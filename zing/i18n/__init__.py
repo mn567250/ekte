@@ -22,6 +22,7 @@ the canonical key list and the completeness tests cover it too).
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import re
@@ -177,7 +178,25 @@ def _script(lang: str | None, _version: tuple[int, int]) -> tuple[str, str]:
     return body, etag
 
 
+@lru_cache(maxsize=16)
+def _encoded(lang: str | None, _version: tuple[int, int]) -> tuple[bytes, str, bytes]:
+    # Compressed once per variant here rather than by the gzip middleware on
+    # every response (~56 ms for the full bundle, on the event loop).
+    body, etag = _script(lang, _version)
+    raw = body.encode("utf-8")
+    return raw, etag, gzip.compress(raw, compresslevel=9, mtime=0)
+
+
 _built_from: list[Any] = [None]  # the _load() result the cached scripts come from
+
+
+def _variant(lang: str | None) -> tuple[str | None, tuple[int, int]]:
+    data = _load()
+    if _built_from[0] is not data:
+        _script.cache_clear()
+        _encoded.cache_clear()
+        _built_from[0] = data
+    return _supported(lang), (id(data), _STATIC_LOCALES_JS.stat().st_mtime_ns)
 
 
 def locales_bundle(lang: str | None = None) -> tuple[str, str]:
@@ -188,11 +207,13 @@ def locales_bundle(lang: str | None = None) -> tuple[str, str]:
     every language. Rebuilt when the locale data is reloaded
     (``_load.cache_clear()``) or ``static/locales.js`` changes.
     """
-    data = _load()
-    if _built_from[0] is not data:
-        _script.cache_clear()
-        _built_from[0] = data
-    return _script(_supported(lang), (id(data), _STATIC_LOCALES_JS.stat().st_mtime_ns))
+    return _script(*_variant(lang))
+
+
+def locales_encoded(lang: str | None = None) -> tuple[bytes, str, bytes]:
+    """:func:`locales_bundle` as served: ``(UTF-8 script, ETag, gzipped script)``,
+    built and compressed once per variant."""
+    return _encoded(*_variant(lang))
 
 
 def locales_script(lang: str | None = None) -> str:
