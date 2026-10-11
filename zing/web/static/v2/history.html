@@ -24,7 +24,7 @@
      Mode sits under the date instead of in its own column so the longest date
      ("Sep 29, 2026, 3:40 PM") and risk label (DE "Abweichungen gefunden", FR
      "Tromperie sur la marchandise") of every language stay on one line. */
-  .hist { --cols: minmax(0, 1.1fr) minmax(0, 1.5fr) 2.8em 2.6em 18px; --cgap: 12px; --del: 36px; }
+  .hist { --cols: minmax(0, 1.1fr) minmax(0, 1.5fr) 2.8em 4.8em 18px; --cgap: 12px; --del: 36px; }
   .local-note { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
   .local-note .zicon { width: 13px; height: 13px; flex: none; }
   .local-note code { font-size: 11.5px; color: var(--ink2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
@@ -57,11 +57,41 @@
   .hist .state.loading { font-family: var(--mono); font-size: 13px; color: var(--faint); }
   .hist .errbox { margin: 18px; }
 
-  /* shared column header */
-  .colhead { display: grid; grid-template-columns: 1fr calc(var(--del) * 3 + 12px); gap: 6px; padding: 12px 18px 8px; border-bottom: 1px solid var(--line); }
-  .colhead .cells { display: grid; grid-template-columns: var(--cols); gap: var(--cgap); padding: 0 10px; }
-  .colhead span { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .colhead .n { text-align: right; }
+  /* shared column header = sort controls (+ collapse / expand all groups) */
+  .colhead { display: grid; grid-template-columns: 1fr calc(var(--del) * 3 + 12px); gap: 6px; padding: 10px 18px 6px; border-bottom: 1px solid var(--line); align-items: center; }
+  /* same font size as .rmain, so the em columns line up with the rows */
+  .colhead .cells { display: grid; grid-template-columns: var(--cols); gap: var(--cgap); padding: 0 10px; align-items: center; font-size: 13px; }
+  .colhead .slabel { display: none; }
+  .colhead .gall { justify-self: end; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .sortb {
+    display: inline-flex; align-items: center; gap: 3px; min-width: 0; max-width: 100%; padding: 4px 4px; margin: 0 -4px; cursor: pointer;
+    font-family: var(--sans); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--faint);
+    background: none; border: 0; border-radius: 6px; transition: color 0.12s, background 0.12s;
+  }
+  .sortb .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .sortb.n .t { overflow: visible; }
+  .sortb .zicon { width: 12px; height: 12px; flex: none; opacity: 0; transition: transform 0.2s; }
+  .sortb:hover { color: var(--ink); background: var(--surface-2); }
+  .sortb:hover .zicon { opacity: 0.5; }
+  .sortb[data-dir] { color: var(--ink); }
+  .sortb[data-dir] .zicon { opacity: 1; }
+  .sortb[data-dir="asc"] .zicon { transform: rotate(180deg); }
+  /* numeric columns are narrow: their labels end at the column's right edge
+     and grow to the left, Score into the free end of the wide Risk column */
+  .sortb.n { justify-self: end; flex-direction: row-reverse; max-width: none; margin: 0 -4px 0 -10px; }
+  .sortb[data-sort="score"] { margin-left: -120px; }
+
+  /* group collapse toggle: the group heading's text is the button */
+  .gtog {
+    display: inline-flex; align-items: center; gap: 8px; max-width: 100%; margin: -3px 0 -3px -26px; padding: 3px 6px 3px 4px; cursor: pointer;
+    font: inherit; letter-spacing: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 8px;
+  }
+  .gtog:hover { background: var(--surface-2); }
+  .gtog .t { overflow-wrap: anywhere; min-width: 0; }
+  .gtog .zicon { width: 16px; height: 16px; flex: none; color: var(--faint); transition: transform 0.2s; }
+  .gtog[aria-expanded="false"] .zicon { transform: rotate(-90deg); }
+  .gbody[hidden] { display: none; }
+  .group.shut .grp-h { padding-bottom: 16px; }
 
   /* group */
   .grp-h { display: flex; align-items: center; gap: 14px; padding: 18px 18px 8px 28px; flex-wrap: wrap; }
@@ -94,8 +124,18 @@
   .trend .dot { fill: currentColor; }
 
   /* filter bar */
-  .filters { margin-top: 22px; padding: 14px 18px 16px; }
+  .filters { margin-top: 22px; padding: 6px 18px 12px; }
   .filters[hidden] { display: none; }
+  /* collapsed by default: the toggle names how many filters are active, the
+     count + reset below it stay visible either way */
+  .ftop { display: flex; align-items: center; gap: 10px; }
+  .ftop .disclosure { flex: 1 1 auto; width: auto; padding: 8px 0; margin: 0; background: none; }
+  .ftop .disclosure .t { display: inline-flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; min-width: 0; }
+  .ftop .disclosure .cv { margin-left: auto; }
+  .ftop .disclosure .zicon { width: 15px; height: 15px; }
+  .ftop .badge[hidden] { display: none; }
+  .fbody { padding: 6px 0 2px; }
+  .fbody[hidden] { display: none; }
   .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; }
   .fgrid .fq { grid-column: 1 / -1; }
   @media (min-width: 700px) { .fgrid .fq { grid-column: auto; } }
@@ -209,7 +249,13 @@
 
   /* phones: stacked rows, no horizontal scroll */
   @media (max-width: 600px) {
-    .colhead { display: none; }
+    /* sort controls as one wrapping row of buttons */
+    .colhead { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 14px 8px 16px; }
+    .colhead .cells { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 0; }
+    .colhead .slabel { display: inline; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); }
+    .sortb, .sortb.n { margin: 0; flex-direction: row; }
+    .colhead .gall { margin-left: auto; }
+    .gtog { margin-left: -6px; }
     .grp-h { padding: 16px 14px 6px 16px; }
     .rows { padding: 0 8px 8px; }
     .gmore { padding: 2px 16px 14px; }
@@ -256,6 +302,7 @@
     <section class="card hist" id="hist" tabindex="-1" aria-busy="true">
       <div class="state loading" data-en="Loading history…">加载历史…</div>
     </section>
+    <p class="sr-only" id="sortst" role="status"></p>
   </main>
 </div>
 <script src="/i18n.js"></script>
@@ -290,6 +337,7 @@
 
   var host = $("#hist"), fbar = $("#filters");
   var FKEY = "zing.v2.history.filters", NONE = "__none__";
+  var fromQuery; // set by loadFilters() when the URL carries filters
   var FDEF = { host: "", model: "", suite: "", mode: "", api: "", detect: "", stream: "", risk: "", min: "", days: "", exec: "", q: "" };
   var state = { rows: null, error: null, reports: {}, open: null, confirm: null, filters: loadFilters() };
   // Rows are rendered PAGE at a time per group ("Show more" appends the next
@@ -298,6 +346,27 @@
   var PAGE = 20;
   state.shown = {};
   state.groups = [];
+
+  // per-viewer view settings (storage may be missing or throw): row order,
+  // collapsed groups (by key) and whether the filter panel is open
+  function loadJSON(key, def) {
+    try { var v = JSON.parse(localStorage.getItem(key) || "null"); return v == null ? def : v; } catch (e) { return def; }
+  }
+  function saveJSON(key, v) {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* ignore */ }
+  }
+  var SKEY = "zing.v2.history.sort", CKEY = "zing.v2.history.collapsed", OKEY = "zing.v2.history.filtersOpen";
+  var SORTS = ["time", "risk", "score", "grade"];
+  state.sort = (function () {
+    var s = loadJSON(SKEY, null);
+    return s && SORTS.indexOf(s.key) >= 0 && (s.dir === "asc" || s.dir === "desc") ? { key: s.key, dir: s.dir } : { key: "time", dir: "desc" };
+  })();
+  state.collapsed = (function () {
+    var c = loadJSON(CKEY, {}), out = {};
+    if (c && typeof c === "object") Object.keys(c).forEach(function (k) { if (c[k] === true) out[k] = true; });
+    return out;
+  })();
+  state.fopen = fromQuery || loadJSON(OKEY, false) === true;
 
   $("#lockIcon").innerHTML = ico("lock");
 
@@ -317,6 +386,7 @@
       if (QK.some(function (k) { return qs.has(k); })) {
         f = Object.assign({}, FDEF); // drop stale filters that could hide the monitor's runs
         QK.forEach(function (k) { if (qs.has(k)) f[k] = qs.get(k); });
+        fromQuery = true; // show what the link filtered by
         localStorage.setItem(FKEY, JSON.stringify(f));
       }
     } catch (e) { /* ignore */ }
@@ -403,6 +473,7 @@
     }
     var f = state.filters;
     var focusSel = document.activeElement && fbar.contains(document.activeElement) && document.activeElement.getAttribute("data-f");
+    var focusTog = document.activeElement && document.activeElement.id === "ftog";
     var suites = asOpts(distinct(function (r) { return r.suite || ""; }, f.suite));
     if ((state.rows || []).some(function (r) { return !r.suite; }) || f.suite === NONE) suites.push({ v: NONE, t: T("（无套件）", "(no suite)") });
     // options of a protocol / detection / mode filter, plus "(unknown)" when an
@@ -421,7 +492,10 @@
     });
     fbar.setAttribute("aria-label", T("筛选", "Filters"));
     fbar.hidden = false;
-    fbar.innerHTML = '<div class="fgrid">' +
+    fbar.innerHTML = '<div class="ftop"><button type="button" class="disclosure" id="ftog" aria-expanded="' + state.fopen + '" aria-controls="fbody">' +
+      '<span class="t">' + ico("search") + "<span>" + esc(T("筛选与趋势图", "Filters & trends")) + "</span>" + factiveHTML() + "</span>" +
+      '<span class="cv" aria-hidden="true">' + ico("chevronDown") + "</span></button></div>" +
+      '<div class="fbody" id="fbody"' + (state.fopen ? "" : " hidden") + '><div class="fgrid">' +
       '<label class="fq"><span>' + esc(T("搜索", "Search")) + '</span><input class="in" type="search" data-f="q" value="' + esc(f.q) +
       '" placeholder="' + esc(T("中转站、模型、套件、协议…", "Relay, model, suite, protocol…")) + '" autocomplete="off" /></label>' +
       selectHTML("host", T("中转站", "Relay / provider"), asOpts(distinct(function (r) { return hostOf(r.base_url); }, f.host))) +
@@ -443,12 +517,39 @@
         { v: "adhoc", t: T("手动", "Ad-hoc") },
         { v: "monitor", t: T("监控", "Monitor") },
       ]) +
-      "</div>" + trendPickerHTML() + '<div class="ffoot"><span id="fcount" aria-live="polite"></span>' +
+      "</div>" + trendPickerHTML() + '</div><div class="ffoot"><span id="fcount" aria-live="polite"></span>' +
       '<button type="button" class="linkbtn" id="freset"' + (isFiltered() ? "" : " hidden") + ">" + esc(T("重置筛选", "Reset filters")) + "</button></div>";
     if (focusSel) {
       var el = fbar.querySelector('[data-f="' + focusSel + '"]');
       if (el) el.focus();
-    }
+    } else if (focusTog) $("#ftog").focus();
+  }
+
+  // number of filters that differ from the defaults (shown on the panel toggle)
+  function activeCount() {
+    return Object.keys(FDEF).filter(function (k) { return state.filters[k] !== FDEF[k]; }).length;
+  }
+  function factiveHTML() {
+    var n = activeCount();
+    return '<span class="badge sky" id="factive"' + (n ? "" : " hidden") + ">" +
+      esc(Tf("{n} 项生效", "{n} active", { n: n })) + "</span>";
+  }
+  function syncFilterChrome() {
+    var rb = $("#freset"), fa = $("#factive"), n = activeCount();
+    if (rb) rb.hidden = !n;
+    if (fa) { fa.hidden = !n; fa.textContent = Tf("{n} 项生效", "{n} active", { n: n }); }
+  }
+  function setFiltersOpen(open) {
+    state.fopen = open;
+    saveJSON(OKEY, open);
+    var b = $("#ftog"), body = $("#fbody");
+    if (b) b.setAttribute("aria-expanded", String(open));
+    if (body) body.hidden = !open;
+  }
+  // after a reset: back to the first field, or to the toggle while the panel is shut
+  function focusFilters() {
+    var el = state.fopen ? fbar.querySelector("[data-f]") : $("#ftog");
+    if (el) el.focus();
   }
 
   function resetFilters() {
@@ -465,8 +566,7 @@
     if (!k || state.filters[k] === String(ev.target.value)) return;
     state.filters[k] = String(ev.target.value);
     saveFilters();
-    var rb = $("#freset");
-    if (rb) rb.hidden = !isFiltered();
+    syncFilterChrome();
     render();
   }
   fbar.addEventListener("input", onFilter);
@@ -474,10 +574,10 @@
   fbar.addEventListener("click", function (ev) {
     var tb = ev.target.closest("[data-trend]");
     if (tb) return toggleTrend(tb.getAttribute("data-trend"));
+    if (ev.target.closest("#ftog")) return setFiltersOpen(!state.fopen);
     if (ev.target.closest("#freset")) {
       resetFilters();
-      var first = fbar.querySelector("[data-f]");
-      if (first) first.focus();
+      focusFilters();
     }
   });
 
@@ -490,6 +590,101 @@
     } catch (e) {
       return d.toLocaleString();
     }
+  }
+
+  /* ---------------- sorting ---------------- */
+  // Rows are sorted inside their group; groups follow their first row, so the
+  // group holding the best match of the sort comes first. Missing values sort
+  // last either way; ties keep newest first.
+  var RISKN = { clean: 0, inconclusive: 1, low: 2, medium: 3, high: 4 };
+  var tsOf = function (r) { var t = Date.parse(r.ts); return isNaN(t) ? null : t; };
+  var SORTV = {
+    time: tsOf,
+    risk: function (r) { return RISKN[riskOf(r)]; },
+    score: function (r) { return typeof r.score === "number" ? r.score : null; },
+    grade: function (r) { return GRADEN[String(r.rating || "").toUpperCase()] || null; },
+  };
+  var SORTL = {
+    time: ["时间", "Time"], risk: ["风险", "Risk"], score: ["健康分", "Score"], grade: ["评级", "Grade"],
+  };
+  function byKey(fn, dir) {
+    return function (a, b) {
+      var x = fn(a), y = fn(b);
+      if (x == null || y == null) return x == null ? (y == null ? 0 : 1) : -1;
+      return dir === "asc" ? x - y : y - x;
+    };
+  }
+  function sortRows(rows) {
+    var main = byKey(SORTV[state.sort.key], state.sort.dir), newest = byKey(tsOf, "desc");
+    return rows.map(function (r, i) { return [r, i]; }).sort(function (a, b) {
+      return main(a[0], b[0]) || newest(a[0], b[0]) || a[1] - b[1];
+    }).map(function (p) { return p[0]; });
+  }
+  function sortName(k) { return T(SORTL[k][0], SORTL[k][1]); }
+  function sortStateText() {
+    return Tf("已按{key}排序，{dir}", "Sorted by {key}, {dir}", {
+      key: sortName(state.sort.key),
+      dir: state.sort.dir === "asc" ? T("升序", "ascending") : T("降序", "descending"),
+    });
+  }
+  // a new column starts descending (newest, most severe, best first); the
+  // active column flips direction
+  function setSort(k) {
+    state.sort = state.sort.key === k ? { key: k, dir: state.sort.dir === "asc" ? "desc" : "asc" } : { key: k, dir: "desc" };
+    saveJSON(SKEY, state.sort);
+    render();
+    var st = $("#sortst");
+    if (st) st.textContent = sortStateText();
+  }
+
+  function sortHeadHTML() {
+    var cell = function (k, cls) {
+      var on = state.sort.key === k;
+      // the name carries the state: this is a list, not a table, so no aria-sort
+      var name = on
+        ? Tf("{key}，{dir}", "{key}, {dir}", {
+          key: sortName(k), dir: state.sort.dir === "asc" ? T("升序排列", "sorted ascending") : T("降序排列", "sorted descending") })
+        : Tf("按{key}排序", "Sort by {key}", { key: sortName(k) });
+      return '<button type="button" class="sortb' + (cls ? " " + cls : "") + '" data-sort="' + k + '"' + (on ? ' data-dir="' + state.sort.dir + '"' : "") +
+        ' aria-label="' + esc(name) + '" title="' + esc(name) + '"><span class="t">' + esc(sortName(k)) + "</span>" + ico("chevronDown") + "</button>";
+    };
+    var anyOpen = state.groups.some(function (g) { return !state.collapsed[g.key]; });
+    return '<div class="colhead"><div class="cells" role="group" aria-label="' + esc(T("排序", "Sort audits")) + '">' +
+      '<span class="slabel" aria-hidden="true">' + esc(T("排序", "Sort")) + "</span>" +
+      cell("time") + cell("risk") + cell("score", "n") + cell("grade", "n") + "<span></span></div>" +
+      '<button type="button" class="linkbtn gall" id="gall" data-all="' + (anyOpen ? "collapse" : "expand") + '">' +
+      esc(anyOpen ? T("全部折叠", "Collapse all") : T("全部展开", "Expand all")) + "</button>" + "</div>";
+  }
+
+  /* ---------------- collapsible groups ---------------- */
+  function saveCollapsed() { saveJSON(CKEY, state.collapsed); }
+  // open/close one group in place; the open report inside it closes first
+  function setGroupOpen(sec, open) {
+    var b = sec.querySelector(".gtog"), body = sec.querySelector(".gbody"), key = b.getAttribute("data-gkey");
+    if (!open && state.open != null && body.querySelector('.row[data-id="' + CSS.escape(String(state.open)) + '"]')) toggle(String(state.open));
+    if (!open && state.confirm != null && state.confirm !== "all" && body.querySelector('.row[data-id="' + CSS.escape(String(state.confirm)) + '"]')) setConfirm(null);
+    if (open) delete state.collapsed[key];
+    else state.collapsed[key] = true;
+    b.setAttribute("aria-expanded", String(open));
+    body.hidden = !open;
+    sec.classList.toggle("shut", !open);
+  }
+  function syncGroupAll() {
+    var ga = $("#gall");
+    if (!ga) return;
+    var anyOpen = state.groups.some(function (g) { return !state.collapsed[g.key]; });
+    ga.setAttribute("data-all", anyOpen ? "collapse" : "expand");
+    ga.textContent = anyOpen ? T("全部折叠", "Collapse all") : T("全部展开", "Expand all");
+  }
+  function toggleGroup(b) {
+    setGroupOpen(b.closest(".group"), b.getAttribute("aria-expanded") !== "true");
+    saveCollapsed();
+    syncGroupAll();
+  }
+  function setAllGroups(open) {
+    Array.prototype.forEach.call(host.querySelectorAll(".group"), function (sec) { setGroupOpen(sec, open); });
+    saveCollapsed();
+    syncGroupAll();
   }
 
   function groupsOf(rows) {
@@ -569,8 +764,13 @@
       return;
     }
 
-    var groups = groupsOf(rows);
+    var groups = groupsOf(sortRows(rows));
     groups.forEach(function (g) {
+      // a row that must stay visible opens its group
+      if (state.collapsed[g.key] && g.rows.some(function (r) { return need[String(r.id)]; })) {
+        delete state.collapsed[g.key];
+        saveCollapsed();
+      }
       var lim = Math.max(PAGE, state.shown[g.key] || 0);
       g.rows.forEach(function (r, i) {
         if (i >= lim && need[String(r.id)]) lim = Math.ceil((i + 1) / PAGE) * PAGE;
@@ -580,12 +780,7 @@
     state.groups = groups;
     var more = groups.some(function (g) { return g.limit < g.rows.length; });
     host.innerHTML =
-      '<div class="colhead" aria-hidden="true"><div class="cells">' +
-      "<span>" + esc(T("时间", "Time")) + "</span>" +
-      "<span>" + esc(T("风险", "Risk")) + "</span>" +
-      '<span class="n">' + esc(T("健康分", "Score")) + "</span>" +
-      '<span class="n">' + esc(T("评级", "Grade")) + "</span>" +
-      "<span></span></div><span></span></div>" +
+      sortHeadHTML() +
       groups.map(groupHTML).join("") +
       '<div class="lfoot">' +
       '<span class="aside">' + esc(isFiltered()
@@ -621,6 +816,8 @@
     if (row && el.classList.contains("rrerun")) return '.row[data-id="' + row.getAttribute("data-id") + '"] .rrerun';
     if (row && el.classList.contains("rsched")) return '.row[data-id="' + row.getAttribute("data-id") + '"] .rsched';
     if (el.hasAttribute("data-more")) return '[data-more="' + CSS.escape(el.getAttribute("data-more")) + '"]';
+    if (el.hasAttribute("data-sort")) return '[data-sort="' + el.getAttribute("data-sort") + '"]';
+    if (el.hasAttribute("data-gkey")) return '[data-gkey="' + CSS.escape(el.getAttribute("data-gkey")) + '"]';
     return null;
   }
 
@@ -632,15 +829,19 @@
   }
 
   function groupHTML(g, gi) {
-    var hid = "g" + gi;
+    var hid = "g" + gi, shut = !!state.collapsed[g.key];
     // rough height for content-visibility until the group is first laid out
-    var gh = 100 + 58 * g.limit + (g.limit < g.rows.length ? 50 : 0);
-    return '<section class="group" aria-labelledby="' + hid + '" style="--gh:' + gh + 'px"><div class="grp-h"><div class="gtitle">' +
-      '<h2 id="' + hid + '" title="' + esc(T("声称模型", "Claimed model")) + '">' +
-      esc(g.claimed_model || T("(未声明模型)", "(no model declared)")) + "</h2>" +
+    var gh = shut ? 100 : 100 + 58 * g.limit + (g.limit < g.rows.length ? 50 : 0);
+    // the heading's text is the collapse toggle: heading navigation still
+    // lands on it, and the button says whether the group's rows are shown
+    return '<section class="group' + (shut ? " shut" : "") + '" aria-labelledby="' + hid + '" style="--gh:' + gh + 'px"><div class="grp-h"><div class="gtitle">' +
+      '<h2 id="' + hid + '"><button type="button" class="gtog" data-gkey="' + esc(g.key) + '" aria-expanded="' + !shut + '" aria-controls="gb' + gi + '" title="' +
+      esc(T("声称模型", "Claimed model")) + '">' + ico("chevronDown") + '<span class="t">' +
+      esc(g.claimed_model || T("(未声明模型)", "(no model declared)")) + "</span></button></h2>" +
       '<div class="gu"><code class="key">base_url</code><span title="' + esc(g.base_url || "") + '">' + esc(g.base_url || "—") + "</span></div></div>" +
       trendHTML(g.rows) + "</div>" +
-      '<ul class="rows">' + g.rows.slice(0, g.limit).map(rowHTML).join("") + "</ul>" + moreHTML(g, gi) + "</section>";
+      '<div class="gbody" id="gb' + gi + '"' + (shut ? " hidden" : "") + '><ul class="rows">' + g.rows.slice(0, g.limit).map(rowHTML).join("") + "</ul>" +
+      moreHTML(g, gi) + "</div></section>";
   }
 
   // "Show more" under a group whose rows are not all rendered yet; its
@@ -753,9 +954,10 @@
     render();
   }
 
-  // group trends from the group's (filtered) rows, which arrive newest first
+  // group trends from the group's (filtered) rows, oldest to newest whatever
+  // the list's sort
   function trendHTML(rows) {
-    var pts = rows.slice().reverse();
+    var pts = rows.slice().sort(byKey(tsOf, "asc"));
     var W = state.trends.length > 2 ? 72 : 96;
     var tiles = METRICS.filter(function (m) { return state.trends.indexOf(m.id) >= 0; }).map(function (m) {
       var vals = pts.map(m.get).filter(function (v) { return v != null; });
@@ -956,11 +1158,13 @@
     if (!t || !host.contains(t)) return;
     if (t.id === "nmreset") {
       resetFilters();
-      var fq = fbar.querySelector("[data-f]");
-      if (fq) fq.focus();
+      focusFilters();
       return;
     }
     if (t.classList.contains("rmain")) return toggle(t.id.slice(2));
+    if (t.hasAttribute("data-sort")) return setSort(t.getAttribute("data-sort"));
+    if (t.hasAttribute("data-gkey")) return toggleGroup(t);
+    if (t.id === "gall") return setAllGroups(t.getAttribute("data-all") === "expand");
     if (t.hasAttribute("data-more")) return showMore(t);
     if (t.hasAttribute("data-rerun")) return rerun(t.getAttribute("data-rerun"));
     if (t.hasAttribute("data-sched")) return schedule(t.getAttribute("data-sched"));

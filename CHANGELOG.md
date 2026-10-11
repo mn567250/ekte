@@ -6,6 +6,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **History (UI v2): sort, collapse groups, fold the filters.** The column
+  header (Time · Risk · Score · Grade) now sorts: rows within each relay group,
+  and the groups by their first row; a second click reverses the order, risk
+  sorts most severe first. Each group's heading collapses or expands its rows
+  (trend tiles stay visible), with **Collapse all / Expand all** next to the
+  sort buttons. The filter and trend settings sit in a panel that starts
+  closed; its toggle counts the active filters, and the result count and
+  **Reset filters** stay visible while it is closed. Sort order, collapsed
+  groups and the panel state are remembered per browser. All three are native
+  disclosure / toggle buttons that keep focus in place, and a status message
+  announces each new sort order (`tests/a11y/test_history_controls.py`).
+
 ### Fixed
 
 - **Local servers no longer read as response caches.** Ollama, llama.cpp and
