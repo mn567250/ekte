@@ -51,6 +51,7 @@ def build(full: KnowledgeBase, effective: KnowledgeBase, entries: list[dict[str,
         entry = by_id.get(_entry_id(src) or -1)
         eff = effective.providers.get(name)
         prov_on = eff is not None and effective.provider_sources.get(name) == src
+        eff_ids = {x.id for x in eff.models} if eff is not None else set()
         item = {
             "key": f"provider:{name}",
             "provider": name,
@@ -71,7 +72,7 @@ def build(full: KnowledgeBase, effective: KnowledgeBase, entries: list[dict[str,
             key = f"{name}/{m.id}"
             msrc = full.model_sources.get(key, "")
             eff_src = effective.model_sources.get(key) if prov_on else None
-            on = eff_src == msrc and eff is not None and any(x.id == m.id for x in eff.models)
+            on = eff_src == msrc and m.id in eff_ids
             models.append({
                 "key": f"model:{key}",
                 "provider": name,
@@ -120,7 +121,7 @@ def build(full: KnowledgeBase, effective: KnowledgeBase, entries: list[dict[str,
         "providers": providers,
         "relays": relays,
         "user_kb": effective.user_kb,
-        "warnings": effective.warnings,
+        "warnings": list(effective.warnings),
         "disabled": len(effective.disabled),
         "entry_count": len(entries),
     }
@@ -128,8 +129,9 @@ def build(full: KnowledgeBase, effective: KnowledgeBase, entries: list[dict[str,
 
 def catalog() -> dict[str, Any]:
     """:func:`build` for the knowledge base as it is now."""
-    effective = load_knowledge_base()
-    full = load_knowledge_base(full=True)
+    # both loads are only read: the shared cached instances, no copies
+    effective = load_knowledge_base(copy=False)
+    full = load_knowledge_base(full=True, copy=False)
     entries = store.list_entries() if effective.user_kb else []
     return build(full, effective, entries)
 
@@ -142,7 +144,7 @@ class ToggleError(ValueError):
 
 def set_enabled(key: str, enabled: bool) -> None:
     """Switch the item ``key`` on or off; :class:`ToggleError` when that is not possible."""
-    effective = load_knowledge_base()
+    effective = load_knowledge_base(copy=False)
     if not effective.user_kb:
         raise ToggleError(409, "your kb.db is ignored (ZING_NO_USER_KB); nothing can be switched")
     kind, _, rest = str(key or "").partition(":")
@@ -154,7 +156,7 @@ def set_enabled(key: str, enabled: bool) -> None:
         if not store.set_enabled(target, enabled):
             raise ToggleError(404, "not found")
         return
-    full = load_knowledge_base(full=True)
+    full = load_knowledge_base(full=True, copy=False)
     if kind == "provider":
         if rest not in full.providers:
             raise ToggleError(404, "not found")

@@ -82,7 +82,13 @@ from zing.detectors.performance import stream_mode
 from zing.models import KnowledgeUsage, TargetConfig
 from zing.runner import run_audit
 from zing.web import jobs
-from zing.web.caching import CachedStaticFiles, CompressionMiddleware, html_page
+from zing.web.caching import (
+    GZIP_MINIMUM_SIZE,
+    CachedStaticFiles,
+    CompressionMiddleware,
+    encoded_response,
+    html_page,
+)
 from zing.web.security import LocalOnlyMiddleware
 
 _STATIC = Path(__file__).parent / "static"
@@ -180,7 +186,8 @@ def _watch_knowledge(row: dict[str, Any], kb: Any = None) -> dict[str, Any]:
     from zing.knowledge.snapshot import knowledge_usage
 
     claimed = str(row.get("claimed_model") or row.get("model") or "")
-    kb = kb if kb is not None else load_knowledge_base()
+    # resolving and describing only read the KB: the shared instance will do
+    kb = kb if kb is not None else load_knowledge_base(copy=False)
     resolved = kb.resolve(claimed, row.get("declared_provider") or None)
     return knowledge_usage(kb, resolved, claimed).model_dump(mode="json")
 
@@ -192,7 +199,7 @@ def _kb_embedding_dimensions(model_id: str | None, provider_hint: str | None) ->
     try:
         from zing.knowledge import load_knowledge_base
 
-        resolved = load_knowledge_base().resolve(model_id, provider_hint=provider_hint)
+        resolved = load_knowledge_base(copy=False).resolve(model_id, provider_hint=provider_hint)
     except Exception:
         return 0
     if resolved is None:
@@ -674,19 +681,21 @@ def create_app() -> FastAPI:
     async def locales_js(request: Request) -> Any:
         # Translation data (zing/i18n/locales/*.json) + the lookup logic: one
         # language's for ?lang= or the zing_lang cookie lang.js writes, else
-        # every language (built once, revalidated by ETag).
-        from zing.i18n import locales_bundle
+        # every language (built and gzipped once, revalidated by ETag; see
+        # encoded_response).
+        from zing.i18n import locales_encoded
 
         q = request.query_params.get("lang")
-        body, etag = locales_bundle(q if q is not None else request.cookies.get("zing_lang"))
-        headers = {"ETag": etag, "Cache-Control": "no-cache"}
+        lang = q if q is not None else request.cookies.get("zing_lang")
+        # A (re)build serializes and compresses up to ~800 KiB: off the event loop.
+        body, etag, gz = await asyncio.to_thread(locales_encoded, lang)
+        headers = {"Cache-Control": "no-cache"}
         if q is None:
             headers["Vary"] = "Cookie"
-        inm = request.headers.get("if-none-match", "")
-        tags = {t.strip().removeprefix("W/") for t in inm.split(",")}
-        if etag in tags or "*" in tags:
-            return Response(status_code=304, headers=headers)
-        return Response(body, media_type="application/javascript", headers=headers)
+        return encoded_response(
+            request.scope, body, etag, gz if len(body) >= GZIP_MINIMUM_SIZE else None,
+            media_type="application/javascript", headers=headers,
+        )
 
     @app.get("/lang.js")
     async def lang_js(request: Request) -> Any:
@@ -725,7 +734,8 @@ def create_app() -> FastAPI:
         # (or any provider without models); kind: chat or embedding model.
         from zing.knowledge.relays import base_urls, is_relay
 
-        knowledge = load_knowledge_base()
+        # only read: the shared cached instance (see load_knowledge_base)
+        knowledge = load_knowledge_base(copy=False)
         provs = sorted(knowledge.providers.values(), key=lambda p: p.provider)
         providers = []
         for prov in provs:
@@ -789,7 +799,7 @@ def create_app() -> FastAPI:
         from zing.knowledge import load_knowledge_base
         from zing.knowledge.research import research_prompt
 
-        text = research_prompt(model[:200], provider[:64] or None, load_knowledge_base())
+        text = research_prompt(model[:200], provider[:64] or None, load_knowledge_base(copy=False))
         return Response(text, media_type="text/plain; charset=utf-8")
 
     @app.post("/api/kb/resolve")
@@ -797,13 +807,14 @@ def create_app() -> FastAPI:
         from zing.knowledge import load_knowledge_base
 
         body = await request.json()
-        knowledge = await asyncio.to_thread(load_knowledge_base)
+        # resolving only reads: the shared cached instances, no copies
+        knowledge = await asyncio.to_thread(load_knowledge_base, copy=False)
         model, hint = str(body.get("model") or "")[:200], body.get("provider") or None
         r = knowledge.resolve(model, hint)
         off = None
         if r is None or r.match_confidence not in ("exact", "alias"):
             # a closer profile that exists but is switched off: name it
-            full = await asyncio.to_thread(load_knowledge_base, full=True)
+            full = await asyncio.to_thread(load_knowledge_base, full=True, copy=False)
             f = full.resolve(model, hint)
             if f is not None and (r is None or f.match_confidence in ("exact", "alias")):
                 off = {"provider": f.provider.provider, "model_id": f.model.id}
@@ -1167,7 +1178,7 @@ def create_app() -> FastAPI:
         rows = watches.list_all()
         # Flag pinned profiles that differ from what the knowledge base resolves now.
         try:
-            kb = load_knowledge_base() if rows else None
+            kb = load_knowledge_base(copy=False) if rows else None  # read-only
         except Exception:
             kb = None
         for row in rows:

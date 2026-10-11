@@ -2,23 +2,14 @@
 
 We do not need exact tokenization — we need a defensible estimate to compare
 against the ``usage`` numbers a relay reports, so we can flag inflated billing or
-implausible counts. When the optional ``tiktoken`` extra is installed and the
-encoding is an OpenAI-family one, we use it for accuracy; otherwise we fall back
-to a language-aware heuristic that handles CJK text reasonably.
+implausible counts. The count is always a language-aware stdlib heuristic that
+handles CJK text reasonably: zing must run in restricted environments, so it
+never imports a tokenizer library or downloads an encoding at runtime.
 """
 
 from __future__ import annotations
 
 import re
-from functools import lru_cache
-
-# Map a tokenizer family hint to a tiktoken encoding name (OpenAI-family only).
-_TIKTOKEN_ENCODINGS = {
-    "o200k_base": "o200k_base",
-    "cl100k_base": "cl100k_base",
-    "o200k": "o200k_base",
-    "cl100k": "cl100k_base",
-}
 
 _CJK = re.compile(
     r"[　-〿぀-ヿ㐀-䶿一-鿿豈-﫿＀-￯]"
@@ -26,20 +17,8 @@ _CJK = re.compile(
 _WORDISH = re.compile(r"[A-Za-z0-9]+|[^\sA-Za-z0-9]")
 
 
-@lru_cache(maxsize=8)
-def _load_tiktoken(encoding_name: str):  # pragma: no cover - optional dependency
-    try:
-        import tiktoken
-    except ImportError:
-        return None
-    try:
-        return tiktoken.get_encoding(encoding_name)
-    except Exception:
-        return None
-
-
 def heuristic_token_count(text: str) -> int:
-    """Language-aware fallback estimate.
+    """Language-aware token estimate.
 
     CJK characters count ~1 token each; runs of latin/digits and punctuation are
     each roughly one BPE token. Empirically within ~15-20% of real tokenizers,
@@ -53,30 +32,12 @@ def heuristic_token_count(text: str) -> int:
     return cjk + pieces
 
 
-def is_exact_tokenizer(tokenizer: str | None) -> bool:
-    """True when we can count tokens EXACTLY (a tiktoken OpenAI-family encoding is
-    available). For any other family the count is a heuristic that can be off by a
-    lot — especially for reasoning models and CJK — so billing checks must not treat
-    a divergence as proof of inflation."""
-    if not tokenizer:
-        return False
-    name = _TIKTOKEN_ENCODINGS.get(tokenizer.lower())
-    return name is not None and _load_tiktoken(name) is not None
-
-
 def estimate_tokens(text: str, tokenizer: str | None = None) -> int:
-    """Best-effort token count for ``text`` under the given tokenizer family."""
-    if not text:
-        return 0
-    if tokenizer:
-        encoding_name = _TIKTOKEN_ENCODINGS.get(tokenizer.lower())
-        if encoding_name:
-            enc = _load_tiktoken(encoding_name)
-            if enc is not None:
-                try:
-                    return len(enc.encode(text))
-                except Exception:
-                    pass
+    """Estimated token count for ``text``.
+
+    ``tokenizer`` (the model family's tokenizer hint) is accepted for call-site
+    compatibility but does not change the count: every family uses the heuristic.
+    """
     return heuristic_token_count(text)
 
 

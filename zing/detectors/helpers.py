@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from functools import lru_cache
 from typing import Any
 
 from zing import prompts
@@ -29,21 +30,37 @@ def stable_marker(seed: str, prefix: str = "ZING") -> str:
     return f"{prefix}-{digest}"
 
 
+@lru_cache(maxsize=4)
 def build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
     """Build filler text of approximately ``target_tokens`` tokens.
 
     Lines are numbered so position is meaningful and the text resists dedup.
+
+    Linear in the output size: each line is counted once and a running total is
+    kept, instead of re-joining and re-counting the whole text every 50 lines
+    (which was quadratic — ~6 s at the default 200k-token probe cap, blocking the
+    event loop). Same 50-line stepping and stop rule. Each line after the first
+    is counted together with its leading newline separator: the heuristic count
+    is additive over whitespace-joined lines (a newline yields no piece), so the
+    output is byte-identical to the old algorithm; an exact BPE tokenizer gets
+    its separator token counted too, staying close to the joined-text count.
+
+    Memoized (a few entries): the context-window probe builds a size again to
+    confirm a miss at the other needle depth and revisits sizes in its refine
+    and lost-in-the-middle phases. The result is an immutable ``str``, so sharing
+    it is safe; callers that insert a needle work on a split copy.
     """
     if target_tokens <= 0:
         return ""
     parts: list[str] = []
+    total = 0
     idx = 0
-    # Grow in chunks, re-estimating periodically to avoid quadratic cost.
     while True:
-        sentence = _FILLER_SENTENCES[idx % len(_FILLER_SENTENCES)]
-        parts.append(f"[{idx:05d}] {sentence}")
+        line = f"[{idx:05d}] {_FILLER_SENTENCES[idx % len(_FILLER_SENTENCES)]}"
+        parts.append(line)
+        total += estimate_tokens(line if idx == 0 else "\n" + line, tokenizer)
         idx += 1
-        if idx % 50 == 0 and estimate_tokens("\n".join(parts), tokenizer) >= target_tokens:
+        if idx % 50 == 0 and total >= target_tokens:
             break
         if idx > 400_000:  # hard safety stop
             break

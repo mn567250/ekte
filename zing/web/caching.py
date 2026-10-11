@@ -3,6 +3,9 @@
 * **Compression** (:class:`CompressionMiddleware`): gzip for every response of
   at least 1 KiB that the client accepts it for, except Server-Sent Events,
   which must reach the browser event by event.
+* **Precompression** (:func:`encoded_response`): cached bodies (pages,
+  ``/locales.js``) are gzipped once, when built, and served as such; the
+  middleware leaves a response that already has a ``Content-Encoding`` alone.
 * **Versioned asset URLs** (:func:`html_page`): pages are served with their
   local script / stylesheet references rewritten to ``…?v=<content hash>``.
   Hashes and rewritten pages are cached, keyed on file mtime and size, so an
@@ -15,6 +18,7 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import os
 import re
@@ -55,10 +59,91 @@ class CompressionMiddleware:
         self.gzip = GZipMiddleware(app, minimum_size=minimum_size)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] == "http" and not _SSE_PATH.match(scope.get("path", "")):
+        # Clients refusing gzip (also `gzip;q=0`, which the middleware's substring
+        # check would miss) skip it, as encoded_response does.
+        if (
+            scope["type"] == "http"
+            and not _SSE_PATH.match(scope.get("path", ""))
+            and accepts_gzip(Headers(scope=scope))
+        ):
             await self.gzip(scope, receive, send)
         else:
             await self.app(scope, receive, send)
+
+
+# ----- precompressed bodies ----------------------------------------------- #
+def precompressed(body: bytes) -> bytes | None:
+    """``body`` gzipped (once, by a caller that caches it), or None when it is
+    too small to be worth compressing."""
+    if len(body) < GZIP_MINIMUM_SIZE:
+        return None
+    return gzip.compress(body, compresslevel=9, mtime=0)
+
+
+def accepts_gzip(request_headers: Headers) -> bool:
+    """Whether Accept-Encoding allows gzip (an explicit ``gzip;q=0`` refuses it,
+    even next to ``*``)."""
+    allowed = None
+    for part in request_headers.get("accept-encoding", "").split(","):
+        coding, _, params = part.partition(";")
+        coding = coding.strip().lower()
+        if coding not in ("gzip", "x-gzip", "*"):
+            continue
+        q = 1.0
+        for param in params.split(";"):
+            key, _, value = param.partition("=")
+            if key.strip().lower() == "q":
+                try:
+                    q = float(value)
+                except ValueError:
+                    q = 0.0
+                if not 0 <= q <= 1:  # also nan
+                    q = 0.0
+        if coding == "*":
+            if allowed is None:
+                allowed = q > 0
+        else:
+            return q > 0
+    return bool(allowed)
+
+
+def gzip_etag(etag: str) -> str:
+    """The ETag of the gzipped representation: ``"tag"`` -> ``"tag-gz"``."""
+    return etag[:-1] + '-gz"' if etag.endswith('"') else etag + "-gz"
+
+
+def encoded_response(
+    scope: Scope | None,
+    body: bytes,
+    etag: str,
+    gz: bytes | None,
+    *,
+    media_type: str,
+    status_code: int = 200,
+    headers: dict[str, str] | None = None,
+) -> Response:
+    """``body`` (or its precompressed ``gz``, when the client accepts gzip) with
+    an ETag per encoding; a 304 when If-None-Match has the requested one, or,
+    for a gzip request, the identity one (identity bytes suit any client; the
+    gzip ones must not be revalidated for a client that refused gzip)."""
+    out = dict(headers or {})
+    req = Headers(scope=scope) if scope is not None else Headers()
+    tags: tuple[str, ...] = (etag,)
+    if gz is not None:
+        vary = [v.strip() for v in out.get("Vary", "").split(",") if v.strip()]
+        out["Vary"] = ", ".join([*vary, "Accept-Encoding"])
+        if accepts_gzip(req):
+            body, tags = gz, (gzip_etag(etag), etag)
+            out["Content-Encoding"] = "gzip"
+    out["ETag"] = tags[0]
+    if scope is not None and status_code == 200:
+        matched = next((t for t in tags if _etag_matches(req, t)), None)
+        if matched is not None:
+            out.pop("Content-Encoding", None)
+            # "*" matches both; otherwise echo the representation the client has
+            out["ETag"] = tags[0] if req.get("if-none-match", "").strip() == "*" else matched
+            return Response(status_code=304, headers=out)
+    return Response(body, status_code=status_code, media_type=media_type, headers=out)
 
 
 # ----- content hashes ------------------------------------------------------ #
@@ -102,8 +187,9 @@ def asset_file(url_path: str) -> Path | None:
 # src="/…" / href="/…" with no query or fragment yet.
 _REF = re.compile(r"""(?P<pre>\b(?:src|href)=)(?P<q>["'])(?P<url>/[^"'?#\s<>]+)(?P=q)""")
 
-# page -> (stamps of page + referenced assets, referenced asset paths, body, etag)
-_pages: dict[Path, tuple[tuple[_Stamp, ...], tuple[Path, ...], bytes, str]] = {}
+# page -> (stamps of page + referenced assets, referenced asset paths, body, etag, gzipped body)
+_Page = tuple[tuple[_Stamp, ...], tuple[Path, ...], bytes, str, bytes | None]
+_pages: dict[Path, _Page] = {}
 
 
 def _stamps(paths: tuple[Path, ...]) -> tuple[_Stamp, ...] | None:
@@ -113,7 +199,7 @@ def _stamps(paths: tuple[Path, ...]) -> tuple[_Stamp, ...] | None:
         return None
 
 
-def _render(page: Path) -> tuple[tuple[_Stamp, ...], tuple[Path, ...], bytes, str]:
+def _render(page: Path) -> _Page:
     st = page.stat()
     html = page.read_text(encoding="utf-8")
     deps: list[Path] = []
@@ -130,7 +216,7 @@ def _render(page: Path) -> tuple[tuple[_Stamp, ...], tuple[Path, ...], bytes, st
 
     body = _REF.sub(version, html).encode("utf-8")
     etag = '"' + hashlib.sha256(body).hexdigest()[:16] + '"'
-    return tuple(stamps), tuple(deps), body, etag
+    return tuple(stamps), tuple(deps), body, etag, precompressed(body)
 
 
 def _etag_matches(request_headers: Headers, etag: str) -> bool:
@@ -148,11 +234,11 @@ def html_page(page: Path, scope: Scope | None = None, status_code: int = 200) ->
     if cached is None or _stamps((page, *cached[1])) != cached[0]:
         cached = _render(page)
         _pages[page] = cached
-    _, _, body, etag = cached
-    headers = {"Cache-Control": NO_CACHE, "ETag": etag}
-    if scope is not None and status_code == 200 and _etag_matches(Headers(scope=scope), etag):
-        return Response(status_code=304, headers=headers)
-    return Response(body, status_code=status_code, media_type="text/html", headers=headers)
+    _, _, body, etag, gz = cached
+    return encoded_response(
+        scope, body, etag, gz, media_type="text/html", status_code=status_code,
+        headers={"Cache-Control": NO_CACHE},
+    )
 
 
 # ----- assets --------------------------------------------------------------- #

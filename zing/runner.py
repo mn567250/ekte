@@ -214,7 +214,6 @@ async def run_audit(
     performance = build_performance(
         recorder.records,
         tokenizer=recorder.tokenizer,
-        tokens_exact=recorder.tokens_exact,
         has_baseline=baseline is not None,
         probe_max_tokens=options.performance_max_tokens,
         concurrency=options.reliability_concurrency,

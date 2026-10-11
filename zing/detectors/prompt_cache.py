@@ -12,6 +12,8 @@ finding states that limitation explicitly rather than overclaiming.
 
 from __future__ import annotations
 
+import asyncio
+
 from zing import prompts
 from zing.context import AuditContext
 from zing.detectors.base import Detector, register
@@ -55,7 +57,8 @@ class PromptCacheDetector(Detector):
     async def run(self, ctx: AuditContext) -> DetectorResult:
         result = self.new_result(scoring=SCALE.scoring())
         tok = ctx.tokenizer_hint()
-        filler = build_filler(_PREFIX_TOKENS, tok)
+        # CPU work: keep it off the event loop (it would skew concurrent timings).
+        filler = await asyncio.to_thread(build_filler, _PREFIX_TOKENS, tok)
         prefix_a = f"{stable_marker('cache-a')}\n{filler}"
         prefix_b = f"{stable_marker('cache-b')}\n{filler}"
 

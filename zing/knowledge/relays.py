@@ -92,7 +92,7 @@ def add_relay(name: str, base_url: str) -> dict[str, Any]:
         raise RelayError(400, "base_url must be an http:// or https:// URL")
     key = slug(name)
     # the complete set: a switched-off provider still owns its key and URLs
-    knowledge = load_knowledge_base(full=True)
+    knowledge = load_knowledge_base(full=True, copy=False)  # only read
     taken = knowledge.providers.get(key)
     if taken is not None or store.find("provider", key) is not None:
         label = taken.display_name if taken is not None and taken.display_name else key
