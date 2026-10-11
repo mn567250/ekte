@@ -354,20 +354,30 @@ select.in {
 .chips button[aria-pressed="true"]::before { content: "✓ "; }
 .chips button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* switch: <label class="switch"><input type="checkbox" role="switch"><span></span> text</label> */
-.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; color: var(--ink2); }
-.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.switch span {
+/* switch: <label class="switch"><input type="checkbox" role="switch"><span></span> text</label>
+   The input itself is the visible track (so the focused element is the one on
+   screen, with its own focus ring); the span is only the knob drawn over it. */
+.switch { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; color: var(--ink2); }
+.switch input {
+  -webkit-appearance: none; appearance: none; margin: 0; cursor: pointer;
   position: relative; width: 38px; height: 22px; flex: 0 0 38px; border-radius: var(--r-pill);
   background: var(--track); border: 1px solid var(--line-control); transition: background 0.15s;
 }
-.switch span::after {
-  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.15s;
+.switch span {
+  position: absolute; left: 3px; top: 50%; margin-top: -8px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.15s; pointer-events: none;
 }
-.switch input:checked + span { background: var(--teal); border-color: var(--teal); }
-.switch input:checked + span::after { transform: translateX(16px); }
-.switch input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 2px; }
+.switch input:checked { background: var(--teal); border-color: var(--teal); }
+.switch input:checked + span { transform: translateX(16px); }
+.switch input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.switch input:disabled { cursor: not-allowed; opacity: 0.5; }
+.switch input:disabled + span { opacity: 0.5; }
+/* forced colours drop backgrounds: draw the knob and the "on" track in system colours */
+@media (forced-colors: active) {
+  .switch span { forced-color-adjust: none; background: CanvasText; box-shadow: none; }
+  .switch input:checked { forced-color-adjust: none; background: Highlight; border-color: Highlight; }
+  .switch input:checked + span { background: HighlightText; }
+}
 
 /* disclosure (accordion): <button class="disclosure" aria-expanded aria-controls> */
 .disclosure-box { border: 1.5px dashed var(--line-strong); border-radius: 14px; overflow: hidden; }
