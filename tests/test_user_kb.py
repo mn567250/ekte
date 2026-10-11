@@ -215,6 +215,16 @@ def test_catalog_lists_complete_sets_with_state(data_dir):
     assert err.value.status == 404
 
 
+def test_catalog_keeps_your_model_less_provider_among_providers(data_dir):
+    from zing.knowledge import catalog
+
+    result, _ids = import_yaml("provider: newprov\ndisplay_name: New\nbase_url_hints: [https://n.example/v1]\nmodels: []\n")
+    assert result.ok, result.errors
+    data = catalog.catalog()
+    assert "provider:newprov" in {p["key"] for p in data["providers"]}
+    assert "provider:newprov" not in {p["key"] for p in data["relays"]}
+
+
 def test_catalog_lists_additions_to_a_packaged_provider(data_dir):
     from zing.knowledge import catalog
 

@@ -62,7 +62,10 @@ def build(full: KnowledgeBase, effective: KnowledgeBase, entries: list[dict[str,
             "entry_id": entry["id"] if entry else None,
             "enabled": prov_on,
         }
-        (relays if is_relay(prov, entry) else providers).append(item)
+        # your own entries go by their origin (a provider you imported without
+        # models stays a provider); anything else without models is a relay
+        relay = entry.get("origin") == RELAY_ORIGIN if entry is not None else is_relay(prov)
+        (relays if relay else providers).append(item)
 
         for m in prov.models:
             key = f"{name}/{m.id}"
