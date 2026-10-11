@@ -45,9 +45,15 @@ def test_import_cli_does_not_load_heavy_modules():
     assert loaded == []
 
 
+# rich colours the help when the environment asks for it (FORCE_COLOR, some CI
+# runners); the escape codes would sit between the panel border and the name.
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
 def test_help_still_lists_every_command():
     result = CliRunner().invoke(app, ["--help"], env={"COLUMNS": "200"})
     assert result.exit_code == 0
+    output = _ANSI.sub("", result.output)
     for cmd in ("check", "compare", "models", "kb", "serve", "watch", "data-dir", "secret"):
         # A command row in rich's help panel: "│ <name>  <help...>".
-        assert re.search(rf"^\W*{re.escape(cmd)}\s{{2,}}", result.output, re.M), cmd
+        assert re.search(rf"^\W*{re.escape(cmd)}\s{{2,}}", output, re.M), cmd
