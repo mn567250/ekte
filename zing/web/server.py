@@ -82,7 +82,13 @@ from zing.detectors.performance import stream_mode
 from zing.models import KnowledgeUsage, TargetConfig
 from zing.runner import run_audit
 from zing.web import jobs
-from zing.web.caching import CachedStaticFiles, CompressionMiddleware, html_page
+from zing.web.caching import (
+    GZIP_MINIMUM_SIZE,
+    CachedStaticFiles,
+    CompressionMiddleware,
+    encoded_response,
+    html_page,
+)
 from zing.web.security import LocalOnlyMiddleware
 
 _STATIC = Path(__file__).parent / "static"
@@ -675,18 +681,18 @@ def create_app() -> FastAPI:
         # Translation data (zing/i18n/locales/*.json) + the lookup logic: one
         # language's for ?lang= or the zing_lang cookie lang.js writes, else
         # every language (built once, revalidated by ETag).
-        from zing.i18n import locales_bundle
+        # Served precompressed when the client takes gzip (see encoded_response).
+        from zing.i18n import locales_encoded
 
         q = request.query_params.get("lang")
-        body, etag = locales_bundle(q if q is not None else request.cookies.get("zing_lang"))
-        headers = {"ETag": etag, "Cache-Control": "no-cache"}
+        body, etag, gz = locales_encoded(q if q is not None else request.cookies.get("zing_lang"))
+        headers = {"Cache-Control": "no-cache"}
         if q is None:
             headers["Vary"] = "Cookie"
-        inm = request.headers.get("if-none-match", "")
-        tags = {t.strip().removeprefix("W/") for t in inm.split(",")}
-        if etag in tags or "*" in tags:
-            return Response(status_code=304, headers=headers)
-        return Response(body, media_type="application/javascript", headers=headers)
+        return encoded_response(
+            request.scope, body, etag, gz if len(body) >= GZIP_MINIMUM_SIZE else None,
+            media_type="application/javascript", headers=headers,
+        )
 
     @app.get("/lang.js")
     async def lang_js(request: Request) -> Any:
