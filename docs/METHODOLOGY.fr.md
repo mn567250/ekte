@@ -315,8 +315,8 @@ RAG/résumé bon marché ne transmet qu'une partie du prompt).
 
 **Fonctionnement.** Rappel d'une aiguille dans une botte de foin à
 `temperature=0` : un marqueur unique est placé dans un texte de remplissage non
-répétitif dimensionné avec le tokenizer du modèle annoncé, et le modèle doit le
-restituer.
+répétitif dimensionné avec l'estimation heuristique des tokens de zing, et le
+modèle doit le restituer.
 
 1. Une échelle croissante qui double à partir de 2K tokens jusqu'à la fenêtre
    annoncée, plafonnée par `--max-context-tokens` (200K par défaut), avec un
@@ -551,25 +551,24 @@ et, comme signal de corroboration, `prompt.injected-system-prompt`.
 
 **Fonctionnement.** Un appel déterministe (un paragraphe connu à résumer,
 `temperature=0`). Le prompt et la réponse visible sont comptés
-indépendamment avec le tokenizer du modèle annoncé : exactement avec tiktoken
-pour les tokenizers de la famille OpenAI (extra `tokenizers`), sinon avec une
-heuristique sensible à la langue (environ ±25 %). Des tokens de prompt
-rapportés au-delà de 1,8× l'estimation (2,5× pour une heuristique) et de plus
-de 50 tokens au-dessus comptent comme gonflement. Les tokens de complétion d'un
-modèle de raisonnement incluent légitimement des tokens de raisonnement cachés
-et ne sont pas signalés ; sinon, au-delà de 1,8× une estimation exacte c'est un
-gonflement, et au-delà de 3× une estimation heuristique un avertissement plus
-léger. `total` doit égaler `prompt + completion` (±2), et un total sans
-répartition est signalé. Un sous-comptage est indicatif (sans préjudice pour
-l'acheteur).
+indépendamment avec une heuristique sensible à la langue (environ ±25 %), pour
+toutes les familles de modèles : zing n'utilise aucune bibliothèque de tokenizer
+et n'en télécharge aucune. Des tokens de prompt rapportés au-delà de 2,5×
+l'estimation et de plus de 50 tokens au-dessus comptent comme gonflement. Les
+tokens de complétion d'un modèle de raisonnement incluent légitimement des
+tokens de raisonnement cachés et ne sont pas signalés ; sinon, des tokens de
+complétion au-delà de 3× l'estimation et de plus de 80 tokens au-dessus sont un
+avertissement léger, jamais un échec, car l'estimation d'une réponse courte est
+bruitée. `total` doit égaler `prompt + completion` (±2), et un total sans
+répartition est signalé. Un sous-comptage (moins de la moitié de l'estimation)
+est indicatif (sans préjudice pour l'acheteur).
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `billing.request-failed` | Aucune réponse exploitable pour juger. | Non concluant · Faible | Aucune déduction |
 | `billing.missing-usage` | La réponse ne comportait aucune consommation de tokens. | Avertissement · Moyenne | plafond 75 |
 | `billing.usage-inflation` | Les tokens de prompt déclarés dépassent largement l'estimation indépendante. | Échec · Élevée | plafond 55 |
-| `billing.usage-inflation-completion` | Les tokens de complétion déclarés dépassent largement l'estimation d'un tokenizer exact. | Échec · Élevée | plafond 55 |
-|  | Les tokens de complétion déclarés sont bien au-dessus d'une estimation heuristique. | Avertissement · Moyenne | plafond 70 |
+| `billing.usage-inflation-completion` | Les tokens de complétion déclarés sont bien au-dessus d'une estimation heuristique. | Avertissement · Moyenne | plafond 70 |
 | `billing.reasoning-tokens` | Les tokens de complétion dépassent le texte visible, comme attendu pour un modèle de raisonnement. | Info | Aucune déduction |
 | `billing.usage-undercount-prompt` | Les tokens de prompt déclarés sont bien en dessous de l'estimation (sans préjudice pour l'acheteur). | Info | Aucune déduction |
 | `billing.usage-undercount-completion` | Les tokens de complétion déclarés sont bien en dessous de l'estimation (sans préjudice pour l'acheteur). | Info | Aucune déduction |
@@ -794,7 +793,7 @@ Les 16 astuces de relais issues de la recherche se répartissent ainsi dans zing
 | 5 | `context.window-truncation` | high | `context_window` | échelle à aiguille en bordure + recherche dichotomique ; mesuré vs annoncé |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | profondeurs 0,1/0,5/0,9 à taille moyenne |
 | 7 | `stream.fake-streaming` | medium | `streaming` | nombre de fragments, moment du premier token, uniformité des écarts |
-| 8 | `billing.usage-inflation` | high | `billing` | estimation indépendante par tokenizer d'une sonde connue |
+| 8 | `billing.usage-inflation` | high | `billing` | estimation heuristique indépendante des tokens d'une sonde connue |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | présence, répartition et arithmétique de l'usage ; fragment d'usage du flux |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | mise en cache par préfixe via le TTFT (indicatif) ; partage entre utilisateurs et journalisation restent improuvables avec une clé |
 | 11 | `infra.shared-upstream-key` | high | — | feuille de route (quota qui baisse au repos, identifiants de requête amont divulgués) |
