@@ -30,7 +30,7 @@ def stable_marker(seed: str, prefix: str = "ZING") -> str:
     return f"{prefix}-{digest}"
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=4)
 def build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
     """Build filler text of approximately ``target_tokens`` tokens.
 
@@ -39,14 +39,16 @@ def build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
     Linear in the output size: each line is counted once and a running total is
     kept, instead of re-joining and re-counting the whole text every 50 lines
     (which was quadratic — ~6 s at the default 200k-token probe cap, blocking the
-    event loop). The per-line sum equals the count of the joined text because the
-    token count is additive over whitespace-joined lines ("\n" yields no piece),
-    so the output is byte-identical to the old algorithm. Same 50-line stepping
-    and stop rule.
+    event loop). Same 50-line stepping and stop rule. Each line after the first
+    is counted together with its leading newline separator: the heuristic count
+    is additive over whitespace-joined lines (a newline yields no piece), so the
+    output is byte-identical to the old algorithm; an exact BPE tokenizer gets
+    its separator token counted too, staying close to the joined-text count.
 
-    Memoized (a few entries): the context-window probe builds every size at
-    least twice (two needle depths) and its binary search revisits sizes. The
-    result is an immutable ``str``, so sharing it is safe.
+    Memoized (a few entries): the context-window probe builds a size again to
+    confirm a miss at the other needle depth and revisits sizes in its refine
+    and lost-in-the-middle phases. The result is an immutable ``str``, so sharing
+    it is safe; callers that insert a needle work on a split copy.
     """
     if target_tokens <= 0:
         return ""
@@ -56,7 +58,7 @@ def build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
     while True:
         line = f"[{idx:05d}] {_FILLER_SENTENCES[idx % len(_FILLER_SENTENCES)]}"
         parts.append(line)
-        total += estimate_tokens(line, tokenizer)
+        total += estimate_tokens(line if idx == 0 else "\n" + line, tokenizer)
         idx += 1
         if idx % 50 == 0 and total >= target_tokens:
             break
