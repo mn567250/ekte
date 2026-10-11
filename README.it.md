@@ -262,12 +262,12 @@ nuova interfaccia** passa alla **nuova interfaccia** sotto `/v2/`, il cui link
 | **Strumenti** | `/tools` | `/v2/tools` | Verifiche di embedding e rerank |
 | **Cronologia** | `/history` | `/v2/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
 | **Monitor** | `/watches` | `/v2/watches` | Verifiche ripetute pianificate con avvisi via webhook |
-| **Modelli** | — | `/v2/kb` | Sfogliare la base di conoscenza, aggiungere i tuoi profili di modello e vedere i relay salvati |
+| **Conoscenza** | — | `/v2/kb` | La base di conoscenza in tre schede — modelli, provider, relay: sfogliare, attivare/disattivare, aggiungere i propri |
 
 La nuova interfaccia aggiunge: filtri e tendenze configurabili (punteggio, voto,
 latenza p50, token/s) nella **Cronologia**; **Pianifica come monitor** e **Riesegui audit** su ogni
 esecuzione della Cronologia; **Scarica il rapporto** in tutti i formati; un
-selettore del tema (Automatico / Chiaro / Scuro); e la pagina **Modelli**.
+selettore del tema (Automatico / Chiaro / Scuro); e la pagina **Conoscenza**.
 
 **Audit in background (nuova interfaccia).** Un audit avviato dalla pagina
 **Audit** continua quando cambi pagina o chiudi la scheda; **Continua in
@@ -643,15 +643,19 @@ coprono OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM e Moonshot
    o `ZING_KB_DIR`.
 3. **Le tue voci** (`kb.db` nella directory dei dati), aggiunte senza file YAML né
    installazione modificabile:
-   - nella pagina **Modelli** dell'interfaccia web (`/v2/kb`): **Aggiungi un
+   - nella pagina **Conoscenza** dell'interfaccia web (`/v2/kb`), con una scheda
+     per **Modelli**, **Provider** e **Relay**. Ogni scheda elenca l'insieme
+     completo — inclusi, `ZING_KB_DIR` e tuoi (contrassegnati **Tuo**) — con un
+     filtro, un interruttore per elemento e un modulo **Aggiungi …**: **Aggiungi un
      modello** → **Copia il prompt di ricerca** nell'assistente IA che preferisci,
-     carica o incolla lo YAML con cui risponde, poi **Verifica e salva**. **Tutti
-     i profili** elenca ogni profilo con la sua origine; **Quale profilo usa un ID
-     di modello?** mostra come si risolve un id; **Le tue voci** si possono
-     esportare in YAML;
+     carica o incolla lo YAML con cui risponde, poi **Verifica e salva**;
+     **Aggiungi un provider** accetta YAML di provider allo stesso modo; **Aggiungi
+     un relay** chiede un nome e un URL di base. **Quale profilo usa un ID di
+     modello?** mostra come si risolve un id; le tue voci si possono esportare in
+     YAML;
    - nelle pagine **Verifica** e **Strumenti** dell'interfaccia web: **Salva
      nella base** conserva nome e URL di base di un relay (una voce di provider
-     senza modelli), mostrato in **Modelli** con il badge **Relay**;
+     senza modelli), elencato in **Conoscenza → Relay**;
    - da riga di comando: `zing kb-prompt <model>`, `zing kb-import <file>`
      (aggiungi `--check` per limitarti a verificarlo) e `zing kb-export`.
 
@@ -659,9 +663,12 @@ Prima di salvare una voce zing la controlla: schema e limiti, espressioni regola
 pericolose, ogni prompt che invierebbe e id di modello che verrebbero risolti in un
 altro profilo. Un tuo modello con l'id di uno integrato lo sostituisce (segnalato
 come *oscuramento*), ma non modifica mai le impostazioni proprie di un fornitore
-integrato; le impronte vengono unite per id. `zing check` e `zing serve` usano
-esattamente gli stessi profili; `--no-user-kb` (o `ZING_NO_USER_KB=1`) esclude le
-tue voci.
+integrato; le impronte vengono unite per id. Disattivare un modello, provider o
+relay incluso nella pagina **Conoscenza** viene salvato anch'esso in `kb.db`: un id
+di modello disattivato non viene più risolto, un provider disattivato porta con sé
+i suoi modelli e URL di base. `zing check` e `zing serve` usano esattamente gli
+stessi profili; `--no-user-kb` (o `ZING_NO_USER_KB=1`) esclude le tue voci e i tuoi
+interruttori.
 
 Ogni rapporto registra il profilo rispetto a cui ha verificato (`knowledge`:
 fornitore, modello, come è stato risolto l'id, la sua origine e un'istantanea

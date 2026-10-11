@@ -264,13 +264,13 @@ navigateur.
 | **Outils** | `/tools` | `/v2/tools` | Audits d'embedding et de rerank |
 | **Historique** | `/history` | `/v2/history` | Chaque audit exécuté sur cette machine, groupé par relais + modèle annoncé, avec tendances |
 | **Surveillances** | `/watches` | `/v2/watches` | Ré-audits planifiés avec alertes webhook |
-| **Modèles** | — | `/v2/kb` | Parcourir la base de connaissances, ajouter vos propres profils de modèles et voir vos relais enregistrés |
+| **Connaissances** | — | `/v2/kb` | La base de connaissances en trois onglets — modèles, fournisseurs, relais : parcourir, activer/désactiver, ajouter les vôtres |
 
 La nouvelle interface ajoute : des filtres et des tendances configurables (score,
 note, latence p50, tokens/s) dans l'**Historique** ; **Planifier comme
 surveillance** et **Relancer l'audit** sur chaque exécution de l'Historique ; **Télécharger le rapport**
 dans tous les formats ; un sélecteur de thème (Automatique / Clair / Sombre) ; et
-la page **Modèles**.
+la page **Connaissances**.
 
 **Audits en arrière-plan (nouvelle interface).** Un audit lancé depuis la page
 **Audit** continue quand vous changez de page ou fermez l'onglet ; **Continuer en
@@ -649,15 +649,19 @@ l'emportant :
    (répétable) ou `ZING_KB_DIR`.
 3. **Vos entrées** (`kb.db` dans le répertoire de données), ajoutées sans fichier
    YAML ni installation éditable :
-   - sur la page **Modèles** de l'interface web (`/v2/kb`) : **Ajouter un
-     modèle** → **Copier le prompt de recherche** dans l'assistant IA de votre
-     choix, téléverser ou coller le YAML qu'il renvoie, puis **Vérifier et
-     enregistrer**. **Tous les profils** liste chaque profil avec sa source ;
-     **Quel profil un identifiant de modèle utilise-t-il ?** montre comment un id
-     se résout ; **Vos entrées** s'exportent en YAML ;
+   - sur la page **Connaissances** de l'interface web (`/v2/kb`), avec un onglet
+     pour **Modèles**, **Fournisseurs** et **Relais**. Chaque onglet liste
+     l'ensemble complet — fournis, `ZING_KB_DIR` et les vôtres (marqués **Les
+     vôtres**) — avec un filtre, un interrupteur par élément et un formulaire
+     **Ajouter …** : **Ajouter un modèle** → **Copier le prompt de recherche** dans
+     l'assistant IA de votre choix, téléverser ou coller le YAML qu'il renvoie, puis
+     **Vérifier et enregistrer** ; **Ajouter un fournisseur** accepte du YAML de
+     fournisseur de la même façon ; **Ajouter un relais** demande un nom et une URL
+     de base. **Quel profil un identifiant de modèle utilise-t-il ?** montre comment
+     un id se résout ; vos entrées s'exportent en YAML ;
    - sur les pages **Audit** et **Outils** de l'interface web : **Enregistrer
      dans la base** conserve le nom et l'URL de base d'un relais (une entrée de
-     fournisseur sans modèles), affiché sur **Modèles** avec le badge **Relais** ;
+     fournisseur sans modèles), listé sous **Connaissances → Relais** ;
    - en ligne de commande : `zing kb-prompt <model>`, `zing kb-import <file>`
      (ajoutez `--check` pour seulement vérifier) et `zing kb-export`.
 
@@ -666,8 +670,11 @@ régulières dangereuses, chaque prompt qu'elle enverrait, et identifiants de
 modèle qui se résoudraient vers un autre profil. Un de vos modèles portant l'id
 d'un modèle intégré le remplace (signalé comme le *masquant*), mais ne modifie
 jamais les réglages propres d'un fournisseur intégré ; les empreintes sont
-fusionnées par id. `zing check` et `zing serve` utilisent exactement les mêmes
-profils ; `--no-user-kb` (ou `ZING_NO_USER_KB=1`) laisse vos entrées de côté.
+fusionnées par id. Désactiver un modèle, un fournisseur ou un relais fourni sur la
+page **Connaissances** est aussi enregistré dans `kb.db` : un id de modèle désactivé
+n'est plus résolu, un fournisseur désactivé emporte ses modèles et URL de base.
+`zing check` et `zing serve` utilisent exactement les mêmes profils ;
+`--no-user-kb` (ou `ZING_NO_USER_KB=1`) laisse vos entrées et interrupteurs de côté.
 
 Chaque rapport consigne le profil utilisé pour l'audit (`knowledge` : fournisseur,
 modèle, manière dont l'id a été résolu, sa source et un instantané complet avec

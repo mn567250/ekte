@@ -25,10 +25,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Saved relays.** **Save to knowledge base** keeps a relay that is not listed
   yet under a name you give it: a provider entry in `kb.db` with the name and the
   base URL, no models (no schema change, readable by older versions). It is
-  offered in the relay list from then on and shown on **Models** with a **Relay**
-  badge, where it can be disabled or deleted like any entry. API:
+  offered in the relay list from then on and listed under **Knowledge → Relays**,
+  where it can be switched off or deleted like any entry. API:
   `POST /api/kb/relays {name, base_url}` (400 for bad input, 409 when the name
   or the URL is already known).
+- **Knowledge page (v2).** The **Models** page is now **Knowledge** (`/v2/kb`,
+  same URL) with three tabs — **Models**, **Providers**, **Relays** — built from
+  one pattern: each lists the complete set (packaged, `ZING_KB_DIR` and yours,
+  marked **Yours**) with a filter, an on/off switch per item, **Delete** for your
+  own items and an **Add …** form (the research-prompt wizard for models,
+  provider YAML for providers, name + base URL for relays). Tabs follow the
+  WAI-ARIA tabs pattern (arrow keys, Home/End) and can be linked
+  (`#providers`, `#relays`, `#add-relays`, …). The model-id lookup names a
+  closer profile that is switched off.
+- **Switch packaged items off.** A packaged or `ZING_KB_DIR` model, provider or
+  relay can be switched off; it is stored in `kb.db` (new table `kb_disabled`,
+  ignored by older versions) and applies to the web UI and `zing check` alike:
+  the model id no longer resolves, a provider takes its models and base URLs
+  with it. `--no-user-kb` / `ZING_NO_USER_KB` ignore the switches. API:
+  `GET /api/kb/profiles` now returns `models`, `providers` and `relays` (each
+  item with `key`, `source`, `yours`, `enabled`, …); `PUT /api/kb/enabled
+  {key, enabled}` switches one item.
 - `GET /api/kb` lists each provider's usable `base_urls` (the `base_url_hints`
   without bare hosts, path fragments, URL templates and endpoint suffixes), a
   `relay` flag and its `entry_id`, and each model's `kind` (`chat` /
@@ -49,6 +66,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Accessibility: the audit and tools flows of the browser suite now cover the
   relay configuration (listing models, saving and re-picking a relay); the
   accessibility-tree snapshots and the conformance report are regenerated.
+- Web UI v2 tabs (Tools, Knowledge) share `v2/tabs.js` and the tab styles in
+  `zing.css`. The on/off switch is now the visible, focusable control itself
+  (it was a transparent 1×1 checkbox with the focus ring drawn beside it), with
+  forced-colours styles. The knowledge-page flow of the browser suite covers all
+  three tabs; lists of switchable items are condensed in the accessibility-tree
+  snapshots like table rows.
 
 ## [0.17.3] — readable durations and numbers in reports
 

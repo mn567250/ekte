@@ -262,12 +262,12 @@ clásica** vuelve atrás. La elección se recuerda por navegador.
 | **Herramientas** | `/tools` | `/v2/tools` | Auditorías de embeddings y rerank |
 | **Historial** | `/history` | `/v2/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
 | **Monitores** | `/watches` | `/v2/watches` | Reauditorías programadas con alertas por webhook |
-| **Modelos** | — | `/v2/kb` | Explorar la base de conocimiento, añadir tus propios perfiles de modelo y ver tus relays guardados |
+| **Conocimiento** | — | `/v2/kb` | La base de conocimiento en tres pestañas — modelos, proveedores, relays: explorar, activar/desactivar, añadir lo tuyo |
 
 La nueva interfaz añade: filtros y tendencias configurables (puntuación, nota,
 latencia p50, tokens/s) en el **Historial**; **Programar como monitor** y **Repetir auditoría** en cada
 ejecución del Historial; **Descargar informe** en todos los formatos; un selector
-de tema (Automático / Claro / Oscuro); y la página **Modelos**.
+de tema (Automático / Claro / Oscuro); y la página **Conocimiento**.
 
 **Auditorías en segundo plano (nueva interfaz).** Una auditoría iniciada en la
 página **Auditoría** sigue en marcha cuando cambias de página o cierras la
@@ -646,16 +646,19 @@ y Moonshot (`zing kb` los lista). Hay tres capas; las posteriores prevalecen:
    (repetible) o `ZING_KB_DIR`.
 3. **Tus entradas** (`kb.db` en el directorio de datos), añadidas sin archivos
    YAML ni instalación editable:
-   - en la página **Modelos** de la interfaz web (`/v2/kb`): **Añadir un
+   - en la página **Conocimiento** de la interfaz web (`/v2/kb`), con una pestaña
+     para **Modelos**, **Proveedores** y **Relays**. Cada pestaña lista el conjunto
+     completo —incluidos, `ZING_KB_DIR` y los tuyos (marcados **Tuyo**)— con un
+     filtro, un interruptor por elemento y un formulario **Añadir …**: **Añadir un
      modelo** → **Copiar el prompt de investigación** en el asistente de IA que
      prefieras, subir o pegar el YAML con el que responde y después **Comprobar y
-     guardar**. **Todos los perfiles** lista cada perfil con su origen; **¿Qué
-     perfil usa un ID de modelo?** muestra cómo se resuelve un id; **Tus
-     entradas** se pueden exportar como YAML;
+     guardar**; **Añadir un proveedor** acepta YAML de proveedor del mismo modo;
+     **Añadir un relay** pide un nombre y una URL base. **¿Qué perfil usa un ID de
+     modelo?** muestra cómo se resuelve un id; tus entradas se pueden exportar
+     como YAML;
    - en las páginas **Auditoría** y **Herramientas** de la interfaz web:
      **Guardar en la base** conserva el nombre y la URL base de un relay (una
-     entrada de proveedor sin modelos), que se muestra en **Modelos** con la
-     etiqueta **Relay**;
+     entrada de proveedor sin modelos), que aparece en **Conocimiento → Relays**;
    - en la línea de comandos: `zing kb-prompt <model>`, `zing kb-import <file>`
      (añade `--check` para solo comprobarlo) y `zing kb-export`.
 
@@ -663,9 +666,12 @@ Antes de guardar una entrada, zing la comprueba: esquema y límites, expresiones
 regulares peligrosas, cada prompt que enviaría e ids de modelo que se
 resolverían a otro perfil. Un modelo tuyo con el id de uno integrado lo sustituye
 (se indica que lo *oculta*), pero nunca cambia los ajustes propios de un
-proveedor integrado; las huellas se fusionan por id. `zing check` y `zing serve`
-usan exactamente los mismos perfiles; `--no-user-kb` (o `ZING_NO_USER_KB=1`)
-deja fuera tus entradas.
+proveedor integrado; las huellas se fusionan por id. Desactivar un modelo,
+proveedor o relay incluido en la página **Conocimiento** también se guarda en
+`kb.db`: un id de modelo desactivado ya no se resuelve y un proveedor desactivado
+se lleva sus modelos y URL base. `zing check` y `zing serve` usan exactamente los
+mismos perfiles; `--no-user-kb` (o `ZING_NO_USER_KB=1`) deja fuera tus entradas e
+interruptores.
 
 Cada informe registra el perfil contra el que auditó (`knowledge`: proveedor,
 modelo, cómo se resolvió el id, su origen y una instantánea completa con su hash
