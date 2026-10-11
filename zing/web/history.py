@@ -314,9 +314,30 @@ def get(rid: int) -> dict[str, Any] | None:
         row = conn.execute(
             "SELECT report_json, kb_snapshot_id FROM history WHERE id = ?", (int(rid),)
         ).fetchone()
-        if not row or row["report_json"] is None:
-            return None
-        snap = kb_snapshot.get(conn, row["kb_snapshot_id"])
+        return _full_report(conn, row)
+
+
+def latest_for(base_url: str, claimed_model: str) -> dict[str, Any] | None:
+    """The newest saved report for one target+model (as :func:`get`), or ``None``.
+
+    One lookup on ``idx_history_target``, however many runs of other targets
+    were saved since — a monitor's regression check compares against this.
+    """
+    with _connect() as conn:
+        row = conn.execute(_LATEST_FOR_SQL, (base_url, claimed_model)).fetchone()
+        return _full_report(conn, row)
+
+
+_LATEST_FOR_SQL = """SELECT report_json, kb_snapshot_id FROM history
+   WHERE base_url = ? AND claimed_model = ?
+   ORDER BY id DESC LIMIT 1"""
+
+
+def _full_report(conn: sqlite3.Connection, row: sqlite3.Row | None) -> dict[str, Any] | None:
+    """Parse a row's ``report_json`` and put its profile snapshot back."""
+    if not row or row["report_json"] is None:
+        return None
+    snap = kb_snapshot.get(conn, row["kb_snapshot_id"])
     try:
         report = json.loads(row["report_json"])
     except (ValueError, TypeError):

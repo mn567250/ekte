@@ -61,13 +61,13 @@ zing 是黑盒审计辅助工具：正确性以及**不冤枉诚实的中转站*
 ```bash
 git clone https://github.com/cenbonew/zing
 cd zing
-pip install -e '.[dev,tokenizers,web]'   # 以可编辑模式安装全部附加项
-pytest                                       # 测试套件
-ruff check zing tests                        # 代码检查
-mypy zing                                    # 类型检查
+pip install -e '.[dev,web]'   # 以可编辑模式安装开发工具和 Web 界面
+pytest                        # 测试套件
+ruff check zing tests         # 代码检查
+mypy zing                     # 类型检查
 ```
 
-使用 uv：`uv venv && uv pip install -e '.[dev,tokenizers,web]'`。无需任何系统库，PDF 报告也不例外。
+使用 uv：`uv venv && uv pip install -e '.[dev,web]'`。无需任何系统库，PDF 报告也不例外。
 
 从源码运行：`zing …` 或 `python -m zing …`。`zing serve` 直接从 `zing/web/static/` 提供
 Web 界面，刷新浏览器即可看到前端改动；没有构建步骤。
@@ -162,6 +162,14 @@ Dockerfile             Web 界面镜像
 或设上限。Web 界面在「**计分标准**」中展示它；[方法论](docs/METHODOLOGY.zh-CN.md)收录了
 每一份计分标准。`connectivity.py` 是最短、最标准的示例。
 
+在 `zing serve` 中，检测器与其他所有检测共用一个事件循环，因此 CPU 密集的工作不能在其上运行：
+事件循环一旦卡住，就会拖延其他检测的请求，并让它们记录的延迟虚高。`helpers.build_filler()`
+以线性时间构建填充文本，并缓存最近几种长度的结果；上下文窗口和提示缓存检测器通过
+`asyncio.to_thread` 调用它（以及 `build_haystack()`）。token 计数来自 `zing/utils/tokenize.py`，
+一个只用标准库的启发式方法：zing 不导入任何分词器库，运行时也不下载任何东西，因此在受限环境中
+同样可以运行。`estimate_tokens()` 的 `tokenizer` 参数仍被接受，但不会改变计数；报告字段
+`tokens_exact` / `exact_tokenizer` 为兼容而保留，始终为 false。
+
 ### 计分与结论
 
 `zing/scoring.py` 定义了 `DIMENSION_WEIGHTS` 和结论规则：维度得分是其各检测器得分的
@@ -177,6 +185,10 @@ Dockerfile             Web 界面镜像
 → 用户的 `kb.db`），保存用户条目（`store.py`），检查并导入 YAML（`importer.py`），
 生成供外部助手使用的调研提示词（`research.py`），并为一次运行所用的画像拍快照（`snapshot.py`）。
 模型 id 通过别名和声明的厂商解析；每份报告都会记录 id 是如何匹配的。
+
+`load_knowledge_base()` 会缓存合并结果，默认返回一份深拷贝，因此调用方可以修改拿到的结果。
+只读取它的调用方（Web 界面的列表和目录、解析模型）传入 `copy=False`，拿到共享的缓存实例，
+它们不得修改这个实例。
 
 中转站也是端点：`relays.py` 把厂商的 `base_url_hints` 转换为可用的基础地址（`GET /api/kb` →
 `base_urls`），并把 Web 界面中保存的中转站作为厂商条目写入 `kb.db`（`origin = relay`：一个
@@ -225,8 +237,19 @@ Embedding/rerank（`embed_audit.py`）和图像/音频（`media_audit.py`）不�
   `/api/audit/stream`（经典界面）包装同一种任务，并在数据流关闭时取消它。
   中转站互斥让同一中转站同一时间只运行一项检测（或一次监控运行），按主机名区分，所有回环地址视为同一主机；
   同时最多运行 `ZING_MAX_PARALLEL_AUDITS`（默认 4）项，等待者按到达顺序执行。
-- **监控调度器。** 应用的 lifespan 启动一个后台循环，运行到期的监控，把每次运行存入检测历史，
-  并在越过阈值或恶化时发送 Webhook 告警（`zing/notify.py`）。
+- **监控调度器。** 应用的 lifespan 启动一个后台循环，把每个到期的监控作为独立任务启动，
+  因此不同中转站上的监控会同时检测；中转站互斥依然生效，所以监控可能占满
+  `ZING_MAX_PARALLEL_AUDITS` 个名额，手动检测可能排在它们之后。一次运行的 `last_run_ts`
+  是其检测开始的时刻（在等待中转站空闲之后）。每次运行都存入检测历史；恶化检查将其与同一目标和
+  模型最近一次保存的运行比较（`history.latest_for()`，一次带索引的查询），并在越过阈值或恶化时
+  并发发送 Webhook 告警（`zing/notify.py`）。调度器刚启动某个监控时，
+  `POST /api/watches/{id}/run` 返回 409；重置主密钥会取消尚未开始的计划运行，关闭服务会取消
+  正在进行的运行。
+- **压缩与缓存。** `caching.py` 对 1 KiB 及以上的响应（Server-Sent Events 除外）进行 gzip
+  压缩，前提是客户端接受（`gzip;q=0` 表示拒绝）。页面和 `/locales.js` 在生成时只压缩一次，
+  以预压缩形式提供，带 `Content-Encoding: gzip`、`Vary: Accept-Encoding` 和一个以 `-gz`
+  结尾的独立 ETag；页面通过 `html_page(page, request.scope)` 提供，从而走这条路径，并对条件请求
+  返回 304。页面中本地脚本和样式表的 URL 带有 `?v=<content hash>`，作为不可变资源缓存。
 - **安全。** `security.py` 决定绑定地址（仅回环地址；只有在检测到容器且设置了
   `ZING_CONTAINER=1` 时例外），并安装 `LocalOnlyMiddleware`：防 DNS 重绑定的 Host 白名单、
   防 CSRF 的 `Origin` 与 `Sec-Fetch-Site` 校验、只接受 JSON 请求体，以及防嵌入 / 禁止
@@ -256,7 +279,10 @@ v2 的**检测**和**工具**页面用 `v2/relaycfg.js` 配置中转站：选择
 `zing/datadir.py` 管理 `$ZING_DATA_DIR`（默认 `~/.zing`），以 `0700` 创建，其中的 SQLite 文件
 为 `0600`：`history.db`（`web/history.py`）、`watches.db`（`web/watches.py`，加密保存监控的
 API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个短生命周期的连接，因此这些存储
-在 FastAPI 的线程池中是安全的。
+在 FastAPI 的线程池中是安全的。全局选项 `--data-dir`（`zing serve` 也支持）只是把 `ZING_DATA_DIR`
+设为该绝对路径，`zing data-dir` 输出解析后的目录。已存在的目录保留其权限；只有默认的 `~/.zing`
+会被收紧为 `0700`。检测历史的记录按目标和模型建立索引（`idx_history_target`），
+`history.latest_for()` 借此找到监控的上一次运行。
 
 保存的 API 密钥由 `zing/secretbox.py` 加密（Fernet，存为 `enc:v1:…`；`env:`/`file:` 引用保持原样）。
 主密钥本身从不保存：`web/masterkey.py`（`Vault`，服务器与 `zing secret` 共用）在主密钥来自
@@ -315,7 +341,7 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 功能也可以用片段的形式提供文案：`zing/i18n/locales/fragments/<feature>/<code>.json`，
 内容为 `{"strings": {…}}`，加载时合并进对应语言。`/locales.js` 只发送所选语言
 （`?lang=<code>`，或 `lang.js` 写入的 `zing_lang` cookie；两者都没有时发送全部语言），
-只生成一次并通过 `ETag` 重新验证；切换语言时按需加载新语言。
+每种变体只生成并 gzip 压缩一次，并通过 `ETag` 重新验证；切换语言时按需加载新语言。
 
 - **新的界面文案：** 把中文写进 HTML，英文写进 `data-en`（或使用 `T(zh, en)`），然后把英文键加入
   `en.json` 或某个片段，并在其他每种语言中加上译文。
@@ -360,6 +386,14 @@ pytest -n auto               # 并行运行，每个 CPU 一个 worker（pytest-
 - 浏览器脚本（`lang.js`、`modelpicker.js`、`v2/relaycfg.js`、`perf.js`、`secretfield.js`、`v2/report.js`、
   翻译数据）在 `test_web_*_js.py` 和 `test_web_locales.py` 中由 `node` 执行；没有 Node.js 时跳过。
 - 任何测试都不得访问网络。
+- `test_cli_startup.py` 保证 CLI 启动迅速：导入 `zing.cli` 时不得加载 HTTP 客户端、runner、
+  知识库加载器、报告渲染器（ReportLab）或 Web 服务器。请在需要它们的命令内部导入。
+- `test_filler_perf.py` 逐字节固定填充文本，并在上下文窗口探测卡住事件循环时失败。
+- `tests/a11y/` 在真实浏览器中（Playwright + axe-core），以每种界面语言和两种主题，按
+  BITV 2.0 / EN 301 549 / WCAG 2.1 AA 检查新界面（v2）：
+  `pip install -e '.[web,a11y]' && playwright install chromium`，然后运行 `pytest -m a11y`。
+  没有 Playwright 时跳过该目录。哪些已自动化、哪些仍需人工 BITV 审查，见
+  [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)（英文）。
 
 ## Docker
 
@@ -392,7 +426,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v zing-data:/data zing
 
 | 工作流 | 触发条件 | 作用 |
 |---|---|---|
-| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request | 在 Python 3.10–3.13 上带全部附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库 |
+| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `a11y/integration`、`perf/integration`） | 在 Python 3.10–3.13 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
 | `.github/workflows/release.yml` | `v*` 标签 | 构建、运行 `twine check` 并发布到 PyPI（Trusted Publishing） |
 | `.github/workflows/example-audit.yml` | 每日定时、手动 | 使用该 Action 定时审计中转站的示例 |
 

@@ -69,13 +69,13 @@ run under `node` and are skipped without it.
 ```bash
 git clone https://github.com/cenbonew/zing
 cd zing
-pip install -e '.[dev,tokenizers,web]'   # editable install with every extra
-pytest                                       # test suite
-ruff check zing tests                        # lint
-mypy zing                                    # type-check
+pip install -e '.[dev,web]'   # editable install with the dev tools and the web UI
+pytest                        # test suite
+ruff check zing tests         # lint
+mypy zing                     # type-check
 ```
 
-With uv: `uv venv && uv pip install -e '.[dev,tokenizers,web]'`. No system
+With uv: `uv venv && uv pip install -e '.[dev,web]'`. No system
 libraries are needed, PDF reports included.
 
 Run from source with `zing …` or `python -m zing …`. `zing serve` serves the
@@ -187,6 +187,18 @@ report and the behavior cannot disagree. `Scale` scores the mean of its checks;
 under **Scoring scale**; the [Methodology](docs/METHODOLOGY.md) reproduces every
 scale. `connectivity.py` is the canonical, shortest example.
 
+Detectors share one event loop with every other audit in `zing serve`, so
+CPU-heavy work must not run on it: a stalled loop delays other audits' requests
+and inflates the latencies they record. `helpers.build_filler()` builds filler
+text in linear time and memoizes the last few sizes, and the context-window and
+prompt-cache detectors call it (and `build_haystack()`) through
+`asyncio.to_thread`. Token counts come from `zing/utils/tokenize.py`, a
+standard-library heuristic: zing imports no tokenizer library and downloads
+nothing at runtime, so it works in restricted environments. The `tokenizer`
+argument of `estimate_tokens()` is accepted but does not change the count, and
+the report fields `tokens_exact` / `exact_tokenizer` are kept for compatibility
+and always false.
+
 ### Scoring and verdict
 
 `zing/scoring.py` holds `DIMENSION_WEIGHTS` and the verdict rules: a dimension
@@ -207,6 +219,11 @@ stores the user's entries (`store.py`), checks and imports YAML
 (`research.py`) and snapshots the profile a run used (`snapshot.py`). Model ids
 resolve through aliases and the declared provider; every report records how the
 id matched.
+
+`load_knowledge_base()` caches merged results and returns a deep copy by
+default, so callers may modify what they get. Callers that only read it (the web
+UI's lists and catalog, resolving a model) pass `copy=False` and get the shared
+cached instance, which they must not modify.
 
 Relays are endpoints too: `relays.py` turns a provider's `base_url_hints` into
 usable base URLs (`GET /api/kb` → `base_urls`) and saves a relay from the web UI
@@ -272,9 +289,26 @@ All decoding (image headers, WAV) is standard library only.
   audit (or monitor run) at a time use a relay, keyed by host name with every
   loopback address as one host, and at most `ZING_MAX_PARALLEL_AUDITS`
   (default 4) run at once; waiters are served in arrival order.
-- **Monitor scheduler.** The app's lifespan starts a background loop that runs
-  due monitors, stores each run in the history and sends webhook alerts
-  (`zing/notify.py`) on a threshold cross or a regression.
+- **Monitor scheduler.** The app's lifespan starts a background loop that
+  starts every due monitor as its own task, so monitors on different relays
+  audit at the same time; the relay gate still applies, so monitors can fill
+  the `ZING_MAX_PARALLEL_AUDITS` slots and a manual audit may queue behind
+  them. A run's `last_run_ts` is the moment its audit starts (after waiting for
+  its relay). Each run is stored in the history; the regression check compares
+  it with the most recent saved run of the same target and model
+  (`history.latest_for()`, one indexed lookup) and sends the webhook alerts
+  (`zing/notify.py`) concurrently on a threshold cross or a regression.
+  `POST /api/watches/{id}/run` answers 409 while the scheduler has just started
+  that monitor; a master-key reset cancels scheduled runs that have not started
+  yet, and shutdown cancels the runs in flight.
+- **Compression and caching.** `caching.py` gzips responses of 1 KiB or more
+  (except Server-Sent Events) for clients that accept it (`gzip;q=0` refuses).
+  Pages and `/locales.js` are gzipped once when they are built and served
+  precompressed with `Content-Encoding: gzip`, `Vary: Accept-Encoding` and a
+  separate ETag ending in `-gz`; pages are served through `html_page(page,
+  request.scope)` so they get that path and answer conditional requests with
+  304. Local script and stylesheet URLs in pages carry a `?v=<content hash>` and
+  are cached as immutable.
 - **Security.** `security.py` resolves the bind address (loopback only, except
   in a detected container with `ZING_CONTAINER=1`) and installs
   `LocalOnlyMiddleware`: a Host allowlist against DNS rebinding, Origin and
@@ -315,7 +349,9 @@ with `0600` SQLite files: `history.db` (`web/history.py`), `watches.db`
 are safe on FastAPI's thread pool. The global `--data-dir` option (also on
 `zing serve`) just sets `ZING_DATA_DIR` to the absolute path, and
 `zing data-dir` prints the resolved directory. A directory that already exists
-keeps its mode; only the default `~/.zing` is tightened to `0700`.
+keeps its mode; only the default `~/.zing` is tightened to `0700`. History rows
+are indexed by target and model (`idx_history_target`), which
+`history.latest_for()` uses to find a monitor's previous run.
 
 Stored API keys are encrypted by `zing/secretbox.py` (Fernet, stored as
 `enc:v1:…`; `env:`/`file:` references stay as they are). The master key itself
@@ -395,8 +431,9 @@ Features may ship their strings as fragments,
 `zing/i18n/locales/fragments/<feature>/<code>.json` holding
 `{"strings": {…}}`, merged into the language at load time.
 `/locales.js` sends only the chosen language (`?lang=<code>` or the `zing_lang`
-cookie `lang.js` sets; every language without either), built once and
-revalidated by `ETag`; switching loads the new language on demand.
+cookie `lang.js` sets; every language without either), built and gzipped once
+per variant and revalidated by `ETag`; switching loads the new language on
+demand.
 
 - **New UI text:** write the Chinese in the HTML and the English in `data-en`
   (or use `T(zh, en)`), then add the English key to `en.json` or a fragment and
@@ -449,6 +486,12 @@ pytest -n auto               # in parallel, one worker per CPU (pytest-xdist)
   `v2/report.js`, the locales) are evaluated under `node` in
   `test_web_*_js.py` and `test_web_locales.py`; they are skipped without Node.js.
 - No test may reach the network.
+- `test_cli_startup.py` keeps the CLI fast to start: importing `zing.cli` must
+  not load the HTTP clients, the runner, the knowledge loader, the report
+  renderers (ReportLab) or the web server. Import those inside the command that
+  needs them.
+- `test_filler_perf.py` pins the filler text byte for byte and fails when the
+  context-window probe stalls the event loop.
 - `tests/a11y/` checks web UI v2 against BITV 2.0 / EN 301 549 / WCAG 2.1 AA
   in a real browser (Playwright + axe-core), in every UI language and both
   themes: `pip install -e '.[web,a11y]' && playwright install chromium`, then
@@ -492,7 +535,7 @@ the UI.
 
 | Workflow | Runs | Does |
 |---|---|---|
-| `.github/workflows/ci.yml` | push and pull request to `main` (and `a11y/integration`) | `ruff`, `mypy` and `pytest` on Python 3.10–3.13 with every extra; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the accessibility suite (informational, never fails the run) and uploads its findings |
+| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `a11y/integration`, `perf/integration`) | `ruff`, `mypy` and `pytest` on Python 3.10–3.13 with the `dev` and `web` extras; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the accessibility suite (informational, never fails the run) and uploads its findings — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
 | `.github/workflows/release.yml` | a `v*` tag | builds, runs `twine check` and publishes to PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | daily schedule, manual | example of a scheduled relay audit with the action |
 

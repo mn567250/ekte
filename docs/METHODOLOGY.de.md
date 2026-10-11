@@ -319,8 +319,9 @@ billige RAG-/Zusammenfassungs-Zwischenschicht reicht nur Teile des Prompts
 weiter).
 
 **Vorgehen.** Abruf einer Nadel im Heuhaufen mit `temperature=0`: ein
-eindeutiger Marker steckt in nicht repetitivem Fülltext, der mit dem Tokenizer
-des angegebenen Modells bemessen ist, und das Modell muss ihn zurückgeben.
+eindeutiger Marker steckt in nicht repetitivem Fülltext, der mit der
+heuristischen Token-Schätzung von zing bemessen ist, und das Modell muss ihn
+zurückgeben.
 
 1. Eine aufsteigende, sich verdoppelnde Leiter ab 2K Token bis zum angegebenen
    Fenster, begrenzt durch `--max-context-tokens` (Standard 200K), mit einer
@@ -554,25 +555,23 @@ widersprüchliche `usage`) und, als bestätigendes Signal,
 
 **Vorgehen.** Ein deterministischer Aufruf (ein bekannter Absatz zum
 Zusammenfassen, `temperature=0`). Prompt und sichtbare Antwort werden
-unabhängig mit dem Tokenizer des angegebenen Modells gezählt: exakt mit
-tiktoken für Tokenizer der OpenAI-Familie (Extra `tokenizers`), sonst mit einer
-sprachbewussten Heuristik (etwa ±25 %). Gemeldete Prompt-Token über dem
-1,8-Fachen der Schätzung (2,5-fach bei einer Heuristik) und mehr als 50 Token
+unabhängig mit einer sprachbewussten Heuristik (etwa ±25 %) gezählt, für jede
+Modellfamilie: zing verwendet keine Tokenizer-Bibliothek und lädt keine herunter.
+Gemeldete Prompt-Token über dem 2,5-Fachen der Schätzung und mehr als 50 Token
 darüber gelten als aufgebläht. Completion-Token eines Reasoning-Modells
 enthalten legitim versteckte Reasoning-Token und werden nicht markiert; sonst
-gilt über dem 1,8-Fachen einer exakten Schätzung als aufgebläht und über dem
-3-Fachen einer heuristischen als schwächere Warnung. `total` muss
-`prompt + completion` entsprechen (±2), und ein Total ohne Aufteilung wird
-markiert. Eine Unterzählung dient nur zur Information (schadet dem Käufer
-nicht).
+sind Completion-Token über dem 3-Fachen der Schätzung und mehr als 80 Token
+darüber nur eine weiche Warnung, nie ein Fehlschlag, weil die Schätzung einer
+kurzen Antwort ungenau ist. `total` muss `prompt + completion` entsprechen
+(±2), und ein Total ohne Aufteilung wird markiert. Eine Unterzählung (unter der
+Hälfte der Schätzung) dient nur zur Information (schadet dem Käufer nicht).
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `billing.request-failed` | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Kein Abzug |
 | `billing.missing-usage` | Die Antwort enthielt überhaupt keine Token-Nutzung. | Warnung · Mittel | Obergrenze 75 |
 | `billing.usage-inflation` | Die gemeldeten Prompt-Tokens übersteigen die unabhängige Schätzung deutlich. | Fehlgeschlagen · Hoch | Obergrenze 55 |
-| `billing.usage-inflation-completion` | Die gemeldeten Completion-Tokens übersteigen die Schätzung eines exakten Tokenizers deutlich. | Fehlgeschlagen · Hoch | Obergrenze 55 |
-|  | Die gemeldeten Completion-Tokens liegen weit über einer heuristischen Schätzung. | Warnung · Mittel | Obergrenze 70 |
+| `billing.usage-inflation-completion` | Die gemeldeten Completion-Tokens liegen weit über einer heuristischen Schätzung. | Warnung · Mittel | Obergrenze 70 |
 | `billing.reasoning-tokens` | Die Completion-Tokens übersteigen den sichtbaren Text, wie bei einem Reasoning-Modell zu erwarten. | Info | Kein Abzug |
 | `billing.usage-undercount-prompt` | Die gemeldeten Prompt-Tokens liegen weit unter der Schätzung (nicht zum Nachteil des Käufers). | Info | Kein Abzug |
 | `billing.usage-undercount-completion` | Die gemeldeten Completion-Tokens liegen weit unter der Schätzung (nicht zum Nachteil des Käufers). | Info | Kein Abzug |
@@ -792,7 +791,7 @@ Die 16 Relay-Tricks aus der Recherche verteilen sich wie folgt auf zing.
 | 5 | `context.window-truncation` | high | `context_window` | Leiter mit Nadel am Rand + binäre Suche; gemessen vs. angegeben |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | Tiefen 0,1/0,5/0,9 bei mittlerer Größe |
 | 7 | `stream.fake-streaming` | medium | `streaming` | Chunk-Anzahl, Zeitpunkt des ersten Tokens, Gleichförmigkeit der Abstände |
-| 8 | `billing.usage-inflation` | high | `billing` | unabhängige Tokenizer-Schätzung eines bekannten Tests |
+| 8 | `billing.usage-inflation` | high | `billing` | unabhängige heuristische Token-Schätzung eines bekannten Tests |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | Vorhandensein, Aufteilung und Arithmetik der Usage; Usage-Chunk im Stream |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | Präfix-Caching per TTFT (informativ); nutzerübergreifendes Teilen und Logging bleiben mit einem Schlüssel unbeweisbar |
 | 11 | `infra.shared-upstream-key` | high | — | Roadmap (sinkendes Kontingent im Leerlauf, durchgesickerte Upstream-Request-IDs) |

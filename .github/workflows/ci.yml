@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install
-        run: python -m pip install --upgrade pip && pip install -e '.[dev,tokenizers,web]'
+        run: python -m pip install --upgrade pip && pip install -e '.[dev,web]'
 
       - name: Lint (ruff)
         run: ruff check zing tests
@@ -46,6 +46,9 @@ jobs:
     # Split into 4 parallel shards (ZING_A11Y_SHARD, tests/a11y/conftest.py),
     # each on its own runner; a11y-report merges their results.
     name: accessibility ${{ matrix.shard }}/4 (informational)
+    # Slow browser suite: not on PRs into the perf integration branch (it runs
+    # on the integration branch's own pushes and on its PR into main).
+    if: github.event_name != 'pull_request' || github.base_ref != 'perf/integration'
     runs-on: ubuntu-latest
     continue-on-error: true
     strategy:
@@ -84,7 +87,8 @@ jobs:
     # One conformance report from all shards, plus the optional LLM review.
     name: accessibility report (informational)
     needs: a11y
-    if: always()
+    # not on PRs into the perf integration branch, like the a11y job
+    if: always() && (github.event_name != 'pull_request' || github.base_ref != 'perf/integration')
     runs-on: ubuntu-latest
     continue-on-error: true
     env:

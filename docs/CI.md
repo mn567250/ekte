@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.11.0     # pin to a tag — see "Pinning" below
+        uses: cenbonew/zing@v0.19.0     # pin to a tag — see "Pinning" below
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -60,7 +60,7 @@ jobs:
 | `suite`             | no       | `standard`    | Detector suite: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | no       | `high`        | Fail the job when risk `>=` this level: `low` \| `medium` \| `high`. |
 | `python-version`    | no       | `3.12`        | Python version used to install and run `zing`. |
-| `version`           | no       | `zing-audit`  | pip install spec. Pin for reproducible runs, e.g. `zing-audit==0.11.0`. |
+| `version`           | no       | `zing-audit`  | pip install spec. Pin for reproducible runs, e.g. `zing-audit==0.19.0`. |
 
 ## Outputs
 
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.11.0
+        uses: cenbonew/zing@v0.19.0
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -112,10 +112,10 @@ jobs:
 
 ## Pinning
 
-Pin the action to a **release tag** (`cenbonew/zing@v0.11.0`) rather than a moving
+Pin the action to a **release tag** (`cenbonew/zing@v0.19.0`) rather than a moving
 branch. This keeps audits reproducible and protects you from unexpected changes
 to the action. For fully reproducible CLI behavior, also pin the `version` input
-to an exact release, e.g. `version: zing-audit==0.11.0`.
+to an exact release, e.g. `version: zing-audit==0.19.0`.
 
 A ready-to-copy scheduled example lives at
 [`.github/workflows/example-audit.yml`](../.github/workflows/example-audit.yml).

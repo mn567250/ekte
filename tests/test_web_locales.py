@@ -105,7 +105,7 @@ report.detectors[0].scoring = { method: "mean_of_checks", outcomes: [
     label: "No usable response to judge by." }] };
 // The performance section's notes are fixed backend sentences.
 report.performance = { source: "passive", notes: [
-  "Local token counts are estimates (about ±15-20%): no exact tokenizer is available for this model family.",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; zing never downloads a tokenizer.",
   "Some requests were served fully or partly from a cache and are left out of the statistics."] };
 const TEXT = /^(verdict\.(headline|summary|key_findings\.\d+)|dimensions\.\d+\.reason|(performance\.)?notes\.\d+|(baseline_)?detectors\.\d+\.(name|findings\.\d+\.(title|summary|recommendation)|scoring\.(outcomes\.\d+\.label|titles\..+)))$/;
 const CJK = /[\u3400-\u9fff]/;
@@ -390,6 +390,23 @@ def test_one_language_bundle_carries_only_that_language():
     assert i18n.locales_bundle("de") is i18n.locales_bundle("DE")
     assert i18n.locales_script("xx") == i18n.locales_script(None) == i18n.locales_script()
     assert i18n.locales_bundle("de")[1] != i18n.locales_bundle("fr")[1]
+
+
+def test_bundles_are_precompressed_once_and_rebuilt_with_the_data():
+    import gzip
+
+    from zing import i18n
+
+    for lang in (None, "de"):
+        body, etag, gz = i18n.locales_encoded(lang)
+        assert body == i18n.locales_script(lang).encode("utf-8")
+        assert etag == i18n.locales_bundle(lang)[1]
+        assert gzip.decompress(gz) == body
+        assert i18n.locales_encoded(lang) is i18n.locales_encoded(lang)
+    before = i18n.locales_encoded("de")
+    i18n._load.cache_clear()  # a reload rebuilds the compressed bytes too
+    after = i18n.locales_encoded("de")
+    assert after is not before and after == before
 
 
 def test_locales_route_picks_the_language_and_revalidates():

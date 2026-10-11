@@ -14,6 +14,8 @@ recall (100 - measured/declared x 100), and a needle lost in the middle deducts
 
 from __future__ import annotations
 
+import asyncio
+
 from zing.context import AuditContext
 from zing.detectors.base import Detector, register
 from zing.detectors.helpers import build_haystack, contains_ci, stable_marker
@@ -437,8 +439,10 @@ class ContextWindowDetector(Detector):
         reasoning: bool = False,
     ) -> CompletionOutcome:
         needle = stable_marker(f"ctxwin-{size}-{depth}")
-        haystack = build_haystack(
-            total_tokens=size, needle=needle, depth=depth, tokenizer=tokenizer
+        # Building a ~200k-token haystack is CPU work; run it off the event loop so
+        # concurrent audits in `zing serve` keep measuring honest latencies.
+        haystack = await asyncio.to_thread(
+            build_haystack, total_tokens=size, needle=needle, depth=depth, tokenizer=tokenizer
         )
         messages = [{"role": "user", "content": haystack}]
         outcome = await self._call(ctx, messages, use_completion_tokens=reasoning)

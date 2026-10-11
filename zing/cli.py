@@ -13,12 +13,11 @@ Commands:
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 
 import typer
 from rich.console import Console
@@ -27,7 +26,6 @@ from rich.table import Table
 
 from zing import __version__, prompts
 from zing import i18n as _i18n
-from zing.clients import make_client
 from zing.config import (
     DIMENSIONS,
     TEMPLATE,
@@ -42,11 +40,15 @@ from zing.config import (
     validate_risk,
     validate_suite,
 )
-from zing.knowledge import load_knowledge_base
-from zing.models import AuditReport, RiskLevel, Status, TargetConfig
-from zing.report.performance import fmt_num
+from zing.models import RiskLevel, Status
 
+# Heavy imports (the httpx client stack, the knowledge loader, the runner and the
+# report renderers / ReportLab) are deferred into the commands that use them, so
+# `zing --help`, `zing data-dir` and friends start fast.
 if TYPE_CHECKING:
+    from collections.abc import Coroutine
+
+    from zing.models import AuditReport, TargetConfig
     from zing.secretbox import SecretBox
 
 # Risk ordering for the `watch` alert threshold (clean < low < medium < high).
@@ -116,6 +118,8 @@ _RISK_ORDER = [
 # Rendering
 # --------------------------------------------------------------------------- #
 def _print_summary(report: AuditReport, written: list[Path]) -> None:
+    from zing.report.performance import fmt_num
+
     v = report.verdict
     style, label = _RISK_STYLE.get(v.risk_level, ("white", v.risk_level.value))
     score = "n/a" if v.overall_score is None else f"{v.overall_score}/100 (rating {v.rating})"
@@ -325,6 +329,16 @@ def _judge_target(cfg: dict, base_url, api_key, model, baseline: TargetConfig | 
     return baseline
 
 
+_T = TypeVar("_T")
+
+
+def _run_async(coro: Coroutine[Any, Any, _T]) -> _T:
+    """``asyncio.run``, with asyncio imported on first use (it is not free at startup)."""
+    import asyncio
+
+    return asyncio.run(coro)
+
+
 def _machine_mode(as_json: bool, as_compact: bool) -> bool:
     """True when output should be pure JSON to stdout (no files, no rich panel)."""
     return as_json or as_compact
@@ -432,7 +446,6 @@ def _run_and_report(
     kb_dirs,
     use_user_kb=None,
 ) -> None:
-    # Imported here so a partially-built report module never breaks `zing kb` etc.
     from zing.report import render_compact, write_reports
     from zing.runner import run_audit
 
@@ -441,7 +454,7 @@ def _run_and_report(
         fmt = validate_format(fmt)
 
     command = "zing " + " ".join(sys.argv[1:])
-    report = asyncio.run(
+    report = _run_async(
         run_audit(
             target,
             options,
@@ -654,6 +667,8 @@ def models_command(
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
+    from zing.clients import make_client
+
     async def _go() -> None:
         async with make_client(target) as client:
             outcome, ids = await client.list_models()
@@ -674,7 +689,7 @@ def models_command(
         for mid in ids:
             console.print(f"  • {mid}")
 
-    asyncio.run(_go())
+    _run_async(_go())
 
 
 @app.command("kb")
@@ -685,6 +700,8 @@ def kb_command(
     no_user_kb: Annotated[bool, typer.Option("--no-user-kb", help=_NO_USER_KB_HELP)] = False,
 ) -> None:
     """Inspect the knowledge base: packaged profiles, ZING_KB_DIR and your own entries."""
+    from zing.knowledge import load_knowledge_base
+
     kb = load_knowledge_base(list(kb_dir) if kb_dir else None, include_user=False if no_user_kb else None)
     provs = [p for p in sorted(kb.providers.values(), key=lambda p: p.provider)
              if not provider or p.provider == provider]
@@ -750,6 +767,7 @@ def kb_prompt_command(
     provider: Annotated[str | None, typer.Option("--provider", help="Provider key, if known.")] = None,
 ) -> None:
     """Print a research prompt for an external AI assistant; import its YAML answer with `zing kb-import`."""
+    from zing.knowledge import load_knowledge_base
     from zing.knowledge.research import research_prompt
 
     print(research_prompt(model, provider, load_knowledge_base()), end="")
@@ -900,6 +918,8 @@ def watch_command(
     unless --no-alert-on-regression). Use --once for a single cycle (e.g. in cron),
     or leave it looping with --interval. Ctrl-C stops cleanly.
     """
+    import asyncio
+
     from zing import notify
     from zing.runner import run_audit
 
@@ -1082,6 +1102,8 @@ def embed_command(
     # Resolve the claimed embedding dimension from the KB unless overridden.
     dims = claimed_dimensions if claimed_dimensions is not None else 0
     if claimed_dimensions is None:
+        from zing.knowledge import load_knowledge_base
+
         kb = load_knowledge_base(list(kb_dir) if kb_dir else None)
         resolved = kb.resolve(target.claimed, provider_hint=target.declared_provider)
         if resolved is not None:
@@ -1089,7 +1111,7 @@ def embed_command(
 
     from zing.embed_audit import audit_embeddings
 
-    verdict = asyncio.run(audit_embeddings(target, dims))
+    verdict = _run_async(audit_embeddings(target, dims))
 
     if as_json:
         print(json.dumps(verdict, ensure_ascii=False, indent=2))
@@ -1132,7 +1154,7 @@ def rerank_command(
 
     from zing.embed_audit import audit_rerank
 
-    verdict = asyncio.run(audit_rerank(target, query, documents, expected_top_index))
+    verdict = _run_async(audit_rerank(target, query, documents, expected_top_index))
 
     if as_json:
         print(json.dumps(verdict, ensure_ascii=False, indent=2))
@@ -1193,6 +1215,9 @@ def image_command(
         raise typer.Exit(code=2) from exc
 
     # Resolve the claimed native sizes from the KB for the size-match check.
+    from zing.clients import make_client
+    from zing.knowledge import load_knowledge_base
+
     kb = load_knowledge_base(list(kb_dir) if kb_dir else None)
     resolved = kb.resolve(target.claimed, provider_hint=target.declared_provider)
     claimed_sizes = list(resolved.model.image_sizes) if resolved is not None else []
@@ -1212,7 +1237,7 @@ def image_command(
                 sample = images[0]
         return verdict, sample
 
-    verdict, sample = asyncio.run(_go())
+    verdict, sample = _run_async(_go())
     if save is not None and sample:
         save.write_bytes(sample)
 
@@ -1259,6 +1284,7 @@ def audio_command(
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
+    from zing.clients import make_client
     from zing.media_audit import audit_audio
 
     async def _go() -> tuple[dict, bytes | None]:
@@ -1271,7 +1297,7 @@ def audio_command(
                 sample = audio
         return verdict, sample
 
-    verdict, sample = asyncio.run(_go())
+    verdict, sample = _run_async(_go())
     if save is not None and sample:
         save.write_bytes(sample)
 

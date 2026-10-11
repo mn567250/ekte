@@ -102,15 +102,20 @@ También puedes instalarlo directamente desde el repositorio Git sin clonarlo:
 
 ### Extras opcionales
 
-- `tokenizers` — conteo preciso de tokens de la familia OpenAI en la auditoría de facturación.
 - `web` — la interfaz web local (`zing serve`).
 
 ```bash
-pip install 'zing-audit[tokenizers,web]'      # pip, desde PyPI
-pip install -e '.[tokenizers,web]'            # pip, desde el código fuente
-uv tool install 'zing-audit[tokenizers,web]'  # uv, desde PyPI
-uv pip install -e '.[tokenizers,web]'         # uv, desde el código fuente
+pip install 'zing-audit[web]'      # pip, desde PyPI
+pip install -e '.[web]'            # pip, desde el código fuente
+uv tool install 'zing-audit[web]'  # uv, desde PyPI
+uv pip install -e '.[web]'         # uv, desde el código fuente
 ```
+
+El extra `tokenizers` ya no es necesario: desde la 0.19.0 está vacío y solo se
+conserva para que los comandos de instalación antiguos sigan funcionando. zing
+cuenta los tokens con una heurística integrada y no descarga nada en tiempo de
+ejecución (ningún archivo de tokenizer), así que también funciona en entornos
+restringidos o sin conexión que solo alcanzan los relays que auditas.
 
 Los informes PDF (`--format pdf` y la descarga en PDF de la interfaz web) no
 necesitan ningún extra: se componen con
@@ -322,7 +327,7 @@ web y los informes.
 | **Ventana de contexto** | `context_window` | 19 | Recorte silencioso del contexto (declara 1M, la recuperación falla en 32K) y «lost in the middle» por capas baratas de RAG/resumen, mediante aguja en un pajar y búsqueda binaria |
 | **Capacidades declaradas** | `capability` | 13 | Llamadas a herramientas / modo JSON / esquema JSON / salida máxima declarados pero no entregados (o *sobre*entregados, señal de un sustituto); **visión** — un modelo que declara entrada de imagen debe leer una imagen generada de respuesta conocida |
 | **Conformidad del protocolo** | `protocol` | 8 | Conformidad en el cable: multiturno, secuencias de parada, esquema de error; cada parámetro de petición aceptado (y respetado cuando es visible), cada atributo de respuesta presente; caché de respuestas que ignora temperature/seed |
-| **Facturación y uso** | `billing` | 8 | Inflado de tokens/uso y contabilidad de uso ausente o no verificable, mediante una estimación independiente con tokenizer |
+| **Facturación y uso** | `billing` | 8 | Inflado de tokens/uso y contabilidad de uso ausente o no verificable, mediante una estimación heurística independiente de tokens |
 | **Conectividad** | `connectivity` | 7 | Accesibilidad del endpoint y la lista `/v1/models` anunciada |
 | **Autenticidad del streaming** | `streaming` | 6 | Streaming falso (búfer y luego troceo), a partir del número de fragmentos y su separación temporal |
 | **Fiabilidad en concurrencia** | `reliability` | 6 | Tasa de éxito y latencia bajo carga concurrente (la limitación HTTP 429 se cuenta aparte) |
@@ -443,11 +448,18 @@ referencia, `smoke`), la dimensión no se ejecuta y sale de la puntuación globa
   marcan en verde ✓ cuando el objetivo es mejor y en rojo ✗ cuando es peor.
 
 Los tokens se cuentan dos veces — a partir del `usage` del relay y localmente —,
-así que el throughput se puede medir incluso sin `usage`. Un percentil solo se
-muestra con suficientes muestras (p90 desde 10, p95 desde 20, p99 desde 100). El
+así que el throughput se puede medir incluso sin `usage`. El conteo local es una
+estimación con una heurística integrada (aproximadamente ±15-20 %; no se usa ni
+se descarga ningún tokenizer), y la sección siempre lo indica. Un percentil solo
+se muestra con suficientes muestras (p90 desde 10, p95 desde 20, p99 desde 100). El
 informe JSON guarda los tiempos de cada petición (solo números, sin texto); el
 informe HTML y la interfaz web los representan a lo largo de la línea temporal de
 la auditoría.
+
+Las auditorías que se ejecutan a la vez en `zing serve` (varias pestañas del
+navegador, monitores) no distorsionan los tiempos de las demás: la preparación
+intensiva en CPU, como construir los largos prompts de ventana de contexto, se
+ejecuta fuera del bucle de eventos del servidor.
 
 **Tiempos de espera.** `timeout_sec` (`--timeout`, 60 s por defecto) es la base;
 cada petición recibe más tiempo según el tamaño del prompt y el presupuesto de
@@ -523,8 +535,18 @@ ejecución en el **Historial** y envía las mismas alertas por webhook:
 
 Cada monitor tiene su propio idioma de alertas (por defecto, el de la interfaz),
 puede ejecutarse ahora, pausarse o eliminarse, y queda anclado al perfil de la
-base de conocimiento con el que se creó hasta que lo vuelvas a anclar. Las
-claves se guardan cifradas en tu directorio de datos local y nunca se devuelven
+base de conocimiento con el que se creó hasta que lo vuelvas a anclar.
+
+Los monitores a los que les toca ejecutarse lo hacen a la vez, cada uno como su
+propia auditoría, pero nunca más de una auditoría a la vez por host de relay y
+como máximo `ZING_MAX_PARALLEL_AUDITS` en total; una ejecución espera a que haya
+un hueco libre (una auditoría que lances a mano también puede quedar en cola
+detrás de los monitores en curso). La hora de una ejecución es la de inicio de
+su auditoría, tras cualquier espera. La comprobación de regresiones compara con
+la ejecución guardada más reciente del mismo relay y modelo, por muchas otras
+ejecuciones que se hayan guardado desde entonces. Los webhooks de alerta de una
+ejecución se envían a la vez, así que uno lento o caído no retrasa a los demás.
+Las claves se guardan cifradas en tu directorio de datos local y nunca se devuelven
 al navegador.
 
 **Clave maestra.** Las claves API de los monitores se cifran con una clave
@@ -619,7 +641,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.11.0         # fijar a una etiqueta de versión
+        uses: cenbonew/zing@v0.19.0         # fijar a una etiqueta de versión
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # secreto del llamante; nunca se muestra
@@ -711,7 +733,8 @@ escribirse.
   `localhost`), responde solo a esos nombres de host y rechaza peticiones entre
   sitios; no tiene inicio de sesión porque nada fuera de tu máquina puede
   alcanzarlo. zing solo contacta los endpoints que configuras (objetivo,
-  referencia, juez, webhooks).
+  referencia, juez, webhooks); no descarga nada en tiempo de ejecución, ni
+  siquiera archivos de tokenizer.
 - **Claves.** Los informes y el historial solo guardan una huella de una clave
   API. Las claves de los monitores se guardan cifradas en `watches.db`; la clave
   maestra que las descifra nunca se escribe en el directorio de datos (la

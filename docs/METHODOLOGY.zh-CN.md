@@ -257,8 +257,8 @@ Anthropic↔OpenAI 方言转换会正当地重塑部分结构。确认可疑缺�
 **能抓到什么.** `context.window-truncation`（中转站宣称 128K/200K/1M，却悄悄裁剪
 prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转发部分 prompt）。
 
-**做法.** 在 `temperature=0` 下做大海捞针召回：把一个唯一标记埋入按所声称模型分词器
-计量的非重复填充文本中，要求模型原样返回。
+**做法.** 在 `temperature=0` 下做大海捞针召回：把一个唯一标记埋入按 zing 的启发式 token
+估算计量的非重复填充文本中，要求模型原样返回。
 
 1. 从 2K token 起逐级翻倍、直到声称窗口的上升阶梯，受 `--max-context-tokens`
    （默认 200K）约束，并在上限约 90% 处加一级（最多 7 个长度）。每个长度都把针放在
@@ -448,21 +448,20 @@ CV < 0.1，且小于 2 ms：一次性倾倒）。流中没有用量分片则单�
 `billing.missing-usage`（`usage` 缺失、不完整或自相矛盾），并佐证
 `prompt.injected-system-prompt`。
 
-**做法.** 一次确定性调用（总结一段已知文字，`temperature=0`）。用所声称模型的分词器
-独立计算 prompt 与可见回答的 token 数：OpenAI 系分词器用 tiktoken 精确计数
-（`tokenizers` 附加项），其他则用对语言敏感的启发式估算（约 ±25%）。上报的 prompt
-token 超过估算的 1.8 倍（启发式为 2.5 倍）且多出 50 个以上，视为虚高。推理模型的
-completion token 正当地包含隐藏的推理 token，不告警；否则超过精确估算的 1.8 倍视为
-虚高，超过启发式估算的 3 倍给出较轻的警告。`total` 必须等于 `prompt + completion`
-（误差 ±2），只有总数而没有拆分也会告警。少报仅供参考（对买方无害）。
+**做法.** 一次确定性调用（总结一段已知文字，`temperature=0`）。对所有模型系列，都用
+对语言敏感的启发式方法（约 ±25%）独立计算 prompt 与可见回答的 token 数：zing 不使用任何
+分词器库，也不下载分词器。上报的 prompt token 超过估算的 2.5 倍且多出 50 个以上，视为虚高。
+推理模型的 completion token 正当地包含隐藏的推理 token，不告警；否则 completion token
+超过估算的 3 倍且多出 80 个以上时给出较轻的警告，绝不判为失败，因为对简短回答的估算噪声较大。
+`total` 必须等于 `prompt + completion`（误差 ±2），只有总数而没有拆分也会告警。
+少报（低于估算的一半）仅供参考（对买方无害）。
 
 | 检查项 | 结果 | 状态 | 计分 |
 |---|---|---|---|
 | `billing.request-failed` | 没有可用于判断的响应。 | 不确定 · 低 | 不扣分 |
 | `billing.missing-usage` | 响应完全没有返回 token 用量。 | 警告 · 中 | 上限 75 |
 | `billing.usage-inflation` | 上报的提示 token 远超独立估算。 | 失败 · 高 | 上限 55 |
-| `billing.usage-inflation-completion` | 上报的补全 token 远超精确分词器的估算。 | 失败 · 高 | 上限 55 |
-|  | 上报的补全 token 远高于启发式估算。 | 警告 · 中 | 上限 70 |
+| `billing.usage-inflation-completion` | 上报的补全 token 远高于启发式估算。 | 警告 · 中 | 上限 70 |
 | `billing.reasoning-tokens` | 补全 token 多于可见文本，这对推理模型来说属于正常。 | 信息 | 不扣分 |
 | `billing.usage-undercount-prompt` | 上报的提示 token 远低于估算（不损害买方）。 | 信息 | 不扣分 |
 | `billing.usage-undercount-completion` | 上报的补全 token 远低于估算（不损害买方）。 | 信息 | 不扣分 |
@@ -648,7 +647,7 @@ completion token 正当地包含隐藏的推理 token，不告警；否则超过
 | 5 | `context.window-truncation` | high | `context_window` | 边缘放针的阶梯 + 二分搜索；实测 vs 声称 |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | 中等长度下的深度 0.1/0.5/0.9 |
 | 7 | `stream.fake-streaming` | medium | `streaming` | 分片数量、首 token 时机、间隔均匀度 |
-| 8 | `billing.usage-inflation` | high | `billing` | 对一个已知探测做独立分词估算 |
+| 8 | `billing.usage-inflation` | high | `billing` | 对一个已知探测做独立的启发式 token 估算 |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | 用量是否存在、是否拆分、算术是否一致；流式用量分片 |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | 用 TTFT 判断前缀缓存（仅供参考）；跨用户共享与日志记录用单个密钥无法证明 |
 | 11 | `infra.shared-upstream-key` | high | — | 路线图（空闲时配额仍在减少、泄漏的上游 request id） |

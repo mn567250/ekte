@@ -207,3 +207,32 @@ def test_schema_is_rebuilt_for_a_new_or_deleted_database(data, monkeypatch, tmp_
     got = history.recent(500, perf=True)
     assert len(got) == len(_PERFS) * 30 + 2
     assert got == _old_recent(third / "history.db")
+
+
+def test_latest_for_finds_a_target_behind_many_newer_runs(data):
+    profile = {"provider": {"provider": "acme"}, "model": {"id": "model-one"}}
+    for i in range(2):
+        report = _report(i, None)
+        report["knowledge"] = {"profile": dict(profile), "match_confidence": "exact"}
+        history.save(report)
+    for i in range(60):  # more than the 50 rows the old lookup scanned
+        other = _report(100 + i, None)
+        other["target"] = {"base_url": f"https://other-{i}/v1", "claimed_model": "m", "model": "m"}
+        history.save(other)
+
+    found = history.latest_for(_TARGET["base_url"], _TARGET["claimed_model"])
+    assert found is not None and found["generated_at"] == "t1"  # the newest of the two
+    # The full report, with its profile snapshot put back as get() does.
+    assert found["knowledge"]["profile"] == profile
+    assert history.latest_for(_TARGET["base_url"], "other-model") is None
+    assert history.latest_for("https://nowhere/v1", _TARGET["claimed_model"]) is None
+
+
+def test_latest_for_is_one_lookup_on_the_target_index(data):
+    history.save(_report(0, None))
+    with sqlite3.connect(data / "history.db") as conn:
+        plan = conn.execute(
+            "EXPLAIN QUERY PLAN " + history._LATEST_FOR_SQL, ("https://x/v1", "m")
+        ).fetchall()
+    detail = " ".join(str(row[-1]) for row in plan)
+    assert "idx_history_target" in detail and "TEMP B-TREE" not in detail

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zing-audit"
-version = "0.18.0"
+version = "0.19.0"
 description = "LLM relay reality check — a CLI that audits whether an API relay actually serves the model it claims (货不对板检测)."
 readme = "README.md"
 license = "Apache-2.0"
@@ -43,8 +43,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Accurate tokenizer-based billing audit for OpenAI-family encodings.
-tokenizers = ["tiktoken>=0.7"]
+# Token counts always use the built-in heuristic (no runtime downloads, so zing
+# runs in restricted environments); the empty extra keeps
+# `pip install 'zing-audit[tokenizers]'` from older instructions working.
+tokenizers = []
 # Local web UI: `zing serve`.
 web = [
     "fastapi>=0.110",
