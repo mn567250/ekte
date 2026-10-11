@@ -104,15 +104,20 @@ Sie können auch direkt aus dem Git-Repository installieren, ohne es zu klonen:
 
 ### Optionale Extras
 
-- `tokenizers` — genaue Token-Zählung für die OpenAI-Familie in der Abrechnungsprüfung.
 - `web` — die lokale Weboberfläche (`zing serve`).
 
 ```bash
-pip install 'zing-audit[tokenizers,web]'      # pip, von PyPI
-pip install -e '.[tokenizers,web]'            # pip, aus dem Quellcode
-uv tool install 'zing-audit[tokenizers,web]'  # uv, von PyPI
-uv pip install -e '.[tokenizers,web]'         # uv, aus dem Quellcode
+pip install 'zing-audit[web]'      # pip, von PyPI
+pip install -e '.[web]'            # pip, aus dem Quellcode
+uv tool install 'zing-audit[web]'  # uv, von PyPI
+uv pip install -e '.[web]'         # uv, aus dem Quellcode
 ```
+
+Das Extra `tokenizers` wird nicht mehr gebraucht: Seit 0.19.0 ist es leer und
+bleibt nur erhalten, damit ältere Installationsbefehle weiter funktionieren. zing
+zählt Token mit einer eingebauten Heuristik und lädt zur Laufzeit nichts herunter
+(keine Tokenizer-Dateien), läuft also auch in eingeschränkten oder Offline-Umgebungen,
+die nur die geprüften Relays erreichen.
 
 PDF-Berichte (`--format pdf` und der PDF-Download in der Weboberfläche) brauchen
 kein Extra: Sie werden mit [ReportLab](https://www.reportlab.com/opensource/)
@@ -324,7 +329,7 @@ Weboberfläche und der Berichte.
 | **Kontextfenster** | `context_window` | 19 | Stillschweigende Kontextkürzung (1M angegeben, Abruf scheitert bei 32K) und „Lost in the Middle“ durch billige RAG-/Zusammenfassungs-Zwischenschichten, per Nadel im Heuhaufen und binärer Suche |
 | **Angegebene Fähigkeiten** | `capability` | 13 | Angaben zu Tool-Calling / JSON-Modus / JSON-Schema / maximaler Ausgabe, die nicht geliefert (oder *über*erfüllt, ein Hinweis auf ein Ersatzmodell) werden; **Vision** — ein Modell, das Bildeingabe angibt, muss ein generiertes Bild mit bekannter Antwort lesen |
 | **Protokollkonformität** | `protocol` | 8 | Konformität auf der Leitung: Mehrfachdialoge, Stoppsequenzen, Fehlerschema; jeder Anfrageparameter angenommen (und beachtet, wo sichtbar), jedes Antwortattribut vorhanden; Antwort-Caches, die temperature/seed ignorieren |
-| **Abrechnung & Verbrauch** | `billing` | 8 | Aufgeblähte Token/Nutzung und fehlende oder nicht überprüfbare Nutzungsabrechnung, per unabhängiger Tokenizer-Schätzung |
+| **Abrechnung & Verbrauch** | `billing` | 8 | Aufgeblähte Token/Nutzung und fehlende oder nicht überprüfbare Nutzungsabrechnung, per unabhängiger heuristischer Token-Schätzung |
 | **Konnektivität** | `connectivity` | 7 | Erreichbarkeit des Endpunkts und die beworbene `/v1/models`-Liste |
 | **Echtheit des Streamings** | `streaming` | 6 | Vorgetäuschtes Streaming (erst puffern, dann zerstückeln), erkannt an Anzahl und zeitlichem Abstand der Chunks |
 | **Zuverlässigkeit unter Parallellast** | `reliability` | 6 | Erfolgsquote und Latenz unter paralleler Last (HTTP-429-Drosselung wird gesondert gezählt) |
@@ -449,10 +454,17 @@ Bewertung, nie das Risikourteil. Ohne die Messung (`standard` ohne Referenz,
   grün ✓ markiert sind, wo das Ziel besser ist, und rot ✗, wo es schlechter ist.
 
 Token werden doppelt gezählt — aus der `usage` des Relays und lokal —, sodass der
-Durchsatz auch ohne `usage` messbar ist. Ein Perzentil wird nur bei ausreichend
-Stichproben angezeigt (p90 ab 10, p95 ab 20, p99 ab 100). Der JSON-Bericht
+Durchsatz auch ohne `usage` messbar ist. Die lokale Zählung ist eine Schätzung
+mit einer eingebauten Heuristik (etwa ±15-20 %; kein Tokenizer wird verwendet
+oder heruntergeladen), und der Abschnitt weist immer darauf hin. Ein Perzentil
+wird nur bei ausreichend Stichproben angezeigt (p90 ab 10, p95 ab 20, p99 ab 100). Der JSON-Bericht
 speichert die Zeiten jeder Anfrage (nur Zahlen, kein Text); HTML-Bericht und
 Weboberfläche stellen sie entlang der Zeitachse der Prüfung dar.
+
+Audits, die in `zing serve` gleichzeitig laufen (mehrere Browser-Tabs,
+Überwachungen), verfälschen sich nicht gegenseitig die Zeiten: CPU-intensive
+Vorbereitung, etwa das Erstellen der langen Kontextfenster-Prompts, läuft
+außerhalb der Event-Loop des Servers.
 
 **Request-Timeouts.** `timeout_sec` (`--timeout`, Standard 60 s) ist die Basis;
 jede Anfrage bekommt zusätzlich Zeit für Prompt-Größe und Ausgabebudget, damit
@@ -530,8 +542,18 @@ und sendet dieselben Webhook-Warnungen:
 Jede Überwachung hat ihre eigene Warnsprache (standardmäßig die Sprache der
 Oberfläche), lässt sich sofort ausführen, pausieren oder löschen und bleibt an
 das Wissensbasis-Profil gebunden, mit dem sie angelegt wurde, bis Sie es neu
-binden. Schlüssel werden verschlüsselt in Ihrem lokalen Datenverzeichnis
-gespeichert und nie an den Browser zurückgegeben.
+binden.
+
+Fällige Überwachungen laufen gleichzeitig, jede als eigenes Audit, aber nie mehr
+als ein Audit pro Relay-Host auf einmal und insgesamt höchstens
+`ZING_MAX_PARALLEL_AUDITS`; ein Lauf wartet auf einen freien Platz (auch ein von
+Hand gestartetes Audit kann sich hinter laufenden Überwachungen einreihen). Die
+Zeit eines Laufs ist der Start seines Audits, nach einer etwaigen Wartezeit. Die
+Prüfung auf Verschlechterung vergleicht mit dem zuletzt gespeicherten Lauf
+desselben Relays und Modells, egal wie viele andere Läufe seitdem gespeichert
+wurden. Die Warn-Webhooks eines Laufs werden gleichzeitig gesendet, sodass ein
+langsamer oder toter Webhook die anderen nicht aufhält. Schlüssel werden
+verschlüsselt in Ihrem lokalen Datenverzeichnis gespeichert und nie an den Browser zurückgegeben.
 
 **Hauptschlüssel.** Die API-Schlüssel der Überwachungen sind mit einem
 Hauptschlüssel verschlüsselt, den zing nie auf die Festplatte schreibt. Wenn Sie
@@ -627,7 +649,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.11.0         # auf ein Release-Tag festlegen
+        uses: cenbonew/zing@v0.19.0         # auf ein Release-Tag festlegen
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # Secret des Aufrufers; wird nie ausgegeben
@@ -720,7 +742,8 @@ Relay kontrollierter Text wird vor dem Schreiben geschwärzt und maskiert.
   `localhost`), antwortet nur unter diesen Hostnamen und weist
   seitenübergreifende Anfragen ab; es hat keine Anmeldung, weil nichts außerhalb
   Ihres Rechners es erreichen kann. zing kontaktiert nur die Endpunkte, die Sie
-  konfigurieren (Ziel, Referenz, Richter, Webhooks).
+  konfigurieren (Ziel, Referenz, Richter, Webhooks); zur Laufzeit lädt es nichts
+  herunter, nicht einmal Tokenizer-Dateien.
 - **Schlüssel.** Berichte und Verlauf speichern von einem API-Schlüssel nur
   einen Fingerabdruck. Die Schlüssel der Überwachungen liegen verschlüsselt in
   `watches.db`; der Hauptschlüssel, der sie entschlüsselt, wird nie im

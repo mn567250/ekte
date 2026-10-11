@@ -96,15 +96,18 @@ source .venv/bin/activate       # Windows：.venv\Scripts\activate
 
 ### 可选附加项
 
-- `tokenizers` —— 在计费审计中对 OpenAI 系列模型做精确的 token 计数。
 - `web` —— 本地 Web 界面（`zing serve`）。
 
 ```bash
-pip install 'zing-audit[tokenizers,web]'      # pip，从 PyPI
-pip install -e '.[tokenizers,web]'            # pip，从源码
-uv tool install 'zing-audit[tokenizers,web]'  # uv，从 PyPI
-uv pip install -e '.[tokenizers,web]'         # uv，从源码
+pip install 'zing-audit[web]'      # pip，从 PyPI
+pip install -e '.[web]'            # pip，从源码
+uv tool install 'zing-audit[web]'  # uv，从 PyPI
+uv pip install -e '.[web]'         # uv，从源码
 ```
+
+不再需要 `tokenizers` 附加项：自 0.19.0 起它是空的，保留它只是为了让旧的安装命令仍然可用。
+zing 用内置的启发式方法计数 token，运行时不下载任何东西（也不下载分词器文件），因此在只能访问
+被检测中转站的受限或离线环境中同样可以运行。
 
 PDF 报告（`--format pdf` 以及 Web 界面中的 PDF 下载）无需任何附加项：由
 [ReportLab](https://www.reportlab.com/opensource/) 排版，这是一个纯 Python 依赖，在 Linux、macOS 和
@@ -277,7 +280,7 @@ zing 对十个维度评分。三个**核心维度**——模型身份、上下�
 | **上下文窗口** | `context_window` | 19 | 上下文被悄悄截断（宣称 1M，32K 时回忆就失败），以及廉价 RAG/摘要中间层导致的「中段遗失」，通过大海捞针 + 二分搜索检测 |
 | **能力声明** | `capability` | 13 | 声称支持的工具调用 / JSON 模式 / JSON schema / 最大输出其实没有兑现（或*超额*兑现，暗示换了模型）；**视觉**——声称支持图像输入的模型必须读出一张答案已知的生成图片 |
 | **协议兼容** | `protocol` | 8 | 线上协议合规：多轮对话、停止序列、错误结构；每个请求参数都被接受（可见时也被遵守）、每个响应属性都存在；忽略 temperature/seed 的响应缓存 |
-| **计费用量** | `billing` | 8 | token/用量虚报，以及缺失或无法核实的用量统计，通过独立的分词器估算检测 |
+| **计费用量** | `billing` | 8 | token/用量虚报，以及缺失或无法核实的用量统计，通过独立的启发式 token 估算检测 |
 | **连通性** | `connectivity` | 7 | 端点可达性和公布的 `/v1/models` 列表 |
 | **流式真实** | `streaming` | 6 | 伪流式（先缓冲再切块），根据分块数量和块间时间间隔识别 |
 | **并发可靠** | `reliability` | 6 | 并发负载下的成功率和延迟（HTTP 429 限流单独统计） |
@@ -374,8 +377,12 @@ zing check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
   更差的以红色 ✗ 标出。
 
 token 会计数两次——取自中转站的 `usage` 和本地计数——因此即使缺少 `usage` 也能测量吞吐。
+本地计数是内置启发式方法的估算值（约 ±15-20%；不使用也不下载任何分词器），该部分始终会注明这一点。
 只有样本足够时才显示对应分位数（p90 需 10 个，p95 需 20 个，p99 需 100 个）。JSON 报告保存
 每个请求的耗时（只有数字，没有文本）；HTML 报告和 Web 界面会把它们画在检测时间轴上。
+
+在 `zing serve` 中同时运行的检测（多个浏览器标签页、监控）不会相互扭曲计时：CPU 密集的准备工作
+（例如构建较长的上下文窗口提示）在服务器的事件循环之外运行。
 
 **请求超时。** `timeout_sec`（`--timeout`，默认 60 秒）是基础值；每个请求会按提示长度和
 输出预算额外加时，因此较长的上下文窗口探测或较慢的自托管模型不会在一分钟后被切断。
@@ -430,7 +437,13 @@ zing watch --base-url https://relay.example.com/v1 --api-key env:ZING_API_KEY \
 - **经典界面：** 在**监控**页面填写表单，然后点击**添加监控**。
 
 每个监控都有自己的告警语言（默认跟随界面语言），可以立即运行、暂停或删除，并固定使用创建时的
-知识库画像，直到你重新固定。密钥加密保存在本地数据目录中，绝不会返回给浏览器。
+知识库画像，直到你重新固定。
+
+到期的监控会同时运行，每个都是一次独立的检测，但同一中转站主机同一时刻最多只有一个检测，总数最多为
+`ZING_MAX_PARALLEL_AUDITS`；运行会等待空闲名额（你手动启动的检测也可能排在运行中的监控之后）。
+一次运行的时间是其检测开始的时刻（在任何等待之后）。判断是否恶化时，与同一中转站和模型最近一次保存的运行比较，
+无论此后又保存了多少其他运行。一次运行的告警 Webhook 会同时发送，因此一个缓慢或失效的 Webhook
+不会拖住其他 Webhook。密钥加密保存在本地数据目录中，绝不会返回给浏览器。
 
 **主密钥。** 监控的 API 密钥用一个主密钥加密，zing 从不把主密钥写入磁盘。你第一次保存 API 密钥时，
 **监控**页面会创建主密钥并只显示一次：复制或下载它，保存在密码管理器中（浏览器也可以保存），再粘贴回来确认。
@@ -503,7 +516,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.11.0         # 固定到发布标签
+        uses: cenbonew/zing@v0.19.0         # 固定到发布标签
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # 调用方的密钥；绝不回显
@@ -570,7 +583,7 @@ Qwen、GLM 和 Moonshot（用 `zing kb` 查看）。共有三层，后面的优�
 
 - **仅限本地。** `zing serve` 只监听回环地址（`127.0.0.1`、`::1`、`localhost`），只响应这些主机名，
   并拒绝跨站请求；它没有登录，因为你的机器之外没有任何东西能访问它。zing 只会联系你配置的端点
-  （目标、基线、裁判、Webhook）。
+  （目标、基线、裁判、Webhook）；运行时不下载任何东西，连分词器文件也不下载。
 - **密钥。** 报告和检测历史只保存 API 密钥的指纹。监控的密钥加密保存在 `watches.db` 中；
   用于解密的主密钥从不写入数据目录（由你保管，见上文**持续监控**），因此目录的副本不会泄露任何 API 密钥。
   该目录仍然仅对你本人可访问。
