@@ -431,8 +431,9 @@ Features may ship their strings as fragments,
 `zing/i18n/locales/fragments/<feature>/<code>.json` holding
 `{"strings": {…}}`, merged into the language at load time.
 `/locales.js` sends only the chosen language (`?lang=<code>` or the `zing_lang`
-cookie `lang.js` sets; every language without either), built once and
-revalidated by `ETag`; switching loads the new language on demand.
+cookie `lang.js` sets; every language without either), built and gzipped once
+per variant and revalidated by `ETag`; switching loads the new language on
+demand.
 
 - **New UI text:** write the Chinese in the HTML and the English in `data-en`
   (or use `T(zh, en)`), then add the English key to `en.json` or a fragment and
