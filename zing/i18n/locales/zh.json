@@ -118,6 +118,7 @@
   "Headline numbers come from the audit's own requests, which mix prompt and output sizes; the deep and full suites add a controlled, uncacheable probe.": "核心数字来自本次检测自身的请求，其提示词与输出长度各不相同；deep 与 full 套件会额外发送受控、不可缓存的专用探测。",
   "Reasoning tokens detected: TTFT is the time to the first visible token and includes hidden thinking, and usage-based throughput counts thinking tokens. zing does not set a reasoning effort (the modes a relay accepts are unknown), so the model thinks at its default effort.": "检测到推理 token：TTFT 是首个可见 token 的时间，包含隐藏的思考过程；基于 usage 的吞吐量也计入了思考 token。zing 不设置推理强度（中转站接受哪些档位未知），因此模型以默认强度思考。",
   "Local token counts are estimates (about ±15-20%): no exact tokenizer is available for this model family.": "本地 token 计数为估算值（约 ±15-20%）：该模型系列没有可用的精确分词器。",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; zing never downloads a tokenizer.": "本地 token 计数为内置启发式算法的估算值（约 ±15-20%）；zing 从不下载分词器。",
   "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests.": "百分位需要足够的样本：p75 需 4 个、p90 需 10 个、p95 需 20 个、p99 需 100 个请求。",
   "Relay processing times come from the relay's own response headers and are unverified.": "中转站自报的处理时间来自其响应头，未经核实。",
   "Some requests were served fully or partly from a cache and are left out of the statistics.": "部分请求全部或部分由缓存返回，已从统计中排除。",

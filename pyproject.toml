@@ -43,8 +43,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Accurate tokenizer-based billing audit for OpenAI-family encodings.
-tokenizers = ["tiktoken>=0.7"]
+# Token counts always use the built-in heuristic (no runtime downloads, so zing
+# runs in restricted environments); the empty extra keeps
+# `pip install 'zing-audit[tokenizers]'` from older instructions working.
+tokenizers = []
 # Local web UI: `zing serve`.
 web = [
     "fastapi>=0.110",

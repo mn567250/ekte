@@ -2,7 +2,7 @@
 
 Sends one bounded request with a fixed, known-size prompt and compares the
 relay's reported ``usage`` against an independent token estimate. The estimate is
-heuristic (exact only when a tiktoken encoding is available), so we tolerate wide
+always heuristic (zing ships no tokenizer and downloads none), so we tolerate wide
 margins and flag only gross deviations — inflated counts that would overbill the
 buyer, missing accounting that makes billing unverifiable, or internally
 inconsistent totals.
@@ -20,7 +20,7 @@ from zing.detectors.base import Detector, register
 from zing.detectors.helpers import usage_field
 from zing.detectors.scale import DeductionScale, outcome
 from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
-from zing.utils.tokenize import estimate_messages_tokens, estimate_tokens, is_exact_tokenizer
+from zing.utils.tokenize import estimate_messages_tokens, estimate_tokens
 
 # The probe summarizes a fixed paragraph (~110 words, "billing.known_paragraph" in
 # zing/prompts/en.json) so the prompt size is stable across runs.
@@ -32,9 +32,6 @@ SCALE = DeductionScale(
             label="The response carried no token usage at all."),
     outcome("billing.usage-inflation", "inflated", None, Status.FAIL, Severity.HIGH, cap=55.0,
             label="Reported prompt tokens far exceed the independent estimate."),
-    outcome("billing.usage-inflation-completion", "inflated", None, Status.FAIL, Severity.HIGH,
-            cap=55.0,
-            label="Reported completion tokens far exceed the estimate of an exact tokenizer."),
     outcome("billing.usage-inflation-completion", "above_heuristic", None, Status.WARN,
             Severity.MEDIUM, cap=70.0,
             label="Reported completion tokens are far above a heuristic estimate."),
@@ -116,8 +113,8 @@ class BillingDetector(Detector):
             "ratio_completion": round(ratio_completion, 3) if ratio_completion is not None else None,
             "tokenizer": tok,
             "estimate_note": (
-                "Token estimate uses a heuristic fallback; treat as ~±25% unless an "
-                "exact tiktoken encoding was available."
+                "Token counts are heuristic estimates (no tokenizer is used); "
+                "treat them as ~±25%."
             ),
         }
 
@@ -138,16 +135,14 @@ class BillingDetector(Detector):
             return result
 
         worst = Status.PASS
-        exact = is_exact_tokenizer(tok)
         reasoning = bool(ctx.profile and ctx.profile.model.reasoning)
 
         # Prompt-token inflation (the buyer-harmful direction). The prompt has no
-        # hidden tokens, but when the estimate is heuristic (non-OpenAI tokenizer)
-        # we widen the margin so CJK / aggressive-split tokenizers aren't flagged.
-        prompt_ratio_threshold = 1.8 if exact else 2.5
+        # hidden tokens, but the estimate is heuristic, so the margin is wide enough
+        # that CJK / aggressive-split tokenizers aren't flagged.
         if (
             prompt is not None
-            and prompt > prompt_ratio_threshold * est_prompt
+            and prompt > 2.5 * est_prompt
             and prompt > est_prompt + 50
         ):
             result.findings.append(
@@ -159,7 +154,7 @@ class BillingDetector(Detector):
                         f"Reported prompt tokens ({prompt}) far exceed independent "
                         f"estimate (~{est_prompt})."
                     ),
-                    evidence={"reported_prompt": prompt, "estimated_prompt": est_prompt, "ratio": ratio_prompt, "exact_tokenizer": exact},
+                    evidence={"reported_prompt": prompt, "estimated_prompt": est_prompt, "ratio": ratio_prompt, "exact_tokenizer": False},
                     recommendation="Cross-check billing against a known-size prompt; possible per-token overbilling.",
                 )
             )
@@ -168,8 +163,8 @@ class BillingDetector(Detector):
         # Completion-token inflation — the trickiest. For a REASONING model the
         # reported completion legitimately includes hidden reasoning/thinking tokens
         # that our visible-text estimate cannot see, so a higher count is EXPECTED,
-        # not inflation. For a non-exact tokenizer the completion estimate is
-        # unreliable, so only a gross divergence is flagged, and only as a soft WARN.
+        # not inflation. The completion estimate is heuristic and short outputs make
+        # it noisy, so only a gross divergence is flagged, and only as a soft WARN.
         if completion is not None and est_completion > 0:
             comp_ratio = completion / est_completion
             if reasoning:
@@ -187,25 +182,9 @@ class BillingDetector(Detector):
                             evidence={"reported_completion": completion, "visible_estimate": est_completion, "ratio": round(comp_ratio, 2)},
                         )
                     )
-            elif exact:
-                if completion > 1.8 * est_completion and completion > est_completion + 50:
-                    result.findings.append(
-                        SCALE.finding(
-                            "billing.usage-inflation-completion",
-                            "inflated",
-                            title="Reported completion tokens far exceed estimate",
-                            summary=(
-                                f"Reported completion tokens ({completion}) far exceed "
-                                f"independent estimate (~{est_completion})."
-                            ),
-                            evidence={"reported_completion": completion, "estimated_completion": est_completion, "ratio": ratio_completion},
-                            recommendation="Cross-check billing against output length; possible per-token overbilling.",
-                        )
-                    )
-                    worst = Status.FAIL
             elif comp_ratio > 3.0 and completion > est_completion + 80:
-                # Non-exact tokenizer, non-reasoning: estimate is approximate, so a
-                # gross divergence is only a soft signal worth a second look.
+                # Non-reasoning: the estimate is approximate, so a gross divergence
+                # is only a soft signal worth a second look.
                 result.findings.append(
                     SCALE.finding(
                         "billing.usage-inflation-completion",
@@ -213,8 +192,8 @@ class BillingDetector(Detector):
                         title="Reported completion tokens well above heuristic estimate",
                         summary=(
                             f"Reported completion tokens ({completion}) are far above the "
-                            f"heuristic estimate (~{est_completion}); the estimate is approximate "
-                            "for this tokenizer, so corroborate before concluding overbilling."
+                            f"heuristic estimate (~{est_completion}); the estimate is approximate, "
+                            "so corroborate before concluding overbilling."
                         ),
                         evidence={"reported_completion": completion, "estimated_completion": est_completion, "ratio": round(comp_ratio, 2), "exact_tokenizer": False},
                         recommendation="Compare token accounting against a trusted baseline of the same model.",

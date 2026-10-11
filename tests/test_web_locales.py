@@ -105,7 +105,7 @@ report.detectors[0].scoring = { method: "mean_of_checks", outcomes: [
     label: "No usable response to judge by." }] };
 // The performance section's notes are fixed backend sentences.
 report.performance = { source: "passive", notes: [
-  "Local token counts are estimates (about ±15-20%): no exact tokenizer is available for this model family.",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; zing never downloads a tokenizer.",
   "Some requests were served fully or partly from a cache and are left out of the statistics."] };
 const TEXT = /^(verdict\.(headline|summary|key_findings\.\d+)|dimensions\.\d+\.reason|(performance\.)?notes\.\d+|(baseline_)?detectors\.\d+\.(name|findings\.\d+\.(title|summary|recommendation)|scoring\.(outcomes\.\d+\.label|titles\..+)))$/;
 const CJK = /[\u3400-\u9fff]/;

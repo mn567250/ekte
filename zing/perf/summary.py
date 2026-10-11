@@ -50,8 +50,8 @@ NOTE_REASONING = (
     "so the model thinks at its default effort."
 )
 NOTE_ESTIMATED = (
-    "Local token counts are estimates (about ±15-20%): no exact tokenizer is "
-    "available for this model family."
+    "Local token counts are estimates (about ±15-20%) from a built-in heuristic; "
+    "zing never downloads a tokenizer."
 )
 NOTE_PERCENTILES = (
     "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, "
@@ -289,7 +289,6 @@ def build_performance(
     records: Sequence[RequestRecord],
     *,
     tokenizer: str | None = None,
-    tokens_exact: bool = False,
     has_baseline: bool = False,
     probe_max_tokens: int | None = None,
     concurrency: int = 0,
@@ -336,8 +335,7 @@ def build_performance(
         notes.append(NOTE_REASONING)
     if any(r.ok and r.cached for r in completes):
         notes.append(NOTE_CACHED)
-    if not tokens_exact:
-        notes.append(NOTE_ESTIMATED)
+    notes.append(NOTE_ESTIMATED)  # local counts always come from the heuristic
     floor = PERCENTILE_MIN_SAMPLES["p99"]
     if any(e.latency_ms.count < floor for e in (target, baseline) if e is not None):
         notes.append(NOTE_PERCENTILES)
@@ -350,7 +348,6 @@ def build_performance(
         probe_requests=probe_n,
         probe_max_tokens=probe_max_tokens if probe_n else None,
         tokenizer=tokenizer,
-        tokens_exact=tokens_exact,
         target=target,
         baseline=baseline,
         comparison=compare_endpoints(target, baseline) if baseline is not None else [],
