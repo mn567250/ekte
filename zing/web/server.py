@@ -677,7 +677,7 @@ def create_app() -> FastAPI:
     async def console(request: Request) -> Any:
         # Classic only: the console has no v2 counterpart, so the UI cookie
         # never redirects it.
-        return html_page(_STATIC / "console.html")
+        return html_page(_STATIC / "console.html", request.scope)
 
     # ----- v2 UI (side by side with the classic one, for A/B) ------------- #
     @app.get("/v2")
