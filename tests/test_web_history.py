@@ -232,9 +232,7 @@ def test_latest_for_is_one_lookup_on_the_target_index(data):
     history.save(_report(0, None))
     with sqlite3.connect(data / "history.db") as conn:
         plan = conn.execute(
-            "EXPLAIN QUERY PLAN SELECT report_json, kb_snapshot_id FROM history"
-            " WHERE base_url = ? AND claimed_model = ? ORDER BY id DESC LIMIT 1",
-            ("https://x/v1", "m"),
+            "EXPLAIN QUERY PLAN " + history._LATEST_FOR_SQL, ("https://x/v1", "m")
         ).fetchall()
     detail = " ".join(str(row[-1]) for row in plan)
     assert "idx_history_target" in detail and "TEMP B-TREE" not in detail

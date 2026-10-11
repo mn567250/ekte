@@ -324,13 +324,13 @@ def latest_for(base_url: str, claimed_model: str) -> dict[str, Any] | None:
     were saved since — a monitor's regression check compares against this.
     """
     with _connect() as conn:
-        row = conn.execute(
-            """SELECT report_json, kb_snapshot_id FROM history
-               WHERE base_url = ? AND claimed_model = ?
-               ORDER BY id DESC LIMIT 1""",
-            (base_url, claimed_model),
-        ).fetchone()
+        row = conn.execute(_LATEST_FOR_SQL, (base_url, claimed_model)).fetchone()
         return _full_report(conn, row)
+
+
+_LATEST_FOR_SQL = """SELECT report_json, kb_snapshot_id FROM history
+   WHERE base_url = ? AND claimed_model = ?
+   ORDER BY id DESC LIMIT 1"""
 
 
 def _full_report(conn: sqlite3.Connection, row: sqlite3.Row | None) -> dict[str, Any] | None:

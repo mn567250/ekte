@@ -376,18 +376,10 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
         )
         claimed = target.claimed_model or target.model
 
-        def stored() -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-            # Blocking SQLite reads: run in a worker thread, off the loop.
-            # Audit against the profile pinned when the watch was created, so a
-            # knowledge-base edit cannot silently change what the monitor measures.
-            pinned_raw = watches.pinned_knowledge(wid)
-            # Previous saved run for this target+model — used for the regression check
-            # and the "since last run" delta in the alert (notify.send needs the full
-            # report). One indexed lookup, so it is found however many runs of other
-            # targets were saved since.
-            return pinned_raw, history.latest_for(target.base_url, claimed)
-
-        pinned_raw, previous = await asyncio.to_thread(stored)
+        # Audit against the profile pinned when the watch was created, so a
+        # knowledge-base edit cannot silently change what the monitor measures.
+        # A blocking SQLite read: run in a worker thread, off the loop.
+        pinned_raw = await asyncio.to_thread(watches.pinned_knowledge, wid)
         pinned = KnowledgeUsage(**pinned_raw) if pinned_raw else None
 
         job = state.get("job") if state is not None else None
@@ -406,6 +398,9 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             job.waiting_for = list(state["waiting_for"])
             job.emit({"type": "queued", "job": job.id, "waiting_for": job.waiting_for})
         async with jobs.gate.hold(keys, label=f"monitor:{wid}"):
+            # The run's time is when its audit starts, not when it was due:
+            # a monitor that waited for its relay must not come due again at once.
+            now = time.time()
             if state is not None:
                 state["waiting_for"] = []
                 state["started"] = True
@@ -420,11 +415,25 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             )
             duration = time.perf_counter() - started
         report_dict = json.loads(report.model_dump_json())
+        previous: dict[str, Any] | None = None
+
+        def save() -> int:
+            # Blocking SQLite: run in a worker thread, off the loop.
+            nonlocal previous
+            # Previous saved run for this target+model — used for the regression
+            # check and the "since last run" delta in the alert (notify.send needs
+            # the full report). Read after the audit, so a run of the same target
+            # that queued ahead of this one on the relay counts; one indexed
+            # lookup, found however many runs of other targets were saved since.
+            # Best-effort, like save: a failed read must not lose the report.
+            with contextlib.suppress(Exception):
+                previous = history.latest_for(target.base_url, claimed)
+            return history.save(report_dict, watch_id=wid)
 
         async def store() -> None:
             # Save off the loop and report it, as one step (see jobs.settle).
             nonlocal report_id, saved
-            rid = await asyncio.to_thread(history.save, report_dict, watch_id=wid)
+            rid = await asyncio.to_thread(save)
             report_id = rid if rid is not None and rid >= 0 else None
             saved = True
             if job is not None:
@@ -457,11 +466,11 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             # All webhooks at once: a dead one (10 s timeout) must not hold up
             # the others or the run's completion. send never raises; any
             # exception that slips through is returned by gather and dropped.
-            urls = [
+            urls = dict.fromkeys(
                 url.strip()
                 for url in row.get("webhooks") or []
                 if isinstance(url, str) and url.strip()
-            ]
+            )
             await asyncio.gather(
                 *(
                     send(url, report_dict, previous=previous, lang=row.get("language"))
@@ -1429,6 +1438,9 @@ def create_app() -> FastAPI:
         row = await asyncio.to_thread(watches.get, wid)
         if row is None:
             return JSONResponse({"error": "not found"}, status_code=404)
+        if wid in _scheduled_watch_tasks:
+            # The scheduler just started it; its run registers on the next step.
+            return JSONResponse({"error": "already running"}, status_code=409)
         # Run the same path the scheduler uses (audit + persist + alert + mark).
         try:
             await _run_one_watch(row)
@@ -1551,6 +1563,11 @@ def create_app() -> FastAPI:
         # land) in between. A rare, deliberate action.
         for wid in list(_running_watches):
             _cancel_watch(wid)
+        # Scheduled runs not yet started hold rows with keys decrypted before
+        # the reset: they must never start.
+        for wid, task in list(_scheduled_watch_tasks.items()):
+            if wid not in _running_watches:
+                task.cancel()
         try:
             dropped = vault.reset()
         except VaultError as exc:
