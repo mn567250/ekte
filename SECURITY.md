@@ -44,8 +44,9 @@ zing is a local-first auditing tool. The security properties that matter most:
   must neutralize relay-controlled text (HTML-escape, Markdown-escape) so it
   cannot inject markup or spoof report structure.
 - **No surprising egress.** zing only contacts the endpoints you configure (the
-  target, an optional baseline, and an optional judge). A change that sends data
-  elsewhere is in scope.
+  target, an optional baseline, an optional judge, and monitor webhooks). It
+  downloads nothing at runtime, not even tokenizer files. A change that sends
+  data elsewhere or fetches anything at runtime is in scope.
 
 ## Responsible use (not a vulnerability)
 

@@ -319,7 +319,7 @@ and carry the most weight. The names are the ones the web UI and reports use.
 | **Context window** | `context_window` | 19 | Silent context truncation (claims 1M, recall fails at 32K) and lost-in-the-middle from cheap RAG/summarization shims, via needle-in-a-haystack and binary search |
 | **Capability claims** | `capability` | 13 | Tool calling / JSON mode / JSON schema / max-output claims that aren't delivered (or are *over*-delivered, hinting at a substitute); **vision** — a model claiming image input must read a generated known-answer image |
 | **Protocol compliance** | `protocol` | 8 | Wire conformance: multi-turn, stop sequences, error schema; every request parameter accepted (and honored where visible), every response attribute present; response caching that ignores temperature/seed |
-| **Billing & usage** | `billing` | 8 | Token/usage inflation and missing or unverifiable usage accounting, via an independent tokenizer estimate |
+| **Billing & usage** | `billing` | 8 | Token/usage inflation and missing or unverifiable usage accounting, via an independent heuristic token estimate |
 | **Connectivity** | `connectivity` | 7 | Endpoint reachability and the advertised `/v1/models` list |
 | **Streaming authenticity** | `streaming` | 6 | Fake streaming (buffer-then-chunk), from chunk count and inter-chunk timing |
 | **Concurrency reliability** | `reliability` | 6 | Success rate and latency under concurrent load (HTTP 429 throttling counted separately) |
@@ -606,7 +606,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.11.0         # pin to a release tag
+        uses: cenbonew/zing@v0.19.0         # pin to a release tag
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # caller secret; never echoed
