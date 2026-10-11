@@ -27,7 +27,7 @@
       - /url: /v2/history
     - link "Monitores":
       - /url: /v2/watches
-    - link "Modelos":
+    - link "Conocimiento":
       - /url: /v2/kb
   - paragraph: Se ejecuta en local · las claves nunca salen
 - main:

@@ -27,190 +27,74 @@
       - /url: /v2/history
     - link "Überwachung":
       - /url: /v2/watches
-    - link "Modelle":
+    - link "Wissen":
       - /url: /v2/kb
   - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät
 - main:
   - heading "Die Wissensbasis, gegen die zing prüft" [level=1]
   - paragraph:
-    - text: "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier kannst du die Profile durchsuchen und eigene Modelle hinzufügen — ohne YAML-Dateien oder editierbare Installation. Deine Einträge werden in kb.db auf diesem Rechner gespeichert und von der Web-Oberfläche wie von"
+    - text: "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das zing kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder ausschalten oder eigene hinzufügen. Deine Änderungen werden in kb.db auf diesem Rechner gespeichert und von der Web-Oberfläche wie von"
     - code: zing check
     - text: verwendet.
-  - region "Modell hinzufügen":
-    - heading "Modell hinzufügen" [level=2]
-    - paragraph: Lass einen KI-Assistenten das Modell recherchieren und prüfe seine Antwort hier, bevor sie gespeichert wird.
-    - heading "1 Recherche-Prompt kopieren" [level=3]
-    - text: Modell-ID id
-    - textbox "Modell-ID id":
-      - /placeholder: z. B. example-large-2
-    - text: Anbieter Optional
-    - textbox "Anbieter Optional":
-      - /placeholder: z. B. openai / deepseek
-    - button "Prompt kopieren"
-    - status
-    - group:
-      - text: Prompt anzeigen
-      - textbox "Prompt"
-    - paragraph: Füge ihn in einen KI-Assistenten deiner Wahl ein. Er antwortet mit einem YAML-Dokument.
-    - heading "2 YAML hochladen oder einfügen" [level=3]
-    - text: Profil-YAML
-    - textbox "Profil-YAML":
-      - /placeholder: "provider: …\nmodels:\n- id: …"
-    - text: .yaml-Datei wählen
-    - heading "3 Prüfen und speichern" [level=3]
-    - paragraph: Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den zing an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.
-    - button "Prüfung"
-    - button "In der Wissensbasis speichern" [disabled]
   - region "Welches Profil verwendet eine Modell-ID?":
     - heading "Welches Profil verwendet eine Modell-ID?" [level=2]
     - textbox "Modell-ID":
       - /placeholder: z. B. gpt-4o
     - button "Nachschlagen"
     - status
-  - heading "Deine Einträge" [level=2]
-  - link "Als YAML exportieren":
-    - /url: /api/kb/export
-  - paragraph: Noch keine eigenen Einträge. Füge mit den Schritten oben dein erstes Modell hinzu.
-  - heading "Alle Profile 98 Modelle" [level=2]
-  - searchbox "Filter"
-  - group:
-    - text: Anthropic (Claude)
-    - code: anthropic
-    - text: Mitgeliefert 14 Modelle
-    - table:
-      - rowgroup:
-        - row "Modell Kontext Max. Ausgabe Quelle":
-          - columnheader "Modell"
-          - columnheader "Kontext"
-          - columnheader "Max. Ausgabe"
-          - columnheader "Quelle"
-      - rowgroup:
-        - row "claude-opus-4-8claude-opus-4-8, opus, opus 4.8, most powerful 1000000128000 Mitgeliefert":
-          - cell "claude-opus-4-8claude-opus-4-8, opus, opus 4.8, most powerful":
-            - code: claude-opus-4-8
-            - text: claude-opus-4-8, opus, opus 4.8, most powerful
-          - cell "1000000"
-          - cell "128000"
-          - cell "Mitgeliefert"
-        # … more rows of the same shape
-  - group:
-    - text: DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)
-    - code: deepseek
-    - text: Mitgeliefert 4 Modelle
-    - table:
-      - rowgroup:
-        - row "Modell Kontext Max. Ausgabe Quelle":
-          - columnheader "Modell"
-          - columnheader "Kontext"
-          - columnheader "Max. Ausgabe"
-          - columnheader "Quelle"
-      - rowgroup:
-        - row "deepseek-chatdeepseek-v3, V3 lineage non-thinking 128000 8192 Mitgeliefert":
-          - cell "deepseek-chatdeepseek-v3, V3 lineage non-thinking":
-            - code: deepseek-chat
-            - text: deepseek-v3, V3 lineage non-thinking
-          - cell "128000"
-          - cell "8192"
-          - cell "Mitgeliefert"
-        # … more rows of the same shape
-  - group:
-    - text: Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)
-    - code: gemini
-    - text: Mitgeliefert 10 Modelle
-    - table:
-      - rowgroup:
-        - row "Modell Kontext Max. Ausgabe Quelle":
-          - columnheader "Modell"
-          - columnheader "Kontext"
-          - columnheader "Max. Ausgabe"
-          - columnheader "Quelle"
-      - rowgroup:
-        - row "gemini-3.1-pro-previewgemini-3.1-pro, Gemini 3.1 Pro 1048576 65536 Mitgeliefert":
-          - cell "gemini-3.1-pro-previewgemini-3.1-pro, Gemini 3.1 Pro":
-            - code: gemini-3.1-pro-preview
-            - text: gemini-3.1-pro, Gemini 3.1 Pro
-          - cell "1048576"
-          - cell "65536"
-          - cell "Mitgeliefert"
-        # … more rows of the same shape
-  - group:
-    - text: Zhipu AI ( 智谱 / Z.ai) — BigModel open platform
-    - code: glm
-    - text: Mitgeliefert 15 Modelle
-    - table:
-      - rowgroup:
-        - row "Modell Kontext Max. Ausgabe Quelle":
-          - columnheader "Modell"
-          - columnheader "Kontext"
-          - columnheader "Max. Ausgabe"
-          - columnheader "Quelle"
-      - rowgroup:
-        - row "glm-5.1204800131072 Mitgeliefert":
-          - cell "glm-5.1":
-            - code: glm-5.1
-          - cell "204800"
-          - cell "131072"
-          - cell "Mitgeliefert"
-        # … more rows of the same shape
-  - group:
-    - text: Moonshot AI ( 月之暗面 / Kimi)
-    - code: moonshot
-    - text: Mitgeliefert 9 Modelle
-    - table:
-      - rowgroup:
-        - row "Modell Kontext Max. Ausgabe Quelle":
-          - columnheader "Modell"
-          - columnheader "Kontext"
-          - columnheader "Max. Ausgabe"
-          - columnheader "Quelle"
-      - rowgroup:
-        - row "kimi-k2.6kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6262144 32768 Mitgeliefert":
-          - cell "kimi-k2.6kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6":
-            - code: kimi-k2.6
-            - text: kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6
-          - cell "262144"
-          - cell "32768"
-          - cell "Mitgeliefert"
-        # … more rows of the same shape
-  - group:
-    - text: OpenAI
-    - code: openai
-    - text: Mitgeliefert 27 Modelle
-    - table:
-      - rowgroup:
-        - row "Modell Kontext Max. Ausgabe Quelle":
-          - columnheader "Modell"
-          - columnheader "Kontext"
-          - columnheader "Max. Ausgabe"
-          - columnheader "Quelle"
-      - rowgroup:
-        - row "text-embedding-3-small 8191 — Mitgeliefert":
-          - cell "text-embedding-3-small":
-            - code: text-embedding-3-small
-          - cell "8191"
-          - cell "—"
-          - cell "Mitgeliefert"
-        # … more rows of the same shape
-  - group:
-    - text: Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼 )
-    - code: qwen
-    - text: Mitgeliefert 19 Modelle
-    - table:
-      - rowgroup:
-        - row "Modell Kontext Max. Ausgabe Quelle":
-          - columnheader "Modell"
-          - columnheader "Kontext"
-          - columnheader "Max. Ausgabe"
-          - columnheader "Quelle"
-      - rowgroup:
-        - row "text-embedding-v4 8192 — Mitgeliefert":
-          - cell "text-embedding-v4":
-            - code: text-embedding-v4
-          - cell "8192"
-          - cell "—"
-          - cell "Mitgeliefert"
-        # … more rows of the same shape
-  - status
+  - tablist "Bereiche der Wissensbasis":
+    - tab "Modelle" [selected]
+    - tab "Anbieter"
+    - tab "Relays"
+  - tabpanel "Modelle":
+    - heading "Alle Modelle 98 Modelle" [level=2]
+    - paragraph: "Die Modellprofile, mit denen Prüfungen vergleichen. Ein ausgeschaltetes Modell wird nicht mehr zugeordnet: Prüfungen dafür laufen ohne Profil."
+    - group:
+      - text: Modell hinzufügen
+      - paragraph: Lass einen KI-Assistenten das Modell recherchieren und prüfe seine Antwort hier, bevor sie gespeichert wird.
+      - heading "1 Recherche-Prompt kopieren" [level=3]
+      - text: Modell-ID id
+      - textbox "Modell-ID id":
+        - /placeholder: z. B. example-large-2
+      - text: Anbieter Optional
+      - textbox "Anbieter Optional":
+        - /placeholder: z. B. openai / deepseek
+      - button "Prompt kopieren"
+      - status
+      - group:
+        - text: Prompt anzeigen
+        - textbox "Prompt"
+      - paragraph: Füge ihn in einen KI-Assistenten deiner Wahl ein. Er antwortet mit einem YAML-Dokument.
+      - heading "2 YAML hochladen oder einfügen" [level=3]
+      - text: Profil-YAML
+      - textbox "Profil-YAML":
+        - /placeholder: "provider: …\nmodels:\n- id: …"
+      - text: .yaml-Datei wählen
+      - heading "3 Prüfen und speichern" [level=3]
+      - paragraph: Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den zing an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.
+      - button "Prüfung"
+      - button "In der Wissensbasis speichern" [disabled]
+    - searchbox "Modelle filtern"
+    - status
+    - group:
+      - text: Anthropic (Claude)
+      - code: anthropic
+      - text: 14 Modelle
+      - list:
+        - listitem:
+          - code: claude-opus-4-8
+          - text: Mitgeliefert Kontext 1000000 Max. Ausgabe 128000 Aliasse
+          - code: claude-opus-4-8
+          - text: ","
+          - code: opus
+          - text: ","
+          - code: opus 4.8
+          - text: ","
+          - code: most powerful
+          - switch "claude-opus-4-8 Aktiv" [checked]
+          - emphasis: Aktiv
+        # … more items of the same shape
+    # … more items of the same shape
 - contentinfo:
   - paragraph:
     - text: zing · Relay-Realitätscheck · mitgelieferte Profile liegen in

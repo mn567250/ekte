@@ -794,8 +794,49 @@ def condense_tables(snapshot: str) -> str:
     return "\n".join(out)
 
 
+def condense_items(snapshot: str) -> str:
+    """Keep the first of consecutive sibling blocks that hold an on/off switch
+    (the Knowledge page's models, providers and relays, and their provider
+    groups): the others repeat its structure and grow with every release."""
+    lines = snapshot.splitlines()
+    out: list[str] = []
+
+    def block_end(i: int) -> int:
+        ind = len(lines[i]) - len(lines[i].lstrip())
+        j = i + 1
+        while j < len(lines) and len(lines[j]) - len(lines[j].lstrip()) > ind:
+            j += 1
+        return j
+
+    def has_switch(i: int, j: int) -> bool:
+        return any(x.lstrip().startswith('- switch "') for x in lines[i:j])
+
+    i = 0
+    while i < len(lines):
+        j = block_end(i)
+        if not has_switch(i, j) or not lines[i].lstrip().startswith(("- listitem", "- group")):
+            out.append(lines[i])
+            i += 1
+            continue
+        out.append(lines[i])
+        if j - i > 1:
+            out.extend(condense_items("\n".join(lines[i + 1:j])).splitlines())
+        ind = len(lines[i]) - len(lines[i].lstrip())
+        head = lines[i].lstrip().split(":")[0].split(" ")[1]
+        k, more = j, 0
+        while k < len(lines) and len(lines[k]) - len(lines[k].lstrip()) == ind and lines[k].lstrip().startswith("- " + head):
+            e = block_end(k)
+            if not has_switch(k, e):
+                break
+            k, more = e, more + 1
+        if more:
+            out.append(" " * ind + "# … more items of the same shape")
+        i = k
+    return "\n".join(out)
+
+
 def mask(snapshot: str) -> str:
-    snapshot = condense_tables(snapshot)
+    snapshot = condense_items(condense_tables(snapshot))
     for rx, repl in VOLATILE:
         snapshot = rx.sub(repl, snapshot)
     return snapshot.rstrip() + "\n"

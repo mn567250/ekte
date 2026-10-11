@@ -27,7 +27,7 @@
       - /url: /v2/history
     - link "监控":
       - /url: /v2/watches
-    - link "模型库":
+    - link "知识库":
       - /url: /v2/kb
   - paragraph: 本地运行 · 密钥不经手
 - main:

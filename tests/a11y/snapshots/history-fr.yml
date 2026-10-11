@@ -27,7 +27,7 @@
       - /url: /v2/history
     - link "Surveillances":
       - /url: /v2/watches
-    - link "Modèles":
+    - link "Connaissances":
       - /url: /v2/kb
 - main:
   - heading "Historique et tendances des audits" [level=1]

@@ -27,190 +27,74 @@
       - /url: /v2/history
     - link "Monitores":
       - /url: /v2/watches
-    - link "Modelos":
+    - link "Conocimiento":
       - /url: /v2/kb
   - paragraph: Se ejecuta en local · las claves nunca salen
 - main:
   - heading "La base de conocimiento con la que audita zing" [level=1]
   - paragraph:
-    - text: "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Explora aquí los perfiles y añade tus propios modelos, sin archivos YAML ni instalación editable. Tus entradas se guardan en kb.db en este equipo y las usan tanto la interfaz web como"
+    - text: "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Aquí encuentras cada modelo, proveedor y relay que zing conoce —los incluidos y los tuyos— y puedes activar o desactivar cada uno o añadir los tuyos. Tus cambios se guardan en kb.db en este equipo y los usan tanto la interfaz web como"
     - code: zing check
     - text: .
-  - region "Añadir un modelo":
-    - heading "Añadir un modelo" [level=2]
-    - paragraph: Deja que un asistente de IA investigue el modelo y comprueba aquí su respuesta antes de guardarla.
-    - heading "1 Copiar el prompt de investigación" [level=3]
-    - text: ID del modelo id
-    - textbox "ID del modelo id":
-      - /placeholder: p. ej. example-large-2
-    - text: Proveedor Opcional
-    - textbox "Proveedor Opcional":
-      - /placeholder: p. ej. openai / deepseek
-    - button "Copiar prompt"
-    - status
-    - group:
-      - text: Mostrar el prompt
-      - textbox "Prompt"
-    - paragraph: Pégalo en el asistente de IA que prefieras. Responde con un documento YAML.
-    - heading "2 Subir o pegar el YAML" [level=3]
-    - text: YAML del perfil
-    - textbox "YAML del perfil":
-      - /placeholder: "provider: …\nmodels:\n- id: …"
-    - text: Elegir un archivo .yaml
-    - heading "3 Comprobar y guardar" [level=3]
-    - paragraph: La comprobación valida el esquema y los límites, marca expresiones regulares inseguras, lista cada prompt que zing enviaría a los relays y muestra qué ID de modelo se resolverían de otra forma. No se guarda nada hasta que guardes.
-    - button "Comprobación"
-    - button "Guardar en la base" [disabled]
   - region "¿Qué perfil usa un ID de modelo?":
     - heading "¿Qué perfil usa un ID de modelo?" [level=2]
     - textbox "ID del modelo":
       - /placeholder: p. ej. gpt-4o
     - button "Consultar"
     - status
-  - heading "Tus entradas" [level=2]
-  - link "Exportar como YAML":
-    - /url: /api/kb/export
-  - paragraph: Aún no tienes entradas propias. Usa los pasos de arriba para añadir tu primer modelo.
-  - heading "Todos los perfiles 98 modelos" [level=2]
-  - searchbox "Filtrar"
-  - group:
-    - text: Anthropic (Claude)
-    - code: anthropic
-    - text: Incluido 14 modelos
-    - table:
-      - rowgroup:
-        - row "Modelo Contexto Salida máx. Origen":
-          - columnheader "Modelo"
-          - columnheader "Contexto"
-          - columnheader "Salida máx."
-          - columnheader "Origen"
-      - rowgroup:
-        - row "claude-opus-4-8claude-opus-4-8, opus, opus 4.8, most powerful 1000000128000 Incluido":
-          - cell "claude-opus-4-8claude-opus-4-8, opus, opus 4.8, most powerful":
-            - code: claude-opus-4-8
-            - text: claude-opus-4-8, opus, opus 4.8, most powerful
-          - cell "1000000"
-          - cell "128000"
-          - cell "Incluido"
-        # … more rows of the same shape
-  - group:
-    - text: DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)
-    - code: deepseek
-    - text: Incluido 4 modelos
-    - table:
-      - rowgroup:
-        - row "Modelo Contexto Salida máx. Origen":
-          - columnheader "Modelo"
-          - columnheader "Contexto"
-          - columnheader "Salida máx."
-          - columnheader "Origen"
-      - rowgroup:
-        - row "deepseek-chatdeepseek-v3, V3 lineage non-thinking 128000 8192 Incluido":
-          - cell "deepseek-chatdeepseek-v3, V3 lineage non-thinking":
-            - code: deepseek-chat
-            - text: deepseek-v3, V3 lineage non-thinking
-          - cell "128000"
-          - cell "8192"
-          - cell "Incluido"
-        # … more rows of the same shape
-  - group:
-    - text: Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)
-    - code: gemini
-    - text: Incluido 10 modelos
-    - table:
-      - rowgroup:
-        - row "Modelo Contexto Salida máx. Origen":
-          - columnheader "Modelo"
-          - columnheader "Contexto"
-          - columnheader "Salida máx."
-          - columnheader "Origen"
-      - rowgroup:
-        - row "gemini-3.1-pro-previewgemini-3.1-pro, Gemini 3.1 Pro 1048576 65536 Incluido":
-          - cell "gemini-3.1-pro-previewgemini-3.1-pro, Gemini 3.1 Pro":
-            - code: gemini-3.1-pro-preview
-            - text: gemini-3.1-pro, Gemini 3.1 Pro
-          - cell "1048576"
-          - cell "65536"
-          - cell "Incluido"
-        # … more rows of the same shape
-  - group:
-    - text: Zhipu AI ( 智谱 / Z.ai) — BigModel open platform
-    - code: glm
-    - text: Incluido 15 modelos
-    - table:
-      - rowgroup:
-        - row "Modelo Contexto Salida máx. Origen":
-          - columnheader "Modelo"
-          - columnheader "Contexto"
-          - columnheader "Salida máx."
-          - columnheader "Origen"
-      - rowgroup:
-        - row "glm-5.1204800131072 Incluido":
-          - cell "glm-5.1":
-            - code: glm-5.1
-          - cell "204800"
-          - cell "131072"
-          - cell "Incluido"
-        # … more rows of the same shape
-  - group:
-    - text: Moonshot AI ( 月之暗面 / Kimi)
-    - code: moonshot
-    - text: Incluido 9 modelos
-    - table:
-      - rowgroup:
-        - row "Modelo Contexto Salida máx. Origen":
-          - columnheader "Modelo"
-          - columnheader "Contexto"
-          - columnheader "Salida máx."
-          - columnheader "Origen"
-      - rowgroup:
-        - row "kimi-k2.6kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6262144 32768 Incluido":
-          - cell "kimi-k2.6kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6":
-            - code: kimi-k2.6
-            - text: kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6
-          - cell "262144"
-          - cell "32768"
-          - cell "Incluido"
-        # … more rows of the same shape
-  - group:
-    - text: OpenAI
-    - code: openai
-    - text: Incluido 27 modelos
-    - table:
-      - rowgroup:
-        - row "Modelo Contexto Salida máx. Origen":
-          - columnheader "Modelo"
-          - columnheader "Contexto"
-          - columnheader "Salida máx."
-          - columnheader "Origen"
-      - rowgroup:
-        - row "text-embedding-3-small 8191 — Incluido":
-          - cell "text-embedding-3-small":
-            - code: text-embedding-3-small
-          - cell "8191"
-          - cell "—"
-          - cell "Incluido"
-        # … more rows of the same shape
-  - group:
-    - text: Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼 )
-    - code: qwen
-    - text: Incluido 19 modelos
-    - table:
-      - rowgroup:
-        - row "Modelo Contexto Salida máx. Origen":
-          - columnheader "Modelo"
-          - columnheader "Contexto"
-          - columnheader "Salida máx."
-          - columnheader "Origen"
-      - rowgroup:
-        - row "text-embedding-v4 8192 — Incluido":
-          - cell "text-embedding-v4":
-            - code: text-embedding-v4
-          - cell "8192"
-          - cell "—"
-          - cell "Incluido"
-        # … more rows of the same shape
-  - status
+  - tablist "Secciones de la base de conocimiento":
+    - tab "Modelos" [selected]
+    - tab "Proveedores"
+    - tab "Relays"
+  - tabpanel "Modelos":
+    - heading "Todos los modelos 98 modelos" [level=2]
+    - paragraph: "Los perfiles de modelo con los que comparan las auditorías. Un modelo desactivado ya no se resuelve: sus auditorías se ejecutan sin perfil."
+    - group:
+      - text: Añadir un modelo
+      - paragraph: Deja que un asistente de IA investigue el modelo y comprueba aquí su respuesta antes de guardarla.
+      - heading "1 Copiar el prompt de investigación" [level=3]
+      - text: ID del modelo id
+      - textbox "ID del modelo id":
+        - /placeholder: p. ej. example-large-2
+      - text: Proveedor Opcional
+      - textbox "Proveedor Opcional":
+        - /placeholder: p. ej. openai / deepseek
+      - button "Copiar prompt"
+      - status
+      - group:
+        - text: Mostrar el prompt
+        - textbox "Prompt"
+      - paragraph: Pégalo en el asistente de IA que prefieras. Responde con un documento YAML.
+      - heading "2 Subir o pegar el YAML" [level=3]
+      - text: YAML del perfil
+      - textbox "YAML del perfil":
+        - /placeholder: "provider: …\nmodels:\n- id: …"
+      - text: Elegir un archivo .yaml
+      - heading "3 Comprobar y guardar" [level=3]
+      - paragraph: La comprobación valida el esquema y los límites, marca expresiones regulares inseguras, lista cada prompt que zing enviaría a los relays y muestra qué ID de modelo se resolverían de otra forma. No se guarda nada hasta que guardes.
+      - button "Comprobación"
+      - button "Guardar en la base" [disabled]
+    - searchbox "Filtrar modelos"
+    - status
+    - group:
+      - text: Anthropic (Claude)
+      - code: anthropic
+      - text: 14 modelos
+      - list:
+        - listitem:
+          - code: claude-opus-4-8
+          - text: Incluido Contexto 1000000 Salida máx. 128000 Alias
+          - code: claude-opus-4-8
+          - text: ","
+          - code: opus
+          - text: ","
+          - code: opus 4.8
+          - text: ","
+          - code: most powerful
+          - switch "claude-opus-4-8 Activo" [checked]
+          - emphasis: Activo
+        # … more items of the same shape
+    # … more items of the same shape
 - contentinfo:
   - paragraph:
     - text: zing · verificación de relays · los perfiles incluidos están en

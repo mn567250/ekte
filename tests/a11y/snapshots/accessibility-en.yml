@@ -27,7 +27,7 @@
       - /url: /v2/history
     - link "Monitors":
       - /url: /v2/watches
-    - link "Models":
+    - link "Knowledge":
       - /url: /v2/kb
 - main:
   - heading "Accessibility conformance report" [level=1]

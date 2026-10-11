@@ -196,7 +196,7 @@
         var p = g.items[0], s = window.ZingKbView._.summary(g.items);
         return L.markCJK(p.provider_name) + " " + code(p.provider) +
           (p.provider_enabled ? "" : ' <span class="badge grey">' + esc(T("厂商已停用", "Provider off")) + "</span>") +
-          '<span class="cnt">' + esc(counts(["1 个模型", "1 model"], ["{n} 个模型", "{n} models"])(s)) + "</span>";
+          ' <span class="cnt">' + esc(counts(["1 个模型", "1 model"], ["{n} 个模型", "{n} models"])(s)) + "</span>";
       },
       name: function (m) { return code(m.id); },
       meta: function (m) {

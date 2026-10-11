@@ -107,7 +107,7 @@
       return (
         '<li class="card item' + (it.enabled ? "" : " off") + '" data-key="' + esc(it.key) + '">' +
           '<div class="what"><span class="nm" id="' + id + '-n">' + cfg.name(it) + "</span> " + sourceBadge(it.source) +
-            (meta.length ? '<span class="meta">' + meta.join('<span class="sep" aria-hidden="true"> · </span>') + "</span>" : "") +
+            (meta.length ? '<span class="meta">' + meta.join(' <span class="sep" aria-hidden="true">·</span> ') + "</span>" : "") +
           "</div>" +
           '<label class="switch"><input type="checkbox" role="switch" data-act="on" data-key="' + esc(it.key) + '"' +
             ' aria-labelledby="' + id + "-n " + id + '-s"' + (it.enabled ? " checked" : "") + (userKb ? "" : " disabled") +
