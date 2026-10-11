@@ -392,6 +392,23 @@ def test_one_language_bundle_carries_only_that_language():
     assert i18n.locales_bundle("de")[1] != i18n.locales_bundle("fr")[1]
 
 
+def test_bundles_are_precompressed_once_and_rebuilt_with_the_data():
+    import gzip
+
+    from zing import i18n
+
+    for lang in (None, "de"):
+        body, etag, gz = i18n.locales_encoded(lang)
+        assert body == i18n.locales_script(lang).encode("utf-8")
+        assert etag == i18n.locales_bundle(lang)[1]
+        assert gzip.decompress(gz) == body
+        assert i18n.locales_encoded(lang) is i18n.locales_encoded(lang)
+    before = i18n.locales_encoded("de")
+    i18n._load.cache_clear()  # a reload rebuilds the compressed bytes too
+    after = i18n.locales_encoded("de")
+    assert after is not before and after == before
+
+
 def test_locales_route_picks_the_language_and_revalidates():
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient

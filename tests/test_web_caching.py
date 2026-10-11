@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gzip
 import os
 import re
 from pathlib import Path
@@ -11,6 +12,7 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 from starlette.applications import Starlette  # noqa: E402
+from starlette.datastructures import Headers  # noqa: E402
 from starlette.responses import PlainTextResponse, StreamingResponse  # noqa: E402
 from starlette.routing import Route  # noqa: E402
 
@@ -170,4 +172,77 @@ def test_asset_file_stays_inside_the_static_dirs():
     assert caching.asset_file("/v2/static/") is None
     assert caching.asset_file("/locales.js") is None
     assert caching.asset_file("/i18n.js") == Path(caching._STATIC) / "i18n.js"
+
+
+def _vary(r) -> set[str]:
+    return {v.strip().lower() for v in r.headers.get("vary", "").split(",") if v.strip()}
+
+
+def _raw_get(client, path: str, **headers: str):
+    """GET without decoding the body, so its real Content-Encoding shows."""
+    with client.stream("GET", path, headers=headers) as r:
+        return r, b"".join(r.iter_raw())
+
+
+@pytest.mark.parametrize("path", ["/v2/", "/", "/locales.js", "/locales.js?lang=de"])
+def test_precompressed_bodies_decompress_to_the_identity_bytes(client, path):
+    plain, identity = _raw_get(client, path, **{"Accept-Encoding": "identity"})
+    assert plain.status_code == 200 and "content-encoding" not in plain.headers
+    zipped, raw = _raw_get(client, path, **{"Accept-Encoding": "gzip, deflate"})
+    assert zipped.headers["content-encoding"] == "gzip"
+    # compressed once, not again by the middleware
+    assert gzip.decompress(raw) == identity
+    assert zipped.headers["content-length"] == str(len(raw))
+    # one ETag per encoding; both responses vary on Accept-Encoding
+    assert zipped.headers["etag"] == plain.headers["etag"][:-1] + '-gz"'
+    assert "accept-encoding" in _vary(plain) and "accept-encoding" in _vary(zipped)
+    assert (path == "/locales.js") == ("cookie" in _vary(zipped))
+    # 304 with either ETag, for either encoding, echoing the one that matched
+    for enc in ("gzip", "identity"):
+        for tag in (plain.headers["etag"], zipped.headers["etag"]):
+            r = client.get(path, headers={"Accept-Encoding": enc, "If-None-Match": f'"x", {tag}'})
+            assert r.status_code == 304 and r.content == b"", (enc, tag)
+            assert r.headers["etag"] == tag and "content-encoding" not in r.headers
+            assert "accept-encoding" in _vary(r)
+
+
+def test_precompressed_bodies_are_built_once(client, monkeypatch):
+    client.get("/v2/")
+    client.get("/locales.js")
+    calls = []
+    real = gzip.compress
+    monkeypatch.setattr(gzip, "compress", lambda *a, **k: calls.append(1) or real(*a, **k))
+    for _ in range(3):
+        assert client.get("/v2/").headers["content-encoding"] == "gzip"
+        assert client.get("/locales.js").headers["content-encoding"] == "gzip"
+    assert not calls
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("gzip", True),
+        ("GZip;q=0.5, br", True),
+        ("x-gzip", True),
+        ("*", True),
+        ("", False),
+        ("identity", False),
+        ("br, deflate", False),
+        ("gzip;q=0", False),
+        ("gzip;q=0, *", False),
+        ("*;q=0", False),
+        ("gzip;q=bad", False),
+    ],
+)
+def test_accepts_gzip(value, expected):
+    assert caching.accepts_gzip(Headers({"accept-encoding": value})) is expected
+
+
+def test_small_bodies_are_not_precompressed():
+    assert caching.precompressed(b"x" * (caching.GZIP_MINIMUM_SIZE - 1)) is None
+    r = caching.encoded_response(
+        {"type": "http", "headers": [(b"accept-encoding", b"gzip")]},
+        b"tiny", '"t"', None, media_type="text/plain",
+    )
+    assert r.body == b"tiny" and "content-encoding" not in r.headers and "vary" not in r.headers
 
