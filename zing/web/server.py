@@ -680,12 +680,14 @@ def create_app() -> FastAPI:
     async def locales_js(request: Request) -> Any:
         # Translation data (zing/i18n/locales/*.json) + the lookup logic: one
         # language's for ?lang= or the zing_lang cookie lang.js writes, else
-        # every language (built once, revalidated by ETag).
-        # Served precompressed when the client takes gzip (see encoded_response).
+        # every language (built and gzipped once, revalidated by ETag; see
+        # encoded_response).
         from zing.i18n import locales_encoded
 
         q = request.query_params.get("lang")
-        body, etag, gz = locales_encoded(q if q is not None else request.cookies.get("zing_lang"))
+        lang = q if q is not None else request.cookies.get("zing_lang")
+        # A (re)build serializes and compresses up to ~800 KiB: off the event loop.
+        body, etag, gz = await asyncio.to_thread(locales_encoded, lang)
         headers = {"Cache-Control": "no-cache"}
         if q is None:
             headers["Vary"] = "Cookie"

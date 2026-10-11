@@ -59,7 +59,13 @@ class CompressionMiddleware:
         self.gzip = GZipMiddleware(app, minimum_size=minimum_size)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] == "http" and not _SSE_PATH.match(scope.get("path", "")):
+        # Clients refusing gzip (also `gzip;q=0`, which the middleware's substring
+        # check would miss) skip it, as encoded_response does.
+        if (
+            scope["type"] == "http"
+            and not _SSE_PATH.match(scope.get("path", ""))
+            and accepts_gzip(Headers(scope=scope))
+        ):
             await self.gzip(scope, receive, send)
         else:
             await self.app(scope, receive, send)
@@ -91,6 +97,8 @@ def accepts_gzip(request_headers: Headers) -> bool:
                     q = float(value)
                 except ValueError:
                     q = 0.0
+                if not 0 <= q <= 1:  # also nan
+                    q = 0.0
         if coding == "*":
             if allowed is None:
                 allowed = q > 0
@@ -101,7 +109,7 @@ def accepts_gzip(request_headers: Headers) -> bool:
 
 def gzip_etag(etag: str) -> str:
     """The ETag of the gzipped representation: ``"tag"`` -> ``"tag-gz"``."""
-    return etag[:-1] + '-gz"'
+    return etag[:-1] + '-gz"' if etag.endswith('"') else etag + "-gz"
 
 
 def encoded_response(
@@ -115,7 +123,9 @@ def encoded_response(
     headers: dict[str, str] | None = None,
 ) -> Response:
     """``body`` (or its precompressed ``gz``, when the client accepts gzip) with
-    an ETag per encoding; a 304 when If-None-Match has either of them."""
+    an ETag per encoding; a 304 when If-None-Match has the requested one, or,
+    for a gzip request, the identity one (identity bytes suit any client; the
+    gzip ones must not be revalidated for a client that refused gzip)."""
     out = dict(headers or {})
     req = Headers(scope=scope) if scope is not None else Headers()
     tags: tuple[str, ...] = (etag,)
@@ -125,8 +135,6 @@ def encoded_response(
         if accepts_gzip(req):
             body, tags = gz, (gzip_etag(etag), etag)
             out["Content-Encoding"] = "gzip"
-        else:
-            tags = (etag, gzip_etag(etag))
     out["ETag"] = tags[0]
     if scope is not None and status_code == 200:
         matched = next((t for t in tags if _etag_matches(req, t)), None)

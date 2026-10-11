@@ -197,13 +197,27 @@ def test_precompressed_bodies_decompress_to_the_identity_bytes(client, path):
     assert zipped.headers["etag"] == plain.headers["etag"][:-1] + '-gz"'
     assert "accept-encoding" in _vary(plain) and "accept-encoding" in _vary(zipped)
     assert (path == "/locales.js") == ("cookie" in _vary(zipped))
-    # 304 with either ETag, for either encoding, echoing the one that matched
-    for enc in ("gzip", "identity"):
-        for tag in (plain.headers["etag"], zipped.headers["etag"]):
-            r = client.get(path, headers={"Accept-Encoding": enc, "If-None-Match": f'"x", {tag}'})
-            assert r.status_code == 304 and r.content == b"", (enc, tag)
-            assert r.headers["etag"] == tag and "content-encoding" not in r.headers
-            assert "accept-encoding" in _vary(r)
+    # 304 with either ETag for a gzip client, echoing the one that matched; a
+    # client refusing gzip must not be told to reuse the gzipped bytes
+    cases = [
+        ("gzip", plain.headers["etag"], 304),
+        ("gzip", zipped.headers["etag"], 304),
+        ("identity", plain.headers["etag"], 304),
+        ("identity", zipped.headers["etag"], 200),
+    ]
+    for enc, tag, status in cases:
+        r = client.get(path, headers={"Accept-Encoding": enc, "If-None-Match": f'"x", {tag}'})
+        assert r.status_code == status, (enc, tag)
+        assert "accept-encoding" in _vary(r)
+        if status == 304:
+            assert r.content == b"" and r.headers["etag"] == tag
+            assert "content-encoding" not in r.headers
+
+
+def test_refusing_gzip_is_honoured_by_the_middleware_too(client):
+    for path in ("/locales.js", "/api/kb"):
+        r, _ = _raw_get(client, path, **{"Accept-Encoding": "gzip;q=0, br"})
+        assert r.status_code == 200 and "content-encoding" not in r.headers, path
 
 
 def test_precompressed_bodies_are_built_once(client, monkeypatch):
@@ -232,6 +246,8 @@ def test_precompressed_bodies_are_built_once(client, monkeypatch):
         ("gzip;q=0, *", False),
         ("*;q=0", False),
         ("gzip;q=bad", False),
+        ("gzip;q=nan", False),
+        ("gzip;q=inf", False),
     ],
 )
 def test_accepts_gzip(value, expected):
