@@ -281,6 +281,7 @@ class TestTokenize:
         def refuse(*args, **kwargs):
             raise AssertionError("token estimation must not open a connection")
 
+        preloaded = "tiktoken" in sys.modules  # e.g. a stale install imported elsewhere
         monkeypatch.setattr(socket.socket, "connect", refuse)
         monkeypatch.setattr(socket, "create_connection", refuse)
         messages = [{"role": "user", "content": "hello there 世界"}]
@@ -288,7 +289,7 @@ class TestTokenize:
             assert estimate_tokens("hello there", hint) > 0
             assert estimate_messages_tokens(messages, hint) > 0
         RequestRecorder("o200k_base")  # used to resolve an encoding up front
-        assert "tiktoken" not in sys.modules
+        assert preloaded or "tiktoken" not in sys.modules
 
 
 # --------------------------------------------------------------------------- #

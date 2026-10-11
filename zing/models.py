@@ -530,7 +530,7 @@ class PerformanceReport(BaseModel):
     probe_requests: int = 0  # per endpoint and mode; 0 when the probe did not run
     probe_max_tokens: int | None = None
     tokenizer: str | None = None
-    tokens_exact: bool = False
+    tokens_exact: bool = False  # kept for report compatibility; counts are always estimates
     target: EndpointPerformance = Field(default_factory=EndpointPerformance)
     baseline: EndpointPerformance | None = None
     comparison: list[PerformanceComparison] = Field(default_factory=list)
