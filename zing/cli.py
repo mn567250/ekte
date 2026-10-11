@@ -17,7 +17,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 
 import typer
 from rich.console import Console
@@ -46,6 +46,8 @@ from zing.models import RiskLevel, Status
 # report renderers / ReportLab) are deferred into the commands that use them, so
 # `zing --help`, `zing data-dir` and friends start fast.
 if TYPE_CHECKING:
+    from collections.abc import Coroutine
+
     from zing.models import AuditReport, TargetConfig
     from zing.secretbox import SecretBox
 
@@ -327,6 +329,16 @@ def _judge_target(cfg: dict, base_url, api_key, model, baseline: TargetConfig | 
     return baseline
 
 
+_T = TypeVar("_T")
+
+
+def _run_async(coro: Coroutine[Any, Any, _T]) -> _T:
+    """``asyncio.run``, with asyncio imported on first use (it is not free at startup)."""
+    import asyncio
+
+    return asyncio.run(coro)
+
+
 def _machine_mode(as_json: bool, as_compact: bool) -> bool:
     """True when output should be pure JSON to stdout (no files, no rich panel)."""
     return as_json or as_compact
@@ -434,9 +446,6 @@ def _run_and_report(
     kb_dirs,
     use_user_kb=None,
 ) -> None:
-    # Imported here so a partially-built report module never breaks `zing kb` etc.
-    import asyncio
-
     from zing.report import render_compact, write_reports
     from zing.runner import run_audit
 
@@ -445,7 +454,7 @@ def _run_and_report(
         fmt = validate_format(fmt)
 
     command = "zing " + " ".join(sys.argv[1:])
-    report = asyncio.run(
+    report = _run_async(
         run_audit(
             target,
             options,
@@ -658,8 +667,6 @@ def models_command(
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
-    import asyncio
-
     from zing.clients import make_client
 
     async def _go() -> None:
@@ -682,7 +689,7 @@ def models_command(
         for mid in ids:
             console.print(f"  • {mid}")
 
-    asyncio.run(_go())
+    _run_async(_go())
 
 
 @app.command("kb")
@@ -1102,11 +1109,9 @@ def embed_command(
         if resolved is not None:
             dims = resolved.model.embedding_dimensions
 
-    import asyncio
-
     from zing.embed_audit import audit_embeddings
 
-    verdict = asyncio.run(audit_embeddings(target, dims))
+    verdict = _run_async(audit_embeddings(target, dims))
 
     if as_json:
         print(json.dumps(verdict, ensure_ascii=False, indent=2))
@@ -1147,11 +1152,9 @@ def rerank_command(
     documents = prompts.get("rerank.cli.documents")
     expected_top_index = 2
 
-    import asyncio
-
     from zing.embed_audit import audit_rerank
 
-    verdict = asyncio.run(audit_rerank(target, query, documents, expected_top_index))
+    verdict = _run_async(audit_rerank(target, query, documents, expected_top_index))
 
     if as_json:
         print(json.dumps(verdict, ensure_ascii=False, indent=2))
@@ -1219,8 +1222,6 @@ def image_command(
     resolved = kb.resolve(target.claimed, provider_hint=target.declared_provider)
     claimed_sizes = list(resolved.model.image_sizes) if resolved is not None else []
 
-    import asyncio
-
     from zing.media_audit import audit_image
 
     async def _go() -> tuple[dict, bytes | None]:
@@ -1236,7 +1237,7 @@ def image_command(
                 sample = images[0]
         return verdict, sample
 
-    verdict, sample = asyncio.run(_go())
+    verdict, sample = _run_async(_go())
     if save is not None and sample:
         save.write_bytes(sample)
 
@@ -1283,8 +1284,6 @@ def audio_command(
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
-    import asyncio
-
     from zing.clients import make_client
     from zing.media_audit import audit_audio
 
@@ -1298,7 +1297,7 @@ def audio_command(
                 sample = audio
         return verdict, sample
 
-    verdict, sample = asyncio.run(_go())
+    verdict, sample = _run_async(_go())
     if save is not None and sample:
         save.write_bytes(sample)
 
