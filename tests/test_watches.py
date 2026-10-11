@@ -1,9 +1,9 @@
 """Tests for the scheduled-watch store and its web endpoints.
 
 Skipped automatically when the optional web extra (fastapi) isn't installed.
-These never touch the network or trigger the real scheduler loop: they cover the
-SQLite store roundtrip and the /api/watches CRUD endpoints, asserting that the
-api_key never leaks into a listing.
+These never touch the network: they cover the SQLite store roundtrip and the
+/api/watches CRUD endpoints, asserting that the api_key never leaks into a
+listing, and drive the scheduler loop with fake audits.
 """
 
 from __future__ import annotations
@@ -436,3 +436,303 @@ def test_history_run_time_sets_the_monitors_shortest_interval(tmp_path, monkeypa
     assert r.status_code == 400 and "at least 600" in r.json()["error"]
     assert client.patch(f"/api/watches/{wid}", json={"interval_sec": 86400 + 60}).status_code == 400
     assert client.patch(f"/api/watches/{wid}", json={"interval_sec": 600, "enabled": True}).status_code == 200
+
+
+# ----- the scheduler loop ------------------------------------------------- #
+
+
+def _audit_report(target):
+    from zing.models import AuditReport, RedactedTarget, Verdict
+
+    return AuditReport(
+        tool_version="0", mode="check", suite="standard",
+        target=RedactedTarget(name="t", kind="target", base_url=target.base_url, model=target.model),
+        verdict=Verdict(),
+    )
+
+
+async def _until(cond, timeout: float = 5.0) -> None:
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    while not cond():
+        assert loop.time() < deadline, "condition not met in time"
+        await asyncio.sleep(0.005)
+
+
+class _GatedAudits:
+    """A fake run_audit: records when each audit starts and ends, and holds it
+    until its model's release event is set."""
+
+    def __init__(self) -> None:
+        import asyncio
+
+        self.started: dict[str, float] = {}
+        self.ended: dict[str, float] = {}
+        self.calls: list[str] = []
+        self.release: dict[str, asyncio.Event] = {}
+
+    def event(self, model: str):
+        import asyncio
+
+        return self.release.setdefault(model, asyncio.Event())
+
+    async def __call__(self, target, options, **_):
+        import time
+
+        self.calls.append(target.model)
+        self.started[target.model] = time.monotonic()
+        await self.event(target.model).wait()
+        self.ended[target.model] = time.monotonic()
+        return _audit_report(target)
+
+
+async def _scheduler(monkeypatch):
+    """Start the scheduler loop with a short tick; returns its task."""
+    import asyncio
+
+    from zing.web import server
+
+    # Many ticks per run: a watch stays due until its run is recorded.
+    monkeypatch.setattr(server, "_SCHEDULER_TICK_SEC", 0.01)
+    return asyncio.create_task(server._scheduler_loop())
+
+
+async def _stop(loop_task) -> None:
+    import asyncio
+
+    from zing.web import server
+
+    loop_task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await loop_task
+    await server._cancel_scheduled_watches()
+    # Each task leaves the dict from its done callback, a loop step later.
+    await _until(lambda: not server._scheduled_watch_tasks)
+    assert not server._running_watches
+
+
+async def test_due_watches_on_different_relays_run_at_the_same_time(tmp_path, monkeypatch):
+    import asyncio
+
+    from zing.web import server, watches
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    audits = _GatedAudits()
+    monkeypatch.setattr(server, "run_audit", audits)
+    ids = [
+        watches.create({"base_url": f"https://relay-{n}.test/v1", "api_key": "sk-x",
+                        "model": n, "interval_sec": 3600})
+        for n in ("a", "b")
+    ]
+    loop_task = await _scheduler(monkeypatch)
+    try:
+        await _until(lambda: len(audits.started) == 2)
+        await asyncio.sleep(0.05)  # several more ticks while both are running
+        assert sorted(audits.calls) == ["a", "b"]  # neither started twice
+        audits.event("a").set()
+        audits.event("b").set()
+        await _until(lambda: all(watches.get(w)["last_report_id"] for w in ids))
+        await _until(lambda: not server._scheduled_watch_tasks)
+    finally:
+        for ev in audits.release.values():
+            ev.set()
+        await _stop(loop_task)
+    # Overlap: each audit started before the other one ended.
+    assert audits.started["a"] < audits.ended["b"] and audits.started["b"] < audits.ended["a"]
+    assert sorted(audits.calls) == ["a", "b"]  # recorded, so not due again
+
+
+async def test_due_watches_on_the_same_relay_run_one_after_another(tmp_path, monkeypatch):
+    import asyncio
+    import time
+
+    from zing.web import server, watches
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    audits = _GatedAudits()
+    monkeypatch.setattr(server, "run_audit", audits)
+    ids = [
+        watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x",
+                        "model": n, "interval_sec": 3600})
+        for n in ("a", "b")
+    ]
+    loop_task = await _scheduler(monkeypatch)
+    try:
+        await _until(lambda: len(audits.started) == 1)
+        first = audits.calls[0]
+        second = "b" if first == "a" else "a"
+        # Both runs are in flight, the second waiting for the relay.
+        await _until(lambda: len(server._running_watches) == 2)
+        await asyncio.sleep(0.05)
+        assert audits.calls == [first]
+        released = time.time()
+        audits.event(first).set()
+        await _until(lambda: len(audits.started) == 2)
+        audits.event(second).set()
+        await _until(lambda: all(watches.get(w)["last_report_id"] for w in ids))
+    finally:
+        for ev in audits.release.values():
+            ev.set()
+        await _stop(loop_task)
+    assert audits.ended[first] <= audits.started[second]
+    # The queued run's time is when its audit started, not when it became due,
+    # so it does not come due again right after it waited for the relay.
+    by_model = {watches.get(w)["model"]: watches.get(w) for w in ids}
+    assert by_model[second]["last_run_ts"] >= released
+    assert audits.calls == [first, second]
+
+
+async def test_a_failing_watch_does_not_stop_the_others(tmp_path, monkeypatch):
+    from zing.web import server, watches
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    audits = _GatedAudits()
+
+    async def audit(target, options, **kw):
+        if target.model == "bad":
+            raise RuntimeError("relay down")
+        return await audits(target, options, **kw)
+
+    monkeypatch.setattr(server, "run_audit", audit)
+    bad = watches.create({"base_url": "https://bad.test/v1", "api_key": "sk-x",
+                          "model": "bad", "interval_sec": 3600})
+    good = watches.create({"base_url": "https://good.test/v1", "api_key": "sk-x",
+                           "model": "good", "interval_sec": 3600})
+    audits.event("good").set()
+    loop_task = await _scheduler(monkeypatch)
+    try:
+        await _until(lambda: watches.get(good)["last_report_id"] is not None)
+        await _until(lambda: watches.get(bad)["last_run_ts"] is not None)
+    finally:
+        await _stop(loop_task)
+
+
+async def test_shutdown_cancels_running_monitors(tmp_path, monkeypatch):
+    from zing.web import server, watches
+    from zing.web.server import create_app
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    audits = _GatedAudits()  # never released: the runs are still going at shutdown
+    monkeypatch.setattr(server, "run_audit", audits)
+    monkeypatch.setattr(server, "_SCHEDULER_TICK_SEC", 0.01)
+    for n in ("a", "b"):
+        watches.create({"base_url": f"https://relay-{n}.test/v1", "api_key": "sk-x",
+                        "model": n, "interval_sec": 3600})
+    async with server._lifespan(create_app()):
+        await _until(lambda: len(audits.started) == 2)
+        tasks = list(server._scheduled_watch_tasks.values())
+        assert len(tasks) == 2
+    assert all(t.done() for t in tasks)
+    assert not server._running_watches
+    await _until(lambda: not server._scheduled_watch_tasks)
+
+
+async def test_alert_webhooks_are_sent_at_the_same_time(tmp_path, monkeypatch):
+    import asyncio
+
+    from zing import notify
+    from zing.models import RiskLevel
+    from zing.web import server, watches
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+
+    async def fake_run_audit(target, options, **_):
+        report = _audit_report(target)
+        report.verdict.risk_level = RiskLevel.HIGH
+        return report
+
+    hooks = [f"https://hooks.test/{i}" for i in range(3)]
+    entered: list[str] = []
+    all_in = asyncio.Event()
+
+    async def fake_send(url, report_dict, **_):
+        entered.append(url)
+        if len(entered) == len(hooks):
+            all_in.set()
+        # Each send waits for all of them: only finishes if they run at once.
+        await asyncio.wait_for(all_in.wait(), 2)
+        if url.endswith("/1"):
+            raise RuntimeError("must not escape")
+        return True
+
+    monkeypatch.setattr(server, "run_audit", fake_run_audit)
+    monkeypatch.setattr(notify, "send", fake_send)
+    wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "m",
+                          "alert_on": "medium", "webhooks": [*hooks, "  "]})
+    await asyncio.wait_for(server._run_one_watch(watches.get(wid)), 5)
+    assert sorted(entered) == hooks
+    assert watches.get(wid)["last_report_id"] is not None
+
+
+async def test_regression_check_sees_a_run_that_queued_ahead_on_the_relay(tmp_path, monkeypatch):
+    from zing import notify
+    from zing.models import RiskLevel
+    from zing.web import server, watches
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    runs: list[str] = []
+    ids: list[int] = []
+
+    async def audit(target, options, **_):
+        runs.append(f"run-{len(runs)}")
+        name = runs[-1]
+        if name == "run-1":
+            # A real audit takes minutes: the run ahead is saved meanwhile.
+            await _until(lambda: any(watches.get(w)["last_report_id"] for w in ids))
+        report = _audit_report(target)
+        report.tool_version = name  # tells the two saved reports apart
+        report.verdict.risk_level = RiskLevel.HIGH
+        return report
+
+    alerts: list[tuple[str, str | None]] = []
+
+    async def fake_send(url, report_dict, *, previous=None, **_):
+        alerts.append((report_dict["tool_version"], (previous or {}).get("tool_version")))
+        return True
+
+    monkeypatch.setattr(server, "run_audit", audit)
+    monkeypatch.setattr(notify, "send", fake_send)
+    # Two monitors of one target (say, two suites), due together.
+    ids.extend(
+        watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "m",
+                        "suite": suite, "interval_sec": 3600, "webhooks": ["https://hooks.test/x"]})
+        for suite in ("smoke", "standard")
+    )
+    loop_task = await _scheduler(monkeypatch)
+    try:
+        await _until(lambda: all(watches.get(w)["last_report_id"] for w in ids))
+        await _until(lambda: len(alerts) == 2)
+    finally:
+        await _stop(loop_task)
+    # The second run queued behind the first on the relay, and still compares
+    # against it: the previous run is read once its own audit is done.
+    assert alerts == [("run-0", None), ("run-1", "run-0")]
+
+
+async def test_run_now_refuses_a_watch_the_scheduler_just_started(tmp_path, monkeypatch):
+    import asyncio
+
+    import httpx
+
+    from zing.web import server, watches
+    from zing.web.server import create_app
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    audits = _GatedAudits()
+    monkeypatch.setattr(server, "run_audit", audits)
+    wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "m",
+                          "interval_sec": 3600})
+    transport = httpx.ASGITransport(app=create_app())
+    async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as ac:
+        # Started by the scheduler, but its task has not taken a step yet.
+        server._start_scheduled_watch(watches.get(wid))
+        assert wid not in server._running_watches
+        task = server._scheduled_watch_tasks[wid]
+        r = await ac.post(f"/api/watches/{wid}/run")
+        assert r.status_code == 409
+        audits.event("m").set()
+        await asyncio.wait_for(task, 5)
+    assert audits.calls == ["m"]
+    assert watches.get(wid)["last_report_id"] is not None

@@ -383,24 +383,10 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
         )
         claimed = target.claimed_model or target.model
 
-        def stored() -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
-            # Blocking SQLite reads: run in a worker thread, off the loop.
-            # Audit against the profile pinned when the watch was created, so a
-            # knowledge-base edit cannot silently change what the monitor measures.
-            pinned_raw = watches.pinned_knowledge(wid)
-            # Previous saved run for this target+model — used for the regression check
-            # and the "since last run" delta in the alert. notify.send needs the full
-            # report, so find the most recent prior history row for this target and
-            # re-fetch it.
-            for item in history.recent(50):  # newest first
-                if (
-                    item.get("base_url") == target.base_url
-                    and item.get("claimed_model") == claimed
-                ):
-                    return pinned_raw, history.get(int(item["id"]))
-            return pinned_raw, None
-
-        pinned_raw, previous = await asyncio.to_thread(stored)
+        # Audit against the profile pinned when the watch was created, so a
+        # knowledge-base edit cannot silently change what the monitor measures.
+        # A blocking SQLite read: run in a worker thread, off the loop.
+        pinned_raw = await asyncio.to_thread(watches.pinned_knowledge, wid)
         pinned = KnowledgeUsage(**pinned_raw) if pinned_raw else None
 
         job = state.get("job") if state is not None else None
@@ -419,6 +405,9 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             job.waiting_for = list(state["waiting_for"])
             job.emit({"type": "queued", "job": job.id, "waiting_for": job.waiting_for})
         async with jobs.gate.hold(keys, label=f"monitor:{wid}"):
+            # The run's time is when its audit starts, not when it was due:
+            # a monitor that waited for its relay must not come due again at once.
+            now = time.time()
             if state is not None:
                 state["waiting_for"] = []
                 state["started"] = True
@@ -433,11 +422,25 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             )
             duration = time.perf_counter() - started
         report_dict = json.loads(report.model_dump_json())
+        previous: dict[str, Any] | None = None
+
+        def save() -> int:
+            # Blocking SQLite: run in a worker thread, off the loop.
+            nonlocal previous
+            # Previous saved run for this target+model — used for the regression
+            # check and the "since last run" delta in the alert (notify.send needs
+            # the full report). Read after the audit, so a run of the same target
+            # that queued ahead of this one on the relay counts; one indexed
+            # lookup, found however many runs of other targets were saved since.
+            # Best-effort, like save: a failed read must not lose the report.
+            with contextlib.suppress(Exception):
+                previous = history.latest_for(target.base_url, claimed)
+            return history.save(report_dict, watch_id=wid)
 
         async def store() -> None:
             # Save off the loop and report it, as one step (see jobs.settle).
             nonlocal report_id, saved
-            rid = await asyncio.to_thread(history.save, report_dict, watch_id=wid)
+            rid = await asyncio.to_thread(save)
             report_id = rid if rid is not None and rid >= 0 else None
             saved = True
             if job is not None:
@@ -467,11 +470,21 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
         crossed = _risk_meets(risk, alert_on)
         went_worse = regressed(report_dict, previous)
         if crossed or went_worse:
-            for url in row.get("webhooks") or []:
-                if not isinstance(url, str) or not url.strip():
-                    continue
-                with contextlib.suppress(Exception):
-                    await send(url.strip(), report_dict, previous=previous, lang=row.get("language"))
+            # All webhooks at once: a dead one (10 s timeout) must not hold up
+            # the others or the run's completion. send never raises; any
+            # exception that slips through is returned by gather and dropped.
+            urls = dict.fromkeys(
+                url.strip()
+                for url in row.get("webhooks") or []
+                if isinstance(url, str) and url.strip()
+            )
+            await asyncio.gather(
+                *(
+                    send(url, report_dict, previous=previous, lang=row.get("language"))
+                    for url in urls
+                ),
+                return_exceptions=True,
+            )
     except asyncio.CancelledError:
         cancelled = True
         raise
@@ -508,12 +521,58 @@ def _risk_meets(risk: str | None, threshold: str) -> bool:
     return order.get(risk, 0) >= order.get(threshold, order[RiskLevel.MEDIUM.value])
 
 
+# Runs the scheduler started, keyed by watch id: an entry exists from the
+# moment its task is created until it finishes, so a watch whose task has not
+# yet reached _running_watches is not started again on the next tick. Loop-owned
+# (only touched on the event loop); _lifespan cancels what is left on shutdown.
+_scheduled_watch_tasks: dict[int, asyncio.Task[None]] = {}
+
+
+async def _scheduled_watch_run(row: dict[str, Any]) -> None:
+    """One scheduler-started run: every failure is swallowed so it stays local
+    to its watch; cancellation (server shutdown) propagates."""
+    try:
+        await _run_one_watch(row)
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        # One bad watch must never take down the others or the loop.
+        pass
+
+
+def _start_scheduled_watch(row: dict[str, Any]) -> None:
+    """Start a due watch as its own task unless it is already running or started."""
+    wid = int(row["id"])
+    if wid in _running_watches or wid in _scheduled_watch_tasks:
+        return
+    task = asyncio.create_task(_scheduled_watch_run(row), name=f"zing-monitor-{wid}")
+    _scheduled_watch_tasks[wid] = task
+
+    def done(t: asyncio.Task[None]) -> None:
+        if _scheduled_watch_tasks.get(wid) is t:
+            del _scheduled_watch_tasks[wid]
+
+    task.add_done_callback(done)
+
+
+async def _cancel_scheduled_watches() -> None:
+    """Cancel the scheduler's runs (server shutdown) and wait until they ended."""
+    tasks = list(_scheduled_watch_tasks.values())
+    for task in tasks:
+        task.cancel()
+    if tasks:
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
 async def _scheduler_loop() -> None:
-    """Poll for due watches every tick and run each one (best-effort, idle-quiet).
+    """Poll for due watches every tick and start each one (best-effort, idle-quiet).
 
     If nothing is due, the loop does nothing and the server stays silent. Each
-    watch is wrapped in its own try/except so a single failure never stops the
-    loop. Cancellation (on server shutdown) propagates cleanly.
+    due watch runs as its own task, so monitors on different relays audit at
+    the same time; the relay gate (jobs.gate) still runs one audit per relay
+    and caps how many run at once. A failure stays inside its watch's task.
+    Cancellation (on server shutdown) propagates cleanly; _lifespan cancels
+    the runs themselves.
     """
     from zing.web import watches
     from zing.web.masterkey import vault
@@ -532,15 +591,7 @@ async def _scheduler_loop() -> None:
         except Exception:
             due = []
         for row in due:
-            if int(row["id"]) in _running_watches:
-                continue
-            try:
-                await _run_one_watch(row)
-            except asyncio.CancelledError:
-                raise
-            except Exception:
-                # One bad watch must never take down the whole loop.
-                pass
+            _start_scheduled_watch(row)
         await asyncio.sleep(_SCHEDULER_TICK_SEC)
 
 
@@ -560,6 +611,9 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError, Exception):
             await task
+        # The loop is stopped, so no new runs start; end the ones in flight.
+        with contextlib.suppress(Exception):
+            await _cancel_scheduled_watches()
         with contextlib.suppress(Exception):
             await jobs.manager.shutdown()
 
@@ -1395,6 +1449,9 @@ def create_app() -> FastAPI:
         row = await asyncio.to_thread(watches.get, wid)
         if row is None:
             return JSONResponse({"error": "not found"}, status_code=404)
+        if wid in _scheduled_watch_tasks:
+            # The scheduler just started it; its run registers on the next step.
+            return JSONResponse({"error": "already running"}, status_code=409)
         # Run the same path the scheduler uses (audit + persist + alert + mark).
         try:
             await _run_one_watch(row)
@@ -1517,6 +1574,11 @@ def create_app() -> FastAPI:
         # land) in between. A rare, deliberate action.
         for wid in list(_running_watches):
             _cancel_watch(wid)
+        # Scheduled runs not yet started hold rows with keys decrypted before
+        # the reset: they must never start.
+        for wid, task in list(_scheduled_watch_tasks.items()):
+            if wid not in _running_watches:
+                task.cancel()
         try:
             dropped = vault.reset()
         except VaultError as exc:
