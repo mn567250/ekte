@@ -154,6 +154,88 @@ def test_disabled_entries_do_not_apply(data_dir):
     assert load_knowledge_base().resolve("acme-large-2") is not None
 
 
+
+# ----- switching packaged items off (kb_disabled) ------------------------- #
+def test_switching_off_packaged_items(data_dir):
+    store.set_item_enabled("model", "openai", "gpt-4o", False)
+    kb = load_knowledge_base()
+    assert "openai/gpt-4o" not in kb.model_sources and kb.disabled == ["model:openai/gpt-4o"]
+    assert all(m.id != "gpt-4o" for m in kb.providers["openai"].models)
+    # the complete set and the opt-out still have it
+    assert "openai/gpt-4o" in load_knowledge_base(full=True).model_sources
+    assert "openai/gpt-4o" in load_knowledge_base(include_user=False).model_sources
+    store.set_item_enabled("provider", "openai", None, False)
+    kb = load_knowledge_base()
+    assert "openai" not in kb.providers and "provider:openai" in kb.disabled
+    assert not any(k.startswith("openai/") for k in kb.model_sources)
+    store.set_item_enabled("provider", "openai", None, True)
+    store.set_item_enabled("model", "openai", "gpt-4o", True)
+    kb = load_knowledge_base()
+    assert kb.model_sources["openai/gpt-4o"] == "packaged:openai.yaml" and not kb.disabled
+    assert store.disabled_items() == []
+
+
+def test_switch_off_leaves_the_users_own_entries_alone(data_dir):
+    result, _ids = import_yaml("provider: openai\nmodels:\n- id: gpt-4o\n  context_window_tokens: 1234\n")
+    assert result.ok, result.errors
+    store.set_item_enabled("model", "openai", "gpt-4o", False)
+    kb = load_knowledge_base()
+    assert kb.model_sources["openai/gpt-4o"].startswith("kb.db:entry/") and not kb.disabled
+
+
+def test_catalog_lists_complete_sets_with_state(data_dir):
+    from zing.knowledge import catalog
+    from zing.knowledge.relays import add_relay
+
+    result, _ids = import_yaml(NEW_PROVIDER_YAML, origin="import:acme.yaml")
+    assert result.ok, result.errors
+    add_relay("My Relay", "https://relay.example/v1")
+    catalog.set_enabled("model:openai/gpt-4o", False)
+    catalog.set_enabled("model:acmeai/acme-large-2", False)  # yours: the entry's own column
+    data = catalog.catalog()
+    models = {m["key"]: m for m in data["models"]}
+    assert models["model:openai/gpt-4o"]["enabled"] is False and not models["model:openai/gpt-4o"]["yours"]
+    acme = models["model:acmeai/acme-large-2"]
+    assert acme["yours"] and acme["enabled"] is False and acme["entry_id"]
+    assert models["model:openai/gpt-4o-mini"]["enabled"] is True
+    assert {p["key"] for p in data["relays"]} == {"provider:my-relay"}
+    assert "provider:acmeai" in {p["key"] for p in data["providers"]}
+    assert data["disabled"] == 1
+    # a provider switched off: its models are listed but off
+    catalog.set_enabled("provider:openai", False)
+    data = catalog.catalog()
+    m = next(x for x in data["models"] if x["key"] == "model:openai/gpt-4o-mini")
+    assert m["enabled"] is False and m["provider_enabled"] is False
+    # the relay is still listed (and its name taken) while switched off
+    catalog.set_enabled("provider:my-relay", False)
+    relay = catalog.catalog()["relays"][0]
+    assert relay["enabled"] is False and relay["base_urls"] == ["https://relay.example/v1"]
+    with pytest.raises(catalog.ToggleError) as err:
+        catalog.set_enabled("model:openai/nope", False)
+    assert err.value.status == 404
+
+
+def test_catalog_keeps_your_model_less_provider_among_providers(data_dir):
+    from zing.knowledge import catalog
+
+    result, _ids = import_yaml("provider: newprov\ndisplay_name: New\nbase_url_hints: [https://n.example/v1]\nmodels: []\n")
+    assert result.ok, result.errors
+    data = catalog.catalog()
+    assert "provider:newprov" in {p["key"] for p in data["providers"]}
+    assert "provider:newprov" not in {p["key"] for p in data["relays"]}
+
+
+def test_catalog_lists_additions_to_a_packaged_provider(data_dir):
+    from zing.knowledge import catalog
+
+    result, _ids = import_yaml("provider: openai\nbase_url_hints: [https://proxy.example/v1]\nmodels: []\n")
+    assert result.ok, result.errors
+    add = next(p for p in catalog.catalog()["providers"] if p.get("addition"))
+    assert add["key"].startswith("entry:") and add["yours"] and add["enabled"]
+    assert add["base_urls"] == ["https://proxy.example/v1"]
+    catalog.set_enabled(add["key"], False)
+    assert not next(p for p in catalog.catalog()["providers"] if p.get("addition"))["enabled"]
+
 # ----- import checks ------------------------------------------------------ #
 BAD_YAML = [
         ("", "empty"),
@@ -452,8 +534,8 @@ def test_kb_api_scan_import_list_toggle_delete(client):
     ok = client.post("/api/kb/import", json={"yaml": NEW_PROVIDER_YAML, "filename": "acme.yaml"})
     assert ok.status_code == 201 and len(ok.json()["entry_ids"]) == 2
     data = client.get("/api/kb/profiles").json()
-    acme = next(p for p in data["providers"] if p["provider"] == "acmeai")
-    assert acme["models"][0]["source"].startswith("kb.db:entry/")
+    acme = next(m for m in data["models"] if m["key"] == "model:acmeai/acme-large-2")
+    assert acme["source"].startswith("kb.db:entry/") and acme["yours"]
     assert {e["origin"] for e in data["entries"]} == {"import:acme.yaml"}
     assert "body" not in data["entries"][0]
     res = client.post("/api/kb/resolve", json={"model": "acme-large-2"}).json()
@@ -467,6 +549,33 @@ def test_kb_api_scan_import_list_toggle_delete(client):
     assert exp.status_code == 200 and "acmeai" in exp.text and "attachment" in exp.headers["content-disposition"]
     prompt = client.get("/api/kb/prompt", params={"model": "acme-large-2"})
     assert prompt.status_code == 200 and "acme-large-2" in prompt.text
+
+
+def test_kb_api_enabled_switch(client):
+    r = client.put("/api/kb/enabled", json={"key": "model:openai/gpt-4o", "enabled": False})
+    assert r.status_code == 200 and r.json()["ok"]
+    data = client.get("/api/kb/profiles").json()
+    assert next(m for m in data["models"] if m["key"] == "model:openai/gpt-4o")["enabled"] is False
+    res = client.post("/api/kb/resolve", json={"model": "gpt-4o"}).json()
+    assert res["matched"] is False or res["model_id"] != "gpt-4o"
+    assert all(m["id"] != "gpt-4o" for p in client.get("/api/kb").json()["providers"] for m in p["models"])
+    assert client.put("/api/kb/enabled", json={"key": "model:openai/nope", "enabled": False}).status_code == 404
+    assert client.put("/api/kb/enabled", json={"key": "weird", "enabled": False}).status_code == 400
+    assert client.put("/api/kb/enabled", json={"enabled": False}).status_code == 400
+    assert client.put("/api/kb/enabled", json={"key": "model:openai/gpt-4o", "enabled": True}).status_code == 200
+    assert client.post("/api/kb/resolve", json={"model": "gpt-4o"}).json()["model_id"] == "gpt-4o"
+
+
+def test_kb_api_resolve_names_a_switched_off_profile(client):
+    client.post("/api/kb/import", json={"yaml": NEW_PROVIDER_YAML})
+    client.put("/api/kb/enabled", json={"key": "provider:acmeai", "enabled": False})
+    res = client.post("/api/kb/resolve", json={"model": "acme-large-2"}).json()
+    assert res == {"matched": False, "switched_off": {"provider": "acmeai", "model_id": "acme-large-2"}}
+    # a fuzzy match is still used, but the exact profile that is off is named
+    client.put("/api/kb/enabled", json={"key": "model:openai/gpt-4o-mini", "enabled": False})
+    res = client.post("/api/kb/resolve", json={"model": "gpt-4o-mini"}).json()
+    assert res["matched"] and res["match_confidence"] != "exact"
+    assert res["switched_off"] == {"provider": "openai", "model_id": "gpt-4o-mini"}
 
 
 def test_kb_import_refuses_cross_site_and_non_json(client):

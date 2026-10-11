@@ -12,12 +12,17 @@ Layers, later ones winning:
    ``provider:`` replaces that whole provider (unchanged behaviour);
 3. the user's ``kb.db`` entries, merged per model and per fingerprint id (see
    :mod:`zing.knowledge.store`). Left out with ``include_user=False``, or
-   ``ZING_NO_USER_KB=1``.
+   ``ZING_NO_USER_KB=1``;
+4. packaged / ``ZING_KB_DIR`` providers and models the user switched off in
+   ``kb.db`` are removed (a provider with all its models). Also left out with
+   ``include_user=False``. ``full=True`` skips this step and applies disabled
+   entries too: the complete set, for listing it with on/off switches.
 
 An edit (or a new kb.db entry) applies to the next call without a restart.
 Merged results are cached, keyed on everything they are built from: the
 ``--kb-dir`` / ``ZING_KB_DIR`` files (path and content digest), the user-KB switch,
-the kb.db location and the kb.db entries themselves (one small query per call),
+the kb.db location, the kb.db entries and switched-off items themselves (two
+small queries per call),
 so an import, edit, toggle or delete is picked up immediately. The packaged
 profiles are immutable package data and parsed once per process. Every call
 returns a deep copy, so callers may modify what they get.
@@ -195,6 +200,38 @@ def apply_user_entries(kb: KnowledgeBase, entries: list[dict[str, Any]]) -> None
         kb.entries[f"model:{key}"] = entry_ref(entry)
 
 
+def apply_disabled(kb: KnowledgeBase, items: list[tuple[str, str, str]]) -> None:
+    """Remove switched-off packaged / ``ZING_KB_DIR`` items from ``kb`` in place.
+
+    The user's own entries are switched off by their ``enabled`` column, so an
+    item whose source is a kb.db entry is left alone here.
+    """
+    for kind, name, mid in items:
+        if kind == "provider":
+            if name not in kb.providers or kb.provider_sources.get(name, "").startswith("kb.db:"):
+                continue
+            del kb.providers[name]
+            kb.provider_sources.pop(name, None)
+            prefix = f"{name}/"
+            for mapping in (kb.model_sources, kb.shadowed):
+                for key in [k for k in mapping if k.startswith(prefix)]:
+                    del mapping[key]
+            for key in [k for k in kb.entries if k == f"provider:{name}" or k.startswith(f"model:{prefix}")]:
+                del kb.entries[key]
+            kb.disabled.append(f"provider:{name}")
+            continue
+        provider = kb.providers.get(name)
+        key = f"{name}/{mid}"
+        if provider is None or kb.model_sources.get(key, "").startswith("kb.db:"):
+            continue
+        models = [m for m in provider.models if m.id != mid]
+        if len(models) == len(provider.models):
+            continue
+        kb.providers[name] = provider.model_copy(update={"models": models})
+        kb.model_sources.pop(key, None)
+        kb.disabled.append(f"model:{key}")
+
+
 _CACHE_SIZE = 8
 _cache: OrderedDict[tuple[Any, ...], KnowledgeBase] = OrderedDict()
 _cache_lock = threading.Lock()
@@ -229,12 +266,15 @@ def load_knowledge_base(
     *,
     include_user: bool | None = None,
     user_entries: list[dict[str, Any]] | None = None,
+    full: bool = False,
 ) -> KnowledgeBase:
     """Build the knowledge base from packaged profiles plus overrides.
 
     Later sources win, so a user-supplied profile for ``provider: openai``
     overrides the packaged one. ``user_entries`` replaces reading kb.db (used
     to preview an import before it is saved; such loads are not cached).
+    ``full=True`` returns the complete set instead of what audits use: disabled
+    kb.db entries applied as if enabled, switched-off items kept.
     The result is the caller's own copy.
     """
     dirs: list[Path] = list(extra_dirs or [])
@@ -244,9 +284,10 @@ def load_knowledge_base(
     use_user = user_kb_enabled(include_user)
 
     if user_entries is not None:
-        return _build(dirs, use_user, user_entries, []).model_copy(deep=True)
+        return _build(dirs, use_user, user_entries, [], []).model_copy(deep=True)
 
     entries: list[dict[str, Any]] = []
+    disabled: list[tuple[str, str, str]] = []
     warnings: list[str] = []
     cacheable = True
     db_location = ""
@@ -256,20 +297,24 @@ def load_knowledge_base(
 
         try:
             db_location = str(datadir.db_path(store.DB_NAME).resolve())
-            entries = store.list_entries(enabled_only=True)
+            if full:
+                entries = [{**e, "enabled": True} for e in store.list_entries()]
+            else:
+                entries = store.list_entries(enabled_only=True)
+                disabled = store.disabled_items()
         except Exception as exc:  # an unreadable kb.db must not break audits
             warnings.append(f"kb.db could not be read: {_short_error(exc)}")
             cacheable = False
 
     if not cacheable:
-        return _build(dirs, use_user, entries, warnings).model_copy(deep=True)
-    key = (_dirs_key(dirs), use_user, db_location, _entries_key(entries))
+        return _build(dirs, use_user, entries, warnings, disabled).model_copy(deep=True)
+    key = (_dirs_key(dirs), use_user, db_location, full, _entries_key(entries), tuple(disabled))
     with _cache_lock:
         cached = _cache.get(key)
         if cached is not None:
             _cache.move_to_end(key)
     if cached is None:
-        cached = _build(dirs, use_user, entries, warnings)
+        cached = _build(dirs, use_user, entries, warnings, disabled)
         with _cache_lock:
             _cache[key] = cached
             _cache.move_to_end(key)
@@ -283,6 +328,7 @@ def _build(
     use_user: bool,
     user_entries: list[dict[str, Any]],
     warnings: list[str],
+    disabled: list[tuple[str, str, str]],
 ) -> KnowledgeBase:
     layered = dict(_load_packaged())
     for directory in dirs:
@@ -301,4 +347,5 @@ def _build(
         return kb
     kb.warnings.extend(warnings)
     apply_user_entries(kb, user_entries)
+    apply_disabled(kb, disabled)
     return kb

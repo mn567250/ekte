@@ -8,7 +8,9 @@ Endpoints:
   GET  /api/health           {ok, version}
   GET  /api/kb               providers (base URLs, saved relays) and their models
   POST /api/kb/relays        save a relay {name, base_url} in kb.db
-  GET  /api/kb/profiles      the merged knowledge base with sources + your kb.db entries
+  GET  /api/kb/profiles      models, providers and relays (complete sets, sources,
+                             on/off state) + your kb.db entries
+  PUT  /api/kb/enabled       switch one model, provider or relay on or off {key, enabled}
   GET  /api/kb/prompt        research prompt for an external AI (?model=&provider=)
   POST /api/kb/scan          check uploaded profile YAML (writes nothing)
   POST /api/kb/import        check + store profile YAML in kb.db
@@ -759,31 +761,28 @@ def create_app() -> FastAPI:
     # ----- Knowledge base: browse, research prompt, import/export -------- #
     @app.get("/api/kb/profiles")
     def kb_profiles() -> Any:
-        # Every provider/model as merged for audits, with its source and the
-        # user's entries (kb.db) — plus entries that were skipped.
-        from zing.knowledge import load_knowledge_base, store
+        # The Knowledge page: models, providers and relays, each the complete
+        # set (packaged, ZING_KB_DIR and kb.db) with its on/off state — see
+        # zing/knowledge/catalog.py — plus the user's kb.db entries (no bodies).
+        from zing.knowledge import catalog, store
 
-        knowledge = load_knowledge_base()
-        providers = []
-        for prov in sorted(knowledge.providers.values(), key=lambda p: p.provider):
-            models = []
-            for m in prov.models:
-                key = f"{prov.provider}/{m.id}"
-                models.append({
-                    **m.model_dump(mode="json"),
-                    "source": knowledge.model_sources.get(key),
-                    "shadows": knowledge.shadowed.get(key),
-                    "entry_id": (knowledge.entries.get(f"model:{key}") or {}).get("id"),
-                })
-            providers.append({
-                **prov.model_dump(mode="json", exclude={"models"}),
-                "source": knowledge.provider_sources.get(prov.provider),
-                "entry_id": (knowledge.entries.get(f"provider:{prov.provider}") or {}).get("id"),
-                "models": models,
-            })
-        entries = [{k: v for k, v in e.items() if k != "body"} for e in store.list_entries()]
-        return JSONResponse({"providers": providers, "entries": entries,
-                             "user_kb": knowledge.user_kb, "warnings": knowledge.warnings})
+        data = catalog.catalog()
+        data["entries"] = [{k: v for k, v in e.items() if k != "body"} for e in store.list_entries()]
+        return JSONResponse(data)
+
+    @app.put("/api/kb/enabled")
+    async def kb_set_enabled(request: Request) -> Any:
+        # Switch one item on or off: {key: "model:p/id" | "provider:p" | "entry:<id>", enabled}.
+        from zing.knowledge import catalog
+
+        body = await request.json()
+        if not isinstance(body, dict) or "enabled" not in body or not isinstance(body.get("key"), str):
+            return JSONResponse({"error": "expected {key, enabled}"}, status_code=400)
+        try:
+            await asyncio.to_thread(catalog.set_enabled, body["key"][:300], bool(body["enabled"]))
+        except catalog.ToggleError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=exc.status)
+        return JSONResponse({"ok": True})
 
     @app.get("/api/kb/prompt")
     def kb_prompt(model: str = "", provider: str = "") -> Any:
@@ -799,13 +798,22 @@ def create_app() -> FastAPI:
 
         body = await request.json()
         knowledge = await asyncio.to_thread(load_knowledge_base)
-        r = knowledge.resolve(str(body.get("model") or "")[:200], body.get("provider") or None)
+        model, hint = str(body.get("model") or "")[:200], body.get("provider") or None
+        r = knowledge.resolve(model, hint)
+        off = None
+        if r is None or r.match_confidence not in ("exact", "alias"):
+            # a closer profile that exists but is switched off: name it
+            full = await asyncio.to_thread(load_knowledge_base, full=True)
+            f = full.resolve(model, hint)
+            if f is not None and (r is None or f.match_confidence in ("exact", "alias")):
+                off = {"provider": f.provider.provider, "model_id": f.model.id}
         if r is None:
-            return JSONResponse({"matched": False})
+            return JSONResponse({"matched": False, **({"switched_off": off} if off else {})})
         key = f"{r.provider.provider}/{r.model.id}"
         return JSONResponse({"matched": True, "provider": r.provider.provider, "model_id": r.model.id,
                              "match_confidence": r.match_confidence,
-                             "source": knowledge.model_sources.get(key)})
+                             "source": knowledge.model_sources.get(key),
+                             **({"switched_off": off} if off else {})})
 
     async def _yaml_body(request: Request) -> tuple[str, str | None]:
         body = await request.json()

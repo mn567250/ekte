@@ -265,12 +265,12 @@ Oberfläche** zurückführt. Die Wahl wird pro Browser gespeichert.
 | **Werkzeuge** | `/tools` | `/v2/tools` | Embedding- und Rerank-Prüfungen |
 | **Verlauf** | `/history` | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
 | **Überwachung** | `/watches` | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
-| **Modelle** | — | `/v2/kb` | Die Wissensbasis durchsuchen, eigene Modellprofile hinzufügen und gespeicherte Relays sehen |
+| **Wissen** | — | `/v2/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
 
 Die neue Oberfläche bietet zusätzlich: Filter und konfigurierbare Trends
 (Bewertung, Note, Latenz p50, Token/s) im **Verlauf**; **Als Überwachung
 einplanen** und **Audit erneut ausführen** bei jedem Lauf im Verlauf; **Bericht herunterladen** in jedem Format;
-eine Designauswahl (Automatisch / Hell / Dunkel); und die Seite **Modelle**.
+eine Designauswahl (Automatisch / Hell / Dunkel); und die Seite **Wissen**.
 
 **Audits im Hintergrund (neue Oberfläche).** Ein auf der Seite **Audit**
 gestartetes Audit läuft weiter, wenn Sie die Seite wechseln oder den Tab
@@ -655,16 +655,19 @@ ab (`zing kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
    (wiederholbar) oder `ZING_KB_DIR`.
 3. **Ihre Einträge** (`kb.db` im Datenverzeichnis), hinzugefügt ohne YAML-Dateien
    oder editierbare Installation:
-   - auf der Seite **Modelle** der Weboberfläche (`/v2/kb`): **Modell
-     hinzufügen** → **Recherche-Prompt kopieren** und in den KI-Assistenten Ihrer
-     Wahl einfügen, das YAML seiner Antwort hochladen oder einfügen, dann
-     **Prüfen und speichern**. **Alle Profile** listet jedes Profil mit seiner
-     Quelle; **Welches Profil verwendet eine Modell-ID?** zeigt, wie eine ID
-     aufgelöst wird; **Deine Einträge** lassen sich als YAML exportieren;
+   - auf der Seite **Wissen** der Weboberfläche (`/v2/kb`), mit je einem Tab für
+     **Modelle**, **Anbieter** und **Relays**. Jeder Tab listet den vollständigen
+     Bestand — mitgeliefert, `ZING_KB_DIR` und eigene (markiert mit **Eigener**) —
+     mit Filter, einem Ein/Aus-Schalter pro Element und einem Formular
+     **… hinzufügen**: **Modell hinzufügen** → **Recherche-Prompt kopieren** und in
+     den KI-Assistenten Ihrer Wahl einfügen, das YAML seiner Antwort hochladen oder
+     einfügen, dann **Prüfen und speichern**; **Anbieter hinzufügen** nimmt
+     Anbieter-YAML auf dieselbe Weise; **Relay hinzufügen** nimmt Namen und
+     Basis-URL. **Welches Profil verwendet eine Modell-ID?** zeigt, wie eine ID
+     aufgelöst wird; Ihre Einträge lassen sich als YAML exportieren;
    - auf den Seiten **Prüfung** und **Werkzeuge** der Weboberfläche: **In der
      Wissensbasis speichern** behält Namen und Basis-URL eines Relays (ein
-     Anbieter-Eintrag ohne Modelle), auf **Modelle** mit dem Abzeichen **Relay**
-     angezeigt;
+     Anbieter-Eintrag ohne Modelle), aufgeführt unter **Wissen → Relays**;
    - auf der Kommandozeile: `zing kb-prompt <model>`, `zing kb-import <file>`
      (mit `--check` nur prüfen) und `zing kb-export`.
 
@@ -673,8 +676,12 @@ reguläre Ausdrücke, jeden Prompt, den er senden würde, und Modell-IDs, die zu
 einem anderen Profil aufgelöst würden. Ein eigenes Modell mit der ID eines
 mitgelieferten ersetzt dieses (als *Überschattung* ausgewiesen), ändert aber nie
 die Einstellungen eines mitgelieferten Anbieters; Fingerabdrücke werden anhand
-ihrer ID zusammengeführt. `zing check` und `zing serve` nutzen genau dieselben
-Profile; `--no-user-kb` (oder `ZING_NO_USER_KB=1`) lässt Ihre Einträge weg.
+ihrer ID zusammengeführt. Das Ausschalten eines mitgelieferten Modells, Anbieters
+oder Relays auf der Seite **Wissen** wird ebenfalls in `kb.db` gespeichert: eine
+ausgeschaltete Modell-ID wird nicht mehr aufgelöst, ein ausgeschalteter Anbieter
+nimmt seine Modelle und Basis-URLs mit. `zing check` und `zing serve` nutzen genau
+dieselben Profile; `--no-user-kb` (oder `ZING_NO_USER_KB=1`) lässt Ihre Einträge
+und Schalter weg.
 
 Jeder Bericht hält fest, gegen welches Profil er geprüft hat (`knowledge`:
 Anbieter, Modell, wie die ID zugeordnet wurde, ihre Quelle und ein vollständiger

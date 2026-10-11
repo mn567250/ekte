@@ -10,55 +10,66 @@
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/fields.css" />
 <style>
-  /* ---- knowledge base page (v2) — page-only rules; colours via zing.css tokens ---- */
-  .form-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 0 0 6px; }
-  .step { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
-  .step:first-of-type { margin-top: 12px; padding-top: 0; border-top: 0; }
+  /* ---- knowledge page (v2) — page-only rules; colours via zing.css tokens ---- */
+  .form-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+  .form-title .count { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--faint); }
+  .form-title:focus { outline: none; }
+  .kb-card { margin-top: 20px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .btn[hidden] { display: none; }
+  .tools-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0 10px; }
+  .filter { flex: 1 1 220px; max-width: 360px; }
+
+  /* add form: a disclosure so the lists come first */
+  .add { margin: 12px 0 4px; border: 1px dashed var(--line-strong); border-radius: 14px; }
+  .add > summary { cursor: pointer; padding: 12px 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .add > summary .zicon { width: 15px; height: 15px; }
+  .add[open] > summary { border-bottom: 1px solid var(--line); }
+  .add-body { padding: 4px 14px 16px; }
+  .step { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .step:first-child { margin-top: 8px; padding-top: 0; border-top: 0; }
   .step h3 { font-size: 15px; font-weight: 700; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
   .step h3 .n {
     display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%;
     background: var(--surface-2); border: 1px solid var(--line-strong); font-size: 12.5px; font-family: var(--mono);
   }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  details.inline { margin-top: 10px; }
   textarea.in.yaml { font-family: var(--mono); font-size: 12.5px; min-height: 180px; }
   textarea.in.prompt { font-family: var(--mono); font-size: 12px; min-height: 160px; }
   .okbox {
     display: flex; align-items: flex-start; gap: 8px; background: var(--goodbg); border: 1px solid var(--good);
-    color: var(--good); border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5; font-weight: 600;
+    color: var(--good); border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5; font-weight: 600; margin-top: 14px;
   }
+  .errbox { margin-top: 14px; }
   .errbox[hidden], .okbox[hidden], .scan[hidden] { display: none; }
   .scan { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
   .scan h4 { margin: 0 0 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--faint); }
   .scan ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5; }
-  .scan li code, .ent code, .prov code, .res code { font-size: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; overflow-wrap: anywhere; }
   .scan .bad li { color: var(--bad); }
   .scan .warn li { color: var(--ink); }
   .scan pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; margin: 4px 0 0; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+  .scan li code, .item code, .grp code, .res code {
+    font-size: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; overflow-wrap: anywhere;
+  }
   .res { margin-top: 10px; font-size: 14px; }
-  .ents { display: flex; flex-direction: column; gap: 10px; }
-  .ent { padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-  .ent.off { opacity: 0.7; }
-  .ent .what { flex: 1 1 240px; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
-  .ent .aside { display: block; font-size: 12.5px; color: var(--ink2); margin-top: 2px; }
-  .ent .ask { font-size: 13px; font-weight: 600; color: var(--bad); }
-  .provs { display: flex; flex-direction: column; gap: 10px; }
-  .prov { padding: 0; }
-  .prov > summary { cursor: pointer; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-weight: 600; }
-  .prov > summary .cnt { color: var(--ink2); font-weight: 500; font-size: 13px; }
-  .prov .models { padding: 0 16px 14px; }
-  .prov table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .prov th, .prov td { text-align: left; padding: 6px 8px; border-top: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
-  .prov th { white-space: nowrap; overflow-wrap: normal; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--faint); }
-  .prov td.num { text-align: right; font-family: var(--mono); white-space: nowrap; }
-  @media (max-width: 620px) { .prov .hide-sm { display: none; } }
-  .prov.relay { padding: 14px 16px; }
-  .prov.relay .rl { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-weight: 600; }
-  .prov.relay .cnt { color: var(--ink2); font-weight: 500; font-size: 13px; min-width: 0; }
-  .prov.relay .hint { margin: 6px 0 0; }
-  .filter { max-width: 360px; }
-  #list-title:focus, #all-title:focus { outline: none; }
-  /* the empty-state live region stays in the DOM (a region created with its message is not announced) */
-  #provs-empty:empty { padding: 0; margin-bottom: -10px; }
+
+  /* items: one row per model / provider / relay */
+  .items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .item { padding: 12px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .item[hidden], .grp[hidden] { display: none; }
+  .item.off .what { opacity: 0.7; }
+  .item .what { flex: 1 1 240px; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+  .item .nm { font-weight: 600; }
+  .item .meta { display: block; font-size: 12.5px; color: var(--ink2); margin-top: 3px; line-height: 1.5; }
+  .item .ask { font-size: 13px; font-weight: 600; color: var(--bad); }
+  .switch:has(input:disabled) { cursor: not-allowed; }
+  .grps { display: flex; flex-direction: column; gap: 10px; }
+  .grp { padding: 0; }
+  .grp > summary { cursor: pointer; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-weight: 600; }
+  .grp > summary .cnt { color: var(--ink2); font-weight: 500; font-size: 13px; }
+  .grp > .items { padding: 0 10px 10px; }
+  .grp .item { box-shadow: none; border: 1px solid var(--line); }
+  [data-kb="list"] { display: flex; flex-direction: column; gap: 10px; }
 </style>
 </head>
 <body>
@@ -67,472 +78,239 @@
   <main id="main" tabindex="-1">
     <div class="hero">
       <h1 data-en="The <span class='u'>knowledge base</span> zing audits against">zing 用来比对的<span class="u">知识库</span></h1>
-      <p data-en="Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Browse the profiles here and add your own models — no YAML files or editable install needed. Your entries are stored in <b>kb.db</b> on this machine and used by the web UI and <code>zing check</code> alike.">每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。你可以在这里浏览这些资料并添加自己的模型——无需编写 YAML 文件或可编辑安装。你的条目保存在本机的 <b>kb.db</b> 中，网页界面和 <code>zing check</code> 都会使用。</p>
+      <p data-en="Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay zing knows — packaged ones and <b>yours</b> — and can switch each of them on or off or add your own. Your changes are stored in <b>kb.db</b> on this machine and used by the web UI and <code>zing check</code> alike.">每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 zing 已知的全部模型、厂商与中转站——内置的和<b>你的</b>——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 <b>kb.db</b> 中，网页界面和 <code>zing check</code> 都会使用。</p>
     </div>
 
     <div class="errbox" id="kbwarn" role="alert" hidden></div>
 
-    <!-- add a model -->
-    <section class="card card-pad" style="margin-top:20px" aria-labelledby="add-title">
-      <h2 class="form-title" id="add-title"><span data-en="Add a model">添加模型</span></h2>
-      <p class="hint" data-en="Let an AI assistant research the model, then check its answer here before it is stored.">让 AI 助手调研该模型，然后在这里检查它的回答，再保存。</p>
-
-      <div class="step">
-        <h3><span class="n">1</span><span data-en="Copy the research prompt">复制调研提示词</span></h3>
-        <div class="two">
-          <div class="grp">
-            <label class="lab" for="p-model"><span data-en="Model id">模型 ID</span> <span class="key">id</span></label>
-            <input class="in mono" id="p-model" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="例如 example-large-2" data-en-placeholder="e.g. example-large-2">
-          </div>
-          <div class="grp">
-            <label class="lab" for="p-prov"><span data-en="Provider">厂商</span> <span class="opt" data-en="Optional">可选</span></label>
-            <input class="in" id="p-prov" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="例如 openai / deepseek" data-en-placeholder="e.g. openai / deepseek">
-          </div>
-        </div>
-        <div class="row">
-          <button class="btn pri" type="button" id="copy"><span id="copy-icon"></span> <span data-en="Copy prompt">复制提示词</span></button>
-          <span class="hint" id="copy-msg" role="status"></span>
-        </div>
-        <details style="margin-top:10px">
-          <summary data-en="Show the prompt">查看提示词</summary>
-          <textarea class="in prompt" id="prompt" readonly aria-label="提示词" data-en-aria-label="Prompt"></textarea>
-        </details>
-        <p class="hint" data-en="Paste it into the AI assistant of your choice. It answers with one YAML document.">把它粘贴到你选择的 AI 助手中，它会返回一份 YAML 文档。</p>
-      </div>
-
-      <div class="step">
-        <h3><span class="n">2</span><span data-en="Upload or paste the YAML">上传或粘贴 YAML</span></h3>
-        <div class="grp">
-          <label class="lab" for="yaml" data-en="Profile YAML">资料 YAML</label>
-          <textarea class="in yaml" id="yaml" spellcheck="false" autocapitalize="off" placeholder="provider: …&#10;models:&#10;- id: …"></textarea>
-        </div>
-        <div class="row">
-          <label class="btn" for="file"><span id="file-icon"></span> <span data-en="Choose a .yaml file">选择 .yaml 文件</span></label>
-          <input type="file" id="file" accept=".yaml,.yml,text/yaml,application/yaml,text/plain" hidden>
-          <span class="hint mono" id="file-name"></span>
-        </div>
-      </div>
-
-      <div class="step">
-        <h3><span class="n">3</span><span data-en="Check and save">检查并保存</span></h3>
-        <p class="hint" data-en="The check validates the schema and limits, flags unsafe regular expressions, lists every prompt zing would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.">检查会校验结构与上限、标记不安全的正则表达式、列出 zing 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。</p>
-        <div class="row">
-          <button class="btn" type="button" id="check"><span id="check-icon"></span> <span data-en="Check">检查</span></button>
-          <button class="btn pri" type="button" id="save" disabled><span id="save-icon"></span> <span data-en="Save to knowledge base">保存到知识库</span></button>
-        </div>
-        <div aria-live="polite">
-          <div class="scan" id="scan" hidden></div>
-          <div class="errbox" id="formerr" role="alert" hidden style="margin-top:14px"></div>
-          <div class="okbox" id="formok" hidden style="margin-top:14px"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- resolve -->
-    <section class="card card-pad" style="margin-top:20px" aria-labelledby="res-title">
+    <!-- which profile does a model id use? -->
+    <section class="card card-pad kb-card" aria-labelledby="res-title">
       <h2 class="form-title" id="res-title" data-en="Which profile does a model id use?">某个模型 ID 会使用哪份资料？</h2>
       <form class="row" id="res-form">
         <input class="in mono" id="res-model" style="flex:1 1 240px" autocomplete="off" spellcheck="false" autocapitalize="off" aria-label="模型 ID" data-en-aria-label="Model id" placeholder="例如 gpt-4o" data-en-placeholder="e.g. gpt-4o">
         <button class="btn" type="submit"><span id="res-icon"></span> <span data-en="Look up">查询</span></button>
+        <a class="btn" id="export" href="/api/kb/export" download hidden><span id="export-icon"></span> <span data-en="Export your entries as YAML">将你的条目导出为 YAML</span></a>
       </form>
       <p class="res" id="res" role="status"></p>
     </section>
 
-    <!-- your entries -->
-    <h2 class="section-title" id="list-title" tabindex="-1"><span data-en="Your entries">你的条目</span> <span class="count" id="count"></span></h2>
-    <div class="row" style="margin-top:0;margin-bottom:12px">
-      <a class="btn sm" id="export" href="/api/kb/export" download><span id="export-icon"></span> <span data-en="Export as YAML">导出为 YAML</span></a>
-    </div>
-    <div class="ents" id="entries" aria-live="polite"><p class="empty" data-en="Loading…">加载中…</p></div>
+    <div class="card card-pad kb-card">
+      <div class="tabs" role="tablist" aria-label="知识库分类" data-en-aria-label="Knowledge base sections">
+        <button type="button" role="tab" id="tab-models" aria-selected="true" aria-controls="panel-models" tabindex="0"><span class="pico" data-icon="book"></span><span data-en="Models">模型</span></button>
+        <button type="button" role="tab" id="tab-providers" aria-selected="false" aria-controls="panel-providers" tabindex="-1"><span class="pico" data-icon="toolbox"></span><span data-en="Providers">厂商</span></button>
+        <button type="button" role="tab" id="tab-relays" aria-selected="false" aria-controls="panel-relays" tabindex="-1"><span class="pico" data-icon="bolt"></span><span data-en="Relays">中转站</span></button>
+      </div>
 
-    <!-- all profiles -->
-    <h2 class="section-title" id="all-title" tabindex="-1"><span data-en="All profiles">全部资料</span> <span class="count" id="all-count" aria-live="polite"></span></h2>
-    <input class="in filter" id="filter" type="search" autocomplete="off" spellcheck="false" aria-label="筛选" data-en-aria-label="Filter" placeholder="筛选厂商或模型…" data-en-placeholder="Filter providers or models…">
-    <div class="provs" id="provs" style="margin-top:12px"><p class="empty" id="provs-empty" role="status"></p></div>
+      <!-- MODELS -->
+      <section role="tabpanel" id="panel-models" aria-labelledby="tab-models" tabindex="0">
+        <h2 class="form-title" data-kb="title" id="models-title" tabindex="-1"><span data-en="All models">全部模型</span> <span class="count" data-kb="count"></span></h2>
+        <p class="hint" data-en="The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.">检测时用来比对的模型资料。停用的模型不再参与匹配：检测它时将没有资料可比对。</p>
+        <details class="add" data-kb="add" id="add-models">
+          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a model">添加模型</span></summary>
+          <div class="add-body">
+            <p class="hint" data-en="Let an AI assistant research the model, then check its answer here before it is stored.">让 AI 助手调研该模型，然后在这里检查它的回答，再保存。</p>
+            <div data-kb="add-body"></div>
+          </div>
+        </details>
+        <div class="tools-row">
+          <input class="in filter" data-kb="filter" id="models-filter" type="search" autocomplete="off" spellcheck="false" aria-label="筛选模型" data-en-aria-label="Filter models" placeholder="筛选模型或厂商…" data-en-placeholder="Filter models or providers…">
+          <span class="hint" data-kb="found" role="status"></span>
+        </div>
+        <div data-kb="list" id="models-list"><p class="empty" data-en="Loading…">加载中…</p></div>
+      </section>
+
+      <!-- PROVIDERS -->
+      <section role="tabpanel" id="panel-providers" aria-labelledby="tab-providers" tabindex="0" hidden>
+        <h2 class="form-title" data-kb="title" id="providers-title" tabindex="-1"><span data-en="All providers">全部厂商</span> <span class="count" data-kb="count"></span></h2>
+        <p class="hint" data-en="The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.">模型的发布方：其基础地址、身份与指纹。停用某个厂商也会停用它的全部模型。</p>
+        <details class="add" data-kb="add" id="add-providers">
+          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a provider">添加厂商</span></summary>
+          <div class="add-body"><div data-kb="add-body"></div></div>
+        </details>
+        <div class="tools-row">
+          <input class="in filter" data-kb="filter" id="providers-filter" type="search" autocomplete="off" spellcheck="false" aria-label="筛选厂商" data-en-aria-label="Filter providers" placeholder="筛选厂商或地址…" data-en-placeholder="Filter providers or URLs…">
+          <span class="hint" data-kb="found" role="status"></span>
+        </div>
+        <div data-kb="list" id="providers-list"><p class="empty" data-en="Loading…">加载中…</p></div>
+      </section>
+
+      <!-- RELAYS -->
+      <section role="tabpanel" id="panel-relays" aria-labelledby="tab-relays" tabindex="0" hidden>
+        <h2 class="form-title" data-kb="title" id="relays-title" tabindex="-1"><span data-en="All relays">全部中转站</span> <span class="count" data-kb="count"></span></h2>
+        <p class="hint" data-en="Endpoints without models of their own, e.g. relays you saved on the Audit or Tools page. They are offered in the relay list there; a switched-off relay is not.">没有自有模型的端点，例如你在检测或工具页面保存的中转站。它们会出现在那里的中转站列表中；停用的则不会。</p>
+        <details class="add" data-kb="add" id="add-relays">
+          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a relay">添加中转站</span></summary>
+          <div class="add-body"><div data-kb="add-body"></div></div>
+        </details>
+        <div class="tools-row">
+          <input class="in filter" data-kb="filter" id="relays-filter" type="search" autocomplete="off" spellcheck="false" aria-label="筛选中转站" data-en-aria-label="Filter relays" placeholder="筛选中转站或地址…" data-en-placeholder="Filter relays or URLs…">
+          <span class="hint" data-kb="found" role="status"></span>
+        </div>
+        <div data-kb="list" id="relays-list"><p class="empty" data-en="Loading…">加载中…</p></div>
+      </section>
+    </div>
   </main>
   <footer><p class="foot" data-en="zing · relay reality check · packaged profiles live in <code>zing/knowledge/data</code>; <code>ZING_KB_DIR</code> and your entries are layered on top">zing · 中转站验真 · 内置资料位于 <code>zing/knowledge/data</code>；<code>ZING_KB_DIR</code> 与你的条目叠加在其上</p></footer>
 </div>
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
+<script src="/v2/static/tabs.js"></script>
+<script src="/v2/static/kbview.js"></script>
+<script src="/v2/static/kbsection.js"></script>
 <script>
 (function () {
   "use strict";
 
   var $ = function (id) { return document.getElementById(id); };
   var L = window.ZING_LANG;
-
-  function icon(name, opts) {
-    return typeof window.zingIcon === "function" ? window.zingIcon(name, opts) : "";
+  var S = window.ZingKbSection, esc = S.esc, Tf = S.Tf;
+  function icon(name, opts) { return typeof window.zingIcon === "function" ? window.zingIcon(name, opts) : ""; }
+  function num(v) {
+    var n = Number(v);
+    return isFinite(n) && n > 0 ? L.numFmt().format(n) : "—";
   }
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-  function Tf(zh, en, vals) {
-    var s = T(zh, en);
-    Object.keys(vals || {}).forEach(function (k) {
-      s = s.split("{" + k + "}").join(String(vals[k]));
-    });
-    return s;
-  }
-  function fmtTime(ts) {
-    if (!ts) return "—";
-    try {
-      return L.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(new Date(ts * 1000));
-    } catch (e) {
-      return new Date(ts * 1000).toLocaleString();
-    }
-  }
-  function postJSON(url, body) {
-    return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-      .then(function (r) {
-        return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, status: r.status, body: j }; });
-      });
-  }
-
-  // ---- sources ------------------------------------------------------------ //
-  // packaged:<file> | kb_dir:<path> | kb.db:entry/<id>
-  function sourceBadge(src) {
-    src = String(src || "");
-    if (src.indexOf("kb.db:") === 0) return '<span class="badge good">' + esc(T("你的条目", "Yours")) + "</span>";
-    if (src.indexOf("kb_dir:") === 0) return '<span class="badge sky" title="' + esc(src.slice(7)) + '">ZING_KB_DIR</span>';
-    return '<span class="badge grey">' + esc(T("内置", "Packaged")) + "</span>";
-  }
-  function sourceText(src) {
-    src = String(src || "");
-    if (src.indexOf("kb.db:entry/") === 0) return Tf("你的条目 #{id}", "your entry #{id}", { id: src.slice(12) });
-    if (src.indexOf("kb_dir:") === 0) return "ZING_KB_DIR " + src.slice(7);
-    if (src.indexOf("packaged:") === 0) return Tf("内置 {file}", "packaged {file}", { file: src.slice(9) });
-    return src;
-  }
-
-  function paintIcons() {
-    $("copy-icon").innerHTML = icon("arrowRight");
-    $("file-icon").innerHTML = icon("folder");
-    $("check-icon").innerHTML = icon("search");
-    $("save-icon").innerHTML = icon("check");
-    $("res-icon").innerHTML = icon("search");
-    $("export-icon").innerHTML = icon("download");
-  }
-
-  // ---- step 1: research prompt --------------------------------------------- //
-  var copyMsg = null;
-  function paintCopyMsg() { $("copy-msg").textContent = copyMsg ? copyMsg() : ""; }
-  function fetchPrompt() {
-    var q = "?model=" + encodeURIComponent($("p-model").value.trim()) + "&provider=" + encodeURIComponent($("p-prov").value.trim());
-    return fetch("/api/kb/prompt" + q).then(function (r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.text();
-    });
-  }
-  $("copy").addEventListener("click", function () {
-    if (!$("p-model").value.trim()) {
-      copyMsg = function () { return T("请先填写模型 ID。", "Enter the model id first."); };
-      paintCopyMsg();
-      $("p-model").focus();
-      return;
-    }
-    fetchPrompt().then(function (text) {
-      $("prompt").value = text;
-      var done = function () {
-        copyMsg = function () { return T("提示词已复制。", "Prompt copied."); };
-        paintCopyMsg();
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        return navigator.clipboard.writeText(text).then(done, function () {
-          copyMsg = function () { return T("无法访问剪贴板，请从下方复制。", "Clipboard not available — copy it from below."); };
-          paintCopyMsg();
-          $("prompt").parentNode.open = true;
-          $("prompt").select();
-        });
-      }
-      $("prompt").parentNode.open = true;
-      $("prompt").select();
-    }).catch(function () {
-      copyMsg = function () { return T("无法生成提示词。", "Could not build the prompt."); };
-      paintCopyMsg();
-    });
-  });
-
-  // ---- step 2: YAML input -------------------------------------------------- //
-  var fileName = null;
-  $("file").addEventListener("change", function () {
-    var f = this.files && this.files[0];
-    if (!f) return;
-    if (f.size > 512 * 1024) {
-      formErr = function () { return T("文件大于 512 KB。", "The file is larger than 512 KB."); };
-      paintForm();
-      return;
-    }
-    var reader = new FileReader();
-    reader.onload = function () {
-      $("yaml").value = String(reader.result || "");
-      fileName = f.name;
-      $("file-name").textContent = f.name;
-      invalidate();
+  function code(s) { return "<code>" + esc(s) + "</code>"; }
+  function counts(one, many) {
+    return function (s) {
+      var parts = [s.total === 1 ? T(one[0], one[1]) : Tf(many[0], many[1], { n: s.total })];
+      if (s.yours) parts.push(Tf("{n} 个是你的", "{n} yours", { n: s.yours }));
+      if (s.off) parts.push(Tf("{n} 个已停用", "{n} off", { n: s.off }));
+      return parts.join(" · ");
     };
-    reader.readAsText(f);
-  });
-  $("yaml").addEventListener("input", invalidate);
-
-  // ---- step 3: check + save ------------------------------------------------ //
-  var scanned = null;      // last scan result for the current text
-  var formErr = null, formOk = null;
-  function invalidate() {
-    scanned = null;
-    formOk = null;
-    paintScan();
-    paintForm();
   }
-  function paintForm() {
-    var e = $("formerr"), o = $("formok");
-    e.hidden = !formErr;
-    e.textContent = formErr ? formErr() : "";
-    o.hidden = !formOk;
-    o.innerHTML = formOk ? icon("check") + "<span>" + esc(formOk()) + "</span>" : "";
-    var sv = $("save"), off = !(scanned && scanned.ok);
-    // nothing (left) to save: the focused button is about to be disabled, so
-    // move focus back to "Check" first (else it falls to <body>); the outcome
-    // is announced by the live region around the messages
-    if (off && document.activeElement === sv) $("check").focus();
-    sv.disabled = off;
-  }
-  // busy buttons stay focusable: aria-disabled, not disabled
-  function setBusy(btn, busy) {
-    if (busy) btn.setAttribute("aria-disabled", "true"); else btn.removeAttribute("aria-disabled");
-  }
-  function isBusy(btn) { return btn.getAttribute("aria-disabled") === "true"; }
-  var ACTION = {
-    add: ["新增", "new"],
-    update: ["更新你的条目", "updates your entry"],
-    shadow: ["覆盖内置模型", "replaces a packaged model"],
-  };
-  function paintScan() {
-    var box = $("scan");
-    if (!scanned) { box.hidden = true; box.innerHTML = ""; return; }
-    var s = scanned, html = "";
-    if (s.errors && s.errors.length) {
-      html += "<div><h4>" + esc(T("错误（阻止保存）", "Errors (block saving)")) + '</h4><ul class="bad">' +
-        s.errors.map(function (e) { return "<li>" + (e.path ? "<code>" + esc(e.path) + "</code> " : "") + esc(e.message) + "</li>"; }).join("") + "</ul></div>";
-    }
-    if (s.models && s.models.length) {
-      html += "<div><h4>" + esc(T("模型", "Models")) + "</h4><ul>" +
-        s.models.map(function (m) {
-          var a = ACTION[m.action] || [m.action, m.action];
-          return "<li><code>" + esc(m.provider + "/" + m.id) + "</code> — " + esc(T(a[0], a[1])) + "</li>";
-        }).join("") + "</ul></div>";
-    }
-    if (s.warnings && s.warnings.length) {
-      html += "<div><h4>" + esc(T("警告", "Warnings")) + '</h4><ul class="warn">' +
-        s.warnings.map(function (w) { return "<li>" + (w.path ? "<code>" + esc(w.path) + "</code> " : "") + esc(w.message) + "</li>"; }).join("") + "</ul></div>";
-    }
-    if (s.resolution_changes && s.resolution_changes.length) {
-      html += "<div><h4>" + esc(T("匹配结果将改变", "Resolution changes")) + "</h4><ul>" +
-        s.resolution_changes.map(function (c) {
-          return "<li><code>" + esc(c.id) + "</code>: " + esc(c.before || "—") + " → " + esc(c.after || "—") + "</li>";
-        }).join("") + "</ul></div>";
-    }
-    if (s.probes && s.probes.length) {
-      html += "<div><h4>" + esc(Tf("将发送给中转站的提示词（{n}）", "Prompts zing will send to relays ({n})", { n: s.probes.length })) + "</h4>" +
-        "<details><summary>" + esc(T("逐条查看", "Review them")) + "</summary><ul>" +
-        s.probes.map(function (p) {
-          return "<li><code>" + esc(p.id) + "</code> (" + esc(p.owner) + ", " + esc(p.prompt_lang) + ")<pre>" + esc(p.prompt) + "</pre></li>";
-        }).join("") + "</ul></details></div>";
-    }
-    if (s.ok) {
-      html += '<p class="hint">' + esc(T("检查通过，可以保存。", "Check passed — ready to save.")) + "</p>";
-    }
-    box.innerHTML = html;
-    box.hidden = false;
-  }
-  function currentYaml() { return $("yaml").value; }
-  $("check").addEventListener("click", function () {
-    formErr = null; formOk = null;
-    if (!currentYaml().trim()) {
-      formErr = function () { return T("请先粘贴或上传 YAML。", "Paste or upload the YAML first."); };
-      scanned = null;
-      paintScan(); paintForm();
-      return;
-    }
-    var btn = $("check");
-    setBusy(btn, true);
-    postJSON("/api/kb/scan", { yaml: currentYaml() }).then(function (res) {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      scanned = res.body;
-    }).catch(function () {
-      scanned = null;
-      formErr = function () { return T("检查失败，请重试。", "The check failed — please try again."); };
-    }).then(function () {
-      setBusy(btn, false);
-      paintScan(); paintForm();
-    });
-  });
-  $("save").addEventListener("click", function () {
-    var btn = $("save");
-    if (!(scanned && scanned.ok) || isBusy(btn)) return;
-    setBusy(btn, true);
-    formErr = null; formOk = null;
-    postJSON("/api/kb/import", { yaml: currentYaml(), filename: fileName }).then(function (res) {
-      if (!res.ok) {
-        scanned = res.body && res.body.errors ? res.body : null;
-        formErr = function () { return T("未保存：YAML 未通过检查。", "Not saved: the YAML did not pass the check."); };
-        return;
-      }
-      var n = (res.body.entry_ids || []).length;
-      formOk = function () { return Tf("已保存 {n} 个条目，下一次检测即会使用。", "Saved {n} entries — the next audit uses them.", { n: n }); };
-      scanned = null;
-      $("yaml").value = "";
-      $("file").value = "";
-      fileName = null;
-      $("file-name").textContent = "";
-      load();
-    }).catch(function () {
-      formErr = function () { return T("网络错误，保存失败。", "Network error — not saved."); };
-    }).then(function () {
-      setBusy(btn, false);
-      paintScan(); paintForm();
-    });
-  });
-
-  // ---- resolve ------------------------------------------------------------- //
-  var resolved = null;
-  function paintResolve() {
-    var el = $("res");
-    if (!resolved) { el.innerHTML = ""; return; }
-    if (!resolved.matched) {
-      el.textContent = T("没有匹配的资料：检测会在没有资料比对的情况下运行。", "No profile matches: the audit runs without a profile to compare against.");
-      return;
-    }
-    el.innerHTML = Tf("使用 {profile}（匹配方式：{match}，来源：{source}）", "Uses {profile} (match: {match}, source: {source})", {
-      profile: "<code>" + esc(resolved.provider + "/" + resolved.model_id) + "</code>",
-      match: esc(resolved.match_confidence),
-      source: esc(sourceText(resolved.source)),
-    });
-  }
-  $("res-form").addEventListener("submit", function (ev) {
-    ev.preventDefault();
-    var m = $("res-model").value.trim();
-    if (!m) return;
-    postJSON("/api/kb/resolve", { model: m }).then(function (res) {
-      resolved = res.ok ? res.body : null;
-      paintResolve();
-    });
-  });
 
   // ---- data ---------------------------------------------------------------- //
-  var data = null, loadErr = false, ui = {};
-  function st(id) { return ui[id] || (ui[id] = {}); }
+  var data = null, loadErr = false, sections = {};
+  var page = {
+    data: function () { return data; },
+    reload: function () { return load(); },
+  };
 
+  // ---- the three tabs: only this config differs ---------------------------- //
+  var CONFIG = {
+    models: {
+      kind: "models",
+      groupBy: "provider",
+      group: function (g) {
+        var p = g.items[0], s = window.ZingKbView._.summary(g.items);
+        return L.markCJK(p.provider_name) + " " + code(p.provider) +
+          (p.provider_enabled ? "" : ' <span class="badge grey">' + esc(T("厂商已停用", "Provider off")) + "</span>") +
+          ' <span class="cnt">' + esc(counts(["1 个模型", "1 model"], ["{n} 个模型", "{n} models"])(s)) + "</span>";
+      },
+      name: function (m) { return code(m.id); },
+      meta: function (m) {
+        return [
+          m.kind === "embedding" ? esc(T("嵌入模型", "Embedding model")) : null,
+          esc(T("上下文", "Context")) + " " + esc(num(m.context_window_tokens)),
+          esc(T("最大输出", "Max output")) + " " + esc(num(m.max_output_tokens)),
+          m.aliases && m.aliases.length ? esc(T("别名", "Aliases")) + " " + m.aliases.map(code).join(", ") : null,
+          m.shadows ? esc(Tf("覆盖 {src}", "replaces {src}", { src: S.sourceText(m.shadows) })) : null,
+          m.effective_source ? esc(Tf("停用期间检测使用 {src}", "while off, audits use {src}", { src: S.sourceText(m.effective_source) })) : null,
+          m.provider_enabled ? null : esc(T("厂商已停用：检测不会使用此模型。", "Its provider is off: audits do not use this model.")),
+        ];
+      },
+      count: counts(["1 个模型", "1 model"], ["{n} 个模型", "{n} models"]),
+      empty: function () { return T("没有模型。", "No models."); },
+      add: function (el) {
+        S.wizard(el, page, { prefix: "m", prompt: true, placeholder: "provider: …\nmodels:\n- id: …" });
+      },
+    },
+    providers: {
+      kind: "providers",
+      name: function (p) {
+        return (p.addition ? esc(Tf("{name} 的补充", "Additions to {name}", { name: p.display_name })) : L.markCJK(p.display_name)) +
+          " " + code(p.provider);
+      },
+      meta: function (p) {
+        var urls = p.base_urls || [];
+        return [
+          p.model_count != null ? esc(p.model_count === 1 ? T("1 个模型", "1 model") : Tf("{n} 个模型", "{n} models", { n: p.model_count })) : null,
+          p.fingerprint_count ? esc(Tf("{n} 个指纹", "{n} fingerprints", { n: p.fingerprint_count })) : null,
+          urls.length ? code(urls[0]) + (urls.length > 1 ? " " + esc(Tf("另有 {n} 个地址", "+{n} more URLs", { n: urls.length - 1 })) : "") : null,
+        ];
+      },
+      count: counts(["1 个厂商", "1 provider"], ["{n} 个厂商", "{n} providers"]),
+      empty: function () { return T("没有厂商。", "No providers."); },
+      add: function (el) {
+        S.wizard(el, page, {
+          prefix: "p", prompt: false, placeholder: "provider: …\ndisplay_name: …\nbase_url_hints: [https://…]\nmodels: []",
+          hint: '<p class="hint" data-en="A provider YAML has <code>provider</code>, <code>display_name</code>, <code>base_url_hints</code> and <code>models</code>. For a provider that already exists only its models, fingerprints, base URLs and relay red flags are added.">' +
+            "一份厂商 YAML 包含 <code>provider</code>、<code>display_name</code>、<code>base_url_hints</code> 和 <code>models</code>。对已有厂商只会补充其模型、指纹、基础地址和中转站警示。</p>",
+        });
+      },
+    },
+    relays: {
+      kind: "relays",
+      name: function (r) { return L.markCJK(r.display_name) + " " + code(r.provider); },
+      meta: function (r) { return (r.base_urls || []).map(code); },
+      count: counts(["1 个中转站", "1 relay"], ["{n} 个中转站", "{n} relays"]),
+      empty: function () { return T("还没有中转站。在下方添加，或在检测和工具页面的中转站列表中保存。", "No relays yet. Add one here, or save one from the relay list on the Audit and Tools pages."); },
+      add: function (el) { S.relayForm(el, page, { prefix: "r" }); },
+    },
+  };
+
+  // ---- page-level: warnings, lookup, export ---------------------------------- //
   function paintWarn() {
-    var w = (data && data.warnings) || [];
-    var box = $("kbwarn");
-    var lines = [];
-    if (data && data.user_kb === false) lines.push(T("你的条目当前被忽略（ZING_NO_USER_KB）。", "Your entries are currently ignored (ZING_NO_USER_KB)."));
+    var box = $("kbwarn"), lines = [], w = (data && data.warnings) || [];
+    if (data && data.user_kb === false) {
+      lines.push(T("你的条目和开关当前被忽略（ZING_NO_USER_KB），无法更改。", "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed."));
+    }
+    if (data && data.disabled) {
+      lines.push(data.disabled === 1
+        ? T("1 个内置项已停用。", "1 packaged item is switched off.")
+        : Tf("{n} 个内置项已停用。", "{n} packaged items are switched off.", { n: data.disabled }));
+    }
     if (w.length) lines.push(T("以下条目已跳过：", "These entries were skipped:"));
     box.hidden = !lines.length;
     box.innerHTML = lines.map(esc).join(" ") + (w.length ? "<ul>" + w.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "");
   }
 
-  function entryRow(e) {
-    var s = st(e.id);
-    var what = e.kind === "model"
-      ? T("模型", "Model") + " <code>" + esc(e.provider + "/" + e.model_id) + "</code>"
-      : (e.origin === "relay" ? T("中转站", "Relay") : T("厂商数据", "Provider data")) + " <code>" + esc(e.provider) + "</code>";
-    var aside = Tf("更新于 {when}", "updated {when}", { when: fmtTime(e.updated_ts) }) + (e.origin ? " · " + e.origin : "");
-    var actions = s.confirm
-      ? '<span class="ask">' + esc(T("删除这个条目？", "Delete this entry?")) + "</span>" +
-        '<button type="button" class="btn sm danger" data-act="del-yes" data-id="' + e.id + '">' + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
-        '<button type="button" class="btn sm" data-act="del-no" data-id="' + e.id + '">' + esc(T("取消", "Cancel")) + "</button>"
-      : '<button type="button" class="btn sm danger" data-act="del" data-id="' + e.id + '">' + icon("trash") + esc(T("删除", "Delete")) + "</button>";
-    return (
-      '<div class="card ent' + (e.enabled ? "" : " off") + '">' +
-        '<div class="what">#' + e.id + " · " + what + '<span class="aside">' + esc(aside) + "</span></div>" +
-        '<label class="switch"><input type="checkbox" role="switch" data-act="enabled" data-id="' + e.id + '"' + (e.enabled ? " checked" : "") +
-        '><span></span> <em class="sw-t">' + esc(e.enabled ? T("启用中", "Enabled") : T("已停用", "Disabled")) + "</em></label>" +
-        actions +
-        (s.msg ? '<span class="hint" role="status">' + esc(s.msg()) + "</span>" : "") +
-      "</div>"
-    );
-  }
-
-  function paintEntries() {
-    var list = $("entries");
-    if (loadErr && !data) {
-      list.innerHTML = '<p class="empty">' + esc(T("加载失败，请刷新重试。", "Failed to load — please refresh and try again.")) + "</p>";
+  var resolved = null;
+  function paintResolve() {
+    var el = $("res");
+    if (!resolved) { el.innerHTML = ""; return; }
+    var off = resolved.switched_off
+      ? " " + Tf("{profile} 更匹配，但它已停用。", "{profile} would match better, but it is switched off.",
+        { profile: code(resolved.switched_off.provider + "/" + resolved.switched_off.model_id) })
+      : "";
+    if (!resolved.matched) {
+      el.innerHTML = esc(T("没有匹配的资料：检测会在没有资料比对的情况下运行。", "No profile matches: the audit runs without a profile to compare against.")) + off;
       return;
     }
-    if (!data) return;
-    var es = data.entries || [];
-    $("count").textContent = es.length ? (es.length === 1 ? T("共 1 项", "1 entry") : Tf("共 {n} 项", "{n} entries", { n: es.length })) : "";
-    $("export").hidden = !es.length;
-    // keep focus on the same control across the re-render (Delete -> Cancel ...)
-    var a = document.activeElement, keep = null;
-    if (a && list.contains(a) && a.getAttribute("data-act")) keep = [a.getAttribute("data-act"), a.getAttribute("data-id")];
-    list.innerHTML = es.length
-      ? es.map(entryRow).join("")
-      : '<p class="empty">' + esc(T("还没有你自己的条目。用上面的步骤添加第一个模型。", "No entries of your own yet. Use the steps above to add your first model.")) + "</p>";
-    if (keep) {
-      var alt = { del: "del-no", "del-no": "del", "del-yes": "del" }[keep[0]] || keep[0];
-      var to = list.querySelector('[data-act="' + keep[0] + '"][data-id="' + keep[1] + '"]') ||
-        list.querySelector('[data-act="' + alt + '"][data-id="' + keep[1] + '"]');
-      (to || $("list-title")).focus();
-    }
+    el.innerHTML = Tf("使用 {profile}（匹配方式：{match}，来源：{source}）", "Uses {profile} (match: {match}, source: {source})", {
+      profile: code(resolved.provider + "/" + resolved.model_id),
+      match: esc(resolved.match_confidence),
+      source: esc(S.sourceText(resolved.source)),
+    }) + off;
   }
+  $("res-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var m = $("res-model").value.trim();
+    if (!m) return;
+    fetch("/api/kb/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: m }) })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { resolved = d; paintResolve(); });
+  });
 
-  function num(v) {
-    var n = Number(v);
-    return isFinite(n) && n > 0 ? L.numFmt().format(n) : "—";
-  }
-  function paintProfiles() {
-    if (!data) return;
-    var q = $("filter").value.trim().toLowerCase();
-    var total = 0;
-    var html = (data.providers || []).map(function (p) {
-      // a relay saved on the Audit or Tools page: a name and a base URL, no models
-      if (!(p.models || []).length) {
-        var urls = p.base_url_hints || [];
-        if (q && [p.provider, p.display_name].concat(urls).join(" ").toLowerCase().indexOf(q) < 0) return "";
-        return (
-          '<div class="card prov relay"><div class="rl">' + ZING_LANG.markCJK(p.display_name || p.provider) +
-          " <code>" + esc(p.provider) + "</code> " + sourceBadge(p.source) + ' <span class="badge sky">' + esc(T("中转站", "Relay")) + "</span>" +
-          (urls.length ? ' <span class="cnt"><code>' + esc(urls[0]) + "</code></span>" : "") + "</div>" +
-          '<p class="hint">' + esc(T("已保存的中转站：在检测和工具页面会自动填写其地址。", "Saved relay: the base URL is filled in on the Audit and Tools pages.")) + "</p></div>"
-        );
+  // ---- render ---------------------------------------------------------------- //
+  var tabs = null;
+  function paintLists(all) {
+    if (!data) {
+      if (loadErr) {
+        Object.keys(CONFIG).forEach(function (k) {
+          $(k + "-list").innerHTML = '<p class="empty">' + esc(T("加载失败，请刷新重试。", "Failed to load — please refresh and try again.")) + "</p>";
+        });
       }
-      var models = (p.models || []).filter(function (m) {
-        if (!q) return true;
-        var hay = [p.provider, p.display_name, m.id].concat(m.aliases || []).join(" ").toLowerCase();
-        return hay.indexOf(q) >= 0;
-      });
-      if (q && !models.length) return "";
-      total += models.length;
-      var rows = models.map(function (m) {
-        var shadow = m.shadows ? '<span class="aside">' + esc(Tf("覆盖 {src}", "replaces {src}", { src: sourceText(m.shadows) })) + "</span>" : "";
-        return "<tr><td><code>" + esc(m.id) + "</code>" + (m.aliases && m.aliases.length ? '<span class="aside hint">' + esc(m.aliases.join(", ")) + "</span>" : "") + "</td>" +
-          '<td class="num">' + esc(num(m.context_window_tokens)) + "</td>" +
-          '<td class="num hide-sm">' + esc(num(m.max_output_tokens)) + "</td>" +
-          "<td>" + sourceBadge(m.source) + shadow + "</td></tr>";
-      }).join("");
-      return (
-        '<details class="card prov"' + (q ? " open" : "") + "><summary>" + ZING_LANG.markCJK(p.display_name || p.provider) +
-        " <code>" + esc(p.provider) + "</code> " + sourceBadge(p.source) +
-        '<span class="cnt">' + esc(models.length === 1 ? T("1 个模型", "1 model") : Tf("{n} 个模型", "{n} models", { n: models.length })) + "</span></summary>" +
-        '<div class="models"><table><thead><tr><th>' + esc(T("模型", "Model")) + '</th><th class="num">' + esc(T("上下文", "Context")) +
-        '</th><th class="num hide-sm">' + esc(T("最大输出", "Max output")) + "</th><th>" + esc(T("来源", "Source")) + "</th></tr></thead><tbody>" +
-        rows + "</tbody></table></div></details>"
-      );
-    }).join("");
-    $("all-count").textContent = (total === 1 ? T("1 个模型", "1 model") : Tf("{n} 个模型", "{n} models", { n: total }));
-    // the profiles go before the (pre-existing) empty-state live region
-    var provs = $("provs"), empty = $("provs-empty");
-    while (provs.firstChild && provs.firstChild !== empty) provs.removeChild(provs.firstChild);
-    empty.insertAdjacentHTML("beforebegin", html);
-    empty.textContent = html ? "" : T("没有匹配的资料。", "No matching profiles.");
+      return;
+    }
+    $("export").hidden = !data.entry_count;
+    // the visible tab now; the others when they are first shown (or already were)
+    var cur = tabs ? tabs.current() : "models";
+    Object.keys(sections).forEach(function (k) {
+      if (k === cur || all || sections[k].rendered()) sections[k].render();
+    });
   }
-  $("filter").addEventListener("input", paintProfiles);
-
   function load() {
     return fetch("/api/kb/profiles")
       .then(function (r) {
@@ -541,58 +319,28 @@
       })
       .then(function (d) { data = d; loadErr = false; })
       .catch(function () { loadErr = true; })
-      .then(function () { paintWarn(); paintEntries(); paintProfiles(); });
+      .then(function () { paintWarn(); paintLists(false); });
   }
 
-  $("entries").addEventListener("click", function (ev) {
-    var t = ev.target.closest("button[data-act]");
-    if (!t) return;
-    var id = t.getAttribute("data-id"), act = t.getAttribute("data-act"), s = st(id);
-    if (act === "del") { s.confirm = true; paintEntries(); }
-    else if (act === "del-no") { s.confirm = false; paintEntries(); }
-    else if (act === "del-yes") {
-      if (isBusy(t)) return;
-      setBusy(t, true);
-      fetch("/api/kb/entries/" + id, { method: "DELETE" }).then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        delete ui[id];
-        return load().then(function () { $("list-title").focus(); });
-      }).catch(function () {
-        s.confirm = false;
-        s.msg = function () { return T("无法更新这个条目，请重试。", "Could not update the entry — please try again."); };
-        paintEntries();
-      });
-    }
-  });
-  $("entries").addEventListener("change", function (ev) {
-    var t = ev.target;
-    if (t.getAttribute("data-act") !== "enabled") return;
-    var id = t.getAttribute("data-id"), on = t.checked;
-    fetch("/api/kb/entries/" + id, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: on }),
-    }).then(function (r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return load();
-    }).catch(function () {
-      t.checked = !on;
-      st(id).msg = function () { return T("无法更新这个条目，请重试。", "Could not update the entry — please try again."); };
-      paintEntries();
-    });
-  });
-
-  function paintAll() {
-    paintCopyMsg();
-    paintScan();
-    paintForm();
-    paintResolve();
-    paintWarn();
-    paintEntries();
-    paintProfiles();
+  // deep links: #providers, #relays, #add-<tab> (opens that tab's add form)
+  function addFromHash(focus) {
+    var m = /^#add-(models|providers|relays)$/.exec(location.hash);
+    if (m && sections[m[1]]) sections[m[1]].openAdd(focus);
   }
-  window.addEventListener("zing:lang", paintAll);
 
-  paintIcons();
-  paintAll();
+  document.querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = icon(el.getAttribute("data-icon")); });
+  $("res-icon").innerHTML = icon("search");
+  $("export-icon").innerHTML = icon("download");
+  Object.keys(CONFIG).forEach(function (k) { sections[k] = S.mount($("panel-" + k), CONFIG[k], page); });
+  tabs = window.ZingTabs.init(document.querySelector(".tabs[role=tablist]"), {
+    fromHash: function (h) { return h.replace(/^add-/, ""); },
+    onSelect: function (name) {
+      if (data && sections[name] && !sections[name].rendered()) sections[name].render();
+    },
+  });
+  addFromHash(false);
+  window.addEventListener("hashchange", function () { addFromHash(true); });
+  window.addEventListener("zing:lang", function () { paintWarn(); paintResolve(); paintLists(false); });
   load();
 })();
 </script>

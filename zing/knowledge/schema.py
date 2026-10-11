@@ -172,6 +172,9 @@ class KnowledgeBase(BaseModel):
     user_kb: bool = True
     # kb.db entries that were skipped (invalid, unknown provider, ...).
     warnings: list[str] = Field(default_factory=list)
+    # packaged / ZING_KB_DIR items switched off in kb.db ("provider:<p>" or
+    # "model:<p>/<id>"), left out of ``providers``.
+    disabled: list[str] = Field(default_factory=list)
 
     def all_models(self) -> list[tuple[ProviderProfile, ModelProfile]]:
         pairs: list[tuple[ProviderProfile, ModelProfile]] = []

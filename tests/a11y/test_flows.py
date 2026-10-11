@@ -626,9 +626,12 @@ def test_tools_flow(browser, contexts, zing, relay, broken_relay, lang: str) -> 
 # --------------------------------------------------------------------------- #
 # 5: knowledge base
 # --------------------------------------------------------------------------- #
-KB_MESSAGES = ["#res", "#formerr", "#formok", "#scan", "#copy-msg", ".ent [role=status]"]
-# while filtering, the number of matching models is the answer the user waits for
-KB_FILTER_MESSAGES = [*KB_MESSAGES, "#all-count", "#provs > .empty"]
+KB_MESSAGES = [
+    "#res", "#kbwarn", "#m-err", "#m-ok", "#m-scan", "#m-copy-msg", "#p-err", "#p-ok", "#p-scan", "#r-err", "#r-ok",
+    "li.item [role=status]",
+]  # fmt: skip
+# while filtering, the number of matching items is the answer the user waits for
+KB_FILTER_MESSAGES = [*KB_MESSAGES, "[data-kb=found]"]
 KB_YAML = """provider: a11yflow
 display_name: A11y Flow
 models:
@@ -636,14 +639,60 @@ models:
   context_window_tokens: 64000
   max_output_tokens: 4096
 """
+KB_PROVIDER_YAML = """provider: a11yprov
+display_name: A11y Provider
+base_url_hints: [https://a11y-provider.example/v1]
+models: []
+"""
+
+
+def _kb_section_steps(flow: Flow, tab: str, query: str, item_key: str) -> None:
+    """The steps every Knowledge tab shares: filter, switch an item off and on."""
+    page = flow.page
+    flt = page.locator(f"#{tab}-filter")
+    flow.step(f"{tab}: filter", lambda: flt.press_sequentially(query), messages=KB_FILTER_MESSAGES)
+    flow.step(f"{tab}: filter without matches", lambda: (flt.fill(""), flt.press_sequentially("zzzz")),
+              messages=KB_FILTER_MESSAGES)
+    flow.step(f"{tab}: filter again", lambda: (flt.fill(""), flt.press_sequentially(query)), messages=KB_FILTER_MESSAGES)
+    switch = f'#{tab}-list li[data-key="{item_key}"] input[data-act=on]'
+
+    def toggle(on: bool) -> Callable[[], None]:
+        def run() -> None:
+            press(page, switch, " ")
+            page.wait_for_function(
+                "([sel, on]) => { const i = document.querySelector(sel); return !!i && i.checked === on"
+                " && !!i.closest('li.item') && i.closest('li.item').classList.contains('off') !== on; }",
+                arg=[switch, on])
+        return run
+
+    flow.step(f"{tab}: switch {item_key} off", toggle(False))
+    flow.step(f"{tab}: switch it on again", toggle(True))
+    flow.step(f"{tab}: clear the filter", lambda: flt.fill(""), messages=KB_FILTER_MESSAGES)
+
+
+def _kb_delete_steps(flow: Flow, tab: str) -> None:
+    page = flow.page
+    lst = f"#{tab}-list"
+    sel = f"{lst} li.item:has([data-act=del])"
+    flow.step(f"{tab}: switch your entry off", lambda: (
+        press(page, f"{sel} input[data-act=on]", " "), page.wait_for_selector(f"{lst} li.item.off:has([data-act=del])")))
+    flow.step(f"{tab}: delete: ask", lambda: press(page, f"{lst} [data-act=del]"))
+    flow.step(f"{tab}: delete: cancel", lambda: press(page, f"{lst} [data-act=del-no]"))
+    n = page.locator(sel).count()
+    flow.step(f"{tab}: delete: confirm", lambda: (
+        press(page, f"{lst} [data-act=del]"), press(page, f"{lst} [data-act=del-yes]"),
+        page.wait_for_function("([s, n]) => document.querySelectorAll(s).length < n", arg=[sel, n])))
 
 
 @pytest.mark.bitv("9.4.1.3", "9.2.4.3", "9.3.3.1")
 @pytest.mark.parametrize("lang", FLOW_LANGS)
 def test_kb_flow(browser, contexts, zing, lang: str) -> None:
-    """Look a model id up, filter the profiles, check/save/delete an entry."""
+    """Every tab of the Knowledge page: filter, switch packaged items off and
+    on, add (model wizard, provider wizard, relay form), switch and delete
+    your own entry; plus the model-id lookup and the tabs' keyboard use."""
     flow = open_flow(contexts, browser, zing.url, "/v2/kb", lang, KB_MESSAGES, "knowledge-base flow")
     page = flow.page
+    page.wait_for_selector("#models-list li.item", state="attached")
 
     def lookup() -> None:
         page.fill("#res-model", "gpt-4o")
@@ -651,24 +700,48 @@ def test_kb_flow(browser, contexts, zing, lang: str) -> None:
         wait_text(page, "#res")
 
     flow.step("look up a model id", lookup)
-    flt = page.locator("#filter")
-    flow.step("filter the profiles", lambda: flt.press_sequentially("claude"), messages=KB_FILTER_MESSAGES)
-    flow.step("filter without matches", lambda: (flt.fill(""), flt.press_sequentially("zzzz")), messages=KB_FILTER_MESSAGES)
-    flow.step("clear the filter", lambda: flt.fill(""), messages=KB_FILTER_MESSAGES)
-    flow.step("check invalid YAML", lambda: (
-        page.fill("#yaml", "provider: x\nmodels:\n- id: m\n  nope: 1"), press(page, "#check"), wait_text(page, "#scan, #formerr")))
-    flow.step("check valid YAML", lambda: (
-        page.fill("#yaml", KB_YAML), press(page, "#check"), page.wait_for_selector("#save:not([disabled])")))
-    flow.step("save it", lambda: (press(page, "#save"), wait_text(page, "#formok"), page.wait_for_selector("#entries .ent")))
-    flow.step("pause the entry", lambda: (
-        press(page, "#entries input[data-act=enabled]", " "), page.wait_for_selector("#entries .ent.off")))
-    flow.step("delete: ask", lambda: press(page, "#entries [data-act=del]"))
-    flow.step("delete: cancel", lambda: press(page, "#entries [data-act=del-no]"))
-    n = page.locator("#entries .ent").count()
-    flow.step("delete: confirm", lambda: (
-        press(page, "#entries [data-act=del]"), press(page, "#entries [data-act=del-yes]"),
-        page.wait_for_function("n => document.querySelectorAll('#entries .ent').length < n", arg=n)))
-    flow.done("#res", "#formok")
+
+    # ---- models
+    _kb_section_steps(flow, "models", "gpt-4o-mini", "model:openai/gpt-4o-mini")
+    flow.step("models: open the add form", lambda: press(page, "#add-models > summary"))
+    flow.step("models: copy the prompt without a model id", lambda: (press(page, "#m-copy"), wait_text(page, "#m-copy-msg")))
+    flow.step("models: check without YAML", lambda: (press(page, "#m-check"), wait_text(page, "#m-err")))
+    flow.step("models: check invalid YAML", lambda: (
+        page.fill("#m-yaml", "provider: x\nmodels:\n- id: m\n  nope: 1"), press(page, "#m-check"),
+        wait_text(page, "#m-scan, #m-err")))
+    flow.step("models: check valid YAML", lambda: (
+        page.fill("#m-yaml", KB_YAML), press(page, "#m-check"), page.wait_for_selector("#m-save:not([disabled])")))
+    flow.step("models: save it", lambda: (
+        press(page, "#m-save"), wait_text(page, "#m-ok"),
+        page.wait_for_selector('#models-list li[data-key="model:a11yflow/a11yflow-large"]', state="attached")))
+    page.evaluate("document.querySelector('#models-list details[data-group=a11yflow]').open = true")
+    _kb_delete_steps(flow, "models")
+
+    # ---- providers (arrow keys move between the tabs)
+    flow.step("switch to the providers tab", lambda: (
+        press(page, "#tab-models", "ArrowRight"), page.wait_for_selector("#panel-providers:not([hidden]) li.item")))
+    _kb_section_steps(flow, "providers", "openai", "provider:openai")
+    flow.step("providers: open the add form", lambda: press(page, "#add-providers > summary"))
+    flow.step("providers: check valid YAML", lambda: (
+        page.fill("#p-yaml", KB_PROVIDER_YAML), press(page, "#p-check"), page.wait_for_selector("#p-save:not([disabled])")))
+    flow.step("providers: save it", lambda: (
+        press(page, "#p-save"), wait_text(page, "#p-ok"), page.wait_for_selector("#providers-list li.item:has([data-act=del])")))
+    _kb_delete_steps(flow, "providers")
+
+    # ---- relays (End jumps to the last tab)
+    flow.step("switch to the relays tab", lambda: (
+        press(page, "#tab-providers", "End"), page.wait_for_selector("#panel-relays:not([hidden])")))
+    flow.step("relays: open the add form", lambda: press(page, "#add-relays > summary"))
+    flow.step("relays: save without a name", lambda: (press(page, "#r-save"), wait_text(page, "#r-err")))
+    flow.step("relays: save with a bad URL", lambda: (
+        page.fill("#r-name", "A11y Relay"), page.fill("#r-url", "relay.example"), press(page, "#r-save"),
+        wait_text(page, "#r-err")))
+    flow.step("relays: save it", lambda: (
+        page.fill("#r-url", "https://a11y-relay.example/v1"), press(page, "#r-save"), wait_text(page, "#r-ok"),
+        page.wait_for_selector("#relays-list li.item")))
+    _kb_section_steps(flow, "relays", "a11y", "provider:a11y-relay")
+    _kb_delete_steps(flow, "relays")
+    flow.done("#res", "#m-ok", "#p-ok", "#r-ok", "#r-err", "[data-kb=found]")
 
 
 # --------------------------------------------------------------------------- #
@@ -721,8 +794,49 @@ def condense_tables(snapshot: str) -> str:
     return "\n".join(out)
 
 
+def condense_items(snapshot: str) -> str:
+    """Keep the first of consecutive sibling blocks that hold an on/off switch
+    (the Knowledge page's models, providers and relays, and their provider
+    groups): the others repeat its structure and grow with every release."""
+    lines = snapshot.splitlines()
+    out: list[str] = []
+
+    def block_end(i: int) -> int:
+        ind = len(lines[i]) - len(lines[i].lstrip())
+        j = i + 1
+        while j < len(lines) and len(lines[j]) - len(lines[j].lstrip()) > ind:
+            j += 1
+        return j
+
+    def has_switch(i: int, j: int) -> bool:
+        return any(x.lstrip().startswith('- switch "') for x in lines[i:j])
+
+    i = 0
+    while i < len(lines):
+        j = block_end(i)
+        if not has_switch(i, j) or not lines[i].lstrip().startswith(("- listitem", "- group")):
+            out.append(lines[i])
+            i += 1
+            continue
+        out.append(lines[i])
+        if j - i > 1:
+            out.extend(condense_items("\n".join(lines[i + 1:j])).splitlines())
+        ind = len(lines[i]) - len(lines[i].lstrip())
+        head = lines[i].lstrip().split(":")[0].split(" ")[1]
+        k, more = j, 0
+        while k < len(lines) and len(lines[k]) - len(lines[k].lstrip()) == ind and lines[k].lstrip().startswith("- " + head):
+            e = block_end(k)
+            if not has_switch(k, e):
+                break
+            k, more = e, more + 1
+        if more:
+            out.append(" " * ind + "# … more items of the same shape")
+        i = k
+    return "\n".join(out)
+
+
 def mask(snapshot: str) -> str:
-    snapshot = condense_tables(snapshot)
+    snapshot = condense_items(condense_tables(snapshot))
     for rx, repl in VOLATILE:
         snapshot = rx.sub(repl, snapshot)
     return snapshot.rstrip() + "\n"

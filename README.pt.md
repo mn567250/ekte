@@ -261,12 +261,12 @@ clássica** volta atrás. A escolha é memorizada por navegador.
 | **Ferramentas** | `/tools` | `/v2/tools` | Auditorias de embeddings e rerank |
 | **Histórico** | `/history` | `/v2/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
 | **Monitores** | `/watches` | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
-| **Modelos** | — | `/v2/kb` | Explorar a base de conhecimento, adicionar os seus próprios perfis de modelo e ver os relays guardados |
+| **Conhecimento** | — | `/v2/kb` | A base de conhecimento em três separadores — modelos, provedores, relays: explorar, ativar/desativar, adicionar os seus |
 
 A nova interface acrescenta: filtros e tendências configuráveis (pontuação, nota,
 latência p50, tokens/s) no **Histórico**; **Agendar como monitor** e **Executar auditoria novamente** em cada
 execução do Histórico; **Transferir relatório** em todos os formatos; um seletor
-de tema (Automático / Claro / Escuro); e a página **Modelos**.
+de tema (Automático / Claro / Escuro); e a página **Conhecimento**.
 
 **Auditorias em segundo plano (nova interface).** Uma auditoria iniciada na
 página **Auditoria** continua quando muda de página ou fecha o separador;
@@ -644,15 +644,19 @@ Moonshot (`zing kb` lista-os). Há três camadas; as posteriores prevalecem:
    (repetível) ou `ZING_KB_DIR`.
 3. **As suas entradas** (`kb.db` no diretório de dados), adicionadas sem ficheiros
    YAML nem instalação editável:
-   - na página **Modelos** da interface web (`/v2/kb`): **Adicionar um modelo** →
-     **Copiar o prompt de pesquisa** para o assistente de IA da sua escolha,
-     carregar ou colar o YAML com que ele responde e depois **Verificar e
-     salvar**. **Todos os perfis** lista cada perfil com a sua origem; **Qual
-     perfil um ID de modelo usa?** mostra como um id é resolvido; **Suas
-     entradas** podem ser exportadas como YAML;
+   - na página **Conhecimento** da interface web (`/v2/kb`), com um separador
+     para **Modelos**, **Provedores** e **Relays**. Cada separador lista o conjunto
+     completo — incluídos, `ZING_KB_DIR` e os seus (marcados **Seu**) — com um
+     filtro, um interruptor por item e um formulário **Adicionar …**: **Adicionar
+     um modelo** → **Copiar o prompt de pesquisa** para o assistente de IA da sua
+     escolha, carregar ou colar o YAML com que ele responde e depois **Verificar e
+     salvar**; **Adicionar um provedor** aceita YAML de provedor da mesma forma;
+     **Adicionar um relay** pede um nome e um URL base. **Qual perfil um ID de
+     modelo usa?** mostra como um id é resolvido; as suas entradas podem ser
+     exportadas como YAML;
    - nas páginas **Auditoria** e **Ferramentas** da interface web: **Salvar na
      base** mantém o nome e o URL base de um relay (uma entrada de provedor sem
-     modelos), mostrado em **Modelos** com o selo **Relay**;
+     modelos), listado em **Conhecimento → Relays**;
    - na linha de comandos: `zing kb-prompt <model>`, `zing kb-import <file>`
      (acrescente `--check` para apenas verificar) e `zing kb-export`.
 
@@ -660,9 +664,12 @@ Antes de guardar uma entrada, o zing verifica-a: esquema e limites, expressões
 regulares perigosas, cada prompt que enviaria e ids de modelo que seriam
 resolvidos para outro perfil. Um modelo seu com o id de um integrado substitui-o
 (assinalado como *sombreando-o*), mas nunca altera as definições próprias de um
-fornecedor integrado; as impressões são fundidas por id. `zing check` e
-`zing serve` usam exatamente os mesmos perfis; `--no-user-kb` (ou
-`ZING_NO_USER_KB=1`) deixa de fora as suas entradas.
+fornecedor integrado; as impressões são fundidas por id. Desativar um modelo,
+provedor ou relay incluído na página **Conhecimento** também fica guardado em
+`kb.db`: um id de modelo desativado deixa de ser resolvido e um provedor
+desativado leva consigo os seus modelos e URLs base. `zing check` e `zing serve`
+usam exatamente os mesmos perfis; `--no-user-kb` (ou `ZING_NO_USER_KB=1`) deixa de
+fora as suas entradas e interruptores.
 
 Cada relatório regista o perfil contra o qual auditou (`knowledge`: fornecedor,
 modelo, como o id foi resolvido, a sua origem e um instantâneo completo com o seu

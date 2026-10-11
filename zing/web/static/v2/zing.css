@@ -354,20 +354,30 @@ select.in {
 .chips button[aria-pressed="true"]::before { content: "✓ "; }
 .chips button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* switch: <label class="switch"><input type="checkbox" role="switch"><span></span> text</label> */
-.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; color: var(--ink2); }
-.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.switch span {
+/* switch: <label class="switch"><input type="checkbox" role="switch"><span></span> text</label>
+   The input itself is the visible track (so the focused element is the one on
+   screen, with its own focus ring); the span is only the knob drawn over it. */
+.switch { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; color: var(--ink2); }
+.switch input {
+  -webkit-appearance: none; appearance: none; margin: 0; cursor: pointer;
   position: relative; width: 38px; height: 22px; flex: 0 0 38px; border-radius: var(--r-pill);
   background: var(--track); border: 1px solid var(--line-control); transition: background 0.15s;
 }
-.switch span::after {
-  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.15s;
+.switch span {
+  position: absolute; left: 3px; top: 50%; margin-top: -8px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.15s; pointer-events: none;
 }
-.switch input:checked + span { background: var(--teal); border-color: var(--teal); }
-.switch input:checked + span::after { transform: translateX(16px); }
-.switch input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 2px; }
+.switch input:checked { background: var(--teal); border-color: var(--teal); }
+.switch input:checked + span { transform: translateX(16px); }
+.switch input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.switch input:disabled { cursor: not-allowed; opacity: 0.5; }
+.switch input:disabled + span { opacity: 0.5; }
+/* forced colours drop backgrounds: draw the knob and the "on" track in system colours */
+@media (forced-colors: active) {
+  .switch span { forced-color-adjust: none; background: CanvasText; box-shadow: none; }
+  .switch input:checked { forced-color-adjust: none; background: Highlight; border-color: Highlight; }
+  .switch input:checked + span { background: HighlightText; }
+}
 
 /* disclosure (accordion): <button class="disclosure" aria-expanded aria-controls> */
 .disclosure-box { border: 1.5px dashed var(--line-strong); border-radius: 14px; overflow: hidden; }
@@ -444,6 +454,34 @@ select.in {
 /* inline canonical SVG icons (icons.js) inherit currentColor */
 .pico { display: inline-flex; vertical-align: -0.12em; }
 .pico .zicon { width: 1em; height: 1em; }
+
+/* ---------- tabs (driven by /v2/static/tabs.js) ---------- */
+.tabs { display: flex; gap: 6px; padding: 6px; margin: 0 0 20px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; }
+.tabs [role="tab"] {
+  flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--disp); font-weight: 600; font-size: 15px; color: var(--ink2); cursor: pointer;
+  background: transparent; border: 0; border-radius: 11px; padding: 11px 10px; text-align: center;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.tabs [role="tab"]:hover { color: var(--ink); }
+.tabs [role="tab"][aria-selected="true"] { color: var(--on-ink); background: var(--ink); box-shadow: var(--shadow-pop); }
+.tabs [role="tab"] .zicon { width: 15px; height: 15px; flex: none; }
+/* forced colours (Windows high contrast) drop backgrounds and shadows: give the
+   tabs a system-coloured border so their shape stays visible and mark the
+   selected one with the system highlight colours */
+@media (forced-colors: active) {
+  .tabs [role="tab"] { border: 1px solid ButtonText; padding: 10px 9px; }
+  .tabs [role="tab"][aria-selected="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
+}
+/* phones: long tab labels (e.g. ES "Auditoría de embeddings") no longer fit
+   side by side, so the tabs stack instead of breaking mid-label */
+@media (max-width: 480px) {
+  .tabs { flex-direction: column; gap: 4px; }
+  .tabs [role="tab"] { flex: none; padding: 10px; }
+}
+[role="tabpanel"][hidden] { display: none; }
+[role="tabpanel"] { animation: z-rise 0.35s cubic-bezier(0.2, 0.85, 0.25, 1); }
+[role="tabpanel"]:focus-visible { outline-offset: 6px; border-radius: 6px; }
 
 /* ---------- motion ---------- */
 .view { display: none; }

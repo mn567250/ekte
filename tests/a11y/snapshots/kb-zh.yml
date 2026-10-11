@@ -27,190 +27,74 @@
       - /url: /v2/history
     - link "监控":
       - /url: /v2/watches
-    - link "模型库":
+    - link "知识库":
       - /url: /v2/kb
   - paragraph: 本地运行 · 密钥不经手
 - main:
   - heading "zing 用来比对的知识库" [level=1]
   - paragraph:
-    - text: 每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。你可以在这里浏览这些资料并添加自己的模型——无需编写 YAML 文件或可编辑安装。你的条目保存在本机的 kb.db 中，网页界面和
+    - text: 每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 zing 已知的全部模型、厂商与中转站——内置的和你的——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 kb.db 中，网页界面和
     - code: zing check
     - text: 都会使用。
-  - region "添加模型":
-    - heading "添加模型" [level=2]
-    - paragraph: 让 AI 助手调研该模型，然后在这里检查它的回答，再保存。
-    - heading "1 复制调研提示词" [level=3]
-    - text: 模型 ID id
-    - textbox "模型 ID id":
-      - /placeholder: 例如 example-large-2
-    - text: 厂商 可选
-    - textbox "厂商 可选":
-      - /placeholder: 例如 openai / deepseek
-    - button "复制提示词"
-    - status
-    - group:
-      - text: 查看提示词
-      - textbox "提示词"
-    - paragraph: 把它粘贴到你选择的 AI 助手中，它会返回一份 YAML 文档。
-    - heading "2 上传或粘贴 YAML" [level=3]
-    - text: 资料 YAML
-    - textbox "资料 YAML":
-      - /placeholder: "provider: …\nmodels:\n- id: …"
-    - text: 选择 .yaml 文件
-    - heading "3 检查并保存" [level=3]
-    - paragraph: 检查会校验结构与上限、标记不安全的正则表达式、列出 zing 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。
-    - button "检查"
-    - button "保存到知识库" [disabled]
   - region "某个模型 ID 会使用哪份资料？":
     - heading "某个模型 ID 会使用哪份资料？" [level=2]
     - textbox "模型 ID":
       - /placeholder: 例如 gpt-4o
     - button "查询"
     - status
-  - heading "你的条目" [level=2]
-  - link "导出为 YAML":
-    - /url: /api/kb/export
-  - paragraph: 还没有你自己的条目。用上面的步骤添加第一个模型。
-  - heading "全部资料 98 个模型" [level=2]
-  - searchbox "筛选"
-  - group:
-    - text: Anthropic (Claude)
-    - code: anthropic
-    - text: 内置 14 个模型
-    - table:
-      - rowgroup:
-        - row "模型 上下文 最大输出 来源":
-          - columnheader "模型"
-          - columnheader "上下文"
-          - columnheader "最大输出"
-          - columnheader "来源"
-      - rowgroup:
-        - row "claude-opus-4-8claude-opus-4-8, opus, opus 4.8, most powerful 1000000128000 内置":
-          - cell "claude-opus-4-8claude-opus-4-8, opus, opus 4.8, most powerful":
-            - code: claude-opus-4-8
-            - text: claude-opus-4-8, opus, opus 4.8, most powerful
-          - cell "1000000"
-          - cell "128000"
-          - cell "内置"
-        # … more rows of the same shape
-  - group:
-    - text: DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)
-    - code: deepseek
-    - text: 内置 4 个模型
-    - table:
-      - rowgroup:
-        - row "模型 上下文 最大输出 来源":
-          - columnheader "模型"
-          - columnheader "上下文"
-          - columnheader "最大输出"
-          - columnheader "来源"
-      - rowgroup:
-        - row "deepseek-chatdeepseek-v3, V3 lineage non-thinking 128000 8192 内置":
-          - cell "deepseek-chatdeepseek-v3, V3 lineage non-thinking":
-            - code: deepseek-chat
-            - text: deepseek-v3, V3 lineage non-thinking
-          - cell "128000"
-          - cell "8192"
-          - cell "内置"
-        # … more rows of the same shape
-  - group:
-    - text: Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)
-    - code: gemini
-    - text: 内置 10 个模型
-    - table:
-      - rowgroup:
-        - row "模型 上下文 最大输出 来源":
-          - columnheader "模型"
-          - columnheader "上下文"
-          - columnheader "最大输出"
-          - columnheader "来源"
-      - rowgroup:
-        - row "gemini-3.1-pro-previewgemini-3.1-pro, Gemini 3.1 Pro 1048576 65536 内置":
-          - cell "gemini-3.1-pro-previewgemini-3.1-pro, Gemini 3.1 Pro":
-            - code: gemini-3.1-pro-preview
-            - text: gemini-3.1-pro, Gemini 3.1 Pro
-          - cell "1048576"
-          - cell "65536"
-          - cell "内置"
-        # … more rows of the same shape
-  - group:
-    - text: Zhipu AI (智谱 / Z.ai) — BigModel open platform
-    - code: glm
-    - text: 内置 15 个模型
-    - table:
-      - rowgroup:
-        - row "模型 上下文 最大输出 来源":
-          - columnheader "模型"
-          - columnheader "上下文"
-          - columnheader "最大输出"
-          - columnheader "来源"
-      - rowgroup:
-        - row "glm-5.1204800131072 内置":
-          - cell "glm-5.1":
-            - code: glm-5.1
-          - cell "204800"
-          - cell "131072"
-          - cell "内置"
-        # … more rows of the same shape
-  - group:
-    - text: Moonshot AI (月之暗面 / Kimi)
-    - code: moonshot
-    - text: 内置 9 个模型
-    - table:
-      - rowgroup:
-        - row "模型 上下文 最大输出 来源":
-          - columnheader "模型"
-          - columnheader "上下文"
-          - columnheader "最大输出"
-          - columnheader "来源"
-      - rowgroup:
-        - row "kimi-k2.6kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6262144 32768 内置":
-          - cell "kimi-k2.6kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6":
-            - code: kimi-k2.6
-            - text: kimi-k2-6, moonshotai/Kimi-K2.6, Kimi-K2.6
-          - cell "262144"
-          - cell "32768"
-          - cell "内置"
-        # … more rows of the same shape
-  - group:
-    - text: OpenAI
-    - code: openai
-    - text: 内置 27 个模型
-    - table:
-      - rowgroup:
-        - row "模型 上下文 最大输出 来源":
-          - columnheader "模型"
-          - columnheader "上下文"
-          - columnheader "最大输出"
-          - columnheader "来源"
-      - rowgroup:
-        - row "text-embedding-3-small 8191 — 内置":
-          - cell "text-embedding-3-small":
-            - code: text-embedding-3-small
-          - cell "8191"
-          - cell "—"
-          - cell "内置"
-        # … more rows of the same shape
-  - group:
-    - text: Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)
-    - code: qwen
-    - text: 内置 19 个模型
-    - table:
-      - rowgroup:
-        - row "模型 上下文 最大输出 来源":
-          - columnheader "模型"
-          - columnheader "上下文"
-          - columnheader "最大输出"
-          - columnheader "来源"
-      - rowgroup:
-        - row "text-embedding-v4 8192 — 内置":
-          - cell "text-embedding-v4":
-            - code: text-embedding-v4
-          - cell "8192"
-          - cell "—"
-          - cell "内置"
-        # … more rows of the same shape
-  - status
+  - tablist "知识库分类":
+    - tab "模型" [selected]
+    - tab "厂商"
+    - tab "中转站"
+  - tabpanel "模型":
+    - heading "全部模型 98 个模型" [level=2]
+    - paragraph: 检测时用来比对的模型资料。停用的模型不再参与匹配：检测它时将没有资料可比对。
+    - group:
+      - text: 添加模型
+      - paragraph: 让 AI 助手调研该模型，然后在这里检查它的回答，再保存。
+      - heading "1 复制调研提示词" [level=3]
+      - text: 模型 ID id
+      - textbox "模型 ID id":
+        - /placeholder: 例如 example-large-2
+      - text: 厂商 可选
+      - textbox "厂商 可选":
+        - /placeholder: 例如 openai / deepseek
+      - button "复制提示词"
+      - status
+      - group:
+        - text: 查看提示词
+        - textbox "提示词"
+      - paragraph: 把它粘贴到你选择的 AI 助手中，它会返回一份 YAML 文档。
+      - heading "2 上传或粘贴 YAML" [level=3]
+      - text: 资料 YAML
+      - textbox "资料 YAML":
+        - /placeholder: "provider: …\nmodels:\n- id: …"
+      - text: 选择 .yaml 文件
+      - heading "3 检查并保存" [level=3]
+      - paragraph: 检查会校验结构与上限、标记不安全的正则表达式、列出 zing 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。
+      - button "检查"
+      - button "保存到知识库" [disabled]
+    - searchbox "筛选模型"
+    - status
+    - group:
+      - text: Anthropic (Claude)
+      - code: anthropic
+      - text: 14 个模型
+      - list:
+        - listitem:
+          - code: claude-opus-4-8
+          - text: 内置 上下文 1000000 最大输出 128000 别名
+          - code: claude-opus-4-8
+          - text: ","
+          - code: opus
+          - text: ","
+          - code: opus 4.8
+          - text: ","
+          - code: most powerful
+          - switch "claude-opus-4-8 启用中" [checked]
+          - emphasis: 启用中
+        # … more items of the same shape
+    # … more items of the same shape
 - contentinfo:
   - paragraph:
     - text: zing · 中转站验真 · 内置资料位于

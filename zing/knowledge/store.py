@@ -22,6 +22,11 @@ One table, one row per entry:
 Bodies are stored as JSON and validated again on every load; an entry that no
 longer validates (e.g. after an upgrade changed the schema) is skipped with a
 warning rather than breaking every audit.
+
+A second table, ``kb_disabled``, switches off items that are *not* the user's
+own entries (packaged or ``ZING_KB_DIR`` providers and models): one row per
+switched-off ``(kind, provider, model_id)``. The user's own entries keep using
+their ``enabled`` column. Older zing versions ignore the table.
 """
 
 from __future__ import annotations
@@ -55,6 +60,17 @@ def _connect() -> Iterator[sqlite3.Connection]:
                 created_ts  REAL,
                 updated_ts  REAL,
                 UNIQUE (kind, provider, model_id)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS kb_disabled (
+                kind        TEXT NOT NULL CHECK (kind IN ('provider', 'model')),
+                provider    TEXT NOT NULL,
+                model_id    TEXT NOT NULL DEFAULT '',
+                ts          REAL,
+                PRIMARY KEY (kind, provider, model_id)
             )
             """
         )
@@ -180,3 +196,32 @@ def delete(entry_id: int) -> bool:
     with _connect() as conn:
         cur = conn.execute("DELETE FROM kb_entries WHERE id = ?", (int(entry_id),))
         return cur.rowcount > 0
+
+
+def disabled_items() -> list[tuple[str, str, str]]:
+    """Switched-off packaged / ``ZING_KB_DIR`` items as ``(kind, provider, model_id)``,
+    sorted (``model_id`` is ``""`` for a provider). Empty without a kb.db."""
+    if not exists():
+        return []
+    with _connect() as conn:
+        rows = conn.execute("SELECT kind, provider, model_id FROM kb_disabled ORDER BY kind, provider, model_id").fetchall()
+    return [(r["kind"], r["provider"], r["model_id"]) for r in rows]
+
+
+def set_item_enabled(kind: str, provider: str, model_id: str | None, enabled: bool) -> None:
+    """Switch a packaged / ``ZING_KB_DIR`` item on or off (see ``kb_disabled``)."""
+    if kind not in KINDS:
+        raise ValueError(f"unknown item kind: {kind!r}")
+    if kind == "model" and not model_id:
+        raise ValueError("a model item needs a model_id")
+    key = model_id if kind == "model" else ""
+    with _connect() as conn:
+        if enabled:
+            conn.execute(
+                "DELETE FROM kb_disabled WHERE kind = ? AND provider = ? AND model_id = ?", (kind, provider, key)
+            )
+        else:
+            conn.execute(
+                "INSERT OR REPLACE INTO kb_disabled (kind, provider, model_id, ts) VALUES (?, ?, ?, ?)",
+                (kind, provider, key, time.time()),
+            )

@@ -27,7 +27,7 @@
       - /url: /v2/history
     - link "Überwachung":
       - /url: /v2/watches
-    - link "Modelle":
+    - link "Wissen":
       - /url: /v2/kb
 - main:
   - heading "Konformitätsbericht Barrierefreiheit" [level=1]

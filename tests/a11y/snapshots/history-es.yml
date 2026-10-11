@@ -27,7 +27,7 @@
       - /url: /v2/history
     - link "Monitores":
       - /url: /v2/watches
-    - link "Modelos":
+    - link "Conocimiento":
       - /url: /v2/kb
 - main:
   - heading "Historial y tendencias de auditorías" [level=1]

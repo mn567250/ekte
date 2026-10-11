@@ -253,12 +253,12 @@ choice is remembered per browser.
 | **Tools** | `/tools` | `/v2/tools` | Embedding and rerank audits |
 | **History** | `/history` | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
 | **Monitors** | `/watches` | `/v2/watches` | Scheduled re-audits with webhook alerts |
-| **Models** | — | `/v2/kb` | Browse the knowledge base, add your own model profiles and see your saved relays |
+| **Knowledge** | — | `/v2/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
 
 The new UI adds: filters and configurable trends (score, grade, latency p50,
 tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
 report** in every format; a theme switch (Auto theme / Light / Dark); and the
-**Models** page.
+**Knowledge** page.
 
 **Background audits (new UI).** An audit started on the **Audit** page keeps
 running when you switch pages or close the tab; **Continue in background** sends
@@ -613,14 +613,18 @@ OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM and Moonshot
    or `ZING_KB_DIR`.
 3. **Your entries** (`kb.db` in the data directory), added without YAML files
    or an editable install:
-   - in the web UI's **Models** page (`/v2/kb`): **Add a model** → **Copy the
+   - in the web UI's **Knowledge** page (`/v2/kb`), with one tab each for
+     **Models**, **Providers** and **Relays**. Every tab lists the complete set —
+     packaged, `ZING_KB_DIR` and yours (marked **Yours**) — with a filter, an
+     on/off switch per item and an **Add …** form: **Add a model** → **Copy the
      research prompt** into the AI assistant of your choice, upload or paste the
-     YAML it answers with, then **Check and save**. **All profiles** lists every
-     profile with its source; **Which profile does a model id use?** shows how an
-     id resolves; **Your entries** can be exported as YAML;
+     YAML it answers with, then **Check and save**; **Add a provider** takes
+     provider YAML the same way; **Add a relay** takes a name and a base URL.
+     **Which profile does a model id use?** shows how an id resolves; your
+     entries can be exported as YAML;
    - on the web UI's **Audit** and **Tools** pages: **Save to knowledge base**
-     keeps a relay's name and base URL (a provider entry without models), shown
-     on **Models** with a **Relay** badge;
+     keeps a relay's name and base URL (a provider entry without models), listed
+     under **Knowledge → Relays**;
    - on the CLI: `zing kb-prompt <model>`, `zing kb-import <file>` (add `--check`
      to only check it) and `zing kb-export`.
 
@@ -628,8 +632,11 @@ Before storing an entry zing checks it: schema and limits, unsafe regular
 expressions, every prompt it would send, and model ids that would resolve to a
 different profile. A model of yours with a packaged id replaces it (reported as
 *shadowing* it), but never changes a packaged provider's own settings;
-fingerprints are merged by id. `zing check` and `zing serve` use exactly the
-same profiles; `--no-user-kb` (or `ZING_NO_USER_KB=1`) leaves your entries out.
+fingerprints are merged by id. Switching off a packaged model, provider or
+relay on the **Knowledge** page is stored in `kb.db` too: a switched-off model
+id no longer resolves, a switched-off provider takes its models and base URLs
+with it. `zing check` and `zing serve` use exactly the same profiles;
+`--no-user-kb` (or `ZING_NO_USER_KB=1`) leaves your entries and switches out.
 
 Every report records the profile it audited against (`knowledge`: provider,
 model, how the id matched, its source, and a full snapshot with its content

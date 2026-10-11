@@ -21,38 +21,14 @@
   .intro li b { color: var(--ink); }
   .intro .tag { justify-self: start; }
 
-  /* ---- tabs ---- */
   .tool-card { margin-top: 20px; }
-  .tabs { display: flex; gap: 6px; padding: 6px; margin: 0 0 20px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; }
-  .tabs [role="tab"] {
-    flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    font-family: var(--disp); font-weight: 600; font-size: 15px; color: var(--ink2); cursor: pointer;
-    background: transparent; border: 0; border-radius: 11px; padding: 11px 10px; text-align: center;
-    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
-  }
-  .tabs [role="tab"]:hover { color: var(--ink); }
-  .tabs [role="tab"][aria-selected="true"] { color: var(--on-ink); background: var(--ink); box-shadow: var(--shadow-pop); }
-  .tabs [role="tab"] .zicon { width: 15px; height: 15px; flex: none; }
-  /* forced colours (Windows high contrast) drop backgrounds and shadows: give the
-     tabs a system-coloured border so their shape stays visible and mark the
-     selected one with the system highlight colours */
-  @media (forced-colors: active) {
-    .tabs [role="tab"] { border: 1px solid ButtonText; padding: 10px 9px; }
-    .tabs [role="tab"][aria-selected="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
-  }
-  /* phones: two long tab labels (e.g. ES "Auditoría de embeddings") no longer fit
-     side by side, so the tabs stack instead of breaking mid-label */
+  /* phones: the two-option protocol switch stacks like the tabs (zing.css),
+     e.g. ES "Compatible con OpenAI" */
   @media (max-width: 480px) {
-    .tabs { flex-direction: column; gap: 4px; }
-    .tabs [role="tab"] { flex: none; padding: 10px; }
-    /* same for the two-option protocol switch (ES "Compatible con OpenAI") */
     .seg[data-seg] { flex-direction: column; }
     .seg[data-seg] button { flex: none; }
     .cta { font-size: 16px; padding: 14px 12px; text-wrap: balance; }
   }
-  [role="tabpanel"][hidden] { display: none; }
-  [role="tabpanel"] { animation: z-rise 0.35s cubic-bezier(0.2, 0.85, 0.25, 1); }
-  [role="tabpanel"]:focus-visible { outline-offset: 6px; border-radius: 6px; }
 
   .seg-hint { margin-top: 7px; }
   .cta { margin-top: 6px; }
@@ -245,6 +221,7 @@
 <script src="/secretfield.js"></script>
 <script src="/v2/static/relaycfg.js"></script>
 <script src="/v2/static/nav.js"></script>
+<script src="/v2/static/tabs.js"></script>
 <script>
 (function () {
   "use strict";
@@ -262,31 +239,8 @@
   // static icons
   $$("[data-icon]").forEach(function (el) { el.innerHTML = ico(el.getAttribute("data-icon")); });
 
-  // ---------- tabs (WAI-ARIA tabs, automatic activation) ----------
-  var tabs = $$('[role="tab"]');
-  function selectTab(tab, focus) {
-    tabs.forEach(function (t) {
-      var on = t === tab;
-      t.setAttribute("aria-selected", String(on));
-      t.tabIndex = on ? 0 : -1;
-      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
-    });
-    if (focus) tab.focus();
-    var name = tab.id.replace("tab-", "");
-    try { history.replaceState(null, "", name === "embed" ? location.pathname + location.search : "#" + name); } catch (e) {}
-  }
-  tabs.forEach(function (t, i) {
-    t.addEventListener("click", function () { selectTab(t, false); });
-    t.addEventListener("keydown", function (e) {
-      var n = null;
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") n = tabs[(i + 1) % tabs.length];
-      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = tabs[(i - 1 + tabs.length) % tabs.length];
-      else if (e.key === "Home") n = tabs[0];
-      else if (e.key === "End") n = tabs[tabs.length - 1];
-      if (n) { e.preventDefault(); selectTab(n, true); }
-    });
-  });
-  if (location.hash === "#rerank") selectTab($("#tab-rerank"), false);
+  // ---------- tabs (v2/tabs.js; #rerank links the second) ----------
+  window.ZingTabs.init($(".tabs[role=tablist]"));
 
   // ---------- segmented controls ----------
   $$("[data-seg] button").forEach(function (b) {

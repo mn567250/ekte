@@ -29,7 +29,7 @@
     ["tools", "/v2/tools", "toolbox", "工具", "Tools"],
     ["history", "/v2/history", "chart", "检测历史", "History"],
     ["monitors", "/v2/watches", "bell", "监控", "Monitors"],
-    ["kb", "/v2/kb", "book", "模型库", "Models"],
+    ["kb", "/v2/kb", "book", "知识库", "Knowledge"],
   ];
 
   function ico(name, opts) {
