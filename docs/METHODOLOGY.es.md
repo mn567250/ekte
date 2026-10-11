@@ -168,6 +168,13 @@ caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
   solo las huellas cuyo idioma *es* la medida declaran `prompt_lang` y
   `language_bound`. Cada informe lista los idiomas de las sondas usadas
   (`prompt_languages`).
+- **Modelos de razonamiento:** una sonda corta que termina en su límite de
+  salida con la respuesta ausente, o cortada después de que el razonamiento usara al
+  menos la mitad del límite (se informan `reasoning_tokens`), se repite una vez con un
+  límite de 4.096 tokens, para que un modelo que piensa antes de responder no se
+  lea como fallo. Las sondas cuyo límite o tiempo es la medida (rendimiento,
+  caché de prompts, fiabilidad, prompt inyectado, salida máxima, el atributo de
+  solicitud `max_tokens`) nunca se repiten.
 
 ---
 
@@ -672,6 +679,7 @@ literalmente. Un eco exacto es correcto, la falta de eco (paráfrasis, negativa)
 es no concluyente, y solo una **sustitución del valor** que conserva la
 estructura cuenta como manipulación. En modo comparación, una sustitución que la
 referencia de confianza no hace es CRÍTICA.
+Una respuesta cortada en el límite de salida es no concluyente, no una sustitución.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
@@ -725,6 +733,9 @@ señala y se excluye de las estadísticas. La sonda usa streaming por defecto
 (`--performance-non-streaming` para relays que no saben hacer streaming); full
 mide ambos modos, intercalados. En modo comparación, objetivo y referencia se
 alternan para que la deriva de la red afecte a ambos por igual.
+Los tokens de entrada en caché solo cuentan cuando cubren al menos la mitad del
+prompt: los servidores locales (Ollama, llama.cpp, LM Studio) reutilizan la
+plantilla de chat en caché de cada prompt, lo que no es una respuesta guardada.
 
 La constancia usa ratios de cola (p90 ÷ p50 para latencia y TTFT, p50 ÷ p10 para
 el rendimiento), que una solicitud atípica no mueve como mueve una desviación

@@ -205,7 +205,7 @@ class ProtocolRequestDetector(Detector):
             "attribute": p.name,
             "availability": key,
             "sent": p.spec.get("extra_body") or {
-                k: v for k, v in p.spec.items() if k != "messages"
+                k: v for k, v in p.spec.items() if k not in ("messages", "reasoning_retry")
             } or "system message",
             "status_code": out.status_code,
         }

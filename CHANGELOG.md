@@ -6,6 +6,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Local servers no longer read as response caches.** Ollama, llama.cpp and
+  LM Studio reuse the KV cache of the chat template (system prompt, role
+  markers) and report those few tokens as cached on every unique prompt, so the
+  performance probe flagged nearly every request as a cache hit, excluded all
+  samples and showed no latency statistics. A request now counts as cached only
+  when its cached input tokens cover at least half the prompt
+  (`zing.perf.recorder.is_cache_hit`).
+- **Reasoning models no longer fail short probes.** A probe with a small output
+  limit (connectivity, determinism, stop sequence, multi-turn, self-identification,
+  context-window needle, integrity canaries…) could end at the limit while a
+  reasoning model was still thinking, returning an empty or cut-off answer that
+  was scored as a failed completion, a missed needle or a value substitution.
+  The client now repeats such a request once with a 4,096-token limit
+  when the answer is empty, or cut off after reasoning took at least half the
+  limit (`RequestSpec.reasoning_retry`, on by default); probes whose limit or
+  timing is the measurement opt out. An integrity canary cut off at the output limit
+  is inconclusive, never a substitution.
+
 ## [0.19.0] — backend performance
 
 **Upgrade note.** Token counting no longer uses tiktoken, and installs that had

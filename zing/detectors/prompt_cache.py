@@ -129,6 +129,7 @@ class PromptCacheDetector(Detector):
             temperature=0.0,
             max_tokens=8,
             stream=True,
+            reasoning_retry=False,  # the timing is the measurement
         )
         outcome: CompletionOutcome = await ctx.client.complete(spec)
         if not outcome.ok:

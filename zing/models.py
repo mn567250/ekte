@@ -119,6 +119,11 @@ class RequestSpec(BaseModel):
     # Client-side only (never sent): keep the redacted raw JSON response body in
     # ``CompletionOutcome.raw_body`` (non-stream calls), for envelope checks.
     capture_raw: bool = False
+    # Client-side only (never sent): when a short request ends at its output limit
+    # with the answer missing or cut off by hidden reasoning, repeat it once with
+    # room to think (BaseHTTPClient.complete). Off for probes whose budget or
+    # timing is the measurement.
+    reasoning_retry: bool = True
 
 
 # --------------------------------------------------------------------------- #

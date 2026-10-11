@@ -161,7 +161,8 @@ class InjectedPromptDetector(Detector):
         for content in (prompts.text("injected_prompt.small"), prompts.text("injected_prompt.large")):
             messages = [{"role": "user", "content": content}]
             outcome = await ctx.client.complete(
-                RequestSpec(messages=messages, temperature=0.0, max_tokens=8)
+                # only the prompt token count is read, never the answer
+                RequestSpec(messages=messages, temperature=0.0, max_tokens=8, reasoning_retry=False)
             )
             if not outcome.ok:
                 continue

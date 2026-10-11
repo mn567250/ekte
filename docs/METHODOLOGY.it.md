@@ -169,6 +169,14 @@ risponda un altro modello.
   ed è in inglese, qualunque sia la lingua dell'interfaccia; solo le impronte la
   cui lingua *è* la misura dichiarano `prompt_lang` e `language_bound`. Ogni
   rapporto elenca le lingue delle sonde usate (`prompt_languages`).
+- **Modelli di ragionamento:** una sonda breve che termina al proprio limite di
+  output con la risposta assente, o troncata dopo che il ragionamento ha usato
+  almeno metà del limite (`reasoning_tokens` riportati), viene ripetuta una
+  volta con un limite di 4.096 token, così un modello che pensa prima di
+  rispondere non viene letto come un errore. Le sonde il cui limite o la cui
+  temporizzazione è la misura (prestazioni, cache dei prompt, affidabilità,
+  prompt iniettato, output massimo, l'attributo di richiesta `max_tokens`) non
+  vengono mai ripetute.
 
 ---
 
@@ -672,6 +680,7 @@ letteralmente. Un'eco esatta è superata, la mancanza di eco (parafrasi, rifiuto
 è non conclusiva, e solo una **sostituzione del valore** che preserva la
 struttura conta come manomissione. In modalità di confronto, una sostituzione
 che il riferimento affidabile non fa è CRITICA.
+Una risposta troncata al limite di output è non conclusiva, non una sostituzione.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
@@ -725,6 +734,9 @@ predefinita (`--performance-non-streaming` per i relay che non lo supportano);
 full misura entrambe le modalità, alternate. In modalità di confronto obiettivo
 e riferimento si alternano, così la deriva della rete colpisce entrambi allo
 stesso modo.
+I token di input in cache contano solo se coprono almeno metà del prompt: i
+server locali (Ollama, llama.cpp, LM Studio) riusano il template di chat in
+cache di ogni prompt, che non è una risposta memorizzata.
 
 La costanza usa rapporti di coda (p90 ÷ p50 per latenza e TTFT, p50 ÷ p10 per il
 throughput), che una richiesta anomala non sposta come sposta una deviazione

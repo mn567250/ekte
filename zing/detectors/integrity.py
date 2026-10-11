@@ -176,6 +176,8 @@ class IntegrityDetector(Detector):
         outcome = await client.complete(
             RequestSpec(messages=[{"role": "user", "content": prompt}], temperature=0.0, max_tokens=80)
         )
-        if outcome.ok and outcome.has_content():
+        # An answer cut off at the output limit (e.g. `==0` for `==0.1.0` after a
+        # reasoning model thought through the budget) is not a substitution.
+        if outcome.ok and outcome.has_content() and outcome.finish_reason != "length":
             return outcome.content
         return None

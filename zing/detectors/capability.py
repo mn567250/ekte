@@ -363,6 +363,7 @@ class CapabilityDetector(Detector):
             ],
             temperature=0.0,
             max_tokens=cap,
+            reasoning_retry=False,  # stopping at the cap is the effect under test
         )
         outcome = await ctx.client.complete(spec)
 
