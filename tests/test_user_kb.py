@@ -118,6 +118,16 @@ def test_a_copying_callers_changes_never_reach_the_cache(data_dir):
     assert load_knowledge_base(include_user=False).providers["openai"].models
 
 
+def test_a_stray_change_to_a_shared_instance_stays_out_of_the_packaged_profiles(data_dir):
+    from zing.knowledge.loader import _load_packaged
+
+    import_yaml(NEW_PROVIDER_YAML, origin="import:acme.yaml")  # a key of this data dir only
+    count = len(_load_packaged()["openai"][0].models)
+    load_knowledge_base(copy=False).providers["openai"].models.clear()  # what callers must not do
+    assert len(_load_packaged()["openai"][0].models) == count
+    assert load_knowledge_base(full=True, copy=False).providers["openai"].models
+
+
 def test_uncached_loads_are_fresh_copies_even_without_copy(data_dir):
     preview = load_knowledge_base(user_entries=[], copy=False)
     preview.providers["openai"].models.clear()
@@ -275,6 +285,16 @@ def test_catalog_from_shared_loads_matches_copies_and_changes_nothing(data_dir):
     # the same lists as from the caller's own copies (what catalog() used before)
     copied = catalog.build(load_knowledge_base(full=True), load_knowledge_base(), store.list_entries())
     assert data == copied
+    # each model's state by the pre-set rule: same source in the audit load and
+    # its id among the provider's effective models
+    for m in data["models"]:
+        key, name = f"{m['provider']}/{m['id']}", m["provider"]
+        eff = effective.providers.get(name)
+        prov_on = eff is not None and effective.provider_sources.get(name) == full.provider_sources[name]
+        eff_src = effective.model_sources.get(key) if prov_on else None
+        on = eff_src == full.model_sources[key] and eff is not None and any(
+            x.id == m["id"] for x in eff.models)
+        assert m["enabled"] is on and m["provider_enabled"] is prov_on, key
     models = {m["key"]: m for m in data["models"]}
     assert models["model:openai/gpt-4o-mini"]["enabled"] is False
     assert models["model:openai/gpt-4o"]["enabled"] is True and models["model:openai/gpt-4o"]["yours"]

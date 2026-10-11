@@ -320,9 +320,12 @@ def load_knowledge_base(
         if cached is not None:
             _cache.move_to_end(key)
     if cached is None:
-        cached = _build(dirs, use_user, entries, warnings, disabled)
+        # cached detached from the packaged profiles a build shares, so a stray
+        # change to a shared instance cannot reach later builds; a thread that
+        # built the same state meanwhile wins (one shared instance per state)
+        built = _build(dirs, use_user, entries, warnings, disabled).model_copy(deep=True)
         with _cache_lock:
-            _cache[key] = cached
+            cached = _cache.setdefault(key, built)
             _cache.move_to_end(key)
             while len(_cache) > _CACHE_SIZE:
                 _cache.popitem(last=False)

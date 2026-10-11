@@ -225,8 +225,9 @@ def scan(text: str, *, base: KnowledgeBase | None = None) -> ScanResult:
         result.error("", "no YAML document found")
         return result
 
-    current = base if base is not None else load_knowledge_base()
-    underlying = load_knowledge_base(include_user=False)
+    # both are only read: the shared cached instances, no copies
+    current = base if base is not None else load_knowledge_base(copy=False)
+    underlying = load_knowledge_base(include_user=False, copy=False)
     user_entries = store.list_entries()
     user_keys = {(e["kind"], e["provider"], e.get("model_id") or "") for e in user_entries}
     seen_models: set[tuple[str, str]] = set()
