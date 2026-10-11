@@ -382,16 +382,10 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             # knowledge-base edit cannot silently change what the monitor measures.
             pinned_raw = watches.pinned_knowledge(wid)
             # Previous saved run for this target+model — used for the regression check
-            # and the "since last run" delta in the alert. notify.send needs the full
-            # report, so find the most recent prior history row for this target and
-            # re-fetch it.
-            for item in history.recent(50):  # newest first
-                if (
-                    item.get("base_url") == target.base_url
-                    and item.get("claimed_model") == claimed
-                ):
-                    return pinned_raw, history.get(int(item["id"]))
-            return pinned_raw, None
+            # and the "since last run" delta in the alert (notify.send needs the full
+            # report). One indexed lookup, so it is found however many runs of other
+            # targets were saved since.
+            return pinned_raw, history.latest_for(target.base_url, claimed)
 
         pinned_raw, previous = await asyncio.to_thread(stored)
         pinned = KnowledgeUsage(**pinned_raw) if pinned_raw else None
@@ -460,11 +454,21 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
         crossed = _risk_meets(risk, alert_on)
         went_worse = regressed(report_dict, previous)
         if crossed or went_worse:
-            for url in row.get("webhooks") or []:
-                if not isinstance(url, str) or not url.strip():
-                    continue
-                with contextlib.suppress(Exception):
-                    await send(url.strip(), report_dict, previous=previous, lang=row.get("language"))
+            # All webhooks at once: a dead one (10 s timeout) must not hold up
+            # the others or the run's completion. send never raises; any
+            # exception that slips through is returned by gather and dropped.
+            urls = [
+                url.strip()
+                for url in row.get("webhooks") or []
+                if isinstance(url, str) and url.strip()
+            ]
+            await asyncio.gather(
+                *(
+                    send(url, report_dict, previous=previous, lang=row.get("language"))
+                    for url in urls
+                ),
+                return_exceptions=True,
+            )
     except asyncio.CancelledError:
         cancelled = True
         raise
@@ -501,12 +505,58 @@ def _risk_meets(risk: str | None, threshold: str) -> bool:
     return order.get(risk, 0) >= order.get(threshold, order[RiskLevel.MEDIUM.value])
 
 
+# Runs the scheduler started, keyed by watch id: an entry exists from the
+# moment its task is created until it finishes, so a watch whose task has not
+# yet reached _running_watches is not started again on the next tick. Loop-owned
+# (only touched on the event loop); _lifespan cancels what is left on shutdown.
+_scheduled_watch_tasks: dict[int, asyncio.Task[None]] = {}
+
+
+async def _scheduled_watch_run(row: dict[str, Any]) -> None:
+    """One scheduler-started run: every failure is swallowed so it stays local
+    to its watch; cancellation (server shutdown) propagates."""
+    try:
+        await _run_one_watch(row)
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        # One bad watch must never take down the others or the loop.
+        pass
+
+
+def _start_scheduled_watch(row: dict[str, Any]) -> None:
+    """Start a due watch as its own task unless it is already running or started."""
+    wid = int(row["id"])
+    if wid in _running_watches or wid in _scheduled_watch_tasks:
+        return
+    task = asyncio.create_task(_scheduled_watch_run(row), name=f"zing-monitor-{wid}")
+    _scheduled_watch_tasks[wid] = task
+
+    def done(t: asyncio.Task[None]) -> None:
+        if _scheduled_watch_tasks.get(wid) is t:
+            del _scheduled_watch_tasks[wid]
+
+    task.add_done_callback(done)
+
+
+async def _cancel_scheduled_watches() -> None:
+    """Cancel the scheduler's runs (server shutdown) and wait until they ended."""
+    tasks = list(_scheduled_watch_tasks.values())
+    for task in tasks:
+        task.cancel()
+    if tasks:
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
 async def _scheduler_loop() -> None:
-    """Poll for due watches every tick and run each one (best-effort, idle-quiet).
+    """Poll for due watches every tick and start each one (best-effort, idle-quiet).
 
     If nothing is due, the loop does nothing and the server stays silent. Each
-    watch is wrapped in its own try/except so a single failure never stops the
-    loop. Cancellation (on server shutdown) propagates cleanly.
+    due watch runs as its own task, so monitors on different relays audit at
+    the same time; the relay gate (jobs.gate) still runs one audit per relay
+    and caps how many run at once. A failure stays inside its watch's task.
+    Cancellation (on server shutdown) propagates cleanly; _lifespan cancels
+    the runs themselves.
     """
     from zing.web import watches
     from zing.web.masterkey import vault
@@ -525,15 +575,7 @@ async def _scheduler_loop() -> None:
         except Exception:
             due = []
         for row in due:
-            if int(row["id"]) in _running_watches:
-                continue
-            try:
-                await _run_one_watch(row)
-            except asyncio.CancelledError:
-                raise
-            except Exception:
-                # One bad watch must never take down the whole loop.
-                pass
+            _start_scheduled_watch(row)
         await asyncio.sleep(_SCHEDULER_TICK_SEC)
 
 
@@ -553,6 +595,9 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError, Exception):
             await task
+        # The loop is stopped, so no new runs start; end the ones in flight.
+        with contextlib.suppress(Exception):
+            await _cancel_scheduled_watches()
         with contextlib.suppress(Exception):
             await jobs.manager.shutdown()
 
