@@ -408,6 +408,13 @@ FAKE_KB_ENTRY = {
     "id": 990001, "kind": "model", "provider": "a11y", "model_id": "a11y-test-model", "enabled": True,
     "origin": "a11y", "created_ts": 1790000000, "updated_ts": 1790000000,
 }  # fmt: skip
+# the same entry as the Knowledge page lists it (a model of your own: deletable)
+FAKE_KB_MODEL = {
+    "key": "model:a11y/a11y-test-model", "provider": "a11y", "provider_name": "A11y", "id": "a11y-test-model",
+    "aliases": [], "kind": "chat", "context_window_tokens": 8192, "max_output_tokens": 1024,
+    "source": "kb.db:entry/990001", "yours": True, "entry_id": 990001, "enabled": True, "provider_enabled": True,
+    "shadows": None, "effective_source": None,
+}  # fmt: skip
 
 DESTRUCTIVE_WORDS = r"\b(delete|remove|clear|erase|reset|drop|discard|purge|wipe|forget)\b"
 UNDO_WORDS = r"\b(undo|restore|revert)\b"
@@ -520,6 +527,8 @@ def _guarded_page(open_page: Any, page_id: str, log: list[str], dialogs: list[st
     page: Page = open_page(PAGES[page_id], "en")
     kb = httpx.get(open_page.base_url + "/api/kb/profiles", timeout=10).json()
     kb["entries"] = [FAKE_KB_ENTRY, *(kb.get("entries") or [])]
+    kb["models"] = [FAKE_KB_MODEL, *(kb.get("models") or [])]
+    kb["entry_count"] = len(kb["entries"])
 
     def handle(route: Any) -> None:
         req = route.request
