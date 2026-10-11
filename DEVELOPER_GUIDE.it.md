@@ -72,13 +72,13 @@ girano con `node` e vengono saltati senza.
 ```bash
 git clone https://github.com/cenbonew/zing
 cd zing
-pip install -e '.[dev,tokenizers,web]'   # installazione modificabile con tutti gli extra
-pytest                                       # suite di test
-ruff check zing tests                        # lint
-mypy zing                                    # controllo dei tipi
+pip install -e '.[dev,web]'   # installazione modificabile con gli strumenti di sviluppo e l'interfaccia web
+pytest                        # suite di test
+ruff check zing tests         # lint
+mypy zing                     # controllo dei tipi
 ```
 
-Con uv: `uv venv && uv pip install -e '.[dev,tokenizers,web]'`. Non servono
+Con uv: `uv venv && uv pip install -e '.[dev,web]'`. Non servono
 librerie di sistema, nemmeno per i rapporti PDF.
 
 Esegui dai sorgenti con `zing …` o `python -m zing …`. `zing serve` serve
@@ -196,6 +196,20 @@ divergere. `Scale` assegna la media dei suoi controlli; `DeductionScale` parte d
 punteggi**; la [Metodologia](docs/METHODOLOGY.it.md) riporta ogni scala.
 `connectivity.py` è l'esempio canonico e più breve.
 
+I rilevatori condividono un unico event loop con ogni altra verifica in
+`zing serve`, quindi il lavoro che impegna la CPU non deve girarci sopra: un loop
+bloccato ritarda le richieste delle altre verifiche e gonfia le latenze che
+registrano. `helpers.build_filler()` costruisce il testo di riempimento in tempo
+lineare e memorizza in cache le ultime dimensioni, e i rilevatori della finestra
+di contesto e della cache dei prompt lo chiamano (insieme a `build_haystack()`)
+tramite `asyncio.to_thread`. I conteggi dei token vengono da
+`zing/utils/tokenize.py`, un'euristica basata solo sulla libreria standard: zing
+non importa alcuna libreria di tokenizer e non scarica nulla in fase di
+esecuzione, quindi funziona in ambienti con accesso limitato. L'argomento
+`tokenizer` di `estimate_tokens()` è accettato ma non cambia il conteggio, e i
+campi del rapporto `tokens_exact` / `exact_tokenizer` sono mantenuti per
+compatibilità e valgono sempre false.
+
 ### Punteggio e verdetto
 
 `zing/scoring.py` contiene `DIMENSION_WEIGHTS` e le regole del verdetto: il
@@ -217,6 +231,13 @@ dell'utente), salva le voci dell'utente (`store.py`), controlla e importa YAML
 (`research.py`) e fotografa il profilo usato da un'esecuzione (`snapshot.py`). Gli
 id di modello si risolvono tramite alias e fornitore dichiarato; ogni rapporto
 registra come è stato risolto l'id.
+
+`load_knowledge_base()` tiene in cache i risultati uniti e per impostazione
+predefinita restituisce una copia profonda, così i chiamanti possono modificare
+ciò che ricevono. I chiamanti che si limitano a leggerla (gli elenchi e il
+catalogo dell'interfaccia web, la risoluzione di un modello) passano
+`copy=False` e ottengono l'istanza condivisa in cache, che non devono
+modificare.
 
 Anche i relay sono endpoint: `relays.py` trasforma i `base_url_hints` di un
 provider in URL di base utilizzabili (`GET /api/kb` → `base_urls`) e salva un
@@ -286,9 +307,28 @@ solo la libreria standard.
   indirizzi loopback come un solo host; al massimo `ZING_MAX_PARALLEL_AUDITS`
   (predefinito 4) insieme, in ordine di arrivo.
 - **Scheduler dei monitor.** Il lifespan dell'app avvia un ciclo in background che
-  esegue i monitor in scadenza, registra ogni esecuzione nella cronologia e invia
-  avvisi via webhook (`zing/notify.py`) al superamento di una soglia o a un
-  peggioramento.
+  avvia ogni monitor in scadenza come task a sé, così i monitor su relay diversi
+  eseguono le verifiche contemporaneamente; il blocco per relay resta valido,
+  quindi i monitor possono occupare i posti di `ZING_MAX_PARALLEL_AUDITS` e una
+  verifica avviata a mano può finire in coda dietro di loro. Il `last_run_ts` di
+  un'esecuzione è il momento in cui inizia la sua verifica (dopo l'attesa del suo
+  relay). Ogni esecuzione è registrata nella cronologia; il controllo di
+  regressione la confronta con l'esecuzione salvata più recente dello stesso
+  obiettivo e modello (`history.latest_for()`, una sola ricerca indicizzata) e
+  invia gli avvisi via webhook (`zing/notify.py`) in parallelo al superamento di
+  una soglia o a un peggioramento. `POST /api/watches/{id}/run` risponde 409
+  se lo scheduler ha appena avviato quel monitor; un reset della chiave
+  principale annulla le esecuzioni pianificate non ancora iniziate, e lo
+  spegnimento annulla quelle in corso.
+- **Compressione e cache.** `caching.py` comprime con gzip le risposte da 1 KiB in
+  su (tranne i Server-Sent Events) per i client che lo accettano (`gzip;q=0` lo
+  rifiuta). Le pagine e `/locales.js` vengono compressi una sola volta quando
+  sono generati e serviti già compressi con `Content-Encoding: gzip`,
+  `Vary: Accept-Encoding` e un ETag distinto che termina in `-gz`; le pagine
+  sono servite tramite `html_page(page, request.scope)`, così seguono quel
+  percorso e rispondono 304 alle richieste condizionali. Gli URL locali di
+  script e fogli di stile nelle pagine portano un `?v=<hash del contenuto>` e
+  sono messi in cache come immutabili.
 - **Sicurezza.** `security.py` determina l'indirizzo di ascolto (solo loopback,
   tranne in un container rilevato con `ZING_CONTAINER=1`) e installa
   `LocalOnlyMiddleware`: un elenco di host ammessi contro il DNS rebinding,
@@ -329,7 +369,13 @@ il testo dinamico e `ZING_LANG.server(text)` per il testo proveniente dal backen
 `0700`, con file SQLite `0600`: `history.db` (`web/history.py`), `watches.db`
 (`web/watches.py`, che conserva cifrate le chiavi API dei monitor) e `kb.db`
 (`knowledge/store.py`). Ogni chiamata apre una connessione di breve durata,
-quindi gli archivi sono sicuri nel pool di thread di FastAPI.
+quindi gli archivi sono sicuri nel pool di thread di FastAPI. L'opzione globale
+`--data-dir` (anche su `zing serve`) imposta semplicemente `ZING_DATA_DIR` sul
+percorso assoluto, e `zing data-dir` stampa la directory risolta. Una directory
+già esistente mantiene i suoi permessi; solo il `~/.zing` predefinito viene
+ristretto a `0700`. Le righe della cronologia sono indicizzate per obiettivo e
+modello (`idx_history_target`), che `history.latest_for()` usa per trovare
+l'esecuzione precedente di un monitor.
 
 Le chiavi API salvate sono cifrate da `zing/secretbox.py` (Fernet, salvate come
 `enc:v1:…`; i riferimenti `env:`/`file:` restano come sono). La chiave
@@ -408,8 +454,8 @@ Le funzionalità possono fornire i propri testi come frammenti,
 `zing/i18n/locales/fragments/<feature>/<code>.json` con `{"strings": {…}}`,
 uniti alla lingua al caricamento. `/locales.js` invia solo la lingua scelta
 (`?lang=<code>` o il cookie `zing_lang` impostato da `lang.js`; senza nessuno dei
-due, tutte le lingue), generato una volta e rivalidato tramite `ETag`; un cambio
-di lingua carica la nuova su richiesta.
+due, tutte le lingue), generato e compresso con gzip una volta per variante e
+rivalidato tramite `ETag`; un cambio di lingua carica la nuova su richiesta.
 
 - **Nuovo testo dell'interfaccia:** scrivi il cinese nell'HTML e l'inglese in
   `data-en` (o usa `T(zh, en)`), poi aggiungi la chiave inglese a `en.json` o a
@@ -465,6 +511,19 @@ pytest -n auto               # in parallelo, un worker per CPU (pytest-xdist)
   `secretfield.js`, `v2/report.js`, le traduzioni) vengono valutati con `node` in
   `test_web_*_js.py` e `test_web_locales.py`; senza Node.js vengono saltati.
 - Nessun test può accedere alla rete.
+- `test_cli_startup.py` mantiene rapido l'avvio della CLI: importare `zing.cli`
+  non deve caricare i client HTTP, il runner, il caricatore della base di
+  conoscenza, i renderer dei rapporti (ReportLab) né il server web. Importali
+  dentro il comando che ne ha bisogno.
+- `test_filler_perf.py` fissa il testo di riempimento byte per byte e fallisce
+  quando la sonda della finestra di contesto blocca l'event loop.
+- `tests/a11y/` verifica la nuova interfaccia web (v2) rispetto a BITV 2.0 /
+  EN 301 549 / WCAG 2.1 AA in un browser reale (Playwright + axe-core), in ogni
+  lingua dell'interfaccia e con entrambi i temi:
+  `pip install -e '.[web,a11y]' && playwright install chromium`, poi
+  `pytest -m a11y`. Senza Playwright la directory viene saltata. Cosa è
+  automatizzato e cosa richiede ancora una revisione BITV manuale è descritto in
+  [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) (in inglese).
 
 ## Docker
 
@@ -502,7 +561,7 @@ le protezioni dell'interfaccia.
 
 | Workflow | Si avvia con | Cosa fa |
 |---|---|---|
-| `.github/workflows/ci.yml` | push e pull request verso `main` | `ruff`, `mypy` e `pytest` con Python 3.10–3.13 e tutti gli extra; costruisce wheel e sdist e verifica che la wheel si installi e carichi la base di conoscenza |
+| `.github/workflows/ci.yml` | push e pull request verso `main` (e i branch di integrazione `a11y/integration`, `perf/integration`) | `ruff`, `mypy` e `pytest` con Python 3.10–3.13 e gli extra `dev` e `web`; costruisce wheel e sdist e verifica che la wheel si installi e carichi la base di conoscenza; esegue la suite di accessibilità (informativa, non fa mai fallire l'esecuzione) e ne carica i risultati — tranne nelle pull request verso `perf/integration`, dove la lenta suite nel browser viene saltata (gira sui push di quel branch e sulla sua pull request verso `main`) |
 | `.github/workflows/release.yml` | un tag `v*` | costruisce, esegue `twine check` e pubblica su PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | pianificazione giornaliera, manuale | esempio di verifica pianificata di un relay con l'action |
 
