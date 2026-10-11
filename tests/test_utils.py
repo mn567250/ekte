@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import ast
+import socket
+import sys
+from pathlib import Path
+
 import pytest
 import yaml
 
+import zing
 from zing.config import ConfigError, load_config_file
+from zing.perf.recorder import RequestRecorder
 from zing.utils import yamlio
 from zing.utils.redact import (
     fingerprint_secret,
@@ -245,6 +252,43 @@ class TestTokenize:
     def test_estimate_messages_tokens_empty(self):
         # only the trailing priming constant
         assert estimate_messages_tokens([]) == 3
+
+    def test_tokenizer_hint_does_not_change_the_count(self):
+        # Every family uses the heuristic: no hint selects an exact encoding.
+        text = "Summarize this paragraph, please. 你好世界"
+        for hint in (None, "o200k_base", "cl100k_base", "o200k", "cl100k", "claude"):
+            assert estimate_tokens(text, hint) == heuristic_token_count(text)
+
+    def test_no_zing_module_imports_tiktoken(self):
+        # zing must run in restricted environments: no tokenizer library (tiktoken
+        # downloads its BPE files on first use) may be imported anywhere.
+        root = Path(zing.__file__).parent
+        offenders = []
+        for path in root.rglob("*.py"):
+            tree = ast.parse(path.read_text("utf-8"), filename=str(path))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    names = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom):
+                    names = [node.module or ""]
+                else:
+                    continue
+                if any(n.split(".")[0] == "tiktoken" for n in names):
+                    offenders.append(f"{path.relative_to(root)}:{node.lineno}")
+        assert offenders == []
+
+    def test_estimating_needs_no_network_or_tokenizer(self, monkeypatch):
+        def refuse(*args, **kwargs):
+            raise AssertionError("token estimation must not open a connection")
+
+        monkeypatch.setattr(socket.socket, "connect", refuse)
+        monkeypatch.setattr(socket, "create_connection", refuse)
+        messages = [{"role": "user", "content": "hello there 世界"}]
+        for hint in (None, "o200k_base", "cl100k_base"):
+            assert estimate_tokens("hello there", hint) > 0
+            assert estimate_messages_tokens(messages, hint) > 0
+        RequestRecorder("o200k_base")  # used to resolve an encoding up front
+        assert "tiktoken" not in sys.modules
 
 
 # --------------------------------------------------------------------------- #

@@ -360,7 +360,7 @@ class RequestRecord(BaseModel):
     output_tokens_reported: int | None = None
     input_tokens_local: int | None = None
     output_tokens_local: int | None = None
-    tokens_exact: bool = False  # local count used an exact tokenizer
+    tokens_exact: bool = False  # kept for report compatibility; counts are always estimates
     reasoning_tokens: int | None = None
     cached_input_tokens: int | None = None
 

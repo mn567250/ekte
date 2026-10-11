@@ -21,7 +21,7 @@ from typing import Any
 
 from zing.models import CompletionOutcome, RequestRecord, RequestSpec
 from zing.utils.stats import mean, percentile, stdev
-from zing.utils.tokenize import estimate_messages_tokens, estimate_tokens, is_exact_tokenizer
+from zing.utils.tokenize import estimate_messages_tokens, estimate_tokens
 
 _DETECTOR: ContextVar[str | None] = ContextVar("zing_perf_detector", default=None)
 _PHASE: ContextVar[str] = ContextVar("zing_perf_phase", default="passive")
@@ -209,7 +209,6 @@ class RequestRecorder:
     ) -> None:
         self.t0 = time.perf_counter()
         self.tokenizer = tokenizer
-        self.tokens_exact = is_exact_tokenizer(tokenizer)
         self.records: list[RequestRecord] = []
         self.on_record = on_record
 
@@ -282,7 +281,6 @@ class RequestRecorder:
         rec.reasoning_tokens = reported["reasoning"]
         rec.cached_input_tokens = reported["cached"]
         rec.cached = bool(reported["cached"])
-        rec.tokens_exact = self.tokens_exact
         try:
             rec.input_tokens_local = estimate_messages_tokens(spec.messages, self.tokenizer)
         except Exception:
