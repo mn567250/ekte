@@ -299,8 +299,8 @@ silently trims the prompt) and `context.lost-in-middle-rag` (a cheap
 RAG/summarization shim forwards only parts of the prompt).
 
 **How it works.** Needle-in-a-haystack recall at `temperature=0`: a unique
-marker is embedded in non-repetitive filler sized with the claimed model's
-tokenizer, and the model must return it.
+marker is embedded in non-repetitive filler sized with zing's heuristic token
+estimate, and the model must return it.
 
 1. An ascending doubling ladder from 2K tokens up to the declared window, capped
    by `--max-context-tokens` (default 200K), with a rung near 90% of the top
@@ -522,23 +522,22 @@ a corroborating signal, `prompt.injected-system-prompt`.
 
 **How it works.** One deterministic call (a known paragraph to summarize,
 `temperature=0`). The prompt and the visible answer are counted independently
-with the claimed model's tokenizer: exactly with tiktoken for OpenAI-family
-tokenizers (the `tokenizers` extra), otherwise with a language-aware heuristic
-(about ±25%). Reported prompt tokens above 1.8× the estimate (2.5× for a
-heuristic) and more than 50 tokens over it count as inflation. Completion
-tokens of a reasoning model legitimately include hidden reasoning tokens and are
-not flagged; otherwise above 1.8× an exact estimate is inflation and above 3× a
-heuristic one a softer warning. `total` must equal `prompt + completion`
-(±2), and a total without the split is flagged. An undercount is informational
-(not buyer-harmful).
+with a language-aware heuristic (about ±25%), for every model family: zing uses
+no tokenizer library and downloads none. Reported prompt tokens above 2.5× the
+estimate and more than 50 tokens over it count as inflation. Completion tokens
+of a reasoning model legitimately include hidden reasoning tokens and are not
+flagged; otherwise completion tokens above 3× the estimate and more than 80
+tokens over it are a soft warning, never a failure, because the estimate of a
+short answer is noisy. `total` must equal `prompt + completion` (±2), and a
+total without the split is flagged. An undercount (below half the estimate) is
+informational (not buyer-harmful).
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `billing.request-failed` | No usable response to judge by. | Inconclusive · Low | No deduction |
 | `billing.missing-usage` | The response carried no token usage at all. | Warning · Medium | cap 75 |
 | `billing.usage-inflation` | Reported prompt tokens far exceed the independent estimate. | Fail · High | cap 55 |
-| `billing.usage-inflation-completion` | Reported completion tokens far exceed the estimate of an exact tokenizer. | Fail · High | cap 55 |
-|  | Reported completion tokens are far above a heuristic estimate. | Warning · Medium | cap 70 |
+| `billing.usage-inflation-completion` | Reported completion tokens are far above a heuristic estimate. | Warning · Medium | cap 70 |
 | `billing.reasoning-tokens` | Completion tokens exceed the visible text, as expected for a reasoning model. | Info | No deduction |
 | `billing.usage-undercount-prompt` | Reported prompt tokens are well below the estimate (not buyer-harmful). | Info | No deduction |
 | `billing.usage-undercount-completion` | Reported completion tokens are well below the estimate (not buyer-harmful). | Info | No deduction |
@@ -748,7 +747,7 @@ The 16 relay tricks from the research map onto zing as follows.
 | 5 | `context.window-truncation` | high | `context_window` | edge-needle ladder + binary search; measured vs declared |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | depths 0.1/0.5/0.9 at a mid size |
 | 7 | `stream.fake-streaming` | medium | `streaming` | chunk count, first-token timing, gap uniformity |
-| 8 | `billing.usage-inflation` | high | `billing` | independent tokenizer estimate of one known probe |
+| 8 | `billing.usage-inflation` | high | `billing` | independent heuristic token estimate of one known probe |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | usage presence, split and arithmetic; stream usage chunk |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | prefix caching by TTFT (informational); cross-user sharing and logging stay unprovable from one key |
 | 11 | `infra.shared-upstream-key` | high | — | roadmap (quota decreasing while idle, leaked upstream request ids) |

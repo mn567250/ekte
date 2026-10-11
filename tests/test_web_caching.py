@@ -184,7 +184,9 @@ def _raw_get(client, path: str, **headers: str):
         return r, b"".join(r.iter_raw())
 
 
-@pytest.mark.parametrize("path", ["/v2/", "/", "/locales.js", "/locales.js?lang=de"])
+@pytest.mark.parametrize(
+    "path", ["/v2/", "/", "/console", "/locales.js", "/locales.js?lang=de"]
+)
 def test_precompressed_bodies_decompress_to_the_identity_bytes(client, path):
     plain, identity = _raw_get(client, path, **{"Accept-Encoding": "identity"})
     assert plain.status_code == 200 and "content-encoding" not in plain.headers

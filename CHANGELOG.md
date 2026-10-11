@@ -6,6 +6,113 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.19.0] — backend performance
+
+**Upgrade note.** Token counting no longer uses tiktoken, and installs that had
+the `tokenizers` extra are scored differently by the billing audit: prompt
+inflation now fails above 2.5× the estimate (was 1.8×), and completion tokens
+far above the estimate are only a warning (cap 70), never a failure. Reports of
+the same relay before and after the upgrade can therefore differ in the
+**Billing & usage** dimension. The `tokenizers` extra still installs (it is
+empty), so `pip install 'zing-audit[tokenizers,web]'` keeps working; drop it
+from new install commands.
+
+### Added
+
+- **`history.latest_for(base_url, claimed_model)`** returns the newest saved
+  report of one target and model with a single lookup on the existing
+  `idx_history_target` index; the monitor's regression check uses it.
+- **Precompressed responses.** `zing/web/caching.py` gains `encoded_response()`,
+  `precompressed()`, `accepts_gzip()` and `gzip_etag()`, and `zing/i18n` gains
+  `locales_encoded()`: a cached body is gzipped once, when it is built, and
+  served with `Content-Encoding: gzip`, `Vary: Accept-Encoding` and its own
+  ETag (`"…-gz"`).
+
+### Changed
+
+- **Context-window filler is built in linear time, off the event loop.**
+  `build_filler()` re-joined and re-counted the whole text every 50 lines, so
+  its cost grew quadratically: 5.7 s at the default 200K-token probe cap and
+  118 s at 900K. It now keeps a running per-line sum (about 0.09 s at 200K) with
+  byte-identical output, and remembers the last four sizes it built. The
+  context-window and prompt-cache detectors build their fillers and haystacks
+  in a worker thread (`asyncio.to_thread`). On an instant mock relay a `full`
+  audit drops from about 4.3 s to 0.4 s and the longest event-loop stall from
+  about 3.9 s to about 130 ms. Audits running in parallel in `zing serve` no
+  longer distort each other's timings: a 300 ms request of a second audit used
+  to be recorded as 3,980 ms, now as 307 ms.
+- **Token counts are always heuristic estimates; nothing is downloaded.**
+  `zing/utils/tokenize.py` uses only its built-in, language-aware heuristic for
+  every model family. Before, the optional `tokenizers` extra made tiktoken
+  fetch a multi-megabyte BPE file over HTTPS on first use, synchronously on the
+  event loop; zing now runs in restricted and offline environments that reach
+  only the relays you audit. The `tokenizers` extra is empty and kept for
+  compatibility. The report fields `tokens_exact` and the billing evidence's
+  `exact_tokenizer` stay and are always `false`.
+- **Billing scoring is the same for every install** (see the upgrade note):
+  prompt inflation is a **Fail** above 2.5× the estimate and more than 50 tokens
+  over it; for a non-reasoning model, completion tokens above 3× the estimate
+  and more than 80 tokens over it are a **Warning** (`above_heuristic`, cap 70).
+- **The performance section always notes that local token counts are
+  estimates**, with new wording in every UI language: "Local token counts are
+  estimates (about ±15-20%) from a built-in heuristic; zing never downloads a
+  tokenizer."
+- **Monitors run concurrently.** The `zing serve` scheduler starts every due
+  monitor as its own task instead of running them one after another. The relay
+  gate still allows one audit per relay host and at most
+  `ZING_MAX_PARALLEL_AUDITS` in total; monitors can now fill those slots, so an
+  audit started by hand may queue behind them. A run's webhooks are sent
+  concurrently, so a dead one (10 s timeout) no longer holds up the others.
+  **Run now** answers 409 for a monitor the scheduler has just started, a
+  master-key reset cancels scheduled runs that have not started yet, and a
+  server shutdown cancels the runs in flight.
+- **`/locales.js` and the HTML pages are served precompressed.** They were
+  gzipped again by the middleware on every response, on the event loop; now
+  once, when built. The full `/locales.js` bundle answers in 1.3 ms instead of
+  59 ms, `?lang=de` in 1.1 ms instead of 16 ms, `/v2/` in 1.0 ms instead of
+  3.5 ms. A gzip client revalidates with either ETag; a client that refused
+  gzip only with the identity one.
+- **Read-only callers share the cached knowledge base.**
+  `load_knowledge_base(copy=False)` returns the shared cached instance instead
+  of a deep copy; the web UI's lists, the catalog, model resolution and the
+  Monitors list use it (audits, the CLI and every caller that modifies the
+  result keep their own copy). `/api/kb/profiles` drops from about 15 ms to
+  7 ms, the catalog from 9.6 ms to 2.3 ms, `/api/kb` from 8 ms to 4.5 ms.
+- **Faster CLI startup.** The HTTP clients, the knowledge loader, the runner,
+  the report renderers (ReportLab) and asyncio are imported inside the commands
+  that use them: `zing --help` starts in 369 ms instead of 467 ms, and every
+  command about 100 ms faster.
+- **CI** installs `.[dev,web]` (no `tokenizers`) and skips the slow browser
+  accessibility suite and its report on pull requests into `perf/integration`;
+  it still runs on that branch's pushes and on its pull request into `main`.
+
+### Removed
+
+- **tiktoken support** and `is_exact_tokenizer()` in `zing/utils/tokenize.py`;
+  the `tokenizers` extra no longer installs anything.
+- **The completion-inflation Fail outcome** (`billing.usage-inflation-completion`
+  `inflated`, "Reported completion tokens far exceed the estimate of an exact
+  tokenizer.", cap 55) is gone from the billing scale; only the
+  `above_heuristic` Warning remains.
+- The `tokens_exact` parameter of `build_performance()`.
+
+### Fixed
+
+- **Monitor regression alerts no longer stop after 50 other runs.** The
+  previous run of a monitor's target was searched among the newest 50 history
+  rows only, so once 50 runs of other targets had been saved in between, the
+  regression check and the "since last run" delta silently had nothing to
+  compare with. It now uses the most recent saved run of the same target and
+  model, however old (`history.latest_for`), read after the audit so a run of
+  the same target that queued ahead of it counts.
+- **A monitor that waited for its relay no longer comes due again at once.**
+  `last_run_ts` is the moment its audit starts (after the wait), not the moment
+  it became due.
+- **`Accept-Encoding: gzip;q=0` is honoured.** The compression middleware
+  gzipped such responses anyway (it only looked for the substring `gzip`).
+- **`/console` is served precompressed** with its `-gz` ETag and answers
+  conditional requests with 304, like the other pages.
+
 ## [0.18.0] — web UI v2: guided relay configuration
 
 ### Added
