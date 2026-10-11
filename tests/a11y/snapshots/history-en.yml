@@ -37,6 +37,7 @@
     - code: ~/.zing
     - text: — nothing is uploaded.
   - region "Filters":
+    - button "Filters & trends" [expanded]
     - text: Search
     - searchbox "Search"
     - text: Relay / provider
@@ -91,8 +92,15 @@
       - button "Latency p50" [pressed]
       - button "Tokens/s"
     - text: Showing 1 of 1 audits
+  - group "Sort audits":
+    - button "Time, sorted descending": Time
+    - button "Sort by Risk": Risk
+    - button "Sort by Score": Score
+    - button "Sort by Grade": Grade
+  - button "Collapse all"
   - region "gpt-4o":
-    - heading "gpt-4o" [level=2]
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
     - code: base_url
     - text: http://127.0.0.1:9099/v1 Score 53
     - list:
@@ -360,6 +368,7 @@
               - button "PDF"
   - text: "Saved audits: 1"
   - button "Clear history"
+  - status
 - contentinfo:
   - paragraph:
     - link "Accessibility":

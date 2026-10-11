@@ -37,6 +37,7 @@
     - code: ~/.zing
     - text: — non viene inviato nulla.
   - region "Filtri":
+    - button "Filtri e tendenze" [expanded]
     - text: Cerca
     - searchbox "Cerca"
     - text: Relay / provider
@@ -91,8 +92,15 @@
       - button "Latenza p50" [pressed]
       - button "Tokens/s"
     - text: 1 di 1 audit mostrati
+  - group "Ordina gli audit":
+    - button "Data, ordine decrescente": Data
+    - button "Ordina per Rischio": Rischio
+    - button "Ordina per Punteggio": Punteggio
+    - button "Ordina per Voto": Voto
+  - button "Comprimi tutto"
   - region "gpt-4o":
-    - heading "gpt-4o" [level=2]
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
     - code: base_url
     - text: http://127.0.0.1:9099/v1 Punteggio 53
     - list:
@@ -360,6 +368,7 @@
               - button "PDF"
   - text: "Audit salvati: 1"
   - button "Cancella cronologia"
+  - status
 - contentinfo:
   - paragraph:
     - link "Accessibilità":

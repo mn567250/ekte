@@ -37,6 +37,7 @@
     - code: ~/.zing
     - text: 下的本地 SQLite 文件里，不会上传。
   - region "筛选":
+    - button "筛选与趋势图" [expanded]
     - text: 搜索
     - searchbox "搜索"
     - text: 中转站
@@ -91,8 +92,15 @@
       - button "延迟 p50" [pressed]
       - button "输出速度"
     - text: 显示 1 / 1 条记录
+  - group "排序":
+    - button "时间，降序排列": 时间
+    - button "按风险排序": 风险
+    - button "按健康分排序": 健康分
+    - button "按评级排序": 评级
+  - button "全部折叠"
   - region "gpt-4o":
-    - heading "gpt-4o" [level=2]
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
     - code: base_url
     - text: http://127.0.0.1:9099/v1 健康分 53
     - list:
@@ -360,6 +368,7 @@
               - button "PDF"
   - text: 共 1 条记录
   - button "清空历史"
+  - status
 - contentinfo:
   - paragraph:
     - link "无障碍":
