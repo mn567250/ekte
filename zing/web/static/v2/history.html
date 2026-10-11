@@ -64,7 +64,7 @@
   .colhead .slabel { display: none; }
   .colhead .gall { justify-self: end; font-size: 12px; font-weight: 600; white-space: nowrap; }
   .sortb {
-    display: inline-flex; align-items: center; gap: 3px; min-width: 0; max-width: 100%; padding: 4px 4px; margin: 0 -4px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 3px; min-width: 0; max-width: 100%; padding: 4px 4px; margin: 0 -4px; cursor: pointer; justify-self: start;
     font-family: var(--sans); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--faint);
     background: none; border: 0; border-radius: 6px; transition: color 0.12s, background 0.12s;
   }
@@ -72,7 +72,6 @@
   .sortb.n .t { overflow: visible; }
   .sortb .zicon { width: 12px; height: 12px; flex: none; opacity: 0; transition: transform 0.2s; }
   .sortb:hover { color: var(--ink); background: var(--surface-2); }
-  .sortb:hover .zicon { opacity: 0.5; }
   .sortb[data-dir] { color: var(--ink); }
   .sortb[data-dir] .zicon { opacity: 1; }
   .sortb[data-dir="asc"] .zicon { transform: rotate(180deg); }
