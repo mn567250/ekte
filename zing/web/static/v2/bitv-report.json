@@ -5,10 +5,10 @@
   "en": "EN 301 549 V3.2.1, chapter 9",
   "wcag": "WCAG 2.1 level A + AA"
  },
- "generated_at": "2026-10-10T10:58:11+00:00",
- "tests_run_at": "2026-10-10T10:57:51+00:00",
+ "generated_at": "2026-10-11T07:01:20+00:00",
+ "tests_run_at": "2026-10-11T07:01:08+00:00",
  "zing_version": "0.18.0",
- "commit": "807091ee8001",
+ "commit": "bcb8d76b1bfe",
  "axe_version": "4.13.0",
  "tested": {
   "languages": [
@@ -203,10 +203,10 @@
    "how": "ARIA, lists, tables, form labels, landmarks and heading levels are checked. Whether the structure matches the visual meaning is judged by a person.",
    "status": "manual review pending",
    "tests": {
-    "run": 345,
-    "passed": 345,
+    "run": 347,
+    "passed": 347,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_aria_snapshot_unchanged",
@@ -288,10 +288,10 @@
    "how": "Fields that ask for data about the user carry a valid autocomplete token.",
    "status": "pass",
    "tests": {
-    "run": 170,
-    "passed": 170,
+    "run": 172,
+    "passed": 172,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_wcag_rules_as_loaded",
@@ -351,10 +351,10 @@
    "how": "Text contrast is measured on every page, in every language, in the light and the dark theme.",
    "status": "pass",
    "tests": {
-    "run": 172,
-    "passed": 172,
+    "run": 174,
+    "passed": 174,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_paged_history_wcag_rules",
@@ -373,10 +373,10 @@
    "how": "At 200 % zoom nothing scrolls sideways or is cut off, in every language.",
    "status": "pass",
    "tests": {
-    "run": 212,
-    "passed": 212,
+    "run": 214,
+    "passed": 214,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_resize_text_200_percent",
@@ -455,10 +455,10 @@
    "how": "The WCAG text spacing values are applied and no content is cut off.",
    "status": "pass",
    "tests": {
-    "run": 206,
-    "passed": 206,
+    "run": 208,
+    "passed": 208,
     "failed": 0,
-    "skipped": 16
+    "skipped": 14
    },
    "test_names": [
     "test_text_spacing_override",
@@ -627,10 +627,10 @@
    "how": "Every page has landmarks and a skip link to the main content.",
    "status": "pass",
    "tests": {
-    "run": 219,
-    "passed": 219,
+    "run": 221,
+    "passed": 221,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_best_practices",
@@ -650,10 +650,10 @@
    "how": "Every page has its own title, translated into every language.",
    "status": "pass",
    "tests": {
-    "run": 177,
-    "passed": 177,
+    "run": 179,
+    "passed": 179,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_page_titles",
@@ -700,10 +700,10 @@
    "how": "Every link has an accessible name. Whether it describes the target is judged by a person.",
    "status": "manual review pending",
    "tests": {
-    "run": 170,
-    "passed": 170,
+    "run": 172,
+    "passed": 172,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_wcag_rules_as_loaded",
@@ -859,10 +859,10 @@
    "how": "The lang attribute of the page names the language shown, on load and after switching language.",
    "status": "pass",
    "tests": {
-    "run": 212,
-    "passed": 212,
+    "run": 214,
+    "passed": 214,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_page_language",
@@ -881,10 +881,10 @@
    "how": "Text in another language than the page is marked with its own lang attribute.",
    "status": "pass",
    "tests": {
-    "run": 88,
-    "passed": 88,
+    "run": 90,
+    "passed": 90,
     "failed": 0,
-    "skipped": 128
+    "skipped": 126
    },
    "test_names": [
     "test_language_of_parts",
@@ -1002,10 +1002,10 @@
    "how": "Every field has a label. Whether the instructions are sufficient is judged by a person.",
    "status": "manual review pending",
    "tests": {
-    "run": 170,
-    "passed": 170,
+    "run": 172,
+    "passed": 172,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_wcag_rules_as_loaded",
@@ -1081,10 +1081,10 @@
    "how": "Every control has a name, a valid role and the states it needs.",
    "status": "pass",
    "tests": {
-    "run": 264,
-    "passed": 264,
+    "run": 266,
+    "passed": 266,
     "failed": 0,
-    "skipped": 10
+    "skipped": 8
    },
    "test_names": [
     "test_aria_snapshot_unchanged",
