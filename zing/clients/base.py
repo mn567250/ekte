@@ -21,7 +21,12 @@ from typing import Any
 import httpx
 
 from zing.models import CompletionOutcome, RequestSpec, TargetConfig
-from zing.perf.recorder import RequestRecorder, current_net_trace, net_trace_scope
+from zing.perf.recorder import (
+    RequestRecorder,
+    current_net_trace,
+    net_trace_scope,
+    usage_tokens,
+)
 from zing.utils.net import is_local_host
 from zing.utils.redact import redact_json, redact_text
 
@@ -48,6 +53,10 @@ _LOCAL_DECODE_TPS = 3.0
 _LOCAL_MIN_BASE_SEC = 300.0
 # Output budget assumed when a request sets no max_tokens.
 _DEFAULT_OUTPUT_TOKENS = 1024
+# Output budget of the one repeat a reasoning model gets when a short request
+# ran out of tokens while thinking (see complete()). Requests that already ask
+# for this much are never repeated.
+REASONING_RETRY_TOKENS = 4096
 # The httpx timeout of the completion running in this task (see complete()).
 _CALL_TIMEOUT: ContextVar[httpx.Timeout | None] = ContextVar("zing_call_timeout", default=None)
 
@@ -78,6 +87,48 @@ def _output_tokens(spec: RequestSpec) -> int:
         if isinstance(value, int) and not isinstance(value, bool) and value > 0:
             return value
     return _DEFAULT_OUTPUT_TOKENS
+
+
+def _budget_field(spec: RequestSpec) -> tuple[str, int] | None:
+    """The output-limit field a request sets explicitly, and its value."""
+    if isinstance(spec.max_tokens, int) and spec.max_tokens > 0:
+        return "max_tokens", spec.max_tokens
+    for name in ("max_completion_tokens", "max_output_tokens"):
+        value = spec.extra_body.get(name)
+        if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+            return name, value
+    return None
+
+
+def reasoning_retry_spec(spec: RequestSpec, outcome: CompletionOutcome) -> RequestSpec | None:
+    """The request to repeat when a reasoning model spent a short output budget
+    on hidden thinking, else None.
+
+    Short probes ask for a few dozen tokens; a reasoning model can think through
+    all of them and return an empty answer (or one cut off mid-way) with
+    ``finish_reason=length``. That is the probe's budget running out, not the
+    relay misbehaving, so it is repeated once with ``REASONING_RETRY_TOKENS``.
+    """
+    if not spec.reasoning_retry or not outcome.ok or outcome.tool_calls:
+        return None
+    if outcome.finish_reason != "length":
+        return None
+    budget = _budget_field(spec)
+    if budget is None or budget[1] >= REASONING_RETRY_TOKENS:
+        return None
+    name, limit = budget
+    # No visible answer at all although the limit was reached (thinking the
+    # relay may not count), or an answer cut off after reasoning took at least
+    # half the budget. A long answer that merely ran into its limit is left alone.
+    if outcome.has_content():
+        reasoning = usage_tokens(outcome.usage)["reasoning"] or 0
+        if reasoning * 2 < limit:
+            return None
+    if name == "max_tokens":
+        return spec.model_copy(update={"max_tokens": REASONING_RETRY_TOKENS})
+    return spec.model_copy(
+        update={"extra_body": {**spec.extra_body, name: REASONING_RETRY_TOKENS}}
+    )
 
 
 def shared_ssl_context() -> ssl.SSLContext:
@@ -226,6 +277,13 @@ class BaseHTTPClient:
 
     # -- public calls (recorded for the performance section) --------------- #
     async def complete(self, spec: RequestSpec) -> CompletionOutcome:
+        outcome = await self._complete_recorded(spec)
+        retry = reasoning_retry_spec(spec, outcome)
+        if retry is not None:
+            outcome = await self._complete_recorded(retry)
+        return outcome
+
+    async def _complete_recorded(self, spec: RequestSpec) -> CompletionOutcome:
         if self.recorder is None:
             return await self._complete_bounded(spec)
         started = time.perf_counter()

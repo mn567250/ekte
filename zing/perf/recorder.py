@@ -159,6 +159,24 @@ def usage_tokens(usage: dict[str, Any] | None) -> dict[str, int | None]:
     return {"input": inp, "output": out, "reasoning": reasoning, "cached": cached}
 
 
+# Share of the prompt that must come from a cache before a request counts as
+# served from it. Local servers (Ollama, llama.cpp, LM Studio) reuse the KV cache
+# of the previous prompt and report the shared prefix as cached; for a short
+# unique prompt that prefix is only the chat template (system prompt, role
+# markers), which says nothing about stored answers.
+CACHE_HIT_SHARE = 0.5
+
+
+def is_cache_hit(cached: int | None, prompt: int | None) -> bool:
+    """True if the reported cached tokens cover most of the prompt (any cached
+    tokens when the prompt size is unknown)."""
+    if not cached:
+        return False
+    if not prompt:
+        return True
+    return cached >= CACHE_HIT_SHARE * prompt
+
+
 def _relay_processing_ms(headers: dict[str, str]) -> float | None:
     for name in _PROCESSING_HEADERS:
         raw = headers.get(name)
@@ -280,7 +298,7 @@ class RequestRecorder:
         rec.output_tokens_reported = reported["output"]
         rec.reasoning_tokens = reported["reasoning"]
         rec.cached_input_tokens = reported["cached"]
-        rec.cached = bool(reported["cached"])
+        rec.cached = is_cache_hit(reported["cached"], reported["input"])
         try:
             rec.input_tokens_local = estimate_messages_tokens(spec.messages, self.tokenizer)
         except Exception:

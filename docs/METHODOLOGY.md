@@ -160,6 +160,14 @@ throttled could not be assessed, which is not evidence of a different model.
   English whatever the UI language; only fingerprints whose language *is* the
   measurement declare `prompt_lang` and `language_bound`. Each report lists the
   probe languages it used (`prompt_languages`).
+- **Reasoning models:** a short probe that ends at its output limit with its
+  answer missing, or cut off after reasoning took at least half the limit
+  (`reasoning_tokens` reported), is repeated once with a 4,096-token
+  limit, so a model that thinks before it answers is not read as failing.
+  Probes whose limit or timing is the measurement (performance, prompt cache,
+  reliability, injected prompt, maximum output, the `max_tokens` request
+  attribute) are never
+  repeated.
 
 ---
 
@@ -637,6 +645,7 @@ URL and a pinned `pip install` package — must come back verbatim. An exact ech
 passes, a non-echo (paraphrase, refusal) is inconclusive, and only a
 structure-preserving **value substitution** counts as tampering. In compare mode
 a substitution the trusted baseline does not make is CRITICAL.
+An answer cut off at the output limit is inconclusive, not a substitution.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
@@ -686,6 +695,9 @@ that still comes back cached is flagged and left out of the statistics. The
 probe streams by default (`--performance-non-streaming` for relays that cannot
 stream); full measures both modes, interleaved. In compare mode target and
 baseline alternate so network drift hits both equally.
+Cached input tokens only count when they cover at least half the prompt: local
+servers (Ollama, llama.cpp, LM Studio) reuse the cached chat template of every
+prompt, which is not a stored answer.
 
 Consistency uses tail ratios (p90 ÷ p50 for latency and TTFT, p50 ÷ p10 for
 throughput), which one stray request cannot move the way it moves a standard

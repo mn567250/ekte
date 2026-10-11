@@ -94,6 +94,7 @@ class ReliabilityDetector(Detector):
             messages=[{"role": "user", "content": prompts.text("reliability.ping")}],
             temperature=0.0,
             max_tokens=8,
+            reasoning_retry=False,  # latency under load is the measurement
         )
 
         # Fire n identical requests, capping in-flight calls with a semaphore.

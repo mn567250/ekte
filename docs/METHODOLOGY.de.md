@@ -171,6 +171,13 @@ das ist kein Beleg für ein anderes Modell.
   selbst die Messung *ist*, deklarieren `prompt_lang` und `language_bound`.
   Jeder Bericht listet die verwendeten Sprachen der Sonden
   (`prompt_languages`).
+- **Reasoning-Modelle:** Eine kurze Probe, die an ihrem Ausgabelimit endet und
+  deren Antwort fehlt oder abgeschnitten wurde, nachdem das Nachdenken
+  mindestens die Hälfte des Limits verbraucht hat (`reasoning_tokens` gemeldet), wird einmal mit
+  einem Limit von 4.096 Token wiederholt, damit ein Modell, das vor der Antwort
+  nachdenkt, nicht als fehlerhaft gilt. Proben, deren Limit oder Timing die
+  Messung ist (Leistung, Prompt-Cache, Zuverlässigkeit, injizierter Prompt, maximale
+  Ausgabe, das Anfrageattribut `max_tokens`), werden nie wiederholt.
 
 ---
 
@@ -676,6 +683,7 @@ zurückkommen. Ein exaktes Echo besteht, kein Echo (Umschreibung, Verweigerung)
 ist nicht eindeutig, und nur ein **Austausch des Werts** bei erhaltener Struktur
 gilt als Manipulation. Im Vergleichsmodus ist ein Austausch, den die
 vertrauenswürdige Referenz nicht zeigt, KRITISCH.
+Eine am Ausgabelimit abgeschnittene Antwort ist nicht eindeutig, kein Austausch.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
@@ -728,6 +736,9 @@ streamt standardmäßig (`--performance-non-streaming` für Relays, die nicht
 streamen können); full misst beide Modi, verschränkt. Im Vergleichsmodus
 wechseln Ziel und Referenz sich ab, sodass Netzwerkschwankungen beide gleich
 treffen.
+Gecachte Eingabe-Token zählen nur, wenn sie mindestens die Hälfte des Prompts
+abdecken: lokale Server (Ollama, llama.cpp, LM Studio) verwenden die gecachte
+Chat-Vorlage jedes Prompts wieder, und das ist keine gespeicherte Antwort.
 
 Die Gleichmäßigkeit nutzt Tail-Verhältnisse (p90 ÷ p50 für Latenz und TTFT,
 p50 ÷ p10 für den Durchsatz), die eine einzelne Ausreißer-Anfrage nicht so

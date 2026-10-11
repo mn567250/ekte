@@ -267,9 +267,15 @@ class PerformanceDetector(Detector):
                 max_tokens=None,
                 stream=stream,
                 extra_body={"max_completion_tokens": max_tokens},
+                reasoning_retry=False,
             )
+        # The fixed output budget is part of the measurement: never repeated.
         return RequestSpec(
-            messages=messages, temperature=None, max_tokens=max_tokens, stream=stream
+            messages=messages,
+            temperature=None,
+            max_tokens=max_tokens,
+            stream=stream,
+            reasoning_retry=False,
         )
 
     async def _call(self, ep: _Endpoint, max_tokens: int, stream: bool) -> RequestRecord | None:

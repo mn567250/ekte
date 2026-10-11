@@ -252,9 +252,14 @@ def _system(name: str) -> Param:
 
 def _max_tokens(name: str, *, extra: bool = False) -> Param:
     messages = [{"role": "user", "content": prompts.text("protocol_request.long")}]
+    # The truncation is the effect under test: never repeat it with a larger limit.
     if extra:  # reasoning models take the limit as max_completion_tokens
-        return Param(name, {"messages": messages, "extra_body": {name: 16}}, _truncated)
-    return Param(name, {"messages": messages, "max_tokens": 16}, _truncated)
+        return Param(
+            name,
+            {"messages": messages, "extra_body": {name: 16}, "reasoning_retry": False},
+            _truncated,
+        )
+    return Param(name, {"messages": messages, "max_tokens": 16, "reasoning_retry": False}, _truncated)
 
 
 def _body(name: str, value: Any, *, sampling: bool = False) -> Param:

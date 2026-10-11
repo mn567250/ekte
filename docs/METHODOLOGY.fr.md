@@ -169,6 +169,13 @@ limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle rép
   l'interface ; seules les empreintes dont la langue *est* la mesure déclarent
   `prompt_lang` et `language_bound`. Chaque rapport liste les langues des
   sondes utilisées (`prompt_languages`).
+- **Modèles de raisonnement :** une sonde courte qui s'arrête à sa limite de
+  sortie avec une réponse absente, ou coupée après que le raisonnement a pris au
+  moins la moitié de la limite (`reasoning_tokens` signalés), est répétée une fois
+  avec une limite de 4 096 tokens, pour qu'un modèle qui réfléchit avant de
+  répondre ne soit pas lu comme un échec. Les sondes dont la limite ou le
+  chronométrage est la mesure (performance, cache de prompt, fiabilité, prompt
+  injecté, sortie maximale, l'attribut de requête `max_tokens`) ne sont jamais répétées.
 
 ---
 
@@ -675,6 +682,7 @@ revenir mot pour mot. Un écho exact réussit, l'absence d'écho (paraphrase,
 refus) est non concluante, et seule une **substitution de valeur** qui préserve
 la structure compte comme falsification. En mode comparaison, une substitution
 que la référence de confiance ne fait pas est CRITIQUE.
+Une réponse coupée à la limite de sortie est non concluante, pas une substitution.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
@@ -730,6 +738,9 @@ le streaming par défaut (`--performance-non-streaming` pour les relais qui ne
 savent pas streamer) ; full mesure les deux modes, entrelacés. En mode
 comparaison, cible et référence alternent pour que la dérive du réseau touche
 les deux également.
+Les tokens d'entrée en cache ne comptent que s'ils couvrent au moins la moitié
+du prompt : les serveurs locaux (Ollama, llama.cpp, LM Studio) réutilisent le
+modèle de chat en cache de chaque prompt, ce qui n'est pas une réponse stockée.
 
 La régularité utilise des rapports de queue (p90 ÷ p50 pour la latence et le
 TTFT, p50 ÷ p10 pour le débit), qu'une requête aberrante ne déplace pas comme
