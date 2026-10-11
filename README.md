@@ -100,15 +100,20 @@ You can also install straight from the Git repository without cloning:
 
 ### Optional extras
 
-- `tokenizers` — accurate OpenAI-family token counting in the billing audit.
 - `web` — the local web UI (`zing serve`).
 
 ```bash
-pip install 'zing-audit[tokenizers,web]'      # pip, from PyPI
-pip install -e '.[tokenizers,web]'            # pip, from source
-uv tool install 'zing-audit[tokenizers,web]'  # uv, from PyPI
-uv pip install -e '.[tokenizers,web]'         # uv, from source
+pip install 'zing-audit[web]'      # pip, from PyPI
+pip install -e '.[web]'            # pip, from source
+uv tool install 'zing-audit[web]'  # uv, from PyPI
+uv pip install -e '.[web]'         # uv, from source
 ```
+
+The `tokenizers` extra is no longer needed: since 0.19.0 it is empty and kept
+only so older install commands still work. zing counts tokens with a built-in
+heuristic and downloads nothing at runtime (no tokenizer files), so it also
+runs in restricted or offline environments that only reach the relays you
+audit.
 
 PDF reports (`--format pdf`, and the PDF download in the web UI) need no extra: they
 are typeset with [ReportLab](https://www.reportlab.com/opensource/), a pure Python
@@ -427,10 +432,16 @@ dimension does not run and drops out of the overall score.
   better and red ✗ where it is worse.
 
 Tokens are counted twice — from the relay's `usage` and locally — so throughput
-is measurable even when `usage` is missing. A percentile is shown only with
+is measurable even when `usage` is missing. The local count is an estimate from
+a built-in heuristic (about ±15-20%; no tokenizer is used or downloaded), and the
+section always says so. A percentile is shown only with
 enough samples (p90 from 10, p95 from 20, p99 from 100). The JSON report keeps
 every request's timings (numbers only, no text); the HTML report and the web UI
 chart them over the audit's timeline.
+
+Audits that run at the same time in `zing serve` (several browser tabs,
+monitors) do not distort each other's timings: CPU-heavy preparation, such as
+building the long context-window prompts, runs off the server's event loop.
 
 **Request timeouts.** `timeout_sec` (`--timeout`, default 60 s) is the base;
 each request gets more for its prompt size and output budget, so a long
@@ -499,7 +510,16 @@ webhook alerts:
 
 Each monitor has its own alert language (defaulting to the UI language), can be
 run now, paused or deleted, and pins the knowledge-base profile it was created
-with until you re-pin it. Keys are stored encrypted in your local data directory
+with until you re-pin it.
+
+Monitors that come due run at the same time, each as its own audit, but never
+more than one audit per relay host at once and at most `ZING_MAX_PARALLEL_AUDITS`
+in total; a run waits for a free slot (an audit you start by hand may queue
+behind running monitors, too). A run's time is when its audit starts, after any
+wait. The regression check compares against the most recent saved run of the
+same relay and model, however many other runs were saved since. Alert webhooks
+of a run are sent at the same time, so a slow or dead one does not hold up the
+others. Keys are stored encrypted in your local data directory
 and are never sent back to the browser.
 
 **Master key.** The monitors' API keys are encrypted with a master key that zing
@@ -674,7 +694,7 @@ redacted and escaped before it is written.
   `localhost`), answers only to those host names and refuses cross-site
   requests; it has no login because nothing outside your machine can reach it.
   zing contacts only the endpoints you configure (target, baseline, judge,
-  webhooks).
+  webhooks); it downloads nothing at runtime, not even tokenizer files.
 - **Keys.** Reports and history keep only a fingerprint of an API key. The
   monitors' keys are stored encrypted in `watches.db`; the master key that
   decrypts them is never written to the data directory (you keep it, see
