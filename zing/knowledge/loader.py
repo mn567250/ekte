@@ -24,8 +24,12 @@ Merged results are cached, keyed on everything they are built from: the
 the kb.db location, the kb.db entries and switched-off items themselves (two
 small queries per call),
 so an import, edit, toggle or delete is picked up immediately. The packaged
-profiles are immutable package data and parsed once per process. Every call
-returns a deep copy, so callers may modify what they get.
+profiles are immutable package data and parsed once per process. By default
+every call returns a deep copy, so callers may modify what they get. Read-only
+callers (the web UI's lists, resolving a model) pass ``copy=False`` and get the
+shared cached instance instead, saving the copy (most of a warm load); they
+must not modify it. Loads that are not cached (an import preview, an unreadable
+kb.db) return a fresh copy either way (a build shares the packaged profiles).
 """
 
 from __future__ import annotations
@@ -267,6 +271,7 @@ def load_knowledge_base(
     include_user: bool | None = None,
     user_entries: list[dict[str, Any]] | None = None,
     full: bool = False,
+    copy: bool = True,
 ) -> KnowledgeBase:
     """Build the knowledge base from packaged profiles plus overrides.
 
@@ -275,7 +280,8 @@ def load_knowledge_base(
     to preview an import before it is saved; such loads are not cached).
     ``full=True`` returns the complete set instead of what audits use: disabled
     kb.db entries applied as if enabled, switched-off items kept.
-    The result is the caller's own copy.
+    The result is the caller's own copy, unless ``copy=False``: then a cached
+    result is the shared instance, which the caller must treat as read-only.
     """
     dirs: list[Path] = list(extra_dirs or [])
     env_dir = os.environ.get("ZING_KB_DIR")
@@ -314,13 +320,16 @@ def load_knowledge_base(
         if cached is not None:
             _cache.move_to_end(key)
     if cached is None:
-        cached = _build(dirs, use_user, entries, warnings, disabled)
+        # cached detached from the packaged profiles a build shares, so a stray
+        # change to a shared instance cannot reach later builds; a thread that
+        # built the same state meanwhile wins (one shared instance per state)
+        built = _build(dirs, use_user, entries, warnings, disabled).model_copy(deep=True)
         with _cache_lock:
-            _cache[key] = cached
+            cached = _cache.setdefault(key, built)
             _cache.move_to_end(key)
             while len(_cache) > _CACHE_SIZE:
                 _cache.popitem(last=False)
-    return cached.model_copy(deep=True)
+    return cached.model_copy(deep=True) if copy else cached
 
 
 def _build(
