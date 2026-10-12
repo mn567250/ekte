@@ -232,7 +232,7 @@ def _exact(kind: str, value: Any) -> bool:
 
 def _column(kind: str, value: Any) -> Any:
     """What goes into the column: the value when the column can hold it."""
-    if not _exact(kind, value):
+    if value is None or not _exact(kind, value):
         return None
     return int(value) if kind == "bool" else value
 
@@ -284,7 +284,10 @@ def decode_request(row: tuple[Any, ...] | sqlite3.Row) -> dict[str, Any]:
     """The record a :func:`encode_request` tuple (as read back) stands for."""
     values = tuple(row)
     raw = values[len(REQUEST_FIELDS)]
-    extra = json.loads(raw) if raw else {}
+    try:
+        extra = json.loads(raw) if raw else {}
+    except (TypeError, ValueError):
+        extra = {}  # damaged: the columns are still the best answer
     return _assemble(values[: len(REQUEST_FIELDS)], extra if isinstance(extra, dict) else {})
 
 

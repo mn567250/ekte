@@ -257,11 +257,11 @@ def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ..
     records = None
     if row[_SPLIT] == 1 and isinstance(report, dict):
         analytics_store.restore_requests(report, analytics_store.get_requests(conn, row["id"]))
-    elif row[_SPLIT] is None and isinstance(report, dict):
-        stored, records = analytics_store.split_requests(report)
-        if records is not None:
-            report_json = json.dumps(stored, ensure_ascii=False)
     try:
+        if row[_SPLIT] is None and isinstance(report, dict):
+            stored, records = analytics_store.split_requests(report)
+            if records is not None:
+                report_json = json.dumps(stored, ensure_ascii=False)
         metrics, dims = analytics_store.extract_metrics(report)
     except Exception:
         return None
