@@ -244,7 +244,7 @@ def test_series_keys_groups_and_share_metric(seeded):
     assert both["series"][0]["label"] == "Cheap GPT · model-a"
     dim = analytics.series({"metric": "dim:protocol", "relay": "cheap-gpt", "bucket": "week"})
     assert dim["series"][0]["points"][0]["median"] == 90.0
-    assert dim["series"][0]["n"] == 12  # the old reports carry no dimensions here
+    assert dim["series"][0]["n"] == 14  # old-shaped reports have dimension scores too
 
 
 def test_series_score_keeps_old_runs(seeded):
@@ -360,7 +360,9 @@ def test_single_run_all_null_metrics(data):
     assert out["series"][0]["points"] == [] and out["series"][0]["coverage"] == 0.0
     k = analytics.summary({})["kpis"]
     assert k["runs"]["value"] == 1
-    assert all(k[m]["value"] is None and k[m]["n"] == 0 for m in analytics.SUMMARY_KPIS)
+    assert k["success_rate"]["value"] == 0.9  # the one thing it measured
+    assert all(k[m]["value"] is None and k[m]["n"] == 0
+               for m in analytics.SUMMARY_KPIS if m != "success_rate")
 
 
 @pytest.mark.parametrize(
@@ -407,8 +409,13 @@ def test_http_endpoints(client):
     r = client.get("/api/analytics/options")
     assert r.status_code == 200 and r.json()["runs"] == 17
     assert r.headers["cache-control"] == "no-store"
-    r = client.get("/api/analytics/summary", params={"from": "2026-03-03T12:00:00+00:00"})
-    assert r.status_code == 200 and r.json()["previous"]["from"].startswith("2026-03-")
+    r = client.get("/api/analytics/summary",
+                   params={"from": "2026-03-03T12:00:00+00:00", "to": "2026-03-04T12:00:00+00:00"})
+    assert r.status_code == 200 and r.json()["runs"] == 5
+    assert r.json()["previous"]["from"] == "2026-03-02T12:00:00.000000+00:00"
+    # from alone: up to now, against the range of the same length before it
+    r = client.get("/api/analytics/summary", params={"from": "2026-03-03T12:00:00Z"})
+    assert r.status_code == 200 and r.json()["to"] is not None and r.json()["runs"] == 13
     r = client.get("/api/analytics/series", params=[
         ("metric", "ttft_p50"), ("bucket", "day"), ("tz", "Europe/Berlin"),
         ("keys", "cheap-gpt"), ("keys", OTHER),
