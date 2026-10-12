@@ -40,10 +40,10 @@
   .custom { display: flex; flex-wrap: wrap; gap: 10px 12px; }
   .custom[hidden] { display: none; }
   .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; margin-top: 12px; }
-  .fgrid label, .custom label, .ctl label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .fgrid label > span, .custom label > span, .ctl label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); overflow-wrap: anywhere; }
-  .fgrid .in, .custom .in, .ctl .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
-  .fgrid select.in, .ctl select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
+  .fgrid label, .custom label, .ctl label, .lbctl label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .fgrid label > span, .custom label > span, .ctl label > span, .lbctl label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); overflow-wrap: anywhere; }
+  .fgrid .in, .custom .in, .ctl .in, .lbctl .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
+  .fgrid select.in, .ctl select.in, .lbctl select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
   .ffoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: var(--ink2); }
   .ffoot .linkbtn[hidden] { display: none; }
   .ferr { margin: 10px 0 0; font-size: 12.5px; font-weight: 600; color: var(--bad); }
@@ -91,11 +91,11 @@
   .dt td.n, .dt th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .dt tbody th { font-weight: 600; color: var(--ink); min-width: 9em; max-width: 22em; overflow-wrap: anywhere; }
   .dt td.when { white-space: nowrap; }
-  .dt td.ser { min-width: 8em; max-width: 18em; overflow-wrap: anywhere; color: var(--ink); }
+  .dt td.ser { min-width: 12em; max-width: 18em; overflow-wrap: anywhere; color: var(--ink); }
   .dt td .cn { display: block; font-size: 11px; color: var(--faint); }
   .dt tr.low > * { color: var(--faint); }
-  .dt tr.low td.note { color: var(--warn); }
-  .dt td.note { min-width: 14em; }
+  .dt tr.low td.nt { color: var(--warn); }
+  .dt td.nt { min-width: 16em; }
   .dt .badge { margin-top: 3px; }
   .dt .u { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--ink2); overflow-wrap: anywhere; }
 
@@ -823,6 +823,7 @@
           return "<li>" + esc(bucketTime(k.t)) + " · " + esc(k.who.join(", ")) + ": " + esc(k.text) + "</li>";
         }).join("") + "</ul></span></div>";
     }
+    var first = Math.min.apply(null, withData.map(function (x) { return x.points[0].t; }));
     var unit = C.unitName(m.unit);
     body.innerHTML = legend +
       '<div class="axcap" aria-hidden="true"><span>' + esc(name + (unit ? " · " + unit : "")) + "</span><span>" +
@@ -832,7 +833,9 @@
       tableHTML(withData, m, name);
     var cfg = {
       id: "cmpc", title: Tf("{metric}随时间变化", "{metric} over time", { metric: name }), desc: desc, unit: m.unit,
-      bucketMs: BUCKET_MS[V.bucket], domain: r.from ? [r.from.getTime(), r.to.getTime()] : null,
+      // the range, from one bucket before the first data on (a long empty
+      // lead-in would squeeze the data into a sliver)
+      bucketMs: BUCKET_MS[V.bucket], domain: r.from ? [Math.max(r.from.getTime(), first - BUCKET_MS[V.bucket]), r.to.getTime()] : null,
       xTick: tick, tipTime: bucketTime, series: withData, marks: marks, lowHint: lowHint(),
       yMin: m.unit === "score" ? 0 : null, yMax: m.unit === "score" ? 100 : null,
     };
@@ -859,7 +862,7 @@
         return '<tr class="' + (p.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(p.t)) + '</td><td class="ser">' + esc(r.x.label) + "</td>" +
           '<td class="n">' + esc(fmt(p.v, m.unit)) + "</td>" +
           (share ? "" : '<td class="n">' + esc(fmt(p.lo, m.unit)) + " – " + esc(fmt(p.hi, m.unit)) + "</td>") +
-          '<td class="n">' + esc(String(p.n)) + '</td><td class="note">' + (p.low ? esc(hint) : "") + "</td></tr>";
+          '<td class="n">' + esc(String(p.n)) + '</td><td class="nt">' + (p.low ? esc(hint) : "") + "</td></tr>";
       }).join("") + "</tbody></table></div></div></div>";
   }
   $("#cmp-body").addEventListener("click", function (ev) {
