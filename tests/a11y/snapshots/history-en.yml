@@ -269,6 +269,9 @@
             - text: Is its speed consistent? Not run
             - heading "Findings" [level=3]
             - paragraph: No warnings or failures — every dimension is consistent with the claimed model.
+            - heading "Execution log 6 checks · <duration> in total" [level=3]
+            - paragraph: Checks run one after another; the slowest was context_window (<duration>).
+            - button "Show all 6"
             - paragraph:
               - text: zing provides
               - strong: reproducible evidence of behavioral deviation and risk

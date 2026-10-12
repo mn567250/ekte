@@ -269,6 +269,9 @@
             - text: 快慢是否稳定？ 未运行
             - heading "关注点" [level=3]
             - paragraph: 未发现警告或失败项 —— 各维度表现与所声称模型一致。
+            - heading "执行记录 6 项检测 · 共 <duration>" [level=3]
+            - paragraph: 各项检测依次运行；最慢的是 context_window（<duration>）。
+            - button "显示全部 6 项"
             - paragraph:
               - text: zing 出具的是
               - strong: 行为偏离与风险的可复现证据

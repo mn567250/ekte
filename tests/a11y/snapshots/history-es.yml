@@ -269,6 +269,9 @@
             - text: ¿Su velocidad es constante? No ejecutado
             - heading "Hallazgos" [level=3]
             - paragraph: Sin advertencias ni fallos — todas las dimensiones coinciden con el modelo declarado.
+            - heading "Registro de ejecución 6 comprobaciones · <duration> en total" [level=3]
+            - paragraph: Las comprobaciones se ejecutan una tras otra; la más lenta fue context_window (<duration>).
+            - button "Mostrar los 6"
             - paragraph:
               - text: zing aporta
               - strong: evidencias reproducibles de desviación de comportamiento y riesgo
