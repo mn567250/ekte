@@ -29,7 +29,9 @@
   border-top: 1px solid var(--line); background: var(--surface-2); font-size: 12.5px; color: var(--ink2);
 }
 .zr .meta-strip .mi { display: flex; align-items: baseline; gap: 6px; min-width: 0; max-width: 100%; }
-.zr .meta-strip dt { color: var(--faint); font-weight: 600; flex: 0 0 auto; }
+/* a long label (e.g. "Requêtes de la sonde de performance") may wrap: at 320 px
+   it is wider than the card */
+.zr .meta-strip dt { color: var(--faint); font-weight: 600; flex: 0 1 auto; min-width: 0; }
 .zr .meta-strip dd { margin: 0; min-width: 0; color: var(--ink); }
 .zr .meta-strip code {
   background: var(--card); border: 1px solid var(--line); padding: 0 6px; border-radius: 5px;

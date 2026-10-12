@@ -70,6 +70,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   or left as it was, and rows that still hold their records inline keep
   working.
 
+### Fixed
+
+- **Report meta labels wrap on narrow screens (UI v2).** A long label in the
+  report's meta strip, such as the French "Requêtes de la sonde de
+  performance", could not shrink and was cut off at 320 px wide (Audit and
+  History); it now wraps like its value.
+
 ## [0.19.2] — fixes for local and reasoning models
 
 ### Changed
