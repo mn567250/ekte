@@ -231,10 +231,24 @@ def _exact(kind: str, value: Any) -> bool:
 
 
 def _column(kind: str, value: Any) -> Any:
-    """What goes into the column: the value when the column can hold it."""
-    if value is None or not _exact(kind, value):
+    """What goes into the column: the value, or the nearest one the column can
+    hold (``extra`` then keeps the exact one), or NULL."""
+    if value is None:
         return None
-    return int(value) if kind == "bool" else value
+    if kind == "bool":
+        return int(value) if type(value) is bool else None
+    if kind == "str":
+        return value if type(value) is str else None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if kind == "int":
+        whole = _int(value)
+        return whole if whole is not None and -_INT64 <= whole < _INT64 else None
+    try:
+        number = float(value) + 0.0  # + 0.0: never -0.0
+    except OverflowError:
+        return None
+    return number if math.isfinite(number) else None
 
 
 def encode_request(rec: dict[str, Any]) -> tuple[Any, ...]:
@@ -394,7 +408,8 @@ def parse_ts(value: Any) -> datetime | None:
 
 def format_ts(dt: datetime) -> str:
     """The fixed-width UTC form ``started_at`` is stored in."""
-    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+    utc = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return utc.isoformat(timespec="microseconds") + "+00:00"
 
 
 def _requests_span_ms(records: list[Any]) -> float | None:

@@ -169,7 +169,7 @@ def test_unusual_records_read_back_exactly(data):
     records = report["performance"]["requests"]
     records[0]["future_field"] = {"nested": [1, 2.5, None]}  # unknown key
     del records[1]["relay_processing_ms"]  # an older record: field missing
-    records[2]["start_ms"] = 5  # int where a float is expected
+    records[2]["start_ms"] = 5  # int where a float is expected (kept queryable)
     records[2]["duration_ms"] = 12.0
     records[3]["status_code"] = 200.0  # float where an int is expected
     records[3]["ok"] = 1  # int where a bool is expected
@@ -187,6 +187,15 @@ def test_unusual_records_read_back_exactly(data):
     assert got is not None
     assert _same(got["performance"]["requests"], saved["performance"]["requests"])
     assert _stored_json(data, rid)["performance"]["requests"] == []
+    with _db(data) as conn:
+        cols = conn.execute(
+            "SELECT start_ms, status_code, ok, ttft_ms, itl_mean_ms, chunk_count, detector"
+            " FROM history_requests ORDER BY ord"
+        ).fetchall()
+    assert cols[2]["start_ms"] == 5.0 and cols[3]["status_code"] == 200
+    assert cols[3]["ok"] is None and cols[4]["detector"] is None
+    assert cols[5]["chunk_count"] is None and cols[7]["itl_mean_ms"] is None
+    assert str(cols[6]["ttft_ms"]) == "0.0"
 
 
 def test_records_that_cannot_move_stay_inline(data):
@@ -217,7 +226,8 @@ def test_save_never_raises(data, monkeypatch):
     assert history.save({"target": "not a dict"}) == -1
     assert history.save("not a dict") == -1  # type: ignore[arg-type]
 
-    # A failing extraction loses only the metrics, which the backfill redoes.
+    # A failing extraction still saves the run, unprocessed (records inline),
+    # and the backfill processes it later.
     def boom(_report):
         raise RuntimeError("extraction bug")
 
@@ -225,9 +235,12 @@ def test_save_never_raises(data, monkeypatch):
         m.setattr(analytics_store, "extract_metrics", boom)
         rid = history.save(_fixture())
     assert rid > 0 and _count(data, "history_metrics", rid) == 0
+    assert _count(data, "history_requests", rid) == 0
     _same_report(history.get(rid), _fixture())
     history.backfill_analytics()
     assert _count(data, "history_metrics", rid) == 1
+    assert _count(data, "history_requests", rid) == 12
+    _same_report(history.get(rid), _fixture())
 
 
 # --------------------------------------------------------------------------- #
@@ -536,6 +549,18 @@ def test_a_newer_extract_version_re_extracts(data, monkeypatch):
         version = conn.execute("SELECT extract_version FROM history_metrics").fetchone()[0]
     assert version == analytics_store.EXTRACT_VERSION
     _same_report(history.get(rid), _fixture())
+
+
+def test_pending_rows_are_found_through_indexes(data):
+    history.save(_fixture())
+    with _db(data) as conn:
+        plan = conn.execute(
+            "EXPLAIN QUERY PLAN " + history._ANALYTICS_TODO,
+            (analytics_store.EXTRACT_VERSION,),
+        ).fetchall()
+    detail = " ".join(str(row[-1]) for row in plan)
+    assert "idx_history_pending" in detail and "idx_history_metrics_version" in detail
+    assert "SCAN history " not in detail.replace("SCAN history USING INDEX", "") + " "
 
 
 def test_fresh_database_has_the_v2_schema(data):

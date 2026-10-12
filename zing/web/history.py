@@ -178,6 +178,10 @@ def _migrate(conn: sqlite3.Connection) -> None:
     )
     # Version 2: where a row's request records are, and the analytics tables.
     kb_snapshot.add_link_columns(conn, "history", {_SPLIT: "INTEGER"})
+    # The rows the analytics backfill has not processed yet.
+    conn.execute(
+        f"CREATE INDEX IF NOT EXISTS idx_history_pending ON history (id) WHERE {_SPLIT} IS NULL"
+    )
     analytics_store.ensure_tables(conn)
     # Groups runs by model across relays.
     conn.execute("CREATE INDEX IF NOT EXISTS idx_history_model ON history (claimed_model)")
@@ -237,13 +241,12 @@ def _fill_perf(conn: sqlite3.Connection, items: list[dict[str, Any]]) -> None:
         conn.rollback()
 
 
-# Rows the analytics backfill has to process: request records not looked at,
-# or metrics missing or extracted by an older EXTRACT_VERSION.
-_ANALYTICS_TODO = f"""SELECT h.id, h.report_json, h.{_SPLIT}
-   FROM history h LEFT JOIN history_metrics m ON m.history_id = h.id
-   WHERE h.id > ? AND (h.{_SPLIT} IS NULL OR m.history_id IS NULL
-                       OR m.extract_version IS NULL OR m.extract_version < ?)
-   ORDER BY h.id LIMIT ?"""
+# Rows the analytics backfill has to process: not looked at yet (those have
+# no metrics either: a row gets both in one transaction), or extracted by an
+# older EXTRACT_VERSION. Both halves are index lookups, so a database with
+# nothing left to do costs next to nothing, however large its reports.
+_ANALYTICS_TODO = f"""SELECT id FROM history WHERE {_SPLIT} IS NULL
+   UNION SELECT history_id FROM history_metrics WHERE extract_version < ?"""
 
 
 def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ...] | None:
@@ -278,13 +281,16 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
     a row's records move only while it is still unmarked, and nothing is
     written for a row deleted in the meantime.
     """
-    last = 0
-    while True:
+    pending = sorted(
+        int(r[0]) for r in conn.execute(_ANALYTICS_TODO, (analytics_store.EXTRACT_VERSION,))
+    )
+    for start in range(0, len(pending), _ANALYTICS_BATCH):
+        ids = pending[start:start + _ANALYTICS_BATCH]
         rows = conn.execute(
-            _ANALYTICS_TODO, (last, analytics_store.EXTRACT_VERSION, _ANALYTICS_BATCH)
+            f"SELECT id, report_json, {_SPLIT} FROM history"
+            f" WHERE id IN ({', '.join('?' * len(ids))}) ORDER BY id",
+            ids,
         ).fetchall()
-        if not rows:
-            return
         work = [w for w in (_analytics_work(conn, r) for r in rows) if w is not None]
         split = {int(r["id"]): r[_SPLIT] for r in rows}
         conn.execute("BEGIN IMMEDIATE")
@@ -309,7 +315,6 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
         except BaseException:
             conn.rollback()
             raise
-        last = int(rows[-1]["id"])
 
 
 def backfill_analytics() -> None:
@@ -363,18 +368,19 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
             report["knowledge"] = {**knowledge, "profile": None}
         # The request records go to history_requests; report_json keeps an
         # empty list in their place (kept inline if they cannot be moved).
+        metrics: tuple[Any, ...] | None = None
+        stored, records, split = report, None, None
         try:
+            metrics = analytics_store.extract_metrics(report)
             stored, records = analytics_store.split_requests(report)
+            split = 1 if records is not None else 0
         except Exception:
-            stored, records = report, None
+            # Left unmarked with its records inline: the backfill retries it.
+            metrics, stored, records, split = None, report, None, None
         report_json = json.dumps(stored, ensure_ascii=False)
         # Serialised the same way, so the stored headline is exactly what
         # reading report_json back would give.
         headline = _perf_headline(json.dumps({"performance": report.get("performance")}))
-        try:
-            metrics: tuple[Any, ...] | None = analytics_store.extract_metrics(report)
-        except Exception:
-            metrics = None  # left to the backfill
         with _connect() as conn:
             snapshot_id = kb_snapshot.put(conn, snap) if isinstance(snap, dict) else None
             cur = conn.execute(
@@ -404,7 +410,7 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                     int(api_auto) if isinstance(api_auto, bool) else None,
                     report.get("stream_mode"),
                     *(headline[c] for c in _PERF_COLS),
-                    1 if records is not None else 0,
+                    split,
                 ),
             )
             rid = int(cur.lastrowid or -1)
