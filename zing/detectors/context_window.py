@@ -3,8 +3,11 @@
 Measures the largest prompt the relay can actually ingest and recall a needle
 from, and compares it to the advertised context window. A relay that silently
 truncates, summarizes, or RAG-shims long prompts will recall well below its
-claim, or fail a needle buried in the middle while passing start and end. zing
-reports the measured divergence; it never asserts fraud outright.
+claim, or fail a needle buried in the middle while passing start and end. A
+server that keeps only the END of an over-long prompt (a local runtime cutting
+the prompt to its configured context length) still recalls a needle near the
+end, so each size is decided at the START edge first. zing reports the measured
+divergence; it never asserts fraud outright.
 
 Scoring follows the published ``SCALE`` (method "deductions"): the score starts
 at 100, the window verdict deducts the share of the declared window that did not
@@ -89,6 +92,15 @@ SCALE = DeductionScale(
 )
 
 
+def _front_note(size: int) -> str:
+    """The sentence a verdict summary gains when the window ended on front
+    truncation (the start of a prompt dropped while its end was recalled)."""
+    return (
+        f" The start of a ~{size}-token prompt was dropped while its end was still "
+        "recalled (front truncation)."
+    )
+
+
 def _window_deduction(ratio: float) -> float:
     """Points the window verdict takes off: the unrecalled share of the claim
     (rounded like the score itself)."""
@@ -133,7 +145,7 @@ class ContextWindowDetector(Detector):
 
         # --- Ascending ladder: find the largest recalling size and the first
         # failing/rejected size above it. Stop after the first failure. Each size is
-        # probed at an EDGE depth and a miss is confirmed before it counts. -------- #
+        # probed at the START edge and a miss is confirmed before it counts. ------ #
         ladder_log: list[dict] = []
         calls = 0
         effective_window: int | None = None
@@ -143,6 +155,8 @@ class ContextWindowDetector(Detector):
         # A timeout says the endpoint is slow at this size, not that it truncates:
         # it ends the ladder without counting as a failure.
         timed_out_at: int | None = None
+        # The smallest size whose start was dropped while its end was recalled.
+        front_truncated_at: int | None = None
 
         for size in ladder_sizes:
             recalled, rejected, status, n = await self._probe_size(
@@ -159,6 +173,8 @@ class ContextWindowDetector(Detector):
             if status == "timeout":
                 timed_out_at = size
                 break
+            if status == "front_truncated":
+                front_truncated_at = size
             # First non-recall (a clean fail, a size rejection, or an odd error).
             first_fail = size
             if rejected:
@@ -189,6 +205,8 @@ class ContextWindowDetector(Detector):
                     timed_out_at = mid
                 elif rejected and rejected_at is None:
                     rejected_at = mid
+                elif status == "front_truncated":
+                    front_truncated_at = mid
 
         # --- Lost-in-the-middle at a mid size (depths 0.1 / 0.5 / 0.9). ------- #
         depth_results: dict[str, bool | None] = {}
@@ -227,6 +245,14 @@ class ContextWindowDetector(Detector):
                 )
 
         # --- Verdicts ---------------------------------------------------------- #
+        # A window that ended on front truncation says so in its verdict; the
+        # evidence keys exist only then (the UI's translated templates key on them).
+        front_ev: dict = (
+            {"front_truncated": True, "front_truncated_at": front_truncated_at}
+            if front_truncated_at is not None
+            else {}
+        )
+        front_note = _front_note(front_truncated_at) if front_truncated_at is not None else ""
         if rejected_at is not None and declared and rejected_at < 0.9 * declared:
             result.findings.append(
                 SCALE.finding(
@@ -289,8 +315,13 @@ class ContextWindowDetector(Detector):
                         summary=(
                             f"Even a ~{ladder_sizes[0]}-token prompt failed recall; the "
                             f"usable window appears far below the declared {declared}."
+                            + front_note
                         ),
-                        evidence={"declared": declared, "smallest_probed": ladder_sizes[0]},
+                        evidence={
+                            "declared": declared,
+                            "smallest_probed": ladder_sizes[0],
+                            **front_ev,
+                        },
                     )
                 )
                 result.status = Status.FAIL
@@ -304,10 +335,20 @@ class ContextWindowDetector(Detector):
                         title="Real context window far below the declared one",
                         summary=(
                             f"Real context window ~{measured} << declared {declared} "
-                            f"(silent truncation suspected)."
+                            f"(silent truncation suspected)." + front_note
                         ),
-                        evidence={"declared": declared, "effective_window": measured, "ratio": round(ratio, 3)},
-                        recommendation="The relay likely truncates or summarizes long prompts.",
+                        evidence={
+                            "declared": declared,
+                            "effective_window": measured,
+                            "ratio": round(ratio, 3),
+                            **front_ev,
+                        },
+                        recommendation=(
+                            "The server silently drops the start of long prompts; raise its "
+                            "context-length setting or treat the declared window as unverified."
+                            if front_ev
+                            else "The relay likely truncates or summarizes long prompts."
+                        ),
                     )
                 )
                 result.status = Status.FAIL
@@ -322,8 +363,14 @@ class ContextWindowDetector(Detector):
                         summary=(
                             f"Real context window ~{measured} is below the declared "
                             f"{declared} (recall degrades before the advertised limit)."
+                            + front_note
                         ),
-                        evidence={"declared": declared, "effective_window": measured, "ratio": round(ratio, 3)},
+                        evidence={
+                            "declared": declared,
+                            "effective_window": measured,
+                            "ratio": round(ratio, 3),
+                            **front_ev,
+                        },
                     )
                 )
                 result.status = Status.WARN if result.status != Status.FAIL else result.status
@@ -356,8 +403,9 @@ class ContextWindowDetector(Detector):
                     summary=(
                         f"No declared context window to compare against; measured "
                         f"effective window ~{effective_window or '<' + str(ladder_sizes[0])} tokens."
+                        + front_note
                     ),
-                    evidence={"declared": None, "effective_window": effective_window},
+                    evidence={"declared": None, "effective_window": effective_window, **front_ev},
                 )
             )
             result.status = Status.INFO
@@ -368,6 +416,7 @@ class ContextWindowDetector(Detector):
                 "declared": declared,
                 "effective_window": effective_window,
                 "timed_out_at": timed_out_at,
+                "front_truncated_at": front_truncated_at,
                 "ladder": ladder_log,
                 "depth_results": depth_results,
                 "calls": calls,
@@ -404,30 +453,43 @@ class ContextWindowDetector(Detector):
     async def _probe_size(
         self, ctx: AuditContext, size: int, *, tokenizer: str | None, reasoning: bool
     ) -> tuple[bool, bool, str, int]:
-        """Decide recall at ``size`` from the most-recalled EDGE positions.
+        """Decide recall at ``size``, START edge first.
 
-        Returns ``(recalled, rejected_for_size, status, calls)``. A single missed
-        needle is not enough to declare a size failed (a benign paraphrase or a
-        dropped marker would falsely shrink the window and drive a HIGH truncation
-        verdict): a miss is confirmed at a second edge before it counts as a fail.
-        A clear size-rejection is authoritative on the first hit.
+        Returns ``(recalled, rejected_for_size, status, calls)``. A truncated prompt
+        whose trailing question survives can only have lost its START (a server
+        cutting the prompt to its context length keeps the end), so the start edge
+        (depth 0.0) decides: recalled there, the size passes in one call.
+
+        A single missed needle is not enough to declare a size failed (a benign
+        paraphrase or a dropped marker would falsely shrink the window and drive a
+        HIGH truncation verdict), so a start miss is checked at the end edge (0.95):
+        missed there too, the size fails. Recalled at the end, the start is probed
+        once more with a fresh needle: recalled now, the first miss was a one-off
+        and the size passes; missed again, the server drops the start of the prompt
+        and the size fails as ``"front_truncated"``. At most three calls per size.
+        A clear size-rejection or a timeout ends the size on the first hit.
         """
         calls = 0
-        last_status = "no_recall"
-        for depth in (0.95, 0.0):
+        status = "no_recall"
+        # (depth, attempt): start, end, then the start again with a fresh needle.
+        for depth, attempt in ((0.0, 0), (0.95, 0), (0.0, 1)):
             outcome = await self._probe(
-                ctx, size, depth=depth, tokenizer=tokenizer, reasoning=reasoning
+                ctx, size, depth=depth, tokenizer=tokenizer, reasoning=reasoning, attempt=attempt
             )
             calls += 1
             recalled, rejected, status = self._classify(outcome, size)
-            last_status = status
-            if recalled:
+            if recalled and depth == 0.0:
                 return True, False, status, calls
             if rejected or status == "timeout":
                 # A timeout at one edge would time out at the other too.
                 return False, rejected, status, calls
-            # else non-recall / param_error / transport error — try the other edge.
-        return False, False, last_status, calls
+            if depth == 0.95 and not recalled:
+                # Missed at both edges (or an error at the end edge): a plain failure.
+                return False, False, status, calls
+            # else a start miss (try the end edge) or an end recall (re-probe the start).
+        # The end recalled but the start missed twice. Only a clean answer without
+        # the needle reads as front truncation; an error at the re-probe stays one.
+        return False, False, "front_truncated" if status == "no_recall" else status, calls
 
     async def _probe(
         self,
@@ -437,8 +499,12 @@ class ContextWindowDetector(Detector):
         depth: float,
         tokenizer: str | None,
         reasoning: bool = False,
+        attempt: int = 0,
     ) -> CompletionOutcome:
-        needle = stable_marker(f"ctxwin-{size}-{depth}")
+        # A re-probe (attempt > 0) gets a fresh needle, so an answer that merely
+        # repeats the previous probe's marker cannot pass it.
+        seed = f"ctxwin-{size}-{depth}" + (f"-{attempt}" if attempt else "")
+        needle = stable_marker(seed)
         # Building a ~200k-token haystack is CPU work; run it off the event loop so
         # concurrent audits in `zing serve` keep measuring honest latencies.
         haystack = await asyncio.to_thread(

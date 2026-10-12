@@ -208,6 +208,20 @@
       ["error", "Expected 4 non-empty vectors, got {returned_vectors}."],
     ],
     "rerank.connectivity": [["error", "POST /rerank failed (HTTP {status_code})."]],
+    // front_truncated_at is only in the evidence when the window ended on front
+    // truncation, so these never shadow the ids' own templates.
+    "context_window.truncation": [
+      [null, "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation)."],
+    ],
+    "context_window.short": [
+      [null, "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation)."],
+    ],
+    "context_window.no_recall": [
+      [null, "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation)."],
+    ],
+    "context_window.measured": [
+      [null, "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation)."],
+    ],
     // error_type is only in the evidence when no HTTP response came back, so
     // this never shadows the generic HTTP-status template.
     "protocol.error_schema": [

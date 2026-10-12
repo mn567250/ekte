@@ -121,7 +121,8 @@ class RequestSpec(BaseModel):
     capture_raw: bool = False
     # Client-side only (never sent): when a short request ends at its output limit
     # with the answer missing or cut off by hidden reasoning, repeat it once with
-    # room to think (BaseHTTPClient.complete). Off for probes whose budget or
+    # room to think, or send it with that room from the start once the endpoint is
+    # known to reason (BaseHTTPClient.complete). Off for probes whose budget or
     # timing is the measurement.
     reasoning_retry: bool = True
 

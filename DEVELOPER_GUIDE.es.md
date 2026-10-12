@@ -430,6 +430,15 @@ relays honestos. `zing kb-import --check <archivo>` ejecuta las mismas
 comprobaciones que la importación del usuario (esquema, límites, expresiones
 regulares peligrosas, prompts, colisiones de ids).
 
+Rellena siempre `identity_keywords` con las palabras del fabricante y de la
+familia con que el modelo se nombra a sí mismo. La comprobación de identidad
+también cuenta la clave del proveedor, el nombre visible y el id del modelo como
+marca auténtica, ampliados con los demás nombres del fabricante en
+`VENDOR_BRANDS` (`zing/knowledge/identity.py`, que es también la lista de marcas
+rivales del detector); la importación completa las palabras clave vacías a
+partir de esos nombres con una advertencia. Las palabras de marca de un
+fabricante nuevo se añaden allí como un grupo.
+
 ### Cambiar los prompts de las sondas
 
 Los textos de las sondas son datos de calibración. Cambiar uno en

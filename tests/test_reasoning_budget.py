@@ -165,3 +165,89 @@ async def test_long_answer_after_a_little_reasoning_is_not_repeated():
     relay = ThinkingRelay(think=10, answer="x" * 400, answer_tokens=400)
     out = await relay.client().complete(_spec(max_tokens=64))
     assert out.finish_reason == "length" and len(relay.bodies) == 1
+
+
+async def test_after_the_first_repeat_short_probes_get_room_up_front():
+    relay = ThinkingRelay()
+    client = relay.client()
+    assert not client.reasoning_room
+    await client.complete(_spec(max_tokens=16))
+    assert client.reasoning_room
+    out = await client.complete(_spec(max_tokens=32))
+    assert out.content == "Paris"
+    assert [b["max_tokens"] for b in relay.bodies] == [16, REASONING_RETRY_TOKENS,
+                                                       REASONING_RETRY_TOKENS]
+    await client.complete(_spec(max_tokens=None, extra_body={"max_completion_tokens": 64}))
+    assert relay.bodies[-1]["max_completion_tokens"] == REASONING_RETRY_TOKENS
+    assert relay.bodies[-1].get("max_tokens") is None
+
+
+async def test_reasoning_room_leaves_opt_outs_and_other_budgets_alone():
+    relay = ThinkingRelay()
+    client = relay.client()
+    client.reasoning_room = True
+    out = await client.complete(_spec(max_tokens=16, reasoning_retry=False))
+    assert out.content == "" and relay.bodies[-1]["max_tokens"] == 16
+    await client.complete(_spec(max_tokens=None))
+    assert relay.bodies[-1].get("max_tokens") is None  # no explicit limit
+    await client.complete(_spec(max_tokens=8192))
+    assert relay.bodies[-1]["max_tokens"] == 8192  # already large enough
+    assert len(relay.bodies) == 3  # no repeats
+
+
+async def test_a_plain_model_never_gets_reasoning_room():
+    relay = ThinkingRelay(think=0)
+    client = relay.client()
+    await client.complete(_spec(max_tokens=16))
+    await client.complete(_spec(max_tokens=16))
+    assert not client.reasoning_room
+    assert [b["max_tokens"] for b in relay.bodies] == [16, 16]
+
+
+async def test_a_repeat_that_did_not_help_is_not_sticky():
+    relay = ThinkingRelay(think=10_000)  # still empty at the retry budget
+    client = relay.client()
+    await client.complete(_spec(max_tokens=16))
+    assert not client.reasoning_room
+    await client.complete(_spec(max_tokens=16))
+    assert [b["max_tokens"] for b in relay.bodies] == [16, REASONING_RETRY_TOKENS] * 2
+
+
+async def test_runner_gives_a_reasoning_profile_room_up_front(monkeypatch, tmp_path):
+    from conftest import MockServer
+
+    from zing.clients import make_client as real
+    from zing.config import AuditOptions
+    from zing.runner import run_audit
+
+    (tmp_path / "thinker.yaml").write_text(
+        "provider: acme\n"
+        "models:\n"
+        "  - id: thinker-1\n"
+        "    family: thinker\n"
+        "    reasoning: true\n"
+    )
+    clients: list = []
+
+    def factory(config, **_):
+        client = real(config, transport=MockServer().transport)
+        clients.append(client)
+        return client
+
+    monkeypatch.setattr("zing.runner.make_client", factory)
+    for model, base_model, expected in (
+        ("thinker-1", "thinker-1", [True, True]),
+        ("plain-model", "plain-model", [False, False]),
+        ("thinker-1", "plain-model", [True, False]),  # baseline has its own profile
+        ("plain-model", "thinker-1", [False, True]),
+    ):
+        clients.clear()
+        await run_audit(
+            TargetConfig(name="t", kind="target", base_url=BASE_URL, model=model),
+            AuditOptions(suite="custom", dimensions=["connectivity"]),
+            baseline=TargetConfig(name="b", kind="baseline", base_url=BASE_URL,
+                                  model=base_model),
+            kb_dirs=[tmp_path],
+            use_user_kb=False,
+        )
+        assert [c.reasoning_room for c in clients] == expected

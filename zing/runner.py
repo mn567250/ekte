@@ -153,11 +153,21 @@ async def run_audit(
     async with AsyncExitStack() as stack:
         client = await stack.enter_async_context(make_client(target))
         client.recorder, client.endpoint = recorder, "target"
+        # A model known to reason gets room to think on short probes up front.
+        client.reasoning_room = bool(profile is not None and profile.model.reasoning)
 
         baseline_client = None
         if baseline is not None:
             baseline_client = await stack.enter_async_context(make_client(baseline))
             baseline_client.recorder, baseline_client.endpoint = recorder, "baseline"
+            # The baseline may be another model (--baseline-model): its own profile.
+            if baseline.claimed == target.claimed:
+                baseline_client.reasoning_room = client.reasoning_room
+            else:
+                base_profile = kb.resolve(baseline.claimed, baseline.declared_provider)
+                baseline_client.reasoning_room = bool(
+                    base_profile is not None and base_profile.model.reasoning
+                )
 
         judge = None
         if options.judge:

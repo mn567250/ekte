@@ -174,7 +174,10 @@ caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
   límite de 4.096 tokens, para que un modelo que piensa antes de responder no se
   lea como fallo. Las sondas cuyo límite o tiempo es la medida (rendimiento,
   caché de prompts, fiabilidad, prompt inyectado, salida máxima, el atributo de
-  solicitud `max_tokens`) nunca se repiten.
+  solicitud `max_tokens`) nunca se repiten. Una vez que se sabe que un endpoint
+  razona (su perfil dice `reasoning: true`, o tras su primera repetición de este
+  tipo), las sondas cortas se envían desde el principio con el límite de 4.096
+  tokens en lugar de dos veces.
 
 ---
 
@@ -326,9 +329,15 @@ con la estimación heurística de tokens de zing, y el modelo debe devolverlo.
 1. Una escalera ascendente que se duplica desde 2K tokens hasta la ventana
    declarada, limitada por `--max-context-tokens` (200K por defecto), con un
    peldaño cerca del 90 % del máximo (siete tamaños como mucho). Cada tamaño se
-   sondea con la aguja en un **borde** (profundidad 0,95 y luego 0,0): un fallo
-   solo se confirma con el segundo borde, y la escalera se detiene en el primer
-   fallo confirmado.
+   sondea primero con la aguja en el **inicio** (profundidad 0,0): un truncado
+   que conserva la pregunta al final del prompt solo puede descartar su inicio
+   (un servidor local que recorta el prompt a su longitud de contexto conserva
+   el final), así que un acierto ahí aprueba el tamaño con una sola llamada. Un
+   fallo se comprueba en el final (profundidad 0,95); si el final se recupera,
+   el inicio se sondea una vez más con una aguja nueva, y un segundo fallo
+   suspende el tamaño como **truncado por el inicio** (indicado en la evidencia
+   del veredicto). Tres llamadas por tamaño como mucho; la escalera se detiene
+   en el primer fallo confirmado.
 2. Un paso de búsqueda binaria entre el último tamaño recuperado y el primero
    que falló.
 3. Pérdida en el medio: con min(32K, ventana medida), la aguja se coloca en las
@@ -382,11 +391,23 @@ cuando cambian el comportamiento.
    una lista de marcas rivales (`identity_forbidden` del perfil más una lista
    integrada). Una marca rival solo cuenta si falta la auténtica; «Soy Claude,
    no GPT» es un contraste benigno.
+   La marca auténtica son las `identity_keywords` del perfil más sus propios
+   nombres: la clave del proveedor, el nombre inicial del nombre visible del
+   proveedor, la primera palabra del id y de la familia del modelo, y los demás
+   nombres de ese fabricante en la lista integrada (`z.ai` también cubre
+   `zhipu`). Por eso un modelo que nombra a su propio fabricante nunca es una
+   marca rival, aunque `identity_keywords` esté vacío. Los nombres derivados
+   nunca anulan `identity_forbidden`, las palabras genéricas («ai»,
+   «platform», …) nunca cuentan, y la marca propia de una plataforma no cuenta
+   para el modelo de otro fabricante que sirve.
 2. **Huellas de comportamiento** de la base de conocimiento (fecha de corte del
    conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
    idioma, …): hasta seis sondas de código puro, comprobadas con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
-   `expect_regex`; salida limitada a 512 tokens. Una huella que se desvía resta
+   `expect_regex`; salida limitada a 512 tokens. Una sonda que
+   necesita más salida (por ejemplo, una comprobación de la salida máxima) se
+   omite, figura como Info y otra sonda ocupa su lugar. Una huella que se
+   desvía resta
    su parte de peso sobre 100 puntos (25 como mucho); sola se queda en BAJA,
    dos o más añaden un hallazgo agregado MEDIO.
 3. **Campo `model` devuelto** por una llamada simple: se toleran sufijos de
@@ -406,6 +427,7 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 |  | La respuesta se desvió del comportamiento nativo: resta la parte de peso de la sonda sobre 100 puntos. | Advertencia · Baja | hasta −25 pts |
 |  | La respuesta nombró una marca rival y no la auténtica: resta la parte de peso de la sonda. | Fallo · Alta | hasta −25 pts · tope 20 |
 |  | No hubo una respuesta útil para evaluar. | No concluyente | Sin deducción |
+|  | La sonda necesita más salida que el tope de identidad de 512 tokens; no se ejecuta. | Info | Sin deducción |
 | `model_identity.fp_aggregate` | Dos o más huellas de comportamiento se desviaron. | Advertencia · Media | Sin deducción |
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |
