@@ -30,7 +30,7 @@ run's test time (`WEIGHTS` in `pages.py`):
 | Page | Tests | Share of the run time |
 |---|---:|---:|
 | audit | 213 | 15 % |
-| history | 232 | 21 % |
+| history | 234 | 21 % |
 | monitors | 212 | 10 % |
 | tools | 206 | 10 % |
 | kb | 199 | 29 % |
