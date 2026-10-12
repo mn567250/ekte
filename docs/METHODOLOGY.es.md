@@ -326,9 +326,15 @@ con la estimación heurística de tokens de zing, y el modelo debe devolverlo.
 1. Una escalera ascendente que se duplica desde 2K tokens hasta la ventana
    declarada, limitada por `--max-context-tokens` (200K por defecto), con un
    peldaño cerca del 90 % del máximo (siete tamaños como mucho). Cada tamaño se
-   sondea con la aguja en un **borde** (profundidad 0,95 y luego 0,0): un fallo
-   solo se confirma con el segundo borde, y la escalera se detiene en el primer
-   fallo confirmado.
+   sondea primero con la aguja en el **inicio** (profundidad 0,0): un truncado
+   que conserva la pregunta al final del prompt solo puede descartar su inicio
+   (un servidor local que recorta el prompt a su longitud de contexto conserva
+   el final), así que un acierto ahí aprueba el tamaño con una sola llamada. Un
+   fallo se comprueba en el final (profundidad 0,95); si el final se recupera,
+   el inicio se sondea una vez más con una aguja nueva, y un segundo fallo
+   suspende el tamaño como **truncado por el inicio** (indicado en la evidencia
+   del veredicto). Tres llamadas por tamaño como mucho; la escalera se detiene
+   en el primer fallo confirmado.
 2. Un paso de búsqueda binaria entre el último tamaño recuperado y el primero
    que falló.
 3. Pérdida en el medio: con min(32K, ventana medida), la aguja se coloca en las

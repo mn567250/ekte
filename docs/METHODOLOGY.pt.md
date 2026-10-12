@@ -324,9 +324,15 @@ com a estimativa heurística de tokens do zing, e o modelo tem de o devolver.
 1. Uma escada ascendente que duplica a partir de 2K tokens até à janela
    declarada, limitada por `--max-context-tokens` (200K por omissão), com um
    degrau perto de 90 % do máximo (sete tamanhos no máximo). Cada tamanho é
-   sondado com a agulha numa **extremidade** (profundidade 0,95 e depois 0,0):
-   uma falha só é confirmada pela segunda extremidade, e a escada para na
-   primeira falha confirmada.
+   sondado primeiro com a agulha no **início** (profundidade 0,0): uma truncagem
+   que mantém a pergunta no fim do prompt só pode descartar o seu início (um
+   servidor local que corta o prompt ao seu comprimento de contexto mantém o
+   fim), por isso uma recuperação aí aprova o tamanho numa só chamada. Uma falha
+   é verificada no fim (profundidade 0,95); se o fim for recuperado, o início é
+   sondado mais uma vez com uma agulha nova, e uma segunda falha reprova o
+   tamanho como **truncagem pelo início** (indicada nas evidências do
+   veredicto). No máximo três chamadas por tamanho; a escada para na primeira
+   falha confirmada.
 2. Um passo de pesquisa binária entre o último tamanho recuperado e o primeiro
    que falhou.
 3. Perda no meio: com min(32K, janela medida), a agulha é colocada nas

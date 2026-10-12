@@ -312,9 +312,15 @@ estimate, and the model must return it.
 
 1. An ascending doubling ladder from 2K tokens up to the declared window, capped
    by `--max-context-tokens` (default 200K), with a rung near 90% of the top
-   (at most seven sizes). Each size is probed with the needle at an **edge**
-   (depth 0.95, then 0.0): a miss is only confirmed by the second edge, and the
-   ladder stops at the first confirmed failure.
+   (at most seven sizes). Each size is probed with the needle at the **start**
+   edge (depth 0.0) first: a truncation that keeps the question at the end of
+   the prompt can only drop its start (a local server cutting the prompt to its
+   context length keeps the end), so a recall there passes the size in one
+   call. A miss is confirmed at the end edge (depth 0.95); if the end is
+   recalled, the start is probed once more with a fresh needle, and a second
+   miss fails the size as **front truncation** (named in the verdict's
+   evidence). At most three calls per size; the ladder stops at the first
+   confirmed failure.
 2. One binary-search step between the last recalled and the first failing size.
 3. Lost-in-the-middle: at min(32K, measured window) the needle is placed at
    depths 0.1, 0.5 and 0.9; start and end recalled but not the middle is a
