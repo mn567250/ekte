@@ -114,6 +114,7 @@ zing/
     jobs.py            trabajos de auditoría en segundo plano y el bloqueo por relay
     security.py        escucha en loopback, lista de hosts permitidos, controles de Origin/JSON, cabeceras
     history.py         almacén del historial de auditorías (history.db)
+    analytics_store.py sus tablas de análisis: métricas por ejecución, registros de peticiones
     watches.py         almacén de los monitores (watches.db)
     masterkey.py       estados y acciones de la clave maestra (servidor y `zing secret`)
     static/            páginas de la interfaz clásica y scripts compartidos (lang.js, i18n.js, …)
@@ -373,6 +374,26 @@ resuelto. Un directorio que ya existe conserva sus permisos; solo el `~/.zing`
 por defecto se restringe a `0700`. Las filas del historial están indexadas por
 objetivo y modelo (`idx_history_target`), índice que usa `history.latest_for()`
 para encontrar la ejecución anterior de un monitor.
+
+Desde la versión 2 del esquema (`PRAGMA user_version`), `history.db` también
+contiene las tablas de análisis, definidas en `web/analytics_store.py`:
+`history_metrics` (una fila de métricas extraídas por ejecución: hora de inicio,
+tasas, percentiles de latencia/TTFT/decodificación, ratios de facturación,
+número de hallazgos y más; NULL donde la ejecución no midió un valor),
+`history_dimensions` (puntuaciones de dimensiones y detectores) y
+`history_requests` (los registros de peticiones de la ejecución, objetivo y
+baseline, en el orden de la lista). Los `performance.requests` de un informe se
+guardan solo ahí: `save()` los saca de `report_json` (`requests_split` marca la
+fila) y `get()` / `latest_for()` los vuelven a poner, de modo que un informe se
+lee idéntico a como se guardó; lo que las columnas no pueden reproducir con
+exactitud va a la columna JSON `extra`. `extract_metrics()` es pura y está
+versionada (`EXTRACT_VERSION`). Tras la migración, un backfill por lotes (una
+transacción corta por lote, idempotente) mueve los registros de las filas
+antiguas, extrae sus métricas y vuelve a extraer las filas escritas con una
+`EXTRACT_VERSION` anterior; `history.backfill_analytics()` lo ejecuta de nuevo
+cuando hace falta. La hora de inicio de una ejecución es el `started_at` del
+informe; los informes anteriores a ese campo reciben `generated_at` menos el
+intervalo de sus registros de peticiones (`started_at_estimated` = 1).
 
 Las claves API guardadas las cifra `zing/secretbox.py` (Fernet, guardadas como
 `enc:v1:…`; las referencias `env:`/`file:` se quedan tal cual). La clave maestra

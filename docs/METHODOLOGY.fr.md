@@ -763,6 +763,10 @@ les deux également.
 Les tokens d'entrée en cache ne comptent que s'ils couvrent au moins la moitié
 du prompt : les serveurs locaux (Ollama, llama.cpp, LM Studio) réutilisent le
 modèle de chat en cache de chaque prompt, ce qui n'est pas une réponse stockée.
+Chaque appel de l'audit est conservé comme enregistrement de requête
+(`performance.requests`, des nombres uniquement, jamais le texte du prompt ou
+de la réponse) ; son `start_ms` compte à partir du `started_at` du rapport
+(UTC), ce qui permet de reconstituer l'heure de chaque appel.
 
 La régularité utilise des rapports de queue (p90 ÷ p50 pour la latence et le
 TTFT, p50 ÷ p10 pour le débit), qu'une requête aberrante ne déplace pas comme

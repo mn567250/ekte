@@ -717,6 +717,9 @@ baseline alternate so network drift hits both equally.
 Cached input tokens only count when they cover at least half the prompt: local
 servers (Ollama, llama.cpp, LM Studio) reuse the cached chat template of every
 prompt, which is not a stored answer.
+Every call of the audit is kept as a request record (`performance.requests`,
+numbers only, never prompt or response text); its `start_ms` counts from the
+report's `started_at` (UTC), so each call's time can be reconstructed.
 
 Consistency uses tail ratios (p90 ÷ p50 for latency and TTFT, p50 ÷ p10 for
 throughput), which one stray request cannot move the way it moves a standard

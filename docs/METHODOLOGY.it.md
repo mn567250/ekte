@@ -758,6 +758,10 @@ stesso modo.
 I token di input in cache contano solo se coprono almeno metà del prompt: i
 server locali (Ollama, llama.cpp, LM Studio) riusano il template di chat in
 cache di ogni prompt, che non è una risposta memorizzata.
+Ogni chiamata della verifica viene conservata come record di richiesta
+(`performance.requests`, solo numeri, mai testo del prompt o della risposta);
+il suo `start_ms` conta dallo `started_at` del rapporto (UTC), così l'ora di
+ogni chiamata si può ricostruire.
 
 La costanza usa rapporti di coda (p90 ÷ p50 per latenza e TTFT, p50 ÷ p10 per il
 throughput), che una richiesta anomala non sposta come sposta una deviazione

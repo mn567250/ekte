@@ -268,6 +268,7 @@ Markdown/HTML/PDF 文件的章节标题为英文。命令行自身的 `--format 
 校准过）。唯一的例外是那些「语言本身就是测量对象」的知识库指纹——例如中国原生模型的
 中文流畅度、分词器和自我身份识别探测。每份报告都会记录实际使用的探测语言
 （`prompt_languages`，例如 `["en", "zh"]`）。
+`started_at` 记录检测开始的时间（UTC），每条请求记录的 `start_ms` 都从这一刻算起。
 
 ## 检测了什么
 
@@ -597,6 +598,8 @@ Qwen、GLM 和 Moonshot（用 `zing kb` 查看）。共有三层，后面的优�
   `zing data-dir` 会显示它的位置；`--data-dir 路径` 可为单次运行另选目录，例如
   `zing serve --data-dir .` 把数据库放在当前文件夹。它们是普通的 SQLite 文件，可自行打开分析
   （zing 运行时最好只读打开）。如果该文件夹是代码仓库，请勿提交 `watches.db`。
+  `history_metrics` 每次运行存一行测量值，`history_requests` 存每条请求记录（只在那里存一份，
+  不再放进每份报告）。
 
 ## 负责任使用
 

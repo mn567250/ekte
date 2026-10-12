@@ -103,6 +103,7 @@ zing/
     jobs.py            后台检测任务与按中转站的互斥
     security.py        回环绑定、Host 白名单、Origin/JSON 校验、安全响应头
     history.py         检测历史存储（history.db）
+    analytics_store.py 其分析表：每次运行的指标、请求记录
     watches.py         监控存储（watches.db）
     masterkey.py       主密钥的状态与操作（服务器与 `zing secret`）
     static/            经典界面页面与共用脚本（lang.js、i18n.js 等）
@@ -283,6 +284,19 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 设为该绝对路径，`zing data-dir` 输出解析后的目录。已存在的目录保留其权限；只有默认的 `~/.zing`
 会被收紧为 `0700`。检测历史的记录按目标和模型建立索引（`idx_history_target`），
 `history.latest_for()` 借此找到监控的上一次运行。
+
+自 schema 版本 2（`PRAGMA user_version`）起，`history.db` 还包含分析表，定义在
+`web/analytics_store.py`：`history_metrics`（每次运行一行提取出的指标：开始时间、各类比率、
+延迟/TTFT/解码速度的百分位、计费比、发现数量等；该次运行未测量的值为 NULL）、
+`history_dimensions`（各维度和检测器的得分）以及 `history_requests`（该次运行的请求记录，
+含目标与基线，按列表顺序）。报告的 `performance.requests` 只存放在那里：`save()` 把它们从
+`report_json` 中移出（由 `requests_split` 标记该行），`get()` / `latest_for()` 再放回去，
+因此读回的报告与保存时完全一致；列无法精确还原的内容存入 JSON 列 `extra`。
+`extract_metrics()` 是纯函数，并带版本号（`EXTRACT_VERSION`）。迁移之后，分批回填
+（每批一个短事务，幂等）会移出旧行的请求记录、提取其指标，并重新提取由较旧
+`EXTRACT_VERSION` 写入的行；需要时可用 `history.backfill_analytics()` 再次运行。一次运行的
+开始时间是报告的 `started_at`；早于该字段的报告取 `generated_at` 减去其请求记录覆盖的时长
+（`started_at_estimated` = 1）。
 
 保存的 API 密钥由 `zing/secretbox.py` 加密（Fernet，存为 `enc:v1:…`；`env:`/`file:` 引用保持原样）。
 主密钥本身从不保存：`web/masterkey.py`（`Vault`，服务器与 `zing secret` 共用）在主密钥来自

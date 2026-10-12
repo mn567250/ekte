@@ -305,7 +305,8 @@ Each report also records how the endpoint was spoken to: the wire protocol
 (`target.api`: `openai`, `anthropic` or `responses`), whether `--api auto`
 detected it (`target.api_auto`), and the performance probe's request mode
 (`stream_mode`: `stream`, `non_stream` or `both` for the full suite). The web
-UI's history page can filter on all three.
+UI's history page can filter on all three. `started_at` records when the audit
+started (UTC); the `start_ms` of every request record counts from it.
 
 ## What it checks
 
@@ -712,7 +713,10 @@ redacted and escaped before it is written.
   remove everything. `zing data-dir` prints where it is; `--data-dir PATH`
   picks another one for a single run, e.g. `zing serve --data-dir .` keeps the
   databases in the current folder. They are plain SQLite files, so you can open
-  them (read-only is safest while zing runs) for your own analysis. Don't
+  them (read-only is safest while zing runs) for your own analysis:
+  `history_metrics` holds one row of measured values per run and
+  `history_requests` every request record (stored there once, not inside each
+  saved report). Don't
   commit `watches.db` if that folder is a repository.
 
 ## Responsible use

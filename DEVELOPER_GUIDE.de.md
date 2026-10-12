@@ -116,6 +116,7 @@ zing/
     jobs.py            Hintergrund-Prüfaufträge und die Relay-Sperre
     security.py        Loopback-Bindung, Host-Allowlist, Origin-/JSON-Prüfung, Header
     history.py         Speicher des Prüfverlaufs (history.db)
+    analytics_store.py seine Analysetabellen: Kennzahlen pro Lauf, Anfrage-Datensätze
     watches.py         Speicher der Überwachungen (watches.db)
     masterkey.py       Zustände und Aktionen des Hauptschlüssels (Server und `zing secret`)
     static/            Seiten der klassischen Oberfläche und gemeinsame Skripte (lang.js, i18n.js, …)
@@ -376,6 +377,26 @@ Die globale Option `--data-dir` (auch bei `zing serve`) setzt lediglich
 Verzeichnis aus. Ein bereits vorhandenes Verzeichnis behält seine Rechte; nur das
 Standardverzeichnis `~/.zing` wird auf `0700` verschärft. Verlaufszeilen sind nach Ziel und Modell indiziert (`idx_history_target`), was
 `history.latest_for()` nutzt, um den vorigen Lauf einer Überwachung zu finden.
+
+Seit Schemaversion 2 (`PRAGMA user_version`) enthält `history.db` auch die
+Analysetabellen, definiert in `web/analytics_store.py`: `history_metrics` (eine
+Zeile extrahierter Kennzahlen pro Lauf: Startzeit, Raten, Perzentile von
+Latenz/TTFT/Dekodierung, Abrechnungsverhältnisse, Anzahl der Befunde und mehr;
+NULL, wo der Lauf einen Wert nicht gemessen hat), `history_dimensions` (Werte
+der Dimensionen und Detektoren) und `history_requests` (die Anfrage-Datensätze
+des Laufs, Ziel und Baseline, in Listenreihenfolge). Die `performance.requests`
+eines Berichts liegen nur dort: `save()` nimmt sie aus `report_json` heraus
+(`requests_split` markiert die Zeile), `get()` / `latest_for()` setzen sie
+wieder ein, sodass ein Bericht genau so zurückgelesen wird, wie er gespeichert
+wurde; was die Spalten nicht exakt wiedergeben können, landet in der
+JSON-Spalte `extra`. `extract_metrics()` ist eine reine, versionierte Funktion
+(`EXTRACT_VERSION`). Nach der Migration verschiebt ein Backfill in Stapeln (eine
+kurze Transaktion pro Stapel, idempotent) die Datensätze älterer Zeilen,
+extrahiert ihre Kennzahlen und extrahiert Zeilen einer älteren
+`EXTRACT_VERSION` neu; `history.backfill_analytics()` startet ihn bei Bedarf
+erneut. Die Startzeit eines Laufs ist `started_at` des Berichts; Berichte von
+vor diesem Feld erhalten `generated_at` minus die Zeitspanne ihrer
+Anfrage-Datensätze (`started_at_estimated` = 1).
 
 Gespeicherte API-Schlüssel verschlüsselt `zing/secretbox.py` (Fernet,
 gespeichert als `enc:v1:…`; `env:`/`file:`-Verweise bleiben unverändert). Der

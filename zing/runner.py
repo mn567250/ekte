@@ -256,6 +256,7 @@ async def run_audit(
         tool_version=__version__,
         mode=mode,
         generated_at=datetime.now(timezone.utc).isoformat(),
+        started_at=recorder.started_at.isoformat(),
         command=command,
         suite=options.suite,
         dimensions_selected=selected,

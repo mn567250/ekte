@@ -313,6 +313,8 @@ conocimiento cuyo idioma *es* la medida — por ejemplo, las sondas de fluidez e
 chino, de tokenizer y de autoidentificación de los modelos chinos. Cada informe
 registra los idiomas de sonda realmente usados (`prompt_languages`, p. ej.
 `["en", "zh"]`).
+`started_at` registra cuándo empezó la auditoría (UTC); el `start_ms` de cada
+registro de petición cuenta desde ese momento.
 
 ## Qué comprueba
 
@@ -757,6 +759,9 @@ escribirse.
   carpeta actual. Son archivos SQLite normales que puedes abrir para tus
   propios análisis (mejor solo lectura mientras zing se ejecuta). No hagas
   commit de `watches.db` si esa carpeta es un repositorio.
+  `history_metrics` guarda una fila de valores medidos por ejecución y
+  `history_requests` cada registro de petición (guardado ahí una sola vez, no
+  dentro de cada informe).
 
 ## Uso responsable
 

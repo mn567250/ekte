@@ -311,6 +311,8 @@ exatos). As únicas exceções são as impressões da base de conhecimento cujo 
 *é* a medida — por exemplo, as sondas de fluência em chinês, de tokenizer e de
 autoidentificação dos modelos chineses. Cada relatório regista os idiomas de
 sonda efetivamente usados (`prompt_languages`, p. ex. `["en", "zh"]`).
+`started_at` regista quando a auditoria começou (UTC); o `start_ms` de cada
+registo de pedido conta a partir desse momento.
 
 ## O que é verificado
 
@@ -754,6 +756,9 @@ sonda. O texto controlado pelo relay é ocultado e escapado antes de ser escrito
   atual. São ficheiros SQLite normais que pode abrir para as suas próprias
   análises (de preferência só leitura enquanto o zing corre). Não faça commit
   de `watches.db` se essa pasta for um repositório.
+  `history_metrics` guarda uma linha de valores medidos por execução e
+  `history_requests` cada registo de pedido (guardado aí uma só vez, não dentro
+  de cada relatório).
 
 ## Utilização responsável
 

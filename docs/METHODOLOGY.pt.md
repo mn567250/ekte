@@ -755,6 +755,10 @@ afete ambos por igual.
 Os tokens de entrada em cache só contam quando cobrem pelo menos metade do
 prompt: os servidores locais (Ollama, llama.cpp, LM Studio) reutilizam o modelo
 de chat em cache de cada prompt, o que não é uma resposta guardada.
+Cada chamada da auditoria fica guardada como registo de pedido
+(`performance.requests`, só números, nunca texto do prompt ou da resposta); o
+seu `start_ms` conta a partir do `started_at` do relatório (UTC), por isso a
+hora de cada chamada pode ser reconstruída.
 
 A constância usa rácios de cauda (p90 ÷ p50 para latência e TTFT, p50 ÷ p10 para
 a vazão), que um pedido atípico não desloca como desloca um desvio-padrão;
