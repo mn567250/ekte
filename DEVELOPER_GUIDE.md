@@ -113,6 +113,7 @@ zing/
     jobs.py            background audit jobs and the per-relay gate
     security.py        loopback bind, Host allowlist, Origin/JSON checks, headers
     history.py         audit history store (history.db)
+    analytics_store.py its analytics tables: per-run metrics, request records
     watches.py         monitor store (watches.db)
     masterkey.py       the master key's states and actions (server and `zing secret`)
     static/            classic UI pages and the shared scripts (lang.js, i18n.js, …)
@@ -352,6 +353,24 @@ are safe on FastAPI's thread pool. The global `--data-dir` option (also on
 keeps its mode; only the default `~/.zing` is tightened to `0700`. History rows
 are indexed by target and model (`idx_history_target`), which
 `history.latest_for()` uses to find a monitor's previous run.
+
+Since schema version 2 (`PRAGMA user_version`) `history.db` also holds the
+analytics tables, defined in `web/analytics_store.py`: `history_metrics` (one
+row of extracted metrics per run: start time, rates, latency/TTFT/decode
+percentiles, billing ratios, finding counts and more; NULL where the run did
+not measure a value), `history_dimensions` (dimension and detector scores) and
+`history_requests` (the run's request records, target and baseline, in list
+order). A report's `performance.requests` are kept only there: `save()` takes
+them out of `report_json` (`requests_split` marks the row) and `get()` /
+`latest_for()` put them back, so a report reads back identical to the one
+saved; whatever the columns cannot reproduce exactly goes into the JSON column
+`extra`. `extract_metrics()` is pure and versioned (`EXTRACT_VERSION`). After
+the migration a batched backfill (one short transaction per batch, idempotent)
+moves older rows' records and extracts their metrics, and re-extracts rows
+written by an older `EXTRACT_VERSION`; `history.backfill_analytics()` runs it
+again on demand. A run's start time is the report's `started_at`; reports from
+before that field get `generated_at` minus the span of their request records
+(`started_at_estimated` = 1).
 
 Stored API keys are encrypted by `zing/secretbox.py` (Fernet, stored as
 `enc:v1:…`; `env:`/`file:` references stay as they are). The master key itself

@@ -6,6 +6,34 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Reports record when the audit started (`started_at`).** An ISO UTC
+  timestamp taken at the same instant the request records' `start_ms` offsets
+  count from, so the time of every call can be reconstructed. Optional: older
+  reports without it stay valid.
+- **Per-run metrics in `history.db` (schema version 2).** Every saved run gets
+  a row in `history_metrics` (start time, success/error/timeout rates,
+  latency, TTFT and decode percentiles, billing ratios, reasoning and cached
+  token shares, echoed-model mismatch, context window, finding counts, the zing
+  version and knowledge-base profile it was scored with) and its dimension and
+  detector scores in `history_dimensions`, groundwork for the analytics views.
+  A value the run did not measure is NULL, never 0. Runs saved before the
+  upgrade are processed once, in small batches, the first time the new
+  version opens the database; for reports without `started_at` the start time
+  is estimated from `generated_at` and the span of the request records, and
+  marked as estimated.
+
+### Changed
+
+- **Smaller `history.db`: request records are stored once.** A report's
+  `performance.requests` (target and baseline) move out of the stored report
+  JSON into their own table, `history_requests`, and are put back when the
+  report is read, so saved reports read back exactly as before. Existing rows
+  are converted by the same one-time backfill; a row is either fully converted
+  or left as it was, and rows that still hold their records inline keep
+  working.
+
 ## [0.19.2] — fixes for local and reasoning models
 
 ### Changed
