@@ -6,6 +6,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **CI runs the accessibility suite only for the pages a change affects.** On
+  pull requests into the integration branches a new `accessibility scope` job
+  maps the changed files to web UI v2 pages (`python -m tests.a11y.affected`,
+  one mapping in `tests/a11y/pages.py`) and the browser suite tests only those
+  pages, in one to four jobs; a docs-only change skips it. Files every page
+  uses, and any web UI file the mapping does not know, still run everything.
+  Pushes, pull requests into `main`, a new nightly run and manual runs test
+  every page, and only those full runs build the BITV conformance report. Pip
+  and Playwright's Chromium are cached. Locally, `ZING_A11Y_PAGES=history,kb`
+  selects pages the same way (tests/a11y/README.md).
+
 ## [0.19.2] — fixes for local and reasoning models
 
 ### Changed
