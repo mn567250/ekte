@@ -435,7 +435,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v zing-data:/data zing
 
 | 工作流 | 触发条件 | 作用 |
 |---|---|---|
-| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `a11y/integration`、`perf/integration`）；每晚定时及手动（仅无障碍测试） | 在 Python 3.10–3.13 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果：推送、针对 `main` 的 Pull Request、每晚及手动运行测试所有页面（并生成 BITV 符合性报告），其他 Pull Request 只测试改动影响的页面（仅改文档时不运行）——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
+| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `a11y/integration`、`perf/integration`）；每晚定时及手动（仅无障碍测试） | 在 Python 3.10–3.13 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果：推送、每晚及手动运行测试所有页面（并生成 BITV 符合性报告），Pull Request 只测试改动影响的页面（仅改文档时不运行）——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
 | `.github/workflows/release.yml` | `v*` 标签 | 构建、运行 `twine check` 并发布到 PyPI（Trusted Publishing） |
 | `.github/workflows/example-audit.yml` | 每日定时、手动 | 使用该 Action 定时审计中转站的示例 |
 

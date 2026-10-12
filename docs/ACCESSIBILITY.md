@@ -26,10 +26,10 @@ navigation and identification, page titles, reachability); the two combine.
 
 In CI an `accessibility scope` job decides what to test
 (`python -m tests.a11y.affected`, mapping in `tests/a11y/pages.py`, see
-[tests/a11y/README.md](../tests/a11y/README.md)): every page on pushes, pull
-requests into `main`, the nightly run and manual runs, in four
-`accessibility k/4 (informational)` jobs; on other pull requests only the
-pages the change can affect, in one to four jobs, and nothing for changes
+[tests/a11y/README.md](../tests/a11y/README.md)): every page on pushes (to `main`
+and the integration branches), the nightly run and manual runs, in four
+`accessibility k/4 (informational)` jobs; on pull requests only the pages
+the change can affect, in one to four jobs, and nothing for changes
 outside the web UI. A file shared by every page, or a web UI file the mapping
 does not know, runs everything. The jobs run without failing the pipeline and
 upload those files; they become a required check once the suite is green.

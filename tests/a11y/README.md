@@ -52,16 +52,18 @@ the scripts and styles only it loads select that page; assets loaded by some
 pages select those (`report.js`: audit and History); files every page uses
 (`nav.js`, `zing.css`, `theme.js`, `i18n.js`, the locales, `server.py`, this
 directory, `ci.yml`, `pyproject.toml`, `uv.lock`, the seeded report fixture)
-select all of them. Files outside the web UI (detectors, docs, other tests)
-select none. **Fail-safe:** a file under `zing/web/`, `zing/i18n/` or
+select all of them. The audit pipeline (`zing/detectors/`, `zing/runner.py`,
+`zing/clients/`, `zing/scoring.py`, `zing/report/`) selects the audit page:
+its flow runs a real audit against a fake relay and renders the report.
+Other files outside the web UI (docs, other tests, the CLI) select none. **Fail-safe:** a file under `zing/web/`, `zing/i18n/` or
 `tests/a11y/` that no rule matches selects everything, and so does a failing
 `git diff`.
 
 `full` means every page; only such a run builds the BITV conformance report.
 
-In CI the `accessibility scope` job runs it on pull requests into the
-integration branches; pushes, pull requests into `main`, the nightly run
-(03:17 UTC) and manual runs test every page. A full run is four round-robin
+In CI the `accessibility scope` job runs it on pull requests; pushes (to
+`main` and the integration branches), the nightly run (03:17 UTC) and manual
+runs test every page. A full run is four round-robin
 shards; a partial run gets one to four jobs by the summed weight of its pages
 (`WEIGHTS`, `job_count` in `pages.py`), each running the whole selection with
 `ZING_A11Y_SHARD=k/n`, so the jobs stay even however large a page is.

@@ -4,7 +4,7 @@ Prints ``{"pages": [...], "full": bool, "reason": "..."}`` for the files
 changed between two commits (``--base A --head B``: ``git diff A...B``, i.e.
 since their merge base), for files given on the command line (``--files``),
 or one per line on stdin (``--files -``). ``--full REASON`` skips the diff and
-selects every page (CI: pushes, PRs into main, nightly runs).
+selects every page (CI: pushes, nightly and manual runs).
 
 ``pages`` is empty when no changed file can affect web UI v2; ``full`` means
 every page (the complete suite). The mapping is in tests/a11y/pages.py. When

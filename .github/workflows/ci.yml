@@ -45,9 +45,10 @@ jobs:
 
   a11y-scope:
     # Which pages the a11y suite tests on this run (tests/a11y/pages.py):
-    # everything on pushes, PRs into main, the nightly run and manual runs;
-    # on other PRs only the pages the PR's changes can affect (none for a
-    # docs-only PR, all of them when a shared or unmapped UI file changes).
+    # everything on pushes (main and the integration branches), the nightly
+    # run and manual runs; on pull requests only the pages the PR's changes
+    # can affect (none for a docs-only PR, all of them when a shared or
+    # unmapped UI file changes).
     name: accessibility scope
     # not on PRs into the perf integration branch (see the a11y job)
     if: github.event_name != 'pull_request' || github.base_ref != 'perf/integration'
@@ -69,18 +70,13 @@ jobs:
         id: scope
         env:
           EVENT: ${{ github.event_name }}
-          BASE_REF: ${{ github.base_ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         # standard library only: the runner's python3, no setup
         run: |
           case "$EVENT" in
             pull_request)
-              if [ "$BASE_REF" = main ]; then
-                python3 -m tests.a11y.affected --full "pull request into main" --github-output
-              else
-                python3 -m tests.a11y.affected --base "$BASE_SHA" --head "$HEAD_SHA" --github-output
-              fi ;;
+              python3 -m tests.a11y.affected --base "$BASE_SHA" --head "$HEAD_SHA" --github-output ;;
             push) python3 -m tests.a11y.affected --full "push to $GITHUB_REF_NAME" --github-output ;;
             schedule) python3 -m tests.a11y.affected --full "nightly run" --github-output ;;
             *) python3 -m tests.a11y.affected --full "$EVENT" --github-output ;;
@@ -194,7 +190,7 @@ jobs:
             else
               echo "Partial run, pages **$PAGES** only: $REASON."
               echo
-              echo "No BITV conformance report: that needs a full run (pushes, PRs into main, the nightly run, a manual run)."
+              echo "No BITV conformance report: that needs a full run (pushes, the nightly run, a manual run)."
               echo "Findings: artifact a11y-report."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
