@@ -269,6 +269,9 @@
             - text: Ist das Tempo gleichmäßig? Nicht ausgeführt
             - heading "Befunde" [level=3]
             - paragraph: Keine Warnungen oder Fehler — jede Dimension entspricht dem angegebenen Modell.
+            - heading "Ausführungsprotokoll 6 Prüfungen · <duration> insgesamt" [level=3]
+            - paragraph: Die Prüfungen laufen nacheinander; am langsamsten war context_window (<duration>).
+            - button "Alle 6 anzeigen"
             - paragraph:
               - text: zing liefert
               - strong: reproduzierbare Belege für Verhaltensabweichungen und Risiken

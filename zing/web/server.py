@@ -33,6 +33,11 @@ Endpoints:
   GET  /api/analytics/summary      KPIs of a range vs. the previous range
   GET  /api/analytics/series       one metric per relay / model over time buckets
   GET  /api/analytics/leaderboard  relays of a model, or models of a relay
+  GET  /api/analytics/breakdown    some metrics per relay / model over the range
+  GET  /api/analytics/errors       request outcomes (429, 5xx, timeouts, …) per
+                                   relay / model and over time buckets
+  GET  /api/analytics/integrity    identity, context window and capability
+                                   checks per relay x model
                                    (parameters: zing/web/analytics.py)
   GET  /api/secret           the monitors' master key: state, fingerprint,
                              allowed actions (never the key)
@@ -1269,6 +1274,25 @@ def create_app() -> FastAPI:
         from zing.web import analytics
 
         return _analytics(analytics.leaderboard, dict(request.query_params))
+
+    @app.get("/api/analytics/breakdown")
+    def analytics_breakdown(request: Request) -> Any:
+        from zing.web import analytics
+
+        params = request.query_params
+        return _analytics(analytics.breakdown, dict(params), params.getlist("metrics"))
+
+    @app.get("/api/analytics/errors")
+    def analytics_errors(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.errors, dict(request.query_params))
+
+    @app.get("/api/analytics/integrity")
+    def analytics_integrity(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.integrity, dict(request.query_params))
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
     @app.get("/watches")

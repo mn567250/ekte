@@ -291,6 +291,19 @@ it compares one suite and probe mode (the most common ones), so unlike runs are
 not mixed; the filters and view are kept in the URL, so a view can be
 bookmarked or shared. Nothing leaves the machine.
 
+Further panels answer narrower questions: **peak hours** (a weekday × hour
+heatmap of TTFT, latency, success or error rate in your time zone — does a
+relay slow down or fail more at busy times?), **errors and reliability** (failed
+calls by cause — rate limits (HTTP 429), server errors (5xx), timeouts, network
+errors — over time and per relay or model, from the stored request records,
+with how many runs have them), **model integrity** (identity, context-window and
+capability check results per relay × model, the share of runs whose echoed
+model differs and the measured share of the declared context window),
+**billing and tokens** (billing ratios over time against the 100% line — above
+it the relay reports more tokens than zing counted — plus reasoning and cached
+input shares) and **relay overhead** (the processing time a relay reports next
+to the network round trip to it).
+
 ### Languages
 
 A language dropdown in the header of every page switches the UI between

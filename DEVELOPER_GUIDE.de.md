@@ -311,6 +311,19 @@ Standardbibliothek.
   bleibt außen vor (jeder Wert hat sein `n` und seine `coverage`), und
   Intervalle mit weniger als `MIN_RUNS` (3) Läufen tragen `low_n`. Ein
   ungültiger Parameter ergibt 400; Antworten sind `Cache-Control: no-store`.
+- **Analyse-Bereiche.** `/api/analytics/breakdown` (bis zu 8 `metrics` pro
+  `group=relay|model|relay_model|all` über den Zeitraum),
+  `/api/analytics/errors` (die Completion-Aufrufe an das Ziel nach
+  Ergebnisklasse `success|client_4xx|rate_limited|server_5xx|timeout|network|other`,
+  pro `group=relay|model` und pro `bucket`, in SQL gezählt von
+  `history.analytics_request_classes()`, ohne Anfragezeilen zu laden; die Zeit
+  eines Aufrufs ist der Start seines Laufs plus sein Versatz, minutengenau;
+  `covered` = Läufe mit Anfragedaten) und `/api/analytics/integrity`
+  (Bestanden-/Warnung-/Fehlschlag-Zahlen der Detektoren für Identität,
+  Fähigkeiten, Bildverständnis, Streaming, Protokoll, Integrität, eingeschleuste
+  Prompts und Konnektivität pro Relay × Modell, der Anteil abweichender Modelle
+  und das mediane Verhältnis gemessenes / angegebenes Kontextfenster).
+  `/api/analytics/series` nimmt auch `group=all`. Filter und Fehler wie oben.
 - **Prüfungen im Hintergrund.** `jobs.py` führt jede Prüfung als Auftrag des
   Servers aus. `POST /api/jobs` stellt einen ein, `GET /api/jobs` listet
   wartende, laufende und kürzlich beendete Aufträge (und laufende
@@ -385,6 +398,16 @@ Markern für `low_n`-Abschnitte, Markierungslinien und Hover-Tooltip; `fmt` /
 `fmtDelta` formatieren Werte nach Einheit) und `v2/charts.css` (vier geprüfte
 Reihenfarben je Theme, zusätzlich an der Markerform unterscheidbar). Jedes
 Diagramm gibt es auch als Datentabelle.
+
+Jeder Bereich ist in sich geschlossen: eine `PANELS`-Registry im Seitenskript
+nennt seine Section-ID, `load()` (mit den aktuellen Filtern und der Ansicht
+laden, dann zeichnen) und `render()` (aus den geladenen Daten neu zeichnen,
+z. B. beim Sprachwechsel), sodass Bereiche umgestellt werden können, ohne
+einander zu berühren. `ZingCharts.heatmap` zeichnet das Raster Wochentag ×
+Stunde (fünfstufige einfarbige Skala pro Theme, schraffierte Zellen für
+`low_n`, umrandete leere Zellen), `ZingCharts.stackBars` die gestapelten
+Fehlerbalken, und `timeChart` nimmt eine `ref`-Linie (100 %
+Abrechnungsverhältnis).
 
 **Übersetzungskonvention.** Der chinesische Text im HTML ist das Original und
 bleibt unverändert; jedes Element trägt seinen englischen Text in `data-en` (und

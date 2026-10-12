@@ -3,8 +3,11 @@
 :func:`seed_analytics` saves a relay in the knowledge base and a dozen runs
 over the last week before ``end``: two relays (the saved one and a long URL
 the knowledge base does not know), two models, manual and monitor runs,
-buckets with three runs and buckets with fewer (drawn faded), and a zing
-version and knowledge-base profile change (annotation markers). Times are
+buckets with three runs and buckets with fewer (drawn faded), a zing
+version and knowledge-base profile change (annotation markers), request
+records with rate limits, server errors and timeouts (errors panel),
+identity / context-window / capability detector results (integrity panel),
+token shares and relay / network timings. Times are
 relative to ``end``, so a server with a fixed clock renders the same page on
 every run.
 """
@@ -62,12 +65,70 @@ def _report(started: datetime, base_url: str, model: str, score: float, saved: b
             "requests": [],
         },
     }
+    side = report["performance"]["target"]
+    side["relay_processing_ms"] = {"p50": 140.0 + (100 - score) * 3 if saved else 420.0}
+    side["network_rtt_ms"] = {"p50": 60.0 if saved else 180.0}
+    report["performance"]["requests"] = _requests(score, saved)
+    report["detectors"].extend(_integrity(model, score, saved))
     if saved:  # billing evidence for some runs only: the page shows coverage
         report["detectors"].append({
             "id": "billing", "status": "pass", "findings": [], "duration_ms": 1000,
             "evidence": {"ratio_prompt": 1.0 + (90 - score) / 200, "ratio_completion": 1.02},
         })
     return report
+
+
+def _requests(score: float, saved: bool) -> list[dict[str, Any]]:
+    """Ten completion calls a few seconds apart: the URL relay hits rate
+    limits and server errors, the saved relay times out now and then."""
+    out = []
+    for seq in range(10):
+        status: int | None = 200
+        error_type = None
+        if not saved and seq in (3, 7) and score < 70:
+            status, error_type = 429, "http_error"
+        elif not saved and seq == 5:
+            status, error_type = 502, "http_error"
+        elif saved and seq == 9 and score < 85:
+            status, error_type = None, "ReadTimeout"
+        out.append({
+            "seq": seq, "endpoint": "target", "phase": "passive", "op": "complete", "stream": True,
+            "start_ms": seq * 6000.0, "ok": status == 200, "status_code": status,
+            "error_type": error_type, "timeout": error_type == "ReadTimeout",
+            "rate_limited": status == 429, "duration_ms": 1200.0 if status == 200 else 300.0,
+            "input_tokens_reported": 400 if status == 200 else None,
+            "output_tokens_reported": 200 if status == 200 else None,
+            "reasoning_tokens": (60 if saved else 20) if status == 200 else None,
+            "cached_input_tokens": (100 if saved else 0) if status == 200 else None,
+        })
+    return out
+
+
+def _integrity(model: str, score: float, saved: bool) -> list[dict[str, Any]]:
+    """Identity (echoed model field), context window and capability results."""
+    diverges = not saved and score < 65
+    identity = {
+        "id": "model_identity", "status": "warn" if diverges else "pass", "score": 60.0 if diverges else 95.0,
+        "duration_ms": 800, "evidence": {},
+        "findings": [{
+            "id": "model_identity.model_field", "check": "model_identity.model_field",
+            "status": "warn" if diverges else "pass", "outcome": "diverges" if diverges else "consistent",
+            "severity": "medium" if diverges else "info", "evidence": {"returned": model + "-mini" if diverges else model},
+        }],
+    }
+    declared = 128_000
+    context = {
+        "id": "context_window", "status": "pass" if saved else "warn", "findings": [], "duration_ms": 3000,
+        "evidence": {"declared": declared, "effective_window": declared if saved else 32_000},
+    }
+    checks = [identity, context]
+    for det_id, status in (
+        ("capability", "pass"), ("streaming", "pass"),
+        ("vision", "pass" if saved else "fail" if score < 65 else "inconclusive"),
+        ("protocol_response", "pass" if score >= 70 else "warn"),
+    ):
+        checks.append({"id": det_id, "status": status, "findings": [], "evidence": {}, "duration_ms": 500})
+    return checks
 
 
 def seed_analytics(end: datetime, watch_id: int | None) -> None:

@@ -339,7 +339,7 @@
     var det = root.querySelector(".zp-data");
     if (det && onToggle) det.addEventListener("toggle", function () { onToggle(det.open); });
     root.querySelectorAll("[data-tip]").forEach(function (el) {
-      el.addEventListener("mousemove", function (e) { showTip(e, el.getAttribute("data-tip")); });
+      el.addEventListener("mouseover", function (e) { showTip(e, el.getAttribute("data-tip")); });
       el.addEventListener("mouseleave", hideTip);
     });
   }
@@ -666,8 +666,9 @@
     };
     this.wirePlot();
     wireTabs(root, function (id) { self.setMetric(id); });
-    // One delegated tooltip handler for every chart mark, current and future.
-    root.addEventListener("mousemove", function (e) {
+    // One delegated tooltip handler for every chart mark, current and future
+    // (shown where the pointer enters a mark: hover only, no movement tracking).
+    root.addEventListener("mouseover", function (e) {
       var t = e.target && e.target.closest ? e.target.closest("[data-tip]") : null;
       if (t && root.contains(t)) showTip(e, t.getAttribute("data-tip"));
       else hideTip();

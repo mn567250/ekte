@@ -269,6 +269,9 @@
             - text: La velocità è costante? Non eseguito
             - heading "Rilevazioni" [level=3]
             - paragraph: Nessun avviso o errore — ogni dimensione è coerente con il modello dichiarato.
+            - heading "Registro di esecuzione 6 controlli · <duration> in totale" [level=3]
+            - paragraph: I controlli vengono eseguiti uno dopo l'altro; il più lento è stato context_window (<duration>).
+            - button "Mostra tutti (6)"
             - paragraph:
               - text: zing fornisce
               - strong: prove riproducibili di scostamento del comportamento e di rischio

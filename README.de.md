@@ -308,6 +308,22 @@ damit Ungleiches nicht vermischt wird; Filter und Ansicht stehen in der URL, ein
 Ansicht lässt sich also als Lesezeichen speichern oder teilen. Nichts verlässt
 den Rechner.
 
+Weitere Bereiche beantworten engere Fragen: **Stoßzeiten** (eine Heatmap
+Wochentag × Stunde von TTFT, Latenz, Erfolgs- oder Fehlerquote in Ihrer
+Zeitzone — wird ein Relay zu Stoßzeiten langsamer oder fehleranfälliger?),
+**Fehler und Zuverlässigkeit** (fehlgeschlagene Aufrufe nach Ursache —
+Ratenbegrenzung (HTTP 429), Serverfehler (5xx), Zeitüberschreitungen,
+Netzwerkfehler — im Zeitverlauf und pro Relay oder Modell, aus den
+gespeicherten Anfragedaten, mit der Zahl der Läufe, die sie haben),
+**Modellechtheit** (Ergebnisse der Identitäts-, Kontextfenster- und
+Fähigkeitsprüfungen pro Relay × Modell, der Anteil der Läufe mit abweichend
+zurückgemeldetem Modell und der gemessene Anteil am angegebenen
+Kontextfenster), **Abrechnung und Tokens** (Abrechnungsverhältnisse im
+Zeitverlauf gegen die 100-%-Linie — darüber meldet das Relay mehr Tokens, als
+zing gezählt hat — sowie Anteile von Reasoning- und gecachten Eingabe-Tokens)
+und **Relay-Overhead** (die vom Relay gemeldete Verarbeitungszeit neben der
+Netzwerk-Umlaufzeit dorthin).
+
 ### Sprachen
 
 Ein Sprachmenü in der Kopfzeile jeder Seite schaltet die Oberfläche zwischen

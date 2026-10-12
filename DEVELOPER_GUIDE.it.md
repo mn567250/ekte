@@ -312,6 +312,20 @@ solo la libreria standard.
   ha il suo `n` e la sua `coverage`) e gli intervalli con meno di `MIN_RUNS` (3)
   esecuzioni sono marcati `low_n`. Un parametro non valido risponde 400; le
   risposte sono `Cache-Control: no-store`.
+- **Pannelli di analisi.** `/api/analytics/breakdown` (fino a 8 `metrics` per
+  `group=relay|model|relay_model|all` nel periodo), `/api/analytics/errors` (le
+  chiamate di completamento al target per classe di esito
+  `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, per
+  `group=relay|model` e per `bucket`, contate in SQL da
+  `history.analytics_request_classes()` senza caricare le righe delle
+  richieste; l'ora di una chiamata è l'inizio del suo audit più il suo offset,
+  al minuto; `covered` = audit con registri delle richieste) e
+  `/api/analytics/integrity` (conteggi di superati / avvisi / falliti dei
+  rilevatori di identità, capacità, visione, streaming, protocollo, integrità,
+  prompt iniettato e connettività per relay × modello, la quota di modelli
+  divergenti e il rapporto mediano finestra di contesto misurata / dichiarata).
+  `/api/analytics/series` accetta anche `group=all`. Stessi filtri ed errori di
+  sopra.
 - **Verifiche in background.** `jobs.py` esegue ogni verifica come job del
   server. `POST /api/jobs` ne accoda uno, `GET /api/jobs` elenca i job in coda,
   in corso e appena conclusi (e i monitor in esecuzione) con l'avanzamento,
@@ -385,6 +399,16 @@ al passaggio del puntatore; `fmt` / `fmtDelta` formattano i valori per unità) e
 da `v2/charts.css` (quattro colori di serie validati per tema, distinguibili
 anche dalla forma del marcatore). Ogni grafico esiste anche come tabella di
 dati.
+
+Ogni pannello è autonomo: un registro `PANELS` nello script della pagina
+indica l'id della sua sezione, `load()` (caricare con i filtri e la vista
+correnti, poi disegnare) e `render()` (ridisegnare dai dati caricati, ad es. al
+cambio di lingua), così i pannelli si possono riordinare senza toccarsi a
+vicenda. `ZingCharts.heatmap` disegna la griglia giorno della settimana × ora
+(scala sequenziale a una tinta in cinque livelli per tema, celle tratteggiate
+per `low_n`, celle vuote solo con contorno), `ZingCharts.stackBars` le barre di
+errore impilate, e `timeChart` accetta una linea `ref` (rapporto di
+fatturazione del 100%).
 
 **Convenzione di traduzione.** Il testo cinese scritto nell'HTML è l'originale e
 resta intatto; ogni elemento porta il suo testo inglese in `data-en` (e

@@ -222,7 +222,7 @@
             - columnheader "Last run":
               - button "Last run"
         - rowgroup:
-          - row "Example Relay 7 82 n=7 <duration> n=7 63.2 tok/s n=7100% n=7104% n=7102% n=7 — n=0 / 7 0% n=7 Sep 30, 2026, 11:00 AM":
+          - row "Example Relay 7 82 n=7 <duration> n=7 63.2 tok/s n=7100% n=7104% n=7102% n=7 0% n=7 0% n=7 Sep 30, 2026, 11:00 AM":
             - rowheader "Example Relay"
             - cell "7"
             - cell "82 n=7"
@@ -231,8 +231,260 @@
             - cell "100% n=7"
             - cell "104% n=7"
             - cell "102% n=7"
-            - cell "— n=0 / 7"
+            - cell "0% n=7"
             - cell "0% n=7"
             - cell "Sep 30, 2026, 11:00 AM"
           # … more rows of the same shape
     - status
+  - region "Peak hours":
+    - heading "Peak hours" [level=2]
+    - paragraph: Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).
+    - text: Metric
+    - combobox "Metric":
+      - option "Time to first token p50" [selected]
+      - option "Latency p50"
+      - option "Decode speed"
+      - option "Success rate"
+      - option "Error rate"
+      - option "Rate-limited share"
+      - option "Timeout rate"
+      - option "Score"
+    - text: Relay
+    - combobox "Relay":
+      - option "All relays" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - img "Time to first token p50 by weekday and hour": 12 AM 3 AM 6 AM 9 AM 12 PM 3 PM 6 PM 9 PM Mon Tue Wed Thu Fri Sat Sun
+    - list:
+      - listitem: <duration> <duration>
+      - listitem: fewer than 3 runs (hatched)
+      - listitem: no runs
+    - paragraph:
+      - text: Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier.
+      - link "Schedule a monitor for regular measurements.":
+        - /url: /v2/watches
+    - button "Show as table" [expanded]
+    - region "Time to first token p50 by weekday and hour (All relays)":
+      - table "Time to first token p50 by weekday and hour (All relays)":
+        - caption: Time to first token p50 by weekday and hour (All relays)
+        - rowgroup:
+          - row "Weekday Hour Median Runs Note":
+            - columnheader "Weekday"
+            - columnheader "Hour"
+            - columnheader "Median"
+            - columnheader "Runs"
+            - columnheader "Note"
+        - rowgroup:
+          - row "Monday 7:00 AM–8:00 AM <duration> 1 Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier.":
+            - cell "Monday"
+            - cell "7:00 AM–8:00 AM"
+            - cell "<duration>"
+            - cell "1"
+            - cell "Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier."
+          # … more rows of the same shape
+  - region "Errors and reliability":
+    - heading "Errors and reliability" [level=2]
+    - paragraph: "Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls."
+    - text: Table by
+    - combobox "Table by":
+      - option "Relay" [selected]
+      - option "Model"
+    - text: Time buckets
+    - combobox "Time buckets":
+      - option "By hour"
+      - option "By day" [selected]
+      - option "By week"
+    - paragraph: Request records for 14 of 14 runs. 140 calls, 18 failed (12.9%).
+    - list "Legend":
+      - listitem: Rate limited (429)
+      - listitem: Server error (5xx)
+      - listitem: Timeout
+      - listitem: Other errors (4xx, network, …)
+    - img "Failed calls over time": 0% 5% 10% 15% 20% Sep 25 Sep 27 Sep 29 Oct 1
+    - paragraph:
+      - text: Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier.
+      - link "Schedule a monitor for regular measurements.":
+        - /url: /v2/watches
+    - button "Show as table" [expanded]
+    - region "Call outcomes per time bucket (By day)":
+      - table "Call outcomes per time bucket (By day)":
+        - caption: Call outcomes per time bucket (By day)
+        - rowgroup:
+          - row "Time bucket Calls Success Client error (4xx) Rate limited (429) Server error (5xx) Timeout Network error Other failure Failed share Runs Note":
+            - columnheader "Time bucket"
+            - columnheader "Calls"
+            - columnheader "Success"
+            - columnheader "Client error (4xx)"
+            - columnheader "Rate limited (429)"
+            - columnheader "Server error (5xx)"
+            - columnheader "Timeout"
+            - columnheader "Network error"
+            - columnheader "Other failure"
+            - columnheader "Failed share"
+            - columnheader "Runs"
+            - columnheader "Note"
+        - rowgroup:
+          - row "Sat, Sep 26, 2026 10 9 0 0 0 1 0 0 10% 1 Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier.":
+            - cell "Sat, Sep 26, 2026"
+            - cell "10"
+            - cell "9"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "1"
+            - cell "0"
+            - cell "0"
+            - cell "10%"
+            - cell "1"
+            - cell "Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier."
+          # … more rows of the same shape
+    - heading "By relay" [level=3]
+    - region "Call outcomes by relay":
+      - table "Call outcomes by relay":
+        - caption: Call outcomes by relay
+        - rowgroup:
+          - row "Relay Runs with records Calls Success Client error (4xx) Rate limited (429) Server error (5xx) Timeout Network error Other failure Failed share Rate-limited share Timeout share":
+            - columnheader "Relay"
+            - columnheader "Runs with records"
+            - columnheader "Calls"
+            - columnheader "Success"
+            - columnheader "Client error (4xx)"
+            - columnheader "Rate limited (429)"
+            - columnheader "Server error (5xx)"
+            - columnheader "Timeout"
+            - columnheader "Network error"
+            - columnheader "Other failure"
+            - columnheader "Failed share"
+            - columnheader "Rate-limited share"
+            - columnheader "Timeout share"
+        - rowgroup:
+          - row "Example Relay 9 / 9 90 85 0 0 0 5 0 0 5.6% 0% 5.6%":
+            - rowheader "Example Relay"
+            - cell "9 / 9"
+            - cell "90"
+            - cell "85"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "5"
+            - cell "0"
+            - cell "0"
+            - cell "5.6%"
+            - cell "0%"
+            - cell "5.6%"
+          # … more rows of the same shape
+  - region "Model integrity":
+    - heading "Model integrity" [level=2]
+    - paragraph: Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.
+    - paragraph:
+      - text: Rows marked “few runs” have fewer than 3 runs — a single audit can be an outlier.
+      - link "Schedule a monitor for regular measurements.":
+        - /url: /v2/watches
+    - region "Check results per relay × model (n = runs with a verdict)":
+      - table "Check results per relay × model (n = runs with a verdict)":
+        - caption: Check results per relay × model (n = runs with a verdict)
+        - rowgroup:
+          - row "Relay × model Runs Model identity Capabilities Vision Streaming Response protocol Model mismatch share Effective / declared context":
+            - columnheader "Relay × model"
+            - columnheader "Runs"
+            - columnheader "Model identity"
+            - columnheader "Capabilities"
+            - columnheader "Vision"
+            - columnheader "Streaming"
+            - columnheader "Response protocol"
+            - columnheader "Model mismatch share"
+            - columnheader "Effective / declared context"
+        - rowgroup:
+          - row "Example Relay · model-a 7 Passed 7 of 7 passed Passed 7 of 7 passed Passed 7 of 7 passed Passed 7 of 7 passed Passed 7 of 7 passed 0% n=7100% 128000 tok / 128000 tok n=7":
+            - rowheader "Example Relay · model-a"
+            - cell "7"
+            - cell "Passed 7 of 7 passed"
+            - cell "Passed 7 of 7 passed"
+            - cell "Passed 7 of 7 passed"
+            - cell "Passed 7 of 7 passed"
+            - cell "Passed 7 of 7 passed"
+            - cell "0% n=7"
+            - cell "100% 128000 tok / 128000 tok n=7"
+          # … more rows of the same shape
+  - region "Billing and tokens":
+    - heading "Billing and tokens" [level=2]
+    - paragraph: "Billing ratio = tokens the relay reports ÷ tokens zing counted. Above 100%: the relay reports more tokens than zing counted (you may be billed for more). zing's counts are estimates, so small deviations are normal."
+    - text: Metric
+    - combobox "Metric":
+      - option "Billing ratio (prompt)" [selected]
+      - option "Billing ratio (completion)"
+      - option "Reasoning token share"
+      - option "Cached input share"
+    - paragraph: “Billing ratio (prompt)” data from 9 of 14 runs.
+    - list "Legend":
+      - listitem: Example Relay 9 runs
+    - img "Billing ratio (prompt) over time": 0% 25% 50% 75% 100% 125% Sep 25 Sep 27 Sep 29 Oct 1100%
+    - paragraph:
+      - text: Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier.
+      - link "Schedule a monitor for regular measurements.":
+        - /url: /v2/watches
+    - button "Show as table" [expanded]
+    - region "Billing ratio (prompt) (Relay, By day)":
+      - table "Billing ratio (prompt) (Relay, By day)":
+        - caption: Billing ratio (prompt) (Relay, By day)
+        - rowgroup:
+          - row "Time bucket Series Median p25–p75 Runs Note":
+            - columnheader "Time bucket"
+            - columnheader "Series"
+            - columnheader "Median"
+            - columnheader "p25–p75"
+            - columnheader "Runs"
+            - columnheader "Note"
+        - rowgroup:
+          - row "Sat, Sep 26, 2026 Example Relay 110% 110% – 110% 1 Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier.":
+            - cell "Sat, Sep 26, 2026"
+            - cell "Example Relay"
+            - cell "110%"
+            - cell "110% – 110%"
+            - cell "1"
+            - cell "Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier."
+          # … more rows of the same shape
+    - heading "Summary by relay" [level=3]
+    - region "Medians over the selected range (n = runs that measured a value)":
+      - table "Medians over the selected range (n = runs that measured a value)":
+        - caption: Medians over the selected range (n = runs that measured a value)
+        - rowgroup:
+          - row "Relay Runs Billing ratio (prompt) Billing ratio (completion) Reasoning token share Cached input share":
+            - columnheader "Relay"
+            - columnheader "Runs"
+            - columnheader "Billing ratio (prompt)"
+            - columnheader "Billing ratio (completion)"
+            - columnheader "Reasoning token share"
+            - columnheader "Cached input share"
+        - rowgroup:
+          - row "Example Relay 9103% n=9102% n=9 30% n=9 25% n=9":
+            - rowheader "Example Relay"
+            - cell "9"
+            - cell "103% n=9"
+            - cell "102% n=9"
+            - cell "30% n=9"
+            - cell "25% n=9"
+          # … more rows of the same shape
+  - region "Relay overhead":
+    - heading "Relay overhead" [level=2]
+    - paragraph: Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.
+    - list "Legend":
+      - listitem: Relay processing time
+      - listitem: Network round trip
+    - region "Medians per relay, bars on one shared scale":
+      - table "Medians per relay, bars on one shared scale":
+        - caption: Medians per relay, bars on one shared scale
+        - rowgroup:
+          - row "Relay Runs Relay processing time Network round trip":
+            - columnheader "Relay"
+            - columnheader "Runs"
+            - columnheader "Relay processing time"
+            - columnheader "Network round trip"
+        - rowgroup:
+          - row "Example Relay 9 <duration> n=9 <duration> n=9":
+            - rowheader "Example Relay"
+            - cell "9"
+            - cell "<duration> n=9"
+            - cell "<duration> n=9"
+          # … more rows of the same shape

@@ -305,6 +305,21 @@ frequenti), per non mescolare esecuzioni diverse; filtri e vista restano
 nell'URL, quindi una vista si può salvare nei preferiti o condividere. Nulla
 lascia la macchina.
 
+Altri pannelli rispondono a domande più specifiche: **ore di punta** (una mappa
+di calore giorno della settimana × ora di TTFT, latenza, tasso di successo o di
+errore nel tuo fuso orario: un relay rallenta o fallisce di più nelle ore di
+maggior carico?), **errori e affidabilità** (chiamate fallite per causa: limiti
+di frequenza (HTTP 429), errori del server (5xx), timeout, errori di rete; nel
+tempo e per relay o modello, dai registri delle richieste salvati, indicando
+quanti audit li hanno), **integrità del modello** (esiti dei controlli di
+identità, finestra di contesto e capacità per relay × modello, la quota di
+audit in cui il modello restituito è diverso e la quota misurata della
+finestra di contesto dichiarata), **fatturazione e token** (rapporti di
+fatturazione nel tempo rispetto alla linea del 100%: sopra, il relay dichiara
+più token di quanti ne abbia contati zing; più le quote di token di
+ragionamento e di input in cache) e **sovraccarico del relay** (il tempo di
+elaborazione dichiarato dal relay accanto al round trip di rete).
+
 ### Lingue
 
 Un menu della lingua nell'intestazione di ogni pagina passa l'interfaccia tra

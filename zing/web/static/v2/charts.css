@@ -10,11 +10,20 @@
   --c-s1: #c8531f; /* orange */
   --c-s2: #0e8a5f; /* aqua */
   --c-s3: #6250d6; /* violet */
+  /* sequential (heatmap): one blue hue, light = low -> dark = high */
+  --c-q1: #cde2fb; --c-q2: #86b6ef; --c-q3: #3987e5; --c-q4: #1c5cab; --c-q5: #0d366b;
 }
+/* dark: the scale's anchor flips (low recedes into the dark surface) */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --c-s0: #3f8fe8; --c-s1: #e0703c; --c-s2: #1fa572; --c-s3: #9085e9; }
+  :root:not([data-theme="light"]) {
+    --c-s0: #3f8fe8; --c-s1: #e0703c; --c-s2: #1fa572; --c-s3: #9085e9;
+    --c-q1: #184f95; --c-q2: #256abf; --c-q3: #3987e5; --c-q4: #6da7ec; --c-q5: #b7d3f6;
+  }
 }
-:root[data-theme="dark"] { --c-s0: #3f8fe8; --c-s1: #e0703c; --c-s2: #1fa572; --c-s3: #9085e9; }
+:root[data-theme="dark"] {
+  --c-s0: #3f8fe8; --c-s1: #e0703c; --c-s2: #1fa572; --c-s3: #9085e9;
+  --c-q1: #184f95; --c-q2: #256abf; --c-q3: #3987e5; --c-q4: #6da7ec; --c-q5: #b7d3f6;
+}
 
 .s0 { --c: var(--c-s0); } .s1 { --c: var(--c-s1); } .s2 { --c: var(--c-s2); } .s3 { --c: var(--c-s3); }
 
@@ -56,7 +65,34 @@
 .ctip .sub { display: block; color: var(--faint); font-size: 11.5px; }
 .ctip .mk { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); color: var(--ink2); }
 
+/* reference line (e.g. 100 % billing ratio) */
+.tchart .ref line { stroke: var(--ink2); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.tchart .ref text { fill: var(--ink2); font-weight: 600; }
+
+/* stacked bars: category segments (series slots), faded for few runs */
+.sbars .seg { fill: var(--c); }
+.sbars .bar.low .seg { opacity: 0.45; }
+.sbars .hit { fill: transparent; }
+.ctip .sw, .sw { display: inline-block; flex: none; width: 11px; height: 11px; border-radius: 3px; background: var(--c); margin-top: 3px; }
+
+/* weekday x hour heatmap */
+.hmap { display: block; max-width: 100%; height: auto; font-family: var(--sans); }
+.hmap text { font-size: 11px; fill: var(--faint); font-variant-numeric: tabular-nums; }
+.hmap .q1 { fill: var(--c-q1); } .hmap .q2 { fill: var(--c-q2); } .hmap .q3 { fill: var(--c-q3); }
+.hmap .q4 { fill: var(--c-q4); } .hmap .q5 { fill: var(--c-q5); }
+/* few runs: faded and hatched; no runs: an outline only (never a "low" colour) */
+.hmap pattern line { stroke: var(--card); stroke-width: 2.2; }
+.hmap .none { fill: none; stroke: var(--line-control); stroke-width: 1; stroke-dasharray: 2 2; }
+.hlegend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12px; color: var(--ink2); }
+.hlegend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.hlegend .hscale { display: inline-flex; gap: 2px; }
+.hlegend .hv { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+.hlegend .sub { color: var(--faint); }
+.hsw { flex: none; }
+
 @media (forced-colors: active) {
+  .hmap .q1, .hmap .q2, .hmap .q3, .hmap .q4, .hmap .q5, .sbars .seg, .sw { fill: CanvasText; background: CanvasText; forced-color-adjust: none; }
+  .hmap .none { stroke: GrayText; }
   .tchart .ser .line, .ckey line { stroke: CanvasText; }
   .tchart .ser .pt, .ckey path { fill: CanvasText; stroke: Canvas; }
   .tchart .ser .pt.low { fill: Canvas; stroke: CanvasText; }

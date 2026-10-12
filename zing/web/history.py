@@ -668,3 +668,41 @@ def analytics_requests(
                 args.append(endpoint)
             out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, ord", args))
     return out
+
+
+# The outcome class of one request record (errors view). First match wins:
+# a timeout is a timeout whatever its status code, a 429 is rate limiting.
+# ``network`` is an exception without an HTTP status (connection refused,
+# TLS, reset); ``other`` a failed call with a 1xx-3xx status or no detail.
+REQUEST_CLASSES = ("success", "client_4xx", "rate_limited", "server_5xx", "timeout", "network", "other")
+_CLASS_SQL = (
+    "CASE WHEN ok = 1 THEN 'success'"
+    " WHEN timeout = 1 THEN 'timeout'"
+    " WHEN rate_limited = 1 OR status_code = 429 THEN 'rate_limited'"
+    " WHEN status_code BETWEEN 500 AND 599 THEN 'server_5xx'"
+    " WHEN status_code BETWEEN 400 AND 499 THEN 'client_4xx'"
+    " WHEN status_code IS NULL AND error_type IS NOT NULL THEN 'network'"
+    " ELSE 'other' END"
+)
+
+
+def analytics_request_classes(
+    ids: Iterable[int], endpoint: str = "target"
+) -> list[dict[str, Any]]:
+    """Completion calls of the given runs counted in SQL by run, minute after
+    the run's start (``minute``: whole minutes of ``start_ms``) and outcome
+    class (``cls``, one of :data:`REQUEST_CLASSES`): rows ``history_id``,
+    ``minute``, ``cls``, ``n``. Never loads the records themselves; a run
+    without stored records has no rows."""
+    out: list[dict[str, Any]] = []
+    with _connect() as conn:
+        for chunk in _chunks(ids):
+            sql = (
+                "SELECT history_id, CAST(COALESCE(start_ms, 0) / 60000 AS INTEGER) AS minute,"
+                f" {_CLASS_SQL} AS cls, COUNT(*) AS n FROM history_requests"
+                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
+                " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = 'complete'"
+                " GROUP BY history_id, minute, cls ORDER BY history_id, minute, cls"
+            )
+            out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint]))
+    return out

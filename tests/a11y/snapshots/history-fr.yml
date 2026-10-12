@@ -269,6 +269,9 @@
             - text: Sa vitesse est-elle régulière ? Non exécuté
             - heading "Constats" [level=3]
             - paragraph: Aucun avertissement ni échec — chaque dimension correspond au modèle annoncé.
+            - heading "Journal d'exécution 6 vérifications · <duration> au total" [level=3]
+            - paragraph: Les vérifications s'exécutent l'une après l'autre ; la plus lente était context_window (<duration>).
+            - button "Tout afficher (6)"
             - paragraph:
               - text: zing fournit des
               - strong: preuves reproductibles d'écart de comportement et de risque

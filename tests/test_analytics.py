@@ -456,3 +456,180 @@ def test_http_bad_parameters(client, path, params, message):
     assert r.status_code == 400 and message in r.json()["error"]
     assert r.headers["cache-control"] == "no-store"
     assert client.get("/api/analytics/options").json()["runs"] == 17  # nothing dropped
+
+
+# --------------------------------------------------------------------------- #
+# Errors, integrity, breakdown (phase 4)
+# --------------------------------------------------------------------------- #
+def _rec(seq: int, start_ms: float, *, ok: bool = True, status: int | None = 200,
+         error_type: str | None = None, endpoint: str = "target", op: str = "complete") -> dict:
+    return {
+        "seq": seq, "endpoint": endpoint, "op": op, "start_ms": start_ms, "ok": ok,
+        "status_code": status, "error_type": error_type,
+        "timeout": bool(error_type and "timeout" in error_type.lower()),
+        "rate_limited": status == 429, "duration_ms": 500.0,
+    }
+
+
+def _with_requests(started, records, **kw) -> int:
+    report = _report(started, **kw)
+    report["performance"]["requests"] = records
+    rid = history.save(report)
+    assert rid > 0
+    return rid
+
+
+@pytest.fixture
+def requests_seeded(data):
+    add_relay("Cheap GPT", RELAY)
+    # 10:59:50 Berlin (09:59:50 UTC): the second minute of calls lands in the next hour
+    start = datetime(2026, 3, 2, 9, 59, 50, tzinfo=timezone.utc)
+    _with_requests(start, [
+        _rec(0, 0), _rec(1, 1000), _rec(2, 2000, ok=False, status=429, error_type="http_error"),
+        _rec(3, 61_000, ok=False, status=503, error_type="http_error"),
+        _rec(4, 62_000, ok=False, status=None, error_type="ReadTimeout"),
+        _rec(5, 63_000, ok=False, status=None, error_type="ConnectError"),
+        _rec(6, 64_000, ok=False, status=400, error_type="http_error"),
+        _rec(7, 65_000, ok=False, status=200, error_type=None),
+        _rec(8, 66_000, op="list_models"),  # not a completion call
+        _rec(9, 67_000, endpoint="baseline", ok=False, status=500, error_type="http_error"),
+    ])
+    _with_requests(T0 + timedelta(days=1), [_rec(0, 0), _rec(1, 10)], base_url=OTHER, model="model-b")
+    # an old-shaped run (no request records) and one with an empty list
+    _save(T0 + timedelta(days=1, hours=1), base_url=RELAY, old=True)
+    _save(T0 + timedelta(days=1, hours=2), base_url=RELAY)
+    return data
+
+
+def test_errors_counts_by_class_group_and_coverage(requests_seeded):
+    out = analytics.errors({"tz": "Europe/Berlin", "bucket": "hour"})
+    assert out["classes"][0] == "success" and out["runs"] == 4 and out["covered"] == 2
+    assert out["coverage"] == 0.5
+    counts = out["totals"]["counts"]
+    assert counts == {"success": 4, "client_4xx": 1, "rate_limited": 1, "server_5xx": 1,
+                      "timeout": 1, "network": 1, "other": 1}
+    assert out["totals"]["requests"] == 10 and out["totals"]["errors"] == 6
+    assert out["totals"]["rate_limited_share"] == pytest.approx(0.1)
+    assert out["totals"]["timeout_share"] == pytest.approx(0.1)
+    relay = out["groups"][0]
+    assert relay["key"] == "cheap-gpt" and relay["runs"] == 3 and relay["covered"] == 1
+    assert relay["requests"] == 8 and relay["low_n"] is True
+    assert relay["error_share"] == pytest.approx(6 / 8)
+    # Berlin hours: 10:59:50 + 0 min -> 10:00; + 1 min -> 11:00
+    buckets = {b["bucket"]: b for b in out["buckets"]}
+    assert buckets["2026-03-02T10:00:00+01:00"]["counts"]["success"] == 2
+    assert buckets["2026-03-02T10:00:00+01:00"]["counts"]["rate_limited"] == 1
+    assert buckets["2026-03-02T11:00:00+01:00"]["errors"] == 5
+    assert all(b["low_n"] and b["runs"] == 1 for b in out["buckets"])
+
+
+def test_errors_group_model_dow_hour_and_filters(requests_seeded):
+    out = analytics.errors({"group": "model", "bucket": "dow_hour", "tz_offset": "0"})
+    assert [g["key"] for g in out["groups"]] == ["model-a", "model-b"]
+    assert {(b["dow"], b["hour"]) for b in out["buckets"]} == {(1, 9), (1, 10), (2, 12)}
+    only = analytics.errors({"relay": OTHER})
+    assert only["runs"] == 1 and only["totals"]["requests"] == 2 and only["totals"]["error_share"] == 0
+    none = analytics.errors({"from": "2027-01-01T00:00:00Z", "to": "2027-02-01T00:00:00Z"})
+    assert none["runs"] == 0 and none["coverage"] is None and none["totals"]["error_share"] is None
+    assert none["groups"] == [] and none["buckets"] == []
+
+
+def test_errors_never_loads_request_rows(requests_seeded, monkeypatch):
+    monkeypatch.setattr(history, "analytics_requests", lambda *a, **k: pytest.fail("loaded rows"))
+    assert analytics.errors({})["totals"]["requests"] == 10
+
+
+@pytest.mark.parametrize("params", [{"group": "relay_model"}, {"bucket": "month"}, {"tz": "Nowhere/x"}])
+def test_errors_bad_parameters(data, params):
+    with pytest.raises(AnalyticsError):
+        analytics.errors(params)
+
+
+def _detectors(report: dict, statuses: dict, *, context: tuple[int, int] | None = None,
+               returned: str | None = None) -> dict:
+    for det_id, status in statuses.items():
+        det = {"id": det_id, "status": status, "findings": [], "duration_ms": 100, "evidence": {}}
+        if det_id == "model_identity" and returned is not None:
+            det["findings"] = [{"id": "model_identity.model_field", "status": "pass",
+                                "outcome": "consistent" if returned == report["target"]["model"] else "diverges",
+                                "evidence": {"returned": returned}}]
+        report["detectors"].append(det)
+    if context is not None:
+        report["detectors"].append({"id": "context_window", "status": "pass", "findings": [],
+                                    "evidence": {"declared": context[0], "effective_window": context[1]}})
+    return report
+
+
+def test_integrity_matrix(data):
+    add_relay("Cheap GPT", RELAY)
+    plan = [
+        ({"model_identity": "pass", "capability": "pass", "vision": "fail"}, (128_000, 64_000), "model-a"),
+        ({"model_identity": "warn", "capability": "pass", "vision": "inconclusive"}, (128_000, 128_000), "other"),
+        ({"model_identity": "pass", "capability": "fail"}, None, "model-a"),
+    ]
+    for i, (statuses, context, returned) in enumerate(plan):
+        history.save(_detectors(_report(T0 + timedelta(hours=i)), statuses, context=context, returned=returned))
+    history.save(_detectors(_report(T0, base_url=OTHER, model="model-b"), {"streaming": "pass"}))
+    _save(T0 + timedelta(hours=5), old=True)  # no detectors at all
+
+    out = analytics.integrity({})
+    assert out["checks"] == ["model_identity", "capability", "vision", "streaming"]
+    row = out["rows"][0]
+    assert row["key"] == "cheap-gpt|model-a" and row["runs"] == 4
+    ident = row["checks"]["model_identity"]
+    assert (ident["pass"], ident["warn"], ident["fail"], ident["n"]) == (2, 1, 0, 3)
+    assert ident["pass_rate"] == pytest.approx(2 / 3) and ident["low_n"] is False
+    vision = row["checks"]["vision"]
+    assert (vision["fail"], vision["other"], vision["n"], vision["low_n"]) == (1, 1, 1, True)
+    assert row["checks"]["streaming"]["n"] == 0 and row["checks"]["streaming"]["pass_rate"] is None
+    assert row["model_mismatch"]["value"] == pytest.approx(1 / 3) and row["model_mismatch"]["n"] == 3
+    assert row["context"]["value"] == pytest.approx(0.75) and row["context"]["n"] == 2
+    assert row["context"]["claimed"] == 128_000 and row["context"]["coverage"] == 0.5
+    other = out["rows"][1]
+    assert other["key"] == f"{OTHER}|model-b" and other["checks"]["streaming"]["pass"] == 1
+    assert other["context"]["value"] is None and other["model_mismatch"]["value"] is None
+
+
+def test_integrity_empty(data):
+    assert analytics.integrity({}) == {"from": None, "to": None, "min_runs": 3, "runs": 0, "checks": [], "rows": []}
+
+
+def test_breakdown(seeded):
+    out = analytics.breakdown({}, ["billing_ratio_prompt", "ttft_p50", "ttft_p50", ""])
+    assert [m["id"] for m in out["metrics"]] == ["billing_ratio_prompt", "ttft_p50"]
+    row = out["rows"][0]
+    assert row["key"] == "cheap-gpt" and row["runs"] == 14
+    ttft = row["metrics"]["ttft_p50"]
+    assert ttft["n"] == 12 and ttft["median"] == 200.0 and ttft["coverage"] == pytest.approx(12 / 14)
+    assert analytics.breakdown({"group": "all"}, ["score"])["rows"][0]["key"] == analytics.ALL_KEY
+    assert [r["key"] for r in analytics.breakdown({"group": "model"}, ["dim:protocol"])["rows"]] == ["model-a", "model-b"]
+    with pytest.raises(AnalyticsError):
+        analytics.breakdown({}, [])
+    with pytest.raises(AnalyticsError):
+        analytics.breakdown({}, ["nope"])
+    with pytest.raises(AnalyticsError):
+        analytics.breakdown({}, list(analytics.METRICS)[:9])
+
+
+def test_series_group_all(seeded):
+    out = analytics.series({"group": "all", "metric": "score", "bucket": "dow_hour", "tz_offset": "0"})
+    assert len(out["series"]) == 1 and out["series"][0]["key"] == analytics.ALL_KEY
+    assert out["series"][0]["runs"] == 17 - 2 + 2  # every run (old ones dated by generated_at)
+
+
+def test_http_phase4_endpoints(client):
+    r = client.get("/api/analytics/breakdown", params=[("metrics", "relay_overhead"), ("metrics", "network_rtt")])
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    assert [m["id"] for m in r.json()["metrics"]] == ["relay_overhead", "network_rtt"]
+    r = client.get("/api/analytics/errors", params={"group": "model", "bucket": "dow_hour", "tz": "UTC"})
+    assert r.status_code == 200 and r.json()["covered"] == 0 and r.json()["runs"] == 17
+    r = client.get("/api/analytics/integrity", params={"model": "model-a"})
+    assert r.status_code == 200 and all(row["model"] == "model-a" for row in r.json()["rows"])
+    for path, params, message in [
+        ("/api/analytics/breakdown", {}, "at least one metric"),
+        ("/api/analytics/breakdown", {"metrics": "x'; DROP TABLE history; --"}, "unknown metric"),
+        ("/api/analytics/errors", {"group": "relay_model"}, "group must be one of"),
+        ("/api/analytics/integrity", {"source": "cron"}, "source must be one of"),
+    ]:
+        r = client.get(path, params=params)
+        assert r.status_code == 400 and message in r.json()["error"], path

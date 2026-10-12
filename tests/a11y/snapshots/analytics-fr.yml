@@ -222,7 +222,7 @@
             - columnheader "Dernière exécution":
               - button "Dernière exécution"
         - rowgroup:
-          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 — n=0 / 7 0 % n=7 30 sept. 2026, 11:00":
+          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 0 % n=7 0 % n=7 30 sept. 2026, 11:00":
             - rowheader "Example Relay"
             - cell "7"
             - cell "82 n=7"
@@ -231,8 +231,260 @@
             - cell "100 % n=7"
             - cell "104 % n=7"
             - cell "102 % n=7"
-            - cell "— n=0 / 7"
+            - cell "0 % n=7"
             - cell "0 % n=7"
             - cell "30 sept. 2026, 11:00"
           # … more rows of the same shape
     - status
+  - region "Heures de pointe":
+    - heading "Heures de pointe" [level=2]
+    - paragraph: Ce relais ralentit-il ou échoue-t-il davantage aux heures de pointe ? Chaque case est une heure d'un jour de la semaine dans votre fuseau horaire, colorée selon la médiane des audits lancés à ce moment (échelle sous la grille).
+    - text: Mesure
+    - combobox "Mesure":
+      - option "Délai du premier jeton p50" [selected]
+      - option "Latence p50"
+      - option "Vitesse de décodage"
+      - option "Taux de réussite"
+      - option "Taux d'erreur"
+      - option "Part limitée en débit"
+      - option "Taux d'expiration"
+      - option "Score"
+    - text: Relais
+    - combobox "Relais":
+      - option "Tous les relais" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - img "Délai du premier jeton p50 par jour de la semaine et heure": 00 03 06 09 12 15 18 21 lun. mar. mer. jeu. ven. sam. dim.
+    - list:
+      - listitem: <duration> 1 <duration>
+      - listitem: moins de 3 audits (hachuré)
+      - listitem: aucun audit
+    - paragraph:
+      - text: Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante.
+      - link "Programmez une surveillance pour des mesures régulières.":
+        - /url: /v2/watches
+    - button "Afficher en tableau" [expanded]
+    - region "Délai du premier jeton p50 par jour de la semaine et heure (Tous les relais)":
+      - table "Délai du premier jeton p50 par jour de la semaine et heure (Tous les relais)":
+        - caption: Délai du premier jeton p50 par jour de la semaine et heure (Tous les relais)
+        - rowgroup:
+          - row "Jour de la semaine Heure Médiane Exécutions Remarque":
+            - columnheader "Jour de la semaine"
+            - columnheader "Heure"
+            - columnheader "Médiane"
+            - columnheader "Exécutions"
+            - columnheader "Remarque"
+        - rowgroup:
+          - row "lundi 7:00–8:00 <duration> 1 Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante.":
+            - cell "lundi"
+            - cell "7:00–8:00"
+            - cell "<duration>"
+            - cell "1"
+            - cell "Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante."
+          # … more rows of the same shape
+  - region "Erreurs et fiabilité":
+    - heading "Erreurs et fiabilité" [level=2]
+    - paragraph: "Appels au relais en échec, par cause : limitation de débit (HTTP 429), erreurs serveur (5xx), délais dépassés et autres, en part de tous les appels."
+    - text: Tableau par
+    - combobox "Tableau par":
+      - option "Relais" [selected]
+      - option "Modèle"
+    - text: Intervalles
+    - combobox "Intervalles":
+      - option "Par heure"
+      - option "Par jour" [selected]
+      - option "Par semaine"
+    - paragraph: Enregistrements de requêtes pour 14 audits sur 14. 140 appels, 18 en échec (12,9 %).
+    - list "Légende":
+      - listitem: Débit limité (429)
+      - listitem: Erreur serveur (5xx)
+      - listitem: Délai dépassé
+      - listitem: Autres erreurs (4xx, réseau, …)
+    - img "Appels en échec au fil du temps": 0 % 5 % 10 % 15 % 20 % 25 sept. 27 sept. 29 sept. 1 oct.
+    - paragraph:
+      - text: Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante.
+      - link "Programmez une surveillance pour des mesures régulières.":
+        - /url: /v2/watches
+    - button "Afficher en tableau" [expanded]
+    - region "Résultats des appels par période (Par jour)":
+      - table "Résultats des appels par période (Par jour)":
+        - caption: Résultats des appels par période (Par jour)
+        - rowgroup:
+          - row "Intervalle Appels Succès Erreur client (4xx) Débit limité (429) Erreur serveur (5xx) Délai dépassé Erreur réseau Autre échec Part d'échecs Exécutions Remarque":
+            - columnheader "Intervalle"
+            - columnheader "Appels"
+            - columnheader "Succès"
+            - columnheader "Erreur client (4xx)"
+            - columnheader "Débit limité (429)"
+            - columnheader "Erreur serveur (5xx)"
+            - columnheader "Délai dépassé"
+            - columnheader "Erreur réseau"
+            - columnheader "Autre échec"
+            - columnheader "Part d'échecs"
+            - columnheader "Exécutions"
+            - columnheader "Remarque"
+        - rowgroup:
+          - row "sam. 26 sept. 2026 10 9 0 0 0 1 0 0 10 % 1 Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante.":
+            - cell "sam. 26 sept. 2026"
+            - cell "10"
+            - cell "9"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "1"
+            - cell "0"
+            - cell "0"
+            - cell "10 %"
+            - cell "1"
+            - cell "Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante."
+          # … more rows of the same shape
+    - heading "Par relais" [level=3]
+    - region "Résultats des appels par relais":
+      - table "Résultats des appels par relais":
+        - caption: Résultats des appels par relais
+        - rowgroup:
+          - row "Relais Audits avec enregistrements Appels Succès Erreur client (4xx) Débit limité (429) Erreur serveur (5xx) Délai dépassé Erreur réseau Autre échec Part d'échecs Part limitée en débit Part de délais dépassés":
+            - columnheader "Relais"
+            - columnheader "Audits avec enregistrements"
+            - columnheader "Appels"
+            - columnheader "Succès"
+            - columnheader "Erreur client (4xx)"
+            - columnheader "Débit limité (429)"
+            - columnheader "Erreur serveur (5xx)"
+            - columnheader "Délai dépassé"
+            - columnheader "Erreur réseau"
+            - columnheader "Autre échec"
+            - columnheader "Part d'échecs"
+            - columnheader "Part limitée en débit"
+            - columnheader "Part de délais dépassés"
+        - rowgroup:
+          - row "Example Relay 9 / 9 90 85 0 0 0 5 0 0 5,6 % 0 % 5,6 %":
+            - rowheader "Example Relay"
+            - cell "9 / 9"
+            - cell "90"
+            - cell "85"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "5"
+            - cell "0"
+            - cell "0"
+            - cell "5,6 %"
+            - cell "0 %"
+            - cell "5,6 %"
+          # … more rows of the same shape
+  - region "Intégrité du modèle":
+    - heading "Intégrité du modèle" [level=2]
+    - paragraph: Est-ce bien le modèle annoncé, complet et avec ses fonctionnalités ? Résultats des vérifications d'identité, de fenêtre de contexte et de capacités par relais et modèle.
+    - paragraph:
+      - text: Les lignes marquées « peu d'exécutions » comptent moins de 3 exécutions — un audit isolé peut être une valeur aberrante.
+      - link "Programmez une surveillance pour des mesures régulières.":
+        - /url: /v2/watches
+    - region "Résultats des vérifications par relais × modèle (n = audits avec un verdict)":
+      - table "Résultats des vérifications par relais × modèle (n = audits avec un verdict)":
+        - caption: Résultats des vérifications par relais × modèle (n = audits avec un verdict)
+        - rowgroup:
+          - row "Relais × modèle Exécutions Identité du modèle Capacités Vision Streaming Protocole de réponse Part de modèle non conforme Contexte mesuré / déclaré":
+            - columnheader "Relais × modèle"
+            - columnheader "Exécutions"
+            - columnheader "Identité du modèle"
+            - columnheader "Capacités"
+            - columnheader "Vision"
+            - columnheader "Streaming"
+            - columnheader "Protocole de réponse"
+            - columnheader "Part de modèle non conforme"
+            - columnheader "Contexte mesuré / déclaré"
+        - rowgroup:
+          - row "Example Relay · model-a 7 Réussi 7 sur 7 réussis Réussi 7 sur 7 réussis Réussi 7 sur 7 réussis Réussi 7 sur 7 réussis Réussi 7 sur 7 réussis 0 % n=7100 % 128000 tok / 128000 tok n=7":
+            - rowheader "Example Relay · model-a"
+            - cell "7"
+            - cell "Réussi 7 sur 7 réussis"
+            - cell "Réussi 7 sur 7 réussis"
+            - cell "Réussi 7 sur 7 réussis"
+            - cell "Réussi 7 sur 7 réussis"
+            - cell "Réussi 7 sur 7 réussis"
+            - cell "0 % n=7"
+            - cell "100 % 128000 tok / 128000 tok n=7"
+          # … more rows of the same shape
+  - region "Facturation et jetons":
+    - heading "Facturation et jetons" [level=2]
+    - paragraph: "Ratio de facturation = jetons déclarés par le relais ÷ jetons comptés par zing. Au-dessus de 100 % : le relais déclare plus de jetons que zing n'en a comptés (vous payez peut-être davantage). Les comptes de zing sont des estimations ; de petits écarts sont normaux."
+    - text: Mesure
+    - combobox "Mesure":
+      - option "Ratio de facturation (entrée)" [selected]
+      - option "Ratio de facturation (sortie)"
+      - option "Part de jetons de raisonnement"
+      - option "Part d'entrée en cache"
+    - paragraph: Données « Ratio de facturation (entrée) » pour 9 audits sur 14.
+    - list "Légende":
+      - listitem: Example Relay 9 exécutions
+    - img "Ratio de facturation (entrée) dans le temps": 0 % 25 % 50 % 75 % 100 % 125 % 25 sept. 27 sept. 29 sept. 1 oct. 100%
+    - paragraph:
+      - text: Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante.
+      - link "Programmez une surveillance pour des mesures régulières.":
+        - /url: /v2/watches
+    - button "Afficher en tableau" [expanded]
+    - region "Ratio de facturation (entrée) (Relais, Par jour)":
+      - table "Ratio de facturation (entrée) (Relais, Par jour)":
+        - caption: Ratio de facturation (entrée) (Relais, Par jour)
+        - rowgroup:
+          - row "Intervalle Série Médiane p25–p75 Exécutions Remarque":
+            - columnheader "Intervalle"
+            - columnheader "Série"
+            - columnheader "Médiane"
+            - columnheader "p25–p75"
+            - columnheader "Exécutions"
+            - columnheader "Remarque"
+        - rowgroup:
+          - row "sam. 26 sept. 2026 Example Relay 110 % 110 % – 110 % 1 Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante.":
+            - cell "sam. 26 sept. 2026"
+            - cell "Example Relay"
+            - cell "110 %"
+            - cell "110 % – 110 %"
+            - cell "1"
+            - cell "Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante."
+          # … more rows of the same shape
+    - heading "Synthèse par relais" [level=3]
+    - region "Médianes sur la période choisie (n = audits ayant mesuré une valeur)":
+      - table "Médianes sur la période choisie (n = audits ayant mesuré une valeur)":
+        - caption: Médianes sur la période choisie (n = audits ayant mesuré une valeur)
+        - rowgroup:
+          - row "Relais Exécutions Ratio de facturation (entrée) Ratio de facturation (sortie) Part de jetons de raisonnement Part d'entrée en cache":
+            - columnheader "Relais"
+            - columnheader "Exécutions"
+            - columnheader "Ratio de facturation (entrée)"
+            - columnheader "Ratio de facturation (sortie)"
+            - columnheader "Part de jetons de raisonnement"
+            - columnheader "Part d'entrée en cache"
+        - rowgroup:
+          - row "Example Relay 9103 % n=9102 % n=9 30 % n=9 25 % n=9":
+            - rowheader "Example Relay"
+            - cell "9"
+            - cell "103 % n=9"
+            - cell "102 % n=9"
+            - cell "30 % n=9"
+            - cell "25 % n=9"
+          # … more rows of the same shape
+  - region "Surcharge du relais":
+    - heading "Surcharge du relais" [level=2]
+    - paragraph: Temps de traitement que le relais indique dans ses propres en-têtes de réponse, à côté de l'aller-retour réseau jusqu'à lui (médianes). La valeur du relais est autodéclarée et non vérifiée.
+    - list "Légende":
+      - listitem: Temps de traitement du relais
+      - listitem: Aller-retour réseau
+    - region "Médianes par relais, barres sur une même échelle":
+      - table "Médianes par relais, barres sur une même échelle":
+        - caption: Médianes par relais, barres sur une même échelle
+        - rowgroup:
+          - row "Relais Exécutions Temps de traitement du relais Aller-retour réseau":
+            - columnheader "Relais"
+            - columnheader "Exécutions"
+            - columnheader "Temps de traitement du relais"
+            - columnheader "Aller-retour réseau"
+        - rowgroup:
+          - row "Example Relay 9 <duration> n=9 <duration> n=9":
+            - rowheader "Example Relay"
+            - cell "9"
+            - cell "<duration> n=9"
+            - cell "<duration> n=9"
+          # … more rows of the same shape

@@ -233,6 +233,7 @@ Embedding/rerank（`embed_audit.py`）和图像/音频（`media_audit.py`）不�
   和 `/api/rerank` 为其他页面提供服务。
 - **中转站。** `POST /api/kb/relays` 保存中转站 `{name, base_url}`（输入无效时返回 400，名称或地址已存在时返回 409）。
 - **分析。** `GET /api/analytics/options`（历史中出现的中转站、模型、套件、流式模式、API 及日期范围）、`/api/analytics/summary`（`from`–`to` 区间的关键指标，并与之前等长区间对比）、`/api/analytics/series`（按 `group=relay|model|relay_model` 给出 `metric`，最多 4 个 `keys`，按查看者时区 `tz` 或 `tz_offset` 划分为 `bucket=hour|day|week|dow_hour` 区间）以及 `/api/analytics/leaderboard`（`model=` 列出其各中转站，或 `relay=` 列出其各模型）。所有端点都接受筛选参数 `from`、`to`、`suite`、`stream_mode`、`api`、`source=all|manual|monitor`、`relay` 和 `model`。`zing/web/analytics.py` 基于 `history.analytics_runs()` 在 Python 中完成全部计算：指标 id 来自固定白名单；中转站在查询时按知识库条目分组；某次运行未测得的值不参与计算（每个值都带有 `n` 和 `coverage`）；运行次数少于 `MIN_RUNS`（3）的区间标记为 `low_n`。参数无效时返回 400；响应带 `Cache-Control: no-store`。
+- **分析面板。** `/api/analytics/breakdown`（在所选区间内按 `group=relay|model|relay_model|all` 给出最多 8 个 `metrics`）、`/api/analytics/errors`（目标端补全调用按结果类别 `success|client_4xx|rate_limited|server_5xx|timeout|network|other` 统计，按 `group=relay|model` 和 `bucket` 划分，由 `history.analytics_request_classes()` 在 SQL 中计数，不加载请求行；调用时间为所属检测的开始时间加上偏移，精确到分钟；`covered` 为有请求记录的检测次数）以及 `/api/analytics/integrity`（每个「中转站 × 模型」的身份、能力、图像理解、流式、协议、完整性、注入提示词与连通性检测器的通过 / 警告 / 失败次数，模型不符占比，以及实测 / 声明上下文窗口的中位数比例）。`/api/analytics/series` 也接受 `group=all`。筛选与错误处理同上。
 - **后台检测。** `jobs.py` 把每次检测作为服务器拥有的任务运行。`POST /api/jobs` 排入一个任务，
   `GET /api/jobs` 列出排队中、运行中和刚结束的任务（以及运行中的监控）及其进度，
   `GET /api/jobs/{id}/events` 先回放任务的事件日志，再通过 SSE 实时跟随，
@@ -273,6 +274,8 @@ v2 的**检测**和**工具**页面用 `v2/relaycfg.js` 配置中转站：选择
 经典页面继续使用 `modelpicker.js`。
 
 v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`options` 还列出「中转站 × 模型」组合 `relay_models`，供数据系列选择使用）。页面在同一个筛选栏下每个面板一个 `<section class="card panel">`，便于加入新面板；筛选与视图保存在网址片段（`#range=30&metric=score&…`）和 `localStorage` 中。图表来自 `v2/charts.js`（`ZingCharts.timeChart`：手绘内联 SVG，含中位数折线、p25–p75 色带、空时间段留空、`low_n` 时间段的淡化标记、标注线和悬停提示；`fmt` / `fmtDelta` 按单位格式化数值）和 `v2/charts.css`（每个主题四种经过校验的系列颜色，并以标记形状区分）。每张图表也都以数据表呈现。
+
+每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`ZingCharts.heatmap` 绘制「星期几 × 小时」网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`ZingCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。
 
 **翻译约定。** 写在 HTML 中的中文是原文，保持不动；每个元素在 `data-en`（以及
 `data-en-placeholder`、`data-en-title`、`data-en-aria-label`）中携带英文文本。英文文本是

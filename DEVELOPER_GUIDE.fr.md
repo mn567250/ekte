@@ -314,6 +314,20 @@ que la bibliothèque standard.
   mesurée est laissée de côté (chaque valeur porte son `n` et sa `coverage`), et
   les intervalles de moins de `MIN_RUNS` (3) exécutions sont marqués `low_n`. Un
   paramètre invalide répond 400 ; les réponses sont en `Cache-Control: no-store`.
+- **Panneaux d'analyse.** `/api/analytics/breakdown` (jusqu'à 8 `metrics` par
+  `group=relay|model|relay_model|all` sur la période), `/api/analytics/errors`
+  (les appels de complétion de la cible par classe de résultat
+  `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, par
+  `group=relay|model` et par `bucket`, comptés en SQL par
+  `history.analytics_request_classes()` sans charger les lignes de requêtes ;
+  l'heure d'un appel est le début de son audit plus son décalage, à la minute ;
+  `covered` = audits qui ont des enregistrements de requêtes) et
+  `/api/analytics/integrity` (nombres de réussites / avertissements / échecs des
+  détecteurs d'identité, de capacités, de vision, de streaming, de protocole,
+  d'intégrité, de prompt injecté et de connectivité par relais × modèle, la part
+  de modèles divergents et le rapport médian fenêtre de contexte mesurée /
+  déclarée). `/api/analytics/series` accepte aussi `group=all`. Mêmes filtres et
+  erreurs que ci-dessus.
 - **Audits en arrière-plan.** `jobs.py` exécute chaque audit comme une tâche
   du serveur. `POST /api/jobs` en met une en file, `GET /api/jobs` liste les
   tâches en attente, en cours et récemment terminées (et les surveillances en
@@ -388,6 +402,16 @@ intervalles `low_n`, lignes d'annotation et infobulle au survol ; `fmt` /
 `fmtDelta` formatent les valeurs selon l'unité) et de `v2/charts.css` (quatre
 couleurs de série validées par thème, distinguées aussi par la forme des
 marqueurs). Chaque graphique existe aussi en tableau de données.
+
+Chaque panneau est autonome : un registre `PANELS` dans le script de la page
+indique l'id de sa section, `load()` (récupérer avec les filtres et la vue
+actuels, puis dessiner) et `render()` (redessiner à partir des données chargées,
+p. ex. au changement de langue), si bien que les panneaux peuvent être
+réorganisés sans se toucher. `ZingCharts.heatmap` dessine la grille jour de la
+semaine × heure (échelle séquentielle à une teinte en cinq paliers par thème,
+cases hachurées pour `low_n`, cases vides en contour), `ZingCharts.stackBars`
+les barres d'erreurs empilées, et `timeChart` accepte une ligne `ref` (ratio de
+facturation de 100 %).
 
 **Convention de traduction.** Le texte chinois écrit dans le HTML est l'original
 et reste intact ; chaque élément porte son texte anglais dans `data-en` (et

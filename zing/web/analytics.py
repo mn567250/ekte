@@ -2,10 +2,13 @@
 
 The read side of the analytics tables :mod:`zing.web.analytics_store` defines;
 ``zing serve`` answers ``/api/analytics/*`` with the functions at the bottom
-(:func:`options`, :func:`summary`, :func:`series`, :func:`leaderboard`). Pure
-Python over :func:`zing.web.history.analytics_runs`: no SQL is built from
-request input, no ``report_json`` is parsed, and every statistic is computed
-here.
+(:func:`options`, :func:`summary`, :func:`series`, :func:`leaderboard`,
+:func:`breakdown`, :func:`errors`, :func:`integrity`). Python over
+:func:`zing.web.history.analytics_runs`: no SQL is built from request input,
+no ``report_json`` is parsed, and every statistic is computed here — except
+the request counts of :func:`errors`, which SQLite sums per run, minute and
+outcome class (:func:`zing.web.history.analytics_request_classes`), so no
+request row is loaded.
 
 * **Relays** are grouped by knowledge-base entry, resolved when the query runs
   (:class:`RelayResolver`): a run's normalized base URL that is one of the base
@@ -52,12 +55,14 @@ MAX_KEYS = 4
 # Longest accepted filter value (relay keys are URLs).
 MAX_PARAM = 500
 
-GROUPS = ("relay", "model", "relay_model")
+GROUPS = ("relay", "model", "relay_model", "all")
 BUCKETS = ("hour", "day", "week", "dow_hour")
 SOURCES = ("all", "manual", "monitor")
 # Group key of runs without a usable base URL (a provider key or URL never
 # contains parentheses).
 UNKNOWN_RELAY = "(unknown)"
+# The one series key of group=all (every run that matches the filters).
+ALL_KEY = "(all)"
 
 
 class AnalyticsError(ValueError):
@@ -422,7 +427,10 @@ def _group_of(group: str) -> Callable[[Mapping[str, Any]], tuple[str, dict[str, 
         return key, {"key": key, "label": f"{g.label} · {name}", "in_kb": g.in_kb,
                      "kind": "relay_model", "relay": g.key, "model": name}
 
-    return {"relay": relay, "model": model, "relay_model": both}[group]
+    def everything(run: Mapping[str, Any]) -> tuple[str, dict[str, Any]]:
+        return ALL_KEY, {"key": ALL_KEY, "label": ALL_KEY, "in_kb": False, "kind": "all"}
+
+    return {"relay": relay, "model": model, "relay_model": both, "all": everything}[group]
 
 
 def _grouped(
@@ -682,3 +690,216 @@ def leaderboard(params: Mapping[str, Any]) -> dict[str, Any]:
         "min_runs": MIN_RUNS,
         "rows": rows,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Per-group breakdown (billing, relay overhead)
+# --------------------------------------------------------------------------- #
+# Metrics per breakdown request.
+MAX_METRICS = 8
+
+
+def breakdown(params: Mapping[str, Any], metrics: Iterable[str]) -> dict[str, Any]:
+    """Some metrics (``metrics``: 1 to :data:`MAX_METRICS` ids) over the whole
+    range, one row per group (``group``: relay, model, relay_model or all),
+    busiest group first."""
+    f = parse_filters(params)
+    group = _choice(params, "group", GROUPS, "relay")
+    wanted: list[Metric] = []
+    for mid in metrics:
+        if not (mid or "").strip():
+            continue
+        m = metric(mid)
+        if m not in wanted:
+            wanted.append(m)
+    if not wanted:
+        raise AnalyticsError("give at least one metric")
+    if len(wanted) > MAX_METRICS:
+        raise AnalyticsError(f"at most {MAX_METRICS} metrics")
+    runs = _load(f)
+    if any(m.id.startswith(DIM_PREFIX) for m in wanted):
+        _attach_dims(runs)
+    by_key, info = _grouped(runs, group)
+    rows = []
+    for key, members in by_key.items():
+        cells = {}
+        for m in wanted:
+            agg = aggregate(m, (run_value(m, r) for r in members))
+            cells[m.id] = {**agg, "coverage": _coverage(agg["n"], len(members)), "low_n": agg["n"] < MIN_RUNS}
+        rows.append({**info[key], "runs": len(members), "low_n": len(members) < MIN_RUNS, "metrics": cells})
+    rows.sort(key=lambda r: (-r["runs"], r["label"].lower(), r["key"]))
+    return {
+        **f.range(),
+        "group": group,
+        "metrics": [m.public() for m in wanted],
+        "runs": len(runs),
+        "min_runs": MIN_RUNS,
+        "rows": rows,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Errors and reliability (request records)
+# --------------------------------------------------------------------------- #
+REQUEST_CLASSES = history.REQUEST_CLASSES
+ERROR_GROUPS = ("relay", "model")
+
+
+def _class_counts() -> dict[str, int]:
+    return dict.fromkeys(REQUEST_CLASSES, 0)
+
+
+def _request_shares(counts: Mapping[str, int]) -> dict[str, Any]:
+    """Requests, failed ones, and the shares of all requests (pooled over the
+    calls, not a median of runs) that failed, hit a rate limit or timed out."""
+    total = sum(counts.values())
+    errors = total - counts["success"]
+
+    def share(n: int) -> float | None:
+        return n / total if total else None
+
+    return {
+        "requests": total,
+        "errors": errors,
+        "error_share": share(errors),
+        "rate_limited_share": share(counts["rate_limited"]),
+        "timeout_share": share(counts["timeout"]),
+        "server_share": share(counts["server_5xx"]),
+    }
+
+
+def errors(params: Mapping[str, Any]) -> dict[str, Any]:
+    """Outcomes of the target's completion calls by class: per group
+    (``group``: relay or model) and per time bucket (``bucket``, in the
+    viewer's time zone; a call's time is its run's start plus its offset, to
+    the minute). Counted in SQL; runs without stored request records (older
+    history) add nothing and show in ``covered`` < ``runs``."""
+    f = parse_filters(params)
+    group = _choice(params, "group", ERROR_GROUPS, "relay")
+    size = _choice(params, "bucket", BUCKETS, "day")
+    zone, zone_name = parse_tz(params)
+    runs = _load(f)
+    by_id = {int(r["id"]): r for r in runs}
+    key_of = _group_of(group)
+
+    groups: dict[str, dict[str, Any]] = {}
+    for run in runs:
+        key, desc = key_of(run)
+        g = groups.setdefault(key, {**desc, "runs": 0, "_covered": set(), "counts": _class_counts()})
+        g["runs"] += 1
+        if group == "model" and desc["in_kb"]:
+            g["in_kb"] = True
+    totals = _class_counts()
+    covered: set[int] = set()
+    buckets: dict[str, dict[str, Any]] = {}
+    for row in history.analytics_request_classes(by_id):
+        rid, cls, n = int(row["history_id"]), row["cls"], int(row["n"])
+        found = by_id.get(rid)
+        if found is None or cls not in totals:
+            continue
+        run = found
+        covered.add(rid)
+        totals[cls] += n
+        g = groups[key_of(run)[0]]
+        g["_covered"].add(rid)
+        g["counts"][cls] += n
+        if run["_t"] is None:
+            continue  # counted, but not placed in time
+        try:
+            t = run["_t"] + timedelta(minutes=int(row["minute"] or 0))
+        except OverflowError:
+            continue
+        if not _T_MIN <= t < _T_MAX:
+            continue
+        pos, bkey, extra = _bucket(t, zone, size)
+        b = buckets.setdefault(bkey, {"_pos": pos, "bucket": bkey, **extra, "_runs": set(),
+                                      "counts": _class_counts()})
+        b["_runs"].add(rid)
+        b["counts"][cls] += n
+
+    out_groups = []
+    for g in groups.values():
+        cov = g.pop("_covered")
+        out_groups.append({**g, "covered": len(cov), "coverage": _coverage(len(cov), g["runs"]),
+                           "low_n": len(cov) < MIN_RUNS, **_request_shares(g["counts"])})
+    out_groups.sort(key=lambda g: (-g["requests"], -g["runs"], g["label"].lower(), g["key"]))
+    out_buckets = []
+    for b in sorted(buckets.values(), key=lambda b: b["_pos"]):
+        ids = b.pop("_runs")
+        b.pop("_pos")
+        out_buckets.append({**b, "runs": len(ids), "low_n": len(ids) < MIN_RUNS, **_request_shares(b["counts"])})
+    return {
+        **f.range(),
+        "group": group,
+        "bucket": size,
+        "tz": zone_name,
+        "min_runs": MIN_RUNS,
+        "classes": list(REQUEST_CLASSES),
+        "runs": len(runs),
+        "covered": len(covered),
+        "coverage": _coverage(len(covered), len(runs)),
+        "totals": {"counts": totals, **_request_shares(totals)},
+        "groups": out_groups,
+        "buckets": out_buckets,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Model integrity (identity, context window, capability detectors)
+# --------------------------------------------------------------------------- #
+# Detectors whose status says whether the relay serves the model it claims,
+# whole and with its features (columns of the matrix, in this order).
+INTEGRITY_CHECKS = (
+    "model_identity", "capability", "vision", "streaming", "protocol_request",
+    "protocol_response", "integrity", "injected_prompt", "connectivity",
+)
+JUDGED = ("pass", "warn", "fail")
+
+
+def integrity(params: Mapping[str, Any]) -> dict[str, Any]:
+    """One row per relay x model: the status counts of each integrity check
+    (pass / warn / fail; ``other`` = inconclusive, not run, error, info, which
+    do not count towards ``n`` or ``pass_rate``), the model-mismatch share and
+    the effective context window as a share of the declared one (median over
+    the runs that measured both)."""
+    f = parse_filters(params)
+    runs = _load(f)
+    statuses: dict[int, dict[str, str | None]] = {}
+    for row in history.analytics_dimensions([r["id"] for r in runs], kind="detector"):
+        if row["key"] in INTEGRITY_CHECKS:
+            statuses.setdefault(int(row["history_id"]), {})[row["key"]] = row["status"]
+    present = {k for checks in statuses.values() for k in checks}
+    checks = [c for c in INTEGRITY_CHECKS if c in present]
+    by_key, info = _grouped(runs, "relay_model")
+    ratio_metric = Metric("context_ratio", "", "ratio", True)
+    rows = []
+    for key, members in by_key.items():
+        cells: dict[str, dict[str, Any]] = {}
+        for check in checks:
+            counts = {"pass": 0, "warn": 0, "fail": 0, "other": 0}
+            for run in members:
+                found = statuses.get(int(run["id"]), {})
+                if check in found:  # a run without this detector does not count
+                    status = found[check]
+                    counts[status if status in JUDGED else "other"] += 1
+            n = counts["pass"] + counts["warn"] + counts["fail"]
+            cells[check] = {**counts, "n": n, "pass_rate": counts["pass"] / n if n else None,
+                            "low_n": n < MIN_RUNS}
+        ratios = []
+        for run in members:
+            claimed = _number(run.get("context_claimed_tokens"))
+            effective = _number(run.get("context_effective_tokens"))
+            ratios.append(effective / claimed if claimed and claimed > 0 and effective is not None else None)
+        context = aggregate(ratio_metric, ratios)
+        context["coverage"] = _coverage(context["n"], len(members))
+        context["low_n"] = context["n"] < MIN_RUNS
+        context["claimed"] = aggregate(METRICS["context_claimed"],
+                                       (run_value(METRICS["context_claimed"], r) for r in members))["value"]
+        context["effective"] = aggregate(METRICS["context_effective"],
+                                         (run_value(METRICS["context_effective"], r) for r in members))["value"]
+        mismatch = _metric_cell(METRICS["model_mismatch_rate"], members)
+        mismatch["low_n"] = mismatch["n"] < MIN_RUNS
+        rows.append({**info[key], "runs": len(members), "low_n": len(members) < MIN_RUNS,
+                     "checks": cells, "model_mismatch": mismatch, "context": context})
+    rows.sort(key=lambda r: (-r["runs"], r["label"].lower(), r["key"]))
+    return {**f.range(), "min_runs": MIN_RUNS, "runs": len(runs), "checks": checks, "rows": rows}

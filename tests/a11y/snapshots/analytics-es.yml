@@ -243,7 +243,7 @@
             - columnheader "Última ejecución":
               - button "Última ejecución"
         - rowgroup:
-          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 — n=0 / 7 0 % n=7 30 sept 2026, 11:00":
+          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 0 % n=7 0 % n=7 30 sept 2026, 11:00":
             - rowheader "Example Relay"
             - cell "7"
             - cell "82 n=7"
@@ -252,8 +252,377 @@
             - cell "100 % n=7"
             - cell "104 % n=7"
             - cell "102 % n=7"
-            - cell "— n=0 / 7"
+            - cell "0 % n=7"
             - cell "0 % n=7"
             - cell "30 sept 2026, 11:00"
           # … more rows of the same shape
     - status
+  - region "Horas punta":
+    - heading "Horas punta" [level=2]
+    - paragraph: ¿Este relay se vuelve más lento o falla más en horas punta? Cada celda es una hora de un día de la semana en tu zona horaria, coloreada según la mediana de las auditorías que empezaron entonces (escala bajo la cuadrícula).
+    - text: Métrica
+    - combobox "Métrica":
+      - option "Tiempo hasta el primer token p50" [selected]
+      - option "Latencia p50"
+      - option "Velocidad de decodificación"
+      - option "Tasa de éxito"
+      - option "Tasa de errores"
+      - option "Proporción limitada por tasa"
+      - option "Tasa de tiempo agotado"
+      - option "Puntuación"
+    - text: Relay
+    - combobox "Relay":
+      - option "Todos los relays" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - img "Tiempo hasta el primer token p50 por día de la semana y hora": 00 03 06 09 12 15 18 21 lun mar mié jue vie sáb dom
+    - list:
+      - listitem: <duration> <duration>
+      - listitem: menos de 3 auditorías (rayado)
+      - listitem: sin auditorías
+    - paragraph:
+      - text: "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."
+      - link "Programe un monitor para obtener mediciones regulares.":
+        - /url: /v2/watches
+    - button "Mostrar como tabla" [expanded]
+    - region "Tiempo hasta el primer token p50 por día de la semana y hora (Todos los relays)":
+      - table "Tiempo hasta el primer token p50 por día de la semana y hora (Todos los relays)":
+        - caption: Tiempo hasta el primer token p50 por día de la semana y hora (Todos los relays)
+        - rowgroup:
+          - row "Día de la semana Hora Mediana Ejecuciones Nota":
+            - columnheader "Día de la semana"
+            - columnheader "Hora"
+            - columnheader "Mediana"
+            - columnheader "Ejecuciones"
+            - columnheader "Nota"
+        - rowgroup:
+          - 'row "lunes 7:00–8:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "lunes"
+            - cell "7:00–8:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "lunes 9:00–10:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "lunes"
+            - cell "9:00–10:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "lunes 10:00–11:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "lunes"
+            - cell "10:00–11:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "martes 6:00–7:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "martes"
+            - cell "6:00–7:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "martes 7:00–8:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "martes"
+            - cell "7:00–8:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "martes 9:00–10:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "martes"
+            - cell "9:00–10:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "martes 10:00–11:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "martes"
+            - cell "10:00–11:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "martes 11:00–12:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "martes"
+            - cell "11:00–12:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "miércoles 8:00–9:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "miércoles"
+            - cell "8:00–9:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "miércoles 9:00–10:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "miércoles"
+            - cell "9:00–10:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "miércoles 10:00–11:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "miércoles"
+            - cell "10:00–11:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "miércoles 11:00–12:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "miércoles"
+            - cell "11:00–12:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "sábado 8:00–9:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "sábado"
+            - cell "8:00–9:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "domingo 10:00–11:00 <duration> 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "domingo"
+            - cell "10:00–11:00"
+            - cell "<duration>"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+  - region "Errores y fiabilidad":
+    - heading "Errores y fiabilidad" [level=2]
+    - paragraph: "Llamadas fallidas al relay por causa: límite de peticiones (HTTP 429), errores del servidor (5xx), tiempos de espera agotados y otras, como proporción de todas las llamadas."
+    - text: Tabla por
+    - combobox "Tabla por":
+      - option "Relay" [selected]
+      - option "Modelo"
+    - text: Intervalos
+    - combobox "Intervalos":
+      - option "Por hora"
+      - option "Por día" [selected]
+      - option "Por semana"
+    - paragraph: Registros de peticiones de 14 de 14 auditorías. 140 llamadas, 18 fallidas (12,9 %).
+    - list "Leyenda":
+      - listitem: Limitado (429)
+      - listitem: Error del servidor (5xx)
+      - listitem: Tiempo agotado
+      - listitem: Otros errores (4xx, red, …)
+    - img "Llamadas fallidas a lo largo del tiempo": 0 % 5 % 10 % 15 % 20 % 25 sept 27 sept 29 sept 1 oct
+    - paragraph:
+      - text: "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."
+      - link "Programe un monitor para obtener mediciones regulares.":
+        - /url: /v2/watches
+    - button "Mostrar como tabla" [expanded]
+    - region "Resultados de las llamadas por intervalo (Por día)":
+      - table "Resultados de las llamadas por intervalo (Por día)":
+        - caption: Resultados de las llamadas por intervalo (Por día)
+        - rowgroup:
+          - row "Intervalo Llamadas Éxito Error del cliente (4xx) Limitado (429) Error del servidor (5xx) Tiempo agotado Error de red Otro fallo Proporción fallida Ejecuciones Nota":
+            - columnheader "Intervalo"
+            - columnheader "Llamadas"
+            - columnheader "Éxito"
+            - columnheader "Error del cliente (4xx)"
+            - columnheader "Limitado (429)"
+            - columnheader "Error del servidor (5xx)"
+            - columnheader "Tiempo agotado"
+            - columnheader "Error de red"
+            - columnheader "Otro fallo"
+            - columnheader "Proporción fallida"
+            - columnheader "Ejecuciones"
+            - columnheader "Nota"
+        - rowgroup:
+          - 'row "sáb, 26 sept 2026 10 9 0 0 0 1 0 0 10 % 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "sáb, 26 sept 2026"
+            - cell "10"
+            - cell "9"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "1"
+            - cell "0"
+            - cell "0"
+            - cell "10 %"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "dom, 27 sept 2026 10 9 0 0 1 0 0 0 10 % 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "dom, 27 sept 2026"
+            - cell "10"
+            - cell "9"
+            - cell "0"
+            - cell "0"
+            - cell "1"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "10 %"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - row "lun, 28 sept 2026 30 27 0 0 0 3 0 0 10 % 3":
+            - cell "lun, 28 sept 2026"
+            - cell "30"
+            - cell "27"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "3"
+            - cell "0"
+            - cell "0"
+            - cell "10 %"
+            - cell "3"
+            - cell
+          # … more rows of the same shape
+    - heading "Por relay" [level=3]
+    - region "Resultados de las llamadas por relay":
+      - table "Resultados de las llamadas por relay":
+        - caption: Resultados de las llamadas por relay
+        - rowgroup:
+          - row "Relay Auditorías con registros Llamadas Éxito Error del cliente (4xx) Limitado (429) Error del servidor (5xx) Tiempo agotado Error de red Otro fallo Proporción fallida Proporción limitada por tasa Proporción de tiempos agotados":
+            - columnheader "Relay"
+            - columnheader "Auditorías con registros"
+            - columnheader "Llamadas"
+            - columnheader "Éxito"
+            - columnheader "Error del cliente (4xx)"
+            - columnheader "Limitado (429)"
+            - columnheader "Error del servidor (5xx)"
+            - columnheader "Tiempo agotado"
+            - columnheader "Error de red"
+            - columnheader "Otro fallo"
+            - columnheader "Proporción fallida"
+            - columnheader "Proporción limitada por tasa"
+            - columnheader "Proporción de tiempos agotados"
+        - rowgroup:
+          - row "Example Relay 9 / 9 90 85 0 0 0 5 0 0 5,6 % 0 % 5,6 %":
+            - rowheader "Example Relay"
+            - cell "9 / 9"
+            - cell "90"
+            - cell "85"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "5"
+            - cell "0"
+            - cell "0"
+            - cell "5,6 %"
+            - cell "0 %"
+            - cell "5,6 %"
+          # … more rows of the same shape
+  - region "Integridad del modelo":
+    - heading "Integridad del modelo" [level=2]
+    - paragraph: ¿Es el modelo que dice ser, completo y con sus funciones? Resultados de las comprobaciones de identidad, ventana de contexto y capacidades por relay y modelo.
+    - paragraph:
+      - text: "Las filas marcadas «pocas ejecuciones» tienen menos de 3 ejecuciones: una sola auditoría puede ser un valor atípico."
+      - link "Programe un monitor para obtener mediciones regulares.":
+        - /url: /v2/watches
+    - region "Resultados de las comprobaciones por relay × modelo (n = auditorías con veredicto)":
+      - table "Resultados de las comprobaciones por relay × modelo (n = auditorías con veredicto)":
+        - caption: Resultados de las comprobaciones por relay × modelo (n = auditorías con veredicto)
+        - rowgroup:
+          - row "Relay × modelo Ejecuciones Identidad del modelo Capacidades Visión Streaming Protocolo de respuesta Proporción de modelo no coincidente Contexto medido / declarado":
+            - columnheader "Relay × modelo"
+            - columnheader "Ejecuciones"
+            - columnheader "Identidad del modelo"
+            - columnheader "Capacidades"
+            - columnheader "Visión"
+            - columnheader "Streaming"
+            - columnheader "Protocolo de respuesta"
+            - columnheader "Proporción de modelo no coincidente"
+            - columnheader "Contexto medido / declarado"
+        - rowgroup:
+          - row "Example Relay · model-a 7 Superada 7 de 7 superadas Superada 7 de 7 superadas Superada 7 de 7 superadas Superada 7 de 7 superadas Superada 7 de 7 superadas 0 % n=7100 % 128000 tok / 128000 tok n=7":
+            - rowheader "Example Relay · model-a"
+            - cell "7"
+            - cell "Superada 7 de 7 superadas"
+            - cell "Superada 7 de 7 superadas"
+            - cell "Superada 7 de 7 superadas"
+            - cell "Superada 7 de 7 superadas"
+            - cell "Superada 7 de 7 superadas"
+            - cell "0 % n=7"
+            - cell "100 % 128000 tok / 128000 tok n=7"
+          # … more rows of the same shape
+  - region "Facturación y tokens":
+    - heading "Facturación y tokens" [level=2]
+    - paragraph: "Ratio de facturación = tokens que informa el relay ÷ tokens que contó zing. Por encima del 100 %: el relay informa más tokens de los que contó zing (puede que pagues de más). Los recuentos de zing son estimaciones, así que las pequeñas desviaciones son normales."
+    - text: Métrica
+    - combobox "Métrica":
+      - option "Ratio de facturación (entrada)" [selected]
+      - option "Ratio de facturación (salida)"
+      - option "Proporción de tokens de razonamiento"
+      - option "Proporción de entrada en caché"
+    - paragraph: Datos de “Ratio de facturación (entrada)” de 9 de 14 auditorías.
+    - list "Leyenda":
+      - listitem: Example Relay 9 ejecuciones
+    - img "Ratio de facturación (entrada) a lo largo del tiempo": 0 % 25 % 50 % 75 % 100 % 125 % 25 sept 27 sept 29 sept 1 oct 100%
+    - paragraph:
+      - text: "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."
+      - link "Programe un monitor para obtener mediciones regulares.":
+        - /url: /v2/watches
+    - button "Mostrar como tabla" [expanded]
+    - region "Ratio de facturación (entrada) (Relay, Por día)":
+      - table "Ratio de facturación (entrada) (Relay, Por día)":
+        - caption: Ratio de facturación (entrada) (Relay, Por día)
+        - rowgroup:
+          - row "Intervalo Serie Mediana p25–p75 Ejecuciones Nota":
+            - columnheader "Intervalo"
+            - columnheader "Serie"
+            - columnheader "Mediana"
+            - columnheader "p25–p75"
+            - columnheader "Ejecuciones"
+            - columnheader "Nota"
+        - rowgroup:
+          - 'row "sáb, 26 sept 2026 Example Relay 110 % 110 % – 110 % 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "sáb, 26 sept 2026"
+            - cell "Example Relay"
+            - cell "110 %"
+            - cell "110 % – 110 %"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - row "lun, 28 sept 2026 Example Relay 105 % 104 % – 105,5 % 3":
+            - cell "lun, 28 sept 2026"
+            - cell "Example Relay"
+            - cell "105 %"
+            - cell "104 % – 105,5 %"
+            - cell "3"
+            - cell
+          - 'row "mar, 29 sept 2026 Example Relay 100 % 99,7 % – 100,3 % 2 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "mar, 29 sept 2026"
+            - cell "Example Relay"
+            - cell "100 %"
+            - cell "99,7 % – 100,3 %"
+            - cell "2"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          # … more rows of the same shape
+    - heading "Resumen por relay" [level=3]
+    - region "Medianas en el periodo seleccionado (n = auditorías que midieron un valor)":
+      - table "Medianas en el periodo seleccionado (n = auditorías que midieron un valor)":
+        - caption: Medianas en el periodo seleccionado (n = auditorías que midieron un valor)
+        - rowgroup:
+          - row "Relay Ejecuciones Ratio de facturación (entrada) Ratio de facturación (salida) Proporción de tokens de razonamiento Proporción de entrada en caché":
+            - columnheader "Relay"
+            - columnheader "Ejecuciones"
+            - columnheader "Ratio de facturación (entrada)"
+            - columnheader "Ratio de facturación (salida)"
+            - columnheader "Proporción de tokens de razonamiento"
+            - columnheader "Proporción de entrada en caché"
+        - rowgroup:
+          - row "Example Relay 9103 % n=9102 % n=9 30 % n=9 25 % n=9":
+            - rowheader "Example Relay"
+            - cell "9"
+            - cell "103 % n=9"
+            - cell "102 % n=9"
+            - cell "30 % n=9"
+            - cell "25 % n=9"
+          # … more rows of the same shape
+  - region "Sobrecarga del relay":
+    - heading "Sobrecarga del relay" [level=2]
+    - paragraph: Tiempo de procesamiento que el relay indica en sus propias cabeceras de respuesta, junto al tiempo de ida y vuelta de red hasta él (medianas). La cifra del relay es autodeclarada y no está verificada.
+    - list "Leyenda":
+      - listitem: Tiempo de procesamiento del relay
+      - listitem: Ida y vuelta de red
+    - region "Medianas por relay, barras en una misma escala":
+      - table "Medianas por relay, barras en una misma escala":
+        - caption: Medianas por relay, barras en una misma escala
+        - rowgroup:
+          - row "Relay Ejecuciones Tiempo de procesamiento del relay Ida y vuelta de red":
+            - columnheader "Relay"
+            - columnheader "Ejecuciones"
+            - columnheader "Tiempo de procesamiento del relay"
+            - columnheader "Ida y vuelta de red"
+        - rowgroup:
+          - row "Example Relay 9 <duration> n=9 <duration> n=9":
+            - rowheader "Example Relay"
+            - cell "9"
+            - cell "<duration> n=9"
+            - cell "<duration> n=9"
+          # … more rows of the same shape

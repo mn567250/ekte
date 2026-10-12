@@ -59,6 +59,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   data table, in all seven languages, light and dark. `GET
   /api/analytics/options` also lists the relay × model pairs
   (`relay_models`).
+- **Analytics page: peak hours, errors, model integrity, billing and relay
+  overhead.** Five more panels under the leaderboard, scoped by the same
+  filters: a weekday × hour heatmap of a metric (TTFT by default; latency,
+  speed, success, error, rate-limit and timeout rates, score) for all relays
+  or one, in the viewer's time zone, cells with fewer than 3 runs hatched and
+  empty cells outlined; failed calls by cause (rate limits / HTTP 429, 5xx,
+  timeouts, 4xx, network and other errors) as stacked bars over time and a
+  table per relay or model with counts and rate-limited / timeout shares,
+  stating how many runs have request records; an integrity matrix per relay ×
+  model with pass / warn / fail chips (icon and text) for the identity,
+  capability, vision, streaming, protocol, integrity, injected-prompt and
+  connectivity checks, the model-mismatch share and the measured share of the
+  declared context window; billing ratios over time against a 100% reference
+  line, reasoning and cached-input shares, and a per-relay summary; and the
+  processing time a relay reports next to the network round trip. Every chart
+  has its data table. New endpoints `GET /api/analytics/errors` (request
+  outcomes counted in SQL by class, per relay or model and per time bucket,
+  with coverage), `GET /api/analytics/integrity` and `GET
+  /api/analytics/breakdown` (some metrics per group over the range);
+  `/api/analytics/series` also takes `group=all`. Each panel loads on its own
+  (`PANELS` registry in the page).
 
 ### Changed
 
@@ -72,6 +93,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Performance chart tooltips no longer track pointer movement.** They open
+  when the pointer enters a mark (Audit and History pages), as the other
+  charts do.
+- **German analytics tile labels break with a hyphen.** "Abrechnungsverhältnis"
+  broke mid-word without a hyphen in the overview tiles; it now carries a soft
+  hyphen, and tile labels use `hyphens: auto` with the page language.
 - **Report meta labels wrap on narrow screens (UI v2).** A long label in the
   report's meta strip, such as the French "Requêtes de la sonde de
   performance", could not shrink and was cut off at 320 px wide (Audit and
