@@ -5,7 +5,8 @@ Endpoints:
   GET  /v2/…                 the v2 UI, served side by side for A/B comparison;
                              ?ui=v1|v2 on any page picks one (remembered in the
                              `zing_ui` cookie)
-  GET  /api/health           {ok, version}
+  GET  /v2/analytics         charts and leaderboards over the run history (v2 only)
+  GET  /api/health          {ok, version}
   GET  /api/kb               providers (base URLs, saved relays) and their models
   POST /api/kb/relays        save a relay {name, base_url} in kb.db
   GET  /api/kb/profiles      models, providers and relays (complete sets, sources,

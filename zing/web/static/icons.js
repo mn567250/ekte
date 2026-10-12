@@ -37,6 +37,10 @@
     chart:
       '<path d="M4 19V5"/><path d="M4 19h16"/>' +
       '<path d="M7 15l4-5 3 3 5-7"/>',
+    // bars — analytics (grouped bars over a baseline)
+    bars:
+      '<path d="M4 20h16"/><path d="M7 16v-5"/><path d="M11 16V6"/>' +
+      '<path d="M15 16v-8"/><path d="M19 16v-3"/>',
     // toolbox — tools surface
     toolbox:
       '<rect x="3" y="8" width="18" height="12" rx="2"/>' +

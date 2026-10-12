@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title data-en="zing — analytics">zing — 分析</title>
+<script src="/locales.js"></script>
+<script src="/lang.js"></script>
+<script src="/v2/static/theme.js"></script>
+<link rel="stylesheet" href="/v2/static/zing.css" />
+<link rel="stylesheet" href="/v2/static/charts.css" />
+<style>
+  /* Analytics page. Tokens only (zing.css, charts.css); light + dark.
+   *
+   * One <section class="card panel"> per panel (overview, comparison,
+   * leaderboard; more can follow), all scoped by the one filter bar above
+   * them. Every chart has its data table (BITV 9.1.1.1 / 9.1.3.1). Below
+   * 600px everything stacks; wide tables scroll inside their own focusable
+   * region, never the page (BITV 9.1.4.10). */
+  .local-note { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
+  .local-note .zicon { width: 13px; height: 13px; flex: none; }
+  .local-note code { font-size: 11.5px; color: var(--ink2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+  .panel, .filters { margin-top: 22px; padding: 18px 20px 20px; min-width: 0; }
+  .panel[hidden], .filters[hidden] { display: none; }
+  .panel h2, .filters h2 { font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.2px; margin: 0; }
+  .psub { margin: 4px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
+  .pbody { margin-top: 14px; min-width: 0; transition: opacity 0.2s; }
+  /* refetch keeps the frame: the previous numbers stay, dimmed */
+  [aria-busy="true"] .pbody { opacity: 0.55; }
+  .state { padding: 14px 0; color: var(--ink2); font-size: 14px; }
+  .state.loading { font-family: var(--mono); font-size: 13px; color: var(--faint); }
+  .errbox { margin-top: 0; }
+
+  /* filter bar */
+  .frow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; margin-top: 12px; }
+  .flab { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); }
+  .range { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 100%; }
+  .range .seg button { flex: 0 1 auto; min-width: 0; padding: 8px 12px; font-size: 12.5px; }
+  .custom { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+  .custom[hidden] { display: none; }
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; margin-top: 12px; }
+  .fgrid label, .custom label, .ctl label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .fgrid label > span, .custom label > span, .ctl label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); overflow-wrap: anywhere; }
+  .fgrid .in, .custom .in, .ctl .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
+  .fgrid select.in, .ctl select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
+  .ffoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: var(--ink2); }
+  .ffoot .linkbtn[hidden] { display: none; }
+  .ferr { margin: 10px 0 0; font-size: 12.5px; font-weight: 600; color: var(--bad); }
+  .ferr:empty { display: none; }
+
+  /* KPI tiles */
+  .kpis { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .kpi { border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px 11px; background: var(--surface-2); min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .kpi .kl { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); overflow-wrap: anywhere; }
+  .kpi .kv { font-family: var(--disp); font-weight: 700; font-size: 22px; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; color: var(--ink); overflow-wrap: anywhere; }
+  .kpi .kd { font-size: 12px; font-weight: 600; color: var(--ink2); font-variant-numeric: tabular-nums; }
+  .kpi .kd.good { color: var(--good); } .kpi .kd.bad { color: var(--bad); }
+  .kpi .kc { font-size: 11.5px; color: var(--faint); line-height: 1.4; }
+
+  /* comparison chart */
+  .ctl { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 12px; align-items: end; }
+  .pick { margin-top: 12px; }
+  .pick .chips { margin-top: 6px; }
+  .pick .chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+  .legend { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink2); }
+  .legend li { display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; }
+  .legend .nm { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+  .legend .sub { color: var(--faint); white-space: nowrap; }
+  .axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--faint); margin: 4px 0 2px; }
+  .notes { margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
+  .note { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink2); padding: 9px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+  .note .zicon { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+  .note.warn { color: var(--warn); background: var(--warnbg); border-color: transparent; }
+  .note ul { margin: 4px 0 0; padding-left: 18px; }
+  .note > span { min-width: 0; overflow-wrap: anywhere; }
+  .empty-data { padding: 30px 12px; text-align: center; color: var(--ink2); font-size: 14px; border: 1px dashed var(--line-strong); border-radius: 14px; }
+
+  /* data tables (chart table + leaderboard) */
+  .tdisc { margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; }
+  .tdisc .disclosure { padding: 10px 14px; }
+  .tdisc .disclosure .zicon { width: 15px; height: 15px; }
+  .tdisc .tbody { padding: 0 2px 6px; }
+  .tdisc .tbody[hidden] { display: none; }
+  .tscroll { overflow-x: auto; max-width: 100%; border-radius: 10px; }
+  .tscroll:focus-visible { outline-offset: -2px; }
+  table.dt { border-collapse: collapse; width: 100%; font-size: 12.5px; color: var(--ink2); }
+  .dt caption { text-align: left; font-size: 12px; color: var(--faint); padding: 6px 12px; caption-side: top; }
+  .dt th, .dt td { padding: 7px 12px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
+  .dt thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); border-top: 0; white-space: nowrap; }
+  .dt td.n, .dt th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dt tbody th { font-weight: 600; color: var(--ink); min-width: 9em; max-width: 22em; overflow-wrap: anywhere; }
+  .dt td.when { white-space: nowrap; }
+  .dt td.ser { min-width: 8em; max-width: 18em; overflow-wrap: anywhere; color: var(--ink); }
+  .dt td .cn { display: block; font-size: 11px; color: var(--faint); }
+  .dt tr.low > * { color: var(--faint); }
+  .dt tr.low td.note { color: var(--warn); }
+  .dt td.note { min-width: 14em; }
+  .dt .badge { margin-top: 3px; }
+  .dt .u { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--ink2); overflow-wrap: anywhere; }
+
+  /* leaderboard */
+  .lbctl { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
+  .lbctl .seg { flex: 1 1 260px; }
+  .lbctl .seg button { padding: 8px 10px; font-size: 12.5px; }
+  .lbctl label { flex: 1 1 200px; }
+  .lbtab { margin-top: 14px; border: 1px solid var(--line); }
+  .sortb {
+    display: inline-flex; align-items: center; gap: 3px; padding: 3px 4px; margin: -3px -4px; cursor: pointer; white-space: nowrap;
+    font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; border-radius: 6px;
+  }
+  .sortb:hover { color: var(--ink); background: var(--surface-2); }
+  .sortb .zicon { width: 12px; height: 12px; flex: none; opacity: 0; transition: transform 0.2s; }
+  th[aria-sort] .sortb { color: var(--ink); }
+  th[aria-sort] .sortb .zicon { opacity: 1; }
+  th[aria-sort="ascending"] .sortb .zicon { transform: rotate(180deg); }
+  .dt th.n .sortb { flex-direction: row-reverse; }
+
+  .empty-box { text-align: center; padding: 44px 22px 40px; margin-top: 22px; }
+  .empty-box .ic { color: var(--faint); margin-bottom: 10px; }
+  .empty-box .ic .zicon { width: 34px; height: 34px; }
+  .empty-box p { margin: 0 0 16px; color: var(--ink2); font-size: 15px; }
+
+  @media (max-width: 600px) {
+    .panel, .filters { padding: 14px 14px 16px; }
+    .fgrid { grid-template-columns: 1fr 1fr; }
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .kpi .kv { font-size: 19px; }
+    .ctl { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="znav" data-page="analytics"></header>
+  <main id="main" tabindex="-1">
+    <div class="hero">
+      <h1 data-en="Audit <span class='u'>analytics</span>">检测<span class='u'>分析</span></h1>
+      <p data-en="Compare relays and models over time with what zing measured on this machine: scores, speed, success rates and billing.">用 zing 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。</p>
+      <p class="local-note"><span class="pico" id="lockIcon"></span><span data-en="Computed from the local history under &lt;code&gt;~/.zing&lt;/code&gt; — nothing is uploaded.">基于 <code>~/.zing</code> 下的本地历史计算，不会上传。</span></p>
+    </div>
+    <p class="sr-only" id="live" role="status"></p>
+
+    <section class="card empty-box" id="empty" hidden></section>
+
+    <section class="card filters" id="filters" aria-labelledby="f-h" hidden>
+      <h2 id="f-h" data-en="Filters">筛选</h2>
+      <div id="fbody"></div>
+    </section>
+
+    <section class="card panel" id="p-kpi" aria-labelledby="kpi-h" aria-busy="true" hidden>
+      <h2 id="kpi-h" data-en="Overview">概览</h2>
+      <p class="psub" id="kpi-sub"></p>
+      <div class="pbody" id="kpi-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+    </section>
+
+    <section class="card panel" id="p-cmp" aria-labelledby="cmp-h" aria-busy="true" hidden>
+      <h2 id="cmp-h" data-en="Comparison over time">随时间对比</h2>
+      <p class="psub" data-en="The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.">折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。</p>
+      <div class="pbody">
+        <div id="cmp-ctl"></div>
+        <div id="cmp-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+      </div>
+    </section>
+
+    <section class="card panel" id="p-lb" aria-labelledby="lb-h" aria-busy="true" hidden>
+      <h2 id="lb-h" data-en="Leaderboard">排行榜</h2>
+      <p class="psub" data-en="Medians over the selected range; n is the number of runs that measured a value.">所选时间范围内的中位数；n 为测得该值的检测次数。</p>
+      <div class="pbody">
+        <div id="lb-ctl"></div>
+        <div id="lb-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+      </div>
+      <p class="sr-only" id="lbst" role="status"></p>
+    </section>
+  </main>
+</div>
+<script src="/i18n.js"></script>
+<script src="/icons.js"></script>
+<script src="/v2/static/nav.js"></script>
+<script src="/v2/static/charts.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var ico = function (n, o) { return window.zingIcon ? window.zingIcon(n, o || {}) : ""; };
+  var C = window.ZingCharts, esc = C.esc, fmt = C.fmt;
+  // T(zh, en) with {name} placeholders filled after translation
+  var Tf = function (zh, en, vars) {
+    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+  };
+
+  /* ---------------- labels ---------------- */
+  var METRIC_L = {
+    score: ["健康分", "Score"],
+    risk_high_share: ["高风险占比", "High-risk share"],
+    success_rate: ["成功率", "Success rate"],
+    error_rate: ["错误率", "Error rate"],
+    timeout_rate: ["超时率", "Timeout rate"],
+    rate_limited_rate: ["限流占比", "Rate-limited share"],
+    latency_p50: ["延迟 p50", "Latency p50"],
+    latency_p95: ["延迟 p95", "Latency p95"],
+    ttft_p50: ["首字延迟 p50", "Time to first token p50"],
+    ttft_p95: ["首字延迟 p95", "Time to first token p95"],
+    decode_tps: ["输出速度", "Decode speed"],
+    itl_jitter: ["字间抖动", "Inter-token jitter"],
+    relay_overhead: ["中转处理耗时", "Relay processing time"],
+    network_rtt: ["网络往返", "Network round trip"],
+    cold_start: ["冷启动", "Cold start"],
+    concurrency_tps: ["并发吞吐", "Throughput under load"],
+    billing_ratio_prompt: ["计费比（输入）", "Billing ratio (prompt)"],
+    billing_ratio_completion: ["计费比（输出）", "Billing ratio (completion)"],
+    reasoning_share: ["推理 token 占比", "Reasoning token share"],
+    cached_input_share: ["缓存输入占比", "Cached input share"],
+    model_mismatch_rate: ["模型不符占比", "Model mismatch share"],
+    context_claimed: ["声明的上下文", "Declared context"],
+    context_effective: ["实测上下文", "Effective context"],
+    findings_high: ["高危发现", "High-severity findings"],
+    findings_medium: ["中危发现", "Medium-severity findings"],
+    findings_low: ["低危发现", "Low-severity findings"],
+    duration: ["检测时长", "Audit duration"],
+  };
+  var DIM = "dim:";
+  function dimName(k) {
+    var I = window.ZING_I18N;
+    if (!I || !I.DIMENSIONS[k]) return k;
+    return ZING_LANG.isZh() ? I.DIMENSIONS[k][0] : ZING_LANG.tr(I.EN.DIMENSIONS[k][0]);
+  }
+  function metricName(id) {
+    if (String(id).indexOf(DIM) === 0) return Tf("维度：{name}", "Dimension: {name}", { name: dimName(id.slice(DIM.length)) });
+    return METRIC_L[id] ? T(METRIC_L[id][0], METRIC_L[id][1]) : id;
+  }
+  var STREAM = {
+    stream: ["流式", "Streaming"],
+    non_stream: ["非流式", "Non-streaming"],
+    both: ["流式 + 非流式", "Streaming + non-streaming"],
+  };
+  var streamLabel = function (v) { return STREAM[v] ? T(STREAM[v][0], STREAM[v][1]) : v; };
+  var GROUPS = ["relay", "model", "relay_model"];
+  var groupName = function (g) {
+    return g === "model" ? T("模型", "Model") : g === "relay_model" ? T("中转站 × 模型", "Relay × model") : T("中转站", "Relay");
+  };
+  var BUCKETS = ["hour", "day", "week"];
+  var BUCKET_MS = { hour: 36e5, day: 864e5, week: 6048e5 };
+  var bucketName = function (b) {
+    return b === "hour" ? T("按小时", "By hour") : b === "week" ? T("按周", "By week") : T("按天", "By day");
+  };
+  function lowHint() {
+    return Tf("此时间段少于 {min} 次检测——单次检测可能是离群值，因此淡化显示。",
+      "Fewer than {min} runs in this bucket — shown faded because a single audit can be an outlier.", { min: minRuns() });
+  }
+  function relayLabel(r) { return r ? r.label || r.key : ""; }
+
+  /* ---------------- state: filters + view, in the URL ---------------- */
+  // Filters scope every panel; view settings belong to one panel. Both live
+  // in the query string (shareable, bookmarkable); the last view is also
+  // remembered per viewer (localStorage, may be missing or throw).
+  var VKEY = "zing.v2.analytics.view";
+  var RANGES = ["7", "30", "90", "all", "custom"];
+  var SORTS = ["label", "runs", "score", "ttft_p50", "decode_tps", "success_rate", "billing_ratio_prompt",
+    "billing_ratio_completion", "model_mismatch_rate", "risk_high_share", "last_run"];
+  var F, V;
+  var state = { opts: null, summary: null, series: null, board: null, err: {}, seq: { all: 0, cmp: 0, lb: 0 } };
+
+  function readState() {
+    var qs;
+    try { qs = new URLSearchParams(location.search); } catch (e) { qs = new URLSearchParams(""); }
+    if (!Array.from(qs.keys()).length) {
+      try { qs = new URLSearchParams(localStorage.getItem(VKEY) || ""); } catch (e) { /* ignore */ }
+    }
+    var get = function (k, def) { return qs.has(k) ? String(qs.get(k)) : def; };
+    var one = function (k, allowed, def) { var v = get(k, def); return allowed.indexOf(v) >= 0 ? v : def; };
+    var date = function (k) { var v = get(k, ""); return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ""; };
+    F = {
+      range: one("range", RANGES, "30"),
+      from: date("from"),
+      to: date("to"),
+      // null: not chosen yet; resolved to the most common value once the
+      // options are in, so the default view never mixes suites or modes
+      suite: qs.has("suite") ? get("suite", "") : null,
+      stream_mode: qs.has("stream_mode") ? get("stream_mode", "") : null,
+      api: get("api", ""),
+      source: one("source", ["all", "manual", "monitor"], "all"),
+      relay: get("relay", ""),
+      model: get("model", ""),
+    };
+    var sort = get("sort", "").split(".");
+    V = {
+      metric: get("metric", "score"),
+      group: one("group", GROUPS, "relay"),
+      bucket: one("bucket", BUCKETS, "day"),
+      keys: qs.getAll("keys").filter(Boolean).slice(0, 4),
+      lb: one("lb", ["relay", "model"], "relay"),
+      lbk: get("lbk", ""),
+      sort: SORTS.indexOf(sort[0]) >= 0 && (sort[1] === "asc" || sort[1] === "desc") ? { key: sort[0], dir: sort[1] } : null,
+      table: get("table", "") === "1",
+    };
+  }
+
+  function writeState() {
+    var q = new URLSearchParams();
+    q.set("range", F.range);
+    if (F.range === "custom") { q.set("from", F.from); q.set("to", F.to); }
+    ["suite", "stream_mode"].forEach(function (k) { if (F[k] != null) q.set(k, F[k]); });
+    if (F.api) q.set("api", F.api);
+    if (F.source !== "all") q.set("source", F.source);
+    if (F.relay) q.set("relay", F.relay);
+    if (F.model) q.set("model", F.model);
+    q.set("metric", V.metric);
+    q.set("group", V.group);
+    q.set("bucket", V.bucket);
+    V.keys.forEach(function (k) { q.append("keys", k); });
+    q.set("lb", V.lb);
+    if (V.lbk) q.set("lbk", V.lbk);
+    if (V.sort) q.set("sort", V.sort.key + "." + V.sort.dir);
+    if (V.table) q.set("table", "1");
+    var s = q.toString();
+    try { history.replaceState(null, "", location.pathname + "?" + s + location.hash); } catch (e) { /* ignore */ }
+    try { localStorage.setItem(VKEY, s); } catch (e) { /* ignore */ }
+  }
+
+  /* ---------------- time range ---------------- */
+  function localDay(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+  function ymd(d) {
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  // whole local days: [start of the first day, start of the day after today)
+  function rangeOf() {
+    var now = new Date(), end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    if (F.range === "all") return { from: null, to: end };
+    if (F.range === "custom") {
+      var a = localDay(F.from), b = localDay(F.to);
+      if (!a || !b) return { error: T("请填写开始和结束日期。", "Enter a start and an end date.") };
+      b = new Date(b.getFullYear(), b.getMonth(), b.getDate() + 1);
+      if (a >= b) return { error: T("开始日期必须早于结束日期。", "The start date must be before the end date.") };
+      return { from: a, to: b };
+    }
+    var n = Number(F.range);
+    return { from: new Date(end.getFullYear(), end.getMonth(), end.getDate() - n), to: end };
+  }
+  function tzParams(q) {
+    var tz = "";
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { /* ignore */ }
+    if (tz) q.set("tz", tz);
+    q.set("tz_offset", String(-new Date().getTimezoneOffset()));
+    return q;
+  }
+  function tzName() {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (e) { return "UTC"; }
+  }
+  // the filters as API parameters (from / to as UTC instants; "+" never appears)
+  function apiParams(skip) {
+    var q = new URLSearchParams(), r = rangeOf();
+    if (r.from) q.set("from", r.from.toISOString());
+    if (r.to) q.set("to", r.to.toISOString());
+    if (F.suite) q.set("suite", F.suite);
+    if (F.stream_mode) q.set("stream_mode", F.stream_mode);
+    if (F.api) q.set("api", F.api);
+    if (F.source !== "all") q.set("source", F.source);
+    if (F.relay && skip !== "relay") q.set("relay", F.relay);
+    if (F.model && skip !== "model") q.set("model", F.model);
+    return q;
+  }
+  function dfmt(opts, d) {
+    try { return ZING_LANG.dateFmt(opts).format(d); } catch (e) { return d.toLocaleString(); }
+  }
+  function dayRange(a, b) {
+    var last = new Date(b.getTime() - 1);
+    try {
+      var f = ZING_LANG.dateFmt({ dateStyle: "medium" });
+      if (f.formatRange) return f.formatRange(a, last);
+    } catch (e) { /* ignore */ }
+    return dfmt({ dateStyle: "medium" }, a) + " – " + dfmt({ dateStyle: "medium" }, last);
+  }
+  function minRuns() { return (state.opts && state.opts.min_runs) || 3; }
+
+  /* ---------------- data ---------------- */
+  function getJSON(url) {
+    return fetch(url, { headers: { Accept: "application/json" } }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+        return j;
+      });
+    });
+  }
+  var live = $("#live");
+  function say(msg) { live.textContent = msg; }
+  function errText(e) { return ZING_LANG.server(String((e && e.message) || e)); }
+  function busy(id, on) { $(id).setAttribute("aria-busy", on ? "true" : "false"); }
+
+  function loadOptions() {
+    say(T("正在加载分析…", "Loading analytics…"));
+    return getJSON("/api/analytics/options").then(function (o) {
+      state.opts = o;
+      if (!o.runs) return renderEmpty();
+      if (F.suite == null) F.suite = o.suites && o.suites.length ? o.suites[0].value : "";
+      if (F.stream_mode == null) F.stream_mode = o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "";
+      ["#filters", "#p-kpi", "#p-cmp", "#p-lb"].forEach(function (id) { $(id).hidden = false; });
+      renderFilters();
+      refresh();
+    }).catch(function (e) {
+      var box = $("#empty");
+      box.hidden = false;
+      box.classList.remove("empty-box");
+      box.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取分析数据：", "Could not load analytics: ")) + esc(errText(e)) +
+        "<br>" + esc(T("请确认本地 zing 服务在运行。", "Make sure the local zing service is running.")) + "</div>";
+      say("");
+    });
+  }
+
+  // everything the filters scope: overview, comparison, leaderboard
+  function refresh() {
+    var r = rangeOf();
+    $("#ferr").textContent = r.error || "";
+    if (r.error) return;
+    writeState();
+    var seq = ++state.seq.all;
+    say(T("正在加载分析…", "Loading analytics…"));
+    busy("#p-kpi", true);
+    var sum = getJSON("/api/analytics/summary?" + apiParams()).then(function (s) {
+      if (seq !== state.seq.all) return;
+      state.summary = s;
+      state.err.kpi = null;
+    }).catch(function (e) {
+      if (seq !== state.seq.all) return;
+      state.summary = null;
+      state.err.kpi = errText(e);
+    }).then(function () {
+      if (seq !== state.seq.all) return;
+      renderKpis();
+      busy("#p-kpi", false);
+    });
+    Promise.all([sum, loadSeries(), loadBoard()]).then(function () {
+      if (seq !== state.seq.all) return;
+      var s = state.summary;
+      say(s ? Tf("已更新：此范围内 {n} 次检测。", "Updated: {n} runs in this range.", { n: s.runs }) : "");
+    });
+  }
+
+  function loadSeries() {
+    var r = rangeOf();
+    if (r.error) return Promise.resolve();
+    var seq = ++state.seq.cmp;
+    busy("#p-cmp", true);
+    var q = tzParams(apiParams());
+    q.set("metric", V.metric);
+    q.set("group", V.group);
+    q.set("bucket", V.bucket);
+    V.keys.forEach(function (k) { q.append("keys", k); });
+    return getJSON("/api/analytics/series?" + q).then(function (s) {
+      if (seq !== state.seq.cmp) return;
+      state.series = s;
+      state.err.cmp = null;
+    }).catch(function (e) {
+      if (seq !== state.seq.cmp) return;
+      state.series = null;
+      state.err.cmp = errText(e);
+    }).then(function () {
+      if (seq !== state.seq.cmp) return;
+      renderCmpControls();
+      renderChart();
+      busy("#p-cmp", false);
+    });
+  }
+
+  // the model (or relay) the leaderboard ranks for: the chosen one, else the
+  // filter's, else the one with the most runs
+  function boardKey() {
+    var o = state.opts || {}, list = V.lb === "relay" ? (o.models || []) : (o.relays || []);
+    var keys = list.map(function (x) { return x.key; });
+    if (V.lbk && keys.indexOf(V.lbk) >= 0) return V.lbk;
+    var f = V.lb === "relay" ? F.model : F.relay;
+    if (f && keys.indexOf(f) >= 0) return f;
+    return keys[0] || "";
+  }
+  function loadBoard() {
+    var r = rangeOf();
+    if (r.error) return Promise.resolve();
+    var seq = ++state.seq.lb, key = boardKey();
+    busy("#p-lb", true);
+    renderBoardControls();
+    if (!key) {
+      state.board = null;
+      state.err.lb = null;
+      renderBoard();
+      busy("#p-lb", false);
+      return Promise.resolve();
+    }
+    // relays for a model: the model is the subject, the relay filter does not apply (and vice versa)
+    var q = apiParams(V.lb === "relay" ? "relay" : "model");
+    q.delete(V.lb === "relay" ? "model" : "relay");
+    q.set(V.lb === "relay" ? "model" : "relay", key);
+    return getJSON("/api/analytics/leaderboard?" + q).then(function (b) {
+      if (seq !== state.seq.lb) return;
+      state.board = b;
+      state.err.lb = null;
+    }).catch(function (e) {
+      if (seq !== state.seq.lb) return;
+      state.board = null;
+      state.err.lb = errText(e);
+    }).then(function () {
+      if (seq !== state.seq.lb) return;
+      renderBoard();
+      busy("#p-lb", false);
+    });
+  }
+
+  /* ---------------- empty history ---------------- */
+  function renderEmpty() {
+    var box = $("#empty");
+    box.hidden = false;
+    box.innerHTML = '<div class="ic">' + ico("bars") + "</div><p>" +
+      esc(T("还没有检测记录，暂无可分析的数据。", "No audits recorded yet, so there is nothing to analyse.")) +
+      '</p><a class="btn pri" href="/v2/">' + esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a>";
+    say("");
+  }
+
+  /* ---------------- filter bar ---------------- */
+  function selectHTML(key, label, opts, cur, allText) {
+    var known = opts.some(function (o) { return o.v === cur; });
+    if (cur && !known) opts = opts.concat([{ v: cur, t: cur }]);
+    return '<label><span>' + esc(label) + '</span><select class="in" data-f="' + key + '">' +
+      (allText === false ? "" : '<option value="">' + esc(allText || T("全部", "All")) + "</option>") +
+      opts.map(function (o) {
+        return '<option value="' + esc(o.v) + '"' + (o.v === cur ? " selected" : "") + ">" + esc(o.t) + "</option>";
+      }).join("") + "</select></label>";
+  }
+  var RANGE_L = {
+    "7": ["最近 7 天", "Last 7 days"], "30": ["最近 30 天", "Last 30 days"], "90": ["最近 90 天", "Last 90 days"],
+    all: ["全部时间", "All time"], custom: ["自定义", "Custom range"],
+  };
+  function isDefault() {
+    var o = state.opts || {};
+    return F.range === "30" && !F.api && F.source === "all" && !F.relay && !F.model &&
+      F.suite === (o.suites && o.suites.length ? o.suites[0].value : "") &&
+      F.stream_mode === (o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "");
+  }
+  function renderFilters() {
+    var o = state.opts, ae = document.activeElement;
+    var focus = ae && $("#filters").contains(ae) ? (ae.getAttribute("data-f") || ae.getAttribute("data-range") && "r:" + ae.getAttribute("data-range") || ae.id) : null;
+    var r = rangeOf();
+    var vc = function (list) { return (list || []).map(function (x) { return { v: x.value, t: x.value }; }); };
+    $("#fbody").innerHTML =
+      '<div class="frow"><div class="range"><span class="flab" id="rng-l">' + esc(T("时间范围", "Period")) + "</span>" +
+      '<div class="seg" role="group" aria-labelledby="rng-l">' + RANGES.map(function (k) {
+        return '<button type="button" data-range="' + k + '" aria-pressed="' + (F.range === k) + '">' + esc(T(RANGE_L[k][0], RANGE_L[k][1])) + "</button>";
+      }).join("") + "</div></div>" +
+      '<div class="custom" id="custom"' + (F.range === "custom" ? "" : " hidden") + ">" +
+      '<label><span>' + esc(T("开始日期", "Start date")) + '</span><input class="in" type="date" data-f="from" value="' + esc(F.from) + '" /></label>' +
+      '<label><span>' + esc(T("结束日期", "End date")) + '</span><input class="in" type="date" data-f="to" value="' + esc(F.to) + '" /></label>' +
+      "</div></div>" +
+      '<p class="ferr" id="ferr" role="alert">' + esc(r.error || "") + "</p>" +
+      '<div class="fgrid">' +
+      selectHTML("suite", T("套件", "Suite"), vc(o.suites), F.suite) +
+      selectHTML("stream_mode", T("探测请求", "Probe requests"), (o.stream_modes || []).map(function (x) { return { v: x.value, t: streamLabel(x.value) }; }), F.stream_mode) +
+      selectHTML("api", T("协议", "Protocol"), vc(o.apis), F.api) +
+      selectHTML("source", T("来源", "Source"), [
+        { v: "manual", t: T("手动", "Manual") }, { v: "monitor", t: T("监控", "Monitor") },
+      ], F.source === "all" ? "" : F.source) +
+      selectHTML("relay", T("中转站", "Relay / provider"), (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; }), F.relay) +
+      selectHTML("model", T("声称模型", "Claimed model"), (o.models || []).map(function (x) { return { v: x.key, t: x.key }; }), F.model) +
+      "</div>" +
+      '<div class="ffoot"><span>' + esc(Tf("历史中共 {n} 次检测（{m} 次由监控产生）。", "{n} runs in the history ({m} by monitors).", { n: o.runs, m: o.monitor })) + "</span>" +
+      '<button type="button" class="linkbtn" id="freset"' + (isDefault() ? " hidden" : "") + ">" + esc(T("重置筛选", "Reset filters")) + "</button></div>";
+    if (focus) {
+      var el = focus.indexOf("r:") === 0 ? $('[data-range="' + focus.slice(2) + '"]') : $('[data-f="' + focus + '"]') || document.getElementById(focus);
+      if (el) el.focus();
+    }
+  }
+  function syncFilterChrome() {
+    var b = $("#freset");
+    if (b) b.hidden = isDefault();
+  }
+  function setFilter(k, v) {
+    if (k === "source") v = v || "all";
+    if (F[k] === v) return;
+    F[k] = v;
+    syncFilterChrome();
+    refresh();
+  }
+  $("#filters").addEventListener("change", function (ev) {
+    var k = ev.target.getAttribute("data-f");
+    if (k) setFilter(k, String(ev.target.value));
+  });
+  $("#filters").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-range]");
+    if (b) {
+      var k = b.getAttribute("data-range");
+      if (k === F.range) return;
+      if (k === "custom" && (!F.from || !F.to)) {
+        // start from the range shown so far
+        var r = rangeOf();
+        F.from = ymd(r.from || (state.opts.first ? new Date(state.opts.first) : new Date()));
+        F.to = ymd(new Date(r.to.getTime() - 1));
+      }
+      F.range = k;
+      renderFilters();
+      refresh();
+      return;
+    }
+    if (ev.target.closest("#freset")) resetFilters();
+  });
+  function resetFilters() {
+    var o = state.opts;
+    F = { range: "30", from: "", to: "", suite: o.suites && o.suites.length ? o.suites[0].value : "",
+      stream_mode: o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "",
+      api: "", source: "all", relay: "", model: "" };
+    renderFilters();
+    refresh();
+    var first = $('#filters [data-range="30"]');
+    if (first) first.focus();
+  }
+
+  /* ---------------- overview (KPI tiles) ---------------- */
+  var KPIS = [
+    ["runs", "检测次数", "Runs"], ["relays", "中转站", "Relays"], ["models", "模型", "Models"],
+    ["score", "健康分中位数", "Median score"], ["risk_high_share"], ["success_rate"], ["ttft_p50"], ["decode_tps"],
+    ["billing_ratio_prompt"], ["billing_ratio_completion"],
+  ];
+  function deltaHTML(c) {
+    if (c.previous == null && c.delta == null) {
+      return '<span class="kd">' + esc(T("上一周期无数据", "No data in the previous period")) + "</span>";
+    }
+    var d = c.delta, hib = c.higher_is_better;
+    var better = d == null || d === 0 || hib == null ? null : hib ? d > 0 : d < 0;
+    var cls = better == null ? "" : better ? " good" : " bad";
+    var word = better == null ? "" : " · " + (better ? T("变好", "better") : T("变差", "worse"));
+    var arrow = !d ? "" : d > 0 ? "▲ " : "▼ ";
+    return '<span class="kd' + cls + '"><span aria-hidden="true">' + arrow + "</span>" + esc(C.fmtDelta(d, c.unit)) + esc(word) + "</span>";
+  }
+  function renderKpis() {
+    var body = $("#kpi-body"), sub = $("#kpi-sub"), s = state.summary, r = rangeOf();
+    if (state.err.kpi) {
+      sub.textContent = "";
+      body.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取概览：", "Could not load the overview: ")) + esc(state.err.kpi) + "</div>";
+      return;
+    }
+    if (!s) return;
+    var period = r.from ? dayRange(r.from, r.to) : T("全部时间", "All time");
+    sub.textContent = s.previous
+      ? Tf("{period}，与之前同样长度的一段时间（{prev}）对比。", "{period}, compared with the period of the same length before ({prev}).",
+        { period: period, prev: dayRange(new Date(s.previous.from), new Date(s.previous.to)) })
+      : period;
+    if (!s.runs) {
+      body.innerHTML = '<div class="empty-data"><p>' + esc(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range.")) + "</p>" +
+        (isDefault() ? "" : '<button type="button" class="btn sm" id="kreset">' + esc(T("重置筛选", "Reset filters")) + "</button>") + "</div>";
+      return;
+    }
+    body.innerHTML = '<ul class="kpis">' + KPIS.map(function (k) {
+      var c = s.kpis[k[0]];
+      if (!c) return "";
+      var name = k[1] ? T(k[1], k[2]) : metricName(k[0]);
+      var cov = "";
+      if (c.n === 0) cov = T("这些检测均未测得此项", "Not measured in these runs");
+      else if (c.n < s.runs) cov = Tf("{n} / {runs} 次检测有此数据", "Data from {n} of {runs} runs", { n: c.n, runs: s.runs });
+      return '<li class="kpi"><span class="kl">' + esc(name) + '</span><span class="kv">' + esc(fmt(c.value, c.unit)) + "</span>" +
+        (s.previous ? deltaHTML(c) : "") + (cov ? '<span class="kc">' + esc(cov) + "</span>" : "") + "</li>";
+    }).join("") + "</ul>";
+  }
+  $("#kpi-body").addEventListener("click", function (ev) {
+    if (ev.target.closest("#kreset")) resetFilters();
+  });
+
+  /* ---------------- comparison over time ---------------- */
+  function metricOptions() {
+    var o = state.opts || {}, list = (o.metrics || []).map(function (m) { return m.id; });
+    (o.dimensions || []).forEach(function (d) { list.push(DIM + d); });
+    if (list.indexOf(V.metric) < 0) list.unshift(V.metric);
+    return list;
+  }
+  // series the picker offers for the current grouping (narrowed by the relay / model filters)
+  function candidates() {
+    var o = state.opts || {};
+    var list = V.group === "model"
+      ? (o.models || []).map(function (m) { return { key: m.key, label: m.key, runs: m.runs }; })
+      : V.group === "relay_model" ? (o.relay_models || []) : (o.relays || []);
+    list = list.filter(function (c) {
+      var rel = V.group === "relay" ? c.key : c.relay, mod = V.group === "model" ? c.key : c.model;
+      return (!F.relay || V.group === "model" || rel === F.relay) && (!F.model || V.group === "relay" || mod === F.model);
+    });
+    // what is shown stays listed, so it can be switched off
+    ((state.series && state.series.series) || []).forEach(function (s) {
+      if (!list.some(function (c) { return c.key === s.key; })) list = list.concat([{ key: s.key, label: s.label, runs: s.runs }]);
+    });
+    return list;
+  }
+  function shownKeys() {
+    return V.keys.length ? V.keys : ((state.series && state.series.series) || []).map(function (s) { return s.key; });
+  }
+  function renderCmpControls() {
+    var host = $("#cmp-ctl"), ae = document.activeElement;
+    var focus = ae && host.contains(ae) ? ae.getAttribute("data-c") || (ae.hasAttribute("data-key") ? "k:" + ae.getAttribute("data-key") : null) : null;
+    var shown = shownKeys(), full = shown.length >= 4;
+    var cands = candidates();
+    host.innerHTML = '<div class="ctl">' +
+      '<label><span>' + esc(T("指标", "Metric")) + '</span><select class="in" data-c="metric">' + metricOptions().map(function (id) {
+        return '<option value="' + esc(id) + '"' + (id === V.metric ? " selected" : "") + ">" + esc(metricName(id)) + "</option>";
+      }).join("") + "</select></label>" +
+      '<label><span>' + esc(T("分组", "Group by")) + '</span><select class="in" data-c="group">' + GROUPS.map(function (g) {
+        return '<option value="' + g + '"' + (g === V.group ? " selected" : "") + ">" + esc(groupName(g)) + "</option>";
+      }).join("") + "</select></label>" +
+      '<label><span>' + esc(T("时间段", "Time buckets")) + '</span><select class="in" data-c="bucket">' + BUCKETS.map(function (b) {
+        return '<option value="' + b + '"' + (b === V.bucket ? " selected" : "") + ">" + esc(bucketName(b)) + "</option>";
+      }).join("") + "</select></label></div>" +
+      (cands.length > 1 ? '<div class="pick"><span class="flab" id="pick-l">' + esc(Tf("对比的数据系列（最多 {n} 个）", "Series to compare (up to {n})", { n: 4 })) + "</span>" +
+        '<div class="chips" role="group" aria-labelledby="pick-l">' + cands.map(function (c) {
+          var on = shown.indexOf(c.key) >= 0;
+          var dis = (on && shown.length === 1) || (!on && full);
+          return '<button type="button" data-key="' + esc(c.key) + '" aria-pressed="' + on + '"' + (dis ? " disabled" : "") + ">" +
+            esc(c.label || c.key) + "</button>";
+        }).join("") + "</div></div>" : "");
+    if (focus) {
+      var el = focus.indexOf("k:") === 0 ? host.querySelector('[data-key="' + CSS.escape(focus.slice(2)) + '"]') : host.querySelector('[data-c="' + focus + '"]');
+      if (el && !el.disabled) el.focus();
+    }
+  }
+  $("#cmp-ctl").addEventListener("change", function (ev) {
+    var k = ev.target.getAttribute("data-c");
+    if (!k || V[k] === ev.target.value) return;
+    V[k] = String(ev.target.value);
+    if (k === "group") V.keys = []; // the busiest series of the new grouping
+    writeState();
+    loadSeries();
+  });
+  $("#cmp-ctl").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-key]");
+    if (!b || b.disabled) return;
+    var key = b.getAttribute("data-key"), keys = shownKeys().slice(), i = keys.indexOf(key);
+    if (i >= 0) keys.splice(i, 1);
+    else if (keys.length < 4) keys.push(key);
+    if (!keys.length) return;
+    V.keys = keys;
+    writeState();
+    loadSeries();
+  });
+
+  function bucketTime(t) {
+    var d = new Date(t);
+    if (V.bucket === "hour") return dfmt({ dateStyle: "medium", timeStyle: "short" }, d);
+    if (V.bucket === "week") return Tf("{date} 起的一周", "Week of {date}", { date: dfmt({ dateStyle: "medium" }, d) });
+    return dfmt({ weekday: "short", year: "numeric", month: "short", day: "numeric" }, d);
+  }
+  function tick(t, step) {
+    var d = new Date(t);
+    if (step < 864e5 && (d.getHours() || d.getMinutes())) return dfmt({ hour: "numeric", minute: "2-digit" }, d);
+    return dfmt({ month: "short", day: "numeric" }, d);
+  }
+  function markText(a) {
+    return a.kind === "tool_version"
+      ? Tf("zing 版本 {from} → {to}", "zing version {from} → {to}", { from: a.from, to: a.to })
+      : T("知识库档案有变化（评分依据变了，不是中转站变了）", "Knowledge-base profile changed (the reference changed, not the relay)");
+  }
+
+  function renderChart() {
+    var body = $("#cmp-body"), s = state.series;
+    if (state.err.cmp) {
+      body.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取对比数据：", "Could not load the comparison: ")) + esc(state.err.cmp) + "</div>";
+      return;
+    }
+    if (!s) return;
+    var m = s.metric, name = metricName(m.id), share = m.agg === "share";
+    var series = s.series.map(function (x, i) {
+      return {
+        key: x.key, label: x.label || x.key, cls: "s" + (i % 4), shape: C.SHAPES[i % 4], raw: x,
+        points: x.points.map(function (p) {
+          return { t: Date.parse(p.bucket), v: p.value, lo: share ? null : p.p25, hi: share ? null : p.p75, n: p.n, runs: p.runs, low: !!p.low_n };
+        }).filter(function (p) { return !isNaN(p.t) && typeof p.v === "number"; }),
+      };
+    });
+    var withData = series.filter(function (x) { return x.points.length; });
+    var legend = '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '">' + series.map(function (x) {
+      return "<li>" + C.keySVG(x.cls, x.shape) + '<span class="nm">' + esc(x.label) + "</span>" +
+        '<span class="sub">' + esc(x.points.length ? Tf("{n} 次检测", "{n} runs", { n: x.raw.n }) : T("无数据", "no data")) + "</span></li>";
+    }).join("") + "</ul>";
+    if (!withData.length) {
+      body.innerHTML = (series.length ? legend : "") + '<div class="empty-data">' +
+        esc(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name })) + "</div>";
+      return;
+    }
+    var r = rangeOf();
+    var marks = [], seen = {};
+    series.forEach(function (x) {
+      (x.raw.annotations || []).forEach(function (a) {
+        var t = Date.parse(a.bucket), id = a.bucket + "|" + a.kind + "|" + a.to;
+        if (isNaN(t)) return;
+        if (seen[id]) { if (seen[id].who.indexOf(x.label) < 0) seen[id].who.push(x.label); return; }
+        seen[id] = { t: t, kind: a.kind, text: markText(a), who: [x.label] };
+        marks.push(seen[id]);
+      });
+    });
+    var anyLow = withData.some(function (x) { return x.points.some(function (p) { return p.low; }); });
+    var desc = Tf("{metric}（{group}，{bucket}），{n} 个数据系列：{list}。下方表格列出全部数值。",
+      "{metric} ({group}, {bucket}), {n} series: {list}. The table below lists every value.", {
+        metric: name, group: groupName(V.group), bucket: bucketName(V.bucket), n: withData.length,
+        list: withData.map(function (x) {
+          var a = x.points[0], b = x.points[x.points.length - 1];
+          return Tf("{label} 从 {first} 到 {last}", "{label} from {first} to {last}", { label: x.label, first: fmt(a.v, m.unit), last: fmt(b.v, m.unit) });
+        }).join("; "),
+      });
+    var warn = [];
+    series.forEach(function (x) {
+      var mx = x.raw.mixed || {};
+      if (mx.suite) warn.push(Tf("“{series}”混合了不同套件的检测——数值可能不可比。", "“{series}” mixes runs of different suites — its values may not be comparable.", { series: x.label }));
+      if (mx.stream_mode) warn.push(Tf("“{series}”混合了流式与非流式检测——数值可能不可比。", "“{series}” mixes streaming and non-streaming runs — its values may not be comparable.", { series: x.label }));
+      if (mx.api) warn.push(Tf("“{series}”混合了不同协议的检测——数值可能不可比。", "“{series}” mixes runs over different protocols — its values may not be comparable.", { series: x.label }));
+    });
+    var notes = "";
+    if (warn.length) {
+      notes += '<p class="note warn">' + ico("warning") + "<span>" + warn.map(esc).join("<br>") + " " +
+        esc(T("可用上方的筛选只对比同类检测。", "Narrow the filters above to compare like with like.")) + "</span></p>";
+    }
+    if (anyLow) {
+      notes += '<p class="note">' + ico("info") + "<span>" + esc(lowHint()) + " " +
+        '<a href="/v2/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>";
+    }
+    if (marks.length) {
+      notes += '<div class="note">' + ico("info") + "<span>" +
+        esc(T("图中虚线标出评分依据的变化（v = zing 版本，KB = 知识库档案）：", "Dashed lines in the chart mark changes to how runs are scored (v = zing version, KB = knowledge-base profile):")) +
+        "<ul>" + marks.map(function (k) {
+          return "<li>" + esc(bucketTime(k.t)) + " · " + esc(k.who.join(", ")) + ": " + esc(k.text) + "</li>";
+        }).join("") + "</ul></span></div>";
+    }
+    var unit = C.unitName(m.unit);
+    body.innerHTML = legend +
+      '<div class="axcap" aria-hidden="true"><span>' + esc(name + (unit ? " · " + unit : "")) + "</span><span>" +
+      esc(Tf("时间（{tz}）", "Time ({tz})", { tz: tzName() })) + "</span></div>" +
+      '<div class="chartbox" id="cmp-chart"></div>' +
+      (notes ? '<div class="notes">' + notes + "</div>" : "") +
+      tableHTML(withData, m, name);
+    var cfg = {
+      id: "cmpc", title: Tf("{metric}随时间变化", "{metric} over time", { metric: name }), desc: desc, unit: m.unit,
+      bucketMs: BUCKET_MS[V.bucket], domain: r.from ? [r.from.getTime(), r.to.getTime()] : null,
+      xTick: tick, tipTime: bucketTime, series: withData, marks: marks, lowHint: lowHint(),
+      yMin: m.unit === "score" ? 0 : null, yMax: m.unit === "score" ? 100 : null,
+    };
+    state.chartCfg = cfg;
+    C.timeChart($("#cmp-chart"), cfg);
+  }
+
+  function tableHTML(series, m, name) {
+    var share = m.agg === "share", rows = [];
+    series.forEach(function (x) { x.points.forEach(function (p) { rows.push({ x: x, p: p }); }); });
+    rows.sort(function (a, b) { return a.p.t - b.p.t || series.indexOf(a.x) - series.indexOf(b.x); });
+    var hint = lowHint();
+    return '<div class="tdisc"><button type="button" class="disclosure" id="ttog" aria-expanded="' + V.table + '" aria-controls="tbody">' +
+      "<span>" + esc(T("以表格显示", "Show as table")) + '</span><span class="cv" aria-hidden="true">' + ico("chevronDown") + "</span></button>" +
+      '<div class="tbody" id="tbody"' + (V.table ? "" : " hidden") + '><div class="tscroll" tabindex="0" role="region" aria-labelledby="tcap">' +
+      '<table class="dt"><caption id="tcap">' + esc(Tf("{metric}（{group}，{bucket}）", "{metric} ({group}, {bucket})", {
+        metric: name, group: groupName(V.group), bucket: bucketName(V.bucket) })) + "</caption>" +
+      '<thead><tr><th scope="col">' + esc(T("时间段", "Time bucket")) + '</th><th scope="col">' + esc(T("数据系列", "Series")) + "</th>" +
+      '<th scope="col" class="n">' + esc(share ? T("占比", "Share") : T("中位数", "Median")) + "</th>" +
+      (share ? "" : '<th scope="col" class="n">p25–p75</th>') +
+      '<th scope="col" class="n">' + esc(T("检测次数", "Runs")) + '</th><th scope="col">' + esc(T("说明", "Note")) + "</th></tr></thead><tbody>" +
+      rows.map(function (r) {
+        var p = r.p;
+        return '<tr class="' + (p.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(p.t)) + '</td><td class="ser">' + esc(r.x.label) + "</td>" +
+          '<td class="n">' + esc(fmt(p.v, m.unit)) + "</td>" +
+          (share ? "" : '<td class="n">' + esc(fmt(p.lo, m.unit)) + " – " + esc(fmt(p.hi, m.unit)) + "</td>") +
+          '<td class="n">' + esc(String(p.n)) + '</td><td class="note">' + (p.low ? esc(hint) : "") + "</td></tr>";
+      }).join("") + "</tbody></table></div></div></div>";
+  }
+  $("#cmp-body").addEventListener("click", function (ev) {
+    var b = ev.target.closest("#ttog");
+    if (!b) return;
+    V.table = b.getAttribute("aria-expanded") !== "true";
+    b.setAttribute("aria-expanded", String(V.table));
+    $("#tbody").hidden = !V.table;
+    writeState();
+  });
+
+  /* ---------------- leaderboard ---------------- */
+  function renderBoardControls() {
+    var host = $("#lb-ctl"), o = state.opts || {}, ae = document.activeElement;
+    var focus = ae && host.contains(ae) ? ae.getAttribute("data-lb") || ae.getAttribute("data-lbk") : null;
+    var key = boardKey();
+    var list = V.lb === "relay"
+      ? (o.models || []).map(function (m) { return { v: m.key, t: m.key }; })
+      : (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; });
+    host.innerHTML = '<div class="lbctl"><div class="seg" role="group" aria-label="' + esc(T("排行方式", "Rank")) + '">' +
+      '<button type="button" data-lb="relay" aria-pressed="' + (V.lb === "relay") + '">' + esc(T("某个模型的各中转站", "Relays for a model")) + "</button>" +
+      '<button type="button" data-lb="model" aria-pressed="' + (V.lb === "model") + '">' + esc(T("某个中转站的各模型", "Models for a relay")) + "</button></div>" +
+      (list.length ? selectHTML("lbk", V.lb === "relay" ? T("模型", "Model") : T("中转站", "Relay"), list, key, false).replace('data-f="lbk"', 'data-lbk="1"') : "") + "</div>";
+    if (focus) {
+      var el = focus === "1" ? host.querySelector("[data-lbk]") : host.querySelector('[data-lb="' + focus + '"]');
+      if (el) el.focus();
+    }
+  }
+  $("#lb-ctl").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-lb]");
+    if (!b || V.lb === b.getAttribute("data-lb")) return;
+    V.lb = b.getAttribute("data-lb");
+    V.lbk = "";
+    writeState();
+    loadBoard();
+  });
+  $("#lb-ctl").addEventListener("change", function (ev) {
+    if (!ev.target.hasAttribute("data-lbk")) return;
+    V.lbk = String(ev.target.value);
+    writeState();
+    loadBoard();
+  });
+
+  var LB_COLS = [
+    ["runs", "检测次数", "Runs"], ["score"], ["ttft_p50"], ["decode_tps"], ["success_rate"],
+    ["billing_ratio_prompt"], ["billing_ratio_completion"], ["model_mismatch_rate"], ["risk_high_share"],
+    ["last_run", "最近一次检测", "Last run"],
+  ];
+  function colName(c) { return c[1] ? T(c[1], c[2]) : metricName(c[0]); }
+  function sortVal(row, k) {
+    if (k === "label") return String(row.label || row.key).toLowerCase();
+    if (k === "runs") return row.runs;
+    if (k === "last_run") { var t = Date.parse(row.last_run || ""); return isNaN(t) ? null : t; }
+    var c = row.metrics && row.metrics[k];
+    return c && typeof c.value === "number" ? c.value : null;
+  }
+  function sortedRows(rows) {
+    if (!V.sort) return rows; // the API's order: best score first
+    var k = V.sort.key, dir = V.sort.dir === "asc" ? 1 : -1;
+    return rows.map(function (r, i) { return [r, i]; }).sort(function (a, b) {
+      var x = sortVal(a[0], k), y = sortVal(b[0], k);
+      if (x == null || y == null) return x == null ? (y == null ? a[1] - b[1] : 1) : -1;
+      return (x < y ? -1 : x > y ? 1 : 0) * dir || a[1] - b[1];
+    }).map(function (p) { return p[0]; });
+  }
+  function renderBoard() {
+    var body = $("#lb-body"), b = state.board;
+    if (state.err.lb) {
+      body.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取排行榜：", "Could not load the leaderboard: ")) + esc(state.err.lb) + "</div>";
+      return;
+    }
+    if (!b || !b.rows.length) {
+      body.innerHTML = '<div class="empty-data">' + esc(V.lb === "relay"
+        ? T("此时间范围内这个模型没有检测。", "No runs of this model in this range.")
+        : T("此时间范围内这个中转站没有检测。", "No runs of this relay in this range.")) + "</div>";
+      return;
+    }
+    var focusSort = document.activeElement && body.contains(document.activeElement) && document.activeElement.getAttribute("data-sort");
+    var subj = V.lb === "relay" ? b.model : relayLabel((state.opts.relays || []).filter(function (x) { return x.key === b.relay; })[0]) || b.relay;
+    var anyLow = b.rows.some(function (r) { return r.low_n; });
+    var head = function (k, label, num) {
+      var on = V.sort && V.sort.key === k;
+      var name = on ? Tf("{key}，{dir}", "{key}, {dir}", { key: label, dir: V.sort.dir === "asc" ? T("升序排列", "sorted ascending") : T("降序排列", "sorted descending") })
+        : Tf("按{key}排序", "Sort by {key}", { key: label });
+      return '<th scope="col"' + (num ? ' class="n"' : "") + (on ? ' aria-sort="' + (V.sort.dir === "asc" ? "ascending" : "descending") + '"' : "") + ">" +
+        '<button type="button" class="sortb" data-sort="' + k + '" title="' + esc(name) + '"><span>' + esc(label) + "</span>" + ico("chevronDown") + "</button></th>";
+    };
+    var cell = function (c, unit, runs) {
+      if (!c) return '<td class="n">—</td>';
+      return '<td class="n">' + esc(fmt(c.value, unit)) + '<span class="cn">n=' + esc(String(c.n)) + (c.n < runs ? " / " + esc(String(runs)) : "") + "</span></td>";
+    };
+    var units = {};
+    (b.metrics || []).forEach(function (m) { units[m.id] = m.unit; });
+    body.innerHTML = (anyLow ? '<p class="note">' + ico("info") + "<span>" +
+      esc(Tf("标为“检测较少”的行少于 {min} 次检测——单次检测可能是离群值。", "Rows marked “few runs” have fewer than {min} runs — a single audit can be an outlier.", { min: minRuns() })) + " " +
+      '<a href="/v2/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>" : "") +
+      '<div class="tscroll lbtab" tabindex="0" role="region" aria-labelledby="lbcap"><table class="dt"><caption id="lbcap">' +
+      esc(V.lb === "relay" ? Tf("“{name}”的各中转站", "Relays for “{name}”", { name: subj }) : Tf("“{name}”的各模型", "Models for “{name}”", { name: subj })) +
+      "</caption><thead><tr>" + head("label", V.lb === "relay" ? T("中转站", "Relay") : T("模型", "Model"), false) +
+      LB_COLS.map(function (c) { return head(c[0], colName(c), c[0] !== "last_run"); }).join("") + "</tr></thead><tbody>" +
+      sortedRows(b.rows).map(function (r) {
+        return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row">' + esc(r.label || r.key) +
+          (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</th>" +
+          '<td class="n">' + esc(String(r.runs)) + "</td>" +
+          LB_COLS.slice(1, -1).map(function (c) { return cell(r.metrics[c[0]], units[c[0]], r.runs); }).join("") +
+          '<td class="when">' + esc(r.last_run ? dfmt({ dateStyle: "medium", timeStyle: "short" }, new Date(r.last_run)) : "—") + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+    if (focusSort) {
+      var el = body.querySelector('[data-sort="' + focusSort + '"]');
+      if (el) el.focus();
+    }
+  }
+  $("#lb-body").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-sort]");
+    if (!b) return;
+    var k = b.getAttribute("data-sort");
+    // a new column starts with the best (or largest) first; the active one flips
+    V.sort = V.sort && V.sort.key === k ? { key: k, dir: V.sort.dir === "asc" ? "desc" : "asc" } : { key: k, dir: k === "label" ? "asc" : "desc" };
+    writeState();
+    renderBoard();
+    var col = k === "label" ? (V.lb === "relay" ? T("中转站", "Relay") : T("模型", "Model"))
+      : colName(LB_COLS.filter(function (c) { return c[0] === k; })[0]);
+    $("#lbst").textContent = Tf("已按{key}排序，{dir}", "Sorted by {key}, {dir}", { key: col, dir: V.sort.dir === "asc" ? T("升序", "ascending") : T("降序", "descending") });
+  });
+
+  /* ---------------- boot ---------------- */
+  $("#lockIcon").innerHTML = ico("lock");
+  var resizeT = null, lastW = 0;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(function () {
+      var host = $("#cmp-chart");
+      if (!host || !state.chartCfg || host.clientWidth === lastW) return;
+      lastW = host.clientWidth;
+      C.timeChart(host, state.chartCfg);
+    }, 150);
+  });
+  // live language switch: re-render from the data already loaded
+  window.addEventListener("zing:lang", function () {
+    if (!state.opts || !state.opts.runs) { if (state.opts) renderEmpty(); return; }
+    renderFilters();
+    renderKpis();
+    renderCmpControls();
+    renderChart();
+    renderBoardControls();
+    renderBoard();
+  });
+  readState();
+  loadOptions();
+})();
+</script>
+</body>
+</html>
