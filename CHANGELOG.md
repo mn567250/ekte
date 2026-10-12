@@ -93,6 +93,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Performance chart tooltips no longer track pointer movement.** They open
+  when the pointer enters a mark (Audit and History pages), as the other
+  charts do.
 - **German analytics tile labels break with a hyphen.** "Abrechnungsverhältnis"
   broke mid-word without a hyphen in the overview tiles; it now carries a soft
   hyphen, and tile labels use `hyphens: auto` with the page language.
