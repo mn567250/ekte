@@ -252,7 +252,7 @@
 
   /* ---------------- state: filters + view, in the URL ---------------- */
   // Filters scope every panel; view settings belong to one panel. Both live
-  // in the query string (shareable, bookmarkable); the last view is also
+  // in the URL's fragment (shareable, bookmarkable); the last view is also
   // remembered per viewer (localStorage, may be missing or throw).
   var VKEY = "zing.v2.analytics.view";
   var RANGES = ["7", "30", "90", "all", "custom"];
@@ -262,8 +262,10 @@
   var state = { opts: null, summary: null, series: null, board: null, err: {}, seq: { all: 0, cmp: 0, lb: 0 } };
 
   function readState() {
-    var qs;
-    try { qs = new URLSearchParams(location.search); } catch (e) { qs = new URLSearchParams(""); }
+    // the view in the URL's fragment (#range=30&…), else the query string
+    // (links from elsewhere), else the one remembered here
+    var qs = new URLSearchParams(""), h = location.hash.slice(1);
+    try { qs = new URLSearchParams(h.indexOf("=") >= 0 ? h : location.search); } catch (e) { /* ignore */ }
     if (!Array.from(qs.keys()).length) {
       try { qs = new URLSearchParams(localStorage.getItem(VKEY) || ""); } catch (e) { /* ignore */ }
     }
@@ -314,7 +316,8 @@
     if (V.sort) q.set("sort", V.sort.key + "." + V.sort.dir);
     if (V.table) q.set("table", "1");
     var s = q.toString();
-    try { history.replaceState(null, "", location.pathname + "?" + s + location.hash); } catch (e) { /* ignore */ }
+    // replaceState: no history entry per filter, and no reload
+    try { history.replaceState(null, "", location.pathname + "#" + s); } catch (e) { /* ignore */ }
     try { localStorage.setItem(VKEY, s); } catch (e) { /* ignore */ }
   }
 

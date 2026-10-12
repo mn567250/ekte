@@ -13,8 +13,8 @@
  *                             series with its p25–p75 band, gaps where a
  *                             bucket has no data, faded hollow markers for
  *                             buckets with few runs, dashed annotation lines,
- *                             a crosshair + tooltip that snaps to the nearest
- *                             bucket (pointer only: the page renders the same
+ *                             a crosshair + tooltip for the bucket column under
+ *                             the pointer (pointer only: the page renders the same
  *                             values as a data table, the accessible
  *                             equivalent, BITV 9.1.1.1 / 9.1.3.1)
  *
@@ -229,23 +229,27 @@
       out.push("</g>");
     });
     out.push('<line class="cross" x1="0" x2="0" y1="' + M.t + '" y2="' + (M.t + ph) + '" visibility="hidden"/>');
-    out.push('<rect class="hit" x="' + M.l + '" y="' + M.t + '" width="' + pw + '" height="' + ph + '"/>');
+    // hover targets: one column per bucket with data, reaching halfway to its
+    // neighbours (no pointermove tracking: hovering a column is enough)
+    var times = {};
+    all.forEach(function (p) { times[p.t] = 1; });
+    var list = Object.keys(times).map(Number).sort(function (a, b) { return a - b; });
+    list.forEach(function (t, i) {
+      var x = X(t + half), a = i ? (X(list[i - 1] + half) + x) / 2 : M.l, b = i < list.length - 1 ? (X(list[i + 1] + half) + x) / 2 : W - M.r;
+      out.push('<rect class="hit" data-t="' + t + '" x="' + f1(a) + '" y="' + M.t + '" width="' + f1(Math.max(1, b - a)) + '" height="' + ph + '"/>');
+    });
     out.push("</svg>");
 
     host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>';
     wireTooltip(host, cfg, series, X, half, W);
   }
 
-  // Crosshair + tooltip: snaps to the nearest bucket and lists every series
+  // Crosshair + tooltip for the hovered bucket column, listing every series
   // there. Pointer only and aria-hidden: the data table has the same values.
   // Escape hides it (BITV 9.1.4.13 dismissible); it stays while the pointer
   // is over it (hoverable).
   function wireTooltip(host, cfg, series, X, half, W) {
     var svg = host.querySelector("svg"), tip = host.querySelector(".ctip"), cross = svg.querySelector(".cross");
-    var times = {};
-    series.forEach(function (s) { s.points.forEach(function (p) { times[p.t] = 1; }); });
-    var list = Object.keys(times).map(Number).sort(function (a, b) { return a - b; });
-    if (!list.length) return;
     var shown = null;
     function hide() {
       shown = null;
@@ -278,10 +282,9 @@
       if (left + tw > bw) left = Math.max(0, x * scale - tw - 14);
       tip.style.left = left + "px";
     }
-    svg.addEventListener("pointermove", function (ev) {
-      var r = svg.getBoundingClientRect(), x = ((ev.clientX - r.left) / (r.width || W)) * W, best = list[0], bd = Infinity;
-      list.forEach(function (t) { var d = Math.abs(X(t + half) - x); if (d < bd) { bd = d; best = t; } });
-      show(best);
+    svg.addEventListener("mouseover", function (ev) {
+      var hit = ev.target.closest && ev.target.closest("rect.hit");
+      if (hit) show(Number(hit.getAttribute("data-t")));
     });
     // the host is re-used by every render: replace, never stack, its handlers
     host.onpointerleave = hide;
