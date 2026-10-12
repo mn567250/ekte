@@ -109,12 +109,10 @@ def reasoning_retry_spec(spec: RequestSpec, outcome: CompletionOutcome) -> Reque
     ``finish_reason=length``. That is the probe's budget running out, not the
     relay misbehaving, so it is repeated once with ``REASONING_RETRY_TOKENS``.
     """
-    if not spec.reasoning_retry or not outcome.ok or outcome.tool_calls:
+    if not outcome.ok or outcome.tool_calls or outcome.finish_reason != "length":
         return None
-    if outcome.finish_reason != "length":
-        return None
-    budget = _budget_field(spec)
-    if budget is None or budget[1] >= REASONING_RETRY_TOKENS:
+    budget = _short_budget(spec)
+    if budget is None:
         return None
     name, limit = budget
     # No visible answer at all although the limit was reached (thinking the
@@ -124,11 +122,36 @@ def reasoning_retry_spec(spec: RequestSpec, outcome: CompletionOutcome) -> Reque
         reasoning = usage_tokens(outcome.usage)["reasoning"] or 0
         if reasoning * 2 < limit:
             return None
+    return _with_budget(spec, name, REASONING_RETRY_TOKENS)
+
+
+def reasoning_room_spec(spec: RequestSpec) -> RequestSpec:
+    """The request to send to an endpoint known to reason: a short explicit
+    output budget is raised to ``REASONING_RETRY_TOKENS`` up front, so the probe
+    is not sent once short and then again. Opt-out probes, requests without an
+    explicit limit and those that already ask for enough are left as they are."""
+    budget = _short_budget(spec)
+    if budget is None:
+        return spec
+    return _with_budget(spec, budget[0], REASONING_RETRY_TOKENS)
+
+
+def _short_budget(spec: RequestSpec) -> tuple[str, int] | None:
+    """The explicit output limit a reasoning model may get more room on: set,
+    below ``REASONING_RETRY_TOKENS``, and on a probe that has not opted out."""
+    if not spec.reasoning_retry:
+        return None
+    budget = _budget_field(spec)
+    if budget is None or budget[1] >= REASONING_RETRY_TOKENS:
+        return None
+    return budget
+
+
+def _with_budget(spec: RequestSpec, name: str, value: int) -> RequestSpec:
+    """A copy of ``spec`` with ``value`` in the output-limit field ``name``."""
     if name == "max_tokens":
-        return spec.model_copy(update={"max_tokens": REASONING_RETRY_TOKENS})
-    return spec.model_copy(
-        update={"extra_body": {**spec.extra_body, name: REASONING_RETRY_TOKENS}}
-    )
+        return spec.model_copy(update={"max_tokens": value})
+    return spec.model_copy(update={"extra_body": {**spec.extra_body, name: value}})
 
 
 def shared_ssl_context() -> ssl.SSLContext:
@@ -166,6 +189,10 @@ class BaseHTTPClient:
         self.recorder: RequestRecorder | None = None
         self.endpoint = config.kind
         self.local = is_local_host(self.base_url)
+        # True once the endpoint is known to reason (its profile says so, or a
+        # short probe already needed the reasoning repeat): short probes then go
+        # out with ``REASONING_RETRY_TOKENS`` from the start (see complete()).
+        self.reasoning_room = False
 
     # -- lifecycle ---------------------------------------------------------- #
     async def __aenter__(self):
@@ -277,10 +304,16 @@ class BaseHTTPClient:
 
     # -- public calls (recorded for the performance section) --------------- #
     async def complete(self, spec: RequestSpec) -> CompletionOutcome:
+        if self.reasoning_room:
+            spec = reasoning_room_spec(spec)
         outcome = await self._complete_recorded(spec)
         retry = reasoning_retry_spec(spec, outcome)
         if retry is not None:
             outcome = await self._complete_recorded(retry)
+            # Sticky once the room helped: later short probes get it on their
+            # first try instead of being sent twice.
+            if outcome.ok and outcome.has_content():
+                self.reasoning_room = True
         return outcome
 
     async def _complete_recorded(self, spec: RequestSpec) -> CompletionOutcome:

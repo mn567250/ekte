@@ -177,7 +177,10 @@ das ist kein Beleg für ein anderes Modell.
   einem Limit von 4.096 Token wiederholt, damit ein Modell, das vor der Antwort
   nachdenkt, nicht als fehlerhaft gilt. Proben, deren Limit oder Timing die
   Messung ist (Leistung, Prompt-Cache, Zuverlässigkeit, injizierter Prompt, maximale
-  Ausgabe, das Anfrageattribut `max_tokens`), werden nie wiederholt.
+  Ausgabe, das Anfrageattribut `max_tokens`), werden nie wiederholt. Sobald
+  bekannt ist, dass ein Endpunkt nachdenkt (sein Profil sagt
+  `reasoning: true`, oder nach seiner ersten solchen Wiederholung), gehen kurze
+  Proben gleich mit dem Limit von 4.096 Token hinaus statt zweimal.
 
 ---
 

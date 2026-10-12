@@ -173,7 +173,10 @@ ou limitado não pôde ser avaliado, o que não prova que responda outro modelo.
   com um limite de 4.096 tokens, para que um modelo que pensa antes de responder
   não seja lido como falha. As sondas cujo limite ou tempo é a medida
   (desempenho, cache de prompts, fiabilidade, prompt injetado, saída máxima, o
-  atributo de pedido `max_tokens`) nunca são repetidas.
+  atributo de pedido `max_tokens`) nunca são repetidas. Assim que se sabe que um
+  endpoint raciocina (o seu perfil indica `reasoning: true`, ou após a sua
+  primeira repetição deste tipo), as sondas curtas são enviadas desde o início
+  com o limite de 4.096 tokens em vez de duas vezes.
 
 ---
 

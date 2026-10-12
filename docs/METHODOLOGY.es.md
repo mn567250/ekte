@@ -174,7 +174,10 @@ caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
   límite de 4.096 tokens, para que un modelo que piensa antes de responder no se
   lea como fallo. Las sondas cuyo límite o tiempo es la medida (rendimiento,
   caché de prompts, fiabilidad, prompt inyectado, salida máxima, el atributo de
-  solicitud `max_tokens`) nunca se repiten.
+  solicitud `max_tokens`) nunca se repiten. Una vez que se sabe que un endpoint
+  razona (su perfil dice `reasoning: true`, o tras su primera repetición de este
+  tipo), las sondas cortas se envían desde el principio con el límite de 4.096
+  tokens en lugar de dos veces.
 
 ---
 
