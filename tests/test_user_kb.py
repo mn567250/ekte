@@ -721,3 +721,44 @@ def test_cli_kb_import_check_and_prompt(data_dir, tmp_path):
     bad = tmp_path / "bad.yaml"
     bad.write_text("provider: x\nmodels:\n- id: m\n  nope: 1\n", encoding="utf-8")
     assert runner.invoke(app, ["kb-import", str(bad)]).exit_code == 1
+
+
+EMPTY_KEYWORDS_YAML = """
+provider: acmeai
+display_name: Acme AI — open platform
+models:
+- id: acme-vision-2-flash
+  family: acme-vision-2
+  identity_keywords: []
+- id: acme-large-3
+  identity_keywords: [acme, acme large]
+"""
+
+
+def test_scan_fills_empty_identity_keywords(data_dir):
+    result = scan(EMPTY_KEYWORDS_YAML)
+    assert result.ok, result.errors
+    filled = [w for w in result.warnings if w["path"].endswith("identity_keywords")]
+    assert len(filled) == 1
+    assert filled[0]["path"] == "models[0].identity_keywords"
+    assert "was empty; filled with [acmeai, acme]" in filled[0]["message"]
+    result, _ids = import_yaml(EMPTY_KEYWORDS_YAML)
+    assert result.ok, result.errors
+    kb = load_knowledge_base()
+    assert kb.resolve("acme-vision-2-flash").model.identity_keywords == ["acmeai", "acme"]
+    # A model that has its own keywords is stored as given.
+    assert kb.resolve("acme-large-3").model.identity_keywords == ["acme", "acme large"]
+
+
+def test_scan_fills_keywords_from_existing_provider(data_dir):
+    # Under a packaged provider the stored display_name supplies the brand.
+    result = scan("provider: glm\nmodels:\n- id: glm-4.6v-flash\n  family: glm-4.6v\n")
+    assert result.ok, result.errors
+    body = next(b for kind, _p, _m, b in result.entries if kind == "model")
+    assert body["identity_keywords"] == ["glm", "zhipu"]
+    assert any(w["path"] == "models[0].identity_keywords" for w in result.warnings)
+
+
+def test_research_prompt_requires_identity_keywords():
+    text = research_prompt("acme-large-2", "acmeai")
+    assert "`identity_keywords` is the exception and is never empty" in text

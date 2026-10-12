@@ -382,6 +382,15 @@ cuando cambian el comportamiento.
    una lista de marcas rivales (`identity_forbidden` del perfil más una lista
    integrada). Una marca rival solo cuenta si falta la auténtica; «Soy Claude,
    no GPT» es un contraste benigno.
+   La marca auténtica son las `identity_keywords` del perfil más sus propios
+   nombres: la clave del proveedor, el nombre inicial del nombre visible del
+   proveedor, la primera palabra del id y de la familia del modelo, y los demás
+   nombres de ese fabricante en la lista integrada (`z.ai` también cubre
+   `zhipu`). Por eso un modelo que nombra a su propio fabricante nunca es una
+   marca rival, aunque `identity_keywords` esté vacío. Los nombres derivados
+   nunca anulan `identity_forbidden`, las palabras genéricas («ai»,
+   «platform», …) nunca cuentan, y la marca propia de una plataforma no cuenta
+   para el modelo de otro fabricante que sirve.
 2. **Huellas de comportamiento** de la base de conocimiento (fecha de corte del
    conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
    idioma, …): hasta seis sondas de código puro, comprobadas con

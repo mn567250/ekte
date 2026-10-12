@@ -385,6 +385,15 @@ quando cambiano il comportamento.
    di marchi rivali (`identity_forbidden` del profilo più un elenco integrato).
    Un marchio rivale conta solo se manca quello autentico; «Sono Claude, non
    GPT» è un contrasto innocuo.
+   Il marchio autentico sono le `identity_keywords` del profilo più i suoi
+   nomi: la chiave del provider, il nome iniziale del nome visualizzato del
+   provider, la prima parola dell'id e della famiglia del modello, e gli altri
+   nomi di quel produttore nell'elenco integrato (`z.ai` copre anche `zhipu`).
+   Un modello che nomina il proprio produttore non è quindi mai un marchio
+   rivale, anche quando `identity_keywords` è vuoto. I nomi derivati non
+   prevalgono mai su `identity_forbidden`, le parole generiche («ai»,
+   «platform», …) non contano mai, e il marchio proprio di una piattaforma non
+   conta per il modello di un altro produttore che serve.
 2. **Impronte comportamentali** dalla base di conoscenza (data limite delle
    conoscenze, particolarità del tokenizer, formattazione, sonde legate a una
    lingua, …): fino a sei sonde di solo codice, verificate con

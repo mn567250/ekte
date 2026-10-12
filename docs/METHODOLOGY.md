@@ -365,6 +365,14 @@ when they change behavior.
    (the profile's `identity_forbidden` plus a built-in list). A rival brand
    only counts when the genuine brand is absent; "I am Claude, not GPT" is a
    benign contrast.
+   The genuine brand is the profile's `identity_keywords` plus the profile's
+   own names: the provider key, the leading name of the provider's display
+   name, the leading word of the model id and family, and that vendor's other
+   names in the built-in list (`z.ai` also covers `zhipu`). A model naming its
+   own vendor is therefore never a rival brand, even when `identity_keywords`
+   is empty. Derived names never override `identity_forbidden`, generic words
+   ("ai", "platform", …) never count, and a platform's own brand does not count
+   for another vendor's model it serves.
 2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
    tokenizer quirks, formatting, language-bound probes, …): up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,

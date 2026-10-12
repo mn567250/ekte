@@ -388,6 +388,15 @@ billigeren oder offenen Backend) sowie Signale von
    Liste konkurrierender Marken (`identity_forbidden` des Profils plus eine
    eingebaute Liste). Eine Konkurrenzmarke zählt nur, wenn die echte Marke
    fehlt; „Ich bin Claude, nicht GPT“ ist ein harmloser Kontrast.
+   Die echte Marke sind die `identity_keywords` des Profils plus seine eigenen
+   Namen: der Anbieter-Schlüssel, der führende Name im Anzeigenamen des
+   Anbieters, das erste Wort von Modell-ID und Familie sowie die übrigen Namen
+   dieses Herstellers in der eingebauten Liste (`z.ai` deckt auch `zhipu` ab).
+   Ein Modell, das seinen eigenen Hersteller nennt, ist daher nie eine
+   Konkurrenzmarke, auch wenn `identity_keywords` leer ist. Abgeleitete Namen
+   heben `identity_forbidden` nie auf, allgemeine Wörter („ai“, „platform“, …)
+   zählen nie, und die eigene Marke einer Plattform zählt nicht für das Modell
+   eines anderen Herstellers, das sie anbietet.
 2. **Verhaltens-Fingerprints** aus der Wissensbasis (Wissensstichtag,
    Tokenizer-Eigenheiten, Formatierung, sprachgebundene Tests, …): bis zu sechs
    Tests in reinem Code, geprüft mit `expect_contains`, `expect_contains_any`,

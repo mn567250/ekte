@@ -79,8 +79,8 @@ async def test_echoed_downgrade_model_field_is_flagged(audit_context, mock_serve
 def test_forbidden_brands_includes_global_rivals(knowledge_base):
     # A DeepSeek profile's forbidden set must include rivals the KB never listed
     # (Doubao/ByteDance) so a Doubao substitution can't slip through.
-    model = knowledge_base.resolve("deepseek-v4-flash").model
-    forbidden = {b.lower() for b in ModelIdentityDetector._forbidden_brands(model)}
+    resolved = knowledge_base.resolve("deepseek-v4-flash")
+    forbidden = {b.lower() for b in ModelIdentityDetector._forbidden_brands(resolved.model, resolved.provider)}
     assert {"doubao", "豆包", "bytedance", "字节跳动"} <= forbidden
     assert "deepseek" not in forbidden  # the model's own brand is never forbidden
 
@@ -138,3 +138,86 @@ async def test_genuine_deepseek_self_id_passes(knowledge_base):
         result = await ModelIdentityDetector().run(ctx)
     self_id = [f for f in result.findings if f.id == "model_identity.self_id"]
     assert self_id and self_id[0].status == Status.PASS
+
+
+# ----- own brand words: a profile without identity_keywords --------------- #
+def _own_brand_kb(self_id_fingerprint: bool = False):
+    from zing.knowledge.schema import FingerprintProbe, KnowledgeBase, ModelProfile, ProviderProfile
+
+    fps = [FingerprintProbe(
+        id="glm.who", signal="self-description", prompt="Who are you? One sentence.",
+        pure_code_checkable=True, expect_regex=r"\w",
+    )] if self_id_fingerprint else []
+    provider = ProviderProfile(
+        provider="glm", display_name="Z.ai", fingerprints=fps,
+        models=[ModelProfile(id="glm-4.6v-flash", family="glm-4.6v", identity_keywords=[])],
+    )
+    return KnowledgeBase(providers={"glm": provider})
+
+
+async def _run_own_brand(answer: str, *, self_id_fingerprint: bool = False):
+    kb = _own_brand_kb(self_id_fingerprint)
+    mock = _SelfIdMock(answer, served_model="glm-4.6v-flash")
+    target = TargetConfig(base_url="https://relay.test/v1", api_key="sk-x-123456", model="glm-4.6v-flash")
+    async with OpenAICompatibleClient(target, transport=mock.transport) as c:
+        ctx = AuditContext(
+            target=target, client=c, options=AuditOptions(suite="standard"),
+            kb=kb, profile=kb.resolve("glm-4.6v-flash"),
+        )
+        return await ModelIdentityDetector().run(ctx)
+
+
+def test_own_brand_words_from_names():
+    from zing.knowledge.identity import own_brand_words
+    from zing.knowledge.schema import ModelProfile, ProviderProfile
+
+    model = ModelProfile(id="glm-4.6v-flash", family="glm-4.6v")
+    # Provider key, display_name and model id, widened to the vendor's other names.
+    assert own_brand_words(ProviderProfile(provider="glm", display_name="Z.ai"), model) == [
+        "glm", "z.ai", "chatglm", "zhipu", "智谱"]
+    # Only the leading name of a long display_name counts, without generic words.
+    long_name = ProviderProfile(provider="zp", display_name="Zhipu AI (智谱 / Z.ai) — BigModel open platform")
+    assert own_brand_words(long_name, ModelProfile(id="vision-9"), widen=False) == ["zp", "zhipu"]
+    assert not {"ai", "open", "platform", "bigmodel"} & set(own_brand_words(long_name, model))
+    # Explicit keywords come first and are kept as given (lower-cased).
+    assert own_brand_words(None, ModelProfile(id="org/acme-1:q4", identity_keywords=["Acme AI"])) == [
+        "acme ai", "acme"]
+    forbidden = {b.lower() for b in ModelIdentityDetector._forbidden_brands(model, long_name)}
+    assert not {"glm", "zhipu", "z.ai"} & forbidden
+    assert {"qwen", "openai"} <= forbidden
+
+
+async def test_own_brand_without_identity_keywords_is_not_a_rival():
+    result = await _run_own_brand("I am the GLM-4.5V model, built by Zhipu AI.", self_id_fingerprint=True)
+    assert result.status != Status.FAIL
+    assert all(f.severity != Severity.HIGH for f in result.findings)
+    self_id = next(f for f in result.findings if f.id == "model_identity.self_id")
+    assert self_id.status == Status.PASS
+    assert next(f for f in result.findings if f.id == "model_identity.fp.glm.who").status == Status.PASS
+
+
+async def test_rival_brand_still_flagged_without_identity_keywords():
+    result = await _run_own_brand("I am Qwen, a model developed by Alibaba Cloud.", self_id_fingerprint=True)
+    assert result.status == Status.FAIL
+    self_id = next(f for f in result.findings if f.id == "model_identity.self_id")
+    assert self_id.severity == Severity.HIGH
+    assert next(f for f in result.findings if f.id == "model_identity.fp.glm.who").severity == Severity.HIGH
+
+
+def test_own_brand_words_stay_narrow():
+    from zing.knowledge.identity import own_brand_words
+    from zing.knowledge.schema import ModelProfile, ProviderProfile
+
+    # A platform serving another vendor's model: its own brand stays a rival.
+    host = ProviderProfile(provider="qwen", display_name="Alibaba Cloud — Model Studio")
+    words = own_brand_words(host, ModelProfile(id="deepseek-r1"))
+    assert "deepseek" in words and not {"qwen", "alibaba"} & set(words)
+    assert "qwen" in ModelIdentityDetector._forbidden_brands(ModelProfile(id="deepseek-r1"), host)
+    # A derived word never overrides an explicit identity_forbidden.
+    tune = ModelProfile(id="llama-3-hermes", identity_forbidden=["llama", "meta"])
+    assert not {"llama", "meta"} & set(own_brand_words(None, tune))
+    # Unwidened (as the import stores them): only the profile's own names.
+    glm = ProviderProfile(provider="glm", display_name="Z.ai")
+    assert own_brand_words(glm, ModelProfile(id="glm-4.6v-flash"), widen=False) == ["glm", "z.ai"]
+    # Generic words from a model id do not count.
+    assert own_brand_words(None, ModelProfile(id="tts-1")) == []

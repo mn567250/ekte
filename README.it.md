@@ -693,6 +693,13 @@ i suoi modelli e URL di base. `zing check` e `zing serve` usano esattamente gli
 stessi profili; `--no-user-kb` (o `ZING_NO_USER_KB=1`) esclude le tue voci e i tuoi
 interruttori.
 
+Un modello con `identity_keywords` vuoto non viene salvato così: zing completa
+le sue parole di marchio a partire dai nomi del provider e del modello (per
+esempio `glm` e `z.ai`) e mostra un avviso
+per controllarle, perché senza di esse il controllo d'identità potrebbe
+scambiare il produttore del modello per un marchio rivale. Il prompt di ricerca
+le chiede esplicitamente all'assistente IA.
+
 Ogni rapporto registra il profilo rispetto a cui ha verificato (`knowledge`:
 fornitore, modello, come è stato risolto l'id, la sua origine e un'istantanea
 completa con il suo hash del contenuto), così un rapporto resta verificabile anche

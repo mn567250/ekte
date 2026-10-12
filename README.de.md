@@ -705,6 +705,13 @@ nimmt seine Modelle und Basis-URLs mit. `zing check` und `zing serve` nutzen gen
 dieselben Profile; `--no-user-kb` (oder `ZING_NO_USER_KB=1`) lässt Ihre Einträge
 und Schalter weg.
 
+Ein Modell mit leeren `identity_keywords` wird so nicht gespeichert: zing
+ergänzt seine eigenen Markenwörter aus den Namen von Anbieter und Modell (etwa
+`glm` und `z.ai`) und zeigt eine Warnung,
+sie zu prüfen, denn ohne sie könnte die Identitätsprüfung den eigenen Hersteller
+des Modells für eine Konkurrenzmarke halten. Der Recherche-Prompt verlangt sie
+ausdrücklich vom KI-Assistenten.
+
 Jeder Bericht hält fest, gegen welches Profil er geprüft hat (`knowledge`:
 Anbieter, Modell, wie die ID zugeordnet wurde, ihre Quelle und ein vollständiger
 Schnappschuss mit Inhalts-Hash), sodass ein Bericht auch nach Änderungen an der

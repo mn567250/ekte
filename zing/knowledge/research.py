@@ -46,7 +46,8 @@ _HELP: dict[str, str] = {
     "supports_json_schema": "strict JSON-schema structured output",
     "usage_in_stream": "token usage reported in streamed responses",
     "unsupported_params": "request parameters the model itself rejects (e.g. temperature, top_p)",
-    "identity_keywords": "lower-case words the genuine model uses to identify itself",
+    "identity_keywords": "lower-case vendor and model-family words the genuine model uses to identify "
+    "itself (never empty)",
     "identity_forbidden": "lower-case words that would betray a different model (rival brands)",
     "performance": "optional published native-API speed: {decode_tps: [low, high] tok/s, "
     "ttft_ms: [low, high], source: URL, measured: YYYY-MM}; wide ranges, null when unknown",
@@ -146,6 +147,9 @@ def research_prompt(model_id: str, provider: str | None = None, kb: KnowledgeBas
         "- Never guess numbers. If a value is not officially documented, leave the default "
         "(-1 for token limits, null or an empty list otherwise) and say so in `notes`. A wrong value "
         "makes zing wrongly accuse honest relays.",
+        "- `identity_keywords` is the exception and is never empty: list the vendor and model-family "
+        "words the model uses for itself (e.g. the company, its brand names, the family name), lower-case. "
+        "Without them zing reads the model naming its own vendor as a rival brand.",
         "- Fingerprint probes are optional. Only add probes whose expected answer you can justify from "
         "the sources; keep prompts short, English, and free of anything personal. Omit them when unsure.",
         "- Output exactly one YAML document in a single ```yaml code block, nothing else: no anchors (&) "
