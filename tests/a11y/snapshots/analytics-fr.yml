@@ -255,7 +255,7 @@
       - option "Example Relay"
       - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
       - option "http://127.0.0.1:9099/v1"
-    - img "Délai du premier jeton p50 par jour de la semaine et heure": 00 h 03 h 06 h 09 h 12 h 15 h 18 h 21 h lun. mar. mer. jeu. ven. sam. dim.
+    - img "Délai du premier jeton p50 par jour de la semaine et heure": 00 03 06 09 12 15 18 21 lun. mar. mer. jeu. ven. sam. dim.
     - list:
       - listitem: <duration> 1 <duration>
       - listitem: moins de 3 audits (hachuré)

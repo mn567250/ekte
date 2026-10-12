@@ -255,7 +255,7 @@
       - option "Example Relay"
       - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
       - option "http://127.0.0.1:9099/v1"
-    - img "Zeit bis zum ersten Token p50 nach Wochentag und Stunde": 00 Uhr 03 Uhr 06 Uhr 09 Uhr 12 Uhr 15 Uhr 18 Uhr 21 Uhr Mo Di Mi Do Fr Sa So
+    - img "Zeit bis zum ersten Token p50 nach Wochentag und Stunde": 00 03 06 09 12 15 18 21 Mo Di Mi Do Fr Sa So
     - list:
       - listitem: <duration> <duration>
       - listitem: weniger als 3 Läufe (schraffiert)

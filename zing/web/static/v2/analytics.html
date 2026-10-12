@@ -1172,7 +1172,16 @@
   // a Monday: weekday names from Intl, in the UI language
   function dayDate(dow, hour) { return new Date(2024, 0, dow, hour || 0); }
   function dayName(dow, long) { return dfmt({ weekday: long ? "long" : "short" }, dayDate(dow)); }
-  function hourName(h) { return dfmt({ hour: "numeric" }, dayDate(1, h)); }
+  // 24-hour locales get a fixed two-digit hour: Intl's { hour: "numeric" }
+  // gives "0" or "00" depending on the browser's ICU version
+  function hourName(h) {
+    var h12 = false;
+    try {
+      var hc = ZING_LANG.dateFmt({ hour: "numeric" }).resolvedOptions().hourCycle;
+      h12 = hc === "h11" || hc === "h12";
+    } catch (e) { /* 24-hour labels */ }
+    return h12 ? dfmt({ hour: "numeric" }, dayDate(1, h)) : (h < 10 ? "0" : "") + h;
+  }
   function hourSpan(dow, h) {
     return dayName(dow, true) + " " + dfmt({ hour: "numeric", minute: "2-digit" }, dayDate(dow, h)) + "–" +
       dfmt({ hour: "numeric", minute: "2-digit" }, new Date(2024, 0, dow, h + 1));

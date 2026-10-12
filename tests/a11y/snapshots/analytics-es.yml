@@ -276,7 +276,7 @@
       - option "Example Relay"
       - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
       - option "http://127.0.0.1:9099/v1"
-    - img "Tiempo hasta el primer token p50 por día de la semana y hora": 0 3 6 9 12 15 18 21 lun mar mié jue vie sáb dom
+    - img "Tiempo hasta el primer token p50 por día de la semana y hora": 00 03 06 09 12 15 18 21 lun mar mié jue vie sáb dom
     - list:
       - listitem: <duration> <duration>
       - listitem: menos de 3 auditorías (rayado)
