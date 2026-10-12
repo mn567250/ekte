@@ -110,7 +110,7 @@
     - button "Sort by Score": Score
     - button "Sort by Grade": Grade
   - button "Collapse all"
-  - region "model-a":
+  - region "model-a https://relay.example.com/v1":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - code: base_url
@@ -155,7 +155,7 @@
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
-  - region "model-a":
+  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - code: base_url
@@ -185,7 +185,7 @@
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
-  - region "model-b":
+  - region "model-b https://relay.example.com/v1":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - code: base_url
@@ -205,7 +205,7 @@
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
-  - region "model-b":
+  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - code: base_url
@@ -281,7 +281,7 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - region "gpt-4o":
+  - region "gpt-4o http://127.0.0.1:9099/v1":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
     - code: base_url

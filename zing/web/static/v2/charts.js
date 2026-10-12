@@ -193,18 +193,30 @@
         '<text x="' + x + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(cfg.xTick(t, xt.step)) + "</text>");
     });
     out.push("</g>");
-    // annotations: one dashed line per bucket, a glyph per kind at the top
-    var byX = {};
+    // annotations: one dashed line per bucket; labels of lines closer than
+    // 34 px share one label (both kinds listed) so their text never overlaps
+    var xs = {};
     (cfg.marks || []).forEach(function (m) {
-      var k = String(m.t);
-      (byX[k] = byX[k] || { t: m.t, kinds: {} }).kinds[m.kind] = 1;
+      var x = X(m.t + half), k = x.toFixed(1);
+      (xs[k] = xs[k] || { x: x, kinds: {} }).kinds[m.kind] = 1;
+    });
+    var lines = Object.keys(xs).map(function (k) { return xs[k]; }).sort(function (a, b) { return a.x - b.x; });
+    var groups = [];
+    lines.forEach(function (l) {
+      var g = groups[groups.length - 1];
+      if (g && l.x - g.x0 < 34) {
+        g.x1 = l.x;
+        Object.keys(l.kinds).forEach(function (k) { g.kinds[k] = 1; });
+      } else groups.push({ x0: l.x, x1: l.x, kinds: Object.assign({}, l.kinds) });
     });
     out.push('<g class="marks">');
-    Object.keys(byX).forEach(function (k) {
-      var m = byX[k], x = f1(X(m.t + half));
-      var glyph = (m.kinds.tool_version ? "v" : "") + (m.kinds.kb_profile ? (m.kinds.tool_version ? "·" : "") + "KB" : "");
-      out.push('<line x1="' + x + '" x2="' + x + '" y1="' + (M.t - 2) + '" y2="' + (M.t + ph) + '"/>' +
-        '<text x="' + x + '" y="' + (M.t - 6) + '" text-anchor="middle">' + glyph + "</text>");
+    lines.forEach(function (l) {
+      out.push('<line x1="' + f1(l.x) + '" x2="' + f1(l.x) + '" y1="' + (M.t - 2) + '" y2="' + (M.t + ph) + '"/>');
+    });
+    groups.forEach(function (g) {
+      var glyph = (g.kinds.tool_version ? "v" : "") + (g.kinds.kb_profile ? (g.kinds.tool_version ? "·" : "") + "KB" : "");
+      var x = Math.min(W - M.r - 12, (g.x0 + g.x1) / 2);
+      out.push('<text x="' + f1(x) + '" y="' + (M.t - 6) + '" text-anchor="middle">' + glyph + "</text>");
     });
     out.push("</g>");
     // series: band, line, markers

@@ -56,6 +56,7 @@
   .kpi .kv { font-family: var(--disp); font-weight: 700; font-size: 22px; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; color: var(--ink); overflow-wrap: anywhere; }
   .kpi .kd { font-size: 12px; font-weight: 600; color: var(--ink2); font-variant-numeric: tabular-nums; }
   .kpi .kd.good { color: var(--good); } .kpi .kd.bad { color: var(--bad); }
+  .kpi .kd.few { color: var(--faint); font-weight: 500; }
   .kpi .kc { font-size: 11.5px; color: var(--faint); line-height: 1.4; }
 
   /* comparison chart */
@@ -65,7 +66,10 @@
   .pick .chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
   .legend { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink2); }
   .legend li { display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; }
-  .legend .nm { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+  /* long relay URLs: one line, cut with an ellipsis (full text in the DOM and the title) */
+  .legend .nm, .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend .nm { color: var(--ink); font-weight: 600; }
+  .lbl { display: block; max-width: 24em; }
   .legend .sub { color: var(--faint); white-space: nowrap; }
   .axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--faint); margin: 4px 0 2px; }
   .notes { margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
@@ -82,16 +86,25 @@
   .tdisc .disclosure .zicon { width: 15px; height: 15px; }
   .tdisc .tbody { padding: 0 2px 6px; }
   .tdisc .tbody[hidden] { display: none; }
-  .tscroll { overflow-x: auto; max-width: 100%; border-radius: 10px; }
+  /* wide tables scroll inside this focusable region (never the page); edge
+     shadows show there is more to the side */
+  .tscroll {
+    overflow-x: auto; max-width: 100%; border-radius: 10px;
+    background:
+      linear-gradient(to right, var(--card) 30%, transparent) left / 24px 100% no-repeat local,
+      linear-gradient(to left, var(--card) 30%, transparent) right / 24px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, var(--line-control), transparent) left / 10px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, var(--line-control), transparent) right / 10px 100% no-repeat scroll;
+  }
   .tscroll:focus-visible { outline-offset: -2px; }
   table.dt { border-collapse: collapse; width: 100%; font-size: 12.5px; color: var(--ink2); }
   .dt caption { text-align: left; font-size: 12px; color: var(--faint); padding: 6px 12px; caption-side: top; }
   .dt th, .dt td { padding: 7px 12px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
   .dt thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); border-top: 0; white-space: nowrap; }
   .dt td.n, .dt th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .dt tbody th { font-weight: 600; color: var(--ink); min-width: 9em; max-width: 22em; overflow-wrap: anywhere; }
+  .dt tbody th { font-weight: 600; color: var(--ink); min-width: 12em; max-width: 24em; }
   .dt td.when { white-space: nowrap; }
-  .dt td.ser { min-width: 12em; max-width: 18em; overflow-wrap: anywhere; color: var(--ink); }
+  .dt td.ser { min-width: 12em; max-width: 18em; color: var(--ink); }
   .dt td .cn { display: block; font-size: 11px; color: var(--faint); }
   .dt tr.low > * { color: var(--faint); }
   .dt tr.low td.nt { color: var(--warn); }
@@ -623,11 +636,17 @@
     ["score", "健康分中位数", "Median score"], ["risk_high_share"], ["success_rate"], ["ttft_p50"], ["decode_tps"],
     ["billing_ratio_prompt"], ["billing_ratio_completion"],
   ];
-  function deltaHTML(c) {
+  function deltaHTML(c, count) {
     if (c.previous == null && c.delta == null) {
       return '<span class="kd">' + esc(T("上一周期无数据", "No data in the previous period")) + "</span>";
     }
     var d = c.delta, hib = c.higher_is_better;
+    // a median of one or two earlier runs is no baseline: the change is shown
+    // faded, without a better / worse verdict
+    if (!count && c.previous_n != null && c.previous_n < minRuns()) {
+      return '<span class="kd few">' + esc(C.fmtDelta(d, c.unit)) + '</span><span class="kc">' +
+        esc(Tf("上一周期少于 {min} 次检测，仅供参考", "Previous period has fewer than {min} runs — indicative only", { min: minRuns() })) + "</span>";
+    }
     var better = d == null || d === 0 || hib == null ? null : hib ? d > 0 : d < 0;
     var cls = better == null ? "" : better ? " good" : " bad";
     var word = better == null ? "" : " · " + (better ? T("变好", "better") : T("变差", "worse"));
@@ -660,7 +679,7 @@
       if (c.n === 0) cov = T("这些检测均未测得此项", "Not measured in these runs");
       else if (c.n < s.runs) cov = Tf("{n} / {runs} 次检测有此数据", "Data from {n} of {runs} runs", { n: c.n, runs: s.runs });
       return '<li class="kpi"><span class="kl">' + esc(name) + '</span><span class="kv">' + esc(fmt(c.value, c.unit)) + "</span>" +
-        (s.previous ? deltaHTML(c) : "") + (cov ? '<span class="kc">' + esc(cov) + "</span>" : "") + "</li>";
+        (s.previous ? deltaHTML(c, c.unit === "count") : "") + (cov ? '<span class="kc">' + esc(cov) + "</span>" : "") + "</li>";
     }).join("") + "</ul>";
   }
   $("#kpi-body").addEventListener("click", function (ev) {
@@ -775,7 +794,7 @@
     });
     var withData = series.filter(function (x) { return x.points.length; });
     var legend = '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '">' + series.map(function (x) {
-      return "<li>" + C.keySVG(x.cls, x.shape) + '<span class="nm">' + esc(x.label) + "</span>" +
+      return "<li>" + C.keySVG(x.cls, x.shape) + '<span class="nm" title="' + esc(x.label) + '">' + esc(x.label) + "</span>" +
         '<span class="sub">' + esc(x.points.length ? Tf("{n} 次检测", "{n} runs", { n: x.raw.n }) : T("无数据", "no data")) + "</span></li>";
     }).join("") + "</ul>";
     if (!withData.length) {
@@ -862,7 +881,7 @@
       '<th scope="col" class="n">' + esc(T("检测次数", "Runs")) + '</th><th scope="col">' + esc(T("说明", "Note")) + "</th></tr></thead><tbody>" +
       rows.map(function (r) {
         var p = r.p;
-        return '<tr class="' + (p.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(p.t)) + '</td><td class="ser">' + esc(r.x.label) + "</td>" +
+        return '<tr class="' + (p.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(p.t)) + '</td><td class="ser"><span class="lbl" title="' + esc(r.x.label) + '">' + esc(r.x.label) + "</span></td>" +
           '<td class="n">' + esc(fmt(p.v, m.unit)) + "</td>" +
           (share ? "" : '<td class="n">' + esc(fmt(p.lo, m.unit)) + " – " + esc(fmt(p.hi, m.unit)) + "</td>") +
           '<td class="n">' + esc(String(p.n)) + '</td><td class="nt">' + (p.low ? esc(hint) : "") + "</td></tr>";
@@ -943,7 +962,7 @@
         : T("此时间范围内这个中转站没有检测。", "No runs of this relay in this range.")) + "</div>";
       return;
     }
-    var focusSort = document.activeElement && body.contains(document.activeElement) && document.activeElement.getAttribute("data-sort");
+    var focusSort = document.activeElement && body.contains(document.activeElement) && document.activeElement.getAttribute("data-lbsort");
     var subj = V.lb === "relay" ? b.model : relayLabel((state.opts.relays || []).filter(function (x) { return x.key === b.relay; })[0]) || b.relay;
     var anyLow = b.rows.some(function (r) { return r.low_n; });
     var head = function (k, label, num) {
@@ -951,7 +970,7 @@
       var name = on ? Tf("{key}，{dir}", "{key}, {dir}", { key: label, dir: V.sort.dir === "asc" ? T("升序排列", "sorted ascending") : T("降序排列", "sorted descending") })
         : Tf("按{key}排序", "Sort by {key}", { key: label });
       return '<th scope="col"' + (num ? ' class="n"' : "") + (on ? ' aria-sort="' + (V.sort.dir === "asc" ? "ascending" : "descending") + '"' : "") + ">" +
-        '<button type="button" class="sortb" data-sort="' + k + '" title="' + esc(name) + '"><span>' + esc(label) + "</span>" + ico("chevronDown") + "</button></th>";
+        '<button type="button" class="sortb" data-lbsort="' + k + '" title="' + esc(name) + '"><span>' + esc(label) + "</span>" + ico("chevronDown") + "</button></th>";
     };
     var cell = function (c, unit, runs) {
       if (!c) return '<td class="n">—</td>';
@@ -967,21 +986,21 @@
       "</caption><thead><tr>" + head("label", V.lb === "relay" ? T("中转站", "Relay") : T("模型", "Model"), false) +
       LB_COLS.map(function (c) { return head(c[0], colName(c), c[0] !== "last_run"); }).join("") + "</tr></thead><tbody>" +
       sortedRows(b.rows).map(function (r) {
-        return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row">' + esc(r.label || r.key) +
+        return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row"><span class="lbl" title="' + esc(r.label || r.key) + '">' + esc(r.label || r.key) + "</span>" +
           (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</th>" +
           '<td class="n">' + esc(String(r.runs)) + "</td>" +
           LB_COLS.slice(1, -1).map(function (c) { return cell(r.metrics[c[0]], units[c[0]], r.runs); }).join("") +
           '<td class="when">' + esc(r.last_run ? dfmt({ dateStyle: "medium", timeStyle: "short" }, new Date(r.last_run)) : "—") + "</td></tr>";
       }).join("") + "</tbody></table></div>";
     if (focusSort) {
-      var el = body.querySelector('[data-sort="' + focusSort + '"]');
+      var el = body.querySelector('[data-lbsort="' + focusSort + '"]');
       if (el) el.focus();
     }
   }
   $("#lb-body").addEventListener("click", function (ev) {
-    var b = ev.target.closest("[data-sort]");
+    var b = ev.target.closest("[data-lbsort]");
     if (!b) return;
-    var k = b.getAttribute("data-sort");
+    var k = b.getAttribute("data-lbsort");
     // a new column starts with the best (or largest) first; the active one flips
     V.sort = V.sort && V.sort.key === k ? { key: k, dir: V.sort.dir === "asc" ? "desc" : "asc" } : { key: k, dir: k === "label" ? "asc" : "desc" };
     writeState();

@@ -55,6 +55,7 @@
   "Not measured in these runs": "Non mesuré dans ces exécutions",
   "Note": "Remarque",
   "Overview": "Vue d'ensemble",
+  "Previous period has fewer than {min} runs — indicative only": "Moins de {min} exécutions sur la période précédente — à titre indicatif",
   "Rank": "Classer",
   "Rate-limited share": "Part limitée en débit",
   "Reasoning token share": "Part de jetons de raisonnement",

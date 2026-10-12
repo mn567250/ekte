@@ -110,7 +110,7 @@
     - button "按健康分排序": 健康分
     - button "按评级排序": 评级
   - button "全部折叠"
-  - region "model-a":
+  - region "model-a https://relay.example.com/v1":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - code: base_url
@@ -155,7 +155,7 @@
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
-  - region "model-a":
+  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - code: base_url
@@ -185,7 +185,7 @@
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
-  - region "model-b":
+  - region "model-b https://relay.example.com/v1":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - code: base_url
@@ -205,7 +205,7 @@
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
-  - region "model-b":
+  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - code: base_url
@@ -281,7 +281,7 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - region "gpt-4o":
+  - region "gpt-4o http://127.0.0.1:9099/v1":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
     - code: base_url

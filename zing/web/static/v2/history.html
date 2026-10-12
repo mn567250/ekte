@@ -833,11 +833,12 @@
     var gh = shut ? 100 : 100 + 58 * g.limit + (g.limit < g.rows.length ? 50 : 0);
     // the heading's text is the collapse toggle: heading navigation still
     // lands on it, and the button says whether the group's rows are shown
-    return '<section class="group' + (shut ? " shut" : "") + '" aria-labelledby="' + hid + '" style="--gh:' + gh + 'px"><div class="grp-h"><div class="gtitle">' +
+    // named by model AND base URL: one model on two relays gives two groups
+    return '<section class="group' + (shut ? " shut" : "") + '" aria-labelledby="' + hid + " " + hid + 'u" style="--gh:' + gh + 'px"><div class="grp-h"><div class="gtitle">' +
       '<h2 id="' + hid + '"><button type="button" class="gtog" data-gkey="' + esc(g.key) + '" aria-expanded="' + !shut + '" aria-controls="gb' + gi + '" title="' +
       esc(T("声称模型", "Claimed model")) + '">' + ico("chevronDown") + '<span class="t">' +
       esc(g.claimed_model || T("(未声明模型)", "(no model declared)")) + "</span></button></h2>" +
-      '<div class="gu"><code class="key">base_url</code><span title="' + esc(g.base_url || "") + '">' + esc(g.base_url || "—") + "</span></div></div>" +
+      '<div class="gu"><code class="key">base_url</code><span id="' + hid + 'u" title="' + esc(g.base_url || "") + '">' + esc(g.base_url || "—") + "</span></div></div>" +
       trendHTML(g.rows) + "</div>" +
       '<div class="gbody" id="gb' + gi + '"' + (shut ? " hidden" : "") + '><ul class="rows">' + g.rows.slice(0, g.limit).map(rowHTML).join("") + "</ul>" +
       moreHTML(g, gi) + "</div></section>";

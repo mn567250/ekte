@@ -55,6 +55,7 @@
   "Not measured in these runs": "Not measured in these runs",
   "Note": "Note",
   "Overview": "Overview",
+  "Previous period has fewer than {min} runs — indicative only": "Previous period has fewer than {min} runs — indicative only",
   "Rank": "Rank",
   "Rate-limited share": "Rate-limited share",
   "Reasoning token share": "Reasoning token share",
