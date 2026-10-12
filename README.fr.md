@@ -269,6 +269,7 @@ navigateur.
 | **Console** | `/console` | — | Le même audit sous forme de console compacte, façon journal |
 | **Outils** | `/tools` | `/v2/tools` | Audits d'embedding et de rerank |
 | **Historique** | `/history` | `/v2/history` | Chaque audit exécuté sur cette machine, groupé par relais + modèle annoncé, avec tendances |
+| **Analyses** | — | `/v2/analytics` | Relais et modèles comparés dans le temps : indicateurs, graphiques avec tableaux de données, classements |
 | **Surveillances** | `/watches` | `/v2/watches` | Ré-audits planifiés avec alertes webhook |
 | **Connaissances** | — | `/v2/kb` | La base de connaissances en trois onglets — modèles, fournisseurs, relais : parcourir, activer/désactiver, ajouter les vôtres |
 
@@ -289,6 +290,24 @@ les adresses loopback comptent comme un seul hôte : les modèles servis par vot
 propre machine attendent aussi) ; les audits de relais différents s'exécutent
 en parallèle, quatre au plus à la fois (`ZING_MAX_PARALLEL_AUDITS`). Les
 surveillances attendent leur relais de la même façon.
+
+**Analyses (nouvelle interface).** `/v2/analytics` transforme l'historique
+local en comparaisons : des indicateurs pour la période choisie (exécutions,
+score médian, part à risque élevé, taux de réussite, TTFT, vitesse de sortie,
+ratios de facturation) avec l'écart par rapport à la période de même durée qui
+précède ; un graphique de n'importe quelle métrique par relais, modèle ou
+relais × modèle, par heure, jour ou semaine (ligne médiane avec la bande
+p25–p75, jusqu'à quatre séries, chaque graphique aussi en tableau de données) ;
+et un classement des relais pour un modèle, ou des modèles d'un relais. Les
+relais sont regroupés selon leur entrée de la base de connaissances (relais
+enregistrés et fournisseurs) : renommer un relais regroupe son historique. Les
+intervalles de moins de 3 exécutions sont atténués — un audit isolé peut être
+une valeur aberrante ; une surveillance fournit des mesures régulières. Les
+exécutions plus anciennes montrent ce qu'elles ont mesuré : la page indique sur
+combien d'exécutions repose une valeur. Par défaut, elle compare une suite et
+un mode de sonde (les plus fréquents), pour ne pas mélanger des exécutions
+différentes ; filtres et vue sont gardés dans l'URL, une vue peut donc être
+mise en favori ou partagée. Rien ne quitte la machine.
 
 ### Langues
 

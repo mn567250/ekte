@@ -266,6 +266,7 @@ clásica** vuelve atrás. La elección se recuerda por navegador.
 | **Consola** | `/console` | — | La misma auditoría como consola compacta, estilo registro |
 | **Herramientas** | `/tools` | `/v2/tools` | Auditorías de embeddings y rerank |
 | **Historial** | `/history` | `/v2/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
+| **Analítica** | — | `/v2/analytics` | Relays y modelos comparados en el tiempo: indicadores, gráficos con tablas de datos, clasificaciones |
 | **Monitores** | `/watches` | `/v2/watches` | Reauditorías programadas con alertas por webhook |
 | **Conocimiento** | — | `/v2/kb` | La base de conocimiento en tres pestañas — modelos, proveedores, relays: explorar, activar/desactivar, añadir lo tuyo |
 
@@ -285,6 +286,23 @@ fiabilidad (todas las direcciones loopback cuentan como un solo host, así que
 los modelos servidos desde tu propia máquina también esperan); las de relays
 distintos se ejecutan en paralelo, como máximo cuatro a la vez
 (`ZING_MAX_PARALLEL_AUDITS`). Los monitores esperan a su relay del mismo modo.
+
+**Analítica (nueva interfaz).** `/v2/analytics` convierte el historial local
+en comparaciones: indicadores del periodo elegido (ejecuciones, puntuación
+mediana, proporción de riesgo alto, tasa de éxito, TTFT, velocidad de salida,
+ratios de facturación) con el cambio frente al periodo anterior de igual
+duración; un gráfico de cualquier métrica por relay, modelo o relay × modelo,
+por hora, día o semana (línea mediana con la banda p25–p75, hasta cuatro
+series, cada gráfico también como tabla de datos); y una clasificación de los
+relays de un modelo o de los modelos de un relay. Los relays se agrupan por su
+entrada de la base de conocimiento (relays guardados y proveedores), así que
+renombrar un relay reagrupa su historial. Los intervalos con menos de 3
+ejecuciones se dibujan atenuados: una sola auditoría puede ser un valor
+atípico; un monitor da mediciones regulares. Las ejecuciones antiguas muestran
+lo que midieron: la página indica en cuántas ejecuciones se basa un valor. Por
+defecto compara una suite y un modo de sondeo (los más frecuentes), para no
+mezclar ejecuciones distintas; filtros y vista se guardan en la URL, así que
+una vista se puede marcar o compartir. Nada sale del equipo.
 
 ### Idiomas
 

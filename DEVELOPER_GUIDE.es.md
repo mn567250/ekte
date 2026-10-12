@@ -370,6 +370,19 @@ derivado, además de **Guardar en la base** (`POST /api/kb/relays`). Sus funcion
 auxiliares puras se prueban con node; las páginas clásicas conservan
 `modelpicker.js`.
 
+La página v2 **Analítica** (`v2/analytics.html`) solo lee `/api/analytics/*`
+(`options` también lista los pares relay × modelo, `relay_models`, para el
+selector de series). Tiene una `<section class="card panel">` por panel bajo una
+única barra de filtros, así que se pueden añadir paneles; filtros y vista van en
+el fragmento de la URL (`#range=30&metric=score&…`) y en `localStorage`. Los
+gráficos salen de `v2/charts.js` (`ZingCharts.timeChart`: SVG en línea dibujado
+a mano con línea mediana, banda p25–p75, huecos para intervalos vacíos,
+marcadores atenuados para intervalos `low_n`, líneas de anotación y tooltip al
+pasar el puntero; `fmt` / `fmtDelta` formatean valores según la unidad) y de
+`v2/charts.css` (cuatro colores de serie validados por tema, distinguibles
+también por la forma del marcador). Cada gráfico existe también como tabla de
+datos.
+
 **Convención de traducción.** El texto chino escrito en el HTML es el original y
 no se toca; cada elemento lleva su texto inglés en `data-en` (y
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). El texto inglés es

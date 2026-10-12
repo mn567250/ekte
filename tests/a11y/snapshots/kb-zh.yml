@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "检测历史":
       - /url: /v2/history
+    - link "分析":
+      - /url: /v2/analytics
     - link "监控":
       - /url: /v2/watches
     - link "知识库":
@@ -43,6 +45,8 @@
     - textbox "模型 ID":
       - /placeholder: 例如 gpt-4o
     - button "查询"
+    - link "将你的条目导出为 YAML":
+      - /url: /api/kb/export
     - status
   - tablist "知识库分类":
     - tab "模型" [selected]

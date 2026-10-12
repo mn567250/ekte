@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "Verlauf":
       - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
     - link "Überwachung":
       - /url: /v2/watches
     - link "Wissen":

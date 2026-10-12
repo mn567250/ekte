@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "Verlauf":
       - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
     - link "Überwachung":
       - /url: /v2/watches
     - link "Wissen":
@@ -43,6 +45,8 @@
     - textbox "Modell-ID":
       - /placeholder: z. B. gpt-4o
     - button "Nachschlagen"
+    - link "Deine Einträge als YAML exportieren":
+      - /url: /api/kb/export
     - status
   - tablist "Bereiche der Wissensbasis":
     - tab "Modelle" [selected]

@@ -7,7 +7,7 @@ EN 301 549 clause numbers (WCAG 1.4.3 → 9.1.4.3).
 `tests/a11y/` checks as much of this as a machine can, in a real browser
 (Playwright + Chromium, rules by [axe-core](https://github.com/dequelabs/axe-core)
 4.13, vendored in `tests/a11y/vendor/`). Every page (`/v2/`, `/v2/history`,
-`/v2/watches`, `/v2/tools`, `/v2/kb`, `/v2/accessibility`) is checked **in every UI language**
+`/v2/watches`, `/v2/tools`, `/v2/kb`, `/v2/analytics`, `/v2/accessibility`) is checked **in every UI language**
 (`zing/i18n/locales/*.json`: de, en, es, fr, it, pt, zh), in light and dark
 theme, as loaded and with every disclosure opened (rendered report, advanced
 options, monitor details) and every tab panel shown.

@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "Histórico":
       - /url: /v2/history
+    - link "Análises":
+      - /url: /v2/analytics
     - link "Monitores":
       - /url: /v2/watches
     - link "Conhecimento":

@@ -1,0 +1,238 @@
+- banner:
+  - link "跳到主要内容":
+    - /url: "#main"
+  - link "zing":
+    - /url: /v2/
+    - text: zing.
+  - link "经典界面":
+    - /url: "?ui=v1"
+  - combobox "主题":
+    - option "跟随系统"
+    - option "浅色" [selected]
+    - option "深色"
+  - combobox "语言":
+    - option "English"
+    - option "中文" [selected]
+    - option "Français"
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+  - link "无障碍":
+    - /url: /v2/accessibility
+  - navigation "主导航":
+    - link "检测":
+      - /url: /v2/
+    - link "工具":
+      - /url: /v2/tools
+    - link "检测历史":
+      - /url: /v2/history
+    - link "分析":
+      - /url: /v2/analytics
+    - link "监控":
+      - /url: /v2/watches
+    - link "知识库":
+      - /url: /v2/kb
+- main:
+  - heading "检测分析" [level=1]
+  - paragraph: 用 zing 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。
+  - paragraph:
+    - text: 基于
+    - code: ~/.zing
+    - text: 下的本地历史计算，不会上传。
+  - status: 已更新：此范围内 14 次检测。
+  - region "筛选":
+    - heading "筛选" [level=2]
+    - text: 时间范围
+    - group "时间范围":
+      - button "最近 7 天"
+      - button "最近 30 天" [pressed]
+      - button "最近 90 天"
+      - button "全部时间"
+      - button "自定义"
+    - text: 套件
+    - combobox "套件":
+      - option "全部"
+      - option "standard" [selected]
+    - text: 探测请求
+    - combobox "探测请求":
+      - option "全部"
+      - option "流式" [selected]
+    - text: 协议
+    - combobox "协议":
+      - option "全部" [selected]
+      - option "openai"
+    - text: 来源
+    - combobox "来源":
+      - option "全部" [selected]
+      - option "手动"
+      - option "监控"
+    - text: 中转站
+    - combobox "中转站":
+      - option "全部" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - text: 声称模型
+    - combobox "声称模型":
+      - option "全部" [selected]
+      - option "model-a"
+      - option "model-b"
+      - option "gpt-4o"
+    - text: 历史中共 15 次检测（4 次由监控产生）。
+  - region "概览":
+    - heading "概览" [level=2]
+    - paragraph: 2026/9/2 – 2026/10/1，与之前同样长度的一段时间（2026/8/3 – 2026/9/1）对比。
+    - list:
+      - listitem: 检测次数 14 +14
+      - listitem: 中转站 2 +2
+      - listitem: 模型 2 +2
+      - listitem: 健康分中位数 79 上一周期无数据
+      - listitem: 高风险占比 21.4% 上一周期无数据
+      - listitem: 成功率 100% 上一周期无数据
+      - listitem: 首字延迟 p50 <duration> 上一周期无数据
+      - listitem: 输出速度 62.9 tok/s 上一周期无数据
+      - listitem: 计费比（输入） 103% 上一周期无数据 9 / 14 次检测有此数据
+      - listitem: 计费比（输出） 102% 上一周期无数据 9 / 14 次检测有此数据
+  - region "随时间对比":
+    - heading "随时间对比" [level=2]
+    - paragraph: 折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。
+    - text: 指标
+    - combobox "指标":
+      - option "健康分" [selected]
+      - option "高风险占比"
+      - option "成功率"
+      - option "错误率"
+      - option "超时率"
+      - option "限流占比"
+      - option "延迟 p50"
+      - option "延迟 p95"
+      - option "首字延迟 p50"
+      - option "首字延迟 p95"
+      - option "输出速度"
+      - option "字间抖动"
+      - option "中转处理耗时"
+      - option "网络往返"
+      - option "冷启动"
+      - option "并发吞吐"
+      - option "计费比（输入）"
+      - option "计费比（输出）"
+      - option "推理 token 占比"
+      - option "缓存输入占比"
+      - option "模型不符占比"
+      - option "声明的上下文"
+      - option "实测上下文"
+      - option "高危发现"
+      - option "中危发现"
+      - option "低危发现"
+      - option "检测时长"
+      - option "维度：计费用量"
+      - option "维度：能力声明"
+      - option "维度：连通性"
+      - option "维度：上下文窗口"
+      - option "维度：模型身份"
+      - option "维度：协议兼容"
+      - option "维度：并发可靠"
+      - option "维度：传输安全"
+      - option "维度：流式真实"
+    - text: 分组
+    - combobox "分组":
+      - option "中转站" [selected]
+      - option "模型"
+      - option "中转站 × 模型"
+    - text: 时间段
+    - combobox "时间段":
+      - option "按小时"
+      - option "按天" [selected]
+      - option "按周"
+    - text: 对比的数据系列（最多 4 个）
+    - group "对比的数据系列（最多 4 个）":
+      - button "✓ Example Relay" [pressed]
+      - button "✓ https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1" [pressed]
+      - button "http://127.0.0.1:9099/v1"
+    - list "图例":
+      - listitem: Example Relay 9 次检测
+      - listitem: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 5 次检测
+    - img "健康分随时间变化": 0 20 40 60 80100 9月25日 9月27日 9月29日 10月1日 v·KB
+    - paragraph:
+      - text: 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。
+      - link "设置监控以定期测量。":
+        - /url: /v2/watches
+    - text: 图中虚线标出评分依据的变化（v = zing 版本，KB = 知识库档案）：
+    - list:
+      - listitem: "2026年9月29日周二 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: 知识库档案有变化（评分依据变了，不是中转站变了）"
+      - listitem: "2026年9月29日周二 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: zing 版本 0.19.2 → 0.20.0"
+    - button "以表格显示" [expanded]
+    - region "健康分（中转站，按天）":
+      - table "健康分（中转站，按天）":
+        - caption: 健康分（中转站，按天）
+        - rowgroup:
+          - row "时间段 数据系列 中位数 p25–p75 检测次数 说明":
+            - columnheader "时间段"
+            - columnheader "数据系列"
+            - columnheader "中位数"
+            - columnheader "p25–p75"
+            - columnheader "检测次数"
+            - columnheader "说明"
+        - rowgroup:
+          - row "2026年9月26日周六 Example Relay 70 70 – 70 1 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。":
+            - cell "2026年9月26日周六"
+            - cell "Example Relay"
+            - cell "70"
+            - cell "70 – 70"
+            - cell "1"
+            - cell "此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。"
+          # … more rows of the same shape
+  - region "排行榜":
+    - heading "排行榜" [level=2]
+    - paragraph: 所选时间范围内的中位数；n 为测得该值的检测次数。
+    - group "排行方式":
+      - button "某个模型的各中转站" [pressed]
+      - button "某个中转站的各模型"
+    - text: 模型
+    - combobox "模型":
+      - option "model-a" [selected]
+      - option "model-b"
+      - option "gpt-4o"
+    - region "“model-a”的各中转站":
+      - table "“model-a”的各中转站":
+        - caption: “model-a”的各中转站
+        - rowgroup:
+          - row "中转站 检测次数 健康分 首字延迟 p50 输出速度 成功率 计费比（输入） 计费比（输出） 模型不符占比 高风险占比 最近一次检测":
+            - columnheader "中转站":
+              - button "中转站"
+            - columnheader "检测次数":
+              - button "检测次数"
+            - columnheader "健康分":
+              - button "健康分"
+            - columnheader "首字延迟 p50":
+              - button "首字延迟 p50"
+            - columnheader "输出速度":
+              - button "输出速度"
+            - columnheader "成功率":
+              - button "成功率"
+            - columnheader "计费比（输入）":
+              - button "计费比（输入）"
+            - columnheader "计费比（输出）":
+              - button "计费比（输出）"
+            - columnheader "模型不符占比":
+              - button "模型不符占比"
+            - columnheader "高风险占比":
+              - button "高风险占比"
+            - columnheader "最近一次检测":
+              - button "最近一次检测"
+        - rowgroup:
+          - row "Example Relay 7 82 n=7 <duration> n=7 63.2 tok/s n=7100% n=7104% n=7102% n=7 — n=0 / 7 0% n=7 2026年9月30日 11:00":
+            - rowheader "Example Relay"
+            - cell "7"
+            - cell "82 n=7"
+            - cell "<duration> n=7"
+            - cell "63.2 tok/s n=7"
+            - cell "100% n=7"
+            - cell "104% n=7"
+            - cell "102% n=7"
+            - cell "— n=0 / 7"
+            - cell "0% n=7"
+            - cell "2026年9月30日 11:00"
+          # … more rows of the same shape
+    - status

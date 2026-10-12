@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "History":
       - /url: /v2/history
+    - link "Analytics":
+      - /url: /v2/analytics
     - link "Monitors":
       - /url: /v2/watches
     - link "Knowledge":
@@ -46,10 +48,14 @@
     - combobox "Relay / provider":
       - option "All" [selected]
       - option "127.0.0.1:9099"
+      - option "gateway.a-very-long-relay-hostname.example.org"
+      - option "relay.example.com"
     - text: Claimed model
     - combobox "Claimed model":
       - option "All" [selected]
       - option "gpt-4o"
+      - option "model-a"
+      - option "model-b"
     - text: Suite
     - combobox "Suite":
       - option "All" [selected]
@@ -61,6 +67,7 @@
     - text: Protocol
     - combobox "Protocol":
       - option "All" [selected]
+      - option "openai"
       - option "(unknown)"
     - text: Protocol detection
     - combobox "Protocol detection":
@@ -69,10 +76,13 @@
     - text: Probe requests
     - combobox "Probe requests":
       - option "All" [selected]
+      - option "Streaming"
       - option "(unknown)"
     - text: Risk
     - combobox "Risk":
       - option "All" [selected]
+      - option "Consistent (likely genuine)"
+      - option "Mostly trustworthy"
       - option "Bait-and-switch"
     - text: Min. score
     - spinbutton "Min. score"
@@ -93,269 +103,172 @@
       - button "Grade"
       - button "Latency p50" [pressed]
       - button "Tokens/s"
-    - text: Showing 1 of 1 audits
+    - text: Showing 15 of 15 audits
   - group "Sort audits":
     - button "Time, sorted descending": Time
     - button "Sort by Risk": Risk
     - button "Sort by Score": Score
     - button "Sort by Grade": Grade
   - button "Collapse all"
-  - region "gpt-4o":
-    - heading "gpt-4o" [level=2]:
-      - button "gpt-4o" [expanded]
+  - region "model-a":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
     - code: base_url
-    - text: http://127.0.0.1:9099/v1 Score 53
+    - text: https://relay.example.com/v1 Score
+    - 'img "Health score trend across 7 audits: from 70 to 82, rising."'
+    - text: 82 Latency p50
+    - 'img "Latency p50 trend across 7 audits: from <duration> to <duration>."'
+    - text: <duration>
     - list:
       - listitem:
-        - button "Sep 27, 2026, 7:47 AM Bait-and-switch Score 53 Grade F check · standard" [expanded]
+        - button "Sep 30, 2026, 11:02 AM Consistent (likely genuine) Score 82 Grade B check · standard openai · Streaming p50 <duration>"
         - button "Re-run audit"
         - button "Schedule as monitor"
-        - button "Delete entry" [expanded]
-        - group "Delete this history entry?":
-          - text: Delete this history entry?
-          - button "Delete"
-          - button "Cancel"
-        - region "Sep 27, 2026, 7:47 AM Bait-and-switch Score 53 Grade F check · standard":
-          - article "It is not serving the model it claims":
-            - text: Bait-and-switch
-            - heading "It is not serving the model it claims" [level=2]
-            - paragraph: "Findings: 4 high, 5 medium. Run `zing compare` against a trusted baseline to strengthen the verdict."
-            - text: Overall health score 52.6/100 (Rating F) Verdict confidence Medium
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 30, 2026, 10:02 AM Consistent (likely genuine) Score 85 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 30, 2026, 9:02 AM Consistent (likely genuine) Score 88 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 28, 2026, 10:02 AM Mostly trustworthy Score 78 Grade D check · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 28, 2026, 9:02 AM Consistent (likely genuine) Score 80 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 28, 2026, 7:02 AM Consistent (likely genuine) Score 84 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 26, 2026, 8:02 AM Mostly trustworthy Score 70 Grade D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "This run was produced by a monitor" [disabled]
+        - button "Delete entry"
+  - region "model-a":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score
+    - 'img "Health score trend across 4 audits: from 58 to 64, rising."'
+    - text: 64 Latency p50
+    - 'img "Latency p50 trend across 4 audits: from <duration> to <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "Sep 30, 2026, 8:02 AM Bait-and-switch Score 64 Grade D check · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 29, 2026, 11:02 AM Bait-and-switch Score 60 Grade D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "This run was produced by a monitor" [disabled]
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 29, 2026, 10:02 AM Mostly trustworthy Score 66 Grade D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "This run was produced by a monitor" [disabled]
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 29, 2026, 9:02 AM Bait-and-switch Score 58 Grade D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "This run was produced by a monitor" [disabled]
+        - button "Delete entry"
+  - region "model-b":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://relay.example.com/v1 Score
+    - 'img "Health score trend across 2 audits: from 89 to 91, rising."'
+    - text: 91 Latency p50
+    - 'img "Latency p50 trend across 2 audits: from <duration> to <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "Sep 29, 2026, 7:02 AM Consistent (likely genuine) Score 91 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+      - listitem:
+        - button "Sep 29, 2026, 6:02 AM Consistent (likely genuine) Score 89 Grade B check · standard openai · Streaming p50 <duration>"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+  - region "model-b":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score 72 Latency p50 <duration>
+    - list:
+      - listitem:
+        - button "Sep 27, 2026, 10:02 AM Mostly trustworthy Score 72 Grade D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry"
+        - region "Sep 27, 2026, 10:02 AM Mostly trustworthy Score 72 Grade D check · standard openai · Streaming p50 <duration>":
+          - article "Mostly consistent, with a few minor issues":
+            - text: Mostly trustworthy
+            - heading "Mostly consistent, with a few minor issues" [level=2]
+            - text: Overall health score 72/100 (Rating D) Verdict confidence —
             - term: Target
             - definition:
-              - code: http://127.0.0.1:9099/v1
+              - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
             - term: Claimed model
             - definition:
-              - code: gpt-4o
+              - code: model-b
+            - term: Protocol
+            - definition:
+              - code: openai
             - term: Mode
             - definition:
               - code: check
             - term: Suite
             - definition:
               - code: standard
+            - term: Performance probe requests
+            - definition: Streaming
+            - term: Knowledge profile
+            - definition: No matching profile
             - term: Time
-            - definition: Sep 27, 2026, 7:47 AM
+            - definition: Sep 27, 2026, 10:02 AM
             - term: Version
             - definition:
               - code: zing v<version>
-            - heading "Per-dimension checks 8 of 10 dimensions run" [level=3]
-            - button "Connectivity" [expanded]
-            - text: Reliably reachable?
-            - meter "Connectivity Reliably reachable?"
-            - region "Connectivity Reliably reachable?":
-              - paragraph: Score from one detector.
-              - heading "Connectivity & basic completion Score 92.5" [level=4]
-              - list "Connectivity & basic completion Score 92.5":
-                - listitem:
-                  - text: "Result: Pass. /v1/models reachable Listed 1 models; claimed model is present."
-                  - button "Hide evidence" [expanded]
-                  - text: "model_count: 1 claimed_listed: true"
-                - listitem:
-                  - text: "Result: Pass. Basic chat completion works Returned content in <duration>; canary not echoed."
-                  - button "Hide evidence" [expanded]
-                  - text: "duration_ms: <duration> model_returned: gpt-4o-mini canary_echoed: false"
-            - button "Protocol compliance" [expanded]
+            - heading "Per-dimension checks 1 of 10 dimensions run" [level=3]
+            - button "Protocol compliance"
             - text: Is the API spec-compliant?
             - meter "Protocol compliance Is the API spec-compliant?"
-            - region "Protocol compliance Is the API spec-compliant?":
-              - paragraph: Score from one detector.
-              - heading "OpenAI-compatibility conformance Score 75" [level=4]
-              - list "OpenAI-compatibility conformance Score 75":
-                - listitem:
-                  - text: "Result: Pass. Multi-turn conversation memory Prior turns were honored; the recalled color was returned."
-                  - button "Hide evidence" [expanded]
-                  - text: "recalled_blue: true content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: "Result: Warning. Stop-sequence handling Could not confirm stop handling from the response text."
-                  - button "Hide evidence" [expanded]
-                  - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: "Result: Pass. Response envelope shape finish_reason and an integer usage object were present."
-                  - button "Hide evidence" [expanded]
-                  - text: "finish_reason: stop has_usage: true prompt_tokens: 900 completion_tokens: 400 total_tokens: 1300"
-                - listitem:
-                  - text: "Result: Fail. Error response schema Empty-messages request was accepted (2xx) instead of being rejected. · Recommendation: A conformant relay should reject invalid input with a 4xx and an {'error': {...}} body."
-                  - button "Hide evidence" [expanded]
-                  - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - button "Context window" [expanded]
+            - button "Connectivity"
+            - text: Reliably reachable? Not run
+            - button "Context window"
             - text: Does it really remember long input? Not run
-            - region "Context window Does it really remember long input?":
-              - paragraph: No detector of this dimension ran in this audit.
-            - button "Model identity" [expanded]
-            - text: Is it the model it claims to be?
-            - meter "Model identity Is it the model it claims to be?"
-            - region "Model identity Is it the model it claims to be?":
-              - paragraph: Score from one detector.
-              - heading "Model identity & downgrade fingerprinting Score 20" [level=4]
-              - list "Model identity & downgrade fingerprinting Score 20":
-                - listitem:
-                  - text: "Result: Fail. Self-identifies as a rival brand Self-identifies as a rival brand (claude) under the claimed model id gpt-4o, without naming the genuine brand. · Recommendation: A response naming a different vendor strongly suggests model substitution."
-                  - button "Hide evidence" [expanded]
-                  - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-                - listitem:
-                  - text: "Result: Fail. Fingerprint divergence: self-identification style Probe 'self-identification style' surfaced a forbidden brand (claude); expected behavior consistent with gpt-4o."
-                  - button "Hide evidence" [expanded]
-                  - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-                - listitem:
-                  - text: "Result: Warning. Fingerprint divergence: max-output / context truncation Probe 'max-output / context truncation' diverged from native behavior. Expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly capped relay.."
-                  - button "Hide evidence" [expanded]
-                  - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-                - listitem:
-                  - text: "Result: Warning. Echoed model field differs from requested Response 'model' field (gpt-4o-mini) differs from requested (gpt-4o). · Recommendation: A smaller-tier or different-family model id in the response suggests routing to a substitute."
-                  - button "Hide evidence" [expanded]
-                  - text: "requested: gpt-4o returned: gpt-4o-mini"
-            - button "Capability claims" [expanded]
-            - text: Are tools/JSON really supported?
-            - meter "Capability claims Are tools/JSON really supported?"
-            - region "Capability claims Are tools/JSON really supported?":
-              - paragraph: Score from one detector.
-              - heading "Capability-claim verification Score 25" [level=4]
-              - list "Capability-claim verification Score 25":
-                - listitem:
-                  - text: "Result: Fail. Claimed tool-calling not delivered Profile claims tool-calling support but the relay returned no tool call for an explicit tool-use request. · Recommendation: Confirm the served engine actually supports function calling."
-                  - button "Hide evidence" [expanded]
-                  - text: "finish_reason: stop had_content: true"
-                - listitem:
-                  - text: "Result: Fail. Claimed JSON mode not delivered Profile claims JSON-mode support but the relay did not return a valid JSON object carrying the requested value. · Recommendation: Verify the served engine honors response_format=json_object."
-                  - button "Hide evidence" [expanded]
-                  - text: "parsed: false value_matched: false"
-                - listitem:
-                  - text: "Result: Warning. Claimed strict JSON schema not enforced Profile claims json_schema support but the response did not conform."
-                  - button "Hide evidence" [expanded]
-                  - text: "conforms: false parsed: false"
-                - listitem:
-                  - text: "Result: Warning. Output stopped far below requested length Model gave up early (finish_reason=stop) at roughly 0% of the 2048-token request despite a large declared max_output of 16384. Weak signal (short probe). · Recommendation: Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe."
-                  - button "Hide evidence" [expanded]
-                  - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-            - button "Streaming authenticity" [expanded]
-            - text: Real streaming or faked?
-            - meter "Streaming authenticity Real streaming or faked?"
-            - region "Streaming authenticity Real streaming or faked?":
-              - paragraph: Score from one detector.
-              - heading "Streaming authenticity Score 100" [level=4]
-              - list "Streaming authenticity Score 100":
-                - listitem:
-                  - text: "Result: Pass. Streaming looks authentic 2 chunks over <duration>, first token at <duration>."
-                  - button "Hide evidence" [expanded]
-                  - text: "chunk_count: 2 duration_ms: <duration> ttft_ms: <duration>"
-            - button "Billing & usage" [expanded]
-            - text: Is token usage inflated?
-            - meter "Billing & usage Is token usage inflated?"
-            - region "Billing & usage Is token usage inflated?":
-              - paragraph: Score from one detector.
-              - heading "Token/usage billing audit Score 55" [level=4]
-              - list "Token/usage billing audit Score 55":
-                - listitem:
-                  - text: "Result: Fail. Reported prompt tokens far exceed estimate Reported prompt tokens (900) far exceed independent estimate (~135). · Recommendation: Cross-check billing against a known-size prompt; possible per-token overbilling."
-                  - button "Hide evidence" [expanded]
-                  - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-                - listitem:
-                  - text: "Result: Warning. Reported completion tokens well above heuristic estimate Reported completion tokens (400) are far above the heuristic estimate (~7); the estimate is approximate for this tokenizer, so corroborate before concluding overbilling. · Recommendation: Compare token accounting against a trusted baseline of the same model."
-                  - button "Hide evidence" [expanded]
-                  - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-            - button "Concurrency reliability" [expanded]
-            - text: Stable under load?
-            - meter "Concurrency reliability Stable under load?"
-            - region "Concurrency reliability Stable under load?":
-              - paragraph: Score from one detector.
-              - heading "Concurrent reliability & latency Score 100" [level=4]
-              - list "Concurrent reliability & latency Score 100":
-                - listitem:
-                  - text: "Result: Pass. All concurrent requests succeeded 4 of 4 attempted requests succeeded at concurrency 2."
-                  - button "Hide evidence" [expanded]
-                  - text: "requests: 4 successes: 4 rate_limited: 0 concurrency: 2 success_rate: 1"
-            - button "Transport security" [expanded]
-            - text: Are keys handled safely?
-            - meter "Transport security Are keys handled safely?"
-            - region "Transport security Are keys handled safely?":
-              - paragraph: Score from one detector.
-              - heading "Transport & secret-handling signals Score 40" [level=4]
-              - list "Transport & secret-handling signals Score 40":
-                - listitem:
-                  - text: "Result: Fail. Endpoint is not HTTPS Endpoint is not HTTPS; the API key is sent in clear text. · Recommendation: Use an https:// base_url so the bearer token is not exposed on the wire."
-                  - button "Hide evidence" [expanded]
-                  - text: "scheme: http"
-                - listitem:
-                  - text: "Result: Info. Response leaks upstream/proxy headers Found 1 revealing header(s): server. Informational — can corroborate the upstream identity, not a failure."
-                  - button "Hide evidence" [expanded]
-                  - text: "revealing_headers: {\"server\":\"uvicorn\"}"
-                - listitem: "Result: Pass. API key not reflected in response The API key does not appear in the response content or error text."
-                - listitem: "Result: Info. Prompt logging & shared upstream keys are not black-box provable Whether a relay logs prompts or multiplexes a shared upstream key cannot be verified from the client side. Treat the reliability and streaming-timing dimensions as indirect signals (e.g. cross-request latency coupling)."
-            - button "Performance" [expanded]
+            - button "Model identity"
+            - text: Is it the model it claims to be? Not run
+            - button "Capability claims"
+            - text: Are tools/JSON really supported? Not run
+            - button "Streaming authenticity"
+            - text: Real streaming or faked? Not run
+            - button "Billing & usage"
+            - text: Is token usage inflated? Not run
+            - button "Concurrency reliability"
+            - text: Stable under load? Not run
+            - button "Transport security"
+            - text: Are keys handled safely? Not run
+            - button "Performance"
             - text: Is its speed consistent? Not run
-            - region "Performance Is its speed consistent?":
-              - paragraph: No detector of this dimension ran in this audit.
-            - heading "Findings 13 findings" [level=3]
-            - heading "High 4 findings" [level=4]
-            - list "High 4 findings":
-              - listitem:
-                - text: "Severity: High. Reported prompt tokens far exceed estimate Reported prompt tokens (900) far exceed independent estimate (~135). · Recommendation: Cross-check billing against a known-size prompt; possible per-token overbilling."
-                - button "Hide evidence" [expanded]
-                - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-              - listitem:
-                - text: "Severity: High. Self-identifies as a rival brand Self-identifies as a rival brand (claude) under the claimed model id gpt-4o, without naming the genuine brand. · Recommendation: A response naming a different vendor strongly suggests model substitution."
-                - button "Hide evidence" [expanded]
-                - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-              - listitem:
-                - text: "Severity: High. Fingerprint divergence: self-identification style Probe 'self-identification style' surfaced a forbidden brand (claude); expected behavior consistent with gpt-4o."
-                - button "Hide evidence" [expanded]
-                - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-              - listitem:
-                - text: "Severity: High. Endpoint is not HTTPS Endpoint is not HTTPS; the API key is sent in clear text. · Recommendation: Use an https:// base_url so the bearer token is not exposed on the wire."
-                - button "Hide evidence" [expanded]
-                - text: "scheme: http"
-            - heading "Medium 5 findings" [level=4]
-            - list "Medium 5 findings":
-              - listitem:
-                - text: "Severity: Medium. Reported completion tokens well above heuristic estimate Reported completion tokens (400) are far above the heuristic estimate (~7); the estimate is approximate for this tokenizer, so corroborate before concluding overbilling. · Recommendation: Compare token accounting against a trusted baseline of the same model."
-                - button "Hide evidence" [expanded]
-                - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-              - listitem:
-                - text: "Severity: Medium. Claimed tool-calling not delivered Profile claims tool-calling support but the relay returned no tool call for an explicit tool-use request. · Recommendation: Confirm the served engine actually supports function calling."
-                - button "Hide evidence" [expanded]
-                - text: "finish_reason: stop had_content: true"
-              - listitem:
-                - text: "Severity: Medium. Claimed JSON mode not delivered Profile claims JSON-mode support but the relay did not return a valid JSON object carrying the requested value. · Recommendation: Verify the served engine honors response_format=json_object."
-                - button "Hide evidence" [expanded]
-                - text: "parsed: false value_matched: false"
-              - listitem:
-                - text: "Severity: Medium. Echoed model field differs from requested Response 'model' field (gpt-4o-mini) differs from requested (gpt-4o). · Recommendation: A smaller-tier or different-family model id in the response suggests routing to a substitute."
-                - button "Hide evidence" [expanded]
-                - text: "requested: gpt-4o returned: gpt-4o-mini"
-              - listitem:
-                - text: "Severity: Medium. Error response schema Empty-messages request was accepted (2xx) instead of being rejected. · Recommendation: A conformant relay should reject invalid input with a 4xx and an {'error': {...}} body."
-                - button "Hide evidence" [expanded]
-                - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - heading "Low 4 findings" [level=4]
-            - list "Low 4 findings":
-              - listitem:
-                - text: "Severity: Low. Claimed strict JSON schema not enforced Profile claims json_schema support but the response did not conform."
-                - button "Hide evidence" [expanded]
-                - text: "conforms: false parsed: false"
-              - listitem:
-                - text: "Severity: Low. Output stopped far below requested length Model gave up early (finish_reason=stop) at roughly 0% of the 2048-token request despite a large declared max_output of 16384. Weak signal (short probe). · Recommendation: Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe."
-                - button "Hide evidence" [expanded]
-                - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-              - listitem:
-                - text: "Severity: Low. Fingerprint divergence: max-output / context truncation Probe 'max-output / context truncation' diverged from native behavior. Expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly capped relay.."
-                - button "Hide evidence" [expanded]
-                - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-              - listitem:
-                - text: "Severity: Low. Stop-sequence handling Could not confirm stop handling from the response text."
-                - button "Hide evidence" [expanded]
-                - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-            - heading "Execution log 8 checks · <duration> in total" [level=3]
-            - paragraph: Checks run one after another; the slowest was Token/usage billing audit (<duration>).
-            - button "Show fewer" [expanded]
-            - list:
-              - listitem: Token/usage billing audit Billing & usage Fail · Score 55 <duration>
-              - listitem: Capability-claim verification Capability claims Fail · Score 25 <duration>
-              - listitem: Connectivity & basic completion Connectivity Pass · Score 92.5 <duration>
-              - listitem: Model identity & downgrade fingerprinting Model identity Fail · Score 20 <duration>
-              - listitem: OpenAI-compatibility conformance Protocol compliance Fail · Score 75 <duration>
-              - listitem: Concurrent reliability & latency Concurrency reliability Pass · Score 100 <duration>
-              - listitem: Transport & secret-handling signals Transport security Fail · Score 40 <duration>
-              - listitem: Streaming authenticity Streaming authenticity Pass · Score 100 <duration>
+            - heading "Findings" [level=3]
+            - paragraph: No warnings or failures — every dimension is consistent with the claimed model.
             - paragraph:
               - text: zing provides
               - strong: reproducible evidence of behavioral deviation and risk
@@ -368,6 +281,21 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - text: "Saved audits: 1"
+  - region "gpt-4o":
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
+    - code: base_url
+    - text: http://127.0.0.1:9099/v1 Score 53
+    - list:
+      - listitem:
+        - button "Sep 27, 2026, 7:47 AM Bait-and-switch Score 53 Grade F check · standard"
+        - button "Re-run audit"
+        - button "Schedule as monitor"
+        - button "Delete entry" [expanded]
+        - group "Delete this history entry?":
+          - text: Delete this history entry?
+          - button "Delete"
+          - button "Cancel"
+  - text: "Saved audits: 15"
   - button "Clear history"
   - status

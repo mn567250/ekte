@@ -269,6 +269,7 @@ Oberfläche** zurückführt. Die Wahl wird pro Browser gespeichert.
 | **Konsole** | `/console` | — | Dieselbe Prüfung als kompakte Konsole im Log-Stil |
 | **Werkzeuge** | `/tools` | `/v2/tools` | Embedding- und Rerank-Prüfungen |
 | **Verlauf** | `/history` | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
+| **Analyse** | — | `/v2/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
 | **Überwachung** | `/watches` | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
 | **Wissen** | — | `/v2/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
 
@@ -288,6 +289,24 @@ verfälschen (alle Loopback-Adressen zählen als ein Host, also warten auch
 Modelle auf Ihrem eigenen Rechner); Audits verschiedener Relays laufen parallel,
 höchstens vier gleichzeitig (`ZING_MAX_PARALLEL_AUDITS`). Überwachungen warten
 ebenso auf ihr Relay.
+
+**Analyse (neue UI).** `/v2/analytics` macht aus dem lokalen Verlauf
+Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
+hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,
+Abrechnungsverhältnisse) mit der Änderung gegenüber dem gleich langen Zeitraum
+davor; ein Diagramm jeder Kennzahl pro Relay, Modell oder Relay × Modell nach
+Stunde, Tag oder Woche (Median-Linie mit p25–p75-Band, bis zu vier Reihen, jedes
+Diagramm auch als Datentabelle); und eine Rangliste der Relays für ein Modell
+oder der Modelle eines Relays. Relays werden nach ihrem Eintrag in der
+Wissensbasis gruppiert (gespeicherte Relays und Anbieter), ein umbenanntes Relay
+gruppiert also seinen Verlauf neu. Abschnitte mit weniger als 3 Läufen werden
+blass gezeichnet — ein einzelnes Audit kann ein Ausreißer sein; eine
+Überwachung liefert regelmäßige Messungen. Ältere Läufe zeigen, was sie
+gemessen haben: die Seite sagt, auf wie vielen Läufen ein Wert beruht.
+Standardmäßig vergleicht sie eine Suite und einen Probe-Modus (die häufigsten),
+damit Ungleiches nicht vermischt wird; Filter und Ansicht stehen in der URL, eine
+Ansicht lässt sich also als Lesezeichen speichern oder teilen. Nichts verlässt
+den Rechner.
 
 ### Sprachen
 

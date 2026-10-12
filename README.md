@@ -257,6 +257,7 @@ choice is remembered per browser.
 | **Console** | `/console` | — | The same audit as a compact, log-style console |
 | **Tools** | `/tools` | `/v2/tools` | Embedding and rerank audits |
 | **History** | `/history` | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
+| **Analytics** | — | `/v2/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
 | **Monitors** | `/watches` | `/v2/watches` | Scheduled re-audits with webhook alerts |
 | **Knowledge** | — | `/v2/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
 
@@ -274,6 +275,21 @@ after another, so they never skew each other's latency or reliability results
 (all loopback addresses count as one host, so models served from your own
 machine queue too); audits of different relays run in parallel, at most four at
 once (`ZING_MAX_PARALLEL_AUDITS`). Monitors wait for their relay the same way.
+
+**Analytics (new UI).** `/v2/analytics` turns the local history into
+comparisons: KPI tiles for the chosen period (runs, median score, high-risk
+share, success rate, TTFT, decode speed, billing ratios) with the change
+against the period of the same length before; a chart of any metric per relay,
+model or relay × model by hour, day or week (median line with the p25–p75 band,
+up to four series, every chart also as a data table); and a leaderboard of the
+relays for a model, or the models for a relay. Relays are grouped by their
+knowledge-base entry (saved relays and providers), so renaming a relay
+regroups its history. Buckets with fewer than 3 runs are drawn faded — a single
+audit can be an outlier; a monitor gives regular measurements. Older runs show
+what they measured: the page says how many runs a value is based on. By default
+it compares one suite and probe mode (the most common ones), so unlike runs are
+not mixed; the filters and view are kept in the URL, so a view can be
+bookmarked or shared. Nothing leaves the machine.
 
 ### Languages
 

@@ -41,6 +41,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   where the zing version or the knowledge-base profile changed. Filters:
   `from`, `to`, `suite`, `stream_mode`, `api`, `source=all|manual|monitor`,
   `relay`, `model`; a bad parameter answers 400.
+- **Analytics page (UI v2, `/v2/analytics`).** A new page in the main
+  navigation compares relays and models over time from the local history:
+  KPI tiles for the chosen period (runs, relays, models, median score,
+  high-risk share, success rate, TTFT, decode speed, billing ratios) with the
+  change against the period of the same length before and how many runs each
+  value rests on; a chart of any metric (or dimension score) per relay, model
+  or relay × model by hour, day or week, with the median line, the p25–p75
+  band, gaps for empty buckets, faded markers and a hint for buckets with
+  fewer than 3 runs, markers where the zing version or knowledge-base profile
+  changed and a warning when a series mixes suites, probe modes or protocols;
+  and a sortable leaderboard of the relays for a model or the models for a
+  relay. Filters: period (7 / 30 / 90 days, all, custom), suite, probe mode,
+  protocol, source (manual / monitor), relay, model; by default one suite and
+  probe mode (the most common), and the whole view is kept in the URL.
+  Hand-drawn SVG, no library, no outgoing requests; every chart is also a
+  data table, in all seven languages, light and dark. `GET
+  /api/analytics/options` also lists the relay × model pairs
+  (`relay_models`).
 
 ### Changed
 
