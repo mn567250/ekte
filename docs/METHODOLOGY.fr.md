@@ -176,6 +176,9 @@ limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle rép
   répondre ne soit pas lu comme un échec. Les sondes dont la limite ou le
   chronométrage est la mesure (performance, cache de prompt, fiabilité, prompt
   injecté, sortie maximale, l'attribut de requête `max_tokens`) ne sont jamais répétées.
+  Dès qu'un endpoint est connu pour raisonner (son profil indique
+  `reasoning: true`, ou après sa première répétition de ce type), les sondes
+  courtes partent d'emblée avec la limite de 4 096 tokens au lieu de deux fois.
 
 ---
 

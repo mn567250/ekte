@@ -167,7 +167,9 @@ throttled could not be assessed, which is not evidence of a different model.
   Probes whose limit or timing is the measurement (performance, prompt cache,
   reliability, injected prompt, maximum output, the `max_tokens` request
   attribute) are never
-  repeated.
+  repeated. Once an endpoint is known to reason (its profile says
+  `reasoning: true`, or after its first such repeat), short probes are sent
+  with the 4,096-token limit from the start instead of twice.
 
 ---
 

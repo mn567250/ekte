@@ -176,7 +176,9 @@ risponda un altro modello.
   rispondere non viene letto come un errore. Le sonde il cui limite o la cui
   temporizzazione è la misura (prestazioni, cache dei prompt, affidabilità,
   prompt iniettato, output massimo, l'attributo di richiesta `max_tokens`) non
-  vengono mai ripetute.
+  vengono mai ripetute. Una volta noto che un endpoint ragiona (il suo profilo
+  indica `reasoning: true`, o dopo la sua prima ripetizione di questo tipo), le
+  sonde brevi partono subito con il limite di 4.096 token invece che due volte.
 
 ---
 
