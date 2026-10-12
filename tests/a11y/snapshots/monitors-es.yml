@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accesibilidad":
+    - /url: /v2/accessibility
   - navigation "Navegación principal":
     - link "Auditoría":
       - /url: /v2/
@@ -123,6 +125,3 @@
   - paragraph:
     - text: zing · verificación de intermediarios · los monitores los programa en segundo plano el proceso
     - code: zing serve
-  - paragraph:
-    - link "Accesibilidad":
-      - /url: /v2/accessibility

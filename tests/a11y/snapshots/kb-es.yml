@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accesibilidad":
+    - /url: /v2/accessibility
   - navigation "Navegación principal":
     - link "Auditoría":
       - /url: /v2/
@@ -102,6 +104,3 @@
     - text: ;
     - code: ZING_KB_DIR
     - text: y tus entradas se superponen
-  - paragraph:
-    - link "Accesibilidad":
-      - /url: /v2/accessibility

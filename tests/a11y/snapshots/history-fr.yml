@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accessibilité":
+    - /url: /v2/accessibility
   - navigation "Navigation principale":
     - link "Audit":
       - /url: /v2/
@@ -369,7 +371,3 @@
   - text: "Audits enregistrés : 1"
   - button "Effacer l'historique"
   - status
-- contentinfo:
-  - paragraph:
-    - link "Accessibilité":
-      - /url: /v2/accessibility

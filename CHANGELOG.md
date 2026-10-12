@@ -20,6 +20,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   disclosure / toggle buttons that keep focus in place, and a status message
   announces each new sort order (`tests/a11y/test_history_controls.py`).
 
+### Changed
+
+- **Accessibility report link moved to the header (UI v2).** The link to the
+  conformance report is no longer a text link at the bottom of every page but
+  an accessibility icon next to the language switch, in the same place on
+  every page. It is named "Accessibility" for screen readers (and as its
+  tooltip), marked as the current page on the report itself, and the
+  multiple-ways test (9.2.4.5) now counts links in the page header as
+  site-wide navigation.
+
 ### Fixed
 
 - **Local servers no longer read as response caches.** Ollama, llama.cpp and

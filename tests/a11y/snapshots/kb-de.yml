@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch" [selected]
+  - link "Barrierefreiheit":
+    - /url: /v2/accessibility
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
@@ -102,6 +104,3 @@
     - text: ;
     - code: ZING_KB_DIR
     - text: und deine Einträge kommen darüber
-  - paragraph:
-    - link "Barrierefreiheit":
-      - /url: /v2/accessibility

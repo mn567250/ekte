@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accessibilité":
+    - /url: /v2/accessibility
   - navigation "Navigation principale":
     - link "Audit":
       - /url: /v2/
@@ -161,6 +163,3 @@
   - paragraph:
     - text: zing · vérification des relais · ce rapport est généré à partir des tests d'accessibilité automatisés de
     - code: tests/a11y
-  - paragraph:
-    - link "Accessibilité":
-      - /url: /v2/accessibility

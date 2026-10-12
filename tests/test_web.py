@@ -418,10 +418,14 @@ def test_v2_accessibility_report_data_is_served(client):
     assert {s["status"] for s in data["steps"]} <= {"pass", "fail", "not tested", "manual review pending", "n/a"}
 
 
-def test_v2_footer_links_the_accessibility_report(client):
-    # nav.js adds the link to every v2 page's footer (same place everywhere)
+def test_v2_header_links_the_accessibility_report(client):
+    # nav.js adds an icon-only link next to the language switch of every v2
+    # page's header (same place everywhere), named by aria-label
     js = client.get("/v2/static/nav.js").text
-    assert 'href="/v2/accessibility"' in js and "footer" in js
+    assert '<a class="a11y" href="/v2/accessibility"' in js
+    assert 'data-en-aria-label="Accessibility"' in js and 'ico("a11y"' in js
+    assert "footer" not in js.split("*/", 1)[1]
+    assert "a11y:" in client.get("/icons.js").text
     for path in ("/v2/", "/v2/history", "/v2/watches", "/v2/tools", "/v2/kb", "/v2/accessibility"):
         assert '<script src="/v2/static/nav.js"></script>' in _unversioned(client.get(path).text), path
 

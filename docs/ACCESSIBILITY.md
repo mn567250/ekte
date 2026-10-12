@@ -71,7 +71,7 @@ has no such content (no audio or video).
 | 9.2.4.2 | 2.4.2 | A | Page Titled | auto | Every page has its own title, translated into every language. | `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_page_titles` |
 | 9.2.4.3 | 2.4.3 | A | Focus Order | partial | Nothing hidden takes focus and no positive tabindex is used. Whether the order is logical is judged by a person. | `test_best_practices`, `test_audit_flow`, `test_failing_audit_flow`, `test_monitor_flow`, `test_tools_flow`, `test_kb_flow`, `test_show_more_by_keyboard`, `test_focused_element_is_on_screen`, `test_dialogs_close_with_escape`, `test_focus_order_matches_visual_order` |
 | 9.2.4.4 | 2.4.4 | A | Link Purpose (In Context) | partial | Every link has an accessible name. Whether it describes the target is judged by a person. | `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel` |
-| 9.2.4.5 | 2.4.5 | AA | Multiple Ways | auto | Every page opens by its own URL and is linked from the site-wide navigation (nav or footer) of every other page. | `test_every_page_reachable_from_every_page` |
+| 9.2.4.5 | 2.4.5 | AA | Multiple Ways | auto | Every page opens by its own URL and is linked from the site-wide navigation (header, nav or footer) of every other page. | `test_every_page_reachable_from_every_page` |
 | 9.2.4.6 | 2.4.6 | AA | Headings and Labels | partial | Headings and labels exist and are not empty. Whether they are descriptive is judged by a person. | `test_best_practices`, `test_aria_snapshot_unchanged`, `test_aria_tree_names`, `test_heading_structure` |
 | 9.2.4.7 | 2.4.7 | AA | Focus Visible | auto | Every Tab stop looks different with and without focus, in the light and the dark theme. | `test_show_more_focus_visible`, `test_focused_element_is_on_screen`, `test_focus_is_visible` |
 | 9.2.5.1 | 2.5.1 | A | Pointer Gestures | partial | No path-based, multipoint, drag or motion handlers are registered and no element is draggable. If one appears, a person checks the single-pointer alternative. | `test_no_path_gestures_or_motion_actuation` |
@@ -100,9 +100,9 @@ checked too.
 
 ## Conformance report (`/v2/accessibility`)
 
-The page **Accessibility** (linked in the footer of every v2 page) shows, per
-test step, how it is tested and the latest result, plus a short accessibility
-statement (conformance status, known limitations, how it was assessed,
+The page **Accessibility** (the accessibility icon next to the language switch
+in the header of every v2 page) shows, per test step, how it is tested and the
+latest result, plus a short accessibility statement (conformance status, known limitations, how it was assessed,
 feedback). It renders `zing/web/static/v2/bitv-report.json`, built from a real
 run of the suite:
 

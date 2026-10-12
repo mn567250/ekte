@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano" [selected]
     - option "Deutsch"
+  - link "Accessibilità":
+    - /url: /v2/accessibility
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
@@ -71,7 +73,3 @@
     - button "Verifica endpoint di embedding"
     - text: Le richieste partono dal tuo server zing locale; la chiave serve solo a collegarsi all'intermediario di destinazione e non viene mai inviata a terzi.
   - paragraph: "I controlli di embedding/rerank sono test black-box senza chat: una dimensione errata è il segnale più forte di «merce non conforme»; determinismo e distinzione sono prove di supporto."
-- contentinfo:
-  - paragraph:
-    - link "Accessibilità":
-      - /url: /v2/accessibility

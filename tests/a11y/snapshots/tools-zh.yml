@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "无障碍":
+    - /url: /v2/accessibility
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
@@ -71,7 +73,3 @@
     - button "核验嵌入端点"
     - text: 请求在 你本地的 zing 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。
   - paragraph: 嵌入/重排是黑盒非对话检测：维度不符是最强的“货不对板”信号；确定性与可区分性是辅助证据。
-- contentinfo:
-  - paragraph:
-    - link "无障碍":
-      - /url: /v2/accessibility

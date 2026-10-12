@@ -336,9 +336,10 @@ def test_consistent_identification(open_page, lang: str) -> None:
 # --------------------------------------------------------------------------- #
 NAV_LINKS_JS = """
 () => {
-  // site-wide navigation: the nav landmark and the page footer (contentinfo)
-  const navs = [...document.querySelectorAll('nav, [role=navigation], [role=contentinfo]')].concat(
-    [...document.querySelectorAll('footer')].filter(f => !f.closest('article, aside, main, nav, section')));
+  // site-wide navigation: the nav landmark, the page header (banner) and the
+  // page footer (contentinfo)
+  const navs = [...document.querySelectorAll('nav, [role=navigation], [role=banner], [role=contentinfo]')].concat(
+    [...document.querySelectorAll('header, footer')].filter(f => !f.closest('article, aside, main, nav, section')));
   const out = {};
   for (const nav of navs) for (const a of nav.querySelectorAll('a[href]')) {
     const u = new URL(a.href, location.href);
@@ -361,8 +362,8 @@ def _norm_path(path: str) -> str:
 @pytest.mark.parametrize("viewport", list(VIEWPORTS))
 def test_every_page_reachable_from_every_page(open_page, base_url: str, viewport: str) -> None:
     """9.2.4.5 Multiple ways: every v2 page can be opened by its own URL and
-    from a usable link in the site-wide navigation (nav landmark or page
-    footer) of every other page (two ways; the app is too small to need
+    from a usable link in the site-wide navigation (nav landmark, page header
+    or page footer) of every other page (two ways; the app is too small to need
     search or a site map)."""
     import httpx
 

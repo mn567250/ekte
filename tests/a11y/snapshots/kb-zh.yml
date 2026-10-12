@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "无障碍":
+    - /url: /v2/accessibility
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
@@ -102,6 +104,3 @@
     - text: ；
     - code: ZING_KB_DIR
     - text: 与你的条目叠加在其上
-  - paragraph:
-    - link "无障碍":
-      - /url: /v2/accessibility

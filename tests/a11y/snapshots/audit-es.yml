@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accesibilidad":
+    - /url: /v2/accessibility
   - navigation "Navegación principal":
     - link "Auditoría":
       - /url: /v2/
@@ -104,7 +106,3 @@
     - alert
     - status
     - text: zing aporta evidencias reproducibles de riesgo y desviación, no un veredicto legal.
-- contentinfo:
-  - paragraph:
-    - link "Accesibilidad":
-      - /url: /v2/accessibility

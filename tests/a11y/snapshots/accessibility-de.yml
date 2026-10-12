@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch" [selected]
+  - link "Barrierefreiheit":
+    - /url: /v2/accessibility
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
@@ -162,6 +164,3 @@
     - text: zing · Relay-Realitätscheck · dieser Bericht wird aus den automatisierten Barrierefreiheitstests in
     - code: tests/a11y
     - text: erzeugt
-  - paragraph:
-    - link "Barrierefreiheit":
-      - /url: /v2/accessibility

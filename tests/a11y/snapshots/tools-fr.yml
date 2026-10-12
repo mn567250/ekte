@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accessibilité":
+    - /url: /v2/accessibility
   - navigation "Navigation principale":
     - link "Audit":
       - /url: /v2/
@@ -71,7 +73,3 @@
     - button "Vérifier le point d'accès d'embedding"
     - text: Les requêtes partent de votre serveur zing local ; la clé sert uniquement à se connecter au relais cible et n'est jamais transmise à un tiers.
   - paragraph: "Les contrôles embedding/rerank sont des tests boîte noire hors chat : une dimension incorrecte est le signal de « tromperie » le plus fort ; le déterminisme et la distinction sont des preuves complémentaires."
-- contentinfo:
-  - paragraph:
-    - link "Accessibilité":
-      - /url: /v2/accessibility

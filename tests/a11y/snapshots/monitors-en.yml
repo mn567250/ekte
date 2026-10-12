@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accessibility":
+    - /url: /v2/accessibility
   - navigation "Main navigation":
     - link "Audit":
       - /url: /v2/
@@ -124,6 +126,3 @@
     - text: zing · relay reality check · monitors are scheduled in the background by the
     - code: zing serve
     - text: process
-  - paragraph:
-    - link "Accessibility":
-      - /url: /v2/accessibility

@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "无障碍":
+    - /url: /v2/accessibility
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
@@ -369,7 +371,3 @@
   - text: 共 1 条记录
   - button "清空历史"
   - status
-- contentinfo:
-  - paragraph:
-    - link "无障碍":
-      - /url: /v2/accessibility

@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "无障碍":
+    - /url: /v2/accessibility
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
@@ -124,6 +126,3 @@
     - text: zing · 中转站验真 · 监控由
     - code: zing serve
     - text: 进程在后台调度
-  - paragraph:
-    - link "无障碍":
-      - /url: /v2/accessibility

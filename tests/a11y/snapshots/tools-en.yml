@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accessibility":
+    - /url: /v2/accessibility
   - navigation "Main navigation":
     - link "Audit":
       - /url: /v2/
@@ -71,7 +73,3 @@
     - button "Verify embedding endpoint"
     - text: Requests are sent from your local zing server; the key is only used to connect to the target relay and is never uploaded to any third party.
   - paragraph: "Embedding/rerank checks are black-box, non-chat tests: a dimension mismatch is the strongest \"bait-and-switch\" signal; determinism and distinctness are supporting evidence."
-- contentinfo:
-  - paragraph:
-    - link "Accessibility":
-      - /url: /v2/accessibility
