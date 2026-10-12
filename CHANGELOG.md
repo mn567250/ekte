@@ -36,19 +36,21 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Knowledge-base import fills missing identity keywords.** `zing kb-import`
   and the web **Knowledge base** page fill an empty `identity_keywords` list
   with the provider and model-family words and show a warning so the result can
-  be checked; the research prompt now requires the list.
+  be checked; the research prompt now requires the list. `zing kb-import` also
+  prints bracketed text in its warnings and errors, which it used to swallow.
 - **Fingerprints that cannot fit the identity output cap are skipped.** Probes
   needing more than the 512-token identity cap (e.g. GLM's `true-max-output`,
   which counts to 4,000) could never pass and always diverged. They are now
-  skipped, reported as not run, and another probe takes the slot.
+  skipped, reported as not run, and another probe takes the slot. Importing a
+  profile with such a probe now warns that the identity check will skip it.
 - **Context-window probe catches front truncation.** Each size is probed at the
   start of the prompt first; a start miss is confirmed after an end-of-prompt
   recall, so a server that silently keeps only the end of a long prompt (e.g.
   Ollama at its `num_ctx`) no longer reports the full probe cap as its window.
 - **Reasoning models get room to think up front.** Once an endpoint is known to
-  reason (profile `reasoning: true`, or after its first repeated probe), short
-  probes are sent with the 4,096-token limit from the start instead of twice,
-  which halves the long context-window requests on slow local servers.
+  reason (profile `reasoning: true`, or after a repeated probe got its answer),
+  short probes are sent with the 4,096-token limit from the start instead of
+  twice, which halves the long context-window requests on slow local servers.
 
 ## [0.19.1] — history sorting and grouping
 
