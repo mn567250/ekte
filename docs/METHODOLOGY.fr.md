@@ -327,10 +327,16 @@ modèle doit le restituer.
 
 1. Une échelle croissante qui double à partir de 2K tokens jusqu'à la fenêtre
    annoncée, plafonnée par `--max-context-tokens` (200K par défaut), avec un
-   échelon vers 90 % du sommet (sept tailles au plus). Chaque taille est sondée
-   avec l'aiguille en **bordure** (profondeur 0,95 puis 0,0) : un échec n'est
-   confirmé que par la seconde bordure, et l'échelle s'arrête au premier échec
-   confirmé.
+   échelon vers 90 % du sommet (sept tailles au plus). Chaque taille est d'abord
+   sondée avec l'aiguille au **début** (profondeur 0,0) : une troncature qui
+   garde la question en fin de prompt ne peut écarter que son début (un serveur
+   local qui coupe le prompt à sa longueur de contexte en garde la fin), donc un
+   rappel à cet endroit valide la taille en un seul appel. Un échec est vérifié
+   à la fin (profondeur 0,95) ; si la fin est retrouvée, le début est sondé une
+   fois de plus avec une aiguille neuve, et un second échec fait échouer la
+   taille comme **troncature par le début** (signalée dans les preuves du
+   verdict). Trois appels par taille au plus ; l'échelle s'arrête au premier
+   échec confirmé.
 2. Une étape de recherche dichotomique entre la dernière taille retrouvée et la
    première en échec.
 3. Perte au milieu : à min(32K, fenêtre mesurée), l'aiguille est placée aux

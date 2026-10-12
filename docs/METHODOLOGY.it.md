@@ -329,9 +329,15 @@ restituirlo.
 1. Una scala crescente che raddoppia da 2K token fino alla finestra dichiarata,
    limitata da `--max-context-tokens` (200K predefinito), con un gradino vicino
    al 90 % del massimo (al più sette dimensioni). Ogni dimensione viene sondata
-   con l'ago a un **bordo** (profondità 0,95, poi 0,0): un fallimento è
-   confermato solo dal secondo bordo, e la scala si ferma al primo fallimento
-   confermato.
+   prima con l'ago all'**inizio** (profondità 0,0): un troncamento che conserva
+   la domanda in fondo al prompt può scartarne solo l'inizio (un server locale
+   che taglia il prompt alla sua lunghezza di contesto ne conserva la fine),
+   quindi un richiamo lì supera la dimensione con una sola chiamata. Un
+   fallimento viene verificato alla fine (profondità 0,95); se la fine viene
+   richiamata, l'inizio viene sondato ancora una volta con un ago nuovo, e un
+   secondo fallimento boccia la dimensione come **troncamento in testa**
+   (indicato nelle evidenze del verdetto). Al più tre chiamate per dimensione;
+   la scala si ferma al primo fallimento confermato.
 2. Un passo di ricerca binaria tra l'ultima dimensione richiamata e la prima
    fallita.
 3. Perdita nel mezzo: a min(32K, finestra misurata) l'ago viene posto alle

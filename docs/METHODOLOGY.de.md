@@ -333,9 +333,15 @@ zurückgeben.
 1. Eine aufsteigende, sich verdoppelnde Leiter ab 2K Token bis zum angegebenen
    Fenster, begrenzt durch `--max-context-tokens` (Standard 200K), mit einer
    Stufe bei etwa 90 % des Maximums (höchstens sieben Größen). Jede Größe wird
-   mit der Nadel an einem **Rand** getestet (Tiefe 0,95, dann 0,0): ein
-   Fehlschlag gilt erst, wenn der zweite Rand ihn bestätigt, und die Leiter
-   endet beim ersten bestätigten Fehlschlag.
+   zuerst mit der Nadel am **Anfang** getestet (Tiefe 0,0): eine Kürzung, die
+   die Frage am Ende des Prompts behält, kann nur dessen Anfang verwerfen (ein
+   lokaler Server, der den Prompt auf seine Kontextlänge kürzt, behält das
+   Ende), daher besteht die Größe bei einem Treffer dort mit einem Aufruf. Ein
+   Fehlschlag wird am Ende geprüft (Tiefe 0,95); wird das Ende erinnert, wird
+   der Anfang noch einmal mit einer frischen Nadel getestet, und ein zweiter
+   Fehlschlag lässt die Größe als **Kürzung von vorn** scheitern (in den Belegen
+   des Urteils vermerkt). Höchstens drei Aufrufe pro Größe; die Leiter endet
+   beim ersten bestätigten Fehlschlag.
 2. Ein Schritt binärer Suche zwischen der letzten abgerufenen und der ersten
    gescheiterten Größe.
 3. Lost in the Middle: bei min(32K, gemessenes Fenster) liegt die Nadel in
