@@ -6,19 +6,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
-
-- **History (UI v2): sort, collapse groups, fold the filters.** The column
-  header (Time · Risk · Score · Grade) now sorts: rows within each relay group,
-  and the groups by their first row; a second click reverses the order, risk
-  sorts most severe first. Each group's heading collapses or expands its rows
-  (trend tiles stay visible), with **Collapse all / Expand all** next to the
-  sort buttons. The filter and trend settings sit in a panel that starts
-  closed; its toggle counts the active filters, and the result count and
-  **Reset filters** stay visible while it is closed. Sort order, collapsed
-  groups and the panel state are remembered per browser. All three are native
-  disclosure / toggle buttons that keep focus in place, and a status message
-  announces each new sort order (`tests/a11y/test_history_controls.py`).
+## [0.19.2] — fixes for local and reasoning models
 
 ### Fixed
 
@@ -39,6 +27,44 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   limit (`RequestSpec.reasoning_retry`, on by default); probes whose limit or
   timing is the measurement opt out. An integrity canary cut off at the output limit
   is inconclusive, never a substitution.
+- **Own brand is never a rival.** Self-identification and the fingerprint
+  brand check treat the provider key, the brand words of the provider's display
+  name and the leading word of the model id or family (e.g. `glm` for
+  `glm-4.6v-flash`) as the model's own brand. A profile with an empty
+  `identity_keywords` list no longer reports "I am GLM … by Zhipu AI" as a
+  rival brand (FAIL HIGH, identity capped at 20).
+- **Knowledge-base import fills missing identity keywords.** `zing kb-import`
+  and the web **Knowledge base** page fill an empty `identity_keywords` list
+  with the provider and model-family words and show a warning so the result can
+  be checked; the research prompt now requires the list.
+- **Fingerprints that cannot fit the identity output cap are skipped.** Probes
+  needing more than the 512-token identity cap (e.g. GLM's `true-max-output`,
+  which counts to 4,000) could never pass and always diverged. They are now
+  skipped, reported as not run, and another probe takes the slot.
+- **Context-window probe catches front truncation.** Each size is probed at the
+  start of the prompt first; a start miss is confirmed after an end-of-prompt
+  recall, so a server that silently keeps only the end of a long prompt (e.g.
+  Ollama at its `num_ctx`) no longer reports the full probe cap as its window.
+- **Reasoning models get room to think up front.** Once an endpoint is known to
+  reason (profile `reasoning: true`, or after its first repeated probe), short
+  probes are sent with the 4,096-token limit from the start instead of twice,
+  which halves the long context-window requests on slow local servers.
+
+## [0.19.1] — history sorting and grouping
+
+### Added
+
+- **History (UI v2): sort, collapse groups, fold the filters.** The column
+  header (Time · Risk · Score · Grade) now sorts: rows within each relay group,
+  and the groups by their first row; a second click reverses the order, risk
+  sorts most severe first. Each group's heading collapses or expands its rows
+  (trend tiles stay visible), with **Collapse all / Expand all** next to the
+  sort buttons. The filter and trend settings sit in a panel that starts
+  closed; its toggle counts the active filters, and the result count and
+  **Reset filters** stay visible while it is closed. Sort order, collapsed
+  groups and the panel state are remembered per browser. All three are native
+  disclosure / toggle buttons that keep focus in place, and a status message
+  announces each new sort order (`tests/a11y/test_history_controls.py`).
 
 ## [0.19.0] — backend performance
 
