@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, a11y/integration, perf/integration]
+    branches: [main, a11y/integration, perf/integration, analytics/integration]
   pull_request:
-    branches: [main, a11y/integration, perf/integration]
+    branches: [main, a11y/integration, perf/integration, analytics/integration]
 
 permissions:
   contents: read
