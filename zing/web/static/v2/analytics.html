@@ -66,10 +66,11 @@
   .pick .chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
   .legend { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink2); }
   .legend li { display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; }
-  /* long relay URLs: one line, cut with an ellipsis (full text in the DOM and the title) */
-  .legend .nm, .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* long relay URLs wrap only after "/" and "." (<wbr>, see brk()), never
+     mid-word; a single overlong part still breaks rather than overflow */
+  .legend .nm, .lbl { min-width: 0; overflow-wrap: break-word; }
   .legend .nm { color: var(--ink); font-weight: 600; }
-  .lbl { display: block; max-width: 24em; }
+  .lbl { display: block; }
   .legend .sub { color: var(--faint); white-space: nowrap; }
   .axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--faint); margin: 4px 0 2px; }
   .notes { margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
@@ -197,6 +198,8 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var ico = function (n, o) { return window.zingIcon ? window.zingIcon(n, o || {}) : ""; };
   var C = window.ZingCharts, esc = C.esc, fmt = C.fmt;
+  // escaped text that may wrap after "/" and "." (relay URLs)
+  var brk = function (s) { return esc(s).replace(/([/.])/g, "$1<wbr>"); };
   // T(zh, en) with {name} placeholders filled after translation
   var Tf = function (zh, en, vars) {
     return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
@@ -636,7 +639,10 @@
     ["score", "健康分中位数", "Median score"], ["risk_high_share"], ["success_rate"], ["ttft_p50"], ["decode_tps"],
     ["billing_ratio_prompt"], ["billing_ratio_completion"],
   ];
-  function deltaHTML(c, count) {
+  // a tile whose previous median rests on fewer than MIN_RUNS runs: faded,
+  // no verdict; noted per tile, or once in the subtitle (sparse) when the
+  // whole previous period has that few runs
+  function deltaHTML(c, count, sparse) {
     if (c.previous == null && c.delta == null) {
       return '<span class="kd">' + esc(T("上一周期无数据", "No data in the previous period")) + "</span>";
     }
@@ -644,8 +650,8 @@
     // a median of one or two earlier runs is no baseline: the change is shown
     // faded, without a better / worse verdict
     if (!count && c.previous_n != null && c.previous_n < minRuns()) {
-      return '<span class="kd few">' + esc(C.fmtDelta(d, c.unit)) + '</span><span class="kc">' +
-        esc(Tf("上一周期少于 {min} 次检测，仅供参考", "Previous period has fewer than {min} runs — indicative only", { min: minRuns() })) + "</span>";
+      return '<span class="kd few">' + esc(C.fmtDelta(d, c.unit)) + "</span>" + (sparse ? "" : '<span class="kc">' +
+        esc(Tf("上一周期少于 {min} 次检测，仅供参考", "Previous period has fewer than {min} runs — indicative only", { min: minRuns() })) + "</span>");
     }
     var better = d == null || d === 0 || hib == null ? null : hib ? d > 0 : d < 0;
     var cls = better == null ? "" : better ? " good" : " bad";
@@ -662,10 +668,14 @@
     }
     if (!s) return;
     var period = r.from ? dayRange(r.from, r.to) : T("全部时间", "All time");
-    sub.textContent = s.previous
+    var prevRuns = s.previous && s.kpis.runs ? s.kpis.runs.previous : null;
+    var sparse = prevRuns != null && prevRuns > 0 && prevRuns < minRuns();
+    sub.innerHTML = esc(s.previous
       ? Tf("{period}，与之前同样长度的一段时间（{prev}）对比。", "{period}, compared with the period of the same length before ({prev}).",
         { period: period, prev: dayRange(new Date(s.previous.from), new Date(s.previous.to)) })
-      : period;
+      : period) +
+      (sparse ? ' <span id="kpi-few">' + esc(Tf("上一周期少于 {min} 次检测，仅供参考", "Previous period has fewer than {min} runs — indicative only", { min: minRuns() })) +
+        "</span>" : "");
     if (!s.runs) {
       body.innerHTML = '<div class="empty-data"><p>' + esc(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range.")) + "</p>" +
         (isDefault() ? "" : '<button type="button" class="btn sm" id="kreset">' + esc(T("重置筛选", "Reset filters")) + "</button>") + "</div>";
@@ -678,8 +688,9 @@
       var cov = "";
       if (c.n === 0) cov = T("这些检测均未测得此项", "Not measured in these runs");
       else if (c.n < s.runs) cov = Tf("{n} / {runs} 次检测有此数据", "Data from {n} of {runs} runs", { n: c.n, runs: s.runs });
-      return '<li class="kpi"><span class="kl">' + esc(name) + '</span><span class="kv">' + esc(fmt(c.value, c.unit)) + "</span>" +
-        (s.previous ? deltaHTML(c, c.unit === "count") : "") + (cov ? '<span class="kc">' + esc(cov) + "</span>" : "") + "</li>";
+      var faded = sparse && c.unit !== "count" && c.previous_n != null && c.previous_n < minRuns();
+      return '<li class="kpi"' + (faded ? ' aria-describedby="kpi-few"' : "") + '><span class="kl">' + esc(name) + '</span><span class="kv">' + esc(fmt(c.value, c.unit)) + "</span>" +
+        (s.previous ? deltaHTML(c, c.unit === "count", sparse) : "") + (cov ? '<span class="kc">' + esc(cov) + "</span>" : "") + "</li>";
     }).join("") + "</ul>";
   }
   $("#kpi-body").addEventListener("click", function (ev) {
@@ -794,7 +805,7 @@
     });
     var withData = series.filter(function (x) { return x.points.length; });
     var legend = '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '">' + series.map(function (x) {
-      return "<li>" + C.keySVG(x.cls, x.shape) + '<span class="nm" title="' + esc(x.label) + '">' + esc(x.label) + "</span>" +
+      return "<li>" + C.keySVG(x.cls, x.shape) + '<span class="nm">' + brk(x.label) + "</span>" +
         '<span class="sub">' + esc(x.points.length ? Tf("{n} 次检测", "{n} runs", { n: x.raw.n }) : T("无数据", "no data")) + "</span></li>";
     }).join("") + "</ul>";
     if (!withData.length) {
@@ -881,7 +892,7 @@
       '<th scope="col" class="n">' + esc(T("检测次数", "Runs")) + '</th><th scope="col">' + esc(T("说明", "Note")) + "</th></tr></thead><tbody>" +
       rows.map(function (r) {
         var p = r.p;
-        return '<tr class="' + (p.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(p.t)) + '</td><td class="ser"><span class="lbl" title="' + esc(r.x.label) + '">' + esc(r.x.label) + "</span></td>" +
+        return '<tr class="' + (p.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(p.t)) + '</td><td class="ser"><span class="lbl">' + brk(r.x.label) + "</span></td>" +
           '<td class="n">' + esc(fmt(p.v, m.unit)) + "</td>" +
           (share ? "" : '<td class="n">' + esc(fmt(p.lo, m.unit)) + " – " + esc(fmt(p.hi, m.unit)) + "</td>") +
           '<td class="n">' + esc(String(p.n)) + '</td><td class="nt">' + (p.low ? esc(hint) : "") + "</td></tr>";
@@ -986,7 +997,7 @@
       "</caption><thead><tr>" + head("label", V.lb === "relay" ? T("中转站", "Relay") : T("模型", "Model"), false) +
       LB_COLS.map(function (c) { return head(c[0], colName(c), c[0] !== "last_run"); }).join("") + "</tr></thead><tbody>" +
       sortedRows(b.rows).map(function (r) {
-        return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row"><span class="lbl" title="' + esc(r.label || r.key) + '">' + esc(r.label || r.key) + "</span>" +
+        return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
           (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</th>" +
           '<td class="n">' + esc(String(r.runs)) + "</td>" +
           LB_COLS.slice(1, -1).map(function (c) { return cell(r.metrics[c[0]], units[c[0]], r.runs); }).join("") +
