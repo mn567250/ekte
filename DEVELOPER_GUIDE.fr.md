@@ -118,6 +118,7 @@ zing/
     security.py        écoute locale, liste d'hôtes autorisés, contrôles Origin/JSON, en-têtes
     history.py         stockage de l'historique des audits (history.db)
     analytics_store.py ses tables d'analyse : métriques par exécution, enregistrements de requêtes
+    analytics.py       requêtes d'analyse : indicateurs, séries temporelles, classements
     watches.py         stockage des surveillances (watches.db)
     masterkey.py       états et actions de la clé maîtresse (serveur et `zing secret`)
     static/            pages de l'interface classique et scripts partagés (lang.js, i18n.js, …)
@@ -297,6 +298,22 @@ que la bibliothèque standard.
   `/api/rerank` servent les autres pages.
 - **Relais.** `POST /api/kb/relays` enregistre un relais `{name, base_url}` (400
   pour une saisie invalide, 409 si le nom ou l'URL est déjà connu).
+- **Analyses.** `GET /api/analytics/options` (relais, modèles, suites, modes de
+  flux, API et période couverte par l'historique), `/api/analytics/summary`
+  (indicateurs de `from`–`to` face à la période précédente de même durée),
+  `/api/analytics/series` (`metric` par `group=relay|model|relay_model`,
+  jusqu'à 4 `keys`, en intervalles `bucket=hour|day|week|dow_hour` dans le
+  fuseau horaire de l'utilisateur, `tz` ou `tz_offset`) et
+  `/api/analytics/leaderboard` (`model=` pour ses relais, ou `relay=` pour ses
+  modèles). Tous acceptent les filtres `from`, `to`, `suite`, `stream_mode`,
+  `api`, `source=all|manual|monitor`, `relay` et `model`.
+  `zing/web/analytics.py` calcule tout en Python à partir de
+  `history.analytics_runs()` : les identifiants de métrique viennent d'une
+  liste fixe, les relais sont regroupés par leur entrée de la base de
+  connaissances au moment de la requête, une valeur qu'une exécution n'a pas
+  mesurée est laissée de côté (chaque valeur porte son `n` et sa `coverage`), et
+  les intervalles de moins de `MIN_RUNS` (3) exécutions sont marqués `low_n`. Un
+  paramètre invalide répond 400 ; les réponses sont en `Cache-Control: no-store`.
 - **Audits en arrière-plan.** `jobs.py` exécute chaque audit comme une tâche
   du serveur. `POST /api/jobs` en met une en file, `GET /api/jobs` liste les
   tâches en attente, en cours et récemment terminées (et les surveillances en

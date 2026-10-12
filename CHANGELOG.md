@@ -23,6 +23,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   version opens the database; for reports without `started_at` the start time
   is estimated from `generated_at` and the span of the request records, and
   marked as estimated.
+- **Analytics API (`zing serve`).** Four read-only endpoints over the run
+  history, the data behind the coming analytics page:
+  `GET /api/analytics/options` (relays, models, suites, stream modes, APIs and
+  the date range present in the history), `GET /api/analytics/summary` (KPIs
+  of a range against the previous range of the same length: runs, relays,
+  models, median score, high-risk share, success rate, TTFT, decode speed,
+  billing ratios), `GET /api/analytics/series` (one metric per relay, model or
+  relay + model in hour, day, week or weekday x hour buckets of the viewer's
+  time zone, with median, quartiles and run counts) and
+  `GET /api/analytics/leaderboard` (the relays of one model, or the models of
+  one relay). Relays are grouped by their knowledge-base provider or saved
+  relay entry when the query runs, so renaming or saving a relay re-groups the
+  whole history. Every value carries how many runs measured it; a run that
+  did not is left out, never counted as 0. Buckets with fewer than 3 runs are
+  flagged, as are series that mix suites, stream modes or APIs, and the points
+  where the zing version or the knowledge-base profile changed. Filters:
+  `from`, `to`, `suite`, `stream_mode`, `api`, `source=all|manual|monitor`,
+  `relay`, `model`; a bad parameter answers 400.
 
 ### Changed
 

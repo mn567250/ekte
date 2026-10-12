@@ -114,6 +114,7 @@ zing/
     security.py        loopback bind, Host allowlist, Origin/JSON checks, headers
     history.py         audit history store (history.db)
     analytics_store.py its analytics tables: per-run metrics, request records
+    analytics.py       analytics queries: KPIs, time series, leaderboards
     watches.py         monitor store (watches.db)
     masterkey.py       the master key's states and actions (server and `zing secret`)
     static/            classic UI pages and the shared scripts (lang.js, i18n.js, …)
@@ -280,6 +281,20 @@ All decoding (image headers, WAV) is standard library only.
   back the other pages.
 - **Relays.** `POST /api/kb/relays` saves a relay `{name, base_url}` (400 for bad
   input, 409 when the name or URL is already known).
+- **Analytics.** `GET /api/analytics/options` (relays, models, suites, stream
+  modes, APIs and the date range in the history), `/api/analytics/summary`
+  (KPIs of `from`–`to` against the previous range of the same length),
+  `/api/analytics/series` (`metric` per `group=relay|model|relay_model`, up to
+  4 `keys`, in `bucket=hour|day|week|dow_hour` buckets of the viewer's `tz` or
+  `tz_offset`) and `/api/analytics/leaderboard` (`model=` for its relays, or
+  `relay=` for its models). All take the filters `from`, `to`, `suite`,
+  `stream_mode`, `api`, `source=all|manual|monitor`, `relay` and `model`.
+  `zing/web/analytics.py` computes everything in Python from
+  `history.analytics_runs()`: metric ids come from a fixed whitelist, relays are
+  grouped by knowledge-base entry when the query runs, a value a run did not
+  measure is left out (each value has its `n` and `coverage`), and buckets with
+  fewer than `MIN_RUNS` (3) runs are flagged `low_n`. A bad parameter answers
+  400; responses are `Cache-Control: no-store`.
 - **Background audits.** `jobs.py` runs every audit as a job owned by the
   server. `POST /api/jobs` queues one, `GET /api/jobs` lists queued, running and
   recently finished jobs (plus running monitors) with progress,
