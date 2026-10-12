@@ -539,6 +539,11 @@ pytest -n auto               # parallel, ein Worker pro CPU (pytest-xdist)
   `pytest -m a11y`. Ohne Playwright wird das Verzeichnis übersprungen. Was
   automatisiert ist und was noch eine manuelle BITV-Prüfung braucht, steht in
   [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) (englisch).
+- `ZING_A11Y_PAGES=history,kb` führt nur die a11y-Tests dieser Seiten aus (und
+  die seitenübergreifenden Prüfungen); `python -m tests.a11y.affected --base
+  origin/main --head HEAD` gibt aus, welche Seiten eine Änderung betrifft. Beide
+  nutzen eine Zuordnung, `tests/a11y/pages.py`: Eine neue Seite kommt dort in
+  `PAGES` und `RULES` ([tests/a11y/README.md](tests/a11y/README.md)).
 
 ## Docker
 
@@ -577,7 +582,7 @@ einschließlich der Schutzmaßnahmen der Oberfläche.
 
 | Workflow | Läuft bei | Tut |
 |---|---|---|
-| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `a11y/integration`, `perf/integration`) | `ruff`, `mypy` und `pytest` unter Python 3.10–3.13 mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
+| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `a11y/integration`, `perf/integration`); nächtlich und manuell (nur Barrierefreiheit) | `ruff`, `mypy` und `pytest` unter Python 3.10–3.13 mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch: alle Seiten bei Pushes, Pull Requests in `main`, nächtlichen und manuellen Läufen (mit dem BITV-Konformitätsbericht), bei anderen Pull Requests nur die Seiten, die die Änderung betrifft (keine bei reinen Doku-Änderungen) — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
 | `.github/workflows/release.yml` | einem Tag `v*` | baut, führt `twine check` aus und veröffentlicht auf PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | täglich, manuell | Beispiel einer geplanten Relay-Prüfung mit der Action |
 
