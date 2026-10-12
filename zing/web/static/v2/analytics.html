@@ -14,8 +14,8 @@
    *
    * One <section class="card panel"> per panel (overview, comparison,
    * leaderboard, peak hours, errors, model integrity, billing, relay
-   * overhead), all scoped by the one filter bar above them; a contents list
-   * links to each. The first three load at once, the rest right after them. Every chart has its data table (BITV 9.1.1.1 / 9.1.3.1). Below
+   * overhead), all scoped by the one filter bar above them. Each panel is
+   * self-contained: PANELS (script) lists its section, load() and render(). Every chart has its data table (BITV 9.1.1.1 / 9.1.3.1). Below
    * 600px everything stacks; wide tables scroll inside their own focusable
    * region, never the page (BITV 9.1.4.10). */
   .local-note { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
@@ -132,13 +132,6 @@
   th[aria-sort="ascending"] .sortb .zicon { transform: rotate(180deg); }
   .dt th.n .sortb { flex-direction: row-reverse; }
 
-  /* contents */
-  .toc { margin-top: 22px; padding: 14px 20px; }
-  .toc[hidden] { display: none; }
-  .toc h2 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); }
-  .toc ol { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 8px; }
-  .toc a { display: inline-block; padding: 5px 11px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 12.5px; font-weight: 600; text-decoration: none; }
-  .toc a:hover { border-color: var(--line-strong); text-decoration: underline; }
   .cov { margin: 12px 0 10px; font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
 
   /* errors: category legend, breakdown table */
@@ -185,32 +178,18 @@
 
     <section class="card empty-box" id="empty" hidden></section>
 
-    <nav class="card toc" id="toc" aria-labelledby="toc-h" hidden>
-      <h2 id="toc-h" data-en="On this page">本页内容</h2>
-      <ol>
-        <li><a href="#p-kpi" data-en="Overview">概览</a></li>
-        <li><a href="#p-cmp" data-en="Comparison over time">随时间对比</a></li>
-        <li><a href="#p-lb" data-en="Leaderboard">排行榜</a></li>
-        <li><a href="#p-heat" data-en="Peak hours">高峰时段</a></li>
-        <li><a href="#p-err" data-en="Errors and reliability">错误与可靠性</a></li>
-        <li><a href="#p-int" data-en="Model integrity">模型真实性</a></li>
-        <li><a href="#p-bill" data-en="Billing and tokens">计费与 token</a></li>
-        <li><a href="#p-ovh" data-en="Relay overhead">中转开销</a></li>
-      </ol>
-    </nav>
-
     <section class="card filters" id="filters" aria-labelledby="f-h" hidden>
       <h2 id="f-h" data-en="Filters">筛选</h2>
       <div id="fbody"></div>
     </section>
 
-    <section class="card panel" id="p-kpi" aria-labelledby="kpi-h" aria-busy="true" hidden>
+    <section class="card panel" id="panel-kpi" aria-labelledby="kpi-h" aria-busy="true" hidden>
       <h2 id="kpi-h" data-en="Overview">概览</h2>
       <p class="psub" id="kpi-sub"></p>
       <div class="pbody" id="kpi-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
     </section>
 
-    <section class="card panel" id="p-cmp" aria-labelledby="cmp-h" aria-busy="true" hidden>
+    <section class="card panel" id="panel-cmp" aria-labelledby="cmp-h" aria-busy="true" hidden>
       <h2 id="cmp-h" data-en="Comparison over time">随时间对比</h2>
       <p class="psub" data-en="The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.">折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。</p>
       <div class="pbody">
@@ -219,7 +198,7 @@
       </div>
     </section>
 
-    <section class="card panel" id="p-lb" aria-labelledby="lb-h" aria-busy="true" hidden>
+    <section class="card panel" id="panel-lb" aria-labelledby="lb-h" aria-busy="true" hidden>
       <h2 id="lb-h" data-en="Leaderboard">排行榜</h2>
       <p class="psub" data-en="Medians over the selected range; n is the number of runs that measured a value.">所选时间范围内的中位数；n 为测得该值的检测次数。</p>
       <div class="pbody">
@@ -229,7 +208,7 @@
       <p class="sr-only" id="lbst" role="status"></p>
     </section>
 
-    <section class="card panel" id="p-heat" aria-labelledby="heat-h" aria-busy="true" hidden>
+    <section class="card panel" id="panel-heat" aria-labelledby="heat-h" aria-busy="true" hidden>
       <h2 id="heat-h" data-en="Peak hours">高峰时段</h2>
       <p class="psub" data-en="Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).">这个中转站在高峰时段会变慢或更容易出错吗？每个格子是你所在时区某个星期几的某个小时，颜色表示该时段开始的检测的中位数（色阶见网格下方）。</p>
       <div class="pbody">
@@ -238,7 +217,7 @@
       </div>
     </section>
 
-    <section class="card panel" id="p-err" aria-labelledby="err-h" aria-busy="true" hidden>
+    <section class="card panel" id="panel-err" aria-labelledby="err-h" aria-busy="true" hidden>
       <h2 id="err-h" data-en="Errors and reliability">错误与可靠性</h2>
       <p class="psub" data-en="Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls.">按原因统计对中转站的失败调用：限流（HTTP 429）、服务器错误（5xx）、超时及其他，占全部调用的比例。</p>
       <div class="pbody">
@@ -247,13 +226,13 @@
       </div>
     </section>
 
-    <section class="card panel" id="p-int" aria-labelledby="int-h" aria-busy="true" hidden>
+    <section class="card panel" id="panel-int" aria-labelledby="int-h" aria-busy="true" hidden>
       <h2 id="int-h" data-en="Model integrity">模型真实性</h2>
       <p class="psub" data-en="Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.">它是不是自称的那个模型，是否完整、功能齐全？按中转站与模型列出身份、上下文窗口与能力检查的结果。</p>
       <div class="pbody" id="int-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
     </section>
 
-    <section class="card panel" id="p-bill" aria-labelledby="bill-h" aria-busy="true" hidden>
+    <section class="card panel" id="panel-bill" aria-labelledby="bill-h" aria-busy="true" hidden>
       <h2 id="bill-h" data-en="Billing and tokens">计费与 token</h2>
       <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens zing counted. Above 100%: the relay reports more tokens than zing counted (you may be billed for more). zing's counts are estimates, so small deviations are normal.">计费比 = 中转站报告的 token ÷ zing 统计的 token。高于 100%：中转站报告的 token 多于 zing 统计的（可能多计费）。zing 的统计是估算，小幅偏差属正常。</p>
       <div class="pbody">
@@ -262,7 +241,7 @@
       </div>
     </section>
 
-    <section class="card panel" id="p-ovh" aria-labelledby="ovh-h" aria-busy="true" hidden>
+    <section class="card panel" id="panel-ovh" aria-labelledby="ovh-h" aria-busy="true" hidden>
       <h2 id="ovh-h" data-en="Relay overhead">中转开销</h2>
       <p class="psub" data-en="Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.">中转站在自己的响应头里报告的处理耗时，与到它的网络往返时间并列（中位数）。中转站的数据是自报的，未经核实。</p>
       <div class="pbody" id="ovh-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
@@ -359,7 +338,7 @@
     "billing_ratio_completion", "model_mismatch_rate", "risk_high_share", "last_run"];
   var F, V;
   var state = { opts: null, summary: null, series: null, board: null, err: {}, charts: {},
-    seq: { all: 0, cmp: 0, lb: 0, heat: 0, errs: 0, int: 0, bill: 0, ovh: 0 } };
+    seq: { all: 0, kpi: 0, cmp: 0, lb: 0, heat: 0, errs: 0, int: 0, bill: 0, ovh: 0 } };
 
   function readState() {
     // the view in the URL's fragment (#range=30&…), else the query string
@@ -515,7 +494,8 @@
       if (!o.runs) return renderEmpty();
       if (F.suite == null) F.suite = o.suites && o.suites.length ? o.suites[0].value : "";
       if (F.stream_mode == null) F.stream_mode = o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "";
-      ["#toc", "#filters", "#p-kpi", "#p-cmp", "#p-lb", "#p-heat", "#p-err", "#p-int", "#p-bill", "#p-ovh"].forEach(function (id) { $(id).hidden = false; });
+      $("#filters").hidden = false;
+      PANELS.forEach(function (p) { $("#" + p.id).hidden = false; });
       renderFilters();
       refresh();
     }).catch(function (e) {
@@ -528,7 +508,8 @@
     });
   }
 
-  // everything the filters scope: overview, comparison, leaderboard
+  // Every panel the filters scope, each loading on its own (a panel's
+  // controls reload only that panel).
   function refresh() {
     var r = rangeOf();
     $("#ferr").textContent = r.error || "";
@@ -536,29 +517,28 @@
     writeState();
     var seq = ++state.seq.all;
     say(T("正在加载分析…", "Loading analytics…"));
-    busy("#p-kpi", true);
-    var sum = getJSON("/api/analytics/summary?" + apiParams()).then(function (s) {
-      if (seq !== state.seq.all) return;
-      state.summary = s;
-      state.err.kpi = null;
-    }).catch(function (e) {
-      if (seq !== state.seq.all) return;
-      state.summary = null;
-      state.err.kpi = errText(e);
-    }).then(function () {
-      if (seq !== state.seq.all) return;
-      renderKpis();
-      busy("#p-kpi", false);
-    });
-    // the panels further down load once the first three are in (a fast first paint)
-    ["#p-heat", "#p-err", "#p-int", "#p-bill", "#p-ovh"].forEach(function (id) { busy(id, true); });
-    Promise.all([sum, loadSeries(), loadBoard()]).then(function () {
-      if (seq !== state.seq.all) return null;
-      return Promise.all([loadHeat(), loadErrors(), loadIntegrity(), loadBilling(), loadOverhead()]);
-    }).then(function () {
+    Promise.all(PANELS.map(function (p) { return p.load(); })).then(function () {
       if (seq !== state.seq.all) return;
       var s = state.summary;
       say(s ? Tf("已更新：此范围内 {n} 次检测。", "Updated: {n} runs in this range.", { n: s.runs }) : "");
+    });
+  }
+
+  function loadSummary() {
+    var seq = ++state.seq.kpi;
+    busy("#panel-kpi", true);
+    return getJSON("/api/analytics/summary?" + apiParams()).then(function (s) {
+      if (seq !== state.seq.kpi) return;
+      state.summary = s;
+      state.err.kpi = null;
+    }).catch(function (e) {
+      if (seq !== state.seq.kpi) return;
+      state.summary = null;
+      state.err.kpi = errText(e);
+    }).then(function () {
+      if (seq !== state.seq.kpi) return;
+      renderKpis();
+      busy("#panel-kpi", false);
     });
   }
 
@@ -566,7 +546,7 @@
     var r = rangeOf();
     if (r.error) return Promise.resolve();
     var seq = ++state.seq.cmp;
-    busy("#p-cmp", true);
+    busy("#panel-cmp", true);
     var q = tzParams(apiParams());
     q.set("metric", V.metric);
     q.set("group", V.group);
@@ -584,7 +564,7 @@
       if (seq !== state.seq.cmp) return;
       renderCmpControls();
       renderChart();
-      busy("#p-cmp", false);
+      busy("#panel-cmp", false);
     });
   }
 
@@ -602,13 +582,13 @@
     var r = rangeOf();
     if (r.error) return Promise.resolve();
     var seq = ++state.seq.lb, key = boardKey();
-    busy("#p-lb", true);
+    busy("#panel-lb", true);
     renderBoardControls();
     if (!key) {
       state.board = null;
       state.err.lb = null;
       renderBoard();
-      busy("#p-lb", false);
+      busy("#panel-lb", false);
       return Promise.resolve();
     }
     // relays for a model: the model is the subject, the relay filter does not apply (and vice versa)
@@ -626,7 +606,7 @@
     }).then(function () {
       if (seq !== state.seq.lb) return;
       renderBoard();
-      busy("#p-lb", false);
+      busy("#panel-lb", false);
     });
   }
 
@@ -1136,8 +1116,7 @@
   });
 
   /* ---------------- panels below the leaderboard ---------------- */
-  // Each loads after the first three (refresh) and on its own controls; same
-  // pattern as the comparison: a sequence number drops stale answers.
+  // Same pattern as the comparison: a sequence number drops stale answers.
   function panelLoad(name, panel, src, render) {
     var r = rangeOf();
     if (r.error) return Promise.resolve();
@@ -1209,7 +1188,7 @@
     q.set("bucket", "dow_hour");
     q.set("group", relay ? "relay" : "all");
     if (relay) q.set("keys", relay);
-    return panelLoad("heat", "#p-heat", "/api/analytics/series?" + q, renderHeat);
+    return panelLoad("heat", "#panel-heat", "/api/analytics/series?" + q, renderHeat);
   }
   function renderHeat() {
     var o = state.opts || {}, relay = heatRelay();
@@ -1280,7 +1259,7 @@
     var q = tzParams(apiParams());
     q.set("group", V.eg);
     q.set("bucket", V.eb);
-    return panelLoad("errs", "#p-err", "/api/analytics/errors?" + q, renderErrors);
+    return panelLoad("errs", "#panel-err", "/api/analytics/errors?" + q, renderErrors);
   }
   function renderErrors() {
     ctlHTML($("#err-ctl"), '<div class="ctl">' +
@@ -1365,7 +1344,7 @@
   };
   var checkName = function (c) { return CHECK_L[c] ? T(CHECK_L[c][0], CHECK_L[c][1]) : c; };
   function loadIntegrity() {
-    return panelLoad("int", "#p-int", "/api/analytics/integrity?" + apiParams(), renderIntegrity);
+    return panelLoad("int", "#panel-int", "/api/analytics/integrity?" + apiParams(), renderIntegrity);
   }
   function chip(cell) {
     if (!cell || !cell.n) {
@@ -1416,7 +1395,7 @@
     var b = apiParams();
     b.set("group", "relay");
     BILL_SUM.forEach(function (m) { b.append("metrics", m); });
-    return panelLoad("bill", "#p-bill", function () {
+    return panelLoad("bill", "#panel-bill", function () {
       return Promise.all([getJSON("/api/analytics/series?" + q), getJSON("/api/analytics/breakdown?" + b)]);
     }, renderBilling);
   }
@@ -1488,7 +1467,7 @@
     q.set("group", "relay");
     q.append("metrics", "relay_overhead");
     q.append("metrics", "network_rtt");
-    return panelLoad("ovh", "#p-ovh", "/api/analytics/breakdown?" + q, renderOverhead);
+    return panelLoad("ovh", "#panel-ovh", "/api/analytics/breakdown?" + q, renderOverhead);
   }
   function renderOverhead() {
     var body = $("#ovh-body"), d = state.ovh;
@@ -1519,19 +1498,20 @@
       }).join("") + "</tbody></table></div>";
   }
 
-  /* ---- contents: move focus to the panel's heading, keep the view in the URL ---- */
-  $("#toc").addEventListener("click", function (ev) {
-    var a = ev.target.closest("a[href^='#p-']");
-    if (!a) return;
-    var sec = document.getElementById(a.getAttribute("href").slice(1));
-    if (!sec || sec.hidden) return;
-    ev.preventDefault();
-    var h = sec.querySelector("h2");
-    h.setAttribute("tabindex", "-1");
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    sec.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    h.focus({ preventScroll: true });
-  });
+  /* ---------------- panel registry ---------------- */
+  // One entry per <section class="card panel">, in page order: load() fetches
+  // with the current filters (F) and view (V) and renders, render() redraws
+  // from the data already loaded (language switch). Panels share nothing else.
+  var PANELS = [
+    { id: "panel-kpi", load: loadSummary, render: renderKpis },
+    { id: "panel-cmp", load: loadSeries, render: function () { renderCmpControls(); renderChart(); } },
+    { id: "panel-lb", load: loadBoard, render: function () { renderBoardControls(); renderBoard(); } },
+    { id: "panel-heat", load: loadHeat, render: renderHeat },
+    { id: "panel-err", load: loadErrors, render: renderErrors },
+    { id: "panel-int", load: loadIntegrity, render: renderIntegrity },
+    { id: "panel-bill", load: loadBilling, render: renderBilling },
+    { id: "panel-ovh", load: loadOverhead, render: renderOverhead },
+  ];
 
   /* ---------------- boot ---------------- */
   $("#lockIcon").innerHTML = ico("lock");
@@ -1553,16 +1533,7 @@
   window.addEventListener("zing:lang", function () {
     if (!state.opts || !state.opts.runs) { if (state.opts) renderEmpty(); return; }
     renderFilters();
-    renderKpis();
-    renderCmpControls();
-    renderChart();
-    renderBoardControls();
-    renderBoard();
-    if (state.heat || state.err.heat) renderHeat();
-    if (state.errs || state.err.errs) renderErrors();
-    if (state.int || state.err.int) renderIntegrity();
-    if (state.bill || state.err.bill) renderBilling();
-    if (state.ovh || state.err.ovh) renderOverhead();
+    PANELS.forEach(function (p) { p.render(); });
   });
   readState();
   loadOptions();
