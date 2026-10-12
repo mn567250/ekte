@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch" [selected]
+  - link "Barrierefreiheit":
+    - /url: /v2/accessibility
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
@@ -71,7 +73,3 @@
     - button "Embedding-Endpunkt prüfen"
     - text: Die Anfragen werden von Ihrem lokalen zing-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.
   - paragraph: "Embedding-/Rerank-Prüfungen sind Black-Box-Tests ohne Chat: Eine abweichende Dimension ist das stärkste Signal für „Etikettenschwindel“; Determinismus und Unterscheidbarkeit sind ergänzende Belege."
-- contentinfo:
-  - paragraph:
-    - link "Barrierefreiheit":
-      - /url: /v2/accessibility

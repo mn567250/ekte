@@ -269,6 +269,17 @@ main[tabindex="-1"]:focus { outline: none; }
 .theme-sel:hover { border-color: var(--line-control-hover); }
 .lang-sel:focus-visible,
 .theme-sel:focus-visible { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--focus-ring); }
+/* icon-only link to the accessibility report (nav.js), as tall as the switches;
+   focus keeps the global teal outline (the current-page state already has a teal border) */
+.znav .a11y {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 30px; height: 30px; color: var(--ink2); text-decoration: none;
+  background: var(--card); border: 1px solid var(--line-control); border-radius: 50%;
+  transition: border-color 0.15s, box-shadow 0.15s, color 0.15s;
+}
+.znav .a11y .zicon { width: 16px; height: 16px; }
+.znav .a11y:hover { border-color: var(--line-control-hover); color: var(--teal); }
+.znav .a11y[aria-current="page"] { color: var(--teal); border-color: var(--teal); }
 
 /* ---------- hero ---------- */
 .hero { padding: 24px 0 4px; }
@@ -446,10 +457,6 @@ select.in {
 .empty .zicon { width: 28px; height: 28px; color: var(--faint); }
 .foot { text-align: center; color: var(--faint); font-size: 12px; padding: 16px 0 32px; line-height: 1.6; }
 .foot code { font-size: 11.5px; }
-/* footer link row added by nav.js (accessibility report) */
-.foot:has(+ .foot-links) { padding-bottom: 0; margin-bottom: 0; }
-.foot-links { padding-top: 4px; }
-.foot-links a { font-weight: 600; }
 
 /* inline canonical SVG icons (icons.js) inherit currentColor */
 .pico { display: inline-flex; vertical-align: -0.12em; }

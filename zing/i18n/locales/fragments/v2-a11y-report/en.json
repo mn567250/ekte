@@ -120,7 +120,7 @@
   "Link Purpose (In Context)": "Link Purpose (In Context)",
   "Every link has an accessible name. Whether it describes the target is judged by a person.": "Every link has an accessible name. Whether it describes the target is judged by a person.",
   "Multiple Ways": "Multiple Ways",
-  "Every page opens by its own URL and is linked from the site-wide navigation (nav or footer) of every other page.": "Every page opens by its own URL and is linked from the site-wide navigation (nav or footer) of every other page.",
+  "Every page opens by its own URL and is linked from the site-wide navigation (header, nav or footer) of every other page.": "Every page opens by its own URL and is linked from the site-wide navigation (header, nav or footer) of every other page.",
   "Headings and Labels": "Headings and Labels",
   "Headings and labels exist and are not empty. Whether they are descriptive is judged by a person.": "Headings and labels exist and are not empty. Whether they are descriptive is judged by a person.",
   "Focus Visible": "Focus Visible",

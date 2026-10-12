@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "无障碍":
+    - /url: /v2/accessibility
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
@@ -104,7 +106,3 @@
     - alert
     - status
     - text: zing 给出的是风险与偏离的可复现证据，不是法律结论。
-- contentinfo:
-  - paragraph:
-    - link "无障碍":
-      - /url: /v2/accessibility

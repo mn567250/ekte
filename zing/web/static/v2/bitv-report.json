@@ -718,7 +718,7 @@
    "level": "AA",
    "title": "Multiple Ways",
    "automation": "auto",
-   "how": "Every page opens by its own URL and is linked from the site-wide navigation (nav or footer) of every other page.",
+   "how": "Every page opens by its own URL and is linked from the site-wide navigation (header, nav or footer) of every other page.",
    "status": "pass",
    "tests": {
     "run": 2,

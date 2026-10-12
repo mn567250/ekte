@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "无障碍":
+    - /url: /v2/accessibility
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
@@ -162,6 +164,3 @@
     - text: zing · 中转站验真 · 本报告由
     - code: tests/a11y
     - text: 中的自动化无障碍测试生成
-  - paragraph:
-    - link "无障碍":
-      - /url: /v2/accessibility

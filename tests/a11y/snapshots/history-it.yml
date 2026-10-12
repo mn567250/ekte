@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano" [selected]
     - option "Deutsch"
+  - link "Accessibilità":
+    - /url: /v2/accessibility
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
@@ -369,7 +371,3 @@
   - text: "Audit salvati: 1"
   - button "Cancella cronologia"
   - status
-- contentinfo:
-  - paragraph:
-    - link "Accessibilità":
-      - /url: /v2/accessibility

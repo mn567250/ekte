@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accessibilité":
+    - /url: /v2/accessibility
   - navigation "Navigation principale":
     - link "Audit":
       - /url: /v2/
@@ -123,6 +125,3 @@
   - paragraph:
     - text: zing · vérification de relais · les surveillances sont planifiées en arrière-plan par le processus
     - code: zing serve
-  - paragraph:
-    - link "Accessibilité":
-      - /url: /v2/accessibility

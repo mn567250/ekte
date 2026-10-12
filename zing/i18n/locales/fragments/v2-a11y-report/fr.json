@@ -120,7 +120,7 @@
   "Link Purpose (In Context)": "Fonction du lien (selon le contexte)",
   "Every link has an accessible name. Whether it describes the target is judged by a person.": "Chaque lien a un nom accessible. S'il décrit la cible est jugé par une personne.",
   "Multiple Ways": "Accès multiples",
-  "Every page opens by its own URL and is linked from the site-wide navigation (nav or footer) of every other page.": "Chaque page s'ouvre par sa propre URL et est liée depuis la navigation de tout le site (navigation ou pied de page) de chaque autre page.",
+  "Every page opens by its own URL and is linked from the site-wide navigation (header, nav or footer) of every other page.": "Chaque page s'ouvre par sa propre URL et est liée depuis la navigation de tout le site (en-tête, navigation ou pied de page) de chaque autre page.",
   "Headings and Labels": "En-têtes et étiquettes",
   "Headings and labels exist and are not empty. Whether they are descriptive is judged by a person.": "Les titres et étiquettes existent et ne sont pas vides. S'ils sont descriptifs est jugé par une personne.",
   "Focus Visible": "Visibilité du focus",

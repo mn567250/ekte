@@ -18,6 +18,8 @@
     - option "Português" [selected]
     - option "Italiano"
     - option "Deutsch"
+  - link "Acessibilidade":
+    - /url: /v2/accessibility
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
@@ -104,7 +106,3 @@
     - alert
     - status
     - text: O zing fornece evidências reprodutíveis de risco e desvio, não um veredito jurídico.
-- contentinfo:
-  - paragraph:
-    - link "Acessibilidade":
-      - /url: /v2/accessibility

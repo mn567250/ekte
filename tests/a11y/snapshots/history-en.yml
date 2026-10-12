@@ -18,6 +18,8 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+  - link "Accessibility":
+    - /url: /v2/accessibility
   - navigation "Main navigation":
     - link "Audit":
       - /url: /v2/
@@ -369,7 +371,3 @@
   - text: "Saved audits: 1"
   - button "Clear history"
   - status
-- contentinfo:
-  - paragraph:
-    - link "Accessibility":
-      - /url: /v2/accessibility

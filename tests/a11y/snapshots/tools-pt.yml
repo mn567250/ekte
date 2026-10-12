@@ -18,6 +18,8 @@
     - option "Português" [selected]
     - option "Italiano"
     - option "Deutsch"
+  - link "Acessibilidade":
+    - /url: /v2/accessibility
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
@@ -71,7 +73,3 @@
     - button "Verificar endpoint de embeddings"
     - text: Os pedidos são enviados a partir do seu servidor zing local; a chave só é usada para ligar ao intermediário alvo e nunca é enviada a terceiros.
   - paragraph: "As verificações de embeddings/rerank são testes de caixa preta sem chat: uma dimensão errada é o sinal mais forte de «gato por lebre»; o determinismo e a distinção são evidências de apoio."
-- contentinfo:
-  - paragraph:
-    - link "Acessibilidade":
-      - /url: /v2/accessibility

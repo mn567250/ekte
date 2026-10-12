@@ -18,6 +18,8 @@
     - option "Português" [selected]
     - option "Italiano"
     - option "Deutsch"
+  - link "Acessibilidade":
+    - /url: /v2/accessibility
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
@@ -369,7 +371,3 @@
   - text: "Auditorias guardadas: 1"
   - button "Limpar histórico"
   - status
-- contentinfo:
-  - paragraph:
-    - link "Acessibilidade":
-      - /url: /v2/accessibility
