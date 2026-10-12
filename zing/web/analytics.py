@@ -459,9 +459,13 @@ def options(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
         raise AnalyticsError("from must be before to")
     runs = _load(f)
     relays: dict[str, dict[str, Any]] = {}
+    pairs: dict[str, dict[str, Any]] = {}
+    pair_of = _group_of("relay_model")
     for run in runs:
         g: Group = run["_group"]
         relays.setdefault(g.key, {**g.public(), "runs": 0})["runs"] += 1
+        key, desc = pair_of(run)
+        pairs.setdefault(key, {**desc, "runs": 0})["runs"] += 1
 
     def counted(column: str) -> list[dict[str, Any]]:
         counts = Counter(r.get(column) for r in runs if r.get(column))
@@ -478,6 +482,8 @@ def options(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
         "last": max(times) if times else None,
         "relays": sorted(relays.values(), key=lambda g: (-g["runs"], g["label"].lower(), g["key"])),
         "models": [{"key": item["value"], "runs": item["runs"]} for item in counted("claimed_model")],
+        # the series keys of group=relay_model that have runs (for a series picker)
+        "relay_models": sorted(pairs.values(), key=lambda p: (-p["runs"], p["label"].lower(), p["key"])),
         "suites": counted("suite"),
         "stream_modes": counted("stream_mode"),
         "apis": counted("api"),

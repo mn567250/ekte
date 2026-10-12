@@ -716,6 +716,17 @@ def create_app() -> FastAPI:
             resp = html_page(_V2 / "kb.html", request.scope)
         return _remember_ui(resp, request.query_params.get("ui"))
 
+    @app.get("/v2/analytics")
+    async def v2_analytics(request: Request) -> Any:
+        # Charts and leaderboards over the run history (/api/analytics/*).
+        # v2 only: ?ui=v1 goes to the classic history page.
+        resp: Response
+        if request.query_params.get("ui") == "v1":
+            resp = RedirectResponse("/history", status_code=307)
+        else:
+            resp = html_page(_V2 / "analytics.html", request.scope)
+        return _remember_ui(resp, request.query_params.get("ui"))
+
     @app.get("/v2/accessibility")
     async def v2_accessibility(request: Request) -> Any:
         # BITV 2.0 / EN 301 549 conformance report (renders
