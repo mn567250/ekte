@@ -355,9 +355,16 @@ def parse_tz(params: Mapping[str, Any]) -> tuple[tzinfo, str]:
 # --------------------------------------------------------------------------- #
 # Runs
 # --------------------------------------------------------------------------- #
+# Run times outside this range cannot be shifted into every time zone (a
+# damaged report's year 1 or 9999): such runs count as undated.
+_T_MIN = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_T_MAX = datetime(9999, 1, 1, tzinfo=timezone.utc)
+
+
 def _prepare(runs: list[dict[str, Any]], resolver: RelayResolver) -> list[dict[str, Any]]:
     for run in runs:
-        run["_t"] = analytics_store.parse_ts(run.get("started_at"))
+        t = analytics_store.parse_ts(run.get("started_at"))
+        run["_t"] = t if t is not None and _T_MIN <= t < _T_MAX else None
         run["_group"] = resolver.resolve(run)
     return runs
 
@@ -514,8 +521,10 @@ def summary(params: Mapping[str, Any]) -> dict[str, Any]:
         except OverflowError:
             previous = None
     runs = _load(f, previous[0] if previous else None)
-    current = [r for r in runs if f.start is None or (r["_t"] is not None and r["_t"] >= f.start)]
-    before = [r for r in runs if previous and r["_t"] is not None and r["_t"] < previous[1]]
+    # started_at is stored fixed-width, so the strings compare like times
+    split = analytics_store.format_ts(f.start) if f.start else None
+    current = [r for r in runs if split is None or (r.get("started_at") or "") >= split]
+    before = [r for r in runs if split is not None and (r.get("started_at") or "") < split]
     now, then = _kpis(current), _kpis(before) if previous else None
     for key, cell in now.items():
         prev = then[key]["value"] if then else None

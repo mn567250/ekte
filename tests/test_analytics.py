@@ -365,6 +365,15 @@ def test_single_run_all_null_metrics(data):
                for m in analytics.SUMMARY_KPIS if m != "success_rate")
 
 
+def test_run_time_out_of_range_is_undated(data):
+    _save(datetime(1, 1, 1, 0, 30, tzinfo=timezone.utc))
+    _save(T0)
+    out = analytics.series({"metric": "score", "tz": "America/New_York", "bucket": "hour"})
+    assert out["series"][0]["runs"] == 1  # the year-1 run cannot be bucketed
+    assert analytics.summary({})["runs"] == 2
+    assert analytics.summary({"from": "0001-01-01T00:00:00Z", "to": "2026-04-01T00:00:00Z"})["runs"] == 2
+
+
 @pytest.mark.parametrize(
     "params",
     [
