@@ -81,8 +81,7 @@
 .hmap .q1 { fill: var(--c-q1); } .hmap .q2 { fill: var(--c-q2); } .hmap .q3 { fill: var(--c-q3); }
 .hmap .q4 { fill: var(--c-q4); } .hmap .q5 { fill: var(--c-q5); }
 /* few runs: faded and hatched; no runs: an outline only (never a "low" colour) */
-.hmap .low { opacity: 0.5; }
-.hmap pattern line { stroke: var(--ink2); stroke-width: 1.4; }
+.hmap pattern line { stroke: var(--card); stroke-width: 2.2; }
 .hmap .none { fill: none; stroke: var(--line-control); stroke-width: 1; stroke-dasharray: 2 2; }
 .hlegend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12px; color: var(--ink2); }
 .hlegend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
