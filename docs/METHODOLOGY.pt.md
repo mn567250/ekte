@@ -379,6 +379,15 @@ quando alteram o comportamento.
    de marcas rivais (`identity_forbidden` do perfil mais uma lista incorporada).
    Uma marca rival só conta se a genuína estiver ausente; «Sou o Claude, não o
    GPT» é um contraste benigno.
+   A marca genuína são as `identity_keywords` do perfil mais os seus próprios
+   nomes: a chave do fornecedor, o nome inicial do nome de apresentação do
+   fornecedor, a primeira palavra do id e da família do modelo, e os restantes
+   nomes desse fabricante na lista incorporada (`z.ai` também abrange `zhipu`).
+   Um modelo que nomeia o seu próprio fabricante nunca é, por isso, uma marca
+   rival, mesmo quando `identity_keywords` está vazio. Os nomes derivados
+   nunca se sobrepõem a `identity_forbidden`, as palavras genéricas («ai»,
+   «platform», …) nunca contam, e a marca própria de uma plataforma não conta
+   para o modelo de outro fabricante que serve.
 2. **Impressões comportamentais** da base de conhecimento (data-limite do
    conhecimento, particularidades do tokenizer, formatação, sondas ligadas a um
    idioma, …): até seis sondas de código puro, verificadas com

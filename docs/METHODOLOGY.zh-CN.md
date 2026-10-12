@@ -309,6 +309,11 @@ prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转�
 1. **自我身份识别**（`temperature=0`），按整词匹配画像中的身份关键词（正品品牌）
    以及竞品品牌列表（画像的 `identity_forbidden` 加内置列表）。只有在正品品牌缺席时，
    竞品品牌才算数；「我是 Claude，不是 GPT」属于良性对比。
+   正品品牌是画像的 `identity_keywords` 加上画像自身的名称：厂商键、厂商显示名称开头的名字、
+   模型 id 与系列名的首个单词，以及内置列表中同一厂商的其他名称（`z.ai` 也涵盖 `zhipu`）。
+   因此模型说出自家厂商永远不算竞品品牌，即使 `identity_keywords` 为空。推导出的名称绝不会
+   覆盖 `identity_forbidden`，通用词（「ai」「platform」等）从不计入，平台自己的品牌也不算作
+   它所提供的其他厂商模型的品牌。
 2. **行为指纹**，来自知识库（知识截止、分词器特征、格式习惯、与语言绑定的探测等）：
    最多 6 个纯代码探测，用 `expect_contains`、`expect_contains_any`、
    `expect_not_contains` 或 `expect_regex` 判定；输出上限 512 token。偏离的指纹按其

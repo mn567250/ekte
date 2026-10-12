@@ -693,6 +693,13 @@ desativado leva consigo os seus modelos e URLs base. `zing check` e `zing serve`
 usam exatamente os mesmos perfis; `--no-user-kb` (ou `ZING_NO_USER_KB=1`) deixa de
 fora as suas entradas e interruptores.
 
+Um modelo com `identity_keywords` vazio não é guardado assim: o zing preenche
+as suas próprias palavras de marca a partir dos nomes do fornecedor e do modelo
+(por exemplo `glm` e `z.ai`) e mostra um
+aviso para as verificar, pois sem elas a verificação de identidade poderia
+tomar o próprio fabricante do modelo por uma marca rival. O prompt de pesquisa
+pede-as explicitamente ao assistente de IA.
+
 Cada relatório regista o perfil contra o qual auditou (`knowledge`: fornecedor,
 modelo, como o id foi resolvido, a sua origem e um instantâneo completo com o seu
 hash de conteúdo), pelo que um relatório continua verificável depois de a base de

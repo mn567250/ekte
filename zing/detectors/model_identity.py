@@ -26,6 +26,7 @@ from zing.detectors.helpers import (
     words_present,
 )
 from zing.detectors.scale import DeductionScale, outcome
+from zing.knowledge.identity import VENDOR_BRANDS, own_brand_words
 from zing.models import DetectorResult, Dimension, Finding, RequestSpec, Severity, Status
 
 # Substrings that name a cheaper/smaller tier of a family. If the returned model
@@ -35,27 +36,8 @@ _DOWNGRADE_HINTS = ("mini", "nano", "flash", "lite", "small", "tiny", "8b", "7b"
 # Known LLM vendor/brand words (incl. Chinese). A model that self-identifies with
 # any of these — OTHER than its own brand — betrays a substitution, even when the KB
 # profile's identity_forbidden didn't list it (e.g. a Doubao/ByteDance model resold
-# as DeepSeek). Matched whole-word; the model's own identity_keywords are removed.
-_RIVAL_BRANDS = (
-    "openai", "gpt", "chatgpt",
-    "anthropic", "claude",
-    "google", "gemini", "deepmind",
-    "deepseek", "深度求索",
-    "qwen", "tongyi", "通义", "通义千问", "alibaba", "阿里云", "阿里巴巴",
-    "doubao", "豆包", "bytedance", "字节", "字节跳动", "seed",
-    "kimi", "moonshot", "月之暗面",
-    "glm", "chatglm", "zhipu", "智谱",
-    "ernie", "文心", "文心一言", "baidu", "百度",
-    "hunyuan", "混元", "tencent", "腾讯",
-    "llama", "meta",
-    "mistral", "mixtral",
-    "grok", "xai",
-    "cohere", "command",
-    "minimax", "abab",
-    "讯飞", "星火", "spark",
-    "零一万物", "yi",
-    "阶跃", "step",
-)
+# as DeepSeek). Matched whole-word; the model's own brand words are removed.
+_RIVAL_BRANDS = tuple(word for vendor in VENDOR_BRANDS for word in vendor)
 
 _SELF_ID_PROMPT = prompts.text("model_identity.self_id")
 
@@ -179,11 +161,11 @@ class ModelIdentityDetector(Detector):
                 continue
 
             text = outcome.content
-            forbidden_hits = words_present(text, self._forbidden_brands(model))
+            forbidden_hits = words_present(text, self._forbidden_brands(model, ctx.profile.provider))
             # A rival brand only contradicts identity when the GENUINE brand is
             # absent; an honest model contrasting itself ("not Claude") is benign —
             # same gating as the direct self-id check.
-            genuine_present = contains_word_any(text, model.identity_keywords or [])
+            genuine_present = contains_word_any(text, own_brand_words(ctx.profile.provider, model))
             forbidden_contradiction = bool(forbidden_hits) and not genuine_present
             is_violation = self._fingerprint_violated(fp, text) or forbidden_contradiction
             if is_violation:
@@ -325,8 +307,11 @@ class ModelIdentityDetector(Detector):
         # "gpt" in "ChatGPT") doesn't fire, and only treat a rival brand as a swap
         # when the GENUINE brand is ABSENT — an honest model contrasting itself
         # ("I am Claude, not GPT or Gemini") names rivals without being a substitute.
-        forbidden_hits = words_present(text, self._forbidden_brands(model))
-        keyword_present = contains_word_any(text, model.identity_keywords or [])
+        # Own brand words: identity_keywords plus the provider and model names, so
+        # a profile with empty identity_keywords never calls its own brand a rival.
+        provider = ctx.profile.provider if ctx.profile is not None else None
+        forbidden_hits = words_present(text, self._forbidden_brands(model, provider))
+        keyword_present = contains_word_any(text, own_brand_words(provider, model))
 
         if forbidden_hits and not keyword_present:
             hit = forbidden_hits[0]
@@ -444,10 +429,11 @@ class ModelIdentityDetector(Detector):
 
     # ------------------------------------------------------------------ #
     @staticmethod
-    def _forbidden_brands(model) -> list[str]:
+    def _forbidden_brands(model, provider) -> list[str]:
         """Brands that would betray a substitution for this model: the global rival
-        set plus the profile's explicit list, minus the model's own identity words."""
-        own = {k.lower() for k in (model.identity_keywords or [])}
+        set plus the profile's explicit list, minus the model's own brand words
+        (identity_keywords, provider and model names; see own_brand_words)."""
+        own = set(own_brand_words(provider, model))
         seen: set[str] = set()
         out: list[str] = []
         for brand in (*(model.identity_forbidden or []), *_RIVAL_BRANDS):

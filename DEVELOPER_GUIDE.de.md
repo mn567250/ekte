@@ -435,6 +435,14 @@ Fehlalarme gegen ehrliche Relays. `zing kb-import --check <datei>` führt diesel
 Prüfungen aus wie der Import durch Nutzer (Schema, Grenzen, unsichere reguläre
 Ausdrücke, Prompts, ID-Kollisionen).
 
+Füllen Sie `identity_keywords` immer mit den Hersteller- und Familienwörtern,
+mit denen sich das Modell selbst bezeichnet. Die Identitätsprüfung zählt auch
+Anbieter-Schlüssel, Anzeigenamen und Modell-ID als echte Marke, erweitert um die
+übrigen Namen des Herstellers in `VENDOR_BRANDS` (`zing/knowledge/identity.py`,
+zugleich die Liste konkurrierender Marken des Detektors); der Import ergänzt
+leere Schlüsselwörter aus diesen Namen mit einer Warnung. Die Markenwörter eines
+neuen Herstellers gehören dort als eine Gruppe hinein.
+
 ### Test-Prompts ändern
 
 Testtexte sind Kalibrierdaten. Eine Änderung in `zing/prompts/en.json` kann
