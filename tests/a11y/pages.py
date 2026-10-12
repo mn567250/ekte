@@ -156,6 +156,27 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # the knowledge base: the Knowledge page lists it, the relay configuration
     # of the audit and tools pages picks providers and models from it
     ("zing/knowledge/**", ("audit", "kb", "tools")),
+    # -- the audit pipeline: the audit flow (test_flows.py) runs a real audit
+    # against a fake relay and renders its report; the report export is on
+    # the audit and History pages. tests/test_a11y_pages.py checks that every
+    # module the server and the runner import has a rule here --
+    ("zing/report/**", ("audit", "history")),
+    ("zing/detectors/**", ("audit",)),
+    ("zing/clients/**", ("audit",)),
+    ("zing/judge/**", ("audit",)),
+    ("zing/perf/**", ("audit",)),
+    ("zing/prompts/**", ("audit",)),
+    ("zing/utils/**", ("audit",)),
+    ("zing/runner.py", ("audit",)),
+    ("zing/scoring.py", ("audit",)),
+    ("zing/config.py", ("audit",)),
+    ("zing/context.py", ("audit",)),
+    ("zing/models.py", ("audit",)),
+    ("zing/embed_audit.py", ("tools",)),  # the embedding check on the tools page
+    ("zing/notify.py", ("monitors",)),  # monitor webhooks
+    ("zing/secretbox.py", ("monitors",)),  # the monitors' stored keys
+    ("zing/datadir.py", ("audit", "history", "monitors")),  # where history and monitors live
+    ("zing/__init__.py", ALL),  # imported by the server (version)
     # -- UI strings: fragments are merged into one table per language and
     # re-declare shared keys ("Cancel", "API key", …), so a fragment can change
     # any page; only fragments whose keys are used by known pages alone are

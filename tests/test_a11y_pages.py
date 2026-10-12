@@ -193,7 +193,7 @@ def test_fail_safe_is_reached_only_by_unmatched_files():
 
 @pytest.mark.parametrize("paths", [
     ["README.md", "README.de.md", "docs/METHODOLOGY.md", "docs/ACCESSIBILITY.md", "CHANGELOG.md"],
-    ["zing/detectors/model_identity.py", "tests/test_model_identity.py", "zing/cli.py"],
+    ["tests/test_model_identity.py", "zing/cli.py", "zing/__main__.py", "zing/media_audit.py"],
     ["tests/a11y/README.md", "tests/a11y/llm_review.py", "tests/test_a11y_llm_review.py"],
     ["zing/web/static/console.html", "zing/web/static/index.html", "zing/web/static/modelpicker.js"],
     [],
@@ -202,6 +202,60 @@ def test_files_outside_web_ui_v2_select_nothing(paths):
     s = scope(*paths)
     assert s.pages == () and not s.full
     assert matrix(s) == []
+
+
+def test_audit_pipeline_runs_the_audit_page():
+    # test_audit_flow runs a real audit (fake relay) and renders the report
+    for path in ("zing/detectors/model_identity.py", "zing/runner.py", "zing/clients/anthropic.py",
+                 "zing/scoring.py", "zing/utils/sse.py", "zing/prompts/en.json"):
+        assert scope(path).pages == ("audit",), path
+    assert scope("zing/report/render.py").pages == ("audit", "history")
+    s = scope("zing/detectors/context_window.py", "docs/METHODOLOGY.md", "tests/test_context_window.py")
+    assert s.pages == ("audit",) and matrix(s) == [{"shard": "1/1", "pages": "audit"}]
+
+
+def _imports(*modules: str) -> dict[str, str]:
+    """zing modules reachable from ``modules`` by import (module -> path), also
+    through imports inside functions."""
+    seen: dict[str, str] = {}
+    todo = list(modules)
+    while todo:
+        mod = todo.pop()
+        if mod in seen:
+            continue
+        path = ROOT / (mod.replace(".", "/") + ".py")
+        if not path.exists():
+            path = ROOT / mod.replace(".", "/") / "__init__.py"
+            if not path.exists():
+                continue  # a name imported from a module, not a module
+        seen[mod] = path.relative_to(ROOT).as_posix()
+        pkg = mod if path.name == "__init__.py" else mod.rpartition(".")[0]
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Import):
+                todo += [a.name for a in node.names if a.name.startswith("zing")]
+            elif isinstance(node, ast.ImportFrom):
+                base = node.module or ""
+                if node.level:
+                    parts = pkg.split(".")
+                    base = ".".join(parts[: len(parts) - node.level + 1] + ([base] if base else []))
+                if base.startswith("zing"):
+                    todo += [base] + [f"{base}.{a.name}" for a in node.names]
+    return seen
+
+
+def test_every_module_the_server_imports_has_a_rule():
+    # a module the web UI runs on can break a page, so none may select nothing
+    found = _imports("zing.web.server")
+    assert "zing/runner.py" in found.values() and "zing/report/render.py" in found.values()
+    for path in found.values():
+        got = match(path)
+        assert got, f"{path} is imported by the web server but selects no page"
+
+
+def test_every_module_an_audit_runs_selects_the_audit_page():
+    for path in _imports("zing.runner").values():
+        got = match(path)
+        assert got == ALL or (got and "audit" in got), f"{path} runs in an audit but does not select the audit page"
 
 
 def test_every_page_affected_is_a_full_run():
