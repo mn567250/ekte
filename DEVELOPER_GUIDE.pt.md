@@ -309,6 +309,19 @@ WAV) usa apenas a biblioteca padrão.
   seu `n` e a sua `coverage`) e os intervalos com menos de `MIN_RUNS` (3)
   execuções são marcados `low_n`. Um parâmetro inválido responde 400; as
   respostas são `Cache-Control: no-store`.
+- **Painéis de análise.** `/api/analytics/breakdown` (até 8 `metrics` por
+  `group=relay|model|relay_model|all` no período), `/api/analytics/errors` (as
+  chamadas de conclusão ao destino por classe de resultado
+  `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, por
+  `group=relay|model` e por `bucket`, contadas em SQL por
+  `history.analytics_request_classes()` sem carregar as linhas de pedidos; a
+  hora de uma chamada é o início da sua auditoria mais o seu desvio, ao minuto;
+  `covered` = auditorias com registos de pedidos) e `/api/analytics/integrity`
+  (contagens de aprovado / aviso / falha dos detetores de identidade,
+  capacidades, visão, streaming, protocolo, integridade, prompt injetado e
+  conectividade por relay × modelo, a proporção de modelos divergentes e a
+  mediana da janela de contexto medida / declarada). `/api/analytics/series`
+  também aceita `group=all`. Mesmos filtros e erros que acima.
 - **Auditorias em segundo plano.** `jobs.py` executa cada auditoria como um
   trabalho do servidor. `POST /api/jobs` coloca um em fila, `GET /api/jobs`
   lista os trabalhos em fila, em curso e acabados há pouco (e os monitores em
@@ -379,6 +392,15 @@ esbatidos para intervalos `low_n`, linhas de anotação e tooltip ao passar o
 ponteiro; `fmt` / `fmtDelta` formatam valores pela unidade) e de
 `v2/charts.css` (quatro cores de série validadas por tema, distinguíveis também
 pela forma do marcador). Cada gráfico existe também como tabela de dados.
+
+Cada painel é autónomo: um registo `PANELS` no script da página indica o id da
+sua secção, `load()` (obter com os filtros e a vista atuais e desenhar) e
+`render()` (redesenhar a partir dos dados carregados, p. ex. ao mudar de
+idioma), pelo que os painéis podem ser reorganizados sem se afetarem.
+`ZingCharts.heatmap` desenha a grelha dia da semana × hora (escala sequencial
+de um tom em cinco níveis por tema, células tracejadas para `low_n`, células
+vazias só com contorno), `ZingCharts.stackBars` as barras de erros empilhadas,
+e `timeChart` aceita uma linha `ref` (rácio de faturação de 100%).
 
 **Convenção de tradução.** O texto chinês escrito no HTML é o original e não se
 altera; cada elemento leva o seu texto inglês em `data-en` (e

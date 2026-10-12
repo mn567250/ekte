@@ -309,6 +309,22 @@ un mode de sonde (les plus fréquents), pour ne pas mélanger des exécutions
 différentes ; filtres et vue sont gardés dans l'URL, une vue peut donc être
 mise en favori ou partagée. Rien ne quitte la machine.
 
+D'autres panneaux répondent à des questions plus précises : **heures de
+pointe** (une carte de chaleur jour de la semaine × heure du TTFT, de la latence,
+du taux de réussite ou d'erreur dans votre fuseau horaire — un relais
+ralentit-il ou échoue-t-il davantage aux heures chargées ?), **erreurs et
+fiabilité** (appels en échec par cause — limitation de débit (HTTP 429),
+erreurs serveur (5xx), délais dépassés, erreurs réseau — dans le temps et par
+relais ou modèle, à partir des enregistrements de requêtes stockés, avec le
+nombre d'audits qui en disposent), **intégrité du modèle** (résultats des
+vérifications d'identité, de fenêtre de contexte et de capacités par relais ×
+modèle, part des audits dont le modèle renvoyé diffère et part mesurée de la
+fenêtre de contexte déclarée), **facturation et jetons** (ratios de
+facturation dans le temps par rapport à la ligne des 100 % — au-dessus, le
+relais déclare plus de jetons que zing n'en a comptés — ainsi que les parts de
+jetons de raisonnement et d'entrée en cache) et **surcharge du relais** (le
+temps de traitement déclaré par le relais à côté de l'aller-retour réseau).
+
 ### Langues
 
 Un menu de langue dans l'en-tête de chaque page bascule l'interface entre

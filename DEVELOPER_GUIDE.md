@@ -295,6 +295,19 @@ All decoding (image headers, WAV) is standard library only.
   measure is left out (each value has its `n` and `coverage`), and buckets with
   fewer than `MIN_RUNS` (3) runs are flagged `low_n`. A bad parameter answers
   400; responses are `Cache-Control: no-store`.
+- **Analytics panels.** `/api/analytics/breakdown` (up to 8 `metrics` per
+  `group=relay|model|relay_model|all` over the range), `/api/analytics/errors`
+  (the target's completion calls by outcome class
+  `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, per
+  `group=relay|model` and per `bucket`, counted in SQL by
+  `history.analytics_request_classes()` without loading request rows; a call's
+  time is its run's start plus its offset, to the minute; `covered` = runs that
+  have request records) and `/api/analytics/integrity` (pass / warn / fail
+  counts of the identity, capability, vision, streaming, protocol, integrity,
+  injected-prompt and connectivity detectors per relay × model, the
+  model-mismatch share and the median effective / declared context window).
+  `/api/analytics/series` also takes `group=all`. Same filters and errors as
+  above.
 - **Background audits.** `jobs.py` runs every audit as a job owned by the
   server. `POST /api/jobs` queues one, `GET /api/jobs` lists queued, running and
   recently finished jobs (plus running monitors) with progress,
@@ -359,6 +372,14 @@ p25–p75 band, gaps for empty buckets, faded markers for `low_n` buckets,
 annotation lines and a hover tooltip; `fmt` / `fmtDelta` format values by unit)
 and `v2/charts.css` (four validated series colours per theme, told apart by
 marker shape too). Every chart is also rendered as a data table.
+
+Each panel is self-contained: a `PANELS` registry in the page script lists its
+section id, `load()` (fetch with the current filters and view, then render) and
+`render()` (redraw from the loaded data, e.g. on a language switch), so panels
+can be rearranged without touching each other. `ZingCharts.heatmap` draws the
+weekday × hour grid (five-step one-hue sequential scale per theme, hatched cells
+for `low_n`, outlined empty cells), `ZingCharts.stackBars` the stacked error
+bars, and `timeChart` takes a `ref` line (100% billing ratio).
 
 **Translation convention.** The Chinese text written in the HTML is the
 original and stays untouched; every element carries its English text in

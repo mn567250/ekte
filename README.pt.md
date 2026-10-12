@@ -303,6 +303,21 @@ modo de sondagem (os mais frequentes), para não misturar execuções diferentes
 filtros e vista ficam no URL, por isso uma vista pode ser guardada nos
 favoritos ou partilhada. Nada sai da máquina.
 
+Outros painéis respondem a perguntas mais concretas: **horas de ponta** (um
+mapa de calor dia da semana × hora do TTFT, da latência ou da taxa de sucesso ou
+de erro no seu fuso horário — um relay fica mais lento ou falha mais nas horas
+de maior carga?), **erros e fiabilidade** (chamadas falhadas por causa — limite
+de pedidos (HTTP 429), erros do servidor (5xx), tempos esgotados, erros de rede
+— ao longo do tempo e por relay ou modelo, a partir dos registos de pedidos
+guardados, indicando quantas auditorias os têm), **integridade do modelo**
+(resultados das verificações de identidade, janela de contexto e capacidades
+por relay × modelo, a proporção de auditorias cujo modelo devolvido difere e a
+proporção medida da janela de contexto declarada), **faturação e tokens**
+(rácios de faturação ao longo do tempo face à linha dos 100% — acima dela o
+relay informa mais tokens do que o zing contou — e as proporções de tokens de
+raciocínio e de entrada em cache) e **sobrecarga do relay** (o tempo de
+processamento que o relay informa ao lado da ida e volta de rede).
+
 ### Idiomas
 
 Um menu de idioma no cabeçalho de cada página muda a interface entre

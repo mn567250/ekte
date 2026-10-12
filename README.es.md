@@ -304,6 +304,22 @@ defecto compara una suite y un modo de sondeo (los más frecuentes), para no
 mezclar ejecuciones distintas; filtros y vista se guardan en la URL, así que
 una vista se puede marcar o compartir. Nada sale del equipo.
 
+Otros paneles responden preguntas más concretas: **horas punta** (un mapa de
+calor día de la semana × hora del TTFT, la latencia o la tasa de éxito o de
+error en tu zona horaria: ¿un relay se vuelve más lento o falla más en las horas
+de más carga?), **errores y fiabilidad** (llamadas fallidas por causa: límite
+de peticiones (HTTP 429), errores del servidor (5xx), tiempos agotados, errores
+de red; a lo largo del tiempo y por relay o modelo, a partir de los registros
+de peticiones guardados, indicando cuántas auditorías los tienen),
+**integridad del modelo** (resultados de las comprobaciones de identidad,
+ventana de contexto y capacidades por relay × modelo, la proporción de
+auditorías cuyo modelo devuelto difiere y la proporción medida de la ventana
+de contexto declarada), **facturación y tokens** (ratios de facturación a lo
+largo del tiempo frente a la línea del 100 %: por encima, el relay informa más
+tokens de los que contó zing; además de las proporciones de tokens de
+razonamiento y de entrada en caché) y **sobrecarga del relay** (el tiempo de
+procesamiento que informa el relay junto al tiempo de ida y vuelta de red).
+
 ### Idiomas
 
 Un menú de idioma en la cabecera de cada página cambia la interfaz entre
