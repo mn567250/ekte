@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "检测历史":
       - /url: /v2/history
+    - link "分析":
+      - /url: /v2/analytics
     - link "监控":
       - /url: /v2/watches
     - link "知识库":

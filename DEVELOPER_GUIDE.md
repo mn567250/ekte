@@ -349,6 +349,17 @@ cached per URL/key/protocol) → claimed model from the knowledge base
 knowledge base** (`POST /api/kb/relays`). Its pure helpers are tested under node;
 the classic pages keep `modelpicker.js`.
 
+The v2 **Analytics** page (`v2/analytics.html`) reads only `/api/analytics/*`
+(`options` also lists the relay × model pairs, `relay_models`, for its series
+picker). It has one `<section class="card panel">` per panel under one filter
+bar, so new panels slot in; filters and view live in the URL fragment
+(`#range=30&metric=score&…`) and in `localStorage`. Its charts come from
+`v2/charts.js` (`ZingCharts.timeChart`: hand-drawn inline SVG with median line,
+p25–p75 band, gaps for empty buckets, faded markers for `low_n` buckets,
+annotation lines and a hover tooltip; `fmt` / `fmtDelta` format values by unit)
+and `v2/charts.css` (four validated series colours per theme, told apart by
+marker shape too). Every chart is also rendered as a data table.
+
 **Translation convention.** The Chinese text written in the HTML is the
 original and stays untouched; every element carries its English text in
 `data-en` (and `data-en-placeholder`, `data-en-title`, `data-en-aria-label`).

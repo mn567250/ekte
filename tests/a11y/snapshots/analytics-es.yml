@@ -1,0 +1,259 @@
+- banner:
+  - link "Saltar al contenido principal":
+    - /url: "#main"
+  - link "zing":
+    - /url: /v2/
+    - text: zing.
+  - link "Interfaz clásica":
+    - /url: "?ui=v1"
+  - combobox "Tema":
+    - option "Automático"
+    - option "Claro" [selected]
+    - option "Oscuro"
+  - combobox "Idioma":
+    - option "English"
+    - option "中文"
+    - option "Français"
+    - option "Español" [selected]
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+  - link "Accesibilidad":
+    - /url: /v2/accessibility
+  - navigation "Navegación principal":
+    - link "Auditoría":
+      - /url: /v2/
+    - link "Herramientas":
+      - /url: /v2/tools
+    - link "Historial":
+      - /url: /v2/history
+    - link "Analítica":
+      - /url: /v2/analytics
+    - link "Monitores":
+      - /url: /v2/watches
+    - link "Conocimiento":
+      - /url: /v2/kb
+- main:
+  - heading "Analítica de auditorías" [level=1]
+  - paragraph: "Compare relays y modelos a lo largo del tiempo con lo que zing midió en este equipo: puntuaciones, velocidad, tasas de éxito y facturación."
+  - paragraph:
+    - text: Calculado a partir del historial local en
+    - code: ~/.zing
+    - text: ": no se sube nada."
+  - status: "Actualizado: 14 ejecuciones en este periodo."
+  - region "Filtros":
+    - heading "Filtros" [level=2]
+    - text: Periodo
+    - group "Periodo":
+      - button "Últimos 7 días"
+      - button "Últimos 30 días" [pressed]
+      - button "Últimos 90 días"
+      - button "Todo el periodo"
+      - button "Periodo personalizado"
+    - text: Suite
+    - combobox "Suite":
+      - option "Todos"
+      - option "standard" [selected]
+    - text: Solicitudes de sondeo
+    - combobox "Solicitudes de sondeo":
+      - option "Todos"
+      - option "Streaming" [selected]
+    - text: Protocolo
+    - combobox "Protocolo":
+      - option "Todos" [selected]
+      - option "openai"
+    - text: Origen
+    - combobox "Origen":
+      - option "Todos" [selected]
+      - option "Manual"
+      - option "Monitor"
+    - text: Relay / proveedor
+    - combobox "Relay / proveedor":
+      - option "Todos" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - text: Modelo declarado
+    - combobox "Modelo declarado":
+      - option "Todos" [selected]
+      - option "model-a"
+      - option "model-b"
+      - option "gpt-4o"
+    - text: 15 ejecuciones en el historial (4 de monitores).
+  - region "Resumen":
+    - heading "Resumen" [level=2]
+    - paragraph: 2 sept – 1 oct 2026, comparado con el periodo de igual duración anterior (3 ago – 1 sept 2026).
+    - list:
+      - listitem: Ejecuciones 14 +14
+      - listitem: Relays 2 +2
+      - listitem: Modelos 2 +2
+      - listitem: Puntuación mediana 79 Sin datos en el periodo anterior
+      - listitem: Proporción de riesgo alto 21,4 % Sin datos en el periodo anterior
+      - listitem: Tasa de éxito 100 % Sin datos en el periodo anterior
+      - listitem: Tiempo hasta el primer token p50 <duration> Sin datos en el periodo anterior
+      - listitem: Velocidad de decodificación 62,9 tok/s Sin datos en el periodo anterior
+      - listitem: Ratio de facturación (entrada) 103 % Sin datos en el periodo anterior Datos de 9 de 14 ejecuciones
+      - listitem: Ratio de facturación (salida) 102 % Sin datos en el periodo anterior Datos de 9 de 14 ejecuciones
+  - region "Comparación en el tiempo":
+    - heading "Comparación en el tiempo" [level=2]
+    - paragraph: La línea es la mediana de cada intervalo; la banda, la mitad central de las ejecuciones (percentil 25 a 75). Los intervalos vacíos dejan un hueco.
+    - text: Métrica
+    - combobox "Métrica":
+      - option "Puntuación" [selected]
+      - option "Proporción de riesgo alto"
+      - option "Tasa de éxito"
+      - option "Tasa de errores"
+      - option "Tasa de tiempo agotado"
+      - option "Proporción limitada por tasa"
+      - option "Latencia p50"
+      - option "Latencia p95"
+      - option "Tiempo hasta el primer token p50"
+      - option "Tiempo hasta el primer token p95"
+      - option "Velocidad de decodificación"
+      - option "Variación entre tokens"
+      - option "Tiempo de procesamiento del relay"
+      - option "Ida y vuelta de red"
+      - option "Arranque en frío"
+      - option "Rendimiento bajo carga"
+      - option "Ratio de facturación (entrada)"
+      - option "Ratio de facturación (salida)"
+      - option "Proporción de tokens de razonamiento"
+      - option "Proporción de entrada en caché"
+      - option "Proporción de modelo no coincidente"
+      - option "Contexto declarado"
+      - option "Contexto efectivo"
+      - option "Hallazgos de gravedad alta"
+      - option "Hallazgos de gravedad media"
+      - option "Hallazgos de gravedad baja"
+      - option "Duración de la auditoría"
+      - 'option "Dimensión: Facturación y uso"'
+      - 'option "Dimensión: Capacidades declaradas"'
+      - 'option "Dimensión: Conectividad"'
+      - 'option "Dimensión: Ventana de contexto"'
+      - 'option "Dimensión: Identidad del modelo"'
+      - 'option "Dimensión: Conformidad del protocolo"'
+      - 'option "Dimensión: Fiabilidad en concurrencia"'
+      - 'option "Dimensión: Seguridad del transporte"'
+      - 'option "Dimensión: Autenticidad del streaming"'
+    - text: Agrupar por
+    - combobox "Agrupar por":
+      - option "Relay" [selected]
+      - option "Modelo"
+      - option "Relay × modelo"
+    - text: Intervalos
+    - combobox "Intervalos":
+      - option "Por hora"
+      - option "Por día" [selected]
+      - option "Por semana"
+    - text: Series a comparar (hasta 4)
+    - group "Series a comparar (hasta 4)":
+      - button "✓ Example Relay" [pressed]
+      - button "✓ https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1" [pressed]
+      - button "http://127.0.0.1:9099/v1"
+    - list "Leyenda":
+      - listitem: Example Relay 9 ejecuciones
+      - listitem: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 5 ejecuciones
+    - img "Puntuación a lo largo del tiempo": 0 20 40 60 80100 25 sept 27 sept 29 sept 1 oct v·KB
+    - paragraph:
+      - text: "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."
+      - link "Programe un monitor para obtener mediciones regulares.":
+        - /url: /v2/watches
+    - text: "Las líneas discontinuas del gráfico marcan cambios en cómo se puntúan las ejecuciones (v = versión de zing, KB = perfil de la base de conocimiento):"
+    - list:
+      - listitem: "mar, 29 sept 2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: Perfil de la base de conocimiento modificado (cambió la referencia, no el relay)"
+      - listitem: "mar, 29 sept 2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: versión de zing <version> → 0.20.0"
+    - button "Mostrar como tabla" [expanded]
+    - region "Puntuación (Relay, Por día)":
+      - table "Puntuación (Relay, Por día)":
+        - caption: Puntuación (Relay, Por día)
+        - rowgroup:
+          - row "Intervalo Serie Mediana p25–p75 Ejecuciones Nota":
+            - columnheader "Intervalo"
+            - columnheader "Serie"
+            - columnheader "Mediana"
+            - columnheader "p25–p75"
+            - columnheader "Ejecuciones"
+            - columnheader "Nota"
+        - rowgroup:
+          - 'row "sáb, 26 sept 2026 Example Relay 70 70 – 70 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "sáb, 26 sept 2026"
+            - cell "Example Relay"
+            - cell "70"
+            - cell "70 – 70"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - 'row "dom, 27 sept 2026 https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 72 72 – 72 1 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "dom, 27 sept 2026"
+            - cell "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+            - cell "72"
+            - cell "72 – 72"
+            - cell "1"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          - row "lun, 28 sept 2026 Example Relay 80 79 – 82 3":
+            - cell "lun, 28 sept 2026"
+            - cell "Example Relay"
+            - cell "80"
+            - cell "79 – 82"
+            - cell "3"
+            - cell
+          - 'row "mar, 29 sept 2026 Example Relay 90 89,5 – 90,5 2 Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."':
+            - cell "mar, 29 sept 2026"
+            - cell "Example Relay"
+            - cell "90"
+            - cell "89,5 – 90,5"
+            - cell "2"
+            - 'cell "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico."'
+          # … more rows of the same shape
+  - region "Clasificación":
+    - heading "Clasificación" [level=2]
+    - paragraph: Medianas en el periodo elegido; n es el número de ejecuciones que midieron un valor.
+    - group "Clasificar":
+      - button "Relays de un modelo" [pressed]
+      - button "Modelos de un relay"
+    - text: Modelo
+    - combobox "Modelo":
+      - option "model-a" [selected]
+      - option "model-b"
+      - option "gpt-4o"
+    - region "Relays de «model-a»":
+      - table "Relays de «model-a»":
+        - caption: Relays de «model-a»
+        - rowgroup:
+          - row "Relay Ejecuciones Puntuación Tiempo hasta el primer token p50 Velocidad de decodificación Tasa de éxito Ratio de facturación (entrada) Ratio de facturación (salida) Proporción de modelo no coincidente Proporción de riesgo alto Última ejecución":
+            - columnheader "Relay":
+              - button "Relay"
+            - columnheader "Ejecuciones":
+              - button "Ejecuciones"
+            - columnheader "Puntuación":
+              - button "Puntuación"
+            - columnheader "Tiempo hasta el primer token p50":
+              - button "Tiempo hasta el primer token p50"
+            - columnheader "Velocidad de decodificación":
+              - button "Velocidad de decodificación"
+            - columnheader "Tasa de éxito":
+              - button "Tasa de éxito"
+            - columnheader "Ratio de facturación (entrada)":
+              - button "Ratio de facturación (entrada)"
+            - columnheader "Ratio de facturación (salida)":
+              - button "Ratio de facturación (salida)"
+            - columnheader "Proporción de modelo no coincidente":
+              - button "Proporción de modelo no coincidente"
+            - columnheader "Proporción de riesgo alto":
+              - button "Proporción de riesgo alto"
+            - columnheader "Última ejecución":
+              - button "Última ejecución"
+        - rowgroup:
+          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 — n=0 / 7 0 % n=7 30 sept 2026, 11:00":
+            - rowheader "Example Relay"
+            - cell "7"
+            - cell "82 n=7"
+            - cell "<duration> n=7"
+            - cell "63,2 tok/s n=7"
+            - cell "100 % n=7"
+            - cell "104 % n=7"
+            - cell "102 % n=7"
+            - cell "— n=0 / 7"
+            - cell "0 % n=7"
+            - cell "30 sept 2026, 11:00"
+          # … more rows of the same shape
+    - status

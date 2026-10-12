@@ -1,7 +1,7 @@
 /* zing web UI v2 — the one shared header.
  *
  * Every v2 page has, as the first thing in <div class="wrap">:
- *   <header class="znav" data-page="audit|tools|history|monitors|kb"></header>
+ *   <header class="znav" data-page="audit|tools|history|analytics|monitors|kb"></header>
  * and loads, right after /icons.js and before its own page script:
  *   <script src="/v2/static/nav.js"></script>
  * Optional: data-trust on the header adds the "runs locally" line under it
@@ -28,6 +28,7 @@
     ["audit", "/v2/", "bolt", "检测", "Audit"],
     ["tools", "/v2/tools", "toolbox", "工具", "Tools"],
     ["history", "/v2/history", "chart", "检测历史", "History"],
+    ["analytics", "/v2/analytics", "bars", "分析", "Analytics"],
     ["monitors", "/v2/watches", "bell", "监控", "Monitors"],
     ["kb", "/v2/kb", "book", "知识库", "Knowledge"],
   ];

@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "Historique":
       - /url: /v2/history
+    - link "Analyses":
+      - /url: /v2/analytics
     - link "Surveillances":
       - /url: /v2/watches
     - link "Connaissances":
@@ -43,6 +45,8 @@
     - textbox "Identifiant du modèle":
       - /placeholder: p. ex. gpt-4o
     - button "Rechercher"
+    - link "Exporter vos entrées en YAML":
+      - /url: /api/kb/export
     - status
   - tablist "Sections de la base de connaissances":
     - tab "Modèles" [selected]

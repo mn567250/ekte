@@ -265,6 +265,7 @@ clássica** volta atrás. A escolha é memorizada por navegador.
 | **Consola** | `/console` | — | A mesma auditoria como consola compacta, em estilo de registo |
 | **Ferramentas** | `/tools` | `/v2/tools` | Auditorias de embeddings e rerank |
 | **Histórico** | `/history` | `/v2/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
+| **Análises** | — | `/v2/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
 | **Monitores** | `/watches` | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
 | **Conhecimento** | — | `/v2/kb` | A base de conhecimento em três separadores — modelos, provedores, relays: explorar, ativar/desativar, adicionar os seus |
 
@@ -284,6 +285,23 @@ endereços loopback contam como um só host, por isso modelos servidos pela sua
 própria máquina também esperam); auditorias de relays diferentes correm em
 paralelo, no máximo quatro de cada vez (`ZING_MAX_PARALLEL_AUDITS`). Os
 monitores esperam pelo seu relay da mesma forma.
+
+**Análises (nova interface).** `/v2/analytics` transforma o histórico local em
+comparações: indicadores do período escolhido (execuções, pontuação mediana,
+proporção de risco alto, taxa de sucesso, TTFT, velocidade de saída, rácios de
+faturação) com a variação face ao período anterior de igual duração; um gráfico
+de qualquer métrica por relay, modelo ou relay × modelo, por hora, dia ou
+semana (linha mediana com a faixa p25–p75, até quatro séries, cada gráfico
+também como tabela de dados); e uma classificação dos relays de um modelo ou
+dos modelos de um relay. Os relays são agrupados pela sua entrada na base de
+conhecimento (relays guardados e provedores), por isso renomear um relay
+reagrupa o seu histórico. Intervalos com menos de 3 execuções aparecem
+esbatidos — uma única auditoria pode ser um valor atípico; um monitor dá
+medições regulares. Execuções mais antigas mostram o que mediram: a página diz
+em quantas execuções um valor se baseia. Por omissão compara uma suite e um
+modo de sondagem (os mais frequentes), para não misturar execuções diferentes;
+filtros e vista ficam no URL, por isso uma vista pode ser guardada nos
+favoritos ou partilhada. Nada sai da máquina.
 
 ### Idiomas
 

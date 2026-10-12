@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "Cronologia":
       - /url: /v2/history
+    - link "Analisi":
+      - /url: /v2/analytics
     - link "Monitor":
       - /url: /v2/watches
     - link "Conoscenza":
@@ -44,11 +46,11 @@
     - definition:
       - code: <id>
     - term: Versione di zing
-    - definition: 0.18.0
+    - definition: 0.19.2
     - term: Versione di axe-core
     - definition: 4.13.0
     - term: Test
-    - definition: 1115 eseguiti, 1115 superati, 0 falliti, 0 saltati
+    - definition: 1292 eseguiti, 1292 superati, 0 falliti, 0 saltati
     - term: Lingue
     - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
     - term: Temi
@@ -60,6 +62,7 @@
       - code: /v2/watches
       - code: /v2/tools
       - code: /v2/kb
+      - code: /v2/analytics
       - code: /v2/accessibility
   - region "Copertura":
     - heading "Copertura" [level=2]
@@ -115,7 +118,7 @@
               - group:
                 - text: Contenuti non testuali
                 - paragraph: "Come viene verificato: Immagini, icone, SVG e controlli hanno un'alternativa testuale. Se ogni alternativa è significativa lo giudica una persona."
-                - paragraph: "Test automatici: 14 eseguiti, 14 superati, 0 falliti, 166 saltati"
+                - paragraph: "Test automatici: 56 eseguiti, 56 superati, 0 falliti, 154 saltati"
                 - paragraph:
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel

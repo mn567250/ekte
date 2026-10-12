@@ -1,0 +1,64 @@
+/* zing web UI v2 — charts drawn by /v2/static/charts.js.
+ *
+ * Four categorical series slots (s0..s3), assigned in this fixed order and
+ * following the series, never its rank. Validated as a set for each theme
+ * (OKLCH lightness band, CVD separation >= 8.5 ΔE on adjacent pairs, >= 3:1
+ * against --card); text never wears them. Markers differ by shape too.
+ */
+:root {
+  --c-s0: #2a78d6; /* blue */
+  --c-s1: #c8531f; /* orange */
+  --c-s2: #0e8a5f; /* aqua */
+  --c-s3: #6250d6; /* violet */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --c-s0: #3f8fe8; --c-s1: #e0703c; --c-s2: #1fa572; --c-s3: #9085e9; }
+}
+:root[data-theme="dark"] { --c-s0: #3f8fe8; --c-s1: #e0703c; --c-s2: #1fa572; --c-s3: #9085e9; }
+
+.s0 { --c: var(--c-s0); } .s1 { --c: var(--c-s1); } .s2 { --c: var(--c-s2); } .s3 { --c: var(--c-s3); }
+
+.chartbox { position: relative; min-width: 0; }
+.tchart { display: block; max-width: 100%; height: auto; overflow: visible; font-family: var(--sans); }
+.tchart text { font-size: 11px; fill: var(--faint); font-variant-numeric: tabular-nums; }
+.tchart .grid line { stroke: var(--line); stroke-width: 1; }
+.tchart .grid line.zero, .tchart .xaxis line { stroke: var(--line-control); stroke-width: 1; }
+.tchart .xaxis .tick { stroke: var(--line-control); }
+.tchart .marks line { stroke: var(--ink2); stroke-width: 1; stroke-dasharray: 3 3; }
+.tchart .marks text { fill: var(--ink2); font-weight: 700; font-size: 10px; }
+.tchart .ser .band { fill: var(--c); opacity: 0.16; stroke: none; }
+.tchart .ser .whisk { stroke: var(--c); stroke-width: 6; stroke-linecap: round; opacity: 0.22; }
+.tchart .ser .line { fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.tchart .ser .pt { fill: var(--c); stroke: var(--card); stroke-width: 2; }
+/* a bucket with fewer runs than the minimum: hollow and faded (the note,
+   tooltip and table row say why) */
+.tchart .ser .pt.low { fill: var(--card); stroke: var(--c); stroke-width: 1.8; opacity: 0.6; }
+.tchart .cross { stroke: var(--ink2); stroke-width: 1; pointer-events: none; }
+.tchart .hit { fill: transparent; }
+
+/* legend / tooltip key */
+.ckey { flex: none; overflow: visible; }
+.ckey line { stroke: var(--c); stroke-width: 2; }
+.ckey path { fill: var(--c); stroke: var(--card); stroke-width: 1; }
+
+.ctip {
+  position: absolute; top: 8px; z-index: 5; width: max-content; max-width: min(300px, 90%);
+  padding: 9px 11px; border-radius: 12px; background: var(--card); border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop); font-size: 12px; color: var(--ink2); line-height: 1.4;
+}
+.ctip[hidden] { display: none; }
+.ctip .when { margin: 0 0 6px; font-weight: 700; color: var(--ink); }
+.ctip ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ctip li { display: flex; gap: 7px; align-items: flex-start; }
+.ctip li .ckey { margin-top: 3px; }
+.ctip b { color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ctip .nm { overflow-wrap: anywhere; }
+.ctip .sub { display: block; color: var(--faint); font-size: 11.5px; }
+.ctip .mk { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); color: var(--ink2); }
+
+@media (forced-colors: active) {
+  .tchart .ser .line, .ckey line { stroke: CanvasText; }
+  .tchart .ser .pt, .ckey path { fill: CanvasText; stroke: Canvas; }
+  .tchart .ser .pt.low { fill: Canvas; stroke: CanvasText; }
+  .tchart .ser .band { fill: GrayText; }
+}

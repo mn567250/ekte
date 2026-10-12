@@ -368,6 +368,18 @@ base de conhecimento (`/api/kb/resolve` pré-seleciona-o) → provedor derivado,
 mais **Salvar na base** (`POST /api/kb/relays`). As suas funções puras são
 testadas com node; as páginas clássicas mantêm `modelpicker.js`.
 
+A página v2 **Análises** (`v2/analytics.html`) só lê `/api/analytics/*`
+(`options` também lista os pares relay × modelo, `relay_models`, para o seletor
+de séries). Tem uma `<section class="card panel">` por painel sob uma única
+barra de filtros, por isso podem juntar-se painéis; filtros e vista ficam no
+fragmento do URL (`#range=30&metric=score&…`) e em `localStorage`. Os gráficos
+vêm de `v2/charts.js` (`ZingCharts.timeChart`: SVG inline desenhado à mão com
+linha mediana, faixa p25–p75, lacunas para intervalos vazios, marcadores
+esbatidos para intervalos `low_n`, linhas de anotação e tooltip ao passar o
+ponteiro; `fmt` / `fmtDelta` formatam valores pela unidade) e de
+`v2/charts.css` (quatro cores de série validadas por tema, distinguíveis também
+pela forma do marcador). Cada gráfico existe também como tabela de dados.
+
 **Convenção de tradução.** O texto chinês escrito no HTML é o original e não se
 altera; cada elemento leva o seu texto inglês em `data-en` (e
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). O texto inglês é a

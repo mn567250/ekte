@@ -1,0 +1,238 @@
+- banner:
+  - link "Skip to main content":
+    - /url: "#main"
+  - link "zing":
+    - /url: /v2/
+    - text: zing.
+  - link "Classic UI":
+    - /url: "?ui=v1"
+  - combobox "Theme":
+    - option "Auto theme"
+    - option "Light" [selected]
+    - option "Dark"
+  - combobox "Language":
+    - option "English" [selected]
+    - option "中文"
+    - option "Français"
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+  - link "Accessibility":
+    - /url: /v2/accessibility
+  - navigation "Main navigation":
+    - link "Audit":
+      - /url: /v2/
+    - link "Tools":
+      - /url: /v2/tools
+    - link "History":
+      - /url: /v2/history
+    - link "Analytics":
+      - /url: /v2/analytics
+    - link "Monitors":
+      - /url: /v2/watches
+    - link "Knowledge":
+      - /url: /v2/kb
+- main:
+  - heading "Audit analytics" [level=1]
+  - paragraph: "Compare relays and models over time with what zing measured on this machine: scores, speed, success rates and billing."
+  - paragraph:
+    - text: Computed from the local history under
+    - code: ~/.zing
+    - text: — nothing is uploaded.
+  - status: "Updated: 14 runs in this range."
+  - region "Filters":
+    - heading "Filters" [level=2]
+    - text: Period
+    - group "Period":
+      - button "Last 7 days"
+      - button "Last 30 days" [pressed]
+      - button "Last 90 days"
+      - button "All time"
+      - button "Custom range"
+    - text: Suite
+    - combobox "Suite":
+      - option "All"
+      - option "standard" [selected]
+    - text: Probe requests
+    - combobox "Probe requests":
+      - option "All"
+      - option "Streaming" [selected]
+    - text: Protocol
+    - combobox "Protocol":
+      - option "All" [selected]
+      - option "openai"
+    - text: Source
+    - combobox "Source":
+      - option "All" [selected]
+      - option "Manual"
+      - option "Monitor"
+    - text: Relay / provider
+    - combobox "Relay / provider":
+      - option "All" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - text: Claimed model
+    - combobox "Claimed model":
+      - option "All" [selected]
+      - option "model-a"
+      - option "model-b"
+      - option "gpt-4o"
+    - text: 15 runs in the history (4 by monitors).
+  - region "Overview":
+    - heading "Overview" [level=2]
+    - paragraph: Sep 2 – Oct 1, 2026, compared with the period of the same length before (Aug 3 – Sep 1, 2026).
+    - list:
+      - listitem: Runs 14 +14
+      - listitem: Relays 2 +2
+      - listitem: Models 2 +2
+      - listitem: Median score 79 No data in the previous period
+      - listitem: High-risk share 21.4% No data in the previous period
+      - listitem: Success rate 100% No data in the previous period
+      - listitem: Time to first token p50 <duration> No data in the previous period
+      - listitem: Decode speed 62.9 tok/s No data in the previous period
+      - listitem: Billing ratio (prompt) 103% No data in the previous period Data from 9 of 14 runs
+      - listitem: Billing ratio (completion) 102% No data in the previous period Data from 9 of 14 runs
+  - region "Comparison over time":
+    - heading "Comparison over time" [level=2]
+    - paragraph: The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.
+    - text: Metric
+    - combobox "Metric":
+      - option "Score" [selected]
+      - option "High-risk share"
+      - option "Success rate"
+      - option "Error rate"
+      - option "Timeout rate"
+      - option "Rate-limited share"
+      - option "Latency p50"
+      - option "Latency p95"
+      - option "Time to first token p50"
+      - option "Time to first token p95"
+      - option "Decode speed"
+      - option "Inter-token jitter"
+      - option "Relay processing time"
+      - option "Network round trip"
+      - option "Cold start"
+      - option "Throughput under load"
+      - option "Billing ratio (prompt)"
+      - option "Billing ratio (completion)"
+      - option "Reasoning token share"
+      - option "Cached input share"
+      - option "Model mismatch share"
+      - option "Declared context"
+      - option "Effective context"
+      - option "High-severity findings"
+      - option "Medium-severity findings"
+      - option "Low-severity findings"
+      - option "Audit duration"
+      - 'option "Dimension: Billing & usage"'
+      - 'option "Dimension: Capability claims"'
+      - 'option "Dimension: Connectivity"'
+      - 'option "Dimension: Context window"'
+      - 'option "Dimension: Model identity"'
+      - 'option "Dimension: Protocol compliance"'
+      - 'option "Dimension: Concurrency reliability"'
+      - 'option "Dimension: Transport security"'
+      - 'option "Dimension: Streaming authenticity"'
+    - text: Group by
+    - combobox "Group by":
+      - option "Relay" [selected]
+      - option "Model"
+      - option "Relay × model"
+    - text: Time buckets
+    - combobox "Time buckets":
+      - option "By hour"
+      - option "By day" [selected]
+      - option "By week"
+    - text: Series to compare (up to 4)
+    - group "Series to compare (up to 4)":
+      - button "✓ Example Relay" [pressed]
+      - button "✓ https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1" [pressed]
+      - button "http://127.0.0.1:9099/v1"
+    - list "Legend":
+      - listitem: Example Relay 9 runs
+      - listitem: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 5 runs
+    - img "Score over time": 0 20 40 60 80100 Sep 25 Sep 27 Sep 29 Oct 1 v·KB
+    - paragraph:
+      - text: Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier.
+      - link "Schedule a monitor for regular measurements.":
+        - /url: /v2/watches
+    - text: "Dashed lines in the chart mark changes to how runs are scored (v = zing version, KB = knowledge-base profile):"
+    - list:
+      - listitem: "Tue, Sep 29, 2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: Knowledge-base profile changed (the reference changed, not the relay)"
+      - listitem: "Tue, Sep 29, 2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: zing version 0.19.2 → 0.20.0"
+    - button "Show as table" [expanded]
+    - region "Score (Relay, By day)":
+      - table "Score (Relay, By day)":
+        - caption: Score (Relay, By day)
+        - rowgroup:
+          - row "Time bucket Series Median p25–p75 Runs Note":
+            - columnheader "Time bucket"
+            - columnheader "Series"
+            - columnheader "Median"
+            - columnheader "p25–p75"
+            - columnheader "Runs"
+            - columnheader "Note"
+        - rowgroup:
+          - row "Sat, Sep 26, 2026 Example Relay 70 70 – 70 1 Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier.":
+            - cell "Sat, Sep 26, 2026"
+            - cell "Example Relay"
+            - cell "70"
+            - cell "70 – 70"
+            - cell "1"
+            - cell "Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier."
+          # … more rows of the same shape
+  - region "Leaderboard":
+    - heading "Leaderboard" [level=2]
+    - paragraph: Medians over the selected range; n is the number of runs that measured a value.
+    - group "Rank":
+      - button "Relays for a model" [pressed]
+      - button "Models for a relay"
+    - text: Model
+    - combobox "Model":
+      - option "model-a" [selected]
+      - option "model-b"
+      - option "gpt-4o"
+    - region "Relays for “model-a”":
+      - table "Relays for “model-a”":
+        - caption: Relays for “model-a”
+        - rowgroup:
+          - row "Relay Runs Score Time to first token p50 Decode speed Success rate Billing ratio (prompt) Billing ratio (completion) Model mismatch share High-risk share Last run":
+            - columnheader "Relay":
+              - button "Relay"
+            - columnheader "Runs":
+              - button "Runs"
+            - columnheader "Score":
+              - button "Score"
+            - columnheader "Time to first token p50":
+              - button "Time to first token p50"
+            - columnheader "Decode speed":
+              - button "Decode speed"
+            - columnheader "Success rate":
+              - button "Success rate"
+            - columnheader "Billing ratio (prompt)":
+              - button "Billing ratio (prompt)"
+            - columnheader "Billing ratio (completion)":
+              - button "Billing ratio (completion)"
+            - columnheader "Model mismatch share":
+              - button "Model mismatch share"
+            - columnheader "High-risk share":
+              - button "High-risk share"
+            - columnheader "Last run":
+              - button "Last run"
+        - rowgroup:
+          - row "Example Relay 7 82 n=7 <duration> n=7 63.2 tok/s n=7100% n=7104% n=7102% n=7 — n=0 / 7 0% n=7 Sep 30, 2026, 11:00 AM":
+            - rowheader "Example Relay"
+            - cell "7"
+            - cell "82 n=7"
+            - cell "<duration> n=7"
+            - cell "63.2 tok/s n=7"
+            - cell "100% n=7"
+            - cell "104% n=7"
+            - cell "102% n=7"
+            - cell "— n=0 / 7"
+            - cell "0% n=7"
+            - cell "Sep 30, 2026, 11:00 AM"
+          # … more rows of the same shape
+    - status

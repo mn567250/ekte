@@ -374,6 +374,18 @@ abgeleiteter Anbieter, dazu **In der Wissensbasis speichern** (`POST
 /api/kb/relays`). Seine reinen Hilfsfunktionen werden unter node getestet; die
 klassischen Seiten behalten `modelpicker.js`.
 
+Die v2-Seite **Analyse** (`v2/analytics.html`) liest nur `/api/analytics/*`
+(`options` nennt auch die Paare Relay × Modell, `relay_models`, für die
+Reihenauswahl). Sie hat ein `<section class="card panel">` pro Panel unter einer
+Filterleiste, neue Panels lassen sich also einfügen; Filter und Ansicht stehen
+im URL-Fragment (`#range=30&metric=score&…`) und in `localStorage`. Die
+Diagramme kommen aus `v2/charts.js` (`ZingCharts.timeChart`: handgezeichnetes
+Inline-SVG mit Median-Linie, p25–p75-Band, Lücken für leere Abschnitte, blassen
+Markern für `low_n`-Abschnitte, Markierungslinien und Hover-Tooltip; `fmt` /
+`fmtDelta` formatieren Werte nach Einheit) und `v2/charts.css` (vier geprüfte
+Reihenfarben je Theme, zusätzlich an der Markerform unterscheidbar). Jedes
+Diagramm gibt es auch als Datentabelle.
+
 **Übersetzungskonvention.** Der chinesische Text im HTML ist das Original und
 bleibt unverändert; jedes Element trägt seinen englischen Text in `data-en` (und
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Der englische Text

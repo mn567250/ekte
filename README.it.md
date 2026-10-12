@@ -266,6 +266,7 @@ nuova interfaccia** passa alla **nuova interfaccia** sotto `/v2/`, il cui link
 | **Console** | `/console` | — | La stessa verifica come console compatta, in stile registro |
 | **Strumenti** | `/tools` | `/v2/tools` | Verifiche di embedding e rerank |
 | **Cronologia** | `/history` | `/v2/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
+| **Analisi** | — | `/v2/analytics` | Relay e modelli confrontati nel tempo: indicatori, grafici con tabelle di dati, classifiche |
 | **Monitor** | `/watches` | `/v2/watches` | Verifiche ripetute pianificate con avvisi via webhook |
 | **Conoscenza** | — | `/v2/kb` | La base di conoscenza in tre schede — modelli, provider, relay: sfogliare, attivare/disattivare, aggiungere i propri |
 
@@ -285,6 +286,24 @@ contano come un solo host, quindi anche i modelli serviti dalla tua macchina
 attendono); gli audit di relay diversi vengono eseguiti in parallelo, al massimo
 quattro alla volta (`ZING_MAX_PARALLEL_AUDITS`). I monitor attendono il loro
 relay allo stesso modo.
+
+**Analisi (nuova interfaccia).** `/v2/analytics` trasforma la cronologia
+locale in confronti: indicatori per il periodo scelto (esecuzioni, punteggio
+mediano, quota ad alto rischio, tasso di successo, TTFT, velocità di output,
+rapporti di fatturazione) con la variazione rispetto al periodo precedente di
+pari durata; un grafico di qualsiasi metrica per relay, modello o relay ×
+modello, per ora, giorno o settimana (linea mediana con la fascia p25–p75, fino
+a quattro serie, ogni grafico anche come tabella di dati); e una classifica dei
+relay per un modello o dei modelli di un relay. I relay sono raggruppati per
+voce della knowledge base (relay salvati e provider), quindi rinominare un relay
+ne raggruppa di nuovo la cronologia. Gli intervalli con meno di 3 esecuzioni
+sono attenuati — un singolo audit può essere un valore anomalo; un monitor
+fornisce misurazioni regolari. Le esecuzioni più vecchie mostrano ciò che hanno
+misurato: la pagina dice su quante esecuzioni si basa un valore. Per
+impostazione predefinita confronta una suite e una modalità di sonda (le più
+frequenti), per non mescolare esecuzioni diverse; filtri e vista restano
+nell'URL, quindi una vista si può salvare nei preferiti o condividere. Nulla
+lascia la macchina.
 
 ### Lingue
 

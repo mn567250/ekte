@@ -5,7 +5,8 @@ Endpoints:
   GET  /v2/…                 the v2 UI, served side by side for A/B comparison;
                              ?ui=v1|v2 on any page picks one (remembered in the
                              `zing_ui` cookie)
-  GET  /api/health           {ok, version}
+  GET  /v2/analytics         charts and leaderboards over the run history (v2 only)
+  GET  /api/health          {ok, version}
   GET  /api/kb               providers (base URLs, saved relays) and their models
   POST /api/kb/relays        save a relay {name, base_url} in kb.db
   GET  /api/kb/profiles      models, providers and relays (complete sets, sources,
@@ -714,6 +715,17 @@ def create_app() -> FastAPI:
             resp = RedirectResponse("/", status_code=307)
         else:
             resp = html_page(_V2 / "kb.html", request.scope)
+        return _remember_ui(resp, request.query_params.get("ui"))
+
+    @app.get("/v2/analytics")
+    async def v2_analytics(request: Request) -> Any:
+        # Charts and leaderboards over the run history (/api/analytics/*).
+        # v2 only: ?ui=v1 goes to the classic history page.
+        resp: Response
+        if request.query_params.get("ui") == "v1":
+            resp = RedirectResponse("/history", status_code=307)
+        else:
+            resp = html_page(_V2 / "analytics.html", request.scope)
         return _remember_ui(resp, request.query_params.get("ui"))
 
     @app.get("/v2/accessibility")

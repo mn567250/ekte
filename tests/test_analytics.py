@@ -187,6 +187,10 @@ def test_options(seeded):
     assert {s["value"] for s in opt["stream_modes"]} == {"stream", "non_stream"}
     assert {a["value"] for a in opt["apis"]} == {"openai", "anthropic"}
     assert opt["dimensions"] == ["protocol"] and opt["min_runs"] == analytics.MIN_RUNS
+    pairs = {p["key"]: p for p in opt["relay_models"]}
+    assert sum(p["runs"] for p in pairs.values()) == 17
+    assert all(p["key"] == f'{p["relay"]}|{p["model"]}' and p["kind"] == "relay_model" for p in pairs.values())
+    assert opt["relay_models"][0]["runs"] == max(p["runs"] for p in pairs.values())
     assert {m["id"] for m in opt["metrics"]} >= {"score", "ttft_p50", "billing_ratio_prompt"}
     assert analytics.options({"from": _iso(T0 + timedelta(days=3))})["runs"] == 3
 

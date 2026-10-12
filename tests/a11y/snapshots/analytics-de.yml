@@ -1,0 +1,238 @@
+- banner:
+  - link "Zum Hauptinhalt springen":
+    - /url: "#main"
+  - link "zing":
+    - /url: /v2/
+    - text: zing.
+  - link "Klassische Oberfläche":
+    - /url: "?ui=v1"
+  - combobox "Design":
+    - option "Automatisch"
+    - option "Hell" [selected]
+    - option "Dunkel"
+  - combobox "Sprache":
+    - option "English"
+    - option "中文"
+    - option "Français"
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch" [selected]
+  - link "Barrierefreiheit":
+    - /url: /v2/accessibility
+  - navigation "Hauptnavigation":
+    - link "Prüfung":
+      - /url: /v2/
+    - link "Werkzeuge":
+      - /url: /v2/tools
+    - link "Verlauf":
+      - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
+    - link "Überwachung":
+      - /url: /v2/watches
+    - link "Wissen":
+      - /url: /v2/kb
+- main:
+  - heading "Audit-Analyse" [level=1]
+  - paragraph: "Vergleichen Sie Relays und Modelle im Zeitverlauf mit dem, was zing auf diesem Rechner gemessen hat: Scores, Geschwindigkeit, Erfolgsquoten und Abrechnung."
+  - paragraph:
+    - text: Berechnet aus dem lokalen Verlauf unter
+    - code: ~/.zing
+    - text: — nichts wird hochgeladen.
+  - status: "Aktualisiert: 14 Läufe in diesem Zeitraum."
+  - region "Filter":
+    - heading "Filter" [level=2]
+    - text: Zeitraum
+    - group "Zeitraum":
+      - button "Letzte 7 Tage"
+      - button "Letzte 30 Tage" [pressed]
+      - button "Letzte 90 Tage"
+      - button "Gesamter Zeitraum"
+      - button "Eigener Zeitraum"
+    - text: Suite
+    - combobox "Suite":
+      - option "Alle"
+      - option "standard" [selected]
+    - text: Messanfragen
+    - combobox "Messanfragen":
+      - option "Alle"
+      - option "Streaming" [selected]
+    - text: Protokoll
+    - combobox "Protokoll":
+      - option "Alle" [selected]
+      - option "openai"
+    - text: Quelle
+    - combobox "Quelle":
+      - option "Alle" [selected]
+      - option "Manuell"
+      - option "Überwachung"
+    - text: Relay / Anbieter
+    - combobox "Relay / Anbieter":
+      - option "Alle" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - text: Angegebenes Modell
+    - combobox "Angegebenes Modell":
+      - option "Alle" [selected]
+      - option "model-a"
+      - option "model-b"
+      - option "gpt-4o"
+    - text: 15 Läufe im Verlauf (4 von Überwachungen).
+  - region "Überblick":
+    - heading "Überblick" [level=2]
+    - paragraph: 02.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (03.08. – 01.09.2026).
+    - list:
+      - listitem: Läufe 14 +14
+      - listitem: Relays 2 +2
+      - listitem: Modelle 2 +2
+      - listitem: Median-Score 79 Keine Daten im vorigen Zeitraum
+      - listitem: Anteil hohes Risiko 21,4 % Keine Daten im vorigen Zeitraum
+      - listitem: Erfolgsquote 100 % Keine Daten im vorigen Zeitraum
+      - listitem: Zeit bis zum ersten Token p50 <duration> Keine Daten im vorigen Zeitraum
+      - listitem: Dekodiertempo 62,9 tok/s Keine Daten im vorigen Zeitraum
+      - listitem: Abrechnungsverhältnis (Eingabe) 103 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
+      - listitem: Abrechnungsverhältnis (Ausgabe) 102 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
+  - region "Vergleich im Zeitverlauf":
+    - heading "Vergleich im Zeitverlauf" [level=2]
+    - paragraph: Die Linie ist der Median jedes Zeitabschnitts, das Band die mittlere Hälfte der Läufe (25. bis 75. Perzentil). Leere Abschnitte bleiben eine Lücke.
+    - text: Kennzahl
+    - combobox "Kennzahl":
+      - option "Score" [selected]
+      - option "Anteil hohes Risiko"
+      - option "Erfolgsquote"
+      - option "Fehlerquote"
+      - option "Timeout-Quote"
+      - option "Anteil Ratenbegrenzung"
+      - option "Latenz p50"
+      - option "Latenz p95"
+      - option "Zeit bis zum ersten Token p50"
+      - option "Zeit bis zum ersten Token p95"
+      - option "Dekodiertempo"
+      - option "Jitter zwischen Tokens"
+      - option "Verarbeitungszeit des Relays"
+      - option "Netzwerk-Umlaufzeit"
+      - option "Kaltstart"
+      - option "Durchsatz unter Last"
+      - option "Abrechnungsverhältnis (Eingabe)"
+      - option "Abrechnungsverhältnis (Ausgabe)"
+      - option "Anteil Reasoning-Tokens"
+      - option "Anteil gecachter Eingabe"
+      - option "Anteil Modellabweichung"
+      - option "Angegebener Kontext"
+      - option "Gemessener Kontext"
+      - option "Befunde hoher Schwere"
+      - option "Befunde mittlerer Schwere"
+      - option "Befunde geringer Schwere"
+      - option "Audit-Dauer"
+      - 'option "Dimension: Abrechnung & Verbrauch"'
+      - 'option "Dimension: Angegebene Fähigkeiten"'
+      - 'option "Dimension: Konnektivität"'
+      - 'option "Dimension: Kontextfenster"'
+      - 'option "Dimension: Modellidentität"'
+      - 'option "Dimension: Protokollkonformität"'
+      - 'option "Dimension: Zuverlässigkeit unter Parallellast"'
+      - 'option "Dimension: Transportsicherheit"'
+      - 'option "Dimension: Echtheit des Streamings"'
+    - text: Gruppieren nach
+    - combobox "Gruppieren nach":
+      - option "Relay" [selected]
+      - option "Modell"
+      - option "Relay × Modell"
+    - text: Zeitabschnitte
+    - combobox "Zeitabschnitte":
+      - option "Pro Stunde"
+      - option "Pro Tag" [selected]
+      - option "Pro Woche"
+    - text: Zu vergleichende Reihen (bis zu 4)
+    - group "Zu vergleichende Reihen (bis zu 4)":
+      - button "✓ Example Relay" [pressed]
+      - button "✓ https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1" [pressed]
+      - button "http://127.0.0.1:9099/v1"
+    - list "Legende":
+      - listitem: Example Relay 9 Läufe
+      - listitem: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 5 Läufe
+    - img "Score im Zeitverlauf": 0 20 40 60 80100 25. Sept. 27. Sept. 29. Sept. 1. Okt. v·KB
+    - paragraph:
+      - text: Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.
+      - link "Richten Sie eine Überwachung für regelmäßige Messungen ein.":
+        - /url: /v2/watches
+    - text: "Gestrichelte Linien im Diagramm markieren Änderungen an der Bewertung der Läufe (v = zing-Version, KB = Profil der Wissensbasis):"
+    - list:
+      - listitem: "Di., 29. Sept. 2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: Profil der Wissensbasis geändert (die Referenz hat sich geändert, nicht das Relay)"
+      - listitem: "Di., 29. Sept. 2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: zing-Version 0.19.2 → 0.20.0"
+    - button "Als Tabelle anzeigen" [expanded]
+    - region "Score (Relay, Pro Tag)":
+      - table "Score (Relay, Pro Tag)":
+        - caption: Score (Relay, Pro Tag)
+        - rowgroup:
+          - row "Zeitabschnitt Reihe Median p25–p75 Läufe Hinweis":
+            - columnheader "Zeitabschnitt"
+            - columnheader "Reihe"
+            - columnheader "Median"
+            - columnheader "p25–p75"
+            - columnheader "Läufe"
+            - columnheader "Hinweis"
+        - rowgroup:
+          - row "Sa., 26. Sept. 2026 Example Relay 70 70 – 70 1 Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.":
+            - cell "Sa., 26. Sept. 2026"
+            - cell "Example Relay"
+            - cell "70"
+            - cell "70 – 70"
+            - cell "1"
+            - cell "Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann."
+          # … more rows of the same shape
+  - region "Rangliste":
+    - heading "Rangliste" [level=2]
+    - paragraph: Mediane über den gewählten Zeitraum; n ist die Zahl der Läufe, die einen Wert gemessen haben.
+    - group "Rangfolge":
+      - button "Relays für ein Modell" [pressed]
+      - button "Modelle eines Relays"
+    - text: Modell
+    - combobox "Modell":
+      - option "model-a" [selected]
+      - option "model-b"
+      - option "gpt-4o"
+    - region "Relays für „model-a“":
+      - table "Relays für „model-a“":
+        - caption: Relays für „model-a“
+        - rowgroup:
+          - row "Relay Läufe Score Zeit bis zum ersten Token p50 Dekodiertempo Erfolgsquote Abrechnungsverhältnis (Eingabe) Abrechnungsverhältnis (Ausgabe) Anteil Modellabweichung Anteil hohes Risiko Letzter Lauf":
+            - columnheader "Relay":
+              - button "Relay"
+            - columnheader "Läufe":
+              - button "Läufe"
+            - columnheader "Score":
+              - button "Score"
+            - columnheader "Zeit bis zum ersten Token p50":
+              - button "Zeit bis zum ersten Token p50"
+            - columnheader "Dekodiertempo":
+              - button "Dekodiertempo"
+            - columnheader "Erfolgsquote":
+              - button "Erfolgsquote"
+            - columnheader "Abrechnungsverhältnis (Eingabe)":
+              - button "Abrechnungsverhältnis (Eingabe)"
+            - columnheader "Abrechnungsverhältnis (Ausgabe)":
+              - button "Abrechnungsverhältnis (Ausgabe)"
+            - columnheader "Anteil Modellabweichung":
+              - button "Anteil Modellabweichung"
+            - columnheader "Anteil hohes Risiko":
+              - button "Anteil hohes Risiko"
+            - columnheader "Letzter Lauf":
+              - button "Letzter Lauf"
+        - rowgroup:
+          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 — n=0 / 7 0 % n=7 30.09.2026, 11:00":
+            - rowheader "Example Relay"
+            - cell "7"
+            - cell "82 n=7"
+            - cell "<duration> n=7"
+            - cell "63,2 tok/s n=7"
+            - cell "100 % n=7"
+            - cell "104 % n=7"
+            - cell "102 % n=7"
+            - cell "— n=0 / 7"
+            - cell "0 % n=7"
+            - cell "30.09.2026, 11:00"
+          # … more rows of the same shape
+    - status

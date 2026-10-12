@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "检测历史":
       - /url: /v2/history
+    - link "分析":
+      - /url: /v2/analytics
     - link "监控":
       - /url: /v2/watches
     - link "知识库":
@@ -46,10 +48,14 @@
     - combobox "中转站":
       - option "全部" [selected]
       - option "127.0.0.1:9099"
+      - option "gateway.a-very-long-relay-hostname.example.org"
+      - option "relay.example.com"
     - text: 声称模型
     - combobox "声称模型":
       - option "全部" [selected]
       - option "gpt-4o"
+      - option "model-a"
+      - option "model-b"
     - text: 套件
     - combobox "套件":
       - option "全部" [selected]
@@ -61,6 +67,7 @@
     - text: 协议
     - combobox "协议":
       - option "全部" [selected]
+      - option "openai"
       - option "（未知）"
     - text: 协议识别
     - combobox "协议识别":
@@ -69,10 +76,13 @@
     - text: 探测请求
     - combobox "探测请求":
       - option "全部" [selected]
+      - option "流式"
       - option "（未知）"
     - text: 风险
     - combobox "风险":
       - option "全部" [selected]
+      - option "一致（疑似真货）"
+      - option "基本可信"
       - option "货不对板"
     - text: 最低健康分
     - spinbutton "最低健康分"
@@ -93,269 +103,172 @@
       - button "评级"
       - button "延迟 p50" [pressed]
       - button "输出速度"
-    - text: 显示 1 / 1 条记录
+    - text: 显示 15 / 15 条记录
   - group "排序":
     - button "时间，降序排列": 时间
     - button "按风险排序": 风险
     - button "按健康分排序": 健康分
     - button "按评级排序": 评级
   - button "全部折叠"
-  - region "gpt-4o":
-    - heading "gpt-4o" [level=2]:
-      - button "gpt-4o" [expanded]
+  - region "model-a https://relay.example.com/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
     - code: base_url
-    - text: http://127.0.0.1:9099/v1 健康分 53
+    - text: https://relay.example.com/v1 健康分
+    - img "健康分趋势（7 次检测）：从 70 到 82，上升。"
+    - text: 82 延迟 p50
+    - img "延迟 p50趋势（7 次检测）：从 <duration> 到 <duration>。"
+    - text: <duration>
     - list:
       - listitem:
-        - button "2026年9月27日 07:47 货不对板 健康分 53 评级 F check · standard" [expanded]
+        - button "2026年9月30日 11:02 一致（疑似真货） 健康分 82 评级 B check · standard openai · 流式 p50 <duration>"
         - button "重新检测"
         - button "设为监控"
-        - button "删除此记录" [expanded]
-        - group "删除这条历史记录？":
-          - text: 删除这条历史记录？
-          - button "删除"
-          - button "取消"
-        - region "2026年9月27日 07:47 货不对板 健康分 53 评级 F check · standard":
-          - article "它给的并不是你所声称的模型":
-            - text: 货不对板
-            - heading "它给的并不是你所声称的模型" [level=2]
-            - paragraph: "关注点：4 高，5 中。用 `zing compare` 对照可信基线复检，以加强结论。"
-            - text: 综合健康分 52.6/100 (评级 F) 结论置信度 中
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月30日 10:02 一致（疑似真货） 健康分 85 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月30日 09:02 一致（疑似真货） 健康分 88 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月28日 10:02 基本可信 健康分 78 评级 D check · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月28日 09:02 一致（疑似真货） 健康分 80 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月28日 07:02 一致（疑似真货） 健康分 84 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月26日 08:02 基本可信 健康分 70 评级 D check 监控 · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "此记录由监控运行产生" [disabled]
+        - button "删除此记录"
+  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 健康分
+    - img "健康分趋势（4 次检测）：从 58 到 64，上升。"
+    - text: 64 延迟 p50
+    - img "延迟 p50趋势（4 次检测）：从 <duration> 到 <duration>。"
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "2026年9月30日 08:02 货不对板 健康分 64 评级 D check · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月29日 11:02 货不对板 健康分 60 评级 D check 监控 · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "此记录由监控运行产生" [disabled]
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月29日 10:02 基本可信 健康分 66 评级 D check 监控 · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "此记录由监控运行产生" [disabled]
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月29日 09:02 货不对板 健康分 58 评级 D check 监控 · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "此记录由监控运行产生" [disabled]
+        - button "删除此记录"
+  - region "model-b https://relay.example.com/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://relay.example.com/v1 健康分
+    - img "健康分趋势（2 次检测）：从 89 到 91，上升。"
+    - text: 91 延迟 p50
+    - img "延迟 p50趋势（2 次检测）：从 <duration> 到 <duration>。"
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "2026年9月29日 07:02 一致（疑似真货） 健康分 91 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+      - listitem:
+        - button "2026年9月29日 06:02 一致（疑似真货） 健康分 89 评级 B check · standard openai · 流式 p50 <duration>"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 健康分 72 延迟 p50 <duration>
+    - list:
+      - listitem:
+        - button "2026年9月27日 10:02 基本可信 健康分 72 评级 D check · standard openai · 流式 p50 <duration>" [expanded]
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录"
+        - region "2026年9月27日 10:02 基本可信 健康分 72 评级 D check · standard openai · 流式 p50 <duration>":
+          - article "基本一致，存在少量小问题":
+            - text: 基本可信
+            - heading "基本一致，存在少量小问题" [level=2]
+            - text: 综合健康分 72/100 (评级 D) 结论置信度 —
             - term: 目标
             - definition:
-              - code: http://127.0.0.1:9099/v1
+              - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
             - term: 声称的模型
             - definition:
-              - code: gpt-4o
+              - code: model-b
+            - term: 协议
+            - definition:
+              - code: openai
             - term: 模式
             - definition:
               - code: check
             - term: 套件
             - definition:
               - code: standard
+            - term: 性能探测请求
+            - definition: 流式
+            - term: 知识库资料
+            - definition: 无匹配资料
             - term: 时间
-            - definition: 2026年9月27日 07:47
+            - definition: 2026年9月27日 10:02
             - term: 版本
             - definition:
               - code: zing v<version>
-            - heading "逐项体检 8 / 10 个维度已运行" [level=3]
-            - button "连通性" [expanded]
-            - text: 稳定可达？
-            - meter "连通性 稳定可达？"
-            - region "连通性 稳定可达？":
-              - paragraph: 得分来自一个检测器。
-              - heading "连通性与基础补全 92.5 分" [level=4]
-              - list "连通性与基础补全 92.5 分":
-                - listitem:
-                  - text: 结果：通过。 /v1/models 列表 已列出 1 个模型；所声称的模型是否在列表中：是。
-                  - button "收起证据" [expanded]
-                  - text: "model_count: 1 claimed_listed: true"
-                - listitem:
-                  - text: 结果：通过。 基础对话补全 返回了内容，耗时 <duration>；返回模型为 gpt-4o-mini。
-                  - button "收起证据" [expanded]
-                  - text: "duration_ms: <duration> model_returned: gpt-4o-mini canary_echoed: false"
-            - button "协议兼容" [expanded]
+            - heading "逐项体检 1 / 10 个维度已运行" [level=3]
+            - button "协议兼容"
             - text: 接口是否规范？
             - meter "协议兼容 接口是否规范？"
-            - region "协议兼容 接口是否规范？":
-              - paragraph: 得分来自一个检测器。
-              - heading "OpenAI 兼容性规范 75 分" [level=4]
-              - list "OpenAI 兼容性规范 75 分":
-                - listitem:
-                  - text: 结果：通过。 多轮对话记忆 多轮对话上下文检查；是否回忆起此前提到的颜色：是。
-                  - button "收起证据" [expanded]
-                  - text: "recalled_blue: true content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: 结果：警告。 stop 截断序列处理 stop 序列处理检查；finish_reason=stop。
-                  - button "收起证据" [expanded]
-                  - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: 结果：通过。 响应结构（信封）规范性 finish_reason=stop；usage 是否完整：是。
-                  - button "收起证据" [expanded]
-                  - text: "finish_reason: stop has_usage: true prompt_tokens: 900 completion_tokens: 400 total_tokens: 1300"
-                - listitem:
-                  - text: "结果：失败。 错误响应结构 非法请求返回 HTTP 200；错误体是否为 OpenAI 风格：否。 · 建议：合规的中转站应以 4xx 和 {'error': {...}} 响应体拒绝非法输入。"
-                  - button "收起证据" [expanded]
-                  - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - button "上下文窗口" [expanded]
+            - button "连通性"
+            - text: 稳定可达？ 未运行
+            - button "上下文窗口"
             - text: 长文是否真能记住？ 未运行
-            - region "上下文窗口 长文是否真能记住？":
-              - paragraph: 本次检测未运行该维度的检测器。
-            - button "模型身份" [expanded]
-            - text: 它是不是它自称的那个？
-            - meter "模型身份 它是不是它自称的那个？"
-            - region "模型身份 它是不是它自称的那个？":
-              - paragraph: 得分来自一个检测器。
-              - heading "模型身份与降级指纹 20 分" [level=4]
-              - list "模型身份与降级指纹 20 分":
-                - listitem:
-                  - text: 结果：失败。 自我身份识别 自称是竞品品牌（claude, anthropic），且未提及真实品牌。 · 建议：回复中提到其他厂商，强烈暗示模型被替换。
-                  - button "收起证据" [expanded]
-                  - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-                - listitem:
-                  - text: 结果：失败。 行为指纹检查 针对 self-id 的纯代码行为指纹检查。
-                  - button "收起证据" [expanded]
-                  - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-                - listitem:
-                  - text: 结果：警告。 行为指纹检查 针对 max-output-truncation 的纯代码行为指纹检查。
-                  - button "收起证据" [expanded]
-                  - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-                - listitem:
-                  - text: 结果：警告。 回显的 model 字段 响应中的 model 字段为 gpt-4o-mini，请求的是 gpt-4o。 · 建议：响应中出现更低档位或不同系列的模型 id，暗示请求被路由到替身。
-                  - button "收起证据" [expanded]
-                  - text: "requested: gpt-4o returned: gpt-4o-mini"
-            - button "能力声明" [expanded]
-            - text: 工具/JSON 是否真支持？
-            - meter "能力声明 工具/JSON 是否真支持？"
-            - region "能力声明 工具/JSON 是否真支持？":
-              - paragraph: 得分来自一个检测器。
-              - heading "能力声明核验 25 分" [level=4]
-              - list "能力声明核验 25 分":
-                - listitem:
-                  - text: 结果：失败。 工具调用（function calling） 工具调用探测；finish_reason=stop。 · 建议：确认所提供的引擎确实支持函数调用。
-                  - button "收起证据" [expanded]
-                  - text: "finish_reason: stop had_content: true"
-                - listitem:
-                  - text: 结果：失败。 JSON 模式（json_object） JSON 模式探测；是否解析出对象：否，请求值是否匹配：否。 · 建议：确认所提供的引擎遵守 response_format=json_object。
-                  - button "收起证据" [expanded]
-                  - text: "parsed: false value_matched: false"
-                - listitem:
-                  - text: 结果：警告。 严格 JSON Schema 严格 JSON schema 探测；是否符合 schema：否。
-                  - button "收起证据" [expanded]
-                  - text: "conforms: false parsed: false"
-                - listitem:
-                  - text: 结果：警告。 最大输出长度 最大输出探测：声称 max_output=16384，请求 2048 token；产出约 1 行，finish_reason=stop。 · 建议：长文本生成可能达不到声称的上限；请用更长的探针确认。
-                  - button "收起证据" [expanded]
-                  - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-            - button "流式真实" [expanded]
-            - text: 真流式还是假装？
-            - meter "流式真实 真流式还是假装？"
-            - region "流式真实 真流式还是假装？":
-              - paragraph: 得分来自一个检测器。
-              - heading "流式真实性 100 分" [level=4]
-              - list "流式真实性 100 分":
-                - listitem:
-                  - text: 结果：通过。 流式表现真实 共 2 个分片，耗时 <duration>，首 token 于 <duration> 到达。
-                  - button "收起证据" [expanded]
-                  - text: "chunk_count: 2 duration_ms: <duration> ttft_ms: <duration>"
-            - button "计费用量" [expanded]
-            - text: token 有没有虚报？
-            - meter "计费用量 token 有没有虚报？"
-            - region "计费用量 token 有没有虚报？":
-              - paragraph: 得分来自一个检测器。
-              - heading "Token 计费用量审计 55 分" [level=4]
-              - list "Token 计费用量审计 55 分":
-                - listitem:
-                  - text: 结果：失败。 上报的 prompt token 远超估算 上报 prompt token（900）远超独立估算（~135，比值 6667）；疑似按 token 多计费。 · 建议：用已知长度的提示词核对计费；可能存在按 token 多计费。
-                  - button "收起证据" [expanded]
-                  - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-                - listitem:
-                  - text: 结果：警告。 上报的 completion token 远超估算 上报 completion token（400）远超独立估算（~7，比值 57.14）；疑似按 token 多计费。 · 建议：将 token 计量与同款模型的可信基线对比。
-                  - button "收起证据" [expanded]
-                  - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-            - button "并发可靠" [expanded]
-            - text: 压力下稳不稳？
-            - meter "并发可靠 压力下稳不稳？"
-            - region "并发可靠 压力下稳不稳？":
-              - paragraph: 得分来自一个检测器。
-              - heading "并发可靠性与延迟 100 分" [level=4]
-              - list "并发可靠性与延迟 100 分":
-                - listitem:
-                  - text: 结果：通过。 并发请求成功率 并发 2 下，4 个请求成功（共 4 个，0 个被限流）。
-                  - button "收起证据" [expanded]
-                  - text: "requests: 4 successes: 4 rate_limited: 0 concurrency: 2 success_rate: 1"
-            - button "传输安全" [expanded]
-            - text: 密钥是否安全？
-            - meter "传输安全 密钥是否安全？"
-            - region "传输安全 密钥是否安全？":
-              - paragraph: 得分来自一个检测器。
-              - heading "传输与密钥处理信号 40 分" [level=4]
-              - list "传输与密钥处理信号 40 分":
-                - listitem:
-                  - text: 结果：失败。 传输是否使用 HTTPS 传输协议：http。 · 建议：请使用 https:// 的 base_url，以免 bearer token 在传输中暴露。
-                  - button "收起证据" [expanded]
-                  - text: "scheme: http"
-                - listitem:
-                  - text: 结果：信息。 上游/代理响应头 暴露信息的响应头：server。仅供参考 —— 可佐证上游身份，并非失败。
-                  - button "收起证据" [expanded]
-                  - text: "revealing_headers: {\"server\":\"uvicorn\"}"
-                - listitem: 结果：通过。 响应是否回显 API key API key 回显检查。
-                - listitem: 结果：信息。 黑盒检测的局限 是否记录提示词、是否复用共享上游 key 无法从客户端侧黑盒证实；可将可靠性与流式时序维度视为间接信号。
-            - button "性能表现" [expanded]
+            - button "模型身份"
+            - text: 它是不是它自称的那个？ 未运行
+            - button "能力声明"
+            - text: 工具/JSON 是否真支持？ 未运行
+            - button "流式真实"
+            - text: 真流式还是假装？ 未运行
+            - button "计费用量"
+            - text: token 有没有虚报？ 未运行
+            - button "并发可靠"
+            - text: 压力下稳不稳？ 未运行
+            - button "传输安全"
+            - text: 密钥是否安全？ 未运行
+            - button "性能表现"
             - text: 快慢是否稳定？ 未运行
-            - region "性能表现 快慢是否稳定？":
-              - paragraph: 本次检测未运行该维度的检测器。
-            - heading "关注点 13 项" [level=3]
-            - heading "高 4 项" [level=4]
-            - list "高 4 项":
-              - listitem:
-                - text: 严重程度：高。 上报的 prompt token 远超估算 上报 prompt token（900）远超独立估算（~135，比值 6667）；疑似按 token 多计费。 · 建议：用已知长度的提示词核对计费；可能存在按 token 多计费。
-                - button "收起证据" [expanded]
-                - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-              - listitem:
-                - text: 严重程度：高。 自我身份识别 自称是竞品品牌（claude, anthropic），且未提及真实品牌。 · 建议：回复中提到其他厂商，强烈暗示模型被替换。
-                - button "收起证据" [expanded]
-                - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-              - listitem:
-                - text: 严重程度：高。 行为指纹检查 针对 self-id 的纯代码行为指纹检查。
-                - button "收起证据" [expanded]
-                - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-              - listitem:
-                - text: 严重程度：高。 传输是否使用 HTTPS 传输协议：http。 · 建议：请使用 https:// 的 base_url，以免 bearer token 在传输中暴露。
-                - button "收起证据" [expanded]
-                - text: "scheme: http"
-            - heading "中 5 项" [level=4]
-            - list "中 5 项":
-              - listitem:
-                - text: 严重程度：中。 上报的 completion token 远超估算 上报 completion token（400）远超独立估算（~7，比值 57.14）；疑似按 token 多计费。 · 建议：将 token 计量与同款模型的可信基线对比。
-                - button "收起证据" [expanded]
-                - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-              - listitem:
-                - text: 严重程度：中。 工具调用（function calling） 工具调用探测；finish_reason=stop。 · 建议：确认所提供的引擎确实支持函数调用。
-                - button "收起证据" [expanded]
-                - text: "finish_reason: stop had_content: true"
-              - listitem:
-                - text: 严重程度：中。 JSON 模式（json_object） JSON 模式探测；是否解析出对象：否，请求值是否匹配：否。 · 建议：确认所提供的引擎遵守 response_format=json_object。
-                - button "收起证据" [expanded]
-                - text: "parsed: false value_matched: false"
-              - listitem:
-                - text: 严重程度：中。 回显的 model 字段 响应中的 model 字段为 gpt-4o-mini，请求的是 gpt-4o。 · 建议：响应中出现更低档位或不同系列的模型 id，暗示请求被路由到替身。
-                - button "收起证据" [expanded]
-                - text: "requested: gpt-4o returned: gpt-4o-mini"
-              - listitem:
-                - text: "严重程度：中。 错误响应结构 非法请求返回 HTTP 200；错误体是否为 OpenAI 风格：否。 · 建议：合规的中转站应以 4xx 和 {'error': {...}} 响应体拒绝非法输入。"
-                - button "收起证据" [expanded]
-                - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - heading "低 4 项" [level=4]
-            - list "低 4 项":
-              - listitem:
-                - text: 严重程度：低。 严格 JSON Schema 严格 JSON schema 探测；是否符合 schema：否。
-                - button "收起证据" [expanded]
-                - text: "conforms: false parsed: false"
-              - listitem:
-                - text: 严重程度：低。 最大输出长度 最大输出探测：声称 max_output=16384，请求 2048 token；产出约 1 行，finish_reason=stop。 · 建议：长文本生成可能达不到声称的上限；请用更长的探针确认。
-                - button "收起证据" [expanded]
-                - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-              - listitem:
-                - text: 严重程度：低。 行为指纹检查 针对 max-output-truncation 的纯代码行为指纹检查。
-                - button "收起证据" [expanded]
-                - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-              - listitem:
-                - text: 严重程度：低。 stop 截断序列处理 stop 序列处理检查；finish_reason=stop。
-                - button "收起证据" [expanded]
-                - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-            - heading "执行记录 8 项检测 · 共 <duration>" [level=3]
-            - paragraph: 各项检测依次运行；最慢的是 Token 计费用量审计（<duration>）。
-            - button "收起" [expanded]
-            - list:
-              - listitem: Token 计费用量审计 计费用量 失败 · 55 分 <duration>
-              - listitem: 能力声明核验 能力声明 失败 · 25 分 <duration>
-              - listitem: 连通性与基础补全 连通性 通过 · 92.5 分 <duration>
-              - listitem: 模型身份与降级指纹 模型身份 失败 · 20 分 <duration>
-              - listitem: OpenAI 兼容性规范 协议兼容 失败 · 75 分 <duration>
-              - listitem: 并发可靠性与延迟 并发可靠 通过 · 100 分 <duration>
-              - listitem: 传输与密钥处理信号 传输安全 失败 · 40 分 <duration>
-              - listitem: 流式真实性 流式真实 通过 · 100 分 <duration>
+            - heading "关注点" [level=3]
+            - paragraph: 未发现警告或失败项 —— 各维度表现与所声称模型一致。
             - paragraph:
               - text: zing 出具的是
               - strong: 行为偏离与风险的可复现证据
@@ -368,6 +281,21 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - text: 共 1 条记录
+  - region "gpt-4o http://127.0.0.1:9099/v1":
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
+    - code: base_url
+    - text: http://127.0.0.1:9099/v1 健康分 53
+    - list:
+      - listitem:
+        - button "2026年9月27日 07:47 货不对板 健康分 53 评级 F check · standard"
+        - button "重新检测"
+        - button "设为监控"
+        - button "删除此记录" [expanded]
+        - group "删除这条历史记录？":
+          - text: 删除这条历史记录？
+          - button "删除"
+          - button "取消"
+  - text: 共 15 条记录
   - button "清空历史"
   - status
