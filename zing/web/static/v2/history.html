@@ -8,6 +8,7 @@
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/zing.css" />
+<link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <link rel="stylesheet" href="/v2/static/report.css" />
 <link rel="stylesheet" href="/v2/static/perf.css" />
 <style>
@@ -122,19 +123,7 @@
   .trend .base { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 2 3; }
   .trend .dot { fill: currentColor; }
 
-  /* filter bar */
-  .filters { margin-top: 22px; padding: 6px 18px 12px; }
-  .filters[hidden] { display: none; }
-  /* collapsed by default: the toggle names how many filters are active, the
-     count + reset below it stay visible either way */
-  .ftop { display: flex; align-items: center; gap: 10px; }
-  .ftop .disclosure { flex: 1 1 auto; width: auto; padding: 8px 0; margin: 0; background: none; }
-  .ftop .disclosure .t { display: inline-flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; min-width: 0; }
-  .ftop .disclosure .cv { margin-left: auto; }
-  .ftop .disclosure .zicon { width: 15px; height: 15px; }
-  .ftop .badge[hidden] { display: none; }
-  .fbody { padding: 6px 0 2px; }
-  .fbody[hidden] { display: none; }
+  /* filter bar: the collapsible frame is filterpanel.css / filterpanel.js */
   .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; }
   .fgrid .fq { grid-column: 1 / -1; }
   @media (min-width: 700px) { .fgrid .fq { grid-column: auto; } }
@@ -155,9 +144,6 @@
   .tsel button:hover:not(:disabled) { border-color: var(--line-strong); color: var(--ink); }
   .tsel button[aria-pressed="true"]:hover:not(:disabled) { border-color: var(--ink); }
   .tsel button:disabled { cursor: not-allowed; opacity: 0.7; }
-  .ffoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: var(--ink2); }
-  .ffoot .linkbtn { font-size: 12.5px; font-weight: 600; }
-  .ffoot .linkbtn[hidden] { display: none; }
   .nomatch { text-align: center; padding: 36px 22px; color: var(--ink2); font-size: 14.5px; }
   .nomatch p { margin: 0 0 14px; }
 
@@ -275,7 +261,6 @@
     .tr { align-items: flex-end; }
     .tr + .tr { padding-left: 0; border-left: 0; }
     .trend svg { width: 84px; height: 26px; }
-    .filters { padding: 12px 14px 14px; }
     .fgrid { grid-template-columns: 1fr 1fr; }
   }
 </style>
@@ -308,6 +293,7 @@
 <script src="/perf.js"></script>
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
+<script src="/v2/static/filterpanel.js"></script>
 <script src="/v2/static/report.js"></script>
 <script>
 (function () {
@@ -365,7 +351,14 @@
     if (c && typeof c === "object") Object.keys(c).forEach(function (k) { if (c[k] === true) out[k] = true; });
     return out;
   })();
-  state.fopen = fromQuery || loadJSON(OKEY, false) === true;
+  // the collapsible frame (filterpanel.js); a link that carried filters opens it
+  var panel = window.ZingFilterPanel.create(fbar, {
+    label: function () { return T("筛选", "Filters"); },
+    title: function () { return T("筛选与趋势图", "Filters & trends"); },
+    storeKey: OKEY,
+    open: !!fromQuery,
+    onReset: function () { resetFilters(); },
+  });
 
   $("#lockIcon").innerHTML = ico("lock");
 
@@ -462,6 +455,8 @@
         return '<option value="' + esc(o.v) + '"' + (o.v === cur ? " selected" : "") + ">" + esc(o.t) + "</option>";
       }).join("") + "</select></label>";
   }
+  var DAYS_L = { "7": ["最近 7 天", "Last 7 days"], "30": ["最近 30 天", "Last 30 days"], "90": ["最近 90 天", "Last 90 days"] };
+  var daysLabel = function (v) { return DAYS_L[v] ? T(DAYS_L[v][0], DAYS_L[v][1]) : v; };
   var asOpts = function (vals) { return vals.map(function (v) { return { v: v, t: v }; }); };
 
   function renderFilters() {
@@ -471,8 +466,6 @@
       return;
     }
     var f = state.filters;
-    var focusSel = document.activeElement && fbar.contains(document.activeElement) && document.activeElement.getAttribute("data-f");
-    var focusTog = document.activeElement && document.activeElement.id === "ftog";
     var suites = asOpts(distinct(function (r) { return r.suite || ""; }, f.suite));
     if ((state.rows || []).some(function (r) { return !r.suite; }) || f.suite === NONE) suites.push({ v: NONE, t: T("（无套件）", "(no suite)") });
     // options of a protocol / detection / mode filter, plus "(unknown)" when an
@@ -489,12 +482,7 @@
     var risks = ["clean", "low", "medium", "high", "inconclusive"].filter(function (l) {
       return l === f.risk || state.rows.some(function (r) { return riskOf(r) === l; });
     });
-    fbar.setAttribute("aria-label", T("筛选", "Filters"));
-    fbar.hidden = false;
-    fbar.innerHTML = '<div class="ftop"><button type="button" class="disclosure" id="ftog" aria-expanded="' + state.fopen + '" aria-controls="fbody">' +
-      '<span class="t">' + ico("search") + "<span>" + esc(T("筛选与趋势图", "Filters & trends")) + "</span>" + factiveHTML() + "</span>" +
-      '<span class="cv" aria-hidden="true">' + ico("chevronDown") + "</span></button></div>" +
-      '<div class="fbody" id="fbody"' + (state.fopen ? "" : " hidden") + '><div class="fgrid">' +
+    panel.render({ count: activeCount(), summary: filterSummary(), body: '<div class="fgrid">' +
       '<label class="fq"><span>' + esc(T("搜索", "Search")) + '</span><input class="in" type="search" data-f="q" value="' + esc(f.q) +
       '" placeholder="' + esc(T("中转站、模型、套件、协议…", "Relay, model, suite, protocol…")) + '" autocomplete="off" /></label>' +
       selectHTML("host", T("中转站", "Relay / provider"), asOpts(distinct(function (r) { return hostOf(r.base_url); }, f.host))) +
@@ -507,49 +495,42 @@
       selectHTML("risk", T("风险", "Risk"), risks.map(function (l) { return { v: l, t: ZING_I18N.label("RISK_LEVEL", l) }; })) +
       '<label><span>' + esc(T("最低健康分", "Min. score")) + '</span><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-f="min" value="' +
       esc(f.min) + '" placeholder="0" /></label>' +
-      selectHTML("days", T("时间范围", "Period"), [
-        { v: "7", t: T("最近 7 天", "Last 7 days") },
-        { v: "30", t: T("最近 30 天", "Last 30 days") },
-        { v: "90", t: T("最近 90 天", "Last 90 days") },
-      ]) +
+      selectHTML("days", T("时间范围", "Period"), ["7", "30", "90"].map(function (v) { return { v: v, t: daysLabel(v) }; })) +
       selectHTML("exec", T("执行方式", "Execution"), [
         { v: "adhoc", t: T("手动", "Ad-hoc") },
         { v: "monitor", t: T("监控", "Monitor") },
       ]) +
-      "</div>" + trendPickerHTML() + '</div><div class="ffoot"><span id="fcount" aria-live="polite"></span>' +
-      '<button type="button" class="linkbtn" id="freset"' + (isFiltered() ? "" : " hidden") + ">" + esc(T("重置筛选", "Reset filters")) + "</button></div>";
-    if (focusSel) {
-      var el = fbar.querySelector('[data-f="' + focusSel + '"]');
-      if (el) el.focus();
-    } else if (focusTog) $("#ftog").focus();
+      "</div>" + trendPickerHTML(), foot: '<span id="fcount" aria-live="polite"></span>' });
   }
 
   // number of filters that differ from the defaults (shown on the panel toggle)
   function activeCount() {
     return Object.keys(FDEF).filter(function (k) { return state.filters[k] !== FDEF[k]; }).length;
   }
-  function factiveHTML() {
-    var n = activeCount();
-    return '<span class="badge sky" id="factive"' + (n ? "" : " hidden") + ">" +
-      esc(Tf("{n} 项生效", "{n} active", { n: n })) + "</span>";
+  // the active filters in words, for the line under the closed panel's toggle
+  function filterSummary() {
+    var f = state.filters, out = [];
+    var lab = function (label, v) { return Tf("{label}：{value}", "{label}: {value}", { label: label, value: v }); };
+    var unknown = T("（未知）", "(unknown)");
+    if (f.q.trim()) out.push(lab(T("搜索", "Search"), f.q.trim()));
+    if (f.days) out.push(daysLabel(f.days));
+    if (f.host) out.push(f.host);
+    if (f.model) out.push(f.model);
+    if (f.suite) out.push(f.suite === NONE ? T("（无套件）", "(no suite)") : f.suite);
+    if (f.mode) out.push(lab(T("模式", "Mode"), f.mode));
+    if (f.api) out.push(f.api === NONE ? lab(T("协议", "Protocol"), unknown) : f.api);
+    if (f.detect) out.push(lab(T("协议识别", "Protocol detection"), f.detect === NONE ? unknown : detectLabel(f.detect)));
+    if (f.stream) out.push(f.stream === NONE ? lab(T("探测请求", "Probe requests"), unknown) : streamLabel(f.stream));
+    if (f.risk) out.push(lab(T("风险", "Risk"), ZING_I18N.label("RISK_LEVEL", f.risk)));
+    if (f.min !== "") out.push(lab(T("最低健康分", "Min. score"), f.min));
+    if (f.exec) out.push(f.exec === "monitor" ? T("监控", "Monitor") : T("手动", "Ad-hoc"));
+    return out;
   }
   function syncFilterChrome() {
-    var rb = $("#freset"), fa = $("#factive"), n = activeCount();
-    if (rb) rb.hidden = !n;
-    if (fa) { fa.hidden = !n; fa.textContent = Tf("{n} 项生效", "{n} active", { n: n }); }
-  }
-  function setFiltersOpen(open) {
-    state.fopen = open;
-    saveJSON(OKEY, open);
-    var b = $("#ftog"), body = $("#fbody");
-    if (b) b.setAttribute("aria-expanded", String(open));
-    if (body) body.hidden = !open;
+    panel.sync({ count: activeCount(), summary: filterSummary() });
   }
   // after a reset: back to the first field, or to the toggle while the panel is shut
-  function focusFilters() {
-    var el = state.fopen ? fbar.querySelector("[data-f]") : $("#ftog");
-    if (el) el.focus();
-  }
+  function focusFilters() { panel.focusStart(); }
 
   function resetFilters() {
     state.filters = Object.assign({}, FDEF);
@@ -572,12 +553,7 @@
   fbar.addEventListener("change", onFilter);
   fbar.addEventListener("click", function (ev) {
     var tb = ev.target.closest("[data-trend]");
-    if (tb) return toggleTrend(tb.getAttribute("data-trend"));
-    if (ev.target.closest("#ftog")) return setFiltersOpen(!state.fopen);
-    if (ev.target.closest("#freset")) {
-      resetFilters();
-      focusFilters();
-    }
+    if (tb) toggleTrend(tb.getAttribute("data-trend"));
   });
 
   function fmtTime(ts) {
