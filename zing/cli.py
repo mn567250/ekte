@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 
@@ -796,9 +797,9 @@ def kb_import_command(
         print(json.dumps({**result.to_dict(), "entry_ids": ids}, ensure_ascii=False, indent=2))
         raise typer.Exit(code=0 if result.ok else 1)
     for e in result.errors:
-        err_console.print(f"[red]✗[/red] {e['path'] + ': ' if e['path'] else ''}{e['message']}")
+        err_console.print(f"[red]✗[/red] {escape(e['path'] + ': ' if e['path'] else '')}{escape(e['message'])}")
     for w in result.warnings:
-        err_console.print(f"[yellow]![/yellow] {w['path'] + ': ' if w['path'] else ''}{w['message']}")
+        err_console.print(f"[yellow]![/yellow] {escape(w['path'] + ': ' if w['path'] else '')}{escape(w['message'])}")
     for m in result.models:
         console.print(f"  • {m['provider']}/{m['id']}  ({m['action']})")
     if result.probes:

@@ -97,7 +97,7 @@ def test_fingerprint_schema_rejects_unexplained_language():
 # CJK may appear in detector code only in tables that MATCH answers (brand
 # names, colour words, "can't see the image" phrases) — never in text sent to
 # an API, which lives in zing/prompts/en.json or the knowledge base.
-_ANSWER_MATCHERS = {"_RIVAL_BRANDS", "_EXPECTED_COLORS", "_BLIND_PHRASES", "_TOKEN_RE", "_CJK_RE"}
+_ANSWER_MATCHERS = {"_RIVAL_BRANDS", "VENDOR_BRANDS", "_EXPECTED_COLORS", "_BLIND_PHRASES", "_TOKEN_RE", "_CJK_RE"}
 
 
 def test_code_sends_no_hard_coded_non_english_text():

@@ -700,6 +700,13 @@ n'est plus résolu, un fournisseur désactivé emporte ses modèles et URL de ba
 `zing check` et `zing serve` utilisent exactement les mêmes profils ;
 `--no-user-kb` (ou `ZING_NO_USER_KB=1`) laisse vos entrées et interrupteurs de côté.
 
+Un modèle dont les `identity_keywords` sont vides n'est pas enregistré tel quel :
+zing complète ses propres mots de marque à partir des noms du fournisseur et du
+modèle (par exemple `glm` et `z.ai`) et affiche
+un avertissement pour les vérifier, car sans eux le contrôle d'identité pourrait
+prendre son propre fabricant pour une marque concurrente. Le prompt de recherche
+les demande explicitement à l'assistant IA.
+
 Chaque rapport consigne le profil utilisé pour l'audit (`knowledge` : fournisseur,
 modèle, manière dont l'id a été résolu, sa source et un instantané complet avec
 son empreinte de contenu), si bien qu'un rapport reste vérifiable après une

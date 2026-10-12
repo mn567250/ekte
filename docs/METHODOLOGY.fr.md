@@ -384,6 +384,15 @@ moins cher ou ouvert), ainsi que les signaux de
    concurrentes (`identity_forbidden` du profil plus une liste intégrée). Une
    marque concurrente ne compte que si la vraie marque est absente ; « Je suis
    Claude, pas GPT » est un contraste bénin.
+   La vraie marque, ce sont les `identity_keywords` du profil plus ses propres
+   noms : la clé du fournisseur, le nom en tête du nom affiché du fournisseur,
+   le premier mot de l'id et de la famille du modèle, et les autres noms de ce
+   fabricant dans la liste intégrée (`z.ai` couvre aussi `zhipu`). Un modèle
+   qui nomme son propre fabricant n'est donc jamais une marque concurrente,
+   même quand `identity_keywords` est vide. Les noms dérivés ne l'emportent
+   jamais sur `identity_forbidden`, les mots génériques (« ai », « platform »,
+   …) ne comptent jamais, et la marque propre d'une plateforme ne compte pas
+   pour le modèle d'un autre fabricant qu'elle sert.
 2. **Empreintes comportementales** de la base de connaissances (date limite des
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
