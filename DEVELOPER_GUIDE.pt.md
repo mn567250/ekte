@@ -116,6 +116,7 @@ zing/
     security.py        escuta em loopback, lista de anfitriões permitidos, controlos de Origin/JSON, cabeçalhos
     history.py         armazenamento do histórico de auditorias (history.db)
     analytics_store.py as suas tabelas de análise: métricas por execução, registos de pedidos
+    analytics.py       consultas de análise: KPI, séries temporais, classificações
     watches.py         armazenamento dos monitores (watches.db)
     masterkey.py       estados e ações da chave mestra (servidor e `zing secret`)
     static/            páginas da interface clássica e scripts partilhados (lang.js, i18n.js, …)
@@ -293,6 +294,21 @@ WAV) usa apenas a biblioteca padrão.
   `/api/embed` e `/api/rerank` servem as restantes páginas.
 - **Relays.** `POST /api/kb/relays` guarda um relay `{name, base_url}` (400 para
   dados inválidos, 409 se o nome ou o URL já forem conhecidos).
+- **Análises.** `GET /api/analytics/options` (relays, modelos, suites, modos de
+  stream, API e o intervalo de datas do histórico), `/api/analytics/summary`
+  (KPI de `from`–`to` face ao intervalo anterior com a mesma duração),
+  `/api/analytics/series` (`metric` por `group=relay|model|relay_model`, até 4
+  `keys`, em intervalos `bucket=hour|day|week|dow_hour` no fuso horário do
+  utilizador, `tz` ou `tz_offset`) e `/api/analytics/leaderboard` (`model=` para
+  os seus relays, ou `relay=` para os seus modelos). Todos aceitam os filtros
+  `from`, `to`, `suite`, `stream_mode`, `api`, `source=all|manual|monitor`,
+  `relay` e `model`. `zing/web/analytics.py` calcula tudo em Python a partir de
+  `history.analytics_runs()`: os ids de métrica vêm de uma lista fixa, os relays
+  são agrupados pela sua entrada na base de conhecimento no momento da
+  consulta, um valor que uma execução não mediu fica de fora (cada valor tem o
+  seu `n` e a sua `coverage`) e os intervalos com menos de `MIN_RUNS` (3)
+  execuções são marcados `low_n`. Um parâmetro inválido responde 400; as
+  respostas são `Cache-Control: no-store`.
 - **Auditorias em segundo plano.** `jobs.py` executa cada auditoria como um
   trabalho do servidor. `POST /api/jobs` coloca um em fila, `GET /api/jobs`
   lista os trabalhos em fila, em curso e acabados há pouco (e os monitores em

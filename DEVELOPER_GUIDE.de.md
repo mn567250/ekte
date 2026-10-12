@@ -117,6 +117,7 @@ zing/
     security.py        Loopback-Bindung, Host-Allowlist, Origin-/JSON-Prüfung, Header
     history.py         Speicher des Prüfverlaufs (history.db)
     analytics_store.py seine Analysetabellen: Kennzahlen pro Lauf, Anfrage-Datensätze
+    analytics.py       Analyseabfragen: Kennzahlen, Zeitreihen, Ranglisten
     watches.py         Speicher der Überwachungen (watches.db)
     masterkey.py       Zustände und Aktionen des Hauptschlüssels (Server und `zing secret`)
     static/            Seiten der klassischen Oberfläche und gemeinsame Skripte (lang.js, i18n.js, …)
@@ -295,6 +296,21 @@ Standardbibliothek.
   `/api/embed` und `/api/rerank` bedienen die übrigen Seiten.
 - **Relays.** `POST /api/kb/relays` speichert ein Relay `{name, base_url}` (400
   bei ungültiger Eingabe, 409, wenn Name oder URL schon bekannt sind).
+- **Analysen.** `GET /api/analytics/options` (Relays, Modelle, Suites,
+  Stream-Modi, APIs und der Zeitraum der Historie), `/api/analytics/summary`
+  (Kennzahlen von `from`–`to` gegenüber dem gleich langen Zeitraum davor),
+  `/api/analytics/series` (`metric` je `group=relay|model|relay_model`, bis zu
+  4 `keys`, in `bucket=hour|day|week|dow_hour`-Intervallen in der Zeitzone des
+  Betrachters, `tz` oder `tz_offset`) und `/api/analytics/leaderboard`
+  (`model=` für dessen Relays oder `relay=` für dessen Modelle). Alle nehmen die
+  Filter `from`, `to`, `suite`, `stream_mode`, `api`,
+  `source=all|manual|monitor`, `relay` und `model`. `zing/web/analytics.py`
+  rechnet alles in Python aus `history.analytics_runs()`: Metrik-IDs kommen aus
+  einer festen Positivliste, Relays werden bei jeder Abfrage nach ihrem Eintrag
+  in der Wissensbasis gruppiert, ein Wert, den ein Lauf nicht gemessen hat,
+  bleibt außen vor (jeder Wert hat sein `n` und seine `coverage`), und
+  Intervalle mit weniger als `MIN_RUNS` (3) Läufen tragen `low_n`. Ein
+  ungültiger Parameter ergibt 400; Antworten sind `Cache-Control: no-store`.
 - **Prüfungen im Hintergrund.** `jobs.py` führt jede Prüfung als Auftrag des
   Servers aus. `POST /api/jobs` stellt einen ein, `GET /api/jobs` listet
   wartende, laufende und kürzlich beendete Aufträge (und laufende
