@@ -51,6 +51,7 @@
   "The answer matched the claimed model's native behavior.": "A resposta correspondeu ao comportamento nativo do modelo declarado.",
   "The answer diverged from native behavior: deducts the probe's weight share of 100 points.": "A resposta desviou do comportamento nativo: desconta a parcela de peso da sonda em 100 pontos.",
   "The answer named a rival brand and not the genuine one: deducts the probe's weight share.": "A resposta nomeou uma marca rival e não a genuína: desconta a parcela de peso da sonda.",
+  "The probe needs more output than the 512-token identity cap; not run.": "A sonda precisa de mais saída do que o limite de identidade de 512 tokens; não executada.",
   "Two or more behavioral fingerprints diverged.": "Duas ou mais impressões comportamentais desviaram.",
   "The echoed model field matched the requested model.": "O campo model devolvido correspondeu ao modelo solicitado.",
   "The echoed model field names a different or smaller model.": "O campo model devolvido indica um modelo diferente ou menor.",

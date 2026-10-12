@@ -369,6 +369,8 @@ when they change behavior.
    tokenizer quirks, formatting, language-bound probes, …): up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
    `expect_not_contains` or `expect_regex`; output capped at 512 tokens. A
+   probe that needs more output (such as a max-output check) is skipped,
+   listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);
    one alone stays LOW, two or more add a MEDIUM aggregate.
 3. **Echoed `model` field** of a plain call: snapshot suffixes and aliases are
@@ -388,6 +390,7 @@ Without a knowledge-base profile the detector is inconclusive.
 |  | The answer diverged from native behavior: deducts the probe's weight share of 100 points. | Warning · Low | up to −25 pts |
 |  | The answer named a rival brand and not the genuine one: deducts the probe's weight share. | Fail · High | up to −25 pts · cap 20 |
 |  | No usable response to judge by. | Inconclusive | No deduction |
+|  | The probe needs more output than the 512-token identity cap; not run. | Info | No deduction |
 | `model_identity.fp_aggregate` | Two or more behavioral fingerprints diverged. | Warning · Medium | No deduction |
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |

@@ -392,6 +392,9 @@ billigeren oder offenen Backend) sowie Signale von
    Tokenizer-Eigenheiten, Formatierung, sprachgebundene Tests, …): bis zu sechs
    Tests in reinem Code, geprüft mit `expect_contains`, `expect_contains_any`,
    `expect_not_contains` oder `expect_regex`; Ausgabe auf 512 Token begrenzt.
+   Ein Test, der mehr Ausgabe braucht (etwa eine Prüfung der maximalen
+   Ausgabe), wird übersprungen und als Info aufgeführt; ein anderer Test
+   rückt nach.
    Ein abweichender Fingerprint zieht seinen Gewichtsanteil an 100 Punkten ab
    (höchstens 25); einer allein bleibt NIEDRIG, zwei oder mehr ergeben einen
    zusammenfassenden Befund MITTEL.
@@ -412,6 +415,7 @@ Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
 |  | Die Antwort wich vom nativen Verhalten ab: zieht den Gewichtsanteil der Probe an 100 Punkten ab. | Warnung · Niedrig | bis zu −25 Pkt. |
 |  | Die Antwort nannte eine Konkurrenzmarke und nicht die echte: zieht den Gewichtsanteil der Probe ab. | Fehlgeschlagen · Hoch | bis zu −25 Pkt. · Obergrenze 20 |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig | Kein Abzug |
+|  | Die Probe braucht mehr Ausgabe als die Identitäts-Obergrenze von 512 Token; nicht ausgeführt. | Info | Kein Abzug |
 | `model_identity.fp_aggregate` | Zwei oder mehr Verhaltens-Fingerprints wichen ab. | Warnung · Mittel | Kein Abzug |
 | `model_identity.model_field` | Das zurückgegebene model-Feld entsprach dem angefragten Modell. | Bestanden | Kein Abzug |
 |  | Das zurückgegebene model-Feld nennt ein anderes oder kleineres Modell. | Warnung · Mittel | Kein Abzug |

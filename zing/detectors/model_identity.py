@@ -87,6 +87,8 @@ SCALE = DeductionScale(
             label="The answer named a rival brand and not the genuine one: deducts the probe's weight share."),
     outcome("model_identity.fp", "inconclusive", None, Status.INCONCLUSIVE,
             label=_NO_RESPONSE),
+    outcome("model_identity.fp", "skipped_output_cap", None, Status.INFO,
+            label="The probe needs more output than the 512-token identity cap; not run."),
     outcome("model_identity.fp_aggregate", "diverged", None, Status.WARN, Severity.MEDIUM,
             label="Two or more behavioral fingerprints diverged."),
     outcome("model_identity.model_field", "consistent", None, Status.PASS,
@@ -148,7 +150,31 @@ class ModelIdentityDetector(Detector):
 
         # 2) Pure-code behavioral fingerprints. -------------------------- #
         probes = [fp for fp in ctx.profile.all_fingerprints() if fp.pure_code_checkable]
+        # A probe whose expected answer needs more output than the cap (e.g. a
+        # count-to-4000 max-output check) would diverge on every genuine model.
+        # Skip it before the slice so another probe takes its slot; it counts
+        # toward neither the weights, the violations nor the aggregate.
+        skipped = [fp for fp in probes if fp.max_tokens > self.MAX_FINGERPRINT_OUTPUT]
+        probes = [fp for fp in probes if fp.max_tokens <= self.MAX_FINGERPRINT_OUTPUT]
         probes = probes[: self.MAX_FINGERPRINTS]
+        for fp in skipped:
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.fp",
+                    "skipped_output_cap",
+                    id=f"model_identity.fp.{fp.id}",
+                    title=f"Fingerprint skipped: {fp.signal}",
+                    summary=(
+                        f"Probe '{fp.signal}' needs up to {fp.max_tokens} output tokens, more "
+                        f"than the {self.MAX_FINGERPRINT_OUTPUT}-token identity cap; not run."
+                    ),
+                    evidence={
+                        "probe": fp.id,
+                        "max_tokens": fp.max_tokens,
+                        "output_cap": self.MAX_FINGERPRINT_OUTPUT,
+                    },
+                )
+            )
         total_weight = sum(max(fp.weight, 0.0) for fp in probes)
         violated = 0
         # Non-identity (behavioral) fingerprint divergences are individually noisy,
@@ -276,6 +302,7 @@ class ModelIdentityDetector(Detector):
         # the knowledge base); the runner records them on the report.
         result.evidence["fingerprint_prompt_langs"] = sorted({fp.prompt_lang for fp in probes})
         result.evidence["fingerprints_violated"] = violated
+        result.evidence["fingerprints_skipped"] = [fp.id for fp in skipped]
         result.evidence["match_confidence"] = ctx.profile.match_confidence
         return result
 

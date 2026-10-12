@@ -61,7 +61,8 @@ _HELP: dict[str, str] = {
     "expect_contains_any": "at least one of these must appear",
     "expect_not_contains": "none of these may appear",
     "expect_regex": "a short regular expression the answer must match (no nested quantifiers)",
-    "max_tokens": "output tokens for this probe (1-32768)",
+    "max_tokens": "output tokens for this probe (1-32768); the identity check skips a "
+    "pure_code_checkable probe above 512",
     "temperature": "sampling temperature (0-2)",
     "weight": "relative weight of this probe (0-10)",
     "prompt_lang": "language of the prompt; en unless the language itself is measured",
