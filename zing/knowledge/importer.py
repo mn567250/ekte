@@ -22,6 +22,8 @@ The YAML comes from an AI and is treated as untrusted input:
 * ``expect_regex`` must compile, be short, and not nest quantifiers — it runs
   on the server against relay output, so a catastrophic-backtracking pattern
   would stall audits;
+* a model without ``identity_keywords`` gets its own brand words filled in
+  (provider and model names, :mod:`zing.knowledge.identity`) with a warning;
 * every fingerprint prompt (text zing will send to audited endpoints) is
   listed back so the user can review it before saving;
 * resolution changes are reported: an id or alias that would make an existing
@@ -44,6 +46,7 @@ import yaml
 from pydantic import ValidationError
 
 from zing.knowledge import store
+from zing.knowledge.identity import own_brand_words
 from zing.knowledge.loader import load_knowledge_base
 from zing.knowledge.schema import FingerprintProbe, KnowledgeBase, ProviderProfile
 from zing.utils import yamlio
@@ -152,6 +155,11 @@ def _check_strings(result: ScanResult, path: str, value: Any) -> None:
 def _check_fingerprints(
     result: ScanResult, path: str, fps: list[FingerprintProbe], owner: str
 ) -> None:
+    # Imported here: the knowledge layer otherwise does not load the detectors.
+    from zing.detectors.model_identity import ModelIdentityDetector
+
+    # The identity check skips pure-code probes that need more output than this.
+    identity_cap = ModelIdentityDetector.MAX_FINGERPRINT_OUTPUT
     if len(fps) > MAX_FINGERPRINTS:
         result.error(path, f"too many fingerprints ({len(fps)} > {MAX_FINGERPRINTS})")
     seen: set[str] = set()
@@ -185,6 +193,9 @@ def _check_fingerprints(
             fp.expect_contains or fp.expect_contains_any or fp.expect_not_contains or fp.expect_regex
         ):
             result.warn(p, "pure_code_checkable without any expect_* check: it can never fail")
+        if fp.pure_code_checkable and fp.max_tokens > identity_cap:
+            result.warn(f"{p}.max_tokens",
+                        f"more than {identity_cap} tokens: the identity check skips this probe")
         result.probes.append({"path": p, "owner": owner, "id": fp.id, "prompt": fp.prompt,
                               "prompt_lang": fp.prompt_lang})
 
@@ -318,7 +329,21 @@ def scan(text: str, *, base: KnowledgeBase | None = None) -> ScanResult:
                     hit.provider.provider, hit.model.id) != (name, model.id):
                     result.warn(f"{mpath}", f"{n!r} is already {hit.provider.provider}/{hit.model.id}")
             result.models.append(info)
-            result.entries.append(("model", name, model.id, model.model_dump(mode="json")))
+            body = model.model_dump(mode="json")
+            if not model.identity_keywords:
+                # Without own brand words the identity check has nothing to confirm
+                # the genuine brand with; derive them from the names. A packaged
+                # provider keeps its display_name; a provider document without
+                # one falls back to the stored one.
+                brand_source = existing if existing is not None else (
+                    profile if profile.display_name else current.providers.get(name, profile))
+                # Stored unwidened: the detector adds the vendor's other names itself.
+                words = own_brand_words(brand_source, model, widen=False)
+                if words:
+                    body["identity_keywords"] = words
+                    result.warn(f"{mpath}.identity_keywords",
+                                f"was empty; filled with [{', '.join(words)}] — check and edit if wrong")
+            result.entries.append(("model", name, model.id, body))
 
     if not result.errors and result.entries:
         _resolution_changes(result, current, user_entries)

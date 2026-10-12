@@ -431,6 +431,15 @@ causa falsi positivi contro relay onesti. `zing kb-import --check <file>` esegue
 gli stessi controlli dell'importazione utente (schema, limiti, espressioni
 regolari pericolose, prompt, collisioni di id).
 
+Compila sempre `identity_keywords` con le parole del produttore e della
+famiglia con cui il modello si identifica. Il controllo d'identità conta anche
+la chiave del provider, il nome visualizzato e l'id del modello come marchio
+autentico, estesi agli altri nomi del produttore in `VENDOR_BRANDS`
+(`zing/knowledge/identity.py`, che è anche l'elenco dei marchi rivali del
+detector); l'importazione completa le parole chiave vuote a partire da questi
+nomi con un avviso. Le parole di marchio di un nuovo produttore vanno aggiunte
+lì come un gruppo.
+
 ### Modificare i prompt delle sonde
 
 I testi delle sonde sono dati di calibrazione. Modificarne uno in

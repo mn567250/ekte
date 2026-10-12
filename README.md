@@ -658,6 +658,12 @@ id no longer resolves, a switched-off provider takes its models and base URLs
 with it. `zing check` and `zing serve` use exactly the same profiles;
 `--no-user-kb` (or `ZING_NO_USER_KB=1`) leaves your entries and switches out.
 
+A model whose `identity_keywords` is empty is not stored that way: zing fills
+in its own brand words from the provider and model names (for example `glm`
+and `z.ai`) and shows a warning to check them, since
+without them the identity check could take the model naming its own vendor for
+a rival brand. The research prompt asks the AI assistant for them explicitly.
+
 Every report records the profile it audited against (`knowledge`: provider,
 model, how the id matched, its source, and a full snapshot with its content
 hash), so a report stays verifiable after the knowledge base changes.

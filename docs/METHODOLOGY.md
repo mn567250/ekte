@@ -371,10 +371,20 @@ when they change behavior.
    (the profile's `identity_forbidden` plus a built-in list). A rival brand
    only counts when the genuine brand is absent; "I am Claude, not GPT" is a
    benign contrast.
+   The genuine brand is the profile's `identity_keywords` plus the profile's
+   own names: the provider key, the leading name of the provider's display
+   name, the leading word of the model id and family, and that vendor's other
+   names in the built-in list (`z.ai` also covers `zhipu`). A model naming its
+   own vendor is therefore never a rival brand, even when `identity_keywords`
+   is empty. Derived names never override `identity_forbidden`, generic words
+   ("ai", "platform", …) never count, and a platform's own brand does not count
+   for another vendor's model it serves.
 2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
    tokenizer quirks, formatting, language-bound probes, …): up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
    `expect_not_contains` or `expect_regex`; output capped at 512 tokens. A
+   probe that needs more output (such as a max-output check) is skipped,
+   listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);
    one alone stays LOW, two or more add a MEDIUM aggregate.
 3. **Echoed `model` field** of a plain call: snapshot suffixes and aliases are
@@ -394,6 +404,7 @@ Without a knowledge-base profile the detector is inconclusive.
 |  | The answer diverged from native behavior: deducts the probe's weight share of 100 points. | Warning · Low | up to −25 pts |
 |  | The answer named a rival brand and not the genuine one: deducts the probe's weight share. | Fail · High | up to −25 pts · cap 20 |
 |  | No usable response to judge by. | Inconclusive | No deduction |
+|  | The probe needs more output than the 512-token identity cap; not run. | Info | No deduction |
 | `model_identity.fp_aggregate` | Two or more behavioral fingerprints diverged. | Warning · Medium | No deduction |
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |

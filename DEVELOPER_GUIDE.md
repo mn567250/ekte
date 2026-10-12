@@ -408,6 +408,13 @@ against honest relays. `zing kb-import --check <file>` runs the same checks as
 the user import (schema, limits, unsafe regular expressions, prompts, id
 collisions).
 
+Always fill `identity_keywords` with the vendor and model-family words the
+model uses for itself. The identity check also counts the provider key, the
+display name and the model id as the genuine brand, widened to the vendor's
+other names in `VENDOR_BRANDS` (`zing/knowledge/identity.py`, which is also the
+detector's rival-brand list); the import fills empty keywords from these names
+with a warning. Add a new vendor's brand words there as one group.
+
 ### Changing probe prompts
 
 Probe texts are calibration data. Changing one in `zing/prompts/en.json` can

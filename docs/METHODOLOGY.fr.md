@@ -390,11 +390,23 @@ moins cher ou ouvert), ainsi que les signaux de
    concurrentes (`identity_forbidden` du profil plus une liste intégrée). Une
    marque concurrente ne compte que si la vraie marque est absente ; « Je suis
    Claude, pas GPT » est un contraste bénin.
+   La vraie marque, ce sont les `identity_keywords` du profil plus ses propres
+   noms : la clé du fournisseur, le nom en tête du nom affiché du fournisseur,
+   le premier mot de l'id et de la famille du modèle, et les autres noms de ce
+   fabricant dans la liste intégrée (`z.ai` couvre aussi `zhipu`). Un modèle
+   qui nomme son propre fabricant n'est donc jamais une marque concurrente,
+   même quand `identity_keywords` est vide. Les noms dérivés ne l'emportent
+   jamais sur `identity_forbidden`, les mots génériques (« ai », « platform »,
+   …) ne comptent jamais, et la marque propre d'une plateforme ne compte pas
+   pour le modèle d'un autre fabricant qu'elle sert.
 2. **Empreintes comportementales** de la base de connaissances (date limite des
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
    `expect_contains`, `expect_contains_any`, `expect_not_contains` ou
-   `expect_regex` ; sortie limitée à 512 tokens. Une empreinte qui s'écarte
+   `expect_regex` ; sortie limitée à 512 tokens. Une sonde qui
+   demande plus de sortie (un test de sortie maximale, par exemple) est
+   ignorée, signalée en Info, et une autre sonde prend sa place. Une
+   empreinte qui s'écarte
    retire sa part de poids sur 100 points (25 au plus) ; seule, elle reste
    FAIBLE, deux ou plus ajoutent un constat agrégé MOYEN.
 3. **Champ `model` renvoyé** par un appel simple : suffixes d'instantané et
@@ -414,6 +426,7 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 |  | La réponse s'écartait du comportement natif : retire la part de poids de la sonde sur 100 points. | Avertissement · Faible | jusqu'à −25 pts |
 |  | La réponse a nommé une marque concurrente et non l'authentique : retire la part de poids de la sonde. | Échec · Élevée | jusqu'à −25 pts · plafond 20 |
 |  | Aucune réponse exploitable pour juger. | Non concluant | Aucune déduction |
+|  | La sonde demande plus de sortie que le plafond d'identité de 512 tokens ; non exécutée. | Info | Aucune déduction |
 | `model_identity.fp_aggregate` | Deux empreintes comportementales ou plus s'écartaient. | Avertissement · Moyenne | Aucune déduction |
 | `model_identity.model_field` | Le champ model renvoyé correspondait au modèle demandé. | Réussi | Aucune déduction |
 |  | Le champ model renvoyé désigne un modèle différent ou plus petit. | Avertissement · Moyenne | Aucune déduction |

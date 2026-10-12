@@ -388,11 +388,23 @@ cuando cambian el comportamiento.
    una lista de marcas rivales (`identity_forbidden` del perfil más una lista
    integrada). Una marca rival solo cuenta si falta la auténtica; «Soy Claude,
    no GPT» es un contraste benigno.
+   La marca auténtica son las `identity_keywords` del perfil más sus propios
+   nombres: la clave del proveedor, el nombre inicial del nombre visible del
+   proveedor, la primera palabra del id y de la familia del modelo, y los demás
+   nombres de ese fabricante en la lista integrada (`z.ai` también cubre
+   `zhipu`). Por eso un modelo que nombra a su propio fabricante nunca es una
+   marca rival, aunque `identity_keywords` esté vacío. Los nombres derivados
+   nunca anulan `identity_forbidden`, las palabras genéricas («ai»,
+   «platform», …) nunca cuentan, y la marca propia de una plataforma no cuenta
+   para el modelo de otro fabricante que sirve.
 2. **Huellas de comportamiento** de la base de conocimiento (fecha de corte del
    conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
    idioma, …): hasta seis sondas de código puro, comprobadas con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
-   `expect_regex`; salida limitada a 512 tokens. Una huella que se desvía resta
+   `expect_regex`; salida limitada a 512 tokens. Una sonda que
+   necesita más salida (por ejemplo, una comprobación de la salida máxima) se
+   omite, figura como Info y otra sonda ocupa su lugar. Una huella que se
+   desvía resta
    su parte de peso sobre 100 puntos (25 como mucho); sola se queda en BAJA,
    dos o más añaden un hallazgo agregado MEDIO.
 3. **Campo `model` devuelto** por una llamada simple: se toleran sufijos de
@@ -412,6 +424,7 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 |  | La respuesta se desvió del comportamiento nativo: resta la parte de peso de la sonda sobre 100 puntos. | Advertencia · Baja | hasta −25 pts |
 |  | La respuesta nombró una marca rival y no la auténtica: resta la parte de peso de la sonda. | Fallo · Alta | hasta −25 pts · tope 20 |
 |  | No hubo una respuesta útil para evaluar. | No concluyente | Sin deducción |
+|  | La sonda necesita más salida que el tope de identidad de 512 tokens; no se ejecuta. | Info | Sin deducción |
 | `model_identity.fp_aggregate` | Dos o más huellas de comportamiento se desviaron. | Advertencia · Media | Sin deducción |
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |

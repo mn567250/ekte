@@ -428,6 +428,15 @@ pull request: um valor errado provoca falsos positivos contra relays honestos.
 utilizador (esquema, limites, expressões regulares perigosas, prompts, colisões de
 ids).
 
+Preencha sempre `identity_keywords` com as palavras do fabricante e da família
+com que o modelo se identifica. A verificação de identidade conta também a
+chave do fornecedor, o nome de apresentação e o id do modelo como marca
+genuína, alargados aos restantes nomes do fabricante em `VENDOR_BRANDS`
+(`zing/knowledge/identity.py`, que é também a lista de marcas rivais do
+detetor); a importação preenche palavras-chave vazias a partir destes nomes com
+um aviso. As palavras de marca de um novo fabricante acrescentam-se aí como um
+grupo.
+
 ### Alterar os prompts das sondas
 
 Os textos das sondas são dados de calibração. Alterar um em
