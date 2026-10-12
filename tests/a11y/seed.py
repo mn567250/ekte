@@ -11,6 +11,7 @@ every run.
 
 from __future__ import annotations
 
+import contextlib
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -74,10 +75,8 @@ def seed_analytics(end: datetime, watch_id: int | None) -> None:
     from zing.knowledge.relays import RelayError, add_relay
     from zing.web import history
 
-    try:
+    with contextlib.suppress(RelayError):  # already saved
         add_relay(*SAVED_RELAY)
-    except RelayError:
-        pass  # already saved
     for days, hours, relay, model, by_monitor, score in RUNS:
         started = end - timedelta(days=days, hours=hours)
         saved = relay == "saved"

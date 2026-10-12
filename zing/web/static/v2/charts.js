@@ -89,8 +89,10 @@
   function yTicks(lo, hi, count) {
     if (hi <= lo) hi = lo + 1;
     var step = niceStep(hi - lo, count), out = [];
-    // "|| 0": no negative zero ("-0") on the axis
-    for (var v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-6; v += step) out.push(Math.round(v / step) * step || 0);
+    // from the tick at or below lo to the tick at or above hi, so every
+    // value sits inside the labelled range; "|| 0": no "-0" on the axis
+    var first = Math.floor(lo / step + 1e-9), last = Math.ceil(hi / step - 1e-9);
+    for (var i = first; i <= last; i++) out.push(i * step || 0);
     return out;
   }
   var H1 = 36e5, D1 = 864e5;
