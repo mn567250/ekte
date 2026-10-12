@@ -222,7 +222,7 @@
             - columnheader "Ultima esecuzione":
               - button "Ultima esecuzione"
         - rowgroup:
-          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100% n=7104% n=7102% n=7 — n=0 / 7 0% n=7 30 set 2026, 11:00":
+          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100% n=7104% n=7102% n=7 0% n=7 0% n=7 30 set 2026, 11:00":
             - rowheader "Example Relay"
             - cell "7"
             - cell "82 n=7"
@@ -231,8 +231,260 @@
             - cell "100% n=7"
             - cell "104% n=7"
             - cell "102% n=7"
-            - cell "— n=0 / 7"
+            - cell "0% n=7"
             - cell "0% n=7"
             - cell "30 set 2026, 11:00"
           # … more rows of the same shape
     - status
+  - region "Ore di punta":
+    - heading "Ore di punta" [level=2]
+    - paragraph: Questo relay rallenta o fallisce di più nelle ore di punta? Ogni cella è un'ora di un giorno della settimana nel tuo fuso orario, colorata in base alla mediana degli audit iniziati in quel momento (scala sotto la griglia).
+    - text: Metrica
+    - combobox "Metrica":
+      - option "Tempo al primo token p50" [selected]
+      - option "Latenza p50"
+      - option "Velocità di decodifica"
+      - option "Tasso di successo"
+      - option "Tasso di errore"
+      - option "Quota con limite di frequenza"
+      - option "Tasso di timeout"
+      - option "Punteggio"
+    - text: Relay
+    - combobox "Relay":
+      - option "Tutti i relay" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - img "Tempo al primo token p50 per giorno della settimana e ora": 00 03 06 09 12 15 18 21 lun mar mer gio ven sab dom
+    - list:
+      - listitem: <duration> <duration>
+      - listitem: meno di 3 audit (tratteggiato)
+      - listitem: nessun audit
+    - paragraph:
+      - text: Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo.
+      - link "Pianifica un monitor per misurazioni regolari.":
+        - /url: /v2/watches
+    - button "Mostra come tabella" [expanded]
+    - region "Tempo al primo token p50 per giorno della settimana e ora (Tutti i relay)":
+      - table "Tempo al primo token p50 per giorno della settimana e ora (Tutti i relay)":
+        - caption: Tempo al primo token p50 per giorno della settimana e ora (Tutti i relay)
+        - rowgroup:
+          - row "Giorno della settimana Ora Mediana Esecuzioni Nota":
+            - columnheader "Giorno della settimana"
+            - columnheader "Ora"
+            - columnheader "Mediana"
+            - columnheader "Esecuzioni"
+            - columnheader "Nota"
+        - rowgroup:
+          - row "lunedì 7:00–8:00 <duration> 1 Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo.":
+            - cell "lunedì"
+            - cell "7:00–8:00"
+            - cell "<duration>"
+            - cell "1"
+            - cell "Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo."
+          # … more rows of the same shape
+  - region "Errori e affidabilità":
+    - heading "Errori e affidabilità" [level=2]
+    - paragraph: "Chiamate fallite al relay per causa: limiti di frequenza (HTTP 429), errori del server (5xx), timeout e altre, come quota di tutte le chiamate."
+    - text: Tabella per
+    - combobox "Tabella per":
+      - option "Relay" [selected]
+      - option "Modello"
+    - text: Intervalli
+    - combobox "Intervalli":
+      - option "Per ora"
+      - option "Per giorno" [selected]
+      - option "Per settimana"
+    - paragraph: Registri delle richieste per 14 audit su 14. 140 chiamate, 18 fallite (12,9%).
+    - list "Legenda":
+      - listitem: Limitato (429)
+      - listitem: Errore del server (5xx)
+      - listitem: Timeout
+      - listitem: Altri errori (4xx, rete, …)
+    - img "Chiamate fallite nel tempo": 0% 5% 10% 15% 20% 25 set 27 set 29 set 1 ott
+    - paragraph:
+      - text: Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo.
+      - link "Pianifica un monitor per misurazioni regolari.":
+        - /url: /v2/watches
+    - button "Mostra come tabella" [expanded]
+    - region "Esiti delle chiamate per intervallo (Per giorno)":
+      - table "Esiti delle chiamate per intervallo (Per giorno)":
+        - caption: Esiti delle chiamate per intervallo (Per giorno)
+        - rowgroup:
+          - row "Intervallo Chiamate Successo Errore del client (4xx) Limitato (429) Errore del server (5xx) Timeout Errore di rete Altro errore Quota fallita Esecuzioni Nota":
+            - columnheader "Intervallo"
+            - columnheader "Chiamate"
+            - columnheader "Successo"
+            - columnheader "Errore del client (4xx)"
+            - columnheader "Limitato (429)"
+            - columnheader "Errore del server (5xx)"
+            - columnheader "Timeout"
+            - columnheader "Errore di rete"
+            - columnheader "Altro errore"
+            - columnheader "Quota fallita"
+            - columnheader "Esecuzioni"
+            - columnheader "Nota"
+        - rowgroup:
+          - row "sab 26 set 2026 10 9 0 0 0 1 0 0 10% 1 Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo.":
+            - cell "sab 26 set 2026"
+            - cell "10"
+            - cell "9"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "1"
+            - cell "0"
+            - cell "0"
+            - cell "10%"
+            - cell "1"
+            - cell "Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo."
+          # … more rows of the same shape
+    - heading "Per relay" [level=3]
+    - region "Esiti delle chiamate per relay":
+      - table "Esiti delle chiamate per relay":
+        - caption: Esiti delle chiamate per relay
+        - rowgroup:
+          - row "Relay Audit con registri Chiamate Successo Errore del client (4xx) Limitato (429) Errore del server (5xx) Timeout Errore di rete Altro errore Quota fallita Quota con limite di frequenza Quota di timeout":
+            - columnheader "Relay"
+            - columnheader "Audit con registri"
+            - columnheader "Chiamate"
+            - columnheader "Successo"
+            - columnheader "Errore del client (4xx)"
+            - columnheader "Limitato (429)"
+            - columnheader "Errore del server (5xx)"
+            - columnheader "Timeout"
+            - columnheader "Errore di rete"
+            - columnheader "Altro errore"
+            - columnheader "Quota fallita"
+            - columnheader "Quota con limite di frequenza"
+            - columnheader "Quota di timeout"
+        - rowgroup:
+          - row "Example Relay 9 / 9 90 85 0 0 0 5 0 0 5,6% 0% 5,6%":
+            - rowheader "Example Relay"
+            - cell "9 / 9"
+            - cell "90"
+            - cell "85"
+            - cell "0"
+            - cell "0"
+            - cell "0"
+            - cell "5"
+            - cell "0"
+            - cell "0"
+            - cell "5,6%"
+            - cell "0%"
+            - cell "5,6%"
+          # … more rows of the same shape
+  - region "Integrità del modello":
+    - heading "Integrità del modello" [level=2]
+    - paragraph: È il modello che dichiara di essere, completo e con le sue funzioni? Esiti dei controlli di identità, finestra di contesto e capacità per relay e modello.
+    - paragraph:
+      - text: Le righe segnate «poche esecuzioni» hanno meno di 3 esecuzioni — un singolo audit può essere un valore anomalo.
+      - link "Pianifica un monitor per misurazioni regolari.":
+        - /url: /v2/watches
+    - region "Esiti dei controlli per relay × modello (n = audit con un verdetto)":
+      - table "Esiti dei controlli per relay × modello (n = audit con un verdetto)":
+        - caption: Esiti dei controlli per relay × modello (n = audit con un verdetto)
+        - rowgroup:
+          - row "Relay × modello Esecuzioni Identità del modello Capacità Visione Streaming Protocollo di risposta Quota di modello non corrispondente Contesto misurato / dichiarato":
+            - columnheader "Relay × modello"
+            - columnheader "Esecuzioni"
+            - columnheader "Identità del modello"
+            - columnheader "Capacità"
+            - columnheader "Visione"
+            - columnheader "Streaming"
+            - columnheader "Protocollo di risposta"
+            - columnheader "Quota di modello non corrispondente"
+            - columnheader "Contesto misurato / dichiarato"
+        - rowgroup:
+          - row "Example Relay · model-a 7 Superato 7 su 7 superati Superato 7 su 7 superati Superato 7 su 7 superati Superato 7 su 7 superati Superato 7 su 7 superati 0% n=7100% 128000 tok / 128000 tok n=7":
+            - rowheader "Example Relay · model-a"
+            - cell "7"
+            - cell "Superato 7 su 7 superati"
+            - cell "Superato 7 su 7 superati"
+            - cell "Superato 7 su 7 superati"
+            - cell "Superato 7 su 7 superati"
+            - cell "Superato 7 su 7 superati"
+            - cell "0% n=7"
+            - cell "100% 128000 tok / 128000 tok n=7"
+          # … more rows of the same shape
+  - region "Fatturazione e token":
+    - heading "Fatturazione e token" [level=2]
+    - paragraph: "Rapporto di fatturazione = token dichiarati dal relay ÷ token contati da zing. Sopra il 100%: il relay dichiara più token di quanti ne abbia contati zing (potresti pagare di più). I conteggi di zing sono stime, quindi piccoli scostamenti sono normali."
+    - text: Metrica
+    - combobox "Metrica":
+      - option "Rapporto di fatturazione (input)" [selected]
+      - option "Rapporto di fatturazione (output)"
+      - option "Quota di token di ragionamento"
+      - option "Quota di input in cache"
+    - paragraph: Dati di “Rapporto di fatturazione (input)” da 9 audit su 14.
+    - list "Legenda":
+      - listitem: Example Relay 9 esecuzioni
+    - img "Rapporto di fatturazione (input) nel tempo": 0% 25% 50% 75% 100% 125% 25 set 27 set 29 set 1 ott 100%
+    - paragraph:
+      - text: Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo.
+      - link "Pianifica un monitor per misurazioni regolari.":
+        - /url: /v2/watches
+    - button "Mostra come tabella" [expanded]
+    - region "Rapporto di fatturazione (input) (Relay, Per giorno)":
+      - table "Rapporto di fatturazione (input) (Relay, Per giorno)":
+        - caption: Rapporto di fatturazione (input) (Relay, Per giorno)
+        - rowgroup:
+          - row "Intervallo Serie Mediana p25–p75 Esecuzioni Nota":
+            - columnheader "Intervallo"
+            - columnheader "Serie"
+            - columnheader "Mediana"
+            - columnheader "p25–p75"
+            - columnheader "Esecuzioni"
+            - columnheader "Nota"
+        - rowgroup:
+          - row "sab 26 set 2026 Example Relay 110% 110% – 110% 1 Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo.":
+            - cell "sab 26 set 2026"
+            - cell "Example Relay"
+            - cell "110%"
+            - cell "110% – 110%"
+            - cell "1"
+            - cell "Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo."
+          # … more rows of the same shape
+    - heading "Riepilogo per relay" [level=3]
+    - region "Mediane nel periodo selezionato (n = audit che hanno misurato un valore)":
+      - table "Mediane nel periodo selezionato (n = audit che hanno misurato un valore)":
+        - caption: Mediane nel periodo selezionato (n = audit che hanno misurato un valore)
+        - rowgroup:
+          - row "Relay Esecuzioni Rapporto di fatturazione (input) Rapporto di fatturazione (output) Quota di token di ragionamento Quota di input in cache":
+            - columnheader "Relay"
+            - columnheader "Esecuzioni"
+            - columnheader "Rapporto di fatturazione (input)"
+            - columnheader "Rapporto di fatturazione (output)"
+            - columnheader "Quota di token di ragionamento"
+            - columnheader "Quota di input in cache"
+        - rowgroup:
+          - row "Example Relay 9103% n=9102% n=9 30% n=9 25% n=9":
+            - rowheader "Example Relay"
+            - cell "9"
+            - cell "103% n=9"
+            - cell "102% n=9"
+            - cell "30% n=9"
+            - cell "25% n=9"
+          # … more rows of the same shape
+  - region "Sovraccarico del relay":
+    - heading "Sovraccarico del relay" [level=2]
+    - paragraph: Tempo di elaborazione che il relay indica nelle proprie intestazioni di risposta, accanto al round trip di rete verso di esso (mediane). Il valore del relay è autodichiarato e non verificato.
+    - list "Legenda":
+      - listitem: Tempo di elaborazione del relay
+      - listitem: Andata e ritorno di rete
+    - region "Mediane per relay, barre su un'unica scala":
+      - table "Mediane per relay, barre su un'unica scala":
+        - caption: Mediane per relay, barre su un'unica scala
+        - rowgroup:
+          - row "Relay Esecuzioni Tempo di elaborazione del relay Andata e ritorno di rete":
+            - columnheader "Relay"
+            - columnheader "Esecuzioni"
+            - columnheader "Tempo di elaborazione del relay"
+            - columnheader "Andata e ritorno di rete"
+        - rowgroup:
+          - row "Example Relay 9 <duration> n=9 <duration> n=9":
+            - rowheader "Example Relay"
+            - cell "9"
+            - cell "<duration> n=9"
+            - cell "<duration> n=9"
+          # … more rows of the same shape
