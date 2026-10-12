@@ -42,6 +42,7 @@
   "unchanged": "invariato",
   "{group}: showing {shown} of {total} audits": "{group}: {shown} di {total} audit mostrati",
   "{key}, {dir}": "{key}, {dir}",
+  "{label}: {value}": "{label}: {value}",
   "{metric} trend across {n} audits: from {first} to {last}.": "Andamento di {metric} su {n} audit: da {first} a {last}.",
   "{n} active": "{n} attivi"
  }

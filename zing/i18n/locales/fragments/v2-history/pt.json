@@ -42,6 +42,7 @@
   "unchanged": "sem alterações",
   "{group}: showing {shown} of {total} audits": "{group}: mostrando {shown} de {total} auditorias",
   "{key}, {dir}": "{key}, {dir}",
+  "{label}: {value}": "{label}: {value}",
   "{metric} trend across {n} audits: from {first} to {last}.": "Tendência de {metric} em {n} auditorias: de {first} a {last}.",
   "{n} active": "{n} ativos"
  }
