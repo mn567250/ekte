@@ -46,11 +46,11 @@
     - definition:
       - code: <id>
     - term: Versão do zing
-    - definition: 0.18.0
+    - definition: 0.19.2
     - term: Versão do axe-core
     - definition: 4.13.0
     - term: Testes
-    - definition: 1115 executados, 1115 aprovados, 0 falhados, 0 ignorados
+    - definition: 1292 executados, 1292 aprovados, 0 falhados, 0 ignorados
     - term: Idiomas
     - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
     - term: Temas
@@ -62,6 +62,7 @@
       - code: /v2/watches
       - code: /v2/tools
       - code: /v2/kb
+      - code: /v2/analytics
       - code: /v2/accessibility
   - region "Cobertura":
     - heading "Cobertura" [level=2]
@@ -117,7 +118,7 @@
               - group:
                 - text: Conteúdo não textual
                 - paragraph: "Como é testado: Imagens, ícones, SVG e controlos têm uma alternativa em texto. Se cada alternativa é significativa é avaliado por uma pessoa."
-                - paragraph: "Testes automatizados: 14 executados, 14 aprovados, 0 falhados, 166 ignorados"
+                - paragraph: "Testes automatizados: 56 executados, 56 aprovados, 0 falhados, 154 ignorados"
                 - paragraph:
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel
