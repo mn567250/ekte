@@ -543,8 +543,13 @@ def test_a_newer_extract_version_re_extracts(data, monkeypatch):
     assert row["reasoning_share"] is None
     assert row["extract_version"] == analytics_store.EXTRACT_VERSION
 
+    gone = history.save(_fixture())
+    with _db(data) as conn:  # deleted by an older zing: its analytics rows stay
+        conn.execute("DELETE FROM history WHERE id = ?", (gone,))
     monkeypatch.setattr(analytics_store, "EXTRACT_VERSION", analytics_store.EXTRACT_VERSION + 1)
     history.backfill_analytics()
+    tables = ("history_metrics", "history_dimensions", "history_requests")
+    assert [_count(data, t, gone) for t in tables] == [0, 0, 0]  # cleaned up on the way
     with _db(data) as conn:
         version = conn.execute("SELECT extract_version FROM history_metrics").fetchone()[0]
     assert version == analytics_store.EXTRACT_VERSION

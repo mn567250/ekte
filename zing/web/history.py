@@ -295,6 +295,11 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
         split = {int(r["id"]): r[_SPLIT] for r in rows}
         conn.execute("BEGIN IMMEDIATE")
         try:
+            # Analytics rows of a run that is gone (deleted by an older zing,
+            # which does not know these tables): ids are never reused.
+            for rid in ids:
+                if rid not in split:
+                    analytics_store.delete_for(conn, rid)
             for rid, report_json, records, metrics, dims in work:
                 if split[rid] is None:
                     if records is not None:
