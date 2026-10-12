@@ -28,8 +28,12 @@
  *   series          [{ label, cls: "s0".."s3", shape, points: [{ t, v, lo, hi, n, runs, low }] }]
  *   marks           [{ t, kind: "tool_version" | "kb_profile", text }]
  *   lowHint         text shown in the tooltip for a bucket with few runs
- *   yMin, yMax      fixed scale bounds (e.g. 0 / 100 for scores), optional
- *   ref             { v, text }: a dashed reference line (e.g. 100 %), optional
+ *   yMin, yMax      scale bounds, optional: fixed (0 / 100 for scores), or a
+ *                   zoom to the data (billing ratios around 100 %); without
+ *                   yMin the scale starts at 0
+ *   ref             { v, text }: a dashed reference line (e.g. 100 %),
+ *                   labelled at its left end inside the plot (the newest
+ *                   points sit at the right), optional
  *
  *   - heatmap(host, cfg)      a weekday x hour grid (7 x 24) on a one-hue
  *                             sequential scale (5 steps, light = low): cells
@@ -181,7 +185,10 @@
     var yt = yTicks(lo, hi, narrow ? 4 : 5);
     lo = Math.min(lo, yt[0]);
     hi = Math.max(hi, yt[yt.length - 1]);
-    var ylab = yt.map(function (v) { return fmt(v, cfg.unit, { bare: true, digits: cfg.unit === "ratio" ? 0 : undefined }); });
+    // whole percents, unless the ticks are closer (a zoomed ratio axis)
+    var ystep = yt.length > 1 ? yt[1] - yt[0] : 1;
+    var rdig = Math.abs(ystep * 100 - Math.round(ystep * 100)) < 1e-6 ? 0 : 1;
+    var ylab = yt.map(function (v) { return fmt(v, cfg.unit, { bare: true, digits: cfg.unit === "ratio" ? rdig : undefined }); });
     M.l = 12 + Math.max.apply(null, ylab.map(function (s) { return s.length; })) * 7;
     var pw = W - M.l - M.r, ph = H - M.t - M.b;
     var X = function (t) { return M.l + ((t - t0) / (t1 - t0)) * pw; };
@@ -238,7 +245,7 @@
     if (cfg.ref && typeof cfg.ref.v === "number") {
       var ry = f1(Y(cfg.ref.v));
       out.push('<g class="ref"><line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + ry + '" y2="' + ry + '"/>' +
-        '<text x="' + (W - M.r - 4) + '" y="' + ry + '" dy="-0.45em" text-anchor="end">' + esc(cfg.ref.text) + "</text></g>");
+        '<text x="' + (M.l + 6) + '" y="' + ry + '" dy="-0.45em">' + esc(cfg.ref.text) + "</text></g>");
     }
     // series: band, line, markers
     series.forEach(function (s, si) {
