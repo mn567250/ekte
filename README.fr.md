@@ -317,6 +317,8 @@ connaissances dont la langue *est* la mesure — par exemple les sondes de
 fluidité en chinois, de tokenizer et d'auto-identification des modèles chinois.
 Chaque rapport consigne les langues de sonde réellement utilisées
 (`prompt_languages`, p. ex. `["en", "zh"]`).
+`started_at` consigne le début de l'audit (UTC) ; le `start_ms` de chaque
+enregistrement de requête compte à partir de ce moment.
 
 ## Ce qui est vérifié
 
@@ -762,6 +764,9 @@ sonde. Le texte contrôlé par le relais est expurgé et échappé avant d'être
   vous pouvez ouvrir pour vos propres analyses (en lecture seule de préférence
   pendant que zing tourne). Ne committez pas `watches.db` si ce dossier est un
   dépôt.
+  `history_metrics` contient une ligne de valeurs mesurées par exécution et
+  `history_requests` chaque enregistrement de requête (stocké là une seule fois,
+  pas dans chaque rapport).
 
 ## Utilisation responsable
 

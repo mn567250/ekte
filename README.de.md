@@ -315,6 +315,8 @@ Die einzigen Ausnahmen sind Fingerabdrücke der Wissensbasis, deren Sprache
 *selbst* die Messgröße ist — z. B. die Tests zu chinesischer Sprachgewandtheit,
 Tokenizer und Selbstidentifikation chinesischer Modelle. Jeder Bericht vermerkt
 die tatsächlich verwendeten Testsprachen (`prompt_languages`, z. B. `["en", "zh"]`).
+`started_at` vermerkt, wann die Prüfung begann (UTC); `start_ms` jedes
+Anfrage-Datensatzes zählt ab diesem Zeitpunkt.
 
 ## Was geprüft wird
 
@@ -765,6 +767,8 @@ Relay kontrollierter Text wird vor dem Schreiben geschwärzt und maskiert.
   ein anderes, z. B. legt `zing serve --data-dir .` die Datenbanken im
   aktuellen Ordner ab. Es sind normale SQLite-Dateien, die Sie für eigene
   Auswertungen öffnen können (während zing läuft, am besten nur lesend).
+  `history_metrics` enthält eine Zeile Messwerte pro Lauf, `history_requests`
+  jeden Anfrage-Datensatz (dort einmal gespeichert, nicht in jedem Bericht).
   Committen Sie `watches.db` nicht, falls der Ordner ein Repository ist.
 
 ## Verantwortungsvoller Einsatz

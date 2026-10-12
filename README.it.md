@@ -311,6 +311,8 @@ eccezioni sono le impronte della base di conoscenza la cui lingua *è* la misura
 per esempio le sonde di scioltezza in cinese, di tokenizer e di
 autoidentificazione dei modelli cinesi. Ogni rapporto registra le lingue di sonda
 effettivamente usate (`prompt_languages`, per es. `["en", "zh"]`).
+`started_at` registra quando è iniziata la verifica (UTC); lo `start_ms` di ogni
+record di richiesta conta da quel momento.
 
 ## Cosa controlla
 
@@ -754,6 +756,9 @@ testo controllato dal relay viene oscurato ed escapato prima di essere scritto.
   i database nella cartella corrente. Sono normali file SQLite che puoi aprire
   per le tue analisi (meglio in sola lettura mentre zing è in esecuzione). Non
   fare commit di `watches.db` se quella cartella è un repository.
+  `history_metrics` contiene una riga di valori misurati per esecuzione e
+  `history_requests` ogni record di richiesta (salvato lì una sola volta, non
+  dentro ogni rapporto).
 
 ## Uso responsabile
 
