@@ -533,6 +533,12 @@ pytest -n auto               # in parallelo, un worker per CPU (pytest-xdist)
   `pytest -m a11y`. Senza Playwright la directory viene saltata. Cosa è
   automatizzato e cosa richiede ancora una revisione BITV manuale è descritto in
   [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) (in inglese).
+- `ZING_A11Y_PAGES=history,kb` esegue solo i test a11y di quelle pagine (più i
+  controlli che riguardano tutte le pagine); `python -m tests.a11y.affected
+  --base origin/main --head HEAD` mostra le pagine toccate da una modifica.
+  Entrambi usano un'unica corrispondenza, `tests/a11y/pages.py`: una nuova
+  pagina va aggiunta ai suoi `PAGES` e `RULES`
+  ([tests/a11y/README.md](tests/a11y/README.md)).
 
 ## Docker
 
@@ -570,7 +576,7 @@ le protezioni dell'interfaccia.
 
 | Workflow | Si avvia con | Cosa fa |
 |---|---|---|
-| `.github/workflows/ci.yml` | push e pull request verso `main` (e i branch di integrazione `a11y/integration`, `perf/integration`) | `ruff`, `mypy` e `pytest` con Python 3.10–3.13 e gli extra `dev` e `web`; costruisce wheel e sdist e verifica che la wheel si installi e carichi la base di conoscenza; esegue la suite di accessibilità (informativa, non fa mai fallire l'esecuzione) e ne carica i risultati — tranne nelle pull request verso `perf/integration`, dove la lenta suite nel browser viene saltata (gira sui push di quel branch e sulla sua pull request verso `main`) |
+| `.github/workflows/ci.yml` | push e pull request verso `main` (e i branch di integrazione `a11y/integration`, `perf/integration`); ogni notte e manuale (solo accessibilità) | `ruff`, `mypy` e `pytest` con Python 3.10–3.13 e gli extra `dev` e `web`; costruisce wheel e sdist e verifica che la wheel si installi e carichi la base di conoscenza; esegue la suite di accessibilità (informativa, non fa mai fallire l'esecuzione) e ne carica i risultati: tutte le pagine sui push e nelle esecuzioni notturne e manuali (con il rapporto di conformità BITV), nelle pull request solo le pagine toccate dalla modifica (nessuna se cambia solo la documentazione) — tranne nelle pull request verso `perf/integration`, dove la lenta suite nel browser viene saltata (gira sui push di quel branch e sulla sua pull request verso `main`) |
 | `.github/workflows/release.yml` | un tag `v*` | costruisce, esegue `twine check` e pubblica su PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | pianificazione giornaliera, manuale | esempio di verifica pianificata di un relay con l'action |
 
