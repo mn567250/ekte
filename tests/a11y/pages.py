@@ -259,17 +259,17 @@ def affected(paths: Iterable[str]) -> Scope:
 # --------------------------------------------------------------------------- #
 # CI jobs
 # --------------------------------------------------------------------------- #
-# Rough share of the full suite's run time per page (measured locally with
-# --durations; see tests/a11y/README.md). Tests tied to no page (cross-page
+# Share of the full suite's test time per page, from a full local run's
+# JUnit XML (1,122 tests, 4,137 s of test time; tests/a11y/README.md). Tests tied to no page (cross-page
 # checks, self-checks) run in every selection and weigh in as "common".
 WEIGHTS: dict[str, float] = {
-    "audit": 0.17,
-    "history": 0.22,
-    "monitors": 0.14,
-    "tools": 0.12,
-    "kb": 0.14,
-    "accessibility": 0.11,
-    "common": 0.10,
+    "audit": 0.15,
+    "history": 0.21,
+    "monitors": 0.10,
+    "tools": 0.10,
+    "kb": 0.29,
+    "accessibility": 0.12,
+    "common": 0.04,
 }
 FULL_JOBS = 4
 

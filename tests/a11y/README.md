@@ -23,16 +23,18 @@ id is a usage error. A test runs when it is tied to a selected page:
   and identification, page titles, reachability; the self-checks) always runs.
 
 It combines with `ZING_A11Y_SHARD=k/n`, which then splits the selection.
-Roughly (1,122 tests in all, 33 of them run with any selection):
+Collected with `ZING_A11Y_PAGES=<page>` (1,122 tests in all; 33 of them, 4 %
+of the test time, run with any selection), and each page's share of a full
+run's test time (`WEIGHTS` in `pages.py`):
 
 | Page | Tests | Share of the run time |
 |---|---:|---:|
-| audit | 213 | WEIGHT_AUDIT |
-| history | 232 | WEIGHT_HISTORY |
-| monitors | 212 | WEIGHT_MONITORS |
-| tools | 206 | WEIGHT_TOOLS |
-| kb | 199 | WEIGHT_KB |
-| accessibility | 197 | WEIGHT_ACCESSIBILITY |
+| audit | 213 | 15 % |
+| history | 232 | 21 % |
+| monitors | 212 | 10 % |
+| tools | 206 | 10 % |
+| kb | 199 | 29 % |
+| accessibility | 197 | 12 % |
 
 ## Which pages a change affects
 
