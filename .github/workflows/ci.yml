@@ -5,6 +5,10 @@ on:
     branches: [main, a11y/integration, perf/integration]
   pull_request:
     branches: [main, a11y/integration, perf/integration]
+  # nightly full accessibility run (the other jobs skip it)
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,6 +16,7 @@ permissions:
 jobs:
   test:
     name: test (py${{ matrix.python-version }})
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,75 +43,161 @@ jobs:
         # pytest-xdist (dev extra): one worker per CPU
         run: pytest -q -n auto
 
+  a11y-scope:
+    # Which pages the a11y suite tests on this run (tests/a11y/pages.py):
+    # everything on pushes, PRs into main, the nightly run and manual runs;
+    # on other PRs only the pages the PR's changes can affect (none for a
+    # docs-only PR, all of them when a shared or unmapped UI file changes).
+    name: accessibility scope
+    # not on PRs into the perf integration branch (see the a11y job)
+    if: github.event_name != 'pull_request' || github.base_ref != 'perf/integration'
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.scope.outputs.run }}
+      full: ${{ steps.scope.outputs.full }}
+      pages: ${{ steps.scope.outputs.pages }}
+      reason: ${{ steps.scope.outputs.reason }}
+      matrix: ${{ steps.scope.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # the whole history (commits and trees, no old file contents) for
+          # the PR's merge base
+          fetch-depth: 0
+          filter: blob:none
+      - name: Pages to test
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # standard library only: the runner's python3, no setup
+        run: |
+          case "$EVENT" in
+            pull_request)
+              if [ "$BASE_REF" = main ]; then
+                python3 -m tests.a11y.affected --full "pull request into main" --github-output
+              else
+                python3 -m tests.a11y.affected --base "$BASE_SHA" --head "$HEAD_SHA" --github-output
+              fi ;;
+            push) python3 -m tests.a11y.affected --full "push to $GITHUB_REF_NAME" --github-output ;;
+            schedule) python3 -m tests.a11y.affected --full "nightly run" --github-output ;;
+            *) python3 -m tests.a11y.affected --full "$EVENT" --github-output ;;
+          esac
+
   a11y:
     # Browser accessibility tests of web UI v2 (BITV 2.0 / EN 301 549 /
     # WCAG 2.1 AA), see docs/ACCESSIBILITY.md. Informational for now:
     # continue-on-error keeps known violations from failing the run. Drop it
     # (and make the check required) once the suite is green.
-    # Split into 4 parallel shards (ZING_A11Y_SHARD, tests/a11y/conftest.py),
-    # each on its own runner; a11y-report merges their results.
-    name: accessibility ${{ matrix.shard }}/4 (informational)
+    # Parallel jobs from a11y-scope's matrix: a full run is 4 round-robin
+    # shards (ZING_A11Y_SHARD, tests/a11y/conftest.py); a partial run selects
+    # its pages (ZING_A11Y_PAGES) and shares them out over 1-4 jobs by their
+    # weight (tests/a11y/pages.py). a11y-report merges the results.
+    name: accessibility ${{ matrix.shard }}${{ matrix.pages != 'all' && format(' {0}', matrix.pages) || '' }} (informational)
+    needs: a11y-scope
     # Slow browser suite: not on PRs into the perf integration branch (it runs
-    # on the integration branch's own pushes and on its PR into main).
-    if: github.event_name != 'pull_request' || github.base_ref != 'perf/integration'
+    # on the integration branch's own pushes and on its PR into main; the
+    # scope job is skipped there, and so is this one), and not when the
+    # change affects no page.
+    if: needs.a11y-scope.outputs.run == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
     strategy:
       fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
+      matrix: ${{ fromJSON(needs.a11y-scope.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Install
+        id: install
         run: |
           python -m pip install --upgrade pip
           pip install -e '.[dev,web,a11y]'
-          playwright install --with-deps chromium
-      - name: Test (pytest -m a11y, shard ${{ matrix.shard }}/4)
+          echo "playwright=$(python -c 'import importlib.metadata as m; print(m.version("playwright"))')" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright's Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.install.outputs.playwright }}
+      - name: Install Chromium
+        # the system libraries still come from apt; the browser itself from
+        # the cache when this Playwright version was installed before
+        run: playwright install --with-deps chromium
+      - name: Test (pytest -m a11y, pages ${{ matrix.pages }}, shard ${{ matrix.shard }})
         env:
-          ZING_A11Y_SHARD: ${{ matrix.shard }}/4
+          ZING_A11Y_PAGES: ${{ matrix.pages }}
+          ZING_A11Y_SHARD: ${{ matrix.shard }}
           # per-step results for the BITV conformance report (tests/a11y/results.py)
-          ZING_A11Y_RESULTS: a11y-results-${{ matrix.shard }}.json
+          ZING_A11Y_RESULTS: a11y-results-${{ strategy.job-index }}.json
           # findings, one file per xdist worker (tests/a11y/harness.py)
-          ZING_A11Y_REPORT: a11y-report-${{ matrix.shard }}.json
+          ZING_A11Y_REPORT: a11y-report-${{ strategy.job-index }}.json
         run: pytest tests/a11y -m a11y -n auto --dist worksteal -q -p no:cacheprovider
       - name: Upload shard results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: a11y-shard-${{ matrix.shard }}
+          name: a11y-shard-${{ strategy.job-index }}
           path: |
             a11y-report*.json
             a11y-results-*.json
           if-no-files-found: ignore
 
   a11y-report:
-    # One conformance report from all shards, plus the optional LLM review.
+    # One conformance report from all shards of a full run, plus the optional
+    # LLM review. A partial run (some pages) uploads its findings only: a
+    # conformance report built from it would be incomplete.
     name: accessibility report (informational)
-    needs: a11y
-    # not on PRs into the perf integration branch, like the a11y job
-    if: always() && (github.event_name != 'pull_request' || github.base_ref != 'perf/integration')
+    needs: [a11y-scope, a11y]
+    # whenever the a11y job ran (so not on PRs into the perf integration
+    # branch, nor for changes that affect no page)
+    if: always() && needs.a11y-scope.outputs.run == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
     env:
       # only whether the secret exists; the key itself is passed to one step
       HAS_ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+      FULL: ${{ needs.a11y-scope.outputs.full }}
+      PAGES: ${{ needs.a11y-scope.outputs.pages }}
+      REASON: ${{ needs.a11y-scope.outputs.reason }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       - name: Download shard results
         uses: actions/download-artifact@v4
         with:
           pattern: a11y-shard-*
           merge-multiple: true
       - name: Conformance report (bitv-report.json)
-        # standard library only; merges the shards' results
+        # standard library only; merges the shards' results; full runs only
+        if: env.FULL == 'true'
         run: python -m tests.a11y.conformance --results a11y-results-*.json --out bitv-report.json
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Accessibility tests"
+            echo
+            if [ "$FULL" = true ]; then
+              echo "Full run, every page: $REASON."
+              echo
+              echo "Findings and the BITV conformance report (bitv-report.json): artifact a11y-report."
+            else
+              echo "Partial run, pages **$PAGES** only: $REASON."
+              echo
+              echo "No BITV conformance report: that needs a full run (pushes, PRs into main, the nightly run, a manual run)."
+              echo "Findings: artifact a11y-report."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload findings
         if: always()
         uses: actions/upload-artifact@v4
@@ -130,7 +221,8 @@ jobs:
         continue-on-error: true
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python -m tests.a11y.llm_review --out a11y-llm-review.json
+        # the pages this run tested
+        run: python -m tests.a11y.llm_review --pages "$PAGES" --out a11y-llm-review.json
       - name: Upload LLM review
         if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
         uses: actions/upload-artifact@v4
@@ -141,6 +233,7 @@ jobs:
 
   build:
     name: build distribution
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
