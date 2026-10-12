@@ -397,7 +397,10 @@ moins cher ou ouvert), ainsi que les signaux de
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
    `expect_contains`, `expect_contains_any`, `expect_not_contains` ou
-   `expect_regex` ; sortie limitée à 512 tokens. Une empreinte qui s'écarte
+   `expect_regex` ; sortie limitée à 512 tokens. Une sonde qui
+   demande plus de sortie (un test de sortie maximale, par exemple) est
+   ignorée, signalée en Info, et une autre sonde prend sa place. Une
+   empreinte qui s'écarte
    retire sa part de poids sur 100 points (25 au plus) ; seule, elle reste
    FAIBLE, deux ou plus ajoutent un constat agrégé MOYEN.
 3. **Champ `model` renvoyé** par un appel simple : suffixes d'instantané et
@@ -417,6 +420,7 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 |  | La réponse s'écartait du comportement natif : retire la part de poids de la sonde sur 100 points. | Avertissement · Faible | jusqu'à −25 pts |
 |  | La réponse a nommé une marque concurrente et non l'authentique : retire la part de poids de la sonde. | Échec · Élevée | jusqu'à −25 pts · plafond 20 |
 |  | Aucune réponse exploitable pour juger. | Non concluant | Aucune déduction |
+|  | La sonde demande plus de sortie que le plafond d'identité de 512 tokens ; non exécutée. | Info | Aucune déduction |
 | `model_identity.fp_aggregate` | Deux empreintes comportementales ou plus s'écartaient. | Avertissement · Moyenne | Aucune déduction |
 | `model_identity.model_field` | Le champ model renvoyé correspondait au modèle demandé. | Réussi | Aucune déduction |
 |  | Le champ model renvoyé désigne un modèle différent ou plus petit. | Avertissement · Moyenne | Aucune déduction |

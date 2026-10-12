@@ -51,6 +51,7 @@
   "The answer matched the claimed model's native behavior.": "The answer matched the claimed model's native behavior.",
   "The answer diverged from native behavior: deducts the probe's weight share of 100 points.": "The answer diverged from native behavior: deducts the probe's weight share of 100 points.",
   "The answer named a rival brand and not the genuine one: deducts the probe's weight share.": "The answer named a rival brand and not the genuine one: deducts the probe's weight share.",
+  "The probe needs more output than the 512-token identity cap; not run.": "The probe needs more output than the 512-token identity cap; not run.",
   "Two or more behavioral fingerprints diverged.": "Two or more behavioral fingerprints diverged.",
   "The echoed model field matched the requested model.": "The echoed model field matched the requested model.",
   "The echoed model field names a different or smaller model.": "The echoed model field names a different or smaller model.",

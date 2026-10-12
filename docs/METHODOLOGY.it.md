@@ -398,7 +398,10 @@ quando cambiano il comportamento.
    conoscenze, particolarità del tokenizer, formattazione, sonde legate a una
    lingua, …): fino a sei sonde di solo codice, verificate con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
-   `expect_regex`; output limitato a 512 token. Un'impronta che si discosta
+   `expect_regex`; output limitato a 512 token. Una sonda che
+   richiede più output (ad esempio una verifica dell'output massimo) viene
+   saltata, indicata come Info, e un'altra sonda ne prende il posto.
+   Un'impronta che si discosta
    toglie la sua quota di peso su 100 punti (al più 25); da sola resta BASSA,
    due o più aggiungono una rilevazione aggregata MEDIA.
 3. **Campo `model` restituito** da una chiamata semplice: suffissi di snapshot e
@@ -418,6 +421,7 @@ Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 |  | La risposta si è discostata dal comportamento nativo: toglie la quota di peso della sonda su 100 punti. | Avviso · Bassa | fino a −25 pt |
 |  | La risposta ha nominato un marchio concorrente e non quello autentico: toglie la quota di peso della sonda. | Fallito · Alta | fino a −25 pt · tetto 20 |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo | Nessuna detrazione |
+|  | La sonda richiede più output del limite di identità di 512 token; non eseguita. | Info | Nessuna detrazione |
 | `model_identity.fp_aggregate` | Due o più impronte comportamentali si sono discostate. | Avviso · Media | Nessuna detrazione |
 | `model_identity.model_field` | Il campo model restituito corrispondeva al modello richiesto. | Superato | Nessuna detrazione |
 |  | Il campo model restituito indica un modello diverso o più piccolo. | Avviso · Media | Nessuna detrazione |

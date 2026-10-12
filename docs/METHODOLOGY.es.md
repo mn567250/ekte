@@ -395,7 +395,10 @@ cuando cambian el comportamiento.
    conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
    idioma, …): hasta seis sondas de código puro, comprobadas con
    `expect_contains`, `expect_contains_any`, `expect_not_contains` o
-   `expect_regex`; salida limitada a 512 tokens. Una huella que se desvía resta
+   `expect_regex`; salida limitada a 512 tokens. Una sonda que
+   necesita más salida (por ejemplo, una comprobación de la salida máxima) se
+   omite, figura como Info y otra sonda ocupa su lugar. Una huella que se
+   desvía resta
    su parte de peso sobre 100 puntos (25 como mucho); sola se queda en BAJA,
    dos o más añaden un hallazgo agregado MEDIO.
 3. **Campo `model` devuelto** por una llamada simple: se toleran sufijos de
@@ -415,6 +418,7 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 |  | La respuesta se desvió del comportamiento nativo: resta la parte de peso de la sonda sobre 100 puntos. | Advertencia · Baja | hasta −25 pts |
 |  | La respuesta nombró una marca rival y no la auténtica: resta la parte de peso de la sonda. | Fallo · Alta | hasta −25 pts · tope 20 |
 |  | No hubo una respuesta útil para evaluar. | No concluyente | Sin deducción |
+|  | La sonda necesita más salida que el tope de identidad de 512 tokens; no se ejecuta. | Info | Sin deducción |
 | `model_identity.fp_aggregate` | Dos o más huellas de comportamiento se desviaron. | Advertencia · Media | Sin deducción |
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |

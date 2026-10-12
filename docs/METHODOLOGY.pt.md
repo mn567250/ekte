@@ -392,7 +392,10 @@ quando alteram o comportamento.
    conhecimento, particularidades do tokenizer, formatação, sondas ligadas a um
    idioma, …): até seis sondas de código puro, verificadas com
    `expect_contains`, `expect_contains_any`, `expect_not_contains` ou
-   `expect_regex`; saída limitada a 512 tokens. Uma impressão que se desvia
+   `expect_regex`; saída limitada a 512 tokens. Uma sonda que
+   precisa de mais saída (por exemplo, uma verificação da saída máxima) é
+   ignorada, aparece como Info e outra sonda ocupa o seu lugar. Uma
+   impressão que se desvia
    desconta a sua parte do peso sobre 100 pontos (25 no máximo); sozinha fica
    BAIXA, duas ou mais acrescentam uma constatação agregada MÉDIA.
 3. **Campo `model` devolvido** por uma chamada simples: sufixos de snapshot e
@@ -412,6 +415,7 @@ Sem perfil na base de conhecimento, o detector é inconclusivo.
 |  | A resposta desviou do comportamento nativo: desconta a parcela de peso da sonda em 100 pontos. | Aviso · Baixa | até −25 pts |
 |  | A resposta nomeou uma marca rival e não a genuína: desconta a parcela de peso da sonda. | Falha · Alta | até −25 pts · teto 20 |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo | Sem dedução |
+|  | A sonda precisa de mais saída do que o limite de identidade de 512 tokens; não executada. | Info | Sem dedução |
 | `model_identity.fp_aggregate` | Duas ou mais impressões comportamentais desviaram. | Aviso · Média | Sem dedução |
 | `model_identity.model_field` | O campo model devolvido correspondeu ao modelo solicitado. | Aprovado | Sem dedução |
 |  | O campo model devolvido indica um modelo diferente ou menor. | Aviso · Média | Sem dedução |

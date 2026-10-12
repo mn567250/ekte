@@ -32,6 +32,7 @@
   "The answer matched the claimed model's native behavior.": "回答与所声称模型的原生行为一致。",
   "The answer diverged from native behavior: deducts the probe's weight share of 100 points.": "回答偏离了原生行为：按该探针在 100 分中的权重占比扣分。",
   "The answer named a rival brand and not the genuine one: deducts the probe's weight share.": "回答提到了竞品品牌，却没有提到正品品牌：按该探针的权重占比扣分。",
+  "The probe needs more output than the 512-token identity cap; not run.": "该探针所需输出超过身份检查的 512 token 上限；未执行。",
   "Two or more behavioral fingerprints diverged.": "两个或更多行为指纹出现偏离。",
   "The echoed model field matched the requested model.": "回显的 model 字段与请求的模型一致。",
   "The echoed model field names a different or smaller model.": "回显的 model 字段指向不同或更小的模型。",

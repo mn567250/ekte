@@ -155,6 +155,11 @@ def _check_strings(result: ScanResult, path: str, value: Any) -> None:
 def _check_fingerprints(
     result: ScanResult, path: str, fps: list[FingerprintProbe], owner: str
 ) -> None:
+    # Imported here: the knowledge layer otherwise does not load the detectors.
+    from zing.detectors.model_identity import ModelIdentityDetector
+
+    # The identity check skips pure-code probes that need more output than this.
+    identity_cap = ModelIdentityDetector.MAX_FINGERPRINT_OUTPUT
     if len(fps) > MAX_FINGERPRINTS:
         result.error(path, f"too many fingerprints ({len(fps)} > {MAX_FINGERPRINTS})")
     seen: set[str] = set()
@@ -188,6 +193,9 @@ def _check_fingerprints(
             fp.expect_contains or fp.expect_contains_any or fp.expect_not_contains or fp.expect_regex
         ):
             result.warn(p, "pure_code_checkable without any expect_* check: it can never fail")
+        if fp.pure_code_checkable and fp.max_tokens > identity_cap:
+            result.warn(f"{p}.max_tokens",
+                        f"more than {identity_cap} tokens: the identity check skips this probe")
         result.probes.append({"path": p, "owner": owner, "id": fp.id, "prompt": fp.prompt,
                               "prompt_lang": fp.prompt_lang})
 
