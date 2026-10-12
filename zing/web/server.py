@@ -27,6 +27,12 @@ Endpoints:
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
                              (?format=json|md|html|pdf)
+  GET  /api/analytics/options      filter values in the run history (relays,
+                                   models, suites, stream modes, APIs, dates)
+  GET  /api/analytics/summary      KPIs of a range vs. the previous range
+  GET  /api/analytics/series       one metric per relay / model over time buckets
+  GET  /api/analytics/leaderboard  relays of a model, or models of a relay
+                                   (parameters: zing/web/analytics.py)
   GET  /api/secret           the monitors' master key: state, fingerprint,
                              allowed actions (never the key)
   POST /api/secret/new       a new master key, shown once …
@@ -1213,6 +1219,44 @@ def create_app() -> FastAPI:
 
         history.clear()
         return JSONResponse({"ok": True})
+
+    # ----- Analytics (zing/web/analytics.py) ------------------------------ #
+    # Plain `def` handlers (SQLite + the knowledge base load run in the thread
+    # pool). Every parameter is validated there: a bad one answers 400.
+    def _analytics(call: Any, *args: Any) -> Any:
+        from zing.web.analytics import AnalyticsError
+
+        try:
+            body, status = call(*args), 200
+        except AnalyticsError as exc:
+            body, status = {"error": str(exc)}, 400
+        # Fresh numbers on every load: the history changes with each run.
+        return JSONResponse(body, status_code=status, headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/analytics/options")
+    def analytics_options(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.options, dict(request.query_params))
+
+    @app.get("/api/analytics/summary")
+    def analytics_summary(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.summary, dict(request.query_params))
+
+    @app.get("/api/analytics/series")
+    def analytics_series(request: Request) -> Any:
+        from zing.web import analytics
+
+        params = request.query_params
+        return _analytics(analytics.series, dict(params), params.getlist("keys"))
+
+    @app.get("/api/analytics/leaderboard")
+    def analytics_leaderboard(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.leaderboard, dict(request.query_params))
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
     @app.get("/watches")
