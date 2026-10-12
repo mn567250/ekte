@@ -31,6 +31,7 @@ pytest.importorskip("uvicorn", reason="a11y tests need the web extra")
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright  # noqa: E402
 
 from tests.a11y.bitv_map import describe  # noqa: E402
+from tests.a11y.pages import PAGES  # noqa: E402,F401  (defined with the change -> page tables)
 from tests.a11y.results import note_axe_run  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -45,14 +46,6 @@ if _WORKER:
 # Every UI language (zing/i18n/locales/*.json), English first.
 LANGS = sorted((p.stem for p in (ROOT / "zing" / "i18n" / "locales").glob("*.json")), key=lambda c: (c != "en", c))
 THEMES = ["light", "dark"]
-PAGES = {
-    "audit": "/v2/",
-    "history": "/v2/history",
-    "monitors": "/v2/watches",
-    "tools": "/v2/tools",
-    "kb": "/v2/kb",
-    "accessibility": "/v2/accessibility",
-}
 
 WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
 DESKTOP = {"width": 1280, "height": 900}
