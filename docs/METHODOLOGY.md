@@ -314,9 +314,15 @@ estimate, and the model must return it.
 
 1. An ascending doubling ladder from 2K tokens up to the declared window, capped
    by `--max-context-tokens` (default 200K), with a rung near 90% of the top
-   (at most seven sizes). Each size is probed with the needle at an **edge**
-   (depth 0.95, then 0.0): a miss is only confirmed by the second edge, and the
-   ladder stops at the first confirmed failure.
+   (at most seven sizes). Each size is probed with the needle at the **start**
+   edge (depth 0.0) first: a truncation that keeps the question at the end of
+   the prompt can only drop its start (a local server cutting the prompt to its
+   context length keeps the end), so a recall there passes the size in one
+   call. A miss is confirmed at the end edge (depth 0.95); if the end is
+   recalled, the start is probed once more with a fresh needle, and a second
+   miss fails the size as **front truncation** (named in the verdict's
+   evidence). At most three calls per size; the ladder stops at the first
+   confirmed failure.
 2. One binary-search step between the last recalled and the first failing size.
 3. Lost-in-the-middle: at min(32K, measured window) the needle is placed at
    depths 0.1, 0.5 and 0.9; start and end recalled but not the middle is a
@@ -367,10 +373,20 @@ when they change behavior.
    (the profile's `identity_forbidden` plus a built-in list). A rival brand
    only counts when the genuine brand is absent; "I am Claude, not GPT" is a
    benign contrast.
+   The genuine brand is the profile's `identity_keywords` plus the profile's
+   own names: the provider key, the leading name of the provider's display
+   name, the leading word of the model id and family, and that vendor's other
+   names in the built-in list (`z.ai` also covers `zhipu`). A model naming its
+   own vendor is therefore never a rival brand, even when `identity_keywords`
+   is empty. Derived names never override `identity_forbidden`, generic words
+   ("ai", "platform", …) never count, and a platform's own brand does not count
+   for another vendor's model it serves.
 2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
    tokenizer quirks, formatting, language-bound probes, …): up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
    `expect_not_contains` or `expect_regex`; output capped at 512 tokens. A
+   probe that needs more output (such as a max-output check) is skipped,
+   listed as Info, and another probe takes its slot. A
    diverging fingerprint deducts its weight share of 100 points (at most 25);
    one alone stays LOW, two or more add a MEDIUM aggregate.
 3. **Echoed `model` field** of a plain call: snapshot suffixes and aliases are
@@ -390,6 +406,7 @@ Without a knowledge-base profile the detector is inconclusive.
 |  | The answer diverged from native behavior: deducts the probe's weight share of 100 points. | Warning · Low | up to −25 pts |
 |  | The answer named a rival brand and not the genuine one: deducts the probe's weight share. | Fail · High | up to −25 pts · cap 20 |
 |  | No usable response to judge by. | Inconclusive | No deduction |
+|  | The probe needs more output than the 512-token identity cap; not run. | Info | No deduction |
 | `model_identity.fp_aggregate` | Two or more behavioral fingerprints diverged. | Warning · Medium | No deduction |
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |

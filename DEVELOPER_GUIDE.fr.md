@@ -437,6 +437,15 @@ provoque des faux positifs contre des relais honnêtes.
 utilisateur (schéma, limites, expressions régulières dangereuses, prompts,
 collisions d'identifiants).
 
+Renseignez toujours `identity_keywords` avec les mots du fabricant et de la
+famille par lesquels le modèle se désigne. Le contrôle d'identité compte aussi
+la clé du fournisseur, le nom affiché et l'id du modèle comme vraie marque,
+élargis aux autres noms du fabricant dans `VENDOR_BRANDS`
+(`zing/knowledge/identity.py`, qui est aussi la liste de marques concurrentes du
+détecteur) ; l'import complète les mots-clés vides à partir de ces noms avec un
+avertissement. Les mots de marque d'un nouveau fabricant s'y ajoutent en un
+groupe.
+
 ### Modifier les prompts des sondes
 
 Les textes des sondes sont des données de calibrage. En modifier un dans

@@ -327,9 +327,15 @@ com a estimativa heurística de tokens do zing, e o modelo tem de o devolver.
 1. Uma escada ascendente que duplica a partir de 2K tokens até à janela
    declarada, limitada por `--max-context-tokens` (200K por omissão), com um
    degrau perto de 90 % do máximo (sete tamanhos no máximo). Cada tamanho é
-   sondado com a agulha numa **extremidade** (profundidade 0,95 e depois 0,0):
-   uma falha só é confirmada pela segunda extremidade, e a escada para na
-   primeira falha confirmada.
+   sondado primeiro com a agulha no **início** (profundidade 0,0): uma truncagem
+   que mantém a pergunta no fim do prompt só pode descartar o seu início (um
+   servidor local que corta o prompt ao seu comprimento de contexto mantém o
+   fim), por isso uma recuperação aí aprova o tamanho numa só chamada. Uma falha
+   é verificada no fim (profundidade 0,95); se o fim for recuperado, o início é
+   sondado mais uma vez com uma agulha nova, e uma segunda falha reprova o
+   tamanho como **truncagem pelo início** (indicada nas evidências do
+   veredicto). No máximo três chamadas por tamanho; a escada para na primeira
+   falha confirmada.
 2. Um passo de pesquisa binária entre o último tamanho recuperado e o primeiro
    que falhou.
 3. Perda no meio: com min(32K, janela medida), a agulha é colocada nas
@@ -382,11 +388,23 @@ quando alteram o comportamento.
    de marcas rivais (`identity_forbidden` do perfil mais uma lista incorporada).
    Uma marca rival só conta se a genuína estiver ausente; «Sou o Claude, não o
    GPT» é um contraste benigno.
+   A marca genuína são as `identity_keywords` do perfil mais os seus próprios
+   nomes: a chave do fornecedor, o nome inicial do nome de apresentação do
+   fornecedor, a primeira palavra do id e da família do modelo, e os restantes
+   nomes desse fabricante na lista incorporada (`z.ai` também abrange `zhipu`).
+   Um modelo que nomeia o seu próprio fabricante nunca é, por isso, uma marca
+   rival, mesmo quando `identity_keywords` está vazio. Os nomes derivados
+   nunca se sobrepõem a `identity_forbidden`, as palavras genéricas («ai»,
+   «platform», …) nunca contam, e a marca própria de uma plataforma não conta
+   para o modelo de outro fabricante que serve.
 2. **Impressões comportamentais** da base de conhecimento (data-limite do
    conhecimento, particularidades do tokenizer, formatação, sondas ligadas a um
    idioma, …): até seis sondas de código puro, verificadas com
    `expect_contains`, `expect_contains_any`, `expect_not_contains` ou
-   `expect_regex`; saída limitada a 512 tokens. Uma impressão que se desvia
+   `expect_regex`; saída limitada a 512 tokens. Uma sonda que
+   precisa de mais saída (por exemplo, uma verificação da saída máxima) é
+   ignorada, aparece como Info e outra sonda ocupa o seu lugar. Uma
+   impressão que se desvia
    desconta a sua parte do peso sobre 100 pontos (25 no máximo); sozinha fica
    BAIXA, duas ou mais acrescentam uma constatação agregada MÉDIA.
 3. **Campo `model` devolvido** por uma chamada simples: sufixos de snapshot e
@@ -406,6 +424,7 @@ Sem perfil na base de conhecimento, o detector é inconclusivo.
 |  | A resposta desviou do comportamento nativo: desconta a parcela de peso da sonda em 100 pontos. | Aviso · Baixa | até −25 pts |
 |  | A resposta nomeou uma marca rival e não a genuína: desconta a parcela de peso da sonda. | Falha · Alta | até −25 pts · teto 20 |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo | Sem dedução |
+|  | A sonda precisa de mais saída do que o limite de identidade de 512 tokens; não executada. | Info | Sem dedução |
 | `model_identity.fp_aggregate` | Duas ou mais impressões comportamentais desviaram. | Aviso · Média | Sem dedução |
 | `model_identity.model_field` | O campo model devolvido correspondeu ao modelo solicitado. | Aprovado | Sem dedução |
 |  | O campo model devolvido indica um modelo diferente ou menor. | Aviso · Média | Sem dedução |

@@ -330,10 +330,16 @@ modèle doit le restituer.
 
 1. Une échelle croissante qui double à partir de 2K tokens jusqu'à la fenêtre
    annoncée, plafonnée par `--max-context-tokens` (200K par défaut), avec un
-   échelon vers 90 % du sommet (sept tailles au plus). Chaque taille est sondée
-   avec l'aiguille en **bordure** (profondeur 0,95 puis 0,0) : un échec n'est
-   confirmé que par la seconde bordure, et l'échelle s'arrête au premier échec
-   confirmé.
+   échelon vers 90 % du sommet (sept tailles au plus). Chaque taille est d'abord
+   sondée avec l'aiguille au **début** (profondeur 0,0) : une troncature qui
+   garde la question en fin de prompt ne peut écarter que son début (un serveur
+   local qui coupe le prompt à sa longueur de contexte en garde la fin), donc un
+   rappel à cet endroit valide la taille en un seul appel. Un échec est vérifié
+   à la fin (profondeur 0,95) ; si la fin est retrouvée, le début est sondé une
+   fois de plus avec une aiguille neuve, et un second échec fait échouer la
+   taille comme **troncature par le début** (signalée dans les preuves du
+   verdict). Trois appels par taille au plus ; l'échelle s'arrête au premier
+   échec confirmé.
 2. Une étape de recherche dichotomique entre la dernière taille retrouvée et la
    première en échec.
 3. Perte au milieu : à min(32K, fenêtre mesurée), l'aiguille est placée aux
@@ -387,11 +393,23 @@ moins cher ou ouvert), ainsi que les signaux de
    concurrentes (`identity_forbidden` du profil plus une liste intégrée). Une
    marque concurrente ne compte que si la vraie marque est absente ; « Je suis
    Claude, pas GPT » est un contraste bénin.
+   La vraie marque, ce sont les `identity_keywords` du profil plus ses propres
+   noms : la clé du fournisseur, le nom en tête du nom affiché du fournisseur,
+   le premier mot de l'id et de la famille du modèle, et les autres noms de ce
+   fabricant dans la liste intégrée (`z.ai` couvre aussi `zhipu`). Un modèle
+   qui nomme son propre fabricant n'est donc jamais une marque concurrente,
+   même quand `identity_keywords` est vide. Les noms dérivés ne l'emportent
+   jamais sur `identity_forbidden`, les mots génériques (« ai », « platform »,
+   …) ne comptent jamais, et la marque propre d'une plateforme ne compte pas
+   pour le modèle d'un autre fabricant qu'elle sert.
 2. **Empreintes comportementales** de la base de connaissances (date limite des
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
    `expect_contains`, `expect_contains_any`, `expect_not_contains` ou
-   `expect_regex` ; sortie limitée à 512 tokens. Une empreinte qui s'écarte
+   `expect_regex` ; sortie limitée à 512 tokens. Une sonde qui
+   demande plus de sortie (un test de sortie maximale, par exemple) est
+   ignorée, signalée en Info, et une autre sonde prend sa place. Une
+   empreinte qui s'écarte
    retire sa part de poids sur 100 points (25 au plus) ; seule, elle reste
    FAIBLE, deux ou plus ajoutent un constat agrégé MOYEN.
 3. **Champ `model` renvoyé** par un appel simple : suffixes d'instantané et
@@ -411,6 +429,7 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 |  | La réponse s'écartait du comportement natif : retire la part de poids de la sonde sur 100 points. | Avertissement · Faible | jusqu'à −25 pts |
 |  | La réponse a nommé une marque concurrente et non l'authentique : retire la part de poids de la sonde. | Échec · Élevée | jusqu'à −25 pts · plafond 20 |
 |  | Aucune réponse exploitable pour juger. | Non concluant | Aucune déduction |
+|  | La sonde demande plus de sortie que le plafond d'identité de 512 tokens ; non exécutée. | Info | Aucune déduction |
 | `model_identity.fp_aggregate` | Deux empreintes comportementales ou plus s'écartaient. | Avertissement · Moyenne | Aucune déduction |
 | `model_identity.model_field` | Le champ model renvoyé correspondait au modèle demandé. | Réussi | Aucune déduction |
 |  | Le champ model renvoyé désigne un modèle différent ou plus petit. | Avertissement · Moyenne | Aucune déduction |
