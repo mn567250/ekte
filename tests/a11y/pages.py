@@ -231,7 +231,7 @@ def full_scope(reason: str) -> Scope:
 def affected(paths: Iterable[str]) -> Scope:
     """Changed repository paths -> the pages whose a11y tests must run."""
     chosen: set[str] = set()
-    why: dict[str, list[str]] = {}
+    why: dict[tuple[str, ...], list[str]] = {}  # pages -> the files that select them
     files = sorted({p.strip().removeprefix("./") for p in paths if p.strip()})
     for path in files:
         pages = match(path)
@@ -240,16 +240,20 @@ def affected(paths: Iterable[str]) -> Scope:
                 return full_scope(f"{path} matches no rule in tests/a11y/pages.py (fail-safe: run everything)")
             continue
         if pages == ALL:
-            return full_scope(f"{path} is shared by every page")
-        for p in pages:
-            chosen.add(p)
-            why.setdefault(p, []).append(path)
+            return full_scope(f"{path} affects every page")
+        if pages:
+            chosen.update(pages)
+            why.setdefault(tuple(p for p in PAGES if p in pages), []).append(path)
     if not chosen:
         return Scope((), False, "no changed file affects the web UI" if files else "no changed files")
     ordered = tuple(p for p in PAGES if p in chosen)
     if len(ordered) == len(PAGES):
         return full_scope("every page is affected")
-    return Scope(ordered, False, "; ".join(f"{p}: {', '.join(why[p][:3])}{' …' if len(why[p]) > 3 else ''}" for p in ordered))
+    parts = []
+    for ids, paths_ in why.items():
+        more = f" (+{len(paths_) - 2} more)" if len(paths_) > 2 else ""
+        parts.append(f"{', '.join(paths_[:2])}{more} -> {', '.join(ids)}")
+    return Scope(ordered, False, "; ".join(parts))
 
 
 # --------------------------------------------------------------------------- #

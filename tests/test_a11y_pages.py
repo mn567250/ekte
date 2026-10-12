@@ -130,7 +130,7 @@ def test_test_pages_entries_exist_and_cover_the_pages_they_open():
 # --------------------------------------------------------------------------- #
 def test_single_page_files():
     assert scope("zing/web/static/v2/history.html").as_dict() == {
-        "pages": ["history"], "full": False, "reason": "history: zing/web/static/v2/history.html"}
+        "pages": ["history"], "full": False, "reason": "zing/web/static/v2/history.html -> history"}
     assert scope("zing/web/static/v2/kbview.js").pages == ("kb",)
     assert scope("zing/web/static/v2/watches.html", "zing/web/masterkey.py").pages == ("monitors",)
     assert scope("zing/web/static/v2/bitv-report.json").pages == ("accessibility",)
@@ -141,7 +141,7 @@ def test_single_page_files():
 def test_multi_page_files_union_in_page_order():
     s = scope("zing/web/static/v2/tabs.js", "zing/web/static/v2/report.js")
     assert s.pages == ("audit", "history", "tools", "kb") and not s.full
-    assert "audit: zing/web/static/v2/report.js" in s.reason
+    assert "zing/web/static/v2/report.js -> audit, history" in s.reason
     assert scope("zing/i18n/locales/fragments/v2-scoring/de.json").pages == ("audit", "history")
     assert scope("zing/knowledge/data/openai.yaml").pages == ("audit", "tools", "kb")
 
@@ -294,7 +294,7 @@ def test_job_count_grows_with_the_selection():
 # --------------------------------------------------------------------------- #
 def test_cli_files_and_full(capsys):
     assert affected_cli.main(["--files", "zing/web/static/v2/kb.html", "README.md"]) == 0
-    assert json.loads(capsys.readouterr().out) == {"pages": ["kb"], "full": False, "reason": "kb: zing/web/static/v2/kb.html"}
+    assert json.loads(capsys.readouterr().out) == {"pages": ["kb"], "full": False, "reason": "zing/web/static/v2/kb.html -> kb"}
     affected_cli.main(["--full", "nightly"])
     out = json.loads(capsys.readouterr().out)
     assert out["full"] and out["pages"] == list(PAGES) and out["reason"] == "nightly"
