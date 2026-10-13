@@ -87,11 +87,11 @@ def _active(page: Page) -> str:
     )
 
 
-# the filter panel's pages: how to open one, its first field, and one filter
-# to set (selector, value)
+# the filter panel's pages: how to open one, its first field, one filter to
+# set (selector, value) and how the closed panel's summary names it
 FILTER_PAGES = {
-    "history": (lambda op: _history(op), "[data-f=q]", ("[data-f=risk]", "high")),
-    "analytics": (lambda op: op("/v2/analytics"), "[data-range='7']", ("[data-f=source]", "monitor")),
+    "history": (lambda op: _history(op), "[data-f=q]", ("[data-f=risk]", "high"), "Risk: "),
+    "analytics": (lambda op: op("/v2/analytics"), "[data-range='7']", ("[data-f=source]", "monitor"), "Source: Monitor"),
 }
 
 
@@ -102,7 +102,7 @@ def test_filter_panel_disclosure(open_page, page_id: str) -> None:
     the toggle; the toggle counts active filters and, closed, a line under it
     names them (also the toggle's description); the count and reset stay
     visible while it is closed; the state survives a reload."""
-    opener, field, (fsel, fval) = FILTER_PAGES[page_id]
+    opener, field, (fsel, fval), named = FILTER_PAGES[page_id]
     page = opener(open_page)
     issues: list[str] = []
     tog = page.locator("#ftog")
@@ -134,7 +134,7 @@ def test_filter_panel_disclosure(open_page, page_id: str) -> None:
     if not page.locator("#freset").is_visible():
         issues.append("Reset filters is hidden with the panel while a filter is active")
     fsum = page.locator("#fsum")
-    if not fsum.is_visible() or "Monitor" not in fsum.inner_text() and "High" not in fsum.inner_text():
+    if not fsum.is_visible() or named not in fsum.inner_text():
         issues.append(f"the closed panel does not name the active filter: {fsum.inner_text()!r}")
     if tog.get_attribute("aria-describedby") != "fsum":
         issues.append("the closed panel's toggle is not described by the filter summary")
