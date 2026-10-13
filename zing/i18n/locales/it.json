@@ -560,6 +560,10 @@
    "Campo model restituito",
    "Il campo model della risposta è {returned}; richiesto: {requested}."
   ],
+  "model_identity.no_evidence": [
+   "Nessuna prova d'identità utilizzabile",
+   "Né l'autoidentificazione né alcuna sonda d'impronta hanno dato una risposta utilizzabile e il campo model restituito non diverge ({checks} controlli); l'identità non è valutabile."
+  ],
   "model_identity.fp_aggregate": [
    "Più impronte comportamentali divergono",
    "{diverged} e altre impronte solo codice divergono dal comportamento nativo; verifica se c'è una sostituzione."

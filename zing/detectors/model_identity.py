@@ -9,7 +9,8 @@ between the claim and what the model actually behaves like is the signal.
 
 Scoring follows the published ``SCALE`` (method "deductions"): the score starts
 at 100, each diverging fingerprint deducts its weight share of 100 points (at
-most 25), and a rival-brand contradiction caps the score at 20.
+most 25), and a rival-brand contradiction caps the score at 20. When no check
+produced a usable answer the detector is inconclusive and unscored.
 """
 
 from __future__ import annotations
@@ -19,14 +20,9 @@ import re
 from zing import prompts
 from zing.context import AuditContext
 from zing.detectors.base import Detector, register
-from zing.detectors.helpers import (
-    contains_all,
-    contains_any,
-    contains_word_any,
-    words_present,
-)
+from zing.detectors.helpers import contains_all, contains_any, contains_word, contains_word_any
 from zing.detectors.scale import DeductionScale, outcome
-from zing.knowledge.identity import VENDOR_BRANDS, own_brand_words
+from zing.knowledge.identity import AMBIGUOUS_BRAND_WORDS, VENDOR_BRANDS, own_brand_words
 from zing.models import DetectorResult, Dimension, Finding, RequestSpec, Severity, Status
 
 # Substrings that name a cheaper/smaller tier of a family. If the returned model
@@ -37,6 +33,8 @@ _DOWNGRADE_HINTS = ("mini", "nano", "flash", "lite", "small", "tiny", "8b", "7b"
 # any of these — OTHER than its own brand — betrays a substitution, even when the KB
 # profile's identity_forbidden didn't list it (e.g. a Doubao/ByteDance model resold
 # as DeepSeek). Matched whole-word; the model's own brand words are removed.
+# Words in AMBIGUOUS_BRAND_WORDS ("step", "meta", ...) only count in the self-id
+# answer and only written as a name; see _brand_hits.
 _RIVAL_BRANDS = tuple(word for vendor in VENDOR_BRANDS for word in vendor)
 
 _SELF_ID_PROMPT = prompts.text("model_identity.self_id")
@@ -46,6 +44,51 @@ _SELF_ID_PROMPT = prompts.text("model_identity.self_id")
 _MAX_FP_DEDUCTION = 25.0
 _CONTRADICTION_CAP = 20.0
 _NO_RESPONSE = "No usable response to judge by."  # same sentence as protocol's scale
+# An ambiguous brand word as a name (see _named): what may sit before it at the
+# start of a sentence or list item, what ends a sentence, and the version or
+# model-letter suffix that makes it a model name in any case ("grok-2", "Yi-34B",
+# "Command R").
+_LEAD = " \t\"'*_(`#>•·-"
+_LIST_NUMBER = re.compile(r"(?:^|\n)[ \t]*\d+[.)]$")
+_SENTENCE_END = ".!?\n。！？"
+_VERSION = re.compile(r"-?\d|\s[A-Z](?![A-Za-z])")
+
+
+def _named(text: str, word: str) -> bool:
+    """Whole-word match of ``word`` written as a name, not the everyday word:
+    with a version attached in any case ("grok-2", "Step-2", "Command R"), or
+    capitalised ("Meta") or in capitals ("META") inside a sentence. At the start
+    of a sentence or list item a capital proves nothing ("Step by step ..."), nor
+    does a compound with a lower-case word ("Meta-analysis")."""
+    w = word.strip().lower()
+    if not w:
+        return False
+    text = text or ""
+    pattern = r"(?<![A-Za-z0-9])" + re.escape(w) + r"(?![A-Za-z0-9])(?!-[a-z])"
+    for m in re.finditer(pattern, text, re.IGNORECASE):
+        if _VERSION.match(text, m.end()):
+            return True
+        if m.group(0) not in (w.capitalize(), w.upper()):
+            continue
+        before = text[: m.start()].rstrip(_LEAD)
+        if before and before[-1] not in _SENTENCE_END and not _LIST_NUMBER.search(before):
+            return True
+    return False
+
+
+def _brand_hits(text: str, words: list[str], *, ambiguous: bool) -> list[str]:
+    """The ``words`` present in ``text`` as whole words. An ambiguous brand word
+    (AMBIGUOUS_BRAND_WORDS, also everyday English) counts only with
+    ``ambiguous`` and only written as a name; without it, it never counts."""
+    hits: list[str] = []
+    for word in words or []:
+        if word.strip().lower() in AMBIGUOUS_BRAND_WORDS:
+            if ambiguous and _named(text, word):
+                hits.append(word)
+        elif contains_word(text, word):
+            hits.append(word)
+    return hits
+
 
 SCALE = DeductionScale(
     outcome("model_identity.self_id", "consistent", None, Status.PASS,
@@ -79,6 +122,9 @@ SCALE = DeductionScale(
             label="The echoed model field names a different or smaller model."),
     outcome("model_identity.model_field", "unavailable", None, Status.INCONCLUSIVE,
             label="The response had no usable model field."),
+    outcome("model_identity.no_evidence", "none", None, Status.INCONCLUSIVE,
+            label="No self-identification or fingerprint answer was usable and the model "
+                  "field did not diverge: not scored."),
     titles={"model_identity.fp": "Behavioral fingerprints"},
 )
 
@@ -187,10 +233,15 @@ class ModelIdentityDetector(Detector):
                 continue
 
             text = outcome.content
-            forbidden_hits = words_present(text, self._forbidden_brands(model, ctx.profile.provider))
+            # Ambiguous brand words ("step by step", "a meta question") never count
+            # here: a fingerprint answer is free prose, not a self-description.
+            forbidden_hits = _brand_hits(
+                text, self._forbidden_brands(model, ctx.profile.provider), ambiguous=False
+            )
             # A rival brand only contradicts identity when the GENUINE brand is
             # absent; an honest model contrasting itself ("not Claude") is benign —
-            # same gating as the direct self-id check.
+            # same gating as the direct self-id check. Own brand words match in
+            # any form: the genuine brand is never ambiguous to its own model.
             genuine_present = contains_word_any(text, own_brand_words(ctx.profile.provider, model))
             forbidden_contradiction = bool(forbidden_hits) and not genuine_present
             is_violation = self._fingerprint_violated(fp, text) or forbidden_contradiction
@@ -266,18 +317,45 @@ class ModelIdentityDetector(Detector):
             )
 
         # 3) Echoed model field on a plain call. ------------------------- #
-        if await self._check_model_field(ctx, result):
+        field_diverges = await self._check_model_field(ctx, result)
+        if field_diverges:
             has_medium = True
 
         # Score & status. ----------------------------------------------- #
-        result.score = SCALE.total(result.findings)
-
-        if has_high:
-            result.status = Status.FAIL
-        elif has_medium or soft_violations:
-            result.status = Status.WARN
+        # No usable answer to judge identity by (errors, empty answers, skipped
+        # probes): the detector must not read as a clean 100. A matching echoed
+        # model field alone is no evidence, since a relay can echo any requested
+        # name; a diverging one is. Partial evidence still scores normally.
+        answered = [
+            f for f in result.findings
+            if f.id != "model_identity.model_field"
+            and f.status not in (Status.INCONCLUSIVE, Status.INFO)
+        ]
+        if not answered and not field_diverges:
+            result.findings.append(
+                SCALE.finding(
+                    "model_identity.no_evidence",
+                    "none",
+                    title="No usable identity evidence",
+                    summary=(
+                        "Neither the self-identification nor any fingerprint probe returned a "
+                        "usable answer, and the echoed model field shows no divergence; "
+                        "identity could not be judged."
+                    ),
+                    # The identity questions asked: self-id plus each fingerprint run.
+                    evidence={"checks": 1 + len(probes)},
+                )
+            )
+            result.score = None
+            result.status = Status.INCONCLUSIVE
         else:
-            result.status = Status.PASS
+            result.score = SCALE.total(result.findings)
+            if has_high:
+                result.status = Status.FAIL
+            elif has_medium or soft_violations:
+                result.status = Status.WARN
+            else:
+                result.status = Status.PASS
 
         result.evidence["fingerprints_run"] = len(probes)
         # Languages of the fingerprint prompts actually sent (see prompt_lang in
@@ -337,7 +415,9 @@ class ModelIdentityDetector(Detector):
         # Own brand words: identity_keywords plus the provider and model names, so
         # a profile with empty identity_keywords never calls its own brand a rival.
         provider = ctx.profile.provider if ctx.profile is not None else None
-        forbidden_hits = words_present(text, self._forbidden_brands(model, provider))
+        # An ambiguous brand word ("step", "meta", ...) counts only written as a
+        # name ("Meta", "Command R"), never as the everyday word.
+        forbidden_hits = _brand_hits(text, self._forbidden_brands(model, provider), ambiguous=True)
         keyword_present = contains_word_any(text, own_brand_words(provider, model))
 
         if forbidden_hits and not keyword_present:

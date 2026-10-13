@@ -10,6 +10,7 @@ only the model answers.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from zing import prompts
@@ -39,13 +40,11 @@ SCALE = Scale(
     outcome("quality_judge.verdict", "consistent", 95.0, Status.PASS,
             label="The judge found the answers consistent with the claimed model."),
     outcome("quality_judge.verdict", "suspicious", 50.0, Status.WARN, Severity.MEDIUM,
-            label="The judge found the answers unlike the claimed model (low/medium confidence)."),
+            label="The judge found the answers unlike the claimed model (low, medium or no stated confidence)."),
     outcome("quality_judge.verdict", "confident", 25.0, Status.WARN, Severity.MEDIUM,
-            label="The judge is confident the answers are unlike the claimed model (no baseline)."),
+            label="The judge is confident the answers are unlike the claimed model (no usable baseline)."),
     outcome("quality_judge.verdict", "confident_corroborated", 25.0, Status.FAIL, Severity.HIGH,
             label="The judge is confident, and a trusted baseline corroborated the difference."),
-    outcome("quality_judge.verdict", "unrated_corroborated", 50.0, Status.FAIL, Severity.HIGH,
-            label="The judge gave no confidence, and a trusted baseline corroborated the difference."),
     outcome("quality_judge.verdict", "inconclusive", None, Status.INCONCLUSIVE, Severity.LOW,
             label="The judge could not commit to a verdict."),
     outcome("quality_judge.verdict", "unavailable", None, Status.INCONCLUSIVE, Severity.LOW,
@@ -54,12 +53,35 @@ SCALE = Scale(
 )
 
 
-def _suspicious_outcome(confidence: str, high_sev: bool) -> str:
-    """Which "suspicious" row of the scale applies (score by confidence,
-    severity by confidence plus baseline corroboration)."""
-    if confidence == "high":
-        return "confident_corroborated" if high_sev else "confident"
-    return "unrated_corroborated" if high_sev else "suspicious"
+def _suspicious_outcome(confidence: str, corroborated: bool) -> str:
+    """Which "suspicious" row of the scale applies.
+
+    Only an explicit ``high`` confidence counts as confident; a low, medium,
+    missing or unrecognized confidence is the low-confidence row (MEDIUM, never
+    HIGH). A confident verdict reaches HIGH only when a usable baseline
+    corroborated it (see :func:`_baseline_usable`)."""
+    if _is_high(confidence):
+        return "confident_corroborated" if corroborated else "confident"
+    return "suspicious"
+
+
+def _is_high(confidence: str) -> bool:
+    """``high`` as the judge may phrase it ("High.", "very high", "high
+    confidence"); anything else — including no value — is not high."""
+    return re.match(r"^(very\s+)?high\b", confidence.strip().lower()) is not None
+
+
+def _baseline_usable(
+    target_answers: list[dict[str, Any]], baseline_answers: list[dict[str, Any]]
+) -> bool:
+    """A baseline corroborates only when it produced a usable (non-empty)
+    answer for every probe the target answered — otherwise the judge compared
+    the target against gaps, not against the claimed model."""
+    if not baseline_answers:
+        return False
+    answered = {b["label"] for b in baseline_answers if b["answer"]}
+    wanted = {t["label"] for t in target_answers if t["answer"]}
+    return bool(wanted) and wanted <= answered
 
 @register
 class QualityJudgeDetector(Detector):
@@ -73,7 +95,9 @@ class QualityJudgeDetector(Detector):
     async def run(self, ctx: AuditContext) -> DetectorResult:
         result = self.new_result(scoring=SCALE.scoring())
         result.used_judge = True
-        claimed = ctx.target.model
+        # The judge weighs the answers against the model the relay CLAIMS to
+        # serve (family / cutoff below come from that claimed profile too).
+        claimed = ctx.target.claimed
 
         # 1) Gather target (and optional baseline) answers to the probe battery.
         target_answers: list[dict[str, Any]] = []
@@ -110,9 +134,16 @@ class QualityJudgeDetector(Detector):
             result.score = None
             return result
 
+        # A baseline corroborates — and is shown to the judge — only when it
+        # answered every probe the target answered; otherwise the judge would be
+        # comparing the target against "(no answer)" gaps.
+        corroborated = _baseline_usable(target_answers, baseline_answers)
+
         # 2) Build the judge prompt from model answers only (no keys / no base_url).
         system = prompts.text("quality_judge.system", claimed=claimed)
-        user = self._build_user_prompt(claimed, target_answers, baseline_answers, ctx)
+        user = self._build_user_prompt(
+            claimed, target_answers, baseline_answers if corroborated else [], ctx
+        )
 
         assert ctx.judge is not None  # requires_judge=True guarantees a judge here
         verdict = await ctx.judge.evaluate_json(system, user, max_tokens=700)
@@ -129,6 +160,7 @@ class QualityJudgeDetector(Detector):
             "probe_labels": [p["label"] for p in target_answers],
             "target_probe_failures": target_failures,
             "baseline_compared": bool(baseline_answers),
+            "baseline_usable": corroborated,
             "judge_verdict": kind or None,
             "judge_confidence": confidence or None,
             "likely_actual_tier": likely_tier,
@@ -139,18 +171,30 @@ class QualityJudgeDetector(Detector):
         result.evidence.update(evidence)
 
         if kind == "suspicious":
-            low_conf = confidence in ("low", "medium")
             # A lone judge opinion is a single fuzzy signal from one trusted model and
             # must not, by itself, reach the strongest "does not deliver the claimed
             # model" verdict (RiskLevel.HIGH). Only escalate to HIGH severity when a
-            # trusted BASELINE corroborated the side-by-side AND confidence is high;
-            # otherwise cap at MEDIUM so it needs a second core signal to drive HIGH.
-            corroborated = bool(baseline_answers)
-            high_sev = (not low_conf) and corroborated
+            # trusted BASELINE that actually answered corroborated the side-by-side
+            # AND the judge stated high confidence; a missing/unknown confidence
+            # counts as low. Otherwise cap at MEDIUM so it needs a second core
+            # signal to drive HIGH.
+            key = _suspicious_outcome(confidence, corroborated)
+            high_sev = key == "confident_corroborated"
+            if corroborated:
+                note = ""
+            elif any(b["answer"] for b in baseline_answers):
+                note = (" The trusted baseline did not answer every probe, so it does "
+                        "not corroborate this — re-run `zing compare` once it responds.")
+            elif baseline_answers:
+                note = (" The trusted baseline returned no usable answer to any probe, so "
+                        "it does not corroborate this — re-run `zing compare` once it responds.")
+            else:
+                note = (" No trusted baseline was compared, so this stays a "
+                        "corroboration-required signal — run `zing compare`.")
             result.findings.append(
                 SCALE.finding(
                     "quality_judge.verdict",
-                    _suspicious_outcome(confidence, high_sev),
+                    key,
                     id="quality_judge.suspicious",
                     title=(
                         "LLM judge: behavior inconsistent with claimed model "
@@ -160,8 +204,7 @@ class QualityJudgeDetector(Detector):
                         f"Judge ({confidence or 'unspecified'} confidence) found the answers "
                         f"unlike '{claimed}'"
                         + (f"; likely closer to: {likely_tier}." if likely_tier else ".")
-                        + ("" if corroborated else " No trusted baseline was compared, so this "
-                           "stays a corroboration-required signal — run `zing compare`.")
+                        + note
                     ),
                     evidence={
                         "judge_confidence": confidence or None,

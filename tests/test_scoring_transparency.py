@@ -275,3 +275,76 @@ async def test_html_groups_the_subjects_of_a_check():
     assert "7 of 8 OK; usage.completion_tokens (Present but zero or empty" in page
     assert "<code>usage.completion_tokens</code></td><td><code>0</code>" in page
     assert "7 passed: <code>model, choices" in page
+
+
+def _deduction_report() -> AuditReport:
+    """A deduction-scored detector with one parametrized check: one subject
+    passes, one deducts 20, one errored."""
+    from zing.detectors.scale import DeductionScale
+
+    scale = DeductionScale(
+        outcome("d.attr", "ok", None, Status.PASS, label="Fine."),
+        outcome("d.attr", "bad", None, Status.WARN, Severity.LOW, label="Bad.", deduction=20.0),
+        outcome("d.attr", "error", None, Status.ERROR, label="Errored."),
+        titles={"d.attr": "Attributes"},
+    )
+    findings = [
+        scale.finding("d.attr", key, title=f"Attribute {sub}", subject=sub)
+        for key, sub in (("ok", "a"), ("bad", "b"), ("error", "c"))
+    ]
+    det = DetectorResult(
+        id="d", name="D", dimension=Dimension.PROTOCOL, status=Status.WARN,
+        score=DeductionScale.total(findings), findings=findings, scoring=scale.scoring(),
+    )
+    return AuditReport(
+        tool_version="test", mode="check", suite="standard",
+        target=RedactedTarget(name="t", kind="target", base_url="http://relay.test/v1", model="m"),
+        verdict=Verdict(), dimensions=build_dimensions([det], None), detectors=[det],
+    )
+
+
+def test_html_group_rows_use_the_detector_scoring_method():
+    # A deduction scale's subject rows show what each deducted, as in Markdown,
+    # not "not counted" as if the points were a mean of checks.
+    report = _deduction_report()
+    page = render_html(report)
+    assert "<code>b</code>" in page and '<td class="num">−20</td>' in page
+    assert '<td class="num">no deduction</td>' in page
+    md = render_markdown(report)
+    assert "| `b` | — | Bad. | −20 |" in md
+    # the group row sums its subjects' deductions rather than averaging scores
+    assert "| Attributes | 1 of 3 OK; b (Bad.); c (Errored.) | −20 |" in md
+    assert page.count('<td class="num">−20</td>') == 2  # the group row and subject b
+
+
+def test_pdf_group_rows_use_the_detector_scoring_method():
+    pytest.importorskip("reportlab")
+    from reportlab.platypus import Paragraph, Table
+
+    from zing.report.pdf import _dimension_detector
+
+    def texts(flowables) -> list[str]:
+        out = []
+        for fl in flowables:
+            if isinstance(fl, Paragraph):
+                out.append(fl.getPlainText())
+            elif isinstance(fl, Table):
+                out += texts(c for row in fl._cellvalues for c in row)
+        return out
+
+    cells = texts(_dimension_detector(_deduction_report().detectors[0]))
+    assert cells.count("−20") == 2  # the group row and subject b
+    assert "no deduction" in cells and "not counted" not in cells
+
+
+def test_group_status_follows_the_scoring_order():
+    # Like a dimension status: a warning outranks a detector error, and a pass
+    # outranks an informational note.
+    from zing.report.dimensions import _Group
+
+    report = _deduction_report()
+    group = _Group("d.attr", "Attributes", list(report.detectors[0].findings))
+    assert group.status == Status.WARN
+    info = Finding(id="x", title="x", status=Status.INFO)
+    passed = Finding(id="y", title="y", status=Status.PASS)
+    assert _Group("x", "x", [info, passed]).status == Status.PASS
