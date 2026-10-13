@@ -9,7 +9,6 @@
   "Execution": "Exécution",
   "Expand all": "Tout déplier",
   "Filters": "Filtres",
-  "Filters & trends": "Filtres et tendances",
   "Health score trend across {n} audits: from {first} to {last}, {dir}.": "Évolution du score de santé sur {n} audits : de {first} à {last}, {dir}.",
   "History lives only in a local SQLite file under <code>~/.zing</code> — nothing is uploaded.": "L'historique reste uniquement dans un fichier SQLite local sous <code>~/.zing</code> — rien n'est transmis.",
   "Last 30 days": "30 derniers jours",

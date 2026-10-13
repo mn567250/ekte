@@ -353,8 +353,6 @@
   })();
   // the collapsible frame (filterpanel.js); a link that carried filters opens it
   var panel = window.ZingFilterPanel.create(fbar, {
-    label: function () { return T("筛选", "Filters"); },
-    title: function () { return T("筛选与趋势图", "Filters & trends"); },
     storeKey: OKEY,
     open: !!fromQuery,
     onReset: function () { resetFilters(); },

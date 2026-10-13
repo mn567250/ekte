@@ -41,7 +41,7 @@
     - code: ~/.zing
     - text: — nada é enviado.
   - region "Filtros":
-    - button "Filtros e tendências" [expanded]
+    - button "Filtros" [expanded]
     - text: Pesquisar
     - searchbox "Pesquisar"
     - text: Relay / provedor

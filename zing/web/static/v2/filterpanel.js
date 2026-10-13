@@ -14,10 +14,10 @@
  *   div.ffoot       the page's always-visible note (e.g. "Showing 3 of 9")
  *                   and button#freset "Reset filters" (hidden at 0 active)
  *
+ * The section and its toggle are named "Filters" on every page, so the same
+ * control is identified the same way everywhere (BITV 9.3.2.4).
+ *
  * ZingFilterPanel.create(section, opts):
- *   opts.label()     the section's accessible name (text)
- *   opts.title()     the toggle's text
- *   opts.icon        icon name on the toggle (default "search")
  *   opts.storeKey    localStorage key remembering open / closed (per viewer,
  *                    may be missing or throw); closed by default
  *   opts.open        true: start open whatever is remembered (e.g. a link
@@ -79,10 +79,11 @@
       if (ae && section.contains(ae)) {
         KEYS.some(function (k) { var v = ae.getAttribute(k); if (v) focus = [k, v]; return !!v; });
       }
-      section.setAttribute("aria-label", opts.label());
+      var name = T("筛选", "Filters");
+      section.setAttribute("aria-label", name);
       section.hidden = false;
       section.innerHTML = '<div class="ftop"><button type="button" class="disclosure" id="ftog" aria-expanded="' + open + '" aria-controls="fbody">' +
-        '<span class="t">' + ico(opts.icon || "search") + "<span>" + esc(opts.title()) + "</span>" +
+        '<span class="t">' + ico("search") + "<span>" + esc(name) + "</span>" +
         '<span class="badge sky" id="factive" hidden></span></span>' +
         '<span class="cv" aria-hidden="true">' + ico("chevronDown") + "</span></button></div>" +
         '<p class="fsum" id="fsum" hidden></p>' +

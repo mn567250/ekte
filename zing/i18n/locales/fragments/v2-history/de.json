@@ -9,7 +9,6 @@
   "Execution": "Ausführung",
   "Expand all": "Alle aufklappen",
   "Filters": "Filter",
-  "Filters & trends": "Filter & Trends",
   "Health score trend across {n} audits: from {first} to {last}, {dir}.": "Verlauf des Health-Scores über {n} Audits: von {first} auf {last}, {dir}.",
   "History lives only in a local SQLite file under <code>~/.zing</code> — nothing is uploaded.": "Der Verlauf liegt nur in einer lokalen SQLite-Datei unter <code>~/.zing</code> — nichts wird hochgeladen.",
   "Last 30 days": "Letzte 30 Tage",

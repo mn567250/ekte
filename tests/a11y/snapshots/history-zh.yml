@@ -41,7 +41,7 @@
     - code: ~/.zing
     - text: 下的本地 SQLite 文件里，不会上传。
   - region "筛选":
-    - button "筛选与趋势图" [expanded]
+    - button "筛选" [expanded]
     - text: 搜索
     - searchbox "搜索"
     - text: 中转站
