@@ -388,7 +388,13 @@ class PerformanceDetector(Detector):
             "burst": burst,
             "modes": ["stream" if m else "non_stream" for m in modes],
             "concurrency": conc,
-            "max_completion_tokens": {ep.label: ep.use_completion_tokens for ep in endpoints},
+            # The probe's own switch, or the client renaming the limit for a model
+            # known (or found) to refuse max_tokens.
+            "max_completion_tokens": {
+                ep.label: ep.use_completion_tokens
+                or "max_tokens" in getattr(ep.client, "unsupported_params", ())
+                for ep in endpoints
+            },
         }
         self._findings(
             result, records, summaries, n, stream=modes[0], reference=ctx.performance_reference()

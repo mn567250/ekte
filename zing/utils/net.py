@@ -19,8 +19,16 @@ def url_host(base_url: str | None) -> str:
 
 
 def is_loopback_host(host: str) -> bool:
-    """True for this machine's own addresses (localhost, 127.x, ::1, *.localhost)."""
-    return host in _LOOPBACK_NAMES or host.startswith("127.") or host.endswith(".localhost")
+    """True for this machine's own addresses (localhost, 127.x, ::1, *.localhost).
+
+    A DNS name that merely starts with "127." (``127.example.com``) is a public
+    host, not loopback: only a real IPv4 address in 127.0.0.0/8 counts."""
+    if host in _LOOPBACK_NAMES or host.endswith(".localhost"):
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 def is_local_host(base_url: str | None) -> bool:

@@ -89,10 +89,24 @@ class ResponsesClient(BaseHTTPClient):
             choice = self._translate_tool_choice(spec.tool_choice)
             if choice is not None:
                 body["tool_choice"] = choice
-        # response_format / seed / stop have no stable Responses equivalent — dropped.
+        # Chat's response_format maps to Responses' text.format (the json_schema
+        # form is flattened: name/schema/strict sit next to "type").
+        text_format = self._translate_response_format(spec.response_format)
+        if text_format is not None:
+            body["text"] = {"format": text_format}
+        # seed / stop have no stable Responses equivalent — dropped.
         extra = {k: v for k, v in spec.extra_body.items() if k != "max_completion_tokens"}
         body.update(extra)
         return self._drop_unsupported(body, spec)
+
+    @staticmethod
+    def _translate_response_format(fmt: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Chat ``response_format`` -> Responses ``text.format`` (None: not set)."""
+        if not isinstance(fmt, dict) or not fmt.get("type"):
+            return None
+        if fmt["type"] == "json_schema" and isinstance(fmt.get("json_schema"), dict):
+            return {"type": "json_schema", **fmt["json_schema"]}
+        return dict(fmt)
 
     @staticmethod
     def _translate_tool(tool: dict[str, Any]) -> dict[str, Any]:
