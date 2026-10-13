@@ -402,6 +402,12 @@ moins cher ou ouvert), ainsi que les signaux de
    jamais sur `identity_forbidden`, les mots génériques (« ai », « platform »,
    …) ne comptent jamais, et la marque propre d'une plateforme ne compte pas
    pour le modèle d'un autre fabricant qu'elle sert.
+   Les mots de marque qui sont aussi des mots courants (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) ne
+   comptent que dans cette auto-identification et seulement écrits comme
+   un nom (« Meta », « Command R » ; en début de phrase seulement avec une
+   version accolée, « Step-2 ») ; dans les réponses d'empreinte ils ne
+   comptent jamais, « let me think step by step » n'est donc pas une marque
+   concurrente. Un fournisseur à qui appartient un tel mot le garde comme sien.
 2. **Empreintes comportementales** de la base de connaissances (date limite des
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
@@ -417,6 +423,12 @@ moins cher ou ouvert), ainsi que les signaux de
    `8b`, …) ou une autre famille est signalé.
 
 Sans profil dans la base de connaissances, le détecteur est non concluant.
+Il est aussi non concluant et non noté (`model_identity.no_evidence`)
+lorsque ni l'auto-identification ni aucune empreinte n'ont donné de réponse
+exploitable et que le champ `model` renvoyé ne diverge pas : un relais qui
+rejette ou vide chaque requête ne fournit aucune preuve d'identité, et l'écho
+du nom demandé ne prouve rien à lui seul. Des preuves partielles sont notées
+normalement.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
@@ -434,6 +446,7 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 | `model_identity.model_field` | Le champ model renvoyé correspondait au modèle demandé. | Réussi | Aucune déduction |
 |  | Le champ model renvoyé désigne un modèle différent ou plus petit. | Avertissement · Moyenne | Aucune déduction |
 |  | La réponse n'avait pas de champ model exploitable. | Non concluant | Aucune déduction |
+| `model_identity.no_evidence` | Ni l'auto-identification ni aucune empreinte n'ont donné de réponse exploitable et le champ model ne divergeait pas : non noté. | Non concluant | Aucune déduction |
 
 ### `quality_judge` — Évaluation de qualité / déclassement par un LLM juge
 

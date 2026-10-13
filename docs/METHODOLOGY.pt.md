@@ -397,6 +397,12 @@ quando alteram o comportamento.
    nunca se sobrepõem a `identity_forbidden`, as palavras genéricas («ai»,
    «platform», …) nunca contam, e a marca própria de uma plataforma não conta
    para o modelo de outro fabricante que serve.
+   Palavras de marca que também são palavras comuns (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) só contam
+   nesta autoidentificação e só escritas como nome (“Meta”, “Command R”;
+   no início de uma frase só com uma versão anexada, “Step-2”); nas
+   respostas de impressão digital nunca contam, portanto “let me think step
+   by step” não é uma marca concorrente. Um fornecedor dono de uma dessas
+   palavras a mantém como própria.
 2. **Impressões comportamentais** da base de conhecimento (data-limite do
    conhecimento, particularidades do tokenizer, formatação, sondas ligadas a um
    idioma, …): até seis sondas de código puro, verificadas com
@@ -412,6 +418,12 @@ quando alteram o comportamento.
    `lite`, `8b`, …) ou uma família diferente é assinalada.
 
 Sem perfil na base de conhecimento, o detector é inconclusivo.
+Também é inconclusivo e sem pontuação (`model_identity.no_evidence`)
+quando nem a autoidentificação nem nenhuma impressão digital deram uma
+resposta utilizável e o campo `model` devolvido não diverge: um relay que
+rejeita ou esvazia cada requisição não fornece evidência de identidade, e o
+eco do nome solicitado sozinho não prova nada. Evidência parcial pontua
+normalmente.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
@@ -429,6 +441,7 @@ Sem perfil na base de conhecimento, o detector é inconclusivo.
 | `model_identity.model_field` | O campo model devolvido correspondeu ao modelo solicitado. | Aprovado | Sem dedução |
 |  | O campo model devolvido indica um modelo diferente ou menor. | Aviso · Média | Sem dedução |
 |  | A resposta não tinha um campo model utilizável. | Inconclusivo | Sem dedução |
+| `model_identity.no_evidence` | Nem a autoidentificação nem nenhuma impressão digital deram uma resposta utilizável e o campo model não divergiu: sem pontuação. | Inconclusivo | Sem dedução |
 
 ### `quality_judge` — Avaliação de qualidade / degradação por um LLM juiz
 

@@ -381,6 +381,12 @@ when they change behavior.
    is empty. Derived names never override `identity_forbidden`, generic words
    ("ai", "platform", …) never count, and a platform's own brand does not count
    for another vendor's model it serves.
+   Brand words that are also everyday words (`step`, `command`, `seed`,
+   `spark`, `meta`, `yi`, `grok`) count only in this self-identification
+   answer and only written as a name ("Meta", "Command R"; at the start of a
+   sentence only with a version attached, "Step-2"); fingerprint answers never
+   count them, so "let me think step by step" is not a rival brand. A vendor
+   that owns such a word keeps it as its own.
 2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
    tokenizer quirks, formatting, language-bound probes, …): up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
@@ -394,6 +400,11 @@ when they change behavior.
    different family is flagged.
 
 Without a knowledge-base profile the detector is inconclusive.
+It is also inconclusive and unscored (`model_identity.no_evidence`) when
+neither the self-identification nor any fingerprint returned a usable
+answer and the echoed `model` field does not diverge: a relay that rejects
+or empties every request gives no identity evidence, and an echo of the
+requested name proves nothing on its own. Partial evidence scores normally.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
@@ -411,6 +422,7 @@ Without a knowledge-base profile the detector is inconclusive.
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |
 |  | The response had no usable model field. | Inconclusive | No deduction |
+| `model_identity.no_evidence` | No self-identification or fingerprint answer was usable and the model field did not diverge: not scored. | Inconclusive | No deduction |
 
 ### `quality_judge` — LLM-judged quality / downgrade assessment
 
