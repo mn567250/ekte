@@ -326,6 +326,10 @@ prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转�
    因此模型说出自家厂商永远不算竞品品牌，即使 `identity_keywords` 为空。推导出的名称绝不会
    覆盖 `identity_forbidden`，通用词（「ai」「platform」等）从不计入，平台自己的品牌也不算作
    它所提供的其他厂商模型的品牌。
+   同时也是日常英文单词的品牌词（`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`）只在这条自我身份识别回答中计入，
+   而且只有写成名称时才算（“Meta”“Command R”“grok-2”；位于句首或列表项开头时须带版本号，如“Step-2”）；
+   指纹回答中一律不计，因此“let me think step by step”不算竞品品牌。
+   拥有这类词的厂商仍把它当作自家品牌。
 2. **行为指纹**，来自知识库（知识截止、分词器特征、格式习惯、与语言绑定的探测等）：
    最多 6 个纯代码探测，用 `expect_contains`、`expect_contains_any`、
    `expect_not_contains` 或 `expect_regex` 判定；输出上限 512 token。
@@ -336,6 +340,9 @@ prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转�
    （`mini`、`flash`、`lite`、`8b` 等）或不同模型家族则告警。
 
 知识库中没有画像时，该检测器结果为不确定。
+当自我身份识别和所有指纹都没有可用回答、且回显的 `model` 字段没有偏离时，
+该检测器同样为不确定且不计分（`model_identity.no_evidence`）：拒绝或清空每个请求的
+中转不提供任何身份证据，仅回显所请求的名称本身证明不了什么。部分证据照常计分。
 
 | 检查项 | 结果 | 状态 | 计分 |
 |---|---|---|---|
@@ -353,6 +360,7 @@ prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转�
 | `model_identity.model_field` | 回显的 model 字段与请求的模型一致。 | 通过 | 不扣分 |
 |  | 回显的 model 字段指向不同或更小的模型。 | 警告 · 中 | 不扣分 |
 |  | 响应中没有可用的 model 字段。 | 不确定 | 不扣分 |
+| `model_identity.no_evidence` | 自我身份识别和行为指纹均没有可用的回答，且 model 字段没有偏离：不计分。 | 不确定 | 不扣分 |
 
 ### `quality_judge` — LLM 评委质量 / 降级评估
 

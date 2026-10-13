@@ -37,6 +37,7 @@
   "The echoed model field matched the requested model.": "回显的 model 字段与请求的模型一致。",
   "The echoed model field names a different or smaller model.": "回显的 model 字段指向不同或更小的模型。",
   "The response had no usable model field.": "响应中没有可用的 model 字段。",
+  "No self-identification or fingerprint answer was usable and the model field did not diverge: not scored.": "自我身份识别和行为指纹均没有可用的回答，且 model 字段没有偏离：不计分。",
   "The response carried no token usage at all.": "响应完全没有返回 token 用量。",
   "Reported prompt tokens far exceed the independent estimate.": "上报的提示 token 远超独立估算。",
   "Reported completion tokens far exceed the estimate of an exact tokenizer.": "上报的补全 token 远超精确分词器的估算。",

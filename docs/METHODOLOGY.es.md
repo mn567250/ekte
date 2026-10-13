@@ -411,6 +411,13 @@ cuando cambian el comportamiento.
    nunca anulan `identity_forbidden`, las palabras genéricas («ai»,
    «platform», …) nunca cuentan, y la marca propia de una plataforma no cuenta
    para el modelo de otro fabricante que sirve.
+   Las palabras de marca que también son palabras comunes (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`)
+   solo cuentan en esta autoidentificación y solo escritas como nombre
+   («Meta», «Command R», «grok-2»; al inicio de una frase o de un elemento
+   de lista solo con una versión
+   añadida, «Step-2»); en las respuestas de huella nunca cuentan, así que
+   «let me think step by step» no es una marca rival. Un proveedor dueño de
+   una de esas palabras la conserva como propia.
 2. **Huellas de comportamiento** de la base de conocimiento (fecha de corte del
    conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
    idioma, …): hasta seis sondas de código puro, comprobadas con
@@ -426,6 +433,12 @@ cuando cambian el comportamiento.
    `lite`, `8b`, …) o una familia distinta.
 
 Sin perfil en la base de conocimiento, el detector es no concluyente.
+También es no concluyente y sin puntuación (`model_identity.no_evidence`)
+cuando ni la autoidentificación ni ninguna huella devolvieron una respuesta
+utilizable y el campo `model` devuelto no diverge: un relay que rechaza o
+deja vacía cada petición no aporta evidencia de identidad, y el eco del
+nombre solicitado no prueba nada por sí solo. La evidencia parcial puntúa
+con normalidad.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
@@ -443,6 +456,7 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |
 |  | La respuesta no tenía un campo model utilizable. | No concluyente | Sin deducción |
+| `model_identity.no_evidence` | Ni la autoidentificación ni ninguna huella devolvieron una respuesta utilizable y el campo model no divergió: sin puntuar. | No concluyente | Sin deducción |
 
 ### `quality_judge` — Evaluación de calidad / degradación por un LLM juez
 

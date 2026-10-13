@@ -417,6 +417,13 @@ billigeren oder offenen Backend) sowie Signale von
    heben `identity_forbidden` nie auf, allgemeine Wörter („ai“, „platform“, …)
    zählen nie, und die eigene Marke einer Plattform zählt nicht für das Modell
    eines anderen Herstellers, das sie anbietet.
+   Markenwörter, die zugleich Alltagswörter sind (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`), zählen nur in
+   dieser Selbstidentifikation und nur als Name geschrieben („Meta“,
+   „Command R“, „grok-2“; am Satz- oder Listenanfang nur mit angehängter
+   Version, „Step-2“);
+   in Fingerprint-Antworten zählen sie nie, „let me think step by step“ ist
+   also keine Konkurrenzmarke. Ein Hersteller, dem ein solches Wort gehört,
+   behält es als eigene Marke.
 2. **Verhaltens-Fingerprints** aus der Wissensbasis (Wissensstichtag,
    Tokenizer-Eigenheiten, Formatierung, sprachgebundene Tests, …): bis zu sechs
    Tests in reinem Code, geprüft mit `expect_contains`, `expect_contains_any`,
@@ -432,6 +439,12 @@ billigeren oder offenen Backend) sowie Signale von
    `flash`, `lite`, `8b`, …) oder eine andere Modellfamilie wird markiert.
 
 Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
+Ebenfalls nicht eindeutig und ohne Punktzahl (`model_identity.no_evidence`)
+ist er, wenn weder die Selbstidentifikation noch ein Fingerprint eine
+verwertbare Antwort lieferte und das zurückgegebene `model`-Feld nicht
+abweicht: Ein Relay, das jede Anfrage ablehnt oder leer beantwortet, liefert
+keinen Identitätsbeleg, und das Echo des angefragten Namens allein beweist
+nichts. Teilweise Belege werden normal bewertet.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
@@ -449,6 +462,7 @@ Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
 | `model_identity.model_field` | Das zurückgegebene model-Feld entsprach dem angefragten Modell. | Bestanden | Kein Abzug |
 |  | Das zurückgegebene model-Feld nennt ein anderes oder kleineres Modell. | Warnung · Mittel | Kein Abzug |
 |  | Die Antwort enthielt kein verwertbares model-Feld. | Nicht eindeutig | Kein Abzug |
+| `model_identity.no_evidence` | Weder Selbstidentifikation noch ein Fingerprint lieferte eine verwertbare Antwort, und das model-Feld wich nicht ab: nicht bewertet. | Nicht eindeutig | Kein Abzug |
 
 ### `quality_judge` — Qualitäts-/Herabstufungsbewertung durch ein LLM
 

@@ -412,6 +412,13 @@ quando cambiano il comportamento.
    prevalgono mai su `identity_forbidden`, le parole generiche («ai»,
    «platform», …) non contano mai, e il marchio proprio di una piattaforma non
    conta per il modello di un altro produttore che serve.
+   Le parole di marca che sono anche parole comuni (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) contano
+   solo in questa autoidentificazione e solo scritte come nome («Meta»,
+   «Command R», «grok-2»; a inizio frase o di voce di elenco solo con una
+   versione attaccata,
+   «Step-2»); nelle risposte delle impronte non contano mai, quindi
+   «let me think step by step» non è un marchio concorrente. Un produttore
+   a cui appartiene una di queste parole la mantiene come propria.
 2. **Impronte comportamentali** dalla base di conoscenza (data limite delle
    conoscenze, particolarità del tokenizer, formattazione, sonde legate a una
    lingua, …): fino a sei sonde di solo codice, verificate con
@@ -427,6 +434,12 @@ quando cambiano il comportamento.
    `lite`, `8b`, …) o una famiglia diversa viene segnalata.
 
 Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
+È inoltre non conclusivo e senza punteggio (`model_identity.no_evidence`)
+quando né l'autoidentificazione né alcuna impronta hanno dato una risposta
+utilizzabile e il campo `model` restituito non diverge: un relay che
+rifiuta o svuota ogni richiesta non fornisce prove d'identità, e l'eco del
+nome richiesto da solo non prova nulla. Prove parziali vengono valutate
+normalmente.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
@@ -444,6 +457,7 @@ Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 | `model_identity.model_field` | Il campo model restituito corrispondeva al modello richiesto. | Superato | Nessuna detrazione |
 |  | Il campo model restituito indica un modello diverso o più piccolo. | Avviso · Media | Nessuna detrazione |
 |  | La risposta non aveva un campo model utilizzabile. | Non conclusivo | Nessuna detrazione |
+| `model_identity.no_evidence` | Né l'autoidentificazione né alcuna impronta hanno dato una risposta utilizzabile e il campo model non divergeva: non valutato. | Non conclusivo | Nessuna detrazione |
 
 ### `quality_judge` — Valutazione di qualità / declassamento da parte di un LLM giudice
 
