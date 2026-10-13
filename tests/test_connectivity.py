@@ -32,9 +32,9 @@ async def test_connectivity_models_unreachable_warns_but_chat_still_pass(audit_c
 
     by_id = {f.id: f for f in result.findings}
     assert by_id["connectivity.models"].status == Status.WARN
-    # Basic completion still works, so the detector overall passes.
+    # Basic completion still works; the detector is the worst of its checks.
     assert by_id["connectivity.chat"].status == Status.PASS
-    assert result.status == Status.PASS
+    assert result.status == Status.WARN
 
 
 async def test_connectivity_chat_failure_fails(audit_context, mock_server):

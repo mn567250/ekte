@@ -8,6 +8,10 @@ look fine. Aggregated into a :class:`ReliabilitySummary` the runner surfaces.
 Scoring follows the published ``SCALE`` (method "deductions"): the score starts
 at 100, failed requests deduct their share (100 - success rate x 100; HTTP 429
 throttling is excluded), and a high tail latency deducts 15% of what is left.
+A single failure in a small burst (or at most 10% of a larger one) is a WARN,
+more is a FAIL; the detector status is the worst of its findings. These are
+transport advisories (``zing.scoring.ADVISORY_CHECKS``): they lower this
+dimension but never the substitution risk.
 """
 
 from __future__ import annotations
@@ -31,16 +35,20 @@ from zing.utils.stats import summarize
 # A p95 above this (ms) is slow enough to flag and dampen the score.
 _SLOW_P95_MS = 30_000.0
 _SLOW_FACTOR = 0.85  # a slow tail keeps 85% of the success-rate score
+# Failures tolerated as a WARN: at most 10% of the attempted requests, or one
+# request in a small burst (one of the default 8 is 12.5%) — but never below
+# an 80% success rate.
+_MINOR_MIN_SUCCESS = 0.80
 
 SCALE = DeductionScale(
     outcome("reliability.success_rate", "all_succeeded", None, Status.PASS,
             label="Every attempted request in the burst succeeded."),
     outcome("reliability.success_rate", "some_failed", None, Status.WARN, Severity.LOW,
-            max_deduction=10.0,
-            label="Up to 10% of the attempted requests failed; deducts the failed share."),
+            max_deduction=20.0,
+            label="One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share."),
     outcome("reliability.success_rate", "many_failed", None, Status.FAIL, Severity.MEDIUM,
             max_deduction=100.0,
-            label="More than 10% of the attempted requests failed; deducts the failed share."),
+            label="More requests than that failed; deducts the failed share."),
     outcome("reliability.success_rate", "all_rate_limited", None, Status.INCONCLUSIVE,
             Severity.LOW, label="Every request was rate-limited (HTTP 429): not scored."),
     outcome("reliability.latency", "slow", None, Status.WARN, Severity.LOW, max_deduction=15.0,
@@ -54,6 +62,12 @@ SCALE = DeductionScale(
 
 def _rate_score(success_rate: float) -> float:
     return round(success_rate * 100, 1)
+
+
+def _minor_failures(failed: int, effective: int) -> bool:
+    """Whether ``failed`` of ``effective`` attempted requests is a WARN, not a FAIL."""
+    allowed = max(1, effective // 10)  # 10%, rounded down
+    return 0 < failed <= allowed and (effective - failed) / effective >= _MINOR_MIN_SUCCESS
 
 
 def _latency_deduction(success_rate: float) -> float:
@@ -174,7 +188,7 @@ class ReliabilityDetector(Detector):
                 )
             )
         else:
-            severe = success_rate < 0.9
+            severe = not _minor_failures(failed, effective)
             result.findings.append(
                 SCALE.finding(
                     "reliability.success_rate",
@@ -231,12 +245,8 @@ class ReliabilityDetector(Detector):
             result.status = Status.INCONCLUSIVE
             return result
 
-        score = SCALE.total(result.findings)
-        result.score = score
-        if score >= 85:
-            result.status = Status.PASS
-        elif score >= 70:
-            result.status = Status.WARN
-        else:
-            result.status = Status.FAIL
+        result.score = SCALE.total(result.findings)
+        # The status is the worst of the findings, so it never contradicts them
+        # (a FAIL finding under a PASS detector).
+        result.status = DeductionScale.roll_up(result.findings)
         return result

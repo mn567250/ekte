@@ -90,6 +90,13 @@ a bait-and-switch.
 The risk level is driven by **finding severity**, not by the score. Findings of
 the connectivity dimension are left out of the ladder: a relay that is down or
 throttled could not be assessed, which is not evidence of a different model.
+The **transport advisories** are left out too (`ADVISORY_CHECKS` in
+`zing/scoring.py`: `security.tls`, `reliability.success_rate`,
+`reliability.latency`): plain HTTP, failures or slowness under load say how the
+relay is reached, not which model it serves. They still lower their dimension's
+score and status, are listed after the substitution findings in the key
+findings and are noted in the summary as advisories when Medium or higher. Integrity tampering and an
+echoed API key still escalate.
 
 | Risk | Label in the UI | When |
 |---|---|---|
@@ -101,8 +108,9 @@ throttled could not be assessed, which is not evidence of a different model.
 
 ### Verdict confidence
 
-- **low** — the claimed model is not in the knowledge base, or fewer than two
-  core dimensions produced a usable result;
+- **low** — the claimed model is not in the knowledge base, matched a profile
+  only fuzzily (`match_confidence` `fuzzy`; the summary says so), or fewer than
+  two core dimensions produced a usable result;
 - **medium** — at least two core dimensions produced a usable result;
 - **high** — a baseline was used *and* all three core dimensions produced a
   usable result, or the confidence was medium and the LLM judge returned a
@@ -191,6 +199,9 @@ exact canary marker; records latency and the echoed `model` field.
 | `connectivity.chat` | A chat completion returned content and echoed the canary. | Pass | 100 pts |
 |  | A chat completion returned content but did not echo the canary. | Pass | 85 pts |
 |  | The chat completion failed or returned no content. | Fail · High | 0 pts |
+
+The detector status is the worst of its checks, so a disabled `/v1/models`
+makes it a Warning even when chat works.
 
 **Caveats.** A missing `/v1/models` is benign; many relays disable it. A
 transient network error or 5xx can fail the chat check: re-run. Connectivity
@@ -624,13 +635,17 @@ crawls under modest parallelism.
 default 8) at bounded concurrency (`--concurrency`, default 3). The success rate
 is computed over the requests genuinely attempted: HTTP 429 is honest
 throttling and is bucketed separately. The score deducts the failed share; a p95
-latency above 30 s keeps 85% of what is left.
+latency above 30 s keeps 85% of what is left. One failed request (so one
+transient 5xx of the default 8), or at most 10% of a larger burst, is a
+Warning as long as at least 80% succeeded; more is a Fail. The detector status
+is the worst of its findings. These findings are transport advisories: they
+never raise the risk verdict.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `reliability.success_rate` | Every attempted request in the burst succeeded. | Pass | No deduction |
-|  | Up to 10% of the attempted requests failed; deducts the failed share. | Warning · Low | up to −10 pts |
-|  | More than 10% of the attempted requests failed; deducts the failed share. | Fail · Medium | up to −100 pts |
+|  | One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share. | Warning · Low | up to −20 pts |
+|  | More requests than that failed; deducts the failed share. | Fail · Medium | up to −100 pts |
 |  | Every request was rate-limited (HTTP 429): not scored. | Inconclusive · Low | No deduction |
 | `reliability.latency` | p95 latency above 30 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
 | `reliability.rate_limited` | Part of the burst was rate-limited: honest throttling, not counted. | Info | No deduction |
@@ -659,12 +674,17 @@ transport and secret hygiene.
 appears verbatim in a response, and which response headers reveal an upstream or
 proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`, `x-litellm-*`, …;
 informational). It also states the limit: prompt logging and shared upstream
-keys are not provable from outside.
+keys are not provable from outside. Plain HTTP to this machine or a private
+network (`localhost`, `127.x`, `192.168.x`, `*.local`, … — a self-hosted model)
+is only a Warning without a cap, since the key does not cross the internet;
+plain HTTP to any other host stays Fail · High. Either way `security.tls` is a
+transport advisory and never raises the risk verdict.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `security.tls` | The endpoint uses HTTPS. | Pass | No deduction |
 |  | The endpoint is not HTTPS; the API key travels in clear text. | Fail · High | cap 40 |
+|  | Plain HTTP to a local or private-network host; the API key does not cross the internet. | Warning · Low | No deduction |
 | `security.key_echo` | The API key does not appear in the response. | Pass | No deduction |
 |  | The API key appears verbatim in the response. | Fail · High | cap 30 |
 | `security.headers` | No response header reveals the upstream (informational). | Pass | No deduction |

@@ -97,6 +97,13 @@ Die Risikostufe richtet sich nach dem **Schweregrad der Befunde**, nicht nach
 der Bewertung. Befunde der Dimension Konnektivität zählen dabei nicht: ein
 Relay, das nicht erreichbar ist oder drosselt, konnte nicht beurteilt werden —
 das ist kein Beleg für ein anderes Modell.
+Auch die **Transport-Hinweise** zählen nicht (`ADVISORY_CHECKS` in
+`zing/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): Klartext-HTTP, Fehler oder
+Langsamkeit unter Last zeigen, wie das Relay erreicht wird, nicht welches
+Modell es ausliefert. Sie senken weiterhin Bewertung und Status ihrer
+Dimension, stehen in den wichtigsten Befunden nach den Substitutionsbefunden,
+und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipulation der Antwort
+(Integrität) und ein zurückgegebener API-Schlüssel heben das Risiko weiterhin an.
 
 | Risiko | Bezeichnung in der UI | Wann |
 |---|---|---|
@@ -108,8 +115,9 @@ das ist kein Beleg für ein anderes Modell.
 
 ### Konfidenz des Urteils
 
-- **Niedrig** — das angegebene Modell steht nicht in der Wissensbasis, oder
-  weniger als zwei Kerndimensionen lieferten ein verwertbares Ergebnis;
+- **Niedrig** — das angegebene Modell steht nicht in der Wissensbasis, passt
+  nur unscharf zu einem Profil (`match_confidence` `fuzzy`; die
+  Zusammenfassung sagt es), oder weniger als zwei Kerndimensionen lieferten ein verwertbares Ergebnis;
 - **Mittel** — mindestens zwei Kerndimensionen lieferten ein verwertbares
   Ergebnis;
 - **Hoch** — eine Referenz wurde genutzt *und* alle drei Kerndimensionen
@@ -204,6 +212,9 @@ zurückgegebene `model`-Feld.
 | `connectivity.chat` | Eine Chat-Completion lieferte Inhalt und gab das Canary zurück. | Bestanden | 100 Pkt. |
 |  | Eine Chat-Completion lieferte Inhalt, gab das Canary aber nicht zurück. | Bestanden | 85 Pkt. |
 |  | Die Chat-Completion schlug fehl oder lieferte keinen Inhalt. | Fehlgeschlagen · Hoch | 0 Pkt. |
+
+Der Status des Detektors ist der schlechteste seiner Prüfungen: ein
+deaktiviertes `/v1/models` ergibt eine Warnung, auch wenn der Chat funktioniert.
 
 **Einschränkungen.** Ein fehlendes `/v1/models` ist harmlos; viele Relays
 schalten es ab. Ein vorübergehender Netzwerkfehler oder 5xx kann die
@@ -668,12 +679,17 @@ Standard 8) mit begrenzter Parallelität (`--concurrency`, Standard 3). Die
 Erfolgsquote bezieht sich auf die tatsächlich versuchten Anfragen: HTTP 429 ist
 ehrliche Drosselung und wird gesondert gezählt. Die Bewertung zieht den
 gescheiterten Anteil ab; eine p95-Latenz über 30 s behält 85 % des Rests.
+Eine fehlgeschlagene Anfrage (also ein vorübergehender 5xx von standardmäßig 8)
+oder höchstens 10 % eines größeren Bursts ist eine Warnung, solange mindestens
+80 % erfolgreich waren; mehr ist Fehlgeschlagen. Der Status des Detektors ist
+der schlechteste seiner Befunde. Diese Befunde sind Transport-Hinweise: Sie
+heben das Risikourteil nie an.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `reliability.success_rate` | Jede versuchte Anfrage im Burst war erfolgreich. | Bestanden | Kein Abzug |
-|  | Bis zu 10 % der versuchten Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Warnung · Niedrig | bis zu −10 Pkt. |
-|  | Mehr als 10 % der versuchten Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Fehlgeschlagen · Mittel | bis zu −100 Pkt. |
+|  | Eine Anfrage oder höchstens 10 % der versuchten schlugen fehl (mindestens 80 % erfolgreich); zieht den fehlgeschlagenen Anteil ab. | Warnung · Niedrig | bis zu −20 Pkt. |
+|  | Mehr Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Fehlgeschlagen · Mittel | bis zu −100 Pkt. |
 |  | Jede Anfrage wurde gedrosselt (HTTP 429): nicht gewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
 | `reliability.latency` | p95-Latenz über 30 s unter Last; zieht 15 % der verbleibenden Bewertung ab. | Warnung · Niedrig | bis zu −15 Pkt. |
 | `reliability.rate_limited` | Ein Teil des Bursts wurde gedrosselt: ehrliches Throttling, nicht gewertet. | Info | Kein Abzug |
@@ -704,12 +720,18 @@ Transport- und Geheimnishygiene.
 wörtlich in einer Antwort erscheint und welche Antwort-Header einen Upstream
 oder Proxy verraten (`server`, `via`, `x-powered-by`, `x-upstream-*`,
 `x-litellm-*`, …; informativ). Er nennt auch die Grenze: Prompt-Logging und
-geteilte Upstream-Schlüssel sind von außen nicht beweisbar.
+geteilte Upstream-Schlüssel sind von außen nicht beweisbar. Klartext-HTTP zu
+diesem Rechner oder einem privaten Netz (`localhost`, `127.x`, `192.168.x`,
+`*.local`, … — ein selbst gehostetes Modell) ist nur eine Warnung ohne
+Obergrenze, da der Schlüssel nicht über das Internet geht; Klartext-HTTP zu
+jedem anderen Host bleibt Fehlgeschlagen · Hoch. In beiden Fällen ist
+`security.tls` ein Transport-Hinweis und hebt das Risikourteil nie an.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `security.tls` | Der Endpunkt nutzt HTTPS. | Bestanden | Kein Abzug |
 |  | Der Endpunkt ist nicht HTTPS; der API-Schlüssel wird im Klartext übertragen. | Fehlgeschlagen · Hoch | Obergrenze 40 |
+|  | Klartext-HTTP zu einem lokalen Host oder einem im privaten Netz; der API-Schlüssel geht nicht über das Internet. | Warnung · Niedrig | Kein Abzug |
 | `security.key_echo` | Der API-Schlüssel erscheint nicht in der Antwort. | Bestanden | Kein Abzug |
 |  | Der API-Schlüssel erscheint wörtlich in der Antwort. | Fehlgeschlagen · Hoch | Obergrenze 30 |
 | `security.headers` | Kein Antwort-Header verrät das Upstream (nur zur Information). | Bestanden | Kein Abzug |

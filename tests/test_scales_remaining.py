@@ -285,6 +285,46 @@ async def test_reliability_all_failing_scores_0(audit_context, mock_server):
     assert result.score == 0.0 and result.status == Status.FAIL
 
 
+async def _burst(n: int, failures: int) -> DetectorResult:
+    """The reliability detector over a fake client whose first ``failures`` of
+    ``n`` requests return HTTP 500."""
+    from types import SimpleNamespace
+
+    calls = []
+
+    async def complete(spec):
+        calls.append(spec)
+        ok = len(calls) > failures
+        return SimpleNamespace(ok=ok, duration_ms=120.0 if ok else None,
+                               error_type=None if ok else "server_error",
+                               status_code=200 if ok else 500)
+
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          options=SimpleNamespace(reliability_requests=n, reliability_concurrency=4))
+    return await ReliabilityDetector().run(ctx)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("n", "failures", "outcome", "status"),
+    [
+        (8, 0, "all_succeeded", Status.PASS),
+        (8, 1, "some_failed", Status.WARN),   # one transient failure of the default 8
+        (8, 2, "many_failed", Status.FAIL),
+        (4, 1, "many_failed", Status.FAIL),   # 75% success is below the 80% floor
+        (20, 2, "some_failed", Status.WARN),  # 10%
+        (20, 3, "many_failed", Status.FAIL),
+    ],
+)
+async def test_reliability_tolerates_one_failure_and_status_follows_findings(n, failures, outcome, status):
+    result = await _burst(n, failures)
+    _check(result, _scale_of("reliability"))
+    f = next(f for f in result.findings if f.id == "reliability.success_rate")
+    assert f.outcome == outcome
+    assert result.score == round(100.0 * (n - failures) / n, 1)
+    # The detector status is the worst of its findings — never PASS over a FAIL.
+    assert result.status == status == Scale.roll_up(result.findings)
+
+
 def test_reliability_latency_deduction_matches_the_old_formula():
     for rate in (1.0, 0.95, 0.9, 0.37, 0.0):
         base = round(rate * 100, 1)
