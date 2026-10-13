@@ -162,6 +162,24 @@ without the file the report is built as before. The script itself never
 asserts and always exits 0; without a key for a remote endpoint it prints a
 notice and writes a `skipped` report.
 
+**Review and update the report in one command.** The page shows
+`zing/web/static/v2/bitv-report.json`; the review file alone does not change
+it. `--update-report` applies the finished review to that report right away
+(another path can follow the option):
+
+```sh
+python -m tests.a11y.llm_review --base-url http://localhost:1234/v1 --model liquid/lfm2-24b-a2b --update-report
+# or build the report afresh from a suite run's results instead of updating it
+python -m tests.a11y.llm_review --update-report --results a11y-results.json
+```
+
+Each step of the report keeps its status from the tests alone
+(`status_tests`), so a new review replaces the previous one instead of adding
+to it. A dry run or a failed review leaves the report unchanged. Without
+running a new review, `python -m tests.a11y.conformance --update
+zing/web/static/v2/bitv-report.json --llm a11y-llm-review.json` applies an
+existing review file (`--no-llm` removes it again).
+
 Notes:
 
 - Default model: `claude-opus-5-5`. It accepts no sampling parameters
