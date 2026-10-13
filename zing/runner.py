@@ -182,6 +182,7 @@ async def run_audit(
             jt = judge_target or baseline
             if jt is not None:
                 judge_client = await stack.enter_async_context(make_client(jt))
+                _fit_client(judge_client, kb.resolve(jt.claimed, jt.declared_provider))
                 judge = Judge(judge_client, jt.model)
 
         ctx = AuditContext(

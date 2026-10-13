@@ -79,6 +79,11 @@ _PARAM_REJECTION_PHRASES = (
     "is deprecated",
     "use 'max_completion_tokens'",
 )
+# How far (characters) from a rejection phrase the refused name may stand.
+_NAME_REACH = 24
+# Repeats of one request for refused parameters, at most (one per parameter,
+# e.g. max_tokens and then temperature on an unprofiled reasoning model).
+_MAX_PARAM_RETRIES = 3
 # Statuses that never mean a parameter was refused.
 _NOT_PARAM_STATUSES = frozenset({401, 403, 404, 408, 409, 413, 429})
 # The httpx timeout of the completion running in this task (see complete()).
@@ -190,16 +195,27 @@ def rejected_params(outcome: CompletionOutcome, sent: set[str]) -> set[str]:
     if outcome.ok or status is None or not 400 <= status < 500 or status in _NOT_PARAM_STATUSES:
         return set()
     text = (outcome.error_message or "").lower()
-    if not any(phrase in text for phrase in _PARAM_REJECTION_PHRASES):
+    spans = [
+        (m.start(), m.end())
+        for phrase in _PARAM_REJECTION_PHRASES
+        for m in re.finditer(re.escape(phrase), text)
+    ]
+    if not spans:
         return set()
-    named = {
-        name for name in sent
-        if re.search(rf"(?<![a-z0-9_]){re.escape(name)}(?![a-z0-9_])", text)
-    }
     error = (outcome.raw_error or {}).get("error")
     param = error.get("param") if isinstance(error, dict) else None
-    if isinstance(param, str) and param in sent:
-        named.add(param)
+    if isinstance(param, str) and param:
+        # The server says which field it means: trust that alone.
+        return {param} & sent
+    # Otherwise a name counts only next to a rejection phrase, so a message
+    # that echoes the request body does not condemn every field in it.
+    named = set()
+    for name in sent:
+        for m in re.finditer(rf"(?<![a-z0-9_]){re.escape(name)}(?![a-z0-9_])", text):
+            if any(m.start() < end + _NAME_REACH and start < m.end() + _NAME_REACH
+                   for start, end in spans):
+                named.add(name)
+                break
     return named
 
 
@@ -406,16 +422,17 @@ class BaseHTTPClient:
         """One completion, repeated when a 4xx named a parameter the client can
         adapt (dropped, or the output limit renamed). The learned names stay in
         ``unsupported_params``, so later requests go out adapted from the start;
-        each repeat sends a different body from a growing set, so it ends.
+        at most ``_MAX_PARAM_RETRIES`` repeats.
         Rejected attempts are recorded with phase ``param_retry``: the request
         was zing's, not a relay error."""
-        while True:
+        for _ in range(_MAX_PARAM_RETRIES):
             sent = self._build_body(spec)
             outcome, record = await self._complete_recorded(spec)
             if not self._adapt(spec, sent, outcome):
                 return outcome
             if record is not None:
                 record.phase = "param_retry"
+        return (await self._complete_recorded(spec))[0]
 
     async def _complete_recorded(
         self, spec: RequestSpec

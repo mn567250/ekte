@@ -192,6 +192,11 @@ def test_rejected_params_needs_a_named_parameter_and_a_rejection():
     assert rejected_params(bad(400, "max_tokens is too large: 99999"), sent) == set()
     assert rejected_params(bad(400, "Unsupported value.", "temperature"), sent) == {"temperature"}
     assert rejected_params(bad(400, _TEMPERATURE), {"max_tokens"}) == set()  # not sent
+    # A message echoing the request does not condemn every field it mentions.
+    echo = "'tools' is not supported by this deployment. Request was: {\"temperature\": 0, \"max_tokens\": 16}"
+    assert rejected_params(bad(400, echo), sent) == set()
+    # A server-named field is trusted alone.
+    assert rejected_params(bad(400, _MAX_TOKENS, "tools"), sent) == set()
 
 
 # -- the other wire protocols ----------------------------------------------- #
