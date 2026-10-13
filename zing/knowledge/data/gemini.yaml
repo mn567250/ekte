@@ -81,7 +81,7 @@ models:
   - id: reasoning-trap-bat-ball
     signal: reasoning-vs-non-reasoning tell (multi-step trap)
     prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-    native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
+    native_expected: Gemini Pro-tier models (thinking cannot be turned off) answer $0.05 (correct after reasoning). Not attached to Flash/Flash-Lite, where thinking is optional or can be budgeted to 0.
     downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
     pure_code_checkable: true
     expect_contains:
@@ -164,7 +164,7 @@ models:
   - id: reasoning-trap-bat-ball
     signal: reasoning-vs-non-reasoning tell (multi-step trap)
     prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-    native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
+    native_expected: Gemini Pro-tier models (thinking cannot be turned off) answer $0.05 (correct after reasoning). Not attached to Flash/Flash-Lite, where thinking is optional or can be budgeted to 0.
     downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
     pure_code_checkable: true
     expect_contains:
@@ -232,19 +232,6 @@ models:
     max_tokens: 32
     temperature: 0
     weight: 1
-  - id: reasoning-trap-bat-ball
-    signal: reasoning-vs-non-reasoning tell (multi-step trap)
-    prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-    native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
-    downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
-    pure_code_checkable: true
-    expect_contains:
-    - '0.05'
-    expect_not_contains:
-    - '0.10'
-    max_tokens: 64
-    temperature: 0
-    weight: 1
   notes: GA 2026-05-19. Internal version 3.5-flash-05-2026. Pricing ~$1.50 in / $9.00 out per 1M (notably higher-tier Flash). 'Most intelligent model for sustained frontier agentic/coding'. Thinking model with adjustable levels; thought_signature enforced.
 - id: gemini-3-flash-preview
   aliases:
@@ -303,19 +290,6 @@ models:
     max_tokens: 32
     temperature: 0
     weight: 1
-  - id: reasoning-trap-bat-ball
-    signal: reasoning-vs-non-reasoning tell (multi-step trap)
-    prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-    native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
-    downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
-    pure_code_checkable: true
-    expect_contains:
-    - '0.05'
-    expect_not_contains:
-    - '0.10'
-    max_tokens: 64
-    temperature: 0
-    weight: 1
   notes: 'Released 2025-12-17. Configurable thinking levels: minimal/low/medium/high. Pricing $0.50 in / $3.00 out per 1M (audio in $1.00). Uses ~30% fewer tokens than 2.5 Pro at highest thinking. thought_signature enforced even at minimal thinking.'
 - id: gemini-3.1-flash-lite
   aliases:
@@ -371,19 +345,6 @@ models:
     - 2024-06
     - 2024-10
     max_tokens: 32
-    temperature: 0
-    weight: 1
-  - id: reasoning-trap-bat-ball
-    signal: reasoning-vs-non-reasoning tell (multi-step trap)
-    prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-    native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
-    downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
-    pure_code_checkable: true
-    expect_contains:
-    - '0.05'
-    expect_not_contains:
-    - '0.10'
-    max_tokens: 64
     temperature: 0
     weight: 1
   notes: Stable. Cheapest/fastest frontier-class tier of the 3.x line. Thinking-capable.
@@ -457,7 +418,7 @@ models:
   - id: reasoning-trap-bat-ball
     signal: reasoning-vs-non-reasoning tell (multi-step trap)
     prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-    native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
+    native_expected: Gemini Pro-tier models (thinking cannot be turned off) answer $0.05 (correct after reasoning). Not attached to Flash/Flash-Lite, where thinking is optional or can be budgeted to 0.
     downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
     pure_code_checkable: true
     expect_contains:
@@ -523,19 +484,6 @@ models:
     max_tokens: 32
     temperature: 0
     weight: 1
-  - id: reasoning-trap-bat-ball
-    signal: reasoning-vs-non-reasoning tell (multi-step trap)
-    prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-    native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
-    downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
-    pure_code_checkable: true
-    expect_contains:
-    - '0.05'
-    expect_not_contains:
-    - '0.10'
-    max_tokens: 64
-    temperature: 0
-    weight: 1
   notes: Workhorse, native tool use. Thinking can be toggled/budgeted (thinking_budget incl. 0 to disable) unlike Pro. thought_signature optional (not strictly enforced).
 - id: gemini-2.5-flash-lite
   aliases:
@@ -590,19 +538,6 @@ models:
     - 2024-06
     - 2024-10
     max_tokens: 32
-    temperature: 0
-    weight: 1
-  - id: reasoning-trap-bat-ball
-    signal: reasoning-vs-non-reasoning tell (multi-step trap)
-    prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-    native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
-    downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
-    pure_code_checkable: true
-    expect_contains:
-    - '0.05'
-    expect_not_contains:
-    - '0.10'
-    max_tokens: 64
     temperature: 0
     weight: 1
   notes: Lowest-latency 2.5 tier. Thinking optional. Same 1M context.

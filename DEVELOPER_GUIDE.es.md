@@ -232,10 +232,11 @@ usuario), guarda las entradas del usuario (`store.py`), comprueba e importa YAML
 (`snapshot.py`). Los ids de modelo se resuelven de forma exacta, mediante
 alias o por nombre normalizado, acotados por el proveedor declarado. La
 alternativa aproximada toma el nombre de la KB más largo que contiene el id
-declarado (un id de snapshot o decorado); un id más corto solo se resuelve
-cuando el nombre de un único modelo lo contiene, así que un id ambiguo como
-`gpt-4` no obtiene perfil en lugar de un nivel adivinado. Cada informe registra
-cómo se resolvió el id.
+declarado (un id de snapshot o decorado), salvo que el resto del id nombre otro
+nivel o variante (`-mini`, `-lite`, `-image`, …); un id truncado solo se
+resuelve cuando el nombre de un único modelo empieza por él, así que un id
+ambiguo como `gpt-4` no obtiene perfil en lugar de un nivel adivinado. Cada
+informe registra cómo se resolvió el id.
 
 `load_knowledge_base()` guarda en caché los resultados fusionados y devuelve por
 defecto una copia profunda, así que quien la llama puede modificar lo que

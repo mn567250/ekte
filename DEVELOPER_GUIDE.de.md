@@ -232,10 +232,11 @@ YAML (`importer.py`), erzeugt den Recherche-Prompt für externe Assistenten
 verwendet hat (`snapshot.py`). Modell-IDs werden exakt, über Aliasse oder den
 normalisierten Namen aufgelöst, eingegrenzt durch den angegebenen Anbieter. Die
 unscharfe Rückfallstufe nimmt den längsten KB-Namen, den die Angabe enthält
-(eine Snapshot- oder dekorierte ID); eine kürzere Angabe wird nur aufgelöst,
-wenn genau ein Modellname sie enthält, sodass eine mehrdeutige ID wie `gpt-4`
-kein Profil statt einer geratenen Stufe erhält. Jeder Bericht vermerkt, wie die
-ID zugeordnet wurde.
+(eine Snapshot- oder dekorierte ID), außer der Rest der Angabe nennt eine andere
+Stufe oder Variante (`-mini`, `-lite`, `-image`, …); eine gekürzte Angabe wird
+nur aufgelöst, wenn genau ein Modellname mit ihr beginnt, sodass eine
+mehrdeutige ID wie `gpt-4` kein Profil statt einer geratenen Stufe erhält. Jeder
+Bericht vermerkt, wie die ID zugeordnet wurde.
 
 `load_knowledge_base()` speichert zusammengeführte Ergebnisse zwischen und gibt
 standardmäßig eine tiefe Kopie zurück, sodass Aufrufer das Erhaltene ändern

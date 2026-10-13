@@ -167,10 +167,11 @@ risponda un altro modello.
   sonde. Ogni rapporto registra il profilo usato (`knowledge`). L'id
   dichiarato trova un profilo per id esatto, alias o nome normalizzato,
   altrimenti in modo approssimato: per il nome di profilo più lungo che
-  contiene (`gpt-4o-2024-11-20-custom` → `gpt-4o`) o, per un id più corto,
-  solo quando il nome di un unico modello lo contiene. Un id generico o
-  ambiguo (`gpt-4`, `claude`, `gemini-2.5`) non ottiene quindi alcun profilo
-  invece di un livello indovinato, spesso più economico. Le impronte a
+  contiene (`gpt-4o-2024-11-20-custom` → `gpt-4o`), a meno che il resto dell'id
+  nomini un altro livello o variante (`gpt-5-mini` non è `gpt-5`), o, per un id
+  troncato, solo quando il nome di un unico modello inizia con esso. Un id
+  generico o ambiguo (`gpt-4`, `claude`, `gemini-2.5`) non ottiene quindi alcun
+  profilo invece di un livello indovinato, spesso più economico. Le impronte a
   livello di fornitore valgono per ogni suo modello; una che si adatta solo
   ad alcuni (una data di cutoff, un livello di dimensione) compare solo su
   quelli.

@@ -213,6 +213,26 @@ def test_resolve_fuzzy_needs_a_token_boundary():
     assert kb.resolve("acme-pro3") is None
     r = kb.resolve("o3-2099-01-01")
     assert r is not None and r.model.id == "o3"
+    # A longer name may sit inside a glued prefix (chatgpt-4o-latest style).
+    r = kb.resolve("chatacme-4o-latest")
+    assert r is not None and r.model.id == "acme-4o"
+
+
+def test_resolve_fuzzy_rejects_an_extra_tier_word():
+    kb = _tier_kb()
+    # The claim names another tier/variant of a KB model: not that model.
+    for claim in ["acme-4.1-mini", "acme-4o-lite", "acme-4o-image", "acme-4o-8b", "acme-4.1-1.5b"]:
+        assert kb.resolve(claim) is None, claim
+    # Other suffixes (snapshot, effort, preview) are still decoration.
+    for claim in ["acme-4o-high", "acme-4o-preview-0101"]:
+        r = kb.resolve(claim)
+        assert r is not None and r.model.id == "acme-4o", claim
+
+
+def test_resolve_fuzzy_truncated_claim_must_be_a_prefix():
+    kb = _tier_kb()
+    # "pro" is inside acme-3-pro-20250101 but is not a truncation of it.
+    assert kb.resolve("pro") is None
 
 
 def test_resolve_fuzzy_tie_between_models_is_ambiguous():
@@ -223,7 +243,11 @@ def test_resolve_fuzzy_tie_between_models_is_ambiguous():
 
 
 def test_resolve_real_short_claims_are_not_assigned_a_tier(knowledge_base):
-    for claim in ["gpt-4", "gpt", "claude", "gemini", "gemini-2.5", "deepseek", "qwen", "qwen3", "glm-4", "kimi"]:
+    for claim in [
+        "gpt-4", "gpt", "claude", "gemini", "gemini-2.5", "deepseek", "qwen", "qwen3", "glm-4", "kimi",
+        # another tier/variant than the KB model the claim contains
+        "gpt-5-mini", "gemini-2.0-flash-lite", "gemini-3-pro-image-preview",
+    ]:
         assert knowledge_base.resolve(claim) is None, claim
 
 
@@ -235,6 +259,7 @@ def test_resolve_real_decorated_ids_still_match(knowledge_base):
         "gemini-2.5-flash-preview-05-20": "gemini-2.5-flash",
         "gemini-2.0-flash-001": "gemini-2.0-flash",
         "deepseek-chat-v3": "deepseek-chat",
+        "chatgpt-4o-latest": "gpt-4o",
     }
     for claim, expected in cases.items():
         r = knowledge_base.resolve(claim)
@@ -262,20 +287,21 @@ def test_all_fingerprints_merges_provider_and_model():
 
 def test_no_fingerprint_contradicts_the_models_own_cutoff(knowledge_base):
     # A probe applied to a model must not reject that model's own documented
-    # knowledge cutoff, nor demand a different YYYY-MM.
+    # knowledge cutoff (a YYYY-MM or, for vaguer cutoffs, a year), nor demand
+    # a different YYYY-MM.
     import re
 
     for provider, model in knowledge_base.all_models():
-        cutoff = re.match(r"\d{4}-\d{2}", model.knowledge_cutoff or "")
-        if not cutoff:
+        own = re.findall(r"\d{4}-\d{2}|\d{4}", model.knowledge_cutoff or "")
+        if not own:
             continue
-        own = cutoff.group(0)
         for fp in ResolvedProfile(provider=provider, model=model).all_fingerprints():
             where = f"{provider.provider}/{model.id}: {fp.id}"
-            assert not any(own in s for s in fp.expect_not_contains), where
+            for s in fp.expect_not_contains:
+                assert not any(o.startswith(s) or s.startswith(o) for o in own), where
             for s in fp.expect_contains:
                 if re.fullmatch(r"\d{4}-\d{2}", s):
-                    assert s == own, where
+                    assert s in own, where
 
 
 def test_gemini_tier_probes_are_scoped_to_their_models(knowledge_base):
@@ -290,9 +316,11 @@ def test_gemini_tier_probes_are_scoped_to_their_models(knowledge_base):
     )
     for flash in ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3-flash-preview"]:
         ids = probes(flash)
-        assert "knowledge-cutoff" in ids and "factual-recall-pro-size" not in ids, flash
+        assert "knowledge-cutoff" in ids, flash
+        # Pro-tier recall, and a reasoning trap where thinking can be off.
+        assert {"factual-recall-pro-size", "reasoning-trap-bat-ball"}.isdisjoint(ids), flash
     for pro in ["gemini-2.5-pro", "gemini-3-pro-preview", "gemini-3.1-pro-preview"]:
-        assert {"knowledge-cutoff", "factual-recall-pro-size"} <= probes(pro), pro
+        assert {"knowledge-cutoff", "factual-recall-pro-size", "reasoning-trap-bat-ball"} <= probes(pro), pro
 
 
 def test_moonshot_cutoff_probe_skips_legacy_v1_models(knowledge_base):

@@ -221,9 +221,11 @@ stores the user's entries (`store.py`), checks and imports YAML
 (`research.py`) and snapshots the profile a run used (`snapshot.py`). Model ids
 resolve exactly, through aliases or by normalized name, narrowed by the declared
 provider. The fuzzy fallback takes the longest KB name the claim contains (a
-snapshot or decorated id); a shorter claim resolves only when a single model's
-name contains it, so an ambiguous id such as `gpt-4` resolves to no profile
-rather than to a guessed tier. Every report records how the id matched.
+snapshot or decorated id) unless the rest of the claim names another tier or
+variant (`-mini`, `-lite`, `-image`, …); a truncated claim resolves only when a
+single model's name starts with it, so an ambiguous id such as `gpt-4`
+resolves to no profile rather than to a guessed tier. Every report records how
+the id matched.
 
 `load_knowledge_base()` caches merged results and returns a deep copy by
 default, so callers may modify what they get. Callers that only read it (the web

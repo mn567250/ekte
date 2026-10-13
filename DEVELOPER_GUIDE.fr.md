@@ -234,10 +234,11 @@ assistants externes (`research.py`) et prend un instantané du profil utilisé p
 une exécution (`snapshot.py`). Les identifiants de modèle se résolvent exactement, via
 les alias ou par nom normalisé, restreints par le fournisseur déclaré. Le repli
 approximatif prend le plus long nom de la KB contenu dans l'identifiant annoncé
-(un id de snapshot ou décoré) ; un identifiant plus court n'est résolu que si le
-nom d'un seul modèle le contient, si bien qu'un id ambigu comme `gpt-4`
-n'obtient aucun profil plutôt qu'un niveau deviné. Chaque rapport consigne
-comment l'id a été résolu.
+(un id de snapshot ou décoré), sauf si le reste de l'identifiant nomme un autre
+niveau ou une autre variante (`-mini`, `-lite`, `-image`, …) ; un identifiant
+tronqué n'est résolu que si le nom d'un seul modèle commence par lui, si bien
+qu'un id ambigu comme `gpt-4` n'obtient aucun profil plutôt qu'un niveau
+deviné. Chaque rapport consigne comment l'id a été résolu.
 
 `load_knowledge_base()` met en cache les résultats fusionnés et renvoie par
 défaut une copie profonde, que l'appelant peut donc modifier. Les appelants qui

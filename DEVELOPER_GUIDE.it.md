@@ -233,10 +233,12 @@ dell'utente), salva le voci dell'utente (`store.py`), controlla e importa YAML
 (`research.py`) e fotografa il profilo usato da un'esecuzione (`snapshot.py`). Gli
 id di modello si risolvono in modo esatto, tramite alias o per nome normalizzato,
 ristretti dal fornitore dichiarato. Il ripiego approssimato prende il nome della
-KB più lungo contenuto nell'id dichiarato (un id di snapshot o decorato); un id
-più corto si risolve solo quando il nome di un unico modello lo contiene, quindi
-un id ambiguo come `gpt-4` non ottiene alcun profilo invece di un livello
-indovinato. Ogni rapporto registra come è stato risolto l'id.
+KB più lungo contenuto nell'id dichiarato (un id di snapshot o decorato), a meno
+che il resto dell'id nomini un altro livello o variante (`-mini`, `-lite`,
+`-image`, …); un id troncato si risolve solo quando il nome di un unico modello
+inizia con esso, quindi un id ambiguo come `gpt-4` non ottiene alcun profilo
+invece di un livello indovinato. Ogni rapporto registra come è stato risolto
+l'id.
 
 `load_knowledge_base()` tiene in cache i risultati uniti e per impostazione
 predefinita restituisce una copia profonda, così i chiamanti possono modificare

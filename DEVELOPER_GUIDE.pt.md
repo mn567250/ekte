@@ -231,10 +231,11 @@ constrói o prompt de pesquisa para assistentes externos (`research.py`) e tira 
 instantâneo do perfil usado por uma execução (`snapshot.py`). Os ids de modelo
 resolvem-se de forma exata, através de aliases ou pelo nome normalizado,
 restringidos pelo fornecedor declarado. A alternativa aproximada usa o nome da
-KB mais longo contido no id declarado (um id de snapshot ou decorado); um id mais
-curto só se resolve quando o nome de um único modelo o contém, pelo que um id
-ambíguo como `gpt-4` fica sem perfil em vez de um nível adivinhado. Cada
-relatório regista como o id foi resolvido.
+KB mais longo contido no id declarado (um id de snapshot ou decorado), a menos
+que o resto do id nomeie outro nível ou variante (`-mini`, `-lite`, `-image`,
+…); um id truncado só se resolve quando o nome de um único modelo começa por
+ele, pelo que um id ambíguo como `gpt-4` fica sem perfil em vez de um nível
+adivinhado. Cada relatório regista como o id foi resolvido.
 
 `load_knowledge_base()` guarda em cache os resultados fundidos e, por
 predefinição, devolve uma cópia profunda, pelo que quem a chama pode alterar o

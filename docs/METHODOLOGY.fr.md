@@ -165,13 +165,15 @@ limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle rép
   sondes sont comparées. Chaque rapport consigne le profil utilisé
   (`knowledge`). L'identifiant annoncé correspond à un profil par identifiant
   exact, alias ou nom normalisé, sinon de façon approximative : par le plus
-  long nom de profil qu'il contient (`gpt-4o-2024-11-20-custom` → `gpt-4o`)
-  ou, pour un identifiant plus court, seulement si le nom d'un seul modèle le
-  contient. Un identifiant générique ou ambigu (`gpt-4`, `claude`,
-  `gemini-2.5`) n'obtient donc aucun profil plutôt qu'un niveau deviné,
-  souvent moins cher. Les empreintes au niveau du fournisseur s'appliquent à
-  chacun de ses modèles ; celle qui ne convient qu'à certains (une date de
-  coupure, un niveau de taille) n'est listée que sur ceux-ci.
+  long nom de profil qu'il contient (`gpt-4o-2024-11-20-custom` → `gpt-4o`),
+  sauf si le reste de l'identifiant nomme un autre niveau ou une autre variante
+  (`gpt-5-mini` n'est pas `gpt-5`), ou, pour un identifiant tronqué, seulement
+  si le nom d'un seul modèle commence par lui. Un identifiant générique ou
+  ambigu (`gpt-4`, `claude`, `gemini-2.5`) n'obtient donc aucun profil plutôt
+  qu'un niveau deviné, souvent moins cher. Les empreintes au niveau du
+  fournisseur s'appliquent à chacun de ses modèles ; celle qui ne convient
+  qu'à certains (une date de coupure, un niveau de taille) n'est listée que sur
+  ceux-ci.
 - **Langue des prompts :** chaque texte de sonde se trouve dans
   `zing/prompts/en.json` et reste en anglais quelle que soit la langue de
   l'interface ; seules les empreintes dont la langue *est* la mesure déclarent
