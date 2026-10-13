@@ -223,6 +223,10 @@ un colore da un turno precedente; una sequenza `stop` che deve troncare
 l'output; e una richiesta volutamente non valida (`messages` vuoto) che deve
 essere rifiutata con un 4xx, idealmente con un corpo d'errore in stile OpenAI.
 
+La Responses API non ha il parametro `stop`, quindi con un target Responses API
+la prova di stop non viene inviata e la verifica è annotata come non applicabile
+(non conteggiata) invece di incolpare il relay.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `protocol.multi_turn` | Il colore di un turno precedente è stato ricordato. | Superato | 100 pt |
@@ -232,6 +236,7 @@ essere rifiutata con un 4xx, idealmente con un corpo d'errore in stile OpenAI.
 |  | Non è stato possibile confermare la gestione dello stop dal testo. | Avviso · Bassa | 70 pt |
 |  | È stato restituito testo dopo la sequenza di stop. | Avviso · Bassa | 60 pt |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
+|  | La Responses API non ha il parametro stop; non verificato, non conteggiato. | Info | Non conteggiato |
 | `protocol.error_schema` | Rifiutata con un 4xx e un corpo di errore in stile OpenAI. | Superato | 100 pt |
 |  | Rifiutata con un 4xx, ma il corpo non è in stile OpenAI. | Avviso · Bassa | 80 pt |
 |  | Nessuna risposta HTTP; non è stato possibile confermare la gestione degli errori client. | Avviso · Bassa | 55 pt |
@@ -299,12 +304,16 @@ verdetto è soppresso per i modelli di ragionamento, che ignorano legittimamente
 la temperatura. Due domande fattuali identiche a `temperature=0` sono solo
 informative.
 
+Per concludere che c'è una cache, almeno tre dei quattro campioni devono essere
+utilizzabili (e tutti quelli utilizzabili identici); con meno, la verifica non è
+conclusiva.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `determinism.temp1_variability` | I campioni ripetuti con temperature=1.0 erano diversi, come in un vero campionamento. | Superato | 100 pt |
 |  | I campioni erano identici, ma i modelli di ragionamento ignorano legittimamente temperature. | Info | 100 pt |
-|  | Tutti i campioni con temperature=1.0 erano identici byte per byte, il che suggerisce risposte in cache. | Avviso · Media | 55 pt |
-|  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
+|  | Tutti i campioni utilizzabili (almeno 3) a temperature=1.0 erano identici byte per byte, il che suggerisce una cache delle risposte. | Avviso · Media | 55 pt |
+|  | Meno di 3 campioni utilizzabili a temperature=1.0 su cui basare un giudizio. | Non conclusivo · Bassa | Non conteggiato |
 | `determinism.temp0_stability` | Risposte identiche con temperature=0 (previsto); solo informativo, non conteggiato. | Info | Non conteggiato |
 |  | Le risposte differivano con temperature=0; solo informativo, non conteggiato. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
@@ -551,13 +560,22 @@ sono arrivati almeno 220 caratteri, e **intervalli uniformi** (quattro o più
 frammenti con intervalli quasi uguali, CV < 0,1, e sotto i 2 ms: scaricati in
 blocco). Un flusso senza frammento di utilizzo viene segnalato a parte.
 
+Il TTFT è il primo token di contenuto visibile. Per un modello di ragionamento
+(secondo la knowledge base, o che riporta token di ragionamento nell'usage), che
+riflette prima di rispondere, un primo token tardivo viene quindi solo annotato
+e non conteggiato come buffering; i segnali pochi chunk e intervalli uniformi
+contano ancora. Uno stream riuscito ma senza contenuti non è conclusivo e non
+viene valutato.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `streaming.healthy` | Molti chunk, un primo token precoce e intervalli distribuiti: vero streaming. | Superato | Nessuna detrazione |
 | `streaming.few_chunks` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.late_ttft` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
+| `streaming.reasoning_ttft` | Primo token tardivo di un modello di ragionamento (riflette prima di rispondere): informativo, non conteggiato come buffering. | Info | Nessuna detrazione |
 | `streaming.uniform_gaps` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.no_usage` | Nessun chunk di utilizzo nello stream: toglie 15 punti se nulla è in buffer. | Avviso · Bassa | fino a −15 pt |
+| `streaming.no_content` | Lo stream è riuscito ma non ha fornito contenuti da giudicare; non valutato. | Non conclusivo · Bassa | Non conteggiato |
 | `streaming.failed` | La richiesta in streaming non è riuscita. | Fallito · Alta | tetto 0 |
 
 Cioè: autentico 100 · utilizzo mancante 85 · un segnale di buffering 60 · due o

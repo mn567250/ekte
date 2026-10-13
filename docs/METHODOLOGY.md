@@ -211,7 +211,9 @@ It partly covers `capability.json-tool-fakery`.
 **How it works.** Three probes: a multi-turn conversation that must recall a
 color from an earlier turn; a `stop` sequence that must truncate the output; and
 a deliberately invalid request (empty `messages`) that must be rejected with a
-4xx, ideally with an OpenAI-style error body.
+4xx, ideally with an OpenAI-style error body. The Responses API has no `stop`
+parameter, so against a Responses API target the stop probe is not sent and the
+check is noted as not applicable (not counted) instead of blaming the relay.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
@@ -222,6 +224,7 @@ a deliberately invalid request (empty `messages`) that must be rejected with a
 |  | Stop handling could not be confirmed from the text. | Warning · Low | 70 pts |
 |  | Text after the stop sequence was returned. | Warning · Low | 60 pts |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
+|  | The Responses API has no stop parameter; not checked, not counted. | Info | Not counted |
 | `protocol.error_schema` | Rejected with a 4xx and an OpenAI-style error body. | Pass | 100 pts |
 |  | Rejected with a 4xx, but the body is not OpenAI-style. | Warning · Low | 80 pts |
 |  | No HTTP response; client-error handling could not be confirmed. | Warning · Low | 55 pts |
@@ -281,7 +284,9 @@ protocol rejects it too. Tools and JSON mode stay with `capability`, `stop` with
 
 **How it works.** Four identical creative prompts at `temperature=1.0` (no
 seed): a genuine model varies, byte-identical output across all samples points
-to a response cache that ignores sampling. The verdict is suppressed for
+to a response cache that ignores sampling. At least three of the four samples
+must be usable (and all usable ones identical) for the caching call; with fewer
+the check is inconclusive. The verdict is suppressed for
 reasoning models, which legitimately ignore temperature. Two identical factual
 prompts at `temperature=0` are informational only.
 
@@ -289,8 +294,8 @@ prompts at `temperature=0` are informational only.
 |---|---|---|---|
 | `determinism.temp1_variability` | Repeated samples at temperature=1.0 differed, as genuine sampling does. | Pass | 100 pts |
 |  | Samples were identical, but reasoning models legitimately ignore temperature. | Info | 100 pts |
-|  | All samples at temperature=1.0 were byte-identical, suggesting response caching. | Warning · Medium | 55 pts |
-|  | No usable response to judge by. | Inconclusive · Low | Not counted |
+|  | All usable samples (at least 3) at temperature=1.0 were byte-identical, suggesting response caching. | Warning · Medium | 55 pts |
+|  | Fewer than 3 usable samples at temperature=1.0 to judge by. | Inconclusive · Low | Not counted |
 | `determinism.temp0_stability` | Identical answers at temperature=0 (expected); informational, not scored. | Info | Not counted |
 |  | Answers differed at temperature=0; informational, not scored. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
@@ -519,20 +524,27 @@ answer and replays it as one or a few chunks, losing the latency benefit.
 buffering signals: **few chunks** (two or fewer) and **late first token** (TTFT
 above 90% of the total duration), both judged only once at least 220 characters
 came back, and **uniform gaps** (four or more chunks whose gaps are almost
-equal, CV < 0.1, and under 2 ms: dumped together). A stream without a usage
-chunk is flagged separately.
+equal, CV < 0.1, and under 2 ms: dumped together). TTFT is the first visible
+content token, so for a reasoning model (claimed by the knowledge base, or
+reporting reasoning tokens in its usage), which thinks before answering, a late
+first token is only noted and not counted as buffering; its few-chunks and
+uniform-gaps signals still count. A stream without a usage chunk is flagged
+separately. A stream that succeeds but delivers no content is inconclusive and
+not scored.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `streaming.healthy` | Many chunks, an early first token and spread-out gaps: genuine streaming. | Pass | No deduction |
 | `streaming.few_chunks` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.late_ttft` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
+| `streaming.reasoning_ttft` | Late first token from a reasoning model (it thinks before answering): informational, not counted as buffering. | Info | No deduction |
 | `streaming.uniform_gaps` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.no_usage` | No usage chunk in the stream: deducts 15 points when nothing is buffered. | Warning · Low | up to −15 pts |
+| `streaming.no_content` | The stream succeeded but delivered no content to judge by; not scored. | Inconclusive · Low | Not counted |
 | `streaming.failed` | The streaming request failed. | Fail · High | cap 0 |
 
 So: genuine 100 · usage missing 85 · one buffering signal 60 · two or more 40 ·
-failed 0.
+failed 0 · no content: no score.
 
 **Caveats.** Short outputs, a fast small model or network jitter can resemble a
 burst. An upstream that cannot stream forces the relay to buffer legitimately;
