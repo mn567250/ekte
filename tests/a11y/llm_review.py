@@ -11,10 +11,18 @@ second opinion against a strict rubric. A human still decides: the output is
 advisory, the module never asserts and always exits 0.
 
     python -m tests.a11y.llm_review --out a11y-llm-review.json
+    python -m tests.a11y.llm_review --base-url http://localhost:11434/v1 --model qwen3
 
-Needs ``ANTHROPIC_API_KEY``, Playwright + Chromium (the a11y extra) and the web
-extra. ``--dry-run`` collects the page data and builds the requests without
-calling the API.
+Needs Playwright + Chromium (the a11y extra) and the web extra. The endpoint
+is resolved per field (see resolve_endpoint): ``--base-url``, ``--api-key``
+(raw, ``env:VAR`` or ``file:/path``), ``--model`` and ``--api`` first, then the
+zing configuration (``--config``, default ``./zing.yaml``: its ``judge``,
+else ``baseline``, else ``target`` endpoint, as zing's own judge does), then
+``ANTHROPIC_BASE_URL``/``ANTHROPIC_API_KEY``, then the Anthropic API with
+MODEL. Anthropic Messages and OpenAI-compatible chat-completions endpoints
+(relays, Ollama, LM Studio, vLLM) are both spoken, detected like zing does
+(zing.clients.detect_api). A local endpoint needs no key. ``--dry-run``
+collects the page data and builds the requests without calling the API.
 
 A report is ALWAYS written to ``--out``, so a broken run can be told apart
 from a run that did not happen. Its top-level ``status`` is one of:
@@ -30,8 +38,9 @@ to the app is answered by the review itself (nothing is created, changed or
 deleted) and disclosures that would open destructive confirmations (delete,
 clear, ...) are left closed.
 
-Dependencies: only httpx (already a zing dependency), Playwright and the
-standard library; the Messages API is called over plain HTTPS (streamed).
+Dependencies: only httpx (already a zing dependency), Playwright, zing's own
+configuration helpers and the standard library; the API is called over plain
+HTTPS (streamed).
 
 The module is not collected by pytest (no ``test_`` prefix); its pure functions
 are unit-tested in tests/test_a11y_llm_review.py without a browser.
@@ -52,12 +61,19 @@ import threading
 import time
 import traceback
 from collections.abc import Callable, Iterable, Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
-API_URL = "https://api.anthropic.com/v1/messages"
+API_BASE = "https://api.anthropic.com/v1"
+API_URL = API_BASE + "/messages"
+OFFICIAL_HOST = "api.anthropic.com"
+DEFAULT_CONFIG = "zing.yaml"
+# endpoint sections of a zing configuration, in the order zing's judge uses them
+CONFIG_SECTIONS = ("judge", "baseline", "target")
 API_VERSION = "2023-06-01"
 # Most capable current Claude model (per the claude-api skill). It accepts no
 # sampling parameters (temperature/top_p/top_k return 400), so determinism comes
@@ -788,31 +804,75 @@ def build_request(
     effort: str = "high",
     max_tokens: int = MAX_TOKENS,
     stream: bool = True,
+    fallback: bool = True,
 ) -> dict[str, Any]:
     """Messages API request body. The rubric is the system prompt, marked for
     prompt caching so every request after the first reads it from cache; the
     page data (volatile) follows in the user turn. Streamed (a long answer
-    must not run into an HTTP timeout)."""
+    must not run into an HTTP timeout). ``fallback`` asks for Anthropic's
+    server-side fallback (the official API only; relays may reject it)."""
+    body: dict[str, Any] = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "system": [{"type": "text", "text": RUBRIC, "cache_control": {"type": "ephemeral"}}],
+        "messages": [{"role": "user", "content": _user_turn(task, page, payload, lang)}],
+        "output_config": {"effort": effort, "format": {"type": "json_schema", "schema": FINDINGS_SCHEMA}},
+    }
+    if fallback:
+        body["fallbacks"] = "default"
+    if stream:
+        body["stream"] = True
+    return body
+
+
+def _user_turn(task: str, page: str, payload: dict[str, Any], lang: str = "") -> str:
     head = {"task": task, "page": page}
     if lang:
         head["lang"] = lang
-    user = (
+    return (
         "<request>\n"
         + json.dumps(head, sort_keys=True, ensure_ascii=False)
         + "\n</request>\n<page_data>\n"
         + json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
         + "\n</page_data>"
     )
+
+
+# the schema spelled out in the system prompt too: an OpenAI-compatible server
+# that ignores response_format (or only knows json_object) still gets it
+OPENAI_SYSTEM = RUBRIC + "\nJSON schema of the answer:\n" + json.dumps(FINDINGS_SCHEMA, sort_keys=True) + "\n"
+
+
+def build_request_openai(
+    task: str,
+    page: str,
+    payload: dict[str, Any],
+    *,
+    lang: str = "",
+    model: str = MODEL,
+    stream: bool = True,
+    json_schema: bool = True,
+) -> dict[str, Any]:
+    """OpenAI chat-completions request body with the same rubric and user
+    turn as build_request. The answer is bound to FINDINGS_SCHEMA through
+    ``response_format`` (``json_object`` with ``json_schema=False``, for
+    servers without structured output). No max_tokens: local servers differ
+    in what they accept, and the server's own limit is the model's."""
     body: dict[str, Any] = {
         "model": model,
-        "max_tokens": max_tokens,
-        "system": [{"type": "text", "text": RUBRIC, "cache_control": {"type": "ephemeral"}}],
-        "messages": [{"role": "user", "content": user}],
-        "output_config": {"effort": effort, "format": {"type": "json_schema", "schema": FINDINGS_SCHEMA}},
-        "fallbacks": "default",
+        "messages": [
+            {"role": "system", "content": OPENAI_SYSTEM},
+            {"role": "user", "content": _user_turn(task, page, payload, lang)},
+        ],
+        "response_format": (
+            {"type": "json_schema", "json_schema": {"name": "findings", "schema": FINDINGS_SCHEMA, "strict": True}}
+            if json_schema
+            else {"type": "json_object"}
+        ),
     }
     if stream:
         body["stream"] = True
+        body["stream_options"] = {"include_usage": True}
     return body
 
 
@@ -842,7 +902,7 @@ def parse_response(body: dict[str, Any], task: str, page: str, lang: str = "") -
     if not text:
         raise ReviewError(f"no text in the answer (stop_reason={stop})")
     try:
-        data = json.loads(text)
+        data = json.loads(_json_text(text))
     except ValueError as exc:
         raise ReviewError(f"answer is not JSON: {exc}") from exc
     items = data.get("findings") if isinstance(data, dict) else None
@@ -866,6 +926,18 @@ def parse_response(body: dict[str, Any], task: str, page: str, lang: str = "") -
         if f["element"] and f["problem"]:
             out.append(f)
     return _dedupe(out)
+
+
+_THINK = re.compile(r"<think>.*?</think>", re.S)
+_FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.S)
+
+
+def _json_text(text: str) -> str:
+    """The JSON of an answer: local models may lead with <think>...</think>
+    or wrap the object in a ```json fence."""
+    text = _THINK.sub("", text).strip()
+    m = _FENCE.match(text)
+    return m.group(1) if m else text
 
 
 def read_sse(lines: Iterable[str]) -> dict[str, Any]:
@@ -919,6 +991,82 @@ def read_sse(lines: Iterable[str]) -> dict[str, Any]:
         raise _Retryable("stream ended before message_stop")
     msg["content"] = [blocks[i] for i in sorted(blocks)]
     return msg
+
+
+# finish_reason of a chat completion -> the Messages API stop_reason parse_response reads
+_FINISH = {"stop": "end_turn", "length": "max_tokens", "content_filter": "refusal", "tool_calls": "tool_use"}
+
+
+def openai_usage(u: dict[str, Any] | None) -> dict[str, int]:
+    """Chat-completions usage in the Messages API's terms (cached prompt
+    tokens counted as cache reads)."""
+    u = u or {}
+    cached = int(((u.get("prompt_tokens_details") or {}).get("cached_tokens")) or 0)
+    out = {
+        "input_tokens": int(u.get("prompt_tokens") or 0) - cached,
+        "output_tokens": int(u.get("completion_tokens") or 0),
+    }
+    if cached:
+        out["cache_read_input_tokens"] = cached
+    return out
+
+
+def from_openai(body: dict[str, Any]) -> dict[str, Any]:
+    """A (non-streamed) chat completion as the Messages API body that
+    parse_response and the cost accounting read."""
+    choice = (body.get("choices") or [{}])[0] or {}
+    msg = choice.get("message") or {}
+    text = msg.get("content") or ""
+    out: dict[str, Any] = {
+        "model": body.get("model", ""),
+        "content": [{"type": "text", "text": text}] if text else [],
+        "stop_reason": _FINISH.get(str(choice.get("finish_reason")), choice.get("finish_reason")),
+        "usage": openai_usage(body.get("usage")),
+    }
+    if msg.get("refusal"):
+        out["stop_reason"] = "refusal"
+    return out
+
+
+def read_sse_openai(lines: Iterable[str]) -> dict[str, Any]:
+    """Assemble a streamed chat completion (``data: {...}`` chunks ending in
+    ``data: [DONE]``) into the body from_openai returns. A stream that ends
+    without [DONE] or a finish_reason raises (retryable)."""
+    text: list[str] = []
+    model, finish, usage, refusal, done = "", None, None, False, False
+    for line in lines:
+        if not line.startswith("data:"):
+            continue
+        data = line[5:].strip()
+        if data == "[DONE]":
+            done = True
+            break
+        try:
+            ev = json.loads(data)
+        except ValueError:
+            continue
+        if ev.get("error"):
+            err = ev["error"]
+            raise _Retryable(f"stream error: {err.get('message', err) if isinstance(err, dict) else err}")
+        model = ev.get("model") or model
+        if ev.get("usage"):
+            usage = ev["usage"]
+        for ch in ev.get("choices") or []:
+            d = ch.get("delta") or {}
+            if d.get("content"):
+                text.append(d["content"])
+            if d.get("refusal"):
+                refusal = True
+            if ch.get("finish_reason"):
+                finish = ch["finish_reason"]
+    if not done and finish is None:
+        raise _Retryable("stream ended before [DONE]")
+    body = {"model": model, "choices": [{"message": {"content": "".join(text), "refusal": refusal or None},
+                                         "finish_reason": finish}], "usage": usage}
+    return from_openai(body)
+
+
+FREE = {"input": 0.0, "output": 0.0, "cache_write": 0.0, "cache_read": 0.0}
 
 
 def _price(model: str) -> dict[str, float]:
@@ -1002,6 +1150,120 @@ def aggregate(findings: list[dict[str, str]], jobs: list[dict[str, Any]] | None 
 # API client: streaming, retries with backoff, cost guard
 # --------------------------------------------------------------------------- #
 RETRY_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
+ENDPOINT_PATHS = {"anthropic": "/messages", "openai": "/chat/completions"}
+
+
+@dataclass(frozen=True)
+class Endpoint:
+    """Where the review sends its requests. ``source`` says where the base
+    URL came from ("cli", "zing.yaml:judge", "env", "default"); the report
+    keeps it (never the key)."""
+
+    base_url: str = API_BASE
+    api_key: str = ""
+    model: str = MODEL
+    api: str = "anthropic"  # "anthropic" (Messages API) or "openai" (chat completions)
+    source: str = "default"
+
+    @property
+    def url(self) -> str:
+        base = self.base_url.strip().rstrip("/")
+        path = ENDPOINT_PATHS[self.api]
+        if base.endswith(path):
+            return base
+        if self.api == "anthropic" and urlsplit(base).path in ("", "/"):
+            base += "/v1"  # ANTHROPIC_BASE_URL convention: the host without /v1
+        return base + path
+
+    @property
+    def official(self) -> bool:
+        """Anthropic's own API (server-side fallback and its beta header)."""
+        return self.api == "anthropic" and (urlsplit(self.base_url).hostname or "") == OFFICIAL_HOST
+
+    @property
+    def local(self) -> bool:
+        """This machine or a private network (a self-hosted model): no key
+        needed, no cost."""
+        from zing.utils.net import is_local_host
+
+        return is_local_host(self.base_url)
+
+    def describe(self) -> dict[str, str]:
+        return {"base_url": self.base_url, "api": self.api, "source": self.source}
+
+
+def _same_url(a: str | None, b: str | None) -> bool:
+    return bool(a and b) and str(a).strip().rstrip("/").lower() == str(b).strip().rstrip("/").lower()
+
+
+def resolve_endpoint(
+    *,
+    base_url: str | None = None,
+    api_key: str | None = None,
+    model: str | None = None,
+    api: str | None = None,
+    config: str | None = None,
+    env: dict[str, str] | None = None,
+) -> Endpoint:
+    """The endpoint from the command line, the zing configuration, the
+    environment and the defaults, in that order per field.
+
+    The configuration is ``config`` or, when None, ``./zing.yaml`` if it
+    exists; its first section of ``judge``, ``baseline``, ``target`` with a
+    base_url is used, as zing's own judge does. A key or model is only taken
+    from the source that gave the base URL (a section, or the environment's
+    ANTHROPIC_* for the Anthropic API), so a key is never sent to another
+    host. Secrets may be ``env:VAR`` or ``file:/path`` (zing.config.resolve_secret).
+    The protocol is zing's detection (zing.clients.detect_api) unless ``api``
+    or the section's ``api`` names it; the Responses API is spoken as chat
+    completions. Raises zing.config.ConfigError on a bad configuration."""
+    from zing.clients import detect_api
+    from zing.config import ConfigError, build_target, load_config_file, resolve_secret, section
+
+    env = dict(os.environ) if env is None else env
+    path = Path(config) if config else Path(DEFAULT_CONFIG)
+    cfg = load_config_file(path) if config or path.is_file() else {}
+    sec: dict[str, Any] = {}
+    sec_name = ""
+    for name in CONFIG_SECTIONS:
+        if section(cfg, name).get("base_url"):
+            sec, sec_name = section(cfg, name), name
+            break
+
+    env_url = (env.get("ANTHROPIC_BASE_URL") or "").strip()
+    if base_url:
+        url, source = base_url, "cli"
+    elif sec:
+        url, source = str(sec["base_url"]), f"{path.name}:{sec_name}"
+    elif env_url:
+        url, source = env_url, "env"
+    else:
+        url, source = API_BASE, "default"
+    from_sec = bool(sec) and (source != "cli" or _same_url(url, sec.get("base_url")))
+    from_env = source in ("env", "default") or (source == "cli" and _same_url(url, env_url or API_BASE))
+
+    key_ref = api_key
+    if key_ref is None and from_sec:
+        key_ref = sec.get("api_key")
+    if key_ref is None and from_env:
+        key_ref = "env:ANTHROPIC_API_KEY"
+    if key_ref and key_ref.startswith("env:"):
+        key = env.get(key_ref[4:], "")
+    else:
+        key = resolve_secret(key_ref)
+    mdl = model or (sec.get("model") if from_sec else None) or (MODEL if from_env else None)
+    if not mdl:
+        raise ConfigError(f"no model for {url}: give --model")
+    flavor = api or (sec.get("api") if from_sec else None) or "auto"
+    target = build_target(kind="judge", name="llm-review", base_url=url, api_key=None, model=mdl, api=flavor)
+    proto = detect_api(target)
+    return Endpoint(
+        base_url=target.base_url,
+        api_key=key.strip(),
+        model=mdl,
+        api="anthropic" if proto == "anthropic" else "openai",
+        source=source,
+    )
 
 
 class Client:
@@ -1012,24 +1274,30 @@ class Client:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: str = "",
         *,
+        endpoint: Endpoint | None = None,
         max_requests: int = 60,
         max_cost: float = 10.0,
         retries: int = 5,
         transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
-        self.http = httpx.Client(
-            timeout=httpx.Timeout(600.0, connect=20.0),
-            transport=transport,
-            headers={
-                "x-api-key": api_key,
-                "anthropic-version": API_VERSION,
-                "anthropic-beta": FALLBACK_BETA,
-                "content-type": "application/json",
-            },
-        )
+        self.endpoint = endpoint or Endpoint(api_key=api_key)
+        key = self.endpoint.api_key or api_key
+        headers = {"content-type": "application/json"}
+        if self.endpoint.api == "anthropic":
+            headers["anthropic-version"] = API_VERSION
+            if key:
+                headers["x-api-key"] = key
+            if self.endpoint.official:
+                headers["anthropic-beta"] = FALLBACK_BETA
+        elif key:
+            headers["authorization"] = f"Bearer {key}"
+        self.http = httpx.Client(timeout=httpx.Timeout(600.0, connect=20.0), transport=transport, headers=headers)
+        # a self-hosted model costs nothing; the request limit still applies
+        self.free = self.endpoint.local
+        self.json_schema = True  # OpenAI protocol: structured output until the server rejects it
         self.max_requests = max_requests
         self.max_cost = max_cost
         self.retries = retries
@@ -1044,6 +1312,8 @@ class Client:
         """Upper estimate (USD) of one request before sending it: the whole
         body as uncached input plus the mean output seen so far (or a default)
         at the requested model's prices."""
+        if self.free:
+            return 0.0
         price = _price(str(body.get("model", MODEL)))
         tin = estimate_tokens(json.dumps(body, ensure_ascii=False))
         tout = max(self._outputs) if self._outputs else self.DEFAULT_OUTPUT_ESTIMATE
@@ -1068,7 +1338,7 @@ class Client:
             if isinstance(v, int) and not isinstance(v, bool):
                 self.usage[k] = self.usage.get(k, 0) + v
         served = str(data.get("model") or requested)
-        c = usage_cost(u, served, requested)
+        c = 0.0 if self.free else usage_cost(u, served, requested)
         self.cost += c
         self.cost_by_model[served] = self.cost_by_model.get(served, 0.0) + c
         if isinstance(u.get("output_tokens"), int):
@@ -1077,14 +1347,22 @@ class Client:
     def _post(self, body: dict[str, Any]) -> tuple[int, dict[str, Any] | None, str, httpx.Headers]:
         """(status, parsed body or None, error text, headers); streams when
         the server answers with server-sent events."""
-        with self.http.stream("POST", API_URL, json=body) as r:
+        openai = self.endpoint.api == "openai"
+        with self.http.stream("POST", self.endpoint.url, json=body) as r:
             if r.status_code != 200:
                 r.read()
                 return r.status_code, None, r.text[:300], r.headers
             if r.headers.get("content-type", "").startswith("text/event-stream"):
-                return 200, read_sse(r.iter_lines()), "", r.headers
+                lines = r.iter_lines()
+                return 200, read_sse_openai(lines) if openai else read_sse(lines), "", r.headers
             r.read()
-            return 200, r.json(), "", r.headers
+            return 200, from_openai(r.json()) if openai else r.json(), "", r.headers
+
+    def request(
+        self, task: str, page: str, payload: dict[str, Any], *, lang: str = "", effort: str = "high"
+    ) -> dict[str, Any]:
+        """The request body for this client's endpoint and protocol."""
+        return make_request(self.endpoint, task, page, payload, lang=lang, effort=effort, json_schema=self.json_schema)
 
     def send(self, body: dict[str, Any]) -> dict[str, Any]:
         stop = self.budget_left(self.estimate(body))
@@ -1106,6 +1384,12 @@ class Client:
                     self._account(data, requested)
                     return data
                 last = f"HTTP {status}: {err}"
+                fmt = body.get("response_format") or {}
+                if status == 400 and fmt.get("type") == "json_schema" and re.search(r"response_format|json_schema", err, re.I):
+                    # a server without structured output: plain JSON mode, schema in the prompt
+                    body = {**body, "response_format": {"type": "json_object"}}
+                    self.json_schema = False  # and for every later request
+                    continue
                 if status not in RETRY_STATUS:
                     raise ReviewError(last)
                 try:
@@ -1119,6 +1403,22 @@ class Client:
 
     def close(self) -> None:
         self.http.close()
+
+
+def make_request(
+    endpoint: Endpoint,
+    task: str,
+    page: str,
+    payload: dict[str, Any],
+    *,
+    lang: str = "",
+    effort: str = "high",
+    json_schema: bool = True,
+) -> dict[str, Any]:
+    """build_request or build_request_openai, by the endpoint's protocol."""
+    if endpoint.api == "openai":
+        return build_request_openai(task, page, payload, lang=lang, model=endpoint.model, json_schema=json_schema)
+    return build_request(task, page, payload, lang=lang, model=endpoint.model, effort=effort, fallback=endpoint.official)
 
 
 # --------------------------------------------------------------------------- #
@@ -1282,28 +1582,40 @@ def collect(pages: dict[str, str], langs: list[str], log: Callable[[str], None] 
 # --------------------------------------------------------------------------- #
 # run
 # --------------------------------------------------------------------------- #
-def _base_report(model: str) -> dict[str, Any]:
-    return {
+def _base_report(model: str, endpoint: Endpoint | None = None) -> dict[str, Any]:
+    out: dict[str, Any] = {
         "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
         "model": model,
         "advisory": True,
-        "note": "LLM second opinion for human review; not a test result (BITV steps are decided by a person).",
+        "note": (
+            "LLM review of the texts. The conformance report (python -m tests.a11y.conformance) counts it as the"
+            " manual part of the steps it covers and names the model."
+        ),
     }
+    if endpoint is not None:
+        out["endpoint"] = endpoint.describe()
+    return out
 
 
 def review(
     records: dict[str, dict[str, Any]],
     client: Client | None,
     *,
-    model: str = MODEL,
+    model: str | None = None,
     effort: str = "high",
     pages: dict[str, str] | None = None,
+    endpoint: Endpoint | None = None,
     log: Callable[[str], None] = print,
 ) -> dict[str, Any]:
     """Send every page+language (and one translation comparison per page) to
     the model; return the report. With client=None (dry run) only the request
     sizes are recorded. Every entry keeps the exact data that was (or would
-    have been) sent, so findings can be audited."""
+    have been) sent, so findings can be audited. The endpoint is the
+    client's, else ``endpoint``, else the Anthropic API (``model`` overrides
+    its model)."""
+    ep = client.endpoint if client is not None else (endpoint or Endpoint())
+    if model:
+        ep = Endpoint(ep.base_url, ep.api_key, model, ep.api, ep.source)
     entries: list[dict[str, Any]] = []
     findings: list[dict[str, str]] = []
     jobs: list[tuple[str, str, str, dict[str, Any]]] = []
@@ -1313,13 +1625,17 @@ def review(
         if len(records[pid]) > 1:
             jobs.append(("translation", pid, "", translation_view(records[pid])))
     for task, pid, lang, payload in jobs:
-        body = build_request(task, pid, payload, lang=lang, model=model, effort=effort)
+        body = (
+            client.request(task, pid, payload, lang=lang, effort=effort)
+            if client is not None and ep is client.endpoint
+            else make_request(ep, task, pid, payload, lang=lang, effort=effort)
+        )
         entry: dict[str, Any] = {
             "task": task,
             "page": pid,
             "path": (pages or {}).get(pid, ""),
             "lang": lang or "all",
-            "request_chars": len(body["messages"][0]["content"]),
+            "request_chars": len(body["messages"][-1]["content"]),
         }
         if task == "page":
             meta = {k: records[pid][lang][k] for k in _META if records[pid][lang].get(k)}
@@ -1340,7 +1656,9 @@ def review(
             log(f"  {task} {pid} [{lang or 'all'}]: {entry['status']} {entry.get('findings', entry.get('error', ''))}")
         entry["data"] = payload
         entries.append(entry)
-    report = _base_report(model)
+    report = _base_report(ep.model, ep)
+    report["pages_reviewed"] = sorted(records)
+    report["langs"] = sorted({lg for recs in records.values() for lg in recs}, key=lambda c: (c != "en", c))
     if client is None:
         report["status"] = "dry-run"
     else:
@@ -1372,7 +1690,16 @@ def _write(path: str, report: dict[str, Any]) -> None:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m tests.a11y.llm_review", description=__doc__.split("\n\n")[0])
     ap.add_argument("--out", default="a11y-llm-review.json", help="where to write the JSON report")
-    ap.add_argument("--model", default=MODEL)
+    ep = ap.add_argument_group("endpoint (each falls back to --config, then ANTHROPIC_BASE_URL/ANTHROPIC_API_KEY)")
+    ep.add_argument("--base-url", help=f"API base URL, e.g. http://localhost:11434/v1 (default: {API_BASE})")
+    ep.add_argument("--api-key", help="API key, or env:VAR / file:/path (not needed for a local endpoint)")
+    ep.add_argument("--model", help=f"model id (default: {MODEL} on the Anthropic API)")
+    ep.add_argument(
+        "--api", choices=["auto", "anthropic", "openai"], help="wire protocol (default: detected from URL and model)"
+    )
+    ep.add_argument(
+        "-c", "--config", help=f"zing configuration to take the endpoint from (default: ./{DEFAULT_CONFIG} if present)"
+    )
     ap.add_argument("--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     ap.add_argument("--pages", default="", help="comma-separated page ids (default: all v2 pages)")
     ap.add_argument("--langs", default="", help="comma-separated languages (default: all)")
@@ -1381,15 +1708,28 @@ def main(argv: list[str] | None = None) -> int:
         "--max-cost",
         type=float,
         default=10.0,
-        help="do not send a request whose estimated cost would take the total (USD) above this",
+        help="do not send a request whose estimated cost would take the total (USD) above this"
+        " (a local endpoint costs nothing)",
     )
     ap.add_argument("--dry-run", action="store_true", help="collect and build requests, do not call the API")
     args = ap.parse_args(argv)
 
-    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    if not key and not args.dry_run:
-        print("llm_review: ANTHROPIC_API_KEY is not set; skipping the advisory LLM review.")
-        _write(args.out, {**_base_report(args.model), "status": "skipped: no API key"})
+    try:
+        endpoint = resolve_endpoint(
+            base_url=args.base_url, api_key=args.api_key, model=args.model, api=args.api, config=args.config
+        )
+    except Exception as exc:  # zing.config.ConfigError and friends: advisory, leave a trace
+        summary = f"{type(exc).__name__}: {exc}"
+        print(f"llm_review: no usable endpoint: {summary}")
+        _write(args.out, {**_base_report(args.model or ""), "status": "error", "error": summary[:2000]})
+        return 0
+    print(f"llm_review: {endpoint.model} via {endpoint.url} ({endpoint.api}, from {endpoint.source})")
+    if not endpoint.api_key and not endpoint.local and not args.dry_run:
+        print(
+            f"llm_review: no API key for {endpoint.base_url} (--api-key, {DEFAULT_CONFIG} or ANTHROPIC_API_KEY"
+            " is not set); skipping the advisory LLM review."
+        )
+        _write(args.out, {**_base_report(endpoint.model, endpoint), "status": "skipped: no API key"})
         return 0
     try:
         from tests.a11y.harness import LANGS, PAGES
@@ -1397,7 +1737,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"llm_review: browser harness unavailable ({exc}); skipping.")
         _write(
             args.out,
-            {**_base_report(args.model), "status": "skipped: browser harness unavailable", "error": str(exc)[:500]},
+            {
+                **_base_report(endpoint.model, endpoint),
+                "status": "skipped: browser harness unavailable",
+                "error": str(exc)[:500],
+            },
         )
         return 0
     pages = {k: v for k, v in PAGES.items() if not args.pages or k in args.pages.split(",")}
@@ -1407,15 +1751,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"llm_review: collecting {len(pages)} page(s) x {len(langs)} language(s)")
         records = collect(pages, langs)
         if not args.dry_run:
-            client = Client(key, max_requests=args.max_requests, max_cost=args.max_cost)
-        report = review(records, client, model=args.model, effort=args.effort, pages=pages)
+            client = Client(endpoint=endpoint, max_requests=args.max_requests, max_cost=args.max_cost)
+        report = review(records, client, effort=args.effort, pages=pages, endpoint=endpoint)
     except Exception as exc:  # advisory: never fail the caller, but leave a trace
         summary = f"{type(exc).__name__}: {exc}"
         print(f"llm_review: failed: {summary}")
         _write(
             args.out,
             {
-                **_base_report(args.model),
+                **_base_report(endpoint.model, endpoint),
                 "status": "error",
                 "error": summary[:2000],
                 "traceback": traceback.format_exc(limit=8)[-4000:],

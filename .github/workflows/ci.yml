@@ -173,10 +173,36 @@ jobs:
         with:
           pattern: a11y-shard-*
           merge-multiple: true
+      # Optional LLM review of texts (tests/a11y/README.md); runs only when
+      # the ANTHROPIC_API_KEY secret is configured, never blocks. It runs
+      # before the conformance report, which counts a completed review as the
+      # manual part of the steps it covers (a skipped one is ignored).
+      - name: Install (LLM review)
+        if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
+        # a failed install must not keep the conformance report from being built
+        continue-on-error: true
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev,web,a11y]'
+          playwright install --with-deps chromium
+      - name: LLM review (advisory)
+        if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        # the pages this run tested
+        run: python -m tests.a11y.llm_review --pages "$PAGES" --out a11y-llm-review.json
+      - name: Upload LLM review
+        if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-llm-review
+          path: a11y-llm-review.json
+          if-no-files-found: ignore
       - name: Conformance report (bitv-report.json)
         # standard library only; merges the shards' results; full runs only
         if: env.FULL == 'true'
-        run: python -m tests.a11y.conformance --results a11y-results-*.json --out bitv-report.json
+        run: python -m tests.a11y.conformance --results a11y-results-*.json --llm a11y-llm-review.json --out bitv-report.json
       - name: Summary
         if: always()
         run: |
@@ -203,28 +229,6 @@ jobs:
             a11y-report*.json
             a11y-results-*.json
             bitv-report.json
-          if-no-files-found: ignore
-      # Optional advisory LLM review of texts (tests/a11y/README.md); runs
-      # only when the ANTHROPIC_API_KEY secret is configured, never blocks.
-      - name: Install (LLM review)
-        if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e '.[dev,web,a11y]'
-          playwright install --with-deps chromium
-      - name: LLM review (advisory)
-        if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
-        continue-on-error: true
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        # the pages this run tested
-        run: python -m tests.a11y.llm_review --pages "$PAGES" --out a11y-llm-review.json
-      - name: Upload LLM review
-        if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: a11y-llm-review
-          path: a11y-llm-review.json
           if-no-files-found: ignore
 
   build:

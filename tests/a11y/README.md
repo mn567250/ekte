@@ -95,25 +95,47 @@ Some test steps depend on what a text *means*, which a browser cannot decide:
 | 9.3.3.3 | Do error messages say how to correct the input? |
 | translation | Does a translation change the meaning compared with English? |
 
-`llm_review.py` asks Claude for a second opinion on these. It starts the app as
-the suite does, opens every v2 page in every UI language (all disclosures
-open), extracts the title, headings, links (name, target, context), control
-names, form labels/placeholders/descriptions, image alternatives, visible
-instruction sentences and the error/status messages shown after submitting
-each visible form empty, and sends that as compact JSON with a fixed rubric to
-the Messages API (one request per page and language, plus one translation
+`llm_review.py` asks an LLM (Claude by default) for an opinion on these. It
+starts the app as the suite does, opens every v2 page in every UI language
+(all disclosures open), extracts the title, headings, links (name, target,
+context), control names, form labels/placeholders/descriptions, image
+alternatives, visible instruction sentences and the error/status messages
+shown after submitting each visible form empty, and sends that as compact JSON
+with a fixed rubric (one request per page and language, plus one translation
 comparison per page).
 
 ```sh
 pip install -e '.[web,a11y]' && playwright install chromium
 export ANTHROPIC_API_KEY=...
 python -m tests.a11y.llm_review --out a11y-llm-review.json
+
+# a local model (Ollama, LM Studio, vLLM): no key, no cost
+python -m tests.a11y.llm_review --base-url http://localhost:11434/v1 --model qwen3
+
+# the endpoint of an audit configuration (judge, else baseline, else target)
+python -m tests.a11y.llm_review --config zing.yaml
 ```
 
-Options: `--pages audit,kb`, `--langs en,de`, `--effort high`, `--max-requests 60`
-and `--max-cost 10` (USD, estimated from the reported token usage; the run stops
-sending once either limit is reached), `--dry-run` (collect the page data and
-build the requests without calling the API; no key needed).
+**Endpoint.** Each of `--base-url`, `--api-key` (raw, `env:VAR` or
+`file:/path`), `--model` and `--api` (`auto`, `anthropic`, `openai`) is
+optional. A missing one is taken from the zing configuration (`--config`,
+default `./zing.yaml` when it exists): its `judge` endpoint, else `baseline`,
+else `target`, the same order zing's own judge uses. Then from
+`ANTHROPIC_BASE_URL` / `ANTHROPIC_API_KEY`, then the defaults (the Anthropic
+API, `claude-opus-5-5`). A key or model is only taken from the source that
+gave the URL, so a configured key is never sent to another host; a URL that is
+neither configured nor Anthropic's needs `--model`. The protocol is detected
+like an audit target's (`zing.clients.detect_api`): the Anthropic Messages API
+or OpenAI-compatible chat completions (structured output via
+`response_format`, falling back to JSON mode on servers without it; `<think>`
+blocks and code fences in the answer are ignored). A local or private-network
+endpoint needs no key and is costed at zero.
+
+Other options: `--pages audit,kb`, `--langs en,de`, `--effort high`
+(Anthropic only), `--max-requests 60` and `--max-cost 10` (USD, estimated from
+the reported token usage; the run stops sending once either limit is reached),
+`--dry-run` (collect the page data and build the requests without calling the
+API; no key needed).
 
 The output looks like:
 
@@ -124,28 +146,37 @@ The output looks like:
                        "findings": [{"page": "…", "lang": "…", "element": "…", "problem": "…", "suggestion": "…"}]}, …}}
 ```
 
-`verdict` is `ok`, `issues`, or `not-reviewed` (no answer was received for
-that step, e.g. in a dry run).
+`verdict` is `ok`, `issues`, `partial` (some requests failed) or
+`not-reviewed` (no answer was received for that step, e.g. in a dry run). The
+report also names the endpoint (`base_url`, `api`, where it came from; never
+the key) and the pages and languages it reviewed.
 
-**This is advisory.** The findings are a model's opinion for a human tester to
-confirm or reject; they are not test results and do not decide any BITV step.
-The script never asserts and always exits 0. Without `ANTHROPIC_API_KEY` it
-prints a notice and does nothing.
+**In the accessibility report.** `python -m tests.a11y.conformance` picks up
+`./a11y-llm-review.json` (or `--llm <file>`; `--no-llm` ignores it) and counts
+a completed review as the manual part of the steps it covers: a step whose
+automated part passed becomes **pass** when the review found nothing and
+**fail** when it found an issue; the report records a manual review and
+`/v2/accessibility` names the model. A review that was skipped, failed, a dry
+run, or covered fewer pages or languages than were tested changes nothing, and
+without the file the report is built as before. The script itself never
+asserts and always exits 0; without a key for a remote endpoint it prints a
+notice and writes a `skipped` report.
 
 Notes:
 
-- Model: `claude-opus-5-5`. It accepts no sampling parameters
+- Default model: `claude-opus-5-5`. It accepts no sampling parameters
   (`temperature` is rejected), so results can vary slightly between runs; the
   fixed rubric, sorted input and a JSON-schema-constrained answer
   (`output_config.format`) keep them as stable as possible.
 - The rubric is the system prompt and is prompt-cached, so only the first
   request pays for it in full.
 - Retries: 408/409/429/5xx/529 and network errors, with exponential backoff
-  (honours `retry-after`). Refusals are re-run on Anthropic's recommended
-  fallback model (`fallbacks: "default"`); a remaining refusal is recorded as an
-  error for that page.
+  (honours `retry-after`). On the Anthropic API, refusals are re-run on
+  Anthropic's recommended fallback model (`fallbacks: "default"`; not asked of
+  other hosts); a remaining refusal is recorded as an error for that page.
 - Only the standard library, httpx and Playwright are used (no SDK).
 - The pure parts (compaction, request building, response parsing, client
   retries, cost guard) are tested offline in `tests/test_a11y_llm_review.py`.
-- In CI the informational a11y job runs it only when the `ANTHROPIC_API_KEY`
-  secret is set and uploads `a11y-llm-review.json`.
+- In CI the accessibility report job runs it only when the
+  `ANTHROPIC_API_KEY` secret is set, before building the conformance report,
+  and uploads `a11y-llm-review.json`.

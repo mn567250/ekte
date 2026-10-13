@@ -54,6 +54,7 @@
   .det .k { font-weight: 700; color: var(--ink2); }
   .det ul { margin: 4px 0 8px; padding-left: 18px; }
   .det pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); border-radius: 8px; padding: 6px 8px; }
+  .det .pre { white-space: pre-line; overflow-wrap: anywhere; }
   .det li + li { margin-top: 6px; }
   .empty-row td { text-align: center; color: var(--ink2); padding: 24px 8px; }
 
@@ -308,9 +309,16 @@
     if ((s.failures || []).length)
       out += '<p class="k">' + esc(T("失败示例（英文）：", "Sample failures:")) + '</p><ul lang="en">' +
         s.failures.map(function (f) { return "<li><pre>" + esc(f) + "</pre></li>"; }).join("") + "</ul>";
-    if (s.review && (s.review.notes || s.review.verdict))
-      out += '<p><span class="k">' + esc(T("半自动审核（英文）：", "Semi-automated review:")) + '</span> <span lang="en">' +
+    if (s.review && (s.review.notes || s.review.verdict)) {
+      // a review of the texts by an LLM names its model; it counts as the
+      // manual part of the step unless it was incomplete
+      var by = s.review.by
+        ? Tf("{model} 审核（英文）：", "Review by {model}:", { model: s.review.by }) +
+          (s.review.counted === false ? " (" + T("未计入", "not counted") + ")" : "")
+        : T("半自动审核（英文）：", "Semi-automated review:");
+      out += '<p><span class="k">' + esc(by) + '</span> <span lang="en" class="pre">' +
         esc([s.review.verdict, s.review.notes].filter(Boolean).join(" — ")) + "</span></p>";
+    }
     return out + "</div>";
   }
   function matches(s) {
@@ -373,7 +381,12 @@
       return list ? "<p>" + esc(p[1]) + "</p>" + list : "";
     }).join("");
     $("stmt-limits").innerHTML = html || "<p>" + esc(T("目前没有已知限制。", "There are no known limitations.")) + "</p>";
-    $("stmt-manual").textContent = c.manual_review
+    var rv = report.review || {};
+    $("stmt-manual").textContent = c.manual_review && rv.method === "llm"
+      ? Tf("最近一次测试：{date}。{model} 对文本的审核已记录为其所涵盖步骤的人工审核。",
+          "Last test run: {date}. A review of the texts by {model} is recorded as the manual review of the steps it covers.",
+          { date: fmtTime(report.generated_at), model: rv.model || "LLM" })
+      : c.manual_review
       ? Tf("最近一次测试：{date}。已记录人工审核。", "Last test run: {date}. A manual review is recorded.", { date: fmtTime(report.generated_at) })
       : Tf("最近一次测试：{date}。尚未进行包括屏幕阅读器在内的人工审核。", "Last test run: {date}. A manual review, including screen readers, has not been made yet.", { date: fmtTime(report.generated_at) });
   }

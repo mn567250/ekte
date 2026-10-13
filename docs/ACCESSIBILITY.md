@@ -117,7 +117,7 @@ run of the suite:
 
 ```bash
 ZING_A11Y_RESULTS=a11y-results.json pytest tests/a11y -m a11y -n auto
-python -m tests.a11y.conformance --results a11y-results.json [--llm llm-review.json]
+python -m tests.a11y.conformance --results a11y-results.json [--llm a11y-llm-review.json | --no-llm]
 ```
 
 `ZING_A11Y_RESULTS` makes the plugin `tests/a11y/results.py` write, for every
@@ -131,14 +131,27 @@ Per step the report says **pass** (auto step, every test passed), **fail**
 (a test failed), **manual review pending** (partial or manual step: the
 automated part passed, a person still has to judge the rest), **not tested**
 (no test ran yet) or **n/a**. The headline stays "partially conformant" until
-every applicable step passes *and* a manual review is recorded. `--llm` merges
-per-step notes of a semi-automated review into the report; they are shown with
-the step but never change its status.
+every applicable step passes *and* a manual review is recorded.
+
+**LLM review of the texts.** When `a11y-llm-review.json` (written by
+`python -m tests.a11y.llm_review`, see
+[tests/a11y/README.md](../tests/a11y/README.md)) is in the working directory or
+given with `--llm`, a completed review counts as the manual part of the steps
+it covers (9.1.1.1, 9.1.3.3, 9.2.4.4, 9.2.4.6, 9.3.3.2, 9.3.3.3): a step whose
+automated part passed **passes** when the review found nothing and **fails**
+when it found an issue, with the findings shown under the step. The report
+then records a manual review, and the page names the model that made it. A
+failing automated part still fails the step, an untested one stays not tested,
+and a review that was skipped, failed, a dry run or did not cover every tested
+page and language changes nothing. Without the file (or with `--no-llm`) the
+report is built from the tests alone. Hand-written notes in the older
+`{"steps": {...}}` form are shown with their step without changing its status.
 
 CI runs the suite with `ZING_A11Y_RESULTS`, one results file per shard. The
 `accessibility report` job merges them (`--results` takes several files),
 generates the report even when tests fail and uploads `bitv-report.json` with
-the other findings. It does so for full runs only: a run of some pages would
+the other findings. When the `ANTHROPIC_API_KEY` secret is set, it runs the LLM
+review first and builds the report with it. It does so for full runs only: a run of some pages would
 report the steps of the others as not tested, so a partial run uploads its
 findings and names the pages it tested in the job summary. The copy
 committed in the repository is regenerated with the commands above.

@@ -6,6 +6,34 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.20.1] — LLM review of the texts in the accessibility report
+
+### Added
+
+- **The LLM review of the texts runs locally and against any endpoint.**
+  `python -m tests.a11y.llm_review` takes `--base-url`, `--api-key` (raw,
+  `env:VAR` or `file:/path`), `--model` and `--api`; a missing field falls
+  back to the zing configuration (`--config`, default `./zing.yaml`: its
+  `judge`, else `baseline`, else `target` endpoint, as zing's own judge does),
+  then to `ANTHROPIC_BASE_URL`/`ANTHROPIC_API_KEY`, then to the Anthropic API.
+  Besides the Messages API it speaks OpenAI-compatible chat completions
+  (relays, Ollama, LM Studio, vLLM), detected like an audit target. A local
+  endpoint needs no key and costs nothing. A key is only sent to the host it
+  was configured for.
+
+### Changed
+
+- **The accessibility report uses the LLM review.** When
+  `a11y-llm-review.json` is present (or given with `--llm`),
+  `python -m tests.a11y.conformance` counts a completed review as the manual
+  part of the steps it covers (9.1.1.1, 9.1.3.3, 9.2.4.4, 9.2.4.6, 9.3.3.2,
+  9.3.3.3): a step whose automated part passed passes when the review found
+  nothing and fails when it found an issue, and the report records a manual
+  review. `/v2/accessibility` names the reviewing model. A skipped, failed,
+  dry or incomplete review (fewer pages or languages than were tested)
+  changes nothing; without the file the report is built as before
+  (`--no-llm` forces that). CI runs the review before building the report.
+
 ## [0.20.0] — analytics page
 
 ### Added
