@@ -94,6 +94,13 @@ directement une tromperie sur la marchandise.
 Le niveau de risque dépend de la **gravité des constats**, pas du score. Les
 constats de la dimension connectivité sont exclus : un relais injoignable ou
 limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle répond.
+Les **avertissements de transport** sont exclus aussi (`ADVISORY_CHECKS` dans
+`zing/scoring.py` : `security.tls`, `reliability.success_rate`, `reliability.latency`) : le HTTP en clair, les échecs ou
+la lenteur sous charge disent comment le relais est joint, pas quel modèle il
+sert. Ils abaissent toujours le score et le statut de leur dimension, figurent
+après les constats de substitution parmi les constats clés, et le résumé les
+signale comme avertissements (à partir de la gravité Moyenne). La falsification des réponses (intégrité) et une
+clé API renvoyée font toujours monter le risque.
 
 | Risque | Libellé dans l'interface | Quand |
 |---|---|---|
@@ -105,8 +112,9 @@ limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle rép
 
 ### Confiance du verdict
 
-- **Faible** — le modèle annoncé est absent de la base de connaissances, ou
-  moins de deux dimensions cœur ont produit un résultat exploitable ;
+- **Faible** — le modèle annoncé est absent de la base de connaissances, ne
+  correspond qu'approximativement à un profil (`match_confidence` `fuzzy` ; le
+  résumé le précise), ou moins de deux dimensions cœur ont produit un résultat exploitable ;
 - **Moyenne** — au moins deux dimensions cœur ont produit un résultat
   exploitable ;
 - **Élevée** — une référence a été utilisée *et* les trois dimensions cœur ont
@@ -163,7 +171,17 @@ limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle rép
   fenêtre de contexte annoncée, la sortie maximale, le tokenizer, les capacités,
   les mots-clés d'identité et les empreintes comportementales auxquels les
   sondes sont comparées. Chaque rapport consigne le profil utilisé
-  (`knowledge`).
+  (`knowledge`). L'identifiant annoncé correspond à un profil par identifiant
+  exact, alias ou nom normalisé, sinon de façon approximative : par le plus
+  long nom de profil qu'il contient (`gpt-4o-2024-11-20-custom` → `gpt-4o`),
+  sauf si le reste de l'identifiant nomme un autre niveau ou une autre variante
+  (`gpt-5-mini` n'est pas `gpt-5`), ou, pour un identifiant tronqué, seulement
+  si le nom d'un seul modèle commence par lui. Un identifiant générique ou
+  ambigu (`gpt-4`, `claude`, `gemini-2.5`) n'obtient donc aucun profil plutôt
+  qu'un niveau deviné, souvent moins cher. Les empreintes au niveau du
+  fournisseur s'appliquent à chacun de ses modèles ; celle qui ne convient
+  qu'à certains (une date de coupure, un niveau de taille) n'est listée que sur
+  ceux-ci.
 - **Langue des prompts :** chaque texte de sonde se trouve dans
   `zing/prompts/en.json` et reste en anglais quelle que soit la langue de
   l'interface ; seules les empreintes dont la langue *est* la mesure déclarent
@@ -179,6 +197,17 @@ limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle rép
   Dès qu'un endpoint est connu pour raisonner (son profil indique
   `reasoning: true`, ou après sa première répétition de ce type), les sondes
   courtes partent d'emblée avec la limite de 4 096 tokens au lieu de deux fois.
+- **Paramètres de requête :** les modèles de raisonnement refusent certains
+  paramètres : sur Chat Completions `max_tokens` (ils prennent
+  `max_completion_tokens`) et, quel que soit le protocole, les paramètres
+  d'échantillonnage comme `temperature`. Le client omet les paramètres que le
+  profil liste sous `unsupported_params` et envoie la limite de sortie en
+  `max_completion_tokens` quand `max_tokens` y figure. Un point de terminaison
+  sans profil qui nomme un tel paramètre dans une 4xx reçoit la requête une fois
+  de plus, adaptée, et toute requête suivante part adaptée d'emblée ; la
+  tentative refusée ne compte pas comme une erreur du relais. Les sondes de
+  `protocol_request` partent telles qu'elles sont construites, car elles jugent
+  justement le refus brut.
 
 ---
 
@@ -202,6 +231,9 @@ canari exact ; relève la latence et le champ `model` renvoyé.
 |  | Une complétion de chat a renvoyé du contenu, sans répéter le canari. | Réussi | 85 pts |
 |  | La complétion de chat a échoué ou n'a renvoyé aucun contenu. | Échec · Élevée | 0 pts |
 
+Le statut du détecteur est le pire de ses contrôles : un `/v1/models` désactivé
+donne un Avertissement même si le chat fonctionne.
+
 **Mises en garde.** L'absence de `/v1/models` est bénigne ; beaucoup de relais
 le désactivent. Une erreur réseau passagère ou un 5xx peut faire échouer la
 vérification de chat : relancez. La connectivité ne prouve rien sur *quel*
@@ -224,6 +256,10 @@ tronquer la sortie ; et une requête volontairement invalide (`messages` vide)
 qui doit être rejetée par un 4xx, idéalement avec un corps d'erreur de style
 OpenAI.
 
+La Responses API n'a pas de paramètre `stop` : face à une cible Responses API,
+la sonde d'arrêt n'est donc pas envoyée et la vérification est notée non
+applicable (non comptée) au lieu d'incriminer le relais.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `protocol.multi_turn` | La couleur d'un tour précédent a été retrouvée. | Réussi | 100 pts |
@@ -233,6 +269,7 @@ OpenAI.
 |  | La gestion de l'arrêt n'a pas pu être confirmée d'après le texte. | Avertissement · Faible | 70 pts |
 |  | Du texte après la séquence d'arrêt a été renvoyé. | Avertissement · Faible | 60 pts |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
+|  | La Responses API n'a pas de paramètre stop ; non vérifié, non compté. | Info | Non compté |
 | `protocol.error_schema` | Rejetée avec un 4xx et un corps d'erreur de style OpenAI. | Réussi | 100 pts |
 |  | Rejetée avec un 4xx, mais le corps n'est pas de style OpenAI. | Avertissement · Faible | 80 pts |
 |  | Pas de réponse HTTP ; la gestion des erreurs client n'a pas pu être confirmée. | Avertissement · Faible | 55 pts |
@@ -299,12 +336,16 @@ l'échantillonnage. Le verdict est suspendu pour les modèles de raisonnement,
 qui ignorent légitimement la température. Deux questions factuelles
 identiques à `temperature=0` sont purement indicatives.
 
+Pour conclure à un cache, au moins trois des quatre échantillons doivent être
+exploitables (et tous les exploitables identiques) ; avec moins, la vérification
+n'est pas concluante.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `determinism.temp1_variability` | Les échantillons répétés à temperature=1.0 différaient, comme avec un véritable échantillonnage. | Réussi | 100 pts |
 |  | Les échantillons étaient identiques, mais les modèles de raisonnement ignorent légitimement temperature. | Info | 100 pts |
-|  | Tous les échantillons à temperature=1.0 étaient identiques octet pour octet, ce qui suggère une mise en cache des réponses. | Avertissement · Moyenne | 55 pts |
-|  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
+|  | Tous les échantillons exploitables (au moins 3) à temperature=1.0 étaient identiques à l'octet près, ce qui suggère une mise en cache des réponses. | Avertissement · Moyenne | 55 pts |
+|  | Moins de 3 échantillons exploitables à temperature=1.0 pour en juger. | Non concluant · Faible | Non compté |
 | `determinism.temp0_stability` | Réponses identiques à temperature=0 (attendu) ; à titre indicatif, non noté. | Info | Non compté |
 |  | Les réponses différaient à temperature=0 ; à titre indicatif, non noté. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
@@ -325,55 +366,80 @@ RAG/résumé bon marché ne transmet qu'une partie du prompt).
 
 **Fonctionnement.** Rappel d'une aiguille dans une botte de foin à
 `temperature=0` : un marqueur unique est placé dans un texte de remplissage non
-répétitif dimensionné avec l'estimation heuristique des tokens de zing, et le
-modèle doit le restituer.
+répétitif, et le modèle doit le restituer.
 
-1. Une échelle croissante qui double à partir de 2K tokens jusqu'à la fenêtre
-   annoncée, plafonnée par `--max-context-tokens` (200K par défaut), avec un
-   échelon vers 90 % du sommet (sept tailles au plus). Chaque taille est d'abord
-   sondée avec l'aiguille au **début** (profondeur 0,0) : une troncature qui
-   garde la question en fin de prompt ne peut écarter que son début (un serveur
-   local qui coupe le prompt à sa longueur de contexte en garde la fin), donc un
-   rappel à cet endroit valide la taille en un seul appel. Un échec est vérifié
-   à la fin (profondeur 0,95) ; si la fin est retrouvée, le début est sondé une
-   fois de plus avec une aiguille neuve, et un second échec fait échouer la
-   taille comme **troncature par le début** (signalée dans les preuves du
-   verdict). Trois appels par taille au plus ; l'échelle s'arrête au premier
-   échec confirmé.
-2. Une étape de recherche dichotomique entre la dernière taille retrouvée et la
+- **Fenêtre sondée.** La sonde va jusqu'à `upper` = la fenêtre annoncée,
+  plafonnée par `--max-context-tokens` (200K par défaut). Chaque verdict est
+  jugé par rapport à `upper`, jamais par rapport à la part d'une fenêtre
+  annoncée plus grande située au-delà du plafond.
+- **Les tailles sont des tokens réels.** L'estimation de tokens intégrée à zing
+  sous-compte ce remplissage d'environ 12 % (o200k) à 15 % (cl100k) par rapport
+  aux vrais tokenizers ; chaque prompt est donc construit à taille ÷ 1,2 selon
+  l'estimation (aiguille et question comprises) : un échelon de taille N tient
+  dans N tokens réels. Les tailles des preuves (`size`, `effective_window`,
+  `top_rung`) sont ces budgets de tokens réels ; les lignes de l'échelle portent
+  aussi l'estimation à laquelle un prompt a été construit (`heuristic_tokens`).
+
+1. Une échelle de sept tailles au plus, divisée par deux à partir d'un
+   **échelon supérieur à 90 % de `upper`** (aucun échelon n'atteint la fenêtre
+   entière, ce qui laisse de la place pour la réponse et le gabarit de chat)
+   jusqu'à un plancher de 1K (`context_probe_floor_tokens`) ; une petite fenêtre
+   abaisse le plancher au quart de l'échelon supérieur (une fenêtre de 2K sonde
+   ~460, ~920 et ~1,8K). Chaque taille est d'abord sondée avec l'aiguille au
+   **début** (profondeur 0,0) : une troncature qui garde la question en fin de
+   prompt ne peut écarter que son début (un serveur local qui coupe le prompt à
+   sa longueur de contexte en garde la fin), donc un rappel à cet endroit valide
+   la taille en un seul appel. Un échec est vérifié à la fin (profondeur
+   0,95) ; si la fin est retrouvée, le début est sondé une fois de plus avec une
+   aiguille neuve, et un second échec fait échouer la taille comme **troncature
+   par le début** (signalée dans les preuves du verdict). Trois appels par
+   taille au plus ; l'échelle s'arrête au premier échec confirmé.
+2. Deux étapes de recherche dichotomique entre la dernière taille retrouvée et la
    première en échec.
 3. Perte au milieu : à min(32K, fenêtre mesurée), l'aiguille est placée aux
-   profondeurs 0,1, 0,5 et 0,9 ; début et fin retrouvés mais pas le milieu
-   constituent un constat.
+   profondeurs 0,1, 0,5 et 0,9. Si le début et la fin sont retrouvés mais pas le
+   milieu, le milieu est sondé une fois de plus avec une aiguille neuve ; seul
+   un second échec constitue un constat.
 4. Un 4xx dont le message évoque la longueur de contexte est un rejet pour
    taille ; un rejet de `max_tokens` (modèles de raisonnement) est réessayé avec
    `max_completion_tokens` et n'est jamais lu comme un plafond.
-5. Une sonde qui dépasse son délai arrête l'échelle sans compter comme un échec :
-   la fenêtre au-delà de la dernière taille rappelée est signalée comme non
-   vérifiée (non concluant), jamais comme une troncature.
+5. Une sonde qui dépasse son délai ou reçoit une erreur (un autre paramètre
+   refusé, une erreur HTTP, un 5xx, une réponse vide ou mal formée) arrête
+   l'échelle sans compter comme un échec : la fenêtre au-delà de la dernière
+   taille rappelée est signalée comme non vérifiée (non concluant, non notée),
+   jamais comme une troncature ni `no_recall`. Seule une réponse sans
+   l'aiguille est un échec.
 
-La fenêtre mesurée est comparée à la fenêtre annoncée. Sans fenêtre annoncée,
-la mesure est rapportée mais non notée.
+La fenêtre mesurée (la plus grande taille rappelée) est comparée à `upper` : un
+rappel à l'échelon supérieur est cohérent (ou, si la fenêtre annoncée dépasse le
+plafond, **vérifié jusqu'au plafond** : la fenêtre au-delà n'a pas été testée) ;
+en dessous, le verdict déduit la part de l'échelon supérieur non retrouvée — un
+avertissement à partir de la moitié de `upper`, un échec en dessous. Sans
+fenêtre annoncée, la mesure est rapportée mais non notée.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
-| `context_window.window` (Fenêtre de contexte effective) | Le rappel a tenu jusqu'à au moins 90 % de la fenêtre annoncée ; retire la part de la fenêtre non rappelée. | Réussi | jusqu'à −10 pts |
-|  | Le rappel a tenu jusqu'à 50–90 % de la fenêtre annoncée ; retire la part de la fenêtre non rappelée. | Avertissement · Moyenne | jusqu'à −50 pts |
-|  | Le rappel a échoué sous la moitié de la fenêtre annoncée ; retire la part de la fenêtre non rappelée. | Échec · Élevée | jusqu'à −100 pts |
+| `context_window.window` (Fenêtre de contexte effective) | Le rappel a tenu au palier supérieur (90 % de la fenêtre sondée) : aucune déduction. | Réussi | Aucune déduction |
+|  | Rappel vérifié jusqu'au plafond de la sonde ; la fenêtre déclarée au-delà n'a pas été testée. | Réussi | Aucune déduction |
+|  | Le rappel a tenu jusqu'à 50-90 % de la fenêtre sondée ; déduit la part du palier supérieur non retrouvée. | Avertissement · Moyenne | jusqu'à −50 pts |
+|  | Le rappel a échoué sous la moitié de la fenêtre sondée ; déduit la part du palier supérieur non retrouvée. | Échec · Élevée | jusqu'à −100 pts |
 |  | Même la plus petite taille de sonde n'a pas retrouvé l'aiguille. | Échec · Élevée | −100 pts |
-| `context_window.lost_in_middle` | Le début et la fin ont été retrouvés, mais pas le milieu. | Avertissement · Moyenne | −15 pts |
+| `context_window.lost_in_middle` | Le début et la fin ont été retrouvés, mais pas le milieu, à deux reprises. | Avertissement · Moyenne | −15 pts |
 | `context_window.rejected_below_claim` | Un prompt bien en dessous de la fenêtre annoncée a été rejeté comme trop long. | Échec · Élevée | Aucune déduction |
-| `context_window.measured` | Aucune fenêtre annoncée pour comparer : mesurée seulement, non notée. | Info | Aucune déduction |
+| `context_window.measured` | Aucune fenêtre annoncée pour comparer : mesurée seulement, non notée. | Info | Aucune déduction |
 | `context_window.no_ladder` | Aucune taille de sonde ne tenait entre le plancher et le plafond. | Non concluant · Faible | Aucune déduction |
 | `context_window.timed_out` | Une sonde a dépassé son délai avant d'atteindre la fenêtre annoncée : un endpoint lent, pas une preuve de troncature. | Non concluant · Faible | Aucune déduction |
+| `context_window.probe_error` | Une sonde a reçu une erreur (paramètre refusé, erreur HTTP ou serveur) avant le palier supérieur : pas une preuve de troncature. | Non concluant · Faible | Aucune déduction |
 
 **Mises en garde.** Les vrais modèles à long contexte perdent aussi des
 aiguilles au milieu ; seul un échec en **bordure** est donc lu comme une
 troncature. Le rappel près du plafond est probabiliste ; relancez avant de
 conclure. La sonde est bornée par `--max-context-tokens`, une fenêtre plus
-grande n'est donc pas entièrement exercée. Comparez à une référence de
-confiance pour séparer le comportement du modèle de celui d'une couche
-intermédiaire.
+grande n'est donc pas entièrement exercée (augmentez-le pour sonder plus loin).
+L'échelon supérieur est à 90 % de la fenêtre et le budget de tokens est
+prudent, si bien que les derniers ~10-15 % d'une fenêtre ne sont jamais sondés.
+Comparez à une référence de confiance pour séparer le comportement du modèle de
+celui d'une couche intermédiaire.
 
 ---
 
@@ -402,6 +468,13 @@ moins cher ou ouvert), ainsi que les signaux de
    jamais sur `identity_forbidden`, les mots génériques (« ai », « platform »,
    …) ne comptent jamais, et la marque propre d'une plateforme ne compte pas
    pour le modèle d'un autre fabricant qu'elle sert.
+   Les mots de marque qui sont aussi des mots courants (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) ne
+   comptent que dans cette auto-identification et seulement écrits comme
+   un nom (« Meta », « Command R », « grok-2 » ; en début de phrase ou
+   d'élément de liste seulement avec une
+   version accolée, « Step-2 ») ; dans les réponses d'empreinte ils ne
+   comptent jamais, « let me think step by step » n'est donc pas une marque
+   concurrente. Un fournisseur à qui appartient un tel mot le garde comme sien.
 2. **Empreintes comportementales** de la base de connaissances (date limite des
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
@@ -417,6 +490,12 @@ moins cher ou ouvert), ainsi que les signaux de
    `8b`, …) ou une autre famille est signalé.
 
 Sans profil dans la base de connaissances, le détecteur est non concluant.
+Il est aussi non concluant et non noté (`model_identity.no_evidence`)
+lorsque ni l'auto-identification ni aucune empreinte n'ont donné de réponse
+exploitable et que le champ `model` renvoyé ne diverge pas : un relais qui
+rejette ou vide chaque requête ne fournit aucune preuve d'identité, et l'écho
+du nom demandé ne prouve rien à lui seul. Des preuves partielles sont notées
+normalement.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
@@ -434,6 +513,7 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 | `model_identity.model_field` | Le champ model renvoyé correspondait au modèle demandé. | Réussi | Aucune déduction |
 |  | Le champ model renvoyé désigne un modèle différent ou plus petit. | Avertissement · Moyenne | Aucune déduction |
 |  | La réponse n'avait pas de champ model exploitable. | Non concluant | Aucune déduction |
+| `model_identity.no_evidence` | Ni l'auto-identification ni aucune empreinte n'ont donné de réponse exploitable et le champ model ne divergeait pas : non noté. | Non concluant | Aucune déduction |
 
 ### `quality_judge` — Évaluation de qualité / déclassement par un LLM juge
 
@@ -441,17 +521,20 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 série de prompts qui distinguent les gammes (raisonnement en plusieurs étapes,
 tâche de code précise, suivi d'instructions nuancé) part vers la cible et, en
 mode comparaison, vers la référence ; un juge de confiance distinct ne voit que
-les réponses et rend un verdict avec une confiance. Un verdict du juge n'est
-ÉLEVÉ que si une référence a corroboré l'écart et que le juge n'a pas indiqué
-une confiance faible ou moyenne.
+les réponses et rend un verdict avec une confiance. Le juge reçoit le modèle annoncé (`claimed_model` s'il est défini, sinon
+l'identifiant demandé). Un verdict du juge n'est ÉLEVÉ que si le juge a
+indiqué une confiance **élevée** et qu'une référence exploitable a corroboré
+l'écart — une référence qui a donné une réponse non vide à chaque sonde à
+laquelle la cible a répondu. Une confiance faible, moyenne, absente ou
+inconnue reste MOYENNE, de même qu'une référence en erreur ou qui a laissé
+des sondes sans réponse.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `quality_judge.verdict` (Verdict du juge LLM) | Le juge a trouvé les réponses cohérentes avec le modèle annoncé. | Réussi | 95 pts |
-|  | Le juge a trouvé les réponses différentes du modèle annoncé (confiance faible/moyenne). | Avertissement · Moyenne | 50 pts |
-|  | Le juge est confiant : les réponses diffèrent du modèle annoncé (sans référence). | Avertissement · Moyenne | 25 pts |
+|  | Le juge a trouvé les réponses différentes du modèle annoncé (confiance faible, moyenne ou non indiquée). | Avertissement · Moyenne | 50 pts |
+|  | Le juge est confiant : les réponses diffèrent du modèle annoncé (sans référence exploitable). | Avertissement · Moyenne | 25 pts |
 |  | Le juge est confiant et une référence de confiance a confirmé la différence. | Échec · Élevée | 25 pts |
-|  | Le juge n'a donné aucune confiance et une référence de confiance a confirmé la différence. | Échec · Élevée | 50 pts |
 |  | Le juge n'a pas pu trancher. | Non concluant · Faible | Non compté |
 |  | Aucune réponse de la cible à juger. | Non concluant · Faible | Non compté |
 
@@ -493,6 +576,11 @@ aux capacités du profil :
   annoncée, 2048) tokens ; atteindre le plafond ou une longueur plausible
   réussit, s'arrêter sous le quart est signalé.
 
+Une observation sans annonce à vérifier — aucun appel d'outil ni objet JSON
+quand la fonction n'est pas annoncée, ou tout résultat du schéma strict quand le
+profil indique que le modèle n'a pas de schémas stricts — est notée mais non
+comptée : un modèle ne perd jamais de points pour ce que personne n'annonce.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `capability.tools` | Un appel d'outil est revenu pour une demande explicite d'outil. | Réussi | 100 pts |
@@ -501,13 +589,13 @@ aux capacités du profil :
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.tools.encoding` | Les arguments de l'outil sont arrivés en objet, pas en chaîne JSON comme chez OpenAI. | Avertissement · Faible | Non compté |
 | `capability.json_mode` | Le mode JSON a renvoyé un objet analysable avec la valeur demandée. | Réussi | 100 pts |
-|  | Un objet JSON est revenu avec une mauvaise valeur ; le mode JSON n'est pas annoncé. | Info | 70 pts |
-|  | Aucun objet JSON analysable n'est revenu ; le mode JSON n'est pas annoncé. | Avertissement | 50 pts |
+|  | Un objet JSON est revenu avec une mauvaise valeur ; le mode JSON n'est pas annoncé. | Info | Non compté |
+|  | Aucun objet JSON analysable n'est revenu ; le mode JSON n'est pas annoncé. | Info | Non compté |
 |  | Le mode JSON est annoncé mais aucun objet valide avec la valeur n'est revenu. | Échec · Moyenne | 0 pts |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.json_schema` | Le schéma strict est annoncé et la réponse s'y conformait. | Réussi | 100 pts |
-|  | Le schéma strict n'a pas été appliqué, conformément à l'annonce. | Info | 100 pts |
-|  | La réponse s'y conformait bien que le modèle annoncé n'ait pas de schémas stricts. | Info | 90 pts |
+|  | Le schéma strict n'a pas été appliqué, conformément à l'annonce. | Info | Non compté |
+|  | La réponse s'y conformait bien que le modèle annoncé n'ait pas de schémas stricts. | Info | Non compté |
 |  | Le schéma strict est annoncé mais la réponse ne s'y conformait pas. | Avertissement · Faible | 40 pts |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.max_output` | La sortie a continué jusqu'au plafond de tokens demandé. | Réussi | 100 pts |
@@ -552,17 +640,27 @@ seulement à partir de 220 caractères reçus, ainsi que des **écarts uniformes
 (quatre fragments ou plus aux écarts quasi identiques, CV < 0,1, et sous 2 ms :
 livrés en bloc). Un flux sans fragment d'usage est signalé à part.
 
+Le TTFT est le premier jeton de contenu visible. Pour un modèle de raisonnement
+(selon la base de connaissances, ou qui déclare des jetons de raisonnement dans
+son usage), qui réfléchit avant de répondre, un premier jeton tardif est donc
+seulement noté et non compté comme mise en tampon ; les signaux peu de fragments
+et écarts uniformes comptent toujours. Un flux qui réussit mais ne livre aucun
+contenu n'est pas concluant et n'est pas noté.
+Si le modèle diffuse son raisonnement (deltas de raisonnement, blocs de thinking, événements de raisonnement de l'API Responses), c'est le premier jeton de l'un ou l'autre type qui est chronométré : un vrai flux commence tôt à raisonner, donc un flux dont le raisonnement et la réponse arrivent tous deux à la toute fin est mis en tampon, même pour un modèle de raisonnement.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `streaming.healthy` | Beaucoup de fragments, un premier token précoce et des écarts répartis : vrai streaming. | Réussi | Aucune déduction |
 | `streaming.few_chunks` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.late_ttft` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
+| `streaming.reasoning_ttft` | Premier jeton tardif d'un modèle de raisonnement (il réfléchit avant de répondre) : informatif, non compté comme mise en tampon. | Info | Aucune déduction |
 | `streaming.uniform_gaps` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.no_usage` | Aucun fragment d'usage dans le flux : retire 15 points si rien n'est mis en tampon. | Avertissement · Faible | jusqu'à −15 pts |
+| `streaming.no_content` | Le flux a réussi mais n'a livré aucun contenu à juger ; non noté. | Non concluant · Faible | Non compté |
 | `streaming.failed` | La requête en streaming a échoué. | Échec · Élevée | plafond 0 |
 
 Soit : authentique 100 · usage absent 85 · un signal de mise en tampon 60 ·
-deux ou plus 40 · échec 0.
+deux ou plus 40 · échec 0 · aucun contenu : pas de note.
 
 **Mises en garde.** Des sorties courtes, un petit modèle rapide ou la gigue
 réseau peuvent ressembler à une rafale. Un amont qui ne sait pas streamer
@@ -626,13 +724,17 @@ ou se traîne sous un parallélisme modeste.
 (`--concurrency`, 3 par défaut). Le taux de succès porte sur les requêtes
 réellement tentées : un HTTP 429 est une limitation honnête, comptée à part. Le
 score retire la part d'échecs ; une latence p95 au-delà de 30 s garde 85 % du
-reste.
+reste. Une requête échouée (soit un 5xx passager sur les 8 par défaut), ou au plus
+10 % d'une salve plus grande, est un Avertissement tant qu'au moins 80 % ont
+réussi ; au-delà c'est un Échec. Le statut du détecteur est le pire de ses
+constats. Ce sont des avertissements de transport : ils ne font jamais monter
+le verdict de risque.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `reliability.success_rate` | Toutes les requêtes tentées de la rafale ont réussi. | Réussi | Aucune déduction |
-|  | Jusqu'à 10 % des requêtes tentées ont échoué ; retire la part échouée. | Avertissement · Faible | jusqu'à −10 pts |
-|  | Plus de 10 % des requêtes tentées ont échoué ; retire la part échouée. | Échec · Moyenne | jusqu'à −100 pts |
+|  | Une requête, ou au plus 10 % des requêtes tentées, a échoué (80 %+ réussies) ; retire la part échouée. | Avertissement · Faible | jusqu'à −20 pts |
+|  | Davantage de requêtes ont échoué ; retire la part échouée. | Échec · Moyenne | jusqu'à −100 pts |
 |  | Toutes les requêtes ont été limitées (HTTP 429) : non noté. | Non concluant · Faible | Aucune déduction |
 | `reliability.latency` | Latence p95 au-delà de 30 s sous charge ; retire 15 % du score restant. | Avertissement · Faible | jusqu'à −15 pts |
 | `reliability.rate_limited` | Une partie de la rafale a été limitée : limitation honnête, non comptée. | Info | Aucune déduction |
@@ -664,12 +766,17 @@ n'apparaît jamais telle quelle dans une réponse, et quels en-têtes de répons
 trahissent un amont ou un proxy (`server`, `via`, `x-powered-by`,
 `x-upstream-*`, `x-litellm-*`, … ; à titre indicatif). Il rappelle aussi la
 limite : la journalisation des prompts et les clés amont partagées ne sont pas
-prouvables de l'extérieur.
+prouvables de l'extérieur. Le HTTP en clair vers cette machine ou un réseau privé
+(`localhost`, `127.x`, `192.168.x`, `*.local`, … — un modèle auto-hébergé)
+n'est qu'un Avertissement sans plafond, car la clé ne traverse pas Internet ;
+vers tout autre hôte il reste Échec · Élevée. Dans les deux cas `security.tls`
+est un avertissement de transport et ne fait jamais monter le verdict de risque.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `security.tls` | Le point d'accès utilise HTTPS. | Réussi | Aucune déduction |
 |  | Le point d'accès n'est pas en HTTPS ; la clé API circule en clair. | Échec · Élevée | plafond 40 |
+|  | HTTP en clair vers un hôte local ou du réseau privé ; la clé API ne traverse pas Internet. | Avertissement · Faible | Aucune déduction |
 | `security.key_echo` | La clé API n'apparaît pas dans la réponse. | Réussi | Aucune déduction |
 |  | La clé API apparaît telle quelle dans la réponse. | Échec · Élevée | plafond 30 |
 | `security.headers` | Aucun en-tête de réponse ne révèle l'amont (à titre indicatif). | Réussi | Aucune déduction |
@@ -704,6 +811,9 @@ revenir mot pour mot. Un écho exact réussit, l'absence d'écho (paraphrase,
 refus) est non concluante, et seule une **substitution de valeur** qui préserve
 la structure compte comme falsification. En mode comparaison, une substitution
 que la référence de confiance ne fait pas est CRITIQUE.
+Seule une référence qui renvoie le canari intact corrobore : une référence en
+erreur ou sans réponse exploitable ne confirme rien, et la substitution reste
+MOYENNE (preuve `baseline_unavailable`).
 Une réponse coupée à la limite de sortie est non concluante, pas une substitution.
 
 | Contrôle | Résultat | Statut | Effet |
@@ -802,7 +912,7 @@ référence est la référence de confiance, sinon la plage
 | `performance.cache_hit` | Des prompts de sonde uniques sont revenus d'un cache (exclus des statistiques). | Avertissement · Faible | 60 pts |
 |  | La référence a servi des prompts uniques depuis un cache (non noté). | Info | Non compté |
 | `performance.reference` | Le débit correspond à la référence pour ce modèle. | Réussi | 100 pts |
-|  | Plus lent que la référence (p. ex. en local ou sur du matériel plus modeste) ; pas un échec. | Info | 80 pts |
+|  | Plus lent que la référence (p. ex. en local ou sur du matériel plus modeste) ; pas un échec. | Info | Non compté |
 |  | Bien plus rapide que la référence (compatible avec un modèle plus petit). | Avertissement · Faible | 60 pts |
 | `performance.reasoning` | Le modèle dépense des tokens de raisonnement cachés ; le TTFT inclut la réflexion. | Info | Non compté |
 | `performance.relay_overhead` | Latence comparée à la référence de confiance (à titre indicatif). | Info | Non compté |
@@ -811,7 +921,7 @@ référence est la référence de confiance, sinon la plage
 **Mises en garde.** La latence dépend du chemin réseau et de la charge du
 fournisseur à ce moment ; répétez un mauvais résultat de régularité à un autre
 moment. Les plages de la base de connaissances sont des médianes volontairement
-larges des API natives, et une cible plus lente n'est jamais un échec. Tous les
+larges des API natives, et une cible plus lente est notée, jamais comptée. Tous les
 constats sont au plus de gravité FAIBLE : cette dimension fait bouger le score,
 jamais le verdict de risque.
 

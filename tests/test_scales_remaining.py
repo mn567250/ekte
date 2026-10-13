@@ -11,22 +11,25 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
+from types import SimpleNamespace
 
 import pytest
 
 import zing.detectors as detectors_pkg
 from zing import i18n
+from zing.config import AuditOptions
+from zing.context import AuditContext
 from zing.detectors import REGISTRY
 from zing.detectors.capability import CapabilityDetector
 from zing.detectors.context_window import SCALE as CW_SCALE
 from zing.detectors.context_window import ContextWindowDetector, _window_deduction
 from zing.detectors.quality_judge import SCALE as JUDGE_SCALE
-from zing.detectors.quality_judge import _suspicious_outcome
+from zing.detectors.quality_judge import QualityJudgeDetector, _suspicious_outcome
 from zing.detectors.reliability import ReliabilityDetector, _latency_deduction
 from zing.detectors.scale import DeductionScale, Scale
 from zing.detectors.security import SecurityDetector
 from zing.detectors.streaming import StreamingDetector
-from zing.models import DetectorResult, Status
+from zing.models import CompletionOutcome, DetectorResult, Severity, Status, TargetConfig
 
 
 def _scales() -> dict[str, Scale]:
@@ -101,6 +104,41 @@ async def test_capability_failed_probes_are_not_counted(audit_context, mock_serv
     assert result.score is None
 
 
+async def test_capability_unclaimed_json_mode_is_not_counted(audit_context, mock_server):
+    # No profile, plain prose back: no claim to verify, so neither the tool nor
+    # the JSON-mode observation moves the score (and no JSON is not a warning).
+    audit_context.profile = None
+    mock_server.reply_text = "Sure, here you go: status ok, value 7429."
+    result = await CapabilityDetector().run(audit_context)
+    _check(result, _scale_of("capability"))
+    by_check = {f.scale_check: f for f in result.findings}
+    json_mode = by_check["capability.json_mode"]
+    assert (json_mode.outcome, json_mode.status, json_mode.score) == ("no_json", Status.INFO, None)
+    assert by_check["capability.tools"].score is None
+    counted = [f for f in result.findings if f.score is not None]
+    assert [f.scale_check for f in counted] == ["capability.max_output"]
+    assert result.score == counted[0].score
+    assert result.status == counted[0].status  # the short reply stops early
+
+
+@pytest.mark.parametrize(
+    ("reply", "expected"),
+    [('{"name": "Ada", "age": 36}', "over_delivered"), ("Ada is 36.", "absent_as_claimed")],
+)
+async def test_capability_unclaimed_json_schema_is_not_counted(
+    audit_context, mock_server, reply, expected
+):
+    # The profile says strict schemas are unsupported: whatever comes back is
+    # informational and never costs (or earns) the model points.
+    model = audit_context.profile.model.model_copy(update={"supports_json_schema": False})
+    audit_context.profile = audit_context.profile.model_copy(update={"model": model})
+    mock_server.reply_text = reply
+    result = await CapabilityDetector().run(audit_context)
+    _check(result, _scale_of("capability"))
+    schema = next(f for f in result.findings if f.scale_check == "capability.json_schema")
+    assert (schema.outcome, schema.status, schema.score) == (expected, Status.INFO, None)
+
+
 # --------------------------------------------------------------------------- #
 # streaming: buffering signals deduct 40, then 20, then nothing
 # --------------------------------------------------------------------------- #
@@ -135,6 +173,106 @@ async def test_streaming_failure_caps_at_0(audit_context, mock_server):
 
 
 # --------------------------------------------------------------------------- #
+# streaming: reasoning models and empty streams
+# --------------------------------------------------------------------------- #
+def _stream(content: str, *, ttft: float, duration: float, chunks: int,
+            usage: dict | None = None) -> CompletionOutcome:
+    # Irregular gaps between the first token and the end, so no uniform_gaps.
+    gaps = [1.0 + (i % 3) for i in range(chunks - 1)]
+    scale = (duration - ttft) / sum(gaps) if gaps else 0.0
+    timings = [ttft]
+    for g in gaps:
+        timings.append(timings[-1] + g * scale)
+    return CompletionOutcome(
+        ok=True, status_code=200, content=content, ttft_ms=ttft, duration_ms=duration,
+        chunk_count=chunks, chunk_timings_ms=timings,
+        usage=usage or {"prompt_tokens": 20, "completion_tokens": 60, "total_tokens": 80},
+    )
+
+
+async def _run_streaming(out: CompletionOutcome, *, reasoning: bool) -> DetectorResult:
+    async def complete(_spec):
+        return out
+
+    model = SimpleNamespace(reasoning=reasoning, usage_in_stream=True)
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          profile=SimpleNamespace(model=model))
+    return await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+
+
+# The first visible token after ~95% of the time (silent thinking), then a quick answer.
+_LATE = {"ttft": 1900.0, "duration": 2000.0, "chunks": 40}
+
+
+async def test_streaming_late_first_token_of_a_reasoning_model_is_not_buffering():
+    result = await _run_streaming(_stream("word " * 60, **_LATE), reasoning=True)
+    _check(result, _scale_of("streaming"))
+    by_id = {f.id: f for f in result.findings}
+    assert "streaming.late_ttft" not in by_id
+    note = by_id["streaming.reasoning_ttft"]
+    assert (note.outcome, note.status, note.score, note.deduction) == (
+        "reasoning", Status.INFO, None, None)
+    assert "streaming.healthy" in by_id
+    assert result.score == 100.0 and result.status == Status.PASS
+
+
+async def test_streaming_reported_reasoning_tokens_count_as_a_reasoning_model():
+    usage = {"prompt_tokens": 20, "completion_tokens": 400, "total_tokens": 420,
+             "completion_tokens_details": {"reasoning_tokens": 340}}
+    result = await _run_streaming(_stream("word " * 60, usage=usage, **_LATE), reasoning=False)
+    by_id = {f.id: f for f in result.findings}
+    assert "streaming.late_ttft" not in by_id
+    assert by_id["streaming.reasoning_ttft"].evidence["reasoning_tokens"] == 340
+    assert result.score == 100.0
+
+
+async def test_streaming_late_first_token_of_a_plain_model_is_still_buffering():
+    result = await _run_streaming(_stream("word " * 60, **_LATE), reasoning=False)
+    _check(result, _scale_of("streaming"))
+    f = next(f for f in result.findings if f.id == "streaming.late_ttft")
+    assert (f.outcome, f.deduction) == ("buffered", 40.0)
+    assert result.score == 60.0 and result.status == Status.WARN
+
+
+async def test_streaming_streamed_reasoning_early_is_genuine_streaming():
+    # Reasoning deltas from 80 ms on: the stream started early, whatever the
+    # first visible token says.
+    out = _stream("word " * 60, **_LATE).model_copy(update={"first_reasoning_ms": 80.0})
+    result = await _run_streaming(out, reasoning=True)
+    ids = {f.id for f in result.findings}
+    assert "streaming.late_ttft" not in ids and "streaming.reasoning_ttft" not in ids
+    assert result.score == 100.0 and result.evidence["first_reasoning_ms"] == 80.0
+
+
+async def test_streaming_replayed_reasoning_is_buffering_even_for_a_reasoning_model():
+    # Reasoning AND answer only arrive at the very end: a buffered replay.
+    out = _stream("word " * 60, **_LATE).model_copy(update={"first_reasoning_ms": 1880.0})
+    result = await _run_streaming(out, reasoning=True)
+    f = next(f for f in result.findings if f.id == "streaming.late_ttft")
+    assert f.evidence["reasoning_streamed"] is True and f.evidence["ttft_ms"] == 1880.0
+    assert result.score == 60.0 and result.status == Status.WARN
+
+
+async def test_streaming_reasoning_model_still_flags_few_chunks():
+    out = _stream("word " * 60, ttft=1900.0, duration=2000.0, chunks=2)
+    result = await _run_streaming(out, reasoning=True)
+    ids = {f.id for f in result.findings}
+    assert "streaming.few_chunks" in ids and "streaming.late_ttft" not in ids
+    assert result.score == 60.0 and result.status == Status.WARN
+
+
+async def test_streaming_without_content_is_inconclusive():
+    empty = CompletionOutcome(ok=True, status_code=200, content="", chunk_count=0,
+                              duration_ms=300.0)
+    result = await _run_streaming(empty, reasoning=False)
+    _check(result, _scale_of("streaming"))
+    (f,) = result.findings
+    assert (f.id, f.outcome, f.status, f.score) == (
+        "streaming.no_content", "no_content", Status.INCONCLUSIVE, None)
+    assert result.score is None and result.status == Status.INCONCLUSIVE
+
+
+# --------------------------------------------------------------------------- #
 # security: the lowest cap wins
 # --------------------------------------------------------------------------- #
 async def test_security_plain_http_caps_at_40(audit_context):
@@ -164,6 +302,46 @@ async def test_reliability_all_failing_scores_0(audit_context, mock_server):
     f = next(f for f in result.findings if f.id == "reliability.success_rate")
     assert (f.outcome, f.deduction) == ("many_failed", 100.0)
     assert result.score == 0.0 and result.status == Status.FAIL
+
+
+async def _burst(n: int, failures: int) -> DetectorResult:
+    """The reliability detector over a fake client whose first ``failures`` of
+    ``n`` requests return HTTP 500."""
+    from types import SimpleNamespace
+
+    calls = []
+
+    async def complete(spec):
+        calls.append(spec)
+        ok = len(calls) > failures
+        return SimpleNamespace(ok=ok, duration_ms=120.0 if ok else None,
+                               error_type=None if ok else "server_error",
+                               status_code=200 if ok else 500)
+
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          options=SimpleNamespace(reliability_requests=n, reliability_concurrency=4))
+    return await ReliabilityDetector().run(ctx)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("n", "failures", "outcome", "status"),
+    [
+        (8, 0, "all_succeeded", Status.PASS),
+        (8, 1, "some_failed", Status.WARN),   # one transient failure of the default 8
+        (8, 2, "many_failed", Status.FAIL),
+        (4, 1, "many_failed", Status.FAIL),   # 75% success is below the 80% floor
+        (20, 2, "some_failed", Status.WARN),  # 10%
+        (20, 3, "many_failed", Status.FAIL),
+    ],
+)
+async def test_reliability_tolerates_one_failure_and_status_follows_findings(n, failures, outcome, status):
+    result = await _burst(n, failures)
+    _check(result, _scale_of("reliability"))
+    f = next(f for f in result.findings if f.id == "reliability.success_rate")
+    assert f.outcome == outcome
+    assert result.score == round(100.0 * (n - failures) / n, 1)
+    # The detector status is the worst of its findings — never PASS over a FAIL.
+    assert result.status == status == Scale.roll_up(result.findings)
 
 
 def test_reliability_latency_deduction_matches_the_old_formula():
@@ -202,17 +380,92 @@ async def test_context_window_truncation_scores_the_recalled_share(audit_context
 # LLM judge: score by confidence, severity by confidence + corroboration
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize(
-    ("confidence", "high_sev", "key", "score", "status"),
+    ("confidence", "corroborated", "key", "score", "status"),
     [
         ("high", True, "confident_corroborated", 25.0, Status.FAIL),
         ("high", False, "confident", 25.0, Status.WARN),
+        ("medium", True, "suspicious", 50.0, Status.WARN),
         ("medium", False, "suspicious", 50.0, Status.WARN),
-        ("low", False, "suspicious", 50.0, Status.WARN),
-        ("", True, "unrated_corroborated", 50.0, Status.FAIL),
+        ("low", True, "suspicious", 50.0, Status.WARN),
+        # a missing / unrecognized confidence counts as low — never HIGH
+        ("", True, "suspicious", 50.0, Status.WARN),
         ("", False, "suspicious", 50.0, Status.WARN),
+        ("very sure", True, "suspicious", 50.0, Status.WARN),
+        # the judge's phrasing of "high" still counts as high
+        ("High.", True, "confident_corroborated", 25.0, Status.FAIL),
+        ("very high", False, "confident", 25.0, Status.WARN),
     ],
 )
-def test_judge_suspicious_rows(confidence, high_sev, key, score, status):
-    assert _suspicious_outcome(confidence, high_sev) == key
+def test_judge_suspicious_rows(confidence, corroborated, key, score, status):
+    assert _suspicious_outcome(confidence, corroborated) == key
     o = JUDGE_SCALE.get("quality_judge.verdict", key)
     assert (o.score, o.status) == (score, status)
+
+
+class _JudgeStub:
+    def __init__(self, verdict):
+        self.verdict = verdict
+        self.calls: list[tuple[str, str]] = []
+
+    async def evaluate_json(self, system, user, **_):
+        self.calls.append((system, user))
+        return dict(self.verdict)
+
+
+class _AnswerStub:
+    """Answers every probe with ``text``, or fails (HTTP 500) when it is None."""
+
+    def __init__(self, text):
+        self.text = text
+
+    async def complete(self, spec):
+        if self.text is None:
+            return CompletionOutcome(ok=False, status_code=500, error_message="down")
+        return CompletionOutcome(ok=True, status_code=200, content=self.text, finish_reason="stop")
+
+
+async def _run_judge(confidence, *, baseline=None, claimed=None):
+    target = TargetConfig(base_url="https://r.test/v1", model="served-id", claimed_model=claimed)
+    judge = _JudgeStub({"verdict": "suspicious", "confidence": confidence})
+    ctx = AuditContext(
+        target=target, client=_AnswerStub("an answer"), options=AuditOptions(suite="deep"),
+        kb=None, profile=None, baseline=target if baseline is not None else None,  # type: ignore[arg-type]
+        baseline_client=baseline, judge=judge,
+    )
+    result = await QualityJudgeDetector().run(ctx)
+    _check(result, JUDGE_SCALE)
+    return result, judge
+
+
+@pytest.mark.parametrize("confidence", ["", "low", "medium", "unsure"])
+async def test_judge_without_high_confidence_never_reaches_high(confidence):
+    result, _ = await _run_judge(confidence, baseline=_AnswerStub("baseline answer"))
+    (f,) = result.findings
+    assert (f.outcome, f.severity, result.status) == ("suspicious", Severity.MEDIUM, Status.WARN)
+
+
+async def test_judge_high_confidence_with_failed_baseline_is_not_corroborated():
+    result, judge = await _run_judge("high", baseline=_AnswerStub(None))
+    (f,) = result.findings
+    assert (f.outcome, f.severity) == ("confident", Severity.MEDIUM)
+    assert f.evidence["baseline_corroborated"] is False
+    assert result.evidence["baseline_compared"] is True
+    assert result.evidence["baseline_usable"] is False
+    # the unusable baseline is not shown to the judge either
+    _, user = judge.calls[0]
+    assert "baseline answer" not in user and "TRUSTED BASELINE" not in user
+
+
+async def test_judge_high_confidence_with_working_baseline_is_high():
+    result, _ = await _run_judge("high", baseline=_AnswerStub("baseline answer"))
+    (f,) = result.findings
+    assert (f.outcome, f.severity, result.status) == ("confident_corroborated", Severity.HIGH, Status.FAIL)
+    assert f.evidence["baseline_corroborated"] is True
+
+
+async def test_judge_is_told_the_claimed_model():
+    result, judge = await _run_judge("high", claimed="claimed-id")
+    system, user = judge.calls[0]
+    assert "claimed-id" in system and "claimed-id" in user
+    assert "served-id" not in system and "served-id" not in user
+    assert result.evidence["claimed_model"] == "claimed-id"

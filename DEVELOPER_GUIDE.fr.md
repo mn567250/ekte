@@ -180,6 +180,14 @@ détecte à partir de l'URL de base et du modèle. Les détecteurs ne parlent qu
 cette interface (`RequestSpec` en entrée, `CompletionOutcome` en sortie) et sont
 donc indépendants du protocole.
 
+Les clients adaptent aussi les requêtes à ce que le modèle accepte (`base.py`) :
+le runner initialise `unsupported_params` depuis le profil, les paramètres
+d'échantillonnage qui y figurent sont omis et, sur Chat Completions, un
+`max_tokens` listé envoie la limite en `max_completion_tokens`. Une 4xx qui nomme
+un tel paramètre l'ajoute à l'ensemble et répète la requête une fois adaptée (la
+tentative refusée est enregistrée avec la phase `param_retry`). Une sonde qui
+juge le refus brut définit `RequestSpec.exact_params`.
+
 ### Détecteurs et barèmes
 
 Un détecteur est un fichier autonome dans `zing/detectors/` : une sous-classe de
@@ -231,9 +239,14 @@ alimente les **Dimension details** des rapports et les lignes dépliables des
 l'utilisateur), stocke les entrées de l'utilisateur (`store.py`), vérifie et
 importe le YAML (`importer.py`), construit le prompt de recherche destiné aux
 assistants externes (`research.py`) et prend un instantané du profil utilisé par
-une exécution (`snapshot.py`). Les identifiants de modèle se résolvent via les
-alias et le fournisseur déclaré ; chaque rapport consigne comment l'id a été
-résolu.
+une exécution (`snapshot.py`). Les identifiants de modèle se résolvent exactement, via
+les alias ou par nom normalisé, restreints par le fournisseur déclaré. Le repli
+approximatif prend le plus long nom de la KB contenu dans l'identifiant annoncé
+(un id de snapshot ou décoré), sauf si le reste de l'identifiant nomme un autre
+niveau ou une autre variante (`-mini`, `-lite`, `-image`, …) ; un identifiant
+tronqué n'est résolu que si le nom d'un seul modèle commence par lui, si bien
+qu'un id ambigu comme `gpt-4` n'obtient aucun profil plutôt qu'un niveau
+deviné. Chaque rapport consigne comment l'id a été résolu.
 
 `load_knowledge_base()` met en cache les résultats fusionnés et renvoie par
 défaut une copie profonde, que l'appelant peut donc modifier. Les appelants qui
@@ -530,6 +543,12 @@ provoque des faux positifs contre des relais honnêtes.
 `zing kb-import --check <fichier>` effectue les mêmes vérifications que l'import
 utilisateur (schéma, limites, expressions régulières dangereuses, prompts,
 collisions d'identifiants).
+
+Les `fingerprints` au niveau du fournisseur s'exécutent sur chacun de ses
+modèles. Une sonde dont l'attente ne vaut que pour certains modèles (une date de
+coupure, un test de connaissances du niveau Pro, un piège de raisonnement) va
+dans les `fingerprints` de ces modèles, sinon la réponse véridique d'un autre
+modèle compte comme une divergence.
 
 Renseignez toujours `identity_keywords` avec les mots du fabricant et de la
 famille par lesquels le modèle se désigne. Le contrôle d'identité compte aussi

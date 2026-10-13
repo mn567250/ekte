@@ -90,6 +90,13 @@ a bait-and-switch.
 The risk level is driven by **finding severity**, not by the score. Findings of
 the connectivity dimension are left out of the ladder: a relay that is down or
 throttled could not be assessed, which is not evidence of a different model.
+The **transport advisories** are left out too (`ADVISORY_CHECKS` in
+`zing/scoring.py`: `security.tls`, `reliability.success_rate`,
+`reliability.latency`): plain HTTP, failures or slowness under load say how the
+relay is reached, not which model it serves. They still lower their dimension's
+score and status, are listed after the substitution findings in the key
+findings and are noted in the summary as advisories when Medium or higher. Integrity tampering and an
+echoed API key still escalate.
 
 | Risk | Label in the UI | When |
 |---|---|---|
@@ -101,8 +108,9 @@ throttled could not be assessed, which is not evidence of a different model.
 
 ### Verdict confidence
 
-- **low** — the claimed model is not in the knowledge base, or fewer than two
-  core dimensions produced a usable result;
+- **low** — the claimed model is not in the knowledge base, matched a profile
+  only fuzzily (`match_confidence` `fuzzy`; the summary says so), or fewer than
+  two core dimensions produced a usable result;
 - **medium** — at least two core dimensions produced a usable result;
 - **high** — a baseline was used *and* all three core dimensions produced a
   usable result, or the confidence was medium and the LLM judge returned a
@@ -155,7 +163,15 @@ throttled could not be assessed, which is not evidence of a different model.
   plus your own entries in `kb.db`) supplies the declared context window, max
   output, tokenizer, capability flags, identity keywords and behavioral
   fingerprints the probes are judged against. Every report records the profile
-  it used (`knowledge`).
+  it used (`knowledge`). The claimed id matches a profile by exact id, alias
+  or normalized name, else fuzzily: by the longest profile name it contains
+  (`gpt-4o-2024-11-20-custom` → `gpt-4o`) unless the rest of the id names
+  another tier or variant (`gpt-5-mini` is not `gpt-5`), or, for a truncated
+  id, only when a single model's name starts with it. A generic or ambiguous
+  id (`gpt-4`, `claude`, `gemini-2.5`) therefore gets no profile instead of a
+  guessed, often cheaper tier. Provider-wide fingerprints apply to every model
+  of the provider; one that only fits some models (a knowledge cutoff, a size
+  tier) is listed on those models alone.
 - **Prompt language:** every probe text lives in `zing/prompts/en.json` and is
   English whatever the UI language; only fingerprints whose language *is* the
   measurement declare `prompt_lang` and `language_bound`. Each report lists the
@@ -170,6 +186,15 @@ throttled could not be assessed, which is not evidence of a different model.
   repeated. Once an endpoint is known to reason (its profile says
   `reasoning: true`, or after its first such repeat), short probes are sent
   with the 4,096-token limit from the start instead of twice.
+- **Request parameters:** reasoning models refuse some parameters: on Chat
+  Completions `max_tokens` (they take `max_completion_tokens`), and on every
+  protocol sampling parameters such as `temperature`. The client leaves out the
+  parameters the profile lists under `unsupported_params` and sends the output
+  limit as `max_completion_tokens` when `max_tokens` is listed. An endpoint
+  without a profile that names such a parameter in a 4xx gets the request once
+  more, adapted, and every later request goes out adapted from the start; the
+  rejected attempt is not counted as a relay error. The `protocol_request`
+  probes are sent exactly as built, since the raw rejection is what they judge.
 
 ---
 
@@ -192,6 +217,9 @@ exact canary marker; records latency and the echoed `model` field.
 |  | A chat completion returned content but did not echo the canary. | Pass | 85 pts |
 |  | The chat completion failed or returned no content. | Fail · High | 0 pts |
 
+The detector status is the worst of its checks, so a disabled `/v1/models`
+makes it a Warning even when chat works.
+
 **Caveats.** A missing `/v1/models` is benign; many relays disable it. A
 transient network error or 5xx can fail the chat check: re-run. Connectivity
 proves nothing about *which* model answered. Its findings never raise the risk
@@ -211,7 +239,9 @@ It partly covers `capability.json-tool-fakery`.
 **How it works.** Three probes: a multi-turn conversation that must recall a
 color from an earlier turn; a `stop` sequence that must truncate the output; and
 a deliberately invalid request (empty `messages`) that must be rejected with a
-4xx, ideally with an OpenAI-style error body.
+4xx, ideally with an OpenAI-style error body. The Responses API has no `stop`
+parameter, so against a Responses API target the stop probe is not sent and the
+check is noted as not applicable (not counted) instead of blaming the relay.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
@@ -222,6 +252,7 @@ a deliberately invalid request (empty `messages`) that must be rejected with a
 |  | Stop handling could not be confirmed from the text. | Warning · Low | 70 pts |
 |  | Text after the stop sequence was returned. | Warning · Low | 60 pts |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
+|  | The Responses API has no stop parameter; not checked, not counted. | Info | Not counted |
 | `protocol.error_schema` | Rejected with a 4xx and an OpenAI-style error body. | Pass | 100 pts |
 |  | Rejected with a 4xx, but the body is not OpenAI-style. | Warning · Low | 80 pts |
 |  | No HTTP response; client-error handling could not be confirmed. | Warning · Low | 55 pts |
@@ -281,7 +312,9 @@ protocol rejects it too. Tools and JSON mode stay with `capability`, `stop` with
 
 **How it works.** Four identical creative prompts at `temperature=1.0` (no
 seed): a genuine model varies, byte-identical output across all samples points
-to a response cache that ignores sampling. The verdict is suppressed for
+to a response cache that ignores sampling. At least three of the four samples
+must be usable (and all usable ones identical) for the caching call; with fewer
+the check is inconclusive. The verdict is suppressed for
 reasoning models, which legitimately ignore temperature. Two identical factual
 prompts at `temperature=0` are informational only.
 
@@ -289,8 +322,8 @@ prompts at `temperature=0` are informational only.
 |---|---|---|---|
 | `determinism.temp1_variability` | Repeated samples at temperature=1.0 differed, as genuine sampling does. | Pass | 100 pts |
 |  | Samples were identical, but reasoning models legitimately ignore temperature. | Info | 100 pts |
-|  | All samples at temperature=1.0 were byte-identical, suggesting response caching. | Warning · Medium | 55 pts |
-|  | No usable response to judge by. | Inconclusive · Low | Not counted |
+|  | All usable samples (at least 3) at temperature=1.0 were byte-identical, suggesting response caching. | Warning · Medium | 55 pts |
+|  | Fewer than 3 usable samples at temperature=1.0 to judge by. | Inconclusive · Low | Not counted |
 | `determinism.temp0_stability` | Identical answers at temperature=0 (expected); informational, not scored. | Info | Not counted |
 |  | Answers differed at temperature=0; informational, not scored. | Info | Not counted |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
@@ -309,12 +342,23 @@ silently trims the prompt) and `context.lost-in-middle-rag` (a cheap
 RAG/summarization shim forwards only parts of the prompt).
 
 **How it works.** Needle-in-a-haystack recall at `temperature=0`: a unique
-marker is embedded in non-repetitive filler sized with zing's heuristic token
-estimate, and the model must return it.
+marker is embedded in non-repetitive filler, and the model must return it.
 
-1. An ascending doubling ladder from 2K tokens up to the declared window, capped
-   by `--max-context-tokens` (default 200K), with a rung near 90% of the top
-   (at most seven sizes). Each size is probed with the needle at the **start**
+- **Probed window.** The probe runs up to `upper` = the declared window, capped
+  by `--max-context-tokens` (default 200K). Every verdict is judged against
+  `upper`, never against the part of a larger declared window above the cap.
+- **Sizes are real tokens.** zing's built-in token estimate under-counts this
+  filler by about 12% (o200k) to 15% (cl100k) against real tokenizers, so each
+  prompt is built at size ÷ 1.2 by the estimate (needle and question included):
+  a size-N rung stays within N real tokens. Sizes in the evidence (`size`,
+  `effective_window`, `top_rung`) are these real-token budgets; the ladder rows
+  also carry the estimate a prompt was built at (`heuristic_tokens`).
+
+1. A ladder of at most seven sizes, halving down from a **top rung at 90% of
+   `upper`** (so no rung reaches the full window, leaving room for the answer
+   and the chat template) to a 1K floor (`context_probe_floor_tokens`); a small
+   window lowers the floor to a quarter of the top rung (a 2K window probes
+   ~460, ~920 and ~1.8K). Each size is probed with the needle at the **start**
    edge (depth 0.0) first: a truncation that keeps the question at the end of
    the prompt can only drop its start (a local server cutting the prompt to its
    context length keeps the end), so a recall there passes the size in one
@@ -323,36 +367,47 @@ estimate, and the model must return it.
    miss fails the size as **front truncation** (named in the verdict's
    evidence). At most three calls per size; the ladder stops at the first
    confirmed failure.
-2. One binary-search step between the last recalled and the first failing size.
+2. Two binary-search steps between the last recalled and the first failing size.
 3. Lost-in-the-middle: at min(32K, measured window) the needle is placed at
-   depths 0.1, 0.5 and 0.9; start and end recalled but not the middle is a
-   finding.
+   depths 0.1, 0.5 and 0.9. If start and end are recalled but the middle is
+   not, the middle is probed once more with a fresh needle; only a second miss
+   is a finding.
 4. A 4xx whose message names the context length is a size rejection; a
    rejection of `max_tokens` (reasoning models) is retried with
    `max_completion_tokens` and never read as a ceiling.
-5. A timed-out probe ends the ladder without counting as a failure: the window
-   above the last recalled size is reported as unverified (inconclusive), never
-   as truncation.
+5. A probe that times out, or is answered with an error (another rejected
+   parameter, an HTTP error, a 5xx, an empty or malformed response), ends the
+   ladder without counting as a failure: the window above the last recalled
+   size is reported as unverified (inconclusive, not scored), never as
+   truncation or `no_recall`. Only an answer without the needle is a miss.
 
-The measured window is compared with the declared one. Without a declared
-window the measurement is reported but not scored.
+The measured window (largest recalled size) is compared with `upper`: recall
+at the top rung is consistent (or, when the declared window exceeds the cap,
+**verified to the cap**: the window above it was not exercised); below it, the
+verdict deducts the share of the top rung that did not recall — a WARN from
+half of `upper` up, a FAIL below half. Without a declared window the
+measurement is reported but not scored.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
-| `context_window.window` (Effective context window) | Recall held up to at least 90% of the declared window; deducts the share of the declared window that did not recall. | Pass | up to −10 pts |
-|  | Recall held up to 50-90% of the declared window; deducts the share of the declared window that did not recall. | Warning · Medium | up to −50 pts |
-|  | Recall failed below half of the declared window; deducts the share of the declared window that did not recall. | Fail · High | up to −100 pts |
+| `context_window.window` (Effective context window) | Recall held at the top rung (90% of the probed window): no deduction. | Pass | No deduction |
+|  | Recall verified up to the probe cap; the declared window above it was not exercised. | Pass | No deduction |
+|  | Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall. | Warning · Medium | up to −50 pts |
+|  | Recall failed below half of the probed window; deducts the share of the top rung that did not recall. | Fail · High | up to −100 pts |
 |  | Not even the smallest probe size recalled the needle. | Fail · High | −100 pts |
-| `context_window.lost_in_middle` | The start and end were recalled but the middle was not. | Warning · Medium | −15 pts |
+| `context_window.lost_in_middle` | The start and end were recalled but the middle was not, twice. | Warning · Medium | −15 pts |
 | `context_window.rejected_below_claim` | A prompt well below the declared window was rejected as too long. | Fail · High | No deduction |
 | `context_window.measured` | No declared window to compare against: measured only, not scored. | Info | No deduction |
 | `context_window.no_ladder` | No probe size fit between the floor and the cap. | Inconclusive · Low | No deduction |
 | `context_window.timed_out` | A probe timed out before the declared window was reached: a slow endpoint, not evidence of truncation. | Inconclusive · Low | No deduction |
+| `context_window.probe_error` | A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation. | Inconclusive · Low | No deduction |
 
 **Caveats.** Genuine long-context models also lose needles in the middle, so
 only an **edge** failure is read as truncation. Recall near the ceiling is
 probabilistic; re-run before concluding. The probe is bounded by
-`--max-context-tokens`, so a larger window is not exercised in full. Compare
+`--max-context-tokens`, so a larger window is not exercised in full (raise it
+to probe further). The top rung sits at 90% of the window and the token budget
+is conservative, so the last ~10-15% of a window is never probed. Compare
 with a trusted baseline to separate model behavior from shim behavior.
 
 ---
@@ -381,6 +436,13 @@ when they change behavior.
    is empty. Derived names never override `identity_forbidden`, generic words
    ("ai", "platform", …) never count, and a platform's own brand does not count
    for another vendor's model it serves.
+   Brand words that are also everyday words (`step`, `command`, `seed`,
+   `spark`, `meta`, `yi`, `grok`) count only in this self-identification
+   answer and only written as a name ("made by Meta", "Command R", "grok-2";
+   at the start of a sentence or list item only with a version attached,
+   "Step-2"); fingerprint answers never
+   count them, so "let me think step by step" is not a rival brand. A vendor
+   that owns such a word keeps it as its own.
 2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
    tokenizer quirks, formatting, language-bound probes, …): up to six
    pure-code probes, each checked with `expect_contains`, `expect_contains_any`,
@@ -394,6 +456,11 @@ when they change behavior.
    different family is flagged.
 
 Without a knowledge-base profile the detector is inconclusive.
+It is also inconclusive and unscored (`model_identity.no_evidence`) when
+neither the self-identification nor any fingerprint returned a usable
+answer and the echoed `model` field does not diverge: a relay that rejects
+or empties every request gives no identity evidence, and an echo of the
+requested name proves nothing on its own. Partial evidence scores normally.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
@@ -411,6 +478,7 @@ Without a knowledge-base profile the detector is inconclusive.
 | `model_identity.model_field` | The echoed model field matched the requested model. | Pass | No deduction |
 |  | The echoed model field names a different or smaller model. | Warning · Medium | No deduction |
 |  | The response had no usable model field. | Inconclusive | No deduction |
+| `model_identity.no_evidence` | No self-identification or fingerprint answer was usable and the model field did not diverge: not scored. | Inconclusive | No deduction |
 
 ### `quality_judge` — LLM-judged quality / downgrade assessment
 
@@ -418,16 +486,19 @@ Without a knowledge-base profile the detector is inconclusive.
 tier-discriminating prompts (multi-step reasoning, a precise coding task,
 nuanced instruction-following) goes to the target and, in compare mode, to the
 baseline; a separate trusted judge sees only the answers and returns a verdict
-and a confidence. A judge verdict is HIGH only when a baseline corroborated the
-difference and the judge did not report low or medium confidence.
+and a confidence. The judge is told the claimed model (`claimed_model` when set, else the
+requested id). A judge verdict is HIGH only when the judge stated **high**
+confidence and a usable baseline corroborated the difference — one that
+returned a non-empty answer for every probe the target answered. A low,
+medium, missing or unrecognized confidence stays MEDIUM, and so does a
+baseline that errored or left probes unanswered.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 95 pts |
-|  | The judge found the answers unlike the claimed model (low/medium confidence). | Warning · Medium | 50 pts |
-|  | The judge is confident the answers are unlike the claimed model (no baseline). | Warning · Medium | 25 pts |
+|  | The judge found the answers unlike the claimed model (low, medium or no stated confidence). | Warning · Medium | 50 pts |
+|  | The judge is confident the answers are unlike the claimed model (no usable baseline). | Warning · Medium | 25 pts |
 |  | The judge is confident, and a trusted baseline corroborated the difference. | Fail · High | 25 pts |
-|  | The judge gave no confidence, and a trusted baseline corroborated the difference. | Fail · High | 50 pts |
 |  | The judge could not commit to a verdict. | Inconclusive · Low | Not counted |
 |  | No target answers to judge. | Inconclusive · Low | Not counted |
 
@@ -466,6 +537,11 @@ profile's capability flags:
   tokens; reaching the cap or a plausible length passes, stopping below a
   quarter of it is flagged.
 
+An observation without a claim to verify — no tool call or JSON object when the
+feature is not claimed, or any strict-schema result when the profile says the
+model lacks strict schemas — is noted but not counted, so a model is never
+marked down for what nobody claimed.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `capability.tools` | A tool call came back for an explicit tool-use request. | Pass | 100 pts |
@@ -474,13 +550,13 @@ profile's capability flags:
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.tools.encoding` | Tool arguments arrived as an object, not the JSON string OpenAI returns. | Warning · Low | Not counted |
 | `capability.json_mode` | JSON mode returned a parseable object with the requested value. | Pass | 100 pts |
-|  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | 70 pts |
-|  | No parseable JSON object came back; JSON mode is not claimed. | Warning | 50 pts |
+|  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | Not counted |
+|  | No parseable JSON object came back; JSON mode is not claimed. | Info | Not counted |
 |  | JSON mode is claimed but no valid object with the value came back. | Fail · Medium | 0 pts |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.json_schema` | The strict schema is claimed and the response conformed. | Pass | 100 pts |
-|  | The strict schema was not enforced, consistent with the claim. | Info | 100 pts |
-|  | The response conformed although the claimed model lacks strict schemas. | Info | 90 pts |
+|  | The strict schema was not enforced, consistent with the claim. | Info | Not counted |
+|  | The response conformed although the claimed model lacks strict schemas. | Info | Not counted |
 |  | The strict schema is claimed but the response did not conform. | Warning · Low | 40 pts |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.max_output` | Output continued up to the requested token cap. | Pass | 100 pts |
@@ -519,20 +595,28 @@ answer and replays it as one or a few chunks, losing the latency benefit.
 buffering signals: **few chunks** (two or fewer) and **late first token** (TTFT
 above 90% of the total duration), both judged only once at least 220 characters
 came back, and **uniform gaps** (four or more chunks whose gaps are almost
-equal, CV < 0.1, and under 2 ms: dumped together). A stream without a usage
-chunk is flagged separately.
+equal, CV < 0.1, and under 2 ms: dumped together). TTFT is the first visible
+content token, so for a reasoning model (claimed by the knowledge base, or
+reporting reasoning tokens in its usage), which thinks before answering, a late
+first token is only noted and not counted as buffering; its few-chunks and
+uniform-gaps signals still count. A stream without a usage chunk is flagged
+separately. A stream that succeeds but delivers no content is inconclusive and
+not scored.
+When the model streams its reasoning (reasoning deltas, thinking blocks, Responses reasoning events), the first token of either kind is timed instead: a genuine stream starts reasoning early, so a stream whose reasoning and answer both arrive at the very end is buffering even for a reasoning model.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `streaming.healthy` | Many chunks, an early first token and spread-out gaps: genuine streaming. | Pass | No deduction |
 | `streaming.few_chunks` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.late_ttft` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
+| `streaming.reasoning_ttft` | Late first token from a reasoning model (it thinks before answering): informational, not counted as buffering. | Info | No deduction |
 | `streaming.uniform_gaps` | Buffering signal: the first deducts 40 points, a second 20, any further one nothing. | Warning · Medium | up to −40 pts |
 | `streaming.no_usage` | No usage chunk in the stream: deducts 15 points when nothing is buffered. | Warning · Low | up to −15 pts |
+| `streaming.no_content` | The stream succeeded but delivered no content to judge by; not scored. | Inconclusive · Low | Not counted |
 | `streaming.failed` | The streaming request failed. | Fail · High | cap 0 |
 
 So: genuine 100 · usage missing 85 · one buffering signal 60 · two or more 40 ·
-failed 0.
+failed 0 · no content: no score.
 
 **Caveats.** Short outputs, a fast small model or network jitter can resemble a
 burst. An upstream that cannot stream forces the relay to buffer legitimately;
@@ -591,13 +675,17 @@ crawls under modest parallelism.
 default 8) at bounded concurrency (`--concurrency`, default 3). The success rate
 is computed over the requests genuinely attempted: HTTP 429 is honest
 throttling and is bucketed separately. The score deducts the failed share; a p95
-latency above 30 s keeps 85% of what is left.
+latency above 30 s keeps 85% of what is left. One failed request (so one
+transient 5xx of the default 8), or at most 10% of a larger burst, is a
+Warning as long as at least 80% succeeded; more is a Fail. The detector status
+is the worst of its findings. These findings are transport advisories: they
+never raise the risk verdict.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `reliability.success_rate` | Every attempted request in the burst succeeded. | Pass | No deduction |
-|  | Up to 10% of the attempted requests failed; deducts the failed share. | Warning · Low | up to −10 pts |
-|  | More than 10% of the attempted requests failed; deducts the failed share. | Fail · Medium | up to −100 pts |
+|  | One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share. | Warning · Low | up to −20 pts |
+|  | More requests than that failed; deducts the failed share. | Fail · Medium | up to −100 pts |
 |  | Every request was rate-limited (HTTP 429): not scored. | Inconclusive · Low | No deduction |
 | `reliability.latency` | p95 latency above 30 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
 | `reliability.rate_limited` | Part of the burst was rate-limited: honest throttling, not counted. | Info | No deduction |
@@ -626,12 +714,17 @@ transport and secret hygiene.
 appears verbatim in a response, and which response headers reveal an upstream or
 proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`, `x-litellm-*`, …;
 informational). It also states the limit: prompt logging and shared upstream
-keys are not provable from outside.
+keys are not provable from outside. Plain HTTP to this machine or a private
+network (`localhost`, `127.x`, `192.168.x`, `*.local`, … — a self-hosted model)
+is only a Warning without a cap, since the key does not cross the internet;
+plain HTTP to any other host stays Fail · High. Either way `security.tls` is a
+transport advisory and never raises the risk verdict.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `security.tls` | The endpoint uses HTTPS. | Pass | No deduction |
 |  | The endpoint is not HTTPS; the API key travels in clear text. | Fail · High | cap 40 |
+|  | Plain HTTP to a local or private-network host; the API key does not cross the internet. | Warning · Low | No deduction |
 | `security.key_echo` | The API key does not appear in the response. | Pass | No deduction |
 |  | The API key appears verbatim in the response. | Fail · High | cap 30 |
 | `security.headers` | No response header reveals the upstream (informational). | Pass | No deduction |
@@ -664,6 +757,9 @@ URL and a pinned `pip install` package — must come back verbatim. An exact ech
 passes, a non-echo (paraphrase, refusal) is inconclusive, and only a
 structure-preserving **value substitution** counts as tampering. In compare mode
 a substitution the trusted baseline does not make is CRITICAL.
+Only a baseline that returns the canary intact corroborates: a baseline that
+errors or returns nothing usable confirms nothing, so the substitution stays
+MEDIUM (evidence `baseline_unavailable`).
 An answer cut off at the output limit is inconclusive, not a substitution.
 
 | Check | Outcome | Status | Effect |
@@ -754,7 +850,7 @@ baseline, or else the knowledge-base profile's `performance.decode_tps` range.
 | `performance.cache_hit` | Unique probe prompts came back from a cache (left out of the statistics). | Warning · Low | 60 pts |
 |  | The baseline served unique probe prompts from a cache (not scored). | Info | Not counted |
 | `performance.reference` | Throughput is in line with the reference for this model. | Pass | 100 pts |
-|  | Slower than the reference (e.g. local or smaller hardware); not a failure. | Info | 80 pts |
+|  | Slower than the reference (e.g. local or smaller hardware); not a failure. | Info | Not counted |
 |  | Much faster than the reference (consistent with a smaller model). | Warning · Low | 60 pts |
 | `performance.reasoning` | The model spends hidden reasoning tokens; TTFT includes thinking. | Info | Not counted |
 | `performance.relay_overhead` | Latency compared with the trusted baseline (informational). | Info | Not counted |
@@ -763,7 +859,7 @@ baseline, or else the knowledge-base profile's `performance.decode_tps` range.
 **Caveats.** Latency depends on the network path and the provider's load at
 that moment; repeat a poor consistency result at another time. The
 knowledge-base ranges are deliberately wide medians of native APIs, and a
-slower target is never a failure. All findings are at most LOW severity, so
+slower target is noted, never scored. All findings are at most LOW severity, so
 this dimension moves the score, never the risk verdict.
 
 ---

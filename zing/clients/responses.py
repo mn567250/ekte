@@ -89,10 +89,24 @@ class ResponsesClient(BaseHTTPClient):
             choice = self._translate_tool_choice(spec.tool_choice)
             if choice is not None:
                 body["tool_choice"] = choice
-        # response_format / seed / stop have no stable Responses equivalent — dropped.
+        # Chat's response_format maps to Responses' text.format (the json_schema
+        # form is flattened: name/schema/strict sit next to "type").
+        text_format = self._translate_response_format(spec.response_format)
+        if text_format is not None:
+            body["text"] = {"format": text_format}
+        # seed / stop have no stable Responses equivalent — dropped.
         extra = {k: v for k, v in spec.extra_body.items() if k != "max_completion_tokens"}
         body.update(extra)
-        return body
+        return self._drop_unsupported(body, spec)
+
+    @staticmethod
+    def _translate_response_format(fmt: dict[str, Any] | None) -> dict[str, Any] | None:
+        """Chat ``response_format`` -> Responses ``text.format`` (None: not set)."""
+        if not isinstance(fmt, dict) or not fmt.get("type"):
+            return None
+        if fmt["type"] == "json_schema" and isinstance(fmt.get("json_schema"), dict):
+            return {"type": "json_schema", **fmt["json_schema"]}
+        return dict(fmt)
 
     @staticmethod
     def _translate_tool(tool: dict[str, Any]) -> dict[str, Any]:
@@ -254,6 +268,7 @@ class ResponsesClient(BaseHTTPClient):
     async def _complete_stream(self, body: dict[str, Any]) -> CompletionOutcome:
         started = time.perf_counter()
         first_token_at: float | None = None
+        first_reasoning_at: float | None = None
         content_parts: list[str] = []
         chunk_timings: list[float] = []
         # Tool-call args accumulate by output_index across delta/done events.
@@ -297,6 +312,14 @@ class ResponsesClient(BaseHTTPClient):
                                 first_token_at = time.perf_counter()
                             content_parts.append(piece)
                             chunk_timings.append(now)
+                    elif (
+                        isinstance(etype, str)
+                        and etype.startswith("response.reasoning")
+                        and etype.endswith(".delta")
+                    ):
+                        # reasoning_text / reasoning_summary_text deltas
+                        if first_reasoning_at is None and event.get("delta"):
+                            first_reasoning_at = time.perf_counter()
                     elif etype == "response.output_item.added":
                         item = event.get("item") or {}
                         if isinstance(item, dict) and item.get("type") == "function_call":
@@ -336,6 +359,9 @@ class ResponsesClient(BaseHTTPClient):
 
             duration_ms = (time.perf_counter() - started) * 1000
             ttft_ms = (first_token_at - started) * 1000 if first_token_at is not None else None
+            first_reasoning_ms = (
+                (first_reasoning_at - started) * 1000 if first_reasoning_at is not None else None
+            )
             tool_calls = [
                 {
                     "id": meta.get("id"),
@@ -356,6 +382,7 @@ class ResponsesClient(BaseHTTPClient):
                 usage=usage,
                 duration_ms=duration_ms,
                 ttft_ms=ttft_ms,
+                first_reasoning_ms=first_reasoning_ms,
                 chunk_timings_ms=chunk_timings,
                 chunk_count=len(chunk_timings),
                 headers=headers,

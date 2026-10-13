@@ -21,6 +21,7 @@ from zing.models import CompletionOutcome, RequestSpec
 from zing.utils.redact import redact_headers, redact_text
 from zing.utils.sse import (
     extract_content_delta,
+    extract_reasoning_delta,
     extract_tool_calls_delta,
     parse_sse_line,
     try_load_event,
@@ -78,13 +79,39 @@ class OpenAICompatibleClient(BaseHTTPClient):
             "tools": spec.tools,
             "tool_choice": spec.tool_choice,
         }
+        if self._completion_tokens(spec):
+            # Reasoning models refuse max_tokens and take the limit as
+            # max_completion_tokens; a request that already sets that keeps it.
+            limit = optional.pop("max_tokens")
+            if "max_completion_tokens" not in spec.extra_body:
+                optional["max_completion_tokens"] = limit
         for key, value in optional.items():
             if value is not None:
                 body[key] = value
         body.update(spec.extra_body)
         if spec.stream and "stream_options" not in body:
             body["stream_options"] = {"include_usage": True}
-        return body
+        return self._drop_unsupported(body, spec)
+
+    def _completion_tokens(self, spec: RequestSpec) -> bool:
+        """Whether the output limit goes out as ``max_completion_tokens``: the
+        model refuses ``max_tokens`` and has not refused the other name too."""
+        return (
+            not spec.exact_params
+            and "max_tokens" in self.unsupported_params
+            and "max_completion_tokens" not in self.unsupported_params
+        )
+
+    def _adaptable(self, spec: RequestSpec, body: dict[str, Any]) -> set[str]:
+        names = super()._adaptable(spec, body)
+        # The output limit can be renamed (max_tokens -> max_completion_tokens),
+        # and back when the client renamed it for an endpoint that knows only
+        # max_tokens. A limit the request itself sets in extra_body stays put.
+        if "max_tokens" in body:
+            names.add("max_tokens")
+        elif spec.max_tokens is not None and self._completion_tokens(spec):
+            names.add("max_completion_tokens")
+        return names
 
     # -- endpoints ---------------------------------------------------------- #
     async def _list_models(
@@ -360,6 +387,7 @@ class OpenAICompatibleClient(BaseHTTPClient):
     async def _complete_stream(self, body: dict[str, Any]) -> CompletionOutcome:
         started = time.perf_counter()
         first_token_at: float | None = None
+        first_reasoning_at: float | None = None
         content_parts: list[str] = []
         tool_call_parts: list[dict[str, Any]] = []
         chunk_timings: list[float] = []
@@ -400,6 +428,8 @@ class OpenAICompatibleClient(BaseHTTPClient):
                     choices = event.get("choices") or []
                     if choices and isinstance(choices[0], dict):
                         finish_reason = choices[0].get("finish_reason") or finish_reason
+                    if first_reasoning_at is None and extract_reasoning_delta(event):
+                        first_reasoning_at = time.perf_counter()
                     delta_text = extract_content_delta(event)
                     if delta_text:
                         if first_token_at is None:
@@ -414,6 +444,9 @@ class OpenAICompatibleClient(BaseHTTPClient):
 
             duration_ms = (time.perf_counter() - started) * 1000
             ttft_ms = (first_token_at - started) * 1000 if first_token_at is not None else None
+            first_reasoning_ms = (
+                (first_reasoning_at - started) * 1000 if first_reasoning_at is not None else None
+            )
             return CompletionOutcome(
                 ok=True,
                 status_code=status_code,
@@ -423,6 +456,7 @@ class OpenAICompatibleClient(BaseHTTPClient):
                 usage=usage,
                 duration_ms=duration_ms,
                 ttft_ms=ttft_ms,
+                first_reasoning_ms=first_reasoning_ms,
                 chunk_timings_ms=chunk_timings,
                 chunk_count=len(chunk_timings),
                 headers=headers,

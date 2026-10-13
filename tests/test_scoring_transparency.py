@@ -23,6 +23,7 @@ from zing.models import (
     RedactedTarget,
     Severity,
     Status,
+    TargetConfig,
     Verdict,
 )
 from zing.report import compact_dict, render_html, render_markdown
@@ -37,14 +38,21 @@ _REJECTED = CompletionOutcome(ok=False, status_code=400,
 _TIMEOUT = CompletionOutcome(ok=False, error_type="timeout", error_message="Read timed out.")
 
 
-async def _run(*outcomes: CompletionOutcome) -> DetectorResult:
+async def _run(*outcomes: CompletionOutcome, api: str = "openai") -> DetectorResult:
     queue = list(outcomes)
+    sent = []
 
-    async def complete(_spec):
+    async def complete(spec):
+        sent.append(spec)
         return queue.pop(0)
 
-    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete))
-    return await ProtocolDetector().run(ctx)  # type: ignore[arg-type]
+    target = TargetConfig(base_url="http://relay.test/v1", model="m", api=api)
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete), target=target)
+    result = await ProtocolDetector().run(ctx)  # type: ignore[arg-type]
+    assert not queue, "every queued outcome is consumed"
+    if api == "responses":
+        assert all(s.stop is None for s in sent), "no stop request on the Responses API"
+    return result
 
 
 def _finding(result: DetectorResult, fid: str) -> Finding:
@@ -57,7 +65,7 @@ async def test_every_check_scores_from_the_published_scale():
     assert result.scoring is not None and result.scoring.method == "mean_of_checks"
     assert len(result.scoring.outcomes) == len(SCALE.outcomes)
     for f in result.findings:
-        o = SCALE.get(f.id, f.outcome or "")
+        o = SCALE.get(f.scale_check, f.outcome or "")
         assert (f.score, f.status, f.severity) == (o.score, o.status, o.severity)
     assert [f.outcome for f in result.findings] == [
         "recalled", "truncated", "rejected_openai_body",
@@ -83,6 +91,16 @@ async def test_no_counted_check_means_no_score():
     assert _finding(result, "protocol.error_schema").outcome == "no_http_response"
     assert result.score == 55.0
     assert Scale.mean([f for f in result.findings if f.id != "protocol.error_schema"]) is None
+
+
+async def test_stop_check_is_not_applicable_on_the_responses_api():
+    # The Responses API has no stop parameter: no stop request is sent, and the
+    # check is noted but neither blames the relay nor counts towards the score.
+    result = await _run(_BLUE, _REJECTED, api="responses")
+    stop = _finding(result, "protocol.stop_not_applicable")
+    assert (stop.outcome, stop.status, stop.score) == ("not_applicable", Status.INFO, None)
+    assert stop.check == "protocol.stop" and stop.evidence == {"api": "responses"}
+    assert result.score == 100.0 and result.status == Status.PASS
 
 
 def test_scale_rejects_duplicate_outcomes():
@@ -257,3 +275,76 @@ async def test_html_groups_the_subjects_of_a_check():
     assert "7 of 8 OK; usage.completion_tokens (Present but zero or empty" in page
     assert "<code>usage.completion_tokens</code></td><td><code>0</code>" in page
     assert "7 passed: <code>model, choices" in page
+
+
+def _deduction_report() -> AuditReport:
+    """A deduction-scored detector with one parametrized check: one subject
+    passes, one deducts 20, one errored."""
+    from zing.detectors.scale import DeductionScale
+
+    scale = DeductionScale(
+        outcome("d.attr", "ok", None, Status.PASS, label="Fine."),
+        outcome("d.attr", "bad", None, Status.WARN, Severity.LOW, label="Bad.", deduction=20.0),
+        outcome("d.attr", "error", None, Status.ERROR, label="Errored."),
+        titles={"d.attr": "Attributes"},
+    )
+    findings = [
+        scale.finding("d.attr", key, title=f"Attribute {sub}", subject=sub)
+        for key, sub in (("ok", "a"), ("bad", "b"), ("error", "c"))
+    ]
+    det = DetectorResult(
+        id="d", name="D", dimension=Dimension.PROTOCOL, status=Status.WARN,
+        score=DeductionScale.total(findings), findings=findings, scoring=scale.scoring(),
+    )
+    return AuditReport(
+        tool_version="test", mode="check", suite="standard",
+        target=RedactedTarget(name="t", kind="target", base_url="http://relay.test/v1", model="m"),
+        verdict=Verdict(), dimensions=build_dimensions([det], None), detectors=[det],
+    )
+
+
+def test_html_group_rows_use_the_detector_scoring_method():
+    # A deduction scale's subject rows show what each deducted, as in Markdown,
+    # not "not counted" as if the points were a mean of checks.
+    report = _deduction_report()
+    page = render_html(report)
+    assert "<code>b</code>" in page and '<td class="num">−20</td>' in page
+    assert '<td class="num">no deduction</td>' in page
+    md = render_markdown(report)
+    assert "| `b` | — | Bad. | −20 |" in md
+    # the group row sums its subjects' deductions rather than averaging scores
+    assert "| Attributes | 1 of 3 OK; b (Bad.); c (Errored.) | −20 |" in md
+    assert page.count('<td class="num">−20</td>') == 2  # the group row and subject b
+
+
+def test_pdf_group_rows_use_the_detector_scoring_method():
+    pytest.importorskip("reportlab")
+    from reportlab.platypus import Paragraph, Table
+
+    from zing.report.pdf import _dimension_detector
+
+    def texts(flowables) -> list[str]:
+        out = []
+        for fl in flowables:
+            if isinstance(fl, Paragraph):
+                out.append(fl.getPlainText())
+            elif isinstance(fl, Table):
+                out += texts(c for row in fl._cellvalues for c in row)
+        return out
+
+    cells = texts(_dimension_detector(_deduction_report().detectors[0]))
+    assert cells.count("−20") == 2  # the group row and subject b
+    assert "no deduction" in cells and "not counted" not in cells
+
+
+def test_group_status_follows_the_scoring_order():
+    # Like a dimension status: a warning outranks a detector error, and a pass
+    # outranks an informational note.
+    from zing.report.dimensions import _Group
+
+    report = _deduction_report()
+    group = _Group("d.attr", "Attributes", list(report.detectors[0].findings))
+    assert group.status == Status.WARN
+    info = Finding(id="x", title="x", status=Status.INFO)
+    passed = Finding(id="y", title="y", status=Status.PASS)
+    assert _Group("x", "x", [info, passed]).status == Status.PASS

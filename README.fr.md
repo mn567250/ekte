@@ -421,6 +421,15 @@ modèle répond. La **confiance** du verdict (faible / moyenne / élevée) augme
 avec le nombre de dimensions cœur ayant produit un résultat, avec une référence
 et avec le juge LLM.
 
+Les avertissements de transport — HTTP en clair (`security.tls`) et échecs ou
+queues lentes sous charge (`reliability.*`) — abaissent le score de leur dimension
+mais n'élèvent pas non plus le risque de substitution ; le résumé les liste comme
+avertissements. Une réponse altérée et une clé API renvoyée l'élèvent toujours. Le
+HTTP en clair vers cette machine ou un réseau privé n'est qu'un avertissement de
+faible gravité, la clé ne la quittant jamais. Un profil de la base de connaissances
+apparié seulement de façon approximative (fuzzy) limite la confiance à faible, et
+un détecteur sans aucune réponse exploitable est non concluant, jamais une réussite.
+
 ## Suites
 
 | Suite | Détecteurs | Coût |
@@ -434,6 +443,7 @@ et avec le juge LLM.
 La sonde de fenêtre de contexte est bornée par `--max-context-tokens` (200K par
 défaut), afin que l'audit d'un modèle à 1M de tokens reste abordable. `--only` /
 `--skip` exécutent ou écartent des détecteurs par leur id.
+Une fenêtre plus grande que le plafond `--max-context-tokens` est signalée comme *vérifiée jusqu'au plafond*, jamais comme tronquée.
 
 ### Suite personnalisée
 
@@ -478,7 +488,7 @@ un centre de données :
 | erreurs | requêtes de sonde échouées : ≤ 2 % 100 · ≤ 10 % 80 · au-delà : 50 (429 non comptés) |
 | stabilité sous charge | latence p50 en rafale ÷ p50 séquentielle : ≤ 1,5x 100 · ≤ 3x 80 · au-delà : 55 |
 | accès au cache | prompts uniques servis depuis un cache : 60 |
-| référence | tokens/s face à la référence de confiance, sinon à la plage publiée pour le modèle dans la base de connaissances : conforme 100 · plus lent 80 (informatif, jamais un échec) · ≥ 2x plus rapide 60 (signe d'un modèle plus petit) · pas de référence : non compté |
+| référence | tokens/s face à la référence de confiance, sinon à la plage publiée pour le modèle dans la base de connaissances : conforme 100 · plus lent : non compté (informatif, jamais un échec) · ≥ 2x plus rapide 60 (signe d'un modèle plus petit) · pas de référence : non compté |
 
 Les constats de performance sont au plus de gravité faible : ils font bouger le
 score, jamais le verdict de risque. Sans la sonde (`standard` sans référence,

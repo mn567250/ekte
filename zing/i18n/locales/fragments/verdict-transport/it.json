@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Plain HTTP to a local or private-network host; the API key does not cross the internet.": "HTTP in chiaro verso un host locale o di rete privata; la chiave API non attraversa Internet.",
+  "Use https:// if this endpoint is reachable from other machines.": "Usa https:// se questo endpoint è raggiungibile da altre macchine.",
+  "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.": "Il modello dichiarato corrisponde solo in modo approssimativo a un profilo della base di conoscenza, quindi la confidenza è limitata a bassa: indica l'id esatto del modello o aggiungi un alias.",
+  "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "I rilievi su trasporto e affidabilità (HTTP in chiaro, errori o lentezza sotto carico) sono avvisi: abbassano il punteggio ma non il rischio di sostituzione."
+ }
+}

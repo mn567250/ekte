@@ -6,6 +6,64 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.20.2] — Correct verdicts for honest endpoints
+
+### Fixed
+
+Verdict correctness: an audit of the dimensions and detectors found several ways an
+honest endpoint was marked divergent. All of them are fixed.
+
+- **Context window.** The window is judged against the probed ceiling
+  (`--max-context-tokens`), so a window larger than the cap is *verified up to
+  the cap* instead of "truncated" (every 1M-token model failed before). Every
+  ladder rung stays at or below 90% of the window, leaving room for the output,
+  and each prompt is built at size / 1.2 because the heuristic under-counts real
+  tokens by 12–15%. Parameter rejections, server errors and empty answers end
+  the ladder as inconclusive (`probe_error`), never as a failed recall. A missed
+  middle needle is re-probed before lost-in-the-middle is reported. A 413 or
+  "prompt is too long" counts as a size rejection.
+- **Request parameters.** Clients follow the profile's `unsupported_params` (now
+  filled in for o1/o3/o4-mini/gpt-5.x and claude-opus-4-7/4-8): reasoning models
+  get `max_completion_tokens` and no rejected sampling parameters, and an
+  unprofiled endpoint that rejects a parameter is adapted once, for the rest of
+  the audit. The `protocol_request` probes still send their parameters verbatim.
+  An endpoint behaving like OpenAI's o3 no longer gets a HIGH verdict.
+- **Model identity.** No usable answer at all is inconclusive, not pass/100.
+  Generic words that are also brand names (step, command, seed, spark, meta, yi,
+  grok) count as a rival brand only when the self-identification answer names
+  them, never in fingerprint answers.
+- **Knowledge base.** A short model id no longer resolves to a longer, cheaper
+  tier (`gpt-4` was audited as gpt-4o-mini); an ambiguous id gets no profile. A
+  fuzzy match caps the verdict confidence at low. Gemini's cutoff and Pro-tier
+  fingerprints, and Moonshot's cutoff probe, apply only to the models they fit.
+- **Verdict.** Transport advisories (plain HTTP, reliability failures) lower their
+  dimension but no longer raise the substitution risk; plain HTTP to this machine
+  or a private network is a low-severity warning. Integrity tampering is CRITICAL
+  only when the baseline actually returned the canary intact (a failing baseline
+  corroborates nothing). The LLM judge reaches HIGH only with a stated high
+  confidence and a baseline that answered every probe; it is told the claimed
+  model.
+- **Detectors.** Streaming: no late-first-token signal for reasoning models, and an
+  empty stream is inconclusive. Determinism: the caching call needs at least 3
+  usable identical samples. Protocol: the stop check is not applicable on the
+  Responses API. Capability: unclaimed observations are no longer counted.
+  Performance: "slower than the reference" is not counted. Reliability: one
+  transient failure in a small burst is a warning. Connectivity, reliability and
+  context-window statuses now match their findings.
+- **Streamed reasoning.** All three clients record when the first streamed
+  reasoning delta arrives (`CompletionOutcome.first_reasoning_ms`). When a model
+  streams its reasoning, the streaming detector times the first token of either
+  kind, so a relay that buffers a reasoning model and replays it at the end is
+  flagged again; only hidden thinking excuses a late first visible token.
+- **One parameter fallback.** The context-window and performance probes no
+  longer carry their own `max_completion_tokens` retry; the client's adaptation
+  covers them (the probe evidence reports the client's renaming).
+- **Clients and reports.** The Responses client sends `response_format` as
+  `text.format`. A host name that merely starts with "127." is no longer treated
+  as loopback. HTML/PDF report groups show points in the detector's scoring method.
+  Context-window summaries name the probed window (and the declared one beside
+  it), so a capped probe no longer reads as measured against the full claim.
+
 ## [0.20.1] — LLM review of the texts in the accessibility report
 
 ### Added

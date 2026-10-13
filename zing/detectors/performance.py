@@ -48,7 +48,6 @@ from zing.detectors.base import CUSTOM_SUITE, SUITE_ORDER, Detector, register
 from zing.detectors.scale import Scale, outcome
 from zing.knowledge.schema import PerformanceReference
 from zing.models import (
-    CompletionOutcome,
     DetectorResult,
     Dimension,
     EndpointPerformance,
@@ -86,14 +85,6 @@ _ERROR_RATE_WARN = 0.1
 _LOAD_STABLE = 1.5
 _LOAD_SLOWER = 3.0
 _MIN_BURST_SAMPLES = 5
-
-# 4xx texts meaning "this model wants max_completion_tokens" (reasoning models).
-_PARAM_REJECTION_HINTS = (
-    "max_tokens",
-    "max_completion_tokens",
-    "unsupported parameter",
-    "unsupported value",
-)
 
 
 def _deep(suite: str) -> bool:
@@ -147,20 +138,12 @@ def estimated_calls(options: AuditOptions, *, has_baseline: bool) -> int:
     return per_endpoint * (2 if has_baseline else 1)
 
 
-def _is_param_rejection(outcome: CompletionOutcome) -> bool:
-    if outcome.ok or outcome.status_code is None or not 400 <= outcome.status_code < 500:
-        return False
-    msg = (outcome.error_message or "").lower()
-    return any(hint in msg for hint in _PARAM_REJECTION_HINTS)
-
-
 class _Endpoint:
     """One side of the probe and its per-endpoint state."""
 
     def __init__(self, label: str, client: Client) -> None:
         self.label = label
         self.client = client
-        self.use_completion_tokens = False
         self.seen: set[str] = set()
 
 
@@ -204,7 +187,7 @@ SCALE = Scale(
             label="The baseline served unique probe prompts from a cache (not scored)."),
     outcome("performance.reference", "matches", 100, Status.PASS,
             label="Throughput is in line with the reference for this model."),
-    outcome("performance.reference", "slower", 80, Status.INFO,
+    outcome("performance.reference", "slower", None, Status.INFO,
             label="Slower than the reference (e.g. local or smaller hardware); not a failure."),
     outcome("performance.reference", "faster", 60, Status.WARN, Severity.LOW,
             label="Much faster than the reference (consistent with a smaller model)."),
@@ -254,24 +237,17 @@ class PerformanceDetector(Detector):
         self._counter = 0
 
     # -- request building --------------------------------------------------- #
-    def _spec(self, max_tokens: int, *, stream: bool, use_completion_tokens: bool) -> RequestSpec:
+    def _spec(self, max_tokens: int, *, stream: bool) -> RequestSpec:
         topics: list[str] = prompts.get("performance.topics")
         topic = topics[self._counter % len(topics)]
         self._counter += 1
         content = prompts.text("performance.probe", nonce=secrets.token_hex(8), topic=topic)
-        messages = [{"role": "user", "content": content}]
-        if use_completion_tokens:
-            return RequestSpec(
-                messages=messages,
-                temperature=None,
-                max_tokens=None,
-                stream=stream,
-                extra_body={"max_completion_tokens": max_tokens},
-                reasoning_retry=False,
-            )
-        # The fixed output budget is part of the measurement: never repeated.
+        # The fixed output budget is part of the measurement: never repeated. A
+        # model that wants max_completion_tokens gets it from the client, which
+        # renames the limit (profile or first 4xx) and keeps the rejection out of
+        # the stats as a ``param_retry`` record.
         return RequestSpec(
-            messages=messages,
+            messages=[{"role": "user", "content": content}],
             temperature=None,
             max_tokens=max_tokens,
             stream=stream,
@@ -279,19 +255,7 @@ class PerformanceDetector(Detector):
         )
 
     async def _call(self, ep: _Endpoint, max_tokens: int, stream: bool) -> RequestRecord | None:
-        outcome = await ep.client.complete(
-            self._spec(max_tokens, stream=stream, use_completion_tokens=ep.use_completion_tokens)
-        )
-        if not ep.use_completion_tokens and _is_param_rejection(outcome):
-            # Likely a reasoning model that wants max_completion_tokens: keep the
-            # rejected call out of the stats and retry the way it asks.
-            rejected = last_record()
-            if rejected is not None:
-                rejected.phase = "param_retry"
-            ep.use_completion_tokens = True
-            outcome = await ep.client.complete(
-                self._spec(max_tokens, stream=stream, use_completion_tokens=True)
-            )
+        outcome = await ep.client.complete(self._spec(max_tokens, stream=stream))
         record = last_record()
         if record is None:
             return None
@@ -388,7 +352,12 @@ class PerformanceDetector(Detector):
             "burst": burst,
             "modes": ["stream" if m else "non_stream" for m in modes],
             "concurrency": conc,
-            "max_completion_tokens": {ep.label: ep.use_completion_tokens for ep in endpoints},
+            # The client renamed the limit for a model known (or found) to
+            # refuse max_tokens.
+            "max_completion_tokens": {
+                ep.label: "max_tokens" in getattr(ep.client, "unsupported_params", ())
+                for ep in endpoints
+            },
         }
         self._findings(
             result, records, summaries, n, stream=modes[0], reference=ctx.performance_reference()

@@ -309,6 +309,8 @@
   "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "Un proxy qui réécrit des URL/noms de paquets est un risque de chaîne d'approvisionnement — cessez de l'utiliser.",
   "Treat the advertised context window as unverified.": "Considérez la fenêtre de contexte annoncée comme non vérifiée.",
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Augmentez --timeout / --max-request-time, ou réduisez --max-context-tokens, pour mesurer la fenêtre complète.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Vérifiez l'erreur (par ex. un paramètre de requête refusé par ce point de terminaison) et relancez pour mesurer la fenêtre.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Augmentez --max-context-tokens pour tester toute la fenêtre déclarée.",
   "Compare against a trusted baseline to confirm.": "Comparez avec une référence de confiance pour confirmer.",
   "The relay likely truncates or summarizes long prompts.": "Le relais tronque ou résume probablement les longs prompts.",
   "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Fenêtre réelle ~{effective_window} << {declared} annoncés (ratio {ratio}, troncature silencieuse suspectée). Le début d'un prompt de ~{front_truncated_at} tokens a été écarté alors que sa fin était encore retrouvée (troncature par le début).",
@@ -319,6 +321,7 @@
   "Re-run once the endpoint reliably returns completions.": "Relancez quand le point d'accès renverra des complétions de façon fiable.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "À traiter comme un signal d'écart, pas une preuve ; corroborez avec les détecteurs d'empreinte et d'identité avant d'agir.",
   "Verify the relay supports stream=true for this model.": "Vérifiez que le relais prend en charge stream=true pour ce modèle.",
+  "Verify the relay streams content deltas for this model.": "Vérifiez que le relais diffuse des deltas de contenu pour ce modèle.",
   "Run `zing compare` against a trusted baseline to corroborate.": "Lancez `zing compare` face à une référence de confiance pour corroborer.",
   "A response naming a different vendor strongly suggests model substitution.": "Une réponse citant un autre fournisseur suggère fortement une substitution de modèle.",
   "Run `zing compare` against a trusted baseline to disambiguate.": "Lancez `zing compare` face à une référence de confiance pour lever l'ambiguïté.",
@@ -487,6 +490,10 @@
    "Gestion des séquences stop",
    "Contrôle de la séquence stop ; finish_reason={finish_reason}."
   ],
+  "protocol.stop_not_applicable": [
+   "Vérification de la séquence d'arrêt non applicable",
+   "La Responses API n'a pas de paramètre stop ; la séquence d'arrêt n'a pas été vérifiée et n'est pas comptée."
+  ],
   "protocol.shape": [
    "Conformité de la structure de réponse",
    "finish_reason={finish_reason} ; usage complet : {has_usage}."
@@ -525,15 +532,15 @@
   ],
   "context_window.no_recall": [
    "Aucune taille ne permet de retrouver l'aiguille",
-   "Même un prompt de ~{smallest_probed} tokens n'est pas retrouvé ; la fenêtre utile est bien inférieure aux {declared} annoncés."
+   "Même un prompt de ~{smallest_probed} jetons n'est pas rappelé ; la fenêtre utile semble très inférieure à la fenêtre sondée de {upper} jetons (déclarée {declared})."
   ],
   "context_window.truncation": [
    "Fenêtre de contexte réelle bien inférieure à l'annonce",
-   "Fenêtre réelle ~{effective_window} << {declared} annoncés (ratio {ratio}, troncature silencieuse suspectée)."
+   "Fenêtre de contexte réelle ~{effective_window} << fenêtre sondée de {upper} jetons (déclarée {declared} ; ratio {ratio}, troncature silencieuse soupçonnée)."
   ],
   "context_window.short": [
    "Fenêtre de contexte réelle inférieure à l'annonce",
-   "Fenêtre réelle ~{effective_window} inférieure aux {declared} annoncés (ratio {ratio}, le rappel se dégrade avant la limite)."
+   "Fenêtre de contexte réelle ~{effective_window} sous la fenêtre sondée de {upper} jetons (déclarée {declared} ; ratio {ratio}, le rappel se dégrade avant la limite)."
   ],
   "context_window.consistent": [
    "Fenêtre de contexte mesurée conforme à l'annonce",
@@ -542,6 +549,14 @@
   "context_window.measured": [
    "Fenêtre de contexte effective mesurée",
    "Pas de fenêtre annoncée à comparer ; fenêtre effective mesurée ~{effective_window} tokens."
+  ],
+  "context_window.verified_to_cap": [
+   "Fenêtre de contexte vérifiée jusqu'au plafond de la sonde",
+   "L'aiguille est retrouvée à ~{effective_window} tokens, le palier supérieur sous le plafond de sonde de {probe_cap} tokens ; la fenêtre déclarée de {declared} tokens au-delà n'a pas été testée."
+  ],
+  "context_window.probe_error": [
+   "La sonde de fenêtre de contexte a reçu une erreur",
+   "Une sonde de ~{errored_at} tokens a reçu une erreur ({error_status}) ; pas une preuve de troncature."
   ],
   "model_identity.no_profile": [
    "Modèle annoncé absent de la base de connaissances",
@@ -554,6 +569,10 @@
   "model_identity.model_field": [
    "Champ model renvoyé",
    "Le champ model de la réponse vaut {returned} ; demandé : {requested}."
+  ],
+  "model_identity.no_evidence": [
+   "Aucune preuve d'identité exploitable",
+   "Ni l'auto-identification ni aucune sonde d'empreinte n'ont donné de réponse exploitable et le champ model renvoyé ne diverge pas ({checks} vérifications) ; l'identité ne peut pas être jugée."
   ],
   "model_identity.fp_aggregate": [
    "Plusieurs empreintes comportementales divergent",
@@ -587,6 +606,10 @@
    "Échec de la requête en streaming",
    "La requête en streaming a échoué (HTTP {status_code}, type {error_type}) ; vérifiez que le modèle prend en charge stream=true."
   ],
+  "streaming.no_content": [
+   "Le flux n'a livré aucun contenu",
+   "La requête en streaming a réussi mais n'a livré aucun contenu ({chunk_count} fragments) ; le streaming n'a pas pu être évalué."
+  ],
   "streaming.few_chunks": [
    "Réponse livrée en ≤2 fragments",
    "{content_chars} caractères livrés en seulement {chunk_count} fragments (mis en tampon puis découpés, pas un vrai streaming token par token)."
@@ -594,6 +617,10 @@
   "streaming.late_ttft": [
    "Premier token arrivé en fin de flux",
    "Le premier token n'arrive qu'à ~{ttft_ratio} de la durée totale (ttft={ttft_ms} ms / duration={duration_ms} ms, mise en tampon suspectée)."
+  ],
+  "streaming.reasoning_ttft": [
+   "Premier jeton tardif d'un modèle de raisonnement",
+   "Le premier jeton visible est arrivé à {ttft_ms} ms sur {duration_ms} ms au total ; le modèle raisonne avant de répondre, ce n'est donc pas compté comme mise en tampon."
   ],
   "streaming.uniform_gaps": [
    "Intervalles entre fragments uniformes et quasi nuls",

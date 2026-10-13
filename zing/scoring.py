@@ -52,6 +52,23 @@ _CORE_DIMENSIONS = (
 # still counts; it just can't drive the "diverges from the claimed model" headline.
 _INFRA_DIMENSIONS = (Dimension.CONNECTIVITY,)
 
+# Transport/advisory checks (by finding check id): how the relay is reached and
+# how it holds up under load, not WHICH model it serves. Plain HTTP, a flaky
+# burst or a slow tail lower their dimension's score and status and are listed
+# as advisories in the verdict, but never escalate the substitution risk ladder
+# — a self-hosted ``http://localhost`` endpoint must not read as "diverges from
+# the claimed model". Integrity tampering and an echoed API key (other SECURITY
+# checks) still escalate.
+ADVISORY_CHECKS = frozenset({
+    "security.tls",
+    "reliability.success_rate",
+    "reliability.latency",
+})
+
+# Knowledge-base matches too loose to vouch for the profile the audit judged
+# against: the verdict confidence is capped at "low".
+_WEAK_MATCHES = frozenset({"fuzzy"})
+
 # Statuses that count as a core dimension having produced a usable substitution signal.
 _USABLE_STATUSES = (Status.PASS, Status.WARN, Status.FAIL)
 
@@ -62,16 +79,6 @@ _SEVERITY_ORDER = [
     Severity.HIGH,
     Severity.CRITICAL,
 ]
-
-
-def _status_from_score(score: float | None) -> Status:
-    if score is None:
-        return Status.NOT_RUN
-    if score >= 85:
-        return Status.PASS
-    if score >= 70:
-        return Status.WARN
-    return Status.FAIL
 
 
 # How "bad" a status is, for picking the worst across a dimension's detectors.
@@ -91,6 +98,11 @@ _STATUS_BADNESS = {
 
 def _all_findings(detectors: list[DetectorResult]) -> list[tuple[DetectorResult, Finding]]:
     return [(d, f) for d in detectors for f in d.findings]
+
+
+def is_advisory(finding: Finding) -> bool:
+    """True for a transport/advisory finding (see ``ADVISORY_CHECKS``)."""
+    return (finding.check or finding.id) in ADVISORY_CHECKS
 
 
 def _titles(findings: list[Finding]) -> list[str]:
@@ -217,14 +229,27 @@ def build_verdict(
     used_judge: bool,
     used_baseline: bool,
     selected: list[str] | None = None,
+    match_confidence: str | None = None,
 ) -> Verdict:
+    """The headline verdict. ``match_confidence`` is how the claimed model
+    matched its knowledge-base profile (``exact``/``alias``/``fuzzy``…); a
+    fuzzy match caps the confidence at "low"."""
     score = overall_score(dimensions)
     pairs = _all_findings(detectors)
+    weak_match = profile_matched and match_confidence in _WEAK_MATCHES
 
     # Substitution risk is judged on what is SERVED, excluding pure transport
-    # findings (a down/throttled honest relay must not read as "diverges").
+    # findings (a down/throttled honest relay must not read as "diverges") and
+    # transport/advisory checks (plain HTTP, reliability under load).
     infra_dims = set(_INFRA_DIMENSIONS)
-    substantive = [(d, f) for d, f in pairs if d.dimension not in infra_dims]
+    substantive = [
+        (d, f) for d, f in pairs if d.dimension not in infra_dims and not is_advisory(f)
+    ]
+    advisories = [
+        f for d, f in pairs
+        if d.dimension not in infra_dims and is_advisory(f)
+        and f.severity in (Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL)
+    ]
     critical = [f for _, f in substantive if f.severity == Severity.CRITICAL]
     high = [f for _, f in substantive if f.severity == Severity.HIGH]
     medium = [f for _, f in substantive if f.severity == Severity.MEDIUM]
@@ -264,7 +289,8 @@ def build_verdict(
 
     # --- confidence -------------------------------------------------------- #
     n_core_total = len(core_dims)
-    if not profile_matched:
+    if not profile_matched or weak_match:
+        # Unprofiled, or a fuzzy match whose profile may not be the model's.
         confidence = "low"
     elif used_baseline and len(core_dims_ran) == n_core_total:
         confidence = "high"
@@ -282,8 +308,11 @@ def build_verdict(
         risk, score, critical, high, medium, profile_matched, used_baseline,
         scored=sum(1 for d in dimensions if d.score is not None),
         selected=selected,
+        weak_match=weak_match,
+        advisories=bool(advisories),
     )
-    key = _titles(critical + high + medium)[:6]
+    # Substitution findings first; transport/reliability advisories after them.
+    key = _titles(critical + high + medium + advisories)[:6]
 
     return Verdict(
         overall_score=score,
@@ -318,6 +347,8 @@ def _summary(
     *,
     scored: int = 0,
     selected: list[str] | None = None,
+    weak_match: bool = False,
+    advisories: bool = False,
 ) -> str:
     bits: list[str] = []
     if score is not None:
@@ -344,6 +375,16 @@ def _summary(
         bits.append(
             "The claimed model was not found in the knowledge base, so identity/"
             "capability checks are limited — pass --declared-provider or add a KB profile."
+        )
+    elif weak_match:
+        bits.append(
+            "The claimed model only fuzzily matched a knowledge-base profile, so "
+            "confidence is capped at low — pass the exact model id or add a KB alias."
+        )
+    if advisories:
+        bits.append(
+            "Transport and reliability findings (plain HTTP, failures or slowness under "
+            "load) are advisories: they lower the score but not the substitution risk."
         )
     if not used_baseline and risk in (RiskLevel.MEDIUM, RiskLevel.HIGH):
         bits.append("Run `zing compare` against a trusted baseline to strengthen the verdict.")

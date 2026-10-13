@@ -67,7 +67,7 @@ async def _connectivity(models_ok: bool, chat: CompletionOutcome | None) -> Dete
     [
         (True, None, ("listed", "canary_echoed"), 100.0, Status.PASS),
         (True, _ok("Hello there."), ("listed", "canary_missing"), 92.5, Status.PASS),
-        (False, None, ("unavailable", "canary_echoed"), 80.0, Status.PASS),
+        (False, None, ("unavailable", "canary_echoed"), 80.0, Status.WARN),  # worst of the checks
         (True, _DOWN, ("listed", "failed"), 50.0, Status.FAIL),
         (False, _DOWN, ("unavailable", "failed"), 30.0, Status.FAIL),
     ],
@@ -134,3 +134,29 @@ async def test_determinism_without_usable_samples_has_no_score():
     assert by_id["determinism.temp1_variability"].outcome == "not_assessed"
     assert by_id["determinism.temp0_stability"].outcome == "not_assessed"
     assert result.score is None and result.status == Status.INCONCLUSIVE
+
+
+async def test_determinism_two_identical_survivors_are_inconclusive():
+    # 2 failed + 2 identical samples: too few usable samples to call caching.
+    result = await _determinism([_DOWN, _DOWN] + _SAME[:2], _STABLE)
+    _matches_scale(result, determinism.SCALE)
+    f = _by_id(result)["determinism.temp1_variability"]
+    assert (f.outcome, f.status, f.score) == ("not_assessed", Status.INCONCLUSIVE, None)
+    assert f.evidence["usable_samples"] == 2
+    assert f.evidence["required_samples"] == DeterminismDetector.MIN_USABLE_SAMPLES == 3
+    assert "Only 2 of 4 samples were usable" in f.summary
+    assert result.score is None and result.status == Status.INCONCLUSIVE
+
+
+async def test_determinism_empty_samples_are_not_reported_as_http_failures():
+    result = await _determinism([_ok(""), _ok("")] + _SAME[:2], _STABLE)
+    f = _by_id(result)["determinism.temp1_variability"]
+    assert f.outcome == "not_assessed"
+    assert f.summary.endswith("the response had no content") and "HTTP" not in f.summary
+
+
+async def test_determinism_three_identical_usable_samples_warn():
+    result = await _determinism([_DOWN] + _SAME[:3], _STABLE)
+    f = _by_id(result)["determinism.temp1_variability"]
+    assert (f.outcome, f.status, f.evidence["samples"]) == ("identical", Status.WARN, 3)
+    assert result.score == 55.0 and result.status == Status.WARN

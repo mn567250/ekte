@@ -97,6 +97,13 @@ Die Risikostufe richtet sich nach dem **Schweregrad der Befunde**, nicht nach
 der Bewertung. Befunde der Dimension Konnektivität zählen dabei nicht: ein
 Relay, das nicht erreichbar ist oder drosselt, konnte nicht beurteilt werden —
 das ist kein Beleg für ein anderes Modell.
+Auch die **Transport-Hinweise** zählen nicht (`ADVISORY_CHECKS` in
+`zing/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): Klartext-HTTP, Fehler oder
+Langsamkeit unter Last zeigen, wie das Relay erreicht wird, nicht welches
+Modell es ausliefert. Sie senken weiterhin Bewertung und Status ihrer
+Dimension, stehen in den wichtigsten Befunden nach den Substitutionsbefunden,
+und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipulation der Antwort
+(Integrität) und ein zurückgegebener API-Schlüssel heben das Risiko weiterhin an.
 
 | Risiko | Bezeichnung in der UI | Wann |
 |---|---|---|
@@ -108,8 +115,9 @@ das ist kein Beleg für ein anderes Modell.
 
 ### Konfidenz des Urteils
 
-- **Niedrig** — das angegebene Modell steht nicht in der Wissensbasis, oder
-  weniger als zwei Kerndimensionen lieferten ein verwertbares Ergebnis;
+- **Niedrig** — das angegebene Modell steht nicht in der Wissensbasis, passt
+  nur unscharf zu einem Profil (`match_confidence` `fuzzy`; die
+  Zusammenfassung sagt es), oder weniger als zwei Kerndimensionen lieferten ein verwertbares Ergebnis;
 - **Mittel** — mindestens zwei Kerndimensionen lieferten ein verwertbares
   Ergebnis;
 - **Hoch** — eine Referenz wurde genutzt *und* alle drei Kerndimensionen
@@ -165,7 +173,17 @@ das ist kein Beleg für ein anderes Modell.
   das angegebene Kontextfenster, die maximale Ausgabe, den Tokenizer, die
   Fähigkeitsflags, die Identitätsschlüsselwörter und die
   Verhaltens-Fingerprints, an denen die Tests gemessen werden. Jeder Bericht
-  hält das verwendete Profil fest (`knowledge`).
+  hält das verwendete Profil fest (`knowledge`). Die angegebene ID trifft ein
+  Profil über die exakte ID, einen Alias oder den normalisierten Namen, sonst
+  unscharf: über den längsten Profilnamen, den sie enthält
+  (`gpt-4o-2024-11-20-custom` → `gpt-4o`), außer der Rest der ID nennt eine
+  andere Stufe oder Variante (`gpt-5-mini` ist nicht `gpt-5`), oder, bei einer
+  gekürzten ID, nur wenn genau ein Modellname mit ihr beginnt. Eine generische
+  oder mehrdeutige ID (`gpt-4`, `claude`, `gemini-2.5`) erhält daher kein
+  Profil statt einer geratenen, oft günstigeren Stufe. Anbieterweite
+  Fingerprints gelten für jedes Modell des Anbieters; einer, der nur zu manchen
+  Modellen passt (ein Wissensstand, eine Größenstufe), steht nur bei diesen
+  Modellen.
 - **Prompt-Sprache:** jeder Testtext liegt in `zing/prompts/en.json` und ist
   Englisch, unabhängig von der UI-Sprache; nur Fingerprints, deren Sprache
   selbst die Messung *ist*, deklarieren `prompt_lang` und `language_bound`.
@@ -181,6 +199,16 @@ das ist kein Beleg für ein anderes Modell.
   bekannt ist, dass ein Endpunkt nachdenkt (sein Profil sagt
   `reasoning: true`, oder nach seiner ersten solchen Wiederholung), gehen kurze
   Proben gleich mit dem Limit von 4.096 Token hinaus statt zweimal.
+- **Anfrageparameter:** Reasoning-Modelle lehnen manche Parameter ab: bei Chat
+  Completions `max_tokens` (sie nehmen `max_completion_tokens`) und in jedem
+  Protokoll Sampling-Parameter wie `temperature`. Der Client lässt die Parameter
+  weg, die das Profil unter `unsupported_params` führt, und sendet das
+  Ausgabelimit als `max_completion_tokens`, wenn `max_tokens` dort steht. Ein
+  Endpunkt ohne Profil, der einen solchen Parameter in einem 4xx nennt, erhält
+  die Anfrage noch einmal angepasst, und jede spätere Anfrage geht gleich
+  angepasst hinaus; der abgelehnte Versuch zählt nicht als Relay-Fehler. Die
+  Proben von `protocol_request` gehen genau so hinaus, wie sie gebaut sind, denn
+  sie bewerten gerade die unveränderte Ablehnung.
 
 ---
 
@@ -205,6 +233,9 @@ zurückgegebene `model`-Feld.
 |  | Eine Chat-Completion lieferte Inhalt, gab das Canary aber nicht zurück. | Bestanden | 85 Pkt. |
 |  | Die Chat-Completion schlug fehl oder lieferte keinen Inhalt. | Fehlgeschlagen · Hoch | 0 Pkt. |
 
+Der Status des Detektors ist der schlechteste seiner Prüfungen: ein
+deaktiviertes `/v1/models` ergibt eine Warnung, auch wenn der Chat funktioniert.
+
 **Einschränkungen.** Ein fehlendes `/v1/models` ist harmlos; viele Relays
 schalten es ab. Ein vorübergehender Netzwerkfehler oder 5xx kann die
 Chat-Prüfung scheitern lassen: erneut ausführen. Konnektivität beweist nichts
@@ -228,6 +259,10 @@ früheren Runde erinnern muss; eine `stop`-Sequenz, die die Ausgabe abschneiden
 muss; und eine absichtlich ungültige Anfrage (leeres `messages`), die mit einem
 4xx abgelehnt werden muss, idealerweise mit einem Fehlerkörper im OpenAI-Stil.
 
+Die Responses API hat keinen `stop`-Parameter; bei einem Ziel mit Responses API
+wird der Stop-Test daher nicht gesendet und die Prüfung als nicht anwendbar
+vermerkt (nicht gewertet), statt dem Relay die Schuld zu geben.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `protocol.multi_turn` | Die Farbe aus einer früheren Runde wurde wiedergegeben. | Bestanden | 100 Pkt. |
@@ -237,6 +272,7 @@ muss; und eine absichtlich ungültige Anfrage (leeres `messages`), die mit einem
 |  | Die Stopp-Behandlung ließ sich anhand des Textes nicht bestätigen. | Warnung · Niedrig | 70 Pkt. |
 |  | Text nach der Stoppsequenz wurde zurückgegeben. | Warnung · Niedrig | 60 Pkt. |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
+|  | Die Responses API hat keinen stop-Parameter; nicht geprüft, nicht gezählt. | Info | Nicht gewertet |
 | `protocol.error_schema` | Mit einem 4xx und einem Fehlerobjekt im OpenAI-Stil abgelehnt. | Bestanden | 100 Pkt. |
 |  | Mit einem 4xx abgelehnt, aber der Body entspricht nicht dem OpenAI-Stil. | Warnung · Niedrig | 80 Pkt. |
 |  | Keine HTTP-Antwort; die Behandlung von Client-Fehlern ließ sich nicht bestätigen. | Warnung · Niedrig | 55 Pkt. |
@@ -303,12 +339,15 @@ Reasoning-Modelle, die die Temperatur legitim ignorieren, wird das Urteil
 unterdrückt. Zwei identische Faktenfragen mit `temperature=0` dienen nur zur
 Information.
 
+Für den Caching-Befund müssen mindestens drei der vier Samples verwertbar (und
+alle verwertbaren identisch) sein; mit weniger ist die Prüfung nicht eindeutig.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `determinism.temp1_variability` | Wiederholte Samples bei temperature=1.0 unterschieden sich, wie bei echtem Sampling. | Bestanden | 100 Pkt. |
 |  | Die Samples waren identisch, aber Reasoning-Modelle ignorieren temperature berechtigterweise. | Info | 100 Pkt. |
-|  | Alle Samples bei temperature=1.0 waren byte-identisch, was auf zwischengespeicherte Antworten hindeutet. | Warnung · Mittel | 55 Pkt. |
-|  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
+|  | Alle verwertbaren Samples (mindestens 3) bei temperature=1.0 waren bytegleich, was auf Antwort-Caching hindeutet. | Warnung · Mittel | 55 Pkt. |
+|  | Weniger als 3 verwertbare Samples bei temperature=1.0 zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `determinism.temp0_stability` | Identische Antworten bei temperature=0 (erwartet); nur zur Information, nicht gewertet. | Info | Nicht gewertet |
 |  | Die Antworten unterschieden sich bei temperature=0; nur zur Information, nicht gewertet. | Info | Nicht gewertet |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
@@ -329,55 +368,83 @@ billige RAG-/Zusammenfassungs-Zwischenschicht reicht nur Teile des Prompts
 weiter).
 
 **Vorgehen.** Abruf einer Nadel im Heuhaufen mit `temperature=0`: ein
-eindeutiger Marker steckt in nicht repetitivem Fülltext, der mit der
-heuristischen Token-Schätzung von zing bemessen ist, und das Modell muss ihn
-zurückgeben.
+eindeutiger Marker steckt in nicht repetitivem Fülltext, und das Modell muss
+ihn zurückgeben.
 
-1. Eine aufsteigende, sich verdoppelnde Leiter ab 2K Token bis zum angegebenen
-   Fenster, begrenzt durch `--max-context-tokens` (Standard 200K), mit einer
-   Stufe bei etwa 90 % des Maximums (höchstens sieben Größen). Jede Größe wird
-   zuerst mit der Nadel am **Anfang** getestet (Tiefe 0,0): eine Kürzung, die
-   die Frage am Ende des Prompts behält, kann nur dessen Anfang verwerfen (ein
-   lokaler Server, der den Prompt auf seine Kontextlänge kürzt, behält das
-   Ende), daher besteht die Größe bei einem Treffer dort mit einem Aufruf. Ein
-   Fehlschlag wird am Ende geprüft (Tiefe 0,95); wird das Ende erinnert, wird
-   der Anfang noch einmal mit einer frischen Nadel getestet, und ein zweiter
-   Fehlschlag lässt die Größe als **Kürzung von vorn** scheitern (in den Belegen
-   des Urteils vermerkt). Höchstens drei Aufrufe pro Größe; die Leiter endet
-   beim ersten bestätigten Fehlschlag.
-2. Ein Schritt binärer Suche zwischen der letzten abgerufenen und der ersten
+- **Geprüftes Fenster.** Die Probe reicht bis `upper` = angegebenes Fenster,
+  begrenzt durch `--max-context-tokens` (Standard 200K). Jedes Urteil wird an
+  `upper` gemessen, nie an dem Teil eines größeren angegebenen Fensters
+  oberhalb der Obergrenze.
+- **Größen sind echte Token.** Die eingebaute Token-Schätzung von zing zählt
+  diesen Fülltext gegenüber echten Tokenizern etwa 12 % (o200k) bis 15 %
+  (cl100k) zu niedrig; daher wird jeder Prompt laut Schätzung mit Größe ÷ 1,2
+  gebaut (Nadel und Frage eingerechnet): eine Stufe der Größe N bleibt innerhalb
+  von N echten Token. Größen in den Belegen (`size`, `effective_window`,
+  `top_rung`) sind diese Budgets an echten Token; die Leiterzeilen enthalten
+  zusätzlich die Schätzung, mit der ein Prompt gebaut wurde
+  (`heuristic_tokens`).
+
+1. Eine Leiter von höchstens sieben Größen, die von einer **obersten Stufe bei
+   90 % von `upper`** halbiert wird (keine Stufe erreicht das volle Fenster,
+   Platz für Antwort und Chat-Template bleibt) bis zu einer Untergrenze von 1K
+   (`context_probe_floor_tokens`); ein kleines Fenster senkt die Untergrenze auf
+   ein Viertel der obersten Stufe (ein 2K-Fenster prüft ~460, ~920 und ~1,8K).
+   Jede Größe wird zuerst mit der Nadel am **Anfang** getestet (Tiefe 0,0):
+   eine Kürzung, die die Frage am Ende des Prompts behält, kann nur dessen
+   Anfang verwerfen (ein lokaler Server, der den Prompt auf seine Kontextlänge
+   kürzt, behält das Ende), daher besteht die Größe bei einem Treffer dort mit
+   einem Aufruf. Ein Fehlschlag wird am Ende geprüft (Tiefe 0,95); wird das
+   Ende erinnert, wird der Anfang noch einmal mit einer frischen Nadel getestet,
+   und ein zweiter Fehlschlag lässt die Größe als **Kürzung von vorn** scheitern
+   (in den Belegen des Urteils vermerkt). Höchstens drei Aufrufe pro Größe; die
+   Leiter endet beim ersten bestätigten Fehlschlag.
+2. Zwei Schritte binärer Suche zwischen der letzten abgerufenen und der ersten
    gescheiterten Größe.
 3. Lost in the Middle: bei min(32K, gemessenes Fenster) liegt die Nadel in
-   Tiefe 0,1, 0,5 und 0,9; Anfang und Ende abgerufen, die Mitte nicht, ist ein
-   Befund.
+   Tiefe 0,1, 0,5 und 0,9. Werden Anfang und Ende erinnert, die Mitte aber
+   nicht, wird die Mitte noch einmal mit einer frischen Nadel getestet; erst ein
+   zweiter Fehlschlag ist ein Befund.
 4. Ein 4xx, dessen Meldung die Kontextlänge nennt, ist eine Ablehnung wegen der
    Größe; eine Ablehnung von `max_tokens` (Reasoning-Modelle) wird mit
    `max_completion_tokens` wiederholt und nie als Obergrenze gelesen.
-5. Eine Probe mit Zeitüberschreitung beendet die Leiter, ohne als Fehlschlag zu
-   zählen: das Fenster oberhalb der letzten erinnerten Größe gilt als nicht
-   geprüft (nicht eindeutig), nie als Kürzung.
+5. Eine Probe mit Zeitüberschreitung oder mit einer Fehlerantwort (ein anderer
+   abgelehnter Parameter, ein HTTP-Fehler, ein 5xx, eine leere oder fehlerhafte
+   Antwort) beendet die Leiter, ohne als Fehlschlag zu zählen: das Fenster
+   oberhalb der letzten erinnerten Größe gilt als nicht geprüft (nicht
+   eindeutig, nicht bewertet), nie als Kürzung oder `no_recall`. Nur eine
+   Antwort ohne Nadel ist ein Fehlschlag.
 
-Das gemessene Fenster wird mit dem angegebenen verglichen. Ohne angegebenes
-Fenster wird die Messung berichtet, aber nicht bewertet.
+Das gemessene Fenster (größte erinnerte Größe) wird mit `upper` verglichen:
+Erinnerung auf der obersten Stufe ist stimmig (oder, wenn das angegebene
+Fenster die Obergrenze übersteigt, **bis zur Obergrenze bestätigt**: das Fenster
+darüber wurde nicht geprüft); darunter zieht das Urteil den nicht erinnerten
+Anteil der obersten Stufe ab — eine Warnung ab der Hälfte von `upper`, ein
+Fehlschlag darunter. Ohne angegebenes Fenster wird die Messung berichtet, aber
+nicht bewertet.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
-| `context_window.window` (Effektives Kontextfenster) | Recall hielt bis mindestens 90 % des angegebenen Fensters; zieht den Anteil des Fensters ab, der nicht erinnert wurde. | Bestanden | bis zu −10 Pkt. |
-|  | Recall hielt bis 50–90 % des angegebenen Fensters; zieht den Anteil des Fensters ab, der nicht erinnert wurde. | Warnung · Mittel | bis zu −50 Pkt. |
-|  | Recall versagte unter der Hälfte des angegebenen Fensters; zieht den Anteil des Fensters ab, der nicht erinnert wurde. | Fehlgeschlagen · Hoch | bis zu −100 Pkt. |
+| `context_window.window` (Effektives Kontextfenster) | Erinnerung hielt auf der obersten Stufe (90 % des geprüften Fensters): kein Abzug. | Bestanden | Kein Abzug |
+|  | Erinnerung bis zur Probe-Obergrenze bestätigt; das angegebene Fenster darüber wurde nicht geprüft. | Bestanden | Kein Abzug |
+|  | Erinnerung hielt bis 50–90 % des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab. | Warnung · Mittel | bis zu −50 Pkt. |
+|  | Erinnerung versagte unterhalb der Hälfte des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab. | Fehlgeschlagen · Hoch | bis zu −100 Pkt. |
 |  | Nicht einmal die kleinste Probengröße erinnerte die Nadel. | Fehlgeschlagen · Hoch | −100 Pkt. |
-| `context_window.lost_in_middle` | Anfang und Ende wurden erinnert, die Mitte aber nicht. | Warnung · Mittel | −15 Pkt. |
+| `context_window.lost_in_middle` | Anfang und Ende wurden erinnert, die Mitte zweimal nicht. | Warnung · Mittel | −15 Pkt. |
 | `context_window.rejected_below_claim` | Ein Prompt weit unter dem angegebenen Fenster wurde als zu lang abgelehnt. | Fehlgeschlagen · Hoch | Kein Abzug |
 | `context_window.measured` | Kein angegebenes Fenster zum Vergleich: nur gemessen, nicht gewertet. | Info | Kein Abzug |
 | `context_window.no_ladder` | Keine Probengröße passte zwischen Unter- und Obergrenze. | Nicht eindeutig · Niedrig | Kein Abzug |
 | `context_window.timed_out` | Eine Probe lief vor Erreichen des angegebenen Fensters in eine Zeitüberschreitung: ein langsamer Endpunkt, kein Hinweis auf Kürzung. | Nicht eindeutig · Niedrig | Kein Abzug |
+| `context_window.probe_error` | Eine Probe wurde vor der obersten Stufe mit einem Fehler beantwortet (abgelehnter Parameter, HTTP- oder Serverfehler): kein Beleg für Kürzung. | Nicht eindeutig · Niedrig | Kein Abzug |
 
 **Einschränkungen.** Auch echte Langkontext-Modelle verlieren Nadeln in der
 Mitte; deshalb gilt nur ein Fehlschlag am **Rand** als Kürzung. Der Abruf nahe
 der Grenze ist probabilistisch; vor einem Schluss erneut ausführen. Der Test ist
 durch `--max-context-tokens` begrenzt, ein größeres Fenster wird also nicht
-vollständig ausgereizt. Vergleichen Sie mit einer vertrauenswürdigen Referenz,
-um Modellverhalten von Zwischenschicht-Verhalten zu trennen.
+vollständig ausgereizt (zum weiteren Prüfen erhöhen). Die oberste Stufe liegt
+bei 90 % des Fensters und das Token-Budget ist vorsichtig bemessen, daher werden
+die letzten ~10–15 % eines Fensters nie geprüft. Vergleichen Sie mit einer
+vertrauenswürdigen Referenz, um Modellverhalten von Zwischenschicht-Verhalten
+zu trennen.
 
 ---
 
@@ -406,6 +473,13 @@ billigeren oder offenen Backend) sowie Signale von
    heben `identity_forbidden` nie auf, allgemeine Wörter („ai“, „platform“, …)
    zählen nie, und die eigene Marke einer Plattform zählt nicht für das Modell
    eines anderen Herstellers, das sie anbietet.
+   Markenwörter, die zugleich Alltagswörter sind (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`), zählen nur in
+   dieser Selbstidentifikation und nur als Name geschrieben („Meta“,
+   „Command R“, „grok-2“; am Satz- oder Listenanfang nur mit angehängter
+   Version, „Step-2“);
+   in Fingerprint-Antworten zählen sie nie, „let me think step by step“ ist
+   also keine Konkurrenzmarke. Ein Hersteller, dem ein solches Wort gehört,
+   behält es als eigene Marke.
 2. **Verhaltens-Fingerprints** aus der Wissensbasis (Wissensstichtag,
    Tokenizer-Eigenheiten, Formatierung, sprachgebundene Tests, …): bis zu sechs
    Tests in reinem Code, geprüft mit `expect_contains`, `expect_contains_any`,
@@ -421,6 +495,12 @@ billigeren oder offenen Backend) sowie Signale von
    `flash`, `lite`, `8b`, …) oder eine andere Modellfamilie wird markiert.
 
 Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
+Ebenfalls nicht eindeutig und ohne Punktzahl (`model_identity.no_evidence`)
+ist er, wenn weder die Selbstidentifikation noch ein Fingerprint eine
+verwertbare Antwort lieferte und das zurückgegebene `model`-Feld nicht
+abweicht: Ein Relay, das jede Anfrage ablehnt oder leer beantwortet, liefert
+keinen Identitätsbeleg, und das Echo des angefragten Namens allein beweist
+nichts. Teilweise Belege werden normal bewertet.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
@@ -438,6 +518,7 @@ Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
 | `model_identity.model_field` | Das zurückgegebene model-Feld entsprach dem angefragten Modell. | Bestanden | Kein Abzug |
 |  | Das zurückgegebene model-Feld nennt ein anderes oder kleineres Modell. | Warnung · Mittel | Kein Abzug |
 |  | Die Antwort enthielt kein verwertbares model-Feld. | Nicht eindeutig | Kein Abzug |
+| `model_identity.no_evidence` | Weder Selbstidentifikation noch ein Fingerprint lieferte eine verwertbare Antwort, und das model-Feld wich nicht ab: nicht bewertet. | Nicht eindeutig | Kein Abzug |
 
 ### `quality_judge` — Qualitäts-/Herabstufungsbewertung durch ein LLM
 
@@ -445,17 +526,20 @@ Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
 Leistungsstufen unterscheiden (mehrstufiges Denken, eine präzise
 Programmieraufgabe, feines Befolgen von Anweisungen), geht an das Ziel und im
 Vergleichsmodus an die Referenz; ein separater, vertrauenswürdiger Richter sieht
-nur die Antworten und gibt ein Urteil samt Konfidenz ab. Ein Richterurteil ist
-nur HOCH, wenn eine Referenz den Unterschied bestätigt hat und der Richter keine
-niedrige oder mittlere Konfidenz angab.
+nur die Antworten und gibt ein Urteil samt Konfidenz ab. Der Richter erfährt das angegebene Modell (`claimed_model`, falls gesetzt,
+sonst die angefragte ID). Ein Richterurteil ist nur HOCH, wenn der Richter
+**hohe** Konfidenz angab und eine verwertbare Referenz den Unterschied
+bestätigt hat — eine, die auf jede vom Ziel beantwortete Sonde eine nicht
+leere Antwort lieferte. Niedrige, mittlere, fehlende oder unbekannte
+Konfidenz bleibt MITTEL, ebenso eine Referenz, die Fehler lieferte oder
+Sonden unbeantwortet ließ.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `quality_judge.verdict` (Urteil des LLM-Judge) | Der Judge fand die Antworten passend zum angegebenen Modell. | Bestanden | 95 Pkt. |
-|  | Der Judge fand die Antworten dem angegebenen Modell unähnlich (niedrige/mittlere Sicherheit). | Warnung · Mittel | 50 Pkt. |
-|  | Der Judge ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine Baseline). | Warnung · Mittel | 25 Pkt. |
+|  | Der Judge fand die Antworten dem angegebenen Modell unähnlich (niedrige, mittlere oder keine angegebene Sicherheit). | Warnung · Mittel | 50 Pkt. |
+|  | Der Judge ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine verwertbare Baseline). | Warnung · Mittel | 25 Pkt. |
 |  | Der Judge ist sicher, und eine vertrauenswürdige Baseline bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 25 Pkt. |
-|  | Der Judge nannte keine Sicherheit, und eine vertrauenswürdige Baseline bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 50 Pkt. |
 |  | Der Judge kam zu keinem Urteil. | Nicht eindeutig · Niedrig | Nicht gewertet |
 |  | Keine Antworten des Ziels zum Beurteilen. | Nicht eindeutig · Niedrig | Nicht gewertet |
 
@@ -496,6 +580,11 @@ des Profils gemessen:
   maximale Ausgabe, 2048) Token; das Erreichen der Grenze oder eine plausible
   Länge besteht, ein Abbruch unter einem Viertel davon wird markiert.
 
+Eine Beobachtung ohne zu prüfende Angabe – kein Tool-Aufruf oder JSON-Objekt,
+wenn die Funktion nicht angegeben ist, oder jedes Ergebnis zum strikten Schema,
+wenn das Profil dem Modell strikte Schemas abspricht – wird vermerkt, aber nicht
+gewertet: Für etwas, das niemand angibt, verliert ein Modell keine Punkte.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `capability.tools` | Auf eine ausdrückliche Tool-Anfrage kam ein Tool-Aufruf zurück. | Bestanden | 100 Pkt. |
@@ -504,13 +593,13 @@ des Profils gemessen:
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.tools.encoding` | Die Tool-Argumente kamen als Objekt, nicht als der JSON-String, den OpenAI liefert. | Warnung · Niedrig | Nicht gewertet |
 | `capability.json_mode` | Der JSON-Modus lieferte ein parsebares Objekt mit dem angefragten Wert. | Bestanden | 100 Pkt. |
-|  | Ein JSON-Objekt kam mit falschem Wert zurück; der JSON-Modus wird nicht angegeben. | Info | 70 Pkt. |
-|  | Es kam kein parsebares JSON-Objekt zurück; der JSON-Modus wird nicht angegeben. | Warnung | 50 Pkt. |
+|  | Ein JSON-Objekt kam mit falschem Wert zurück; der JSON-Modus wird nicht angegeben. | Info | Nicht gewertet |
+|  | Es kam kein parsebares JSON-Objekt zurück; der JSON-Modus wird nicht angegeben. | Info | Nicht gewertet |
 |  | Der JSON-Modus wird angegeben, aber es kam kein gültiges Objekt mit dem Wert zurück. | Fehlgeschlagen · Mittel | 0 Pkt. |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.json_schema` | Das strikte Schema wird angegeben und die Antwort entsprach ihm. | Bestanden | 100 Pkt. |
-|  | Das strikte Schema wurde nicht durchgesetzt, passend zur Angabe. | Info | 100 Pkt. |
-|  | Die Antwort entsprach dem Schema, obwohl dem angegebenen Modell strikte Schemas fehlen. | Info | 90 Pkt. |
+|  | Das strikte Schema wurde nicht durchgesetzt, passend zur Angabe. | Info | Nicht gewertet |
+|  | Die Antwort entsprach dem Schema, obwohl dem angegebenen Modell strikte Schemas fehlen. | Info | Nicht gewertet |
 |  | Das strikte Schema wird angegeben, aber die Antwort entsprach ihm nicht. | Warnung · Niedrig | 40 Pkt. |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.max_output` | Die Ausgabe lief bis zur angefragten Token-Obergrenze. | Bestanden | 100 Pkt. |
@@ -555,17 +644,27 @@ Zeichen zurückkamen, sowie **gleichförmige Abstände** (vier oder mehr Chunks 
 fast gleichen Abständen, CV < 0,1, und unter 2 ms: gebündelt ausgeliefert). Ein
 Stream ohne Usage-Chunk wird gesondert markiert.
 
+TTFT ist das erste sichtbare Inhalts-Token. Bei einem Reasoning-Modell (laut
+Wissensbasis oder mit Reasoning-Tokens in der Usage), das vor der Antwort
+nachdenkt, wird ein spätes erstes Token daher nur vermerkt und nicht als
+Pufferung gezählt; die Signale wenige Chunks und gleichförmige Abstände zählen
+weiter. Ein Stream, der erfolgreich ist, aber keinen Inhalt liefert, ist nicht
+eindeutig und wird nicht bewertet.
+Streamt das Modell sein Reasoning (Reasoning-Deltas, Thinking-Blöcke, Reasoning-Ereignisse der Responses-API), zählt stattdessen das erste Token beider Arten: ein echter Stream beginnt früh mit dem Reasoning, ein Stream, dessen Reasoning und Antwort beide erst ganz am Ende kommen, ist also auch bei einem Reasoning-Modell gepuffert.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `streaming.healthy` | Viele Chunks, ein früher erster Token und verteilte Abstände: echtes Streaming. | Bestanden | Kein Abzug |
 | `streaming.few_chunks` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.late_ttft` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
+| `streaming.reasoning_ttft` | Spätes erstes Token eines Reasoning-Modells (es denkt vor der Antwort nach): informativ, nicht als Pufferung gezählt. | Info | Kein Abzug |
 | `streaming.uniform_gaps` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.no_usage` | Kein Usage-Chunk im Stream: zieht 15 Punkte ab, wenn nichts gepuffert ist. | Warnung · Niedrig | bis zu −15 Pkt. |
+| `streaming.no_content` | Der Stream war erfolgreich, lieferte aber keinen Inhalt zur Beurteilung; nicht bewertet. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `streaming.failed` | Die Streaming-Anfrage schlug fehl. | Fehlgeschlagen · Hoch | Obergrenze 0 |
 
 Also: echt 100 · Usage fehlt 85 · ein Puffersignal 60 · zwei oder mehr 40 ·
-fehlgeschlagen 0.
+fehlgeschlagen 0 · kein Inhalt: keine Bewertung.
 
 **Einschränkungen.** Kurze Ausgaben, ein schnelles kleines Modell oder
 Netzwerk-Jitter können einem Burst ähneln. Ein Upstream, der nicht streamen
@@ -629,12 +728,17 @@ Standard 8) mit begrenzter Parallelität (`--concurrency`, Standard 3). Die
 Erfolgsquote bezieht sich auf die tatsächlich versuchten Anfragen: HTTP 429 ist
 ehrliche Drosselung und wird gesondert gezählt. Die Bewertung zieht den
 gescheiterten Anteil ab; eine p95-Latenz über 30 s behält 85 % des Rests.
+Eine fehlgeschlagene Anfrage (also ein vorübergehender 5xx von standardmäßig 8)
+oder höchstens 10 % eines größeren Bursts ist eine Warnung, solange mindestens
+80 % erfolgreich waren; mehr ist Fehlgeschlagen. Der Status des Detektors ist
+der schlechteste seiner Befunde. Diese Befunde sind Transport-Hinweise: Sie
+heben das Risikourteil nie an.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `reliability.success_rate` | Jede versuchte Anfrage im Burst war erfolgreich. | Bestanden | Kein Abzug |
-|  | Bis zu 10 % der versuchten Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Warnung · Niedrig | bis zu −10 Pkt. |
-|  | Mehr als 10 % der versuchten Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Fehlgeschlagen · Mittel | bis zu −100 Pkt. |
+|  | Eine Anfrage oder höchstens 10 % der versuchten schlugen fehl (mindestens 80 % erfolgreich); zieht den fehlgeschlagenen Anteil ab. | Warnung · Niedrig | bis zu −20 Pkt. |
+|  | Mehr Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Fehlgeschlagen · Mittel | bis zu −100 Pkt. |
 |  | Jede Anfrage wurde gedrosselt (HTTP 429): nicht gewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
 | `reliability.latency` | p95-Latenz über 30 s unter Last; zieht 15 % der verbleibenden Bewertung ab. | Warnung · Niedrig | bis zu −15 Pkt. |
 | `reliability.rate_limited` | Ein Teil des Bursts wurde gedrosselt: ehrliches Throttling, nicht gewertet. | Info | Kein Abzug |
@@ -665,12 +769,18 @@ Transport- und Geheimnishygiene.
 wörtlich in einer Antwort erscheint und welche Antwort-Header einen Upstream
 oder Proxy verraten (`server`, `via`, `x-powered-by`, `x-upstream-*`,
 `x-litellm-*`, …; informativ). Er nennt auch die Grenze: Prompt-Logging und
-geteilte Upstream-Schlüssel sind von außen nicht beweisbar.
+geteilte Upstream-Schlüssel sind von außen nicht beweisbar. Klartext-HTTP zu
+diesem Rechner oder einem privaten Netz (`localhost`, `127.x`, `192.168.x`,
+`*.local`, … — ein selbst gehostetes Modell) ist nur eine Warnung ohne
+Obergrenze, da der Schlüssel nicht über das Internet geht; Klartext-HTTP zu
+jedem anderen Host bleibt Fehlgeschlagen · Hoch. In beiden Fällen ist
+`security.tls` ein Transport-Hinweis und hebt das Risikourteil nie an.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `security.tls` | Der Endpunkt nutzt HTTPS. | Bestanden | Kein Abzug |
 |  | Der Endpunkt ist nicht HTTPS; der API-Schlüssel wird im Klartext übertragen. | Fehlgeschlagen · Hoch | Obergrenze 40 |
+|  | Klartext-HTTP zu einem lokalen Host oder einem im privaten Netz; der API-Schlüssel geht nicht über das Internet. | Warnung · Niedrig | Kein Abzug |
 | `security.key_echo` | Der API-Schlüssel erscheint nicht in der Antwort. | Bestanden | Kein Abzug |
 |  | Der API-Schlüssel erscheint wörtlich in der Antwort. | Fehlgeschlagen · Hoch | Obergrenze 30 |
 | `security.headers` | Kein Antwort-Header verrät das Upstream (nur zur Information). | Bestanden | Kein Abzug |
@@ -705,6 +815,9 @@ zurückkommen. Ein exaktes Echo besteht, kein Echo (Umschreibung, Verweigerung)
 ist nicht eindeutig, und nur ein **Austausch des Werts** bei erhaltener Struktur
 gilt als Manipulation. Im Vergleichsmodus ist ein Austausch, den die
 vertrauenswürdige Referenz nicht zeigt, KRITISCH.
+Nur eine Referenz, die den Canary unverändert zurückgibt, bestätigt: Liefert sie
+einen Fehler oder nichts Verwertbares, bestätigt sie nichts, und der Austausch
+bleibt MITTEL (Beleg `baseline_unavailable`).
 Eine am Ausgabelimit abgeschnittene Antwort ist nicht eindeutig, kein Austausch.
 
 | Prüfung | Ergebnis | Status | Wirkung |
@@ -800,7 +913,7 @@ Stichproben. Referenz ist die vertrauenswürdige Referenz, sonst der Bereich
 | `performance.cache_hit` | Eindeutige Probe-Prompts kamen aus einem Cache (aus der Statistik ausgenommen). | Warnung · Niedrig | 60 Pkt. |
 |  | Die Referenz lieferte einmalige Mess-Prompts aus einem Cache (nicht gewertet). | Info | Nicht gewertet |
 | `performance.reference` | Der Durchsatz entspricht der Referenz für dieses Modell. | Bestanden | 100 Pkt. |
-|  | Langsamer als die Referenz (z. B. lokal oder kleinere Hardware); kein Fehler. | Info | 80 Pkt. |
+|  | Langsamer als die Referenz (z. B. lokal oder kleinere Hardware); kein Fehler. | Info | Nicht gewertet |
 |  | Viel schneller als die Referenz (passt zu einem kleineren Modell). | Warnung · Niedrig | 60 Pkt. |
 | `performance.reasoning` | Das Modell verbraucht versteckte Reasoning-Tokens; die TTFT enthält das Nachdenken. | Info | Nicht gewertet |
 | `performance.relay_overhead` | Latenz mit der vertrauenswürdigen Baseline verglichen (nur zur Information). | Info | Nicht gewertet |
@@ -809,7 +922,7 @@ Stichproben. Referenz ist die vertrauenswürdige Referenz, sonst der Bereich
 **Einschränkungen.** Die Latenz hängt vom Netzwerkpfad und der momentanen Last
 des Anbieters ab; wiederholen Sie ein schwaches Gleichmäßigkeitsergebnis zu
 einer anderen Zeit. Die Bereiche der Wissensbasis sind bewusst weit gefasste
-Mediane nativer APIs, und ein langsameres Ziel ist nie ein Fehlschlag. Alle
+Mediane nativer APIs, und ein langsameres Ziel wird nur vermerkt, nie gewertet. Alle
 Befunde haben höchstens Schweregrad NIEDRIG; diese Dimension bewegt also die
 Bewertung, nie das Risikourteil.
 

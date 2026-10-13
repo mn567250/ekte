@@ -396,8 +396,16 @@ In short (the [Methodology](docs/METHODOLOGY.md#how-zing-scores) has the details
 
 Findings of the connectivity dimension never raise the risk: a relay that is down
 or throttled could not be assessed, which is not evidence of a different model.
+Transport advisories — plain HTTP (`security.tls`) and failures or slow tails
+under load (`reliability.*`) — lower their dimension's score but do not raise the
+substitution risk either; the summary lists them as advisories. Integrity
+tampering and an echoed API key still do. Plain HTTP to this machine or a private
+network is only a low-severity warning, since the key never leaves it.
 The verdict's **confidence** (low / medium / high) grows with the number of core
-dimensions that produced a result, a baseline and the LLM judge.
+dimensions that produced a result, a baseline and the LLM judge; a model id that
+only matched a knowledge-base profile fuzzily caps it at low. A detector that got
+no usable answer (e.g. every model-identity probe failed) is inconclusive and
+counts as no signal, never as a pass.
 
 ## Suites
 
@@ -410,7 +418,8 @@ dimensions that produced a result, a baseline and the LLM judge.
 | `custom` | only the dimensions you pick, at `deep` depth | depends on the selection |
 
 The context-window probe is bounded by `--max-context-tokens` (default 200K) so
-auditing a 1M-token model stays affordable. `--only` / `--skip` run or leave out
+auditing a 1M-token model stays affordable; a window larger than the cap is
+reported as *verified up to the cap*, never as truncated. `--only` / `--skip` run or leave out
 single detectors by id.
 
 ### Custom suite
@@ -454,7 +463,7 @@ or self-hosted model) is not marked down for not being a data centre:
 | errors | failed probe requests: ≤ 2% 100 · ≤ 10% 80 · above: 50 (429s not counted) |
 | load stability | burst p50 latency ÷ sequential p50: ≤ 1.5x 100 · ≤ 3x 80 · above: 55 |
 | cache hit | unique prompts answered from a cache: 60 |
-| reference | tokens/s against the trusted baseline, or else the knowledge base's published range for the model: in line 100 · slower 80 (informational, never a failure) · ≥ 2x faster 60 (hints at a smaller model) · no reference: not counted |
+| reference | tokens/s against the trusted baseline, or else the knowledge base's published range for the model: in line 100 · slower: not counted (informational, never a failure) · ≥ 2x faster 60 (hints at a smaller model) · no reference: not counted |
 
 Performance findings are at most low severity: they move the score, never the
 risk verdict. Without the probe (`standard` without a baseline, `smoke`), the

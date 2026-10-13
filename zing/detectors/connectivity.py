@@ -3,7 +3,8 @@
 Checks the two most basic things: is the endpoint reachable, and does a plain
 chat completion for the claimed model actually return content. Everything else
 builds on this passing. Each check scores points from the published scale
-``SCALE``; the detector score is their average.
+``SCALE``; the detector score is their average and its status the worst of
+their statuses.
 """
 
 from __future__ import annotations
@@ -91,7 +92,6 @@ class ConnectivityDetector(Detector):
                     },
                 )
             )
-            result.status = Status.PASS
         else:
             result.findings.append(
                 SCALE.finding(
@@ -103,8 +103,10 @@ class ConnectivityDetector(Detector):
                     recommendation="Verify base_url, api_key, and that the model id is served.",
                 )
             )
-            result.status = Status.FAIL
 
+        # Like every scale-based detector, the status is the worst of its checks:
+        # a disabled /models is a WARN even when chat works (score 80).
+        result.status = Scale.roll_up(result.findings)
         result.score = Scale.mean(result.findings)
         result.evidence["model_ids_sample"] = model_ids[:20]
         return result

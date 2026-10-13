@@ -309,6 +309,8 @@
   "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "Un proxy que reescribe URL/nombres de paquetes es un riesgo de cadena de suministro — deje de usarlo.",
   "Treat the advertised context window as unverified.": "Considere no verificada la ventana de contexto anunciada.",
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Aumente --timeout / --max-request-time, o reduzca --max-context-tokens, para medir la ventana completa.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Revise el error (p. ej., un parámetro de solicitud que este endpoint rechaza) y vuelva a ejecutar para medir la ventana.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Aumente --max-context-tokens para probar la ventana declarada completa.",
   "Compare against a trusted baseline to confirm.": "Compare con una referencia de confianza para confirmarlo.",
   "The relay likely truncates or summarizes long prompts.": "Es probable que el intermediario trunque o resuma los prompts largos.",
   "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} << {declared} declarados (proporción {ratio}, se sospecha truncado silencioso). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
@@ -319,6 +321,7 @@
   "Re-run once the endpoint reliably returns completions.": "Vuelva a ejecutar cuando el endpoint devuelva completados de forma fiable.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Trátelo como una señal de desviación, no como prueba; corrobórelo con los detectores de huella e identidad antes de actuar.",
   "Verify the relay supports stream=true for this model.": "Compruebe que el intermediario admite stream=true para este modelo.",
+  "Verify the relay streams content deltas for this model.": "Verifique que el relay transmita deltas de contenido para este modelo.",
   "Run `zing compare` against a trusted baseline to corroborate.": "Ejecute `zing compare` contra una referencia de confianza para corroborarlo.",
   "A response naming a different vendor strongly suggests model substitution.": "Una respuesta que nombra a otro proveedor sugiere claramente una sustitución de modelo.",
   "Run `zing compare` against a trusted baseline to disambiguate.": "Ejecute `zing compare` contra una referencia de confianza para despejar la duda.",
@@ -487,6 +490,10 @@
    "Manejo de secuencias stop",
    "Comprobación de la secuencia stop; finish_reason={finish_reason}."
   ],
+  "protocol.stop_not_applicable": [
+   "Comprobación de secuencia de parada no aplicable",
+   "La Responses API no tiene parámetro stop; la secuencia de parada no se comprobó ni se cuenta."
+  ],
   "protocol.shape": [
    "Conformidad de la estructura de respuesta",
    "finish_reason={finish_reason}; ¿usage completo?: {has_usage}."
@@ -525,15 +532,15 @@
   ],
   "context_window.no_recall": [
    "Ningún tamaño permite recordar la aguja",
-   "Ni siquiera un prompt de ~{smallest_probed} tokens se recuerda; la ventana útil es muy inferior a los {declared} declarados."
+   "Ni siquiera un prompt de ~{smallest_probed} tokens se recuerda; la ventana útil parece muy inferior a la ventana probada de {upper} tokens (declarada {declared})."
   ],
   "context_window.truncation": [
    "Ventana de contexto real muy inferior a la declarada",
-   "Ventana real ~{effective_window} << {declared} declarados (proporción {ratio}, se sospecha truncado silencioso)."
+   "Ventana de contexto real ~{effective_window} << ventana probada de {upper} tokens (declarada {declared}; proporción {ratio}, se sospecha truncado silencioso)."
   ],
   "context_window.short": [
    "Ventana de contexto real inferior a la declarada",
-   "Ventana real ~{effective_window} inferior a los {declared} declarados (proporción {ratio}, el recuerdo se degrada antes del límite)."
+   "Ventana de contexto real ~{effective_window} por debajo de la ventana probada de {upper} tokens (declarada {declared}; proporción {ratio}, el recuerdo se degrada antes del límite)."
   ],
   "context_window.consistent": [
    "Ventana de contexto medida coherente con la declarada",
@@ -542,6 +549,14 @@
   "context_window.measured": [
    "Ventana de contexto efectiva medida",
    "No hay ventana declarada con la que comparar; ventana efectiva medida ~{effective_window} tokens."
+  ],
+  "context_window.verified_to_cap": [
+   "Ventana de contexto verificada hasta el tope de la sonda",
+   "La aguja se recordó a ~{effective_window} tokens, el peldaño superior bajo el tope de sonda de {probe_cap} tokens; la ventana declarada de {declared} tokens por encima no se probó."
+  ],
+  "context_window.probe_error": [
+   "La sonda de ventana de contexto recibió un error",
+   "Una sonda de ~{errored_at} tokens recibió un error ({error_status}); no es evidencia de truncamiento."
   ],
   "model_identity.no_profile": [
    "El modelo declarado no está en la base de conocimiento",
@@ -554,6 +569,10 @@
   "model_identity.model_field": [
    "Campo model devuelto",
    "El campo model de la respuesta es {returned}; se solicitó {requested}."
+  ],
+  "model_identity.no_evidence": [
+   "Sin evidencia de identidad utilizable",
+   "Ni la autoidentificación ni ninguna sonda de huella devolvieron una respuesta utilizable y el campo model devuelto no diverge ({checks} comprobaciones); no se puede juzgar la identidad."
   ],
   "model_identity.fp_aggregate": [
    "Varias huellas de comportamiento divergen",
@@ -587,6 +606,10 @@
    "La petición en streaming falló",
    "La petición en streaming falló (HTTP {status_code}, tipo {error_type}); compruebe que el modelo admite stream=true."
   ],
+  "streaming.no_content": [
+   "El stream no entregó contenido",
+   "La solicitud en streaming tuvo éxito pero no entregó contenido ({chunk_count} fragmentos); no se pudo evaluar el streaming."
+  ],
   "streaming.few_chunks": [
    "Respuesta entregada en ≤2 fragmentos",
    "{content_chars} caracteres entregados en solo {chunk_count} fragmentos (almacenados y luego troceados, no un streaming real token a token)."
@@ -594,6 +617,10 @@
   "streaming.late_ttft": [
    "El primer token llega al final del flujo",
    "El primer token no llega hasta ~{ttft_ratio} de la duración total (ttft={ttft_ms} ms / duration={duration_ms} ms, se sospecha búfer)."
+  ],
+  "streaming.reasoning_ttft": [
+   "Primer token tardío de un modelo de razonamiento",
+   "El primer token visible llegó a los {ttft_ms} ms de {duration_ms} ms en total; el modelo razona antes de responder, así que no cuenta como búfer."
   ],
   "streaming.uniform_gaps": [
    "Intervalos entre fragmentos uniformes y casi nulos",

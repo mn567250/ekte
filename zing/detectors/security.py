@@ -16,6 +16,7 @@ from zing.detectors.base import Detector, register
 from zing.detectors.helpers import contains_ci, stable_marker
 from zing.detectors.scale import DeductionScale, outcome
 from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from zing.utils.net import is_local_host
 from zing.utils.redact import REDACTED_KEY
 
 # Response headers that reveal upstream/proxy identity. Presence is informational:
@@ -47,11 +48,17 @@ def _header_matches(name: str) -> bool:
 
 # Scoring follows the published scale (method "deductions"): the score starts
 # at 100 and each transport-security failure caps it; the lowest cap wins.
+# Plain HTTP to this machine or a private network (a self-hosted model) is only
+# a WARN: the key does not cross the public internet. The TLS check is a
+# transport advisory (zing.scoring.ADVISORY_CHECKS): it lowers this dimension,
+# never the substitution risk.
 SCALE = DeductionScale(
     outcome("security.tls", "https", None, Status.PASS,
             label="The endpoint uses HTTPS."),
     outcome("security.tls", "plain_http", None, Status.FAIL, Severity.HIGH, cap=40.0,
             label="The endpoint is not HTTPS; the API key travels in clear text."),
+    outcome("security.tls", "plain_http_local", None, Status.WARN, Severity.LOW,
+            label="Plain HTTP to a local or private-network host; the API key does not cross the internet."),
     outcome("security.key_echo", "not_echoed", None, Status.PASS,
             label="The API key does not appear in the response."),
     outcome("security.key_echo", "echoed", None, Status.FAIL, Severity.HIGH, cap=30.0,
@@ -79,6 +86,8 @@ class SecurityDetector(Detector):
         result = self.new_result(scoring=SCALE.scoring())
         base_url = ctx.target.base_url or ""
         is_https = base_url.strip().lower().startswith("https://")
+        local_http = not is_https and is_local_host(base_url)
+        scheme = base_url.split("://", 1)[0].strip().lower() if "://" in base_url else ""
 
         # 1) TLS: an http endpoint sends the bearer token in clear text.
         if is_https:
@@ -91,6 +100,23 @@ class SecurityDetector(Detector):
                     evidence={"scheme": "https"},
                 )
             )
+        elif local_http:
+            result.findings.append(
+                SCALE.finding(
+                    "security.tls",
+                    "plain_http_local",
+                    title="Endpoint is plain HTTP on a local/private host",
+                    summary=(
+                        "Endpoint is not HTTPS, but it is on this machine or a private network, "
+                        "so the API key does not cross the public internet."
+                    ),
+                    evidence={
+                        "scheme": scheme,
+                        "local": True,
+                    },
+                    recommendation="Use https:// if this endpoint is reachable from other machines.",
+                )
+            )
         else:
             result.findings.append(
                 SCALE.finding(
@@ -98,7 +124,7 @@ class SecurityDetector(Detector):
                     "plain_http",
                     title="Endpoint is not HTTPS",
                     summary="Endpoint is not HTTPS; the API key is sent in clear text.",
-                    evidence={"scheme": base_url.split("://", 1)[0].lower() if "://" in base_url else ""},
+                    evidence={"scheme": scheme},
                     recommendation="Use an https:// base_url so the bearer token is not exposed on the wire.",
                 )
             )
@@ -202,11 +228,17 @@ class SecurityDetector(Detector):
             )
         )
 
-        # SCORE: 100 healthy https with no key echo; plain http caps at 40 (key on
-        # the wire); a verbatim key echo, the dominant transport-security failure,
-        # caps at 30 — the lowest cap wins.
+        # SCORE: 100 healthy https with no key echo; plain http to a remote host
+        # caps at 40 (key on the wire), to a local/private host it is uncapped; a
+        # verbatim key echo, the dominant transport-security failure, caps at 30 —
+        # the lowest cap wins.
         result.score = SCALE.total(result.findings)
-        result.status = Status.FAIL if (not is_https or key_echoed) else Status.PASS
+        if key_echoed or not (is_https or local_http):
+            result.status = Status.FAIL
+        elif local_http:
+            result.status = Status.WARN
+        else:
+            result.status = Status.PASS
 
         result.evidence["https"] = is_https
         result.evidence["key_present"] = bool(key)

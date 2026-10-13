@@ -178,6 +178,14 @@ partir do URL base e do modelo. Os detectores só falam com esta interface
 (`RequestSpec` à entrada, `CompletionOutcome` à saída), pelo que são
 independentes do protocolo.
 
+Os clientes também adaptam os pedidos ao que o modelo aceita (`base.py`): o
+runner preenche `unsupported_params` a partir do perfil, os parâmetros de
+amostragem aí listados são omitidos e, no Chat Completions, um `max_tokens`
+listado envia o limite como `max_completion_tokens`. Um 4xx que nomeia um desses
+parâmetros acrescenta-o ao conjunto e repete o pedido uma vez adaptado (a
+tentativa recusada é registada com a fase `param_retry`). Uma sonda que julga a
+recusa em bruto define `RequestSpec.exact_params`.
+
 ### Detectores e escalas de pontuação
 
 Um detector é um ficheiro autocontido em `zing/detectors/`: uma subclasse de
@@ -229,8 +237,13 @@ YAML integrado → `ZING_KB_DIR`/`--kb-dir` → o `kb.db` do utilizador), guarda
 entradas do utilizador (`store.py`), verifica e importa YAML (`importer.py`),
 constrói o prompt de pesquisa para assistentes externos (`research.py`) e tira um
 instantâneo do perfil usado por uma execução (`snapshot.py`). Os ids de modelo
-resolvem-se através de aliases e do fornecedor declarado; cada relatório regista
-como o id foi resolvido.
+resolvem-se de forma exata, através de aliases ou pelo nome normalizado,
+restringidos pelo fornecedor declarado. A alternativa aproximada usa o nome da
+KB mais longo contido no id declarado (um id de snapshot ou decorado), a menos
+que o resto do id nomeie outro nível ou variante (`-mini`, `-lite`, `-image`,
+…); um id truncado só se resolve quando o nome de um único modelo começa por
+ele, pelo que um id ambíguo como `gpt-4` fica sem perfil em vez de um nível
+adivinhado. Cada relatório regista como o id foi resolvido.
 
 `load_knowledge_base()` guarda em cache os resultados fundidos e, por
 predefinição, devolve uma cópia profunda, pelo que quem a chama pode alterar o
@@ -516,6 +529,12 @@ pull request: um valor errado provoca falsos positivos contra relays honestos.
 `zing kb-import --check <ficheiro>` faz as mesmas verificações que a importação do
 utilizador (esquema, limites, expressões regulares perigosas, prompts, colisões de
 ids).
+
+As `fingerprints` ao nível do fornecedor correm em cada um dos seus modelos. Uma
+sonda cuja expectativa só vale para alguns modelos (uma data de corte, um teste
+de conhecimento do nível Pro, uma armadilha de raciocínio) pertence às
+`fingerprints` desses modelos; caso contrário, a resposta verdadeira de outro
+modelo conta como divergência.
 
 Preencha sempre `identity_keywords` com as palavras do fabricante e da família
 com que o modelo se identifica. A verificação de identidade conta também a

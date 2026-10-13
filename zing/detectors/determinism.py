@@ -6,8 +6,10 @@ sampling at ``temperature=1.0``: a genuine model should vary; byte-identical
 output is a caching signal. Identity at ``temperature=0`` is expected and not
 penalized — deterministic decoding is correct behavior there.
 
-To avoid falsely accusing honest models, the caching call only fires when ALL of
-several long high-temperature samples come back byte-identical, and it is
+To avoid falsely accusing honest models, the caching call only fires when at
+least ``MIN_USABLE_SAMPLES`` (3) of the ``CACHING_SAMPLES`` (4) long
+high-temperature samples came back usable and ALL usable samples are
+byte-identical (fewer usable samples are inconclusive), and it is
 suppressed for reasoning models, which legitimately ignore/clamp sampling
 parameters (e.g. deepseek-reasoner ignores temperature) and can repeat output.
 
@@ -32,9 +34,10 @@ SCALE = Scale(
     outcome("determinism.temp1_variability", "identical_reasoning", 100.0, Status.INFO,
             label="Samples were identical, but reasoning models legitimately ignore temperature."),
     outcome("determinism.temp1_variability", "identical", 55.0, Status.WARN, Severity.MEDIUM,
-            label="All samples at temperature=1.0 were byte-identical, suggesting response caching."),
+            label="All usable samples (at least 3) at temperature=1.0 were byte-identical, "
+            "suggesting response caching."),
     outcome("determinism.temp1_variability", "not_assessed", None, Status.INCONCLUSIVE,
-            Severity.LOW, label=_NO_RESPONSE),
+            Severity.LOW, label="Fewer than 3 usable samples at temperature=1.0 to judge by."),
     outcome("determinism.temp0_stability", "stable", None, Status.INFO,
             label="Identical answers at temperature=0 (expected); informational, not scored."),
     outcome("determinism.temp0_stability", "drifts", None, Status.INFO,
@@ -56,6 +59,9 @@ class DeterminismDetector(Detector):
     # caching finding fires. More than two so a chance collision on a short output
     # can't trip it.
     CACHING_SAMPLES = 4
+    # Usable (ok, non-empty) samples needed to judge at all; with fewer, two
+    # identical survivors would be too weak a caching signal.
+    MIN_USABLE_SAMPLES = 3
 
     async def run(self, ctx: AuditContext) -> DetectorResult:
         result = self.new_result(scoring=SCALE.scoring())
@@ -78,7 +84,7 @@ class DeterminismDetector(Detector):
         outcomes = [await ctx.client.complete(creative) for _ in range(self.CACHING_SAMPLES)]
         usable = [o for o in outcomes if o.ok and o.has_content()]
 
-        if len(usable) >= 2:
+        if len(usable) >= self.MIN_USABLE_SAMPLES:
             texts = [o.content.strip() for o in usable]
             all_identical = len(set(texts)) == 1
             previews = {f"output_{i}_preview": t[:160] for i, t in enumerate(texts[:3])}
@@ -136,16 +142,31 @@ class DeterminismDetector(Detector):
                 )
         else:
             # A relay that errors or returns nothing cannot be judged for caching.
-            failed = next((o for o in outcomes if not (o.ok and o.has_content())), outcomes[0])
+            # Report a real failure when there is one, else an empty answer.
+            failed = next((o for o in outcomes if not o.ok), None) or next(
+                (o for o in outcomes if not o.has_content()), outcomes[0]
+            )
+            if not failed.ok:
+                reason = failed.error_message or (
+                    f"HTTP {failed.status_code}" if failed.status_code is not None
+                    else failed.error_type or "no response"
+                )
+            else:
+                reason = "the response had no content"
             result.findings.append(
                 SCALE.finding(
                     "determinism.temp1_variability",
                     "not_assessed",
                     title="Could not assess temperature=1.0 variability",
-                    summary=failed.error_message or f"HTTP {failed.status_code}",
+                    summary=(
+                        f"Only {len(usable)} of {self.CACHING_SAMPLES} samples were usable "
+                        f"(at least {self.MIN_USABLE_SAMPLES} needed): "
+                        + reason
+                    ),
                     evidence={
                         "usable_samples": len(usable),
                         "requested_samples": self.CACHING_SAMPLES,
+                        "required_samples": self.MIN_USABLE_SAMPLES,
                         "status_code": failed.status_code,
                         "error_type": failed.error_type,
                     },

@@ -94,6 +94,13 @@ un «gato por liebre».
 El nivel de riesgo depende de la **gravedad de los hallazgos**, no de la
 puntuación. Los hallazgos de la dimensión de conectividad quedan fuera: un relay
 caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
+Tampoco cuentan los **avisos de transporte** (`ADVISORY_CHECKS` en
+`zing/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): el HTTP sin cifrar, los fallos o
+la lentitud bajo carga dicen cómo se llega al relay, no qué modelo sirve.
+Siguen bajando la puntuación y el estado de su dimensión, aparecen tras los
+hallazgos de sustitución entre los hallazgos clave y el resumen los menciona
+como avisos (desde gravedad Media). La manipulación de respuestas (integridad) y una clave API
+devuelta siguen elevando el riesgo.
 
 | Riesgo | Etiqueta en la interfaz | Cuándo |
 |---|---|---|
@@ -105,8 +112,9 @@ caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
 
 ### Confianza del veredicto
 
-- **Baja** — el modelo declarado no está en la base de conocimiento, o menos de
-  dos dimensiones núcleo dieron un resultado utilizable;
+- **Baja** — el modelo declarado no está en la base de conocimiento, solo
+  coincide de forma aproximada con un perfil (`match_confidence` `fuzzy`; el
+  resumen lo indica), o menos de dos dimensiones núcleo dieron un resultado utilizable;
 - **Media** — al menos dos dimensiones núcleo dieron un resultado utilizable;
 - **Alta** — se usó una referencia *y* las tres dimensiones núcleo dieron un
   resultado utilizable, o la confianza era media y el juez LLM devolvió un
@@ -162,7 +170,15 @@ caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
   ventana de contexto declarada, la salida máxima, el tokenizer, las
   capacidades, las palabras clave de identidad y las huellas de comportamiento
   con las que se juzgan las sondas. Cada informe registra el perfil usado
-  (`knowledge`).
+  (`knowledge`). El id declarado se asocia a un perfil por id exacto, alias o
+  nombre normalizado y, si no, de forma aproximada: por el nombre de perfil
+  más largo que contiene (`gpt-4o-2024-11-20-custom` → `gpt-4o`), salvo que el
+  resto del id nombre otro nivel o variante (`gpt-5-mini` no es `gpt-5`), o, si
+  el id está truncado, solo cuando el nombre de un único modelo empieza por él.
+  Un id genérico o ambiguo (`gpt-4`, `claude`, `gemini-2.5`) no obtiene perfil
+  en lugar de un nivel adivinado, a menudo más barato. Las huellas de todo el
+  proveedor se aplican a cada uno de sus modelos; una que solo encaja con
+  algunos (una fecha de corte, un nivel de tamaño) figura solo en ellos.
 - **Idioma de los prompts:** cada texto de sonda está en
   `zing/prompts/en.json` y es en inglés sea cual sea el idioma de la interfaz;
   solo las huellas cuyo idioma *es* la medida declaran `prompt_lang` y
@@ -178,6 +194,16 @@ caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
   razona (su perfil dice `reasoning: true`, o tras su primera repetición de este
   tipo), las sondas cortas se envían desde el principio con el límite de 4.096
   tokens en lugar de dos veces.
+- **Parámetros de la solicitud:** los modelos de razonamiento rechazan algunos
+  parámetros: en Chat Completions `max_tokens` (usan `max_completion_tokens`) y,
+  en cualquier protocolo, parámetros de muestreo como `temperature`. El cliente
+  omite los parámetros que el perfil lista en `unsupported_params` y envía el
+  límite de salida como `max_completion_tokens` cuando figura `max_tokens`. Un
+  endpoint sin perfil que nombra uno de esos parámetros en un 4xx recibe la
+  solicitud una vez más, adaptada, y todas las siguientes salen adaptadas desde
+  el principio; el intento rechazado no cuenta como error del relay. Las sondas
+  de `protocol_request` se envían tal como se construyen, porque juzgan
+  precisamente el rechazo sin alterar.
 
 ---
 
@@ -201,6 +227,9 @@ exacto; registra la latencia y el campo `model` devuelto.
 |  | Una completion de chat devolvió contenido, pero no repitió el canario. | Correcto | 85 pts |
 |  | La completion de chat falló o no devolvió contenido. | Fallo · Alta | 0 pts |
 
+El estado del detector es el peor de sus comprobaciones: un `/v1/models`
+desactivado da una Advertencia aunque el chat funcione.
+
 **Advertencias.** La ausencia de `/v1/models` es benigna; muchos relays la
 desactivan. Un error de red pasajero o un 5xx puede hacer fallar la
 comprobación de chat: vuelve a ejecutar. La conectividad no prueba nada sobre
@@ -223,6 +252,10 @@ un color de un turno anterior; una secuencia `stop` que debe cortar la salida;
 y una solicitud deliberadamente inválida (`messages` vacío) que debe
 rechazarse con un 4xx, idealmente con un cuerpo de error al estilo OpenAI.
 
+La Responses API no tiene parámetro `stop`, así que contra un objetivo con
+Responses API la prueba de parada no se envía y la comprobación se anota como no
+aplicable (no computa) en lugar de culpar al relay.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `protocol.multi_turn` | Se recordó el color de un turno anterior. | Correcto | 100 pts |
@@ -232,6 +265,7 @@ rechazarse con un 4xx, idealmente con un cuerpo de error al estilo OpenAI.
 |  | No se pudo confirmar el manejo de la parada a partir del texto. | Advertencia · Baja | 70 pts |
 |  | Se devolvió texto posterior a la secuencia de parada. | Advertencia · Baja | 60 pts |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
+|  | La Responses API no tiene parámetro stop; no se comprueba ni se cuenta. | Info | No computa |
 | `protocol.error_schema` | Rechazada con un 4xx y un cuerpo de error al estilo OpenAI. | Correcto | 100 pts |
 |  | Rechazada con un 4xx, pero el cuerpo no sigue el estilo OpenAI. | Advertencia · Baja | 80 pts |
 |  | Sin respuesta HTTP; no se pudo confirmar el manejo de errores del cliente. | Advertencia · Baja | 55 pts |
@@ -298,12 +332,16 @@ se suprime para los modelos de razonamiento, que ignoran la temperatura de
 forma legítima. Dos preguntas factuales idénticas a `temperature=0` son solo
 informativas.
 
+Para concluir que hay caché, al menos tres de las cuatro muestras deben ser
+utilizables (y todas las utilizables idénticas); con menos, la comprobación no
+es concluyente.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `determinism.temp1_variability` | Las muestras repetidas con temperature=1.0 fueron distintas, como en un muestreo real. | Correcto | 100 pts |
 |  | Las muestras fueron idénticas, pero los modelos de razonamiento ignoran legítimamente temperature. | Info | 100 pts |
-|  | Todas las muestras con temperature=1.0 fueron idénticas byte a byte, lo que sugiere respuestas en caché. | Advertencia · Media | 55 pts |
-|  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
+|  | Todas las muestras utilizables (al menos 3) con temperature=1.0 fueron idénticas byte a byte, lo que sugiere caché de respuestas. | Advertencia · Media | 55 pts |
+|  | Menos de 3 muestras utilizables con temperature=1.0 para juzgar. | No concluyente · Baja | No computa |
 | `determinism.temp0_stability` | Respuestas idénticas con temperature=0 (esperado); solo informativo, no puntúa. | Info | No computa |
 |  | Las respuestas difirieron con temperature=0; solo informativo, no puntúa. | Info | No computa |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
@@ -323,55 +361,82 @@ recorta el prompt en silencio) y `context.lost-in-middle-rag` (una capa barata
 de RAG/resumen solo reenvía partes del prompt).
 
 **Cómo funciona.** Recuperación de una aguja en un pajar a `temperature=0`: un
-marcador único se inserta en un texto de relleno no repetitivo dimensionado
-con la estimación heurística de tokens de zing, y el modelo debe devolverlo.
+marcador único se inserta en un texto de relleno no repetitivo, y el modelo
+debe devolverlo.
 
-1. Una escalera ascendente que se duplica desde 2K tokens hasta la ventana
-   declarada, limitada por `--max-context-tokens` (200K por defecto), con un
-   peldaño cerca del 90 % del máximo (siete tamaños como mucho). Cada tamaño se
-   sondea primero con la aguja en el **inicio** (profundidad 0,0): un truncado
-   que conserva la pregunta al final del prompt solo puede descartar su inicio
-   (un servidor local que recorta el prompt a su longitud de contexto conserva
-   el final), así que un acierto ahí aprueba el tamaño con una sola llamada. Un
-   fallo se comprueba en el final (profundidad 0,95); si el final se recupera,
-   el inicio se sondea una vez más con una aguja nueva, y un segundo fallo
-   suspende el tamaño como **truncado por el inicio** (indicado en la evidencia
-   del veredicto). Tres llamadas por tamaño como mucho; la escalera se detiene
-   en el primer fallo confirmado.
-2. Un paso de búsqueda binaria entre el último tamaño recuperado y el primero
+- **Ventana sondeada.** La sonda llega hasta `upper` = la ventana declarada,
+  limitada por `--max-context-tokens` (200K por defecto). Cada veredicto se
+  juzga frente a `upper`, nunca frente a la parte de una ventana declarada
+  mayor que quede por encima del tope.
+- **Los tamaños son tokens reales.** La estimación de tokens integrada en zing
+  cuenta este relleno entre un 12 % (o200k) y un 15 % (cl100k) por debajo de
+  los tokenizadores reales, así que cada prompt se construye a tamaño ÷ 1,2
+  según la estimación (aguja y pregunta incluidas): un peldaño de tamaño N cabe
+  en N tokens reales. Los tamaños de la evidencia (`size`, `effective_window`,
+  `top_rung`) son esos presupuestos de tokens reales; las filas de la escalera
+  incluyen además la estimación con que se construyó cada prompt
+  (`heuristic_tokens`).
+
+1. Una escalera de siete tamaños como mucho, que se divide a la mitad desde un
+   **peldaño superior al 90 % de `upper`** (ningún peldaño alcanza la ventana
+   completa, lo que deja sitio a la respuesta y a la plantilla de chat) hasta un
+   mínimo de 1K (`context_probe_floor_tokens`); una ventana pequeña baja el
+   mínimo a un cuarto del peldaño superior (una ventana de 2K sondea ~460, ~920
+   y ~1,8K). Cada tamaño se sondea primero con la aguja en el **inicio**
+   (profundidad 0,0): un truncado que conserva la pregunta al final del prompt
+   solo puede descartar su inicio (un servidor local que recorta el prompt a su
+   longitud de contexto conserva el final), así que un acierto ahí aprueba el
+   tamaño con una sola llamada. Un fallo se comprueba en el final (profundidad
+   0,95); si el final se recupera, el inicio se sondea una vez más con una aguja
+   nueva, y un segundo fallo suspende el tamaño como **truncado por el inicio**
+   (indicado en la evidencia del veredicto). Tres llamadas por tamaño como
+   mucho; la escalera se detiene en el primer fallo confirmado.
+2. Dos pasos de búsqueda binaria entre el último tamaño recuperado y el primero
    que falló.
 3. Pérdida en el medio: con min(32K, ventana medida), la aguja se coloca en las
-   profundidades 0,1, 0,5 y 0,9; recuperar el principio y el final pero no el
-   medio es un hallazgo.
+   profundidades 0,1, 0,5 y 0,9. Si se recuperan el principio y el final pero no
+   el medio, el medio se sondea una vez más con una aguja nueva; solo un segundo
+   fallo es un hallazgo.
 4. Un 4xx cuyo mensaje menciona la longitud de contexto es un rechazo por
    tamaño; un rechazo de `max_tokens` (modelos de razonamiento) se reintenta con
    `max_completion_tokens` y nunca se lee como un techo.
-5. Una sonda que agota el tiempo de espera termina la escalera sin contar como
-   fallo: la ventana por encima del último tamaño recordado se informa como no
-   verificada (no concluyente), nunca como truncamiento.
+5. Una sonda que agota el tiempo de espera o recibe un error (otro parámetro
+   rechazado, un error HTTP, un 5xx, una respuesta vacía o malformada) termina
+   la escalera sin contar como fallo: la ventana por encima del último tamaño
+   recordado se informa como no verificada (no concluyente, sin puntuar), nunca
+   como truncamiento ni `no_recall`. Solo una respuesta sin la aguja es un
+   fallo.
 
-La ventana medida se compara con la declarada. Sin ventana declarada, la medida
-se informa pero no se puntúa.
+La ventana medida (el mayor tamaño recordado) se compara con `upper`: recordar
+en el peldaño superior es coherente (o, si la ventana declarada supera el tope,
+**verificado hasta el tope**: la ventana por encima no se probó); por debajo,
+el veredicto descuenta la parte del peldaño superior que no se recordó — una
+advertencia desde la mitad de `upper`, un fallo por debajo. Sin ventana
+declarada, la medida se informa pero no se puntúa.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
-| `context_window.window` (Ventana de contexto efectiva) | El recuerdo se mantuvo hasta al menos el 90 % de la ventana declarada; resta la parte de la ventana no recordada. | Correcto | hasta −10 pts |
-|  | El recuerdo se mantuvo hasta el 50–90 % de la ventana declarada; resta la parte de la ventana no recordada. | Advertencia · Media | hasta −50 pts |
-|  | El recuerdo falló por debajo de la mitad de la ventana declarada; resta la parte de la ventana no recordada. | Fallo · Alta | hasta −100 pts |
+| `context_window.window` (Ventana de contexto efectiva) | El recuerdo se mantuvo en el peldaño superior (90 % de la ventana sondeada): sin deducción. | Correcto | Sin deducción |
+|  | Recuerdo verificado hasta el tope de la sonda; la ventana declarada por encima no se probó. | Correcto | Sin deducción |
+|  | El recuerdo se mantuvo hasta el 50-90 % de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó. | Advertencia · Media | hasta −50 pts |
+|  | El recuerdo falló por debajo de la mitad de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó. | Fallo · Alta | hasta −100 pts |
 |  | Ni siquiera el tamaño de sonda más pequeño recordó la aguja. | Fallo · Alta | −100 pts |
-| `context_window.lost_in_middle` | Se recordaron el principio y el final, pero no la parte central. | Advertencia · Media | −15 pts |
+| `context_window.lost_in_middle` | Se recordaron el principio y el final, pero la parte central no, dos veces. | Advertencia · Media | −15 pts |
 | `context_window.rejected_below_claim` | Un prompt muy por debajo de la ventana declarada fue rechazado por demasiado largo. | Fallo · Alta | Sin deducción |
 | `context_window.measured` | No hay ventana declarada con la que comparar: solo se mide, no puntúa. | Info | Sin deducción |
 | `context_window.no_ladder` | Ningún tamaño de sonda cabía entre el mínimo y el tope. | No concluyente · Baja | Sin deducción |
 | `context_window.timed_out` | Una sonda agotó el tiempo de espera antes de alcanzar la ventana declarada: un endpoint lento, no una prueba de truncamiento. | No concluyente · Baja | Sin deducción |
+| `context_window.probe_error` | Una sonda recibió un error (un parámetro rechazado, un error HTTP o del servidor) antes del peldaño superior: no es evidencia de truncamiento. | No concluyente · Baja | Sin deducción |
 
 **Advertencias.** Los modelos reales de contexto largo también pierden agujas
 en el medio; por eso solo un fallo en el **borde** se lee como recorte. La
 recuperación cerca del techo es probabilística; vuelve a ejecutar antes de
 concluir. La sonda está limitada por `--max-context-tokens`, así que una
-ventana mayor no se ejercita por completo. Compara con una referencia de
-confianza para separar el comportamiento del modelo del de una capa
-intermedia.
+ventana mayor no se ejercita por completo (súbelo para sondear más). El peldaño
+superior está al 90 % de la ventana y el presupuesto de tokens es prudente, así
+que el último ~10-15 % de una ventana nunca se sondea. Compara con una
+referencia de confianza para separar el comportamiento del modelo del de una
+capa intermedia.
 
 ---
 
@@ -400,6 +465,13 @@ cuando cambian el comportamiento.
    nunca anulan `identity_forbidden`, las palabras genéricas («ai»,
    «platform», …) nunca cuentan, y la marca propia de una plataforma no cuenta
    para el modelo de otro fabricante que sirve.
+   Las palabras de marca que también son palabras comunes (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`)
+   solo cuentan en esta autoidentificación y solo escritas como nombre
+   («Meta», «Command R», «grok-2»; al inicio de una frase o de un elemento
+   de lista solo con una versión
+   añadida, «Step-2»); en las respuestas de huella nunca cuentan, así que
+   «let me think step by step» no es una marca rival. Un proveedor dueño de
+   una de esas palabras la conserva como propia.
 2. **Huellas de comportamiento** de la base de conocimiento (fecha de corte del
    conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
    idioma, …): hasta seis sondas de código puro, comprobadas con
@@ -415,6 +487,12 @@ cuando cambian el comportamiento.
    `lite`, `8b`, …) o una familia distinta.
 
 Sin perfil en la base de conocimiento, el detector es no concluyente.
+También es no concluyente y sin puntuación (`model_identity.no_evidence`)
+cuando ni la autoidentificación ni ninguna huella devolvieron una respuesta
+utilizable y el campo `model` devuelto no diverge: un relay que rechaza o
+deja vacía cada petición no aporta evidencia de identidad, y el eco del
+nombre solicitado no prueba nada por sí solo. La evidencia parcial puntúa
+con normalidad.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
@@ -432,6 +510,7 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |
 |  | La respuesta no tenía un campo model utilizable. | No concluyente | Sin deducción |
+| `model_identity.no_evidence` | Ni la autoidentificación ni ninguna huella devolvieron una respuesta utilizable y el campo model no divergió: sin puntuar. | No concluyente | Sin deducción |
 
 ### `quality_judge` — Evaluación de calidad / degradación por un LLM juez
 
@@ -439,17 +518,20 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 que distinguen gamas (razonamiento en varios pasos, una tarea de código
 precisa, seguimiento de instrucciones con matices) va al objetivo y, en modo
 comparación, a la referencia; un juez de confianza aparte solo ve las
-respuestas y devuelve un veredicto con su confianza. Un veredicto del juez solo
-es ALTO si una referencia corroboró la diferencia y el juez no indicó una
-confianza baja o media.
+respuestas y devuelve un veredicto con su confianza. Al juez se le indica el modelo declarado (`claimed_model` si está definido;
+si no, el id solicitado). Un veredicto del juez solo es ALTO si el juez
+indicó confianza **alta** y una referencia utilizable corroboró la
+diferencia: una que devolvió una respuesta no vacía para cada sonda que
+respondió el objetivo. Una confianza baja, media, ausente o desconocida se
+queda en MEDIA, igual que una referencia que falló o dejó sondas sin
+responder.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `quality_judge.verdict` (Veredicto del juez LLM) | El juez encontró las respuestas coherentes con el modelo declarado. | Correcto | 95 pts |
-|  | El juez encontró las respuestas distintas del modelo declarado (confianza baja/media). | Advertencia · Media | 50 pts |
-|  | El juez está seguro de que las respuestas difieren del modelo declarado (sin referencia). | Advertencia · Media | 25 pts |
+|  | El juez encontró las respuestas distintas del modelo declarado (confianza baja, media o no indicada). | Advertencia · Media | 50 pts |
+|  | El juez está seguro de que las respuestas difieren del modelo declarado (sin referencia utilizable). | Advertencia · Media | 25 pts |
 |  | El juez está seguro y una referencia de confianza corroboró la diferencia. | Fallo · Alta | 25 pts |
-|  | El juez no dio confianza y una referencia de confianza corroboró la diferencia. | Fallo · Alta | 50 pts |
 |  | El juez no pudo emitir un veredicto. | No concluyente · Baja | No computa |
 |  | No hay respuestas del objetivo que juzgar. | No concluyente · Baja | No computa |
 
@@ -491,6 +573,11 @@ las capacidades del perfil:
   declarada, 2048) tokens; llegar al límite o a una longitud plausible es
   correcto, detenerse por debajo de una cuarta parte se señala.
 
+Una observación sin nada declarado que verificar —ninguna llamada a herramienta
+u objeto JSON cuando la función no se declara, o cualquier resultado del esquema
+estricto cuando el perfil dice que el modelo no tiene esquemas estrictos— se
+anota pero no computa: un modelo nunca pierde puntos por algo que nadie declara.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `capability.tools` | Volvió una llamada a herramienta ante una petición explícita de herramienta. | Correcto | 100 pts |
@@ -499,13 +586,13 @@ las capacidades del perfil:
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.tools.encoding` | Los argumentos de la herramienta llegaron como objeto, no como la cadena JSON de OpenAI. | Advertencia · Baja | No computa |
 | `capability.json_mode` | El modo JSON devolvió un objeto analizable con el valor pedido. | Correcto | 100 pts |
-|  | Volvió un objeto JSON con un valor incorrecto; el modo JSON no se declara. | Info | 70 pts |
-|  | No volvió ningún objeto JSON analizable; el modo JSON no se declara. | Advertencia | 50 pts |
+|  | Volvió un objeto JSON con un valor incorrecto; el modo JSON no se declara. | Info | No computa |
+|  | No volvió ningún objeto JSON analizable; el modo JSON no se declara. | Info | No computa |
 |  | Se declara el modo JSON pero no volvió un objeto válido con el valor. | Fallo · Media | 0 pts |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.json_schema` | Se declara el esquema estricto y la respuesta lo cumplió. | Correcto | 100 pts |
-|  | El esquema estricto no se aplicó, de acuerdo con lo declarado. | Info | 100 pts |
-|  | La respuesta lo cumplió aunque el modelo declarado no tiene esquemas estrictos. | Info | 90 pts |
+|  | El esquema estricto no se aplicó, de acuerdo con lo declarado. | Info | No computa |
+|  | La respuesta lo cumplió aunque el modelo declarado no tiene esquemas estrictos. | Info | No computa |
 |  | Se declara el esquema estricto pero la respuesta no lo cumplió. | Advertencia · Baja | 40 pts |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.max_output` | La salida continuó hasta el tope de tokens solicitado. | Correcto | 100 pts |
@@ -550,17 +637,27 @@ cuando llegaron al menos 220 caracteres, e **intervalos uniformes** (cuatro o
 más fragmentos con intervalos casi iguales, CV < 0,1, y por debajo de 2 ms:
 volcados de golpe). Un flujo sin fragmento de uso se señala aparte.
 
+El TTFT es el primer token de contenido visible. Para un modelo de razonamiento
+(según la base de conocimiento, o que informa tokens de razonamiento en su
+usage), que piensa antes de responder, un primer token tardío solo se anota y no
+cuenta como búfer; las señales de pocos fragmentos y huecos uniformes siguen
+contando. Un stream que tiene éxito pero no entrega contenido no es concluyente
+y no se puntúa.
+Si el modelo transmite su razonamiento (deltas de razonamiento, bloques de thinking, eventos de razonamiento de la API Responses), se mide en su lugar el primer token de cualquier tipo: un stream genuino empieza a razonar pronto, así que un stream cuyo razonamiento y respuesta llegan ambos al final es buffering incluso para un modelo de razonamiento.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `streaming.healthy` | Muchos fragmentos, un primer token temprano y huecos repartidos: streaming real. | Correcto | Sin deducción |
 | `streaming.few_chunks` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.late_ttft` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
+| `streaming.reasoning_ttft` | Primer token tardío de un modelo de razonamiento (piensa antes de responder): informativo, no cuenta como búfer. | Info | Sin deducción |
 | `streaming.uniform_gaps` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.no_usage` | No hay fragmento de uso en el stream: resta 15 puntos si nada está en búfer. | Advertencia · Baja | hasta −15 pts |
+| `streaming.no_content` | El stream tuvo éxito pero no entregó contenido para juzgar; sin puntuación. | No concluyente · Baja | No computa |
 | `streaming.failed` | La solicitud en streaming falló. | Fallo · Alta | tope 0 |
 
 Es decir: auténtico 100 · falta el uso 85 · una señal de búfer 60 · dos o más
-40 · fallo 0.
+40 · fallo 0 · sin contenido: sin puntuación.
 
 **Advertencias.** Salidas cortas, un modelo pequeño y rápido o la fluctuación de
 la red pueden parecer una ráfaga. Un upstream que no sabe hacer streaming
@@ -624,13 +721,17 @@ arrastra con un paralelismo moderado.
 (`--concurrency`, 3 por defecto). La tasa de éxito se calcula sobre las
 solicitudes realmente intentadas: un HTTP 429 es una limitación honesta y se
 contabiliza aparte. La puntuación resta la parte fallida; una latencia p95 por
-encima de 30 s conserva el 85 % del resto.
+encima de 30 s conserva el 85 % del resto. Una solicitud fallida (es decir, un
+5xx pasajero de las 8 por defecto), o como mucho el 10 % de una ráfaga mayor, es
+una Advertencia mientras al menos el 80 % tenga éxito; más es un Fallo. El estado
+del detector es el peor de sus hallazgos. Son avisos de transporte: nunca
+elevan el veredicto de riesgo.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `reliability.success_rate` | Todas las solicitudes intentadas de la ráfaga tuvieron éxito. | Correcto | Sin deducción |
-|  | Falló hasta el 10 % de las solicitudes intentadas; resta la parte fallida. | Advertencia · Baja | hasta −10 pts |
-|  | Falló más del 10 % de las solicitudes intentadas; resta la parte fallida. | Fallo · Media | hasta −100 pts |
+|  | Falló una solicitud, o como mucho el 10 % de las intentadas (80 %+ con éxito); resta la parte fallida. | Advertencia · Baja | hasta −20 pts |
+|  | Fallaron más solicitudes; resta la parte fallida. | Fallo · Media | hasta −100 pts |
 |  | Todas las solicitudes fueron limitadas (HTTP 429): no puntúa. | No concluyente · Baja | Sin deducción |
 | `reliability.latency` | Latencia p95 por encima de 30 s bajo carga; resta el 15 % de la puntuación restante. | Advertencia · Baja | hasta −15 pts |
 | `reliability.rate_limited` | Parte de la ráfaga fue limitada: limitación legítima, no computa. | Info | Sin deducción |
@@ -661,12 +762,18 @@ básica de transporte y secretos.
 nunca aparezca literalmente en una respuesta y qué cabeceras de respuesta
 delatan un upstream o proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`,
 `x-litellm-*`, …; informativo). También recuerda el límite: el registro de
-prompts y las claves upstream compartidas no pueden probarse desde fuera.
+prompts y las claves upstream compartidas no pueden probarse desde fuera. El
+HTTP sin cifrar hacia esta máquina o una red privada (`localhost`, `127.x`,
+`192.168.x`, `*.local`, … — un modelo autoalojado) es solo una Advertencia sin
+tope, porque la clave no atraviesa Internet; hacia cualquier otro host sigue
+siendo Fallo · Alta. En ambos casos `security.tls` es un aviso de transporte y
+nunca eleva el veredicto de riesgo.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `security.tls` | El endpoint usa HTTPS. | Correcto | Sin deducción |
 |  | El endpoint no usa HTTPS; la clave API viaja en texto plano. | Fallo · Alta | tope 40 |
+|  | HTTP sin cifrar hacia un host local o de red privada; la clave API no atraviesa Internet. | Advertencia · Baja | Sin deducción |
 | `security.key_echo` | La clave API no aparece en la respuesta. | Correcto | Sin deducción |
 |  | La clave API aparece literalmente en la respuesta. | Fallo · Alta | tope 30 |
 | `security.headers` | Ninguna cabecera de respuesta revela el upstream (solo informativo). | Correcto | Sin deducción |
@@ -701,6 +808,9 @@ literalmente. Un eco exacto es correcto, la falta de eco (paráfrasis, negativa)
 es no concluyente, y solo una **sustitución del valor** que conserva la
 estructura cuenta como manipulación. En modo comparación, una sustitución que la
 referencia de confianza no hace es CRÍTICA.
+Solo corrobora una referencia que devuelve el canario intacto: si falla o no
+devuelve nada utilizable, no confirma nada y la sustitución se queda en MEDIA
+(evidencia `baseline_unavailable`).
 Una respuesta cortada en el límite de salida es no concluyente, no una sustitución.
 
 | Comprobación | Resultado | Estado | Efecto |
@@ -797,7 +907,7 @@ base de conocimiento.
 | `performance.cache_hit` | Prompts de sondeo únicos volvieron de una caché (excluidos de las estadísticas). | Advertencia · Baja | 60 pts |
 |  | La referencia sirvió prompts únicos desde una caché (no puntúa). | Info | No computa |
 | `performance.reference` | El rendimiento concuerda con la referencia de este modelo. | Correcto | 100 pts |
-|  | Más lento que la referencia (p. ej. local o hardware más pequeño); no es un fallo. | Info | 80 pts |
+|  | Más lento que la referencia (p. ej. local o hardware más pequeño); no es un fallo. | Info | No computa |
 |  | Mucho más rápido que la referencia (compatible con un modelo más pequeño). | Advertencia · Baja | 60 pts |
 | `performance.reasoning` | El modelo gasta tokens de razonamiento ocultos; el TTFT incluye el razonamiento. | Info | No computa |
 | `performance.relay_overhead` | Latencia comparada con la referencia de confianza (solo informativo). | Info | No computa |
@@ -806,7 +916,7 @@ base de conocimiento.
 **Advertencias.** La latencia depende del camino de red y de la carga del
 proveedor en ese momento; repite un mal resultado de constancia en otro
 momento. Los rangos de la base de conocimiento son medianas deliberadamente
-amplias de las API nativas, y un objetivo más lento nunca es un fallo. Todos
+amplias de las API nativas, y un objetivo más lento solo se anota, nunca computa. Todos
 los hallazgos son como mucho de gravedad BAJA: esta dimensión mueve la
 puntuación, nunca el veredicto de riesgo.
 

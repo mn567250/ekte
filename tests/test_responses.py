@@ -1,8 +1,8 @@
 """OpenAI Responses-API client tests.
 
 Verifies the request translation (system -> instructions, max_tokens ->
-max_output_tokens, messages -> input items, tool flattening, dropped
-seed/response_format), the response normalization (output_text + function_call
+max_output_tokens, messages -> input items, tool flattening,
+response_format -> text.format, dropped seed/stop), the response normalization (output_text + function_call
 items and input/output token usage -> the common CompletionOutcome shape), SSE
 streaming, and protocol auto-detection.
 """
@@ -197,8 +197,27 @@ async def test_responses_request_translation():
     assert tool["type"] == "function" and tool["name"] == "get_weather"
     assert tool["parameters"]["properties"]["city"]
     assert body["tool_choice"] == "auto"
-    # unsupported knobs dropped
+    # response_format -> text.format; unsupported knobs dropped
+    assert body["text"] == {"format": {"type": "json_object"}}
     assert "response_format" not in body and "seed" not in body and "stop" not in body
+
+
+async def test_responses_json_schema_format_is_flattened():
+    mock = ResponsesMock()
+    schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+    async with ResponsesClient(_target(), transport=mock.transport) as c:
+        await c.complete(
+            RequestSpec(
+                messages=[{"role": "user", "content": "hi"}],
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {"name": "person", "strict": True, "schema": schema},
+                },
+            )
+        )
+    assert mock.requests[-1]["text"] == {
+        "format": {"type": "json_schema", "name": "person", "strict": True, "schema": schema}
+    }
 
 
 async def test_responses_multimodal_input_passthrough():

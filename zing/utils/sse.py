@@ -26,6 +26,22 @@ def parse_sse_line(line: str) -> str | None:
     return payload or None
 
 
+def extract_reasoning_delta(event: dict[str, Any]) -> str:
+    """Pull streamed reasoning text out of a chat.completion.chunk event
+    (``delta.reasoning_content`` or ``delta.reasoning``, as relays name it)."""
+    choices = event.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return ""
+    delta = choices[0].get("delta") if isinstance(choices[0], dict) else None
+    if not isinstance(delta, dict):
+        return ""
+    for key in ("reasoning_content", "reasoning"):
+        value = delta.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
 def extract_content_delta(event: dict[str, Any]) -> str:
     """Pull the incremental text content out of a chat.completion.chunk event."""
     choices = event.get("choices")

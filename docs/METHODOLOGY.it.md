@@ -95,7 +95,13 @@ direttamente una merce non conforme.
 Il livello di rischio dipende dalla **gravità delle rilevazioni**, non dal
 punteggio. Le rilevazioni della dimensione connettività sono escluse: un relay
 irraggiungibile o limitato non ha potuto essere valutato, e questo non prova che
-risponda un altro modello.
+risponda un altro modello. Sono esclusi anche gli **avvisi di trasporto** (`ADVISORY_CHECKS` in
+`zing/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): HTTP in chiaro, errori o lentezza
+sotto carico dicono come si raggiunge il relay, non quale modello serve.
+Abbassano comunque punteggio e stato della loro dimensione, compaiono dopo le
+rilevazioni di sostituzione tra quelle principali e il riepilogo li indica come
+avvisi (da gravità Media in su). La manomissione delle risposte (integrità) e una chiave API restituita
+continuano ad alzare il rischio.
 
 | Rischio | Etichetta nell'interfaccia | Quando |
 |---|---|---|
@@ -107,8 +113,9 @@ risponda un altro modello.
 
 ### Affidabilità del verdetto
 
-- **Bassa** — il modello dichiarato non è nella base di conoscenza, oppure meno
-  di due dimensioni centrali hanno prodotto un risultato utilizzabile;
+- **Bassa** — il modello dichiarato non è nella base di conoscenza, corrisponde
+  solo in modo approssimativo a un profilo (`match_confidence` `fuzzy`; il
+  riepilogo lo dice), oppure meno di due dimensioni centrali hanno prodotto un risultato utilizzabile;
 - **Media** — almeno due dimensioni centrali hanno prodotto un risultato
   utilizzabile;
 - **Alta** — è stato usato un riferimento *e* tutte e tre le dimensioni centrali
@@ -164,7 +171,17 @@ risponda un altro modello.
   (`zing/knowledge/data/*.yaml` più le tue voci in `kb.db`) fornisce la finestra
   di contesto dichiarata, l'output massimo, il tokenizer, le capacità, le parole
   chiave di identità e le impronte comportamentali con cui vengono valutate le
-  sonde. Ogni rapporto registra il profilo usato (`knowledge`).
+  sonde. Ogni rapporto registra il profilo usato (`knowledge`). L'id
+  dichiarato trova un profilo per id esatto, alias o nome normalizzato,
+  altrimenti in modo approssimato: per il nome di profilo più lungo che
+  contiene (`gpt-4o-2024-11-20-custom` → `gpt-4o`), a meno che il resto dell'id
+  nomini un altro livello o variante (`gpt-5-mini` non è `gpt-5`), o, per un id
+  troncato, solo quando il nome di un unico modello inizia con esso. Un id
+  generico o ambiguo (`gpt-4`, `claude`, `gemini-2.5`) non ottiene quindi alcun
+  profilo invece di un livello indovinato, spesso più economico. Le impronte a
+  livello di fornitore valgono per ogni suo modello; una che si adatta solo
+  ad alcuni (una data di cutoff, un livello di dimensione) compare solo su
+  quelli.
 - **Lingua dei prompt:** ogni testo di sonda si trova in `zing/prompts/en.json`
   ed è in inglese, qualunque sia la lingua dell'interfaccia; solo le impronte la
   cui lingua *è* la misura dichiarano `prompt_lang` e `language_bound`. Ogni
@@ -179,6 +196,16 @@ risponda un altro modello.
   vengono mai ripetute. Una volta noto che un endpoint ragiona (il suo profilo
   indica `reasoning: true`, o dopo la sua prima ripetizione di questo tipo), le
   sonde brevi partono subito con il limite di 4.096 token invece che due volte.
+- **Parametri della richiesta:** i modelli di ragionamento rifiutano alcuni
+  parametri: su Chat Completions `max_tokens` (vogliono `max_completion_tokens`)
+  e, in ogni protocollo, i parametri di campionamento come `temperature`. Il
+  client omette i parametri che il profilo elenca in `unsupported_params` e invia
+  il limite di output come `max_completion_tokens` quando vi figura `max_tokens`.
+  Un endpoint senza profilo che nomina un tale parametro in un 4xx riceve la
+  richiesta un'altra volta, adattata, e ogni richiesta successiva parte subito
+  adattata; il tentativo rifiutato non conta come errore del relay. Le sonde di
+  `protocol_request` partono esattamente come sono costruite, perché giudicano
+  proprio il rifiuto grezzo.
 
 ---
 
@@ -202,6 +229,9 @@ canary esatto; registra la latenza e il campo `model` restituito.
 |  | Una chat completion ha restituito contenuto, ma non ha ripetuto il canary. | Superato | 85 pt |
 |  | La chat completion non è riuscita o non ha restituito contenuto. | Fallito · Alta | 0 pt |
 
+Lo stato del detector è il peggiore dei suoi controlli: un `/v1/models`
+disattivato dà un Avviso anche se la chat funziona.
+
 **Avvertenze.** L'assenza di `/v1/models` è innocua; molti relay la
 disattivano. Un errore di rete temporaneo o un 5xx può far fallire il controllo
 della chat: riesegui. La connettività non prova nulla su *quale* modello abbia
@@ -223,6 +253,10 @@ un colore da un turno precedente; una sequenza `stop` che deve troncare
 l'output; e una richiesta volutamente non valida (`messages` vuoto) che deve
 essere rifiutata con un 4xx, idealmente con un corpo d'errore in stile OpenAI.
 
+La Responses API non ha il parametro `stop`, quindi con un target Responses API
+la prova di stop non viene inviata e la verifica è annotata come non applicabile
+(non conteggiata) invece di incolpare il relay.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `protocol.multi_turn` | Il colore di un turno precedente è stato ricordato. | Superato | 100 pt |
@@ -232,6 +266,7 @@ essere rifiutata con un 4xx, idealmente con un corpo d'errore in stile OpenAI.
 |  | Non è stato possibile confermare la gestione dello stop dal testo. | Avviso · Bassa | 70 pt |
 |  | È stato restituito testo dopo la sequenza di stop. | Avviso · Bassa | 60 pt |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
+|  | La Responses API non ha il parametro stop; non verificato, non conteggiato. | Info | Non conteggiato |
 | `protocol.error_schema` | Rifiutata con un 4xx e un corpo di errore in stile OpenAI. | Superato | 100 pt |
 |  | Rifiutata con un 4xx, ma il corpo non è in stile OpenAI. | Avviso · Bassa | 80 pt |
 |  | Nessuna risposta HTTP; non è stato possibile confermare la gestione degli errori client. | Avviso · Bassa | 55 pt |
@@ -299,12 +334,16 @@ verdetto è soppresso per i modelli di ragionamento, che ignorano legittimamente
 la temperatura. Due domande fattuali identiche a `temperature=0` sono solo
 informative.
 
+Per concludere che c'è una cache, almeno tre dei quattro campioni devono essere
+utilizzabili (e tutti quelli utilizzabili identici); con meno, la verifica non è
+conclusiva.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `determinism.temp1_variability` | I campioni ripetuti con temperature=1.0 erano diversi, come in un vero campionamento. | Superato | 100 pt |
 |  | I campioni erano identici, ma i modelli di ragionamento ignorano legittimamente temperature. | Info | 100 pt |
-|  | Tutti i campioni con temperature=1.0 erano identici byte per byte, il che suggerisce risposte in cache. | Avviso · Media | 55 pt |
-|  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
+|  | Tutti i campioni utilizzabili (almeno 3) a temperature=1.0 erano identici byte per byte, il che suggerisce una cache delle risposte. | Avviso · Media | 55 pt |
+|  | Meno di 3 campioni utilizzabili a temperature=1.0 su cui basare un giudizio. | Non conclusivo · Bassa | Non conteggiato |
 | `determinism.temp0_stability` | Risposte identiche con temperature=0 (previsto); solo informativo, non conteggiato. | Info | Non conteggiato |
 |  | Le risposte differivano con temperature=0; solo informativo, non conteggiato. | Info | Non conteggiato |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
@@ -324,56 +363,82 @@ tronca il prompt in silenzio) e `context.lost-in-middle-rag` (uno strato
 economico di RAG/riassunto inoltra solo parti del prompt).
 
 **Come funziona.** Richiamo di un ago nel pagliaio a `temperature=0`: un
-marcatore univoco viene inserito in un testo di riempimento non ripetitivo,
-dimensionato con la stima euristica dei token di zing, e il modello deve
-restituirlo.
+marcatore univoco viene inserito in un testo di riempimento non ripetitivo, e
+il modello deve restituirlo.
 
-1. Una scala crescente che raddoppia da 2K token fino alla finestra dichiarata,
-   limitata da `--max-context-tokens` (200K predefinito), con un gradino vicino
-   al 90 % del massimo (al più sette dimensioni). Ogni dimensione viene sondata
-   prima con l'ago all'**inizio** (profondità 0,0): un troncamento che conserva
-   la domanda in fondo al prompt può scartarne solo l'inizio (un server locale
-   che taglia il prompt alla sua lunghezza di contesto ne conserva la fine),
-   quindi un richiamo lì supera la dimensione con una sola chiamata. Un
-   fallimento viene verificato alla fine (profondità 0,95); se la fine viene
-   richiamata, l'inizio viene sondato ancora una volta con un ago nuovo, e un
-   secondo fallimento boccia la dimensione come **troncamento in testa**
-   (indicato nelle evidenze del verdetto). Al più tre chiamate per dimensione;
-   la scala si ferma al primo fallimento confermato.
-2. Un passo di ricerca binaria tra l'ultima dimensione richiamata e la prima
+- **Finestra sondata.** La sonda arriva fino a `upper` = la finestra
+  dichiarata, limitata da `--max-context-tokens` (200K predefinito). Ogni
+  verdetto è giudicato rispetto a `upper`, mai rispetto alla parte di una
+  finestra dichiarata più grande che sta oltre il limite.
+- **Le dimensioni sono token reali.** La stima dei token integrata in zing
+  sottostima questo riempimento di circa il 12% (o200k) - 15% (cl100k)
+  rispetto ai tokenizer reali, quindi ogni prompt viene costruito a dimensione
+  ÷ 1,2 secondo la stima (ago e domanda inclusi): un gradino di dimensione N
+  resta entro N token reali. Le dimensioni nelle evidenze (`size`,
+  `effective_window`, `top_rung`) sono questi budget di token reali; le righe
+  della scala riportano anche la stima con cui è stato costruito un prompt
+  (`heuristic_tokens`).
+
+1. Una scala di al più sette dimensioni, dimezzata a partire da un **gradino
+   più alto al 90% di `upper`** (nessun gradino raggiunge la finestra intera,
+   lasciando spazio alla risposta e al template di chat) fino a un minimo di 1K
+   (`context_probe_floor_tokens`); una finestra piccola abbassa il minimo a un
+   quarto del gradino più alto (una finestra di 2K sonda ~460, ~920 e ~1,8K).
+   Ogni dimensione viene sondata prima con l'ago all'**inizio** (profondità
+   0,0): un troncamento che conserva la domanda in fondo al prompt può
+   scartarne solo l'inizio (un server locale che taglia il prompt alla sua
+   lunghezza di contesto ne conserva la fine), quindi un richiamo lì supera la
+   dimensione con una sola chiamata. Un fallimento viene verificato alla fine
+   (profondità 0,95); se la fine viene richiamata, l'inizio viene sondato ancora
+   una volta con un ago nuovo, e un secondo fallimento boccia la dimensione come
+   **troncamento in testa** (indicato nelle evidenze del verdetto). Al più tre
+   chiamate per dimensione; la scala si ferma al primo fallimento confermato.
+2. Due passi di ricerca binaria tra l'ultima dimensione richiamata e la prima
    fallita.
 3. Perdita nel mezzo: a min(32K, finestra misurata) l'ago viene posto alle
-   profondità 0,1, 0,5 e 0,9; inizio e fine richiamati ma non il mezzo è una
-   rilevazione.
+   profondità 0,1, 0,5 e 0,9. Se inizio e fine vengono richiamati ma il mezzo
+   no, il mezzo viene sondato ancora una volta con un ago nuovo; solo un secondo
+   fallimento è una rilevazione.
 4. Un 4xx il cui messaggio cita la lunghezza del contesto è un rifiuto per
    dimensione; un rifiuto di `max_tokens` (modelli di ragionamento) viene
    ritentato con `max_completion_tokens` e non viene mai letto come un tetto.
-5. Una sonda andata in timeout chiude la scala senza contare come fallimento:
-   la finestra oltre l'ultima dimensione ricordata è riportata come non
-   verificata (non conclusiva), mai come troncamento.
+5. Una sonda andata in timeout o a cui si risponde con un errore (un altro
+   parametro rifiutato, un errore HTTP, un 5xx, una risposta vuota o malformata)
+   chiude la scala senza contare come fallimento: la finestra oltre l'ultima
+   dimensione ricordata è riportata come non verificata (non conclusiva, non
+   valutata), mai come troncamento né `no_recall`. Solo una risposta senza
+   l'ago è un fallimento.
 
-La finestra misurata viene confrontata con quella dichiarata. Senza finestra
-dichiarata la misura viene riportata ma non valutata.
+La finestra misurata (la dimensione richiamata più grande) viene confrontata con
+`upper`: un richiamo al gradino più alto è coerente (oppure, se la finestra
+dichiarata supera il limite, **verificata fino al limite**: la finestra oltre
+non è stata provata); sotto, il verdetto detrae la quota del gradino più alto
+non richiamata — un avviso dalla metà di `upper` in su, un fallimento sotto.
+Senza finestra dichiarata la misura viene riportata ma non valutata.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
-| `context_window.window` (Finestra di contesto effettiva) | Il richiamo ha tenuto fino ad almeno il 90% della finestra dichiarata; toglie la quota di finestra non richiamata. | Superato | fino a −10 pt |
-|  | Il richiamo ha tenuto fino al 50–90% della finestra dichiarata; toglie la quota di finestra non richiamata. | Avviso · Media | fino a −50 pt |
-|  | Il richiamo è fallito sotto metà della finestra dichiarata; toglie la quota di finestra non richiamata. | Fallito · Alta | fino a −100 pt |
+| `context_window.window` (Finestra di contesto effettiva) | Il richiamo ha tenuto al gradino più alto (90% della finestra sondata): nessuna detrazione. | Superato | Nessuna detrazione |
+|  | Richiamo verificato fino al limite della sonda; la finestra dichiarata oltre non è stata provata. | Superato | Nessuna detrazione |
+|  | Il richiamo ha tenuto fino al 50-90% della finestra sondata; detrae la quota del gradino più alto non richiamata. | Avviso · Media | fino a −50 pt |
+|  | Il richiamo è fallito sotto la metà della finestra sondata; detrae la quota del gradino più alto non richiamata. | Fallito · Alta | fino a −100 pt |
 |  | Nemmeno la dimensione di sonda più piccola ha richiamato l'ago. | Fallito · Alta | −100 pt |
-| `context_window.lost_in_middle` | L'inizio e la fine sono stati richiamati, ma non la parte centrale. | Avviso · Media | −15 pt |
+| `context_window.lost_in_middle` | L'inizio e la fine sono stati richiamati, ma la parte centrale no, per due volte. | Avviso · Media | −15 pt |
 | `context_window.rejected_below_claim` | Un prompt ben al di sotto della finestra dichiarata è stato rifiutato come troppo lungo. | Fallito · Alta | Nessuna detrazione |
 | `context_window.measured` | Nessuna finestra dichiarata con cui confrontare: solo misurata, non conteggiata. | Info | Nessuna detrazione |
 | `context_window.no_ladder` | Nessuna dimensione di sonda rientrava tra il minimo e il limite. | Non conclusivo · Bassa | Nessuna detrazione |
 | `context_window.timed_out` | Una sonda è andata in timeout prima di raggiungere la finestra dichiarata: un endpoint lento, non una prova di troncamento. | Non conclusivo · Bassa | Nessuna detrazione |
+| `context_window.probe_error` | Una sonda ha ricevuto un errore (parametro rifiutato, errore HTTP o del server) prima del gradino più alto: non è prova di troncamento. | Non conclusivo · Bassa | Nessuna detrazione |
 
 **Avvertenze.** Anche i veri modelli a contesto lungo perdono aghi nel mezzo;
 per questo solo un fallimento al **bordo** viene letto come troncamento. Il
 richiamo vicino al tetto è probabilistico; riesegui prima di trarre
 conclusioni. La sonda è limitata da `--max-context-tokens`, quindi una finestra
-più grande non viene esercitata del tutto. Confronta con un riferimento
-affidabile per separare il comportamento del modello da quello di uno strato
-intermedio.
+più grande non viene esercitata del tutto (aumentalo per sondare oltre). Il
+gradino più alto è al 90% della finestra e il budget di token è prudente, quindi
+l'ultimo ~10-15% di una finestra non viene mai sondato. Confronta con un
+riferimento affidabile per separare il comportamento del modello da quello di
+uno strato intermedio.
 
 ---
 
@@ -402,6 +467,13 @@ quando cambiano il comportamento.
    prevalgono mai su `identity_forbidden`, le parole generiche («ai»,
    «platform», …) non contano mai, e il marchio proprio di una piattaforma non
    conta per il modello di un altro produttore che serve.
+   Le parole di marca che sono anche parole comuni (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) contano
+   solo in questa autoidentificazione e solo scritte come nome («Meta»,
+   «Command R», «grok-2»; a inizio frase o di voce di elenco solo con una
+   versione attaccata,
+   «Step-2»); nelle risposte delle impronte non contano mai, quindi
+   «let me think step by step» non è un marchio concorrente. Un produttore
+   a cui appartiene una di queste parole la mantiene come propria.
 2. **Impronte comportamentali** dalla base di conoscenza (data limite delle
    conoscenze, particolarità del tokenizer, formattazione, sonde legate a una
    lingua, …): fino a sei sonde di solo codice, verificate con
@@ -417,6 +489,12 @@ quando cambiano il comportamento.
    `lite`, `8b`, …) o una famiglia diversa viene segnalata.
 
 Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
+È inoltre non conclusivo e senza punteggio (`model_identity.no_evidence`)
+quando né l'autoidentificazione né alcuna impronta hanno dato una risposta
+utilizzabile e il campo `model` restituito non diverge: un relay che
+rifiuta o svuota ogni richiesta non fornisce prove d'identità, e l'eco del
+nome richiesto da solo non prova nulla. Prove parziali vengono valutate
+normalmente.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
@@ -434,6 +512,7 @@ Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 | `model_identity.model_field` | Il campo model restituito corrispondeva al modello richiesto. | Superato | Nessuna detrazione |
 |  | Il campo model restituito indica un modello diverso o più piccolo. | Avviso · Media | Nessuna detrazione |
 |  | La risposta non aveva un campo model utilizzabile. | Non conclusivo | Nessuna detrazione |
+| `model_identity.no_evidence` | Né l'autoidentificazione né alcuna impronta hanno dato una risposta utilizzabile e il campo model non divergeva: non valutato. | Non conclusivo | Nessuna detrazione |
 
 ### `quality_judge` — Valutazione di qualità / declassamento da parte di un LLM giudice
 
@@ -441,17 +520,20 @@ Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 che distinguono le fasce (ragionamento in più passaggi, un compito di codice
 preciso, istruzioni con sfumature) va all'obiettivo e, in modalità di confronto,
 al riferimento; un giudice affidabile separato vede solo le risposte e
-restituisce un verdetto con la sua affidabilità. Un verdetto del giudice è ALTO
-solo se un riferimento ha confermato la differenza e il giudice non ha indicato
-un'affidabilità bassa o media.
+restituisce un verdetto con la sua affidabilità. Al giudice viene indicato il modello dichiarato (`claimed_model` se impostato,
+altrimenti l'id richiesto). Un verdetto del giudice è ALTO solo se il giudice
+ha indicato un'affidabilità **alta** e un riferimento utilizzabile ha
+confermato la differenza — uno che ha dato una risposta non vuota a ogni
+sonda a cui l'obiettivo ha risposto. Un'affidabilità bassa, media, assente o
+sconosciuta resta MEDIA, così come un riferimento andato in errore o che ha
+lasciato sonde senza risposta.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 95 pt |
-|  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa/media). | Avviso · Media | 50 pt |
-|  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessuna baseline). | Avviso · Media | 25 pt |
+|  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa, media o non indicata). | Avviso · Media | 50 pt |
+|  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessuna baseline utilizzabile). | Avviso · Media | 25 pt |
 |  | Il giudice è sicuro e una baseline affidabile ha confermato la differenza. | Fallito · Alta | 25 pt |
-|  | Il giudice non ha indicato una confidenza e una baseline affidabile ha confermato la differenza. | Fallito · Alta | 50 pt |
 |  | Il giudice non è riuscito a esprimere un verdetto. | Non conclusivo · Bassa | Non conteggiato |
 |  | Nessuna risposta del target da giudicare. | Non conclusivo · Bassa | Non conteggiato |
 
@@ -492,6 +574,12 @@ alle capacità del profilo:
   dichiarato, 2048) token; raggiungere il limite o una lunghezza plausibile è
   superato, fermarsi sotto un quarto viene segnalato.
 
+Un'osservazione senza una dichiarazione da verificare — nessuna chiamata a
+strumento o oggetto JSON quando la funzione non è dichiarata, o qualsiasi esito
+dello schema rigoroso quando il profilo dice che il modello non ha schemi
+rigorosi — viene annotata ma non conteggiata: un modello non perde mai punti per
+ciò che nessuno dichiara.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `capability.tools` | È tornata una chiamata a strumento per una richiesta esplicita di strumento. | Superato | 100 pt |
@@ -500,13 +588,13 @@ alle capacità del profilo:
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.tools.encoding` | Gli argomenti dello strumento sono arrivati come oggetto, non come la stringa JSON di OpenAI. | Avviso · Bassa | Non conteggiato |
 | `capability.json_mode` | La modalità JSON ha restituito un oggetto analizzabile con il valore richiesto. | Superato | 100 pt |
-|  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | 70 pt |
-|  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Avviso | 50 pt |
+|  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | Non conteggiato |
+|  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | La modalità JSON è dichiarata ma non è tornato un oggetto valido con il valore. | Fallito · Media | 0 pt |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.json_schema` | Lo schema rigoroso è dichiarato e la risposta lo rispettava. | Superato | 100 pt |
-|  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | 100 pt |
-|  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | 90 pt |
+|  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | Non conteggiato |
+|  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | Non conteggiato |
 |  | Lo schema rigoroso è dichiarato ma la risposta non lo rispettava. | Avviso · Bassa | 40 pt |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.max_output` | L'output è proseguito fino al limite di token richiesto. | Superato | 100 pt |
@@ -551,17 +639,27 @@ sono arrivati almeno 220 caratteri, e **intervalli uniformi** (quattro o più
 frammenti con intervalli quasi uguali, CV < 0,1, e sotto i 2 ms: scaricati in
 blocco). Un flusso senza frammento di utilizzo viene segnalato a parte.
 
+Il TTFT è il primo token di contenuto visibile. Per un modello di ragionamento
+(secondo la knowledge base, o che riporta token di ragionamento nell'usage), che
+riflette prima di rispondere, un primo token tardivo viene quindi solo annotato
+e non conteggiato come buffering; i segnali pochi chunk e intervalli uniformi
+contano ancora. Uno stream riuscito ma senza contenuti non è conclusivo e non
+viene valutato.
+Se il modello trasmette il suo ragionamento (delta di ragionamento, blocchi di thinking, eventi di ragionamento della Responses API), si misura invece il primo token di qualunque tipo: uno stream genuino inizia presto a ragionare, quindi uno stream in cui ragionamento e risposta arrivano entrambi alla fine è bufferizzato anche per un modello di ragionamento.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `streaming.healthy` | Molti chunk, un primo token precoce e intervalli distribuiti: vero streaming. | Superato | Nessuna detrazione |
 | `streaming.few_chunks` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.late_ttft` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
+| `streaming.reasoning_ttft` | Primo token tardivo di un modello di ragionamento (riflette prima di rispondere): informativo, non conteggiato come buffering. | Info | Nessuna detrazione |
 | `streaming.uniform_gaps` | Segnale di buffering: il primo toglie 40 punti, un secondo 20, i successivi nulla. | Avviso · Media | fino a −40 pt |
 | `streaming.no_usage` | Nessun chunk di utilizzo nello stream: toglie 15 punti se nulla è in buffer. | Avviso · Bassa | fino a −15 pt |
+| `streaming.no_content` | Lo stream è riuscito ma non ha fornito contenuti da giudicare; non valutato. | Non conclusivo · Bassa | Non conteggiato |
 | `streaming.failed` | La richiesta in streaming non è riuscita. | Fallito · Alta | tetto 0 |
 
 Cioè: autentico 100 · utilizzo mancante 85 · un segnale di buffering 60 · due o
-più 40 · fallito 0.
+più 40 · fallito 0 · nessun contenuto: nessun punteggio.
 
 **Avvertenze.** Output brevi, un modello piccolo e veloce o il jitter di rete
 possono sembrare una raffica. Un upstream che non supporta lo streaming
@@ -624,13 +722,17 @@ arranca con un parallelismo modesto.
 (`--concurrency`, 3 predefinita). Il tasso di successo è calcolato sulle
 richieste effettivamente tentate: un HTTP 429 è una limitazione onesta e viene
 conteggiato a parte. Il punteggio toglie la quota fallita; una latenza p95
-oltre i 30 s mantiene l'85 % del resto.
+oltre i 30 s mantiene l'85 % del resto. Una richiesta fallita (cioè un 5xx
+temporaneo sulle 8 predefinite), o al massimo il 10% di un burst più grande, è un
+Avviso finché almeno l'80% riesce; di più è Fallito. Lo stato del detector è il
+peggiore delle sue rilevazioni. Sono avvisi di trasporto: non alzano mai il
+verdetto di rischio.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `reliability.success_rate` | Tutte le richieste tentate nella raffica sono riuscite. | Superato | Nessuna detrazione |
-|  | Fino al 10% delle richieste tentate è fallito; toglie la quota fallita. | Avviso · Bassa | fino a −10 pt |
-|  | Oltre il 10% delle richieste tentate è fallito; toglie la quota fallita. | Fallito · Media | fino a −100 pt |
+|  | È fallita una richiesta, o al massimo il 10% di quelle tentate (80%+ riuscite); toglie la quota fallita. | Avviso · Bassa | fino a −20 pt |
+|  | Sono fallite più richieste; toglie la quota fallita. | Fallito · Media | fino a −100 pt |
 |  | Tutte le richieste sono state limitate (HTTP 429): non conteggiato. | Non conclusivo · Bassa | Nessuna detrazione |
 | `reliability.latency` | Latenza p95 oltre 30 s sotto carico; toglie il 15% del punteggio rimanente. | Avviso · Bassa | fino a −15 pt |
 | `reliability.rate_limited` | Parte della raffica è stata limitata: limitazione legittima, non conteggiata. | Info | Nessuna detrazione |
@@ -662,12 +764,17 @@ compaia mai letteralmente in una risposta e quali intestazioni di risposta
 rivelino un upstream o un proxy (`server`, `via`, `x-powered-by`,
 `x-upstream-*`, `x-litellm-*`, …; informativo). Ricorda anche il limite: il
 logging dei prompt e le chiavi upstream condivise non sono dimostrabili
-dall'esterno.
+dall'esterno. L'HTTP in chiaro verso questa macchina o una rete privata (`localhost`,
+`127.x`, `192.168.x`, `*.local`, … — un modello self-hosted) è solo un Avviso
+senza tetto, perché la chiave non attraversa Internet; verso ogni altro host
+resta Fallito · Alta. In entrambi i casi `security.tls` è un avviso di trasporto
+e non alza mai il verdetto di rischio.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `security.tls` | L'endpoint usa HTTPS. | Superato | Nessuna detrazione |
 |  | L'endpoint non usa HTTPS; la chiave API viaggia in chiaro. | Fallito · Alta | tetto 40 |
+|  | HTTP in chiaro verso un host locale o di rete privata; la chiave API non attraversa Internet. | Avviso · Bassa | Nessuna detrazione |
 | `security.key_echo` | La chiave API non compare nella risposta. | Superato | Nessuna detrazione |
 |  | La chiave API compare alla lettera nella risposta. | Fallito · Alta | tetto 30 |
 | `security.headers` | Nessun header di risposta rivela l'upstream (solo informativo). | Superato | Nessuna detrazione |
@@ -701,6 +808,9 @@ letteralmente. Un'eco esatta è superata, la mancanza di eco (parafrasi, rifiuto
 è non conclusiva, e solo una **sostituzione del valore** che preserva la
 struttura conta come manomissione. In modalità di confronto, una sostituzione
 che il riferimento affidabile non fa è CRITICA.
+Conferma solo un riferimento che restituisce il canary intatto: se va in errore
+o non restituisce nulla di utilizzabile non conferma nulla, e la sostituzione
+resta MEDIA (evidenza `baseline_unavailable`).
 Una risposta troncata al limite di output è non conclusiva, non una sostituzione.
 
 | Controllo | Esito | Stato | Effetto |
@@ -797,7 +907,7 @@ base di conoscenza.
 | `performance.cache_hit` | Prompt di sonda unici sono tornati da una cache (esclusi dalle statistiche). | Avviso · Bassa | 60 pt |
 |  | Il riferimento ha servito prompt unici da una cache (non valutato). | Info | Non conteggiato |
 | `performance.reference` | Il throughput è in linea con il riferimento per questo modello. | Superato | 100 pt |
-|  | Più lento del riferimento (ad es. locale o hardware più piccolo); non è un fallimento. | Info | 80 pt |
+|  | Più lento del riferimento (ad es. locale o hardware più piccolo); non è un fallimento. | Info | Non conteggiato |
 |  | Molto più veloce del riferimento (compatibile con un modello più piccolo). | Avviso · Bassa | 60 pt |
 | `performance.reasoning` | Il modello spende token di ragionamento nascosti; il TTFT include il ragionamento. | Info | Non conteggiato |
 | `performance.relay_overhead` | Latenza confrontata con la baseline affidabile (solo informativo). | Info | Non conteggiato |
@@ -806,7 +916,7 @@ base di conoscenza.
 **Avvertenze.** La latenza dipende dal percorso di rete e dal carico del
 fornitore in quel momento; ripeti un cattivo risultato di costanza in un altro
 momento. Gli intervalli della base di conoscenza sono mediane volutamente ampie
-delle API native, e un obiettivo più lento non è mai un fallimento. Tutte le
+delle API native, e un obiettivo più lento viene annotato, mai conteggiato. Tutte le
 rilevazioni sono al massimo di gravità BASSA: questa dimensione muove il
 punteggio, mai il verdetto di rischio.
 

@@ -180,6 +180,14 @@ rileva dall'URL di base e dal modello. I rilevatori parlano solo con questa
 interfaccia (`RequestSpec` in ingresso, `CompletionOutcome` in uscita), quindi
 sono indipendenti dal protocollo.
 
+I client adattano anche le richieste a ciò che il modello accetta (`base.py`):
+il runner inizializza `unsupported_params` dal profilo, i parametri di
+campionamento elencati lì vengono omessi e, su Chat Completions, un `max_tokens`
+elencato invia il limite come `max_completion_tokens`. Un 4xx che nomina un tale
+parametro lo aggiunge all'insieme e ripete la richiesta una volta adattata (il
+tentativo rifiutato è registrato con la fase `param_retry`). Una sonda che
+giudica il rifiuto grezzo imposta `RequestSpec.exact_params`.
+
 ### Rilevatori e scale dei punteggi
 
 Un rilevatore è un file autonomo in `zing/detectors/`: una sottoclasse di
@@ -231,8 +239,14 @@ che alimenta i **Dimension details** dei rapporti e le righe espandibili dei
 dell'utente), salva le voci dell'utente (`store.py`), controlla e importa YAML
 (`importer.py`), costruisce il prompt di ricerca per gli assistenti esterni
 (`research.py`) e fotografa il profilo usato da un'esecuzione (`snapshot.py`). Gli
-id di modello si risolvono tramite alias e fornitore dichiarato; ogni rapporto
-registra come è stato risolto l'id.
+id di modello si risolvono in modo esatto, tramite alias o per nome normalizzato,
+ristretti dal fornitore dichiarato. Il ripiego approssimato prende il nome della
+KB più lungo contenuto nell'id dichiarato (un id di snapshot o decorato), a meno
+che il resto dell'id nomini un altro livello o variante (`-mini`, `-lite`,
+`-image`, …); un id troncato si risolve solo quando il nome di un unico modello
+inizia con esso, quindi un id ambiguo come `gpt-4` non ottiene alcun profilo
+invece di un livello indovinato. Ogni rapporto registra come è stato risolto
+l'id.
 
 `load_knowledge_base()` tiene in cache i risultati uniti e per impostazione
 predefinita restituisce una copia profonda, così i chiamanti possono modificare
@@ -522,6 +536,12 @@ i prezzi o la documentazione del fornitore) nella pull request: un valore errato
 causa falsi positivi contro relay onesti. `zing kb-import --check <file>` esegue
 gli stessi controlli dell'importazione utente (schema, limiti, espressioni
 regolari pericolose, prompt, collisioni di id).
+
+Le `fingerprints` a livello di fornitore girano su ogni suo modello. Una sonda la
+cui attesa vale solo per alcuni modelli (una data di cutoff, una verifica di
+conoscenze del livello Pro, una trappola di ragionamento) va nelle
+`fingerprints` di quei modelli, altrimenti la risposta veritiera di un altro
+modello conta come divergenza.
 
 Compila sempre `identity_keywords` con le parole del produttore e della
 famiglia con cui il modello si identifica. Il controllo d'identità conta anche

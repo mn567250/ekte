@@ -125,6 +125,13 @@ class RequestSpec(BaseModel):
     # known to reason (BaseHTTPClient.complete). Off for probes whose budget or
     # timing is the measurement.
     reasoning_retry: bool = True
+    # Client-side only (never sent): send the request exactly as specified. The
+    # client otherwise leaves out sampling parameters the model refuses, renames
+    # the output limit a reasoning model wants as ``max_completion_tokens`` and
+    # repeats a request whose 4xx named such a parameter
+    # (BaseHTTPClient.unsupported_params). On for probes that classify the raw
+    # rejection.
+    exact_params: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -146,6 +153,9 @@ class CompletionOutcome(BaseModel):
     # Timing
     duration_ms: float | None = None
     ttft_ms: float | None = None  # time to first streamed token
+    # Time to the first streamed REASONING delta (reasoning_content, a thinking
+    # block, a Responses reasoning event); None when no reasoning was streamed.
+    first_reasoning_ms: float | None = None
     # Per-event arrival offsets (ms from request start), for fake-stream analysis.
     chunk_timings_ms: list[float] = Field(default_factory=list)
     chunk_count: int = 0

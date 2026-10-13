@@ -25,7 +25,16 @@ def test_local_hosts(url):
 
 
 @pytest.mark.parametrize(
-    "url", ["https://api.openai.com/v1", "https://relay.example.com/v1", "https://8.8.8.8/v1", "", "not a url"]
+    "url",
+    [
+        "https://api.openai.com/v1",
+        "https://relay.example.com/v1",
+        "https://8.8.8.8/v1",
+        # a public DNS name that merely starts with "127." is not loopback
+        "http://127.relay.example.com/v1",
+        "",
+        "not a url",
+    ],
 )
 def test_remote_hosts(url):
     assert not is_local_host(url)

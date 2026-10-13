@@ -225,3 +225,81 @@ def test_verdict_confidence_high_with_baseline_and_full_core():
         detectors, dims, profile_matched=True, used_judge=False, used_baseline=True
     )
     assert verdict.confidence == "high"
+
+
+def test_verdict_fuzzy_kb_match_caps_confidence_at_low():
+    # Baseline + full core would be "high", but a fuzzy profile may not be the
+    # model's own: confidence stays low and the summary says why.
+    detectors = _clean_core_detectors()
+    dims = build_dimensions(detectors, reliability=None)
+    exact = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=True,
+        match_confidence="exact",
+    )
+    fuzzy = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=True,
+        match_confidence="fuzzy",
+    )
+    assert exact.confidence == "high" and "fuzzily" not in exact.summary
+    assert fuzzy.confidence == "low" and "(confidence: low)" in fuzzy.headline
+    assert "only fuzzily matched a knowledge-base profile" in fuzzy.summary
+
+
+# --------------------------------------------------------------------------- #
+# transport/advisory findings never escalate the substitution risk
+# --------------------------------------------------------------------------- #
+def _plain_http(severity: Severity = Severity.HIGH) -> Finding:
+    return Finding(id="security.tls", title="Endpoint is not HTTPS", status=Status.FAIL,
+                   severity=severity, outcome="plain_http", cap=40.0)
+
+
+def test_verdict_plain_http_is_an_advisory_not_a_divergence():
+    detectors = [
+        *_clean_core_detectors(),
+        _result(Dimension.SECURITY, score=40.0, status=Status.FAIL, findings=[_plain_http()]),
+    ]
+    dims = {d.dimension: d for d in build_dimensions(detectors, reliability=None)}
+    verdict = build_verdict(
+        detectors, list(dims.values()), profile_matched=True, used_judge=False, used_baseline=False
+    )
+    assert verdict.risk_level == RiskLevel.CLEAN
+    # It still fails its dimension and is listed as an advisory.
+    assert dims[Dimension.SECURITY].status == Status.FAIL
+    assert "Endpoint is not HTTPS" in verdict.key_findings
+    assert "advisories" in verdict.summary and "Findings:" not in verdict.summary
+
+
+def test_verdict_reliability_failures_do_not_escalate():
+    # e.g. a reasoning model that 400s every tiny reliability ping.
+    burst = Finding(id="reliability.success_rate", title="Some concurrent requests failed",
+                    status=Status.FAIL, severity=Severity.MEDIUM, outcome="many_failed")
+    slow = Finding(id="reliability.latency", title="High tail latency under load",
+                   status=Status.WARN, severity=Severity.LOW, outcome="slow")
+    detectors = [
+        *_clean_core_detectors(),
+        _result(Dimension.RELIABILITY, score=0.0, status=Status.FAIL, findings=[burst, slow]),
+        _result(Dimension.SECURITY, score=40.0, status=Status.FAIL, findings=[_plain_http()]),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=False
+    )
+    assert verdict.risk_level == RiskLevel.CLEAN
+    assert verdict.key_findings == ["Some concurrent requests failed", "Endpoint is not HTTPS"]
+
+
+def test_verdict_integrity_and_key_echo_still_escalate():
+    tamper = Finding(id="integrity.tampered", title="Response tampered", status=Status.FAIL,
+                     severity=Severity.CRITICAL)
+    echo = Finding(id="security.key_echo", title="API key reflected in response",
+                   status=Status.FAIL, severity=Severity.HIGH, outcome="echoed")
+    for finding, risk in ((tamper, RiskLevel.HIGH), (echo, RiskLevel.MEDIUM)):
+        detectors = [
+            *_clean_core_detectors(),
+            _result(Dimension.SECURITY, score=30.0, status=Status.FAIL, findings=[finding]),
+        ]
+        dims = build_dimensions(detectors, reliability=None)
+        verdict = build_verdict(
+            detectors, dims, profile_matched=True, used_judge=False, used_baseline=False
+        )
+        assert verdict.risk_level == risk, finding.id

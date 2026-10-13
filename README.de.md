@@ -424,6 +424,15 @@ für ein anderes Modell. Die **Konfidenz** des Urteils (niedrig / mittel / hoch)
 steigt mit der Zahl der Kerndimensionen, die ein Ergebnis lieferten, mit einer
 Referenz und mit dem LLM-Richter.
 
+Transport-Hinweise — Klartext-HTTP (`security.tls`) und Ausfälle oder langsame
+Ausreißer unter Last (`reliability.*`) — senken die Punktzahl ihrer Dimension,
+erhöhen aber das Substitutionsrisiko ebenfalls nicht; die Zusammenfassung führt
+sie als Hinweise. Manipulierte Antworten und ein zurückgespiegelter API-Schlüssel
+tun es weiterhin. Klartext-HTTP zu diesem Rechner oder einem privaten Netz ist nur
+eine Warnung niedriger Schwere, da der Schlüssel es nie verlässt. Ein nur unscharf
+(fuzzy) zugeordnetes Wissensbasis-Profil begrenzt die Konfidenz auf niedrig, und
+ein Detektor ohne verwertbare Antwort ist nicht schlüssig — nie ein Bestehen.
+
 ## Suiten
 
 | Suite | Detektoren | Kosten |
@@ -438,6 +447,7 @@ Der Kontextfenster-Test ist durch `--max-context-tokens` (Standard 200K)
 begrenzt, sodass die Prüfung eines Modells mit 1M Token bezahlbar bleibt.
 `--only` / `--skip` führen einzelne Detektoren anhand ihrer Kennung aus oder
 lassen sie weg.
+Ein Fenster oberhalb der `--max-context-tokens`-Grenze wird als *bis zur Grenze verifiziert* gemeldet, nie als gekürzt.
 
 ### Benutzerdefinierte Suite
 
@@ -483,7 +493,7 @@ dafür abgewertet, dass er kein Rechenzentrum ist:
 | Fehler | fehlgeschlagene Messanfragen: ≤ 2 % 100 · ≤ 10 % 80 · darüber: 50 (429 nicht mitgezählt) |
 | Stabilität unter Last | p50-Latenz im Burst ÷ sequenzielle p50: ≤ 1,5x 100 · ≤ 3x 80 · darüber: 55 |
 | Cache-Treffer | eindeutige Prompts aus einem Cache beantwortet: 60 |
-| Referenz | Token/s im Vergleich zur vertrauenswürdigen Referenz, sonst zum veröffentlichten Bereich des Modells in der Wissensbasis: im Rahmen 100 · langsamer 80 (nur Hinweis, nie ein Fehlschlag) · ≥ 2x schneller 60 (Hinweis auf ein kleineres Modell) · keine Referenz: nicht gewertet |
+| Referenz | Token/s im Vergleich zur vertrauenswürdigen Referenz, sonst zum veröffentlichten Bereich des Modells in der Wissensbasis: im Rahmen 100 · langsamer: nicht gewertet (nur Hinweis, nie ein Fehlschlag) · ≥ 2x schneller 60 (Hinweis auf ein kleineres Modell) · keine Referenz: nicht gewertet |
 
 Leistungsbefunde haben höchstens niedrigen Schweregrad: sie bewegen die
 Bewertung, nie das Risikourteil. Ohne die Messung (`standard` ohne Referenz,

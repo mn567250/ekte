@@ -48,6 +48,49 @@ models:
   - deepseek
   - mistral
   - cohere
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge cutoff date
+    prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
+    native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
+    downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
+    pure_code_checkable: true
+    expect_contains:
+    - 2025-01
+    expect_not_contains:
+    - 2023-04
+    - 2023-12
+    - 2024-04
+    - 2024-06
+    - 2024-10
+    max_tokens: 32
+    temperature: 0
+    weight: 1
+  - id: factual-recall-pro-size
+    signal: factual recall distinguishing model size (Pro vs cheap substitute)
+    prompt: 'In one line each, give the SHA-style short answer: (1) the 50th digit of pi after the decimal point, (2) the chemical formula of caffeine, (3) the ICAO airport code for Tromso, Norway. Format strictly as ''1: X | 2: Y | 3: Z''.'
+    native_expected: 'Gemini Pro-tier answers all correctly: 1: 0, 2: C8H10N4O2, 3: ENTC. Maintains the exact requested ''n: value | ...'' format.'
+    downgrade_signal: A small/quantized substitute hallucinates digits of pi, gives wrong caffeine formula, or wrong/invented ICAO code, and/or breaks the strict output format.
+    pure_code_checkable: true
+    expect_contains:
+    - C8H10N4O2
+    - ENTC
+    max_tokens: 128
+    temperature: 0
+    weight: 1
+  - id: reasoning-trap-bat-ball
+    signal: reasoning-vs-non-reasoning tell (multi-step trap)
+    prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
+    native_expected: Gemini Pro-tier models (thinking cannot be turned off) answer $0.05 (correct after reasoning). Not attached to Flash/Flash-Lite, where thinking is optional or can be budgeted to 0.
+    downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
+    pure_code_checkable: true
+    expect_contains:
+    - '0.05'
+    expect_not_contains:
+    - '0.10'
+    max_tokens: 64
+    temperature: 0
+    weight: 1
   notes: Current flagship as of mid-2026, released 2026-02-19. Preview status. ~2x reasoning boost over Gemini 3 Pro. Reasoning-first MoE; reasoning cannot be fully disabled. Enforces thought_signature on function-call turns (strict 400 if omitted). 3.5 Pro announced 'coming soon' (~June 2026) but not GA at time of research.
 - id: gemini-3-pro-preview
   aliases:
@@ -88,6 +131,49 @@ models:
   - deepseek
   - mistral
   - cohere
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge cutoff date
+    prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
+    native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
+    downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
+    pure_code_checkable: true
+    expect_contains:
+    - 2025-01
+    expect_not_contains:
+    - 2023-04
+    - 2023-12
+    - 2024-04
+    - 2024-06
+    - 2024-10
+    max_tokens: 32
+    temperature: 0
+    weight: 1
+  - id: factual-recall-pro-size
+    signal: factual recall distinguishing model size (Pro vs cheap substitute)
+    prompt: 'In one line each, give the SHA-style short answer: (1) the 50th digit of pi after the decimal point, (2) the chemical formula of caffeine, (3) the ICAO airport code for Tromso, Norway. Format strictly as ''1: X | 2: Y | 3: Z''.'
+    native_expected: 'Gemini Pro-tier answers all correctly: 1: 0, 2: C8H10N4O2, 3: ENTC. Maintains the exact requested ''n: value | ...'' format.'
+    downgrade_signal: A small/quantized substitute hallucinates digits of pi, gives wrong caffeine formula, or wrong/invented ICAO code, and/or breaks the strict output format.
+    pure_code_checkable: true
+    expect_contains:
+    - C8H10N4O2
+    - ENTC
+    max_tokens: 128
+    temperature: 0
+    weight: 1
+  - id: reasoning-trap-bat-ball
+    signal: reasoning-vs-non-reasoning tell (multi-step trap)
+    prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
+    native_expected: Gemini Pro-tier models (thinking cannot be turned off) answer $0.05 (correct after reasoning). Not attached to Flash/Flash-Lite, where thinking is optional or can be budgeted to 0.
+    downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
+    pure_code_checkable: true
+    expect_contains:
+    - '0.05'
+    expect_not_contains:
+    - '0.10'
+    max_tokens: 64
+    temperature: 0
+    weight: 1
   notes: 'Released 2025-11-18. Sparse MoE, reasoning-first. Adjustable thinking_level (low/high). Strict thought_signature enforcement on multi-turn tool use (missing -> 400). Benchmarks: GPQA Diamond high-80s/90s.'
 - id: gemini-3.5-flash
   aliases:
@@ -128,6 +214,24 @@ models:
   - deepseek
   - mistral
   - cohere
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge cutoff date
+    prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
+    native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
+    downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
+    pure_code_checkable: true
+    expect_contains:
+    - 2025-01
+    expect_not_contains:
+    - 2023-04
+    - 2023-12
+    - 2024-04
+    - 2024-06
+    - 2024-10
+    max_tokens: 32
+    temperature: 0
+    weight: 1
   notes: GA 2026-05-19. Internal version 3.5-flash-05-2026. Pricing ~$1.50 in / $9.00 out per 1M (notably higher-tier Flash). 'Most intelligent model for sustained frontier agentic/coding'. Thinking model with adjustable levels; thought_signature enforced.
 - id: gemini-3-flash-preview
   aliases:
@@ -168,6 +272,24 @@ models:
   - deepseek
   - mistral
   - cohere
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge cutoff date
+    prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
+    native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
+    downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
+    pure_code_checkable: true
+    expect_contains:
+    - 2025-01
+    expect_not_contains:
+    - 2023-04
+    - 2023-12
+    - 2024-04
+    - 2024-06
+    - 2024-10
+    max_tokens: 32
+    temperature: 0
+    weight: 1
   notes: 'Released 2025-12-17. Configurable thinking levels: minimal/low/medium/high. Pricing $0.50 in / $3.00 out per 1M (audio in $1.00). Uses ~30% fewer tokens than 2.5 Pro at highest thinking. thought_signature enforced even at minimal thinking.'
 - id: gemini-3.1-flash-lite
   aliases:
@@ -207,6 +329,24 @@ models:
   - deepseek
   - mistral
   - cohere
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge cutoff date
+    prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
+    native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
+    downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
+    pure_code_checkable: true
+    expect_contains:
+    - 2025-01
+    expect_not_contains:
+    - 2023-04
+    - 2023-12
+    - 2024-04
+    - 2024-06
+    - 2024-10
+    max_tokens: 32
+    temperature: 0
+    weight: 1
   notes: Stable. Cheapest/fastest frontier-class tier of the 3.x line. Thinking-capable.
 - id: gemini-2.5-pro
   aliases:
@@ -245,6 +385,49 @@ models:
   - deepseek
   - mistral
   - cohere
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge cutoff date
+    prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
+    native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
+    downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
+    pure_code_checkable: true
+    expect_contains:
+    - 2025-01
+    expect_not_contains:
+    - 2023-04
+    - 2023-12
+    - 2024-04
+    - 2024-06
+    - 2024-10
+    max_tokens: 32
+    temperature: 0
+    weight: 1
+  - id: factual-recall-pro-size
+    signal: factual recall distinguishing model size (Pro vs cheap substitute)
+    prompt: 'In one line each, give the SHA-style short answer: (1) the 50th digit of pi after the decimal point, (2) the chemical formula of caffeine, (3) the ICAO airport code for Tromso, Norway. Format strictly as ''1: X | 2: Y | 3: Z''.'
+    native_expected: 'Gemini Pro-tier answers all correctly: 1: 0, 2: C8H10N4O2, 3: ENTC. Maintains the exact requested ''n: value | ...'' format.'
+    downgrade_signal: A small/quantized substitute hallucinates digits of pi, gives wrong caffeine formula, or wrong/invented ICAO code, and/or breaks the strict output format.
+    pure_code_checkable: true
+    expect_contains:
+    - C8H10N4O2
+    - ENTC
+    max_tokens: 128
+    temperature: 0
+    weight: 1
+  - id: reasoning-trap-bat-ball
+    signal: reasoning-vs-non-reasoning tell (multi-step trap)
+    prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
+    native_expected: Gemini Pro-tier models (thinking cannot be turned off) answer $0.05 (correct after reasoning). Not attached to Flash/Flash-Lite, where thinking is optional or can be budgeted to 0.
+    downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
+    pure_code_checkable: true
+    expect_contains:
+    - '0.05'
+    expect_not_contains:
+    - '0.10'
+    max_tokens: 64
+    temperature: 0
+    weight: 1
   notes: Legacy-but-still-available flagship of 2.5 line. Thinking model; reasoning cannot be disabled. Does NOT strictly enforce thought_signature (optional) — key behavioral split vs Gemini 3.x. PDF support via file input.
 - id: gemini-2.5-flash
   aliases:
@@ -283,6 +466,24 @@ models:
   - deepseek
   - mistral
   - cohere
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge cutoff date
+    prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
+    native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
+    downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
+    pure_code_checkable: true
+    expect_contains:
+    - 2025-01
+    expect_not_contains:
+    - 2023-04
+    - 2023-12
+    - 2024-04
+    - 2024-06
+    - 2024-10
+    max_tokens: 32
+    temperature: 0
+    weight: 1
   notes: Workhorse, native tool use. Thinking can be toggled/budgeted (thinking_budget incl. 0 to disable) unlike Pro. thought_signature optional (not strictly enforced).
 - id: gemini-2.5-flash-lite
   aliases:
@@ -321,6 +522,24 @@ models:
   - deepseek
   - mistral
   - cohere
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge cutoff date
+    prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
+    native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
+    downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
+    pure_code_checkable: true
+    expect_contains:
+    - 2025-01
+    expect_not_contains:
+    - 2023-04
+    - 2023-12
+    - 2024-04
+    - 2024-06
+    - 2024-10
+    max_tokens: 32
+    temperature: 0
+    weight: 1
   notes: Lowest-latency 2.5 tier. Thinking optional. Same 1M context.
 - id: gemini-embedding-001
   aliases:
@@ -420,56 +639,14 @@ fingerprints:
   max_tokens: 128
   temperature: 0
   weight: 1
-- id: knowledge-cutoff
-  signal: knowledge cutoff date
-  prompt: What is your training data knowledge cutoff? Answer with just the month and year, formatted as YYYY-MM, and nothing else.
-  native_expected: January 2025, i.e. '2025-01' (consistent across Gemini 2.5 and all 3.x models).
-  downgrade_signal: Returns a different cutoff such as 2023-04 (GPT-4), 2023-12, 2024-04, 2024-10 (Claude), 2024-06, or 'April 2024' etc., indicating a non-Gemini backend.
-  pure_code_checkable: true
-  expect_contains:
-  - 2025-01
-  expect_not_contains:
-  - 2023-04
-  - 2023-12
-  - 2024-04
-  - 2024-06
-  - 2024-10
-  max_tokens: 32
-  temperature: 0
-  weight: 1
 - id: true-max-output
   signal: true max-output-length / context handling
   prompt: Output the integer sequence starting at 1, one number per line (1, 2, 3, ...), and continue without stopping until you are cut off. Do not summarize or stop early.
-  native_expected: Streams a long monotonic sequence and terminates with finishReason='MAX_TOKENS'; the candidate token count approaches the requested maxOutputTokens up to the model ceiling of 65536 (native) — i.e. it can exceed the old 8192 ceiling of legacy models.
+  native_expected: Streams a long monotonic sequence and terminates with finishReason='MAX_TOKENS'; the candidate token count approaches the requested maxOutputTokens up to the model's own max_output_tokens ceiling (65536 for Gemini 2.5 and 3.x, 8192 for legacy 2.0 Flash).
   downgrade_signal: finishReason='STOP' far below the cap, hard truncation near 4096/8192 tokens, or refusal — indicating a substituted/quantized model with a smaller real output ceiling than advertised.
   pure_code_checkable: true
   expect_regex: 1\s*\n\s*2\s*\n\s*3
   max_tokens: 65536
-  temperature: 0
-  weight: 1
-- id: factual-recall-pro-size
-  signal: factual recall distinguishing model size (Pro vs cheap substitute)
-  prompt: 'In one line each, give the SHA-style short answer: (1) the 50th digit of pi after the decimal point, (2) the chemical formula of caffeine, (3) the ICAO airport code for Tromso, Norway. Format strictly as ''1: X | 2: Y | 3: Z''.'
-  native_expected: 'Gemini Pro-tier answers all correctly: 1: 0, 2: C8H10N4O2, 3: ENTC. Maintains the exact requested ''n: value | ...'' format.'
-  downgrade_signal: A small/quantized substitute hallucinates digits of pi, gives wrong caffeine formula, or wrong/invented ICAO code, and/or breaks the strict output format.
-  pure_code_checkable: true
-  expect_contains:
-  - C8H10N4O2
-  - ENTC
-  max_tokens: 128
-  temperature: 0
-  weight: 1
-- id: reasoning-trap-bat-ball
-  signal: reasoning-vs-non-reasoning tell (multi-step trap)
-  prompt: A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Reply with only the dollar amount, e.g. $0.05.
-  native_expected: Gemini 3.x / 2.5 reasoning models answer $0.05 (correct after reasoning).
-  downgrade_signal: Returns the intuitive-but-wrong $0.10 — typical of a small non-reasoning substitute masquerading as a thinking-capable Gemini.
-  pure_code_checkable: true
-  expect_contains:
-  - '0.05'
-  expect_not_contains:
-  - '0.10'
-  max_tokens: 64
   temperature: 0
   weight: 1
 relay_red_flags:
@@ -477,7 +654,7 @@ relay_red_flags:
 - 'Reasoning can be fully turned off on a Pro/3.x model: native generateContent with thinkingConfig.thinkingBudget=0 (or compat reasoning_effort:''none'') still yields usageMetadata.thoughtsTokenCount > 0 on Gemini 3 Pro / 2.5 Pro; a backend that honors ''none'' / always returns 0 thoughts on a Pro tier is not native Gemini. (Dedicated reasoning/thinkingConfig detector.)'
 - usageMetadata missing thoughtsTokenCount (or it is always 0) while the model claims to be a thinking model.
 - models.countTokens endpoint absent or erroring, or token counts that match OpenAI tiktoken cl100k/o200k instead of Gemini SentencePiece for the same string (e.g. 'strawberry hello hello hello 🍓🍓 こんにちは'). (Dedicated tokenizer/countTokens detector.)
-- Self-ID as GPT/Claude/Llama/Qwen/DeepSeek, or knowledge cutoff that is not January 2025.
+- Self-ID as GPT/Claude/Llama/Qwen/DeepSeek, or a knowledge cutoff that contradicts the claimed model's profile (January 2025 for Gemini 2.5 and 3.x; the cutoff probe is attached only to those models).
 - Max output truncates near 4096/8192 with finishReason STOP instead of reaching toward the 65536 ceiling with MAX_TOKENS.
 - OpenAI-compat layer rejects unknown params with a 400 'unknown/unsupported parameter' error (e.g. frobnicate_level / top_logprobs) — real Gemini silently ignores them; a 400 indicates a passthrough to a different OpenAI-compatible provider. (Dedicated parameter-rejection detector.)
 - Serving a 200 response for discontinued ids gemini-2.0-flash / gemini-2.0-flash-lite after 2026-06-01 — Google returns 404/400; a 200 means silent routing to another live model (classic货不对板). (Dedicated discontinued-model detector.)
