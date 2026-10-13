@@ -151,6 +151,12 @@ Dockerfile             Web 界面镜像
 或根据 base URL 和模型自动识别。检测器只与这一接口打交道（输入 `RequestSpec`，
 输出 `CompletionOutcome`），因此与协议无关。
 
+客户端还会让请求适应模型所接受的参数（`base.py`）：runner 根据画像填入
+`unsupported_params`，其中所列的采样参数会被省略；在 Chat Completions 上，若列有
+`max_tokens`，则以 `max_completion_tokens` 发送上限。4xx 若点名此类参数，会将其加入该
+集合，并把请求调整后重发一次（被拒绝的尝试以阶段 `param_retry` 记录）。评判未经调整的
+拒绝的探测会设置 `RequestSpec.exact_params`。
+
 ### 检测器与计分标准
 
 一个检测器就是 `zing/detectors/` 中一个自包含的文件：继承 `Detector`（`base.py`），

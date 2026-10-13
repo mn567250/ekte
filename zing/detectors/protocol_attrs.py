@@ -148,6 +148,9 @@ class ProtocolRequestDetector(Detector):
                 "messages": [{"role": "user", "content": prompts.text("protocol_request.probe")}],
                 "temperature": None,
                 "capture_raw": True,
+                # The classification reads the raw rejection: no client-side
+                # dropping, renaming or repeating of parameters.
+                "exact_params": True,
                 **limit,
                 **spec_fields,
             }

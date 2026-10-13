@@ -172,6 +172,14 @@ with the same interface, built on shared HTTP machinery in `base.py`.
 from the base URL and model. Detectors only speak to this interface
 (`RequestSpec` in, `CompletionOutcome` out), so they are protocol-agnostic.
 
+The clients also adapt requests to what the model accepts (`base.py`): the
+runner seeds `unsupported_params` from the profile, sampling parameters listed
+there are left out, and on Chat Completions a listed `max_tokens` sends the
+limit as `max_completion_tokens`. A 4xx that names such a parameter adds it to
+the set and repeats the request once adapted (the rejected attempt is recorded
+with phase `param_retry`). A probe that judges the raw rejection sets
+`RequestSpec.exact_params`.
+
 ### Detectors and scoring scales
 
 A detector is one self-contained file in `zing/detectors/`: a subclass of

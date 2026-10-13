@@ -259,6 +259,8 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
   identity_keywords:
   - openai
   - gpt
@@ -325,6 +327,8 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
   identity_keywords:
   - openai
   - gpt
@@ -391,6 +395,8 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
   identity_keywords:
   - openai
   - gpt
@@ -424,6 +430,8 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
   identity_keywords:
   - openai
   - gpt
@@ -457,6 +465,8 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
   identity_keywords:
   - openai
   - gpt
@@ -493,6 +503,8 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
   identity_keywords:
   - openai
   - gpt
@@ -528,6 +540,8 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
   identity_keywords:
   - openai
   - gpt
@@ -562,6 +576,11 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
+  - temperature
+  - top_p
+  - logprobs
   identity_keywords:
   - openai
   - gpt
@@ -578,7 +597,7 @@ models:
   - meta
   - deepseek
   - mistral
-  notes: Original GPT-5 (Aug 2025). 400K context advertised, ~272K real input cap. Introduced reasoning_effort=minimal and verbosity params and custom (plaintext/CFG-grammar) tools. gpt-5-chat-latest is 128K/16384 non-reasoning. Retired from ChatGPT UI Feb 2026 but API snapshots remained.
+  notes: Original GPT-5 (Aug 2025). 400K context advertised, ~272K real input cap. Introduced reasoning_effort=minimal and verbosity params and custom (plaintext/CFG-grammar) tools. gpt-5-chat-latest is 128K/16384 non-reasoning. Retired from ChatGPT UI Feb 2026 but API snapshots remained. On Chat Completions requires max_completion_tokens (max_tokens 400) and, at its default reasoning effort, rejects temperature!=1, top_p and logprobs.
 - id: gpt-4.1
   aliases:
   - gpt-4.1-2025-04-14
@@ -766,6 +785,13 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
+  - temperature
+  - top_p
+  - presence_penalty
+  - frequency_penalty
+  - logprobs
   identity_keywords:
   - openai
   - chatgpt
@@ -799,6 +825,13 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
+  - temperature
+  - top_p
+  - presence_penalty
+  - frequency_penalty
+  - logprobs
   identity_keywords:
   - openai
   - chatgpt
@@ -832,6 +865,13 @@ models:
   supports_json_mode: true
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - max_tokens
+  - temperature
+  - top_p
+  - presence_penalty
+  - frequency_penalty
+  - logprobs
   identity_keywords:
   - openai
   - chatgpt
@@ -847,7 +887,7 @@ models:
   - meta
   - deepseek
   - mistral
-  notes: First-gen reasoning model, largely superseded by o3. 200K/100K. Originally no system message / no streaming on early snapshots; uses developer role. Expensive ($15/MTok input historically). Predates the gpt-4o-2024-08-06+ / o3 / o4-mini json_schema structured-output rollout.
+  notes: First-gen reasoning model, largely superseded by o3. 200K/100K. Originally no system message / no streaming on early snapshots; uses developer role. Expensive ($15/MTok input historically). Predates the gpt-4o-2024-08-06+ / o3 / o4-mini json_schema structured-output rollout. Like o3 requires max_completion_tokens and rejects temperature!=1, top_p, presence/frequency penalties and logprobs.
 fingerprints:
 - id: self-id
   signal: self-identification style

@@ -187,6 +187,17 @@ clé API renvoyée font toujours monter le risque.
   Dès qu'un endpoint est connu pour raisonner (son profil indique
   `reasoning: true`, ou après sa première répétition de ce type), les sondes
   courtes partent d'emblée avec la limite de 4 096 tokens au lieu de deux fois.
+- **Paramètres de requête :** les modèles de raisonnement refusent certains
+  paramètres : sur Chat Completions `max_tokens` (ils prennent
+  `max_completion_tokens`) et, quel que soit le protocole, les paramètres
+  d'échantillonnage comme `temperature`. Le client omet les paramètres que le
+  profil liste sous `unsupported_params` et envoie la limite de sortie en
+  `max_completion_tokens` quand `max_tokens` y figure. Un point de terminaison
+  sans profil qui nomme un tel paramètre dans une 4xx reçoit la requête une fois
+  de plus, adaptée, et toute requête suivante part adaptée d'emblée ; la
+  tentative refusée ne compte pas comme une erreur du relais. Les sondes de
+  `protocol_request` partent telles qu'elles sont construites, car elles jugent
+  justement le refus brut.
 
 ---
 

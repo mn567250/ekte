@@ -125,6 +125,13 @@ class RequestSpec(BaseModel):
     # known to reason (BaseHTTPClient.complete). Off for probes whose budget or
     # timing is the measurement.
     reasoning_retry: bool = True
+    # Client-side only (never sent): send the request exactly as specified. The
+    # client otherwise leaves out sampling parameters the model refuses, renames
+    # the output limit a reasoning model wants as ``max_completion_tokens`` and
+    # repeats a request whose 4xx named such a parameter
+    # (BaseHTTPClient.unsupported_params). On for probes that classify the raw
+    # rejection.
+    exact_params: bool = False
 
 
 # --------------------------------------------------------------------------- #

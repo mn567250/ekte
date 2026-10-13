@@ -179,6 +179,14 @@ mit derselben Schnittstelle, gebaut auf der gemeinsamen HTTP-Mechanik in
 dieser Schnittstelle (`RequestSpec` hinein, `CompletionOutcome` heraus) und sind
 damit protokollunabhängig.
 
+Die Clients passen Anfragen außerdem an, was das Modell annimmt (`base.py`):
+der Runner belegt `unsupported_params` aus dem Profil, dort genannte
+Sampling-Parameter werden weggelassen, und bei Chat Completions geht das Limit
+als `max_completion_tokens` hinaus, wenn `max_tokens` genannt ist. Ein 4xx, das
+einen solchen Parameter nennt, fügt ihn hinzu und wiederholt die Anfrage einmal
+angepasst (der abgelehnte Versuch wird mit Phase `param_retry` erfasst). Eine
+Probe, die die unveränderte Ablehnung bewertet, setzt `RequestSpec.exact_params`.
+
 ### Detektoren und Bewertungsskalen
 
 Ein Detektor ist eine eigenständige Datei in `zing/detectors/`: eine

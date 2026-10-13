@@ -78,13 +78,39 @@ class OpenAICompatibleClient(BaseHTTPClient):
             "tools": spec.tools,
             "tool_choice": spec.tool_choice,
         }
+        if self._completion_tokens(spec):
+            # Reasoning models refuse max_tokens and take the limit as
+            # max_completion_tokens; a request that already sets that keeps it.
+            limit = optional.pop("max_tokens")
+            if "max_completion_tokens" not in spec.extra_body:
+                optional["max_completion_tokens"] = limit
         for key, value in optional.items():
             if value is not None:
                 body[key] = value
         body.update(spec.extra_body)
         if spec.stream and "stream_options" not in body:
             body["stream_options"] = {"include_usage": True}
-        return body
+        return self._drop_unsupported(body, spec)
+
+    def _completion_tokens(self, spec: RequestSpec) -> bool:
+        """Whether the output limit goes out as ``max_completion_tokens``: the
+        model refuses ``max_tokens`` and has not refused the other name too."""
+        return (
+            not spec.exact_params
+            and "max_tokens" in self.unsupported_params
+            and "max_completion_tokens" not in self.unsupported_params
+        )
+
+    def _adaptable(self, spec: RequestSpec, body: dict[str, Any]) -> set[str]:
+        names = super()._adaptable(spec, body)
+        # The output limit can be renamed (max_tokens -> max_completion_tokens),
+        # and back when the client renamed it for an endpoint that knows only
+        # max_tokens. A limit the request itself sets in extra_body stays put.
+        if "max_tokens" in body:
+            names.add("max_tokens")
+        elif spec.max_tokens is not None and self._completion_tokens(spec):
+            names.add("max_completion_tokens")
+        return names
 
     # -- endpoints ---------------------------------------------------------- #
     async def _list_models(

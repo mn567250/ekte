@@ -17,7 +17,7 @@ from typing import Any
 
 import zing.detectors  # noqa: F401  -- populates the detector REGISTRY
 from zing import __version__, prompts
-from zing.clients import detect_api, make_client
+from zing.clients import Client, detect_api, make_client
 from zing.config import AuditOptions
 from zing.context import AuditContext
 from zing.detectors.base import run_detector, select_detectors
@@ -98,6 +98,15 @@ def _extract_reliability(detectors: list[DetectorResult]) -> ReliabilitySummary 
     return None
 
 
+def _fit_client(client: Client, profile: ResolvedProfile | None) -> None:
+    """Tell a client what its endpoint's model is known to need: room to think
+    on short probes (a reasoning model), and the request parameters it refuses
+    (``unsupported_params``, left out or renamed by the client)."""
+    model = profile.model if profile is not None else None
+    client.reasoning_room = bool(model and model.reasoning)
+    client.unsupported_params = set(model.unsupported_params) if model else set()
+
+
 async def run_audit(
     target: TargetConfig,
     options: AuditOptions,
@@ -153,8 +162,7 @@ async def run_audit(
     async with AsyncExitStack() as stack:
         client = await stack.enter_async_context(make_client(target))
         client.recorder, client.endpoint = recorder, "target"
-        # A model known to reason gets room to think on short probes up front.
-        client.reasoning_room = bool(profile is not None and profile.model.reasoning)
+        _fit_client(client, profile)
 
         baseline_client = None
         if baseline is not None:
@@ -162,11 +170,11 @@ async def run_audit(
             baseline_client.recorder, baseline_client.endpoint = recorder, "baseline"
             # The baseline may be another model (--baseline-model): its own profile.
             if baseline.claimed == target.claimed:
-                baseline_client.reasoning_room = client.reasoning_room
+                _fit_client(baseline_client, profile)
             else:
-                base_profile = kb.resolve(baseline.claimed, baseline.declared_provider)
-                baseline_client.reasoning_room = bool(
-                    base_profile is not None and base_profile.model.reasoning
+                _fit_client(
+                    baseline_client,
+                    kb.resolve(baseline.claimed, baseline.declared_provider),
                 )
 
         judge = None
@@ -174,6 +182,7 @@ async def run_audit(
             jt = judge_target or baseline
             if jt is not None:
                 judge_client = await stack.enter_async_context(make_client(jt))
+                _fit_client(judge_client, kb.resolve(jt.claimed, jt.declared_provider))
                 judge = Judge(judge_client, jt.model)
 
         ctx = AuditContext(

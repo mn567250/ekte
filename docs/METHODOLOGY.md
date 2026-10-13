@@ -178,6 +178,15 @@ echoed API key still escalate.
   repeated. Once an endpoint is known to reason (its profile says
   `reasoning: true`, or after its first such repeat), short probes are sent
   with the 4,096-token limit from the start instead of twice.
+- **Request parameters:** reasoning models refuse some parameters: on Chat
+  Completions `max_tokens` (they take `max_completion_tokens`), and on every
+  protocol sampling parameters such as `temperature`. The client leaves out the
+  parameters the profile lists under `unsupported_params` and sends the output
+  limit as `max_completion_tokens` when `max_tokens` is listed. An endpoint
+  without a profile that names such a parameter in a 4xx gets the request once
+  more, adapted, and every later request goes out adapted from the start; the
+  rejected attempt is not counted as a relay error. The `protocol_request`
+  probes are sent exactly as built, since the raw rejection is what they judge.
 
 ---
 

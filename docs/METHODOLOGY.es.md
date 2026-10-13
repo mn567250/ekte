@@ -186,6 +186,16 @@ devuelta siguen elevando el riesgo.
   razona (su perfil dice `reasoning: true`, o tras su primera repetición de este
   tipo), las sondas cortas se envían desde el principio con el límite de 4.096
   tokens en lugar de dos veces.
+- **Parámetros de la solicitud:** los modelos de razonamiento rechazan algunos
+  parámetros: en Chat Completions `max_tokens` (usan `max_completion_tokens`) y,
+  en cualquier protocolo, parámetros de muestreo como `temperature`. El cliente
+  omite los parámetros que el perfil lista en `unsupported_params` y envía el
+  límite de salida como `max_completion_tokens` cuando figura `max_tokens`. Un
+  endpoint sin perfil que nombra uno de esos parámetros en un 4xx recibe la
+  solicitud una vez más, adaptada, y todas las siguientes salen adaptadas desde
+  el principio; el intento rechazado no cuenta como error del relay. Las sondas
+  de `protocol_request` se envían tal como se construyen, porque juzgan
+  precisamente el rechazo sin alterar.
 
 ---
 

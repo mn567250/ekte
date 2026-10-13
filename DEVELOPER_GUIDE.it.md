@@ -180,6 +180,14 @@ rileva dall'URL di base e dal modello. I rilevatori parlano solo con questa
 interfaccia (`RequestSpec` in ingresso, `CompletionOutcome` in uscita), quindi
 sono indipendenti dal protocollo.
 
+I client adattano anche le richieste a ciò che il modello accetta (`base.py`):
+il runner inizializza `unsupported_params` dal profilo, i parametri di
+campionamento elencati lì vengono omessi e, su Chat Completions, un `max_tokens`
+elencato invia il limite come `max_completion_tokens`. Un 4xx che nomina un tale
+parametro lo aggiunge all'insieme e ripete la richiesta una volta adattata (il
+tentativo rifiutato è registrato con la fase `param_retry`). Una sonda che
+giudica il rifiuto grezzo imposta `RequestSpec.exact_params`.
+
 ### Rilevatori e scale dei punteggi
 
 Un rilevatore è un file autonomo in `zing/detectors/`: una sottoclasse di
