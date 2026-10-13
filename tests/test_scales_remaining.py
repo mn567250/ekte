@@ -215,6 +215,9 @@ async def test_context_window_truncation_scores_the_recalled_share(audit_context
         ("", True, "suspicious", 50.0, Status.WARN),
         ("", False, "suspicious", 50.0, Status.WARN),
         ("very sure", True, "suspicious", 50.0, Status.WARN),
+        # the judge's phrasing of "high" still counts as high
+        ("High.", True, "confident_corroborated", 25.0, Status.FAIL),
+        ("very high", False, "confident", 25.0, Status.WARN),
     ],
 )
 def test_judge_suspicious_rows(confidence, corroborated, key, score, status):
@@ -266,12 +269,15 @@ async def test_judge_without_high_confidence_never_reaches_high(confidence):
 
 
 async def test_judge_high_confidence_with_failed_baseline_is_not_corroborated():
-    result, _ = await _run_judge("high", baseline=_AnswerStub(None))
+    result, judge = await _run_judge("high", baseline=_AnswerStub(None))
     (f,) = result.findings
     assert (f.outcome, f.severity) == ("confident", Severity.MEDIUM)
     assert f.evidence["baseline_corroborated"] is False
     assert result.evidence["baseline_compared"] is True
     assert result.evidence["baseline_usable"] is False
+    # the unusable baseline is not shown to the judge either
+    _, user = judge.calls[0]
+    assert "baseline answer" not in user and "TRUSTED BASELINE" not in user
 
 
 async def test_judge_high_confidence_with_working_baseline_is_high():

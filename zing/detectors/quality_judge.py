@@ -10,6 +10,7 @@ only the model answers.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from zing import prompts
@@ -59,9 +60,15 @@ def _suspicious_outcome(confidence: str, corroborated: bool) -> str:
     missing or unrecognized confidence is the low-confidence row (MEDIUM, never
     HIGH). A confident verdict reaches HIGH only when a usable baseline
     corroborated it (see :func:`_baseline_usable`)."""
-    if confidence == "high":
+    if _is_high(confidence):
         return "confident_corroborated" if corroborated else "confident"
     return "suspicious"
+
+
+def _is_high(confidence: str) -> bool:
+    """``high`` as the judge may phrase it ("High.", "very high", "high
+    confidence"); anything else — including no value — is not high."""
+    return re.match(r"^(very\s+)?high\b", confidence.strip().lower()) is not None
 
 
 def _baseline_usable(
@@ -127,9 +134,16 @@ class QualityJudgeDetector(Detector):
             result.score = None
             return result
 
+        # A baseline corroborates — and is shown to the judge — only when it
+        # answered every probe the target answered; otherwise the judge would be
+        # comparing the target against "(no answer)" gaps.
+        corroborated = _baseline_usable(target_answers, baseline_answers)
+
         # 2) Build the judge prompt from model answers only (no keys / no base_url).
         system = prompts.text("quality_judge.system", claimed=claimed)
-        user = self._build_user_prompt(claimed, target_answers, baseline_answers, ctx)
+        user = self._build_user_prompt(
+            claimed, target_answers, baseline_answers if corroborated else [], ctx
+        )
 
         assert ctx.judge is not None  # requires_judge=True guarantees a judge here
         verdict = await ctx.judge.evaluate_json(system, user, max_tokens=700)
@@ -146,7 +160,7 @@ class QualityJudgeDetector(Detector):
             "probe_labels": [p["label"] for p in target_answers],
             "target_probe_failures": target_failures,
             "baseline_compared": bool(baseline_answers),
-            "baseline_usable": _baseline_usable(target_answers, baseline_answers),
+            "baseline_usable": corroborated,
             "judge_verdict": kind or None,
             "judge_confidence": confidence or None,
             "likely_actual_tier": likely_tier,
@@ -164,14 +178,16 @@ class QualityJudgeDetector(Detector):
             # AND the judge stated high confidence; a missing/unknown confidence
             # counts as low. Otherwise cap at MEDIUM so it needs a second core
             # signal to drive HIGH.
-            corroborated = _baseline_usable(target_answers, baseline_answers)
             key = _suspicious_outcome(confidence, corroborated)
             high_sev = key == "confident_corroborated"
             if corroborated:
                 note = ""
-            elif baseline_answers:
+            elif any(b["answer"] for b in baseline_answers):
                 note = (" The trusted baseline did not answer every probe, so it does "
                         "not corroborate this — re-run `zing compare` once it responds.")
+            elif baseline_answers:
+                note = (" The trusted baseline returned no usable answer to any probe, so "
+                        "it does not corroborate this — re-run `zing compare` once it responds.")
             else:
                 note = (" No trusted baseline was compared, so this stays a "
                         "corroboration-required signal — run `zing compare`.")

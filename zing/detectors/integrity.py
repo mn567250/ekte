@@ -126,20 +126,28 @@ class IntegrityDetector(Detector):
         )
 
         if substitutions:
-            corroborated = any(baseline_intact)
-            # Compare mode ran, but the baseline errored / answered nothing for
-            # every substituted canary — it could not confirm anything.
+            confirmed = [sub for sub, ok in zip(substitutions, baseline_intact, strict=True) if ok]
+            corroborated = bool(confirmed)
+            # Compare mode ran, but the baseline errored / answered nothing usable
+            # (empty, cut off) for every substituted canary — it confirmed nothing.
             baseline_unavailable = ctx.has_baseline and not corroborated
             if corroborated:
+                unconfirmed = len(substitutions) - len(confirmed)
                 tail = (
                     " — and the trusted baseline returned it intact, strong evidence "
                     "of in-flight tampering."
+                    + (
+                        f" ({unconfirmed} other substitution(s) could not be checked: "
+                        "the baseline returned no usable answer for them.)"
+                        if unconfirmed
+                        else ""
+                    )
                 )
             elif baseline_unavailable:
                 tail = (
-                    ". The trusted baseline returned no usable answer for it, so the "
-                    "substitution is not corroborated; re-run `zing compare` once the "
-                    "baseline responds."
+                    ". The trusted baseline returned no usable answer (error, empty or "
+                    "cut off) for the substituted canary value(s), so the substitution is "
+                    "not corroborated; re-run `zing compare` once the baseline answers."
                 )
             else:
                 tail = (
@@ -160,6 +168,8 @@ class IntegrityDetector(Detector):
                         "substitutions": substitutions,
                         "baseline_corroborated": corroborated,
                         "baseline_unavailable": baseline_unavailable,
+                        # the substitutions the baseline returned intact
+                        "corroborated_substitutions": confirmed,
                     },
                     recommendation="A proxy rewriting URLs/package names is a supply-chain risk — stop using it.",
                 )
