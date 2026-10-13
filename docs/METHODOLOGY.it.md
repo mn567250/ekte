@@ -100,7 +100,7 @@ risponda un altro modello. Sono esclusi anche gli **avvisi di trasporto** (`ADVI
 sotto carico dicono come si raggiunge il relay, non quale modello serve.
 Abbassano comunque punteggio e stato della loro dimensione, compaiono dopo le
 rilevazioni di sostituzione tra quelle principali e il riepilogo li indica come
-avvisi. La manomissione delle risposte (integrità) e una chiave API restituita
+avvisi (da gravità Media in su). La manomissione delle risposte (integrità) e una chiave API restituita
 continuano ad alzare il rischio.
 
 | Rischio | Etichetta nell'interfaccia | Quando |

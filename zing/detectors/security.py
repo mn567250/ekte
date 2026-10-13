@@ -10,13 +10,15 @@ them indirectly.
 
 from __future__ import annotations
 
+import ipaddress
+
 from zing import prompts
 from zing.context import AuditContext
 from zing.detectors.base import Detector, register
 from zing.detectors.helpers import contains_ci, stable_marker
 from zing.detectors.scale import DeductionScale, outcome
 from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
-from zing.utils.net import is_local_host
+from zing.utils.net import is_local_host, url_host
 from zing.utils.redact import REDACTED_KEY
 
 # Response headers that reveal upstream/proxy identity. Presence is informational:
@@ -33,6 +35,20 @@ _REVEALING_HEADERS: tuple[str, ...] = (
     "x-proxy-",
     "cf-",
 )
+
+
+def _is_local_transport(base_url: str) -> bool:
+    """Whether plain HTTP to ``base_url`` stays on this machine or a private
+    network. A public DNS name that merely starts with "127." is not loopback."""
+    if not is_local_host(base_url):
+        return False
+    host = url_host(base_url)
+    if host.startswith("127."):
+        try:
+            ipaddress.ip_address(host)
+        except ValueError:
+            return False
+    return True
 
 
 def _header_matches(name: str) -> bool:
@@ -86,7 +102,8 @@ class SecurityDetector(Detector):
         result = self.new_result(scoring=SCALE.scoring())
         base_url = ctx.target.base_url or ""
         is_https = base_url.strip().lower().startswith("https://")
-        local_http = not is_https and is_local_host(base_url)
+        local_http = not is_https and _is_local_transport(base_url)
+        scheme = base_url.split("://", 1)[0].strip().lower() if "://" in base_url else ""
 
         # 1) TLS: an http endpoint sends the bearer token in clear text.
         if is_https:
@@ -110,7 +127,7 @@ class SecurityDetector(Detector):
                         "so the API key does not cross the public internet."
                     ),
                     evidence={
-                        "scheme": base_url.split("://", 1)[0].lower() if "://" in base_url else "",
+                        "scheme": scheme,
                         "local": True,
                     },
                     recommendation="Use https:// if this endpoint is reachable from other machines.",
@@ -123,7 +140,7 @@ class SecurityDetector(Detector):
                     "plain_http",
                     title="Endpoint is not HTTPS",
                     summary="Endpoint is not HTTPS; the API key is sent in clear text.",
-                    evidence={"scheme": base_url.split("://", 1)[0].lower() if "://" in base_url else ""},
+                    evidence={"scheme": scheme},
                     recommendation="Use an https:// base_url so the bearer token is not exposed on the wire.",
                 )
             )

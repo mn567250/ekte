@@ -99,7 +99,7 @@ Também ficam de fora os **avisos de transporte** (`ADVISORY_CHECKS` em
 lentidão sob carga dizem como se chega ao relay, não que modelo ele serve.
 Continuam a baixar a pontuação e o estado da sua dimensão, aparecem depois das
 constatações de substituição entre as principais e o resumo indica-os como
-avisos. A adulteração de respostas (integridade) e uma chave de API devolvida
+avisos (a partir da gravidade Média). A adulteração de respostas (integridade) e uma chave de API devolvida
 continuam a elevar o risco.
 
 | Risco | Rótulo na interface | Quando |

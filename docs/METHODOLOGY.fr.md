@@ -99,7 +99,7 @@ Les **avertissements de transport** sont exclus aussi (`ADVISORY_CHECKS` dans
 la lenteur sous charge disent comment le relais est joint, pas quel modèle il
 sert. Ils abaissent toujours le score et le statut de leur dimension, figurent
 après les constats de substitution parmi les constats clés, et le résumé les
-signale comme avertissements. La falsification des réponses (intégrité) et une
+signale comme avertissements (à partir de la gravité Moyenne). La falsification des réponses (intégrité) et une
 clé API renvoyée font toujours monter le risque.
 
 | Risque | Libellé dans l'interface | Quand |

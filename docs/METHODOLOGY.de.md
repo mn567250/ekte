@@ -102,7 +102,7 @@ Auch die **Transport-Hinweise** zählen nicht (`ADVISORY_CHECKS` in
 Langsamkeit unter Last zeigen, wie das Relay erreicht wird, nicht welches
 Modell es ausliefert. Sie senken weiterhin Bewertung und Status ihrer
 Dimension, stehen in den wichtigsten Befunden nach den Substitutionsbefunden,
-und die Zusammenfassung nennt sie als Hinweise. Manipulation der Antwort
+und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipulation der Antwort
 (Integrität) und ein zurückgegebener API-Schlüssel heben das Risiko weiterhin an.
 
 | Risiko | Bezeichnung in der UI | Wann |

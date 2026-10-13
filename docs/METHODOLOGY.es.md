@@ -99,7 +99,7 @@ Tampoco cuentan los **avisos de transporte** (`ADVISORY_CHECKS` en
 la lentitud bajo carga dicen cómo se llega al relay, no qué modelo sirve.
 Siguen bajando la puntuación y el estado de su dimensión, aparecen tras los
 hallazgos de sustitución entre los hallazgos clave y el resumen los menciona
-como avisos. La manipulación de respuestas (integridad) y una clave API
+como avisos (desde gravedad Media). La manipulación de respuestas (integridad) y una clave API
 devuelta siguen elevando el riesgo.
 
 | Riesgo | Etiqueta en la interfaz | Cuándo |

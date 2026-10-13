@@ -67,7 +67,7 @@ ADVISORY_CHECKS = frozenset({
 
 # Knowledge-base matches too loose to vouch for the profile the audit judged
 # against: the verdict confidence is capped at "low".
-_WEAK_MATCHES = frozenset({"fuzzy", "family"})
+_WEAK_MATCHES = frozenset({"fuzzy"})
 
 # Statuses that count as a core dimension having produced a usable substitution signal.
 _USABLE_STATUSES = (Status.PASS, Status.WARN, Status.FAIL)

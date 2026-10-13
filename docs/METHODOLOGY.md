@@ -95,7 +95,7 @@ The **transport advisories** are left out too (`ADVISORY_CHECKS` in
 `reliability.latency`): plain HTTP, failures or slowness under load say how the
 relay is reached, not which model it serves. They still lower their dimension's
 score and status, are listed after the substitution findings in the key
-findings, and the summary notes them as advisories. Integrity tampering and an
+findings and are noted in the summary as advisories when Medium or higher. Integrity tampering and an
 echoed API key still escalate.
 
 | Risk | Label in the UI | When |

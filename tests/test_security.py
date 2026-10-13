@@ -39,8 +39,10 @@ async def test_security_plain_http_to_a_local_host_is_only_a_warn(audit_context)
 
 
 async def test_security_plain_http_to_a_remote_host_stays_high(audit_context):
-    audit_context.target = audit_context.target.model_copy(update={"base_url": "http://relay.example.com/v1"})
-    result = await SecurityDetector().run(audit_context)
-    tls = next(f for f in result.findings if f.id == "security.tls")
-    assert (tls.outcome, tls.severity, tls.cap) == ("plain_http", Severity.HIGH, 40.0)
-    assert result.status == Status.FAIL
+    # A public DNS name that merely starts with "127." is not loopback.
+    for url in ("http://relay.example.com/v1", "http://127.relay.example.com/v1"):
+        audit_context.target = audit_context.target.model_copy(update={"base_url": url})
+        result = await SecurityDetector().run(audit_context)
+        tls = next(f for f in result.findings if f.id == "security.tls")
+        assert (tls.outcome, tls.severity, tls.cap) == ("plain_http", Severity.HIGH, 40.0), url
+        assert result.status == Status.FAIL, url
