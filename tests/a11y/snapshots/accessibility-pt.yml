@@ -50,7 +50,7 @@
     - term: Versão do axe-core
     - definition: 4.13.0
     - term: Testes
-    - definition: 1292 executados, 1292 aprovados, 0 falhados, 0 ignorados
+    - definition: 1297 executados, 1297 aprovados, 0 falhados, 0 ignorados
     - term: Idiomas
     - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
     - term: Temas
@@ -118,7 +118,7 @@
               - group:
                 - text: Conteúdo não textual
                 - paragraph: "Como é testado: Imagens, ícones, SVG e controlos têm uma alternativa em texto. Se cada alternativa é significativa é avaliado por uma pessoa."
-                - paragraph: "Testes automatizados: 56 executados, 56 aprovados, 0 falhados, 154 ignorados"
+                - paragraph: "Testes automatizados: 30 executados, 30 aprovados, 0 falhados, 180 ignorados"
                 - paragraph:
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel
