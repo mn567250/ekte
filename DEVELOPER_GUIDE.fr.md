@@ -413,6 +413,24 @@ cases hachurées pour `low_n`, cases vides en contour), `ZingCharts.stackBars`
 les barres d'erreurs empilées, et `timeChart` accepte une ligne `ref` (ratio de
 facturation de 100 %).
 
+L'en-tête de la page et le panneau de filtres sont au-dessus de cinq onglets
+internes (`v2/tabs.js`, comme sur Outils et Connaissances) : chaque
+entrée de `PANELS` nomme son `tab`, et seuls les panneaux de l'onglet affiché se
+chargent ; un changement de filtre recharge cet onglet et marque les autres
+comme périmés (`activate()` les charge à l'affichage). `tabs.js` reçoit ici
+`writeHash: false`, car la page écrit elle-même toute la vue dans le fragment —
+`#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), que **Copier le lien
+vers cette vue** copie (un champ en lecture seule sélectionné si l'API du
+presse-papiers manque ou refuse) ; un fragment sans `tab` ouvre la vue
+d'ensemble, et un lien collé (`hashchange`) relit la vue. Le panneau de filtres
+repliable est `v2/filterpanel.js` + `v2/filterpanel.css`, partagé avec
+l'Historique : `ZingFilterPanel.create(section, {label, title, storeKey, open,
+onReset})` renvoie `render({body, foot, count, summary})`,
+`sync({count, summary})`, `setOpen()` et `focusStart()` ; la page possède ses
+filtres et ses champs, le panneau le bouton avec le badge des filtres actifs, le
+résumé d'une ligne affiché une fois replié, l'état ouvert mémorisé et
+**Réinitialiser les filtres**.
+
 **Convention de traduction.** Le texte chinois écrit dans le HTML est l'original
 et reste intact ; chaque élément porte son texte anglais dans `data-en` (et
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Le texte anglais
@@ -617,6 +635,12 @@ pytest -n auto               # en parallèle, un worker par CPU (pytest-xdist)
   install chromium`, puis `pytest -m a11y`. Sans Playwright, le répertoire est
   ignoré. Ce qui est automatisé et ce qui demande encore une revue BITV manuelle
   est décrit dans [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
+- `ZING_A11Y_PAGES=history,kb` n'exécute que les tests a11y de ces pages (et
+  les vérifications qui couvrent toutes les pages) ; `python -m
+  tests.a11y.affected --base origin/main --head HEAD` affiche les pages
+  touchées par une modification. Les deux utilisent une seule correspondance,
+  `tests/a11y/pages.py` : une nouvelle page s'ajoute à ses `PAGES` et `RULES`
+  ([tests/a11y/README.md](tests/a11y/README.md)).
 
 ## Docker
 
@@ -655,7 +679,7 @@ ce qui protège l'interface.
 
 | Workflow | Déclenché par | Rôle |
 |---|---|---|
-| `.github/workflows/ci.yml` | push et pull request vers `main` (et les branches d'intégration `a11y/integration`, `perf/integration`) | `ruff`, `mypy` et `pytest` sous Python 3.10–3.13 avec les extras `dev` et `web` ; construit la wheel et la sdist et vérifie que la wheel s'installe et charge la base de connaissances ; exécute la suite d'accessibilité (à titre informatif, elle ne fait jamais échouer l'exécution) et téléverse ses constats — sauf sur les pull requests vers `perf/integration`, où la lente suite navigateur est ignorée (elle s'exécute sur les push de cette branche et sur sa pull request vers `main`) |
+| `.github/workflows/ci.yml` | push et pull request vers `main` (et les branches d'intégration `a11y/integration`, `perf/integration`) ; chaque nuit et manuel (accessibilité seulement) | `ruff`, `mypy` et `pytest` sous Python 3.10–3.13 avec les extras `dev` et `web` ; construit la wheel et la sdist et vérifie que la wheel s'installe et charge la base de connaissances ; exécute la suite d'accessibilité (à titre informatif, elle ne fait jamais échouer l'exécution) et téléverse ses constats : toutes les pages sur les push et les exécutions nocturnes et manuelles (avec le rapport de conformité BITV), sur les pull requests seulement les pages touchées par la modification (aucune si seule la documentation change) — sauf sur les pull requests vers `perf/integration`, où la lente suite navigateur est ignorée (elle s'exécute sur les push de cette branche et sur sa pull request vers `main`) |
 | `.github/workflows/release.yml` | un tag `v*` | construit, exécute `twine check` et publie sur PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | planification quotidienne, manuel | exemple d'audit de relais planifié avec l'action |
 

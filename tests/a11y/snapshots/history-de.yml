@@ -41,7 +41,7 @@
     - code: ~/.zing
     - text: — nichts wird hochgeladen.
   - region "Filter":
-    - button "Filter & Trends" [expanded]
+    - button "Filter" [expanded]
     - text: Suche
     - searchbox "Suche"
     - text: Relay / Anbieter

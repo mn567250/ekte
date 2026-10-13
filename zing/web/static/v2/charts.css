@@ -67,7 +67,8 @@
 
 /* reference line (e.g. 100 % billing ratio) */
 .tchart .ref line { stroke: var(--ink2); stroke-width: 1.2; stroke-dasharray: 6 4; }
-.tchart .ref text { fill: var(--ink2); font-weight: 600; }
+/* a halo in the card colour keeps the label legible over a band or line */
+.tchart .ref text { fill: var(--ink2); font-weight: 600; paint-order: stroke; stroke: var(--card); stroke-width: 3px; stroke-linejoin: round; }
 
 /* stacked bars: category segments (series slots), faded for few runs */
 .sbars .seg { fill: var(--c); }

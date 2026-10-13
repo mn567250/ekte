@@ -9,7 +9,6 @@
   "Execution": "Ejecución",
   "Expand all": "Expandir todo",
   "Filters": "Filtros",
-  "Filters & trends": "Filtros y tendencias",
   "Health score trend across {n} audits: from {first} to {last}, {dir}.": "Evolución de la puntuación de salud en {n} auditorías: de {first} a {last}, {dir}.",
   "History lives only in a local SQLite file under <code>~/.zing</code> — nothing is uploaded.": "El historial solo se guarda en un archivo SQLite local en <code>~/.zing</code>; no se envía nada.",
   "Last 30 days": "Últimos 30 días",
@@ -42,6 +41,7 @@
   "unchanged": "sin cambios",
   "{group}: showing {shown} of {total} audits": "{group}: mostrando {shown} de {total} auditorías",
   "{key}, {dir}": "{key}, {dir}",
+  "{label}: {value}": "{label}: {value}",
   "{metric} trend across {n} audits: from {first} to {last}.": "Tendencia de {metric} en {n} auditorías: de {first} a {last}.",
   "{n} active": "{n} activos"
  }

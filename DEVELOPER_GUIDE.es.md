@@ -407,6 +407,24 @@ celdas vacías solo con contorno), `ZingCharts.stackBars` las barras de errores
 apiladas, y `timeChart` acepta una línea `ref` (ratio de facturación del
 100 %).
 
+La cabecera de la página y el panel de filtros están sobre cinco pestañas
+internas (`v2/tabs.js`, como en Herramientas y Conocimiento): cada
+entrada de `PANELS` indica su `tab`, y solo se cargan los paneles de la pestaña
+visible; un cambio de filtro recarga esa pestaña y marca las demás como
+obsoletas (`activate()` las carga al mostrarlas). Aquí `tabs.js` recibe
+`writeHash: false`, porque la página escribe ella misma toda la vista en el
+fragmento — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), que
+**Copiar el enlace a esta vista** copia (un campo de solo lectura seleccionado
+si falta la API del portapapeles o la rechaza); un fragmento sin `tab` abre el
+Resumen, y un enlace pegado (`hashchange`) vuelve a leer la vista. El panel de
+filtros plegable es `v2/filterpanel.js` + `v2/filterpanel.css`, compartido con
+el Historial: `ZingFilterPanel.create(section, {label, title, storeKey, open,
+onReset})` devuelve `render({body, foot, count, summary})`,
+`sync({count, summary})`, `setOpen()` y `focusStart()`; la página tiene sus
+filtros y campos, el panel el botón con la insignia de filtros activos, el
+resumen de una línea que se muestra plegado, el estado abierto recordado y
+**Restablecer filtros**.
+
 **Convención de traducción.** El texto chino escrito en el HTML es el original y
 no se toca; cada elemento lleva su texto inglés en `data-en` (y
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). El texto inglés es
@@ -606,6 +624,12 @@ pytest -n auto               # en paralelo, un worker por CPU (pytest-xdist)
   chromium`, y luego `pytest -m a11y`. Sin Playwright, el directorio se omite. Qué
   está automatizado y qué sigue necesitando una revisión BITV manual se describe
   en [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
+- `ZING_A11Y_PAGES=history,kb` ejecuta solo las pruebas a11y de esas páginas
+  (y las comprobaciones que abarcan todas las páginas); `python -m
+  tests.a11y.affected --base origin/main --head HEAD` muestra las páginas a las
+  que afecta un cambio. Ambos usan una sola correspondencia,
+  `tests/a11y/pages.py`: una página nueva se añade a su `PAGES` y `RULES`
+  ([tests/a11y/README.md](tests/a11y/README.md)).
 
 ## Docker
 
@@ -643,7 +667,7 @@ lo que protege la interfaz.
 
 | Workflow | Se ejecuta con | Hace |
 |---|---|---|
-| `.github/workflows/ci.yml` | push y pull request a `main` (y a las ramas de integración `a11y/integration`, `perf/integration`) | `ruff`, `mypy` y `pytest` con Python 3.10–3.13 y los extras `dev` y `web`; construye la wheel y la sdist y comprueba que la wheel se instala y carga la base de conocimiento; ejecuta la suite de accesibilidad (informativa, nunca hace fallar la ejecución) y sube sus hallazgos — salvo en las pull requests a `perf/integration`, donde se omite la lenta suite de navegador (se ejecuta en los push de esa rama y en su pull request a `main`) |
+| `.github/workflows/ci.yml` | push y pull request a `main` (y a las ramas de integración `a11y/integration`, `perf/integration`); cada noche y manual (solo accesibilidad) | `ruff`, `mypy` y `pytest` con Python 3.10–3.13 y los extras `dev` y `web`; construye la wheel y la sdist y comprueba que la wheel se instala y carga la base de conocimiento; ejecuta la suite de accesibilidad (informativa, nunca hace fallar la ejecución) y sube sus hallazgos: todas las páginas en los push y las ejecuciones nocturnas y manuales (con el informe de conformidad BITV), en las pull requests solo las páginas afectadas por el cambio (ninguna si solo cambia documentación) — salvo en las pull requests a `perf/integration`, donde se omite la lenta suite de navegador (se ejecuta en los push de esa rama y en su pull request a `main`) |
 | `.github/workflows/release.yml` | una etiqueta `v*` | construye, ejecuta `twine check` y publica en PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | programación diaria, manual | ejemplo de auditoría programada de un relay con la action |
 

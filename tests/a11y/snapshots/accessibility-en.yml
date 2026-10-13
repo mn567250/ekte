@@ -50,7 +50,7 @@
     - term: axe-core version
     - definition: 4.13.0
     - term: Tests
-    - definition: 1292 run, 1292 passed, 0 failed, 0 skipped
+    - definition: 1297 run, 1297 passed, 0 failed, 0 skipped
     - term: Languages
     - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
     - term: Themes
@@ -118,7 +118,7 @@
               - group:
                 - text: Non-text Content
                 - paragraph: "How it is tested: Images, icons, SVGs and controls have a text alternative. Whether each alternative is meaningful is judged by a person."
-                - paragraph: "Automated tests: 56 run, 56 passed, 0 failed, 154 skipped"
+                - paragraph: "Automated tests: 30 run, 30 passed, 0 failed, 180 skipped"
                 - paragraph:
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel

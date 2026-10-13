@@ -422,7 +422,15 @@ def test_v2_analytics_page(client):
     js = client.get("/v2/static/nav.js").text
     assert '["analytics", "/v2/analytics", "bars", "分析", "Analytics"]' in js
     assert "bars:" in client.get("/icons.js").text
-    for asset, kind in (("charts.js", "javascript"), ("charts.css", "text/css")):
+    # tabs and the filter panel History shares
+    assert '<script src="/v2/static/filterpanel.js"></script>\n<script src="/v2/static/tabs.js"></script>' in html
+    assert '<link rel="stylesheet" href="/v2/static/filterpanel.css" />' in html
+    assert 'role="tablist"' in html and 'id="tab-integrity"' in html
+    hist = _unversioned(client.get("/v2/history").text)
+    assert '<script src="/v2/static/filterpanel.js"></script>' in hist
+    assert '<link rel="stylesheet" href="/v2/static/filterpanel.css" />' in hist
+    for asset, kind in (("charts.js", "javascript"), ("charts.css", "text/css"), ("filterpanel.js", "javascript"),
+                        ("filterpanel.css", "text/css")):
         r = client.get("/v2/static/" + asset)
         assert r.status_code == 200 and kind in r.headers["content-type"], asset
     # v2 only: ?ui=v1 goes to the classic history page

@@ -42,7 +42,7 @@
     - text: — nada é enviado.
   - status: "Atualizado: 14 execuções neste período."
   - region "Filtros":
-    - heading "Filtros" [level=2]
+    - button "Filtros" [expanded]
     - text: Período
     - group "Período":
       - button "Últimos 7 dias"
@@ -80,411 +80,78 @@
       - option "model-b"
       - option "gpt-4o"
     - text: 15 execuções no histórico (4 de monitores).
-  - region "Visão geral":
-    - heading "Visão geral" [level=2]
-    - paragraph: 02/09/2026 – 01/10/2026, comparado com o período de igual duração anterior (03/08/2026 – 01/09/2026).
-    - list:
-      - listitem: Execuções 14 +14
-      - listitem: Relays 2 +2
-      - listitem: Modelos 2 +2
-      - listitem: Pontuação mediana 79 Sem dados no período anterior
-      - listitem: Proporção de risco alto 21,4% Sem dados no período anterior
-      - listitem: Taxa de sucesso 100% Sem dados no período anterior
-      - listitem: Tempo até o primeiro token p50 <duration> Sem dados no período anterior
-      - listitem: Velocidade de decodificação 62,9 tok/s Sem dados no período anterior
-      - listitem: Rácio de faturação (entrada) 103% Sem dados no período anterior Dados de 9 de 14 execuções
-      - listitem: Rácio de faturação (saída) 102% Sem dados no período anterior Dados de 9 de 14 execuções
-  - region "Comparação ao longo do tempo":
-    - heading "Comparação ao longo do tempo" [level=2]
-    - paragraph: A linha é a mediana de cada intervalo; a faixa, a metade central das execuções (percentil 25 a 75). Intervalos vazios deixam uma lacuna.
-    - text: Métrica
-    - combobox "Métrica":
-      - option "Pontuação" [selected]
-      - option "Proporção de risco alto"
-      - option "Taxa de sucesso"
-      - option "Taxa de erros"
-      - option "Taxa de tempo esgotado"
-      - option "Proporção limitada por taxa"
-      - option "Latência p50"
-      - option "Latência p95"
-      - option "Tempo até o primeiro token p50"
-      - option "Tempo até o primeiro token p95"
-      - option "Velocidade de decodificação"
-      - option "Variação entre tokens"
-      - option "Tempo de processamento do relay"
-      - option "Ida e volta de rede"
-      - option "Arranque a frio"
-      - option "Débito sob carga"
-      - option "Rácio de faturação (entrada)"
-      - option "Rácio de faturação (saída)"
-      - option "Proporção de tokens de raciocínio"
-      - option "Proporção de entrada em cache"
-      - option "Proporção de modelo divergente"
-      - option "Contexto declarado"
-      - option "Contexto efetivo"
-      - option "Constatações de gravidade alta"
-      - option "Constatações de gravidade média"
-      - option "Constatações de gravidade baixa"
-      - option "Duração da auditoria"
-      - 'option "Dimensão: Faturação e utilização"'
-      - 'option "Dimensão: Capacidades declaradas"'
-      - 'option "Dimensão: Conectividade"'
-      - 'option "Dimensão: Janela de contexto"'
-      - 'option "Dimensão: Identidade do modelo"'
-      - 'option "Dimensão: Conformidade do protocolo"'
-      - 'option "Dimensão: Fiabilidade em concorrência"'
-      - 'option "Dimensão: Segurança do transporte"'
-      - 'option "Dimensão: Autenticidade do streaming"'
-    - text: Agrupar por
-    - combobox "Agrupar por":
-      - option "Relay" [selected]
-      - option "Modelo"
-      - option "Relay × modelo"
-    - text: Intervalos
-    - combobox "Intervalos":
-      - option "Por hora"
-      - option "Por dia" [selected]
-      - option "Por semana"
-    - text: Séries a comparar (até 4)
-    - group "Séries a comparar (até 4)":
-      - button "✓ Example Relay" [pressed]
-      - button "✓ https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1" [pressed]
-      - button "http://127.0.0.1:9099/v1"
-    - list "Legenda":
-      - listitem: Example Relay 9 execuções
-      - listitem: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 5 execuções
-    - img "Pontuação ao longo do tempo": 0 20 40 60 80100 25/09 27/09 29/09 1/10 v·KB
-    - paragraph:
-      - text: Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico.
-      - link "Agende um monitor para medições regulares.":
-        - /url: /v2/watches
-    - text: "As linhas tracejadas no gráfico marcam mudanças na forma como as execuções são pontuadas (v = versão do zing, KB = perfil da base de conhecimento):"
-    - list:
-      - listitem: "terça, 29/09/2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: Perfil da base de conhecimento alterado (mudou a referência, não o relay)"
-      - listitem: "terça, 29/09/2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: versão do zing <version> → 0.20.0"
-    - button "Mostrar como tabela" [expanded]
-    - region "Pontuação (Relay, Por dia)":
-      - table "Pontuação (Relay, Por dia)":
-        - caption: Pontuação (Relay, Por dia)
-        - rowgroup:
-          - row "Intervalo Série Mediana p25–p75 Execuções Nota":
-            - columnheader "Intervalo"
-            - columnheader "Série"
-            - columnheader "Mediana"
-            - columnheader "p25–p75"
-            - columnheader "Execuções"
-            - columnheader "Nota"
-        - rowgroup:
-          - row "sábado, 26/09/2026 Example Relay 70 70 – 70 1 Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico.":
-            - cell "sábado, 26/09/2026"
-            - cell "Example Relay"
-            - cell "70"
-            - cell "70 – 70"
-            - cell "1"
-            - cell "Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico."
-          # … more rows of the same shape
-  - region "Classificação":
-    - heading "Classificação" [level=2]
-    - paragraph: Medianas no período escolhido; n é o número de execuções que mediram um valor.
-    - group "Classificar":
-      - button "Relays de um modelo" [pressed]
-      - button "Modelos de um relay"
-    - text: Modelo
-    - combobox "Modelo":
-      - option "model-a" [selected]
-      - option "model-b"
-      - option "gpt-4o"
-    - region "Relays de «model-a»":
-      - table "Relays de «model-a»":
-        - caption: Relays de «model-a»
-        - rowgroup:
-          - row "Relay Execuções Pontuação Tempo até o primeiro token p50 Velocidade de decodificação Taxa de sucesso Rácio de faturação (entrada) Rácio de faturação (saída) Proporção de modelo divergente Proporção de risco alto Última execução":
-            - columnheader "Relay":
-              - button "Relay"
-            - columnheader "Execuções":
-              - button "Execuções"
-            - columnheader "Pontuação":
-              - button "Pontuação"
-            - columnheader "Tempo até o primeiro token p50":
-              - button "Tempo até o primeiro token p50"
-            - columnheader "Velocidade de decodificação":
-              - button "Velocidade de decodificação"
-            - columnheader "Taxa de sucesso":
-              - button "Taxa de sucesso"
-            - columnheader "Rácio de faturação (entrada)":
-              - button "Rácio de faturação (entrada)"
-            - columnheader "Rácio de faturação (saída)":
-              - button "Rácio de faturação (saída)"
-            - columnheader "Proporção de modelo divergente":
-              - button "Proporção de modelo divergente"
-            - columnheader "Proporção de risco alto":
-              - button "Proporção de risco alto"
-            - columnheader "Última execução":
-              - button "Última execução"
-        - rowgroup:
-          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100% n=7104% n=7102% n=7 0% n=7 0% n=7 30/09/2026, 11:00":
-            - rowheader "Example Relay"
-            - cell "7"
-            - cell "82 n=7"
-            - cell "<duration> n=7"
-            - cell "63,2 tok/s n=7"
-            - cell "100% n=7"
-            - cell "104% n=7"
-            - cell "102% n=7"
-            - cell "0% n=7"
-            - cell "0% n=7"
-            - cell "30/09/2026, 11:00"
-          # … more rows of the same shape
-    - status
-  - region "Horas de ponta":
-    - heading "Horas de ponta" [level=2]
-    - paragraph: Este relay fica mais lento ou falha mais nas horas de ponta? Cada célula é uma hora de um dia da semana no seu fuso horário, colorida pela mediana das auditorias que começaram nessa altura (escala abaixo da grelha).
-    - text: Métrica
-    - combobox "Métrica":
-      - option "Tempo até o primeiro token p50" [selected]
-      - option "Latência p50"
-      - option "Velocidade de decodificação"
-      - option "Taxa de sucesso"
-      - option "Taxa de erros"
-      - option "Proporção limitada por taxa"
-      - option "Taxa de tempo esgotado"
-      - option "Pontuação"
-    - text: Relay
-    - combobox "Relay":
-      - option "Todos os relays" [selected]
-      - option "Example Relay"
-      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
-      - option "http://127.0.0.1:9099/v1"
-    - img "Tempo até o primeiro token p50 por dia da semana e hora": 00 03 06 09 12 15 18 21 segunda terça quarta quinta sexta sábado domingo
-    - list:
-      - listitem: <duration> <duration>
-      - listitem: menos de 3 auditorias (tracejado)
-      - listitem: sem auditorias
-    - paragraph:
-      - text: Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico.
-      - link "Agende um monitor para medições regulares.":
-        - /url: /v2/watches
-    - button "Mostrar como tabela" [expanded]
-    - region "Tempo até o primeiro token p50 por dia da semana e hora (Todos os relays)":
-      - table "Tempo até o primeiro token p50 por dia da semana e hora (Todos os relays)":
-        - caption: Tempo até o primeiro token p50 por dia da semana e hora (Todos os relays)
-        - rowgroup:
-          - row "Dia da semana Hora Mediana Execuções Nota":
-            - columnheader "Dia da semana"
-            - columnheader "Hora"
-            - columnheader "Mediana"
-            - columnheader "Execuções"
-            - columnheader "Nota"
-        - rowgroup:
-          - row "segunda-feira 7:00–8:00 <duration> 1 Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico.":
-            - cell "segunda-feira"
-            - cell "7:00–8:00"
-            - cell "<duration>"
-            - cell "1"
-            - cell "Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico."
-          # … more rows of the same shape
-  - region "Erros e fiabilidade":
-    - heading "Erros e fiabilidade" [level=2]
-    - paragraph: "Chamadas falhadas ao relay por causa: limite de pedidos (HTTP 429), erros do servidor (5xx), tempos esgotados e outras, como proporção de todas as chamadas."
-    - text: Tabela por
-    - combobox "Tabela por":
-      - option "Relay" [selected]
-      - option "Modelo"
-    - text: Intervalos
-    - combobox "Intervalos":
-      - option "Por hora"
-      - option "Por dia" [selected]
-      - option "Por semana"
-    - paragraph: Registos de pedidos de 14 de 14 auditorias. 140 chamadas, 18 falhadas (12,9%).
-    - list "Legenda":
-      - listitem: Limitado (429)
-      - listitem: Erro do servidor (5xx)
-      - listitem: Tempo esgotado
-      - listitem: Outros erros (4xx, rede, …)
-    - img "Chamadas falhadas ao longo do tempo": 0% 5% 10% 15% 20% 25/09 27/09 29/09 1/10
-    - paragraph:
-      - text: Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico.
-      - link "Agende um monitor para medições regulares.":
-        - /url: /v2/watches
-    - button "Mostrar como tabela" [expanded]
-    - region "Resultados das chamadas por intervalo (Por dia)":
-      - table "Resultados das chamadas por intervalo (Por dia)":
-        - caption: Resultados das chamadas por intervalo (Por dia)
-        - rowgroup:
-          - row "Intervalo Chamadas Sucesso Erro do cliente (4xx) Limitado (429) Erro do servidor (5xx) Tempo esgotado Erro de rede Outra falha Proporção falhada Execuções Nota":
-            - columnheader "Intervalo"
-            - columnheader "Chamadas"
-            - columnheader "Sucesso"
-            - columnheader "Erro do cliente (4xx)"
-            - columnheader "Limitado (429)"
-            - columnheader "Erro do servidor (5xx)"
-            - columnheader "Tempo esgotado"
-            - columnheader "Erro de rede"
-            - columnheader "Outra falha"
-            - columnheader "Proporção falhada"
-            - columnheader "Execuções"
-            - columnheader "Nota"
-        - rowgroup:
-          - row "sábado, 26/09/2026 10 9 0 0 0 1 0 0 10% 1 Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico.":
-            - cell "sábado, 26/09/2026"
-            - cell "10"
-            - cell "9"
-            - cell "0"
-            - cell "0"
-            - cell "0"
-            - cell "1"
-            - cell "0"
-            - cell "0"
-            - cell "10%"
-            - cell "1"
-            - cell "Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico."
-          # … more rows of the same shape
-    - heading "Por relay" [level=3]
-    - region "Resultados das chamadas por relay":
-      - table "Resultados das chamadas por relay":
-        - caption: Resultados das chamadas por relay
-        - rowgroup:
-          - row "Relay Auditorias com registos Chamadas Sucesso Erro do cliente (4xx) Limitado (429) Erro do servidor (5xx) Tempo esgotado Erro de rede Outra falha Proporção falhada Proporção limitada por taxa Proporção de tempos esgotados":
-            - columnheader "Relay"
-            - columnheader "Auditorias com registos"
-            - columnheader "Chamadas"
-            - columnheader "Sucesso"
-            - columnheader "Erro do cliente (4xx)"
-            - columnheader "Limitado (429)"
-            - columnheader "Erro do servidor (5xx)"
-            - columnheader "Tempo esgotado"
-            - columnheader "Erro de rede"
-            - columnheader "Outra falha"
-            - columnheader "Proporção falhada"
-            - columnheader "Proporção limitada por taxa"
-            - columnheader "Proporção de tempos esgotados"
-        - rowgroup:
-          - row "Example Relay 9 / 9 90 85 0 0 0 5 0 0 5,6% 0% 5,6%":
-            - rowheader "Example Relay"
-            - cell "9 / 9"
-            - cell "90"
-            - cell "85"
-            - cell "0"
-            - cell "0"
-            - cell "0"
-            - cell "5"
-            - cell "0"
-            - cell "0"
-            - cell "5,6%"
-            - cell "0%"
-            - cell "5,6%"
-          # … more rows of the same shape
-  - region "Integridade do modelo":
-    - heading "Integridade do modelo" [level=2]
-    - paragraph: É o modelo que diz ser, completo e com as suas funcionalidades? Resultados das verificações de identidade, janela de contexto e capacidades por relay e modelo.
-    - paragraph:
-      - text: As linhas marcadas «poucas execuções» têm menos de 3 execuções — uma única auditoria pode ser um valor atípico.
-      - link "Agende um monitor para medições regulares.":
-        - /url: /v2/watches
-    - region "Resultados das verificações por relay × modelo (n = auditorias com veredito)":
-      - table "Resultados das verificações por relay × modelo (n = auditorias com veredito)":
-        - caption: Resultados das verificações por relay × modelo (n = auditorias com veredito)
-        - rowgroup:
-          - row "Relay × modelo Execuções Identidade do modelo Capacidades Visão Streaming Protocolo da resposta Proporção de modelo divergente Contexto medido / declarado":
-            - columnheader "Relay × modelo"
-            - columnheader "Execuções"
-            - columnheader "Identidade do modelo"
-            - columnheader "Capacidades"
-            - columnheader "Visão"
-            - columnheader "Streaming"
-            - columnheader "Protocolo da resposta"
-            - columnheader "Proporção de modelo divergente"
-            - columnheader "Contexto medido / declarado"
-        - rowgroup:
-          - row "Example Relay · model-a 7 Aprovado 7 de 7 aprovadas Aprovado 7 de 7 aprovadas Aprovado 7 de 7 aprovadas Aprovado 7 de 7 aprovadas Aprovado 7 de 7 aprovadas 0% n=7100% 128000 tok / 128000 tok n=7":
-            - rowheader "Example Relay · model-a"
-            - cell "7"
-            - cell "Aprovado 7 de 7 aprovadas"
-            - cell "Aprovado 7 de 7 aprovadas"
-            - cell "Aprovado 7 de 7 aprovadas"
-            - cell "Aprovado 7 de 7 aprovadas"
-            - cell "Aprovado 7 de 7 aprovadas"
-            - cell "0% n=7"
-            - cell "100% 128000 tok / 128000 tok n=7"
-          # … more rows of the same shape
-  - region "Faturação e tokens":
-    - heading "Faturação e tokens" [level=2]
-    - paragraph: "Rácio de faturação = tokens que o relay informa ÷ tokens que o zing contou. Acima de 100%: o relay informa mais tokens do que o zing contou (pode estar a pagar a mais). As contagens do zing são estimativas, por isso pequenos desvios são normais."
-    - text: Métrica
-    - combobox "Métrica":
-      - option "Rácio de faturação (entrada)" [selected]
-      - option "Rácio de faturação (saída)"
-      - option "Proporção de tokens de raciocínio"
-      - option "Proporção de entrada em cache"
-    - paragraph: Dados de “Rácio de faturação (entrada)” de 9 de 14 auditorias.
-    - list "Legenda":
-      - listitem: Example Relay 9 execuções
-    - img "Rácio de faturação (entrada) ao longo do tempo": 0% 25% 50% 75% 100% 125% 25/09 27/09 29/09 1/10100%
-    - paragraph:
-      - text: Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico.
-      - link "Agende um monitor para medições regulares.":
-        - /url: /v2/watches
-    - button "Mostrar como tabela" [expanded]
-    - region "Rácio de faturação (entrada) (Relay, Por dia)":
-      - table "Rácio de faturação (entrada) (Relay, Por dia)":
-        - caption: Rácio de faturação (entrada) (Relay, Por dia)
-        - rowgroup:
-          - row "Intervalo Série Mediana p25–p75 Execuções Nota":
-            - columnheader "Intervalo"
-            - columnheader "Série"
-            - columnheader "Mediana"
-            - columnheader "p25–p75"
-            - columnheader "Execuções"
-            - columnheader "Nota"
-        - rowgroup:
-          - row "sábado, 26/09/2026 Example Relay 110% 110% – 110% 1 Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico.":
-            - cell "sábado, 26/09/2026"
-            - cell "Example Relay"
-            - cell "110%"
-            - cell "110% – 110%"
-            - cell "1"
-            - cell "Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico."
-          # … more rows of the same shape
-    - heading "Resumo por relay" [level=3]
-    - region "Medianas no período selecionado (n = auditorias que mediram um valor)":
-      - table "Medianas no período selecionado (n = auditorias que mediram um valor)":
-        - caption: Medianas no período selecionado (n = auditorias que mediram um valor)
-        - rowgroup:
-          - row "Relay Execuções Rácio de faturação (entrada) Rácio de faturação (saída) Proporção de tokens de raciocínio Proporção de entrada em cache":
-            - columnheader "Relay"
-            - columnheader "Execuções"
-            - columnheader "Rácio de faturação (entrada)"
-            - columnheader "Rácio de faturação (saída)"
-            - columnheader "Proporção de tokens de raciocínio"
-            - columnheader "Proporção de entrada em cache"
-        - rowgroup:
-          - row "Example Relay 9103% n=9102% n=9 30% n=9 25% n=9":
-            - rowheader "Example Relay"
-            - cell "9"
-            - cell "103% n=9"
-            - cell "102% n=9"
-            - cell "30% n=9"
-            - cell "25% n=9"
-          # … more rows of the same shape
-  - region "Sobrecarga do relay":
-    - heading "Sobrecarga do relay" [level=2]
-    - paragraph: Tempo de processamento que o relay indica nos seus próprios cabeçalhos de resposta, ao lado da ida e volta de rede até ele (medianas). O valor do relay é autodeclarado e não verificado.
-    - list "Legenda":
-      - listitem: Tempo de processamento do relay
-      - listitem: Ida e volta de rede
-    - region "Medianas por relay, barras numa escala comum":
-      - table "Medianas por relay, barras numa escala comum":
-        - caption: Medianas por relay, barras numa escala comum
-        - rowgroup:
-          - row "Relay Execuções Tempo de processamento do relay Ida e volta de rede":
-            - columnheader "Relay"
-            - columnheader "Execuções"
-            - columnheader "Tempo de processamento do relay"
-            - columnheader "Ida e volta de rede"
-        - rowgroup:
-          - row "Example Relay 9 <duration> n=9 <duration> n=9":
-            - rowheader "Example Relay"
-            - cell "9"
-            - cell "<duration> n=9"
-            - cell "<duration> n=9"
-          # … more rows of the same shape
+  - button "Copiar a ligação para esta vista"
+  - tablist "Vistas da análise":
+    - tab "Visão geral" [selected]
+    - tab "Tendências"
+    - tab "Fiabilidade"
+    - tab "Integridade do modelo"
+    - tab "Faturação"
+  - tabpanel "Visão geral":
+    - region "Visão geral":
+      - heading "Visão geral" [level=2]
+      - paragraph: 02/09/2026 – 01/10/2026, comparado com o período de igual duração anterior (03/08/2026 – 01/09/2026).
+      - list:
+        - listitem: Execuções 14 +14
+        - listitem: Relays 2 +2
+        - listitem: Modelos 2 +2
+        - listitem: Pontuação mediana 79 Sem dados no período anterior
+        - listitem: Proporção de risco alto 21,4% Sem dados no período anterior
+        - listitem: Taxa de sucesso 100% Sem dados no período anterior
+        - listitem: Tempo até o primeiro token p50 <duration> Sem dados no período anterior
+        - listitem: Velocidade de decodificação 62,9 tok/s Sem dados no período anterior
+        - listitem: Rácio de faturação (entrada) 103% Sem dados no período anterior Dados de 9 de 14 execuções
+        - listitem: Rácio de faturação (saída) 102% Sem dados no período anterior Dados de 9 de 14 execuções
+    - region "Classificação":
+      - heading "Classificação" [level=2]
+      - paragraph: Medianas no período escolhido; n é o número de execuções que mediram um valor.
+      - group "Classificar":
+        - button "Relays de um modelo" [pressed]
+        - button "Modelos de um relay"
+      - text: Modelo
+      - combobox "Modelo":
+        - option "model-a" [selected]
+        - option "model-b"
+        - option "gpt-4o"
+      - region "Relays de «model-a»":
+        - table "Relays de «model-a»":
+          - caption: Relays de «model-a»
+          - rowgroup:
+            - row "Relay Execuções Pontuação Tempo até o primeiro token p50 Velocidade de decodificação Taxa de sucesso Rácio de faturação (entrada) Rácio de faturação (saída) Proporção de modelo divergente Proporção de risco alto Última execução":
+              - columnheader "Relay":
+                - button "Relay"
+              - columnheader "Execuções":
+                - button "Execuções"
+              - columnheader "Pontuação":
+                - button "Pontuação"
+              - columnheader "Tempo até o primeiro token p50":
+                - button "Tempo até o primeiro token p50"
+              - columnheader "Velocidade de decodificação":
+                - button "Velocidade de decodificação"
+              - columnheader "Taxa de sucesso":
+                - button "Taxa de sucesso"
+              - columnheader "Rácio de faturação (entrada)":
+                - button "Rácio de faturação (entrada)"
+              - columnheader "Rácio de faturação (saída)":
+                - button "Rácio de faturação (saída)"
+              - columnheader "Proporção de modelo divergente":
+                - button "Proporção de modelo divergente"
+              - columnheader "Proporção de risco alto":
+                - button "Proporção de risco alto"
+              - columnheader "Última execução":
+                - button "Última execução"
+          - rowgroup:
+            - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100% n=7104% n=7102% n=7 0% n=7 0% n=7 30/09/2026, 11:00":
+              - rowheader "Example Relay"
+              - cell "7"
+              - cell "82 n=7"
+              - cell "<duration> n=7"
+              - cell "63,2 tok/s n=7"
+              - cell "100% n=7"
+              - cell "104% n=7"
+              - cell "102% n=7"
+              - cell "0% n=7"
+              - cell "0% n=7"
+              - cell "30/09/2026, 11:00"
+            # … more rows of the same shape
+      - status

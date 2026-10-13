@@ -320,6 +320,19 @@ più token di quanti ne abbia contati zing; più le quote di token di
 ragionamento e di input in cache) e **sovraccarico del relay** (il tempo di
 elaborazione dichiarato dal relay accanto al round trip di rete).
 
+**Schede e link da condividere (Analisi).** I pannelli sono in cinque schede —
+**Panoramica** (indicatori, classifica), **Andamenti** (confronto nel tempo, ore
+di punta), **Affidabilità** (errori, overhead del relay), **Integrità del
+modello** e **Fatturazione** — sotto l’intestazione della pagina e un pannello
+dei filtri comune; si carica solo la scheda che stai guardando. L’URL conserva
+la scheda, i filtri e ogni opzione dei grafici
+(`#tab=reliability&range=30&relay=…&eb=dow_hour`), e **Copia il link a questa
+vista** lo copia (o lo mostra in un campo da copiare se il browser non lo
+consente): il link apre esattamente quella vista. Il pannello dei filtri è lo
+stesso in **Cronologia** e **Analisi**: chiuso, indica quanti filtri sono
+attivi e li nomina in una riga (ad es. «Ultimi 30 giorni · standard · Streaming
+· Example Relay»), così una vista condivisa dice cosa mostra.
+
 ### Lingue
 
 Un menu della lingua nell'intestazione di ogni pagina passa l'interfaccia tra

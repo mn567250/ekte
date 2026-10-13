@@ -320,6 +320,19 @@ tokens de los que contó zing; además de las proporciones de tokens de
 razonamiento y de entrada en caché) y **sobrecarga del relay** (el tiempo de
 procesamiento que informa el relay junto al tiempo de ida y vuelta de red).
 
+**Pestañas y enlaces para compartir (Analítica).** Los paneles están en cinco
+pestañas — **Resumen** (indicadores, clasificación), **Tendencias**
+(comparación en el tiempo, horas punta), **Fiabilidad** (errores, sobrecarga
+del relay), **Integridad del modelo** y **Facturación** — bajo la cabecera de
+la página y un panel de filtros común; solo se carga la pestaña que está
+viendo. La URL guarda la pestaña, los filtros y cada opción de los gráficos
+(`#tab=reliability&range=30&relay=…&eb=dow_hour`), y **Copiar el enlace a esta
+vista** la copia (o la muestra en un campo para copiarla si el navegador no lo
+permite): el enlace abre exactamente esa vista. El panel de filtros es el mismo
+en **Historial** y **Analítica**: cerrado, indica cuántos filtros están activos
+y los nombra en una línea (p. ej. «Últimos 30 días · standard · Streaming ·
+Example Relay»), así una vista compartida dice lo que muestra.
+
 ### Idiomas
 
 Un menú de idioma en la cabecera de cada página cambia la interfaz entre

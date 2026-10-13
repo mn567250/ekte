@@ -325,6 +325,20 @@ relais déclare plus de jetons que zing n'en a comptés — ainsi que les parts 
 jetons de raisonnement et d'entrée en cache) et **surcharge du relais** (le
 temps de traitement déclaré par le relais à côté de l'aller-retour réseau).
 
+**Onglets et liens de partage (Analyses).** Les panneaux sont répartis en cinq
+onglets — **Vue d'ensemble** (indicateurs, classement), **Tendances**
+(comparaison dans le temps, heures de pointe), **Fiabilité** (erreurs, surcoût
+du relais), **Intégrité du modèle** et **Facturation** — sous l’en-tête de la
+page et un panneau de filtres commun ; seul l’onglet affiché est chargé. L’URL
+conserve l’onglet, les filtres et chaque option des graphiques
+(`#tab=reliability&range=30&relay=…&eb=dow_hour`), et **Copier le lien vers
+cette vue** la copie (ou l’affiche dans un champ à copier si le navigateur ne
+le permet pas) : le lien rouvre exactement cette vue. Le panneau de filtres est
+le même sur **Historique** et **Analyses** : fermé, il indique combien de
+filtres sont actifs et les nomme sur une ligne (p. ex. « 30 derniers jours ·
+standard · Streaming · Example Relay »), si bien qu’une vue partagée dit ce
+qu’elle montre.
+
 ### Langues
 
 Un menu de langue dans l'en-tête de chaque page bascule l'interface entre

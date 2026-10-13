@@ -381,6 +381,22 @@ weekday × hour grid (five-step one-hue sequential scale per theme, hatched cell
 for `low_n`, outlined empty cells), `ZingCharts.stackBars` the stacked error
 bars, and `timeChart` takes a `ref` line (100% billing ratio).
 
+The page header and the filter panel sit above five in-page tabs
+(`v2/tabs.js`, as on Tools and Knowledge): each `PANELS` entry names its `tab`,
+and only the shown tab's panels load; a filter change reloads that tab and
+marks the others stale (`activate()` loads them when shown). `tabs.js` takes
+`writeHash: false` here, because the page writes the whole view into the
+fragment itself — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`),
+which **Copy link to this view** copies (a selected read-only field where the
+clipboard API is missing or refuses); a fragment without `tab` opens Overview,
+and a pasted link (`hashchange`) re-reads the view. The collapsible filter
+panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History:
+`ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})`
+returns `render({body, foot, count, summary})`, `sync({count, summary})`,
+`setOpen()` and `focusStart()`; the page owns its filters and fields, the panel
+the toggle with its active-filter badge, the one-line summary shown while
+closed, the remembered open state and **Reset filters**.
+
 **Translation convention.** The Chinese text written in the HTML is the
 original and stays untouched; every element carries its English text in
 `data-en` (and `data-en-placeholder`, `data-en-title`, `data-en-aria-label`).
@@ -571,6 +587,11 @@ pytest -n auto               # in parallel, one worker per CPU (pytest-xdist)
   `pytest -m a11y`. Without Playwright the directory is skipped. What is
   automated and what still needs a manual BITV review is in
   [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
+- `ZING_A11Y_PAGES=history,kb` runs only the a11y tests of those pages (plus
+  the checks that span every page); `python -m tests.a11y.affected --base
+  origin/main --head HEAD` prints the pages a change affects. Both use one
+  mapping, `tests/a11y/pages.py`: a new page is added to its `PAGES` and
+  `RULES` ([tests/a11y/README.md](tests/a11y/README.md)).
 
 ## Docker
 
@@ -608,7 +629,7 @@ the UI.
 
 | Workflow | Runs | Does |
 |---|---|---|
-| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `a11y/integration`, `perf/integration`) | `ruff`, `mypy` and `pytest` on Python 3.10–3.13 with the `dev` and `web` extras; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the accessibility suite (informational, never fails the run) and uploads its findings — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
+| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `a11y/integration`, `perf/integration`); nightly and manual (accessibility only) | `ruff`, `mypy` and `pytest` on Python 3.10–3.13 with the `dev` and `web` extras; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the accessibility suite (informational, never fails the run) and uploads its findings: every page on pushes, the nightly and manual runs (with the BITV conformance report), on pull requests only the pages the change affects (none for docs-only changes) — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
 | `.github/workflows/release.yml` | a `v*` tag | builds, runs `twine check` and publishes to PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | daily schedule, manual | example of a scheduled relay audit with the action |
 

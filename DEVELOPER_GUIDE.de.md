@@ -409,6 +409,24 @@ Stunde (fünfstufige einfarbige Skala pro Theme, schraffierte Zellen für
 Fehlerbalken, und `timeChart` nimmt eine `ref`-Linie (100 %
 Abrechnungsverhältnis).
 
+Seitenkopf und Filterpanel stehen über fünf seiteninternen Tabs
+(`v2/tabs.js`, wie bei Werkzeuge und Wissen): Jeder `PANELS`-Eintrag
+nennt seinen `tab`, und nur die Bereiche des angezeigten Tabs laden; eine
+Filteränderung lädt diesen Tab neu und markiert die anderen als veraltet
+(`activate()` lädt sie beim Anzeigen). `tabs.js` bekommt hier
+`writeHash: false`, denn die Seite schreibt die ganze Ansicht selbst ins
+Fragment — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), das
+**Link zu dieser Ansicht kopieren** kopiert (ein markiertes schreibgeschütztes
+Feld, wenn die Zwischenablage-API fehlt oder ablehnt); ein Fragment ohne `tab`
+öffnet den Überblick, ein eingefügter Link (`hashchange`) liest die Ansicht neu.
+Das einklappbare Filterpanel ist `v2/filterpanel.js` + `v2/filterpanel.css`,
+gemeinsam mit dem Verlauf: `ZingFilterPanel.create(section, {label, title,
+storeKey, open, onReset})` liefert `render({body, foot, count, summary})`,
+`sync({count, summary})`, `setOpen()` und `focusStart()`; die Seite besitzt ihre
+Filter und Felder, das Panel den Umschalter mit dem Zähler aktiver Filter, die
+einzeilige Zusammenfassung im eingeklappten Zustand, den gemerkten
+Offen-Zustand und **Filter zurücksetzen**.
+
 **Übersetzungskonvention.** Der chinesische Text im HTML ist das Original und
 bleibt unverändert; jedes Element trägt seinen englischen Text in `data-en` (und
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Der englische Text
@@ -611,6 +629,11 @@ pytest -n auto               # parallel, ein Worker pro CPU (pytest-xdist)
   `pytest -m a11y`. Ohne Playwright wird das Verzeichnis übersprungen. Was
   automatisiert ist und was noch eine manuelle BITV-Prüfung braucht, steht in
   [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) (englisch).
+- `ZING_A11Y_PAGES=history,kb` führt nur die a11y-Tests dieser Seiten aus (und
+  die seitenübergreifenden Prüfungen); `python -m tests.a11y.affected --base
+  origin/main --head HEAD` gibt aus, welche Seiten eine Änderung betrifft. Beide
+  nutzen eine Zuordnung, `tests/a11y/pages.py`: Eine neue Seite kommt dort in
+  `PAGES` und `RULES` ([tests/a11y/README.md](tests/a11y/README.md)).
 
 ## Docker
 
@@ -649,7 +672,7 @@ einschließlich der Schutzmaßnahmen der Oberfläche.
 
 | Workflow | Läuft bei | Tut |
 |---|---|---|
-| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `a11y/integration`, `perf/integration`) | `ruff`, `mypy` und `pytest` unter Python 3.10–3.13 mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
+| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `a11y/integration`, `perf/integration`); nächtlich und manuell (nur Barrierefreiheit) | `ruff`, `mypy` und `pytest` unter Python 3.10–3.13 mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch: alle Seiten bei Pushes, nächtlichen und manuellen Läufen (mit dem BITV-Konformitätsbericht), bei Pull Requests nur die Seiten, die die Änderung betrifft (keine bei reinen Doku-Änderungen) — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
 | `.github/workflows/release.yml` | einem Tag `v*` | baut, führt `twine check` aus und veröffentlicht auf PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | täglich, manuell | Beispiel einer geplanten Relay-Prüfung mit der Action |
 

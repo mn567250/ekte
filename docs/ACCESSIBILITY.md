@@ -20,10 +20,19 @@ pytest -m a11y -n auto                 # pytest-xdist, in the dev extra
 
 Findings are also written to `a11y-report.json` (`ZING_A11Y_REPORT` moves it).
 `ZING_A11Y_SHARD=k/n` runs only the k-th of n equal parts of the suite (the
-slowest tests are spread evenly). In CI four `accessibility k/4
-(informational)` jobs run one shard each, in parallel, without failing the
-pipeline, and upload those files. They become a required check once the suite
-is green.
+slowest tests are spread evenly). `ZING_A11Y_PAGES=history,kb` runs only the
+tests of those pages, plus the checks that compare every page (consistent
+navigation and identification, page titles, reachability); the two combine.
+
+In CI an `accessibility scope` job decides what to test
+(`python -m tests.a11y.affected`, mapping in `tests/a11y/pages.py`, see
+[tests/a11y/README.md](../tests/a11y/README.md)): every page on pushes (to `main`
+and the integration branches), the nightly run and manual runs, in four
+`accessibility k/4 (informational)` jobs; on pull requests only the pages
+the change can affect, in one to four jobs, and nothing for changes
+outside the web UI. A file shared by every page, or a web UI file the mapping
+does not know, runs everything. The jobs run without failing the pipeline and
+upload those files; they become a required check once the suite is green.
 
 ## Coverage by BITV / EN 301 549 test step
 
@@ -57,11 +66,11 @@ has no such content (no audio or video).
 | 9.1.4.3 | 1.4.3 | AA | Contrast (Minimum) | auto | Text contrast is measured on every page, in every language, in the light and the dark theme. | `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_controls_wcag_rules`, `test_paged_history_wcag_rules` |
 | 9.1.4.4 | 1.4.4 | AA | Resize Text | auto | At 200 % zoom nothing scrolls sideways or is cut off, in every language. | `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_resize_text_200_percent` |
 | 9.1.4.5 | 1.4.5 | AA | Images of Text | auto | Images, canvases and CSS background images are checked for text rendered as pixels. | `test_no_images_of_text` |
-| 9.1.4.10 | 1.4.10 | AA | Reflow | auto | At 320 CSS px width the page needs no horizontal scrolling and loses no content, in every language. | `test_controls_reflow_at_320_css_px`, `test_paged_history_reflows_at_320_css_px`, `test_reflow_at_320_css_px` |
+| 9.1.4.10 | 1.4.10 | AA | Reflow | auto | At 320 CSS px width the page needs no horizontal scrolling and loses no content, in every language. | `test_view_controls_reflow_at_320_css_px`, `test_controls_reflow_at_320_css_px`, `test_paged_history_reflows_at_320_css_px`, `test_reflow_at_320_css_px` |
 | 9.1.4.11 | 1.4.11 | AA | Non-text Contrast | partial | Form control borders and focus indicators reach 3:1. Charts and icons are judged by a person. | `test_chart_and_meter_contrast`, `test_form_control_boundaries_contrast`, `test_focus_indicator_contrast` |
 | 9.1.4.12 | 1.4.12 | AA | Text Spacing | auto | The WCAG text spacing values are applied and no content is cut off. | `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_text_spacing_override` |
 | 9.1.4.13 | 1.4.13 | AA | Content on Hover or Focus | partial | Every element is hovered and focused; content it reveals must close with Escape, stay while the pointer is on it and persist. Whether new content counts as additional content is judged by a person. | `test_content_on_hover_or_focus`, `test_popups_close_with_escape_and_return_focus`, `test_tooltips_dismissible_hoverable_persistent` |
-| 9.2.1.1 | 2.1.1 | A | Keyboard | auto | Every control is reached with the Tab key; popups, dialogs and tabs work with the keyboard. | `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_filter_panel_disclosure`, `test_sort_buttons`, `test_group_collapse`, `test_show_more_by_keyboard`, `test_every_control_reachable_by_tab_without_trap`, `test_popups_close_with_escape_and_return_focus`, `test_dialogs_close_with_escape`, `test_tabs_follow_arrow_key_pattern` |
+| 9.2.1.1 | 2.1.1 | A | Keyboard | auto | Every control is reached with the Tab key; popups, dialogs and tabs work with the keyboard. | `test_analytics_filter_panel_disclosure`, `test_copy_link_falls_back_to_a_selected_field`, `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_filter_panel_disclosure`, `test_sort_buttons`, `test_group_collapse`, `test_show_more_by_keyboard`, `test_every_control_reachable_by_tab_without_trap`, `test_popups_close_with_escape_and_return_focus`, `test_dialogs_close_with_escape`, `test_tabs_follow_arrow_key_pattern` |
 | 9.2.1.2 | 2.1.2 | A | No Keyboard Trap | auto | Tabbing through the page always leaves it again. | `test_every_control_reachable_by_tab_without_trap` |
 | 9.2.1.4 | 2.1.4 | A | Character Key Shortcuts | auto | Single printable keys pressed on the page trigger no action. | `test_no_character_key_shortcuts` |
 | 9.2.2.1 | 2.2.1 | A | Timing Adjustable | auto | No page refreshes, redirects or expires on its own while the user is reading. | `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_no_time_limits` |
@@ -89,8 +98,8 @@ has no such content (no audio or video).
 | 9.3.3.3 | 3.3.3 | AA | Error Suggestion | partial | Error messages are present and translated. Whether they suggest a fix is judged by a person. | `test_error_identification` |
 | 9.3.3.4 | 3.3.4 | AA | Error Prevention (Legal, Financial, Data) | auto | Deleting stored data asks for confirmation or can be undone. | `test_destructive_actions_ask_first` |
 | 9.4.1.1 | 4.1.1 | A | Parsing | auto | IDs are unique and the markup has no parsing errors that affect assistive technology. | `test_served_markup_is_well_formed`, `test_rendered_ids_are_unique` |
-| 9.4.1.2 | 4.1.2 | A | Name, Role, Value | auto | Every control has a name, a valid role and the states it needs. | `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_monitor_flow`, `test_aria_snapshot_unchanged`, `test_aria_tree_names`, `test_filter_panel_disclosure`, `test_sort_buttons`, `test_group_collapse`, `test_controls_wcag_rules`, `test_paged_history_wcag_rules`, `test_tabs_follow_arrow_key_pattern` |
-| 9.4.1.3 | 4.1.3 | AA | Status Messages | partial | Status areas are live regions. Whether each status change is announced is judged by a person. | `test_audit_flow`, `test_failing_audit_flow`, `test_monitor_flow`, `test_tools_flow`, `test_kb_flow`, `test_filter_panel_disclosure`, `test_sort_buttons`, `test_show_more_by_keyboard` |
+| 9.4.1.2 | 4.1.2 | A | Name, Role, Value | auto | Every control has a name, a valid role and the states it needs. | `test_analytics_filter_panel_disclosure`, `test_tabs_load_only_their_panels`, `test_wcag_rules_as_loaded`, `test_wcag_rules_expanded`, `test_wcag_rules_every_tab_panel`, `test_monitor_flow`, `test_aria_snapshot_unchanged`, `test_aria_tree_names`, `test_filter_panel_disclosure`, `test_sort_buttons`, `test_group_collapse`, `test_controls_wcag_rules`, `test_paged_history_wcag_rules`, `test_tabs_follow_arrow_key_pattern` |
+| 9.4.1.3 | 4.1.3 | AA | Status Messages | partial | Status areas are live regions. Whether each status change is announced is judged by a person. | `test_analytics_filter_panel_disclosure`, `test_copy_link_announces_it`, `test_copy_link_falls_back_to_a_selected_field`, `test_audit_flow`, `test_failing_audit_flow`, `test_monitor_flow`, `test_tools_flow`, `test_kb_flow`, `test_filter_panel_disclosure`, `test_sort_buttons`, `test_show_more_by_keyboard` |
 | 11.7 | — | — | beyond WCAG (EN 301 549 clause 11.7) | auto | — | `test_forced_colors_mode` |
 <!-- bitv-coverage:end -->
 
@@ -129,7 +138,9 @@ the step but never change its status.
 CI runs the suite with `ZING_A11Y_RESULTS`, one results file per shard. The
 `accessibility report` job merges them (`--results` takes several files),
 generates the report even when tests fail and uploads `bitv-report.json` with
-the other findings. The copy
+the other findings. It does so for full runs only: a run of some pages would
+report the steps of the others as not tested, so a partial run uploads its
+findings and names the pages it tested in the job summary. The copy
 committed in the repository is regenerated with the commands above.
 
 ## Manual review still needed

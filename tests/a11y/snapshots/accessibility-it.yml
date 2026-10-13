@@ -50,7 +50,7 @@
     - term: Versione di axe-core
     - definition: 4.13.0
     - term: Test
-    - definition: 1292 eseguiti, 1292 superati, 0 falliti, 0 saltati
+    - definition: 1297 eseguiti, 1297 superati, 0 falliti, 0 saltati
     - term: Lingue
     - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
     - term: Temi
@@ -118,7 +118,7 @@
               - group:
                 - text: Contenuti non testuali
                 - paragraph: "Come viene verificato: Immagini, icone, SVG e controlli hanno un'alternativa testuale. Se ogni alternativa è significativa lo giudica una persona."
-                - paragraph: "Test automatici: 56 eseguiti, 56 superati, 0 falliti, 154 saltati"
+                - paragraph: "Test automatici: 30 eseguiti, 30 superati, 0 falliti, 180 saltati"
                 - paragraph:
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel

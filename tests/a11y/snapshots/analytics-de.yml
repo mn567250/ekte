@@ -42,7 +42,7 @@
     - text: — nichts wird hochgeladen.
   - status: "Aktualisiert: 14 Läufe in diesem Zeitraum."
   - region "Filter":
-    - heading "Filter" [level=2]
+    - button "Filter" [expanded]
     - text: Zeitraum
     - group "Zeitraum":
       - button "Letzte 7 Tage"
@@ -80,411 +80,78 @@
       - option "model-b"
       - option "gpt-4o"
     - text: 15 Läufe im Verlauf (4 von Überwachungen).
-  - region "Überblick":
-    - heading "Überblick" [level=2]
-    - paragraph: 02.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (03.08. – 01.09.2026).
-    - list:
-      - listitem: Läufe 14 +14
-      - listitem: Relays 2 +2
-      - listitem: Modelle 2 +2
-      - listitem: Median-Score 79 Keine Daten im vorigen Zeitraum
-      - listitem: Anteil hohes Risiko 21,4 % Keine Daten im vorigen Zeitraum
-      - listitem: Erfolgsquote 100 % Keine Daten im vorigen Zeitraum
-      - listitem: Zeit bis zum ersten Token p50 <duration> Keine Daten im vorigen Zeitraum
-      - listitem: Dekodiertempo 62,9 tok/s Keine Daten im vorigen Zeitraum
-      - listitem: Abrechnungsverhältnis (Eingabe) 103 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
-      - listitem: Abrechnungsverhältnis (Ausgabe) 102 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
-  - region "Vergleich im Zeitverlauf":
-    - heading "Vergleich im Zeitverlauf" [level=2]
-    - paragraph: Die Linie ist der Median jedes Zeitabschnitts, das Band die mittlere Hälfte der Läufe (25. bis 75. Perzentil). Leere Abschnitte bleiben eine Lücke.
-    - text: Kennzahl
-    - combobox "Kennzahl":
-      - option "Score" [selected]
-      - option "Anteil hohes Risiko"
-      - option "Erfolgsquote"
-      - option "Fehlerquote"
-      - option "Timeout-Quote"
-      - option "Anteil Ratenbegrenzung"
-      - option "Latenz p50"
-      - option "Latenz p95"
-      - option "Zeit bis zum ersten Token p50"
-      - option "Zeit bis zum ersten Token p95"
-      - option "Dekodiertempo"
-      - option "Jitter zwischen Tokens"
-      - option "Verarbeitungszeit des Relays"
-      - option "Netzwerk-Umlaufzeit"
-      - option "Kaltstart"
-      - option "Durchsatz unter Last"
-      - option "Abrechnungsverhältnis (Eingabe)"
-      - option "Abrechnungsverhältnis (Ausgabe)"
-      - option "Anteil Reasoning-Tokens"
-      - option "Anteil gecachter Eingabe"
-      - option "Anteil Modellabweichung"
-      - option "Angegebener Kontext"
-      - option "Gemessener Kontext"
-      - option "Befunde hoher Schwere"
-      - option "Befunde mittlerer Schwere"
-      - option "Befunde geringer Schwere"
-      - option "Audit-Dauer"
-      - 'option "Dimension: Abrechnung & Verbrauch"'
-      - 'option "Dimension: Angegebene Fähigkeiten"'
-      - 'option "Dimension: Konnektivität"'
-      - 'option "Dimension: Kontextfenster"'
-      - 'option "Dimension: Modellidentität"'
-      - 'option "Dimension: Protokollkonformität"'
-      - 'option "Dimension: Zuverlässigkeit unter Parallellast"'
-      - 'option "Dimension: Transportsicherheit"'
-      - 'option "Dimension: Echtheit des Streamings"'
-    - text: Gruppieren nach
-    - combobox "Gruppieren nach":
-      - option "Relay" [selected]
-      - option "Modell"
-      - option "Relay × Modell"
-    - text: Zeitabschnitte
-    - combobox "Zeitabschnitte":
-      - option "Pro Stunde"
-      - option "Pro Tag" [selected]
-      - option "Pro Woche"
-    - text: Zu vergleichende Reihen (bis zu 4)
-    - group "Zu vergleichende Reihen (bis zu 4)":
-      - button "✓ Example Relay" [pressed]
-      - button "✓ https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1" [pressed]
-      - button "http://127.0.0.1:9099/v1"
-    - list "Legende":
-      - listitem: Example Relay 9 Läufe
-      - listitem: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 5 Läufe
-    - img "Score im Zeitverlauf": 0 20 40 60 80100 25. Sept. 27. Sept. 29. Sept. 1. Okt. v·KB
-    - paragraph:
-      - text: Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.
-      - link "Richten Sie eine Überwachung für regelmäßige Messungen ein.":
-        - /url: /v2/watches
-    - text: "Gestrichelte Linien im Diagramm markieren Änderungen an der Bewertung der Läufe (v = zing-Version, KB = Profil der Wissensbasis):"
-    - list:
-      - listitem: "Di., 29. Sept. 2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: Profil der Wissensbasis geändert (die Referenz hat sich geändert, nicht das Relay)"
-      - listitem: "Di., 29. Sept. 2026 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: zing-Version 0.19.2 → 0.20.0"
-    - button "Als Tabelle anzeigen" [expanded]
-    - region "Score (Relay, Pro Tag)":
-      - table "Score (Relay, Pro Tag)":
-        - caption: Score (Relay, Pro Tag)
-        - rowgroup:
-          - row "Zeitabschnitt Reihe Median p25–p75 Läufe Hinweis":
-            - columnheader "Zeitabschnitt"
-            - columnheader "Reihe"
-            - columnheader "Median"
-            - columnheader "p25–p75"
-            - columnheader "Läufe"
-            - columnheader "Hinweis"
-        - rowgroup:
-          - row "Sa., 26. Sept. 2026 Example Relay 70 70 – 70 1 Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.":
-            - cell "Sa., 26. Sept. 2026"
-            - cell "Example Relay"
-            - cell "70"
-            - cell "70 – 70"
-            - cell "1"
-            - cell "Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann."
-          # … more rows of the same shape
-  - region "Rangliste":
-    - heading "Rangliste" [level=2]
-    - paragraph: Mediane über den gewählten Zeitraum; n ist die Zahl der Läufe, die einen Wert gemessen haben.
-    - group "Rangfolge":
-      - button "Relays für ein Modell" [pressed]
-      - button "Modelle eines Relays"
-    - text: Modell
-    - combobox "Modell":
-      - option "model-a" [selected]
-      - option "model-b"
-      - option "gpt-4o"
-    - region "Relays für „model-a“":
-      - table "Relays für „model-a“":
-        - caption: Relays für „model-a“
-        - rowgroup:
-          - row "Relay Läufe Score Zeit bis zum ersten Token p50 Dekodiertempo Erfolgsquote Abrechnungsverhältnis (Eingabe) Abrechnungsverhältnis (Ausgabe) Anteil Modellabweichung Anteil hohes Risiko Letzter Lauf":
-            - columnheader "Relay":
-              - button "Relay"
-            - columnheader "Läufe":
-              - button "Läufe"
-            - columnheader "Score":
-              - button "Score"
-            - columnheader "Zeit bis zum ersten Token p50":
-              - button "Zeit bis zum ersten Token p50"
-            - columnheader "Dekodiertempo":
-              - button "Dekodiertempo"
-            - columnheader "Erfolgsquote":
-              - button "Erfolgsquote"
-            - columnheader "Abrechnungsverhältnis (Eingabe)":
-              - button "Abrechnungsverhältnis (Eingabe)"
-            - columnheader "Abrechnungsverhältnis (Ausgabe)":
-              - button "Abrechnungsverhältnis (Ausgabe)"
-            - columnheader "Anteil Modellabweichung":
-              - button "Anteil Modellabweichung"
-            - columnheader "Anteil hohes Risiko":
-              - button "Anteil hohes Risiko"
-            - columnheader "Letzter Lauf":
-              - button "Letzter Lauf"
-        - rowgroup:
-          - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 0 % n=7 0 % n=7 30.09.2026, 11:00":
-            - rowheader "Example Relay"
-            - cell "7"
-            - cell "82 n=7"
-            - cell "<duration> n=7"
-            - cell "63,2 tok/s n=7"
-            - cell "100 % n=7"
-            - cell "104 % n=7"
-            - cell "102 % n=7"
-            - cell "0 % n=7"
-            - cell "0 % n=7"
-            - cell "30.09.2026, 11:00"
-          # … more rows of the same shape
-    - status
-  - region "Stoßzeiten":
-    - heading "Stoßzeiten" [level=2]
-    - paragraph: Wird dieses Relay zu Stoßzeiten langsamer oder fehleranfälliger? Jede Zelle ist eine Stunde eines Wochentags in Ihrer Zeitzone, eingefärbt nach dem Median der Läufe, die dann starteten (Farbskala unter dem Raster).
-    - text: Kennzahl
-    - combobox "Kennzahl":
-      - option "Zeit bis zum ersten Token p50" [selected]
-      - option "Latenz p50"
-      - option "Dekodiertempo"
-      - option "Erfolgsquote"
-      - option "Fehlerquote"
-      - option "Anteil Ratenbegrenzung"
-      - option "Timeout-Quote"
-      - option "Score"
-    - text: Relay
-    - combobox "Relay":
-      - option "Alle Relays" [selected]
-      - option "Example Relay"
-      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
-      - option "http://127.0.0.1:9099/v1"
-    - img "Zeit bis zum ersten Token p50 nach Wochentag und Stunde": 00 03 06 09 12 15 18 21 Mo Di Mi Do Fr Sa So
-    - list:
-      - listitem: <duration> <duration>
-      - listitem: weniger als 3 Läufe (schraffiert)
-      - listitem: keine Läufe
-    - paragraph:
-      - text: Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.
-      - link "Richten Sie eine Überwachung für regelmäßige Messungen ein.":
-        - /url: /v2/watches
-    - button "Als Tabelle anzeigen" [expanded]
-    - region "Zeit bis zum ersten Token p50 nach Wochentag und Stunde (Alle Relays)":
-      - table "Zeit bis zum ersten Token p50 nach Wochentag und Stunde (Alle Relays)":
-        - caption: Zeit bis zum ersten Token p50 nach Wochentag und Stunde (Alle Relays)
-        - rowgroup:
-          - row "Wochentag Stunde Median Läufe Hinweis":
-            - columnheader "Wochentag"
-            - columnheader "Stunde"
-            - columnheader "Median"
-            - columnheader "Läufe"
-            - columnheader "Hinweis"
-        - rowgroup:
-          - row "Montag 7:00–8:00 <duration> 1 Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.":
-            - cell "Montag"
-            - cell "7:00–8:00"
-            - cell "<duration>"
-            - cell "1"
-            - cell "Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann."
-          # … more rows of the same shape
-  - region "Fehler und Zuverlässigkeit":
-    - heading "Fehler und Zuverlässigkeit" [level=2]
-    - paragraph: "Fehlgeschlagene Aufrufe an das Relay nach Ursache: Ratenbegrenzung (HTTP 429), Serverfehler (5xx), Zeitüberschreitungen und andere, als Anteil aller Aufrufe."
-    - text: Tabelle nach
-    - combobox "Tabelle nach":
-      - option "Relay" [selected]
-      - option "Modell"
-    - text: Zeitabschnitte
-    - combobox "Zeitabschnitte":
-      - option "Pro Stunde"
-      - option "Pro Tag" [selected]
-      - option "Pro Woche"
-    - paragraph: Anfragedaten für 14 von 14 Läufen. 140 Aufrufe, 18 fehlgeschlagen (12,9 %).
-    - list "Legende":
-      - listitem: Ratenbegrenzt (429)
-      - listitem: Serverfehler (5xx)
-      - listitem: Zeitüberschreitung
-      - listitem: Andere Fehler (4xx, Netzwerk, …)
-    - img "Fehlgeschlagene Aufrufe im Zeitverlauf": 0 % 5 % 10 % 15 % 20 % 25. Sept. 27. Sept. 29. Sept. 1. Okt.
-    - paragraph:
-      - text: Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.
-      - link "Richten Sie eine Überwachung für regelmäßige Messungen ein.":
-        - /url: /v2/watches
-    - button "Als Tabelle anzeigen" [expanded]
-    - region "Aufrufergebnisse pro Zeitabschnitt (Pro Tag)":
-      - table "Aufrufergebnisse pro Zeitabschnitt (Pro Tag)":
-        - caption: Aufrufergebnisse pro Zeitabschnitt (Pro Tag)
-        - rowgroup:
-          - row "Zeitabschnitt Aufrufe Erfolg Client-Fehler (4xx) Ratenbegrenzt (429) Serverfehler (5xx) Zeitüberschreitung Netzwerkfehler Anderer Fehlschlag Anteil fehlgeschlagen Läufe Hinweis":
-            - columnheader "Zeitabschnitt"
-            - columnheader "Aufrufe"
-            - columnheader "Erfolg"
-            - columnheader "Client-Fehler (4xx)"
-            - columnheader "Ratenbegrenzt (429)"
-            - columnheader "Serverfehler (5xx)"
-            - columnheader "Zeitüberschreitung"
-            - columnheader "Netzwerkfehler"
-            - columnheader "Anderer Fehlschlag"
-            - columnheader "Anteil fehlgeschlagen"
-            - columnheader "Läufe"
-            - columnheader "Hinweis"
-        - rowgroup:
-          - row "Sa., 26. Sept. 2026 10 9 0 0 0 1 0 0 10 % 1 Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.":
-            - cell "Sa., 26. Sept. 2026"
-            - cell "10"
-            - cell "9"
-            - cell "0"
-            - cell "0"
-            - cell "0"
-            - cell "1"
-            - cell "0"
-            - cell "0"
-            - cell "10 %"
-            - cell "1"
-            - cell "Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann."
-          # … more rows of the same shape
-    - heading "Nach Relay" [level=3]
-    - region "Aufrufergebnisse nach Relay":
-      - table "Aufrufergebnisse nach Relay":
-        - caption: Aufrufergebnisse nach Relay
-        - rowgroup:
-          - row "Relay Läufe mit Daten Aufrufe Erfolg Client-Fehler (4xx) Ratenbegrenzt (429) Serverfehler (5xx) Zeitüberschreitung Netzwerkfehler Anderer Fehlschlag Anteil fehlgeschlagen Anteil Ratenbegrenzung Anteil Zeitüberschreitungen":
-            - columnheader "Relay"
-            - columnheader "Läufe mit Daten"
-            - columnheader "Aufrufe"
-            - columnheader "Erfolg"
-            - columnheader "Client-Fehler (4xx)"
-            - columnheader "Ratenbegrenzt (429)"
-            - columnheader "Serverfehler (5xx)"
-            - columnheader "Zeitüberschreitung"
-            - columnheader "Netzwerkfehler"
-            - columnheader "Anderer Fehlschlag"
-            - columnheader "Anteil fehlgeschlagen"
-            - columnheader "Anteil Ratenbegrenzung"
-            - columnheader "Anteil Zeitüberschreitungen"
-        - rowgroup:
-          - row "Example Relay 9 / 9 90 85 0 0 0 5 0 0 5,6 % 0 % 5,6 %":
-            - rowheader "Example Relay"
-            - cell "9 / 9"
-            - cell "90"
-            - cell "85"
-            - cell "0"
-            - cell "0"
-            - cell "0"
-            - cell "5"
-            - cell "0"
-            - cell "0"
-            - cell "5,6 %"
-            - cell "0 %"
-            - cell "5,6 %"
-          # … more rows of the same shape
-  - region "Modellechtheit":
-    - heading "Modellechtheit" [level=2]
-    - paragraph: Ist es das Modell, das es zu sein behauptet – vollständig und mit seinen Funktionen? Ergebnisse der Identitäts-, Kontextfenster- und Fähigkeitsprüfungen pro Relay und Modell.
-    - paragraph:
-      - text: Mit „wenige Läufe“ markierte Zeilen haben weniger als 3 Läufe — ein einzelnes Audit kann ein Ausreißer sein.
-      - link "Richten Sie eine Überwachung für regelmäßige Messungen ein.":
-        - /url: /v2/watches
-    - region "Prüfergebnisse pro Relay × Modell (n = Läufe mit Ergebnis)":
-      - table "Prüfergebnisse pro Relay × Modell (n = Läufe mit Ergebnis)":
-        - caption: Prüfergebnisse pro Relay × Modell (n = Läufe mit Ergebnis)
-        - rowgroup:
-          - row "Relay × Modell Läufe Modellidentität Fähigkeiten Bildverständnis Streaming Antwortprotokoll Anteil Modellabweichung Gemessener / angegebener Kontext":
-            - columnheader "Relay × Modell"
-            - columnheader "Läufe"
-            - columnheader "Modellidentität"
-            - columnheader "Fähigkeiten"
-            - columnheader "Bildverständnis"
-            - columnheader "Streaming"
-            - columnheader "Antwortprotokoll"
-            - columnheader "Anteil Modellabweichung"
-            - columnheader "Gemessener / angegebener Kontext"
-        - rowgroup:
-          - row "Example Relay · model-a 7 Bestanden 7 von 7 bestanden Bestanden 7 von 7 bestanden Bestanden 7 von 7 bestanden Bestanden 7 von 7 bestanden Bestanden 7 von 7 bestanden 0 % n=7100 % 128000 tok / 128000 tok n=7":
-            - rowheader "Example Relay · model-a"
-            - cell "7"
-            - cell "Bestanden 7 von 7 bestanden"
-            - cell "Bestanden 7 von 7 bestanden"
-            - cell "Bestanden 7 von 7 bestanden"
-            - cell "Bestanden 7 von 7 bestanden"
-            - cell "Bestanden 7 von 7 bestanden"
-            - cell "0 % n=7"
-            - cell "100 % 128000 tok / 128000 tok n=7"
-          # … more rows of the same shape
-  - region "Abrechnung und Tokens":
-    - heading "Abrechnung und Tokens" [level=2]
-    - paragraph: "Abrechnungsverhältnis = vom Relay gemeldete Tokens ÷ von zing gezählte Tokens. Über 100 %: Das Relay meldet mehr Tokens, als zing gezählt hat (Sie zahlen eventuell mehr). zings Zählungen sind Schätzungen, kleine Abweichungen sind normal."
-    - text: Kennzahl
-    - combobox "Kennzahl":
-      - option "Abrechnungsverhältnis (Eingabe)" [selected]
-      - option "Abrechnungsverhältnis (Ausgabe)"
-      - option "Anteil Reasoning-Tokens"
-      - option "Anteil gecachter Eingabe"
-    - paragraph: Daten zu „Abrechnungsverhältnis (Eingabe)“ aus 9 von 14 Läufen.
-    - list "Legende":
-      - listitem: Example Relay 9 Läufe
-    - img "Abrechnungsverhältnis (Eingabe) im Zeitverlauf": 0 % 25 % 50 % 75 % 100 % 125 % 25. Sept. 27. Sept. 29. Sept. 1. Okt. 100%
-    - paragraph:
-      - text: Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.
-      - link "Richten Sie eine Überwachung für regelmäßige Messungen ein.":
-        - /url: /v2/watches
-    - button "Als Tabelle anzeigen" [expanded]
-    - region "Abrechnungsverhältnis (Eingabe) (Relay, Pro Tag)":
-      - table "Abrechnungsverhältnis (Eingabe) (Relay, Pro Tag)":
-        - caption: Abrechnungsverhältnis (Eingabe) (Relay, Pro Tag)
-        - rowgroup:
-          - row "Zeitabschnitt Reihe Median p25–p75 Läufe Hinweis":
-            - columnheader "Zeitabschnitt"
-            - columnheader "Reihe"
-            - columnheader "Median"
-            - columnheader "p25–p75"
-            - columnheader "Läufe"
-            - columnheader "Hinweis"
-        - rowgroup:
-          - row "Sa., 26. Sept. 2026 Example Relay 110 % 110 % – 110 % 1 Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann.":
-            - cell "Sa., 26. Sept. 2026"
-            - cell "Example Relay"
-            - cell "110 %"
-            - cell "110 % – 110 %"
-            - cell "1"
-            - cell "Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann."
-          # … more rows of the same shape
-    - heading "Übersicht nach Relay" [level=3]
-    - region "Mediane über den gewählten Zeitraum (n = Läufe, die einen Wert gemessen haben)":
-      - table "Mediane über den gewählten Zeitraum (n = Läufe, die einen Wert gemessen haben)":
-        - caption: Mediane über den gewählten Zeitraum (n = Läufe, die einen Wert gemessen haben)
-        - rowgroup:
-          - row "Relay Läufe Abrechnungsverhältnis (Eingabe) Abrechnungsverhältnis (Ausgabe) Anteil Reasoning-Tokens Anteil gecachter Eingabe":
-            - columnheader "Relay"
-            - columnheader "Läufe"
-            - columnheader "Abrechnungsverhältnis (Eingabe)"
-            - columnheader "Abrechnungsverhältnis (Ausgabe)"
-            - columnheader "Anteil Reasoning-Tokens"
-            - columnheader "Anteil gecachter Eingabe"
-        - rowgroup:
-          - row "Example Relay 9103 % n=9102 % n=9 30 % n=9 25 % n=9":
-            - rowheader "Example Relay"
-            - cell "9"
-            - cell "103 % n=9"
-            - cell "102 % n=9"
-            - cell "30 % n=9"
-            - cell "25 % n=9"
-          # … more rows of the same shape
-  - region "Relay-Overhead":
-    - heading "Relay-Overhead" [level=2]
-    - paragraph: Verarbeitungszeit, die das Relay in seinen eigenen Antwort-Headern meldet, neben der Netzwerk-Umlaufzeit dorthin (Mediane). Der Wert des Relays ist selbst gemeldet und nicht überprüft.
-    - list "Legende":
-      - listitem: Verarbeitungszeit des Relays
-      - listitem: Netzwerk-Umlaufzeit
-    - region "Mediane pro Relay, Balken auf einer gemeinsamen Skala":
-      - table "Mediane pro Relay, Balken auf einer gemeinsamen Skala":
-        - caption: Mediane pro Relay, Balken auf einer gemeinsamen Skala
-        - rowgroup:
-          - row "Relay Läufe Verarbeitungszeit des Relays Netzwerk-Umlaufzeit":
-            - columnheader "Relay"
-            - columnheader "Läufe"
-            - columnheader "Verarbeitungszeit des Relays"
-            - columnheader "Netzwerk-Umlaufzeit"
-        - rowgroup:
-          - row "Example Relay 9 <duration> n=9 <duration> n=9":
-            - rowheader "Example Relay"
-            - cell "9"
-            - cell "<duration> n=9"
-            - cell "<duration> n=9"
-          # … more rows of the same shape
+  - button "Link zu dieser Ansicht kopieren"
+  - tablist "Analyseansichten":
+    - tab "Überblick" [selected]
+    - tab "Trends"
+    - tab "Zuverlässigkeit"
+    - tab "Modellechtheit"
+    - tab "Abrechnung"
+  - tabpanel "Überblick":
+    - region "Überblick":
+      - heading "Überblick" [level=2]
+      - paragraph: 02.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (03.08. – 01.09.2026).
+      - list:
+        - listitem: Läufe 14 +14
+        - listitem: Relays 2 +2
+        - listitem: Modelle 2 +2
+        - listitem: Median-Score 79 Keine Daten im vorigen Zeitraum
+        - listitem: Anteil hohes Risiko 21,4 % Keine Daten im vorigen Zeitraum
+        - listitem: Erfolgsquote 100 % Keine Daten im vorigen Zeitraum
+        - listitem: Zeit bis zum ersten Token p50 <duration> Keine Daten im vorigen Zeitraum
+        - listitem: Dekodiertempo 62,9 tok/s Keine Daten im vorigen Zeitraum
+        - listitem: Abrechnungsverhältnis (Eingabe) 103 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
+        - listitem: Abrechnungsverhältnis (Ausgabe) 102 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
+    - region "Rangliste":
+      - heading "Rangliste" [level=2]
+      - paragraph: Mediane über den gewählten Zeitraum; n ist die Zahl der Läufe, die einen Wert gemessen haben.
+      - group "Rangfolge":
+        - button "Relays für ein Modell" [pressed]
+        - button "Modelle eines Relays"
+      - text: Modell
+      - combobox "Modell":
+        - option "model-a" [selected]
+        - option "model-b"
+        - option "gpt-4o"
+      - region "Relays für „model-a“":
+        - table "Relays für „model-a“":
+          - caption: Relays für „model-a“
+          - rowgroup:
+            - row "Relay Läufe Score Zeit bis zum ersten Token p50 Dekodiertempo Erfolgsquote Abrechnungsverhältnis (Eingabe) Abrechnungsverhältnis (Ausgabe) Anteil Modellabweichung Anteil hohes Risiko Letzter Lauf":
+              - columnheader "Relay":
+                - button "Relay"
+              - columnheader "Läufe":
+                - button "Läufe"
+              - columnheader "Score":
+                - button "Score"
+              - columnheader "Zeit bis zum ersten Token p50":
+                - button "Zeit bis zum ersten Token p50"
+              - columnheader "Dekodiertempo":
+                - button "Dekodiertempo"
+              - columnheader "Erfolgsquote":
+                - button "Erfolgsquote"
+              - columnheader "Abrechnungsverhältnis (Eingabe)":
+                - button "Abrechnungsverhältnis (Eingabe)"
+              - columnheader "Abrechnungsverhältnis (Ausgabe)":
+                - button "Abrechnungsverhältnis (Ausgabe)"
+              - columnheader "Anteil Modellabweichung":
+                - button "Anteil Modellabweichung"
+              - columnheader "Anteil hohes Risiko":
+                - button "Anteil hohes Risiko"
+              - columnheader "Letzter Lauf":
+                - button "Letzter Lauf"
+          - rowgroup:
+            - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 0 % n=7 0 % n=7 30.09.2026, 11:00":
+              - rowheader "Example Relay"
+              - cell "7"
+              - cell "82 n=7"
+              - cell "<duration> n=7"
+              - cell "63,2 tok/s n=7"
+              - cell "100 % n=7"
+              - cell "104 % n=7"
+              - cell "102 % n=7"
+              - cell "0 % n=7"
+              - cell "0 % n=7"
+              - cell "30.09.2026, 11:00"
+            # … more rows of the same shape
+      - status

@@ -410,6 +410,24 @@ per `low_n`, celle vuote solo con contorno), `ZingCharts.stackBars` le barre di
 errore impilate, e `timeChart` accetta una linea `ref` (rapporto di
 fatturazione del 100%).
 
+L'intestazione della pagina e il pannello dei filtri stanno sopra cinque schede
+interne (`v2/tabs.js`, come in Strumenti e Conoscenza): ogni voce di
+`PANELS` indica la sua `tab`, e si caricano solo i pannelli della scheda
+visibile; una modifica dei filtri ricarica quella scheda e segna le altre come
+non aggiornate (`activate()` le carica quando vengono mostrate). Qui `tabs.js`
+riceve `writeHash: false`, perché la pagina scrive da sé l'intera vista nel
+frammento — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), che
+**Copia il link a questa vista** copia (un campo di sola lettura selezionato se
+l'API degli appunti manca o rifiuta); un frammento senza `tab` apre la
+Panoramica, e un link incollato (`hashchange`) rilegge la vista. Il pannello dei
+filtri richiudibile è `v2/filterpanel.js` + `v2/filterpanel.css`, condiviso con
+la Cronologia: `ZingFilterPanel.create(section, {label, title, storeKey, open,
+onReset})` restituisce `render({body, foot, count, summary})`,
+`sync({count, summary})`, `setOpen()` e `focusStart()`; la pagina gestisce i
+propri filtri e campi, il pannello il pulsante con il badge dei filtri attivi,
+il riepilogo di una riga mostrato da chiuso, lo stato aperto memorizzato e
+**Reimposta filtri**.
+
 **Convenzione di traduzione.** Il testo cinese scritto nell'HTML è l'originale e
 resta intatto; ogni elemento porta il suo testo inglese in `data-en` (e
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Il testo inglese è
@@ -607,6 +625,12 @@ pytest -n auto               # in parallelo, un worker per CPU (pytest-xdist)
   `pytest -m a11y`. Senza Playwright la directory viene saltata. Cosa è
   automatizzato e cosa richiede ancora una revisione BITV manuale è descritto in
   [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) (in inglese).
+- `ZING_A11Y_PAGES=history,kb` esegue solo i test a11y di quelle pagine (più i
+  controlli che riguardano tutte le pagine); `python -m tests.a11y.affected
+  --base origin/main --head HEAD` mostra le pagine toccate da una modifica.
+  Entrambi usano un'unica corrispondenza, `tests/a11y/pages.py`: una nuova
+  pagina va aggiunta ai suoi `PAGES` e `RULES`
+  ([tests/a11y/README.md](tests/a11y/README.md)).
 
 ## Docker
 
@@ -644,7 +668,7 @@ le protezioni dell'interfaccia.
 
 | Workflow | Si avvia con | Cosa fa |
 |---|---|---|
-| `.github/workflows/ci.yml` | push e pull request verso `main` (e i branch di integrazione `a11y/integration`, `perf/integration`) | `ruff`, `mypy` e `pytest` con Python 3.10–3.13 e gli extra `dev` e `web`; costruisce wheel e sdist e verifica che la wheel si installi e carichi la base di conoscenza; esegue la suite di accessibilità (informativa, non fa mai fallire l'esecuzione) e ne carica i risultati — tranne nelle pull request verso `perf/integration`, dove la lenta suite nel browser viene saltata (gira sui push di quel branch e sulla sua pull request verso `main`) |
+| `.github/workflows/ci.yml` | push e pull request verso `main` (e i branch di integrazione `a11y/integration`, `perf/integration`); ogni notte e manuale (solo accessibilità) | `ruff`, `mypy` e `pytest` con Python 3.10–3.13 e gli extra `dev` e `web`; costruisce wheel e sdist e verifica che la wheel si installi e carichi la base di conoscenza; esegue la suite di accessibilità (informativa, non fa mai fallire l'esecuzione) e ne carica i risultati: tutte le pagine sui push e nelle esecuzioni notturne e manuali (con il rapporto di conformità BITV), nelle pull request solo le pagine toccate dalla modifica (nessuna se cambia solo la documentazione) — tranne nelle pull request verso `perf/integration`, dove la lenta suite nel browser viene saltata (gira sui push di quel branch e sulla sua pull request verso `main`) |
 | `.github/workflows/release.yml` | un tag `v*` | costruisce, esegue `twine check` e pubblica su PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | pianificazione giornaliera, manuale | esempio di verifica pianificata di un relay con l'action |
 

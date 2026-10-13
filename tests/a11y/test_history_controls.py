@@ -1,6 +1,7 @@
-"""History's view controls: the collapsible filter panel, the sort buttons in
-the column header and the per-group collapse toggles (BITV 9.2.1.1, 9.4.1.2,
-9.4.1.3, 9.2.4.3, 9.1.4.3, 9.1.4.10).
+"""History's view controls: the collapsible filter panel (filterpanel.js,
+shared with Analytics), the sort buttons in the column header and the
+per-group collapse toggles (BITV 9.2.1.1, 9.4.1.2, 9.4.1.3, 9.2.4.3, 9.1.4.3,
+9.1.4.10).
 
 Each control is a native button that keeps focus where it was, says its state
 in its name or aria-expanded, and hides what it collapses with ``hidden`` (out
@@ -17,6 +18,7 @@ from typing import Any
 import pytest
 from playwright.sync_api import Page
 
+from tests.a11y.filter_panel import filter_panel_issues
 from tests.a11y.harness import (
     DESKTOP,
     THEMES,
@@ -89,47 +91,12 @@ def _active(page: Page) -> str:
 @pytest.mark.bitv("9.2.1.1", "9.4.1.2", "9.4.1.3")
 def test_filter_panel_disclosure(open_page) -> None:
     """Closed by default; Enter/Space open and close it in place, focus stays on
-    the toggle; the toggle counts active filters; the count and reset stay
-    visible while it is closed; the state survives a reload."""
+    the toggle; the toggle counts active filters and, closed, a line under it
+    names them (also the toggle's description); the count and reset stay
+    visible while it is closed; the state survives a reload. The same panel
+    (filterpanel.js) is checked on Analytics in test_analytics_view.py."""
     page = _history(open_page)
-    issues: list[str] = []
-    tog = page.locator("#ftog")
-    if tog.get_attribute("aria-expanded") != "false" or page.locator("#fbody").is_visible():
-        issues.append("filter panel is not closed by default")
-    if tog.get_attribute("aria-controls") != "fbody":
-        issues.append("toggle does not name the panel it controls")
-    if not page.locator("#fcount").is_visible():
-        issues.append("the 'Showing X of N' count is hidden with the panel")
-    tog.focus()
-    page.keyboard.press("Enter")
-    settle(page)
-    if tog.get_attribute("aria-expanded") != "true" or not page.locator("[data-f=q]").is_visible():
-        issues.append("Enter did not open the panel")
-    if _active(page) != "ftog":
-        issues.append(f"focus moved to {_active(page)!r} instead of staying on the toggle")
-    page.locator("[data-f=risk]").select_option("high")
-    settle(page)
-    name = tog.inner_text()
-    if "1 active" not in name:
-        issues.append(f"toggle does not count the active filter: {name!r}")
-    tog.focus()
-    page.keyboard.press(" ")
-    settle(page)
-    if tog.get_attribute("aria-expanded") != "false" or page.locator("#fbody").is_visible():
-        issues.append("Space did not close the panel")
-    if not page.locator("#freset").is_visible():
-        issues.append("Reset filters is hidden with the panel while a filter is active")
-    page.locator("#freset").click()
-    settle(page)
-    if _active(page) != "ftog":
-        issues.append(f"reset with the panel closed left focus on {_active(page)!r}")
-    if page.locator("#factive").is_visible():
-        issues.append("active-filter badge stays after reset")
-    tog.click()
-    page.reload(wait_until="networkidle")
-    settle(page)
-    if page.locator("#ftog").get_attribute("aria-expanded") != "true":
-        issues.append("open state is not remembered across a reload")
+    issues = filter_panel_issues(page, "[data-f=q]", ("[data-f=risk]", "high"), "Risk: ")
     assert_no_issues(issues, "history [en]", "filter-panel")
 
 

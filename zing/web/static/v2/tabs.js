@@ -1,5 +1,5 @@
 /* zing web UI v2 — WAI-ARIA tabs with automatic activation, shared by the
- * Tools and Knowledge pages.
+ * Tools, Knowledge and Analytics pages.
  *
  * Markup (static, so lang.js translates it and nothing shifts at boot):
  *   <div class="tabs" role="tablist" aria-label="…">
@@ -16,6 +16,9 @@
  *   opts.fromHash(hash)  maps a hash without "#" to a tab name (default: the
  *                        hash itself when such a tab exists); lets a page
  *                        accept deep links such as #add-relays
+ *   opts.writeHash       false: leave the hash alone (a page that keeps more
+ *                        state in it, e.g. Analytics' #tab=…&range=…, writes
+ *                        it itself from onSelect)
  * Returns { select(name, focus), current() }.
  */
 (function () {
@@ -46,7 +49,7 @@
       });
       if (focus) tabs[i].focus();
       cur = name;
-      if (!keepHash) {
+      if (!keepHash && opts.writeHash !== false) {
         try {
           history.replaceState(null, "", i === 0 ? location.pathname + location.search : "#" + name);
         } catch (e) { /* file:// or sandboxed */ }

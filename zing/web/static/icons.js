@@ -105,8 +105,12 @@
     download:
       '<path d="M12 3v12"/><path d="M7 11l5 5 5-5"/>' +
       '<path d="M4 20h16"/>',
+    // link — copy a link to this view
+    link:
+      '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/>' +
+      '<path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
     // plus — add
-    plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+    plus:'<path d="M12 5v14"/><path d="M5 12h14"/>',
     // eye — reveal a masked key
     eye:
       '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>' +

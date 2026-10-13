@@ -318,6 +318,19 @@ relay informa mais tokens do que o zing contou — e as proporções de tokens d
 raciocínio e de entrada em cache) e **sobrecarga do relay** (o tempo de
 processamento que o relay informa ao lado da ida e volta de rede).
 
+**Separadores e ligações para partilhar (Análises).** Os painéis estão em cinco
+separadores — **Visão geral** (indicadores, classificação), **Tendências**
+(comparação ao longo do tempo, horas de ponta), **Fiabilidade** (erros,
+sobrecarga do relay), **Integridade do modelo** e **Faturação** — sob o
+cabeçalho da página e um painel de filtros comum; só o separador que está a ver
+é carregado. O URL guarda o separador, os filtros e cada opção dos gráficos
+(`#tab=reliability&range=30&relay=…&eb=dow_hour`), e **Copiar a ligação para
+esta vista** copia-o (ou mostra-o num campo para copiar quando o navegador não
+o permite): a ligação abre exatamente essa vista. O painel de filtros é o mesmo
+em **Histórico** e **Análises**: fechado, indica quantos filtros estão ativos e
+nomeia-os numa linha (p. ex. «Últimos 30 dias · standard · Streaming · Example
+Relay»), assim uma vista partilhada diz o que mostra.
+
 ### Idiomas
 
 Um menu de idioma no cabeçalho de cada página muda a interface entre

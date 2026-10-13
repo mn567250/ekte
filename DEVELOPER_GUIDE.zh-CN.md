@@ -277,6 +277,8 @@ v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`o
 
 每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`ZingCharts.heatmap` 绘制「星期几 × 小时」网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`ZingCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。
 
+页面标题和筛选面板位于五个页内标签页之上（`v2/tabs.js`，与工具和知识库页面相同）：每个 `PANELS` 条目注明所属的 `tab`，只加载当前显示的标签页的面板；筛选变化时重新加载该标签页，其他标签页标记为过期（`activate()` 在显示时加载）。这里给 `tabs.js` 传入 `writeHash: false`，因为页面自己把整个视图写进网址片段——`#tab=trends&range=30&suite=…&metric=…`（`stateQuery()`），**复制此视图的链接**复制的就是它（剪贴板 API 不存在或被拒绝时，改为显示并选中一个只读文本框）；不含 `tab` 的片段打开概览，粘贴进来的链接（`hashchange`）会重新读取视图。可折叠的筛选面板是 `v2/filterpanel.js` + `v2/filterpanel.css`，与检测历史共用：`ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})` 返回 `render({body, foot, count, summary})`、`sync({count, summary})`、`setOpen()` 和 `focusStart()`；页面负责自己的筛选条件和字段，面板负责带生效筛选计数的切换按钮、收起时显示的一行摘要、记住的展开状态以及**重置筛选**。
+
 **翻译约定。** 写在 HTML 中的中文是原文，保持不动；每个元素在 `data-en`（以及
 `data-en-placeholder`、`data-en-title`、`data-en-aria-label`）中携带英文文本。英文文本是
 其他所有语言的查找键。脚本对动态文本使用 `T(zh, en)`，对来自后端的文本（检测器名称、建议、
@@ -420,6 +422,10 @@ pytest -n auto               # 并行运行，每个 CPU 一个 worker（pytest-
   `pip install -e '.[web,a11y]' && playwright install chromium`，然后运行 `pytest -m a11y`。
   没有 Playwright 时跳过该目录。哪些已自动化、哪些仍需人工 BITV 审查，见
   [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)（英文）。
+- `ZING_A11Y_PAGES=history,kb` 只运行这些页面的无障碍测试（以及跨所有页面的检查）；
+  `python -m tests.a11y.affected --base origin/main --head HEAD` 输出某次改动影响的页面。
+  两者使用同一份映射 `tests/a11y/pages.py`：新增页面时须加入其中的 `PAGES` 和 `RULES`
+  （[tests/a11y/README.md](tests/a11y/README.md)）。
 
 ## Docker
 
@@ -452,7 +458,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v zing-data:/data zing
 
 | 工作流 | 触发条件 | 作用 |
 |---|---|---|
-| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `a11y/integration`、`perf/integration`） | 在 Python 3.10–3.13 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
+| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `a11y/integration`、`perf/integration`）；每晚定时及手动（仅无障碍测试） | 在 Python 3.10–3.13 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果：推送、每晚及手动运行测试所有页面（并生成 BITV 符合性报告），Pull Request 只测试改动影响的页面（仅改文档时不运行）——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
 | `.github/workflows/release.yml` | `v*` 标签 | 构建、运行 `twine check` 并发布到 PyPI（Trusted Publishing） |
 | `.github/workflows/example-audit.yml` | 每日定时、手动 | 使用该 Action 定时审计中转站的示例 |
 

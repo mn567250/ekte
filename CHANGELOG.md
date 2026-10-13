@@ -80,9 +80,45 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   /api/analytics/breakdown` (some metrics per group over the range);
   `/api/analytics/series` also takes `group=all`. Each panel loads on its own
   (`PANELS` registry in the page).
+- **Analytics page: tabs and share links.** The panels sit in five tabs under
+  the page header and one filter panel shared by all of them: Overview (KPIs,
+  leaderboard), Trends (comparison over time, peak hours), Reliability
+  (errors, relay overhead), Model integrity and Billing; only the shown tab's
+  panels load, and a filter change reloads that tab while the others reload
+  when shown. The URL fragment keeps the tab, every filter and every panel
+  option (`#tab=reliability&range=30&source=monitor&eb=dow_hour&…`), and
+  **Copy link to this view** copies it, announcing "Link copied" (where the
+  browser offers no clipboard, the link appears selected in a read-only field
+  to copy); opening the link restores exactly that view, older links without a
+  tab open Overview. The filter panel is now collapsible like History's (the
+  same component) and, closed, names the period and every active filter in one
+  line. Also: the errors panel offers weekday × hour buckets (a grid of the
+  failed share); the billing chart's axis is zoomed to the data around 100%
+  instead of starting at 0%, with the 100% label at the left of the plot; each
+  integrity cell has one accessible name ("All 7 passed", "Failed: 4 of 7
+  passed · 2 failed"); the peak-hours hint speaks of hatched cells.
 
 ### Changed
 
+- **History's closed filter panel names the active filters.** Next to the
+  count of active filters, a line under the toggle lists them (e.g. "Last 30
+  days · Example Relay · Ad-hoc"), and the toggle is described by it. The
+  panel is now a component shared with the Analytics page
+  (`v2/filterpanel.js`, `v2/filterpanel.css`) and works as before; its toggle
+  reads "Filters" (was "Filters & trends") on both pages, so the same control
+  has the same name everywhere (BITV 9.3.2.4); the trend picker is still in it.
+- **CI runs the accessibility suite only for the pages a change affects.** On
+  pull requests a new `accessibility scope` job
+  maps the changed files to web UI v2 pages (`python -m tests.a11y.affected`,
+  one mapping in `tests/a11y/pages.py`) and the browser suite tests only those
+  pages, in one to four jobs; a docs-only change skips it. Changes to the audit pipeline (detectors,
+  runner, clients, scoring, reports) run the audit page, whose flow runs a
+  real audit. Files every page
+  uses, and any web UI file the mapping does not know, still run everything.
+  Pushes to `main` and the integration branches, a new nightly run and
+  manual runs test every page, and only those full runs build the BITV conformance report. Pip
+  and Playwright's Chromium are cached. Locally, `ZING_A11Y_PAGES=history,kb`
+  selects pages the same way (tests/a11y/README.md).
 - **Smaller `history.db`: request records are stored once.** A report's
   `performance.requests` (target and baseline) move out of the stored report
   JSON into their own table, `history_requests`, and are put back when the

@@ -9,22 +9,26 @@
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/charts.css" />
+<link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <style>
-  /* Analytics page. Tokens only (zing.css, charts.css); light + dark.
+  /* Analytics page. Tokens only (zing.css, charts.css, filterpanel.css);
+   * light + dark.
    *
-   * One <section class="card panel"> per panel (overview, comparison,
-   * leaderboard, peak hours, errors, model integrity, billing, relay
-   * overhead), all scoped by the one filter bar above them. Each panel is
-   * self-contained: PANELS (script) lists its section, load() and render(). Every chart has its data table (BITV 9.1.1.1 / 9.1.3.1). Below
-   * 600px everything stacks; wide tables scroll inside their own focusable
-   * region, never the page (BITV 9.1.4.10). */
+   * The collapsible filter panel (filterpanel.js) and "Copy link to this
+   * view" sit above five tabs (tabs.js): Overview, Trends, Reliability,
+   * Model integrity, Billing. Each tab holds one or two
+   * <section class="card panel">; PANELS (script) lists each panel's tab,
+   * load() and render(), and only the shown tab's panels load. Every chart
+   * has its data table (BITV 9.1.1.1 / 9.1.3.1). Below 600px everything
+   * stacks; wide tables scroll inside their own focusable region, never the
+   * page (BITV 9.1.4.10). */
   .local-note { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
   .local-note .zicon { width: 13px; height: 13px; flex: none; }
   .local-note code { font-size: 11.5px; color: var(--ink2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
 
-  .panel, .filters { margin-top: 22px; padding: 18px 20px 20px; min-width: 0; }
-  .panel[hidden], .filters[hidden] { display: none; }
-  .panel h2, .filters h2 { font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.2px; margin: 0; }
+  .panel { margin-top: 22px; padding: 18px 20px 20px; min-width: 0; }
+  [role="tabpanel"] > .panel:first-child { margin-top: 0; }
+  .panel h2 { font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.2px; margin: 0; }
   .psub { margin: 4px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
   .pbody { margin-top: 14px; min-width: 0; transition: opacity 0.2s; }
   /* refetch keeps the frame: the previous numbers stay, dimmed */
@@ -33,8 +37,8 @@
   .state.loading { font-family: var(--mono); font-size: 13px; color: var(--faint); }
   .errbox { margin-top: 0; }
 
-  /* filter bar */
-  .frow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; margin-top: 12px; }
+  /* filter fields (inside the shared panel, filterpanel.css) */
+  .frow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
   .flab { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); }
   .range { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 100%; }
   .range .seg button { flex: 0 1 auto; min-width: 0; padding: 8px 12px; font-size: 12.5px; }
@@ -45,10 +49,22 @@
   .fgrid label > span, .custom label > span, .ctl label > span, .lbctl label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); overflow-wrap: anywhere; }
   .fgrid .in, .custom .in, .ctl .in, .lbctl .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
   .fgrid select.in, .ctl select.in, .lbctl select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
-  .ffoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: var(--ink2); }
-  .ffoot .linkbtn[hidden] { display: none; }
   .ferr { margin: 10px 0 0; font-size: 12.5px; font-weight: 600; color: var(--bad); }
   .ferr:empty { display: none; }
+
+  /* share link + tabs */
+  .views[hidden] { display: none; }
+  .share { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px 12px; margin: 16px 0 12px; }
+  .share .btn .zicon { width: 14px; height: 14px; }
+  .sharest { font-size: 12.5px; font-weight: 600; color: var(--ink2); }
+  .sharest:empty { display: none; }
+  .sharefb { margin: 0 0 14px; }
+  .sharefb[hidden] { display: none; }
+  .sharefb label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); }
+  .sharefb .in { font-family: var(--mono); font-size: 12.5px; padding: 8px 11px; border-radius: 10px; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink); }
+  /* five tabs: they wrap rather than squeeze long labels (DE, FR) */
+  .atabs { flex-wrap: wrap; }
+  .atabs [role="tab"] { flex: 1 1 auto; overflow-wrap: anywhere; }
 
   /* KPI tiles */
   .kpis { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
@@ -141,7 +157,8 @@
   .subh { margin: 18px 0 0; font-size: 13.5px; font-weight: 700; color: var(--ink); }
 
   /* integrity matrix */
-  .dt td.chk { min-width: 8.5em; }
+  /* position: the sr-only name (absolute) stays inside the scrolling table */
+  .dt td.chk { min-width: 8.5em; position: relative; }
   .dt td.chk .badge { margin-top: 0; }
   .dt td.chk.low .badge { opacity: 0.7; }
   .dt td .few { display: block; font-size: 11px; color: var(--warn); }
@@ -157,7 +174,7 @@
   .empty-box p { margin: 0 0 16px; color: var(--ink2); font-size: 15px; }
 
   @media (max-width: 600px) {
-    .panel, .filters { padding: 14px 14px 16px; }
+    .panel { padding: 14px 14px 16px; }
     .fgrid { grid-template-columns: 1fr 1fr; }
     .kpis { grid-template-columns: 1fr 1fr; }
     .kpi .kv { font-size: 19px; }
@@ -178,80 +195,104 @@
 
     <section class="card empty-box" id="empty" hidden></section>
 
-    <section class="card filters" id="filters" aria-labelledby="f-h" hidden>
-      <h2 id="f-h" data-en="Filters">筛选</h2>
-      <div id="fbody"></div>
-    </section>
+    <section class="card filters" id="filters" hidden></section>
 
-    <section class="card panel" id="panel-kpi" aria-labelledby="kpi-h" aria-busy="true" hidden>
-      <h2 id="kpi-h" data-en="Overview">概览</h2>
-      <p class="psub" id="kpi-sub"></p>
-      <div class="pbody" id="kpi-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
-    </section>
-
-    <section class="card panel" id="panel-cmp" aria-labelledby="cmp-h" aria-busy="true" hidden>
-      <h2 id="cmp-h" data-en="Comparison over time">随时间对比</h2>
-      <p class="psub" data-en="The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.">折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。</p>
-      <div class="pbody">
-        <div id="cmp-ctl"></div>
-        <div id="cmp-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+    <div class="views" id="views" hidden>
+      <div class="share">
+        <span class="sharest" id="sharest" role="status"></span>
+        <button type="button" class="btn sm" id="sharebtn"><span class="pico" id="shareIcon"></span><span data-en="Copy link to this view">复制此视图的链接</span></button>
       </div>
-    </section>
-
-    <section class="card panel" id="panel-lb" aria-labelledby="lb-h" aria-busy="true" hidden>
-      <h2 id="lb-h" data-en="Leaderboard">排行榜</h2>
-      <p class="psub" data-en="Medians over the selected range; n is the number of runs that measured a value.">所选时间范围内的中位数；n 为测得该值的检测次数。</p>
-      <div class="pbody">
-        <div id="lb-ctl"></div>
-        <div id="lb-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+      <div class="sharefb" id="sharefb" hidden>
+        <label><span data-en="Link to this view">此视图的链接</span><input class="in" type="text" id="shareurl" readonly /></label>
       </div>
-      <p class="sr-only" id="lbst" role="status"></p>
-    </section>
 
-    <section class="card panel" id="panel-heat" aria-labelledby="heat-h" aria-busy="true" hidden>
-      <h2 id="heat-h" data-en="Peak hours">高峰时段</h2>
-      <p class="psub" data-en="Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).">这个中转站在高峰时段会变慢或更容易出错吗？每个格子是你所在时区某个星期几的某个小时，颜色表示该时段开始的检测的中位数（色阶见网格下方）。</p>
-      <div class="pbody">
-        <div id="heat-ctl"></div>
-        <div id="heat-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+      <div class="tabs atabs" role="tablist" id="atabs" aria-label="分析视图" data-en-aria-label="Analytics views">
+        <button type="button" role="tab" id="tab-overview" aria-selected="true" aria-controls="panel-overview" tabindex="0"><span data-en="Overview">概览</span></button>
+        <button type="button" role="tab" id="tab-trends" aria-selected="false" aria-controls="panel-trends" tabindex="-1"><span data-en="Trends">趋势</span></button>
+        <button type="button" role="tab" id="tab-reliability" aria-selected="false" aria-controls="panel-reliability" tabindex="-1"><span data-en="Reliability">可靠性</span></button>
+        <button type="button" role="tab" id="tab-integrity" aria-selected="false" aria-controls="panel-integrity" tabindex="-1"><span data-en="Model integrity">模型真实性</span></button>
+        <button type="button" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1"><span data-en="Billing">计费</span></button>
       </div>
-    </section>
 
-    <section class="card panel" id="panel-err" aria-labelledby="err-h" aria-busy="true" hidden>
-      <h2 id="err-h" data-en="Errors and reliability">错误与可靠性</h2>
-      <p class="psub" data-en="Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls.">按原因统计对中转站的失败调用：限流（HTTP 429）、服务器错误（5xx）、超时及其他，占全部调用的比例。</p>
-      <div class="pbody">
-        <div id="err-ctl"></div>
-        <div id="err-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
-      </div>
-    </section>
+      <section role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="0">
+        <section class="card panel" id="panel-kpi" aria-labelledby="kpi-h" aria-busy="true">
+          <h2 id="kpi-h" data-en="Overview">概览</h2>
+          <p class="psub" id="kpi-sub"></p>
+          <div class="pbody" id="kpi-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+        </section>
+        <section class="card panel" id="panel-lb" aria-labelledby="lb-h" aria-busy="true">
+          <h2 id="lb-h" data-en="Leaderboard">排行榜</h2>
+          <p class="psub" data-en="Medians over the selected range; n is the number of runs that measured a value.">所选时间范围内的中位数；n 为测得该值的检测次数。</p>
+          <div class="pbody">
+            <div id="lb-ctl"></div>
+            <div id="lb-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+          </div>
+          <p class="sr-only" id="lbst" role="status"></p>
+        </section>
+      </section>
 
-    <section class="card panel" id="panel-int" aria-labelledby="int-h" aria-busy="true" hidden>
-      <h2 id="int-h" data-en="Model integrity">模型真实性</h2>
-      <p class="psub" data-en="Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.">它是不是自称的那个模型，是否完整、功能齐全？按中转站与模型列出身份、上下文窗口与能力检查的结果。</p>
-      <div class="pbody" id="int-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
-    </section>
+      <section role="tabpanel" id="panel-trends" aria-labelledby="tab-trends" tabindex="0" hidden>
+        <section class="card panel" id="panel-cmp" aria-labelledby="cmp-h" aria-busy="true">
+          <h2 id="cmp-h" data-en="Comparison over time">随时间对比</h2>
+          <p class="psub" data-en="The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.">折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。</p>
+          <div class="pbody">
+            <div id="cmp-ctl"></div>
+            <div id="cmp-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+          </div>
+        </section>
+        <section class="card panel" id="panel-heat" aria-labelledby="heat-h" aria-busy="true">
+          <h2 id="heat-h" data-en="Peak hours">高峰时段</h2>
+          <p class="psub" data-en="Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).">这个中转站在高峰时段会变慢或更容易出错吗？每个格子是你所在时区某个星期几的某个小时，颜色表示该时段开始的检测的中位数（色阶见网格下方）。</p>
+          <div class="pbody">
+            <div id="heat-ctl"></div>
+            <div id="heat-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+          </div>
+        </section>
+      </section>
 
-    <section class="card panel" id="panel-bill" aria-labelledby="bill-h" aria-busy="true" hidden>
-      <h2 id="bill-h" data-en="Billing and tokens">计费与 token</h2>
-      <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens zing counted. Above 100%: the relay reports more tokens than zing counted (you may be billed for more). zing's counts are estimates, so small deviations are normal.">计费比 = 中转站报告的 token ÷ zing 统计的 token。高于 100%：中转站报告的 token 多于 zing 统计的（可能多计费）。zing 的统计是估算，小幅偏差属正常。</p>
-      <div class="pbody">
-        <div id="bill-ctl"></div>
-        <div id="bill-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
-      </div>
-    </section>
+      <section role="tabpanel" id="panel-reliability" aria-labelledby="tab-reliability" tabindex="0" hidden>
+        <section class="card panel" id="panel-err" aria-labelledby="err-h" aria-busy="true">
+          <h2 id="err-h" data-en="Errors and reliability">错误与可靠性</h2>
+          <p class="psub" data-en="Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls.">按原因统计对中转站的失败调用：限流（HTTP 429）、服务器错误（5xx）、超时及其他，占全部调用的比例。</p>
+          <div class="pbody">
+            <div id="err-ctl"></div>
+            <div id="err-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+          </div>
+        </section>
+        <section class="card panel" id="panel-ovh" aria-labelledby="ovh-h" aria-busy="true">
+          <h2 id="ovh-h" data-en="Relay overhead">中转开销</h2>
+          <p class="psub" data-en="Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.">中转站在自己的响应头里报告的处理耗时，与到它的网络往返时间并列（中位数）。中转站的数据是自报的，未经核实。</p>
+          <div class="pbody" id="ovh-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+        </section>
+      </section>
 
-    <section class="card panel" id="panel-ovh" aria-labelledby="ovh-h" aria-busy="true" hidden>
-      <h2 id="ovh-h" data-en="Relay overhead">中转开销</h2>
-      <p class="psub" data-en="Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.">中转站在自己的响应头里报告的处理耗时，与到它的网络往返时间并列（中位数）。中转站的数据是自报的，未经核实。</p>
-      <div class="pbody" id="ovh-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
-    </section>
+      <section role="tabpanel" id="panel-integrity" aria-labelledby="tab-integrity" tabindex="0" hidden>
+        <section class="card panel" id="panel-int" aria-labelledby="int-h" aria-busy="true">
+          <h2 id="int-h" data-en="Model integrity">模型真实性</h2>
+          <p class="psub" data-en="Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.">它是不是自称的那个模型，是否完整、功能齐全？按中转站与模型列出身份、上下文窗口与能力检查的结果。</p>
+          <div class="pbody" id="int-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+        </section>
+      </section>
+
+      <section role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" tabindex="0" hidden>
+        <section class="card panel" id="panel-bill" aria-labelledby="bill-h" aria-busy="true">
+          <h2 id="bill-h" data-en="Billing and tokens">计费与 token</h2>
+          <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens zing counted. Above 100%: the relay reports more tokens than zing counted (you may be billed for more). zing's counts are estimates, so small deviations are normal.">计费比 = 中转站报告的 token ÷ zing 统计的 token。高于 100%：中转站报告的 token 多于 zing 统计的（可能多计费）。zing 的统计是估算，小幅偏差属正常。</p>
+          <div class="pbody">
+            <div id="bill-ctl"></div>
+            <div id="bill-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+          </div>
+        </section>
+      </section>
+    </div>
   </main>
 </div>
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
 <script src="/v2/static/charts.js"></script>
+<script src="/v2/static/filterpanel.js"></script>
+<script src="/v2/static/tabs.js"></script>
 <script>
 (function () {
   "use strict";
@@ -318,26 +359,40 @@
   var BUCKETS = ["hour", "day", "week"];
   var BUCKET_MS = { hour: 36e5, day: 864e5, week: 6048e5 };
   var bucketName = function (b) {
-    return b === "hour" ? T("按小时", "By hour") : b === "week" ? T("按周", "By week") : T("按天", "By day");
+    return b === "hour" ? T("按小时", "By hour") : b === "week" ? T("按周", "By week") :
+      b === "dow_hour" ? T("按星期几和小时", "By weekday and hour") : T("按天", "By day");
   };
   function lowHint() {
     return Tf("此时间段少于 {min} 次检测——单次检测可能是离群值，因此淡化显示。",
       "Fewer than {min} runs in this bucket — shown faded because a single audit can be an outlier.", { min: minRuns() });
   }
+  // the weekday x hour grids: a cell (tooltip, table row), or the hatched cells (note)
+  function cellHint() {
+    return Tf("此格子少于 {min} 次检测——单次检测可能是离群值，因此淡化显示。",
+      "Fewer than {min} runs in this cell — shown faded because a single audit can be an outlier.", { min: minRuns() });
+  }
+  function hatchedHint() {
+    return Tf("斜线格子少于 {min} 次检测——单次检测可能是离群值，因此淡化显示。",
+      "Hatched cells have fewer than {min} runs — shown faded because a single audit can be an outlier.", { min: minRuns() });
+  }
   function relayLabel(r) { return r ? r.label || r.key : ""; }
 
-  /* ---------------- state: filters + view, in the URL ---------------- */
-  // Filters scope every panel; view settings belong to one panel. Both live
-  // in the URL's fragment (shareable, bookmarkable); the last view is also
-  // remembered per viewer (localStorage, may be missing or throw).
-  var VKEY = "zing.v2.analytics.view";
+  /* ---------------- state: tab + filters + view, in the URL ---------------- */
+  // Filters scope every panel; view settings belong to one panel; the tab
+  // picks the panels shown. All of it lives in the URL's fragment
+  // (#tab=trends&range=30&…: shareable, bookmarkable, "Copy link to this
+  // view"); the last view is also remembered per viewer (localStorage, may
+  // be missing or throw). A fragment without tab= opens Overview.
+  var VKEY = "zing.v2.analytics.view", OKEY = "zing.v2.analytics.filtersOpen";
+  var TABS = ["overview", "trends", "reliability", "integrity", "billing"];
+  var ERR_BUCKETS = BUCKETS.concat(["dow_hour"]);
   var HEAT_METRICS = ["ttft_p50", "latency_p50", "decode_tps", "success_rate", "error_rate", "rate_limited_rate", "timeout_rate", "score"];
   var BILL_METRICS = ["billing_ratio_prompt", "billing_ratio_completion", "reasoning_share", "cached_input_share"];
   var RANGES = ["7", "30", "90", "all", "custom"];
   var SORTS = ["label", "runs", "score", "ttft_p50", "decode_tps", "success_rate", "billing_ratio_prompt",
     "billing_ratio_completion", "model_mismatch_rate", "risk_high_share", "last_run"];
   var F, V;
-  var state = { opts: null, summary: null, series: null, board: null, err: {}, charts: {},
+  var state = { opts: null, summary: null, series: null, board: null, err: {}, charts: {}, written: "",
     seq: { all: 0, kpi: 0, cmp: 0, lb: 0, heat: 0, errs: 0, int: 0, bill: 0, ovh: 0 } };
 
   function readState() {
@@ -366,6 +421,7 @@
     };
     var sort = get("sort", "").split(".");
     V = {
+      tab: one("tab", TABS, "overview"),
       metric: get("metric", "score"),
       group: one("group", GROUPS, "relay"),
       bucket: one("bucket", BUCKETS, "day"),
@@ -377,7 +433,7 @@
       hm: one("hm", HEAT_METRICS, "ttft_p50"),
       hr: get("hr", ""),
       eg: one("eg", ["relay", "model"], "relay"),
-      eb: one("eb", BUCKETS, "day"),
+      eb: one("eb", ERR_BUCKETS, "day"),
       bm: one("bm", BILL_METRICS, "billing_ratio_prompt"),
       ht: get("ht", "") === "1",
       et: get("et", "") === "1",
@@ -385,8 +441,10 @@
     };
   }
 
-  function writeState() {
+  // the whole view as a fragment (without "#")
+  function stateQuery() {
     var q = new URLSearchParams();
+    q.set("tab", V.tab);
     q.set("range", F.range);
     if (F.range === "custom") { q.set("from", F.from); q.set("to", F.to); }
     ["suite", "stream_mode"].forEach(function (k) { if (F[k] != null) q.set(k, F[k]); });
@@ -408,10 +466,25 @@
     q.set("eb", V.eb);
     q.set("bm", V.bm);
     ["ht", "et", "bt"].forEach(function (k) { if (V[k]) q.set(k, "1"); });
-    var s = q.toString();
-    // replaceState: no history entry per filter, and no reload
-    try { history.replaceState(null, "", location.pathname + "#" + s); } catch (e) { /* ignore */ }
+    return q.toString();
+  }
+  function writeState() {
+    var s = stateQuery();
+    state.written = s;
+    // replaceState: no history entry per filter or tab, and no reload
+    try { history.replaceState(null, "", location.pathname + location.search + "#" + s); } catch (e) { /* ignore */ }
     try { localStorage.setItem(VKEY, s); } catch (e) { /* ignore */ }
+    // an open copy-the-link fallback always shows the current view
+    var fb = $("#shareurl");
+    if (fb && !$("#sharefb").hidden) fb.value = shareURL();
+  }
+  function shareURL() { return location.origin + location.pathname + "#" + stateQuery(); }
+  // suite / stream mode not in the link: the most common, so the default
+  // view never mixes suites or modes
+  function resolveDefaults() {
+    var o = state.opts || {};
+    if (F.suite == null) F.suite = o.suites && o.suites.length ? o.suites[0].value : "";
+    if (F.stream_mode == null) F.stream_mode = o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "";
   }
 
   /* ---------------- time range ---------------- */
@@ -492,10 +565,8 @@
     return getJSON("/api/analytics/options").then(function (o) {
       state.opts = o;
       if (!o.runs) return renderEmpty();
-      if (F.suite == null) F.suite = o.suites && o.suites.length ? o.suites[0].value : "";
-      if (F.stream_mode == null) F.stream_mode = o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "";
-      $("#filters").hidden = false;
-      PANELS.forEach(function (p) { $("#" + p.id).hidden = false; });
+      resolveDefaults();
+      $("#views").hidden = false;
       renderFilters();
       refresh();
     }).catch(function (e) {
@@ -508,20 +579,48 @@
     });
   }
 
-  // Every panel the filters scope, each loading on its own (a panel's
-  // controls reload only that panel).
+  // New filters: the shown tab's panels reload (each on its own; a panel's
+  // controls reload only that panel), the other tabs' are stale and load
+  // when their tab is shown.
   function refresh() {
     var r = rangeOf();
-    $("#ferr").textContent = r.error || "";
-    if (r.error) return;
+    var fe = $("#ferr");
+    if (fe) fe.textContent = r.error || "";
+    syncFilterChrome();
+    if (r.error) {
+      // e.g. a link with an incomplete custom range: show the dates to fix
+      if (!fpanel.isOpen()) fpanel.setOpen(true);
+      return;
+    }
     writeState();
+    invalidate();
     var seq = ++state.seq.all;
     say(T("正在加载分析…", "Loading analytics…"));
-    Promise.all(PANELS.map(function (p) { return p.load(); })).then(function () {
+    activate(V.tab).then(function () {
       if (seq !== state.seq.all) return;
-      var s = state.summary;
-      say(s ? Tf("已更新：此范围内 {n} 次检测。", "Updated: {n} runs in this range.", { n: s.runs }) : "");
+      var s = V.tab === "overview" && state.summary;
+      say(s ? Tf("已更新：此范围内 {n} 次检测。", "Updated: {n} runs in this range.", { n: s.runs }) : T("已更新。", "Updated."));
     });
+  }
+  // every panel is stale; answers still on their way are for the old filters
+  function invalidate() {
+    PANELS.forEach(function (p) { p.stale = true; state.seq[p.seq]++; });
+  }
+  // load a tab's stale panels; the others redraw their charts if the width
+  // changed while the tab was hidden
+  function activate(tab) {
+    var loads = [];
+    // an unfinished custom range: nothing loads until it is fixed (the filter
+    // panel says what is wrong)
+    if (rangeOf().error) return Promise.resolve();
+    PANELS.forEach(function (p) {
+      if (p.tab !== tab || !p.stale) return;
+      p.stale = false;
+      p.loaded = true;
+      loads.push(p.load());
+    });
+    redrawCharts();
+    return Promise.all(loads);
   }
 
   function loadSummary() {
@@ -640,12 +739,40 @@
       F.suite === (o.suites && o.suites.length ? o.suites[0].value : "") &&
       F.stream_mode === (o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "");
   }
+  // filters that differ from the defaults (the toggle's badge)
+  function activeCount() {
+    var o = state.opts || {};
+    return [F.range !== "30", !!F.api, F.source !== "all", !!F.relay, !!F.model,
+      F.suite !== (o.suites && o.suites.length ? o.suites[0].value : ""),
+      F.stream_mode !== (o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "")].filter(Boolean).length;
+  }
+  // what the panels show, in words (under the closed panel's toggle): the
+  // period always, then every filter that narrows it
+  function filterSummary() {
+    var out = [], r = rangeOf();
+    if (F.range !== "custom") out.push(T(RANGE_L[F.range][0], RANGE_L[F.range][1]));
+    else if (!r.error) out.push(dayRange(r.from, r.to));
+    if (F.suite) out.push(F.suite);
+    if (F.stream_mode) out.push(streamLabel(F.stream_mode));
+    if (F.api) out.push(F.api);
+    if (F.source !== "all") {
+      out.push(Tf("{label}：{value}", "{label}: {value}", { label: T("来源", "Source"), value: F.source === "monitor" ? T("监控", "Monitor") : T("手动", "Manual") }));
+    }
+    if (F.relay) out.push(relayName(F.relay));
+    if (F.model) out.push(F.model);
+    return out;
+  }
+  var fpanel = window.ZingFilterPanel.create($("#filters"), {
+    storeKey: OKEY,
+    onReset: function () { resetFilters(); },
+  });
   function renderFilters() {
-    var o = state.opts, ae = document.activeElement;
-    var focus = ae && $("#filters").contains(ae) ? (ae.getAttribute("data-f") || ae.getAttribute("data-range") && "r:" + ae.getAttribute("data-range") || ae.id) : null;
+    var o = state.opts;
     var r = rangeOf();
     var vc = function (list) { return (list || []).map(function (x) { return { v: x.value, t: x.value }; }); };
-    $("#fbody").innerHTML =
+    fpanel.render({ count: activeCount(), summary: filterSummary(), foot:
+      '<span id="fcount">' + esc(Tf("历史中共 {n} 次检测（{m} 次由监控产生）。", "{n} runs in the history ({m} by monitors).", { n: o.runs, m: o.monitor })) + "</span>",
+    body:
       '<div class="frow"><div class="range"><span class="flab" id="rng-l">' + esc(T("时间范围", "Period")) + "</span>" +
       '<div class="seg" role="group" aria-labelledby="rng-l">' + RANGES.map(function (k) {
         return '<button type="button" data-range="' + k + '" aria-pressed="' + (F.range === k) + '">' + esc(T(RANGE_L[k][0], RANGE_L[k][1])) + "</button>";
@@ -664,23 +791,15 @@
       ], F.source === "all" ? "" : F.source) +
       selectHTML("relay", T("中转站", "Relay / provider"), (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; }), F.relay) +
       selectHTML("model", T("声称模型", "Claimed model"), (o.models || []).map(function (x) { return { v: x.key, t: x.key }; }), F.model) +
-      "</div>" +
-      '<div class="ffoot"><span>' + esc(Tf("历史中共 {n} 次检测（{m} 次由监控产生）。", "{n} runs in the history ({m} by monitors).", { n: o.runs, m: o.monitor })) + "</span>" +
-      '<button type="button" class="linkbtn" id="freset"' + (isDefault() ? " hidden" : "") + ">" + esc(T("重置筛选", "Reset filters")) + "</button></div>";
-    if (focus) {
-      var el = focus.indexOf("r:") === 0 ? $('[data-range="' + focus.slice(2) + '"]') : $('[data-f="' + focus + '"]') || document.getElementById(focus);
-      if (el) el.focus();
-    }
+      "</div>" });
   }
   function syncFilterChrome() {
-    var b = $("#freset");
-    if (b) b.hidden = isDefault();
+    fpanel.sync({ count: activeCount(), summary: filterSummary() });
   }
   function setFilter(k, v) {
     if (k === "source") v = v || "all";
     if (F[k] === v) return;
     F[k] = v;
-    syncFilterChrome();
     refresh();
   }
   $("#filters").addEventListener("change", function (ev) {
@@ -701,9 +820,7 @@
       F.range = k;
       renderFilters();
       refresh();
-      return;
     }
-    if (ev.target.closest("#freset")) resetFilters();
   });
   function resetFilters() {
     var o = state.opts;
@@ -712,8 +829,6 @@
       api: "", source: "all", relay: "", model: "" };
     renderFilters();
     refresh();
-    var first = $('#filters [data-range="30"]');
-    if (first) first.focus();
   }
 
   /* ---------------- overview (KPI tiles) ---------------- */
@@ -777,7 +892,10 @@
     }).join("") + "</ul>";
   }
   $("#kpi-body").addEventListener("click", function (ev) {
-    if (ev.target.closest("#kreset")) resetFilters();
+    if (ev.target.closest("#kreset")) {
+      resetFilters();
+      fpanel.focusStart();
+    }
   });
 
   /* ---------------- comparison over time ---------------- */
@@ -956,8 +1074,7 @@
       xTick: tick, tipTime: bucketTime, series: withData, marks: marks, lowHint: lowHint(),
       yMin: m.unit === "score" ? 0 : null, yMax: m.unit === "score" ? 100 : null,
     };
-    state.chartCfg = cfg;
-    C.timeChart($("#cmp-chart"), cfg);
+    drawChart("cmp", "cmp-chart", C.timeChart, cfg);
   }
 
   // A "show as table" disclosure: pfx names its ids (pfx + "tog" / "body" /
@@ -1139,8 +1256,8 @@
   function errBox(prefix, msg) {
     return '<div class="errbox" role="alert">' + esc(prefix) + esc(msg) + "</div>";
   }
-  function fewNote() {
-    return '<p class="note">' + ico("info") + "<span>" + esc(lowHint()) + " " +
+  function fewNote(hint) {
+    return '<p class="note">' + ico("info") + "<span>" + esc(hint || lowHint()) + " " +
       '<a href="/v2/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>";
   }
   function relayName(key) {
@@ -1186,6 +1303,10 @@
     return dayName(dow, true) + " " + dfmt({ hour: "numeric", minute: "2-digit" }, dayDate(dow, h)) + "–" +
       dfmt({ hour: "numeric", minute: "2-digit" }, new Date(2024, 0, dow, h + 1));
   }
+  function weekdays() { return [1, 2, 3, 4, 5, 6, 7].map(function (i) { return dayName(i); }); }
+  function gridLegend() {
+    return { few: Tf("少于 {min} 次检测（斜线）", "fewer than {min} runs (hatched)", { min: minRuns() }), none: T("没有检测", "no runs") };
+  }
   function heatRelay() {
     if (F.relay) return F.relay; // the filter decides
     var keys = ((state.opts && state.opts.relays) || []).map(function (r) { return r.key; });
@@ -1227,24 +1348,21 @@
     body.innerHTML = '<div class="axcap" aria-hidden="true"><span>' + esc(name + (unit ? " · " + unit : "") + " · " + who) + "</span><span>" +
       esc(Tf("时间（{tz}）", "Time ({tz})", { tz: tzName() })) + "</span></div>" +
       '<div class="chartbox" id="heat-chart"></div>' +
-      (cells.some(function (c) { return c.low; }) ? '<div class="notes">' + fewNote() + "</div>" : "") +
+      (cells.some(function (c) { return c.low; }) ? '<div class="notes">' + fewNote(hatchedHint()) + "</div>" : "") +
       discHTML("ht", "ht", Tf("{metric}，按星期几和小时（{who}）", "{metric} by weekday and hour ({who})", { metric: name, who: who }),
         th(T("星期", "Weekday")) + th(T("小时", "Hour")) + th(m.agg === "share" ? T("占比", "Share") : T("中位数", "Median"), true) +
         th(T("检测次数", "Runs"), true) + th(T("说明", "Note")),
         cells.map(function (c) {
           return '<tr class="' + (c.low ? "low" : "") + '"><td class="when">' + esc(dayName(c.dow, true)) + '</td><td class="when">' +
             esc(dfmt({ hour: "numeric", minute: "2-digit" }, dayDate(c.dow, c.hour)) + "–" + dfmt({ hour: "numeric", minute: "2-digit" }, new Date(2024, 0, c.dow, c.hour + 1))) +
-            '</td><td class="n">' + esc(fmt(c.v, m.unit)) + '</td><td class="n">' + esc(String(c.runs)) + '</td><td class="nt">' + (c.low ? esc(lowHint()) : "") + "</td></tr>";
+            '</td><td class="n">' + esc(fmt(c.v, m.unit)) + '</td><td class="n">' + esc(String(c.runs)) + '</td><td class="nt">' + (c.low ? esc(cellHint()) : "") + "</td></tr>";
         }).join(""));
     var cfg = {
       id: "heatc", title: Tf("{metric}，按星期几和小时", "{metric} by weekday and hour", { metric: name }), desc: desc, unit: m.unit,
-      cells: cells, days: [1, 2, 3, 4, 5, 6, 7].map(function (i) { return dayName(i); }), hourLabel: hourName, tipTime: hourSpan,
-      lowHint: lowHint(),
-      legend: { few: Tf("少于 {min} 次检测（斜线）", "fewer than {min} runs (hatched)", { min: minRuns() }),
-        none: T("没有检测", "no runs") },
+      cells: cells, days: weekdays(), hourLabel: hourName, tipTime: hourSpan,
+      lowHint: cellHint(), legend: gridLegend(),
     };
-    state.charts.heat = cfg;
-    C.heatmap($("#heat-chart"), cfg);
+    drawChart("heat", "heat-chart", C.heatmap, cfg);
   }
   onCtl("#heat-ctl", loadHeat);
 
@@ -1273,7 +1391,7 @@
   function renderErrors() {
     ctlHTML($("#err-ctl"), '<div class="ctl">' +
       selectCtl('data-v="eg"', T("表格分组", "Table by"), [{ v: "relay", t: groupName("relay") }, { v: "model", t: groupName("model") }], V.eg) +
-      selectCtl('data-v="eb"', T("时间段", "Time buckets"), BUCKETS.map(function (b) { return { v: b, t: bucketName(b) }; }), V.eb) + "</div>");
+      selectCtl('data-v="eb"', T("时间段", "Time buckets"), ERR_BUCKETS.map(function (b) { return { v: b, t: bucketName(b) }; }), V.eb) + "</div>");
     var body = $("#err-body"), d = state.errs;
     if (state.err.errs) { body.innerHTML = errBox(T("无法读取错误统计：", "Could not load the errors: "), state.err.errs); return; }
     if (!d) return;
@@ -1286,37 +1404,45 @@
       return;
     }
     var cats = errCats();
+    // weekday x hour: a grid of the failed share (the table keeps the causes)
+    var grid = V.eb === "dow_hour";
     var bars = d.buckets.map(function (b) {
       var c = b.counts;
-      return { t: Date.parse(b.bucket), total: b.requests, runs: b.runs, low: !!b.low_n, raw: b,
+      return { t: grid ? b.dow * 24 + b.hour : Date.parse(b.bucket), dow: b.dow, hour: b.hour, total: b.requests, runs: b.runs, low: !!b.low_n, raw: b,
         counts: { rate_limited: c.rate_limited, server_5xx: c.server_5xx, timeout: c.timeout, rest: c.client_4xx + c.network + c.other } };
     }).filter(function (b) { return !isNaN(b.t); });
+    var when = function (b) { return grid ? hourSpan(b.dow, b.hour) : bucketTime(b.t, V.eb); };
     var legend = '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '">' + cats.map(function (c) {
       return '<li><span class="sw ' + c.cls + '" aria-hidden="true"></span><span class="nm">' + esc(c.label) + "</span></li>";
     }).join("") + "</ul>";
     var r = rangeOf(), bms = BUCKET_MS[V.eb];
     var worst = bars.reduce(function (a, b) { return !a || b.raw.error_share > a.raw.error_share ? b : a; }, null);
-    var desc = Tf("每个时间段失败调用的占比（{bucket}），按原因堆叠。总计 {share} 失败；最高 {max}（{when}）。下方表格列出全部数值。",
-      "Share of failed calls per time bucket ({bucket}), stacked by cause. {share} failed overall; highest {max} ({when}). The tables below list every value.", {
-        bucket: bucketName(V.eb), share: fmt(tot.error_share, "ratio"), max: worst ? fmt(worst.raw.error_share, "ratio") : "—",
-        when: worst ? bucketTime(worst.t, V.eb) : "—" });
+    var desc = grid
+      ? Tf("按星期几和小时（{tz}）统计的失败调用占比：{n} 个有数据的格子。总计 {share} 失败；最高 {max}（{when}）。下方表格列出全部数值。",
+        "Share of failed calls by weekday and hour ({tz}): {n} cells with data. {share} failed overall; highest {max} ({when}). The tables below list every value.", {
+          tz: tzName(), n: bars.length, share: fmt(tot.error_share, "ratio"), max: worst ? fmt(worst.raw.error_share, "ratio") : "—",
+          when: worst ? when(worst) : "—" })
+      : Tf("每个时间段失败调用的占比（{bucket}），按原因堆叠。总计 {share} 失败；最高 {max}（{when}）。下方表格列出全部数值。",
+        "Share of failed calls per time bucket ({bucket}), stacked by cause. {share} failed overall; highest {max} ({when}). The tables below list every value.", {
+          bucket: bucketName(V.eb), share: fmt(tot.error_share, "ratio"), max: worst ? fmt(worst.raw.error_share, "ratio") : "—",
+          when: worst ? when(worst) : "—" });
     var first = bars.length ? Math.min.apply(null, bars.map(function (b) { return b.t; })) : null;
     var shareTh = function (t) { return th(t, true); };
     var count = function (n) { return '<td class="n">' + esc(String(n)) + "</td>"; };
     var classes = d.classes;
     var gName = V.eg === "model" ? T("模型", "Model") : T("中转站", "Relay");
-    body.innerHTML = cov + legend +
+    body.innerHTML = cov + (grid ? "" : legend) +
       '<div class="axcap" aria-hidden="true"><span>' + esc(T("失败调用占比", "Failed calls") + " · %") + "</span><span>" +
       esc(Tf("时间（{tz}）", "Time ({tz})", { tz: tzName() })) + "</span></div>" +
       '<div class="chartbox" id="err-chart"></div>' +
-      (bars.some(function (b) { return b.low; }) ? '<div class="notes">' + fewNote() + "</div>" : "") +
+      (bars.some(function (b) { return b.low; }) ? '<div class="notes">' + fewNote(grid ? hatchedHint() : lowHint()) + "</div>" : "") +
       discHTML("et", "et", Tf("每个时间段的调用结果（{bucket}）", "Call outcomes per time bucket ({bucket})", { bucket: bucketName(V.eb) }),
         th(T("时间段", "Time bucket")) + th(T("调用", "Calls"), true) + classes.map(function (c) { return th(className(c), true); }).join("") +
         shareTh(T("失败占比", "Failed share")) + th(T("检测次数", "Runs"), true) + th(T("说明", "Note")),
         bars.map(function (b) {
-          return '<tr class="' + (b.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(b.t, V.eb)) + "</td>" + count(b.total) +
+          return '<tr class="' + (b.low ? "low" : "") + '"><td class="when">' + esc(when(b)) + "</td>" + count(b.total) +
             classes.map(function (c) { return count(b.raw.counts[c]); }).join("") +
-            '<td class="n">' + esc(fmt(b.raw.error_share, "ratio")) + "</td>" + count(b.runs) + '<td class="nt">' + (b.low ? esc(lowHint()) : "") + "</td></tr>";
+            '<td class="n">' + esc(fmt(b.raw.error_share, "ratio")) + "</td>" + count(b.runs) + '<td class="nt">' + (b.low ? esc(grid ? cellHint() : lowHint()) : "") + "</td></tr>";
         }).join("")) +
       '<h3 class="subh" id="eg-h">' + esc(V.eg === "model" ? T("按模型", "By model") : T("按中转站", "By relay")) + "</h3>" +
       '<div class="tscroll etab" tabindex="0" role="region" aria-labelledby="eg-cap"><table class="dt"><caption id="eg-cap">' +
@@ -1331,6 +1457,14 @@
           classes.map(function (c) { return count(g.counts[c]); }).join("") +
           ["error_share", "rate_limited_share", "timeout_share"].map(function (k) { return '<td class="n">' + esc(fmt(g[k], "ratio")) + "</td>"; }).join("") + "</tr>";
       }).join("") + "</tbody></table></div>";
+    if (grid) {
+      drawChart("errs", "err-chart", C.heatmap, {
+        id: "errc", title: T("失败调用，按星期几和小时", "Failed calls by weekday and hour"), desc: desc, unit: "ratio",
+        cells: bars.map(function (b) { return { dow: b.dow, hour: b.hour, v: b.raw.error_share, runs: b.runs, low: b.low }; }),
+        days: weekdays(), hourLabel: hourName, tipTime: hourSpan, lowHint: cellHint(), legend: gridLegend(),
+      });
+      return;
+    }
     var cfg = {
       id: "errc", title: T("失败调用随时间变化", "Failed calls over time"), desc: desc, bucketMs: bms,
       domain: r.from && first != null ? [Math.max(r.from.getTime(), first - bms), r.to.getTime()] : null,
@@ -1339,8 +1473,7 @@
         return Tf("{n} 次调用，{e} 次失败，来自 {runs} 次检测", "{n} calls, {e} failed, from {runs} runs", { n: b.total, e: b.raw.errors, runs: b.runs });
       },
     };
-    state.charts.errs = cfg;
-    C.stackBars($("#err-chart"), cfg);
+    drawChart("errs", "err-chart", C.stackBars, cfg);
   }
   onCtl("#err-ctl", loadErrors);
 
@@ -1360,10 +1493,17 @@
       return '<td class="chk">—<span class="cn">' + esc(cell && cell.other ? Tf("{n} 次无结论", "{n} inconclusive", { n: cell.other }) : T("未检查", "not checked")) + "</span></td>";
     }
     var st = cell.fail ? ["bad", "x", T("有失败", "Failed")] : cell.warn ? ["warn", "warning", T("有警告", "Warnings")] : ["good", "check", T("通过", "Passed")];
-    return '<td class="chk' + (cell.low_n ? " low" : "") + '"><span class="badge ' + st[0] + '">' + ico(st[1]) + esc(st[2]) + "</span>" +
-      '<span class="cn">' + esc(Tf("{p} / {n} 通过", "{p} of {n} passed", { p: cell.pass, n: cell.n })) +
-      (cell.warn ? " · " + esc(Tf("{n} 警告", "{n} warn", { n: cell.warn })) : "") + (cell.fail ? " · " + esc(Tf("{n} 失败", "{n} failed", { n: cell.fail })) : "") + "</span>" +
-      (cell.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</td>";
+    var counts = Tf("{p} / {n} 通过", "{p} of {n} passed", { p: cell.pass, n: cell.n }) +
+      (cell.warn ? " · " + Tf("{n} 警告", "{n} warn", { n: cell.warn }) : "") + (cell.fail ? " · " + Tf("{n} 失败", "{n} failed", { n: cell.fail }) : "");
+    // read as one name: "All 7 passed", or the verdict and its counts
+    // (the badge and the counts below it are the same, drawn)
+    var name = !cell.fail && !cell.warn ? Tf("全部 {n} 次通过", "All {n} passed", { n: cell.n })
+      : Tf("{status}：{counts}", "{status}: {counts}", { status: st[2], counts: counts });
+    if (cell.low_n) name += " · " + T("检测较少", "few runs");
+    return '<td class="chk' + (cell.low_n ? " low" : "") + '"><span class="sr-only">' + esc(name) + "</span>" +
+      '<span aria-hidden="true"><span class="badge ' + st[0] + '">' + ico(st[1]) + esc(st[2]) + "</span>" +
+      '<span class="cn">' + esc(counts) + "</span>" +
+      (cell.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</span></td>";
   }
   function renderIntegrity() {
     var body = $("#int-body"), d = state.int;
@@ -1443,8 +1583,17 @@
           T("下方表格列出全部数值。", "The table below lists every value."),
         domain: r.from ? [Math.max(r.from.getTime(), first - BUCKET_MS.day), r.to.getTime()] : null,
         xTick: tick, tipTime: function (t) { return bucketTime(t, "day"); }, series: withData, marks: [], lowHint: lowHint(),
-        ref: ratio ? { v: 1, text: "100%" } : null,
+        ref: ratio ? { v: 1, text: fmt(1, "ratio", { digits: 0 }) } : null,
       };
+      if (ratio) {
+        // zoomed to the data (with the 100% line and some room), not from 0%:
+        // deviations of a few percent stay visible
+        var vs = [1];
+        withData.forEach(function (x) { x.points.forEach(function (p) { [p.v, p.lo, p.hi].forEach(function (v) { if (typeof v === "number") vs.push(v); }); }); });
+        var vlo = Math.min.apply(null, vs), vhi = Math.max.apply(null, vs), pad = Math.max(0.05, (vhi - vlo) * 0.15);
+        cfg.yMin = Math.max(0, vlo - pad);
+        cfg.yMax = vhi + pad;
+      }
     } else {
       html += '<div class="empty-data">' + esc(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name })) + "</div>";
     }
@@ -1465,8 +1614,7 @@
         }).join("") + "</tbody></table></div>";
     }
     body.innerHTML = html;
-    state.charts.bill = cfg || null;
-    if (cfg) C.timeChart($("#bill-chart"), cfg);
+    if (cfg) drawChart("bill", "bill-chart", C.timeChart, cfg);
   }
   onCtl("#bill-ctl", loadBilling);
 
@@ -1508,43 +1656,116 @@
   }
 
   /* ---------------- panel registry ---------------- */
-  // One entry per <section class="card panel">, in page order: load() fetches
-  // with the current filters (F) and view (V) and renders, render() redraws
-  // from the data already loaded (language switch). Panels share nothing else.
+  // One entry per <section class="card panel">, in page order: its tab, the
+  // state.seq counter that drops its stale answers, load() fetches with the
+  // current filters (F) and view (V) and renders, render() redraws from the
+  // data already loaded (language switch). Panels share nothing else. A
+  // panel is stale until loaded with the current filters (activate()).
   var PANELS = [
-    { id: "panel-kpi", load: loadSummary, render: renderKpis },
-    { id: "panel-cmp", load: loadSeries, render: function () { renderCmpControls(); renderChart(); } },
-    { id: "panel-lb", load: loadBoard, render: function () { renderBoardControls(); renderBoard(); } },
-    { id: "panel-heat", load: loadHeat, render: renderHeat },
-    { id: "panel-err", load: loadErrors, render: renderErrors },
-    { id: "panel-int", load: loadIntegrity, render: renderIntegrity },
-    { id: "panel-bill", load: loadBilling, render: renderBilling },
-    { id: "panel-ovh", load: loadOverhead, render: renderOverhead },
+    { id: "panel-kpi", tab: "overview", seq: "kpi", load: loadSummary, render: renderKpis },
+    { id: "panel-lb", tab: "overview", seq: "lb", load: loadBoard, render: function () { renderBoardControls(); renderBoard(); } },
+    { id: "panel-cmp", tab: "trends", seq: "cmp", load: loadSeries, render: function () { renderCmpControls(); renderChart(); } },
+    { id: "panel-heat", tab: "trends", seq: "heat", load: loadHeat, render: renderHeat },
+    { id: "panel-err", tab: "reliability", seq: "errs", load: loadErrors, render: renderErrors },
+    { id: "panel-ovh", tab: "reliability", seq: "ovh", load: loadOverhead, render: renderOverhead },
+    { id: "panel-int", tab: "integrity", seq: "int", load: loadIntegrity, render: renderIntegrity },
+    { id: "panel-bill", tab: "billing", seq: "bill", load: loadBilling, render: renderBilling },
   ];
+  PANELS.forEach(function (p) { p.stale = true; p.loaded = false; });
+
+  // Charts drawn so far (by name): redrawn when their box changed width
+  // (window resized, or drawn while their tab was hidden).
+  function drawChart(name, id, draw, cfg) {
+    var host = document.getElementById(id);
+    state.charts[name] = { id: id, draw: draw, cfg: cfg };
+    host.zcW = host.clientWidth;
+    draw(host, cfg);
+  }
+  function redrawCharts() {
+    Object.keys(state.charts).forEach(function (k) {
+      var c = state.charts[k], host = document.getElementById(c.id);
+      if (!host || !host.clientWidth || host.clientWidth === host.zcW) return;
+      host.zcW = host.clientWidth;
+      c.draw(host, c.cfg);
+    });
+  }
+
+  /* ---------------- copy link to this view ---------------- */
+  // The clipboard where the browser allows it; otherwise (no clipboard API,
+  // or it refuses) a read-only field with the link, focused and selected.
+  var shareT = null;
+  function shareSay(msg, keep) {
+    var st = $("#sharest");
+    clearTimeout(shareT);
+    st.textContent = msg;
+    if (!keep) shareT = setTimeout(function () { st.textContent = ""; }, 6000);
+  }
+  $("#sharebtn").addEventListener("click", function () {
+    var url = shareURL();
+    var fb = $("#sharefb"), field = $("#shareurl");
+    function fallback() {
+      fb.hidden = false;
+      field.value = url;
+      field.focus();
+      field.select();
+      shareSay(T("无法自动复制，请复制下面的链接。", "Could not copy automatically — copy the link from the field below."), true);
+    }
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) return fallback();
+      navigator.clipboard.writeText(url).then(function () {
+        if (!fb.hidden) field.value = url;
+        shareSay(T("链接已复制", "Link copied"));
+      }, fallback);
+    } catch (e) { fallback(); }
+  });
 
   /* ---------------- boot ---------------- */
   $("#lockIcon").innerHTML = ico("lock");
-  var resizeT = null, lastW = 0;
+  $("#shareIcon").innerHTML = ico("link");
+  var resizeT = null;
   window.addEventListener("resize", function () {
     clearTimeout(resizeT);
-    resizeT = setTimeout(function () {
-      var host = $("#cmp-chart");
-      if (!host || host.clientWidth === lastW) return;
-      lastW = host.clientWidth;
-      if (state.chartCfg) C.timeChart(host, state.chartCfg);
-      var ch = state.charts;
-      if (ch.heat && $("#heat-chart")) C.heatmap($("#heat-chart"), ch.heat);
-      if (ch.errs && $("#err-chart")) C.stackBars($("#err-chart"), ch.errs);
-      if (ch.bill && $("#bill-chart")) C.timeChart($("#bill-chart"), ch.bill);
-    }, 150);
+    resizeT = setTimeout(redrawCharts, 150);
   });
   // live language switch: re-render from the data already loaded
   window.addEventListener("zing:lang", function () {
     if (!state.opts || !state.opts.runs) { if (state.opts) renderEmpty(); return; }
     renderFilters();
-    PANELS.forEach(function (p) { p.render(); });
+    PANELS.forEach(function (p) { if (p.loaded) p.render(); });
+  });
+  // a link to another view pasted into this tab's address bar (only the
+  // fragment changes, so no reload): take over its filters and view. Runs
+  // before tabs.js's own hashchange handler, which then shows its tab.
+  window.addEventListener("hashchange", function () {
+    var h = location.hash.slice(1);
+    if (h.indexOf("=") < 0 || h === state.written) return;
+    readState();
+    if (!state.opts || !state.opts.runs) return;
+    resolveDefaults();
+    renderFilters();
+    syncFilterChrome();
+    invalidate();
   });
   readState();
+  var wanted = V.tab;
+  var tabs = window.ZingTabs.init($("#atabs"), {
+    writeHash: false,
+    // #tab=…&range=… (no tab: Overview); other fragments (#main) are no view
+    fromHash: function (h) {
+      if (h.indexOf("=") < 0) return null;
+      var t = "";
+      try { t = new URLSearchParams(h).get("tab") || ""; } catch (e) { /* ignore */ }
+      return TABS.indexOf(t) >= 0 ? t : "overview";
+    },
+    onSelect: function (name) {
+      V.tab = name;
+      if (!state.opts || !state.opts.runs) return;
+      writeState();
+      activate(name);
+    },
+  });
+  // a view remembered here (no fragment): its tab
+  if (tabs.current() !== wanted) tabs.select(wanted, false, true);
   loadOptions();
 })();
 </script>
