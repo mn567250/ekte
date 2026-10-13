@@ -309,6 +309,8 @@
   "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "Un proxy che riscrive URL/nomi di pacchetti è un rischio per la supply chain — smetti di usarlo.",
   "Treat the advertised context window as unverified.": "Considera la finestra di contesto dichiarata come non verificata.",
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Aumenta --timeout / --max-request-time, o riduci --max-context-tokens, per misurare la finestra completa.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Controlla l'errore (ad es. un parametro di richiesta che questo endpoint rifiuta) e riesegui per misurare la finestra.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Aumenta --max-context-tokens per provare l'intera finestra dichiarata.",
   "Compare against a trusted baseline to confirm.": "Confronta con un riferimento affidabile per conferma.",
   "The relay likely truncates or summarizes long prompts.": "L'intermediario probabilmente tronca o riassume i prompt lunghi.",
   "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Finestra reale ~{effective_window} << {declared} dichiarati (rapporto {ratio}, sospetto troncamento silenzioso). L'inizio di un prompt di ~{front_truncated_at} token è stato scartato mentre la fine veniva ancora ricordata (troncamento in testa).",
@@ -547,6 +549,14 @@
   "context_window.measured": [
    "Finestra di contesto effettiva misurata",
    "Nessuna finestra dichiarata da confrontare; finestra effettiva misurata ~{effective_window} token."
+  ],
+  "context_window.verified_to_cap": [
+   "Finestra di contesto verificata fino al limite della sonda",
+   "L'ago viene richiamato a ~{effective_window} token, il gradino più alto sotto il limite di sonda di {probe_cap} token; la finestra dichiarata di {declared} token oltre non è stata provata."
+  ],
+  "context_window.probe_error": [
+   "La sonda della finestra di contesto ha ricevuto un errore",
+   "Una sonda di ~{errored_at} token ha ricevuto un errore ({error_status}); non è prova di troncamento."
   ],
   "model_identity.no_profile": [
    "Il modello dichiarato non è nella base di conoscenza",

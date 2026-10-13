@@ -53,6 +53,8 @@
   "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "改写 URL/包名的代理属于供应链风险 —— 请停止使用。",
   "Treat the advertised context window as unverified.": "请将宣传的上下文窗口视为未经核实。",
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "请调高 --timeout / --max-request-time，或调低 --max-context-tokens，以测量完整窗口。",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "请检查该错误（例如该端点拒绝的某个请求参数），然后重新运行以测量窗口。",
+  "Raise --max-context-tokens to exercise the full declared window.": "请调高 --max-context-tokens 以测试完整的声明窗口。",
   "Compare against a trusted baseline to confirm.": "请对照可信基线加以确认。",
   "The relay likely truncates or summarizes long prompts.": "该中转站很可能截断或摘要长提示词。",
   "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} << 声称的 {declared}（占比 {ratio}，疑似静默截断）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
@@ -207,6 +209,14 @@
   "context_window.measured": [
    "实测有效上下文窗口",
    "无声称窗口可对比；实测有效窗口 ~{effective_window} token。"
+  ],
+  "context_window.verified_to_cap": [
+   "上下文窗口已在探测上限内验证",
+   "在 ~{effective_window} token 处仍能回忆出针（{probe_cap} token 探测上限下的最高档）；上限以上的声称窗口 {declared} 未被测试。"
+  ],
+  "context_window.probe_error": [
+   "上下文窗口探测收到错误响应",
+   "一个 ~{errored_at} token 的探测收到了错误响应（{error_status}）；这并非截断的证据。"
   ],
   "model_identity.no_profile": [
    "所声称的模型不在知识库中",

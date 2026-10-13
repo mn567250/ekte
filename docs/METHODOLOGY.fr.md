@@ -366,55 +366,80 @@ RAG/résumé bon marché ne transmet qu'une partie du prompt).
 
 **Fonctionnement.** Rappel d'une aiguille dans une botte de foin à
 `temperature=0` : un marqueur unique est placé dans un texte de remplissage non
-répétitif dimensionné avec l'estimation heuristique des tokens de zing, et le
-modèle doit le restituer.
+répétitif, et le modèle doit le restituer.
 
-1. Une échelle croissante qui double à partir de 2K tokens jusqu'à la fenêtre
-   annoncée, plafonnée par `--max-context-tokens` (200K par défaut), avec un
-   échelon vers 90 % du sommet (sept tailles au plus). Chaque taille est d'abord
-   sondée avec l'aiguille au **début** (profondeur 0,0) : une troncature qui
-   garde la question en fin de prompt ne peut écarter que son début (un serveur
-   local qui coupe le prompt à sa longueur de contexte en garde la fin), donc un
-   rappel à cet endroit valide la taille en un seul appel. Un échec est vérifié
-   à la fin (profondeur 0,95) ; si la fin est retrouvée, le début est sondé une
-   fois de plus avec une aiguille neuve, et un second échec fait échouer la
-   taille comme **troncature par le début** (signalée dans les preuves du
-   verdict). Trois appels par taille au plus ; l'échelle s'arrête au premier
-   échec confirmé.
-2. Une étape de recherche dichotomique entre la dernière taille retrouvée et la
+- **Fenêtre sondée.** La sonde va jusqu'à `upper` = la fenêtre annoncée,
+  plafonnée par `--max-context-tokens` (200K par défaut). Chaque verdict est
+  jugé par rapport à `upper`, jamais par rapport à la part d'une fenêtre
+  annoncée plus grande située au-delà du plafond.
+- **Les tailles sont des tokens réels.** L'estimation de tokens intégrée à zing
+  sous-compte ce remplissage d'environ 12 % (o200k) à 15 % (cl100k) par rapport
+  aux vrais tokenizers ; chaque prompt est donc construit à taille ÷ 1,2 selon
+  l'estimation (aiguille et question comprises) : un échelon de taille N tient
+  dans N tokens réels. Les tailles des preuves (`size`, `effective_window`,
+  `top_rung`) sont ces budgets de tokens réels ; les lignes de l'échelle portent
+  aussi l'estimation à laquelle un prompt a été construit (`heuristic_tokens`).
+
+1. Une échelle de sept tailles au plus, divisée par deux à partir d'un
+   **échelon supérieur à 90 % de `upper`** (aucun échelon n'atteint la fenêtre
+   entière, ce qui laisse de la place pour la réponse et le gabarit de chat)
+   jusqu'à un plancher de 1K (`context_probe_floor_tokens`) ; une petite fenêtre
+   abaisse le plancher au quart de l'échelon supérieur (une fenêtre de 2K sonde
+   ~460, ~920 et ~1,8K). Chaque taille est d'abord sondée avec l'aiguille au
+   **début** (profondeur 0,0) : une troncature qui garde la question en fin de
+   prompt ne peut écarter que son début (un serveur local qui coupe le prompt à
+   sa longueur de contexte en garde la fin), donc un rappel à cet endroit valide
+   la taille en un seul appel. Un échec est vérifié à la fin (profondeur
+   0,95) ; si la fin est retrouvée, le début est sondé une fois de plus avec une
+   aiguille neuve, et un second échec fait échouer la taille comme **troncature
+   par le début** (signalée dans les preuves du verdict). Trois appels par
+   taille au plus ; l'échelle s'arrête au premier échec confirmé.
+2. Deux étapes de recherche dichotomique entre la dernière taille retrouvée et la
    première en échec.
 3. Perte au milieu : à min(32K, fenêtre mesurée), l'aiguille est placée aux
-   profondeurs 0,1, 0,5 et 0,9 ; début et fin retrouvés mais pas le milieu
-   constituent un constat.
+   profondeurs 0,1, 0,5 et 0,9. Si le début et la fin sont retrouvés mais pas le
+   milieu, le milieu est sondé une fois de plus avec une aiguille neuve ; seul
+   un second échec constitue un constat.
 4. Un 4xx dont le message évoque la longueur de contexte est un rejet pour
    taille ; un rejet de `max_tokens` (modèles de raisonnement) est réessayé avec
    `max_completion_tokens` et n'est jamais lu comme un plafond.
-5. Une sonde qui dépasse son délai arrête l'échelle sans compter comme un échec :
-   la fenêtre au-delà de la dernière taille rappelée est signalée comme non
-   vérifiée (non concluant), jamais comme une troncature.
+5. Une sonde qui dépasse son délai ou reçoit une erreur (un autre paramètre
+   refusé, une erreur HTTP, un 5xx, une réponse vide ou mal formée) arrête
+   l'échelle sans compter comme un échec : la fenêtre au-delà de la dernière
+   taille rappelée est signalée comme non vérifiée (non concluant, non notée),
+   jamais comme une troncature ni `no_recall`. Seule une réponse sans
+   l'aiguille est un échec.
 
-La fenêtre mesurée est comparée à la fenêtre annoncée. Sans fenêtre annoncée,
-la mesure est rapportée mais non notée.
+La fenêtre mesurée (la plus grande taille rappelée) est comparée à `upper` : un
+rappel à l'échelon supérieur est cohérent (ou, si la fenêtre annoncée dépasse le
+plafond, **vérifié jusqu'au plafond** : la fenêtre au-delà n'a pas été testée) ;
+en dessous, le verdict déduit la part de l'échelon supérieur non retrouvée — un
+avertissement à partir de la moitié de `upper`, un échec en dessous. Sans
+fenêtre annoncée, la mesure est rapportée mais non notée.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
-| `context_window.window` (Fenêtre de contexte effective) | Le rappel a tenu jusqu'à au moins 90 % de la fenêtre annoncée ; retire la part de la fenêtre non rappelée. | Réussi | jusqu'à −10 pts |
-|  | Le rappel a tenu jusqu'à 50–90 % de la fenêtre annoncée ; retire la part de la fenêtre non rappelée. | Avertissement · Moyenne | jusqu'à −50 pts |
-|  | Le rappel a échoué sous la moitié de la fenêtre annoncée ; retire la part de la fenêtre non rappelée. | Échec · Élevée | jusqu'à −100 pts |
+| `context_window.window` (Fenêtre de contexte effective) | Le rappel a tenu au palier supérieur (90 % de la fenêtre sondée) : aucune déduction. | Réussi | Aucune déduction |
+|  | Rappel vérifié jusqu'au plafond de la sonde ; la fenêtre déclarée au-delà n'a pas été testée. | Réussi | Aucune déduction |
+|  | Le rappel a tenu jusqu'à 50-90 % de la fenêtre sondée ; déduit la part du palier supérieur non retrouvée. | Avertissement · Moyenne | jusqu'à −50 pts |
+|  | Le rappel a échoué sous la moitié de la fenêtre sondée ; déduit la part du palier supérieur non retrouvée. | Échec · Élevée | jusqu'à −100 pts |
 |  | Même la plus petite taille de sonde n'a pas retrouvé l'aiguille. | Échec · Élevée | −100 pts |
-| `context_window.lost_in_middle` | Le début et la fin ont été retrouvés, mais pas le milieu. | Avertissement · Moyenne | −15 pts |
+| `context_window.lost_in_middle` | Le début et la fin ont été retrouvés, mais pas le milieu, à deux reprises. | Avertissement · Moyenne | −15 pts |
 | `context_window.rejected_below_claim` | Un prompt bien en dessous de la fenêtre annoncée a été rejeté comme trop long. | Échec · Élevée | Aucune déduction |
-| `context_window.measured` | Aucune fenêtre annoncée pour comparer : mesurée seulement, non notée. | Info | Aucune déduction |
+| `context_window.measured` | Aucune fenêtre annoncée pour comparer : mesurée seulement, non notée. | Info | Aucune déduction |
 | `context_window.no_ladder` | Aucune taille de sonde ne tenait entre le plancher et le plafond. | Non concluant · Faible | Aucune déduction |
 | `context_window.timed_out` | Une sonde a dépassé son délai avant d'atteindre la fenêtre annoncée : un endpoint lent, pas une preuve de troncature. | Non concluant · Faible | Aucune déduction |
+| `context_window.probe_error` | Une sonde a reçu une erreur (paramètre refusé, erreur HTTP ou serveur) avant le palier supérieur : pas une preuve de troncature. | Non concluant · Faible | Aucune déduction |
 
 **Mises en garde.** Les vrais modèles à long contexte perdent aussi des
 aiguilles au milieu ; seul un échec en **bordure** est donc lu comme une
 troncature. Le rappel près du plafond est probabiliste ; relancez avant de
 conclure. La sonde est bornée par `--max-context-tokens`, une fenêtre plus
-grande n'est donc pas entièrement exercée. Comparez à une référence de
-confiance pour séparer le comportement du modèle de celui d'une couche
-intermédiaire.
+grande n'est donc pas entièrement exercée (augmentez-le pour sonder plus loin).
+L'échelon supérieur est à 90 % de la fenêtre et le budget de tokens est
+prudent, si bien que les derniers ~10-15 % d'une fenêtre ne sont jamais sondés.
+Comparez à une référence de confiance pour séparer le comportement du modèle de
+celui d'une couche intermédiaire.
 
 ---
 

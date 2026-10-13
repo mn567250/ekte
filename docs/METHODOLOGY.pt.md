@@ -360,54 +360,79 @@ corta o prompt em silêncio) e `context.lost-in-middle-rag` (uma camada barata d
 RAG/resumo só reencaminha partes do prompt).
 
 **Como funciona.** Recuperação de uma agulha num palheiro a `temperature=0`: um
-marcador único é inserido num texto de enchimento não repetitivo dimensionado
-com a estimativa heurística de tokens do zing, e o modelo tem de o devolver.
+marcador único é inserido num texto de enchimento não repetitivo, e o modelo
+tem de o devolver.
 
-1. Uma escada ascendente que duplica a partir de 2K tokens até à janela
-   declarada, limitada por `--max-context-tokens` (200K por omissão), com um
-   degrau perto de 90 % do máximo (sete tamanhos no máximo). Cada tamanho é
-   sondado primeiro com a agulha no **início** (profundidade 0,0): uma truncagem
-   que mantém a pergunta no fim do prompt só pode descartar o seu início (um
-   servidor local que corta o prompt ao seu comprimento de contexto mantém o
-   fim), por isso uma recuperação aí aprova o tamanho numa só chamada. Uma falha
-   é verificada no fim (profundidade 0,95); se o fim for recuperado, o início é
-   sondado mais uma vez com uma agulha nova, e uma segunda falha reprova o
-   tamanho como **truncagem pelo início** (indicada nas evidências do
+- **Janela sondada.** A sonda vai até `upper` = a janela declarada, limitada
+  por `--max-context-tokens` (200K por omissão). Cada veredicto é julgado face a
+  `upper`, nunca face à parte de uma janela declarada maior que fica acima do
+  limite.
+- **Os tamanhos são tokens reais.** A estimativa de tokens embutida no zing
+  conta este enchimento cerca de 12% (o200k) a 15% (cl100k) abaixo dos
+  tokenizers reais, por isso cada prompt é construído a tamanho ÷ 1,2 segundo a
+  estimativa (agulha e pergunta incluídas): um degrau de tamanho N cabe em N
+  tokens reais. Os tamanhos nas evidências (`size`, `effective_window`,
+  `top_rung`) são esses orçamentos de tokens reais; as linhas da escada trazem
+  também a estimativa com que um prompt foi construído (`heuristic_tokens`).
+
+1. Uma escada de no máximo sete tamanhos, dividida ao meio a partir de um
+   **degrau superior a 90% de `upper`** (nenhum degrau atinge a janela inteira,
+   o que deixa espaço para a resposta e o modelo de chat) até um mínimo de 1K
+   (`context_probe_floor_tokens`); uma janela pequena baixa o mínimo para um
+   quarto do degrau superior (uma janela de 2K sonda ~460, ~920 e ~1,8K). Cada
+   tamanho é sondado primeiro com a agulha no **início** (profundidade 0,0): uma
+   truncagem que mantém a pergunta no fim do prompt só pode descartar o seu
+   início (um servidor local que corta o prompt ao seu comprimento de contexto
+   mantém o fim), por isso uma recuperação aí aprova o tamanho numa só chamada.
+   Uma falha é verificada no fim (profundidade 0,95); se o fim for recuperado, o
+   início é sondado mais uma vez com uma agulha nova, e uma segunda falha
+   reprova o tamanho como **truncagem pelo início** (indicada nas evidências do
    veredicto). No máximo três chamadas por tamanho; a escada para na primeira
    falha confirmada.
-2. Um passo de pesquisa binária entre o último tamanho recuperado e o primeiro
+2. Dois passos de pesquisa binária entre o último tamanho recuperado e o primeiro
    que falhou.
 3. Perda no meio: com min(32K, janela medida), a agulha é colocada nas
-   profundidades 0,1, 0,5 e 0,9; recuperar o início e o fim mas não o meio é uma
-   constatação.
+   profundidades 0,1, 0,5 e 0,9. Se o início e o fim forem recuperados mas o
+   meio não, o meio é sondado mais uma vez com uma agulha nova; só uma segunda
+   falha é uma constatação.
 4. Um 4xx cuja mensagem refere o comprimento do contexto é uma rejeição por
    tamanho; uma rejeição de `max_tokens` (modelos de raciocínio) é repetida com
    `max_completion_tokens` e nunca é lida como um teto.
-5. Uma sonda que esgota o tempo encerra a escada sem contar como falha: a
-   janela acima do último tamanho recordado é reportada como não verificada
-   (inconclusiva), nunca como truncamento.
+5. Uma sonda que esgota o tempo ou recebe um erro (outro parâmetro rejeitado,
+   um erro HTTP, um 5xx, uma resposta vazia ou malformada) encerra a escada sem
+   contar como falha: a janela acima do último tamanho recordado é reportada
+   como não verificada (inconclusiva, sem pontuação), nunca como truncamento nem
+   `no_recall`. Só uma resposta sem a agulha é uma falha.
 
-A janela medida é comparada com a declarada. Sem janela declarada, a medida é
+A janela medida (o maior tamanho recordado) é comparada com `upper`: recordar no
+degrau superior é coerente (ou, se a janela declarada exceder o limite,
+**verificada até ao limite**: a janela acima dele não foi testada); abaixo
+disso, o veredicto deduz a parte do degrau superior não recordada — um aviso a
+partir de metade de `upper`, uma falha abaixo. Sem janela declarada, a medida é
 reportada mas não pontuada.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
-| `context_window.window` (Janela de contexto efetiva) | A recordação se manteve até pelo menos 90% da janela declarada; desconta a parte da janela não recordada. | Aprovado | até −10 pts |
-|  | A recordação se manteve até 50–90% da janela declarada; desconta a parte da janela não recordada. | Aviso · Média | até −50 pts |
-|  | A recordação falhou abaixo da metade da janela declarada; desconta a parte da janela não recordada. | Falha · Alta | até −100 pts |
+| `context_window.window` (Janela de contexto efetiva) | A recordação manteve-se no degrau superior (90% da janela sondada): sem dedução. | Aprovado | Sem dedução |
+|  | Recordação verificada até ao limite da sonda; a janela declarada acima dele não foi testada. | Aprovado | Sem dedução |
+|  | A recordação manteve-se até 50-90% da janela sondada; deduz a parte do degrau superior não recordada. | Aviso · Média | até −50 pts |
+|  | A recordação falhou abaixo de metade da janela sondada; deduz a parte do degrau superior não recordada. | Falha · Alta | até −100 pts |
 |  | Nem o menor tamanho de sonda recordou a agulha. | Falha · Alta | −100 pts |
-| `context_window.lost_in_middle` | O início e o fim foram recordados, mas o meio não. | Aviso · Média | −15 pts |
+| `context_window.lost_in_middle` | O início e o fim foram recordados, mas o meio não, por duas vezes. | Aviso · Média | −15 pts |
 | `context_window.rejected_below_claim` | Um prompt bem abaixo da janela declarada foi rejeitado como longo demais. | Falha · Alta | Sem dedução |
 | `context_window.measured` | Não há janela declarada para comparar: apenas medido, não pontua. | Info | Sem dedução |
 | `context_window.no_ladder` | Nenhum tamanho de sonda coube entre o mínimo e o limite. | Inconclusivo · Baixa | Sem dedução |
 | `context_window.timed_out` | Uma sonda esgotou o tempo antes de atingir a janela declarada: um endpoint lento, não uma prova de truncamento. | Inconclusivo · Baixa | Sem dedução |
+| `context_window.probe_error` | Uma sonda recebeu um erro (parâmetro rejeitado, erro HTTP ou do servidor) antes do degrau superior: não é evidência de truncamento. | Inconclusivo · Baixa | Sem dedução |
 
 **Ressalvas.** Os modelos genuínos de contexto longo também perdem agulhas no
 meio; por isso só uma falha na **extremidade** é lida como truncagem. A
 recuperação perto do teto é probabilística; volte a executar antes de concluir.
 A sonda é limitada por `--max-context-tokens`, pelo que uma janela maior não é
-exercitada por completo. Compare com uma referência de confiança para separar
-o comportamento do modelo do de uma camada intermédia.
+exercitada por completo (aumente-o para sondar mais longe). O degrau superior
+fica a 90% da janela e o orçamento de tokens é prudente, pelo que os últimos
+~10-15% de uma janela nunca são sondados. Compare com uma referência de
+confiança para separar o comportamento do modelo do de uma camada intermédia.
 
 ---
 

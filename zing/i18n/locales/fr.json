@@ -309,6 +309,8 @@
   "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "Un proxy qui réécrit des URL/noms de paquets est un risque de chaîne d'approvisionnement — cessez de l'utiliser.",
   "Treat the advertised context window as unverified.": "Considérez la fenêtre de contexte annoncée comme non vérifiée.",
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Augmentez --timeout / --max-request-time, ou réduisez --max-context-tokens, pour mesurer la fenêtre complète.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Vérifiez l'erreur (par ex. un paramètre de requête refusé par ce point de terminaison) et relancez pour mesurer la fenêtre.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Augmentez --max-context-tokens pour tester toute la fenêtre déclarée.",
   "Compare against a trusted baseline to confirm.": "Comparez avec une référence de confiance pour confirmer.",
   "The relay likely truncates or summarizes long prompts.": "Le relais tronque ou résume probablement les longs prompts.",
   "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Fenêtre réelle ~{effective_window} << {declared} annoncés (ratio {ratio}, troncature silencieuse suspectée). Le début d'un prompt de ~{front_truncated_at} tokens a été écarté alors que sa fin était encore retrouvée (troncature par le début).",
@@ -547,6 +549,14 @@
   "context_window.measured": [
    "Fenêtre de contexte effective mesurée",
    "Pas de fenêtre annoncée à comparer ; fenêtre effective mesurée ~{effective_window} tokens."
+  ],
+  "context_window.verified_to_cap": [
+   "Fenêtre de contexte vérifiée jusqu'au plafond de la sonde",
+   "L'aiguille est retrouvée à ~{effective_window} tokens, le palier supérieur sous le plafond de sonde de {probe_cap} tokens ; la fenêtre déclarée de {declared} tokens au-delà n'a pas été testée."
+  ],
+  "context_window.probe_error": [
+   "La sonde de fenêtre de contexte a reçu une erreur",
+   "Une sonde de ~{errored_at} tokens a reçu une erreur ({error_status}) ; pas une preuve de troncature."
   ],
   "model_identity.no_profile": [
    "Modèle annoncé absent de la base de connaissances",

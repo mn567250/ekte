@@ -309,6 +309,8 @@
   "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "Un proxy que reescribe URL/nombres de paquetes es un riesgo de cadena de suministro — deje de usarlo.",
   "Treat the advertised context window as unverified.": "Considere no verificada la ventana de contexto anunciada.",
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Aumente --timeout / --max-request-time, o reduzca --max-context-tokens, para medir la ventana completa.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Revise el error (p. ej., un parámetro de solicitud que este endpoint rechaza) y vuelva a ejecutar para medir la ventana.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Aumente --max-context-tokens para probar la ventana declarada completa.",
   "Compare against a trusted baseline to confirm.": "Compare con una referencia de confianza para confirmarlo.",
   "The relay likely truncates or summarizes long prompts.": "Es probable que el intermediario trunque o resuma los prompts largos.",
   "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ventana real ~{effective_window} << {declared} declarados (proporción {ratio}, se sospecha truncado silencioso). Se descartó el inicio de un prompt de ~{front_truncated_at} tokens mientras su final aún se recordaba (truncado por el inicio).",
@@ -547,6 +549,14 @@
   "context_window.measured": [
    "Ventana de contexto efectiva medida",
    "No hay ventana declarada con la que comparar; ventana efectiva medida ~{effective_window} tokens."
+  ],
+  "context_window.verified_to_cap": [
+   "Ventana de contexto verificada hasta el tope de la sonda",
+   "La aguja se recordó a ~{effective_window} tokens, el peldaño superior bajo el tope de sonda de {probe_cap} tokens; la ventana declarada de {declared} tokens por encima no se probó."
+  ],
+  "context_window.probe_error": [
+   "La sonda de ventana de contexto recibió un error",
+   "Una sonda de ~{errored_at} tokens recibió un error ({error_status}); no es evidencia de truncamiento."
   ],
   "model_identity.no_profile": [
    "El modelo declarado no está en la base de conocimiento",
