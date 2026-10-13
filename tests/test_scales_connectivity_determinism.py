@@ -67,7 +67,7 @@ async def _connectivity(models_ok: bool, chat: CompletionOutcome | None) -> Dete
     [
         (True, None, ("listed", "canary_echoed"), 100.0, Status.PASS),
         (True, _ok("Hello there."), ("listed", "canary_missing"), 92.5, Status.PASS),
-        (False, None, ("unavailable", "canary_echoed"), 80.0, Status.PASS),
+        (False, None, ("unavailable", "canary_echoed"), 80.0, Status.WARN),  # worst of the checks
         (True, _DOWN, ("listed", "failed"), 50.0, Status.FAIL),
         (False, _DOWN, ("unavailable", "failed"), 30.0, Status.FAIL),
     ],

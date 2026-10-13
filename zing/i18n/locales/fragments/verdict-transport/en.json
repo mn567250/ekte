@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Plain HTTP to a local or private-network host; the API key does not cross the internet.": "Plain HTTP to a local or private-network host; the API key does not cross the internet.",
+  "Use https:// if this endpoint is reachable from other machines.": "Use https:// if this endpoint is reachable from other machines.",
+  "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.": "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.",
+  "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk."
+ }
+}

@@ -237,6 +237,7 @@ async def run_audit(
         used_judge=judge is not None,
         used_baseline=baseline_client is not None,
         selected=selected,
+        match_confidence=profile.match_confidence if profile is not None else None,
     )
 
     warnings = [
