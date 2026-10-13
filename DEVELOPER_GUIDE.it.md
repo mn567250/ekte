@@ -116,6 +116,8 @@ zing/
     jobs.py            verifiche in background e il blocco per relay
     security.py        ascolto su loopback, elenco di host ammessi, controlli Origin/JSON, intestazioni
     history.py         archivio della cronologia delle verifiche (history.db)
+    analytics_store.py le sue tabelle di analisi: metriche per esecuzione, record delle richieste
+    analytics.py       query di analisi: KPI, serie temporali, classifiche
     watches.py         archivio dei monitor (watches.db)
     masterkey.py       stati e azioni della chiave principale (server e `zing secret`)
     static/            pagine dell'interfaccia classica e script condivisi (lang.js, i18n.js, …)
@@ -295,6 +297,35 @@ solo la libreria standard.
   `/api/embed` e `/api/rerank` servono le altre pagine.
 - **Relay.** `POST /api/kb/relays` salva un relay `{name, base_url}` (400 per un
   input non valido, 409 se il nome o l'URL sono già noti).
+- **Analisi.** `GET /api/analytics/options` (relay, modelli, suite, modalità di
+  stream, API e intervallo di date della cronologia), `/api/analytics/summary`
+  (KPI di `from`–`to` rispetto all'intervallo precedente di pari durata),
+  `/api/analytics/series` (`metric` per `group=relay|model|relay_model`, fino a
+  4 `keys`, in intervalli `bucket=hour|day|week|dow_hour` nel fuso orario
+  dell'utente, `tz` o `tz_offset`) e `/api/analytics/leaderboard` (`model=` per
+  i suoi relay, oppure `relay=` per i suoi modelli). Tutti accettano i filtri
+  `from`, `to`, `suite`, `stream_mode`, `api`, `source=all|manual|monitor`,
+  `relay` e `model`. `zing/web/analytics.py` calcola tutto in Python da
+  `history.analytics_runs()`: gli id delle metriche vengono da un elenco fisso,
+  i relay sono raggruppati per voce della base di conoscenza al momento della
+  query, un valore che un'esecuzione non ha misurato resta escluso (ogni valore
+  ha il suo `n` e la sua `coverage`) e gli intervalli con meno di `MIN_RUNS` (3)
+  esecuzioni sono marcati `low_n`. Un parametro non valido risponde 400; le
+  risposte sono `Cache-Control: no-store`.
+- **Pannelli di analisi.** `/api/analytics/breakdown` (fino a 8 `metrics` per
+  `group=relay|model|relay_model|all` nel periodo), `/api/analytics/errors` (le
+  chiamate di completamento al target per classe di esito
+  `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, per
+  `group=relay|model` e per `bucket`, contate in SQL da
+  `history.analytics_request_classes()` senza caricare le righe delle
+  richieste; l'ora di una chiamata è l'inizio del suo audit più il suo offset,
+  al minuto; `covered` = audit con registri delle richieste) e
+  `/api/analytics/integrity` (conteggi di superati / avvisi / falliti dei
+  rilevatori di identità, capacità, visione, streaming, protocollo, integrità,
+  prompt iniettato e connettività per relay × modello, la quota di modelli
+  divergenti e il rapporto mediano finestra di contesto misurata / dichiarata).
+  `/api/analytics/series` accetta anche `group=all`. Stessi filtri ed errori di
+  sopra.
 - **Verifiche in background.** `jobs.py` esegue ogni verifica come job del
   server. `POST /api/jobs` ne accoda uno, `GET /api/jobs` elenca i job in coda,
   in corso e appena conclusi (e i monitor in esecuzione) con l'avanzamento,
@@ -356,6 +387,47 @@ provider derivato, più **Salva nella base** (`POST /api/kb/relays`). Le sue
 funzioni pure sono testate con node; le pagine classiche mantengono
 `modelpicker.js`.
 
+La pagina v2 **Analisi** (`v2/analytics.html`) legge solo `/api/analytics/*`
+(`options` elenca anche le coppie relay × modello, `relay_models`, per la scelta
+delle serie). Ha una `<section class="card panel">` per pannello sotto un'unica
+barra dei filtri, quindi si possono aggiungere pannelli; filtri e vista stanno
+nel frammento dell'URL (`#range=30&metric=score&…`) e in `localStorage`. I
+grafici vengono da `v2/charts.js` (`ZingCharts.timeChart`: SVG inline disegnato
+a mano con linea mediana, fascia p25–p75, vuoti per gli intervalli senza dati,
+marcatori attenuati per gli intervalli `low_n`, linee di annotazione e tooltip
+al passaggio del puntatore; `fmt` / `fmtDelta` formattano i valori per unità) e
+da `v2/charts.css` (quattro colori di serie validati per tema, distinguibili
+anche dalla forma del marcatore). Ogni grafico esiste anche come tabella di
+dati.
+
+Ogni pannello è autonomo: un registro `PANELS` nello script della pagina
+indica l'id della sua sezione, `load()` (caricare con i filtri e la vista
+correnti, poi disegnare) e `render()` (ridisegnare dai dati caricati, ad es. al
+cambio di lingua), così i pannelli si possono riordinare senza toccarsi a
+vicenda. `ZingCharts.heatmap` disegna la griglia giorno della settimana × ora
+(scala sequenziale a una tinta in cinque livelli per tema, celle tratteggiate
+per `low_n`, celle vuote solo con contorno), `ZingCharts.stackBars` le barre di
+errore impilate, e `timeChart` accetta una linea `ref` (rapporto di
+fatturazione del 100%).
+
+L'intestazione della pagina e il pannello dei filtri stanno sopra cinque schede
+interne (`v2/tabs.js`, come in Strumenti e Conoscenza): ogni voce di
+`PANELS` indica la sua `tab`, e si caricano solo i pannelli della scheda
+visibile; una modifica dei filtri ricarica quella scheda e segna le altre come
+non aggiornate (`activate()` le carica quando vengono mostrate). Qui `tabs.js`
+riceve `writeHash: false`, perché la pagina scrive da sé l'intera vista nel
+frammento — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), che
+**Copia il link a questa vista** copia (un campo di sola lettura selezionato se
+l'API degli appunti manca o rifiuta); un frammento senza `tab` apre la
+Panoramica, e un link incollato (`hashchange`) rilegge la vista. Il pannello dei
+filtri richiudibile è `v2/filterpanel.js` + `v2/filterpanel.css`, condiviso con
+la Cronologia: `ZingFilterPanel.create(section, {label, title, storeKey, open,
+onReset})` restituisce `render({body, foot, count, summary})`,
+`sync({count, summary})`, `setOpen()` e `focusStart()`; la pagina gestisce i
+propri filtri e campi, il pannello il pulsante con il badge dei filtri attivi,
+il riepilogo di una riga mostrato da chiuso, lo stato aperto memorizzato e
+**Reimposta filtri**.
+
 **Convenzione di traduzione.** Il testo cinese scritto nell'HTML è l'originale e
 resta intatto; ogni elemento porta il suo testo inglese in `data-en` (e
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Il testo inglese è
@@ -376,6 +448,26 @@ già esistente mantiene i suoi permessi; solo il `~/.zing` predefinito viene
 ristretto a `0700`. Le righe della cronologia sono indicizzate per obiettivo e
 modello (`idx_history_target`), che `history.latest_for()` usa per trovare
 l'esecuzione precedente di un monitor.
+
+Dalla versione 2 dello schema (`PRAGMA user_version`) `history.db` contiene
+anche le tabelle di analisi, definite in `web/analytics_store.py`:
+`history_metrics` (una riga di metriche estratte per esecuzione: ora di inizio,
+tassi, percentili di latenza/TTFT/decodifica, rapporti di fatturazione, numero di
+rilevazioni e altro; NULL dove l'esecuzione non ha misurato un valore),
+`history_dimensions` (punteggi di dimensioni e rilevatori) e `history_requests` (i
+record delle richieste dell'esecuzione, obiettivo e baseline, nell'ordine della
+lista). I `performance.requests` di un rapporto stanno solo lì: `save()` li toglie
+da `report_json` (`requests_split` marca la riga) e `get()` / `latest_for()` li
+rimettono al loro posto, così un rapporto si rilegge identico a come è stato
+salvato; ciò che le colonne non possono riprodurre esattamente finisce nella
+colonna JSON `extra`. `extract_metrics()` è pura e versionata
+(`EXTRACT_VERSION`). Dopo la migrazione un backfill a lotti (una transazione
+breve per lotto, idempotente) sposta i record delle righe più vecchie, ne
+estrae le metriche e riestrae le righe scritte da una `EXTRACT_VERSION`
+precedente; `history.backfill_analytics()` lo riesegue su richiesta. L'ora di
+inizio di un'esecuzione è lo `started_at` del rapporto; i rapporti precedenti a
+quel campo ricevono `generated_at` meno l'intervallo coperto dai loro record
+delle richieste (`started_at_estimated` = 1).
 
 Le chiavi API salvate sono cifrate da `zing/secretbox.py` (Fernet, salvate come
 `enc:v1:…`; i riferimenti `env:`/`file:` restano come sono). La chiave

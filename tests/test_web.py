@@ -403,6 +403,41 @@ def test_v2_accessibility_report_page(client):
     assert r.status_code == 307 and r.headers["location"] == "/"
 
 
+def test_v2_analytics_page(client):
+    # charts over the run history: a v2 page in the design system, linked from
+    # every page's main navigation
+    r = client.get("/v2/analytics")
+    assert r.status_code == 200 and "text/html" in r.headers["content-type"]
+    html = _unversioned(r.text)
+    assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
+    assert '<link rel="stylesheet" href="/v2/static/zing.css" />' in html
+    assert '<link rel="stylesheet" href="/v2/static/charts.css" />' in html
+    assert '<header class="znav" data-page="analytics"' in html
+    assert '<main id="main" tabindex="-1">' in html
+    assert '<script src="/v2/static/nav.js"></script>\n<script src="/v2/static/charts.js"></script>' in html
+    for api in ("/api/analytics/options", "/api/analytics/summary", "/api/analytics/series", "/api/analytics/leaderboard"):
+        assert api in html
+    # no outgoing requests: every script and stylesheet is local
+    assert not re.search(r'(?:src|href)="(?:https?:)?//', html)
+    js = client.get("/v2/static/nav.js").text
+    assert '["analytics", "/v2/analytics", "bars", "分析", "Analytics"]' in js
+    assert "bars:" in client.get("/icons.js").text
+    # tabs and the filter panel History shares
+    assert '<script src="/v2/static/filterpanel.js"></script>\n<script src="/v2/static/tabs.js"></script>' in html
+    assert '<link rel="stylesheet" href="/v2/static/filterpanel.css" />' in html
+    assert 'role="tablist"' in html and 'id="tab-integrity"' in html
+    hist = _unversioned(client.get("/v2/history").text)
+    assert '<script src="/v2/static/filterpanel.js"></script>' in hist
+    assert '<link rel="stylesheet" href="/v2/static/filterpanel.css" />' in hist
+    for asset, kind in (("charts.js", "javascript"), ("charts.css", "text/css"), ("filterpanel.js", "javascript"),
+                        ("filterpanel.css", "text/css")):
+        r = client.get("/v2/static/" + asset)
+        assert r.status_code == 200 and kind in r.headers["content-type"], asset
+    # v2 only: ?ui=v1 goes to the classic history page
+    r = client.get("/v2/analytics?ui=v1", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == "/history"
+
+
 def test_v2_accessibility_report_data_is_served(client):
     import json
 
@@ -426,7 +461,7 @@ def test_v2_header_links_the_accessibility_report(client):
     assert 'data-en-aria-label="Accessibility"' in js and 'ico("a11y"' in js
     assert "footer" not in js.split("*/", 1)[1]
     assert "a11y:" in client.get("/icons.js").text
-    for path in ("/v2/", "/v2/history", "/v2/watches", "/v2/tools", "/v2/kb", "/v2/accessibility"):
+    for path in ("/v2/", "/v2/history", "/v2/watches", "/v2/tools", "/v2/kb", "/v2/analytics", "/v2/accessibility"):
         assert '<script src="/v2/static/nav.js"></script>' in _unversioned(client.get(path).text), path
 
 

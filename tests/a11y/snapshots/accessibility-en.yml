@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "History":
       - /url: /v2/history
+    - link "Analytics":
+      - /url: /v2/analytics
     - link "Monitors":
       - /url: /v2/watches
     - link "Knowledge":
@@ -44,11 +46,11 @@
     - definition:
       - code: <id>
     - term: zing version
-    - definition: 0.18.0
+    - definition: 0.20.0
     - term: axe-core version
     - definition: 4.13.0
     - term: Tests
-    - definition: 1115 run, 1115 passed, 0 failed, 0 skipped
+    - definition: 1297 run, 1297 passed, 0 failed, 0 skipped
     - term: Languages
     - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
     - term: Themes
@@ -60,6 +62,7 @@
       - code: /v2/watches
       - code: /v2/tools
       - code: /v2/kb
+      - code: /v2/analytics
       - code: /v2/accessibility
   - region "Coverage":
     - heading "Coverage" [level=2]
@@ -115,7 +118,7 @@
               - group:
                 - text: Non-text Content
                 - paragraph: "How it is tested: Images, icons, SVGs and controls have a text alternative. Whether each alternative is meaningful is judged by a person."
-                - paragraph: "Automated tests: 14 run, 14 passed, 0 failed, 166 skipped"
+                - paragraph: "Automated tests: 30 run, 30 passed, 0 failed, 180 skipped"
                 - paragraph:
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel

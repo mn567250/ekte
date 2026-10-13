@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "Historique":
       - /url: /v2/history
+    - link "Analyses":
+      - /url: /v2/analytics
     - link "Surveillances":
       - /url: /v2/watches
     - link "Connaissances":
@@ -39,17 +41,21 @@
     - code: ~/.zing
     - text: — rien n'est transmis.
   - region "Filtres":
-    - button "Filtres et tendances" [expanded]
+    - button "Filtres" [expanded]
     - text: Rechercher
     - searchbox "Rechercher"
     - text: Relais / fournisseur
     - combobox "Relais / fournisseur":
       - option "Tous" [selected]
       - option "127.0.0.1:9099"
+      - option "gateway.a-very-long-relay-hostname.example.org"
+      - option "relay.example.com"
     - text: Modèle annoncé
     - combobox "Modèle annoncé":
       - option "Tous" [selected]
       - option "gpt-4o"
+      - option "model-a"
+      - option "model-b"
     - text: Suite
     - combobox "Suite":
       - option "Tous" [selected]
@@ -61,6 +67,7 @@
     - text: Protocole
     - combobox "Protocole":
       - option "Tous" [selected]
+      - option "openai"
       - option "(inconnu)"
     - text: Détection du protocole
     - combobox "Détection du protocole":
@@ -69,10 +76,13 @@
     - text: Requêtes de sonde
     - combobox "Requêtes de sonde":
       - option "Tous" [selected]
+      - option "Streaming"
       - option "(inconnu)"
     - text: Risque
     - combobox "Risque":
       - option "Tous" [selected]
+      - option "Cohérent (probablement authentique)"
+      - option "Globalement fiable"
       - option "Tromperie sur la marchandise"
     - text: Score min.
     - spinbutton "Score min."
@@ -93,269 +103,175 @@
       - button "Note"
       - button "Latence p50" [pressed]
       - button "Tokens/s"
-    - text: 1 audits affichés sur 1
+    - text: 15 audits affichés sur 15
   - group "Trier les audits":
     - button "Date, tri décroissant": Date
     - button "Trier par Risque": Risque
     - button "Trier par Score": Score
     - button "Trier par Note": Note
   - button "Tout replier"
-  - region "gpt-4o":
-    - heading "gpt-4o" [level=2]:
-      - button "gpt-4o" [expanded]
+  - region "model-a https://relay.example.com/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
     - code: base_url
-    - text: http://127.0.0.1:9099/v1 Score 53
+    - text: https://relay.example.com/v1 Score
+    - 'img "Évolution du score de santé sur 7 audits : de 70 à 82, en hausse."'
+    - text: 82 Latence p50
+    - 'img "Tendance Latence p50 sur 7 audits : de <duration> à <duration>."'
+    - text: <duration>
     - list:
       - listitem:
-        - button "27 sept. 2026, 07:47 Tromperie sur la marchandise Score 53 Note F check · standard" [expanded]
+        - button "30 sept. 2026, 11:02 Cohérent (probablement authentique) Score 82 Note B check · standard openai · Streaming p50 <duration>"
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
-        - button "Supprimer l'entrée" [expanded]
-        - group "Supprimer cette entrée de l'historique ?":
-          - text: Supprimer cette entrée de l'historique ?
-          - button "Supprimer"
-          - button "Annuler"
-        - region "27 sept. 2026, 07:47 Tromperie sur la marchandise Score 53 Note F check · standard":
-          - article "Il ne sert pas le modèle qu'il annonce":
-            - text: Tromperie sur la marchandise
-            - heading "Il ne sert pas le modèle qu'il annonce" [level=2]
-            - paragraph: "Constats : 4 élevé(s), 5 moyen(s). Lancez `zing compare` face à une référence de confiance pour renforcer le verdict."
-            - text: Score de santé global 52,6/100 (Note F) Confiance du verdict Moyenne
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "30 sept. 2026, 10:02 Cohérent (probablement authentique) Score 85 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "30 sept. 2026, 09:02 Cohérent (probablement authentique) Score 88 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "28 sept. 2026, 10:02 Globalement fiable Score 78 Note D check · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "28 sept. 2026, 09:02 Cohérent (probablement authentique) Score 80 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "28 sept. 2026, 07:02 Cohérent (probablement authentique) Score 84 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "26 sept. 2026, 08:02 Globalement fiable Score 70 Note D check Surveillance · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Cette exécution provient d’une surveillance" [disabled]
+        - button "Supprimer l'entrée"
+  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score
+    - 'img "Évolution du score de santé sur 4 audits : de 58 à 64, en hausse."'
+    - text: 64 Latence p50
+    - 'img "Tendance Latence p50 sur 4 audits : de <duration> à <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "30 sept. 2026, 08:02 Tromperie sur la marchandise Score 64 Note D check · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "29 sept. 2026, 11:02 Tromperie sur la marchandise Score 60 Note D check Surveillance · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Cette exécution provient d’une surveillance" [disabled]
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "29 sept. 2026, 10:02 Globalement fiable Score 66 Note D check Surveillance · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Cette exécution provient d’une surveillance" [disabled]
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "29 sept. 2026, 09:02 Tromperie sur la marchandise Score 58 Note D check Surveillance · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Cette exécution provient d’une surveillance" [disabled]
+        - button "Supprimer l'entrée"
+  - region "model-b https://relay.example.com/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://relay.example.com/v1 Score
+    - 'img "Évolution du score de santé sur 2 audits : de 89 à 91, en hausse."'
+    - text: 91 Latence p50
+    - 'img "Tendance Latence p50 sur 2 audits : de <duration> à <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "29 sept. 2026, 07:02 Cohérent (probablement authentique) Score 91 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+      - listitem:
+        - button "29 sept. 2026, 06:02 Cohérent (probablement authentique) Score 89 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score 72 Latence p50 <duration>
+    - list:
+      - listitem:
+        - button "27 sept. 2026, 10:02 Globalement fiable Score 72 Note D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée"
+        - region "27 sept. 2026, 10:02 Globalement fiable Score 72 Note D check · standard openai · Streaming p50 <duration>":
+          - article "Globalement cohérent, avec quelques défauts mineurs":
+            - text: Globalement fiable
+            - heading "Globalement cohérent, avec quelques défauts mineurs" [level=2]
+            - text: Score de santé global 72/100 (Note D) Confiance du verdict —
             - term: Cible
             - definition:
-              - code: http://127.0.0.1:9099/v1
+              - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
             - term: Modèle annoncé
             - definition:
-              - code: gpt-4o
+              - code: model-b
+            - term: Protocole
+            - definition:
+              - code: openai
             - term: Mode
             - definition:
               - code: check
             - term: Suite
             - definition:
               - code: standard
+            - term: Requêtes de la sonde de performance
+            - definition: Streaming
+            - term: Profil de connaissances
+            - definition: Aucun profil correspondant
             - term: Date
-            - definition: 27 sept. 2026, 07:47
+            - definition: 27 sept. 2026, 10:02
             - term: Version
             - definition:
               - code: zing v<version>
-            - heading "Contrôles par dimension 8 dimensions exécutées sur 10" [level=3]
-            - button "Connectivité" [expanded]
-            - text: Joignable de façon fiable ?
-            - meter "Connectivité Joignable de façon fiable ?"
-            - region "Connectivité Joignable de façon fiable ?":
-              - paragraph: Score issu d'un seul détecteur.
-              - heading "Connectivité et complétion de base Score 92,5" [level=4]
-              - list "Connectivité et complétion de base Score 92,5":
-                - listitem:
-                  - text: "Résultat : Réussi. Liste /v1/models 1 modèles listés ; modèle annoncé présent dans la liste : oui."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "model_count: 1 claimed_listed: true"
-                - listitem:
-                  - text: "Résultat : Réussi. Complétion de chat de base Contenu renvoyé en <duration> ; modèle renvoyé : gpt-4o-mini."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "duration_ms: <duration> model_returned: gpt-4o-mini canary_echoed: false"
-            - button "Conformité du protocole" [expanded]
+            - heading "Contrôles par dimension 1 dimensions exécutées sur 10" [level=3]
+            - button "Conformité du protocole"
             - text: L'API respecte-t-elle la spécification ?
             - meter "Conformité du protocole L'API respecte-t-elle la spécification ?"
-            - region "Conformité du protocole L'API respecte-t-elle la spécification ?":
-              - paragraph: Score issu d'un seul détecteur.
-              - heading "Conformité à la compatibilité OpenAI Score 75" [level=4]
-              - list "Conformité à la compatibilité OpenAI Score 75":
-                - listitem:
-                  - text: "Résultat : Réussi. Mémoire multi-tours Contrôle du contexte multi-tours ; couleur mentionnée plus tôt retrouvée : oui."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "recalled_blue: true content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: "Résultat : Avertissement. Gestion des séquences stop Contrôle de la séquence stop ; finish_reason=stop."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: "Résultat : Réussi. Conformité de la structure de réponse finish_reason=stop ; usage complet : oui."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "finish_reason: stop has_usage: true prompt_tokens: 900 completion_tokens: 400 total_tokens: 1300"
-                - listitem:
-                  - text: "Résultat : Échec. Structure des réponses d'erreur Une requête invalide renvoie HTTP 200 ; corps d'erreur au format OpenAI : non. · Recommandation : Un relais conforme doit rejeter une entrée invalide avec un 4xx et un corps {'error': {...}}."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - button "Fenêtre de contexte" [expanded]
+            - button "Connectivité"
+            - text: Joignable de façon fiable ? Non exécuté
+            - button "Fenêtre de contexte"
             - text: Retient-il vraiment les longues entrées ? Non exécuté
-            - region "Fenêtre de contexte Retient-il vraiment les longues entrées ?":
-              - paragraph: Aucun détecteur de cette dimension n'a été exécuté dans cet audit.
-            - button "Identité du modèle" [expanded]
-            - text: Est-ce le modèle qu'il prétend être ?
-            - meter "Identité du modèle Est-ce le modèle qu'il prétend être ?"
-            - region "Identité du modèle Est-ce le modèle qu'il prétend être ?":
-              - paragraph: Score issu d'un seul détecteur.
-              - heading "Identité du modèle et empreinte de déclassement Score 20" [level=4]
-              - list "Identité du modèle et empreinte de déclassement Score 20":
-                - listitem:
-                  - text: "Résultat : Échec. Auto-identification Se présente comme une marque concurrente (claude, anthropic) sans citer la vraie marque. · Recommandation : Une réponse citant un autre fournisseur suggère fortement une substitution de modèle."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-                - listitem:
-                  - text: "Résultat : Échec. Contrôle d'empreinte comportementale Contrôle d'empreinte comportementale purement code pour self-id."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-                - listitem:
-                  - text: "Résultat : Avertissement. Contrôle d'empreinte comportementale Contrôle d'empreinte comportementale purement code pour max-output-truncation."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-                - listitem:
-                  - text: "Résultat : Avertissement. Champ model renvoyé Le champ model de la réponse vaut gpt-4o-mini ; demandé : gpt-4o. · Recommandation : Un id de modèle de gamme inférieure ou d'une autre famille dans la réponse suggère un routage vers un substitut."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "requested: gpt-4o returned: gpt-4o-mini"
-            - button "Capacités annoncées" [expanded]
-            - text: Outils/JSON vraiment pris en charge ?
-            - meter "Capacités annoncées Outils/JSON vraiment pris en charge ?"
-            - region "Capacités annoncées Outils/JSON vraiment pris en charge ?":
-              - paragraph: Score issu d'un seul détecteur.
-              - heading "Vérification des capacités annoncées Score 25" [level=4]
-              - list "Vérification des capacités annoncées Score 25":
-                - listitem:
-                  - text: "Résultat : Échec. Appel d'outils (function calling) Sonde d'appel d'outils ; finish_reason=stop. · Recommandation : Vérifiez que le moteur servi prend réellement en charge l'appel de fonctions."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "finish_reason: stop had_content: true"
-                - listitem:
-                  - text: "Résultat : Échec. Mode JSON (json_object) Sonde du mode JSON ; objet analysé : non, valeur demandée respectée : non. · Recommandation : Vérifiez que le moteur servi respecte response_format=json_object."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "parsed: false value_matched: false"
-                - listitem:
-                  - text: "Résultat : Avertissement. JSON Schema strict Sonde JSON schema strict ; conforme au schéma : non."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "conforms: false parsed: false"
-                - listitem:
-                  - text: "Résultat : Avertissement. Longueur de sortie maximale Sonde de sortie maximale : max_output annoncé=16384, 2048 tokens demandés ; ~1 lignes produites, finish_reason=stop. · Recommandation : La génération longue peut rester en deçà du plafond annoncé ; confirmez avec une sonde plus longue."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-            - button "Authenticité du streaming" [expanded]
-            - text: Vrai streaming ou simulé ?
-            - meter "Authenticité du streaming Vrai streaming ou simulé ?"
-            - region "Authenticité du streaming Vrai streaming ou simulé ?":
-              - paragraph: Score issu d'un seul détecteur.
-              - heading "Authenticité du streaming Score 100" [level=4]
-              - list "Authenticité du streaming Score 100":
-                - listitem:
-                  - text: "Résultat : Réussi. Streaming authentique 2 fragments en <duration>, premier token à <duration>."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "chunk_count: 2 duration_ms: <duration> ttft_ms: <duration>"
-            - button "Facturation et consommation" [expanded]
-            - text: La consommation de tokens est-elle gonflée ?
-            - meter "Facturation et consommation La consommation de tokens est-elle gonflée ?"
-            - region "Facturation et consommation La consommation de tokens est-elle gonflée ?":
-              - paragraph: Score issu d'un seul détecteur.
-              - heading "Audit de facturation des tokens Score 55" [level=4]
-              - list "Audit de facturation des tokens Score 55":
-                - listitem:
-                  - text: "Résultat : Échec. Tokens de prompt déclarés bien au-dessus de l'estimation Tokens de prompt déclarés (900) bien au-dessus de l'estimation indépendante (~135, ratio 6667) ; surfacturation par token suspectée. · Recommandation : Recoupez la facturation avec un prompt de taille connue ; surfacturation par token possible."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-                - listitem:
-                  - text: "Résultat : Avertissement. Tokens de complétion déclarés bien au-dessus de l'estimation Tokens de complétion déclarés (400) bien au-dessus de l'estimation indépendante (~7, ratio 57.14) ; surfacturation par token suspectée. · Recommandation : Comparez le décompte des tokens avec une référence de confiance du même modèle."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-            - button "Fiabilité en concurrence" [expanded]
-            - text: Stable sous charge ?
-            - meter "Fiabilité en concurrence Stable sous charge ?"
-            - region "Fiabilité en concurrence Stable sous charge ?":
-              - paragraph: Score issu d'un seul détecteur.
-              - heading "Fiabilité et latence en concurrence Score 100" [level=4]
-              - list "Fiabilité et latence en concurrence Score 100":
-                - listitem:
-                  - text: "Résultat : Réussi. Taux de réussite des requêtes concurrentes Avec une concurrence de 2, 4 requêtes réussies (sur 4, 0 limitées en débit)."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "requests: 4 successes: 4 rate_limited: 0 concurrency: 2 success_rate: 1"
-            - button "Sécurité du transport" [expanded]
-            - text: Les clés sont-elles traitées en sécurité ?
-            - meter "Sécurité du transport Les clés sont-elles traitées en sécurité ?"
-            - region "Sécurité du transport Les clés sont-elles traitées en sécurité ?":
-              - paragraph: Score issu d'un seul détecteur.
-              - heading "Signaux de transport et de gestion des secrets Score 40" [level=4]
-              - list "Signaux de transport et de gestion des secrets Score 40":
-                - listitem:
-                  - text: "Résultat : Échec. Transport en HTTPS ? Protocole de transport : http. · Recommandation : Utilisez un base_url en https:// pour que le jeton bearer ne circule pas en clair."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "scheme: http"
-                - listitem:
-                  - text: "Résultat : Info. En-têtes de réponse amont/proxy En-têtes de réponse révélateurs : server. Informatif — peut corroborer l'identité amont, ce n'est pas un échec."
-                  - button "Masquer les preuves" [expanded]
-                  - text: "revealing_headers: {\"server\":\"uvicorn\"}"
-                - listitem: "Résultat : Réussi. La réponse renvoie-t-elle la clé API ? Contrôle de renvoi de la clé API."
-                - listitem: "Résultat : Info. Limites de la détection en boîte noire L'enregistrement des prompts ou la réutilisation d'une clé amont partagée ne peuvent pas être prouvés en boîte noire côté client ; les dimensions fiabilité et timing du streaming servent de signaux indirects."
-            - button "Performance" [expanded]
+            - button "Identité du modèle"
+            - text: Est-ce le modèle qu'il prétend être ? Non exécuté
+            - button "Capacités annoncées"
+            - text: Outils/JSON vraiment pris en charge ? Non exécuté
+            - button "Authenticité du streaming"
+            - text: Vrai streaming ou simulé ? Non exécuté
+            - button "Facturation et consommation"
+            - text: La consommation de tokens est-elle gonflée ? Non exécuté
+            - button "Fiabilité en concurrence"
+            - text: Stable sous charge ? Non exécuté
+            - button "Sécurité du transport"
+            - text: Les clés sont-elles traitées en sécurité ? Non exécuté
+            - button "Performance"
             - text: Sa vitesse est-elle régulière ? Non exécuté
-            - region "Performance Sa vitesse est-elle régulière ?":
-              - paragraph: Aucun détecteur de cette dimension n'a été exécuté dans cet audit.
-            - heading "Constats 13 constats" [level=3]
-            - heading "Élevée 4 constats" [level=4]
-            - list "Élevée 4 constats":
-              - listitem:
-                - text: "Gravité : Élevée. Tokens de prompt déclarés bien au-dessus de l'estimation Tokens de prompt déclarés (900) bien au-dessus de l'estimation indépendante (~135, ratio 6667) ; surfacturation par token suspectée. · Recommandation : Recoupez la facturation avec un prompt de taille connue ; surfacturation par token possible."
-                - button "Masquer les preuves" [expanded]
-                - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-              - listitem:
-                - text: "Gravité : Élevée. Auto-identification Se présente comme une marque concurrente (claude, anthropic) sans citer la vraie marque. · Recommandation : Une réponse citant un autre fournisseur suggère fortement une substitution de modèle."
-                - button "Masquer les preuves" [expanded]
-                - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-              - listitem:
-                - text: "Gravité : Élevée. Contrôle d'empreinte comportementale Contrôle d'empreinte comportementale purement code pour self-id."
-                - button "Masquer les preuves" [expanded]
-                - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-              - listitem:
-                - text: "Gravité : Élevée. Transport en HTTPS ? Protocole de transport : http. · Recommandation : Utilisez un base_url en https:// pour que le jeton bearer ne circule pas en clair."
-                - button "Masquer les preuves" [expanded]
-                - text: "scheme: http"
-            - heading "Moyenne 5 constats" [level=4]
-            - list "Moyenne 5 constats":
-              - listitem:
-                - text: "Gravité : Moyenne. Tokens de complétion déclarés bien au-dessus de l'estimation Tokens de complétion déclarés (400) bien au-dessus de l'estimation indépendante (~7, ratio 57.14) ; surfacturation par token suspectée. · Recommandation : Comparez le décompte des tokens avec une référence de confiance du même modèle."
-                - button "Masquer les preuves" [expanded]
-                - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-              - listitem:
-                - text: "Gravité : Moyenne. Appel d'outils (function calling) Sonde d'appel d'outils ; finish_reason=stop. · Recommandation : Vérifiez que le moteur servi prend réellement en charge l'appel de fonctions."
-                - button "Masquer les preuves" [expanded]
-                - text: "finish_reason: stop had_content: true"
-              - listitem:
-                - text: "Gravité : Moyenne. Mode JSON (json_object) Sonde du mode JSON ; objet analysé : non, valeur demandée respectée : non. · Recommandation : Vérifiez que le moteur servi respecte response_format=json_object."
-                - button "Masquer les preuves" [expanded]
-                - text: "parsed: false value_matched: false"
-              - listitem:
-                - text: "Gravité : Moyenne. Champ model renvoyé Le champ model de la réponse vaut gpt-4o-mini ; demandé : gpt-4o. · Recommandation : Un id de modèle de gamme inférieure ou d'une autre famille dans la réponse suggère un routage vers un substitut."
-                - button "Masquer les preuves" [expanded]
-                - text: "requested: gpt-4o returned: gpt-4o-mini"
-              - listitem:
-                - text: "Gravité : Moyenne. Structure des réponses d'erreur Une requête invalide renvoie HTTP 200 ; corps d'erreur au format OpenAI : non. · Recommandation : Un relais conforme doit rejeter une entrée invalide avec un 4xx et un corps {'error': {...}}."
-                - button "Masquer les preuves" [expanded]
-                - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - heading "Faible 4 constats" [level=4]
-            - list "Faible 4 constats":
-              - listitem:
-                - text: "Gravité : Faible. JSON Schema strict Sonde JSON schema strict ; conforme au schéma : non."
-                - button "Masquer les preuves" [expanded]
-                - text: "conforms: false parsed: false"
-              - listitem:
-                - text: "Gravité : Faible. Longueur de sortie maximale Sonde de sortie maximale : max_output annoncé=16384, 2048 tokens demandés ; ~1 lignes produites, finish_reason=stop. · Recommandation : La génération longue peut rester en deçà du plafond annoncé ; confirmez avec une sonde plus longue."
-                - button "Masquer les preuves" [expanded]
-                - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-              - listitem:
-                - text: "Gravité : Faible. Contrôle d'empreinte comportementale Contrôle d'empreinte comportementale purement code pour max-output-truncation."
-                - button "Masquer les preuves" [expanded]
-                - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-              - listitem:
-                - text: "Gravité : Faible. Gestion des séquences stop Contrôle de la séquence stop ; finish_reason=stop."
-                - button "Masquer les preuves" [expanded]
-                - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-            - heading "Journal d'exécution 8 vérifications · <duration> au total" [level=3]
-            - paragraph: Les vérifications s'exécutent l'une après l'autre ; la plus lente était Audit de facturation des tokens (<duration>).
-            - button "Afficher moins" [expanded]
-            - list:
-              - listitem: Audit de facturation des tokens Facturation et consommation Échec · Score 55 <duration>
-              - listitem: Vérification des capacités annoncées Capacités annoncées Échec · Score 25 <duration>
-              - listitem: Connectivité et complétion de base Connectivité Réussi · Score 92,5 <duration>
-              - listitem: Identité du modèle et empreinte de déclassement Identité du modèle Échec · Score 20 <duration>
-              - listitem: Conformité à la compatibilité OpenAI Conformité du protocole Échec · Score 75 <duration>
-              - listitem: Fiabilité et latence en concurrence Fiabilité en concurrence Réussi · Score 100 <duration>
-              - listitem: Signaux de transport et de gestion des secrets Sécurité du transport Échec · Score 40 <duration>
-              - listitem: Authenticité du streaming Authenticité du streaming Réussi · Score 100 <duration>
+            - heading "Constats" [level=3]
+            - paragraph: Aucun avertissement ni échec — chaque dimension correspond au modèle annoncé.
+            - heading "Journal d'exécution 6 vérifications · <duration> au total" [level=3]
+            - paragraph: Les vérifications s'exécutent l'une après l'autre ; la plus lente était context_window (<duration>).
+            - button "Tout afficher (6)"
             - paragraph:
               - text: zing fournit des
               - strong: preuves reproductibles d'écart de comportement et de risque
@@ -368,6 +284,21 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - text: "Audits enregistrés : 1"
+  - region "gpt-4o http://127.0.0.1:9099/v1":
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
+    - code: base_url
+    - text: http://127.0.0.1:9099/v1 Score 53
+    - list:
+      - listitem:
+        - button "27 sept. 2026, 07:47 Tromperie sur la marchandise Score 53 Note F check · standard"
+        - button "Relancer l’audit"
+        - button "Planifier comme surveillance"
+        - button "Supprimer l'entrée" [expanded]
+        - group "Supprimer cette entrée de l'historique ?":
+          - text: Supprimer cette entrée de l'historique ?
+          - button "Supprimer"
+          - button "Annuler"
+  - text: "Audits enregistrés : 15"
   - button "Effacer l'historique"
   - status

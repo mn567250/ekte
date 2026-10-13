@@ -6,8 +6,109 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.20.0] — analytics page
+
+### Added
+
+- **Reports record when the audit started (`started_at`).** An ISO UTC
+  timestamp taken at the same instant the request records' `start_ms` offsets
+  count from, so the time of every call can be reconstructed. Optional: older
+  reports without it stay valid.
+- **Per-run metrics in `history.db` (schema version 2).** Every saved run gets
+  a row in `history_metrics` (start time, success/error/timeout rates,
+  latency, TTFT and decode percentiles, billing ratios, reasoning and cached
+  token shares, echoed-model mismatch, context window, finding counts, the zing
+  version and knowledge-base profile it was scored with) and its dimension and
+  detector scores in `history_dimensions`, groundwork for the analytics views.
+  A value the run did not measure is NULL, never 0. Runs saved before the
+  upgrade are processed once, in small batches, the first time the new
+  version opens the database; for reports without `started_at` the start time
+  is estimated from `generated_at` and the span of the request records, and
+  marked as estimated.
+- **Analytics API (`zing serve`).** Four read-only endpoints over the run
+  history, the data behind the analytics page:
+  `GET /api/analytics/options` (relays, models, suites, stream modes, APIs and
+  the date range present in the history), `GET /api/analytics/summary` (KPIs
+  of a range against the previous range of the same length: runs, relays,
+  models, median score, high-risk share, success rate, TTFT, decode speed,
+  billing ratios), `GET /api/analytics/series` (one metric per relay, model or
+  relay + model in hour, day, week or weekday x hour buckets of the viewer's
+  time zone, with median, quartiles and run counts) and
+  `GET /api/analytics/leaderboard` (the relays of one model, or the models of
+  one relay). Relays are grouped by their knowledge-base provider or saved
+  relay entry when the query runs, so renaming or saving a relay re-groups the
+  whole history. Every value carries how many runs measured it; a run that
+  did not is left out, never counted as 0. Buckets with fewer than 3 runs are
+  flagged, as are series that mix suites, stream modes or APIs, and the points
+  where the zing version or the knowledge-base profile changed. Filters:
+  `from`, `to`, `suite`, `stream_mode`, `api`, `source=all|manual|monitor`,
+  `relay`, `model`; a bad parameter answers 400.
+- **Analytics page (UI v2, `/v2/analytics`).** A new page in the main
+  navigation compares relays and models over time from the local history:
+  KPI tiles for the chosen period (runs, relays, models, median score,
+  high-risk share, success rate, TTFT, decode speed, billing ratios) with the
+  change against the period of the same length before and how many runs each
+  value rests on; a chart of any metric (or dimension score) per relay, model
+  or relay × model by hour, day or week, with the median line, the p25–p75
+  band, gaps for empty buckets, faded markers and a hint for buckets with
+  fewer than 3 runs, markers where the zing version or knowledge-base profile
+  changed and a warning when a series mixes suites, probe modes or protocols;
+  and a sortable leaderboard of the relays for a model or the models for a
+  relay. Filters: period (7 / 30 / 90 days, all, custom), suite, probe mode,
+  protocol, source (manual / monitor), relay, model; by default one suite and
+  probe mode (the most common), and the whole view is kept in the URL.
+  Hand-drawn SVG, no library, no outgoing requests; every chart is also a
+  data table, in all seven languages, light and dark. `GET
+  /api/analytics/options` also lists the relay × model pairs
+  (`relay_models`).
+- **Analytics page: peak hours, errors, model integrity, billing and relay
+  overhead.** Five more panels, scoped by the same filters: a weekday × hour
+  heatmap of a metric (TTFT by default; latency, speed, success, error,
+  rate-limit and timeout rates, score) for all relays
+  or one, in the viewer's time zone, cells with fewer than 3 runs hatched and
+  empty cells outlined; failed calls by cause (rate limits / HTTP 429, 5xx,
+  timeouts, 4xx, network and other errors) as stacked bars over time and a
+  table per relay or model with counts and rate-limited / timeout shares,
+  stating how many runs have request records; an integrity matrix per relay ×
+  model with pass / warn / fail chips (icon and text) for the identity,
+  capability, vision, streaming, protocol, integrity, injected-prompt and
+  connectivity checks, the model-mismatch share and the measured share of the
+  declared context window; billing ratios over time against a 100% reference
+  line, reasoning and cached-input shares, and a per-relay summary; and the
+  processing time a relay reports next to the network round trip. Every chart
+  has its data table. New endpoints `GET /api/analytics/errors` (request
+  outcomes counted in SQL by class, per relay or model and per time bucket,
+  with coverage), `GET /api/analytics/integrity` and `GET
+  /api/analytics/breakdown` (some metrics per group over the range);
+  `/api/analytics/series` also takes `group=all`. Each panel loads on its own
+  (`PANELS` registry in the page).
+- **Analytics page: tabs and share links.** The panels sit in five tabs under
+  the page header and one filter panel shared by all of them: Overview (KPIs,
+  leaderboard), Trends (comparison over time, peak hours), Reliability
+  (errors, relay overhead), Model integrity and Billing; only the shown tab's
+  panels load, and a filter change reloads that tab while the others reload
+  when shown. The URL fragment keeps the tab, every filter and every panel
+  option (`#tab=reliability&range=30&source=monitor&eb=dow_hour&…`), and
+  **Copy link to this view** copies it, announcing "Link copied" (where the
+  browser offers no clipboard, the link appears selected in a read-only field
+  to copy); opening the link restores exactly that view, older links without a
+  tab open Overview. The filter panel is now collapsible like History's (the
+  same component) and, closed, names the period and every active filter in one
+  line. Also: the errors panel offers weekday × hour buckets (a grid of the
+  failed share); the billing chart's axis is zoomed to the data around 100%
+  instead of starting at 0%, with the 100% label at the left of the plot; each
+  integrity cell has one accessible name ("All 7 passed", "Failed: 4 of 7
+  passed · 2 failed"); the peak-hours hint speaks of hatched cells.
+
 ### Changed
 
+- **History's closed filter panel names the active filters.** Next to the
+  count of active filters, a line under the toggle lists them (e.g. "Last 30
+  days · Example Relay · Ad-hoc"), and the toggle is described by it. The
+  panel is now a component shared with the Analytics page
+  (`v2/filterpanel.js`, `v2/filterpanel.css`) and works as before; its toggle
+  reads "Filters" (was "Filters & trends") on both pages, so the same control
+  has the same name everywhere (BITV 9.3.2.4); the trend picker is still in it.
 - **CI runs the accessibility suite only for the pages a change affects.** On
   pull requests a new `accessibility scope` job
   maps the changed files to web UI v2 pages (`python -m tests.a11y.affected`,
@@ -20,6 +121,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   manual runs test every page, and only those full runs build the BITV conformance report. Pip
   and Playwright's Chromium are cached. Locally, `ZING_A11Y_PAGES=history,kb`
   selects pages the same way (tests/a11y/README.md).
+- **Smaller `history.db`: request records are stored once.** A report's
+  `performance.requests` (target and baseline) move out of the stored report
+  JSON into their own table, `history_requests`, and are put back when the
+  report is read, so saved reports read back exactly as before. Existing rows
+  are converted by the same one-time backfill; a row is either fully converted
+  or left as it was, and rows that still hold their records inline keep
+  working.
+
+### Fixed
+
+- **Performance chart tooltips no longer track pointer movement.** They open
+  when the pointer enters a mark (Audit and History pages), as the other
+  charts do.
+- **German analytics tile labels break with a hyphen.** "Abrechnungsverhältnis"
+  broke mid-word without a hyphen in the overview tiles; it now carries a soft
+  hyphen, and tile labels use `hyphens: auto` with the page language.
+- **Report meta labels wrap on narrow screens (UI v2).** A long label in the
+  report's meta strip, such as the French "Requêtes de la sonde de
+  performance", could not shrink and was cut off at 320 px wide (Audit and
+  History); it now wraps like its value.
 
 ## [0.19.2] — fixes for local and reasoning models
 

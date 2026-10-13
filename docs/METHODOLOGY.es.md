@@ -758,6 +758,10 @@ alternan para que la deriva de la red afecte a ambos por igual.
 Los tokens de entrada en caché solo cuentan cuando cubren al menos la mitad del
 prompt: los servidores locales (Ollama, llama.cpp, LM Studio) reutilizan la
 plantilla de chat en caché de cada prompt, lo que no es una respuesta guardada.
+Cada llamada de la auditoría se guarda como registro de petición
+(`performance.requests`, solo números, nunca texto del prompt ni de la
+respuesta); su `start_ms` cuenta desde el `started_at` del informe (UTC), así
+que la hora de cada llamada se puede reconstruir.
 
 La constancia usa ratios de cola (p90 ÷ p50 para latencia y TTFT, p50 ÷ p10 para
 el rendimiento), que una solicitud atípica no mueve como mueve una desviación

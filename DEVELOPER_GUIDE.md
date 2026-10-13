@@ -113,6 +113,8 @@ zing/
     jobs.py            background audit jobs and the per-relay gate
     security.py        loopback bind, Host allowlist, Origin/JSON checks, headers
     history.py         audit history store (history.db)
+    analytics_store.py its analytics tables: per-run metrics, request records
+    analytics.py       analytics queries: KPIs, time series, leaderboards
     watches.py         monitor store (watches.db)
     masterkey.py       the master key's states and actions (server and `zing secret`)
     static/            classic UI pages and the shared scripts (lang.js, i18n.js, …)
@@ -279,6 +281,33 @@ All decoding (image headers, WAV) is standard library only.
   back the other pages.
 - **Relays.** `POST /api/kb/relays` saves a relay `{name, base_url}` (400 for bad
   input, 409 when the name or URL is already known).
+- **Analytics.** `GET /api/analytics/options` (relays, models, suites, stream
+  modes, APIs and the date range in the history), `/api/analytics/summary`
+  (KPIs of `from`–`to` against the previous range of the same length),
+  `/api/analytics/series` (`metric` per `group=relay|model|relay_model`, up to
+  4 `keys`, in `bucket=hour|day|week|dow_hour` buckets of the viewer's `tz` or
+  `tz_offset`) and `/api/analytics/leaderboard` (`model=` for its relays, or
+  `relay=` for its models). All take the filters `from`, `to`, `suite`,
+  `stream_mode`, `api`, `source=all|manual|monitor`, `relay` and `model`.
+  `zing/web/analytics.py` computes everything in Python from
+  `history.analytics_runs()`: metric ids come from a fixed whitelist, relays are
+  grouped by knowledge-base entry when the query runs, a value a run did not
+  measure is left out (each value has its `n` and `coverage`), and buckets with
+  fewer than `MIN_RUNS` (3) runs are flagged `low_n`. A bad parameter answers
+  400; responses are `Cache-Control: no-store`.
+- **Analytics panels.** `/api/analytics/breakdown` (up to 8 `metrics` per
+  `group=relay|model|relay_model|all` over the range), `/api/analytics/errors`
+  (the target's completion calls by outcome class
+  `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, per
+  `group=relay|model` and per `bucket`, counted in SQL by
+  `history.analytics_request_classes()` without loading request rows; a call's
+  time is its run's start plus its offset, to the minute; `covered` = runs that
+  have request records) and `/api/analytics/integrity` (pass / warn / fail
+  counts of the identity, capability, vision, streaming, protocol, integrity,
+  injected-prompt and connectivity detectors per relay × model, the
+  model-mismatch share and the median effective / declared context window).
+  `/api/analytics/series` also takes `group=all`. Same filters and errors as
+  above.
 - **Background audits.** `jobs.py` runs every audit as a job owned by the
   server. `POST /api/jobs` queues one, `GET /api/jobs` lists queued, running and
   recently finished jobs (plus running monitors) with progress,
@@ -333,6 +362,41 @@ cached per URL/key/protocol) → claimed model from the knowledge base
 knowledge base** (`POST /api/kb/relays`). Its pure helpers are tested under node;
 the classic pages keep `modelpicker.js`.
 
+The v2 **Analytics** page (`v2/analytics.html`) reads only `/api/analytics/*`
+(`options` also lists the relay × model pairs, `relay_models`, for its series
+picker). It has one `<section class="card panel">` per panel under one filter
+bar, so new panels slot in; filters and view live in the URL fragment
+(`#range=30&metric=score&…`) and in `localStorage`. Its charts come from
+`v2/charts.js` (`ZingCharts.timeChart`: hand-drawn inline SVG with median line,
+p25–p75 band, gaps for empty buckets, faded markers for `low_n` buckets,
+annotation lines and a hover tooltip; `fmt` / `fmtDelta` format values by unit)
+and `v2/charts.css` (four validated series colours per theme, told apart by
+marker shape too). Every chart is also rendered as a data table.
+
+Each panel is self-contained: a `PANELS` registry in the page script lists its
+section id, `load()` (fetch with the current filters and view, then render) and
+`render()` (redraw from the loaded data, e.g. on a language switch), so panels
+can be rearranged without touching each other. `ZingCharts.heatmap` draws the
+weekday × hour grid (five-step one-hue sequential scale per theme, hatched cells
+for `low_n`, outlined empty cells), `ZingCharts.stackBars` the stacked error
+bars, and `timeChart` takes a `ref` line (100% billing ratio).
+
+The page header and the filter panel sit above five in-page tabs
+(`v2/tabs.js`, as on Tools and Knowledge): each `PANELS` entry names its `tab`,
+and only the shown tab's panels load; a filter change reloads that tab and
+marks the others stale (`activate()` loads them when shown). `tabs.js` takes
+`writeHash: false` here, because the page writes the whole view into the
+fragment itself — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`),
+which **Copy link to this view** copies (a selected read-only field where the
+clipboard API is missing or refuses); a fragment without `tab` opens Overview,
+and a pasted link (`hashchange`) re-reads the view. The collapsible filter
+panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History:
+`ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})`
+returns `render({body, foot, count, summary})`, `sync({count, summary})`,
+`setOpen()` and `focusStart()`; the page owns its filters and fields, the panel
+the toggle with its active-filter badge, the one-line summary shown while
+closed, the remembered open state and **Reset filters**.
+
 **Translation convention.** The Chinese text written in the HTML is the
 original and stays untouched; every element carries its English text in
 `data-en` (and `data-en-placeholder`, `data-en-title`, `data-en-aria-label`).
@@ -352,6 +416,24 @@ are safe on FastAPI's thread pool. The global `--data-dir` option (also on
 keeps its mode; only the default `~/.zing` is tightened to `0700`. History rows
 are indexed by target and model (`idx_history_target`), which
 `history.latest_for()` uses to find a monitor's previous run.
+
+Since schema version 2 (`PRAGMA user_version`) `history.db` also holds the
+analytics tables, defined in `web/analytics_store.py`: `history_metrics` (one
+row of extracted metrics per run: start time, rates, latency/TTFT/decode
+percentiles, billing ratios, finding counts and more; NULL where the run did
+not measure a value), `history_dimensions` (dimension and detector scores) and
+`history_requests` (the run's request records, target and baseline, in list
+order). A report's `performance.requests` are kept only there: `save()` takes
+them out of `report_json` (`requests_split` marks the row) and `get()` /
+`latest_for()` put them back, so a report reads back identical to the one
+saved; whatever the columns cannot reproduce exactly goes into the JSON column
+`extra`. `extract_metrics()` is pure and versioned (`EXTRACT_VERSION`). After
+the migration a batched backfill (one short transaction per batch, idempotent)
+moves older rows' records and extracts their metrics, and re-extracts rows
+written by an older `EXTRACT_VERSION`; `history.backfill_analytics()` runs it
+again on demand. A run's start time is the report's `started_at`; reports from
+before that field get `generated_at` minus the span of their request records
+(`started_at_estimated` = 1).
 
 Stored API keys are encrypted by `zing/secretbox.py` (Fernet, stored as
 `enc:v1:…`; `env:`/`file:` references stay as they are). The master key itself

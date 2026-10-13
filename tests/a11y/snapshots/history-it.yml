@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "Cronologia":
       - /url: /v2/history
+    - link "Analisi":
+      - /url: /v2/analytics
     - link "Monitor":
       - /url: /v2/watches
     - link "Conoscenza":
@@ -39,17 +41,21 @@
     - code: ~/.zing
     - text: — non viene inviato nulla.
   - region "Filtri":
-    - button "Filtri e tendenze" [expanded]
+    - button "Filtri" [expanded]
     - text: Cerca
     - searchbox "Cerca"
     - text: Relay / provider
     - combobox "Relay / provider":
       - option "Tutti" [selected]
       - option "127.0.0.1:9099"
+      - option "gateway.a-very-long-relay-hostname.example.org"
+      - option "relay.example.com"
     - text: Modello dichiarato
     - combobox "Modello dichiarato":
       - option "Tutti" [selected]
       - option "gpt-4o"
+      - option "model-a"
+      - option "model-b"
     - text: Suite
     - combobox "Suite":
       - option "Tutti" [selected]
@@ -61,6 +67,7 @@
     - text: Protocollo
     - combobox "Protocollo":
       - option "Tutti" [selected]
+      - option "openai"
       - option "(sconosciuto)"
     - text: Rilevamento del protocollo
     - combobox "Rilevamento del protocollo":
@@ -69,10 +76,13 @@
     - text: Richieste di sonda
     - combobox "Richieste di sonda":
       - option "Tutti" [selected]
+      - option "Streaming"
       - option "(sconosciuto)"
     - text: Rischio
     - combobox "Rischio":
       - option "Tutti" [selected]
+      - option "Coerente (probabilmente autentico)"
+      - option "Per lo più affidabile"
       - option "Merce non conforme"
     - text: Punteggio min.
     - spinbutton "Punteggio min."
@@ -93,269 +103,175 @@
       - button "Voto"
       - button "Latenza p50" [pressed]
       - button "Tokens/s"
-    - text: 1 di 1 audit mostrati
+    - text: 15 di 15 audit mostrati
   - group "Ordina gli audit":
     - button "Data, ordine decrescente": Data
     - button "Ordina per Rischio": Rischio
     - button "Ordina per Punteggio": Punteggio
     - button "Ordina per Voto": Voto
   - button "Comprimi tutto"
-  - region "gpt-4o":
-    - heading "gpt-4o" [level=2]:
-      - button "gpt-4o" [expanded]
+  - region "model-a https://relay.example.com/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
     - code: base_url
-    - text: http://127.0.0.1:9099/v1 Punteggio 53
+    - text: https://relay.example.com/v1 Punteggio
+    - 'img "Andamento del punteggio di salute in 7 audit: da 70 a 82, in crescita."'
+    - text: 82 Latenza p50
+    - 'img "Andamento di Latenza p50 su 7 audit: da <duration> a <duration>."'
+    - text: <duration>
     - list:
       - listitem:
-        - button "27 set 2026, 07:47 Merce non conforme Punteggio 53 Voto F check · standard" [expanded]
+        - button "30 set 2026, 11:02 Coerente (probabilmente autentico) Punteggio 82 Voto B check · standard openai · Streaming p50 <duration>"
         - button "Riesegui audit"
         - button "Pianifica come monitor"
-        - button "Elimina voce" [expanded]
-        - group "Eliminare questa voce della cronologia?":
-          - text: Eliminare questa voce della cronologia?
-          - button "Elimina"
-          - button "Annulla"
-        - region "27 set 2026, 07:47 Merce non conforme Punteggio 53 Voto F check · standard":
-          - article "Non sta servendo il modello che dichiara":
-            - text: Merce non conforme
-            - heading "Non sta servendo il modello che dichiara" [level=2]
-            - paragraph: "Rilevazioni: 4 alto/i, 5 medio/i. Esegui `zing compare` rispetto a un riferimento affidabile per rafforzare il verdetto."
-            - text: Punteggio di salute complessivo 52,6/100 (Valutazione F) Affidabilità del verdetto Media
+        - button "Elimina voce"
+      - listitem:
+        - button "30 set 2026, 10:02 Coerente (probabilmente autentico) Punteggio 85 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+      - listitem:
+        - button "30 set 2026, 09:02 Coerente (probabilmente autentico) Punteggio 88 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+      - listitem:
+        - button "28 set 2026, 10:02 Per lo più affidabile Punteggio 78 Voto D check · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+      - listitem:
+        - button "28 set 2026, 09:02 Coerente (probabilmente autentico) Punteggio 80 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+      - listitem:
+        - button "28 set 2026, 07:02 Coerente (probabilmente autentico) Punteggio 84 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+      - listitem:
+        - button "26 set 2026, 08:02 Per lo più affidabile Punteggio 70 Voto D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
+        - button "Elimina voce"
+  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Punteggio
+    - 'img "Andamento del punteggio di salute in 4 audit: da 58 a 64, in crescita."'
+    - text: 64 Latenza p50
+    - 'img "Andamento di Latenza p50 su 4 audit: da <duration> a <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "30 set 2026, 08:02 Merce non conforme Punteggio 64 Voto D check · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+      - listitem:
+        - button "29 set 2026, 11:02 Merce non conforme Punteggio 60 Voto D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
+        - button "Elimina voce"
+      - listitem:
+        - button "29 set 2026, 10:02 Per lo più affidabile Punteggio 66 Voto D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
+        - button "Elimina voce"
+      - listitem:
+        - button "29 set 2026, 09:02 Merce non conforme Punteggio 58 Voto D check Monitor · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
+        - button "Elimina voce"
+  - region "model-b https://relay.example.com/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://relay.example.com/v1 Punteggio
+    - 'img "Andamento del punteggio di salute in 2 audit: da 89 a 91, in crescita."'
+    - text: 91 Latenza p50
+    - 'img "Andamento di Latenza p50 su 2 audit: da <duration> a <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "29 set 2026, 07:02 Coerente (probabilmente autentico) Punteggio 91 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+      - listitem:
+        - button "29 set 2026, 06:02 Coerente (probabilmente autentico) Punteggio 89 Voto B check · standard openai · Streaming p50 <duration>"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Punteggio 72 Latenza p50 <duration>
+    - list:
+      - listitem:
+        - button "27 set 2026, 10:02 Per lo più affidabile Punteggio 72 Voto D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce"
+        - region "27 set 2026, 10:02 Per lo più affidabile Punteggio 72 Voto D check · standard openai · Streaming p50 <duration>":
+          - article "Per lo più coerente, con alcuni problemi minori":
+            - text: Per lo più affidabile
+            - heading "Per lo più coerente, con alcuni problemi minori" [level=2]
+            - text: Punteggio di salute complessivo 72/100 (Valutazione D) Affidabilità del verdetto —
             - term: Obiettivo
             - definition:
-              - code: http://127.0.0.1:9099/v1
+              - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
             - term: Modello dichiarato
             - definition:
-              - code: gpt-4o
+              - code: model-b
+            - term: Protocollo
+            - definition:
+              - code: openai
             - term: Modalità
             - definition:
               - code: check
             - term: Suite
             - definition:
               - code: standard
+            - term: Richieste della sonda delle prestazioni
+            - definition: Streaming
+            - term: Profilo di conoscenza
+            - definition: Nessun profilo corrispondente
             - term: Data
-            - definition: 27 set 2026, 07:47
+            - definition: 27 set 2026, 10:02
             - term: Versione
             - definition:
               - code: zing v<version>
-            - heading "Controlli per dimensione 8 di 10 dimensioni eseguite" [level=3]
-            - button "Connettività" [expanded]
-            - text: Raggiungibile in modo affidabile?
-            - meter "Connettività Raggiungibile in modo affidabile?"
-            - region "Connettività Raggiungibile in modo affidabile?":
-              - paragraph: Punteggio da un solo rilevatore.
-              - heading "Connettività e completamento di base Punteggio 92,5" [level=4]
-              - list "Connettività e completamento di base Punteggio 92,5":
-                - listitem:
-                  - text: "Esito: Superato. Elenco /v1/models 1 modelli elencati; modello dichiarato presente nell'elenco: sì."
-                  - button "Nascondi prove" [expanded]
-                  - text: "model_count: 1 claimed_listed: true"
-                - listitem:
-                  - text: "Esito: Superato. Completamento di chat di base Contenuto restituito in <duration>; modello restituito: gpt-4o-mini."
-                  - button "Nascondi prove" [expanded]
-                  - text: "duration_ms: <duration> model_returned: gpt-4o-mini canary_echoed: false"
-            - button "Conformità del protocollo" [expanded]
+            - heading "Controlli per dimensione 1 di 10 dimensioni eseguite" [level=3]
+            - button "Conformità del protocollo"
             - text: L'API rispetta la specifica?
             - meter "Conformità del protocollo L'API rispetta la specifica?"
-            - region "Conformità del protocollo L'API rispetta la specifica?":
-              - paragraph: Punteggio da un solo rilevatore.
-              - heading "Conformità alla compatibilità OpenAI Punteggio 75" [level=4]
-              - list "Conformità alla compatibilità OpenAI Punteggio 75":
-                - listitem:
-                  - text: "Esito: Superato. Memoria multi-turno Controllo del contesto multi-turno; colore menzionato prima ricordato: sì."
-                  - button "Nascondi prove" [expanded]
-                  - text: "recalled_blue: true content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: "Esito: Avviso. Gestione delle sequenze stop Controllo della sequenza stop; finish_reason=stop."
-                  - button "Nascondi prove" [expanded]
-                  - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: "Esito: Superato. Conformità della struttura della risposta finish_reason=stop; usage completo: sì."
-                  - button "Nascondi prove" [expanded]
-                  - text: "finish_reason: stop has_usage: true prompt_tokens: 900 completion_tokens: 400 total_tokens: 1300"
-                - listitem:
-                  - text: "Esito: Fallito. Struttura delle risposte di errore Una richiesta non valida restituisce HTTP 200; corpo di errore in stile OpenAI: no. · Raccomandazione: Un intermediario conforme dovrebbe rifiutare input non validi con un 4xx e un corpo {'error': {...}}."
-                  - button "Nascondi prove" [expanded]
-                  - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - button "Finestra di contesto" [expanded]
+            - button "Connettività"
+            - text: Raggiungibile in modo affidabile? Non eseguito
+            - button "Finestra di contesto"
             - text: Ricorda davvero gli input lunghi? Non eseguito
-            - region "Finestra di contesto Ricorda davvero gli input lunghi?":
-              - paragraph: Nessun rilevatore di questa dimensione è stato eseguito in questo audit.
-            - button "Identità del modello" [expanded]
-            - text: È il modello che dichiara di essere?
-            - meter "Identità del modello È il modello che dichiara di essere?"
-            - region "Identità del modello È il modello che dichiara di essere?":
-              - paragraph: Punteggio da un solo rilevatore.
-              - heading "Identità del modello e impronta di declassamento Punteggio 20" [level=4]
-              - list "Identità del modello e impronta di declassamento Punteggio 20":
-                - listitem:
-                  - text: "Esito: Fallito. Autoidentificazione Si identifica come un marchio concorrente (claude, anthropic) senza nominare il marchio autentico. · Raccomandazione: Una risposta che nomina un altro fornitore suggerisce fortemente una sostituzione del modello."
-                  - button "Nascondi prove" [expanded]
-                  - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-                - listitem:
-                  - text: "Esito: Fallito. Controllo dell'impronta comportamentale Controllo dell'impronta comportamentale solo codice per self-id."
-                  - button "Nascondi prove" [expanded]
-                  - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-                - listitem:
-                  - text: "Esito: Avviso. Controllo dell'impronta comportamentale Controllo dell'impronta comportamentale solo codice per max-output-truncation."
-                  - button "Nascondi prove" [expanded]
-                  - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-                - listitem:
-                  - text: "Esito: Avviso. Campo model restituito Il campo model della risposta è gpt-4o-mini; richiesto: gpt-4o. · Raccomandazione: Un id di modello di fascia inferiore o di un'altra famiglia nella risposta suggerisce l'instradamento verso un sostituto."
-                  - button "Nascondi prove" [expanded]
-                  - text: "requested: gpt-4o returned: gpt-4o-mini"
-            - button "Capacità dichiarate" [expanded]
-            - text: Strumenti/JSON davvero supportati?
-            - meter "Capacità dichiarate Strumenti/JSON davvero supportati?"
-            - region "Capacità dichiarate Strumenti/JSON davvero supportati?":
-              - paragraph: Punteggio da un solo rilevatore.
-              - heading "Verifica delle capacità dichiarate Punteggio 25" [level=4]
-              - list "Verifica delle capacità dichiarate Punteggio 25":
-                - listitem:
-                  - text: "Esito: Fallito. Chiamata di strumenti (function calling) Sonda di chiamata di strumenti; finish_reason=stop. · Raccomandazione: Verifica che il motore servito supporti davvero la chiamata di funzioni."
-                  - button "Nascondi prove" [expanded]
-                  - text: "finish_reason: stop had_content: true"
-                - listitem:
-                  - text: "Esito: Fallito. Modalità JSON (json_object) Sonda della modalità JSON; oggetto analizzato: no; valore richiesto rispettato: no. · Raccomandazione: Verifica che il motore servito rispetti response_format=json_object."
-                  - button "Nascondi prove" [expanded]
-                  - text: "parsed: false value_matched: false"
-                - listitem:
-                  - text: "Esito: Avviso. JSON Schema rigoroso Sonda JSON schema rigoroso; conforme allo schema: no."
-                  - button "Nascondi prove" [expanded]
-                  - text: "conforms: false parsed: false"
-                - listitem:
-                  - text: "Esito: Avviso. Lunghezza massima dell'output Sonda di output massimo: max_output dichiarato=16384, 2048 token richiesti; ~1 righe prodotte, finish_reason=stop. · Raccomandazione: La generazione lunga può restare sotto il massimo dichiarato; conferma con una sonda più lunga."
-                  - button "Nascondi prove" [expanded]
-                  - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-            - button "Autenticità dello streaming" [expanded]
-            - text: Streaming reale o simulato?
-            - meter "Autenticità dello streaming Streaming reale o simulato?"
-            - region "Autenticità dello streaming Streaming reale o simulato?":
-              - paragraph: Punteggio da un solo rilevatore.
-              - heading "Autenticità dello streaming Punteggio 100" [level=4]
-              - list "Autenticità dello streaming Punteggio 100":
-                - listitem:
-                  - text: "Esito: Superato. Streaming autentico 2 frammenti in <duration>, primo token a <duration>."
-                  - button "Nascondi prove" [expanded]
-                  - text: "chunk_count: 2 duration_ms: <duration> ttft_ms: <duration>"
-            - button "Fatturazione e consumo" [expanded]
-            - text: Il consumo di token è gonfiato?
-            - meter "Fatturazione e consumo Il consumo di token è gonfiato?"
-            - region "Fatturazione e consumo Il consumo di token è gonfiato?":
-              - paragraph: Punteggio da un solo rilevatore.
-              - heading "Verifica della fatturazione dei token Punteggio 55" [level=4]
-              - list "Verifica della fatturazione dei token Punteggio 55":
-                - listitem:
-                  - text: "Esito: Fallito. Token di prompt dichiarati molto sopra la stima Token di prompt dichiarati (900) molto sopra la stima indipendente (~135, rapporto 6667); sospetta sovrafatturazione per token. · Raccomandazione: Verifica la fatturazione con un prompt di dimensione nota; possibile sovrafatturazione per token."
-                  - button "Nascondi prove" [expanded]
-                  - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-                - listitem:
-                  - text: "Esito: Avviso. Token di completamento dichiarati molto sopra la stima Token di completamento dichiarati (400) molto sopra la stima indipendente (~7, rapporto 57.14); sospetta sovrafatturazione per token. · Raccomandazione: Confronta il conteggio dei token con un riferimento affidabile dello stesso modello."
-                  - button "Nascondi prove" [expanded]
-                  - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-            - button "Affidabilità in concorrenza" [expanded]
-            - text: Stabile sotto carico?
-            - meter "Affidabilità in concorrenza Stabile sotto carico?"
-            - region "Affidabilità in concorrenza Stabile sotto carico?":
-              - paragraph: Punteggio da un solo rilevatore.
-              - heading "Affidabilità e latenza in concorrenza Punteggio 100" [level=4]
-              - list "Affidabilità e latenza in concorrenza Punteggio 100":
-                - listitem:
-                  - text: "Esito: Superato. Tasso di successo delle richieste concorrenti Con concorrenza 2, 4 richieste riuscite (su 4, 0 limitate)."
-                  - button "Nascondi prove" [expanded]
-                  - text: "requests: 4 successes: 4 rate_limited: 0 concurrency: 2 success_rate: 1"
-            - button "Sicurezza del trasporto" [expanded]
-            - text: Le chiavi sono gestite in sicurezza?
-            - meter "Sicurezza del trasporto Le chiavi sono gestite in sicurezza?"
-            - region "Sicurezza del trasporto Le chiavi sono gestite in sicurezza?":
-              - paragraph: Punteggio da un solo rilevatore.
-              - heading "Segnali di trasporto e gestione dei segreti Punteggio 40" [level=4]
-              - list "Segnali di trasporto e gestione dei segreti Punteggio 40":
-                - listitem:
-                  - text: "Esito: Fallito. Trasporto in HTTPS? Protocollo di trasporto: http. · Raccomandazione: Usa un base_url https:// così il token bearer non viaggia in chiaro."
-                  - button "Nascondi prove" [expanded]
-                  - text: "scheme: http"
-                - listitem:
-                  - text: "Esito: Info. Intestazioni di risposta upstream/proxy Intestazioni di risposta rivelatrici: server. Informativo — può confermare l'identità upstream, non è un errore."
-                  - button "Nascondi prove" [expanded]
-                  - text: "revealing_headers: {\"server\":\"uvicorn\"}"
-                - listitem: "Esito: Superato. La risposta restituisce la chiave API? Controllo di eco della chiave API."
-                - listitem: "Esito: Info. Limiti del rilevamento black-box La registrazione dei prompt o il riuso di una chiave upstream condivisa non si possono dimostrare in black-box lato client; le dimensioni affidabilità e tempi dello streaming fungono da segnali indiretti."
-            - button "Prestazioni" [expanded]
+            - button "Identità del modello"
+            - text: È il modello che dichiara di essere? Non eseguito
+            - button "Capacità dichiarate"
+            - text: Strumenti/JSON davvero supportati? Non eseguito
+            - button "Autenticità dello streaming"
+            - text: Streaming reale o simulato? Non eseguito
+            - button "Fatturazione e consumo"
+            - text: Il consumo di token è gonfiato? Non eseguito
+            - button "Affidabilità in concorrenza"
+            - text: Stabile sotto carico? Non eseguito
+            - button "Sicurezza del trasporto"
+            - text: Le chiavi sono gestite in sicurezza? Non eseguito
+            - button "Prestazioni"
             - text: La velocità è costante? Non eseguito
-            - region "Prestazioni La velocità è costante?":
-              - paragraph: Nessun rilevatore di questa dimensione è stato eseguito in questo audit.
-            - heading "Rilevazioni 13 rilievi" [level=3]
-            - heading "Alta 4 rilievi" [level=4]
-            - list "Alta 4 rilievi":
-              - listitem:
-                - text: "Gravità: Alta. Token di prompt dichiarati molto sopra la stima Token di prompt dichiarati (900) molto sopra la stima indipendente (~135, rapporto 6667); sospetta sovrafatturazione per token. · Raccomandazione: Verifica la fatturazione con un prompt di dimensione nota; possibile sovrafatturazione per token."
-                - button "Nascondi prove" [expanded]
-                - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-              - listitem:
-                - text: "Gravità: Alta. Autoidentificazione Si identifica come un marchio concorrente (claude, anthropic) senza nominare il marchio autentico. · Raccomandazione: Una risposta che nomina un altro fornitore suggerisce fortemente una sostituzione del modello."
-                - button "Nascondi prove" [expanded]
-                - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-              - listitem:
-                - text: "Gravità: Alta. Controllo dell'impronta comportamentale Controllo dell'impronta comportamentale solo codice per self-id."
-                - button "Nascondi prove" [expanded]
-                - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-              - listitem:
-                - text: "Gravità: Alta. Trasporto in HTTPS? Protocollo di trasporto: http. · Raccomandazione: Usa un base_url https:// così il token bearer non viaggia in chiaro."
-                - button "Nascondi prove" [expanded]
-                - text: "scheme: http"
-            - heading "Media 5 rilievi" [level=4]
-            - list "Media 5 rilievi":
-              - listitem:
-                - text: "Gravità: Media. Token di completamento dichiarati molto sopra la stima Token di completamento dichiarati (400) molto sopra la stima indipendente (~7, rapporto 57.14); sospetta sovrafatturazione per token. · Raccomandazione: Confronta il conteggio dei token con un riferimento affidabile dello stesso modello."
-                - button "Nascondi prove" [expanded]
-                - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-              - listitem:
-                - text: "Gravità: Media. Chiamata di strumenti (function calling) Sonda di chiamata di strumenti; finish_reason=stop. · Raccomandazione: Verifica che il motore servito supporti davvero la chiamata di funzioni."
-                - button "Nascondi prove" [expanded]
-                - text: "finish_reason: stop had_content: true"
-              - listitem:
-                - text: "Gravità: Media. Modalità JSON (json_object) Sonda della modalità JSON; oggetto analizzato: no; valore richiesto rispettato: no. · Raccomandazione: Verifica che il motore servito rispetti response_format=json_object."
-                - button "Nascondi prove" [expanded]
-                - text: "parsed: false value_matched: false"
-              - listitem:
-                - text: "Gravità: Media. Campo model restituito Il campo model della risposta è gpt-4o-mini; richiesto: gpt-4o. · Raccomandazione: Un id di modello di fascia inferiore o di un'altra famiglia nella risposta suggerisce l'instradamento verso un sostituto."
-                - button "Nascondi prove" [expanded]
-                - text: "requested: gpt-4o returned: gpt-4o-mini"
-              - listitem:
-                - text: "Gravità: Media. Struttura delle risposte di errore Una richiesta non valida restituisce HTTP 200; corpo di errore in stile OpenAI: no. · Raccomandazione: Un intermediario conforme dovrebbe rifiutare input non validi con un 4xx e un corpo {'error': {...}}."
-                - button "Nascondi prove" [expanded]
-                - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - heading "Bassa 4 rilievi" [level=4]
-            - list "Bassa 4 rilievi":
-              - listitem:
-                - text: "Gravità: Bassa. JSON Schema rigoroso Sonda JSON schema rigoroso; conforme allo schema: no."
-                - button "Nascondi prove" [expanded]
-                - text: "conforms: false parsed: false"
-              - listitem:
-                - text: "Gravità: Bassa. Lunghezza massima dell'output Sonda di output massimo: max_output dichiarato=16384, 2048 token richiesti; ~1 righe prodotte, finish_reason=stop. · Raccomandazione: La generazione lunga può restare sotto il massimo dichiarato; conferma con una sonda più lunga."
-                - button "Nascondi prove" [expanded]
-                - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-              - listitem:
-                - text: "Gravità: Bassa. Controllo dell'impronta comportamentale Controllo dell'impronta comportamentale solo codice per max-output-truncation."
-                - button "Nascondi prove" [expanded]
-                - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-              - listitem:
-                - text: "Gravità: Bassa. Gestione delle sequenze stop Controllo della sequenza stop; finish_reason=stop."
-                - button "Nascondi prove" [expanded]
-                - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-            - heading "Registro di esecuzione 8 controlli · <duration> in totale" [level=3]
-            - paragraph: I controlli vengono eseguiti uno dopo l'altro; il più lento è stato Verifica della fatturazione dei token (<duration>).
-            - button "Mostra meno" [expanded]
-            - list:
-              - listitem: Verifica della fatturazione dei token Fatturazione e consumo Fallito · Punteggio 55 <duration>
-              - listitem: Verifica delle capacità dichiarate Capacità dichiarate Fallito · Punteggio 25 <duration>
-              - listitem: Connettività e completamento di base Connettività Superato · Punteggio 92,5 <duration>
-              - listitem: Identità del modello e impronta di declassamento Identità del modello Fallito · Punteggio 20 <duration>
-              - listitem: Conformità alla compatibilità OpenAI Conformità del protocollo Fallito · Punteggio 75 <duration>
-              - listitem: Affidabilità e latenza in concorrenza Affidabilità in concorrenza Superato · Punteggio 100 <duration>
-              - listitem: Segnali di trasporto e gestione dei segreti Sicurezza del trasporto Fallito · Punteggio 40 <duration>
-              - listitem: Autenticità dello streaming Autenticità dello streaming Superato · Punteggio 100 <duration>
+            - heading "Rilevazioni" [level=3]
+            - paragraph: Nessun avviso o errore — ogni dimensione è coerente con il modello dichiarato.
+            - heading "Registro di esecuzione 6 controlli · <duration> in totale" [level=3]
+            - paragraph: I controlli vengono eseguiti uno dopo l'altro; il più lento è stato context_window (<duration>).
+            - button "Mostra tutti (6)"
             - paragraph:
               - text: zing fornisce
               - strong: prove riproducibili di scostamento del comportamento e di rischio
@@ -368,6 +284,21 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - text: "Audit salvati: 1"
+  - region "gpt-4o http://127.0.0.1:9099/v1":
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
+    - code: base_url
+    - text: http://127.0.0.1:9099/v1 Punteggio 53
+    - list:
+      - listitem:
+        - button "27 set 2026, 07:47 Merce non conforme Punteggio 53 Voto F check · standard"
+        - button "Riesegui audit"
+        - button "Pianifica come monitor"
+        - button "Elimina voce" [expanded]
+        - group "Eliminare questa voce della cronologia?":
+          - text: Eliminare questa voce della cronologia?
+          - button "Elimina"
+          - button "Annulla"
+  - text: "Audit salvati: 15"
   - button "Cancella cronologia"
   - status

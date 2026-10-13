@@ -4,7 +4,8 @@ The session server of harness.py is shared by every a11y test of a worker, so
 flows that create monitors, set a master key or run audits get a server of
 their own: a separate process (the data directory is process-wide state) with
 a throwaway ``ZING_DATA_DIR`` that holds the saved report fixture and,
-optionally, the monitor scheduled from it, with fixed timestamps so pages
+optionally, the monitor scheduled from it and a week of runs for the Analytics
+page (seed.py), with fixed timestamps so pages
 render the same on every run.
 
 ``python -m tests.a11y.zing_proc PORT DATA_DIR SEED_MONITOR`` is what the
@@ -19,6 +20,7 @@ import subprocess
 import sys
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -93,6 +95,7 @@ def _main(port: int, data_dir: Path, seed_monitor: bool) -> None:
     import httpx
     import uvicorn
 
+    from tests.a11y.seed import seed_analytics
     from zing.web import history, watches
     from zing.web.server import create_app
 
@@ -108,6 +111,8 @@ def _main(port: int, data_dir: Path, seed_monitor: bool) -> None:
             wid = c.post(f"/api/watches/from-history/{rid}", json={}).json()["id"]
         with watches._connect() as conn:
             conn.execute("UPDATE watches SET created_ts = ?, kb_pinned_ts = ? WHERE id = ?", (FIXED_TS, FIXED_TS, wid))
+        # runs for /v2/analytics, in the week before the snapshots' fixed clock
+        seed_analytics(datetime.fromtimestamp(FIXED_TS, timezone.utc), wid)
     (data_dir / ".seeded").write_text("ok", encoding="utf-8")
     thread.join()
 

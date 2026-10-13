@@ -103,6 +103,8 @@ zing/
     jobs.py            后台检测任务与按中转站的互斥
     security.py        回环绑定、Host 白名单、Origin/JSON 校验、安全响应头
     history.py         检测历史存储（history.db）
+    analytics_store.py 其分析表：每次运行的指标、请求记录
+    analytics.py       分析查询：关键指标、时间序列、排行榜
     watches.py         监控存储（watches.db）
     masterkey.py       主密钥的状态与操作（服务器与 `zing secret`）
     static/            经典界面页面与共用脚本（lang.js、i18n.js 等）
@@ -230,6 +232,8 @@ Embedding/rerank（`embed_audit.py`）和图像/音频（`media_audit.py`）不�
   `/api/report/export` 渲染报告；`/api/history…`、`/api/watches…`、`/api/kb…`、`/api/embed`
   和 `/api/rerank` 为其他页面提供服务。
 - **中转站。** `POST /api/kb/relays` 保存中转站 `{name, base_url}`（输入无效时返回 400，名称或地址已存在时返回 409）。
+- **分析。** `GET /api/analytics/options`（历史中出现的中转站、模型、套件、流式模式、API 及日期范围）、`/api/analytics/summary`（`from`–`to` 区间的关键指标，并与之前等长区间对比）、`/api/analytics/series`（按 `group=relay|model|relay_model` 给出 `metric`，最多 4 个 `keys`，按查看者时区 `tz` 或 `tz_offset` 划分为 `bucket=hour|day|week|dow_hour` 区间）以及 `/api/analytics/leaderboard`（`model=` 列出其各中转站，或 `relay=` 列出其各模型）。所有端点都接受筛选参数 `from`、`to`、`suite`、`stream_mode`、`api`、`source=all|manual|monitor`、`relay` 和 `model`。`zing/web/analytics.py` 基于 `history.analytics_runs()` 在 Python 中完成全部计算：指标 id 来自固定白名单；中转站在查询时按知识库条目分组；某次运行未测得的值不参与计算（每个值都带有 `n` 和 `coverage`）；运行次数少于 `MIN_RUNS`（3）的区间标记为 `low_n`。参数无效时返回 400；响应带 `Cache-Control: no-store`。
+- **分析面板。** `/api/analytics/breakdown`（在所选区间内按 `group=relay|model|relay_model|all` 给出最多 8 个 `metrics`）、`/api/analytics/errors`（目标端补全调用按结果类别 `success|client_4xx|rate_limited|server_5xx|timeout|network|other` 统计，按 `group=relay|model` 和 `bucket` 划分，由 `history.analytics_request_classes()` 在 SQL 中计数，不加载请求行；调用时间为所属检测的开始时间加上偏移，精确到分钟；`covered` 为有请求记录的检测次数）以及 `/api/analytics/integrity`（每个「中转站 × 模型」的身份、能力、图像理解、流式、协议、完整性、注入提示词与连通性检测器的通过 / 警告 / 失败次数，模型不符占比，以及实测 / 声明上下文窗口的中位数比例）。`/api/analytics/series` 也接受 `group=all`。筛选与错误处理同上。
 - **后台检测。** `jobs.py` 把每次检测作为服务器拥有的任务运行。`POST /api/jobs` 排入一个任务，
   `GET /api/jobs` 列出排队中、运行中和刚结束的任务（以及运行中的监控）及其进度，
   `GET /api/jobs/{id}/events` 先回放任务的事件日志，再通过 SSE 实时跟随，
@@ -269,6 +273,12 @@ v2 的**检测**和**工具**页面用 `v2/relaycfg.js` 配置中转站：选择
 预选）→ 推导出声明的厂商，另有**保存到知识库**（`POST /api/kb/relays`）。其纯函数在 node 下测试；
 经典页面继续使用 `modelpicker.js`。
 
+v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`options` 还列出「中转站 × 模型」组合 `relay_models`，供数据系列选择使用）。页面在同一个筛选栏下每个面板一个 `<section class="card panel">`，便于加入新面板；筛选与视图保存在网址片段（`#range=30&metric=score&…`）和 `localStorage` 中。图表来自 `v2/charts.js`（`ZingCharts.timeChart`：手绘内联 SVG，含中位数折线、p25–p75 色带、空时间段留空、`low_n` 时间段的淡化标记、标注线和悬停提示；`fmt` / `fmtDelta` 按单位格式化数值）和 `v2/charts.css`（每个主题四种经过校验的系列颜色，并以标记形状区分）。每张图表也都以数据表呈现。
+
+每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`ZingCharts.heatmap` 绘制「星期几 × 小时」网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`ZingCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。
+
+页面标题和筛选面板位于五个页内标签页之上（`v2/tabs.js`，与工具和知识库页面相同）：每个 `PANELS` 条目注明所属的 `tab`，只加载当前显示的标签页的面板；筛选变化时重新加载该标签页，其他标签页标记为过期（`activate()` 在显示时加载）。这里给 `tabs.js` 传入 `writeHash: false`，因为页面自己把整个视图写进网址片段——`#tab=trends&range=30&suite=…&metric=…`（`stateQuery()`），**复制此视图的链接**复制的就是它（剪贴板 API 不存在或被拒绝时，改为显示并选中一个只读文本框）；不含 `tab` 的片段打开概览，粘贴进来的链接（`hashchange`）会重新读取视图。可折叠的筛选面板是 `v2/filterpanel.js` + `v2/filterpanel.css`，与检测历史共用：`ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})` 返回 `render({body, foot, count, summary})`、`sync({count, summary})`、`setOpen()` 和 `focusStart()`；页面负责自己的筛选条件和字段，面板负责带生效筛选计数的切换按钮、收起时显示的一行摘要、记住的展开状态以及**重置筛选**。
+
 **翻译约定。** 写在 HTML 中的中文是原文，保持不动；每个元素在 `data-en`（以及
 `data-en-placeholder`、`data-en-title`、`data-en-aria-label`）中携带英文文本。英文文本是
 其他所有语言的查找键。脚本对动态文本使用 `T(zh, en)`，对来自后端的文本（检测器名称、建议、
@@ -283,6 +293,19 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 设为该绝对路径，`zing data-dir` 输出解析后的目录。已存在的目录保留其权限；只有默认的 `~/.zing`
 会被收紧为 `0700`。检测历史的记录按目标和模型建立索引（`idx_history_target`），
 `history.latest_for()` 借此找到监控的上一次运行。
+
+自 schema 版本 2（`PRAGMA user_version`）起，`history.db` 还包含分析表，定义在
+`web/analytics_store.py`：`history_metrics`（每次运行一行提取出的指标：开始时间、各类比率、
+延迟/TTFT/解码速度的百分位、计费比、发现数量等；该次运行未测量的值为 NULL）、
+`history_dimensions`（各维度和检测器的得分）以及 `history_requests`（该次运行的请求记录，
+含目标与基线，按列表顺序）。报告的 `performance.requests` 只存放在那里：`save()` 把它们从
+`report_json` 中移出（由 `requests_split` 标记该行），`get()` / `latest_for()` 再放回去，
+因此读回的报告与保存时完全一致；列无法精确还原的内容存入 JSON 列 `extra`。
+`extract_metrics()` 是纯函数，并带版本号（`EXTRACT_VERSION`）。迁移之后，分批回填
+（每批一个短事务，幂等）会移出旧行的请求记录、提取其指标，并重新提取由较旧
+`EXTRACT_VERSION` 写入的行；需要时可用 `history.backfill_analytics()` 再次运行。一次运行的
+开始时间是报告的 `started_at`；早于该字段的报告取 `generated_at` 减去其请求记录覆盖的时长
+（`started_at_estimated` = 1）。
 
 保存的 API 密钥由 `zing/secretbox.py` 加密（Fernet，存为 `enc:v1:…`；`env:`/`file:` 引用保持原样）。
 主密钥本身从不保存：`web/masterkey.py`（`Vault`，服务器与 `zing secret` 共用）在主密钥来自

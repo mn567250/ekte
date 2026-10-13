@@ -27,6 +27,8 @@
       - /url: /v2/tools
     - link "Verlauf":
       - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
     - link "Überwachung":
       - /url: /v2/watches
     - link "Wissen":
@@ -39,17 +41,21 @@
     - code: ~/.zing
     - text: — nichts wird hochgeladen.
   - region "Filter":
-    - button "Filter & Trends" [expanded]
+    - button "Filter" [expanded]
     - text: Suche
     - searchbox "Suche"
     - text: Relay / Anbieter
     - combobox "Relay / Anbieter":
       - option "Alle" [selected]
       - option "127.0.0.1:9099"
+      - option "gateway.a-very-long-relay-hostname.example.org"
+      - option "relay.example.com"
     - text: Angegebenes Modell
     - combobox "Angegebenes Modell":
       - option "Alle" [selected]
       - option "gpt-4o"
+      - option "model-a"
+      - option "model-b"
     - text: Suite
     - combobox "Suite":
       - option "Alle" [selected]
@@ -61,6 +67,7 @@
     - text: Protokoll
     - combobox "Protokoll":
       - option "Alle" [selected]
+      - option "openai"
       - option "(unbekannt)"
     - text: Protokollerkennung
     - combobox "Protokollerkennung":
@@ -69,10 +76,13 @@
     - text: Messanfragen
     - combobox "Messanfragen":
       - option "Alle" [selected]
+      - option "Streaming"
       - option "(unbekannt)"
     - text: Risiko
     - combobox "Risiko":
       - option "Alle" [selected]
+      - option "Konsistent (wahrscheinlich echt)"
+      - option "Weitgehend vertrauenswürdig"
       - option "Etikettenschwindel"
     - text: Min. Score
     - spinbutton "Min. Score"
@@ -93,269 +103,175 @@
       - button "Note"
       - button "Latenz p50" [pressed]
       - button "Tokens/s"
-    - text: 1 von 1 Prüfungen
+    - text: 15 von 15 Prüfungen
   - group "Prüfungen sortieren":
     - button "Zeit, absteigend sortiert": Zeit
     - button "Nach Risiko sortieren": Risiko
     - button "Nach Score sortieren": Score
     - button "Nach Note sortieren": Note
   - button "Alle einklappen"
-  - region "gpt-4o":
-    - heading "gpt-4o" [level=2]:
-      - button "gpt-4o" [expanded]
+  - region "model-a https://relay.example.com/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
     - code: base_url
-    - text: http://127.0.0.1:9099/v1 Score 53
+    - text: https://relay.example.com/v1 Score
+    - 'img "Verlauf des Health-Scores über 7 Audits: von 70 auf 82, steigend."'
+    - text: 82 Latenz p50
+    - 'img "Latenz p50-Verlauf über 7 Prüfungen: von <duration> auf <duration>."'
+    - text: <duration>
     - list:
       - listitem:
-        - button "27.09.2026, 07:47 Etikettenschwindel Score 53 Note F check · standard" [expanded]
+        - button "30.09.2026, 11:02 Konsistent (wahrscheinlich echt) Score 82 Note B check · standard openai · Streaming p50 <duration>"
         - button "Audit erneut ausführen"
         - button "Als Überwachung einplanen"
-        - button "Eintrag löschen" [expanded]
-        - group "Diesen Verlaufseintrag löschen?":
-          - text: Diesen Verlaufseintrag löschen?
-          - button "Löschen"
-          - button "Abbrechen"
-        - region "27.09.2026, 07:47 Etikettenschwindel Score 53 Note F check · standard":
-          - article "Es liefert nicht das Modell, das es angibt":
-            - text: Etikettenschwindel
-            - heading "Es liefert nicht das Modell, das es angibt" [level=2]
-            - paragraph: "Befunde: 4 hoch, 5 mittel. Führen Sie `zing compare` gegen eine vertrauenswürdige Referenz aus, um das Urteil zu stärken."
-            - text: Gesamt-Health-Score 52,6/100 (Note F) Konfidenz des Urteils Mittel
+        - button "Eintrag löschen"
+      - listitem:
+        - button "30.09.2026, 10:02 Konsistent (wahrscheinlich echt) Score 85 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+      - listitem:
+        - button "30.09.2026, 09:02 Konsistent (wahrscheinlich echt) Score 88 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+      - listitem:
+        - button "28.09.2026, 10:02 Weitgehend vertrauenswürdig Score 78 Note D check · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+      - listitem:
+        - button "28.09.2026, 09:02 Konsistent (wahrscheinlich echt) Score 80 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+      - listitem:
+        - button "28.09.2026, 07:02 Konsistent (wahrscheinlich echt) Score 84 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+      - listitem:
+        - button "26.09.2026, 08:02 Weitgehend vertrauenswürdig Score 70 Note D check Überwachung · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Dieser Lauf stammt von einer Überwachung" [disabled]
+        - button "Eintrag löschen"
+  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score
+    - 'img "Verlauf des Health-Scores über 4 Audits: von 58 auf 64, steigend."'
+    - text: 64 Latenz p50
+    - 'img "Latenz p50-Verlauf über 4 Prüfungen: von <duration> auf <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "30.09.2026, 08:02 Etikettenschwindel Score 64 Note D check · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+      - listitem:
+        - button "29.09.2026, 11:02 Etikettenschwindel Score 60 Note D check Überwachung · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Dieser Lauf stammt von einer Überwachung" [disabled]
+        - button "Eintrag löschen"
+      - listitem:
+        - button "29.09.2026, 10:02 Weitgehend vertrauenswürdig Score 66 Note D check Überwachung · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Dieser Lauf stammt von einer Überwachung" [disabled]
+        - button "Eintrag löschen"
+      - listitem:
+        - button "29.09.2026, 09:02 Etikettenschwindel Score 58 Note D check Überwachung · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Dieser Lauf stammt von einer Überwachung" [disabled]
+        - button "Eintrag löschen"
+  - region "model-b https://relay.example.com/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://relay.example.com/v1 Score
+    - 'img "Verlauf des Health-Scores über 2 Audits: von 89 auf 91, steigend."'
+    - text: 91 Latenz p50
+    - 'img "Latenz p50-Verlauf über 2 Prüfungen: von <duration> auf <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "29.09.2026, 07:02 Konsistent (wahrscheinlich echt) Score 91 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+      - listitem:
+        - button "29.09.2026, 06:02 Konsistent (wahrscheinlich echt) Score 89 Note B check · standard openai · Streaming p50 <duration>"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score 72 Latenz p50 <duration>
+    - list:
+      - listitem:
+        - button "27.09.2026, 10:02 Weitgehend vertrauenswürdig Score 72 Note D check · standard openai · Streaming p50 <duration>" [expanded]
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen"
+        - region "27.09.2026, 10:02 Weitgehend vertrauenswürdig Score 72 Note D check · standard openai · Streaming p50 <duration>":
+          - article "Weitgehend konsistent, mit einigen kleineren Mängeln":
+            - text: Weitgehend vertrauenswürdig
+            - heading "Weitgehend konsistent, mit einigen kleineren Mängeln" [level=2]
+            - text: Gesamt-Health-Score 72/100 (Note D) Konfidenz des Urteils —
             - term: Ziel
             - definition:
-              - code: http://127.0.0.1:9099/v1
+              - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
             - term: Angegebenes Modell
             - definition:
-              - code: gpt-4o
+              - code: model-b
+            - term: Protokoll
+            - definition:
+              - code: openai
             - term: Modus
             - definition:
               - code: check
             - term: Suite
             - definition:
               - code: standard
+            - term: Anfragen der Leistungsmessung
+            - definition: Streaming
+            - term: Wissensprofil
+            - definition: Kein passendes Profil
             - term: Zeit
-            - definition: 27.09.2026, 07:47
+            - definition: 27.09.2026, 10:02
             - term: Version
             - definition:
               - code: zing v<version>
-            - heading "Prüfungen je Dimension 8 von 10 Dimensionen ausgeführt" [level=3]
-            - button "Konnektivität" [expanded]
-            - text: Zuverlässig erreichbar?
-            - meter "Konnektivität Zuverlässig erreichbar?"
-            - region "Konnektivität Zuverlässig erreichbar?":
-              - paragraph: Bewertung aus einem Detektor.
-              - heading "Konnektivität & einfache Vervollständigung Bewertung 92,5" [level=4]
-              - list "Konnektivität & einfache Vervollständigung Bewertung 92,5":
-                - listitem:
-                  - text: "Ergebnis: Bestanden. /v1/models-Liste 1 Modelle gelistet; angegebenes Modell in der Liste: ja."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "model_count: 1 claimed_listed: true"
-                - listitem:
-                  - text: "Ergebnis: Bestanden. Einfache Chat-Vervollständigung Inhalt in <duration> zurückgegeben; zurückgegebenes Modell: gpt-4o-mini."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "duration_ms: <duration> model_returned: gpt-4o-mini canary_echoed: false"
-            - button "Protokollkonformität" [expanded]
+            - heading "Prüfungen je Dimension 1 von 10 Dimensionen ausgeführt" [level=3]
+            - button "Protokollkonformität"
             - text: Ist die API spezifikationskonform?
             - meter "Protokollkonformität Ist die API spezifikationskonform?"
-            - region "Protokollkonformität Ist die API spezifikationskonform?":
-              - paragraph: Bewertung aus einem Detektor.
-              - heading "Konformität der OpenAI-Kompatibilität Bewertung 75" [level=4]
-              - list "Konformität der OpenAI-Kompatibilität Bewertung 75":
-                - listitem:
-                  - text: "Ergebnis: Bestanden. Gedächtnis über mehrere Runden Prüfung des Mehrrunden-Kontexts; zuvor genannte Farbe erinnert: ja."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "recalled_blue: true content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: "Ergebnis: Warnung. Behandlung von Stop-Sequenzen Prüfung der Stop-Sequenz; finish_reason=stop."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-                - listitem:
-                  - text: "Ergebnis: Bestanden. Konformität der Antwortstruktur finish_reason=stop; usage vollständig: ja."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "finish_reason: stop has_usage: true prompt_tokens: 900 completion_tokens: 400 total_tokens: 1300"
-                - listitem:
-                  - text: "Ergebnis: Fehlgeschlagen. Struktur von Fehlerantworten Eine ungültige Anfrage liefert HTTP 200; Fehler-Body im OpenAI-Stil: nein. · Empfehlung: Ein konformes Relay sollte ungültige Eingaben mit einem 4xx und einem {'error': {...}}-Body ablehnen."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - button "Kontextfenster" [expanded]
+            - button "Konnektivität"
+            - text: Zuverlässig erreichbar? Nicht ausgeführt
+            - button "Kontextfenster"
             - text: Merkt es sich lange Eingaben wirklich? Nicht ausgeführt
-            - region "Kontextfenster Merkt es sich lange Eingaben wirklich?":
-              - paragraph: In dieser Prüfung lief kein Detektor dieser Dimension.
-            - button "Modellidentität" [expanded]
-            - text: Ist es das Modell, das es zu sein behauptet?
-            - meter "Modellidentität Ist es das Modell, das es zu sein behauptet?"
-            - region "Modellidentität Ist es das Modell, das es zu sein behauptet?":
-              - paragraph: Bewertung aus einem Detektor.
-              - heading "Modellidentität & Herabstufungs-Fingerprinting Bewertung 20" [level=4]
-              - list "Modellidentität & Herabstufungs-Fingerprinting Bewertung 20":
-                - listitem:
-                  - text: "Ergebnis: Fehlgeschlagen. Selbstidentifikation Gibt sich als Konkurrenzmarke aus (claude, anthropic), ohne die echte Marke zu nennen. · Empfehlung: Eine Antwort, die einen anderen Anbieter nennt, deutet stark auf einen Modellaustausch hin."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-                - listitem:
-                  - text: "Ergebnis: Fehlgeschlagen. Verhaltens-Fingerprint-Prüfung Reine Code-Prüfung des Verhaltens-Fingerprints für self-id."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-                - listitem:
-                  - text: "Ergebnis: Warnung. Verhaltens-Fingerprint-Prüfung Reine Code-Prüfung des Verhaltens-Fingerprints für max-output-truncation."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-                - listitem:
-                  - text: "Ergebnis: Warnung. Zurückgegebenes model-Feld Das model-Feld der Antwort lautet gpt-4o-mini; angefragt wurde gpt-4o. · Empfehlung: Eine Modell-ID einer kleineren Stufe oder anderen Familie in der Antwort deutet auf ein Routing zu einem Ersatz hin."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "requested: gpt-4o returned: gpt-4o-mini"
-            - button "Angegebene Fähigkeiten" [expanded]
-            - text: Werden Tools/JSON wirklich unterstützt?
-            - meter "Angegebene Fähigkeiten Werden Tools/JSON wirklich unterstützt?"
-            - region "Angegebene Fähigkeiten Werden Tools/JSON wirklich unterstützt?":
-              - paragraph: Bewertung aus einem Detektor.
-              - heading "Prüfung der angegebenen Fähigkeiten Bewertung 25" [level=4]
-              - list "Prüfung der angegebenen Fähigkeiten Bewertung 25":
-                - listitem:
-                  - text: "Ergebnis: Fehlgeschlagen. Tool-Aufrufe (function calling) Sonde für Tool-Aufrufe; finish_reason=stop. · Empfehlung: Prüfen Sie, ob die bereitgestellte Engine Funktionsaufrufe wirklich unterstützt."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "finish_reason: stop had_content: true"
-                - listitem:
-                  - text: "Ergebnis: Fehlgeschlagen. JSON-Modus (json_object) Sonde für den JSON-Modus; Objekt geparst: nein, angefragter Wert getroffen: nein. · Empfehlung: Prüfen Sie, ob die bereitgestellte Engine response_format=json_object einhält."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "parsed: false value_matched: false"
-                - listitem:
-                  - text: "Ergebnis: Warnung. Striktes JSON-Schema Sonde für striktes JSON-Schema; schemakonform: nein."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "conforms: false parsed: false"
-                - listitem:
-                  - text: "Ergebnis: Warnung. Maximale Ausgabelänge Sonde für maximale Ausgabe: angegebenes max_output=16384, 2048 Tokens angefragt; ~1 Zeilen erzeugt, finish_reason=stop. · Empfehlung: Lange Generierungen können hinter der angegebenen Obergrenze zurückbleiben; mit einer längeren Sonde bestätigen."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-            - button "Echtheit des Streamings" [expanded]
-            - text: Echtes oder vorgetäuschtes Streaming?
-            - meter "Echtheit des Streamings Echtes oder vorgetäuschtes Streaming?"
-            - region "Echtheit des Streamings Echtes oder vorgetäuschtes Streaming?":
-              - paragraph: Bewertung aus einem Detektor.
-              - heading "Echtheit des Streamings Bewertung 100" [level=4]
-              - list "Echtheit des Streamings Bewertung 100":
-                - listitem:
-                  - text: "Ergebnis: Bestanden. Streaming ist echt 2 Chunks in <duration>, erstes Token nach <duration>."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "chunk_count: 2 duration_ms: <duration> ttft_ms: <duration>"
-            - button "Abrechnung & Verbrauch" [expanded]
-            - text: Ist der Token-Verbrauch aufgebläht?
-            - meter "Abrechnung & Verbrauch Ist der Token-Verbrauch aufgebläht?"
-            - region "Abrechnung & Verbrauch Ist der Token-Verbrauch aufgebläht?":
-              - paragraph: Bewertung aus einem Detektor.
-              - heading "Prüfung der Token-Abrechnung Bewertung 55" [level=4]
-              - list "Prüfung der Token-Abrechnung Bewertung 55":
-                - listitem:
-                  - text: "Ergebnis: Fehlgeschlagen. Gemeldete Prompt-Tokens weit über der Schätzung Gemeldete Prompt-Tokens (900) weit über der unabhängigen Schätzung (~135, Verhältnis 6667); Verdacht auf Überabrechnung pro Token. · Empfehlung: Gleichen Sie die Abrechnung mit einem Prompt bekannter Größe ab; mögliche Überabrechnung pro Token."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-                - listitem:
-                  - text: "Ergebnis: Warnung. Gemeldete Completion-Tokens weit über der Schätzung Gemeldete Completion-Tokens (400) weit über der unabhängigen Schätzung (~7, Verhältnis 57.14); Verdacht auf Überabrechnung pro Token. · Empfehlung: Vergleichen Sie die Token-Zählung mit einer vertrauenswürdigen Referenz desselben Modells."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-            - button "Zuverlässigkeit unter Parallellast" [expanded]
-            - text: Stabil unter Last?
-            - meter "Zuverlässigkeit unter Parallellast Stabil unter Last?"
-            - region "Zuverlässigkeit unter Parallellast Stabil unter Last?":
-              - paragraph: Bewertung aus einem Detektor.
-              - heading "Zuverlässigkeit & Latenz unter Parallellast Bewertung 100" [level=4]
-              - list "Zuverlässigkeit & Latenz unter Parallellast Bewertung 100":
-                - listitem:
-                  - text: "Ergebnis: Bestanden. Erfolgsquote paralleler Anfragen Bei Parallelität 2 waren 4 Anfragen erfolgreich (von 4, 0 gedrosselt)."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "requests: 4 successes: 4 rate_limited: 0 concurrency: 2 success_rate: 1"
-            - button "Transportsicherheit" [expanded]
-            - text: Werden Schlüssel sicher behandelt?
-            - meter "Transportsicherheit Werden Schlüssel sicher behandelt?"
-            - region "Transportsicherheit Werden Schlüssel sicher behandelt?":
-              - paragraph: Bewertung aus einem Detektor.
-              - heading "Signale zu Transport & Geheimnisbehandlung Bewertung 40" [level=4]
-              - list "Signale zu Transport & Geheimnisbehandlung Bewertung 40":
-                - listitem:
-                  - text: "Ergebnis: Fehlgeschlagen. Transport über HTTPS? Transportprotokoll: http. · Empfehlung: Verwenden Sie eine https://-base_url, damit das Bearer-Token nicht ungeschützt übertragen wird."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "scheme: http"
-                - listitem:
-                  - text: "Ergebnis: Info. Upstream-/Proxy-Antwortheader Aufschlussreiche Antwortheader: server. Zur Information — kann die Upstream-Identität bestätigen, kein Fehler."
-                  - button "Belege ausblenden" [expanded]
-                  - text: "revealing_headers: {\"server\":\"uvicorn\"}"
-                - listitem: "Ergebnis: Bestanden. Gibt die Antwort den API-Schlüssel zurück? Prüfung auf Rückgabe des API-Schlüssels."
-                - listitem: "Ergebnis: Info. Grenzen der Black-Box-Erkennung Ob Prompts protokolliert oder ein geteilter Upstream-Schlüssel genutzt wird, lässt sich clientseitig per Black-Box nicht beweisen; die Dimensionen Zuverlässigkeit und Streaming-Timing dienen als indirekte Signale."
-            - button "Leistung" [expanded]
+            - button "Modellidentität"
+            - text: Ist es das Modell, das es zu sein behauptet? Nicht ausgeführt
+            - button "Angegebene Fähigkeiten"
+            - text: Werden Tools/JSON wirklich unterstützt? Nicht ausgeführt
+            - button "Echtheit des Streamings"
+            - text: Echtes oder vorgetäuschtes Streaming? Nicht ausgeführt
+            - button "Abrechnung & Verbrauch"
+            - text: Ist der Token-Verbrauch aufgebläht? Nicht ausgeführt
+            - button "Zuverlässigkeit unter Parallellast"
+            - text: Stabil unter Last? Nicht ausgeführt
+            - button "Transportsicherheit"
+            - text: Werden Schlüssel sicher behandelt? Nicht ausgeführt
+            - button "Leistung"
             - text: Ist das Tempo gleichmäßig? Nicht ausgeführt
-            - region "Leistung Ist das Tempo gleichmäßig?":
-              - paragraph: In dieser Prüfung lief kein Detektor dieser Dimension.
-            - heading "Befunde 13 Befunde" [level=3]
-            - heading "Hoch 4 Befunde" [level=4]
-            - list "Hoch 4 Befunde":
-              - listitem:
-                - text: "Schweregrad: Hoch. Gemeldete Prompt-Tokens weit über der Schätzung Gemeldete Prompt-Tokens (900) weit über der unabhängigen Schätzung (~135, Verhältnis 6667); Verdacht auf Überabrechnung pro Token. · Empfehlung: Gleichen Sie die Abrechnung mit einem Prompt bekannter Größe ab; mögliche Überabrechnung pro Token."
-                - button "Belege ausblenden" [expanded]
-                - text: "reported_prompt: 900 estimated_prompt: 135 ratio: 6.666666666666667 exact_tokenizer: false"
-              - listitem:
-                - text: "Schweregrad: Hoch. Selbstidentifikation Gibt sich als Konkurrenzmarke aus (claude, anthropic), ohne die echte Marke zu nennen. · Empfehlung: Eine Antwort, die einen anderen Anbieter nennt, deutet stark auf einen Modellaustausch hin."
-                - button "Belege ausblenden" [expanded]
-                - text: "prompt: self-id target_answer: I am Claude, a model made by Anthropic. forbidden_hits: [\"claude\",\"anthropic\"]"
-              - listitem:
-                - text: "Schweregrad: Hoch. Verhaltens-Fingerprint-Prüfung Reine Code-Prüfung des Verhaltens-Fingerprints für self-id."
-                - button "Belege ausblenden" [expanded]
-                - text: "probe: self-id native_expected: Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek. downgrade_signal: A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), observed: I am Claude, a model made by Anthropic. weight: 1"
-              - listitem:
-                - text: "Schweregrad: Hoch. Transport über HTTPS? Transportprotokoll: http. · Empfehlung: Verwenden Sie eine https://-base_url, damit das Bearer-Token nicht ungeschützt übertragen wird."
-                - button "Belege ausblenden" [expanded]
-                - text: "scheme: http"
-            - heading "Mittel 5 Befunde" [level=4]
-            - list "Mittel 5 Befunde":
-              - listitem:
-                - text: "Schweregrad: Mittel. Gemeldete Completion-Tokens weit über der Schätzung Gemeldete Completion-Tokens (400) weit über der unabhängigen Schätzung (~7, Verhältnis 57.14); Verdacht auf Überabrechnung pro Token. · Empfehlung: Vergleichen Sie die Token-Zählung mit einer vertrauenswürdigen Referenz desselben Modells."
-                - button "Belege ausblenden" [expanded]
-                - text: "reported_completion: 400 estimated_completion: 7 ratio: 57.14 exact_tokenizer: false"
-              - listitem:
-                - text: "Schweregrad: Mittel. Tool-Aufrufe (function calling) Sonde für Tool-Aufrufe; finish_reason=stop. · Empfehlung: Prüfen Sie, ob die bereitgestellte Engine Funktionsaufrufe wirklich unterstützt."
-                - button "Belege ausblenden" [expanded]
-                - text: "finish_reason: stop had_content: true"
-              - listitem:
-                - text: "Schweregrad: Mittel. JSON-Modus (json_object) Sonde für den JSON-Modus; Objekt geparst: nein, angefragter Wert getroffen: nein. · Empfehlung: Prüfen Sie, ob die bereitgestellte Engine response_format=json_object einhält."
-                - button "Belege ausblenden" [expanded]
-                - text: "parsed: false value_matched: false"
-              - listitem:
-                - text: "Schweregrad: Mittel. Zurückgegebenes model-Feld Das model-Feld der Antwort lautet gpt-4o-mini; angefragt wurde gpt-4o. · Empfehlung: Eine Modell-ID einer kleineren Stufe oder anderen Familie in der Antwort deutet auf ein Routing zu einem Ersatz hin."
-                - button "Belege ausblenden" [expanded]
-                - text: "requested: gpt-4o returned: gpt-4o-mini"
-              - listitem:
-                - text: "Schweregrad: Mittel. Struktur von Fehlerantworten Eine ungültige Anfrage liefert HTTP 200; Fehler-Body im OpenAI-Stil: nein. · Empfehlung: Ein konformes Relay sollte ungültige Eingaben mit einem 4xx und einem {'error': {...}}-Body ablehnen."
-                - button "Belege ausblenden" [expanded]
-                - text: "status_code: 200 conforming_error_body: false raw_error_keys: null accepted_invalid: true"
-            - heading "Niedrig 4 Befunde" [level=4]
-            - list "Niedrig 4 Befunde":
-              - listitem:
-                - text: "Schweregrad: Niedrig. Striktes JSON-Schema Sonde für striktes JSON-Schema; schemakonform: nein."
-                - button "Belege ausblenden" [expanded]
-                - text: "conforms: false parsed: false"
-              - listitem:
-                - text: "Schweregrad: Niedrig. Maximale Ausgabelänge Sonde für maximale Ausgabe: angegebenes max_output=16384, 2048 Tokens angefragt; ~1 Zeilen erzeugt, finish_reason=stop. · Empfehlung: Lange Generierungen können hinter der angegebenen Obergrenze zurückbleiben; mit einer längeren Sonde bestätigen."
-                - button "Belege ausblenden" [expanded]
-                - text: "declared_max_output: 16384 requested_max_tokens: 2048 finish_reason: stop line_count: 1 char_count: 23 note: probe capped at 2048 tokens; full declared ceiling not exercised"
-              - listitem:
-                - text: "Schweregrad: Niedrig. Verhaltens-Fingerprint-Prüfung Reine Code-Prüfung des Verhaltens-Fingerprints für max-output-truncation."
-                - button "Belege ausblenden" [expanded]
-                - text: "probe: max-output-truncation native_expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly ca downgrade_signal: A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens. observed: Blue. The answer is 42. weight: 1"
-              - listitem:
-                - text: "Schweregrad: Niedrig. Behandlung von Stop-Sequenzen Prüfung der Stop-Sequenz; finish_reason=stop."
-                - button "Belege ausblenden" [expanded]
-                - text: "contains_alpha: false contains_beta: false finish_reason: stop content_preview: Blue. The answer is 42."
-            - heading "Ausführungsprotokoll 8 Prüfungen · <duration> insgesamt" [level=3]
-            - paragraph: Die Prüfungen laufen nacheinander; am langsamsten war Prüfung der Token-Abrechnung (<duration>).
-            - button "Weniger anzeigen" [expanded]
-            - list:
-              - listitem: Prüfung der Token-Abrechnung Abrechnung & Verbrauch Fehlgeschlagen · Bewertung 55 <duration>
-              - listitem: Prüfung der angegebenen Fähigkeiten Angegebene Fähigkeiten Fehlgeschlagen · Bewertung 25 <duration>
-              - listitem: Konnektivität & einfache Vervollständigung Konnektivität Bestanden · Bewertung 92,5 <duration>
-              - listitem: Modellidentität & Herabstufungs-Fingerprinting Modellidentität Fehlgeschlagen · Bewertung 20 <duration>
-              - listitem: Konformität der OpenAI-Kompatibilität Protokollkonformität Fehlgeschlagen · Bewertung 75 <duration>
-              - listitem: Zuverlässigkeit & Latenz unter Parallellast Zuverlässigkeit unter Parallellast Bestanden · Bewertung 100 <duration>
-              - listitem: Signale zu Transport & Geheimnisbehandlung Transportsicherheit Fehlgeschlagen · Bewertung 40 <duration>
-              - listitem: Echtheit des Streamings Echtheit des Streamings Bestanden · Bewertung 100 <duration>
+            - heading "Befunde" [level=3]
+            - paragraph: Keine Warnungen oder Fehler — jede Dimension entspricht dem angegebenen Modell.
+            - heading "Ausführungsprotokoll 6 Prüfungen · <duration> insgesamt" [level=3]
+            - paragraph: Die Prüfungen laufen nacheinander; am langsamsten war context_window (<duration>).
+            - button "Alle 6 anzeigen"
             - paragraph:
               - text: zing liefert
               - strong: reproduzierbare Belege für Verhaltensabweichungen und Risiken
@@ -368,6 +284,21 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - text: "Gespeicherte Audits: 1"
+  - region "gpt-4o http://127.0.0.1:9099/v1":
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
+    - code: base_url
+    - text: http://127.0.0.1:9099/v1 Score 53
+    - list:
+      - listitem:
+        - button "27.09.2026, 07:47 Etikettenschwindel Score 53 Note F check · standard"
+        - button "Audit erneut ausführen"
+        - button "Als Überwachung einplanen"
+        - button "Eintrag löschen" [expanded]
+        - group "Diesen Verlaufseintrag löschen?":
+          - text: Diesen Verlaufseintrag löschen?
+          - button "Löschen"
+          - button "Abbrechen"
+  - text: "Gespeicherte Audits: 15"
   - button "Verlauf löschen"
   - status

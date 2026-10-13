@@ -257,6 +257,7 @@ choice is remembered per browser.
 | **Console** | `/console` | — | The same audit as a compact, log-style console |
 | **Tools** | `/tools` | `/v2/tools` | Embedding and rerank audits |
 | **History** | `/history` | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
+| **Analytics** | — | `/v2/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
 | **Monitors** | `/watches` | `/v2/watches` | Scheduled re-audits with webhook alerts |
 | **Knowledge** | — | `/v2/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
 
@@ -274,6 +275,46 @@ after another, so they never skew each other's latency or reliability results
 (all loopback addresses count as one host, so models served from your own
 machine queue too); audits of different relays run in parallel, at most four at
 once (`ZING_MAX_PARALLEL_AUDITS`). Monitors wait for their relay the same way.
+
+**Analytics (new UI).** `/v2/analytics` turns the local history into
+comparisons: KPI tiles for the chosen period (runs, median score, high-risk
+share, success rate, TTFT, decode speed, billing ratios) with the change
+against the period of the same length before; a chart of any metric per relay,
+model or relay × model by hour, day or week (median line with the p25–p75 band,
+up to four series, every chart also as a data table); and a leaderboard of the
+relays for a model, or the models for a relay. Relays are grouped by their
+knowledge-base entry (saved relays and providers), so renaming a relay
+regroups its history. Buckets with fewer than 3 runs are drawn faded — a single
+audit can be an outlier; a monitor gives regular measurements. Older runs show
+what they measured: the page says how many runs a value is based on. By default
+it compares one suite and probe mode (the most common ones), so unlike runs are
+not mixed; the filters and view are kept in the URL, so a view can be
+bookmarked or shared. Nothing leaves the machine.
+
+Further panels answer narrower questions: **peak hours** (a weekday × hour
+heatmap of TTFT, latency, success or error rate in your time zone — does a
+relay slow down or fail more at busy times?), **errors and reliability** (failed
+calls by cause — rate limits (HTTP 429), server errors (5xx), timeouts, network
+errors — over time and per relay or model, from the stored request records,
+with how many runs have them), **model integrity** (identity, context-window and
+capability check results per relay × model, the share of runs whose echoed
+model differs and the measured share of the declared context window),
+**billing and tokens** (billing ratios over time against the 100% line — above
+it the relay reports more tokens than zing counted — plus reasoning and cached
+input shares) and **relay overhead** (the processing time a relay reports next
+to the network round trip to it).
+
+**Tabs and share links (Analytics).** The panels sit in five tabs —
+**Overview** (KPIs, leaderboard), **Trends** (comparison over time, peak
+hours), **Reliability** (errors, relay overhead), **Model integrity** and
+**Billing** — under the page header and one filter panel shared by all of
+them; only the tab you look at loads. The URL keeps the tab, the filters and
+every chart option (`#tab=reliability&range=30&relay=…&eb=dow_hour`), and
+**Copy link to this view** copies it (or shows it in a field to copy where the
+browser does not allow that): opening the link shows exactly that view. The
+filter panel is the same on **History** and **Analytics**: closed, it shows how
+many filters are active and names them in one line (e.g. "Last 30 days ·
+standard · Streaming · Example Relay"), so a shared view says what it shows.
 
 ### Languages
 
@@ -305,7 +346,8 @@ Each report also records how the endpoint was spoken to: the wire protocol
 (`target.api`: `openai`, `anthropic` or `responses`), whether `--api auto`
 detected it (`target.api_auto`), and the performance probe's request mode
 (`stream_mode`: `stream`, `non_stream` or `both` for the full suite). The web
-UI's history page can filter on all three.
+UI's history page can filter on all three. `started_at` records when the audit
+started (UTC); the `start_ms` of every request record counts from it.
 
 ## What it checks
 
@@ -606,7 +648,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.19.0         # pin to a release tag
+        uses: cenbonew/zing@v0.20.0         # pin to a release tag
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # caller secret; never echoed
@@ -712,7 +754,10 @@ redacted and escaped before it is written.
   remove everything. `zing data-dir` prints where it is; `--data-dir PATH`
   picks another one for a single run, e.g. `zing serve --data-dir .` keeps the
   databases in the current folder. They are plain SQLite files, so you can open
-  them (read-only is safest while zing runs) for your own analysis. Don't
+  them (read-only is safest while zing runs) for your own analysis:
+  `history_metrics` holds one row of measured values per run and
+  `history_requests` every request record (stored there once, not inside each
+  saved report). Don't
   commit `watches.db` if that folder is a repository.
 
 ## Responsible use

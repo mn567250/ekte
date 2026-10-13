@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
@@ -330,6 +331,20 @@ async def test_audit_report_has_passive_performance(patched_make_client, target_
     assert "content" not in live[0]["record"]
     # The JSON export carries the section.
     assert '"performance"' in report.model_dump_json()
+    # started_at is the instant start_ms counts from: every request falls
+    # between it and generated_at.
+    assert report.started_at is not None and report.generated_at is not None
+    started = datetime.fromisoformat(report.started_at)
+    generated = datetime.fromisoformat(report.generated_at)
+    assert started.utcoffset() == timedelta(0)
+    last = max(r.start_ms + (r.duration_ms or 0) for r in perf.requests)
+    assert started + timedelta(milliseconds=last) <= generated
+
+
+def test_recorder_start_time_is_its_t0():
+    before = datetime.now(timezone.utc)
+    rec = RequestRecorder()
+    assert before <= rec.started_at <= datetime.now(timezone.utc)
 
 
 async def test_stream_server_time_runs_to_first_token():

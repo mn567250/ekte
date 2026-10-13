@@ -358,7 +358,8 @@ def _source_strings(path: Path) -> set[str]:
 @pytest.mark.parametrize(
     "page",
     ["v2/masterkey.js", "v2/watches.html", "watches.html", "v2/relaycfg.js", "v2/index.html", "v2/tools.html", "v2/kb.html",
-     "v2/kbsection.js", "v2/kbview.js", "v2/tabs.js", "v2/history.html"],
+     "v2/kbsection.js", "v2/kbview.js", "v2/tabs.js", "v2/history.html", "v2/analytics.html", "v2/filterpanel.js",
+     "v2/charts.js"],
 )
 def test_page_strings_are_translatable(page):
     # Every English text these pages show must be a key of the merged `en`

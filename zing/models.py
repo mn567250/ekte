@@ -636,6 +636,9 @@ class AuditReport(BaseModel):
     tool_version: str
     mode: str  # "check" | "compare"
     generated_at: str | None = None  # ISO timestamp, stamped by the runner
+    # When the audit started (ISO UTC): the instant every request record's
+    # ``start_ms`` is measured from. None in reports from before this was recorded.
+    started_at: str | None = None
     command: str | None = None
     suite: str
     # The dimensions a ``custom`` suite ran (None for the fixed suites).

@@ -796,7 +796,8 @@ VISIBLE_TEXT_JS = """
   for (const el of document.body.querySelectorAll('*')) {
     if (/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT)$/.test(el.tagName) || !vis(el)) continue;
     if (![...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) continue;
-    let t = el.innerText.trim();
+    // SVG elements (chart labels) have no innerText
+    let t = (el.innerText ?? el.textContent ?? '').trim();
     if (el.querySelector('b, strong, code, kbd')) t += ' <b>';
     if (t && !seen.has(t)) { seen.add(t); out.push(t); }
   }

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, a11y/integration, perf/integration]
+    branches: [main, a11y/integration, perf/integration, analytics/integration]
   pull_request:
-    branches: [main, a11y/integration, perf/integration]
+    branches: [main, a11y/integration, perf/integration, analytics/integration]
   # nightly full accessibility run (the other jobs skip it)
   schedule:
     - cron: "17 3 * * *"

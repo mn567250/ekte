@@ -761,6 +761,10 @@ treffen.
 Gecachte Eingabe-Token zählen nur, wenn sie mindestens die Hälfte des Prompts
 abdecken: lokale Server (Ollama, llama.cpp, LM Studio) verwenden die gecachte
 Chat-Vorlage jedes Prompts wieder, und das ist keine gespeicherte Antwort.
+Jeder Aufruf der Prüfung wird als Anfrage-Datensatz festgehalten
+(`performance.requests`, nur Zahlen, nie Prompt- oder Antworttext); sein
+`start_ms` zählt ab `started_at` des Berichts (UTC), sodass sich der
+Zeitpunkt jedes Aufrufs rekonstruieren lässt.
 
 Die Gleichmäßigkeit nutzt Tail-Verhältnisse (p90 ÷ p50 für Latenz und TTFT,
 p50 ÷ p10 für den Durchsatz), die eine einzelne Ausreißer-Anfrage nicht so

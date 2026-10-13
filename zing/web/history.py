@@ -24,6 +24,17 @@ existed are backfilled once after the migration; any row still unmarked (a
 failed backfill, or a row written by an older zing) is computed when it is
 first read and written back.
 
+Analytics (schema version 2): every saved run also gets a row of extracted
+metrics plus its dimension and detector scores, and its ``performance.requests``
+records move out of ``report_json`` into ``history_requests``, stored once and
+put back by :func:`get` / :func:`latest_for`, so a report reads back identical
+to the one saved (the tables are described in :mod:`zing.web.analytics_store`).
+``requests_split`` says where a row's records are: 1 in ``history_requests``,
+0 inline (or none), NULL not looked at yet (a row from before version 2, or
+one written by an older zing). Such rows are processed by a batched backfill
+(:func:`backfill_analytics`), which also re-extracts rows whose
+``extract_version`` is behind ``analytics_store.EXTRACT_VERSION``.
+
 ``PRAGMA user_version`` records that the schema is current, so connections to
 a migrated database skip the schema check; a deleted or replaced database file
 starts again at 0.
@@ -31,16 +42,18 @@ starts again at 0.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import sqlite3
 import threading
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
 from zing import datadir
 from zing.knowledge import snapshot as kb_snapshot
+from zing.web import analytics_store
 
 # Columns returned by the list view (everything except the heavy report_json).
 _SUMMARY_COLS = (
@@ -65,14 +78,20 @@ _SUMMARY_COLS = (
 _PERF_COLS = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50")
 # Set to 1 once a row's headline has been computed (its values may all be NULL).
 _PERF_DONE = "perf_done"
+# 1: the row's request records are in history_requests; 0: inline (or none);
+# NULL: not looked at yet.
+_SPLIT = "requests_split"
 
 _DB_NAME = "history.db"
 
 # ``PRAGMA user_version`` of a database whose schema is current. Every schema
 # change goes into _migrate() *and* bumps this number: databases already at this
 # version skip _migrate() entirely.
-_SCHEMA_VERSION = 1
+_SCHEMA_VERSION = 2
 _BACKFILL_BATCH = 100
+# Rows per analytics backfill transaction: each one parses a whole report, so
+# fewer than the perf backfill, to keep the write lock short.
+_ANALYTICS_BATCH = 25
 # Serialises the one-time migration within this process.
 _ensure_lock = threading.Lock()
 
@@ -113,6 +132,11 @@ def _ensure(conn: sqlite3.Connection) -> None:
     except Exception:
         # Best-effort: rows left unmarked are computed on read instead.
         conn.rollback()
+    try:
+        _backfill_analytics(conn)
+    except Exception:
+        # Best-effort: rows left over are picked up by backfill_analytics().
+        conn.rollback()
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -152,6 +176,15 @@ def _migrate(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(
         conn, "history", {**dict.fromkeys(_PERF_COLS, "REAL"), _PERF_DONE: "INTEGER"}
     )
+    # Version 2: where a row's request records are, and the analytics tables.
+    kb_snapshot.add_link_columns(conn, "history", {_SPLIT: "INTEGER"})
+    # The rows the analytics backfill has not processed yet.
+    conn.execute(
+        f"CREATE INDEX IF NOT EXISTS idx_history_pending ON history (id) WHERE {_SPLIT} IS NULL"
+    )
+    analytics_store.ensure_tables(conn)
+    # Groups runs by model across relays.
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_history_model ON history (claimed_model)")
 
 
 _SET_PERF = (
@@ -208,6 +241,98 @@ def _fill_perf(conn: sqlite3.Connection, items: list[dict[str, Any]]) -> None:
         conn.rollback()
 
 
+# Rows the analytics backfill has to process: not looked at yet (those have
+# no metrics either: a row gets both in one transaction), or extracted by an
+# older EXTRACT_VERSION. Both halves are index lookups, so a database with
+# nothing left to do costs next to nothing, however large its reports.
+_ANALYTICS_TODO = f"""SELECT id FROM history WHERE {_SPLIT} IS NULL
+   UNION SELECT history_id FROM history_metrics WHERE extract_version < ?"""
+
+
+def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ...] | None:
+    """What the backfill writes for one row: ``(id, new report_json or None,
+    encoded request records or None, metrics, dimensions)``; None to skip it."""
+    try:
+        report = json.loads(row["report_json"]) if row["report_json"] is not None else None
+    except (ValueError, TypeError):
+        report = None
+    report_json = None
+    records = None
+    if row[_SPLIT] == 1 and isinstance(report, dict):
+        analytics_store.restore_requests(report, analytics_store.get_requests(conn, row["id"]))
+    try:
+        if row[_SPLIT] is None and isinstance(report, dict):
+            stored, records = analytics_store.split_requests(report)
+            if records is not None:
+                report_json = json.dumps(stored, ensure_ascii=False)
+        metrics, dims = analytics_store.extract_metrics(report)
+    except Exception:
+        return None
+    return row["id"], report_json, records, metrics, dims
+
+
+def _backfill_analytics(conn: sqlite3.Connection) -> None:
+    """Move inline request records out of ``report_json`` and extract metrics,
+    for every row that needs it (see ``_ANALYTICS_TODO``).
+
+    Reads and parses a batch first, then writes it in one short transaction: a
+    row is either fully processed (report_json, its records and metrics) or
+    untouched. Idempotent, and safe next to a second process doing the same:
+    a row's records move only while it is still unmarked, and nothing is
+    written for a row deleted in the meantime.
+    """
+    pending = sorted(
+        int(r[0]) for r in conn.execute(_ANALYTICS_TODO, (analytics_store.EXTRACT_VERSION,))
+    )
+    for start in range(0, len(pending), _ANALYTICS_BATCH):
+        ids = pending[start:start + _ANALYTICS_BATCH]
+        rows = conn.execute(
+            f"SELECT id, report_json, {_SPLIT} FROM history"
+            f" WHERE id IN ({', '.join('?' * len(ids))}) ORDER BY id",
+            ids,
+        ).fetchall()
+        work = [w for w in (_analytics_work(conn, r) for r in rows) if w is not None]
+        split = {int(r["id"]): r[_SPLIT] for r in rows}
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            # Analytics rows of a run that is gone (deleted by an older zing,
+            # which does not know these tables): ids are never reused.
+            for rid in ids:
+                if rid not in split:
+                    analytics_store.delete_for(conn, rid)
+            for rid, report_json, records, metrics, dims in work:
+                if split[rid] is None:
+                    if records is not None:
+                        cur = conn.execute(
+                            f"UPDATE history SET report_json = ?, {_SPLIT} = 1"
+                            f" WHERE id = ? AND {_SPLIT} IS NULL",
+                            (report_json, rid),
+                        )
+                        if cur.rowcount:
+                            analytics_store.put_requests(conn, rid, records)
+                    else:
+                        conn.execute(
+                            f"UPDATE history SET {_SPLIT} = 0 WHERE id = ? AND {_SPLIT} IS NULL",
+                            (rid,),
+                        )
+                analytics_store.put_metrics(conn, rid, metrics, dims)
+            conn.commit()
+        except BaseException:
+            conn.rollback()
+            raise
+
+
+def backfill_analytics() -> None:
+    """Bring the analytics tables up to date with every saved run.
+
+    Runs once after the schema migration; call it before reading the analytics
+    tables to pick up rows written since by an older zing, or extracted by an
+    older ``EXTRACT_VERSION``. Costs one query when nothing is left.
+    """
+    with _connect() as conn:
+        _backfill_analytics(conn)
+
+
 @contextmanager
 def _connect() -> Iterator[sqlite3.Connection]:
     """Yield a fresh connection with rows as dicts; commit + close on exit."""
@@ -232,7 +357,9 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
     extraction or DB error is swallowed rather than allowed to abort the audit.
     """
     try:
-        report = dict(report or {})
+        # As plain JSON (what reading it back gives), so the request records
+        # and metrics below see exactly what is stored.
+        report = json.loads(json.dumps(dict(report or {}), ensure_ascii=False, default=str))
         target = report.get("target") or {}
         verdict = report.get("verdict") or {}
         score = verdict.get("overall_score")
@@ -244,12 +371,21 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
         if isinstance(snap, dict):
             # The profile lives in kb_snapshots; the row keeps only the hash.
             report["knowledge"] = {**knowledge, "profile": None}
-        report_json = json.dumps(report, ensure_ascii=False, default=str)
+        # The request records go to history_requests; report_json keeps an
+        # empty list in their place (kept inline if they cannot be moved).
+        metrics: tuple[Any, ...] | None = None
+        stored, records, split = report, None, None
+        try:
+            metrics = analytics_store.extract_metrics(report)
+            stored, records = analytics_store.split_requests(report)
+            split = 1 if records is not None else 0
+        except Exception:
+            # Left unmarked with its records inline: the backfill retries it.
+            metrics, stored, records, split = None, report, None, None
+        report_json = json.dumps(stored, ensure_ascii=False)
         # Serialised the same way, so the stored headline is exactly what
         # reading report_json back would give.
-        headline = _perf_headline(
-            json.dumps({"performance": report.get("performance")}, default=str)
-        )
+        headline = _perf_headline(json.dumps({"performance": report.get("performance")}))
         with _connect() as conn:
             snapshot_id = kb_snapshot.put(conn, snap) if isinstance(snap, dict) else None
             cur = conn.execute(
@@ -257,8 +393,8 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                    (ts, base_url, claimed_model, model, mode, suite,
                     risk_level, score, rating, report_json, kb_snapshot_id, kb_match, watch_id,
                     api, api_auto, stream_mode,
-                    latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
+                    latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done, requests_split)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)""",
                 (
                     report.get("generated_at"),
                     target.get("base_url"),
@@ -279,9 +415,16 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                     int(api_auto) if isinstance(api_auto, bool) else None,
                     report.get("stream_mode"),
                     *(headline[c] for c in _PERF_COLS),
+                    split,
                 ),
             )
-            return int(cur.lastrowid or -1)
+            rid = int(cur.lastrowid or -1)
+            # The same transaction: the row is stored with its records, or not at all.
+            if records is not None:
+                analytics_store.put_requests(conn, rid, records)
+            if metrics is not None:
+                analytics_store.put_metrics(conn, rid, *metrics)
+            return rid
     except Exception:
         return -1
 
@@ -312,7 +455,8 @@ def get(rid: int) -> dict[str, Any] | None:
     """The full saved report for one row (profile snapshot included), or ``None``."""
     with _connect() as conn:
         row = conn.execute(
-            "SELECT report_json, kb_snapshot_id FROM history WHERE id = ?", (int(rid),)
+            f"SELECT id, report_json, kb_snapshot_id, {_SPLIT} FROM history WHERE id = ?",
+            (int(rid),),
         ).fetchone()
         return _full_report(conn, row)
 
@@ -328,13 +472,14 @@ def latest_for(base_url: str, claimed_model: str) -> dict[str, Any] | None:
         return _full_report(conn, row)
 
 
-_LATEST_FOR_SQL = """SELECT report_json, kb_snapshot_id FROM history
+_LATEST_FOR_SQL = f"""SELECT id, report_json, kb_snapshot_id, {_SPLIT} FROM history
    WHERE base_url = ? AND claimed_model = ?
    ORDER BY id DESC LIMIT 1"""
 
 
 def _full_report(conn: sqlite3.Connection, row: sqlite3.Row | None) -> dict[str, Any] | None:
-    """Parse a row's ``report_json`` and put its profile snapshot back."""
+    """Parse a row's ``report_json`` and put its profile snapshot and its
+    request records back."""
     if not row or row["report_json"] is None:
         return None
     snap = kb_snapshot.get(conn, row["kb_snapshot_id"])
@@ -344,6 +489,8 @@ def _full_report(conn: sqlite3.Connection, row: sqlite3.Row | None) -> dict[str,
         return None
     if snap is not None and isinstance(report, dict) and isinstance(report.get("knowledge"), dict):
         report["knowledge"]["profile"] = snap
+    if row[_SPLIT] == 1 and isinstance(report, dict):
+        analytics_store.restore_requests(report, analytics_store.get_requests(conn, row["id"]))
     return report
 
 
@@ -416,14 +563,146 @@ def trend(
 
 
 def delete(rid: int) -> None:
-    """Remove one row by id (and a snapshot nothing else uses). No-op if missing."""
+    """Remove one row by id, with its analytics rows (and a snapshot nothing
+    else uses). No-op if missing."""
     with _connect() as conn:
         conn.execute("DELETE FROM history WHERE id = ?", (int(rid),))
+        analytics_store.delete_for(conn, int(rid))
         kb_snapshot.prune(conn, "history")
 
 
 def clear() -> None:
-    """Wipe all history, snapshots included."""
+    """Wipe all history, analytics rows and snapshots included."""
     with _connect() as conn:
         conn.execute("DELETE FROM history")
+        analytics_store.delete_for(conn)
         kb_snapshot.prune(conn, "history")
+
+
+# --------------------------------------------------------------------------- #
+# Analytics reads (the query layer builds on these)
+# --------------------------------------------------------------------------- #
+_RUN_COLS = (
+    *(f"h.{c}" for c in _SUMMARY_COLS),
+    *(f"m.{c}" for c in analytics_store.METRIC_COLS),
+)
+
+
+def analytics_runs(start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
+    """Every run with its extracted metrics, oldest first by ``started_at``.
+
+    Each row holds the list view's columns (``id``, ``base_url``,
+    ``claimed_model``, ``suite``, ``watch_id``, ...) and every
+    ``history_metrics`` column. ``start`` (inclusive) / ``end`` (exclusive) are
+    ISO timestamps compared with ``started_at``; runs without a known start
+    time are left out when either is given. Brings the analytics tables up to
+    date first (:func:`backfill_analytics`).
+    """
+    where, args = [], []
+    for op, value in ((">=", start), ("<", end)):
+        if value is None:
+            continue
+        dt = analytics_store.parse_ts(value)
+        if dt is None:
+            raise ValueError(f"not an ISO timestamp: {value!r}")
+        where.append(f"m.started_at {op} ?")
+        args.append(analytics_store.format_ts(dt))
+    sql = (
+        f"SELECT {', '.join(_RUN_COLS)} FROM history h"
+        " JOIN history_metrics m ON m.history_id = h.id"
+        + (" WHERE " + " AND ".join(where) if where else "")
+        + " ORDER BY m.started_at, h.id"
+    )
+    with _connect() as conn:
+        with contextlib.suppress(sqlite3.Error):
+            _backfill_analytics(conn)  # best-effort; a locked database can wait
+        return [dict(r) for r in conn.execute(sql, args).fetchall()]
+
+
+def _chunks(ids: Iterable[int]) -> Iterator[list[int]]:
+    ids = [int(i) for i in ids]
+    for start in range(0, len(ids), 500):
+        yield ids[start:start + 500]
+
+
+def analytics_dimensions(ids: Iterable[int], kind: str | None = None) -> list[dict[str, Any]]:
+    """``history_dimensions`` rows (``history_id``, ``kind``, ``key``, ``score``,
+    ``status``, ``weight``) of the given runs, optionally of one ``kind``
+    (``dimension`` / ``detector``)."""
+    out: list[dict[str, Any]] = []
+    with _connect() as conn:
+        for chunk in _chunks(ids):
+            sql = (
+                "SELECT history_id, kind, key, score, status, weight FROM history_dimensions"
+                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
+            )
+            args: list[Any] = list(chunk)
+            if kind is not None:
+                sql += " AND kind = ?"
+                args.append(kind)
+            out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, kind, key", args))
+    return out
+
+
+def analytics_requests(
+    ids: Iterable[int], endpoint: str | None = "target"
+) -> list[dict[str, Any]]:
+    """Request records of the given runs as stored columns (``history_id``,
+    ``ord`` and every RequestRecord field; booleans as 0/1, ``extra`` left out),
+    in run and list order. ``endpoint`` None returns baseline records too.
+
+    Rows whose records are still inline in ``report_json`` contribute nothing;
+    :func:`analytics_runs` moves them out first.
+    """
+    cols = ", ".join(("history_id", "ord", *analytics_store.REQUEST_FIELDS))
+    out: list[dict[str, Any]] = []
+    with _connect() as conn:
+        for chunk in _chunks(ids):
+            sql = (
+                f"SELECT {cols} FROM history_requests"
+                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
+            )
+            args: list[Any] = list(chunk)
+            if endpoint is not None:
+                sql += " AND endpoint = ?"
+                args.append(endpoint)
+            out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, ord", args))
+    return out
+
+
+# The outcome class of one request record (errors view). First match wins:
+# a timeout is a timeout whatever its status code, a 429 is rate limiting.
+# ``network`` is an exception without an HTTP status (connection refused,
+# TLS, reset); ``other`` a failed call with a 1xx-3xx status or no detail.
+REQUEST_CLASSES = ("success", "client_4xx", "rate_limited", "server_5xx", "timeout", "network", "other")
+_CLASS_SQL = (
+    "CASE WHEN ok = 1 THEN 'success'"
+    " WHEN timeout = 1 THEN 'timeout'"
+    " WHEN rate_limited = 1 OR status_code = 429 THEN 'rate_limited'"
+    " WHEN status_code BETWEEN 500 AND 599 THEN 'server_5xx'"
+    " WHEN status_code BETWEEN 400 AND 499 THEN 'client_4xx'"
+    " WHEN status_code IS NULL AND error_type IS NOT NULL THEN 'network'"
+    " ELSE 'other' END"
+)
+
+
+def analytics_request_classes(
+    ids: Iterable[int], endpoint: str = "target"
+) -> list[dict[str, Any]]:
+    """Completion calls of the given runs counted in SQL by run, minute after
+    the run's start (``minute``: whole minutes of ``start_ms``) and outcome
+    class (``cls``, one of :data:`REQUEST_CLASSES`): rows ``history_id``,
+    ``minute``, ``cls``, ``n``. Never loads the records themselves; a run
+    without stored records has no rows."""
+    out: list[dict[str, Any]] = []
+    with _connect() as conn:
+        for chunk in _chunks(ids):
+            sql = (
+                "SELECT history_id, CAST(COALESCE(start_ms, 0) / 60000 AS INTEGER) AS minute,"
+                f" {_CLASS_SQL} AS cls, COUNT(*) AS n FROM history_requests"
+                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
+                " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = 'complete'"
+                " GROUP BY history_id, minute, cls ORDER BY history_id, minute, cls"
+            )
+            out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint]))
+    return out

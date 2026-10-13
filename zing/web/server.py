@@ -5,7 +5,8 @@ Endpoints:
   GET  /v2/…                 the v2 UI, served side by side for A/B comparison;
                              ?ui=v1|v2 on any page picks one (remembered in the
                              `zing_ui` cookie)
-  GET  /api/health           {ok, version}
+  GET  /v2/analytics         charts and leaderboards over the run history (v2 only)
+  GET  /api/health          {ok, version}
   GET  /api/kb               providers (base URLs, saved relays) and their models
   POST /api/kb/relays        save a relay {name, base_url} in kb.db
   GET  /api/kb/profiles      models, providers and relays (complete sets, sources,
@@ -27,6 +28,17 @@ Endpoints:
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
                              (?format=json|md|html|pdf)
+  GET  /api/analytics/options      filter values in the run history (relays,
+                                   models, suites, stream modes, APIs, dates)
+  GET  /api/analytics/summary      KPIs of a range vs. the previous range
+  GET  /api/analytics/series       one metric per relay / model over time buckets
+  GET  /api/analytics/leaderboard  relays of a model, or models of a relay
+  GET  /api/analytics/breakdown    some metrics per relay / model over the range
+  GET  /api/analytics/errors       request outcomes (429, 5xx, timeouts, …) per
+                                   relay / model and over time buckets
+  GET  /api/analytics/integrity    identity, context window and capability
+                                   checks per relay x model
+                                   (parameters: zing/web/analytics.py)
   GET  /api/secret           the monitors' master key: state, fingerprint,
                              allowed actions (never the key)
   POST /api/secret/new       a new master key, shown once …
@@ -710,6 +722,17 @@ def create_app() -> FastAPI:
             resp = html_page(_V2 / "kb.html", request.scope)
         return _remember_ui(resp, request.query_params.get("ui"))
 
+    @app.get("/v2/analytics")
+    async def v2_analytics(request: Request) -> Any:
+        # Charts and leaderboards over the run history (/api/analytics/*).
+        # v2 only: ?ui=v1 goes to the classic history page.
+        resp: Response
+        if request.query_params.get("ui") == "v1":
+            resp = RedirectResponse("/history", status_code=307)
+        else:
+            resp = html_page(_V2 / "analytics.html", request.scope)
+        return _remember_ui(resp, request.query_params.get("ui"))
+
     @app.get("/v2/accessibility")
     async def v2_accessibility(request: Request) -> Any:
         # BITV 2.0 / EN 301 549 conformance report (renders
@@ -1213,6 +1236,63 @@ def create_app() -> FastAPI:
 
         history.clear()
         return JSONResponse({"ok": True})
+
+    # ----- Analytics (zing/web/analytics.py) ------------------------------ #
+    # Plain `def` handlers (SQLite + the knowledge base load run in the thread
+    # pool). Every parameter is validated there: a bad one answers 400.
+    def _analytics(call: Any, *args: Any) -> Any:
+        from zing.web.analytics import AnalyticsError
+
+        try:
+            body, status = call(*args), 200
+        except AnalyticsError as exc:
+            body, status = {"error": str(exc)}, 400
+        # Fresh numbers on every load: the history changes with each run.
+        return JSONResponse(body, status_code=status, headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/analytics/options")
+    def analytics_options(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.options, dict(request.query_params))
+
+    @app.get("/api/analytics/summary")
+    def analytics_summary(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.summary, dict(request.query_params))
+
+    @app.get("/api/analytics/series")
+    def analytics_series(request: Request) -> Any:
+        from zing.web import analytics
+
+        params = request.query_params
+        return _analytics(analytics.series, dict(params), params.getlist("keys"))
+
+    @app.get("/api/analytics/leaderboard")
+    def analytics_leaderboard(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.leaderboard, dict(request.query_params))
+
+    @app.get("/api/analytics/breakdown")
+    def analytics_breakdown(request: Request) -> Any:
+        from zing.web import analytics
+
+        params = request.query_params
+        return _analytics(analytics.breakdown, dict(params), params.getlist("metrics"))
+
+    @app.get("/api/analytics/errors")
+    def analytics_errors(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.errors, dict(request.query_params))
+
+    @app.get("/api/analytics/integrity")
+    def analytics_integrity(request: Request) -> Any:
+        from zing.web import analytics
+
+        return _analytics(analytics.integrity, dict(request.query_params))
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
     @app.get("/watches")

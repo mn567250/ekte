@@ -1,0 +1,157 @@
+- banner:
+  - link "Saltar para o conteúdo principal":
+    - /url: "#main"
+  - link "zing":
+    - /url: /v2/
+    - text: zing.
+  - link "Interface clássica":
+    - /url: "?ui=v1"
+  - combobox "Tema":
+    - option "Automático"
+    - option "Claro" [selected]
+    - option "Escuro"
+  - combobox "Idioma":
+    - option "English"
+    - option "中文"
+    - option "Français"
+    - option "Español"
+    - option "Português" [selected]
+    - option "Italiano"
+    - option "Deutsch"
+  - link "Acessibilidade":
+    - /url: /v2/accessibility
+  - navigation "Navegação principal":
+    - link "Auditoria":
+      - /url: /v2/
+    - link "Ferramentas":
+      - /url: /v2/tools
+    - link "Histórico":
+      - /url: /v2/history
+    - link "Análises":
+      - /url: /v2/analytics
+    - link "Monitores":
+      - /url: /v2/watches
+    - link "Conhecimento":
+      - /url: /v2/kb
+- main:
+  - heading "Análises das auditorias" [level=1]
+  - paragraph: "Compare relays e modelos ao longo do tempo com o que o zing mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação."
+  - paragraph:
+    - text: Calculado a partir do histórico local em
+    - code: ~/.zing
+    - text: — nada é enviado.
+  - status: "Atualizado: 14 execuções neste período."
+  - region "Filtros":
+    - button "Filtros" [expanded]
+    - text: Período
+    - group "Período":
+      - button "Últimos 7 dias"
+      - button "Últimos 30 dias" [pressed]
+      - button "Últimos 90 dias"
+      - button "Todo o período"
+      - button "Período personalizado"
+    - text: Suite
+    - combobox "Suite":
+      - option "Todos"
+      - option "standard" [selected]
+    - text: Requisições de sondagem
+    - combobox "Requisições de sondagem":
+      - option "Todos"
+      - option "Streaming" [selected]
+    - text: Protocolo
+    - combobox "Protocolo":
+      - option "Todos" [selected]
+      - option "openai"
+    - text: Origem
+    - combobox "Origem":
+      - option "Todos" [selected]
+      - option "Manual"
+      - option "Monitor"
+    - text: Relay / provedor
+    - combobox "Relay / provedor":
+      - option "Todos" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - text: Modelo declarado
+    - combobox "Modelo declarado":
+      - option "Todos" [selected]
+      - option "model-a"
+      - option "model-b"
+      - option "gpt-4o"
+    - text: 15 execuções no histórico (4 de monitores).
+  - button "Copiar a ligação para esta vista"
+  - tablist "Vistas da análise":
+    - tab "Visão geral" [selected]
+    - tab "Tendências"
+    - tab "Fiabilidade"
+    - tab "Integridade do modelo"
+    - tab "Faturação"
+  - tabpanel "Visão geral":
+    - region "Visão geral":
+      - heading "Visão geral" [level=2]
+      - paragraph: 02/09/2026 – 01/10/2026, comparado com o período de igual duração anterior (03/08/2026 – 01/09/2026).
+      - list:
+        - listitem: Execuções 14 +14
+        - listitem: Relays 2 +2
+        - listitem: Modelos 2 +2
+        - listitem: Pontuação mediana 79 Sem dados no período anterior
+        - listitem: Proporção de risco alto 21,4% Sem dados no período anterior
+        - listitem: Taxa de sucesso 100% Sem dados no período anterior
+        - listitem: Tempo até o primeiro token p50 <duration> Sem dados no período anterior
+        - listitem: Velocidade de decodificação 62,9 tok/s Sem dados no período anterior
+        - listitem: Rácio de faturação (entrada) 103% Sem dados no período anterior Dados de 9 de 14 execuções
+        - listitem: Rácio de faturação (saída) 102% Sem dados no período anterior Dados de 9 de 14 execuções
+    - region "Classificação":
+      - heading "Classificação" [level=2]
+      - paragraph: Medianas no período escolhido; n é o número de execuções que mediram um valor.
+      - group "Classificar":
+        - button "Relays de um modelo" [pressed]
+        - button "Modelos de um relay"
+      - text: Modelo
+      - combobox "Modelo":
+        - option "model-a" [selected]
+        - option "model-b"
+        - option "gpt-4o"
+      - region "Relays de «model-a»":
+        - table "Relays de «model-a»":
+          - caption: Relays de «model-a»
+          - rowgroup:
+            - row "Relay Execuções Pontuação Tempo até o primeiro token p50 Velocidade de decodificação Taxa de sucesso Rácio de faturação (entrada) Rácio de faturação (saída) Proporção de modelo divergente Proporção de risco alto Última execução":
+              - columnheader "Relay":
+                - button "Relay"
+              - columnheader "Execuções":
+                - button "Execuções"
+              - columnheader "Pontuação":
+                - button "Pontuação"
+              - columnheader "Tempo até o primeiro token p50":
+                - button "Tempo até o primeiro token p50"
+              - columnheader "Velocidade de decodificação":
+                - button "Velocidade de decodificação"
+              - columnheader "Taxa de sucesso":
+                - button "Taxa de sucesso"
+              - columnheader "Rácio de faturação (entrada)":
+                - button "Rácio de faturação (entrada)"
+              - columnheader "Rácio de faturação (saída)":
+                - button "Rácio de faturação (saída)"
+              - columnheader "Proporção de modelo divergente":
+                - button "Proporção de modelo divergente"
+              - columnheader "Proporção de risco alto":
+                - button "Proporção de risco alto"
+              - columnheader "Última execução":
+                - button "Última execução"
+          - rowgroup:
+            - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100% n=7104% n=7102% n=7 0% n=7 0% n=7 30/09/2026, 11:00":
+              - rowheader "Example Relay"
+              - cell "7"
+              - cell "82 n=7"
+              - cell "<duration> n=7"
+              - cell "63,2 tok/s n=7"
+              - cell "100% n=7"
+              - cell "104% n=7"
+              - cell "102% n=7"
+              - cell "0% n=7"
+              - cell "0% n=7"
+              - cell "30/09/2026, 11:00"
+            # … more rows of the same shape
+      - status

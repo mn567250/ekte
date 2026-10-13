@@ -34,6 +34,7 @@ PAGES: dict[str, str] = {
     "monitors": "/v2/watches",
     "tools": "/v2/tools",
     "kb": "/v2/kb",
+    "analytics": "/v2/analytics",
     "accessibility": "/v2/accessibility",
 }
 
@@ -44,6 +45,7 @@ PAGES_ENV = "ZING_A11Y_PAGES"
 # "<file>" for a whole file, "<file>::<test>" for one test.
 TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_history_controls.py": ("history",),
+    "test_analytics_view.py": ("analytics",),
     "test_history_paging.py": ("history",),
     "test_flows.py::test_audit_flow": ("audit",),
     "test_flows.py::test_failing_audit_flow": ("audit",),
@@ -116,6 +118,11 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "kb.html", ("kb",)),
     (_V2 + "kbsection.js", ("kb",)),
     (_V2 + "kbview.js", ("kb",)),
+    (_V2 + "analytics.html", ("analytics",)),
+    (_V2 + "charts.js", ("analytics",)),
+    (_V2 + "charts.css", ("analytics",)),
+    (_V2 + "filterpanel.js", ("history", "analytics")),
+    (_V2 + "filterpanel.css", ("history", "analytics")),
     (_V2 + "accessibility.html", ("accessibility",)),
     # the page fetches bitv-report.json; the catalogue is what it is built from
     (_V2 + "bitv-*.json", ("accessibility",)),
@@ -125,7 +132,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "report.css", ("audit", "history")),
     (_V2 + "perf.css", ("audit", "history")),
     (_V2 + "masterkey.js", ("monitors",)),
-    (_V2 + "tabs.js", ("kb", "tools")),
+    (_V2 + "tabs.js", ("tools", "kb", "analytics")),
     (_V2 + "fields.css", ("audit", "kb", "monitors", "tools")),
     (_V2 + "nav.js", ALL),
     (_V2 + "theme.js", ALL),
@@ -147,8 +154,10 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # -- server side --
     (
         "zing/web/history.py",
-        ("audit", "history", "monitors"),
-    ),  # report view, history list, monitor from history
+        ("audit", "history", "monitors", "analytics"),
+    ),  # report view, history list, monitor from history, the analytics queries
+    ("zing/web/analytics.py", ("analytics",)),  # the /api/analytics/* endpoints
+    ("zing/web/analytics_store.py", ("analytics",)),
     ("zing/web/jobs.py", ("audit", "history", "monitors")),  # running audits
     ("zing/web/watches.py", ("history", "monitors")),  # "schedule as monitor" on History
     ("zing/web/masterkey.py", ("monitors",)),
@@ -185,12 +194,17 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("zing/i18n/locales/fragments/v2-all-dimensions/*", ("audit", "history")),
     ("zing/i18n/locales/fragments/v2-download/*", ("audit", "history")),
     ("zing/i18n/locales/fragments/v2-exec-log/*", ("audit", "history")),
-    ("zing/i18n/locales/fragments/v2-scoring/*", ("audit", "history")),
+    ("zing/i18n/locales/fragments/v2-scoring/*", ("audit", "history", "analytics")),
+    # v2-analytics also holds the navigation label "Analytics", shown on every page
     ("zing/i18n/**", ALL),
     # -- the suite itself --
     ("tests/a11y/README.md", NONE),
     ("tests/a11y/llm_review.py", NONE),  # advisory review, not part of the suite
     ("tests/a11y/test_history_*.py", ("history",)),
+    ("tests/a11y/test_analytics_*.py", ("analytics",)),
+    ("tests/a11y/filter_panel.py", ("history", "analytics")),  # the filter panel check both use
+    # the runs every a11y server is seeded with (History, Monitors, Analytics, …)
+    ("tests/a11y/seed.py", ALL),
     *((f"tests/a11y/snapshots/{p}-*.yml", (p,)) for p in PAGES),
     ("tests/a11y/**", ALL),  # harness, conftest, fixtures, other test files, vendor
     ("tests/fixtures/web_report.json", ALL),  # the report every a11y server is seeded with
@@ -281,15 +295,16 @@ def affected(paths: Iterable[str]) -> Scope:
 # CI jobs
 # --------------------------------------------------------------------------- #
 # Share of the full suite's test time per page, from a full local run's
-# JUnit XML (1,122 tests, 4,137 s of test time; tests/a11y/README.md). Tests tied to no page (cross-page
+# JUnit XML (1,299 tests, 4,465 s of test time; tests/a11y/README.md). Tests tied to no page (cross-page
 # checks, self-checks) run in every selection and weigh in as "common".
 WEIGHTS: dict[str, float] = {
-    "audit": 0.15,
-    "history": 0.21,
-    "monitors": 0.10,
-    "tools": 0.10,
-    "kb": 0.29,
-    "accessibility": 0.12,
+    "audit": 0.12,
+    "history": 0.24,
+    "monitors": 0.09,
+    "tools": 0.08,
+    "kb": 0.23,
+    "analytics": 0.10,
+    "accessibility": 0.10,
     "common": 0.04,
 }
 FULL_JOBS = 4

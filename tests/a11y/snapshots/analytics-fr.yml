@@ -1,0 +1,157 @@
+- banner:
+  - link "Aller au contenu principal":
+    - /url: "#main"
+  - link "zing":
+    - /url: /v2/
+    - text: zing.
+  - link "Interface classique":
+    - /url: "?ui=v1"
+  - combobox "Thème":
+    - option "Automatique"
+    - option "Clair" [selected]
+    - option "Sombre"
+  - combobox "Langue":
+    - option "English"
+    - option "中文"
+    - option "Français" [selected]
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+  - link "Accessibilité":
+    - /url: /v2/accessibility
+  - navigation "Navigation principale":
+    - link "Audit":
+      - /url: /v2/
+    - link "Outils":
+      - /url: /v2/tools
+    - link "Historique":
+      - /url: /v2/history
+    - link "Analyses":
+      - /url: /v2/analytics
+    - link "Surveillances":
+      - /url: /v2/watches
+    - link "Connaissances":
+      - /url: /v2/kb
+- main:
+  - heading "Analyses des audits" [level=1]
+  - paragraph: "Comparez relais et modèles dans le temps avec ce que zing a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation."
+  - paragraph:
+    - text: Calculé à partir de l'historique local dans
+    - code: ~/.zing
+    - text: — rien n'est envoyé.
+  - status: "Mis à jour : 14 exécutions sur cette période."
+  - region "Filtres":
+    - button "Filtres" [expanded]
+    - text: Période
+    - group "Période":
+      - button "7 derniers jours"
+      - button "30 derniers jours" [pressed]
+      - button "90 derniers jours"
+      - button "Toute la période"
+      - button "Période personnalisée"
+    - text: Suite
+    - combobox "Suite":
+      - option "Tous"
+      - option "standard" [selected]
+    - text: Requêtes de sonde
+    - combobox "Requêtes de sonde":
+      - option "Tous"
+      - option "Streaming" [selected]
+    - text: Protocole
+    - combobox "Protocole":
+      - option "Tous" [selected]
+      - option "openai"
+    - text: Source
+    - combobox "Source":
+      - option "Tous" [selected]
+      - option "Manuel"
+      - option "Surveillance"
+    - text: Relais / fournisseur
+    - combobox "Relais / fournisseur":
+      - option "Tous" [selected]
+      - option "Example Relay"
+      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
+      - option "http://127.0.0.1:9099/v1"
+    - text: Modèle annoncé
+    - combobox "Modèle annoncé":
+      - option "Tous" [selected]
+      - option "model-a"
+      - option "model-b"
+      - option "gpt-4o"
+    - text: 15 exécutions dans l'historique (4 par des surveillances).
+  - button "Copier le lien vers cette vue"
+  - tablist "Vues de l’analyse":
+    - tab "Vue d'ensemble" [selected]
+    - tab "Tendances"
+    - tab "Fiabilité"
+    - tab "Intégrité du modèle"
+    - tab "Facturation"
+  - tabpanel "Vue d'ensemble":
+    - region "Vue d'ensemble":
+      - heading "Vue d'ensemble" [level=2]
+      - paragraph: 2 sept. – 1 oct. 2026, comparé à la période de même durée qui précède (3 août – 1 sept. 2026).
+      - list:
+        - listitem: Exécutions 14 +14
+        - listitem: Relais 2 +2
+        - listitem: Modèles 2 +2
+        - listitem: Score médian 79 Pas de données sur la période précédente
+        - listitem: Part à risque élevé 21,4 % Pas de données sur la période précédente
+        - listitem: Taux de réussite 100 % Pas de données sur la période précédente
+        - listitem: Délai du premier jeton p50 <duration> Pas de données sur la période précédente
+        - listitem: Vitesse de décodage 62,9 tok/s Pas de données sur la période précédente
+        - listitem: Ratio de facturation (entrée) 103 % Pas de données sur la période précédente Données de 9 exécutions sur 14
+        - listitem: Ratio de facturation (sortie) 102 % Pas de données sur la période précédente Données de 9 exécutions sur 14
+    - region "Classement":
+      - heading "Classement" [level=2]
+      - paragraph: Médianes sur la période choisie ; n est le nombre d'exécutions qui ont mesuré une valeur.
+      - group "Classer":
+        - button "Relais pour un modèle" [pressed]
+        - button "Modèles d'un relais"
+      - text: Modèle
+      - combobox "Modèle":
+        - option "model-a" [selected]
+        - option "model-b"
+        - option "gpt-4o"
+      - region "Relais pour « model-a »":
+        - table "Relais pour « model-a »":
+          - caption: Relais pour « model-a »
+          - rowgroup:
+            - row "Relais Exécutions Score Délai du premier jeton p50 Vitesse de décodage Taux de réussite Ratio de facturation (entrée) Ratio de facturation (sortie) Part de modèle non conforme Part à risque élevé Dernière exécution":
+              - columnheader "Relais":
+                - button "Relais"
+              - columnheader "Exécutions":
+                - button "Exécutions"
+              - columnheader "Score":
+                - button "Score"
+              - columnheader "Délai du premier jeton p50":
+                - button "Délai du premier jeton p50"
+              - columnheader "Vitesse de décodage":
+                - button "Vitesse de décodage"
+              - columnheader "Taux de réussite":
+                - button "Taux de réussite"
+              - columnheader "Ratio de facturation (entrée)":
+                - button "Ratio de facturation (entrée)"
+              - columnheader "Ratio de facturation (sortie)":
+                - button "Ratio de facturation (sortie)"
+              - columnheader "Part de modèle non conforme":
+                - button "Part de modèle non conforme"
+              - columnheader "Part à risque élevé":
+                - button "Part à risque élevé"
+              - columnheader "Dernière exécution":
+                - button "Dernière exécution"
+          - rowgroup:
+            - row "Example Relay 7 82 n=7 <duration> n=7 63,2 tok/s n=7100 % n=7104 % n=7102 % n=7 0 % n=7 0 % n=7 30 sept. 2026, 11:00":
+              - rowheader "Example Relay"
+              - cell "7"
+              - cell "82 n=7"
+              - cell "<duration> n=7"
+              - cell "63,2 tok/s n=7"
+              - cell "100 % n=7"
+              - cell "104 % n=7"
+              - cell "102 % n=7"
+              - cell "0 % n=7"
+              - cell "0 % n=7"
+              - cell "30 sept. 2026, 11:00"
+            # … more rows of the same shape
+      - status

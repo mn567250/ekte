@@ -42,6 +42,7 @@ PAGE_HTML = {
     "monitors": "watches.html",
     "tools": "tools.html",
     "kb": "kb.html",
+    "analytics": "analytics.html",
     "accessibility": "accessibility.html",
 }
 
@@ -57,8 +58,8 @@ def test_parse_pages():
     assert parse_pages("") is None and parse_pages("  ") is None and parse_pages("all") is None
     assert parse_pages("history, kb,") == {"history", "kb"}
     assert parse_pages("tools,all") is None
-    with pytest.raises(ValueError, match="analytics"):
-        parse_pages("history,analytics")
+    with pytest.raises(ValueError, match="reports"):
+        parse_pages("history,reports")
 
 
 def test_pages_of_test():
@@ -136,13 +137,15 @@ def test_single_page_files():
     assert scope("zing/web/static/v2/bitv-report.json").pages == ("accessibility",)
     assert scope("tests/a11y/test_history_controls.py").pages == ("history",)
     assert scope("tests/a11y/snapshots/kb-zh.yml").pages == ("kb",)
+    assert scope("zing/web/static/v2/charts.js", "zing/web/analytics.py").pages == ("analytics",)
+    assert scope("zing/web/static/v2/filterpanel.js").pages == ("history", "analytics")
 
 
 def test_multi_page_files_union_in_page_order():
     s = scope("zing/web/static/v2/tabs.js", "zing/web/static/v2/report.js")
-    assert s.pages == ("audit", "history", "tools", "kb") and not s.full
+    assert s.pages == ("audit", "history", "tools", "kb", "analytics") and not s.full
     assert "zing/web/static/v2/report.js -> audit, history" in s.reason
-    assert scope("zing/i18n/locales/fragments/v2-scoring/de.json").pages == ("audit", "history")
+    assert scope("zing/i18n/locales/fragments/v2-scoring/de.json").pages == ("audit", "history", "analytics")
     assert scope("zing/knowledge/data/openai.yaml").pages == ("audit", "tools", "kb")
 
 
@@ -417,5 +420,5 @@ def test_collection_selects_pages_and_rejects_unknown_ids():
     # with the shard on top: the parts add up to the selection
     parts = [_ids(_collect(ZING_A11Y_PAGES="history", ZING_A11Y_SHARD=f"{k}/2")) for k in (1, 2)]
     assert sorted(parts[0] + parts[1]) == sorted(history)
-    bad = _collect(ZING_A11Y_PAGES="history,analytics")
-    assert bad.returncode != 0 and "unknown page id(s) analytics" in bad.stderr + bad.stdout
+    bad = _collect(ZING_A11Y_PAGES="history,reports")
+    assert bad.returncode != 0 and "unknown page id(s) reports" in bad.stderr + bad.stdout

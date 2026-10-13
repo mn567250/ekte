@@ -266,6 +266,7 @@ nuova interfaccia** passa alla **nuova interfaccia** sotto `/v2/`, il cui link
 | **Console** | `/console` | — | La stessa verifica come console compatta, in stile registro |
 | **Strumenti** | `/tools` | `/v2/tools` | Verifiche di embedding e rerank |
 | **Cronologia** | `/history` | `/v2/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
+| **Analisi** | — | `/v2/analytics` | Relay e modelli confrontati nel tempo: indicatori, grafici con tabelle di dati, classifiche |
 | **Monitor** | `/watches` | `/v2/watches` | Verifiche ripetute pianificate con avvisi via webhook |
 | **Conoscenza** | — | `/v2/kb` | La base di conoscenza in tre schede — modelli, provider, relay: sfogliare, attivare/disattivare, aggiungere i propri |
 
@@ -285,6 +286,52 @@ contano come un solo host, quindi anche i modelli serviti dalla tua macchina
 attendono); gli audit di relay diversi vengono eseguiti in parallelo, al massimo
 quattro alla volta (`ZING_MAX_PARALLEL_AUDITS`). I monitor attendono il loro
 relay allo stesso modo.
+
+**Analisi (nuova interfaccia).** `/v2/analytics` trasforma la cronologia
+locale in confronti: indicatori per il periodo scelto (esecuzioni, punteggio
+mediano, quota ad alto rischio, tasso di successo, TTFT, velocità di output,
+rapporti di fatturazione) con la variazione rispetto al periodo precedente di
+pari durata; un grafico di qualsiasi metrica per relay, modello o relay ×
+modello, per ora, giorno o settimana (linea mediana con la fascia p25–p75, fino
+a quattro serie, ogni grafico anche come tabella di dati); e una classifica dei
+relay per un modello o dei modelli di un relay. I relay sono raggruppati per
+voce della knowledge base (relay salvati e provider), quindi rinominare un relay
+ne raggruppa di nuovo la cronologia. Gli intervalli con meno di 3 esecuzioni
+sono attenuati — un singolo audit può essere un valore anomalo; un monitor
+fornisce misurazioni regolari. Le esecuzioni più vecchie mostrano ciò che hanno
+misurato: la pagina dice su quante esecuzioni si basa un valore. Per
+impostazione predefinita confronta una suite e una modalità di sonda (le più
+frequenti), per non mescolare esecuzioni diverse; filtri e vista restano
+nell'URL, quindi una vista si può salvare nei preferiti o condividere. Nulla
+lascia la macchina.
+
+Altri pannelli rispondono a domande più specifiche: **ore di punta** (una mappa
+di calore giorno della settimana × ora di TTFT, latenza, tasso di successo o di
+errore nel tuo fuso orario: un relay rallenta o fallisce di più nelle ore di
+maggior carico?), **errori e affidabilità** (chiamate fallite per causa: limiti
+di frequenza (HTTP 429), errori del server (5xx), timeout, errori di rete; nel
+tempo e per relay o modello, dai registri delle richieste salvati, indicando
+quanti audit li hanno), **integrità del modello** (esiti dei controlli di
+identità, finestra di contesto e capacità per relay × modello, la quota di
+audit in cui il modello restituito è diverso e la quota misurata della
+finestra di contesto dichiarata), **fatturazione e token** (rapporti di
+fatturazione nel tempo rispetto alla linea del 100%: sopra, il relay dichiara
+più token di quanti ne abbia contati zing; più le quote di token di
+ragionamento e di input in cache) e **sovraccarico del relay** (il tempo di
+elaborazione dichiarato dal relay accanto al round trip di rete).
+
+**Schede e link da condividere (Analisi).** I pannelli sono in cinque schede —
+**Panoramica** (indicatori, classifica), **Andamenti** (confronto nel tempo, ore
+di punta), **Affidabilità** (errori, overhead del relay), **Integrità del
+modello** e **Fatturazione** — sotto l’intestazione della pagina e un pannello
+dei filtri comune; si carica solo la scheda che stai guardando. L’URL conserva
+la scheda, i filtri e ogni opzione dei grafici
+(`#tab=reliability&range=30&relay=…&eb=dow_hour`), e **Copia il link a questa
+vista** lo copia (o lo mostra in un campo da copiare se il browser non lo
+consente): il link apre esattamente quella vista. Il pannello dei filtri è lo
+stesso in **Cronologia** e **Analisi**: chiuso, indica quanti filtri sono
+attivi e li nomina in una riga (ad es. «Ultimi 30 giorni · standard · Streaming
+· Example Relay»), così una vista condivisa dice cosa mostra.
 
 ### Lingue
 
@@ -311,6 +358,8 @@ eccezioni sono le impronte della base di conoscenza la cui lingua *è* la misura
 per esempio le sonde di scioltezza in cinese, di tokenizer e di
 autoidentificazione dei modelli cinesi. Ogni rapporto registra le lingue di sonda
 effettivamente usate (`prompt_languages`, per es. `["en", "zh"]`).
+`started_at` registra quando è iniziata la verifica (UTC); lo `start_ms` di ogni
+record di richiesta conta da quel momento.
 
 ## Cosa controlla
 
@@ -638,7 +687,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.19.0         # fissare a un tag di rilascio
+        uses: cenbonew/zing@v0.20.0         # fissare a un tag di rilascio
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # secret del chiamante; mai mostrato
@@ -754,6 +803,9 @@ testo controllato dal relay viene oscurato ed escapato prima di essere scritto.
   i database nella cartella corrente. Sono normali file SQLite che puoi aprire
   per le tue analisi (meglio in sola lettura mentre zing è in esecuzione). Non
   fare commit di `watches.db` se quella cartella è un repository.
+  `history_metrics` contiene una riga di valori misurati per esecuzione e
+  `history_requests` ogni record di richiesta (salvato lì una sola volta, non
+  dentro ogni rapporto).
 
 ## Uso responsabile
 

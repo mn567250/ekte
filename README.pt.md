@@ -265,6 +265,7 @@ clássica** volta atrás. A escolha é memorizada por navegador.
 | **Consola** | `/console` | — | A mesma auditoria como consola compacta, em estilo de registo |
 | **Ferramentas** | `/tools` | `/v2/tools` | Auditorias de embeddings e rerank |
 | **Histórico** | `/history` | `/v2/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
+| **Análises** | — | `/v2/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
 | **Monitores** | `/watches` | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
 | **Conhecimento** | — | `/v2/kb` | A base de conhecimento em três separadores — modelos, provedores, relays: explorar, ativar/desativar, adicionar os seus |
 
@@ -284,6 +285,51 @@ endereços loopback contam como um só host, por isso modelos servidos pela sua
 própria máquina também esperam); auditorias de relays diferentes correm em
 paralelo, no máximo quatro de cada vez (`ZING_MAX_PARALLEL_AUDITS`). Os
 monitores esperam pelo seu relay da mesma forma.
+
+**Análises (nova interface).** `/v2/analytics` transforma o histórico local em
+comparações: indicadores do período escolhido (execuções, pontuação mediana,
+proporção de risco alto, taxa de sucesso, TTFT, velocidade de saída, rácios de
+faturação) com a variação face ao período anterior de igual duração; um gráfico
+de qualquer métrica por relay, modelo ou relay × modelo, por hora, dia ou
+semana (linha mediana com a faixa p25–p75, até quatro séries, cada gráfico
+também como tabela de dados); e uma classificação dos relays de um modelo ou
+dos modelos de um relay. Os relays são agrupados pela sua entrada na base de
+conhecimento (relays guardados e provedores), por isso renomear um relay
+reagrupa o seu histórico. Intervalos com menos de 3 execuções aparecem
+esbatidos — uma única auditoria pode ser um valor atípico; um monitor dá
+medições regulares. Execuções mais antigas mostram o que mediram: a página diz
+em quantas execuções um valor se baseia. Por omissão compara uma suite e um
+modo de sondagem (os mais frequentes), para não misturar execuções diferentes;
+filtros e vista ficam no URL, por isso uma vista pode ser guardada nos
+favoritos ou partilhada. Nada sai da máquina.
+
+Outros painéis respondem a perguntas mais concretas: **horas de ponta** (um
+mapa de calor dia da semana × hora do TTFT, da latência ou da taxa de sucesso ou
+de erro no seu fuso horário — um relay fica mais lento ou falha mais nas horas
+de maior carga?), **erros e fiabilidade** (chamadas falhadas por causa — limite
+de pedidos (HTTP 429), erros do servidor (5xx), tempos esgotados, erros de rede
+— ao longo do tempo e por relay ou modelo, a partir dos registos de pedidos
+guardados, indicando quantas auditorias os têm), **integridade do modelo**
+(resultados das verificações de identidade, janela de contexto e capacidades
+por relay × modelo, a proporção de auditorias cujo modelo devolvido difere e a
+proporção medida da janela de contexto declarada), **faturação e tokens**
+(rácios de faturação ao longo do tempo face à linha dos 100% — acima dela o
+relay informa mais tokens do que o zing contou — e as proporções de tokens de
+raciocínio e de entrada em cache) e **sobrecarga do relay** (o tempo de
+processamento que o relay informa ao lado da ida e volta de rede).
+
+**Separadores e ligações para partilhar (Análises).** Os painéis estão em cinco
+separadores — **Visão geral** (indicadores, classificação), **Tendências**
+(comparação ao longo do tempo, horas de ponta), **Fiabilidade** (erros,
+sobrecarga do relay), **Integridade do modelo** e **Faturação** — sob o
+cabeçalho da página e um painel de filtros comum; só o separador que está a ver
+é carregado. O URL guarda o separador, os filtros e cada opção dos gráficos
+(`#tab=reliability&range=30&relay=…&eb=dow_hour`), e **Copiar a ligação para
+esta vista** copia-o (ou mostra-o num campo para copiar quando o navegador não
+o permite): a ligação abre exatamente essa vista. O painel de filtros é o mesmo
+em **Histórico** e **Análises**: fechado, indica quantos filtros estão ativos e
+nomeia-os numa linha (p. ex. «Últimos 30 dias · standard · Streaming · Example
+Relay»), assim uma vista partilhada diz o que mostra.
 
 ### Idiomas
 
@@ -311,6 +357,8 @@ exatos). As únicas exceções são as impressões da base de conhecimento cujo 
 *é* a medida — por exemplo, as sondas de fluência em chinês, de tokenizer e de
 autoidentificação dos modelos chineses. Cada relatório regista os idiomas de
 sonda efetivamente usados (`prompt_languages`, p. ex. `["en", "zh"]`).
+`started_at` regista quando a auditoria começou (UTC); o `start_ms` de cada
+registo de pedido conta a partir desse momento.
 
 ## O que é verificado
 
@@ -639,7 +687,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.19.0         # fixar numa tag de versão
+        uses: cenbonew/zing@v0.20.0         # fixar numa tag de versão
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # segredo de quem chama; nunca é mostrado
@@ -754,6 +802,9 @@ sonda. O texto controlado pelo relay é ocultado e escapado antes de ser escrito
   atual. São ficheiros SQLite normais que pode abrir para as suas próprias
   análises (de preferência só leitura enquanto o zing corre). Não faça commit
   de `watches.db` se essa pasta for um repositório.
+  `history_metrics` guarda uma linha de valores medidos por execução e
+  `history_requests` cada registo de pedido (guardado aí uma só vez, não dentro
+  de cada relatório).
 
 ## Utilização responsável
 

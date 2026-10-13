@@ -269,6 +269,7 @@ Oberfläche** zurückführt. Die Wahl wird pro Browser gespeichert.
 | **Konsole** | `/console` | — | Dieselbe Prüfung als kompakte Konsole im Log-Stil |
 | **Werkzeuge** | `/tools` | `/v2/tools` | Embedding- und Rerank-Prüfungen |
 | **Verlauf** | `/history` | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
+| **Analyse** | — | `/v2/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
 | **Überwachung** | `/watches` | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
 | **Wissen** | — | `/v2/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
 
@@ -288,6 +289,54 @@ verfälschen (alle Loopback-Adressen zählen als ein Host, also warten auch
 Modelle auf Ihrem eigenen Rechner); Audits verschiedener Relays laufen parallel,
 höchstens vier gleichzeitig (`ZING_MAX_PARALLEL_AUDITS`). Überwachungen warten
 ebenso auf ihr Relay.
+
+**Analyse (neue UI).** `/v2/analytics` macht aus dem lokalen Verlauf
+Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
+hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,
+Abrechnungsverhältnisse) mit der Änderung gegenüber dem gleich langen Zeitraum
+davor; ein Diagramm jeder Kennzahl pro Relay, Modell oder Relay × Modell nach
+Stunde, Tag oder Woche (Median-Linie mit p25–p75-Band, bis zu vier Reihen, jedes
+Diagramm auch als Datentabelle); und eine Rangliste der Relays für ein Modell
+oder der Modelle eines Relays. Relays werden nach ihrem Eintrag in der
+Wissensbasis gruppiert (gespeicherte Relays und Anbieter), ein umbenanntes Relay
+gruppiert also seinen Verlauf neu. Abschnitte mit weniger als 3 Läufen werden
+blass gezeichnet — ein einzelnes Audit kann ein Ausreißer sein; eine
+Überwachung liefert regelmäßige Messungen. Ältere Läufe zeigen, was sie
+gemessen haben: die Seite sagt, auf wie vielen Läufen ein Wert beruht.
+Standardmäßig vergleicht sie eine Suite und einen Probe-Modus (die häufigsten),
+damit Ungleiches nicht vermischt wird; Filter und Ansicht stehen in der URL, eine
+Ansicht lässt sich also als Lesezeichen speichern oder teilen. Nichts verlässt
+den Rechner.
+
+Weitere Bereiche beantworten engere Fragen: **Stoßzeiten** (eine Heatmap
+Wochentag × Stunde von TTFT, Latenz, Erfolgs- oder Fehlerquote in Ihrer
+Zeitzone — wird ein Relay zu Stoßzeiten langsamer oder fehleranfälliger?),
+**Fehler und Zuverlässigkeit** (fehlgeschlagene Aufrufe nach Ursache —
+Ratenbegrenzung (HTTP 429), Serverfehler (5xx), Zeitüberschreitungen,
+Netzwerkfehler — im Zeitverlauf und pro Relay oder Modell, aus den
+gespeicherten Anfragedaten, mit der Zahl der Läufe, die sie haben),
+**Modellechtheit** (Ergebnisse der Identitäts-, Kontextfenster- und
+Fähigkeitsprüfungen pro Relay × Modell, der Anteil der Läufe mit abweichend
+zurückgemeldetem Modell und der gemessene Anteil am angegebenen
+Kontextfenster), **Abrechnung und Tokens** (Abrechnungsverhältnisse im
+Zeitverlauf gegen die 100-%-Linie — darüber meldet das Relay mehr Tokens, als
+zing gezählt hat — sowie Anteile von Reasoning- und gecachten Eingabe-Tokens)
+und **Relay-Overhead** (die vom Relay gemeldete Verarbeitungszeit neben der
+Netzwerk-Umlaufzeit dorthin).
+
+**Tabs und Links zum Teilen (Analyse).** Die Panels liegen in fünf Tabs —
+**Überblick** (Kennzahlen, Rangliste), **Trends** (Vergleich im Zeitverlauf,
+Stoßzeiten), **Zuverlässigkeit** (Fehler, Relay-Overhead),
+**Modellechtheit** und **Abrechnung** — unter dem Seitenkopf und einem
+gemeinsamen Filterpanel; geladen wird nur der Tab, den Sie ansehen. Die URL
+enthält Tab, Filter und jede Diagrammoption
+(`#tab=reliability&range=30&relay=…&eb=dow_hour`), und **Link zu dieser
+Ansicht kopieren** kopiert sie (oder zeigt sie in einem Feld zum Kopieren, wo
+der Browser das nicht erlaubt): Der Link öffnet genau diese Ansicht. Das
+Filterpanel ist auf **Verlauf** und **Analyse** dasselbe: Geschlossen zeigt es,
+wie viele Filter aktiv sind, und nennt sie in einer Zeile (z. B. „Letzte 30
+Tage · standard · Streaming · Example Relay“), so sagt eine geteilte Ansicht,
+was sie zeigt.
 
 ### Sprachen
 
@@ -315,6 +364,8 @@ Die einzigen Ausnahmen sind Fingerabdrücke der Wissensbasis, deren Sprache
 *selbst* die Messgröße ist — z. B. die Tests zu chinesischer Sprachgewandtheit,
 Tokenizer und Selbstidentifikation chinesischer Modelle. Jeder Bericht vermerkt
 die tatsächlich verwendeten Testsprachen (`prompt_languages`, z. B. `["en", "zh"]`).
+`started_at` vermerkt, wann die Prüfung begann (UTC); `start_ms` jedes
+Anfrage-Datensatzes zählt ab diesem Zeitpunkt.
 
 ## Was geprüft wird
 
@@ -649,7 +700,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.19.0         # auf ein Release-Tag festlegen
+        uses: cenbonew/zing@v0.20.0         # auf ein Release-Tag festlegen
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # Secret des Aufrufers; wird nie ausgegeben
@@ -765,6 +816,8 @@ Relay kontrollierter Text wird vor dem Schreiben geschwärzt und maskiert.
   ein anderes, z. B. legt `zing serve --data-dir .` die Datenbanken im
   aktuellen Ordner ab. Es sind normale SQLite-Dateien, die Sie für eigene
   Auswertungen öffnen können (während zing läuft, am besten nur lesend).
+  `history_metrics` enthält eine Zeile Messwerte pro Lauf, `history_requests`
+  jeden Anfrage-Datensatz (dort einmal gespeichert, nicht in jedem Bericht).
   Committen Sie `watches.db` nicht, falls der Ordner ein Repository ist.
 
 ## Verantwortungsvoller Einsatz

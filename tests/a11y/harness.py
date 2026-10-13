@@ -1,7 +1,8 @@
 """Browser harness for the BITV 2.0 / EN 301 549 / WCAG 2.1 AA tests of web UI v2.
 
 Starts the real app (``create_app``) on a free local port with a throwaway data
-dir that holds one saved report and one monitor, and drives it with Playwright
+dir that holds one saved report, one monitor and a week of runs for the
+Analytics page (seed.py), and drives it with Playwright
 (Chromium). Every test is parametrised over the UI languages found in
 ``zing/i18n/locales`` and, where colours matter, over the light and dark theme.
 
@@ -20,6 +21,7 @@ import threading
 import time
 import weakref
 from collections.abc import Iterator
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +35,7 @@ from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright  
 from tests.a11y.bitv_map import describe  # noqa: E402
 from tests.a11y.pages import PAGES  # noqa: E402,F401  (defined with the change -> page tables)
 from tests.a11y.results import note_axe_run  # noqa: E402
+from tests.a11y.seed import seed_analytics  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 AXE = Path(__file__).resolve().parent / "vendor" / "axe.min.js"
@@ -92,7 +95,9 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
 
     # one monitor, so the monitors page has a populated list
     with httpx.Client(base_url=url, headers={"Origin": url}, timeout=10) as c:
-        c.post(f"/api/watches/from-history/{rid}", json={})
+        wid = c.post(f"/api/watches/from-history/{rid}", json={}).json().get("id")
+    # a week of runs over two relays and models, so /v2/analytics draws charts
+    seed_analytics(datetime.now(timezone.utc), wid)
 
     yield url
 
