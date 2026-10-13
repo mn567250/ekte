@@ -415,6 +415,15 @@ baixo ou limitado não pôde ser avaliado, o que não prova que responda outro
 modelo. A **confiança** do veredito (baixa / média / alta) cresce com o número de
 dimensões núcleo que produziram resultado, com uma referência e com o juiz LLM.
 
+Os avisos de transporte — HTTP sem cifra (`security.tls`) e falhas ou caudas lentas
+sob carga (`reliability.*`) — baixam a pontuação da sua dimensão, mas também não
+elevam o risco de substituição; o resumo lista-os como avisos. Respostas
+adulteradas e uma chave API devolvida continuam a elevá-lo. HTTP sem cifra para
+esta máquina ou uma rede privada é apenas um aviso de gravidade baixa, pois a
+chave nunca sai dela. Um perfil da base de conhecimento associado apenas de forma
+aproximada (fuzzy) limita a confiança a baixa, e um detetor sem qualquer resposta
+utilizável é inconclusivo, nunca uma aprovação.
+
 ## Suites
 
 | Suite | Detectores | Custo |
@@ -428,6 +437,7 @@ dimensões núcleo que produziram resultado, com uma referência e com o juiz LL
 A sonda da janela de contexto é limitada por `--max-context-tokens` (200K por
 predefinição), para que auditar um modelo de 1M de tokens continue acessível.
 `--only` / `--skip` executam ou excluem detectores individuais pelo seu id.
+Uma janela maior do que o limite de `--max-context-tokens` é reportada como *verificada até ao limite*, nunca como truncada.
 
 ### Suite personalizada
 
@@ -473,7 +483,7 @@ centro de dados:
 | erros | pedidos de sonda falhados: ≤ 2 % 100 · ≤ 10 % 80 · acima: 50 (os 429 não contam) |
 | estabilidade sob carga | latência p50 em rajada ÷ p50 sequencial: ≤ 1,5x 100 · ≤ 3x 80 · acima: 55 |
 | acerto de cache | prompts únicos respondidos a partir de uma cache: 60 |
-| referência | tokens/s face à referência de confiança ou, na falta dela, ao intervalo publicado para o modelo na base de conhecimento: em linha 100 · mais lento 80 (informativo, nunca uma falha) · ≥ 2x mais rápido 60 (sinal de um modelo mais pequeno) · sem referência: não contabilizado |
+| referência | tokens/s face à referência de confiança ou, na falta dela, ao intervalo publicado para o modelo na base de conhecimento: em linha 100 · mais lento: não contabilizado (informativo, nunca uma falha) · ≥ 2x mais rápido 60 (sinal de um modelo mais pequeno) · sem referência: não contabilizado |
 
 As constatações de desempenho são no máximo de gravidade baixa: mexem na
 pontuação, nunca no veredito de risco. Sem a sonda (`standard` sem referência,

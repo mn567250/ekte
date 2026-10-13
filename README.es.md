@@ -417,6 +417,15 @@ caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo. L
 **confianza** del veredicto (baja / media / alta) crece con el número de
 dimensiones núcleo que dieron resultado, con una referencia y con el juez LLM.
 
+Los avisos de transporte —HTTP sin cifrar (`security.tls`) y fallos o colas lentas
+bajo carga (`reliability.*`)— bajan la puntuación de su dimensión, pero tampoco
+elevan el riesgo de sustitución; el resumen los lista como avisos. La manipulación
+de respuestas y una clave API devuelta sí lo elevan. HTTP sin cifrar hacia esta
+máquina o una red privada es solo un aviso de gravedad baja, porque la clave nunca
+sale de ella. Un perfil de la base de conocimiento emparejado solo de forma
+aproximada (fuzzy) limita la confianza a baja, y un detector sin ninguna respuesta
+utilizable es no concluyente, nunca un aprobado.
+
 ## Suites
 
 | Suite | Detectores | Coste |
@@ -430,6 +439,7 @@ dimensiones núcleo que dieron resultado, con una referencia y con el juez LLM.
 La sonda de ventana de contexto está limitada por `--max-context-tokens` (200K
 por defecto) para que auditar un modelo de 1M de tokens siga siendo asequible.
 `--only` / `--skip` ejecutan o excluyen detectores sueltos por su id.
+Una ventana mayor que el límite de `--max-context-tokens` se informa como *verificada hasta el límite*, nunca como truncada.
 
 ### Suite personalizada
 
@@ -475,7 +485,7 @@ centro de datos:
 | errores | peticiones de sonda fallidas: ≤ 2 % 100 · ≤ 10 % 80 · por encima: 50 (los 429 no cuentan) |
 | estabilidad bajo carga | latencia p50 en ráfaga ÷ p50 secuencial: ≤ 1,5x 100 · ≤ 3x 80 · por encima: 55 |
 | acierto de caché | prompts únicos respondidos desde una caché: 60 |
-| referencia | tokens/s frente a la referencia de confianza o, si no, al rango publicado para el modelo en la base de conocimiento: en línea 100 · más lento 80 (informativo, nunca un fallo) · ≥ 2x más rápido 60 (señal de un modelo más pequeño) · sin referencia: no computa |
+| referencia | tokens/s frente a la referencia de confianza o, si no, al rango publicado para el modelo en la base de conocimiento: en línea 100 · más lento: no computa (informativo, nunca un fallo) · ≥ 2x más rápido 60 (señal de un modelo más pequeño) · sin referencia: no computa |
 
 Los hallazgos de rendimiento son como mucho de gravedad baja: mueven la
 puntuación, nunca el veredicto de riesgo. Sin la sonda (`standard` sin

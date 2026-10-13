@@ -415,6 +415,15 @@ risponda un altro modello. L'**affidabilità** del verdetto (bassa / media / alt
 cresce con il numero di dimensioni centrali che hanno prodotto un risultato, con
 un riferimento e con il giudice LLM.
 
+Gli avvisi di trasporto — HTTP in chiaro (`security.tls`) e fallimenti o code lente
+sotto carico (`reliability.*`) — abbassano il punteggio della loro dimensione ma
+non alzano neppure il rischio di sostituzione; il riepilogo li elenca come avvisi.
+Risposte manomesse e una chiave API rimandata indietro lo alzano ancora. HTTP in
+chiaro verso questa macchina o una rete privata è solo un avviso di gravità bassa,
+perché la chiave non la lascia mai. Un profilo della base di conoscenza abbinato
+solo in modo approssimativo (fuzzy) limita l'affidabilità a bassa, e un rilevatore
+senza alcuna risposta utilizzabile è non conclusivo, mai un superamento.
+
 ## Suite
 
 | Suite | Rilevatori | Costo |
@@ -428,6 +437,7 @@ un riferimento e con il giudice LLM.
 La sonda della finestra di contesto è limitata da `--max-context-tokens` (200K
 per impostazione predefinita), così verificare un modello da 1M di token resta
 sostenibile. `--only` / `--skip` eseguono o escludono singoli rilevatori per id.
+Una finestra più grande del limite di `--max-context-tokens` è riportata come *verificata fino al limite*, mai come troncata.
 
 ### Suite personalizzata
 
@@ -472,7 +482,7 @@ penalizzato per non essere un data center:
 | errori | richieste di sonda fallite: ≤ 2 % 100 · ≤ 10 % 80 · oltre: 50 (i 429 non contano) |
 | stabilità sotto carico | latenza p50 in raffica ÷ p50 sequenziale: ≤ 1,5x 100 · ≤ 3x 80 · oltre: 55 |
 | cache hit | prompt unici serviti da una cache: 60 |
-| riferimento | token/s rispetto al riferimento affidabile o, in mancanza, all'intervallo pubblicato per il modello nella base di conoscenza: in linea 100 · più lento 80 (informativo, mai un fallimento) · ≥ 2x più veloce 60 (indizio di un modello più piccolo) · nessun riferimento: non conteggiato |
+| riferimento | token/s rispetto al riferimento affidabile o, in mancanza, all'intervallo pubblicato per il modello nella base di conoscenza: in linea 100 · più lento: non conteggiato (informativo, mai un fallimento) · ≥ 2x più veloce 60 (indizio di un modello più piccolo) · nessun riferimento: non conteggiato |
 
 Le rilevazioni sulle prestazioni sono al massimo di gravità bassa: spostano il
 punteggio, mai il verdetto di rischio. Senza la sonda (`standard` senza
