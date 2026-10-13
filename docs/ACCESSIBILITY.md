@@ -20,10 +20,19 @@ pytest -m a11y -n auto                 # pytest-xdist, in the dev extra
 
 Findings are also written to `a11y-report.json` (`ZING_A11Y_REPORT` moves it).
 `ZING_A11Y_SHARD=k/n` runs only the k-th of n equal parts of the suite (the
-slowest tests are spread evenly). In CI four `accessibility k/4
-(informational)` jobs run one shard each, in parallel, without failing the
-pipeline, and upload those files. They become a required check once the suite
-is green.
+slowest tests are spread evenly). `ZING_A11Y_PAGES=history,kb` runs only the
+tests of those pages, plus the checks that compare every page (consistent
+navigation and identification, page titles, reachability); the two combine.
+
+In CI an `accessibility scope` job decides what to test
+(`python -m tests.a11y.affected`, mapping in `tests/a11y/pages.py`, see
+[tests/a11y/README.md](../tests/a11y/README.md)): every page on pushes (to `main`
+and the integration branches), the nightly run and manual runs, in four
+`accessibility k/4 (informational)` jobs; on pull requests only the pages
+the change can affect, in one to four jobs, and nothing for changes
+outside the web UI. A file shared by every page, or a web UI file the mapping
+does not know, runs everything. The jobs run without failing the pipeline and
+upload those files; they become a required check once the suite is green.
 
 ## Coverage by BITV / EN 301 549 test step
 
@@ -129,7 +138,9 @@ the step but never change its status.
 CI runs the suite with `ZING_A11Y_RESULTS`, one results file per shard. The
 `accessibility report` job merges them (`--results` takes several files),
 generates the report even when tests fail and uploads `bitv-report.json` with
-the other findings. The copy
+the other findings. It does so for full runs only: a run of some pages would
+report the steps of the others as not tested, so a partial run uploads its
+findings and names the pages it tested in the job summary. The copy
 committed in the repository is regenerated with the commands above.
 
 ## Manual review still needed
