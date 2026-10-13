@@ -23,6 +23,7 @@ from zing.models import (
     RedactedTarget,
     Severity,
     Status,
+    TargetConfig,
     Verdict,
 )
 from zing.report import compact_dict, render_html, render_markdown
@@ -37,14 +38,21 @@ _REJECTED = CompletionOutcome(ok=False, status_code=400,
 _TIMEOUT = CompletionOutcome(ok=False, error_type="timeout", error_message="Read timed out.")
 
 
-async def _run(*outcomes: CompletionOutcome) -> DetectorResult:
+async def _run(*outcomes: CompletionOutcome, api: str = "openai") -> DetectorResult:
     queue = list(outcomes)
+    sent = []
 
-    async def complete(_spec):
+    async def complete(spec):
+        sent.append(spec)
         return queue.pop(0)
 
-    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete))
-    return await ProtocolDetector().run(ctx)  # type: ignore[arg-type]
+    target = TargetConfig(base_url="http://relay.test/v1", model="m", api=api)
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete), target=target)
+    result = await ProtocolDetector().run(ctx)  # type: ignore[arg-type]
+    assert not queue, "every queued outcome is consumed"
+    if api == "responses":
+        assert all(s.stop is None for s in sent), "no stop request on the Responses API"
+    return result
 
 
 def _finding(result: DetectorResult, fid: str) -> Finding:
@@ -57,7 +65,7 @@ async def test_every_check_scores_from_the_published_scale():
     assert result.scoring is not None and result.scoring.method == "mean_of_checks"
     assert len(result.scoring.outcomes) == len(SCALE.outcomes)
     for f in result.findings:
-        o = SCALE.get(f.id, f.outcome or "")
+        o = SCALE.get(f.scale_check, f.outcome or "")
         assert (f.score, f.status, f.severity) == (o.score, o.status, o.severity)
     assert [f.outcome for f in result.findings] == [
         "recalled", "truncated", "rejected_openai_body",
@@ -83,6 +91,16 @@ async def test_no_counted_check_means_no_score():
     assert _finding(result, "protocol.error_schema").outcome == "no_http_response"
     assert result.score == 55.0
     assert Scale.mean([f for f in result.findings if f.id != "protocol.error_schema"]) is None
+
+
+async def test_stop_check_is_not_applicable_on_the_responses_api():
+    # The Responses API has no stop parameter: no stop request is sent, and the
+    # check is noted but neither blames the relay nor counts towards the score.
+    result = await _run(_BLUE, _REJECTED, api="responses")
+    stop = _finding(result, "protocol.stop_not_applicable")
+    assert (stop.outcome, stop.status, stop.score) == ("not_applicable", Status.INFO, None)
+    assert stop.check == "protocol.stop" and stop.evidence == {"api": "responses"}
+    assert result.score == 100.0 and result.status == Status.PASS
 
 
 def test_scale_rejects_duplicate_outcomes():

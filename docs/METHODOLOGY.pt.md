@@ -222,6 +222,10 @@ recordar uma cor de uma interação anterior; uma sequência `stop` que tem de
 cortar a saída; e um pedido deliberadamente inválido (`messages` vazio) que tem
 de ser rejeitado com um 4xx, idealmente com um corpo de erro ao estilo OpenAI.
 
+A Responses API não tem parâmetro `stop`, por isso contra um alvo Responses API
+o teste de parada não é enviado e a verificação é registrada como não aplicável
+(não contabilizada) em vez de culpar o relay.
+
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `protocol.multi_turn` | A cor de um turno anterior foi lembrada. | Aprovado | 100 pts |
@@ -231,6 +235,7 @@ de ser rejeitado com um 4xx, idealmente com um corpo de erro ao estilo OpenAI.
 |  | Não foi possível confirmar o tratamento da parada pelo texto. | Aviso · Baixa | 70 pts |
 |  | Foi devolvido texto após a sequência de parada. | Aviso · Baixa | 60 pts |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
+|  | A Responses API não tem parâmetro stop; não verificado, não contado. | Info | Não contabilizado |
 | `protocol.error_schema` | Rejeitada com um 4xx e um corpo de erro no estilo OpenAI. | Aprovado | 100 pts |
 |  | Rejeitada com um 4xx, mas o corpo não segue o estilo OpenAI. | Aviso · Baixa | 80 pts |
 |  | Sem resposta HTTP; não foi possível confirmar o tratamento de erros do cliente. | Aviso · Baixa | 55 pts |
@@ -297,12 +302,16 @@ amostras aponta para uma cache de respostas que ignora a amostragem. O veredito
 temperatura. Duas perguntas factuais idênticas a `temperature=0` são apenas
 informativas.
 
+Para concluir que há cache, pelo menos três das quatro amostras têm de ser
+utilizáveis (e todas as utilizáveis idênticas); com menos, a verificação é
+inconclusiva.
+
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `determinism.temp1_variability` | As amostras repetidas com temperature=1.0 diferiram, como numa amostragem real. | Aprovado | 100 pts |
 |  | As amostras foram idênticas, mas modelos de raciocínio ignoram legitimamente temperature. | Info | 100 pts |
-|  | Todas as amostras com temperature=1.0 foram idênticas byte a byte, o que sugere respostas em cache. | Aviso · Média | 55 pts |
-|  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
+|  | Todas as amostras utilizáveis (pelo menos 3) com temperature=1.0 eram idênticas byte a byte, sugerindo cache de respostas. | Aviso · Média | 55 pts |
+|  | Menos de 3 amostras utilizáveis com temperature=1.0 para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `determinism.temp0_stability` | Respostas idênticas com temperature=0 (esperado); apenas informativo, não pontua. | Info | Não contabilizado |
 |  | As respostas diferiram com temperature=0; apenas informativo, não pontua. | Info | Não contabilizado |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
@@ -569,17 +578,26 @@ mais fragmentos com intervalos quase iguais, CV < 0,1, e abaixo de 2 ms:
 despejados de uma vez). Um fluxo sem fragmento de utilização é assinalado à
 parte.
 
+O TTFT é o primeiro token de conteúdo visível. Para um modelo de raciocínio
+(segundo a base de conhecimento, ou que reporta tokens de raciocínio no usage),
+que pensa antes de responder, um primeiro token tardio é apenas registrado e não
+conta como buffer; os sinais de poucos fragmentos e intervalos uniformes
+continuam a contar. Um stream bem-sucedido mas sem conteúdo é inconclusivo e não
+é pontuado.
+
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `streaming.healthy` | Muitos fragmentos, um primeiro token cedo e intervalos espalhados: streaming real. | Aprovado | Sem dedução |
 | `streaming.few_chunks` | Sinal de buffer: o primeiro desconta 40 pontos, um segundo 20, os seguintes nada. | Aviso · Média | até −40 pts |
 | `streaming.late_ttft` | Sinal de buffer: o primeiro desconta 40 pontos, um segundo 20, os seguintes nada. | Aviso · Média | até −40 pts |
+| `streaming.reasoning_ttft` | Primeiro token tardio de um modelo de raciocínio (ele pensa antes de responder): informativo, não contado como buffer. | Info | Sem dedução |
 | `streaming.uniform_gaps` | Sinal de buffer: o primeiro desconta 40 pontos, um segundo 20, os seguintes nada. | Aviso · Média | até −40 pts |
 | `streaming.no_usage` | Nenhum fragmento de uso no stream: desconta 15 pontos se nada estiver em buffer. | Aviso · Baixa | até −15 pts |
+| `streaming.no_content` | O stream teve sucesso, mas não entregou conteúdo para avaliar; sem pontuação. | Inconclusivo · Baixa | Não contabilizado |
 | `streaming.failed` | A requisição em streaming falhou. | Falha · Alta | teto 0 |
 
 Ou seja: autêntico 100 · utilização em falta 85 · um sinal de buffer 60 · dois
-ou mais 40 · falha 0.
+ou mais 40 · falha 0 · sem conteúdo: sem pontuação.
 
 **Ressalvas.** Saídas curtas, um modelo pequeno e rápido ou a instabilidade da
 rede podem parecer uma rajada. Um upstream que não suporta streaming obriga o

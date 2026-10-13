@@ -224,6 +224,10 @@ tronquer la sortie ; et une requête volontairement invalide (`messages` vide)
 qui doit être rejetée par un 4xx, idéalement avec un corps d'erreur de style
 OpenAI.
 
+La Responses API n'a pas de paramètre `stop` : face à une cible Responses API,
+la sonde d'arrêt n'est donc pas envoyée et la vérification est notée non
+applicable (non comptée) au lieu d'incriminer le relais.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `protocol.multi_turn` | La couleur d'un tour précédent a été retrouvée. | Réussi | 100 pts |
@@ -233,6 +237,7 @@ OpenAI.
 |  | La gestion de l'arrêt n'a pas pu être confirmée d'après le texte. | Avertissement · Faible | 70 pts |
 |  | Du texte après la séquence d'arrêt a été renvoyé. | Avertissement · Faible | 60 pts |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
+|  | La Responses API n'a pas de paramètre stop ; non vérifié, non compté. | Info | Non compté |
 | `protocol.error_schema` | Rejetée avec un 4xx et un corps d'erreur de style OpenAI. | Réussi | 100 pts |
 |  | Rejetée avec un 4xx, mais le corps n'est pas de style OpenAI. | Avertissement · Faible | 80 pts |
 |  | Pas de réponse HTTP ; la gestion des erreurs client n'a pas pu être confirmée. | Avertissement · Faible | 55 pts |
@@ -299,12 +304,16 @@ l'échantillonnage. Le verdict est suspendu pour les modèles de raisonnement,
 qui ignorent légitimement la température. Deux questions factuelles
 identiques à `temperature=0` sont purement indicatives.
 
+Pour conclure à un cache, au moins trois des quatre échantillons doivent être
+exploitables (et tous les exploitables identiques) ; avec moins, la vérification
+n'est pas concluante.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `determinism.temp1_variability` | Les échantillons répétés à temperature=1.0 différaient, comme avec un véritable échantillonnage. | Réussi | 100 pts |
 |  | Les échantillons étaient identiques, mais les modèles de raisonnement ignorent légitimement temperature. | Info | 100 pts |
-|  | Tous les échantillons à temperature=1.0 étaient identiques octet pour octet, ce qui suggère une mise en cache des réponses. | Avertissement · Moyenne | 55 pts |
-|  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
+|  | Tous les échantillons exploitables (au moins 3) à temperature=1.0 étaient identiques à l'octet près, ce qui suggère une mise en cache des réponses. | Avertissement · Moyenne | 55 pts |
+|  | Moins de 3 échantillons exploitables à temperature=1.0 pour en juger. | Non concluant · Faible | Non compté |
 | `determinism.temp0_stability` | Réponses identiques à temperature=0 (attendu) ; à titre indicatif, non noté. | Info | Non compté |
 |  | Les réponses différaient à temperature=0 ; à titre indicatif, non noté. | Info | Non compté |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
@@ -574,17 +583,26 @@ seulement à partir de 220 caractères reçus, ainsi que des **écarts uniformes
 (quatre fragments ou plus aux écarts quasi identiques, CV < 0,1, et sous 2 ms :
 livrés en bloc). Un flux sans fragment d'usage est signalé à part.
 
+Le TTFT est le premier jeton de contenu visible. Pour un modèle de raisonnement
+(selon la base de connaissances, ou qui déclare des jetons de raisonnement dans
+son usage), qui réfléchit avant de répondre, un premier jeton tardif est donc
+seulement noté et non compté comme mise en tampon ; les signaux peu de fragments
+et écarts uniformes comptent toujours. Un flux qui réussit mais ne livre aucun
+contenu n'est pas concluant et n'est pas noté.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `streaming.healthy` | Beaucoup de fragments, un premier token précoce et des écarts répartis : vrai streaming. | Réussi | Aucune déduction |
 | `streaming.few_chunks` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.late_ttft` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
+| `streaming.reasoning_ttft` | Premier jeton tardif d'un modèle de raisonnement (il réfléchit avant de répondre) : informatif, non compté comme mise en tampon. | Info | Aucune déduction |
 | `streaming.uniform_gaps` | Signal de mise en tampon : le premier retire 40 points, un second 20, les suivants rien. | Avertissement · Moyenne | jusqu'à −40 pts |
 | `streaming.no_usage` | Aucun fragment d'usage dans le flux : retire 15 points si rien n'est mis en tampon. | Avertissement · Faible | jusqu'à −15 pts |
+| `streaming.no_content` | Le flux a réussi mais n'a livré aucun contenu à juger ; non noté. | Non concluant · Faible | Non compté |
 | `streaming.failed` | La requête en streaming a échoué. | Échec · Élevée | plafond 0 |
 
 Soit : authentique 100 · usage absent 85 · un signal de mise en tampon 60 ·
-deux ou plus 40 · échec 0.
+deux ou plus 40 · échec 0 · aucun contenu : pas de note.
 
 **Mises en garde.** Des sorties courtes, un petit modèle rapide ou la gigue
 réseau peuvent ressembler à une rafale. Un amont qui ne sait pas streamer

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
+from types import SimpleNamespace
 
 import pytest
 
@@ -169,6 +170,87 @@ async def test_streaming_failure_caps_at_0(audit_context, mock_server):
     mock_server.chat_status = 500
     result = await StreamingDetector().run(audit_context)
     assert result.score == 0.0 and result.status == Status.FAIL
+
+
+# --------------------------------------------------------------------------- #
+# streaming: reasoning models and empty streams
+# --------------------------------------------------------------------------- #
+def _stream(content: str, *, ttft: float, duration: float, chunks: int,
+            usage: dict | None = None) -> CompletionOutcome:
+    # Irregular gaps between the first token and the end, so no uniform_gaps.
+    gaps = [1.0 + (i % 3) for i in range(chunks - 1)]
+    scale = (duration - ttft) / sum(gaps) if gaps else 0.0
+    timings = [ttft]
+    for g in gaps:
+        timings.append(timings[-1] + g * scale)
+    return CompletionOutcome(
+        ok=True, status_code=200, content=content, ttft_ms=ttft, duration_ms=duration,
+        chunk_count=chunks, chunk_timings_ms=timings,
+        usage=usage or {"prompt_tokens": 20, "completion_tokens": 60, "total_tokens": 80},
+    )
+
+
+async def _run_streaming(out: CompletionOutcome, *, reasoning: bool) -> DetectorResult:
+    async def complete(_spec):
+        return out
+
+    model = SimpleNamespace(reasoning=reasoning, usage_in_stream=True)
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          profile=SimpleNamespace(model=model))
+    return await StreamingDetector().run(ctx)  # type: ignore[arg-type]
+
+
+# The first visible token after ~95% of the time (silent thinking), then a quick answer.
+_LATE = {"ttft": 1900.0, "duration": 2000.0, "chunks": 40}
+
+
+async def test_streaming_late_first_token_of_a_reasoning_model_is_not_buffering():
+    result = await _run_streaming(_stream("word " * 60, **_LATE), reasoning=True)
+    _check(result, _scale_of("streaming"))
+    by_id = {f.id: f for f in result.findings}
+    assert "streaming.late_ttft" not in by_id
+    note = by_id["streaming.reasoning_ttft"]
+    assert (note.outcome, note.status, note.score, note.deduction) == (
+        "reasoning", Status.INFO, None, None)
+    assert "streaming.healthy" in by_id
+    assert result.score == 100.0 and result.status == Status.PASS
+
+
+async def test_streaming_reported_reasoning_tokens_count_as_a_reasoning_model():
+    usage = {"prompt_tokens": 20, "completion_tokens": 400, "total_tokens": 420,
+             "completion_tokens_details": {"reasoning_tokens": 340}}
+    result = await _run_streaming(_stream("word " * 60, usage=usage, **_LATE), reasoning=False)
+    by_id = {f.id: f for f in result.findings}
+    assert "streaming.late_ttft" not in by_id
+    assert by_id["streaming.reasoning_ttft"].evidence["reasoning_tokens"] == 340
+    assert result.score == 100.0
+
+
+async def test_streaming_late_first_token_of_a_plain_model_is_still_buffering():
+    result = await _run_streaming(_stream("word " * 60, **_LATE), reasoning=False)
+    _check(result, _scale_of("streaming"))
+    f = next(f for f in result.findings if f.id == "streaming.late_ttft")
+    assert (f.outcome, f.deduction) == ("buffered", 40.0)
+    assert result.score == 60.0 and result.status == Status.WARN
+
+
+async def test_streaming_reasoning_model_still_flags_few_chunks():
+    out = _stream("word " * 60, ttft=1900.0, duration=2000.0, chunks=2)
+    result = await _run_streaming(out, reasoning=True)
+    ids = {f.id for f in result.findings}
+    assert "streaming.few_chunks" in ids and "streaming.late_ttft" not in ids
+    assert result.score == 60.0 and result.status == Status.WARN
+
+
+async def test_streaming_without_content_is_inconclusive():
+    empty = CompletionOutcome(ok=True, status_code=200, content="", chunk_count=0,
+                              duration_ms=300.0)
+    result = await _run_streaming(empty, reasoning=False)
+    _check(result, _scale_of("streaming"))
+    (f,) = result.findings
+    assert (f.id, f.outcome, f.status, f.score) == (
+        "streaming.no_content", "no_content", Status.INCONCLUSIVE, None)
+    assert result.score is None and result.status == Status.INCONCLUSIVE
 
 
 # --------------------------------------------------------------------------- #

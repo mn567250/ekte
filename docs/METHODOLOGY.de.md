@@ -228,6 +228,10 @@ früheren Runde erinnern muss; eine `stop`-Sequenz, die die Ausgabe abschneiden
 muss; und eine absichtlich ungültige Anfrage (leeres `messages`), die mit einem
 4xx abgelehnt werden muss, idealerweise mit einem Fehlerkörper im OpenAI-Stil.
 
+Die Responses API hat keinen `stop`-Parameter; bei einem Ziel mit Responses API
+wird der Stop-Test daher nicht gesendet und die Prüfung als nicht anwendbar
+vermerkt (nicht gewertet), statt dem Relay die Schuld zu geben.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `protocol.multi_turn` | Die Farbe aus einer früheren Runde wurde wiedergegeben. | Bestanden | 100 Pkt. |
@@ -237,6 +241,7 @@ muss; und eine absichtlich ungültige Anfrage (leeres `messages`), die mit einem
 |  | Die Stopp-Behandlung ließ sich anhand des Textes nicht bestätigen. | Warnung · Niedrig | 70 Pkt. |
 |  | Text nach der Stoppsequenz wurde zurückgegeben. | Warnung · Niedrig | 60 Pkt. |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
+|  | Die Responses API hat keinen stop-Parameter; nicht geprüft, nicht gezählt. | Info | Nicht gewertet |
 | `protocol.error_schema` | Mit einem 4xx und einem Fehlerobjekt im OpenAI-Stil abgelehnt. | Bestanden | 100 Pkt. |
 |  | Mit einem 4xx abgelehnt, aber der Body entspricht nicht dem OpenAI-Stil. | Warnung · Niedrig | 80 Pkt. |
 |  | Keine HTTP-Antwort; die Behandlung von Client-Fehlern ließ sich nicht bestätigen. | Warnung · Niedrig | 55 Pkt. |
@@ -303,12 +308,15 @@ Reasoning-Modelle, die die Temperatur legitim ignorieren, wird das Urteil
 unterdrückt. Zwei identische Faktenfragen mit `temperature=0` dienen nur zur
 Information.
 
+Für den Caching-Befund müssen mindestens drei der vier Samples verwertbar (und
+alle verwertbaren identisch) sein; mit weniger ist die Prüfung nicht eindeutig.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `determinism.temp1_variability` | Wiederholte Samples bei temperature=1.0 unterschieden sich, wie bei echtem Sampling. | Bestanden | 100 Pkt. |
 |  | Die Samples waren identisch, aber Reasoning-Modelle ignorieren temperature berechtigterweise. | Info | 100 Pkt. |
-|  | Alle Samples bei temperature=1.0 waren byte-identisch, was auf zwischengespeicherte Antworten hindeutet. | Warnung · Mittel | 55 Pkt. |
-|  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
+|  | Alle verwertbaren Samples (mindestens 3) bei temperature=1.0 waren bytegleich, was auf Antwort-Caching hindeutet. | Warnung · Mittel | 55 Pkt. |
+|  | Weniger als 3 verwertbare Samples bei temperature=1.0 zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `determinism.temp0_stability` | Identische Antworten bei temperature=0 (erwartet); nur zur Information, nicht gewertet. | Info | Nicht gewertet |
 |  | Die Antworten unterschieden sich bei temperature=0; nur zur Information, nicht gewertet. | Info | Nicht gewertet |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
@@ -577,17 +585,26 @@ Zeichen zurückkamen, sowie **gleichförmige Abstände** (vier oder mehr Chunks 
 fast gleichen Abständen, CV < 0,1, und unter 2 ms: gebündelt ausgeliefert). Ein
 Stream ohne Usage-Chunk wird gesondert markiert.
 
+TTFT ist das erste sichtbare Inhalts-Token. Bei einem Reasoning-Modell (laut
+Wissensbasis oder mit Reasoning-Tokens in der Usage), das vor der Antwort
+nachdenkt, wird ein spätes erstes Token daher nur vermerkt und nicht als
+Pufferung gezählt; die Signale wenige Chunks und gleichförmige Abstände zählen
+weiter. Ein Stream, der erfolgreich ist, aber keinen Inhalt liefert, ist nicht
+eindeutig und wird nicht bewertet.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `streaming.healthy` | Viele Chunks, ein früher erster Token und verteilte Abstände: echtes Streaming. | Bestanden | Kein Abzug |
 | `streaming.few_chunks` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.late_ttft` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
+| `streaming.reasoning_ttft` | Spätes erstes Token eines Reasoning-Modells (es denkt vor der Antwort nach): informativ, nicht als Pufferung gezählt. | Info | Kein Abzug |
 | `streaming.uniform_gaps` | Pufferungssignal: das erste zieht 40 Punkte ab, ein zweites 20, jedes weitere nichts. | Warnung · Mittel | bis zu −40 Pkt. |
 | `streaming.no_usage` | Kein Usage-Chunk im Stream: zieht 15 Punkte ab, wenn nichts gepuffert ist. | Warnung · Niedrig | bis zu −15 Pkt. |
+| `streaming.no_content` | Der Stream war erfolgreich, lieferte aber keinen Inhalt zur Beurteilung; nicht bewertet. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `streaming.failed` | Die Streaming-Anfrage schlug fehl. | Fehlgeschlagen · Hoch | Obergrenze 0 |
 
 Also: echt 100 · Usage fehlt 85 · ein Puffersignal 60 · zwei oder mehr 40 ·
-fehlgeschlagen 0.
+fehlgeschlagen 0 · kein Inhalt: keine Bewertung.
 
 **Einschränkungen.** Kurze Ausgaben, ein schnelles kleines Modell oder
 Netzwerk-Jitter können einem Burst ähneln. Ein Upstream, der nicht streamen

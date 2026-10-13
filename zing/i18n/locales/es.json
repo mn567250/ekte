@@ -319,6 +319,7 @@
   "Re-run once the endpoint reliably returns completions.": "Vuelva a ejecutar cuando el endpoint devuelva completados de forma fiable.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Trátelo como una señal de desviación, no como prueba; corrobórelo con los detectores de huella e identidad antes de actuar.",
   "Verify the relay supports stream=true for this model.": "Compruebe que el intermediario admite stream=true para este modelo.",
+  "Verify the relay streams content deltas for this model.": "Verifique que el relay transmita deltas de contenido para este modelo.",
   "Run `zing compare` against a trusted baseline to corroborate.": "Ejecute `zing compare` contra una referencia de confianza para corroborarlo.",
   "A response naming a different vendor strongly suggests model substitution.": "Una respuesta que nombra a otro proveedor sugiere claramente una sustitución de modelo.",
   "Run `zing compare` against a trusted baseline to disambiguate.": "Ejecute `zing compare` contra una referencia de confianza para despejar la duda.",
@@ -487,6 +488,10 @@
    "Manejo de secuencias stop",
    "Comprobación de la secuencia stop; finish_reason={finish_reason}."
   ],
+  "protocol.stop_not_applicable": [
+   "Comprobación de secuencia de parada no aplicable",
+   "La Responses API no tiene parámetro stop; la secuencia de parada no se comprobó ni se cuenta."
+  ],
   "protocol.shape": [
    "Conformidad de la estructura de respuesta",
    "finish_reason={finish_reason}; ¿usage completo?: {has_usage}."
@@ -591,6 +596,10 @@
    "La petición en streaming falló",
    "La petición en streaming falló (HTTP {status_code}, tipo {error_type}); compruebe que el modelo admite stream=true."
   ],
+  "streaming.no_content": [
+   "El stream no entregó contenido",
+   "La solicitud en streaming tuvo éxito pero no entregó contenido ({chunk_count} fragmentos); no se pudo evaluar el streaming."
+  ],
   "streaming.few_chunks": [
    "Respuesta entregada en ≤2 fragmentos",
    "{content_chars} caracteres entregados en solo {chunk_count} fragmentos (almacenados y luego troceados, no un streaming real token a token)."
@@ -598,6 +607,10 @@
   "streaming.late_ttft": [
    "El primer token llega al final del flujo",
    "El primer token no llega hasta ~{ttft_ratio} de la duración total (ttft={ttft_ms} ms / duration={duration_ms} ms, se sospecha búfer)."
+  ],
+  "streaming.reasoning_ttft": [
+   "Primer token tardío de un modelo de razonamiento",
+   "El primer token visible llegó a los {ttft_ms} ms de {duration_ms} ms en total; el modelo razona antes de responder, así que no cuenta como búfer."
   ],
   "streaming.uniform_gaps": [
    "Intervalos entre fragmentos uniformes y casi nulos",

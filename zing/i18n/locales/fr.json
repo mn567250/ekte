@@ -319,6 +319,7 @@
   "Re-run once the endpoint reliably returns completions.": "Relancez quand le point d'accès renverra des complétions de façon fiable.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "À traiter comme un signal d'écart, pas une preuve ; corroborez avec les détecteurs d'empreinte et d'identité avant d'agir.",
   "Verify the relay supports stream=true for this model.": "Vérifiez que le relais prend en charge stream=true pour ce modèle.",
+  "Verify the relay streams content deltas for this model.": "Vérifiez que le relais diffuse des deltas de contenu pour ce modèle.",
   "Run `zing compare` against a trusted baseline to corroborate.": "Lancez `zing compare` face à une référence de confiance pour corroborer.",
   "A response naming a different vendor strongly suggests model substitution.": "Une réponse citant un autre fournisseur suggère fortement une substitution de modèle.",
   "Run `zing compare` against a trusted baseline to disambiguate.": "Lancez `zing compare` face à une référence de confiance pour lever l'ambiguïté.",
@@ -487,6 +488,10 @@
    "Gestion des séquences stop",
    "Contrôle de la séquence stop ; finish_reason={finish_reason}."
   ],
+  "protocol.stop_not_applicable": [
+   "Vérification de la séquence d'arrêt non applicable",
+   "La Responses API n'a pas de paramètre stop ; la séquence d'arrêt n'a pas été vérifiée et n'est pas comptée."
+  ],
   "protocol.shape": [
    "Conformité de la structure de réponse",
    "finish_reason={finish_reason} ; usage complet : {has_usage}."
@@ -591,6 +596,10 @@
    "Échec de la requête en streaming",
    "La requête en streaming a échoué (HTTP {status_code}, type {error_type}) ; vérifiez que le modèle prend en charge stream=true."
   ],
+  "streaming.no_content": [
+   "Le flux n'a livré aucun contenu",
+   "La requête en streaming a réussi mais n'a livré aucun contenu ({chunk_count} fragments) ; le streaming n'a pas pu être évalué."
+  ],
   "streaming.few_chunks": [
    "Réponse livrée en ≤2 fragments",
    "{content_chars} caractères livrés en seulement {chunk_count} fragments (mis en tampon puis découpés, pas un vrai streaming token par token)."
@@ -598,6 +607,10 @@
   "streaming.late_ttft": [
    "Premier token arrivé en fin de flux",
    "Le premier token n'arrive qu'à ~{ttft_ratio} de la durée totale (ttft={ttft_ms} ms / duration={duration_ms} ms, mise en tampon suspectée)."
+  ],
+  "streaming.reasoning_ttft": [
+   "Premier jeton tardif d'un modèle de raisonnement",
+   "Le premier jeton visible est arrivé à {ttft_ms} ms sur {duration_ms} ms au total ; le modèle raisonne avant de répondre, ce n'est donc pas compté comme mise en tampon."
   ],
   "streaming.uniform_gaps": [
    "Intervalles entre fragments uniformes et quasi nuls",

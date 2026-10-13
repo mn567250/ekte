@@ -319,6 +319,7 @@
   "Re-run once the endpoint reliably returns completions.": "Re-run once the endpoint reliably returns completions.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.",
   "Verify the relay supports stream=true for this model.": "Verify the relay supports stream=true for this model.",
+  "Verify the relay streams content deltas for this model.": "Verify the relay streams content deltas for this model.",
   "Run `zing compare` against a trusted baseline to corroborate.": "Run `zing compare` against a trusted baseline to corroborate.",
   "A response naming a different vendor strongly suggests model substitution.": "A response naming a different vendor strongly suggests model substitution.",
   "Run `zing compare` against a trusted baseline to disambiguate.": "Run `zing compare` against a trusted baseline to disambiguate.",

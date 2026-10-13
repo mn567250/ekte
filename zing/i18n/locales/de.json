@@ -319,6 +319,7 @@
   "Re-run once the endpoint reliably returns completions.": "Erneut ausführen, sobald der Endpunkt zuverlässig Vervollständigungen liefert.",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Als Abweichungssignal werten, nicht als Beweis; vor weiteren Schritten mit Fingerprint- und Identitätsdetektoren bestätigen.",
   "Verify the relay supports stream=true for this model.": "Prüfen Sie, ob das Relay stream=true für dieses Modell unterstützt.",
+  "Verify the relay streams content deltas for this model.": "Prüfen Sie, ob das Relay für dieses Modell Inhalts-Deltas streamt.",
   "Run `zing compare` against a trusted baseline to corroborate.": "Führen Sie `zing compare` gegen eine vertrauenswürdige Referenz aus, um dies zu bestätigen.",
   "A response naming a different vendor strongly suggests model substitution.": "Eine Antwort, die einen anderen Anbieter nennt, deutet stark auf einen Modellaustausch hin.",
   "Run `zing compare` against a trusted baseline to disambiguate.": "Führen Sie `zing compare` gegen eine vertrauenswürdige Referenz aus, um dies zu klären.",
@@ -487,6 +488,10 @@
    "Behandlung von Stop-Sequenzen",
    "Prüfung der Stop-Sequenz; finish_reason={finish_reason}."
   ],
+  "protocol.stop_not_applicable": [
+   "Stop-Sequenz-Prüfung nicht anwendbar",
+   "Die Responses API hat keinen stop-Parameter; die Stop-Sequenz wurde nicht geprüft und nicht gezählt."
+  ],
   "protocol.shape": [
    "Konformität der Antwortstruktur",
    "finish_reason={finish_reason}; usage vollständig: {has_usage}."
@@ -591,6 +596,10 @@
    "Streaming-Anfrage fehlgeschlagen",
    "Die Streaming-Anfrage ist fehlgeschlagen (HTTP {status_code}, Typ {error_type}); prüfen Sie, ob das Modell stream=true unterstützt."
   ],
+  "streaming.no_content": [
+   "Stream lieferte keinen Inhalt",
+   "Der Streaming-Request war erfolgreich, lieferte aber keinen Inhalt ({chunk_count} Chunks); Streaming konnte nicht beurteilt werden."
+  ],
   "streaming.few_chunks": [
    "Antwort in ≤2 Chunks geliefert",
    "{content_chars} Zeichen in nur {chunk_count} Chunks geliefert (erst gepuffert, dann zerteilt – kein echtes Token-für-Token-Streaming)."
@@ -598,6 +607,10 @@
   "streaming.late_ttft": [
    "Erstes Token erst am Ende des Streams",
    "Das erste Token kam erst bei ~{ttft_ratio} der Gesamtdauer (ttft={ttft_ms} ms / duration={duration_ms} ms, Verdacht auf Pufferung)."
+  ],
+  "streaming.reasoning_ttft": [
+   "Spätes erstes Token eines Reasoning-Modells",
+   "Erstes sichtbares Token nach {ttft_ms} ms von {duration_ms} ms Gesamtdauer; das Modell denkt vor der Antwort nach, daher nicht als Pufferung gezählt."
   ],
   "streaming.uniform_gaps": [
    "Gleichmäßige, nahezu leere Chunk-Abstände",
