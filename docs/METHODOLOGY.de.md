@@ -456,17 +456,20 @@ Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
 Leistungsstufen unterscheiden (mehrstufiges Denken, eine präzise
 Programmieraufgabe, feines Befolgen von Anweisungen), geht an das Ziel und im
 Vergleichsmodus an die Referenz; ein separater, vertrauenswürdiger Richter sieht
-nur die Antworten und gibt ein Urteil samt Konfidenz ab. Ein Richterurteil ist
-nur HOCH, wenn eine Referenz den Unterschied bestätigt hat und der Richter keine
-niedrige oder mittlere Konfidenz angab.
+nur die Antworten und gibt ein Urteil samt Konfidenz ab. Der Richter erfährt das angegebene Modell (`claimed_model`, falls gesetzt,
+sonst die angefragte ID). Ein Richterurteil ist nur HOCH, wenn der Richter
+**hohe** Konfidenz angab und eine verwertbare Referenz den Unterschied
+bestätigt hat — eine, die auf jede vom Ziel beantwortete Sonde eine nicht
+leere Antwort lieferte. Niedrige, mittlere, fehlende oder unbekannte
+Konfidenz bleibt MITTEL, ebenso eine Referenz, die Fehler lieferte oder
+Sonden unbeantwortet ließ.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `quality_judge.verdict` (Urteil des LLM-Judge) | Der Judge fand die Antworten passend zum angegebenen Modell. | Bestanden | 95 Pkt. |
-|  | Der Judge fand die Antworten dem angegebenen Modell unähnlich (niedrige/mittlere Sicherheit). | Warnung · Mittel | 50 Pkt. |
-|  | Der Judge ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine Baseline). | Warnung · Mittel | 25 Pkt. |
+|  | Der Judge fand die Antworten dem angegebenen Modell unähnlich (niedrige, mittlere oder keine angegebene Sicherheit). | Warnung · Mittel | 50 Pkt. |
+|  | Der Judge ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine verwertbare Baseline). | Warnung · Mittel | 25 Pkt. |
 |  | Der Judge ist sicher, und eine vertrauenswürdige Baseline bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 25 Pkt. |
-|  | Der Judge nannte keine Sicherheit, und eine vertrauenswürdige Baseline bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 50 Pkt. |
 |  | Der Judge kam zu keinem Urteil. | Nicht eindeutig · Niedrig | Nicht gewertet |
 |  | Keine Antworten des Ziels zum Beurteilen. | Nicht eindeutig · Niedrig | Nicht gewertet |
 
@@ -507,6 +510,11 @@ des Profils gemessen:
   maximale Ausgabe, 2048) Token; das Erreichen der Grenze oder eine plausible
   Länge besteht, ein Abbruch unter einem Viertel davon wird markiert.
 
+Eine Beobachtung ohne zu prüfende Angabe – kein Tool-Aufruf oder JSON-Objekt,
+wenn die Funktion nicht angegeben ist, oder jedes Ergebnis zum strikten Schema,
+wenn das Profil dem Modell strikte Schemas abspricht – wird vermerkt, aber nicht
+gewertet: Für etwas, das niemand angibt, verliert ein Modell keine Punkte.
+
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `capability.tools` | Auf eine ausdrückliche Tool-Anfrage kam ein Tool-Aufruf zurück. | Bestanden | 100 Pkt. |
@@ -515,13 +523,13 @@ des Profils gemessen:
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.tools.encoding` | Die Tool-Argumente kamen als Objekt, nicht als der JSON-String, den OpenAI liefert. | Warnung · Niedrig | Nicht gewertet |
 | `capability.json_mode` | Der JSON-Modus lieferte ein parsebares Objekt mit dem angefragten Wert. | Bestanden | 100 Pkt. |
-|  | Ein JSON-Objekt kam mit falschem Wert zurück; der JSON-Modus wird nicht angegeben. | Info | 70 Pkt. |
-|  | Es kam kein parsebares JSON-Objekt zurück; der JSON-Modus wird nicht angegeben. | Warnung | 50 Pkt. |
+|  | Ein JSON-Objekt kam mit falschem Wert zurück; der JSON-Modus wird nicht angegeben. | Info | Nicht gewertet |
+|  | Es kam kein parsebares JSON-Objekt zurück; der JSON-Modus wird nicht angegeben. | Info | Nicht gewertet |
 |  | Der JSON-Modus wird angegeben, aber es kam kein gültiges Objekt mit dem Wert zurück. | Fehlgeschlagen · Mittel | 0 Pkt. |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.json_schema` | Das strikte Schema wird angegeben und die Antwort entsprach ihm. | Bestanden | 100 Pkt. |
-|  | Das strikte Schema wurde nicht durchgesetzt, passend zur Angabe. | Info | 100 Pkt. |
-|  | Die Antwort entsprach dem Schema, obwohl dem angegebenen Modell strikte Schemas fehlen. | Info | 90 Pkt. |
+|  | Das strikte Schema wurde nicht durchgesetzt, passend zur Angabe. | Info | Nicht gewertet |
+|  | Die Antwort entsprach dem Schema, obwohl dem angegebenen Modell strikte Schemas fehlen. | Info | Nicht gewertet |
 |  | Das strikte Schema wird angegeben, aber die Antwort entsprach ihm nicht. | Warnung · Niedrig | 40 Pkt. |
 |  | Keine verwertbare Antwort zur Beurteilung. | Nicht eindeutig · Niedrig | Nicht gewertet |
 | `capability.max_output` | Die Ausgabe lief bis zur angefragten Token-Obergrenze. | Bestanden | 100 Pkt. |
@@ -727,6 +735,9 @@ zurückkommen. Ein exaktes Echo besteht, kein Echo (Umschreibung, Verweigerung)
 ist nicht eindeutig, und nur ein **Austausch des Werts** bei erhaltener Struktur
 gilt als Manipulation. Im Vergleichsmodus ist ein Austausch, den die
 vertrauenswürdige Referenz nicht zeigt, KRITISCH.
+Nur eine Referenz, die den Canary unverändert zurückgibt, bestätigt: Liefert sie
+einen Fehler oder nichts Verwertbares, bestätigt sie nichts, und der Austausch
+bleibt MITTEL (Beleg `baseline_unavailable`).
 Eine am Ausgabelimit abgeschnittene Antwort ist nicht eindeutig, kein Austausch.
 
 | Prüfung | Ergebnis | Status | Wirkung |
@@ -822,7 +833,7 @@ Stichproben. Referenz ist die vertrauenswürdige Referenz, sonst der Bereich
 | `performance.cache_hit` | Eindeutige Probe-Prompts kamen aus einem Cache (aus der Statistik ausgenommen). | Warnung · Niedrig | 60 Pkt. |
 |  | Die Referenz lieferte einmalige Mess-Prompts aus einem Cache (nicht gewertet). | Info | Nicht gewertet |
 | `performance.reference` | Der Durchsatz entspricht der Referenz für dieses Modell. | Bestanden | 100 Pkt. |
-|  | Langsamer als die Referenz (z. B. lokal oder kleinere Hardware); kein Fehler. | Info | 80 Pkt. |
+|  | Langsamer als die Referenz (z. B. lokal oder kleinere Hardware); kein Fehler. | Info | Nicht gewertet |
 |  | Viel schneller als die Referenz (passt zu einem kleineren Modell). | Warnung · Niedrig | 60 Pkt. |
 | `performance.reasoning` | Das Modell verbraucht versteckte Reasoning-Tokens; die TTFT enthält das Nachdenken. | Info | Nicht gewertet |
 | `performance.relay_overhead` | Latenz mit der vertrauenswürdigen Baseline verglichen (nur zur Information). | Info | Nicht gewertet |
@@ -831,7 +842,7 @@ Stichproben. Referenz ist die vertrauenswürdige Referenz, sonst der Bereich
 **Einschränkungen.** Die Latenz hängt vom Netzwerkpfad und der momentanen Last
 des Anbieters ab; wiederholen Sie ein schwaches Gleichmäßigkeitsergebnis zu
 einer anderen Zeit. Die Bereiche der Wissensbasis sind bewusst weit gefasste
-Mediane nativer APIs, und ein langsameres Ziel ist nie ein Fehlschlag. Alle
+Mediane nativer APIs, und ein langsameres Ziel wird nur vermerkt, nie gewertet. Alle
 Befunde haben höchstens Schweregrad NIEDRIG; diese Dimension bewegt also die
 Bewertung, nie das Risikourteil.
 

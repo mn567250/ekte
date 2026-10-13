@@ -429,16 +429,19 @@ Without a knowledge-base profile the detector is inconclusive.
 tier-discriminating prompts (multi-step reasoning, a precise coding task,
 nuanced instruction-following) goes to the target and, in compare mode, to the
 baseline; a separate trusted judge sees only the answers and returns a verdict
-and a confidence. A judge verdict is HIGH only when a baseline corroborated the
-difference and the judge did not report low or medium confidence.
+and a confidence. The judge is told the claimed model (`claimed_model` when set, else the
+requested id). A judge verdict is HIGH only when the judge stated **high**
+confidence and a usable baseline corroborated the difference — one that
+returned a non-empty answer for every probe the target answered. A low,
+medium, missing or unrecognized confidence stays MEDIUM, and so does a
+baseline that errored or left probes unanswered.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 95 pts |
-|  | The judge found the answers unlike the claimed model (low/medium confidence). | Warning · Medium | 50 pts |
-|  | The judge is confident the answers are unlike the claimed model (no baseline). | Warning · Medium | 25 pts |
+|  | The judge found the answers unlike the claimed model (low, medium or no stated confidence). | Warning · Medium | 50 pts |
+|  | The judge is confident the answers are unlike the claimed model (no usable baseline). | Warning · Medium | 25 pts |
 |  | The judge is confident, and a trusted baseline corroborated the difference. | Fail · High | 25 pts |
-|  | The judge gave no confidence, and a trusted baseline corroborated the difference. | Fail · High | 50 pts |
 |  | The judge could not commit to a verdict. | Inconclusive · Low | Not counted |
 |  | No target answers to judge. | Inconclusive · Low | Not counted |
 
@@ -477,6 +480,11 @@ profile's capability flags:
   tokens; reaching the cap or a plausible length passes, stopping below a
   quarter of it is flagged.
 
+An observation without a claim to verify — no tool call or JSON object when the
+feature is not claimed, or any strict-schema result when the profile says the
+model lacks strict schemas — is noted but not counted, so a model is never
+marked down for what nobody claimed.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `capability.tools` | A tool call came back for an explicit tool-use request. | Pass | 100 pts |
@@ -485,13 +493,13 @@ profile's capability flags:
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.tools.encoding` | Tool arguments arrived as an object, not the JSON string OpenAI returns. | Warning · Low | Not counted |
 | `capability.json_mode` | JSON mode returned a parseable object with the requested value. | Pass | 100 pts |
-|  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | 70 pts |
-|  | No parseable JSON object came back; JSON mode is not claimed. | Warning | 50 pts |
+|  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | Not counted |
+|  | No parseable JSON object came back; JSON mode is not claimed. | Info | Not counted |
 |  | JSON mode is claimed but no valid object with the value came back. | Fail · Medium | 0 pts |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.json_schema` | The strict schema is claimed and the response conformed. | Pass | 100 pts |
-|  | The strict schema was not enforced, consistent with the claim. | Info | 100 pts |
-|  | The response conformed although the claimed model lacks strict schemas. | Info | 90 pts |
+|  | The strict schema was not enforced, consistent with the claim. | Info | Not counted |
+|  | The response conformed although the claimed model lacks strict schemas. | Info | Not counted |
 |  | The strict schema is claimed but the response did not conform. | Warning · Low | 40 pts |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.max_output` | Output continued up to the requested token cap. | Pass | 100 pts |
@@ -684,6 +692,9 @@ URL and a pinned `pip install` package — must come back verbatim. An exact ech
 passes, a non-echo (paraphrase, refusal) is inconclusive, and only a
 structure-preserving **value substitution** counts as tampering. In compare mode
 a substitution the trusted baseline does not make is CRITICAL.
+Only a baseline that returns the canary intact corroborates: a baseline that
+errors or returns nothing usable confirms nothing, so the substitution stays
+MEDIUM (evidence `baseline_unavailable`).
 An answer cut off at the output limit is inconclusive, not a substitution.
 
 | Check | Outcome | Status | Effect |
@@ -774,7 +785,7 @@ baseline, or else the knowledge-base profile's `performance.decode_tps` range.
 | `performance.cache_hit` | Unique probe prompts came back from a cache (left out of the statistics). | Warning · Low | 60 pts |
 |  | The baseline served unique probe prompts from a cache (not scored). | Info | Not counted |
 | `performance.reference` | Throughput is in line with the reference for this model. | Pass | 100 pts |
-|  | Slower than the reference (e.g. local or smaller hardware); not a failure. | Info | 80 pts |
+|  | Slower than the reference (e.g. local or smaller hardware); not a failure. | Info | Not counted |
 |  | Much faster than the reference (consistent with a smaller model). | Warning · Low | 60 pts |
 | `performance.reasoning` | The model spends hidden reasoning tokens; TTFT includes thinking. | Info | Not counted |
 | `performance.relay_overhead` | Latency compared with the trusted baseline (informational). | Info | Not counted |
@@ -783,7 +794,7 @@ baseline, or else the knowledge-base profile's `performance.decode_tps` range.
 **Caveats.** Latency depends on the network path and the provider's load at
 that moment; repeat a poor consistency result at another time. The
 knowledge-base ranges are deliberately wide medians of native APIs, and a
-slower target is never a failure. All findings are at most LOW severity, so
+slower target is noted, never scored. All findings are at most LOW severity, so
 this dimension moves the score, never the risk verdict.
 
 ---

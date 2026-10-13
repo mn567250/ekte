@@ -447,17 +447,19 @@ Sem perfil na base de conhecimento, o detector é inconclusivo.
 prompts que distinguem gamas (raciocínio em vários passos, uma tarefa de código
 precisa, seguimento de instruções com nuances) vai para o alvo e, no modo de
 comparação, para a referência; um juiz de confiança separado só vê as respostas
-e devolve um veredito com a sua confiança. Um veredito do juiz só é ALTO se uma
-referência tiver corroborado a diferença e o juiz não tiver indicado confiança
-baixa ou média.
+e devolve um veredito com a sua confiança. O juiz recebe o modelo declarado (`claimed_model` se estiver definido; caso
+contrário, o id pedido). Um veredito do juiz só é ALTO se o juiz tiver
+indicado confiança **alta** e uma referência utilizável tiver corroborado a
+diferença — uma que devolveu uma resposta não vazia a cada sonda que o alvo
+respondeu. Uma confiança baixa, média, ausente ou desconhecida fica em
+MÉDIA, tal como uma referência que falhou ou deixou sondas sem resposta.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `quality_judge.verdict` (Veredito do juiz LLM) | O juiz considerou as respostas compatíveis com o modelo declarado. | Aprovado | 95 pts |
-|  | O juiz considerou as respostas diferentes do modelo declarado (confiança baixa/média). | Aviso · Média | 50 pts |
-|  | O juiz tem certeza de que as respostas diferem do modelo declarado (sem referência). | Aviso · Média | 25 pts |
+|  | O juiz considerou as respostas diferentes do modelo declarado (confiança baixa, média ou não indicada). | Aviso · Média | 50 pts |
+|  | O juiz tem certeza de que as respostas diferem do modelo declarado (sem referência utilizável). | Aviso · Média | 25 pts |
 |  | O juiz tem certeza e uma referência confiável corroborou a diferença. | Falha · Alta | 25 pts |
-|  | O juiz não deu confiança e uma referência confiável corroborou a diferença. | Falha · Alta | 50 pts |
 |  | O juiz não conseguiu chegar a um veredito. | Inconclusivo · Baixa | Não contabilizado |
 |  | Não há respostas do alvo para julgar. | Inconclusivo · Baixa | Não contabilizado |
 
@@ -499,6 +501,11 @@ capacidades do perfil:
   2048) tokens; atingir o limite ou um comprimento plausível é aprovado, parar
   abaixo de um quarto é assinalado.
 
+Uma observação sem declaração a verificar — nenhuma chamada de ferramenta ou
+objeto JSON quando a função não é declarada, ou qualquer resultado do esquema
+estrito quando o perfil diz que o modelo não tem esquemas estritos — é registada
+mas não contabilizada: um modelo nunca perde pontos pelo que ninguém declara.
+
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `capability.tools` | Voltou uma chamada de ferramenta para um pedido explícito de ferramenta. | Aprovado | 100 pts |
@@ -507,13 +514,13 @@ capacidades do perfil:
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.tools.encoding` | Os argumentos da ferramenta chegaram como objeto, não como a string JSON da OpenAI. | Aviso · Baixa | Não contabilizado |
 | `capability.json_mode` | O modo JSON devolveu um objeto analisável com o valor pedido. | Aprovado | 100 pts |
-|  | Voltou um objeto JSON com o valor errado; o modo JSON não é declarado. | Info | 70 pts |
-|  | Não voltou nenhum objeto JSON analisável; o modo JSON não é declarado. | Aviso | 50 pts |
+|  | Voltou um objeto JSON com o valor errado; o modo JSON não é declarado. | Info | Não contabilizado |
+|  | Não voltou nenhum objeto JSON analisável; o modo JSON não é declarado. | Info | Não contabilizado |
 |  | O modo JSON é declarado, mas não voltou um objeto válido com o valor. | Falha · Média | 0 pts |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.json_schema` | O esquema estrito é declarado e a resposta o seguiu. | Aprovado | 100 pts |
-|  | O esquema estrito não foi aplicado, de acordo com o declarado. | Info | 100 pts |
-|  | A resposta o seguiu embora o modelo declarado não tenha esquemas estritos. | Info | 90 pts |
+|  | O esquema estrito não foi aplicado, de acordo com o declarado. | Info | Não contabilizado |
+|  | A resposta o seguiu embora o modelo declarado não tenha esquemas estritos. | Info | Não contabilizado |
 |  | O esquema estrito é declarado, mas a resposta não o seguiu. | Aviso · Baixa | 40 pts |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
 | `capability.max_output` | A saída continuou até o limite de tokens pedido. | Aprovado | 100 pts |
@@ -719,6 +726,9 @@ literalmente. Um eco exato é aprovado, a falta de eco (paráfrase, recusa) é
 inconclusiva, e só uma **substituição do valor** que preserva a estrutura conta
 como adulteração. No modo de comparação, uma substituição que a referência de
 confiança não faz é CRÍTICA.
+Só corrobora uma referência que devolve o canário intacto: se falhar ou não
+devolver nada utilizável, não confirma nada e a substituição fica em MÉDIA
+(evidência `baseline_unavailable`).
 Uma resposta cortada no limite de saída é inconclusiva, não uma substituição.
 
 | Verificação | Resultado | Estado | Efeito |
@@ -814,7 +824,7 @@ base de conhecimento.
 | `performance.cache_hit` | Prompts de sonda únicos voltaram de um cache (excluídos das estatísticas). | Aviso · Baixa | 60 pts |
 |  | A referência serviu prompts únicos a partir de um cache (não pontuado). | Info | Não contabilizado |
 | `performance.reference` | A vazão está de acordo com a referência deste modelo. | Aprovado | 100 pts |
-|  | Mais lento que a referência (ex.: local ou hardware menor); não é uma falha. | Info | 80 pts |
+|  | Mais lento que a referência (ex.: local ou hardware menor); não é uma falha. | Info | Não contabilizado |
 |  | Muito mais rápido que a referência (compatível com um modelo menor). | Aviso · Baixa | 60 pts |
 | `performance.reasoning` | O modelo gasta tokens de raciocínio ocultos; o TTFT inclui o raciocínio. | Info | Não contabilizado |
 | `performance.relay_overhead` | Latência comparada com a referência confiável (apenas informativo). | Info | Não contabilizado |
@@ -823,7 +833,7 @@ base de conhecimento.
 **Ressalvas.** A latência depende do caminho de rede e da carga do fornecedor
 nesse momento; repita um mau resultado de constância noutro momento. Os
 intervalos da base de conhecimento são medianas deliberadamente largas das API
-nativas, e um alvo mais lento nunca é uma falha. Todas as constatações são no
+nativas, e um alvo mais lento é registado, nunca contabilizado. Todas as constatações são no
 máximo de gravidade BAIXA: esta dimensão mexe na pontuação, nunca no veredito de
 risco.
 

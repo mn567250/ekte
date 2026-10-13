@@ -54,8 +54,8 @@ class FingerprintProbe(BaseModel):
 class PerformanceReference(BaseModel):
     """Typical speed of the model on its native (data-centre) API, as published
     measurements. Deliberately wide ranges: the performance detector only flags a
-    target far outside them, and a slower one only mildly (it may be served
-    locally or on smaller hardware)."""
+    target far faster than them; a slower one is noted but not scored (it may be
+    served locally or on smaller hardware)."""
 
     model_config = ConfigDict(extra="forbid")
 
