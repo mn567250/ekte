@@ -221,3 +221,131 @@ def test_own_brand_words_stay_narrow():
     assert own_brand_words(glm, ModelProfile(id="glm-4.6v-flash"), widen=False) == ["glm", "z.ai"]
     # Generic words from a model id do not count.
     assert own_brand_words(None, ModelProfile(id="tts-1")) == []
+
+
+# ----- no usable evidence: inconclusive, not a clean 100 ------------------ #
+class _FnMock:
+    """A relay whose reply to each request comes from ``fn(user_text)``, which
+    returns ``(http_status, content, model)``."""
+
+    def __init__(self, fn):
+        self.fn = fn
+
+    @property
+    def transport(self):
+        return httpx.MockTransport(self._handler)
+
+    def _handler(self, request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content.decode())
+        user = " ".join(m.get("content", "") for m in body["messages"])
+        status, text, model = self.fn(user)
+        if status != 200:
+            return httpx.Response(status, json={"error": {"message": "bad request", "type": "invalid_request_error"}})
+        return httpx.Response(
+            200,
+            json={
+                "model": model,
+                "choices": [{"index": 0, "message": {"role": "assistant", "content": text}, "finish_reason": "stop"}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+            },
+        )
+
+
+async def _run_fn(knowledge_base, fn, model: str = "deepseek-v4-flash", kb=None):
+    kb = kb or knowledge_base
+    target = TargetConfig(base_url="https://relay.test/v1", api_key="sk-x-123456", model=model)
+    async with OpenAICompatibleClient(target, transport=_FnMock(fn).transport) as c:
+        ctx = AuditContext(
+            target=target, client=c, options=AuditOptions(suite="standard"),
+            kb=kb, profile=kb.resolve(model),
+        )
+        return await ModelIdentityDetector().run(ctx)
+
+
+async def test_every_request_rejected_is_inconclusive(knowledge_base):
+    result = await _run_fn(knowledge_base, lambda u: (400, "", ""))
+    assert result.status == Status.INCONCLUSIVE and result.score is None
+    no_ev = next(f for f in result.findings if f.id == "model_identity.no_evidence")
+    assert no_ev.status == Status.INCONCLUSIVE and no_ev.outcome == "none"
+
+
+async def test_empty_answers_with_echoed_model_are_inconclusive(knowledge_base):
+    # A matching echoed model field alone is no identity evidence.
+    result = await _run_fn(knowledge_base, lambda u: (200, "", "deepseek-v4-flash"))
+    assert next(f for f in result.findings if f.id == "model_identity.model_field").status == Status.PASS
+    assert result.status == Status.INCONCLUSIVE and result.score is None
+    assert any(f.id == "model_identity.no_evidence" for f in result.findings)
+
+
+async def test_partial_evidence_still_scores(knowledge_base):
+    def fn(user):
+        if "What model are you" in user:
+            return 200, "I am DeepSeek-V4, a model from DeepSeek.", "deepseek-v4-flash"
+        return 400, "", ""
+
+    result = await _run_fn(knowledge_base, fn)
+    assert result.status == Status.PASS and result.score == 100.0
+    assert not any(f.id == "model_identity.no_evidence" for f in result.findings)
+
+
+async def test_diverging_model_field_alone_is_evidence(knowledge_base):
+    result = await _run_fn(knowledge_base, lambda u: (200, "", "qwen-max"))
+    assert result.status == Status.WARN and result.score is not None
+    assert not any(f.id == "model_identity.no_evidence" for f in result.findings)
+
+
+# ----- ambiguous brand words ("step", "meta", ...) ------------------------ #
+def test_ambiguous_brand_words_count_only_as_names():
+    from zing.detectors.model_identity import _brand_hits
+
+    words = ["step", "meta", "qwen"]
+    assert _brand_hits("Let me think step by step, a meta question.", words, ambiguous=True) == []
+    assert _brand_hits("I am Step-2 by StepFun, not Meta.", words, ambiguous=True) == ["step", "meta"]
+    # A sentence-initial capital proves nothing unless a version is attached.
+    assert _brand_hits("Step by step. Meta-level: no.", words, ambiguous=True) == []
+    assert _brand_hits("Step-2 here.", words, ambiguous=True) == ["step"]
+    # In fingerprint answers they never count; unambiguous brands always do.
+    assert _brand_hits("I am Step-2, not Qwen.", words, ambiguous=False) == ["qwen"]
+    assert _brand_hits("built on qwen", words, ambiguous=True) == ["qwen"]
+
+
+async def test_step_by_step_in_a_fingerprint_is_not_a_rival(knowledge_base):
+    # Honest DeepSeek narrating its knowledge-cutoff answer "step by step".
+    def fn(user):
+        if "What model are you" in user:
+            return 200, "I am DeepSeek-V4, developed by DeepSeek.", "deepseek-v4-flash"
+        return 200, "2024-07. Let me think step by step: a meta point, the seed of an idea.", "deepseek-v4-flash"
+
+    result = await _run_fn(knowledge_base, fn)
+    assert not any(f.outcome == "rival_brand" for f in result.findings)
+    assert all(f.severity != Severity.HIGH for f in result.findings)
+    assert result.status != Status.FAIL
+
+
+async def test_ambiguous_word_in_self_id(knowledge_base):
+    # Written as a name in the self-description it still betrays a swap ...
+    rival = await _run_fn(knowledge_base, lambda u: (200, "I am Step-2, a large language model.", "deepseek-v4-flash"))
+    self_id = next(f for f in rival.findings if f.id == "model_identity.self_id")
+    assert self_id.outcome == "rival_brand" and rival.status == Status.FAIL
+    # ... the everyday word does not.
+    plain = await _run_fn(
+        knowledge_base, lambda u: (200, "Step by step: I am a large language model.", "deepseek-v4-flash")
+    )
+    assert next(f for f in plain.findings if f.id == "model_identity.self_id").outcome == "evasive"
+
+
+async def test_vendor_owning_an_ambiguous_word_keeps_it(knowledge_base):
+    from zing.knowledge.schema import KnowledgeBase, ModelProfile, ProviderProfile
+
+    provider = ProviderProfile(
+        provider="cohere", display_name="Cohere",
+        models=[ModelProfile(id="command-r-plus", family="command-r", identity_keywords=[])],
+    )
+    kb = KnowledgeBase(providers={"cohere": provider})
+    assert "command" not in ModelIdentityDetector._forbidden_brands(provider.models[0], provider)
+    result = await _run_fn(
+        knowledge_base, lambda u: (200, "I am Command R+, a model built by Cohere.", "command-r-plus"),
+        model="command-r-plus", kb=kb,
+    )
+    assert next(f for f in result.findings if f.id == "model_identity.self_id").status == Status.PASS
+    assert result.status == Status.PASS

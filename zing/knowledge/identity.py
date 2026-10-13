@@ -45,6 +45,15 @@ VENDOR_BRANDS: tuple[tuple[str, ...], ...] = (
     ("阶跃", "step"),
 )
 
+# Brand words that are also everyday English ("step by step", "a meta question",
+# "a spark of", "the seed", "a command"). The identity detector counts them only
+# in the direct self-identification answer and only written as a name
+# (capitalised, "Meta", "Command R"); fingerprint answers never count them, so an
+# honest model narrating "let me think step by step" is not a StepFun swap.
+AMBIGUOUS_BRAND_WORDS: frozenset[str] = frozenset({
+    "step", "command", "seed", "spark", "meta", "yi", "grok",
+})
+
 # Words that occur in vendor and model names without naming a brand.
 _GENERIC = frozenset({
     "ai", "the", "model", "models", "chat", "text", "embedding", "embeddings",
