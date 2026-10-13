@@ -137,6 +137,13 @@ zing 对十个维度评分。维度得分为其**各检测器得分的平均值�
   提示词缓存、可靠性、注入提示词、最大输出、`max_tokens` 请求属性）从不重试。
   一旦确知端点会推理（其档案标注 `reasoning: true`，或在首次此类重试之后），
   短探测会从一开始就以 4,096 token 的上限发送，而不再发送两次。
+- **请求参数：** 推理模型会拒绝部分参数：在 Chat Completions 上拒绝
+  `max_tokens`（改用 `max_completion_tokens`），在所有协议上拒绝 `temperature`
+  等采样参数。客户端会省略画像中 `unsupported_params` 所列的参数；若其中列有
+  `max_tokens`，则以 `max_completion_tokens` 发送输出上限。没有画像的端点若在
+  4xx 中点名了此类参数，该请求会调整后再发送一次，此后的请求一开始就按调整后的方式
+  发送；被拒绝的那次尝试不计为中转错误。`protocol_request` 的探测按原样发送，因为
+  它评判的正是未经调整的拒绝。
 
 ---
 

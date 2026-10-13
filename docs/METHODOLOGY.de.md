@@ -181,6 +181,16 @@ das ist kein Beleg für ein anderes Modell.
   bekannt ist, dass ein Endpunkt nachdenkt (sein Profil sagt
   `reasoning: true`, oder nach seiner ersten solchen Wiederholung), gehen kurze
   Proben gleich mit dem Limit von 4.096 Token hinaus statt zweimal.
+- **Anfrageparameter:** Reasoning-Modelle lehnen manche Parameter ab: bei Chat
+  Completions `max_tokens` (sie nehmen `max_completion_tokens`) und in jedem
+  Protokoll Sampling-Parameter wie `temperature`. Der Client lässt die Parameter
+  weg, die das Profil unter `unsupported_params` führt, und sendet das
+  Ausgabelimit als `max_completion_tokens`, wenn `max_tokens` dort steht. Ein
+  Endpunkt ohne Profil, der einen solchen Parameter in einem 4xx nennt, erhält
+  die Anfrage noch einmal angepasst, und jede spätere Anfrage geht gleich
+  angepasst hinaus; der abgelehnte Versuch zählt nicht als Relay-Fehler. Die
+  Proben von `protocol_request` gehen genau so hinaus, wie sie gebaut sind, denn
+  sie bewerten gerade die unveränderte Ablehnung.
 
 ---
 

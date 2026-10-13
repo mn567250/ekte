@@ -179,6 +179,16 @@ risponda un altro modello.
   vengono mai ripetute. Una volta noto che un endpoint ragiona (il suo profilo
   indica `reasoning: true`, o dopo la sua prima ripetizione di questo tipo), le
   sonde brevi partono subito con il limite di 4.096 token invece che due volte.
+- **Parametri della richiesta:** i modelli di ragionamento rifiutano alcuni
+  parametri: su Chat Completions `max_tokens` (vogliono `max_completion_tokens`)
+  e, in ogni protocollo, i parametri di campionamento come `temperature`. Il
+  client omette i parametri che il profilo elenca in `unsupported_params` e invia
+  il limite di output come `max_completion_tokens` quando vi figura `max_tokens`.
+  Un endpoint senza profilo che nomina un tale parametro in un 4xx riceve la
+  richiesta un'altra volta, adattata, e ogni richiesta successiva parte subito
+  adattata; il tentativo rifiutato non conta come errore del relay. Le sonde di
+  `protocol_request` partono esattamente come sono costruite, perché giudicano
+  proprio il rifiuto grezzo.
 
 ---
 

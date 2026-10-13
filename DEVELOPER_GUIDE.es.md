@@ -178,6 +178,14 @@ partir de la URL base y el modelo. Los detectores solo hablan con esta interfaz
 (`RequestSpec` de entrada, `CompletionOutcome` de salida), así que son
 independientes del protocolo.
 
+Los clientes también adaptan las solicitudes a lo que el modelo acepta
+(`base.py`): el runner rellena `unsupported_params` desde el perfil, los
+parámetros de muestreo que figuran allí se omiten y, en Chat Completions, un
+`max_tokens` listado envía el límite como `max_completion_tokens`. Un 4xx que
+nombra uno de esos parámetros lo añade al conjunto y repite la solicitud una vez
+adaptada (el intento rechazado se registra con la fase `param_retry`). Una sonda
+que juzga el rechazo sin alterar establece `RequestSpec.exact_params`.
+
 ### Detectores y escalas de puntuación
 
 Un detector es un archivo autocontenido en `zing/detectors/`: una subclase de

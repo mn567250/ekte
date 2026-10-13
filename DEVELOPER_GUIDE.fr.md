@@ -180,6 +180,14 @@ détecte à partir de l'URL de base et du modèle. Les détecteurs ne parlent qu
 cette interface (`RequestSpec` en entrée, `CompletionOutcome` en sortie) et sont
 donc indépendants du protocole.
 
+Les clients adaptent aussi les requêtes à ce que le modèle accepte (`base.py`) :
+le runner initialise `unsupported_params` depuis le profil, les paramètres
+d'échantillonnage qui y figurent sont omis et, sur Chat Completions, un
+`max_tokens` listé envoie la limite en `max_completion_tokens`. Une 4xx qui nomme
+un tel paramètre l'ajoute à l'ensemble et répète la requête une fois adaptée (la
+tentative refusée est enregistrée avec la phase `param_retry`). Une sonde qui
+juge le refus brut définit `RequestSpec.exact_params`.
+
 ### Détecteurs et barèmes
 
 Un détecteur est un fichier autonome dans `zing/detectors/` : une sous-classe de
