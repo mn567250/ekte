@@ -204,7 +204,7 @@ SCALE = Scale(
             label="The baseline served unique probe prompts from a cache (not scored)."),
     outcome("performance.reference", "matches", 100, Status.PASS,
             label="Throughput is in line with the reference for this model."),
-    outcome("performance.reference", "slower", 80, Status.INFO,
+    outcome("performance.reference", "slower", None, Status.INFO,
             label="Slower than the reference (e.g. local or smaller hardware); not a failure."),
     outcome("performance.reference", "faster", 60, Status.WARN, Severity.LOW,
             label="Much faster than the reference (consistent with a smaller model)."),
