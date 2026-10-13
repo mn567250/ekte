@@ -576,7 +576,7 @@ continuam a contar. Um stream bem-sucedido mas sem conteúdo é inconclusivo e n
 | `streaming.failed` | A requisição em streaming falhou. | Falha · Alta | teto 0 |
 
 Ou seja: autêntico 100 · utilização em falta 85 · um sinal de buffer 60 · dois
-ou mais 40 · falha 0.
+ou mais 40 · falha 0 · sem conteúdo: sem pontuação.
 
 **Ressalvas.** Saídas curtas, um modelo pequeno e rápido ou a instabilidade da
 rede podem parecer uma rajada. Um upstream que não suporta streaming obriga o

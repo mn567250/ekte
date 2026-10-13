@@ -580,7 +580,7 @@ contenu n'est pas concluant et n'est pas noté.
 | `streaming.failed` | La requête en streaming a échoué. | Échec · Élevée | plafond 0 |
 
 Soit : authentique 100 · usage absent 85 · un signal de mise en tampon 60 ·
-deux ou plus 40 · échec 0.
+deux ou plus 40 · échec 0 · aucun contenu : pas de note.
 
 **Mises en garde.** Des sorties courtes, un petit modèle rapide ou la gigue
 réseau peuvent ressembler à une rafale. Un amont qui ne sait pas streamer

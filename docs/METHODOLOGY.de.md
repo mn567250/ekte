@@ -582,7 +582,7 @@ eindeutig und wird nicht bewertet.
 | `streaming.failed` | Die Streaming-Anfrage schlug fehl. | Fehlgeschlagen · Hoch | Obergrenze 0 |
 
 Also: echt 100 · Usage fehlt 85 · ein Puffersignal 60 · zwei oder mehr 40 ·
-fehlgeschlagen 0.
+fehlgeschlagen 0 · kein Inhalt: keine Bewertung.
 
 **Einschränkungen.** Kurze Ausgaben, ein schnelles kleines Modell oder
 Netzwerk-Jitter können einem Burst ähneln. Ein Upstream, der nicht streamen

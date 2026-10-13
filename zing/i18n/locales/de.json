@@ -490,7 +490,7 @@
   ],
   "protocol.stop_not_applicable": [
    "Stop-Sequenz-Prüfung nicht anwendbar",
-   "Die Responses API ({api}) hat keinen stop-Parameter; die Stop-Sequenz wurde nicht geprüft und nicht gezählt."
+   "Die Responses API hat keinen stop-Parameter; die Stop-Sequenz wurde nicht geprüft und nicht gezählt."
   ],
   "protocol.shape": [
    "Konformität der Antwortstruktur",
@@ -606,7 +606,7 @@
   ],
   "streaming.reasoning_ttft": [
    "Spätes erstes Token eines Reasoning-Modells",
-   "Erstes sichtbares Token nach ~{ttft_ratio} der Gesamtzeit (ttft={ttft_ms} ms / duration={duration_ms} ms); das Modell denkt vor der Antwort nach, daher nicht als Pufferung gezählt."
+   "Erstes sichtbares Token nach {ttft_ms} ms von {duration_ms} ms Gesamtdauer; das Modell denkt vor der Antwort nach, daher nicht als Pufferung gezählt."
   ],
   "streaming.uniform_gaps": [
    "Gleichmäßige, nahezu leere Chunk-Abstände",

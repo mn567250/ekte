@@ -579,7 +579,7 @@ viene valutato.
 | `streaming.failed` | La richiesta in streaming non è riuscita. | Fallito · Alta | tetto 0 |
 
 Cioè: autentico 100 · utilizzo mancante 85 · un segnale di buffering 60 · due o
-più 40 · fallito 0.
+più 40 · fallito 0 · nessun contenuto: nessun punteggio.
 
 **Avvertenze.** Output brevi, un modello piccolo e veloce o il jitter di rete
 possono sembrare una raffica. Un upstream che non supporta lo streaming

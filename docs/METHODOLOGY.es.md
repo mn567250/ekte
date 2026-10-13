@@ -578,7 +578,7 @@ y no se puntúa.
 | `streaming.failed` | La solicitud en streaming falló. | Fallo · Alta | tope 0 |
 
 Es decir: auténtico 100 · falta el uso 85 · una señal de búfer 60 · dos o más
-40 · fallo 0.
+40 · fallo 0 · sin contenido: sin puntuación.
 
 **Advertencias.** Salidas cortas, un modelo pequeño y rápido o la fluctuación de
 la red pueden parecer una ráfaga. Un upstream que no sabe hacer streaming

@@ -142,7 +142,17 @@ class DeterminismDetector(Detector):
                 )
         else:
             # A relay that errors or returns nothing cannot be judged for caching.
-            failed = next((o for o in outcomes if not (o.ok and o.has_content())), outcomes[0])
+            # Report a real failure when there is one, else an empty answer.
+            failed = next((o for o in outcomes if not o.ok), None) or next(
+                (o for o in outcomes if not o.has_content()), outcomes[0]
+            )
+            if not failed.ok:
+                reason = failed.error_message or (
+                    f"HTTP {failed.status_code}" if failed.status_code is not None
+                    else failed.error_type or "no response"
+                )
+            else:
+                reason = "the response had no content"
             result.findings.append(
                 SCALE.finding(
                     "determinism.temp1_variability",
@@ -151,7 +161,7 @@ class DeterminismDetector(Detector):
                     summary=(
                         f"Only {len(usable)} of {self.CACHING_SAMPLES} samples were usable "
                         f"(at least {self.MIN_USABLE_SAMPLES} needed): "
-                        + (failed.error_message or f"HTTP {failed.status_code}")
+                        + reason
                     ),
                     evidence={
                         "usable_samples": len(usable),

@@ -490,7 +490,7 @@
   ],
   "protocol.stop_not_applicable": [
    "Vérification de la séquence d'arrêt non applicable",
-   "La Responses API ({api}) n'a pas de paramètre stop ; la séquence d'arrêt n'a pas été vérifiée et n'est pas comptée."
+   "La Responses API n'a pas de paramètre stop ; la séquence d'arrêt n'a pas été vérifiée et n'est pas comptée."
   ],
   "protocol.shape": [
    "Conformité de la structure de réponse",
@@ -606,7 +606,7 @@
   ],
   "streaming.reasoning_ttft": [
    "Premier jeton tardif d'un modèle de raisonnement",
-   "Le premier jeton visible est arrivé à ~{ttft_ratio} du temps total (ttft={ttft_ms} ms / duration={duration_ms} ms) ; le modèle raisonne avant de répondre, ce n'est donc pas compté comme mise en tampon."
+   "Le premier jeton visible est arrivé à {ttft_ms} ms sur {duration_ms} ms au total ; le modèle raisonne avant de répondre, ce n'est donc pas compté comme mise en tampon."
   ],
   "streaming.uniform_gaps": [
    "Intervalles entre fragments uniformes et quasi nuls",

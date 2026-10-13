@@ -490,7 +490,7 @@
   ],
   "protocol.stop_not_applicable": [
    "Verificação da sequência de parada não aplicável",
-   "A Responses API ({api}) não tem parâmetro stop; a sequência de parada não foi verificada nem contada."
+   "A Responses API não tem parâmetro stop; a sequência de parada não foi verificada nem contada."
   ],
   "protocol.shape": [
    "Conformidade da estrutura da resposta",
@@ -606,7 +606,7 @@
   ],
   "streaming.reasoning_ttft": [
    "Primeiro token tardio de um modelo de raciocínio",
-   "O primeiro token visível chegou a ~{ttft_ratio} do tempo total (ttft={ttft_ms} ms / duration={duration_ms} ms); o modelo raciocina antes de responder, então não conta como buffer."
+   "O primeiro token visível chegou aos {ttft_ms} ms de {duration_ms} ms no total; o modelo raciocina antes de responder, então não conta como buffer."
   ],
   "streaming.uniform_gaps": [
    "Intervalos entre fragmentos uniformes e quase nulos",

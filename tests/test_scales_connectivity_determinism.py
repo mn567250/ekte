@@ -148,6 +148,13 @@ async def test_determinism_two_identical_survivors_are_inconclusive():
     assert result.score is None and result.status == Status.INCONCLUSIVE
 
 
+async def test_determinism_empty_samples_are_not_reported_as_http_failures():
+    result = await _determinism([_ok(""), _ok("")] + _SAME[:2], _STABLE)
+    f = _by_id(result)["determinism.temp1_variability"]
+    assert f.outcome == "not_assessed"
+    assert f.summary.endswith("the response had no content") and "HTTP" not in f.summary
+
+
 async def test_determinism_three_identical_usable_samples_warn():
     result = await _determinism([_DOWN] + _SAME[:3], _STABLE)
     f = _by_id(result)["determinism.temp1_variability"]

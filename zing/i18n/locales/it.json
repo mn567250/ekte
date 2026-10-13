@@ -490,7 +490,7 @@
   ],
   "protocol.stop_not_applicable": [
    "Verifica della sequenza di stop non applicabile",
-   "La Responses API ({api}) non ha il parametro stop; la sequenza di stop non è stata verificata né conteggiata."
+   "La Responses API non ha il parametro stop; la sequenza di stop non è stata verificata né conteggiata."
   ],
   "protocol.shape": [
    "Conformità della struttura della risposta",
@@ -606,7 +606,7 @@
   ],
   "streaming.reasoning_ttft": [
    "Primo token tardivo di un modello di ragionamento",
-   "Il primo token visibile è arrivato a ~{ttft_ratio} del tempo totale (ttft={ttft_ms} ms / duration={duration_ms} ms); il modello ragiona prima di rispondere, quindi non è conteggiato come buffering."
+   "Il primo token visibile è arrivato a {ttft_ms} ms su {duration_ms} ms totali; il modello ragiona prima di rispondere, quindi non è conteggiato come buffering."
   ],
   "streaming.uniform_gaps": [
    "Intervalli tra frammenti uniformi e quasi nulli",

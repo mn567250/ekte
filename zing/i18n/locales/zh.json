@@ -150,7 +150,7 @@
   ],
   "protocol.stop_not_applicable": [
    "stop 序列检查不适用",
-   "Responses API（{api}）没有 stop 参数；未检查 stop 序列处理，也不计分。"
+   "Responses API 没有 stop 参数；未检查 stop 序列处理，也不计分。"
   ],
   "protocol.shape": [
    "响应结构（信封）规范性",
@@ -262,7 +262,7 @@
   ],
   "streaming.reasoning_ttft": [
    "推理模型的首 token 较晚",
-   "首个可见 token 在约总时长的 {ttft_ratio} 时到达（ttft={ttft_ms} ms / duration={duration_ms} ms）；该模型会先推理再回答，因此不计为缓冲。"
+   "首个可见 token 在第 {ttft_ms} ms 到达（总时长 {duration_ms} ms）；该模型会先推理再回答，因此不计为缓冲。"
   ],
   "streaming.uniform_gaps": [
    "分片间隔均匀且接近零",
