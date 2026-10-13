@@ -404,7 +404,8 @@ moins cher ou ouvert), ainsi que les signaux de
    pour le modèle d'un autre fabricant qu'elle sert.
    Les mots de marque qui sont aussi des mots courants (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) ne
    comptent que dans cette auto-identification et seulement écrits comme
-   un nom (« Meta », « Command R » ; en début de phrase seulement avec une
+   un nom (« Meta », « Command R », « grok-2 » ; en début de phrase ou
+   d'élément de liste seulement avec une
    version accolée, « Step-2 ») ; dans les réponses d'empreinte ils ne
    comptent jamais, « let me think step by step » n'est donc pas une marque
    concurrente. Un fournisseur à qui appartient un tel mot le garde comme sien.

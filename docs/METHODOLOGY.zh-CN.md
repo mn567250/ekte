@@ -320,7 +320,7 @@ prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转�
    覆盖 `identity_forbidden`，通用词（「ai」「platform」等）从不计入，平台自己的品牌也不算作
    它所提供的其他厂商模型的品牌。
    同时也是日常英文单词的品牌词（`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`）只在这条自我身份识别回答中计入，
-   而且只有写成名称时才算（“Meta”“Command R”；位于句首时须带版本号，如“Step-2”）；
+   而且只有写成名称时才算（“Meta”“Command R”“grok-2”；位于句首或列表项开头时须带版本号，如“Step-2”）；
    指纹回答中一律不计，因此“let me think step by step”不算竞品品牌。
    拥有这类词的厂商仍把它当作自家品牌。
 2. **行为指纹**，来自知识库（知识截止、分词器特征、格式习惯、与语言绑定的探测等）：

@@ -398,8 +398,9 @@ quando alteram o comportamento.
    «platform», …) nunca contam, e a marca própria de uma plataforma não conta
    para o modelo de outro fabricante que serve.
    Palavras de marca que também são palavras comuns (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) só contam
-   nesta autoidentificação e só escritas como nome (“Meta”, “Command R”;
-   no início de uma frase só com uma versão anexada, “Step-2”); nas
+   nesta autoidentificação e só escritas como nome (“Meta”, “Command R”,
+   “grok-2”; no início de uma frase ou item de lista só com uma versão
+   anexada, “Step-2”); nas
    respostas de impressão digital nunca contam, portanto “let me think step
    by step” não é uma marca concorrente. Um fornecedor dono de uma dessas
    palavras a mantém como própria.

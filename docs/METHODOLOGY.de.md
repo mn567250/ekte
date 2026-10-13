@@ -408,7 +408,8 @@ billigeren oder offenen Backend) sowie Signale von
    eines anderen Herstellers, das sie anbietet.
    Markenwörter, die zugleich Alltagswörter sind (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`), zählen nur in
    dieser Selbstidentifikation und nur als Name geschrieben („Meta“,
-   „Command R“; am Satzanfang nur mit angehängter Version, „Step-2“);
+   „Command R“, „grok-2“; am Satz- oder Listenanfang nur mit angehängter
+   Version, „Step-2“);
    in Fingerprint-Antworten zählen sie nie, „let me think step by step“ ist
    also keine Konkurrenzmarke. Ein Hersteller, dem ein solches Wort gehört,
    behält es als eigene Marke.

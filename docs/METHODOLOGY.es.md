@@ -402,7 +402,8 @@ cuando cambian el comportamiento.
    para el modelo de otro fabricante que sirve.
    Las palabras de marca que también son palabras comunes (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`)
    solo cuentan en esta autoidentificación y solo escritas como nombre
-   («Meta», «Command R»; al inicio de una frase solo con una versión
+   («Meta», «Command R», «grok-2»; al inicio de una frase o de un elemento
+   de lista solo con una versión
    añadida, «Step-2»); en las respuestas de huella nunca cuentan, así que
    «let me think step by step» no es una marca rival. Un proveedor dueño de
    una de esas palabras la conserva como propia.

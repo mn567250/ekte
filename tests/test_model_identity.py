@@ -304,6 +304,13 @@ def test_ambiguous_brand_words_count_only_as_names():
     # A sentence-initial capital proves nothing unless a version is attached.
     assert _brand_hits("Step by step. Meta-level: no.", words, ambiguous=True) == []
     assert _brand_hits("Step-2 here.", words, ambiguous=True) == ["step"]
+    for text in ("- Step by step", "## Step by step", "1) Step by step", "Intro\nStep one",
+                 "Step 1: I am an AI assistant.", "I ran a Meta-analysis."):
+        assert _brand_hits(text, words, ambiguous=True) == [], text
+    # A version or model letter makes it a name in any case and position.
+    for text, hit in (("I am grok-2.", "grok"), ("Command R+, here to help.", "command"),
+                      ("Developer: Meta", "meta"), ("I am Yi-34B.", "yi")):
+        assert _brand_hits(text, [hit], ambiguous=True) == [hit], text
     # In fingerprint answers they never count; unambiguous brands always do.
     assert _brand_hits("I am Step-2, not Qwen.", words, ambiguous=False) == ["qwen"]
     assert _brand_hits("built on qwen", words, ambiguous=True) == ["qwen"]

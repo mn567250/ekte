@@ -404,7 +404,8 @@ quando cambiano il comportamento.
    conta per il modello di un altro produttore che serve.
    Le parole di marca che sono anche parole comuni (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) contano
    solo in questa autoidentificazione e solo scritte come nome («Meta»,
-   «Command R»; a inizio frase solo con una versione attaccata,
+   «Command R», «grok-2»; a inizio frase o di voce di elenco solo con una
+   versione attaccata,
    «Step-2»); nelle risposte delle impronte non contano mai, quindi
    «let me think step by step» non è un marchio concorrente. Un produttore
    a cui appartiene una di queste parole la mantiene come propria.

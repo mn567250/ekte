@@ -383,8 +383,9 @@ when they change behavior.
    for another vendor's model it serves.
    Brand words that are also everyday words (`step`, `command`, `seed`,
    `spark`, `meta`, `yi`, `grok`) count only in this self-identification
-   answer and only written as a name ("Meta", "Command R"; at the start of a
-   sentence only with a version attached, "Step-2"); fingerprint answers never
+   answer and only written as a name ("made by Meta", "Command R", "grok-2";
+   at the start of a sentence or list item only with a version attached,
+   "Step-2"); fingerprint answers never
    count them, so "let me think step by step" is not a rival brand. A vendor
    that owns such a word keeps it as its own.
 2. **Behavioral fingerprints** from the knowledge base (knowledge cutoff,
