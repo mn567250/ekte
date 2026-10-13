@@ -49,7 +49,20 @@ models:
   - deepseek
   - llama
   - meta
-  fingerprints: []
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff / factual recall
+    prompt: What is the most recent event or fact you are confident about? State the approximate month and year of your knowledge cutoff, and name your own model version (e.g. K2.5, K2.6).
+    native_expected: K2.6/K2.5 cluster knowledge around early-to-mid 2025 (commonly cited ~April 2025) and, if grounded, will name itself as a K2-series Moonshot model. Plausibly knows 2024-early-2025 events.
+    downgrade_signal: States a cutoff of 2021/2022/2023 (typical of older GPT-3.5/Llama-2-class substitutes), or confidently names itself as a non-Kimi model, or has no knowledge past 2023 — indicates a cheaper/older substituted backend.
+    pure_code_checkable: false
+    expect_not_contains:
+    - '2021'
+    - '2022'
+    - '2023'
+    max_tokens: 256
+    temperature: 0
+    weight: 1
   notes: Current flagship as of mid-2026. 1T total / 32B activated MoE (384 experts, 8 active/token, 61 layers, MLA attention, SwiGLU, MoonViT 400M vision encoder). 256K context (262,144). Thinking mode ENABLED BY DEFAULT (disable via thinking={"type":"disabled"}); emits reasoning_content separate from content. Fixed temperature 1.0 recommended for thinking. Recommend max_tokens>=16000 to avoid truncating reasoning+content. Default max output 32768 (32k); some serving stacks advertise output up to full 256K.
 - id: kimi-k2.5
   aliases:
@@ -90,7 +103,20 @@ models:
   - deepseek
   - llama
   - meta
-  fingerprints: []
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff / factual recall
+    prompt: What is the most recent event or fact you are confident about? State the approximate month and year of your knowledge cutoff, and name your own model version (e.g. K2.5, K2.6).
+    native_expected: K2.6/K2.5 cluster knowledge around early-to-mid 2025 (commonly cited ~April 2025) and, if grounded, will name itself as a K2-series Moonshot model. Plausibly knows 2024-early-2025 events.
+    downgrade_signal: States a cutoff of 2021/2022/2023 (typical of older GPT-3.5/Llama-2-class substitutes), or confidently names itself as a non-Kimi model, or has no knowledge past 2023 — indicates a cheaper/older substituted backend.
+    pure_code_checkable: false
+    expect_not_contains:
+    - '2021'
+    - '2022'
+    - '2023'
+    max_tokens: 256
+    temperature: 0
+    weight: 1
   notes: Previous-generation flagship still active. 1T/32B MoE, 256K context, multi-turn tool calling, vision input, structured outputs, thinking + non-thinking modes.
 - id: moonshot-v1-128k
   aliases: []
@@ -336,7 +362,20 @@ models:
   - deepseek
   - llama
   - meta
-  fingerprints: []
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff / factual recall
+    prompt: What is the most recent event or fact you are confident about? State the approximate month and year of your knowledge cutoff, and name your own model version (e.g. K2.5, K2.6).
+    native_expected: K2.6/K2.5 cluster knowledge around early-to-mid 2025 (commonly cited ~April 2025) and, if grounded, will name itself as a K2-series Moonshot model. Plausibly knows 2024-early-2025 events.
+    downgrade_signal: States a cutoff of 2021/2022/2023 (typical of older GPT-3.5/Llama-2-class substitutes), or confidently names itself as a non-Kimi model, or has no knowledge past 2023 — indicates a cheaper/older substituted backend.
+    pure_code_checkable: false
+    expect_not_contains:
+    - '2021'
+    - '2022'
+    - '2023'
+    max_tokens: 256
+    temperature: 0
+    weight: 1
   notes: 'DEPRECATED as a standalone hosted API model on the Kimi platform (superseded by K2.6''s built-in thinking), but open weights remain on HuggingFace and it is still served by 3rd-party relays/providers. 1T/32B MoE, 256K ctx, native INT4 QAT (weight-only on MoE, ~2x speed). Distinctive: ''Stable Long-Horizon Agency'' — coherent across 200-300 consecutive tool calls. Emits reasoning_content. Useful as a downgrade target to detect (a relay may serve cheaper K2-Thinking weights while billing K2.6).'
 fingerprints:
 - id: self-id
@@ -362,19 +401,6 @@ fingerprints:
   max_tokens: 128
   temperature: 0
   weight: 2
-- id: knowledge-cutoff
-  signal: knowledge-cutoff / factual recall
-  prompt: What is the most recent event or fact you are confident about? State the approximate month and year of your knowledge cutoff, and name your own model version (e.g. K2.5, K2.6).
-  native_expected: K2.6/K2.5 cluster knowledge around early-to-mid 2025 (commonly cited ~April 2025) and, if grounded, will name itself as a K2-series Moonshot model. Plausibly knows 2024-early-2025 events.
-  downgrade_signal: States a cutoff of 2021/2022/2023 (typical of older GPT-3.5/Llama-2-class substitutes), or confidently names itself as a non-Kimi model, or has no knowledge past 2023 — indicates a cheaper/older substituted backend.
-  pure_code_checkable: false
-  expect_not_contains:
-  - '2021'
-  - '2022'
-  - '2023'
-  max_tokens: 256
-  temperature: 0
-  weight: 1
 - id: tokenizer-cjk-echo
   signal: tokenizer artifact (CJK / vocab)
   prompt: 'Repeat this exact string back verbatim, then on a new line state how many tokens it was for you: 月之暗面Kimi开放平台🌙'

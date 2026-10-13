@@ -188,8 +188,12 @@ class KnowledgeBase(BaseModel):
     ) -> ResolvedProfile | None:
         """Resolve a claimed model id to a profile.
 
-        Resolution order: exact id, alias, then a normalized fuzzy/substring match.
-        A ``provider_hint`` narrows the search and breaks ties.
+        Resolution order: exact id, alias, normalized id/alias, then a fuzzy
+        match on normalized names: first the longest KB name the claim contains
+        (a decorated or snapshot id), else - for a claim shorter than the KB
+        names - the one model whose names contain it. A fuzzy match that would
+        have to pick between several models returns ``None`` rather than
+        guess a tier. A ``provider_hint`` narrows the search and breaks ties.
         """
         if not model_id:
             return None
@@ -216,21 +220,76 @@ class KnowledgeBase(BaseModel):
             names = [model.id, *model.aliases]
             if any(_normalize(n) == norm for n in names):
                 return ResolvedProfile(provider=provider, model=model, match_confidence="alias")
-        # 4) substring / fuzzy on normalized names
-        best: tuple[ProviderProfile, ModelProfile] | None = None
+        # 4) fuzzy on normalized names, in two directions.
+        names_by_model = [
+            (provider, model, {_normalize(n) for n in (model.id, *model.aliases)} - {""})
+            for provider, model in candidates
+        ]
+        # 4a) the claim *contains* a KB name (a relay-decorated, snapshot or
+        # suffixed id such as ``gpt-4o-2024-11-20-custom`` or
+        # ``openai/gpt-4o``). The longest contained name wins, so
+        # ``gpt-4o-mini-x`` lands on gpt-4o-mini rather than gpt-4o. The name
+        # must start where a token of the claim starts, so a short id such as
+        # ``o3`` is not found inside ``gemini-pro3``.
+        starts = _token_starts(model_id)
+        # Keyed by model id: the same id listed under two providers is one model
+        # (the first listed wins, as before), two different ids are ambiguous.
+        contained: dict[str, tuple[ProviderProfile, ModelProfile]] = {}
         best_len = 0
-        for provider, model in candidates:
-            names = [model.id, *model.aliases]
-            for n in names:
-                nn = _normalize(n)
-                if nn and (nn in norm or norm in nn) and len(nn) > best_len:
-                    best = (provider, model)
+        for provider, model, names in names_by_model:
+            for nn in names:
+                if len(nn) < best_len or not _contains_at_token(norm, nn, starts):
+                    continue
+                if len(nn) > best_len:
+                    contained = {}
                     best_len = len(nn)
-        if best is not None:
-            return ResolvedProfile(provider=best[0], model=best[1], match_confidence="fuzzy")
+                contained.setdefault(model.id, (provider, model))
+        if contained:
+            if len(contained) == 1:
+                provider, model = next(iter(contained.values()))
+                return ResolvedProfile(provider=provider, model=model, match_confidence="fuzzy")
+            # Two different models with equally long contained names: ambiguous.
+            return None
+        # 4b) the claim is *shorter* than KB names (``gpt-4``, ``claude``,
+        # ``gemini-2.5``). Picking the longest - or any - of several models
+        # would silently assign a specific, often cheaper tier, so this only
+        # resolves when exactly one model has a name extending the claim.
+        extending: dict[str, tuple[ProviderProfile, ModelProfile]] = {}
+        for provider, model, names in names_by_model:
+            if any(norm in nn for nn in names):
+                extending.setdefault(model.id, (provider, model))
+        if len(extending) == 1:
+            provider, model = next(iter(extending.values()))
+            return ResolvedProfile(provider=provider, model=model, match_confidence="fuzzy")
         return None
 
 
 def _normalize(name: str) -> str:
     """Lowercase and strip separators/date suffixes for tolerant matching."""
     return "".join(ch for ch in name.lower() if ch.isalnum())
+
+
+def _token_starts(name: str) -> set[int]:
+    """Offsets in ``_normalize(name)`` at which a separator-delimited token starts."""
+    starts: set[int] = set()
+    pos = 0
+    prev_sep = True
+    for ch in name.lower():
+        if ch.isalnum():
+            if prev_sep:
+                starts.add(pos)
+            pos += 1
+            prev_sep = False
+        else:
+            prev_sep = True
+    return starts
+
+
+def _contains_at_token(norm: str, needle: str, starts: set[int]) -> bool:
+    """True when ``needle`` occurs in ``norm`` beginning at a token start."""
+    i = norm.find(needle)
+    while i != -1:
+        if i in starts:
+            return True
+        i = norm.find(needle, i + 1)
+    return False
