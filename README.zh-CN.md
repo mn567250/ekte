@@ -532,7 +532,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.19.0         # 固定到发布标签
+        uses: cenbonew/zing@v0.20.0         # 固定到发布标签
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # 调用方的密钥；绝不回显

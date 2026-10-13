@@ -690,7 +690,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.19.0         # fijar a una etiqueta de versión
+        uses: cenbonew/zing@v0.20.0         # fijar a una etiqueta de versión
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # secreto del llamante; nunca se muestra

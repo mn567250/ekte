@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.20.0] — analytics page
+
 ### Added
 
 - **Reports record when the audit started (`started_at`).** An ISO UTC
@@ -24,7 +26,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   is estimated from `generated_at` and the span of the request records, and
   marked as estimated.
 - **Analytics API (`zing serve`).** Four read-only endpoints over the run
-  history, the data behind the coming analytics page:
+  history, the data behind the analytics page:
   `GET /api/analytics/options` (relays, models, suites, stream modes, APIs and
   the date range present in the history), `GET /api/analytics/summary` (KPIs
   of a range against the previous range of the same length: runs, relays,
@@ -60,9 +62,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   /api/analytics/options` also lists the relay × model pairs
   (`relay_models`).
 - **Analytics page: peak hours, errors, model integrity, billing and relay
-  overhead.** Five more panels under the leaderboard, scoped by the same
-  filters: a weekday × hour heatmap of a metric (TTFT by default; latency,
-  speed, success, error, rate-limit and timeout rates, score) for all relays
+  overhead.** Five more panels, scoped by the same filters: a weekday × hour
+  heatmap of a metric (TTFT by default; latency, speed, success, error,
+  rate-limit and timeout rates, score) for all relays
   or one, in the viewer's time zone, cells with fewer than 3 runs hatched and
   empty cells outlined; failed calls by cause (rate limits / HTTP 429, 5xx,
   timeouts, 4xx, network and other errors) as stacked bars over time and a
