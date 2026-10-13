@@ -34,6 +34,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   changes nothing; without the file the report is built as before
   (`--no-llm` forces that). CI runs the review before building the report.
 
+### Fixed
+
+- **A check's elapsed time survives "Continue in background".** Reopening a
+  running audit in UI v2 restarted the time of the check in progress at zero,
+  so the check times no longer added up to the audit's total. The server now
+  stamps each `detector_start` event with its start time (`at`), and the live
+  view times the running check from it.
+
 ## [0.20.0] — analytics page
 
 ### Added

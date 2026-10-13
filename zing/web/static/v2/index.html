@@ -708,7 +708,9 @@
     } else if (ev.type === "detector_start") {
       if (!state.seen[ev.id]) state.seen[ev.id] = addDet(ev);
       clock.li = state.seen[ev.id];
-      clock.start = Date.now();
+      // the server's start time, so a replayed check keeps its elapsed time
+      clock.start = ev.at ? ev.at * 1000 : Date.now();
+      tick();
       if (ev.total) { progress.total = ev.total; renderCount(); }
       setNow(function () { return detName(ev) + " …"; });
     } else if (ev.type === "detector_done") {

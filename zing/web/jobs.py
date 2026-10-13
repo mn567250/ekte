@@ -211,6 +211,10 @@ class Job:
         return self.status in _ACTIVE
 
     def emit(self, event: dict[str, Any]) -> None:
+        if event.get("type") == "detector_start":
+            # When the check started (wall clock, like ``started``): a page
+            # re-attaching mid-check times it from here, not from the replay.
+            event.setdefault("at", time.time())
         track_progress(self.progress, event)
         self.events.append(event)
         for q in self._subscribers:

@@ -288,3 +288,19 @@ async def test_shutdown_stops_every_job():
     await mgr.shutdown()
     assert a.status == b.status == "cancelled"
     assert not mgr.gate.would_wait(["r.example"])
+
+
+def test_detector_start_is_stamped_and_replayed_with_its_start_time():
+    # a page re-attaching mid-check times the running check from "at"
+    job = jobs.Job({}, frozenset())
+    job.started = 1000.0
+    job.emit({"type": "detector_start", "id": "x", "index": 0, "total": 1})
+    job.emit({"type": "detector_done", "id": "x", "index": 0})
+    at = job.events[0]["at"]
+    assert isinstance(at, float) and at >= job.started
+    assert "at" not in job.events[1]
+    q = job.subscribe()
+    assert q.get_nowait()["at"] == at
+    # an explicit time is kept
+    job.emit({"type": "detector_start", "id": "y", "at": 5.0})
+    assert job.events[-1]["at"] == 5.0
