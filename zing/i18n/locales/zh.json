@@ -63,6 +63,7 @@
   "Re-run once the endpoint reliably returns completions.": "待端点能稳定返回补全后再重跑。",
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "请视为偏离信号而非证据；行动前先用指纹与身份检测佐证。",
   "Verify the relay supports stream=true for this model.": "确认该中转站对此模型支持 stream=true。",
+  "Verify the relay streams content deltas for this model.": "确认该中转站对此模型以流式返回内容增量。",
   "Run `zing compare` against a trusted baseline to corroborate.": "用 `zing compare` 对照可信基线加以佐证。",
   "A response naming a different vendor strongly suggests model substitution.": "回复中提到其他厂商，强烈暗示模型被替换。",
   "Run `zing compare` against a trusted baseline to disambiguate.": "用 `zing compare` 对照可信基线以消除歧义。",
@@ -146,6 +147,10 @@
   "protocol.stop": [
    "stop 截断序列处理",
    "stop 序列处理检查；finish_reason={finish_reason}。"
+  ],
+  "protocol.stop_not_applicable": [
+   "stop 序列检查不适用",
+   "Responses API（{api}）没有 stop 参数；未检查 stop 序列处理，也不计分。"
   ],
   "protocol.shape": [
    "响应结构（信封）规范性",
@@ -243,6 +248,10 @@
    "流式请求失败",
    "流式请求失败（HTTP {status_code}，类型 {error_type}）；请确认该模型支持 stream=true。"
   ],
+  "streaming.no_content": [
+   "流式响应没有内容",
+   "流式请求成功，但没有返回任何内容（{chunk_count} 个分片）；无法评估流式表现。"
+  ],
   "streaming.few_chunks": [
    "响应仅用 ≤2 个分片送达",
    "{content_chars} 字符仅用 {chunk_count} 个分片送达（先缓冲再切片，并非真正的逐 token 流式）。"
@@ -250,6 +259,10 @@
   "streaming.late_ttft": [
    "首 token 在流的末尾才到达",
    "首 token 直到约总时长的 {ttft_ratio} 才到达（ttft={ttft_ms} ms / duration={duration_ms} ms，疑似缓冲）。"
+  ],
+  "streaming.reasoning_ttft": [
+   "推理模型的首 token 较晚",
+   "首个可见 token 在约总时长的 {ttft_ratio} 时到达（ttft={ttft_ms} ms / duration={duration_ms} ms）；该模型会先推理再回答，因此不计为缓冲。"
   ],
   "streaming.uniform_gaps": [
    "分片间隔均匀且接近零",

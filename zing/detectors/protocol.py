@@ -6,12 +6,14 @@ error body. (Which request/response attributes survive the relay is checked
 attribute by attribute in :mod:`zing.detectors.protocol_attrs`.) Each sub-check exercises one such
 contract and scores points from the published scale ``SCALE`` (every possible
 outcome of every check); the detector score is the average of the counted checks.
-An inconclusive check (no usable response) is not counted.
+An inconclusive check (no usable response) is not counted, nor is the stop check
+on the Responses API, which has no ``stop`` parameter to honor.
 """
 
 from __future__ import annotations
 
 from zing import prompts
+from zing.clients import detect_api
 from zing.context import AuditContext
 from zing.detectors.base import Detector, register
 from zing.detectors.helpers import contains_ci
@@ -35,6 +37,8 @@ SCALE = Scale(
             label="Text after the stop sequence was returned."),
     outcome("protocol.stop", "no_content", None, Status.INCONCLUSIVE, Severity.LOW,
             label=_NO_RESPONSE),
+    outcome("protocol.stop", "not_applicable", None, Status.INFO,
+            label="The Responses API has no stop parameter; not checked, not counted."),
     outcome("protocol.error_schema", "rejected_openai_body", 100.0, Status.PASS,
             label="Rejected with a 4xx and an OpenAI-style error body."),
     outcome("protocol.error_schema", "rejected_other_body", 80.0, Status.WARN, Severity.LOW,
@@ -113,6 +117,24 @@ class ProtocolDetector(Detector):
 
     # 2) Is the ``stop`` sequence actually applied? ------------------------- #
     async def _check_stop_sequence(self, ctx: AuditContext, result: DetectorResult) -> None:
+        api = detect_api(ctx.target)
+        if api == "responses":
+            # The Responses API has no ``stop`` parameter (the client drops it), so
+            # a relay can't be blamed for text past the stop sequence there.
+            result.findings.append(
+                SCALE.finding(
+                    "protocol.stop",
+                    "not_applicable",
+                    id="protocol.stop_not_applicable",
+                    title="Stop-sequence check not applicable",
+                    summary=(
+                        "The Responses API has no stop parameter, so stop-sequence "
+                        "handling was not checked and is not counted."
+                    ),
+                    evidence={"api": api},
+                )
+            )
+            return
         spec = RequestSpec(
             messages=[{"role": "user", "content": prompts.text("protocol.stop")}],
             stop="STOP",
