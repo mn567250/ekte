@@ -418,16 +418,19 @@ Without a knowledge-base profile the detector is inconclusive.
 tier-discriminating prompts (multi-step reasoning, a precise coding task,
 nuanced instruction-following) goes to the target and, in compare mode, to the
 baseline; a separate trusted judge sees only the answers and returns a verdict
-and a confidence. A judge verdict is HIGH only when a baseline corroborated the
-difference and the judge did not report low or medium confidence.
+and a confidence. The judge is told the claimed model (`claimed_model` when set, else the
+requested id). A judge verdict is HIGH only when the judge stated **high**
+confidence and a usable baseline corroborated the difference — one that
+returned a non-empty answer for every probe the target answered. A low,
+medium, missing or unrecognized confidence stays MEDIUM, and so does a
+baseline that errored or left probes unanswered.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `quality_judge.verdict` (LLM judge verdict) | The judge found the answers consistent with the claimed model. | Pass | 95 pts |
-|  | The judge found the answers unlike the claimed model (low/medium confidence). | Warning · Medium | 50 pts |
-|  | The judge is confident the answers are unlike the claimed model (no baseline). | Warning · Medium | 25 pts |
+|  | The judge found the answers unlike the claimed model (low, medium or no stated confidence). | Warning · Medium | 50 pts |
+|  | The judge is confident the answers are unlike the claimed model (no usable baseline). | Warning · Medium | 25 pts |
 |  | The judge is confident, and a trusted baseline corroborated the difference. | Fail · High | 25 pts |
-|  | The judge gave no confidence, and a trusted baseline corroborated the difference. | Fail · High | 50 pts |
 |  | The judge could not commit to a verdict. | Inconclusive · Low | Not counted |
 |  | No target answers to judge. | Inconclusive · Low | Not counted |
 
@@ -664,6 +667,9 @@ URL and a pinned `pip install` package — must come back verbatim. An exact ech
 passes, a non-echo (paraphrase, refusal) is inconclusive, and only a
 structure-preserving **value substitution** counts as tampering. In compare mode
 a substitution the trusted baseline does not make is CRITICAL.
+Only a baseline that returns the canary intact corroborates: a baseline that
+errors or returns nothing usable confirms nothing, so the substitution stays
+MEDIUM (evidence `baseline_unavailable`).
 An answer cut off at the output limit is inconclusive, not a substitution.
 
 | Check | Outcome | Status | Effect |

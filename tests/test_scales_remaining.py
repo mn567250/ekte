@@ -16,17 +16,19 @@ import pytest
 
 import zing.detectors as detectors_pkg
 from zing import i18n
+from zing.config import AuditOptions
+from zing.context import AuditContext
 from zing.detectors import REGISTRY
 from zing.detectors.capability import CapabilityDetector
 from zing.detectors.context_window import SCALE as CW_SCALE
 from zing.detectors.context_window import ContextWindowDetector, _window_deduction
 from zing.detectors.quality_judge import SCALE as JUDGE_SCALE
-from zing.detectors.quality_judge import _suspicious_outcome
+from zing.detectors.quality_judge import QualityJudgeDetector, _suspicious_outcome
 from zing.detectors.reliability import ReliabilityDetector, _latency_deduction
 from zing.detectors.scale import DeductionScale, Scale
 from zing.detectors.security import SecurityDetector
 from zing.detectors.streaming import StreamingDetector
-from zing.models import DetectorResult, Status
+from zing.models import CompletionOutcome, DetectorResult, Severity, Status, TargetConfig
 
 
 def _scales() -> dict[str, Scale]:
@@ -202,17 +204,92 @@ async def test_context_window_truncation_scores_the_recalled_share(audit_context
 # LLM judge: score by confidence, severity by confidence + corroboration
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize(
-    ("confidence", "high_sev", "key", "score", "status"),
+    ("confidence", "corroborated", "key", "score", "status"),
     [
         ("high", True, "confident_corroborated", 25.0, Status.FAIL),
         ("high", False, "confident", 25.0, Status.WARN),
+        ("medium", True, "suspicious", 50.0, Status.WARN),
         ("medium", False, "suspicious", 50.0, Status.WARN),
-        ("low", False, "suspicious", 50.0, Status.WARN),
-        ("", True, "unrated_corroborated", 50.0, Status.FAIL),
+        ("low", True, "suspicious", 50.0, Status.WARN),
+        # a missing / unrecognized confidence counts as low — never HIGH
+        ("", True, "suspicious", 50.0, Status.WARN),
         ("", False, "suspicious", 50.0, Status.WARN),
+        ("very sure", True, "suspicious", 50.0, Status.WARN),
+        # the judge's phrasing of "high" still counts as high
+        ("High.", True, "confident_corroborated", 25.0, Status.FAIL),
+        ("very high", False, "confident", 25.0, Status.WARN),
     ],
 )
-def test_judge_suspicious_rows(confidence, high_sev, key, score, status):
-    assert _suspicious_outcome(confidence, high_sev) == key
+def test_judge_suspicious_rows(confidence, corroborated, key, score, status):
+    assert _suspicious_outcome(confidence, corroborated) == key
     o = JUDGE_SCALE.get("quality_judge.verdict", key)
     assert (o.score, o.status) == (score, status)
+
+
+class _JudgeStub:
+    def __init__(self, verdict):
+        self.verdict = verdict
+        self.calls: list[tuple[str, str]] = []
+
+    async def evaluate_json(self, system, user, **_):
+        self.calls.append((system, user))
+        return dict(self.verdict)
+
+
+class _AnswerStub:
+    """Answers every probe with ``text``, or fails (HTTP 500) when it is None."""
+
+    def __init__(self, text):
+        self.text = text
+
+    async def complete(self, spec):
+        if self.text is None:
+            return CompletionOutcome(ok=False, status_code=500, error_message="down")
+        return CompletionOutcome(ok=True, status_code=200, content=self.text, finish_reason="stop")
+
+
+async def _run_judge(confidence, *, baseline=None, claimed=None):
+    target = TargetConfig(base_url="https://r.test/v1", model="served-id", claimed_model=claimed)
+    judge = _JudgeStub({"verdict": "suspicious", "confidence": confidence})
+    ctx = AuditContext(
+        target=target, client=_AnswerStub("an answer"), options=AuditOptions(suite="deep"),
+        kb=None, profile=None, baseline=target if baseline is not None else None,  # type: ignore[arg-type]
+        baseline_client=baseline, judge=judge,
+    )
+    result = await QualityJudgeDetector().run(ctx)
+    _check(result, JUDGE_SCALE)
+    return result, judge
+
+
+@pytest.mark.parametrize("confidence", ["", "low", "medium", "unsure"])
+async def test_judge_without_high_confidence_never_reaches_high(confidence):
+    result, _ = await _run_judge(confidence, baseline=_AnswerStub("baseline answer"))
+    (f,) = result.findings
+    assert (f.outcome, f.severity, result.status) == ("suspicious", Severity.MEDIUM, Status.WARN)
+
+
+async def test_judge_high_confidence_with_failed_baseline_is_not_corroborated():
+    result, judge = await _run_judge("high", baseline=_AnswerStub(None))
+    (f,) = result.findings
+    assert (f.outcome, f.severity) == ("confident", Severity.MEDIUM)
+    assert f.evidence["baseline_corroborated"] is False
+    assert result.evidence["baseline_compared"] is True
+    assert result.evidence["baseline_usable"] is False
+    # the unusable baseline is not shown to the judge either
+    _, user = judge.calls[0]
+    assert "baseline answer" not in user and "TRUSTED BASELINE" not in user
+
+
+async def test_judge_high_confidence_with_working_baseline_is_high():
+    result, _ = await _run_judge("high", baseline=_AnswerStub("baseline answer"))
+    (f,) = result.findings
+    assert (f.outcome, f.severity, result.status) == ("confident_corroborated", Severity.HIGH, Status.FAIL)
+    assert f.evidence["baseline_corroborated"] is True
+
+
+async def test_judge_is_told_the_claimed_model():
+    result, judge = await _run_judge("high", claimed="claimed-id")
+    system, user = judge.calls[0]
+    assert "claimed-id" in system and "claimed-id" in user
+    assert "served-id" not in system and "served-id" not in user
+    assert result.evidence["claimed_model"] == "claimed-id"

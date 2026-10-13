@@ -439,17 +439,20 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 que distinguen gamas (razonamiento en varios pasos, una tarea de código
 precisa, seguimiento de instrucciones con matices) va al objetivo y, en modo
 comparación, a la referencia; un juez de confianza aparte solo ve las
-respuestas y devuelve un veredicto con su confianza. Un veredicto del juez solo
-es ALTO si una referencia corroboró la diferencia y el juez no indicó una
-confianza baja o media.
+respuestas y devuelve un veredicto con su confianza. Al juez se le indica el modelo declarado (`claimed_model` si está definido;
+si no, el id solicitado). Un veredicto del juez solo es ALTO si el juez
+indicó confianza **alta** y una referencia utilizable corroboró la
+diferencia: una que devolvió una respuesta no vacía para cada sonda que
+respondió el objetivo. Una confianza baja, media, ausente o desconocida se
+queda en MEDIA, igual que una referencia que falló o dejó sondas sin
+responder.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `quality_judge.verdict` (Veredicto del juez LLM) | El juez encontró las respuestas coherentes con el modelo declarado. | Correcto | 95 pts |
-|  | El juez encontró las respuestas distintas del modelo declarado (confianza baja/media). | Advertencia · Media | 50 pts |
-|  | El juez está seguro de que las respuestas difieren del modelo declarado (sin referencia). | Advertencia · Media | 25 pts |
+|  | El juez encontró las respuestas distintas del modelo declarado (confianza baja, media o no indicada). | Advertencia · Media | 50 pts |
+|  | El juez está seguro de que las respuestas difieren del modelo declarado (sin referencia utilizable). | Advertencia · Media | 25 pts |
 |  | El juez está seguro y una referencia de confianza corroboró la diferencia. | Fallo · Alta | 25 pts |
-|  | El juez no dio confianza y una referencia de confianza corroboró la diferencia. | Fallo · Alta | 50 pts |
 |  | El juez no pudo emitir un veredicto. | No concluyente · Baja | No computa |
 |  | No hay respuestas del objetivo que juzgar. | No concluyente · Baja | No computa |
 
@@ -701,6 +704,9 @@ literalmente. Un eco exacto es correcto, la falta de eco (paráfrasis, negativa)
 es no concluyente, y solo una **sustitución del valor** que conserva la
 estructura cuenta como manipulación. En modo comparación, una sustitución que la
 referencia de confianza no hace es CRÍTICA.
+Solo corrobora una referencia que devuelve el canario intacto: si falla o no
+devuelve nada utilizable, no confirma nada y la sustitución se queda en MEDIA
+(evidencia `baseline_unavailable`).
 Una respuesta cortada en el límite de salida es no concluyente, no una sustitución.
 
 | Comprobación | Resultado | Estado | Efecto |
