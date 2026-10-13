@@ -441,17 +441,20 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 série de prompts qui distinguent les gammes (raisonnement en plusieurs étapes,
 tâche de code précise, suivi d'instructions nuancé) part vers la cible et, en
 mode comparaison, vers la référence ; un juge de confiance distinct ne voit que
-les réponses et rend un verdict avec une confiance. Un verdict du juge n'est
-ÉLEVÉ que si une référence a corroboré l'écart et que le juge n'a pas indiqué
-une confiance faible ou moyenne.
+les réponses et rend un verdict avec une confiance. Le juge reçoit le modèle annoncé (`claimed_model` s'il est défini, sinon
+l'identifiant demandé). Un verdict du juge n'est ÉLEVÉ que si le juge a
+indiqué une confiance **élevée** et qu'une référence exploitable a corroboré
+l'écart — une référence qui a donné une réponse non vide à chaque sonde à
+laquelle la cible a répondu. Une confiance faible, moyenne, absente ou
+inconnue reste MOYENNE, de même qu'une référence en erreur ou qui a laissé
+des sondes sans réponse.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `quality_judge.verdict` (Verdict du juge LLM) | Le juge a trouvé les réponses cohérentes avec le modèle annoncé. | Réussi | 95 pts |
-|  | Le juge a trouvé les réponses différentes du modèle annoncé (confiance faible/moyenne). | Avertissement · Moyenne | 50 pts |
-|  | Le juge est confiant : les réponses diffèrent du modèle annoncé (sans référence). | Avertissement · Moyenne | 25 pts |
+|  | Le juge a trouvé les réponses différentes du modèle annoncé (confiance faible, moyenne ou non indiquée). | Avertissement · Moyenne | 50 pts |
+|  | Le juge est confiant : les réponses diffèrent du modèle annoncé (sans référence exploitable). | Avertissement · Moyenne | 25 pts |
 |  | Le juge est confiant et une référence de confiance a confirmé la différence. | Échec · Élevée | 25 pts |
-|  | Le juge n'a donné aucune confiance et une référence de confiance a confirmé la différence. | Échec · Élevée | 50 pts |
 |  | Le juge n'a pas pu trancher. | Non concluant · Faible | Non compté |
 |  | Aucune réponse de la cible à juger. | Non concluant · Faible | Non compté |
 
@@ -704,6 +707,9 @@ revenir mot pour mot. Un écho exact réussit, l'absence d'écho (paraphrase,
 refus) est non concluante, et seule une **substitution de valeur** qui préserve
 la structure compte comme falsification. En mode comparaison, une substitution
 que la référence de confiance ne fait pas est CRITIQUE.
+Seule une référence qui renvoie le canari intact corrobore : une référence en
+erreur ou sans réponse exploitable ne confirme rien, et la substitution reste
+MOYENNE (preuve `baseline_unavailable`).
 Une réponse coupée à la limite de sortie est non concluante, pas une substitution.
 
 | Contrôle | Résultat | Statut | Effet |

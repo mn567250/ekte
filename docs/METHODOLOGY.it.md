@@ -441,17 +441,20 @@ Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 che distinguono le fasce (ragionamento in più passaggi, un compito di codice
 preciso, istruzioni con sfumature) va all'obiettivo e, in modalità di confronto,
 al riferimento; un giudice affidabile separato vede solo le risposte e
-restituisce un verdetto con la sua affidabilità. Un verdetto del giudice è ALTO
-solo se un riferimento ha confermato la differenza e il giudice non ha indicato
-un'affidabilità bassa o media.
+restituisce un verdetto con la sua affidabilità. Al giudice viene indicato il modello dichiarato (`claimed_model` se impostato,
+altrimenti l'id richiesto). Un verdetto del giudice è ALTO solo se il giudice
+ha indicato un'affidabilità **alta** e un riferimento utilizzabile ha
+confermato la differenza — uno che ha dato una risposta non vuota a ogni
+sonda a cui l'obiettivo ha risposto. Un'affidabilità bassa, media, assente o
+sconosciuta resta MEDIA, così come un riferimento andato in errore o che ha
+lasciato sonde senza risposta.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 95 pt |
-|  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa/media). | Avviso · Media | 50 pt |
-|  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessuna baseline). | Avviso · Media | 25 pt |
+|  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa, media o non indicata). | Avviso · Media | 50 pt |
+|  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessuna baseline utilizzabile). | Avviso · Media | 25 pt |
 |  | Il giudice è sicuro e una baseline affidabile ha confermato la differenza. | Fallito · Alta | 25 pt |
-|  | Il giudice non ha indicato una confidenza e una baseline affidabile ha confermato la differenza. | Fallito · Alta | 50 pt |
 |  | Il giudice non è riuscito a esprimere un verdetto. | Non conclusivo · Bassa | Non conteggiato |
 |  | Nessuna risposta del target da giudicare. | Non conclusivo · Bassa | Non conteggiato |
 
@@ -701,6 +704,9 @@ letteralmente. Un'eco esatta è superata, la mancanza di eco (parafrasi, rifiuto
 è non conclusiva, e solo una **sostituzione del valore** che preserva la
 struttura conta come manomissione. In modalità di confronto, una sostituzione
 che il riferimento affidabile non fa è CRITICA.
+Conferma solo un riferimento che restituisce il canary intatto: se va in errore
+o non restituisce nulla di utilizzabile non conferma nulla, e la sostituzione
+resta MEDIA (evidenza `baseline_unavailable`).
 Una risposta troncata al limite di output è non conclusiva, non una sostituzione.
 
 | Controllo | Esito | Stato | Effetto |

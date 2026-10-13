@@ -445,17 +445,20 @@ Ohne Profil in der Wissensbasis ist der Detektor nicht eindeutig.
 Leistungsstufen unterscheiden (mehrstufiges Denken, eine präzise
 Programmieraufgabe, feines Befolgen von Anweisungen), geht an das Ziel und im
 Vergleichsmodus an die Referenz; ein separater, vertrauenswürdiger Richter sieht
-nur die Antworten und gibt ein Urteil samt Konfidenz ab. Ein Richterurteil ist
-nur HOCH, wenn eine Referenz den Unterschied bestätigt hat und der Richter keine
-niedrige oder mittlere Konfidenz angab.
+nur die Antworten und gibt ein Urteil samt Konfidenz ab. Der Richter erfährt das angegebene Modell (`claimed_model`, falls gesetzt,
+sonst die angefragte ID). Ein Richterurteil ist nur HOCH, wenn der Richter
+**hohe** Konfidenz angab und eine verwertbare Referenz den Unterschied
+bestätigt hat — eine, die auf jede vom Ziel beantwortete Sonde eine nicht
+leere Antwort lieferte. Niedrige, mittlere, fehlende oder unbekannte
+Konfidenz bleibt MITTEL, ebenso eine Referenz, die Fehler lieferte oder
+Sonden unbeantwortet ließ.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `quality_judge.verdict` (Urteil des LLM-Judge) | Der Judge fand die Antworten passend zum angegebenen Modell. | Bestanden | 95 Pkt. |
-|  | Der Judge fand die Antworten dem angegebenen Modell unähnlich (niedrige/mittlere Sicherheit). | Warnung · Mittel | 50 Pkt. |
-|  | Der Judge ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine Baseline). | Warnung · Mittel | 25 Pkt. |
+|  | Der Judge fand die Antworten dem angegebenen Modell unähnlich (niedrige, mittlere oder keine angegebene Sicherheit). | Warnung · Mittel | 50 Pkt. |
+|  | Der Judge ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine verwertbare Baseline). | Warnung · Mittel | 25 Pkt. |
 |  | Der Judge ist sicher, und eine vertrauenswürdige Baseline bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 25 Pkt. |
-|  | Der Judge nannte keine Sicherheit, und eine vertrauenswürdige Baseline bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 50 Pkt. |
 |  | Der Judge kam zu keinem Urteil. | Nicht eindeutig · Niedrig | Nicht gewertet |
 |  | Keine Antworten des Ziels zum Beurteilen. | Nicht eindeutig · Niedrig | Nicht gewertet |
 
@@ -705,6 +708,9 @@ zurückkommen. Ein exaktes Echo besteht, kein Echo (Umschreibung, Verweigerung)
 ist nicht eindeutig, und nur ein **Austausch des Werts** bei erhaltener Struktur
 gilt als Manipulation. Im Vergleichsmodus ist ein Austausch, den die
 vertrauenswürdige Referenz nicht zeigt, KRITISCH.
+Nur eine Referenz, die den Canary unverändert zurückgibt, bestätigt: Liefert sie
+einen Fehler oder nichts Verwertbares, bestätigt sie nichts, und der Austausch
+bleibt MITTEL (Beleg `baseline_unavailable`).
 Eine am Ausgabelimit abgeschnittene Antwort ist nicht eindeutig, kein Austausch.
 
 | Prüfung | Ergebnis | Status | Wirkung |

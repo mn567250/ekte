@@ -436,17 +436,19 @@ Sem perfil na base de conhecimento, o detector é inconclusivo.
 prompts que distinguem gamas (raciocínio em vários passos, uma tarefa de código
 precisa, seguimento de instruções com nuances) vai para o alvo e, no modo de
 comparação, para a referência; um juiz de confiança separado só vê as respostas
-e devolve um veredito com a sua confiança. Um veredito do juiz só é ALTO se uma
-referência tiver corroborado a diferença e o juiz não tiver indicado confiança
-baixa ou média.
+e devolve um veredito com a sua confiança. O juiz recebe o modelo declarado (`claimed_model` se estiver definido; caso
+contrário, o id pedido). Um veredito do juiz só é ALTO se o juiz tiver
+indicado confiança **alta** e uma referência utilizável tiver corroborado a
+diferença — uma que devolveu uma resposta não vazia a cada sonda que o alvo
+respondeu. Uma confiança baixa, média, ausente ou desconhecida fica em
+MÉDIA, tal como uma referência que falhou ou deixou sondas sem resposta.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
 | `quality_judge.verdict` (Veredito do juiz LLM) | O juiz considerou as respostas compatíveis com o modelo declarado. | Aprovado | 95 pts |
-|  | O juiz considerou as respostas diferentes do modelo declarado (confiança baixa/média). | Aviso · Média | 50 pts |
-|  | O juiz tem certeza de que as respostas diferem do modelo declarado (sem referência). | Aviso · Média | 25 pts |
+|  | O juiz considerou as respostas diferentes do modelo declarado (confiança baixa, média ou não indicada). | Aviso · Média | 50 pts |
+|  | O juiz tem certeza de que as respostas diferem do modelo declarado (sem referência utilizável). | Aviso · Média | 25 pts |
 |  | O juiz tem certeza e uma referência confiável corroborou a diferença. | Falha · Alta | 25 pts |
-|  | O juiz não deu confiança e uma referência confiável corroborou a diferença. | Falha · Alta | 50 pts |
 |  | O juiz não conseguiu chegar a um veredito. | Inconclusivo · Baixa | Não contabilizado |
 |  | Não há respostas do alvo para julgar. | Inconclusivo · Baixa | Não contabilizado |
 
@@ -699,6 +701,9 @@ literalmente. Um eco exato é aprovado, a falta de eco (paráfrase, recusa) é
 inconclusiva, e só uma **substituição do valor** que preserva a estrutura conta
 como adulteração. No modo de comparação, uma substituição que a referência de
 confiança não faz é CRÍTICA.
+Só corrobora uma referência que devolve o canário intacto: se falhar ou não
+devolver nada utilizável, não confirma nada e a substituição fica em MÉDIA
+(evidência `baseline_unavailable`).
 Uma resposta cortada no limite de saída é inconclusiva, não uma substituição.
 
 | Verificação | Resultado | Estado | Efeito |
