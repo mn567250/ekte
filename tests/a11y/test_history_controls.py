@@ -1,6 +1,7 @@
-"""History's view controls: the collapsible filter panel, the sort buttons in
-the column header and the per-group collapse toggles (BITV 9.2.1.1, 9.4.1.2,
-9.4.1.3, 9.2.4.3, 9.1.4.3, 9.1.4.10).
+"""History's view controls: the collapsible filter panel (shared with
+Analytics, filterpanel.js), the sort buttons in the column header and the
+per-group collapse toggles (BITV 9.2.1.1, 9.4.1.2, 9.4.1.3, 9.2.4.3, 9.1.4.3,
+9.1.4.10).
 
 Each control is a native button that keeps focus where it was, says its state
 in its name or aria-expanded, and hides what it collapses with ``hidden`` (out
@@ -86,12 +87,23 @@ def _active(page: Page) -> str:
     )
 
 
+# the filter panel's pages: how to open one, its first field, and one filter
+# to set (selector, value)
+FILTER_PAGES = {
+    "history": (lambda op: _history(op), "[data-f=q]", ("[data-f=risk]", "high")),
+    "analytics": (lambda op: op("/v2/analytics"), "[data-range='7']", ("[data-f=source]", "monitor")),
+}
+
+
 @pytest.mark.bitv("9.2.1.1", "9.4.1.2", "9.4.1.3")
-def test_filter_panel_disclosure(open_page) -> None:
+@pytest.mark.parametrize("page_id", list(FILTER_PAGES))
+def test_filter_panel_disclosure(open_page, page_id: str) -> None:
     """Closed by default; Enter/Space open and close it in place, focus stays on
-    the toggle; the toggle counts active filters; the count and reset stay
+    the toggle; the toggle counts active filters and, closed, a line under it
+    names them (also the toggle's description); the count and reset stay
     visible while it is closed; the state survives a reload."""
-    page = _history(open_page)
+    opener, field, (fsel, fval) = FILTER_PAGES[page_id]
+    page = opener(open_page)
     issues: list[str] = []
     tog = page.locator("#ftog")
     if tog.get_attribute("aria-expanded") != "false" or page.locator("#fbody").is_visible():
@@ -103,11 +115,13 @@ def test_filter_panel_disclosure(open_page) -> None:
     tog.focus()
     page.keyboard.press("Enter")
     settle(page)
-    if tog.get_attribute("aria-expanded") != "true" or not page.locator("[data-f=q]").is_visible():
+    if tog.get_attribute("aria-expanded") != "true" or not page.locator(field).is_visible():
         issues.append("Enter did not open the panel")
     if _active(page) != "ftog":
         issues.append(f"focus moved to {_active(page)!r} instead of staying on the toggle")
-    page.locator("[data-f=risk]").select_option("high")
+    if page.locator("#fsum").is_visible():
+        issues.append("the filter summary shows while the panel is open")
+    page.locator(fsel).select_option(fval)
     settle(page)
     name = tog.inner_text()
     if "1 active" not in name:
@@ -119,6 +133,11 @@ def test_filter_panel_disclosure(open_page) -> None:
         issues.append("Space did not close the panel")
     if not page.locator("#freset").is_visible():
         issues.append("Reset filters is hidden with the panel while a filter is active")
+    fsum = page.locator("#fsum")
+    if not fsum.is_visible() or "Monitor" not in fsum.inner_text() and "High" not in fsum.inner_text():
+        issues.append(f"the closed panel does not name the active filter: {fsum.inner_text()!r}")
+    if tog.get_attribute("aria-describedby") != "fsum":
+        issues.append("the closed panel's toggle is not described by the filter summary")
     page.locator("#freset").click()
     settle(page)
     if _active(page) != "ftog":
@@ -130,7 +149,7 @@ def test_filter_panel_disclosure(open_page) -> None:
     settle(page)
     if page.locator("#ftog").get_attribute("aria-expanded") != "true":
         issues.append("open state is not remembered across a reload")
-    assert_no_issues(issues, "history [en]", "filter-panel")
+    assert_no_issues(issues, f"{page_id} [en]", "filter-panel")
 
 
 @pytest.mark.bitv("9.2.1.1", "9.4.1.2", "9.4.1.3", "9.1.3.2")
