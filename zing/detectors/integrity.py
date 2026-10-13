@@ -10,7 +10,9 @@ It is deliberately precise to avoid false positives: an exact echo is PASS, a
 non-echo (the model didn't comply / paraphrased) is INCONCLUSIVE, and only a
 *structure-preserved value substitution* is treated as tampering. A lone
 substitution caps at MEDIUM; in ``compare`` mode, a substitution the trusted
-baseline does NOT make is escalated to CRITICAL.
+baseline does NOT make (it returns the canary intact) is escalated to CRITICAL.
+A baseline that errors or returns nothing usable corroborates nothing, so the
+substitution stays MEDIUM.
 """
 
 from __future__ import annotations
@@ -88,6 +90,11 @@ class IntegrityDetector(Detector):
     async def run(self, ctx: AuditContext) -> DetectorResult:
         result = self.new_result(scoring=SCALE.scoring())
         substitutions: list[str] = []
+        # Per substitution: did the trusted baseline return that canary intact?
+        # Only a baseline that actually answered — verbatim — corroborates; one
+        # that errored or returned nothing usable leaves the substitution
+        # uncorroborated.
+        baseline_intact: list[bool] = []
         verbatim = 0
         noncompliant = 0
 
@@ -101,14 +108,16 @@ class IntegrityDetector(Detector):
                 continue
             sub = canary.substitution(text)
             if sub:
-                # In compare mode, only count it if the trusted baseline kept it intact.
+                intact = False
                 if ctx.has_baseline:
                     base = await self._ask(ctx, canary.prompt, baseline=True)
                     if base is not None and not contains_ci(base, canary.expected):
                         # Baseline also failed to echo it — likely model behavior, not tampering.
                         noncompliant += 1
                         continue
+                    intact = base is not None
                 substitutions.append(sub)
+                baseline_intact.append(intact)
             else:
                 noncompliant += 1
 
@@ -117,7 +126,34 @@ class IntegrityDetector(Detector):
         )
 
         if substitutions:
-            corroborated = ctx.has_baseline
+            confirmed = [sub for sub, ok in zip(substitutions, baseline_intact, strict=True) if ok]
+            corroborated = bool(confirmed)
+            # Compare mode ran, but the baseline errored / answered nothing usable
+            # (empty, cut off) for every substituted canary — it confirmed nothing.
+            baseline_unavailable = ctx.has_baseline and not corroborated
+            if corroborated:
+                unconfirmed = len(substitutions) - len(confirmed)
+                tail = (
+                    " — and the trusted baseline returned it intact, strong evidence "
+                    "of in-flight tampering."
+                    + (
+                        f" ({unconfirmed} other substitution(s) could not be checked: "
+                        "the baseline returned no usable answer for them.)"
+                        if unconfirmed
+                        else ""
+                    )
+                )
+            elif baseline_unavailable:
+                tail = (
+                    ". The trusted baseline returned no usable answer (error, empty or "
+                    "cut off) for the substituted canary value(s), so the substitution is "
+                    "not corroborated; re-run `zing compare` once the baseline answers."
+                )
+            else:
+                tail = (
+                    ". Treat as a strong signal; run `zing compare` against a "
+                    "trusted baseline to confirm."
+                )
             result.findings.append(
                 SCALE.finding(
                     "integrity.verdict",
@@ -126,16 +162,15 @@ class IntegrityDetector(Detector):
                     title="Relay-controlled value substitution detected",
                     summary=(
                         "A known-answer canary came back with its value substituted while "
-                        "its structure was preserved"
-                        + (
-                            " — and the trusted baseline returned it intact, strong evidence "
-                            "of in-flight tampering."
-                            if corroborated
-                            else ". Treat as a strong signal; run `zing compare` against a "
-                            "trusted baseline to confirm."
-                        )
+                        "its structure was preserved" + tail
                     ),
-                    evidence={"substitutions": substitutions, "baseline_corroborated": corroborated},
+                    evidence={
+                        "substitutions": substitutions,
+                        "baseline_corroborated": corroborated,
+                        "baseline_unavailable": baseline_unavailable,
+                        # the substitutions the baseline returned intact
+                        "corroborated_substitutions": confirmed,
+                    },
                     recommendation="A proxy rewriting URLs/package names is a supply-chain risk — stop using it.",
                 )
             )
