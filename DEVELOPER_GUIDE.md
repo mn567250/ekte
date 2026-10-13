@@ -381,6 +381,22 @@ weekday × hour grid (five-step one-hue sequential scale per theme, hatched cell
 for `low_n`, outlined empty cells), `ZingCharts.stackBars` the stacked error
 bars, and `timeChart` takes a `ref` line (100% billing ratio).
 
+The page header and the filter panel sit above five in-page tabs
+(`v2/tabs.js`, as on Tools and Knowledge): each `PANELS` entry names its `tab`,
+and only the shown tab's panels load; a filter change reloads that tab and
+marks the others stale (`activate()` loads them when shown). `tabs.js` takes
+`writeHash: false` here, because the page writes the whole view into the
+fragment itself — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`),
+which **Copy link to this view** copies (a selected read-only field where the
+clipboard API is missing or refuses); a fragment without `tab` opens Overview,
+and a pasted link (`hashchange`) re-reads the view. The collapsible filter
+panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History:
+`ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})`
+returns `render({body, foot, count, summary})`, `sync({count, summary})`,
+`setOpen()` and `focusStart()`; the page owns its filters and fields, the panel
+the toggle with its active-filter badge, the one-line summary shown while
+closed, the remembered open state and **Reset filters**.
+
 **Translation convention.** The Chinese text written in the HTML is the
 original and stays untouched; every element carries its English text in
 `data-en` (and `data-en-placeholder`, `data-en-title`, `data-en-aria-label`).

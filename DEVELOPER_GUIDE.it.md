@@ -410,6 +410,24 @@ per `low_n`, celle vuote solo con contorno), `ZingCharts.stackBars` le barre di
 errore impilate, e `timeChart` accetta una linea `ref` (rapporto di
 fatturazione del 100%).
 
+L'intestazione della pagina e il pannello dei filtri stanno sopra cinque schede
+interne (`v2/tabs.js`, come in Strumenti e Conoscenza): ogni voce di
+`PANELS` indica la sua `tab`, e si caricano solo i pannelli della scheda
+visibile; una modifica dei filtri ricarica quella scheda e segna le altre come
+non aggiornate (`activate()` le carica quando vengono mostrate). Qui `tabs.js`
+riceve `writeHash: false`, perché la pagina scrive da sé l'intera vista nel
+frammento — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), che
+**Copia il link a questa vista** copia (un campo di sola lettura selezionato se
+l'API degli appunti manca o rifiuta); un frammento senza `tab` apre la
+Panoramica, e un link incollato (`hashchange`) rilegge la vista. Il pannello dei
+filtri richiudibile è `v2/filterpanel.js` + `v2/filterpanel.css`, condiviso con
+la Cronologia: `ZingFilterPanel.create(section, {label, title, storeKey, open,
+onReset})` restituisce `render({body, foot, count, summary})`,
+`sync({count, summary})`, `setOpen()` e `focusStart()`; la pagina gestisce i
+propri filtri e campi, il pannello il pulsante con il badge dei filtri attivi,
+il riepilogo di una riga mostrato da chiuso, lo stato aperto memorizzato e
+**Reimposta filtri**.
+
 **Convenzione di traduzione.** Il testo cinese scritto nell'HTML è l'originale e
 resta intatto; ogni elemento porta il suo testo inglese in `data-en` (e
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Il testo inglese è

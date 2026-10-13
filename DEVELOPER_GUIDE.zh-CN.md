@@ -277,6 +277,8 @@ v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`o
 
 每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`ZingCharts.heatmap` 绘制「星期几 × 小时」网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`ZingCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。
 
+页面标题和筛选面板位于五个页内标签页之上（`v2/tabs.js`，与工具和知识库页面相同）：每个 `PANELS` 条目注明所属的 `tab`，只加载当前显示的标签页的面板；筛选变化时重新加载该标签页，其他标签页标记为过期（`activate()` 在显示时加载）。这里给 `tabs.js` 传入 `writeHash: false`，因为页面自己把整个视图写进网址片段——`#tab=trends&range=30&suite=…&metric=…`（`stateQuery()`），**复制此视图的链接**复制的就是它（剪贴板 API 不存在或被拒绝时，改为显示并选中一个只读文本框）；不含 `tab` 的片段打开概览，粘贴进来的链接（`hashchange`）会重新读取视图。可折叠的筛选面板是 `v2/filterpanel.js` + `v2/filterpanel.css`，与检测历史共用：`ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})` 返回 `render({body, foot, count, summary})`、`sync({count, summary})`、`setOpen()` 和 `focusStart()`；页面负责自己的筛选条件和字段，面板负责带生效筛选计数的切换按钮、收起时显示的一行摘要、记住的展开状态以及**重置筛选**。
+
 **翻译约定。** 写在 HTML 中的中文是原文，保持不动；每个元素在 `data-en`（以及
 `data-en-placeholder`、`data-en-title`、`data-en-aria-label`）中携带英文文本。英文文本是
 其他所有语言的查找键。脚本对动态文本使用 `T(zh, en)`，对来自后端的文本（检测器名称、建议、

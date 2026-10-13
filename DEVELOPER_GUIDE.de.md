@@ -409,6 +409,24 @@ Stunde (fünfstufige einfarbige Skala pro Theme, schraffierte Zellen für
 Fehlerbalken, und `timeChart` nimmt eine `ref`-Linie (100 %
 Abrechnungsverhältnis).
 
+Seitenkopf und Filterpanel stehen über fünf seiteninternen Tabs
+(`v2/tabs.js`, wie bei Werkzeuge und Wissen): Jeder `PANELS`-Eintrag
+nennt seinen `tab`, und nur die Bereiche des angezeigten Tabs laden; eine
+Filteränderung lädt diesen Tab neu und markiert die anderen als veraltet
+(`activate()` lädt sie beim Anzeigen). `tabs.js` bekommt hier
+`writeHash: false`, denn die Seite schreibt die ganze Ansicht selbst ins
+Fragment — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), das
+**Link zu dieser Ansicht kopieren** kopiert (ein markiertes schreibgeschütztes
+Feld, wenn die Zwischenablage-API fehlt oder ablehnt); ein Fragment ohne `tab`
+öffnet den Überblick, ein eingefügter Link (`hashchange`) liest die Ansicht neu.
+Das einklappbare Filterpanel ist `v2/filterpanel.js` + `v2/filterpanel.css`,
+gemeinsam mit dem Verlauf: `ZingFilterPanel.create(section, {label, title,
+storeKey, open, onReset})` liefert `render({body, foot, count, summary})`,
+`sync({count, summary})`, `setOpen()` und `focusStart()`; die Seite besitzt ihre
+Filter und Felder, das Panel den Umschalter mit dem Zähler aktiver Filter, die
+einzeilige Zusammenfassung im eingeklappten Zustand, den gemerkten
+Offen-Zustand und **Filter zurücksetzen**.
+
 **Übersetzungskonvention.** Der chinesische Text im HTML ist das Original und
 bleibt unverändert; jedes Element trägt seinen englischen Text in `data-en` (und
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Der englische Text

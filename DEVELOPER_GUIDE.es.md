@@ -407,6 +407,24 @@ celdas vacías solo con contorno), `ZingCharts.stackBars` las barras de errores
 apiladas, y `timeChart` acepta una línea `ref` (ratio de facturación del
 100 %).
 
+La cabecera de la página y el panel de filtros están sobre cinco pestañas
+internas (`v2/tabs.js`, como en Herramientas y Conocimiento): cada
+entrada de `PANELS` indica su `tab`, y solo se cargan los paneles de la pestaña
+visible; un cambio de filtro recarga esa pestaña y marca las demás como
+obsoletas (`activate()` las carga al mostrarlas). Aquí `tabs.js` recibe
+`writeHash: false`, porque la página escribe ella misma toda la vista en el
+fragmento — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), que
+**Copiar el enlace a esta vista** copia (un campo de solo lectura seleccionado
+si falta la API del portapapeles o la rechaza); un fragmento sin `tab` abre el
+Resumen, y un enlace pegado (`hashchange`) vuelve a leer la vista. El panel de
+filtros plegable es `v2/filterpanel.js` + `v2/filterpanel.css`, compartido con
+el Historial: `ZingFilterPanel.create(section, {label, title, storeKey, open,
+onReset})` devuelve `render({body, foot, count, summary})`,
+`sync({count, summary})`, `setOpen()` y `focusStart()`; la página tiene sus
+filtros y campos, el panel el botón con la insignia de filtros activos, el
+resumen de una línea que se muestra plegado, el estado abierto recordado y
+**Restablecer filtros**.
+
 **Convención de traducción.** El texto chino escrito en el HTML es el original y
 no se toca; cada elemento lleva su texto inglés en `data-en` (y
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). El texto inglés es
