@@ -11,6 +11,7 @@ translation.
 from __future__ import annotations
 
 import asyncio
+import re
 import ssl
 import threading
 import time
@@ -20,7 +21,7 @@ from typing import Any
 
 import httpx
 
-from zing.models import CompletionOutcome, RequestSpec, TargetConfig
+from zing.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
 from zing.perf.recorder import (
     RequestRecorder,
     current_net_trace,
@@ -57,6 +58,29 @@ _DEFAULT_OUTPUT_TOKENS = 1024
 # ran out of tokens while thinking (see complete()). Requests that already ask
 # for this much are never repeated.
 REASONING_RETRY_TOKENS = 4096
+# Sampling parameters the client leaves out of a request once the endpoint's
+# model is known not to take them (its profile's ``unsupported_params``, or a 4xx
+# that named one). Reasoning models refuse e.g. ``temperature`` other than 1.
+SAMPLING_PARAMS = frozenset(
+    {"temperature", "top_p", "top_k", "presence_penalty", "frequency_penalty"}
+)
+# Phrases of a 4xx that rejects a request PARAMETER (not the prompt or the key).
+# The parameter itself must also be named in the error for the client to adapt.
+_PARAM_REJECTION_PHRASES = (
+    "unsupported parameter",
+    "unsupported value",
+    "unknown parameter",
+    "unrecognized request argument",
+    "is not supported",
+    "not supported with this model",
+    "does not support",
+    "only the default",
+    "extra inputs are not permitted",
+    "is deprecated",
+    "use 'max_completion_tokens'",
+)
+# Statuses that never mean a parameter was refused.
+_NOT_PARAM_STATUSES = frozenset({401, 403, 404, 408, 409, 413, 429})
 # The httpx timeout of the completion running in this task (see complete()).
 _CALL_TIMEOUT: ContextVar[httpx.Timeout | None] = ContextVar("zing_call_timeout", default=None)
 
@@ -154,6 +178,31 @@ def _with_budget(spec: RequestSpec, name: str, value: int) -> RequestSpec:
     return spec.model_copy(update={"extra_body": {**spec.extra_body, name: value}})
 
 
+def rejected_params(outcome: CompletionOutcome, sent: set[str]) -> set[str]:
+    """The parameters among ``sent`` that a 4xx rejects by name, else empty.
+
+    OpenAI names the field in ``error.param``; other servers only in the message
+    ("Unsupported parameter: 'max_tokens' is not supported with this model").
+    A name only counts as a whole word, so ``max_tokens`` is not found inside
+    "use 'max_completion_tokens' instead".
+    """
+    status = outcome.status_code
+    if outcome.ok or status is None or not 400 <= status < 500 or status in _NOT_PARAM_STATUSES:
+        return set()
+    text = (outcome.error_message or "").lower()
+    if not any(phrase in text for phrase in _PARAM_REJECTION_PHRASES):
+        return set()
+    named = {
+        name for name in sent
+        if re.search(rf"(?<![a-z0-9_]){re.escape(name)}(?![a-z0-9_])", text)
+    }
+    error = (outcome.raw_error or {}).get("error")
+    param = error.get("param") if isinstance(error, dict) else None
+    if isinstance(param, str) and param in sent:
+        named.add(param)
+    return named
+
+
 def shared_ssl_context() -> ssl.SSLContext:
     """The process-wide TLS context (created on first use)."""
     global _SSL_CONTEXT
@@ -193,6 +242,13 @@ class BaseHTTPClient:
         # short probe already needed the reasoning repeat): short probes then go
         # out with ``REASONING_RETRY_TOKENS`` from the start (see complete()).
         self.reasoning_room = False
+        # Request parameters the endpoint's model refuses: set by the runner from
+        # the profile's ``unsupported_params`` and extended (sticky) whenever a
+        # 4xx names a parameter the client can do without. Listed sampling
+        # parameters are left out of requests; on Chat Completions a listed
+        # ``max_tokens`` sends the output limit as ``max_completion_tokens``.
+        # Requests with ``exact_params`` are sent as they are.
+        self.unsupported_params: set[str] = set()
 
     # -- lifecycle ---------------------------------------------------------- #
     async def __aenter__(self):
@@ -294,6 +350,36 @@ class BaseHTTPClient:
     def _headers(self) -> dict[str, str]:
         raise NotImplementedError
 
+    def _build_body(self, spec: RequestSpec) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def _drop_unsupported(self, body: dict[str, Any], spec: RequestSpec) -> dict[str, Any]:
+        """``body`` without the sampling parameters the model refuses."""
+        if spec.exact_params:
+            return body
+        for name in SAMPLING_PARAMS & self.unsupported_params:
+            body.pop(name, None)
+        return body
+
+    def _adaptable(self, spec: RequestSpec, body: dict[str, Any]) -> set[str]:
+        """The parameters of ``body`` the client can adapt when they are
+        rejected (subclasses add their output-limit field)."""
+        return set(SAMPLING_PARAMS & body.keys())
+
+    def _adapt(
+        self, spec: RequestSpec, sent: dict[str, Any], outcome: CompletionOutcome
+    ) -> bool:
+        """Learn from a 4xx that rejected parameters of the body ``sent``; True
+        when the request now goes out differently and is worth repeating (also
+        when a concurrent request already learned the same thing)."""
+        if spec.exact_params:
+            return False
+        named = rejected_params(outcome, self._adaptable(spec, sent))
+        if not named:
+            return False
+        self.unsupported_params |= named
+        return self._build_body(spec) != sent
+
     async def _complete(self, spec: RequestSpec) -> CompletionOutcome:
         raise NotImplementedError
 
@@ -306,24 +392,41 @@ class BaseHTTPClient:
     async def complete(self, spec: RequestSpec) -> CompletionOutcome:
         if self.reasoning_room:
             spec = reasoning_room_spec(spec)
-        outcome = await self._complete_recorded(spec)
+        outcome = await self._complete_adapted(spec)
         retry = reasoning_retry_spec(spec, outcome)
         if retry is not None:
-            outcome = await self._complete_recorded(retry)
+            outcome = await self._complete_adapted(retry)
             # Sticky once the room helped: later short probes get it on their
             # first try instead of being sent twice.
             if outcome.ok and outcome.has_content():
                 self.reasoning_room = True
         return outcome
 
-    async def _complete_recorded(self, spec: RequestSpec) -> CompletionOutcome:
+    async def _complete_adapted(self, spec: RequestSpec) -> CompletionOutcome:
+        """One completion, repeated when a 4xx named a parameter the client can
+        adapt (dropped, or the output limit renamed). The learned names stay in
+        ``unsupported_params``, so later requests go out adapted from the start;
+        each repeat sends a different body from a growing set, so it ends.
+        Rejected attempts are recorded with phase ``param_retry``: the request
+        was zing's, not a relay error."""
+        while True:
+            sent = self._build_body(spec)
+            outcome, record = await self._complete_recorded(spec)
+            if not self._adapt(spec, sent, outcome):
+                return outcome
+            if record is not None:
+                record.phase = "param_retry"
+
+    async def _complete_recorded(
+        self, spec: RequestSpec
+    ) -> tuple[CompletionOutcome, RequestRecord | None]:
         if self.recorder is None:
-            return await self._complete_bounded(spec)
+            return await self._complete_bounded(spec), None
         started = time.perf_counter()
         with net_trace_scope() as net:
             outcome = await self._complete_bounded(spec)
-        self.recorder.record_completion(self.endpoint, spec, outcome, started, net)
-        return outcome
+        record = self.recorder.record_completion(self.endpoint, spec, outcome, started, net)
+        return outcome, record
 
     async def _complete_bounded(self, spec: RequestSpec) -> CompletionOutcome:
         """Run one completion under its timeout budget and hard deadline."""

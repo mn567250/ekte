@@ -95,7 +95,7 @@ class AnthropicClient(BaseHTTPClient):
         # response_format / seed have no Messages-API equivalent — intentionally dropped.
         extra = {k: v for k, v in spec.extra_body.items() if k != "max_completion_tokens"}
         body.update(extra)
-        return body
+        return self._drop_unsupported(body, spec)
 
     @staticmethod
     def _translate_tool(tool: dict[str, Any]) -> dict[str, Any]:

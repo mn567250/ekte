@@ -29,6 +29,10 @@ models:
   supports_json_mode: false
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - temperature
+  - top_p
+  - top_k
   identity_keywords:
   - claude
   - anthropic
@@ -66,6 +70,10 @@ models:
   supports_json_mode: false
   supports_json_schema: true
   usage_in_stream: true
+  unsupported_params:
+  - temperature
+  - top_p
+  - top_k
   identity_keywords:
   - claude
   - anthropic

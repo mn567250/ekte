@@ -269,6 +269,8 @@ async def test_a_faithful_relay_honors_every_parameter_in_few_calls():
     assert {keys[p.name] for p in verified} == {"honored"}
     assert {keys[p.name] for p in params if not p.verify} == {"accepted"}
     assert all(s.capture_raw and s.temperature in (None, 0.5) for s in seen)
+    # The raw rejection is the evidence: the client must not adapt these probes.
+    assert all(s.exact_params for s in seen)
 
 
 async def test_a_rejected_batch_is_retried_one_by_one():

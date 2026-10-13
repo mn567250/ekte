@@ -92,7 +92,7 @@ class ResponsesClient(BaseHTTPClient):
         # response_format / seed / stop have no stable Responses equivalent — dropped.
         extra = {k: v for k, v in spec.extra_body.items() if k != "max_completion_tokens"}
         body.update(extra)
-        return body
+        return self._drop_unsupported(body, spec)
 
     @staticmethod
     def _translate_tool(tool: dict[str, Any]) -> dict[str, Any]:

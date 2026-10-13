@@ -182,7 +182,8 @@ async def test_max_tokens_rejection_switches_to_completion_tokens(knowledge_base
     assert [r.phase for r in rec.records].count("param_retry") == 1
     probe = [r for r in rec.records if r.phase == "probe"]
     assert len(probe) == 3 and all(r.ok for r in probe)
-    assert result.evidence["performance_probe"]["max_completion_tokens"]["target"] is True
+    # The client adapts the request itself (sticky), so the probe never has to.
+    assert result.evidence["performance_probe"]["max_completion_tokens"]["target"] is False
     assert summarize_endpoint(rec.records).errors == 0
 
 
