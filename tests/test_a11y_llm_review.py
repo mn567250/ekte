@@ -921,6 +921,68 @@ def test_main_dry_run_writes_report(monkeypatch: pytest.MonkeyPatch, tmp_path: A
     assert rep["status"] == "dry-run" and len(rep["pages"]) == 3
 
 
+def _review_run(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    _fake_harness(monkeypatch)
+    monkeypatch.setattr(lr, "collect", lambda pages, langs: {"audit": {lg: lr.compact_page(RAW) for lg in langs}})
+
+    def fake_send(self: lr.Client, body: dict[str, Any]) -> dict[str, Any]:
+        self.requests += 1
+        head = json.loads(body["messages"][-1]["content"].split("\n")[1])
+        fs = [F_LINK] if head["task"] == "page" and head.get("lang") == "de" else []
+        return lr.from_openai({"model": "qwen3", "choices": [{"message": {"content": json.dumps({"findings": fs})},
+                                                               "finish_reason": "stop"}]})
+
+    monkeypatch.setattr(lr.Client, "send", fake_send)
+
+
+def _tested_report(path: Any) -> dict[str, Any]:
+    from tests.a11y import conformance
+
+    rep = conformance.build_report({"langs": ["en", "de"], "pages": {"audit": "/v2/"}}, None)
+    path.write_text(json.dumps(rep), encoding="utf-8")
+    return rep
+
+
+LOCAL = ["--base-url", "http://localhost:1234/v1", "--model", "qwen3"]
+
+
+def test_main_update_report_applies_the_review(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+    _review_run(monkeypatch, tmp_path)
+    bitv = tmp_path / "bitv-report.json"
+    before = _tested_report(bitv)
+    assert lr.main([*LOCAL, "--out", str(tmp_path / "r.json"), "--update-report", str(bitv)]) == 0
+    after = json.loads(bitv.read_text(encoding="utf-8"))
+    steps = {s["step"]: s for s in after["steps"]}
+    assert steps["9.2.4.4"]["review"]["by"] == "qwen3" and steps["9.2.4.4"]["review"]["counted"] is True
+    assert after["review"]["method"] == "llm" and after["conformance"]["manual_review"] is True
+    assert after["tested"] == before["tested"]
+    assert {s["status_tests"] for s in after["steps"]} == {s["status"] for s in before["steps"]}
+
+
+def test_main_update_report_leaves_the_report_alone_on_a_dry_run(monkeypatch: pytest.MonkeyPatch, tmp_path: Any, capsys: Any) -> None:
+    _review_run(monkeypatch, tmp_path)
+    bitv = tmp_path / "bitv-report.json"
+    _tested_report(bitv)
+    text = bitv.read_text(encoding="utf-8")
+    assert lr.main([*LOCAL, "--dry-run", "--out", str(tmp_path / "r.json"), "--update-report", str(bitv)]) == 0
+    assert bitv.read_text(encoding="utf-8") == text
+    assert "not changed" in capsys.readouterr().out
+
+
+def test_main_update_report_from_results(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+    from tests.a11y import results
+
+    _review_run(monkeypatch, tmp_path)
+    res = tmp_path / "a11y-results.json"
+    res.write_text(json.dumps(results.build_results({}, {"langs": ["en", "de"], "pages": {"audit": "/v2/"}})), encoding="utf-8")
+    bitv = tmp_path / "new.json"
+    assert lr.main([*LOCAL, "--out", str(tmp_path / "r.json"), "--update-report", str(bitv), "--results", str(res)]) == 0
+    assert json.loads(bitv.read_text(encoding="utf-8"))["review"]["model"] == "qwen3"
+    with pytest.raises(SystemExit):
+        lr.main([*LOCAL, "--results", str(res)])  # --results only with --update-report
+
+
 # --------------------------------------------------------------------------- #
 # in-page extraction against static HTML (needs Playwright + Chromium)
 # --------------------------------------------------------------------------- #
