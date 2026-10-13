@@ -155,6 +155,27 @@ async def test_integrity_tampering_with_clean_baseline_is_critical():
     result = await IntegrityDetector().run(ctx)
     finding = next(f for f in result.findings if f.id == "integrity.tampering")
     assert finding.severity == Severity.CRITICAL
+    assert finding.evidence["baseline_corroborated"] is True
+    assert finding.evidence["baseline_unavailable"] is False
+
+
+class _DownMock:
+    """A baseline that answers every request with HTTP 503."""
+
+    @property
+    def transport(self):
+        return httpx.MockTransport(lambda request: httpx.Response(503, json={"error": {"message": "down"}}))
+
+
+async def test_integrity_tampering_with_errored_baseline_is_not_corroborated():
+    # A baseline that errors confirms nothing: the substitution stays MEDIUM.
+    ctx = await _ctx(IntegrityMock("tamper"), baseline_mock=_DownMock())
+    result = await IntegrityDetector().run(ctx)
+    finding = next(f for f in result.findings if f.id == "integrity.tampering")
+    assert (finding.outcome, finding.severity) == ("tampering", Severity.MEDIUM)
+    assert finding.evidence["baseline_corroborated"] is False
+    assert finding.evidence["baseline_unavailable"] is True
+    assert "no usable answer" in finding.summary
 
 
 async def test_integrity_noncompliance_is_inconclusive():

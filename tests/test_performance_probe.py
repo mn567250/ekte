@@ -225,7 +225,8 @@ def test_reference_check_against_the_baseline():
     slow = [_probe_rec(i, "target", 20.0) for i in range(6)]
     slow += [_probe_rec(10 + i, "baseline", 80.0) for i in range(6)]
     ref = _score(slow)[1]["performance.reference"]
-    assert ref.outcome == "slower" and ref.status == Status.INFO and ref.score == 80
+    # slow but steady hardware is noted, never marked down
+    assert ref.outcome == "slower" and ref.status == Status.INFO and ref.score is None
 
 
 def test_reference_check_against_the_knowledge_base():
@@ -238,7 +239,8 @@ def test_reference_check_against_the_knowledge_base():
     ref = _score(recs, reference=kb)[1]["performance.reference"]
     assert ref.outcome == "faster" and ref.evidence["reference_range"] == "50–120"
     recs = [_probe_rec(i, "target", 15.0) for i in range(6)]
-    assert _score(recs, reference=kb)[1]["performance.reference"].outcome == "slower"
+    ref = _score(recs, reference=kb)[1]["performance.reference"]
+    assert ref.outcome == "slower" and ref.score is None
     # no reference at all: the check is left out rather than penalised
     assert "performance.reference" not in _score(recs)[1]
 

@@ -408,6 +408,13 @@ cuando cambian el comportamiento.
    nunca anulan `identity_forbidden`, las palabras genéricas («ai»,
    «platform», …) nunca cuentan, y la marca propia de una plataforma no cuenta
    para el modelo de otro fabricante que sirve.
+   Las palabras de marca que también son palabras comunes (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`)
+   solo cuentan en esta autoidentificación y solo escritas como nombre
+   («Meta», «Command R», «grok-2»; al inicio de una frase o de un elemento
+   de lista solo con una versión
+   añadida, «Step-2»); en las respuestas de huella nunca cuentan, así que
+   «let me think step by step» no es una marca rival. Un proveedor dueño de
+   una de esas palabras la conserva como propia.
 2. **Huellas de comportamiento** de la base de conocimiento (fecha de corte del
    conocimiento, particularidades del tokenizer, formato, sondas ligadas a un
    idioma, …): hasta seis sondas de código puro, comprobadas con
@@ -423,6 +430,12 @@ cuando cambian el comportamiento.
    `lite`, `8b`, …) o una familia distinta.
 
 Sin perfil en la base de conocimiento, el detector es no concluyente.
+También es no concluyente y sin puntuación (`model_identity.no_evidence`)
+cuando ni la autoidentificación ni ninguna huella devolvieron una respuesta
+utilizable y el campo `model` devuelto no diverge: un relay que rechaza o
+deja vacía cada petición no aporta evidencia de identidad, y el eco del
+nombre solicitado no prueba nada por sí solo. La evidencia parcial puntúa
+con normalidad.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
@@ -440,6 +453,7 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 | `model_identity.model_field` | El campo model devuelto coincidió con el modelo solicitado. | Correcto | Sin deducción |
 |  | El campo model devuelto nombra un modelo distinto o más pequeño. | Advertencia · Media | Sin deducción |
 |  | La respuesta no tenía un campo model utilizable. | No concluyente | Sin deducción |
+| `model_identity.no_evidence` | Ni la autoidentificación ni ninguna huella devolvieron una respuesta utilizable y el campo model no divergió: sin puntuar. | No concluyente | Sin deducción |
 
 ### `quality_judge` — Evaluación de calidad / degradación por un LLM juez
 
@@ -447,17 +461,20 @@ Sin perfil en la base de conocimiento, el detector es no concluyente.
 que distinguen gamas (razonamiento en varios pasos, una tarea de código
 precisa, seguimiento de instrucciones con matices) va al objetivo y, en modo
 comparación, a la referencia; un juez de confianza aparte solo ve las
-respuestas y devuelve un veredicto con su confianza. Un veredicto del juez solo
-es ALTO si una referencia corroboró la diferencia y el juez no indicó una
-confianza baja o media.
+respuestas y devuelve un veredicto con su confianza. Al juez se le indica el modelo declarado (`claimed_model` si está definido;
+si no, el id solicitado). Un veredicto del juez solo es ALTO si el juez
+indicó confianza **alta** y una referencia utilizable corroboró la
+diferencia: una que devolvió una respuesta no vacía para cada sonda que
+respondió el objetivo. Una confianza baja, media, ausente o desconocida se
+queda en MEDIA, igual que una referencia que falló o dejó sondas sin
+responder.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `quality_judge.verdict` (Veredicto del juez LLM) | El juez encontró las respuestas coherentes con el modelo declarado. | Correcto | 95 pts |
-|  | El juez encontró las respuestas distintas del modelo declarado (confianza baja/media). | Advertencia · Media | 50 pts |
-|  | El juez está seguro de que las respuestas difieren del modelo declarado (sin referencia). | Advertencia · Media | 25 pts |
+|  | El juez encontró las respuestas distintas del modelo declarado (confianza baja, media o no indicada). | Advertencia · Media | 50 pts |
+|  | El juez está seguro de que las respuestas difieren del modelo declarado (sin referencia utilizable). | Advertencia · Media | 25 pts |
 |  | El juez está seguro y una referencia de confianza corroboró la diferencia. | Fallo · Alta | 25 pts |
-|  | El juez no dio confianza y una referencia de confianza corroboró la diferencia. | Fallo · Alta | 50 pts |
 |  | El juez no pudo emitir un veredicto. | No concluyente · Baja | No computa |
 |  | No hay respuestas del objetivo que juzgar. | No concluyente · Baja | No computa |
 
@@ -499,6 +516,11 @@ las capacidades del perfil:
   declarada, 2048) tokens; llegar al límite o a una longitud plausible es
   correcto, detenerse por debajo de una cuarta parte se señala.
 
+Una observación sin nada declarado que verificar —ninguna llamada a herramienta
+u objeto JSON cuando la función no se declara, o cualquier resultado del esquema
+estricto cuando el perfil dice que el modelo no tiene esquemas estrictos— se
+anota pero no computa: un modelo nunca pierde puntos por algo que nadie declara.
+
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `capability.tools` | Volvió una llamada a herramienta ante una petición explícita de herramienta. | Correcto | 100 pts |
@@ -507,13 +529,13 @@ las capacidades del perfil:
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.tools.encoding` | Los argumentos de la herramienta llegaron como objeto, no como la cadena JSON de OpenAI. | Advertencia · Baja | No computa |
 | `capability.json_mode` | El modo JSON devolvió un objeto analizable con el valor pedido. | Correcto | 100 pts |
-|  | Volvió un objeto JSON con un valor incorrecto; el modo JSON no se declara. | Info | 70 pts |
-|  | No volvió ningún objeto JSON analizable; el modo JSON no se declara. | Advertencia | 50 pts |
+|  | Volvió un objeto JSON con un valor incorrecto; el modo JSON no se declara. | Info | No computa |
+|  | No volvió ningún objeto JSON analizable; el modo JSON no se declara. | Info | No computa |
 |  | Se declara el modo JSON pero no volvió un objeto válido con el valor. | Fallo · Media | 0 pts |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.json_schema` | Se declara el esquema estricto y la respuesta lo cumplió. | Correcto | 100 pts |
-|  | El esquema estricto no se aplicó, de acuerdo con lo declarado. | Info | 100 pts |
-|  | La respuesta lo cumplió aunque el modelo declarado no tiene esquemas estrictos. | Info | 90 pts |
+|  | El esquema estricto no se aplicó, de acuerdo con lo declarado. | Info | No computa |
+|  | La respuesta lo cumplió aunque el modelo declarado no tiene esquemas estrictos. | Info | No computa |
 |  | Se declara el esquema estricto pero la respuesta no lo cumplió. | Advertencia · Baja | 40 pts |
 |  | No hubo una respuesta útil para evaluar. | No concluyente · Baja | No computa |
 | `capability.max_output` | La salida continuó hasta el tope de tokens solicitado. | Correcto | 100 pts |
@@ -709,6 +731,9 @@ literalmente. Un eco exacto es correcto, la falta de eco (paráfrasis, negativa)
 es no concluyente, y solo una **sustitución del valor** que conserva la
 estructura cuenta como manipulación. En modo comparación, una sustitución que la
 referencia de confianza no hace es CRÍTICA.
+Solo corrobora una referencia que devuelve el canario intacto: si falla o no
+devuelve nada utilizable, no confirma nada y la sustitución se queda en MEDIA
+(evidencia `baseline_unavailable`).
 Una respuesta cortada en el límite de salida es no concluyente, no una sustitución.
 
 | Comprobación | Resultado | Estado | Efecto |
@@ -805,7 +830,7 @@ base de conocimiento.
 | `performance.cache_hit` | Prompts de sondeo únicos volvieron de una caché (excluidos de las estadísticas). | Advertencia · Baja | 60 pts |
 |  | La referencia sirvió prompts únicos desde una caché (no puntúa). | Info | No computa |
 | `performance.reference` | El rendimiento concuerda con la referencia de este modelo. | Correcto | 100 pts |
-|  | Más lento que la referencia (p. ej. local o hardware más pequeño); no es un fallo. | Info | 80 pts |
+|  | Más lento que la referencia (p. ej. local o hardware más pequeño); no es un fallo. | Info | No computa |
 |  | Mucho más rápido que la referencia (compatible con un modelo más pequeño). | Advertencia · Baja | 60 pts |
 | `performance.reasoning` | El modelo gasta tokens de razonamiento ocultos; el TTFT incluye el razonamiento. | Info | No computa |
 | `performance.relay_overhead` | Latencia comparada con la referencia de confianza (solo informativo). | Info | No computa |
@@ -814,7 +839,7 @@ base de conocimiento.
 **Advertencias.** La latencia depende del camino de red y de la carga del
 proveedor en ese momento; repite un mal resultado de constancia en otro
 momento. Los rangos de la base de conocimiento son medianas deliberadamente
-amplias de las API nativas, y un objetivo más lento nunca es un fallo. Todos
+amplias de las API nativas, y un objetivo más lento solo se anota, nunca computa. Todos
 los hallazgos son como mucho de gravedad BAJA: esta dimensión mueve la
 puntuación, nunca el veredicto de riesgo.
 

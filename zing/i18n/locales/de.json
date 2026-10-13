@@ -555,6 +555,10 @@
    "Zurückgegebenes model-Feld",
    "Das model-Feld der Antwort lautet {returned}; angefragt wurde {requested}."
   ],
+  "model_identity.no_evidence": [
+   "Keine verwertbaren Identitätsbelege",
+   "Weder die Selbstidentifikation noch eine Fingerprint-Sonde lieferte eine verwertbare Antwort, und das zurückgegebene model-Feld weicht nicht ab ({checks} Prüfungen); die Identität ist nicht beurteilbar."
+  ],
   "model_identity.fp_aggregate": [
    "Mehrere Verhaltens-Fingerprints weichen ab",
    "{diverged} und weitere reine Code-Fingerprints weichen vom nativen Verhalten ab; prüfen Sie auf Austausch."
