@@ -94,6 +94,13 @@ directement une tromperie sur la marchandise.
 Le niveau de risque dépend de la **gravité des constats**, pas du score. Les
 constats de la dimension connectivité sont exclus : un relais injoignable ou
 limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle répond.
+Les **avertissements de transport** sont exclus aussi (`ADVISORY_CHECKS` dans
+`zing/scoring.py` : `security.tls`, `reliability.success_rate`, `reliability.latency`) : le HTTP en clair, les échecs ou
+la lenteur sous charge disent comment le relais est joint, pas quel modèle il
+sert. Ils abaissent toujours le score et le statut de leur dimension, figurent
+après les constats de substitution parmi les constats clés, et le résumé les
+signale comme avertissements. La falsification des réponses (intégrité) et une
+clé API renvoyée font toujours monter le risque.
 
 | Risque | Libellé dans l'interface | Quand |
 |---|---|---|
@@ -105,8 +112,9 @@ limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle rép
 
 ### Confiance du verdict
 
-- **Faible** — le modèle annoncé est absent de la base de connaissances, ou
-  moins de deux dimensions cœur ont produit un résultat exploitable ;
+- **Faible** — le modèle annoncé est absent de la base de connaissances, ne
+  correspond qu'approximativement à un profil (`match_confidence` `fuzzy` ; le
+  résumé le précise), ou moins de deux dimensions cœur ont produit un résultat exploitable ;
 - **Moyenne** — au moins deux dimensions cœur ont produit un résultat
   exploitable ;
 - **Élevée** — une référence a été utilisée *et* les trois dimensions cœur ont
@@ -201,6 +209,9 @@ canari exact ; relève la latence et le champ `model` renvoyé.
 | `connectivity.chat` | Une complétion de chat a renvoyé du contenu et répété le canari. | Réussi | 100 pts |
 |  | Une complétion de chat a renvoyé du contenu, sans répéter le canari. | Réussi | 85 pts |
 |  | La complétion de chat a échoué ou n'a renvoyé aucun contenu. | Échec · Élevée | 0 pts |
+
+Le statut du détecteur est le pire de ses contrôles : un `/v1/models` désactivé
+donne un Avertissement même si le chat fonctionne.
 
 **Mises en garde.** L'absence de `/v1/models` est bénigne ; beaucoup de relais
 le désactivent. Une erreur réseau passagère ou un 5xx peut faire échouer la
@@ -626,13 +637,17 @@ ou se traîne sous un parallélisme modeste.
 (`--concurrency`, 3 par défaut). Le taux de succès porte sur les requêtes
 réellement tentées : un HTTP 429 est une limitation honnête, comptée à part. Le
 score retire la part d'échecs ; une latence p95 au-delà de 30 s garde 85 % du
-reste.
+reste. Une requête échouée (soit un 5xx passager sur les 8 par défaut), ou au plus
+10 % d'une salve plus grande, est un Avertissement tant qu'au moins 80 % ont
+réussi ; au-delà c'est un Échec. Le statut du détecteur est le pire de ses
+constats. Ce sont des avertissements de transport : ils ne font jamais monter
+le verdict de risque.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `reliability.success_rate` | Toutes les requêtes tentées de la rafale ont réussi. | Réussi | Aucune déduction |
-|  | Jusqu'à 10 % des requêtes tentées ont échoué ; retire la part échouée. | Avertissement · Faible | jusqu'à −10 pts |
-|  | Plus de 10 % des requêtes tentées ont échoué ; retire la part échouée. | Échec · Moyenne | jusqu'à −100 pts |
+|  | Une requête, ou au plus 10 % des requêtes tentées, a échoué (80 %+ réussies) ; retire la part échouée. | Avertissement · Faible | jusqu'à −20 pts |
+|  | Davantage de requêtes ont échoué ; retire la part échouée. | Échec · Moyenne | jusqu'à −100 pts |
 |  | Toutes les requêtes ont été limitées (HTTP 429) : non noté. | Non concluant · Faible | Aucune déduction |
 | `reliability.latency` | Latence p95 au-delà de 30 s sous charge ; retire 15 % du score restant. | Avertissement · Faible | jusqu'à −15 pts |
 | `reliability.rate_limited` | Une partie de la rafale a été limitée : limitation honnête, non comptée. | Info | Aucune déduction |
@@ -664,12 +679,17 @@ n'apparaît jamais telle quelle dans une réponse, et quels en-têtes de répons
 trahissent un amont ou un proxy (`server`, `via`, `x-powered-by`,
 `x-upstream-*`, `x-litellm-*`, … ; à titre indicatif). Il rappelle aussi la
 limite : la journalisation des prompts et les clés amont partagées ne sont pas
-prouvables de l'extérieur.
+prouvables de l'extérieur. Le HTTP en clair vers cette machine ou un réseau privé
+(`localhost`, `127.x`, `192.168.x`, `*.local`, … — un modèle auto-hébergé)
+n'est qu'un Avertissement sans plafond, car la clé ne traverse pas Internet ;
+vers tout autre hôte il reste Échec · Élevée. Dans les deux cas `security.tls`
+est un avertissement de transport et ne fait jamais monter le verdict de risque.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `security.tls` | Le point d'accès utilise HTTPS. | Réussi | Aucune déduction |
 |  | Le point d'accès n'est pas en HTTPS ; la clé API circule en clair. | Échec · Élevée | plafond 40 |
+|  | HTTP en clair vers un hôte local ou du réseau privé ; la clé API ne traverse pas Internet. | Avertissement · Faible | Aucune déduction |
 | `security.key_echo` | La clé API n'apparaît pas dans la réponse. | Réussi | Aucune déduction |
 |  | La clé API apparaît telle quelle dans la réponse. | Échec · Élevée | plafond 30 |
 | `security.headers` | Aucun en-tête de réponse ne révèle l'amont (à titre indicatif). | Réussi | Aucune déduction |

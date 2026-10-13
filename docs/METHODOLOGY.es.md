@@ -94,6 +94,13 @@ un «gato por liebre».
 El nivel de riesgo depende de la **gravedad de los hallazgos**, no de la
 puntuación. Los hallazgos de la dimensión de conectividad quedan fuera: un relay
 caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
+Tampoco cuentan los **avisos de transporte** (`ADVISORY_CHECKS` en
+`zing/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): el HTTP sin cifrar, los fallos o
+la lentitud bajo carga dicen cómo se llega al relay, no qué modelo sirve.
+Siguen bajando la puntuación y el estado de su dimensión, aparecen tras los
+hallazgos de sustitución entre los hallazgos clave y el resumen los menciona
+como avisos. La manipulación de respuestas (integridad) y una clave API
+devuelta siguen elevando el riesgo.
 
 | Riesgo | Etiqueta en la interfaz | Cuándo |
 |---|---|---|
@@ -105,8 +112,9 @@ caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
 
 ### Confianza del veredicto
 
-- **Baja** — el modelo declarado no está en la base de conocimiento, o menos de
-  dos dimensiones núcleo dieron un resultado utilizable;
+- **Baja** — el modelo declarado no está en la base de conocimiento, solo
+  coincide de forma aproximada con un perfil (`match_confidence` `fuzzy`; el
+  resumen lo indica), o menos de dos dimensiones núcleo dieron un resultado utilizable;
 - **Media** — al menos dos dimensiones núcleo dieron un resultado utilizable;
 - **Alta** — se usó una referencia *y* las tres dimensiones núcleo dieron un
   resultado utilizable, o la confianza era media y el juez LLM devolvió un
@@ -200,6 +208,9 @@ exacto; registra la latencia y el campo `model` devuelto.
 | `connectivity.chat` | Una completion de chat devolvió contenido y repitió el canario. | Correcto | 100 pts |
 |  | Una completion de chat devolvió contenido, pero no repitió el canario. | Correcto | 85 pts |
 |  | La completion de chat falló o no devolvió contenido. | Fallo · Alta | 0 pts |
+
+El estado del detector es el peor de sus comprobaciones: un `/v1/models`
+desactivado da una Advertencia aunque el chat funcione.
 
 **Advertencias.** La ausencia de `/v1/models` es benigna; muchos relays la
 desactivan. Un error de red pasajero o un 5xx puede hacer fallar la
@@ -624,13 +635,17 @@ arrastra con un paralelismo moderado.
 (`--concurrency`, 3 por defecto). La tasa de éxito se calcula sobre las
 solicitudes realmente intentadas: un HTTP 429 es una limitación honesta y se
 contabiliza aparte. La puntuación resta la parte fallida; una latencia p95 por
-encima de 30 s conserva el 85 % del resto.
+encima de 30 s conserva el 85 % del resto. Una solicitud fallida (es decir, un
+5xx pasajero de las 8 por defecto), o como mucho el 10 % de una ráfaga mayor, es
+una Advertencia mientras al menos el 80 % tenga éxito; más es un Fallo. El estado
+del detector es el peor de sus hallazgos. Son avisos de transporte: nunca
+elevan el veredicto de riesgo.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `reliability.success_rate` | Todas las solicitudes intentadas de la ráfaga tuvieron éxito. | Correcto | Sin deducción |
-|  | Falló hasta el 10 % de las solicitudes intentadas; resta la parte fallida. | Advertencia · Baja | hasta −10 pts |
-|  | Falló más del 10 % de las solicitudes intentadas; resta la parte fallida. | Fallo · Media | hasta −100 pts |
+|  | Falló una solicitud, o como mucho el 10 % de las intentadas (80 %+ con éxito); resta la parte fallida. | Advertencia · Baja | hasta −20 pts |
+|  | Fallaron más solicitudes; resta la parte fallida. | Fallo · Media | hasta −100 pts |
 |  | Todas las solicitudes fueron limitadas (HTTP 429): no puntúa. | No concluyente · Baja | Sin deducción |
 | `reliability.latency` | Latencia p95 por encima de 30 s bajo carga; resta el 15 % de la puntuación restante. | Advertencia · Baja | hasta −15 pts |
 | `reliability.rate_limited` | Parte de la ráfaga fue limitada: limitación legítima, no computa. | Info | Sin deducción |
@@ -661,12 +676,18 @@ básica de transporte y secretos.
 nunca aparezca literalmente en una respuesta y qué cabeceras de respuesta
 delatan un upstream o proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`,
 `x-litellm-*`, …; informativo). También recuerda el límite: el registro de
-prompts y las claves upstream compartidas no pueden probarse desde fuera.
+prompts y las claves upstream compartidas no pueden probarse desde fuera. El
+HTTP sin cifrar hacia esta máquina o una red privada (`localhost`, `127.x`,
+`192.168.x`, `*.local`, … — un modelo autoalojado) es solo una Advertencia sin
+tope, porque la clave no atraviesa Internet; hacia cualquier otro host sigue
+siendo Fallo · Alta. En ambos casos `security.tls` es un aviso de transporte y
+nunca eleva el veredicto de riesgo.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `security.tls` | El endpoint usa HTTPS. | Correcto | Sin deducción |
 |  | El endpoint no usa HTTPS; la clave API viaja en texto plano. | Fallo · Alta | tope 40 |
+|  | HTTP sin cifrar hacia un host local o de red privada; la clave API no atraviesa Internet. | Advertencia · Baja | Sin deducción |
 | `security.key_echo` | La clave API no aparece en la respuesta. | Correcto | Sin deducción |
 |  | La clave API aparece literalmente en la respuesta. | Fallo · Alta | tope 30 |
 | `security.headers` | Ninguna cabecera de respuesta revela el upstream (solo informativo). | Correcto | Sin deducción |

@@ -1,6 +1,6 @@
 {
  "strings": {
-  "Plain HTTP to a local or private-network host; the API key does not cross the internet.": "通过明文 HTTP 访问本机或内网主机；API key 不会经过公网。",
+  "Plain HTTP to a local or private-network host; the API key does not cross the internet.": "通过明文 HTTP 访问本机或内网主机；API 密钥不会经过公网。",
   "Use https:// if this endpoint is reachable from other machines.": "如果该端点可从其他机器访问，请使用 https://。",
   "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.": "所声称的模型只与知识库档案模糊匹配，因此置信度上限为低——请传入精确的模型 id 或添加知识库别名。",
   "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "传输与可靠性问题（明文 HTTP、压力下失败或变慢）仅作为提示：会拉低得分，但不影响替换风险。"
