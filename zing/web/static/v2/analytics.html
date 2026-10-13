@@ -587,7 +587,11 @@
     var fe = $("#ferr");
     if (fe) fe.textContent = r.error || "";
     syncFilterChrome();
-    if (r.error) return;
+    if (r.error) {
+      // e.g. a link with an incomplete custom range: show the dates to fix
+      if (!fpanel.isOpen()) fpanel.setOpen(true);
+      return;
+    }
     writeState();
     invalidate();
     var seq = ++state.seq.all;
@@ -606,6 +610,9 @@
   // changed while the tab was hidden
   function activate(tab) {
     var loads = [];
+    // an unfinished custom range: nothing loads until it is fixed (the filter
+    // panel says what is wrong)
+    if (rangeOf().error) return Promise.resolve();
     PANELS.forEach(function (p) {
       if (p.tab !== tab || !p.stale) return;
       p.stale = false;
