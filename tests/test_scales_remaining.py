@@ -101,6 +101,41 @@ async def test_capability_failed_probes_are_not_counted(audit_context, mock_serv
     assert result.score is None
 
 
+async def test_capability_unclaimed_json_mode_is_not_counted(audit_context, mock_server):
+    # No profile, plain prose back: no claim to verify, so neither the tool nor
+    # the JSON-mode observation moves the score (and no JSON is not a warning).
+    audit_context.profile = None
+    mock_server.reply_text = "Sure, here you go: status ok, value 7429."
+    result = await CapabilityDetector().run(audit_context)
+    _check(result, _scale_of("capability"))
+    by_check = {f.scale_check: f for f in result.findings}
+    json_mode = by_check["capability.json_mode"]
+    assert (json_mode.outcome, json_mode.status, json_mode.score) == ("no_json", Status.INFO, None)
+    assert by_check["capability.tools"].score is None
+    counted = [f for f in result.findings if f.score is not None]
+    assert [f.scale_check for f in counted] == ["capability.max_output"]
+    assert result.score == counted[0].score
+    assert result.status == counted[0].status  # the short reply stops early
+
+
+@pytest.mark.parametrize(
+    ("reply", "expected"),
+    [('{"name": "Ada", "age": 36}', "over_delivered"), ("Ada is 36.", "absent_as_claimed")],
+)
+async def test_capability_unclaimed_json_schema_is_not_counted(
+    audit_context, mock_server, reply, expected
+):
+    # The profile says strict schemas are unsupported: whatever comes back is
+    # informational and never costs (or earns) the model points.
+    model = audit_context.profile.model.model_copy(update={"supports_json_schema": False})
+    audit_context.profile = audit_context.profile.model_copy(update={"model": model})
+    mock_server.reply_text = reply
+    result = await CapabilityDetector().run(audit_context)
+    _check(result, _scale_of("capability"))
+    schema = next(f for f in result.findings if f.scale_check == "capability.json_schema")
+    assert (schema.outcome, schema.status, schema.score) == (expected, Status.INFO, None)
+
+
 # --------------------------------------------------------------------------- #
 # streaming: buffering signals deduct 40, then 20, then nothing
 # --------------------------------------------------------------------------- #

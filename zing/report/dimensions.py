@@ -36,7 +36,7 @@ from zing.models import (
     Status,
 )
 from zing.report import performance as perf_render
-from zing.scoring import DIMENSION_WEIGHTS
+from zing.scoring import _STATUS_BADNESS, DIMENSION_WEIGHTS
 
 _STATUS_EMOJI: dict[Status, str] = {
     Status.PASS: "✅",
@@ -202,10 +202,6 @@ _METHOD_NOTE = {
 }
 
 
-_WORST = [Status.PASS, Status.INFO, Status.NOT_RUN, Status.INCONCLUSIVE, Status.WARN,
-          Status.ERROR, Status.FAIL]
-
-
 @dataclass
 class _Group:
     """The subjects of one parametrized check (e.g. every response attribute)."""
@@ -216,7 +212,9 @@ class _Group:
 
     @property
     def status(self) -> Status:
-        return max((f.status for f in self.findings), key=_WORST.index)
+        # The scoring module's order, so a group reads like a dimension status
+        # (a warning or failure outranks a detector error).
+        return max((f.status for f in self.findings), key=lambda s: _STATUS_BADNESS.get(s, 0))
 
     @property
     def ok(self) -> int:
@@ -426,7 +424,7 @@ def _html_detector(det: DetectorResult) -> str:
             if isinstance(row, _Group):
                 out.append(
                     f"<tr><td>{_pill(row.status)}</td><td>{_esc(row.title)}</td>"
-                    f"<td>{_esc(row.outline(labels))}{_html_group(row, labels)}</td>"
+                    f"<td>{_esc(row.outline(labels))}{_html_group(row, labels, det.scoring.method)}</td>"
                     f'<td class="num">avg {_esc(_num(row.mean))}</td></tr>'
                 )
                 continue
@@ -455,11 +453,13 @@ def _html_detector(det: DetectorResult) -> str:
     return "".join(out)
 
 
-def _html_group(g: _Group, labels: dict[tuple[str, str], ScoringOutcome]) -> str:
+def _html_group(
+    g: _Group, labels: dict[tuple[str, str], ScoringOutcome], method: str = "mean_of_checks"
+) -> str:
     rows = "".join(
         f"<tr><td>{_pill(f.status)}</td><td><code>{_esc(f.subject)}</code></td>"
         f"<td><code>{_esc(_observed(f))}</code></td><td>{_esc(_label(labels, f))}</td>"
-        f'<td class="num">{_esc(_points(f))}</td></tr>'
+        f'<td class="num">{_esc(_points(f, method))}</td></tr>'
         for f in g.findings
     )
     return (

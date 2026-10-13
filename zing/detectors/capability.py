@@ -11,7 +11,10 @@ Budget: up to 4 chat completions.
 
 Each check scores points from the published scale ``SCALE``; the detector score
 is the mean of the counted checks. A probe that failed to complete is not
-counted, and neither are observations without a claim to verify.
+counted, and neither are observations without a claim to verify: no tool call
+or no JSON object when the feature is not claimed, and the strict-schema result
+when the profile says the model lacks strict schemas. A model that does what it
+was asked without a claim behind it neither gains nor loses points.
 """
 
 from __future__ import annotations
@@ -38,9 +41,9 @@ SCALE = Scale(
             label="Tool arguments arrived as an object, not the JSON string OpenAI returns."),
     outcome("capability.json_mode", "delivered", 100.0, Status.PASS,
             label="JSON mode returned a parseable object with the requested value."),
-    outcome("capability.json_mode", "value_mismatch", 70.0, Status.INFO,
+    outcome("capability.json_mode", "value_mismatch", None, Status.INFO,
             label="A JSON object came back with the wrong value; JSON mode is not claimed."),
-    outcome("capability.json_mode", "no_json", 50.0, Status.WARN,
+    outcome("capability.json_mode", "no_json", None, Status.INFO,
             label="No parseable JSON object came back; JSON mode is not claimed."),
     outcome("capability.json_mode", "not_delivered", 0.0, Status.FAIL, Severity.MEDIUM,
             label="JSON mode is claimed but no valid object with the value came back."),
@@ -48,9 +51,9 @@ SCALE = Scale(
             label=_NO_RESPONSE),
     outcome("capability.json_schema", "honored", 100.0, Status.PASS,
             label="The strict schema is claimed and the response conformed."),
-    outcome("capability.json_schema", "absent_as_claimed", 100.0, Status.INFO,
+    outcome("capability.json_schema", "absent_as_claimed", None, Status.INFO,
             label="The strict schema was not enforced, consistent with the claim."),
-    outcome("capability.json_schema", "over_delivered", 90.0, Status.INFO,
+    outcome("capability.json_schema", "over_delivered", None, Status.INFO,
             label="The response conformed although the claimed model lacks strict schemas."),
     outcome("capability.json_schema", "not_enforced", 40.0, Status.WARN, Severity.LOW,
             label="The strict schema is claimed but the response did not conform."),
