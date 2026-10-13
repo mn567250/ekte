@@ -359,7 +359,7 @@ ihn zurückgeben.
    und ein zweiter Fehlschlag lässt die Größe als **Kürzung von vorn** scheitern
    (in den Belegen des Urteils vermerkt). Höchstens drei Aufrufe pro Größe; die
    Leiter endet beim ersten bestätigten Fehlschlag.
-2. Ein Schritt binärer Suche zwischen der letzten abgerufenen und der ersten
+2. Zwei Schritte binärer Suche zwischen der letzten abgerufenen und der ersten
    gescheiterten Größe.
 3. Lost in the Middle: bei min(32K, gemessenes Fenster) liegt die Nadel in
    Tiefe 0,1, 0,5 und 0,9. Werden Anfang und Ende erinnert, die Mitte aber

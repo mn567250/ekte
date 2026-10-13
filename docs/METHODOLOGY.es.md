@@ -353,7 +353,7 @@ debe devolverlo.
    nueva, y un segundo fallo suspende el tamaño como **truncado por el inicio**
    (indicado en la evidencia del veredicto). Tres llamadas por tamaño como
    mucho; la escalera se detiene en el primer fallo confirmado.
-2. Un paso de búsqueda binaria entre el último tamaño recuperado y el primero
+2. Dos pasos de búsqueda binaria entre el último tamaño recuperado y el primero
    que falló.
 3. Pérdida en el medio: con min(32K, ventana medida), la aguja se coloca en las
    profundidades 0,1, 0,5 y 0,9. Si se recuperan el principio y el final pero no

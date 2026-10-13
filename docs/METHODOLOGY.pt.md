@@ -350,7 +350,7 @@ tem de o devolver.
    reprova o tamanho como **truncagem pelo início** (indicada nas evidências do
    veredicto). No máximo três chamadas por tamanho; a escada para na primeira
    falha confirmada.
-2. Um passo de pesquisa binária entre o último tamanho recuperado e o primeiro
+2. Dois passos de pesquisa binária entre o último tamanho recuperado e o primeiro
    que falhou.
 3. Perda no meio: com min(32K, janela medida), a agulha é colocada nas
    profundidades 0,1, 0,5 e 0,9. Se o início e o fim forem recuperados mas o

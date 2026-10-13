@@ -334,7 +334,7 @@ marker is embedded in non-repetitive filler, and the model must return it.
    miss fails the size as **front truncation** (named in the verdict's
    evidence). At most three calls per size; the ladder stops at the first
    confirmed failure.
-2. One binary-search step between the last recalled and the first failing size.
+2. Two binary-search steps between the last recalled and the first failing size.
 3. Lost-in-the-middle: at min(32K, measured window) the needle is placed at
    depths 0.1, 0.5 and 0.9. If start and end are recalled but the middle is
    not, the middle is probed once more with a fresh needle; only a second miss

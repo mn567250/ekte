@@ -293,6 +293,21 @@ async def test_truncating_endpoint_fails(audit_context):
     assert verdict.evidence["effective_window"] < 60_000
 
 
+async def test_window_between_half_and_top_is_short(audit_context):
+    # 80K of a declared 128K: the two refine steps land it in the WARN band (the
+    # detector FAILs on the separate rejected_below_claim finding).
+    _window_server(audit_context, window=80_000)
+    result = await ContextWindowDetector().run(audit_context)
+    verdict = next(f for f in result.findings if f.check == "context_window.window")
+    assert verdict.id == "context_window.short" and result.status == Status.FAIL
+    assert 0.5 <= verdict.evidence["ratio"] < 0.9
+
+
+def test_classify_413_is_a_size_rejection():
+    o = _outcome(413, "Request Entity Too Large")
+    assert ContextWindowDetector._classify(o, 16000) == (False, True, "rejected")
+
+
 async def test_parameter_rejection_is_inconclusive_not_no_recall(audit_context):
     rejected = CompletionOutcome(
         ok=False, status_code=400,

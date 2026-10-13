@@ -354,7 +354,7 @@ il modello deve restituirlo.
    una volta con un ago nuovo, e un secondo fallimento boccia la dimensione come
    **troncamento in testa** (indicato nelle evidenze del verdetto). Al più tre
    chiamate per dimensione; la scala si ferma al primo fallimento confermato.
-2. Un passo di ricerca binaria tra l'ultima dimensione richiamata e la prima
+2. Due passi di ricerca binaria tra l'ultima dimensione richiamata e la prima
    fallita.
 3. Perdita nel mezzo: a min(32K, finestra misurata) l'ago viene posto alle
    profondità 0,1, 0,5 e 0,9. Se inizio e fine vengono richiamati ma il mezzo

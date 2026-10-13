@@ -353,7 +353,7 @@ répétitif, et le modèle doit le restituer.
    aiguille neuve, et un second échec fait échouer la taille comme **troncature
    par le début** (signalée dans les preuves du verdict). Trois appels par
    taille au plus ; l'échelle s'arrête au premier échec confirmé.
-2. Une étape de recherche dichotomique entre la dernière taille retrouvée et la
+2. Deux étapes de recherche dichotomique entre la dernière taille retrouvée et la
    première en échec.
 3. Perte au milieu : à min(32K, fenêtre mesurée), l'aiguille est placée aux
    profondeurs 0,1, 0,5 et 0,9. Si le début et la fin sont retrouvés mais pas le

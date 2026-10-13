@@ -58,6 +58,10 @@ _CONTEXT_ERROR_HINTS = (
     "exceeds the context",
     "reduce the length of the messages",
     "too many tokens",
+    "prompt is too long",
+    "input is too long",
+    "request too large",
+    "payload too large",
 )
 
 # A 4xx complaining about a request PARAMETER (not the prompt size). Reasoning
@@ -271,23 +275,32 @@ class ContextWindowDetector(Detector):
                 rejected_at = size
             break
 
-        # --- One binary-search refine between last pass and first failure. A
-        # timeout or error here leaves the bounds as they are. ------------------ #
-        if last_pass is not None and first_fail is not None and first_fail > last_pass:
-            mid = (last_pass + first_fail) // 2
-            if last_pass < mid < first_fail:
-                recalled, rejected, status, n = await self._probe_size(
-                    ctx, mid, tokenizer=tokenizer, reasoning=reasoning, errors=errors
-                )
-                calls += n
-                log(mid, recalled, rejected, status, refine=True)
-                if recalled:
-                    last_pass = mid
-                    effective_window = mid
-                elif rejected and rejected_at is None:
-                    rejected_at = mid
-                elif status == "front_truncated":
-                    front_truncated_at = mid
+        # --- Two binary-search refines between last pass and first failure (the
+        # halving ladder leaves a 2x gap; two steps narrow it to 1.25x). A timeout
+        # or error ends the refine and leaves the bounds as they are. ---------- #
+        hi = first_fail
+        for _ in range(2):
+            if last_pass is None or hi is None or hi <= last_pass:
+                break
+            mid = (last_pass + hi) // 2
+            if not last_pass < mid < hi:
+                break
+            recalled, rejected, status, n = await self._probe_size(
+                ctx, mid, tokenizer=tokenizer, reasoning=reasoning, errors=errors
+            )
+            calls += n
+            log(mid, recalled, rejected, status, refine=True)
+            if recalled:
+                last_pass = mid
+                effective_window = mid
+                continue
+            if status == "timeout" or status in _ERROR_STATUSES:
+                break
+            hi = mid
+            if rejected:
+                rejected_at = mid if rejected_at is None else min(rejected_at, mid)
+            elif status == "front_truncated":
+                front_truncated_at = mid
 
         # --- Lost-in-the-middle at a mid size (depths 0.1 / 0.5 / 0.9). ------- #
         depth_results: dict[str, bool | None] = {}
@@ -296,7 +309,8 @@ class ContextWindowDetector(Detector):
         # Only worth spending calls if the mid size is at/below what we know works.
         if (
             mid_size >= floor
-            and (effective_window is None or mid_size <= effective_window)
+            and effective_window is not None
+            and mid_size <= effective_window
             and (stopped_at is None or mid_size < stopped_at)
         ):
             for depth in (0.1, 0.5, 0.9):
@@ -339,7 +353,8 @@ class ContextWindowDetector(Detector):
             else {}
         )
         front_note = _front_note(front_truncated_at) if front_truncated_at is not None else ""
-        if rejected_at is not None and declared and rejected_at < 0.9 * declared:
+        # Below the top rung only: a rejection at the 90% rung is not "well below".
+        if rejected_at is not None and declared and rejected_at < top:
             result.findings.append(
                 SCALE.finding(
                     "context_window.rejected_below_claim",
@@ -353,6 +368,7 @@ class ContextWindowDetector(Detector):
                     recommendation="Treat the advertised context window as unverified.",
                 )
             )
+            result.status = Status.FAIL
 
         verified = (
             f"recall verified up to ~{effective_window} tokens"
@@ -738,6 +754,9 @@ class ContextWindowDetector(Detector):
         code = outcome.status_code
         if code is not None and 400 <= code <= 422:
             text = (outcome.error_message or "").lower()
+            # 413 Payload Too Large is a size rejection whatever its wording.
+            if code == 413:
+                return False, True, "rejected"
             # Context-size rejection takes priority: a clear context phrase is a real
             # ceiling even if the message also names max_tokens.
             if any(hint in text for hint in _CONTEXT_ERROR_HINTS):
