@@ -594,6 +594,171 @@ def test_estimate_tokens_counts_cjk_conservatively() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# endpoint: command line, zing.yaml, environment, defaults
+# --------------------------------------------------------------------------- #
+ZING_YAML = """\
+target:
+  base_url: https://relay.example.com/v1
+  api_key: env:RELAY_KEY
+  model: gpt-4o
+baseline:
+  base_url: https://api.openai.com/v1
+  api_key: env:OPENAI_KEY
+  model: gpt-4o
+judge:
+  base_url: https://judge.example.com/v1
+  api_key: env:JUDGE_KEY
+  model: claude-sonnet-5-5
+"""
+ENV = {"JUDGE_KEY": "sk-judge", "OPENAI_KEY": "sk-openai", "RELAY_KEY": "sk-relay", "ANTHROPIC_API_KEY": "sk-ant"}
+
+
+def _yaml(tmp_path: Any, text: str = ZING_YAML) -> str:
+    f = tmp_path / "zing.yaml"
+    f.write_text(text, encoding="utf-8")
+    return str(f)
+
+
+def test_endpoint_defaults_to_the_anthropic_api(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)  # no ./zing.yaml
+    ep = lr.resolve_endpoint(env={"ANTHROPIC_API_KEY": "sk-ant"})
+    assert ep == lr.Endpoint(lr.API_BASE, "sk-ant", lr.MODEL, "anthropic", "default")
+    assert ep.url == lr.API_URL and ep.official and not ep.local
+    # ANTHROPIC_BASE_URL is the host without /v1 (SDK convention)
+    ep = lr.resolve_endpoint(env={"ANTHROPIC_BASE_URL": "https://gw.example.com", "ANTHROPIC_API_KEY": "k"})
+    assert ep.url == "https://gw.example.com/v1/messages" and ep.source == "env" and ep.api_key == "k"
+    assert not ep.official
+
+
+def test_endpoint_from_zing_yaml_judge_then_baseline_then_target(tmp_path: Any) -> None:
+    cfg = _yaml(tmp_path)
+    ep = lr.resolve_endpoint(config=cfg, env=ENV)
+    assert (ep.base_url, ep.api_key, ep.model, ep.api, ep.source) == (
+        "https://judge.example.com/v1", "sk-judge", "claude-sonnet-5-5", "anthropic", "zing.yaml:judge")
+    no_judge = ZING_YAML.split("judge:")[0]
+    ep = lr.resolve_endpoint(config=_yaml(tmp_path, no_judge), env=ENV)
+    assert (ep.base_url, ep.api_key, ep.api, ep.source) == (
+        "https://api.openai.com/v1", "sk-openai", "openai", "zing.yaml:baseline")
+    ep = lr.resolve_endpoint(config=_yaml(tmp_path, no_judge.split("baseline:")[0]), env=ENV)
+    assert (ep.api_key, ep.model, ep.source) == ("sk-relay", "gpt-4o", "zing.yaml:target")
+    assert ep.url == "https://relay.example.com/v1/chat/completions"
+
+
+def test_endpoint_default_config_is_the_working_directory_zing_yaml(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    _yaml(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert lr.resolve_endpoint(env=ENV).source == "zing.yaml:judge"
+
+
+def test_endpoint_command_line_wins_per_field(tmp_path: Any) -> None:
+    cfg = _yaml(tmp_path)
+    # only the model: URL and key still from the configuration
+    ep = lr.resolve_endpoint(model="claude-opus-5-5", config=cfg, env=ENV)
+    assert (ep.base_url, ep.api_key, ep.model) == ("https://judge.example.com/v1", "sk-judge", "claude-opus-5-5")
+    # the same URL on the command line keeps the configured key
+    ep = lr.resolve_endpoint(base_url="https://judge.example.com/v1/", config=cfg, env=ENV)
+    assert ep.api_key == "sk-judge" and ep.source == "cli"
+    # another URL: no key from the configuration or ANTHROPIC_API_KEY (never sent to another host)
+    ep = lr.resolve_endpoint(base_url="https://other.example.com/v1", model="m", config=cfg, env=ENV)
+    assert ep.api_key == "" and ep.api == "openai"
+    ep = lr.resolve_endpoint(base_url="https://other.example.com/v1", api_key="env:RELAY_KEY", model="m",
+                             api="anthropic", config=cfg, env=ENV)
+    assert (ep.api_key, ep.api) == ("sk-relay", "anthropic")
+    assert ep.url == "https://other.example.com/v1/messages"
+
+
+def test_endpoint_needs_a_model_for_another_url(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    from zing.config import ConfigError
+
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ConfigError, match="--model"):
+        lr.resolve_endpoint(base_url="http://localhost:11434/v1", env={})
+    ep = lr.resolve_endpoint(base_url="http://localhost:11434/v1", model="qwen3", env={})
+    assert ep.local and ep.api == "openai" and ep.api_key == ""
+    assert ep.url == "http://localhost:11434/v1/chat/completions"
+    # a full endpoint URL is used as given
+    assert lr.Endpoint("http://h:1/v1/chat/completions", api="openai").url == "http://h:1/v1/chat/completions"
+
+
+def test_build_request_openai_shape() -> None:
+    rec = lr.page_payload(lr.compact_page(RAW))
+    body = lr.build_request_openai("page", "audit", rec, lang="de", model="qwen3")
+    assert body["model"] == "qwen3" and body["stream"] is True
+    assert [m["role"] for m in body["messages"]] == ["system", "user"]
+    assert body["messages"][0]["content"].startswith(lr.RUBRIC) and '"findings"' in body["messages"][0]["content"]
+    # same user turn as the Messages API request
+    assert body["messages"][1]["content"] == lr.build_request("page", "audit", rec, lang="de")["messages"][0]["content"]
+    assert body["response_format"]["json_schema"]["schema"] == lr.FINDINGS_SCHEMA
+    assert lr.build_request_openai("page", "a", {}, json_schema=False)["response_format"] == {"type": "json_object"}
+    # no Anthropic-only fields
+    assert not {"system", "output_config", "fallbacks", "max_tokens"} & set(body)
+    # relays: no server-side fallback request
+    assert "fallbacks" not in lr.make_request(lr.Endpoint("https://relay.example/v1"), "page", "a", {})
+
+
+def _openai_chunks(parts: list[str], *, finish: str = "stop") -> bytes:
+    ev = [{"model": "qwen3", "choices": [{"index": 0, "delta": {"role": "assistant", "content": ""}}]}]
+    ev += [{"model": "qwen3", "choices": [{"index": 0, "delta": {"content": p}}]} for p in parts]
+    ev += [{"model": "qwen3", "choices": [{"index": 0, "delta": {}, "finish_reason": finish}]},
+           {"model": "qwen3", "choices": [], "usage": {"prompt_tokens": 900, "completion_tokens": 50,
+                                                       "prompt_tokens_details": {"cached_tokens": 100}}}]
+    return ("".join(f"data: {json.dumps(e)}\n\n" for e in ev) + "data: [DONE]\n\n").encode()
+
+
+def test_openai_client_streams_and_is_free_on_a_local_host() -> None:
+    text = "<think>checking</think>\n```json\n" + json.dumps({"findings": [F_LINK]}) + "\n```"
+    seen: list[httpx.Request] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(req)
+        return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=_openai_chunks([text[:15], text[15:]]))
+
+    ep = lr.Endpoint("http://127.0.0.1:11434/v1", "", "qwen3", "openai", "cli")
+    c = lr.Client(endpoint=ep, transport=httpx.MockTransport(handler), sleep=lambda s: None, max_cost=0.0)
+    out = c.send(c.request("page", "audit", {}, lang="en"))
+    assert str(seen[0].url) == "http://127.0.0.1:11434/v1/chat/completions"
+    assert "authorization" not in seen[0].headers and "x-api-key" not in seen[0].headers
+    assert out["stop_reason"] == "end_turn" and out["model"] == "qwen3"
+    assert lr.parse_response(out, "page", "audit", "en")[0]["element"] == 'link "More"'
+    assert c.usage == {"input_tokens": 800, "output_tokens": 50, "cache_read_input_tokens": 100}
+    assert c.cost == 0.0  # a local model costs nothing; max_cost=0 did not stop it
+
+
+def test_openai_client_sends_bearer_and_falls_back_to_json_mode() -> None:
+    seen: list[dict[str, Any]] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        body = json.loads(req.content)
+        seen.append(body)
+        assert req.headers["authorization"] == "Bearer sk-relay"
+        if body["response_format"]["type"] == "json_schema":
+            return httpx.Response(400, json={"error": {"message": "response_format json_schema is not supported"}})
+        answer = {"model": "gpt-x", "choices": [{"message": {"content": json.dumps({"findings": []})},
+                                                 "finish_reason": "stop"}], "usage": {"prompt_tokens": 10}}
+        return httpx.Response(200, json=answer)
+
+    ep = lr.Endpoint("https://relay.example.com/v1", "sk-relay", "gpt-x", "openai", "cli")
+    c = lr.Client(endpoint=ep, transport=httpx.MockTransport(handler), sleep=lambda s: None)
+    assert lr.parse_response(c.send(c.request("page", "a", {})), "page", "a", "en") == []
+    assert [b["response_format"]["type"] for b in seen] == ["json_schema", "json_object"]
+    # later requests go straight to JSON mode
+    c.send(c.request("page", "b", {}))
+    assert seen[-1]["response_format"]["type"] == "json_object" and len(seen) == 3
+    assert c.requests == 2
+
+
+def test_read_sse_openai_maps_finish_reasons_and_broken_streams() -> None:
+    out = lr.read_sse_openai(_openai_chunks(['{"find'], finish="length").decode().splitlines())
+    assert out["stop_reason"] == "max_tokens"
+    with pytest.raises(lr.ReviewError, match="max_tokens"):
+        lr.parse_response(out, "page", "a")
+    with pytest.raises(lr._Retryable):
+        lr.read_sse_openai(['data: {"choices": [{"delta": {"content": "x"}}]}'])
+    assert lr.from_openai({"choices": [{"message": {"content": None, "refusal": "no"}, "finish_reason": "stop"}]})[
+        "stop_reason"] == "refusal"
+
+
+# --------------------------------------------------------------------------- #
 # whole review (mocked API, no browser)
 # --------------------------------------------------------------------------- #
 def test_review_end_to_end() -> None:
@@ -679,11 +844,45 @@ def test_review_dry_run_marks_steps_not_reviewed() -> None:
 # --------------------------------------------------------------------------- #
 def test_main_without_key_writes_a_skipped_report(monkeypatch: pytest.MonkeyPatch, tmp_path: Any, capsys: Any) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+    monkeypatch.chdir(tmp_path)
     out = tmp_path / "r.json"
     assert lr.main(["--out", str(out)]) == 0
     assert "ANTHROPIC_API_KEY is not set" in capsys.readouterr().out
     rep = json.loads(out.read_text(encoding="utf-8"))
     assert rep["status"] == "skipped: no API key" and rep["advisory"] is True
+    assert rep["endpoint"] == {"base_url": lr.API_BASE, "api": "anthropic", "source": "default"}
+
+
+def test_main_bad_config_writes_an_error_report(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+    monkeypatch.chdir(tmp_path)
+    out = tmp_path / "r.json"
+    assert lr.main(["--config", str(tmp_path / "missing.yaml"), "--out", str(out)]) == 0
+    rep = json.loads(out.read_text(encoding="utf-8"))
+    assert rep["status"] == "error" and "missing.yaml" in rep["error"]
+
+
+def test_main_local_endpoint_needs_no_key(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
+    _fake_harness(monkeypatch)
+    monkeypatch.setattr(lr, "collect", lambda pages, langs: {"audit": {lg: lr.compact_page(RAW) for lg in langs}})
+    sent: list[lr.Endpoint] = []
+
+    def fake_send(self: lr.Client, body: dict[str, Any]) -> dict[str, Any]:
+        sent.append(self.endpoint)
+        self.requests += 1
+        return lr.from_openai({"model": "qwen3", "choices": [{"message": {"content": '{"findings": []}'},
+                                                               "finish_reason": "stop"}]})
+
+    monkeypatch.setattr(lr.Client, "send", fake_send)
+    out = tmp_path / "r.json"
+    assert lr.main(["--base-url", "http://localhost:11434/v1", "--model", "qwen3", "--out", str(out)]) == 0
+    rep = json.loads(out.read_text(encoding="utf-8"))
+    assert rep["status"] == "ok" and rep["model"] == "qwen3" and len(sent) == 3
+    assert rep["endpoint"] == {"base_url": "http://localhost:11434/v1", "api": "openai", "source": "cli"}
+    assert rep["pages_reviewed"] == ["audit"] and rep["langs"] == ["en", "de"]
+    assert rep["cost_usd_estimate"] == 0
 
 
 def _fake_harness(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -695,6 +894,7 @@ def _fake_harness(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_main_crash_writes_an_error_report(monkeypatch: pytest.MonkeyPatch, tmp_path: Any, capsys: Any) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.chdir(tmp_path)
     _fake_harness(monkeypatch)
 
     def boom(*a: Any, **k: Any) -> Any:
@@ -712,6 +912,7 @@ def test_main_crash_writes_an_error_report(monkeypatch: pytest.MonkeyPatch, tmp_
 
 def test_main_dry_run_writes_report(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
     _fake_harness(monkeypatch)
     monkeypatch.setattr(lr, "collect", lambda pages, langs: {"audit": {lg: lr.compact_page(RAW) for lg in langs}})
     out = tmp_path / "r.json"

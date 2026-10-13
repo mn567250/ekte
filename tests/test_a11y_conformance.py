@@ -115,7 +115,8 @@ def test_report_without_results_is_honest():
     assert {s["status"] for s in rep["steps"]} == {"not tested", "n/a"}
 
 
-def test_cli_writes_the_report(tmp_path):
+def test_cli_writes_the_report(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)  # no a11y-llm-review.json picked up
     res = tmp_path / "res.json"
     res.write_text(json.dumps(_results()), encoding="utf-8")
     out = tmp_path / "bitv-report.json"
@@ -123,9 +124,10 @@ def test_cli_writes_the_report(tmp_path):
     assert json.loads(out.read_text(encoding="utf-8"))["totals"]["steps"] == 50
 
 
-def test_shard_results_merge_into_the_results_of_one_run(tmp_path):
+def test_shard_results_merge_into_the_results_of_one_run(tmp_path, monkeypatch):
     """CI runs the suite as parallel shards (ZING_A11Y_SHARD); merging their
     results must give exactly what one run over every test writes."""
+    monkeypatch.chdir(tmp_path)  # no a11y-llm-review.json picked up
     axe = results._merge_axe([[_rule("color-contrast", "pass", ["wcag2aa", "wcag143"])]])
     axe2 = results._merge_axe([[_rule("color-contrast", "violation", ["wcag2aa", "wcag143"]),
                                 _rule("image-alt", "pass", ["wcag2a", "wcag111"])]])
@@ -170,3 +172,79 @@ def test_docs_table_lists_every_step_and_marked_tests():
     assert "test_reflow_at_320_css_px" in marked["9.1.4.10"]
     table = conformance.docs_table()
     assert all(f"| {s['step']} |" in table for s in CAT["steps"])
+
+
+# --------------------------------------------------------------------------- #
+# a review of the texts written by tests/a11y/llm_review.py
+# --------------------------------------------------------------------------- #
+def _llm_review(status="ok", verdicts=None, pages=("kb",), langs=("en", "de")):
+    verdicts = verdicts or {}
+    finding = {"page": "kb", "lang": "de", "element": 'link "Mehr"', "problem": "unclear", "suggestion": "Name it"}
+    steps = {
+        s: {"title": s, "verdict": verdicts.get(s, "ok"), "findings": [finding] if verdicts.get(s) == "issues" else []}
+        for s in ("9.1.1.1", "9.1.3.3", "9.2.4.4", "9.2.4.6", "9.3.3.2", "9.3.3.3", "translation")
+    }
+    return {"generated_at": "2026-10-13T00:00:00+00:00", "model": "claude-opus-5-5", "advisory": True,
+            "status": status, "pages_reviewed": list(pages), "langs": list(langs),
+            "endpoint": {"base_url": "http://localhost:11434/v1", "api": "openai", "source": "cli"},
+            "pages": [], "steps": steps}
+
+
+def _by(rep):
+    return {s["step"]: s for s in rep["steps"]}
+
+
+def test_llm_review_counts_as_the_manual_part():
+    rep = conformance.build_report(_results(), _llm_review(verdicts={"9.2.4.4": "issues", "translation": "issues"}))
+    by = _by(rep)
+    assert by["9.1.1.1"]["status"] == "pass"                     # partial, tests passed, review ok
+    assert by["9.1.1.1"]["review"] == {"verdict": "ok", "notes": "", "by": "claude-opus-5-5", "counted": True}
+    assert by["9.2.4.4"]["status"] == "fail"                     # review found an issue
+    assert by["9.2.4.4"]["review"]["notes"] == 'kb [de] link "Mehr": unclear → Name it'
+    assert by["9.3.3.3"]["status"] == "not tested"               # no automated test ran: review alone decides nothing
+    assert by["9.1.4.10"]["status"] == "fail" and "review" not in by["9.1.4.10"]
+    assert rep["conformance"]["manual_review"] is True
+    assert rep["review"]["method"] == "llm" and rep["review"]["model"] == "claude-opus-5-5" and rep["review"]["counted"]
+    assert rep["review"]["translation"]["verdict"] == "issues"
+    assert "localhost" not in json.dumps(rep)                    # the endpoint stays out of the published report
+
+
+def test_failed_tests_are_not_overridden_by_the_review():
+    res = _results()
+    res["steps"]["9.1.1.1"][0]["outcome"] = "failed"
+    assert _by(conformance.build_report(res, _llm_review()))["9.1.1.1"]["status"] == "fail"
+
+
+def test_incomplete_llm_review_changes_no_status():
+    plain = _by(conformance.build_report(_results(), None))
+    # a step only partly reviewed
+    rep = conformance.build_report(_results(), _llm_review(verdicts={"9.1.1.1": "partial"}))
+    assert _by(rep)["9.1.1.1"]["status"] == plain["9.1.1.1"]["status"] == "manual review pending"
+    assert _by(rep)["9.1.1.1"]["review"]["counted"] is False
+    # a review of fewer languages than were tested
+    rep = conformance.build_report(_results(), _llm_review(langs=("en",)))
+    assert _by(rep)["9.1.1.1"]["status"] == "manual review pending"
+    assert rep["review"]["counted"] is False and rep["conformance"]["manual_review"] is False
+
+
+def test_skipped_or_failed_llm_review_is_ignored():
+    plain = conformance.build_report(_results(), None, commit="c", now=dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc))
+    for status in ("skipped: no API key", "error", "dry-run", "skipped: browser harness unavailable"):
+        rep = conformance.build_report(_results(), _llm_review(status=status), commit="c",
+                                       now=dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc))
+        assert rep == plain, status
+
+
+def test_cli_picks_up_the_llm_review_in_the_working_directory(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    res = tmp_path / "res.json"
+    res.write_text(json.dumps(_results()), encoding="utf-8")
+    out = tmp_path / "bitv-report.json"
+    assert conformance.main(["--results", str(res), "--out", str(out)]) == 0
+    assert json.loads(out.read_text(encoding="utf-8"))["review"] is None    # no file: as before
+    (tmp_path / "a11y-llm-review.json").write_text(json.dumps(_llm_review()), encoding="utf-8")
+    assert conformance.main(["--results", str(res), "--out", str(out)]) == 0
+    rep = json.loads(out.read_text(encoding="utf-8"))
+    assert _by(rep)["9.1.1.1"]["status"] == "pass" and rep["conformance"]["manual_review"] is True
+    assert conformance.main(["--results", str(res), "--out", str(out), "--no-llm"]) == 0
+    assert json.loads(out.read_text(encoding="utf-8"))["review"] is None
