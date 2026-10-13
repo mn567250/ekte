@@ -650,6 +650,7 @@ nachdenkt, wird ein spätes erstes Token daher nur vermerkt und nicht als
 Pufferung gezählt; die Signale wenige Chunks und gleichförmige Abstände zählen
 weiter. Ein Stream, der erfolgreich ist, aber keinen Inhalt liefert, ist nicht
 eindeutig und wird nicht bewertet.
+Streamt das Modell sein Reasoning (Reasoning-Deltas, Thinking-Blöcke, Reasoning-Ereignisse der Responses-API), zählt stattdessen das erste Token beider Arten: ein echter Stream beginnt früh mit dem Reasoning, ein Stream, dessen Reasoning und Antwort beide erst ganz am Ende kommen, ist also auch bei einem Reasoning-Modell gepuffert.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|

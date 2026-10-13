@@ -602,6 +602,7 @@ first token is only noted and not counted as buffering; its few-chunks and
 uniform-gaps signals still count. A stream without a usage chunk is flagged
 separately. A stream that succeeds but delivers no content is inconclusive and
 not scored.
+When the model streams its reasoning (reasoning deltas, thinking blocks, Responses reasoning events), the first token of either kind is timed instead: a genuine stream starts reasoning early, so a stream whose reasoning and answer both arrive at the very end is buffering even for a reasoning model.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|

@@ -532,15 +532,15 @@
   ],
   "context_window.no_recall": [
    "Aucune taille ne permet de retrouver l'aiguille",
-   "Même un prompt de ~{smallest_probed} tokens n'est pas retrouvé ; la fenêtre utile est bien inférieure aux {declared} annoncés."
+   "Même un prompt de ~{smallest_probed} jetons n'est pas rappelé ; la fenêtre utile semble très inférieure à la fenêtre sondée de {upper} jetons (déclarée {declared})."
   ],
   "context_window.truncation": [
    "Fenêtre de contexte réelle bien inférieure à l'annonce",
-   "Fenêtre réelle ~{effective_window} << {declared} annoncés (ratio {ratio}, troncature silencieuse suspectée)."
+   "Fenêtre de contexte réelle ~{effective_window} << fenêtre sondée de {upper} jetons (déclarée {declared} ; ratio {ratio}, troncature silencieuse soupçonnée)."
   ],
   "context_window.short": [
    "Fenêtre de contexte réelle inférieure à l'annonce",
-   "Fenêtre réelle ~{effective_window} inférieure aux {declared} annoncés (ratio {ratio}, le rappel se dégrade avant la limite)."
+   "Fenêtre de contexte réelle ~{effective_window} sous la fenêtre sondée de {upper} jetons (déclarée {declared} ; ratio {ratio}, le rappel se dégrade avant la limite)."
   ],
   "context_window.consistent": [
    "Fenêtre de contexte mesurée conforme à l'annonce",

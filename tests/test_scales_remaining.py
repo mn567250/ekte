@@ -234,6 +234,25 @@ async def test_streaming_late_first_token_of_a_plain_model_is_still_buffering():
     assert result.score == 60.0 and result.status == Status.WARN
 
 
+async def test_streaming_streamed_reasoning_early_is_genuine_streaming():
+    # Reasoning deltas from 80 ms on: the stream started early, whatever the
+    # first visible token says.
+    out = _stream("word " * 60, **_LATE).model_copy(update={"first_reasoning_ms": 80.0})
+    result = await _run_streaming(out, reasoning=True)
+    ids = {f.id for f in result.findings}
+    assert "streaming.late_ttft" not in ids and "streaming.reasoning_ttft" not in ids
+    assert result.score == 100.0 and result.evidence["first_reasoning_ms"] == 80.0
+
+
+async def test_streaming_replayed_reasoning_is_buffering_even_for_a_reasoning_model():
+    # Reasoning AND answer only arrive at the very end: a buffered replay.
+    out = _stream("word " * 60, **_LATE).model_copy(update={"first_reasoning_ms": 1880.0})
+    result = await _run_streaming(out, reasoning=True)
+    f = next(f for f in result.findings if f.id == "streaming.late_ttft")
+    assert f.evidence["reasoning_streamed"] is True and f.evidence["ttft_ms"] == 1880.0
+    assert result.score == 60.0 and result.status == Status.WARN
+
+
 async def test_streaming_reasoning_model_still_flags_few_chunks():
     out = _stream("word " * 60, ttft=1900.0, duration=2000.0, chunks=2)
     result = await _run_streaming(out, reasoning=True)

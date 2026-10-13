@@ -639,6 +639,7 @@ que pensa antes de responder, um primeiro token tardio é apenas registrado e n�
 conta como buffer; os sinais de poucos fragmentos e intervalos uniformes
 continuam a contar. Um stream bem-sucedido mas sem conteúdo é inconclusivo e não
 é pontuado.
+Se o modelo transmitir o seu raciocínio (deltas de raciocínio, blocos de thinking, eventos de raciocínio da API Responses), mede-se antes o primeiro token de qualquer tipo: um stream genuíno começa cedo a raciocinar, pelo que um stream cujo raciocínio e resposta chegam ambos no fim é buffering mesmo para um modelo de raciocínio.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|

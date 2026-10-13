@@ -153,6 +153,9 @@ class CompletionOutcome(BaseModel):
     # Timing
     duration_ms: float | None = None
     ttft_ms: float | None = None  # time to first streamed token
+    # Time to the first streamed REASONING delta (reasoning_content, a thinking
+    # block, a Responses reasoning event); None when no reasoning was streamed.
+    first_reasoning_ms: float | None = None
     # Per-event arrival offsets (ms from request start), for fake-stream analysis.
     chunk_timings_ms: list[float] = Field(default_factory=list)
     chunk_count: int = 0

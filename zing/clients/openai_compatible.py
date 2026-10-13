@@ -21,6 +21,7 @@ from zing.models import CompletionOutcome, RequestSpec
 from zing.utils.redact import redact_headers, redact_text
 from zing.utils.sse import (
     extract_content_delta,
+    extract_reasoning_delta,
     extract_tool_calls_delta,
     parse_sse_line,
     try_load_event,
@@ -386,6 +387,7 @@ class OpenAICompatibleClient(BaseHTTPClient):
     async def _complete_stream(self, body: dict[str, Any]) -> CompletionOutcome:
         started = time.perf_counter()
         first_token_at: float | None = None
+        first_reasoning_at: float | None = None
         content_parts: list[str] = []
         tool_call_parts: list[dict[str, Any]] = []
         chunk_timings: list[float] = []
@@ -426,6 +428,8 @@ class OpenAICompatibleClient(BaseHTTPClient):
                     choices = event.get("choices") or []
                     if choices and isinstance(choices[0], dict):
                         finish_reason = choices[0].get("finish_reason") or finish_reason
+                    if first_reasoning_at is None and extract_reasoning_delta(event):
+                        first_reasoning_at = time.perf_counter()
                     delta_text = extract_content_delta(event)
                     if delta_text:
                         if first_token_at is None:
@@ -440,6 +444,9 @@ class OpenAICompatibleClient(BaseHTTPClient):
 
             duration_ms = (time.perf_counter() - started) * 1000
             ttft_ms = (first_token_at - started) * 1000 if first_token_at is not None else None
+            first_reasoning_ms = (
+                (first_reasoning_at - started) * 1000 if first_reasoning_at is not None else None
+            )
             return CompletionOutcome(
                 ok=True,
                 status_code=status_code,
@@ -449,6 +456,7 @@ class OpenAICompatibleClient(BaseHTTPClient):
                 usage=usage,
                 duration_ms=duration_ms,
                 ttft_ms=ttft_ms,
+                first_reasoning_ms=first_reasoning_ms,
                 chunk_timings_ms=chunk_timings,
                 chunk_count=len(chunk_timings),
                 headers=headers,

@@ -532,15 +532,15 @@
   ],
   "context_window.no_recall": [
    "Bei keiner Größe wird die Nadel erinnert",
-   "Selbst ein Prompt von ~{smallest_probed} Tokens wird nicht erinnert; das nutzbare Fenster liegt weit unter den angegebenen {declared}."
+   "Selbst ein Prompt von ~{smallest_probed} Tokens wird nicht erinnert; das nutzbare Fenster liegt weit unter dem geprüften Fenster von {upper} Tokens (angegeben {declared})."
   ],
   "context_window.truncation": [
    "Echtes Kontextfenster weit kleiner als angegeben",
-   "Echtes Kontextfenster ~{effective_window} << angegebene {declared} (Verhältnis {ratio}, Verdacht auf stille Kürzung)."
+   "Echtes Kontextfenster ~{effective_window} << geprüftes Fenster von {upper} Tokens (angegeben {declared}; Verhältnis {ratio}, Verdacht auf stille Kürzung)."
   ],
   "context_window.short": [
    "Echtes Kontextfenster kleiner als angegeben",
-   "Echtes Kontextfenster ~{effective_window} unter den angegebenen {declared} (Verhältnis {ratio}, Erinnerung lässt vor der Grenze nach)."
+   "Echtes Kontextfenster ~{effective_window} unter dem geprüften Fenster von {upper} Tokens (angegeben {declared}; Verhältnis {ratio}, Erinnerung lässt vor der Grenze nach)."
   ],
   "context_window.consistent": [
    "Gemessenes Kontextfenster entspricht der Angabe",

@@ -228,6 +228,7 @@ class AnthropicClient(BaseHTTPClient):
     async def _complete_stream(self, body: dict[str, Any]) -> CompletionOutcome:
         started = time.perf_counter()
         first_token_at: float | None = None
+        first_reasoning_at: float | None = None
         content_parts: list[str] = []
         chunk_timings: list[float] = []
         tool_blocks: dict[int, dict[str, Any]] = {}
@@ -286,6 +287,9 @@ class AnthropicClient(BaseHTTPClient):
                                     first_token_at = time.perf_counter()
                                 content_parts.append(piece)
                                 chunk_timings.append(now)
+                        elif delta.get("type") == "thinking_delta":
+                            if first_reasoning_at is None and delta.get("thinking"):
+                                first_reasoning_at = time.perf_counter()
                         elif delta.get("type") == "input_json_delta":
                             idx = event.get("index", 0)
                             if idx in tool_blocks:
@@ -303,6 +307,9 @@ class AnthropicClient(BaseHTTPClient):
 
             duration_ms = (time.perf_counter() - started) * 1000
             ttft_ms = (first_token_at - started) * 1000 if first_token_at is not None else None
+            first_reasoning_ms = (
+                (first_reasoning_at - started) * 1000 if first_reasoning_at is not None else None
+            )
             tool_calls = [
                 {
                     "id": tb.get("id"),
@@ -328,6 +335,7 @@ class AnthropicClient(BaseHTTPClient):
                 ),
                 duration_ms=duration_ms,
                 ttft_ms=ttft_ms,
+                first_reasoning_ms=first_reasoning_ms,
                 chunk_timings_ms=chunk_timings,
                 chunk_count=len(chunk_timings),
                 headers=headers,

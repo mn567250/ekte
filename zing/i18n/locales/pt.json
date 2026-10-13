@@ -532,15 +532,15 @@
   ],
   "context_window.no_recall": [
    "Nenhum tamanho permite recordar a agulha",
-   "Nem sequer um prompt de ~{smallest_probed} tokens é recordado; a janela útil é muito inferior aos {declared} declarados."
+   "Nem um prompt de ~{smallest_probed} tokens é recordado; a janela útil parece muito inferior à janela sondada de {upper} tokens (declarada {declared})."
   ],
   "context_window.truncation": [
    "Janela de contexto real muito inferior à declarada",
-   "Janela real ~{effective_window} << {declared} declarados (rácio {ratio}, suspeita de truncagem silenciosa)."
+   "Janela de contexto real ~{effective_window} << janela sondada de {upper} tokens (declarada {declared}; rácio {ratio}, suspeita de truncagem silenciosa)."
   ],
   "context_window.short": [
    "Janela de contexto real inferior à declarada",
-   "Janela real ~{effective_window} inferior aos {declared} declarados (rácio {ratio}, a recordação degrada-se antes do limite)."
+   "Janela de contexto real ~{effective_window} abaixo da janela sondada de {upper} tokens (declarada {declared}; rácio {ratio}, a recordação degrada-se antes do limite)."
   ],
   "context_window.consistent": [
    "Janela de contexto medida coerente com a declarada",

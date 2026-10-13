@@ -532,15 +532,15 @@
   ],
   "context_window.no_recall": [
    "Ningún tamaño permite recordar la aguja",
-   "Ni siquiera un prompt de ~{smallest_probed} tokens se recuerda; la ventana útil es muy inferior a los {declared} declarados."
+   "Ni siquiera un prompt de ~{smallest_probed} tokens se recuerda; la ventana útil parece muy inferior a la ventana probada de {upper} tokens (declarada {declared})."
   ],
   "context_window.truncation": [
    "Ventana de contexto real muy inferior a la declarada",
-   "Ventana real ~{effective_window} << {declared} declarados (proporción {ratio}, se sospecha truncado silencioso)."
+   "Ventana de contexto real ~{effective_window} << ventana probada de {upper} tokens (declarada {declared}; proporción {ratio}, se sospecha truncado silencioso)."
   ],
   "context_window.short": [
    "Ventana de contexto real inferior a la declarada",
-   "Ventana real ~{effective_window} inferior a los {declared} declarados (proporción {ratio}, el recuerdo se degrada antes del límite)."
+   "Ventana de contexto real ~{effective_window} por debajo de la ventana probada de {upper} tokens (declarada {declared}; proporción {ratio}, el recuerdo se degrada antes del límite)."
   ],
   "context_window.consistent": [
    "Ventana de contexto medida coherente con la declarada",

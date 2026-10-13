@@ -643,6 +643,7 @@ usage), que piensa antes de responder, un primer token tardío solo se anota y n
 cuenta como búfer; las señales de pocos fragmentos y huecos uniformes siguen
 contando. Un stream que tiene éxito pero no entrega contenido no es concluyente
 y no se puntúa.
+Si el modelo transmite su razonamiento (deltas de razonamiento, bloques de thinking, eventos de razonamiento de la API Responses), se mide en su lugar el primer token de cualquier tipo: un stream genuino empieza a razonar pronto, así que un stream cuyo razonamiento y respuesta llegan ambos al final es buffering incluso para un modelo de razonamiento.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|

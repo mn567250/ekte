@@ -171,7 +171,7 @@ async def test_a_miss_at_both_edges_fails_after_two_calls(audit_context):
 
     audit_context.client.complete = complete
     recalled, rejected, status, n = await ContextWindowDetector()._probe_size(
-        audit_context, 4_000, tokenizer=None, reasoning=False
+        audit_context, 4_000, tokenizer=None
     )
     assert (recalled, rejected, status, n) == (False, False, "no_recall", 2)
 
@@ -187,7 +187,7 @@ async def test_front_truncated_size_takes_three_calls_with_a_fresh_start_needle(
 
     audit_context.client.complete = complete
     recalled, rejected, status, n = await ContextWindowDetector()._probe_size(
-        audit_context, 16_000, tokenizer=None, reasoning=False
+        audit_context, 16_000, tokenizer=None
     )
     assert (recalled, rejected, status, n) == (False, False, "front_truncated", 3)
     assert len(calls) == 3

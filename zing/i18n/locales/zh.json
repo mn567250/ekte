@@ -192,15 +192,15 @@
   ],
   "context_window.no_recall": [
    "没有任何尺寸能回忆出针",
-   "连 ~{smallest_probed} token 的提示都无法回忆；可用窗口远小于声称的 {declared}。"
+   "连 ~{smallest_probed} token 的提示都无法回忆；可用窗口远小于实际探测的 {upper} token 窗口（声称 {declared}）。"
   ],
   "context_window.truncation": [
    "真实上下文窗口远小于声称值",
-   "真实上下文窗口 ~{effective_window} << 声称的 {declared}（占比 {ratio}，疑似静默截断）。"
+   "真实上下文窗口 ~{effective_window} << 实际探测的 {upper} token 窗口（声称 {declared}；占比 {ratio}，疑似静默截断）。"
   ],
   "context_window.short": [
    "真实上下文窗口低于声称值",
-   "真实上下文窗口 ~{effective_window} 低于声称的 {declared}（占比 {ratio}，在到达上限前回忆已退化）。"
+   "真实上下文窗口 ~{effective_window} 低于实际探测的 {upper} token 窗口（声称 {declared}；占比 {ratio}，在到达上限前回忆已退化）。"
   ],
   "context_window.consistent": [
    "实测上下文窗口与声称一致",

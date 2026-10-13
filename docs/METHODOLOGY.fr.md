@@ -646,6 +646,7 @@ son usage), qui réfléchit avant de répondre, un premier jeton tardif est donc
 seulement noté et non compté comme mise en tampon ; les signaux peu de fragments
 et écarts uniformes comptent toujours. Un flux qui réussit mais ne livre aucun
 contenu n'est pas concluant et n'est pas noté.
+Si le modèle diffuse son raisonnement (deltas de raisonnement, blocs de thinking, événements de raisonnement de l'API Responses), c'est le premier jeton de l'un ou l'autre type qui est chronométré : un vrai flux commence tôt à raisonner, donc un flux dont le raisonnement et la réponse arrivent tous deux à la toute fin est mis en tampon, même pour un modèle de raisonnement.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|

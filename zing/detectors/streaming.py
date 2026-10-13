@@ -12,8 +12,10 @@ deducts 15 only when nothing is buffered; a failed stream caps the score at 0.
 
 A reasoning model (claimed by the knowledge base, or reporting reasoning tokens
 in its usage) may think for seconds before its first visible token and then
-write the answer quickly, so for it a late first token is noted, not counted as
-buffering. A stream that succeeds but delivers no content cannot be judged at
+write the answer quickly. When that thinking is streamed (reasoning deltas), the
+first token of either kind decides: a genuine stream starts reasoning early, a
+buffered one replays it at the end. When the thinking is hidden, a late first
+visible token is noted, not counted as buffering. A stream that succeeds but delivers no content cannot be judged at
 all and is inconclusive (no score).
 """
 
@@ -131,10 +133,15 @@ class StreamingDetector(Detector):
 
         content_len = len(out.content or "")
         buffered_signals: list[str] = []
-        # Reasoning models think (silently or as reasoning deltas) before the
-        # first visible token, so a late first token is no buffering signal there.
+        # Reasoning models think before the first visible token. Streamed thinking
+        # is itself a token stream, so the first token of either kind is timed;
+        # only hidden thinking excuses a late first token.
         reasoning_tokens = usage_tokens(out.usage)["reasoning"] or 0
         reasoning = bool(ctx.profile and ctx.profile.model.reasoning) or reasoning_tokens > 0
+        first_ms = min(
+            (t for t in (out.ttft_ms, out.first_reasoning_ms) if t is not None), default=None
+        )
+        hidden_reasoning = reasoning and out.first_reasoning_ms is None
 
         # Signal 1: substantial content delivered in <=2 chunks.
         if content_len >= _MIN_BUFFERED_CHARS and out.chunk_count <= 2:
@@ -157,13 +164,13 @@ class StreamingDetector(Detector):
         # meaningful when enough text was produced to expect multi-chunk streaming.
         if (
             content_len >= _MIN_BUFFERED_CHARS
-            and out.ttft_ms is not None
+            and first_ms is not None
             and out.duration_ms
             and out.duration_ms > 0
         ):
-            ttft_ratio = out.ttft_ms / out.duration_ms
+            ttft_ratio = first_ms / out.duration_ms
             pct = round(ttft_ratio * 100)
-            if ttft_ratio > 0.9 and reasoning:
+            if ttft_ratio > 0.9 and hidden_reasoning:
                 result.findings.append(
                     SCALE.finding(
                         "streaming.reasoning_ttft",
@@ -175,7 +182,7 @@ class StreamingDetector(Detector):
                             "buffering."
                         ),
                         evidence={
-                            "ttft_ms": round(out.ttft_ms, 1),
+                            "ttft_ms": round(first_ms, 1),
                             "duration_ms": round(out.duration_ms, 1),
                             "ttft_ratio": round(ttft_ratio, 3),
                             "reasoning_tokens": reasoning_tokens or None,
@@ -192,7 +199,8 @@ class StreamingDetector(Detector):
                         title="First token arrived late in the stream",
                         summary=f"First token arrived at ~{pct}% of total time (buffered).",
                         evidence={
-                            "ttft_ms": round(out.ttft_ms, 1),
+                            "ttft_ms": round(first_ms, 1),
+                            "reasoning_streamed": out.first_reasoning_ms is not None,
                             "duration_ms": round(out.duration_ms, 1),
                             "ttft_ratio": round(ttft_ratio, 3),
                         },
@@ -272,6 +280,9 @@ class StreamingDetector(Detector):
                 "content_chars": content_len,
                 "duration_ms": round(out.duration_ms, 1) if out.duration_ms else None,
                 "ttft_ms": round(out.ttft_ms, 1) if out.ttft_ms is not None else None,
+                "first_reasoning_ms": (
+                    round(out.first_reasoning_ms, 1) if out.first_reasoning_ms is not None else None
+                ),
                 "usage_present": out.usage is not None,
                 "buffered_signals": buffered_signals,
                 "reasoning": reasoning,

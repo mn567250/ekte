@@ -532,15 +532,15 @@
   ],
   "context_window.no_recall": [
    "Nessuna dimensione permette di ricordare l'ago",
-   "Nemmeno un prompt di ~{smallest_probed} token viene ricordato; la finestra utile è molto inferiore ai {declared} dichiarati."
+   "Nemmeno un prompt di ~{smallest_probed} token viene richiamato; la finestra utile sembra molto inferiore alla finestra sondata di {upper} token (dichiarata {declared})."
   ],
   "context_window.truncation": [
    "Finestra di contesto reale molto inferiore a quella dichiarata",
-   "Finestra reale ~{effective_window} << {declared} dichiarati (rapporto {ratio}, sospetto troncamento silenzioso)."
+   "Finestra di contesto reale ~{effective_window} << finestra sondata di {upper} token (dichiarata {declared}; rapporto {ratio}, sospetto troncamento silenzioso)."
   ],
   "context_window.short": [
    "Finestra di contesto reale inferiore a quella dichiarata",
-   "Finestra reale ~{effective_window} inferiore ai {declared} dichiarati (rapporto {ratio}, il ricordo peggiora prima del limite)."
+   "Finestra di contesto reale ~{effective_window} sotto la finestra sondata di {upper} token (dichiarata {declared}; rapporto {ratio}, il richiamo peggiora prima del limite)."
   ],
   "context_window.consistent": [
    "Finestra di contesto misurata coerente con quella dichiarata",

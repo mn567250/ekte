@@ -50,9 +50,19 @@ honest endpoint was marked divergent. All of them are fixed.
   Performance: "slower than the reference" is not counted. Reliability: one
   transient failure in a small burst is a warning. Connectivity, reliability and
   context-window statuses now match their findings.
+- **Streamed reasoning.** All three clients record when the first streamed
+  reasoning delta arrives (`CompletionOutcome.first_reasoning_ms`). When a model
+  streams its reasoning, the streaming detector times the first token of either
+  kind, so a relay that buffers a reasoning model and replays it at the end is
+  flagged again; only hidden thinking excuses a late first visible token.
+- **One parameter fallback.** The context-window and performance probes no
+  longer carry their own `max_completion_tokens` retry; the client's adaptation
+  covers them (the probe evidence reports the client's renaming).
 - **Clients and reports.** The Responses client sends `response_format` as
   `text.format`. A host name that merely starts with "127." is no longer treated
   as loopback. HTML/PDF report groups show points in the detector's scoring method.
+  Context-window summaries name the probed window (and the declared one beside
+  it), so a capped probe no longer reads as measured against the full claim.
 
 ## [0.20.1] — LLM review of the texts in the accessibility report
 

@@ -268,6 +268,7 @@ class ResponsesClient(BaseHTTPClient):
     async def _complete_stream(self, body: dict[str, Any]) -> CompletionOutcome:
         started = time.perf_counter()
         first_token_at: float | None = None
+        first_reasoning_at: float | None = None
         content_parts: list[str] = []
         chunk_timings: list[float] = []
         # Tool-call args accumulate by output_index across delta/done events.
@@ -311,6 +312,14 @@ class ResponsesClient(BaseHTTPClient):
                                 first_token_at = time.perf_counter()
                             content_parts.append(piece)
                             chunk_timings.append(now)
+                    elif (
+                        isinstance(etype, str)
+                        and etype.startswith("response.reasoning")
+                        and etype.endswith(".delta")
+                    ):
+                        # reasoning_text / reasoning_summary_text deltas
+                        if first_reasoning_at is None and event.get("delta"):
+                            first_reasoning_at = time.perf_counter()
                     elif etype == "response.output_item.added":
                         item = event.get("item") or {}
                         if isinstance(item, dict) and item.get("type") == "function_call":
@@ -350,6 +359,9 @@ class ResponsesClient(BaseHTTPClient):
 
             duration_ms = (time.perf_counter() - started) * 1000
             ttft_ms = (first_token_at - started) * 1000 if first_token_at is not None else None
+            first_reasoning_ms = (
+                (first_reasoning_at - started) * 1000 if first_reasoning_at is not None else None
+            )
             tool_calls = [
                 {
                     "id": meta.get("id"),
@@ -370,6 +382,7 @@ class ResponsesClient(BaseHTTPClient):
                 usage=usage,
                 duration_ms=duration_ms,
                 ttft_ms=ttft_ms,
+                first_reasoning_ms=first_reasoning_ms,
                 chunk_timings_ms=chunk_timings,
                 chunk_count=len(chunk_timings),
                 headers=headers,

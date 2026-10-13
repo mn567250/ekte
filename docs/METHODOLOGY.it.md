@@ -645,6 +645,7 @@ riflette prima di rispondere, un primo token tardivo viene quindi solo annotato
 e non conteggiato come buffering; i segnali pochi chunk e intervalli uniformi
 contano ancora. Uno stream riuscito ma senza contenuti non è conclusivo e non
 viene valutato.
+Se il modello trasmette il suo ragionamento (delta di ragionamento, blocchi di thinking, eventi di ragionamento della Responses API), si misura invece il primo token di qualunque tipo: uno stream genuino inizia presto a ragionare, quindi uno stream in cui ragionamento e risposta arrivano entrambi alla fine è bufferizzato anche per un modello di ragionamento.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|

@@ -216,10 +216,6 @@ class ContextWindowDetector(Detector):
             return result
         top = ladder_sizes[-1]
 
-        # Reasoning models reject max_tokens and require max_completion_tokens; probe
-        # them accordingly so a 400 isn't misread as a context ceiling.
-        reasoning = bool(ctx.profile and getattr(ctx.profile.model, "reasoning", False))
-
         # --- Ascending ladder: find the largest recalling size and the first
         # failing/rejected size above it. Stop after the first failure. Each size is
         # probed at the START edge and a miss is confirmed before it counts. ------ #
@@ -253,7 +249,7 @@ class ContextWindowDetector(Detector):
 
         for size in ladder_sizes:
             recalled, rejected, status, n = await self._probe_size(
-                ctx, size, tokenizer=tokenizer, reasoning=reasoning, errors=errors
+                ctx, size, tokenizer=tokenizer, errors=errors
             )
             calls += n
             log(size, recalled, rejected, status)
@@ -286,7 +282,7 @@ class ContextWindowDetector(Detector):
             if not last_pass < mid < hi:
                 break
             recalled, rejected, status, n = await self._probe_size(
-                ctx, mid, tokenizer=tokenizer, reasoning=reasoning, errors=errors
+                ctx, mid, tokenizer=tokenizer, errors=errors
             )
             calls += n
             log(mid, recalled, rejected, status, refine=True)
@@ -315,7 +311,7 @@ class ContextWindowDetector(Detector):
         ):
             for depth in (0.1, 0.5, 0.9):
                 depth_results[f"{depth:.1f}"], n = await self._probe_depth(
-                    ctx, mid_size, depth, tokenizer=tokenizer, reasoning=reasoning
+                    ctx, mid_size, depth, tokenizer=tokenizer
                 )
                 calls += n
             start_ok = depth_results.get("0.1") is True
@@ -324,7 +320,7 @@ class ContextWindowDetector(Detector):
                 # One missed middle needle may be a benign paraphrase: confirm it
                 # with a fresh needle before calling it lost.
                 depth_results["0.5_retry"], n = await self._probe_depth(
-                    ctx, mid_size, 0.5, tokenizer=tokenizer, reasoning=reasoning, attempt=1
+                    ctx, mid_size, 0.5, tokenizer=tokenizer, attempt=1
                 )
                 calls += n
             if start_ok and end_ok and depth_results.get("0.5_retry") is False:
@@ -455,7 +451,7 @@ class ContextWindowDetector(Detector):
                         title="No probe size recalled the needle",
                         summary=(
                             f"Even a ~{ladder_sizes[0]}-token prompt failed recall; the "
-                            f"usable window appears far below the declared {declared}."
+                            f"usable window appears far below {claim}."
                             + front_note
                         ),
                         evidence={
@@ -613,7 +609,6 @@ class ContextWindowDetector(Detector):
         size: int,
         *,
         tokenizer: str | None,
-        reasoning: bool,
         errors: list[dict] | None = None,
     ) -> tuple[bool, bool, str, int]:
         """Decide recall at ``size``, START edge first.
@@ -639,7 +634,7 @@ class ContextWindowDetector(Detector):
         # (depth, attempt): start, end, then the start again with a fresh needle.
         for depth, attempt in ((0.0, 0), (0.95, 0), (0.0, 1)):
             outcome = await self._probe(
-                ctx, size, depth=depth, tokenizer=tokenizer, reasoning=reasoning, attempt=attempt
+                ctx, size, depth=depth, tokenizer=tokenizer, attempt=attempt
             )
             calls += 1
             recalled, rejected, status = self._classify(outcome, size)
@@ -667,13 +662,12 @@ class ContextWindowDetector(Detector):
         depth: float,
         *,
         tokenizer: str | None,
-        reasoning: bool,
         attempt: int = 0,
     ) -> tuple[bool | None, int]:
         """One lost-in-the-middle probe: ``(recalled, calls)``. A timeout or an
         error answer is unknown (``None``), not a lost needle."""
         outcome = await self._probe(
-            ctx, size, depth=depth, tokenizer=tokenizer, reasoning=reasoning, attempt=attempt
+            ctx, size, depth=depth, tokenizer=tokenizer, attempt=attempt
         )
         recalled, _, status = self._classify(outcome, size)
         if status == "timeout" or status in _ERROR_STATUSES:
@@ -697,7 +691,6 @@ class ContextWindowDetector(Detector):
         *,
         depth: float,
         tokenizer: str | None,
-        reasoning: bool = False,
         attempt: int = 0,
     ) -> CompletionOutcome:
         # A re-probe (attempt > 0) gets a fresh needle, so an answer that merely
@@ -712,30 +705,14 @@ class ContextWindowDetector(Detector):
             _build_haystack, size, needle=needle, depth=depth, tokenizer=tokenizer
         )
         messages = [{"role": "user", "content": haystack}]
-        outcome = await self._call(ctx, messages, use_completion_tokens=reasoning)
-        # A non-reasoning probe that gets a max_tokens parameter rejection is very
-        # likely an unprofiled reasoning model — retry once with max_completion_tokens
-        # rather than misreading the 4xx as a context ceiling.
-        if not reasoning and self._is_param_rejection(outcome):
-            outcome = await self._call(ctx, messages, use_completion_tokens=True)
+        # A model that wants max_completion_tokens gets it from the client (profile
+        # or its first 4xx), so a parameter rejection is never read as a ceiling.
+        outcome = await ctx.client.complete(
+            RequestSpec(messages=messages, temperature=0.0, max_tokens=64)
+        )
         # Stash the needle so the caller's classifier can check recall.
         outcome.headers.setdefault("x-zing-needle", needle)
         return outcome
-
-    @staticmethod
-    async def _call(
-        ctx: AuditContext, messages: list[dict], *, use_completion_tokens: bool
-    ) -> CompletionOutcome:
-        if use_completion_tokens:
-            spec = RequestSpec(
-                messages=messages,
-                temperature=0.0,
-                max_tokens=None,
-                extra_body={"max_completion_tokens": 64},
-            )
-        else:
-            spec = RequestSpec(messages=messages, temperature=0.0, max_tokens=64)
-        return await ctx.client.complete(spec)
 
     @staticmethod
     def _classify(outcome: CompletionOutcome, size: int) -> tuple[bool, bool, str]:
@@ -771,14 +748,3 @@ class ContextWindowDetector(Detector):
         # Other transport errors, 5xx, malformed/empty responses: no answer to judge,
         # so inconclusive like the 4xx errors above — never a recall failure.
         return False, False, "error"
-
-    @staticmethod
-    def _is_param_rejection(outcome: CompletionOutcome) -> bool:
-        """True if a 4xx is rejecting the max_tokens parameter (not the prompt size)."""
-        code = outcome.status_code
-        if code is None or not (400 <= code <= 422):
-            return False
-        text = (outcome.error_message or "").lower()
-        if any(hint in text for hint in _CONTEXT_ERROR_HINTS):
-            return False
-        return any(hint in text for hint in _PARAM_REJECTION_HINTS)
