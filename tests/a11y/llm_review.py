@@ -23,6 +23,9 @@ MODEL. Anthropic Messages and OpenAI-compatible chat-completions endpoints
 (relays, Ollama, LM Studio, vLLM) are both spoken, detected like zing does
 (zing.clients.detect_api). A local endpoint needs no key. ``--dry-run``
 collects the page data and builds the requests without calling the API.
+``--update-report`` then applies the review to the conformance report shown
+at /v2/accessibility (zing/web/static/v2/bitv-report.json, see
+tests/a11y/conformance.py), in the same command.
 
 A report is ALWAYS written to ``--out``, so a broken run can be told apart
 from a run that did not happen. Its top-level ``status`` is one of:
@@ -1712,7 +1715,20 @@ def main(argv: list[str] | None = None) -> int:
         " (a local endpoint costs nothing)",
     )
     ap.add_argument("--dry-run", action="store_true", help="collect and build requests, do not call the API")
+    rep = ap.add_argument_group("accessibility report (python -m tests.a11y.conformance)")
+    rep.add_argument(
+        "--update-report", nargs="?", const="", metavar="REPORT",
+        help="after the review, apply it to the conformance report shown at /v2/accessibility"
+        " (default: zing/web/static/v2/bitv-report.json); an earlier review in it is replaced",
+    )
+    rep.add_argument(
+        "--results", nargs="+", metavar="FILE",
+        help="with --update-report: build the report afresh from these results of the a11y suite"
+        " (ZING_A11Y_RESULTS) instead of updating the existing one",
+    )
     args = ap.parse_args(argv)
+    if args.results and args.update_report is None:
+        ap.error("--results needs --update-report")
 
     try:
         endpoint = resolve_endpoint(
@@ -1774,7 +1790,38 @@ def main(argv: list[str] | None = None) -> int:
     print(f"llm_review: status {report['status']}; {n} advisory finding(s) written to {args.out}")
     for step, s in report["steps"].items():
         print(f"  {step:12} {s['verdict']:12} {len(s['findings'])}")
+    if args.update_report is not None:
+        update_report(report, args.update_report or None, args.results)
     return 0
+
+
+def update_report(review_report: dict[str, Any], path: str | None = None, results: list[str] | None = None) -> bool:
+    """Apply a finished review to the conformance report (``path``, default
+    conformance.DEFAULT_OUT): re-applied to the existing report, or, with
+    ``results``, a report built afresh from the suite's results files. A
+    review that cannot be used (dry run, failed) leaves the report as it is.
+    Never raises (advisory); returns whether the report was written."""
+    from tests.a11y import conformance
+
+    target = Path(path) if path else conformance.DEFAULT_OUT
+    ok, why = conformance.usable_review(review_report)
+    if not ok:
+        print(f"llm_review: {target} not changed: {why}")
+        return False
+    try:
+        if results:
+            loaded = conformance.load_results([Path(r) for r in results])
+            new = conformance.build_report(loaded, review_report, commit=conformance._git_commit())
+        else:
+            old = json.loads(target.read_text(encoding="utf-8"))
+            new = conformance.apply_review(old, review_report, now=_dt.datetime.now(_dt.timezone.utc))
+        conformance.write_report(target, new)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"llm_review: could not update {target}: {type(exc).__name__}: {exc}")
+        return False
+    if not (new.get("review") or {}).get("counted"):
+        print(f"llm_review: note: {(new.get('review') or {}).get('not_counted', 'the review was not counted')}")
+    return True
 
 
 if __name__ == "__main__":

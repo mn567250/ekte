@@ -33,6 +33,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   dry or incomplete review (fewer pages or languages than were tested)
   changes nothing; without the file the report is built as before
   (`--no-llm` forces that). CI runs the review before building the report.
+- **Review and update the report in one command.**
+  `python -m tests.a11y.llm_review --update-report [REPORT]` applies the
+  finished review to `zing/web/static/v2/bitv-report.json` (the file
+  `/v2/accessibility` shows), or builds the report afresh with
+  `--results a11y-results.json`. `python -m tests.a11y.conformance --update
+  REPORT` applies an existing review file without new results. Every step
+  keeps its status from the tests alone (`status_tests`), so a newer review
+  replaces the older one; long review notes are cut at a line and their
+  finding count is kept.
 
 ### Fixed
 

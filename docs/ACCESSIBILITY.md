@@ -147,6 +147,14 @@ page and language changes nothing. Without the file (or with `--no-llm`) the
 report is built from the tests alone. Hand-written notes in the older
 `{"steps": {...}}` form are shown with their step without changing its status.
 
+The page renders `bitv-report.json` only, so a new review shows up once it has
+been applied to that file: `python -m tests.a11y.llm_review --update-report`
+reviews and updates the report in one command, and
+`python -m tests.a11y.conformance --update zing/web/static/v2/bitv-report.json
+--llm a11y-llm-review.json` applies an existing review file without running
+the suite or the review again. Each step keeps its status from the tests
+alone (`status_tests`), so a newer review replaces the older one.
+
 CI runs the suite with `ZING_A11Y_RESULTS`, one results file per shard. The
 `accessibility report` job merges them (`--results` takes several files),
 generates the report even when tests fail and uploads `bitv-report.json` with

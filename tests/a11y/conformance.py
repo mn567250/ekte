@@ -1,6 +1,7 @@
 """BITV 2.0 / EN 301 549 conformance report of web UI v2.
 
     python -m tests.a11y.conformance --results a11y-results.json [--llm a11y-llm-review.json | --no-llm]
+    python -m tests.a11y.conformance --update zing/web/static/v2/bitv-report.json [--llm …]
     python -m tests.a11y.conformance --docs
 
 ``--results`` takes the per-step results the a11y suite writes with
@@ -11,7 +12,11 @@ numbered as EN 301 549 / BITV 9.x.x.x) how it is tested and the latest result.
 ``--llm`` merges a review of the texts (default: ``./a11y-llm-review.json``
 when it exists, as tests/a11y/llm_review.py writes it). A completed LLM review
 counts as the manual part of the steps it covers (see apply_review); without
-one the report is built from the tests alone.
+one the report is built from the tests alone. ``--update`` re-applies a review
+to an existing report (no results files needed): each step keeps its status
+from the tests alone (``status_tests``), so an older review is replaced, not
+stacked. ``python -m tests.a11y.llm_review --update-report`` does the same
+right after a review.
 
 ``--docs`` rewrites the coverage table in docs/ACCESSIBILITY.md from the
 catalogue (zing/web/static/v2/bitv-catalogue.json, the single source of truth)
@@ -24,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import copy
 import datetime as _dt
 import json
 import re
@@ -46,6 +52,7 @@ AUTOMATION = ("auto", "partial", "manual", "n/a")
 STATUSES = ("pass", "fail", "not tested", "manual review pending", "n/a")
 MAX_FAILURES = 5
 MAX_MESSAGE = 600
+MAX_NOTES = 4000
 DEFAULT_LLM = Path("a11y-llm-review.json")
 # llm_review.py report statuses whose verdicts can be used
 REVIEW_USABLE = ("ok", "partial")
@@ -118,9 +125,15 @@ def _review_notes(llm: dict[str, Any] | None) -> tuple[dict[str, dict[str, Any]]
             verdict = v.get("verdict") or v.get("status") or v.get("result")
         else:
             notes, verdict = v, None
+        count = len(notes) if isinstance(notes, list) else None
         if isinstance(notes, list):
             notes = "\n".join(_note_line(n) for n in notes)
-        out[step] = {"verdict": str(verdict) if verdict is not None else None, "notes": str(notes)[:4000]}
+        notes = str(notes)
+        if len(notes) > MAX_NOTES:
+            notes = notes[: notes.rfind("\n", 0, MAX_NOTES) if "\n" in notes[:MAX_NOTES] else MAX_NOTES] + "\n…"
+        out[step] = {"verdict": str(verdict) if verdict is not None else None, "notes": notes}
+        if count:  # the notes are cut at 4000 characters; the count is not
+            out[step]["count"] = count
     meta = {k: llm[k] for k in ("model", "generated_at", "method", "source", "note") if isinstance(llm, dict) and k in llm}
     return out, meta
 
@@ -158,7 +171,7 @@ def _reviewed_scope(llm: dict[str, Any]) -> tuple[set[str], set[str]]:
     return {str(p) for p in pages if p}, {str(lg) for lg in langs if lg}
 
 
-def apply_review(entry: dict[str, Any], verdict: str | None, counted: bool) -> str:
+def _reviewed_status(entry: dict[str, Any], verdict: str | None, counted: bool) -> str:
     """The step status with the LLM review as its manual part. Only a
     counted review changes it: 'issues' fails the step; 'ok' passes a step
     whose automated part passed (or that has none). A failing or untested
@@ -207,45 +220,22 @@ def build_report(
     now: _dt.datetime | None = None,
     commit: str | None = None,
 ) -> dict[str, Any]:
+    """The report from the suite's results, with a review of the texts (or
+    hand-written notes) applied by apply_review."""
     cat = cat or catalogue()
     results = results or {}
     by_step: dict[str, list[dict[str, Any]]] = results.get("steps") or {}
-    llm_run = is_llm_review(llm)
-    if llm_run and not usable_review(llm)[0]:
-        llm = None
-    review, review_meta = _review_notes(llm)
-    covered = False
-    if llm_run and llm:
-        r_pages, r_langs = _reviewed_scope(llm)
-        tested_pages = set(results.get("pages") or {})
-        tested_langs = set(results.get("langs") or [])
-        covered = bool(r_pages) and tested_pages <= r_pages and tested_langs <= r_langs
-        review_meta = {**(review_meta or {}), "method": "llm", "counted": covered}
-        if not covered:
-            review_meta["not_counted"] = "the review did not cover every tested page and language"
-        tr = (llm.get("steps") or {}).get("translation")
-        if isinstance(tr, dict):
-            review_meta["translation"] = {
-                "verdict": tr.get("verdict"),
-                "notes": "\n".join(_note_line(n) for n in tr.get("findings") or [])[:4000],
-            }
     steps: list[dict[str, Any]] = []
     for c in cat["steps"]:
         s = _summarize(by_step.get(c["step"], []))
-        entry = {
+        status = step_status(c["automation"], [e.get("outcome", "") for e in by_step.get(c["step"], [])])
+        steps.append({
             "step": c["step"], "wcag": c["wcag"], "level": c["level"], "title": c["title"],
             "automation": c["automation"], "how": c["how"],
-            "status": step_status(c["automation"], [e.get("outcome", "") for e in by_step.get(c["step"], [])]),
+            # status_tests: from the tests alone; status: with the review applied
+            "status": status, "status_tests": status,
             "tests": s["counts"], "test_names": s["test_names"], "failures": s["failures"],
-        }
-        if c["step"] in review:
-            entry["review"] = review[c["step"]]
-            if llm_run:
-                verdict = review[c["step"]]["verdict"]
-                counted = covered and verdict in ("ok", "issues") and c["automation"] != "n/a"
-                entry["review"].update(by=(llm or {}).get("model") or "LLM", counted=counted)
-                entry["status"] = apply_review(entry, verdict, counted)
-        steps.append(entry)
+        })
     known = {c["step"] for c in cat["steps"]}
     beyond = []
     for step in sorted(set(by_step) - known, key=_step_key):
@@ -260,18 +250,9 @@ def build_report(
             "percent": _pct(sum(1 for e in applicable if e["automation"] == a), n_app) if a != "n/a" else None}
         for a in AUTOMATION
     }
-    status = {
-        st: {"count": sum(1 for e in steps if e["status"] == st),
-             "percent": _pct(sum(1 for e in applicable if e["status"] == st), n_app) if st != "n/a" else None}
-        for st in STATUSES
-    }
     test_outcomes = [t.get("outcome") for t in (results.get("tests") or {}).values()]
-    # a completed LLM review of the texts counts as the recorded manual review
-    # (the report names its model); otherwise none is recorded yet
-    manual_review = any((e.get("review") or {}).get("counted") for e in steps)
-    all_pass = n_app > 0 and all(e["status"] == "pass" for e in applicable)
     now = now or _dt.datetime.now(_dt.timezone.utc)
-    return {
+    report = {
         "schema": SCHEMA,
         "standards": cat["standards"],
         "generated_at": now.isoformat(timespec="seconds"),
@@ -284,15 +265,12 @@ def build_report(
             "themes": results.get("themes") or [],
             "pages": results.get("pages") or {},
         },
-        "conformance": {
-            "status": "fully conformant" if all_pass and manual_review else "partially conformant",
-            "manual_review": manual_review,
-        },
+        "conformance": {},
         "totals": {
             "steps": len(steps),
             "applicable": n_app,
             "automation": automation,
-            "status": status,
+            "status": {},
             "tests": {
                 "run": sum(1 for o in test_outcomes if o in ("passed", "failed")),
                 "passed": test_outcomes.count("passed"),
@@ -302,8 +280,86 @@ def build_report(
         },
         "steps": steps,
         "beyond": beyond,
-        "review": review_meta if review else None,
+        "review": None,
     }
+    return apply_review(report, llm)
+
+
+def _refresh_status(report: dict[str, Any]) -> None:
+    """totals.status and the conformance headline from the steps' statuses."""
+    steps = report["steps"]
+    applicable = [e for e in steps if e["automation"] != "n/a"]
+    n_app = len(applicable)
+    report["totals"]["status"] = {
+        st: {"count": sum(1 for e in steps if e["status"] == st),
+             "percent": _pct(sum(1 for e in applicable if e["status"] == st), n_app) if st != "n/a" else None}
+        for st in STATUSES
+    }
+    # a completed LLM review of the texts counts as the recorded manual review
+    # (the report names its model); otherwise none is recorded yet
+    manual_review = any((e.get("review") or {}).get("counted") for e in steps)
+    all_pass = n_app > 0 and all(e["status"] == "pass" for e in applicable)
+    report["conformance"] = {
+        "status": "fully conformant" if all_pass and manual_review else "partially conformant",
+        "manual_review": manual_review,
+    }
+
+
+def apply_review(
+    report: dict[str, Any], llm: dict[str, Any] | None, now: _dt.datetime | None = None
+) -> dict[str, Any]:
+    """``report`` (a built report, e.g. the committed bitv-report.json) with
+    ``llm`` applied in place of any earlier review: every step starts again
+    from its status from the tests alone (``status_tests``), so applying a
+    newer review never stacks on an older one. A review that is not usable
+    (skipped, failed, dry run) or None leaves the tests-only statuses.
+    Coverage is checked against the report's tested pages and languages.
+    ``now`` (when given) re-stamps generated_at. Returns a new report."""
+    rep = copy.deepcopy(report)
+    llm_run = is_llm_review(llm)
+    if llm_run and not usable_review(llm)[0]:
+        llm = None
+    review, review_meta = _review_notes(llm)
+    covered = False
+    if llm_run and llm:
+        r_pages, r_langs = _reviewed_scope(llm)
+        tested = rep.get("tested") or {}
+        tested_pages = set(tested.get("pages") or {})
+        tested_langs = set(tested.get("languages") or [])
+        covered = bool(r_pages) and tested_pages <= r_pages and tested_langs <= r_langs
+        review_meta = {**(review_meta or {}), "method": "llm", "counted": covered}
+        if not covered:
+            review_meta["not_counted"] = "the review did not cover every tested page and language"
+        tr = (llm.get("steps") or {}).get("translation")
+        if isinstance(tr, dict):
+            review_meta["translation"] = {
+                "verdict": tr.get("verdict"),
+                "notes": "\n".join(_note_line(n) for n in tr.get("findings") or [])[:4000],
+            }
+    for entry in rep["steps"]:
+        entry["status"] = entry.setdefault("status_tests", entry["status"])
+        entry.pop("review", None)
+        if entry["step"] not in review:
+            continue
+        entry["review"] = review[entry["step"]]
+        if llm_run:
+            verdict = review[entry["step"]]["verdict"]
+            counted = covered and verdict in ("ok", "issues") and entry["automation"] != "n/a"
+            entry["review"].update(by=(llm or {}).get("model") or "LLM", counted=counted)
+            entry["status"] = _reviewed_status(entry, verdict, counted)
+    rep["review"] = review_meta if review else None
+    _refresh_status(rep)
+    if now is not None:
+        rep["generated_at"] = now.isoformat(timespec="seconds")
+    return rep
+
+
+def summary_line(report: dict[str, Any]) -> str:
+    t = report["totals"]["status"]
+    return (
+        f"{t['pass']['count']} pass, {t['fail']['count']} fail, {t['not tested']['count']} not tested, "
+        f"{t['manual review pending']['count']} manual review pending, {t['n/a']['count']} n/a"
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -408,6 +464,40 @@ def merge_results(parts: list[dict[str, Any]]) -> dict[str, Any]:
     return merged
 
 
+def load_results(paths: list[Path]) -> dict[str, Any] | None:
+    """The suite's results files (one per CI shard) merged, or None."""
+    parts = []
+    for path in paths:
+        if path.exists():
+            parts.append(json.loads(path.read_text(encoding="utf-8")))
+        else:
+            print(f"warning: {path} not found", file=sys.stderr)
+    if not parts:
+        print("warning: no results found, every step is reported as not tested", file=sys.stderr)
+        return None
+    return merge_results(parts)
+
+
+def load_review(path: Path | None) -> dict[str, Any] | None:
+    """A review file (llm_review.py's report or hand-written notes), or None;
+    says on stderr whether an LLM review is used or ignored and why."""
+    if path is None:
+        return None
+    if not path.exists():
+        print(f"warning: {path} not found, no review notes merged", file=sys.stderr)
+        return None
+    llm = json.loads(path.read_text(encoding="utf-8"))
+    if is_llm_review(llm):
+        ok, why = usable_review(llm)
+        print(f"{'using' if ok else 'ignoring'} {path}" + (f": {why}" if why else ""), file=sys.stderr)
+    return llm
+
+
+def write_report(path: Path, report: dict[str, Any]) -> None:
+    path.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"wrote {path}: {summary_line(report)}")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m tests.a11y.conformance", description=__doc__.split("\n\n")[0])
     ap.add_argument(
@@ -415,45 +505,32 @@ def main(argv: list[str] | None = None) -> int:
         help="per-step results written by the a11y suite (ZING_A11Y_RESULTS); several files (one per CI shard) are merged",
     )
     ap.add_argument(
+        "--update", type=Path, metavar="REPORT",
+        help="re-apply the review to an existing report (e.g. the committed bitv-report.json) instead of building it"
+        " from --results; written back to REPORT unless --out is given",
+    )
+    ap.add_argument(
         "--llm", type=Path,
         help=f"review of the texts (tests/a11y/llm_review.py) or notes per step (default: ./{DEFAULT_LLM} if present)",
     )
     ap.add_argument("--no-llm", action="store_true", help="build the report from the tests alone")
-    ap.add_argument("--out", type=Path, default=DEFAULT_OUT, help=f"report to write (default: {DEFAULT_OUT.relative_to(ROOT)})")
+    ap.add_argument("--out", type=Path, help=f"report to write (default: {DEFAULT_OUT.relative_to(ROOT)})")
     ap.add_argument("--docs", action="store_true", help="rewrite the coverage table in docs/ACCESSIBILITY.md")
     args = ap.parse_args(argv)
-    if not args.results and not args.docs:
-        ap.error("give --results and/or --docs")
+    if not args.results and not args.docs and not args.update:
+        ap.error("give --results, --update and/or --docs")
+    if args.results and args.update:
+        ap.error("--results builds a new report, --update changes an existing one: give one of them")
     if args.docs:
         print(("updated " if update_docs() else "unchanged ") + str(DOCS.relative_to(ROOT)))
+    llm_path = None if args.no_llm else (args.llm or (DEFAULT_LLM if DEFAULT_LLM.is_file() else None))
     if args.results:
-        parts = []
-        for path in args.results:
-            if path.exists():
-                parts.append(json.loads(path.read_text(encoding="utf-8")))
-            else:
-                print(f"warning: {path} not found", file=sys.stderr)
-        results = merge_results(parts) if parts else None
-        if results is None:
-            print("warning: no results found, every step is reported as not tested", file=sys.stderr)
-        llm = None
-        llm_path = None if args.no_llm else (args.llm or (DEFAULT_LLM if DEFAULT_LLM.is_file() else None))
-        if llm_path:
-            if llm_path.exists():
-                llm = json.loads(llm_path.read_text(encoding="utf-8"))
-                if is_llm_review(llm):
-                    ok, why = usable_review(llm)
-                    print(f"{'using' if ok else 'ignoring'} {llm_path}" + (f": {why}" if why else ""), file=sys.stderr)
-            else:
-                print(f"warning: {llm_path} not found, no review notes merged", file=sys.stderr)
-        report = build_report(results, llm, commit=_git_commit())
-        args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-        t = report["totals"]
-        print(
-            f"wrote {args.out}: {t['status']['pass']['count']} pass, {t['status']['fail']['count']} fail, "
-            f"{t['status']['not tested']['count']} not tested, "
-            f"{t['status']['manual review pending']['count']} manual review pending, {t['status']['n/a']['count']} n/a"
-        )
+        report = build_report(load_results(args.results), load_review(llm_path), commit=_git_commit())
+        write_report(args.out or DEFAULT_OUT, report)
+    if args.update:
+        old = json.loads(args.update.read_text(encoding="utf-8"))
+        report = apply_review(old, load_review(llm_path), now=_dt.datetime.now(_dt.timezone.utc))
+        write_report(args.out or args.update, report)
     return 0
 
 

@@ -248,3 +248,52 @@ def test_cli_picks_up_the_llm_review_in_the_working_directory(tmp_path, monkeypa
     assert _by(rep)["9.1.1.1"]["status"] == "pass" and rep["conformance"]["manual_review"] is True
     assert conformance.main(["--results", str(res), "--out", str(out), "--no-llm"]) == 0
     assert json.loads(out.read_text(encoding="utf-8"))["review"] is None
+
+
+def test_a_review_applied_to_a_built_report_equals_building_with_it():
+    now = dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc)
+    llm = _llm_review(verdicts={"9.2.4.4": "issues"})
+    built = conformance.build_report(_results(), llm, now=now, commit="c")
+    applied = conformance.apply_review(conformance.build_report(_results(), None, now=now, commit="c"), llm)
+    assert applied == built
+
+
+def test_a_newer_review_replaces_the_older_one():
+    base = conformance.build_report(_results(), None)
+    first = conformance.apply_review(base, _llm_review(verdicts={"9.1.1.1": "issues"}))
+    assert _by(first)["9.1.1.1"]["status"] == "fail" and _by(first)["9.1.1.1"]["status_tests"] == "manual review pending"
+    second = conformance.apply_review(first, _llm_review())
+    assert second == conformance.apply_review(base, _llm_review())
+    assert _by(second)["9.1.1.1"]["status"] == "pass"
+    # an unusable review, or none, goes back to the tests alone
+    for llm in (None, _llm_review(status="error")):
+        back = conformance.apply_review(first, llm)
+        assert back == base
+    assert base["totals"]["status"]["fail"]["count"] == 1     # 9.1.4.10 only
+
+
+def test_long_review_notes_are_cut_at_a_line_and_counted():
+    many = [{"page": "kb", "lang": "de", "element": f'link "{i}"', "problem": "p" * 80} for i in range(200)]
+    llm = _llm_review(verdicts={"9.2.4.4": "issues"})
+    llm["steps"]["9.2.4.4"]["findings"] = many
+    r = _by(conformance.build_report(_results(), llm))["9.2.4.4"]["review"]
+    assert r["count"] == 200 and r["notes"].endswith("\n…") and len(r["notes"]) <= conformance.MAX_NOTES + 2
+    assert all(line.startswith("kb [de]") for line in r["notes"].split("\n")[:-1])
+
+
+def test_cli_update_reapplies_the_review_to_an_existing_report(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    rep = tmp_path / "bitv-report.json"
+    rep.write_text(json.dumps(conformance.build_report(_results(), None)), encoding="utf-8")
+    review = tmp_path / "review.json"
+    review.write_text(json.dumps(_llm_review(verdicts={"9.2.4.4": "issues"})), encoding="utf-8")
+    assert conformance.main(["--update", str(rep), "--llm", str(review)]) == 0
+    out = json.loads(rep.read_text(encoding="utf-8"))
+    assert _by(out)["9.2.4.4"]["status"] == "fail" and out["review"]["model"] == "claude-opus-5-5"
+    # a report committed before status_tests existed works too
+    old = conformance.build_report(_results(), None)
+    for s in old["steps"]:
+        s.pop("status_tests")
+    rep.write_text(json.dumps(old), encoding="utf-8")
+    assert conformance.main(["--update", str(rep), "--llm", str(review)]) == 0
+    assert _by(json.loads(rep.read_text(encoding="utf-8")))["9.1.1.1"]["status"] == "pass"
