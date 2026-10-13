@@ -13,8 +13,9 @@ Each check scores points from the published scale ``SCALE``; the detector score
 is the mean of the counted checks. A probe that failed to complete is not
 counted, and neither are observations without a claim to verify: no tool call
 or no JSON object when the feature is not claimed, and the strict-schema result
-when the profile says the model lacks strict schemas. A model that does what it
-was asked without a claim behind it neither gains nor loses points.
+when the profile says the model lacks strict schemas. A model is never marked
+down for what nobody claimed (a tool call or JSON object that does come back
+still passes).
 """
 
 from __future__ import annotations
@@ -261,10 +262,11 @@ class CapabilityDetector(Detector):
     async def _check_json_schema(self, ctx, result, model) -> None:
         """Strict json_schema: verify when claimed; flag over-delivery when not.
 
-        If the profile says the genuine model lacks strict json_schema but the
-        relay enforces it flawlessly, that is a substitute red flag. If the model
-        is claimed to support it, just verify it works. Single call; skipped when
-        we have no profile to anchor the claim.
+        If the model is claimed to support it, verify it works. If the profile
+        says the genuine model lacks strict json_schema, a conforming object is
+        noted as a faint substitute hint and a non-conforming one as consistent —
+        neither is counted. Single call; skipped when we have no profile to
+        anchor the claim.
         """
         if model is None:
             return  # Nothing to compare against — skip to stay within budget.

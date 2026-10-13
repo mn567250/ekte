@@ -468,8 +468,8 @@ profile's capability flags:
 
 An observation without a claim to verify — no tool call or JSON object when the
 feature is not claimed, or any strict-schema result when the profile says the
-model lacks strict schemas — is noted but not counted: a model is neither marked
-down nor credited for what nobody claimed.
+model lacks strict schemas — is noted but not counted, so a model is never
+marked down for what nobody claimed.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|

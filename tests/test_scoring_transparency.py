@@ -292,7 +292,31 @@ def test_html_group_rows_use_the_detector_scoring_method():
     page = render_html(report)
     assert "<code>b</code>" in page and '<td class="num">−20</td>' in page
     assert '<td class="num">no deduction</td>' in page
-    assert "| `b` | — | Bad. | −20 |" in render_markdown(report)
+    md = render_markdown(report)
+    assert "| `b` | — | Bad. | −20 |" in md
+    # the group row sums its subjects' deductions rather than averaging scores
+    assert "| Attributes | 1 of 3 OK; b (Bad.); c (Errored.) | −20 |" in md
+    assert page.count('<td class="num">−20</td>') == 2  # the group row and subject b
+
+
+def test_pdf_group_rows_use_the_detector_scoring_method():
+    pytest.importorskip("reportlab")
+    from reportlab.platypus import Paragraph, Table
+
+    from zing.report.pdf import _dimension_detector
+
+    def texts(flowables) -> list[str]:
+        out = []
+        for fl in flowables:
+            if isinstance(fl, Paragraph):
+                out.append(fl.getPlainText())
+            elif isinstance(fl, Table):
+                out += texts(c for row in fl._cellvalues for c in row)
+        return out
+
+    cells = texts(_dimension_detector(_deduction_report().detectors[0]))
+    assert cells.count("−20") == 2  # the group row and subject b
+    assert "no deduction" in cells and "not counted" not in cells
 
 
 def test_group_status_follows_the_scoring_order():

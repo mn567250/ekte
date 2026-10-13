@@ -495,8 +495,8 @@ alle capacità del profilo:
 Un'osservazione senza una dichiarazione da verificare — nessuna chiamata a
 strumento o oggetto JSON quando la funzione non è dichiarata, o qualsiasi esito
 dello schema rigoroso quando il profilo dice che il modello non ha schemi
-rigorosi — viene annotata ma non conteggiata: un modello non perde né guadagna
-punti per ciò che nessuno dichiara.
+rigorosi — viene annotata ma non conteggiata: un modello non perde mai punti per
+ciò che nessuno dichiara.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|

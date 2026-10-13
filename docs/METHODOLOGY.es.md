@@ -494,8 +494,7 @@ las capacidades del perfil:
 Una observación sin nada declarado que verificar —ninguna llamada a herramienta
 u objeto JSON cuando la función no se declara, o cualquier resultado del esquema
 estricto cuando el perfil dice que el modelo no tiene esquemas estrictos— se
-anota pero no computa: un modelo no pierde ni gana puntos por algo que nadie
-declara.
+anota pero no computa: un modelo nunca pierde puntos por algo que nadie declara.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|

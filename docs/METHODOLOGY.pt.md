@@ -491,8 +491,7 @@ capacidades do perfil:
 Uma observação sem declaração a verificar — nenhuma chamada de ferramenta ou
 objeto JSON quando a função não é declarada, ou qualquer resultado do esquema
 estrito quando o perfil diz que o modelo não tem esquemas estritos — é registada
-mas não contabilizada: um modelo não perde nem ganha pontos pelo que ninguém
-declara.
+mas não contabilizada: um modelo nunca perde pontos pelo que ninguém declara.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|

@@ -499,8 +499,7 @@ des Profils gemessen:
 Eine Beobachtung ohne zu prüfende Angabe – kein Tool-Aufruf oder JSON-Objekt,
 wenn die Funktion nicht angegeben ist, oder jedes Ergebnis zum strikten Schema,
 wenn das Profil dem Modell strikte Schemas abspricht – wird vermerkt, aber nicht
-gewertet: Für etwas, das niemand angibt, verliert oder gewinnt ein Modell keine
-Punkte.
+gewertet: Für etwas, das niemand angibt, verliert ein Modell keine Punkte.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|

@@ -496,8 +496,7 @@ aux capacités du profil :
 Une observation sans annonce à vérifier — aucun appel d'outil ni objet JSON
 quand la fonction n'est pas annoncée, ou tout résultat du schéma strict quand le
 profil indique que le modèle n'a pas de schémas stricts — est notée mais non
-comptée : un modèle ne perd ni ne gagne de points pour ce que personne
-n'annonce.
+comptée : un modèle ne perd jamais de points pour ce que personne n'annonce.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
