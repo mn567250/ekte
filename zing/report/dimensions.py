@@ -36,7 +36,7 @@ from zing.models import (
     Status,
 )
 from zing.report import performance as perf_render
-from zing.scoring import DIMENSION_WEIGHTS
+from zing.scoring import DIMENSION_WEIGHTS, _worst_status
 
 _STATUS_EMOJI: dict[Status, str] = {
     Status.PASS: "✅",
@@ -185,7 +185,7 @@ def _effect(
     return " · ".join(parts) or "no deduction"
 
 
-def _points(f: Finding, method: str = "mean_of_checks") -> str:
+def _points(f: Finding, method: str) -> str:
     return _effect(method, f.score, f.deduction, f.cap)
 
 
@@ -202,10 +202,6 @@ _METHOD_NOTE = {
 }
 
 
-_WORST = [Status.PASS, Status.INFO, Status.NOT_RUN, Status.INCONCLUSIVE, Status.WARN,
-          Status.ERROR, Status.FAIL]
-
-
 @dataclass
 class _Group:
     """The subjects of one parametrized check (e.g. every response attribute)."""
@@ -216,7 +212,9 @@ class _Group:
 
     @property
     def status(self) -> Status:
-        return max((f.status for f in self.findings), key=_WORST.index)
+        # The scoring module's order, so a group reads like a dimension status
+        # (a warning or failure outranks a detector error).
+        return _worst_status([f.status for f in self.findings])
 
     @property
     def ok(self) -> int:
@@ -226,6 +224,15 @@ class _Group:
     def mean(self) -> float | None:
         points = [f.score for f in self.findings if f.score is not None]
         return round(sum(points) / len(points), 1) if points else None
+
+    def points(self, method: str) -> str:
+        """The group's effect: "avg 90" on a mean scale; on a deduction scale
+        the subjects' deductions summed and the lowest cap."""
+        if method != "deductions":
+            return f"avg {_num(self.mean)}"
+        deducted = sum(f.deduction or 0.0 for f in self.findings)
+        caps = [f.cap for f in self.findings if f.cap is not None]
+        return _effect(method, None, deducted, min(caps) if caps else None)
 
     def outline(self, labels: dict[tuple[str, str], ScoringOutcome]) -> str:
         """"8 of 9 OK; missing: usage.total_tokens" — the problems by name."""
@@ -322,7 +329,7 @@ def _markdown_detector(det: DetectorResult, md) -> list[str]:
                 groups.append(row)
                 lines.append(
                     f"| {_STATUS_EMOJI.get(row.status, '')} | {md(row.title)} | "
-                    f"{md(row.outline(labels))} | avg {_num(row.mean)} |"
+                    f"{md(row.outline(labels))} | {row.points(det.scoring.method)} |"
                 )
                 continue
             lines.append(
@@ -426,8 +433,8 @@ def _html_detector(det: DetectorResult) -> str:
             if isinstance(row, _Group):
                 out.append(
                     f"<tr><td>{_pill(row.status)}</td><td>{_esc(row.title)}</td>"
-                    f"<td>{_esc(row.outline(labels))}{_html_group(row, labels)}</td>"
-                    f'<td class="num">avg {_esc(_num(row.mean))}</td></tr>'
+                    f"<td>{_esc(row.outline(labels))}{_html_group(row, labels, det.scoring.method)}</td>"
+                    f'<td class="num">{_esc(row.points(det.scoring.method))}</td></tr>'
                 )
                 continue
             out.append(
@@ -455,11 +462,13 @@ def _html_detector(det: DetectorResult) -> str:
     return "".join(out)
 
 
-def _html_group(g: _Group, labels: dict[tuple[str, str], ScoringOutcome]) -> str:
+def _html_group(
+    g: _Group, labels: dict[tuple[str, str], ScoringOutcome], method: str
+) -> str:
     rows = "".join(
         f"<tr><td>{_pill(f.status)}</td><td><code>{_esc(f.subject)}</code></td>"
         f"<td><code>{_esc(_observed(f))}</code></td><td>{_esc(_label(labels, f))}</td>"
-        f'<td class="num">{_esc(_points(f))}</td></tr>'
+        f'<td class="num">{_esc(_points(f, method))}</td></tr>'
         for f in g.findings
     )
     return (

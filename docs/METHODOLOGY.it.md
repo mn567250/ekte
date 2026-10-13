@@ -428,6 +428,13 @@ quando cambiano il comportamento.
    prevalgono mai su `identity_forbidden`, le parole generiche («ai»,
    «platform», …) non contano mai, e il marchio proprio di una piattaforma non
    conta per il modello di un altro produttore che serve.
+   Le parole di marca che sono anche parole comuni (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) contano
+   solo in questa autoidentificazione e solo scritte come nome («Meta»,
+   «Command R», «grok-2»; a inizio frase o di voce di elenco solo con una
+   versione attaccata,
+   «Step-2»); nelle risposte delle impronte non contano mai, quindi
+   «let me think step by step» non è un marchio concorrente. Un produttore
+   a cui appartiene una di queste parole la mantiene come propria.
 2. **Impronte comportamentali** dalla base di conoscenza (data limite delle
    conoscenze, particolarità del tokenizer, formattazione, sonde legate a una
    lingua, …): fino a sei sonde di solo codice, verificate con
@@ -443,6 +450,12 @@ quando cambiano il comportamento.
    `lite`, `8b`, …) o una famiglia diversa viene segnalata.
 
 Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
+È inoltre non conclusivo e senza punteggio (`model_identity.no_evidence`)
+quando né l'autoidentificazione né alcuna impronta hanno dato una risposta
+utilizzabile e il campo `model` restituito non diverge: un relay che
+rifiuta o svuota ogni richiesta non fornisce prove d'identità, e l'eco del
+nome richiesto da solo non prova nulla. Prove parziali vengono valutate
+normalmente.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
@@ -460,6 +473,7 @@ Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 | `model_identity.model_field` | Il campo model restituito corrispondeva al modello richiesto. | Superato | Nessuna detrazione |
 |  | Il campo model restituito indica un modello diverso o più piccolo. | Avviso · Media | Nessuna detrazione |
 |  | La risposta non aveva un campo model utilizzabile. | Non conclusivo | Nessuna detrazione |
+| `model_identity.no_evidence` | Né l'autoidentificazione né alcuna impronta hanno dato una risposta utilizzabile e il campo model non divergeva: non valutato. | Non conclusivo | Nessuna detrazione |
 
 ### `quality_judge` — Valutazione di qualità / declassamento da parte di un LLM giudice
 
@@ -467,17 +481,20 @@ Senza profilo nella base di conoscenza il rilevatore è non conclusivo.
 che distinguono le fasce (ragionamento in più passaggi, un compito di codice
 preciso, istruzioni con sfumature) va all'obiettivo e, in modalità di confronto,
 al riferimento; un giudice affidabile separato vede solo le risposte e
-restituisce un verdetto con la sua affidabilità. Un verdetto del giudice è ALTO
-solo se un riferimento ha confermato la differenza e il giudice non ha indicato
-un'affidabilità bassa o media.
+restituisce un verdetto con la sua affidabilità. Al giudice viene indicato il modello dichiarato (`claimed_model` se impostato,
+altrimenti l'id richiesto). Un verdetto del giudice è ALTO solo se il giudice
+ha indicato un'affidabilità **alta** e un riferimento utilizzabile ha
+confermato la differenza — uno che ha dato una risposta non vuota a ogni
+sonda a cui l'obiettivo ha risposto. Un'affidabilità bassa, media, assente o
+sconosciuta resta MEDIA, così come un riferimento andato in errore o che ha
+lasciato sonde senza risposta.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 95 pt |
-|  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa/media). | Avviso · Media | 50 pt |
-|  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessuna baseline). | Avviso · Media | 25 pt |
+|  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa, media o non indicata). | Avviso · Media | 50 pt |
+|  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessuna baseline utilizzabile). | Avviso · Media | 25 pt |
 |  | Il giudice è sicuro e una baseline affidabile ha confermato la differenza. | Fallito · Alta | 25 pt |
-|  | Il giudice non ha indicato una confidenza e una baseline affidabile ha confermato la differenza. | Fallito · Alta | 50 pt |
 |  | Il giudice non è riuscito a esprimere un verdetto. | Non conclusivo · Bassa | Non conteggiato |
 |  | Nessuna risposta del target da giudicare. | Non conclusivo · Bassa | Non conteggiato |
 
@@ -518,6 +535,12 @@ alle capacità del profilo:
   dichiarato, 2048) token; raggiungere il limite o una lunghezza plausibile è
   superato, fermarsi sotto un quarto viene segnalato.
 
+Un'osservazione senza una dichiarazione da verificare — nessuna chiamata a
+strumento o oggetto JSON quando la funzione non è dichiarata, o qualsiasi esito
+dello schema rigoroso quando il profilo dice che il modello non ha schemi
+rigorosi — viene annotata ma non conteggiata: un modello non perde mai punti per
+ciò che nessuno dichiara.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `capability.tools` | È tornata una chiamata a strumento per una richiesta esplicita di strumento. | Superato | 100 pt |
@@ -526,13 +549,13 @@ alle capacità del profilo:
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.tools.encoding` | Gli argomenti dello strumento sono arrivati come oggetto, non come la stringa JSON di OpenAI. | Avviso · Bassa | Non conteggiato |
 | `capability.json_mode` | La modalità JSON ha restituito un oggetto analizzabile con il valore richiesto. | Superato | 100 pt |
-|  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | 70 pt |
-|  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Avviso | 50 pt |
+|  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | Non conteggiato |
+|  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | La modalità JSON è dichiarata ma non è tornato un oggetto valido con il valore. | Fallito · Media | 0 pt |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.json_schema` | Lo schema rigoroso è dichiarato e la risposta lo rispettava. | Superato | 100 pt |
-|  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | 100 pt |
-|  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | 90 pt |
+|  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | Non conteggiato |
+|  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | Non conteggiato |
 |  | Lo schema rigoroso è dichiarato ma la risposta non lo rispettava. | Avviso · Bassa | 40 pt |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.max_output` | L'output è proseguito fino al limite di token richiesto. | Superato | 100 pt |
@@ -727,6 +750,9 @@ letteralmente. Un'eco esatta è superata, la mancanza di eco (parafrasi, rifiuto
 è non conclusiva, e solo una **sostituzione del valore** che preserva la
 struttura conta come manomissione. In modalità di confronto, una sostituzione
 che il riferimento affidabile non fa è CRITICA.
+Conferma solo un riferimento che restituisce il canary intatto: se va in errore
+o non restituisce nulla di utilizzabile non conferma nulla, e la sostituzione
+resta MEDIA (evidenza `baseline_unavailable`).
 Una risposta troncata al limite di output è non conclusiva, non una sostituzione.
 
 | Controllo | Esito | Stato | Effetto |
@@ -823,7 +849,7 @@ base di conoscenza.
 | `performance.cache_hit` | Prompt di sonda unici sono tornati da una cache (esclusi dalle statistiche). | Avviso · Bassa | 60 pt |
 |  | Il riferimento ha servito prompt unici da una cache (non valutato). | Info | Non conteggiato |
 | `performance.reference` | Il throughput è in linea con il riferimento per questo modello. | Superato | 100 pt |
-|  | Più lento del riferimento (ad es. locale o hardware più piccolo); non è un fallimento. | Info | 80 pt |
+|  | Più lento del riferimento (ad es. locale o hardware più piccolo); non è un fallimento. | Info | Non conteggiato |
 |  | Molto più veloce del riferimento (compatibile con un modello più piccolo). | Avviso · Bassa | 60 pt |
 | `performance.reasoning` | Il modello spende token di ragionamento nascosti; il TTFT include il ragionamento. | Info | Non conteggiato |
 | `performance.relay_overhead` | Latenza confrontata con la baseline affidabile (solo informativo). | Info | Non conteggiato |
@@ -832,7 +858,7 @@ base di conoscenza.
 **Avvertenze.** La latenza dipende dal percorso di rete e dal carico del
 fornitore in quel momento; ripeti un cattivo risultato di costanza in un altro
 momento. Gli intervalli della base di conoscenza sono mediane volutamente ampie
-delle API native, e un obiettivo più lento non è mai un fallimento. Tutte le
+delle API native, e un obiettivo più lento viene annotato, mai conteggiato. Tutte le
 rilevazioni sono al massimo di gravità BASSA: questa dimensione muove il
 punteggio, mai il verdetto di rischio.
 

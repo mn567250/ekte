@@ -565,6 +565,10 @@
    "Campo model devuelto",
    "El campo model de la respuesta es {returned}; se solicitó {requested}."
   ],
+  "model_identity.no_evidence": [
+   "Sin evidencia de identidad utilizable",
+   "Ni la autoidentificación ni ninguna sonda de huella devolvieron una respuesta utilizable y el campo model devuelto no diverge ({checks} comprobaciones); no se puede juzgar la identidad."
+  ],
   "model_identity.fp_aggregate": [
    "Varias huellas de comportamiento divergen",
    "{diverged} y otras huellas de solo código divergen del comportamiento nativo; compruebe si hay sustitución."

@@ -427,6 +427,13 @@ moins cher ou ouvert), ainsi que les signaux de
    jamais sur `identity_forbidden`, les mots génériques (« ai », « platform »,
    …) ne comptent jamais, et la marque propre d'une plateforme ne compte pas
    pour le modèle d'un autre fabricant qu'elle sert.
+   Les mots de marque qui sont aussi des mots courants (`step`, `command`, `seed`, `spark`, `meta`, `yi`, `grok`) ne
+   comptent que dans cette auto-identification et seulement écrits comme
+   un nom (« Meta », « Command R », « grok-2 » ; en début de phrase ou
+   d'élément de liste seulement avec une
+   version accolée, « Step-2 ») ; dans les réponses d'empreinte ils ne
+   comptent jamais, « let me think step by step » n'est donc pas une marque
+   concurrente. Un fournisseur à qui appartient un tel mot le garde comme sien.
 2. **Empreintes comportementales** de la base de connaissances (date limite des
    connaissances, particularités du tokenizer, mise en forme, sondes liées à
    une langue, …) : jusqu'à six sondes en code pur, vérifiées par
@@ -442,6 +449,12 @@ moins cher ou ouvert), ainsi que les signaux de
    `8b`, …) ou une autre famille est signalé.
 
 Sans profil dans la base de connaissances, le détecteur est non concluant.
+Il est aussi non concluant et non noté (`model_identity.no_evidence`)
+lorsque ni l'auto-identification ni aucune empreinte n'ont donné de réponse
+exploitable et que le champ `model` renvoyé ne diverge pas : un relais qui
+rejette ou vide chaque requête ne fournit aucune preuve d'identité, et l'écho
+du nom demandé ne prouve rien à lui seul. Des preuves partielles sont notées
+normalement.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
@@ -459,6 +472,7 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 | `model_identity.model_field` | Le champ model renvoyé correspondait au modèle demandé. | Réussi | Aucune déduction |
 |  | Le champ model renvoyé désigne un modèle différent ou plus petit. | Avertissement · Moyenne | Aucune déduction |
 |  | La réponse n'avait pas de champ model exploitable. | Non concluant | Aucune déduction |
+| `model_identity.no_evidence` | Ni l'auto-identification ni aucune empreinte n'ont donné de réponse exploitable et le champ model ne divergeait pas : non noté. | Non concluant | Aucune déduction |
 
 ### `quality_judge` — Évaluation de qualité / déclassement par un LLM juge
 
@@ -466,17 +480,20 @@ Sans profil dans la base de connaissances, le détecteur est non concluant.
 série de prompts qui distinguent les gammes (raisonnement en plusieurs étapes,
 tâche de code précise, suivi d'instructions nuancé) part vers la cible et, en
 mode comparaison, vers la référence ; un juge de confiance distinct ne voit que
-les réponses et rend un verdict avec une confiance. Un verdict du juge n'est
-ÉLEVÉ que si une référence a corroboré l'écart et que le juge n'a pas indiqué
-une confiance faible ou moyenne.
+les réponses et rend un verdict avec une confiance. Le juge reçoit le modèle annoncé (`claimed_model` s'il est défini, sinon
+l'identifiant demandé). Un verdict du juge n'est ÉLEVÉ que si le juge a
+indiqué une confiance **élevée** et qu'une référence exploitable a corroboré
+l'écart — une référence qui a donné une réponse non vide à chaque sonde à
+laquelle la cible a répondu. Une confiance faible, moyenne, absente ou
+inconnue reste MOYENNE, de même qu'une référence en erreur ou qui a laissé
+des sondes sans réponse.
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `quality_judge.verdict` (Verdict du juge LLM) | Le juge a trouvé les réponses cohérentes avec le modèle annoncé. | Réussi | 95 pts |
-|  | Le juge a trouvé les réponses différentes du modèle annoncé (confiance faible/moyenne). | Avertissement · Moyenne | 50 pts |
-|  | Le juge est confiant : les réponses diffèrent du modèle annoncé (sans référence). | Avertissement · Moyenne | 25 pts |
+|  | Le juge a trouvé les réponses différentes du modèle annoncé (confiance faible, moyenne ou non indiquée). | Avertissement · Moyenne | 50 pts |
+|  | Le juge est confiant : les réponses diffèrent du modèle annoncé (sans référence exploitable). | Avertissement · Moyenne | 25 pts |
 |  | Le juge est confiant et une référence de confiance a confirmé la différence. | Échec · Élevée | 25 pts |
-|  | Le juge n'a donné aucune confiance et une référence de confiance a confirmé la différence. | Échec · Élevée | 50 pts |
 |  | Le juge n'a pas pu trancher. | Non concluant · Faible | Non compté |
 |  | Aucune réponse de la cible à juger. | Non concluant · Faible | Non compté |
 
@@ -518,6 +535,11 @@ aux capacités du profil :
   annoncée, 2048) tokens ; atteindre le plafond ou une longueur plausible
   réussit, s'arrêter sous le quart est signalé.
 
+Une observation sans annonce à vérifier — aucun appel d'outil ni objet JSON
+quand la fonction n'est pas annoncée, ou tout résultat du schéma strict quand le
+profil indique que le modèle n'a pas de schémas stricts — est notée mais non
+comptée : un modèle ne perd jamais de points pour ce que personne n'annonce.
+
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
 | `capability.tools` | Un appel d'outil est revenu pour une demande explicite d'outil. | Réussi | 100 pts |
@@ -526,13 +548,13 @@ aux capacités du profil :
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.tools.encoding` | Les arguments de l'outil sont arrivés en objet, pas en chaîne JSON comme chez OpenAI. | Avertissement · Faible | Non compté |
 | `capability.json_mode` | Le mode JSON a renvoyé un objet analysable avec la valeur demandée. | Réussi | 100 pts |
-|  | Un objet JSON est revenu avec une mauvaise valeur ; le mode JSON n'est pas annoncé. | Info | 70 pts |
-|  | Aucun objet JSON analysable n'est revenu ; le mode JSON n'est pas annoncé. | Avertissement | 50 pts |
+|  | Un objet JSON est revenu avec une mauvaise valeur ; le mode JSON n'est pas annoncé. | Info | Non compté |
+|  | Aucun objet JSON analysable n'est revenu ; le mode JSON n'est pas annoncé. | Info | Non compté |
 |  | Le mode JSON est annoncé mais aucun objet valide avec la valeur n'est revenu. | Échec · Moyenne | 0 pts |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.json_schema` | Le schéma strict est annoncé et la réponse s'y conformait. | Réussi | 100 pts |
-|  | Le schéma strict n'a pas été appliqué, conformément à l'annonce. | Info | 100 pts |
-|  | La réponse s'y conformait bien que le modèle annoncé n'ait pas de schémas stricts. | Info | 90 pts |
+|  | Le schéma strict n'a pas été appliqué, conformément à l'annonce. | Info | Non compté |
+|  | La réponse s'y conformait bien que le modèle annoncé n'ait pas de schémas stricts. | Info | Non compté |
 |  | Le schéma strict est annoncé mais la réponse ne s'y conformait pas. | Avertissement · Faible | 40 pts |
 |  | Aucune réponse exploitable pour juger. | Non concluant · Faible | Non compté |
 | `capability.max_output` | La sortie a continué jusqu'au plafond de tokens demandé. | Réussi | 100 pts |
@@ -729,6 +751,9 @@ revenir mot pour mot. Un écho exact réussit, l'absence d'écho (paraphrase,
 refus) est non concluante, et seule une **substitution de valeur** qui préserve
 la structure compte comme falsification. En mode comparaison, une substitution
 que la référence de confiance ne fait pas est CRITIQUE.
+Seule une référence qui renvoie le canari intact corrobore : une référence en
+erreur ou sans réponse exploitable ne confirme rien, et la substitution reste
+MOYENNE (preuve `baseline_unavailable`).
 Une réponse coupée à la limite de sortie est non concluante, pas une substitution.
 
 | Contrôle | Résultat | Statut | Effet |
@@ -827,7 +852,7 @@ référence est la référence de confiance, sinon la plage
 | `performance.cache_hit` | Des prompts de sonde uniques sont revenus d'un cache (exclus des statistiques). | Avertissement · Faible | 60 pts |
 |  | La référence a servi des prompts uniques depuis un cache (non noté). | Info | Non compté |
 | `performance.reference` | Le débit correspond à la référence pour ce modèle. | Réussi | 100 pts |
-|  | Plus lent que la référence (p. ex. en local ou sur du matériel plus modeste) ; pas un échec. | Info | 80 pts |
+|  | Plus lent que la référence (p. ex. en local ou sur du matériel plus modeste) ; pas un échec. | Info | Non compté |
 |  | Bien plus rapide que la référence (compatible avec un modèle plus petit). | Avertissement · Faible | 60 pts |
 | `performance.reasoning` | Le modèle dépense des tokens de raisonnement cachés ; le TTFT inclut la réflexion. | Info | Non compté |
 | `performance.relay_overhead` | Latence comparée à la référence de confiance (à titre indicatif). | Info | Non compté |
@@ -836,7 +861,7 @@ référence est la référence de confiance, sinon la plage
 **Mises en garde.** La latence dépend du chemin réseau et de la charge du
 fournisseur à ce moment ; répétez un mauvais résultat de régularité à un autre
 moment. Les plages de la base de connaissances sont des médianes volontairement
-larges des API natives, et une cible plus lente n'est jamais un échec. Tous les
+larges des API natives, et une cible plus lente est notée, jamais comptée. Tous les
 constats sont au plus de gravité FAIBLE : cette dimension fait bouger le score,
 jamais le verdict de risque.
 

@@ -565,6 +565,10 @@
    "Campo model devolvido",
    "O campo model da resposta é {returned}; foi pedido {requested}."
   ],
+  "model_identity.no_evidence": [
+   "Nenhuma evidência de identidade utilizável",
+   "Nem a autoidentificação nem nenhuma sonda de impressão digital deram uma resposta utilizável e o campo model devolvido não diverge ({checks} verificações); a identidade não pode ser avaliada."
+  ],
   "model_identity.fp_aggregate": [
    "Várias impressões digitais de comportamento divergem",
    "{diverged} e outras impressões apenas de código divergem do comportamento nativo; verifique se há substituição."

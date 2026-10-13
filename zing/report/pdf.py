@@ -389,7 +389,7 @@ def _dimension_detector(det: DetectorResult) -> list[Flowable]:
         if isinstance(row, dims._Group):
             groups.append(row)
             rows.append([_pill(row.status), _t(row.title), _t(row.outline(labels)),
-                         _t(f"avg {dims._num(row.mean)}")])
+                         _t(row.points(method))])
         else:
             rows.append([_pill(row.status), _t(row.title), _t(dims._label(labels, row)),
                          _t(dims._points(row, method))])
@@ -399,7 +399,7 @@ def _dimension_detector(det: DetectorResult) -> list[Flowable]:
         out += _head(_t(f"{g.title}: all {len(g.findings)}", bold=True, size=8), "sub")
         sub = [
             [_pill(f.status), _code(f.subject or ""), _code(dims._observed(f)),
-             _t(dims._label(labels, f)), _t(dims._points(f))]
+             _t(dims._label(labels, f)), _t(dims._points(f, method))]
             for f in g.findings
         ]
         out.append(_table(["", "Attribute", "Observed", "Outcome", "Points"], sub,
