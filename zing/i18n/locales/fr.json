@@ -555,6 +555,10 @@
    "Champ model renvoyé",
    "Le champ model de la réponse vaut {returned} ; demandé : {requested}."
   ],
+  "model_identity.no_evidence": [
+   "Aucune preuve d'identité exploitable",
+   "Ni l'auto-identification ni aucune sonde d'empreinte n'ont donné de réponse exploitable et le champ model renvoyé ne diverge pas ({checks} vérifications) ; l'identité ne peut pas être jugée."
+  ],
   "model_identity.fp_aggregate": [
    "Plusieurs empreintes comportementales divergent",
    "{diverged} et d'autres empreintes purement code divergent du comportement natif ; vérifiez s'il y a substitution."

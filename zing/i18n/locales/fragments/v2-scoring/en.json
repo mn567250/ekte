@@ -56,6 +56,7 @@
   "The echoed model field matched the requested model.": "The echoed model field matched the requested model.",
   "The echoed model field names a different or smaller model.": "The echoed model field names a different or smaller model.",
   "The response had no usable model field.": "The response had no usable model field.",
+  "No self-identification or fingerprint answer was usable and the model field did not diverge: not scored.": "No self-identification or fingerprint answer was usable and the model field did not diverge: not scored.",
   "The response carried no token usage at all.": "The response carried no token usage at all.",
   "Reported prompt tokens far exceed the independent estimate.": "Reported prompt tokens far exceed the independent estimate.",
   "Reported completion tokens far exceed the estimate of an exact tokenizer.": "Reported completion tokens far exceed the estimate of an exact tokenizer.",

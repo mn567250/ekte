@@ -56,6 +56,7 @@
   "The echoed model field matched the requested model.": "O campo model devolvido correspondeu ao modelo solicitado.",
   "The echoed model field names a different or smaller model.": "O campo model devolvido indica um modelo diferente ou menor.",
   "The response had no usable model field.": "A resposta não tinha um campo model utilizável.",
+  "No self-identification or fingerprint answer was usable and the model field did not diverge: not scored.": "Nem a autoidentificação nem nenhuma impressão digital deram uma resposta utilizável e o campo model não divergiu: sem pontuação.",
   "The response carried no token usage at all.": "A resposta não trazia nenhum uso de tokens.",
   "Reported prompt tokens far exceed the independent estimate.": "Os tokens de prompt declarados excedem em muito a estimativa independente.",
   "Reported completion tokens far exceed the estimate of an exact tokenizer.": "Os tokens de completion declarados excedem em muito a estimativa de um tokenizador exato.",

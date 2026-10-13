@@ -215,6 +215,10 @@
    "回显的 model 字段",
    "响应中的 model 字段为 {returned}，请求的是 {requested}。"
   ],
+  "model_identity.no_evidence": [
+   "没有可用的身份证据",
+   "自我身份识别和所有指纹探针均未返回可用回答，回显的 model 字段也没有偏离（共 {checks} 项检查）；无法判断模型身份。"
+  ],
   "model_identity.fp_aggregate": [
    "多项行为指纹同时偏离",
    "{diverged} 等多项纯代码指纹偏离了原生行为；请排查是否存在替换。"
