@@ -12,7 +12,7 @@ ZING_A11Y_PAGES=tools,kb pytest tests/a11y -m a11y --collect-only -q
 ```
 
 `ZING_A11Y_PAGES` is a comma list of page ids (`PAGES` in `pages.py`: `audit`,
-`history`, `monitors`, `tools`, `kb`, `accessibility`), or `all`; an unknown
+`history`, `monitors`, `tools`, `kb`, `analytics`, `accessibility`), or `all`; an unknown
 id is a usage error. A test runs when it is tied to a selected page:
 
 - tests parametrised by `page_id`, or by a `state` such as `history-charts` or
