@@ -188,8 +188,14 @@ class KnowledgeBase(BaseModel):
     ) -> ResolvedProfile | None:
         """Resolve a claimed model id to a profile.
 
-        Resolution order: exact id, alias, then a normalized fuzzy/substring match.
-        A ``provider_hint`` narrows the search and breaks ties.
+        Resolution order: exact id, alias, normalized id/alias, then a fuzzy
+        match on normalized names: first the longest KB name the claim contains
+        (a decorated or snapshot id), else - for a claim that is a truncated
+        KB name - the one model whose name starts with it. A fuzzy match that
+        would have to choose between several models, or whose claim carries an
+        extra tier/variant word (``-mini``, ``-lite``, ``-image``, ...), returns
+        ``None`` rather than guess a tier. A ``provider_hint`` narrows the
+        candidates to that provider when it has any.
         """
         if not model_id:
             return None
@@ -212,25 +218,101 @@ class KnowledgeBase(BaseModel):
             if model_id in model.aliases:
                 return ResolvedProfile(provider=provider, model=model, match_confidence="alias")
         # 3) normalized exact (id or alias)
-        for provider, model in candidates:
-            names = [model.id, *model.aliases]
-            if any(_normalize(n) == norm for n in names):
+        names_by_model = [
+            (provider, model, {_normalize(n) for n in (model.id, *model.aliases)} - {""})
+            for provider, model in candidates
+        ]
+        if not norm:
+            return None
+        for provider, model, model_names in names_by_model:
+            if norm in model_names:
                 return ResolvedProfile(provider=provider, model=model, match_confidence="alias")
-        # 4) substring / fuzzy on normalized names
-        best: tuple[ProviderProfile, ModelProfile] | None = None
+        # 4a) the claim *contains* a KB name (a relay-decorated, snapshot or
+        # suffixed id such as ``gpt-4o-2024-11-20-custom``, ``openai/gpt-4o``
+        # or ``chatgpt-4o-latest``). The longest contained name wins, so
+        # ``gpt-4o-mini-x`` lands on gpt-4o-mini rather than gpt-4o. A name
+        # is skipped when the rest of the claim names another tier or variant
+        # (``gpt-5-mini`` is not gpt-5), and a very short name such as ``o3``
+        # must start a token of the claim (it is not inside ``gemini-pro3``).
+        tokens = _tokens(model_id)
+        # Keyed by model id: the same id listed under two providers is one model
+        # (the first listed wins), two different ids are ambiguous.
+        contained: dict[str, tuple[ProviderProfile, ModelProfile]] = {}
         best_len = 0
-        for provider, model in candidates:
-            names = [model.id, *model.aliases]
-            for n in names:
-                nn = _normalize(n)
-                if nn and (nn in norm or norm in nn) and len(nn) > best_len:
-                    best = (provider, model)
+        for provider, model, model_names in names_by_model:
+            for nn in model_names:
+                if len(nn) < best_len or not _contains_cleanly(norm, nn, tokens):
+                    continue
+                if len(nn) > best_len:
+                    contained = {}
                     best_len = len(nn)
-        if best is not None:
-            return ResolvedProfile(provider=best[0], model=best[1], match_confidence="fuzzy")
+                contained.setdefault(model.id, (provider, model))
+        if contained:
+            if len(contained) == 1:
+                provider, model = next(iter(contained.values()))
+                return ResolvedProfile(provider=provider, model=model, match_confidence="fuzzy")
+            # Two different models with equally long contained names: ambiguous.
+            return None
+        # 4b) the claim is a truncated KB name (``claude-3-5-sonnet`` for
+        # ``claude-3-5-sonnet-20241022``). A short claim such as ``gpt-4``,
+        # ``claude`` or ``gemini-2.5`` starts the names of several models;
+        # picking the longest - or any - of them would silently assign a
+        # specific, often cheaper tier, so this resolves only when exactly one
+        # model has a name starting with the claim.
+        extending: dict[str, tuple[ProviderProfile, ModelProfile]] = {}
+        for provider, model, model_names in names_by_model:
+            if any(nn.startswith(norm) for nn in model_names):
+                extending.setdefault(model.id, (provider, model))
+        if len(extending) == 1:
+            provider, model = next(iter(extending.values()))
+            return ResolvedProfile(provider=provider, model=model, match_confidence="fuzzy")
         return None
 
 
 def _normalize(name: str) -> str:
     """Lowercase and strip separators/date suffixes for tolerant matching."""
     return "".join(ch for ch in name.lower() if ch.isalnum())
+
+
+# Words that, left over in a claim after the KB name it contains, name a
+# different tier or variant of that model rather than a snapshot/decoration.
+_VARIANT_WORDS = frozenset({
+    "mini", "nano", "micro", "tiny", "small", "lite", "flash", "flashx",
+    "image", "vision", "audio", "tts", "realtime", "embedding",
+})
+# A fuzzy KB name shorter than this must start where a token of the claim starts.
+_MIN_FREE_NAME = 4
+
+
+def _tokens(name: str) -> list[tuple[int, int, str]]:
+    """Separator-delimited tokens of ``name`` as (start, end, text), with
+    offsets in ``_normalize(name)``."""
+    out: list[tuple[int, int, str]] = []
+    pos = 0
+    for part in "".join(ch if ch.isalnum() else " " for ch in name.lower()).split():
+        out.append((pos, pos + len(part), part))
+        pos += len(part)
+    return out
+
+
+def _is_variant(token: str) -> bool:
+    if token in _VARIANT_WORDS:
+        return True
+    # a parameter size such as 8b / 70b / 1.5b (the dot is a separator)
+    return len(token) > 1 and token[-1] == "b" and token[:-1].isdigit()
+
+
+def _contains_cleanly(norm: str, needle: str, tokens: list[tuple[int, int, str]]) -> bool:
+    """True when ``needle`` occurs in ``norm`` and the claim's tokens outside
+    that occurrence name no other tier/variant (see :data:`_VARIANT_WORDS`);
+    a short ``needle`` must also start at a token start."""
+    starts = {start for start, _, _ in tokens}
+    i = norm.find(needle)
+    while i != -1:
+        end = i + len(needle)
+        if len(needle) >= _MIN_FREE_NAME or i in starts:
+            rest = [t for s, e, t in tokens if e <= i or s >= end]
+            if not any(_is_variant(t) for t in rest):
+                return True
+        i = norm.find(needle, i + 1)
+    return False

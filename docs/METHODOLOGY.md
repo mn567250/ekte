@@ -163,7 +163,15 @@ echoed API key still escalate.
   plus your own entries in `kb.db`) supplies the declared context window, max
   output, tokenizer, capability flags, identity keywords and behavioral
   fingerprints the probes are judged against. Every report records the profile
-  it used (`knowledge`).
+  it used (`knowledge`). The claimed id matches a profile by exact id, alias
+  or normalized name, else fuzzily: by the longest profile name it contains
+  (`gpt-4o-2024-11-20-custom` → `gpt-4o`) unless the rest of the id names
+  another tier or variant (`gpt-5-mini` is not `gpt-5`), or, for a truncated
+  id, only when a single model's name starts with it. A generic or ambiguous
+  id (`gpt-4`, `claude`, `gemini-2.5`) therefore gets no profile instead of a
+  guessed, often cheaper tier. Provider-wide fingerprints apply to every model
+  of the provider; one that only fits some models (a knowledge cutoff, a size
+  tier) is listed on those models alone.
 - **Prompt language:** every probe text lives in `zing/prompts/en.json` and is
   English whatever the UI language; only fingerprints whose language *is* the
   measurement declare `prompt_lang` and `language_bound`. Each report lists the

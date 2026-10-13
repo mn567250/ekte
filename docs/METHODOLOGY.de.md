@@ -173,7 +173,17 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipula
   das angegebene Kontextfenster, die maximale Ausgabe, den Tokenizer, die
   Fähigkeitsflags, die Identitätsschlüsselwörter und die
   Verhaltens-Fingerprints, an denen die Tests gemessen werden. Jeder Bericht
-  hält das verwendete Profil fest (`knowledge`).
+  hält das verwendete Profil fest (`knowledge`). Die angegebene ID trifft ein
+  Profil über die exakte ID, einen Alias oder den normalisierten Namen, sonst
+  unscharf: über den längsten Profilnamen, den sie enthält
+  (`gpt-4o-2024-11-20-custom` → `gpt-4o`), außer der Rest der ID nennt eine
+  andere Stufe oder Variante (`gpt-5-mini` ist nicht `gpt-5`), oder, bei einer
+  gekürzten ID, nur wenn genau ein Modellname mit ihr beginnt. Eine generische
+  oder mehrdeutige ID (`gpt-4`, `claude`, `gemini-2.5`) erhält daher kein
+  Profil statt einer geratenen, oft günstigeren Stufe. Anbieterweite
+  Fingerprints gelten für jedes Modell des Anbieters; einer, der nur zu manchen
+  Modellen passt (ein Wissensstand, eine Größenstufe), steht nur bei diesen
+  Modellen.
 - **Prompt-Sprache:** jeder Testtext liegt in `zing/prompts/en.json` und ist
   Englisch, unabhängig von der UI-Sprache; nur Fingerprints, deren Sprache
   selbst die Messung *ist*, deklarieren `prompt_lang` und `language_bound`.

@@ -170,7 +170,15 @@ devuelta siguen elevando el riesgo.
   ventana de contexto declarada, la salida máxima, el tokenizer, las
   capacidades, las palabras clave de identidad y las huellas de comportamiento
   con las que se juzgan las sondas. Cada informe registra el perfil usado
-  (`knowledge`).
+  (`knowledge`). El id declarado se asocia a un perfil por id exacto, alias o
+  nombre normalizado y, si no, de forma aproximada: por el nombre de perfil
+  más largo que contiene (`gpt-4o-2024-11-20-custom` → `gpt-4o`), salvo que el
+  resto del id nombre otro nivel o variante (`gpt-5-mini` no es `gpt-5`), o, si
+  el id está truncado, solo cuando el nombre de un único modelo empieza por él.
+  Un id genérico o ambiguo (`gpt-4`, `claude`, `gemini-2.5`) no obtiene perfil
+  en lugar de un nivel adivinado, a menudo más barato. Las huellas de todo el
+  proveedor se aplican a cada uno de sus modelos; una que solo encaja con
+  algunos (una fecha de corte, un nivel de tamaño) figura solo en ellos.
 - **Idioma de los prompts:** cada texto de sonda está en
   `zing/prompts/en.json` y es en inglés sea cual sea el idioma de la interfaz;
   solo las huellas cuyo idioma *es* la medida declaran `prompt_lang` y

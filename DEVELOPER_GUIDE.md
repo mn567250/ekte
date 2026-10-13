@@ -227,8 +227,13 @@ feeds **Dimension details** in the reports and the expandable rows of
 stores the user's entries (`store.py`), checks and imports YAML
 (`importer.py`), builds the research prompt for external assistants
 (`research.py`) and snapshots the profile a run used (`snapshot.py`). Model ids
-resolve through aliases and the declared provider; every report records how the
-id matched.
+resolve exactly, through aliases or by normalized name, narrowed by the declared
+provider. The fuzzy fallback takes the longest KB name the claim contains (a
+snapshot or decorated id) unless the rest of the claim names another tier or
+variant (`-mini`, `-lite`, `-image`, …); a truncated claim resolves only when a
+single model's name starts with it, so an ambiguous id such as `gpt-4`
+resolves to no profile rather than to a guessed tier. Every report records how
+the id matched.
 
 `load_knowledge_base()` caches merged results and returns a deep copy by
 default, so callers may modify what they get. Callers that only read it (the web
@@ -497,6 +502,11 @@ card, pricing or docs) in the pull request: a wrong value causes false positives
 against honest relays. `zing kb-import --check <file>` runs the same checks as
 the user import (schema, limits, unsafe regular expressions, prompts, id
 collisions).
+
+Provider-level `fingerprints` run on every model of the provider. A probe whose
+expectation holds only for some models (a knowledge cutoff, a Pro-tier recall
+check, a reasoning trap) belongs in those models' own `fingerprints`, or a
+truthful answer from another model counts as a divergence.
 
 Always fill `identity_keywords` with the vendor and model-family words the
 model uses for itself. The identity check also counts the provider key, the
