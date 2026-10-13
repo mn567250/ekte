@@ -309,6 +309,8 @@
   "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "Ein Proxy, der URLs/Paketnamen umschreibt, ist ein Lieferkettenrisiko — nicht mehr verwenden.",
   "Treat the advertised context window as unverified.": "Betrachten Sie das beworbene Kontextfenster als unbestätigt.",
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Erhöhen Sie --timeout / --max-request-time oder senken Sie --max-context-tokens, um das volle Fenster zu messen.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Prüfen Sie den Fehler (z. B. einen Anfrageparameter, den dieser Endpunkt ablehnt) und führen Sie die Messung erneut aus.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Erhöhen Sie --max-context-tokens, um das volle angegebene Fenster zu prüfen.",
   "Compare against a trusted baseline to confirm.": "Zur Bestätigung mit einer vertrauenswürdigen Referenz vergleichen.",
   "The relay likely truncates or summarizes long prompts.": "Das Relay kürzt oder fasst lange Prompts vermutlich zusammen.",
   "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Echtes Kontextfenster ~{effective_window} << angegebene {declared} (Verhältnis {ratio}, Verdacht auf stille Kürzung). Der Anfang eines Prompts von ~{front_truncated_at} Tokens wurde verworfen, während sein Ende noch erinnert wurde (Kürzung von vorn).",
@@ -542,6 +544,14 @@
   "context_window.measured": [
    "Gemessenes effektives Kontextfenster",
    "Kein angegebenes Fenster zum Vergleich; gemessenes effektives Fenster ~{effective_window} Tokens."
+  ],
+  "context_window.verified_to_cap": [
+   "Kontextfenster bis zur Probe-Obergrenze bestätigt",
+   "Die Nadel wird bei ~{effective_window} Tokens erinnert, der obersten Stufe unter der Probe-Obergrenze von {probe_cap} Tokens; das angegebene Fenster von {declared} Tokens darüber wurde nicht geprüft."
+  ],
+  "context_window.probe_error": [
+   "Kontextfenster-Sonde mit Fehler beantwortet",
+   "Eine Probe von ~{errored_at} Tokens wurde mit einem Fehler beantwortet ({error_status}); kein Beleg für Kürzung."
   ],
   "model_identity.no_profile": [
    "Angegebenes Modell nicht in der Wissensbasis",

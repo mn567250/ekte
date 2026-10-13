@@ -328,6 +328,7 @@ class ContextWindowDetector(Detector):
                         recommendation="Compare against a trusted baseline to confirm.",
                     )
                 )
+                result.status = Status.WARN
 
         # --- Verdicts ---------------------------------------------------------- #
         # A window that ended on front truncation says so in its verdict; the

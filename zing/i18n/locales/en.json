@@ -309,6 +309,8 @@
   "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.",
   "Treat the advertised context window as unverified.": "Treat the advertised context window as unverified.",
   "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Raise --max-context-tokens to exercise the full declared window.",
   "Compare against a trusted baseline to confirm.": "Compare against a trusted baseline to confirm.",
   "The relay likely truncates or summarizes long prompts.": "The relay likely truncates or summarizes long prompts.",
   "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).",
