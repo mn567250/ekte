@@ -231,9 +231,13 @@ alimente les **Dimension details** des rapports et les lignes dépliables des
 l'utilisateur), stocke les entrées de l'utilisateur (`store.py`), vérifie et
 importe le YAML (`importer.py`), construit le prompt de recherche destiné aux
 assistants externes (`research.py`) et prend un instantané du profil utilisé par
-une exécution (`snapshot.py`). Les identifiants de modèle se résolvent via les
-alias et le fournisseur déclaré ; chaque rapport consigne comment l'id a été
-résolu.
+une exécution (`snapshot.py`). Les identifiants de modèle se résolvent exactement, via
+les alias ou par nom normalisé, restreints par le fournisseur déclaré. Le repli
+approximatif prend le plus long nom de la KB contenu dans l'identifiant annoncé
+(un id de snapshot ou décoré) ; un identifiant plus court n'est résolu que si le
+nom d'un seul modèle le contient, si bien qu'un id ambigu comme `gpt-4`
+n'obtient aucun profil plutôt qu'un niveau deviné. Chaque rapport consigne
+comment l'id a été résolu.
 
 `load_knowledge_base()` met en cache les résultats fusionnés et renvoie par
 défaut une copie profonde, que l'appelant peut donc modifier. Les appelants qui
@@ -530,6 +534,12 @@ provoque des faux positifs contre des relais honnêtes.
 `zing kb-import --check <fichier>` effectue les mêmes vérifications que l'import
 utilisateur (schéma, limites, expressions régulières dangereuses, prompts,
 collisions d'identifiants).
+
+Les `fingerprints` au niveau du fournisseur s'exécutent sur chacun de ses
+modèles. Une sonde dont l'attente ne vaut que pour certains modèles (une date de
+coupure, un test de connaissances du niveau Pro, un piège de raisonnement) va
+dans les `fingerprints` de ces modèles, sinon la réponse véridique d'un autre
+modèle compte comme une divergence.
 
 Renseignez toujours `identity_keywords` avec les mots du fabricant et de la
 famille par lesquels le modèle se désigne. Le contrôle d'identité compte aussi

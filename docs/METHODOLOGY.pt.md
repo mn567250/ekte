@@ -162,7 +162,15 @@ ou limitado não pôde ser avaliado, o que não prova que responda outro modelo.
   fornece a janela de contexto declarada, a saída máxima, o tokenizer, as
   capacidades, as palavras-chave de identidade e as impressões comportamentais
   com que as sondas são avaliadas. Cada relatório regista o perfil usado
-  (`knowledge`).
+  (`knowledge`). O id declarado corresponde a um perfil por id exato, alias
+  ou nome normalizado e, caso contrário, de forma aproximada: pelo nome de
+  perfil mais longo que contém (`gpt-4o-2024-11-20-custom` → `gpt-4o`) ou,
+  para um id mais curto, apenas quando o nome de um único modelo o contém.
+  Um id genérico ou ambíguo (`gpt-4`, `claude`, `gemini-2.5`) fica assim sem
+  perfil em vez de um nível adivinhado, muitas vezes mais barato. As
+  impressões ao nível do fornecedor aplicam-se a cada um dos seus modelos;
+  uma que só se ajusta a alguns (uma data de corte, um nível de tamanho)
+  consta apenas nesses.
 - **Idioma dos prompts:** cada texto de sonda está em `zing/prompts/en.json` e
   é em inglês, seja qual for o idioma da interface; só as impressões cujo idioma
   *é* a medida declaram `prompt_lang` e `language_bound`. Cada relatório lista

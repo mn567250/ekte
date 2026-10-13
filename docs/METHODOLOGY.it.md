@@ -164,7 +164,16 @@ risponda un altro modello.
   (`zing/knowledge/data/*.yaml` più le tue voci in `kb.db`) fornisce la finestra
   di contesto dichiarata, l'output massimo, il tokenizer, le capacità, le parole
   chiave di identità e le impronte comportamentali con cui vengono valutate le
-  sonde. Ogni rapporto registra il profilo usato (`knowledge`).
+  sonde. Ogni rapporto registra il profilo usato (`knowledge`). L'id
+  dichiarato trova un profilo per id esatto, alias o nome normalizzato,
+  altrimenti in modo approssimato: per il nome di profilo più lungo che
+  contiene (`gpt-4o-2024-11-20-custom` → `gpt-4o`) o, per un id più corto,
+  solo quando il nome di un unico modello lo contiene. Un id generico o
+  ambiguo (`gpt-4`, `claude`, `gemini-2.5`) non ottiene quindi alcun profilo
+  invece di un livello indovinato, spesso più economico. Le impronte a
+  livello di fornitore valgono per ogni suo modello; una che si adatta solo
+  ad alcuni (una data di cutoff, un livello di dimensione) compare solo su
+  quelli.
 - **Lingua dei prompt:** ogni testo di sonda si trova in `zing/prompts/en.json`
   ed è in inglese, qualunque sia la lingua dell'interfaccia; solo le impronte la
   cui lingua *è* la misura dichiarano `prompt_lang` e `language_bound`. Ogni

@@ -221,6 +221,8 @@ class KnowledgeBase(BaseModel):
             if any(_normalize(n) == norm for n in names):
                 return ResolvedProfile(provider=provider, model=model, match_confidence="alias")
         # 4) fuzzy on normalized names, in two directions.
+        if not norm:
+            return None
         names_by_model = [
             (provider, model, {_normalize(n) for n in (model.id, *model.aliases)} - {""})
             for provider, model in candidates
@@ -236,8 +238,8 @@ class KnowledgeBase(BaseModel):
         # (the first listed wins, as before), two different ids are ambiguous.
         contained: dict[str, tuple[ProviderProfile, ModelProfile]] = {}
         best_len = 0
-        for provider, model, names in names_by_model:
-            for nn in names:
+        for provider, model, model_names in names_by_model:
+            for nn in model_names:
                 if len(nn) < best_len or not _contains_at_token(norm, nn, starts):
                     continue
                 if len(nn) > best_len:
@@ -255,8 +257,8 @@ class KnowledgeBase(BaseModel):
         # would silently assign a specific, often cheaper tier, so this only
         # resolves when exactly one model has a name extending the claim.
         extending: dict[str, tuple[ProviderProfile, ModelProfile]] = {}
-        for provider, model, names in names_by_model:
-            if any(norm in nn for nn in names):
+        for provider, model, model_names in names_by_model:
+            if any(norm in nn for nn in model_names):
                 extending.setdefault(model.id, (provider, model))
         if len(extending) == 1:
             provider, model = next(iter(extending.values()))

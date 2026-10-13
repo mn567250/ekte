@@ -229,8 +229,13 @@ Zeilen der **Prüfungen je Dimension** in der Weboberfläche.
 Nutzers), speichert die Einträge des Nutzers (`store.py`), prüft und importiert
 YAML (`importer.py`), erzeugt den Recherche-Prompt für externe Assistenten
 (`research.py`) und hält einen Schnappschuss des Profils fest, das ein Lauf
-verwendet hat (`snapshot.py`). Modell-IDs werden über Aliasse und den angegebenen
-Anbieter aufgelöst; jeder Bericht vermerkt, wie die ID zugeordnet wurde.
+verwendet hat (`snapshot.py`). Modell-IDs werden exakt, über Aliasse oder den
+normalisierten Namen aufgelöst, eingegrenzt durch den angegebenen Anbieter. Die
+unscharfe Rückfallstufe nimmt den längsten KB-Namen, den die Angabe enthält
+(eine Snapshot- oder dekorierte ID); eine kürzere Angabe wird nur aufgelöst,
+wenn genau ein Modellname sie enthält, sodass eine mehrdeutige ID wie `gpt-4`
+kein Profil statt einer geratenen Stufe erhält. Jeder Bericht vermerkt, wie die
+ID zugeordnet wurde.
 
 `load_knowledge_base()` speichert zusammengeführte Ergebnisse zwischen und gibt
 standardmäßig eine tiefe Kopie zurück, sodass Aufrufer das Erhaltene ändern
@@ -524,6 +529,12 @@ Dokumentation des Anbieters) im Pull Request: ein falscher Wert verursacht
 Fehlalarme gegen ehrliche Relays. `zing kb-import --check <datei>` führt dieselben
 Prüfungen aus wie der Import durch Nutzer (Schema, Grenzen, unsichere reguläre
 Ausdrücke, Prompts, ID-Kollisionen).
+
+`fingerprints` auf Anbieterebene laufen für jedes Modell des Anbieters. Ein
+Test, dessen Erwartung nur für manche Modelle gilt (ein Wissensstichtag, eine
+Wissensprüfung der Pro-Stufe, eine Denkfalle), gehört in die `fingerprints`
+dieser Modelle, sonst zählt eine wahrheitsgemäße Antwort eines anderen Modells
+als Abweichung.
 
 Füllen Sie `identity_keywords` immer mit den Hersteller- und Familienwörtern,
 mit denen sich das Modell selbst bezeichnet. Die Identitätsprüfung zählt auch

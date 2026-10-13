@@ -229,8 +229,13 @@ capas (`loader.py`: YAML integrado → `ZING_KB_DIR`/`--kb-dir` → el `kb.db` d
 usuario), guarda las entradas del usuario (`store.py`), comprueba e importa YAML
 (`importer.py`), construye el prompt de investigación para asistentes externos
 (`research.py`) y toma una instantánea del perfil que usó una ejecución
-(`snapshot.py`). Los ids de modelo se resuelven mediante alias y el proveedor
-declarado; cada informe registra cómo se resolvió el id.
+(`snapshot.py`). Los ids de modelo se resuelven de forma exacta, mediante
+alias o por nombre normalizado, acotados por el proveedor declarado. La
+alternativa aproximada toma el nombre de la KB más largo que contiene el id
+declarado (un id de snapshot o decorado); un id más corto solo se resuelve
+cuando el nombre de un único modelo lo contiene, así que un id ambiguo como
+`gpt-4` no obtiene perfil en lugar de un nivel adivinado. Cada informe registra
+cómo se resolvió el id.
 
 `load_knowledge_base()` guarda en caché los resultados fusionados y devuelve por
 defecto una copia profunda, así que quien la llama puede modificar lo que
@@ -521,6 +526,12 @@ proveedor) en la pull request: un valor erróneo provoca falsos positivos contra
 relays honestos. `zing kb-import --check <archivo>` ejecuta las mismas
 comprobaciones que la importación del usuario (esquema, límites, expresiones
 regulares peligrosas, prompts, colisiones de ids).
+
+Las `fingerprints` a nivel de proveedor se ejecutan en cada modelo del
+proveedor. Una sonda cuya expectativa solo vale para algunos modelos (una fecha
+de corte, una prueba de conocimiento del nivel Pro, una trampa de razonamiento)
+va en las `fingerprints` de esos modelos; si no, la respuesta veraz de otro
+modelo cuenta como divergencia.
 
 Rellena siempre `identity_keywords` con las palabras del fabricante y de la
 familia con que el modelo se nombra a sí mismo. La comprobación de identidad

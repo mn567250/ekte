@@ -186,7 +186,10 @@ Dockerfile             Web 界面镜像
 `FingerprintProbe`），加载并合并各层（`loader.py`：内置 YAML → `ZING_KB_DIR`/`--kb-dir`
 → 用户的 `kb.db`），保存用户条目（`store.py`），检查并导入 YAML（`importer.py`），
 生成供外部助手使用的调研提示词（`research.py`），并为一次运行所用的画像拍快照（`snapshot.py`）。
-模型 id 通过别名和声明的厂商解析；每份报告都会记录 id 是如何匹配的。
+模型 id 依次按精确 id、别名或规范化名称解析，并由声明的厂商缩小范围。模糊匹配取所声称 id
+中包含的最长知识库名称（快照或带修饰的 id）；更短的 id 只有在恰好一个模型的名称包含它时才会
+解析，因此像 `gpt-4` 这样有歧义的 id 不会匹配任何画像，而不是被猜成某个档位。每份报告都会
+记录 id 是如何匹配的。
 
 `load_knowledge_base()` 会缓存合并结果，默认返回一份深拷贝，因此调用方可以修改拿到的结果。
 只读取它的调用方（Web 界面的列表和目录、解析模型）传入 `copy=False`，拿到共享的缓存实例，
@@ -347,6 +350,10 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 `zing/knowledge/schema.py`）。修改数值字段时，请在 Pull Request 中**注明权威来源**（厂商官方的
 模型卡、价格页或文档）：错误的数值会导致对诚实中转站的误报。`zing kb-import --check <file>`
 会执行与用户导入相同的检查（结构、限制、不安全的正则表达式、提示词、id 冲突）。
+
+厂商级 `fingerprints` 会在该厂商的每个模型上运行。期望只对部分模型成立的探测（知识截止日期、
+Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `fingerprints` 中，否则另一个模型的如实
+回答会被算作偏离。
 
 `identity_keywords` 一律要填上模型自称时使用的厂商与系列词。身份检查还会把厂商键、显示名称
 和模型 id 当作正品品牌，并扩展到 `VENDOR_BRANDS`（`zing/knowledge/identity.py`，同时也是检测器
