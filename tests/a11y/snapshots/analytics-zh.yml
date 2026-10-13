@@ -42,7 +42,7 @@
     - text: 下的本地历史计算，不会上传。
   - status: 已更新：此范围内 14 次检测。
   - region "筛选":
-    - heading "筛选" [level=2]
+    - button "筛选" [expanded]
     - text: 时间范围
     - group "时间范围":
       - button "最近 7 天"
@@ -80,411 +80,78 @@
       - option "model-b"
       - option "gpt-4o"
     - text: 历史中共 15 次检测（4 次由监控产生）。
-  - region "概览":
-    - heading "概览" [level=2]
-    - paragraph: 2026/9/2 – 2026/10/1，与之前同样长度的一段时间（2026/8/3 – 2026/9/1）对比。
-    - list:
-      - listitem: 检测次数 14 +14
-      - listitem: 中转站 2 +2
-      - listitem: 模型 2 +2
-      - listitem: 健康分中位数 79 上一周期无数据
-      - listitem: 高风险占比 21.4% 上一周期无数据
-      - listitem: 成功率 100% 上一周期无数据
-      - listitem: 首字延迟 p50 <duration> 上一周期无数据
-      - listitem: 输出速度 62.9 tok/s 上一周期无数据
-      - listitem: 计费比（输入） 103% 上一周期无数据 9 / 14 次检测有此数据
-      - listitem: 计费比（输出） 102% 上一周期无数据 9 / 14 次检测有此数据
-  - region "随时间对比":
-    - heading "随时间对比" [level=2]
-    - paragraph: 折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。
-    - text: 指标
-    - combobox "指标":
-      - option "健康分" [selected]
-      - option "高风险占比"
-      - option "成功率"
-      - option "错误率"
-      - option "超时率"
-      - option "限流占比"
-      - option "延迟 p50"
-      - option "延迟 p95"
-      - option "首字延迟 p50"
-      - option "首字延迟 p95"
-      - option "输出速度"
-      - option "字间抖动"
-      - option "中转处理耗时"
-      - option "网络往返"
-      - option "冷启动"
-      - option "并发吞吐"
-      - option "计费比（输入）"
-      - option "计费比（输出）"
-      - option "推理 token 占比"
-      - option "缓存输入占比"
-      - option "模型不符占比"
-      - option "声明的上下文"
-      - option "实测上下文"
-      - option "高危发现"
-      - option "中危发现"
-      - option "低危发现"
-      - option "检测时长"
-      - option "维度：计费用量"
-      - option "维度：能力声明"
-      - option "维度：连通性"
-      - option "维度：上下文窗口"
-      - option "维度：模型身份"
-      - option "维度：协议兼容"
-      - option "维度：并发可靠"
-      - option "维度：传输安全"
-      - option "维度：流式真实"
-    - text: 分组
-    - combobox "分组":
-      - option "中转站" [selected]
-      - option "模型"
-      - option "中转站 × 模型"
-    - text: 时间段
-    - combobox "时间段":
-      - option "按小时"
-      - option "按天" [selected]
-      - option "按周"
-    - text: 对比的数据系列（最多 4 个）
-    - group "对比的数据系列（最多 4 个）":
-      - button "✓ Example Relay" [pressed]
-      - button "✓ https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1" [pressed]
-      - button "http://127.0.0.1:9099/v1"
-    - list "图例":
-      - listitem: Example Relay 9 次检测
-      - listitem: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 5 次检测
-    - img "健康分随时间变化": 0 20 40 60 80100 9月25日 9月27日 9月29日 10月1日 v·KB
-    - paragraph:
-      - text: 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。
-      - link "设置监控以定期测量。":
-        - /url: /v2/watches
-    - text: 图中虚线标出评分依据的变化（v = zing 版本，KB = 知识库档案）：
-    - list:
-      - listitem: "2026年9月29日周二 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: 知识库档案有变化（评分依据变了，不是中转站变了）"
-      - listitem: "2026年9月29日周二 · Example Relay, https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1: zing 版本 0.19.2 → 0.20.0"
-    - button "以表格显示" [expanded]
-    - region "健康分（中转站，按天）":
-      - table "健康分（中转站，按天）":
-        - caption: 健康分（中转站，按天）
-        - rowgroup:
-          - row "时间段 数据系列 中位数 p25–p75 检测次数 说明":
-            - columnheader "时间段"
-            - columnheader "数据系列"
-            - columnheader "中位数"
-            - columnheader "p25–p75"
-            - columnheader "检测次数"
-            - columnheader "说明"
-        - rowgroup:
-          - row "2026年9月26日周六 Example Relay 70 70 – 70 1 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。":
-            - cell "2026年9月26日周六"
-            - cell "Example Relay"
-            - cell "70"
-            - cell "70 – 70"
-            - cell "1"
-            - cell "此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。"
-          # … more rows of the same shape
-  - region "排行榜":
-    - heading "排行榜" [level=2]
-    - paragraph: 所选时间范围内的中位数；n 为测得该值的检测次数。
-    - group "排行方式":
-      - button "某个模型的各中转站" [pressed]
-      - button "某个中转站的各模型"
-    - text: 模型
-    - combobox "模型":
-      - option "model-a" [selected]
-      - option "model-b"
-      - option "gpt-4o"
-    - region "“model-a”的各中转站":
-      - table "“model-a”的各中转站":
-        - caption: “model-a”的各中转站
-        - rowgroup:
-          - row "中转站 检测次数 健康分 首字延迟 p50 输出速度 成功率 计费比（输入） 计费比（输出） 模型不符占比 高风险占比 最近一次检测":
-            - columnheader "中转站":
-              - button "中转站"
-            - columnheader "检测次数":
-              - button "检测次数"
-            - columnheader "健康分":
-              - button "健康分"
-            - columnheader "首字延迟 p50":
-              - button "首字延迟 p50"
-            - columnheader "输出速度":
-              - button "输出速度"
-            - columnheader "成功率":
-              - button "成功率"
-            - columnheader "计费比（输入）":
-              - button "计费比（输入）"
-            - columnheader "计费比（输出）":
-              - button "计费比（输出）"
-            - columnheader "模型不符占比":
-              - button "模型不符占比"
-            - columnheader "高风险占比":
-              - button "高风险占比"
-            - columnheader "最近一次检测":
-              - button "最近一次检测"
-        - rowgroup:
-          - row "Example Relay 7 82 n=7 <duration> n=7 63.2 tok/s n=7100% n=7104% n=7102% n=7 0% n=7 0% n=7 2026年9月30日 11:00":
-            - rowheader "Example Relay"
-            - cell "7"
-            - cell "82 n=7"
-            - cell "<duration> n=7"
-            - cell "63.2 tok/s n=7"
-            - cell "100% n=7"
-            - cell "104% n=7"
-            - cell "102% n=7"
-            - cell "0% n=7"
-            - cell "0% n=7"
-            - cell "2026年9月30日 11:00"
-          # … more rows of the same shape
-    - status
-  - region "高峰时段":
-    - heading "高峰时段" [level=2]
-    - paragraph: 这个中转站在高峰时段会变慢或更容易出错吗？每个格子是你所在时区某个星期几的某个小时，颜色表示该时段开始的检测的中位数（色阶见网格下方）。
-    - text: 指标
-    - combobox "指标":
-      - option "首字延迟 p50" [selected]
-      - option "延迟 p50"
-      - option "输出速度"
-      - option "成功率"
-      - option "错误率"
-      - option "限流占比"
-      - option "超时率"
-      - option "健康分"
-    - text: 中转站
-    - combobox "中转站":
-      - option "全部中转站" [selected]
-      - option "Example Relay"
-      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
-      - option "http://127.0.0.1:9099/v1"
-    - img "首字延迟 p50，按星期几和小时": 00 03 06 09 12 15 18 21 周一 周二 周三 周四 周五 周六 周日
-    - list:
-      - listitem: <duration> <duration>
-      - listitem: 少于 3 次检测（斜线）
-      - listitem: 没有检测
-    - paragraph:
-      - text: 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。
-      - link "设置监控以定期测量。":
-        - /url: /v2/watches
-    - button "以表格显示" [expanded]
-    - region "首字延迟 p50，按星期几和小时（全部中转站）":
-      - table "首字延迟 p50，按星期几和小时（全部中转站）":
-        - caption: 首字延迟 p50，按星期几和小时（全部中转站）
-        - rowgroup:
-          - row "星期 小时 中位数 检测次数 说明":
-            - columnheader "星期"
-            - columnheader "小时"
-            - columnheader "中位数"
-            - columnheader "检测次数"
-            - columnheader "说明"
-        - rowgroup:
-          - row "星期一 7:00–8:00 <duration> 1 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。":
-            - cell "星期一"
-            - cell "7:00–8:00"
-            - cell "<duration>"
-            - cell "1"
-            - cell "此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。"
-          # … more rows of the same shape
-  - region "错误与可靠性":
-    - heading "错误与可靠性" [level=2]
-    - paragraph: 按原因统计对中转站的失败调用：限流（HTTP 429）、服务器错误（5xx）、超时及其他，占全部调用的比例。
-    - text: 表格分组
-    - combobox "表格分组":
-      - option "中转站" [selected]
-      - option "模型"
-    - text: 时间段
-    - combobox "时间段":
-      - option "按小时"
-      - option "按天" [selected]
-      - option "按周"
-    - paragraph: 14 / 14 次检测有请求记录。 共 140 次调用，18 次失败（12.9%）。
-    - list "图例":
-      - listitem: 限流（429）
-      - listitem: 服务器错误（5xx）
-      - listitem: 超时
-      - listitem: 其他错误（4xx、网络等）
-    - img "失败调用随时间变化": 0% 5% 10% 15% 20% 9月25日 9月27日 9月29日 10月1日
-    - paragraph:
-      - text: 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。
-      - link "设置监控以定期测量。":
-        - /url: /v2/watches
-    - button "以表格显示" [expanded]
-    - region "每个时间段的调用结果（按天）":
-      - table "每个时间段的调用结果（按天）":
-        - caption: 每个时间段的调用结果（按天）
-        - rowgroup:
-          - row "时间段 调用 成功 客户端错误（4xx） 限流（429） 服务器错误（5xx） 超时 网络错误 其他失败 失败占比 检测次数 说明":
-            - columnheader "时间段"
-            - columnheader "调用"
-            - columnheader "成功"
-            - columnheader "客户端错误（4xx）"
-            - columnheader "限流（429）"
-            - columnheader "服务器错误（5xx）"
-            - columnheader "超时"
-            - columnheader "网络错误"
-            - columnheader "其他失败"
-            - columnheader "失败占比"
-            - columnheader "检测次数"
-            - columnheader "说明"
-        - rowgroup:
-          - row "2026年9月26日周六 10 9 0 0 0 1 0 0 10% 1 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。":
-            - cell "2026年9月26日周六"
-            - cell "10"
-            - cell "9"
-            - cell "0"
-            - cell "0"
-            - cell "0"
-            - cell "1"
-            - cell "0"
-            - cell "0"
-            - cell "10%"
-            - cell "1"
-            - cell "此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。"
-          # … more rows of the same shape
-    - heading "按中转站" [level=3]
-    - region "各中转站的调用结果":
-      - table "各中转站的调用结果":
-        - caption: 各中转站的调用结果
-        - rowgroup:
-          - row "中转站 有记录的检测 调用 成功 客户端错误（4xx） 限流（429） 服务器错误（5xx） 超时 网络错误 其他失败 失败占比 限流占比 超时占比":
-            - columnheader "中转站"
-            - columnheader "有记录的检测"
-            - columnheader "调用"
-            - columnheader "成功"
-            - columnheader "客户端错误（4xx）"
-            - columnheader "限流（429）"
-            - columnheader "服务器错误（5xx）"
-            - columnheader "超时"
-            - columnheader "网络错误"
-            - columnheader "其他失败"
-            - columnheader "失败占比"
-            - columnheader "限流占比"
-            - columnheader "超时占比"
-        - rowgroup:
-          - row "Example Relay 9 / 9 90 85 0 0 0 5 0 0 5.6% 0% 5.6%":
-            - rowheader "Example Relay"
-            - cell "9 / 9"
-            - cell "90"
-            - cell "85"
-            - cell "0"
-            - cell "0"
-            - cell "0"
-            - cell "5"
-            - cell "0"
-            - cell "0"
-            - cell "5.6%"
-            - cell "0%"
-            - cell "5.6%"
-          # … more rows of the same shape
-  - region "模型真实性":
-    - heading "模型真实性" [level=2]
-    - paragraph: 它是不是自称的那个模型，是否完整、功能齐全？按中转站与模型列出身份、上下文窗口与能力检查的结果。
-    - paragraph:
-      - text: 标为“检测较少”的行少于 3 次检测——单次检测可能是离群值。
-      - link "设置监控以定期测量。":
-        - /url: /v2/watches
-    - region "每个中转站 × 模型的检查结果（n = 有结论的检测次数）":
-      - table "每个中转站 × 模型的检查结果（n = 有结论的检测次数）":
-        - caption: 每个中转站 × 模型的检查结果（n = 有结论的检测次数）
-        - rowgroup:
-          - row "中转站 × 模型 检测次数 模型身份 能力 图像理解 流式输出 响应协议 模型不符占比 实测 / 声明的上下文":
-            - columnheader "中转站 × 模型"
-            - columnheader "检测次数"
-            - columnheader "模型身份"
-            - columnheader "能力"
-            - columnheader "图像理解"
-            - columnheader "流式输出"
-            - columnheader "响应协议"
-            - columnheader "模型不符占比"
-            - columnheader "实测 / 声明的上下文"
-        - rowgroup:
-          - row "Example Relay · model-a 7 通过 7 / 7 通过 通过 7 / 7 通过 通过 7 / 7 通过 通过 7 / 7 通过 通过 7 / 7 通过 0% n=7100% 128000 tok / 128000 tok n=7":
-            - rowheader "Example Relay · model-a"
-            - cell "7"
-            - cell "通过 7 / 7 通过"
-            - cell "通过 7 / 7 通过"
-            - cell "通过 7 / 7 通过"
-            - cell "通过 7 / 7 通过"
-            - cell "通过 7 / 7 通过"
-            - cell "0% n=7"
-            - cell "100% 128000 tok / 128000 tok n=7"
-          # … more rows of the same shape
-  - region "计费与 token":
-    - heading "计费与 token" [level=2]
-    - paragraph: 计费比 = 中转站报告的 token ÷ zing 统计的 token。高于 100%：中转站报告的 token 多于 zing 统计的（可能多计费）。zing 的统计是估算，小幅偏差属正常。
-    - text: 指标
-    - combobox "指标":
-      - option "计费比（输入）" [selected]
-      - option "计费比（输出）"
-      - option "推理 token 占比"
-      - option "缓存输入占比"
-    - paragraph: 9 / 14 次检测有“计费比（输入）”的数据。
-    - list "图例":
-      - listitem: Example Relay 9 次检测
-    - img "计费比（输入）随时间变化": 0% 25% 50% 75% 100% 125% 9月25日 9月27日 9月29日 10月1日 100%
-    - paragraph:
-      - text: 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。
-      - link "设置监控以定期测量。":
-        - /url: /v2/watches
-    - button "以表格显示" [expanded]
-    - region "计费比（输入）（中转站，按天）":
-      - table "计费比（输入）（中转站，按天）":
-        - caption: 计费比（输入）（中转站，按天）
-        - rowgroup:
-          - row "时间段 数据系列 中位数 p25–p75 检测次数 说明":
-            - columnheader "时间段"
-            - columnheader "数据系列"
-            - columnheader "中位数"
-            - columnheader "p25–p75"
-            - columnheader "检测次数"
-            - columnheader "说明"
-        - rowgroup:
-          - row "2026年9月26日周六 Example Relay 110% 110% – 110% 1 此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。":
-            - cell "2026年9月26日周六"
-            - cell "Example Relay"
-            - cell "110%"
-            - cell "110% – 110%"
-            - cell "1"
-            - cell "此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。"
-          # … more rows of the same shape
-    - heading "各中转站汇总" [level=3]
-    - region "所选范围内的中位数（n = 测得该值的检测次数）":
-      - table "所选范围内的中位数（n = 测得该值的检测次数）":
-        - caption: 所选范围内的中位数（n = 测得该值的检测次数）
-        - rowgroup:
-          - row "中转站 检测次数 计费比（输入） 计费比（输出） 推理 token 占比 缓存输入占比":
-            - columnheader "中转站"
-            - columnheader "检测次数"
-            - columnheader "计费比（输入）"
-            - columnheader "计费比（输出）"
-            - columnheader "推理 token 占比"
-            - columnheader "缓存输入占比"
-        - rowgroup:
-          - row "Example Relay 9103% n=9102% n=9 30% n=9 25% n=9":
-            - rowheader "Example Relay"
-            - cell "9"
-            - cell "103% n=9"
-            - cell "102% n=9"
-            - cell "30% n=9"
-            - cell "25% n=9"
-          # … more rows of the same shape
-  - region "中转开销":
-    - heading "中转开销" [level=2]
-    - paragraph: 中转站在自己的响应头里报告的处理耗时，与到它的网络往返时间并列（中位数）。中转站的数据是自报的，未经核实。
-    - list "图例":
-      - listitem: 中转处理耗时
-      - listitem: 网络往返
-    - region "每个中转站的中位数，条形按同一比例绘制":
-      - table "每个中转站的中位数，条形按同一比例绘制":
-        - caption: 每个中转站的中位数，条形按同一比例绘制
-        - rowgroup:
-          - row "中转站 检测次数 中转处理耗时 网络往返":
-            - columnheader "中转站"
-            - columnheader "检测次数"
-            - columnheader "中转处理耗时"
-            - columnheader "网络往返"
-        - rowgroup:
-          - row "Example Relay 9 <duration> n=9 <duration> n=9":
-            - rowheader "Example Relay"
-            - cell "9"
-            - cell "<duration> n=9"
-            - cell "<duration> n=9"
-          # … more rows of the same shape
+  - button "复制此视图的链接"
+  - tablist "分析视图":
+    - tab "概览" [selected]
+    - tab "趋势"
+    - tab "可靠性"
+    - tab "模型真实性"
+    - tab "计费"
+  - tabpanel "概览":
+    - region "概览":
+      - heading "概览" [level=2]
+      - paragraph: 2026/9/2 – 2026/10/1，与之前同样长度的一段时间（2026/8/3 – 2026/9/1）对比。
+      - list:
+        - listitem: 检测次数 14 +14
+        - listitem: 中转站 2 +2
+        - listitem: 模型 2 +2
+        - listitem: 健康分中位数 79 上一周期无数据
+        - listitem: 高风险占比 21.4% 上一周期无数据
+        - listitem: 成功率 100% 上一周期无数据
+        - listitem: 首字延迟 p50 <duration> 上一周期无数据
+        - listitem: 输出速度 62.9 tok/s 上一周期无数据
+        - listitem: 计费比（输入） 103% 上一周期无数据 9 / 14 次检测有此数据
+        - listitem: 计费比（输出） 102% 上一周期无数据 9 / 14 次检测有此数据
+    - region "排行榜":
+      - heading "排行榜" [level=2]
+      - paragraph: 所选时间范围内的中位数；n 为测得该值的检测次数。
+      - group "排行方式":
+        - button "某个模型的各中转站" [pressed]
+        - button "某个中转站的各模型"
+      - text: 模型
+      - combobox "模型":
+        - option "model-a" [selected]
+        - option "model-b"
+        - option "gpt-4o"
+      - region "“model-a”的各中转站":
+        - table "“model-a”的各中转站":
+          - caption: “model-a”的各中转站
+          - rowgroup:
+            - row "中转站 检测次数 健康分 首字延迟 p50 输出速度 成功率 计费比（输入） 计费比（输出） 模型不符占比 高风险占比 最近一次检测":
+              - columnheader "中转站":
+                - button "中转站"
+              - columnheader "检测次数":
+                - button "检测次数"
+              - columnheader "健康分":
+                - button "健康分"
+              - columnheader "首字延迟 p50":
+                - button "首字延迟 p50"
+              - columnheader "输出速度":
+                - button "输出速度"
+              - columnheader "成功率":
+                - button "成功率"
+              - columnheader "计费比（输入）":
+                - button "计费比（输入）"
+              - columnheader "计费比（输出）":
+                - button "计费比（输出）"
+              - columnheader "模型不符占比":
+                - button "模型不符占比"
+              - columnheader "高风险占比":
+                - button "高风险占比"
+              - columnheader "最近一次检测":
+                - button "最近一次检测"
+          - rowgroup:
+            - row "Example Relay 7 82 n=7 <duration> n=7 63.2 tok/s n=7100% n=7104% n=7102% n=7 0% n=7 0% n=7 2026年9月30日 11:00":
+              - rowheader "Example Relay"
+              - cell "7"
+              - cell "82 n=7"
+              - cell "<duration> n=7"
+              - cell "63.2 tok/s n=7"
+              - cell "100% n=7"
+              - cell "104% n=7"
+              - cell "102% n=7"
+              - cell "0% n=7"
+              - cell "0% n=7"
+              - cell "2026年9月30日 11:00"
+            # … more rows of the same shape
+      - status
