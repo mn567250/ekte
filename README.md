@@ -304,6 +304,18 @@ it the relay reports more tokens than zing counted — plus reasoning and cached
 input shares) and **relay overhead** (the processing time a relay reports next
 to the network round trip to it).
 
+**Tabs and share links (Analytics).** The panels sit in five tabs —
+**Overview** (KPIs, leaderboard), **Trends** (comparison over time, peak
+hours), **Reliability** (errors, relay overhead), **Model integrity** and
+**Billing** — under the page header and one filter panel shared by all of
+them; only the tab you look at loads. The URL keeps the tab, the filters and
+every chart option (`#tab=reliability&range=30&relay=…&eb=dow_hour`), and
+**Copy link to this view** copies it (or shows it in a field to copy where the
+browser does not allow that): opening the link shows exactly that view. The
+filter panel is the same on **History** and **Analytics**: closed, it shows how
+many filters are active and names them in one line (e.g. "Last 30 days ·
+standard · Streaming · Example Relay"), so a shared view says what it shows.
+
 ### Languages
 
 A language dropdown in the header of every page switches the UI between

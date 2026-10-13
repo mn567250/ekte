@@ -324,6 +324,20 @@ zing gezählt hat — sowie Anteile von Reasoning- und gecachten Eingabe-Tokens)
 und **Relay-Overhead** (die vom Relay gemeldete Verarbeitungszeit neben der
 Netzwerk-Umlaufzeit dorthin).
 
+**Tabs und Links zum Teilen (Analyse).** Die Panels liegen in fünf Tabs —
+**Überblick** (Kennzahlen, Rangliste), **Trends** (Vergleich im Zeitverlauf,
+Stoßzeiten), **Zuverlässigkeit** (Fehler, Relay-Overhead),
+**Modellechtheit** und **Abrechnung** — unter dem Seitenkopf und einem
+gemeinsamen Filterpanel; geladen wird nur der Tab, den Sie ansehen. Die URL
+enthält Tab, Filter und jede Diagrammoption
+(`#tab=reliability&range=30&relay=…&eb=dow_hour`), und **Link zu dieser
+Ansicht kopieren** kopiert sie (oder zeigt sie in einem Feld zum Kopieren, wo
+der Browser das nicht erlaubt): Der Link öffnet genau diese Ansicht. Das
+Filterpanel ist auf **Verlauf** und **Analyse** dasselbe: Geschlossen zeigt es,
+wie viele Filter aktiv sind, und nennt sie in einer Zeile (z. B. „Letzte 30
+Tage · standard · Streaming · Example Relay“), so sagt eine geteilte Ansicht,
+was sie zeigt.
+
 ### Sprachen
 
 Ein Sprachmenü in der Kopfzeile jeder Seite schaltet die Oberfläche zwischen
