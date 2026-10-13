@@ -492,6 +492,12 @@ alle capacità del profilo:
   dichiarato, 2048) token; raggiungere il limite o una lunghezza plausibile è
   superato, fermarsi sotto un quarto viene segnalato.
 
+Un'osservazione senza una dichiarazione da verificare — nessuna chiamata a
+strumento o oggetto JSON quando la funzione non è dichiarata, o qualsiasi esito
+dello schema rigoroso quando il profilo dice che il modello non ha schemi
+rigorosi — viene annotata ma non conteggiata: un modello non perde né guadagna
+punti per ciò che nessuno dichiara.
+
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `capability.tools` | È tornata una chiamata a strumento per una richiesta esplicita di strumento. | Superato | 100 pt |
@@ -500,13 +506,13 @@ alle capacità del profilo:
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.tools.encoding` | Gli argomenti dello strumento sono arrivati come oggetto, non come la stringa JSON di OpenAI. | Avviso · Bassa | Non conteggiato |
 | `capability.json_mode` | La modalità JSON ha restituito un oggetto analizzabile con il valore richiesto. | Superato | 100 pt |
-|  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | 70 pt |
-|  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Avviso | 50 pt |
+|  | È tornato un oggetto JSON con il valore sbagliato; la modalità JSON non è dichiarata. | Info | Non conteggiato |
+|  | Non è tornato alcun oggetto JSON analizzabile; la modalità JSON non è dichiarata. | Info | Non conteggiato |
 |  | La modalità JSON è dichiarata ma non è tornato un oggetto valido con il valore. | Fallito · Media | 0 pt |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.json_schema` | Lo schema rigoroso è dichiarato e la risposta lo rispettava. | Superato | 100 pt |
-|  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | 100 pt |
-|  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | 90 pt |
+|  | Lo schema rigoroso non è stato applicato, in linea con quanto dichiarato. | Info | Non conteggiato |
+|  | La risposta lo rispettava anche se il modello dichiarato non ha schemi rigorosi. | Info | Non conteggiato |
 |  | Lo schema rigoroso è dichiarato ma la risposta non lo rispettava. | Avviso · Bassa | 40 pt |
 |  | Nessuna risposta utilizzabile per valutare. | Non conclusivo · Bassa | Non conteggiato |
 | `capability.max_output` | L'output è proseguito fino al limite di token richiesto. | Superato | 100 pt |
@@ -797,7 +803,7 @@ base di conoscenza.
 | `performance.cache_hit` | Prompt di sonda unici sono tornati da una cache (esclusi dalle statistiche). | Avviso · Bassa | 60 pt |
 |  | Il riferimento ha servito prompt unici da una cache (non valutato). | Info | Non conteggiato |
 | `performance.reference` | Il throughput è in linea con il riferimento per questo modello. | Superato | 100 pt |
-|  | Più lento del riferimento (ad es. locale o hardware più piccolo); non è un fallimento. | Info | 80 pt |
+|  | Più lento del riferimento (ad es. locale o hardware più piccolo); non è un fallimento. | Info | Non conteggiato |
 |  | Molto più veloce del riferimento (compatibile con un modello più piccolo). | Avviso · Bassa | 60 pt |
 | `performance.reasoning` | Il modello spende token di ragionamento nascosti; il TTFT include il ragionamento. | Info | Non conteggiato |
 | `performance.relay_overhead` | Latenza confrontata con la baseline affidabile (solo informativo). | Info | Non conteggiato |
@@ -806,7 +812,7 @@ base di conoscenza.
 **Avvertenze.** La latenza dipende dal percorso di rete e dal carico del
 fornitore in quel momento; ripeti un cattivo risultato di costanza in un altro
 momento. Gli intervalli della base di conoscenza sono mediane volutamente ampie
-delle API native, e un obiettivo più lento non è mai un fallimento. Tutte le
+delle API native, e un obiettivo più lento viene annotato, mai conteggiato. Tutte le
 rilevazioni sono al massimo di gravità BASSA: questa dimensione muove il
 punteggio, mai il verdetto di rischio.
 

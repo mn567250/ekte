@@ -466,6 +466,11 @@ profile's capability flags:
   tokens; reaching the cap or a plausible length passes, stopping below a
   quarter of it is flagged.
 
+An observation without a claim to verify — no tool call or JSON object when the
+feature is not claimed, or any strict-schema result when the profile says the
+model lacks strict schemas — is noted but not counted: a model is neither marked
+down nor credited for what nobody claimed.
+
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
 | `capability.tools` | A tool call came back for an explicit tool-use request. | Pass | 100 pts |
@@ -474,13 +479,13 @@ profile's capability flags:
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.tools.encoding` | Tool arguments arrived as an object, not the JSON string OpenAI returns. | Warning · Low | Not counted |
 | `capability.json_mode` | JSON mode returned a parseable object with the requested value. | Pass | 100 pts |
-|  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | 70 pts |
-|  | No parseable JSON object came back; JSON mode is not claimed. | Warning | 50 pts |
+|  | A JSON object came back with the wrong value; JSON mode is not claimed. | Info | Not counted |
+|  | No parseable JSON object came back; JSON mode is not claimed. | Info | Not counted |
 |  | JSON mode is claimed but no valid object with the value came back. | Fail · Medium | 0 pts |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.json_schema` | The strict schema is claimed and the response conformed. | Pass | 100 pts |
-|  | The strict schema was not enforced, consistent with the claim. | Info | 100 pts |
-|  | The response conformed although the claimed model lacks strict schemas. | Info | 90 pts |
+|  | The strict schema was not enforced, consistent with the claim. | Info | Not counted |
+|  | The response conformed although the claimed model lacks strict schemas. | Info | Not counted |
 |  | The strict schema is claimed but the response did not conform. | Warning · Low | 40 pts |
 |  | No usable response to judge by. | Inconclusive · Low | Not counted |
 | `capability.max_output` | Output continued up to the requested token cap. | Pass | 100 pts |
@@ -754,7 +759,7 @@ baseline, or else the knowledge-base profile's `performance.decode_tps` range.
 | `performance.cache_hit` | Unique probe prompts came back from a cache (left out of the statistics). | Warning · Low | 60 pts |
 |  | The baseline served unique probe prompts from a cache (not scored). | Info | Not counted |
 | `performance.reference` | Throughput is in line with the reference for this model. | Pass | 100 pts |
-|  | Slower than the reference (e.g. local or smaller hardware); not a failure. | Info | 80 pts |
+|  | Slower than the reference (e.g. local or smaller hardware); not a failure. | Info | Not counted |
 |  | Much faster than the reference (consistent with a smaller model). | Warning · Low | 60 pts |
 | `performance.reasoning` | The model spends hidden reasoning tokens; TTFT includes thinking. | Info | Not counted |
 | `performance.relay_overhead` | Latency compared with the trusted baseline (informational). | Info | Not counted |
@@ -763,7 +768,7 @@ baseline, or else the knowledge-base profile's `performance.decode_tps` range.
 **Caveats.** Latency depends on the network path and the provider's load at
 that moment; repeat a poor consistency result at another time. The
 knowledge-base ranges are deliberately wide medians of native APIs, and a
-slower target is never a failure. All findings are at most LOW severity, so
+slower target is noted, never scored. All findings are at most LOW severity, so
 this dimension moves the score, never the risk verdict.
 
 ---
