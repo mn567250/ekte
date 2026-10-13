@@ -44,7 +44,7 @@ inputs:
   version:
     description: >-
       pip install spec for zing. Defaults to the latest published `zing-audit`.
-      Pin it for reproducible runs, e.g. `zing-audit==0.19.0`.
+      Pin it for reproducible runs, e.g. `zing-audit==0.20.0`.
     required: false
     default: "zing-audit"
 

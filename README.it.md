@@ -687,7 +687,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.19.0         # fissare a un tag di rilascio
+        uses: cenbonew/zing@v0.20.0         # fissare a un tag di rilascio
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # secret del chiamante; mai mostrato

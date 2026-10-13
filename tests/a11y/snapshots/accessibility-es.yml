@@ -46,7 +46,7 @@
     - definition:
       - code: <id>
     - term: Versión de zing
-    - definition: 0.19.2
+    - definition: 0.20.0
     - term: Versión de axe-core
     - definition: 4.13.0
     - term: Pruebas
