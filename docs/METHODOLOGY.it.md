@@ -324,56 +324,82 @@ tronca il prompt in silenzio) e `context.lost-in-middle-rag` (uno strato
 economico di RAG/riassunto inoltra solo parti del prompt).
 
 **Come funziona.** Richiamo di un ago nel pagliaio a `temperature=0`: un
-marcatore univoco viene inserito in un testo di riempimento non ripetitivo,
-dimensionato con la stima euristica dei token di zing, e il modello deve
-restituirlo.
+marcatore univoco viene inserito in un testo di riempimento non ripetitivo, e
+il modello deve restituirlo.
 
-1. Una scala crescente che raddoppia da 2K token fino alla finestra dichiarata,
-   limitata da `--max-context-tokens` (200K predefinito), con un gradino vicino
-   al 90 % del massimo (al più sette dimensioni). Ogni dimensione viene sondata
-   prima con l'ago all'**inizio** (profondità 0,0): un troncamento che conserva
-   la domanda in fondo al prompt può scartarne solo l'inizio (un server locale
-   che taglia il prompt alla sua lunghezza di contesto ne conserva la fine),
-   quindi un richiamo lì supera la dimensione con una sola chiamata. Un
-   fallimento viene verificato alla fine (profondità 0,95); se la fine viene
-   richiamata, l'inizio viene sondato ancora una volta con un ago nuovo, e un
-   secondo fallimento boccia la dimensione come **troncamento in testa**
-   (indicato nelle evidenze del verdetto). Al più tre chiamate per dimensione;
-   la scala si ferma al primo fallimento confermato.
+- **Finestra sondata.** La sonda arriva fino a `upper` = la finestra
+  dichiarata, limitata da `--max-context-tokens` (200K predefinito). Ogni
+  verdetto è giudicato rispetto a `upper`, mai rispetto alla parte di una
+  finestra dichiarata più grande che sta oltre il limite.
+- **Le dimensioni sono token reali.** La stima dei token integrata in zing
+  sottostima questo riempimento di circa il 12% (o200k) - 15% (cl100k)
+  rispetto ai tokenizer reali, quindi ogni prompt viene costruito a dimensione
+  ÷ 1,2 secondo la stima (ago e domanda inclusi): un gradino di dimensione N
+  resta entro N token reali. Le dimensioni nelle evidenze (`size`,
+  `effective_window`, `top_rung`) sono questi budget di token reali; le righe
+  della scala riportano anche la stima con cui è stato costruito un prompt
+  (`heuristic_tokens`).
+
+1. Una scala di al più sette dimensioni, dimezzata a partire da un **gradino
+   più alto al 90% di `upper`** (nessun gradino raggiunge la finestra intera,
+   lasciando spazio alla risposta e al template di chat) fino a un minimo di 1K
+   (`context_probe_floor_tokens`); una finestra piccola abbassa il minimo a un
+   quarto del gradino più alto (una finestra di 2K sonda ~460, ~920 e ~1,8K).
+   Ogni dimensione viene sondata prima con l'ago all'**inizio** (profondità
+   0,0): un troncamento che conserva la domanda in fondo al prompt può
+   scartarne solo l'inizio (un server locale che taglia il prompt alla sua
+   lunghezza di contesto ne conserva la fine), quindi un richiamo lì supera la
+   dimensione con una sola chiamata. Un fallimento viene verificato alla fine
+   (profondità 0,95); se la fine viene richiamata, l'inizio viene sondato ancora
+   una volta con un ago nuovo, e un secondo fallimento boccia la dimensione come
+   **troncamento in testa** (indicato nelle evidenze del verdetto). Al più tre
+   chiamate per dimensione; la scala si ferma al primo fallimento confermato.
 2. Un passo di ricerca binaria tra l'ultima dimensione richiamata e la prima
    fallita.
 3. Perdita nel mezzo: a min(32K, finestra misurata) l'ago viene posto alle
-   profondità 0,1, 0,5 e 0,9; inizio e fine richiamati ma non il mezzo è una
-   rilevazione.
+   profondità 0,1, 0,5 e 0,9. Se inizio e fine vengono richiamati ma il mezzo
+   no, il mezzo viene sondato ancora una volta con un ago nuovo; solo un secondo
+   fallimento è una rilevazione.
 4. Un 4xx il cui messaggio cita la lunghezza del contesto è un rifiuto per
    dimensione; un rifiuto di `max_tokens` (modelli di ragionamento) viene
    ritentato con `max_completion_tokens` e non viene mai letto come un tetto.
-5. Una sonda andata in timeout chiude la scala senza contare come fallimento:
-   la finestra oltre l'ultima dimensione ricordata è riportata come non
-   verificata (non conclusiva), mai come troncamento.
+5. Una sonda andata in timeout o a cui si risponde con un errore (un altro
+   parametro rifiutato, un errore HTTP, un 5xx, una risposta vuota o malformata)
+   chiude la scala senza contare come fallimento: la finestra oltre l'ultima
+   dimensione ricordata è riportata come non verificata (non conclusiva, non
+   valutata), mai come troncamento né `no_recall`. Solo una risposta senza
+   l'ago è un fallimento.
 
-La finestra misurata viene confrontata con quella dichiarata. Senza finestra
-dichiarata la misura viene riportata ma non valutata.
+La finestra misurata (la dimensione richiamata più grande) viene confrontata con
+`upper`: un richiamo al gradino più alto è coerente (oppure, se la finestra
+dichiarata supera il limite, **verificata fino al limite**: la finestra oltre
+non è stata provata); sotto, il verdetto detrae la quota del gradino più alto
+non richiamata — un avviso dalla metà di `upper` in su, un fallimento sotto.
+Senza finestra dichiarata la misura viene riportata ma non valutata.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
-| `context_window.window` (Finestra di contesto effettiva) | Il richiamo ha tenuto fino ad almeno il 90% della finestra dichiarata; toglie la quota di finestra non richiamata. | Superato | fino a −10 pt |
-|  | Il richiamo ha tenuto fino al 50–90% della finestra dichiarata; toglie la quota di finestra non richiamata. | Avviso · Media | fino a −50 pt |
-|  | Il richiamo è fallito sotto metà della finestra dichiarata; toglie la quota di finestra non richiamata. | Fallito · Alta | fino a −100 pt |
+| `context_window.window` (Finestra di contesto effettiva) | Il richiamo ha tenuto al gradino più alto (90% della finestra sondata): nessuna detrazione. | Superato | Nessuna detrazione |
+|  | Richiamo verificato fino al limite della sonda; la finestra dichiarata oltre non è stata provata. | Superato | Nessuna detrazione |
+|  | Il richiamo ha tenuto fino al 50-90% della finestra sondata; detrae la quota del gradino più alto non richiamata. | Avviso · Media | fino a −50 pt |
+|  | Il richiamo è fallito sotto la metà della finestra sondata; detrae la quota del gradino più alto non richiamata. | Fallito · Alta | fino a −100 pt |
 |  | Nemmeno la dimensione di sonda più piccola ha richiamato l'ago. | Fallito · Alta | −100 pt |
-| `context_window.lost_in_middle` | L'inizio e la fine sono stati richiamati, ma non la parte centrale. | Avviso · Media | −15 pt |
+| `context_window.lost_in_middle` | L'inizio e la fine sono stati richiamati, ma la parte centrale no, per due volte. | Avviso · Media | −15 pt |
 | `context_window.rejected_below_claim` | Un prompt ben al di sotto della finestra dichiarata è stato rifiutato come troppo lungo. | Fallito · Alta | Nessuna detrazione |
 | `context_window.measured` | Nessuna finestra dichiarata con cui confrontare: solo misurata, non conteggiata. | Info | Nessuna detrazione |
 | `context_window.no_ladder` | Nessuna dimensione di sonda rientrava tra il minimo e il limite. | Non conclusivo · Bassa | Nessuna detrazione |
 | `context_window.timed_out` | Una sonda è andata in timeout prima di raggiungere la finestra dichiarata: un endpoint lento, non una prova di troncamento. | Non conclusivo · Bassa | Nessuna detrazione |
+| `context_window.probe_error` | Una sonda ha ricevuto un errore (parametro rifiutato, errore HTTP o del server) prima del gradino più alto: non è prova di troncamento. | Non conclusivo · Bassa | Nessuna detrazione |
 
 **Avvertenze.** Anche i veri modelli a contesto lungo perdono aghi nel mezzo;
 per questo solo un fallimento al **bordo** viene letto come troncamento. Il
 richiamo vicino al tetto è probabilistico; riesegui prima di trarre
 conclusioni. La sonda è limitata da `--max-context-tokens`, quindi una finestra
-più grande non viene esercitata del tutto. Confronta con un riferimento
-affidabile per separare il comportamento del modello da quello di uno strato
-intermedio.
+più grande non viene esercitata del tutto (aumentalo per sondare oltre). Il
+gradino più alto è al 90% della finestra e il budget di token è prudente, quindi
+l'ultimo ~10-15% di una finestra non viene mai sondato. Confronta con un
+riferimento affidabile per separare il comportamento del modello da quello di
+uno strato intermedio.
 
 ---
 

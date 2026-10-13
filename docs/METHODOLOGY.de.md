@@ -329,55 +329,83 @@ billige RAG-/Zusammenfassungs-Zwischenschicht reicht nur Teile des Prompts
 weiter).
 
 **Vorgehen.** Abruf einer Nadel im Heuhaufen mit `temperature=0`: ein
-eindeutiger Marker steckt in nicht repetitivem Fülltext, der mit der
-heuristischen Token-Schätzung von zing bemessen ist, und das Modell muss ihn
-zurückgeben.
+eindeutiger Marker steckt in nicht repetitivem Fülltext, und das Modell muss
+ihn zurückgeben.
 
-1. Eine aufsteigende, sich verdoppelnde Leiter ab 2K Token bis zum angegebenen
-   Fenster, begrenzt durch `--max-context-tokens` (Standard 200K), mit einer
-   Stufe bei etwa 90 % des Maximums (höchstens sieben Größen). Jede Größe wird
-   zuerst mit der Nadel am **Anfang** getestet (Tiefe 0,0): eine Kürzung, die
-   die Frage am Ende des Prompts behält, kann nur dessen Anfang verwerfen (ein
-   lokaler Server, der den Prompt auf seine Kontextlänge kürzt, behält das
-   Ende), daher besteht die Größe bei einem Treffer dort mit einem Aufruf. Ein
-   Fehlschlag wird am Ende geprüft (Tiefe 0,95); wird das Ende erinnert, wird
-   der Anfang noch einmal mit einer frischen Nadel getestet, und ein zweiter
-   Fehlschlag lässt die Größe als **Kürzung von vorn** scheitern (in den Belegen
-   des Urteils vermerkt). Höchstens drei Aufrufe pro Größe; die Leiter endet
-   beim ersten bestätigten Fehlschlag.
+- **Geprüftes Fenster.** Die Probe reicht bis `upper` = angegebenes Fenster,
+  begrenzt durch `--max-context-tokens` (Standard 200K). Jedes Urteil wird an
+  `upper` gemessen, nie an dem Teil eines größeren angegebenen Fensters
+  oberhalb der Obergrenze.
+- **Größen sind echte Token.** Die eingebaute Token-Schätzung von zing zählt
+  diesen Fülltext gegenüber echten Tokenizern etwa 12 % (o200k) bis 15 %
+  (cl100k) zu niedrig; daher wird jeder Prompt laut Schätzung mit Größe ÷ 1,2
+  gebaut (Nadel und Frage eingerechnet): eine Stufe der Größe N bleibt innerhalb
+  von N echten Token. Größen in den Belegen (`size`, `effective_window`,
+  `top_rung`) sind diese Budgets an echten Token; die Leiterzeilen enthalten
+  zusätzlich die Schätzung, mit der ein Prompt gebaut wurde
+  (`heuristic_tokens`).
+
+1. Eine Leiter von höchstens sieben Größen, die von einer **obersten Stufe bei
+   90 % von `upper`** halbiert wird (keine Stufe erreicht das volle Fenster,
+   Platz für Antwort und Chat-Template bleibt) bis zu einer Untergrenze von 1K
+   (`context_probe_floor_tokens`); ein kleines Fenster senkt die Untergrenze auf
+   ein Viertel der obersten Stufe (ein 2K-Fenster prüft ~460, ~920 und ~1,8K).
+   Jede Größe wird zuerst mit der Nadel am **Anfang** getestet (Tiefe 0,0):
+   eine Kürzung, die die Frage am Ende des Prompts behält, kann nur dessen
+   Anfang verwerfen (ein lokaler Server, der den Prompt auf seine Kontextlänge
+   kürzt, behält das Ende), daher besteht die Größe bei einem Treffer dort mit
+   einem Aufruf. Ein Fehlschlag wird am Ende geprüft (Tiefe 0,95); wird das
+   Ende erinnert, wird der Anfang noch einmal mit einer frischen Nadel getestet,
+   und ein zweiter Fehlschlag lässt die Größe als **Kürzung von vorn** scheitern
+   (in den Belegen des Urteils vermerkt). Höchstens drei Aufrufe pro Größe; die
+   Leiter endet beim ersten bestätigten Fehlschlag.
 2. Ein Schritt binärer Suche zwischen der letzten abgerufenen und der ersten
    gescheiterten Größe.
 3. Lost in the Middle: bei min(32K, gemessenes Fenster) liegt die Nadel in
-   Tiefe 0,1, 0,5 und 0,9; Anfang und Ende abgerufen, die Mitte nicht, ist ein
-   Befund.
+   Tiefe 0,1, 0,5 und 0,9. Werden Anfang und Ende erinnert, die Mitte aber
+   nicht, wird die Mitte noch einmal mit einer frischen Nadel getestet; erst ein
+   zweiter Fehlschlag ist ein Befund.
 4. Ein 4xx, dessen Meldung die Kontextlänge nennt, ist eine Ablehnung wegen der
    Größe; eine Ablehnung von `max_tokens` (Reasoning-Modelle) wird mit
    `max_completion_tokens` wiederholt und nie als Obergrenze gelesen.
-5. Eine Probe mit Zeitüberschreitung beendet die Leiter, ohne als Fehlschlag zu
-   zählen: das Fenster oberhalb der letzten erinnerten Größe gilt als nicht
-   geprüft (nicht eindeutig), nie als Kürzung.
+5. Eine Probe mit Zeitüberschreitung oder mit einer Fehlerantwort (ein anderer
+   abgelehnter Parameter, ein HTTP-Fehler, ein 5xx, eine leere oder fehlerhafte
+   Antwort) beendet die Leiter, ohne als Fehlschlag zu zählen: das Fenster
+   oberhalb der letzten erinnerten Größe gilt als nicht geprüft (nicht
+   eindeutig, nicht bewertet), nie als Kürzung oder `no_recall`. Nur eine
+   Antwort ohne Nadel ist ein Fehlschlag.
 
-Das gemessene Fenster wird mit dem angegebenen verglichen. Ohne angegebenes
-Fenster wird die Messung berichtet, aber nicht bewertet.
+Das gemessene Fenster (größte erinnerte Größe) wird mit `upper` verglichen:
+Erinnerung auf der obersten Stufe ist stimmig (oder, wenn das angegebene
+Fenster die Obergrenze übersteigt, **bis zur Obergrenze bestätigt**: das Fenster
+darüber wurde nicht geprüft); darunter zieht das Urteil den nicht erinnerten
+Anteil der obersten Stufe ab — eine Warnung ab der Hälfte von `upper`, ein
+Fehlschlag darunter. Ohne angegebenes Fenster wird die Messung berichtet, aber
+nicht bewertet.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
-| `context_window.window` (Effektives Kontextfenster) | Recall hielt bis mindestens 90 % des angegebenen Fensters; zieht den Anteil des Fensters ab, der nicht erinnert wurde. | Bestanden | bis zu −10 Pkt. |
-|  | Recall hielt bis 50–90 % des angegebenen Fensters; zieht den Anteil des Fensters ab, der nicht erinnert wurde. | Warnung · Mittel | bis zu −50 Pkt. |
-|  | Recall versagte unter der Hälfte des angegebenen Fensters; zieht den Anteil des Fensters ab, der nicht erinnert wurde. | Fehlgeschlagen · Hoch | bis zu −100 Pkt. |
+| `context_window.window` (Effektives Kontextfenster) | Erinnerung hielt auf der obersten Stufe (90 % des geprüften Fensters): kein Abzug. | Bestanden | Kein Abzug |
+|  | Erinnerung bis zur Probe-Obergrenze bestätigt; das angegebene Fenster darüber wurde nicht geprüft. | Bestanden | Kein Abzug |
+|  | Erinnerung hielt bis 50–90 % des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab. | Warnung · Mittel | bis zu −50 Pkt. |
+|  | Erinnerung versagte unterhalb der Hälfte des geprüften Fensters; zieht den nicht erinnerten Anteil der obersten Stufe ab. | Fehlgeschlagen · Hoch | bis zu −100 Pkt. |
 |  | Nicht einmal die kleinste Probengröße erinnerte die Nadel. | Fehlgeschlagen · Hoch | −100 Pkt. |
-| `context_window.lost_in_middle` | Anfang und Ende wurden erinnert, die Mitte aber nicht. | Warnung · Mittel | −15 Pkt. |
+| `context_window.lost_in_middle` | Anfang und Ende wurden erinnert, die Mitte zweimal nicht. | Warnung · Mittel | −15 Pkt. |
 | `context_window.rejected_below_claim` | Ein Prompt weit unter dem angegebenen Fenster wurde als zu lang abgelehnt. | Fehlgeschlagen · Hoch | Kein Abzug |
 | `context_window.measured` | Kein angegebenes Fenster zum Vergleich: nur gemessen, nicht gewertet. | Info | Kein Abzug |
 | `context_window.no_ladder` | Keine Probengröße passte zwischen Unter- und Obergrenze. | Nicht eindeutig · Niedrig | Kein Abzug |
 | `context_window.timed_out` | Eine Probe lief vor Erreichen des angegebenen Fensters in eine Zeitüberschreitung: ein langsamer Endpunkt, kein Hinweis auf Kürzung. | Nicht eindeutig · Niedrig | Kein Abzug |
+| `context_window.probe_error` | Eine Probe wurde vor der obersten Stufe mit einem Fehler beantwortet (abgelehnter Parameter, HTTP- oder Serverfehler): kein Beleg für Kürzung. | Nicht eindeutig · Niedrig | Kein Abzug |
 
 **Einschränkungen.** Auch echte Langkontext-Modelle verlieren Nadeln in der
 Mitte; deshalb gilt nur ein Fehlschlag am **Rand** als Kürzung. Der Abruf nahe
 der Grenze ist probabilistisch; vor einem Schluss erneut ausführen. Der Test ist
 durch `--max-context-tokens` begrenzt, ein größeres Fenster wird also nicht
-vollständig ausgereizt. Vergleichen Sie mit einer vertrauenswürdigen Referenz,
-um Modellverhalten von Zwischenschicht-Verhalten zu trennen.
+vollständig ausgereizt (zum weiteren Prüfen erhöhen). Die oberste Stufe liegt
+bei 90 % des Fensters und das Token-Budget ist vorsichtig bemessen, daher werden
+die letzten ~10–15 % eines Fensters nie geprüft. Vergleichen Sie mit einer
+vertrauenswürdigen Referenz, um Modellverhalten von Zwischenschicht-Verhalten
+zu trennen.
 
 ---
 

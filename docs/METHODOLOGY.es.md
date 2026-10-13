@@ -323,55 +323,82 @@ recorta el prompt en silencio) y `context.lost-in-middle-rag` (una capa barata
 de RAG/resumen solo reenvía partes del prompt).
 
 **Cómo funciona.** Recuperación de una aguja en un pajar a `temperature=0`: un
-marcador único se inserta en un texto de relleno no repetitivo dimensionado
-con la estimación heurística de tokens de zing, y el modelo debe devolverlo.
+marcador único se inserta en un texto de relleno no repetitivo, y el modelo
+debe devolverlo.
 
-1. Una escalera ascendente que se duplica desde 2K tokens hasta la ventana
-   declarada, limitada por `--max-context-tokens` (200K por defecto), con un
-   peldaño cerca del 90 % del máximo (siete tamaños como mucho). Cada tamaño se
-   sondea primero con la aguja en el **inicio** (profundidad 0,0): un truncado
-   que conserva la pregunta al final del prompt solo puede descartar su inicio
-   (un servidor local que recorta el prompt a su longitud de contexto conserva
-   el final), así que un acierto ahí aprueba el tamaño con una sola llamada. Un
-   fallo se comprueba en el final (profundidad 0,95); si el final se recupera,
-   el inicio se sondea una vez más con una aguja nueva, y un segundo fallo
-   suspende el tamaño como **truncado por el inicio** (indicado en la evidencia
-   del veredicto). Tres llamadas por tamaño como mucho; la escalera se detiene
-   en el primer fallo confirmado.
+- **Ventana sondeada.** La sonda llega hasta `upper` = la ventana declarada,
+  limitada por `--max-context-tokens` (200K por defecto). Cada veredicto se
+  juzga frente a `upper`, nunca frente a la parte de una ventana declarada
+  mayor que quede por encima del tope.
+- **Los tamaños son tokens reales.** La estimación de tokens integrada en zing
+  cuenta este relleno entre un 12 % (o200k) y un 15 % (cl100k) por debajo de
+  los tokenizadores reales, así que cada prompt se construye a tamaño ÷ 1,2
+  según la estimación (aguja y pregunta incluidas): un peldaño de tamaño N cabe
+  en N tokens reales. Los tamaños de la evidencia (`size`, `effective_window`,
+  `top_rung`) son esos presupuestos de tokens reales; las filas de la escalera
+  incluyen además la estimación con que se construyó cada prompt
+  (`heuristic_tokens`).
+
+1. Una escalera de siete tamaños como mucho, que se divide a la mitad desde un
+   **peldaño superior al 90 % de `upper`** (ningún peldaño alcanza la ventana
+   completa, lo que deja sitio a la respuesta y a la plantilla de chat) hasta un
+   mínimo de 1K (`context_probe_floor_tokens`); una ventana pequeña baja el
+   mínimo a un cuarto del peldaño superior (una ventana de 2K sondea ~460, ~920
+   y ~1,8K). Cada tamaño se sondea primero con la aguja en el **inicio**
+   (profundidad 0,0): un truncado que conserva la pregunta al final del prompt
+   solo puede descartar su inicio (un servidor local que recorta el prompt a su
+   longitud de contexto conserva el final), así que un acierto ahí aprueba el
+   tamaño con una sola llamada. Un fallo se comprueba en el final (profundidad
+   0,95); si el final se recupera, el inicio se sondea una vez más con una aguja
+   nueva, y un segundo fallo suspende el tamaño como **truncado por el inicio**
+   (indicado en la evidencia del veredicto). Tres llamadas por tamaño como
+   mucho; la escalera se detiene en el primer fallo confirmado.
 2. Un paso de búsqueda binaria entre el último tamaño recuperado y el primero
    que falló.
 3. Pérdida en el medio: con min(32K, ventana medida), la aguja se coloca en las
-   profundidades 0,1, 0,5 y 0,9; recuperar el principio y el final pero no el
-   medio es un hallazgo.
+   profundidades 0,1, 0,5 y 0,9. Si se recuperan el principio y el final pero no
+   el medio, el medio se sondea una vez más con una aguja nueva; solo un segundo
+   fallo es un hallazgo.
 4. Un 4xx cuyo mensaje menciona la longitud de contexto es un rechazo por
    tamaño; un rechazo de `max_tokens` (modelos de razonamiento) se reintenta con
    `max_completion_tokens` y nunca se lee como un techo.
-5. Una sonda que agota el tiempo de espera termina la escalera sin contar como
-   fallo: la ventana por encima del último tamaño recordado se informa como no
-   verificada (no concluyente), nunca como truncamiento.
+5. Una sonda que agota el tiempo de espera o recibe un error (otro parámetro
+   rechazado, un error HTTP, un 5xx, una respuesta vacía o malformada) termina
+   la escalera sin contar como fallo: la ventana por encima del último tamaño
+   recordado se informa como no verificada (no concluyente, sin puntuar), nunca
+   como truncamiento ni `no_recall`. Solo una respuesta sin la aguja es un
+   fallo.
 
-La ventana medida se compara con la declarada. Sin ventana declarada, la medida
-se informa pero no se puntúa.
+La ventana medida (el mayor tamaño recordado) se compara con `upper`: recordar
+en el peldaño superior es coherente (o, si la ventana declarada supera el tope,
+**verificado hasta el tope**: la ventana por encima no se probó); por debajo,
+el veredicto descuenta la parte del peldaño superior que no se recordó — una
+advertencia desde la mitad de `upper`, un fallo por debajo. Sin ventana
+declarada, la medida se informa pero no se puntúa.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
-| `context_window.window` (Ventana de contexto efectiva) | El recuerdo se mantuvo hasta al menos el 90 % de la ventana declarada; resta la parte de la ventana no recordada. | Correcto | hasta −10 pts |
-|  | El recuerdo se mantuvo hasta el 50–90 % de la ventana declarada; resta la parte de la ventana no recordada. | Advertencia · Media | hasta −50 pts |
-|  | El recuerdo falló por debajo de la mitad de la ventana declarada; resta la parte de la ventana no recordada. | Fallo · Alta | hasta −100 pts |
+| `context_window.window` (Ventana de contexto efectiva) | El recuerdo se mantuvo en el peldaño superior (90 % de la ventana sondeada): sin deducción. | Correcto | Sin deducción |
+|  | Recuerdo verificado hasta el tope de la sonda; la ventana declarada por encima no se probó. | Correcto | Sin deducción |
+|  | El recuerdo se mantuvo hasta el 50-90 % de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó. | Advertencia · Media | hasta −50 pts |
+|  | El recuerdo falló por debajo de la mitad de la ventana sondeada; descuenta la parte del peldaño superior que no se recordó. | Fallo · Alta | hasta −100 pts |
 |  | Ni siquiera el tamaño de sonda más pequeño recordó la aguja. | Fallo · Alta | −100 pts |
-| `context_window.lost_in_middle` | Se recordaron el principio y el final, pero no la parte central. | Advertencia · Media | −15 pts |
+| `context_window.lost_in_middle` | Se recordaron el principio y el final, pero la parte central no, dos veces. | Advertencia · Media | −15 pts |
 | `context_window.rejected_below_claim` | Un prompt muy por debajo de la ventana declarada fue rechazado por demasiado largo. | Fallo · Alta | Sin deducción |
 | `context_window.measured` | No hay ventana declarada con la que comparar: solo se mide, no puntúa. | Info | Sin deducción |
 | `context_window.no_ladder` | Ningún tamaño de sonda cabía entre el mínimo y el tope. | No concluyente · Baja | Sin deducción |
 | `context_window.timed_out` | Una sonda agotó el tiempo de espera antes de alcanzar la ventana declarada: un endpoint lento, no una prueba de truncamiento. | No concluyente · Baja | Sin deducción |
+| `context_window.probe_error` | Una sonda recibió un error (un parámetro rechazado, un error HTTP o del servidor) antes del peldaño superior: no es evidencia de truncamiento. | No concluyente · Baja | Sin deducción |
 
 **Advertencias.** Los modelos reales de contexto largo también pierden agujas
 en el medio; por eso solo un fallo en el **borde** se lee como recorte. La
 recuperación cerca del techo es probabilística; vuelve a ejecutar antes de
 concluir. La sonda está limitada por `--max-context-tokens`, así que una
-ventana mayor no se ejercita por completo. Compara con una referencia de
-confianza para separar el comportamiento del modelo del de una capa
-intermedia.
+ventana mayor no se ejercita por completo (súbelo para sondear más). El peldaño
+superior está al 90 % de la ventana y el presupuesto de tokens es prudente, así
+que el último ~10-15 % de una ventana nunca se sondea. Compara con una
+referencia de confianza para separar el comportamiento del modelo del de una
+capa intermedia.
 
 ---
 

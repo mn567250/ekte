@@ -309,12 +309,23 @@ silently trims the prompt) and `context.lost-in-middle-rag` (a cheap
 RAG/summarization shim forwards only parts of the prompt).
 
 **How it works.** Needle-in-a-haystack recall at `temperature=0`: a unique
-marker is embedded in non-repetitive filler sized with zing's heuristic token
-estimate, and the model must return it.
+marker is embedded in non-repetitive filler, and the model must return it.
 
-1. An ascending doubling ladder from 2K tokens up to the declared window, capped
-   by `--max-context-tokens` (default 200K), with a rung near 90% of the top
-   (at most seven sizes). Each size is probed with the needle at the **start**
+- **Probed window.** The probe runs up to `upper` = the declared window, capped
+  by `--max-context-tokens` (default 200K). Every verdict is judged against
+  `upper`, never against the part of a larger declared window above the cap.
+- **Sizes are real tokens.** zing's built-in token estimate under-counts this
+  filler by about 12% (o200k) to 15% (cl100k) against real tokenizers, so each
+  prompt is built at size ÷ 1.2 by the estimate (needle and question included):
+  a size-N rung stays within N real tokens. Sizes in the evidence (`size`,
+  `effective_window`, `top_rung`) are these real-token budgets; the ladder rows
+  also carry the estimate a prompt was built at (`heuristic_tokens`).
+
+1. A ladder of at most seven sizes, halving down from a **top rung at 90% of
+   `upper`** (so no rung reaches the full window, leaving room for the answer
+   and the chat template) to a 1K floor (`context_probe_floor_tokens`); a small
+   window lowers the floor to a quarter of the top rung (a 2K window probes
+   ~460, ~920 and ~1.8K). Each size is probed with the needle at the **start**
    edge (depth 0.0) first: a truncation that keeps the question at the end of
    the prompt can only drop its start (a local server cutting the prompt to its
    context length keeps the end), so a recall there passes the size in one
@@ -325,34 +336,45 @@ estimate, and the model must return it.
    confirmed failure.
 2. One binary-search step between the last recalled and the first failing size.
 3. Lost-in-the-middle: at min(32K, measured window) the needle is placed at
-   depths 0.1, 0.5 and 0.9; start and end recalled but not the middle is a
-   finding.
+   depths 0.1, 0.5 and 0.9. If start and end are recalled but the middle is
+   not, the middle is probed once more with a fresh needle; only a second miss
+   is a finding.
 4. A 4xx whose message names the context length is a size rejection; a
    rejection of `max_tokens` (reasoning models) is retried with
    `max_completion_tokens` and never read as a ceiling.
-5. A timed-out probe ends the ladder without counting as a failure: the window
-   above the last recalled size is reported as unverified (inconclusive), never
-   as truncation.
+5. A probe that times out, or is answered with an error (another rejected
+   parameter, an HTTP error, a 5xx, an empty or malformed response), ends the
+   ladder without counting as a failure: the window above the last recalled
+   size is reported as unverified (inconclusive, not scored), never as
+   truncation or `no_recall`. Only an answer without the needle is a miss.
 
-The measured window is compared with the declared one. Without a declared
-window the measurement is reported but not scored.
+The measured window (largest recalled size) is compared with `upper`: recall
+at the top rung is consistent (or, when the declared window exceeds the cap,
+**verified to the cap**: the window above it was not exercised); below it, the
+verdict deducts the share of the top rung that did not recall — a WARN from
+half of `upper` up, a FAIL below half. Without a declared window the
+measurement is reported but not scored.
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
-| `context_window.window` (Effective context window) | Recall held up to at least 90% of the declared window; deducts the share of the declared window that did not recall. | Pass | up to −10 pts |
-|  | Recall held up to 50-90% of the declared window; deducts the share of the declared window that did not recall. | Warning · Medium | up to −50 pts |
-|  | Recall failed below half of the declared window; deducts the share of the declared window that did not recall. | Fail · High | up to −100 pts |
+| `context_window.window` (Effective context window) | Recall held at the top rung (90% of the probed window): no deduction. | Pass | No deduction |
+|  | Recall verified up to the probe cap; the declared window above it was not exercised. | Pass | No deduction |
+|  | Recall held up to 50-90% of the probed window; deducts the share of the top rung that did not recall. | Warning · Medium | up to −50 pts |
+|  | Recall failed below half of the probed window; deducts the share of the top rung that did not recall. | Fail · High | up to −100 pts |
 |  | Not even the smallest probe size recalled the needle. | Fail · High | −100 pts |
-| `context_window.lost_in_middle` | The start and end were recalled but the middle was not. | Warning · Medium | −15 pts |
+| `context_window.lost_in_middle` | The start and end were recalled but the middle was not, twice. | Warning · Medium | −15 pts |
 | `context_window.rejected_below_claim` | A prompt well below the declared window was rejected as too long. | Fail · High | No deduction |
 | `context_window.measured` | No declared window to compare against: measured only, not scored. | Info | No deduction |
 | `context_window.no_ladder` | No probe size fit between the floor and the cap. | Inconclusive · Low | No deduction |
 | `context_window.timed_out` | A probe timed out before the declared window was reached: a slow endpoint, not evidence of truncation. | Inconclusive · Low | No deduction |
+| `context_window.probe_error` | A probe was answered with an error (a rejected parameter, an HTTP or server error) before the top rung: not evidence of truncation. | Inconclusive · Low | No deduction |
 
 **Caveats.** Genuine long-context models also lose needles in the middle, so
 only an **edge** failure is read as truncation. Recall near the ceiling is
 probabilistic; re-run before concluding. The probe is bounded by
-`--max-context-tokens`, so a larger window is not exercised in full. Compare
+`--max-context-tokens`, so a larger window is not exercised in full (raise it
+to probe further). The top rung sits at 90% of the window and the token budget
+is conservative, so the last ~10-15% of a window is never probed. Compare
 with a trusted baseline to separate model behavior from shim behavior.
 
 ---
