@@ -1,0 +1,2925 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zing Chart Motion</title>
+<style>
+/* zing web UI v2 — shared design tokens and base components.
+ *
+ * The "calm lab report" language of the classic UI (sage + warm white, ink and
+ * teal, a lime highlighter stroke, system font stacks (no web fonts),
+ * generous radii) as ONE stylesheet every v2 page links:
+ *   <link rel="stylesheet" href="/v2/static/zing.css" />
+ *
+ * Rules for pages:
+ *   - colours only through the tokens below (every page must work light + dark);
+ *   - page-specific CSS lives in the page (or its own /v2/static/<name>.css);
+ *   - text colours are chosen for >= 4.5:1 on --card, --bg and --field.
+ *
+ * Themes: light by default; dark follows prefers-color-scheme unless the root
+ * carries data-theme="light"; data-theme="dark" forces dark (the console).
+ * theme.js sets the attribute from the header's theme switch.
+ */
+
+:root {
+  color-scheme: light;
+  /* surfaces */
+  --bg: #eef2ec;
+  --bg-glow-1: #f4fbef;
+  --bg-glow-2: #dceee2;
+  --card: #fffefb;
+  --field: #fbfdfa;
+  --field-focus: #ffffff;
+  --surface-2: #f3f6f2;
+  --track: #e3ebe3;
+  --line: #e2e8e0;
+  --line-strong: #cfe0d6;
+  /* form-control boundaries (inputs, selects, switches): >= 3:1 on --bg/--card/--field (WCAG 1.4.11) */
+  --line-control: #75847e;
+  --line-control-hover: #5e6c67;
+  /* text */
+  --ink: #0c211e;
+  --ink2: #566460;
+  --faint: #5e6c67;
+  --on-ink: #ffffff;
+  /* brand */
+  --teal: #0f6f5f;
+  --teal-d: #0a4a40;
+  --lime: #c7f25a;
+  --focus-ring: rgba(15, 111, 95, 0.22);
+  /* semantic (text colour + pale background) */
+  --good: #0f6f5f;
+  --goodbg: #e9f4ee;
+  --warn: #8f6412;
+  --warnbg: #f7eed7;
+  --bad: #b8352a;
+  --badbg: #fbe7e2;
+  --sky: #236a9f;
+  --skybg: #e4f0f8;
+  --grey: #5e6c67;
+  --greybg: #eef1ec;
+  /* solid fills for dots / bars (not for small text) */
+  --good-fill: #0f6f5f;
+  --warn-fill: #b9831f;
+  --bad-fill: #cb3b2e;
+  --sky-fill: #2a7bb8;
+  --grey-fill: #7c8a85;
+  /* elevation */
+  --shadow-card: 0 26px 60px -42px rgba(15, 60, 50, 0.45), 0 2px 0 rgba(255, 255, 255, 0.9) inset;
+  --shadow-pop: 0 18px 40px -24px rgba(15, 60, 50, 0.5);
+  /* type */
+  /* System font stacks only: the app is local-only, so no web fonts are
+   * fetched (works offline / behind firewalls, nothing leaves the machine).
+   * Latin faces first, then CJK faces, then the generic family. */
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --disp: var(--sans);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  /* shape */
+  --r-card: 22px;
+  --r-field: 13px;
+  --r-btn: 15px;
+  --r-pill: 999px;
+  --wrap: 760px;
+}
+
+/* dark: console-derived palette, same token names */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0b1012;
+    --bg-glow-1: #0f1d1a;
+    --bg-glow-2: #16121d;
+    --card: #11181b;
+    --field: #0e1417;
+    --field-focus: #0b1113;
+    --surface-2: #151e22;
+    --track: #1e2a30;
+    --line: #1f2b31;
+    --line-strong: #2d3d45;
+    --line-control: #6b7f86;
+    --line-control-hover: #8aa0a7;
+    --ink: #e3ece8;
+    --ink2: #a7b6b0;
+    --faint: #8a9a94;
+    --on-ink: #0b1012;
+    --teal: #4fd8a4;
+    --teal-d: #2fae7f;
+    --lime: #c7f25a;
+    --focus-ring: rgba(79, 216, 164, 0.28);
+    --good: #4fd8a4;
+    --goodbg: rgba(79, 216, 164, 0.12);
+    --warn: #f5bd4f;
+    --warnbg: rgba(245, 189, 79, 0.13);
+    --bad: #ff7b72;
+    --badbg: rgba(255, 123, 114, 0.13);
+    --sky: #6cc6f5;
+    --skybg: rgba(108, 198, 245, 0.12);
+    --grey: #8a9a94;
+    --greybg: rgba(138, 154, 148, 0.14);
+    --good-fill: #3fc893;
+    --warn-fill: #e0a93a;
+    --bad-fill: #f0625a;
+    --sky-fill: #4fb3e8;
+    --grey-fill: #6f7f79;
+    --shadow-card: 0 26px 60px -42px rgba(0, 0, 0, 0.8);
+    --shadow-pop: 0 18px 40px -24px rgba(0, 0, 0, 0.8);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1012;
+  --bg-glow-1: #0f1d1a;
+  --bg-glow-2: #16121d;
+  --card: #11181b;
+  --field: #0e1417;
+  --field-focus: #0b1113;
+  --surface-2: #151e22;
+  --track: #1e2a30;
+  --line: #1f2b31;
+  --line-strong: #2d3d45;
+  --line-control: #6b7f86;
+  --line-control-hover: #8aa0a7;
+  --ink: #e3ece8;
+  --ink2: #a7b6b0;
+  --faint: #8a9a94;
+  --on-ink: #0b1012;
+  --teal: #4fd8a4;
+  --teal-d: #2fae7f;
+  --lime: #c7f25a;
+  --focus-ring: rgba(79, 216, 164, 0.28);
+  --good: #4fd8a4;
+  --goodbg: rgba(79, 216, 164, 0.12);
+  --warn: #f5bd4f;
+  --warnbg: rgba(245, 189, 79, 0.13);
+  --bad: #ff7b72;
+  --badbg: rgba(255, 123, 114, 0.13);
+  --sky: #6cc6f5;
+  --skybg: rgba(108, 198, 245, 0.12);
+  --grey: #8a9a94;
+  --greybg: rgba(138, 154, 148, 0.14);
+  --good-fill: #3fc893;
+  --warn-fill: #e0a93a;
+  --bad-fill: #f0625a;
+  --sky-fill: #4fb3e8;
+  --grey-fill: #6f7f79;
+  --shadow-card: 0 26px 60px -42px rgba(0, 0, 0, 0.8);
+  --shadow-pop: 0 18px 40px -24px rgba(0, 0, 0, 0.8);
+}
+
+/* ---------- base ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(700px 460px at 50% -8%, var(--bg-glow-1) 0, transparent 60%),
+    radial-gradient(760px 760px at 110% 114%, var(--bg-glow-2) 0, transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: var(--teal); }
+code, kbd { font-family: var(--mono); }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 16px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+button { font: inherit; color: inherit; }
+
+/* ---------- shared header (rendered by /v2/static/nav.js) ---------- */
+/* skip link (BITV 9.2.4.1): off-screen until it receives keyboard focus */
+.skip-link {
+  position: absolute; left: 16px; top: -100px; z-index: 1000;
+  padding: 8px 14px; border-radius: var(--r-pill); background: var(--ink); color: var(--bg);
+  font-size: 13px; font-weight: 600; text-decoration: none;
+}
+.skip-link:focus { top: 8px; }
+main[tabindex="-1"]:focus { outline: none; }
+.znav { display: flex; align-items: center; gap: 12px; padding: 18px 0 6px; min-width: 0; }
+.znav .logo {
+  display: flex; align-items: center; gap: 9px; flex: 0 0 auto; text-decoration: none; color: var(--ink);
+  font-family: var(--disp); font-weight: 700; font-size: 21px; letter-spacing: -0.01em;
+}
+.znav .logo .b {
+  width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  background: var(--ink); color: var(--lime); box-shadow: 0 8px 22px -10px var(--teal);
+}
+.znav .logo .b .zicon { width: 16px; height: 16px; }
+.znav .logo b { color: var(--teal); }
+.znav .links {
+  display: flex; gap: 4px; margin-left: auto; min-width: 0;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.znav .links::-webkit-scrollbar { display: none; }
+.znav .links a {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; white-space: nowrap;
+  font-size: 13px; font-weight: 600; color: var(--ink2); text-decoration: none;
+  padding: 7px 11px; border-radius: var(--r-pill); transition: background 0.15s, color 0.15s;
+}
+.znav .links a:hover { background: var(--surface-2); color: var(--ink); }
+.znav .links a[aria-current="page"] { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.znav .links .zicon { width: 14px; height: 14px; }
+.znav .tail { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.znav .classic { font-size: 12px; font-weight: 600; color: var(--faint); text-decoration: none; white-space: nowrap; }
+.znav .classic:hover { color: var(--teal); text-decoration: underline; }
+.trust {
+  display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px 0 0;
+  font-size: 12px; color: var(--faint);
+}
+/* inside the header (banner landmark): its own last row, same spacing as before */
+.znav .trust { flex: 1 0 100%; margin: 0 0 -6px; }
+.trust b { color: var(--ink2); }
+.trust .zicon { width: 13px; height: 13px; }
+/* Six sections no longer fit beside the logo and language switch: the links
+   always get their own row (scrollable on phones). nav.js renders them after
+   .tail, so DOM, reading and Tab order follow the rows (BITV 9.1.3.2 / 9.2.4.3). */
+.znav { flex-wrap: wrap; row-gap: 8px; }
+.znav .tail { margin-left: auto; min-width: 0; flex: 0 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
+.znav .links { flex: 1 0 100%; margin-left: 0; }
+@media (max-width: 720px) {
+  .znav .links { margin: 0 -16px; padding: 0 16px; }
+}
+/* phones: the "Classic UI" link (first in .tail) gets its own row above the
+   two switches instead of pushing the language switch past the right edge
+   (long DE / FR labels); no CSS order, so it is still read and focused first */
+@media (max-width: 480px) {
+  .znav .classic { flex: 1 0 100%; text-align: right; }
+}
+
+/* ---------- pills / language switch ---------- */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2);
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 6px 12px;
+  text-decoration: none; white-space: nowrap;
+}
+.pill b { color: var(--teal); }
+.lang-sel,
+.theme-sel {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink2);
+  background: var(--card); border: 1px solid var(--line-control); border-radius: var(--r-pill);
+  padding: 6px 26px 6px 12px; transition: border-color 0.15s, box-shadow 0.15s;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 13px center, right 9px center;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+.lang-sel:hover,
+.theme-sel:hover { border-color: var(--line-control-hover); }
+.lang-sel:focus-visible,
+.theme-sel:focus-visible { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--focus-ring); }
+/* icon-only link to the accessibility report (nav.js), as tall as the switches;
+   focus keeps the global teal outline (the current-page state already has a teal border) */
+.znav .a11y {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 30px; height: 30px; color: var(--ink2); text-decoration: none;
+  background: var(--card); border: 1px solid var(--line-control); border-radius: 50%;
+  transition: border-color 0.15s, box-shadow 0.15s, color 0.15s;
+}
+.znav .a11y .zicon { width: 16px; height: 16px; }
+.znav .a11y:hover { border-color: var(--line-control-hover); color: var(--teal); }
+.znav .a11y[aria-current="page"] { color: var(--teal); border-color: var(--teal); }
+
+/* ---------- hero ---------- */
+.hero { padding: 24px 0 4px; }
+.hero h1 {
+  font-family: var(--disp); font-weight: 700; font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.12; letter-spacing: -0.015em; margin: 0; overflow-wrap: anywhere;
+}
+/* Negative tracking was tuned for Latin display faces; CJK glyphs are
+ * full-width and look cramped with it, so Chinese headings use none. */
+:lang(zh) .hero h1, :lang(zh) .znav .logo { letter-spacing: 0; }
+.hero h1 .u { background: linear-gradient(transparent 62%, var(--lime) 0); padding: 0 4px; color: inherit; }
+:root[data-theme="dark"] .hero h1 .u { background: linear-gradient(transparent 62%, rgba(199, 242, 90, 0.35) 0); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero h1 .u { background: linear-gradient(transparent 62%, rgba(199, 242, 90, 0.35) 0); }
+}
+.hero p { color: var(--ink2); font-size: 15.5px; line-height: 1.6; margin: 12px 0 0; }
+
+/* ---------- cards ---------- */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--shadow-card); }
+.card-pad { padding: 24px; }
+@media (max-width: 520px) { .card-pad { padding: 18px; } }
+.section-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 28px 0 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.section-title .count { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--faint); white-space: nowrap; }
+
+/* ---------- form fields ---------- */
+.grp { margin-bottom: 14px; min-width: 0; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 560px) { .two, .three { grid-template-columns: 1fr; } }
+.lab-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 7px; flex-wrap: wrap; }
+.lab {
+  display: inline-flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 0 0 7px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--ink2); text-transform: uppercase;
+}
+.lab-row .lab { margin: 0; }
+/* a technical key shown next to a human label — never uppercased */
+.key {
+  font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: var(--ink2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px;
+}
+/* "optional" suffix on a label */
+.opt { font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--faint); }
+.aside { font-size: 11.5px; color: var(--faint); }
+.in {
+  width: 100%; min-width: 0; border: 1.5px solid var(--line-control); background: var(--field); color: var(--ink);
+  border-radius: var(--r-field); font-family: var(--sans); font-weight: 500; font-size: 15.5px;
+  padding: 12px 14px; outline: none; transition: border-color 0.16s, box-shadow 0.16s, background 0.16s;
+}
+.in::placeholder { color: var(--faint); font-weight: 400; font-style: italic; opacity: 1; }
+.in:hover { border-color: var(--line-control-hover); }
+.in:focus { border-color: var(--teal); box-shadow: 0 0 0 4px var(--focus-ring); background: var(--field-focus); }
+.in.mono, textarea.in { font-family: var(--mono); font-size: 13px; }
+select.in {
+  appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 36px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink2) 50%), linear-gradient(135deg, var(--ink2) 50%, transparent 50%);
+  background-position: right 19px center, right 14px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  text-overflow: ellipsis;
+}
+.hint { font-size: 12px; color: var(--faint); margin-top: 6px; line-height: 1.45; }
+
+/* segmented control: <div class="seg" role="group"><button aria-pressed="true">… */
+.seg { display: flex; gap: 7px; flex-wrap: wrap; }
+.seg button {
+  flex: 1 1 0; min-width: 64px; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
+  color: var(--ink2); background: var(--field); border: 1.5px solid var(--line); border-radius: 11px;
+  padding: 10px 8px; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.seg button:hover:not(:disabled) { border-color: var(--line-strong); color: var(--ink); }
+.seg button[aria-pressed="true"] { color: var(--on-ink); background: var(--ink); border-color: var(--ink); }
+.seg button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* multi-select chips: <div class="chips" role="group"><button aria-pressed="true">… (each toggles) */
+.chips { display: flex; gap: 7px; flex-wrap: wrap; }
+.chips button {
+  cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 12.5px;
+  color: var(--ink2); background: var(--field); border: 1.5px solid var(--line); border-radius: var(--r-pill);
+  padding: 7px 12px; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chips button:hover:not(:disabled) { border-color: var(--line-strong); color: var(--ink); }
+.chips button[aria-pressed="true"] { color: var(--on-ink); background: var(--ink); border-color: var(--ink); }
+.chips button[aria-pressed="true"]::before { content: "✓ "; }
+.chips button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* switch: <label class="switch"><input type="checkbox" role="switch"><span></span> text</label>
+   The input itself is the visible track (so the focused element is the one on
+   screen, with its own focus ring); the span is only the knob drawn over it. */
+.switch { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; color: var(--ink2); }
+.switch input {
+  -webkit-appearance: none; appearance: none; margin: 0; cursor: pointer;
+  position: relative; width: 38px; height: 22px; flex: 0 0 38px; border-radius: var(--r-pill);
+  background: var(--track); border: 1px solid var(--line-control); transition: background 0.15s;
+}
+.switch span {
+  position: absolute; left: 3px; top: 50%; margin-top: -8px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: transform 0.15s; pointer-events: none;
+}
+.switch input:checked { background: var(--teal); border-color: var(--teal); }
+.switch input:checked + span { transform: translateX(16px); }
+.switch input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.switch input:disabled { cursor: not-allowed; opacity: 0.5; }
+.switch input:disabled + span { opacity: 0.5; }
+/* forced colours drop backgrounds: draw the knob and the "on" track in system colours */
+@media (forced-colors: active) {
+  .switch span { forced-color-adjust: none; background: CanvasText; box-shadow: none; }
+  .switch input:checked { forced-color-adjust: none; background: Highlight; border-color: Highlight; }
+  .switch input:checked + span { background: HighlightText; }
+}
+
+/* disclosure (accordion): <button class="disclosure" aria-expanded aria-controls> */
+.disclosure-box { border: 1.5px dashed var(--line-strong); border-radius: 14px; overflow: hidden; }
+.disclosure-box.open { border-style: solid; background: var(--surface-2); }
+.disclosure {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left;
+  background: none; border: 0; cursor: pointer; font-family: var(--sans); font-weight: 700; font-size: 13.5px;
+  color: var(--ink2); padding: 13px 14px;
+}
+.disclosure[aria-expanded="true"] { color: var(--teal); }
+.disclosure .cv { display: inline-flex; transition: transform 0.25s; }
+.disclosure[aria-expanded="true"] .cv { transform: rotate(180deg); }
+.disclosure-body { padding: 2px 14px 14px; }
+.disclosure-body[hidden] { display: none; }
+
+/* ---------- buttons ---------- */
+.cta {
+  width: 100%; border: 0; border-radius: var(--r-btn); padding: 15px 16px; cursor: pointer;
+  font-family: var(--disp); font-weight: 600; font-size: 17px; color: var(--on-ink); background: var(--ink);
+  display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.16s;
+}
+.cta:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--teal); }
+/* aria-disabled: busy but still focusable (focus must not fall to <body>) */
+.cta:disabled, .cta[aria-disabled="true"] { opacity: 0.55; cursor: wait; }
+.cta .zicon { width: 1em; height: 1em; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; text-decoration: none;
+  border-radius: var(--r-field); padding: 10px 16px; font-family: var(--disp); font-weight: 600; font-size: 14px;
+  border: 1.5px solid var(--line); background: var(--field); color: var(--ink);
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn:hover:not(:disabled):not([aria-disabled="true"]) { border-color: var(--line-strong); }
+.btn.pri { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+.btn.pri:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--teal); border-color: var(--teal); }
+.btn.danger { color: var(--bad); }
+.btn.danger:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--badbg); border-color: var(--bad); }
+.btn.sm { padding: 6px 11px; font-size: 12.5px; border-radius: 10px; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+.btn .zicon { width: 1em; height: 1em; }
+.linkbtn {
+  background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--sans); font-weight: 700;
+  font-size: 12.5px; color: var(--teal);
+}
+.linkbtn:hover { text-decoration: underline; }
+
+/* ---------- status badges ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; border-radius: var(--r-pill);
+  font-family: var(--sans); font-weight: 700; font-size: 11.5px; padding: 3px 10px;
+}
+.badge .zicon { width: 1em; height: 1em; }
+.badge.good { color: var(--good); background: var(--goodbg); }
+.badge.warn { color: var(--warn); background: var(--warnbg); }
+.badge.bad { color: var(--bad); background: var(--badbg); }
+.badge.sky { color: var(--sky); background: var(--skybg); }
+.badge.grey { color: var(--grey); background: var(--greybg); }
+
+/* ---------- messages ---------- */
+.reassure { text-align: center; font-size: 12.5px; color: var(--faint); margin-top: 13px; line-height: 1.5; }
+.reassure b { color: var(--ink2); }
+.errbox {
+  background: var(--badbg); border: 1px solid var(--bad); color: var(--bad);
+  border-radius: 14px; padding: 14px 16px; margin-top: 14px; font-size: 14px; line-height: 1.5;
+}
+.empty { text-align: center; padding: 36px 20px; color: var(--ink2); font-size: 14.5px; }
+.empty .zicon { width: 28px; height: 28px; color: var(--faint); }
+.foot { text-align: center; color: var(--faint); font-size: 12px; padding: 16px 0 32px; line-height: 1.6; }
+.foot code { font-size: 11.5px; }
+
+/* inline canonical SVG icons (icons.js) inherit currentColor */
+.pico { display: inline-flex; vertical-align: -0.12em; }
+.pico .zicon { width: 1em; height: 1em; }
+
+/* ---------- tabs (driven by /v2/static/tabs.js) ---------- */
+.tabs { display: flex; gap: 6px; padding: 6px; margin: 0 0 20px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; }
+.tabs [role="tab"] {
+  flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--disp); font-weight: 600; font-size: 15px; color: var(--ink2); cursor: pointer;
+  background: transparent; border: 0; border-radius: 11px; padding: 11px 10px; text-align: center;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.tabs [role="tab"]:hover { color: var(--ink); }
+.tabs [role="tab"][aria-selected="true"] { color: var(--on-ink); background: var(--ink); box-shadow: var(--shadow-pop); }
+.tabs [role="tab"] .zicon { width: 15px; height: 15px; flex: none; }
+/* forced colours (Windows high contrast) drop backgrounds and shadows: give the
+   tabs a system-coloured border so their shape stays visible and mark the
+   selected one with the system highlight colours */
+@media (forced-colors: active) {
+  .tabs [role="tab"] { border: 1px solid ButtonText; padding: 10px 9px; }
+  .tabs [role="tab"][aria-selected="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
+}
+/* phones: long tab labels (e.g. ES "Auditoría de embeddings") no longer fit
+   side by side, so the tabs stack instead of breaking mid-label */
+@media (max-width: 480px) {
+  .tabs { flex-direction: column; gap: 4px; }
+  .tabs [role="tab"] { flex: none; padding: 10px; }
+}
+[role="tabpanel"][hidden] { display: none; }
+[role="tabpanel"] { animation: z-rise 0.35s cubic-bezier(0.2, 0.85, 0.25, 1); }
+[role="tabpanel"]:focus-visible { outline-offset: 6px; border-radius: 6px; }
+
+/* ---------- motion ---------- */
+.view { display: none; }
+.view.show { display: block; animation: z-rise 0.45s cubic-bezier(0.2, 0.85, 0.25, 1); }
+@keyframes z-rise { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* zing web UI v2 — charts drawn by /v2/static/charts.js.
+ *
+ * Four categorical series slots (s0..s3), assigned in this fixed order and
+ * following the series, never its rank. Validated as a set for each theme
+ * (OKLCH lightness band, CVD separation >= 8.5 ΔE on adjacent pairs, >= 3:1
+ * against --card); text never wears them. Markers differ by shape too.
+ */
+:root {
+  --c-s0: #2a78d6; /* blue */
+  --c-s1: #c8531f; /* orange */
+  --c-s2: #0e8a5f; /* aqua */
+  --c-s3: #6250d6; /* violet */
+  /* sequential (heatmap): one blue hue, light = low -> dark = high */
+  --c-q1: #cde2fb; --c-q2: #86b6ef; --c-q3: #3987e5; --c-q4: #1c5cab; --c-q5: #0d366b;
+}
+/* dark: the scale's anchor flips (low recedes into the dark surface) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-s0: #3f8fe8; --c-s1: #e0703c; --c-s2: #1fa572; --c-s3: #9085e9;
+    --c-q1: #184f95; --c-q2: #256abf; --c-q3: #3987e5; --c-q4: #6da7ec; --c-q5: #b7d3f6;
+  }
+}
+:root[data-theme="dark"] {
+  --c-s0: #3f8fe8; --c-s1: #e0703c; --c-s2: #1fa572; --c-s3: #9085e9;
+  --c-q1: #184f95; --c-q2: #256abf; --c-q3: #3987e5; --c-q4: #6da7ec; --c-q5: #b7d3f6;
+}
+
+.s0 { --c: var(--c-s0); } .s1 { --c: var(--c-s1); } .s2 { --c: var(--c-s2); } .s3 { --c: var(--c-s3); }
+
+.chartbox { position: relative; min-width: 0; }
+.tchart { display: block; max-width: 100%; height: auto; overflow: visible; font-family: var(--sans); }
+.tchart text { font-size: 11px; fill: var(--faint); font-variant-numeric: tabular-nums; }
+.tchart .grid line { stroke: var(--line); stroke-width: 1; }
+.tchart .grid line.zero, .tchart .xaxis line { stroke: var(--line-control); stroke-width: 1; }
+.tchart .xaxis .tick { stroke: var(--line-control); }
+.tchart .marks line { stroke: var(--ink2); stroke-width: 1; stroke-dasharray: 3 3; }
+.tchart .marks text { fill: var(--ink2); font-weight: 700; font-size: 10px; }
+.tchart .ser .band { fill: var(--c); opacity: 0.16; stroke: none; }
+.tchart .ser .whisk { stroke: var(--c); stroke-width: 6; stroke-linecap: round; opacity: 0.22; }
+.tchart .ser .line { fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.tchart .ser .pt { fill: var(--c); stroke: var(--card); stroke-width: 2; }
+/* a bucket with fewer runs than the minimum: hollow and faded (the note,
+   tooltip and table row say why) */
+.tchart .ser .pt.low { fill: var(--card); stroke: var(--c); stroke-width: 1.8; opacity: 0.6; }
+.tchart .cross { stroke: var(--ink2); stroke-width: 1; pointer-events: none; }
+.tchart .hit { fill: transparent; }
+
+/* legend / tooltip key */
+.ckey { flex: none; overflow: visible; }
+.ckey line { stroke: var(--c); stroke-width: 2; }
+.ckey path { fill: var(--c); stroke: var(--card); stroke-width: 1; }
+
+.ctip {
+  position: absolute; top: 8px; z-index: 5; width: max-content; max-width: min(300px, 90%);
+  padding: 9px 11px; border-radius: 12px; background: var(--card); border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop); font-size: 12px; color: var(--ink2); line-height: 1.4;
+}
+.ctip[hidden] { display: none; }
+.ctip .when { margin: 0 0 6px; font-weight: 700; color: var(--ink); }
+.ctip ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ctip li { display: flex; gap: 7px; align-items: flex-start; }
+.ctip li .ckey { margin-top: 3px; }
+.ctip b { color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ctip .nm { overflow-wrap: anywhere; }
+.ctip .sub { display: block; color: var(--faint); font-size: 11.5px; }
+.ctip .mk { margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--line); color: var(--ink2); }
+
+/* reference line (e.g. 100 % billing ratio) */
+.tchart .ref line { stroke: var(--ink2); stroke-width: 1.2; stroke-dasharray: 6 4; }
+/* a halo in the card colour keeps the label legible over a band or line */
+.tchart .ref text { fill: var(--ink2); font-weight: 600; paint-order: stroke; stroke: var(--card); stroke-width: 3px; stroke-linejoin: round; }
+
+/* stacked bars: category segments (series slots), faded for few runs */
+.sbars .seg { fill: var(--c); }
+.sbars .bar.low .seg { opacity: 0.45; }
+.sbars .hit { fill: transparent; }
+.ctip .sw, .sw { display: inline-block; flex: none; width: 11px; height: 11px; border-radius: 3px; background: var(--c); margin-top: 3px; }
+
+/* weekday x hour heatmap */
+.hmap { display: block; max-width: 100%; height: auto; font-family: var(--sans); }
+.hmap text { font-size: 11px; fill: var(--faint); font-variant-numeric: tabular-nums; }
+.hmap .q1 { fill: var(--c-q1); } .hmap .q2 { fill: var(--c-q2); } .hmap .q3 { fill: var(--c-q3); }
+.hmap .q4 { fill: var(--c-q4); } .hmap .q5 { fill: var(--c-q5); }
+/* few runs: faded and hatched; no runs: an outline only (never a "low" colour) */
+.hmap pattern line { stroke: var(--card); stroke-width: 2.2; }
+.hmap .none { fill: none; stroke: var(--line-control); stroke-width: 1; stroke-dasharray: 2 2; }
+.hlegend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12px; color: var(--ink2); }
+.hlegend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.hlegend .hscale { display: inline-flex; gap: 2px; }
+.hlegend .hv { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+.hlegend .sub { color: var(--faint); }
+.hsw { flex: none; }
+
+@media (forced-colors: active) {
+  .hmap .q1, .hmap .q2, .hmap .q3, .hmap .q4, .hmap .q5, .sbars .seg, .sw { fill: CanvasText; background: CanvasText; forced-color-adjust: none; }
+  .hmap .none { stroke: GrayText; }
+  .tchart .ser .line, .ckey line { stroke: CanvasText; }
+  .tchart .ser .pt, .ckey path { fill: CanvasText; stroke: Canvas; }
+  .tchart .ser .pt.low { fill: Canvas; stroke: CanvasText; }
+  .tchart .ser .band { fill: GrayText; }
+}
+
+/* zing web UI v2 — the performance panel (/perf.js) on the v2 tokens.
+ *
+ * perf.js injects its layout with every colour as a --zp-* property whose
+ * classic default has zero specificity (:where), so these mappings win. The
+ * tooltip is appended to <body>, hence .zp-tip here too. Theme switching comes
+ * from zing.css: the tokens change under [data-theme=dark] and
+ * prefers-color-scheme: dark; only the baseline series colour is set per theme.
+ */
+:root .zp-section,
+:root .zp-live,
+:root .zp-tip {
+  --zp-surface: var(--card);
+  --zp-panel: var(--card);
+  --zp-ink: var(--ink);
+  --zp-ink2: var(--ink2);
+  --zp-faint: var(--faint);
+  --zp-grid: var(--line);
+  --zp-tile: var(--surface-2);
+  --zp-track: var(--track);
+  --zp-tab: var(--field);
+  --zp-tab-on: var(--ink);
+  --zp-tab-on-ink: var(--on-ink);
+  --zp-cached: var(--grey-fill);
+  --zp-better: var(--good);
+  --zp-worse: var(--bad);
+  --zp-x: var(--bad-fill);
+  --zp-focus: var(--teal);
+  --zp-tip-bg: var(--ink);
+  --zp-tip-ink: var(--on-ink);
+  --zp-tip-shadow: rgba(0, 0, 0, 0.45);
+  /* series: target = the v2 accent (--teal, flips with the theme), so the
+     live probe bar and target points match the audit progress bar; baseline
+     stays orange. Both >= 3:1 against --card as graphics */
+  --zp-t: var(--teal);
+  --zp-b: #c8561c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .zp-section,
+  :root:not([data-theme="light"]) .zp-live,
+  :root:not([data-theme="light"]) .zp-tip {
+    --zp-b: #f39a5c;
+    --zp-tip-shadow: rgba(0, 0, 0, 0.8);
+  }
+}
+:root[data-theme="dark"] .zp-section,
+:root[data-theme="dark"] .zp-live,
+:root[data-theme="dark"] .zp-tip {
+  --zp-b: #f39a5c;
+  --zp-tip-shadow: rgba(0, 0, 0, 0.8);
+}
+
+/* layout touches on the v2 language */
+:root .zp-live {
+  max-width: none;
+  border-color: var(--line);
+  border-radius: var(--r-field);
+  box-shadow: var(--shadow-card);
+}
+:root .zp-tabs button { font-family: var(--sans); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+:root .zp-tabs button:not(.on):hover { color: var(--ink); border-color: var(--line-strong); }
+:root .zp-tl { letter-spacing: 0.3px; }
+/* the live probe bar has the audit progress bar's (.pbar) shape and motion */
+:root .zp-bar { height: 6px; }
+:root .zp-bar i { transition: width 0.4s ease; }
+/* the ten-column stat table fits the 760px card without scrolling */
+:root .zp-table th,
+:root .zp-table td { padding-left: 5px; padding-right: 5px; }
+:root .zp-table th:first-child,
+:root .zp-table td:first-child { padding-left: 0; }
+:root .zp-table th { letter-spacing: 0.2px; }
+:root .zp-h { font-family: var(--disp); font-weight: 600; }
+:root .zp-tip { font-family: var(--mono); box-shadow: var(--shadow-pop); }
+
+/* wide tables scroll inside the card on narrow screens (classic lets them
+   overflow; a plain wrapper there keeps its margins collapsing as before) */
+:root .zp-wide { overflow-x: auto; }
+:root .zp-wide > .zp-table { margin-top: 0; }
+
+/* the data table toggle is visible in v2 (keyboard + touch reach the
+   tooltip contents here) */
+:root .zp-data {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  margin: 2px 0 4px;
+}
+:root .zp-data summary { display: inline-block; font-weight: 600; color: var(--ink2); }
+:root .zp-data summary:hover { color: var(--ink); }
+:root .zp-data-scroll {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-top: 4px;
+  background: var(--card);
+}
+:root .zp-data-scroll .zp-table { margin: 0; width: 100%; }
+:root .zp-data-scroll thead th { position: sticky; top: 0; background: var(--card); }
+
+/* chartmotion.css — subtle entrance motion for the charts drawn by charts.js.
+ * Only active while the <svg> carries .zm-in (set by chartmotion.js for
+ * ~0.8 s after a draw with new data; never on resize or a language switch).
+ * Animates only opacity, transform and stroke-dashoffset. Every keyframe
+ * animates FROM a hidden state TO the element's normal style, so the resting
+ * chart is pixel-identical to today's. Users who ask for reduced motion get
+ * no motion at all (the class is never set, and the rules sit behind
+ * no-preference as a second guard).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .zm-in .ser .line {
+    stroke-dasharray: 1;
+    animation: zm-draw var(--zm-t, 600ms) linear var(--zm-d, 0ms) both;
+  }
+  /* the band grows out of the line (SMIL, see chartmotion.js); a lone
+     bucket's whisker grows out of its marker */
+  .zm-in .ser .whisk {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: zm-grow 380ms cubic-bezier(0.2, 0.8, 0.2, 1) 420ms backwards;
+  }
+  .zm-in .ser .pt, .zm-in.sbars .seg {
+    transform-box: fill-box;
+  }
+  .zm-in .ser .pt {
+    transform-origin: center;
+    animation: zm-pop 300ms cubic-bezier(0.2, 0.9, 0.3, 1.25) var(--zm-d, 0ms) backwards;
+  }
+  .zm-in .marks, .zm-in .ref {
+    animation: zm-fade 360ms ease-out 420ms backwards;
+  }
+  /* stacked bars: per bar the bottom segment grows from the axis, then the
+     middle one on top of it, then the top one; bars start left to right */
+  .zm-in.sbars .seg {
+    transform-origin: bottom;
+    animation: zm-grow 200ms cubic-bezier(0.3, 0.6, 0.3, 1) var(--zm-d, 0ms) backwards;
+  }
+  /* heat grid: outlines first, then each cell fills through the scale at
+     the same pace (STEP per step) and stops at its own step */
+  .zm-in.hgrid { --zm-step: 110ms; }
+  .zm-in.hgrid .cells rect[data-k] {
+    stroke: var(--line-control); stroke-width: 1; stroke-dasharray: 2 2;
+    animation-timing-function: linear; animation-fill-mode: both; animation-delay: var(--zm-d, 0ms);
+  }
+  .zm-in.hgrid .cells .q1 { animation-name: zm-h1; animation-duration: var(--zm-step); }
+  .zm-in.hgrid .cells .q2 { animation-name: zm-h2; animation-duration: calc(2 * var(--zm-step)); }
+  .zm-in.hgrid .cells .q3 { animation-name: zm-h3; animation-duration: calc(3 * var(--zm-step)); }
+  .zm-in.hgrid .cells .q4 { animation-name: zm-h4; animation-duration: calc(4 * var(--zm-step)); }
+  .zm-in.hgrid .cells .q5 { animation-name: zm-h5; animation-duration: calc(5 * var(--zm-step)); }
+  .zm-in.hgrid .cells .hatch { animation: zm-fade 200ms ease-out var(--zm-d, 0ms) backwards; }
+  /* old weekday x hour heatmap: the grid fades in as one */
+  .zm-in.hmap .cells {
+    animation: zm-fade 420ms ease-out backwards;
+  }
+  /* perf.js request timeline: marks pop in with the sweep, the running
+     median draws along */
+  .zm-in.zp-chart .zp-pt, .zm-in.zp-chart .zp-fail, .zm-new .zm-fresh {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .zm-in.zp-chart .zp-pt, .zm-in.zp-chart .zp-fail {
+    animation: zm-pop 300ms cubic-bezier(0.2, 0.9, 0.3, 1.25) var(--zm-d, 0ms) backwards;
+  }
+  .zm-in .zp-trend path {
+    stroke-dasharray: 1;
+    animation: zm-draw var(--zm-t, 600ms) linear var(--zm-d, 0ms) both;
+  }
+  .zm-new .zp-pt.zm-fresh, .zm-new .zp-fail.zm-fresh {
+    animation: zm-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
+  }
+  /* live view: only the newest points pop in */
+  .zm-new .ser .pt.zm-fresh {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: zm-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
+  }
+  /* tooltip: fades in instead of blinking in (it is aria-hidden; the data
+     table carries the same values) */
+  .ctip:not([hidden]) { animation: zm-tip 140ms ease-out; }
+}
+@keyframes zm-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes zm-fade { from { opacity: 0; } }
+@keyframes zm-pop { from { opacity: 0; transform: scale(0.35); } }
+@keyframes zm-grow { from { transform: scaleY(0); } }
+/* heat grid fill: first leg fades the outline into the lightest step, each
+   further leg darkens one step (equal time per step = the same pace) */
+@keyframes zm-h1 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  100% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-h2 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  50% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  100% { fill: var(--c-q2); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-h3 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  33.33% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  66.67% { fill: var(--c-q2); }
+  100% { fill: var(--c-q3); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-h4 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  25% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  50% { fill: var(--c-q2); }
+  75% { fill: var(--c-q3); }
+  100% { fill: var(--c-q4); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-h5 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  20% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  40% { fill: var(--c-q2); }
+  60% { fill: var(--c-q3); }
+  80% { fill: var(--c-q4); }
+  100% { fill: var(--c-q5); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-tip { from { opacity: 0; transform: translateY(3px); } }
+
+/* proposed charts.css change: the heat scale works like a contribution
+   graph in both themes. The lowest step sits close to the card, each higher
+   step is more intense (more colour, further from the card); dark mode no
+   longer ends in a pale near-white. One hue (blue 255° OKLCH), lightness in
+   even steps, each step 1.3–1.6:1 from the one before, the top step >= 7:1
+   against --card. */
+:root { --c-q1: #cfdef2; --c-q2: #9dc1ee; --c-q3: #629ce6; --c-q4: #2a76ce; --c-q5: #12549e; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --c-q1: #1e2f44; --c-q2: #254974; --c-q3: #2b66ae; --c-q4: #3586e6; --c-q5: #62aaff; }
+}
+:root[data-theme="dark"] { --c-q1: #1e2f44; --c-q2: #254974; --c-q3: #2b66ae; --c-q4: #3586e6; --c-q5: #62aaff; }
+/* few-runs hatching in ink, so it shows on the faint low steps too */
+.hgrid pattern line, .hsw pattern line { stroke: var(--ink2); stroke-opacity: 0.55; stroke-width: 1.6; }
+
+/* prototype page only */
+.wrap { padding-block: 28px 56px; display: flex; flex-direction: column; gap: 18px; }
+.intro h1 { font-size: 24px; margin: 0 0 6px; text-wrap: balance; }
+.intro p { margin: 0; color: var(--ink2); line-height: 1.5; max-width: 62ch; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--teal); margin: 0 0 6px; }
+.ctrl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 6; padding: 10px 12px; }
+.ctrl .st { font-size: 12.5px; color: var(--ink2); margin-left: auto; min-width: 0; }
+.btn[aria-pressed="true"] { background: var(--goodbg); color: var(--teal); border-color: var(--teal); }
+.card h2 { font-size: 15px; margin: 0 0 2px; }
+.card .sub2 { margin: 0 0 8px; font-size: 12.5px; color: var(--faint); }
+.legend { list-style: none; margin: 10px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink2); }
+.legend li { display: inline-flex; align-items: center; gap: 7px; }
+.legend .sw { margin-top: 0; }
+.axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--faint); margin: 4px 0 2px; }
+details.tdisc { margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; }
+details.tdisc summary { padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.tscroll { overflow-x: auto; max-width: 100%; }
+table.dt { border-collapse: collapse; width: 100%; font-size: 12.5px; color: var(--ink2); }
+.dt th, .dt td { padding: 7px 12px; text-align: left; border-top: 1px solid var(--line); }
+.dt thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); border-top: 0; white-space: nowrap; }
+.dt td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.facts h3 { font-size: 13px; margin: 0 0 6px; }
+.facts ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink2); line-height: 1.5; }
+.facts li + li { margin-top: 4px; }
+.meas { font-variant-numeric: tabular-nums; }
+.seg-ctl { border: 0; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.seg-ctl legend { float: left; padding: 0; margin-right: 6px; font-size: 12.5px; color: var(--ink2); }
+.seg-ctl label { position: relative; cursor: pointer; }
+.seg-ctl input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg-ctl span { display: inline-block; padding: 5px 11px; border-radius: var(--r-pill); border: 1.5px solid var(--line); background: var(--field); font-size: 12.5px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.seg-ctl label:hover span { border-color: var(--line-strong); }
+.seg-ctl input:checked + span { background: var(--goodbg); border-color: var(--teal); color: var(--teal); }
+.seg-ctl input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 2px; }
+.opt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; }
+.hint2 { font-size: 12.5px; color: var(--faint); margin: 0 0 12px; }
+/* proposed perf.js addition: the running-median line behind the dots */
+.zp-trend path { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; opacity: 0.55; }
+.zp-trend .t { stroke: var(--zp-t); } .zp-trend .b { stroke: var(--zp-b); }
+.zp-trend-key { display: inline-flex; align-items: center; gap: 5px; }
+.zp-trend-key svg line { stroke: var(--zp-ink2); stroke-width: 2; stroke-linecap: round; }
+.example { display: inline-block; font-size: 11px; font-weight: 700; color: var(--warn); background: var(--warnbg); border-radius: var(--r-pill); padding: 2px 8px; margin-left: 6px; vertical-align: middle; }
+</style>
+
+<main class="wrap">
+  <header class="intro">
+    <p class="eyebrow">UI v2 prototype · not wired into the app</p>
+    <h1>Chart motion</h1>
+    <p>The analytics charts from <code>charts.js</code>, unchanged, with an optional motion layer on top. The weekday grid is a proposed new layout. Motion plays only when the data changes. Redraws for a resize or language switch stay still, and so does everything if your system asks for reduced motion.</p>
+  </header>
+
+  <div class="card ctrl" role="group" aria-label="Prototype controls">
+    <button class="btn sm pri" id="b-new" type="button">New data</button>
+    <button class="btn sm" id="b-redraw" type="button">Redraw (like a resize)</button>
+    <button class="btn sm" id="b-live" type="button" aria-pressed="false">Live updates</button>
+    <button class="btn sm" id="b-motion" type="button" aria-pressed="true">Motion on</button>
+    <span class="st" id="st" aria-live="polite"></span>
+  </div>
+
+  <section class="card card-pad" aria-labelledby="h-cmp">
+    <h2 id="h-cmp">Score over time <span class="example">example data</span></h2>
+    <p class="sub2">Median per day with its p25–p75 band. Hollow markers: fewer than 3 runs.</p>
+    <ul class="legend" id="lg-cmp"></ul>
+    <div class="axcap" aria-hidden="true"><span>Score · pts</span><span>Time (local)</span></div>
+    <div class="chartbox" id="cmp-chart"></div>
+    <details class="tdisc"><summary>Show as table</summary><div class="tscroll" tabindex="0" role="region" aria-label="Score over time, table"><table class="dt" id="cmp-table"></table></div></details>
+  </section>
+
+  <section class="card card-pad" aria-labelledby="h-live">
+    <h2 id="h-live">Live performance during an audit <span class="example">example data</span></h2>
+    <p class="sub2">The live panel from <code>perf.js</code>, unchanged: one dot per request (target and baseline, lighter for audit requests, hollow for non-streaming, × for a failed request). Turn on “Live updates”: each new request pops in, the rest of the chart stays still.</p>
+    <p class="hint2">Line: median of each endpoint’s last 5 successful requests. Failed and cached requests don’t count.</p>
+    <div id="live-chart"></div>
+  </section>
+
+  <section class="card card-pad" aria-labelledby="h-err">
+    <h2 id="h-err">Error mix <span class="example">example data</span></h2>
+    <p class="sub2">Share of failed requests per day, by cause.</p>
+    <ul class="legend" id="lg-err"></ul>
+    <div class="chartbox" id="err-chart"></div>
+  </section>
+
+  <section class="card card-pad" aria-labelledby="h-heat">
+    <h2 id="h-heat">When is it fast? <span class="example">example data</span></h2>
+    <p class="sub2">Time to first token by weekday and time of day. Hatched: fewer than 3 runs.</p>
+    <fieldset class="seg-ctl">
+      <legend>Time block</legend>
+      <label><input type="radio" name="bk" value="1"><span>1 h</span></label>
+      <label><input type="radio" name="bk" value="2"><span>2 h</span></label>
+      <label><input type="radio" name="bk" value="3"><span>3 h</span></label>
+      <label><input type="radio" name="bk" value="4" checked><span>4 h</span></label>
+      <label><input type="radio" name="bk" value="6"><span>6 h</span></label>
+    </fieldset>
+    <div class="chartbox" id="heat-chart"></div>
+  </section>
+
+  <section class="card card-pad" aria-labelledby="h-facts">
+    <h2 id="h-facts">What the layer does and does not do</h2>
+    <div class="facts">
+      <div><h3>Accessibility</h3><ul>
+        <li>No element added or removed, no ARIA attribute touched. The <code>role="img"</code> name, description and data tables stay as they are.</li>
+        <li>Temporary class and styles are removed after about 1 s, so the chart at rest is the same DOM as today.</li>
+        <li>Reduced motion: no class is set and the CSS sits behind <code>no-preference</code>.</li>
+        <li>Every motion is under 1 s and runs once (no pause control needed, WCAG 2.2.2).</li>
+      </ul></div>
+      <div><h3>Performance</h3><ul>
+        <li>CSS animations only: opacity, transform, stroke-dashoffset. No requestAnimationFrame loop.</li>
+        <li>No layout reads: marker positions come from the path data, the line length from <code>pathLength="1"</code>.</li>
+        <li>Heat grid: one CSS animation per cell, changing only its fill. 1-hour blocks (168 cells) cost a couple of slow frames at 4× CPU slowdown, mostly from drawing the grid itself.</li>
+        <li>The p25–p75 band grows out of its line with an SVG <code>&lt;animate&gt;</code> on the path, which works in every current browser. It is removed again after the motion.</li>
+        <li>Measured here: <span class="meas" id="m-cost">…</span></li>
+        <li>Size: about 13 KB with comments, about 4.5 KB gzipped, no dependency.</li>
+      </ul></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* zing web UI — the performance panel (live during an audit, and in reports).
+ *
+ * Plain browser global, no modules; load after /lang.js. Exposes
+ * window.ZingPerf with:
+ *   - Live(host)              live panel fed by the audit stream:
+ *                               .reset({probeTotal, hasBaseline})
+ *                               .add(records)   RequestRecord dicts (numbers only)
+ *                               .render()       re-draw (e.g. after a language switch)
+ *   - section(performance)    HTML for a report's `performance` block ("" if none)
+ *   - wireSection(root, perf) hook up its metric tabs + tooltips inside `root`
+ *   - chart(records, metric)  the timeline SVG (x = seconds since audit start)
+ *
+ * Colors follow the categorical order validated for the reports: target is
+ * slot 1 (blue), baseline slot 2 (orange); a failed request is a red cross
+ * with its own legend entry, so identity is never carried by color alone.
+ *
+ * Theming: every colour in the injected CSS is a --zp-* custom property whose
+ * default (declared with zero specificity, see CSS below) is the classic look.
+ * A page restyles the panel by setting those properties on .zp-section,
+ * .zp-live and .zp-tip (the tooltip lives on <body>), e.g. /v2/static/perf.css.
+ *
+ * Accessibility: the metric tabs are an ARIA tablist (arrow keys, Home, End);
+ * each chart has a summary as its accessible name, and a data table with what
+ * the hover tooltips show (visually hidden in the classic UI until focused).
+ */
+(function () {
+  "use strict";
+
+  var T = function (zh, en) {
+    return window.ZING_LANG ? window.ZING_LANG.t(zh, en) : en;
+  };
+  // English-keyed lookup without a Chinese variant (CN keeps the English
+  // statistics shorthand, e.g. the "min / mean / max" column heads).
+  var tr = function (en) {
+    return window.ZING_LANG && window.ZING_LANG.tr ? window.ZING_LANG.tr(en) : en;
+  };
+  // Backend notes are fixed English sentences with translations in every
+  // language, CN included; server() translates backend text in every language.
+  var note = function (s) {
+    return window.ZING_LANG ? window.ZING_LANG.server(s) : s;
+  };
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  // Fill "{name}" placeholders of an already translated template.
+  function fill(s, vals) {
+    return String(s).replace(/\{(\w+)\}/g, function (m, k) {
+      return Object.prototype.hasOwnProperty.call(vals, k) ? vals[k] : m;
+    });
+  }
+  function loc() {
+    return window.ZING_LANG && window.ZING_LANG.locale ? window.ZING_LANG.locale() : undefined;
+  }
+  // Number formatting goes through one cached Intl.NumberFormat per locale and
+  // digit count: Number#toLocaleString builds a new formatter on every call,
+  // which dominated large live tables. The formatters come from
+  // ZING_LANG.intl (lang.js); loaded without it, this script keeps a small
+  // cache of its own. The output is the same as v.toLocaleString(locale,
+  // options) (that is how the spec defines it); when Intl is missing, or for
+  // a non-number, that call is still what runs.
+  var fmts = {};
+  var digitOpts = {}; // one options object per digit count
+  function numberFormat(locale, opts) {
+    var Z = window.ZING_LANG;
+    if (Z && Z.intl) return Z.intl(Intl.NumberFormat, opts, locale);
+    // undefined (the browser default) and "" (an error) must not share a key
+    var key = (locale === undefined ? "" : "=" + locale) + "|" + (opts ? opts.maximumFractionDigits : "");
+    return fmts[key] || (fmts[key] = new Intl.NumberFormat(locale, opts));
+  }
+  function format(v, digits) {
+    var locale = loc();
+    var opts = digits == null ? undefined
+      : digitOpts[digits] || (digitOpts[digits] = { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    if (typeof v !== "number" || typeof Intl === "undefined" || !Intl.NumberFormat)
+      return opts ? v.toLocaleString(locale, opts) : v.toLocaleString(locale);
+    return numberFormat(locale, opts).format(v);
+  }
+  function fixed(v, digits) {
+    return format(v, digits);
+  }
+  function num(v, unit) {
+    if (v == null || isNaN(v)) return "—";
+    if (unit === "ratio") return fixed(v * 100, 1) + "%";
+    var a = Math.abs(v);
+    if (v === 0 || a >= 100) return format(Math.round(v));
+    return fixed(v, a >= 10 ? 1 : 2);
+  }
+  function int(v) {
+    return v == null ? "—" : format(Number(v));
+  }
+  function endpointName(r) {
+    return r.endpoint === "baseline" ? T("基线", "baseline") : T("目标", "target");
+  }
+  function phaseName(p) {
+    return p === "probe" ? T("性能探测", "probe") : p === "passive" ? T("常规检测", "audit") : String(p || "—");
+  }
+
+  var METRICS = [
+    { id: "latency", zh: "延迟", en: "Latency", unit: "ms", get: function (r) { return r.duration_ms; } },
+    { id: "ttft", zh: "首 token 时间", en: "TTFT", unit: "ms", get: function (r) { return r.ttft_ms; } },
+    {
+      id: "tps", zh: "解码速度", en: "Decode speed", unit: "tok/s",
+      get: function (r) { return r.decode_tps_local != null ? r.decode_tps_local : r.decode_tps_reported; },
+    },
+    { id: "itl", zh: "块间延迟", en: "Inter-chunk latency", unit: "ms", get: function (r) { return r.itl_mean_ms; } },
+  ];
+  function metric(id) {
+    for (var i = 0; i < METRICS.length; i++) if (METRICS[i].id === id) return METRICS[i];
+    return METRICS[0];
+  }
+
+  // Stat rows of a report endpoint block: [key, zh, en, unit].
+  var ROWS = [
+    ["latency_ms", "延迟", "Latency", "ms"],
+    ["ttft_ms", "首 token 时间", "Time to first token", "ms"],
+    ["decode_tps_reported", "解码速度（usage）", "Decode speed (usage)", "tok/s"],
+    ["decode_tps_local", "解码速度（本地计数）", "Decode speed (local count)", "tok/s"],
+    ["e2e_tps_reported", "端到端速度（usage）", "End-to-end speed (usage)", "tok/s"],
+    ["e2e_tps_local", "端到端速度（本地计数）", "End-to-end speed (local count)", "tok/s"],
+    ["itl_ms", "块间延迟", "Inter-chunk latency", "ms"],
+    ["itl_jitter_ms", "块间抖动", "Inter-chunk jitter", "ms"],
+    ["server_ms", "服务端时间（发送→首个输出）", "Server time (sent → first output)", "ms"],
+    ["relay_processing_ms", "中转站自报处理时间", "Relay-reported processing", "ms"],
+    ["network_rtt_ms", "网络往返（GET /models）", "Network round trip (GET /models)", "ms"],
+    ["connect_ms", "TCP 连接", "TCP connect", "ms"],
+    ["tls_ms", "TLS 握手", "TLS handshake", "ms"],
+  ];
+  var COLS = ["count", "min", "mean", "p50", "p75", "p90", "p95", "p99", "max", "stdev"];
+  var COMPARE = {
+    latency_p50: ["延迟 p50", "Latency p50"],
+    latency_p90: ["延迟 p90", "Latency p90"],
+    ttft_p50: ["TTFT p50", "TTFT p50"],
+    ttft_p90: ["TTFT p90", "TTFT p90"],
+    decode_tps_reported_p50: ["解码速度 p50（usage）", "Decode speed p50 (usage)"],
+    decode_tps_local_p50: ["解码速度 p50（本地）", "Decode speed p50 (local)"],
+    e2e_tps_local_p50: ["端到端速度 p50（本地）", "End-to-end speed p50 (local)"],
+    itl_p50: ["块间延迟 p50", "Inter-chunk latency p50"],
+    server_p50: ["服务端时间 p50", "Server time p50"],
+    network_rtt_p50: ["网络往返 p50", "Network round trip p50"],
+    error_rate: ["错误率", "Error rate"],
+  };
+
+  // Same floors as zing/utils/stats.py: a percentile needs this many samples.
+  var FLOOR = { p50: 1, p75: 4, p90: 10, p95: 20, p99: 100 };
+  function pct(sorted, p) {
+    if (!sorted.length) return null;
+    var rank = (p / 100) * (sorted.length - 1), lo = Math.floor(rank), hi = Math.ceil(rank);
+    return lo === hi ? sorted[lo] : sorted[lo] * (1 - (rank - lo)) + sorted[hi] * (rank - lo);
+  }
+  function p50(values) {
+    var s = values.filter(function (v) { return v != null; }).sort(function (a, b) { return a - b; });
+    return pct(s, 50);
+  }
+
+  // A tight axis: the smallest 1/2/2.5/5 x 10^n tick step that covers `v` in at
+  // most 6 intervals, and the maximum rounded up to the next multiple of it
+  // (510 -> 0..600 by 100, not 0..1000). Same as nice_axis in zing/report/performance.py.
+  function niceAxis(v) {
+    if (!(v > 0)) return { max: 1, step: 0.25, n: 4 };
+    var base = Math.pow(10, Math.floor(Math.log10(v / 6)));
+    var steps = [1, 2, 2.5, 5, 10]; // v / 6 < 10 * base, so the last one always fits
+    for (var i = 0; ; i++) {
+      var step = steps[i] * base, n = Math.ceil(v / step - 1e-9);
+      if (n <= 6) return { max: n * step, step: step, n: n };
+    }
+  }
+
+  // ---- timeline chart ------------------------------------------------- //
+  var W = 720, H = 230, ML = 52, MR = 12, MT = 10, MB = 30;
+  // opts.open keeps the data-table toggle expanded across re-renders.
+  function chart(records, metricId, opts) {
+    var c = chartSvg(records, metricId);
+    return c.empty ? c.html : c.html + dataTable(c.calls, c.m, opts && opts.open);
+  }
+  // The SVG alone (or the "no samples" note): {html, empty, calls, m}. Its data
+  // table is dataTable(calls, m, open); the live panel keeps that one in place.
+  function chartSvg(records, metricId) {
+    var m = metric(metricId);
+    var calls = (records || []).filter(function (r) { return r.op === "complete"; });
+    var pts = calls.filter(function (r) { return r.ok && m.get(r) != null; });
+    var failed = calls.filter(function (r) { return !r.ok; });
+    if (!pts.length && !failed.length)
+      return { html: '<div class="zp-empty">' + esc(T("暂无数据", "No samples yet")) + "</div>", empty: true, calls: calls, m: m };
+    var end = 1;
+    calls.forEach(function (r) { end = Math.max(end, (r.start_ms + (r.duration_ms || 0)) / 1000); });
+    var xa = niceAxis(end), xMax = xa.max;
+    var ya = niceAxis(Math.max.apply(null, pts.map(m.get).concat([1])) * 1.05), yMax = ya.max;
+    var pw = W - ML - MR, ph = H - MT - MB;
+    var x = function (s) { return ML + (s / xMax) * pw; };
+    var y = function (v) { return MT + ph - (v / yMax) * ph; };
+    var o = ['<svg class="zp-chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' +
+      esc(summary(m, pts, failed)) + '">'];
+    for (var i = 0; i <= ya.n; i++) {
+      var v = ya.step * i, yy = y(v).toFixed(1);
+      o.push('<line class="zp-grid" x1="' + ML + '" x2="' + (W - MR) + '" y1="' + yy + '" y2="' + yy + '"/>');
+      o.push('<text class="zp-tick" x="' + (ML - 6) + '" y="' + (+yy + 4) + '" text-anchor="end">' + num(v) + "</text>");
+    }
+    for (var j = 0; j <= xa.n; j++) {
+      var s = xa.step * j;
+      o.push('<text class="zp-tick" x="' + x(s).toFixed(1) + '" y="' + (H - MB + 16) +
+        '" text-anchor="' + (j === 0 ? "start" : j === xa.n ? "end" : "middle") + '">' + num(s) + "s</text>");
+    }
+    pts.forEach(function (r) {
+      var cls = "zp-pt " + (r.endpoint === "baseline" ? "b" : "t") +
+        (r.phase === "passive" ? " passive" : r.stream ? "" : " hollow") + (r.cached ? " cached" : "");
+      o.push('<circle class="' + cls + '" cx="' + x(r.start_ms / 1000).toFixed(1) + '" cy="' +
+        y(m.get(r)).toFixed(1) + '" r="4" data-tip="' + esc(tip(r, m)) + '"/>');
+    });
+    var by = MT + ph;
+    failed.forEach(function (r) {
+      var cx = x(r.start_ms / 1000);
+      o.push('<path class="zp-fail" d="M' + (cx - 4).toFixed(1) + "," + (by - 4) + "l8,8m0,-8l-8,8" +
+        '" data-tip="' + esc(tip(r, null)) + '"/>');
+    });
+    o.push("</svg>");
+    return { html: o.join(""), empty: false, calls: calls, m: m };
+  }
+  // The chart's accessible name: what it plots, how many requests, the median
+  // per endpoint and the failures.
+  function summary(m, pts, failed) {
+    var parts = [fill(T("{metric}（{unit}）随时间变化：{n} 个请求", "{metric} ({unit}) over time: {n} requests"),
+      { metric: T(m.zh, m.en), unit: m.unit, n: int(pts.length + failed.length) })];
+    var med = [
+      [false, T("目标中位数 {value}", "target median {value}")],
+      [true, T("基线中位数 {value}", "baseline median {value}")],
+    ];
+    med.forEach(function (e) {
+      var vs = pts.filter(function (r) { return (r.endpoint === "baseline") === e[0] && !r.cached; }).map(m.get);
+      if (vs.length) parts.push(fill(e[1], { value: num(p50(vs)) + " " + m.unit }));
+    });
+    if (failed.length) parts.push(fill(T("{n} 个失败", "{n} failed"), { n: int(failed.length) }));
+    return parts.join(T("；", "; "));
+  }
+  // What the hover tooltips show, as a table behind a toggle.
+  // With `lazy`, a closed toggle comes without its table (the live panel fills
+  // it in when it opens).
+  function dataTable(calls, m, open, lazy) {
+    var rows = dataRows(calls, m);
+    if (!rows.length) return "";
+    return '<details class="zp-data"' + (open ? " open" : "") + "><summary>" + esc(dataSummary()) +
+      '</summary><div class="zp-data-scroll" tabindex="0">' + (open || !lazy ? dataTableHtml(rows, m) : "") +
+      "</div></details>";
+  }
+  function dataSummary() {
+    return T("查看数据表", "Show data table");
+  }
+  function dataRows(calls, m) {
+    return calls.filter(function (r) { return !r.ok || m.get(r) != null; });
+  }
+  function dataHead(m) {
+    return '<thead><tr><th class="r">#</th><th>' +
+      esc(T("端点", "Endpoint")) + "</th><th>" + esc(T("阶段", "Phase")) + '</th><th class="r">' +
+      esc(T("开始", "Start")) + ' <span class="zp-unit">s</span></th><th class="r">' + esc(T(m.zh, m.en)) +
+      ' <span class="zp-unit">' + m.unit + "</span></th><th>" + esc(T("状态", "Status")) + "</th></tr></thead>";
+  }
+  function dataRow(r, m) {
+    var status = !r.ok
+      ? T("失败", "failed") + " (" + (r.status_code || r.error_type || "?") + ")"
+      : r.cached ? T("缓存命中（不计入统计）", "cached (excluded)") : "OK";
+    return '<tr><td class="r">' + esc(r.seq) + "</td><td>" + esc(endpointName(r)) + "</td><td>" +
+      esc(phaseName(r.phase) + (r.stream ? "" : " · " + T("非流式", "non-streaming"))) + '</td><td class="r">' +
+      num((r.start_ms || 0) / 1000) + '</td><td class="r">' + (r.ok ? num(m.get(r)) : "—") + "</td><td>" +
+      esc(status) + "</td></tr>";
+  }
+  function dataTableHtml(rows, m) {
+    return '<table class="zp-table zp-small">' + dataHead(m) + "<tbody>" +
+      rows.map(function (r) { return dataRow(r, m); }).join("") + "</tbody></table>";
+  }
+  function tip(r, m) {
+    var head = "#" + r.seq + " · " + endpointName(r) + " · " + (r.detector || "—") + " · " + phaseName(r.phase) +
+      (r.stream ? "" : " · " + T("非流式", "non-streaming"));
+    if (!m) return head + "\n" + T("失败", "failed") + " (" + (r.status_code || r.error_type || "?") + ")";
+    var lines = [head, T(m.zh, m.en) + ": " + num(m.get(r)) + " " + m.unit];
+    if (m.id !== "latency" && r.duration_ms != null) lines.push(T("延迟", "Latency") + ": " + num(r.duration_ms) + " ms");
+    if (m.id !== "ttft" && r.ttft_ms != null) lines.push("TTFT: " + num(r.ttft_ms) + " ms");
+    if (r.cached) lines.push(T("缓存命中（不计入统计）", "cached (excluded)"));
+    return lines.join("\n");
+  }
+
+  function legend(records, hasBaseline) {
+    var calls = (records || []).filter(function (r) { return r.op === "complete"; });
+    var probe = calls.some(function (r) { return r.phase !== "passive"; });
+    var items = ['<span><i class="zp-key t"></i>' + esc(T("目标", "target")) + "</span>"];
+    if (hasBaseline) items.push('<span><i class="zp-key b"></i>' + esc(T("基线", "baseline")) + "</span>");
+    if (probe && calls.some(function (r) { return r.phase === "passive"; }))
+      items.push('<span><i class="zp-key t passive"></i>' + esc(T("常规检测请求（浅色）", "audit request (lighter)")) + "</span>");
+    if (calls.some(function (r) { return r.phase !== "passive" && !r.stream; }))
+      items.push('<span><i class="zp-key t hollow"></i>' + esc(T("非流式请求（空心）", "non-streaming request (hollow)")) + "</span>");
+    if (calls.some(function (r) { return !r.ok; }))
+      items.push('<span><i class="zp-key x" aria-hidden="true">×</i>' + esc(T("失败请求", "failed request")) + "</span>");
+    return '<div class="zp-legend">' + items.join("") + "</div>";
+  }
+
+  // Metric tabs and the plot they control; `pid` keeps the ids unique per panel.
+  var seq = 0;
+  function tabs(active, pid) {
+    return '<div class="zp-tabs" role="tablist" aria-label="' + esc(T("性能指标", "Performance metric")) + '">' +
+      METRICS.map(function (m) {
+        var on = m.id === active;
+        return '<button type="button" role="tab" id="' + pid + "-tab-" + m.id + '" aria-controls="' + pid +
+          '-panel" data-metric="' + m.id + '" aria-selected="' + on + '" tabindex="' + (on ? 0 : -1) + '"' +
+          (on ? ' class="on"' : "") + ">" + esc(T(m.zh, m.en)) + "</button>";
+      }).join("") + "</div>";
+  }
+  function plot(records, active, pid, open) {
+    return '<div class="zp-plot" role="tabpanel" id="' + pid + '-panel" aria-labelledby="' + pid + "-tab-" + active +
+      '">' + chart(records, active, { open: open }) + "</div>";
+  }
+
+  // ---- tooltip + tabs wiring ------------------------------------------ //
+  var tipEl = null;
+  function showTip(evt, text) {
+    if (!tipEl) {
+      tipEl = document.createElement("div");
+      tipEl.className = "zp-tip";
+      tipEl.setAttribute("aria-hidden", "true"); // the data table carries the same text
+      document.body.appendChild(tipEl);
+    }
+    tipEl.textContent = text;
+    tipEl.style.display = "block";
+    var pad = 14, w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    var left = evt.clientX + pad, top = evt.clientY + pad;
+    if (left + w > window.innerWidth - 8) left = evt.clientX - w - pad;
+    if (top + h > window.innerHeight - 8) top = evt.clientY - h - pad;
+    tipEl.style.left = Math.max(8, left) + "px";
+    tipEl.style.top = Math.max(8, top) + "px";
+  }
+  function hideTip() {
+    if (tipEl) tipEl.style.display = "none";
+  }
+  var STEP = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+  // onMetric(id) re-renders with another metric; onToggle(open) remembers the
+  // data-table toggle's state for the next render.
+  function wire(root, onMetric, onToggle) {
+    if (!root) return;
+    wireTabs(root, onMetric);
+    var det = root.querySelector(".zp-data");
+    if (det && onToggle) det.addEventListener("toggle", function () { onToggle(det.open); });
+    root.querySelectorAll("[data-tip]").forEach(function (el) {
+      el.addEventListener("mouseover", function (e) { showTip(e, el.getAttribute("data-tip")); });
+      el.addEventListener("mouseleave", hideTip);
+    });
+  }
+  // The tab buttons' handlers are properties, so wiring a tab twice is harmless.
+  function wireTabs(root, onMetric) {
+    root.querySelectorAll(".zp-tabs button").forEach(function (b) {
+      b.onclick = function (e) {
+        e.stopPropagation();
+        onMetric(b.dataset.metric);
+      };
+      b.onkeydown = function (e) {
+        var n = METRICS.length, i = METRICS.indexOf(metric(b.dataset.metric)), next;
+        if (STEP[e.key]) next = (i + STEP[e.key] + n) % n;
+        else if (e.key === "Home") next = 0;
+        else if (e.key === "End") next = n - 1;
+        else return;
+        e.preventDefault();
+        e.stopPropagation();
+        var id = METRICS[next].id;
+        onMetric(id);
+        var t = root.querySelector('.zp-tabs [data-metric="' + id + '"]');
+        if (t) t.focus();
+      };
+    });
+  }
+
+  // ---- report section --------------------------------------------------- //
+  function statTable(ep) {
+    var rows = ROWS.filter(function (r) { return ep[r[0]] && ep[r[0]].count; });
+    if (!rows.length) return '<p class="zp-muted">' + esc(T("没有可统计的成功请求。", "No successful requests to summarize.")) + "</p>";
+    return '<div class="zp-scroll"><table class="zp-table"><thead><tr><th>' + esc(T("指标", "Metric")) + "</th>" +
+      COLS.map(function (c) { return '<th class="r">' + esc(FLOOR[c] ? c : tr(c)) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      rows.map(function (r) {
+        var s = ep[r[0]];
+        return "<tr><td>" + esc(T(r[1], r[2])) + ' <span class="zp-unit">' + r[3] + "</span></td>" +
+          COLS.map(function (c) { return '<td class="r">' + (c === "count" ? int(s.count) : num(s[c])) + "</td>"; }).join("") +
+          "</tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+  function p50of(stats) {
+    return stats && stats.p50 != null ? stats.p50 : null;
+  }
+  function tiles(ep) {
+    var streamed = ep.ttft_ms && ep.ttft_ms.count;
+    var tps = p50of(ep.decode_tps_local);
+    if (tps == null) tps = p50of(ep.decode_tps_reported);
+    var t = [[T("延迟 p50", "Latency p50"), num(p50of(ep.latency_ms)), "ms"]];
+    if (streamed) {
+      t.push(["TTFT p50", num(p50of(ep.ttft_ms)), "ms"]);
+      t.push([T("解码速度 p50", "Decode speed p50"), num(tps), "tok/s"]);
+    } else {
+      // Non-streamed calls have no first token: end-to-end speed instead.
+      t.push([T("端到端速度 p50", "End-to-end speed p50"), num(p50of(ep.e2e_tps_local)), "tok/s"]);
+    }
+    t.push([T("错误率", "Error rate"), num(ep.error_rate, "ratio"), ""]);
+    return '<div class="zp-tiles">' + t.map(function (x) {
+      return '<div class="zp-tile"><div class="zp-tl">' + esc(x[0]) + '</div><div class="zp-tv">' + esc(x[1]) +
+        (x[2] ? ' <small>' + x[2] + "</small>" : "") + "</div></div>";
+    }).join("") + "</div>";
+  }
+  function endpointBlock(ep, title) {
+    var o = [];
+    if (title) o.push('<h4 class="zp-h">' + esc(title) + "</h4>");
+    o.push(tiles(ep));
+    var line = int(ep.successes) + "/" + int(ep.requests) + " " + T("成功", "succeeded") + " · " +
+      T("超时", "timeouts") + " " + num(ep.timeout_rate, "ratio") + " · 429 " + num(ep.rate_limited_rate, "ratio");
+    if (ep.cached_excluded) line += " · " + int(ep.cached_excluded) + " " + T("缓存命中（不计入统计）", "cached (excluded)");
+    o.push('<p class="zp-muted">' + esc(line) + "</p>");
+    var extra = [];
+    if (ep.cold_start_ms != null)
+      extra.push(T("冷启动（首个请求）", "Cold start (first request)") + ": " + num(ep.cold_start_ms) + " ms" +
+        (ep.cold_start_ttft_ms != null ? ", TTFT " + num(ep.cold_start_ttft_ms) + " ms" : ""));
+    var c = ep.concurrency;
+    if (c)
+      extra.push(T("并发负载", "Under load") + " (" + int(c.requests) + " × " + int(c.concurrency) + "): " +
+        T("总吞吐", "aggregate") + " " + num(c.aggregate_tps_local) + " tok/s, " + T("延迟 p50", "Latency p50") + " " +
+        num(c.latency_ms && c.latency_ms.p50) + " ms");
+    if (extra.length) o.push('<ul class="zp-list">' + extra.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>");
+    o.push(statTable(ep));
+    if ((ep.ttft_by_input || []).length > 1) {
+      o.push('<div class="zp-wide"><table class="zp-table zp-small"><thead><tr><th>' + esc(T("提示词长度", "Prompt size")) + '</th><th class="r">n</th>' +
+        '<th class="r">TTFT p50</th><th class="r">' + esc(T("延迟 p50", "Latency p50")) + "</th></tr></thead><tbody>" +
+        ep.ttft_by_input.map(function (b) {
+          return "<tr><td>" + esc(b.label) + '</td><td class="r">' + int(b.count) + '</td><td class="r">' + num(b.ttft_p50_ms) +
+            '</td><td class="r">' + num(b.latency_p50_ms) + "</td></tr>";
+        }).join("") + "</tbody></table></div>");
+    }
+    return o.join("");
+  }
+
+  // Same rule as PerformanceComparison.target_better in zing/models.py: true /
+  // false when the target is better / worse, null within 2% or with a side missing.
+  function targetBetter(c) {
+    if (c.delta == null || c.target == null || c.baseline == null) return null;
+    var scale = Math.max(Math.abs(c.target), Math.abs(c.baseline));
+    if (!scale || Math.abs(c.delta) / scale < 0.02) return null;
+    return c.delta > 0 === !!c.higher_is_better;
+  }
+  function compareTable(rows) {
+    return '<div class="zp-wide"><table class="zp-table"><thead><tr><th>' + esc(T("指标", "Metric")) + '</th><th class="r">' +
+      esc(T("目标", "Target")) + '</th><th class="r">' + esc(T("基线", "Baseline")) + '</th><th class="r">Δ</th><th class="r">' +
+      esc(T("比值", "Ratio")) + "</th></tr></thead><tbody>" + rows.map(function (c) {
+        var lab = COMPARE[c.metric] ? T(COMPARE[c.metric][0], COMPARE[c.metric][1]) : c.metric;
+        var sign = c.delta > 0 ? "+" : "";
+        var d = c.delta == null ? "—" : c.unit === "ratio" ? sign + fixed(c.delta * 100, 1) + " pp" : sign + num(c.delta);
+        var b = targetBetter(c), cls = b === true ? " zp-better" : b === false ? " zp-worse" : "";
+        var mark = b === true ? "✓ " : b === false ? "✗ " : "";
+        return "<tr><td>" + esc(lab) + ' <span class="zp-unit">' + esc(c.unit) + '</span></td><td class="r">' +
+          num(c.target, c.unit) + '</td><td class="r">' + num(c.baseline, c.unit) + '</td><td class="r' + cls + '">' + mark + d +
+          '</td><td class="r">' + (c.ratio == null ? "—" : fixed(c.ratio, 2) + "x") + "</td></tr>";
+      }).join("") + "</tbody></table></div>" +
+      '<p class="zp-muted"><span class="zp-better">✓ ' + esc(T("目标更好", "target better")) + '</span> · <span class="zp-worse">✗ ' +
+      esc(T("目标更差", "target worse")) + "</span> " + esc(T("（相差 2% 以内视为持平）", "(within 2% counts as even)")) + "</p>";
+  }
+  var MODE_TITLE = { stream: ["流式", "Streaming"], non_stream: ["非流式", "Non-streaming"] };
+  function modeBlock(mode, target, baseline, comparison, titled) {
+    var o = [];
+    if (titled && MODE_TITLE[mode]) o.push('<h4 class="zp-h zp-mode">' + esc(T(MODE_TITLE[mode][0], MODE_TITLE[mode][1])) + "</h4>");
+    o.push(endpointBlock(target, baseline ? T("目标", "Target") : ""));
+    if (baseline) o.push(endpointBlock(baseline, T("基线", "Baseline")));
+    if ((comparison || []).length) {
+      o.push('<h4 class="zp-h">' + esc(T("目标 vs 基线", "Target vs baseline")) + "</h4>");
+      o.push(compareTable(comparison));
+    }
+    return o.join("");
+  }
+
+  var sectionState = { metric: "latency", open: false };
+  function section(perf) {
+    if (!perf || !perf.target) return "";
+    var modes = perf.modes || [];
+    var kind = [perf.mode].concat(modes.map(function (m) { return m.mode; }))
+      .filter(function (m) { return MODE_TITLE[m]; })
+      .map(function (m) { return T(MODE_TITLE[m][0], MODE_TITLE[m][1]); }).join(" + ");
+    var src = perf.source === "probe"
+      ? T("来源：专用性能探测", "Source: dedicated probe") + " — " +
+        fill(T("{n} × {max} tokens", "{n} × {max} tokens"), {
+          n: int(perf.probe_requests),
+          max: perf.probe_max_tokens ? int(perf.probe_max_tokens) : "?",
+        }) + (kind ? " · " + kind : "")
+      : T("来源：本次检测自身的请求", "Source: the audit's own requests");
+    var hasB = !!perf.baseline;
+    var pid = "zp" + ++seq;
+    var o = ['<div class="zp-section" data-zp="' + pid + '">'];
+    var scored = perf.source === "probe"
+      ? T("稳定性计入性能表现维度", "Consistency is scored in the performance dimension")
+      : T("仅供参考，不计分", "Informational — not scored");
+    o.push('<p class="zp-muted">' + esc(src) + " · " + esc(scored) + "</p>");
+    o.push(tabs(sectionState.metric, pid));
+    o.push(plot(perf.requests, sectionState.metric, pid, sectionState.open));
+    o.push(legend(perf.requests, hasB));
+    o.push(modeBlock(perf.mode, perf.target, perf.baseline, perf.comparison, modes.length > 0));
+    modes.forEach(function (m) {
+      o.push(modeBlock(m.mode, m.target, m.baseline, m.comparison, true));
+    });
+    if (perf.probe_cost) {
+      var pc = perf.probe_cost;
+      o.push('<p class="zp-muted">' + esc(T("探测成本", "Probe cost")) + ": " + esc(T("请求数", "Requests")) + " " +
+        int(pc.requests) + " · " + esc(fill(T("{input} + {output} tokens（usage）", "{input} + {output} tokens (usage)"),
+          { input: num(pc.input_tokens_reported), output: num(pc.output_tokens_reported) })) + "</p>");
+    }
+    if ((perf.notes || []).length)
+      o.push('<ul class="zp-list zp-notes">' + perf.notes.map(function (n) { return "<li>" + esc(note(n)) + "</li>"; }).join("") + "</ul>");
+    o.push("</div>");
+    return o.join("");
+  }
+  // Re-draw only the chart of a rendered section when its metric tab changes.
+  function wireSection(root, perf) {
+    if (!root) return;
+    var sec = root.querySelector(".zp-section");
+    var pid = sec && sec.getAttribute("data-zp");
+    if (!pid) return;
+    wire(root, function (id) {
+      sectionState.metric = id;
+      var plotEl = root.querySelector(".zp-plot"), tabsEl = root.querySelector(".zp-tabs");
+      hideTip();
+      if (plotEl) plotEl.outerHTML = plot(perf.requests, id, pid, sectionState.open);
+      if (tabsEl) tabsEl.outerHTML = tabs(id, pid);
+      wireSection(root, perf);
+    }, function (open) {
+      sectionState.open = open;
+    });
+  }
+
+  // ---- live panel -------------------------------------------------------- //
+  function Live(host) {
+    this.host = host;
+    this.metric = "latency";
+    this.open = false;
+    this.pid = "zpl" + ++seq;
+    this.reset({});
+  }
+  Live.prototype.reset = function (opts) {
+    this.records = [];
+    this.probeTotal = (opts && opts.probeTotal) || 0;
+    this.hasBaseline = !!(opts && opts.hasBaseline);
+    this.pending = false;
+    this.el = null; // the rendered panel's parts, patched in place by render()
+    this.table = null; // what the data table currently shows (see fillTable)
+    if (this.host) this.host.innerHTML = "";
+  };
+  Live.prototype.add = function (records) {
+    var self = this;
+    (records || []).forEach(function (r) { self.records.push(r); });
+    if (this.pending) return;
+    this.pending = true;
+    requestAnimationFrame(function () {
+      self.pending = false;
+      self.render();
+    });
+  };
+  // The first render builds the panel; later ones (one per animation frame
+  // while records stream in) update its tiles, probe bar, chart and legend in
+  // place, and redraw the tabs only when their markup changes (a new metric or
+  // language). The data table is built only while its toggle is open, and new
+  // records are appended to it.
+  Live.prototype.render = function () {
+    if (!this.host || !this.records.length) return;
+    var recs = this.records;
+    var calls = recs.filter(function (r) { return r.op === "complete"; });
+    var target = calls.filter(function (r) { return r.endpoint !== "baseline" && r.ok && !r.cached; });
+    var probeDone = calls.filter(function (r) { return r.endpoint !== "baseline" && r.phase === "probe"; }).length;
+    var tps = target.map(function (r) { return r.decode_tps_local != null ? r.decode_tps_local : r.decode_tps_reported; });
+    var ttftP50 = p50(target.map(function (r) { return r.ttft_ms; }));
+    var tpsP50 = p50(tps);
+    var decodeLabel = T("解码速度 p50", "Decode speed p50");
+    // Non-streamed calls have no first token, so no TTFT and no decode speed
+    // (it needs the first-token time). Until a streamed call lands, show the
+    // end-to-end speed instead, as the final report does.
+    if (tpsP50 == null) {
+      var e2e = p50(target.map(function (r) { return r.e2e_tps_local != null ? r.e2e_tps_local : r.e2e_tps_reported; }));
+      if (e2e != null) {
+        tpsP50 = e2e;
+        decodeLabel = T("端到端速度 p50", "End-to-end speed p50");
+      }
+    }
+    function withUnit(v, unit) { return v == null ? "—" : num(v) + " " + unit; }
+    var v = {
+      title: T("性能 · 实时", "Performance · live"),
+      head: [
+        [T("请求数", "Requests"), int(calls.length)],
+        [T("延迟 p50", "Latency p50"), withUnit(p50(target.map(function (r) { return r.duration_ms; })), "ms")],
+        ["TTFT p50", withUnit(ttftP50, "ms")],
+        [decodeLabel, withUnit(tpsP50, "tok/s")],
+      ],
+      probe: null,
+      tabs: tabs(this.metric, this.pid),
+      chart: chartSvg(recs, this.metric),
+      legend: legend(recs, this.hasBaseline),
+    };
+    if (this.probeTotal) {
+      var label = T("性能探测", "Performance probe");
+      v.probe = {
+        label: label,
+        text: label + " " + int(probeDone) + "/" + int(this.probeTotal),
+        max: String(this.probeTotal),
+        now: String(Math.min(probeDone, this.probeTotal)),
+        width: Math.min(100, Math.round((probeDone / this.probeTotal) * 100)) + "%",
+      };
+    }
+    // Streamed re-renders must not take keyboard focus away from a tab or
+    // from the data-table toggle, ...
+    var act = document.activeElement, refocus = null;
+    if (act && act !== this.host && this.host.contains(act)) {
+      // (the selected tab: after an arrow key the focused one is the old metric)
+      if (act.getAttribute("data-metric")) refocus = '.zp-tabs [data-metric="' + this.metric + '"]';
+      else if (act.tagName === "SUMMARY") refocus = ".zp-data summary";
+    }
+    // ... nor jump an open data table back to its top.
+    var box = this.host.querySelector(".zp-data-scroll"), scrollTop = box ? box.scrollTop : 0;
+    if (act && box && box.contains(act)) refocus = ".zp-data-scroll";
+    var el = this.el;
+    if (el && el.root.parentNode === this.host && !el.probe === !v.probe) this.patch(v);
+    else this.build(v);
+    box = this.host.querySelector(".zp-data-scroll");
+    if (box && scrollTop && box.scrollTop !== scrollTop) box.scrollTop = scrollTop;
+    // Only an element that was replaced is focused again (no focus() call,
+    // and so no new announcement, while it stays in place).
+    if (refocus && !this.host.contains(act)) {
+      var f = this.host.querySelector(refocus);
+      if (f) f.focus();
+    }
+  };
+  function tileHtml(x) {
+    return '<div class="zp-tile"><div class="zp-tl">' + esc(x[0]) + '</div><div class="zp-tv">' + esc(x[1]) + "</div></div>";
+  }
+  function plotInner(c, open) {
+    return c.html + (c.empty ? "" : dataTable(c.calls, c.m, open, true));
+  }
+  Live.prototype.build = function (v) {
+    var self = this;
+    var prev = this.host.querySelector(".zp-data");
+    // the toggle may have been opened before its "toggle" event ran
+    var open = this.open || !!(prev && prev.open);
+    var o = ['<div class="zp-live"><div class="zp-live-h">' + esc(v.title) + "</div>"];
+    o.push('<div class="zp-tiles">' + v.head.map(tileHtml).join("") + "</div>");
+    if (v.probe) {
+      o.push('<div class="zp-probe"><span>' + esc(v.probe.text) + '</span><div class="zp-bar" role="progressbar" aria-label="' +
+        esc(v.probe.label) + '" aria-valuemin="0" aria-valuemax="' + v.probe.max + '" aria-valuenow="' + v.probe.now +
+        '"><i style="width:' + v.probe.width + '"></i></div></div>');
+    }
+    o.push(v.tabs);
+    o.push('<div class="zp-plot" role="tabpanel" id="' + this.pid + '-panel" aria-labelledby="' + this.pid + "-tab-" +
+      this.metric + '">' + plotInner(v.chart, open) + "</div>");
+    o.push(v.legend);
+    o.push("</div>");
+    this.host.innerHTML = o.join("");
+    this.markTable(open, v.chart);
+    this.el = null;
+    var root = this.host.querySelector(".zp-live");
+    if (!root) return; // not a real DOM (the tests): nothing to update in place
+    var probe = root.querySelector(".zp-probe");
+    this.el = {
+      root: root,
+      title: root.querySelector(".zp-live-h"),
+      tiles: Array.prototype.map.call(root.querySelectorAll(".zp-tile"), function (t) {
+        return [t.querySelector(".zp-tl"), t.querySelector(".zp-tv")];
+      }),
+      probe: probe && { text: probe.querySelector("span"), bar: probe.querySelector(".zp-bar"), fill: probe.querySelector(".zp-bar i") },
+      tabs: root.querySelector(".zp-tabs"),
+      plot: root.querySelector(".zp-plot"),
+      legend: root.querySelector(".zp-legend"),
+      cache: { tabs: v.tabs, tabsKey: tabs(METRICS[0].id, this.pid), chart: v.chart.html, empty: v.chart.empty, legend: v.legend },
+    };
+    this.wirePlot();
+    wireTabs(root, function (id) { self.setMetric(id); });
+    // One delegated tooltip handler for every chart mark, current and future
+    // (shown where the pointer enters a mark: hover only, no movement tracking).
+    root.addEventListener("mouseover", function (e) {
+      var t = e.target && e.target.closest ? e.target.closest("[data-tip]") : null;
+      if (t && root.contains(t)) showTip(e, t.getAttribute("data-tip"));
+      else hideTip();
+    });
+    root.addEventListener("mouseleave", hideTip);
+  };
+  Live.prototype.setMetric = function (id) {
+    this.metric = id;
+    this.render();
+  };
+  // Hook up the data-table toggle (after the plot's contents were built).
+  Live.prototype.wirePlot = function () {
+    var self = this, el = this.el, det = el.plot.querySelector(".zp-data");
+    el.det = det;
+    el.box = det && det.querySelector(".zp-data-scroll");
+    el.summary = det && det.querySelector("summary");
+    if (!det) return;
+    // Fill the table as the toggle opens, so it never shows up empty or stale
+    // (a click on the summary runs before the details opens; "toggle" after).
+    el.summary.addEventListener("click", function () {
+      if (!det.open && self.el && self.el.det === det) self.fillTable();
+    });
+    det.addEventListener("toggle", function () {
+      if (!self.el || self.el.det !== det) return;
+      self.open = det.open;
+      if (det.open) self.fillTable();
+    });
+  };
+  Live.prototype.patch = function (v) {
+    var self = this, el = this.el, c = el.cache;
+    setText(el.title, v.title);
+    v.head.forEach(function (x, i) {
+      if (!el.tiles[i]) return;
+      setText(el.tiles[i][0], x[0]);
+      setText(el.tiles[i][1], x[1]);
+    });
+    if (v.probe) {
+      setText(el.probe.text, v.probe.text);
+      setAttr(el.probe.bar, "aria-label", v.probe.label);
+      setAttr(el.probe.bar, "aria-valuemax", v.probe.max);
+      setAttr(el.probe.bar, "aria-valuenow", v.probe.now);
+      if (el.probe.fill.style.width !== v.probe.width) el.probe.fill.style.width = v.probe.width;
+    }
+    var tabsKey = tabs(METRICS[0].id, this.pid);
+    if (v.tabs !== c.tabs && tabsKey === c.tabsKey) {
+      // another metric: move the selection, keeping the buttons (and focus)
+      el.tabs.querySelectorAll("[data-metric]").forEach(function (b) {
+        var on = b.getAttribute("data-metric") === self.metric;
+        setAttr(b, "aria-selected", String(on));
+        if (b.tabIndex !== (on ? 0 : -1)) b.tabIndex = on ? 0 : -1;
+        b.classList.toggle("on", on);
+        if (!on && b.getAttribute("class") === "") b.removeAttribute("class");
+      });
+      c.tabs = v.tabs;
+    }
+    if (v.tabs !== c.tabs) {
+      // new labels (a language switch): redraw them
+      c.tabsKey = tabsKey;
+      el.tabs.outerHTML = v.tabs;
+      el.tabs = el.root.querySelector(".zp-tabs");
+      wireTabs(el.root, function (id) { self.setMetric(id); });
+      c.tabs = v.tabs;
+    }
+    setAttr(el.plot, "aria-labelledby", this.pid + "-tab-" + this.metric);
+    if (v.chart.empty !== c.empty) {
+      // the first samples arrived (or this metric has none): the plot gains
+      // or loses its data table
+      var open = this.open || !!(el.det && el.det.open);
+      el.plot.innerHTML = plotInner(v.chart, open);
+      this.markTable(open, v.chart);
+      this.wirePlot();
+    } else if (v.chart.html !== c.chart) {
+      el.plot.firstElementChild.outerHTML = v.chart.html;
+    }
+    c.chart = v.chart.html;
+    c.empty = v.chart.empty;
+    if (el.summary) setText(el.summary, dataSummary());
+    if (el.det && el.det.open) this.fillTable();
+    if (v.legend !== c.legend) {
+      el.legend.outerHTML = v.legend;
+      el.legend = el.root.querySelector(".zp-legend");
+      c.legend = v.legend;
+    }
+  };
+  function setText(node, s) {
+    if (node && node.textContent !== s) node.textContent = s;
+  }
+  function setAttr(node, name, s) {
+    if (node && node.getAttribute(name) !== s) node.setAttribute(name, s);
+  }
+  // Note what a just built plot's data table holds (nothing while closed).
+  Live.prototype.markTable = function (open, chart) {
+    this.table = open && !chart.empty ? { recs: this.records, n: this.records.length, key: this.tableKey(chart.m) } : null;
+  };
+  // What a data-table row's markup depends on besides its record.
+  Live.prototype.tableKey = function (m) {
+    return [m.id, dataHead(m), loc(), T("失败", "failed"), T("缓存命中（不计入统计）", "cached (excluded)"),
+      T("非流式", "non-streaming"), endpointName({}), endpointName({ endpoint: "baseline" }),
+      phaseName("probe"), phaseName("passive")].join("\n");
+  };
+  // Bring the open data table up to date: append the rows of records added
+  // since it was built, or rebuild it after a metric or language change.
+  Live.prototype.fillTable = function () {
+    var el = this.el, box = el && el.box;
+    if (!box) return;
+    var m = metric(this.metric), recs = this.records, key = this.tableKey(m), t = this.table;
+    var tbody = box.querySelector("tbody");
+    var complete = function (r) { return r.op === "complete"; };
+    if (t && tbody && t.key === key && t.recs === recs && t.n <= recs.length) {
+      if (t.n < recs.length) {
+        var rows = dataRows(recs.slice(t.n).filter(complete), m);
+        if (rows.length) tbody.insertAdjacentHTML("beforeend", rows.map(function (r) { return dataRow(r, m); }).join(""));
+      }
+    } else {
+      var top = box.scrollTop;
+      box.innerHTML = dataTableHtml(dataRows(recs.filter(complete), m), m);
+      if (top && box.scrollTop !== top) box.scrollTop = top;
+    }
+    this.table = { recs: recs, n: recs.length, key: key };
+  };
+
+  // ---- styles (injected once) ------------------------------------------- //
+  // Every colour is a --zp-* property. The defaults (the classic palette) sit
+  // in :where(), i.e. zero specificity, so any page rule setting them wins.
+  var CSS =
+    ":where(.zp-section,.zp-live,.zp-tip){--zp-t:#2a78d6;--zp-b:#eb6834;--zp-x:#d03b3b;--zp-surface:#fffefb;" +
+    "--zp-grid:#e7ece5;--zp-ink:#0c211e;--zp-ink2:#566460;--zp-faint:#93a09b;--zp-panel:#fff;--zp-tile:#f5f8f4;" +
+    "--zp-track:#e3ebe3;--zp-tab:#fbfdfa;--zp-tab-on:#0c211e;--zp-tab-on-ink:#fff;--zp-cached:#8c959f;" +
+    "--zp-better:#1a7f37;--zp-worse:#cb3b2e;--zp-focus:#2a78d6;--zp-tip-bg:#0c211e;--zp-tip-ink:#fff;" +
+    "--zp-tip-shadow:rgba(0,0,0,.5)}" +
+    ".zp-section,.zp-live{text-align:left}" +
+    ".zp-live{margin:18px auto 0;max-width:620px;background:var(--zp-panel);border:1px solid var(--zp-grid);border-radius:14px;padding:12px 14px}" +
+    ".zp-live-h{font-weight:700;font-size:13px;color:var(--zp-ink);margin-bottom:8px}" +
+    ".zp-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 10px}" +
+    "@media(max-width:520px){.zp-tiles{grid-template-columns:1fr 1fr}}" +
+    ".zp-tile{background:var(--zp-tile);border:1px solid var(--zp-grid);border-radius:10px;padding:7px 9px}" +
+    ".zp-tl{font-size:11px;color:var(--zp-faint);font-weight:600}" +
+    ".zp-tv{font-weight:700;font-size:16px;color:var(--zp-ink);font-variant-numeric:tabular-nums}" +
+    ".zp-tv small{font-size:11px;color:var(--zp-ink2);font-weight:600}" +
+    ".zp-probe{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--zp-ink2);margin:0 0 8px;font-family:var(--mono,monospace)}" +
+    ".zp-bar{flex:1;height:5px;background:var(--zp-track);border-radius:3px;overflow:hidden}" +
+    ".zp-bar i{display:block;height:100%;background:var(--zp-t);transition:width .3s}" +
+    ".zp-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}" +
+    ".zp-tabs button{font:600 12px var(--sans,system-ui);color:var(--zp-ink2);background:var(--zp-tab);border:1.5px solid var(--zp-grid);border-radius:999px;padding:4px 11px;cursor:pointer}" +
+    ".zp-tabs button.on{color:var(--zp-tab-on-ink);background:var(--zp-tab-on);border-color:var(--zp-tab-on)}" +
+    ".zp-tabs button:focus-visible,.zp-data summary:focus-visible{outline:2px solid var(--zp-focus);outline-offset:2px}" +
+    ".zp-chart{width:100%;height:auto;display:block}" +
+    ".zp-grid{stroke:var(--zp-grid);stroke-width:1}" +
+    ".zp-tick{fill:var(--zp-ink2);font-size:11px;font-variant-numeric:tabular-nums}" +
+    ".zp-pt{stroke:var(--zp-surface);stroke-width:2}.zp-pt.t{fill:var(--zp-t)}.zp-pt.b{fill:var(--zp-b)}" +
+    // audit (passive) requests: a lightly tinted ring in the series colour, so the
+    // mark keeps >= 3:1 (its stroke) yet reads apart from solid and hollow points;
+    // cached hits: grey, ringed in the secondary ink
+    ".zp-pt.passive{fill-opacity:.35}.zp-pt.passive.t{stroke:var(--zp-t)}.zp-pt.passive.b{stroke:var(--zp-b)}" +
+    ".zp-pt.t.cached,.zp-pt.b.cached{fill:var(--zp-cached);fill-opacity:.6;stroke:var(--zp-ink2)}.zp-pt:hover{stroke:var(--zp-ink)}" +
+    ".zp-pt.hollow{fill:var(--zp-surface)}.zp-pt.hollow.t{stroke:var(--zp-t)}.zp-pt.hollow.b{stroke:var(--zp-b)}" +
+    ".zp-legend .zp-key.hollow{background:transparent;border:2px solid var(--zp-t);box-sizing:border-box}" +
+    ".zp-better{color:var(--zp-better);font-weight:700}.zp-worse{color:var(--zp-worse);font-weight:700}" +
+    ".zp-mode{border-top:1px solid var(--zp-grid);padding-top:14px;margin-top:20px;font-size:14.5px}" +
+    ".zp-fail{stroke:var(--zp-x);stroke-width:2;stroke-linecap:round}" +
+    ".zp-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--zp-ink2);margin:2px 0 8px}" +
+    ".zp-key{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;font-style:normal}" +
+    ".zp-key.t{background:var(--zp-t)}.zp-key.b{background:var(--zp-b)}" +
+    ".zp-legend .zp-key.passive{background:color-mix(in srgb,var(--zp-t) 35%,transparent);border:2px solid var(--zp-t);box-sizing:border-box}" +
+    ".zp-key.x{width:auto;height:auto;border-radius:0;color:var(--zp-x);font-weight:800}" +
+    ".zp-empty{font-size:12.5px;color:var(--zp-faint);padding:18px 0;text-align:center}" +
+    ".zp-muted{font-size:12.5px;color:var(--zp-ink2);margin:6px 0;line-height:1.5}" +
+    ".zp-h{font-size:13.5px;margin:16px 0 6px;color:var(--zp-ink)}" +
+    ".zp-scroll{overflow-x:auto}" +  // .zp-wide: a plain wrapper (pages may let it scroll)
+    ".zp-table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0 10px;font-variant-numeric:tabular-nums}" +
+    ".zp-table th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--zp-faint);text-align:left;padding:5px 7px;border-bottom:1px solid var(--zp-grid)}" +
+    ".zp-table td{padding:5px 7px;border-bottom:1px dotted var(--zp-grid);color:var(--zp-ink2);white-space:nowrap}" +
+    ".zp-table .r{text-align:right}.zp-table.zp-small{width:auto}" +
+    ".zp-unit{color:var(--zp-faint);font-size:10.5px}" +
+    ".zp-list{font-size:12.5px;color:var(--zp-ink2);margin:6px 0;padding-left:18px;line-height:1.55}" +
+    // The data table is for screen readers until it takes focus or is opened
+    // (:where keeps this overridable: a page may always show the toggle).
+    ".zp-plot{position:relative}" +
+    ".zp-data:where(:not(:focus-within):not([open])){position:absolute;left:0;bottom:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}" +
+    ".zp-data summary{font-size:12px;color:var(--zp-ink2);cursor:pointer;margin:2px 0 4px}" +
+    ".zp-data-scroll{max-height:260px;overflow:auto}" +
+    ".zp-tip{position:fixed;z-index:50;display:none;pointer-events:none;white-space:pre;background:var(--zp-tip-bg);color:var(--zp-tip-ink);" +
+    "font:500 11.5px/1.45 var(--mono,monospace);padding:7px 9px;border-radius:8px;box-shadow:0 8px 24px -10px var(--zp-tip-shadow)}";
+  (function inject() {
+    if (typeof document === "undefined" || !document.head || document.getElementById("zp-css")) return;
+    var st = document.createElement("style");
+    st.id = "zp-css";
+    st.textContent = CSS;
+    document.head.appendChild(st);
+  })();
+
+  window.ZingPerf = {
+    Live: Live,
+    section: section,
+    wireSection: wireSection,
+    chart: chart,
+    niceAxis: niceAxis,
+    CSS: CSS,
+  };
+})();
+
+</script>
+<script>
+/* perftrend.js — proposed addition to perf.js (prototype): a running-median
+ * line per endpoint behind the live chart's request dots.
+ *
+ * For every successful, uncached request the line takes the median of that
+ * endpoint's last N such requests (N = 5), drawn at the request's x. Failed
+ * and cached requests do not feed it (as the p50 tiles), so a failure never
+ * pulls the line to zero and the line never "connects" a failure. The dots,
+ * crosses, tooltips and data table stay exactly as perf.js draws them.
+ *
+ * In perf.js itself this would be a few lines inside chartSvg() using its own
+ * x / y scales; here it reads the dots' cx and rebuilds the y scale with the
+ * same niceAxis rule, so perf.js can stay unchanged.
+ *
+ *   ZingPerfTrend.draw(svg, records, metricId) -> true if a line was drawn
+ */
+(function () {
+  "use strict";
+  var N = 5, H = 230, MT = 10, MB = 30; // perf.js chart geometry
+  var GET = {
+    latency: function (r) { return r.duration_ms; },
+    ttft: function (r) { return r.ttft_ms; },
+    tps: function (r) { return r.decode_tps_local != null ? r.decode_tps_local : r.decode_tps_reported; },
+    itl: function (r) { return r.itl_mean_ms; },
+  };
+  function niceAxis(v) { // same rule as perf.js
+    if (!(v > 0)) return { max: 1 };
+    var base = Math.pow(10, Math.floor(Math.log10(v / 6))), steps = [1, 2, 2.5, 5, 10];
+    for (var i = 0; ; i++) { var step = steps[i] * base, n = Math.ceil(v / step - 1e-9); if (n <= 6) return { max: n * step }; }
+  }
+  function median(a) {
+    var s = a.slice().sort(function (x, y) { return x - y; }), m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function draw(svg, records, metricId) {
+    var get = GET[metricId] || GET.latency;
+    var calls = records.filter(function (r) { return r.op === "complete"; });
+    var pts = calls.filter(function (r) { return r.ok && get(r) != null; });
+    if (!pts.length) return false;
+    var yMax = niceAxis(Math.max.apply(null, pts.map(get).concat([1])) * 1.05).max, ph = H - MT - MB;
+    var y = function (v) { return MT + ph - (v / yMax) * ph; };
+    // each dot's x, by its request number (the tooltip starts with "#seq ")
+    var xs = {};
+    Array.prototype.forEach.call(svg.querySelectorAll("circle.zp-pt"), function (c) {
+      var m = /^#(\d+)\s/.exec(c.getAttribute("data-tip") || "");
+      if (m) xs[m[1]] = c.getAttribute("cx");
+    });
+    var out = [];
+    ["target", "baseline"].forEach(function (ep) {
+      var win = [], d = [];
+      pts.filter(function (r) { return (r.endpoint === "baseline" ? "baseline" : "target") === ep && !r.cached; })
+        .sort(function (a, b) { return a.start_ms - b.start_ms; })
+        .forEach(function (r) {
+          win.push(get(r)); if (win.length > N) win.shift();
+          if (xs[r.seq] != null) d.push(xs[r.seq] + "," + y(median(win)).toFixed(1));
+        });
+      if (d.length > 1) out.push('<path class="' + (ep === "baseline" ? "b" : "t") + '" d="M' + d.join("L") + '"/>');
+    });
+    if (!out.length) return false;
+    var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "zp-trend");
+    g.innerHTML = out.join("");
+    var first = svg.querySelector(".zp-pt, .zp-fail");
+    svg.insertBefore(g, first); // behind the dots and crosses
+    return true;
+  }
+  window.ZingPerfTrend = { draw: draw, N: N };
+})();
+
+</script>
+<script>
+/* zing web UI v2 — hand-drawn inline-SVG charts and value formatting.
+ *
+ * Plain browser global, no modules, no libraries, no outgoing requests. Load
+ * after /lang.js (T, ZING_LANG) and /icons.js. Exposes window.ZingCharts with:
+ *   - esc(s)                  HTML-escaped text (every label from the API
+ *                             goes through it: relay names are user input)
+ *   - fmt(v, unit, o)         a value in the UI locale with its unit
+ *                             (ratio -> %, ms, tok/s, …); "—" for null.
+ *                             o.bare drops the unit suffix
+ *   - fmtDelta(d, unit)       a signed difference ("+2.1", "−120 ms", "+3 pp")
+ *   - unitName(unit)          the unit as an axis caption ("%", "ms", …)
+ *   - timeChart(host, cfg)    a time-series line chart: one median line per
+ *                             series with its p25–p75 band, gaps where a
+ *                             bucket has no data, faded hollow markers for
+ *                             buckets with few runs, dashed annotation lines,
+ *                             a crosshair + tooltip for the bucket column under
+ *                             the pointer (pointer only: the page renders the same
+ *                             values as a data table, the accessible
+ *                             equivalent, BITV 9.1.1.1 / 9.1.3.1)
+ *
+ * timeChart cfg:
+ *   title, desc     accessible name / description of the <svg role="img">
+ *   unit            metric unit (fmt)
+ *   bucketMs        bucket length; points further apart than 1.5 buckets are
+ *                   not joined (an empty bucket is a gap, never a zero)
+ *   domain          [t0, t1] in ms, or null for the data's extent
+ *   xTick(t, step)  tick label; tipTime(t) the tooltip's heading
+ *   series          [{ label, cls: "s0".."s3", shape, points: [{ t, v, lo, hi, n, runs, low }] }]
+ *   marks           [{ t, kind: "tool_version" | "kb_profile", text }]
+ *   lowHint         text shown in the tooltip for a bucket with few runs
+ *   yMin, yMax      scale bounds, optional: fixed (0 / 100 for scores), or a
+ *                   zoom to the data (billing ratios around 100 %); without
+ *                   yMin the scale starts at 0
+ *   ref             { v, text }: a dashed reference line (e.g. 100 %),
+ *                   labelled at its left end inside the plot (the newest
+ *                   points sit at the right), optional
+ *
+ *   - heatmap(host, cfg)      a weekday x hour grid (7 x 24) on a one-hue
+ *                             sequential scale (5 steps, light = low): cells
+ *                             with few runs hatched and faded, empty cells an
+ *                             outline only; legend below; per-cell tooltip
+ *     cfg: id, title, desc, unit, cells [{ dow 1..7 (Mon..Sun), hour 0..23,
+ *          v, runs, low }], days [7 short names], tipTime(dow, hour),
+ *          lowHint, legend { low, high, few, none } texts
+ *   - stackBars(host, cfg)    bars over time, each stacked from categories
+ *                             (shares of the bucket's total), faded for few
+ *                             runs; per-bar tooltip
+ *     cfg: id, title, desc, bucketMs, domain, xTick, tipTime, lowHint,
+ *          cats [{ id, label, cls }], bars [{ t, total, counts{id: n}, runs, low }],
+ *          totalText(bar) a line for the tooltip
+ *
+ * Colours come from charts.css (series slots s0..s3 per theme); text in the
+ * chart wears ink tokens, never the series colour. Shapes (circle, square,
+ * triangle, diamond) tell the series apart without colour.
+ */
+(function () {
+  "use strict";
+
+  var NS = "http://www.w3.org/2000/svg";
+  var SHAPES = ["circle", "square", "triangle", "diamond"];
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function Tx(zh, en) { return window.T ? window.T(zh, en) : en; }
+  function Tf(zh, en, vars) {
+    return Tx(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+  }
+  function nf(opts) {
+    try { return window.ZING_LANG.numFmt(opts); } catch (e) { return new Intl.NumberFormat(undefined, opts); }
+  }
+
+  var DIGITS = { score: 1, ratio: 1, ms: 0, "tok/s": 1, tokens: 0, count: 1, s: 1 };
+  var SUFFIX = { ms: " ms", "tok/s": " tok/s", tokens: " tok", s: " s" };
+
+  function fmt(v, unit, o) {
+    if (typeof v !== "number" || !isFinite(v)) return "—";
+    o = o || {};
+    if (unit === "ratio") return nf({ style: "percent", maximumFractionDigits: o.digits != null ? o.digits : 1 }).format(v);
+    var d = o.digits != null ? o.digits : DIGITS[unit] != null ? DIGITS[unit] : 1;
+    var s = nf({ maximumFractionDigits: d }).format(v);
+    return o.bare || !SUFFIX[unit] ? s : s + SUFFIX[unit];
+  }
+
+  function fmtDelta(d, unit) {
+    if (typeof d !== "number" || !isFinite(d)) return "—";
+    if (unit === "ratio") {
+      return Tf("{n} 个百分点", "{n} pp", { n: nf({ maximumFractionDigits: 1, signDisplay: "exceptZero" }).format(d * 100) });
+    }
+    var s = nf({ maximumFractionDigits: DIGITS[unit] != null ? DIGITS[unit] : 1, signDisplay: "exceptZero" }).format(d);
+    return SUFFIX[unit] ? s + SUFFIX[unit] : s;
+  }
+
+  function unitName(unit) {
+    return {
+      score: Tx("健康分（0–100）", "score (0–100)"), ratio: "%", ms: "ms", "tok/s": "tok/s",
+      tokens: "tokens", count: Tx("个数", "count"), s: Tx("秒", "seconds"),
+    }[unit] || unit || "";
+  }
+
+  /* ---------------- scales ---------------- */
+  function niceStep(span, count) {
+    var raw = span / Math.max(1, count), mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), r = raw / mag;
+    return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 2.5 ? 2.5 : r <= 5 ? 5 : 10) * mag;
+  }
+  function yTicks(lo, hi, count) {
+    if (hi <= lo) hi = lo + 1;
+    var step = niceStep(hi - lo, count), out = [];
+    // from the tick at or below lo to the tick at or above hi, so every
+    // value sits inside the labelled range; "|| 0": no "-0" on the axis
+    var first = Math.floor(lo / step + 1e-9), last = Math.ceil(hi / step - 1e-9);
+    for (var i = first; i <= last; i++) out.push(i * step || 0);
+    return out;
+  }
+  var H1 = 36e5, D1 = 864e5;
+  var TSTEPS = [H1, 3 * H1, 6 * H1, 12 * H1, D1, 2 * D1, 7 * D1, 14 * D1, 28 * D1, 91 * D1, 182 * D1, 364 * D1];
+  // tick times in the viewer's local time: whole hours, local midnights
+  function xTicks(t0, t1, count) {
+    var want = (t1 - t0) / Math.max(1, count), step = TSTEPS[TSTEPS.length - 1];
+    for (var i = 0; i < TSTEPS.length; i++) if (TSTEPS[i] >= want) { step = TSTEPS[i]; break; }
+    var d = new Date(t0), out = [];
+    if (step < D1) {
+      d.setMinutes(0, 0, 0);
+      var hours = step / H1;
+      while (d.getHours() % hours) d.setHours(d.getHours() + 1);
+      while (d.getTime() < t0) d.setHours(d.getHours() + hours);
+      for (; d.getTime() <= t1 && out.length < 60; d.setHours(d.getHours() + hours)) out.push(d.getTime());
+    } else {
+      d.setHours(0, 0, 0, 0);
+      var days = Math.round(step / D1);
+      if (d.getTime() < t0) d.setDate(d.getDate() + 1);
+      if (days === 7 || days === 14) while (d.getDay() !== 1) d.setDate(d.getDate() + 1); // Mondays (ISO weeks)
+      for (; d.getTime() <= t1 && out.length < 60; d.setDate(d.getDate() + days)) out.push(d.getTime());
+    }
+    return { ticks: out, step: step };
+  }
+
+  /* ---------------- marks ---------------- */
+  function shapePath(shape, x, y, r) {
+    var f = function (n) { return n.toFixed(1); };
+    if (shape === "square") { var s = r * 0.9; return "M" + f(x - s) + "," + f(y - s) + "h" + f(2 * s) + "v" + f(2 * s) + "h" + f(-2 * s) + "Z"; }
+    if (shape === "triangle") { var h = r * 1.15; return "M" + f(x) + "," + f(y - h) + "L" + f(x + h) + "," + f(y + h * 0.8) + "L" + f(x - h) + "," + f(y + h * 0.8) + "Z"; }
+    if (shape === "diamond") { var q = r * 1.2; return "M" + f(x) + "," + f(y - q) + "L" + f(x + q) + "," + f(y) + "L" + f(x) + "," + f(y + q) + "L" + f(x - q) + "," + f(y) + "Z"; }
+    return "M" + f(x - r) + "," + f(y) + "a" + r + "," + r + " 0 1,0 " + f(2 * r) + ",0a" + r + "," + r + " 0 1,0 " + f(-2 * r) + ",0Z";
+  }
+  // a legend / tooltip key: a short line with the series' marker on it
+  function keySVG(cls, shape) {
+    return '<svg class="ckey ' + esc(cls) + '" width="22" height="12" viewBox="0 0 22 12" aria-hidden="true" focusable="false">' +
+      '<line x1="1" x2="21" y1="6" y2="6"/><path d="' + shapePath(shape, 11, 6, 3.6) + '"/></svg>';
+  }
+
+  // runs of consecutive buckets (a gap > 1.5 buckets starts a new run)
+  function segments(points, bucketMs) {
+    var out = [], cur = [];
+    points.forEach(function (p, i) {
+      if (i && p.t - points[i - 1].t > bucketMs * 1.5) { out.push(cur); cur = []; }
+      cur.push(p);
+    });
+    if (cur.length) out.push(cur);
+    return out;
+  }
+
+  /* ---------------- the chart ---------------- */
+  function timeChart(host, cfg) {
+    var series = (cfg.series || []).filter(function (s) { return s.points && s.points.length; });
+    var all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p); }); });
+    var W = Math.max(260, Math.floor(host.clientWidth || 640));
+    var narrow = W < 480;
+    var H = narrow ? 220 : 270;
+    var M = { l: 0, r: 14, t: 18, b: 30 };
+    var half = cfg.bucketMs / 2;
+    var ts = all.map(function (p) { return p.t; });
+    var t0 = cfg.domain ? cfg.domain[0] : Math.min.apply(null, ts);
+    var t1 = cfg.domain ? cfg.domain[1] : Math.max.apply(null, ts) + cfg.bucketMs;
+    if (!(t1 > t0)) t1 = t0 + cfg.bucketMs;
+    var vals = [];
+    all.forEach(function (p) { [p.v, p.lo, p.hi].forEach(function (v) { if (typeof v === "number") vals.push(v); }); });
+    if (cfg.ref && typeof cfg.ref.v === "number") vals.push(cfg.ref.v);
+    var lo = Math.min.apply(null, vals.concat(cfg.yMin != null ? [cfg.yMin] : [0]));
+    var hi = Math.max.apply(null, vals.concat(cfg.yMax != null ? [cfg.yMax] : []));
+    if (cfg.unit === "ratio" && hi <= 1) hi = 1;
+    var yt = yTicks(lo, hi, narrow ? 4 : 5);
+    lo = Math.min(lo, yt[0]);
+    hi = Math.max(hi, yt[yt.length - 1]);
+    // whole percents, unless the ticks are closer (a zoomed ratio axis)
+    var ystep = yt.length > 1 ? yt[1] - yt[0] : 1;
+    var rdig = Math.abs(ystep * 100 - Math.round(ystep * 100)) < 1e-6 ? 0 : 1;
+    var ylab = yt.map(function (v) { return fmt(v, cfg.unit, { bare: true, digits: cfg.unit === "ratio" ? rdig : undefined }); });
+    M.l = 12 + Math.max.apply(null, ylab.map(function (s) { return s.length; })) * 7;
+    var pw = W - M.l - M.r, ph = H - M.t - M.b;
+    var X = function (t) { return M.l + ((t - t0) / (t1 - t0)) * pw; };
+    var Y = function (v) { return M.t + ph - ((v - lo) / (hi - lo || 1)) * ph; };
+    var xt = xTicks(t0, t1, Math.max(2, Math.floor(pw / (narrow ? 82 : 96))));
+    var f1 = function (n) { return n.toFixed(1); };
+
+    var out = [];
+    out.push('<svg class="tchart" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H +
+      '" role="img" aria-labelledby="' + esc(cfg.id) + '-t" aria-describedby="' + esc(cfg.id) + '-d" focusable="false">' +
+      '<title id="' + esc(cfg.id) + '-t">' + esc(cfg.title) + '</title><desc id="' + esc(cfg.id) + '-d">' + esc(cfg.desc) + "</desc>");
+    // grid + y axis
+    out.push('<g class="grid">');
+    yt.forEach(function (v, i) {
+      var y = f1(Y(v));
+      out.push('<line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + y + '" y2="' + y + '"' + (v === 0 ? ' class="zero"' : "") + "/>" +
+        '<text x="' + (M.l - 8) + '" y="' + y + '" dy="0.32em" text-anchor="end">' + esc(ylab[i]) + "</text>");
+    });
+    out.push("</g>");
+    // x axis
+    out.push('<g class="xaxis"><line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + (M.t + ph) + '" y2="' + (M.t + ph) + '"/>');
+    xt.ticks.forEach(function (t) {
+      var x = f1(X(t));
+      out.push('<line class="tick" x1="' + x + '" x2="' + x + '" y1="' + (M.t + ph) + '" y2="' + (M.t + ph + 4) + '"/>' +
+        '<text x="' + x + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(cfg.xTick(t, xt.step)) + "</text>");
+    });
+    out.push("</g>");
+    // annotations: one dashed line per bucket; labels of lines closer than
+    // 34 px share one label (both kinds listed) so their text never overlaps
+    var xs = {};
+    (cfg.marks || []).forEach(function (m) {
+      var x = X(m.t + half), k = x.toFixed(1);
+      (xs[k] = xs[k] || { x: x, kinds: {} }).kinds[m.kind] = 1;
+    });
+    var lines = Object.keys(xs).map(function (k) { return xs[k]; }).sort(function (a, b) { return a.x - b.x; });
+    var groups = [];
+    lines.forEach(function (l) {
+      var g = groups[groups.length - 1];
+      if (g && l.x - g.x0 < 34) {
+        g.x1 = l.x;
+        Object.keys(l.kinds).forEach(function (k) { g.kinds[k] = 1; });
+      } else groups.push({ x0: l.x, x1: l.x, kinds: Object.assign({}, l.kinds) });
+    });
+    out.push('<g class="marks">');
+    lines.forEach(function (l) {
+      out.push('<line x1="' + f1(l.x) + '" x2="' + f1(l.x) + '" y1="' + (M.t - 2) + '" y2="' + (M.t + ph) + '"/>');
+    });
+    groups.forEach(function (g) {
+      var glyph = (g.kinds.tool_version ? "v" : "") + (g.kinds.kb_profile ? (g.kinds.tool_version ? "·" : "") + "KB" : "");
+      var x = Math.min(W - M.r - 12, (g.x0 + g.x1) / 2);
+      out.push('<text x="' + f1(x) + '" y="' + (M.t - 6) + '" text-anchor="middle">' + glyph + "</text>");
+    });
+    out.push("</g>");
+    if (cfg.ref && typeof cfg.ref.v === "number") {
+      var ry = f1(Y(cfg.ref.v));
+      out.push('<g class="ref"><line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + ry + '" y2="' + ry + '"/>' +
+        '<text x="' + (M.l + 6) + '" y="' + ry + '" dy="-0.45em">' + esc(cfg.ref.text) + "</text></g>");
+    }
+    // series: band, line, markers
+    series.forEach(function (s, si) {
+      var shape = s.shape || SHAPES[si % SHAPES.length];
+      out.push('<g class="ser ' + esc(s.cls) + '">');
+      segments(s.points, cfg.bucketMs).forEach(function (seg) {
+        var band = seg.filter(function (p) { return typeof p.lo === "number" && typeof p.hi === "number"; });
+        if (band.length === seg.length && band.length > 1) {
+          var top = band.map(function (p) { return f1(X(p.t + half)) + "," + f1(Y(p.hi)); });
+          var bot = band.slice().reverse().map(function (p) { return f1(X(p.t + half)) + "," + f1(Y(p.lo)); });
+          out.push('<path class="band" d="M' + top.join("L") + "L" + bot.join("L") + 'Z"/>');
+        } else {
+          band.forEach(function (p) { // a lone bucket: its band as a short bar
+            out.push('<line class="whisk" x1="' + f1(X(p.t + half)) + '" x2="' + f1(X(p.t + half)) + '" y1="' + f1(Y(p.hi)) + '" y2="' + f1(Y(p.lo)) + '"/>');
+          });
+        }
+        if (seg.length > 1) {
+          out.push('<path class="line" d="M' + seg.map(function (p) { return f1(X(p.t + half)) + "," + f1(Y(p.v)); }).join("L") + '"/>');
+        }
+      });
+      s.points.forEach(function (p) {
+        out.push('<path class="pt' + (p.low ? " low" : "") + '" d="' + shapePath(shape, X(p.t + half), Y(p.v), narrow ? 3.4 : 4) + '"/>');
+      });
+      out.push("</g>");
+    });
+    out.push('<line class="cross" x1="0" x2="0" y1="' + M.t + '" y2="' + (M.t + ph) + '" visibility="hidden"/>');
+    // hover targets: one column per bucket with data, reaching halfway to its
+    // neighbours (no pointermove tracking: hovering a column is enough)
+    var times = {};
+    all.forEach(function (p) { times[p.t] = 1; });
+    var list = Object.keys(times).map(Number).sort(function (a, b) { return a - b; });
+    list.forEach(function (t, i) {
+      var x = X(t + half), a = i ? (X(list[i - 1] + half) + x) / 2 : M.l, b = i < list.length - 1 ? (X(list[i + 1] + half) + x) / 2 : W - M.r;
+      out.push('<rect class="hit" data-t="' + t + '" x="' + f1(a) + '" y="' + M.t + '" width="' + f1(Math.max(1, b - a)) + '" height="' + ph + '"/>');
+    });
+    out.push("</svg>");
+
+    host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>';
+    wireTooltip(host, cfg, series, X, half, W);
+  }
+
+  // Crosshair + tooltip for the hovered bucket column, listing every series
+  // there. Pointer only and aria-hidden: the data table has the same values.
+  // Escape hides it (BITV 9.1.4.13 dismissible); it stays while the pointer
+  // is over it (hoverable).
+  function wireTooltip(host, cfg, series, X, half, W) {
+    var svg = host.querySelector("svg"), tip = host.querySelector(".ctip"), cross = svg.querySelector(".cross");
+    var shown = null;
+    function hide() {
+      shown = null;
+      tip.hidden = true;
+      cross.setAttribute("visibility", "hidden");
+    }
+    function show(t) {
+      if (shown === t) return;
+      shown = t;
+      var x = X(t + half);
+      cross.setAttribute("x1", x.toFixed(1));
+      cross.setAttribute("x2", x.toFixed(1));
+      cross.setAttribute("visibility", "visible");
+      var rows = series.map(function (s, si) {
+        var p = s.points.filter(function (q) { return q.t === t; })[0];
+        if (!p) return "";
+        var spread = typeof p.lo === "number" ? '<span class="sub">p25–p75 ' + esc(fmt(p.lo, cfg.unit)) + " – " + esc(fmt(p.hi, cfg.unit)) + "</span>" : "";
+        return '<li class="' + (p.low ? "low" : "") + '">' + keySVG(s.cls, s.shape || SHAPES[si % SHAPES.length]) +
+          "<span><b>" + esc(fmt(p.v, cfg.unit)) + "</b> " + '<span class="nm">' + esc(s.label) + "</span>" + spread +
+          '<span class="sub">' + esc(Tf("{n} 次检测", "{n} runs", { n: p.runs != null ? p.runs : p.n })) + "</span>" +
+          (p.low ? '<span class="sub lowtxt">' + esc(cfg.lowHint) + "</span>" : "") + "</span></li>";
+      }).join("");
+      var notes = (cfg.marks || []).filter(function (m) { return m.t === t; }).map(function (m) {
+        return '<p class="mk">' + esc(m.text) + "</p>";
+      }).join("");
+      tip.innerHTML = '<p class="when">' + esc(cfg.tipTime(t)) + "</p><ul>" + rows + "</ul>" + notes;
+      tip.hidden = false;
+      var bw = svg.getBoundingClientRect().width || W, scale = bw / W;
+      var tw = tip.offsetWidth, left = x * scale + 14;
+      if (left + tw > bw) left = Math.max(0, x * scale - tw - 14);
+      tip.style.left = left + "px";
+    }
+    svg.addEventListener("mouseover", function (ev) {
+      var hit = ev.target.closest && ev.target.closest("rect.hit");
+      if (hit) show(Number(hit.getAttribute("data-t")));
+    });
+    // the host is re-used by every render: replace, never stack, its handlers
+    host.onpointerleave = hide;
+    if (host.zcKey) document.removeEventListener("keydown", host.zcKey);
+    host.zcKey = function (ev) {
+      if (ev.key === "Escape" && shown != null) hide();
+    };
+    document.addEventListener("keydown", host.zcKey);
+  }
+
+  // A tooltip for marks with a data-k attribute (pointer only, aria-hidden:
+  // the page's table has the same values). html(k) fills it, at(k) gives the
+  // mark's x in SVG units. Escape hides it; it stays while hovered.
+  function tipFor(host, W, html, at, onShow) {
+    var svg = host.querySelector("svg"), tip = host.querySelector(".ctip"), shown = null;
+    function hide() {
+      shown = null;
+      tip.hidden = true;
+      if (onShow) onShow(null);
+    }
+    svg.addEventListener("mouseover", function (ev) {
+      var hit = ev.target.closest && ev.target.closest("[data-k]");
+      if (!hit) return;
+      var k = hit.getAttribute("data-k");
+      if (shown === k) return;
+      shown = k;
+      tip.innerHTML = html(k);
+      tip.hidden = false;
+      if (onShow) onShow(k);
+      var bw = svg.getBoundingClientRect().width || W, scale = bw / W, x = at(k);
+      var tw = tip.offsetWidth, left = x * scale + 14;
+      if (left + tw > bw) left = Math.max(0, x * scale - tw - 14);
+      tip.style.left = left + "px";
+    });
+    host.onpointerleave = hide;
+    if (host.zcKey) document.removeEventListener("keydown", host.zcKey);
+    host.zcKey = function (ev) {
+      if (ev.key === "Escape" && shown != null) hide();
+    };
+    document.addEventListener("keydown", host.zcKey);
+  }
+
+  function svgOpen(cfg, W, H, cls) {
+    return '<svg class="' + cls + '" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H +
+      '" role="img" aria-labelledby="' + esc(cfg.id) + '-t" aria-describedby="' + esc(cfg.id) + '-d" focusable="false">' +
+      '<title id="' + esc(cfg.id) + '-t">' + esc(cfg.title) + '</title><desc id="' + esc(cfg.id) + '-d">' + esc(cfg.desc) + "</desc>";
+  }
+  function hatch(id) {
+    return '<defs><pattern id="' + esc(id) + '" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+      '<line x1="0" y1="0" x2="0" y2="5"/></pattern></defs>';
+  }
+
+  /* ---------------- weekday x hour heatmap ---------------- */
+  var STEPS = 5;
+  function heatmap(host, cfg) {
+    var cells = (cfg.cells || []).filter(function (c) { return typeof c.v === "number" && isFinite(c.v); });
+    var W = Math.max(300, Math.floor(host.clientWidth || 640));
+    var narrow = W < 520;
+    var ch = narrow ? 18 : 22, top = 18;
+    var left = 10 + Math.max.apply(null, cfg.days.map(function (d) { return String(d).length; })) * 7;
+    var cw = (W - left - 2) / 24, H = top + 7 * ch + 2;
+    var vs = cells.map(function (c) { return c.v; });
+    var lo = vs.length ? Math.min.apply(null, vs) : 0, hi = vs.length ? Math.max.apply(null, vs) : 1;
+    var step = function (v) { return hi > lo ? Math.min(STEPS - 1, Math.floor(((v - lo) / (hi - lo)) * STEPS)) : Math.floor(STEPS / 2); };
+    var at = {};
+    cells.forEach(function (c) { at[c.dow + "-" + c.hour] = c; });
+    var f1 = function (n) { return n.toFixed(1); };
+    var pat = esc(cfg.id) + "-hatch";
+    var out = [svgOpen(cfg, W, H, "hmap"), hatch(pat)];
+    out.push('<g class="hx">');
+    for (var h = 0; h < 24; h += narrow ? 6 : 3) {
+      out.push('<text x="' + f1(left + h * cw + 1) + '" y="11">' + esc(cfg.hourLabel ? cfg.hourLabel(h) : String(h)) + "</text>");
+    }
+    out.push('</g><g class="hy">');
+    cfg.days.forEach(function (d, i) {
+      out.push('<text x="' + (left - 8) + '" y="' + f1(top + i * ch + ch / 2) + '" dy="0.32em" text-anchor="end">' + esc(d) + "</text>");
+    });
+    out.push("</g><g class=\"cells\">");
+    for (var dow = 1; dow <= 7; dow++) {
+      for (var hr = 0; hr < 24; hr++) {
+        var c = at[dow + "-" + hr], x = f1(left + hr * cw + 1), y = f1(top + (dow - 1) * ch + 1);
+        var w = f1(Math.max(1, cw - 2)), hh = ch - 2;
+        if (!c) {
+          out.push('<rect class="none" x="' + x + '" y="' + y + '" width="' + w + '" height="' + hh + '" rx="3"/>');
+          continue;
+        }
+        var k = dow + "-" + hr;
+        out.push('<rect class="q' + (step(c.v) + 1) + (c.low ? " low" : "") + '" data-k="' + k + '" x="' + x + '" y="' + y +
+          '" width="' + w + '" height="' + hh + '" rx="3"/>');
+        if (c.low) out.push('<rect class="hatch" fill="url(#' + pat + ')" x="' + x + '" y="' + y + '" width="' + w + '" height="' + hh + '" rx="3" pointer-events="none"/>');
+      }
+    }
+    out.push("</g></svg>");
+    var L = cfg.legend || {};
+    var sw = function (cls) {
+      return '<svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true" focusable="false" class="hmap hsw">' +
+        (cls === "low" ? hatch(pat + "-l") + '<rect class="q3 low" x="0.5" y="0.5" width="15" height="11" rx="3"/><rect class="hatch" fill="url(#' + pat + '-l)" x="0.5" y="0.5" width="15" height="11" rx="3"/>'
+          : '<rect class="' + cls + '" x="0.5" y="0.5" width="15" height="11" rx="3"/>') + "</svg>";
+    };
+    var scale = "";
+    for (var i = 1; i <= STEPS; i++) scale += sw("q" + i);
+    var legend = '<ul class="hlegend">' +
+      '<li><span class="hv">' + esc(fmt(lo, cfg.unit)) + "</span>" + '<span class="hscale" aria-hidden="true">' + scale + "</span>" +
+      '<span class="hv">' + esc(fmt(hi, cfg.unit)) + "</span>" + '<span class="sub">' + esc(L.scale || "") + "</span></li>" +
+      "<li>" + sw("low") + "<span>" + esc(L.few || "") + "</span></li>" +
+      "<li>" + sw("none") + "<span>" + esc(L.none || "") + "</span></li></ul>";
+    host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>' + legend;
+    tipFor(host, W, function (k) {
+      var c = at[k];
+      return '<p class="when">' + esc(cfg.tipTime(c.dow, c.hour)) + "</p><ul><li><span><b>" + esc(fmt(c.v, cfg.unit)) + "</b>" +
+        '<span class="sub">' + esc(Tf("{n} 次检测", "{n} runs", { n: c.runs })) + "</span>" +
+        (c.low ? '<span class="sub lowtxt">' + esc(cfg.lowHint) + "</span>" : "") + "</span></li></ul>";
+    }, function (k) {
+      var c = at[k];
+      return left + c.hour * cw + cw;
+    });
+  }
+
+  /* ---------------- stacked bars over time ---------------- */
+  function stackBars(host, cfg) {
+    var bars = (cfg.bars || []).filter(function (b) { return b.total > 0; });
+    var W = Math.max(260, Math.floor(host.clientWidth || 640));
+    var narrow = W < 480;
+    var H = narrow ? 200 : 240;
+    var M = { l: 0, r: 14, t: 14, b: 30 };
+    var ts = bars.map(function (b) { return b.t; });
+    var t0 = cfg.domain ? cfg.domain[0] : Math.min.apply(null, ts);
+    var t1 = cfg.domain ? cfg.domain[1] : Math.max.apply(null, ts) + cfg.bucketMs;
+    if (!(t1 > t0)) t1 = t0 + cfg.bucketMs;
+    var shareOf = function (b, id) { return (b.counts[id] || 0) / b.total; };
+    var tops = bars.map(function (b) { return cfg.cats.reduce(function (a, c) { return a + shareOf(b, c.id); }, 0); });
+    var hi = Math.max.apply(null, tops.concat([0.01]));
+    var yt = yTicks(0, hi, narrow ? 3 : 4);
+    hi = yt[yt.length - 1];
+    var ylab = yt.map(function (v) { return fmt(v, "ratio", { digits: hi < 0.05 ? 1 : 0 }); });
+    M.l = 12 + Math.max.apply(null, ylab.map(function (x) { return x.length; })) * 7;
+    var pw = W - M.l - M.r, ph = H - M.t - M.b;
+    var X = function (t) { return M.l + ((t - t0) / (t1 - t0)) * pw; };
+    var Y = function (v) { return M.t + ph - (v / (hi || 1)) * ph; };
+    var xt = xTicks(t0, t1, Math.max(2, Math.floor(pw / (narrow ? 82 : 96))));
+    var f1 = function (n) { return n.toFixed(1); };
+    var bw = Math.max(2, Math.min(36, X(t0 + cfg.bucketMs) - X(t0) - 2));
+    var out = [svgOpen(cfg, W, H, "tchart sbars")];
+    out.push('<g class="grid">');
+    yt.forEach(function (v, i) {
+      var y = f1(Y(v));
+      out.push('<line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + y + '" y2="' + y + '"' + (v === 0 ? ' class="zero"' : "") + "/>" +
+        '<text x="' + (M.l - 8) + '" y="' + y + '" dy="0.32em" text-anchor="end">' + esc(ylab[i]) + "</text>");
+    });
+    out.push('</g><g class="xaxis"><line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + (M.t + ph) + '" y2="' + (M.t + ph) + '"/>');
+    xt.ticks.forEach(function (t) {
+      var x = f1(X(t));
+      out.push('<line class="tick" x1="' + x + '" x2="' + x + '" y1="' + (M.t + ph) + '" y2="' + (M.t + ph + 4) + '"/>' +
+        '<text x="' + x + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(cfg.xTick(t, xt.step)) + "</text>");
+    });
+    out.push("</g>");
+    bars.forEach(function (b, i) {
+      var cx = X(b.t + cfg.bucketMs / 2), x = f1(cx - bw / 2), acc = 0;
+      out.push('<g class="bar' + (b.low ? " low" : "") + '">');
+      cfg.cats.forEach(function (c) {
+        var v = shareOf(b, c.id);
+        if (!v) return;
+        var y0 = Y(acc), y1 = Y(acc + v);
+        acc += v;
+        // a 1px surface gap between stacked segments
+        out.push('<rect class="seg ' + esc(c.cls) + '" x="' + x + '" y="' + f1(y1) + '" width="' + f1(bw) + '" height="' + f1(Math.max(1, y0 - y1 - 1)) + '"/>');
+      });
+      // the hover target: the whole bucket column
+      out.push('<rect class="hit" data-k="' + i + '" x="' + f1(cx - Math.max(bw, 12) / 2) + '" y="' + M.t + '" width="' + f1(Math.max(bw, 12)) + '" height="' + ph + '"/></g>');
+    });
+    out.push("</svg>");
+    host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>';
+    tipFor(host, W, function (k) {
+      var b = bars[Number(k)];
+      var rows = cfg.cats.slice().reverse().map(function (c) {
+        var n = b.counts[c.id] || 0;
+        return '<li><span class="sw ' + esc(c.cls) + '" aria-hidden="true"></span><span><b>' + esc(fmt(n / b.total, "ratio")) + "</b> " +
+          '<span class="nm">' + esc(c.label) + '</span><span class="sub">' + esc(Tf("{n} 次请求", "{n} requests", { n: n })) + "</span></span></li>";
+      }).join("");
+      return '<p class="when">' + esc(cfg.tipTime(b.t)) + "</p><ul>" + rows + "</ul>" +
+        '<p class="mk">' + esc(cfg.totalText(b)) + (b.low ? "<br>" + esc(cfg.lowHint) : "") + "</p>";
+    }, function (k) { return X(bars[Number(k)].t + cfg.bucketMs / 2); });
+  }
+
+  window.ZingCharts = {
+    esc: esc,
+    fmt: fmt,
+    fmtDelta: fmtDelta,
+    unitName: unitName,
+    keySVG: keySVG,
+    SHAPES: SHAPES,
+    timeChart: timeChart,
+    heatmap: heatmap,
+    stackBars: stackBars,
+  };
+})();
+
+</script>
+<script>
+/* heatgrid.js — proposed replacement for ZingCharts.heatmap (prototype).
+ *
+ * Weekdays run across (7 columns), the day runs down in buckets of
+ * cfg.bucketH hours: a divisor of 24 (1, 2, 3, 4, 6; default 4 -> 6 rows),
+ * so every block has the same length. Cells are square; their size follows the
+ * width and keeps the grid at most MAXH px tall. Same
+ * colour scale, hatching, empty outlines, legend and pointer-only tooltip as
+ * the current heatmap; same <svg role="img"> name and description.
+ *
+ * cfg: id, title, desc, unit, cells [{ dow 1..7, hour 0..23, v, runs }]
+ *      (hourly, as the API sends them), bucketH, minRuns, days [7 names],
+ *      rowLabel(h0, h1), tipTime(dow, h0, h1), lowHint, legend { few, none }
+ *
+ * Hourly cells are merged per bucket here with a run-weighted mean of their
+ * values (prototype only: the real chart should get bucketed medians from
+ * the server, a mean of medians is not a median).
+ */
+(function () {
+  "use strict";
+  var C = window.ZingCharts, esc = C.esc, fmt = C.fmt, STEPS = 5, MAX = 60, MAXH = 440;
+
+  function heatGrid(host, cfg) {
+    var B = [1, 2, 3, 4, 6].indexOf(cfg.bucketH) >= 0 ? cfg.bucketH : 4, rows = Math.ceil(24 / B), at = {}, list = [];
+    (cfg.cells || []).forEach(function (c) {
+      if (typeof c.v !== "number" || !isFinite(c.v)) return;
+      var r = Math.floor(c.hour / B), k = c.dow + "-" + r, a = at[k];
+      if (!a) { a = at[k] = { dow: c.dow, row: r, sum: 0, runs: 0 }; list.push(a); }
+      a.sum += c.v * (c.runs || 1); a.runs += c.runs || 1;
+    });
+    list.forEach(function (a) { a.v = a.sum / a.runs; a.low = a.runs < (cfg.minRuns || 3); });
+    var vs = list.map(function (a) { return a.v; });
+    var lo = vs.length ? Math.min.apply(null, vs) : 0, hi = vs.length ? Math.max.apply(null, vs) : 1;
+    var step = function (v) { return hi > lo ? Math.min(STEPS - 1, Math.floor(((v - lo) / (hi - lo)) * STEPS)) : 2; };
+
+    var W0 = Math.max(260, Math.floor(host.clientWidth || 640));
+    var left = 48, top = 20;
+    var size = Math.max(16, Math.min(MAX, Math.floor((W0 - left - 2) / 7), Math.floor(MAXH / rows)));   // square cells
+    var W = left + 7 * size + 2, H = top + rows * size + 2;
+    var f1 = function (n) { return n.toFixed(1); }, pat = esc(cfg.id) + "-hatch";
+    var out = ['<svg class="hmap hgrid" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H +
+      '" role="img" aria-labelledby="' + esc(cfg.id) + '-t" aria-describedby="' + esc(cfg.id) + '-d" focusable="false">' +
+      '<title id="' + esc(cfg.id) + '-t">' + esc(cfg.title) + '</title><desc id="' + esc(cfg.id) + '-d">' + esc(cfg.desc) + "</desc>" +
+      '<defs><pattern id="' + pat + '" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5"/></pattern></defs>'];
+    out.push('<g class="hx">');
+    // narrow cells (1-hour blocks) get shortened day names; the full name is
+    // in the tooltip and the table
+    var cut = size < 22 ? 1 : size < 34 ? 2 : 0;
+    cfg.days.forEach(function (d, i) {
+      out.push('<text x="' + f1(left + i * size + size / 2 + 1) + '" y="12" text-anchor="middle">' + esc(cut ? String(d).slice(0, cut) : d) + "</text>");
+    });
+    out.push('</g><g class="hy">');
+    for (var r = 0; r < rows; r++) {
+      out.push('<text x="' + (left - 8) + '" y="' + f1(top + r * size + size / 2 + 1) + '" dy="0.32em" text-anchor="end">' +
+        esc(cfg.rowLabel(r * B, Math.min(24, (r + 1) * B))) + "</text>");
+    }
+    out.push('</g><g class="cells">');
+    for (var dow = 1; dow <= 7; dow++) {
+      for (r = 0; r < rows; r++) {
+        var a = at[dow + "-" + r], x = f1(left + (dow - 1) * size + 2), y = f1(top + r * size + 2), s = size - 2;
+        if (!a) { out.push('<rect class="none" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" rx="4"/>'); continue; }
+        out.push('<rect class="q' + (step(a.v) + 1) + (a.low ? " low" : "") + '" data-k="' + dow + "-" + r + '" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" rx="4"/>');
+        if (a.low) out.push('<rect class="hatch" fill="url(#' + pat + ')" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" rx="4" pointer-events="none"/>');
+      }
+    }
+    out.push("</g></svg>");
+    var L = cfg.legend || {};
+    var sw = function (cls) {
+      return '<svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true" focusable="false" class="hmap hsw">' +
+        (cls === "low" ? '<defs><pattern id="' + pat + '-l" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5"/></pattern></defs>' +
+          '<rect class="q3 low" x="0.5" y="0.5" width="15" height="11" rx="3"/><rect class="hatch" fill="url(#' + pat + '-l)" x="0.5" y="0.5" width="15" height="11" rx="3"/>'
+          : '<rect class="' + cls + '" x="0.5" y="0.5" width="15" height="11" rx="3"/>') + "</svg>";
+    };
+    var scale = "";
+    for (var i = 1; i <= STEPS; i++) scale += sw("q" + i);
+    host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>' +
+      '<ul class="hlegend"><li><span class="hv">' + esc(fmt(lo, cfg.unit)) + '</span><span class="hscale" aria-hidden="true">' + scale +
+      '</span><span class="hv">' + esc(fmt(hi, cfg.unit)) + "</span></li><li>" + sw("low") + "<span>" + esc(L.few || "") + "</span></li><li>" +
+      sw("none") + "<span>" + esc(L.none || "") + "</span></li></ul>";
+
+    // pointer-only tooltip (aria-hidden: the data table has the same values);
+    // Escape hides it, it stays while hovered — as tipFor in charts.js
+    var svg = host.querySelector("svg"), tip = host.querySelector(".ctip"), shown = null;
+    function hide() { shown = null; tip.hidden = true; }
+    svg.addEventListener("mouseover", function (ev) {
+      var hit = ev.target.closest && ev.target.closest("[data-k]");
+      if (!hit) return;
+      var k = hit.getAttribute("data-k");
+      if (shown === k) return;
+      shown = k;
+      var a = at[k], h0 = a.row * B;
+      tip.innerHTML = '<p class="when">' + esc(cfg.tipTime(a.dow, h0, Math.min(24, h0 + B))) + "</p><ul><li><span><b>" + esc(fmt(a.v, cfg.unit)) + "</b>" +
+        '<span class="sub">' + esc(a.runs + " runs") + "</span>" + (a.low ? '<span class="sub lowtxt">' + esc(cfg.lowHint) + "</span>" : "") + "</span></li></ul>";
+      tip.hidden = false;
+      var bw = svg.getBoundingClientRect().width || W, sc = bw / W, xr = (left + a.dow * size) * sc + 10, tw = tip.offsetWidth;
+      tip.style.left = (xr + tw > host.clientWidth ? Math.max(0, (left + (a.dow - 1) * size) * sc - tw - 10) : xr) + "px";
+    });
+    host.onpointerleave = hide;
+    if (host.zcKey) document.removeEventListener("keydown", host.zcKey);
+    host.zcKey = function (ev) { if (ev.key === "Escape" && shown != null) hide(); };
+    document.addEventListener("keydown", host.zcKey);
+  }
+
+  C.heatGrid = heatGrid;
+})();
+
+</script>
+<script>
+/* chartmotion.js — opt-in entrance motion for charts drawn by charts.js.
+ *
+ * Plain browser global, no libraries; load after charts.js. Exposes
+ * window.ZingMotion with:
+ *   - enter(host)          call right after a draw whose DATA changed (a new
+ *                          filter, metric or range) — not after a redraw for
+ *                          a resize or a language switch
+ *   - fresh(host, k)       live updates: pop in only the last k markers of
+ *                          each series (the rest of the chart stays still)
+ *   - pop(svg, marks)      live updates: pop in exactly these marks (the
+ *                          perf.js live chart: the new requests' dots and
+ *                          failure crosses)
+ *   enter() also takes the <svg> itself instead of its host.
+ *
+ * It never changes what the chart says: no element is added or removed and
+ * no ARIA attribute is touched. The temporary class, pathLength and --zm-d
+ * are removed again when the motion ends, so the DOM at rest is exactly what
+ * charts.js drew. Nothing happens under prefers-reduced-motion.
+ */
+(function () {
+  "use strict";
+
+  var mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  function still() { return !mq || mq.matches; }
+
+  // x of a marker from its path data ("M12.3,45.6…"): string work, no layout
+  var SWEEP = 600; // ms for the left-to-right reveal of a line chart
+  var SEG = 170;   // ms between the segments of one stacked bar
+  var STEP = 110;  // ms per colour step of a heat-grid cell (as --zm-step in the CSS)
+  var WAVE = 420;  // ms from the first heat-grid cell starting to the last
+  var NS = "http://www.w3.org/2000/svg";
+
+  function pairs(d) {
+    return d.replace(/[MZ]/g, "").split("L").filter(Boolean);
+  }
+  // band path "M top… L bottom (reversed)… Z" -> collapsed onto the median line
+  function grow(band, at, anims) {
+    var line = band.nextElementSibling;
+    if (!line || !line.classList.contains("line")) return;
+    var b = pairs(band.getAttribute("d") || ""), l = pairs(line.getAttribute("d") || ""), n = l.length;
+    // no SMIL (never in current browsers): the band simply shows
+    if (b.length !== 2 * n || !n || typeof band.ownerSVGElement.animationsPaused !== "function") return;
+    var flat = "M" + l.join("L") + "L" + l.slice().reverse().join("L") + "Z";
+    var end = at(parseFloat(l[n - 1])), dur = end + 420;
+    var a = document.createElementNS(NS, "animate");
+    a.setAttribute("attributeName", "d");
+    a.setAttribute("values", flat + ";" + flat + ";" + band.getAttribute("d"));
+    a.setAttribute("keyTimes", "0;" + (end / dur).toFixed(3) + ";1");
+    a.setAttribute("calcMode", "spline");
+    a.setAttribute("keySplines", "0 0 1 1;0.2 0.8 0.2 1");
+    a.setAttribute("dur", dur + "ms");
+    a.setAttribute("begin", "indefinite");
+    a.setAttribute("fill", "remove");
+    band.appendChild(a);
+    anims.push(a);
+  }
+
+  function px(el) {
+    var m = /^M\s*(-?[\d.]+)/.exec(el.getAttribute("d") || "");
+    return m ? parseFloat(m[1]) : 0;
+  }
+
+  function cleanup(svg, ms, cls, els, anims) {
+    clearTimeout(svg.zmT);
+    svg.zmT = setTimeout(function () {
+      svg.classList.remove(cls);
+      (anims || []).forEach(function (a) { if (a.parentNode) a.parentNode.removeChild(a); });
+      els.forEach(function (el) {
+        el.style.removeProperty("--zm-d");
+        el.style.removeProperty("--zm-t");
+        if (!el.getAttribute("style")) el.removeAttribute("style");
+        if (el.zmPL) { el.removeAttribute("pathLength"); el.zmPL = false; }
+        el.classList.remove("zm-fresh");
+      });
+    }, ms);
+  }
+
+  function enter(host) {
+    var svg = host && (host instanceof SVGElement ? host : host.querySelector("svg"));
+    if (!svg || still()) return;
+    var touched = [], anims = [], until = 1150, i;
+    // stacked bars are drawn as "tchart sbars": test for them first
+    if (svg.classList.contains("tchart") && !svg.classList.contains("sbars")) {
+      // One sweep from left to right over SWEEP ms: each line segment draws
+      // while the sweep crosses it (a segment after a gap waits its turn) and
+      // each marker pops in as the sweep reaches its x. The line is drawn by
+      // its dash; with pathLength="1" nothing is measured.
+      var lines = svg.querySelectorAll(".ser .line"), pts = svg.querySelectorAll(".ser .pt");
+      var lo = Infinity, hi = -Infinity, xs = [], ends = [];
+      for (i = 0; i < pts.length; i++) { xs[i] = px(pts[i]); lo = Math.min(lo, xs[i]); hi = Math.max(hi, xs[i]); }
+      for (i = 0; i < lines.length; i++) {
+        var d = lines[i].getAttribute("d") || "", last = /(-?[\d.]+),-?[\d.]+\s*$/.exec(d);
+        ends[i] = [px(lines[i]), last ? parseFloat(last[1]) : px(lines[i])];
+        lo = Math.min(lo, ends[i][0]); hi = Math.max(hi, ends[i][1]);
+      }
+      var at = function (x) { return Math.round(((x - lo) / (hi - lo || 1)) * SWEEP); };
+      for (i = 0; i < lines.length; i++) {
+        lines[i].setAttribute("pathLength", "1"); lines[i].zmPL = true;
+        lines[i].style.setProperty("--zm-d", at(ends[i][0]) + "ms");
+        lines[i].style.setProperty("--zm-t", Math.max(60, at(ends[i][1]) - at(ends[i][0])) + "ms");
+        touched.push(lines[i]);
+      }
+      for (i = 0; i < pts.length; i++) { pts[i].style.setProperty("--zm-d", Math.max(0, at(xs[i]) - 60) + "ms"); touched.push(pts[i]); }
+      // The p25–p75 band grows out of its median line once the sweep has
+      // drawn that segment: its path morphs from the line (top and bottom
+      // edges on the median) to the band. SMIL <animate> on d works in every
+      // current browser (CSS d animation does not in Safari); it is removed
+      // again with the rest.
+      var bands = svg.querySelectorAll(".ser .band");
+      for (i = 0; i < bands.length; i++) grow(bands[i], at, anims);
+    } else if (svg.classList.contains("sbars")) {
+      var bars = svg.querySelectorAll(".bar");
+      for (i = 0; i < bars.length; i++) {
+        // bars start left to right; inside a bar the segments grow in drawing
+        // order, which is bottom to top (each starts as the one below it ends)
+        var b0 = Math.round((i / Math.max(1, bars.length - 1)) * 300), segs = bars[i].querySelectorAll(".seg");
+        for (var j = 0; j < segs.length; j++) { segs[j].style.setProperty("--zm-d", (b0 + j * SEG) + "ms"); touched.push(segs[j]); }
+      }
+    } else if (svg.classList.contains("zp-chart")) {
+      // perf.js request timeline: dots and failure crosses pop in as a sweep
+      // passes their x; a running-median line (if drawn) draws with it
+      var marks = svg.querySelectorAll(".zp-pt, .zp-fail"), mx = [], m0 = Infinity, m1 = -Infinity;
+      for (i = 0; i < marks.length; i++) {
+        mx[i] = marks[i].tagName === "circle" ? parseFloat(marks[i].getAttribute("cx")) || 0 : px(marks[i]) + 4;
+        m0 = Math.min(m0, mx[i]); m1 = Math.max(m1, mx[i]);
+      }
+      for (i = 0; i < marks.length; i++) {
+        marks[i].style.setProperty("--zm-d", Math.round(((mx[i] - m0) / (m1 - m0 || 1)) * SWEEP) + "ms");
+        touched.push(marks[i]);
+      }
+      var tl = svg.querySelectorAll(".zp-trend path");
+      for (i = 0; i < tl.length; i++) {
+        var a0 = px(tl[i]), lm = /(-?[\d.]+),-?[\d.]+\s*$/.exec(tl[i].getAttribute("d") || ""), a1 = lm ? parseFloat(lm[1]) : a0;
+        var at0 = Math.round(((a0 - m0) / (m1 - m0 || 1)) * SWEEP), at1 = Math.round(((a1 - m0) / (m1 - m0 || 1)) * SWEEP);
+        tl[i].setAttribute("pathLength", "1"); tl[i].zmPL = true;
+        tl[i].style.setProperty("--zm-d", at0 + "ms");
+        tl[i].style.setProperty("--zm-t", Math.max(60, at1 - at0) + "ms");
+        touched.push(tl[i]);
+      }
+    } else if (svg.classList.contains("hgrid")) {
+      // The empty grid shows first (each cell as an outline), then every cell
+      // fills at the same pace through the colour scale and stops at its own
+      // step: light cells settle early, dark ones keep darkening (the step
+      // durations live in the CSS). Cells start in a wave from the bottom-left
+      // corner, left to right and bottom to top. data-k is "day-row".
+      var cells = svg.querySelectorAll(".cells rect[data-k]"), rows = 0, kk = [];
+      for (i = 0; i < cells.length; i++) { kk[i] = cells[i].getAttribute("data-k").split("-").map(Number); rows = Math.max(rows, kk[i][1] + 1); }
+      var span = 6 + Math.max(0, rows - 1), last = 0;
+      for (i = 0; i < cells.length; i++) {
+        var delay = Math.round(((kk[i][0] - 1) + (rows - 1 - kk[i][1])) / span * WAVE);
+        var q = /\bq(\d)\b/.exec(cells[i].getAttribute("class")), done = delay + (q ? +q[1] : 1) * STEP;
+        cells[i].style.setProperty("--zm-d", delay + "ms");
+        touched.push(cells[i]);
+        var h = cells[i].nextElementSibling; // a few-runs cell's hatching shows once the cell is filled
+        if (h && h.classList.contains("hatch")) { h.style.setProperty("--zm-d", done + "ms"); touched.push(h); }
+        last = Math.max(last, done + 200);
+      }
+      until = Math.max(until, last + 100);
+    } else if (svg.classList.contains("hmap")) {
+      // one fade for the whole grid: ~170 cells animated one by one cost
+      // dropped frames on a slow CPU, a single group animation does not
+    } else return;
+    svg.classList.add("zm-in");
+    for (i = 0; i < anims.length; i++) anims[i].beginElement();
+    cleanup(svg, until, "zm-in", touched, anims);
+  }
+
+  function fresh(host, k) {
+    var svg = host && host.querySelector("svg.tchart");
+    if (!svg || still() || !(k > 0)) return;
+    var touched = [], sers = svg.querySelectorAll(".ser");
+    for (var s = 0; s < sers.length; s++) {
+      var pts = sers[s].querySelectorAll(".pt");
+      for (var i = Math.max(0, pts.length - k); i < pts.length; i++) { pts[i].classList.add("zm-fresh"); touched.push(pts[i]); }
+    }
+    svg.classList.add("zm-new");
+    cleanup(svg, 450, "zm-new", touched);
+  }
+
+  function pop(svg, marks) {
+    if (!svg || still() || !marks || !marks.length) return;
+    var touched = [];
+    for (var i = 0; i < marks.length; i++) { marks[i].classList.add("zm-fresh"); touched.push(marks[i]); }
+    svg.classList.add("zm-new");
+    cleanup(svg, 450, "zm-new", touched);
+  }
+
+  window.ZingMotion = { enter: enter, fresh: fresh, pop: pop };
+})();
+
+</script>
+<script>
+(function () {
+  "use strict";
+  var C = window.ZingCharts, M = window.ZingMotion, esc = C.esc, fmt = C.fmt;
+  var D1 = 864e5, motion = true, seed = 7;
+  function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function $(id) { return document.getElementById(id); }
+  var rm = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var dayFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+  var tick = function (t) { return dayFmt.format(new Date(t)); };
+
+  function scoreSeries(label, cls, base, drift) {
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var pts = [], v = base;
+    for (var d = 29; d >= 0; d--) {
+      if (d === 12 && cls === "s1") continue; // a gap: no runs that day
+      v = Math.max(20, Math.min(98, v + (rnd() - 0.5) * 6 + drift));
+      var spread = 2 + rnd() * 6, runs = 1 + Math.floor(rnd() * 9);
+      pts.push({ t: now.getTime() - d * D1, v: v, lo: v - spread, hi: Math.min(100, v + spread * 0.8), n: runs, runs: runs, low: runs < 3 });
+    }
+    return { label: label, cls: cls, points: pts };
+  }
+  var data = {};
+  function makeData() {
+    data.series = [scoreSeries("relay-eu.example", "s0", 72 + rnd() * 10, 0.25), scoreSeries("relay-us.example", "s1", 60 + rnd() * 10, -0.1)];
+    var p0 = data.series[0].points;
+    data.marks = [{ t: p0[18].t, kind: "tool_version", text: "zing 0.20.2" }];
+    data.bars = p0.slice(-14).map(function (p) {
+      var c = { timeout: Math.floor(rnd() * 6), rate: Math.floor(rnd() * 5), server: Math.floor(rnd() * 3) };
+      var total = c.timeout + c.rate + c.server || 1, runs = 1 + Math.floor(rnd() * 8);
+      return { t: p.t, total: total, counts: c, runs: runs, low: runs < 3 };
+    });
+    data.cells = [];
+    for (var dow = 1; dow <= 7; dow++) for (var h = 0; h < 24; h++) {
+      if (rnd() < 0.08) continue;
+      var busy = (h >= 9 && h <= 18 && dow <= 5) ? 1 : 0, runs = 1 + Math.floor(rnd() * 6);
+      data.cells.push({ dow: dow, hour: h, v: 420 + busy * 380 + rnd() * 260, runs: runs, low: runs < 2 });
+    }
+    data.recs = []; data.seq = 0; data.t = 0;
+    for (var i = 0; i < 22; i++) data.recs.push(liveRec());
+  }
+  // one RequestRecord as the audit stream sends it (the fields perf.js reads)
+  var DETECTORS = ["identity", "tool_use", "context_window", "streaming", "refusal"];
+  function liveRec() {
+    var n = ++data.seq, probe = n <= PROBE, base = probe && n % 2 === 0;
+    data.t += 350 + rnd() * 900;
+    var slow = 1 + 0.25 * Math.sin(n / 6), ok = rnd() > 0.07, stream = probe ? rnd() > 0.12 : rnd() > 0.05;
+    var dur = (base ? 1350 + rnd() * 450 : 1700 + rnd() * 900) * slow, ttft = stream ? (base ? 330 : 420) * slow + rnd() * 180 : null;
+    return {
+      op: "complete", seq: n, endpoint: base ? "baseline" : "target", phase: probe ? "probe" : "passive",
+      detector: probe ? "probe" : DETECTORS[n % DETECTORS.length], stream: stream, cached: !probe && rnd() < 0.05, ok: ok,
+      status_code: ok ? 200 : rnd() < 0.5 ? 429 : 502, start_ms: Math.round(data.t),
+      duration_ms: ok ? Math.round(dur) : Math.round(200 + rnd() * 400), ttft_ms: ok && ttft ? Math.round(ttft) : null,
+      decode_tps_local: ok && stream ? Math.round((base ? 70 : 55) / slow + rnd() * 15) : null,
+      itl_mean_ms: ok && stream ? Math.round((base ? 16 : 22) * slow + rnd() * 6) : null,
+    };
+  }
+
+  function drawCmp() {
+    C.timeChart($("cmp-chart"), {
+      id: "cmpc", title: "Score over time", desc: "Two relays, daily median score with p25–p75 band; the data table below has the values.",
+      unit: "score", bucketMs: D1, domain: null, xTick: tick, tipTime: function (t) { return new Date(t).toDateString(); },
+      series: data.series, marks: data.marks, lowHint: "Fewer than 3 runs — read with care.", yMin: 0, yMax: 100,
+    });
+  }
+  // The real live panel. After each of its renders, this hook (a few lines in
+  // perf.js itself, later) draws the running median and starts the motion:
+  // the full sweep on a new chart (first draw, new data, another metric
+  // tab), a pop for only the dots and crosses that are new.
+  var PROBE = 16, trendOn = true, live = new window.ZingPerf.Live($("live-chart"));
+  var TREND_TEXT = "running median (last 5)";
+  function seqOf(el) { var m = /^#(\d+)\s/.exec(el.getAttribute("data-tip") || ""); return m ? m[1] : null; }
+  function trendLegend(host) {
+    var lg = host.querySelector(".zp-legend"), k = lg && lg.querySelector(".zp-trend-key");
+    if (!lg) return;
+    if (trendOn && !k) lg.insertAdjacentHTML("beforeend", '<span class="zp-trend-key"><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true" focusable="false"><line x1="1" y1="5" x2="15" y2="5"/></svg>' + TREND_TEXT + "</span>");
+    if (!trendOn && k) k.remove();
+  }
+  function addTrend(svg, self) {
+    if (!trendOn || !window.ZingPerfTrend.draw(svg, self.records, self.metric)) return;
+    svg.setAttribute("aria-label", svg.getAttribute("aria-label") + "; lines: running median of each endpoint's last 5 successful requests");
+  }
+  var LP = window.ZingPerf.Live.prototype, origRender = LP.render;
+  LP.render = function () {
+    var before = this.host && this.host.querySelector("svg.zp-chart"), prevSeen = this.zmSeen || {}, prevMetric = this.zmMetric;
+    origRender.apply(this, arguments);
+    var svg = this.host && this.host.querySelector("svg.zp-chart");
+    if (this.host) trendLegend(this.host);
+    if (!svg || svg === before) return; // the chart was not redrawn
+    addTrend(svg, this);
+    var seen = {}, fresh = [];
+    Array.prototype.forEach.call(svg.querySelectorAll(".zp-pt, .zp-fail"), function (el) {
+      var s = seqOf(el); seen[s] = 1; if (!prevSeen[s]) fresh.push(el);
+    });
+    this.zmSeen = seen; this.zmMetric = this.metric;
+    if (!motion) return;
+    if (!before || prevMetric !== this.metric) M.enter(svg); else M.pop(svg, fresh);
+  };
+  function drawLive() {
+    clearInterval(liveT); $("b-live").setAttribute("aria-pressed", "false");
+    live.reset({ probeTotal: PROBE, hasBaseline: true });
+    live.add(data.recs.slice());
+  }
+  function drawErr() {
+    C.stackBars($("err-chart"), {
+      id: "errc", title: "Error mix", desc: "Share of failed requests per day by cause.",
+      bucketMs: D1, domain: null, xTick: tick, tipTime: function (t) { return new Date(t).toDateString(); }, lowHint: "Few runs",
+      cats: [{ id: "timeout", label: "Timeout", cls: "s0" }, { id: "rate", label: "Rate limited", cls: "s1" }, { id: "server", label: "Server error", cls: "s3" }],
+      bars: data.bars, totalText: function (b) { return b.total + " failed requests"; },
+    });
+  }
+  var DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], bucketH = 4;
+  document.querySelectorAll('input[name="bk"]').forEach(function (r) {
+    r.addEventListener("change", function () {
+      bucketH = Number(this.value); drawHeat();
+      if (motion) M.enter($("heat-chart")); // a new grid is new data
+    });
+  });
+  var hh = function (h) { return (h < 10 ? "0" : "") + h; };
+  function drawHeat() {
+    C.heatGrid($("heat-chart"), {
+      id: "heatc", title: "Time to first token by weekday and time of day",
+      desc: "Weekdays across, " + bucketH + "-hour blocks of the day down; darker is slower.",
+      unit: "ms", cells: data.cells, bucketH: bucketH, minRuns: 3, days: DAYS,
+      rowLabel: function (a, b) { return hh(a) + "–" + hh(b); },
+      tipTime: function (d, a, b) { return DAYS[d - 1] + " " + hh(a) + ":00–" + hh(b) + ":00"; },
+      lowHint: "Fewer than 3 runs — read with care.", legend: { few: "fewer than 3 runs", none: "no runs" },
+    });
+  }
+  function tables() {
+    $("lg-cmp").innerHTML = data.series.map(function (s, i) {
+      return "<li>" + C.keySVG(s.cls, C.SHAPES[i]) + '<span class="nm">' + esc(s.label) + "</span></li>";
+    }).join("");
+    $("lg-err").innerHTML = [["s0", "Timeout"], ["s1", "Rate limited"], ["s3", "Server error"]].map(function (c) {
+      return '<li><span class="sw ' + c[0] + '" aria-hidden="true"></span>' + c[1] + "</li>";
+    }).join("");
+    var rows = data.series[0].points.map(function (p) {
+      var q = data.series[1].points.filter(function (x) { return x.t === p.t; })[0];
+      return '<tr><td>' + esc(tick(p.t)) + '</td><td class="n">' + esc(fmt(p.v, "score")) + '</td><td class="n">' + esc(q ? fmt(q.v, "score") : "—") + "</td></tr>";
+    }).join("");
+    $("cmp-table").innerHTML = "<caption class=\"sr-only\">Daily median score per relay</caption><thead><tr><th scope=\"col\">Day</th><th scope=\"col\">relay-eu.example</th><th scope=\"col\">relay-us.example</th></tr></thead><tbody>" + rows + "</tbody>";
+  }
+
+  var hosts = ["cmp-chart", "err-chart", "heat-chart"]; // the live panel starts its own motion
+  var liveT = null;
+  function drawAll(animate) {
+    var t = performance.now();
+    drawCmp(); if (animate) drawLive(); drawErr(); drawHeat(); tables();
+    var mid = performance.now();
+    if (animate && motion) hosts.forEach(function (id) { M.enter($(id)); });
+    return { draw: mid - t, motion: performance.now() - mid };
+  }
+  function status() {
+    $("st").textContent = rm.matches ? "Your system asks for reduced motion: charts stay still." : motion ? "Motion plays on new data." : "Motion off: the app as it is today.";
+  }
+
+  $("b-new").onclick = function () { makeData(); drawAll(true); };
+  $("b-redraw").onclick = function () { drawAll(false); };
+  $("b-motion").onclick = function () {
+    motion = !motion;
+    this.setAttribute("aria-pressed", String(motion));
+    this.textContent = motion ? "Motion on" : "Motion off";
+    status();
+  };
+  $("b-live").onclick = function () {
+    var on = this.getAttribute("aria-pressed") !== "true";
+    this.setAttribute("aria-pressed", String(on));
+    clearInterval(liveT);
+    if (on) liveT = setInterval(function () {
+      var batch = [liveRec()];
+      if (rnd() < 0.3) batch.push(liveRec()); // sometimes two land in one frame
+      data.recs = data.recs.concat(batch);
+      live.add(batch);
+    }, 1300);
+  };
+
+  var rzT = null, lastW = 0;
+  window.addEventListener("resize", function () {
+    clearTimeout(rzT);
+    rzT = setTimeout(function () { var w = $("cmp-chart").clientWidth; if (w !== lastW) { lastW = w; drawAll(false); } }, 150);
+  });
+  if (rm.addEventListener) rm.addEventListener("change", status);
+
+  makeData();
+  lastW = $("cmp-chart").clientWidth;
+  var c = drawAll(true);
+  status();
+  window.__cost = c;
+  $("m-cost").textContent = "under 3 ms of script to start the motion on all four charts; no dropped frames at normal CPU speed, a few 24–48 ms frames at 4× CPU slowdown when all four animate at once";
+})();
+</script>
