@@ -29,8 +29,9 @@ request row is loaded.
   of runs with "yes", and they have no percentiles.
 * **Buckets** follow the viewer's time zone (``tz``: IANA name, else
   ``tz_offset``: minutes east of UTC, else UTC): ``hour``, ``day``, ``week``
-  (ISO weeks, starting Monday) and ``dow_hour`` (weekday x hour of day, a 7 x 24
-  heatmap). Only buckets with data are returned. A bucket with fewer than
+  (ISO weeks, starting Monday) and ``dow_hour`` (weekday x time of day, a 7 x 24
+  heatmap; with ``block`` = 2, 3, 4 or 6 the day is cut into blocks of that
+  many hours instead, and each cell's median comes from the raw runs in it). Only buckets with data are returned. A bucket with fewer than
   :data:`MIN_RUNS` runs is flagged ``low_n``: a single audit can be an outlier.
 """
 
@@ -57,6 +58,8 @@ MAX_PARAM = 500
 
 GROUPS = ("relay", "model", "relay_model", "all")
 BUCKETS = ("hour", "day", "week", "dow_hour")
+# hours per row of the dow_hour grid: the divisors of 24, so blocks are equal
+BLOCKS = (1, 2, 3, 4, 6)
 SOURCES = ("all", "manual", "monitor")
 # Group key of runs without a usable base URL (a provider key or URL never
 # contains parentheses).
@@ -557,12 +560,24 @@ def summary(params: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _bucket(dt: datetime, zone: tzinfo, size: str) -> tuple[float, str, dict[str, Any]]:
-    """Sort position, key and extra fields of the bucket a UTC time falls in."""
+def _block(params: Mapping[str, Any]) -> int:
+    """Hours per row of the ``dow_hour`` grid (``block``, default 1)."""
+    raw = _text(params, "block") or "1"
+    if raw not in {str(b) for b in BLOCKS}:
+        raise AnalyticsError(f"block must be one of {', '.join(str(b) for b in BLOCKS)}")
+    return int(raw)
+
+
+def _bucket(dt: datetime, zone: tzinfo, size: str, block: int = 1) -> tuple[float, str, dict[str, Any]]:
+    """Sort position, key and extra fields of the bucket a UTC time falls in
+    (``block``: hours per ``dow_hour`` row; ``hour`` is the block's start)."""
     local = dt.astimezone(zone)
     if size == "dow_hour":
-        dow = local.isoweekday()
-        return float(dow * 24 + local.hour), f"{dow}-{local.hour:02d}", {"dow": dow, "hour": local.hour}
+        dow, hour = local.isoweekday(), local.hour - local.hour % block
+        extra: dict[str, Any] = {"dow": dow, "hour": hour}
+        if block > 1:
+            extra["hours"] = block
+        return float(dow * 24 + hour), f"{dow}-{hour:02d}", extra
     if size == "hour":
         # fold tells the two 01:00-01:59 hours of a DST fall-back apart
         start = datetime(local.year, local.month, local.day, local.hour, tzinfo=zone, fold=local.fold)
@@ -582,6 +597,7 @@ def series(params: Mapping[str, Any], keys: Iterable[str] = ()) -> dict[str, Any
     m = metric(_text(params, "metric") or "score")
     group = _choice(params, "group", GROUPS, "relay")
     size = _choice(params, "bucket", BUCKETS, "day")
+    block = _block(params)
     zone, zone_name = parse_tz(params)
     wanted = []
     for key in keys:
@@ -605,7 +621,7 @@ def series(params: Mapping[str, Any], keys: Iterable[str] = ()) -> dict[str, Any
         members = by_key.get(key, [])
         buckets: dict[str, tuple[float, dict[str, Any], list[float | None]]] = {}
         for run in members:
-            pos, bkey, extra = _bucket(run["_t"], zone, size)
+            pos, bkey, extra = _bucket(run["_t"], zone, size, block)
             buckets.setdefault(bkey, (pos, extra, []))[2].append(run_value(m, run))
         points = []
         for bkey, (_, extra, values) in sorted(buckets.items(), key=lambda i: i[1][0]):
@@ -632,6 +648,7 @@ def series(params: Mapping[str, Any], keys: Iterable[str] = ()) -> dict[str, Any
         "metric": m.public(),
         "group": group,
         "bucket": size,
+        "block": block,
         "tz": zone_name,
         "min_runs": MIN_RUNS,
         "series": out,
@@ -777,6 +794,7 @@ def errors(params: Mapping[str, Any]) -> dict[str, Any]:
     f = parse_filters(params)
     group = _choice(params, "group", ERROR_GROUPS, "relay")
     size = _choice(params, "bucket", BUCKETS, "day")
+    block = _block(params)
     zone, zone_name = parse_tz(params)
     runs = _load(f)
     by_id = {int(r["id"]): r for r in runs}
@@ -811,7 +829,7 @@ def errors(params: Mapping[str, Any]) -> dict[str, Any]:
             continue
         if not _T_MIN <= t < _T_MAX:
             continue
-        pos, bkey, extra = _bucket(t, zone, size)
+        pos, bkey, extra = _bucket(t, zone, size, block)
         b = buckets.setdefault(bkey, {"_pos": pos, "bucket": bkey, **extra, "_runs": set(),
                                       "counts": _class_counts()})
         b["_runs"].add(rid)
@@ -832,6 +850,7 @@ def errors(params: Mapping[str, Any]) -> dict[str, Any]:
         **f.range(),
         "group": group,
         "bucket": size,
+        "block": block,
         "tz": zone_name,
         "min_runs": MIN_RUNS,
         "classes": list(REQUEST_CLASSES),

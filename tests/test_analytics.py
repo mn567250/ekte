@@ -298,6 +298,15 @@ def test_buckets_in_viewer_time_zone_across_dst_and_midnight(data):
     assert set(cells) == {"6-23", "7-00", "1-00", "7-02"}
     assert cells["7-02"]["n"] == 2 and (cells["7-02"]["dow"], cells["7-02"]["hour"]) == (7, 2)
     assert heat["series"][0]["annotations"] == []
+    # 4-hour blocks: the 23:00, 00:00 and 02:00 runs fall into 20-24 and 00-04
+    blocks = analytics.series({"metric": "score", "bucket": "dow_hour", "block": "4", "tz": "Europe/Berlin"})
+    assert blocks["block"] == 4
+    cells = {p["bucket"]: p for p in blocks["series"][0]["points"]}
+    assert set(cells) == {"6-20", "7-00", "1-00"}
+    assert cells["7-00"]["n"] == 3 and (cells["7-00"]["hour"], cells["7-00"]["hours"]) == (0, 4)
+    assert "hours" not in heat["series"][0]["points"][0]
+    with pytest.raises(analytics.AnalyticsError):
+        analytics.series({"bucket": "dow_hour", "block": "5"})
 
 
 # --------------------------------------------------------------------------- #
@@ -527,6 +536,8 @@ def test_errors_group_model_dow_hour_and_filters(requests_seeded):
     out = analytics.errors({"group": "model", "bucket": "dow_hour", "tz_offset": "0"})
     assert [g["key"] for g in out["groups"]] == ["model-a", "model-b"]
     assert {(b["dow"], b["hour"]) for b in out["buckets"]} == {(1, 9), (1, 10), (2, 12)}
+    six = analytics.errors({"group": "model", "bucket": "dow_hour", "block": "6", "tz_offset": "0"})
+    assert {(b["dow"], b["hour"], b["hours"]) for b in six["buckets"]} == {(1, 6, 6), (2, 12, 6)}
     only = analytics.errors({"relay": OTHER})
     assert only["runs"] == 1 and only["totals"]["requests"] == 2 and only["totals"]["error_share"] == 0
     none = analytics.errors({"from": "2027-01-01T00:00:00Z", "to": "2027-02-01T00:00:00Z"})
