@@ -279,6 +279,7 @@ class ModelIdentityDetector(Detector):
                         summary=summary,
                         evidence={
                             "probe": fp.id,
+                            "signal": fp.signal,
                             "native_expected": fp.native_expected,
                             "downgrade_signal": fp.downgrade_signal,
                             "observed": text[:400],
