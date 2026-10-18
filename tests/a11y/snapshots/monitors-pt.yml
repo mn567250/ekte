@@ -10,6 +10,9 @@
     - option "Automático"
     - option "Claro" [selected]
     - option "Escuro"
+  - combobox "Animação dos gráficos":
+    - option "Animação ligada" [selected]
+    - option "Animação desligada"
   - combobox "Idioma":
     - option "English"
     - option "中文"
