@@ -750,7 +750,7 @@ def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
             continue
         fp = i18n._load()[lang]["findings"]["model_identity.fp.*"]
         assert r["titles"] == [fp[0].replace("{signal|server}", s) for s in r["signal"]], lang
-        assert all(t != s for t, s in zip(r["signal"], signals)), lang  # signals translated
+        assert all(t != s for t, s in zip(r["signal"], signals, strict=True)), lang  # signals translated
         assert r["old"] == fp[2], lang  # no signal recorded (older report): the generic title
     # the webhook alerts' titles (zing.notify) agree
     assert i18n.finding_title("de", "model_identity.fp.self-id", "x", {"signal": "self-identification"}) == (
