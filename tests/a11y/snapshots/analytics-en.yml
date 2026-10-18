@@ -92,10 +92,10 @@
     - tab "Billing"
   - tabpanel "Overview":
     - tablist "Overview":
-      - tab "Overview" [selected]
+      - tab "Key figures" [selected]
       - tab "Leaderboard"
-    - tabpanel "Overview":
-      - heading "Overview" [level=2]
+    - tabpanel "Key figures":
+      - heading "Key figures" [level=2]
       - paragraph: Sep 2 – Oct 1, 2026, compared with the period of the same length before (Aug 3 – Sep 1, 2026).
       - list:
         - listitem: Runs 14 +14

@@ -92,10 +92,10 @@
     - tab "Facturation"
   - tabpanel "Vue d'ensemble":
     - tablist "Vue d'ensemble":
-      - tab "Vue d'ensemble" [selected]
+      - tab "Chiffres clés" [selected]
       - tab "Classement"
-    - tabpanel "Vue d'ensemble":
-      - heading "Vue d'ensemble" [level=2]
+    - tabpanel "Chiffres clés":
+      - heading "Chiffres clés" [level=2]
       - paragraph: 2 sept. – 1 oct. 2026, comparé à la période de même durée qui précède (3 août – 1 sept. 2026).
       - list:
         - listitem: Exécutions 14 +14

@@ -54,8 +54,9 @@
     - article "gpt-4o":
       - heading "gpt-4o" [level=3]
       - text: Einrichtung nötig
-      - switch "Einrichtung nötig" [disabled]
-      - emphasis: Einrichtung nötig
+      - switch "Überwachung aktiv" [disabled]
+      - text: Überwachung aktiv
+      - emphasis: (Einrichtung nötig)
       - text: http://127.0.0.1:9099/v1
       - term: Angefragtes Modell
       - definition:
