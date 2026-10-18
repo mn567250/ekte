@@ -319,10 +319,10 @@
         .map(function (k) { return '<span><span class="key">' + esc(k) + "</span>" + esc(fmtVal(k, f.evidence[k])) + "</span>"; }).join("");
       var open = openIds && openIds.indexOf(id) >= 0;
       return '<li class="chk"><span class="dot ' + c + '" aria-hidden="true">' + ico(ICON[f.status] || "info") + "</span>" +
-        '<div class="body"><div class="top"><span class="ft">' + esc(L.title) + '</span><span class="badge ' + c + '">' + esc(statusLabel(f.status)) + "</span></div>" +
+        '<div class="body"><div class="top"><span class="ft" id="' + id + '-t">' + esc(L.title) + '</span><span class="badge ' + c + '">' + esc(statusLabel(f.status)) + "</span></div>" +
         (metrics ? '<div class="metrics">' + metrics + "</div>" : "") +
         (L.summary ? '<div class="fs">' + esc(L.summary) + "</div>" : "") +
-        (ev ? '<button type="button" class="linkbtn more" aria-expanded="' + open + '" aria-controls="' + id + '">' +
+        (ev ? '<button type="button" class="linkbtn more" aria-expanded="' + open + '" aria-controls="' + id + '" aria-describedby="' + id + '-t">' +
           (open ? tt("收起证据", "Hide evidence") : tt("查看证据", "Show evidence")) + "</button>" +
           '<pre id="' + id + '"' + (open ? "" : " hidden") + ">" + esc(ev) + "</pre>" : "") +
         "</div></li>";
