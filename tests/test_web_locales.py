@@ -726,6 +726,7 @@ for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
     titles: findings.map(f => I.localizeFinding(f.id, f.summary, f.evidence, f.title, f.status).title),
     exported: ex.detectors[0].findings.map(f => f.title), key_findings: ex.verdict.key_findings,
     old: I.localizeFinding("model_identity.fp.p", "x", { probe: "p" }, "Fingerprint divergence: self-identification", "warn").title,
+    unknown: I.localizeFinding("model_identity.fp.p", "x", { probe: "p" }, "Fingerprint went sideways", "warn").title,
     signal: signals.map(s => window.ZING_LANG.server(s)),
   };
 }
@@ -751,7 +752,9 @@ def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
         fp = i18n._load()[lang]["findings"]["model_identity.fp.*"]
         assert r["titles"] == [fp[0].replace("{signal|server}", s) for s in r["signal"]], lang
         assert all(t != s for t, s in zip(r["signal"], signals, strict=True)), lang  # signals translated
-        assert r["old"] == fp[2], lang  # no signal recorded (older report): the generic title
+        # no signal recorded (older report): the result title still names it
+        assert r["old"] == fp[0].replace("{signal|server}", i18n.ui(lang, "self-identification")), lang
+        assert r["unknown"] == fp[2], lang  # an unknown title and no signal: the generic title
     # the webhook alerts' titles (zing.notify) agree
     assert i18n.finding_title("de", "model_identity.fp.self-id", "x", {"signal": "self-identification"}) == (
         "Fingerprint-Abweichung: Selbstidentifikation"
