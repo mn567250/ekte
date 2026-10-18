@@ -10,6 +10,9 @@
     - option "Auto theme"
     - option "Light" [selected]
     - option "Dark"
+  - combobox "Chart motion":
+    - option "Motion on" [selected]
+    - option "Motion off"
   - combobox "Language":
     - option "English" [selected]
     - option "中文"

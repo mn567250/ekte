@@ -109,7 +109,7 @@ def test_link_restores_tab_filters_and_view(open_page) -> None:
         issues.append("the errors panel does not use the link's weekday x hour buckets")
     if page.locator("#ettog").get_attribute("aria-expanded") != "true":
         issues.append("the errors table the link opened is closed")
-    if page.locator("#err-chart svg[role=img]").get_attribute("class") != "hmap":
+    if "hmap" not in (page.locator("#err-chart svg[role=img]").get_attribute("class") or "").split():
         issues.append("weekday x hour errors are not drawn as a grid")
     page.locator("#tab-billing").click()
     settle(page)

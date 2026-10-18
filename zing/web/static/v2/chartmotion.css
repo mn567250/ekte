@@ -1,0 +1,118 @@
+/* chartmotion.css — subtle entrance motion for the charts drawn by charts.js.
+ * Only active while the <svg> carries .zm-in (set by chartmotion.js for
+ * ~0.8 s after a draw with new data; never on resize or a language switch).
+ * Animates only opacity, transform and stroke-dashoffset. Every keyframe
+ * animates FROM a hidden state TO the element's normal style, so the resting
+ * chart is pixel-identical to today's. Users who ask for reduced motion get
+ * no motion at all (the class is never set, and the rules sit behind
+ * no-preference as a second guard).
+ */
+/* :root:not([data-motion="off"]): the header switch (nav.js) stops it too */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="off"]) .zm-in .ser .line {
+    stroke-dasharray: 1;
+    animation: zm-draw var(--zm-t, 600ms) linear var(--zm-d, 0ms) both;
+  }
+  /* the band grows out of the line (SMIL, see chartmotion.js); a lone
+     bucket's whisker grows out of its marker */
+  :root:not([data-motion="off"]) .zm-in .ser .whisk {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: zm-grow 380ms cubic-bezier(0.2, 0.8, 0.2, 1) 420ms backwards;
+  }
+  :root:not([data-motion="off"]) .zm-in .ser .pt, :root:not([data-motion="off"]) .zm-in.sbars .seg {
+    transform-box: fill-box;
+  }
+  :root:not([data-motion="off"]) .zm-in .ser .pt {
+    transform-origin: center;
+    animation: zm-pop 300ms cubic-bezier(0.2, 0.9, 0.3, 1.25) var(--zm-d, 0ms) backwards;
+  }
+  :root:not([data-motion="off"]) .zm-in .marks, :root:not([data-motion="off"]) .zm-in .ref {
+    animation: zm-fade 360ms ease-out 420ms backwards;
+  }
+  /* stacked bars: per bar the bottom segment grows from the axis, then the
+     middle one on top of it, then the top one; bars start left to right */
+  :root:not([data-motion="off"]) .zm-in.sbars .seg {
+    transform-origin: bottom;
+    animation: zm-grow 200ms cubic-bezier(0.3, 0.6, 0.3, 1) var(--zm-d, 0ms) backwards;
+  }
+  /* heat grid: outlines first, then each cell fills through the scale at
+     the same pace (STEP per step) and stops at its own step */
+  :root:not([data-motion="off"]) .zm-in.hgrid { --zm-step: 110ms; }
+  :root:not([data-motion="off"]) .zm-in.hgrid .cells rect[data-k] {
+    stroke: var(--line-control); stroke-width: 1; stroke-dasharray: 2 2;
+    animation-timing-function: linear; animation-fill-mode: both; animation-delay: var(--zm-d, 0ms);
+  }
+  :root:not([data-motion="off"]) .zm-in.hgrid .cells .q1 { animation-name: zm-h1; animation-duration: var(--zm-step); }
+  :root:not([data-motion="off"]) .zm-in.hgrid .cells .q2 { animation-name: zm-h2; animation-duration: calc(2 * var(--zm-step)); }
+  :root:not([data-motion="off"]) .zm-in.hgrid .cells .q3 { animation-name: zm-h3; animation-duration: calc(3 * var(--zm-step)); }
+  :root:not([data-motion="off"]) .zm-in.hgrid .cells .q4 { animation-name: zm-h4; animation-duration: calc(4 * var(--zm-step)); }
+  :root:not([data-motion="off"]) .zm-in.hgrid .cells .q5 { animation-name: zm-h5; animation-duration: calc(5 * var(--zm-step)); }
+  :root:not([data-motion="off"]) .zm-in.hgrid .cells .hatch { animation: zm-fade 200ms ease-out var(--zm-d, 0ms) backwards; }
+  /* old weekday x hour heatmap: the grid fades in as one */
+  :root:not([data-motion="off"]) .zm-in.hmap .cells {
+    animation: zm-fade 420ms ease-out backwards;
+  }
+  /* perf.js request timeline: marks pop in with the sweep, the running
+     median draws along */
+  :root:not([data-motion="off"]) .zm-in.zp-chart .zp-pt, :root:not([data-motion="off"]) .zm-in.zp-chart .zp-fail, :root:not([data-motion="off"]) .zm-new .zm-fresh {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  :root:not([data-motion="off"]) .zm-in.zp-chart .zp-pt, :root:not([data-motion="off"]) .zm-in.zp-chart .zp-fail {
+    animation: zm-pop 300ms cubic-bezier(0.2, 0.9, 0.3, 1.25) var(--zm-d, 0ms) backwards;
+  }
+  :root:not([data-motion="off"]) .zm-in .zp-trend path {
+    stroke-dasharray: 1;
+    animation: zm-draw var(--zm-t, 600ms) linear var(--zm-d, 0ms) both;
+  }
+  :root:not([data-motion="off"]) .zm-new .zp-pt.zm-fresh, :root:not([data-motion="off"]) .zm-new .zp-fail.zm-fresh {
+    animation: zm-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
+  }
+  /* live view: only the newest points pop in */
+  :root:not([data-motion="off"]) .zm-new .ser .pt.zm-fresh {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: zm-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
+  }
+  /* tooltip: fades in instead of blinking in (it is aria-hidden; the data
+     table carries the same values) */
+  :root:not([data-motion="off"]) .ctip:not([hidden]) { animation: zm-tip 140ms ease-out; }
+}
+@keyframes zm-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes zm-fade { from { opacity: 0; } }
+@keyframes zm-pop { from { opacity: 0; transform: scale(0.35); } }
+@keyframes zm-grow { from { transform: scaleY(0); } }
+/* heat grid fill: first leg fades the outline into the lightest step, each
+   further leg darkens one step (equal time per step = the same pace) */
+@keyframes zm-h1 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  100% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-h2 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  50% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  100% { fill: var(--c-q2); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-h3 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  33.33% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  66.67% { fill: var(--c-q2); }
+  100% { fill: var(--c-q3); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-h4 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  25% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  50% { fill: var(--c-q2); }
+  75% { fill: var(--c-q3); }
+  100% { fill: var(--c-q4); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-h5 {
+  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
+  20% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  40% { fill: var(--c-q2); }
+  60% { fill: var(--c-q3); }
+  80% { fill: var(--c-q4); }
+  100% { fill: var(--c-q5); fill-opacity: 1; stroke-opacity: 0; }
+}
+@keyframes zm-tip { from { opacity: 0; transform: translateY(3px); } }

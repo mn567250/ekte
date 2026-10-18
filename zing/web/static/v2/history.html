@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <link rel="stylesheet" href="/v2/static/report.css" />
 <link rel="stylesheet" href="/v2/static/perf.css" />
+<link rel="stylesheet" href="/v2/static/chartmotion.css" />
 <style>
   /* History page. Tokens only (zing.css); light + dark.
    *
@@ -291,6 +292,7 @@
 </div>
 <script src="/i18n.js"></script>
 <script src="/perf.js"></script>
+<script src="/v2/static/chartmotion.js"></script>
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
 <script src="/v2/static/filterpanel.js"></script>
@@ -1028,7 +1030,7 @@
 
   function fetchReport(panel, id) {
     panel.innerHTML = '<div class="state loading">' + esc(T("加载报告…", "Loading report…")) + "</div>";
-    fetch("/api/history/" + encodeURIComponent(id))
+    fetch("/api/history/" + encodeURIComponent(id) + "?trend=1")
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();

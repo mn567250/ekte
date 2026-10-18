@@ -184,6 +184,9 @@
   "“{metric}” data from {n} of {runs} runs.": "Datos de “{metric}” de {n} de {runs} auditorías.",
   "“{series}” mixes runs of different suites — its values may not be comparable.": "«{series}» mezcla ejecuciones de suites distintas; sus valores pueden no ser comparables.",
   "“{series}” mixes runs over different protocols — its values may not be comparable.": "«{series}» mezcla ejecuciones con protocolos distintos; sus valores pueden no ser comparables.",
-  "“{series}” mixes streaming and non-streaming runs — its values may not be comparable.": "«{series}» mezcla ejecuciones con y sin streaming; sus valores pueden no ser comparables."
+  "“{series}” mixes streaming and non-streaming runs — its values may not be comparable.": "«{series}» mezcla ejecuciones con y sin streaming; sus valores pueden no ser comparables.",
+  "Time block": "Bloque horario",
+  "1 hour": "1 hora",
+  "{n} hours": "{n} horas"
  }
 }

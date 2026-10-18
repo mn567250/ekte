@@ -184,6 +184,9 @@
   "“{metric}” data from {n} of {runs} runs.": "“{metric}” data from {n} of {runs} runs.",
   "“{series}” mixes runs of different suites — its values may not be comparable.": "“{series}” mixes runs of different suites — its values may not be comparable.",
   "“{series}” mixes runs over different protocols — its values may not be comparable.": "“{series}” mixes runs over different protocols — its values may not be comparable.",
-  "“{series}” mixes streaming and non-streaming runs — its values may not be comparable.": "“{series}” mixes streaming and non-streaming runs — its values may not be comparable."
+  "“{series}” mixes streaming and non-streaming runs — its values may not be comparable.": "“{series}” mixes streaming and non-streaming runs — its values may not be comparable.",
+  "Time block": "Time block",
+  "1 hour": "1 hour",
+  "{n} hours": "{n} hours"
  }
 }

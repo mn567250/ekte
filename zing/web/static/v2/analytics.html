@@ -9,6 +9,7 @@
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/charts.css" />
+<link rel="stylesheet" href="/v2/static/chartmotion.css" />
 <link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <style>
   /* Analytics page. Tokens only (zing.css, charts.css, filterpanel.css);
@@ -291,6 +292,7 @@
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
 <script src="/v2/static/charts.js"></script>
+<script src="/v2/static/chartmotion.js"></script>
 <script src="/v2/static/filterpanel.js"></script>
 <script src="/v2/static/tabs.js"></script>
 <script>
@@ -432,6 +434,8 @@
       table: get("table", "") === "1",
       hm: one("hm", HEAT_METRICS, "ttft_p50"),
       hr: get("hr", ""),
+      hb: one("hb", BLOCKS, "4"),
+      eh: one("eh", BLOCKS, "4"),
       eg: one("eg", ["relay", "model"], "relay"),
       eb: one("eb", ERR_BUCKETS, "day"),
       bm: one("bm", BILL_METRICS, "billing_ratio_prompt"),
@@ -462,6 +466,8 @@
     if (V.table) q.set("table", "1");
     q.set("hm", V.hm);
     if (V.hr) q.set("hr", V.hr);
+    q.set("hb", V.hb);
+    q.set("eh", V.eh);
     q.set("eg", V.eg);
     q.set("eb", V.eb);
     q.set("bm", V.bm);
@@ -1299,9 +1305,18 @@
     } catch (e) { /* 24-hour labels */ }
     return h12 ? dfmt({ hour: "numeric" }, dayDate(1, h)) : (h < 10 ? "0" : "") + h;
   }
-  function hourSpan(dow, h) {
-    return dayName(dow, true) + " " + dfmt({ hour: "numeric", minute: "2-digit" }, dayDate(dow, h)) + "–" +
-      dfmt({ hour: "numeric", minute: "2-digit" }, new Date(2024, 0, dow, h + 1));
+  // hours h .. h + n of a weekday (n: the grid's block size, default 1)
+  function timeSpan(dow, h, n) {
+    return dfmt({ hour: "numeric", minute: "2-digit" }, dayDate(dow, h)) + "–" +
+      dfmt({ hour: "numeric", minute: "2-digit" }, new Date(2024, 0, dow, h + (n || 1)));
+  }
+  function hourSpan(dow, h, n) { return dayName(dow, true) + " " + timeSpan(dow, h, n); }
+  // the grid's block size: hours per row (a divisor of 24)
+  var BLOCKS = ["1", "2", "3", "4", "6"];
+  function blockCtl(key) {
+    return selectCtl('data-v="' + key + '"', T("时段", "Time block"), BLOCKS.map(function (b) {
+      return { v: b, t: b === "1" ? T("1 小时", "1 hour") : Tf("{n} 小时", "{n} hours", { n: b }) };
+    }), V[key]);
   }
   function weekdays() { return [1, 2, 3, 4, 5, 6, 7].map(function (i) { return dayName(i); }); }
   function gridLegend() {
@@ -1316,6 +1331,7 @@
     var q = tzParams(apiParams()), relay = heatRelay();
     q.set("metric", V.hm);
     q.set("bucket", "dow_hour");
+    q.set("block", V.hb);
     q.set("group", relay ? "relay" : "all");
     if (relay) q.set("keys", relay);
     return panelLoad("heat", "#panel-heat", "/api/analytics/series?" + q, renderHeat);
@@ -1325,11 +1341,12 @@
     ctlHTML($("#heat-ctl"), '<div class="ctl">' +
       selectCtl('data-v="hm"', T("指标", "Metric"), HEAT_METRICS.map(function (id) { return { v: id, t: metricName(id) }; }), V.hm) +
       (F.relay ? "" : selectCtl('data-v="hr"', T("中转站", "Relay"), [{ v: "", t: T("全部中转站", "All relays") }].concat(
-        (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; })), relay)) + "</div>");
+        (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; })), relay)) + blockCtl("hb") + "</div>");
     var body = $("#heat-body"), d = state.heat;
     if (state.err.heat) { body.innerHTML = errBox(T("无法读取高峰时段：", "Could not load peak hours: "), state.err.heat); return; }
     if (!d) return;
-    var m = d.metric, name = metricName(m.id), ser = d.series[0];
+    var m = d.metric, name = metricName(m.id), ser = d.series[0], blk = d.block || 1;
+    var span = function (dow, h) { return hourSpan(dow, h, blk); };
     var cells = (ser ? ser.points : []).filter(function (p) { return typeof p.value === "number"; }).map(function (p) {
       return { dow: p.dow, hour: p.hour, v: p.value, runs: p.n, low: !!p.low_n };
     });
@@ -1342,8 +1359,8 @@
     var hi = cells.reduce(function (a, c) { return c.v > a.v ? c : a; }), lo = cells.reduce(function (a, c) { return c.v < a.v ? c : a; });
     var desc = Tf("{metric}，{who}，按星期几和小时（{tz}）：{n} 个有数据的格子，最高 {high}（{hw}），最低 {low}（{lw}）。下方表格列出全部数值。",
       "{metric}, {who}, by weekday and hour ({tz}): {n} cells with data, highest {high} ({hw}), lowest {low} ({lw}). The table below lists every value.", {
-        metric: name, who: who, tz: tzName(), n: cells.length, high: fmt(hi.v, m.unit), hw: hourSpan(hi.dow, hi.hour),
-        low: fmt(lo.v, m.unit), lw: hourSpan(lo.dow, lo.hour) });
+        metric: name, who: who, tz: tzName(), n: cells.length, high: fmt(hi.v, m.unit), hw: span(hi.dow, hi.hour),
+        low: fmt(lo.v, m.unit), lw: span(lo.dow, lo.hour) });
     var unit = C.unitName(m.unit);
     body.innerHTML = '<div class="axcap" aria-hidden="true"><span>' + esc(name + (unit ? " · " + unit : "") + " · " + who) + "</span><span>" +
       esc(Tf("时间（{tz}）", "Time ({tz})", { tz: tzName() })) + "</span></div>" +
@@ -1354,12 +1371,12 @@
         th(T("检测次数", "Runs"), true) + th(T("说明", "Note")),
         cells.map(function (c) {
           return '<tr class="' + (c.low ? "low" : "") + '"><td class="when">' + esc(dayName(c.dow, true)) + '</td><td class="when">' +
-            esc(dfmt({ hour: "numeric", minute: "2-digit" }, dayDate(c.dow, c.hour)) + "–" + dfmt({ hour: "numeric", minute: "2-digit" }, new Date(2024, 0, c.dow, c.hour + 1))) +
+            esc(timeSpan(c.dow, c.hour, blk)) +
             '</td><td class="n">' + esc(fmt(c.v, m.unit)) + '</td><td class="n">' + esc(String(c.runs)) + '</td><td class="nt">' + (c.low ? esc(cellHint()) : "") + "</td></tr>";
         }).join(""));
     var cfg = {
       id: "heatc", title: Tf("{metric}，按星期几和小时", "{metric} by weekday and hour", { metric: name }), desc: desc, unit: m.unit,
-      cells: cells, days: weekdays(), hourLabel: hourName, tipTime: hourSpan,
+      cells: cells, block: blk, days: weekdays(), hourLabel: hourName, tipTime: span,
       lowHint: cellHint(), legend: gridLegend(),
     };
     drawChart("heat", "heat-chart", C.heatmap, cfg);
@@ -1386,12 +1403,14 @@
     var q = tzParams(apiParams());
     q.set("group", V.eg);
     q.set("bucket", V.eb);
+    if (V.eb === "dow_hour") q.set("block", V.eh);
     return panelLoad("errs", "#panel-err", "/api/analytics/errors?" + q, renderErrors);
   }
   function renderErrors() {
     ctlHTML($("#err-ctl"), '<div class="ctl">' +
       selectCtl('data-v="eg"', T("表格分组", "Table by"), [{ v: "relay", t: groupName("relay") }, { v: "model", t: groupName("model") }], V.eg) +
-      selectCtl('data-v="eb"', T("时间段", "Time buckets"), ERR_BUCKETS.map(function (b) { return { v: b, t: bucketName(b) }; }), V.eb) + "</div>");
+      selectCtl('data-v="eb"', T("时间段", "Time buckets"), ERR_BUCKETS.map(function (b) { return { v: b, t: bucketName(b) }; }), V.eb) +
+      (V.eb === "dow_hour" ? blockCtl("eh") : "") + "</div>");
     var body = $("#err-body"), d = state.errs;
     if (state.err.errs) { body.innerHTML = errBox(T("无法读取错误统计：", "Could not load the errors: "), state.err.errs); return; }
     if (!d) return;
@@ -1411,7 +1430,8 @@
       return { t: grid ? b.dow * 24 + b.hour : Date.parse(b.bucket), dow: b.dow, hour: b.hour, total: b.requests, runs: b.runs, low: !!b.low_n, raw: b,
         counts: { rate_limited: c.rate_limited, server_5xx: c.server_5xx, timeout: c.timeout, rest: c.client_4xx + c.network + c.other } };
     }).filter(function (b) { return !isNaN(b.t); });
-    var when = function (b) { return grid ? hourSpan(b.dow, b.hour) : bucketTime(b.t, V.eb); };
+    var blk = d.block || 1;
+    var when = function (b) { return grid ? hourSpan(b.dow, b.hour, blk) : bucketTime(b.t, V.eb); };
     var legend = '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '">' + cats.map(function (c) {
       return '<li><span class="sw ' + c.cls + '" aria-hidden="true"></span><span class="nm">' + esc(c.label) + "</span></li>";
     }).join("") + "</ul>";
@@ -1461,7 +1481,8 @@
       drawChart("errs", "err-chart", C.heatmap, {
         id: "errc", title: T("失败调用，按星期几和小时", "Failed calls by weekday and hour"), desc: desc, unit: "ratio",
         cells: bars.map(function (b) { return { dow: b.dow, hour: b.hour, v: b.raw.error_share, runs: b.runs, low: b.low }; }),
-        days: weekdays(), hourLabel: hourName, tipTime: hourSpan, lowHint: cellHint(), legend: gridLegend(),
+        block: blk, days: weekdays(), hourLabel: hourName, tipTime: function (dow, h) { return hourSpan(dow, h, blk); },
+        lowHint: cellHint(), legend: gridLegend(),
       });
       return;
     }
@@ -1680,6 +1701,8 @@
     state.charts[name] = { id: id, draw: draw, cfg: cfg };
     host.zcW = host.clientWidth;
     draw(host, cfg);
+    // new data moves in (chartmotion.js); a language re-render stays still
+    if (!state.still && window.ZingMotion) window.ZingMotion.enter(host);
   }
   function redrawCharts() {
     Object.keys(state.charts).forEach(function (k) {
@@ -1731,7 +1754,8 @@
   window.addEventListener("zing:lang", function () {
     if (!state.opts || !state.opts.runs) { if (state.opts) renderEmpty(); return; }
     renderFilters();
-    PANELS.forEach(function (p) { if (p.loaded) p.render(); });
+    state.still = true;
+    try { PANELS.forEach(function (p) { if (p.loaded) p.render(); }); } finally { state.still = false; }
   });
   // a link to another view pasted into this tab's address bar (only the
   // fragment changes, so no reload): take over its filters and view. Runs

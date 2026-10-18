@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/v2/static/fields.css" />
 <link rel="stylesheet" href="/v2/static/report.css" />
 <link rel="stylesheet" href="/v2/static/perf.css" />
+<link rel="stylesheet" href="/v2/static/chartmotion.css" />
 <style>
   /* ---------- page: audit (tokens only; light + dark) ---------- */
   [tabindex="-1"]:focus { outline: none; }
@@ -310,6 +311,7 @@
 
 <script src="/i18n.js"></script>
 <script src="/perf.js"></script>
+<script src="/v2/static/chartmotion.js"></script>
 <script src="/icons.js"></script>
 <script src="/secretfield.js"></script>
 <script src="/v2/static/relaycfg.js"></script>
@@ -882,7 +884,7 @@
       if (!btns.some(function (b) { return b.getAttribute("data-v") === v; })) return;
       btns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-v") === v)); });
     }
-    fetch("/api/history/" + encodeURIComponent(id))
+    fetch("/api/history/" + encodeURIComponent(id) + "?trend=1")
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(function (rep) {
         var t = rep.target || {};

@@ -12,6 +12,9 @@
   "Theme": "Thème",
   "Auto theme": "Automatique",
   "Light": "Clair",
-  "Dark": "Sombre"
+  "Dark": "Sombre",
+  "Chart motion": "Animation des graphiques",
+  "Motion on": "Animation activée",
+  "Motion off": "Animation désactivée"
  }
 }

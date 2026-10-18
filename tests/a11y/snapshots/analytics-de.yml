@@ -10,6 +10,9 @@
     - option "Automatisch"
     - option "Hell" [selected]
     - option "Dunkel"
+  - combobox "Diagramm-Animation":
+    - option "Animation an" [selected]
+    - option "Animation aus"
   - combobox "Sprache":
     - option "English"
     - option "中文"

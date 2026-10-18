@@ -12,6 +12,9 @@
   "Theme": "Theme",
   "Auto theme": "Auto theme",
   "Light": "Light",
-  "Dark": "Dark"
+  "Dark": "Dark",
+  "Chart motion": "Chart motion",
+  "Motion on": "Motion on",
+  "Motion off": "Motion off"
  }
 }

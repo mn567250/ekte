@@ -121,6 +121,8 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "analytics.html", ("analytics",)),
     (_V2 + "charts.js", ("analytics",)),
     (_V2 + "charts.css", ("analytics",)),
+    (_V2 + "chartmotion.js", ("audit", "history", "analytics")),
+    (_V2 + "chartmotion.css", ("audit", "history", "analytics")),
     (_V2 + "filterpanel.js", ("history", "analytics")),
     (_V2 + "filterpanel.css", ("history", "analytics")),
     (_V2 + "accessibility.html", ("accessibility",)),

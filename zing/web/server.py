@@ -61,9 +61,11 @@ stream (closing the page stops it); /api/jobs detaches it from the page.
 from __future__ import annotations
 
 import asyncio
+import collections
 import contextlib
 import json
 import logging
+import threading
 import time
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -92,6 +94,7 @@ from zing.config import (
 )
 from zing.detectors.performance import stream_mode
 from zing.models import KnowledgeUsage, TargetConfig
+from zing.perf.trend import attach_trends
 from zing.runner import run_audit
 from zing.web import jobs
 from zing.web.caching import (
@@ -1215,12 +1218,17 @@ def create_app() -> FastAPI:
         return JSONResponse(history.trend(base_url, claimed_model, limit))
 
     @app.get("/api/history/{rid}")
-    def history_get(rid: int) -> Any:
+    def history_get(rid: int, trend: int = 0) -> Any:
+        """A saved report as stored; ``trend=1`` (the pages that show it) adds
+        each request's running medians for the performance chart."""
         from zing.web import history
 
         report = history.get(rid)
         if report is None:
             return JSONResponse({"error": "not found"}, status_code=404)
+        perf = report.get("performance") if trend else None
+        if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
+            attach_trends(perf["requests"])
         return JSONResponse(report)
 
     @app.delete("/api/history/{rid}")
@@ -1240,13 +1248,35 @@ def create_app() -> FastAPI:
     # ----- Analytics (zing/web/analytics.py) ------------------------------ #
     # Plain `def` handlers (SQLite + the knowledge base load run in the thread
     # pool). Every parameter is validated there: a bad one answers 400.
+    # Analytics answers are cached briefly: a filter, tab or block change
+    # often asks the same question again. The key holds the call and its
+    # parameters, the history database and its write count (any saved,
+    # deleted or cleared run drops them) and a 30-second time slot (relative
+    # ranges such as "last 7 days" move, relay names can change).
+    analytics_cache: collections.OrderedDict[str, Any] = collections.OrderedDict()
+    analytics_lock = threading.Lock()
+
     def _analytics(call: Any, *args: Any) -> Any:
+        from zing.web import history
         from zing.web.analytics import AnalyticsError
 
-        try:
-            body, status = call(*args), 200
-        except AnalyticsError as exc:
-            body, status = {"error": str(exc)}, 400
+        key = json.dumps([call.__name__, args, history.write_mark(), int(time.time() // 30)],
+                         sort_keys=True, default=str)
+        with analytics_lock:
+            body = analytics_cache.get(key)
+            if body is not None:
+                analytics_cache.move_to_end(key)
+        status = 200
+        if body is None:
+            try:
+                body = call(*args)
+            except AnalyticsError as exc:
+                body, status = {"error": str(exc)}, 400
+            else:
+                with analytics_lock:
+                    analytics_cache[key] = body
+                    while len(analytics_cache) > 64:
+                        analytics_cache.popitem(last=False)
         # Fresh numbers on every load: the history changes with each run.
         return JSONResponse(body, status_code=status, headers={"Cache-Control": "no-store"})
 
