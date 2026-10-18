@@ -762,3 +762,144 @@ def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
     assert i18n.finding_title("de", "model_identity.fp.self-id", "x", {"probe": "self-id"}) == (
         "Verhaltens-Fingerprint-Prüfung"
     )
+
+
+# --------------------------------------------------------------------------- #
+# Result titles: the backend's per-outcome English title, in every language
+# --------------------------------------------------------------------------- #
+def _result_titles() -> tuple[set[str], set[str]]:
+    """Every finding title the backend can emit: ``(fixed titles, templates)``.
+
+    A title is the ``title=`` of a finding built in zing/detectors (or the title
+    argument of the embed/media audits' ``_finding``): a literal, either branch
+    of a conditional, a module-level ``{…: title}`` dict looked up, or an
+    f-string around one subject (a template, its subject as ``{1}``). Any other
+    form fails, so a new dynamic title cannot slip past the translations.
+    """
+    root = Path(__file__).resolve().parent.parent / "zing"
+    fixed: set[str] = set()
+    templates: set[str] = set()
+    for path in sorted(root.rglob("*.py")):
+        rel = path.relative_to(root).as_posix()
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        dicts = {
+            n.targets[0].id: n.value
+            for n in tree.body
+            if isinstance(n, ast.Assign) and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name)
+            and isinstance(n.value, ast.Dict)
+        }
+
+        def add(v: ast.AST, rel: str = rel, dicts: dict = dicts) -> None:
+            if isinstance(v, ast.Constant) and isinstance(v.value, str):
+                fixed.add(v.value)
+            elif isinstance(v, ast.IfExp):
+                add(v.body)
+                add(v.orelse)
+            elif isinstance(v, ast.Subscript) and isinstance(v.value, ast.Name) and v.value.id in dicts:
+                for x in dicts[v.value.id].values:
+                    add(x)
+            elif isinstance(v, ast.JoinedStr):
+                parts = ["{1}" if isinstance(x, ast.FormattedValue) else x.value for x in v.values]
+                assert parts.count("{1}") == 1, f"{rel}:{v.lineno}: a title template takes one subject"
+                templates.add("".join(parts))
+            else:
+                raise AssertionError(f"{rel}:{v.lineno}: untranslatable finding title {ast.unparse(v)}")
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = ast.unparse(node.func)
+            # (scale.py's Finding only passes a detector's title through)
+            if rel != "detectors/scale.py" and (rel.startswith("detectors/") or fn == "Finding"):
+                for k in node.keywords:
+                    if k.arg == "title":
+                        add(k.value)
+            if fn == "_finding" and len(node.args) > 1:
+                add(node.args[1])
+    return fixed, templates
+
+
+def test_every_result_title_is_translated():
+    # The UI, the download and the webhook alerts show a finding's result
+    # title ("Endpoint is not HTTPS"), not just its check's, so every title the
+    # backend can emit needs a translation in every language but EN.
+    from zing import i18n
+
+    fixed, templates = _result_titles()
+    assert len(fixed) > 150 and "Endpoint is not HTTPS" in fixed
+    assert templates == set(i18n.RESULT_TITLE_PATTERNS)
+    data = i18n._load()
+    for code in i18n.codes():
+        if code == "en":
+            continue
+        strings = data[code]["strings"]
+        assert sorted(t for t in fixed | templates if not strings.get(t)) == [], code
+        assert sorted(t for t in templates if strings[t].count("{1}") != 1) == [], code
+        assert sorted(t for t in fixed if i18n.result_title(code, t) is None) == [], code
+    assert i18n.result_title("de", "Fingerprint consistent: self-identification") == (
+        "Fingerprint stimmig: Selbstidentifikation"
+    )
+    assert i18n.result_title("fr", "Response attribute choices[0].logprobs") == (
+        "Attribut de réponse choices[0].logprobs"
+    )
+    assert i18n.result_title("de", "Some new title") is None
+
+
+# (id, passing English title, failing English title, evidence) of one check.
+_PASS_FAIL = [
+    ("security.tls", "Endpoint uses HTTPS", "Endpoint is not HTTPS", {}),
+    ("model_identity.self_id", "Self-identification consistent", "Self-identifies as a rival brand", {}),
+    ("model_identity.fp.self-id", "Fingerprint consistent: self-identification",
+     "Fingerprint divergence: self-identification", {"probe": "self-id"}),
+]
+
+_PASS_FAIL_JS = r"""
+const path = require("path");
+const dir = process.argv[1], cases = JSON.parse(process.argv[2]);
+const out = {};
+for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
+  for (const m of ["locales.js", "lang.js", "i18n.js"]) delete require.cache[require.resolve(path.join(dir, m))];
+  global.window = {};
+  global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", querySelectorAll: () => [], addEventListener() {} };
+  global.localStorage = { getItem: () => lang, setItem() {} };
+  for (const m of ["locales.js", "lang.js", "i18n.js"]) require(path.join(dir, m));
+  const I = window.ZING_I18N;
+  const f = (id, title, status, evidence) => ({ id, title, status, severity: "info", summary: "x", evidence, recommendation: null });
+  const findings = [];
+  for (const [id, pass, fail, ev] of cases) findings.push(f(id, pass, "pass", ev), f(id, fail, "fail", ev));
+  const ex = I.exportReport({ detectors: [{ name: "x", findings }], verdict: { key_findings: [] } });
+  out[lang] = {
+    ui: findings.map(x => I.localizeFinding(x.id, x.summary, x.evidence, x.title, x.status).title),
+    exported: ex.detectors[0].findings.map(x => x.title),
+    // a title this version does not know (an older or newer backend): the check's title
+    unknown: I.localizeFinding("security.tls", "x", {}, "Some retired title", "fail").title,
+  };
+}
+console.log(JSON.stringify(out));
+"""
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_pass_and_fail_of_one_check_get_different_localized_titles(tmp_path):
+    from zing import i18n
+
+    out = json.loads(subprocess.run(
+        ["node", "-e", _PASS_FAIL_JS, str(_ui_js(tmp_path)), json.dumps(_PASS_FAIL)],
+        capture_output=True, text=True, check=True,
+    ).stdout)
+    english = [t for _id, p, f, _ev in _PASS_FAIL for t in (p, f)]
+    assert out["en"]["ui"] == out["en"]["exported"] == english
+    for lang, r in out.items():
+        assert r["exported"] == r["ui"], lang  # the download matches the UI
+        if lang == "en":
+            continue
+        for i, (fid, passed, failed, ev) in enumerate(_PASS_FAIL):
+            p, f = r["ui"][2 * i], r["ui"][2 * i + 1]
+            assert p != f, (lang, fid)
+            assert (p, f) == (i18n.result_title(lang, passed), i18n.result_title(lang, failed)), (lang, fid)
+            # the webhook alerts' titles agree
+            assert i18n.finding_title(lang, fid, passed, ev) == p, (lang, fid)
+            assert i18n.finding_title(lang, fid, failed, ev) == f, (lang, fid)
+        check_title = i18n._load()[lang]["findings"]["security.tls"][0]
+        assert r["unknown"] == check_title, lang
+        assert i18n.finding_title(lang, "security.tls", "Some retired title") == check_title, lang
