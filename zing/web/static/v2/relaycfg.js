@@ -24,7 +24,10 @@
  * saved as a relay under a name (POST /api/kb/relays).
  *
  * opts: { url, key, model, claimed?, provider?, kind?: "chat"|"embedding"|"rerank",
- *         api?: () => "auto"|"openai"|… }  (selectors or elements)
+ *         api?: () => "auto"|"openai"|…,
+ *         relayLabel?: [zh, en] }  (selectors or elements; relayLabel names the
+ *         relay select, default "Relay / provider", so a page with two flows
+ *         can tell them apart)
  *
  * Styling: /v2/static/fields.css (.zmp, .zmp-sel, .zmp-fetch, .zmp-status,
  * .zmp-custom from the model picker, plus .rc-*). Pure helpers are exposed as
@@ -194,6 +197,7 @@
     if (!url || !model) return null;
     var claimed = resolveEl(opts.claimed), provider = resolveEl(opts.provider);
     var kind = opts.kind || "chat";
+    var relayLabel = opts.relayLabel || ["中转站 / 厂商", "Relay / provider"];
     var api = typeof opts.api === "function" ? opts.api : function () { return "auto"; };
     var base = url.id || "rc";
     var providers = [], loaded = false;
@@ -377,7 +381,7 @@
     }
     function paintAll() {
       rLab.innerHTML = "";
-      rLab.appendChild(document.createTextNode(T("中转站 / 厂商", "Relay / provider") + " "));
+      rLab.appendChild(document.createTextNode(T(relayLabel[0], relayLabel[1]) + " "));
       var o = el("span", "opt");
       o.textContent = T("可选", "Optional");
       rLab.appendChild(o);

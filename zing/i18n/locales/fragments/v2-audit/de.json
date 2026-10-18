@@ -22,6 +22,7 @@
   "Responses": "Responses",
   "Running": "Läuft",
   "To compare, enter both the baseline URL and the baseline model.": "Zum Vergleichen sowohl Referenz-URL als auch Referenzmodell eingeben.",
-  "{n} of {total} checks done": "{n} von {total} Prüfungen erledigt"
+  "{n} of {total} checks done": "{n} von {total} Prüfungen erledigt",
+  "Baseline relay / provider": "Relay / Anbieter der Referenz"
  }
 }
