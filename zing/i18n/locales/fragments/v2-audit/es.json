@@ -2,6 +2,7 @@
  "strings": {
   "API key": "Clave API",
   "Audit progress": "Progreso de la auditoría",
+  "Audits": "Auditorías",
   "Baseline API key": "Clave API de referencia",
   "Baseline URL": "URL de referencia",
   "Cancel": "Cancelar",
@@ -11,6 +12,8 @@
   "Empty = same as model to request": "Vacío = igual que el modelo solicitado",
   "Live evidence": "Evidencia en vivo",
   "Model to request": "Modelo solicitado",
+  "New audit": "Nueva auditoría",
+  "No audits are running": "No hay auditorías en curso",
   "On": "Activado",
   "Only if the relay sells it under another name — zing checks the answers against this model.": "Solo si el intermediario lo vende con otro nombre — zing contrasta las respuestas con este modelo.",
   "Please enter the relay URL and the model to request.": "Introduce la URL del intermediario y el modelo solicitado.",
