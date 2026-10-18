@@ -475,6 +475,9 @@ select.in {
 }
 .tabs [role="tab"]:hover { color: var(--ink); }
 .tabs [role="tab"][aria-selected="true"] { color: var(--on-ink); background: var(--ink); box-shadow: var(--shadow-pop); }
+/* a tab tabs.js skips (aria-disabled), e.g. "Running" while nothing runs */
+.tabs [role="tab"][aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+.tabs [role="tab"][aria-disabled="true"]:hover { color: var(--ink2); }
 .tabs [role="tab"] .zicon { width: 15px; height: 15px; flex: none; }
 /* forced colours (Windows high contrast) drop backgrounds and shadows: give the
    tabs a system-coloured border so their shape stays visible and mark the

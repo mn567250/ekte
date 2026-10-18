@@ -38,76 +38,80 @@
       - /url: /v2/kb
   - paragraph: Runs locally · keys never leave
 - main:
-  - list "Audit progress":
-    - listitem: Configure
-    - listitem: Scan
-    - listitem: Report
-  - region "Is this relay serving the real thing?":
-    - heading "Is this relay serving the real thing?" [level=1]
-    - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.
-    - text: Relay / provider Optional
-    - combobox "Relay / provider Optional":
-      - option "Select a relay or provider…" [selected]
-      - option "Other (enter the URL)"
-    - text: Selecting one fills in its URL; for any other relay choose “Other” and enter the URL. Relay URL base_url
-    - combobox "Relay URL base_url"
-    - text: API key Supports env:VAR / file:/path
-    - textbox "API key":
-      - /placeholder: sk-... or env:ZING_API_KEY
-      - text: env:ZING_API_KEY
-    - button "Show key" [pressed]
-    - text: Model to request model
-    - textbox "Model to request model":
-      - /placeholder: deepseek-chat
-    - button "Refresh models" [disabled]
-    - status: Select a relay or enter its URL, and zing lists its models.
-    - text: Claimed model claimed_model Optional
-    - combobox "Claimed model claimed_model Optional":
-      - option "Same as the model to request" [selected]
-    - button "Enter manually"
-    - text: Only if the relay sells it under another name — zing checks the answers against this model. Protocol
-    - group "Protocol":
-      - button "Auto" [pressed]
-      - button "OpenAI"
-      - button "Anthropic"
-      - button "Responses"
-    - text: Test suite
-    - group "Test suite":
-      - button "smoke"
-      - button "standard" [pressed]
-      - button "deep"
-      - button "full"
-      - button "custom"
-    - text: Performance probe requests
-    - group "Performance probe requests":
-      - button "Streaming" [pressed]
-      - button "Non-streaming"
-    - text: On standard the probe runs only with a baseline; otherwise the audit's own requests are used.
-    - button "Compare against a trusted baseline compare" [expanded]
-    - paragraph: Enter an endpoint for the same model that you trust (e.g. the official API). zing uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.
-    - text: Relay / provider Optional
-    - combobox "Relay / provider Optional":
-      - option "Select a relay or provider…" [selected]
-      - option "Other (enter the URL)"
-    - text: Selecting one fills in its URL; for any other relay choose “Other” and enter the URL. Baseline URL base_url
-    - combobox "Baseline URL base_url"
-    - text: Baseline API key
-    - textbox "Baseline API key":
-      - /placeholder: sk-... or env:OPENAI_API_KEY
-    - button "Show key"
-    - text: Baseline model model
-    - textbox "Baseline model model":
-      - /placeholder: Official id of the same model
-    - button "Refresh models" [disabled]
-    - status: Select a relay or enter its URL, and zing lists its models.
-    - text: Baseline protocol
-    - group "Baseline protocol":
-      - button "Auto" [pressed]
-      - button "OpenAI"
-      - button "Anthropic"
-      - button "Responses"
-    - button "Start audit"
-    - text: Tests are sent from your local zing server; the key is only used to connect to the target relay and is never uploaded to any third party.
-    - alert
-    - status
-    - text: zing provides reproducible evidence of risk and deviation, not a legal verdict.
+  - tablist "Audits":
+    - tab "New audit" [selected]
+    - tab "Running"
+  - tabpanel "New audit":
+    - list "Audit progress":
+      - listitem: Configure
+      - listitem: Scan
+      - listitem: Report
+    - region "Is this relay serving the real thing?":
+      - heading "Is this relay serving the real thing?" [level=1]
+      - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.
+      - text: Relay / provider Optional
+      - combobox "Relay / provider Optional":
+        - option "Select a relay or provider…" [selected]
+        - option "Other (enter the URL)"
+      - text: Selecting one fills in its URL; for any other relay choose “Other” and enter the URL. Relay URL base_url
+      - combobox "Relay URL base_url"
+      - text: API key Supports env:VAR / file:/path
+      - textbox "API key":
+        - /placeholder: sk-... or env:ZING_API_KEY
+        - text: env:ZING_API_KEY
+      - button "Show key" [pressed]
+      - text: Model to request model
+      - textbox "Model to request model":
+        - /placeholder: deepseek-chat
+      - button "Refresh models" [disabled]
+      - status: Select a relay or enter its URL, and zing lists its models.
+      - text: Claimed model claimed_model Optional
+      - combobox "Claimed model claimed_model Optional":
+        - option "Same as the model to request" [selected]
+      - button "Enter manually"
+      - text: Only if the relay sells it under another name — zing checks the answers against this model. Protocol
+      - group "Protocol":
+        - button "Auto" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - text: Test suite
+      - group "Test suite":
+        - button "smoke"
+        - button "standard" [pressed]
+        - button "deep"
+        - button "full"
+        - button "custom"
+      - text: Performance probe requests
+      - group "Performance probe requests":
+        - button "Streaming" [pressed]
+        - button "Non-streaming"
+      - text: On standard the probe runs only with a baseline; otherwise the audit's own requests are used.
+      - button "Compare against a trusted baseline compare" [expanded]
+      - paragraph: Enter an endpoint for the same model that you trust (e.g. the official API). zing uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.
+      - text: Relay / provider Optional
+      - combobox "Relay / provider Optional":
+        - option "Select a relay or provider…" [selected]
+        - option "Other (enter the URL)"
+      - text: Selecting one fills in its URL; for any other relay choose “Other” and enter the URL. Baseline URL base_url
+      - combobox "Baseline URL base_url"
+      - text: Baseline API key
+      - textbox "Baseline API key":
+        - /placeholder: sk-... or env:OPENAI_API_KEY
+      - button "Show key"
+      - text: Baseline model model
+      - textbox "Baseline model model":
+        - /placeholder: Official id of the same model
+      - button "Refresh models" [disabled]
+      - status: Select a relay or enter its URL, and zing lists its models.
+      - text: Baseline protocol
+      - group "Baseline protocol":
+        - button "Auto" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - button "Start audit"
+      - text: Tests are sent from your local zing server; the key is only used to connect to the target relay and is never uploaded to any third party.
+      - alert
+      - status
+      - text: zing provides reproducible evidence of risk and deviation, not a legal verdict.

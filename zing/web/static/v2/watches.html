@@ -9,6 +9,7 @@
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/fields.css" />
+<link rel="stylesheet" href="/v2/static/jobs.css" />
 <style>
   /* ---- monitors page (v2) — page-only rules; colours via zing.css tokens ---- */
   /* inline field errors */
@@ -112,6 +113,10 @@
   .empty.boxed { border: 1.5px dashed var(--line-strong); border-radius: 18px; }
   .empty p { margin: 8px 0 0; }
   .empty a { font-weight: 700; }
+  .tabs [role="tab"] .count:empty { display: none; }
+  .tabs [role="tab"] .count { font-variant-numeric: tabular-nums; }
+  .mon:focus { outline: none; }
+  .mon:focus-visible { outline: 3px solid var(--sky); outline-offset: 3px; }
 </style>
 </head>
 <body>
@@ -123,6 +128,12 @@
       <p data-en="Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/v2/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).">每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在<a href="/v2/history">检测历史</a>中打开一次运行，选择<b>设为监控</b>，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
     </div>
 
+    <div class="tabs" role="tablist" aria-label="监控视图" data-en-aria-label="Monitor views">
+      <button type="button" role="tab" id="tab-configure" aria-selected="true" aria-controls="panel-configure" tabindex="0"><span class="pico" data-icon="bell"></span><span data-en="Configure">配置</span></button>
+      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">运行中</span> <span class="count" id="run-count"></span></button>
+    </div>
+
+    <section role="tabpanel" id="panel-configure" aria-labelledby="tab-configure" tabindex="0">
     <!-- the master key that encrypts the stored API keys -->
     <div id="mk-bar" aria-live="polite"></div>
 
@@ -130,11 +141,20 @@
     <h2 class="section-title" id="list-title" tabindex="-1" style="margin-top:24px"><span data-en="Configured monitors">已配置的监控</span> <span class="count" id="count"></span></h2>
     <div class="mons" id="list" aria-live="polite"><p class="empty" data-en="Loading…">加载中…</p></div>
     <p class="reassure"><span class="pico" id="lock-icon"></span> <span data-en="Everything <b>runs locally</b>. The API key is stored <b>encrypted</b>, only in the local database under <b>~/.zing</b> on this machine; it <b>never</b> appears in the monitor list and is never sent to the browser. The master key that decrypts it is <b>never written to disk</b>: you keep it, and enter it after each restart.">全程<b>本地运行</b>。API Key 仅<b>加密</b>保存在本机 <b>~/.zing</b> 的本地数据库里，<b>绝不</b>出现在监控列表里、也不会发给浏览器。用于解密的主密钥<b>从不写入磁盘</b>：由你保管，每次重启后再输入。</span></p>
+    </section>
+
+    <section role="tabpanel" id="panel-running" aria-labelledby="tab-running" tabindex="0" hidden>
+      <p class="jh" data-en="Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.">正在进行的监控运行。同一中转站的运行会等它的其他检测结束后再开始，结果不会互相干扰。</p>
+      <p class="jempty" id="jobs-empty" data-en="No monitors are running">当前没有运行中的监控</p>
+      <ul class="jlist" id="jobs"></ul>
+    </section>
   </main>
   <footer><p class="foot" data-en="zing · relay reality check · monitors are scheduled in the background by the <code>zing serve</code> process">zing · 中转站验真 · 监控由 <code>zing serve</code> 进程在后台调度</p></footer>
 </div>
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
+<script src="/v2/static/tabs.js"></script>
+<script src="/v2/static/jobs.js"></script>
 <script src="/secretfield.js"></script>
 <script src="/v2/static/masterkey.js"></script>
 <script src="/v2/static/nav.js"></script>
@@ -552,8 +572,10 @@
         c.classList.add("flash");
         if (focusSetup) {
           c.scrollIntoView({ block: "center" });
+          // a draft focuses its first setup field, any other monitor its card
           var first = c.querySelector(".setup .in:not(.sr-only)");
-          if (first) first.focus({ preventScroll: true });
+          if (!first) { c.tabIndex = -1; first = c; }
+          first.focus({ preventScroll: true });
         }
       }
       flashId = null;
@@ -920,12 +942,39 @@
     }
   });
 
-  // /v2/watches#w-<id>: arriving from History's "Schedule as monitor"
+  // /v2/watches#w-<id>: arriving from History's "Schedule as monitor", or
+  // "Open monitor" in the Running list (same page: a hashchange)
   var m = /^#w-(\d+)$/.exec(location.hash || "");
   if (m) {
     flashId = m[1];
     focusSetup = true;
   }
+
+  // ---------- tabs: Configure / Running (v2/tabs.js, v2/jobs.js) ----------
+  document.querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = icon(el.getAttribute("data-icon")); });
+  var tabs = window.ZingTabs.init(document.querySelector(".tabs[role=tablist]"), {
+    // #w-<id> deep links name a monitor in the Configure tab
+    fromHash: function (h) { return /^w-/.test(h) ? "configure" : h; },
+  });
+  window.addEventListener("hashchange", function () {
+    var h = /^#w-(\d+)$/.exec(location.hash || "");
+    if (!h) return;
+    tabs.select("configure", false, true);
+    flashId = h[1];
+    focusSetup = true;
+    render();
+  });
+  window.ZingJobs.init($("jobs"), {
+    kind: "monitor",
+    onChange: function (active, rows) {
+      // the tab stays selectable while nothing runs: the panel says so;
+      // the count names the active runs
+      $("jobs-empty").hidden = rows > 0;
+      $("run-count").textContent = active > 0 ? String(active) : "";
+    },
+    // a finished run changes the monitor's last-run status
+    onFinish: function () { load(); },
+  });
 
   $("lock-icon").innerHTML = icon("lock");
   if (window.ZingMasterKey) window.ZingMasterKey.mountBar($("mk-bar"), function () { load(); });

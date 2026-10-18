@@ -44,88 +44,92 @@
     - link "Verlauf":
       - /url: /v2/history
     - text: und wählen Als Überwachung einplanen — legen Sie dann hier das Intervall fest und schalten Sie sie ein. Überschreitet das Risiko Ihre Schwelle oder wird es schlechter als beim letzten Mal, alarmiert zing Ihre Webhooks (Slack / Feishu / DingTalk / generisches JSON).
-  - text: Noch kein Hauptschlüssel Er wird erstellt, wenn Sie den ersten API-Schlüssel speichern.
-  - button "Jetzt erstellen"
-  - heading "Eingerichtete Überwachungen 1 Überwachung" [level=2]
-  - article "gpt-4o":
-    - heading "gpt-4o" [level=3]
-    - text: Einrichtung nötig
-    - switch "Einrichtung nötig" [disabled]
-    - emphasis: Einrichtung nötig
-    - text: http://127.0.0.1:9099/v1
-    - term: Angefragtes Modell
-    - definition:
-      - code: gpt-4o
-    - term: Testsuite
-    - definition:
-      - code: standard
-    - term: Protokoll
-    - definition:
-      - code: openai
-      - text: · automatisch erkannt
-    - term: Anfragen der Leistungsmessung
-    - definition: Streaming
-    - term: Prüfintervall
-    - definition: Nicht festgelegt
-    - term: API-Schlüssel
-    - definition:
-      - text: Keiner
-      - button "Ersetzen"
-    - term: Warnschwelle
-    - definition:
-      - combobox "Warnschwelle — gpt-4o":
-        - option "Niedrig und höher"
-        - option "Mittel und höher" [selected]
-        - option "Nur hoch"
-    - term: Webhooks
-    - definition:
-      - text: Keine Webhooks
-      - button "Bearbeiten"
-    - term: Sprache der Warnungen
-    - definition:
-      - combobox "Sprache der Warnungen — gpt-4o":
-        - option "English" [selected]
-        - option "中文"
-        - option "Français"
-        - option "Español"
-        - option "Português"
-        - option "Italiano"
-        - option "Deutsch"
-    - term: Wissensprofil
-    - definition:
-      - code: openai/gpt-4o
-      - text: festgelegt 01.10.2026, 12:00
-    - 'link "Aus Lauf #1 →"':
-      - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
-    - form "Einrichtung abschließen, um sie einzuschalten":
-      - heading "Einrichtung abschließen, um sie einzuschalten" [level=4]
-      - paragraph: Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft sie läuft, und aktivieren Sie sie.
-      - text: Prüfintervall
-      - combobox "Prüfintervall":
-        - option "Auswählen…" [selected]
-        - option "alle 5 Min."
-        - option "alle 10 Min."
-        - option "alle 15 Min."
-        - option "alle 20 Min."
-        - option "alle 30 Min."
-        - option "alle 1 Std."
-        - option "alle 2 Std."
-        - option "alle 3 Std."
-        - option "alle 4 Std."
-        - option "alle 6 Std."
-        - option "alle 8 Std."
-        - option "alle 12 Std."
-        - option "alle 24 Std."
-      - paragraph: Ein vollständiger Lauf dauerte <duration>, daher läuft sie höchstens alle 5 Min..
-      - text: API-Schlüssel (optional)
-      - textbox "API-Schlüssel (optional)":
-        - /placeholder: sk-... oder env:ZING_API_KEY
-      - button "Schlüssel anzeigen"
-      - paragraph: Der Verlauf speichert den Schlüssel nie. Für lokale oder selbst gehostete Modelle leer lassen.
-      - button "Überwachung aktivieren"
-    - button "Jetzt ausführen"
-    - button "Löschen"
-  - paragraph: "Alles läuft lokal. Der API-Schlüssel wird verschlüsselt und nur in der lokalen Datenbank unter ~/.zing auf diesem Rechner gespeichert; er erscheint nie in der Überwachungsliste und wird nie an den Browser gesendet. Der Hauptschlüssel, der ihn entschlüsselt, wird nie auf die Festplatte geschrieben: Sie bewahren ihn auf und geben ihn nach jedem Neustart ein."
+  - tablist "Überwachungsansichten":
+    - tab "Konfigurieren" [selected]
+    - tab "Läuft"
+  - tabpanel "Konfigurieren":
+    - text: Noch kein Hauptschlüssel Er wird erstellt, wenn Sie den ersten API-Schlüssel speichern.
+    - button "Jetzt erstellen"
+    - heading "Eingerichtete Überwachungen 1 Überwachung" [level=2]
+    - article "gpt-4o":
+      - heading "gpt-4o" [level=3]
+      - text: Einrichtung nötig
+      - switch "Einrichtung nötig" [disabled]
+      - emphasis: Einrichtung nötig
+      - text: http://127.0.0.1:9099/v1
+      - term: Angefragtes Modell
+      - definition:
+        - code: gpt-4o
+      - term: Testsuite
+      - definition:
+        - code: standard
+      - term: Protokoll
+      - definition:
+        - code: openai
+        - text: · automatisch erkannt
+      - term: Anfragen der Leistungsmessung
+      - definition: Streaming
+      - term: Prüfintervall
+      - definition: Nicht festgelegt
+      - term: API-Schlüssel
+      - definition:
+        - text: Keiner
+        - button "Ersetzen"
+      - term: Warnschwelle
+      - definition:
+        - combobox "Warnschwelle — gpt-4o":
+          - option "Niedrig und höher"
+          - option "Mittel und höher" [selected]
+          - option "Nur hoch"
+      - term: Webhooks
+      - definition:
+        - text: Keine Webhooks
+        - button "Bearbeiten"
+      - term: Sprache der Warnungen
+      - definition:
+        - combobox "Sprache der Warnungen — gpt-4o":
+          - option "English" [selected]
+          - option "中文"
+          - option "Français"
+          - option "Español"
+          - option "Português"
+          - option "Italiano"
+          - option "Deutsch"
+      - term: Wissensprofil
+      - definition:
+        - code: openai/gpt-4o
+        - text: festgelegt 01.10.2026, 12:00
+      - 'link "Aus Lauf #1 →"':
+        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+      - form "Einrichtung abschließen, um sie einzuschalten":
+        - heading "Einrichtung abschließen, um sie einzuschalten" [level=4]
+        - paragraph: Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft sie läuft, und aktivieren Sie sie.
+        - text: Prüfintervall
+        - combobox "Prüfintervall":
+          - option "Auswählen…" [selected]
+          - option "alle 5 Min."
+          - option "alle 10 Min."
+          - option "alle 15 Min."
+          - option "alle 20 Min."
+          - option "alle 30 Min."
+          - option "alle 1 Std."
+          - option "alle 2 Std."
+          - option "alle 3 Std."
+          - option "alle 4 Std."
+          - option "alle 6 Std."
+          - option "alle 8 Std."
+          - option "alle 12 Std."
+          - option "alle 24 Std."
+        - paragraph: Ein vollständiger Lauf dauerte <duration>, daher läuft sie höchstens alle 5 Min..
+        - text: API-Schlüssel (optional)
+        - textbox "API-Schlüssel (optional)":
+          - /placeholder: sk-... oder env:ZING_API_KEY
+        - button "Schlüssel anzeigen"
+        - paragraph: Der Verlauf speichert den Schlüssel nie. Für lokale oder selbst gehostete Modelle leer lassen.
+        - button "Überwachung aktivieren"
+      - button "Jetzt ausführen"
+      - button "Löschen"
+    - paragraph: "Alles läuft lokal. Der API-Schlüssel wird verschlüsselt und nur in der lokalen Datenbank unter ~/.zing auf diesem Rechner gespeichert; er erscheint nie in der Überwachungsliste und wird nie an den Browser gesendet. Der Hauptschlüssel, der ihn entschlüsselt, wird nie auf die Festplatte geschrieben: Sie bewahren ihn auf und geben ihn nach jedem Neustart ein."
 - contentinfo:
   - paragraph:
     - text: zing · Relay-Echtheitsprüfung · Überwachungen werden vom Prozess

@@ -31,28 +31,6 @@
   .local-note .zicon { width: 13px; height: 13px; flex: none; }
   .local-note code { font-size: 11.5px; color: var(--ink2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
 
-  /* in progress: background audits and running monitors (/api/jobs) */
-  .jobs { margin-top: 22px; padding: 16px 18px 14px; }
-  .jobs[hidden] { display: none; }
-  .jobs h2 { font-family: var(--disp); font-weight: 600; font-size: 16px; margin: 0 0 2px; display: flex; align-items: center; gap: 8px; }
-  .jobs .jh { font-size: 12.5px; color: var(--faint); margin: 0 0 10px; line-height: 1.5; }
-  .jlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-  .job { padding: 12px 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-  .job .jmain { flex: 1 1 260px; min-width: 0; }
-  .job .jt { font-weight: 700; font-size: 14px; overflow-wrap: anywhere; }
-  .job .jt .key { margin-left: 6px; }
-  .job .ju { font-family: var(--mono); font-size: 12px; color: var(--ink2); overflow-wrap: anywhere; margin-top: 2px; }
-  .job .js { font-size: 12.5px; color: var(--ink2); margin-top: 6px; }
-  .job .js b { color: var(--ink); }
-  .job.err .js { color: var(--bad); }
-  .job .jprog { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 12.5px; font-weight: 700; color: var(--sky); }
-  .job .jprog .bar { flex: 1; height: 6px; border-radius: 3px; background: var(--skybg); overflow: hidden; }
-  .job .jprog .bar > span { display: block; height: 100%; background: var(--sky); border-radius: 3px; transition: width .4s ease; }
-  .job .jprog .bar.q > span { width: 30% !important; opacity: .5; animation: job-wait 1.6s ease-in-out infinite alternate; }
-  @keyframes job-wait { from { margin-left: 0; } to { margin-left: 70%; } }
-  .job .jprog b { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
-  .job .jact { display: flex; gap: 6px; flex-wrap: wrap; }
-
   .hist { margin-top: 22px; overflow: hidden; }
   .hist:focus { outline: none; }
   .hist .state { padding: 26px 22px; color: var(--ink2); font-size: 14px; }
@@ -275,12 +253,6 @@
       <p data-en="Every verification you have run on this machine. Grouped by &quot;relay + claimed model&quot;, with a health-score trend line; click any row to expand that report.">这里是你在本机跑过的每一次验真。按「中转站 + 声称模型」分组，附一条健康分趋势曲线；点任意一行可展开当时那份报告。</p>
       <p class="local-note"><span class="pico" id="lockIcon"></span><span data-en="History lives only in a local SQLite file under &lt;code&gt;~/.zing&lt;/code&gt; — nothing is uploaded.">历史只保存在 <code>~/.zing</code> 下的本地 SQLite 文件里，不会上传。</span></p>
     </div>
-
-    <section class="card jobs" id="jobs" aria-labelledby="jobs-h" hidden>
-      <h2 id="jobs-h"><span class="pico" id="jobsIcon"></span><span data-en="In progress">进行中</span></h2>
-      <p class="jh" data-en="Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.">离开检测页后检测仍会继续运行。同一中转站的检测会依次排队运行，互不干扰检测结果。</p>
-      <ul class="jlist" id="jlist"></ul>
-    </section>
 
     <section class="card filters" id="filters" hidden></section>
 
@@ -1166,119 +1138,9 @@
     if (back) back.focus();
   });
 
-  /* ---------------- in progress (background audits, running monitors) ---------------- */
-  // Polled while anything is queued or running; when a run finishes the
-  // history list below is reloaded so its report shows up there.
-  var jobsBox = $("#jobs"), jlist = $("#jlist");
-  // Paused while the tab is hidden: a poll that comes due then is only
-  // marked (jobs.due) and runs as soon as the tab is visible again.
-  var jobs = { rows: [], timer: null, due: false, active: {}, msg: {} };
-  $("#jobsIcon").innerHTML = ico("play");
-  function isActive(j) { return j.status === "queued" || j.status === "running"; }
-  function pollJobs() {
-    jobs.timer = null;
-    if (document.hidden) jobs.due = true;
-    else loadJobs();
-  }
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && jobs.due) loadJobs();
-  });
-  function loadJobs() {
-    clearTimeout(jobs.timer);
-    jobs.timer = null;
-    jobs.due = false;
-    return fetch("/api/jobs")
-      .then(function (r) { return r.ok ? r.json() : { jobs: [] }; })
-      .then(function (d) {
-        var rows = (d && d.jobs) || [];
-        var now = {}, finished = false;
-        rows.forEach(function (j) { if (isActive(j)) now[j.id] = true; });
-        Object.keys(jobs.active).forEach(function (id) { if (!now[id]) finished = true; });
-        jobs.active = now;
-        // failed audits never reach the history list: keep them here (the
-        // server drops them after a while); cancelled and finished ones go
-        jobs.rows = rows.filter(function (j) { return isActive(j) || j.status === "error"; });
-        renderJobs();
-        if (finished) load();
-      })
-      .catch(function () {})
-      .then(function () {
-        clearTimeout(jobs.timer);
-        if (Object.keys(jobs.active).length) jobs.timer = setTimeout(pollJobs, 2000);
-      });
-  }
-  function jobStateHTML(j) {
-    if (j.status === "queued") {
-      var hosts = (j.waiting_for || []).join(", ");
-      return esc(hosts
-        ? Tf("排队中：{h} 正在进行另一项检测", "Queued: another audit is using {h}", { h: hosts })
-        : T("排队中：等待空闲的检测位", "Queued: waiting for a free audit slot"));
-    }
-    if (j.status === "error") return esc(T("检测失败：", "Audit failed: ")) + esc(srvT(j.error || ""));
-    var line = "<b>" + esc(T("正在运行", "Running now")) + "</b>";
-    if (j.total) line += " · " + esc(Tf("已完成 {n} / {total} 项检测", "{n} of {total} checks done", { n: j.done || 0, total: j.total }));
-    if (j.started) line += " · " + esc(fmtTime(new Date(j.started * 1000).toISOString()));
-    return line;
-  }
-  function srvT(s) { return window.ZING_LANG ? ZING_LANG.server(s) : s; }
-  function jobHTML(j) {
-    var mon = j.kind === "monitor";
-    var title = j.claimed_model || j.model || "?";
-    var pct = Math.max(0, Math.min(100, Number(j.progress) || 0));
-    var label = Tf("{name} 的运行进度", "Progress of {name}", { name: title });
-    var prog = isActive(j)
-      ? '<div class="jprog"><div class="bar' + (j.status === "queued" ? " q" : "") + '" role="progressbar" aria-valuemin="0" aria-valuemax="100"' +
-        (j.status === "queued" ? "" : ' aria-valuenow="' + pct + '"') + ' aria-label="' + esc(label) + '"><span style="width:' + pct + '%"></span></div>' +
-        "<b>" + (j.status === "queued" ? "" : pct + "%") + "</b></div>"
-      : "";
-    var live = isActive(j)
-      ? '<a class="btn sm pri" href="/v2/?job=' + encodeURIComponent(j.id) + '">' + ico("eye") + esc(T("实时查看", "Watch live")) + "</a>"
-      : "";
-    var open = (mon
-      ? '<a class="btn sm" href="/v2/watches#w-' + esc(j.watch_id) + '">' + ico("bell") + esc(T("打开监控", "Open monitor")) + "</a>"
-      : "") + live;
-    var cancel = isActive(j)
-      ? '<button type="button" class="btn sm danger" data-jcancel="' + esc(j.id) + '">' + ico("x") + esc(T("取消", "Cancel")) + "</button>"
-      : "";
-    return '<li class="job' + (j.status === "error" ? " err" : "") + '" data-job="' + esc(j.id) + '"><div class="jmain">' +
-      '<div class="jt">' + esc(title) + ' <span class="key">' + esc(j.suite || "standard") + "</span>" +
-      (j.api ? ' <span class="key">' + esc(j.api) + (j.api_auto ? " (" + esc(detectLabel("auto")) + ")" : "") + "</span>" : "") +
-      (j.stream_mode ? ' <span class="key">' + esc(streamLabel(j.stream_mode)) + "</span>" : "") +
-      (mon ? ' <span class="key">' + esc(T("监控", "Monitor")) + "</span>" : "") + "</div>" +
-      '<div class="ju">' + esc(j.base_url || "") + "</div>" +
-      '<div class="js" role="status">' + jobStateHTML(j) + (jobs.msg[j.id] ? " · " + esc(jobs.msg[j.id]()) : "") + "</div>" +
-      prog + '</div><div class="jact">' + open + cancel + "</div></li>";
-  }
-  function renderJobs() {
-    jobsBox.hidden = !jobs.rows.length;
-    var focusId = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute("data-jcancel");
-    jlist.innerHTML = jobs.rows.map(jobHTML).join("");
-    if (focusId) {
-      var again = jlist.querySelector('[data-jcancel="' + focusId + '"]');
-      if (again) again.focus();
-    }
-  }
-  jlist.addEventListener("click", function (ev) {
-    var b = ev.target.closest("button[data-jcancel]");
-    if (!b) return;
-    var id = b.getAttribute("data-jcancel");
-    var row = jobs.rows.filter(function (j) { return j.id === id; })[0];
-    var url = row && row.kind === "monitor"
-      ? "/api/watches/" + encodeURIComponent(row.watch_id) + "/cancel"
-      : "/api/jobs/" + encodeURIComponent(id) + "/cancel";
-    b.disabled = true;
-    fetch(url, { method: "POST" })
-      .then(function (r) {
-        if (!r.ok) jobs.msg[id] = function () { return T("无法取消运行，请重试。", "Could not cancel the run — please try again."); };
-      })
-      .catch(function () {})
-      .then(loadJobs);
-  });
-
   // live language switch: re-render from cached data (no refetch); the open
   // report is re-rendered by report.js and carried over by render().
-  window.addEventListener("zing:lang", function () { renderFilters(); render(); renderJobs(); });
-  loadJobs();
+  window.addEventListener("zing:lang", function () { renderFilters(); render(); });
 
   load();
 })();

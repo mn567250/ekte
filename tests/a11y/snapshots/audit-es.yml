@@ -38,76 +38,80 @@
       - /url: /v2/kb
   - paragraph: Se ejecuta en local · las claves nunca salen
 - main:
-  - list "Progreso de la auditoría":
-    - listitem: Configurar
-    - listitem: Análisis
-    - listitem: Informe
-  - region "¿Este intermediario sirve el modelo real?":
-    - heading "¿Este intermediario sirve el modelo real?" [level=1]
-    - paragraph: Elige el relay, el modelo que quieres auditar y, si se vende con otro nombre, el modelo que dice ser. zing ejecuta en tu equipo una batería completa de pruebas de caja negra y genera un informe de verificación legible y respaldado por evidencias.
-    - text: Relay / proveedor Opcional
-    - combobox "Relay / proveedor Opcional":
-      - option "Selecciona un relay o proveedor…" [selected]
-      - option "Otro (introducir la URL)"
-    - text: Al seleccionar uno se rellena su URL; para cualquier otro relay elige «Otro» e introduce la URL. URL del intermediario base_url
-    - combobox "URL del intermediario base_url"
-    - text: Clave de API Admite env:VAR / file:/ruta
-    - textbox "Clave de API":
-      - /placeholder: sk-... o env:ZING_API_KEY
-      - text: env:ZING_API_KEY
-    - button "Mostrar clave" [pressed]
-    - text: Modelo solicitado model
-    - textbox "Modelo solicitado model":
-      - /placeholder: deepseek-chat
-    - button "Actualizar modelos" [disabled]
-    - status: Selecciona un relay o introduce su URL y zing listará sus modelos.
-    - text: Modelo declarado claimed_model Opcional
-    - combobox "Modelo declarado claimed_model Opcional":
-      - option "Igual que el modelo solicitado" [selected]
-    - button "Introducir a mano"
-    - text: Solo si el intermediario lo vende con otro nombre — zing contrasta las respuestas con este modelo. Protocolo
-    - group "Protocolo":
-      - button "Auto" [pressed]
-      - button "OpenAI"
-      - button "Anthropic"
-      - button "Responses"
-    - text: Batería de pruebas
-    - group "Batería de pruebas":
-      - button "smoke"
-      - button "standard" [pressed]
-      - button "deep"
-      - button "full"
-      - button "personalizado"
-    - text: Peticiones de la sonda de rendimiento
-    - group "Peticiones de la sonda de rendimiento":
-      - button "Streaming" [pressed]
-      - button "Sin streaming"
-    - text: En standard la sonda solo se ejecuta con una referencia; si no, se usan las propias peticiones de la auditoría.
-    - button "Comparar con una referencia de confianza compare" [expanded]
-    - paragraph: Indique un endpoint del mismo modelo en el que confíe (p. ej. la API oficial). zing lo usa para corroborar el comportamiento del objetivo y hacer más fiables los veredictos de sustitución/degradación — la evaluación de calidad y la detección de manipulación solo alcanzan su nivel máximo con una referencia.
-    - text: Relay / proveedor Opcional
-    - combobox "Relay / proveedor Opcional":
-      - option "Selecciona un relay o proveedor…" [selected]
-      - option "Otro (introducir la URL)"
-    - text: Al seleccionar uno se rellena su URL; para cualquier otro relay elige «Otro» e introduce la URL. URL de referencia base_url
-    - combobox "URL de referencia base_url"
-    - text: Clave API de referencia
-    - textbox "Clave API de referencia":
-      - /placeholder: sk-... o env:OPENAI_API_KEY
-    - button "Mostrar clave"
-    - text: Modelo de referencia model
-    - textbox "Modelo de referencia model":
-      - /placeholder: id oficial del mismo modelo
-    - button "Actualizar modelos" [disabled]
-    - status: Selecciona un relay o introduce su URL y zing listará sus modelos.
-    - text: Protocolo de referencia
-    - group "Protocolo de referencia":
-      - button "Auto" [pressed]
-      - button "OpenAI"
-      - button "Anthropic"
-      - button "Responses"
-    - button "Iniciar auditoría"
-    - text: Las pruebas se envían desde su servidor zing local; la clave solo se usa para conectar con el intermediario objetivo y nunca se envía a terceros.
-    - alert
-    - status
-    - text: zing aporta evidencias reproducibles de riesgo y desviación, no un veredicto legal.
+  - tablist "Auditorías":
+    - tab "Nueva auditoría" [selected]
+    - tab "En curso"
+  - tabpanel "Nueva auditoría":
+    - list "Progreso de la auditoría":
+      - listitem: Configurar
+      - listitem: Análisis
+      - listitem: Informe
+    - region "¿Este intermediario sirve el modelo real?":
+      - heading "¿Este intermediario sirve el modelo real?" [level=1]
+      - paragraph: Elige el relay, el modelo que quieres auditar y, si se vende con otro nombre, el modelo que dice ser. zing ejecuta en tu equipo una batería completa de pruebas de caja negra y genera un informe de verificación legible y respaldado por evidencias.
+      - text: Relay / proveedor Opcional
+      - combobox "Relay / proveedor Opcional":
+        - option "Selecciona un relay o proveedor…" [selected]
+        - option "Otro (introducir la URL)"
+      - text: Al seleccionar uno se rellena su URL; para cualquier otro relay elige «Otro» e introduce la URL. URL del intermediario base_url
+      - combobox "URL del intermediario base_url"
+      - text: Clave de API Admite env:VAR / file:/ruta
+      - textbox "Clave de API":
+        - /placeholder: sk-... o env:ZING_API_KEY
+        - text: env:ZING_API_KEY
+      - button "Mostrar clave" [pressed]
+      - text: Modelo solicitado model
+      - textbox "Modelo solicitado model":
+        - /placeholder: deepseek-chat
+      - button "Actualizar modelos" [disabled]
+      - status: Selecciona un relay o introduce su URL y zing listará sus modelos.
+      - text: Modelo declarado claimed_model Opcional
+      - combobox "Modelo declarado claimed_model Opcional":
+        - option "Igual que el modelo solicitado" [selected]
+      - button "Introducir a mano"
+      - text: Solo si el intermediario lo vende con otro nombre — zing contrasta las respuestas con este modelo. Protocolo
+      - group "Protocolo":
+        - button "Auto" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - text: Batería de pruebas
+      - group "Batería de pruebas":
+        - button "smoke"
+        - button "standard" [pressed]
+        - button "deep"
+        - button "full"
+        - button "personalizado"
+      - text: Peticiones de la sonda de rendimiento
+      - group "Peticiones de la sonda de rendimiento":
+        - button "Streaming" [pressed]
+        - button "Sin streaming"
+      - text: En standard la sonda solo se ejecuta con una referencia; si no, se usan las propias peticiones de la auditoría.
+      - button "Comparar con una referencia de confianza compare" [expanded]
+      - paragraph: Indique un endpoint del mismo modelo en el que confíe (p. ej. la API oficial). zing lo usa para corroborar el comportamiento del objetivo y hacer más fiables los veredictos de sustitución/degradación — la evaluación de calidad y la detección de manipulación solo alcanzan su nivel máximo con una referencia.
+      - text: Relay / proveedor Opcional
+      - combobox "Relay / proveedor Opcional":
+        - option "Selecciona un relay o proveedor…" [selected]
+        - option "Otro (introducir la URL)"
+      - text: Al seleccionar uno se rellena su URL; para cualquier otro relay elige «Otro» e introduce la URL. URL de referencia base_url
+      - combobox "URL de referencia base_url"
+      - text: Clave API de referencia
+      - textbox "Clave API de referencia":
+        - /placeholder: sk-... o env:OPENAI_API_KEY
+      - button "Mostrar clave"
+      - text: Modelo de referencia model
+      - textbox "Modelo de referencia model":
+        - /placeholder: id oficial del mismo modelo
+      - button "Actualizar modelos" [disabled]
+      - status: Selecciona un relay o introduce su URL y zing listará sus modelos.
+      - text: Protocolo de referencia
+      - group "Protocolo de referencia":
+        - button "Auto" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - button "Iniciar auditoría"
+      - text: Las pruebas se envían desde su servidor zing local; la clave solo se usa para conectar con el intermediario objetivo y nunca se envía a terceros.
+      - alert
+      - status
+      - text: zing aporta evidencias reproducibles de riesgo y desviación, no un veredicto legal.

@@ -12,9 +12,18 @@
 <link rel="stylesheet" href="/v2/static/report.css" />
 <link rel="stylesheet" href="/v2/static/perf.css" />
 <link rel="stylesheet" href="/v2/static/chartmotion.css" />
+<link rel="stylesheet" href="/v2/static/jobs.css" />
 <style>
   /* ---------- page: audit (tokens only; light + dark) ---------- */
   [tabindex="-1"]:focus { outline: none; }
+
+  /* "New audit" / "Running" tabs (v2/tabs.js; the list is v2/jobs.js) */
+  .tabs .tcount {
+    min-width: 1.6em; padding: 1px 7px; border-radius: var(--r-pill); font-size: 12px; font-weight: 700;
+    font-variant-numeric: tabular-nums; background: var(--skybg); color: var(--sky);
+  }
+  .tabs .tcount[hidden] { display: none; }
+  #panel-running { padding-top: 4px; }
 
   /* stepper */
   .steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 18px 0 0; flex-wrap: wrap; }
@@ -171,6 +180,12 @@
   <header class="znav" data-page="audit" data-trust></header>
 
   <main id="main" tabindex="-1">
+    <div class="tabs" role="tablist" aria-label="检测" data-en-aria-label="Audits">
+      <button type="button" role="tab" id="tab-new" aria-selected="true" aria-controls="panel-new" tabindex="0"><span class="pico" data-icon="search"></span><span data-en="New audit">新检测</span></button>
+      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">运行中</span><span class="tcount" id="running-count" hidden></span></button>
+    </div>
+
+    <section role="tabpanel" id="panel-new" aria-labelledby="tab-new" tabindex="0">
     <ol class="steps" aria-label="检测进度" data-en-aria-label="Audit progress">
       <li id="st-1" aria-current="step"><span class="n" aria-hidden="true">1</span><span data-en="Configure">配置</span></li>
       <li id="st-2"><span class="n" aria-hidden="true">2</span><span data-en="Scan">检测</span></li>
@@ -306,6 +321,13 @@
       <div id="report" tabindex="-1"></div>
       <div class="foot" id="cmp-tip" data-en="Want the strongest verdict? Re-check against an official baseline with <code>zing compare</code>.">想要最强结论？用 <code>zing compare</code> 对照官方基线复检。</div>
     </section>
+    </section>
+
+    <section role="tabpanel" id="panel-running" aria-labelledby="tab-running" tabindex="0" hidden>
+      <p class="jh" data-en="Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.">离开检测页后检测仍会继续运行。同一中转站的检测会依次排队运行，互不干扰检测结果。</p>
+      <p class="jempty" id="jobs-empty" data-en="No audits are running">当前没有正在运行的检测</p>
+      <ul class="jlist" id="jobs"></ul>
+    </section>
   </main>
 </div>
 
@@ -313,6 +335,8 @@
 <script src="/perf.js"></script>
 <script src="/v2/static/chartmotion.js"></script>
 <script src="/icons.js"></script>
+<script src="/v2/static/tabs.js"></script>
+<script src="/v2/static/jobs.js"></script>
 <script src="/secretfield.js"></script>
 <script src="/v2/static/relaycfg.js"></script>
 <script src="/v2/static/nav.js"></script>
@@ -395,8 +419,48 @@
   });
   ["#b-url", "#b-model"].forEach(function (s) { $(s).addEventListener("input", syncCmpBadge); });
 
+  // ---------- tabs: "New audit" (steps + views) / "Running" ----------
+  // v2/tabs.js; #running links the list. With ?job=<id> the page re-attaches
+  // to that audit, so the hash is ignored and "New audit" stays selected.
+  var hasJobParam = false;
+  try { hasJobParam = !!new URLSearchParams(location.search).get("job"); } catch (e) {}
+  var tabs = window.ZingTabs.init($(".tabs[role=tablist]"), {
+    fromHash: function (h) { return hasJobParam ? "new" : h; },
+  });
+  // the Running tab stays selectable while nothing runs (the panel says so);
+  // the badge counts queued + running audits and is part of the tab's name
+  var jobs = window.ZingJobs.init($("#jobs"), {
+    kind: "audit",
+    onChange: function (active, rows) {
+      $("#jobs-empty").hidden = rows > 0;
+      var c = $("#running-count");
+      c.hidden = !active;
+      c.textContent = active ? String(active) : "";
+    },
+  });
+  // "Watch live" in the list: follow that audit right here instead of
+  // reloading the page (modified clicks still open a new tab/window)
+  $("#jobs").addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="/v2/?job="]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var id = null;
+    try { id = new URL(a.href).searchParams.get("job"); } catch (err) {}
+    if (!id) return;
+    e.preventDefault();
+    if (id === jobId) { go(2); return; }
+    fetch("/api/jobs/" + encodeURIComponent(id))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (job) {
+        if (job && job.id) follow(job);
+        else location.href = a.href;
+      })
+      .catch(function () { location.href = a.href; });
+  });
+
   // ---------- views + stepper ----------
   function go(n) {
+    // the views live in the "New audit" tab: show it before moving focus
+    if (tabs.current() !== "new") tabs.select("new", false);
     $$(".view").forEach(function (v) { v.classList.remove("show"); });
     $("#v" + n).classList.add("show");
     for (var i = 1; i <= 3; i++) {
@@ -621,6 +685,7 @@
     detach();
     jobId = job.id;
     setJobParam(job.id);
+    if (jobs.refresh) jobs.refresh().catch(function () {}); // the Running tab enables now, not at the next poll
     resetScan(job);
     go(2);
     if (job.status !== "queued") startClock(job.started ? job.started * 1000 : 0);

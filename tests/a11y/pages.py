@@ -134,7 +134,9 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "report.css", ("audit", "history")),
     (_V2 + "perf.css", ("audit", "history")),
     (_V2 + "masterkey.js", ("monitors",)),
-    (_V2 + "tabs.js", ("tools", "kb", "analytics")),
+    (_V2 + "tabs.js", ("tools", "kb", "analytics", "audit", "monitors")),
+    (_V2 + "jobs.js", ("audit", "monitors")),
+    (_V2 + "jobs.css", ("audit", "monitors")),
     (_V2 + "fields.css", ("audit", "kb", "monitors", "tools")),
     (_V2 + "nav.js", ALL),
     (_V2 + "theme.js", ALL),
@@ -160,7 +162,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),  # report view, history list, monitor from history, the analytics queries
     ("zing/web/analytics.py", ("analytics",)),  # the /api/analytics/* endpoints
     ("zing/web/analytics_store.py", ("analytics",)),
-    ("zing/web/jobs.py", ("audit", "history", "monitors")),  # running audits
+    ("zing/web/jobs.py", ("audit", "monitors")),  # running audits (the Running tabs)
     ("zing/web/watches.py", ("history", "monitors")),  # "schedule as monitor" on History
     ("zing/web/masterkey.py", ("monitors",)),
     ("zing/web/*.py", ALL),  # server, security, caching, __init__: every page

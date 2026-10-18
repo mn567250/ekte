@@ -19,7 +19,16 @@
  *   opts.writeHash       false: leave the hash alone (a page that keeps more
  *                        state in it, e.g. Analytics' #tab=…&range=…, writes
  *                        it itself from onSelect)
- * Returns { select(name, focus), current() }.
+ * Returns { select(name, focus), current(), setDisabled(name, bool) }.
+ *
+ * setDisabled(name, true) marks a tab aria-disabled="true" (e.g. "Running"
+ * while nothing runs): clicks on it are ignored, ←/→/Home/End skip it, and
+ * if it was selected the first enabled tab is selected instead (without
+ * moving focus). A disabled tab can also be authored with aria-disabled="true"
+ * in the markup; an initial hash naming a disabled tab falls back to the
+ * first enabled tab, and that tab is selected after all if it is enabled
+ * before the user picks another one (a deep link to a tab that only enables
+ * once data has loaded).
  */
 (function () {
   "use strict";
@@ -29,6 +38,7 @@
     var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
     var names = tabs.map(function (t) { return t.id.replace(/^tab-/, ""); });
     var cur = null;
+    var wanted = null; // a disabled tab the initial hash asked for
 
     function nameFor(hash) {
       hash = String(hash || "").replace(/^#/, "");
@@ -37,9 +47,24 @@
       return names.indexOf(n) >= 0 ? n : null;
     }
 
+    function isOff(i) { return tabs[i].getAttribute("aria-disabled") === "true"; }
+    function firstOn() {
+      for (var i = 0; i < tabs.length; i++) if (!isOff(i)) return i;
+      return 0;
+    }
+    // the next enabled tab from i in direction d (wraps); i itself if none
+    function step(i, d) {
+      for (var k = 1; k <= tabs.length; k++) {
+        var j = ((i + d * k) % tabs.length + tabs.length) % tabs.length;
+        if (!isOff(j)) return j;
+      }
+      return i;
+    }
+
     function select(name, focus, keepHash) {
       var i = names.indexOf(name);
-      if (i < 0) return;
+      if (i < 0 || isOff(i)) return;
+      wanted = null;
       tabs.forEach(function (t, j) {
         var on = j === i;
         t.setAttribute("aria-selected", String(on));
@@ -58,24 +83,46 @@
     }
 
     tabs.forEach(function (t, i) {
-      t.addEventListener("click", function () { select(names[i], false); });
+      t.addEventListener("click", function () { if (!isOff(i)) select(names[i], false); });
       t.addEventListener("keydown", function (e) {
         var n = null;
-        if (e.key === "ArrowRight" || e.key === "ArrowDown") n = (i + 1) % tabs.length;
-        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = (i - 1 + tabs.length) % tabs.length;
-        else if (e.key === "Home") n = 0;
-        else if (e.key === "End") n = tabs.length - 1;
-        if (n !== null) { e.preventDefault(); select(names[n], true); }
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") n = step(i, 1);
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = step(i, -1);
+        else if (e.key === "Home") n = firstOn();
+        else if (e.key === "End") n = step(0, -1);
+        if (n !== null) { e.preventDefault(); if (!isOff(n)) select(names[n], true); }
       });
     });
-    // a link to #NAME on the same page (or the back button) selects that tab
+    // a link to #NAME on the same page (or the back button) selects that tab;
+    // a disabled one is selected once it is enabled (as for the initial hash)
     window.addEventListener("hashchange", function () {
       var n = nameFor(location.hash);
-      if (n) select(n, false, true);
+      if (!n) return;
+      if (isOff(names.indexOf(n))) wanted = n;
+      else select(n, false, true);
     });
 
-    select(nameFor(location.hash) || names[0], false, true);
-    return { select: select, current: function () { return cur; } };
+    function setDisabled(name, off) {
+      var i = names.indexOf(name);
+      if (i < 0) return;
+      if (off) tabs[i].setAttribute("aria-disabled", "true");
+      else tabs[i].removeAttribute("aria-disabled");
+      if (!off && wanted === name) select(name, false, true);
+      else if (off && cur === name) {
+        var j = firstOn();
+        if (j !== i) select(names[j], false);
+      }
+    }
+
+    var first = nameFor(location.hash);
+    if (!first || isOff(names.indexOf(first))) {
+      if (first) wanted = first;
+      first = names[firstOn()];
+    }
+    var keep = wanted;
+    select(first, false, true);
+    wanted = keep;
+    return { select: select, current: function () { return cur; }, setDisabled: setDisabled };
   }
 
   window.ZingTabs = { init: init };

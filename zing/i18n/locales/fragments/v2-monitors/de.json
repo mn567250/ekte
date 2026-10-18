@@ -41,6 +41,9 @@
   "one per line · optional": "eine pro Zeile · optional",
   "{n} monitors": "{n} Überwachungen",
   "{n} webhooks": "{n} Webhooks",
-  "Run finished.": "Lauf abgeschlossen."
+  "Run finished.": "Lauf abgeschlossen.",
+  "Monitor views": "Überwachungsansichten",
+  "No monitors are running": "Es laufen keine Überwachungen",
+  "Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.": "Laufende Überwachungen. Ein Lauf desselben Relays wartet, bis jede andere Prüfung davon abgeschlossen ist, damit die Ergebnisse nie verfälscht werden."
  }
 }

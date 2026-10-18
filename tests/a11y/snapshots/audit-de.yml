@@ -38,76 +38,80 @@
       - /url: /v2/kb
   - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät
 - main:
-  - list "Audit-Fortschritt":
-    - listitem: Konfigurieren
-    - listitem: Scan
-    - listitem: Bericht
-  - region "Liefert dieses Relay das echte Modell?":
-    - heading "Liefert dieses Relay das echte Modell?" [level=1]
-    - paragraph: Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. zing führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.
-    - text: Relay / Anbieter Optional
-    - combobox "Relay / Anbieter Optional":
-      - option "Relay oder Anbieter wählen…" [selected]
-      - option "Andere (URL eingeben)"
-    - text: Die Auswahl füllt die URL aus; für jedes andere Relay wähle „Andere“ und gib die URL ein. Relay-URL base_url
-    - combobox "Relay-URL base_url"
-    - text: API-Schlüssel Unterstützt env:VAR / file:/pfad
-    - textbox "API-Schlüssel":
-      - /placeholder: sk-... oder env:ZING_API_KEY
-      - text: env:ZING_API_KEY
-    - button "Schlüssel anzeigen" [pressed]
-    - text: Angefragtes Modell model
-    - textbox "Angefragtes Modell model":
-      - /placeholder: deepseek-chat
-    - button "Modelle neu laden" [disabled]
-    - status: Wähle ein Relay oder gib seine URL ein, dann listet zing seine Modelle auf.
-    - text: Angegebenes Modell claimed_model Optional
-    - combobox "Angegebenes Modell claimed_model Optional":
-      - option "Wie das angefragte Modell" [selected]
-    - button "Manuell eingeben"
-    - text: Nur wenn das Relay es unter anderem Namen verkauft — zing prüft die Antworten gegen dieses Modell. Protokoll
-    - group "Protokoll":
-      - button "Auto" [pressed]
-      - button "OpenAI"
-      - button "Anthropic"
-      - button "Responses"
-    - text: Testsuite
-    - group "Testsuite":
-      - button "smoke"
-      - button "standard" [pressed]
-      - button "deep"
-      - button "full"
-      - button "benutzerdefiniert"
-    - text: Anfragen der Leistungsmessung
-    - group "Anfragen der Leistungsmessung":
-      - button "Streaming" [pressed]
-      - button "Ohne Streaming"
-    - text: Bei standard läuft die Messung nur mit einer Referenz; sonst werden die Anfragen der Prüfung selbst verwendet.
-    - button "Mit vertrauenswürdiger Referenz vergleichen compare" [expanded]
-    - paragraph: Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). zing nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit einer Referenz.
-    - text: Relay / Anbieter Optional
-    - combobox "Relay / Anbieter Optional":
-      - option "Relay oder Anbieter wählen…" [selected]
-      - option "Andere (URL eingeben)"
-    - text: Die Auswahl füllt die URL aus; für jedes andere Relay wähle „Andere“ und gib die URL ein. Referenz-URL base_url
-    - combobox "Referenz-URL base_url"
-    - text: Referenz-API-Schlüssel
-    - textbox "Referenz-API-Schlüssel":
-      - /placeholder: sk-... oder env:OPENAI_API_KEY
-    - button "Schlüssel anzeigen"
-    - text: Referenzmodell model
-    - textbox "Referenzmodell model":
-      - /placeholder: Offizielle ID desselben Modells
-    - button "Modelle neu laden" [disabled]
-    - status: Wähle ein Relay oder gib seine URL ein, dann listet zing seine Modelle auf.
-    - text: Referenzprotokoll
-    - group "Referenzprotokoll":
-      - button "Auto" [pressed]
-      - button "OpenAI"
-      - button "Anthropic"
-      - button "Responses"
-    - button "Prüfung starten"
-    - text: Die Tests werden von Ihrem lokalen zing-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.
-    - alert
-    - status
-    - text: zing liefert reproduzierbare Belege für Risiken und Abweichungen, kein rechtliches Urteil.
+  - tablist "Audits":
+    - tab "Neues Audit" [selected]
+    - tab "Läuft"
+  - tabpanel "Neues Audit":
+    - list "Audit-Fortschritt":
+      - listitem: Konfigurieren
+      - listitem: Scan
+      - listitem: Bericht
+    - region "Liefert dieses Relay das echte Modell?":
+      - heading "Liefert dieses Relay das echte Modell?" [level=1]
+      - paragraph: Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. zing führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.
+      - text: Relay / Anbieter Optional
+      - combobox "Relay / Anbieter Optional":
+        - option "Relay oder Anbieter wählen…" [selected]
+        - option "Andere (URL eingeben)"
+      - text: Die Auswahl füllt die URL aus; für jedes andere Relay wähle „Andere“ und gib die URL ein. Relay-URL base_url
+      - combobox "Relay-URL base_url"
+      - text: API-Schlüssel Unterstützt env:VAR / file:/pfad
+      - textbox "API-Schlüssel":
+        - /placeholder: sk-... oder env:ZING_API_KEY
+        - text: env:ZING_API_KEY
+      - button "Schlüssel anzeigen" [pressed]
+      - text: Angefragtes Modell model
+      - textbox "Angefragtes Modell model":
+        - /placeholder: deepseek-chat
+      - button "Modelle neu laden" [disabled]
+      - status: Wähle ein Relay oder gib seine URL ein, dann listet zing seine Modelle auf.
+      - text: Angegebenes Modell claimed_model Optional
+      - combobox "Angegebenes Modell claimed_model Optional":
+        - option "Wie das angefragte Modell" [selected]
+      - button "Manuell eingeben"
+      - text: Nur wenn das Relay es unter anderem Namen verkauft — zing prüft die Antworten gegen dieses Modell. Protokoll
+      - group "Protokoll":
+        - button "Auto" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - text: Testsuite
+      - group "Testsuite":
+        - button "smoke"
+        - button "standard" [pressed]
+        - button "deep"
+        - button "full"
+        - button "benutzerdefiniert"
+      - text: Anfragen der Leistungsmessung
+      - group "Anfragen der Leistungsmessung":
+        - button "Streaming" [pressed]
+        - button "Ohne Streaming"
+      - text: Bei standard läuft die Messung nur mit einer Referenz; sonst werden die Anfragen der Prüfung selbst verwendet.
+      - button "Mit vertrauenswürdiger Referenz vergleichen compare" [expanded]
+      - paragraph: Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). zing nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit einer Referenz.
+      - text: Relay / Anbieter Optional
+      - combobox "Relay / Anbieter Optional":
+        - option "Relay oder Anbieter wählen…" [selected]
+        - option "Andere (URL eingeben)"
+      - text: Die Auswahl füllt die URL aus; für jedes andere Relay wähle „Andere“ und gib die URL ein. Referenz-URL base_url
+      - combobox "Referenz-URL base_url"
+      - text: Referenz-API-Schlüssel
+      - textbox "Referenz-API-Schlüssel":
+        - /placeholder: sk-... oder env:OPENAI_API_KEY
+      - button "Schlüssel anzeigen"
+      - text: Referenzmodell model
+      - textbox "Referenzmodell model":
+        - /placeholder: Offizielle ID desselben Modells
+      - button "Modelle neu laden" [disabled]
+      - status: Wähle ein Relay oder gib seine URL ein, dann listet zing seine Modelle auf.
+      - text: Referenzprotokoll
+      - group "Referenzprotokoll":
+        - button "Auto" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - button "Prüfung starten"
+      - text: Die Tests werden von Ihrem lokalen zing-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.
+      - alert
+      - status
+      - text: zing liefert reproduzierbare Belege für Risiken und Abweichungen, kein rechtliches Urteil.

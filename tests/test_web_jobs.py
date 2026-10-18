@@ -270,9 +270,10 @@ def test_v2_pages_use_background_jobs():
     audit = client.get("/v2/").text
     assert 'fetch("/api/jobs"' in audit and "/events" in audit and 'id="bg"' in audit
     assert "/api/audit/stream" not in audit  # the v2 audit outlives the page
-    history = client.get("/v2/history").text
-    assert 'id="jobs"' in history and 'fetch("/api/jobs")' in history
-    assert "/v2/?job=" in history
+    # the Running tab lists background audits (v2/jobs.js) and links back here
+    assert 'id="tab-running"' in audit and 'class="jlist" id="jobs"' in audit and "/v2/static/jobs.js" in audit
+    shared = client.get("/v2/static/jobs.js").text
+    assert 'fetch("/api/jobs")' in shared and "/v2/?job=" in shared
 
 
 async def test_shutdown_stops_every_job():

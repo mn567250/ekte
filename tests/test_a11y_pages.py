@@ -143,7 +143,7 @@ def test_single_page_files():
 
 def test_multi_page_files_union_in_page_order():
     s = scope("zing/web/static/v2/tabs.js", "zing/web/static/v2/report.js")
-    assert s.pages == ("audit", "history", "tools", "kb", "analytics") and not s.full
+    assert s.pages == ("audit", "history", "monitors", "tools", "kb", "analytics") and not s.full
     assert "zing/web/static/v2/report.js -> audit, history" in s.reason
     assert scope("zing/i18n/locales/fragments/v2-scoring/de.json").pages == ("audit", "history", "analytics")
     assert scope("zing/knowledge/data/openai.yaml").pages == ("audit", "tools", "kb")

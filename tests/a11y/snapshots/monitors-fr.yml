@@ -44,88 +44,92 @@
     - link "Historique":
       - /url: /v2/history
     - text: et choisissez Planifier comme surveillance, puis définissez ici son intervalle et activez-la. Dès que le risque franchit votre seuil ou s’aggrave par rapport à la dernière fois, zing alerte vos webhooks (Slack / Feishu / DingTalk / JSON générique).
-  - text: Pas encore de clé maîtresse Elle est créée lorsque vous enregistrez la première clé API.
-  - button "Créer maintenant"
-  - heading "Surveillances configurées 1 surveillance" [level=2]
-  - article "gpt-4o":
-    - heading "gpt-4o" [level=3]
-    - text: À configurer
-    - switch "À configurer" [disabled]
-    - emphasis: À configurer
-    - text: http://127.0.0.1:9099/v1
-    - term: Modèle demandé
-    - definition:
-      - code: gpt-4o
-    - term: Suite de tests
-    - definition:
-      - code: standard
-    - term: Protocole
-    - definition:
-      - code: openai
-      - text: · détecté automatiquement
-    - term: Requêtes de la sonde de performance
-    - definition: Streaming
-    - term: Intervalle de contrôle
-    - definition: Non défini
-    - term: Clé API
-    - definition:
-      - text: Aucune
-      - button "Remplacer"
-    - term: Seuil d'alerte
-    - definition:
-      - combobox "Seuil d'alerte — gpt-4o":
-        - option "Faible et plus"
-        - option "Moyen et plus" [selected]
-        - option "Élevé uniquement"
-    - term: Webhooks
-    - definition:
-      - text: Aucun webhook
-      - button "Modifier"
-    - term: Langue des alertes
-    - definition:
-      - combobox "Langue des alertes — gpt-4o":
-        - option "English" [selected]
-        - option "中文"
-        - option "Français"
-        - option "Español"
-        - option "Português"
-        - option "Italiano"
-        - option "Deutsch"
-    - term: Profil de connaissances
-    - definition:
-      - code: openai/gpt-4o
-      - text: figé 1 oct. 2026, 12:00
-    - 'link "Depuis l’exécution #1 →"':
-      - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
-    - form "Terminez la configuration pour l’activer":
-      - heading "Terminez la configuration pour l’activer" [level=4]
-      - paragraph: La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la.
-      - text: Intervalle de contrôle
-      - combobox "Intervalle de contrôle":
-        - option "Choisir…" [selected]
-        - option "toutes les 5 min"
-        - option "toutes les 10 min"
-        - option "toutes les 15 min"
-        - option "toutes les 20 min"
-        - option "toutes les 30 min"
-        - option "toutes les 1 h"
-        - option "toutes les 2 h"
-        - option "toutes les 3 h"
-        - option "toutes les 4 h"
-        - option "toutes les 6 h"
-        - option "toutes les 8 h"
-        - option "toutes les 12 h"
-        - option "toutes les 24 h"
-      - paragraph: Une exécution complète a pris <duration>, elle s’exécute donc au plus toutes les 5 min.
-      - text: Clé API (facultatif)
-      - textbox "Clé API (facultatif)":
-        - /placeholder: sk-... ou env:ZING_API_KEY
-      - button "Afficher la clé"
-      - paragraph: L’historique ne conserve jamais la clé. Laissez vide pour un modèle local ou auto-hébergé.
-      - button "Activer la surveillance"
-    - button "Exécuter maintenant"
-    - button "Supprimer"
-  - paragraph: "Tout s'exécute en local. La clé API est stockée chiffrée, uniquement dans la base de données locale sous ~/.zing sur cette machine ; elle n'apparaît jamais dans la liste des surveillances et n'est jamais envoyée au navigateur. La clé maîtresse qui la déchiffre n'est jamais écrite sur le disque : vous la conservez et la saisissez après chaque redémarrage."
+  - tablist "Vues des moniteurs":
+    - tab "Configurer" [selected]
+    - tab "En cours"
+  - tabpanel "Configurer":
+    - text: Pas encore de clé maîtresse Elle est créée lorsque vous enregistrez la première clé API.
+    - button "Créer maintenant"
+    - heading "Surveillances configurées 1 surveillance" [level=2]
+    - article "gpt-4o":
+      - heading "gpt-4o" [level=3]
+      - text: À configurer
+      - switch "À configurer" [disabled]
+      - emphasis: À configurer
+      - text: http://127.0.0.1:9099/v1
+      - term: Modèle demandé
+      - definition:
+        - code: gpt-4o
+      - term: Suite de tests
+      - definition:
+        - code: standard
+      - term: Protocole
+      - definition:
+        - code: openai
+        - text: · détecté automatiquement
+      - term: Requêtes de la sonde de performance
+      - definition: Streaming
+      - term: Intervalle de contrôle
+      - definition: Non défini
+      - term: Clé API
+      - definition:
+        - text: Aucune
+        - button "Remplacer"
+      - term: Seuil d'alerte
+      - definition:
+        - combobox "Seuil d'alerte — gpt-4o":
+          - option "Faible et plus"
+          - option "Moyen et plus" [selected]
+          - option "Élevé uniquement"
+      - term: Webhooks
+      - definition:
+        - text: Aucun webhook
+        - button "Modifier"
+      - term: Langue des alertes
+      - definition:
+        - combobox "Langue des alertes — gpt-4o":
+          - option "English" [selected]
+          - option "中文"
+          - option "Français"
+          - option "Español"
+          - option "Português"
+          - option "Italiano"
+          - option "Deutsch"
+      - term: Profil de connaissances
+      - definition:
+        - code: openai/gpt-4o
+        - text: figé 1 oct. 2026, 12:00
+      - 'link "Depuis l’exécution #1 →"':
+        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+      - form "Terminez la configuration pour l’activer":
+        - heading "Terminez la configuration pour l’activer" [level=4]
+        - paragraph: La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la.
+        - text: Intervalle de contrôle
+        - combobox "Intervalle de contrôle":
+          - option "Choisir…" [selected]
+          - option "toutes les 5 min"
+          - option "toutes les 10 min"
+          - option "toutes les 15 min"
+          - option "toutes les 20 min"
+          - option "toutes les 30 min"
+          - option "toutes les 1 h"
+          - option "toutes les 2 h"
+          - option "toutes les 3 h"
+          - option "toutes les 4 h"
+          - option "toutes les 6 h"
+          - option "toutes les 8 h"
+          - option "toutes les 12 h"
+          - option "toutes les 24 h"
+        - paragraph: Une exécution complète a pris <duration>, elle s’exécute donc au plus toutes les 5 min.
+        - text: Clé API (facultatif)
+        - textbox "Clé API (facultatif)":
+          - /placeholder: sk-... ou env:ZING_API_KEY
+        - button "Afficher la clé"
+        - paragraph: L’historique ne conserve jamais la clé. Laissez vide pour un modèle local ou auto-hébergé.
+        - button "Activer la surveillance"
+      - button "Exécuter maintenant"
+      - button "Supprimer"
+    - paragraph: "Tout s'exécute en local. La clé API est stockée chiffrée, uniquement dans la base de données locale sous ~/.zing sur cette machine ; elle n'apparaît jamais dans la liste des surveillances et n'est jamais envoyée au navigateur. La clé maîtresse qui la déchiffre n'est jamais écrite sur le disque : vous la conservez et la saisissez après chaque redémarrage."
 - contentinfo:
   - paragraph:
     - text: zing · vérification de relais · les surveillances sont planifiées en arrière-plan par le processus

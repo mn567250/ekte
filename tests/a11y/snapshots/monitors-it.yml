@@ -44,88 +44,92 @@
     - link "Cronologia":
       - /url: /v2/history
     - text: e scegli Pianifica come monitor, poi imposta qui l’intervallo e attivalo. Quando il rischio supera la soglia o peggiora rispetto all’ultima volta, zing avvisa i tuoi webhook (Slack / Feishu / DingTalk / JSON generico).
-  - text: Ancora nessuna chiave principale Viene creata quando salvi la prima chiave API.
-  - button "Crea ora"
-  - heading "Monitor configurati 1 monitor" [level=2]
-  - article "gpt-4o":
-    - heading "gpt-4o" [level=3]
-    - text: Da configurare
-    - switch "Da configurare" [disabled]
-    - emphasis: Da configurare
-    - text: http://127.0.0.1:9099/v1
-    - term: Modello richiesto
-    - definition:
-      - code: gpt-4o
-    - term: Suite di test
-    - definition:
-      - code: standard
-    - term: Protocollo
-    - definition:
-      - code: openai
-      - text: · rilevato automaticamente
-    - term: Richieste della sonda delle prestazioni
-    - definition: Streaming
-    - term: Intervallo di controllo
-    - definition: Non impostato
-    - term: Chiave API
-    - definition:
-      - text: Nessuna
-      - button "Sostituisci"
-    - term: Soglia di avviso
-    - definition:
-      - combobox "Soglia di avviso — gpt-4o":
-        - option "Basso e superiore"
-        - option "Medio e superiore" [selected]
-        - option "Solo alto"
-    - term: Webhook
-    - definition:
-      - text: Nessun webhook
-      - button "Modifica"
-    - term: Lingua degli avvisi
-    - definition:
-      - combobox "Lingua degli avvisi — gpt-4o":
-        - option "English" [selected]
-        - option "中文"
-        - option "Français"
-        - option "Español"
-        - option "Português"
-        - option "Italiano"
-        - option "Deutsch"
-    - term: Profilo di conoscenza
-    - definition:
-      - code: openai/gpt-4o
-      - text: fissato 1 ott 2026, 12:00
-    - 'link "Dall’esecuzione #1 →"':
-      - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
-    - form "Completa la configurazione per attivarlo":
-      - heading "Completa la configurazione per attivarlo" [level=4]
-      - paragraph: La configurazione proviene dall’esecuzione nella Cronologia. Imposta ogni quanto viene eseguito, poi attivalo.
-      - text: Intervallo di controllo
-      - combobox "Intervallo di controllo":
-        - option "Scegli…" [selected]
-        - option "ogni 5 min"
-        - option "ogni 10 min"
-        - option "ogni 15 min"
-        - option "ogni 20 min"
-        - option "ogni 30 min"
-        - option "ogni 1 h"
-        - option "ogni 2 h"
-        - option "ogni 3 h"
-        - option "ogni 4 h"
-        - option "ogni 6 h"
-        - option "ogni 8 h"
-        - option "ogni 12 h"
-        - option "ogni 24 h"
-      - paragraph: Un’esecuzione completa ha richiesto <duration>, quindi viene eseguito al massimo ogni 5 min.
-      - text: Chiave API (facoltativo)
-      - textbox "Chiave API (facoltativo)":
-        - /placeholder: sk-... o env:ZING_API_KEY
-      - button "Mostra chiave"
-      - paragraph: La cronologia non salva mai la chiave. Lasciala vuota per un modello locale o self-hosted.
-      - button "Attiva monitor"
-    - button "Esegui ora"
-    - button "Elimina"
-  - paragraph: "Tutto gira in locale. La chiave API è salvata cifrata, solo nel database locale in ~/.zing su questo computer; non compare mai nell'elenco dei monitor e non viene mai inviata al browser. La chiave principale che la decifra non viene mai scritta su disco: la conservi tu e la inserisci dopo ogni riavvio."
+  - tablist "Viste dei monitor":
+    - tab "Configura" [selected]
+    - tab "In corso"
+  - tabpanel "Configura":
+    - text: Ancora nessuna chiave principale Viene creata quando salvi la prima chiave API.
+    - button "Crea ora"
+    - heading "Monitor configurati 1 monitor" [level=2]
+    - article "gpt-4o":
+      - heading "gpt-4o" [level=3]
+      - text: Da configurare
+      - switch "Da configurare" [disabled]
+      - emphasis: Da configurare
+      - text: http://127.0.0.1:9099/v1
+      - term: Modello richiesto
+      - definition:
+        - code: gpt-4o
+      - term: Suite di test
+      - definition:
+        - code: standard
+      - term: Protocollo
+      - definition:
+        - code: openai
+        - text: · rilevato automaticamente
+      - term: Richieste della sonda delle prestazioni
+      - definition: Streaming
+      - term: Intervallo di controllo
+      - definition: Non impostato
+      - term: Chiave API
+      - definition:
+        - text: Nessuna
+        - button "Sostituisci"
+      - term: Soglia di avviso
+      - definition:
+        - combobox "Soglia di avviso — gpt-4o":
+          - option "Basso e superiore"
+          - option "Medio e superiore" [selected]
+          - option "Solo alto"
+      - term: Webhook
+      - definition:
+        - text: Nessun webhook
+        - button "Modifica"
+      - term: Lingua degli avvisi
+      - definition:
+        - combobox "Lingua degli avvisi — gpt-4o":
+          - option "English" [selected]
+          - option "中文"
+          - option "Français"
+          - option "Español"
+          - option "Português"
+          - option "Italiano"
+          - option "Deutsch"
+      - term: Profilo di conoscenza
+      - definition:
+        - code: openai/gpt-4o
+        - text: fissato 1 ott 2026, 12:00
+      - 'link "Dall’esecuzione #1 →"':
+        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+      - form "Completa la configurazione per attivarlo":
+        - heading "Completa la configurazione per attivarlo" [level=4]
+        - paragraph: La configurazione proviene dall’esecuzione nella Cronologia. Imposta ogni quanto viene eseguito, poi attivalo.
+        - text: Intervallo di controllo
+        - combobox "Intervallo di controllo":
+          - option "Scegli…" [selected]
+          - option "ogni 5 min"
+          - option "ogni 10 min"
+          - option "ogni 15 min"
+          - option "ogni 20 min"
+          - option "ogni 30 min"
+          - option "ogni 1 h"
+          - option "ogni 2 h"
+          - option "ogni 3 h"
+          - option "ogni 4 h"
+          - option "ogni 6 h"
+          - option "ogni 8 h"
+          - option "ogni 12 h"
+          - option "ogni 24 h"
+        - paragraph: Un’esecuzione completa ha richiesto <duration>, quindi viene eseguito al massimo ogni 5 min.
+        - text: Chiave API (facoltativo)
+        - textbox "Chiave API (facoltativo)":
+          - /placeholder: sk-... o env:ZING_API_KEY
+        - button "Mostra chiave"
+        - paragraph: La cronologia non salva mai la chiave. Lasciala vuota per un modello locale o self-hosted.
+        - button "Attiva monitor"
+      - button "Esegui ora"
+      - button "Elimina"
+    - paragraph: "Tutto gira in locale. La chiave API è salvata cifrata, solo nel database locale in ~/.zing su questo computer; non compare mai nell'elenco dei monitor e non viene mai inviata al browser. La chiave principale che la decifra non viene mai scritta su disco: la conservi tu e la inserisci dopo ogni riavvio."
 - contentinfo:
   - paragraph:
     - text: zing · verifica degli intermediari · i monitor sono pianificati in background dal processo
