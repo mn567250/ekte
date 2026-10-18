@@ -1530,7 +1530,7 @@ def collect(pages: dict[str, str], langs: list[str], log: Callable[[str], None] 
     with tabs are extracted once per tab panel and merged."""
     from playwright.sync_api import sync_playwright
 
-    from tests.a11y.harness import Opener, settle, tab_states
+    from tests.a11y.harness import Opener, settle, show_tab, tab_states
 
     out: dict[str, dict[str, Any]] = {}
     with _app() as base_url, sync_playwright() as pw:
@@ -1549,7 +1549,7 @@ def collect(pages: dict[str, str], langs: list[str], log: Callable[[str], None] 
                         skipped = 0
                         for tab in tabs:
                             if tab:
-                                page.click(tab)
+                                show_tab(page, tab)
                                 settle(page)
                             skipped = max(skipped, _expand_safe(page, settle))
                             parts.append(_extract(page))

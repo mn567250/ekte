@@ -28,6 +28,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Analytics sections as sub-tabs (web UI v2).** Overview, Trends and
+  Reliability show their two panels (Overview / Leaderboard, Comparison over
+  time / Peak hours, Errors and reliability / Relay overhead) one at a time
+  behind a smaller second row of tabs, so the page scrolls less and keeps its
+  height while panels load. The selected section is part of the view link
+  (`os=`, `ts=`, `rs=`), and only the shown panel loads.
+- The Overview KPI figures count up to their new value when the data changes
+  (not on a language switch, under `prefers-reduced-motion` or with motion off).
 - Analytics API answers are cached in-process for up to 30 seconds and dropped
   on every saved, deleted or cleared run.
 

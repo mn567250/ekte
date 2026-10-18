@@ -18,6 +18,7 @@ from tests.a11y.harness import (
     expand_all,
     run_axe,
     settle,
+    show_tab,
     tab_states,
 )
 
@@ -59,7 +60,7 @@ def test_wcag_rules_every_tab_panel(open_page, page_id: str, theme: str) -> None
     page = open_page(PAGES[page_id], "en", theme)
     found = []
     for sel in tab_states(page):
-        page.locator(sel).first.click()
+        show_tab(page, sel)
         settle(page)
         found += [dict(v, id=f"{v['id']} (tab {sel})") for v in run_axe(page, WCAG_TAGS)]
     assert_no_violations(found, f"{page_id} [en, {theme}] each tab panel")

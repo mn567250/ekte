@@ -10,6 +10,9 @@
  *   - pop(svg, marks)      live updates: pop in exactly these marks (the
  *                          perf.js live chart: the new requests' dots and
  *                          failure crosses)
+ *   - count(els, show)     KPI figures: each element counts up to its new
+ *                          value; els is a list of {el, from, to, …}, show(v, it)
+ *                          formats item it's value v on the way
  *   enter() also takes the <svg> itself instead of its host.
  *
  * It never changes what the chart says: no element is added or removed and
@@ -191,5 +194,34 @@
     cleanup(svg, 450, "zm-new", touched);
   }
 
-  window.ZingMotion = { enter: enter, fresh: fresh, pop: pop };
+  var COUNT = 700; // ms for a KPI figure to count up
+  function count(items, show) {
+    function paint(k) {
+      // ease-out cubic: fast at first, settling on the value; whole-number
+      // targets (run counts) stay whole on the way
+      var e = 1 - Math.pow(1 - k, 3);
+      items.forEach(function (it) {
+        var v = k >= 1 ? it.to : it.from + (it.to - it.from) * e;
+        it.el.textContent = show(Math.round(it.to) === it.to && k < 1 ? Math.round(v) : v, it);
+      });
+    }
+    var host = items.length && items[0].el;
+    if (still() || !host || typeof host.animate !== "function") return paint(1);
+    // an empty Web Animation is the clock: it shows in document.getAnimations(),
+    // so whatever waits for the page's animations also waits for the count,
+    // and the final value lands the moment it ends
+    var clock = host.animate([], { duration: COUNT });
+    clock.finished.then(function () { paint(1); }, function () { /* replaced */ });
+    paint(0);
+    function step() {
+      // a newer render replaced these elements: stop
+      if (!host.isConnected) { clock.cancel(); return; }
+      if (clock.playState === "finished") return;
+      paint(Math.min(1, (clock.currentTime || 0) / COUNT));
+      window.requestAnimationFrame(step);
+    }
+    window.requestAnimationFrame(step);
+  }
+
+  window.ZingMotion = { enter: enter, fresh: fresh, pop: pop, count: count };
 })();
