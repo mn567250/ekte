@@ -390,8 +390,9 @@
     var B = [1, 2, 3, 4, 6].indexOf(cfg.block) >= 0 ? cfg.block : 1, rows = 24 / B;
     var cells = (cfg.cells || []).filter(function (c) { return typeof c.v === "number" && isFinite(c.v); });
     var W0 = Math.max(260, Math.floor(host.clientWidth || 640));
-    // square cells: as wide as 7 columns allow, the grid at most 440 px tall
-    var left = 48, top = 20, size = Math.max(16, Math.min(60, Math.floor((W0 - left - 2) / 7), Math.floor(440 / rows)));
+    // square cells: as wide as 7 columns allow, the grid at most 720 px tall;
+    // blocks of several hours get a wider axis for their "00:00–06:00" labels
+    var left = B > 1 ? 96 : 48, top = 20, size = Math.max(16, Math.min(Math.floor((W0 - left - 2) / 7), Math.floor(720 / rows)));
     var W = left + 7 * size + 2, H = top + rows * size + 2;
     var vs = cells.map(function (c) { return c.v; });
     var lo = vs.length ? Math.min.apply(null, vs) : 0, hi = vs.length ? Math.max.apply(null, vs) : 1;
@@ -414,7 +415,7 @@
     var every = size >= 22 ? 1 : Math.ceil(22 / size);
     for (var r = 0; r < rows; r += every) {
       out.push('<text x="' + (left - 8) + '" y="' + f1(Y(r) + size / 2 + 1) + '" dy="0.32em" text-anchor="end">' +
-        esc(cfg.hourLabel ? cfg.hourLabel(r * B) : String(r * B)) + "</text>");
+        esc(cfg.hourLabel ? cfg.hourLabel(r * B, B) : String(r * B)) + "</text>");
     }
     out.push('</g><g class="cells">');
     for (var dow = 1; dow <= 7; dow++) {
