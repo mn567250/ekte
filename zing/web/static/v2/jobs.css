@@ -1,6 +1,8 @@
 /* zing web UI v2 — the "Running" list (jobs.js), shared by the Audit and
  * Monitors pages. Tokens only (zing.css); light + dark. */
 .jh { font-size: 12.5px; color: var(--faint); margin: 0 0 10px; line-height: 1.5; }
+.jempty { font-size: 14px; color: var(--ink2); margin: 8px 0 0; }
+.jempty[hidden] { display: none; }
 .jlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .job { padding: 12px 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .job .jmain { flex: 1 1 260px; min-width: 0; }

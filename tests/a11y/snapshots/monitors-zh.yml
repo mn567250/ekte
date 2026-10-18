@@ -44,88 +44,92 @@
     - link "检测历史":
       - /url: /v2/history
     - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
-  - text: 尚无主密钥 保存第一个 API 密钥时会创建它。
-  - button "立即创建"
-  - heading "已配置的监控 共 1 项" [level=2]
-  - article "gpt-4o":
-    - heading "gpt-4o" [level=3]
-    - text: 待设置
-    - switch "待设置" [disabled]
-    - emphasis: 待设置
-    - text: http://127.0.0.1:9099/v1
-    - term: 请求的模型
-    - definition:
-      - code: gpt-4o
-    - term: 测试套件
-    - definition:
-      - code: standard
-    - term: 协议
-    - definition:
-      - code: openai
-      - text: · 自动识别
-    - term: 性能探测请求
-    - definition: 流式
-    - term: 检测间隔
-    - definition: 未设置
-    - term: API 密钥
-    - definition:
-      - text: 无
-      - button "更换"
-    - term: 告警阈值
-    - definition:
-      - combobox "告警阈值 — gpt-4o":
-        - option "低及以上"
-        - option "中及以上" [selected]
-        - option "仅高"
-    - term: Webhook
-    - definition:
-      - text: 无 Webhook
-      - button "编辑"
-    - term: 告警语言
-    - definition:
-      - combobox "告警语言 — gpt-4o":
-        - option "English" [selected]
-        - option "中文"
-        - option "Français"
-        - option "Español"
-        - option "Português"
-        - option "Italiano"
-        - option "Deutsch"
-    - term: 知识库资料
-    - definition:
-      - code: openai/gpt-4o
-      - text: 固定于 2026年10月1日 12:00
-    - 'link "来自运行 #1 →"':
-      - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
-    - form "设置后即可启用":
-      - heading "设置后即可启用" [level=4]
-      - paragraph: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。
-      - text: 检测间隔
-      - combobox "检测间隔":
-        - option "请选择…" [selected]
-        - option "每 5 分钟"
-        - option "每 10 分钟"
-        - option "每 15 分钟"
-        - option "每 20 分钟"
-        - option "每 30 分钟"
-        - option "每 1 小时"
-        - option "每 2 小时"
-        - option "每 3 小时"
-        - option "每 4 小时"
-        - option "每 6 小时"
-        - option "每 8 小时"
-        - option "每 12 小时"
-        - option "每 24 小时"
-      - paragraph: 上次完整运行耗时 1 秒，因此最短间隔为每 5 分钟。
-      - text: API 密钥 （可选）
-      - textbox "API 密钥 （可选）":
-        - /placeholder: sk-... 或 env:ZING_API_KEY
-      - button "显示密钥"
-      - paragraph: 检测历史不保存密钥。本地或自托管模型可留空。
-      - button "启用监控"
-    - button "立即运行"
-    - button "删除"
-  - paragraph: 全程本地运行。API Key 仅加密保存在本机 ~/.zing 的本地数据库里，绝不出现在监控列表里、也不会发给浏览器。用于解密的主密钥从不写入磁盘：由你保管，每次重启后再输入。
+  - tablist "监控视图":
+    - tab "配置" [selected]
+    - tab "运行中"
+  - tabpanel "配置":
+    - text: 尚无主密钥 保存第一个 API 密钥时会创建它。
+    - button "立即创建"
+    - heading "已配置的监控 共 1 项" [level=2]
+    - article "gpt-4o":
+      - heading "gpt-4o" [level=3]
+      - text: 待设置
+      - switch "待设置" [disabled]
+      - emphasis: 待设置
+      - text: http://127.0.0.1:9099/v1
+      - term: 请求的模型
+      - definition:
+        - code: gpt-4o
+      - term: 测试套件
+      - definition:
+        - code: standard
+      - term: 协议
+      - definition:
+        - code: openai
+        - text: · 自动识别
+      - term: 性能探测请求
+      - definition: 流式
+      - term: 检测间隔
+      - definition: 未设置
+      - term: API 密钥
+      - definition:
+        - text: 无
+        - button "更换"
+      - term: 告警阈值
+      - definition:
+        - combobox "告警阈值 — gpt-4o":
+          - option "低及以上"
+          - option "中及以上" [selected]
+          - option "仅高"
+      - term: Webhook
+      - definition:
+        - text: 无 Webhook
+        - button "编辑"
+      - term: 告警语言
+      - definition:
+        - combobox "告警语言 — gpt-4o":
+          - option "English" [selected]
+          - option "中文"
+          - option "Français"
+          - option "Español"
+          - option "Português"
+          - option "Italiano"
+          - option "Deutsch"
+      - term: 知识库资料
+      - definition:
+        - code: openai/gpt-4o
+        - text: 固定于 2026年10月1日 12:00
+      - 'link "来自运行 #1 →"':
+        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+      - form "设置后即可启用":
+        - heading "设置后即可启用" [level=4]
+        - paragraph: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。
+        - text: 检测间隔
+        - combobox "检测间隔":
+          - option "请选择…" [selected]
+          - option "每 5 分钟"
+          - option "每 10 分钟"
+          - option "每 15 分钟"
+          - option "每 20 分钟"
+          - option "每 30 分钟"
+          - option "每 1 小时"
+          - option "每 2 小时"
+          - option "每 3 小时"
+          - option "每 4 小时"
+          - option "每 6 小时"
+          - option "每 8 小时"
+          - option "每 12 小时"
+          - option "每 24 小时"
+        - paragraph: 上次完整运行耗时 1 秒，因此最短间隔为每 5 分钟。
+        - text: API 密钥 （可选）
+        - textbox "API 密钥 （可选）":
+          - /placeholder: sk-... 或 env:ZING_API_KEY
+        - button "显示密钥"
+        - paragraph: 检测历史不保存密钥。本地或自托管模型可留空。
+        - button "启用监控"
+      - button "立即运行"
+      - button "删除"
+    - paragraph: 全程本地运行。API Key 仅加密保存在本机 ~/.zing 的本地数据库里，绝不出现在监控列表里、也不会发给浏览器。用于解密的主密钥从不写入磁盘：由你保管，每次重启后再输入。
 - contentinfo:
   - paragraph:
     - text: zing · 中转站验真 · 监控由

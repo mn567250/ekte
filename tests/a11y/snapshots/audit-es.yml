@@ -40,8 +40,7 @@
 - main:
   - tablist "Auditorías":
     - tab "Nueva auditoría" [selected]
-    - tab "En curso" [disabled]
-  - text: No hay auditorías en curso
+    - tab "En curso"
   - tabpanel "Nueva auditoría":
     - list "Progreso de la auditoría":
       - listitem: Configurar

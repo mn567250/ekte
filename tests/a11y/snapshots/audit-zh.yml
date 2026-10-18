@@ -40,8 +40,7 @@
 - main:
   - tablist "检测":
     - tab "新检测" [selected]
-    - tab "运行中" [disabled]
-  - text: 当前没有正在运行的检测
+    - tab "运行中"
   - tabpanel "新检测":
     - list "检测进度":
       - listitem: 配置

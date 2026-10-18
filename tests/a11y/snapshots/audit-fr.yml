@@ -40,8 +40,7 @@
 - main:
   - tablist "Audits":
     - tab "Nouvel audit" [selected]
-    - tab "En cours" [disabled]
-  - text: Aucun audit en cours
+    - tab "En cours"
   - tabpanel "Nouvel audit":
     - list "Progression de l'audit":
       - listitem: Configurer

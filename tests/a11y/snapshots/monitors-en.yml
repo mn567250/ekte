@@ -44,88 +44,92 @@
     - link "History":
       - /url: /v2/history
     - text: and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).
-  - text: No master key yet It is created when you store the first API key.
-  - button "Create now"
-  - heading "Configured monitors 1 monitor" [level=2]
-  - article "gpt-4o":
-    - heading "gpt-4o" [level=3]
-    - text: Needs setup
-    - switch "Needs setup" [disabled]
-    - emphasis: Needs setup
-    - text: http://127.0.0.1:9099/v1
-    - term: Model to request
-    - definition:
-      - code: gpt-4o
-    - term: Test suite
-    - definition:
-      - code: standard
-    - term: Protocol
-    - definition:
-      - code: openai
-      - text: · auto-detected
-    - term: Performance probe requests
-    - definition: Streaming
-    - term: Check interval
-    - definition: Not set
-    - term: API key
-    - definition:
-      - text: None
-      - button "Replace"
-    - term: Alert threshold
-    - definition:
-      - combobox "Alert threshold — gpt-4o":
-        - option "Low and above"
-        - option "Medium and above" [selected]
-        - option "High only"
-    - term: Webhooks
-    - definition:
-      - text: No webhooks
-      - button "Edit"
-    - term: Alert language
-    - definition:
-      - combobox "Alert language — gpt-4o":
-        - option "English" [selected]
-        - option "中文"
-        - option "Français"
-        - option "Español"
-        - option "Português"
-        - option "Italiano"
-        - option "Deutsch"
-    - term: Knowledge profile
-    - definition:
-      - code: openai/gpt-4o
-      - text: pinned Oct 1, 2026, 12:00 PM
-    - 'link "From run #1 →"':
-      - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
-    - form "Finish setup to switch it on":
-      - heading "Finish setup to switch it on" [level=4]
-      - paragraph: The configuration comes from the run in History. Set how often it runs, then activate it.
-      - text: Check interval
-      - combobox "Check interval":
-        - option "Choose…" [selected]
-        - option "every 5 min"
-        - option "every 10 min"
-        - option "every 15 min"
-        - option "every 20 min"
-        - option "every 30 min"
-        - option "every 1 h"
-        - option "every 2 h"
-        - option "every 3 h"
-        - option "every 4 h"
-        - option "every 6 h"
-        - option "every 8 h"
-        - option "every 12 h"
-        - option "every 24 h"
-      - paragraph: One full run took <duration>, so it runs at most every 5 min.
-      - text: API key (optional)
-      - textbox "API key (optional)":
-        - /placeholder: sk-... or env:ZING_API_KEY
-      - button "Show key"
-      - paragraph: History never stores the key. Leave it empty for a local or self-hosted model.
-      - button "Activate monitor"
-    - button "Run now"
-    - button "Delete"
-  - paragraph: "Everything runs locally. The API key is stored encrypted, only in the local database under ~/.zing on this machine; it never appears in the monitor list and is never sent to the browser. The master key that decrypts it is never written to disk: you keep it, and enter it after each restart."
+  - tablist "Monitor views":
+    - tab "Configure" [selected]
+    - tab "Running"
+  - tabpanel "Configure":
+    - text: No master key yet It is created when you store the first API key.
+    - button "Create now"
+    - heading "Configured monitors 1 monitor" [level=2]
+    - article "gpt-4o":
+      - heading "gpt-4o" [level=3]
+      - text: Needs setup
+      - switch "Needs setup" [disabled]
+      - emphasis: Needs setup
+      - text: http://127.0.0.1:9099/v1
+      - term: Model to request
+      - definition:
+        - code: gpt-4o
+      - term: Test suite
+      - definition:
+        - code: standard
+      - term: Protocol
+      - definition:
+        - code: openai
+        - text: · auto-detected
+      - term: Performance probe requests
+      - definition: Streaming
+      - term: Check interval
+      - definition: Not set
+      - term: API key
+      - definition:
+        - text: None
+        - button "Replace"
+      - term: Alert threshold
+      - definition:
+        - combobox "Alert threshold — gpt-4o":
+          - option "Low and above"
+          - option "Medium and above" [selected]
+          - option "High only"
+      - term: Webhooks
+      - definition:
+        - text: No webhooks
+        - button "Edit"
+      - term: Alert language
+      - definition:
+        - combobox "Alert language — gpt-4o":
+          - option "English" [selected]
+          - option "中文"
+          - option "Français"
+          - option "Español"
+          - option "Português"
+          - option "Italiano"
+          - option "Deutsch"
+      - term: Knowledge profile
+      - definition:
+        - code: openai/gpt-4o
+        - text: pinned Oct 1, 2026, 12:00 PM
+      - 'link "From run #1 →"':
+        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+      - form "Finish setup to switch it on":
+        - heading "Finish setup to switch it on" [level=4]
+        - paragraph: The configuration comes from the run in History. Set how often it runs, then activate it.
+        - text: Check interval
+        - combobox "Check interval":
+          - option "Choose…" [selected]
+          - option "every 5 min"
+          - option "every 10 min"
+          - option "every 15 min"
+          - option "every 20 min"
+          - option "every 30 min"
+          - option "every 1 h"
+          - option "every 2 h"
+          - option "every 3 h"
+          - option "every 4 h"
+          - option "every 6 h"
+          - option "every 8 h"
+          - option "every 12 h"
+          - option "every 24 h"
+        - paragraph: One full run took <duration>, so it runs at most every 5 min.
+        - text: API key (optional)
+        - textbox "API key (optional)":
+          - /placeholder: sk-... or env:ZING_API_KEY
+        - button "Show key"
+        - paragraph: History never stores the key. Leave it empty for a local or self-hosted model.
+        - button "Activate monitor"
+      - button "Run now"
+      - button "Delete"
+    - paragraph: "Everything runs locally. The API key is stored encrypted, only in the local database under ~/.zing on this machine; it never appears in the monitor list and is never sent to the browser. The master key that decrypts it is never written to disk: you keep it, and enter it after each restart."
 - contentinfo:
   - paragraph:
     - text: zing · relay reality check · monitors are scheduled in the background by the

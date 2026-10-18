@@ -40,8 +40,7 @@
 - main:
   - tablist "Auditorias":
     - tab "Nova auditoria" [selected]
-    - tab "Em andamento" [disabled]
-  - text: Nenhuma auditoria em execução
+    - tab "Em andamento"
   - tabpanel "Nova auditoria":
     - list "Progresso da auditoria":
       - listitem: Configurar

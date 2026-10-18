@@ -8,8 +8,8 @@
  * per queued / running run of that kind (a progress bar with role=progressbar,
  * "Watch live", "Open monitor" for monitors, Cancel), plus failed runs, which
  * never reach History (the server drops them after a while). It polls every
- * 2 s while a run is active and every 5 s otherwise (so a page can enable its
- * tab when a run starts); polling pauses while the browser tab is hidden and
+ * 2 s while a run is active and every 5 s otherwise (so a page notices a
+ * run that starts elsewhere); polling pauses while the browser tab is hidden and
  * catches up when it is shown again. Re-renders on "zing:lang" from cache.
  *   opts.kind            "audit" (everything but monitors, the default) or
  *                        "monitor"

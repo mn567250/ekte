@@ -40,8 +40,7 @@
 - main:
   - tablist "Audits":
     - tab "New audit" [selected]
-    - tab "Running" [disabled]
-  - text: No audits are running
+    - tab "Running"
   - tabpanel "New audit":
     - list "Audit progress":
       - listitem: Configure

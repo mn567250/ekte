@@ -44,88 +44,92 @@
     - link "Histórico":
       - /url: /v2/history
     - text: e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa seu limite ou piora em relação à última vez, o zing alerta seus webhooks (Slack / Feishu / DingTalk / JSON genérico).
-  - text: Ainda sem chave mestra É criada quando guarda a primeira chave API.
-  - button "Criar agora"
-  - heading "Monitores configurados 1 monitor" [level=2]
-  - article "gpt-4o":
-    - heading "gpt-4o" [level=3]
-    - text: Requer configuração
-    - switch "Requer configuração" [disabled]
-    - emphasis: Requer configuração
-    - text: http://127.0.0.1:9099/v1
-    - term: Modelo pedido
-    - definition:
-      - code: gpt-4o
-    - term: Conjunto de testes
-    - definition:
-      - code: standard
-    - term: Protocolo
-    - definition:
-      - code: openai
-      - text: · detectado automaticamente
-    - term: Requisições da sonda de desempenho
-    - definition: Streaming
-    - term: Intervalo de verificação
-    - definition: Não definido
-    - term: Chave de API
-    - definition:
-      - text: Nenhuma
-      - button "Substituir"
-    - term: Limite de alerta
-    - definition:
-      - combobox "Limite de alerta — gpt-4o":
-        - option "Baixo ou superior"
-        - option "Médio ou superior" [selected]
-        - option "Apenas alto"
-    - term: Webhooks
-    - definition:
-      - text: Sem webhooks
-      - button "Editar"
-    - term: Idioma dos alertas
-    - definition:
-      - combobox "Idioma dos alertas — gpt-4o":
-        - option "English" [selected]
-        - option "中文"
-        - option "Français"
-        - option "Español"
-        - option "Português"
-        - option "Italiano"
-        - option "Deutsch"
-    - term: Perfil de conhecimento
-    - definition:
-      - code: openai/gpt-4o
-      - text: fixado 01/10/2026, 12:00
-    - 'link "Da execução #1 →"':
-      - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
-    - form "Conclua a configuração para ativá-lo":
-      - heading "Conclua a configuração para ativá-lo" [level=4]
-      - paragraph: A configuração vem da execução no Histórico. Defina com que frequência ele roda e ative-o.
-      - text: Intervalo de verificação
-      - combobox "Intervalo de verificação":
-        - option "Escolher…" [selected]
-        - option "a cada 5 min"
-        - option "a cada 10 min"
-        - option "a cada 15 min"
-        - option "a cada 20 min"
-        - option "a cada 30 min"
-        - option "a cada 1 h"
-        - option "a cada 2 h"
-        - option "a cada 3 h"
-        - option "a cada 4 h"
-        - option "a cada 6 h"
-        - option "a cada 8 h"
-        - option "a cada 12 h"
-        - option "a cada 24 h"
-      - paragraph: Uma execução completa demorou <duration>, por isso é executada no máximo a cada 5 min.
-      - text: Chave de API (opcional)
-      - textbox "Chave de API (opcional)":
-        - /placeholder: sk-... ou env:ZING_API_KEY
-      - button "Mostrar chave"
-      - paragraph: O histórico nunca guarda a chave. Deixe vazio para um modelo local ou auto-hospedado.
-      - button "Ativar monitor"
-    - button "Executar agora"
-    - button "Eliminar"
-  - paragraph: "Tudo é executado localmente. A chave API é guardada encriptada, apenas na base de dados local em ~/.zing nesta máquina; nunca aparece na lista de monitores nem é enviada ao navegador. A chave mestra que a desencripta nunca é escrita no disco: guarda-a você e introduz-a após cada reinício."
+  - tablist "Vistas de monitores":
+    - tab "Configurar" [selected]
+    - tab "Em andamento"
+  - tabpanel "Configurar":
+    - text: Ainda sem chave mestra É criada quando guarda a primeira chave API.
+    - button "Criar agora"
+    - heading "Monitores configurados 1 monitor" [level=2]
+    - article "gpt-4o":
+      - heading "gpt-4o" [level=3]
+      - text: Requer configuração
+      - switch "Requer configuração" [disabled]
+      - emphasis: Requer configuração
+      - text: http://127.0.0.1:9099/v1
+      - term: Modelo pedido
+      - definition:
+        - code: gpt-4o
+      - term: Conjunto de testes
+      - definition:
+        - code: standard
+      - term: Protocolo
+      - definition:
+        - code: openai
+        - text: · detectado automaticamente
+      - term: Requisições da sonda de desempenho
+      - definition: Streaming
+      - term: Intervalo de verificação
+      - definition: Não definido
+      - term: Chave de API
+      - definition:
+        - text: Nenhuma
+        - button "Substituir"
+      - term: Limite de alerta
+      - definition:
+        - combobox "Limite de alerta — gpt-4o":
+          - option "Baixo ou superior"
+          - option "Médio ou superior" [selected]
+          - option "Apenas alto"
+      - term: Webhooks
+      - definition:
+        - text: Sem webhooks
+        - button "Editar"
+      - term: Idioma dos alertas
+      - definition:
+        - combobox "Idioma dos alertas — gpt-4o":
+          - option "English" [selected]
+          - option "中文"
+          - option "Français"
+          - option "Español"
+          - option "Português"
+          - option "Italiano"
+          - option "Deutsch"
+      - term: Perfil de conhecimento
+      - definition:
+        - code: openai/gpt-4o
+        - text: fixado 01/10/2026, 12:00
+      - 'link "Da execução #1 →"':
+        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+      - form "Conclua a configuração para ativá-lo":
+        - heading "Conclua a configuração para ativá-lo" [level=4]
+        - paragraph: A configuração vem da execução no Histórico. Defina com que frequência ele roda e ative-o.
+        - text: Intervalo de verificação
+        - combobox "Intervalo de verificação":
+          - option "Escolher…" [selected]
+          - option "a cada 5 min"
+          - option "a cada 10 min"
+          - option "a cada 15 min"
+          - option "a cada 20 min"
+          - option "a cada 30 min"
+          - option "a cada 1 h"
+          - option "a cada 2 h"
+          - option "a cada 3 h"
+          - option "a cada 4 h"
+          - option "a cada 6 h"
+          - option "a cada 8 h"
+          - option "a cada 12 h"
+          - option "a cada 24 h"
+        - paragraph: Uma execução completa demorou <duration>, por isso é executada no máximo a cada 5 min.
+        - text: Chave de API (opcional)
+        - textbox "Chave de API (opcional)":
+          - /placeholder: sk-... ou env:ZING_API_KEY
+        - button "Mostrar chave"
+        - paragraph: O histórico nunca guarda a chave. Deixe vazio para um modelo local ou auto-hospedado.
+        - button "Ativar monitor"
+      - button "Executar agora"
+      - button "Eliminar"
+    - paragraph: "Tudo é executado localmente. A chave API é guardada encriptada, apenas na base de dados local em ~/.zing nesta máquina; nunca aparece na lista de monitores nem é enviada ao navegador. A chave mestra que a desencripta nunca é escrita no disco: guarda-a você e introduz-a após cada reinício."
 - contentinfo:
   - paragraph:
     - text: zing · verificação de intermediários · os monitores são agendados em segundo plano pelo processo

@@ -130,9 +130,8 @@
 
     <div class="tabs" role="tablist" aria-label="监控视图" data-en-aria-label="Monitor views">
       <button type="button" role="tab" id="tab-configure" aria-selected="true" aria-controls="panel-configure" tabindex="0"><span class="pico" data-icon="bell"></span><span data-en="Configure">配置</span></button>
-      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1" aria-disabled="true" aria-describedby="running-none"><span class="pico" data-icon="play"></span><span data-en="Running">运行中</span> <span class="count" id="run-count"></span></button>
+      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">运行中</span> <span class="count" id="run-count"></span></button>
     </div>
-    <span id="running-none" hidden data-en="Nothing is running">当前没有运行中的监控</span>
 
     <section role="tabpanel" id="panel-configure" aria-labelledby="tab-configure" tabindex="0">
     <!-- the master key that encrypts the stored API keys -->
@@ -146,6 +145,7 @@
 
     <section role="tabpanel" id="panel-running" aria-labelledby="tab-running" tabindex="0" hidden>
       <p class="jh" data-en="Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.">正在进行的监控运行。同一中转站的运行会等它的其他检测结束后再开始，结果不会互相干扰。</p>
+      <p class="jempty" id="jobs-empty" data-en="Nothing is running">当前没有运行中的监控</p>
       <ul class="jlist" id="jobs"></ul>
     </section>
   </main>
@@ -964,14 +964,12 @@
     focusSetup = true;
     render();
   });
-  var runTab = $("tab-running");
   window.ZingJobs.init($("jobs"), {
     kind: "monitor",
     onChange: function (active, rows) {
-      tabs.setDisabled("running", rows === 0);
-      // "Nothing is running" explains the disabled tab; the count names the active runs
-      if (rows === 0) runTab.setAttribute("aria-describedby", "running-none");
-      else runTab.removeAttribute("aria-describedby");
+      // the tab stays selectable while nothing runs: the panel says so;
+      // the count names the active runs
+      $("jobs-empty").hidden = rows > 0;
       $("run-count").textContent = active > 0 ? String(active) : "";
     },
     // a finished run changes the monitor's last-run status

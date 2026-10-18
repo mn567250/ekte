@@ -40,8 +40,7 @@
 - main:
   - tablist "Audits":
     - tab "Neues Audit" [selected]
-    - tab "Läuft" [disabled]
-  - text: Es laufen keine Audits
+    - tab "Läuft"
   - tabpanel "Neues Audit":
     - list "Audit-Fortschritt":
       - listitem: Konfigurieren
