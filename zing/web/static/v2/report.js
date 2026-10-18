@@ -207,7 +207,33 @@
   function scoreC(v) {
     return v == null ? "grey" : v >= 85 ? "good" : v >= 70 ? "warn" : "bad";
   }
+  // The headline names what drove the risk (verdict.drivers, scoring order):
+  // the claimed-model sentences only when model identity is among them, and a
+  // scoped sentence when model identity was not verified. Reports from before
+  // drivers were recorded fall back to the risk level alone.
   function head(v) {
+    var drivers = v.drivers;
+    if (Array.isArray(drivers)) {
+      var dims = drivers.map(function (k) {
+        var n = dimName(k);
+        return n ? n[0] : k;
+      }).join(T("、", ", "));
+      var identity = drivers.indexOf("model_identity") >= 0;
+      var checked = (v.checked || []).indexOf("model_identity") >= 0;
+      var scoped = {
+        high: drivers.length && !identity
+          ? ["它没有兑现所宣传的内容：{dims}", "It does not deliver what it advertises: {dims}"] : null,
+        medium: drivers.length && !identity
+          ? ["部分检查与宣传不符：{dims} —— 建议核实", "Some checks do not match what is advertised: {dims} — verify"] : null,
+        clean: !checked
+          ? ["已检查的维度未发现问题（未核实模型身份）", "No problems in the checked dimensions (model identity not verified)"] : null,
+        low: !checked
+          ? ["已检查的维度存在少量小问题（未核实模型身份）", "A few minor issues in the checked dimensions (model identity not verified)"] : null,
+      }[v.risk_level];
+      if (scoped) return Tf(scoped[0], scoped[1], { dims: dims });
+    } else if (v.risk_level === "high") {
+      return T("它没有兑现所宣传的内容", "It does not deliver what it advertises");
+    }
     var m = {
       clean: ["行为与所声称的模型一致", "Behavior is consistent with the claimed model"],
       low: ["基本一致，存在少量小问题", "Mostly consistent, with a few minor issues"],

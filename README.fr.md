@@ -371,9 +371,9 @@ enregistrement de requête compte à partir de ce moment.
 
 ## Ce qui est vérifié
 
-zing note dix dimensions. Les trois **dimensions cœur** — identité du modèle,
-fenêtre de contexte et capacités annoncées — révèlent le plus directement une
-tromperie sur la marchandise et pèsent le plus lourd. Les noms sont ceux de
+zing note dix dimensions. Les quatre **dimensions cœur** — identité du modèle,
+fenêtre de contexte, capacités annoncées et facturation & consommation — révèlent
+le plus directement une tromperie sur la marchandise. Les noms sont ceux de
 l'interface web et des rapports.
 
 | Dimension | Id | Poids | Ce qu'elle détecte |
@@ -409,7 +409,7 @@ En bref (les détails sont dans la [Méthodologie](docs/METHODOLOGY.fr.md#commen
 
 | Risque | Libellé dans l'interface | Quand |
 |---|---|---|
-| `inconclusive` | Signal insuffisant | Aucune dimension cœur n'a produit de résultat exploitable (relais injoignable, modèle absent de la base de connaissances, ou exécution `custom` sans dimension cœur) |
+| `inconclusive` | Signal insuffisant | Rien d'exploitable : identité du modèle, fenêtre de contexte et capacités annoncées ont tourné sans résultat exploitable (relais injoignable, modèle absent de la base de connaissances), ou aucune dimension hormis la connectivité n'en a produit |
 | `high` | Tromperie sur la marchandise | Un constat CRITIQUE, un constat ÉLEVÉ/CRITIQUE dans une dimension cœur, ou au moins deux constats ÉLEVÉS |
 | `medium` | Écarts détectés | Exactement un constat ÉLEVÉ hors des dimensions cœur, ou un constat MOYEN dans une dimension cœur |
 | `low` | Globalement fiable | Tout autre constat MOYEN |
@@ -465,8 +465,8 @@ page d'audit, la console et les surveillances.
 
 Le **score global est la moyenne pondérée des seules dimensions choisies** ; les
 dimensions laissées de côté apparaissent comme « non sélectionnées ». Le verdict
-de risque exige au moins une dimension cœur (identité du modèle, fenêtre de
-contexte, capacités annoncées) : sans elle, il est *non concluant*.
+de risque porte lui aussi sur les dimensions choisies : sans l'identité du
+modèle, il ne couvre qu'elles, pas le modèle réellement servi, et le dit.
 
 ## Performance
 

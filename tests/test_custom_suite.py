@@ -142,15 +142,18 @@ def test_overall_score_uses_only_the_selected_dimensions():
     assert reasons["protocol"] != "Not selected in this custom run."
 
 
-def test_verdict_without_a_core_dimension_is_inconclusive():
+def test_verdict_without_model_identity_is_judged_on_the_selection():
+    # A custom run is judged on the dimensions it checked, and says it does
+    # not speak to which model is served.
     dets = [_det(Dimension.PROTOCOL, 100.0)]
     dims = build_dimensions(dets, None, selected=["protocol"])
     v = build_verdict(dets, dims, profile_matched=True, used_judge=False, used_baseline=False,
                       selected=["protocol"])
-    assert v.risk_level == RiskLevel.INCONCLUSIVE
+    assert v.risk_level == RiskLevel.CLEAN and v.checked == ["protocol"]
     assert v.overall_score == 100.0
+    assert v.headline.startswith("No problems found in the checked dimensions")
     assert "Custom run: 1 of 1 selected dimensions scored." in v.summary
-    assert "No core dimension" in v.summary
+    assert "Model identity was not selected" in v.summary
 
 
 async def test_custom_audit_reports_its_selection(monkeypatch):

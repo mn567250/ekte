@@ -351,9 +351,9 @@ started (UTC); the `start_ms` of every request record counts from it.
 
 ## What it checks
 
-zing scores ten dimensions. The three **core dimensions** — model identity,
-context window and capability claims — most directly reveal a bait-and-switch
-and carry the most weight. The names are the ones the web UI and reports use.
+zing scores ten dimensions. The four **core dimensions** — model identity,
+context window, capability claims and billing & usage — most directly reveal a
+bait-and-switch. The names are the ones the web UI and reports use.
 
 | Dimension | Id | Weight | What it catches |
 |---|---|---|---|
@@ -388,7 +388,7 @@ In short (the [Methodology](docs/METHODOLOGY.md#how-zing-scores) has the details
 
 | Risk | Label in the UI | When |
 |---|---|---|
-| `inconclusive` | Insufficient signal | No core dimension produced a usable result (relay unreachable, model not in the knowledge base, or a `custom` run without a core dimension) |
+| `inconclusive` | Insufficient signal | Nothing usable to judge by: none of model identity, context window and capability claims produced a usable result when they ran (relay unreachable, model not in the knowledge base), or no dimension but connectivity did |
 | `high` | Bait-and-switch | A CRITICAL finding, a HIGH/CRITICAL finding in a core dimension, or two or more HIGH findings |
 | `medium` | Deviations found | Exactly one HIGH finding outside the core dimensions, or a MEDIUM finding in a core dimension |
 | `low` | Mostly trustworthy | Any other MEDIUM finding |
@@ -401,6 +401,10 @@ under load (`reliability.*`) — lower their dimension's score but do not raise 
 substitution risk either; the summary lists them as advisories. Integrity
 tampering and an echoed API key still do. Plain HTTP to this machine or a private
 network is only a low-severity warning, since the key never leaves it.
+The headline names the dimensions that set the risk: it speaks of the claimed
+model only when model identity is among them (a truncated context window reads
+"does not deliver what it advertises: Context window"), and a verdict without a
+model-identity result says that model identity was not verified.
 The verdict's **confidence** (low / medium / high) grows with the number of core
 dimensions that produced a result, a baseline and the LLM judge; a model id that
 only matched a knowledge-base profile fuzzily caps it at low. A detector that got
@@ -440,9 +444,9 @@ UI, the `custom` suite button opens the same choice (**Dimensions to run**) on
 the audit page, the console and the monitors.
 
 The **overall score is the weighted mean of the selected dimensions only**;
-dimensions you left out are reported as "not selected". The risk verdict needs
-at least one core dimension (model identity, context window, capability claims):
-without one, it is *inconclusive*.
+dimensions you left out are reported as "not selected". The risk verdict is
+judged on the selected dimensions too: without model identity it covers only
+them, not which model is served, and says so.
 
 ## Performance
 

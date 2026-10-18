@@ -131,7 +131,21 @@
   "Relay processing times come from the relay's own response headers and are unverified.": "中转站自报的处理时间来自其响应头，未经核实。",
   "Some requests were served fully or partly from a cache and are left out of the statistics.": "部分请求全部或部分由缓存返回，已从统计中排除。",
   "A relay that caches unique prompts may be serving stored answers; compare with a trusted baseline.": "对唯一提示词也做缓存的中转站可能在返回存储的答案；请与可信基线对照。",
-  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "请结合模型身份的检测结果一并判断；仅凭速度不能证明模型被替换。"
+  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "请结合模型身份的检测结果一并判断；仅凭速度不能证明模型被替换。",
+  "Strong evidence the relay does not deliver what it advertises: {1}.": "有强证据表明该中转站没有兑现所宣传的内容：{1}。",
+  "Some checks diverge from what is advertised: {1} — investigate.": "部分检查与宣传不符：{1} —— 建议核实。",
+  "No problems found in the checked dimensions; model identity was not verified.": "已检查的维度未发现问题；未核实模型身份。",
+  "Minor concerns in the checked dimensions; model identity was not verified.": "已检查的维度存在少量疑点；未核实模型身份。",
+  "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.": "未选择模型身份，因此本结论只涵盖所选维度，不说明实际提供的是哪个模型。",
+  "Connectivity": "连通性",
+  "Protocol compliance": "协议兼容",
+  "Context window": "上下文窗口",
+  "Model identity": "模型身份",
+  "Capability claims": "能力声明",
+  "Billing & usage": "计费用量",
+  "Concurrency reliability": "并发可靠",
+  "Transport security": "传输安全",
+  "Performance": "性能"
  },
  "findings": {
   "connectivity.models": [

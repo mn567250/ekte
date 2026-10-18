@@ -128,6 +128,39 @@ def test_report_clean_and_translated_summary(tmp_path):
     assert "Consistent (likely genuine)" in html
 
 
+
+def _headline(html: str) -> str:
+    return htmllib.unescape(re.search(r'<h2 id="zr-h-\d+">(.*?)</h2>', html).group(1))
+
+
+@needs_node
+@pytest.mark.parametrize(("lang", "want"), [
+    ("en", "It does not deliver what it advertises: Context window, Billing & usage"),
+    ("de", "Es liefert nicht, was es bewirbt: Kontextfenster, Abrechnung & Verbrauch"),
+    ("zh", "它没有兑现所宣传的内容：上下文窗口、计费用量"),
+])
+def test_headline_names_the_dimensions_that_drove_the_risk(tmp_path, lang, want):
+    # Model identity passed; the risk comes from the context window and billing.
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    report["verdict"].update(drivers=["context_window", "billing"],
+                             checked=["context_window", "model_identity", "billing"])
+    assert _headline(_render(tmp_path, lang, report)["html"]) == want
+
+
+@needs_node
+def test_headline_by_drivers_and_checked_dimensions(tmp_path):
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    report["verdict"].update(drivers=["model_identity"], checked=["model_identity"])
+    assert _headline(_render(tmp_path, "en", report)["html"]) == "It is not serving the model it claims"
+    report["verdict"].update(risk_level="clean", drivers=[], checked=["streaming"])
+    assert _headline(_render(tmp_path, "en", report)["html"]) == (
+        "No problems in the checked dimensions (model identity not verified)")
+    # a report from before drivers were recorded does not name the model
+    del report["verdict"]["drivers"], report["verdict"]["checked"]
+    report["verdict"]["risk_level"] = "high"
+    assert _headline(_render(tmp_path, "en", report)["html"]) == "It does not deliver what it advertises"
+
+
 _DOWNLOAD_JS = r"""
 const path = require("path");
 const [dir, reportJson] = process.argv.slice(1);

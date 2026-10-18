@@ -474,7 +474,17 @@
   "End-to-end speed p50": "Vitesse de bout en bout p50",
   "target better": "cible meilleure",
   "target worse": "cible moins bonne",
-  "(within 2% counts as even)": "(moins de 2 % d'écart compte comme égal)"
+  "(within 2% counts as even)": "(moins de 2 % d'écart compte comme égal)",
+  "Strong evidence the relay does not deliver what it advertises: {1}.": "Fortes indications que le relais ne fournit pas ce qu'il annonce : {1}.",
+  "Some checks diverge from what is advertised: {1} — investigate.": "Certaines vérifications s'écartent de ce qui est annoncé : {1} — à examiner.",
+  "No problems found in the checked dimensions; model identity was not verified.": "Aucun problème dans les dimensions vérifiées ; l'identité du modèle n'a pas été vérifiée.",
+  "Minor concerns in the checked dimensions; model identity was not verified.": "Quelques réserves dans les dimensions vérifiées ; l'identité du modèle n'a pas été vérifiée.",
+  "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.": "L'identité du modèle n'était pas sélectionnée : ce verdict ne couvre que les dimensions sélectionnées, pas le modèle réellement servi.",
+  "It does not deliver what it advertises: {dims}": "Il ne fournit pas ce qu'il annonce : {dims}",
+  "Some checks do not match what is advertised: {dims} — verify": "Certaines vérifications ne correspondent pas à ce qui est annoncé : {dims} — à vérifier",
+  "No problems in the checked dimensions (model identity not verified)": "Aucun problème dans les dimensions vérifiées (identité du modèle non vérifiée)",
+  "A few minor issues in the checked dimensions (model identity not verified)": "Quelques problèmes mineurs dans les dimensions vérifiées (identité du modèle non vérifiée)",
+  "It does not deliver what it advertises": "Il ne fournit pas ce qu'il annonce"
  },
  "findings": {
   "connectivity.models": [

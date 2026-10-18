@@ -446,7 +446,10 @@ function evText(e){if(!e||typeof e!=="object")return "";const keys=Object.keys(e
 function fmt(x){if(x==null)return "null";if(typeof x==="object")return JSON.stringify(x).slice(0,200);return String(x).slice(0,240);}
 function sevRank(s){return {critical:5,high:4,medium:3,low:2,info:1}[s]||0;}
 function riskGlyph(r){return ico(r==="high"?"x":r==="clean"?"check":r==="inconclusive"?"info":"warning");}
-function zhHead(v){const m=!ZING_LANG.isZh()
+function zhHead(v){
+  // reports that record verdict.drivers carry a headline naming what drove the risk
+  if(Array.isArray(v.drivers)&&v.headline)return srv(v.headline).replace(/\s*[(（][^()（）]*[)）]$/,"");
+  const m=!ZING_LANG.isZh()
   ?{clean:"Behavior is consistent with the claimed model",low:"Mostly consistent, with a few minor issues",medium:"Some behavior does not match the claimed model — verify",high:"It is not serving the model it claims",inconclusive:"Insufficient signal to decide (connectivity or coverage too low)"}
   :{clean:"行为与所声称的模型一致",low:"基本一致，存在少量小问题",medium:"部分行为与所声称的模型不符 —— 建议核实",high:"它给的并不是你所声称的模型",inconclusive:"信号不足，无法判定（连通或覆盖不够）"};
   const h=m[v.risk_level];return h?T(h,h):srv(v.headline)||"";}

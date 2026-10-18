@@ -1,9 +1,10 @@
 """Turn detector results into dimension scores and a headline verdict.
 
 The verdict deliberately uses cautious, evidence-first language: zing reports
-*divergence and risk*, never a definitive fraud accusation. The dimensions that
-speak to "货不对板" (model identity, real context window, capability claims) carry
-the most weight.
+*divergence and risk*, never a definitive fraud accusation. It is judged on the
+dimensions that actually ran (a custom run checks only its selection), and the
+dimensions that break what the relay advertises (model identity, real context
+window, capability claims, billed usage) decide the risk.
 """
 
 from __future__ import annotations
@@ -39,12 +40,19 @@ DIMENSION_WEIGHTS: dict[Dimension, float] = {
     Dimension.PERFORMANCE: 6.0,
 }
 
-# Dimensions whose failure most directly indicates 货不对板.
-_CORE_DIMENSIONS = (
+# Dimensions judged against the claimed model's knowledge-base profile: when
+# one of them ran, the verdict needs one of them to produce a usable result,
+# and an unmatched or fuzzy profile caps the confidence.
+_PROFILE_DIMENSIONS = (
     Dimension.MODEL_IDENTITY,
     Dimension.CONTEXT_WINDOW,
     Dimension.CAPABILITY,
 )
+
+# Dimensions whose failure means the relay does not deliver what it advertises
+# (货不对板): a different model, a smaller context window, missing capabilities
+# or inflated billing. One HIGH finding here makes the risk HIGH.
+_CORE_DIMENSIONS = (*_PROFILE_DIMENSIONS, Dimension.BILLING)
 
 # Pure transport/reachability dimensions. A HIGH here (relay down, throttled,
 # transient 5xx) means we could not assess the model — NOT that the relay serves a
@@ -69,7 +77,7 @@ ADVISORY_CHECKS = frozenset({
 # against: the verdict confidence is capped at "low".
 _WEAK_MATCHES = frozenset({"fuzzy"})
 
-# Statuses that count as a core dimension having produced a usable substitution signal.
+# Statuses that count as a dimension having produced a usable result.
 _USABLE_STATUSES = (Status.PASS, Status.WARN, Status.FAIL)
 
 _SEVERITY_ORDER = [
@@ -231,9 +239,10 @@ def build_verdict(
     selected: list[str] | None = None,
     match_confidence: str | None = None,
 ) -> Verdict:
-    """The headline verdict. ``match_confidence`` is how the claimed model
-    matched its knowledge-base profile (``exact``/``alias``/``fuzzy``…); a
-    fuzzy match caps the confidence at "low"."""
+    """The headline verdict, judged on the dimensions that ran.
+    ``match_confidence`` is how the claimed model matched its knowledge-base
+    profile (``exact``/``alias``/``fuzzy``…); a fuzzy match caps the
+    confidence at "low"."""
     score = overall_score(dimensions)
     pairs = _all_findings(detectors)
     weak_match = profile_matched and match_confidence in _WEAK_MATCHES
@@ -250,22 +259,24 @@ def build_verdict(
         if d.dimension not in infra_dims and is_advisory(f)
         and f.severity in (Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL)
     ]
-    critical = [f for _, f in substantive if f.severity == Severity.CRITICAL]
-    high = [f for _, f in substantive if f.severity == Severity.HIGH]
-    medium = [f for _, f in substantive if f.severity == Severity.MEDIUM]
+    critical = [(d, f) for d, f in substantive if f.severity == Severity.CRITICAL]
+    high = [(d, f) for d, f in substantive if f.severity == Severity.HIGH]
+    medium = [(d, f) for d, f in substantive if f.severity == Severity.MEDIUM]
 
-    # Findings landing in a core (substitution-revealing) dimension weigh more.
+    # Findings landing in a core dimension weigh more.
     core_dims = set(_CORE_DIMENSIONS)
-    core_high = [f for d, f in pairs if d.dimension in core_dims and f.severity in (Severity.HIGH, Severity.CRITICAL)]
-    core_medium = [f for d, f in pairs if d.dimension in core_dims and f.severity == Severity.MEDIUM]
-    # Core coverage measured over distinct DIMENSIONS that produced a usable signal,
-    # not over detector count — two MODEL_IDENTITY detectors must not look like full
-    # coverage while CONTEXT_WINDOW/CAPABILITY never ran.
-    core_dims_ran = {
+    core_high = [(d, f) for d, f in high if d.dimension in core_dims]
+    core_medium = [(d, f) for d, f in medium if d.dimension in core_dims]
+
+    # Coverage is measured over distinct DIMENSIONS, not detector count — two
+    # MODEL_IDENTITY detectors must not look like broad coverage.
+    attempted = {d.dimension for d in detectors if d.dimension not in infra_dims}
+    checked = {
         d.dimension
         for d in detectors
-        if d.dimension in core_dims and d.status in _USABLE_STATUSES
+        if d.dimension not in infra_dims and d.status in _USABLE_STATUSES
     }
+    profile_dims = set(_PROFILE_DIMENSIONS)
     judge_effective = any(
         d.id == "quality_judge" and d.status in _USABLE_STATUSES for d in detectors
     )
@@ -273,28 +284,37 @@ def build_verdict(
     # --- risk classification: driven by FINDING SEVERITY, not score alone --- #
     # zing only reaches HIGH on hard, high-severity evidence — a single soft
     # signal or a merely-low score never escalates to HIGH on its own.
-    if not core_dims_ran:
-        # No core dimension produced a usable substitution signal (relay unreachable,
-        # unprofiled, or only peripheral checks ran) — we cannot judge the claim.
+    # When the profile-backed dimensions ran, they decide whether the claim can
+    # be judged at all (relay unreachable, model unprofiled); a custom run
+    # without them is judged on whatever it checked.
+    judged = bool(checked & profile_dims) if attempted & profile_dims else bool(checked)
+    if not judged:
         # Peripheral findings are still carried in the report as advisories.
         risk = RiskLevel.INCONCLUSIVE
+        causes: list[tuple[DetectorResult, Finding]] = []
     elif critical or core_high or len(high) >= 2:
         risk = RiskLevel.HIGH
+        causes = critical + core_high or high
     elif high or core_medium:  # exactly one high-severity finding outside the core dimensions
         risk = RiskLevel.MEDIUM
+        causes = high + core_medium
     elif medium:
         risk = RiskLevel.LOW
+        causes = medium
     else:
         risk = RiskLevel.CLEAN
+        causes = []
+    drivers = _in_order({d.dimension for d, _ in causes})
 
     # --- confidence -------------------------------------------------------- #
-    n_core_total = len(core_dims)
-    if not profile_matched or weak_match:
+    core_attempted = attempted & core_dims
+    core_checked = checked & core_dims
+    if attempted & profile_dims and (not profile_matched or weak_match):
         # Unprofiled, or a fuzzy match whose profile may not be the model's.
         confidence = "low"
-    elif used_baseline and len(core_dims_ran) == n_core_total:
+    elif used_baseline and core_checked and core_checked == core_attempted:
         confidence = "high"
-    elif len(core_dims_ran) >= 2:
+    elif len(core_checked) >= 2 or (not core_attempted and len(checked) >= 2):
         confidence = "medium"
     else:
         confidence = "low"
@@ -303,16 +323,20 @@ def build_verdict(
     if judge_effective and confidence == "medium":
         confidence = "high"
 
-    headline = _headline(risk, confidence)
+    identity_checked = Dimension.MODEL_IDENTITY in checked
+    headline = _headline(risk, confidence, drivers, identity_checked=identity_checked)
+    # The knowledge-base caveats only matter when a profile-backed dimension ran.
+    profile_used = bool(attempted & profile_dims)
     summary = _summary(
-        risk, score, critical, high, medium, profile_matched, used_baseline,
+        risk, score, [f for _, f in critical], [f for _, f in high], [f for _, f in medium],
+        profile_matched or not profile_used, used_baseline,
         scored=sum(1 for d in dimensions if d.score is not None),
         selected=selected,
-        weak_match=weak_match,
+        weak_match=weak_match and profile_used,
         advisories=bool(advisories),
     )
     # Substitution findings first; transport/reliability advisories after them.
-    key = _titles(critical + high + medium + advisories)[:6]
+    key = _titles([f for _, f in critical + high + medium] + advisories)[:6]
 
     return Verdict(
         overall_score=score,
@@ -322,18 +346,61 @@ def build_verdict(
         confidence=confidence,
         summary=summary,
         key_findings=key,
+        drivers=[d.value for d in drivers],
+        checked=[d.value for d in _in_order(checked)],
     )
 
 
-def _headline(risk: RiskLevel, confidence: str) -> str:
+def _in_order(dims: set[Dimension]) -> list[Dimension]:
+    """``dims`` in scoring order (``DIMENSION_WEIGHTS``)."""
+    return [d for d in DIMENSION_WEIGHTS if d in dims]
+
+
+# English names of the dimensions, as the reports show them.
+DIMENSION_NAMES: dict[Dimension, str] = {
+    Dimension.CONNECTIVITY: "Connectivity",
+    Dimension.PROTOCOL: "Protocol compliance",
+    Dimension.CONTEXT_WINDOW: "Context window",
+    Dimension.MODEL_IDENTITY: "Model identity",
+    Dimension.CAPABILITY: "Capability claims",
+    Dimension.STREAMING: "Streaming authenticity",
+    Dimension.BILLING: "Billing & usage",
+    Dimension.RELIABILITY: "Concurrency reliability",
+    Dimension.SECURITY: "Transport security",
+    Dimension.PERFORMANCE: "Performance",
+}
+
+
+def _headline(
+    risk: RiskLevel,
+    confidence: str,
+    drivers: list[Dimension] | None = None,
+    *,
+    identity_checked: bool = True,
+) -> str:
+    """The headline names what drove the risk: the claimed-model sentences
+    only when model identity is among the drivers (or none are known)."""
+    drivers = drivers or []
+    if risk in (RiskLevel.HIGH, RiskLevel.MEDIUM):
+        scoped = bool(drivers) and Dimension.MODEL_IDENTITY not in drivers
+    else:
+        scoped = not identity_checked and risk != RiskLevel.INCONCLUSIVE
+    # (risk, scoped): "scoped" sentences speak of the checked dimensions
+    # (``{1}``: the drivers), the others of the claimed model.
     table = {
-        RiskLevel.CLEAN: "Behavior is consistent with the claimed model.",
-        RiskLevel.LOW: "Mostly consistent with the claimed model; minor concerns.",
-        RiskLevel.MEDIUM: "Some behavior diverges from the claimed model — investigate.",
-        RiskLevel.HIGH: "Strong evidence the relay does not deliver the claimed model as advertised.",
-        RiskLevel.INCONCLUSIVE: "Not enough signal to judge — connectivity or coverage was insufficient.",
+        (RiskLevel.CLEAN, False): "Behavior is consistent with the claimed model.",
+        (RiskLevel.CLEAN, True): "No problems found in the checked dimensions; model identity was not verified.",
+        (RiskLevel.LOW, False): "Mostly consistent with the claimed model; minor concerns.",
+        (RiskLevel.LOW, True): "Minor concerns in the checked dimensions; model identity was not verified.",
+        (RiskLevel.MEDIUM, False): "Some behavior diverges from the claimed model — investigate.",
+        (RiskLevel.MEDIUM, True): "Some checks diverge from what is advertised: {1} — investigate.",
+        (RiskLevel.HIGH, False): "Strong evidence the relay does not deliver the claimed model as advertised.",
+        (RiskLevel.HIGH, True): "Strong evidence the relay does not deliver what it advertises: {1}.",
+        (RiskLevel.INCONCLUSIVE, False): "Not enough signal to judge — connectivity or coverage was insufficient.",
     }
-    return f"{table[risk]} (confidence: {confidence})"
+    names = ", ".join(DIMENSION_NAMES[d] for d in drivers)
+    sentence = table[(risk, scoped)].replace("{1}", names)
+    return f"{sentence} (confidence: {confidence})"
 
 
 def _summary(
@@ -355,10 +422,10 @@ def _summary(
         bits.append(f"Overall health score {score}/100.")
     if selected is not None:
         bits.append(f"Custom run: {scored} of {len(selected)} selected dimensions scored.")
-        if not set(selected) & {d.value for d in _CORE_DIMENSIONS}:
+        if Dimension.MODEL_IDENTITY.value not in selected:
             bits.append(
-                "No core dimension (model identity, context window, capability) was "
-                "selected, so the substitution risk cannot be judged."
+                "Model identity was not selected, so this verdict covers only the "
+                "selected dimensions, not which model is served."
             )
     counts = []
     if critical:

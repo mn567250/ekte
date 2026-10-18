@@ -303,3 +303,88 @@ def test_verdict_integrity_and_key_echo_still_escalate():
             detectors, dims, profile_matched=True, used_judge=False, used_baseline=False
         )
         assert verdict.risk_level == risk, finding.id
+
+
+# --------------------------------------------------------------------------- #
+# the verdict follows the dimensions that ran and drove the risk
+# --------------------------------------------------------------------------- #
+def _high(dim: Dimension, check: str, title: str) -> DetectorResult:
+    finding = Finding(id=check, title=title, status=Status.FAIL, severity=Severity.HIGH)
+    return _result(dim, score=25.0, status=Status.FAIL, findings=[finding])
+
+
+def test_verdict_context_window_high_does_not_blame_the_model():
+    # Identity passes, the context window is cut: HIGH, driven by the context
+    # window, with a headline that names it and leaves the model alone.
+    detectors = [
+        _result(Dimension.MODEL_IDENTITY, score=100.0, status=Status.PASS, findings=[_info("identity")]),
+        _high(Dimension.CONTEXT_WINDOW, "context_window.rejected", "Endpoint rejects context below its advertised window"),
+        _result(Dimension.CAPABILITY, score=93.0, status=Status.PASS, findings=[_info("capability")]),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=False
+    )
+    assert verdict.risk_level == RiskLevel.HIGH
+    assert verdict.drivers == ["context_window"]
+    assert verdict.checked == ["context_window", "model_identity", "capability"]
+    assert verdict.headline == (
+        "Strong evidence the relay does not deliver what it advertises: Context window. "
+        "(confidence: medium)"
+    )
+
+
+def test_verdict_identity_high_keeps_the_claimed_model_headline():
+    detectors = [
+        _high(Dimension.MODEL_IDENTITY, "identity.downgrade", "Likely model downgrade"),
+        _high(Dimension.CONTEXT_WINDOW, "context_window.rejected", "Context cut"),
+    ]
+    dims = build_dimensions(detectors, reliability=None)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=False
+    )
+    assert verdict.drivers == ["context_window", "model_identity"]
+    assert verdict.headline.startswith("Strong evidence the relay does not deliver the claimed model")
+
+
+def test_verdict_custom_billing_run_is_judged():
+    # A custom run of billing alone: inflated usage is HIGH, not "insufficient
+    # signal", and the unmatched profile does not cap a profile-free run.
+    detectors = [_high(Dimension.BILLING, "billing.usage-inflation", "Usage inflated")]
+    dims = build_dimensions(detectors, reliability=None, selected=["billing"])
+    verdict = build_verdict(
+        detectors, dims, profile_matched=False, used_judge=False, used_baseline=False,
+        selected=["billing"],
+    )
+    assert verdict.risk_level == RiskLevel.HIGH
+    assert verdict.drivers == ["billing"]
+    assert "Billing & usage" in verdict.headline
+    assert "Model identity was not selected" in verdict.summary
+    assert "knowledge base" not in verdict.summary
+
+
+def test_verdict_custom_clean_run_without_identity_is_scoped():
+    detectors = [
+        _result(Dimension.STREAMING, score=100.0, status=Status.PASS, findings=[_info("streaming")]),
+        _result(Dimension.PROTOCOL, score=100.0, status=Status.PASS, findings=[_info("protocol")]),
+    ]
+    selected = ["streaming", "protocol"]
+    dims = build_dimensions(detectors, reliability=None, selected=selected)
+    verdict = build_verdict(
+        detectors, dims, profile_matched=False, used_judge=False, used_baseline=False,
+        selected=selected,
+    )
+    assert verdict.risk_level == RiskLevel.CLEAN
+    assert verdict.confidence == "medium"
+    assert verdict.headline.startswith("No problems found in the checked dimensions; model identity was not verified.")
+
+
+def test_verdict_custom_run_of_connectivity_only_is_inconclusive():
+    detectors = [_result(Dimension.CONNECTIVITY, score=100.0, status=Status.PASS, findings=[_info("conn")])]
+    dims = build_dimensions(detectors, reliability=None, selected=["connectivity"])
+    verdict = build_verdict(
+        detectors, dims, profile_matched=True, used_judge=False, used_baseline=False,
+        selected=["connectivity"],
+    )
+    assert verdict.risk_level == RiskLevel.INCONCLUSIVE
+    assert verdict.drivers == []

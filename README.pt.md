@@ -362,9 +362,9 @@ registo de pedido conta a partir desse momento.
 
 ## O que é verificado
 
-O zing pontua dez dimensões. As três **dimensões núcleo** — identidade do
-modelo, janela de contexto e capacidades declaradas — revelam mais diretamente um
-«gato por lebre» e são as que mais pesam. Os nomes são os da interface web e dos
+O zing pontua dez dimensões. As quatro **dimensões núcleo** — identidade do
+modelo, janela de contexto, capacidades declaradas e faturação e consumo —
+revelam mais diretamente um «gato por lebre». Os nomes são os da interface web e dos
 relatórios.
 
 | Dimensão | Id | Peso | O que deteta |
@@ -404,7 +404,7 @@ Em resumo (os detalhes estão na [Metodologia](docs/METHODOLOGY.pt.md#como-o-zin
 
 | Risco | Rótulo na interface | Quando |
 |---|---|---|
-| `inconclusive` | Sinal insuficiente | Nenhuma dimensão núcleo produziu um resultado utilizável (relay inacessível, modelo fora da base de conhecimento ou execução `custom` sem dimensão núcleo) |
+| `inconclusive` | Sinal insuficiente | Nada utilizável para julgar: identidade do modelo, janela de contexto e capacidades declaradas correram sem resultado utilizável (relay inacessível, modelo fora da base de conhecimento), ou nenhuma dimensão além da conectividade o produziu |
 | `high` | Gato por lebre | Uma constatação CRÍTICA, uma constatação ALTA/CRÍTICA numa dimensão núcleo, ou duas ou mais constatações ALTAS |
 | `medium` | Desvios detetados | Exatamente uma constatação ALTA fora das dimensões núcleo, ou uma constatação MÉDIA numa dimensão núcleo |
 | `low` | Globalmente fiável | Qualquer outra constatação MÉDIA |
@@ -458,9 +458,9 @@ de suite `custom` abre a mesma escolha (**Dimensões a executar**) na página de
 auditoria, na consola e nos monitores.
 
 A **pontuação global é a média ponderada apenas das dimensões escolhidas**; as
-que ficam de fora aparecem como «não selecionadas». O veredito de risco precisa
-de pelo menos uma dimensão núcleo (identidade do modelo, janela de contexto,
-capacidades declaradas): sem ela, é *inconclusivo*.
+que ficam de fora aparecem como «não selecionadas». O veredito de risco também
+se baseia nas dimensões escolhidas: sem a identidade do modelo cobre apenas
+essas, não qual modelo é servido, e indica-o.
 
 ## Desempenho
 
