@@ -196,7 +196,6 @@
 
   var COUNT = 700; // ms for a KPI figure to count up
   function count(items, show) {
-    var t0 = null;
     function paint(k) {
       // ease-out cubic: fast at first, settling on the value; whole-number
       // targets (run counts) stay whole on the way
@@ -206,15 +205,20 @@
         it.el.textContent = show(Math.round(it.to) === it.to && k < 1 ? Math.round(v) : v, it);
       });
     }
-    if (still() || !items.length || !window.requestAnimationFrame) return paint(1);
+    var host = items.length && items[0].el;
+    if (still() || !host || typeof host.animate !== "function") return paint(1);
+    // an empty Web Animation is the clock: it shows in document.getAnimations(),
+    // so whatever waits for the page's animations also waits for the count,
+    // and the final value lands the moment it ends
+    var clock = host.animate([], { duration: COUNT });
+    clock.finished.then(function () { paint(1); }, function () { /* replaced */ });
     paint(0);
-    function step(now) {
-      if (t0 == null) t0 = now;
-      var k = Math.min(1, (now - t0) / COUNT);
+    function step() {
       // a newer render replaced these elements: stop
-      if (!items[0].el.isConnected) return;
-      paint(k);
-      if (k < 1) window.requestAnimationFrame(step);
+      if (!host.isConnected) { clock.cancel(); return; }
+      if (clock.playState === "finished") return;
+      paint(Math.min(1, (clock.currentTime || 0) / COUNT));
+      window.requestAnimationFrame(step);
     }
     window.requestAnimationFrame(step);
   }
