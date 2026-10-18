@@ -6,6 +6,31 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Chart motion (web UI v2).** Charts move in when their data changes: lines
+  draw left to right with their p25–p75 band growing out of the median,
+  stacked bars fill bottom to top, the heat grid fills in a wave, and the live
+  performance chart pops in each new request. Nothing moves on a resize or a
+  language switch, under `prefers-reduced-motion`, or with the new header
+  switch set to "Motion off". CSS animations only, no dependency; the chart
+  markup at rest is unchanged.
+- **Running median in the performance chart.** A thin line per endpoint
+  (median of its last 5 successful, uncached requests) behind the request
+  dots, in the live view and in saved reports; also a data-table column.
+  Computed on the server (`zing/perf/trend.py`); stored reports and downloads
+  are unchanged (`GET /api/history/{id}?trend=1` adds it for display).
+- **Heat grid with time blocks (Analytics).** Peak hours and the errors grid
+  show weekdays across and the day upward (00:00 at the bottom) in blocks of
+  1, 2, 3, 4 or 6 hours (default 4), with square cells and a contribution-graph
+  colour scale in both themes. The API takes `block` with `bucket=dow_hour`;
+  each block's median comes from its raw runs.
+
+### Changed
+
+- Analytics API answers are cached in-process for up to 30 seconds and dropped
+  on every saved, deleted or cleared run.
+
 ## [0.20.2] — Correct verdicts for honest endpoints
 
 ### Fixed

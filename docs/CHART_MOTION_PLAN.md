@@ -1,6 +1,9 @@
 # Chart motion and heat grid: implementation plan
 
-Status: plan + prototype agreed; implementation not started.
+Status: implemented on this branch (work packages 1–4, backend and caching);
+see the CHANGELOG. Changes agreed after the prototype: the heat grid runs
+upward (00:00 at the bottom, 24:00 at the top) and its block size is a
+dropdown next to Metric and Relay; the running-median line has no toggle.
 Prototype: [`prototypes/chart-motion/index.html`](../prototypes/chart-motion/index.html)
 (open the file directly; rebuild with `python prototypes/chart-motion/build.py`).
 It runs the app's own, unchanged `zing.css`, `charts.css`, `charts.js`,
