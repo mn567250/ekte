@@ -28,6 +28,9 @@
  *   - patterns                 [regex, english template, {group: fn}] used by
  *                              ZING_LANG.server() to translate known backend
  *                              sentences (verdict summary and headline).
+ *   - titlePatterns            English result-title templates whose {1} is a
+ *                              subject ("Fingerprint divergence: {1}"; see
+ *                              zing.i18n.RESULT_TITLE_PATTERNS), for i18n.js.
  *   - add(code, strings, findings)   register a language at runtime.
  *   - has(code)                true when that language's data is loaded
  *                              (always for "en", the key language).
@@ -198,6 +201,7 @@
     strings: strings,
     findings: findings,
     patterns: P,
+    titlePatterns: DATA.title_patterns || [],
     add: add,
     has: has,
     merge: merge,

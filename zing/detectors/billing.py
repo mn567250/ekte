@@ -25,6 +25,13 @@ from zing.utils.tokenize import estimate_messages_tokens, estimate_tokens
 # The probe summarizes a fixed paragraph (~110 words, "billing.known_paragraph" in
 # zing/prompts/en.json) so the prompt size is stable across runs.
 
+# Finding titles spelled out (not built from the label), so every title the
+# detector can emit is a fixed string the locales translate.
+_UNDERCOUNT_TITLE = {
+    "prompt": "Reported prompt tokens well below estimate",
+    "completion": "Reported completion tokens well below estimate",
+}
+
 SCALE = DeductionScale(
     outcome("billing.request-failed", "no_response", None, Status.INCONCLUSIVE, Severity.LOW,
             label="No usable response to judge by."),
@@ -212,7 +219,7 @@ class BillingDetector(Detector):
                     SCALE.finding(
                         f"billing.usage-undercount-{label}",
                         "below_estimate",
-                        title=f"Reported {label} tokens well below estimate",
+                        title=_UNDERCOUNT_TITLE[label],
                         summary=(
                             f"Reported {label} tokens ({reported}) are far below the "
                             f"estimate (~{estimated}); not buyer-harmful but unusual."
