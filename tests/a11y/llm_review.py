@@ -153,8 +153,9 @@ Fields of a page record: "title" (document title), "lang" (html lang), \
 "headings" ([level, text], or [level, text, count] when the same heading occurs \
 count times), "links" ({name, href, context}: the accessible name, \
 the target and the text of the surrounding list item/paragraph), "controls" \
-({role, name, state, target}: buttons, tabs, switches and other widgets with \
-their accessible name; target is the id of the element they control), "fields" \
+({role, name, state, target, description}: buttons, tabs, switches and other \
+widgets with their accessible name; target is the id of the element they \
+control, description the text referenced by aria-describedby), "fields" \
 ({label, name_from, visible_label, placeholder, description, required, type}: \
 label is the accessible name, name_from says where it comes from ("label", \
 "aria-labelledby", "aria-label", "title", "placeholder" or "none"), \
@@ -183,7 +184,8 @@ apart. Do not report a link whose context makes the purpose clear.
 purpose of its section or field. Report empty, generic ("Section", "Untitled", \
 "Item 1"), misleading or duplicated headings that leave the user unable to tell \
 sections apart, and controls that share one name although they act on different \
-targets (count > 1 with several "targets") when nothing tells them apart. Short \
+targets (count > 1 with several "targets") when nothing tells them apart; a \
+"description" that differs between them tells them apart. Short \
 headings are fine if they are descriptive.
 - "9.1.3.3" Sensory characteristics. Report instructions that can ONLY be \
 followed by perceiving shape, colour, size, visual position or sound (e.g. \
@@ -366,6 +368,7 @@ EXTRACT_JS = r"""
     if (c.disabled) st.push('disabled');
     return { role: c.getAttribute('role') || (c.tagName === 'INPUT' ? c.type : c.tagName.toLowerCase()),
              name: name(c), state: st.join(' '), target: c.getAttribute('aria-controls') || '',
+             description: byIds(c.getAttribute('aria-describedby')),
              key: keyOf(c), ax: mark(c) };
   });
 

@@ -98,7 +98,7 @@ Some test steps depend on what a text *means*, which a browser cannot decide:
 `llm_review.py` asks an LLM (Claude by default) for an opinion on these. It
 starts the app as the suite does, opens every v2 page in every UI language
 (all disclosures open), extracts the title, headings, links (name, target,
-context), control names, form labels/placeholders/descriptions, image
+context), control names and descriptions, form labels/placeholders/descriptions, image
 alternatives, visible instruction sentences and the error/status messages
 shown after submitting each visible form empty, and sends that as compact JSON
 with a fixed rubric (one request per page and language, plus one translation
