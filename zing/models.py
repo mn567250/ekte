@@ -568,6 +568,11 @@ class Verdict(BaseModel):
     confidence: str = "low"  # low | medium | high
     summary: str = ""
     key_findings: list[str] = Field(default_factory=list)
+    # Dimensions whose findings set ``risk_level`` (scoring order), and the
+    # dimensions that produced a usable result. Empty in reports from before
+    # they were recorded.
+    drivers: list[str] = Field(default_factory=list)
+    checked: list[str] = Field(default_factory=list)
 
 
 class RedactedTarget(BaseModel):

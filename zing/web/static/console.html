@@ -571,6 +571,8 @@ function showVerdict(r){
 }
 
 function zhHead(v){
+  // reports that record verdict.drivers carry a headline naming what drove the risk
+  if(Array.isArray(v.drivers)&&v.headline)return srv(v.headline).replace(/\s*[(（][^()（）]*[)）]$/,"");
   const m=!ZING_LANG.isZh()
     ?{clean:"Behavior is consistent with the claimed model",low:"Mostly consistent, with a few minor issues",
       medium:"Some behavior does not match the claimed model — verify",high:"It is not serving the model it claims",

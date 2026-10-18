@@ -78,6 +78,30 @@
       },
     ],
   ];
+  // Headlines naming the dimensions that drove the risk ("Context window,
+  // Billing & usage"): translate each name and the list separator.
+  var dimList = {
+    1: function (g, tr) {
+      return g
+        .split(", ")
+        .map(function (n) {
+          return tr(n);
+        })
+        .join(tr(", "));
+    },
+  };
+  P.push(
+    [
+      "Strong evidence the relay does not deliver what it advertises: (.+?)\\.(?= \\(confidence: |$)",
+      "Strong evidence the relay does not deliver what it advertises: {1}.",
+      dimList,
+    ],
+    [
+      "Some checks diverge from what is advertised: (.+?) — investigate\\.",
+      "Some checks diverge from what is advertised: {1} — investigate.",
+      dimList,
+    ]
+  );
   P.push([
     "\\(confidence: (low|medium|high)\\)",
     "(confidence: {1})",
@@ -99,6 +123,9 @@
     "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.",
     "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.",
     "No core dimension (model identity, context window, capability) was selected, so the substitution risk cannot be judged.",
+    "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.",
+    "No problems found in the checked dimensions; model identity was not verified.",
+    "Minor concerns in the checked dimensions; model identity was not verified.",
     "zing reports black-box evidence of divergence and risk, not proof of fraud.",
   ].forEach(function (s) {
     P.push([esc(s), s]);

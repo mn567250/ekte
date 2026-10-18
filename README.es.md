@@ -365,9 +365,9 @@ registro de petición cuenta desde ese momento.
 
 ## Qué comprueba
 
-zing puntúa diez dimensiones. Las tres **dimensiones núcleo** — identidad del
-modelo, ventana de contexto y capacidades declaradas — revelan más directamente
-un «gato por liebre» y son las que más pesan. Los nombres son los de la interfaz
+zing puntúa diez dimensiones. Las cuatro **dimensiones núcleo** — identidad del
+modelo, ventana de contexto, capacidades declaradas y facturación y uso — revelan
+más directamente un «gato por liebre». Los nombres son los de la interfaz
 web y los informes.
 
 | Dimensión | Id | Peso | Qué detecta |
@@ -406,7 +406,7 @@ En resumen (los detalles están en la [Metodología](docs/METHODOLOGY.es.md#cóm
 
 | Riesgo | Etiqueta en la interfaz | Cuándo |
 |---|---|---|
-| `inconclusive` | Señal insuficiente | Ninguna dimensión núcleo dio un resultado utilizable (relay inaccesible, modelo fuera de la base de conocimiento o ejecución `custom` sin dimensión núcleo) |
+| `inconclusive` | Señal insuficiente | Nada utilizable que juzgar: identidad del modelo, ventana de contexto y capacidades declaradas se ejecutaron sin resultado utilizable (relay inaccesible, modelo fuera de la base de conocimiento), o ninguna dimensión salvo la conectividad lo dio |
 | `high` | Gato por liebre | Un hallazgo CRÍTICO, un hallazgo ALTO/CRÍTICO en una dimensión núcleo, o dos o más hallazgos ALTOS |
 | `medium` | Desviaciones detectadas | Exactamente un hallazgo ALTO fuera de las dimensiones núcleo, o un hallazgo MEDIO en una dimensión núcleo |
 | `low` | Mayormente fiable | Cualquier otro hallazgo MEDIO |
@@ -461,8 +461,8 @@ monitores.
 
 La **puntuación global es la media ponderada solo de las dimensiones elegidas**;
 las que dejas fuera aparecen como «no seleccionadas». El veredicto de riesgo
-necesita al menos una dimensión núcleo (identidad del modelo, ventana de
-contexto, capacidades declaradas): sin ella, es *no concluyente*.
+también se basa en las dimensiones elegidas: sin la identidad del modelo solo
+las cubre a ellas, no qué modelo se sirve, y lo indica.
 
 ## Rendimiento
 

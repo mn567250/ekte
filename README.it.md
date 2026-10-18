@@ -363,9 +363,9 @@ record di richiesta conta da quel momento.
 
 ## Cosa controlla
 
-zing assegna un punteggio a dieci dimensioni. Le tre **dimensioni centrali** —
-identità del modello, finestra di contesto e capacità dichiarate — rivelano più
-direttamente una merce non conforme e pesano di più. I nomi sono quelli
+zing assegna un punteggio a dieci dimensioni. Le quattro **dimensioni centrali** —
+identità del modello, finestra di contesto, capacità dichiarate e fatturazione e
+consumo — rivelano più direttamente una merce non conforme. I nomi sono quelli
 dell'interfaccia web e dei rapporti.
 
 | Dimensione | Id | Peso | Cosa rileva |
@@ -403,7 +403,7 @@ In breve (i dettagli sono nella [Metodologia](docs/METHODOLOGY.it.md#come-zing-a
 
 | Rischio | Etichetta nell'interfaccia | Quando |
 |---|---|---|
-| `inconclusive` | Segnale insufficiente | Nessuna dimensione centrale ha prodotto un risultato utilizzabile (relay irraggiungibile, modello non presente nella base di conoscenza, o esecuzione `custom` senza dimensioni centrali) |
+| `inconclusive` | Segnale insufficiente | Niente di utilizzabile da giudicare: identità del modello, finestra di contesto e capacità dichiarate sono state eseguite senza risultato utilizzabile (relay irraggiungibile, modello non presente nella base di conoscenza), o nessuna dimensione oltre alla connettività ne ha prodotto uno |
 | `high` | Merce non conforme | Una rilevazione CRITICA, una rilevazione ALTA/CRITICA in una dimensione centrale, o due o più rilevazioni ALTE |
 | `medium` | Scostamenti rilevati | Esattamente una rilevazione ALTA fuori dalle dimensioni centrali, o una rilevazione MEDIA in una dimensione centrale |
 | `low` | Per lo più affidabile | Qualsiasi altra rilevazione MEDIA |
@@ -458,9 +458,9 @@ scelta (**Dimensioni da eseguire**) nella pagina di verifica, nella console e ne
 monitor.
 
 Il **punteggio complessivo è la media ponderata delle sole dimensioni scelte**;
-quelle escluse compaiono come «non selezionate». Il verdetto di rischio richiede
-almeno una dimensione centrale (identità del modello, finestra di contesto,
-capacità dichiarate): senza, è *non conclusivo*.
+quelle escluse compaiono come «non selezionate». Anche il verdetto di rischio si
+basa sulle dimensioni scelte: senza l'identità del modello copre solo quelle,
+non quale modello viene servito, e lo dice.
 
 ## Prestazioni
 

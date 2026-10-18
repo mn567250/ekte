@@ -38,6 +38,15 @@ DEFAULT = "en"
 # Chinese terms the (otherwise English) backend embeds in its sentences.
 _GLOSSARY = (("货不对板", "bait-and-switch"), ("中转站", "relay"))
 _HEADLINE = re.compile(r"^(?P<sentence>.*?)\s*\(confidence: (?P<conf>low|medium|high)\)$")
+# Headline sentences naming the dimensions that drove the risk, as
+# (pattern, template): the names are translated one by one.
+_DIM_SENTENCES = tuple(
+    (re.compile("^" + re.escape(t).replace(re.escape("{1}"), "(?P<dims>.+?)") + "$"), t)
+    for t in (
+        "Strong evidence the relay does not deliver what it advertises: {1}.",
+        "Some checks diverge from what is advertised: {1} — investigate.",
+    )
+)
 
 
 @lru_cache(maxsize=1)
@@ -118,8 +127,19 @@ def backend(lang: str | None, text: str | None) -> str:
         conf = ui(lang, m["conf"].capitalize())
         conf = conf if lang == "zh" else conf.lower()
         suffix = ui(lang, "(confidence: {1})").replace("{1}", conf)
-        return ui(lang, m["sentence"]) + ("" if lang == "zh" else " ") + suffix
+        return _sentence(lang, m["sentence"]) + ("" if lang == "zh" else " ") + suffix
     return s
+
+
+def _sentence(lang: str, s: str) -> str:
+    """A headline sentence in ``lang``, its dimension list included."""
+    for pattern, template in _DIM_SENTENCES:
+        m = pattern.match(s)
+        if m:
+            sep = ui(lang, ", ")
+            dims = sep.join(ui(lang, n) for n in m["dims"].split(", "))
+            return ui(lang, template).replace("{1}", dims)
+    return ui(lang, s)
 
 
 def bundle() -> dict[str, Any]:

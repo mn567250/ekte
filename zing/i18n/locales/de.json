@@ -474,7 +474,17 @@
   "End-to-end speed p50": "Gesamttempo p50",
   "target better": "Ziel besser",
   "target worse": "Ziel schlechter",
-  "(within 2% counts as even)": "(bis 2 % Unterschied gilt als gleich)"
+  "(within 2% counts as even)": "(bis 2 % Unterschied gilt als gleich)",
+  "Strong evidence the relay does not deliver what it advertises: {1}.": "Starke Belege, dass das Relay nicht liefert, was es bewirbt: {1}.",
+  "Some checks diverge from what is advertised: {1} — investigate.": "Einige Prüfungen weichen vom Beworbenen ab: {1} — bitte untersuchen.",
+  "No problems found in the checked dimensions; model identity was not verified.": "In den geprüften Dimensionen keine Probleme gefunden; die Modellidentität wurde nicht verifiziert.",
+  "Minor concerns in the checked dimensions; model identity was not verified.": "Kleinere Bedenken in den geprüften Dimensionen; die Modellidentität wurde nicht verifiziert.",
+  "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.": "Die Modellidentität war nicht ausgewählt: Dieses Urteil gilt nur für die ausgewählten Dimensionen, nicht dafür, welches Modell bereitgestellt wird.",
+  "It does not deliver what it advertises: {dims}": "Es liefert nicht, was es bewirbt: {dims}",
+  "Some checks do not match what is advertised: {dims} — verify": "Einige Prüfungen passen nicht zum Beworbenen: {dims} — bitte prüfen",
+  "No problems in the checked dimensions (model identity not verified)": "Keine Probleme in den geprüften Dimensionen (Modellidentität nicht verifiziert)",
+  "A few minor issues in the checked dimensions (model identity not verified)": "Einige kleinere Mängel in den geprüften Dimensionen (Modellidentität nicht verifiziert)",
+  "It does not deliver what it advertises": "Es liefert nicht, was es bewirbt"
  },
  "findings": {
   "connectivity.models": [

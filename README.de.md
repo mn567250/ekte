@@ -369,9 +369,9 @@ Anfrage-Datensatzes zählt ab diesem Zeitpunkt.
 
 ## Was geprüft wird
 
-zing bewertet zehn Dimensionen. Die drei **Kerndimensionen** — Modellidentität,
-Kontextfenster und angegebene Fähigkeiten — decken einen Etikettenschwindel am
-direktesten auf und werden am stärksten gewichtet. Die Namen sind die der
+zing bewertet zehn Dimensionen. Die vier **Kerndimensionen** — Modellidentität,
+Kontextfenster, angegebene Fähigkeiten und Abrechnung & Verbrauch — decken einen
+Etikettenschwindel am direktesten auf. Die Namen sind die der
 Weboberfläche und der Berichte.
 
 | Dimension | Kennung | Gewicht | Was sie aufdeckt |
@@ -412,7 +412,7 @@ Kurz gefasst (Details in der [Methodik](docs/METHODOLOGY.de.md#wie-zing-bewertet
 
 | Risiko | Bezeichnung in der UI | Wann |
 |---|---|---|
-| `inconclusive` | Unzureichendes Signal | Keine Kerndimension lieferte ein verwertbares Ergebnis (Relay nicht erreichbar, Modell nicht in der Wissensbasis oder ein `custom`-Lauf ohne Kerndimension) |
+| `inconclusive` | Unzureichendes Signal | Nichts Verwertbares zu beurteilen: Modellidentität, Kontextfenster und angegebene Fähigkeiten liefen, aber keine lieferte ein verwertbares Ergebnis (Relay nicht erreichbar, Modell nicht in der Wissensbasis), oder keine Dimension außer der Konnektivität lieferte eines |
 | `high` | Etikettenschwindel | Ein Befund KRITISCH, ein Befund HOCH/KRITISCH in einer Kerndimension oder zwei oder mehr Befunde HOCH |
 | `medium` | Abweichungen gefunden | Genau ein Befund HOCH außerhalb der Kerndimensionen oder ein Befund MITTEL in einer Kerndimension |
 | `low` | Weitgehend vertrauenswürdig | Jeder andere Befund MITTEL |
@@ -469,9 +469,9 @@ Konsole und bei den Überwachungen.
 
 Die **Gesamtbewertung ist der gewichtete Mittelwert allein der gewählten
 Dimensionen**; ausgelassene Dimensionen werden als „nicht ausgewählt“
-ausgewiesen. Das Risikourteil braucht mindestens eine Kerndimension
-(Modellidentität, Kontextfenster, angegebene Fähigkeiten): ohne sie ist es
-*nicht eindeutig*.
+ausgewiesen. Auch das Risikourteil beruht auf den gewählten Dimensionen: ohne
+Modellidentität gilt es nur für sie, nicht dafür, welches Modell bereitgestellt
+wird, und sagt das.
 
 ## Leistung
 

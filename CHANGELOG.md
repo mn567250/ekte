@@ -28,6 +28,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The verdict follows the dimensions that were checked.** The headline names
+  the dimensions that set the risk (new `verdict.drivers`) and speaks of the
+  claimed model only when model identity is among them: a context window cut
+  below what is advertised, with model identity passing, now reads "It does not
+  deliver what it advertises: Context window" instead of "It is not serving the
+  model it claims". A `custom` run is judged on its selection (new
+  `verdict.checked`) instead of being inconclusive without model identity,
+  context window or capability claims; without model identity the headline and
+  summary say that model identity was not verified. Billing & usage joins the
+  core dimensions, so inflated usage alone is a high risk. The knowledge-base
+  match only caps the confidence when a profile-backed dimension ran.
 - **Analytics sections as sub-tabs (web UI v2).** Overview, Trends and
   Reliability show their two panels (Overview / Leaderboard, Comparison over
   time / Peak hours, Errors and reliability / Relay overhead) one at a time

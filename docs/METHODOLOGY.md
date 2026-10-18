@@ -82,8 +82,15 @@ C (≥ 70), D (≥ 60) or F.
 | Transport security | `security` | 6 |  |
 | Performance | `performance` | 6 |  |
 
-The three **core dimensions** are the ones whose failure most directly reveals
-a bait-and-switch.
+The verdict is judged on the dimensions that **ran** — a `custom` run checks
+only its selection. Two groups of dimensions matter:
+
+- the **profile dimensions** (model identity, context window, capability
+  claims) are judged against the claimed model's knowledge-base profile;
+- the **core dimensions** are the profile dimensions plus billing & usage:
+  their failure means the relay does not deliver what it advertises (a
+  different model, a smaller context window, missing capabilities, inflated
+  billing).
 
 ### Risk verdict
 
@@ -100,20 +107,30 @@ echoed API key still escalate.
 
 | Risk | Label in the UI | When |
 |---|---|---|
-| `inconclusive` | Insufficient signal | No core dimension produced a usable result (Pass, Warning or Fail) — for example the relay is unreachable, the model is unprofiled, or a `custom` run selected no core dimension |
+| `inconclusive` | Insufficient signal | Nothing usable to judge by: when a profile dimension ran, none of them produced a usable result (Pass, Warning or Fail) — the relay is unreachable or the model is unprofiled; otherwise no dimension other than connectivity produced one |
 | `high` | Bait-and-switch | A CRITICAL finding, a HIGH/CRITICAL finding in a core dimension, or two or more HIGH findings |
 | `medium` | Deviations found | Exactly one HIGH finding outside the core dimensions, or a MEDIUM finding in a core dimension |
 | `low` | Mostly trustworthy | Any other MEDIUM finding |
 | `clean` | Consistent (likely genuine) | None of the above |
 
+The verdict records the dimensions whose findings set the risk
+(`verdict.drivers`) and the dimensions that produced a usable result
+(`verdict.checked`). The headline follows them: it speaks of the claimed model
+only when model identity is among the drivers, and otherwise names the
+drivers ("Strong evidence the relay does not deliver what it advertises:
+Context window."). A clean or low verdict without a usable model-identity
+result says that model identity was not verified.
+
 ### Verdict confidence
 
-- **low** — the claimed model is not in the knowledge base, matched a profile
-  only fuzzily (`match_confidence` `fuzzy`; the summary says so), or fewer than
-  two core dimensions produced a usable result;
-- **medium** — at least two core dimensions produced a usable result;
-- **high** — a baseline was used *and* all three core dimensions produced a
-  usable result, or the confidence was medium and the LLM judge returned a
+- **low** — a profile dimension ran and the claimed model is not in the
+  knowledge base or matched a profile only fuzzily (`match_confidence`
+  `fuzzy`; the summary says so), or too few dimensions produced a usable
+  result;
+- **medium** — at least two core dimensions produced a usable result (or, in
+  a run without core dimensions, at least two dimensions did);
+- **high** — a baseline was used *and* every core dimension that ran produced
+  a usable result, or the confidence was medium and the LLM judge returned a
   usable verdict.
 
 ## Suites, detectors and modes
