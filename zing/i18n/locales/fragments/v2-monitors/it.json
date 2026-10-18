@@ -41,6 +41,9 @@
   "one per line · optional": "uno per riga · facoltativo",
   "{n} monitors": "{n} monitor",
   "{n} webhooks": "{n} webhook",
-  "Run finished.": "Esecuzione completata."
+  "Run finished.": "Esecuzione completata.",
+  "Monitor views": "Viste dei monitor",
+  "Nothing is running": "Nulla in corso",
+  "Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.": "Esecuzioni dei monitor in corso. Un’esecuzione dello stesso relay attende che termini ogni altro audit su di esso, così i risultati non vengono mai falsati."
  }
 }
