@@ -94,12 +94,47 @@ def ui(lang: str | None, en: str) -> str:
 
 _TITLE_FIELD = re.compile(r"\{(\w+)(?:\|(list|server))?\}")
 
+# Result titles a detector builds around a subject, as English templates whose
+# ``{1}`` is the subject: a KB fingerprint's signal (zing/detectors/
+# model_identity.py, translated on its own) or an attribute path
+# (protocol_attrs.py, kept). Every other result title is a fixed string. The
+# browser gets the list as ``title_patterns`` in /locales.js.
+RESULT_TITLE_PATTERNS = (
+    "Fingerprint divergence: {1}",
+    "Fingerprint consistent: {1}",
+    "Fingerprint inconclusive: {1}",
+    "Fingerprint skipped: {1}",
+    "Response attribute {1}",
+    "Request attribute {1}",
+)
+_RESULT_TITLE_RES = tuple(
+    (re.compile("^" + re.escape(t).replace(re.escape("{1}"), "(.+)") + "$"), t) for t in RESULT_TITLE_PATTERNS
+)
+
+
+def result_title(lang: str | None, english_title: str | None) -> str | None:
+    """The backend's English result title of a finding (one per outcome, e.g.
+    "Endpoint is not HTTPS") in ``lang``, keyed by the English text like the
+    other backend sentences; ``None`` when ``lang`` has no translation for it."""
+    lang = normalize(lang)
+    if lang == DEFAULT or not english_title:
+        return None
+    strings = _load()[lang].get("strings", {})
+    if english_title in strings:
+        return strings[english_title]
+    for rx, template in _RESULT_TITLE_RES:
+        m = rx.match(english_title)
+        if m and template in strings:
+            return strings[template].replace("{1}", strings.get(m[1], m[1]))
+    return None
+
 
 def finding_title(
     lang: str | None, finding_id: str | None, english_title: str, evidence: dict[str, Any] | None = None
 ) -> str:
-    """A finding's title in ``lang``: its catalog title filled from ``evidence``
-    (as i18n.js does), else the English one.
+    """A finding's title in ``lang``: its translated result title (see
+    :func:`result_title`), else its check's catalog title filled from
+    ``evidence`` (as i18n.js does), else the English one.
 
     A catalog entry is ``[title, summary, generic title]``; the optional generic
     title stands in when the evidence lacks a title placeholder (older reports).
@@ -107,6 +142,9 @@ def finding_title(
     lang = normalize(lang)
     if lang == DEFAULT:
         return backend(lang, english_title)
+    translated = result_title(lang, english_title)
+    if translated is not None:
+        return translated
     cat = _load()[lang].get("findings", {})
     entry = None
     if finding_id:
@@ -182,6 +220,7 @@ def bundle() -> dict[str, Any]:
     return {
         "languages": languages(),
         "locales": {code: {"strings": d.get("strings", {}), "findings": d.get("findings", {})} for code, d in data.items()},
+        "title_patterns": list(RESULT_TITLE_PATTERNS),
     }
 
 
@@ -209,6 +248,7 @@ def lang_bundle(lang: str) -> dict[str, Any]:
         "lang": lang,
         "locales": locales,
         "common": common,
+        "title_patterns": list(RESULT_TITLE_PATTERNS),
         "keys": {
             "strings": list(data.get(DEFAULT, {}).get("strings", {})),
             "findings": list(data.get("zh", {}).get("findings", {})),

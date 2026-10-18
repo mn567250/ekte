@@ -290,6 +290,33 @@
     return (entry.title && fillTemplate(entry.title, evidence)) || entry.generic || null;
   }
 
+  // The backend's English result title (one per outcome of a check, e.g.
+  // "Endpoint is not HTTPS" vs "Endpoint uses HTTPS") in language `lang`,
+  // keyed by the English text like other backend text (ZING_LOCALES strings,
+  // zh included), plus the few titles built around a subject (titlePatterns:
+  // "Fingerprint divergence: {1}", the subject translated on its own). Null
+  // when unknown, so the caller falls back to the check's catalog title.
+  function resultTitle(lang, en) {
+    var LOC = window.ZING_LOCALES || {};
+    var d = (LOC.strings || {})[lang];
+    if (!d || !en || lang === "en") return null;
+    var has = function (k) {
+      return Object.prototype.hasOwnProperty.call(d, k);
+    };
+    en = String(en);
+    if (has(en)) return d[en];
+    var pats = LOC.titlePatterns || [];
+    for (var i = 0; i < pats.length; i++) {
+      var t = pats[i], at = t.indexOf("{1}");
+      var pre = t.slice(0, at), post = t.slice(at + 3);
+      if (!has(t) || en.length <= pre.length + post.length) continue;
+      if (en.slice(0, pre.length) !== pre || en.slice(en.length - post.length) !== post) continue;
+      var subject = en.slice(pre.length, en.length - post.length);
+      return d[t].replace("{1}", has(subject) ? d[subject] : subject);
+    }
+    return null;
+  }
+
   // Resolve a Chinese catalog entry.
   function lookup(id) {
     return lookupIn(FINDINGS, id);
@@ -298,7 +325,8 @@
   /**
    * localizeFinding(id, fallbackSummary, evidence, fallbackTitle) -> { title, summary }
    *  - EN UI:   the backend's English fallbackTitle / fallbackSummary.
-   *  - title:   zh title from the catalog, or a generic zh title if unknown.
+   *  - title:   the translated result title (resultTitle), else the check's
+   *             title from the catalog, else a generic zh title.
    *  - summary: filled zh template; if the id is unknown OR a template
    *             placeholder is missing, the original English fallbackSummary
    *             is returned instead of a broken string.
@@ -313,7 +341,7 @@
       var cat = ((window.ZING_LOCALES || {}).findings || {})[L.get()];
       var le = cat && lookupIn(cat, id);
       var ls = summaryFor(id, status, evidence, le && le.tpl, [L.tr("yes"), L.tr("no")]);
-      var lt = titleOf(le, evidence);
+      var lt = resultTitle(L.get(), fallbackTitle) || titleOf(le, evidence);
       return {
         title: lt || L.server(fallbackTitle || id || "Check"),
         summary: ls != null ? ls : L.server(fallbackSummary || ""),
@@ -322,7 +350,7 @@
     var entry = lookup(id);
     var summary = summaryFor(id, status, evidence, entry && entry.tpl);
     return {
-      title: titleOf(entry, evidence) || GENERIC_TITLE,
+      title: resultTitle("zh", fallbackTitle) || titleOf(entry, evidence) || GENERIC_TITLE,
       summary: summary != null ? summary : fallbackSummary || "",
     };
   }
@@ -336,7 +364,7 @@
     if (isZh()) {
       var entry = lookup(f.id);
       var s = summaryFor(f.id, f.status, f.evidence, entry && entry.tpl);
-      out.title = titleOf(entry, f.evidence) || L.exportText(f.title);
+      out.title = resultTitle("zh", f.title) || titleOf(entry, f.evidence) || L.exportText(f.title);
       out.summary = s != null ? s : L.exportText(f.summary || "");
     } else {
       var loc = localizeFinding(f.id, f.summary, f.evidence, f.title, f.status);
