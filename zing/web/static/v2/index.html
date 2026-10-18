@@ -935,7 +935,10 @@
       url: "#i-url", key: "#i-key", model: "#i-model", claimed: "#i-claimed", provider: "#i-prov",
       api: function () { return segVal("api"); },
     });
-    ZingRelayConfig.bind({ url: "#b-url", key: "#b-key", model: "#b-model", api: function () { return segVal("b-api"); } });
+    ZingRelayConfig.bind({
+      url: "#b-url", key: "#b-key", model: "#b-model", api: function () { return segVal("b-api"); },
+      relayLabel: ["基线中转站 / 厂商", "Baseline relay / provider"],
+    });
   }
   // /v2/?rerun=<history id> (from History): fill the form with that run's
   // configuration. The API key is never stored in history, so the key field

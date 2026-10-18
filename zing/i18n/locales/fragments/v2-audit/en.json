@@ -22,6 +22,7 @@
   "Responses": "Responses",
   "Running": "Running",
   "To compare, enter both the baseline URL and the baseline model.": "To compare, enter both the baseline URL and the baseline model.",
-  "{n} of {total} checks done": "{n} of {total} checks done"
+  "{n} of {total} checks done": "{n} of {total} checks done",
+  "Baseline relay / provider": "Baseline relay / provider"
  }
 }

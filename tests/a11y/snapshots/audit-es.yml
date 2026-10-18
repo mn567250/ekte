@@ -89,8 +89,8 @@
       - text: En standard la sonda solo se ejecuta con una referencia; si no, se usan las propias peticiones de la auditoría.
       - button "Comparar con una referencia de confianza compare" [expanded]
       - paragraph: Indique un endpoint del mismo modelo en el que confíe (p. ej. la API oficial). zing lo usa para corroborar el comportamiento del objetivo y hacer más fiables los veredictos de sustitución/degradación — la evaluación de calidad y la detección de manipulación solo alcanzan su nivel máximo con una referencia.
-      - text: Relay / proveedor Opcional
-      - combobox "Relay / proveedor Opcional":
+      - text: Relay / proveedor de referencia Opcional
+      - combobox "Relay / proveedor de referencia Opcional":
         - option "Selecciona un relay o proveedor…" [selected]
         - option "Otro (introducir la URL)"
       - text: Al seleccionar uno se rellena su URL; para cualquier otro relay elige «Otro» e introduce la URL. URL de referencia base_url

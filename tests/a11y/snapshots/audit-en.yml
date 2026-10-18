@@ -89,8 +89,8 @@
       - text: On standard the probe runs only with a baseline; otherwise the audit's own requests are used.
       - button "Compare against a trusted baseline compare" [expanded]
       - paragraph: Enter an endpoint for the same model that you trust (e.g. the official API). zing uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.
-      - text: Relay / provider Optional
-      - combobox "Relay / provider Optional":
+      - text: Baseline relay / provider Optional
+      - combobox "Baseline relay / provider Optional":
         - option "Select a relay or provider…" [selected]
         - option "Other (enter the URL)"
       - text: Selecting one fills in its URL; for any other relay choose “Other” and enter the URL. Baseline URL base_url

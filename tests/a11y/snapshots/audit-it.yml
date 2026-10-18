@@ -89,8 +89,8 @@
       - text: Con standard la sonda viene eseguita solo con un riferimento; altrimenti si usano le richieste dell'audit stesso.
       - button "Confronta con un riferimento affidabile compare" [expanded]
       - paragraph: Inserisci un endpoint dello stesso modello di cui ti fidi (ad es. l'API ufficiale). zing lo usa per confermare il comportamento dell'obiettivo, rendendo più affidabili i verdetti di sostituzione/declassamento — la valutazione della qualità e il rilevamento di manomissioni raggiungono il livello massimo solo con un riferimento.
-      - text: Relay / provider Facoltativo
-      - combobox "Relay / provider Facoltativo":
+      - text: Relay / provider di riferimento Facoltativo
+      - combobox "Relay / provider di riferimento Facoltativo":
         - option "Seleziona un relay o un provider…" [selected]
         - option "Altro (inserisci l'URL)"
       - text: Selezionandone uno ne viene compilato l'URL; per qualsiasi altro relay scegli «Altro» e inserisci l'URL. URL di riferimento base_url
