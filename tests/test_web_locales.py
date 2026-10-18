@@ -342,15 +342,20 @@ def test_hidden_page_is_revealed_if_boot_never_runs(tmp_path):
 # --------------------------------------------------------------------------- #
 _STATIC = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
 _T_CALL = re.compile(r'\bTf?\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"')
-_DATA_EN = re.compile(r'data-en="([^"]*)"')
+_DATA_EN = re.compile(r'data-en(?:-[a-z-]+)?="([^"]*)"')
+# A ["中文", "English"] pair handed to a helper that calls T/Tf later, e.g.
+# kb.html's counts(["1 个模型", "1 model"], …) — invisible to _T_CALL.
+_ZH_EN_PAIR = re.compile(r'\[\s*"((?:[^"\\]|\\.)*[㐀-鿿](?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\]')
 
 
 def _source_strings(path: Path) -> set[str]:
-    """English texts a page hands to T(zh, en) / Tf(zh, en, …) or data-en."""
+    """English texts a page hands to T(zh, en) / Tf(zh, en, …), a ["zh", "en"]
+    pair, or a data-en / data-en-<attr> attribute."""
     import html
 
     src = path.read_text(encoding="utf-8")
-    found = {json.loads(f'"{en}"') for _zh, en in _T_CALL.findall(src)}
+    pairs = _T_CALL.findall(src) + _ZH_EN_PAIR.findall(src)
+    found = {json.loads(f'"{en}"') for _zh, en in pairs}
     found |= {html.unescape(en) for en in _DATA_EN.findall(src)}
     return found
 
