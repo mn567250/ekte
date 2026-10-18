@@ -502,15 +502,15 @@
     return (
       '<li class="zr-find zr-chk"><span class="dot ' + s.c + '" aria-hidden="true">' + ico(s.g) + "</span>" +
       '<div class="body"><div class="ft"><span class="sr-only">' +
-      esc(Tf("结果：{s}。", "Result: {s}.", { s: label("STATUS", f.status) })) + " </span>" + esc(L.title) +
+      esc(Tf("结果：{s}。", "Result: {s}.", { s: label("STATUS", f.status) })) + " </span>" + '<span id="' + id + '-t">' + esc(L.title) + "</span>" +
       (points != null ? ' <span class="pts">' + esc(points) + "</span>" : "") +
       (outcomes && outcomes.length ? scaleTip(hitsOf([f]), outcomes, sc) : "") + "</div>" +
       '<div class="fs">' + esc(L.summary) +
       (f.recommendation ? ' <span class="rec">· ' + esc(T("建议：", "Recommendation: ")) + esc(srv(f.recommendation)) + "</span>" : "") +
       "</div>" +
       (ev
-        ? '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id + '">' +
-          esc(showEvidence(false)) + "</button>" +
+        ? '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id +
+          '" aria-describedby="' + id + '-t">' + esc(showEvidence(false)) + "</button>" +
           '<pre class="ev" id="' + id + '" hidden>' + escEv(ev) + "</pre>"
         : "") +
       "</div></li>"
@@ -625,13 +625,13 @@
     return (
       '<li class="zr-find"><span class="dot ' + s.c + '" aria-hidden="true">' + ico(s.g) + "</span>" +
       '<div class="body"><div class="ft"><span class="sr-only">' +
-      esc(Tf("严重程度：{s}。", "Severity: {s}.", { s: label("SEVERITY", f.severity) })) + " </span>" + esc(L.title) + "</div>" +
+      esc(Tf("严重程度：{s}。", "Severity: {s}.", { s: label("SEVERITY", f.severity) })) + " </span>" + '<span id="' + id + '-t">' + esc(L.title) + "</span>" + "</div>" +
       '<div class="fs">' + esc(L.summary) +
       (f.recommendation ? ' <span class="rec">· ' + esc(T("建议：", "Recommendation: ")) + esc(srv(f.recommendation)) + "</span>" : "") +
       "</div>" +
       (ev
-        ? '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id + '">' +
-          esc(showEvidence(false)) + "</button>" +
+        ? '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id +
+          '" aria-describedby="' + id + '-t">' + esc(showEvidence(false)) + "</button>" +
           '<pre class="ev" id="' + id + '" hidden>' + escEv(ev) + "</pre>"
         : "") +
       "</div></li>"
