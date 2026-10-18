@@ -10,6 +10,9 @@
  *   - pop(svg, marks)      live updates: pop in exactly these marks (the
  *                          perf.js live chart: the new requests' dots and
  *                          failure crosses)
+ *   - count(els, show)     KPI figures: each element counts up to its new
+ *                          value; els is a list of {el, from, to, …}, show(v, it)
+ *                          formats item it's value v on the way
  *   enter() also takes the <svg> itself instead of its host.
  *
  * It never changes what the chart says: no element is added or removed and
@@ -191,5 +194,30 @@
     cleanup(svg, 450, "zm-new", touched);
   }
 
-  window.ZingMotion = { enter: enter, fresh: fresh, pop: pop };
+  var COUNT = 700; // ms for a KPI figure to count up
+  function count(items, show) {
+    var t0 = null;
+    function paint(k) {
+      // ease-out cubic: fast at first, settling on the value; whole-number
+      // targets (run counts) stay whole on the way
+      var e = 1 - Math.pow(1 - k, 3);
+      items.forEach(function (it) {
+        var v = k >= 1 ? it.to : it.from + (it.to - it.from) * e;
+        it.el.textContent = show(Math.round(it.to) === it.to && k < 1 ? Math.round(v) : v, it);
+      });
+    }
+    if (still() || !items.length || !window.requestAnimationFrame) return paint(1);
+    paint(0);
+    function step(now) {
+      if (t0 == null) t0 = now;
+      var k = Math.min(1, (now - t0) / COUNT);
+      // a newer render replaced these elements: stop
+      if (!items[0].el.isConnected) return;
+      paint(k);
+      if (k < 1) window.requestAnimationFrame(step);
+    }
+    window.requestAnimationFrame(step);
+  }
+
+  window.ZingMotion = { enter: enter, fresh: fresh, pop: pop, count: count };
 })();
