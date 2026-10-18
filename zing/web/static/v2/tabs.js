@@ -26,7 +26,9 @@
  * if it was selected the first enabled tab is selected instead (without
  * moving focus). A disabled tab can also be authored with aria-disabled="true"
  * in the markup; an initial hash naming a disabled tab falls back to the
- * first tab.
+ * first enabled tab, and that tab is selected after all if it is enabled
+ * before the user picks another one (a deep link to a tab that only enables
+ * once data has loaded).
  */
 (function () {
   "use strict";
@@ -36,6 +38,7 @@
     var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
     var names = tabs.map(function (t) { return t.id.replace(/^tab-/, ""); });
     var cur = null;
+    var wanted = null; // a disabled tab the initial hash asked for
 
     function nameFor(hash) {
       hash = String(hash || "").replace(/^#/, "");
@@ -61,6 +64,7 @@
     function select(name, focus, keepHash) {
       var i = names.indexOf(name);
       if (i < 0 || isOff(i)) return;
+      wanted = null;
       tabs.forEach(function (t, j) {
         var on = j === i;
         t.setAttribute("aria-selected", String(on));
@@ -100,15 +104,21 @@
       if (i < 0) return;
       if (off) tabs[i].setAttribute("aria-disabled", "true");
       else tabs[i].removeAttribute("aria-disabled");
-      if (off && cur === name) {
+      if (!off && wanted === name) select(name, false, true);
+      else if (off && cur === name) {
         var j = firstOn();
         if (j !== i) select(names[j], false);
       }
     }
 
     var first = nameFor(location.hash);
-    if (!first || isOff(names.indexOf(first))) first = names[firstOn()];
+    if (!first || isOff(names.indexOf(first))) {
+      if (first) wanted = first;
+      first = names[firstOn()];
+    }
+    var keep = wanted;
     select(first, false, true);
+    wanted = keep;
     return { select: select, current: function () { return cur; }, setDisabled: setDisabled };
   }
 

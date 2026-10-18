@@ -12,8 +12,9 @@ visit states only a running app reaches, all without network access:
   serves ``/api/jobs/<id>/events`` as an open event stream fed from the test
   (checks done, one running, live performance records), so the scan view with
   its radar, blinking check icon, ticking clock and live chart stays up.
-* ``history-jobs``: History with a running and a queued background audit
-  (``/api/jobs`` answered by a route), so the page polls every 2 s.
+* ``audit-jobs``: the audit page's "Running" tab (v2/jobs.js) with a running
+  and a queued background audit (``/api/jobs`` answered by a route), so the
+  page polls every 2 s. (This list used to be History's "In progress".)
 * ``monitors-running``: Monitors with the monitor running (spinner, progress,
   polling every 2 s).
 * ``history-charts``: History with three runs of one relay (sparklines for all
@@ -42,7 +43,7 @@ from zing.perf import build_performance
 
 PAGE_IDS = list(PAGES)
 EXPANDED = [f"{p}+expanded" for p in PAGE_IDS]
-APP_STATES = ["audit-running", "history-jobs", "monitors-running"]
+APP_STATES = ["audit-running", "audit-jobs", "monitors-running"]
 ALL_STATES = PAGE_IDS + EXPANDED + APP_STATES
 # WCAG 2.3.1 is defined for a 1024 x 768 screen (10 degree field = 341 x 256 px)
 XGA = {"width": 1024, "height": 768}
@@ -175,7 +176,7 @@ def _route_history_charts(page: Page) -> None:
     page.route(re.compile(r"/api/history/[^/?]+$"), _quiet(lambda route: _fulfill_json(route, report)))
 
 
-def _route_history_jobs(page: Page) -> None:
+def _route_audit_jobs(page: Page) -> None:
     now = time.time()
     jobs = {"jobs": [
         {"id": "a11y-j1", "kind": "audit", "status": "running", "progress": 40, "done": 2, "total": 5, "started": now - 30,
@@ -208,7 +209,7 @@ def open_state(
     script that must run before the page's own scripts (the page is loaded a
     second time after it is installed)."""
     page_id, _, extra = state.partition("+")
-    app = {"audit-running": "audit", "history-jobs": "history", "monitors-running": "monitors", "history-charts": "history"}
+    app = {"audit-running": "audit", "audit-jobs": "audit", "monitors-running": "monitors", "history-charts": "history"}
     path = PAGES[app.get(page_id, page_id)]
     page = open_page(path, lang, theme, **opts)
     reload_needed = init is not None
@@ -218,8 +219,12 @@ def open_state(
         page.context.add_init_script(FAKE_JOB_INIT)
         path = f"{path}?job={FAKE_JOB}"
         reload_needed = True
-    elif page_id == "history-jobs":
-        _route_history_jobs(page)
+    elif page_id == "audit-jobs":
+        _route_audit_jobs(page)
+        # TODO(page integration): the audit page's "Running" tab is not wired
+        # into index.html yet; it must be named "running" (tab-running /
+        # panel-running) for this deep link and hold a <ul class="jlist">.
+        path = f"{path}#running"
         reload_needed = True
     elif page_id == "monitors-running":
         _route_monitors_running(page)
@@ -237,8 +242,8 @@ def open_state(
         page.wait_for_selector("#dets .det.run", state="visible")
         page.wait_for_selector("#perf-live .zp-chart", state="visible")
         settle(page)
-    elif page_id == "history-jobs":
-        page.wait_for_selector("#jlist .job", state="visible")
+    elif page_id == "audit-jobs":
+        page.wait_for_selector("#panel-running .jlist .job", state="visible")
     elif page_id == "monitors-running":
         page.wait_for_selector(".spin", state="visible")
     elif page_id == "history-charts":
@@ -839,7 +844,7 @@ NO_TRANSITIONS_CSS = "*, *::before, *::after { transition: none !important; anim
 
 @pytest.mark.bitv("9.1.4.11")
 @pytest.mark.parametrize("theme", THEMES)
-@pytest.mark.parametrize("state", ["history-charts", "audit-running", "history-jobs", "monitors-running"])
+@pytest.mark.parametrize("state", ["history-charts", "audit-running", "audit-jobs", "monitors-running"])
 def test_chart_and_meter_contrast(open_page, state: str, theme: str) -> None:
     """9.1.4.11 Non-text contrast of graphics: data marks of every chart
     (svg role=img: performance timeline points / failure crosses, trend
