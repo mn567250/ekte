@@ -221,9 +221,8 @@ def open_state(
         reload_needed = True
     elif page_id == "audit-jobs":
         _route_audit_jobs(page)
-        # TODO(page integration): the audit page's "Running" tab is not wired
-        # into index.html yet; it must be named "running" (tab-running /
-        # panel-running) for this deep link and hold a <ul class="jlist">.
+        # #running deep-links the tab; tabs.js selects it once jobs.js has
+        # rows and enables it
         path = f"{path}#running"
         reload_needed = True
     elif page_id == "monitors-running":
