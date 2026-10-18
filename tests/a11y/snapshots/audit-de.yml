@@ -89,8 +89,8 @@
       - text: Bei standard läuft die Messung nur mit einer Referenz; sonst werden die Anfragen der Prüfung selbst verwendet.
       - button "Mit vertrauenswürdiger Referenz vergleichen compare" [expanded]
       - paragraph: Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). zing nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit einer Referenz.
-      - text: Relay / Anbieter Optional
-      - combobox "Relay / Anbieter Optional":
+      - text: Relay / Anbieter der Referenz Optional
+      - combobox "Relay / Anbieter der Referenz Optional":
         - option "Relay oder Anbieter wählen…" [selected]
         - option "Andere (URL eingeben)"
       - text: Die Auswahl füllt die URL aus; für jedes andere Relay wähle „Andere“ und gib die URL ein. Referenz-URL base_url

@@ -89,8 +89,8 @@
       - text: En standard, la sonde ne s'exécute qu'avec une référence ; sinon, les requêtes de l'audit lui-même sont utilisées.
       - button "Comparer à une référence de confiance compare" [expanded]
       - paragraph: Indiquez un point d'accès du même modèle en qui vous avez confiance (p. ex. l'API officielle). zing s'en sert pour corroborer le comportement de la cible et fiabiliser les verdicts de substitution/déclassement — l'évaluation de qualité et la détection de falsification n'atteignent leur niveau maximal qu'avec une référence.
-      - text: Relais / fournisseur Facultatif
-      - combobox "Relais / fournisseur Facultatif":
+      - text: Relais / fournisseur de référence Facultatif
+      - combobox "Relais / fournisseur de référence Facultatif":
         - option "Sélectionnez un relais ou un fournisseur…" [selected]
         - option "Autre (saisir l'URL)"
       - text: En choisir un remplit son URL ; pour tout autre relais, choisissez « Autre » et saisissez l'URL. URL de référence base_url
