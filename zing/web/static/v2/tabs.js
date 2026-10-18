@@ -93,10 +93,13 @@
         if (n !== null) { e.preventDefault(); if (!isOff(n)) select(names[n], true); }
       });
     });
-    // a link to #NAME on the same page (or the back button) selects that tab
+    // a link to #NAME on the same page (or the back button) selects that tab;
+    // a disabled one is selected once it is enabled (as for the initial hash)
     window.addEventListener("hashchange", function () {
       var n = nameFor(location.hash);
-      if (n) select(n, false, true);
+      if (!n) return;
+      if (isOff(names.indexOf(n))) wanted = n;
+      else select(n, false, true);
     });
 
     function setDisabled(name, off) {

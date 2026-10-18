@@ -38,76 +38,81 @@
       - /url: /v2/kb
   - paragraph: 本地运行 · 密钥不经手
 - main:
-  - list "检测进度":
-    - listitem: 配置
-    - listitem: 检测
-    - listitem: 报告
-  - region "这家中转站，给的是真货吗？":
-    - heading "这家中转站，给的是真货吗？" [level=1]
-    - paragraph: 选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。
-    - text: 中转站 / 厂商 可选
-    - combobox "中转站 / 厂商 可选":
-      - option "选择中转站或厂商…" [selected]
-      - option "其他（手动填写地址）"
-    - text: 选择后会自动填写地址；不在列表中的中转站请选“其他”并填写地址。 中转站地址 base_url
-    - combobox "中转站地址 base_url"
-    - text: API 密钥 支持 env:VAR / file:/path
-    - textbox "API 密钥":
-      - /placeholder: sk-... 或 env:ZING_API_KEY
-      - text: env:ZING_API_KEY
-    - button "显示密钥" [pressed]
-    - text: 请求的模型 model
-    - textbox "请求的模型 model":
-      - /placeholder: deepseek-chat
-    - button "刷新模型列表" [disabled]
-    - status: 选择中转站或填写地址后，zing 会列出它的模型。
-    - text: 声称的模型 claimed_model 可选
-    - combobox "声称的模型 claimed_model 可选":
-      - option "同请求的模型" [selected]
-    - button "手动输入"
-    - text: 仅当中转站以另一个名字售卖时填写 —— zing 会按这个模型核对回答。 协议
-    - group "协议":
-      - button "自动" [pressed]
-      - button "OpenAI"
-      - button "Anthropic"
-      - button "Responses"
-    - text: 检测套件
-    - group "检测套件":
-      - button "smoke"
-      - button "standard" [pressed]
-      - button "deep"
-      - button "full"
-      - button "自定义"
-    - text: 性能探测请求
-    - group "性能探测请求":
-      - button "流式" [pressed]
-      - button "非流式"
-    - text: standard 套件只在对照基线时发送探测请求；否则使用检测自身的请求。
-    - button "对照可信基线 compare" [expanded]
-    - paragraph: 填一个你信任的同款模型端点（如官方 API）。zing 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。
-    - text: 中转站 / 厂商 可选
-    - combobox "中转站 / 厂商 可选":
-      - option "选择中转站或厂商…" [selected]
-      - option "其他（手动填写地址）"
-    - text: 选择后会自动填写地址；不在列表中的中转站请选“其他”并填写地址。 基线地址 base_url
-    - combobox "基线地址 base_url"
-    - text: 基线 API 密钥
-    - textbox "基线 API 密钥":
-      - /placeholder: sk-... 或 env:OPENAI_API_KEY
-    - button "显示密钥"
-    - text: 基线模型 model
-    - textbox "基线模型 model":
-      - /placeholder: 同款官方模型 id
-    - button "刷新模型列表" [disabled]
-    - status: 选择中转站或填写地址后，zing 会列出它的模型。
-    - text: 基线协议
-    - group "基线协议":
-      - button "自动" [pressed]
-      - button "OpenAI"
-      - button "Anthropic"
-      - button "Responses"
-    - button "开始检测"
-    - text: 检测在 你本地的 zing 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。
-    - alert
-    - status
-    - text: zing 给出的是风险与偏离的可复现证据，不是法律结论。
+  - tablist "检测":
+    - tab "新检测" [selected]
+    - tab "运行中" [disabled]
+  - text: 当前没有正在运行的检测
+  - tabpanel "新检测":
+    - list "检测进度":
+      - listitem: 配置
+      - listitem: 检测
+      - listitem: 报告
+    - region "这家中转站，给的是真货吗？":
+      - heading "这家中转站，给的是真货吗？" [level=1]
+      - paragraph: 选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。
+      - text: 中转站 / 厂商 可选
+      - combobox "中转站 / 厂商 可选":
+        - option "选择中转站或厂商…" [selected]
+        - option "其他（手动填写地址）"
+      - text: 选择后会自动填写地址；不在列表中的中转站请选“其他”并填写地址。 中转站地址 base_url
+      - combobox "中转站地址 base_url"
+      - text: API 密钥 支持 env:VAR / file:/path
+      - textbox "API 密钥":
+        - /placeholder: sk-... 或 env:ZING_API_KEY
+        - text: env:ZING_API_KEY
+      - button "显示密钥" [pressed]
+      - text: 请求的模型 model
+      - textbox "请求的模型 model":
+        - /placeholder: deepseek-chat
+      - button "刷新模型列表" [disabled]
+      - status: 选择中转站或填写地址后，zing 会列出它的模型。
+      - text: 声称的模型 claimed_model 可选
+      - combobox "声称的模型 claimed_model 可选":
+        - option "同请求的模型" [selected]
+      - button "手动输入"
+      - text: 仅当中转站以另一个名字售卖时填写 —— zing 会按这个模型核对回答。 协议
+      - group "协议":
+        - button "自动" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - text: 检测套件
+      - group "检测套件":
+        - button "smoke"
+        - button "standard" [pressed]
+        - button "deep"
+        - button "full"
+        - button "自定义"
+      - text: 性能探测请求
+      - group "性能探测请求":
+        - button "流式" [pressed]
+        - button "非流式"
+      - text: standard 套件只在对照基线时发送探测请求；否则使用检测自身的请求。
+      - button "对照可信基线 compare" [expanded]
+      - paragraph: 填一个你信任的同款模型端点（如官方 API）。zing 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。
+      - text: 中转站 / 厂商 可选
+      - combobox "中转站 / 厂商 可选":
+        - option "选择中转站或厂商…" [selected]
+        - option "其他（手动填写地址）"
+      - text: 选择后会自动填写地址；不在列表中的中转站请选“其他”并填写地址。 基线地址 base_url
+      - combobox "基线地址 base_url"
+      - text: 基线 API 密钥
+      - textbox "基线 API 密钥":
+        - /placeholder: sk-... 或 env:OPENAI_API_KEY
+      - button "显示密钥"
+      - text: 基线模型 model
+      - textbox "基线模型 model":
+        - /placeholder: 同款官方模型 id
+      - button "刷新模型列表" [disabled]
+      - status: 选择中转站或填写地址后，zing 会列出它的模型。
+      - text: 基线协议
+      - group "基线协议":
+        - button "自动" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - button "开始检测"
+      - text: 检测在 你本地的 zing 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。
+      - alert
+      - status
+      - text: zing 给出的是风险与偏离的可复现证据，不是法律结论。
