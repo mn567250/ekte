@@ -45,6 +45,7 @@
     - text: alike.
   - region "Which profile does a model id use?":
     - heading "Which profile does a model id use?" [level=2]
+    - text: Model id
     - textbox "Model id":
       - /placeholder: e.g. gpt-4o
     - button "Look up"
@@ -83,6 +84,7 @@
       - paragraph: The check validates the schema and limits, flags unsafe regular expressions, lists every prompt zing would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.
       - button "Check"
       - button "Save to knowledge base" [disabled]
+    - text: Filter models
     - searchbox "Filter models"
     - status
     - group:

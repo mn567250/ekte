@@ -45,6 +45,7 @@
     - text: .
   - region "Quale profilo usa un ID di modello?":
     - heading "Quale profilo usa un ID di modello?" [level=2]
+    - text: ID del modello
     - textbox "ID del modello":
       - /placeholder: es. gpt-4o
     - button "Cerca"
@@ -83,6 +84,7 @@
       - paragraph: La verifica convalida schema e limiti, segnala le espressioni regolari non sicure, elenca ogni prompt che zing invierebbe ai relay e mostra quali ID di modello verrebbero risolti diversamente. Nulla viene salvato finché non salvi.
       - button "Controllo"
       - button "Salva nella base" [disabled]
+    - text: Filtra modelli
     - searchbox "Filtra modelli"
     - status
     - group:

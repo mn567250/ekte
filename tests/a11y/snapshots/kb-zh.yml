@@ -45,6 +45,7 @@
     - text: 都会使用。
   - region "某个模型 ID 会使用哪份资料？":
     - heading "某个模型 ID 会使用哪份资料？" [level=2]
+    - text: 模型 ID
     - textbox "模型 ID":
       - /placeholder: 例如 gpt-4o
     - button "查询"
@@ -83,6 +84,7 @@
       - paragraph: 检查会校验结构与上限、标记不安全的正则表达式、列出 zing 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。
       - button "检查"
       - button "保存到知识库" [disabled]
+    - text: 筛选模型
     - searchbox "筛选模型"
     - status
     - group:

@@ -45,6 +45,7 @@
     - text: verwendet.
   - region "Welches Profil verwendet eine Modell-ID?":
     - heading "Welches Profil verwendet eine Modell-ID?" [level=2]
+    - text: Modell-ID
     - textbox "Modell-ID":
       - /placeholder: z. B. gpt-4o
     - button "Nachschlagen"
@@ -83,6 +84,7 @@
       - paragraph: Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den zing an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.
       - button "Prüfung"
       - button "In der Wissensbasis speichern" [disabled]
+    - text: Modelle filtern
     - searchbox "Modelle filtern"
     - status
     - group:
