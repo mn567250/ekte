@@ -9,6 +9,7 @@
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/charts.css" />
+<link rel="stylesheet" href="/v2/static/chartmotion.css" />
 <link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <style>
   /* Analytics page. Tokens only (zing.css, charts.css, filterpanel.css);
@@ -291,6 +292,7 @@
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
 <script src="/v2/static/charts.js"></script>
+<script src="/v2/static/chartmotion.js"></script>
 <script src="/v2/static/filterpanel.js"></script>
 <script src="/v2/static/tabs.js"></script>
 <script>
@@ -1680,6 +1682,8 @@
     state.charts[name] = { id: id, draw: draw, cfg: cfg };
     host.zcW = host.clientWidth;
     draw(host, cfg);
+    // new data moves in (chartmotion.js); a language re-render stays still
+    if (!state.still && window.ZingMotion) window.ZingMotion.enter(host);
   }
   function redrawCharts() {
     Object.keys(state.charts).forEach(function (k) {
@@ -1731,7 +1735,8 @@
   window.addEventListener("zing:lang", function () {
     if (!state.opts || !state.opts.runs) { if (state.opts) renderEmpty(); return; }
     renderFilters();
-    PANELS.forEach(function (p) { if (p.loaded) p.render(); });
+    state.still = true;
+    try { PANELS.forEach(function (p) { if (p.loaded) p.render(); }); } finally { state.still = false; }
   });
   // a link to another view pasted into this tab's address bar (only the
   // fragment changes, so no reload): take over its filters and view. Runs
