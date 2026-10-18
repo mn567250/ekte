@@ -13,10 +13,10 @@ from __future__ import annotations
 import json
 
 import httpx
-from conftest import BASE_URL
 from test_anthropic import AnthropicMock
 from test_responses import ResponsesMock
 
+from tests._helpers import BASE_URL
 from zing.clients import AnthropicClient, OpenAICompatibleClient, ResponsesClient
 from zing.clients.base import rejected_params
 from zing.models import CompletionOutcome, RequestSpec, TargetConfig
@@ -251,8 +251,7 @@ async def test_responses_client_drops_refused_sampling_parameters():
 
 # -- the runner hands the profile's constraints to the clients -------------- #
 async def test_runner_sets_unsupported_params_from_each_profile(monkeypatch, tmp_path):
-    from conftest import MockServer
-
+    from tests._helpers import MockServer
     from zing.clients import make_client as real
     from zing.config import AuditOptions
     from zing.runner import run_audit

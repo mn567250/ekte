@@ -7,8 +7,8 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
-from conftest import BASE_URL, DEFAULT_MODEL
 
+from tests._helpers import BASE_URL, DEFAULT_MODEL
 from zing.clients import OpenAICompatibleClient
 from zing.config import AuditOptions
 from zing.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
