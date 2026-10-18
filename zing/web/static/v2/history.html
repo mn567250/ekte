@@ -1028,7 +1028,7 @@
 
   function fetchReport(panel, id) {
     panel.innerHTML = '<div class="state loading">' + esc(T("加载报告…", "Loading report…")) + "</div>";
-    fetch("/api/history/" + encodeURIComponent(id))
+    fetch("/api/history/" + encodeURIComponent(id) + "?trend=1")
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();

@@ -34,6 +34,7 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from typing import Any, TypeVar
 
+from zing.perf.trend import attach_trends
 from zing.utils.net import is_loopback_host, url_host
 
 _T = TypeVar("_T")
@@ -338,6 +339,9 @@ class JobManager:
     async def _finish(job: Job, report: dict[str, Any]) -> None:
         job.finishing = True
         job.report_id = await asyncio.to_thread(_save, report)
+        perf = report.get("performance")
+        if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
+            attach_trends(perf["requests"])  # the chart's trend line (after saving: never stored)
         job.status = "done"
         job.emit({"type": "report", "report": report, "report_id": job.report_id})
 

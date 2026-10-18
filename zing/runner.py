@@ -35,6 +35,7 @@ from zing.models import (
     TargetConfig,
 )
 from zing.perf import RequestRecorder, build_performance, detector_scope
+from zing.perf.trend import RunningMedian
 from zing.scoring import build_dimensions, build_verdict
 from zing.utils.redact import fingerprint_secret
 
@@ -154,9 +155,12 @@ async def run_audit(
 
     # Every target/baseline call is logged for the performance section and
     # streamed as a live progress event.
+    # Each streamed record carries its running medians (the live chart's
+    # trend line), so the browser only draws.
+    trend = RunningMedian()
     recorder = RequestRecorder(
         profile.model.tokenizer if profile and profile.model.tokenizer else None,
-        on_record=lambda rec: _emit({"type": "request_done", "record": rec.model_dump()}),
+        on_record=lambda rec: _emit({"type": "request_done", "record": trend.tag(rec.model_dump())}),
     )
 
     async with AsyncExitStack() as stack:

@@ -92,6 +92,7 @@ from zing.config import (
 )
 from zing.detectors.performance import stream_mode
 from zing.models import KnowledgeUsage, TargetConfig
+from zing.perf.trend import attach_trends
 from zing.runner import run_audit
 from zing.web import jobs
 from zing.web.caching import (
@@ -1215,12 +1216,17 @@ def create_app() -> FastAPI:
         return JSONResponse(history.trend(base_url, claimed_model, limit))
 
     @app.get("/api/history/{rid}")
-    def history_get(rid: int) -> Any:
+    def history_get(rid: int, trend: int = 0) -> Any:
+        """A saved report as stored; ``trend=1`` (the pages that show it) adds
+        each request's running medians for the performance chart."""
         from zing.web import history
 
         report = history.get(rid)
         if report is None:
             return JSONResponse({"error": "not found"}, status_code=404)
+        perf = report.get("performance") if trend else None
+        if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
+            attach_trends(perf["requests"])
         return JSONResponse(report)
 
     @app.delete("/api/history/{rid}")
