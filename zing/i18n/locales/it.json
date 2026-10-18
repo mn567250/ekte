@@ -592,8 +592,9 @@
    "{diverged} e altre impronte solo codice divergono dal comportamento nativo; verifica se c'è una sostituzione."
   ],
   "model_identity.fp.*": [
-   "Controllo dell'impronta comportamentale",
-   "Controllo dell'impronta comportamentale solo codice per {probe}."
+   "Divergenza dell'impronta: {signal|server}",
+   "Controllo dell'impronta comportamentale solo codice per {probe}.",
+   "Controllo dell'impronta comportamentale"
   ],
   "capability.tools": [
    "Chiamata di strumenti (function calling)",

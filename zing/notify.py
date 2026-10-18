@@ -97,12 +97,15 @@ def _key_findings(report: dict[str, Any], lang: str) -> list[str]:
     titles = [f for f in (verdict.get("key_findings") or []) if isinstance(f, str) and f.strip()]
     # key_findings are English titles; map each back to its finding's id so
     # the translated catalog title can be used.
-    ids: dict[str, str] = {}
+    found: dict[str, dict[str, Any]] = {}
     for det in report.get("detectors") or []:
         for f in det.get("findings") or []:
             if f.get("title") and f.get("id"):
-                ids.setdefault(f["title"], f["id"])
-    return [i18n.finding_title(lang, ids.get(t), t) for t in titles[:_MAX_FINDINGS]]
+                found.setdefault(f["title"], f)
+    return [
+        i18n.finding_title(lang, (found.get(t) or {}).get("id"), t, (found.get(t) or {}).get("evidence"))
+        for t in titles[:_MAX_FINDINGS]
+    ]
 
 
 def regressed(current: dict[str, Any], previous: dict[str, Any] | None) -> bool:

@@ -662,3 +662,100 @@ def test_shared_intl_formatters_are_cached_per_locale(tmp_path):
         "locale": "RangeError", "options": "RangeError", "ctor": "TypeError", "joined": "RangeError",
     }
     assert out["browserDefault"] and out["same"]
+
+
+# --------------------------------------------------------------------------- #
+# Fingerprint findings: one title per KB signal, in every language
+# --------------------------------------------------------------------------- #
+def _kb_signals() -> set[str]:
+    """Every ``fingerprints[].signal`` in the packaged KB (zing/knowledge/data)."""
+    import yaml
+
+    out: set[str] = set()
+
+    def walk(o: object) -> None:
+        if isinstance(o, dict):
+            out.update(f["signal"] for f in o.get("fingerprints") or [] if isinstance(f, dict) and f.get("signal"))
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    data = Path(__file__).resolve().parent.parent / "zing" / "knowledge" / "data"
+    for path in sorted(data.glob("*.yaml")):
+        for doc in yaml.safe_load_all(path.read_text(encoding="utf-8")):
+            walk(doc)
+    return out
+
+
+def test_every_fingerprint_signal_is_translated():
+    # A divergence finding's title names its signal ("Fingerprint divergence:
+    # <signal>"); the localized title shows it translated (i18n.js {signal|server}),
+    # so every KB signal needs a translation in every language but EN.
+    from zing import i18n
+
+    signals = _kb_signals()
+    assert len(signals) > 20
+    data = i18n._load()
+    for code in i18n.codes():
+        if code == "en":
+            continue
+        strings = data[code].get("strings", {})
+        assert sorted(s for s in signals if not strings.get(s) or strings[s] == s) == [], code
+        title, _tpl, generic = data[code]["findings"]["model_identity.fp.*"]
+        assert "{signal|server}" in title and "{" not in generic, code
+
+
+_FP_TITLES_JS = r"""
+const path = require("path");
+const dir = process.argv[1], signals = JSON.parse(process.argv[2]);
+const out = {};
+for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
+  for (const m of ["locales.js", "lang.js", "i18n.js"]) delete require.cache[require.resolve(path.join(dir, m))];
+  global.window = {};
+  global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", querySelectorAll: () => [], addEventListener() {} };
+  global.localStorage = { getItem: () => lang, setItem() {} };
+  for (const m of ["locales.js", "lang.js", "i18n.js"]) require(path.join(dir, m));
+  const I = window.ZING_I18N;
+  const findings = signals.map((s, i) => ({ id: "model_identity.fp.p" + i, title: "Fingerprint divergence: " + s,
+    status: "warn", severity: "low", summary: "x", evidence: { probe: "p" + i, signal: s }, recommendation: null }));
+  const report = { detectors: [{ name: "x", findings }], verdict: { key_findings: findings.map(f => f.title) } };
+  const ex = I.exportReport(report);
+  out[lang] = {
+    titles: findings.map(f => I.localizeFinding(f.id, f.summary, f.evidence, f.title, f.status).title),
+    exported: ex.detectors[0].findings.map(f => f.title), key_findings: ex.verdict.key_findings,
+    old: I.localizeFinding("model_identity.fp.p", "x", { probe: "p" }, "Fingerprint divergence: self-identification", "warn").title,
+    signal: signals.map(s => window.ZING_LANG.server(s)),
+  };
+}
+console.log(JSON.stringify(out));
+"""
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
+    from zing import i18n
+
+    signals = sorted(_kb_signals())
+    out = json.loads(subprocess.run(
+        ["node", "-e", _FP_TITLES_JS, str(_ui_js(tmp_path)), json.dumps(signals)],
+        capture_output=True, text=True, check=True,
+    ).stdout)
+    assert out["en"]["titles"] == ["Fingerprint divergence: " + s for s in signals]
+    for lang, r in out.items():
+        assert len(set(r["titles"])) == len(signals), lang  # one title per signal
+        assert r["exported"] == r["key_findings"] == r["titles"], lang  # the download matches the UI
+        if lang == "en":
+            continue
+        fp = i18n._load()[lang]["findings"]["model_identity.fp.*"]
+        assert r["titles"] == [fp[0].replace("{signal|server}", s) for s in r["signal"]], lang
+        assert all(t != s for t, s in zip(r["signal"], signals, strict=True)), lang  # signals translated
+        assert r["old"] == fp[2], lang  # no signal recorded (older report): the generic title
+    # the webhook alerts' titles (zing.notify) agree
+    assert i18n.finding_title("de", "model_identity.fp.self-id", "x", {"signal": "self-identification"}) == (
+        "Fingerprint-Abweichung: Selbstidentifikation"
+    )
+    assert i18n.finding_title("de", "model_identity.fp.self-id", "x", {"probe": "self-id"}) == (
+        "Verhaltens-Fingerprint-Prüfung"
+    )

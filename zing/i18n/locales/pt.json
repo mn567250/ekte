@@ -592,8 +592,9 @@
    "{diverged} e outras impressões apenas de código divergem do comportamento nativo; verifique se há substituição."
   ],
   "model_identity.fp.*": [
-   "Verificação de impressão digital de comportamento",
-   "Verificação de impressão digital de comportamento apenas de código para {probe}."
+   "Divergência de impressão digital: {signal|server}",
+   "Verificação de impressão digital de comportamento apenas de código para {probe}.",
+   "Verificação de impressão digital de comportamento"
   ],
   "capability.tools": [
    "Chamada de ferramentas (function calling)",

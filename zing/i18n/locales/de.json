@@ -592,8 +592,9 @@
    "{diverged} und weitere reine Code-Fingerprints weichen vom nativen Verhalten ab; prüfen Sie auf Austausch."
   ],
   "model_identity.fp.*": [
-   "Verhaltens-Fingerprint-Prüfung",
-   "Reine Code-Prüfung des Verhaltens-Fingerprints für {probe}."
+   "Fingerprint-Abweichung: {signal|server}",
+   "Reine Code-Prüfung des Verhaltens-Fingerprints für {probe}.",
+   "Verhaltens-Fingerprint-Prüfung"
   ],
   "capability.tools": [
    "Tool-Aufrufe (function calling)",

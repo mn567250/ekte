@@ -138,8 +138,10 @@
     if (!tpl) return null;
     var ev = evidence || {};
     var ok = true;
-    // {key} or {key|list}: the latter renders an array / object keys as "a, b".
-    var out = tpl.replace(/\{([a-zA-Z0-9_]+)(\|list)?\}/g, function (_m, key, asList) {
+    // {key}, {key|list} (an array / object keys as "a, b") or {key|server}
+    // (backend English text, e.g. a KB fingerprint's signal, translated).
+    var out = tpl.replace(/\{([a-zA-Z0-9_]+)(?:\|(list|server))?\}/g, function (_m, key, mod) {
+      var asList = mod === "list";
       if (!Object.prototype.hasOwnProperty.call(ev, key)) {
         ok = false;
         return "";
@@ -149,6 +151,7 @@
         ok = false;
         return "";
       }
+      if (mod === "server" && typeof v === "string") return window.ZING_LANG ? window.ZING_LANG.server(v) : v;
       if (typeof v === "boolean") return (yesNo || ["是", "否"])[v ? 0 : 1];
       if (typeof v === "number") {
         // Trim noisy floats; keep ints intact.
@@ -279,6 +282,14 @@
     return null;
   }
 
+  // A catalog entry's title filled from the evidence. A title naming its
+  // subject (model_identity.fp.*: "…: {signal|server}") falls back to the
+  // entry's generic title when the evidence lacks it (older reports).
+  function titleOf(entry, evidence) {
+    if (!entry) return null;
+    return (entry.title && fillTemplate(entry.title, evidence)) || entry.generic || null;
+  }
+
   // Resolve a Chinese catalog entry.
   function lookup(id) {
     return lookupIn(FINDINGS, id);
@@ -302,7 +313,7 @@
       var cat = ((window.ZING_LOCALES || {}).findings || {})[L.get()];
       var le = cat && lookupIn(cat, id);
       var ls = summaryFor(id, status, evidence, le && le.tpl, [L.tr("yes"), L.tr("no")]);
-      var lt = le && le.title ? fillTemplate(le.title, evidence) : null;
+      var lt = titleOf(le, evidence);
       return {
         title: lt || L.server(fallbackTitle || id || "Check"),
         summary: ls != null ? ls : L.server(fallbackSummary || ""),
@@ -311,7 +322,7 @@
     var entry = lookup(id);
     var summary = summaryFor(id, status, evidence, entry && entry.tpl);
     return {
-      title: (entry && entry.title && fillTemplate(entry.title, evidence)) || GENERIC_TITLE,
+      title: titleOf(entry, evidence) || GENERIC_TITLE,
       summary: summary != null ? summary : fallbackSummary || "",
     };
   }
@@ -325,7 +336,7 @@
     if (isZh()) {
       var entry = lookup(f.id);
       var s = summaryFor(f.id, f.status, f.evidence, entry && entry.tpl);
-      out.title = (entry && entry.title && fillTemplate(entry.title, f.evidence)) || L.exportText(f.title);
+      out.title = titleOf(entry, f.evidence) || L.exportText(f.title);
       out.summary = s != null ? s : L.exportText(f.summary || "");
     } else {
       var loc = localizeFinding(f.id, f.summary, f.evidence, f.title, f.status);
