@@ -113,9 +113,6 @@
   .empty.boxed { border: 1.5px dashed var(--line-strong); border-radius: 18px; }
   .empty p { margin: 8px 0 0; }
   .empty a { font-weight: 700; }
-  /* tabs: "Running" is aria-disabled while no monitor runs (tabs.js skips it) */
-  .tabs [role="tab"][aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
-  .tabs [role="tab"][aria-disabled="true"]:hover { color: var(--ink2); }
   .tabs [role="tab"] .count:empty { display: none; }
   .tabs [role="tab"] .count { font-variant-numeric: tabular-nums; }
   .mon:focus { outline: none; }
