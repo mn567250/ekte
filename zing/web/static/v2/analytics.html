@@ -1353,6 +1353,13 @@
     } catch (e) { /* 24-hour labels */ }
     return h12 ? dfmt({ hour: "numeric" }, dayDate(1, h)) : (h < 10 ? "0" : "") + h;
   }
+  // a row label of the grid: the start hour, or start–end for blocks of several hours
+  function rowName(h, n) {
+    if (!n || n < 2) return hourName(h);
+    var e = h + n, hc = ZING_LANG.dateFmt({ hour: "numeric" }).resolvedOptions().hourCycle;
+    if (hc === "h11" || hc === "h12") return hourName(h) + "–" + hourName(e % 24);
+    return hourName(h) + ":00–" + (e >= 24 ? "24" : hourName(e)) + ":00";
+  }
   // hours h .. h + n of a weekday (n: the grid's block size, default 1)
   function timeSpan(dow, h, n) {
     return dfmt({ hour: "numeric", minute: "2-digit" }, dayDate(dow, h)) + "–" +
@@ -1424,7 +1431,7 @@
         }).join(""));
     var cfg = {
       id: "heatc", title: Tf("{metric}，按星期几和小时", "{metric} by weekday and hour", { metric: name }), desc: desc, unit: m.unit,
-      cells: cells, block: blk, days: weekdays(), hourLabel: hourName, tipTime: span,
+      cells: cells, block: blk, days: weekdays(), hourLabel: rowName, tipTime: span,
       lowHint: cellHint(), legend: gridLegend(),
     };
     drawChart("heat", "heat-chart", C.heatmap, cfg);
@@ -1529,7 +1536,7 @@
       drawChart("errs", "err-chart", C.heatmap, {
         id: "errc", title: T("失败调用，按星期几和小时", "Failed calls by weekday and hour"), desc: desc, unit: "ratio",
         cells: bars.map(function (b) { return { dow: b.dow, hour: b.hour, v: b.raw.error_share, runs: b.runs, low: b.low }; }),
-        block: blk, days: weekdays(), hourLabel: hourName, tipTime: function (dow, h) { return hourSpan(dow, h, blk); },
+        block: blk, days: weekdays(), hourLabel: rowName, tipTime: function (dow, h) { return hourSpan(dow, h, blk); },
         lowHint: cellHint(), legend: gridLegend(),
       });
       return;
