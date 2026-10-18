@@ -12,6 +12,9 @@
   "Theme": "Design",
   "Auto theme": "Automatisch",
   "Light": "Hell",
-  "Dark": "Dunkel"
+  "Dark": "Dunkel",
+  "Chart motion": "Diagramm-Animation",
+  "Motion on": "Animation an",
+  "Motion off": "Animation aus"
  }
 }

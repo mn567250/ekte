@@ -62,6 +62,9 @@
       '<option value="system" data-en="Auto theme">跟随系统</option>' +
       '<option value="light" data-en="Light">浅色</option>' +
       '<option value="dark" data-en="Dark">深色</option></select>' +
+      '<select class="motion-sel" aria-label="图表动画" title="图表动画" data-en-aria-label="Chart motion" data-en-title="Chart motion">' +
+      '<option value="on" data-en="Motion on">动画开</option>' +
+      '<option value="off" data-en="Motion off">动画关</option></select>' +
       '<select class="lang-sel" aria-label="语言" title="语言" data-en-aria-label="Language" data-en-title="Language"></select>' +
       '<a class="a11y" href="/v2/accessibility"' + (page === "a11y" ? ' aria-current="page"' : "") +
       ' aria-label="无障碍" title="无障碍" data-en-aria-label="Accessibility" data-en-title="Accessibility">' +
@@ -82,6 +85,13 @@
       ts.addEventListener("change", function () { window.ZING_THEME.set(ts.value); });
     } else {
       ts.remove(); // page without theme.js
+    }
+    var ms = header.querySelector("select.motion-sel");
+    if (window.ZING_MOTION) {
+      ms.value = window.ZING_MOTION.get();
+      ms.addEventListener("change", function () { window.ZING_MOTION.set(ms.value); });
+    } else {
+      ms.remove();
     }
     // keep the active tab visible when the link row scrolls (phones). Scroll
     // the row itself: scrollIntoView() would also move Chromium's sequential

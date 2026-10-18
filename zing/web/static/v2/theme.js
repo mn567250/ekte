@@ -10,6 +10,10 @@
  * The choice ("system" | "light" | "dark") is a per-browser convenience in
  * localStorage, shared by every v2 page and kept in sync across open tabs.
  * nav.js renders the <select class="theme-sel"> and calls ZING_THEME.set.
+ *
+ * Chart motion ("on" | "off", ZING_MOTION) works the same way: "off" sets
+ * data-motion="off" on <html>, which chartmotion.js / .css honour (as they do
+ * prefers-reduced-motion). nav.js renders its <select class="motion-sel">.
  */
 (function () {
   "use strict";
@@ -51,4 +55,26 @@
 
   window.ZING_THEME = { get: get, set: set, apply: function () { apply(get()); } };
   apply(get());
+
+  // ---- chart motion: "on" (default; reduced motion still wins) | "off" ----
+  var MKEY = "zing.v2.motion";
+  function mget() {
+    try { return localStorage.getItem(MKEY) === "off" ? "off" : "on"; } catch (e) { return "on"; }
+  }
+  function mapply(choice) {
+    if (choice === "off") root.setAttribute("data-motion", "off");
+    else root.removeAttribute("data-motion");
+    var sw = document.querySelectorAll("select.motion-sel");
+    for (var i = 0; i < sw.length; i++) sw[i].value = choice;
+  }
+  function mset(choice) {
+    choice = choice === "off" ? "off" : "on";
+    try { localStorage.setItem(MKEY, choice); } catch (e) {}
+    mapply(choice);
+  }
+  window.addEventListener("storage", function (ev) {
+    if (ev.key === MKEY) mapply(mget());
+  });
+  window.ZING_MOTION = { get: mget, set: mset };
+  mapply(mget());
 })();

@@ -255,7 +255,8 @@ main[tabindex="-1"]:focus { outline: none; }
 }
 .pill b { color: var(--teal); }
 .lang-sel,
-.theme-sel {
+.theme-sel,
+.motion-sel {
   appearance: none; -webkit-appearance: none; cursor: pointer;
   font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink2);
   background: var(--card); border: 1px solid var(--line-control); border-radius: var(--r-pill);
@@ -266,9 +267,11 @@ main[tabindex="-1"]:focus { outline: none; }
   background-repeat: no-repeat;
 }
 .lang-sel:hover,
-.theme-sel:hover { border-color: var(--line-control-hover); }
+.theme-sel:hover,
+.motion-sel:hover { border-color: var(--line-control-hover); }
 .lang-sel:focus-visible,
-.theme-sel:focus-visible { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--focus-ring); }
+.theme-sel:focus-visible,
+.motion-sel:focus-visible { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--focus-ring); }
 /* icon-only link to the accessibility report (nav.js), as tall as the switches;
    focus keeps the global teal outline (the current-page state already has a teal border) */
 .znav .a11y {
