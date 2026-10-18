@@ -89,8 +89,8 @@
       - text: standard 套件只在对照基线时发送探测请求；否则使用检测自身的请求。
       - button "对照可信基线 compare" [expanded]
       - paragraph: 填一个你信任的同款模型端点（如官方 API）。zing 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。
-      - text: 中转站 / 厂商 可选
-      - combobox "中转站 / 厂商 可选":
+      - text: 基线中转站 / 厂商 可选
+      - combobox "基线中转站 / 厂商 可选":
         - option "选择中转站或厂商…" [selected]
         - option "其他（手动填写地址）"
       - text: 选择后会自动填写地址；不在列表中的中转站请选“其他”并填写地址。 基线地址 base_url

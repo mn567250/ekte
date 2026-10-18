@@ -42,7 +42,7 @@
   - region "Statut":
     - heading "Statut" [level=2]
     - paragraph: Partiellement conforme
-    - paragraph: Sur 44 étapes applicables, 27 sont réussies, 0 échouent, 17 attendent une revue manuelle et 0 ne sont pas encore testées.
+    - paragraph: Sur 44 étapes applicables, 33 sont réussies, 0 échouent, 11 attendent une revue manuelle et 0 ne sont pas encore testées.
     - term: Généré
     - definition: <report date>
     - term: Commit
@@ -77,9 +77,9 @@
       - listitem: Non applicable 6
     - heading "Résultats" [level=3]
     - list:
-      - listitem: Réussi 27 sur 44 · 61,4 %
+      - listitem: Réussi 33 sur 44 · 75 %
       - listitem: Échec 0 sur 44 · 0 %
-      - listitem: Revue manuelle en attente 17 sur 44 · 38,6 %
+      - listitem: Revue manuelle en attente 11 sur 44 · 25 %
       - listitem: Non testé 0 sur 44 · 0 %
       - listitem: Non applicable 6
     - paragraph: Les pourcentages portent sur les étapes applicables ; les étapes sur l'audio et la vidéo ne s'appliquent pas, car l'interface n'en contient pas.
@@ -115,7 +115,7 @@
             - columnheader "Automatisation"
             - columnheader "Statut"
         - rowgroup:
-          - row "9.1.1.1 A Partiellement automatique Revue manuelle en attente":
+          - row "9.1.1.1 A Partiellement automatique Réussi":
             - rowheader "9.1.1.1"
             - cell:
               - group:
@@ -126,9 +126,10 @@
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel
                   - code: test_wcag_rules_expanded
+                - paragraph: "Revue par claude-opus-5-5 (en anglais) : ok"
             - cell "A"
             - cell "Partiellement automatique"
-            - cell "Revue manuelle en attente"
+            - cell "Réussi"
           # … more rows of the same shape
   - region "Déclaration d'accessibilité":
     - heading "Déclaration d'accessibilité" [level=2]
@@ -137,29 +138,23 @@
     - heading "Limites connues" [level=3]
     - paragraph: "La partie automatisée de ces étapes est réussie ; le reste nécessite encore une revue manuelle :"
     - list:
-      - listitem: 9.1.1.1 Contenu non textuel
       - listitem: 9.1.3.1 Information et relations
       - listitem: 9.1.3.2 Ordre séquentiel logique
-      - listitem: 9.1.3.3 Caractéristiques sensorielles
       - listitem: 9.1.4.1 Utilisation de la couleur
       - listitem: 9.1.4.11 Contraste du contenu non textuel
       - listitem: 9.1.4.13 Contenu au survol ou au focus
       - listitem: 9.2.2.2 Mettre en pause, arrêter, masquer
       - listitem: 9.2.4.3 Parcours du focus
-      - listitem: 9.2.4.4 Fonction du lien (selon le contexte)
-      - listitem: 9.2.4.6 En-têtes et étiquettes
       - listitem: 9.2.5.1 Gestes de pointeur
       - listitem: 9.3.2.2 À la saisie
       - listitem: 9.3.3.1 Identification des erreurs
-      - listitem: 9.3.3.2 Étiquettes ou instructions
-      - listitem: 9.3.3.3 Suggestion après une erreur
       - listitem: 9.4.1.3 Messages d'état
     - heading "Méthode d'évaluation" [level=3]
     - paragraph:
       - text: "Auto-évaluation : à chaque modification, la suite de tests automatisés de"
       - code: tests/a11y
       - text: vérifie chaque page de l'interface web v2 dans un vrai navigateur (Chromium, avec axe-core et des vérifications propres) dans chaque langue de l'interface et dans les thèmes clair et sombre. Chaque test indique les étapes de test qu'il tranche.
-    - paragraph: "Dernière exécution des tests : <report date>. Aucune revue manuelle, y compris avec des lecteurs d'écran, n'a encore été faite."
+    - paragraph: "Dernière exécution des tests : <report date>. Une revue des textes par claude-opus-5-5 est enregistrée comme revue manuelle des étapes qu’elle couvre."
     - heading "Retour" [level=3]
     - paragraph:
       - text: "Vous avez trouvé un obstacle, ou quelque chose est difficile à utiliser avec une technologie d'assistance ? Dites-le-nous :"

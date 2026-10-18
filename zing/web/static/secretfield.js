@@ -81,7 +81,16 @@
       btn.setAttribute("title", "显示密钥");
       btn.setAttribute("data-en-aria-label", "Show key");
       btn.setAttribute("data-en-title", "Show key");
-      if (input.id) btn.setAttribute("aria-controls", input.id);
+      if (input.id) {
+        btn.setAttribute("aria-controls", input.id);
+        // Every toggle is named "Show key" (its visible tooltip, WCAG 2.5.3);
+        // the field's label, as the description, tells them apart.
+        var lab = document.querySelector('label[for="' + input.id + '"]');
+        if (lab) {
+          if (!lab.id) lab.id = input.id + "-lab";
+          btn.setAttribute("aria-describedby", lab.id);
+        }
+      }
       wrap.appendChild(btn);
       input.__zingEye = btn;
       btn.addEventListener("mousedown", function (e) {

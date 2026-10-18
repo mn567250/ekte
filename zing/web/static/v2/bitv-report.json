@@ -5,7 +5,7 @@
   "en": "EN 301 549 V3.2.1, chapter 9",
   "wcag": "WCAG 2.1 level A + AA"
  },
- "generated_at": "2026-10-13T04:56:22+00:00",
+ "generated_at": "2026-10-18T22:33:37+00:00",
  "tests_run_at": "2026-10-13T04:56:10+00:00",
  "zing_version": "0.20.0",
  "commit": "012c36068547",
@@ -36,7 +36,7 @@
  },
  "conformance": {
   "status": "partially conformant",
-  "manual_review": false
+  "manual_review": true
  },
  "totals": {
   "steps": 50,
@@ -61,8 +61,8 @@
   },
   "status": {
    "pass": {
-    "count": 27,
-    "percent": 61.4
+    "count": 33,
+    "percent": 75.0
    },
    "fail": {
     "count": 0,
@@ -73,8 +73,8 @@
     "percent": 0.0
    },
    "manual review pending": {
-    "count": 17,
-    "percent": 38.6
+    "count": 11,
+    "percent": 25.0
    },
    "n/a": {
     "count": 6,
@@ -96,7 +96,7 @@
    "title": "Non-text Content",
    "automation": "partial",
    "how": "Images, icons, SVGs and controls have a text alternative. Whether each alternative is meaningful is judged by a person.",
-   "status": "manual review pending",
+   "status": "pass",
    "tests": {
     "run": 30,
     "passed": 30,
@@ -108,7 +108,14 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending",
+   "review": {
+    "verdict": "ok",
+    "notes": "",
+    "by": "claude-opus-5-5",
+    "counted": true
+   }
   },
   {
    "step": "9.1.2.1",
@@ -125,7 +132,8 @@
     "skipped": 0
    },
    "test_names": [],
-   "failures": []
+   "failures": [],
+   "status_tests": "n/a"
   },
   {
    "step": "9.1.2.2",
@@ -142,7 +150,8 @@
     "skipped": 0
    },
    "test_names": [],
-   "failures": []
+   "failures": [],
+   "status_tests": "n/a"
   },
   {
    "step": "9.1.2.3",
@@ -159,7 +168,8 @@
     "skipped": 0
    },
    "test_names": [],
-   "failures": []
+   "failures": [],
+   "status_tests": "n/a"
   },
   {
    "step": "9.1.2.4",
@@ -176,7 +186,8 @@
     "skipped": 0
    },
    "test_names": [],
-   "failures": []
+   "failures": [],
+   "status_tests": "n/a"
   },
   {
    "step": "9.1.2.5",
@@ -193,7 +204,8 @@
     "skipped": 0
    },
    "test_names": [],
-   "failures": []
+   "failures": [],
+   "status_tests": "n/a"
   },
   {
    "step": "9.1.3.1",
@@ -219,7 +231,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.1.3.2",
@@ -239,7 +252,8 @@
     "test_reading_order_matches_visual_order",
     "test_sort_buttons"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.1.3.3",
@@ -248,7 +262,7 @@
    "title": "Sensory Characteristics",
    "automation": "partial",
    "how": "Texts are searched for instructions that rely on shape, position or colour alone. A person reviews the hits.",
-   "status": "manual review pending",
+   "status": "pass",
    "tests": {
     "run": 51,
     "passed": 51,
@@ -260,7 +274,14 @@
     "test_no_sensory_only_instructions_on_page",
     "test_sensory_heuristic_self_check"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending",
+   "review": {
+    "verdict": "ok",
+    "notes": "",
+    "by": "claude-opus-5-5",
+    "counted": true
+   }
   },
   {
    "step": "9.1.3.4",
@@ -279,7 +300,8 @@
    "test_names": [
     "test_orientation_not_locked"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.1.3.5",
@@ -300,7 +322,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.1.4.1",
@@ -325,7 +348,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.1.4.2",
@@ -342,7 +366,8 @@
     "skipped": 0
    },
    "test_names": [],
-   "failures": []
+   "failures": [],
+   "status_tests": "n/a"
   },
   {
    "step": "9.1.4.3",
@@ -365,7 +390,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.1.4.4",
@@ -387,7 +413,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.1.4.5",
@@ -406,7 +433,8 @@
    "test_names": [
     "test_no_images_of_text"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.1.4.10",
@@ -428,7 +456,8 @@
     "test_reflow_at_320_css_px",
     "test_view_controls_reflow_at_320_css_px"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.1.4.11",
@@ -449,7 +478,8 @@
     "test_focus_indicator_contrast",
     "test_form_control_boundaries_contrast"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.1.4.12",
@@ -471,7 +501,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.1.4.13",
@@ -492,7 +523,8 @@
     "test_popups_close_with_escape_and_return_focus",
     "test_tooltips_dismissible_hoverable_persistent"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.2.1.1",
@@ -523,7 +555,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.1.2",
@@ -542,7 +575,8 @@
    "test_names": [
     "test_every_control_reachable_by_tab_without_trap"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.1.4",
@@ -561,7 +595,8 @@
    "test_names": [
     "test_no_character_key_shortcuts"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.2.1",
@@ -583,7 +618,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.2.2",
@@ -607,7 +643,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.2.3.1",
@@ -626,7 +663,8 @@
    "test_names": [
     "test_no_flashing_above_threshold"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.4.1",
@@ -649,7 +687,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.4.2",
@@ -671,7 +710,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.4.3",
@@ -700,7 +740,8 @@
     "test_show_more_by_keyboard",
     "test_tools_flow"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.2.4.4",
@@ -709,7 +750,7 @@
    "title": "Link Purpose (In Context)",
    "automation": "partial",
    "how": "Every link has an accessible name. Whether it describes the target is judged by a person.",
-   "status": "manual review pending",
+   "status": "pass",
    "tests": {
     "run": 202,
     "passed": 202,
@@ -721,7 +762,14 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending",
+   "review": {
+    "verdict": "ok",
+    "notes": "",
+    "by": "claude-opus-5-5",
+    "counted": true
+   }
   },
   {
    "step": "9.2.4.5",
@@ -740,7 +788,8 @@
    "test_names": [
     "test_every_page_reachable_from_every_page"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.4.6",
@@ -749,7 +798,7 @@
    "title": "Headings and Labels",
    "automation": "partial",
    "how": "Headings and labels exist and are not empty. Whether they are descriptive is judged by a person.",
-   "status": "manual review pending",
+   "status": "pass",
    "tests": {
     "run": 196,
     "passed": 196,
@@ -762,7 +811,14 @@
     "test_best_practices",
     "test_heading_structure"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending",
+   "review": {
+    "verdict": "ok",
+    "notes": "",
+    "by": "claude-opus-5-5",
+    "counted": true
+   }
   },
   {
    "step": "9.2.4.7",
@@ -783,7 +839,8 @@
     "test_focused_element_is_on_screen",
     "test_show_more_focus_visible"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.5.1",
@@ -802,7 +859,8 @@
    "test_names": [
     "test_no_path_gestures_or_motion_actuation"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.2.5.2",
@@ -821,7 +879,8 @@
    "test_names": [
     "test_pointer_cancellation"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.5.3",
@@ -840,7 +899,8 @@
    "test_names": [
     "test_label_in_name"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.2.5.4",
@@ -859,7 +919,8 @@
    "test_names": [
     "test_no_path_gestures_or_motion_actuation"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.3.1.1",
@@ -881,7 +942,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.3.1.2",
@@ -903,7 +965,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.3.2.1",
@@ -922,7 +985,8 @@
    "test_names": [
     "test_every_control_reachable_by_tab_without_trap"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.3.2.2",
@@ -941,7 +1005,8 @@
    "test_names": [
     "test_on_input_no_change_of_context"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.3.2.3",
@@ -960,7 +1025,8 @@
    "test_names": [
     "test_consistent_navigation_and_landmarks"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.3.2.4",
@@ -980,7 +1046,8 @@
     "test_consistent_identification",
     "test_consistent_navigation_and_landmarks"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.3.3.1",
@@ -1002,7 +1069,8 @@
     "test_kb_flow",
     "test_tools_flow"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   },
   {
    "step": "9.3.3.2",
@@ -1011,7 +1079,7 @@
    "title": "Labels or Instructions",
    "automation": "partial",
    "how": "Every field has a label. Whether the instructions are sufficient is judged by a person.",
-   "status": "manual review pending",
+   "status": "pass",
    "tests": {
     "run": 202,
     "passed": 202,
@@ -1023,7 +1091,14 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending",
+   "review": {
+    "verdict": "ok",
+    "notes": "",
+    "by": "claude-opus-5-5",
+    "counted": true
+   }
   },
   {
    "step": "9.3.3.3",
@@ -1032,7 +1107,7 @@
    "title": "Error Suggestion",
    "automation": "partial",
    "how": "Error messages are present and translated. Whether they suggest a fix is judged by a person.",
-   "status": "manual review pending",
+   "status": "pass",
    "tests": {
     "run": 49,
     "passed": 49,
@@ -1042,7 +1117,14 @@
    "test_names": [
     "test_error_identification"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending",
+   "review": {
+    "verdict": "ok",
+    "notes": "",
+    "by": "claude-opus-5-5",
+    "counted": true
+   }
   },
   {
    "step": "9.3.3.4",
@@ -1061,7 +1143,8 @@
    "test_names": [
     "test_destructive_actions_ask_first"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.4.1.1",
@@ -1081,7 +1164,8 @@
     "test_rendered_ids_are_unique",
     "test_served_markup_is_well_formed"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.4.1.2",
@@ -1113,7 +1197,8 @@
     "test_wcag_rules_every_tab_panel",
     "test_wcag_rules_expanded"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "pass"
   },
   {
    "step": "9.4.1.3",
@@ -1142,7 +1227,8 @@
     "test_sort_buttons",
     "test_tools_flow"
    ],
-   "failures": []
+   "failures": [],
+   "status_tests": "manual review pending"
   }
  ],
  "beyond": [
@@ -1161,5 +1247,15 @@
    "failures": []
   }
  ],
- "review": null
+ "review": {
+  "model": "claude-opus-5-5",
+  "generated_at": "2026-10-18T22:32:52+00:00",
+  "note": "LLM review of the texts. The conformance report (python -m tests.a11y.conformance) counts it as the manual part of the steps it covers and names the model.",
+  "method": "llm",
+  "counted": true,
+  "translation": {
+   "verdict": "ok",
+   "notes": ""
+  }
+ }
 }

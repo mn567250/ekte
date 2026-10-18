@@ -22,6 +22,7 @@
   "Responses": "Responses",
   "Running": "En curso",
   "To compare, enter both the baseline URL and the baseline model.": "Para comparar, introduce tanto la URL como el modelo de referencia.",
-  "{n} of {total} checks done": "{n} de {total} comprobaciones completadas"
+  "{n} of {total} checks done": "{n} de {total} comprobaciones completadas",
+  "Baseline relay / provider": "Relay / proveedor de referencia"
  }
 }

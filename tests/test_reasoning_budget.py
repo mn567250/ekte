@@ -12,8 +12,8 @@ from __future__ import annotations
 import json
 
 import httpx
-from conftest import BASE_URL
 
+from tests._helpers import BASE_URL
 from zing.clients import OpenAICompatibleClient
 from zing.clients.base import REASONING_RETRY_TOKENS
 from zing.models import CompletionOutcome, RequestSpec, TargetConfig
@@ -214,8 +214,7 @@ async def test_a_repeat_that_did_not_help_is_not_sticky():
 
 
 async def test_runner_gives_a_reasoning_profile_room_up_front(monkeypatch, tmp_path):
-    from conftest import MockServer
-
+    from tests._helpers import MockServer
     from zing.clients import make_client as real
     from zing.config import AuditOptions
     from zing.runner import run_audit

@@ -78,6 +78,14 @@ _MIN_CONSISTENCY_SAMPLES = 10
 _TAIL_STEADY = 1.3
 _TAIL_STABLE = 1.75
 _TAIL_VARIABLE = 2.5
+# The consistency findings' titles per metric, spelled out so the locales can
+# translate each one.
+_CONSISTENCY_TITLE = {
+    "Latency": "Latency consistency",
+    "Time to first token": "Time to first token consistency",
+    "Decode throughput": "Decode throughput consistency",
+    "End-to-end throughput": "End-to-end throughput consistency",
+}
 # Share of probe requests that failed (rate limits excluded).
 _ERROR_RATE_OK = 0.02
 _ERROR_RATE_WARN = 0.1
@@ -505,7 +513,7 @@ class PerformanceDetector(Detector):
                 result.findings.append(
                     SCALE.finding(
                         check, "few_samples",
-                        title=f"{what} consistency",
+                        title=_CONSISTENCY_TITLE[what],
                         summary=f"{len(values)} clean samples; at least "
                         f"{_MIN_CONSISTENCY_SAMPLES} are needed to judge consistency.",
                         evidence=evidence,
@@ -516,7 +524,7 @@ class PerformanceDetector(Detector):
             result.findings.append(
                 SCALE.finding(
                     check, _tail_key(ratio),
-                    title=f"{what} consistency",
+                    title=_CONSISTENCY_TITLE[what],
                     summary=f"{what}: p50 {_fmt(p50, unit)}, {tail} "
                     f"{_fmt(tail_value, unit)} — tail ratio ({spread}) {ratio:.2f} over "
                     f"{len(values)} requests.",

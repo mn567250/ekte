@@ -92,10 +92,10 @@
     - tab "Facturación"
   - tabpanel "Resumen":
     - tablist "Resumen":
-      - tab "Resumen" [selected]
+      - tab "Cifras clave" [selected]
       - tab "Clasificación"
-    - tabpanel "Resumen":
-      - heading "Resumen" [level=2]
+    - tabpanel "Cifras clave":
+      - heading "Cifras clave" [level=2]
       - paragraph: 2 sept – 1 oct 2026, comparado con el periodo de igual duración anterior (3 ago – 1 sept 2026).
       - list:
         - listitem: Ejecuciones 14 +14

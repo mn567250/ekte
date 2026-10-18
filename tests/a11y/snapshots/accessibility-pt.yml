@@ -42,7 +42,7 @@
   - region "Estado":
     - heading "Estado" [level=2]
     - paragraph: Parcialmente conforme
-    - paragraph: Dos 44 passos aplicáveis, 27 são aprovados, 0 falham, 17 aguardam uma revisão manual e 0 ainda não foram testados.
+    - paragraph: Dos 44 passos aplicáveis, 33 são aprovados, 0 falham, 11 aguardam uma revisão manual e 0 ainda não foram testados.
     - term: Gerado
     - definition: <report date>
     - term: Commit
@@ -77,9 +77,9 @@
       - listitem: Não aplicável 6
     - heading "Resultados" [level=3]
     - list:
-      - listitem: Aprovado 27 de 44 · 61,4 %
+      - listitem: Aprovado 33 de 44 · 75 %
       - listitem: Falha 0 de 44 · 0 %
-      - listitem: Revisão manual pendente 17 de 44 · 38,6 %
+      - listitem: Revisão manual pendente 11 de 44 · 25 %
       - listitem: Não testado 0 de 44 · 0 %
       - listitem: Não aplicável 6
     - paragraph: As percentagens referem-se aos passos aplicáveis; os passos sobre áudio e vídeo não se aplicam porque a interface não os tem.
@@ -115,7 +115,7 @@
             - columnheader "Automação"
             - columnheader "Estado"
         - rowgroup:
-          - row "9.1.1.1 A Parcialmente automático Revisão manual pendente":
+          - row "9.1.1.1 A Parcialmente automático Aprovado":
             - rowheader "9.1.1.1"
             - cell:
               - group:
@@ -126,9 +126,10 @@
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel
                   - code: test_wcag_rules_expanded
+                - paragraph: "Revisão por claude-opus-5-5 (em inglês): ok"
             - cell "A"
             - cell "Parcialmente automático"
-            - cell "Revisão manual pendente"
+            - cell "Aprovado"
           # … more rows of the same shape
   - region "Declaração de acessibilidade":
     - heading "Declaração de acessibilidade" [level=2]
@@ -137,29 +138,23 @@
     - heading "Limitações conhecidas" [level=3]
     - paragraph: "A parte automatizada destes passos é aprovada; o resto ainda precisa de uma revisão manual:"
     - list:
-      - listitem: 9.1.1.1 Conteúdo não textual
       - listitem: 9.1.3.1 Informações e relações
       - listitem: 9.1.3.2 Sequência com significado
-      - listitem: 9.1.3.3 Características sensoriais
       - listitem: 9.1.4.1 Utilização da cor
       - listitem: 9.1.4.11 Contraste não textual
       - listitem: 9.1.4.13 Conteúdo em foco ou ao passar o cursor
       - listitem: 9.2.2.2 Pausar, parar, ocultar
       - listitem: 9.2.4.3 Ordem do foco
-      - listitem: 9.2.4.4 Finalidade da ligação (em contexto)
-      - listitem: 9.2.4.6 Cabeçalhos e etiquetas
       - listitem: 9.2.5.1 Gestos de ponteiro
       - listitem: 9.3.2.2 Na introdução de dados
       - listitem: 9.3.3.1 Identificação de erros
-      - listitem: 9.3.3.2 Etiquetas ou instruções
-      - listitem: 9.3.3.3 Sugestão de erro
       - listitem: 9.4.1.3 Mensagens de estado
     - heading "Como foi avaliado" [level=3]
     - paragraph:
       - text: "Autoavaliação: a cada alteração, o conjunto de testes automatizados em"
       - code: tests/a11y
       - text: verifica cada página da interface web v2 num navegador real (Chromium, com axe-core e verificações próprias) em todos os idiomas da interface e nos temas claro e escuro. Cada teste indica os passos de teste que decide.
-    - paragraph: "Última execução dos testes: <report date>. Ainda não foi feita uma revisão manual, incluindo leitores de ecrã."
+    - paragraph: "Última execução dos testes: <report date>. Está registada uma revisão dos textos por claude-opus-5-5 como revisão manual dos passos que abrange."
     - heading "Comentários" [level=3]
     - paragraph:
       - text: "Encontrou uma barreira ou algo é difícil de usar com tecnologias de apoio? Diga-nos:"

@@ -7,8 +7,8 @@ import re
 
 import httpx
 import pytest
-from conftest import BASE_URL, DEFAULT_MODEL, MockServer
 
+from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
 from zing.clients import OpenAICompatibleClient
 from zing.config import AuditOptions
 from zing.context import AuditContext

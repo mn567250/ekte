@@ -592,8 +592,9 @@
    "{diverged} et d'autres empreintes purement code divergent du comportement natif ; vérifiez s'il y a substitution."
   ],
   "model_identity.fp.*": [
-   "Contrôle d'empreinte comportementale",
-   "Contrôle d'empreinte comportementale purement code pour {probe}."
+   "Divergence d'empreinte : {signal|server}",
+   "Contrôle d'empreinte comportementale purement code pour {probe}.",
+   "Contrôle d'empreinte comportementale"
   ],
   "capability.tools": [
    "Appel d'outils (function calling)",

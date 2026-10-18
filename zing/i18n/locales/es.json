@@ -592,8 +592,9 @@
    "{diverged} y otras huellas de solo código divergen del comportamiento nativo; compruebe si hay sustitución."
   ],
   "model_identity.fp.*": [
-   "Comprobación de huella de comportamiento",
-   "Comprobación de huella de comportamiento de solo código para {probe}."
+   "Divergencia de huella: {signal|server}",
+   "Comprobación de huella de comportamiento de solo código para {probe}.",
+   "Comprobación de huella de comportamiento"
   ],
   "capability.tools": [
    "Llamada a herramientas (function calling)",

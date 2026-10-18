@@ -45,6 +45,7 @@
     - text: .
   - region "Quel profil un identifiant de modèle utilise-t-il ?":
     - heading "Quel profil un identifiant de modèle utilise-t-il ?" [level=2]
+    - text: Identifiant du modèle
     - textbox "Identifiant du modèle":
       - /placeholder: p. ex. gpt-4o
     - button "Rechercher"
@@ -83,6 +84,7 @@
       - paragraph: La vérification valide le schéma et les limites, signale les expressions régulières dangereuses, liste chaque prompt que zing enverrait aux relais et montre quels identifiants de modèle seraient résolus différemment. Rien n’est enregistré avant que vous n’enregistriez.
       - button "Contrôle"
       - button "Enregistrer dans la base" [disabled]
+    - text: Filtrer les modèles
     - searchbox "Filtrer les modèles"
     - status
     - group:

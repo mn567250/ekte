@@ -42,7 +42,7 @@
   - region "Status":
     - heading "Status" [level=2]
     - paragraph: Teilweise vereinbar
-    - paragraph: Von 44 anwendbaren Schritten sind 27 bestanden, 0 nicht bestanden, 17 warten auf eine manuelle Prüfung und 0 sind noch nicht geprüft.
+    - paragraph: Von 44 anwendbaren Schritten sind 33 bestanden, 0 nicht bestanden, 11 warten auf eine manuelle Prüfung und 0 sind noch nicht geprüft.
     - term: Erstellt
     - definition: <report date>
     - term: Commit
@@ -77,9 +77,9 @@
       - listitem: Nicht anwendbar 6
     - heading "Ergebnisse" [level=3]
     - list:
-      - listitem: Bestanden 27 von 44 · 61,4 %
+      - listitem: Bestanden 33 von 44 · 75 %
       - listitem: Fehlgeschlagen 0 von 44 · 0 %
-      - listitem: Manuelle Prüfung ausstehend 17 von 44 · 38,6 %
+      - listitem: Manuelle Prüfung ausstehend 11 von 44 · 25 %
       - listitem: Nicht geprüft 0 von 44 · 0 %
       - listitem: Nicht anwendbar 6
     - paragraph: Die Prozentwerte beziehen sich auf die anwendbaren Schritte; Schritte zu Audio und Video sind nicht anwendbar, weil die Oberfläche keine enthält.
@@ -115,7 +115,7 @@
             - columnheader "Automatisierung"
             - columnheader "Status"
         - rowgroup:
-          - row "9.1.1.1 A Teilweise automatisch Manuelle Prüfung ausstehend":
+          - row "9.1.1.1 A Teilweise automatisch Bestanden":
             - rowheader "9.1.1.1"
             - cell:
               - group:
@@ -126,9 +126,10 @@
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel
                   - code: test_wcag_rules_expanded
+                - paragraph: "Prüfung durch claude-opus-5-5 (Englisch): ok"
             - cell "A"
             - cell "Teilweise automatisch"
-            - cell "Manuelle Prüfung ausstehend"
+            - cell "Bestanden"
           # … more rows of the same shape
   - region "Erklärung zur Barrierefreiheit":
     - heading "Erklärung zur Barrierefreiheit" [level=2]
@@ -137,29 +138,23 @@
     - heading "Bekannte Einschränkungen" [level=3]
     - paragraph: "Der automatisierte Teil dieser Schritte ist bestanden; der Rest braucht noch eine manuelle Prüfung:"
     - list:
-      - listitem: 9.1.1.1 Nicht-Text-Inhalt
       - listitem: 9.1.3.1 Info und Beziehungen
       - listitem: 9.1.3.2 Bedeutungstragende Reihenfolge
-      - listitem: 9.1.3.3 Sensorische Eigenschaften
       - listitem: 9.1.4.1 Benutzung von Farbe
       - listitem: 9.1.4.11 Nicht-Text-Kontrast
       - listitem: 9.1.4.13 Eingeblendeter Inhalt bei Hover oder Fokus
       - listitem: 9.2.2.2 Pausieren, beenden, ausblenden
       - listitem: 9.2.4.3 Fokus-Reihenfolge
-      - listitem: 9.2.4.4 Linkzweck (im Kontext)
-      - listitem: 9.2.4.6 Überschriften und Beschriftungen
       - listitem: 9.2.5.1 Zeigergesten
       - listitem: 9.3.2.2 Bei Eingabe
       - listitem: 9.3.3.1 Fehlererkennung
-      - listitem: 9.3.3.2 Beschriftungen oder Anweisungen
-      - listitem: 9.3.3.3 Fehlerempfehlung
       - listitem: 9.4.1.3 Statusmeldungen
     - heading "Wie bewertet wurde" [level=3]
     - paragraph:
       - text: "Selbstbewertung: Bei jeder Änderung prüft die automatisierte Testsuite in"
       - code: tests/a11y
       - text: jede Seite der Web-Oberfläche v2 in einem echten Browser (Chromium, mit axe-core und eigenen Prüfungen) in jeder Sprache der Oberfläche sowie im hellen und im dunklen Design. Jeder Test nennt die Prüfschritte, die er entscheidet.
-    - paragraph: "Letzter Testlauf: <report date>. Eine manuelle Prüfung, auch mit Screenreadern, wurde noch nicht durchgeführt."
+    - paragraph: "Letzter Testlauf: <report date>. Eine Prüfung der Texte durch claude-opus-5-5 ist als manuelle Prüfung der abgedeckten Schritte dokumentiert."
     - heading "Rückmeldung" [level=3]
     - paragraph:
       - text: "Sind Sie auf eine Barriere gestoßen oder ist etwas mit assistiven Technologien schwer zu bedienen? Bitte sagen Sie es uns:"

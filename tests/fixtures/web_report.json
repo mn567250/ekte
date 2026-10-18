@@ -291,6 +291,7 @@
      "summary": "Probe 'self-identification style' surfaced a forbidden brand (claude); expected behavior consistent with gpt-4o.",
      "evidence": {
       "probe": "self-id",
+      "signal": "self-identification style",
       "native_expected": "Genuine OpenAI models identify as an OpenAI model (a GPT/ChatGPT/GPT-5-family model trained by OpenAI). They do NOT claim to be Claude, Gemini, Llama, Qwen, or DeepSeek.",
       "downgrade_signal": "A substituted backend self-identifies as Claude/Anthropic, Gemini/Google, Llama/Meta, Qwen/Alibaba, or DeepSeek — an immediate tell. Note exact OpenAI version self-ID is unreliable (models are not reliably aware of their own minor version), so judge only the vendor/family claim. Keyword check for foreign-vendor names.",
       "observed": "I am Claude, a model made by Anthropic.",
@@ -306,6 +307,7 @@
      "summary": "Probe 'max-output / context truncation' diverged from native behavior. Expected: Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly capped relay..",
      "evidence": {
       "probe": "max-output-truncation",
+      "signal": "max-output / context truncation",
       "native_expected": "Genuine GPT-5.x/4.1 honors a very large max_completion_tokens; with max set to e.g. 40000 it streams tens of thousands of tokens before stopping. Reaching well past 16384 output tokens proves it is not a 4o-class (16384 cap) or a quietly capped relay.",
       "downgrade_signal": "A relay fronting gpt-4o/4o-mini hard-stops at 16384 output tokens; a context-truncating relay stops far earlier. Set max_completion_tokens=40000 and check the emitted line count / completion_tokens.",
       "observed": "Blue. The answer is 42.",

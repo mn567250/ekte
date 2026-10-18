@@ -9,10 +9,10 @@ from __future__ import annotations
 import json
 
 import pytest
-from conftest import BASE_URL, DEFAULT_MODEL
 from typer.testing import CliRunner
 
 import zing.detectors  # noqa: F401  -- populate the registry
+from tests._helpers import BASE_URL, DEFAULT_MODEL
 from zing.cli import _build_options, app
 from zing.config import DIMENSIONS, AuditOptions, ConfigError, validate_dimensions
 from zing.detectors.base import REGISTRY, select_detectors
@@ -157,8 +157,7 @@ def test_verdict_without_model_identity_is_judged_on_the_selection():
 
 
 async def test_custom_audit_reports_its_selection(monkeypatch):
-    from conftest import MockServer
-
+    from tests._helpers import MockServer
     from zing.clients import make_client as real
     from zing.runner import run_audit
 

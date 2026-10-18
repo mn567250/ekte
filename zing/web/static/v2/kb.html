@@ -17,8 +17,12 @@
   .kb-card { margin-top: 20px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
   .btn[hidden] { display: none; }
-  .tools-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0 10px; }
+  .tools-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin: 14px 0 10px; }
+  .tools-row > .hint { padding-bottom: 14px; }
   .filter { flex: 1 1 220px; max-width: 360px; }
+  .filter > .lab, .kb-card > .lab { display: flex; }
+  .kb-card > .lab { margin-top: 12px; }
+  .kb-card > .lab + .row { margin-top: 0; }
 
   /* add form: a disclosure so the lists come first */
   .add { margin: 12px 0 4px; border: 1px dashed var(--line-strong); border-radius: 14px; }
@@ -86,8 +90,9 @@
     <!-- which profile does a model id use? -->
     <section class="card card-pad kb-card" aria-labelledby="res-title">
       <h2 class="form-title" id="res-title" data-en="Which profile does a model id use?">某个模型 ID 会使用哪份资料？</h2>
+      <label class="lab" for="res-model" data-en="Model id">模型 ID</label>
       <form class="row" id="res-form">
-        <input class="in mono" id="res-model" style="flex:1 1 240px" autocomplete="off" spellcheck="false" autocapitalize="off" aria-label="模型 ID" data-en-aria-label="Model id" placeholder="例如 gpt-4o" data-en-placeholder="e.g. gpt-4o">
+        <input class="in mono" id="res-model" style="flex:1 1 240px" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="例如 gpt-4o" data-en-placeholder="e.g. gpt-4o">
         <button class="btn" type="submit"><span id="res-icon"></span> <span data-en="Look up">查询</span></button>
         <a class="btn" id="export" href="/api/kb/export" download hidden><span id="export-icon"></span> <span data-en="Export your entries as YAML">将你的条目导出为 YAML</span></a>
       </form>
@@ -113,7 +118,10 @@
           </div>
         </details>
         <div class="tools-row">
-          <input class="in filter" data-kb="filter" id="models-filter" type="search" autocomplete="off" spellcheck="false" aria-label="筛选模型" data-en-aria-label="Filter models" placeholder="筛选模型或厂商…" data-en-placeholder="Filter models or providers…">
+          <div class="filter">
+            <label class="lab" for="models-filter" data-en="Filter models">筛选模型</label>
+            <input class="in" data-kb="filter" id="models-filter" type="search" autocomplete="off" spellcheck="false" placeholder="筛选模型或厂商…" data-en-placeholder="Filter models or providers…">
+          </div>
           <span class="hint" data-kb="found" role="status"></span>
         </div>
         <div data-kb="list" id="models-list"><p class="empty" data-en="Loading…">加载中…</p></div>
@@ -128,7 +136,10 @@
           <div class="add-body"><div data-kb="add-body"></div></div>
         </details>
         <div class="tools-row">
-          <input class="in filter" data-kb="filter" id="providers-filter" type="search" autocomplete="off" spellcheck="false" aria-label="筛选厂商" data-en-aria-label="Filter providers" placeholder="筛选厂商或地址…" data-en-placeholder="Filter providers or URLs…">
+          <div class="filter">
+            <label class="lab" for="providers-filter" data-en="Filter providers">筛选厂商</label>
+            <input class="in" data-kb="filter" id="providers-filter" type="search" autocomplete="off" spellcheck="false" placeholder="筛选厂商或地址…" data-en-placeholder="Filter providers or URLs…">
+          </div>
           <span class="hint" data-kb="found" role="status"></span>
         </div>
         <div data-kb="list" id="providers-list"><p class="empty" data-en="Loading…">加载中…</p></div>
@@ -143,7 +154,10 @@
           <div class="add-body"><div data-kb="add-body"></div></div>
         </details>
         <div class="tools-row">
-          <input class="in filter" data-kb="filter" id="relays-filter" type="search" autocomplete="off" spellcheck="false" aria-label="筛选中转站" data-en-aria-label="Filter relays" placeholder="筛选中转站或地址…" data-en-placeholder="Filter relays or URLs…">
+          <div class="filter">
+            <label class="lab" for="relays-filter" data-en="Filter relays">筛选中转站</label>
+            <input class="in" data-kb="filter" id="relays-filter" type="search" autocomplete="off" spellcheck="false" placeholder="筛选中转站或地址…" data-en-placeholder="Filter relays or URLs…">
+          </div>
           <span class="hint" data-kb="found" role="status"></span>
         </div>
         <div data-kb="list" id="relays-list"><p class="empty" data-en="Loading…">加载中…</p></div>

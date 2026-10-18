@@ -92,10 +92,10 @@
     - tab "计费"
   - tabpanel "概览":
     - tablist "概览":
-      - tab "概览" [selected]
+      - tab "关键指标" [selected]
       - tab "排行榜"
-    - tabpanel "概览":
-      - heading "概览" [level=2]
+    - tabpanel "关键指标":
+      - heading "关键指标" [level=2]
       - paragraph: 2026/9/2 – 2026/10/1，与之前同样长度的一段时间（2026/8/3 – 2026/9/1）对比。
       - list:
         - listitem: 检测次数 14 +14

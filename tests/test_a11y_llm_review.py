@@ -124,6 +124,24 @@ def test_repeated_names_are_counted_with_their_targets() -> None:
     assert '"count"' in lr.RUBRIC and '"targets"' in lr.RUBRIC
 
 
+def test_control_description_is_kept_and_separates_repeats() -> None:
+    raw = {
+        "controls": [
+            {"role": "button", "name": "Show key", "target": "k1", "description": "OpenAI API key", "key": "#a"},
+            {"role": "button", "name": "Show key", "target": "k2", "description": "Relay token", "key": "#b"},
+            {"role": "button", "name": "Show key", "target": "k3", "description": "Relay token", "key": "#c"},
+            {"role": "button", "name": "Go", "description": "", "key": "#d"},
+        ]
+    }
+    pay = lr.page_payload(lr.compact_page(raw))
+    assert pay["controls"] == [
+        {"role": "button", "name": "Show key", "target": "k1", "description": "OpenAI API key"},
+        {"role": "button", "name": "Show key", "description": "Relay token", "count": 2, "targets": ["k2", "k3"]},
+        {"role": "button", "name": "Go"},  # empty description dropped
+    ]
+    assert "description" in lr.RUBRIC.split('"fields"')[0]
+
+
 # --------------------------------------------------------------------------- #
 # bug 2: language-aware instruction filter, translation aligned by element
 # --------------------------------------------------------------------------- #
@@ -1015,6 +1033,7 @@ HTML = """<!doctype html><html lang="en"><head><title>T</title><style>
 <button aria-expanded="false" class="rdel" aria-controls="c1">Delete entry</button><div id="c1" hidden>Really delete?</div>
 <button aria-expanded="false" aria-controls="m1" class="more">More</button><div id="m1" hidden>More text here, a lot.</div>
 <button aria-expanded="false" data-act="del">x</button>
+<span id="d1">Relay URL</span><button aria-describedby="d1">Show key</button>
 </main></body></html>"""
 
 
@@ -1027,6 +1046,8 @@ def test_extraction_uses_real_accessible_names(chromium: Any) -> None:
         names = [c["name"] for c in raw["controls"]]
         # bug 3: hidden busy label not included
         assert "Verify embedding endpoint" in names
+        show = next(c for c in raw["controls"] if c["name"] == "Show key")
+        assert show["description"] == "Relay URL"
         rec = lr.compact_page(raw)
         texts = [i["text"] for i in rec["instructions"]]
         # bug 3: no spaces around inline elements, CSS-hidden text skipped
