@@ -270,15 +270,39 @@ def expand_all(page: Page) -> None:
         settle(page)
 
 
+TAB_STATES_JS = """
+() => {
+  const all = [...document.querySelectorAll('[role=tab]')];
+  const sel = t => t.id ? '#' + CSS.escape(t.id) : `:nth-match([role=tab], ${all.indexOf(t) + 1})`;
+  // the tab showing a panel, for tabs nested in another tab's panel (sub-tabs)
+  const opener = p => all.find(t => t.getAttribute('aria-controls') === p.id);
+  const out = [];
+  for (const t of all) {
+    const chain = [t];
+    let ok = true;
+    for (let p = t.parentElement.closest('[role=tabpanel]'); p; p = p.parentElement && p.parentElement.closest('[role=tabpanel]')) {
+      const o = opener(p);
+      if (!o) { ok = false; break; }
+      chain.unshift(o);
+    }
+    // a tab hidden for another reason than its enclosing tab panels is skipped
+    if (ok && (t.getBoundingClientRect().width > 0 || t.closest('[role=tabpanel][hidden]'))) out.push(chain.map(sel).join(' ~> '));
+  }
+  return out;
+}
+"""
+
+
 def tab_states(page: Page) -> list[str]:
-    """Ids/labels of every tab, so each panel can be shown and checked."""
-    return list(
-        page.evaluate(
-            """() => [...document.querySelectorAll('[role=tab]')]
-                 .filter(t => t.getBoundingClientRect().width > 0)
-                 .map((t, i) => t.id ? '#' + CSS.escape(t.id) : `:nth-match([role=tab], ${i + 1})`)"""
-        )
-    )
+    """Every tab, so each panel can be shown and checked. A tab inside another
+    tab's panel (a sub-tab) comes as "outer ~> inner": show it with show_tab()."""
+    return list(page.evaluate(TAB_STATES_JS))
+
+
+def show_tab(page: Page, state: str) -> None:
+    """Select a tab from tab_states(), its enclosing tabs first."""
+    for sel in state.split(" ~> "):
+        page.locator(sel).first.click()
 
 
 TO_TOP_JS = """

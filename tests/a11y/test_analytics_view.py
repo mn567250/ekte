@@ -43,7 +43,7 @@ def _open(open_page: Any, fragment: str = "", init: str = "", clipboard: bool = 
 
 
 def _tab(page: Page) -> str:
-    return str(page.locator("[role=tab][aria-selected=true]").get_attribute("id"))
+    return str(page.locator("#atabs [role=tab][aria-selected=true]").get_attribute("id"))
 
 
 @pytest.mark.bitv("9.2.1.1", "9.4.1.2", "9.4.1.3")
@@ -57,33 +57,43 @@ def test_analytics_filter_panel_disclosure(open_page) -> None:
 
 @pytest.mark.bitv("9.4.1.2")
 def test_tabs_load_only_their_panels(open_page) -> None:
-    """Only the shown tab's panels load; a filter change reloads the shown
-    tab and leaves the others stale until shown; nothing is busy once loaded."""
+    """Only the shown tab's panels load (of a tab with sub-tabs, the shown
+    sub-tab's); a filter change reloads the shown panels and leaves the others
+    stale until shown; nothing is busy once loaded."""
     page, calls = _open(open_page)
     issues: list[str] = []
     if _tab(page) != "tab-overview":
         issues.append(f"the page does not open on Overview: {_tab(page)}")
-    if sorted(set(calls)) != ["/api/analytics/leaderboard", "/api/analytics/options", "/api/analytics/summary"]:
-        issues.append(f"Overview loaded more than its panels: {calls}")
-    if page.locator("#panel-overview [aria-busy=true]").count():
-        issues.append("an Overview panel is still marked busy after loading")
+    if sorted(set(calls)) != ["/api/analytics/options", "/api/analytics/summary"]:
+        issues.append(f"Overview loaded more than its shown panel: {calls}")
+    if page.locator("#panel-kpi[aria-busy=true]").count():
+        issues.append("the Overview panel is still marked busy after loading")
+    calls.clear()
+    page.locator("#tab-lb").click()
+    settle(page)
+    if sorted(set(calls)) != ["/api/analytics/leaderboard"] or not page.locator("#panel-lb").is_visible():
+        issues.append(f"the Leaderboard sub-tab loaded {calls}")
+    if page.locator("#panel-kpi").is_visible() or "os=lb" not in page.url:
+        issues.append(f"the Leaderboard sub-tab does not replace the Overview panel: {page.url}")
+    page.locator("#tab-kpi").click()
+    settle(page)
     calls.clear()
     page.locator("#tab-reliability").click()
     settle(page)
-    if sorted(set(calls)) != ["/api/analytics/breakdown", "/api/analytics/errors"]:
+    if sorted(set(calls)) != ["/api/analytics/errors"]:
         issues.append(f"Reliability loaded {calls}")
     calls.clear()
     page.locator("#ftog").click()
     page.locator("[data-f=source]").select_option("manual")
     settle(page)
-    if sorted(set(calls)) != ["/api/analytics/breakdown", "/api/analytics/errors"]:
+    if sorted(set(calls)) != ["/api/analytics/errors"]:
         issues.append(f"a filter change on Reliability loaded {calls}")
     if page.locator("#panel-reliability [aria-busy=true]").count():
         issues.append("a Reliability panel is still marked busy after loading")
     calls.clear()
     page.locator("#tab-overview").click()
     settle(page)
-    if sorted(set(calls)) != ["/api/analytics/leaderboard", "/api/analytics/summary"]:
+    if sorted(set(calls)) != ["/api/analytics/summary"]:
         issues.append(f"Overview did not reload with the new filter: {calls}")
     calls.clear()
     page.locator("#tab-reliability").click()
@@ -115,6 +125,9 @@ def test_link_restores_tab_filters_and_view(open_page) -> None:
     settle(page)
     if "tab=billing" not in page.url or "source=monitor" not in page.url:
         issues.append(f"the URL does not follow the tab: {page.url}")
+    sub, _ = _open(open_page, "#tab=trends&ts=heat&range=30")
+    if not sub.locator("#panel-heat").is_visible() or sub.locator("#panel-cmp").is_visible():
+        issues.append("a link to the Peak hours sub-tab does not show it")
     old, _ = _open(open_page, "#range=7&metric=ttft_p50")
     if _tab(old) != "tab-overview" or "range=7" not in old.url:
         issues.append(f"a link without a tab does not open Overview with its filters: {_tab(old)} {old.url}")
