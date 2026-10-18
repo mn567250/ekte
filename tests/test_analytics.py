@@ -644,3 +644,13 @@ def test_http_phase4_endpoints(client):
     ]:
         r = client.get(path, params=params)
         assert r.status_code == 400 and message in r.json()["error"], path
+
+
+def test_http_answers_are_cached_until_the_history_changes(client):
+    def runs() -> int:
+        return client.get("/api/analytics/summary", params={"range": "all"}).json()["runs"]
+
+    before = runs()
+    assert runs() == before  # served from the cache
+    _save(T0 + timedelta(hours=5), score=70.0)
+    assert runs() == before + 1  # a saved run drops the cached answers

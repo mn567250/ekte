@@ -356,6 +356,7 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
     Best-effort by contract: this is called from inside the SSE stream, so any
     extraction or DB error is swallowed rather than allowed to abort the audit.
     """
+    _wrote()
     try:
         # As plain JSON (what reading it back gives), so the request records
         # and metrics below see exactly what is stored.
@@ -562,9 +563,24 @@ def trend(
     return [{k: item[k] for k in keys} for item in items]
 
 
+# Bumped by every write, so cached analytics answers (server.py) are dropped.
+_writes = 0
+
+
+def write_mark() -> tuple[str, int]:
+    """Which history database, and how often it was written since start."""
+    return str(_db_path()), _writes
+
+
+def _wrote() -> None:
+    global _writes
+    _writes += 1
+
+
 def delete(rid: int) -> None:
     """Remove one row by id, with its analytics rows (and a snapshot nothing
     else uses). No-op if missing."""
+    _wrote()
     with _connect() as conn:
         conn.execute("DELETE FROM history WHERE id = ?", (int(rid),))
         analytics_store.delete_for(conn, int(rid))
@@ -573,6 +589,7 @@ def delete(rid: int) -> None:
 
 def clear() -> None:
     """Wipe all history, analytics rows and snapshots included."""
+    _wrote()
     with _connect() as conn:
         conn.execute("DELETE FROM history")
         analytics_store.delete_for(conn)
