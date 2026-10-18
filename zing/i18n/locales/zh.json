@@ -481,8 +481,9 @@
    "排在首位的是文档 {top_index}，预期应为文档 {expected}（排名顺序 {ranking}）。"
   ],
   "model_identity.fp.*": [
-   "行为指纹检查",
-   "针对 {probe} 的纯代码行为指纹检查。"
+   "行为指纹偏离：{signal|server}",
+   "针对 {probe} 的纯代码行为指纹检查。",
+   "行为指纹检查"
   ],
   "performance.summary": [
    "性能探测结果",

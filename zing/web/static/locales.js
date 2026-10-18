@@ -18,7 +18,7 @@
  *   - strings[lang][english]   UI text; the English string (a `data-en`
  *                              attribute or the 2nd argument of T(zh, en)) is
  *                              the key. Missing keys fall back to English.
- *   - findings[lang][id]       { title, tpl } per audit finding, same
+ *   - findings[lang][id]       { title, tpl, generic } per audit finding, same
  *                              placeholder rules as i18n.js ("zh" is the
  *                              original Chinese catalog).
  *                              Both maps hold one object per language from the
@@ -147,8 +147,9 @@
   }
 
   // Register a language. `s` maps English UI string -> translation; `f` maps
-  // finding id -> [title, summary template]. Missing entries fall back to
-  // English at runtime.
+  // finding id -> [title, summary template, generic title (optional: when a
+  // title placeholder is missing from the evidence)]. Missing entries fall
+  // back to English at runtime.
   function add(code, s, f) {
     var sd = slot(strings, code);
     Object.keys(s || {}).forEach(function (k) {
@@ -156,7 +157,7 @@
     });
     var d = slot(findings, code);
     Object.keys(f || {}).forEach(function (id) {
-      d[id] = { title: f[id][0], tpl: f[id][1] };
+      d[id] = { title: f[id][0], tpl: f[id][1], generic: f[id][2] };
     });
     loaded[code] = true;
   }
