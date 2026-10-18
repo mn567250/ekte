@@ -896,7 +896,8 @@
     ".zp-better{color:var(--zp-better);font-weight:700}.zp-worse{color:var(--zp-worse);font-weight:700}" +
     ".zp-mode{border-top:1px solid var(--zp-grid);padding-top:14px;margin-top:20px;font-size:14.5px}" +
     ".zp-fail{stroke:var(--zp-x);stroke-width:2;stroke-linecap:round}" +
-    ".zp-trend path{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;opacity:.55}" +
+    // full opacity (>= 3:1 like the dots, BITV 9.1.4.11), thinner than a mark
+    ".zp-trend path{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}" +
     ".zp-trend .t{stroke:var(--zp-t)}.zp-trend .b{stroke:var(--zp-b)}" +
     ".zp-key.line{width:14px;height:2px;border-radius:1px;background:var(--zp-ink2);vertical-align:middle}" +
     ".zp-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--zp-ink2);margin:2px 0 8px}" +
