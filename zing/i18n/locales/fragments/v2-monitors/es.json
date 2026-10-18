@@ -44,6 +44,7 @@
   "Run finished.": "Ejecución terminada.",
   "Monitor views": "Vistas de monitores",
   "No monitors are running": "No hay monitores en curso",
-  "Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.": "Ejecuciones de monitores en curso. Una ejecución del mismo relay espera a que termine cualquier otra auditoría suya, para que los resultados nunca se distorsionen."
+  "Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.": "Ejecuciones de monitores en curso. Una ejecución del mismo relay espera a que termine cualquier otra auditoría suya, para que los resultados nunca se distorsionen.",
+  "Monitor active": "Monitor activo"
  }
 }

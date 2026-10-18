@@ -187,6 +187,7 @@
   "“{series}” mixes streaming and non-streaming runs — its values may not be comparable.": "«{series}» mezcla ejecuciones con y sin streaming; sus valores pueden no ser comparables.",
   "Time block": "Bloque horario",
   "1 hour": "1 hora",
-  "{n} hours": "{n} horas"
+  "{n} hours": "{n} horas",
+  "Key figures": "Cifras clave"
  }
 }
