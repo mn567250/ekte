@@ -11,8 +11,8 @@ import asyncio
 
 import httpx
 import pytest
-from conftest import BASE_URL
 
+from tests._helpers import BASE_URL
 from zing.clients import OpenAICompatibleClient
 from zing.models import RequestSpec, TargetConfig
 
