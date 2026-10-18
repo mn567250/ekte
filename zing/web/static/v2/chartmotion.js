@@ -145,12 +145,15 @@
       // fills at the same pace through the colour scale and stops at its own
       // step: light cells settle early, dark ones keep darkening (the step
       // durations live in the CSS). Cells start in a wave from the bottom-left
-      // corner, left to right and bottom to top. data-k is "day-row".
-      var cells = svg.querySelectorAll(".cells rect[data-k]"), rows = 0, kk = [];
-      for (i = 0; i < cells.length; i++) { kk[i] = cells[i].getAttribute("data-k").split("-").map(Number); rows = Math.max(rows, kk[i][1] + 1); }
-      var span = 6 + Math.max(0, rows - 1), last = 0;
+      // corner, left to right and bottom to top (positions from the x / y
+      // attributes: no layout read).
+      var cells = svg.querySelectorAll(".cells rect[data-k]"), cx = [], cy = [], x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, last = 0;
       for (i = 0; i < cells.length; i++) {
-        var delay = Math.round(((kk[i][0] - 1) + (rows - 1 - kk[i][1])) / span * WAVE);
+        cx[i] = parseFloat(cells[i].getAttribute("x")) || 0; cy[i] = parseFloat(cells[i].getAttribute("y")) || 0;
+        x0 = Math.min(x0, cx[i]); x1 = Math.max(x1, cx[i]); y0 = Math.min(y0, cy[i]); y1 = Math.max(y1, cy[i]);
+      }
+      for (i = 0; i < cells.length; i++) {
+        var delay = Math.round(((cx[i] - x0) / (x1 - x0 || 1) * 0.6 + (y1 - cy[i]) / (y1 - y0 || 1) * 0.4) * WAVE);
         var q = /\bq(\d)\b/.exec(cells[i].getAttribute("class")), done = delay + (q ? +q[1] : 1) * STEP;
         cells[i].style.setProperty("--zm-d", delay + "ms");
         touched.push(cells[i]);
