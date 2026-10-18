@@ -8,7 +8,15 @@
  *                               .render()       re-draw (e.g. after a language switch)
  *   - section(performance)    HTML for a report's `performance` block ("" if none)
  *   - wireSection(root, perf) hook up its metric tabs + tooltips inside `root`
- *   - chart(records, metric)  the timeline SVG (x = seconds since audit start)
+ *   - chart(records, metric)  the timeline SVG (x = seconds since audit start);
+ *                             records with a server-computed `trend` (running
+ *                             median of the endpoint's last 5 successful
+ *                             requests, zing/perf/trend.py) also get a thin
+ *                             line per endpoint behind the dots
+ *
+ * Motion (chartmotion.js, if loaded): the live chart sweeps in when it is
+ * first drawn or shows another metric, then only new requests pop in; a
+ * report's chart sweeps in when it is opened or switches metric.
  *
  * Colors follow the categorical order validated for the reports: target is
  * slot 1 (blue), baseline slot 2 (orange); a failed request is a red cross
@@ -202,6 +210,7 @@
       o.push('<text class="zp-tick" x="' + x(s).toFixed(1) + '" y="' + (H - MB + 16) +
         '" text-anchor="' + (j === 0 ? "start" : j === xa.n ? "end" : "middle") + '">' + num(s) + "s</text>");
     }
+    o.push(trendPaths(pts, m, x, y));
     pts.forEach(function (r) {
       var cls = "zp-pt " + (r.endpoint === "baseline" ? "b" : "t") +
         (r.phase === "passive" ? " passive" : r.stream ? "" : " hollow") + (r.cached ? " cached" : "");
@@ -217,6 +226,25 @@
     o.push("</svg>");
     return { html: o.join(""), empty: false, calls: calls, m: m };
   }
+  // The running-median line per endpoint, behind the dots: through each
+  // successful request's `trend` value for this metric, in time order.
+  function trendOf(r, m) {
+    var v = r.trend && r.trend[m.id];
+    return typeof v === "number" && isFinite(v) ? v : null;
+  }
+  function trendPaths(pts, m, x, y) {
+    var out = [];
+    [false, true].forEach(function (base) {
+      var d = pts.filter(function (r) { return (r.endpoint === "baseline") === base && trendOf(r, m) != null; })
+        .sort(function (a, b) { return a.start_ms - b.start_ms; })
+        .map(function (r) { return x(r.start_ms / 1000).toFixed(1) + "," + y(trendOf(r, m)).toFixed(1); });
+      if (d.length > 1) out.push('<path class="' + (base ? "b" : "t") + '" d="M' + d.join("L") + '"/>');
+    });
+    return out.length ? '<g class="zp-trend">' + out.join("") + "</g>" : "";
+  }
+  function trendText() {
+    return T("线：每个端点最近 5 次成功请求的滚动中位数", "line: running median of each endpoint's last 5 successful requests");
+  }
   // The chart's accessible name: what it plots, how many requests, the median
   // per endpoint and the failures.
   function summary(m, pts, failed) {
@@ -231,6 +259,7 @@
       if (vs.length) parts.push(fill(e[1], { value: num(p50(vs)) + " " + m.unit }));
     });
     if (failed.length) parts.push(fill(T("{n} 个失败", "{n} failed"), { n: int(failed.length) }));
+    if (pts.some(function (r) { return trendOf(r, m) != null; })) parts.push(trendText());
     return parts.join(T("；", "; "));
   }
   // What the hover tooltips show, as a table behind a toggle.
@@ -253,6 +282,7 @@
     return '<thead><tr><th class="r">#</th><th>' +
       esc(T("端点", "Endpoint")) + "</th><th>" + esc(T("阶段", "Phase")) + '</th><th class="r">' +
       esc(T("开始", "Start")) + ' <span class="zp-unit">s</span></th><th class="r">' + esc(T(m.zh, m.en)) +
+      ' <span class="zp-unit">' + m.unit + '</span></th><th class="r">' + esc(T("滚动中位数", "Running median")) +
       ' <span class="zp-unit">' + m.unit + "</span></th><th>" + esc(T("状态", "Status")) + "</th></tr></thead>";
   }
   function dataRow(r, m) {
@@ -261,7 +291,8 @@
       : r.cached ? T("缓存命中（不计入统计）", "cached (excluded)") : "OK";
     return '<tr><td class="r">' + esc(r.seq) + "</td><td>" + esc(endpointName(r)) + "</td><td>" +
       esc(phaseName(r.phase) + (r.stream ? "" : " · " + T("非流式", "non-streaming"))) + '</td><td class="r">' +
-      num((r.start_ms || 0) / 1000) + '</td><td class="r">' + (r.ok ? num(m.get(r)) : "—") + "</td><td>" +
+      num((r.start_ms || 0) / 1000) + '</td><td class="r">' + (r.ok ? num(m.get(r)) : "—") + '</td><td class="r">' +
+      (trendOf(r, m) != null ? num(trendOf(r, m)) : "—") + "</td><td>" +
       esc(status) + "</td></tr>";
   }
   function dataTableHtml(rows, m) {
@@ -290,6 +321,8 @@
       items.push('<span><i class="zp-key t hollow"></i>' + esc(T("非流式请求（空心）", "non-streaming request (hollow)")) + "</span>");
     if (calls.some(function (r) { return !r.ok; }))
       items.push('<span><i class="zp-key x" aria-hidden="true">×</i>' + esc(T("失败请求", "failed request")) + "</span>");
+    if (calls.some(function (r) { return r.trend; }))
+      items.push('<span><i class="zp-key line" aria-hidden="true"></i>' + esc(T("滚动中位数（最近 5 次）", "running median (last 5)")) + "</span>");
     return '<div class="zp-legend">' + items.join("") + "</div>";
   }
 
@@ -512,6 +545,12 @@
     var sec = root.querySelector(".zp-section");
     var pid = sec && sec.getAttribute("data-zp");
     if (!pid) return;
+    // a newly shown report's chart moves in; a re-render of the same one
+    // (language switch) stays still
+    if (root.zpPerf !== perf) {
+      root.zpPerf = perf;
+      motion(root.querySelector("svg.zp-chart"));
+    }
     wire(root, function (id) {
       sectionState.metric = id;
       var plotEl = root.querySelector(".zp-plot"), tabsEl = root.querySelector(".zp-tabs");
@@ -519,9 +558,35 @@
       if (plotEl) plotEl.outerHTML = plot(perf.requests, id, pid, sectionState.open);
       if (tabsEl) tabsEl.outerHTML = tabs(id, pid);
       wireSection(root, perf);
+      motion(root.querySelector("svg.zp-chart"));
     }, function (open) {
       sectionState.open = open;
     });
+  }
+
+  // ---- motion (chartmotion.js) ------------------------------------------ //
+  function motion(svg, fresh) {
+    var M = window.ZingMotion;
+    if (!M || !svg) return;
+    if (fresh) M.pop(svg, fresh);
+    else M.enter(svg);
+  }
+  // after a live render: a new chart (first draw, another metric) sweeps in,
+  // a redrawn one pops only the requests it did not show before
+  function liveMotion(self) {
+    var svg = self.host && self.host.querySelector ? self.host.querySelector("svg.zp-chart") : null;
+    if (!svg || svg === self.zmSvg) return;
+    self.zmSvg = svg;
+    var seen = {}, fresh = [], prev = self.zmSeen, first = !prev || self.zmMetric !== self.metric;
+    Array.prototype.forEach.call(svg.querySelectorAll(".zp-pt, .zp-fail"), function (el) {
+      var s = (/^#(\d+)\s/.exec(el.getAttribute("data-tip") || "") || [])[1];
+      seen[s] = 1;
+      if (!first && !prev[s]) fresh.push(el);
+    });
+    self.zmSeen = seen;
+    self.zmMetric = self.metric;
+    if (first) motion(svg);
+    else if (fresh.length) motion(svg, fresh);
   }
 
   // ---- live panel -------------------------------------------------------- //
@@ -538,6 +603,7 @@
     this.hasBaseline = !!(opts && opts.hasBaseline);
     this.pending = false;
     this.el = null; // the rendered panel's parts, patched in place by render()
+    this.zmSeen = this.zmSvg = null; // what the chart showed (liveMotion)
     this.table = null; // what the data table currently shows (see fillTable)
     if (this.host) this.host.innerHTML = "";
   };
@@ -614,6 +680,7 @@
     var el = this.el;
     if (el && el.root.parentNode === this.host && !el.probe === !v.probe) this.patch(v);
     else this.build(v);
+    liveMotion(this);
     box = this.host.querySelector(".zp-data-scroll");
     if (box && scrollTop && box.scrollTop !== scrollTop) box.scrollTop = scrollTop;
     // Only an element that was replaced is focused again (no focus() call,
@@ -829,6 +896,9 @@
     ".zp-better{color:var(--zp-better);font-weight:700}.zp-worse{color:var(--zp-worse);font-weight:700}" +
     ".zp-mode{border-top:1px solid var(--zp-grid);padding-top:14px;margin-top:20px;font-size:14.5px}" +
     ".zp-fail{stroke:var(--zp-x);stroke-width:2;stroke-linecap:round}" +
+    ".zp-trend path{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;opacity:.55}" +
+    ".zp-trend .t{stroke:var(--zp-t)}.zp-trend .b{stroke:var(--zp-b)}" +
+    ".zp-key.line{width:14px;height:2px;border-radius:1px;background:var(--zp-ink2);vertical-align:middle}" +
     ".zp-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--zp-ink2);margin:2px 0 8px}" +
     ".zp-key{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;font-style:normal}" +
     ".zp-key.t{background:var(--zp-t)}.zp-key.b{background:var(--zp-b)}" +
