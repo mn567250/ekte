@@ -45,6 +45,7 @@
     - text: .
   - region "Qual perfil um ID de modelo usa?":
     - heading "Qual perfil um ID de modelo usa?" [level=2]
+    - text: ID do modelo
     - textbox "ID do modelo":
       - /placeholder: "ex.: gpt-4o"
     - button "Consultar"
@@ -83,6 +84,7 @@
       - paragraph: A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o zing enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é salvo até você salvar.
       - button "Verificação"
       - button "Salvar na base" [disabled]
+    - text: Filtrar modelos
     - searchbox "Filtrar modelos"
     - status
     - group:
