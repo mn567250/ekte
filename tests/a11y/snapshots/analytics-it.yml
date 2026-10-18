@@ -92,10 +92,10 @@
     - tab "Fatturazione"
   - tabpanel "Panoramica":
     - tablist "Panoramica":
-      - tab "Panoramica" [selected]
+      - tab "Dati chiave" [selected]
       - tab "Classifica"
-    - tabpanel "Panoramica":
-      - heading "Panoramica" [level=2]
+    - tabpanel "Dati chiave":
+      - heading "Dati chiave" [level=2]
       - paragraph: 02 set – 01 ott 2026, confrontato con il periodo di pari durata precedente (03 ago – 01 set 2026).
       - list:
         - listitem: Esecuzioni 14 +14

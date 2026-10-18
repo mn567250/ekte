@@ -92,10 +92,10 @@
     - tab "Abrechnung"
   - tabpanel "Überblick":
     - tablist "Überblick":
-      - tab "Überblick" [selected]
+      - tab "Kennzahlen" [selected]
       - tab "Rangliste"
-    - tabpanel "Überblick":
-      - heading "Überblick" [level=2]
+    - tabpanel "Kennzahlen":
+      - heading "Kennzahlen" [level=2]
       - paragraph: 02.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (03.08. – 01.09.2026).
       - list:
         - listitem: Läufe 14 +14

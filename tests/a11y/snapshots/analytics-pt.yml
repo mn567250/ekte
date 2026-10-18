@@ -92,10 +92,10 @@
     - tab "Faturação"
   - tabpanel "Visão geral":
     - tablist "Visão geral":
-      - tab "Visão geral" [selected]
+      - tab "Números-chave" [selected]
       - tab "Classificação"
-    - tabpanel "Visão geral":
-      - heading "Visão geral" [level=2]
+    - tabpanel "Números-chave":
+      - heading "Números-chave" [level=2]
       - paragraph: 02/09/2026 – 01/10/2026, comparado com o período de igual duração anterior (03/08/2026 – 01/09/2026).
       - list:
         - listitem: Execuções 14 +14
