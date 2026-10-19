@@ -40,7 +40,7 @@
      the same pace (STEP per step) and stops at its own step */
   :root:not([data-motion="off"]) .zm-in.hgrid { --zm-step: 110ms; }
   :root:not([data-motion="off"]) .zm-in.hgrid .cells rect[data-k] {
-    stroke: var(--line-control); stroke-width: 1; stroke-dasharray: 2 2;
+    stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 2;
     animation-timing-function: linear; animation-fill-mode: both; animation-delay: var(--zm-d, 0ms);
   }
   :root:not([data-motion="off"]) .zm-in.hgrid .cells .q1 { animation-name: zm-h1; animation-duration: var(--zm-step); }
@@ -100,33 +100,33 @@
 /* heat grid fill: first leg fades the outline into the lightest step, each
    further leg darkens one step (equal time per step = the same pace) */
 @keyframes zm-h1 {
-  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
-  100% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
+  0% { fill: var(--heat-1); fill-opacity: 0; stroke-opacity: 1; }
+  100% { fill: var(--heat-1); fill-opacity: 1; stroke-opacity: 0; }
 }
 @keyframes zm-h2 {
-  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
-  50% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
-  100% { fill: var(--c-q2); fill-opacity: 1; stroke-opacity: 0; }
+  0% { fill: var(--heat-1); fill-opacity: 0; stroke-opacity: 1; }
+  50% { fill: var(--heat-1); fill-opacity: 1; stroke-opacity: 0; }
+  100% { fill: var(--heat-2); fill-opacity: 1; stroke-opacity: 0; }
 }
 @keyframes zm-h3 {
-  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
-  33.33% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
-  66.67% { fill: var(--c-q2); }
-  100% { fill: var(--c-q3); fill-opacity: 1; stroke-opacity: 0; }
+  0% { fill: var(--heat-1); fill-opacity: 0; stroke-opacity: 1; }
+  33.33% { fill: var(--heat-1); fill-opacity: 1; stroke-opacity: 0; }
+  66.67% { fill: var(--heat-2); }
+  100% { fill: var(--heat-3); fill-opacity: 1; stroke-opacity: 0; }
 }
 @keyframes zm-h4 {
-  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
-  25% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
-  50% { fill: var(--c-q2); }
-  75% { fill: var(--c-q3); }
-  100% { fill: var(--c-q4); fill-opacity: 1; stroke-opacity: 0; }
+  0% { fill: var(--heat-1); fill-opacity: 0; stroke-opacity: 1; }
+  25% { fill: var(--heat-1); fill-opacity: 1; stroke-opacity: 0; }
+  50% { fill: var(--heat-2); }
+  75% { fill: var(--heat-3); }
+  100% { fill: var(--heat-4); fill-opacity: 1; stroke-opacity: 0; }
 }
 @keyframes zm-h5 {
-  0% { fill: var(--c-q1); fill-opacity: 0; stroke-opacity: 1; }
-  20% { fill: var(--c-q1); fill-opacity: 1; stroke-opacity: 0; }
-  40% { fill: var(--c-q2); }
-  60% { fill: var(--c-q3); }
-  80% { fill: var(--c-q4); }
-  100% { fill: var(--c-q5); fill-opacity: 1; stroke-opacity: 0; }
+  0% { fill: var(--heat-1); fill-opacity: 0; stroke-opacity: 1; }
+  20% { fill: var(--heat-1); fill-opacity: 1; stroke-opacity: 0; }
+  40% { fill: var(--heat-2); }
+  60% { fill: var(--heat-3); }
+  80% { fill: var(--heat-4); }
+  100% { fill: var(--heat-5); fill-opacity: 1; stroke-opacity: 0; }
 }
 @keyframes zm-tip { from { opacity: 0; transform: translateY(3px); } }

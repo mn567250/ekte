@@ -7,6 +7,7 @@
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
+<link rel="stylesheet" href="/v2/static/tokens.css" />
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/fields.css" />
 <style>
@@ -16,8 +17,8 @@
     list-style: none; margin: 14px 0 0; padding: 0; max-width: 62ch;
     display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 10px; align-items: baseline;
   }
-  .intro li { display: contents; color: var(--ink2); font-size: 14.5px; line-height: 1.5; }
-  .intro li > span:last-child { color: var(--ink2); font-size: 14.5px; line-height: 1.5; }
+  .intro li { display: contents; color: var(--ink-muted); font-size: 14.5px; line-height: 1.5; }
+  .intro li > span:last-child { color: var(--ink-muted); font-size: 14.5px; line-height: 1.5; }
   .intro li b { color: var(--ink); }
   .intro .tag { justify-self: start; }
 
@@ -41,7 +42,7 @@
   @keyframes tspin { to { transform: rotate(360deg); } }
   .probe { margin: 2px 0 16px; }
   .probe .disclosure > span:first-child { display: inline-flex; align-items: center; gap: 8px; }
-  .probe .adv-hint { font-size: 12.5px; color: var(--ink2); line-height: 1.55; margin: 0 0 12px; }
+  .probe .adv-hint { font-size: 12.5px; color: var(--ink-muted); line-height: 1.55; margin: 0 0 12px; }
   .probe .cv { width: 16px; height: 16px; flex: none; align-items: center; justify-content: center; }
   .probe .cv .zicon, .probe .pico .zicon { width: 15px; height: 15px; }
   .probe textarea.in { min-height: 104px; resize: vertical; line-height: 1.5; }
@@ -50,44 +51,44 @@
   /* ---- result ---- */
   .out:empty { display: none; }
   .out { margin-top: 18px; }
-  .res { border: 1px solid var(--line); border-radius: 18px; background: var(--card); overflow: hidden; }
-  .res .ribbon { height: 4px; background: var(--grey-fill); }
-  .res.good .ribbon { background: var(--good-fill); }
-  .res.sky .ribbon { background: var(--sky-fill); }
-  .res.warn .ribbon { background: var(--warn-fill); }
-  .res.bad .ribbon { background: var(--bad-fill); }
+  .res { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden; }
+  .res .ribbon { height: 4px; background: var(--ink-muted); }
+  .res.good .ribbon { background: var(--success); }
+  .res.sky .ribbon { background: var(--info); }
+  .res.warn .ribbon { background: var(--warning-fill); }
+  .res.bad .ribbon { background: var(--danger); }
   .res-head { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; padding: 16px 18px; border-bottom: 1px solid var(--line); }
   .res-head .vbadge { font-family: var(--disp); font-weight: 600; font-size: 14.5px; padding: 6px 14px; }
-  .res-head .score { font-size: 13px; color: var(--ink2); }
+  .res-head .score { font-size: 13px; color: var(--ink-muted); }
   .res-head .score b { font-family: var(--disp); font-size: 18px; color: var(--ink); }
-  .res-head .score b.good { color: var(--good); }
-  .res-head .score b.warn { color: var(--warn); }
-  .res-head .score b.bad { color: var(--bad); }
-  .res-head .tgt { flex: 1 1 100%; font-family: var(--mono); font-size: 12px; color: var(--faint); overflow-wrap: anywhere; }
+  .res-head .score b.good { color: var(--success); }
+  .res-head .score b.warn { color: var(--warning); }
+  .res-head .score b.bad { color: var(--danger); }
+  .res-head .tgt { flex: 1 1 100%; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; }
   .checks { list-style: none; margin: 0; padding: 0 18px; }
   .chk { display: flex; gap: 12px; padding: 14px 0; border-top: 1px dotted var(--line); }
   .chk:first-child { border-top: 0; }
-  .chk .dot { flex: 0 0 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--on-ink); background: var(--grey-fill); margin-top: 1px; }
+  .chk .dot { flex: 0 0 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--on-primary); background: var(--ink-muted); margin-top: 1px; }
   .chk .dot .zicon { width: 13px; height: 13px; }
-  .chk .dot.good { background: var(--good-fill); }
-  .chk .dot.sky { background: var(--sky-fill); }
-  .chk .dot.warn { background: var(--warn-fill); }
-  .chk .dot.bad { background: var(--bad-fill); }
+  .chk .dot.good { background: var(--success); }
+  .chk .dot.sky { background: var(--info); }
+  .chk .dot.warn { background: var(--warning-fill); color: var(--on-warning); }
+  .chk .dot.bad { background: var(--danger); }
   .chk .body { flex: 1; min-width: 0; }
   .chk .top { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: flex-start; justify-content: space-between; }
   .chk .top .badge { margin-top: 1px; }
   .chk .ft { flex: 1 1 14em; min-width: 0; font-weight: 600; font-size: 14px; line-height: 1.4; overflow-wrap: break-word; hyphens: auto; }
-  .chk .fs { color: var(--ink2); font-size: 13.5px; line-height: 1.55; margin-top: 3px; overflow-wrap: anywhere; }
+  .chk .fs { color: var(--ink-muted); font-size: 13.5px; line-height: 1.55; margin-top: 3px; overflow-wrap: anywhere; }
   .chk .metrics { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; font-family: var(--mono); font-size: 12px; color: var(--ink); }
   .chk .metrics > span { display: inline-flex; align-items: baseline; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
   .chk .metrics .key { white-space: nowrap; }
   .chk .more { margin-top: 7px; }
   .chk pre {
-    margin: 7px 0 0; font-family: var(--mono); font-size: 11.5px; color: var(--ink2); background: var(--surface-2);
+    margin: 7px 0 0; font-family: var(--mono); font-size: 11.5px; color: var(--ink-muted); background: var(--sunken);
     border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; white-space: pre-wrap; word-break: break-word;
   }
   .chk pre[hidden] { display: none; }
-  .res .none { padding: 16px 0; color: var(--ink2); font-size: 14px; margin: 0; }
+  .res .none { padding: 16px 0; color: var(--ink-muted); font-size: 14px; margin: 0; }
 </style>
 </head>
 <body>

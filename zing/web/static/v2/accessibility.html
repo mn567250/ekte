@@ -7,6 +7,7 @@
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
+<link rel="stylesheet" href="/v2/static/tokens.css" />
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <style>
   /* ---- accessibility conformance report (v2) — page-only rules; colours via zing.css tokens ---- */
@@ -16,9 +17,9 @@
   .verdict .badge { font-size: 13px; padding: 5px 12px; }
   .lead { font-size: 15px; line-height: 1.55; margin: 0; overflow-wrap: anywhere; }
   .meta { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 16px 0 0; font-size: 13.5px; line-height: 1.45; }
-  .meta dt { color: var(--ink2); font-weight: 600; }
+  .meta dt { color: var(--ink-muted); font-weight: 600; }
   .meta dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-  .meta code, .det code, .stmt code { font-size: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; overflow-wrap: anywhere; }
+  .meta code, .det code, .stmt code { font-size: 12px; background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; overflow-wrap: anywhere; }
   @media (max-width: 520px) { .meta { grid-template-columns: 1fr; gap: 2px; } .meta dd { margin-bottom: 8px; } }
 
   .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
@@ -26,24 +27,24 @@
   .groups h3 { font-size: 14px; font-weight: 700; margin: 0 0 10px; }
   .bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
   .bars li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: baseline; font-size: 13.5px; }
-  .bars .val { font-family: var(--mono); font-size: 12.5px; color: var(--ink2); white-space: nowrap; }
-  .bars .bar { grid-column: 1 / -1; height: 8px; border-radius: var(--r-pill); background: var(--track); overflow: hidden; }
-  .bars .bar span { display: block; height: 100%; border-radius: var(--r-pill); background: var(--grey-fill); }
-  .bars .bar .good { background: var(--good-fill); }
-  .bars .bar .bad { background: var(--bad-fill); }
-  .bars .bar .warn { background: var(--warn-fill); }
-  .bars .bar .sky { background: var(--sky-fill); }
-  .beyond { margin: 16px 0 0; font-size: 13px; color: var(--ink2); line-height: 1.5; }
+  .bars .val { font-family: var(--mono); font-size: 12.5px; color: var(--ink-muted); white-space: nowrap; }
+  .bars .bar { grid-column: 1 / -1; height: 8px; border-radius: var(--r-pill); background: var(--sunken); overflow: hidden; }
+  .bars .bar span { display: block; height: 100%; border-radius: var(--r-pill); background: var(--ink-muted); }
+  .bars .bar .good { background: var(--success); }
+  .bars .bar .bad { background: var(--danger); }
+  .bars .bar .warn { background: var(--warning-fill); }
+  .bars .bar .sky { background: var(--info); }
+  .beyond { margin: 16px 0 0; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
 
   .filters { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 12px; }
   @media (max-width: 640px) { .filters { grid-template-columns: 1fr; } }
   .filters .grp { margin: 0; }
-  .shown { font-size: 13px; color: var(--ink2); margin: 12px 0 0; }
+  .shown { font-size: 13px; color: var(--ink-muted); margin: 12px 0 0; }
   .tbl { margin-top: 12px; overflow-x: auto; border-radius: 14px; }
   table.steps { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 520px; }
   .steps caption { text-align: left; }
   .steps th, .steps td { text-align: left; vertical-align: top; padding: 9px 8px; border-top: 1px solid var(--line); }
-  .steps thead th { border-top: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--ink2); white-space: nowrap; }
+  .steps thead th { border-top: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--ink-muted); white-space: nowrap; }
   .steps th[scope=row] { font-family: var(--mono); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
   .steps td.lvl { font-family: var(--mono); font-size: 12.5px; }
   .steps td.ttl { min-width: 11em; }
@@ -51,12 +52,12 @@
   .steps .badge { white-space: normal; }
   .det { margin: 8px 0 2px; font-size: 13px; line-height: 1.5; color: var(--ink); }
   .det p { margin: 0 0 8px; }
-  .det .k { font-weight: 700; color: var(--ink2); }
+  .det .k { font-weight: 700; color: var(--ink-muted); }
   .det ul { margin: 4px 0 8px; padding-left: 18px; }
-  .det pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: 11.5px; background: var(--surface-2); border-radius: 8px; padding: 6px 8px; }
+  .det pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: 11.5px; background: var(--sunken); border-radius: 8px; padding: 6px 8px; }
   .det .pre { white-space: pre-line; overflow-wrap: anywhere; }
   .det li + li { margin-top: 6px; }
-  .empty-row td { text-align: center; color: var(--ink2); padding: 24px 8px; }
+  .empty-row td { text-align: center; color: var(--ink-muted); padding: 24px 8px; }
 
   .stmt h3 { font-size: 15px; font-weight: 700; margin: 18px 0 6px; }
   .stmt h3:first-of-type { margin-top: 0; }

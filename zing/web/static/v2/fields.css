@@ -12,39 +12,39 @@
 .zmp-sels { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .zmp .zmp-sel {
   width: 100%; min-width: 0; max-width: 100%; cursor: pointer;
-  border: 1.5px solid var(--line-control); background-color: var(--field); color: var(--ink);
+  border: 1.5px solid var(--border); background-color: var(--surface); color: var(--ink);
   border-radius: var(--r-field); font-family: var(--sans); font-weight: 500; font-size: 15.5px;
   padding: 12px 36px 12px 14px; outline: none;
   appearance: none; -webkit-appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--ink2) 50%), linear-gradient(135deg, var(--ink2) 50%, transparent 50%);
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-muted) 50%), linear-gradient(135deg, var(--ink-muted) 50%, transparent 50%);
   background-position: right 19px center, right 14px center;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   transition: border-color 0.16s, box-shadow 0.16s, background-color 0.16s, color 0.16s;
 }
-.zmp .zmp-sel:hover:not(:disabled) { border-color: var(--line-control-hover); }
+.zmp .zmp-sel:hover:not(:disabled) { border-color: var(--ink-muted); }
 .zmp .zmp-sel:focus,
 .zmp .zmp-sel:focus-visible {
-  outline: none; border-color: var(--teal); box-shadow: 0 0 0 4px var(--focus-ring); background-color: var(--field-focus);
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-tint); background-color: var(--surface);
 }
 /* placeholder ("Select provider…") reads as unfilled, like an input placeholder */
-.zmp .zmp-sel.is-empty { color: var(--faint); font-weight: 400; font-style: italic; }
-.zmp .zmp-sel option { color: var(--ink); background: var(--card); font-style: normal; font-weight: 500; }
-.zmp .zmp-sel option[value=""] { color: var(--faint); }
+.zmp .zmp-sel.is-empty { color: var(--ink-muted); font-weight: 400; font-style: italic; }
+.zmp .zmp-sel option { color: var(--ink); background: var(--surface); font-style: normal; font-weight: 500; }
+.zmp .zmp-sel option[value=""] { color: var(--ink-muted); }
 /* disabled (no provider chosen yet): dashed, flat, no chevron */
 .zmp .zmp-sel:disabled {
-  cursor: not-allowed; border-style: dashed; border-color: var(--line-strong);
-  background-color: var(--surface-2); background-image: none; color: var(--faint);
+  cursor: not-allowed; border-style: dashed; border-color: var(--line);
+  background-color: var(--sunken); background-image: none; color: var(--ink-muted);
 }
 
 /* "Custom (from relay)": fetch button + status line */
 .zmp-fetch { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; min-width: 0; }
-.zmp-fetch-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
-.zmp-status { font-size: 12.5px; line-height: 1.45; color: var(--ink2); overflow-wrap: anywhere; min-width: 0; }
-.zmp-status.is-ok { color: var(--good); }
-.zmp-status.is-warn { color: var(--warn); }
-.zmp-status.is-error { color: var(--bad); }
+.zmp-fetch-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.zmp-status { font-size: 12.5px; line-height: 1.45; color: var(--ink-muted); overflow-wrap: anywhere; min-width: 0; }
+.zmp-status.is-ok { color: var(--success); }
+.zmp-status.is-warn { color: var(--warning); }
+.zmp-status.is-error { color: var(--danger); }
 
 /* the free-text input (moved inside .zmp) and the mode toggle */
 .zmp > input { min-width: 0; }
@@ -52,56 +52,56 @@
   align-self: flex-start; display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 2px; margin: -1px 0 0; border-radius: 6px; line-height: 1.3;
 }
-.zmp-custom:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; text-decoration: underline; }
+.zmp-custom:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; text-decoration: underline; }
 
 /* ---------- secret key field (/secretfield.js) ---------- */
 .zsf { min-width: 0; }
 .zsf > input { min-width: 0; }
 .zsf .zsf-toggle {
-  --zsf-color: var(--faint);
+  --zsf-color: var(--ink-muted);
   --zsf-color-on: var(--ink);
-  --zsf-focus: var(--teal);
+  --zsf-focus: var(--primary);
   width: 38px; height: 34px; right: 5px; border-radius: 9px;
   transition: color 0.15s, background-color 0.15s;
 }
-.zsf .zsf-toggle:hover { background-color: var(--surface-2); }
-.zsf .zsf-toggle[aria-pressed="true"] { color: var(--teal); }
-.zsf .zsf-toggle:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; box-shadow: 0 0 0 3px var(--focus-ring); }
+.zsf .zsf-toggle:hover { background-color: var(--sunken); }
+.zsf .zsf-toggle[aria-pressed="true"] { color: var(--primary); }
+.zsf .zsf-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; box-shadow: 0 0 0 3px var(--primary-tint); }
 .zsf .zsf-toggle svg,
 .zsf .zsf-toggle .zicon { width: 18px; height: 18px; }
 
 /* ---------- monitors' master key (/v2/static/masterkey.js) ---------- */
 .zmk-bar {
   margin: 18px 0 0; padding: 12px 14px; border-radius: 14px;
-  background: var(--surface-2); border: 1px solid var(--line);
+  background: var(--sunken); border: 1px solid var(--line);
 }
-.zmk-bar.ok { background: var(--goodbg); border-color: var(--line-strong); }
-.zmk-bar.warn { background: var(--warnbg); border-color: var(--warn); }
-.zmk-bar.bad { background: var(--badbg); border-color: var(--bad); }
+.zmk-bar.ok { background: var(--success-tint); border-color: var(--line); }
+.zmk-bar.warn { background: var(--warning-tint); border-color: var(--warning); }
+.zmk-bar.bad { background: var(--danger-tint); border-color: var(--danger); }
 .zmk-line { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
-.zmk-ico { display: inline-flex; color: var(--ink2); }
+.zmk-ico { display: inline-flex; color: var(--ink-muted); }
 .zmk-ico .zicon { width: 18px; height: 18px; }
 .zmk-text { flex: 1 1 260px; min-width: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink); }
-.zmk-meta { color: var(--ink2); }
+.zmk-meta { color: var(--ink-muted); }
 .zmk-text code {
-  font-size: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px;
+  font-size: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px;
 }
 .zmk-btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .zmk-btns .btn.link { border-color: transparent; background: none; text-decoration: underline; }
-.zmk-warn { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--warn); line-height: 1.45; }
-.zmk-msg { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: var(--ink2); }
+.zmk-warn { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--warning); line-height: 1.45; }
+.zmk-msg { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: var(--ink-muted); }
 .zmk-msg:empty { display: none; }
 .zmk-reset { margin-top: 10px; }
-.zmk-reset p { margin: 0 0 8px; font-size: 13px; color: var(--bad); font-weight: 600; line-height: 1.45; }
+.zmk-reset p { margin: 0 0 8px; font-size: 13px; color: var(--danger); font-weight: 600; line-height: 1.45; }
 .zmk-row { display: flex; gap: 6px 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
 .zmk-row .in { flex: 1 1 160px; min-width: 0; font-size: 13px; padding: 7px 10px; border-radius: 10px; }
 
 .zmk-dlg {
   width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0;
-  border: 1px solid var(--line-strong); border-radius: var(--r-card);
-  background: var(--card); color: var(--ink); box-shadow: var(--shadow-pop);
+  border: 1px solid var(--line); border-radius: var(--r-card);
+  background: var(--surface); color: var(--ink); box-shadow: var(--shadow-pop);
 }
-.zmk-dlg::backdrop { background: rgba(5, 15, 13, 0.55); }
+.zmk-dlg::backdrop { background: var(--backdrop); }
 .zmk-body { padding: 22px 22px 20px; }
 @media (max-width: 520px) { .zmk-body { padding: 18px 16px 16px; } }
 .zmk-body h2 {
@@ -109,17 +109,17 @@
   font-family: var(--disp); font-size: 19px; font-weight: 600; letter-spacing: -0.01em;
 }
 .zmk-body h2 .zicon { width: 20px; height: 20px; }
-.zmk-body p { margin: 0 0 12px; font-size: 14px; line-height: 1.55; color: var(--ink2); }
+.zmk-body p { margin: 0 0 12px; font-size: 14px; line-height: 1.55; color: var(--ink-muted); }
 .zmk-body .in { width: 100%; box-sizing: border-box; }
 .zmk-body #zmk-key { font-size: 14px; letter-spacing: 0.3px; }
 .zmk-check { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 0; font-size: 13.5px; line-height: 1.45; cursor: pointer; }
 .zmk-check input { margin-top: 3px; }
 .zmk-act { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-.zmk-err { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: var(--bad); }
+.zmk-err { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: var(--danger); }
 .zmk-err[hidden] { display: none; }
 
 /* field-level error message, linked to its field with aria-describedby (BITV 9.3.3.1) */
-.ferr { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; color: var(--bad); line-height: 1.45; }
+.ferr { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; color: var(--danger); line-height: 1.45; }
 .ferr[hidden] { display: none; }
 
 /* ---------- relay configuration (/v2/static/relaycfg.js) ---------- */

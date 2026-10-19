@@ -382,7 +382,7 @@ O frontend é HTML, CSS e JavaScript de navegador simples, sem módulos nem pass
 de build. As páginas clássicas estão em `zing/web/static/`; a nova interface, em
 `zing/web/static/v2/`, partilha um cabeçalho (`nav.js`), o renderizador de
 relatórios (`report.js`), o seletor de tema (`theme.js`) e os estilos
-(`zing.css`, `fields.css`, `report.css`, `perf.css`). Os scripts partilhados são
+(`tokens.css`, `zing.css`, `fields.css`, `report.css`, `perf.css`). Os scripts partilhados são
 servidos a partir da raiz: `lang.js` (mudança de idioma), `locales.js` (dados de
 tradução), `i18n.js` (tradução das constatações), `icons.js`, `modelpicker.js`
 (**Obter modelos**), `secretfield.js` e `perf.js` (gráficos de desempenho).

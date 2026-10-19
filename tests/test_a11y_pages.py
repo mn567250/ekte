@@ -151,6 +151,7 @@ def test_multi_page_files_union_in_page_order():
 
 @pytest.mark.parametrize("path", [
     "zing/web/static/v2/nav.js",
+    "zing/web/static/v2/tokens.css",
     "zing/web/static/v2/zing.css",
     "zing/web/static/v2/theme.js",
     "zing/web/static/i18n.js",

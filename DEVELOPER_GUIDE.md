@@ -362,11 +362,14 @@ All decoding (image headers, WAV) is standard library only.
 The front end is plain HTML, CSS and browser JavaScript without modules or a
 build step. The classic pages live in `zing/web/static/`; the new UI in
 `zing/web/static/v2/` shares one header (`nav.js`), the report renderer
-(`report.js`), the theme switch (`theme.js`) and the styles (`zing.css`,
+(`report.js`), the theme switch (`theme.js`) and the styles (`tokens.css`, `zing.css`,
 `fields.css`, `report.css`, `perf.css`). Shared scripts are served from the root:
 `lang.js` (language switch), `locales.js` (translation data), `i18n.js` (finding
 translations), `icons.js`, `modelpicker.js` (**Fetch models**), `secretfield.js`
 and `perf.js` (performance charts).
+Every colour of the v2 UI, in both themes, is a token in `v2/tokens.css`
+(written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
+scripts use `var(--…)` only, never a literal colour.
 
 The v2 **Audit** and **Tools** pages configure relays with `v2/relaycfg.js`:
 relay/provider select → base URL → the relay's models (`/api/models`, on change,
