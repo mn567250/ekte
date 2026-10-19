@@ -38,6 +38,8 @@
       - /url: /v2/kb
   - paragraph: Exécution locale · les clés ne sortent jamais
 - main:
+  - heading "Ce relais sert-il le vrai modèle ?" [level=1]
+  - paragraph: Choisissez le relais, le modèle à auditer et, s'il est vendu sous un autre nom, le modèle qu'il prétend être. zing exécute sur votre machine une batterie complète de tests en boîte noire et produit un rapport de vérification lisible et étayé par des preuves.
   - tablist "Audits":
     - tab "Nouvel audit" [selected]
     - tab "En cours"
@@ -46,9 +48,8 @@
       - listitem: Configurer
       - listitem: Analyse
       - listitem: Rapport
-    - region "Ce relais sert-il le vrai modèle ?":
-      - heading "Ce relais sert-il le vrai modèle ?" [level=1]
-      - paragraph: Choisissez le relais, le modèle à auditer et, s'il est vendu sous un autre nom, le modèle qu'il prétend être. zing exécute sur votre machine une batterie complète de tests en boîte noire et produit un rapport de vérification lisible et étayé par des preuves.
+    - region "Configurer":
+      - heading "Configurer" [level=2]
       - text: Relais / fournisseur Facultatif
       - combobox "Relais / fournisseur Facultatif":
         - option "Sélectionnez un relais ou un fournisseur…" [selected]

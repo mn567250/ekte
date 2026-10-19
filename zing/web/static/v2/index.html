@@ -26,7 +26,7 @@
   #panel-running { padding-top: 4px; }
 
   /* stepper */
-  .steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 18px 0 0; flex-wrap: wrap; }
+  .steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0; flex-wrap: wrap; }
   .steps li {
     display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--faint);
     padding: 5px 11px 5px 6px; border-radius: var(--r-pill); border: 1px solid transparent;
@@ -35,14 +35,14 @@
     width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700;
     background: var(--surface-2); color: var(--ink2); border: 1px solid var(--line);
   }
-  .steps li[aria-current="step"] { color: var(--ink); background: var(--card); border-color: var(--line); }
+  .steps li[aria-current="step"] { color: var(--ink); background: var(--surface-2); border-color: var(--line); }
   .steps li[aria-current="step"] .n { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
   .steps li.done { color: var(--ink2); }
   .steps li.done .n { background: var(--goodbg); color: var(--good); border-color: transparent; }
   .steps .n .zicon { width: 11px; height: 11px; }
 
-  /* form */
-  .form-card { margin-top: 20px; }
+  /* form (inside the tab card: no second frame) */
+  .form-card { margin-top: 18px; }
   /* four-option segments: one row, 2 × 2 on phones (no mid-word breaks) */
   /* columns are never narrower than their label (e.g. DE "benutzerdefiniert") */
   .seg.q { display: grid; grid-template-columns: repeat(4, minmax(min-content, 1fr)); }
@@ -61,8 +61,7 @@
   .in[aria-invalid="true"] { border-color: var(--bad); }
 
   /* step 2: scan */
-  .scan { padding: 28px 24px 24px; text-align: center; }
-  @media (max-width: 520px) { .scan { padding: 22px 16px 18px; } }
+  .scan { padding: 18px 0 0; text-align: center; }
   .radar { position: relative; width: 140px; height: 140px; margin: 4px auto; }
   .radar .ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--line-strong); }
   .radar .ring.r2 { inset: 22%; }
@@ -172,7 +171,12 @@
   #perf-live .zp-plot { max-width: 100%; overflow-x: auto; }
 
   /* step 3 */
-  #report { margin-top: 22px; }
+  #report { margin-top: 18px; }
+  /* the report article is a card elsewhere (history); inside the tab card it
+     spans the card's width without a frame of its own */
+  .tab-card .zr.card { margin: 0 -24px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+  @media (max-width: 520px) { .tab-card .zr.card { margin: 0 -18px; } }
+  .tab-card .view > .foot:last-child { padding-bottom: 0; }
 </style>
 </head>
 <body>
@@ -180,6 +184,12 @@
   <header class="znav" data-page="audit" data-trust></header>
 
   <main id="main" tabindex="-1">
+    <div class="hero">
+      <h1 id="h-form" tabindex="-1" data-en="Is this relay serving the <span class='u'>real thing</span>?">这家中转站，给的是<span class="u">真货</span>吗？</h1>
+      <p data-en="Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
+    </div>
+
+    <div class="card card-pad tab-card">
     <div class="tabs" role="tablist" aria-label="检测" data-en-aria-label="Audits">
       <button type="button" role="tab" id="tab-new" aria-selected="true" aria-controls="panel-new" tabindex="0"><span class="pico" data-icon="search"></span><span data-en="New audit">新检测</span></button>
       <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">运行中</span><span class="tcount" id="running-count" hidden></span></button>
@@ -193,12 +203,9 @@
     </ol>
 
     <!-- STEP 1: form -->
-    <section class="view show" id="v1" aria-labelledby="h-form">
-      <div class="hero">
-        <h1 id="h-form" tabindex="-1" data-en="Is this relay serving the <span class='u'>real thing</span>?">这家中转站，给的是<span class="u">真货</span>吗？</h1>
-        <p data-en="Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
-      </div>
-      <div class="card card-pad form-card">
+    <section class="view show" id="v1" aria-labelledby="h-config">
+      <h2 class="sr-only" id="h-config" tabindex="-1" data-en="Configure">配置</h2>
+      <div class="form-card">
         <form id="form" novalidate>
           <div class="grp">
             <label class="lab" for="i-url"><span data-en="Relay URL">中转站地址</span> <span class="key">base_url</span></label>
@@ -290,7 +297,7 @@
 
     <!-- STEP 2: live scan -->
     <section class="view" id="v2" aria-labelledby="h-scan">
-      <div class="card scan" style="margin-top:22px">
+      <div class="scan">
         <div class="radar" id="radar" aria-hidden="true"><div class="ring"></div><div class="ring r2"></div><div class="sweep"></div><div class="ripple"></div><div class="ripple"></div><div class="ripple"></div><div class="core" data-icon="bolt"></div></div>
         <h2 id="h-scan" tabindex="-1" data-en="Running checks…">正在体检…</h2>
         <div class="target" id="scan-target"></div>
@@ -328,6 +335,7 @@
       <p class="jempty" id="jobs-empty" data-en="No audits are running">当前没有正在运行的检测</p>
       <ul class="jlist" id="jobs"></ul>
     </section>
+    </div>
   </main>
 </div>
 
@@ -472,7 +480,7 @@
     }
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
     // move focus into the new view (the old one is now display:none)
-    (n === 1 ? $("#h-form") : n === 2 ? $("#h-scan") : $("#report")).focus({ preventScroll: true });
+    (n === 1 ? $("#h-config") : n === 2 ? $("#h-scan") : $("#report")).focus({ preventScroll: true });
   }
 
   // ---------- messages kept as functions so a language switch re-renders them ----------

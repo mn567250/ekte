@@ -38,6 +38,8 @@
       - /url: /v2/kb
   - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät
 - main:
+  - heading "Liefert dieses Relay das echte Modell?" [level=1]
+  - paragraph: Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. zing führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.
   - tablist "Audits":
     - tab "Neues Audit" [selected]
     - tab "Läuft"
@@ -46,9 +48,8 @@
       - listitem: Konfigurieren
       - listitem: Scan
       - listitem: Bericht
-    - region "Liefert dieses Relay das echte Modell?":
-      - heading "Liefert dieses Relay das echte Modell?" [level=1]
-      - paragraph: Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. zing führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.
+    - region "Konfigurieren":
+      - heading "Konfigurieren" [level=2]
       - text: Relay / Anbieter Optional
       - combobox "Relay / Anbieter Optional":
         - option "Relay oder Anbieter wählen…" [selected]
