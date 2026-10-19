@@ -21,8 +21,7 @@
   .intro li b { color: var(--ink); }
   .intro .tag { justify-self: start; }
 
-  .tool-card { margin-top: 20px; }
-  /* phones: the two-option protocol switch stacks like the tabs (zing.css),
+  /* phones: the two-option protocol switch stacks,
      e.g. ES "Compatible con OpenAI" */
   @media (max-width: 480px) {
     .seg[data-seg] { flex-direction: column; }
@@ -105,7 +104,7 @@
       </ul>
     </div>
 
-    <div class="card card-pad tool-card">
+    <div class="card card-pad tab-card">
       <div class="tabs" role="tablist" aria-label="验真类型" data-en-aria-label="Verification type">
         <button type="button" role="tab" id="tab-embed" aria-selected="true" aria-controls="panel-embed" tabindex="0"><span class="pico" data-icon="chart"></span><span data-en="Embedding audit">嵌入审计</span></button>
         <button type="button" role="tab" id="tab-rerank" aria-selected="false" aria-controls="panel-rerank" tabindex="-1"><span class="pico" data-icon="search"></span><span data-en="Rerank audit">重排审计</span></button>

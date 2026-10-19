@@ -38,6 +38,8 @@
       - /url: /v2/kb
   - paragraph: 本地运行 · 密钥不经手
 - main:
+  - heading "这家中转站，给的是真货吗？" [level=1]
+  - paragraph: 选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。
   - tablist "检测":
     - tab "新检测" [selected]
     - tab "运行中"
@@ -46,9 +48,8 @@
       - listitem: 配置
       - listitem: 检测
       - listitem: 报告
-    - region "这家中转站，给的是真货吗？":
-      - heading "这家中转站，给的是真货吗？" [level=1]
-      - paragraph: 选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。
+    - region "配置":
+      - heading "配置" [level=2]
       - text: 中转站 / 厂商 可选
       - combobox "中转站 / 厂商 可选":
         - option "选择中转站或厂商…" [selected]

@@ -18,7 +18,7 @@
    * The collapsible filter panel (filterpanel.js) and "Copy link to this
    * view" sit above five tabs (tabs.js): Overview, Trends, Reliability,
    * Model integrity, Billing. Each tab holds one or two
-   * <section class="card panel">; a tab with two has a smaller second row
+   * <section class="panel">; a tab with two has a smaller second row
    * of tabs (.subtabs) showing one of them at a time, so the page neither
    * scrolls far nor changes height while panels load. PANELS (script) lists
    * each panel's tab, sub-tab, load() and render(), and only the shown
@@ -30,8 +30,10 @@
   .local-note .zicon { width: 13px; height: 13px; flex: none; }
   .local-note code { font-size: 11.5px; color: var(--ink2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
 
-  .panel { margin-top: 22px; padding: 18px 20px 20px; min-width: 0; }
-  [role="tabpanel"] > .panel:first-child, .subtabs ~ .panel { margin-top: 0; }
+  /* each top-level tab panel is one card (.tab-card, zing.css): its
+   * sub-tab switch first, then the selected sub-panel inside the same card */
+  #views > .tab-card { min-width: 0; }
+  .panel { min-width: 0; }
   .panel h2 { font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.2px; margin: 0; }
   .psub { margin: 4px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
   .pbody { margin-top: 14px; min-width: 0; transition: opacity 0.2s; }
@@ -70,8 +72,8 @@
   .atabs { flex-wrap: wrap; }
   .atabs [role="tab"] { flex: 1 1 auto; overflow-wrap: anywhere; }
   /* sections within a tab: a smaller, content-width second row */
-  .subtabs { width: fit-content; max-width: 100%; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 14px; border-radius: 13px; }
-  .subtabs [role="tab"] { flex: 0 1 auto; font-size: 13.5px; padding: 7px 14px; border-radius: 9px; overflow-wrap: anywhere; }
+  .subtabs { width: 100%; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 18px; border-radius: 13px; }
+  .subtabs [role="tab"] { flex: 1 1 0; font-size: 13.5px; padding: 7px 14px; border-radius: 9px; overflow-wrap: anywhere; }
 
   /* KPI tiles */
   .kpis { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
@@ -181,7 +183,6 @@
   .empty-box p { margin: 0 0 16px; color: var(--ink2); font-size: 15px; }
 
   @media (max-width: 600px) {
-    .panel { padding: 14px 14px 16px; }
     .fgrid { grid-template-columns: 1fr 1fr; }
     .kpis { grid-template-columns: 1fr 1fr; }
     .kpi .kv { font-size: 19px; }
@@ -226,17 +227,17 @@
         <button type="button" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1"><span data-en="Billing">计费</span></button>
       </div>
 
-      <section role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="0">
+      <section class="card card-pad tab-card" role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="0">
         <div class="tabs subtabs" role="tablist" id="stabs-overview" aria-labelledby="tab-overview">
           <button type="button" role="tab" id="tab-kpi" aria-selected="true" aria-controls="panel-kpi" tabindex="0"><span data-en="Key figures">关键指标</span></button>
           <button type="button" role="tab" id="tab-lb" aria-selected="false" aria-controls="panel-lb" tabindex="-1"><span data-en="Leaderboard">排行榜</span></button>
         </div>
-        <section class="card panel" role="tabpanel" id="panel-kpi" aria-labelledby="tab-kpi" tabindex="0" aria-busy="true">
+        <section class="panel" role="tabpanel" id="panel-kpi" aria-labelledby="tab-kpi" tabindex="0" aria-busy="true">
           <h2 id="kpi-h" data-en="Key figures">关键指标</h2>
           <p class="psub" id="kpi-sub"></p>
           <div class="pbody" id="kpi-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
         </section>
-        <section class="card panel" role="tabpanel" id="panel-lb" aria-labelledby="tab-lb" tabindex="0" hidden>
+        <section class="panel" role="tabpanel" id="panel-lb" aria-labelledby="tab-lb" tabindex="0" hidden>
           <h2 id="lb-h" data-en="Leaderboard">排行榜</h2>
           <p class="psub" data-en="Medians over the selected range; n is the number of runs that measured a value.">所选时间范围内的中位数；n 为测得该值的检测次数。</p>
           <div class="pbody">
@@ -247,12 +248,12 @@
         </section>
       </section>
 
-      <section role="tabpanel" id="panel-trends" aria-labelledby="tab-trends" tabindex="0" hidden>
+      <section class="card card-pad tab-card" role="tabpanel" id="panel-trends" aria-labelledby="tab-trends" tabindex="0" hidden>
         <div class="tabs subtabs" role="tablist" id="stabs-trends" aria-labelledby="tab-trends">
           <button type="button" role="tab" id="tab-cmp" aria-selected="true" aria-controls="panel-cmp" tabindex="0"><span data-en="Comparison over time">随时间对比</span></button>
           <button type="button" role="tab" id="tab-heat" aria-selected="false" aria-controls="panel-heat" tabindex="-1"><span data-en="Peak hours">高峰时段</span></button>
         </div>
-        <section class="card panel" role="tabpanel" id="panel-cmp" aria-labelledby="tab-cmp" tabindex="0" aria-busy="true">
+        <section class="panel" role="tabpanel" id="panel-cmp" aria-labelledby="tab-cmp" tabindex="0" aria-busy="true">
           <h2 id="cmp-h" data-en="Comparison over time">随时间对比</h2>
           <p class="psub" data-en="The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.">折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。</p>
           <div class="pbody">
@@ -260,7 +261,7 @@
             <div id="cmp-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
           </div>
         </section>
-        <section class="card panel" role="tabpanel" id="panel-heat" aria-labelledby="tab-heat" tabindex="0" hidden>
+        <section class="panel" role="tabpanel" id="panel-heat" aria-labelledby="tab-heat" tabindex="0" hidden>
           <h2 id="heat-h" data-en="Peak hours">高峰时段</h2>
           <p class="psub" data-en="Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).">这个中转站在高峰时段会变慢或更容易出错吗？每个格子是你所在时区某个星期几的某个小时，颜色表示该时段开始的检测的中位数（色阶见网格下方）。</p>
           <div class="pbody">
@@ -270,12 +271,12 @@
         </section>
       </section>
 
-      <section role="tabpanel" id="panel-reliability" aria-labelledby="tab-reliability" tabindex="0" hidden>
+      <section class="card card-pad tab-card" role="tabpanel" id="panel-reliability" aria-labelledby="tab-reliability" tabindex="0" hidden>
         <div class="tabs subtabs" role="tablist" id="stabs-reliability" aria-labelledby="tab-reliability">
           <button type="button" role="tab" id="tab-err" aria-selected="true" aria-controls="panel-err" tabindex="0"><span data-en="Errors and reliability">错误与可靠性</span></button>
           <button type="button" role="tab" id="tab-ovh" aria-selected="false" aria-controls="panel-ovh" tabindex="-1"><span data-en="Relay overhead">中转开销</span></button>
         </div>
-        <section class="card panel" role="tabpanel" id="panel-err" aria-labelledby="tab-err" tabindex="0" aria-busy="true">
+        <section class="panel" role="tabpanel" id="panel-err" aria-labelledby="tab-err" tabindex="0" aria-busy="true">
           <h2 id="err-h" data-en="Errors and reliability">错误与可靠性</h2>
           <p class="psub" data-en="Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls.">按原因统计对中转站的失败调用：限流（HTTP 429）、服务器错误（5xx）、超时及其他，占全部调用的比例。</p>
           <div class="pbody">
@@ -283,23 +284,23 @@
             <div id="err-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
           </div>
         </section>
-        <section class="card panel" role="tabpanel" id="panel-ovh" aria-labelledby="tab-ovh" tabindex="0" hidden>
+        <section class="panel" role="tabpanel" id="panel-ovh" aria-labelledby="tab-ovh" tabindex="0" hidden>
           <h2 id="ovh-h" data-en="Relay overhead">中转开销</h2>
           <p class="psub" data-en="Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.">中转站在自己的响应头里报告的处理耗时，与到它的网络往返时间并列（中位数）。中转站的数据是自报的，未经核实。</p>
           <div class="pbody" id="ovh-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
         </section>
       </section>
 
-      <section role="tabpanel" id="panel-integrity" aria-labelledby="tab-integrity" tabindex="0" hidden>
-        <section class="card panel" id="panel-int" aria-labelledby="int-h" aria-busy="true">
+      <section class="card card-pad tab-card" role="tabpanel" id="panel-integrity" aria-labelledby="tab-integrity" tabindex="0" hidden>
+        <section class="panel" id="panel-int" aria-labelledby="int-h" aria-busy="true">
           <h2 id="int-h" data-en="Model integrity">模型真实性</h2>
           <p class="psub" data-en="Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.">它是不是自称的那个模型，是否完整、功能齐全？按中转站与模型列出身份、上下文窗口与能力检查的结果。</p>
           <div class="pbody" id="int-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
         </section>
       </section>
 
-      <section role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" tabindex="0" hidden>
-        <section class="card panel" id="panel-bill" aria-labelledby="bill-h" aria-busy="true">
+      <section class="card card-pad tab-card" role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" tabindex="0" hidden>
+        <section class="panel" id="panel-bill" aria-labelledby="bill-h" aria-busy="true">
           <h2 id="bill-h" data-en="Billing and tokens">计费与 token</h2>
           <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens zing counted. Above 100%: the relay reports more tokens than zing counted (you may be billed for more). zing's counts are estimates, so small deviations are normal.">计费比 = 中转站报告的 token ÷ zing 统计的 token。高于 100%：中转站报告的 token 多于 zing 统计的（可能多计费）。zing 的统计是估算，小幅偏差属正常。</p>
           <div class="pbody">
@@ -1732,7 +1733,7 @@
   }
 
   /* ---------------- panel registry ---------------- */
-  // One entry per <section class="card panel">, in page order: its tab, the
+  // One entry per <section class="panel">, in page order: its tab, the
   // state.seq counter that drops its stale answers, load() fetches with the
   // current filters (F) and view (V) and renders, render() redraws from the
   // data already loaded (language switch). Panels share nothing else. A

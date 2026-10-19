@@ -38,6 +38,8 @@
       - /url: /v2/kb
   - paragraph: Runs locally · keys never leave
 - main:
+  - heading "Is this relay serving the real thing?" [level=1]
+  - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.
   - tablist "Audits":
     - tab "New audit" [selected]
     - tab "Running"
@@ -46,9 +48,8 @@
       - listitem: Configure
       - listitem: Scan
       - listitem: Report
-    - region "Is this relay serving the real thing?":
-      - heading "Is this relay serving the real thing?" [level=1]
-      - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.
+    - region "Configure":
+      - heading "Configure" [level=2]
       - text: Relay / provider Optional
       - combobox "Relay / provider Optional":
         - option "Select a relay or provider…" [selected]

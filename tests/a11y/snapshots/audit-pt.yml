@@ -38,6 +38,8 @@
       - /url: /v2/kb
   - paragraph: Execução local · as chaves nunca saem
 - main:
+  - heading "Este intermediário serve o modelo verdadeiro?" [level=1]
+  - paragraph: Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O zing executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.
   - tablist "Auditorias":
     - tab "Nova auditoria" [selected]
     - tab "Em andamento"
@@ -46,9 +48,8 @@
       - listitem: Configurar
       - listitem: Análise
       - listitem: Relatório
-    - region "Este intermediário serve o modelo verdadeiro?":
-      - heading "Este intermediário serve o modelo verdadeiro?" [level=1]
-      - paragraph: Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O zing executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.
+    - region "Configurar":
+      - heading "Configurar" [level=2]
       - text: Relay / provedor Opcional
       - combobox "Relay / provedor Opcional":
         - option "Selecione um relay ou provedor…" [selected]
