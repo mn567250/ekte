@@ -273,7 +273,7 @@ Embedding/rerank（`embed_audit.py`）和图像/音频（`media_audit.py`）不�
 
 前端是纯 HTML、CSS 和浏览器 JavaScript，不使用模块，也没有构建步骤。经典页面位于
 `zing/web/static/`；新界面位于 `zing/web/static/v2/`，共用一个页头（`nav.js`）、报告渲染器
-（`report.js`）、主题切换（`theme.js`）和样式（`zing.css`、`fields.css`、`report.css`、
+（`report.js`）、主题切换（`theme.js`）和样式（`tokens.css`、`zing.css`、`fields.css`、`report.css`、
 `perf.css`）。共用脚本从根路径提供：`lang.js`（语言切换）、`locales.js`（翻译数据）、
 `i18n.js`（发现的翻译）、`icons.js`、`modelpicker.js`（**获取模型列表**）、`secretfield.js`
 和 `perf.js`（性能图表）。

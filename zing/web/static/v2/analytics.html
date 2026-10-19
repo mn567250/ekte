@@ -7,6 +7,7 @@
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
+<link rel="stylesheet" href="/v2/static/tokens.css" />
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/charts.css" />
 <link rel="stylesheet" href="/v2/static/chartmotion.css" />
@@ -26,47 +27,47 @@
    * has its data table (BITV 9.1.1.1 / 9.1.3.1). Below 600px everything
    * stacks; wide tables scroll inside their own focusable region, never the
    * page (BITV 9.1.4.10). */
-  .local-note { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
+  .local-note { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
   .local-note .zicon { width: 13px; height: 13px; flex: none; }
-  .local-note code { font-size: 11.5px; color: var(--ink2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+  .local-note code { font-size: 11.5px; color: var(--ink-muted); background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
 
   /* each top-level tab panel is one card (.tab-card, zing.css): its
    * sub-tab switch first, then the selected sub-panel inside the same card */
   #views > .tab-card { min-width: 0; }
   .panel { min-width: 0; }
   .panel h2 { font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.2px; margin: 0; }
-  .psub { margin: 4px 0 0; font-size: 12.5px; color: var(--faint); line-height: 1.5; }
+  .psub { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
   .pbody { margin-top: 14px; min-width: 0; transition: opacity 0.2s; }
   /* refetch keeps the frame: the previous numbers stay, dimmed */
   [aria-busy="true"] .pbody { opacity: 0.55; }
-  .state { padding: 14px 0; color: var(--ink2); font-size: 14px; }
-  .state.loading { font-family: var(--mono); font-size: 13px; color: var(--faint); }
+  .state { padding: 14px 0; color: var(--ink-muted); font-size: 14px; }
+  .state.loading { font-family: var(--mono); font-size: 13px; color: var(--ink-muted); }
   .errbox { margin-top: 0; }
 
   /* filter fields (inside the shared panel, filterpanel.css) */
   .frow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
-  .flab { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); }
+  .flab { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); }
   .range { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 100%; }
   .range .seg button { flex: 0 1 auto; min-width: 0; padding: 8px 12px; font-size: 12.5px; }
   .custom { display: flex; flex-wrap: wrap; gap: 10px 12px; }
   .custom[hidden] { display: none; }
   .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; margin-top: 12px; }
   .fgrid label, .custom label, .ctl label, .lbctl label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .fgrid label > span, .custom label > span, .ctl label > span, .lbctl label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); overflow-wrap: anywhere; }
+  .fgrid label > span, .custom label > span, .ctl label > span, .lbctl label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
   .fgrid .in, .custom .in, .ctl .in, .lbctl .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
   .fgrid select.in, .ctl select.in, .lbctl select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
-  .ferr { margin: 10px 0 0; font-size: 12.5px; font-weight: 600; color: var(--bad); }
+  .ferr { margin: 10px 0 0; font-size: 12.5px; font-weight: 600; color: var(--danger); }
   .ferr:empty { display: none; }
 
   /* share link + tabs */
   .views[hidden] { display: none; }
   .share { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px 12px; margin: 16px 0 12px; }
   .share .btn .zicon { width: 14px; height: 14px; }
-  .sharest { font-size: 12.5px; font-weight: 600; color: var(--ink2); }
+  .sharest { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); }
   .sharest:empty { display: none; }
   .sharefb { margin: 0 0 14px; }
   .sharefb[hidden] { display: none; }
-  .sharefb label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); }
+  .sharefb label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); }
   .sharefb .in { font-family: var(--mono); font-size: 12.5px; padding: 8px 11px; border-radius: 10px; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink); }
   /* five tabs: they wrap rather than squeeze long labels (DE, FR) */
   .atabs { flex-wrap: wrap; }
@@ -77,36 +78,36 @@
 
   /* KPI tiles */
   .kpis { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .kpi { border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px 11px; background: var(--surface-2); min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .kpi { border: 1px solid var(--line); border-radius: 14px; padding: 12px 13px 11px; background: var(--sunken); min-width: 0; display: flex; flex-direction: column; gap: 3px; }
   /* long words (German compounds) break with a hyphen, by the page's lang */
-  .kpi .kl { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
+  .kpi .kl { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
   .kpi .kv { font-family: var(--disp); font-weight: 700; font-size: 22px; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; color: var(--ink); overflow-wrap: anywhere; }
-  .kpi .kd { font-size: 12px; font-weight: 600; color: var(--ink2); font-variant-numeric: tabular-nums; }
-  .kpi .kd.good { color: var(--good); } .kpi .kd.bad { color: var(--bad); }
-  .kpi .kd.few { color: var(--faint); font-weight: 500; }
-  .kpi .kc { font-size: 11.5px; color: var(--faint); line-height: 1.4; }
+  .kpi .kd { font-size: 12px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .kpi .kd.good { color: var(--success); } .kpi .kd.bad { color: var(--danger); }
+  .kpi .kd.few { color: var(--ink-muted); font-weight: 500; }
+  .kpi .kc { font-size: 11.5px; color: var(--ink-muted); line-height: 1.4; }
 
   /* comparison chart */
   .ctl { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 12px; align-items: end; }
   .pick { margin-top: 12px; }
   .pick .chips { margin-top: 6px; }
   .pick .chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
-  .legend { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink2); }
+  .legend { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink-muted); }
   .legend li { display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; }
   /* long relay URLs wrap only after "/" and "." (<wbr>, see brk()), never
      mid-word; a single overlong part still breaks rather than overflow */
   .legend .nm, .lbl { min-width: 0; overflow-wrap: break-word; }
   .legend .nm { color: var(--ink); font-weight: 600; }
   .lbl { display: block; }
-  .legend .sub { color: var(--faint); white-space: nowrap; }
-  .axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--faint); margin: 4px 0 2px; }
+  .legend .sub { color: var(--ink-muted); white-space: nowrap; }
+  .axcap { display: flex; justify-content: space-between; gap: 8px 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-muted); margin: 4px 0 2px; }
   .notes { margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
-  .note { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink2); padding: 9px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+  .note { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); padding: 9px 12px; border-radius: 12px; background: var(--sunken); border: 1px solid var(--line); }
   .note .zicon { width: 14px; height: 14px; flex: none; margin-top: 2px; }
-  .note.warn { color: var(--warn); background: var(--warnbg); border-color: transparent; }
+  .note.warn { color: var(--warning); background: var(--warning-tint); border-color: transparent; }
   .note ul { margin: 4px 0 0; padding-left: 18px; }
   .note > span { min-width: 0; overflow-wrap: anywhere; }
-  .empty-data { padding: 30px 12px; text-align: center; color: var(--ink2); font-size: 14px; border: 1px dashed var(--line-strong); border-radius: 14px; }
+  .empty-data { padding: 30px 12px; text-align: center; color: var(--ink-muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 14px; }
 
   /* data tables (chart table + leaderboard) */
   .tdisc { margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; }
@@ -119,26 +120,26 @@
   .tscroll {
     overflow-x: auto; max-width: 100%; border-radius: 10px;
     background:
-      linear-gradient(to right, var(--card) 30%, transparent) left / 24px 100% no-repeat local,
-      linear-gradient(to left, var(--card) 30%, transparent) right / 24px 100% no-repeat local,
-      radial-gradient(farthest-side at 0 50%, var(--line-control), transparent) left / 10px 100% no-repeat scroll,
-      radial-gradient(farthest-side at 100% 50%, var(--line-control), transparent) right / 10px 100% no-repeat scroll;
+      linear-gradient(to right, var(--surface) 30%, transparent) left / 24px 100% no-repeat local,
+      linear-gradient(to left, var(--surface) 30%, transparent) right / 24px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, var(--border), transparent) left / 10px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, var(--border), transparent) right / 10px 100% no-repeat scroll;
   }
   .tscroll:focus-visible { outline-offset: -2px; }
-  table.dt { border-collapse: collapse; width: 100%; font-size: 12.5px; color: var(--ink2); }
-  .dt caption { text-align: left; font-size: 12px; color: var(--faint); padding: 6px 12px; caption-side: top; }
+  table.dt { border-collapse: collapse; width: 100%; font-size: 12.5px; color: var(--ink-muted); }
+  .dt caption { text-align: left; font-size: 12px; color: var(--ink-muted); padding: 6px 12px; caption-side: top; }
   .dt th, .dt td { padding: 7px 12px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
-  .dt thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--faint); border-top: 0; white-space: nowrap; }
+  .dt thead th { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); border-top: 0; white-space: nowrap; }
   .dt td.n, .dt th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .dt tbody th { font-weight: 600; color: var(--ink); min-width: 12em; max-width: 24em; }
   .dt td.when { white-space: nowrap; }
   .dt td.ser { min-width: 12em; max-width: 18em; color: var(--ink); }
-  .dt td .cn { display: block; font-size: 11px; color: var(--faint); }
-  .dt tr.low > * { color: var(--faint); }
-  .dt tr.low td.nt { color: var(--warn); }
+  .dt td .cn { display: block; font-size: 11px; color: var(--ink-muted); }
+  .dt tr.low > * { color: var(--ink-muted); }
+  .dt tr.low td.nt { color: var(--warning); }
   .dt td.nt { min-width: 16em; }
   .dt .badge { margin-top: 3px; }
-  .dt .u { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--ink2); overflow-wrap: anywhere; }
+  .dt .u { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--ink-muted); overflow-wrap: anywhere; }
 
   /* leaderboard */
   .lbctl { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; }
@@ -150,14 +151,14 @@
     display: inline-flex; align-items: center; gap: 3px; padding: 3px 4px; margin: -3px -4px; cursor: pointer; white-space: nowrap;
     font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; border-radius: 6px;
   }
-  .sortb:hover { color: var(--ink); background: var(--surface-2); }
+  .sortb:hover { color: var(--ink); background: var(--sunken); }
   .sortb .zicon { width: 12px; height: 12px; flex: none; opacity: 0; transition: transform 0.2s; }
   th[aria-sort] .sortb { color: var(--ink); }
   th[aria-sort] .sortb .zicon { opacity: 1; }
   th[aria-sort="ascending"] .sortb .zicon { transform: rotate(180deg); }
   .dt th.n .sortb { flex-direction: row-reverse; }
 
-  .cov { margin: 12px 0 10px; font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
+  .cov { margin: 12px 0 10px; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
 
   /* errors: category legend, breakdown table */
   .legend .sw { margin-top: 0; }
@@ -170,17 +171,17 @@
   .dt td.chk { min-width: 8.5em; position: relative; }
   .dt td.chk .badge { margin-top: 0; }
   .dt td.chk.low .badge { opacity: 0.7; }
-  .dt td .few { display: block; font-size: 11px; color: var(--warn); }
+  .dt td .few { display: block; font-size: 11px; color: var(--warning); }
 
   /* relay overhead: bars in the table itself */
-  .hbar { display: block; height: 8px; margin-top: 5px; border-radius: 4px; background: var(--surface-2); min-width: 8em; }
+  .hbar { display: block; height: 8px; margin-top: 5px; border-radius: 4px; background: var(--sunken); min-width: 8em; }
   .hbar > span { display: block; height: 8px; border-radius: 4px; background: var(--c); min-width: 2px; }
   .dt td.bar { min-width: 11em; }
 
   .empty-box { text-align: center; padding: 44px 22px 40px; margin-top: 22px; }
-  .empty-box .ic { color: var(--faint); margin-bottom: 10px; }
+  .empty-box .ic { color: var(--ink-muted); margin-bottom: 10px; }
   .empty-box .ic .zicon { width: 34px; height: 34px; }
-  .empty-box p { margin: 0 0 16px; color: var(--ink2); font-size: 15px; }
+  .empty-box p { margin: 0 0 16px; color: var(--ink-muted); font-size: 15px; }
 
   @media (max-width: 600px) {
     .fgrid { grid-template-columns: 1fr 1fr; }

@@ -7,12 +7,13 @@
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
+<link rel="stylesheet" href="/v2/static/tokens.css" />
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/fields.css" />
 <style>
   /* ---- knowledge page (v2) — page-only rules; colours via zing.css tokens ---- */
   .form-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
-  .form-title .count { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--faint); }
+  .form-title .count { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink-muted); }
   .form-title:focus { outline: none; }
   .kb-card { margin-top: 20px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
@@ -25,7 +26,7 @@
   .kb-card > .lab + .row { margin-top: 0; }
 
   /* add form: a disclosure so the lists come first */
-  .add { margin: 12px 0 4px; border: 1px dashed var(--line-strong); border-radius: 14px; }
+  .add { margin: 12px 0 4px; border: 1px dashed var(--line); border-radius: 14px; }
   .add > summary { cursor: pointer; padding: 12px 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .add > summary .zicon { width: 15px; height: 15px; }
   .add[open] > summary { border-bottom: 1px solid var(--line); }
@@ -35,25 +36,25 @@
   .step h3 { font-size: 15px; font-weight: 700; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
   .step h3 .n {
     display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%;
-    background: var(--surface-2); border: 1px solid var(--line-strong); font-size: 12.5px; font-family: var(--mono);
+    background: var(--sunken); border: 1px solid var(--line); font-size: 12.5px; font-family: var(--mono);
   }
   details.inline { margin-top: 10px; }
   textarea.in.yaml { font-family: var(--mono); font-size: 12.5px; min-height: 180px; }
   textarea.in.prompt { font-family: var(--mono); font-size: 12px; min-height: 160px; }
   .okbox {
-    display: flex; align-items: flex-start; gap: 8px; background: var(--goodbg); border: 1px solid var(--good);
-    color: var(--good); border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5; font-weight: 600; margin-top: 14px;
+    display: flex; align-items: flex-start; gap: 8px; background: var(--success-tint); border: 1px solid var(--success);
+    color: var(--success); border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.5; font-weight: 600; margin-top: 14px;
   }
   .errbox { margin-top: 14px; }
   .errbox[hidden], .okbox[hidden], .scan[hidden] { display: none; }
   .scan { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .scan h4 { margin: 0 0 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--faint); }
+  .scan h4 { margin: 0 0 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--ink-muted); }
   .scan ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5; }
-  .scan .bad li { color: var(--bad); }
+  .scan .bad li { color: var(--danger); }
   .scan .warn li { color: var(--ink); }
-  .scan pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; margin: 4px 0 0; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+  .scan pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; margin: 4px 0 0; background: var(--sunken); border-radius: 8px; padding: 8px 10px; }
   .scan li code, .item code, .grp code, .res code {
-    font-size: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; overflow-wrap: anywhere;
+    font-size: 12px; background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; overflow-wrap: anywhere;
   }
   .res { margin-top: 10px; font-size: 14px; }
 
@@ -64,13 +65,13 @@
   .item.off .what { opacity: 0.7; }
   .item .what { flex: 1 1 240px; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
   .item .nm { font-weight: 600; }
-  .item .meta { display: block; font-size: 12.5px; color: var(--ink2); margin-top: 3px; line-height: 1.5; }
-  .item .ask { font-size: 13px; font-weight: 600; color: var(--bad); }
+  .item .meta { display: block; font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; line-height: 1.5; }
+  .item .ask { font-size: 13px; font-weight: 600; color: var(--danger); }
   .switch:has(input:disabled) { cursor: not-allowed; }
   .grps { display: flex; flex-direction: column; gap: 10px; }
   .grp { padding: 0; }
   .grp > summary { cursor: pointer; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-weight: 600; }
-  .grp > summary .cnt { color: var(--ink2); font-weight: 500; font-size: 13px; }
+  .grp > summary .cnt { color: var(--ink-muted); font-weight: 500; font-size: 13px; }
   .grp > .items { padding: 0 10px 10px; }
   .grp .item { box-shadow: none; border: 1px solid var(--line); }
   [data-kb="list"] { display: flex; flex-direction: column; gap: 10px; }

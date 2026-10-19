@@ -2,51 +2,35 @@
  *
  * perf.js injects its layout with every colour as a --zp-* property whose
  * classic default has zero specificity (:where), so these mappings win. The
- * tooltip is appended to <body>, hence .zp-tip here too. Theme switching comes
- * from zing.css: the tokens change under [data-theme=dark] and
- * prefers-color-scheme: dark; only the baseline series colour is set per theme.
+ * tooltip is appended to <body>, hence .zp-tip here too. Both themes come
+ * from tokens.css; nothing here is set per theme.
  */
 :root .zp-section,
 :root .zp-live,
 :root .zp-tip {
-  --zp-surface: var(--card);
-  --zp-panel: var(--card);
+  --zp-surface: var(--surface);
+  --zp-panel: var(--surface);
   --zp-ink: var(--ink);
-  --zp-ink2: var(--ink2);
-  --zp-faint: var(--faint);
+  --zp-ink2: var(--ink-muted);
+  --zp-faint: var(--ink-muted);
   --zp-grid: var(--line);
-  --zp-tile: var(--surface-2);
-  --zp-track: var(--track);
-  --zp-tab: var(--field);
-  --zp-tab-on: var(--ink);
-  --zp-tab-on-ink: var(--on-ink);
-  --zp-cached: var(--grey-fill);
-  --zp-better: var(--good);
-  --zp-worse: var(--bad);
-  --zp-x: var(--bad-fill);
-  --zp-focus: var(--teal);
+  --zp-tile: var(--sunken);
+  --zp-track: var(--sunken);
+  --zp-tab: var(--surface);
+  --zp-tab-on: var(--primary);
+  --zp-tab-on-ink: var(--on-primary);
+  --zp-cached: var(--ink-muted);
+  --zp-better: var(--success);
+  --zp-worse: var(--danger);
+  --zp-x: var(--danger);
+  --zp-focus: var(--primary);
   --zp-tip-bg: var(--ink);
-  --zp-tip-ink: var(--on-ink);
-  --zp-tip-shadow: rgba(0, 0, 0, 0.45);
-  /* series: target = the v2 accent (--teal, flips with the theme), so the
-     live probe bar and target points match the audit progress bar; baseline
-     stays orange. Both >= 3:1 against --card as graphics */
-  --zp-t: var(--teal);
-  --zp-b: #c8561c;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .zp-section,
-  :root:not([data-theme="light"]) .zp-live,
-  :root:not([data-theme="light"]) .zp-tip {
-    --zp-b: #f39a5c;
-    --zp-tip-shadow: rgba(0, 0, 0, 0.8);
-  }
-}
-:root[data-theme="dark"] .zp-section,
-:root[data-theme="dark"] .zp-live,
-:root[data-theme="dark"] .zp-tip {
-  --zp-b: #f39a5c;
-  --zp-tip-shadow: rgba(0, 0, 0, 0.8);
+  --zp-tip-ink: var(--on-primary);
+  --zp-tip-shadow: var(--shadow);
+  /* series: target = chart slot 0 (the brand), so the live probe bar and
+     target points match the audit progress bar; baseline = chart slot 2 */
+  --zp-t: var(--chart-0);
+  --zp-b: var(--chart-2);
 }
 
 /* layout touches on the v2 language */
@@ -61,7 +45,7 @@
 :root .zp-seg button, :root .zp-auto { font-family: var(--sans); }
 :root .zp-seg button { transition: background 0.15s, color 0.15s; }
 :root .zp-seg button:not([aria-pressed="true"]):not(:disabled):hover { color: var(--ink); }
-:root .zp-tabs button:not(.on):hover { color: var(--ink); border-color: var(--line-strong); }
+:root .zp-tabs button:not(.on):hover { color: var(--ink); border-color: var(--line); }
 :root .zp-tl { letter-spacing: 0.3px; }
 /* the live probe bar has the audit progress bar's (.pbar) shape and motion */
 :root .zp-bar { height: 6px; }
@@ -91,13 +75,13 @@
   white-space: normal;
   margin: 2px 0 4px;
 }
-:root .zp-data summary { display: inline-block; font-weight: 600; color: var(--ink2); }
+:root .zp-data summary { display: inline-block; font-weight: 600; color: var(--ink-muted); }
 :root .zp-data summary:hover { color: var(--ink); }
 :root .zp-data-scroll {
   border: 1px solid var(--line);
   border-radius: 10px;
   margin-top: 4px;
-  background: var(--card);
+  background: var(--surface);
 }
 :root .zp-data-scroll .zp-table { margin: 0; width: 100%; }
-:root .zp-data-scroll thead th { position: sticky; top: 0; background: var(--card); }
+:root .zp-data-scroll thead th { position: sticky; top: 0; background: var(--surface); }

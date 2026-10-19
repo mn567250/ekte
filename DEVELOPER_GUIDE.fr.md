@@ -389,7 +389,7 @@ L'interface est en HTML, CSS et JavaScript de navigateur simples, sans modules n
 étape de build. Les pages classiques sont dans `zing/web/static/` ; la nouvelle
 interface, dans `zing/web/static/v2/`, partage un en-tête (`nav.js`), le rendu
 de rapport (`report.js`), le sélecteur de thème (`theme.js`) et les styles
-(`zing.css`, `fields.css`, `report.css`, `perf.css`). Les scripts partagés sont
+(`tokens.css`, `zing.css`, `fields.css`, `report.css`, `perf.css`). Les scripts partagés sont
 servis depuis la racine : `lang.js` (choix de la langue), `locales.js` (données
 de traduction), `i18n.js` (traduction des constats), `icons.js`,
 `modelpicker.js` (**Récupérer les modèles**), `secretfield.js` et `perf.js`

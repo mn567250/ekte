@@ -13,11 +13,11 @@
 .ftop .disclosure .zicon { width: 15px; height: 15px; }
 .ftop .badge[hidden] { display: none; }
 /* the active filters in one line; long relay names wrap (never scroll) */
-.fsum { margin: -2px 0 4px; font-size: 12.5px; line-height: 1.5; color: var(--ink2); overflow-wrap: anywhere; }
+.fsum { margin: -2px 0 4px; font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); overflow-wrap: anywhere; }
 .fsum[hidden] { display: none; }
 .fbody { padding: 6px 0 2px; }
 .fbody[hidden] { display: none; }
-.ffoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: var(--ink2); }
+.ffoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: var(--ink-muted); }
 .ffoot .linkbtn { font-size: 12.5px; font-weight: 600; }
 .ffoot .linkbtn[hidden] { display: none; }
 
