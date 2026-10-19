@@ -42,6 +42,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The header's motion switch stops all motion (web UI v2).** "Motion off"
+  used to stop only chart animations; it now stops every animation and
+  transition, as `prefers-reduced-motion` does: the running audit's radar and
+  blinking check icon, the queued-audit bar and the spinners on Monitors and
+  Tools included, also when switched while an audit runs. This gives the
+  moving content an on-page stop control (BITV / EN 301 549 9.2.2.2, WCAG
+  2.2.2 Pause, Stop, Hide). The switch is now labelled "Motion".
 - **The verdict follows the dimensions that were checked.** The headline names
   the dimensions that set the risk (new `verdict.drivers`) and speaks of the
   claimed model only when model identity is among them: a context window cut

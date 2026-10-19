@@ -10,7 +10,7 @@
     - option "Automático"
     - option "Claro" [selected]
     - option "Escuro"
-  - combobox "Animação dos gráficos":
+  - combobox "Animação":
     - option "Animação ligada" [selected]
     - option "Animação desligada"
   - combobox "Idioma":
