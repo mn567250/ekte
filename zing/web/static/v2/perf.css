@@ -57,6 +57,10 @@
   box-shadow: var(--shadow-card);
 }
 :root .zp-tabs button { font-family: var(--sans); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+/* the y-range switch (Full range / Probe focus) in the same type */
+:root .zp-seg button, :root .zp-auto { font-family: var(--sans); }
+:root .zp-seg button { transition: background 0.15s, color 0.15s; }
+:root .zp-seg button:not([aria-pressed="true"]):not(:disabled):hover { color: var(--ink); }
 :root .zp-tabs button:not(.on):hover { color: var(--ink); border-color: var(--line-strong); }
 :root .zp-tl { letter-spacing: 0.3px; }
 /* the live probe bar has the audit progress bar's (.pbar) shape and motion */

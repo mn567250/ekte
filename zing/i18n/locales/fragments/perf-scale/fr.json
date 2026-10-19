@@ -1,0 +1,20 @@
+{
+ "strings": {
+  "▲ {n} above {value}": "▲ {n} au-dessus de {value}",
+  "band: p25–p75 of the same 5 requests": "bande : p25–p75 des mêmes 5 requêtes",
+  "y-axis focused on the probe: 0 to {max}, {n} requests above it (triangles at the top)": "axe y centré sur la sonde : de 0 à {max}, {n} requêtes au-dessus (triangles en haut)",
+  "audit request (ringed)": "requête de l'audit (cerclée)",
+  "probe request (small, lighter)": "requête de la sonde (petite, plus claire)",
+  "running median (last 5) with p25–p75": "médiane glissante (5 dernières) avec p25–p75",
+  "above the range (value in the tooltip)": "au-dessus de la plage (valeur dans l'infobulle)",
+  "Probe focus": "Centré sur la sonde",
+  "Full range": "Plage complète",
+  "set by you": "choisi par vous",
+  "automatic": "automatique",
+  "provisional until {n} probe requests ({k}/{n})": "provisoire jusqu'à {n} requêtes de la sonde ({k}/{n})",
+  "range from the first {n} probe requests": "plage issue des {n} premières requêtes de la sonde",
+  "Y-axis range": "Plage de l'axe y",
+  "Back to automatic": "Revenir à l'automatique",
+  "Y-axis switched to {range} automatically": "Axe y passé automatiquement à : {range}"
+ }
+}

@@ -48,7 +48,8 @@ def test_perf_js_renders_section_and_chart():
     ).stdout)
     section = out["section"]
     assert out["empty"] == ""
-    assert "<svg" in section and 'class="zp-pt t"' in section and 'class="zp-pt b"' in section
+    # probe requests: small, translucent dots (class "probe")
+    assert "<svg" in section and 'class="zp-pt t probe"' in section and 'class="zp-pt b probe"' in section
     assert 'class="zp-fail"' in section  # the failed request
     assert "Target vs baseline" in section and "Decode speed p50 (local)" in section
     assert "<img" not in section and "&lt;img" in section  # detector ids are escaped
@@ -420,3 +421,92 @@ def _drive_live_panel(page) -> None:
     page.evaluate("() => { L.records.push(mk(81)); L.render(); }")
     assert page.evaluate("document.querySelectorAll('#host .zp-data-scroll tbody tr').length") == 81
     assert errors == []
+
+
+_SCALE_JS = r"""
+const path = require("path");
+global.window = {};
+global.document = undefined;
+require(path.join(process.argv[1], "perf.js"));
+global.document = { activeElement: null };
+const P = window.ZingPerf;
+const recs = JSON.parse(process.argv[2]);
+const live = (total, n, user) => {
+  const host = { innerHTML: "", contains: () => false, querySelector: () => null, querySelectorAll: () => [] };
+  const l = new P.Live(host);
+  l.reset({ probeTotal: total });
+  l.records = recs.slice(0, n);
+  l.scale = user || null;
+  l.render();
+  return host.innerHTML;
+};
+const audit = recs.filter((r) => r.phase === "passive").length;
+console.log(JSON.stringify({
+  full: P.chart(recs, "latency"),
+  focus: P.chart(recs, "latency", { scale: "probe" }),
+  early: P.chart(recs.slice(0, audit + 2), "latency", { scale: "probe" }),
+  later: P.chart(recs.slice(0, audit + 5).concat(recs.slice(-1)), "latency", { scale: "probe" }),
+  running: live(20, audit + 8),
+  finished: live(20, recs.length),
+  chosen: live(20, audit + 8, "full"),
+  auditOnly: live(0, audit),
+  report: P.section({ target: {}, requests: recs }),
+}));
+"""
+
+
+def _scale_records() -> list[dict]:
+    from zing.perf.trend import attach_trends
+
+    recs: list[dict] = []
+    for i, ms in enumerate([12_000, 58_000, 9_000, 101_000, 3_500, 74_000, 22_000, 98_000, 41_000, 7_500]):
+        recs.append({"seq": len(recs) + 1, "op": "complete", "endpoint": "target", "phase": "passive", "ok": True,
+                     "stream": True, "start_ms": i * 50_000.0, "duration_ms": float(ms)})
+    # the first five probe requests: p25 1,550, p75 1,700 -> top max(2,150, 2,550) -> axis 0..3,000
+    probe = [1500, 2600, 1700, 1550, 1650] + [1600] * 14 + [9000]
+    for i, ms in enumerate(probe):
+        recs.append({"seq": len(recs) + 1, "op": "complete", "endpoint": "target", "phase": "probe", "ok": True,
+                     "stream": True, "start_ms": 600_000.0 + i * 2_000, "duration_ms": float(ms)})
+    attach_trends(recs)
+    return recs
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_probe_focus_fixes_the_range_from_the_first_probe_requests():
+    out = json.loads(subprocess.run(
+        ["node", "-e", _SCALE_JS, str(_STATIC), json.dumps(_scale_records())],
+        capture_output=True, text=True, check=True,
+    ).stdout)
+    full, focus = out["full"], out["focus"]
+    # full range: everything on the plot, no triangles
+    assert "zp-off" not in full and 'text-anchor="end">3,000</text>' not in full
+    # probe focus: 0..3,000 from the first five probe requests; the ten audit
+    # requests and the one slow probe request sit as triangles on the top edge
+    assert 'text-anchor="end">3,000</text>' in focus
+    assert focus.count('class="zp-off t"') == 11
+    assert "y-axis focused on the probe: 0 to 3,000 ms, 11 requests above it" in focus
+    # the range stays put however the probe goes on (here: a 9 s request) ...
+    assert 'text-anchor="end">3,000</text>' in out["later"]
+    # ... and is provisional before the fifth request (two: 1,500 and 2,600 -> 0..4,000)
+    assert 'text-anchor="end">4,000</text>' in out["early"]
+    # the running median sits in its p25–p75 band; probe dots are small
+    assert '<g class="zp-band"><path class="t" d="M' in full and 'r="3"' in full
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_live_focuses_on_the_probe_while_it_runs_unless_the_user_chose():
+    out = json.loads(subprocess.run(
+        ["node", "-e", _SCALE_JS, str(_STATIC), json.dumps(_scale_records())],
+        capture_output=True, text=True, check=True,
+    ).stdout)
+    pressed = lambda html, s: f'data-scale="{s}" aria-pressed="true"' in html  # noqa: E731
+    # "Full range" comes first, then "Probe focus"
+    assert out["running"].index('data-scale="full"') < out["running"].index('data-scale="probe"')
+    assert pressed(out["running"], "probe") and "automatic · range from the first 5 probe requests" in out["running"]
+    assert "· ▲ 10 above 3,000 ms</span>" in out["running"]  # the ten audit requests
+    assert pressed(out["finished"], "full") and "Back to automatic" not in out["finished"]
+    assert pressed(out["chosen"], "full") and "set by you" in out["chosen"] and "Back to automatic" in out["chosen"]
+    assert 'role="group" aria-label="Y-axis range"' in out["running"] and 'class="zp-sr" role="status"' in out["running"]
+    assert "zp-scale" not in out["auditOnly"]  # no probe, no switch
+    # a finished report starts on the full range
+    assert pressed(out["report"], "full") and "zp-scale" in out["report"]

@@ -8,15 +8,26 @@
  *                               .render()       re-draw (e.g. after a language switch)
  *   - section(performance)    HTML for a report's `performance` block ("" if none)
  *   - wireSection(root, perf) hook up its metric tabs + tooltips inside `root`
- *   - chart(records, metric)  the timeline SVG (x = seconds since audit start);
+ *   - chart(records, metric[, opts])
+ *                             the timeline SVG (x = seconds since audit start);
  *                             records with a server-computed `trend` (running
  *                             median of the endpoint's last 5 successful
  *                             requests, zing/perf/trend.py) also get a thin
- *                             line per endpoint behind the dots
+ *                             line per endpoint behind the dots, inside its
+ *                             p25–p75 band (`trend_band`); opts.scale "probe"
+ *                             focuses the y-axis on the performance probe
+ *
+ * Y-range: "Full range" (0 to the slowest request) or "Probe focus", one fixed
+ * range per audit taken from the first probe requests (see probeRange); the
+ * requests above it sit as triangles on the top edge. The live panel focuses
+ * on the probe automatically while it runs; a report starts on the full
+ * range. Choosing one with the switch above the chart stops the automatic
+ * change until "Back to automatic".
  *
  * Motion (chartmotion.js, if loaded): the live chart sweeps in when it is
  * first drawn or shows another metric, then only new requests pop in; a
- * report's chart sweeps in when it is opened or switches metric.
+ * report's chart sweeps in when it is opened or switches metric. When the
+ * y-range changes, the requests slide to their new height (ZingMotion.rescale).
  *
  * Colors follow the categorical order validated for the reports: target is
  * slot 1 (blue), baseline slot 2 (orange); a failed request is a red cross
@@ -175,31 +186,66 @@
     }
   }
 
+  // ---- y-range: the full range, or focused on the performance probe ------ //
+  // Probe focus has one fixed range per audit, from the first CALIB probe
+  // requests (both endpoints, successful and uncached, in recorded order):
+  // p75 + 3 × (p75 − p25), at least 1.5 × p75, on a nice axis. CALIB is the
+  // running median's window (zing/perf/trend.py); until that many probe
+  // requests are in, the range is provisional.
+  var CALIB = 5;
+  function probeRange(records, m) {
+    var v = (records || []).filter(function (r) {
+      return r.op === "complete" && r.phase === "probe" && r.ok && !r.cached && m.get(r) != null;
+    }).slice(0, CALIB).map(m.get).sort(function (a, b) { return a - b; });
+    if (!v.length) return null;
+    var lo = pct(v, 25), hi = pct(v, 75);
+    return { top: Math.max(hi + 3 * (hi - lo), 1.5 * hi), n: v.length };
+  }
+  // What the chart shows: the user's choice (null: automatic), else `auto`;
+  // probe focus falls back to the full range while this metric has no probe
+  // values (non-streamed calls have no TTFT, for one).
+  function scaleState(records, metricId, user, auto) {
+    var range = probeRange(records, metric(metricId));
+    var eff = user || auto;
+    if (eff === "probe" && !range) eff = "full";
+    return { eff: eff, user: user, range: range };
+  }
+  function hasProbe(records) {
+    return (records || []).some(function (r) { return r.op === "complete" && r.phase === "probe"; });
+  }
+
   // ---- timeline chart ------------------------------------------------- //
   var W = 720, H = 230, ML = 52, MR = 12, MT = 10, MB = 30;
-  // opts.open keeps the data-table toggle expanded across re-renders.
+  var MT_FOCUS = 26; // probe focus: room above the plot for the off-range triangles
+  // opts.open keeps the data-table toggle expanded across re-renders;
+  // opts.scale "probe" focuses the y-axis on the probe.
   function chart(records, metricId, opts) {
-    var c = chartSvg(records, metricId);
+    var c = chartSvg(records, metricId, opts && opts.scale);
     return c.empty ? c.html : c.html + dataTable(c.calls, c.m, opts && opts.open);
   }
-  // The SVG alone (or the "no samples" note): {html, empty, calls, m}. Its data
-  // table is dataTable(calls, m, open); the live panel keeps that one in place.
-  function chartSvg(records, metricId) {
+  // The SVG alone (or the "no samples" note): {html, empty, calls, m, over,
+  // top} (top: a focused range's maximum; over: how many requests sit above
+  // it, as triangles on the top edge). Its data table is
+  // dataTable(calls, m, open); the live panel keeps that one in place.
+  function chartSvg(records, metricId, scale) {
     var m = metric(metricId);
     var calls = (records || []).filter(function (r) { return r.op === "complete"; });
     var pts = calls.filter(function (r) { return r.ok && m.get(r) != null; });
     var failed = calls.filter(function (r) { return !r.ok; });
     if (!pts.length && !failed.length)
-      return { html: '<div class="zp-empty">' + esc(T("暂无数据", "No samples yet")) + "</div>", empty: true, calls: calls, m: m };
+      return { html: '<div class="zp-empty">' + esc(T("暂无数据", "No samples yet")) + "</div>", empty: true, calls: calls, m: m, over: 0 };
     var end = 1;
     calls.forEach(function (r) { end = Math.max(end, (r.start_ms + (r.duration_ms || 0)) / 1000); });
     var xa = niceAxis(end), xMax = xa.max;
-    var ya = niceAxis(Math.max.apply(null, pts.map(m.get).concat([1])) * 1.05), yMax = ya.max;
-    var pw = W - ML - MR, ph = H - MT - MB;
+    var range = scale === "probe" ? probeRange(records, m) : null, mt = range ? MT_FOCUS : MT;
+    var ya = niceAxis(range ? range.top : Math.max.apply(null, pts.map(m.get).concat([1])) * 1.05), yMax = ya.max;
+    var pw = W - ML - MR, ph = H - mt - MB;
     var x = function (s) { return ML + (s / xMax) * pw; };
-    var y = function (v) { return MT + ph - (v / yMax) * ph; };
+    var y = function (v) { return mt + ph - (v / yMax) * ph; };
+    var above = function (r) { return range && m.get(r) > yMax; };
+    var over = pts.filter(above).length;
     var o = ['<svg class="zp-chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' +
-      esc(summary(m, pts, failed)) + '">'];
+      esc(summary(m, pts, failed, range && { max: yMax, over: over })) + '">'];
     for (var i = 0; i <= ya.n; i++) {
       var v = ya.step * i, yy = y(v).toFixed(1);
       o.push('<line class="zp-grid" x1="' + ML + '" x2="' + (W - MR) + '" y1="' + yy + '" y2="' + yy + '"/>');
@@ -210,21 +256,33 @@
       o.push('<text class="zp-tick" x="' + x(s).toFixed(1) + '" y="' + (H - MB + 16) +
         '" text-anchor="' + (j === 0 ? "start" : j === xa.n ? "end" : "middle") + '">' + num(s) + "s</text>");
     }
-    o.push(trendPaths(pts, m, x, y));
+    // band and line are cut at the top edge of a focused range
+    o.push(bandPaths(pts, m, x, y, mt));
+    o.push(trendPaths(pts, m, x, y, mt));
+    var top = (mt - 4) / 2 + 2; // the triangles' centre line, above the plot
     pts.forEach(function (r) {
-      var cls = "zp-pt " + (r.endpoint === "baseline" ? "b" : "t") +
-        (r.phase === "passive" ? " passive" : r.stream ? "" : " hollow") + (r.cached ? " cached" : "");
-      o.push('<circle class="' + cls + '" cx="' + x(r.start_ms / 1000).toFixed(1) + '" cy="' +
-        y(m.get(r)).toFixed(1) + '" r="4" data-tip="' + esc(tip(r, m)) + '"/>');
+      var side = r.endpoint === "baseline" ? "b" : "t", cx = x(r.start_ms / 1000).toFixed(1);
+      if (above(r)) {
+        o.push('<path class="zp-off ' + side + '" d="M' + cx + "," + (top - 5) + "l5,9h-10z" +
+          '" data-tip="' + esc(tip(r, m)) + '"/>');
+        return;
+      }
+      // probe requests are small and translucent, so dense runs read as a
+      // cloud around the median; audit requests keep their ring
+      var probe = r.phase === "probe";
+      var cls = "zp-pt " + side + (r.phase === "passive" ? " passive" : r.stream ? "" : " hollow") +
+        (probe ? " probe" : "") + (r.cached ? " cached" : "");
+      o.push('<circle class="' + cls + '" cx="' + cx + '" cy="' +
+        y(m.get(r)).toFixed(1) + '" r="' + (probe ? 3 : 4) + '" data-tip="' + esc(tip(r, m)) + '"/>');
     });
-    var by = MT + ph;
+    var by = mt + ph;
     failed.forEach(function (r) {
       var cx = x(r.start_ms / 1000);
       o.push('<path class="zp-fail" d="M' + (cx - 4).toFixed(1) + "," + (by - 4) + "l8,8m0,-8l-8,8" +
         '" data-tip="' + esc(tip(r, null)) + '"/>');
     });
     o.push("</svg>");
-    return { html: o.join(""), empty: false, calls: calls, m: m };
+    return { html: o.join(""), empty: false, calls: calls, m: m, over: over, top: range ? yMax : null };
   }
   // The running-median line per endpoint, behind the dots: through each
   // successful request's `trend` value for this metric, in time order.
@@ -232,22 +290,72 @@
     var v = r.trend && r.trend[m.id];
     return typeof v === "number" && isFinite(v) ? v : null;
   }
-  function trendPaths(pts, m, x, y) {
+  // [p25, p75] of the same window (`trend_band`), or null
+  function bandOf(r, m) {
+    var b = r.trend_band && r.trend_band[m.id];
+    return b && typeof b[0] === "number" && typeof b[1] === "number" && isFinite(b[0]) && isFinite(b[1]) ? b : null;
+  }
+  function series(pts, base, has) {
+    return pts.filter(function (r) { return (r.endpoint === "baseline") === base && has(r); })
+      .sort(function (a, b) { return a.start_ms - b.start_ms; });
+  }
+  // Cut at the plot's top edge (y = top; svg y grows downwards): a line
+  // where it leaves and re-enters, a polygon along the edge (one
+  // Sutherland–Hodgman pass). Points are [x, y]; returns path data or "".
+  function cross(a, b, top) {
+    return [a[0] + ((top - a[1]) * (b[0] - a[0])) / (b[1] - a[1]), top];
+  }
+  function pt(p) { return p[0].toFixed(1) + "," + p[1].toFixed(1); }
+  function lineD(ps, top) {
+    var d = "", on = false;
+    ps.forEach(function (p, i) {
+      var q = ps[i - 1], inside = p[1] >= top;
+      if (i && (q[1] >= top) !== inside) {
+        var c = cross(q, p, top);
+        d += (inside ? "M" : "L") + pt(c);
+        on = inside;
+      }
+      if (inside) { d += (on ? "L" : "M") + pt(p); on = true; } else on = false;
+    });
+    return /L/.test(d) ? d : "";
+  }
+  function polyD(ps, top) {
+    var out = [];
+    ps.forEach(function (p, i) {
+      var q = ps[(i || ps.length) - 1];
+      if ((q[1] >= top) !== (p[1] >= top)) out.push(cross(q, p, top));
+      if (p[1] >= top) out.push(p);
+    });
+    return out.length > 2 ? "M" + out.map(pt).join("L") + "Z" : "";
+  }
+  function trendPaths(pts, m, x, y, top) {
     var out = [];
     [false, true].forEach(function (base) {
-      var d = pts.filter(function (r) { return (r.endpoint === "baseline") === base && trendOf(r, m) != null; })
-        .sort(function (a, b) { return a.start_ms - b.start_ms; })
-        .map(function (r) { return x(r.start_ms / 1000).toFixed(1) + "," + y(trendOf(r, m)).toFixed(1); });
-      if (d.length > 1) out.push('<path class="' + (base ? "b" : "t") + '" d="M' + d.join("L") + '"/>');
+      var ps = series(pts, base, function (r) { return trendOf(r, m) != null; })
+        .map(function (r) { return [x(r.start_ms / 1000), y(trendOf(r, m))]; });
+      var d = ps.length > 1 ? lineD(ps, top) : "";
+      if (d) out.push('<path class="' + (base ? "b" : "t") + '" d="' + d + '"/>');
     });
     return out.length ? '<g class="zp-trend">' + out.join("") + "</g>" : "";
+  }
+  // The p25–p75 band around each line: along the p75 values, back along the p25.
+  function bandPaths(pts, m, x, y, top) {
+    var out = [];
+    [false, true].forEach(function (base) {
+      var s = series(pts, base, function (r) { return bandOf(r, m) != null; });
+      if (s.length < 2) return;
+      var at = function (r, k) { return [x(r.start_ms / 1000), y(bandOf(r, m)[k])]; };
+      var d = polyD(s.map(function (r) { return at(r, 1); }).concat(s.slice().reverse().map(function (r) { return at(r, 0); })), top);
+      if (d) out.push('<path class="' + (base ? "b" : "t") + '" d="' + d + '"/>');
+    });
+    return out.length ? '<g class="zp-band">' + out.join("") + "</g>" : "";
   }
   function trendText() {
     return T("线：每个端点最近 5 次成功请求的滚动中位数", "line: running median of each endpoint's last 5 successful requests");
   }
   // The chart's accessible name: what it plots, how many requests, the median
-  // per endpoint and the failures.
-  function summary(m, pts, failed) {
+  // per endpoint, the failures, the line and a focused y-range.
+  function summary(m, pts, failed, focus) {
     var parts = [fill(T("{metric}（{unit}）随时间变化：{n} 个请求", "{metric} ({unit}) over time: {n} requests"),
       { metric: T(m.zh, m.en), unit: m.unit, n: int(pts.length + failed.length) })];
     var med = [
@@ -260,6 +368,12 @@
     });
     if (failed.length) parts.push(fill(T("{n} 个失败", "{n} failed"), { n: int(failed.length) }));
     if (pts.some(function (r) { return trendOf(r, m) != null; })) parts.push(trendText());
+    if (pts.some(function (r) { return bandOf(r, m) != null; }))
+      parts.push(T("带：同样 5 次请求的 p25–p75", "band: p25–p75 of the same 5 requests"));
+    if (focus)
+      parts.push(fill(T("y 轴聚焦性能探测：0 至 {max}，{n} 个请求高于此范围（顶部三角形）",
+        "y-axis focused on the probe: 0 to {max}, {n} requests above it (triangles at the top)"),
+        { max: num(focus.max) + " " + m.unit, n: int(focus.over) }));
     return parts.join(T("；", "; "));
   }
   // What the hover tooltips show, as a table behind a toggle.
@@ -283,7 +397,8 @@
       esc(T("端点", "Endpoint")) + "</th><th>" + esc(T("阶段", "Phase")) + '</th><th class="r">' +
       esc(T("开始", "Start")) + ' <span class="zp-unit">s</span></th><th class="r">' + esc(T(m.zh, m.en)) +
       ' <span class="zp-unit">' + m.unit + '</span></th><th class="r">' + esc(T("滚动中位数", "Running median")) +
-      ' <span class="zp-unit">' + m.unit + "</span></th><th>" + esc(T("状态", "Status")) + "</th></tr></thead>";
+      ' <span class="zp-unit">' + m.unit + '</span></th><th class="r">p25–p75 <span class="zp-unit">' + m.unit +
+      "</span></th><th>" + esc(T("状态", "Status")) + "</th></tr></thead>";
   }
   function dataRow(r, m) {
     var status = !r.ok
@@ -292,7 +407,8 @@
     return '<tr><td class="r">' + esc(r.seq) + "</td><td>" + esc(endpointName(r)) + "</td><td>" +
       esc(phaseName(r.phase) + (r.stream ? "" : " · " + T("非流式", "non-streaming"))) + '</td><td class="r">' +
       num((r.start_ms || 0) / 1000) + '</td><td class="r">' + (r.ok ? num(m.get(r)) : "—") + '</td><td class="r">' +
-      (trendOf(r, m) != null ? num(trendOf(r, m)) : "—") + "</td><td>" +
+      (trendOf(r, m) != null ? num(trendOf(r, m)) : "—") + '</td><td class="r">' +
+      (bandOf(r, m) ? num(bandOf(r, m)[0]) + "–" + num(bandOf(r, m)[1]) : "—") + "</td><td>" +
       esc(status) + "</td></tr>";
   }
   function dataTableHtml(rows, m) {
@@ -310,19 +426,28 @@
     return lines.join("\n");
   }
 
-  function legend(records, hasBaseline) {
+  // `over`: how many requests the chart drew as triangles above its range
+  function legend(records, hasBaseline, over) {
     var calls = (records || []).filter(function (r) { return r.op === "complete"; });
     var probe = calls.some(function (r) { return r.phase !== "passive"; });
     var items = ['<span><i class="zp-key t"></i>' + esc(T("目标", "target")) + "</span>"];
     if (hasBaseline) items.push('<span><i class="zp-key b"></i>' + esc(T("基线", "baseline")) + "</span>");
     if (probe && calls.some(function (r) { return r.phase === "passive"; }))
-      items.push('<span><i class="zp-key t passive"></i>' + esc(T("常规检测请求（浅色）", "audit request (lighter)")) + "</span>");
+      items.push('<span><i class="zp-key t passive"></i>' + esc(T("常规检测请求（圆环）", "audit request (ringed)")) + "</span>");
+    if (calls.some(function (r) { return r.phase === "probe"; }))
+      items.push('<span><i class="zp-key t probe"></i>' + esc(T("性能探测请求（小、浅色）", "probe request (small, lighter)")) + "</span>");
     if (calls.some(function (r) { return r.phase !== "passive" && !r.stream; }))
       items.push('<span><i class="zp-key t hollow"></i>' + esc(T("非流式请求（空心）", "non-streaming request (hollow)")) + "</span>");
     if (calls.some(function (r) { return !r.ok; }))
       items.push('<span><i class="zp-key x" aria-hidden="true">×</i>' + esc(T("失败请求", "failed request")) + "</span>");
-    if (calls.some(function (r) { return r.trend; }))
+    if (calls.some(function (r) { return r.trend_band; }))
+      items.push('<span><i class="zp-key band" aria-hidden="true"></i>' +
+        esc(T("滚动中位数（最近 5 次）及 p25–p75", "running median (last 5) with p25–p75")) + "</span>");
+    else if (calls.some(function (r) { return r.trend; }))
       items.push('<span><i class="zp-key line" aria-hidden="true"></i>' + esc(T("滚动中位数（最近 5 次）", "running median (last 5)")) + "</span>");
+    if (over)
+      items.push('<span><i class="zp-key tri" aria-hidden="true"></i>' +
+        esc(T("高于范围（数值见提示）", "above the range (value in the tooltip)")) + "</span>");
     return '<div class="zp-legend">' + items.join("") + "</div>";
   }
 
@@ -337,9 +462,39 @@
           (on ? ' class="on"' : "") + ">" + esc(T(m.zh, m.en)) + "</button>";
       }).join("") + "</div>";
   }
-  function plot(records, active, pid, open) {
+  function plot(records, active, pid, open, scale) {
+    return plotHtml(chartSvg(records, active, scale), active, pid, open);
+  }
+  function plotHtml(c, active, pid, open) {
     return '<div class="zp-plot" role="tabpanel" id="' + pid + '-panel" aria-labelledby="' + pid + "-tab-" + active +
-      '">' + chart(records, active, { open: open }) + "</div>";
+      '">' + (c.empty ? c.html : c.html + dataTable(c.calls, c.m, open)) + "</div>";
+  }
+  // The y-range switch above the chart (s from scaleState): "Full range" and
+  // "Probe focus" as toggle buttons, whether the range was chosen
+  // automatically or by the user, and a way back to automatic.
+  function scaleName(eff) {
+    return eff === "probe" ? T("聚焦性能探测", "Probe focus") : T("完整范围", "Full range");
+  }
+  // c: the chart drawn (chartSvg), for how many requests are above a focused range
+  function scaleBar(s, c) {
+    var btn = function (id) {
+      return '<button type="button" data-scale="' + id + '" aria-pressed="' + (s.eff === id) + '"' +
+        (id === "probe" && !s.range ? " disabled" : "") + ">" + esc(scaleName(id)) + "</button>";
+    };
+    var state = s.user ? T("由你选择", "set by you") : T("自动", "automatic");
+    if (s.eff === "probe")
+      state += " · " + fill(s.range.n < CALIB
+        ? T("前 {n} 个探测请求前为暂定范围（{k}/{n}）", "provisional until {n} probe requests ({k}/{n})")
+        : T("范围取自前 {n} 个探测请求", "range from the first {n} probe requests"), { n: int(CALIB), k: int(s.range.n) });
+    if (c && c.over)
+      state += " · " + fill(T("▲ {n} 个高于 {value}", "▲ {n} above {value}"), { n: int(c.over), value: num(c.top) + " " + c.m.unit });
+    return '<div class="zp-scale"><div class="zp-seg" role="group" aria-label="' + esc(T("y 轴范围", "Y-axis range")) + '">' +
+      btn("full") + btn("probe") + '</div><span class="zp-scale-s">' + esc(state) + "</span>" +
+      (s.user ? '<button type="button" class="zp-auto" data-scale="auto">' + esc(T("恢复自动", "Back to automatic")) + "</button>" : "") +
+      "</div>";
+  }
+  function scaleSaid(eff) {
+    return fill(T("y 轴已自动切换为：{range}", "Y-axis switched to {range} automatically"), { range: scaleName(eff) });
   }
 
   // ---- tooltip + tabs wiring ------------------------------------------ //
@@ -500,7 +655,19 @@
     return o.join("");
   }
 
-  var sectionState = { metric: "latency", open: false };
+  // scale: the y-range the user chose (null: automatic, which in a finished
+  // report is the full range)
+  var sectionState = { metric: "latency", open: false, scale: null };
+  // The parts of a report's chart that follow its metric and y-range.
+  function sectionParts(perf, pid) {
+    var recs = perf.requests, st = sectionState;
+    var s = scaleState(recs, st.metric, st.scale, "full"), c = chartSvg(recs, st.metric, s.eff);
+    return {
+      scale: hasProbe(recs) ? scaleBar(s, c) : "",
+      plot: plotHtml(c, st.metric, pid, st.open),
+      legend: legend(recs, !!perf.baseline, c.over),
+    };
+  }
   function section(perf) {
     if (!perf || !perf.target) return "";
     var modes = perf.modes || [];
@@ -514,16 +681,15 @@
           max: perf.probe_max_tokens ? int(perf.probe_max_tokens) : "?",
         }) + (kind ? " · " + kind : "")
       : T("来源：本次检测自身的请求", "Source: the audit's own requests");
-    var hasB = !!perf.baseline;
     var pid = "zp" + ++seq;
     var o = ['<div class="zp-section" data-zp="' + pid + '">'];
     var scored = perf.source === "probe"
       ? T("稳定性计入性能表现维度", "Consistency is scored in the performance dimension")
       : T("仅供参考，不计分", "Informational — not scored");
     o.push('<p class="zp-muted">' + esc(src) + " · " + esc(scored) + "</p>");
+    var parts = sectionParts(perf, pid);
     o.push(tabs(sectionState.metric, pid));
-    o.push(plot(perf.requests, sectionState.metric, pid, sectionState.open));
-    o.push(legend(perf.requests, hasB));
+    o.push(parts.scale, parts.plot, parts.legend);
     o.push(modeBlock(perf.mode, perf.target, perf.baseline, perf.comparison, modes.length > 0));
     modes.forEach(function (m) {
       o.push(modeBlock(m.mode, m.target, m.baseline, m.comparison, true));
@@ -551,16 +717,35 @@
       root.zpPerf = perf;
       motion(root.querySelector("svg.zp-chart"));
     }
+    // redraw the y-range switch, plot and legend; `then(oldSvg)` adds motion
+    function redraw(then) {
+      var parts = sectionParts(perf, pid), old = root.querySelector("svg.zp-chart");
+      hideTip();
+      [[".zp-scale", parts.scale], [".zp-plot", parts.plot], [".zp-legend", parts.legend]].forEach(function (p) {
+        var el = root.querySelector(p[0]);
+        if (el) el.outerHTML = p[1];
+      });
+      wireSection(root, perf);
+      then(old);
+    }
     wire(root, function (id) {
       sectionState.metric = id;
-      var plotEl = root.querySelector(".zp-plot"), tabsEl = root.querySelector(".zp-tabs");
-      hideTip();
-      if (plotEl) plotEl.outerHTML = plot(perf.requests, id, pid, sectionState.open);
+      var tabsEl = root.querySelector(".zp-tabs");
       if (tabsEl) tabsEl.outerHTML = tabs(id, pid);
-      wireSection(root, perf);
-      motion(root.querySelector("svg.zp-chart"));
+      redraw(function () { motion(root.querySelector("svg.zp-chart")); });
     }, function (open) {
       sectionState.open = open;
+    });
+    root.querySelectorAll(".zp-scale [data-scale]").forEach(function (b) {
+      b.onclick = function () {
+        var id = b.getAttribute("data-scale");
+        sectionState.scale = id === "auto" ? null : id;
+        redraw(function (old) {
+          rescale(old, root.querySelector("svg.zp-chart"));
+          var f = root.querySelector('.zp-seg [aria-pressed="true"]');
+          if (f) f.focus(); // the pressed button was redrawn
+        });
+      };
     });
   }
 
@@ -571,12 +756,19 @@
     if (fresh) M.pop(svg, fresh);
     else M.enter(svg);
   }
+  // the y-range changed: the requests slide from where `old` drew them
+  function rescale(old, svg) {
+    var M = window.ZingMotion;
+    if (M && M.rescale && old && svg) M.rescale(old, svg);
+  }
   // after a live render: a new chart (first draw, another metric) sweeps in,
   // a redrawn one pops only the requests it did not show before
   function liveMotion(self) {
     var svg = self.host && self.host.querySelector ? self.host.querySelector("svg.zp-chart") : null;
     if (!svg || svg === self.zmSvg) return;
+    var old = self.zmSvg, moved = !!old && !!self.zmScale && self.zmScale !== self.scaleEff;
     self.zmSvg = svg;
+    self.zmScale = self.scaleEff;
     var seen = {}, fresh = [], prev = self.zmSeen, first = !prev || self.zmMetric !== self.metric;
     Array.prototype.forEach.call(svg.querySelectorAll(".zp-pt, .zp-fail"), function (el) {
       var s = (/^#(\d+)\s/.exec(el.getAttribute("data-tip") || "") || [])[1];
@@ -586,6 +778,7 @@
     self.zmSeen = seen;
     self.zmMetric = self.metric;
     if (first) motion(svg);
+    else if (moved) rescale(old, svg); // (a request new in this frame simply shows)
     else if (fresh.length) motion(svg, fresh);
   }
 
@@ -602,8 +795,10 @@
     this.probeTotal = (opts && opts.probeTotal) || 0;
     this.hasBaseline = !!(opts && opts.hasBaseline);
     this.pending = false;
+    this.scale = null; // the y-range the user chose; null: automatic (a new audit starts automatic)
+    this.scaleEff = null; // the y-range shown
     this.el = null; // the rendered panel's parts, patched in place by render()
-    this.zmSeen = this.zmSvg = null; // what the chart showed (liveMotion)
+    this.zmSeen = this.zmSvg = this.zmScale = null; // what the chart showed (liveMotion)
     this.table = null; // what the data table currently shows (see fillTable)
     if (this.host) this.host.innerHTML = "";
   };
@@ -643,6 +838,12 @@
       }
     }
     function withUnit(v, unit) { return v == null ? "—" : num(v) + " " + unit; }
+    // y-range: focused on the probe while it runs, unless the user chose one
+    var running = this.probeTotal > 0 && probeDone > 0 && probeDone < this.probeTotal;
+    var sc = scaleState(recs, this.metric, this.scale, running ? "probe" : "full");
+    var said = !this.scale && this.scaleEff && sc.eff !== this.scaleEff ? scaleSaid(sc.eff) : "";
+    this.scaleEff = sc.eff;
+    var chartV = chartSvg(recs, this.metric, sc.eff);
     var v = {
       title: T("性能 · 实时", "Performance · live"),
       head: [
@@ -653,8 +854,9 @@
       ],
       probe: null,
       tabs: tabs(this.metric, this.pid),
-      chart: chartSvg(recs, this.metric),
-      legend: legend(recs, this.hasBaseline),
+      scale: this.probeTotal > 0 || hasProbe(recs) ? scaleBar(sc, chartV) : "",
+      chart: chartV,
+      legend: legend(recs, this.hasBaseline, chartV.over),
     };
     if (this.probeTotal) {
       var label = T("性能探测", "Performance probe");
@@ -673,13 +875,18 @@
       // (the selected tab: after an arrow key the focused one is the old metric)
       if (act.getAttribute("data-metric")) refocus = '.zp-tabs [data-metric="' + this.metric + '"]';
       else if (act.tagName === "SUMMARY") refocus = ".zp-data summary";
+      // a y-range button (gone after "Back to automatic": the pressed one)
+      else if (act.getAttribute("data-scale"))
+        refocus = act.getAttribute("data-scale") === "auto" ? '.zp-seg [aria-pressed="true"]'
+          : '.zp-seg [data-scale="' + act.getAttribute("data-scale") + '"]';
     }
     // ... nor jump an open data table back to its top.
     var box = this.host.querySelector(".zp-data-scroll"), scrollTop = box ? box.scrollTop : 0;
     if (act && box && box.contains(act)) refocus = ".zp-data-scroll";
     var el = this.el;
-    if (el && el.root.parentNode === this.host && !el.probe === !v.probe) this.patch(v);
+    if (el && el.root.parentNode === this.host && !el.probe === !v.probe && !el.scale === !v.scale) this.patch(v);
     else this.build(v);
+    if (said && this.el && this.el.say) this.el.say.textContent = said;
     liveMotion(this);
     box = this.host.querySelector(".zp-data-scroll");
     if (box && scrollTop && box.scrollTop !== scrollTop) box.scrollTop = scrollTop;
@@ -709,9 +916,12 @@
         '"><i style="width:' + v.probe.width + '"></i></div></div>');
     }
     o.push(v.tabs);
+    o.push(v.scale);
     o.push('<div class="zp-plot" role="tabpanel" id="' + this.pid + '-panel" aria-labelledby="' + this.pid + "-tab-" +
       this.metric + '">' + plotInner(v.chart, open) + "</div>");
     o.push(v.legend);
+    // announces an automatic y-range switch (kept across patches, so it speaks)
+    o.push('<div class="zp-sr" role="status"></div>');
     o.push("</div>");
     this.host.innerHTML = o.join("");
     this.markTable(open, v.chart);
@@ -727,12 +937,22 @@
       }),
       probe: probe && { text: probe.querySelector("span"), bar: probe.querySelector(".zp-bar"), fill: probe.querySelector(".zp-bar i") },
       tabs: root.querySelector(".zp-tabs"),
+      scale: root.querySelector(".zp-scale"),
       plot: root.querySelector(".zp-plot"),
       legend: root.querySelector(".zp-legend"),
-      cache: { tabs: v.tabs, tabsKey: tabs(METRICS[0].id, this.pid), chart: v.chart.html, empty: v.chart.empty, legend: v.legend },
+      say: root.querySelector(".zp-sr"),
+      cache: { tabs: v.tabs, tabsKey: tabs(METRICS[0].id, this.pid), scale: v.scale, chart: v.chart.html, empty: v.chart.empty, legend: v.legend },
     };
     this.wirePlot();
     wireTabs(root, function (id) { self.setMetric(id); });
+    // the y-range switch (redrawn as it changes: one delegated handler)
+    root.addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest("[data-scale]") : null;
+      if (!b || !root.contains(b) || b.disabled) return;
+      var id = b.getAttribute("data-scale");
+      self.scale = id === "auto" ? null : id;
+      self.render();
+    });
     // One delegated tooltip handler for every chart mark, current and future
     // (shown where the pointer enters a mark: hover only, no movement tracking).
     root.addEventListener("mouseover", function (e) {
@@ -798,6 +1018,11 @@
       el.tabs = el.root.querySelector(".zp-tabs");
       wireTabs(el.root, function (id) { self.setMetric(id); });
       c.tabs = v.tabs;
+    }
+    if (v.scale !== c.scale && el.scale) {
+      el.scale.outerHTML = v.scale;
+      el.scale = el.root.querySelector(".zp-scale");
+      c.scale = v.scale;
     }
     setAttr(el.plot, "aria-labelledby", this.pid + "-tab-" + this.metric);
     if (v.chart.empty !== c.empty) {
@@ -899,7 +1124,30 @@
     // full opacity (>= 3:1 like the dots, BITV 9.1.4.11), thinner than a mark
     ".zp-trend path{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}" +
     ".zp-trend .t{stroke:var(--zp-t)}.zp-trend .b{stroke:var(--zp-b)}" +
+    // the p25–p75 band: a wash behind the line (the line carries the 3:1)
+    ".zp-band path{stroke:none;fill-opacity:.14}.zp-band .t{fill:var(--zp-t)}.zp-band .b{fill:var(--zp-b)}" +
+    // probe requests: small and translucent with a hairline in the series
+    // colour (the outline keeps each dot >= 3:1, BITV 9.1.4.11), so a dense run
+    // reads as a light cloud around the median, not a chain of rings
+    ".zp-pt.probe{stroke-width:1;fill-opacity:.4}.zp-pt.probe.t{stroke:var(--zp-t)}.zp-pt.probe.b{stroke:var(--zp-b)}" +
+    ".zp-pt.probe.hollow{stroke-width:1.5;fill-opacity:1}.zp-pt.probe.cached{stroke:var(--zp-ink2)}" +
+    // requests above a focused y-range: triangles on the top edge
+    ".zp-off{stroke:var(--zp-surface);stroke-width:1.5}.zp-off.t{fill:var(--zp-t)}.zp-off.b{fill:var(--zp-b)}" +
+    ".zp-off:hover{stroke:var(--zp-ink)}" +
     ".zp-key.line{width:14px;height:2px;border-radius:1px;background:var(--zp-ink2);vertical-align:middle}" +
+    ".zp-legend .zp-key.probe{width:7px;height:7px;background:color-mix(in srgb,var(--zp-t) 40%,transparent);border:1px solid var(--zp-t);box-sizing:border-box}" +
+    ".zp-key.band{width:16px;height:10px;border-radius:2px;vertical-align:middle;background:linear-gradient(var(--zp-ink2),var(--zp-ink2)) center/100% 2px no-repeat," +
+    "color-mix(in srgb,var(--zp-ink2) 22%,transparent)}" +
+    ".zp-key.tri{width:0;height:0;border-radius:0;border:solid transparent;border-width:0 5px 9px;border-bottom-color:var(--zp-t)}" +
+    // the y-range switch above the chart
+    ".zp-scale{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0 0 4px;font-size:12px;color:var(--zp-ink2)}" +
+    ".zp-seg{display:inline-flex;gap:2px;padding:2px;border:1.5px solid var(--zp-grid);border-radius:999px;background:var(--zp-tab)}" +
+    ".zp-seg button{font:600 12px var(--sans,system-ui);color:var(--zp-ink2);background:none;border:0;border-radius:999px;padding:3px 10px;min-height:24px;cursor:pointer}" +
+    ".zp-seg button[aria-pressed=true]{color:var(--zp-tab-on-ink);background:var(--zp-tab-on)}" +
+    ".zp-seg button:disabled{opacity:.5;cursor:not-allowed}" +
+    ".zp-auto{font:600 12px var(--sans,system-ui);color:var(--zp-ink);background:none;border:0;padding:3px 2px;min-height:24px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}" +
+    ".zp-seg button:focus-visible,.zp-auto:focus-visible{outline:2px solid var(--zp-focus);outline-offset:2px}" +
+    ".zp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}" +
     ".zp-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--zp-ink2);margin:2px 0 8px}" +
     ".zp-key{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;font-style:normal}" +
     ".zp-key.t{background:var(--zp-t)}.zp-key.b{background:var(--zp-b)}" +

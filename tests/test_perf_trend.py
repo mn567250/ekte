@@ -22,6 +22,17 @@ def test_median_of_the_last_five_per_endpoint():
     assert "itl" not in recs[0]["trend"]  # no value, no median
 
 
+def test_band_is_p25_to_p75_of_the_same_window():
+    recs = [_rec(i, v) for i, v in enumerate([100, 300, 200, 400, 500, 900], 1)]
+    attach_trends(recs)
+    bands = [r["trend_band"]["latency"] for r in recs]
+    assert bands[0] == [100, 100]  # one value: no spread
+    assert bands[1] == [150, 250]  # interpolated between the two
+    assert bands[4] == [200, 400]  # 5 values: the 2nd and 4th smallest
+    assert bands[5] == [300, 500]  # [300, 200, 400, 500, 900] after the 1st drops out
+    assert set(recs[0]["trend_band"]) == set(recs[0]["trend"])
+
+
 def test_failed_cached_and_other_calls_neither_feed_nor_get_a_trend():
     tagger = RunningMedian()
     tagger.tag(_rec(1, 100))
@@ -30,4 +41,5 @@ def test_failed_cached_and_other_calls_neither_feed_nor_get_a_trend():
     models = tagger.tag({"op": "list_models", "ok": True, "duration_ms": 5})
     last = tagger.tag(_rec(4, 300))
     assert "trend" not in failed and "trend" not in cached and "trend" not in models
+    assert "trend_band" not in failed and "trend_band" not in cached
     assert last["trend"]["latency"] == 200

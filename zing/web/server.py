@@ -1220,7 +1220,8 @@ def create_app() -> FastAPI:
     @app.get("/api/history/{rid}")
     def history_get(rid: int, trend: int = 0) -> Any:
         """A saved report as stored; ``trend=1`` (the pages that show it) adds
-        each request's running medians for the performance chart."""
+        each request's running medians and their p25–p75 bands for the
+        performance chart."""
         from zing.web import history
 
         report = history.get(rid)

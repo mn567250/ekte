@@ -782,8 +782,10 @@ GRAPHICS_JS = (
   const out = new Map();
   const add = (k, msg) => { const e = out.get(k); if (e) e.n++; else out.set(k, { msg, n: 1 }); };
   // decorative parts of a chart: gridlines, the shaded area under a line (the
-  // line carries the data), a dashed reference baseline
-  const DECOR = '.zp-grid, .area, .base';
+  // line carries the data), a dashed reference baseline, the performance
+  // chart's p25–p75 wash around its running median (the line carries it; the
+  // values are in the data table)
+  const DECOR = '.zp-grid, .area, .base, .zp-band path';
   for (const svg of document.querySelectorAll('svg')) {
     if (!vis(svg) || svg.closest('[aria-hidden=true]') || svg.parentElement.closest('svg')) continue;
     if ((svg.getAttribute('role') || '') !== 'img') continue;   // charts; icons are aria-hidden

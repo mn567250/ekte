@@ -66,6 +66,19 @@
     stroke-dasharray: 1;
     animation: zm-draw var(--zm-t, 600ms) linear var(--zm-d, 0ms) both;
   }
+  /* the p25–p75 band shows once the line has drawn */
+  :root:not([data-motion="off"]) .zm-in .zp-band path {
+    animation: zm-fade 360ms ease-out 420ms backwards;
+  }
+  /* perf.js y-range switch: requests slide to their new height, the axis
+     and the running-median lines and bands fade in */
+  :root:not([data-motion="off"]) .zm-rs .zm-mv {
+    animation: zm-slide 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  :root:not([data-motion="off"]) .zm-rs .zp-grid, :root:not([data-motion="off"]) .zm-rs .zp-tick,
+  :root:not([data-motion="off"]) .zm-rs .zp-trend path, :root:not([data-motion="off"]) .zm-rs .zp-band path {
+    animation: zm-fade 420ms ease-out backwards;
+  }
   :root:not([data-motion="off"]) .zm-new .zp-pt.zm-fresh, :root:not([data-motion="off"]) .zm-new .zp-fail.zm-fresh {
     animation: zm-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
   }
@@ -81,6 +94,7 @@
 }
 @keyframes zm-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes zm-fade { from { opacity: 0; } }
+@keyframes zm-slide { from { transform: translateY(var(--zm-dy, 0px)); } }
 @keyframes zm-pop { from { opacity: 0; transform: scale(0.35); } }
 @keyframes zm-grow { from { transform: scaleY(0); } }
 /* heat grid fill: first leg fades the outline into the lightest step, each

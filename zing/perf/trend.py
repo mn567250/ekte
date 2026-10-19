@@ -2,7 +2,8 @@
 
 Every successful, uncached request gets ``trend``: per chart metric, the
 median of its endpoint's last :data:`TREND_WINDOW` such values, taken in the
-order the requests were recorded. Failed and cached requests neither feed nor
+order the requests were recorded; and ``trend_band``: per metric, the p25 and
+p75 of that same window (the band drawn around the line). Failed and cached requests neither feed nor
 get one, so a failure never pulls the line down. The live stream tags each
 record as it is emitted (:class:`RunningMedian`); a finished or stored report
 gets the same values from :func:`attach_trends`, so the browser only draws.
@@ -13,7 +14,7 @@ from __future__ import annotations
 import math
 from collections import deque
 from collections.abc import Callable, Iterable
-from statistics import median
+from statistics import median, quantiles
 from typing import Any
 
 TREND_WINDOW = 5
@@ -31,6 +32,15 @@ METRICS: dict[str, Callable[[dict[str, Any]], Any]] = {
     "tps": _decode_tps,
     "itl": lambda r: r.get("itl_mean_ms"),
 }
+
+
+def _band(values: deque[float]) -> list[float]:
+    """p25 and p75 of a window, interpolated between the sorted values (the
+    browser's percentile rule: with 5 values, the 2nd and 4th smallest)."""
+    if len(values) < 2:
+        return [values[0], values[0]]
+    q = quantiles(values, n=4, method="inclusive")
+    return [q[0], q[2]]
 
 
 def _number(value: Any) -> float | None:
@@ -52,6 +62,7 @@ class RunningMedian:
             return rec
         endpoint = "baseline" if rec.get("endpoint") == "baseline" else "target"
         trend: dict[str, float] = {}
+        band: dict[str, list[float]] = {}
         for mid, get in METRICS.items():
             value = _number(get(rec))
             if value is None:
@@ -59,8 +70,10 @@ class RunningMedian:
             window = self._values.setdefault((endpoint, mid), deque(maxlen=self.window))
             window.append(value)
             trend[mid] = median(window)
+            band[mid] = _band(window)
         if trend:
             rec["trend"] = trend
+            rec["trend_band"] = band
         return rec
 
 
