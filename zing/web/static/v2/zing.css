@@ -304,6 +304,9 @@ main[tabindex="-1"]:focus { outline: none; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--shadow-card); }
 .card-pad { padding: 24px; }
 @media (max-width: 520px) { .card-pad { padding: 18px; } }
+/* the page's main block: a card whose first child is the tab switch
+   (.tabs[role=tablist]); the selected tab's panel opens inside it */
+.tab-card { margin-top: 20px; }
 .section-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 28px 0 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
 .section-title .count { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--faint); white-space: nowrap; }
 
