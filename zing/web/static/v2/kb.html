@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/v2/static/tokens.css" />
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/fields.css" />
+<link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <style>
   /* ---- knowledge page (v2) — page-only rules; colours via zing.css tokens ---- */
   .form-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 0 0 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
@@ -18,10 +19,11 @@
   .kb-card { margin-top: 20px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
   .btn[hidden] { display: none; }
-  .tools-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin: 14px 0 10px; }
-  .tools-row > .hint { padding-bottom: 14px; }
-  .filter { flex: 1 1 220px; max-width: 360px; }
-  .filter > .lab, .kb-card > .lab { display: flex; }
+  .kb-card > .lab { display: flex; }
+  /* the one filter for all tabs (filterpanel.css) */
+  .fbody .lab { display: flex; }
+  .fbody .in { max-width: 480px; }
+  [data-kb="add"] + [data-kb="list"] { margin-top: 14px; }
   .kb-card > .lab { margin-top: 12px; }
   .kb-card > .lab + .row { margin-top: 0; }
 
@@ -67,6 +69,12 @@
   .item .nm { font-weight: 600; }
   .item .meta { display: block; font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; line-height: 1.5; }
   .item .ask { font-size: 13px; font-weight: 600; color: var(--danger); }
+  /* Delete (your entries) sits before the switch; the switch closes every row
+     at the same width, so the toggles line up down the list */
+  .item .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+  .item .switch { margin-left: auto; min-width: 10em; }
+  .item .acts + .switch { margin-left: 0; }
+  .item > .hint { flex-basis: 100%; }
   .switch:has(input:disabled) { cursor: not-allowed; }
   .grps { display: flex; flex-direction: column; gap: 10px; }
   .grp { padding: 0; }
@@ -100,6 +108,9 @@
       <p class="res" id="res" role="status"></p>
     </section>
 
+    <!-- one filter for every tab (filterpanel.js) -->
+    <section class="card filters" id="filters" hidden></section>
+
     <div class="card card-pad kb-card">
       <div class="tabs" role="tablist" aria-label="知识库分类" data-en-aria-label="Knowledge base sections">
         <button type="button" role="tab" id="tab-models" aria-selected="true" aria-controls="panel-models" tabindex="0"><span class="pico" data-icon="book"></span><span data-en="Models">模型</span></button>
@@ -118,13 +129,6 @@
             <div data-kb="add-body"></div>
           </div>
         </details>
-        <div class="tools-row">
-          <div class="filter">
-            <label class="lab" for="models-filter" data-en="Filter models">筛选模型</label>
-            <input class="in" data-kb="filter" id="models-filter" type="search" autocomplete="off" spellcheck="false" placeholder="筛选模型或厂商…" data-en-placeholder="Filter models or providers…">
-          </div>
-          <span class="hint" data-kb="found" role="status"></span>
-        </div>
         <div data-kb="list" id="models-list"><p class="empty" data-en="Loading…">加载中…</p></div>
       </section>
 
@@ -136,13 +140,6 @@
           <summary><span class="pico" data-icon="plus"></span><span data-en="Add a provider">添加厂商</span></summary>
           <div class="add-body"><div data-kb="add-body"></div></div>
         </details>
-        <div class="tools-row">
-          <div class="filter">
-            <label class="lab" for="providers-filter" data-en="Filter providers">筛选厂商</label>
-            <input class="in" data-kb="filter" id="providers-filter" type="search" autocomplete="off" spellcheck="false" placeholder="筛选厂商或地址…" data-en-placeholder="Filter providers or URLs…">
-          </div>
-          <span class="hint" data-kb="found" role="status"></span>
-        </div>
         <div data-kb="list" id="providers-list"><p class="empty" data-en="Loading…">加载中…</p></div>
       </section>
 
@@ -154,13 +151,6 @@
           <summary><span class="pico" data-icon="plus"></span><span data-en="Add a relay">添加中转站</span></summary>
           <div class="add-body"><div data-kb="add-body"></div></div>
         </details>
-        <div class="tools-row">
-          <div class="filter">
-            <label class="lab" for="relays-filter" data-en="Filter relays">筛选中转站</label>
-            <input class="in" data-kb="filter" id="relays-filter" type="search" autocomplete="off" spellcheck="false" placeholder="筛选中转站或地址…" data-en-placeholder="Filter relays or URLs…">
-          </div>
-          <span class="hint" data-kb="found" role="status"></span>
-        </div>
         <div data-kb="list" id="relays-list"><p class="empty" data-en="Loading…">加载中…</p></div>
       </section>
     </div>
@@ -171,6 +161,7 @@
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
 <script src="/v2/static/tabs.js"></script>
+<script src="/v2/static/filterpanel.js"></script>
 <script src="/v2/static/kbview.js"></script>
 <script src="/v2/static/kbsection.js"></script>
 <script>
@@ -196,10 +187,11 @@
   }
 
   // ---- data ---------------------------------------------------------------- //
-  var data = null, loadErr = false, sections = {};
+  var data = null, loadErr = false, sections = {}, query = "";
   var page = {
     data: function () { return data; },
     reload: function () { return load(); },
+    query: function () { return query; },
   };
 
   // ---- the three tabs: only this config differs ---------------------------- //
@@ -308,6 +300,46 @@
       .then(function (d) { resolved = d; paintResolve(); });
   });
 
+  // ---- the filter: one panel, applied to every tab ---------------------------- //
+  var fpanel = window.ZingFilterPanel.create($("filters"), {
+    storeKey: "zing.kb.filters.open",
+    onReset: function () { query = ""; renderFilters(); refilter(); },
+  });
+  function filterState() {
+    return { count: query ? 1 : 0, summary: query ? [Tf("包含“{q}”", "Contains “{q}”", { q: query })] : [] };
+  }
+  function renderFilters() {
+    var st = filterState();
+    fpanel.render({
+      count: st.count, summary: st.summary,
+      body: '<label class="lab" for="kb-q">' + esc(T("按名称、ID 或地址筛选", "Filter by name, id or URL")) + "</label>" +
+        '<input class="in" id="kb-q" type="search" autocomplete="off" spellcheck="false" autocapitalize="off" value="' + esc(query) + '"' +
+        ' placeholder="' + esc(T("例如 gpt-4o、deepseek、https://…", "e.g. gpt-4o, deepseek, https://…")) + '">',
+      foot: '<span id="kb-found" role="status"></span>',
+    });
+    paintFound();
+  }
+  // re-applies the filter to the tab on screen (the others when they render)
+  function refilter() {
+    Object.keys(sections).forEach(function (k) { if (sections[k].rendered()) sections[k].filter(); });
+    fpanel.sync(filterState());
+    paintFound();
+  }
+  function paintFound() {
+    var el = $("kb-found"), cur = tabs ? tabs.current() : "models", sec = sections[cur];
+    if (!el) return;
+    if (!query || !sec || !sec.rendered()) { el.textContent = ""; return; }
+    var r = sec.filter();
+    el.textContent = r.n
+      ? Tf("{n} / {total} 项匹配", "{n} of {total} match", { n: r.n, total: r.total })
+      : T("没有匹配的项。", "Nothing matches.");
+  }
+  $("filters").addEventListener("input", function (ev) {
+    if (ev.target.id !== "kb-q") return;
+    query = ev.target.value.trim();
+    refilter();
+  });
+
   // ---- render ---------------------------------------------------------------- //
   var tabs = null;
   function paintLists(all) {
@@ -325,6 +357,7 @@
     Object.keys(sections).forEach(function (k) {
       if (k === cur || all || sections[k].rendered()) sections[k].render();
     });
+    paintFound();
   }
   function load() {
     return fetch("/api/kb/profiles")
@@ -351,11 +384,13 @@
     fromHash: function (h) { return h.replace(/^add-/, ""); },
     onSelect: function (name) {
       if (data && sections[name] && !sections[name].rendered()) sections[name].render();
+      paintFound();
     },
   });
+  renderFilters();
   addFromHash(false);
   window.addEventListener("hashchange", function () { addFromHash(true); });
-  window.addEventListener("zing:lang", function () { paintWarn(); paintResolve(); paintLists(false); });
+  window.addEventListener("zing:lang", function () { paintWarn(); paintResolve(); renderFilters(); paintLists(false); });
   load();
 })();
 </script>

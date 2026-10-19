@@ -124,6 +124,9 @@
   "1 packaged item is switched off.": "1 packaged item is switched off.",
   "{n} packaged items are switched off.": "{n} packaged items are switched off.",
   "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed.": "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed.",
-  "{profile} would match better, but it is switched off.": "{profile} would match better, but it is switched off."
+  "{profile} would match better, but it is switched off.": "{profile} would match better, but it is switched off.",
+  "Filter by name, id or URL": "Filter by name, id or URL",
+  "e.g. gpt-4o, deepseek, https://…": "e.g. gpt-4o, deepseek, https://…",
+  "Contains “{q}”": "Contains “{q}”"
  }
 }

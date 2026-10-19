@@ -631,7 +631,7 @@ KB_MESSAGES = [
     "li.item [role=status]",
 ]  # fmt: skip
 # while filtering, the number of matching items is the answer the user waits for
-KB_FILTER_MESSAGES = [*KB_MESSAGES, "[data-kb=found]"]
+KB_FILTER_MESSAGES = [*KB_MESSAGES, "#kb-found"]
 KB_YAML = """provider: a11yflow
 display_name: A11y Flow
 models:
@@ -649,7 +649,10 @@ models: []
 def _kb_section_steps(flow: Flow, tab: str, query: str, item_key: str) -> None:
     """The steps every Knowledge tab shares: filter, switch an item off and on."""
     page = flow.page
-    flt = page.locator(f"#{tab}-filter")
+    # one filter panel for every tab, closed by default
+    if page.locator("#ftog").get_attribute("aria-expanded") != "true":
+        flow.step(f"{tab}: open the filters", lambda: press(page, "#ftog"))
+    flt = page.locator("#kb-q")
     flow.step(f"{tab}: filter", lambda: flt.press_sequentially(query), messages=KB_FILTER_MESSAGES)
     flow.step(f"{tab}: filter without matches", lambda: (flt.fill(""), flt.press_sequentially("zzzz")),
               messages=KB_FILTER_MESSAGES)
@@ -741,7 +744,7 @@ def test_kb_flow(browser, contexts, zing, lang: str) -> None:
         page.wait_for_selector("#relays-list li.item")))
     _kb_section_steps(flow, "relays", "a11y", "provider:a11y-relay")
     _kb_delete_steps(flow, "relays")
-    flow.done("#res", "#m-ok", "#p-ok", "#r-ok", "#r-err", "[data-kb=found]")
+    flow.done("#res", "#m-ok", "#p-ok", "#r-ok", "#r-err", "#kb-found")
 
 
 # --------------------------------------------------------------------------- #

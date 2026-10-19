@@ -124,6 +124,9 @@
   "1 packaged item is switched off.": "1 mitgeliefertes Element ist ausgeschaltet.",
   "{n} packaged items are switched off.": "{n} mitgelieferte Elemente sind ausgeschaltet.",
   "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed.": "Deine Einträge und Schalter werden derzeit ignoriert (ZING_NO_USER_KB) und können nicht geändert werden.",
-  "{profile} would match better, but it is switched off.": "{profile} würde besser passen, ist aber ausgeschaltet."
+  "{profile} would match better, but it is switched off.": "{profile} würde besser passen, ist aber ausgeschaltet.",
+  "Filter by name, id or URL": "Nach Name, ID oder URL filtern",
+  "e.g. gpt-4o, deepseek, https://…": "z. B. gpt-4o, deepseek, https://…",
+  "Contains “{q}”": "Enthält „{q}“"
  }
 }
