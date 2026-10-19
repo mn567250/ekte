@@ -11,9 +11,10 @@
  * localStorage, shared by every v2 page and kept in sync across open tabs.
  * nav.js renders the <select class="theme-sel"> and calls ZING_THEME.set.
  *
- * Chart motion ("on" | "off", ZING_MOTION) works the same way: "off" sets
- * data-motion="off" on <html>, which chartmotion.js / .css honour (as they do
- * prefers-reduced-motion). nav.js renders its <select class="motion-sel">.
+ * Motion ("on" | "off", ZING_MOTION) works the same way: "off" sets
+ * data-motion="off" on <html>, which stops every animation and transition as
+ * prefers-reduced-motion does (zing.css; chartmotion.js / .css, the radar and
+ * spinners too). nav.js renders its <select class="motion-sel">.
  */
 (function () {
   "use strict";
@@ -56,7 +57,7 @@
   window.ZING_THEME = { get: get, set: set, apply: function () { apply(get()); } };
   apply(get());
 
-  // ---- chart motion: "on" (default; reduced motion still wins) | "off" ----
+  // ---- motion: "on" (default; reduced motion still wins) | "off" ----
   var MKEY = "zing.v2.motion";
   function mget() {
     try { return localStorage.getItem(MKEY) === "off" ? "off" : "on"; } catch (e) { return "on"; }

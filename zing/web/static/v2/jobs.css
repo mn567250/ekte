@@ -23,3 +23,5 @@
   .job .jprog .bar > span { transition: none; }
   .job .jprog .bar.q > span { animation: none; }
 }
+:root[data-motion="off"] .job .jprog .bar > span { transition: none; }
+:root[data-motion="off"] .job .jprog .bar.q > span { animation: none; }

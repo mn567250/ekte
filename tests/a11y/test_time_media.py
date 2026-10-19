@@ -37,7 +37,7 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, Route
 
 from tests.a11y.harness import PAGES, REPORT_FIXTURE, THEMES, assert_no_issues, expand_all, settle
-from tests.a11y.test_visual import COLOR_LIB, DESCRIBE
+from tests.a11y.test_visual import ANIMATIONS_JS, COLOR_LIB, DESCRIBE
 from zing.models import RequestRecord
 from zing.perf import build_performance
 
@@ -531,6 +531,26 @@ def test_auto_updating_content_can_be_paused(open_page, state: str) -> None:
     issues = [f"{f['kind']}: {f['desc']}" + (f"  {f['n']} changes in 6 s (~{f['rate']})" if f["n"] else f"  {f['rate']}")
               + " — no pause/stop/hide control" for f in found]
     assert_no_issues(issues, f"{state} [en] observed 6 s", "pause-stop-hide")
+
+
+@pytest.mark.bitv("9.2.2.2")
+@pytest.mark.parametrize("state", PAGE_IDS + APP_STATES)
+def test_motion_switch_stops_all_motion(open_page, state: str) -> None:
+    """9.2.2.2 Pause, stop, hide: the header's "Motion off" switch is an
+    on-page way to stop every movement, the running audit's radar and the
+    spinners included: no animation loops or runs longer than 200 ms. The
+    switch is set while the page runs, as a user would."""
+    page = open_state(open_page, state)
+    page.locator("select.motion-sel").select_option("off")
+    assert page.evaluate("() => document.documentElement.getAttribute('data-motion')") == "off"
+    settle(page)
+    anims: list[dict[str, Any]] = page.evaluate(ANIMATIONS_JS)
+    issues = [
+        f"{a['name']} on {a['el']} ({'infinite' if a['infinite'] else str(a['duration']) + ' ms'})"
+        for a in anims
+        if a["visible"] and (a["infinite"] or (isinstance(a["duration"], (int, float)) and a["duration"] > 200))
+    ]
+    assert_no_issues(issues, f"{state} [en] with motion off", "motion-switch")
 
 
 # --------------------------------------------------------------------------- #

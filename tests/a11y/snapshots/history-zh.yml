@@ -10,7 +10,7 @@
     - option "跟随系统"
     - option "浅色" [selected]
     - option "深色"
-  - combobox "图表动画":
+  - combobox "动画":
     - option "动画开" [selected]
     - option "动画关"
   - combobox "语言":

@@ -62,7 +62,7 @@
       '<option value="system" data-en="Auto theme">跟随系统</option>' +
       '<option value="light" data-en="Light">浅色</option>' +
       '<option value="dark" data-en="Dark">深色</option></select>' +
-      '<select class="motion-sel" aria-label="图表动画" title="图表动画" data-en-aria-label="Chart motion" data-en-title="Chart motion">' +
+      '<select class="motion-sel" aria-label="动画" title="动画" data-en-aria-label="Motion" data-en-title="Motion">' +
       '<option value="on" data-en="Motion on">动画开</option>' +
       '<option value="off" data-en="Motion off">动画关</option></select>' +
       '<select class="lang-sel" aria-label="语言" title="语言" data-en-aria-label="Language" data-en-title="Language"></select>' +

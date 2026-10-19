@@ -503,6 +503,8 @@ select.in {
 .view { display: none; }
 .view.show { display: block; animation: z-rise 0.45s cubic-bezier(0.2, 0.85, 0.25, 1); }
 @keyframes z-rise { from { opacity: 0; transform: translateY(10px); } }
+/* the header's motion switch (theme.js: data-motion="off") stops the same as
+   prefers-reduced-motion: every animation and transition, spinners included */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
@@ -510,4 +512,10 @@ select.in {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }

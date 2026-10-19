@@ -85,6 +85,8 @@
     .radar .ripple, .radar .sweep { display: none; }
     .det.run .ic { animation: none; }
   }
+  :root[data-motion="off"] .radar .ripple, :root[data-motion="off"] .radar .sweep { display: none; }
+  :root[data-motion="off"] .det.run .ic { animation: none; }
   .scan h2 { font-family: var(--disp); font-weight: 600; font-size: 20px; margin: 14px 0 4px; }
   .scan .target { font-size: 12.5px; color: var(--ink2); overflow-wrap: anywhere; }
   .scan .target code { font-size: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
@@ -363,7 +365,11 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
     });
   }
-  var reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // read on use: the header's motion switch can change while the page is open
+  function reduceMotion() {
+    return document.documentElement.getAttribute("data-motion") === "off" ||
+      !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
 
   var STATC = { pass: "good", warn: "warn", fail: "bad", info: "sky", inconclusive: "grey", not_run: "grey", error: "bad" };
   var SEVC = { info: "sky", low: "warn", medium: "warn", high: "bad", critical: "bad" };
@@ -478,7 +484,7 @@
       li.classList.toggle("done", i < n);
       li.querySelector(".n").innerHTML = i < n ? ico("check") : String(i);
     }
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+    window.scrollTo({ top: 0, behavior: reduceMotion() ? "auto" : "smooth" });
     // move focus into the new view (the old one is now display:none)
     (n === 1 ? $("#h-config") : n === 2 ? $("#h-scan") : $("#report")).focus({ preventScroll: true });
   }

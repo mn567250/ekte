@@ -10,7 +10,7 @@
     - option "Auto theme"
     - option "Light" [selected]
     - option "Dark"
-  - combobox "Chart motion":
+  - combobox "Motion":
     - option "Motion on" [selected]
     - option "Motion off"
   - combobox "Language":
