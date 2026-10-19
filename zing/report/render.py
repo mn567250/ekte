@@ -28,6 +28,7 @@ from zing.models import (
     Status,
 )
 from zing.report import dimensions as dimension_details
+from zing.report import palette
 from zing.report.performance import (
     PERF_CSS,
     compact_performance,
@@ -50,11 +51,11 @@ _RISK_LABEL: dict[RiskLevel, str] = {
     RiskLevel.INCONCLUSIVE: "INCONCLUSIVE",
 }
 _RISK_COLOR: dict[RiskLevel, str] = {
-    RiskLevel.CLEAN: "#1a7f37",      # green
-    RiskLevel.LOW: "#0969da",        # blue
-    RiskLevel.MEDIUM: "#9a6700",     # amber
-    RiskLevel.HIGH: "#cf222e",       # red
-    RiskLevel.INCONCLUSIVE: "#656d76",  # grey
+    RiskLevel.CLEAN: "var(--success)",
+    RiskLevel.LOW: "var(--info)",
+    RiskLevel.MEDIUM: "var(--warning)",  # not --warning-fill: the label needs >= 4.5:1
+    RiskLevel.HIGH: "var(--danger)",
+    RiskLevel.INCONCLUSIVE: "var(--ink-muted)",
 }
 
 # The performance probe's configured request mode (AuditReport.stream_mode).
@@ -540,7 +541,7 @@ _STATUS_CLASS: dict[Status, str] = {
 def render_html(report: AuditReport) -> str:
     v = report.verdict
     risk_label = _RISK_LABEL.get(v.risk_level, v.risk_level.value)
-    risk_color = _RISK_COLOR.get(v.risk_level, "#656d76")
+    risk_color = _RISK_COLOR.get(v.risk_level, "var(--ink-muted)")
     score = _fmt_score(v.overall_score)
     rating = v.rating or "—"
 
@@ -737,80 +738,64 @@ def render_html(report: AuditReport) -> str:
     return "".join(out)
 
 
-_CSS = """<style>
-:root { color-scheme: light dark; }
+_CSS = "<style>" + palette.tokens_css() + """
 * { box-sizing: border-box; }
 body {
   margin: 0; padding: 2rem 1rem;
   font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #1f2328; background: #f6f8fa;
+  color: var(--ink); background: var(--bg);
 }
 main { max-width: 920px; margin: 0 auto; }
 h1 { font-size: 1.7rem; margin: 0 0 .25rem; }
-h1 .model { font-weight: 500; color: #57606a; }
-h2 { font-size: 1.2rem; margin: 0 0 .75rem; border-bottom: 1px solid #d0d7de; padding-bottom: .35rem; }
+h1 .model { font-weight: 500; color: var(--ink-muted); }
+h2 { font-size: 1.2rem; margin: 0 0 .75rem; border-bottom: 1px solid var(--line); padding-bottom: .35rem; }
 h3 { font-size: 1rem; margin: 1rem 0 .5rem; }
-h3.group { color: #57606a; text-transform: uppercase; letter-spacing: .04em; font-size: .8rem; }
+h3.group { color: var(--ink-muted); text-transform: uppercase; letter-spacing: .04em; font-size: .8rem; }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85em;
-  background: #eaeef2; padding: .1em .35em; border-radius: 4px; }
+  background: var(--sunken); padding: .1em .35em; border-radius: 4px; }
 .report-head { margin-bottom: 1.5rem; }
-.badge { display: inline-block; color: #fff; font-weight: 700; letter-spacing: .03em;
+.badge { display: inline-block; color: var(--on-primary); font-weight: 700; letter-spacing: .03em;
   padding: .35rem .9rem; border-radius: 999px; font-size: .9rem; margin: .25rem 0 .75rem; }
 .scoreline { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 1.05rem; margin-bottom: .5rem; }
 .scoreline strong { font-size: 1.15rem; }
-.meta { color: #57606a; font-size: .85rem; margin: .2rem 0; }
-.card { background: #fff; border: 1px solid #d0d7de; border-radius: 10px;
+.meta { color: var(--ink-muted); font-size: .85rem; margin: .2rem 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
   padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
-.card.warnings { border-color: #d4a72c; background: #fff8e6; }
+.card.warnings { border-color: var(--warning-fill); background: var(--warning-tint); }
 .headline { font-size: 1.1rem; font-weight: 600; margin: 0 0 .5rem; }
 table { width: 100%; border-collapse: collapse; font-size: .92rem; }
-th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #eaeef2; vertical-align: top; }
-th { color: #57606a; font-weight: 600; }
+th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--ink-muted); font-weight: 600; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .pill { display: inline-block; padding: .05rem .5rem; border-radius: 999px;
   font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
-.pill.pass { background: #dafbe1; color: #1a7f37; }
-.pill.warn { background: #fff1c2; color: #9a6700; }
-.pill.fail { background: #ffebe9; color: #cf222e; }
-.pill.info { background: #ddf4ff; color: #0969da; }
-.pill.muted { background: #eaeef2; color: #57606a; }
-.muted { color: #57606a; }
-.fail { color: #cf222e; }
-.tag { display: inline-block; background: #eaeef2; color: #57606a; border-radius: 4px;
+.pill.pass { background: var(--success-tint); color: var(--success); }
+.pill.warn { background: var(--warning-tint); color: var(--warning); }
+.pill.fail { background: var(--danger-tint); color: var(--danger); }
+.pill.info { background: var(--info-tint); color: var(--info); }
+.pill.muted { background: var(--sunken); color: var(--ink-muted); }
+.muted { color: var(--ink-muted); }
+.fail { color: var(--danger); }
+.tag { display: inline-block; background: var(--sunken); color: var(--ink-muted); border-radius: 4px;
   padding: .05rem .4rem; font-size: .75rem; font-weight: 500; margin-left: .25rem; }
-.detector { border-top: 1px solid #eaeef2; padding-top: .75rem; margin-top: .75rem; }
+.detector { border-top: 1px solid var(--line); padding-top: .75rem; margin-top: .75rem; }
 .detector:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
 .det-title { display: flex; align-items: center; flex-wrap: wrap; gap: .3rem; }
-.finding { background: #f6f8fa; border: 1px solid #eaeef2; border-radius: 8px;
+.finding { background: var(--sunken); border: 1px solid var(--line); border-radius: 8px;
   padding: .6rem .75rem; margin: .5rem 0; }
 .f-head { margin: 0 0 .35rem; }
 .sev { font-size: .75rem; font-weight: 700; text-transform: uppercase; }
-.sev-info { color: #57606a; } .sev-low { color: #9a6700; } .sev-medium { color: #bc4c00; }
-.sev-high { color: #cf222e; } .sev-critical { color: #82071e; }
+.sev-info { color: var(--ink-muted); } .sev-low { color: var(--warning); } .sev-medium { color: var(--warning); }
+.sev-high { color: var(--danger); } .sev-critical { color: var(--danger); }
 table.evidence { font-size: .85rem; margin: .35rem 0; }
-table.evidence td { border-bottom: 1px solid #eaeef2; padding: .25rem .5rem; }
-td.ekey { color: #57606a; white-space: nowrap; font-weight: 500; }
-.rec { font-style: italic; color: #57606a; margin: .35rem 0 0; }
-.disclaimer { color: #57606a; font-size: .85rem; border-top: 1px solid #d0d7de;
+table.evidence td { border-bottom: 1px solid var(--line); padding: .25rem .5rem; }
+td.ekey { color: var(--ink-muted); white-space: nowrap; font-weight: 500; }
+.rec { font-style: italic; color: var(--ink-muted); margin: .35rem 0 0; }
+.disclaimer { color: var(--ink-muted); font-size: .85rem; border-top: 1px solid var(--line);
   padding-top: 1rem; margin-top: 1.5rem; }
-@media (prefers-color-scheme: dark) {
-  body { color: #e6edf3; background: #0d1117; }
-  h1 .model, .meta, th, .muted, td.ekey, .rec, .disclaimer { color: #8b949e; }
-  code, .tag { background: #21262d; color: #c9d1d9; }
-  h2 { border-color: #30363d; }
-  .card { background: #161b22; border-color: #30363d; }
-  .card.warnings { background: #2d2206; border-color: #9a6700; }
-  th, td, .detector, table.evidence td, .finding { border-color: #21262d; }
-  .finding { background: #0d1117; }
-  .pill.pass { background: #12361f; color: #3fb950; }
-  .pill.warn { background: #3a2d04; color: #d29922; }
-  .pill.fail { background: #3a1417; color: #f85149; }
-  .pill.info { background: #0b2942; color: #58a6ff; }
-  .pill.muted { background: #21262d; color: #8b949e; }
-}
 @page { size: A4; margin: 14mm 12mm; }
 @media print {
-  body { padding: 0; background: #fff; font-size: 12px; }
+  body { padding: 0; background: var(--surface); font-size: 12px; }
   main { max-width: none; }
   .card { break-inside: auto; }
   .finding, tr, .badge, h2, h3 { break-inside: avoid; }

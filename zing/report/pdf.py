@@ -47,6 +47,7 @@ from reportlab.platypus import (
 
 from zing.models import AuditReport, DetectorResult, Finding, PerformanceReport, Status
 from zing.report import dimensions as dims
+from zing.report import palette
 from zing.report import performance as perf_render
 from zing.report.render import (
     _DISCLAIMER,
@@ -114,25 +115,34 @@ def _t(value: object, *, bold: bool = False, mono: bool = False,
 
 
 # --------------------------------------------------------------------------- #
-# Palette and styles (the HTML report's light theme)
+# Palette and styles (the HTML report's light theme: tokens.css via palette)
 # --------------------------------------------------------------------------- #
-_INK = "#1f2328"
-_MUTED = "#57606a"
-_LINE = "#d0d7de"
-_HAIR = "#eaeef2"
-_PANEL = "#f6f8fa"
+_C = palette.LIGHT
+_INK = _C["ink"]
+_MUTED = _C["ink-muted"]
+_LINE = _C["line"]
+_HAIR = _C["line"]
+_PANEL = _C["sunken"]
+_ON_FILL = _C["on-primary"]  # text and icons on a solid status fill
 
 _PILL: dict[str, tuple[str, str]] = {  # css class -> (background, text)
-    "pass": ("#dafbe1", "#1a7f37"),
-    "warn": ("#fff1c2", "#9a6700"),
-    "fail": ("#ffebe9", "#cf222e"),
-    "info": ("#ddf4ff", "#0969da"),
-    "muted": ("#eaeef2", "#57606a"),
+    "pass": (_C["success-tint"], _C["success"]),
+    "warn": (_C["warning-tint"], _C["warning"]),
+    "fail": (_C["danger-tint"], _C["danger"]),
+    "info": (_C["info-tint"], _C["info"]),
+    "muted": (_C["sunken"], _C["ink-muted"]),
 }
-_SEV_COLOR = {"info": "#57606a", "low": "#9a6700", "medium": "#bc4c00",
-              "high": "#cf222e", "critical": "#82071e"}
-_TARGET, _BASELINE, _CRITICAL, _CACHED = "#2a78d6", "#eb6834", "#d03b3b", "#8c959f"
-_GOOD, _BAD = "#1a7f37", "#cf222e"
+_SEV_COLOR = {"info": _C["ink-muted"], "low": _C["warning"], "medium": _C["warning"],
+              "high": _C["danger"], "critical": _C["danger"]}
+_TARGET, _BASELINE, _CRITICAL, _CACHED = _C["chart-0"], _C["chart-2"], _C["danger"], _C["ink-muted"]
+_TARGET_FADED = _C["heat-3"]  # the brand faded into the card, like the lighter audit-request dots
+_GOOD, _BAD = _C["success"], _C["danger"]
+
+
+def _var(css: str) -> str:
+    """Resolve a ``var(--token)`` colour shared with the HTML report to its light value."""
+    return _C[css[len("var(--") : -1]] if css.startswith("var(--") else css
+
 
 _PAGE_W, _PAGE_H = A4
 _MARGIN_X, _MARGIN_TOP, _MARGIN_BOTTOM = 12 * mm, 14 * mm, 16 * mm
@@ -169,10 +179,10 @@ _S = {
     "head_num": _style("head_num", fontName="Helvetica-Bold", fontSize=8, leading=10, spaceAfter=0,
                        textColor=colors.HexColor(_MUTED), alignment=TA_RIGHT),
     "badge": _style("badge", fontName="Helvetica-Bold", fontSize=9.5, leading=12, spaceAfter=0,
-                    textColor=colors.white),
-    "warning": _style("warning", backColor=colors.HexColor("#fff8e6"), borderColor=colors.HexColor(
-        "#d4a72c"), borderWidth=0.6, borderPadding=(4, 6, 5, 6), leftIndent=6, rightIndent=6,
-        spaceBefore=5, spaceAfter=5),
+                    textColor=colors.HexColor(_ON_FILL)),
+    "warning": _style("warning", backColor=colors.HexColor(_C["warning-tint"]),
+        borderColor=colors.HexColor(_C["warning-fill"]), borderWidth=0.6,
+        borderPadding=(4, 6, 5, 6), leftIndent=6, rightIndent=6, spaceBefore=5, spaceAfter=5),
     "disclaimer": _style("disclaimer", fontSize=8, leading=11, textColor=colors.HexColor(_MUTED)),
 }
 for _name, _base in list(_S.items()):  # Chinese text wraps between any two characters
@@ -287,10 +297,11 @@ def _header(report: AuditReport) -> list[Flowable]:
         _p(_t("zing audit ", bold=True) + _t(report.target.model, color=_MUTED), "title")
     ]
     label = _RISK_LABEL.get(v.risk_level, v.risk_level.value)
-    badge = Table([[_p(_t(label, bold=True, color="#ffffff"), "badge")]], hAlign="LEFT",
+    badge = Table([[_p(_t(label, bold=True, color=_ON_FILL), "badge")]], hAlign="LEFT",
                   colWidths=[pdfmetrics.stringWidth(label, "Helvetica-Bold", 9.5) + 20])
     badge.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(_RISK_COLOR.get(v.risk_level, "#656d76"))),
+        ("BACKGROUND", (0, 0), (-1, -1),
+         colors.HexColor(_var(_RISK_COLOR.get(v.risk_level, "var(--ink-muted)")))),
         ("ROUNDEDCORNERS", [8, 8, 8, 8]),
         ("LEFTPADDING", (0, 0), (-1, -1), 9),
         ("RIGHTPADDING", (0, 0), (-1, -1), 9),
@@ -541,7 +552,7 @@ def _performance(perf: PerformanceReport) -> list[Flowable]:
         if perf.baseline is not None:
             legend.append(_t("●", color=_BASELINE) + _t(" baseline"))
         if perf.source == "probe" and any(r.phase == "passive" for r in calls):
-            legend.append(_t("●", color="#95bbea") + _t(" audit request (lighter)"))
+            legend.append(_t("●", color=_TARGET_FADED) + _t(" audit request (lighter)"))
         if any(r.phase != "passive" and not r.stream for r in calls):
             legend.append(_t("○", color=_TARGET) + _t(" non-streaming request (hollow)"))
         if any(not r.ok for r in calls):
@@ -651,14 +662,14 @@ def _timeline(perf: PerformanceReport, metric: tuple[str, str, str, Callable[...
     for r, v in plotted:
         series = colors.HexColor(_BASELINE if r.endpoint == "baseline" else _TARGET)
         fill: Any = series
-        stroke: Any = colors.white
+        stroke: Any = colors.HexColor(_C["surface"])
         opacity = 1.0
         if r.phase == "passive":
             opacity = 0.45
         if r.cached:
             fill, opacity = colors.HexColor(_CACHED), 0.6
         elif r.phase != "passive" and not r.stream:
-            fill, stroke = colors.white, series
+            fill, stroke = colors.HexColor(_C["surface"]), series
         d.add(Circle(x(r.start_ms / 1000), y(v), 2.6, fillColor=fill, strokeColor=stroke,
                      strokeWidth=0.8, fillOpacity=opacity))
     red = colors.HexColor(_CRITICAL)
