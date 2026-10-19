@@ -16,7 +16,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   next to the switch, exact value in the tooltip and data table); the x-axis
   still spans the whole audit. A "Full range / Probe focus" switch above the
   chart overrides the automatic choice until "Back to automatic"; reports start
-  on the full range. Probe requests are drawn as small translucent dots, the
+  on the full range. Probe requests are drawn as small translucent dots with a
+  hairline in the series colour (>= 3:1), the
   running median sits in its p25–p75 band (new `trend_band`, same window,
   `zing/perf/trend.py`; also a data-table column), and with chart motion on the
   requests slide to their new height when the range changes. Automatic

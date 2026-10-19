@@ -1126,14 +1126,16 @@
     ".zp-trend .t{stroke:var(--zp-t)}.zp-trend .b{stroke:var(--zp-b)}" +
     // the p25–p75 band: a wash behind the line (the line carries the 3:1)
     ".zp-band path{stroke:none;fill-opacity:.14}.zp-band .t{fill:var(--zp-t)}.zp-band .b{fill:var(--zp-b)}" +
-    // probe requests: small, translucent, no ring, so a dense run reads as a
-    // cloud around the median (the line, tooltip and data table carry the values)
-    ".zp-pt.probe{stroke:none;fill-opacity:.5}.zp-pt.probe.hollow{stroke-width:1.5;fill-opacity:1}" +
+    // probe requests: small and translucent with a hairline in the series
+    // colour (the outline keeps each dot >= 3:1, BITV 9.1.4.11), so a dense run
+    // reads as a light cloud around the median, not a chain of rings
+    ".zp-pt.probe{stroke-width:1;fill-opacity:.4}.zp-pt.probe.t{stroke:var(--zp-t)}.zp-pt.probe.b{stroke:var(--zp-b)}" +
+    ".zp-pt.probe.hollow{stroke-width:1.5;fill-opacity:1}.zp-pt.probe.cached{stroke:var(--zp-ink2)}" +
     // requests above a focused y-range: triangles on the top edge
     ".zp-off{stroke:var(--zp-surface);stroke-width:1.5}.zp-off.t{fill:var(--zp-t)}.zp-off.b{fill:var(--zp-b)}" +
     ".zp-off:hover{stroke:var(--zp-ink)}" +
     ".zp-key.line{width:14px;height:2px;border-radius:1px;background:var(--zp-ink2);vertical-align:middle}" +
-    ".zp-legend .zp-key.probe{width:7px;height:7px;background:color-mix(in srgb,var(--zp-t) 50%,transparent)}" +
+    ".zp-legend .zp-key.probe{width:7px;height:7px;background:color-mix(in srgb,var(--zp-t) 40%,transparent);border:1px solid var(--zp-t);box-sizing:border-box}" +
     ".zp-key.band{width:16px;height:10px;border-radius:2px;vertical-align:middle;background:linear-gradient(var(--zp-ink2),var(--zp-ink2)) center/100% 2px no-repeat," +
     "color-mix(in srgb,var(--zp-ink2) 22%,transparent)}" +
     ".zp-key.tri{width:0;height:0;border-radius:0;border:solid transparent;border-width:0 5px 9px;border-bottom-color:var(--zp-t)}" +
