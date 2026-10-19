@@ -594,6 +594,15 @@
   function say(msg) { live.textContent = msg; }
   function errText(e) { return ZING_LANG.server(String((e && e.message) || e)); }
   function busy(id, on) { $(id).setAttribute("aria-busy", on ? "true" : "false"); }
+  // Every panel re-render goes through here: a render empties its chart box
+  // before drawing it, and a page that is briefly shorter clamps the scroll
+  // position (the page jumps up). The panel keeps its height until fn() has
+  // drawn everything.
+  function steady(sel, fn) {
+    var p = $(sel);
+    p.style.minHeight = p.offsetHeight + "px";
+    try { fn(); } finally { p.style.minHeight = ""; }
+  }
 
   function loadOptions() {
     say(T("正在加载分析…", "Loading analytics…"));
@@ -671,7 +680,7 @@
       state.err.kpi = errText(e);
     }).then(function () {
       if (seq !== state.seq.kpi) return;
-      renderKpis();
+      steady("#panel-kpi", renderKpis);
       busy("#panel-kpi", false);
     });
   }
@@ -696,8 +705,7 @@
       state.err.cmp = errText(e);
     }).then(function () {
       if (seq !== state.seq.cmp) return;
-      renderCmpControls();
-      renderChart();
+      steady("#panel-cmp", function () { renderCmpControls(); renderChart(); });
       busy("#panel-cmp", false);
     });
   }
@@ -721,7 +729,7 @@
     if (!key) {
       state.board = null;
       state.err.lb = null;
-      renderBoard();
+      steady("#panel-lb", renderBoard);
       busy("#panel-lb", false);
       return Promise.resolve();
     }
@@ -739,7 +747,7 @@
       state.err.lb = errText(e);
     }).then(function () {
       if (seq !== state.seq.lb) return;
-      renderBoard();
+      steady("#panel-lb", renderBoard);
       busy("#panel-lb", false);
     });
   }
@@ -1281,7 +1289,7 @@
     // a new column starts with the best (or largest) first; the active one flips
     V.sort = V.sort && V.sort.key === k ? { key: k, dir: V.sort.dir === "asc" ? "desc" : "asc" } : { key: k, dir: k === "label" ? "asc" : "desc" };
     writeState();
-    renderBoard();
+    steady("#panel-lb", renderBoard);
     var col = k === "label" ? (V.lb === "relay" ? T("中转站", "Relay") : T("模型", "Model"))
       : colName(LB_COLS.filter(function (c) { return c[0] === k; })[0]);
     $("#lbst").textContent = Tf("已按{key}排序，{dir}", "Sorted by {key}, {dir}", { key: col, dir: V.sort.dir === "asc" ? T("升序", "ascending") : T("降序", "descending") });
@@ -1304,7 +1312,7 @@
       state.err[name] = errText(e);
     }).then(function () {
       if (seq !== state.seq[name]) return;
-      render();
+      steady(panel, render);
       busy(panel, false);
     });
   }
@@ -1751,7 +1759,8 @@
   PANELS.forEach(function (p) { p.stale = true; p.loaded = false; });
 
   // Charts drawn so far (by name): redrawn when their box changed width
-  // (window resized, or drawn while their tab was hidden).
+  // (window resized, or drawn while their tab was hidden). Draw from a
+  // render that runs inside steady(), so the page keeps its scroll position.
   function drawChart(name, id, draw, cfg) {
     var host = document.getElementById(id);
     state.charts[name] = { id: id, draw: draw, cfg: cfg };
@@ -1811,7 +1820,7 @@
     if (!state.opts || !state.opts.runs) { if (state.opts) renderEmpty(); return; }
     renderFilters();
     state.still = true;
-    try { PANELS.forEach(function (p) { if (p.loaded) p.render(); }); } finally { state.still = false; }
+    try { PANELS.forEach(function (p) { if (p.loaded) steady("#" + p.id, p.render); }); } finally { state.still = false; }
   });
   // a link to another view pasted into this tab's address bar (only the
   // fragment changes, so no reload): take over its filters and view. Runs
