@@ -8,6 +8,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Probe focus in the performance chart.** While the performance probe runs,
+  the chart's y-axis focuses on it: one fixed range per audit, taken from the
+  first 5 probe requests (p75 + 3 × (p75 − p25), at least 1.5 × p75), so the
+  ~100 probe requests no longer sit flat at zero under audit requests that take
+  minutes. Requests above the range become triangles on the top edge (count
+  next to the switch, exact value in the tooltip and data table); the x-axis
+  still spans the whole audit. A "Full range / Probe focus" switch above the
+  chart overrides the automatic choice until "Back to automatic"; reports start
+  on the full range. Probe requests are drawn as small translucent dots, the
+  running median sits in its p25–p75 band (new `trend_band`, same window,
+  `zing/perf/trend.py`; also a data-table column), and with chart motion on the
+  requests slide to their new height when the range changes. Automatic
+  switches are announced to screen readers.
 - **Chart motion (web UI v2).** Charts move in when their data changes: lines
   draw left to right with their p25–p75 band growing out of the median,
   stacked bars fill bottom to top, the heat grid fills in a wave, and the live

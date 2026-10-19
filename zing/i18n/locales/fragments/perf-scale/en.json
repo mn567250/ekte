@@ -1,0 +1,20 @@
+{
+ "strings": {
+  "▲ {n} above {value}": "▲ {n} above {value}",
+  "band: p25–p75 of the same 5 requests": "band: p25–p75 of the same 5 requests",
+  "y-axis focused on the probe: 0 to {max}, {n} requests above it (triangles at the top)": "y-axis focused on the probe: 0 to {max}, {n} requests above it (triangles at the top)",
+  "audit request (ringed)": "audit request (ringed)",
+  "probe request (small, lighter)": "probe request (small, lighter)",
+  "running median (last 5) with p25–p75": "running median (last 5) with p25–p75",
+  "above the range (value in the tooltip)": "above the range (value in the tooltip)",
+  "Probe focus": "Probe focus",
+  "Full range": "Full range",
+  "set by you": "set by you",
+  "automatic": "automatic",
+  "provisional until {n} probe requests ({k}/{n})": "provisional until {n} probe requests ({k}/{n})",
+  "range from the first {n} probe requests": "range from the first {n} probe requests",
+  "Y-axis range": "Y-axis range",
+  "Back to automatic": "Back to automatic",
+  "Y-axis switched to {range} automatically": "Y-axis switched to {range} automatically"
+ }
+}

@@ -10,6 +10,10 @@
  *   - pop(svg, marks)      live updates: pop in exactly these marks (the
  *                          perf.js live chart: the new requests' dots and
  *                          failure crosses)
+ *   - rescale(old, svg)    perf.js: the y-range changed (full range / probe
+ *                          focus): each request slides from where the old
+ *                          <svg> drew it to its new height; the axis and
+ *                          the running-median lines and bands fade in
  *   - count(els, show)     KPI figures: each element counts up to its new
  *                          value; els is a list of {el, from, to, …}, show(v, it)
  *                          formats item it's value v on the way
@@ -74,9 +78,11 @@
       els.forEach(function (el) {
         el.style.removeProperty("--zm-d");
         el.style.removeProperty("--zm-t");
+        el.style.removeProperty("--zm-dy");
         if (!el.getAttribute("style")) el.removeAttribute("style");
         if (el.zmPL) { el.removeAttribute("pathLength"); el.zmPL = false; }
         el.classList.remove("zm-fresh");
+        el.classList.remove("zm-mv");
       });
     }, ms);
   }
@@ -194,6 +200,35 @@
     cleanup(svg, 450, "zm-new", touched);
   }
 
+  // perf.js y-range switch. Marks are matched by request number (the "#n"
+  // their tooltip starts with) and slide vertically by the difference: a
+  // translate, so a dot keeps its shape (scaling the plot would stretch it).
+  // A dot that becomes a triangle above a focused range slides up into it.
+  // The axis, the running-median lines and their bands fade in (cut at a
+  // focused range's top edge, their points differ: no morph).
+  var RESCALE = 420; // ms
+  function rescale(old, svg) {
+    if (!old || !svg || still()) return;
+    var key = function (el) { return (/^#(\d+)\s/.exec(el.getAttribute("data-tip") || "") || [])[1]; };
+    var py = function (el) {
+      if (el.tagName === "circle") return parseFloat(el.getAttribute("cy")) || 0;
+      var m = /^M\s*-?[\d.]+,(-?[\d.]+)/.exec(el.getAttribute("d") || "");
+      return m ? parseFloat(m[1]) : 0;
+    };
+    var was = {}, touched = [], i;
+    var before = old.querySelectorAll(".zp-pt, .zp-off"), after = svg.querySelectorAll(".zp-pt, .zp-off");
+    for (i = 0; i < before.length; i++) was[key(before[i])] = py(before[i]);
+    for (i = 0; i < after.length; i++) {
+      var k = key(after[i]), dy = k in was ? was[k] - py(after[i]) : 0;
+      if (Math.abs(dy) < 0.5) continue;
+      after[i].style.setProperty("--zm-dy", dy.toFixed(1) + "px");
+      after[i].classList.add("zm-mv");
+      touched.push(after[i]);
+    }
+    svg.classList.add("zm-rs");
+    cleanup(svg, RESCALE + 60, "zm-rs", touched);
+  }
+
   var COUNT = 700; // ms for a KPI figure to count up
   function count(items, show) {
     function paint(k) {
@@ -223,5 +258,5 @@
     window.requestAnimationFrame(step);
   }
 
-  window.ZingMotion = { enter: enter, fresh: fresh, pop: pop, count: count };
+  window.ZingMotion = { enter: enter, fresh: fresh, pop: pop, rescale: rescale, count: count };
 })();
