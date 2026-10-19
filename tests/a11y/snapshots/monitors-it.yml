@@ -44,12 +44,12 @@
     - link "Cronologia":
       - /url: /v2/history
     - text: e scegli Pianifica come monitor, poi imposta qui l’intervallo e attivalo. Quando il rischio supera la soglia o peggiora rispetto all’ultima volta, zing avvisa i tuoi webhook (Slack / Feishu / DingTalk / JSON generico).
+  - text: Ancora nessuna chiave principale Viene creata quando salvi la prima chiave API.
+  - button "Crea ora"
   - tablist "Viste dei monitor":
     - tab "Configura" [selected]
     - tab "In corso"
   - tabpanel "Configura":
-    - text: Ancora nessuna chiave principale Viene creata quando salvi la prima chiave API.
-    - button "Crea ora"
     - heading "Monitor configurati 1 monitor" [level=2]
     - article "gpt-4o":
       - heading "gpt-4o" [level=3]

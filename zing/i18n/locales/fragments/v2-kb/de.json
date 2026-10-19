@@ -125,8 +125,7 @@
   "{n} packaged items are switched off.": "{n} mitgelieferte Elemente sind ausgeschaltet.",
   "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed.": "Deine Einträge und Schalter werden derzeit ignoriert (ZING_NO_USER_KB) und können nicht geändert werden.",
   "{profile} would match better, but it is switched off.": "{profile} würde besser passen, ist aber ausgeschaltet.",
-  "Filter by name, id or URL": "Nach Name, ID oder URL filtern",
-  "e.g. gpt-4o, deepseek, https://…": "z. B. gpt-4o, deepseek, https://…",
-  "Contains “{q}”": "Enthält „{q}“"
+  "Showing {m} of {mt} models · {p} of {pt} providers · {r} of {rt} relays": "Angezeigt: {m} von {mt} Modellen · {p} von {pt} Anbietern · {r} von {rt} Relays",
+  "Nothing matches the filters.": "Nichts passt zu den Filtern."
  }
 }

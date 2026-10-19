@@ -19,13 +19,17 @@
   .kb-card { margin-top: 20px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
   .btn[hidden] { display: none; }
-  .kb-card > .lab { display: flex; }
-  /* the one filter for all tabs (filterpanel.css) */
-  .fbody .lab { display: flex; }
-  .fbody .in { max-width: 480px; }
+  /* the one filter card for all tabs (filterpanel.css), fields as on Analytics */
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px 12px; align-items: end; }
+  .fgrid label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .fgrid label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
+  .fgrid .in { font-size: 13.5px; padding: 8px 30px 8px 11px; border-radius: 10px; background-position: right 16px center, right 11px center; min-width: 0; }
+  .fbody .res:empty { display: none; }
+  .kb-tools { display: flex; justify-content: flex-end; margin: 14px 0 0; }
+  .kb-tools:not(:has(.btn:not([hidden]))) { display: none; }
+  .kb-tools .btn .zicon { width: 14px; height: 14px; }
+  .kb-tools + .kb-card { margin-top: 12px; }
   [data-kb="add"] + [data-kb="list"] { margin-top: 14px; }
-  .kb-card > .lab { margin-top: 12px; }
-  .kb-card > .lab + .row { margin-top: 0; }
 
   /* add form: a disclosure so the lists come first */
   .add { margin: 12px 0 4px; border: 1px dashed var(--line); border-radius: 14px; }
@@ -96,20 +100,12 @@
 
     <div class="errbox" id="kbwarn" role="alert" hidden></div>
 
-    <!-- which profile does a model id use? -->
-    <section class="card card-pad kb-card" aria-labelledby="res-title">
-      <h2 class="form-title" id="res-title" data-en="Which profile does a model id use?">某个模型 ID 会使用哪份资料？</h2>
-      <label class="lab" for="res-model" data-en="Model id">模型 ID</label>
-      <form class="row" id="res-form">
-        <input class="in mono" id="res-model" style="flex:1 1 240px" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="例如 gpt-4o" data-en-placeholder="e.g. gpt-4o">
-        <button class="btn" type="submit"><span id="res-icon"></span> <span data-en="Look up">查询</span></button>
-        <a class="btn" id="export" href="/api/kb/export" download hidden><span id="export-icon"></span> <span data-en="Export your entries as YAML">将你的条目导出为 YAML</span></a>
-      </form>
-      <p class="res" id="res" role="status"></p>
-    </section>
-
     <!-- one filter for every tab (filterpanel.js) -->
     <section class="card filters" id="filters" hidden></section>
+
+    <div class="kb-tools">
+      <a class="btn sm" id="export" href="/api/kb/export" download hidden><span id="export-icon"></span> <span data-en="Export your entries as YAML">将你的条目导出为 YAML</span></a>
+    </div>
 
     <div class="card card-pad kb-card">
       <div class="tabs" role="tablist" aria-label="知识库分类" data-en-aria-label="Knowledge base sections">
@@ -187,11 +183,13 @@
   }
 
   // ---- data ---------------------------------------------------------------- //
-  var data = null, loadErr = false, sections = {}, query = "";
+  var V = window.ZingKbView._;
+  var data = null, loadErr = false, sections = {};
+  var F = { model: "", provider: "", relay: "", source: "" };
   var page = {
     data: function () { return data; },
     reload: function () { return load(); },
-    query: function () { return query; },
+    filters: function () { return F; },
   };
 
   // ---- the three tabs: only this config differs ---------------------------- //
@@ -257,7 +255,7 @@
     },
   };
 
-  // ---- page-level: warnings, lookup, export ---------------------------------- //
+  // ---- page-level: warnings, export ------------------------------------------ //
   function paintWarn() {
     var box = $("kbwarn"), lines = [], w = (data && data.warnings) || [];
     if (data && data.user_kb === false) {
@@ -273,10 +271,113 @@
     box.innerHTML = lines.map(esc).join(" ") + (w.length ? "<ul>" + w.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "");
   }
 
-  var resolved = null;
+  // ---- the filter card: one set of filters for every tab --------------------- //
+  // Model id, provider, relay and source, each offering only the values that
+  // exist (kbview.options); kbview.matches applies them to every tab. With a
+  // model id picked the card also says which profile audits of it use.
+  var SOURCE_L = { packaged: ["内置", "Packaged"], kbdir: ["ZING_KB_DIR", "ZING_KB_DIR"], yours: ["你的", "Yours"] };
+  var FIELDS = {
+    model: ["模型 ID", "Model id"], provider: ["厂商", "Provider"], relay: ["中转站", "Relay"], source: ["来源", "Source"],
+  };
+  var fpanel = window.ZingFilterPanel.create($("filters"), {
+    storeKey: "zing.kb.filters.open",
+    onReset: function () {
+      F = { model: "", provider: "", relay: "", source: "" };
+      changed(true);
+    },
+  });
+  function label(k) { return T(FIELDS[k][0], FIELDS[k][1]); }
+  function optionsHTML(list, cur) {
+    var html = '<option value="">' + esc(T("全部", "All")) + "</option>", group = null;
+    list.forEach(function (o) {
+      if (o.group !== undefined && o.group !== group) {
+        html += (group !== null ? "</optgroup>" : "") + '<optgroup label="' + esc(o.group) + '">';
+        group = o.group;
+      }
+      html += '<option value="' + esc(o.v) + '"' + (o.v === cur ? " selected" : "") + ">" + esc(o.t) + "</option>";
+    });
+    return html + (group !== null ? "</optgroup>" : "");
+  }
+  function selectHTML(k, list) {
+    return '<label><span>' + esc(label(k)) + '</span><select class="in" data-f="' + k + '">' + optionsHTML(list, F[k]) + "</select></label>";
+  }
+  function fieldsHTML() {
+    var o = opts();
+    return '<div class="fgrid">' + Object.keys(FIELDS).map(function (k) { return selectHTML(k, o[k]); }).join("") + "</div>" +
+      '<p class="res" id="res" role="status"></p>';
+  }
+  function opts() {
+    var o = V.options(data, F);
+    return {
+      model: o.models, provider: o.providers, relay: o.relays,
+      source: o.sources.map(function (k) { return { v: k, t: T(SOURCE_L[k][0], SOURCE_L[k][1]) }; }),
+    };
+  }
+  // drop a picked value that no longer exists (deleted, or out of the provider)
+  function prune() {
+    if (!data) return;
+    var o = opts();
+    Object.keys(F).forEach(function (k) {
+      if (F[k] && !o[k].some(function (x) { return x.v === F[k]; })) F[k] = "";
+    });
+  }
+  function filterSummary() {
+    if (!data) return [];
+    var o = opts();
+    return Object.keys(FIELDS).filter(function (k) { return F[k]; }).map(function (k) {
+      var hit = o[k].filter(function (x) { return x.v === F[k]; })[0];
+      return Tf("{label}：{value}", "{label}: {value}", { label: label(k), value: hit ? hit.t : F[k] });
+    });
+  }
+  // the whole panel: at start and on a language switch
+  function renderFilters() {
+    fpanel.render({
+      count: V.active(F), summary: filterSummary(), body: data ? fieldsHTML() : "",
+      foot: '<span id="kb-found" role="status"></span>',
+    });
+    paintResolve();
+    paintFound();
+  }
+  // after a reload or a change: the selects' options and values in place, so
+  // focus and the live regions (#kb-found, #res) stay where they are
+  function syncFilters() {
+    var body = $("fbody");
+    if (!body || !data) return;
+    if (!body.querySelector("select")) body.innerHTML = fieldsHTML();
+    var o = opts();
+    Object.keys(FIELDS).forEach(function (k) {
+      var sel = body.querySelector('[data-f="' + k + '"]');
+      if (!sel) return;
+      var html = optionsHTML(o[k], F[k]);
+      if (sel.getAttribute("data-opts") !== html) {
+        sel.innerHTML = html;
+        sel.setAttribute("data-opts", html);
+      }
+      sel.value = F[k];
+    });
+    fpanel.sync({ count: V.active(F), summary: filterSummary() });
+    paintResolve();
+    paintFound();
+  }
+  function paintFound() {
+    var el = $("kb-found");
+    if (!el || !data) return;
+    var c = {};
+    Object.keys(CONFIG).forEach(function (k) {
+      var items = V.itemsOf(data, k);
+      c[k] = [items.filter(function (it) { return V.matches(k, it, F); }).length, items.length];
+    });
+    el.textContent = Tf("显示 {m}/{mt} 个模型 · {p}/{pt} 个厂商 · {r}/{rt} 个中转站",
+      "Showing {m} of {mt} models · {p} of {pt} providers · {r} of {rt} relays",
+      { m: c.models[0], mt: c.models[1], p: c.providers[0], pt: c.providers[1], r: c.relays[0], rt: c.relays[1] });
+  }
+
+  // which profile audits of the picked model id use (/api/kb/resolve)
+  var resolved = null, resolving = "";
   function paintResolve() {
     var el = $("res");
-    if (!resolved) { el.innerHTML = ""; return; }
+    if (!el) return;
+    if (!resolved || !F.model) { el.innerHTML = ""; return; }
     var off = resolved.switched_off
       ? " " + Tf("{profile} 更匹配，但它已停用。", "{profile} would match better, but it is switched off.",
         { profile: code(resolved.switched_off.provider + "/" + resolved.switched_off.model_id) })
@@ -291,53 +392,34 @@
       source: esc(S.sourceText(resolved.source)),
     }) + off;
   }
-  $("res-form").addEventListener("submit", function (ev) {
-    ev.preventDefault();
-    var m = $("res-model").value.trim();
-    if (!m) return;
-    fetch("/api/kb/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: m }) })
+  function resolve() {
+    var key = F.model;
+    resolved = null;
+    paintResolve();
+    if (!key) return;
+    var m = (V.itemsOf(data, "models").filter(function (x) { return x.key === key; })[0] || {});
+    if (!m.id) return;
+    resolving = key;
+    fetch("/api/kb/resolve", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: m.id, provider: m.provider }) })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { resolved = d; paintResolve(); });
-  });
+      .then(function (d) { if (resolving === key && F.model === key) { resolved = d; paintResolve(); } });
+  }
 
-  // ---- the filter: one panel, applied to every tab ---------------------------- //
-  var fpanel = window.ZingFilterPanel.create($("filters"), {
-    storeKey: "zing.kb.filters.open",
-    onReset: function () { query = ""; renderFilters(); refilter(); },
-  });
-  function filterState() {
-    return { count: query ? 1 : 0, summary: query ? [Tf("包含“{q}”", "Contains “{q}”", { q: query })] : [] };
-  }
-  function renderFilters() {
-    var st = filterState();
-    fpanel.render({
-      count: st.count, summary: st.summary,
-      body: '<label class="lab" for="kb-q">' + esc(T("按名称、ID 或地址筛选", "Filter by name, id or URL")) + "</label>" +
-        '<input class="in" id="kb-q" type="search" autocomplete="off" spellcheck="false" autocapitalize="off" value="' + esc(query) + '"' +
-        ' placeholder="' + esc(T("例如 gpt-4o、deepseek、https://…", "e.g. gpt-4o, deepseek, https://…")) + '">',
-      foot: '<span id="kb-found" role="status"></span>',
-    });
-    paintFound();
-  }
-  // re-applies the filter to the tab on screen (the others when they render)
-  function refilter() {
+  // after a change: the selects (the model list follows the provider), the
+  // lists of every tab already shown, the counts and the profile line
+  function changed(model) {
+    var before = F.model;
+    prune();
+    syncFilters();
     Object.keys(sections).forEach(function (k) { if (sections[k].rendered()) sections[k].filter(); });
-    fpanel.sync(filterState());
-    paintFound();
+    if (model || F.model !== before) resolve();
   }
-  function paintFound() {
-    var el = $("kb-found"), cur = tabs ? tabs.current() : "models", sec = sections[cur];
-    if (!el) return;
-    if (!query || !sec || !sec.rendered()) { el.textContent = ""; return; }
-    var r = sec.filter();
-    el.textContent = r.n
-      ? Tf("{n} / {total} 项匹配", "{n} of {total} match", { n: r.n, total: r.total })
-      : T("没有匹配的项。", "Nothing matches.");
-  }
-  $("filters").addEventListener("input", function (ev) {
-    if (ev.target.id !== "kb-q") return;
-    query = ev.target.value.trim();
-    refilter();
+  $("filters").addEventListener("change", function (ev) {
+    var k = ev.target.getAttribute("data-f");
+    if (!k || !(k in F)) return;
+    F[k] = String(ev.target.value);
+    // a new provider changes which model ids can be picked
+    changed(k === "model");
   });
 
   // ---- render ---------------------------------------------------------------- //
@@ -352,12 +434,13 @@
       return;
     }
     $("export").hidden = !data.entry_count;
+    prune();
+    syncFilters();
     // the visible tab now; the others when they are first shown (or already were)
     var cur = tabs ? tabs.current() : "models";
     Object.keys(sections).forEach(function (k) {
       if (k === cur || all || sections[k].rendered()) sections[k].render();
     });
-    paintFound();
   }
   function load() {
     return fetch("/api/kb/profiles")
@@ -377,20 +460,18 @@
   }
 
   document.querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = icon(el.getAttribute("data-icon")); });
-  $("res-icon").innerHTML = icon("search");
   $("export-icon").innerHTML = icon("download");
   Object.keys(CONFIG).forEach(function (k) { sections[k] = S.mount($("panel-" + k), CONFIG[k], page); });
   tabs = window.ZingTabs.init(document.querySelector(".tabs[role=tablist]"), {
     fromHash: function (h) { return h.replace(/^add-/, ""); },
     onSelect: function (name) {
       if (data && sections[name] && !sections[name].rendered()) sections[name].render();
-      paintFound();
     },
   });
   renderFilters();
   addFromHash(false);
   window.addEventListener("hashchange", function () { addFromHash(true); });
-  window.addEventListener("zing:lang", function () { paintWarn(); paintResolve(); renderFilters(); paintLists(false); });
+  window.addEventListener("zing:lang", function () { paintWarn(); renderFilters(); paintLists(false); });
   load();
 })();
 </script>

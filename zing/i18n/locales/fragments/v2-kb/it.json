@@ -125,8 +125,7 @@
   "{n} packaged items are switched off.": "{n} elementi inclusi sono disattivati.",
   "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed.": "Le tue voci e i tuoi interruttori sono attualmente ignorati (ZING_NO_USER_KB) e non possono essere modificati.",
   "{profile} would match better, but it is switched off.": "{profile} corrisponderebbe meglio, ma è disattivato.",
-  "Filter by name, id or URL": "Filtra per nome, id o URL",
-  "e.g. gpt-4o, deepseek, https://…": "ad es. gpt-4o, deepseek, https://…",
-  "Contains “{q}”": "Contiene «{q}»"
+  "Showing {m} of {mt} models · {p} of {pt} providers · {r} of {rt} relays": "Mostrati {m} di {mt} modelli · {p} di {pt} provider · {r} di {rt} relay",
+  "Nothing matches the filters.": "Nessun elemento corrisponde ai filtri."
  }
 }

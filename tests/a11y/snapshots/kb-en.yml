@@ -43,15 +43,33 @@
     - text: "Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay zing knows — packaged ones and yours — and can switch each of them on or off or add your own. Your changes are stored in kb.db on this machine and used by the web UI and"
     - code: zing check
     - text: alike.
-  - region "Which profile does a model id use?":
-    - heading "Which profile does a model id use?" [level=2]
+  - region "Filters":
+    - button "Filters" [expanded]
     - text: Model id
-    - textbox "Model id":
-      - /placeholder: e.g. gpt-4o
-    - button "Look up"
-    - link "Export your entries as YAML":
-      - /url: /api/kb/export
-    - status
+    - combobox "Model id":
+      - option "All" [selected]
+    - text: Provider
+    - combobox "Provider":
+      - option "All" [selected]
+      - option "Anthropic (Claude)"
+      - option "DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)"
+      - option "Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)"
+      - option "Zhipu AI (智谱 / Z.ai) — BigModel open platform"
+      - option "Moonshot AI (月之暗面 / Kimi)"
+      - option "OpenAI"
+      - option "Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)"
+    - text: Relay
+    - combobox "Relay":
+      - option "All" [selected]
+      - option "Example Relay"
+    - text: Source
+    - combobox "Source":
+      - option "All" [selected]
+      - option "Packaged"
+      - option "Yours"
+    - status: Showing 98 of 98 models · 7 of 7 providers · 1 of 1 relays
+  - link "Export your entries as YAML":
+    - /url: /api/kb/export
   - tablist "Knowledge base sections":
     - tab "Models" [selected]
     - tab "Providers"
@@ -84,9 +102,6 @@
       - paragraph: The check validates the schema and limits, flags unsafe regular expressions, lists every prompt zing would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.
       - button "Check"
       - button "Save to knowledge base" [disabled]
-    - text: Filter models
-    - searchbox "Filter models"
-    - status
     - group:
       - text: Anthropic (Claude)
       - code: anthropic

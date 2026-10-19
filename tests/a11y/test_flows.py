@@ -646,17 +646,19 @@ models: []
 """
 
 
-def _kb_section_steps(flow: Flow, tab: str, query: str, item_key: str) -> None:
+def _kb_open_filters(flow: Flow) -> None:
+    """The one filter card for every tab, closed by default."""
+    page = flow.page
+    if page.locator("#ftog").get_attribute("aria-expanded") != "true":
+        flow.step("open the filters", lambda: press(page, "#ftog"))
+
+
+def _kb_section_steps(flow: Flow, tab: str, field: str, value: str, item_key: str) -> None:
     """The steps every Knowledge tab shares: filter, switch an item off and on."""
     page = flow.page
-    # one filter panel for every tab, closed by default
-    if page.locator("#ftog").get_attribute("aria-expanded") != "true":
-        flow.step(f"{tab}: open the filters", lambda: press(page, "#ftog"))
-    flt = page.locator("#kb-q")
-    flow.step(f"{tab}: filter", lambda: flt.press_sequentially(query), messages=KB_FILTER_MESSAGES)
-    flow.step(f"{tab}: filter without matches", lambda: (flt.fill(""), flt.press_sequentially("zzzz")),
-              messages=KB_FILTER_MESSAGES)
-    flow.step(f"{tab}: filter again", lambda: (flt.fill(""), flt.press_sequentially(query)), messages=KB_FILTER_MESSAGES)
+    _kb_open_filters(flow)
+    flt = page.locator(f"#filters [data-f={field}]")
+    flow.step(f"{tab}: filter by {field}", lambda: flt.select_option(value), messages=KB_FILTER_MESSAGES)
     switch = f'#{tab}-list li[data-key="{item_key}"] input[data-act=on]'
 
     def toggle(on: bool) -> Callable[[], None]:
@@ -670,7 +672,7 @@ def _kb_section_steps(flow: Flow, tab: str, query: str, item_key: str) -> None:
 
     flow.step(f"{tab}: switch {item_key} off", toggle(False))
     flow.step(f"{tab}: switch it on again", toggle(True))
-    flow.step(f"{tab}: clear the filter", lambda: flt.fill(""), messages=KB_FILTER_MESSAGES)
+    flow.step(f"{tab}: clear the filter", lambda: flt.select_option(""), messages=KB_FILTER_MESSAGES)
 
 
 def _kb_delete_steps(flow: Flow, tab: str) -> None:
@@ -697,15 +699,17 @@ def test_kb_flow(browser, contexts, zing, lang: str) -> None:
     page = flow.page
     page.wait_for_selector("#models-list li.item", state="attached")
 
-    def lookup() -> None:
-        page.fill("#res-model", "gpt-4o")
-        press(page, "#res-model")
-        wait_text(page, "#res")
-
-    flow.step("look up a model id", lookup)
+    _kb_open_filters(flow)
+    model = page.locator("#filters [data-f=model]")
+    flow.step("pick a model id: its profile", lambda: (model.select_option("model:openai/gpt-4o"), wait_text(page, "#res")),
+              messages=KB_FILTER_MESSAGES)
+    # a fresh server has no entries of yours: only "Packaged" is offered
+    flow.step("only packaged entries", lambda: page.locator("#filters [data-f=source]").select_option("packaged"),
+              messages=KB_FILTER_MESSAGES)
+    flow.step("reset the filters", lambda: press(page, "#freset"), messages=KB_FILTER_MESSAGES)
 
     # ---- models
-    _kb_section_steps(flow, "models", "gpt-4o-mini", "model:openai/gpt-4o-mini")
+    _kb_section_steps(flow, "models", "model", "model:openai/gpt-4o-mini", "model:openai/gpt-4o-mini")
     flow.step("models: open the add form", lambda: press(page, "#add-models > summary"))
     flow.step("models: copy the prompt without a model id", lambda: (press(page, "#m-copy"), wait_text(page, "#m-copy-msg")))
     flow.step("models: check without YAML", lambda: (press(page, "#m-check"), wait_text(page, "#m-err")))
@@ -723,7 +727,7 @@ def test_kb_flow(browser, contexts, zing, lang: str) -> None:
     # ---- providers (arrow keys move between the tabs)
     flow.step("switch to the providers tab", lambda: (
         press(page, "#tab-models", "ArrowRight"), page.wait_for_selector("#panel-providers:not([hidden]) li.item")))
-    _kb_section_steps(flow, "providers", "openai", "provider:openai")
+    _kb_section_steps(flow, "providers", "provider", "openai", "provider:openai")
     flow.step("providers: open the add form", lambda: press(page, "#add-providers > summary"))
     flow.step("providers: check valid YAML", lambda: (
         page.fill("#p-yaml", KB_PROVIDER_YAML), press(page, "#p-check"), page.wait_for_selector("#p-save:not([disabled])")))
@@ -742,7 +746,7 @@ def test_kb_flow(browser, contexts, zing, lang: str) -> None:
     flow.step("relays: save it", lambda: (
         page.fill("#r-url", "https://a11y-relay.example/v1"), press(page, "#r-save"), wait_text(page, "#r-ok"),
         page.wait_for_selector("#relays-list li.item")))
-    _kb_section_steps(flow, "relays", "a11y", "provider:a11y-relay")
+    _kb_section_steps(flow, "relays", "relay", "provider:a11y-relay", "provider:a11y-relay")
     _kb_delete_steps(flow, "relays")
     flow.done("#res", "#m-ok", "#p-ok", "#r-ok", "#r-err", "#kb-found")
 

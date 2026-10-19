@@ -44,12 +44,12 @@
     - link "Historial":
       - /url: /v2/history
     - text: y elige Programar como monitor; luego define aquí su intervalo y actívalo. Cuando el riesgo supera tu umbral o empeora respecto a la última vez, zing avisa a tus webhooks (Slack / Feishu / DingTalk / JSON genérico).
+  - text: Aún no hay clave maestra Se crea cuando guardas la primera clave API.
+  - button "Crear ahora"
   - tablist "Vistas de monitores":
     - tab "Configurar" [selected]
     - tab "En curso"
   - tabpanel "Configurar":
-    - text: Aún no hay clave maestra Se crea cuando guardas la primera clave API.
-    - button "Crear ahora"
     - heading "Monitores configurados 1 monitor" [level=2]
     - article "gpt-4o":
       - heading "gpt-4o" [level=3]

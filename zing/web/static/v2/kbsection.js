@@ -23,9 +23,10 @@
  *   cfg.add(el, page) builds the add form into el
  *   page.data()  the last GET /api/kb/profiles answer
  *   page.reload() refetch and re-render every section (Promise)
- *   page.query()  the shared filter's text
+ *   page.filters() the shared filters ({ model, provider, relay, source },
+ *                 kbview.matches)
  * Returns { render(), rendered(), filter() → { n, total }, openAdd(focus) };
- * filter() re-applies page.query() after it changes.
+ * filter() re-applies page.filters() after they change.
  *
  * Add forms (ZingKbSection.wizard / relayForm) carry Chinese text with data-en
  * like the static markup and are translated with ZING_LANG.apply(), so a
@@ -141,7 +142,7 @@
       } else {
         html = '<ul class="items">' + items.map(function (it) { return row(it, i++); }).join("") + "</ul>";
       }
-      list.innerHTML = html;
+      list.innerHTML = html + '<p class="empty" data-kb="none" hidden>' + esc(T("没有符合筛选条件的项。", "Nothing matches the filters.")) + "</p>";
       applyFilter();
       if (keep) {
         var alt = { del: "del-no", "del-no": "del", "del-yes": "del" }[keep[0]] || keep[0];
@@ -164,27 +165,31 @@
       var data = page.data();
       if (!data) return { n: 0, total: 0 };
       var items = V.itemsOf(data, cfg.kind);
-      var qs = page.query();
+      var f = page.filters(), on = V.active(f) > 0;
       var hit = {};
-      V.filter(cfg.kind, items, qs).forEach(function (it) { hit[it.key] = true; });
+      items.forEach(function (it) { if (V.matches(cfg.kind, it, f)) hit[it.key] = true; });
       var n = 0;
       Array.prototype.forEach.call(list.querySelectorAll("li.item"), function (li) {
-        var on = !qs || hit[li.getAttribute("data-key")];
-        li.hidden = !on;
-        if (on) n++;
+        var show = !on || hit[li.getAttribute("data-key")];
+        li.hidden = !show;
+        if (show) n++;
       });
       Array.prototype.forEach.call(list.querySelectorAll("details.grp"), function (d) {
         var any = d.querySelector("li.item:not([hidden])");
         d.hidden = !any;
-        if (qs && any) d.open = true;
-        else if (!qs) d.open = !!openGroups[d.getAttribute("data-group")];
+        if (on && any) d.open = true;
+        // clearing the filters closes what the user had not opened, unless
+        // focus is inside (it would fall to <body>)
+        else if (!on) d.open = !!openGroups[d.getAttribute("data-group")] || d.contains(document.activeElement);
       });
+      var none = list.querySelector('[data-kb="none"]');
+      if (none) none.hidden = !(items.length && !n);
       return { n: n, total: items.length };
     }
     list.addEventListener("toggle", function (ev) {
       var d = ev.target;
       // only the user's own opening/closing is remembered, not the filter's
-      if (d.classList && d.classList.contains("grp") && !page.query()) openGroups[d.getAttribute("data-group")] = d.open;
+      if (d.classList && d.classList.contains("grp") && !V.active(page.filters())) openGroups[d.getAttribute("data-group")] = d.open;
     }, true);
 
     list.addEventListener("click", function (ev) {

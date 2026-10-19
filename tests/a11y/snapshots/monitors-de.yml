@@ -44,12 +44,12 @@
     - link "Verlauf":
       - /url: /v2/history
     - text: und wählen Als Überwachung einplanen — legen Sie dann hier das Intervall fest und schalten Sie sie ein. Überschreitet das Risiko Ihre Schwelle oder wird es schlechter als beim letzten Mal, alarmiert zing Ihre Webhooks (Slack / Feishu / DingTalk / generisches JSON).
+  - text: Noch kein Hauptschlüssel Er wird erstellt, wenn Sie den ersten API-Schlüssel speichern.
+  - button "Jetzt erstellen"
   - tablist "Überwachungsansichten":
     - tab "Konfigurieren" [selected]
     - tab "Läuft"
   - tabpanel "Konfigurieren":
-    - text: Noch kein Hauptschlüssel Er wird erstellt, wenn Sie den ersten API-Schlüssel speichern.
-    - button "Jetzt erstellen"
     - heading "Eingerichtete Überwachungen 1 Überwachung" [level=2]
     - article "gpt-4o":
       - heading "gpt-4o" [level=3]

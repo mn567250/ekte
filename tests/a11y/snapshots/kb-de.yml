@@ -43,15 +43,33 @@
     - text: "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das zing kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder ausschalten oder eigene hinzufügen. Deine Änderungen werden in kb.db auf diesem Rechner gespeichert und von der Web-Oberfläche wie von"
     - code: zing check
     - text: verwendet.
-  - region "Welches Profil verwendet eine Modell-ID?":
-    - heading "Welches Profil verwendet eine Modell-ID?" [level=2]
+  - region "Filter":
+    - button "Filter" [expanded]
     - text: Modell-ID
-    - textbox "Modell-ID":
-      - /placeholder: z. B. gpt-4o
-    - button "Nachschlagen"
-    - link "Deine Einträge als YAML exportieren":
-      - /url: /api/kb/export
-    - status
+    - combobox "Modell-ID":
+      - option "Alle" [selected]
+    - text: Anbieter
+    - combobox "Anbieter":
+      - option "Alle" [selected]
+      - option "Anthropic (Claude)"
+      - option "DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)"
+      - option "Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)"
+      - option "Zhipu AI (智谱 / Z.ai) — BigModel open platform"
+      - option "Moonshot AI (月之暗面 / Kimi)"
+      - option "OpenAI"
+      - option "Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)"
+    - text: Relay
+    - combobox "Relay":
+      - option "Alle" [selected]
+      - option "Example Relay"
+    - text: Quelle
+    - combobox "Quelle":
+      - option "Alle" [selected]
+      - option "Mitgeliefert"
+      - option "Eigener"
+    - status: "Angezeigt: 98 von 98 Modellen · 7 von 7 Anbietern · 1 von 1 Relays"
+  - link "Deine Einträge als YAML exportieren":
+    - /url: /api/kb/export
   - tablist "Bereiche der Wissensbasis":
     - tab "Modelle" [selected]
     - tab "Anbieter"
@@ -84,9 +102,6 @@
       - paragraph: Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den zing an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.
       - button "Prüfung"
       - button "In der Wissensbasis speichern" [disabled]
-    - text: Modelle filtern
-    - searchbox "Modelle filtern"
-    - status
     - group:
       - text: Anthropic (Claude)
       - code: anthropic

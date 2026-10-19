@@ -44,12 +44,12 @@
     - link "Historique":
       - /url: /v2/history
     - text: et choisissez Planifier comme surveillance, puis définissez ici son intervalle et activez-la. Dès que le risque franchit votre seuil ou s’aggrave par rapport à la dernière fois, zing alerte vos webhooks (Slack / Feishu / DingTalk / JSON générique).
+  - text: Pas encore de clé maîtresse Elle est créée lorsque vous enregistrez la première clé API.
+  - button "Créer maintenant"
   - tablist "Vues des moniteurs":
     - tab "Configurer" [selected]
     - tab "En cours"
   - tabpanel "Configurer":
-    - text: Pas encore de clé maîtresse Elle est créée lorsque vous enregistrez la première clé API.
-    - button "Créer maintenant"
     - heading "Surveillances configurées 1 surveillance" [level=2]
     - article "gpt-4o":
       - heading "gpt-4o" [level=3]
