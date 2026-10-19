@@ -201,3 +201,80 @@ def test_view_controls_reflow_at_320_css_px(open_page) -> None:
         if not box or box["x"] < 0 or box["x"] + box["width"] > 320:
             issues.append(f"{sel} does not fit the viewport: {box}")
     assert_no_issues(issues, "analytics [en, 320px]", "reflow")
+
+
+def _tip_gap(page: Page, chart: str, mark: str, at: tuple[float, float]) -> tuple[float, dict[str, Any]]:
+    """Moves the pointer onto a mark of a chart (at: where on it, as fractions
+    of its box); returns the distance from the pointer to the shown tooltip's
+    box (0: touching) and that box."""
+    page.locator(f"{chart} {mark}").scroll_into_view_if_needed()
+    box = page.locator(f"{chart} {mark}").bounding_box()
+    assert box, f"no {mark} in {chart}"
+    x, y = box["x"] + box["width"] * at[0], box["y"] + box["height"] * at[1]
+    page.mouse.move(x, y)
+    page.mouse.move(x + 1, y + 1)
+    tip = page.locator(f"{chart} .ctip")
+    t = tip.bounding_box() if tip.is_visible() else None
+    if not t:
+        return float("inf"), {}
+    dx = max(t["x"] - x, 0, x - t["x"] - t["width"])
+    dy = max(t["y"] - y, 0, y - t["y"] - t["height"])
+    return max(dx, dy), t
+
+
+def test_chart_tooltips_follow_the_pointer(open_page) -> None:
+    """Every chart's tooltip shows next to the pointer, wherever on the chart
+    it is (a cell at the bottom of the peak-hours grid, a bucket of the
+    comparison chart), and stays inside the chart's box."""
+    issues: list[str] = []
+    page, _ = _open(open_page, "#tab=trends&ts=heat&range=90&hb=1")
+    cells = page.locator("#heat-chart rect[data-k]")
+    if not cells.count():
+        issues.append("no peak-hours cells to hover")
+    else:
+        # the lowest cell (the day starts at the bottom): far from the grid's top
+        k = page.evaluate(
+            "() => [...document.querySelectorAll('#heat-chart rect[data-k]')]"
+            ".sort((a, b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top)[0].getAttribute('data-k')"
+        )
+        gap, t = _tip_gap(page, "#heat-chart", f"rect[data-k='{k}']", (0.5, 0.5))
+        if gap > 30:
+            issues.append(f"peak hours: the tooltip is {gap:.0f}px from the pointer ({t})")
+        host = page.locator("#heat-chart").bounding_box()
+        if t and host and (t["x"] < host["x"] - 1 or t["x"] + t["width"] > host["x"] + host["width"] + 1):
+            issues.append(f"peak hours: the tooltip leaves the chart's box: {t} {host}")
+    page, _ = _open(open_page, "#tab=trends&range=90")
+    gap, t = _tip_gap(page, "#cmp-chart", "rect.hit >> nth=-1", (0.5, 0.9))
+    if gap > 30:
+        issues.append(f"comparison: the tooltip is {gap:.0f}px from the pointer ({t})")
+    assert_no_issues(issues, "analytics [en]", "chart-tooltip")
+
+
+def test_changing_a_panel_option_keeps_the_scroll_position(open_page) -> None:
+    """A panel's option reloads only that panel, and the page stays where it
+    was scrolled to. While a chart is redrawn the page must not get shorter
+    than the scrolled-to view: browsers without scroll anchoring (Safari)
+    would clamp the scroll position and jump up to the panel's heading."""
+    page, _ = _open(open_page, "#tab=trends&ts=heat&range=90&hb=1", viewport={"width": 1280, "height": 700})
+    # the scroll position at the moment each chart is drawn: Chromium restores
+    # a clamped one afterwards (scroll anchoring), Safari keeps it
+    page.evaluate(
+        "() => { window.__at = []; const C = window.ZingCharts, draw = C.heatmap;"
+        " C.heatmap = function (host, cfg) { window.__at.push(scrollY); return draw(host, cfg); }; }"
+    )
+    issues: list[str] = []
+    for metric in ("latency_p50", "decode_tps"):
+        page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+        settle(page)
+        page.evaluate("window.__at = []")
+        before = page.evaluate("scrollY")
+        page.locator("[data-v=hm]").select_option(metric)
+        settle(page)
+        after, at = page.evaluate("[scrollY, window.__at]")
+        if not at:
+            issues.append(f"choosing {metric} did not redraw the grid")
+        for y in at + [after]:
+            if abs(y - before) > 2:
+                issues.append(f"choosing {metric} moved the page from {before} to {y}")
+                break
+    assert_no_issues(issues, "analytics [en]", "scroll")

@@ -50,6 +50,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Analytics API answers are cached in-process for up to 30 seconds and dropped
   on every saved, deleted or cleared run.
 
+### Fixed
+
+- **Analytics chart tooltips (web UI v2)** show next to the pointer in every
+  chart. In Peak hours, the tooltip used to stay at the top of the grid, far
+  from a hovered cell lower down.
+- **Analytics no longer jumps up when a panel option changes** (Metric, Relay,
+  Time block, …). While a chart was redrawn the page was briefly shorter, and
+  browsers without scroll anchoring (Safari) moved the view up to the panel's
+  heading. Every panel now keeps its height until its chart is drawn.
+
 ## [0.20.2] — Correct verdicts for honest endpoints
 
 ### Fixed

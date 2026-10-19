@@ -14,7 +14,8 @@
  *                             bucket has no data, faded hollow markers for
  *                             buckets with few runs, dashed annotation lines,
  *                             a crosshair + tooltip for the bucket column under
- *                             the pointer (pointer only: the page renders the same
+ *                             the pointer, the tooltip next to the pointer as
+ *                             in every chart here (pointer only: the page renders the same
  *                             values as a data table, the accessible
  *                             equivalent, BITV 9.1.1.1 / 9.1.3.1)
  *
@@ -277,7 +278,7 @@
     });
     out.push('<line class="cross" x1="0" x2="0" y1="' + M.t + '" y2="' + (M.t + ph) + '" visibility="hidden"/>');
     // hover targets: one column per bucket with data, reaching halfway to its
-    // neighbours (no pointermove tracking: hovering a column is enough)
+    // neighbours (the column under the pointer picks the bucket, no nearest-point search)
     var times = {};
     all.forEach(function (p) { times[p.t] = 1; });
     var list = Object.keys(times).map(Number).sort(function (a, b) { return a - b; });
@@ -288,14 +289,35 @@
     out.push("</svg>");
 
     host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>';
-    wireTooltip(host, cfg, series, X, half, W);
+    wireTooltip(host, cfg, series, X, half);
+  }
+
+  // The tooltip next to the pointer (inside the chart's box, flipped to the
+  // pointer's left / above it near the right / bottom edge). Shared by every
+  // chart: placed on each move, its content rebuilt only when the mark changes.
+  function placeTip(host, tip, ev) {
+    var r = host.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, gap = 14;
+    var tw = tip.offsetWidth, th = tip.offsetHeight, left = x + gap, top = y + gap;
+    if (left + tw > host.clientWidth) left = x - tw - gap;
+    if (top + th > host.clientHeight) top = y - th - gap;
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = Math.max(0, top) + "px";
+  }
+  // Escape hides it (BITV 9.1.4.13 dismissible); it stays while the pointer
+  // is over it (hoverable). The host is re-used by every render: replace,
+  // never stack, its handlers.
+  function tipDismiss(host, shown, hide) {
+    host.onpointerleave = hide;
+    if (host.zcKey) document.removeEventListener("keydown", host.zcKey);
+    host.zcKey = function (ev) {
+      if (ev.key === "Escape" && shown() != null) hide();
+    };
+    document.addEventListener("keydown", host.zcKey);
   }
 
   // Crosshair + tooltip for the hovered bucket column, listing every series
   // there. Pointer only and aria-hidden: the data table has the same values.
-  // Escape hides it (BITV 9.1.4.13 dismissible); it stays while the pointer
-  // is over it (hoverable).
-  function wireTooltip(host, cfg, series, X, half, W) {
+  function wireTooltip(host, cfg, series, X, half) {
     var svg = host.querySelector("svg"), tip = host.querySelector(".ctip"), cross = svg.querySelector(".cross");
     var shown = null;
     function hide() {
@@ -324,54 +346,36 @@
       }).join("");
       tip.innerHTML = '<p class="when">' + esc(cfg.tipTime(t)) + "</p><ul>" + rows + "</ul>" + notes;
       tip.hidden = false;
-      var bw = svg.getBoundingClientRect().width || W, scale = bw / W;
-      var tw = tip.offsetWidth, left = x * scale + 14;
-      if (left + tw > bw) left = Math.max(0, x * scale - tw - 14);
-      tip.style.left = left + "px";
     }
-    svg.addEventListener("mouseover", function (ev) {
+    svg.addEventListener("mousemove", function (ev) {
       var hit = ev.target.closest && ev.target.closest("rect.hit");
-      if (hit) show(Number(hit.getAttribute("data-t")));
+      if (!hit) return;
+      show(Number(hit.getAttribute("data-t")));
+      placeTip(host, tip, ev);
     });
-    // the host is re-used by every render: replace, never stack, its handlers
-    host.onpointerleave = hide;
-    if (host.zcKey) document.removeEventListener("keydown", host.zcKey);
-    host.zcKey = function (ev) {
-      if (ev.key === "Escape" && shown != null) hide();
-    };
-    document.addEventListener("keydown", host.zcKey);
+    tipDismiss(host, function () { return shown; }, hide);
   }
 
   // A tooltip for marks with a data-k attribute (pointer only, aria-hidden:
-  // the page's table has the same values). html(k) fills it, at(k) gives the
-  // mark's x in SVG units. Escape hides it; it stays while hovered.
-  function tipFor(host, W, html, at, onShow) {
+  // the page's table has the same values). html(k) fills it.
+  function tipFor(host, html) {
     var svg = host.querySelector("svg"), tip = host.querySelector(".ctip"), shown = null;
     function hide() {
       shown = null;
       tip.hidden = true;
-      if (onShow) onShow(null);
     }
-    svg.addEventListener("mouseover", function (ev) {
+    svg.addEventListener("mousemove", function (ev) {
       var hit = ev.target.closest && ev.target.closest("[data-k]");
       if (!hit) return;
       var k = hit.getAttribute("data-k");
-      if (shown === k) return;
-      shown = k;
-      tip.innerHTML = html(k);
-      tip.hidden = false;
-      if (onShow) onShow(k);
-      var bw = svg.getBoundingClientRect().width || W, scale = bw / W, x = at(k);
-      var tw = tip.offsetWidth, left = x * scale + 14;
-      if (left + tw > bw) left = Math.max(0, x * scale - tw - 14);
-      tip.style.left = left + "px";
+      if (shown !== k) {
+        shown = k;
+        tip.innerHTML = html(k);
+        tip.hidden = false;
+      }
+      placeTip(host, tip, ev);
     });
-    host.onpointerleave = hide;
-    if (host.zcKey) document.removeEventListener("keydown", host.zcKey);
-    host.zcKey = function (ev) {
-      if (ev.key === "Escape" && shown != null) hide();
-    };
-    document.addEventListener("keydown", host.zcKey);
+    tipDismiss(host, function () { return shown; }, hide);
   }
 
   function svgOpen(cfg, W, H, cls) {
@@ -445,13 +449,11 @@
       "<li>" + sw("low") + "<span>" + esc(L.few || "") + "</span></li>" +
       "<li>" + sw("none") + "<span>" + esc(L.none || "") + "</span></li></ul>";
     host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>' + legend;
-    tipFor(host, W, function (k) {
+    tipFor(host, function (k) {
       var c = at[k];
       return '<p class="when">' + esc(cfg.tipTime(c.dow, c.hour - c.hour % B)) + "</p><ul><li><span><b>" + esc(fmt(c.v, cfg.unit)) + "</b>" +
         '<span class="sub">' + esc(Tf("{n} 次检测", "{n} runs", { n: c.runs })) + "</span>" +
         (c.low ? '<span class="sub lowtxt">' + esc(cfg.lowHint) + "</span>" : "") + "</span></li></ul>";
-    }, function (k) {
-      return X(at[k].dow) + size;
     });
   }
 
@@ -509,7 +511,7 @@
     });
     out.push("</svg>");
     host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>';
-    tipFor(host, W, function (k) {
+    tipFor(host, function (k) {
       var b = bars[Number(k)];
       var rows = cfg.cats.slice().reverse().map(function (c) {
         var n = b.counts[c.id] || 0;
@@ -518,7 +520,7 @@
       }).join("");
       return '<p class="when">' + esc(cfg.tipTime(b.t)) + "</p><ul>" + rows + "</ul>" +
         '<p class="mk">' + esc(cfg.totalText(b)) + (b.low ? "<br>" + esc(cfg.lowHint) : "") + "</p>";
-    }, function (k) { return X(bars[Number(k)].t + cfg.bucketMs / 2); });
+    });
   }
 
   window.ZingCharts = {
