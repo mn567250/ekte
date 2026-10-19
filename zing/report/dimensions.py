@@ -479,16 +479,12 @@ def _html_group(
 
 
 DIM_CSS = """
-details.dim { border-top: 1px solid #eaeef2; padding: .5rem 0; }
+details.dim { border-top: 1px solid var(--line); padding: .5rem 0; }
 details.dim:first-of-type { border-top: 0; }
 details.dim > summary { cursor: pointer; }
 .dim-det { margin: .5rem 0 .75rem 1rem; }
 details.scale { margin: .35rem 0; font-size: .88rem; }
-details.scale > summary { cursor: pointer; color: #57606a; }
+details.scale > summary { cursor: pointer; color: var(--ink-muted); }
 ul.checks { list-style: none; padding-left: 0; margin: .35rem 0; }
 ul.checks li { margin: .2rem 0; }
-@media (prefers-color-scheme: dark) {
-  details.dim { border-color: #21262d; }
-  details.scale > summary { color: #8b949e; }
-}
 """

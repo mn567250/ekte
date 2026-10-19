@@ -537,38 +537,39 @@ def html_section(perf: PerformanceReport | None, *, nested: bool = False) -> str
 
 
 PERF_CSS = """
-.perf-card { --series-target: #2a78d6; --series-baseline: #eb6834; --status-critical: #d03b3b;
-  --chart-surface: #ffffff; --grid: #eaeef2; }
+.perf-card { --series-target: var(--chart-0); --series-baseline: var(--chart-2);
+  --status-critical: var(--danger); --chart-surface: var(--surface); --grid: var(--line); }
 .perf-tabs { display: flex; flex-wrap: wrap; gap: .25rem .5rem; margin: .5rem 0; }
 .perf-tabs input { position: absolute; opacity: 0; pointer-events: none; }
-.perf-tabs label { font-size: .85rem; padding: .2rem .7rem; border: 1px solid #d0d7de;
-  border-radius: 999px; cursor: pointer; color: #57606a; }
-.perf-tabs input:checked + label { background: #1f2328; border-color: #1f2328; color: #fff; }
-.perf-tabs input:focus-visible + label { outline: 2px solid #0969da; outline-offset: 2px; }
+.perf-tabs label { font-size: .85rem; padding: .2rem .7rem; border: 1px solid var(--border);
+  border-radius: 999px; cursor: pointer; color: var(--ink-muted); }
+.perf-tabs input:checked + label { background: var(--primary); border-color: var(--primary);
+  color: var(--on-primary); }
+.perf-tabs input:focus-visible + label { outline: 2px solid var(--primary); outline-offset: 2px; }
 .perf-panel { display: none; width: 100%; order: 99; }
 #perf-latency:checked ~ #panel-latency, #perf-ttft:checked ~ #panel-ttft,
 #perf-tps:checked ~ #panel-tps, #perf-itl:checked ~ #panel-itl { display: block; }
 .perf-chart { width: 100%; height: auto; display: block; }
 .perf-chart .grid { stroke: var(--grid); stroke-width: 1; }
-.perf-chart .tick { fill: #57606a; font-size: 11px; font-variant-numeric: tabular-nums; }
+.perf-chart .tick { fill: var(--ink-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .perf-chart .pt { stroke: var(--chart-surface); stroke-width: 2; }
 .perf-chart .pt.target { fill: var(--series-target); }
 .perf-chart .pt.baseline { fill: var(--series-baseline); }
 .perf-chart .pt.passive { fill-opacity: .45; }
-.perf-chart .pt.cached { fill: #8c959f; fill-opacity: .6; }
+.perf-chart .pt.cached { fill: var(--ink-muted); fill-opacity: .6; }
 .perf-chart .pt.nonstream { fill: var(--chart-surface); stroke-width: 2; }
 .perf-chart .pt.nonstream.target { stroke: var(--series-target); }
 .perf-chart .pt.nonstream.baseline { stroke: var(--series-baseline); }
 .perf-legend .key.target.hollow { background: transparent; border: 2px solid var(--series-target);
   width: 10px; height: 10px; box-sizing: border-box; }
-.perf-card { --good: #1a7f37; --bad: #cf222e; }
+.perf-card { --good: var(--success); --bad: var(--danger); }
 .delta.better { color: var(--good); font-weight: 600; }
 .delta.worse { color: var(--bad); font-weight: 600; }
-.perf-nested { margin: .75rem 0 .5rem 1rem; padding-top: .5rem; border-top: 1px solid #eaeef2; }
+.perf-nested { margin: .75rem 0 .5rem 1rem; padding-top: .5rem; border-top: 1px solid var(--line); }
 .perf-nested > h4 { margin: .25rem 0; }
-h3.perf-mode { margin-top: 1.5rem; border-top: 1px solid #eaeef2; padding-top: 1rem; }
+h3.perf-mode { margin-top: 1.5rem; border-top: 1px solid var(--line); padding-top: 1rem; }
 .perf-chart .fail-mark { stroke: var(--status-critical); stroke-width: 2; stroke-linecap: round; }
-.perf-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .8rem; color: #57606a;
+.perf-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .8rem; color: var(--ink-muted);
   margin: .25rem 0 .75rem; }
 .perf-legend .key { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
   margin-right: .35rem; vertical-align: -1px; font-style: normal; }
@@ -581,13 +582,5 @@ h3.perf-mode { margin-top: 1.5rem; border-top: 1px solid #eaeef2; padding-top: 1
 table.perf { font-size: .82rem; margin: .5rem 0 1rem; }
 table.perf td, table.perf th { padding: .3rem .45rem; white-space: nowrap; }
 table.perf.small { width: auto; }
-.perf-notes { font-size: .85rem; color: #57606a; }
-@media (prefers-color-scheme: dark) {
-  .perf-card { --series-target: #3987e5; --series-baseline: #d95926; --chart-surface: #161b22;
-    --grid: #21262d; --good: #3fb950; --bad: #f85149; }
-  h3.perf-mode, .perf-nested { border-color: #30363d; }
-  .perf-chart .tick, .perf-legend, .perf-notes { fill: #8b949e; color: #8b949e; }
-  .perf-tabs label { border-color: #30363d; color: #8b949e; }
-  .perf-tabs input:checked + label { background: #e6edf3; border-color: #e6edf3; color: #0d1117; }
-}
+.perf-notes { font-size: .85rem; color: var(--ink-muted); }
 """
