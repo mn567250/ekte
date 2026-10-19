@@ -489,11 +489,11 @@ select.in {
   .tabs [role="tab"] { border: 1px solid ButtonText; padding: 10px 9px; }
   .tabs [role="tab"][aria-selected="true"] { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
 }
-/* phones: long tab labels (e.g. ES "Auditoría de embeddings") no longer fit
-   side by side, so the tabs stack instead of breaking mid-label */
+/* phones: the tabs stay side by side; a long label (e.g. ES "Auditoría de
+   embeddings") wraps onto a second line between words, not mid-word */
 @media (max-width: 480px) {
-  .tabs { flex-direction: column; gap: 4px; }
-  .tabs [role="tab"] { flex: none; padding: 10px; }
+  .tabs { gap: 4px; padding: 4px; }
+  .tabs [role="tab"] { gap: 6px; padding: 9px 6px; font-size: 14px; line-height: 1.25; text-wrap: balance; overflow-wrap: break-word; }
 }
 [role="tabpanel"][hidden] { display: none; }
 [role="tabpanel"] { animation: z-rise 0.35s cubic-bezier(0.2, 0.85, 0.25, 1); }
