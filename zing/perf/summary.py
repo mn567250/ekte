@@ -160,6 +160,52 @@ def _input_buckets(records: Sequence[RequestRecord]) -> list[InputSizeBucket]:
     return out
 
 
+def _mode_completes(
+    records: Sequence[RequestRecord], endpoint: str, stream: bool | None
+) -> list[RequestRecord]:
+    return [
+        r for r in _completes(records, endpoint)
+        if stream is None or r.phase == "passive" or r.stream == stream
+    ]
+
+
+def _probe_or_passive(completes: Sequence[RequestRecord]) -> tuple[str, list[RequestRecord]]:
+    probe = [r for r in completes if r.phase == "probe"]
+    if probe:
+        return "probe", probe
+    return "passive", [r for r in completes if r.phase == "passive"]
+
+
+def stats_pool(
+    records: Sequence[RequestRecord], endpoint: str = "target", *, stream: bool | None = None
+) -> list[RequestRecord]:
+    """The requests an endpoint's latency, TTFT and throughput statistics come
+    from: its probe completions (else the passive ones), successful and not
+    served from a cache; ``stream`` as in :func:`summarize_endpoint`."""
+    return [r for r in _probe_or_passive(_mode_completes(records, endpoint, stream))[1]
+            if r.ok and not r.cached]
+
+
+def headline_stream(records: Sequence[RequestRecord]) -> bool | None:
+    """The request mode :func:`performance_report` headlines: streaming when
+    it was probed, else non-streaming; None without probe requests."""
+    probed = {r.stream for r in records if r.phase == "probe" and r.op == "complete"}
+    return next((m for m in (True, False) if m in probed), None)
+
+
+def decode_tps_tails(records: Sequence[RequestRecord]) -> tuple[float | None, float | None]:
+    """p5 and p95 of the target's decode speed, from the requests its p50 comes
+    from (headline mode; local count, else the reported one): the slow and the
+    fast end. Both None below the p95 sample floor."""
+    streamed = [r for r in stats_pool(records, "target", stream=headline_stream(records)) if r.stream]
+    values = [float(r.decode_tps_local) for r in streamed if r.decode_tps_local is not None]
+    if not values:
+        values = [float(r.decode_tps_reported) for r in streamed if r.decode_tps_reported is not None]
+    if len(values) < PERCENTILE_MIN_SAMPLES["p95"]:
+        return None, None
+    return percentile(values, 5), percentile(values, 95)
+
+
 def summarize_endpoint(
     records: Sequence[RequestRecord],
     endpoint: str = "target",
@@ -173,13 +219,8 @@ def summarize_endpoint(
     request mode; None takes them all.
     """
     mine = [r for r in records if r.endpoint == endpoint]
-    completes = [
-        r for r in _completes(records, endpoint)
-        if stream is None or r.phase == "passive" or r.stream == stream
-    ]
-    probe = [r for r in completes if r.phase == "probe"]
-    source = "probe" if probe else "passive"
-    pool = probe or [r for r in completes if r.phase == "passive"]
+    completes = _mode_completes(records, endpoint, stream)
+    source, pool = _probe_or_passive(completes)
     good = [r for r in pool if r.ok and not r.cached]
     streamed = [r for r in good if r.stream]
     # Reliability counts every call (the audit's own, warm-up, burst and probe),
@@ -302,7 +343,7 @@ def build_performance(
         return None
     probed = {r.stream for r in records if r.phase == "probe" and r.op == "complete"}
     ordered: list[bool | None] = [m for m in (True, False) if m in probed]  # stream first
-    modes = ordered or [None]
+    modes = ordered or [None]  # modes[0] is headline_stream(records)
 
     def side(endpoint: str, stream: bool | None) -> EndpointPerformance:
         return summarize_endpoint(records, endpoint, concurrency=concurrency, stream=stream)

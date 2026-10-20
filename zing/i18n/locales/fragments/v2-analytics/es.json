@@ -200,6 +200,8 @@
   "Days": "Días",
   "“{fold}” needs runs spread over at least {min} days; the filtered runs cover {n} days, so they are shown by weekday.": "«{fold}» requiere ejecuciones repartidas en al menos {min} días; las ejecuciones filtradas abarcan {n} días, así que se muestran por día de la semana.",
   "Weeks 1–4 repeat every 4 weeks, counted from Monday 5 January 1970, so a week of the cycle keeps its column whatever the filter.": "Las semanas 1–4 se repiten cada 4 semanas, contadas desde el lunes 5 de enero de 1970, así que una semana del ciclo conserva su columna sea cual sea el filtro.",
-  "Days 29–31 exist only in some months, so their cells hold fewer runs.": "Los días 29–31 solo existen en algunos meses, así que sus celdas tienen menos ejecuciones."
+  "Days 29–31 exist only in some months, so their cells hold fewer runs.": "Los días 29–31 solo existen en algunos meses, así que sus celdas tienen menos ejecuciones.",
+  "Decode speed p5": "Velocidad de decodificación p5",
+  "Decode speed p95": "Velocidad de decodificación p95"
  }
 }

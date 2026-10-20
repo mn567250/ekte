@@ -8,6 +8,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Decode speed p5 and p95 in analytics.** Every audit now stores the slow
+  (p5) and fast (p95) end of its decode speed next to the p50, from the same
+  requests (local token count, else the reported one; 20 requests at least,
+  like the other p95 values), so decode speed has the tails latency and TTFT
+  have. History schema 3 adds the two columns, and the analytics backfill
+  re-extracts every older run from its stored request records
+  (`EXTRACT_VERSION` 2). Both are new metrics of the comparison chart.
+- **More Peak hours metrics.** The heatmap also offers TTFT p95, latency p95,
+  decode speed p5 and p95, inter-token jitter, network round trip, relay
+  processing time and cold start.
 - **Peak hours: Aggregation (web UI v2).** A fourth option over the heatmap
   folds the filtered runs by weekday (as before, the default), over a 4-week
   cycle (weeks 1–4 side by side; counted from Monday 5 January 1970, so a week

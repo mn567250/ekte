@@ -118,6 +118,8 @@ METRICS: dict[str, Metric] = {m.id: m for m in (
     _m("ttft_p50", "ttft_p50_ms", "ms", False),
     _m("ttft_p95", "ttft_p95_ms", "ms", False),
     _m("decode_tps", "decode_tps_p50", "tok/s", True),
+    _m("decode_tps_p5", "decode_tps_p5", "tok/s", True),
+    _m("decode_tps_p95", "decode_tps_p95", "tok/s", True),
     _m("itl_jitter", "itl_jitter_p50_ms", "ms", False),
     _m("relay_overhead", "relay_processing_p50_ms", "ms", False),
     _m("network_rtt", "network_rtt_p50_ms", "ms", False),

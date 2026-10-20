@@ -355,6 +355,8 @@
     ttft_p50: ["首字延迟 p50", "Time to first token p50"],
     ttft_p95: ["首字延迟 p95", "Time to first token p95"],
     decode_tps: ["输出速度", "Decode speed"],
+    decode_tps_p5: ["输出速度 p5", "Decode speed p5"],
+    decode_tps_p95: ["输出速度 p95", "Decode speed p95"],
     itl_jitter: ["字间抖动", "Inter-token jitter"],
     relay_overhead: ["中转处理耗时", "Relay processing time"],
     network_rtt: ["网络往返", "Network round trip"],
@@ -425,7 +427,9 @@
   var SUBS = { overview: ["kpi", "lb"], trends: ["cmp", "heat"], reliability: ["err", "ovh"] };
   var SUBKEY = { overview: "os", trends: "ts", reliability: "rs" };
   var ERR_BUCKETS = BUCKETS.concat(["dow_hour"]);
-  var HEAT_METRICS = ["ttft_p50", "latency_p50", "decode_tps", "success_rate", "error_rate", "rate_limited_rate", "timeout_rate", "score"];
+  var HEAT_METRICS = ["ttft_p50", "ttft_p95", "latency_p50", "latency_p95", "decode_tps", "decode_tps_p5", "decode_tps_p95",
+    "itl_jitter", "network_rtt", "relay_overhead", "cold_start", "success_rate", "error_rate", "rate_limited_rate",
+    "timeout_rate", "score"];
   var BILL_METRICS = ["billing_ratio_prompt", "billing_ratio_completion", "reasoning_share", "cached_input_share"];
   var RANGES = ["7", "30", "90", "all", "custom"];
   var SORTS = ["label", "runs", "score", "ttft_p50", "decode_tps", "success_rate", "billing_ratio_prompt",

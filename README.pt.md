@@ -304,7 +304,8 @@ filtros e vista ficam no URL, por isso uma vista pode ser guardada nos
 favoritos ou partilhada. Nada sai da máquina.
 
 Outros painéis respondem a perguntas mais concretas: **horas de ponta** (um
-mapa de calor dia da semana × hora do TTFT, da latência ou da taxa de sucesso ou
+mapa de calor dia da semana × hora do TTFT, da latência e da velocidade de decodificação (mediana e caudas p95 /
+p5), da variação entre tokens, dos tempos de rede e do relay ou da taxa de sucesso ou
 de erro no seu fuso horário — um relay fica mais lento ou falha mais nas horas
 de maior carga? Por dia da semana ou, com 90 dias de execuções, num ciclo de
 4 semanas e, com 180 dias, por semana do mês), **erros e fiabilidade** (chamadas falhadas por causa — limite

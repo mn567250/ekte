@@ -305,7 +305,8 @@ mezclar ejecuciones distintas; filtros y vista se guardan en la URL, así que
 una vista se puede marcar o compartir. Nada sale del equipo.
 
 Otros paneles responden preguntas más concretas: **horas punta** (un mapa de
-calor día de la semana × hora del TTFT, la latencia o la tasa de éxito o de
+calor día de la semana × hora del TTFT, la latencia y la velocidad de decodificación (mediana y colas p95 /
+p5), la variación entre tokens, los tiempos de red y del relay o la tasa de éxito o de
 error en tu zona horaria: ¿un relay se vuelve más lento o falla más en las horas
 de más carga? Por día de la semana o, con 90 días de ejecuciones, en un ciclo
 de 4 semanas y, con 180 días, por semana del mes), **errores y fiabilidad** (llamadas fallidas por causa: límite

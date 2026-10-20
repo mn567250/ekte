@@ -21,7 +21,9 @@ backfill use (the same split as :mod:`zing.knowledge.snapshot`).
 * ``success_rate``, ``error_rate``, ``timeout_rate``, ``rate_limited_rate`` —
   over every target completion call (``performance.target``).
 * ``latency_p50_ms``, ``latency_p95_ms``, ``ttft_p50_ms``, ``ttft_p95_ms``,
-  ``decode_tps_p50`` (local count, else the reported one), ``itl_jitter_p50_ms``,
+  ``decode_tps_p50`` (local count, else the reported one), ``decode_tps_p5``
+  and ``decode_tps_p95`` (the slow and the fast end, from the same requests:
+  :func:`zing.perf.summary.decode_tps_tails`), ``itl_jitter_p50_ms``,
   ``relay_processing_p50_ms``, ``network_rtt_p50_ms``, ``cold_start_ms``,
   ``concurrency_tps`` (the burst's aggregate output tokens/s, local count first)
   — the target's headline performance.
@@ -64,10 +66,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from zing.knowledge.relays import normalize_url
+from zing.models import RequestRecord
+from zing.perf.summary import decode_tps_tails
 
 # Bump when extract_metrics() changes what it extracts: the backfill then
 # re-extracts every row written by an older version, without a schema change.
-EXTRACT_VERSION = 1
+EXTRACT_VERSION = 2  # 2: decode_tps_p5, decode_tps_p95
 
 # Column name -> SQL type of history_metrics (after history_id), in order.
 METRIC_COLS: dict[str, str] = {
@@ -88,6 +92,8 @@ METRIC_COLS: dict[str, str] = {
     "ttft_p50_ms": "REAL",
     "ttft_p95_ms": "REAL",
     "decode_tps_p50": "REAL",
+    "decode_tps_p5": "REAL",
+    "decode_tps_p95": "REAL",
     "itl_jitter_p50_ms": "REAL",
     "relay_processing_p50_ms": "REAL",
     "network_rtt_p50_ms": "REAL",
@@ -502,6 +508,22 @@ def _duration_sec(detectors: list[Any]) -> float | None:
     return round(total / 1000, 1) if total > 0 else None
 
 
+def _decode_tails(records: list[Any]) -> tuple[float | None, float | None]:
+    """Decode speed p5 / p95 of the report's request records (records that do
+    not parse are left out)."""
+    parsed = []
+    for rec in records:
+        if isinstance(rec, dict):
+            try:
+                parsed.append(RequestRecord.model_validate(rec))
+            except ValueError:
+                continue
+    try:
+        return decode_tps_tails(parsed)
+    except Exception:
+        return None, None
+
+
 def extract_metrics(report: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """The ``history_metrics`` row (by column) and ``history_dimensions`` rows
     of one report dict. Pure; any shape of input gives NULLs, never an error."""
@@ -519,6 +541,7 @@ def extract_metrics(report: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     identity = _detector(detectors, "model_identity")
     context = _dict(_detector(detectors, "context_window").get("evidence"))
     decode = _p(side.get("decode_tps_local"), "p50")
+    decode_p5, decode_p95 = _decode_tails(records)
     burst = _dict(side.get("concurrency"))
     burst_tps = _num(burst.get("aggregate_tps_local"))
 
@@ -549,6 +572,8 @@ def extract_metrics(report: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         "ttft_p50_ms": _p(side.get("ttft_ms"), "p50"),
         "ttft_p95_ms": _p(side.get("ttft_ms"), "p95"),
         "decode_tps_p50": decode if decode is not None else _p(side.get("decode_tps_reported"), "p50"),
+        "decode_tps_p5": decode_p5,
+        "decode_tps_p95": decode_p95,
         "itl_jitter_p50_ms": _p(side.get("itl_jitter_ms"), "p50"),
         "relay_processing_p50_ms": _p(side.get("relay_processing_ms"), "p50"),
         "network_rtt_p50_ms": _p(side.get("network_rtt_ms"), "p50"),

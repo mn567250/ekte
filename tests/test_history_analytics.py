@@ -568,15 +568,65 @@ def test_pending_rows_are_found_through_indexes(data):
     assert "SCAN history " not in detail.replace("SCAN history USING INDEX", "") + " "
 
 
-def test_fresh_database_has_the_v2_schema(data):
+def test_fresh_database_has_the_v3_schema(data):
     history.init()
     with _db(data) as conn:
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master")}
         cols = {r[1] for r in conn.execute("PRAGMA table_info(history)")}
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+        metric_cols = {r[1] for r in conn.execute("PRAGMA table_info(history_metrics)")}
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
     assert {"history_metrics", "history_dimensions", "history_requests",
             "idx_history_metrics_started", "idx_history_model"} <= tables
     assert "requests_split" in cols
+    assert {"decode_tps_p5", "decode_tps_p95"} <= metric_cols
+
+
+def _with_decode(report: dict, speeds: list[float | None], *, stream: bool = True) -> dict:
+    """The report with probe requests of these local decode speeds (tok/s)."""
+    seq = max(r["seq"] for r in report["performance"]["requests"]) + 1
+    report["performance"]["requests"] += [
+        RequestRecord(seq=seq + i, phase="probe", stream=stream, ok=True, duration_ms=900.0,
+                      ttft_ms=200.0, decode_tps_local=v, decode_tps_reported=50.0).model_dump()
+        for i, v in enumerate(speeds)
+    ]
+    return report
+
+
+def test_decode_speed_tails_come_from_the_requests_of_the_p50():
+    speeds = [float(v) for v in range(10, 31)]  # 21 requests: 10 .. 30 tok/s
+    metrics, _ = analytics_store.extract_metrics(_with_decode(_fixture(), speeds))
+    assert metrics["decode_tps_p5"] == pytest.approx(11.0) and metrics["decode_tps_p95"] == pytest.approx(29.0)
+    # a failed or cached request does not count, like for the p50
+    report = _with_decode(_fixture(), speeds)
+    report["performance"]["requests"][-1].update(ok=False)
+    report["performance"]["requests"][-2].update(cached=True)
+    assert analytics_store.extract_metrics(report)[0]["decode_tps_p5"] is None  # 19 < 20 requests
+    # without local counts: the reported speed, as for the p50
+    metrics, _ = analytics_store.extract_metrics(_with_decode(_fixture(), [None] * 20))
+    assert (metrics["decode_tps_p5"], metrics["decode_tps_p95"]) == (50.0, 50.0)
+    # only non-streaming requests: no decode speed
+    metrics, _ = analytics_store.extract_metrics(_with_decode(_fixture(), speeds, stream=False))
+    assert (metrics["decode_tps_p5"], metrics["decode_tps_p95"]) == (None, None)
+    # fewer than 20 requests (the p95 floor), or records that do not parse
+    assert analytics_store.extract_metrics(_fixture())[0]["decode_tps_p95"] is None
+    report = _with_decode(_fixture(), speeds)
+    report["performance"]["requests"].append({"seq": "x"})
+    assert analytics_store.extract_metrics(report)[0]["decode_tps_p95"] == pytest.approx(29.0)
+
+
+def test_a_v2_database_gets_the_decode_tails_of_its_older_runs(data):
+    rid = history.save(_with_decode(_fixture(), [float(v) for v in range(10, 31)]))
+    with _db(data) as conn:  # as zing with schema 2 left it
+        conn.execute("ALTER TABLE history_metrics DROP COLUMN decode_tps_p5")
+        conn.execute("ALTER TABLE history_metrics DROP COLUMN decode_tps_p95")
+        conn.execute("UPDATE history_metrics SET extract_version = 1")
+        conn.execute("PRAGMA user_version = 2")
+    history.init()
+    with _db(data) as conn:
+        row = conn.execute("SELECT * FROM history_metrics WHERE history_id = ?", (rid,)).fetchone()
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+    assert row["decode_tps_p5"] == pytest.approx(11.0) and row["decode_tps_p95"] == pytest.approx(29.0)
+    assert row["extract_version"] == analytics_store.EXTRACT_VERSION
 
 
 # --------------------------------------------------------------------------- #
