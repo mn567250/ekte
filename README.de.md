@@ -310,7 +310,9 @@ den Rechner.
 
 Weitere Bereiche beantworten engere Fragen: **Stoßzeiten** (eine Heatmap
 Wochentag × Stunde von TTFT, Latenz, Erfolgs- oder Fehlerquote in Ihrer
-Zeitzone — wird ein Relay zu Stoßzeiten langsamer oder fehleranfälliger?),
+Zeitzone — wird ein Relay zu Stoßzeiten langsamer oder fehleranfälliger? Nach Wochentag,
+oder ab 90 Tagen mit Läufen über einen 4-Wochen-Zyklus und ab 180 Tagen nach
+Woche im Monat),
 **Fehler und Zuverlässigkeit** (fehlgeschlagene Aufrufe nach Ursache —
 Ratenbegrenzung (HTTP 429), Serverfehler (5xx), Zeitüberschreitungen,
 Netzwerkfehler — im Zeitverlauf und pro Relay oder Modell, aus den

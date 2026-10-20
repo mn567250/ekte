@@ -307,7 +307,8 @@ una vista se puede marcar o compartir. Nada sale del equipo.
 Otros paneles responden preguntas más concretas: **horas punta** (un mapa de
 calor día de la semana × hora del TTFT, la latencia o la tasa de éxito o de
 error en tu zona horaria: ¿un relay se vuelve más lento o falla más en las horas
-de más carga?), **errores y fiabilidad** (llamadas fallidas por causa: límite
+de más carga? Por día de la semana o, con 90 días de ejecuciones, en un ciclo
+de 4 semanas y, con 180 días, por semana del mes), **errores y fiabilidad** (llamadas fallidas por causa: límite
 de peticiones (HTTP 429), errores del servidor (5xx), tiempos agotados, errores
 de red; a lo largo del tiempo y por relay o modelo, a partir de los registros
 de peticiones guardados, indicando cuántas auditorías los tienen),

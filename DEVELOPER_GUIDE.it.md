@@ -316,7 +316,9 @@ solo la libreria standard.
   (KPI di `from`–`to` rispetto all'intervallo precedente di pari durata),
   `/api/analytics/series` (`metric` per `group=relay|model|relay_model`, fino a
   4 `keys`, in intervalli `bucket=hour|day|week|dow_hour` nel fuso orario
-  dell'utente, `tz` o `tz_offset`) e `/api/analytics/leaderboard` (`model=` per
+  dell'utente, `tz` o `tz_offset`; `dow_hour` accetta anche `block` (ore per riga) e
+  `fold=week|4weeks|month_week`, che torna a `week` finché le esecuzioni non
+  coprono 90 o 180 giorni) e `/api/analytics/leaderboard` (`model=` per
   i suoi relay, oppure `relay=` per i suoi modelli). Tutti accettano i filtri
   `from`, `to`, `suite`, `stream_mode`, `api`, `source=all|manual|monitor`,
   `relay` e `model`. `zing/web/analytics.py` calcola tutto in Python da

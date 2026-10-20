@@ -306,7 +306,8 @@ favoritos ou partilhada. Nada sai da máquina.
 Outros painéis respondem a perguntas mais concretas: **horas de ponta** (um
 mapa de calor dia da semana × hora do TTFT, da latência ou da taxa de sucesso ou
 de erro no seu fuso horário — um relay fica mais lento ou falha mais nas horas
-de maior carga?), **erros e fiabilidade** (chamadas falhadas por causa — limite
+de maior carga? Por dia da semana ou, com 90 dias de execuções, num ciclo de
+4 semanas e, com 180 dias, por semana do mês), **erros e fiabilidade** (chamadas falhadas por causa — limite
 de pedidos (HTTP 429), erros do servidor (5xx), tempos esgotados, erros de rede
 — ao longo do tempo e por relay ou modelo, a partir dos registos de pedidos
 guardados, indicando quantas auditorias os têm), **integridade do modelo**

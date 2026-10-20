@@ -8,6 +8,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Peak hours: Aggregation (web UI v2).** A fourth option over the heatmap
+  folds the filtered runs by weekday (as before, the default), over a 4-week
+  cycle (weeks 1–4 side by side; counted from Monday 5 January 1970, so a week
+  keeps its column whatever the filter) or by week of the month (days 1–7,
+  8–14, 15–21, 22–28 and 29–31). The 4-week cycle needs runs spread over at
+  least 90 days and the weeks of the month 180 days: until then the option is
+  disabled with the reason, and a link asking for it shows the weekday grid
+  with a note. `GET /api/analytics/series` takes `fold=week|4weeks|month_week`
+  for `bucket=dow_hour` and answers with the fold used, `span_days` and
+  `fold_min_days`; folded cells carry `week`. The URL keeps the choice (`ha`).
 - **Probe focus in the performance chart.** While the performance probe runs,
   the chart's y-axis focuses on it: one fixed range per audit, taken from the
   first 5 probe requests (p75 + 3 × (p75 − p25), at least 1.5 × p75), so the

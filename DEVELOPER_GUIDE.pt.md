@@ -312,7 +312,9 @@ WAV) usa apenas a biblioteca padrão.
   (KPI de `from`–`to` face ao intervalo anterior com a mesma duração),
   `/api/analytics/series` (`metric` por `group=relay|model|relay_model`, até 4
   `keys`, em intervalos `bucket=hour|day|week|dow_hour` no fuso horário do
-  utilizador, `tz` ou `tz_offset`) e `/api/analytics/leaderboard` (`model=` para
+  utilizador, `tz` ou `tz_offset`; `dow_hour` aceita também `block` (horas por linha) e
+  `fold=week|4weeks|month_week`, que volta a `week` até as execuções cobrirem
+  90 ou 180 dias) e `/api/analytics/leaderboard` (`model=` para
   os seus relays, ou `relay=` para os seus modelos). Todos aceitam os filtros
   `from`, `to`, `suite`, `stream_mode`, `api`, `source=all|manual|monitor`,
   `relay` e `model`. `zing/web/analytics.py` calcula tudo em Python a partir de

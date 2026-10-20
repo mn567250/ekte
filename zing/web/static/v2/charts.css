@@ -59,6 +59,8 @@
 /* weekday x hour heatmap */
 .hmap { display: block; max-width: 100%; height: auto; font-family: var(--sans); }
 .hmap text { font-size: 11px; fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
+/* a week of a fold, above its weekdays */
+.hmap text.hg { font-weight: 600; fill: var(--ink); }
 .hmap .q1 { fill: var(--heat-1); } .hmap .q2 { fill: var(--heat-2); } .hmap .q3 { fill: var(--heat-3); }
 .hmap .q4 { fill: var(--heat-4); } .hmap .q5 { fill: var(--heat-5); }
 /* few runs: faded and hatched; no runs: a flat neutral tile (never a "low" colour) */

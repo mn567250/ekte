@@ -188,6 +188,18 @@
   "Time block": "Time block",
   "1 hour": "1 hour",
   "{n} hours": "{n} hours",
-  "Key figures": "Key figures"
+  "Key figures": "Key figures",
+  "Aggregation": "Aggregation",
+  "By weekday": "By weekday",
+  "By 4 weeks": "By 4 weeks",
+  "By week of month": "By week of month",
+  "{fold} (needs {min} days of runs)": "{fold} (needs {min} days of runs)",
+  "Week {n}": "Week {n}",
+  "Days {a}–{b}": "Days {a}–{b}",
+  "Week": "Week",
+  "Days": "Days",
+  "“{fold}” needs runs spread over at least {min} days; the filtered runs cover {n} days, so they are shown by weekday.": "“{fold}” needs runs spread over at least {min} days; the filtered runs cover {n} days, so they are shown by weekday.",
+  "Weeks 1–4 repeat every 4 weeks, counted from Monday 5 January 1970, so a week of the cycle keeps its column whatever the filter.": "Weeks 1–4 repeat every 4 weeks, counted from Monday 5 January 1970, so a week of the cycle keeps its column whatever the filter.",
+  "Days 29–31 exist only in some months, so their cells hold fewer runs.": "Days 29–31 exist only in some months, so their cells hold fewer runs."
  }
 }

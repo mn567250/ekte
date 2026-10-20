@@ -316,7 +316,9 @@ que la bibliothèque standard.
   (indicateurs de `from`–`to` face à la période précédente de même durée),
   `/api/analytics/series` (`metric` par `group=relay|model|relay_model`,
   jusqu'à 4 `keys`, en intervalles `bucket=hour|day|week|dow_hour` dans le
-  fuseau horaire de l'utilisateur, `tz` ou `tz_offset`) et
+  fuseau horaire de l'utilisateur, `tz` ou `tz_offset` ; `dow_hour` accepte aussi `block` (heures par ligne) et
+  `fold=week|4weeks|month_week`, qui revient à `week` tant que les exécutions
+  ne couvrent pas 90 ou 180 jours) et
   `/api/analytics/leaderboard` (`model=` pour ses relais, ou `relay=` pour ses
   modèles). Tous acceptent les filtres `from`, `to`, `suite`, `stream_mode`,
   `api`, `source=all|manual|monitor`, `relay` et `model`.

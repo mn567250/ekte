@@ -188,6 +188,18 @@
   "Time block": "Zeitblock",
   "1 hour": "1 Stunde",
   "{n} hours": "{n} Stunden",
-  "Key figures": "Kennzahlen"
+  "Key figures": "Kennzahlen",
+  "Aggregation": "Zusammenfassung",
+  "By weekday": "Nach Wochentag",
+  "By 4 weeks": "Nach 4 Wochen",
+  "By week of month": "Nach Woche im Monat",
+  "{fold} (needs {min} days of runs)": "{fold} (braucht {min} Tage mit Läufen)",
+  "Week {n}": "Woche {n}",
+  "Days {a}–{b}": "Tage {a}–{b}",
+  "Week": "Woche",
+  "Days": "Tage",
+  "“{fold}” needs runs spread over at least {min} days; the filtered runs cover {n} days, so they are shown by weekday.": "„{fold}“ braucht Läufe, die sich über mindestens {min} Tage verteilen; die gefilterten Läufe umfassen {n} Tage, daher werden sie nach Wochentag gezeigt.",
+  "Weeks 1–4 repeat every 4 weeks, counted from Monday 5 January 1970, so a week of the cycle keeps its column whatever the filter.": "Die Wochen 1–4 wiederholen sich alle 4 Wochen, gezählt ab Montag, dem 5. Januar 1970; so behält eine Woche des Zyklus ihre Spalte, egal wie gefiltert wird.",
+  "Days 29–31 exist only in some months, so their cells hold fewer runs.": "Die Tage 29–31 gibt es nur in manchen Monaten, daher enthalten ihre Zellen weniger Läufe."
  }
 }
