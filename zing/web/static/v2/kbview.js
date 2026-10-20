@@ -6,8 +6,17 @@
  * can be tested under node (tests/test_web_kbview_js.py):
  *   sourceKind(src)       "yours" | "kbdir" | "packaged" from an item's source
  *   sourceFile(src)       the file / path / entry number behind it
- *   haystack(kind, item)  the lower-case text the filter searches
- *   filter(kind, items, q) the items matching every word of q
+ *   modelProvider(key)    "openai" from a model key "model:openai/gpt-4o"
+ *   matches(kind, item, f) whether an item passes the filters
+ *                         f = { model, provider, relay, source } ("" = any):
+ *                         model (a model key): that model, its provider;
+ *                         provider: its models and its provider rows;
+ *                         relay (a relay key): that relay; source: every tab.
+ *                         A filter a tab has no field for leaves it alone.
+ *   active(f)             how many filters are set
+ *   options(data, f)      the values that exist, for the filter's selects:
+ *                         { models (narrowed to f.provider), providers,
+ *                         relays: [{v, t, group?}], sources: [kind…] }
  *   groups(items, field)  [{key, items}] in first-seen order
  *   summary(items)        {total, yours, off}
  *   itemsOf(data, kind)   the list for a tab ([] when missing)
@@ -29,23 +38,49 @@
     return i >= 0 ? src.slice(i + 1) : src;
   }
 
-  function haystack(kind, it) {
-    var parts;
-    if (kind === "models") {
-      parts = [it.id, it.provider, it.provider_name].concat(it.aliases || []);
-    } else {
-      parts = [it.provider, it.display_name].concat(it.base_urls || []);
-    }
-    return parts.filter(Boolean).join(" ").toLowerCase();
+  function modelProvider(key) {
+    var m = /^model:([^/]+)\//.exec(String(key || ""));
+    return m ? m[1] : "";
   }
 
-  function filter(kind, items, q) {
-    var words = String(q || "").toLowerCase().split(/\s+/).filter(Boolean);
-    if (!words.length) return (items || []).slice();
-    return (items || []).filter(function (it) {
-      var hay = haystack(kind, it);
-      return words.every(function (w) { return hay.indexOf(w) >= 0; });
+  function matches(kind, it, f) {
+    f = f || {};
+    if (f.source && sourceKind(it.source) !== f.source) return false;
+    if (kind === "models") {
+      if (f.model && it.key !== f.model) return false;
+      if (f.provider && it.provider !== f.provider) return false;
+    } else if (kind === "providers") {
+      if (f.model && it.provider !== modelProvider(f.model)) return false;
+      if (f.provider && it.provider !== f.provider) return false;
+    } else if (kind === "relays") {
+      if (f.relay && it.key !== f.relay) return false;
+    }
+    return true;
+  }
+
+  function active(f) {
+    f = f || {};
+    return ["model", "provider", "relay", "source"].filter(function (k) { return !!f[k]; }).length;
+  }
+
+  function options(data, f) {
+    f = f || {};
+    var provs = [], seen = {};
+    itemsOf(data, "providers").forEach(function (p) {
+      if (seen[p.provider]) return;
+      seen[p.provider] = true;
+      provs.push({ v: p.provider, t: p.display_name || p.provider });
     });
+    var models = itemsOf(data, "models")
+      .filter(function (m) { return !f.provider || m.provider === f.provider; })
+      .map(function (m) { return { v: m.key, t: m.id, group: m.provider_name || m.provider }; });
+    var relays = itemsOf(data, "relays").map(function (r) { return { v: r.key, t: r.display_name || r.provider }; });
+    var kinds = {};
+    ["models", "providers", "relays"].forEach(function (k) {
+      itemsOf(data, k).forEach(function (it) { kinds[sourceKind(it.source)] = true; });
+    });
+    var sources = ["packaged", "kbdir", "yours"].filter(function (k) { return kinds[k]; });
+    return { models: models, providers: provs, relays: relays, sources: sources };
   }
 
   function groups(items, field) {
@@ -77,8 +112,8 @@
 
   window.ZingKbView = {
     _: {
-      sourceKind: sourceKind, sourceFile: sourceFile, haystack: haystack, filter: filter,
-      groups: groups, summary: summary, itemsOf: itemsOf,
+      sourceKind: sourceKind, sourceFile: sourceFile, modelProvider: modelProvider, matches: matches,
+      active: active, options: options, groups: groups, summary: summary, itemsOf: itemsOf,
     },
   };
 })();

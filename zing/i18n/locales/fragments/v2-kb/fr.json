@@ -124,6 +124,8 @@
   "1 packaged item is switched off.": "1 élément fourni est désactivé.",
   "{n} packaged items are switched off.": "{n} éléments fournis sont désactivés.",
   "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed.": "Vos entrées et interrupteurs sont actuellement ignorés (ZING_NO_USER_KB) et ne peuvent pas être modifiés.",
-  "{profile} would match better, but it is switched off.": "{profile} correspondrait mieux, mais il est désactivé."
+  "{profile} would match better, but it is switched off.": "{profile} correspondrait mieux, mais il est désactivé.",
+  "Showing {m} of {mt} models · {p} of {pt} providers · {r} of {rt} relays": "Affichage de {m} modèles sur {mt} · {p} fournisseurs sur {pt} · {r} relais sur {rt}",
+  "Nothing matches the filters.": "Rien ne correspond aux filtres."
  }
 }

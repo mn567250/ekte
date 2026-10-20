@@ -123,8 +123,8 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "charts.css", ("analytics",)),
     (_V2 + "chartmotion.js", ("audit", "history", "analytics")),
     (_V2 + "chartmotion.css", ("audit", "history", "analytics")),
-    (_V2 + "filterpanel.js", ("history", "analytics")),
-    (_V2 + "filterpanel.css", ("history", "analytics")),
+    (_V2 + "filterpanel.js", ("history", "analytics", "kb")),
+    (_V2 + "filterpanel.css", ("history", "analytics", "kb")),
     (_V2 + "accessibility.html", ("accessibility",)),
     # the page fetches bitv-report.json; the catalogue is what it is built from
     (_V2 + "bitv-*.json", ("accessibility",)),

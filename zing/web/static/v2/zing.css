@@ -251,6 +251,9 @@ select.in {
   position: absolute; left: 3px; top: 50%; margin-top: -8px; width: 16px; height: 16px; border-radius: 50%;
   background: var(--surface); box-shadow: 0 1px 3px var(--shadow); transition: transform 0.15s; pointer-events: none;
 }
+/* off: an --ink-muted knob on the --sunken track (a --surface knob all but
+   vanished there in dark mode); on: a --surface knob on the --primary track */
+.switch input:not(:checked) + span { background: var(--ink-muted); box-shadow: none; }
 .switch input:checked { background: var(--primary); border-color: var(--primary); }
 .switch input:checked + span { transform: translateX(16px); }
 .switch input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -258,7 +261,7 @@ select.in {
 .switch input:disabled + span { opacity: 0.5; }
 /* forced colours drop backgrounds: draw the knob and the "on" track in system colours */
 @media (forced-colors: active) {
-  .switch span { forced-color-adjust: none; background: CanvasText; box-shadow: none; }
+  .switch span, .switch input:not(:checked) + span { forced-color-adjust: none; background: CanvasText; box-shadow: none; }
   .switch input:checked { forced-color-adjust: none; background: Highlight; border-color: Highlight; }
   .switch input:checked + span { background: HighlightText; }
 }

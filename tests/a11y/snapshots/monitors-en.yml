@@ -44,12 +44,12 @@
     - link "History":
       - /url: /v2/history
     - text: and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).
+  - text: No master key yet It is created when you store the first API key.
+  - button "Create now"
   - tablist "Monitor views":
     - tab "Configure" [selected]
     - tab "Running"
   - tabpanel "Configure":
-    - text: No master key yet It is created when you store the first API key.
-    - button "Create now"
     - heading "Configured monitors 1 monitor" [level=2]
     - article "gpt-4o":
       - heading "gpt-4o" [level=3]

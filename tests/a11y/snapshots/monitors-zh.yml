@@ -44,12 +44,12 @@
     - link "检测历史":
       - /url: /v2/history
     - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
+  - text: 尚无主密钥 保存第一个 API 密钥时会创建它。
+  - button "立即创建"
   - tablist "监控视图":
     - tab "配置" [selected]
     - tab "运行中"
   - tabpanel "配置":
-    - text: 尚无主密钥 保存第一个 API 密钥时会创建它。
-    - button "立即创建"
     - heading "已配置的监控 共 1 项" [level=2]
     - article "gpt-4o":
       - heading "gpt-4o" [level=3]

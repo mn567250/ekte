@@ -87,8 +87,11 @@
   .mon-msg:empty { display: none; }
   .mon-msg.ok { color: var(--success); }
   .mon-msg.bad { color: var(--danger); }
-  .mon-act { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-  .mon-act .ask { font-size: 13px; font-weight: 600; color: var(--danger); margin-right: 4px; }
+  /* the actions span the card, like the report's page actions (report.css) */
+  .mon-act { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .mon-act .btn { flex: 1 1 200px; min-width: 0; padding: 12px 14px; white-space: normal; text-align: center; }
+  .mon-act .ask { flex-basis: 100%; font-size: 13px; font-weight: 600; color: var(--danger); }
+  @media (max-width: 520px) { .mon-act .btn { flex-basis: 100%; } }
   .mon-prog { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--info); }
   .mon-prog .bar { flex: 1; height: 6px; border-radius: 3px; background: var(--info-tint); overflow: hidden; }
   .mon-prog .bar > span { display: block; height: 100%; background: var(--info); border-radius: 3px; transition: width .4s ease; }
@@ -121,9 +124,7 @@
   .tabs [role="tab"] .count { font-variant-numeric: tabular-nums; }
   /* nested in the .tab-card: a quieter item surface instead of a second card shadow */
   .tab-card .mon { box-shadow: none; border-color: var(--line); border-radius: 16px; }
-  .tab-card .zmk-bar { margin-top: 0; }
   .tab-card .section-title { margin-top: 0; }
-  .tab-card .zmk-bar + .section-title { margin-top: 22px; }
   .mon:focus { outline: none; }
   .mon:focus-visible { outline: 3px solid var(--info); outline-offset: 3px; }
 </style>
@@ -137,6 +138,9 @@
       <p data-en="Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/v2/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).">每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在<a href="/v2/history">检测历史</a>中打开一次运行，选择<b>设为监控</b>，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
     </div>
 
+    <!-- the master key that encrypts the stored API keys -->
+    <div id="mk-bar" aria-live="polite"></div>
+
     <div class="card card-pad tab-card">
       <div class="tabs" role="tablist" aria-label="监控视图" data-en-aria-label="Monitor views">
         <button type="button" role="tab" id="tab-configure" aria-selected="true" aria-controls="panel-configure" tabindex="0"><span class="pico" data-icon="bell"></span><span data-en="Configure">配置</span></button>
@@ -144,9 +148,6 @@
       </div>
 
       <section role="tabpanel" id="panel-configure" aria-labelledby="tab-configure" tabindex="0">
-        <!-- the master key that encrypts the stored API keys -->
-        <div id="mk-bar" aria-live="polite"></div>
-
         <!-- list -->
         <h2 class="section-title" id="list-title" tabindex="-1"><span data-en="Configured monitors">已配置的监控</span> <span class="count" id="count"></span></h2>
         <div class="mons" id="list" aria-live="polite"><p class="empty" data-en="Loading…">加载中…</p></div>
@@ -482,18 +483,18 @@
     if (s.confirm) {
       actions =
         '<span class="ask" id="ask-' + w.id + '">' + esc(T("删除这个监控？", "Delete this monitor?")) + "</span>" +
-        '<button type="button" class="btn sm danger" data-act="del-yes" data-id="' + w.id + '" aria-describedby="ask-' + w.id + '">' + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
-        '<button type="button" class="btn sm" data-act="del-no" data-id="' + w.id + '">' + esc(T("取消", "Cancel")) + "</button>";
+        '<button type="button" class="btn danger" data-act="del-yes" data-id="' + w.id + '" aria-describedby="ask-' + w.id + '">' + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
+        '<button type="button" class="btn" data-act="del-no" data-id="' + w.id + '">' + esc(T("取消", "Cancel")) + "</button>";
     } else {
       // A draft can run once right away; the interval is only for the schedule.
       var run =
         running
-          ? '<button type="button" class="btn sm danger" data-act="stop" data-id="' + w.id + '"' + (s.stopping ? ' disabled aria-busy="true"' : "") + ">" +
+          ? '<button type="button" class="btn danger" data-act="stop" data-id="' + w.id + '"' + (s.stopping ? ' disabled aria-busy="true"' : "") + ">" +
             icon("x") + esc(s.stopping ? T("正在取消…", "Cancelling…") : T("取消运行", "Cancel run")) + "</button>"
-          : '<button type="button" class="btn sm' + (draft ? "" : " pri") + '" data-act="run" data-id="' + w.id + '">' +
+          : '<button type="button" class="btn' + (draft ? "" : " pri") + '" data-act="run" data-id="' + w.id + '">' +
             icon("play") + esc(T("立即运行", "Run now")) + "</button>";
       actions = run +
-        '<button type="button" class="btn sm danger" data-act="del" data-id="' + w.id + '"' + (running ? " disabled" : "") + ">" + icon("trash") + esc(T("删除", "Delete")) + "</button>";
+        '<button type="button" class="btn danger" data-act="del" data-id="' + w.id + '"' + (running ? " disabled" : "") + ">" + icon("trash") + esc(T("删除", "Delete")) + "</button>";
     }
     var stateLine = running
       ? '<span>' + esc(T("状态", "Status")) + ': <b>' + esc(w.queued

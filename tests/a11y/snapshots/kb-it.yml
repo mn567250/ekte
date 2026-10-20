@@ -43,15 +43,33 @@
     - text: "Ogni audit confronta un relay con il profilo del modello che dichiara: finestra di contesto, limite di output, capacità, identità e impronte comportamentali. Qui trovi ogni modello, provider e relay che zing conosce — inclusi e tuoi — e puoi attivarli o disattivarli uno per uno o aggiungerne di tuoi. Le tue modifiche sono salvate in kb.db su questo computer e usate sia dall'interfaccia web sia da"
     - code: zing check
     - text: .
-  - region "Quale profilo usa un ID di modello?":
-    - heading "Quale profilo usa un ID di modello?" [level=2]
+  - region "Filtri":
+    - button "Filtri" [expanded]
     - text: ID del modello
-    - textbox "ID del modello":
-      - /placeholder: es. gpt-4o
-    - button "Cerca"
-    - link "Esporta le tue voci come YAML":
-      - /url: /api/kb/export
-    - status
+    - combobox "ID del modello":
+      - option "Tutti" [selected]
+    - text: Fornitore
+    - combobox "Fornitore":
+      - option "Tutti" [selected]
+      - option "Anthropic (Claude)"
+      - option "DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)"
+      - option "Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)"
+      - option "Zhipu AI (智谱 / Z.ai) — BigModel open platform"
+      - option "Moonshot AI (月之暗面 / Kimi)"
+      - option "OpenAI"
+      - option "Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)"
+    - text: Relay
+    - combobox "Relay":
+      - option "Tutti" [selected]
+      - option "Example Relay"
+    - text: Origine
+    - combobox "Origine":
+      - option "Tutti" [selected]
+      - option "Incluso"
+      - option "Tuo"
+    - status: Mostrati 98 di 98 modelli · 7 di 7 provider · 1 di 1 relay
+  - link "Esporta le tue voci come YAML":
+    - /url: /api/kb/export
   - tablist "Sezioni della base di conoscenza":
     - tab "Modelli" [selected]
     - tab "Provider"
@@ -84,9 +102,6 @@
       - paragraph: La verifica convalida schema e limiti, segnala le espressioni regolari non sicure, elenca ogni prompt che zing invierebbe ai relay e mostra quali ID di modello verrebbero risolti diversamente. Nulla viene salvato finché non salvi.
       - button "Controllo"
       - button "Salva nella base" [disabled]
-    - text: Filtra modelli
-    - searchbox "Filtra modelli"
-    - status
     - group:
       - text: Anthropic (Claude)
       - code: anthropic

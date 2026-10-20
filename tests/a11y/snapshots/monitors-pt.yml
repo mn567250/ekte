@@ -44,12 +44,12 @@
     - link "Histórico":
       - /url: /v2/history
     - text: e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa seu limite ou piora em relação à última vez, o zing alerta seus webhooks (Slack / Feishu / DingTalk / JSON genérico).
+  - text: Ainda sem chave mestra É criada quando guarda a primeira chave API.
+  - button "Criar agora"
   - tablist "Vistas de monitores":
     - tab "Configurar" [selected]
     - tab "Em andamento"
   - tabpanel "Configurar":
-    - text: Ainda sem chave mestra É criada quando guarda a primeira chave API.
-    - button "Criar agora"
     - heading "Monitores configurados 1 monitor" [level=2]
     - article "gpt-4o":
       - heading "gpt-4o" [level=3]
