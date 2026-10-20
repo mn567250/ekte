@@ -89,6 +89,14 @@
 
   /* comparison chart */
   .ctl { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 12px; align-items: end; }
+  /* peak hours: four options in one row, each as wide as its longest text
+     needs (metric and relay names are long, time blocks short); they wrap
+     only when even that does not fit */
+  #heat-ctl .ctl { display: flex; flex-wrap: wrap; }
+  #heat-ctl .ctl > label { flex: 1 1 120px; }
+  #heat-ctl .ctl > label:has(> [data-v="hm"]) { flex: 1.3 1 150px; }
+  #heat-ctl .ctl > label:has(> [data-v="hb"]) { flex: 0.6 1 90px; }
+  #heat-ctl .ctl > label:has(> [data-v="ha"]) { flex: 1 1 130px; }
   .pick { margin-top: 12px; }
   .pick .chips { margin-top: 6px; }
   .pick .chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
@@ -188,6 +196,7 @@
     .kpis { grid-template-columns: 1fr 1fr; }
     .kpi .kv { font-size: 19px; }
     .ctl { grid-template-columns: 1fr; }
+    #heat-ctl .ctl > label:has(> [data-v]) { flex-basis: 100%; }
   }
   /* phones: zing.css stacks .tabs; two short sections still fit side by side */
   @media (max-width: 480px) {
