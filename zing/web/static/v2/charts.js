@@ -41,8 +41,8 @@
  *                             cfg.block hours (00:00 at the bottom, 24:00 at
  *                             the top), square cells on a one-hue sequential
  *                             scale (5 steps, faint = low, intense = high):
- *                             cells with few runs hatched, empty cells an
- *                             outline only; legend below; per-cell tooltip
+ *                             cells with few runs hatched, empty cells a
+ *                             flat neutral tile; legend below; per-cell tooltip
  *     cfg: id, title, desc, unit, block (1, 2, 3, 4 or 6; default 1),
  *          cells [{ dow 1..7 (Mon..Sun), hour (block start) 0..23, v, runs,
  *          low }], days [7 short names], hourLabel(h), tipTime(dow, hour),
@@ -397,7 +397,9 @@
     // square cells: as wide as 7 columns allow, the grid at most 720 px tall;
     // blocks of several hours get a wider axis for their "00:00–06:00" labels
     var left = B > 1 ? 96 : 48, top = 20, size = Math.max(16, Math.min(Math.floor((W0 - left - 2) / 7), Math.floor(720 / rows)));
-    var W = left + 7 * size + 2, H = top + rows * size + 2;
+    // the gap and corner radius grow with the cell, so large cells stay tiles
+    var gap = Math.max(2, Math.round(size * 0.1)), rx = Math.max(3, Math.round(size * 0.12));
+    var W = left + 7 * size + gap, H = top + rows * size + gap;
     var vs = cells.map(function (c) { return c.v; });
     var lo = vs.length ? Math.min.apply(null, vs) : 0, hi = vs.length ? Math.max.apply(null, vs) : 1;
     var step = function (v) { return hi > lo ? Math.min(STEPS - 1, Math.floor(((v - lo) / (hi - lo)) * STEPS)) : Math.floor(STEPS / 2); };
@@ -424,14 +426,14 @@
     out.push('</g><g class="cells">');
     for (var dow = 1; dow <= 7; dow++) {
       for (r = 0; r < rows; r++) {
-        var k = dow + "-" + r * B, c = at[k], x = f1(X(dow) + 2), y = f1(Y(r) + 2), w = f1(size - 2);
+        var k = dow + "-" + r * B, c = at[k], x = f1(X(dow) + gap), y = f1(Y(r) + gap), w = f1(size - gap);
         if (!c) {
-          out.push('<rect class="none" x="' + x + '" y="' + y + '" width="' + w + '" height="' + w + '" rx="4"/>');
+          out.push('<rect class="none" x="' + x + '" y="' + y + '" width="' + w + '" height="' + w + '" rx="' + rx + '"/>');
           continue;
         }
         out.push('<rect class="q' + (step(c.v) + 1) + (c.low ? " low" : "") + '" data-k="' + k + '" x="' + x + '" y="' + y +
-          '" width="' + w + '" height="' + w + '" rx="4"/>');
-        if (c.low) out.push('<rect class="hatch" fill="url(#' + pat + ')" x="' + x + '" y="' + y + '" width="' + w + '" height="' + w + '" rx="4" pointer-events="none"/>');
+          '" width="' + w + '" height="' + w + '" rx="' + rx + '"/>');
+        if (c.low) out.push('<rect class="hatch" fill="url(#' + pat + ')" x="' + x + '" y="' + y + '" width="' + w + '" height="' + w + '" rx="' + rx + '" pointer-events="none"/>');
       }
     }
     out.push("</g></svg>");

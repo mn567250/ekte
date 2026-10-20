@@ -42,6 +42,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Heatmap cells look like tiles (web UI v2).** Hours with no runs are a flat
+  neutral tile instead of a dashed outline, the gap and corner radius grow with
+  the cell so large blocks (4 or 6 hours) stay separate tiles, and the lightest
+  step of the colour scale is a little stronger so it stays apart from an empty
+  cell. The fill-in motion starts from the empty tiles. Under forced colours an
+  empty cell keeps its dashed outline.
 - **The header's motion switch stops all motion (web UI v2).** "Motion off"
   used to stop only chart animations; it now stops every animation and
   transition, as `prefers-reduced-motion` does: the running audit's radar and

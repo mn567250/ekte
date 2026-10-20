@@ -61,10 +61,10 @@
 .hmap text { font-size: 11px; fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .hmap .q1 { fill: var(--heat-1); } .hmap .q2 { fill: var(--heat-2); } .hmap .q3 { fill: var(--heat-3); }
 .hmap .q4 { fill: var(--heat-4); } .hmap .q5 { fill: var(--heat-5); }
-/* few runs: faded and hatched; no runs: an outline only (never a "low" colour) */
+/* few runs: faded and hatched; no runs: a flat neutral tile (never a "low" colour) */
 /* hatching in ink: it shows on the faint low steps too */
 .hmap pattern line { stroke: var(--ink-muted); stroke-opacity: 0.55; stroke-width: 1.6; }
-.hmap .none { fill: none; stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 2; }
+.hmap .none { fill: var(--sunken); }
 .hlegend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12px; color: var(--ink-muted); }
 .hlegend li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .hlegend .hscale { display: inline-flex; gap: 2px; }
@@ -74,7 +74,7 @@
 
 @media (forced-colors: active) {
   .hmap .q1, .hmap .q2, .hmap .q3, .hmap .q4, .hmap .q5, .sbars .seg, .sw { fill: CanvasText; background: CanvasText; forced-color-adjust: none; }
-  .hmap .none { stroke: GrayText; }
+  .hmap .none { fill: Canvas; stroke: GrayText; stroke-width: 1; stroke-dasharray: 2 2; }
   .tchart .ser .line, .ckey line { stroke: CanvasText; }
   .tchart .ser .pt, .ckey path { fill: CanvasText; stroke: Canvas; }
   .tchart .ser .pt.low { fill: Canvas; stroke: CanvasText; }
