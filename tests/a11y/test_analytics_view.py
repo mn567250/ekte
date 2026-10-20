@@ -9,6 +9,7 @@ relays and models over the last week, manual and by a monitor.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -21,9 +22,11 @@ PATH = "/v2/analytics"
 
 
 def _open(open_page: Any, fragment: str = "", init: str = "", clipboard: bool = False,
-          viewport: dict[str, int] | None = None) -> tuple[Page, list[str]]:
+          viewport: dict[str, int] | None = None,
+          route: tuple[str, Callable[..., Any]] | None = None) -> tuple[Page, list[str]]:
     """The page in a fresh English context; returns it and the analytics API
-    paths it requested (in order)."""
+    paths it requested (in order). route: (glob, handler) for the context,
+    e.g. to change an API answer."""
     base = open_page.base_url
     ctx = open_page.browser.new_context(viewport=viewport or {"width": 1280, "height": 900})
     open_page.contexts.append(ctx)
@@ -34,6 +37,8 @@ def _open(open_page: Any, fragment: str = "", init: str = "", clipboard: bool = 
         "try { localStorage.setItem('zing.lang', 'en'); localStorage.setItem('zing.v2.theme', 'light'); } catch (e) {}" + init
     )
     ctx.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
+    if route:
+        ctx.route(*route)  # the later route wins
     calls: list[str] = []
     ctx.on("request", lambda r: calls.append(r.url.removeprefix(base).split("?")[0]) if "/api/analytics/" in r.url else None)
     page = ctx.new_page()
@@ -278,3 +283,61 @@ def test_changing_a_panel_option_keeps_the_scroll_position(open_page) -> None:
                 issues.append(f"choosing {metric} moved the page from {before} to {y}")
                 break
     assert_no_issues(issues, "analytics [en]", "scroll")
+
+
+def _folded(route: Any) -> None:
+    """The peak-hours answer as if the runs covered 120 days and the server
+    had folded them into 4-week cycles (the seeded history spans one week)."""
+    res = route.fetch()
+    body = res.json()
+    body.update(fold="4weeks", fold_requested="4weeks", span_days=120)
+    for ser in body["series"]:
+        points = []
+        for week in range(1, 5):
+            points += [{**p, "week": week, "bucket": f"{week}.{p['bucket']}"} for p in ser["points"]]
+        ser["points"] = points
+    route.fulfill(response=res, json=body)
+
+
+@pytest.mark.bitv("9.4.1.2")
+def test_peak_hours_aggregation(open_page) -> None:
+    """The Aggregation option: the longer folds are offered once the runs cover
+    enough days (disabled before, with the reason); a link asking for one too
+    early shows the grid by weekday and says why, and keeps the wish in the
+    URL; a 4-week fold draws the weekdays once per week of the cycle."""
+    issues: list[str] = []
+    page, _ = _open(open_page, "#tab=trends&ts=heat&range=90&ha=4weeks")
+    sel = page.locator("[data-v=ha]")
+    if sel.input_value() != "week":
+        issues.append(f"one week of runs is not shown by weekday: {sel.input_value()!r}")
+    for value, days in (("4weeks", 90), ("month_week", 180)):
+        opt = sel.locator(f"option[value='{value}']")
+        if not opt.evaluate("o => o.disabled") or f"(needs {days} days of runs)" not in opt.inner_text():
+            issues.append(f"the {value} option is not disabled with its reason: {opt.inner_text()!r}")
+    note = page.locator("#heat-body .notes").inner_text() if page.locator("#heat-body .notes").count() else ""
+    if "needs runs spread over at least 90 days" not in note:
+        issues.append(f"the fallback to weekdays is not explained: {note!r}")
+    if "ha=4weeks" not in page.url:
+        issues.append(f"the link's aggregation was dropped from the URL: {page.url}")
+
+    page, _ = _open(open_page, "#tab=trends&ts=heat&range=90&hb=4&ha=4weeks",
+                    route=("**/api/analytics/series?*fold=4weeks*", _folded))
+    groups = page.locator("#heat-chart svg.hmap text.hg").all_text_contents()
+    if groups != ["Week 1", "Week 2", "Week 3", "Week 4"]:
+        issues.append(f"the 4-week grid does not label its weeks: {groups}")
+    n = page.locator("#heat-chart svg.hmap .cells rect:not(.hatch)").count()
+    if n != 4 * 7 * 6:
+        issues.append(f"the 4-week grid of 4-hour blocks has {n} cells, not 168")
+    if page.locator("[data-v=ha]").input_value() != "4weeks":
+        issues.append("the Aggregation option does not show the 4-week fold")
+    if "Weeks 1–4 repeat every 4 weeks" not in page.locator("#heat-body .notes").inner_text():
+        issues.append("the 4-week grid does not say how its cycle is counted")
+    head = page.locator("#heat-body table thead").inner_text()
+    if "Week" not in head.split("\n")[0] and "Week" not in head:
+        issues.append(f"the table has no week column: {head!r}")
+    k = page.locator("#heat-chart rect[data-k^='3.']").first
+    k.hover()
+    tip = page.locator("#heat-chart .ctip .when").inner_text()
+    if not tip.startswith("Week 3 · "):
+        issues.append(f"a cell's tooltip does not name its week: {tip!r}")
+    assert_no_issues(issues, "analytics [en]", "peak-hours-fold")

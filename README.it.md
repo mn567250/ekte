@@ -306,9 +306,11 @@ nell'URL, quindi una vista si può salvare nei preferiti o condividere. Nulla
 lascia la macchina.
 
 Altri pannelli rispondono a domande più specifiche: **ore di punta** (una mappa
-di calore giorno della settimana × ora di TTFT, latenza, tasso di successo o di
+di calore giorno della settimana × ora di TTFT, latenza e velocità di decodifica (mediana e code p95 / p5), jitter
+tra token, tempi di rete e del relay, tasso di successo o di
 errore nel tuo fuso orario: un relay rallenta o fallisce di più nelle ore di
-maggior carico?), **errori e affidabilità** (chiamate fallite per causa: limiti
+maggior carico? Per giorno della settimana oppure, con 90 giorni di esecuzioni,
+su un ciclo di 4 settimane e, con 180 giorni, per settimana del mese), **errori e affidabilità** (chiamate fallite per causa: limiti
 di frequenza (HTTP 429), errori del server (5xx), timeout, errori di rete; nel
 tempo e per relay o modello, dai registri delle richieste salvati, indicando
 quanti audit li hanno), **integrità del modello** (esiti dei controlli di

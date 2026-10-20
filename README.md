@@ -292,8 +292,10 @@ not mixed; the filters and view are kept in the URL, so a view can be
 bookmarked or shared. Nothing leaves the machine.
 
 Further panels answer narrower questions: **peak hours** (a weekday × hour
-heatmap of TTFT, latency, success or error rate in your time zone — does a
-relay slow down or fail more at busy times?), **errors and reliability** (failed
+heatmap of TTFT, latency and decode speed (median and p95 / p5 tails),
+inter-token jitter, network and relay times, success or error rate in your time zone — does a
+relay slow down or fail more at busy times? By weekday, or with 90 days of runs
+over a 4-week cycle and with 180 days by week of the month), **errors and reliability** (failed
 calls by cause — rate limits (HTTP 429), server errors (5xx), timeouts, network
 errors — over time and per relay or model, from the stored request records,
 with how many runs have them), **model integrity** (identity, context-window and

@@ -89,6 +89,14 @@
 
   /* comparison chart */
   .ctl { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 12px; align-items: end; }
+  /* peak hours: four options in one row, each as wide as its longest text
+     needs (metric and relay names are long, time blocks short); they wrap
+     only when even that does not fit */
+  #heat-ctl .ctl { display: flex; flex-wrap: wrap; }
+  #heat-ctl .ctl > label { flex: 1 1 120px; }
+  #heat-ctl .ctl > label:has(> [data-v="hm"]) { flex: 1.3 1 150px; }
+  #heat-ctl .ctl > label:has(> [data-v="hb"]) { flex: 0.6 1 90px; }
+  #heat-ctl .ctl > label:has(> [data-v="ha"]) { flex: 1 1 130px; }
   .pick { margin-top: 12px; }
   .pick .chips { margin-top: 6px; }
   .pick .chips button { max-width: 100%; overflow-wrap: anywhere; text-align: left; }
@@ -188,6 +196,7 @@
     .kpis { grid-template-columns: 1fr 1fr; }
     .kpi .kv { font-size: 19px; }
     .ctl { grid-template-columns: 1fr; }
+    #heat-ctl .ctl > label:has(> [data-v]) { flex-basis: 100%; }
   }
   /* phones: zing.css stacks .tabs; two short sections still fit side by side */
   @media (max-width: 480px) {
@@ -346,6 +355,8 @@
     ttft_p50: ["首字延迟 p50", "Time to first token p50"],
     ttft_p95: ["首字延迟 p95", "Time to first token p95"],
     decode_tps: ["输出速度", "Decode speed"],
+    decode_tps_p5: ["输出速度 p5", "Decode speed p5"],
+    decode_tps_p95: ["输出速度 p95", "Decode speed p95"],
     itl_jitter: ["字间抖动", "Inter-token jitter"],
     relay_overhead: ["中转处理耗时", "Relay processing time"],
     network_rtt: ["网络往返", "Network round trip"],
@@ -416,7 +427,9 @@
   var SUBS = { overview: ["kpi", "lb"], trends: ["cmp", "heat"], reliability: ["err", "ovh"] };
   var SUBKEY = { overview: "os", trends: "ts", reliability: "rs" };
   var ERR_BUCKETS = BUCKETS.concat(["dow_hour"]);
-  var HEAT_METRICS = ["ttft_p50", "latency_p50", "decode_tps", "success_rate", "error_rate", "rate_limited_rate", "timeout_rate", "score"];
+  var HEAT_METRICS = ["ttft_p50", "ttft_p95", "latency_p50", "latency_p95", "decode_tps", "decode_tps_p5", "decode_tps_p95",
+    "itl_jitter", "network_rtt", "relay_overhead", "cold_start", "success_rate", "error_rate", "rate_limited_rate",
+    "timeout_rate", "score"];
   var BILL_METRICS = ["billing_ratio_prompt", "billing_ratio_completion", "reasoning_share", "cached_input_share"];
   var RANGES = ["7", "30", "90", "all", "custom"];
   var SORTS = ["label", "runs", "score", "ttft_p50", "decode_tps", "success_rate", "billing_ratio_prompt",
@@ -464,6 +477,7 @@
       hm: one("hm", HEAT_METRICS, "ttft_p50"),
       hr: get("hr", ""),
       hb: one("hb", BLOCKS, "4"),
+      ha: one("ha", FOLDS, "week"),
       eh: one("eh", BLOCKS, "4"),
       eg: one("eg", ["relay", "model"], "relay"),
       eb: one("eb", ERR_BUCKETS, "day"),
@@ -497,6 +511,7 @@
     q.set("hm", V.hm);
     if (V.hr) q.set("hr", V.hr);
     q.set("hb", V.hb);
+    q.set("ha", V.ha);
     q.set("eh", V.eh);
     q.set("eg", V.eg);
     q.set("eb", V.eb);
@@ -1330,7 +1345,7 @@
   }
   function selectCtl(attr, label, list, cur) {
     return '<label><span>' + esc(label) + '</span><select class="in" ' + attr + ">" + list.map(function (o) {
-      return '<option value="' + esc(o.v) + '"' + (o.v === cur ? " selected" : "") + ">" + esc(o.t) + "</option>";
+      return '<option value="' + esc(o.v) + '"' + (o.v === cur ? " selected" : "") + (o.off ? " disabled" : "") + ">" + esc(o.t) + "</option>";
     }).join("") + "</select></label>";
   }
   // re-render controls, keeping focus on the control that had it
@@ -1383,6 +1398,27 @@
       return { v: b, t: b === "1" ? T("1 小时", "1 hour") : Tf("{n} 小时", "{n} hours", { n: b }) };
     }), V[key]);
   }
+  // how the peak-hours grid folds the period: one week, a 4-week cycle, the
+  // weeks of a month (the longer two need runs on enough days: the server
+  // falls back to "week" and says so)
+  var FOLDS = ["week", "4weeks", "month_week"];
+  var FOLD_MIN = { "4weeks": 90, month_week: 180 };
+  function foldName(f) {
+    return f === "4weeks" ? T("按 4 周", "By 4 weeks") : f === "month_week" ? T("按月内周次", "By week of month") : T("按星期", "By weekday");
+  }
+  function foldCtl(d) {
+    var mins = (d && d.fold_min_days) || FOLD_MIN, span = d ? d.span_days : null;
+    return selectCtl('data-v="ha"', T("汇总方式", "Aggregation"), FOLDS.map(function (f) {
+      var off = f !== "week" && span != null && span < mins[f];
+      return { v: f, off: off, t: off ? Tf("{fold}（需要 {min} 天的检测）", "{fold} (needs {min} days of runs)", { fold: foldName(f), min: mins[f] }) : foldName(f) };
+    }), d ? d.fold : V.ha);
+  }
+  // the label of week g (0-based) of a fold
+  function foldWeek(fold, g) {
+    if (fold === "4weeks") return Tf("第 {n} 周", "Week {n}", { n: g + 1 });
+    var a = g * 7 + 1;
+    return Tf("{a}–{b} 日", "Days {a}–{b}", { a: a, b: g === 4 ? 31 : a + 6 });
+  }
   function weekdays() { return [1, 2, 3, 4, 5, 6, 7].map(function (i) { return dayName(i); }); }
   function gridLegend() {
     return { few: Tf("少于 {min} 次检测（斜线）", "fewer than {min} runs (hatched)", { min: minRuns() }), none: T("没有检测", "no runs") };
@@ -1397,6 +1433,7 @@
     q.set("metric", V.hm);
     q.set("bucket", "dow_hour");
     q.set("block", V.hb);
+    q.set("fold", V.ha);
     q.set("group", relay ? "relay" : "all");
     if (relay) q.set("keys", relay);
     return panelLoad("heat", "#panel-heat", "/api/analytics/series?" + q, renderHeat);
@@ -1406,42 +1443,58 @@
     ctlHTML($("#heat-ctl"), '<div class="ctl">' +
       selectCtl('data-v="hm"', T("指标", "Metric"), HEAT_METRICS.map(function (id) { return { v: id, t: metricName(id) }; }), V.hm) +
       (F.relay ? "" : selectCtl('data-v="hr"', T("中转站", "Relay"), [{ v: "", t: T("全部中转站", "All relays") }].concat(
-        (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; })), relay)) + blockCtl("hb") + "</div>");
+        (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; })), relay)) + blockCtl("hb") +
+      foldCtl(state.err.heat ? null : state.heat) + "</div>");
     var body = $("#heat-body"), d = state.heat;
     if (state.err.heat) { body.innerHTML = errBox(T("无法读取高峰时段：", "Could not load peak hours: "), state.err.heat); return; }
     if (!d) return;
-    var m = d.metric, name = metricName(m.id), ser = d.series[0], blk = d.block || 1;
-    var span = function (dow, h) { return hourSpan(dow, h, blk); };
+    var m = d.metric, name = metricName(m.id), ser = d.series[0], blk = d.block || 1, fold = d.fold || "week", folded = fold !== "week";
+    var span = function (dow, h, g) { return (folded ? foldWeek(fold, g || 0) + " · " : "") + hourSpan(dow, h, blk); };
     var cells = (ser ? ser.points : []).filter(function (p) { return typeof p.value === "number"; }).map(function (p) {
-      return { dow: p.dow, hour: p.hour, v: p.value, runs: p.n, low: !!p.low_n };
+      return { dow: p.dow, hour: p.hour, g: p.week ? p.week - 1 : 0, v: p.value, runs: p.n, low: !!p.low_n };
     });
+    // a fold the runs cannot fill yet: shown by weekday, and said so
+    var foldNotes = [];
+    if (d.fold_requested && d.fold_requested !== fold) {
+      foldNotes.push(Tf("“{fold}”需要分布在至少 {min} 天内的检测；筛选出的检测只覆盖 {n} 天，因此按星期显示。",
+        "“{fold}” needs runs spread over at least {min} days; the filtered runs cover {n} days, so they are shown by weekday.",
+        { fold: foldName(d.fold_requested), min: (d.fold_min_days || FOLD_MIN)[d.fold_requested], n: d.span_days }));
+    }
+    if (fold === "4weeks") foldNotes.push(T("第 1–4 周每 4 周重复一次，从 1970 年 1 月 5 日（星期一）起算，因此无论怎样筛选，同一周总在同一列。",
+      "Weeks 1–4 repeat every 4 weeks, counted from Monday 5 January 1970, so a week of the cycle keeps its column whatever the filter."));
+    if (fold === "month_week") foldNotes.push(T("29–31 日只出现在部分月份，因此这些格子的检测较少。",
+      "Days 29–31 exist only in some months, so their cells hold fewer runs."));
     var who = relay ? relayName(relay) : T("全部中转站", "All relays");
     if (!cells.length) {
       body.innerHTML = '<div class="empty-data">' + esc(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name })) + "</div>";
       return;
     }
-    cells.sort(function (a, b) { return a.dow - b.dow || a.hour - b.hour; });
+    cells.sort(function (a, b) { return a.g - b.g || a.dow - b.dow || a.hour - b.hour; });
     var hi = cells.reduce(function (a, c) { return c.v > a.v ? c : a; }), lo = cells.reduce(function (a, c) { return c.v < a.v ? c : a; });
     var desc = Tf("{metric}，{who}，按星期几和小时（{tz}）：{n} 个有数据的格子，最高 {high}（{hw}），最低 {low}（{lw}）。下方表格列出全部数值。",
       "{metric}, {who}, by weekday and hour ({tz}): {n} cells with data, highest {high} ({hw}), lowest {low} ({lw}). The table below lists every value.", {
-        metric: name, who: who, tz: tzName(), n: cells.length, high: fmt(hi.v, m.unit), hw: span(hi.dow, hi.hour),
-        low: fmt(lo.v, m.unit), lw: span(lo.dow, lo.hour) });
+        metric: name, who: who, tz: tzName(), n: cells.length, high: fmt(hi.v, m.unit), hw: span(hi.dow, hi.hour, hi.g),
+        low: fmt(lo.v, m.unit), lw: span(lo.dow, lo.hour, lo.g) }) + (folded ? " " + foldName(fold) + "." : "");
     var unit = C.unitName(m.unit);
     body.innerHTML = '<div class="axcap" aria-hidden="true"><span>' + esc(name + (unit ? " · " + unit : "") + " · " + who) + "</span><span>" +
       esc(Tf("时间（{tz}）", "Time ({tz})", { tz: tzName() })) + "</span></div>" +
       '<div class="chartbox" id="heat-chart"></div>' +
-      (cells.some(function (c) { return c.low; }) ? '<div class="notes">' + fewNote(hatchedHint()) + "</div>" : "") +
+      (foldNotes.length || cells.some(function (c) { return c.low; }) ? '<div class="notes">' +
+        foldNotes.map(function (t) { return '<p class="note">' + ico("info") + "<span>" + esc(t) + "</span></p>"; }).join("") +
+        (cells.some(function (c) { return c.low; }) ? fewNote(hatchedHint()) : "") + "</div>" : "") +
       discHTML("ht", "ht", Tf("{metric}，按星期几和小时（{who}）", "{metric} by weekday and hour ({who})", { metric: name, who: who }),
-        th(T("星期", "Weekday")) + th(T("小时", "Hour")) + th(m.agg === "share" ? T("占比", "Share") : T("中位数", "Median"), true) +
+        (folded ? th(fold === "4weeks" ? T("周", "Week") : T("日期", "Days")) : "") + th(T("星期", "Weekday")) + th(T("小时", "Hour")) + th(m.agg === "share" ? T("占比", "Share") : T("中位数", "Median"), true) +
         th(T("检测次数", "Runs"), true) + th(T("说明", "Note")),
         cells.map(function (c) {
-          return '<tr class="' + (c.low ? "low" : "") + '"><td class="when">' + esc(dayName(c.dow, true)) + '</td><td class="when">' +
+          return '<tr class="' + (c.low ? "low" : "") + '">' + (folded ? '<td class="when">' + esc(foldWeek(fold, c.g)) + "</td>" : "") +
+            '<td class="when">' + esc(dayName(c.dow, true)) + '</td><td class="when">' +
             esc(timeSpan(c.dow, c.hour, blk)) +
             '</td><td class="n">' + esc(fmt(c.v, m.unit)) + '</td><td class="n">' + esc(String(c.runs)) + '</td><td class="nt">' + (c.low ? esc(cellHint()) : "") + "</td></tr>";
         }).join(""));
     var cfg = {
       id: "heatc", title: Tf("{metric}，按星期几和小时", "{metric} by weekday and hour", { metric: name }), desc: desc, unit: m.unit,
       cells: cells, block: blk, days: weekdays(), hourLabel: rowName, tipTime: span,
+      groups: folded ? (fold === "4weeks" ? [0, 1, 2, 3] : [0, 1, 2, 3, 4]).map(function (g) { return foldWeek(fold, g); }) : null,
       lowHint: cellHint(), legend: gridLegend(),
     };
     drawChart("heat", "heat-chart", C.heatmap, cfg);

@@ -310,9 +310,11 @@ différentes ; filtres et vue sont gardés dans l'URL, une vue peut donc être
 mise en favori ou partagée. Rien ne quitte la machine.
 
 D'autres panneaux répondent à des questions plus précises : **heures de
-pointe** (une carte de chaleur jour de la semaine × heure du TTFT, de la latence,
+pointe** (une carte de chaleur jour de la semaine × heure du TTFT, de la latence et de la vitesse de décodage
+(médiane et queues p95 / p5), de la gigue entre jetons, des temps réseau et du relais,
 du taux de réussite ou d'erreur dans votre fuseau horaire — un relais
-ralentit-il ou échoue-t-il davantage aux heures chargées ?), **erreurs et
+ralentit-il ou échoue-t-il davantage aux heures chargées ? Par jour de la semaine ou, avec 90 jours d'exécutions, sur un
+cycle de 4 semaines et, avec 180 jours, par semaine du mois), **erreurs et
 fiabilité** (appels en échec par cause — limitation de débit (HTTP 429),
 erreurs serveur (5xx), délais dépassés, erreurs réseau — dans le temps et par
 relais ou modèle, à partir des enregistrements de requêtes stockés, avec le

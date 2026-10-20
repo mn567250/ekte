@@ -150,7 +150,7 @@
         touched.push(tl[i]);
       }
     } else if (svg.classList.contains("hgrid")) {
-      // The empty grid shows first (each cell as an outline), then every cell
+      // The empty grid shows first (each cell as an empty tile), then every cell
       // fills at the same pace through the colour scale and stops at its own
       // step: light cells settle early, dark ones keep darkening (the step
       // durations live in the CSS). Cells start in a wave from the bottom-left

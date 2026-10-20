@@ -87,7 +87,7 @@ _DB_NAME = "history.db"
 # ``PRAGMA user_version`` of a database whose schema is current. Every schema
 # change goes into _migrate() *and* bumps this number: databases already at this
 # version skip _migrate() entirely.
-_SCHEMA_VERSION = 2
+_SCHEMA_VERSION = 3
 _BACKFILL_BATCH = 100
 # Rows per analytics backfill transaction: each one parses a whole report, so
 # fewer than the perf backfill, to keep the write lock short.
@@ -183,6 +183,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
         f"CREATE INDEX IF NOT EXISTS idx_history_pending ON history (id) WHERE {_SPLIT} IS NULL"
     )
     analytics_store.ensure_tables(conn)
+    # Version 3: decode speed p5 / p95 (filled by the analytics backfill, which
+    # re-extracts every row of an older EXTRACT_VERSION).
+    kb_snapshot.add_link_columns(
+        conn, "history_metrics", {"decode_tps_p5": "REAL", "decode_tps_p95": "REAL"}
+    )
     # Groups runs by model across relays.
     conn.execute("CREATE INDEX IF NOT EXISTS idx_history_model ON history (claimed_model)")
 

@@ -299,7 +299,9 @@ All decoding (image headers, WAV) is standard library only.
   (KPIs of `from`–`to` against the previous range of the same length),
   `/api/analytics/series` (`metric` per `group=relay|model|relay_model`, up to
   4 `keys`, in `bucket=hour|day|week|dow_hour` buckets of the viewer's `tz` or
-  `tz_offset`) and `/api/analytics/leaderboard` (`model=` for its relays, or
+  `tz_offset`; `dow_hour` also takes `block` (hours per row) and
+  `fold=week|4weeks|month_week`, which falls back to `week` until the runs cover
+  90 or 180 days) and `/api/analytics/leaderboard` (`model=` for its relays, or
   `relay=` for its models). All take the filters `from`, `to`, `suite`,
   `stream_mode`, `api`, `source=all|manual|monitor`, `relay` and `model`.
   `zing/web/analytics.py` computes everything in Python from

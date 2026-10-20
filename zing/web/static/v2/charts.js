@@ -41,12 +41,14 @@
  *                             cfg.block hours (00:00 at the bottom, 24:00 at
  *                             the top), square cells on a one-hue sequential
  *                             scale (5 steps, faint = low, intense = high):
- *                             cells with few runs hatched, empty cells an
- *                             outline only; legend below; per-cell tooltip
+ *                             cells with few runs hatched, empty cells a
+ *                             flat neutral tile; legend below; per-cell tooltip
  *     cfg: id, title, desc, unit, block (1, 2, 3, 4 or 6; default 1),
  *          cells [{ dow 1..7 (Mon..Sun), hour (block start) 0..23, v, runs,
- *          low }], days [7 short names], hourLabel(h), tipTime(dow, hour),
- *          lowHint, legend { few, none } texts
+ *          low, g (week of the fold, 0-based; default 0) }], days [7 short
+ *          names], hourLabel(h), tipTime(dow, hour, g), lowHint,
+ *          legend { few, none } texts; groups [labels]: the weekdays repeat
+ *          once per label (weeks of a fold), side by side with a wider gap
  *   - stackBars(host, cfg)    bars over time, each stacked from categories
  *                             (shares of the bucket's total), faded for few
  *                             runs; per-bar tooltip
@@ -394,44 +396,54 @@
     var B = [1, 2, 3, 4, 6].indexOf(cfg.block) >= 0 ? cfg.block : 1, rows = 24 / B;
     var cells = (cfg.cells || []).filter(function (c) { return typeof c.v === "number" && isFinite(c.v); });
     var W0 = Math.max(260, Math.floor(host.clientWidth || 640));
-    // square cells: as wide as 7 columns allow, the grid at most 720 px tall;
+    // groups of 7 weekdays (one per week of a fold), apart by SEP
+    var G = cfg.groups && cfg.groups.length ? cfg.groups : null, NG = G ? G.length : 1, SEP = G ? 10 : 0;
+    // square cells: as wide as the columns allow, the grid at most 720 px tall;
     // blocks of several hours get a wider axis for their "00:00–06:00" labels
-    var left = B > 1 ? 96 : 48, top = 20, size = Math.max(16, Math.min(Math.floor((W0 - left - 2) / 7), Math.floor(720 / rows)));
-    var W = left + 7 * size + 2, H = top + rows * size + 2;
+    var left = B > 1 ? 96 : 48, top = G ? 34 : 20;
+    var size = Math.max(16, Math.min(Math.floor((W0 - left - 2 - SEP * (NG - 1)) / (7 * NG)), Math.floor(720 / rows)));
+    // the gap and corner radius grow with the cell, so large cells stay tiles
+    var gap = Math.max(2, Math.round(size * 0.1)), rx = Math.max(3, Math.round(size * 0.12));
+    var W = left + 7 * NG * size + SEP * (NG - 1) + gap, H = top + rows * size + gap;
     var vs = cells.map(function (c) { return c.v; });
     var lo = vs.length ? Math.min.apply(null, vs) : 0, hi = vs.length ? Math.max.apply(null, vs) : 1;
     var step = function (v) { return hi > lo ? Math.min(STEPS - 1, Math.floor(((v - lo) / (hi - lo)) * STEPS)) : Math.floor(STEPS / 2); };
-    var at = {};
-    cells.forEach(function (c) { at[c.dow + "-" + (c.hour - c.hour % B)] = c; });
+    var at = {}, kOf = function (g, dow, h) { return (G ? g + 1 + "." : "") + dow + "-" + h; };
+    cells.forEach(function (c) { at[kOf(c.g || 0, c.dow, c.hour - c.hour % B)] = c; });
     var f1 = function (n) { return n.toFixed(1); };
     var pat = esc(cfg.id) + "-hatch";
     // row r holds hours r*B .. (r+1)*B, drawn from the bottom up
     var Y = function (r) { return top + (rows - 1 - r) * size; };
-    var X = function (dow) { return left + (dow - 1) * size; };
+    var X = function (dow, g) { return left + ((g || 0) * 7 + dow - 1) * size + (g || 0) * SEP; };
     var out = [svgOpen(cfg, W, H, "hmap hgrid"), hatch(pat)];
     // narrow columns get shortened day names (the tooltip and table have them in full)
     var cut = size < 22 ? 1 : size < 34 ? 2 : 0;
     out.push('<g class="hx">');
-    cfg.days.forEach(function (d, i) {
-      out.push('<text x="' + f1(X(i + 1) + size / 2 + 1) + '" y="12" text-anchor="middle">' + esc(cut ? String(d).slice(0, cut) : d) + "</text>");
-    });
+    for (var g = 0; g < NG; g++) {
+      if (G) out.push('<text class="hg" x="' + f1(X(1, g) + gap) + '" y="12">' + esc(G[g]) + "</text>");
+      cfg.days.forEach(function (d, i) {
+        out.push('<text x="' + f1(X(i + 1, g) + size / 2 + 1) + '" y="' + (top - 8) + '" text-anchor="middle">' + esc(cut ? String(d).slice(0, cut) : d) + "</text>");
+      });
+    }
     out.push('</g><g class="hy">');
-    var every = size >= 22 ? 1 : Math.ceil(22 / size);
+    // a label per row, but every other one (or fewer) for the hourly rows of
+    // small cells
+    var every = size >= 22 || rows <= 12 ? 1 : Math.ceil(22 / size);
     for (var r = 0; r < rows; r += every) {
       out.push('<text x="' + (left - 8) + '" y="' + f1(Y(r) + size / 2 + 1) + '" dy="0.32em" text-anchor="end">' +
         esc(cfg.hourLabel ? cfg.hourLabel(r * B, B) : String(r * B)) + "</text>");
     }
     out.push('</g><g class="cells">');
-    for (var dow = 1; dow <= 7; dow++) {
+    for (g = 0; g < NG; g++) for (var dow = 1; dow <= 7; dow++) {
       for (r = 0; r < rows; r++) {
-        var k = dow + "-" + r * B, c = at[k], x = f1(X(dow) + 2), y = f1(Y(r) + 2), w = f1(size - 2);
+        var k = kOf(g, dow, r * B), c = at[k], x = f1(X(dow, g) + gap), y = f1(Y(r) + gap), w = f1(size - gap);
         if (!c) {
-          out.push('<rect class="none" x="' + x + '" y="' + y + '" width="' + w + '" height="' + w + '" rx="4"/>');
+          out.push('<rect class="none" x="' + x + '" y="' + y + '" width="' + w + '" height="' + w + '" rx="' + rx + '"/>');
           continue;
         }
         out.push('<rect class="q' + (step(c.v) + 1) + (c.low ? " low" : "") + '" data-k="' + k + '" x="' + x + '" y="' + y +
-          '" width="' + w + '" height="' + w + '" rx="4"/>');
-        if (c.low) out.push('<rect class="hatch" fill="url(#' + pat + ')" x="' + x + '" y="' + y + '" width="' + w + '" height="' + w + '" rx="4" pointer-events="none"/>');
+          '" width="' + w + '" height="' + w + '" rx="' + rx + '"/>');
+        if (c.low) out.push('<rect class="hatch" fill="url(#' + pat + ')" x="' + x + '" y="' + y + '" width="' + w + '" height="' + w + '" rx="' + rx + '" pointer-events="none"/>');
       }
     }
     out.push("</g></svg>");
@@ -451,7 +463,7 @@
     host.innerHTML = out.join("") + '<div class="ctip" aria-hidden="true" hidden></div>' + legend;
     tipFor(host, function (k) {
       var c = at[k];
-      return '<p class="when">' + esc(cfg.tipTime(c.dow, c.hour - c.hour % B)) + "</p><ul><li><span><b>" + esc(fmt(c.v, cfg.unit)) + "</b>" +
+      return '<p class="when">' + esc(cfg.tipTime(c.dow, c.hour - c.hour % B, c.g || 0)) + "</p><ul><li><span><b>" + esc(fmt(c.v, cfg.unit)) + "</b>" +
         '<span class="sub">' + esc(Tf("{n} 次检测", "{n} runs", { n: c.runs })) + "</span>" +
         (c.low ? '<span class="sub lowtxt">' + esc(cfg.lowHint) + "</span>" : "") + "</span></li></ul>";
     });

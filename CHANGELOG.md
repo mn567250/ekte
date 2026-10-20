@@ -8,6 +8,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Decode speed p5 and p95 in analytics.** Every audit now stores the slow
+  (p5) and fast (p95) end of its decode speed next to the p50, from the same
+  requests (local token count, else the reported one; 20 requests at least,
+  like the other p95 values), so decode speed has the tails latency and TTFT
+  have. History schema 3 adds the two columns, and the analytics backfill
+  re-extracts every older run from its stored request records
+  (`EXTRACT_VERSION` 2). Both are new metrics of the comparison chart.
+- **More Peak hours metrics.** The heatmap also offers TTFT p95, latency p95,
+  decode speed p5 and p95, inter-token jitter, network round trip, relay
+  processing time and cold start.
+- **Peak hours: Aggregation (web UI v2).** A fourth option over the heatmap
+  folds the filtered runs by weekday (as before, the default), over a 4-week
+  cycle (weeks 1–4 side by side; counted from Monday 5 January 1970, so a week
+  keeps its column whatever the filter) or by week of the month (days 1–7,
+  8–14, 15–21, 22–28 and 29–31). The 4-week cycle needs runs spread over at
+  least 90 days and the weeks of the month 180 days: until then the option is
+  disabled with the reason, and a link asking for it shows the weekday grid
+  with a note. `GET /api/analytics/series` takes `fold=week|4weeks|month_week`
+  for `bucket=dow_hour` and answers with the fold used, `span_days` and
+  `fold_min_days`; folded cells carry `week`. The URL keeps the choice (`ha`).
 - **Probe focus in the performance chart.** While the performance probe runs,
   the chart's y-axis focuses on it: one fixed range per audit, taken from the
   first 5 probe requests (p75 + 3 × (p75 − p25), at least 1.5 × p75), so the
@@ -42,6 +62,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Heatmap cells look like tiles (web UI v2).** Hours with no runs are a flat
+  neutral tile instead of a dashed outline, the gap and corner radius grow with
+  the cell so large blocks (4 or 6 hours) stay separate tiles, and the lightest
+  step of the colour scale is a little stronger so it stays apart from an empty
+  cell. The fill-in motion starts from the empty tiles. Under forced colours an
+  empty cell keeps its dashed outline.
 - **The header's motion switch stops all motion (web UI v2).** "Motion off"
   used to stop only chart animations; it now stops every animation and
   transition, as `prefers-reduced-motion` does: the running audit's radar and

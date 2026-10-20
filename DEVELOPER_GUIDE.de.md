@@ -315,7 +315,9 @@ Standardbibliothek.
   (Kennzahlen von `from`–`to` gegenüber dem gleich langen Zeitraum davor),
   `/api/analytics/series` (`metric` je `group=relay|model|relay_model`, bis zu
   4 `keys`, in `bucket=hour|day|week|dow_hour`-Intervallen in der Zeitzone des
-  Betrachters, `tz` oder `tz_offset`) und `/api/analytics/leaderboard`
+  Betrachters, `tz` oder `tz_offset`; `dow_hour` nimmt außerdem `block` (Stunden je Zeile) und
+  `fold=week|4weeks|month_week`, das auf `week` zurückfällt, bis die Läufe 90
+  bzw. 180 Tage umfassen) und `/api/analytics/leaderboard`
   (`model=` für dessen Relays oder `relay=` für dessen Modelle). Alle nehmen die
   Filter `from`, `to`, `suite`, `stream_mode`, `api`,
   `source=all|manual|monitor`, `relay` und `model`. `zing/web/analytics.py`

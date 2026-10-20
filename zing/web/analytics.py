@@ -31,7 +31,13 @@ request row is loaded.
   ``tz_offset``: minutes east of UTC, else UTC): ``hour``, ``day``, ``week``
   (ISO weeks, starting Monday) and ``dow_hour`` (weekday x time of day, a 7 x 24
   heatmap; with ``block`` = 2, 3, 4 or 6 the day is cut into blocks of that
-  many hours instead, and each cell's median comes from the raw runs in it). Only buckets with data are returned. A bucket with fewer than
+  many hours instead, and each cell's median comes from the raw runs in it). With
+  ``fold`` the weekday grid repeats per week of a longer cycle: ``4weeks`` (weeks
+  1-4 of a 4-week cycle counted from Monday 1970-01-05, so a week keeps its
+  place whatever the filter) or ``month_week`` (days 1-7, 8-14, 15-21, 22-28 and
+  29-31 of the month); each cell then also carries ``week`` (1-based). A fold
+  needs the runs to cover :data:`FOLD_MIN_DAYS` calendar days, else the grid
+  falls back to ``week`` (the answer's ``fold``). Only buckets with data are returned. A bucket with fewer than
   :data:`MIN_RUNS` runs is flagged ``low_n``: a single audit can be an outlier.
 """
 
@@ -42,7 +48,7 @@ import re
 from collections import Counter
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -60,6 +66,12 @@ GROUPS = ("relay", "model", "relay_model", "all")
 BUCKETS = ("hour", "day", "week", "dow_hour")
 # hours per row of the dow_hour grid: the divisors of 24, so blocks are equal
 BLOCKS = (1, 2, 3, 4, 6)
+# how the dow_hour grid folds the period: one week, a 4-week cycle, the weeks
+# of a month; the longer folds need runs on this many calendar days
+FOLDS = ("week", "4weeks", "month_week")
+FOLD_MIN_DAYS = {"4weeks": 90, "month_week": 180}
+# week 1 of every 4-week cycle starts on a multiple of 4 weeks after this Monday
+CYCLE_EPOCH = date(1970, 1, 5)
 SOURCES = ("all", "manual", "monitor")
 # Group key of runs without a usable base URL (a provider key or URL never
 # contains parentheses).
@@ -106,6 +118,8 @@ METRICS: dict[str, Metric] = {m.id: m for m in (
     _m("ttft_p50", "ttft_p50_ms", "ms", False),
     _m("ttft_p95", "ttft_p95_ms", "ms", False),
     _m("decode_tps", "decode_tps_p50", "tok/s", True),
+    _m("decode_tps_p5", "decode_tps_p5", "tok/s", True),
+    _m("decode_tps_p95", "decode_tps_p95", "tok/s", True),
     _m("itl_jitter", "itl_jitter_p50_ms", "ms", False),
     _m("relay_overhead", "relay_processing_p50_ms", "ms", False),
     _m("network_rtt", "network_rtt_p50_ms", "ms", False),
@@ -568,16 +582,31 @@ def _block(params: Mapping[str, Any]) -> int:
     return int(raw)
 
 
-def _bucket(dt: datetime, zone: tzinfo, size: str, block: int = 1) -> tuple[float, str, dict[str, Any]]:
+def _fold_week(day: date, fold: str) -> int:
+    """Week (0-based) of the fold a local day falls in: 0 for ``week``."""
+    if fold == "4weeks":
+        return (day - CYCLE_EPOCH).days // 7 % 4
+    if fold == "month_week":
+        return min(4, (day.day - 1) // 7)
+    return 0
+
+
+def _bucket(dt: datetime, zone: tzinfo, size: str, block: int = 1,
+            fold: str = "week") -> tuple[float, str, dict[str, Any]]:
     """Sort position, key and extra fields of the bucket a UTC time falls in
-    (``block``: hours per ``dow_hour`` row; ``hour`` is the block's start)."""
+    (``block``: hours per ``dow_hour`` row; ``hour`` is the block's start;
+    ``fold``: see :data:`FOLDS`)."""
     local = dt.astimezone(zone)
     if size == "dow_hour":
         dow, hour = local.isoweekday(), local.hour - local.hour % block
         extra: dict[str, Any] = {"dow": dow, "hour": hour}
         if block > 1:
             extra["hours"] = block
-        return float(dow * 24 + hour), f"{dow}-{hour:02d}", extra
+        if fold == "week":
+            return float(dow * 24 + hour), f"{dow}-{hour:02d}", extra
+        week = _fold_week(local.date(), fold)
+        extra["week"] = week + 1
+        return float(week * 168 + dow * 24 + hour), f"{week + 1}.{dow}-{hour:02d}", extra
     if size == "hour":
         # fold tells the two 01:00-01:59 hours of a DST fall-back apart
         start = datetime(local.year, local.month, local.day, local.hour, tzinfo=zone, fold=local.fold)
@@ -598,6 +627,7 @@ def series(params: Mapping[str, Any], keys: Iterable[str] = ()) -> dict[str, Any
     group = _choice(params, "group", GROUPS, "relay")
     size = _choice(params, "bucket", BUCKETS, "day")
     block = _block(params)
+    wanted_fold = _choice(params, "fold", FOLDS, "week")
     zone, zone_name = parse_tz(params)
     wanted = []
     for key in keys:
@@ -615,13 +645,17 @@ def series(params: Mapping[str, Any], keys: Iterable[str] = ()) -> dict[str, Any
     by_key, info = _grouped(runs, group)
     if not wanted:
         wanted = sorted(by_key, key=lambda k: (-len(by_key[k]), info[k]["label"].lower(), k))[:MAX_KEYS]
+    # calendar days (viewer's zone) from the first to the last run shown
+    days = sorted({r["_t"].astimezone(zone).date() for key in wanted for r in by_key.get(key, [])})
+    span_days = (days[-1] - days[0]).days + 1 if days else 0
+    fold = wanted_fold if size == "dow_hour" and span_days >= FOLD_MIN_DAYS.get(wanted_fold, 0) else "week"
 
     out = []
     for key in wanted:
         members = by_key.get(key, [])
         buckets: dict[str, tuple[float, dict[str, Any], list[float | None]]] = {}
         for run in members:
-            pos, bkey, extra = _bucket(run["_t"], zone, size, block)
+            pos, bkey, extra = _bucket(run["_t"], zone, size, block, fold)
             buckets.setdefault(bkey, (pos, extra, []))[2].append(run_value(m, run))
         points = []
         for bkey, (_, extra, values) in sorted(buckets.items(), key=lambda i: i[1][0]):
@@ -649,6 +683,10 @@ def series(params: Mapping[str, Any], keys: Iterable[str] = ()) -> dict[str, Any
         "group": group,
         "bucket": size,
         "block": block,
+        "fold": fold,
+        "fold_requested": wanted_fold,
+        "fold_min_days": FOLD_MIN_DAYS,
+        "span_days": span_days,
         "tz": zone_name,
         "min_runs": MIN_RUNS,
         "series": out,

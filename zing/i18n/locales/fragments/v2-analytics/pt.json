@@ -188,6 +188,20 @@
   "Time block": "Bloco horário",
   "1 hour": "1 hora",
   "{n} hours": "{n} horas",
-  "Key figures": "Números-chave"
+  "Key figures": "Números-chave",
+  "Aggregation": "Agrupamento",
+  "By weekday": "Por dia da semana",
+  "By 4 weeks": "Por 4 semanas",
+  "By week of month": "Por semana do mês",
+  "{fold} (needs {min} days of runs)": "{fold} (requer {min} dias de execuções)",
+  "Week {n}": "Semana {n}",
+  "Days {a}–{b}": "Dias {a}–{b}",
+  "Week": "Semana",
+  "Days": "Dias",
+  "“{fold}” needs runs spread over at least {min} days; the filtered runs cover {n} days, so they are shown by weekday.": "“{fold}” requer execuções distribuídas por pelo menos {min} dias; as execuções filtradas cobrem {n} dias, por isso são mostradas por dia da semana.",
+  "Weeks 1–4 repeat every 4 weeks, counted from Monday 5 January 1970, so a week of the cycle keeps its column whatever the filter.": "As semanas 1–4 repetem-se a cada 4 semanas, contadas a partir de segunda-feira, 5 de janeiro de 1970, por isso uma semana do ciclo mantém a sua coluna seja qual for o filtro.",
+  "Days 29–31 exist only in some months, so their cells hold fewer runs.": "Os dias 29–31 só existem em alguns meses, por isso as suas células têm menos execuções.",
+  "Decode speed p5": "Velocidade de decodificação p5",
+  "Decode speed p95": "Velocidade de decodificação p95"
  }
 }

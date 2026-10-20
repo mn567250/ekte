@@ -59,8 +59,9 @@
   --chart-1: light-dark(#2a9a98, #2b9c97);  /* teal */
   --chart-2: light-dark(#4c4ff1, #5483f4);  /* indigo */
   --chart-3: light-dark(#4f148a, #bbacf8);  /* violet */
-  /* sequential (heatmap): the brand faded into the card, low step closest to it */
-  --heat-1: color-mix(in srgb, var(--primary) 14%, var(--surface));
+  /* sequential (heatmap): the brand faded into the card, low step closest to it;
+     the low step stays clearly greener than an empty cell (--sunken) */
+  --heat-1: color-mix(in srgb, var(--primary) 22%, var(--surface));
   --heat-2: color-mix(in srgb, var(--primary) 32%, var(--surface));
   --heat-3: color-mix(in srgb, var(--primary) 52%, var(--surface));
   --heat-4: color-mix(in srgb, var(--primary) 76%, var(--surface));

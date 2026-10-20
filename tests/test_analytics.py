@@ -309,6 +309,42 @@ def test_buckets_in_viewer_time_zone_across_dst_and_midnight(data):
         analytics.series({"bucket": "dow_hour", "block": "5"})
 
 
+def test_dow_hour_folds_into_4_week_cycles_and_weeks_of_the_month(data):
+    utc = timezone.utc
+
+    def grid(fold):
+        out = analytics.series({"metric": "score", "bucket": "dow_hour", "block": "4", "fold": fold, "tz": "UTC"})
+        return out, {p["bucket"]: p for p in out["series"][0]["points"]}
+
+    # Mondays 5 and 12 Jan and 2 Feb 2026, Thursday 30 Apr: 116 calendar days
+    for t in (datetime(2026, 1, 5, 10, tzinfo=utc), datetime(2026, 1, 12, 10, tzinfo=utc),
+              datetime(2026, 2, 2, 10, tzinfo=utc), datetime(2026, 4, 30, 10, tzinfo=utc)):
+        _save(t)
+    out, cells = grid("week")
+    assert (out["fold"], out["fold_requested"], out["span_days"]) == ("week", "week", 116)
+    assert out["fold_min_days"] == {"4weeks": 90, "month_week": 180}
+    assert set(cells) == {"1-08", "4-08"} and "week" not in cells["1-08"]
+    # weeks counted from Monday 1970-01-05: 5 Jan and 2 Feb (4 weeks later)
+    # share week 3 of the cycle, 12 Jan is week 4, 30 Apr week 3 again
+    out, cells = grid("4weeks")
+    assert out["fold"] == "4weeks"
+    assert set(cells) == {"3.1-08", "4.1-08", "3.4-08"}
+    assert cells["3.1-08"]["n"] == 2 and (cells["3.1-08"]["week"], cells["3.1-08"]["dow"]) == (3, 1)
+    # weeks of the month need 180 days: shown by weekday until then
+    out, cells = grid("month_week")
+    assert (out["fold"], out["fold_requested"]) == ("week", "month_week") and set(cells) == {"1-08", "4-08"}
+    _save(datetime(2026, 7, 31, 10, tzinfo=utc))  # a Friday, 208 days after the first run
+    out, cells = grid("month_week")
+    assert (out["fold"], out["span_days"]) == ("month_week", 208)
+    # days 1-7 (5 Jan, 2 Feb), 8-14 (12 Jan), 29-31 (30 Apr, 31 Jul)
+    assert set(cells) == {"1.1-08", "2.1-08", "5.4-08", "5.5-08"} and cells["1.1-08"]["n"] == 2
+    # the span counts only the runs shown (here: none for an unknown relay)
+    none = analytics.series({"bucket": "dow_hour", "fold": "4weeks", "group": "relay"}, ["nobody"])
+    assert (none["fold"], none["span_days"]) == ("week", 0)
+    with pytest.raises(analytics.AnalyticsError):
+        analytics.series({"bucket": "dow_hour", "fold": "month"})
+
+
 # --------------------------------------------------------------------------- #
 # Summary and leaderboard
 # --------------------------------------------------------------------------- #
