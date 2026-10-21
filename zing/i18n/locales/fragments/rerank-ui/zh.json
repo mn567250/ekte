@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Reranking": "重排",
+  "Do the rankings come from the claimed model?": "排序是否来自声称的模型？",
+  "Does the obvious answer rank first?": "显而易见的答案是否排在首位？",
+  "Does the same request give the same ranking?": "同一请求是否得到同一排序？"
+ }
+}

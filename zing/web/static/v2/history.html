@@ -370,7 +370,7 @@
   function streamOf(r) { return r.stream_mode || ""; }
   // the audited surface; rows saved before surfaces existed are chat
   function surfaceOf(r) { return r.surface || "chat"; }
-  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"] };
+  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
   var surfaceLabel = function (v) { return SURFACE[v] ? T(SURFACE[v][0], SURFACE[v][1]) : v; };
   // who started the run: a monitor (it has a watch_id) or a person (ad-hoc)
   function execOf(r) { return r.watch_id != null ? "monitor" : "adhoc"; }
@@ -977,12 +977,14 @@
   // A run a monitor produced already has its monitor: offer no second one.
   function byMonitor(r) { return !!r && r.watch_id != null; }
 
-  // Re-run: open the audit form (an embedding run: the Tools page) prefilled
-  // with this run's configuration.
+  // Re-run: open the audit form prefilled with this run's configuration. A
+  // non-chat run opens the Tools page on its surface's tab (#rerank selects
+  // the rerank tab; the embedding tab is the default).
+  var TOOLS_TAB = { embedding: "", rerank: "#rerank" };
   function rerun(id) {
     var row = (state.rows || []).filter(function (r) { return String(r.id) === String(id); })[0];
-    var page = row && surfaceOf(row) === "embedding" ? "/v2/tools" : "/v2/";
-    location.href = page + "?rerun=" + encodeURIComponent(id);
+    var s = row ? surfaceOf(row) : "chat", q = "?rerun=" + encodeURIComponent(id);
+    location.href = TOOLS_TAB.hasOwnProperty(s) ? "/v2/tools" + q + TOOLS_TAB[s] : "/v2/" + q;
   }
 
   function rerunBtnHTML(r) {

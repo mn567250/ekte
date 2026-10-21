@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Reranking": "Reranking",
+  "Do the rankings come from the claimed model?": "Do the rankings come from the claimed model?",
+  "Does the obvious answer rank first?": "Does the obvious answer rank first?",
+  "Does the same request give the same ranking?": "Does the same request give the same ranking?"
+ }
+}
