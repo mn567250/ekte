@@ -61,6 +61,8 @@
       - term: Model to request
       - definition:
         - code: gpt-4o
+      - term: Endpoint type
+      - definition: Chat
       - term: Test suite
       - definition:
         - code: standard

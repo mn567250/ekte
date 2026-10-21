@@ -61,6 +61,8 @@
       - term: Angefragtes Modell
       - definition:
         - code: gpt-4o
+      - term: Endpunkttyp
+      - definition: Chat
       - term: Testsuite
       - definition:
         - code: standard

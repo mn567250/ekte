@@ -61,6 +61,8 @@
       - term: 请求的模型
       - definition:
         - code: gpt-4o
+      - term: 接口类型
+      - definition: 对话
       - term: 测试套件
       - definition:
         - code: standard

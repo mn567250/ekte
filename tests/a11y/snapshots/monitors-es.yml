@@ -61,6 +61,8 @@
       - term: Modelo solicitado
       - definition:
         - code: gpt-4o
+      - term: Tipo de endpoint
+      - definition: Chat
       - term: Batería de pruebas
       - definition:
         - code: standard
