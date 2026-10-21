@@ -62,6 +62,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Accessibility report: a clearer Coverage card (web UI v2).** The overall
+  result is a donut over all 50 test steps, with the pass rate of the
+  applicable steps in the middle and a legend that lists Not applicable (of
+  50) first and every result of the 44 applicable steps. Below it, who decides
+  the steps: the test suite alone (Automatic), a person alone (Manual), and
+  the test suite first and then a person (Partly automatic, with how many of
+  them are reviewed and how many still pending, on the same scale). New
+  colours tell the two sides apart: blue for the test suite, violet for a
+  person, solid for the whole and light for the part, every fill at 3:1;
+  the pills in the Test steps table use them too, so Partly automatic no
+  longer shares the amber of Manual review pending. The filters follow the
+  table's columns (Search, Level, Automation, Status) in one row, with a new
+  Level filter. `ZingCharts.donut` and `ZingCharts.meter` draw the card, and
+  `chartmotion.js` gives them the entrance motion of the other charts: the
+  ring draws clockwise, the bars grow from the left and the pass rate counts
+  up, once when the report loads, never under reduced motion or "Motion off".
 - **Heatmap cells look like tiles (web UI v2).** Hours with no runs are a flat
   neutral tile instead of a dashed outline, the gap and corner radius grow with
   the cell so large blocks (4 or 6 hours) stay separate tiles, and the lightest

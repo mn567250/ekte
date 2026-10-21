@@ -9,6 +9,8 @@
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/tokens.css" />
 <link rel="stylesheet" href="/v2/static/zing.css" />
+<link rel="stylesheet" href="/v2/static/charts.css" />
+<link rel="stylesheet" href="/v2/static/chartmotion.css" />
 <style>
   /* ---- accessibility conformance report (v2) — page-only rules; colours via zing.css tokens ---- */
   .card + .card, .card + h2 { margin-top: 20px; }
@@ -22,22 +24,43 @@
   .meta code, .det code, .stmt code { font-size: 12px; background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; overflow-wrap: anywhere; }
   @media (max-width: 520px) { .meta { grid-template-columns: 1fr; gap: 2px; } .meta dd { margin-bottom: 8px; } }
 
-  .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
-  @media (max-width: 640px) { .groups { grid-template-columns: 1fr; } }
-  .groups h3 { font-size: 14px; font-weight: 700; margin: 0 0 10px; }
+  /* coverage: the overall result (donut over every step), then who decides
+     the applicable steps: the test suite, a person, or the test suite first
+     and then a person */
+  .cov { display: grid; gap: 14px; }
+  .box { border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 11px; min-width: 0; }
+  .box h3 { margin: 0; font-size: 14px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .who { font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; padding: 1px 7px; border-radius: 5px; }
+  .who.m { color: var(--info); background: var(--machine-tint); }
+  .who.h { color: var(--human); background: var(--human-tint); }
+  .box.res { background: var(--sunken); border: 1px solid var(--line); }
+  .box.m { background: color-mix(in srgb, var(--machine) 6%, var(--surface)); border: 1px solid color-mix(in srgb, var(--machine) 28%, var(--line)); }
+  .box.h { background: color-mix(in srgb, var(--human) 6%, var(--surface)); border: 1px solid color-mix(in srgb, var(--human) 28%, var(--line)); }
+  .box.mh { background: linear-gradient(90deg, color-mix(in srgb, var(--machine) 6%, var(--surface)), color-mix(in srgb, var(--human) 6%, var(--surface)));
+    border: 1px solid color-mix(in srgb, var(--machine-soft) 28%, var(--line)); }
+  .lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .lanes .mh { grid-column: 1 / -1; }
+  @media (max-width: 640px) { .lanes { grid-template-columns: 1fr; } }
+  .ring { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; }
+  @media (max-width: 520px) { .ring { justify-content: center; } .ring .legend { flex-basis: 100%; } }
+  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px; min-width: 0; font-size: 13.5px; }
+  .legend li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  .legend li.na { border-bottom-width: 2px; }
+  .lbl { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+  .lbl .sw { margin-top: 0; width: 10px; height: 10px; }
+  .val { font-family: var(--mono); font-size: 12.5px; color: var(--ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
   .bars li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: baseline; font-size: 13.5px; }
-  .bars .val { font-family: var(--mono); font-size: 12.5px; color: var(--ink-muted); white-space: nowrap; }
-  .bars .bar { grid-column: 1 / -1; height: 8px; border-radius: var(--r-pill); background: var(--sunken); overflow: hidden; }
-  .bars .bar span { display: block; height: 100%; border-radius: var(--r-pill); background: var(--ink-muted); }
-  .bars .bar .good { background: var(--success); }
-  .bars .bar .bad { background: var(--danger); }
-  .bars .bar .warn { background: var(--warning-fill); }
-  .bars .bar .sky { background: var(--info); }
+  .bars .meter { grid-column: 1 / -1; }
+  .bars .zero { color: var(--ink-muted); }
+  .bars li.split { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+  .split .cap { display: flex; flex-wrap: wrap; gap: 4px 16px; }
   .beyond { margin: 16px 0 0; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
 
-  .filters { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 12px; }
-  @media (max-width: 640px) { .filters { grid-template-columns: 1fr; } }
+  /* filters in the order of the table columns: search (step and title), level, automation, status */
+  .filters { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 0.8fr) minmax(0, 1.3fr) minmax(0, 1.6fr); gap: 12px; }
+  @media (max-width: 680px) { .filters { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.2fr); } .filters .g-q { grid-column: 1 / -1; } }
+  @media (max-width: 440px) { .filters { grid-template-columns: 1fr 1fr; } .filters .g-st { grid-column: 1 / -1; } }
   .filters .grp { margin: 0; }
   .shown { font-size: 13px; color: var(--ink-muted); margin: 12px 0 0; }
   .tbl { margin-top: 12px; overflow-x: auto; border-radius: 14px; }
@@ -84,35 +107,46 @@
 
     <section class="card card-pad" aria-labelledby="cov-title">
       <h2 class="form-title" id="cov-title" data-en="Coverage">覆盖范围</h2>
-      <div class="groups">
-        <div>
-          <h3 data-en="How the steps are tested">步骤的测试方式</h3>
-          <ul class="bars" id="bars-auto"></ul>
+      <div class="cov">
+        <div class="box res">
+          <h3 data-en="Overall result">总体结果</h3>
+          <div class="ring"><div id="cov-donut"></div><ul class="legend" id="cov-legend"></ul></div>
         </div>
-        <div>
-          <h3 data-en="Results">结果</h3>
-          <ul class="bars" id="bars-status"></ul>
+        <div class="lanes" id="cov-lanes">
+          <div class="box m">
+            <h3><span class="who m" data-en="Machine">机器</span> <span data-en="Test suite only">仅测试套件</span></h3>
+            <ul class="bars" id="bars-m"></ul>
+          </div>
+          <div class="box h">
+            <h3><span class="who h" data-en="Human">人工</span> <span data-en="Person only">仅由人审核</span></h3>
+            <ul class="bars" id="bars-h"></ul>
+          </div>
+          <div class="box mh">
+            <h3><span class="who m" data-en="Machine">机器</span> <span class="who h" data-en="Human">人工</span> <span data-en="Test suite first, then a person">先测试套件，再由人审核</span></h3>
+            <ul class="bars" id="bars-mh"></ul>
+          </div>
         </div>
       </div>
-      <p class="hint" data-en="Percentages are of the applicable steps; steps about audio and video do not apply because the UI has none.">百分比基于适用的步骤；界面中没有音频和视频，因此相关步骤不适用。</p>
+      <p class="hint" id="cov-hint"></p>
       <p class="beyond" id="beyond" hidden></p>
     </section>
 
     <section class="card card-pad" aria-labelledby="steps-title">
       <h2 class="form-title" id="steps-title" data-en="Test steps">检查步骤</h2>
       <div class="filters">
-        <div class="grp">
-          <label class="lab" for="f-status" data-en="Status">状态</label>
-          <select class="in" id="f-status">
+        <div class="grp g-q">
+          <label class="lab" for="f-q" data-en="Search">搜索</label>
+          <input class="in" id="f-q" type="search" autocomplete="off" spellcheck="false" placeholder="步骤编号或标题…" data-en-placeholder="Step number or title…">
+        </div>
+        <div class="grp g-lv">
+          <label class="lab" for="f-level" data-en="Level">级别</label>
+          <select class="in" id="f-level">
             <option value="" data-en="All">全部</option>
-            <option value="fail" data-en="Fail">未通过</option>
-            <option value="pass" data-en="Pass">通过</option>
-            <option value="manual review pending" data-en="Manual review pending">待人工审核</option>
-            <option value="not tested" data-en="Not tested">未测试</option>
-            <option value="n/a" data-en="Not applicable">不适用</option>
+            <option value="A">A</option>
+            <option value="AA">AA</option>
           </select>
         </div>
-        <div class="grp">
+        <div class="grp g-au">
           <label class="lab" for="f-auto" data-en="Automation">自动化程度</label>
           <select class="in" id="f-auto">
             <option value="" data-en="All">全部</option>
@@ -122,9 +156,16 @@
             <option value="n/a" data-en="Not applicable">不适用</option>
           </select>
         </div>
-        <div class="grp">
-          <label class="lab" for="f-q" data-en="Search">搜索</label>
-          <input class="in" id="f-q" type="search" autocomplete="off" spellcheck="false" placeholder="步骤编号或标题…" data-en-placeholder="Step number or title…">
+        <div class="grp g-st">
+          <label class="lab" for="f-status" data-en="Status">状态</label>
+          <select class="in" id="f-status">
+            <option value="" data-en="All">全部</option>
+            <option value="pass" data-en="Pass">通过</option>
+            <option value="fail" data-en="Fail">未通过</option>
+            <option value="manual review pending" data-en="Manual review pending">待人工审核</option>
+            <option value="not tested" data-en="Not tested">未测试</option>
+            <option value="n/a" data-en="Not applicable">不适用</option>
+          </select>
         </div>
       </div>
       <p class="shown" id="shown" role="status"></p>
@@ -164,6 +205,8 @@
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
+<script src="/v2/static/charts.js"></script>
+<script src="/v2/static/chartmotion.js"></script>
 <script>
 (function () {
   "use strict";
@@ -208,14 +251,14 @@
   var STATUS = {
     "pass": ["good", function () { return T("通过", "Pass"); }],
     "fail": ["bad", function () { return T("未通过", "Fail"); }],
-    "manual review pending": ["warn", function () { return T("待人工审核", "Manual review pending"); }],
+    "manual review pending": ["human-soft", function () { return T("待人工审核", "Manual review pending"); }],
     "not tested": ["grey", function () { return T("未测试", "Not tested"); }],
     "n/a": ["grey", function () { return T("不适用", "Not applicable"); }],
   };
   var AUTO = {
-    "auto": ["sky", function () { return T("自动", "Automatic"); }],
-    "partial": ["warn", function () { return T("部分自动", "Partly automatic"); }],
-    "manual": ["grey", function () { return T("人工", "Manual"); }],
+    "auto": ["machine", function () { return T("自动", "Automatic"); }],
+    "partial": ["machine-soft", function () { return T("部分自动", "Partly automatic"); }],
+    "manual": ["human", function () { return T("人工", "Manual"); }],
     "n/a": ["grey", function () { return T("不适用", "Not applicable"); }],
   };
   var BEYOND = {
@@ -268,23 +311,53 @@
       "</dl>";
   }
 
-  // ---- coverage bars (the text carries the numbers; the bar is decoration) - //
-  function bar(label, cls, count, total, pct) {
-    var val = pct == null
-      ? num(count)
-      : Tf("{n} / {total} · {pct} %", "{n} of {total} · {pct} %", { n: num(count), total: num(total), pct: num(pct, 1) });
-    return '<li><span class="lbl">' + esc(label) + '</span><span class="val">' + esc(val) + "</span>" +
-      '<span class="bar" aria-hidden="true"><span class="' + cls + '" style="width:' + (pct == null ? 0 : Math.max(0, Math.min(100, pct))) + '%"></span></span></li>';
+  // ---- coverage ----------------------------------------------------------- //
+  // The donut and the meters are decoration (charts.js draws them
+  // aria-hidden): the text next to them carries every number. The ring covers
+  // every step; the other numbers are of the applicable steps.
+  var KEY = { "pass": "k-pass", "fail": "k-fail", "manual review pending": "k-pending", "not tested": "k-untested", "n/a": "k-na" };
+  var RESULTS = ["n/a", "pass", "fail", "manual review pending", "not tested"];
+  var moved = false; // the entrance motion runs once, when the report arrives
+  function ofText(n, total) {
+    return Tf("{n} / {total}", "{n} of {total}", { n: num(n), total: num(total) });
+  }
+  function pctText(n, total, pct) {
+    return Tf("{n} / {total} · {pct} %", "{n} of {total} · {pct} %", { n: num(n), total: num(total), pct: num(pct, 1) });
+  }
+  function share(n, total) { return total ? Math.round((n / total) * 1000) / 10 : 0; }
+  function sw(cls) { return '<span class="sw ' + cls + '" aria-hidden="true"></span>'; }
+  function barRow(label, cls, n, total) {
+    return "<li" + (n ? "" : ' class="zero"') + '><span class="lbl">' + sw(cls) + esc(label) + '</span><span class="val">' +
+      esc(pctText(n, total, share(n, total))) + "</span>" + ZingCharts.meter([{ cls: cls, n: n }], total) + "</li>";
   }
   function paintCoverage() {
     if (!report) return;
-    var t = report.totals, n = t.applicable;
-    $("bars-auto").innerHTML = ["auto", "partial", "manual"].map(function (a) {
-      return bar(autoLabel(a), AUTO[a][0], t.automation[a].count, n, t.automation[a].percent);
-    }).join("") + bar(T("不适用", "Not applicable"), "grey", t.automation["n/a"].count, n, null);
-    $("bars-status").innerHTML = ["pass", "fail", "manual review pending", "not tested"].map(function (s) {
-      return bar(statusLabel(s), STATUS[s][0], t.status[s].count, n, t.status[s].percent);
-    }).join("") + bar(T("不适用", "Not applicable"), "grey", t.status["n/a"].count, n, null);
+    var t = report.totals, all = t.steps, n = t.applicable, st = t.status;
+    var cnt = function (a, s) { return report.steps.filter(function (x) { return x.automation === a && (!s || x.status === s); }).length; };
+    var pass = st.pass.count;
+    ZingCharts.donut($("cov-donut"), {
+      total: all,
+      parts: RESULTS.map(function (s) { return { cls: KEY[s], n: st[s].count }; }),
+      center: { value: num(share(pass, n), 1) + " %", lines: [T("通过", "Pass"), Tf("共 {total} 项", "of {total}", { total: num(n) })] },
+    });
+    $("cov-legend").innerHTML = RESULTS.map(function (s) {
+      var c = st[s].count, of = s === "n/a" ? all : n;
+      return '<li class="' + (s === "n/a" ? "na" : "") + '"><span class="lbl">' + sw(KEY[s]) + esc(statusLabel(s)) + '</span><span class="val">' +
+        esc(pctText(c, of, share(c, of))) + "</span></li>";
+    }).join("");
+    $("bars-m").innerHTML = barRow(autoLabel("auto"), "k-auto", t.automation.auto.count, n);
+    $("bars-h").innerHTML = barRow(autoLabel("manual"), "k-manual", t.automation.manual.count, n);
+    // the partly automatic steps after the person's part: reviewed (passed or
+    // failed) and still pending, on the same scale as the bar above
+    var p = t.automation.partial.count, done = cnt("partial", "pass") + cnt("partial", "fail"), pend = cnt("partial", "manual review pending");
+    $("bars-mh").innerHTML = barRow(autoLabel("partial"), "k-partial", p, n) +
+      '<li class="split">' + ZingCharts.meter([{ cls: "k-pass", n: done }, { cls: "k-pending", n: pend }], n) +
+      '<span class="cap"><span class="lbl">' + sw("k-pass") + esc(T("已审核", "Reviewed")) + ' <span class="val">' + esc(ofText(done, p)) + "</span></span>" +
+      '<span class="lbl">' + sw("k-pending") + esc(statusLabel("manual review pending")) + ' <span class="val">' + esc(ofText(pend, p)) + "</span></span></span></li>";
+    $("cov-hint").textContent = Tf(
+      "圆环显示全部 {total} 个步骤。音频和视频相关的步骤不适用，因为界面中没有音频和视频；其余数字均基于 {applicable} 个适用的步骤。",
+      "The ring shows all {total} steps. Steps about audio and video do not apply because the UI has none; every other number is of the {applicable} applicable steps.",
+      { total: num(all), applicable: num(n) });
     var beyond = report.beyond || [];
     $("beyond").hidden = !beyond.length;
     $("beyond").innerHTML = beyond.length
@@ -292,6 +365,14 @@
           return esc(BEYOND[b.step] ? BEYOND[b.step]() : b.step) + " — " + esc(statusLabel(b.status));
         }).join("; ")
       : "";
+    if (moved || !window.ZingMotion) return;
+    // new data (the report arrived): the ring draws, the meters grow and the
+    // pass rate counts up; a language switch repaints without motion
+    moved = true;
+    ZingMotion.enter($("cov-donut"));
+    ZingMotion.enter($("cov-lanes"));
+    var dv = $("cov-donut").querySelector(".dv");
+    if (dv) ZingMotion.count([{ el: dv, from: 0, to: share(pass, n) }], function (v) { return num(v, 1) + " %"; });
   }
 
   // ---- table --------------------------------------------------------------- //
@@ -323,7 +404,8 @@
     return out + "</div>";
   }
   function matches(s) {
-    var fs = $("f-status").value, fa = $("f-auto").value, q = $("f-q").value.trim().toLowerCase();
+    var fs = $("f-status").value, fa = $("f-auto").value, fl = $("f-level").value, q = $("f-q").value.trim().toLowerCase();
+    if (fl && s.level !== fl) return false;
     if (fs && s.status !== fs) return false;
     if (fa && s.automation !== fa) return false;
     if (!q) return true;
@@ -350,7 +432,7 @@
     var d = ev.target;
     if (d && d.tagName === "DETAILS") open[d.getAttribute("data-step")] = d.open;
   }, true);
-  ["f-status", "f-auto"].forEach(function (id) { $(id).addEventListener("change", paintTable); });
+  ["f-level", "f-auto", "f-status"].forEach(function (id) { $(id).addEventListener("change", paintTable); });
   $("f-q").addEventListener("input", paintTable);
 
   // ---- accessibility statement --------------------------------------------- //

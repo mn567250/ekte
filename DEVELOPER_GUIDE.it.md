@@ -424,7 +424,14 @@ vicenda. `ZingCharts.heatmap` disegna la griglia giorno della settimana × ora
 (scala sequenziale a una tinta in cinque livelli per tema, celle tratteggiate
 per `low_n`, celle vuote solo con contorno), `ZingCharts.stackBars` le barre di
 errore impilate, e `timeChart` accetta una linea `ref` (rapporto di
-fatturazione del 100%).
+fatturazione del 100%). `ZingCharts.donut` (un anello di parti di un intero con
+una cifra HTML al centro) e `ZingCharts.meter` (una barra sottile di parti)
+disegnano la scheda Copertura del rapporto di accessibilità; i loro colori
+`k-*` (chi decide un passo: blu la suite di test, viola una persona) vengono da
+`tokens.css`. `v2/chartmotion.js` (`ZingMotion.enter`) disegna un anello in
+senso orario e fa crescere le barre da sinistra, come per gli altri grafici,
+solo quando arrivano dati nuovi e mai con il movimento ridotto o con
+l'animazione disattivata nell'intestazione.
 
 L'intestazione della pagina e il pannello dei filtri stanno sopra cinque schede
 interne (`v2/tabs.js`, come in Strumenti e Conoscenza): ogni voce di

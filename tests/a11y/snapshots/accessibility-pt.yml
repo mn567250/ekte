@@ -69,31 +69,35 @@
       - code: /v2/accessibility
   - region "Cobertura":
     - heading "Cobertura" [level=2]
-    - heading "Como os passos são testados" [level=3]
+    - heading "Resultado geral" [level=3]
+    - paragraph: 75 % Aprovado de 44
     - list:
-      - listitem: Automático 27 de 44 · 61,4 %
-      - listitem: Parcialmente automático 17 de 44 · 38,6 %
-      - listitem: Manual 0 de 44 · 0 %
-      - listitem: Não aplicável 6
-    - heading "Resultados" [level=3]
-    - list:
+      - listitem: Não aplicável 6 de 50 · 12 %
       - listitem: Aprovado 33 de 44 · 75 %
       - listitem: Falha 0 de 44 · 0 %
       - listitem: Revisão manual pendente 11 de 44 · 25 %
       - listitem: Não testado 0 de 44 · 0 %
-      - listitem: Não aplicável 6
-    - paragraph: As percentagens referem-se aos passos aplicáveis; os passos sobre áudio e vídeo não se aplicam porque a interface não os tem.
+    - heading "Máquina Apenas o conjunto de testes" [level=3]
+    - list:
+      - listitem: Automático 27 de 44 · 61,4 %
+    - heading "Pessoa Apenas uma pessoa" [level=3]
+    - list:
+      - listitem: Manual 0 de 44 · 0 %
+    - heading "Máquina Pessoa Primeiro o conjunto de testes, depois uma pessoa" [level=3]
+    - list:
+      - listitem: Parcialmente automático 17 de 44 · 38,6 %
+      - listitem: Revisto 6 de 17 Revisão manual pendente 11 de 17
+    - paragraph: O anel mostra todos os 50 passos. Os passos sobre áudio e vídeo não se aplicam porque a interface não os tem; todos os outros números referem-se aos 44 passos aplicáveis.
     - paragraph: "Também verificado além das WCAG: Preferências do utilizador: modo de cores forçadas (EN 301549 cláusula 11.7) — Aprovado"
   - region "Passos de teste":
     - heading "Passos de teste" [level=2]
-    - text: Estado
-    - combobox "Estado":
+    - text: Pesquisar
+    - searchbox "Pesquisar"
+    - text: Nível
+    - combobox "Nível":
       - option "Todos" [selected]
-      - option "Falha"
-      - option "Aprovado"
-      - option "Revisão manual pendente"
-      - option "Não testado"
-      - option "Não aplicável"
+      - option "A"
+      - option "AA"
     - text: Automação
     - combobox "Automação":
       - option "Todos" [selected]
@@ -101,8 +105,14 @@
       - option "Parcialmente automático"
       - option "Manual"
       - option "Não aplicável"
-    - text: Pesquisar
-    - searchbox "Pesquisar"
+    - text: Estado
+    - combobox "Estado":
+      - option "Todos" [selected]
+      - option "Aprovado"
+      - option "Falha"
+      - option "Revisão manual pendente"
+      - option "Não testado"
+      - option "Não aplicável"
     - status: A mostrar 50 de 50 passos
     - region "Passos de teste BITV / EN 301549 com nível de automação e resultado":
       - table "Passos de teste BITV / EN 301549 com nível de automação e resultado":

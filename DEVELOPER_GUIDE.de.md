@@ -423,7 +423,14 @@ einander zu berühren. `ZingCharts.heatmap` zeichnet das Raster Wochentag ×
 Stunde (fünfstufige einfarbige Skala pro Theme, schraffierte Zellen für
 `low_n`, umrandete leere Zellen), `ZingCharts.stackBars` die gestapelten
 Fehlerbalken, und `timeChart` nimmt eine `ref`-Linie (100 %
-Abrechnungsverhältnis).
+Abrechnungsverhältnis). `ZingCharts.donut` (ein Ring aus Teilen eines Ganzen
+mit einer HTML-Zahl in der Mitte) und `ZingCharts.meter` (ein schmaler Balken
+aus Teilen) zeichnen die Karte „Abdeckung“ des Barrierefreiheitsberichts; ihre
+`k-*`-Farben (wer einen Schritt entscheidet: Blau die Testsuite, Violett eine
+Person) stammen aus `tokens.css`. `v2/chartmotion.js` (`ZingMotion.enter`)
+zeichnet einen Donut im Uhrzeigersinn und lässt Balken von links wachsen, wie
+bei allen anderen Diagrammen nur bei neuen Daten und nie bei reduzierter
+Bewegung oder „Animation aus“ im Kopfbereich.
 
 Seitenkopf und Filterpanel stehen über fünf seiteninternen Tabs
 (`v2/tabs.js`, wie bei Werkzeuge und Wissen): Jeder `PANELS`-Eintrag

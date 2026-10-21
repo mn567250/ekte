@@ -398,6 +398,13 @@ can be rearranged without touching each other. `ZingCharts.heatmap` draws the
 weekday × hour grid (five-step one-hue sequential scale per theme, hatched cells
 for `low_n`, outlined empty cells), `ZingCharts.stackBars` the stacked error
 bars, and `timeChart` takes a `ref` line (100% billing ratio).
+`ZingCharts.donut` (a ring of parts of one whole with an HTML figure in the
+middle) and `ZingCharts.meter` (a thin bar of parts) draw the Coverage card of
+the accessibility report; their `k-*` colours (who decides a step: blue the
+test suite, violet a person) come from `tokens.css`. `v2/chartmotion.js`
+(`ZingMotion.enter`) draws a donut clockwise and grows meters from the left,
+like every other chart, only when new data arrives and never under reduced
+motion or the header's "Motion off".
 
 The page header and the filter panel sit above five in-page tabs
 (`v2/tabs.js`, as on Tools and Knowledge): each `PANELS` entry names its `tab`,

@@ -69,31 +69,35 @@
       - code: /v2/accessibility
   - region "Copertura":
     - heading "Copertura" [level=2]
-    - heading "Come vengono verificati i passi" [level=3]
+    - heading "Risultato complessivo" [level=3]
+    - paragraph: 75 % Superato su 44
     - list:
-      - listitem: Automatico 27 su 44 · 61,4 %
-      - listitem: Parzialmente automatico 17 su 44 · 38,6 %
-      - listitem: Manuale 0 su 44 · 0 %
-      - listitem: Non applicabile 6
-    - heading "Risultati" [level=3]
-    - list:
+      - listitem: Non applicabile 6 su 50 · 12 %
       - listitem: Superato 33 su 44 · 75 %
       - listitem: Fallito 0 su 44 · 0 %
       - listitem: Revisione manuale in sospeso 11 su 44 · 25 %
       - listitem: Non verificato 0 su 44 · 0 %
-      - listitem: Non applicabile 6
-    - paragraph: Le percentuali si riferiscono ai passi applicabili; i passi su audio e video non si applicano perché l'interfaccia non ne contiene.
+    - heading "Macchina Solo la suite di test" [level=3]
+    - list:
+      - listitem: Automatico 27 su 44 · 61,4 %
+    - heading "Persona Solo una persona" [level=3]
+    - list:
+      - listitem: Manuale 0 su 44 · 0 %
+    - heading "Macchina Persona Prima la suite di test, poi una persona" [level=3]
+    - list:
+      - listitem: Parzialmente automatico 17 su 44 · 38,6 %
+      - listitem: Revisionato 6 su 17 Revisione manuale in sospeso 11 su 17
+    - paragraph: L'anello mostra tutti i 50 passi. I passi su audio e video non si applicano perché l'interfaccia non ne contiene; tutti gli altri numeri si riferiscono ai 44 passi applicabili.
     - paragraph: "Verificato anche oltre le WCAG: Preferenze dell'utente: modalità colori forzati (EN 301549 clausola 11.7) — Superato"
   - region "Passi di verifica":
     - heading "Passi di verifica" [level=2]
-    - text: Stato
-    - combobox "Stato":
+    - text: Cerca
+    - searchbox "Cerca"
+    - text: Livello
+    - combobox "Livello":
       - option "Tutti" [selected]
-      - option "Fallito"
-      - option "Superato"
-      - option "Revisione manuale in sospeso"
-      - option "Non verificato"
-      - option "Non applicabile"
+      - option "A"
+      - option "AA"
     - text: Automazione
     - combobox "Automazione":
       - option "Tutti" [selected]
@@ -101,8 +105,14 @@
       - option "Parzialmente automatico"
       - option "Manuale"
       - option "Non applicabile"
-    - text: Cerca
-    - searchbox "Cerca"
+    - text: Stato
+    - combobox "Stato":
+      - option "Tutti" [selected]
+      - option "Superato"
+      - option "Fallito"
+      - option "Revisione manuale in sospeso"
+      - option "Non verificato"
+      - option "Non applicabile"
     - status: Visualizzati 50 di 50 passi
     - region "Passi di verifica BITV / EN 301549 con livello di automazione e risultato":
       - table "Passi di verifica BITV / EN 301549 con livello di automazione e risultato":

@@ -69,31 +69,35 @@
       - code: /v2/accessibility
   - region "Abdeckung":
     - heading "Abdeckung" [level=2]
-    - heading "Wie die Schritte geprüft werden" [level=3]
+    - heading "Gesamtergebnis" [level=3]
+    - paragraph: 75 % Bestanden von 44
     - list:
-      - listitem: Automatisch 27 von 44 · 61,4 %
-      - listitem: Teilweise automatisch 17 von 44 · 38,6 %
-      - listitem: Manuell 0 von 44 · 0 %
-      - listitem: Nicht anwendbar 6
-    - heading "Ergebnisse" [level=3]
-    - list:
+      - listitem: Nicht anwendbar 6 von 50 · 12 %
       - listitem: Bestanden 33 von 44 · 75 %
       - listitem: Fehlgeschlagen 0 von 44 · 0 %
       - listitem: Manuelle Prüfung ausstehend 11 von 44 · 25 %
       - listitem: Nicht geprüft 0 von 44 · 0 %
-      - listitem: Nicht anwendbar 6
-    - paragraph: Die Prozentwerte beziehen sich auf die anwendbaren Schritte; Schritte zu Audio und Video sind nicht anwendbar, weil die Oberfläche keine enthält.
+    - heading "Maschine Nur die Testsuite" [level=3]
+    - list:
+      - listitem: Automatisch 27 von 44 · 61,4 %
+    - heading "Mensch Nur eine Person" [level=3]
+    - list:
+      - listitem: Manuell 0 von 44 · 0 %
+    - heading "Maschine Mensch Erst die Testsuite, dann eine Person" [level=3]
+    - list:
+      - listitem: Teilweise automatisch 17 von 44 · 38,6 %
+      - listitem: Geprüft 6 von 17 Manuelle Prüfung ausstehend 11 von 17
+    - paragraph: Der Ring zeigt alle 50 Schritte. Schritte zu Audio und Video sind nicht anwendbar, weil die Oberfläche keine enthält; alle anderen Zahlen beziehen sich auf die 44 anwendbaren Schritte.
     - paragraph: "Über WCAG hinaus geprüft: Benutzereinstellungen: erzwungene Farben (EN 301549 Abschnitt 11.7) — Bestanden"
   - region "Prüfschritte":
     - heading "Prüfschritte" [level=2]
-    - text: Status
-    - combobox "Status":
+    - text: Suche
+    - searchbox "Suche"
+    - text: Stufe
+    - combobox "Stufe":
       - option "Alle" [selected]
-      - option "Fehlgeschlagen"
-      - option "Bestanden"
-      - option "Manuelle Prüfung ausstehend"
-      - option "Nicht geprüft"
-      - option "Nicht anwendbar"
+      - option "A"
+      - option "AA"
     - text: Automatisierung
     - combobox "Automatisierung":
       - option "Alle" [selected]
@@ -101,8 +105,14 @@
       - option "Teilweise automatisch"
       - option "Manuell"
       - option "Nicht anwendbar"
-    - text: Suche
-    - searchbox "Suche"
+    - text: Status
+    - combobox "Status":
+      - option "Alle" [selected]
+      - option "Bestanden"
+      - option "Fehlgeschlagen"
+      - option "Manuelle Prüfung ausstehend"
+      - option "Nicht geprüft"
+      - option "Nicht anwendbar"
     - status: 50 von 50 Schritten angezeigt
     - region "Prüfschritte nach BITV / EN 301549 mit Automatisierungsgrad und Ergebnis":
       - table "Prüfschritte nach BITV / EN 301549 mit Automatisierungsgrad und Ergebnis":

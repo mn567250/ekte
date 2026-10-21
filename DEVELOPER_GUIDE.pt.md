@@ -416,6 +416,14 @@ idioma), pelo que os painéis podem ser reorganizados sem se afetarem.
 de um tom em cinco níveis por tema, células tracejadas para `low_n`, células
 vazias só com contorno), `ZingCharts.stackBars` as barras de erros empilhadas,
 e `timeChart` aceita uma linha `ref` (rácio de faturação de 100%).
+`ZingCharts.donut` (um anel de partes de um todo com um número HTML no centro)
+e `ZingCharts.meter` (uma barra fina de partes) desenham o cartão Cobertura do
+relatório de acessibilidade; as suas cores `k-*` (quem decide um passo: azul o
+conjunto de testes, violeta uma pessoa) vêm de `tokens.css`.
+`v2/chartmotion.js` (`ZingMotion.enter`) desenha um anel no sentido dos
+ponteiros do relógio e faz crescer as barras a partir da esquerda, como nos
+outros gráficos, só quando chegam dados novos e nunca com movimento reduzido ou
+com a animação desligada no cabeçalho.
 
 O cabeçalho da página e o painel de filtros ficam acima de cinco separadores
 internos (`v2/tabs.js`, como em Ferramentas e Conhecimento): cada
