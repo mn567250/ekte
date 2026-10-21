@@ -64,6 +64,10 @@ class AuditOptions(BaseModel):
     # that cannot stream. The full suite always measures both.
     performance_streaming: bool = True
 
+    # Embedding surface: expected vector length of the claimed model, overriding
+    # the knowledge base (0 = take it from the KB).
+    embedding_dimensions: int = 0
+
     def enabled(self, detector_id: str) -> bool:
         if self.only:
             return detector_id in self.only

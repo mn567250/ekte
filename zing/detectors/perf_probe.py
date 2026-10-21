@@ -42,6 +42,7 @@ CONSISTENCY_TITLE = {
     "Time to first token": "Time to first token consistency",
     "Decode throughput": "Decode throughput consistency",
     "End-to-end throughput": "End-to-end throughput consistency",
+    "Embedding throughput": "Embedding throughput consistency",
 }
 # Share of probe requests that failed (rate limits excluded).
 _ERROR_RATE_OK = 0.02

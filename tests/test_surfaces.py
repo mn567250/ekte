@@ -94,7 +94,8 @@ def test_select_detectors_filters_by_surface(monkeypatch):
     monkeypatch.setitem(base.REGISTRY, _Embed.id, _Embed)
     assert _ids() == chat == _ids("chat")
     assert "zz.embed_probe" not in chat
-    assert _ids("embedding") == ["zz.embed_probe"]
+    assert "zz.embed_probe" in _ids("embedding")
+    assert all(base.REGISTRY[i].surface == "embedding" for i in _ids("embedding"))
     assert all(base.REGISTRY[i].surface == "chat" for i in chat)
 
 
