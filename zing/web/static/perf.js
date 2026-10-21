@@ -113,7 +113,18 @@
     return r.endpoint === "baseline" ? T("基线", "baseline") : T("目标", "target");
   }
   function phaseName(p) {
-    return p === "probe" ? T("性能探测", "probe") : p === "passive" ? T("常规检测", "audit") : String(p || "—");
+    return p === "probe" ? T("性能探测", "probe") : p === "passive" ? T("常规检测", "audit")
+      : p === "probe_batch" ? T("批量探测", "batch probe") : String(p || "—");
+  }
+  // The calls the charts show: completion calls, or an embedding audit's
+  // embedding calls (a chat report has none of those).
+  function isCall(r) { return r.op === "complete" || r.op === "embed"; }
+  // a request that could have streamed but did not (embedding calls never stream)
+  function unstreamed(r) { return !r.stream && r.op !== "embed"; }
+  // An embedding audit's performance: latency only, no tokens out, no streaming.
+  function isEmbed(perf) {
+    var recs = (perf && perf.requests) || [];
+    return recs.some(function (r) { return r.op === "embed"; }) && !recs.some(function (r) { return r.op === "complete"; });
   }
 
   var METRICS = [
@@ -195,7 +206,7 @@
   var CALIB = 5;
   function probeRange(records, m) {
     var v = (records || []).filter(function (r) {
-      return r.op === "complete" && r.phase === "probe" && r.ok && !r.cached && m.get(r) != null;
+      return isCall(r) && r.phase === "probe" && r.ok && !r.cached && m.get(r) != null;
     }).slice(0, CALIB).map(m.get).sort(function (a, b) { return a - b; });
     if (!v.length) return null;
     var lo = pct(v, 25), hi = pct(v, 75);
@@ -211,7 +222,7 @@
     return { eff: eff, user: user, range: range };
   }
   function hasProbe(records) {
-    return (records || []).some(function (r) { return r.op === "complete" && r.phase === "probe"; });
+    return (records || []).some(function (r) { return isCall(r) && r.phase === "probe"; });
   }
 
   // ---- timeline chart ------------------------------------------------- //
@@ -229,7 +240,7 @@
   // dataTable(calls, m, open); the live panel keeps that one in place.
   function chartSvg(records, metricId, scale) {
     var m = metric(metricId);
-    var calls = (records || []).filter(function (r) { return r.op === "complete"; });
+    var calls = (records || []).filter(isCall);
     var pts = calls.filter(function (r) { return r.ok && m.get(r) != null; });
     var failed = calls.filter(function (r) { return !r.ok; });
     if (!pts.length && !failed.length)
@@ -270,7 +281,7 @@
       // probe requests are small and translucent, so dense runs read as a
       // cloud around the median; audit requests keep their ring
       var probe = r.phase === "probe";
-      var cls = "zp-pt " + side + (r.phase === "passive" ? " passive" : r.stream ? "" : " hollow") +
+      var cls = "zp-pt " + side + (r.phase === "passive" ? " passive" : unstreamed(r) ? " hollow" : "") +
         (probe ? " probe" : "") + (r.cached ? " cached" : "");
       o.push('<circle class="' + cls + '" cx="' + cx + '" cy="' +
         y(m.get(r)).toFixed(1) + '" r="' + (probe ? 3 : 4) + '" data-tip="' + esc(tip(r, m)) + '"/>');
@@ -405,7 +416,7 @@
       ? T("失败", "failed") + " (" + (r.status_code || r.error_type || "?") + ")"
       : r.cached ? T("缓存命中（不计入统计）", "cached (excluded)") : "OK";
     return '<tr><td class="r">' + esc(r.seq) + "</td><td>" + esc(endpointName(r)) + "</td><td>" +
-      esc(phaseName(r.phase) + (r.stream ? "" : " · " + T("非流式", "non-streaming"))) + '</td><td class="r">' +
+      esc(phaseName(r.phase) + (unstreamed(r) ? " · " + T("非流式", "non-streaming") : "")) + '</td><td class="r">' +
       num((r.start_ms || 0) / 1000) + '</td><td class="r">' + (r.ok ? num(m.get(r)) : "—") + '</td><td class="r">' +
       (trendOf(r, m) != null ? num(trendOf(r, m)) : "—") + '</td><td class="r">' +
       (bandOf(r, m) ? num(bandOf(r, m)[0]) + "–" + num(bandOf(r, m)[1]) : "—") + "</td><td>" +
@@ -417,7 +428,7 @@
   }
   function tip(r, m) {
     var head = "#" + r.seq + " · " + endpointName(r) + " · " + (r.detector || "—") + " · " + phaseName(r.phase) +
-      (r.stream ? "" : " · " + T("非流式", "non-streaming"));
+      (unstreamed(r) ? " · " + T("非流式", "non-streaming") : "");
     if (!m) return head + "\n" + T("失败", "failed") + " (" + (r.status_code || r.error_type || "?") + ")";
     var lines = [head, T(m.zh, m.en) + ": " + num(m.get(r)) + " " + m.unit];
     if (m.id !== "latency" && r.duration_ms != null) lines.push(T("延迟", "Latency") + ": " + num(r.duration_ms) + " ms");
@@ -428,7 +439,7 @@
 
   // `over`: how many requests the chart drew as triangles above its range
   function legend(records, hasBaseline, over) {
-    var calls = (records || []).filter(function (r) { return r.op === "complete"; });
+    var calls = (records || []).filter(isCall);
     var probe = calls.some(function (r) { return r.phase !== "passive"; });
     var items = ['<span><i class="zp-key t"></i>' + esc(T("目标", "target")) + "</span>"];
     if (hasBaseline) items.push('<span><i class="zp-key b"></i>' + esc(T("基线", "baseline")) + "</span>");
@@ -436,7 +447,7 @@
       items.push('<span><i class="zp-key t passive"></i>' + esc(T("常规检测请求（圆环）", "audit request (ringed)")) + "</span>");
     if (calls.some(function (r) { return r.phase === "probe"; }))
       items.push('<span><i class="zp-key t probe"></i>' + esc(T("性能探测请求（小、浅色）", "probe request (small, lighter)")) + "</span>");
-    if (calls.some(function (r) { return r.phase !== "passive" && !r.stream; }))
+    if (calls.some(function (r) { return r.phase !== "passive" && unstreamed(r); }))
       items.push('<span><i class="zp-key t hollow"></i>' + esc(T("非流式请求（空心）", "non-streaming request (hollow)")) + "</span>");
     if (calls.some(function (r) { return !r.ok; }))
       items.push('<span><i class="zp-key x" aria-hidden="true">×</i>' + esc(T("失败请求", "failed request")) + "</span>");
@@ -453,9 +464,9 @@
 
   // Metric tabs and the plot they control; `pid` keeps the ids unique per panel.
   var seq = 0;
-  function tabs(active, pid) {
+  function tabs(active, pid, embed) {
     return '<div class="zp-tabs" role="tablist" aria-label="' + esc(T("性能指标", "Performance metric")) + '">' +
-      METRICS.map(function (m) {
+      METRICS.filter(function (m) { return !embed || m.id === "latency"; }).map(function (m) {
         var on = m.id === active;
         return '<button type="button" role="tab" id="' + pid + "-tab-" + m.id + '" aria-controls="' + pid +
           '-panel" data-metric="' + m.id + '" aria-selected="' + on + '" tabindex="' + (on ? 0 : -1) + '"' +
@@ -570,12 +581,14 @@
   function p50of(stats) {
     return stats && stats.p50 != null ? stats.p50 : null;
   }
-  function tiles(ep) {
+  function tiles(ep, embed) {
     var streamed = ep.ttft_ms && ep.ttft_ms.count;
     var tps = p50of(ep.decode_tps_local);
     if (tps == null) tps = p50of(ep.decode_tps_reported);
     var t = [[T("延迟 p50", "Latency p50"), num(p50of(ep.latency_ms)), "ms"]];
-    if (streamed) {
+    if (embed) {
+      // no tokens come back: latency and errors only
+    } else if (streamed) {
       t.push(["TTFT p50", num(p50of(ep.ttft_ms)), "ms"]);
       t.push([T("解码速度 p50", "Decode speed p50"), num(tps), "tok/s"]);
     } else {
@@ -588,10 +601,10 @@
         (x[2] ? ' <small>' + x[2] + "</small>" : "") + "</div></div>";
     }).join("") + "</div>";
   }
-  function endpointBlock(ep, title) {
+  function endpointBlock(ep, title, embed) {
     var o = [];
     if (title) o.push('<h4 class="zp-h">' + esc(title) + "</h4>");
-    o.push(tiles(ep));
+    o.push(tiles(ep, embed));
     var line = int(ep.successes) + "/" + int(ep.requests) + " " + T("成功", "succeeded") + " · " +
       T("超时", "timeouts") + " " + num(ep.timeout_rate, "ratio") + " · 429 " + num(ep.rate_limited_rate, "ratio");
     if (ep.cached_excluded) line += " · " + int(ep.cached_excluded) + " " + T("缓存命中（不计入统计）", "cached (excluded)");
@@ -601,7 +614,10 @@
       extra.push(T("冷启动（首个请求）", "Cold start (first request)") + ": " + num(ep.cold_start_ms) + " ms" +
         (ep.cold_start_ttft_ms != null ? ", TTFT " + num(ep.cold_start_ttft_ms) + " ms" : ""));
     var c = ep.concurrency;
-    if (c)
+    if (c && embed)
+      extra.push(T("并发负载", "Under load") + " (" + int(c.requests) + " × " + int(c.concurrency) + "): " +
+        T("延迟 p50", "Latency p50") + " " + num(c.latency_ms && c.latency_ms.p50) + " ms");
+    else if (c)
       extra.push(T("并发负载", "Under load") + " (" + int(c.requests) + " × " + int(c.concurrency) + "): " +
         T("总吞吐", "aggregate") + " " + num(c.aggregate_tps_local) + " tok/s, " + T("延迟 p50", "Latency p50") + " " +
         num(c.latency_ms && c.latency_ms.p50) + " ms");
@@ -643,11 +659,11 @@
       esc(T("目标更差", "target worse")) + "</span> " + esc(T("（相差 2% 以内视为持平）", "(within 2% counts as even)")) + "</p>";
   }
   var MODE_TITLE = { stream: ["流式", "Streaming"], non_stream: ["非流式", "Non-streaming"] };
-  function modeBlock(mode, target, baseline, comparison, titled) {
+  function modeBlock(mode, target, baseline, comparison, titled, embed) {
     var o = [];
     if (titled && MODE_TITLE[mode]) o.push('<h4 class="zp-h zp-mode">' + esc(T(MODE_TITLE[mode][0], MODE_TITLE[mode][1])) + "</h4>");
-    o.push(endpointBlock(target, baseline ? T("目标", "Target") : ""));
-    if (baseline) o.push(endpointBlock(baseline, T("基线", "Baseline")));
+    o.push(endpointBlock(target, baseline ? T("目标", "Target") : "", embed));
+    if (baseline) o.push(endpointBlock(baseline, T("基线", "Baseline"), embed));
     if ((comparison || []).length) {
       o.push('<h4 class="zp-h">' + esc(T("目标 vs 基线", "Target vs baseline")) + "</h4>");
       o.push(compareTable(comparison));
@@ -661,20 +677,25 @@
   // The parts of a report's chart that follow its metric and y-range.
   function sectionParts(perf, pid) {
     var recs = perf.requests, st = sectionState;
-    var s = scaleState(recs, st.metric, st.scale, "full"), c = chartSvg(recs, st.metric, s.eff);
+    var shown = isEmbed(perf) ? "latency" : st.metric;
+    var s = scaleState(recs, shown, st.scale, "full"), c = chartSvg(recs, shown, s.eff);
     return {
       scale: hasProbe(recs) ? scaleBar(s, c) : "",
-      plot: plotHtml(c, st.metric, pid, st.open),
+      plot: plotHtml(c, shown, pid, st.open),
       legend: legend(recs, !!perf.baseline, c.over),
     };
   }
   function section(perf) {
     if (!perf || !perf.target) return "";
     var modes = perf.modes || [];
-    var kind = [perf.mode].concat(modes.map(function (m) { return m.mode; }))
+    var embed = isEmbed(perf);
+    var kind = embed ? "" : [perf.mode].concat(modes.map(function (m) { return m.mode; }))
       .filter(function (m) { return MODE_TITLE[m]; })
       .map(function (m) { return T(MODE_TITLE[m][0], MODE_TITLE[m][1]); }).join(" + ");
-    var src = perf.source === "probe"
+    var src = perf.source === "probe" && embed
+      ? T("来源：专用性能探测", "Source: dedicated probe") + " — " +
+        fill(T("{n} 个请求", "{n} requests"), { n: int(perf.probe_requests) })
+      : perf.source === "probe"
       ? T("来源：专用性能探测", "Source: dedicated probe") + " — " +
         fill(T("{n} × {max} tokens", "{n} × {max} tokens"), {
           n: int(perf.probe_requests),
@@ -688,17 +709,19 @@
       : T("仅供参考，不计分", "Informational — not scored");
     o.push('<p class="zp-muted">' + esc(src) + " · " + esc(scored) + "</p>");
     var parts = sectionParts(perf, pid);
-    o.push(tabs(sectionState.metric, pid));
+    o.push(tabs(embed ? "latency" : sectionState.metric, pid, embed));
     o.push(parts.scale, parts.plot, parts.legend);
-    o.push(modeBlock(perf.mode, perf.target, perf.baseline, perf.comparison, modes.length > 0));
+    o.push(modeBlock(perf.mode, perf.target, perf.baseline, perf.comparison, !embed && modes.length > 0, embed));
     modes.forEach(function (m) {
-      o.push(modeBlock(m.mode, m.target, m.baseline, m.comparison, true));
+      o.push(modeBlock(m.mode, m.target, m.baseline, m.comparison, !embed, embed));
     });
     if (perf.probe_cost) {
       var pc = perf.probe_cost;
       o.push('<p class="zp-muted">' + esc(T("探测成本", "Probe cost")) + ": " + esc(T("请求数", "Requests")) + " " +
-        int(pc.requests) + " · " + esc(fill(T("{input} + {output} tokens（usage）", "{input} + {output} tokens (usage)"),
-          { input: num(pc.input_tokens_reported), output: num(pc.output_tokens_reported) })) + "</p>");
+        int(pc.requests) + " · " + esc(embed
+          ? fill(T("{input} 个输入 token（usage）", "{input} input tokens (usage)"), { input: num(pc.input_tokens_reported) })
+          : fill(T("{input} + {output} tokens（usage）", "{input} + {output} tokens (usage)"),
+            { input: num(pc.input_tokens_reported), output: num(pc.output_tokens_reported) })) + "</p>");
     }
     if ((perf.notes || []).length)
       o.push('<ul class="zp-list zp-notes">' + perf.notes.map(function (n) { return "<li>" + esc(note(n)) + "</li>"; }).join("") + "</ul>");
@@ -820,7 +843,9 @@
   Live.prototype.render = function () {
     if (!this.host || !this.records.length) return;
     var recs = this.records;
-    var calls = recs.filter(function (r) { return r.op === "complete"; });
+    // completion calls, or an embedding job's embedding calls
+    var calls = recs.filter(isCall);
+    var embedOnly = calls.length > 0 && !calls.some(function (r) { return r.op === "complete"; });
     var target = calls.filter(function (r) { return r.endpoint !== "baseline" && r.ok && !r.cached; });
     var probeDone = calls.filter(function (r) { return r.endpoint !== "baseline" && r.phase === "probe"; }).length;
     var tps = target.map(function (r) { return r.decode_tps_local != null ? r.decode_tps_local : r.decode_tps_reported; });
@@ -849,9 +874,10 @@
       head: [
         [T("请求数", "Requests"), int(calls.length)],
         [T("延迟 p50", "Latency p50"), withUnit(p50(target.map(function (r) { return r.duration_ms; })), "ms")],
+      ].concat(embedOnly ? [] : [
         ["TTFT p50", withUnit(ttftP50, "ms")],
         [decodeLabel, withUnit(tpsP50, "tok/s")],
-      ],
+      ]),
       probe: null,
       tabs: tabs(this.metric, this.pid),
       scale: this.probeTotal > 0 || hasProbe(recs) ? scaleBar(sc, chartV) : "",
@@ -1068,7 +1094,7 @@
     if (!box) return;
     var m = metric(this.metric), recs = this.records, key = this.tableKey(m), t = this.table;
     var tbody = box.querySelector("tbody");
-    var complete = function (r) { return r.op === "complete"; };
+    var complete = isCall;
     if (t && tbody && t.key === key && t.recs === recs && t.n <= recs.length) {
       if (t.n < recs.length) {
         var rows = dataRows(recs.slice(t.n).filter(complete), m);

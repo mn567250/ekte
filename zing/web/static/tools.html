@@ -87,6 +87,11 @@
   .vpill{display:inline-flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:600;font-size:15px;padding:7px 16px;border-radius:999px}
   .vscore{font-size:13px;color:var(--ink2)}.vscore b{font-family:var(--disp);font-size:18px;color:var(--ink)}
   .vtgt{font-size:12px;color:var(--faint);font-family:var(--mono)}
+  .ract{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;margin-top:14px}
+  .ract button{font-family:var(--sans);font-weight:700;font-size:13px;color:#fff;background:var(--ink);border:0;border-radius:11px;padding:10px 14px;cursor:pointer}
+  .ract button:disabled{opacity:.5;cursor:not-allowed}
+  .ract .rmsg{flex:1 1 100%;font-size:13px;color:var(--ink2);margin:0}
+  .ract .rmsg:empty{display:none}
   .findings{margin-top:14px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--card)}
   .f{display:flex;gap:11px;padding:13px 16px;border-top:1px dotted var(--line)}
   .f:first-child{border-top:0}
@@ -226,8 +231,22 @@ function renderResult(outSel,verdict){
       ${t.base_url?`<span class="vtgt">${esc(t.base_url)} · ${esc(t.claimed_model||t.model||"")}</span>`:""}
     </div>
     <div class="findings">${findings||'<div class="f"><div class="fs">'+T("没有检测项。","No checks.")+'</div></div>'}</div>
+    ${v.report_id!=null?`<div class="ract"><button type="button" data-monitor="${esc(v.report_id)}">${T("监控此端点","Monitor this")}</button>
+      <a href="/v2/history?surface=${esc(v.surface||"embedding")}#r-${esc(v.report_id)}">${T("打开已保存的报告","Open the saved report")} →</a>
+      <p class="rmsg" role="status" id="rmsg-${esc(v.report_id)}"></p></div>`:""}
   </div>`;
 }
+// "Monitor this": schedule the saved run as a paused monitor with its configuration.
+const DIMS={};
+document.addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest("[data-monitor]"); if(!b)return;
+  const id=b.dataset.monitor, msg=document.getElementById("rmsg-"+id);
+  b.disabled=true; if(msg)msg.textContent="";
+  fetch("/api/watches/from-history/"+encodeURIComponent(id),{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({language:ZING_LANG.get(),embedding_dimensions:DIMS[id]||0})})
+    .then(r=>r.json().catch(()=>({})).then(j=>{if(!r.ok||!j.id)throw new Error((j&&j.error)||("HTTP "+r.status));location.href="/v2/watches#w-"+j.id;}))
+    .catch(err=>{b.disabled=false;if(msg)msg.textContent=T("无法设为监控：","Could not schedule this run: ")+ZING_LANG.server(String(err.message||err));});
+});
 
 async function postAudit(url,payload,btn,outSel){
   $(outSel).innerHTML="";delete OUT[outSel];btn.disabled=true;
@@ -235,6 +254,7 @@ async function postAudit(url,payload,btn,outSel){
     const resp=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     const data=await resp.json().catch(()=>({}));
     if(!resp.ok){showErr(outSel,()=>esc(ZING_LANG.server(data.error)||("HTTP "+resp.status)));return;}
+    if(data.report_id!=null)DIMS[data.report_id]=payload.claimed_dimensions||0;
     renderResult(outSel,data);
   }catch(e){
     const msg=String(e.message||e);

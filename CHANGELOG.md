@@ -8,6 +8,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Embedding audits as first-class audits (endpoint type / surface).** Every
+  audit, history row and monitor has a `surface`: `chat` (default) or
+  `embedding`, independent of the suite (`NULL` and a missing field read as
+  chat; no migration). `zing embed`, `/api/embed` and the Tools page run the
+  embedding checks through the runner, score them on the shared 0–100 / A–F
+  scale and save them to History. New checks: vector drift against the
+  previous run (cosine ≥ 0.995 stable, 0.95–0.995 shifted, below 0.95
+  swapped) and an embedding performance probe (`performance.embed`: latency,
+  cold start, inputs/s, batch scaling; gated like the chat probe). History
+  shows a surface badge and filter; Analytics has a mandatory endpoint-type
+  filter and offers only the metrics that apply. Monitors take a surface and
+  an embedding watch's claimed dimension (`embedding_dimensions`); an
+  embedding monitor checks drift against its previous run and alerts like a
+  chat monitor. The Tools result offers **Monitor this** and a link to the
+  saved report; **Re-run** of an embedding run opens the Tools page
+  prefilled. Chat audits are unchanged.
+
 - **Decode speed p5 and p95 in analytics.** Every audit now stores the slow
   (p5) and fast (p95) end of its decode speed next to the p50, from the same
   requests (local token count, else the reported one; 20 requests at least,

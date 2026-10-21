@@ -61,6 +61,8 @@
       - term: Modelo pedido
       - definition:
         - code: gpt-4o
+      - term: Tipo de endpoint
+      - definition: Chat
       - term: Conjunto de testes
       - definition:
         - code: standard

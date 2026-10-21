@@ -53,6 +53,9 @@
       - button "Last 90 days"
       - button "All time"
       - button "Custom range"
+    - text: Endpoint type
+    - combobox "Endpoint type":
+      - option "Chat" [selected]
     - text: Suite
     - combobox "Suite":
       - option "All"

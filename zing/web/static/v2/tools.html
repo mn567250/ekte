@@ -83,6 +83,10 @@
   .chk .metrics > span { display: inline-flex; align-items: baseline; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
   .chk .metrics .key { white-space: nowrap; }
   .chk .more { margin-top: 7px; }
+  /* the saved run: open it in History, or schedule it as a monitor */
+  .res-act { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; padding: 12px 18px; border-top: 1px solid var(--line); }
+  .res-act .msg { flex: 1 1 100%; font-size: 13px; color: var(--danger); }
+  .res-act .msg:empty { display: none; }
   .chk pre {
     margin: 7px 0 0; font-family: var(--mono); font-size: 11.5px; color: var(--ink-muted); background: var(--sunken);
     border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; white-space: pre-wrap; word-break: break-word;
@@ -334,8 +338,45 @@
       '<span class="score">' + esc(tt("健康分", "Health score")) + ' <b class="' + scoreC(v.score) + '">' + (v.score == null ? "—" : esc(Math.round(v.score))) + "</b>/100</span>" +
       (target ? '<span class="tgt">' + target + "</span>" : "") + "</div>" +
       (rows ? '<ul class="checks">' + rows + "</ul>" : '<div class="checks"><p class="none">' + esc(tt("没有检测项。", "No checks.")) + "</p></div>") +
+      savedHTML(v) +
       "</section>";
   }
+  // A run saved to history (embedding audits are): link to it, and offer to
+  // schedule it as a monitor with the same configuration.
+  function savedHTML(v) {
+    if (v.report_id == null) return "";
+    var id = esc(String(v.report_id));
+    return '<div class="res-act">' +
+      '<button type="button" class="btn sm pri" data-monitor="' + id + '">' + ico("bell") + esc(tt("监控此端点", "Monitor this")) + "</button>" +
+      '<a href="/v2/history?surface=' + esc(v.surface || "embedding") + "#r-" + id + '">' + esc(tt("打开已保存的报告", "Open the saved report")) + " →</a>" +
+      '<p class="msg" id="mon-msg-' + id + '" role="status"></p></div>';
+  }
+  // the claimed vector length each saved run was audited with (the report does not keep it)
+  var DIMS = {};
+  function monitor(btn) {
+    var id = btn.getAttribute("data-monitor"), msg = document.getElementById("mon-msg-" + id);
+    btn.disabled = true;
+    if (msg) msg.textContent = "";
+    fetch("/api/watches/from-history/" + encodeURIComponent(id), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: window.ZING_LANG ? ZING_LANG.get() : "en", embedding_dimensions: DIMS[id] || 0 }),
+    })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          if (!r.ok || !j.id) throw new Error((j && j.error) || "HTTP " + r.status);
+          location.href = "/v2/watches#w-" + j.id;
+        });
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        if (msg) msg.textContent = tt("无法设为监控：", "Could not schedule this run: ") + srv(String((e && e.message) || e));
+      });
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-monitor]") : null;
+    if (b) monitor(b);
+  });
   document.addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest(".chk .more") : null;
     if (!b) return;
@@ -365,6 +406,7 @@
         showErr(sel, function () { return esc(srv(data.error) || "HTTP " + status); });
         return;
       }
+      if (data.report_id != null) DIMS[data.report_id] = payload.claimed_dimensions || 0;
       renderResult(sel, data);
     } catch (e) {
       var msg = String((e && e.message) || e);
@@ -433,6 +475,25 @@
       renderResult(sel, o.data, openIds);
     });
   });
+
+  // ---------- ?rerun=<id>: prefill the embedding form from a saved run ----------
+  var rerunId = new URLSearchParams(location.search).get("rerun");
+  if (rerunId) {
+    fetch("/api/history/" + encodeURIComponent(rerunId))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (rep) {
+        var t = (rep && rep.target) || {};
+        if (!rep || rep.surface !== "embedding") return;
+        $("#e-url").value = t.base_url || "";
+        $("#e-model").value = t.model || "";
+        $("#e-claimed").value = t.claimed_model && t.claimed_model !== t.model ? t.claimed_model : "";
+        $("#e-provider").value = t.declared_provider || "";
+        ["#e-url", "#e-model", "#e-claimed"].forEach(function (s) {
+          $(s).dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      })
+      .catch(function () {});
+  }
 
   // ---------- relay configuration: the same flow as the audit page ----------
   // (relay / provider -> base URL -> the relay's models -> claimed model)

@@ -152,13 +152,22 @@
     "connectivity", "protocol", "context_window", "model_identity", "capability",
     "streaming", "billing", "reliability", "security", "performance",
   ];
+  // Another surface scores only the dimensions it has evidence for
+  // (zing/scoring.py SURFACE_WEIGHTS); a missing surface is chat.
+  var SURFACE_DIMS = {
+    embedding: ["connectivity", "model_identity", "capability", "reliability", "performance"],
+  };
+  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"] };
+  function surfaceOf(r) {
+    return (r && r.surface) || "chat";
+  }
   function allDims(r) {
     var have = {};
     var out = (r.dimensions || []).slice();
     out.forEach(function (d) {
       have[d.dimension] = true;
     });
-    DIM_ORDER.forEach(function (k) {
+    (SURFACE_DIMS[surfaceOf(r)] || DIM_ORDER).forEach(function (k) {
       if (!have[k]) out.push({ dimension: k, score: null, status: "not_run", reason: "" });
     });
     return out;
@@ -194,7 +203,18 @@
     return body ? '<div class="zr-extra" data-extra="' + esc(d.dimension) + '">' + body + "</div>" : "";
   }
 
-  function dimName(k) {
+  // What a dimension asks on the embedding surface (its name stays the same).
+  var DIMDESC_EMBED = {
+    model_identity: ["向量是否属于声称的模型？", "Do the vectors come from the claimed model?"],
+    capability: ["不同输入是否得到不同向量？", "Do different inputs give different vectors?"],
+    reliability: ["同一输入是否得到同一向量？", "Does the same input give the same vector?"],
+  };
+  function dimName(k, surface) {
+    var alt = surface === "embedding" && DIMDESC_EMBED[k];
+    var n = dimNameOf(k);
+    return alt && n ? [n[0], T(alt[0], alt[1])] : n;
+  }
+  function dimNameOf(k) {
     if (isZh()) return DIMNAME[k];
     var e = DIMNAME_EN[k];
     return (
@@ -297,6 +317,10 @@
       if (/_ms$/.test(k)) return fmtDuration(x);
       if (/_(s|sec|seconds)$/.test(k)) return fmtDuration(x * 1000);
     }
+    // the embedding drift check's vector sample: its length, not 64 numbers
+    if (k === "sample" && Array.isArray(x) && x.length > 6 &&
+        x.every(function (v) { return typeof v === "number"; }))
+      return Tf("[{n} 个数值的向量样本]", "[vector sample of {n} numbers]", { n: num(x.length, 0) });
     if (Array.isArray(x) && k && /_(ms|s|sec|seconds)$/.test(k) &&
         x.every(function (v) { return typeof v === "number"; }))
       return "[" + x.slice(0, 6).map(function (v) { return fmt(v, k); }).join(", ") +
@@ -330,7 +354,7 @@
   var uid = 0;
 
   function dimRow(d, r) {
-    var n = dimName(d.dimension) || [d.dimension, ""];
+    var n = dimName(d.dimension, surfaceOf(r)) || [d.dimension, ""];
     var c = STATC[d.status] || scoreC(d.score);
     var hasScore = d.score != null && isFinite(d.score);
     var v = hasScore ? Math.max(0, Math.min(100, Math.round(d.score))) : null;
@@ -787,6 +811,8 @@
     if (r.baseline)
       meta.push(item(T("对照基线", "Baseline"), code(r.baseline.model || "—") + " @ " + code(r.baseline.base_url || "—") +
         (proto(r.baseline) ? " · " + proto(r.baseline) : "")));
+    if (surfaceOf(r) !== "chat")
+      meta.push(item(T("接口类型", "Endpoint type"), esc(SURFACE[surfaceOf(r)] ? T.apply(null, SURFACE[surfaceOf(r)]) : surfaceOf(r))));
     meta.push(item(T("模式", "Mode"), code(r.mode || "check")));
     if (r.suite)
       meta.push(item(T("套件", "Suite"), code(r.suite) +
@@ -796,7 +822,8 @@
               return esc(n ? n[0] : d);
             }).join(" · ")
           : "")));
-    if (r.stream_mode)
+    // a chat probe's request mode (other surfaces never stream)
+    if (r.stream_mode && surfaceOf(r) === "chat")
       meta.push(item(T("性能探测请求", "Performance probe requests"), esc(STREAM_MODE[r.stream_mode] ? T.apply(null, STREAM_MODE[r.stream_mode]) : r.stream_mode)));
     if ((r.prompt_languages || []).length)
       meta.push(item(T("探测语言", "Probe languages"), esc(r.prompt_languages.map(langName).join(" · "))));

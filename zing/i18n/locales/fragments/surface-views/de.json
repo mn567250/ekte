@@ -1,0 +1,21 @@
+{
+ "strings": {
+  "Chat": "Chat",
+  "Embeddings": "Embeddings",
+  "Endpoint type": "Endpunkttyp",
+  "Billing and token metrics apply to chat audits only.": "Abrechnungs- und Token-Metriken gelten nur für Chat-Prüfungen.",
+  "Embedding connectivity": "Embedding-Erreichbarkeit",
+  "Embedding model identity": "Identität des Embedding-Modells",
+  "Vector determinism": "Vektor-Determinismus",
+  "Vector distinctness": "Vektor-Unterscheidbarkeit",
+  "Vector drift": "Vektordrift",
+  "Do the vectors come from the claimed model?": "Stammen die Vektoren vom angegebenen Modell?",
+  "Do different inputs give different vectors?": "Ergeben verschiedene Eingaben verschiedene Vektoren?",
+  "Does the same input give the same vector?": "Ergibt dieselbe Eingabe denselben Vektor?",
+  "[vector sample of {n} numbers]": "[Vektorstichprobe aus {n} Zahlen]",
+  "{n} requests": "{n} Anfragen",
+  "{input} input tokens (usage)": "{input} Eingabe-Tokens (usage)",
+  "batch probe": "Batch-Messung",
+  "No audits of this endpoint type.": "Keine Prüfungen dieses Endpunkttyps."
+ }
+}

@@ -35,16 +35,31 @@ suite in compare mode (too few samples for the consistency checks).
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import secrets
 from collections.abc import Sequence
 
 from zing import prompts
-from zing.clients import Client
 from zing.config import AuditOptions
 from zing.context import AuditContext
-from zing.detectors.base import CUSTOM_SUITE, SUITE_ORDER, Detector, register
+from zing.detectors import perf_probe
+from zing.detectors.base import Detector, register
+from zing.detectors.perf_probe import (
+    PINGS,
+    STANDARD_COMPARE_REQUESTS,
+    burst_size,
+    consistency_outcomes,
+    error_outcomes,
+    load_outcomes,
+    planned_probe_requests,
+)
+from zing.detectors.perf_probe import Endpoint as _Endpoint
+from zing.detectors.perf_probe import deep as _deep
+from zing.detectors.perf_probe import fmt as _fmt
+from zing.detectors.perf_probe import r as _r
+from zing.detectors.perf_probe import signed as _signed
+from zing.detectors.perf_probe import tail_key as _tail_key
+from zing.detectors.perf_probe import tail_ratio as _tail_ratio
 from zing.detectors.scale import Scale, outcome
 from zing.knowledge.schema import PerformanceReference
 from zing.models import (
@@ -56,62 +71,28 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.perf import RequestRecorder, phase_scope, summarize_endpoint
+from zing.perf import summarize_endpoint
 from zing.perf.recorder import last_record
 from zing.perf.summary import hidden_reasoning
-from zing.utils.stats import percentile
 
-PINGS = 3
-# Probe size on the standard suite, where it only runs in compare mode.
-STANDARD_COMPARE_REQUESTS = 5
-# Burst size: a few rounds at the configured concurrency.
-_BURST_ROUNDS = 4
-_MIN_BURST = 8
+__all__ = [
+    "PINGS",
+    "STANDARD_COMPARE_REQUESTS",
+    "PerformanceDetector",
+    "_deep",
+    "_tail_key",
+    "_tail_ratio",
+    "burst_size",
+    "estimated_calls",
+    "planned_probe_requests",
+    "probe_modes",
+    "stream_mode",
+]
+
 # Decode throughput this far above the reference suggests a smaller model.
 _FAST_RATIO = 2.0
 # Minimum clean samples per side before comparing throughput.
 _MIN_COMPARE_SAMPLES = 5
-# Consistency is judged by the tail ratio: p90 / p50 for latency and TTFT (slow
-# outliers), p50 / p10 for throughput (slow outliers). A percentile ratio is
-# robust to the odd stray request, unlike a standard deviation.
-_MIN_CONSISTENCY_SAMPLES = 10
-_TAIL_STEADY = 1.3
-_TAIL_STABLE = 1.75
-_TAIL_VARIABLE = 2.5
-# The consistency findings' titles per metric, spelled out so the locales can
-# translate each one.
-_CONSISTENCY_TITLE = {
-    "Latency": "Latency consistency",
-    "Time to first token": "Time to first token consistency",
-    "Decode throughput": "Decode throughput consistency",
-    "End-to-end throughput": "End-to-end throughput consistency",
-}
-# Share of probe requests that failed (rate limits excluded).
-_ERROR_RATE_OK = 0.02
-_ERROR_RATE_WARN = 0.1
-# Burst p50 latency / sequential p50 latency.
-_LOAD_STABLE = 1.5
-_LOAD_SLOWER = 3.0
-_MIN_BURST_SAMPLES = 5
-
-
-def _deep(suite: str) -> bool:
-    """Deep or deeper — the custom suite probes like deep."""
-    if suite == CUSTOM_SUITE:
-        return True
-    return suite in SUITE_ORDER and SUITE_ORDER.index(suite) >= SUITE_ORDER.index("deep")
-
-
-def planned_probe_requests(options: AuditOptions, *, has_baseline: bool) -> int:
-    """Probe requests per endpoint for this run (0 = the probe does not run)."""
-    n = options.performance_requests
-    if n <= 0:
-        return 0
-    if _deep(options.suite):
-        return n
-    if options.suite == "standard" and has_baseline:
-        return min(STANDARD_COMPARE_REQUESTS, n)
-    return 0
 
 
 def probe_modes(options: AuditOptions) -> list[bool]:
@@ -129,14 +110,6 @@ def stream_mode(options: AuditOptions) -> str:
     return "stream" if modes[0] else "non_stream"
 
 
-def burst_size(options: AuditOptions, probe_requests: int) -> int:
-    """Requests in the concurrency burst (deep/full only)."""
-    if not _deep(options.suite) or probe_requests <= 0:
-        return 0
-    conc = max(1, options.reliability_concurrency)
-    return min(probe_requests, max(conc * _BURST_ROUNDS, _MIN_BURST))
-
-
 def estimated_calls(options: AuditOptions, *, has_baseline: bool) -> int:
     """API calls the probe makes across all endpoints — for ``--dry-run``."""
     n = planned_probe_requests(options, has_baseline=has_baseline)
@@ -146,26 +119,7 @@ def estimated_calls(options: AuditOptions, *, has_baseline: bool) -> int:
     return per_endpoint * (2 if has_baseline else 1)
 
 
-class _Endpoint:
-    """One side of the probe and its per-endpoint state."""
-
-    def __init__(self, label: str, client: Client) -> None:
-        self.label = label
-        self.client = client
-        self.seen: set[str] = set()
-
-
-def _consistency(check: str, what: str) -> tuple:
-    return (
-        outcome(check, "steady", 100, Status.PASS, label=f"{what} is steady (tail ratio at most 1.3)."),
-        outcome(check, "stable", 85, Status.PASS, label=f"{what} is stable (tail ratio at most 1.75)."),
-        outcome(check, "variable", 65, Status.WARN, Severity.LOW,
-                label=f"{what} varies noticeably (tail ratio at most 2.5)."),
-        outcome(check, "erratic", 40, Status.FAIL, Severity.LOW,
-                label=f"{what} is erratic (tail ratio above 2.5)."),
-        outcome(check, "few_samples", None, Status.INFO,
-                label=f"Too few samples to judge how consistent {what.lower()} is."),
-    )
+_consistency = consistency_outcomes
 
 
 # Consistency first: an endpoint that is slow but steady scores well.
@@ -177,18 +131,8 @@ SCALE = Scale(
     *_consistency("performance.latency_consistency", "Latency"),
     *_consistency("performance.ttft_consistency", "Time to first token"),
     *_consistency("performance.throughput_consistency", "Throughput"),
-    outcome("performance.errors", "ok", 100, Status.PASS,
-            label="At most 2% of the probe requests failed."),
-    outcome("performance.errors", "some", 80, Status.WARN, Severity.LOW,
-            label="Up to 10% of the probe requests failed or timed out."),
-    outcome("performance.errors", "failed", 50, Status.FAIL, Severity.LOW,
-            label="Many probe requests failed or timed out."),
-    outcome("performance.load_stability", "stable", 100, Status.PASS,
-            label="Latency holds up under concurrent load (at most 1.5x)."),
-    outcome("performance.load_stability", "slower", 80, Status.WARN, Severity.LOW,
-            label="Latency rises under concurrent load (up to 3x)."),
-    outcome("performance.load_stability", "degraded", 55, Status.FAIL, Severity.LOW,
-            label="Latency degrades sharply under concurrent load (above 3x)."),
+    *error_outcomes(),
+    *load_outcomes(),
     outcome("performance.cache_hit", "cached", 60, Status.WARN, Severity.LOW,
             label="Unique probe prompts came back from a cache (left out of the statistics)."),
     outcome("performance.cache_hit", "baseline_cached", None, Status.INFO,
@@ -208,27 +152,6 @@ SCALE = Scale(
 )
 
 
-def _tail_key(ratio: float) -> str:
-    if ratio <= _TAIL_STEADY:
-        return "steady"
-    if ratio <= _TAIL_STABLE:
-        return "stable"
-    if ratio <= _TAIL_VARIABLE:
-        return "variable"
-    return "erratic"
-
-
-def _tail_ratio(values: Sequence[float], *, higher_is_better: bool) -> float | None:
-    """How far the slow tail sits from the median (>= 1; 1 = perfectly even)."""
-    if len(values) < _MIN_CONSISTENCY_SAMPLES:
-        return None
-    p50 = percentile(values, 50)
-    tail = percentile(values, 10 if higher_is_better else 90)
-    if not p50 or not tail:
-        return None
-    return p50 / tail if higher_is_better else tail / p50
-
-
 @register
 class PerformanceDetector(Detector):
     id = "performance"
@@ -239,7 +162,7 @@ class PerformanceDetector(Detector):
 
     @classmethod
     def applies(cls, suite: str, *, has_baseline: bool) -> bool:
-        return _deep(suite) or (suite == "standard" and has_baseline)
+        return perf_probe.probe_applies(suite, has_baseline=has_baseline)
 
     def __init__(self) -> None:
         self._counter = 0
@@ -276,17 +199,6 @@ class PerformanceDetector(Detector):
             ep.seen.add(digest)
         return record
 
-    async def _burst(
-        self, ep: _Endpoint, size: int, conc: int, max_tokens: int, stream: bool
-    ) -> None:
-        sem = asyncio.Semaphore(conc)
-
-        async def one() -> None:
-            async with sem:
-                await self._call(ep, max_tokens, stream)
-
-        await asyncio.gather(*(one() for _ in range(size)))
-
     # -- run ---------------------------------------------------------------- #
     async def run(self, ctx: AuditContext) -> DetectorResult:
         result = self.new_result(scoring=SCALE.scoring())
@@ -306,44 +218,21 @@ class PerformanceDetector(Detector):
             )
             return result
 
-        endpoints = [_Endpoint("target", ctx.client)]
-        if ctx.baseline_client is not None:
-            endpoints.append(_Endpoint("baseline", ctx.baseline_client))
-
-        # Standalone use (no runner): record into a private recorder.
-        recorder = ctx.recorder
-        attached: list[Client] = []
-        if recorder is None:
-            recorder = RequestRecorder(ctx.tokenizer_hint())
-            for ep in endpoints:
-                if ep.client.recorder is None:
-                    ep.client.recorder, ep.client.endpoint = recorder, ep.label
-                    attached.append(ep.client)
+        endpoints = perf_probe.endpoints_of(ctx)
+        recorder, attached = perf_probe.attach_recorder(ctx, endpoints)
         first = len(recorder.records)
         max_tokens = max(1, opts.performance_max_tokens)
         conc = max(1, opts.reliability_concurrency)
         burst = burst_size(opts, n)
         modes = probe_modes(opts)
 
+        async def call(ep: _Endpoint, stream: bool) -> None:
+            await self._call(ep, max_tokens, stream)
+
         try:
-            with phase_scope("ping"):
-                for _ in range(PINGS):
-                    for ep in endpoints:
-                        await ep.client.list_models(no_cache=True)
-            with phase_scope("warmup"):
-                for ep in endpoints:
-                    await self._call(ep, max_tokens, modes[0])
-            with phase_scope("probe"):
-                for i in range(n):
-                    for stream in modes:
-                        # Alternate who goes first so neither side always follows the other.
-                        for ep in endpoints if i % 2 == 0 else endpoints[::-1]:
-                            await self._call(ep, max_tokens, stream)
-            if burst:
-                with phase_scope("probe_concurrent"):
-                    for stream in modes:
-                        for ep in endpoints:
-                            await self._burst(ep, burst, conc, max_tokens, stream)
+            await perf_probe.run_phases(
+                endpoints, call, n=n, modes=modes, burst=burst, conc=conc
+            )
         finally:
             for client in attached:
                 client.recorder = None
@@ -429,8 +318,8 @@ class PerformanceDetector(Detector):
         )
 
         self._consistency_findings(result, records, stream=stream)
-        self._error_finding(result, target)
-        self._load_finding(result, target)
+        perf_probe.error_finding(SCALE, result, target)
+        perf_probe.load_finding(SCALE, result, target)
 
         for label in summaries:
             cached = [
@@ -498,90 +387,7 @@ class PerformanceDetector(Detector):
             metrics.append(("performance.throughput_consistency", "End-to-end throughput",
                             "tok/s", [r.e2e_tps_local for r in good if r.e2e_tps_local], True))
         for check, what, unit, values, higher in metrics:
-            ratio = _tail_ratio(values, higher_is_better=higher)
-            tail = "p10" if higher else "p90"
-            p50 = _r(percentile(values, 50))
-            tail_value = _r(percentile(values, 10 if higher else 90))
-            evidence: dict[str, float | int | str | None] = {
-                "samples": len(values),
-                "p50": p50,
-                tail: tail_value,
-                "tail_ratio": round(ratio, 2) if ratio is not None else None,
-                "unit": unit,
-            }
-            if ratio is None:
-                result.findings.append(
-                    SCALE.finding(
-                        check, "few_samples",
-                        title=_CONSISTENCY_TITLE[what],
-                        summary=f"{len(values)} clean samples; at least "
-                        f"{_MIN_CONSISTENCY_SAMPLES} are needed to judge consistency.",
-                        evidence=evidence,
-                    )
-                )
-                continue
-            spread = f"{tail} / p50" if not higher else f"p50 / {tail}"
-            result.findings.append(
-                SCALE.finding(
-                    check, _tail_key(ratio),
-                    title=_CONSISTENCY_TITLE[what],
-                    summary=f"{what}: p50 {_fmt(p50, unit)}, {tail} "
-                    f"{_fmt(tail_value, unit)} — tail ratio ({spread}) {ratio:.2f} over "
-                    f"{len(values)} requests.",
-                    evidence=evidence,
-                )
-            )
-
-    @staticmethod
-    def _error_finding(result: DetectorResult, target: EndpointPerformance) -> None:
-        if target.error_rate is None:
-            return
-        rate = target.error_rate
-        key = "ok" if rate <= _ERROR_RATE_OK else "some" if rate <= _ERROR_RATE_WARN else "failed"
-        result.findings.append(
-            SCALE.finding(
-                "performance.errors",
-                key,
-                title="Probe request failures",
-                summary=f"{target.errors} of {target.requests} target probe requests failed "
-                f"({target.timeouts} timed out; {target.rate_limited} rate-limited, not counted).",
-                evidence={
-                    "endpoint": "target",
-                    "requests": target.requests,
-                    "errors": target.errors,
-                    "timeouts": target.timeouts,
-                    "rate_limited": target.rate_limited,
-                    "error_rate": round(rate, 3),
-                },
-            )
-        )
-
-    @staticmethod
-    def _load_finding(result: DetectorResult, target: EndpointPerformance) -> None:
-        conc = target.concurrency
-        seq = target.latency_ms.p50
-        if conc is None or conc.latency_ms.count < _MIN_BURST_SAMPLES or not seq:
-            return
-        burst = conc.latency_ms.p50
-        if burst is None:
-            return
-        ratio = burst / seq
-        key = "stable" if ratio <= _LOAD_STABLE else "slower" if ratio <= _LOAD_SLOWER else "degraded"
-        result.findings.append(
-            SCALE.finding(
-                "performance.load_stability",
-                key,
-                title="Latency under concurrent load",
-                summary=f"p50 latency {_fmt(burst, 'ms')} at concurrency {conc.concurrency} vs "
-                f"{_fmt(seq, 'ms')} one at a time ({ratio:.2f}x).",
-                evidence={
-                    "concurrency": conc.concurrency,
-                    "burst_latency_p50_ms": _r(burst),
-                    "sequential_latency_p50_ms": _r(seq),
-                    "ratio": round(ratio, 2),
-                },
-            )
-        )
+            perf_probe.consistency_finding(SCALE, result, check, what, unit, values, higher)
 
     # -- reference speed ---------------------------------------------------- #
     @staticmethod
@@ -711,15 +517,3 @@ class PerformanceDetector(Detector):
                 "speed alone is not proof of substitution." if key == "faster" else None,
             )
         )
-
-
-def _r(value: float | None) -> float | None:
-    return round(value, 1) if value is not None else None
-
-
-def _fmt(value: float | None, unit: str) -> str:
-    return "n/a" if value is None else f"{value:.0f} {unit}"
-
-
-def _signed(value: float) -> str:
-    return f"{value:+.0f}"

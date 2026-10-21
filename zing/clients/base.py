@@ -404,6 +404,16 @@ class BaseHTTPClient:
     ) -> tuple[CompletionOutcome, list[str]]:
         raise NotImplementedError
 
+    async def _embeddings(
+        self, inputs: list[str]
+    ) -> tuple[CompletionOutcome, list[list[float]]]:
+        """POST /embeddings; only OpenAI-shaped endpoints serve it."""
+        return CompletionOutcome(
+            ok=False,
+            error_type="Unsupported",
+            error_message=f"{type(self).__name__} has no embeddings endpoint.",
+        ), []
+
     # -- public calls (recorded for the performance section) --------------- #
     async def complete(self, spec: RequestSpec) -> CompletionOutcome:
         if self.reasoning_room:
@@ -461,6 +471,23 @@ class BaseHTTPClient:
             )
         finally:
             _CALL_TIMEOUT.reset(token)
+
+    async def embeddings(
+        self, inputs: list[str]
+    ) -> tuple[CompletionOutcome, list[list[float]]]:
+        """POST /embeddings. Returns (outcome, list-of-vectors).
+
+        Each vector is a list of floats. On any error the outcome carries the
+        redacted failure and the vector list is empty. With a recorder
+        the call is recorded as an ``embed`` request.
+        """
+        if self.recorder is None:
+            return await self._embeddings(inputs)
+        started = time.perf_counter()
+        with net_trace_scope() as net:
+            outcome, vectors = await self._embeddings(inputs)
+        self.recorder.record_embedding(self.endpoint, inputs, outcome, started, net)
+        return outcome, vectors
 
     async def list_models(
         self, *, no_cache: bool = False

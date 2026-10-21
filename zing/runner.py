@@ -119,6 +119,7 @@ async def run_audit(
     kb_dirs: list[Path] | None = None,
     use_user_kb: bool | None = None,
     pinned: KnowledgeUsage | None = None,
+    previous_report: dict[str, Any] | None = None,
     on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> AuditReport:
     """Run one audit.
@@ -126,6 +127,8 @@ async def run_audit(
     ``use_user_kb`` includes/excludes the user's kb.db entries (default: unless
     ``ZING_NO_USER_KB``). ``pinned`` audits against a fixed profile snapshot
     (a watch's) instead of resolving the live knowledge base.
+    ``previous_report`` is the last saved report of the same target and claimed
+    model, for checks that compare across runs (embedding vector drift).
     """
     # YAML + kb.db reads (a deep copy even when cached): off the event loop,
     # which timestamps the streamed chunks.
@@ -163,6 +166,10 @@ async def run_audit(
         on_record=lambda rec: _emit({"type": "request_done", "record": trend.tag(rec.model_dump())}),
     )
 
+    embedding = options.surface == "embedding"
+    # Embeddings do not stream.
+    request_mode = "non_stream" if embedding else stream_mode(options)
+
     async with AsyncExitStack() as stack:
         client = await stack.enter_async_context(make_client(target))
         client.recorder, client.endpoint = recorder, "target"
@@ -199,6 +206,7 @@ async def run_audit(
             baseline_client=baseline_client,
             judge=judge,
             recorder=recorder,
+            previous_report=previous_report,
         )
 
         detectors = select_detectors(
@@ -207,20 +215,23 @@ async def run_audit(
             has_baseline=baseline_client is not None,
             enabled=options.enabled,
             dimensions=options.dimensions,
+            surface=options.surface,
         )
         total = len(detectors)
         has_baseline = baseline_client is not None
         # Target probe requests across all modes, for the live progress bar.
-        probe_planned = (
-            planned_probe_requests(options, has_baseline=has_baseline) * len(probe_modes(options))
-            if any(d.id == "performance" for d in detectors)
-            else 0
-        )
+        probe_planned = planned_probe_requests(options, has_baseline=has_baseline)
+        if any(d.id == "performance" for d in detectors):
+            probe_planned *= len(probe_modes(options))
+        elif any(d.id == "performance.embed" for d in detectors):
+            probe_planned *= 2  # a single-input and a batch request per round
+        else:
+            probe_planned = 0
         _emit({"type": "start", "total": total, "suite": options.suite,
                "dimensions": list(options.dimensions), "mode": mode,
                "target": target.name, "claimed_model": target.claimed,
                "has_baseline": has_baseline, "probe_requests": probe_planned,
-               "api": detect_api(target), "stream_mode": stream_mode(options)})
+               "api": detect_api(target), "stream_mode": request_mode})
         results: list[DetectorResult] = []
         for i, detector in enumerate(detectors):
             _emit({"type": "detector_start", "index": i, "total": total,
@@ -240,9 +251,10 @@ async def run_audit(
         has_baseline=baseline is not None,
         probe_max_tokens=options.performance_max_tokens,
         concurrency=options.reliability_concurrency,
+        op="embed" if embedding else "complete",
     )
     selected = list(options.dimensions) if options.suite == "custom" else None
-    dimensions = build_dimensions(results, reliability, selected=selected)
+    dimensions = build_dimensions(results, reliability, selected=selected, surface=options.surface)
     verdict = build_verdict(
         results,
         dimensions,
@@ -251,6 +263,7 @@ async def run_audit(
         used_baseline=baseline_client is not None,
         selected=selected,
         match_confidence=profile.match_confidence if profile is not None else None,
+        surface=options.surface,
     )
 
     warnings = [
@@ -273,8 +286,9 @@ async def run_audit(
         started_at=recorder.started_at.isoformat(),
         command=command,
         suite=options.suite,
+        surface=options.surface,
         dimensions_selected=selected,
-        stream_mode=stream_mode(options),
+        stream_mode=request_mode,
         target=_redact(target),
         baseline=_redact(baseline) if baseline else None,
         verdict=verdict,

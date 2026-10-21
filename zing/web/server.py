@@ -91,6 +91,7 @@ from zing.config import (
     validate_api,
     validate_dimensions,
     validate_suite,
+    validate_surface,
 )
 from zing.detectors.performance import stream_mode
 from zing.models import KnowledgeUsage, TargetConfig
@@ -188,6 +189,9 @@ def _watch_protocol(row: dict[str, Any]) -> dict[str, Any]:
         )
     except Exception:
         resolved = None
+    if (row.get("surface") or "chat") != "chat":
+        # embedding requests never stream: no probe request mode to show
+        return {"api_resolved": resolved, "api_auto": configured == "auto", "stream_mode": None}
     mode = stream_mode(AuditOptions(
         suite=str(row.get("suite") or "standard"),
         performance_streaming=row.get("performance_streaming") is not False,
@@ -205,21 +209,6 @@ def _watch_knowledge(row: dict[str, Any], kb: Any = None) -> dict[str, Any]:
     kb = kb if kb is not None else load_knowledge_base(copy=False)
     resolved = kb.resolve(claimed, row.get("declared_provider") or None)
     return knowledge_usage(kb, resolved, claimed).model_dump(mode="json")
-
-
-def _kb_embedding_dimensions(model_id: str | None, provider_hint: str | None) -> int:
-    """Native embedding dimension for ``model_id`` from the KB; 0 if unknown."""
-    if not model_id:
-        return 0
-    try:
-        from zing.knowledge import load_knowledge_base
-
-        resolved = load_knowledge_base(copy=False).resolve(model_id, provider_hint=provider_hint)
-    except Exception:
-        return 0
-    if resolved is None:
-        return 0
-    return int(resolved.model.embedding_dimensions or 0)
 
 
 # Watches whose audit is executing right now (scheduler or Run now), keyed by
@@ -391,12 +380,23 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             declared_provider=row.get("declared_provider") or None,
             api=validate_api(row.get("api")),
         )
+        surface = validate_surface(row.get("surface"))
         options = AuditOptions(
             suite=suite,
             dimensions=dimensions,
             performance_streaming=row.get("performance_streaming") is not False,
+            surface=surface,
+            embedding_dimensions=max(0, _coerce_int(row.get("embedding_dimensions"))),
         )
         claimed = target.claimed_model or target.model
+        # An embedding run's vector-drift check compares with the previous
+        # saved embedding run of this target and model (best-effort).
+        drift_ref: dict[str, Any] | None = None
+        if surface == "embedding":
+            with contextlib.suppress(Exception):
+                drift_ref = await asyncio.to_thread(
+                    history.latest_for, target.base_url, claimed, "embedding"
+                )
 
         # Audit against the profile pinned when the watch was created, so a
         # knowledge-base edit cannot silently change what the monitor measures.
@@ -433,7 +433,13 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
                 job.emit({"type": "running", "job": job.id})
             started = time.perf_counter()
             report = await run_audit(
-                target, options, baseline=None, mode="check", pinned=pinned, on_event=on_event
+                target,
+                options,
+                baseline=None,
+                mode="check",
+                pinned=pinned,
+                on_event=on_event,
+                previous_report=drift_ref,
             )
             duration = time.perf_counter() - started
         report_dict = json.loads(report.model_dump_json())
@@ -449,7 +455,10 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             # lookup, found however many runs of other targets were saved since.
             # Best-effort, like save: a failed read must not lose the report.
             with contextlib.suppress(Exception):
-                previous = history.latest_for(target.base_url, claimed)
+                # chat looks up as before; another surface only among its own runs
+                previous = history.latest_for(
+                    target.base_url, claimed, surface=None if surface == "chat" else surface
+                )
             return history.save(report_dict, watch_id=wid)
 
         async def store() -> None:
@@ -1383,6 +1392,7 @@ def create_app() -> FastAPI:
         try:
             suite = validate_suite(str(body.get("suite") or "standard"))
             dimensions = validate_dimensions(suite, body.get("dimensions"))
+            surface = validate_surface(body.get("surface"))
             build_target(
                 kind="target",
                 name=body.get("name") or "watch",
@@ -1396,11 +1406,15 @@ def create_app() -> FastAPI:
         except ConfigError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
+        embedding = surface == "embedding"
         cfg = {
             **body,
             "suite": suite,
             "dimensions": dimensions,
-            "performance_streaming": body.get("performance_streaming") is not False,
+            "surface": surface,
+            # the streaming mode is a chat setting; embedding requests never stream
+            "performance_streaming": embedding or body.get("performance_streaming") is not False,
+            "embedding_dimensions": _coerce_int(body.get("embedding_dimensions")) if embedding else 0,
         }
         try:
             knowledge = await asyncio.to_thread(_watch_knowledge, cfg)
@@ -1457,6 +1471,11 @@ def create_app() -> FastAPI:
         except ConfigError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
         name = tgt.get("name")
+        surface = str(report.get("surface") or "chat")
+        embedding = surface == "embedding"
+        # The Tools page passes the claimed vector length it audited with (the
+        # report does not keep it); 0 takes the knowledge base's.
+        claimed_dims = _coerce_int(body.get("embedding_dimensions")) if isinstance(body, dict) else 0
         cfg = {
             "name": name if name and name != "target" else (tgt.get("claimed_model") or tgt.get("model")),
             "base_url": tgt.get("base_url"),
@@ -1466,7 +1485,9 @@ def create_app() -> FastAPI:
             "api": api,
             "suite": suite,
             "dimensions": dimensions,
-            "performance_streaming": report.get("stream_mode") != "non_stream",
+            "performance_streaming": embedding or report.get("stream_mode") != "non_stream",
+            "surface": surface,
+            "embedding_dimensions": claimed_dims if embedding else 0,
             "language": (body or {}).get("language") if isinstance(body, dict) else None,
             "source_report_id": rid,
             "run_duration_sec": history.run_duration_sec(report),
@@ -1524,6 +1545,23 @@ def create_app() -> FastAPI:
                 return JSONResponse(
                     {"error": f"webhook is not an http(s) URL: {bad}"}, status_code=400
                 )
+        dims = None
+        if body.get("embedding_dimensions") is not None:
+            raw = body.get("embedding_dimensions")
+            if row.get("surface") != "embedding":
+                return JSONResponse(
+                    {"error": "embedding_dimensions applies to embedding monitors only"},
+                    status_code=400,
+                )
+            if isinstance(raw, bool) or not isinstance(raw, int) or not 0 <= raw <= 65536:
+                return JSONResponse(
+                    {"error": "embedding_dimensions must be a whole number (0 to 65536)"},
+                    status_code=400,
+                )
+            dims = raw
+        if body.get("surface") is not None and body.get("surface") != row.get("surface"):
+            # What a monitor audits is fixed; create a new one for another surface.
+            return JSONResponse({"error": "a monitor's surface cannot be changed"}, status_code=400)
         if body.get("enabled") and (interval or row.get("interval_sec")) is None:
             # A draft needs its schedule before it may run on its own. The key
             # stays optional, as in the audit: local relays need none.
@@ -1535,7 +1573,12 @@ def create_app() -> FastAPI:
             # All of the PATCH's writes in one worker-thread call, in order.
             try:
                 watches.update(
-                    wid, interval_sec=interval, api_key=key, alert_on=alert_on, webhooks=hooks
+                    wid,
+                    interval_sec=interval,
+                    api_key=key,
+                    alert_on=alert_on,
+                    webhooks=hooks,
+                    embedding_dimensions=dims,
                 )
             except SecretLocked as exc:
                 return _locked_response(exc)
@@ -1704,7 +1747,7 @@ def create_app() -> FastAPI:
     @app.post("/api/embed")
     async def embed_audit(request: Request) -> Any:
         # Lazy import: the embed auditor pulls in the client stack only on demand.
-        from zing.embed_audit import audit_embeddings
+        from zing.embed_audit import run_embedding_audit, tool_verdict
 
         body = await request.json()
         try:
@@ -1718,23 +1761,20 @@ def create_app() -> FastAPI:
                 declared_provider=body.get("declared_provider") or None,
                 api=validate_api(body.get("api")),
             )
+            suite = validate_suite(str(body.get("suite") or "standard"))
         except ConfigError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
-        # Resolve the expected output dimension: an explicit claimed value wins;
-        # otherwise look the claimed (or requested) model up in the KB. 0 = unknown,
-        # in which case the auditor records the observed dimension instead.
+        # An explicit claimed dimension wins; otherwise (0) the runner takes the
+        # claimed (or requested) model's from the KB, and records the observed
+        # dimension when the KB does not know it.
         claimed_dimensions = _coerce_int(body.get("claimed_dimensions"))
-        if claimed_dimensions <= 0:
-            claimed_dimensions = await asyncio.to_thread(
-                _kb_embedding_dimensions,
-                target.claimed_model or target.model,
-                target.declared_provider,
-            )
-
-        # The verdict is already redacted (api_key is fingerprinted in `target`).
-        verdict = await audit_embeddings(target, claimed_dimensions)
-        return JSONResponse(verdict)
+        # Runs the embedding surface through the runner and saves it to history;
+        # the verdict is redacted (api_key is fingerprinted in `target`).
+        report, report_id = await run_embedding_audit(
+            target, claimed_dimensions=max(0, claimed_dimensions), suite=suite
+        )
+        return JSONResponse(tool_verdict(report, report_id))
 
     @app.post("/api/rerank")
     async def rerank_audit(request: Request) -> Any:

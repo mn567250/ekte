@@ -1,0 +1,9 @@
+{
+ "strings": {
+  "From the knowledge base": "Depuis la base de connaissances",
+  "Monitor this": "Surveiller",
+  "Open the saved report": "Ouvrir le rapport enregistré",
+  "dimension": "dimension",
+  "The speed probe runs only on deep, full or custom suites, or on standard with a baseline.": "La mesure de vitesse ne s’exécute qu’avec les suites deep, full ou custom, ou avec standard et une référence."
+ }
+}

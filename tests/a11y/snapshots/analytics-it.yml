@@ -53,6 +53,9 @@
       - button "Ultimi 90 giorni"
       - button "Tutto il periodo"
       - button "Periodo personalizzato"
+    - text: Tipo di endpoint
+    - combobox "Tipo di endpoint":
+      - option "Chat" [selected]
     - text: Suite
     - combobox "Suite":
       - option "Tutti"

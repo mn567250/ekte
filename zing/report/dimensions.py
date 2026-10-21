@@ -36,7 +36,7 @@ from zing.models import (
     Status,
 )
 from zing.report import performance as perf_render
-from zing.scoring import DIMENSION_WEIGHTS, _worst_status
+from zing.scoring import _worst_status, weights_for
 
 _STATUS_EMOJI: dict[Status, str] = {
     Status.PASS: "✅",
@@ -75,7 +75,7 @@ def all_dimensions(report: AuditReport) -> list[DimensionScore]:
     extra = [
         DimensionScore(dimension=dim, weight=w, status=Status.NOT_RUN,
                        reason="Not recorded in this report.")
-        for dim, w in DIMENSION_WEIGHTS.items()
+        for dim, w in weights_for(report.surface).items()
         if dim not in have
     ]
     return list(report.dimensions) + extra

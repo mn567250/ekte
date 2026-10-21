@@ -434,7 +434,8 @@
   function historyHref(w, reportId) {
     var host = "";
     try { host = new URL(w.base_url).host; } catch (e) { host = w.base_url || ""; }
-    var q = [["host", host], ["model", w.claimed_model || w.model || ""], ["suite", w.suite || ""]]
+    var q = [["surface", w.surface && w.surface !== "chat" ? w.surface : ""],
+      ["host", host], ["model", w.claimed_model || w.model || ""], ["suite", w.suite || ""]]
       .filter(function (p) { return p[1]; })
       .map(function (p) { return p[0] + "=" + encodeURIComponent(p[1]); }).join("&");
     return "/v2/history" + (q ? "?" + q : "") + "#r-" + reportId;
@@ -456,10 +457,28 @@
     return esc(T(m[0], m[1]));
   }
 
+  // What the monitor audits: a chat endpoint, or an embeddings one.
+  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"] };
+  function surfaceCell(w) {
+    var m = SURFACE[w.surface] || SURFACE.chat;
+    return w.surface === "embedding" ? '<span class="badge machine-soft">' + esc(T(m[0], m[1])) + "</span>" : esc(T(m[0], m[1]));
+  }
+  // The embedding speed probe is gated like the chat one; monitors have no baseline.
+  function embedPerfNote(w) {
+    return ["deep", "full", "custom"].indexOf(w.suite || "standard") >= 0 ? "" :
+      '<span class="aside">' + esc(T("速度探测仅在 deep、full 或 custom 套件下运行，或在有基线的 standard 下运行。",
+        "The speed probe runs only on deep, full or custom suites, or on standard with a baseline.")) + "</span>";
+  }
+  function dimsCell(w) {
+    return w.embedding_dimensions ? "<code>" + esc(String(w.embedding_dimensions)) + "</code>"
+      : esc(T("来自知识库", "From the knowledge base"));
+  }
+
   function card(w) {
     var s = st(w.id);
     var name = w.name || "watch";
     var draft = needsSetup(w);
+    var embed = w.surface === "embedding";
     var claimed = w.claimed_model && w.claimed_model !== w.model
       ? '<span class="aside">' + esc(T("声称的模型", "Claimed model")) + " <code>" + esc(w.claimed_model) + "</code></span>"
       : "";
@@ -524,10 +543,13 @@
           '<div class="mon-url">' + esc(w.base_url || "") + "</div>" +
           '<dl class="mon-meta">' +
             meta(T("请求的模型", "Model to request"), "<code>" + esc(w.model || "?") + "</code>" + claimed) +
+            meta(T("接口类型", "Endpoint type"), surfaceCell(w)) +
             meta(T("测试套件", "Test suite"), "<code>" + esc(w.suite || "standard") + "</code>" +
-              (w.suite === "custom" && (w.dimensions || []).length ? " <code>" + esc(w.dimensions.join(", ")) + "</code>" : "")) +
+              (w.suite === "custom" && (w.dimensions || []).length ? " <code>" + esc(w.dimensions.join(", ")) + "</code>" : "") +
+              (embed ? embedPerfNote(w) : "")) +
             meta(T("协议", "Protocol"), protoCell(w)) +
-            meta(T("性能探测请求", "Performance probe requests"), streamCell(w)) +
+            (embed ? meta(T("声称维度", "Claimed dimension"), dimsCell(w))
+              : meta(T("性能探测请求", "Performance probe requests"), streamCell(w))) +
             meta(T("检测间隔", "Check interval"), intervalCell(w, s)) +
             meta(T("API 密钥", "API key"), keyCell(w, s)) +
             meta(thrLabel, '<select class="in" data-act="alert" data-id="' + w.id + '" aria-label="' + esc(thrLabel + " — " + name) + '">' + thresholdOptions(w.alert_on || "medium") + "</select>") +

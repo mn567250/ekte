@@ -455,6 +455,8 @@
       to: date("to"),
       // null: not chosen yet; resolved to the most common value once the
       // options are in, so the default view never mixes suites or modes
+      // the surface is mandatory: null until the options name the most common
+      surface: qs.has("surface") ? get("surface", "") || null : null,
       suite: qs.has("suite") ? get("suite", "") : null,
       stream_mode: qs.has("stream_mode") ? get("stream_mode", "") : null,
       api: get("api", ""),
@@ -495,7 +497,7 @@
     Object.keys(SUBS).forEach(function (t) { if (V.sub[t] !== SUBS[t][0]) q.set(SUBKEY[t], V.sub[t]); });
     q.set("range", F.range);
     if (F.range === "custom") { q.set("from", F.from); q.set("to", F.to); }
-    ["suite", "stream_mode"].forEach(function (k) { if (F[k] != null) q.set(k, F[k]); });
+    ["surface", "suite", "stream_mode"].forEach(function (k) { if (F[k] != null) q.set(k, F[k]); });
     if (F.api) q.set("api", F.api);
     if (F.source !== "all") q.set("source", F.source);
     if (F.relay) q.set("relay", F.relay);
@@ -534,6 +536,10 @@
   // view never mixes suites or modes
   function resolveDefaults() {
     var o = state.opts || {};
+    F.surface = o.surface || F.surface || "chat";
+    // a metric another surface does not measure falls back to one it does
+    if (!applies(V.metric)) V.metric = "score";
+    if (!applies(V.hm)) V.hm = "latency_p50";
     if (F.suite == null) F.suite = o.suites && o.suites.length ? o.suites[0].value : "";
     if (F.stream_mode == null) F.stream_mode = o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "";
   }
@@ -576,6 +582,7 @@
     var q = new URLSearchParams(), r = rangeOf();
     if (r.from) q.set("from", r.from.toISOString());
     if (r.to) q.set("to", r.to.toISOString());
+    if (F.surface) q.set("surface", F.surface);
     if (F.suite) q.set("suite", F.suite);
     if (F.stream_mode) q.set("stream_mode", F.stream_mode);
     if (F.api) q.set("api", F.api);
@@ -596,6 +603,18 @@
     return dfmt({ dateStyle: "medium" }, a) + " – " + dfmt({ dateStyle: "medium" }, last);
   }
   function minRuns() { return (state.opts && state.opts.min_runs) || 3; }
+  // whether a metric applies to the shown surface (per-dimension scores always do)
+  function applies(id) {
+    var o = state.opts || {};
+    if (String(id).indexOf(DIM) === 0 || !o.metrics) return true;
+    return o.metrics.some(function (m) { return m.id === id; });
+  }
+  function defaultSurface() {
+    var o = state.opts || {};
+    return o.surfaces && o.surfaces.length ? o.surfaces[0].value : "chat";
+  }
+  var SURFACE_L = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"] };
+  function surfaceLabel(v) { return SURFACE_L[v] ? T(SURFACE_L[v][0], SURFACE_L[v][1]) : v; }
 
   /* ---------------- data ---------------- */
   function getJSON(url) {
@@ -620,9 +639,12 @@
     try { fn(); } finally { p.style.minHeight = ""; }
   }
 
+  // the options of one surface (F.surface; none yet: the most common)
   function loadOptions() {
     say(T("正在加载分析…", "Loading analytics…"));
-    return getJSON("/api/analytics/options").then(function (o) {
+    return getJSON("/api/analytics/options" + (F.surface ? "?surface=" + encodeURIComponent(F.surface) : "")).then(function (o) {
+      // a linked surface without runs: the most common one instead
+      if (!o.runs && F.surface && (o.surfaces || []).length) { F.surface = null; return loadOptions(); }
       state.opts = o;
       if (!o.runs) return renderEmpty();
       resolveDefaults();
@@ -794,14 +816,14 @@
   };
   function isDefault() {
     var o = state.opts || {};
-    return F.range === "30" && !F.api && F.source === "all" && !F.relay && !F.model &&
+    return F.range === "30" && !F.api && F.source === "all" && !F.relay && !F.model && F.surface === defaultSurface() &&
       F.suite === (o.suites && o.suites.length ? o.suites[0].value : "") &&
       F.stream_mode === (o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "");
   }
   // filters that differ from the defaults (the toggle's badge)
   function activeCount() {
     var o = state.opts || {};
-    return [F.range !== "30", !!F.api, F.source !== "all", !!F.relay, !!F.model,
+    return [F.range !== "30", !!F.api, F.source !== "all", !!F.relay, !!F.model, F.surface !== defaultSurface(),
       F.suite !== (o.suites && o.suites.length ? o.suites[0].value : ""),
       F.stream_mode !== (o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "")].filter(Boolean).length;
   }
@@ -811,6 +833,8 @@
     var out = [], r = rangeOf();
     if (F.range !== "custom") out.push(T(RANGE_L[F.range][0], RANGE_L[F.range][1]));
     else if (!r.error) out.push(dayRange(r.from, r.to));
+    // the surface once there is a choice (or it is not chat)
+    if (((state.opts || {}).surfaces || []).length > 1 || F.surface !== "chat") out.push(surfaceLabel(F.surface));
     if (F.suite) out.push(F.suite);
     if (F.stream_mode) out.push(streamLabel(F.stream_mode));
     if (F.api) out.push(F.api);
@@ -842,6 +866,10 @@
       "</div></div>" +
       '<p class="ferr" id="ferr" role="alert">' + esc(r.error || "") + "</p>" +
       '<div class="fgrid">' +
+      // mandatory: no "All", runs of different surfaces never mix
+      selectHTML("surface", T("接口类型", "Endpoint type"), (o.surfaces && o.surfaces.length ? o.surfaces : [{ value: F.surface }]).map(function (x) {
+        return { v: x.value, t: surfaceLabel(x.value) };
+      }), F.surface, false) +
       selectHTML("suite", T("套件", "Suite"), vc(o.suites), F.suite) +
       selectHTML("stream_mode", T("探测请求", "Probe requests"), (o.stream_modes || []).map(function (x) { return { v: x.value, t: streamLabel(x.value) }; }), F.stream_mode) +
       selectHTML("api", T("协议", "Protocol"), vc(o.apis), F.api) +
@@ -859,7 +887,17 @@
     if (k === "source") v = v || "all";
     if (F[k] === v) return;
     F[k] = v;
+    if (k === "surface") return switchSurface(v);
     refresh();
+  }
+  // Another surface has its own suites, modes, relays, models and metrics:
+  // reload its options and start from its defaults.
+  function switchSurface(v, keep) {
+    F.surface = v;
+    F.suite = null;
+    F.stream_mode = null;
+    if (!keep) { F.api = ""; F.relay = ""; F.model = ""; }
+    return loadOptions();
   }
   $("#filters").addEventListener("change", function (ev) {
     var k = ev.target.getAttribute("data-f");
@@ -883,7 +921,11 @@
   });
   function resetFilters() {
     var o = state.opts;
-    F = { range: "30", from: "", to: "", suite: o.suites && o.suites.length ? o.suites[0].value : "",
+    if (F.surface !== defaultSurface()) {
+      F.range = "30"; F.from = ""; F.to = ""; F.source = "all";
+      return switchSurface(defaultSurface());
+    }
+    F = { surface: F.surface, range: "30", from: "", to: "", suite: o.suites && o.suites.length ? o.suites[0].value : "",
       stream_mode: o.stream_modes && o.stream_modes.length ? o.stream_modes[0].value : "",
       api: "", source: "all", relay: "", model: "" };
     renderFilters();
@@ -1279,18 +1321,20 @@
     };
     var units = {};
     (b.metrics || []).forEach(function (m) { units[m.id] = m.unit; });
+    // the columns of the metrics the shown surface measures
+    var cols = LB_COLS.filter(function (c) { return c[0] === "runs" || c[0] === "last_run" || units[c[0]]; });
     body.innerHTML = (anyLow ? '<p class="note">' + ico("info") + "<span>" +
       esc(Tf("标为“检测较少”的行少于 {min} 次检测——单次检测可能是离群值。", "Rows marked “few runs” have fewer than {min} runs — a single audit can be an outlier.", { min: minRuns() })) + " " +
       '<a href="/v2/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>" : "") +
       '<div class="tscroll lbtab" tabindex="0" role="region" aria-labelledby="lbcap"><table class="dt"><caption id="lbcap">' +
       esc(V.lb === "relay" ? Tf("“{name}”的各中转站", "Relays for “{name}”", { name: subj }) : Tf("“{name}”的各模型", "Models for “{name}”", { name: subj })) +
       "</caption><thead><tr>" + head("label", V.lb === "relay" ? T("中转站", "Relay") : T("模型", "Model"), false) +
-      LB_COLS.map(function (c) { return head(c[0], colName(c), c[0] !== "last_run"); }).join("") + "</tr></thead><tbody>" +
+      cols.map(function (c) { return head(c[0], colName(c), c[0] !== "last_run"); }).join("") + "</tr></thead><tbody>" +
       sortedRows(b.rows).map(function (r) {
         return '<tr class="' + (r.low_n ? "low" : "") + '"><th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
           (r.low_n ? ' <span class="badge warn">' + esc(T("检测较少", "few runs")) + "</span>" : "") + "</th>" +
           '<td class="n">' + esc(String(r.runs)) + "</td>" +
-          LB_COLS.slice(1, -1).map(function (c) { return cell(r.metrics[c[0]], units[c[0]], r.runs); }).join("") +
+          cols.slice(1, -1).map(function (c) { return cell(r.metrics[c[0]], units[c[0]], r.runs); }).join("") +
           '<td class="when">' + esc(r.last_run ? dfmt({ dateStyle: "medium", timeStyle: "short" }, new Date(r.last_run)) : "—") + "</td></tr>";
       }).join("") + "</tbody></table></div>";
     if (focusSort) {
@@ -1441,7 +1485,7 @@
   function renderHeat() {
     var o = state.opts || {}, relay = heatRelay();
     ctlHTML($("#heat-ctl"), '<div class="ctl">' +
-      selectCtl('data-v="hm"', T("指标", "Metric"), HEAT_METRICS.map(function (id) { return { v: id, t: metricName(id) }; }), V.hm) +
+      selectCtl('data-v="hm"', T("指标", "Metric"), HEAT_METRICS.filter(applies).map(function (id) { return { v: id, t: metricName(id) }; }), V.hm) +
       (F.relay ? "" : selectCtl('data-v="hr"', T("中转站", "Relay"), [{ v: "", t: T("全部中转站", "All relays") }].concat(
         (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; })), relay)) + blockCtl("hb") +
       foldCtl(state.err.heat ? null : state.heat) + "</div>");
@@ -1622,6 +1666,9 @@
     streaming: ["流式输出", "Streaming"], protocol_request: ["请求协议", "Request protocol"],
     protocol_response: ["响应协议", "Response protocol"], integrity: ["响应完整性", "Response integrity"],
     injected_prompt: ["注入提示词", "Injected prompt"], connectivity: ["连通性", "Connectivity"],
+    "embed.identity": ["嵌入模型身份", "Embedding model identity"], "embed.drift": ["向量漂移", "Vector drift"],
+    "embed.determinism": ["向量确定性", "Vector determinism"], "embed.distinctness": ["向量区分度", "Vector distinctness"],
+    "embed.connectivity": ["嵌入连通性", "Embedding connectivity"],
   };
   var checkName = function (c) { return CHECK_L[c] ? T(CHECK_L[c][0], CHECK_L[c][1]) : c; };
   function loadIntegrity() {
@@ -1652,6 +1699,8 @@
       body.innerHTML = '<div class="empty-data">' + esc(T("此时间范围内没有符合筛选条件的检测。", "No runs match these filters in this range.")) + "</div>";
       return;
     }
+    // the context column only when some run measured the context window
+    var ctx = d.has_context !== false;
     var nc = function (c) { return '<span class="cn">n=' + esc(String(c.n)) + "</span>" + (c.n && c.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : ""); };
     body.innerHTML = (d.rows.some(function (r) { return r.low_n; }) ? '<p class="note">' + ico("info") + "<span>" +
       esc(Tf("标为“检测较少”的行少于 {min} 次检测——单次检测可能是离群值。", "Rows marked “few runs” have fewer than {min} runs — a single audit can be an outlier.", { min: minRuns() })) + " " +
@@ -1660,7 +1709,7 @@
       esc(T("每个中转站 × 模型的检查结果（n = 有结论的检测次数）", "Check results per relay × model (n = runs with a verdict)")) + "</caption><thead><tr>" +
       th(T("中转站 × 模型", "Relay × model")) + th(T("检测次数", "Runs"), true) +
       d.checks.map(function (c) { return th(checkName(c)); }).join("") +
-      th(T("模型不符占比", "Model mismatch share"), true) + th(T("实测 / 声明的上下文", "Effective / declared context"), true) +
+      th(T("模型不符占比", "Model mismatch share"), true) + (ctx ? th(T("实测 / 声明的上下文", "Effective / declared context"), true) : "") +
       "</tr></thead><tbody>" + d.rows.map(function (r) {
         var cx = r.context, mm = r.model_mismatch;
         return '<tr><th scope="row"><span class="lbl">' + brk(r.label || r.key) + "</span>" +
@@ -1668,14 +1717,20 @@
           '<td class="n">' + esc(String(r.runs)) + "</td>" +
           d.checks.map(function (c) { return chip(r.checks[c]); }).join("") +
           '<td class="n">' + esc(fmt(mm.value, "ratio")) + nc(mm) + "</td>" +
-          '<td class="n">' + esc(fmt(cx.value, "ratio")) +
-          (cx.n ? '<span class="cn">' + esc(fmt(cx.effective, "tokens") + " / " + fmt(cx.claimed, "tokens")) + "</span>" : "") + nc(cx) + "</td></tr>";
+          (ctx ? '<td class="n">' + esc(fmt(cx.value, "ratio")) +
+          (cx.n ? '<span class="cn">' + esc(fmt(cx.effective, "tokens") + " / " + fmt(cx.claimed, "tokens")) + "</span>" : "") + nc(cx) + "</td>" : "") + "</tr>";
       }).join("") + "</tbody></table></div>";
   }
 
   /* ---- billing and tokens ---- */
   var BILL_SUM = ["billing_ratio_prompt", "billing_ratio_completion", "reasoning_share", "cached_input_share"];
   function loadBilling() {
+    if (!applies("billing_ratio_prompt")) {
+      // billing and token shares are measured on chat audits only
+      $("#bill-ctl").innerHTML = "";
+      $("#bill-body").innerHTML = '<div class="empty-data">' + esc(T("计费与 token 指标只适用于对话检测。", "Billing and token metrics apply to chat audits only.")) + "</div>";
+      return Promise.resolve();
+    }
     var q = tzParams(apiParams());
     q.set("metric", V.bm);
     q.set("group", "relay");

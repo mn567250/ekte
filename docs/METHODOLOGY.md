@@ -881,6 +881,45 @@ this dimension moves the score, never the risk verdict.
 
 ---
 
+## Embedding surface
+
+An audit's **surface** (`chat` by default, or `embedding`) selects the
+detectors; the suite still sets the depth. An embedding audit sends only
+`POST /embeddings` requests and reuses the chat dimensions and the shared
+0–100 score and A–F grade, with per-surface weights. A dimension mismatch
+(MODEL_IDENTITY, HIGH) makes the risk HIGH, as a swapped model does on chat.
+
+| Check | Id | Dimension | What it tests |
+|---|---|---|---|
+| Connectivity | `embed.connectivity` | Connectivity | the endpoint returns well-formed vectors |
+| Vector dimension | `embed.dimension` | Model identity | returned length vs the claimed model's native dimension (KB, or `claimed_dimensions`) |
+| Echoed model | `embed.model_field` | Model identity | the response's `model` field names the claimed model |
+| Vector drift | `embed.drift` | Model identity | the pinned probe input's vector vs the previous saved run |
+| Determinism | `embed.determinism` | Concurrency reliability | the same input twice gives cosine ≥ 0.9999 |
+| Distinctness | `embed.distinctness` | Capability claims | unrelated inputs give cosine below 0.98 |
+| Performance probe | `performance.embed` | Performance | latency, cold start, throughput, batch scaling |
+
+**Vector drift.** Every run stores the first 64 components of the unit-length
+vector of one fixed input. The next run of the same target and claimed model
+(`zing embed`, the Tools page or an embedding monitor) compares its vector
+with that sample: cosine **≥ 0.995** is stable (PASS), **0.95 to 0.995** has
+shifted (WARN, MEDIUM: a re-deployment or quantisation), below **0.95** or a
+different length means the model was swapped (FAIL, HIGH). The first run has
+nothing to compare with and records the baseline (INFO).
+
+**Performance probe.** Gated like the chat probe: it runs on deep, full and
+custom, and on standard only with a baseline. After a ping and a warm-up
+request (cold start) it sends uniform single-input requests, batches of 16
+inputs and, on deep/full, a concurrent burst. Every input carries a random
+nonce; identical vectors for different inputs are flagged as cached and left
+out of the statistics. It reports latency p50/p95, cold start, inputs/s and
+input tokens/s, the latency/throughput consistency, errors and load stability.
+**Batch scaling** compares a batch's per-input latency with a single request's:
+at 0.6x or more the batch is split or serialised (linear, WARN LOW). There is
+no knowledge-base speed reference; raw speed only counts against a baseline.
+
+---
+
 ## Trick → detector mapping
 
 The 16 relay tricks from the research map onto zing as follows.

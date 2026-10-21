@@ -61,6 +61,8 @@
       - term: Modèle demandé
       - definition:
         - code: gpt-4o
+      - term: Type de point d'accès
+      - definition: Chat
       - term: Suite de tests
       - definition:
         - code: standard

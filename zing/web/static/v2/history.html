@@ -295,7 +295,7 @@
   var host = $("#hist"), fbar = $("#filters");
   var FKEY = "zing.v2.history.filters", NONE = "__none__";
   var fromQuery; // set by loadFilters() when the URL carries filters
-  var FDEF = { host: "", model: "", suite: "", mode: "", api: "", detect: "", stream: "", risk: "", min: "", days: "", exec: "", q: "" };
+  var FDEF = { surface: "", host: "", model: "", suite: "", mode: "", api: "", detect: "", stream: "", risk: "", min: "", days: "", exec: "", q: "" };
   var state = { rows: null, error: null, reports: {}, open: null, confirm: null, filters: loadFilters() };
   // Rows are rendered PAGE at a time per group ("Show more" appends the next
   // page); state.shown remembers how far each group (by key) was expanded
@@ -344,7 +344,7 @@
     // string; these win over the remembered ones
     try {
       var qs = new URLSearchParams(location.search);
-      var QK = ["host", "model", "suite", "api", "stream"];
+      var QK = ["surface", "host", "model", "suite", "api", "stream"];
       if (QK.some(function (k) { return qs.has(k); })) {
         f = Object.assign({}, FDEF); // drop stale filters that could hide the monitor's runs
         QK.forEach(function (k) { if (qs.has(k)) f[k] = qs.get(k); });
@@ -368,6 +368,10 @@
   function apiOf(r) { return r.api || ""; }
   function detectOf(r) { return r.api_auto == null ? "" : r.api_auto ? "auto" : "manual"; }
   function streamOf(r) { return r.stream_mode || ""; }
+  // the audited surface; rows saved before surfaces existed are chat
+  function surfaceOf(r) { return r.surface || "chat"; }
+  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"] };
+  var surfaceLabel = function (v) { return SURFACE[v] ? T(SURFACE[v][0], SURFACE[v][1]) : v; };
   // who started the run: a monitor (it has a watch_id) or a person (ad-hoc)
   function execOf(r) { return r.watch_id != null ? "monitor" : "adhoc"; }
   var STREAM = {
@@ -387,6 +391,7 @@
     var since = f.days ? Date.now() - Number(f.days) * 864e5 : null;
     var q = f.q.trim().toLowerCase();
     return rows.filter(function (r) {
+      if (f.surface && surfaceOf(r) !== f.surface) return false;
       if (f.host && hostOf(r.base_url) !== f.host) return false;
       if (f.model && (r.claimed_model || "") !== f.model) return false;
       if (f.suite && (f.suite === NONE ? !!r.suite : r.suite !== f.suite)) return false;
@@ -399,7 +404,7 @@
         var t = Date.parse(r.ts);
         if (isNaN(t) || t < since) return false;
       }
-      if (q && [r.base_url, r.claimed_model, r.model, r.suite, modeOf(r), apiOf(r),
+      if (q && [r.base_url, r.claimed_model, r.model, r.suite, modeOf(r), apiOf(r), surfaceLabel(surfaceOf(r)),
         execOf(r) === "monitor" ? T("监控", "Monitor") : "",
         detectOf(r) && detectLabel(detectOf(r)), streamOf(r) && streamLabel(streamOf(r))].join(" ").toLowerCase().indexOf(q) < 0) return false;
       return true;
@@ -452,9 +457,11 @@
     var risks = ["clean", "low", "medium", "high", "inconclusive"].filter(function (l) {
       return l === f.risk || state.rows.some(function (r) { return riskOf(r) === l; });
     });
+    var surfaces = distinct(surfaceOf, f.surface).map(function (v) { return { v: v, t: surfaceLabel(v) }; });
     panel.render({ count: activeCount(), summary: filterSummary(), body: '<div class="fgrid">' +
       '<label class="fq"><span>' + esc(T("搜索", "Search")) + '</span><input class="in" type="search" data-f="q" value="' + esc(f.q) +
       '" placeholder="' + esc(T("中转站、模型、套件、协议…", "Relay, model, suite, protocol…")) + '" autocomplete="off" /></label>' +
+      selectHTML("surface", T("接口类型", "Endpoint type"), surfaces) +
       selectHTML("host", T("中转站", "Relay / provider"), asOpts(distinct(function (r) { return hostOf(r.base_url); }, f.host))) +
       selectHTML("model", T("声称模型", "Claimed model"), asOpts(distinct(function (r) { return r.claimed_model || ""; }, f.model))) +
       selectHTML("suite", T("套件", "Suite"), suites) +
@@ -484,6 +491,7 @@
     var unknown = T("（未知）", "(unknown)");
     if (f.q.trim()) out.push(lab(T("搜索", "Search"), f.q.trim()));
     if (f.days) out.push(daysLabel(f.days));
+    if (f.surface) out.push(surfaceLabel(f.surface));
     if (f.host) out.push(f.host);
     if (f.model) out.push(f.model);
     if (f.suite) out.push(f.suite === NONE ? T("（无套件）", "(no suite)") : f.suite);
@@ -929,6 +937,12 @@
     return '<div class="trend">' + tiles + "</div>";
   }
 
+  // a badge for every surface but chat (the default, most rows)
+  function surfaceHTML(r) {
+    var s = surfaceOf(r);
+    return s === "chat" ? "" : ' <span class="badge machine-soft">' + esc(surfaceLabel(s)) + "</span>";
+  }
+
   function rowHTML(r) {
     var id = String(r.id);
     var lvl = r.risk_level || "inconclusive";
@@ -941,7 +955,7 @@
       esc(ZING_I18N.label("RISK_LEVEL", lvl)) + "</span></span>" +
       '<span class="c-score f-' + scoreC(r.score) + '"><span class="sr-only">' + esc(T("健康分", "Score")) + " </span>" + num(r.score) + "</span>" +
       '<span class="c-grade f-' + gradeC(r.rating) + '"><span class="sr-only">' + esc(T("评级", "Grade")) + " </span>" + esc(r.rating || "–") + "</span>" +
-      '<span class="c-mode"><b>' + esc(r.mode || "check") + "</b>" + (byMonitor(r) ? ' <span class="badge sky">' + ico("bell") + " " + esc(T("监控", "Monitor")) + "</span>" : "") + (r.suite ? " · " + esc(r.suite) : "") + protoHTML(r) +
+      '<span class="c-mode"><b>' + esc(r.mode || "check") + "</b>" + surfaceHTML(r) + (byMonitor(r) ? ' <span class="badge sky">' + ico("bell") + " " + esc(T("监控", "Monitor")) + "</span>" : "") + (r.suite ? " · " + esc(r.suite) : "") + protoHTML(r) +
       (perf ? '<span class="perf" title="' + esc(T("延迟 p50", "Latency p50")) + '">p50 ' + Math.round(perf.latency_p50_ms) + " ms</span>" : "") + "</span>" +
       '<span class="c-cv" aria-hidden="true">' + ico("chevronDown") + "</span></button>" +
       rerunBtnHTML(r) + schedBtnHTML(r) +
@@ -956,15 +970,20 @@
   function protoHTML(r) {
     var bits = [];
     if (apiOf(r)) bits.push(esc(apiOf(r)) + (detectOf(r) ? " (" + esc(detectLabel(detectOf(r))) + ")" : ""));
-    if (streamOf(r)) bits.push(esc(streamLabel(streamOf(r))));
+    if (streamOf(r) && surfaceOf(r) === "chat") bits.push(esc(streamLabel(streamOf(r))));
     return bits.length ? '<span class="proto">' + bits.join(" · ") + "</span>" : "";
   }
 
   // A run a monitor produced already has its monitor: offer no second one.
   function byMonitor(r) { return !!r && r.watch_id != null; }
 
-  // Re-run: open the audit form prefilled with this run's configuration.
-  function rerun(id) { location.href = "/v2/?rerun=" + encodeURIComponent(id); }
+  // Re-run: open the audit form (an embedding run: the Tools page) prefilled
+  // with this run's configuration.
+  function rerun(id) {
+    var row = (state.rows || []).filter(function (r) { return String(r.id) === String(id); })[0];
+    var page = row && surfaceOf(row) === "embedding" ? "/v2/tools" : "/v2/";
+    location.href = page + "?rerun=" + encodeURIComponent(id);
+  }
 
   function rerunBtnHTML(r) {
     var label = T("重新检测", "Re-run audit");

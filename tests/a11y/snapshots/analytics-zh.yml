@@ -53,6 +53,9 @@
       - button "最近 90 天"
       - button "全部时间"
       - button "自定义"
+    - text: 接口类型
+    - combobox "接口类型":
+      - option "对话" [selected]
     - text: 套件
     - combobox "套件":
       - option "全部"

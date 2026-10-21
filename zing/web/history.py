@@ -72,6 +72,7 @@ _SUMMARY_COLS = (
     "api",
     "api_auto",
     "stream_mode",
+    "surface",
 )
 
 # Performance headline columns, in the order the API returns them.
@@ -176,6 +177,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(
         conn, "history", {**dict.fromkeys(_PERF_COLS, "REAL"), _PERF_DONE: "INTEGER"}
     )
+    # The audited surface ("chat" or "embedding"); NULL (rows saved before
+    # surfaces existed) reads as chat.
+    kb_snapshot.add_link_columns(conn, "history", {"surface": "TEXT"})
     # Version 2: where a row's request records are, and the analytics tables.
     kb_snapshot.add_link_columns(conn, "history", {_SPLIT: "INTEGER"})
     # The rows the analytics backfill has not processed yet.
@@ -398,9 +402,9 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                 """INSERT INTO history
                    (ts, base_url, claimed_model, model, mode, suite,
                     risk_level, score, rating, report_json, kb_snapshot_id, kb_match, watch_id,
-                    api, api_auto, stream_mode,
+                    api, api_auto, stream_mode, surface,
                     latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done, requests_split)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)""",
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)""",
                 (
                     report.get("generated_at"),
                     target.get("base_url"),
@@ -420,6 +424,7 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                     target.get("api"),
                     int(api_auto) if isinstance(api_auto, bool) else None,
                     report.get("stream_mode"),
+                    report.get("surface") or "chat",
                     *(headline[c] for c in _PERF_COLS),
                     split,
                 ),
@@ -451,10 +456,16 @@ def recent(limit: int = 50, perf: bool = False) -> list[dict[str, Any]]:
         rows = conn.execute(
             f"SELECT {cols} FROM history ORDER BY id DESC LIMIT ?", (limit,)
         ).fetchall()
-        out = [dict(r) for r in rows]
+        out = [_with_surface(dict(r)) for r in rows]
         if perf:
             _fill_perf(conn, out)
     return out
+
+
+def _with_surface(row: dict[str, Any]) -> dict[str, Any]:
+    """``row`` with a NULL ``surface`` (saved before surfaces existed) read as chat."""
+    row["surface"] = row.get("surface") or "chat"
+    return row
 
 
 def get(rid: int) -> dict[str, Any] | None:
@@ -467,19 +478,30 @@ def get(rid: int) -> dict[str, Any] | None:
         return _full_report(conn, row)
 
 
-def latest_for(base_url: str, claimed_model: str) -> dict[str, Any] | None:
+def latest_for(
+    base_url: str, claimed_model: str, surface: str | None = None
+) -> dict[str, Any] | None:
     """The newest saved report for one target+model (as :func:`get`), or ``None``.
 
     One lookup on ``idx_history_target``, however many runs of other targets
     were saved since — a monitor's regression check compares against this.
+    ``surface`` limits it to runs of that surface (NULL reads as chat).
     """
     with _connect() as conn:
-        row = conn.execute(_LATEST_FOR_SQL, (base_url, claimed_model)).fetchone()
+        if surface is None:
+            row = conn.execute(_LATEST_FOR_SQL, (base_url, claimed_model)).fetchone()
+        else:
+            row = conn.execute(
+                _LATEST_FOR_SURFACE_SQL, (base_url, claimed_model, surface)
+            ).fetchone()
         return _full_report(conn, row)
 
 
 _LATEST_FOR_SQL = f"""SELECT id, report_json, kb_snapshot_id, {_SPLIT} FROM history
    WHERE base_url = ? AND claimed_model = ?
+   ORDER BY id DESC LIMIT 1"""
+_LATEST_FOR_SURFACE_SQL = f"""SELECT id, report_json, kb_snapshot_id, {_SPLIT} FROM history
+   WHERE base_url = ? AND claimed_model = ? AND COALESCE(surface, 'chat') = ?
    ORDER BY id DESC LIMIT 1"""
 
 
@@ -638,7 +660,16 @@ def analytics_runs(start: str | None = None, end: str | None = None) -> list[dic
     with _connect() as conn:
         with contextlib.suppress(sqlite3.Error):
             _backfill_analytics(conn)  # best-effort; a locked database can wait
-        return [dict(r) for r in conn.execute(sql, args).fetchall()]
+        return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
+
+
+def surface_counts() -> dict[str, int]:
+    """Runs per surface over the whole history (NULL reads as chat)."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT COALESCE(surface, 'chat') AS s, COUNT(*) AS n FROM history GROUP BY s"
+        ).fetchall()
+    return {str(r[0]): int(r[1]) for r in rows}
 
 
 def _chunks(ids: Iterable[int]) -> Iterator[list[int]]:
@@ -709,9 +740,10 @@ _CLASS_SQL = (
 
 
 def analytics_request_classes(
-    ids: Iterable[int], endpoint: str = "target"
+    ids: Iterable[int], endpoint: str = "target", op: str = "complete"
 ) -> list[dict[str, Any]]:
-    """Completion calls of the given runs counted in SQL by run, minute after
+    """Calls of the given runs (``op``: ``complete`` for completion calls,
+    ``embed`` for embedding calls) counted in SQL by run, minute after
     the run's start (``minute``: whole minutes of ``start_ms``) and outcome
     class (``cls``, one of :data:`REQUEST_CLASSES`): rows ``history_id``,
     ``minute``, ``cls``, ``n``. Never loads the records themselves; a run
@@ -723,8 +755,8 @@ def analytics_request_classes(
                 "SELECT history_id, CAST(COALESCE(start_ms, 0) / 60000 AS INTEGER) AS minute,"
                 f" {_CLASS_SQL} AS cls, COUNT(*) AS n FROM history_requests"
                 f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-                " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = 'complete'"
+                " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = ?"
                 " GROUP BY history_id, minute, cls ORDER BY history_id, minute, cls"
             )
-            out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint]))
+            out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint, op]))
     return out

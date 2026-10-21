@@ -150,15 +150,9 @@ class OpenAICompatibleClient(BaseHTTPClient):
         except Exception as exc:
             return self._exception_outcome(exc, started), []
 
-    async def embeddings(
+    async def _embeddings(
         self, inputs: list[str]
     ) -> tuple[CompletionOutcome, list[list[float]]]:
-        """POST /embeddings. Returns (outcome, list-of-vectors).
-
-        Each vector is a list of floats. On any error the outcome carries the
-        redacted failure and the vector list is empty. This is a non-chat surface,
-        so it never routes through the chat detector pipeline.
-        """
         body: dict[str, Any] = {"model": self.config.model, "input": inputs}
         started = time.perf_counter()
         try:

@@ -1,0 +1,9 @@
+{
+ "strings": {
+  "From the knowledge base": "Aus der Wissensbasis",
+  "Monitor this": "Überwachen",
+  "Open the saved report": "Gespeicherten Bericht öffnen",
+  "dimension": "Dimension",
+  "The speed probe runs only on deep, full or custom suites, or on standard with a baseline.": "Die Geschwindigkeitsmessung läuft nur mit den Suiten deep, full oder custom, oder mit standard und einer Referenz."
+ }
+}

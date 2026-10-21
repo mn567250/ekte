@@ -156,6 +156,8 @@
   "embed.determinism_input": "The quick brown fox jumps over the lazy dog.",
   "embed.distinct_a": "A recipe for chocolate chip cookies with butter and brown sugar.",
   "embed.distinct_b": "Quarterly revenue grew on strong cloud-infrastructure demand.",
+  "embed.drift_input": "A lighthouse keeper climbs the spiral stairs at dusk to light the lamp.",
+  "embed.perf_input": "Request {{nonce}}. A short note about {{topic}}.",
   "rerank.cli.query": "What is the capital of France?",
   "rerank.cli.documents": [
    "Bananas are a good source of potassium and dietary fiber.",

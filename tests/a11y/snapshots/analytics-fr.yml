@@ -53,6 +53,9 @@
       - button "90 derniers jours"
       - button "Toute la période"
       - button "Période personnalisée"
+    - text: Type de point d'accès
+    - combobox "Type de point d'accès":
+      - option "Chat" [selected]
     - text: Suite
     - combobox "Suite":
       - option "Tous"

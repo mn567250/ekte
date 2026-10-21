@@ -9,6 +9,7 @@ judge. Detectors must not mutate it.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from zing.clients import Client
 from zing.config import AuditOptions
@@ -31,6 +32,9 @@ class AuditContext:
     judge: Judge | None = None
     # Logs every target/baseline call for the performance section.
     recorder: RequestRecorder | None = None
+    # The previous saved report of the same target and claimed model (a report
+    # dict, as history stores it), for checks that compare across runs.
+    previous_report: dict[str, Any] | None = None
 
     @property
     def has_judge(self) -> bool:
@@ -58,6 +62,15 @@ class AuditContext:
     def performance_reference(self) -> PerformanceReference | None:
         """Published native-API speed of the claimed model, if the KB has it."""
         return self.profile.model.performance if self.profile else None
+
+    def embedding_dimensions(self) -> int:
+        """The claimed model's native vector length: the run's override, else
+        the KB profile's; 0 when unknown."""
+        if self.options.embedding_dimensions > 0:
+            return self.options.embedding_dimensions
+        if self.profile and self.profile.model.embedding_dimensions > 0:
+            return self.profile.model.embedding_dimensions
+        return 0
 
     def tokenizer_hint(self) -> str | None:
         if self.profile and self.profile.model.tokenizer:

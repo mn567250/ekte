@@ -1,14 +1,14 @@
 """Embedding and rerank auditor tests.
 
-These cover the non-chat surface: ``zing.embed_audit.audit_embeddings`` and
+These cover the non-chat surface: ``zing.embed_audit.run_embedding_audit`` and
 ``audit_rerank`` plus the OpenAI-compatible client's ``embeddings``/``rerank``
 methods. We inject an ``httpx.MockTransport`` into the real client (mirroring the
 mock-client style in ``tests/test_anthropic.py``) so no network is touched, and
 patch ``make_client`` so the auditor uses our transport-backed client.
 
 Scenarios:
-  * /embeddings — correct dims => PASS; wrong dims => high-severity mismatch;
-    identical vectors for different inputs => a distinctness warning.
+  * /embeddings through ``run_embedding_audit`` — correct dims => PASS; wrong
+    dims => high-severity mismatch; runs saved to history feed vector drift.
   * /rerank — correct top => PASS; wrong top => WARN.
 """
 
@@ -22,7 +22,7 @@ import httpx
 import pytest
 
 from zing.clients import OpenAICompatibleClient
-from zing.embed_audit import audit_embeddings, audit_rerank, cosine_similarity
+from zing.embed_audit import audit_rerank, cosine_similarity, run_embedding_audit, tool_verdict
 from zing.models import TargetConfig
 
 BASE = "https://relay.embed.test/v1"
@@ -179,53 +179,65 @@ async def test_client_rerank_is_sorted():
 
 
 # --------------------------------------------------------------------------- #
-# Embedding audit
+# Embedding audit (the runner's embedding surface, saved to history)
 # --------------------------------------------------------------------------- #
-async def test_embed_correct_dims_pass(patch_client):
-    patch_client(EmbedMock(dim=3072))
-    verdict = await audit_embeddings(_target(), claimed_dimensions=3072)
-    assert verdict["risk_level"] == "clean"
-    assert verdict["score"] == 100.0
-    dim = _finding(verdict, "embed.dimension")
-    assert dim["status"] == "pass"
+@pytest.fixture
+def patch_runner(monkeypatch):
+    def _install(mock: EmbedMock) -> None:
+        monkeypatch.setattr(
+            "zing.runner.make_client",
+            lambda target, **_: OpenAICompatibleClient(target, transport=mock.transport),
+        )
+
+    return _install
 
 
-async def test_embed_wrong_dims_is_high_severity_mismatch(patch_client):
+async def test_embed_correct_dims_pass(patch_runner):
+    patch_runner(EmbedMock(dim=3072))
+    report, rid = await run_embedding_audit(_target(), claimed_dimensions=3072, save=False)
+    verdict = tool_verdict(report, rid)
+    assert verdict["risk_level"] == "clean" and verdict["score"] == 100.0
+    assert verdict["surface"] == "embedding" and verdict["report_id"] is None
+    assert _finding(verdict, "embed.dimension")["status"] == "pass"
+    assert SECRET not in json.dumps(verdict)
+
+
+async def test_embed_wrong_dims_is_high_severity_mismatch(patch_runner):
     # Claim 3072-d (text-embedding-3-large) but the relay returns 1536-d.
-    patch_client(EmbedMock(dim=1536))
-    verdict = await audit_embeddings(_target(), claimed_dimensions=3072)
+    patch_runner(EmbedMock(dim=1536))
+    report, _ = await run_embedding_audit(_target(), claimed_dimensions=3072, save=False)
+    verdict = tool_verdict(report)
     assert verdict["risk_level"] == "high"
     dim = _finding(verdict, "embed.dimension")
-    assert dim["status"] == "fail"
-    assert dim["severity"] == "high"
+    assert (dim["status"], dim["severity"]) == ("fail", "high")
     assert dim["evidence"] == {"returned": 1536, "claimed": 3072}
 
 
-async def test_embed_collapsed_vectors_warn_on_distinctness(patch_client):
-    # Same vector for every input: determinism trivially passes but distinctness
-    # must warn (and at high severity).
-    patch_client(EmbedMock(dim=3072, collapse=True))
-    verdict = await audit_embeddings(_target(), claimed_dimensions=3072)
-    distinct = _finding(verdict, "embed.distinctness")
-    assert distinct["status"] == "warn"
-    assert distinct["severity"] == "high"
-    assert verdict["risk_level"] == "high"
+async def test_embed_kb_dimension_and_connectivity_error(patch_runner):
+    # No override: the KB knows text-embedding-3-large's length.
+    patch_runner(EmbedMock(dim=1536))
+    report, _ = await run_embedding_audit(_target(), save=False)
+    assert _finding(tool_verdict(report), "embed.dimension")["evidence"]["claimed"] == 3072
+    patch_runner(EmbedMock(status=500))
+    report, _ = await run_embedding_audit(_target(), claimed_dimensions=3072, save=False)
+    verdict = tool_verdict(report)
+    assert _finding(verdict, "embed.connectivity")["status"] == "fail"
+    assert verdict["risk_level"] != "clean"
 
 
-async def test_embed_unknown_dims_skips_match(patch_client):
-    patch_client(EmbedMock(dim=1024))
-    verdict = await audit_embeddings(_target(), claimed_dimensions=0)
-    dim = _finding(verdict, "embed.dimension")
-    assert dim["status"] == "info"
-    assert dim["evidence"]["returned"] == 1024
+async def test_embed_runs_are_saved_and_drift_uses_the_previous_one(patch_runner):
+    from zing.web import history
 
-
-async def test_embed_connectivity_error(patch_client):
-    patch_client(EmbedMock(status=500))
-    verdict = await audit_embeddings(_target(), claimed_dimensions=3072)
-    assert verdict["risk_level"] == "inconclusive"
-    conn = _finding(verdict, "embed.connectivity")
-    assert conn["status"] == "error"
+    patch_runner(EmbedMock(dim=3072))
+    first, rid = await run_embedding_audit(_target(), claimed_dimensions=3072)
+    assert rid is not None
+    saved = history.get(rid)
+    assert saved["surface"] == "embedding"
+    assert _finding(tool_verdict(first), "embed.drift")["evidence"]["sample"]
+    second, rid2 = await run_embedding_audit(_target(), claimed_dimensions=3072)
+    assert rid2 != rid
+    drift = _finding(tool_verdict(second), "embed.drift")
+    assert drift["status"] == "pass" and drift["evidence"]["cosine"] == pytest.approx(1.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -263,3 +275,20 @@ def _finding(verdict: dict, finding_id: str) -> dict:
         if f["id"] == finding_id:
             return f
     raise AssertionError(f"finding {finding_id!r} not found in {[f['id'] for f in verdict['findings']]}")
+
+
+def test_cli_embed_runs_the_embedding_surface(patch_runner):
+    from typer.testing import CliRunner
+
+    from zing.cli import app
+
+    patch_runner(EmbedMock(dim=1536))
+    result = CliRunner().invoke(app, [
+        "embed", "--base-url", BASE, "--api-key", SECRET, "--model", MODEL,
+        "--claimed-dimensions", "3072", "--no-save", "--json", "--fail-on-risk", "high",
+    ])
+    assert result.exit_code == 1, result.output
+    verdict = json.loads(result.stdout)
+    assert verdict["surface"] == "embedding" and verdict["risk_level"] == "high"
+    assert verdict["report_id"] is None
+    assert SECRET not in result.stdout

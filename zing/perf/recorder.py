@@ -317,6 +317,24 @@ class RequestRecorder:
             rec.e2e_tps_local = _e2e_tps(rec.output_tokens_local, dur)
         return self._add(rec, net, started)
 
+    def record_embedding(
+        self,
+        endpoint: str,
+        inputs: list[str],
+        outcome: CompletionOutcome,
+        started: float,
+        net: NetTrace | None = None,
+    ) -> RequestRecord:
+        """One ``POST /embeddings`` call: latency and input tokens, no output."""
+        rec = self._base(endpoint, "embed", False, started, outcome)
+        reported = usage_tokens(outcome.usage)
+        rec.input_tokens_reported = reported["input"]
+        try:
+            rec.input_tokens_local = sum(estimate_tokens(text, self.tokenizer) for text in inputs)
+        except Exception:
+            rec.input_tokens_local = None
+        return self._add(rec, net, started)
+
     def record_models(
         self,
         endpoint: str,

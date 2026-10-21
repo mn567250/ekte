@@ -362,7 +362,7 @@ def _build_dry_run_plan(target, options, baseline, judge_target, mode: str) -> d
     has_baseline = baseline is not None
     detectors = select_detectors(
         options.suite, has_judge=has_judge, has_baseline=has_baseline, enabled=options.enabled,
-        dimensions=options.dimensions,
+        dimensions=options.dimensions, surface=options.surface,
     )
     rows: list[dict] = []
     total = 0
@@ -1077,15 +1077,18 @@ def embed_command(
     claimed_model: Annotated[str | None, typer.Option("--claimed-model", help="Model the relay claims to serve, if different from --model (resolves the claimed dimension from the KB).")] = None,
     declared_provider: Annotated[str | None, typer.Option("--declared-provider", help="Provider hint for KB lookup (openai, qwen, ...).")] = None,
     claimed_dimensions: Annotated[int | None, typer.Option("--claimed-dimensions", help="Override the expected vector dimension instead of resolving it from the KB (0 = unknown).")] = None,
+    suite: Annotated[str, typer.Option("--suite", help="smoke | standard | deep | full (deep/full add the performance probe).")] = "standard",
+    save: Annotated[bool, typer.Option("--save/--no-save", help="Save the report to the local history (the next run's vector-drift reference).")] = True,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
 ) -> None:
     """Audit an embeddings endpoint (a non-chat surface).
 
-    Runs embedding-specific checks — connectivity, vector-dimension match against
-    the claimed model, determinism, and distinctness — instead of the chat
-    detector pipeline. The expected dimension is resolved from the bundled
+    Runs the embedding-surface detectors — connectivity, vector-dimension match
+    against the claimed model, echoed model, vector drift since the last saved
+    run, determinism, distinctness, and on deep/full a performance probe —
+    instead of the chat detectors. The expected dimension is resolved from the
     knowledge base for the claimed model (override with --claimed-dimensions).
     """
     try:
@@ -1094,25 +1097,30 @@ def embed_command(
             declared_provider=declared_provider, claimed_model=claimed_model,
         )
         fail_on_risk = validate_risk(fail_on_risk)
+        suite = validate_suite(suite)
     except ConfigError as exc:
         if as_json:
             _emit_machine_error(exc)
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
-    # Resolve the claimed embedding dimension from the KB unless overridden.
-    dims = claimed_dimensions if claimed_dimensions is not None else 0
-    if claimed_dimensions is None:
-        from zing.knowledge import load_knowledge_base
+    # Through the runner as the embedding surface; the claimed dimension comes
+    # from the knowledge base unless overridden (0 = unknown). The previous saved
+    # run of this target is the vector-drift reference, and the report is saved
+    # to history (best-effort) unless --no-save.
+    from zing.embed_audit import run_embedding_audit, tool_verdict
 
-        kb = load_knowledge_base(list(kb_dir) if kb_dir else None)
-        resolved = kb.resolve(target.claimed, provider_hint=target.declared_provider)
-        if resolved is not None:
-            dims = resolved.model.embedding_dimensions
-
-    from zing.embed_audit import audit_embeddings
-
-    verdict = _run_async(audit_embeddings(target, dims))
+    report, report_id = _run_async(
+        run_embedding_audit(
+            target,
+            claimed_dimensions=claimed_dimensions or 0,
+            suite=suite,
+            kb_dirs=list(kb_dir) if kb_dir else None,
+            command="zing embed",
+            save=save,
+        )
+    )
+    verdict = tool_verdict(report, report_id)
 
     if as_json:
         print(json.dumps(verdict, ensure_ascii=False, indent=2))

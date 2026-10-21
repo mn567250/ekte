@@ -74,8 +74,12 @@ def track_progress(state: dict[str, Any], event: dict[str, Any]) -> None:
         state["current"] = None
     elif kind == "request_done":
         rec = event.get("record") or {}
-        if rec.get("detector") == "performance" and rec.get("endpoint") == "target":
+        if rec.get("detector") in _PROBES and rec.get("endpoint") == "target":
             state["probe_done"] = state.get("probe_done", 0) + 1
+
+
+# The performance probes (chat and embedding), by detector id.
+_PROBES = ("performance", "performance.embed")
 
 
 def progress_pct(state: dict[str, Any]) -> int:
@@ -86,7 +90,7 @@ def progress_pct(state: dict[str, Any]) -> int:
         return 0
     done = float(state.get("done") or 0)
     planned = state.get("probe_planned") or 0
-    if state.get("current") == "performance" and planned:
+    if state.get("current") in _PROBES and planned:
         done += min(state.get("probe_done", 0) / planned, 1.0)
     return max(0, min(99, int(done * 100 / total)))
 
