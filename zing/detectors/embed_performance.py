@@ -215,7 +215,7 @@ class EmbedPerformanceDetector(Detector):
             "latency_p50_ms": r(ep.latency_ms.p50),
             "latency_p95_ms": r(ep.latency_ms.p95),
             "cold_start_ms": r(ep.cold_start_ms),
-            "batch_latency_p50_ms": r(percentile([rec.duration_ms for rec in batch], 50)),
+            "batch_latency_p50_ms": r(percentile([rec.duration_ms for rec in batch if rec.duration_ms is not None], 50)),
             "inputs_per_s_p50": r(percentile([v for v in inputs_s if v], 50)),
             "input_tokens_per_s_p50": r(percentile([v for v in tokens_s if v], 50)),
             "network_rtt_p50_ms": r(ep.network_rtt_ms.p50),
@@ -291,8 +291,8 @@ class EmbedPerformanceDetector(Detector):
     def _batch_finding(
         self, result: DetectorResult, single: list[RequestRecord], batch: list[RequestRecord]
     ) -> None:
-        one = percentile([rec.duration_ms for rec in single], 50)
-        many = percentile([rec.duration_ms for rec in batch], 50)
+        one = percentile([rec.duration_ms for rec in single if rec.duration_ms is not None], 50)
+        many = percentile([rec.duration_ms for rec in batch if rec.duration_ms is not None], 50)
         evidence = {
             "batch": BATCH,
             "single_samples": len(single),
