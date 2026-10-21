@@ -77,6 +77,7 @@ _ALL_COLS = (
     "run_duration_sec",
     "performance_streaming",
     "surface",
+    "embedding_dimensions",
 )
 
 # Columns safe to return to the browser — everything except the API key.
@@ -149,6 +150,9 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
     # The audited surface ("chat" or "embedding"); NULL reads as chat.
     if "surface" not in cols:
         conn.execute("ALTER TABLE watches ADD COLUMN surface TEXT")
+    # An embedding watch's claimed vector length; NULL or 0 takes the KB's.
+    if "embedding_dimensions" not in cols:
+        conn.execute("ALTER TABLE watches ADD COLUMN embedding_dimensions INTEGER")
     # The master key's check value (see zing.secretbox.make_canary).
     conn.execute("CREATE TABLE IF NOT EXISTS secret_meta (name TEXT PRIMARY KEY, value TEXT)")
     kb_snapshot.ensure_table(conn)
@@ -358,6 +362,7 @@ def _row_to_dict(row: sqlite3.Row, *, include_key: bool) -> dict[str, Any]:
     d["performance_streaming"] = d.get("performance_streaming") != 0
     # NULL (watches from before surfaces existed) audits a chat endpoint.
     d["surface"] = d.get("surface") or "chat"
+    d["embedding_dimensions"] = _dims(d.get("embedding_dimensions"))
     d["language"] = i18n.normalize(d.get("language"))
     raw_dims = d.get("dimensions")
     try:
@@ -428,6 +433,16 @@ def _duration(raw: Any) -> float | None:
     return round(float(raw), 1)
 
 
+def _dims(raw: Any) -> int:
+    """A claimed embedding vector length: a positive int, else 0 (from the KB)."""
+    if isinstance(raw, bool):
+        return 0
+    try:
+        return max(0, int(raw or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def create(
     cfg: dict[str, Any], knowledge: dict[str, Any] | None = None, *, draft: bool = False
 ) -> int:
@@ -437,7 +452,9 @@ def create(
     declared_provider, suite, dimensions (list; the custom suite's), interval_sec,
     alert_on, webhooks (list), language (alert language code; unknown/missing ->
     English), performance_streaming (False: the probe sends non-streaming
-    requests), surface ("chat" or "embedding"; missing -> chat). Unknown keys are ignored;
+    requests), surface ("chat" or "embedding"; missing -> chat),
+    embedding_dimensions (an embedding watch's claimed vector length; 0 or
+    missing -> the knowledge base's). Unknown keys are ignored;
     missing keys fall back to sensible defaults. ``knowledge`` (a
     KnowledgeUsage dict with its profile) pins the watch's profile.
 
@@ -477,6 +494,7 @@ def create(
         _duration(cfg.get("run_duration_sec")),
         0 if cfg.get("performance_streaming") is False else 1,
         cfg.get("surface") or "chat",
+        _dims(cfg.get("embedding_dimensions")) or None,
     )
     with _connect() as conn:
         cur = conn.execute(
@@ -484,8 +502,9 @@ def create(
                (name, base_url, api_key, model, claimed_model, api,
                 declared_provider, suite, interval_sec, alert_on, webhooks,
                 enabled, created_ts, language, dimensions, source_report_id,
-                run_duration_sec, performance_streaming, surface)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                run_duration_sec, performance_streaming, surface,
+                embedding_dimensions)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             row,
         )
         wid = int(cur.lastrowid or -1)
@@ -556,6 +575,7 @@ def update(
     api_key: str | None = None,
     alert_on: str | None = None,
     webhooks: list[str] | None = None,
+    embedding_dimensions: int | None = None,
 ) -> None:
     """Change a watch's schedule, key or alert settings; ``None`` leaves a field as is.
 
@@ -575,6 +595,9 @@ def update(
     if webhooks is not None:
         sets.append("webhooks = ?")
         vals.append(json.dumps(list(webhooks), ensure_ascii=False))
+    if embedding_dimensions is not None:
+        sets.append("embedding_dimensions = ?")
+        vals.append(_dims(embedding_dimensions) or None)
     if not sets:
         return
     with _connect() as conn:
