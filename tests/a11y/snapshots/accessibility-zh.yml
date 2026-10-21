@@ -80,10 +80,10 @@
     - heading "机器 仅测试套件" [level=3]
     - list:
       - listitem: 自动 27 / 44 · 61.4 %
-    - heading "人工 仅人工" [level=3]
+    - heading "人工 仅由人审核" [level=3]
     - list:
       - listitem: 人工 0 / 44 · 0 %
-    - heading "机器 人工 先测试套件，再人工" [level=3]
+    - heading "机器 人工 先测试套件，再由人审核" [level=3]
     - list:
       - listitem: 部分自动 17 / 44 · 38.6 %
       - listitem: 已审核 6 / 17 待人工审核 11 / 17
