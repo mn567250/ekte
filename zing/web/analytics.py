@@ -58,7 +58,7 @@ from datetime import date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from zing.config import SURFACES
+from zing.config import SURFACE_OPS, SURFACES
 from zing.knowledge.relays import normalize_url
 from zing.web import analytics_store, history
 
@@ -88,8 +88,6 @@ ALL_KEY = "(all)"
 # Every surface, and the chat surface alone (metrics of chat completions only).
 ALL_SURFACES = frozenset(SURFACES)
 CHAT_ONLY = frozenset({"chat"})
-# The request op whose records a surface's errors view counts.
-SURFACE_OPS = {"chat": "complete", "embedding": "embed"}
 
 
 class AnalyticsError(ValueError):
@@ -990,6 +988,9 @@ INTEGRITY_CHECKS = (
     # the embedding surface
     "embed.identity", "embed.drift", "embed.determinism", "embed.distinctness",
     "embed.connectivity",
+    # the rerank surface
+    "rerank.connectivity", "rerank.known_answer", "rerank.identity", "rerank.determinism",
+    "rerank.drift", "performance.rerank",
 )
 JUDGED = ("pass", "warn", "fail")
 

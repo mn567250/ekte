@@ -414,6 +414,16 @@ class BaseHTTPClient:
             error_message=f"{type(self).__name__} has no embeddings endpoint.",
         ), []
 
+    async def _rerank(
+        self, query: str, documents: list[str]
+    ) -> tuple[CompletionOutcome, list[dict[str, Any]]]:
+        """POST /rerank; only OpenAI-shaped endpoints serve it."""
+        return CompletionOutcome(
+            ok=False,
+            error_type="Unsupported",
+            error_message=f"{type(self).__name__} has no rerank endpoint.",
+        ), []
+
     # -- public calls (recorded for the performance section) --------------- #
     async def complete(self, spec: RequestSpec) -> CompletionOutcome:
         if self.reasoning_room:
@@ -488,6 +498,24 @@ class BaseHTTPClient:
             outcome, vectors = await self._embeddings(inputs)
         self.recorder.record_embedding(self.endpoint, inputs, outcome, started, net)
         return outcome, vectors
+
+    async def rerank(
+        self, query: str, documents: list[str]
+    ) -> tuple[CompletionOutcome, list[dict[str, Any]]]:
+        """POST /rerank. Returns (outcome, results) sorted by score descending.
+
+        Each result is ``{"index": int, "relevance_score": float}``, ``index``
+        pointing into ``documents``. On any error the outcome carries the
+        redacted failure and the list is empty. With a recorder the call is
+        recorded as a ``rerank`` request.
+        """
+        if self.recorder is None:
+            return await self._rerank(query, documents)
+        started = time.perf_counter()
+        with net_trace_scope() as net:
+            outcome, results = await self._rerank(query, documents)
+        self.recorder.record_rerank(self.endpoint, query, documents, outcome, started, net)
+        return outcome, results
 
     async def list_models(
         self, *, no_cache: bool = False

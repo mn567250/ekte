@@ -1,4 +1,4 @@
-"""The surface axis: chat (default) vs embedding audits.
+"""The surface axis: chat (default) vs embedding and rerank audits.
 
 Covers the option / report field, detector selection by surface and the
 per-surface scoring tables. Chat behaviour is pinned by the rest of the suite.
@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 import zing.detectors  # noqa: F401  -- populate the registry
-from zing.config import AuditOptions, ConfigError, validate_surface
+from zing.config import SURFACE_OPS, SURFACES, AuditOptions, ConfigError, validate_surface
 from zing.detectors import base
 from zing.models import (
     AuditReport,
@@ -57,6 +57,17 @@ def test_surface_defaults_to_chat():
     assert validate_surface("embedding") == "embedding"
     with pytest.raises(ConfigError):
         validate_surface("video")
+
+
+def test_rerank_surface_validates():
+    assert "rerank" in SURFACES
+    assert validate_surface("rerank") == "rerank"
+    assert AuditOptions(surface="rerank").surface == "rerank"
+
+
+def test_surface_ops_cover_every_surface():
+    assert SURFACE_OPS == {"chat": "complete", "embedding": "embed", "rerank": "rerank"}
+    assert set(SURFACE_OPS) == set(SURFACES)
 
 
 def test_saved_report_without_surface_loads_as_chat():
@@ -158,6 +169,55 @@ def test_embedding_connectivity_high_does_not_escalate():
     assert _verdict(results)[1].risk_level == RiskLevel.CLEAN
 
 
+def test_rerank_weights():
+    weights = SURFACE_WEIGHTS["rerank"]
+    assert weights_for("rerank") is weights
+    assert weights == {
+        Dimension.MODEL_IDENTITY: 30.0, Dimension.CAPABILITY: 30.0, Dimension.PERFORMANCE: 20.0,
+        Dimension.RELIABILITY: 10.0, Dimension.CONNECTIVITY: 10.0,
+    }
+
+
+def test_rerank_scores_only_its_dimensions():
+    results = [
+        _result(Dimension.CONNECTIVITY, 100.0),
+        _result(Dimension.MODEL_IDENTITY, 90.0),
+        _result(Dimension.RELIABILITY, 80.0),
+        _result(Dimension.CAPABILITY, 70.0),
+        _result(Dimension.PERFORMANCE, 60.0),
+    ]
+    dims, verdict = _verdict(results, "rerank")
+    assert {d.dimension for d in dims} == set(SURFACE_WEIGHTS["rerank"])
+    assert verdict.overall_score == 78.0  # (10*100 + 30*90 + 10*80 + 30*70 + 20*60) / 100
+    assert verdict.risk_level == RiskLevel.CLEAN
+
+
+def test_rerank_capability_high_is_high_risk():
+    results = [
+        _result(Dimension.MODEL_IDENTITY, 100.0),
+        _result(Dimension.CAPABILITY, 20.0, severity=Severity.HIGH),
+    ]
+    # A failed known-answer ranking is core for rerank, unlike for embeddings.
+    assert _verdict(results, "rerank")[1].risk_level == RiskLevel.HIGH
+
+
+def test_rerank_identity_high_is_high_risk():
+    results = [
+        _result(Dimension.MODEL_IDENTITY, 20.0, severity=Severity.HIGH),
+        _result(Dimension.CAPABILITY, 100.0),
+    ]
+    assert _verdict(results, "rerank")[1].risk_level == RiskLevel.HIGH
+
+
+def test_rerank_connectivity_high_does_not_escalate():
+    results = [
+        _result(Dimension.CONNECTIVITY, 0.0, severity=Severity.HIGH),
+        _result(Dimension.MODEL_IDENTITY, 100.0),
+        _result(Dimension.CAPABILITY, 100.0),
+    ]
+    assert _verdict(results, "rerank")[1].risk_level == RiskLevel.CLEAN
+
+
 # --------------------------------------------------------------------------- #
 # Recorder and performance summary
 # --------------------------------------------------------------------------- #
@@ -176,6 +236,57 @@ async def test_client_records_embedding_calls():
     assert rec.input_tokens_reported == 10
     assert rec.input_tokens_local and rec.input_tokens_local > 0
     assert rec.duration_ms is not None and rec.output_tokens_reported is None
+
+
+def _rerank_transport():
+    import httpx
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path.endswith("/rerank")
+        return httpx.Response(200, json={
+            "model": "m",
+            "results": [{"index": 0, "relevance_score": 0.1}, {"index": 1, "relevance_score": 0.9}],
+            "usage": {"total_tokens": 7},
+        })
+
+    return httpx.MockTransport(handler)
+
+
+async def test_client_records_rerank_calls():
+    from tests.test_embed import _target
+    from zing.clients import OpenAICompatibleClient
+    from zing.perf.recorder import RequestRecorder
+
+    recorder = RequestRecorder()
+    async with OpenAICompatibleClient(_target(), transport=_rerank_transport()) as c:
+        c.recorder = recorder
+        outcome, results = await c.rerank("which?", ["alpha", "beta gamma"])
+    assert outcome.ok
+    assert [r["index"] for r in results] == [1, 0]
+    (rec,) = recorder.records
+    assert (rec.op, rec.endpoint, rec.stream, rec.ok) == ("rerank", "target", False, True)
+    assert rec.input_tokens_local and rec.input_tokens_local > 0
+    assert rec.duration_ms is not None and rec.output_tokens_reported is None
+
+
+async def test_client_rerank_without_recorder():
+    from tests.test_embed import _target
+    from zing.clients import OpenAICompatibleClient
+
+    async with OpenAICompatibleClient(_target(), transport=_rerank_transport()) as c:
+        outcome, results = await c.rerank("which?", ["alpha", "beta"])
+    assert outcome.ok and results[0] == {"index": 1, "relevance_score": 0.9}
+
+
+def test_recorder_records_rerank():
+    from zing.models import CompletionOutcome
+    from zing.perf.recorder import RequestRecorder
+
+    recorder = RequestRecorder()
+    outcome = CompletionOutcome(ok=False, error_type="HTTPError", status_code=500)
+    rec = recorder.record_rerank("target", "q", ["d1", "d2"], outcome, 0.0)
+    assert (rec.op, rec.ok, rec.stream) == ("rerank", False, False)
+    assert recorder.records == [rec]
 
 
 def test_summary_op_parameter():

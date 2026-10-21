@@ -720,7 +720,7 @@ def test_metrics_declare_their_surfaces():
     emb = {m.id for m in analytics.metrics_for("embedding")}
     assert emb == set(analytics.METRICS) - chat_only
     assert {"score", "latency_p50", "cold_start", "model_mismatch_rate", "findings_high"} <= emb
-    assert analytics.METRICS["latency_p50"].public()["surfaces"] == ["chat", "embedding"]
+    assert analytics.METRICS["latency_p50"].public()["surfaces"] == ["chat", "embedding", "rerank"]
     with pytest.raises(AnalyticsError, match="does not apply"):
         analytics.metric("ttft_p50", "embedding")
     assert analytics.metric("dim:model_identity", "embedding").unit == "score"

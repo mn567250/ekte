@@ -71,23 +71,38 @@ _EMBEDDING_WEIGHTS: dict[Dimension, float] = {
     Dimension.PERFORMANCE: 20.0,
 }
 
+# The rerank surface: identity (echoed model, drift on a pinned probe) and
+# capability (ranking a known answer first) carry the verdict together.
+_RERANK_WEIGHTS: dict[Dimension, float] = {
+    Dimension.MODEL_IDENTITY: 30.0,
+    Dimension.CAPABILITY: 30.0,
+    Dimension.PERFORMANCE: 20.0,
+    Dimension.RELIABILITY: 10.0,
+    Dimension.CONNECTIVITY: 10.0,
+}
+
 # Per-surface weights and dimension sets; ``chat`` keeps the tables above.
 SURFACE_WEIGHTS: dict[str, dict[Dimension, float]] = {
     "chat": DIMENSION_WEIGHTS,
     "embedding": _EMBEDDING_WEIGHTS,
+    "rerank": _RERANK_WEIGHTS,
 }
 _SURFACE_PROFILE_DIMENSIONS: dict[str, tuple[Dimension, ...]] = {
     "chat": _PROFILE_DIMENSIONS,
     "embedding": (Dimension.MODEL_IDENTITY,),
+    "rerank": (Dimension.MODEL_IDENTITY,),
 }
-# For embeddings a dimension mismatch (MODEL_IDENTITY HIGH) makes the risk HIGH.
+# For embeddings a dimension mismatch (MODEL_IDENTITY HIGH) makes the risk HIGH;
+# for rerank a failed known-answer ranking (CAPABILITY HIGH) does too.
 _SURFACE_CORE_DIMENSIONS: dict[str, tuple[Dimension, ...]] = {
     "chat": _CORE_DIMENSIONS,
     "embedding": (Dimension.MODEL_IDENTITY,),
+    "rerank": (Dimension.MODEL_IDENTITY, Dimension.CAPABILITY),
 }
 _SURFACE_INFRA_DIMENSIONS: dict[str, tuple[Dimension, ...]] = {
     "chat": _INFRA_DIMENSIONS,
     "embedding": (Dimension.CONNECTIVITY,),
+    "rerank": (Dimension.CONNECTIVITY,),
 }
 
 

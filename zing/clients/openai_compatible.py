@@ -189,15 +189,9 @@ class OpenAICompatibleClient(BaseHTTPClient):
         except Exception as exc:
             return self._exception_outcome(exc, started), []
 
-    async def rerank(
+    async def _rerank(
         self, query: str, documents: list[str]
     ) -> tuple[CompletionOutcome, list[dict[str, Any]]]:
-        """POST /rerank. Returns (outcome, results) sorted by score descending.
-
-        Each result is ``{"index": int, "relevance_score": float}`` where ``index``
-        points into the original ``documents`` list. Non-chat surface — no detector
-        pipeline.
-        """
         body: dict[str, Any] = {
             "model": self.config.model,
             "query": query,
