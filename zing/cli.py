@@ -362,7 +362,7 @@ def _build_dry_run_plan(target, options, baseline, judge_target, mode: str) -> d
     has_baseline = baseline is not None
     detectors = select_detectors(
         options.suite, has_judge=has_judge, has_baseline=has_baseline, enabled=options.enabled,
-        dimensions=options.dimensions,
+        dimensions=options.dimensions, surface=options.surface,
     )
     rows: list[dict] = []
     total = 0

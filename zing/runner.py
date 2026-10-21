@@ -207,6 +207,7 @@ async def run_audit(
             has_baseline=baseline_client is not None,
             enabled=options.enabled,
             dimensions=options.dimensions,
+            surface=options.surface,
         )
         total = len(detectors)
         has_baseline = baseline_client is not None
@@ -242,7 +243,7 @@ async def run_audit(
         concurrency=options.reliability_concurrency,
     )
     selected = list(options.dimensions) if options.suite == "custom" else None
-    dimensions = build_dimensions(results, reliability, selected=selected)
+    dimensions = build_dimensions(results, reliability, selected=selected, surface=options.surface)
     verdict = build_verdict(
         results,
         dimensions,
@@ -251,6 +252,7 @@ async def run_audit(
         used_baseline=baseline_client is not None,
         selected=selected,
         match_confidence=profile.match_confidence if profile is not None else None,
+        surface=options.surface,
     )
 
     warnings = [
@@ -273,6 +275,7 @@ async def run_audit(
         started_at=recorder.started_at.isoformat(),
         command=command,
         suite=options.suite,
+        surface=options.surface,
         dimensions_selected=selected,
         stream_mode=stream_mode(options),
         target=_redact(target),

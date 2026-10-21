@@ -20,6 +20,9 @@ from zing.utils import yamlio
 # deep depth; the others are cumulative tiers.
 SUITES = ("smoke", "standard", "deep", "full", "custom")
 DIMENSIONS = tuple(d.value for d in Dimension)
+# What kind of endpoint is audited, orthogonal to the suite (the depth). A
+# missing value (old reports, NULL database columns) means ``chat``.
+SURFACES = ("chat", "embedding")
 FORMATS = ("json", "md", "html", "pdf", "all")
 RISK_LEVELS = ("low", "medium", "high")
 APIS = ("auto", "openai", "anthropic", "responses")
@@ -35,6 +38,7 @@ class AuditOptions(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     suite: str = "standard"
+    surface: str = "chat"  # one of SURFACES
     judge: bool = False
     only: list[str] = Field(default_factory=list)   # run only these detector ids
     skip: list[str] = Field(default_factory=list)    # skip these detector ids
@@ -162,6 +166,14 @@ def build_target(
 def validate_suite(value: str) -> str:
     if value not in SUITES:
         raise ConfigError(f"Unknown suite {value!r}. Choose from: {', '.join(SUITES)}")
+    return value
+
+
+def validate_surface(value: str | None) -> str:
+    """``value`` as a surface; empty or None means ``chat``."""
+    value = value or "chat"
+    if value not in SURFACES:
+        raise ConfigError(f"Unknown surface {value!r}. Choose from: {', '.join(SURFACES)}")
     return value
 
 

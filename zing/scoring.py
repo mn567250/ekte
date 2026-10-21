@@ -60,6 +60,45 @@ _CORE_DIMENSIONS = (*_PROFILE_DIMENSIONS, Dimension.BILLING)
 # still counts; it just can't drive the "diverges from the claimed model" headline.
 _INFRA_DIMENSIONS = (Dimension.CONNECTIVITY,)
 
+# The embedding surface reuses the chat dimensions it has evidence for. Model
+# identity (vector dimension, echoed model, drift on a pinned probe) dominates:
+# a different embedding model silently breaks every stored vector.
+_EMBEDDING_WEIGHTS: dict[Dimension, float] = {
+    Dimension.CONNECTIVITY: 10.0,
+    Dimension.MODEL_IDENTITY: 40.0,
+    Dimension.CAPABILITY: 15.0,
+    Dimension.RELIABILITY: 15.0,
+    Dimension.PERFORMANCE: 20.0,
+}
+
+# Per-surface weights and dimension sets; ``chat`` keeps the tables above.
+SURFACE_WEIGHTS: dict[str, dict[Dimension, float]] = {
+    "chat": DIMENSION_WEIGHTS,
+    "embedding": _EMBEDDING_WEIGHTS,
+}
+_SURFACE_PROFILE_DIMENSIONS: dict[str, tuple[Dimension, ...]] = {
+    "chat": _PROFILE_DIMENSIONS,
+    "embedding": (Dimension.MODEL_IDENTITY,),
+}
+# For embeddings a dimension mismatch (MODEL_IDENTITY HIGH) makes the risk HIGH.
+_SURFACE_CORE_DIMENSIONS: dict[str, tuple[Dimension, ...]] = {
+    "chat": _CORE_DIMENSIONS,
+    "embedding": (Dimension.MODEL_IDENTITY,),
+}
+_SURFACE_INFRA_DIMENSIONS: dict[str, tuple[Dimension, ...]] = {
+    "chat": _INFRA_DIMENSIONS,
+    "embedding": (Dimension.CONNECTIVITY,),
+}
+
+
+def weights_for(surface: str | None) -> dict[Dimension, float]:
+    """The dimension weights of ``surface`` (None or unknown reads as chat)."""
+    return SURFACE_WEIGHTS.get(surface or "chat", DIMENSION_WEIGHTS)
+
+
+def _dims_for(table: dict[str, tuple[Dimension, ...]], surface: str | None) -> set[Dimension]:
+    return set(table.get(surface or "chat", table["chat"]))
+
 # Transport/advisory checks (by finding check id): how the relay is reached and
 # how it holds up under load, not WHICH model it serves. Plain HTTP, a flaky
 # burst or a slow tail lower their dimension's score and status and are listed
@@ -141,11 +180,12 @@ def build_dimensions(
     reliability: ReliabilitySummary | None,
     *,
     selected: list[str] | None = None,
+    surface: str = "chat",
 ) -> list[DimensionScore]:
-    """Score every dimension. ``selected`` (a custom suite's dimensions) marks
-    the rest as not selected rather than not run."""
+    """Score every dimension of ``surface``. ``selected`` (a custom suite's
+    dimensions) marks the rest as not selected rather than not run."""
     dimensions: list[DimensionScore] = []
-    for dim, weight in DIMENSION_WEIGHTS.items():
+    for dim, weight in weights_for(surface).items():
         members = [d for d in detectors if d.dimension == dim]
         scored = [d.score for d in members if d.score is not None]
         score = round(sum(scored) / len(scored), 1) if scored else None
@@ -238,11 +278,13 @@ def build_verdict(
     used_baseline: bool,
     selected: list[str] | None = None,
     match_confidence: str | None = None,
+    surface: str = "chat",
 ) -> Verdict:
     """The headline verdict, judged on the dimensions that ran.
     ``match_confidence`` is how the claimed model matched its knowledge-base
     profile (``exact``/``alias``/``fuzzy``…); a fuzzy match caps the
-    confidence at "low"."""
+    confidence at "low". ``surface`` picks the profile / core / infra
+    dimension sets."""
     score = overall_score(dimensions)
     pairs = _all_findings(detectors)
     weak_match = profile_matched and match_confidence in _WEAK_MATCHES
@@ -250,7 +292,7 @@ def build_verdict(
     # Substitution risk is judged on what is SERVED, excluding pure transport
     # findings (a down/throttled honest relay must not read as "diverges") and
     # transport/advisory checks (plain HTTP, reliability under load).
-    infra_dims = set(_INFRA_DIMENSIONS)
+    infra_dims = _dims_for(_SURFACE_INFRA_DIMENSIONS, surface)
     substantive = [
         (d, f) for d, f in pairs if d.dimension not in infra_dims and not is_advisory(f)
     ]
@@ -264,7 +306,7 @@ def build_verdict(
     medium = [(d, f) for d, f in substantive if f.severity == Severity.MEDIUM]
 
     # Findings landing in a core dimension weigh more.
-    core_dims = set(_CORE_DIMENSIONS)
+    core_dims = _dims_for(_SURFACE_CORE_DIMENSIONS, surface)
     core_high = [(d, f) for d, f in high if d.dimension in core_dims]
     core_medium = [(d, f) for d, f in medium if d.dimension in core_dims]
 
@@ -276,7 +318,7 @@ def build_verdict(
         for d in detectors
         if d.dimension not in infra_dims and d.status in _USABLE_STATUSES
     }
-    profile_dims = set(_PROFILE_DIMENSIONS)
+    profile_dims = _dims_for(_SURFACE_PROFILE_DIMENSIONS, surface)
     judge_effective = any(
         d.id == "quality_judge" and d.status in _USABLE_STATUSES for d in detectors
     )

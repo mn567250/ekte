@@ -41,6 +41,8 @@ class Detector(ABC):
     name: ClassVar[str]
     dimension: ClassVar[Dimension]
     min_suite: ClassVar[str] = "standard"
+    # The kind of endpoint this check audits ("chat" or "embedding").
+    surface: ClassVar[str] = "chat"
     requires_judge: ClassVar[bool] = False
     requires_baseline: ClassVar[bool] = False
     # Approximate number of API calls this detector issues — used by `--dry-run` so
@@ -80,9 +82,11 @@ def select_detectors(
     has_baseline: bool,
     enabled,
     dimensions: list[str] | None = None,
+    surface: str = "chat",
 ) -> list[Detector]:
     """Instantiate the detectors that should run for this configuration.
 
+    Only the detectors of ``surface`` are considered (None reads as chat).
     ``enabled`` is a callable ``(detector_id) -> bool`` from :class:`AuditOptions`.
     Detectors requiring a judge/baseline are silently dropped when unavailable.
     On the ``custom`` suite only the detectors of ``dimensions`` run.
@@ -90,8 +94,11 @@ def select_detectors(
     suite_tier = _tier(suite)
     custom = suite == CUSTOM_SUITE
     selected = set(dimensions or [])
+    surface = surface or "chat"
     chosen: list[Detector] = []
     for det_id, cls in sorted(REGISTRY.items()):
+        if cls.surface != surface:
+            continue
         if _tier(cls.min_suite) > suite_tier:
             continue
         if custom and cls.dimension.value not in selected:
