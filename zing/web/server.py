@@ -82,7 +82,7 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from zing import __version__, prompts
+from zing import __version__
 from zing.clients import detect_api
 from zing.config import (
     AuditOptions,
@@ -128,12 +128,6 @@ _SCHEDULER_TICK_SEC = 30.0
 
 # Live per-request events are batched into one SSE message per window.
 _REQUEST_BATCH_SEC = 0.25
-
-# Built-in known-answer rerank probe: one document (index 2) is unmistakably the
-# most relevant answer to the query. A genuine reranker must rank it first.
-_RERANK_PROBE_QUERY = prompts.text("rerank.web.query")
-_RERANK_PROBE_DOCS: list[str] = prompts.get("rerank.web.documents")
-_RERANK_PROBE_TOP = 2
 
 
 def _remember_ui(resp: Response, choice: str | None) -> Response:
@@ -190,7 +184,7 @@ def _watch_protocol(row: dict[str, Any]) -> dict[str, Any]:
     except Exception:
         resolved = None
     if (row.get("surface") or "chat") != "chat":
-        # embedding requests never stream: no probe request mode to show
+        # embedding and rerank requests never stream: no probe request mode to show
         return {"api_resolved": resolved, "api_auto": configured == "auto", "stream_mode": None}
     mode = stream_mode(AuditOptions(
         suite=str(row.get("suite") or "standard"),
@@ -386,16 +380,18 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             dimensions=dimensions,
             performance_streaming=row.get("performance_streaming") is not False,
             surface=surface,
-            embedding_dimensions=max(0, _coerce_int(row.get("embedding_dimensions"))),
+            embedding_dimensions=(
+                max(0, _coerce_int(row.get("embedding_dimensions"))) if surface == "embedding" else 0
+            ),
         )
         claimed = target.claimed_model or target.model
-        # An embedding run's vector-drift check compares with the previous
-        # saved embedding run of this target and model (best-effort).
+        # A non-chat run's drift check (vectors, rankings) compares with the
+        # previous saved run of the same surface, target and model (best-effort).
         drift_ref: dict[str, Any] | None = None
-        if surface == "embedding":
+        if surface != "chat":
             with contextlib.suppress(Exception):
                 drift_ref = await asyncio.to_thread(
-                    history.latest_for, target.base_url, claimed, "embedding"
+                    history.latest_for, target.base_url, claimed, surface
                 )
 
         # Audit against the profile pinned when the watch was created, so a
@@ -1412,8 +1408,8 @@ def create_app() -> FastAPI:
             "suite": suite,
             "dimensions": dimensions,
             "surface": surface,
-            # the streaming mode is a chat setting; embedding requests never stream
-            "performance_streaming": embedding or body.get("performance_streaming") is not False,
+            # the streaming mode is a chat setting; non-chat requests never stream
+            "performance_streaming": surface != "chat" or body.get("performance_streaming") is not False,
             "embedding_dimensions": _coerce_int(body.get("embedding_dimensions")) if embedding else 0,
         }
         try:
@@ -1485,7 +1481,7 @@ def create_app() -> FastAPI:
             "api": api,
             "suite": suite,
             "dimensions": dimensions,
-            "performance_streaming": embedding or report.get("stream_mode") != "non_stream",
+            "performance_streaming": surface != "chat" or report.get("stream_mode") != "non_stream",
             "surface": surface,
             "embedding_dimensions": claimed_dims if embedding else 0,
             "language": (body or {}).get("language") if isinstance(body, dict) else None,
@@ -1778,7 +1774,7 @@ def create_app() -> FastAPI:
 
     @app.post("/api/rerank")
     async def rerank_audit(request: Request) -> Any:
-        from zing.embed_audit import audit_rerank
+        from zing.embed_audit import run_rerank_audit, tool_verdict
 
         body = await request.json()
         try:
@@ -1788,28 +1784,19 @@ def create_app() -> FastAPI:
                 base_url=body.get("base_url"),
                 api_key=body.get("api_key"),
                 model=body.get("model"),
+                claimed_model=body.get("claimed_model") or None,
+                declared_provider=body.get("declared_provider") or None,
                 api=validate_api(body.get("api")),
             )
+            suite = validate_suite(str(body.get("suite") or "standard"))
         except ConfigError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
-        # Use the caller's query/documents when given, else a built-in known-answer
-        # probe where one document is unmistakably the most relevant.
-        query = body.get("query")
-        documents = body.get("documents")
-        expected_top_index = body.get("expected_top_index")
-        if not (isinstance(query, str) and query.strip()) or not (
-            isinstance(documents, list) and len(documents) >= 2
-        ):
-            query = _RERANK_PROBE_QUERY
-            documents = list(_RERANK_PROBE_DOCS)
-            expected_top_index = _RERANK_PROBE_TOP
-        expected_top_index = _coerce_int(expected_top_index)
-        if not 0 <= expected_top_index < len(documents):
-            expected_top_index = 0
-
-        verdict = await audit_rerank(target, query, documents, expected_top_index)
-        return JSONResponse(verdict)
+        # Runs the rerank surface through the runner and saves it to history;
+        # the verdict keeps the old shape (risk_level, score, findings, redacted
+        # target) plus report_id, surface, suite, rating and headline.
+        report, report_id = await run_rerank_audit(target, suite=suite)
+        return JSONResponse(tool_verdict(report, report_id))
 
     # Static assets (e.g. future JS/CSS split-outs) under /assets.
     assets = _STATIC / "assets"
