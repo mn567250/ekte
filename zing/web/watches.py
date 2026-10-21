@@ -76,6 +76,7 @@ _ALL_COLS = (
     "source_report_id",
     "run_duration_sec",
     "performance_streaming",
+    "surface",
 )
 
 # Columns safe to return to the browser — everything except the API key.
@@ -145,6 +146,9 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
     # (the full suite measures both either way).
     if "performance_streaming" not in cols:
         conn.execute("ALTER TABLE watches ADD COLUMN performance_streaming INTEGER")
+    # The audited surface ("chat" or "embedding"); NULL reads as chat.
+    if "surface" not in cols:
+        conn.execute("ALTER TABLE watches ADD COLUMN surface TEXT")
     # The master key's check value (see zing.secretbox.make_canary).
     conn.execute("CREATE TABLE IF NOT EXISTS secret_meta (name TEXT PRIMARY KEY, value TEXT)")
     kb_snapshot.ensure_table(conn)
@@ -352,6 +356,8 @@ def _row_to_dict(row: sqlite3.Row, *, include_key: bool) -> dict[str, Any]:
     d["enabled"] = bool(d.get("enabled"))
     # NULL (watches from before the setting existed) probes with streaming.
     d["performance_streaming"] = d.get("performance_streaming") != 0
+    # NULL (watches from before surfaces existed) audits a chat endpoint.
+    d["surface"] = d.get("surface") or "chat"
     d["language"] = i18n.normalize(d.get("language"))
     raw_dims = d.get("dimensions")
     try:
@@ -431,7 +437,7 @@ def create(
     declared_provider, suite, dimensions (list; the custom suite's), interval_sec,
     alert_on, webhooks (list), language (alert language code; unknown/missing ->
     English), performance_streaming (False: the probe sends non-streaming
-    requests). Unknown keys are ignored;
+    requests), surface ("chat" or "embedding"; missing -> chat). Unknown keys are ignored;
     missing keys fall back to sensible defaults. ``knowledge`` (a
     KnowledgeUsage dict with its profile) pins the watch's profile.
 
@@ -470,6 +476,7 @@ def create(
         cfg.get("source_report_id") if draft else None,
         _duration(cfg.get("run_duration_sec")),
         0 if cfg.get("performance_streaming") is False else 1,
+        cfg.get("surface") or "chat",
     )
     with _connect() as conn:
         cur = conn.execute(
@@ -477,8 +484,8 @@ def create(
                (name, base_url, api_key, model, claimed_model, api,
                 declared_provider, suite, interval_sec, alert_on, webhooks,
                 enabled, created_ts, language, dimensions, source_report_id,
-                run_duration_sec, performance_streaming)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                run_duration_sec, performance_streaming, surface)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             row,
         )
         wid = int(cur.lastrowid or -1)

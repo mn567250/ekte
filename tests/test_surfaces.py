@@ -193,3 +193,37 @@ def test_summary_op_parameter():
     report = build_performance(records, op="embed")
     assert report is not None and report.probe_requests == 3
     assert report.probe_cost is not None and report.probe_cost.requests == 3
+
+
+# --------------------------------------------------------------------------- #
+# History and watches
+# --------------------------------------------------------------------------- #
+def test_history_stores_surface_and_null_reads_as_chat(tmp_path, monkeypatch):
+    import sqlite3
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    from zing.web import history
+
+    target = {"base_url": "https://relay.test/v1", "claimed_model": "m", "model": "m"}
+    old = history.save({"generated_at": "t1", "target": target, "suite": "standard"})
+    new = history.save({"generated_at": "t2", "target": target, "surface": "embedding"})
+    assert old > 0 and new > 0
+    conn = sqlite3.connect(tmp_path / "history.db")
+    conn.execute("UPDATE history SET surface = NULL WHERE id = ?", (old,))
+    conn.commit()
+    conn.close()
+    by_id = {r["id"]: r for r in history.recent(10)}
+    assert by_id[old]["surface"] == "chat"
+    assert by_id[new]["surface"] == "embedding"
+
+
+def test_watch_surface_defaults_to_chat(tmp_path, monkeypatch):
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    from zing.web import watches
+
+    cfg = {"name": "w", "base_url": "https://relay.test/v1", "model": "m"}
+    chat = watches.create(cfg)
+    embed = watches.create({**cfg, "surface": "embedding"})
+    assert watches.get(chat)["surface"] == "chat"
+    assert watches.get(embed)["surface"] == "embedding"
+    assert {w["id"]: w["surface"] for w in watches.list_all()} == {chat: "chat", embed: "embedding"}

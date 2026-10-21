@@ -72,6 +72,7 @@ _SUMMARY_COLS = (
     "api",
     "api_auto",
     "stream_mode",
+    "surface",
 )
 
 # Performance headline columns, in the order the API returns them.
@@ -176,6 +177,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(
         conn, "history", {**dict.fromkeys(_PERF_COLS, "REAL"), _PERF_DONE: "INTEGER"}
     )
+    # The audited surface ("chat" or "embedding"); NULL (rows saved before
+    # surfaces existed) reads as chat.
+    kb_snapshot.add_link_columns(conn, "history", {"surface": "TEXT"})
     # Version 2: where a row's request records are, and the analytics tables.
     kb_snapshot.add_link_columns(conn, "history", {_SPLIT: "INTEGER"})
     # The rows the analytics backfill has not processed yet.
@@ -398,9 +402,9 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                 """INSERT INTO history
                    (ts, base_url, claimed_model, model, mode, suite,
                     risk_level, score, rating, report_json, kb_snapshot_id, kb_match, watch_id,
-                    api, api_auto, stream_mode,
+                    api, api_auto, stream_mode, surface,
                     latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done, requests_split)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)""",
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)""",
                 (
                     report.get("generated_at"),
                     target.get("base_url"),
@@ -420,6 +424,7 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                     target.get("api"),
                     int(api_auto) if isinstance(api_auto, bool) else None,
                     report.get("stream_mode"),
+                    report.get("surface") or "chat",
                     *(headline[c] for c in _PERF_COLS),
                     split,
                 ),
@@ -451,10 +456,16 @@ def recent(limit: int = 50, perf: bool = False) -> list[dict[str, Any]]:
         rows = conn.execute(
             f"SELECT {cols} FROM history ORDER BY id DESC LIMIT ?", (limit,)
         ).fetchall()
-        out = [dict(r) for r in rows]
+        out = [_with_surface(dict(r)) for r in rows]
         if perf:
             _fill_perf(conn, out)
     return out
+
+
+def _with_surface(row: dict[str, Any]) -> dict[str, Any]:
+    """``row`` with a NULL ``surface`` (saved before surfaces existed) read as chat."""
+    row["surface"] = row.get("surface") or "chat"
+    return row
 
 
 def get(rid: int) -> dict[str, Any] | None:
@@ -638,7 +649,7 @@ def analytics_runs(start: str | None = None, end: str | None = None) -> list[dic
     with _connect() as conn:
         with contextlib.suppress(sqlite3.Error):
             _backfill_analytics(conn)  # best-effort; a locked database can wait
-        return [dict(r) for r in conn.execute(sql, args).fetchall()]
+        return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
 
 
 def _chunks(ids: Iterable[int]) -> Iterator[list[int]]:

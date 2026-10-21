@@ -41,15 +41,19 @@ def _report(i: int, perf) -> dict:
 
 
 def _old_recent(db, limit=500):
-    """recent(perf=True) as computed before the headline columns existed."""
+    """recent(perf=True) as computed before the headline columns existed (a
+    row without a surface reads as chat)."""
     conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row
-    cols = ", ".join(history._SUMMARY_COLS + ("report_json",))
+    summary = tuple(c for c in history._SUMMARY_COLS if c != "surface")
+    cols = ", ".join(summary + ("report_json",))
     rows = conn.execute(f"SELECT {cols} FROM history ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
     conn.close()
     out = [dict(r) for r in rows]
     for item in out:
-        item.update(history._perf_headline(item.pop("report_json", None)))
+        report_json = item.pop("report_json", None)
+        item["surface"] = "chat"
+        item.update(history._perf_headline(report_json))
     return out
 
 
