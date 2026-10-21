@@ -663,6 +663,15 @@ def analytics_runs(start: str | None = None, end: str | None = None) -> list[dic
         return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
 
 
+def surface_counts() -> dict[str, int]:
+    """Runs per surface over the whole history (NULL reads as chat)."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT COALESCE(surface, 'chat') AS s, COUNT(*) AS n FROM history GROUP BY s"
+        ).fetchall()
+    return {str(r[0]): int(r[1]) for r in rows}
+
+
 def _chunks(ids: Iterable[int]) -> Iterator[list[int]]:
     ids = [int(i) for i in ids]
     for start in range(0, len(ids), 500):
@@ -731,9 +740,10 @@ _CLASS_SQL = (
 
 
 def analytics_request_classes(
-    ids: Iterable[int], endpoint: str = "target"
+    ids: Iterable[int], endpoint: str = "target", op: str = "complete"
 ) -> list[dict[str, Any]]:
-    """Completion calls of the given runs counted in SQL by run, minute after
+    """Calls of the given runs (``op``: ``complete`` for completion calls,
+    ``embed`` for embedding calls) counted in SQL by run, minute after
     the run's start (``minute``: whole minutes of ``start_ms``) and outcome
     class (``cls``, one of :data:`REQUEST_CLASSES`): rows ``history_id``,
     ``minute``, ``cls``, ``n``. Never loads the records themselves; a run
@@ -745,8 +755,8 @@ def analytics_request_classes(
                 "SELECT history_id, CAST(COALESCE(start_ms, 0) / 60000 AS INTEGER) AS minute,"
                 f" {_CLASS_SQL} AS cls, COUNT(*) AS n FROM history_requests"
                 f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-                " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = 'complete'"
+                " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = ?"
                 " GROUP BY history_id, minute, cls ORDER BY history_id, minute, cls"
             )
-            out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint]))
+            out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint, op]))
     return out

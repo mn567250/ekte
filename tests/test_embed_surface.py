@@ -114,6 +114,17 @@ async def test_clean_embedding_audit(serve):
     assert report.performance is not None and report.performance.target.latency_ms.count > 0
 
 
+async def test_embedding_report_lists_only_its_dimensions(serve):
+    from zing.report import dimensions, render
+
+    serve(EmbedServer())
+    report = await run_audit(_target(), _opts(suite="smoke"))
+    listed = {d.dimension for d in dimensions.all_dimensions(report)}
+    assert listed == {Dimension.CONNECTIVITY, Dimension.MODEL_IDENTITY, Dimension.CAPABILITY,
+                      Dimension.RELIABILITY, Dimension.PERFORMANCE}
+    assert "Billing" not in render.render_markdown(report)
+
+
 async def test_dimension_mismatch_is_high_risk(serve):
     serve(EmbedServer(dim=1536))
     report = await run_audit(_target(), _opts(suite="smoke"))

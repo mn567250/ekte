@@ -39,6 +39,12 @@ request row is loaded.
   needs the runs to cover :data:`FOLD_MIN_DAYS` calendar days, else the grid
   falls back to ``week`` (the answer's ``fold``). Only buckets with data are returned. A bucket with fewer than
   :data:`MIN_RUNS` runs is flagged ``low_n``: a single audit can be an outlier.
+* **Surface** (``chat``, ``embedding``) is a mandatory filter: runs of
+  different surfaces never mix. Without ``surface`` the most common one of the
+  history is used (:func:`default_surface`; a NULL in the history reads as
+  chat). A metric applies to some surfaces only (:attr:`Metric.surfaces`):
+  asking for one outside them is an error, and the KPI and leaderboard cells
+  leave it out.
 """
 
 from __future__ import annotations
@@ -52,6 +58,7 @@ from datetime import date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from zing.config import SURFACES
 from zing.knowledge.relays import normalize_url
 from zing.web import analytics_store, history
 
@@ -78,6 +85,11 @@ SOURCES = ("all", "manual", "monitor")
 UNKNOWN_RELAY = "(unknown)"
 # The one series key of group=all (every run that matches the filters).
 ALL_KEY = "(all)"
+# Every surface, and the chat surface alone (metrics of chat completions only).
+ALL_SURFACES = frozenset(SURFACES)
+CHAT_ONLY = frozenset({"chat"})
+# The request op whose records a surface's errors view counts.
+SURFACE_OPS = {"chat": "complete", "embedding": "embed"}
 
 
 class AnalyticsError(ValueError):
@@ -96,13 +108,19 @@ class Metric:
     unit: str  # score | ratio | ms | tok/s | tokens | count | s
     higher_is_better: bool | None  # None: neither (e.g. billing ratio, ideal 1.0)
     agg: str = "median"  # median | share
+    surfaces: frozenset[str] = ALL_SURFACES  # the surfaces it is measured on
 
     def public(self) -> dict[str, Any]:
-        return {"id": self.id, "unit": self.unit, "higher_is_better": self.higher_is_better, "agg": self.agg}
+        return {"id": self.id, "unit": self.unit, "higher_is_better": self.higher_is_better, "agg": self.agg,
+                "surfaces": [s for s in SURFACES if s in self.surfaces]}
+
+    def applies(self, surface: str) -> bool:
+        return surface in self.surfaces
 
 
-def _m(mid: str, column: str, unit: str, better: bool | None, agg: str = "median") -> Metric:
-    return Metric(mid, column, unit, better, agg)
+def _m(mid: str, column: str, unit: str, better: bool | None, agg: str = "median",
+       surfaces: frozenset[str] = ALL_SURFACES) -> Metric:
+    return Metric(mid, column, unit, better, agg, surfaces)
 
 
 # The whitelist: public id -> column. Rates and shares are 0..1 ("ratio").
@@ -115,23 +133,23 @@ METRICS: dict[str, Metric] = {m.id: m for m in (
     _m("rate_limited_rate", "rate_limited_rate", "ratio", False),
     _m("latency_p50", "latency_p50_ms", "ms", False),
     _m("latency_p95", "latency_p95_ms", "ms", False),
-    _m("ttft_p50", "ttft_p50_ms", "ms", False),
-    _m("ttft_p95", "ttft_p95_ms", "ms", False),
-    _m("decode_tps", "decode_tps_p50", "tok/s", True),
-    _m("decode_tps_p5", "decode_tps_p5", "tok/s", True),
-    _m("decode_tps_p95", "decode_tps_p95", "tok/s", True),
-    _m("itl_jitter", "itl_jitter_p50_ms", "ms", False),
+    _m("ttft_p50", "ttft_p50_ms", "ms", False, surfaces=CHAT_ONLY),
+    _m("ttft_p95", "ttft_p95_ms", "ms", False, surfaces=CHAT_ONLY),
+    _m("decode_tps", "decode_tps_p50", "tok/s", True, surfaces=CHAT_ONLY),
+    _m("decode_tps_p5", "decode_tps_p5", "tok/s", True, surfaces=CHAT_ONLY),
+    _m("decode_tps_p95", "decode_tps_p95", "tok/s", True, surfaces=CHAT_ONLY),
+    _m("itl_jitter", "itl_jitter_p50_ms", "ms", False, surfaces=CHAT_ONLY),
     _m("relay_overhead", "relay_processing_p50_ms", "ms", False),
     _m("network_rtt", "network_rtt_p50_ms", "ms", False),
     _m("cold_start", "cold_start_ms", "ms", False),
-    _m("concurrency_tps", "concurrency_tps", "tok/s", True),
-    _m("billing_ratio_prompt", "billing_ratio_prompt", "ratio", None),
-    _m("billing_ratio_completion", "billing_ratio_completion", "ratio", None),
-    _m("reasoning_share", "reasoning_share", "ratio", None),
-    _m("cached_input_share", "cached_input_share", "ratio", None),
+    _m("concurrency_tps", "concurrency_tps", "tok/s", True, surfaces=CHAT_ONLY),
+    _m("billing_ratio_prompt", "billing_ratio_prompt", "ratio", None, surfaces=CHAT_ONLY),
+    _m("billing_ratio_completion", "billing_ratio_completion", "ratio", None, surfaces=CHAT_ONLY),
+    _m("reasoning_share", "reasoning_share", "ratio", None, surfaces=CHAT_ONLY),
+    _m("cached_input_share", "cached_input_share", "ratio", None, surfaces=CHAT_ONLY),
     _m("model_mismatch_rate", "model_mismatch", "ratio", False, "share"),
-    _m("context_claimed", "context_claimed_tokens", "tokens", None),
-    _m("context_effective", "context_effective_tokens", "tokens", True),
+    _m("context_claimed", "context_claimed_tokens", "tokens", None, surfaces=CHAT_ONLY),
+    _m("context_effective", "context_effective_tokens", "tokens", True, surfaces=CHAT_ONLY),
     _m("findings_high", "findings_high", "count", False),
     _m("findings_medium", "findings_medium", "count", False),
     _m("findings_low", "findings_low", "count", False),
@@ -153,14 +171,23 @@ LEADERBOARD_METRICS = (
 )
 
 
-def metric(mid: str) -> Metric:
-    """The :class:`Metric` of a public id (``dim:<key>`` included)."""
+def metric(mid: str, surface: str | None = None) -> Metric:
+    """The :class:`Metric` of a public id (``dim:<key>`` included); with
+    ``surface`` it must apply to that surface."""
     mid = (mid or "").strip()
     if mid in METRICS:
-        return METRICS[mid]
+        m = METRICS[mid]
+        if surface is not None and not m.applies(surface):
+            raise AnalyticsError(f"metric {mid!r} does not apply to the {surface} surface")
+        return m
     if mid.startswith(DIM_PREFIX) and _DIM_KEY.match(mid[len(DIM_PREFIX):]):
         return Metric(mid, "", "score", True)
     raise AnalyticsError(f"unknown metric {mid[:80]!r}; one of {', '.join(METRICS)} or dim:<dimension>")
+
+
+def metrics_for(surface: str) -> list[Metric]:
+    """The metrics that apply to ``surface``, in whitelist order."""
+    return [m for m in METRICS.values() if m.applies(surface)]
 
 
 def _number(value: Any) -> float | None:
@@ -291,6 +318,7 @@ class Filters:
     stream_mode: str | None = None
     api: str | None = None
     source: str = "all"
+    surface: str = "chat"
     relay: str | None = None
     model: str | None = None
 
@@ -330,9 +358,32 @@ def _time(params: Mapping[str, Any], name: str) -> datetime | None:
     return dt
 
 
+def _most_common(counts: Mapping[str, int]) -> str:
+    """The surface with the most runs (ties: in :data:`SURFACES` order; chat
+    when there are none)."""
+    ranked = sorted((s for s in counts if counts[s]), key=lambda s: (
+        -counts[s], SURFACES.index(s) if s in SURFACES else len(SURFACES), s))
+    return ranked[0] if ranked else "chat"
+
+
+def default_surface() -> str:
+    """The most common surface of the whole history (chat when it is empty)."""
+    return _most_common(history.surface_counts())
+
+
+def _surface(params: Mapping[str, Any]) -> str:
+    value = _text(params, "surface")
+    if value is None:
+        return default_surface()
+    if value not in SURFACES:
+        raise AnalyticsError(f"surface must be one of {', '.join(SURFACES)}")
+    return value
+
+
 def parse_filters(params: Mapping[str, Any]) -> Filters:
-    """The filters every endpoint takes: from, to, suite, stream_mode, api,
-    source (all|manual|monitor), relay (a group key), model (claimed model)."""
+    """The filters every endpoint takes: from, to, surface (mandatory; default
+    :func:`default_surface`), suite, stream_mode, api, source
+    (all|manual|monitor), relay (a group key), model (claimed model)."""
     f = Filters(
         start=_time(params, "from"),
         end=_time(params, "to"),
@@ -342,6 +393,7 @@ def parse_filters(params: Mapping[str, Any]) -> Filters:
         source=_choice(params, "source", SOURCES, "all"),
         relay=_text(params, "relay"),
         model=_text(params, "model"),
+        surface=_surface(params),
     )
     if f.start and f.end and f.start >= f.end:
         raise AnalyticsError("from must be before to")
@@ -397,7 +449,8 @@ def _matches(run: Mapping[str, Any], f: Filters) -> bool:
     if f.source == "monitor" and run.get("watch_id") is None:
         return False
     return (
-        (f.suite is None or run.get("suite") == f.suite)
+        (run.get("surface") or "chat") == f.surface
+        and (f.suite is None or run.get("suite") == f.suite)
         and (f.stream_mode is None or run.get("stream_mode") == f.stream_mode)
         and (f.api is None or run.get("api") == f.api)
         and (f.model is None or run.get("claimed_model") == f.model)
@@ -405,17 +458,25 @@ def _matches(run: Mapping[str, Any], f: Filters) -> bool:
     )
 
 
-def _load(
+def _load_all(
     f: Filters, start: datetime | None = None, resolver: RelayResolver | None = None
 ) -> list[dict[str, Any]]:
-    """The runs from ``start`` (default: the filter's ``from``) to ``to``,
-    filtered, with their relay group (``_group``) and start time (``_t``)."""
+    """Every run from ``start`` (default: the filter's ``from``) to ``to``,
+    unfiltered, with its relay group (``_group``) and start time (``_t``)."""
     start = start or f.start
     runs = history.analytics_runs(
         analytics_store.format_ts(start) if start else None,
         analytics_store.format_ts(f.end) if f.end else None,
     )
-    return [r for r in _prepare(runs, resolver or RelayResolver()) if _matches(r, f)]
+    return _prepare(runs, resolver or RelayResolver())
+
+
+def _load(
+    f: Filters, start: datetime | None = None, resolver: RelayResolver | None = None
+) -> list[dict[str, Any]]:
+    """The runs from ``start`` (default: the filter's ``from``) to ``to``,
+    filtered, with their relay group (``_group``) and start time (``_t``)."""
+    return [r for r in _load_all(f, start, resolver) if _matches(r, f)]
 
 
 def _attach_dims(runs: list[dict[str, Any]]) -> None:
@@ -477,12 +538,22 @@ def _metric_cell(m: Metric, runs: list[dict[str, Any]]) -> dict[str, Any]:
 # Endpoints
 # --------------------------------------------------------------------------- #
 def options(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    """The filter values present in the data (optionally within from / to)."""
+    """The filter values present in the data (optionally within from / to).
+
+    ``surfaces`` counts the runs of every surface; everything else describes
+    the runs of one surface (``surface``: the one asked for, else the most
+    common in the range), whose applicable metrics ``metrics`` lists."""
     params = params or {}
     f = Filters(start=_time(params, "from"), end=_time(params, "to"))
     if f.start and f.end and f.start >= f.end:
         raise AnalyticsError("from must be before to")
-    runs = _load(f)
+    every = _load_all(f)
+    per_surface = Counter(r.get("surface") or "chat" for r in every)
+    asked = _text(params, "surface")
+    if asked is not None and asked not in SURFACES:
+        raise AnalyticsError(f"surface must be one of {', '.join(SURFACES)}")
+    f.surface = asked or _most_common(per_surface)
+    runs = [r for r in every if _matches(r, f)]
     relays: dict[str, dict[str, Any]] = {}
     pairs: dict[str, dict[str, Any]] = {}
     pair_of = _group_of("relay_model")
@@ -512,13 +583,16 @@ def options(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
         "suites": counted("suite"),
         "stream_modes": counted("stream_mode"),
         "apis": counted("api"),
-        "metrics": [m.public() for m in METRICS.values()],
+        "surface": f.surface,
+        "surfaces": [{"value": v, "runs": n} for v, n in sorted(
+            per_surface.items(), key=lambda i: (-i[1], SURFACES.index(i[0]) if i[0] in SURFACES else len(SURFACES), i[0]))],
+        "metrics": [m.public() for m in metrics_for(f.surface)],
         "dimensions": dims,
         "min_runs": MIN_RUNS,
     }
 
 
-def _kpis(runs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+def _kpis(runs: list[dict[str, Any]], surface: str = "chat") -> dict[str, dict[str, Any]]:
     n = len(runs)
     full = {"n": n, "coverage": 1.0 if n else None}
     out: dict[str, dict[str, Any]] = {
@@ -530,6 +604,8 @@ def _kpis(runs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     }
     for mid in SUMMARY_KPIS:
         m = METRICS[mid]
+        if not m.applies(surface):
+            continue
         out[mid] = {**_metric_cell(m, runs), "unit": m.unit, "higher_is_better": m.higher_is_better}
     return out
 
@@ -556,7 +632,7 @@ def summary(params: Mapping[str, Any]) -> dict[str, Any]:
     split = analytics_store.format_ts(f.start) if f.start else None
     current = [r for r in runs if split is None or (r.get("started_at") or "") >= split]
     before = [r for r in runs if split is not None and (r.get("started_at") or "") < split]
-    now, then = _kpis(current), _kpis(before) if previous else None
+    now, then = _kpis(current, f.surface), _kpis(before, f.surface) if previous else None
     for key, cell in now.items():
         prev = then[key]["value"] if then else None
         cell["previous"] = prev
@@ -568,6 +644,7 @@ def summary(params: Mapping[str, Any]) -> dict[str, Any]:
             {"from": analytics_store.format_ts(previous[0]), "to": analytics_store.format_ts(previous[1])}
             if previous else None
         ),
+        "surface": f.surface,
         "runs": len(current),
         "kpis": now,
         "min_runs": MIN_RUNS,
@@ -623,7 +700,7 @@ def series(params: Mapping[str, Any], keys: Iterable[str] = ()) -> dict[str, Any
     """One metric over time per group (``keys``: up to :data:`MAX_KEYS` series
     keys; default the groups with the most runs)."""
     f = parse_filters(params)
-    m = metric(_text(params, "metric") or "score")
+    m = metric(_text(params, "metric") or "score", f.surface)
     group = _choice(params, "group", GROUPS, "relay")
     size = _choice(params, "bucket", BUCKETS, "day")
     block = _block(params)
@@ -719,6 +796,7 @@ def leaderboard(params: Mapping[str, Any]) -> dict[str, Any]:
     if (f.model is None) == (f.relay is None):
         raise AnalyticsError("give either model or relay")
     by = "relay" if f.model is not None else "model"
+    shown = [mid for mid in LEADERBOARD_METRICS if METRICS[mid].applies(f.surface)]
     groups, info = _grouped(_load(f), by)
     rows = []
     for key, members in groups.items():
@@ -728,7 +806,7 @@ def leaderboard(params: Mapping[str, Any]) -> dict[str, Any]:
             "runs": len(members),
             "low_n": len(members) < MIN_RUNS,
             "last_run": max(times) if times else None,
-            "metrics": {mid: _metric_cell(METRICS[mid], members) for mid in LEADERBOARD_METRICS},
+            "metrics": {mid: _metric_cell(METRICS[mid], members) for mid in shown},
         })
 
     def rank(row: dict[str, Any]) -> tuple[Any, ...]:
@@ -741,7 +819,7 @@ def leaderboard(params: Mapping[str, Any]) -> dict[str, Any]:
         "by": by,
         "model": f.model,
         "relay": f.relay,
-        "metrics": [METRICS[mid].public() for mid in LEADERBOARD_METRICS],
+        "metrics": [METRICS[mid].public() for mid in shown],
         "min_runs": MIN_RUNS,
         "rows": rows,
     }
@@ -764,7 +842,7 @@ def breakdown(params: Mapping[str, Any], metrics: Iterable[str]) -> dict[str, An
     for mid in metrics:
         if not (mid or "").strip():
             continue
-        m = metric(mid)
+        m = metric(mid, f.surface)
         if m not in wanted:
             wanted.append(m)
     if not wanted:
@@ -848,7 +926,7 @@ def errors(params: Mapping[str, Any]) -> dict[str, Any]:
     totals = _class_counts()
     covered: set[int] = set()
     buckets: dict[str, dict[str, Any]] = {}
-    for row in history.analytics_request_classes(by_id):
+    for row in history.analytics_request_classes(by_id, op=SURFACE_OPS.get(f.surface, "complete")):
         rid, cls, n = int(row["history_id"]), row["cls"], int(row["n"])
         found = by_id.get(rid)
         if found is None or cls not in totals:
@@ -909,6 +987,9 @@ def errors(params: Mapping[str, Any]) -> dict[str, Any]:
 INTEGRITY_CHECKS = (
     "model_identity", "capability", "vision", "streaming", "protocol_request",
     "protocol_response", "integrity", "injected_prompt", "connectivity",
+    # the embedding surface
+    "embed.identity", "embed.drift", "embed.determinism", "embed.distinctness",
+    "embed.connectivity",
 )
 JUDGED = ("pass", "warn", "fail")
 
@@ -959,4 +1040,7 @@ def integrity(params: Mapping[str, Any]) -> dict[str, Any]:
         rows.append({**info[key], "runs": len(members), "low_n": len(members) < MIN_RUNS,
                      "checks": cells, "model_mismatch": mismatch, "context": context})
     rows.sort(key=lambda r: (-r["runs"], r["label"].lower(), r["key"]))
-    return {**f.range(), "min_runs": MIN_RUNS, "runs": len(runs), "checks": checks, "rows": rows}
+    # whether any row measured the context window (the view hides the column otherwise)
+    has_context = any(r["context"]["n"] for r in rows)
+    return {**f.range(), "min_runs": MIN_RUNS, "runs": len(runs), "checks": checks,
+            "has_context": has_context, "rows": rows}

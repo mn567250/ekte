@@ -33,8 +33,9 @@ backfill use (the same split as :mod:`zing.knowledge.snapshot`).
   ``cached_input_share`` — cached / reported input tokens, summed over the
   target's request records that report both.
 * ``model_mismatch`` — 1 when the echoed ``model`` field differs from the
-  requested one, 0 when it matches (model_identity detector).
-* ``identity_status`` — the model_identity detector's status.
+  requested one, 0 when it matches (model_identity detector; embed.identity
+  for an embedding run).
+* ``identity_status`` — that detector's status.
 * ``context_claimed_tokens``, ``context_effective_tokens`` — declared and
   measured context window (context_window detector).
 * ``findings_high`` (high + critical), ``findings_medium``, ``findings_low`` —
@@ -71,7 +72,7 @@ from zing.perf.summary import decode_tps_tails
 
 # Bump when extract_metrics() changes what it extracts: the backfill then
 # re-extracts every row written by an older version, without a schema change.
-EXTRACT_VERSION = 2  # 2: decode_tps_p5, decode_tps_p95
+EXTRACT_VERSION = 3  # 2: decode_tps_p5, decode_tps_p95; 3: model_mismatch of embedding runs
 
 # Column name -> SQL type of history_metrics (after history_id), in order.
 METRIC_COLS: dict[str, str] = {
@@ -482,9 +483,14 @@ def _detector(detectors: list[Any], det_id: str) -> dict[str, Any]:
 def _model_mismatch(identity: dict[str, Any]) -> int | None:
     """1 / 0 from the echoed-model-field check, None when it was not usable."""
     for f in _list(identity.get("findings")):
-        if not isinstance(f, dict) or (f.get("check") or f.get("id")) != "model_identity.model_field":
+        if not isinstance(f, dict):
             continue
+        check = f.get("check") or f.get("id")
         outcome = f.get("outcome")
+        if check == "embed.model_field":  # the embedding surface's echoed model
+            return 1 if outcome == "differs" else 0 if outcome == "matches" else None
+        if check != "model_identity.model_field":
+            continue
         if outcome == "diverges":
             return 1
         if outcome == "consistent":
@@ -538,7 +544,7 @@ def extract_metrics(report: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     start, estimated = started_at(report)
     base_url = target.get("base_url")
     billing = _dict(_detector(detectors, "billing").get("evidence"))
-    identity = _detector(detectors, "model_identity")
+    identity = _detector(detectors, "model_identity") or _detector(detectors, "embed.identity")
     context = _dict(_detector(detectors, "context_window").get("evidence"))
     decode = _p(side.get("decode_tps_local"), "p50")
     decode_p5, decode_p95 = _decode_tails(records)

@@ -210,7 +210,8 @@ def test_filters(seeded):
 
 def test_series_daily_with_coverage_low_n_mixed_and_annotations(seeded):
     out = analytics.series({"metric": "ttft_p50", "group": "relay", "bucket": "day"})
-    assert out["metric"] == {"id": "ttft_p50", "unit": "ms", "higher_is_better": False, "agg": "median"}
+    assert out["metric"] == {"id": "ttft_p50", "unit": "ms", "higher_is_better": False, "agg": "median",
+                             "surfaces": ["chat"]}
     assert out["tz"] == "UTC" and out["bucket"] == "day"
     keys = [s["key"] for s in out["series"]]
     assert keys == ["cheap-gpt", "openai", OTHER]  # by run count
@@ -638,7 +639,8 @@ def test_integrity_matrix(data):
 
 
 def test_integrity_empty(data):
-    assert analytics.integrity({}) == {"from": None, "to": None, "min_runs": 3, "runs": 0, "checks": [], "rows": []}
+    assert analytics.integrity({}) == {"from": None, "to": None, "min_runs": 3, "runs": 0, "checks": [],
+                                          "has_context": False, "rows": []}
 
 
 def test_breakdown(seeded):
@@ -690,3 +692,96 @@ def test_http_answers_are_cached_until_the_history_changes(client):
     assert runs() == before  # served from the cache
     _save(T0 + timedelta(hours=5), score=70.0)
     assert runs() == before + 1  # a saved run drops the cached answers
+
+
+# --------------------------------------------------------------------------- #
+# Surfaces
+# --------------------------------------------------------------------------- #
+def _embed_report(started: datetime, *, base_url: str = RELAY, model: str = "emb-a",
+                  latency: float = 40.0, echoed: str = "matches") -> dict:
+    report = _report(started, base_url=base_url, model=model, ttft=None, tps=None, billing=None,
+                     protocol=None, stream_mode="non_stream")
+    report["surface"] = "embedding"
+    report["performance"]["target"]["latency_ms"] = {"p50": latency}
+    report["detectors"] = [
+        {"id": "embed.identity", "status": "pass", "dimension": "model_identity",
+         "findings": [{"id": "embed.model_field", "check": "embed.model_field", "status": "pass",
+                       "outcome": echoed, "severity": "info"}]},
+        {"id": "embed.drift", "status": "pass", "dimension": "model_identity", "findings": []},
+    ]
+    return report
+
+
+def test_metrics_declare_their_surfaces():
+    chat_only = {"ttft_p50", "ttft_p95", "decode_tps", "decode_tps_p5", "decode_tps_p95", "itl_jitter",
+                 "concurrency_tps", "billing_ratio_prompt", "billing_ratio_completion",
+                 "reasoning_share", "cached_input_share", "context_claimed", "context_effective"}
+    assert {m.id for m in analytics.METRICS.values() if m.surfaces == {"chat"}} == chat_only
+    emb = {m.id for m in analytics.metrics_for("embedding")}
+    assert emb == set(analytics.METRICS) - chat_only
+    assert {"score", "latency_p50", "cold_start", "model_mismatch_rate", "findings_high"} <= emb
+    assert analytics.METRICS["latency_p50"].public()["surfaces"] == ["chat", "embedding"]
+    with pytest.raises(AnalyticsError, match="does not apply"):
+        analytics.metric("ttft_p50", "embedding")
+    assert analytics.metric("dim:model_identity", "embedding").unit == "score"
+
+
+def test_surface_is_a_mandatory_filter(data):
+    for i in range(3):
+        _save(T0 + timedelta(hours=i))  # chat
+    for i in range(4):
+        history.save(_embed_report(T0 + timedelta(hours=i), latency=40.0 + i,
+                                   echoed="differs" if i == 0 else "matches"))
+    # the default is the most common surface; runs never mix
+    assert analytics.default_surface() == "embedding"
+    assert analytics.summary({})["runs"] == 4 and analytics.summary({})["surface"] == "embedding"
+    assert analytics.summary({"surface": "chat"})["runs"] == 3
+    with pytest.raises(AnalyticsError, match="surface"):
+        analytics.parse_filters({"surface": "image"})
+
+    opts = analytics.options()
+    assert opts["surface"] == "embedding" and opts["runs"] == 4
+    assert opts["surfaces"] == [{"value": "embedding", "runs": 4}, {"value": "chat", "runs": 3}]
+    assert opts["stream_modes"] == [{"value": "non_stream", "runs": 4}]
+    ids = {m["id"] for m in opts["metrics"]}
+    assert "latency_p50" in ids and "ttft_p50" not in ids and "billing_ratio_prompt" not in ids
+    assert "ttft_p50" in {m["id"] for m in analytics.options({"surface": "chat"})["metrics"]}
+
+    kpis = analytics.summary({"surface": "embedding"})["kpis"]
+    assert "ttft_p50" not in kpis and "billing_ratio_prompt" not in kpis and "score" in kpis
+    assert "ttft_p50" in analytics.summary({"surface": "chat"})["kpis"]
+    series = analytics.series({"surface": "embedding", "metric": "latency_p50", "group": "all"})
+    assert series["series"][0]["runs"] == 4
+    with pytest.raises(AnalyticsError, match="does not apply"):
+        analytics.series({"surface": "embedding", "metric": "ttft_p50"})
+    board = analytics.leaderboard({"surface": "embedding", "model": "emb-a"})
+    assert [m["id"] for m in board["metrics"]] == [
+        "score", "success_rate", "model_mismatch_rate", "risk_high_share"]
+    assert board["rows"][0]["metrics"]["model_mismatch_rate"]["value"] == 0.25
+
+    integ = analytics.integrity({"surface": "embedding"})
+    assert integ["checks"] == ["embed.identity", "embed.drift"] and integ["has_context"] is False
+    assert integ["rows"][0]["checks"]["embed.identity"]["pass"] == 4
+    assert analytics.integrity({"surface": "chat"})["runs"] == 3
+
+
+def test_null_surface_reads_as_chat(data):
+    rid = _save(T0)
+    with history._connect() as conn:
+        conn.execute("UPDATE history SET surface = NULL WHERE id = ?", (rid,))
+    assert history.surface_counts() == {"chat": 1}
+    assert analytics.default_surface() == "chat"
+    assert analytics.summary({"surface": "chat"})["runs"] == 1
+    assert analytics.summary({"surface": "embedding"})["runs"] == 0
+
+
+def test_embedding_errors_count_embed_calls(data):
+    report = _embed_report(T0)
+    report["performance"]["requests"] = [
+        {"seq": i, "endpoint": "target", "op": "embed", "phase": "probe", "ok": i > 0,
+         "status_code": 200 if i else 500, "start_ms": 10.0 * i} for i in range(3)
+    ]
+    history.save(report)
+    out = analytics.errors({"surface": "embedding"})
+    assert out["totals"]["counts"]["success"] == 2 and out["totals"]["counts"]["server_5xx"] == 1
+    assert analytics.errors({"surface": "chat"})["covered"] == 0
