@@ -198,8 +198,10 @@ async def test_embedding_probe_measures_latency_and_batch_scaling(serve):
     head = _finding(report, "performance.summary").evidence
     assert head["latency_p50_ms"] and head["cold_start_ms"] and head["inputs_per_s_p50"]
     assert head["input_tokens_per_s_p50"]
-    # per-input latency is constant: a batch costs as much per input as single calls
-    assert _finding(report, "performance.batch_scaling").outcome == "linear"
+    # the classification itself is tested on given timings (wall-clock time on
+    # a busy runner is dominated by overhead): here only that it was measured
+    scaling = _finding(report, "performance.batch_scaling")
+    assert scaling.outcome in ("linear", "parallel") and scaling.evidence["per_input_ratio"] > 0
     perf = report.performance
     assert perf is not None and perf.source == "probe" and perf.probe_requests == 12
     assert perf.target.cold_start_ms is not None
@@ -211,11 +213,32 @@ async def test_embedding_probe_measures_latency_and_batch_scaling(serve):
                                                     "probe_concurrent"}
 
 
-async def test_embedding_probe_parallel_batches_and_cache(serve):
-    serve(EmbedServer(per_request_ms=3.0))
-    report = await run_audit(_target(), _opts(suite="deep", performance_requests=6))
-    assert _finding(report, "performance.batch_scaling").outcome == "parallel"
+def _scaling(single_ms: float, batch_ms: float, n: int = 6):
+    from zing.detectors.embed_performance import BATCH_PHASE, EmbedPerformanceDetector
+    from zing.models import DetectorResult, RequestRecord
 
+    def recs(ms: float, phase: str) -> list:
+        return [RequestRecord(seq=i, op="embed", phase=phase, ok=True, duration_ms=ms)
+                for i in range(n)]
+
+    result = DetectorResult(id="performance.embed", name="x", dimension=Dimension.PERFORMANCE)
+    EmbedPerformanceDetector()._batch_finding(result, recs(single_ms, "probe"),
+                                              recs(batch_ms, BATCH_PHASE))
+    [finding] = result.findings
+    return finding
+
+
+def test_batch_scaling_classification_on_given_timings():
+    # a batch of 16 that costs about as much as one input: processed in parallel
+    parallel = _scaling(100.0, 130.0)
+    assert parallel.outcome == "parallel" and parallel.evidence["per_input_ratio"] < 0.6
+    # 16x the single latency: split or serialised per input
+    linear = _scaling(100.0, 1600.0)
+    assert linear.outcome == "linear" and linear.evidence["per_input_ratio"] == 1.0
+    assert _scaling(100.0, 1600.0, n=2).outcome == "few_samples"
+
+
+async def test_embedding_probe_detects_a_cache(serve):
     serve(EmbedServer(collapse=True))
     cached = await run_audit(_target(), _opts(suite="deep", performance_requests=6))
     hit = _finding(cached, "performance.cache_hit")
