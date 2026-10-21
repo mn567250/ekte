@@ -47,6 +47,10 @@
     - button "Filter" [expanded]
     - text: Suche
     - searchbox "Suche"
+    - text: Endpunkttyp
+    - combobox "Endpunkttyp":
+      - option "Alle" [selected]
+      - option "Chat"
     - text: Relay / Anbieter
     - combobox "Relay / Anbieter":
       - option "Alle" [selected]

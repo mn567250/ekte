@@ -47,6 +47,10 @@
     - button "筛选" [expanded]
     - text: 搜索
     - searchbox "搜索"
+    - text: 接口类型
+    - combobox "接口类型":
+      - option "全部" [selected]
+      - option "对话"
     - text: 中转站
     - combobox "中转站":
       - option "全部" [selected]

@@ -47,6 +47,10 @@
     - button "Filtros" [expanded]
     - text: Buscar
     - searchbox "Buscar"
+    - text: Tipo de endpoint
+    - combobox "Tipo de endpoint":
+      - option "Todos" [selected]
+      - option "Chat"
     - text: Relay / proveedor
     - combobox "Relay / proveedor":
       - option "Todos" [selected]

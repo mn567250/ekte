@@ -53,6 +53,9 @@
       - button "Letzte 90 Tage"
       - button "Gesamter Zeitraum"
       - button "Eigener Zeitraum"
+    - text: Endpunkttyp
+    - combobox "Endpunkttyp":
+      - option "Chat" [selected]
     - text: Suite
     - combobox "Suite":
       - option "Alle"

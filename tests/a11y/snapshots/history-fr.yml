@@ -47,6 +47,10 @@
     - button "Filtres" [expanded]
     - text: Rechercher
     - searchbox "Rechercher"
+    - text: Type de point d'accès
+    - combobox "Type de point d'accès":
+      - option "Tous" [selected]
+      - option "Chat"
     - text: Relais / fournisseur
     - combobox "Relais / fournisseur":
       - option "Tous" [selected]
