@@ -1,54 +1,27 @@
-"""Standalone auditor for embedding and rerank endpoints.
+"""Entry points for the non-chat Tools: embedding and rerank audits.
 
-These are a NON-chat surface. The 9-dimension chat detector pipeline (identity,
-streaming, tool calls, ...) is meaningless for a model that returns a vector, so
-this module deliberately bypasses the runner and runs a small set of
-embedding-specific checks directly against an OpenAI-shaped client.
+Embedding audits run through the runner as the ``embedding`` surface (the
+detectors live in ``zing/detectors/embed_*.py``), are saved to history like any
+audit, and come back to the Tools page as a small verdict dict
+(:func:`tool_verdict`).
 
-The headline 货不对板 signal here is a DIMENSION mismatch: a relay that claims
-``text-embedding-3-large`` (3072-d) but returns 1536-d vectors is serving a
-different model. We also probe DETERMINISM (same input -> near-identical vector,
-cosine ~ 1) and DISTINCTNESS (different inputs -> cosine well below 1), and echo
-back the model field the relay reports.
-
-All math is pure stdlib — no numpy dependency.
+The rerank audit is still a standalone known-answer probe that bypasses the
+runner: one document is obviously the most relevant to the query, and a
+genuine reranker ranks it first.
 """
 
 from __future__ import annotations
 
-import math
+import asyncio
+import json
+from pathlib import Path
 from typing import Any
 
-from zing import prompts
 from zing.clients import make_client
-from zing.models import RiskLevel, Severity, Status, TargetConfig
+from zing.config import AuditOptions
+from zing.detectors.embedding import cosine_similarity  # noqa: F401  -- re-exported
+from zing.models import AuditReport, RiskLevel, Severity, Status, TargetConfig
 from zing.utils.redact import fingerprint_secret
-
-# A pair of clearly-unrelated inputs for the distinctness probe, plus a repeated
-# input for the determinism probe (zing/prompts/en.json).
-_DET_INPUT = prompts.text("embed.determinism_input")
-_DISTINCT_A = prompts.text("embed.distinct_a")
-_DISTINCT_B = prompts.text("embed.distinct_b")
-
-# Cosine thresholds. Determinism should be essentially 1.0; distinct texts should
-# be comfortably below 1.0 (identical vectors for different inputs is the tell).
-_DET_MIN_COSINE = 0.9999
-_DISTINCT_MAX_COSINE = 0.98
-
-
-# --------------------------------------------------------------------------- #
-# Pure math helpers (stdlib only)
-# --------------------------------------------------------------------------- #
-def cosine_similarity(a: list[float], b: list[float]) -> float:
-    """Cosine similarity of two equal-length vectors. 0.0 if either is degenerate."""
-    if not a or not b or len(a) != len(b):
-        return 0.0
-    dot = sum(x * y for x, y in zip(a, b, strict=False))
-    na = math.sqrt(sum(x * x for x in a))
-    nb = math.sqrt(sum(y * y for y in b))
-    if na == 0.0 or nb == 0.0:
-        return 0.0
-    return dot / (na * nb)
 
 
 def _finding(
@@ -119,182 +92,93 @@ def _verdict(
 
 
 # --------------------------------------------------------------------------- #
-# Embedding audit
+# Embedding audit (through the runner)
 # --------------------------------------------------------------------------- #
-async def audit_embeddings(
-    target: TargetConfig, claimed_dimensions: int
-) -> dict[str, Any]:
-    """Run embedding-specific checks against ``target``.
+def tool_verdict(report: AuditReport, report_id: int | None = None) -> dict[str, Any]:
+    """The Tools page's small verdict dict for an embedding-surface report:
+    ``risk_level``, ``score``, the flattened ``findings`` and the redacted
+    ``target`` (the rerank verdict's shape), plus the saved ``report_id``."""
+    findings = [
+        {
+            "id": f.id,
+            "title": f.title,
+            "status": f.status.value,
+            "severity": f.severity.value,
+            "summary": f.summary,
+            "evidence": f.evidence,
+        }
+        for d in report.detectors
+        for f in d.findings
+    ]
+    target = report.target
+    return {
+        "risk_level": report.verdict.risk_level.value,
+        "score": report.verdict.overall_score,
+        "rating": report.verdict.rating,
+        "headline": report.verdict.headline,
+        "surface": report.surface,
+        "suite": report.suite,
+        "findings": findings,
+        "target": {
+            "name": target.name,
+            "base_url": target.base_url,
+            "model": target.model,
+            "claimed_model": target.claimed_model,
+            "declared_provider": target.declared_provider,
+            "api_key_fingerprint": target.api_key_fingerprint,
+        },
+        "report_id": report_id,
+    }
 
-    ``claimed_dimensions`` is the native output dimensionality of the claimed
-    model (0 = unknown, in which case the dimension check is skipped). Returns a
-    small verdict dict: ``risk_level``, ``score``, ``findings``, ``target``.
+
+def _previous(target: TargetConfig) -> dict[str, Any] | None:
+    """The last saved embedding run of this target and claimed model (best-effort)."""
+    try:
+        from zing.web import history
+
+        return history.latest_for(target.base_url, target.claimed, surface="embedding")
+    except Exception:
+        return None
+
+
+def _save(report: AuditReport) -> int | None:
+    """Persist to history (best-effort: a store failure must not lose the verdict)."""
+    try:
+        from zing.web import history
+
+        rid = history.save(json.loads(report.model_dump_json()))
+    except Exception:
+        return None
+    return rid if isinstance(rid, int) and rid >= 0 else None
+
+
+async def run_embedding_audit(
+    target: TargetConfig,
+    *,
+    claimed_dimensions: int = 0,
+    suite: str = "standard",
+    kb_dirs: list[Path] | None = None,
+    command: str | None = None,
+    save: bool = True,
+) -> tuple[AuditReport, int | None]:
+    """Audit an embeddings endpoint with the runner (surface ``embedding``).
+
+    ``claimed_dimensions`` overrides the claimed model's vector length (0 = from
+    the knowledge base). The previous saved run of the same target and claimed
+    model is the reference for the vector-drift check; with ``save`` the report
+    goes to history. Returns the report and its history id (None if not saved).
     """
-    findings: list[dict[str, Any]] = []
+    from zing.runner import run_audit
 
-    async with make_client(target) as client:
-        # One batched call covers connectivity + determinism + distinctness:
-        # [det, det(repeat), distinct_a, distinct_b].
-        outcome, vectors = await client.embeddings(
-            [_DET_INPUT, _DET_INPUT, _DISTINCT_A, _DISTINCT_B]
-        )
-
-    # 1) Connectivity ------------------------------------------------------- #
-    if not outcome.ok:
-        findings.append(
-            _finding(
-                "embed.connectivity",
-                "Embedding endpoint unreachable",
-                Status.ERROR,
-                Severity.HIGH,
-                f"POST /embeddings failed: {outcome.error_message or outcome.status_code}",
-                {"status_code": outcome.status_code, "error": outcome.error_message},
-            )
-        )
-        return _verdict(findings, target)
-
-    if len(vectors) < 4 or any(not v for v in vectors):
-        findings.append(
-            _finding(
-                "embed.connectivity",
-                "Embedding response malformed",
-                Status.ERROR,
-                Severity.HIGH,
-                f"Expected 4 non-empty vectors, got {len(vectors)}.",
-                {"returned_vectors": len(vectors)},
-            )
-        )
-        return _verdict(findings, target)
-
-    findings.append(
-        _finding(
-            "embed.connectivity",
-            "Embedding endpoint reachable",
-            Status.PASS,
-            Severity.INFO,
-            f"Got {len(vectors)} vectors of dimension {len(vectors[0])}.",
-            {"vectors": len(vectors), "dimension": len(vectors[0])},
-        )
+    previous = await asyncio.to_thread(_previous, target) if save else None
+    options = AuditOptions(
+        suite=suite, surface="embedding", embedding_dimensions=max(0, claimed_dimensions)
     )
-
-    det_a, det_b, dist_a, dist_b = vectors[0], vectors[1], vectors[2], vectors[3]
-    returned_dim = len(det_a)
-
-    # 2) Dimension match (the headline mismatch signal) --------------------- #
-    if claimed_dimensions > 0:
-        if returned_dim == claimed_dimensions:
-            findings.append(
-                _finding(
-                    "embed.dimension",
-                    "Vector dimension matches the claimed model",
-                    Status.PASS,
-                    Severity.INFO,
-                    f"Returned {returned_dim}-d vectors, as expected for the claim.",
-                    {"returned": returned_dim, "claimed": claimed_dimensions},
-                )
-            )
-        else:
-            findings.append(
-                _finding(
-                    "embed.dimension",
-                    "Vector dimension does NOT match the claimed model",
-                    Status.FAIL,
-                    Severity.HIGH,
-                    (
-                        f"Returned {returned_dim}-d vectors but the claimed model "
-                        f"produces {claimed_dimensions}-d. Strong evidence of a "
-                        f"substituted embedding model (货不对板)."
-                    ),
-                    {"returned": returned_dim, "claimed": claimed_dimensions},
-                )
-            )
-    else:
-        findings.append(
-            _finding(
-                "embed.dimension",
-                "Claimed dimension unknown — recording observed dimension",
-                Status.INFO,
-                Severity.INFO,
-                f"No KB dimension for the claimed model; observed {returned_dim}-d.",
-                {"returned": returned_dim, "claimed": 0},
-            )
-        )
-
-    # 3) Determinism (same input twice -> cosine ~ 1) ----------------------- #
-    det_cos = cosine_similarity(det_a, det_b)
-    if det_cos >= _DET_MIN_COSINE:
-        findings.append(
-            _finding(
-                "embed.determinism",
-                "Embeddings are deterministic",
-                Status.PASS,
-                Severity.INFO,
-                f"Same input twice gave cosine {det_cos:.6f} (~1.0).",
-                {"cosine": det_cos, "threshold": _DET_MIN_COSINE},
-            )
-        )
-    else:
-        findings.append(
-            _finding(
-                "embed.determinism",
-                "Embeddings are not deterministic",
-                Status.WARN,
-                Severity.MEDIUM,
-                (
-                    f"Same input twice gave cosine {det_cos:.6f}, below "
-                    f"{_DET_MIN_COSINE}. A genuine embedding model is deterministic; "
-                    f"drift suggests a noisy or re-wrapped backend."
-                ),
-                {"cosine": det_cos, "threshold": _DET_MIN_COSINE},
-            )
-        )
-
-    # 4) Distinctness (different inputs -> cosine well below 1) -------------- #
-    dist_cos = cosine_similarity(dist_a, dist_b)
-    if dist_cos < _DISTINCT_MAX_COSINE:
-        findings.append(
-            _finding(
-                "embed.distinctness",
-                "Different inputs produce distinct vectors",
-                Status.PASS,
-                Severity.INFO,
-                f"Unrelated texts gave cosine {dist_cos:.4f} (< {_DISTINCT_MAX_COSINE}).",
-                {"cosine": dist_cos, "threshold": _DISTINCT_MAX_COSINE},
-            )
-        )
-    else:
-        findings.append(
-            _finding(
-                "embed.distinctness",
-                "Different inputs produce near-identical vectors",
-                Status.WARN,
-                Severity.HIGH,
-                (
-                    f"Two unrelated texts gave cosine {dist_cos:.4f} "
-                    f"(>= {_DISTINCT_MAX_COSINE}). Vectors that barely vary across "
-                    f"inputs indicate a degenerate or stub embedding backend."
-                ),
-                {"cosine": dist_cos, "threshold": _DISTINCT_MAX_COSINE},
-            )
-        )
-
-    # 5) Echoed model field ------------------------------------------------- #
-    findings.append(
-        _finding(
-            "embed.model_field",
-            "Echoed model field",
-            Status.INFO,
-            Severity.INFO,
-            f"Relay reported model: {outcome.model_returned or '(none)'}.",
-            {
-                "model_returned": outcome.model_returned,
-                "model_requested": target.model,
-                "claimed_model": target.claimed_model,
-            },
-        )
+    report = await run_audit(
+        target, options, mode="check", command=command, kb_dirs=kb_dirs, previous_report=previous
     )
-
-    return _verdict(findings, target)
+    report_id = await asyncio.to_thread(_save, report) if save else None
+    return report, report_id
 
 
 # --------------------------------------------------------------------------- #

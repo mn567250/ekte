@@ -2,8 +2,9 @@
 
 Skipped automatically when the optional web extra (fastapi) isn't installed.
 No network is touched: the auditors are monkeypatched to return canned verdict
-dicts, so we only exercise the HTTP plumbing — request parsing, KB dimension
-resolution, ConfigError -> 400, secret hygiene, and the served page/nav.
+dicts, so we only exercise the HTTP plumbing — request parsing, the claimed
+dimension (0 = the runner resolves it from the KB), ConfigError -> 400, secret
+hygiene, and the served page/nav.
 """
 
 from __future__ import annotations
@@ -76,15 +77,25 @@ def _rerank_verdict(target) -> dict:
     }
 
 
+def _fake_embed_audit(monkeypatch, captured: dict) -> None:
+    """Stand in for the runner-backed audit: record what reached it and answer
+    with a canned verdict (saved as history row 7)."""
+
+    async def fake_run(target, *, claimed_dimensions=0, suite="standard", **_):
+        captured.update(claimed_dimensions=claimed_dimensions, suite=suite, api_key=target.api_key)
+        return target, 7
+
+    def fake_verdict(report, report_id=None):
+        return {**_embed_verdict(report), "report_id": report_id}
+
+    monkeypatch.setattr(embed_audit, "run_embedding_audit", fake_run)
+    monkeypatch.setattr(embed_audit, "tool_verdict", fake_verdict)
+
+
 def test_embed_endpoint_returns_verdict_and_hides_secret(client, monkeypatch):
     captured = {}
 
-    async def fake_audit(target, claimed_dimensions):
-        captured["claimed_dimensions"] = claimed_dimensions
-        captured["api_key"] = target.api_key  # the real (resolved) secret
-        return _embed_verdict(target)
-
-    monkeypatch.setattr(embed_audit, "audit_embeddings", fake_audit)
+    _fake_embed_audit(monkeypatch, captured)
 
     r = client.post(
         "/api/embed",
@@ -102,7 +113,8 @@ def test_embed_endpoint_returns_verdict_and_hides_secret(client, monkeypatch):
     assert "target" in body
     # The verdict reached the auditor with the resolved secret...
     assert captured["api_key"] == SECRET
-    assert captured["claimed_dimensions"] == 3072
+    assert captured["claimed_dimensions"] == 3072 and captured["suite"] == "standard"
+    assert body["report_id"] == 7
     # ...but the secret must never cross back to the browser.
     raw = r.text
     assert SECRET not in raw
@@ -113,11 +125,7 @@ def test_embed_endpoint_returns_verdict_and_hides_secret(client, monkeypatch):
 def test_embed_resolves_dimension_from_kb_when_not_given(client, monkeypatch):
     captured = {}
 
-    async def fake_audit(target, claimed_dimensions):
-        captured["claimed_dimensions"] = claimed_dimensions
-        return _embed_verdict(target)
-
-    monkeypatch.setattr(embed_audit, "audit_embeddings", fake_audit)
+    _fake_embed_audit(monkeypatch, captured)
     # No claimed_dimensions in the request and an unknown model -> 0 (skip match),
     # exercising the KB-resolution branch without depending on KB contents.
     r = client.post(
@@ -133,15 +141,51 @@ def test_embed_resolves_dimension_from_kb_when_not_given(client, monkeypatch):
 
 
 def test_embed_bad_target_is_400(client, monkeypatch):
-    async def fake_audit(target, claimed_dimensions):  # pragma: no cover - never called
+    async def fake_run(target, **_):  # pragma: no cover - never called
         raise AssertionError("auditor must not run on a bad target")
 
-    monkeypatch.setattr(embed_audit, "audit_embeddings", fake_audit)
+    monkeypatch.setattr(embed_audit, "run_embedding_audit", fake_run)
     # Missing base_url -> ConfigError -> clean 400, not a 500 and no audit.
     r = client.post("/api/embed", json={"model": "m", "api_key": SECRET})
     assert r.status_code == 400
     assert "error" in r.json()
     assert SECRET not in r.text
+    # an unknown suite is a 400 too
+    r = client.post("/api/embed", json={"base_url": "https://relay.embed.test/v1", "model": "m",
+                                        "suite": "bogus"})
+    assert r.status_code == 400
+
+
+def test_embed_endpoint_runs_the_runner_and_saves(client, monkeypatch):
+    # End to end through the real runner against a mock /embeddings endpoint.
+    import httpx
+
+    from zing.clients import OpenAICompatibleClient
+    from zing.web import history
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        import json as _json
+
+        inputs = _json.loads(request.content or b"{}").get("input") or []
+        data = [{"index": i, "embedding": [float(len(t) % 7 == j) + 0.01 * j for j in range(8)]}
+                for i, t in enumerate(inputs)]
+        return httpx.Response(200, json={"model": "e-model", "data": data})
+
+    monkeypatch.setattr(
+        "zing.runner.make_client",
+        lambda target, **_: OpenAICompatibleClient(target, transport=httpx.MockTransport(handler)),
+    )
+    r = client.post("/api/embed", json={"base_url": "https://relay.embed.test/v1",
+                                        "api_key": SECRET, "model": "e-model",
+                                        "claimed_dimensions": 8})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["surface"] == "embedding" and isinstance(body["report_id"], int)
+    assert {f["id"] for f in body["findings"]} >= {"embed.connectivity", "embed.dimension",
+                                                   "embed.drift", "embed.determinism"}
+    assert SECRET not in r.text
+    saved = history.get(body["report_id"])
+    assert saved["surface"] == "embedding" and saved["target"]["model"] == "e-model"
 
 
 def test_rerank_endpoint_uses_builtin_probe_and_hides_secret(client, monkeypatch):

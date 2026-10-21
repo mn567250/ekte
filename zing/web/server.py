@@ -207,21 +207,6 @@ def _watch_knowledge(row: dict[str, Any], kb: Any = None) -> dict[str, Any]:
     return knowledge_usage(kb, resolved, claimed).model_dump(mode="json")
 
 
-def _kb_embedding_dimensions(model_id: str | None, provider_hint: str | None) -> int:
-    """Native embedding dimension for ``model_id`` from the KB; 0 if unknown."""
-    if not model_id:
-        return 0
-    try:
-        from zing.knowledge import load_knowledge_base
-
-        resolved = load_knowledge_base(copy=False).resolve(model_id, provider_hint=provider_hint)
-    except Exception:
-        return 0
-    if resolved is None:
-        return 0
-    return int(resolved.model.embedding_dimensions or 0)
-
-
 # Watches whose audit is executing right now (scheduler or Run now), keyed by
 # id, so the UI can show which monitors run, how far along they are, cancel
 # one, and nothing runs twice at once. Each value is the run's live state:
@@ -1704,7 +1689,7 @@ def create_app() -> FastAPI:
     @app.post("/api/embed")
     async def embed_audit(request: Request) -> Any:
         # Lazy import: the embed auditor pulls in the client stack only on demand.
-        from zing.embed_audit import audit_embeddings
+        from zing.embed_audit import run_embedding_audit, tool_verdict
 
         body = await request.json()
         try:
@@ -1718,23 +1703,20 @@ def create_app() -> FastAPI:
                 declared_provider=body.get("declared_provider") or None,
                 api=validate_api(body.get("api")),
             )
+            suite = validate_suite(str(body.get("suite") or "standard"))
         except ConfigError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
 
-        # Resolve the expected output dimension: an explicit claimed value wins;
-        # otherwise look the claimed (or requested) model up in the KB. 0 = unknown,
-        # in which case the auditor records the observed dimension instead.
+        # An explicit claimed dimension wins; otherwise (0) the runner takes the
+        # claimed (or requested) model's from the KB, and records the observed
+        # dimension when the KB does not know it.
         claimed_dimensions = _coerce_int(body.get("claimed_dimensions"))
-        if claimed_dimensions <= 0:
-            claimed_dimensions = await asyncio.to_thread(
-                _kb_embedding_dimensions,
-                target.claimed_model or target.model,
-                target.declared_provider,
-            )
-
-        # The verdict is already redacted (api_key is fingerprinted in `target`).
-        verdict = await audit_embeddings(target, claimed_dimensions)
-        return JSONResponse(verdict)
+        # Runs the embedding surface through the runner and saves it to history;
+        # the verdict is redacted (api_key is fingerprinted in `target`).
+        report, report_id = await run_embedding_audit(
+            target, claimed_dimensions=max(0, claimed_dimensions), suite=suite
+        )
+        return JSONResponse(tool_verdict(report, report_id))
 
     @app.post("/api/rerank")
     async def rerank_audit(request: Request) -> Any:

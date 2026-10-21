@@ -478,19 +478,30 @@ def get(rid: int) -> dict[str, Any] | None:
         return _full_report(conn, row)
 
 
-def latest_for(base_url: str, claimed_model: str) -> dict[str, Any] | None:
+def latest_for(
+    base_url: str, claimed_model: str, surface: str | None = None
+) -> dict[str, Any] | None:
     """The newest saved report for one target+model (as :func:`get`), or ``None``.
 
     One lookup on ``idx_history_target``, however many runs of other targets
     were saved since — a monitor's regression check compares against this.
+    ``surface`` limits it to runs of that surface (NULL reads as chat).
     """
     with _connect() as conn:
-        row = conn.execute(_LATEST_FOR_SQL, (base_url, claimed_model)).fetchone()
+        if surface is None:
+            row = conn.execute(_LATEST_FOR_SQL, (base_url, claimed_model)).fetchone()
+        else:
+            row = conn.execute(
+                _LATEST_FOR_SURFACE_SQL, (base_url, claimed_model, surface)
+            ).fetchone()
         return _full_report(conn, row)
 
 
 _LATEST_FOR_SQL = f"""SELECT id, report_json, kb_snapshot_id, {_SPLIT} FROM history
    WHERE base_url = ? AND claimed_model = ?
+   ORDER BY id DESC LIMIT 1"""
+_LATEST_FOR_SURFACE_SQL = f"""SELECT id, report_json, kb_snapshot_id, {_SPLIT} FROM history
+   WHERE base_url = ? AND claimed_model = ? AND COALESCE(surface, 'chat') = ?
    ORDER BY id DESC LIMIT 1"""
 
 
