@@ -1,0 +1,21 @@
+{
+ "strings": {
+  "Chat": "Chat",
+  "Embeddings": "Embeddings",
+  "Endpoint type": "Endpoint type",
+  "Billing and token metrics apply to chat audits only.": "Billing and token metrics apply to chat audits only.",
+  "Embedding connectivity": "Embedding connectivity",
+  "Embedding model identity": "Embedding model identity",
+  "Vector determinism": "Vector determinism",
+  "Vector distinctness": "Vector distinctness",
+  "Vector drift": "Vector drift",
+  "Do the vectors come from the claimed model?": "Do the vectors come from the claimed model?",
+  "Do different inputs give different vectors?": "Do different inputs give different vectors?",
+  "Does the same input give the same vector?": "Does the same input give the same vector?",
+  "[vector sample of {n} numbers]": "[vector sample of {n} numbers]",
+  "{n} requests": "{n} requests",
+  "{input} input tokens (usage)": "{input} input tokens (usage)",
+  "batch probe": "batch probe",
+  "No audits of this endpoint type.": "No audits of this endpoint type."
+ }
+}
