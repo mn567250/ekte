@@ -155,3 +155,41 @@ def test_embedding_connectivity_high_does_not_escalate():
         _result(Dimension.MODEL_IDENTITY, 100.0),
     ]
     assert _verdict(results)[1].risk_level == RiskLevel.CLEAN
+
+
+# --------------------------------------------------------------------------- #
+# Recorder and performance summary
+# --------------------------------------------------------------------------- #
+async def test_client_records_embedding_calls():
+    from tests.test_embed import EmbedMock, _target
+    from zing.clients import OpenAICompatibleClient
+    from zing.perf.recorder import RequestRecorder
+
+    recorder = RequestRecorder()
+    async with OpenAICompatibleClient(_target(), transport=EmbedMock(dim=8).transport) as c:
+        c.recorder = recorder
+        outcome, vectors = await c.embeddings(["alpha", "beta gamma"])
+    assert outcome.ok and len(vectors) == 2
+    (rec,) = recorder.records
+    assert (rec.op, rec.endpoint, rec.stream, rec.ok) == ("embed", "target", False, True)
+    assert rec.input_tokens_reported == 10
+    assert rec.input_tokens_local and rec.input_tokens_local > 0
+    assert rec.duration_ms is not None and rec.output_tokens_reported is None
+
+
+def test_summary_op_parameter():
+    from zing.models import RequestRecord
+    from zing.perf.summary import build_performance, stats_pool, summarize_endpoint
+
+    records = [
+        RequestRecord(seq=i, op="embed", phase="probe", ok=True, duration_ms=10.0 * (i + 1))
+        for i in range(3)
+    ]
+    # Chat summaries (the default) ignore embedding requests.
+    assert build_performance(records) is None
+    assert stats_pool(records) == []
+    embed = summarize_endpoint(records, op="embed")
+    assert (embed.source, embed.requests, embed.latency_ms.p50) == ("probe", 3, 20.0)
+    report = build_performance(records, op="embed")
+    assert report is not None and report.probe_requests == 3
+    assert report.probe_cost is not None and report.probe_cost.requests == 3

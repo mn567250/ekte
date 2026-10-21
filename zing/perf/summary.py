@@ -76,8 +76,10 @@ def _field(records: Sequence[RequestRecord], get: Callable[[RequestRecord], floa
     return _stats([get(r) for r in records])
 
 
-def _completes(records: Sequence[RequestRecord], endpoint: str) -> list[RequestRecord]:
-    return [r for r in records if r.endpoint == endpoint and r.op == "complete"]
+def _completes(
+    records: Sequence[RequestRecord], endpoint: str, op: str = "complete"
+) -> list[RequestRecord]:
+    return [r for r in records if r.endpoint == endpoint and r.op == op]
 
 
 def hidden_reasoning(records: Sequence[RequestRecord]) -> bool:
@@ -161,10 +163,10 @@ def _input_buckets(records: Sequence[RequestRecord]) -> list[InputSizeBucket]:
 
 
 def _mode_completes(
-    records: Sequence[RequestRecord], endpoint: str, stream: bool | None
+    records: Sequence[RequestRecord], endpoint: str, stream: bool | None, op: str = "complete"
 ) -> list[RequestRecord]:
     return [
-        r for r in _completes(records, endpoint)
+        r for r in _completes(records, endpoint, op)
         if stream is None or r.phase == "passive" or r.stream == stream
     ]
 
@@ -177,19 +179,23 @@ def _probe_or_passive(completes: Sequence[RequestRecord]) -> tuple[str, list[Req
 
 
 def stats_pool(
-    records: Sequence[RequestRecord], endpoint: str = "target", *, stream: bool | None = None
+    records: Sequence[RequestRecord],
+    endpoint: str = "target",
+    *,
+    stream: bool | None = None,
+    op: str = "complete",
 ) -> list[RequestRecord]:
     """The requests an endpoint's latency, TTFT and throughput statistics come
     from: its probe completions (else the passive ones), successful and not
-    served from a cache; ``stream`` as in :func:`summarize_endpoint`."""
-    return [r for r in _probe_or_passive(_mode_completes(records, endpoint, stream))[1]
+    served from a cache; ``stream`` and ``op`` as in :func:`summarize_endpoint`."""
+    return [r for r in _probe_or_passive(_mode_completes(records, endpoint, stream, op))[1]
             if r.ok and not r.cached]
 
 
-def headline_stream(records: Sequence[RequestRecord]) -> bool | None:
+def headline_stream(records: Sequence[RequestRecord], op: str = "complete") -> bool | None:
     """The request mode :func:`performance_report` headlines: streaming when
     it was probed, else non-streaming; None without probe requests."""
-    probed = {r.stream for r in records if r.phase == "probe" and r.op == "complete"}
+    probed = {r.stream for r in records if r.phase == "probe" and r.op == op}
     return next((m for m in (True, False) if m in probed), None)
 
 
@@ -212,14 +218,16 @@ def summarize_endpoint(
     *,
     concurrency: int = 0,
     stream: bool | None = None,
+    op: str = "complete",
 ) -> EndpointPerformance:
     """Headline performance of one endpoint from its recorded requests.
 
     ``stream`` limits the probe requests (and the burst and warm-up) to one
-    request mode; None takes them all.
+    request mode; None takes them all. ``op`` is the request kind measured
+    (``complete``, or ``embed`` for an embedding endpoint).
     """
     mine = [r for r in records if r.endpoint == endpoint]
-    completes = _mode_completes(records, endpoint, stream)
+    completes = _mode_completes(records, endpoint, stream, op)
     source, pool = _probe_or_passive(completes)
     good = [r for r in pool if r.ok and not r.cached]
     streamed = [r for r in good if r.stream]
@@ -309,8 +317,8 @@ def compare_endpoints(
     return rows
 
 
-def _probe_cost(records: Sequence[RequestRecord]) -> ProbeCost | None:
-    probe = [r for r in records if r.op == "complete" and r.phase in PROBE_PHASES]
+def _probe_cost(records: Sequence[RequestRecord], op: str = "complete") -> ProbeCost | None:
+    probe = [r for r in records if r.op == op and r.phase in PROBE_PHASES]
     if not probe:
         return None
     return ProbeCost(
@@ -333,20 +341,22 @@ def build_performance(
     has_baseline: bool = False,
     probe_max_tokens: int | None = None,
     concurrency: int = 0,
+    op: str = "complete",
 ) -> PerformanceReport | None:
     """The report's performance section, or None when nothing was recorded.
 
     With both request modes probed (full suite), streaming is the headline and
-    non-streaming goes to ``modes``.
+    non-streaming goes to ``modes``. ``op`` is the request kind summarised
+    (``embed`` for an embedding audit).
     """
-    if not any(r.op == "complete" for r in records):
+    if not any(r.op == op for r in records):
         return None
-    probed = {r.stream for r in records if r.phase == "probe" and r.op == "complete"}
+    probed = {r.stream for r in records if r.phase == "probe" and r.op == op}
     ordered: list[bool | None] = [m for m in (True, False) if m in probed]  # stream first
     modes = ordered or [None]  # modes[0] is headline_stream(records)
 
     def side(endpoint: str, stream: bool | None) -> EndpointPerformance:
-        return summarize_endpoint(records, endpoint, concurrency=concurrency, stream=stream)
+        return summarize_endpoint(records, endpoint, concurrency=concurrency, stream=stream, op=op)
 
     target = side("target", modes[0])
     baseline = side("baseline", modes[0]) if has_baseline else None
@@ -364,14 +374,14 @@ def build_performance(
         )
     probe_n = sum(
         1 for r in records
-        if r.endpoint == "target" and r.phase == "probe" and r.op == "complete"
+        if r.endpoint == "target" and r.phase == "probe" and r.op == op
         and r.stream == modes[0]
     )
 
     notes: list[str] = []
     if target.source == "passive":
         notes.append(NOTE_PASSIVE)
-    completes = [r for r in records if r.op == "complete"]
+    completes = [r for r in records if r.op == op]
     if hidden_reasoning(completes):
         notes.append(NOTE_REASONING)
     if any(r.ok and r.cached for r in completes):
@@ -393,7 +403,7 @@ def build_performance(
         baseline=baseline,
         comparison=compare_endpoints(target, baseline) if baseline is not None else [],
         modes=extra,
-        probe_cost=_probe_cost(records),
+        probe_cost=_probe_cost(records, op),
         requests=list(records),
         notes=notes,
     )

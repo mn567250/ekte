@@ -18,6 +18,7 @@ from typing import Any
 
 from zing.clients.base import BaseHTTPClient
 from zing.models import CompletionOutcome, RequestSpec
+from zing.perf.recorder import net_trace_scope
 from zing.utils.redact import redact_headers, redact_text
 from zing.utils.sse import (
     extract_content_delta,
@@ -157,8 +158,20 @@ class OpenAICompatibleClient(BaseHTTPClient):
 
         Each vector is a list of floats. On any error the outcome carries the
         redacted failure and the vector list is empty. This is a non-chat surface,
-        so it never routes through the chat detector pipeline.
+        so it never routes through the chat detector pipeline. With a recorder
+        the call is recorded as an ``embed`` request.
         """
+        if self.recorder is None:
+            return await self._embeddings(inputs)
+        started = time.perf_counter()
+        with net_trace_scope() as net:
+            outcome, vectors = await self._embeddings(inputs)
+        self.recorder.record_embedding(self.endpoint, inputs, outcome, started, net)
+        return outcome, vectors
+
+    async def _embeddings(
+        self, inputs: list[str]
+    ) -> tuple[CompletionOutcome, list[list[float]]]:
         body: dict[str, Any] = {"model": self.config.model, "input": inputs}
         started = time.perf_counter()
         try:
