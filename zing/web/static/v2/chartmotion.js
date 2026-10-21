@@ -17,7 +17,10 @@
  *   - count(els, show)     KPI figures: each element counts up to its new
  *                          value; els is a list of {el, from, to, …}, show(v, it)
  *                          formats item it's value v on the way
- *   enter() also takes the <svg> itself instead of its host.
+ *   enter() also takes the <svg> itself instead of its host. A donut draws
+ *   clockwise, part after part; a host without an <svg> but with meters
+ *   (ZingCharts.meter) grows each meter from the left, its parts one after
+ *   the other.
  *
  * It never changes what the chart says: no element is added or removed and
  * no ARIA attribute is touched. The temporary class, pathLength and --zm-d
@@ -38,6 +41,8 @@
   var SEG = 170;   // ms between the segments of one stacked bar
   var STEP = 110;  // ms per colour step of a heat-grid cell (as --zm-step in the CSS)
   var WAVE = 420;  // ms from the first heat-grid cell starting to the last
+  var RINGT = 700; // ms for a donut to draw all the way round
+  var METER = 90;  // ms between the meters of one host
   var NS = "http://www.w3.org/2000/svg";
 
   function pairs(d) {
@@ -79,6 +84,7 @@
         el.style.removeProperty("--zm-d");
         el.style.removeProperty("--zm-t");
         el.style.removeProperty("--zm-dy");
+        el.style.removeProperty("--zm-len");
         if (!el.getAttribute("style")) el.removeAttribute("style");
         if (el.zmPL) { el.removeAttribute("pathLength"); el.zmPL = false; }
         el.classList.remove("zm-fresh");
@@ -89,6 +95,7 @@
 
   function enter(host) {
     var svg = host && (host instanceof SVGElement ? host : host.querySelector("svg"));
+    if (!svg && host && host.querySelector && host.querySelector(".meter")) return meters(host);
     if (!svg || still()) return;
     var touched = [], anims = [], until = 1150, i;
     // stacked bars are drawn as "tchart sbars": test for them first
@@ -171,6 +178,18 @@
         last = Math.max(last, done + 200);
       }
       until = Math.max(until, last + 100);
+    } else if (svg.classList.contains("donut")) {
+      // one turn over RINGT ms: each arc draws by its dash (pathLength 100, set
+      // by charts.js) while the turn passes it, so the parts follow each other
+      var arcs = svg.querySelectorAll(".arc"), pos = 0;
+      for (i = 0; i < arcs.length; i++) {
+        var len = parseFloat(arcs[i].getAttribute("stroke-dasharray")) || 0;
+        arcs[i].style.setProperty("--zm-len", len);
+        arcs[i].style.setProperty("--zm-d", Math.round((pos / 100) * RINGT) + "ms");
+        arcs[i].style.setProperty("--zm-t", Math.max(60, Math.round((len / 100) * RINGT)) + "ms");
+        touched.push(arcs[i]);
+        pos += len;
+      }
     } else if (svg.classList.contains("hmap")) {
       // one fade for the whole grid: ~170 cells animated one by one cost
       // dropped frames on a slow CPU, a single group animation does not
@@ -178,6 +197,25 @@
     svg.classList.add("zm-in");
     for (i = 0; i < anims.length; i++) anims[i].beginElement();
     cleanup(svg, until, "zm-in", touched, anims);
+  }
+
+  // meters grow from the left, a host's meters a little apart, the parts of
+  // one meter one after the other (as the segments of a stacked bar)
+  function meters(host) {
+    if (still()) return;
+    var ms = host.querySelectorAll(".meter"), touched = [], last = 0;
+    for (var i = 0; i < ms.length; i++) {
+      var segs = ms[i].querySelectorAll(".mseg");
+      for (var j = 0; j < segs.length; j++) {
+        var d = i * METER + j * SEG;
+        segs[j].style.setProperty("--zm-d", d + "ms");
+        touched.push(segs[j]);
+        last = Math.max(last, d);
+      }
+    }
+    if (!touched.length) return;
+    host.classList.add("zm-in");
+    cleanup(host, last + 520, "zm-in", touched);
   }
 
   function fresh(host, k) {

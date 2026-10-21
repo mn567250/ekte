@@ -55,8 +55,22 @@
  *     cfg: id, title, desc, bucketMs, domain, xTick, tipTime, lowHint,
  *          cats [{ id, label, cls }], bars [{ t, total, counts{id: n}, runs, low }],
  *          totalText(bar) a line for the tooltip
+ *   - donut(host, cfg)        a ring of parts of one whole, drawn clockwise
+ *                             from 12 o'clock in the given order, with a
+ *                             figure in the middle. The ring is aria-hidden
+ *                             (the page writes every part as text next to
+ *                             it: no tooltip); the figure is HTML text over
+ *                             it, so it zooms and reads like any text
+ *     cfg: total, parts [{ cls, n }] (cls a k-* key below), center
+ *          { value, lines [..] } (value: the big figure, .dv; lines: small
+ *          text under it)
+ *   - meter(parts, total)     the HTML of a thin horizontal bar (aria-hidden:
+ *                             the text next to it carries the numbers): the
+ *                             parts [{ cls, n }] side by side, as shares of
+ *                             total, the rest an empty track
  *
- * Colours come from charts.css (series slots s0..s3 per theme); text in the
+ * Colours come from charts.css (series slots s0..s3 per theme, k-* keys for
+ * who decides a test step and its result); text in the
  * chart wears ink tokens, never the series colour. Shapes (circle, square,
  * triangle, diamond) tell the series apart without colour.
  */
@@ -535,6 +549,34 @@
     });
   }
 
+  /* ---------------- donut and meter (parts of one whole) ---------------- */
+  var RING = { size: 156, r: 60, w: 22 };
+  function donut(host, cfg) {
+    var S = RING.size, c = S / 2, total = cfg.total > 0 ? cfg.total : 1;
+    var parts = (cfg.parts || []).filter(function (p) { return p.n > 0; });
+    // the arcs are measured in hundredths of the ring (pathLength 100); a
+    // small gap in the card colour separates neighbours
+    var gap = parts.length > 1 ? 0.6 : 0, at = 0, f2 = function (n) { return n.toFixed(2); };
+    var out = ['<div class="donut-box"><svg class="donut" viewBox="0 0 ' + S + " " + S + '" aria-hidden="true" focusable="false">',
+      '<circle class="track" cx="' + c + '" cy="' + c + '" r="' + RING.r + '" stroke-width="' + RING.w + '"/>'];
+    parts.forEach(function (p) {
+      var len = (p.n / total) * 100, d = Math.max(0.1, len - gap);
+      out.push('<circle class="arc ' + esc(p.cls) + '" cx="' + c + '" cy="' + c + '" r="' + RING.r + '" stroke-width="' + RING.w +
+        '" pathLength="100" stroke-dasharray="' + f2(d) + ' 100" transform="rotate(' + f2(-90 + at * 3.6) + " " + c + " " + c + ')"/>');
+      at += len;
+    });
+    var C = cfg.center || {};
+    out.push('</svg><p class="dc"><span class="dv">' + esc(C.value == null ? "" : C.value) + "</span> " +
+      (C.lines || []).map(function (l) { return '<span class="dl">' + esc(l) + "</span>"; }).join(" ") + "</p></div>");
+    host.innerHTML = out.join("");
+  }
+  function meter(parts, total) {
+    var t = total > 0 ? total : 1;
+    return '<span class="meter" aria-hidden="true">' + (parts || []).filter(function (p) { return p.n > 0; }).map(function (p) {
+      return '<span class="mseg ' + esc(p.cls) + '" style="width:' + Math.min(100, (p.n / t) * 100).toFixed(2) + '%"></span>';
+    }).join("") + "</span>";
+  }
+
   window.ZingCharts = {
     esc: esc,
     fmt: fmt,
@@ -545,5 +587,7 @@
     timeChart: timeChart,
     heatmap: heatmap,
     stackBars: stackBars,
+    donut: donut,
+    meter: meter,
   };
 })();

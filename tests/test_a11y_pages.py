@@ -137,7 +137,8 @@ def test_single_page_files():
     assert scope("zing/web/static/v2/bitv-report.json").pages == ("accessibility",)
     assert scope("tests/a11y/test_history_controls.py").pages == ("history",)
     assert scope("tests/a11y/snapshots/kb-zh.yml").pages == ("kb",)
-    assert scope("zing/web/static/v2/charts.js", "zing/web/analytics.py").pages == ("analytics",)
+    assert scope("zing/web/analytics.py").pages == ("analytics",)
+    assert scope("zing/web/static/v2/charts.js").pages == ("analytics", "accessibility")
     assert scope("zing/web/static/v2/filterpanel.js").pages == ("history", "kb", "analytics")
 
 

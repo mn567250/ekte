@@ -69,31 +69,35 @@
       - code: /v2/accessibility
   - region "覆盖范围":
     - heading "覆盖范围" [level=2]
-    - heading "步骤的测试方式" [level=3]
+    - heading "总体结果" [level=3]
+    - paragraph: 75 % 通过 共 44 项
     - list:
-      - listitem: 自动 27 / 44 · 61.4 %
-      - listitem: 部分自动 17 / 44 · 38.6 %
-      - listitem: 人工 0 / 44 · 0 %
-      - listitem: 不适用 6
-    - heading "结果" [level=3]
-    - list:
+      - listitem: 不适用 6 / 50 · 12 %
       - listitem: 通过 33 / 44 · 75 %
       - listitem: 未通过 0 / 44 · 0 %
       - listitem: 待人工审核 11 / 44 · 25 %
       - listitem: 未测试 0 / 44 · 0 %
-      - listitem: 不适用 6
-    - paragraph: 百分比基于适用的步骤；界面中没有音频和视频，因此相关步骤不适用。
+    - heading "机器 仅测试套件" [level=3]
+    - list:
+      - listitem: 自动 27 / 44 · 61.4 %
+    - heading "人工 仅人工" [level=3]
+    - list:
+      - listitem: 人工 0 / 44 · 0 %
+    - heading "机器 人工 先测试套件，再人工" [level=3]
+    - list:
+      - listitem: 部分自动 17 / 44 · 38.6 %
+      - listitem: 已审核 6 / 17 待人工审核 11 / 17
+    - paragraph: 圆环显示全部 50 个步骤。音频和视频相关的步骤不适用，因为界面中没有音频和视频；其余数字均基于 44 个适用的步骤。
     - paragraph: WCAG 之外还检查了： 用户偏好设置：强制颜色模式（EN 301549 第 11.7 条） — 通过
   - region "检查步骤":
     - heading "检查步骤" [level=2]
-    - text: 状态
-    - combobox "状态":
+    - text: 搜索
+    - searchbox "搜索"
+    - text: 级别
+    - combobox "级别":
       - option "全部" [selected]
-      - option "未通过"
-      - option "通过"
-      - option "待人工审核"
-      - option "未测试"
-      - option "不适用"
+      - option "A"
+      - option "AA"
     - text: 自动化程度
     - combobox "自动化程度":
       - option "全部" [selected]
@@ -101,8 +105,14 @@
       - option "部分自动"
       - option "人工"
       - option "不适用"
-    - text: 搜索
-    - searchbox "搜索"
+    - text: 状态
+    - combobox "状态":
+      - option "全部" [selected]
+      - option "通过"
+      - option "未通过"
+      - option "待人工审核"
+      - option "未测试"
+      - option "不适用"
     - status: 显示 50 / 50 个步骤
     - region "BITV / EN 301549 检查步骤及其自动化程度与结果":
       - table "BITV / EN 301549 检查步骤及其自动化程度与结果":

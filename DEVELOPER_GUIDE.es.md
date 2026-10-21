@@ -421,7 +421,14 @@ idioma), así que los paneles pueden reorganizarse sin tocarse entre sí.
 secuencial de un tono en cinco pasos por tema, celdas rayadas para `low_n`,
 celdas vacías solo con contorno), `ZingCharts.stackBars` las barras de errores
 apiladas, y `timeChart` acepta una línea `ref` (ratio de facturación del
-100 %).
+100 %). `ZingCharts.donut` (un anillo de partes de un todo con una cifra HTML
+en el centro) y `ZingCharts.meter` (una barra fina de partes) dibujan la
+tarjeta de cobertura del informe de accesibilidad; sus colores `k-*` (quién
+decide un paso: azul la batería de pruebas, violeta una persona) vienen de
+`tokens.css`. `v2/chartmotion.js` (`ZingMotion.enter`) dibuja un anillo en el
+sentido de las agujas del reloj y hace crecer las barras desde la izquierda,
+como en los demás gráficos, solo cuando llegan datos nuevos y nunca con
+movimiento reducido ni con la animación desactivada en la cabecera.
 
 La cabecera de la página y el panel de filtros están sobre cinco pestañas
 internas (`v2/tabs.js`, como en Herramientas y Conocimiento): cada

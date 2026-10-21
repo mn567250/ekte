@@ -69,31 +69,35 @@
       - code: /v2/accessibility
   - region "Couverture":
     - heading "Couverture" [level=2]
-    - heading "Comment les étapes sont testées" [level=3]
+    - heading "Résultat global" [level=3]
+    - paragraph: 75 % Réussi sur 44
     - list:
-      - listitem: Automatique 27 sur 44 · 61,4 %
-      - listitem: Partiellement automatique 17 sur 44 · 38,6 %
-      - listitem: Manuel 0 sur 44 · 0 %
-      - listitem: Non applicable 6
-    - heading "Résultats" [level=3]
-    - list:
+      - listitem: Non applicable 6 sur 50 · 12 %
       - listitem: Réussi 33 sur 44 · 75 %
       - listitem: Échec 0 sur 44 · 0 %
       - listitem: Revue manuelle en attente 11 sur 44 · 25 %
       - listitem: Non testé 0 sur 44 · 0 %
-      - listitem: Non applicable 6
-    - paragraph: Les pourcentages portent sur les étapes applicables ; les étapes sur l'audio et la vidéo ne s'appliquent pas, car l'interface n'en contient pas.
+    - heading "Machine Suite de tests seule" [level=3]
+    - list:
+      - listitem: Automatique 27 sur 44 · 61,4 %
+    - heading "Humain Une personne seule" [level=3]
+    - list:
+      - listitem: Manuel 0 sur 44 · 0 %
+    - heading "Machine Humain D'abord la suite de tests, puis une personne" [level=3]
+    - list:
+      - listitem: Partiellement automatique 17 sur 44 · 38,6 %
+      - listitem: Revu 6 sur 17 Revue manuelle en attente 11 sur 17
+    - paragraph: L'anneau montre les 50 étapes. Les étapes sur l'audio et la vidéo ne s'appliquent pas, car l'interface n'en contient pas ; tous les autres chiffres portent sur les 44 étapes applicables.
     - paragraph: "Également vérifié au-delà des WCAG : Préférences de l'utilisateur : mode couleurs forcées (EN 301549 clause 11.7) — Réussi"
   - region "Étapes de test":
     - heading "Étapes de test" [level=2]
-    - text: Statut
-    - combobox "Statut":
+    - text: Rechercher
+    - searchbox "Rechercher"
+    - text: Niveau
+    - combobox "Niveau":
       - option "Tous" [selected]
-      - option "Échec"
-      - option "Réussi"
-      - option "Revue manuelle en attente"
-      - option "Non testé"
-      - option "Non applicable"
+      - option "A"
+      - option "AA"
     - text: Automatisation
     - combobox "Automatisation":
       - option "Tous" [selected]
@@ -101,8 +105,14 @@
       - option "Partiellement automatique"
       - option "Manuel"
       - option "Non applicable"
-    - text: Rechercher
-    - searchbox "Rechercher"
+    - text: Statut
+    - combobox "Statut":
+      - option "Tous" [selected]
+      - option "Réussi"
+      - option "Échec"
+      - option "Revue manuelle en attente"
+      - option "Non testé"
+      - option "Non applicable"
     - status: 50 étapes affichées sur 50
     - region "Étapes de test BITV / EN 301549 avec niveau d'automatisation et résultat":
       - table "Étapes de test BITV / EN 301549 avec niveau d'automatisation et résultat":

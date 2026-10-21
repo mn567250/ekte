@@ -69,31 +69,35 @@
       - code: /v2/accessibility
   - region "Coverage":
     - heading "Coverage" [level=2]
-    - heading "How the steps are tested" [level=3]
+    - heading "Overall result" [level=3]
+    - paragraph: 75 % Pass of 44
     - list:
-      - listitem: Automatic 27 of 44 · 61.4 %
-      - listitem: Partly automatic 17 of 44 · 38.6 %
-      - listitem: Manual 0 of 44 · 0 %
-      - listitem: Not applicable 6
-    - heading "Results" [level=3]
-    - list:
+      - listitem: Not applicable 6 of 50 · 12 %
       - listitem: Pass 33 of 44 · 75 %
       - listitem: Fail 0 of 44 · 0 %
       - listitem: Manual review pending 11 of 44 · 25 %
       - listitem: Not tested 0 of 44 · 0 %
-      - listitem: Not applicable 6
-    - paragraph: Percentages are of the applicable steps; steps about audio and video do not apply because the UI has none.
+    - heading "Machine Test suite only" [level=3]
+    - list:
+      - listitem: Automatic 27 of 44 · 61.4 %
+    - heading "Human Person only" [level=3]
+    - list:
+      - listitem: Manual 0 of 44 · 0 %
+    - heading "Machine Human Test suite first, then a person" [level=3]
+    - list:
+      - listitem: Partly automatic 17 of 44 · 38.6 %
+      - listitem: Reviewed 6 of 17 Manual review pending 11 of 17
+    - paragraph: The ring shows all 50 steps. Steps about audio and video do not apply because the UI has none; every other number is of the 44 applicable steps.
     - paragraph: "Also checked beyond WCAG: User preferences: forced colours mode (EN 301549 clause 11.7) — Pass"
   - region "Test steps":
     - heading "Test steps" [level=2]
-    - text: Status
-    - combobox "Status":
+    - text: Search
+    - searchbox "Search"
+    - text: Level
+    - combobox "Level":
       - option "All" [selected]
-      - option "Fail"
-      - option "Pass"
-      - option "Manual review pending"
-      - option "Not tested"
-      - option "Not applicable"
+      - option "A"
+      - option "AA"
     - text: Automation
     - combobox "Automation":
       - option "All" [selected]
@@ -101,8 +105,14 @@
       - option "Partly automatic"
       - option "Manual"
       - option "Not applicable"
-    - text: Search
-    - searchbox "Search"
+    - text: Status
+    - combobox "Status":
+      - option "All" [selected]
+      - option "Pass"
+      - option "Fail"
+      - option "Manual review pending"
+      - option "Not tested"
+      - option "Not applicable"
     - status: Showing 50 of 50 steps
     - region "BITV / EN 301549 test steps with automation level and result":
       - table "BITV / EN 301549 test steps with automation level and result":

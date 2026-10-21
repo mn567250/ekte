@@ -87,6 +87,16 @@
     transform-origin: center;
     animation: zm-pop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
   }
+  /* donut: the ring draws clockwise, part after part (chartmotion.js sets
+     each arc's length, start and duration) */
+  :root:not([data-motion="off"]) .zm-in.donut .arc {
+    animation: zm-arc var(--zm-t, 300ms) linear var(--zm-d, 0ms) both;
+  }
+  /* meters: each part grows from the left */
+  :root:not([data-motion="off"]) .zm-in .meter .mseg {
+    transform-origin: left;
+    animation: zm-grow-x 420ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--zm-d, 0ms) backwards;
+  }
   /* tooltip: fades in instead of blinking in (it is aria-hidden; the data
      table carries the same values) */
   :root:not([data-motion="off"]) .ctip:not([hidden]) { animation: zm-tip 140ms ease-out; }
@@ -96,6 +106,8 @@
 @keyframes zm-slide { from { transform: translateY(var(--zm-dy, 0px)); } }
 @keyframes zm-pop { from { opacity: 0; transform: scale(0.35); } }
 @keyframes zm-grow { from { transform: scaleY(0); } }
+@keyframes zm-grow-x { from { transform: scaleX(0); } }
+@keyframes zm-arc { from { stroke-dashoffset: var(--zm-len, 0); } }
 /* heat grid fill: first leg turns the empty tile into the lightest step, each
    further leg darkens one step (equal time per step = the same pace) */
 @keyframes zm-h1 {

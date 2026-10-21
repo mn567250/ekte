@@ -74,6 +74,37 @@
 .hlegend .sub { color: var(--ink-muted); }
 .hsw { flex: none; }
 
+/* who decides a test step and its result (accessibility report), tokens.css:
+   blue = the test suite, violet = a person; solid = the whole, light = the part */
+.k-auto { --c: var(--machine); } .k-partial { --c: var(--machine-soft); }
+.k-manual { --c: var(--human); } .k-pending { --c: var(--human-soft); }
+.k-pass { --c: var(--success); } .k-fail { --c: var(--danger); }
+.k-untested { --c: var(--untested-fill); } .k-na { --c: var(--na-fill); }
+
+/* donut: parts of one whole, a figure (HTML text) in the middle */
+.donut-box { position: relative; width: 156px; height: 156px; flex: none; }
+.donut { display: block; width: 100%; height: 100%; overflow: visible; }
+.donut .track { fill: none; stroke: var(--sunken); }
+.donut .arc { fill: none; stroke: var(--c); }
+.donut-box .dc { position: absolute; inset: 34px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; line-height: 1.15; font-family: var(--sans); }
+.donut-box .dv { font-size: 26px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.donut-box .dl { font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+
+/* meter: a thin bar of parts of a total on an empty track */
+.meter { display: flex; height: 8px; border-radius: var(--r-pill); background: var(--sunken); overflow: hidden; }
+.meter .mseg { display: block; height: 100%; background: var(--c); }
+/* a gap inside the next part, so the parts add up to exactly their share */
+.meter .mseg + .mseg { box-sizing: border-box; border-left: 2px solid var(--surface); }
+.meter .mseg:first-child { border-top-left-radius: var(--r-pill); border-bottom-left-radius: var(--r-pill); }
+.meter .mseg:last-child { border-top-right-radius: var(--r-pill); border-bottom-right-radius: var(--r-pill); }
+
+@media (forced-colors: active) {
+  .donut .arc { stroke: CanvasText; }
+  .donut .track { stroke: GrayText; }
+  .meter { background: Canvas; border: 1px solid GrayText; }
+  .meter .mseg { background: CanvasText; forced-color-adjust: none; }
+}
 @media (forced-colors: active) {
   .hmap .q1, .hmap .q2, .hmap .q3, .hmap .q4, .hmap .q5, .sbars .seg, .sw { fill: CanvasText; background: CanvasText; forced-color-adjust: none; }
   .hmap .none { fill: Canvas; stroke: GrayText; stroke-width: 1; stroke-dasharray: 2 2; }

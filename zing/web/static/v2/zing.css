@@ -321,6 +321,11 @@ select.in {
 .badge.bad { color: var(--danger); background: var(--danger-tint); }
 .badge.sky { color: var(--info); background: var(--info-tint); }
 .badge.grey { color: var(--ink-muted); background: var(--sunken); }
+/* who decides a step (accessibility report): solid = the whole, light = the part */
+.badge.machine { color: var(--on-primary); background: var(--machine); }
+.badge.machine-soft { color: var(--info); background: var(--machine-tint); }
+.badge.human { color: var(--on-primary); background: var(--human); }
+.badge.human-soft { color: var(--human); background: var(--human-tint); }
 
 /* ---------- messages ---------- */
 .reassure { text-align: center; font-size: 12.5px; color: var(--ink-muted); margin-top: 13px; line-height: 1.5; }
