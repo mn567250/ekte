@@ -977,8 +977,13 @@
   // A run a monitor produced already has its monitor: offer no second one.
   function byMonitor(r) { return !!r && r.watch_id != null; }
 
-  // Re-run: open the audit form prefilled with this run's configuration.
-  function rerun(id) { location.href = "/v2/?rerun=" + encodeURIComponent(id); }
+  // Re-run: open the audit form (an embedding run: the Tools page) prefilled
+  // with this run's configuration.
+  function rerun(id) {
+    var row = (state.rows || []).filter(function (r) { return String(r.id) === String(id); })[0];
+    var page = row && surfaceOf(row) === "embedding" ? "/v2/tools" : "/v2/";
+    location.href = page + "?rerun=" + encodeURIComponent(id);
+  }
 
   function rerunBtnHTML(r) {
     var label = T("重新检测", "Re-run audit");

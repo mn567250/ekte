@@ -843,7 +843,9 @@
   Live.prototype.render = function () {
     if (!this.host || !this.records.length) return;
     var recs = this.records;
-    var calls = recs.filter(function (r) { return r.op === "complete"; });
+    // completion calls, or an embedding job's embedding calls
+    var calls = recs.filter(isCall);
+    var embedOnly = calls.length > 0 && !calls.some(function (r) { return r.op === "complete"; });
     var target = calls.filter(function (r) { return r.endpoint !== "baseline" && r.ok && !r.cached; });
     var probeDone = calls.filter(function (r) { return r.endpoint !== "baseline" && r.phase === "probe"; }).length;
     var tps = target.map(function (r) { return r.decode_tps_local != null ? r.decode_tps_local : r.decode_tps_reported; });
@@ -872,9 +874,10 @@
       head: [
         [T("请求数", "Requests"), int(calls.length)],
         [T("延迟 p50", "Latency p50"), withUnit(p50(target.map(function (r) { return r.duration_ms; })), "ms")],
+      ].concat(embedOnly ? [] : [
         ["TTFT p50", withUnit(ttftP50, "ms")],
         [decodeLabel, withUnit(tpsP50, "tok/s")],
-      ],
+      ]),
       probe: null,
       tabs: tabs(this.metric, this.pid),
       scale: this.probeTotal > 0 || hasProbe(recs) ? scaleBar(sc, chartV) : "",
@@ -1091,7 +1094,7 @@
     if (!box) return;
     var m = metric(this.metric), recs = this.records, key = this.tableKey(m), t = this.table;
     var tbody = box.querySelector("tbody");
-    var complete = function (r) { return r.op === "complete"; };
+    var complete = isCall;
     if (t && tbody && t.key === key && t.recs === recs && t.n <= recs.length) {
       if (t.n < recs.length) {
         var rows = dataRows(recs.slice(t.n).filter(complete), m);

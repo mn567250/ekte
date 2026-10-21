@@ -46,6 +46,8 @@
   .lab{font-size:12px;font-weight:700;letter-spacing:.4px;color:var(--faint);text-transform:uppercase;margin:0 0 7px}
   .in{width:100%;border:1.5px solid var(--line);background:#fbfdfa;border-radius:13px;font-family:var(--sans);font-weight:500;font-size:15px;color:var(--ink);padding:12px 14px;outline:none;transition:.16s}
   .in:focus{border-color:var(--teal);box-shadow:0 0 0 4px rgba(15,111,95,.12);background:#fff}
+  [hidden]{display:none!important}
+  .hint{font-size:13px;color:var(--ink2);margin:-4px 0 14px}
   textarea.in{font-family:var(--mono);font-size:13px;resize:vertical;min-height:64px}
   .grp{margin-bottom:13px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
@@ -130,11 +132,21 @@
         <div class="grp"><div class="lab" data-en="Declared provider (optional)">声明厂商（可选）</div><input class="in" id="f-prov" placeholder="例如 openai / deepseek" data-en-placeholder="e.g. openai / deepseek"></div>
       </div>
       <div class="two">
+        <div class="grp"><label class="lab" for="f-surface" data-en="Endpoint type">接口类型</label>
+          <select class="in" id="f-surface">
+            <option value="chat" data-en="Chat">对话</option>
+            <option value="embedding" data-en="Embeddings">嵌入</option>
+          </select>
+        </div>
+        <div class="grp" id="g-dims" hidden><label class="lab" for="f-dims" data-en="Claimed dimension (optional)">声称维度（可选）</label><input class="in" id="f-dims" type="number" min="1" step="1" placeholder="留空 = 查知识库" data-en-placeholder="Empty = look up in knowledge base"></div>
+      </div>
+      <div class="hint" id="h-embed" hidden data-en="The speed probe runs only on deep, full or custom suites, or on standard with a baseline.">速度探测仅在 deep、full 或 custom 套件下运行，或在有基线的 standard 下运行。</div>
+      <div class="two">
         <div class="grp"><div class="lab" data-en="Requested model">请求模型 model</div><input class="in" id="f-model" placeholder="gpt-4o"></div>
         <div class="grp"><div class="lab" data-en="Claimed model (optional)">声称模型（可选）</div><input class="in" id="f-claimed" placeholder="默认同 model" data-en-placeholder="Defaults to model"></div>
       </div>
       <div class="three">
-        <div class="grp"><div class="lab" data-en="Protocol api">协议 api</div>
+        <div class="grp" id="g-api"><div class="lab" data-en="Protocol api">协议 api</div>
           <select class="in" id="f-api">
             <option value="auto">auto</option>
             <option value="openai">openai</option>
@@ -267,6 +279,8 @@
         '<div class="wtarget" style="margin-top:7px">' + esc(w.base_url || "") + '</div>' +
         '<div class="wmeta">' +
           '<span>' + T("模型", "Model") + ' <code>' + esc(w.model || "?") + '</code>' + claimed + '</span>' +
+          (w.surface === "embedding" ? '<span>' + T("接口类型", "Endpoint type") + ' <code>' + T("嵌入", "Embeddings") + '</code>' +
+            (w.embedding_dimensions ? " · " + T("维度", "dimension") + " " + esc(w.embedding_dimensions) : "") + '</span>' : "") +
           '<span>' + T("套件", "Suite") + ' <code>' + esc(w.suite || "standard") + '</code></span>' +
           '<span>' + T("间隔 ", "Every ") + fmtInterval(w.interval_sec) + '</span>' +
           '<span>' + T("阈值", "Threshold") + ' <code>' + esc(w.alert_on || "medium") + '</code></span>' +
@@ -299,11 +313,22 @@
   }
   function clearErr(){ errFn = null; $("formerr").classList.remove("show"); }
 
+  // Embedding monitors: no chat protocol choice; a claimed vector length instead.
+  function syncSurface(){
+    var embed = $("f-surface").value === "embedding";
+    $("g-dims").hidden = !embed;
+    $("g-api").hidden = embed;
+    $("h-embed").hidden = !embed || ["deep", "full", "custom"].indexOf($("f-suite").value) >= 0;
+  }
+  $("f-surface").addEventListener("change", syncSurface);
+  $("f-suite").addEventListener("change", syncSurface);
+
   $("add").addEventListener("click", function(){
     clearErr();
     var hooks = $("f-hooks").value.split("\n").map(function(s){ return s.trim(); }).filter(Boolean);
     var minutes = parseInt($("f-interval").value, 10);
     if(!minutes || minutes < 1) minutes = 60;
+    var embed = $("f-surface").value === "embedding";
     var body = {
       name: $("f-name").value.trim() || "watch",
       base_url: $("f-url").value.trim(),
@@ -311,14 +336,16 @@
       model: $("f-model").value.trim(),
       claimed_model: $("f-claimed").value.trim() || null,
       declared_provider: $("f-prov").value.trim() || null,
-      api: $("f-api").value,
+      api: embed ? "auto" : $("f-api").value,
       suite: $("f-suite").value,
+      surface: $("f-surface").value,
       alert_on: $("f-alert").value,
       interval_sec: minutes * 60,
       enabled: $("f-enabled").checked,
       webhooks: hooks,
       language: $("f-lang").value
     };
+    if(embed && $("f-dims").value.trim()) body.embedding_dimensions = parseInt($("f-dims").value, 10) || 0;
     var btn = $("add");
     btn.disabled = true;
     fetch("/api/watches", {
