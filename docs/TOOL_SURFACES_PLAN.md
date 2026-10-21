@@ -69,12 +69,14 @@ v1 scope: embeddings only. Rerank, image and TTS follow the same pattern.
 
 ## Implementation batches
 
-1. Surface axis (models, config, history/watches columns, detector filter),
+All four batches are done.
+
+1. (done) Surface axis (models, config, history/watches columns, detector filter),
    per-surface scoring, recorder `op=embed`, `summary` `op` parameter. No chat
    behaviour change.
-2. Embedding detectors incl. drift, shared probe module +
+2. (done) Embedding detectors incl. drift, shared probe module +
    `EmbedPerformanceDetector`, runner wiring, `/api/embed` and `zing embed`
    via the runner, saved to history.
-3. History surface badge/filter; Analytics mandatory surface filter,
+3. (done) History surface badge/filter; Analytics mandatory surface filter,
    `Metric.surfaces`, integrity ids; report view hides chat-only sections.
-4. Monitors with a surface, "Monitor this" on Tools; docs and CHANGELOG.
+4. (done) Monitors with a surface, "Monitor this" on Tools; docs and CHANGELOG.

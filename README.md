@@ -594,8 +594,24 @@ enter them again). For unattended or Docker use, pass the key as
 ## Embedding, rerank, image and audio audits
 
 These endpoints return vectors, rankings, images or audio instead of chat, so
-zing audits them with focused, standalone auditors instead of the ten-dimension
-chat pipeline. Each prints a verdict and supports `--json` and `--fail-on-risk`.
+zing audits them with focused probes instead of the chat prompts. Each prints a
+verdict and supports `--json` and `--fail-on-risk`.
+
+### Endpoint type (surface) and embedding monitors
+
+Every audit, history row and monitor has an **endpoint type** (`surface`):
+`chat` (the default) or `embedding`. It is independent of the suite. Embedding
+audits run through the same runner, scoring (0–100, A–F), History, Analytics
+and Monitors as chat audits; only the detectors differ. History and Analytics
+filter by endpoint type, and Analytics shows only the metrics that apply.
+
+To monitor an embeddings endpoint, run it on the **Tools** page and choose
+**Monitor this**, or **Schedule as monitor** on its History row. The monitor
+re-runs the embedding audit on its schedule, with the same knowledge-base pin,
+alert threshold and regression alerts as a chat monitor, and checks **vector
+drift** against its previous run. The embedding speed probe (latency, cold
+start, inputs/s, batch scaling) runs only on the deep, full or custom suites,
+or on standard with a baseline.
 
 ### Embeddings and rerank
 
