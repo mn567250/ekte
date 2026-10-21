@@ -134,6 +134,8 @@
 
   <div class="topbar">
     <a class="back" href="/"><span id="backIcon" style="vertical-align:-3px"></span> <span data-en="Back to audit">返回检测</span></a>
+    <label class="surf" style="font-size:12px;font-weight:700;color:var(--ink2)"><span data-en="Endpoint type">接口类型</span>
+      <select id="surf" style="margin-left:6px"><option value="" data-en="All">全部</option><option value="chat" data-en="Chat">对话</option><option value="embedding" data-en="Embeddings">嵌入</option></select></label>
     <button class="clr" id="clr" data-en="Clear history">清空历史</button>
   </div>
 
@@ -176,18 +178,27 @@ $("#logoIcon").innerHTML=window.zingIcon("bolt",{size:18});
 $("#lockIcon").innerHTML=window.zingIcon("lock",{size:14});
 $("#backIcon").innerHTML=window.zingIcon("arrowLeft",{size:15});
 
+let allRows=[];
+const surfaceOf=r=>r.surface||"chat";
+$("#surf").onchange=()=>render(allRows);
 load();
 
 async function load(){
   try{
     const rows=await fetch("/api/history").then(r=>r.json());
-    render(Array.isArray(rows)?rows:[]);
+    allRows=Array.isArray(rows)?rows:[];
+    render(allRows);
   }catch(e){
     $("#card").innerHTML=`<div class="empty"><div class="big">${window.zingIcon("warning",{size:34})}</div>${T("无法读取历史：","Could not read history: ")}${esc(String(e.message||e))}<br><br>${T("请确认本地 zing 服务在运行。","Make sure the local zing service is running.")}</div>`;
   }
 }
 
 function render(rows){
+  const want=$("#surf").value;
+  if(want&&rows.length){
+    rows=rows.filter(r=>surfaceOf(r)===want);
+    if(!rows.length){$("#card").innerHTML=`<div class="empty">${T("没有这种接口类型的检测记录。","No audits of this endpoint type.")}</div>`;return;}
+  }
   if(!rows.length){
     $("#card").innerHTML=`<div class="empty"><div class="big">${window.zingIcon("folder",{size:34})}</div>${T("还没有检测记录。","No audits recorded yet.")}<br><br><a href="/">${T("去跑第一次检测","Run your first audit")} ${window.zingIcon("arrowRight",{size:15})}</a></div>`;
     return;
@@ -235,7 +246,7 @@ function rowHTML(r){
     <td><span class="bdg" style="background:var(--${risk.bg});color:${VAR(risk.c)}">${riskGlyph(r.risk_level)} ${esc(ZING_LANG.code(r.risk_level||"?"))}</span></td>
     <td class="sc r"><b style="color:${VAR(scoreC(r.score))}">${sc}</b></td>
     <td class="r" style="font-family:var(--disp);font-weight:700;color:${VAR(risk.c)}">${esc(r.rating||"–")}</td>
-    <td class="r ms"><b>${esc(r.mode||"check")}</b> · ${esc(r.suite||"")}</td>
+    <td class="r ms"><b>${esc(r.mode||"check")}</b>${surfaceOf(r)==="embedding"?` <span class="bdg" style="background:var(--skybg);color:${VAR("sky")}">${T("嵌入","Embeddings")}</span>`:""} · ${esc(r.suite||"")}</td>
   </tr>`;
 }
 
@@ -321,7 +332,7 @@ function findRow(f){const c=VAR(SEVC[f.severity]||"grey");const ev=evText(f.evid
     <div class="fs">${esc(fLoc(f).summary||"")}${f.recommendation?` <span style="color:var(--faint)">· ${T("建议：","Recommendation: ")}${esc(srv(f.recommendation))}</span>`:""}</div>
     ${ev?`<div class="ev">${esc(ev)}</div><span class="more">${T("查看证据","Show evidence")}</span>`:""}</div></div>`;}
 function evText(e){if(!e||typeof e!=="object")return "";const keys=Object.keys(e).slice(0,6);
-  return keys.map(k=>`${k}: ${fmt(e[k])}`).join("\n");}
+  return keys.map(k=>`${k}: ${k==="sample"&&Array.isArray(e[k])&&e[k].length>6?T("[{n} 个数值的向量样本]","[vector sample of {n} numbers]").replace("{n}",e[k].length):fmt(e[k])}`).join("\n");}
 function fmt(x){if(x==null)return "null";if(typeof x==="object")return JSON.stringify(x).slice(0,200);return String(x).slice(0,240);}
 function sevRank(s){return {critical:5,high:4,medium:3,low:2,info:1}[s]||0;}
 function riskGlyph(r){const n=r==="high"?"x":r==="clean"?"check":r==="inconclusive"?"info":"warning";
