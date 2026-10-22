@@ -28,8 +28,8 @@ class RerankServer:
     """Scores each document by word overlap with the query; ``fixed`` answers
     every request with the same fine-grained scores (a stub or a cache)."""
 
-    def __init__(self, *, fixed: bool = False) -> None:
-        self.fixed = fixed
+    def __init__(self, *, fixed: bool = False, partial: bool = False) -> None:
+        self.fixed, self.partial = fixed, partial
         self.sizes: list[int] = []
 
     @property
@@ -48,7 +48,8 @@ class RerankServer:
              else float(len(words & set(d.lower().split())))}
             for i, d in enumerate(docs)
         ]
-        return httpx.Response(200, json={"model": MODEL, "results": results})
+        return httpx.Response(200, json={"model": MODEL, "results": results[:1] if self.partial
+                                         else results})
 
 
 @pytest.fixture
@@ -132,6 +133,16 @@ async def test_rerank_probe_detects_repeated_scores(serve):
                                                      performance_requests=6))
     hit = _finding(report, "performance.cache_hit")
     assert hit.outcome == "cached" and hit.evidence["cached"] > 0
+
+
+async def test_rerank_probe_counts_an_incomplete_ranking_as_a_failure(serve):
+    serve(RerankServer(partial=True))
+    report = await run_audit(_target(), AuditOptions(surface="rerank", suite="deep",
+                                                     performance_requests=6))
+    det = next(d for d in report.detectors if d.id == "performance.rerank")
+    assert det.status == Status.INCONCLUSIVE
+    assert _finding(report, "performance.summary").outcome == "no_success"
+    assert _finding(report, "performance.errors").outcome == "failed"
 
 
 async def test_rerank_probe_disabled(serve):

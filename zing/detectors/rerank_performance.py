@@ -8,11 +8,12 @@ documents and one over 32 — the second axis: a 32-document request whose
 per-document latency is about that of a 4-document one suggests a relay that
 splits or serialises the documents.
 
-Every query is unique (a random request id opens it), so no response can come
-from a cache. A response whose scores repeat, exactly, those seen for another
-query is flagged as cached and left out of the stats. Only fine-grained scores
+Every query and document is unique (a random request id marks each), so no
+response can come from a cache. A response whose scores repeat, exactly, those
+seen for another request is flagged as cached and left out of the stats. Only fine-grained scores
 count (a value that is not a round number to 3 decimals): coarse scores, as
-from a lexical scorer, can repeat legitimately. Rerank does not stream.
+from a lexical scorer, can repeat legitimately. A 200 that does not score every
+document counts as a failed request. Rerank does not stream.
 
 There is no knowledge-base speed reference for rerank models: the probe scores
 consistency, failures, behaviour under load and document-count scaling, and with
@@ -120,18 +121,19 @@ class RerankPerformanceDetector(Detector):
 
     def __init__(self) -> None:
         self._counter = 0
+        self._topics: list[str] = prompts.get("performance.topics")
         # seq of each recorded request -> documents it carried
         self._docs: dict[int, int] = {}
 
     def _request(self, size: int) -> tuple[str, list[str]]:
-        topics: list[str] = prompts.get("performance.topics")
+        topics = self._topics
         start = self._counter
         self._counter += 1
-        query = prompts.text(
-            "rerank.perf_query", nonce=secrets.token_hex(8), topic=topics[start % len(topics)]
-        )
+        nonce = secrets.token_hex(8)
+        query = prompts.text("rerank.perf_query", nonce=nonce, topic=topics[start % len(topics)])
         documents = [
-            prompts.text("rerank.perf_document", n=i + 1, topic=topics[(start + i) % len(topics)])
+            prompts.text("rerank.perf_document", n=i + 1, nonce=nonce,
+                         topic=topics[(start + i) % len(topics)])
             for i in range(size)
         ]
         return query, documents
@@ -147,8 +149,12 @@ class RerankPerformanceDetector(Detector):
         if record is None:
             return None
         self._docs[record.seq] = size
-        # The same fine-grained scores for a different (unique) query: a cache hit.
-        if result.ok and any(_fine(item.get("relevance_score")) for item in ranked):
+        # A 200 that leaves documents unscored did not do the work it is timed for.
+        if record.ok and len({item.get("index") for item in ranked}) != size:
+            record.ok = False
+            record.error_type = "IncompleteRanking"
+        # The same fine-grained scores for a different (unique) request: a cache hit.
+        if record.ok and any(_fine(item.get("relevance_score")) for item in ranked):
             scores = [(item.get("index"), item.get("relevance_score")) for item in ranked]
             digest = hashlib.sha256(repr(scores).encode("utf-8")).hexdigest()
             if digest in ep.seen:
