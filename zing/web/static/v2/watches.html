@@ -247,9 +247,9 @@
   var loadErr = false;
   // per-monitor transient UI state:
   //   running, confirm, busy, msg (fn), msgKind,
-  //   edit: null | "interval" | "key" | "hooks"   (an open inline editor)
-  //   vals: {interval, key, hooks}                 (typed values, kept across re-renders)
-  //   errs: {interval, key, hooks}                 (fn → message)
+  //   edit: null | "interval" | "key" | "hooks" | "dims"   (an open inline editor)
+  //   vals: {interval, key, hooks, dims}                    (typed values, kept across re-renders)
+  //   errs: {interval, key, hooks, dims}                    (fn → message)
   var ui = {};
   function st(id) { return ui[id] || (ui[id] = { vals: {}, errs: {} }); }
 
@@ -288,6 +288,19 @@
     return String(raw == null ? "" : raw).trim()
       ? null
       : function () { return T("请填写 API 密钥（或 env:变量名）。", "Enter the API key (or env:VAR)."); };
+  }
+  // An embedding monitor's claimed vector length: 0 (or empty) takes it from the knowledge base.
+  function dimsOf(raw) {
+    raw = String(raw == null ? "" : raw).trim();
+    if (raw === "") return 0;
+    if (!/^\d+$/.test(raw)) return null;
+    var n = parseInt(raw, 10);
+    return n <= 65536 ? n : null;
+  }
+  function checkDims(raw) {
+    return dimsOf(raw) == null
+      ? function () { return T("请输入 0 到 65536 之间的整数。", "Enter a whole number from 0 to 65536."); }
+      : null;
   }
   function checkHooks(raw) {
     var lines = hooksOf(raw);
@@ -457,21 +470,31 @@
     return esc(T(m[0], m[1]));
   }
 
-  // What the monitor audits: a chat endpoint, or an embeddings one.
-  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"] };
+  // What the monitor audits: a chat endpoint, an embeddings one or a rerank one.
+  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Rerank"] };
   function surfaceCell(w) {
     var m = SURFACE[w.surface] || SURFACE.chat;
-    return w.surface === "embedding" ? '<span class="badge machine-soft">' + esc(T(m[0], m[1])) + "</span>" : esc(T(m[0], m[1]));
+    return SURFACE[w.surface] && w.surface !== "chat" ? '<span class="badge machine-soft">' + esc(T(m[0], m[1])) + "</span>" : esc(T(m[0], m[1]));
   }
-  // The embedding speed probe is gated like the chat one; monitors have no baseline.
-  function embedPerfNote(w) {
+  // The embedding and rerank speed probes are gated like the chat one; monitors have no baseline.
+  function toolPerfNote(w) {
     return ["deep", "full", "custom"].indexOf(w.suite || "standard") >= 0 ? "" :
       '<span class="aside">' + esc(T("速度探测仅在 deep、full 或 custom 套件下运行，或在有基线的 standard 下运行。",
         "The speed probe runs only on deep, full or custom suites, or on standard with a baseline.")) + "</span>";
   }
-  function dimsCell(w) {
-    return w.embedding_dimensions ? "<code>" + esc(String(w.embedding_dimensions)) + "</code>"
-      : esc(T("来自知识库", "From the knowledge base"));
+  function dimsInput(w, s) {
+    var v = s.vals.dims != null ? s.vals.dims : (w.embedding_dimensions ? String(w.embedding_dimensions) : "");
+    return '<input class="in mono" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" id="dm-' + w.id + '"' +
+      ' data-act="f-dims" data-id="' + w.id + '" aria-label="' + esc(T("声称维度", "Claimed dimension")) + '"' +
+      ' aria-describedby="dmh-' + w.id + " dme-" + w.id + '"' + invalid(s.errs.dims) + ' value="' + esc(v) + '">' +
+      '<p class="hint" id="dmh-' + w.id + '">' + esc(T("留空或 0：取自知识库。", "Empty or 0: taken from the knowledge base.")) + "</p>" +
+      err("dme-" + w.id, s.errs.dims);
+  }
+  function dimsCell(w, s) {
+    if (s.edit === "dims") return '<form class="edit" data-id="' + w.id + '" novalidate>' + dimsInput(w, s) + saveCancel("dims", w.id) + "</form>";
+    return (w.embedding_dimensions ? "<code>" + esc(String(w.embedding_dimensions)) + "</code>"
+      : esc(T("来自知识库", "From the knowledge base"))) +
+      linkBtn("edit-dims", w.id, T("修改声称维度", "Change the claimed dimension"));
   }
 
   function card(w) {
@@ -479,6 +502,8 @@
     var name = w.name || "watch";
     var draft = needsSetup(w);
     var embed = w.surface === "embedding";
+    // embeddings and rerank do not stream: no streaming mode to show
+    var tool = embed || w.surface === "rerank";
     var claimed = w.claimed_model && w.claimed_model !== w.model
       ? '<span class="aside">' + esc(T("声称的模型", "Claimed model")) + " <code>" + esc(w.claimed_model) + "</code></span>"
       : "";
@@ -546,10 +571,10 @@
             meta(T("接口类型", "Endpoint type"), surfaceCell(w)) +
             meta(T("测试套件", "Test suite"), "<code>" + esc(w.suite || "standard") + "</code>" +
               (w.suite === "custom" && (w.dimensions || []).length ? " <code>" + esc(w.dimensions.join(", ")) + "</code>" : "") +
-              (embed ? embedPerfNote(w) : "")) +
+              (tool ? toolPerfNote(w) : "")) +
             meta(T("协议", "Protocol"), protoCell(w)) +
-            (embed ? meta(T("声称维度", "Claimed dimension"), dimsCell(w))
-              : meta(T("性能探测请求", "Performance probe requests"), streamCell(w))) +
+            (embed ? meta(T("声称维度", "Claimed dimension"), dimsCell(w, s))
+              : tool ? "" : meta(T("性能探测请求", "Performance probe requests"), streamCell(w))) +
             meta(T("检测间隔", "Check interval"), intervalCell(w, s)) +
             meta(T("API 密钥", "API key"), keyCell(w, s)) +
             meta(thrLabel, '<select class="in" data-act="alert" data-id="' + w.id + '" aria-label="' + esc(thrLabel + " — " + name) + '">' + thresholdOptions(w.alert_on || "medium") + "</select>") +
@@ -757,6 +782,10 @@
       var raw = s.vals.hooks != null ? s.vals.hooks : ($("hk-" + id) || {}).value;
       s.errs.hooks = checkHooks(raw);
       if (!s.errs.hooks) body.webhooks = hooksOf(raw);
+    } else if (what === "dims") {
+      var dv = s.vals.dims != null ? s.vals.dims : ($("dm-" + id) || {}).value;
+      s.errs.dims = checkDims(dv);
+      if (!s.errs.dims) body.embedding_dimensions = dimsOf(dv);
     }
     if (s.errs[what]) {
       render();
@@ -767,7 +796,8 @@
       s.msgKind = "ok";
       s.msg = { interval: function () { return T("检测间隔已保存。", "Check interval saved."); },
         key: function () { return T("API 密钥已更换。", "API key replaced."); },
-        hooks: function () { return T("Webhook 已保存。", "Webhooks saved."); } }[what];
+        hooks: function () { return T("Webhook 已保存。", "Webhooks saved."); },
+        dims: function () { return T("声称维度已保存。", "Claimed dimension saved."); } }[what];
       s.edit = null;
       s.vals = {};
       return load().then(function () { focusAct("edit-" + what, id); });
@@ -785,11 +815,11 @@
     s.vals[field] = t.value;
     // re-check a flagged field as the user fixes it
     if (s.errs[field]) {
-      var fn = { interval: checkInterval, key: checkKey, hooks: checkHooks }[field](t.value);
+      var fn = { interval: checkInterval, key: checkKey, hooks: checkHooks, dims: checkDims }[field](t.value);
       if (!fn) {
         s.errs[field] = null;
         t.removeAttribute("aria-invalid");
-        var box = $({ interval: "ive-", key: "ke-", hooks: "hke-" }[field] + id);
+        var box = $({ interval: "ive-", key: "ke-", hooks: "hke-", dims: "dme-" }[field] + id);
         if (box) { box.hidden = true; box.textContent = ""; }
       }
     }

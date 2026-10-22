@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Enter a whole number from 0 to 65536.": "Enter a whole number from 0 to 65536.",
+  "Empty or 0: taken from the knowledge base.": "Empty or 0: taken from the knowledge base.",
+  "Change the claimed dimension": "Change the claimed dimension",
+  "Claimed dimension saved.": "Claimed dimension saved."
+ }
+}
