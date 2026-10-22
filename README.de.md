@@ -637,9 +637,29 @@ unbeaufsichtigten Betrieb oder Docker übergeben Sie den Schlüssel als
 ## Prüfungen für Embedding, Rerank, Bild und Audio
 
 Diese Endpunkte liefern Vektoren, Rangfolgen, Bilder oder Audio statt Chat, daher
-prüft zing sie mit eigenen, fokussierten Prüfern statt mit der Chat-Pipeline mit
-zehn Dimensionen. Jeder gibt ein Urteil aus und unterstützt `--json` und
-`--fail-on-risk`.
+prüft zing sie mit fokussierten Tests statt mit den Chat-Prompts. Jeder gibt ein
+Urteil aus und unterstützt `--json` und `--fail-on-risk`.
+
+### Endpunkttyp (Surface), Embedding- und Rerank-Monitore
+
+Jede Prüfung, jede Verlaufszeile und jeder Monitor hat einen **Endpunkttyp**
+(`surface`): `chat` (Standard), `embedding` oder `rerank`. Er ist unabhängig von
+der Suite. Embedding- und Rerank-Prüfungen laufen über denselben Runner, dieselbe
+Bewertung (0–100, A–F), denselben Verlauf, dieselbe Analyse und dieselben Monitore
+wie Chat-Prüfungen; nur die Detektoren unterscheiden sich. Verlauf und Analyse
+filtern nach Endpunkttyp, und die Analyse zeigt nur die Kennzahlen, die zutreffen.
+
+Um einen Embeddings- oder Rerank-Endpunkt zu überwachen, prüfen Sie ihn auf der
+Seite **Werkzeuge** und wählen **Überwachen**, oder **Als Überwachung einplanen** in
+seiner Verlaufszeile. Der Monitor wiederholt die Prüfung nach Zeitplan, mit
+derselben Fixierung der Wissensbasis, derselben Alarmschwelle und denselben
+Regressionsalarmen wie ein Chat-Monitor, und prüft die **Drift** gegenüber
+seinem vorigen Lauf (die Vektoren eines Embedding-Tests, Rangfolge und Scores
+eines Rerank-Tests). Die angegebene Dimension eines Embedding-Monitors lässt sich
+auf seiner Karte ändern (leer oder 0: aus der Wissensbasis). Die
+Geschwindigkeitsmessungen (Embeddings: Latenz, Kaltstart, Eingaben/s,
+Batch-Skalierung; Rerank: Latenz, Kaltstart, Dokumente/s, 4 gegen 32 Dokumente)
+laufen nur in den Suiten deep, full oder custom oder in standard mit Baseline.
 
 ### Embeddings und Rerank
 
@@ -654,7 +674,20 @@ zing embed --base-url ... --model my-embed --claimed-dimensions 1024 --json
 # Rerank: ein eingebauter Test mit bekannter Antwort — ein echter Reranker muss das
 # offensichtlich relevante Dokument an erster Stelle einordnen.
 zing rerank --base-url https://relay.example.com/v1 --model my-rerank
+
+# Gründlicher: mit der Rerank-Geschwindigkeitsmessung; --no-save hält den Lauf aus dem Verlauf.
+zing rerank --base-url ... --model my-rerank --suite deep --no-save
+# Zuerst die Prüfungen und die geschätzten Aufrufe ansehen, ohne Anfrage:
+zing rerank --base-url ... --model my-rerank --dry-run
 ```
+
+`rerank` prüft Konnektivität, den **Test mit bekannter Antwort** (das
+offensichtlich relevante Dokument muss an erster Stelle stehen), das
+zurückgegebene `model`-Feld, Determinismus (dieselbe Anfrage zweimal ergibt
+dieselbe Rangfolge und dieselben Scores) und die **Rangfolge-Drift** gegenüber
+dem vorigen gespeicherten Lauf. `zing embed` und `zing rerank` nehmen `--suite`,
+`--save/--no-save` (standardmäßig gespeichert, damit der nächste Lauf eine
+Drift-Referenz hat) und `--dry-run`.
 
 `embed` prüft Konnektivität, **Übereinstimmung der Dimension** (Länge des
 zurückgegebenen Vektors gegenüber der nativen Dimension des angegebenen Modells —
