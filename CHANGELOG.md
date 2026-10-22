@@ -8,6 +8,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Rerank performance probe (`performance.rerank`).** On the rerank surface,
+  latency, cold start, documents/s, consistency, errors, load stability and
+  document-count scaling (4 vs 32 documents per query), with cache detection
+  through nonce-varied queries and a baseline comparison; gated like the chat
+  probe. Finding texts in all seven UI languages.
+
 - **Embedding audits as first-class audits (endpoint type / surface).** Every
   audit, history row and monitor has a `surface`: `chat` (default) or
   `embedding`, independent of the suite (`NULL` and a missing field read as
