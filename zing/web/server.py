@@ -20,7 +20,8 @@ Endpoints:
   POST /api/audit/stream     run an audit; stream detector progress, batched
                              per-request timing records and the final report
                              as Server-Sent Events (text/event-stream)
-  POST /api/jobs             queue an audit as a background job (same body as
+  POST /api/jobs             queue an audit (any surface: chat, embedding, rerank)
+                             as a background job (same body as
                              /api/audit/stream); it runs on whatever page is open
   GET  /api/jobs             queued and running audits (and running monitors),
                              recently finished ones too, with progress
@@ -97,6 +98,7 @@ from zing.detectors.performance import stream_mode
 from zing.models import KnowledgeUsage, TargetConfig
 from zing.perf.trend import attach_trends
 from zing.runner import run_audit
+from zing.scoring import weights_for
 from zing.web import jobs
 from zing.web.caching import (
     GZIP_MINIMUM_SIZE,
@@ -1010,8 +1012,17 @@ def create_app() -> FastAPI:
         """
         bl = body.get("baseline") or {}
         has_baseline = bool(bl.get("base_url") and bl.get("model"))
+        surface = validate_surface(body.get("surface"))
         suite = validate_suite(str(body.get("suite") or "standard"))
         dimensions = validate_dimensions(suite, body.get("dimensions"))
+        if surface != "chat":
+            # a custom suite on another surface picks among that surface's dimensions
+            own = {d.value for d in weights_for(surface)}
+            other = [d for d in dimensions if d not in own]
+            if other:
+                raise ConfigError(
+                    f"Dimensions not audited on the {surface} surface: {', '.join(other)}"
+                )
         target = build_target(
             kind="target",
             name=body.get("name") or "target",
@@ -1035,18 +1046,34 @@ def create_app() -> FastAPI:
         options = AuditOptions(
             suite=suite,
             dimensions=dimensions,
-            # probe request mode (standard/deep; the full suite measures both)
-            performance_streaming=body.get("performance_streaming") is not False,
+            # probe request mode (standard/deep; the full suite measures both);
+            # a chat setting: the other surfaces' requests never stream
+            performance_streaming=surface != "chat" or body.get("performance_streaming") is not False,
+            surface=surface,
+            # embedding: the claimed vector length (0 = from the knowledge base)
+            embedding_dimensions=(
+                max(0, _coerce_int(body.get("embedding_dimensions"))) if surface == "embedding" else 0
+            ),
         )
 
         async def run(emit: jobs.Emit) -> dict[str, Any]:
-            report = await run_audit(
-                target,
-                options,
-                baseline=baseline,
-                mode="compare" if baseline is not None else "check",
-                on_event=emit,
-            )
+            if surface != "chat":
+                # The Tools' run (the surface's previous saved run as the drift
+                # reference), unsaved: the job saves it like a chat audit.
+                from zing.embed_audit import _run_surface
+
+                report, _ = await _run_surface(
+                    target, options, kb_dirs=None, command=None, save=False,
+                    baseline=baseline, on_event=emit,
+                )
+            else:
+                report = await run_audit(
+                    target,
+                    options,
+                    baseline=baseline,
+                    mode="compare" if baseline is not None else "check",
+                    on_event=emit,
+                )
             return json.loads(report.model_dump_json())
 
         # What the history page lists for the job: no key, nothing secret.
@@ -1055,11 +1082,13 @@ def create_app() -> FastAPI:
             "model": target.model,
             "claimed_model": target.claimed_model or target.model,
             "suite": suite,
+            "surface": surface,
             "dimensions": list(dimensions or []),
             "baseline_url": baseline.base_url if baseline is not None else None,
-            "api": detect_api(target),
+            # protocol and probe request mode are chat settings
+            "api": detect_api(target) if surface == "chat" else None,
             "api_auto": target.api == "auto",
-            "stream_mode": stream_mode(options),
+            "stream_mode": stream_mode(options) if surface == "chat" else None,
         }
         urls = [target.base_url, baseline.base_url if baseline is not None else None]
         return jobs.manager.submit(summary, urls, run)

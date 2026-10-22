@@ -1,7 +1,7 @@
 /* zing web UI v2 — guided relay configuration (audit, baseline, embedding, rerank).
  *
  * Plain browser global, no modules. Exposes:
- *   window.ZingRelayConfig.bind(opts) -> { set(values), refresh() }
+ *   window.ZingRelayConfig.bind(opts) -> { set(values), refresh(), setKind(kind) }
  *
  * The flow, on the page's existing inputs (they stay the canonical value
  * holders, so form-submit code keeps reading input.value):
@@ -89,7 +89,7 @@
   }
   // Claimed-model groups: per provider, its models of `kind` (chat by default).
   function claimedGroups(providers, kind) {
-    var want = kind === "embedding" ? "embedding" : "chat";
+    var want = kind === "embedding" || kind === "rerank" ? kind : "chat";
     var out = [];
     (providers || []).forEach(function (p) {
       var ms = (p.models || []).filter(function (m) { return m && m.id && (m.kind || "chat") === want; });
@@ -587,6 +587,19 @@
         });
       },
       refresh: function () { return listModels(true); },
+      // Switch the claimed-model list to another kind (the audit page's endpoint type).
+      setKind: function (k) {
+        k = k || "chat";
+        if (k === kind) return;
+        kind = k;
+        if (!c) return;
+        // a claimed model of the other kind does not carry over
+        claimed.value = "";
+        c.chosen = false;
+        c.setManual(false);
+        paintClaimed();  // back to manual entry when this kind has no models
+        c.paint();
+      },
     };
   }
 
