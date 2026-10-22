@@ -54,15 +54,16 @@
   fieldset.grp { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   fieldset.grp > legend { padding: 0; }
   .seg.radio { display: grid; grid-template-columns: repeat(3, minmax(min-content, 1fr)); }
+  .seg.radio > span { position: relative; display: grid; }
   .seg.radio label {
-    position: relative; text-align: center; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
+    text-align: center; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
     color: var(--ink-muted); background: var(--surface); border: 1.5px solid var(--line); border-radius: 11px;
     padding: 10px 8px; transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
-  .seg.radio label:hover { color: var(--ink); }
-  .seg.radio input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-  .seg.radio label:has(input:checked) { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
-  .seg.radio label:has(input:focus-visible) { outline: 2px solid var(--primary); outline-offset: 2px; }
+  /* the radio itself covers its option, so it carries the focus ring */
+  .seg.radio input { appearance: none; position: absolute; inset: 0; z-index: 1; margin: 0; border-radius: 11px; background: transparent; cursor: pointer; }
+  .seg.radio input:hover + label { color: var(--ink); }
+  .seg.radio input:checked + label { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
   .cmp { margin: 4px 0 16px; }
   .cmp .disclosure { justify-content: flex-start; }
   .cmp .disclosure > .pico { flex: none; }
@@ -228,7 +229,7 @@
           <fieldset class="grp">
             <legend class="lab"><span data-en="Endpoint type">接口类型</span> <span class="key">surface</span></legend>
             <div class="seg radio" id="surface">
-              <label><input type="radio" name="surface" value="chat" checked><span data-en="Chat">对话</span></label><label><input type="radio" name="surface" value="embedding"><span data-en="Embeddings">嵌入</span></label><label><input type="radio" name="surface" value="rerank"><span data-en="Reranking">重排</span></label>
+              <span><input type="radio" name="surface" id="sf-chat" value="chat" checked><label for="sf-chat" data-en="Chat">对话</label></span><span><input type="radio" name="surface" id="sf-embedding" value="embedding"><label for="sf-embedding" data-en="Embeddings">嵌入</label></span><span><input type="radio" name="surface" id="sf-rerank" value="rerank"><label for="sf-rerank" data-en="Reranking">重排</label></span>
             </div>
           </fieldset>
           <div class="grp">
