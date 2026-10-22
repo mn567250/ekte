@@ -244,7 +244,7 @@
   $$("[data-icon]").forEach(function (el) { el.innerHTML = ico(el.getAttribute("data-icon")); });
 
   // ---------- tabs (v2/tabs.js; #rerank links the second) ----------
-  window.ZingTabs.init($(".tabs[role=tablist]"));
+  var tabs = window.ZingTabs.init($(".tabs[role=tablist]"));
 
   // ---------- segmented controls ----------
   $$("[data-seg] button").forEach(function (b) {
@@ -284,6 +284,7 @@
     "embed.model_field": ["model_returned"],
     "rerank.connectivity": ["results", "status_code"],
     "rerank.known_answer": ["top_index", "expected", "ranking"],
+    "rerank.identity": ["model_returned"],
   };
   var scoreC = function (v) { return v == null ? "" : v >= 85 ? "good" : v >= 70 ? "warn" : "bad"; };
   function statusLabel(s) {
@@ -341,8 +342,8 @@
       savedHTML(v) +
       "</section>";
   }
-  // A run saved to history (embedding audits are): link to it, and offer to
-  // schedule it as a monitor with the same configuration.
+  // A run saved to history (embedding and rerank audits are): link to it, and
+  // offer to schedule it as a monitor with the same configuration.
   function savedHTML(v) {
     if (v.report_id == null) return "";
     var id = esc(String(v.report_id));
@@ -476,21 +477,32 @@
     });
   });
 
-  // ---------- ?rerun=<id>: prefill the embedding form from a saved run ----------
+  // ---------- ?rerun=<id>: prefill the run's form from a saved run ----------
+  // History links a rerank run with #rerank, so its tab is already selected;
+  // a link without the hash is switched to the run's tab here.
+  // all values first, then the input events (relaycfg.js reacts to them)
+  function prefill(fields) {
+    var sels = Object.keys(fields);
+    sels.forEach(function (s) { $(s).value = fields[s]; });
+    sels.forEach(function (s) { $(s).dispatchEvent(new Event("input", { bubbles: true })); });
+  }
   var rerunId = new URLSearchParams(location.search).get("rerun");
   if (rerunId) {
     fetch("/api/history/" + encodeURIComponent(rerunId))
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (rep) {
         var t = (rep && rep.target) || {};
-        if (!rep || rep.surface !== "embedding") return;
-        $("#e-url").value = t.base_url || "";
-        $("#e-model").value = t.model || "";
-        $("#e-claimed").value = t.claimed_model && t.claimed_model !== t.model ? t.claimed_model : "";
-        $("#e-provider").value = t.declared_provider || "";
-        ["#e-url", "#e-model", "#e-claimed"].forEach(function (s) {
-          $(s).dispatchEvent(new Event("input", { bubbles: true }));
-        });
+        if (!rep) return;
+        if (rep.surface === "embedding") {
+          $("#e-provider").value = t.declared_provider || "";
+          prefill({
+            "#e-url": t.base_url || "", "#e-model": t.model || "",
+            "#e-claimed": t.claimed_model && t.claimed_model !== t.model ? t.claimed_model : "",
+          });
+        } else if (rep.surface === "rerank") {
+          if (tabs && tabs.current() !== "rerank") tabs.select("rerank", false);
+          prefill({ "#r-url": t.base_url || "", "#r-model": t.model || "" });
+        }
       })
       .catch(function () {});
   }

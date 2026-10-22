@@ -156,8 +156,9 @@
   // (zing/scoring.py SURFACE_WEIGHTS); a missing surface is chat.
   var SURFACE_DIMS = {
     embedding: ["connectivity", "model_identity", "capability", "reliability", "performance"],
+    rerank: ["connectivity", "model_identity", "capability", "reliability", "performance"],
   };
-  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"] };
+  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
   function surfaceOf(r) {
     return (r && r.surface) || "chat";
   }
@@ -203,14 +204,20 @@
     return body ? '<div class="zr-extra" data-extra="' + esc(d.dimension) + '">' + body + "</div>" : "";
   }
 
-  // What a dimension asks on the embedding surface (its name stays the same).
+  // What a dimension asks on a non-chat surface (its name stays the same).
   var DIMDESC_EMBED = {
     model_identity: ["向量是否属于声称的模型？", "Do the vectors come from the claimed model?"],
     capability: ["不同输入是否得到不同向量？", "Do different inputs give different vectors?"],
     reliability: ["同一输入是否得到同一向量？", "Does the same input give the same vector?"],
   };
+  var DIMDESC_RERANK = {
+    model_identity: ["排序是否来自声称的模型？", "Do the rankings come from the claimed model?"],
+    capability: ["显而易见的答案是否排在首位？", "Does the obvious answer rank first?"],
+    reliability: ["同一请求是否得到同一排序？", "Does the same request give the same ranking?"],
+  };
+  var DIMDESC = { embedding: DIMDESC_EMBED, rerank: DIMDESC_RERANK };
   function dimName(k, surface) {
-    var alt = surface === "embedding" && DIMDESC_EMBED[k];
+    var alt = DIMDESC[surface] && DIMDESC[surface][k];
     var n = dimNameOf(k);
     return alt && n ? [n[0], T(alt[0], alt[1])] : n;
   }

@@ -158,6 +158,21 @@
   "embed.distinct_b": "Quarterly revenue grew on strong cloud-infrastructure demand.",
   "embed.drift_input": "A lighthouse keeper climbs the spiral stairs at dusk to light the lamp.",
   "embed.perf_input": "Request {{nonce}}. A short note about {{topic}}.",
+  "rerank.web.query": "What is the capital of France?",
+  "rerank.web.documents": [
+   "Bananas are a good source of potassium.",
+   "The Great Wall of China is very long.",
+   "Paris is the capital of France.",
+   "Photosynthesis happens in plants."
+  ],
+  "rerank.drift.query": "How do lighthouses warn ships at night?",
+  "rerank.drift.documents": [
+   "A lighthouse shines a rotating beam whose flash pattern tells ships which light they see.",
+   "Foghorns and radio beacons supplement the light when visibility is poor.",
+   "Lighthouse keepers once trimmed the wicks and wound the clockwork every few hours.",
+   "Many coastal towns turned their old lighthouses into museums.",
+   "A sourdough starter needs regular feeding with flour and water."
+  ],
   "image.prompt_a": "A photorealistic red apple on a white table, studio lighting.",
   "image.prompt_b": "A blue sailboat on a calm ocean at sunset, watercolor style.",
   "audio.short": "Hello.",
