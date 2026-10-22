@@ -289,6 +289,62 @@ async def test_rerank_drift_reference_is_never_an_embedding_run(patch_runner, sp
     assert spy_previous[-1] is None
 
 
+# --------------------------------------------------------------------------- #
+# The audit page's background jobs (POST /api/jobs with a surface)
+# --------------------------------------------------------------------------- #
+async def _job(ac, body: dict) -> dict:
+    from zing.web import jobs
+
+    created = await ac.post("/api/jobs", json=body)
+    assert created.status_code == 200, created.text
+    info = created.json()
+    job = jobs.manager.get(info["id"])
+    assert job is not None and job.task is not None
+    await job.task
+    assert job.status == "done", job.error
+    return {**info, "report_id": job.report_id, "events": job.events}
+
+
+async def test_jobs_run_the_embedding_and_rerank_surfaces(patch_runner, spy_previous):
+    import httpx
+
+    from zing.web import history
+    from zing.web.server import create_app
+
+    patch_runner(EmbedMock(dim=3072, served_model=MODEL))
+    transport = httpx.ASGITransport(app=create_app())
+    async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as ac:
+        for surface, url, model, extra in (
+            ("embedding", "https://relay.job-embed.test/v1", MODEL, {"embedding_dimensions": 3072}),
+            ("rerank", "https://relay.job-rerank.test/v1", RR_MODEL, {}),
+        ):
+            body = {"base_url": url, "api_key": SECRET, "model": model, "suite": "smoke",
+                    "surface": surface, "performance_streaming": True, **extra}
+            first = await _job(ac, body)
+            assert first["surface"] == surface and first["stream_mode"] is None
+            saved = history.get(first["report_id"])
+            assert saved["surface"] == surface and saved["stream_mode"] == "non_stream"
+            assert any(e.get("type") == "detector_done" for e in first["events"])
+            # The second job gets the first saved run of the surface as its drift reference.
+            second = await _job(ac, body)
+            assert second["report_id"] != first["report_id"]
+            assert spy_previous[-2] is None
+            assert spy_previous[-1]["generated_at"] == saved["generated_at"]
+            assert spy_previous[-1]["surface"] == surface
+        # The claimed vector length reaches the dimension check.
+        embed = await _job(ac, {"base_url": "https://relay.job-embed.test/v1", "api_key": SECRET,
+                                "model": MODEL, "suite": "smoke", "surface": "embedding",
+                                "embedding_dimensions": 1536})
+        rep = history.get(embed["report_id"])
+        found = [f for d in rep["detectors"] for f in d["findings"] if f["id"] == "embed.dimension"]
+        assert found and found[0]["evidence"]["claimed"] == 1536
+        bad = await ac.post("/api/jobs", json={"base_url": BASE, "model": MODEL, "surface": "audio"})
+        assert bad.status_code == 400
+        bad = await ac.post("/api/jobs", json={"base_url": BASE, "model": MODEL, "surface": "rerank",
+                                               "suite": "custom", "dimensions": ["streaming"]})
+        assert bad.status_code == 400 and "streaming" in bad.json()["error"]
+
+
 def _finding(verdict: dict, finding_id: str) -> dict:
     for f in verdict["findings"]:
         if f["id"] == finding_id:

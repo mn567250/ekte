@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -194,15 +195,26 @@ async def _run_surface(
     kb_dirs: list[Path] | None,
     command: str | None,
     save: bool,
+    baseline: TargetConfig | None = None,
+    on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> tuple[AuditReport, int | None]:
-    """One check-mode run of ``options.surface``, with the previous saved run of
-    that surface as the drift reference (read even when not saving: an unsaved
-    check still compares), saved to history when ``save``."""
+    """One run of ``options.surface`` (check mode, or compare with a
+    ``baseline``), with the previous saved run of that surface as the drift
+    reference (read even when not saving: an unsaved check still compares),
+    saved to history when ``save``. The audit page's background jobs call it
+    with ``save=False`` (the job saves) and their ``on_event`` progress sink."""
     from zing.runner import run_audit
 
     previous = await asyncio.to_thread(_previous, target, options.surface)
     report = await run_audit(
-        target, options, mode="check", command=command, kb_dirs=kb_dirs, previous_report=previous
+        target,
+        options,
+        baseline=baseline,
+        mode="compare" if baseline is not None else "check",
+        command=command,
+        kb_dirs=kb_dirs,
+        previous_report=previous,
+        on_event=on_event,
     )
     report_id = await asyncio.to_thread(_save, report) if save else None
     return report, report_id
