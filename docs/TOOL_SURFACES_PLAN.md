@@ -115,3 +115,22 @@ Rerank is the third surface, built the same way; nothing above changes.
 
 All rerank batches are done: surface foundation, detectors, probe, entry
 points, Tools / History / report UI, Monitors / Analytics UI and docs.
+
+## v2: one audit page for every surface
+
+The v2 Tools page is retired: the audit page's endpoint-type selector (Chat /
+Embeddings / Reranking) starts every audit, and `/api/jobs` runs the
+embedding and rerank surfaces as background jobs like a chat audit.
+
+- **Contract.** `/v2/?surface=embedding|rerank` preselects the surface;
+  `?rerun=<history id>` prefills a non-chat run from History.
+- **Old links.** `/v2/tools` serves a small forwarding page (a title, `lang`,
+  a meta refresh and `<noscript>` links): `#rerank` goes to
+  `/v2/?surface=rerank`, anything else to `?surface=embedding`, and a
+  `?rerun=` is passed on. With the new UI chosen, the classic `/tools`
+  redirects to `/v2/?surface=embedding`; the classic Tools page itself stays.
+- **Nav and History.** The v2 nav has no Tools entry; History's Re-run of an
+  embedding or rerank run opens `/v2/?surface=<surface>&rerun=<id>`.
+- **Tests and docs.** The tools page's accessibility checks and snapshots go
+  with it; README, DEVELOPER_GUIDE and METHODOLOGY in all seven languages say
+  that embedding and rerank audits start on the audit page.

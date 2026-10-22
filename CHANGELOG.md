@@ -102,6 +102,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **No Tools page in the web UI v2.** Embedding and rerank audits start on the
+  audit page through its endpoint-type selector (`/v2/?surface=embedding` or
+  `?surface=rerank`), so the v2 nav has no Tools entry. `/v2/tools` forwards
+  old links and bookmarks there (`#rerank` opens the rerank surface, `?rerun=`
+  is passed on), History's **Re-run audit** for an embedding or rerank run
+  opens `/v2/?surface=<surface>&rerun=<id>`, and with the new UI chosen the
+  classic `/tools` redirects to `/v2/?surface=embedding`. The classic Tools
+  page is unchanged.
 - **Accessibility report: a clearer Coverage card (web UI v2).** The overall
   result is a donut over all 50 test steps, with the pass rate of the
   applicable steps in the middle and a legend that lists Not applicable (of
