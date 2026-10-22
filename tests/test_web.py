@@ -306,7 +306,7 @@ def test_api_key_fields_are_masked_and_paired_with_their_url(client):
 
 # ----- v2 UI, served side by side with the classic one (A/B) ------------- #
 
-_V2_PAGES = {"/": "audit", "/history": "history", "/watches": "monitors", "/tools": "tools"}
+_V2_PAGES = {"/": "audit", "/history": "history", "/watches": "monitors"}
 
 
 def test_v2_pages_share_the_design_system(client):
@@ -351,6 +351,9 @@ def test_ui_switch_is_remembered_in_a_cookie(client):
         r = client.get(classic, follow_redirects=False)
         assert r.status_code == 307, classic
         assert r.headers["location"] == ("/v2/" if classic == "/" else "/v2" + classic)
+    # the classic Tools page has no v2 page of its own: the audit page's surface selector
+    r = client.get("/tools", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == "/v2/?surface=embedding"
     # ?ui=v1 on a v2 page: back to classic and forget v2
     r = client.get("/v2/watches?ui=v1", follow_redirects=False)
     assert r.status_code == 307 and r.headers["location"] == "/watches"
@@ -360,8 +363,32 @@ def test_ui_switch_is_remembered_in_a_cookie(client):
 
 
 def test_classic_pages_link_to_the_v2_ui(client):
-    for classic in _V2_PAGES:
+    for classic in (*_V2_PAGES, "/tools"):
         assert 'class="try-v2" href="?ui=v2"' in client.get(classic).text, classic
+
+
+def test_v2_tools_forwards_to_the_audit_page_surface(client):
+    # /v2/tools was retired for the audit page's endpoint-type selector. The
+    # old page picked its rerank tab by the fragment (#rerank), which never
+    # reaches the server, so a tiny page forwards in the browser.
+    r = client.get("/v2/tools?rerun=3", follow_redirects=False)
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
+    assert r.headers["cache-control"] == "no-store"
+    html = r.text
+    assert '<html lang="en">' in html and "<title>" in html and "<h1>" in html
+    assert 'location.hash === "#rerank" ? "rerank" : "embedding"' in html
+    assert '"/v2/?surface="' in html and 'get("rerun")' in html and '"&rerun=" + encodeURIComponent(rerun)' in html
+    assert "location.replace(to)" in html
+    # without JavaScript: a meta refresh to the embedding surface and links to both
+    assert '<meta http-equiv="refresh" content="0; url=/v2/?surface=embedding">' in html
+    noscript = html.split("<noscript>", 1)[1].split("</noscript>", 1)[0]
+    assert 'href="/v2/?surface=embedding"' in noscript and 'href="/v2/?surface=rerank"' in noscript
+    assert 'data-page="tools"' not in html
+    # ?ui=v1 still goes to the classic Tools page, which is unchanged
+    r = client.get("/v2/tools?ui=v1", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == "/tools"
+    assert 'class="try-v2" href="?ui=v2"' in client.get("/tools").text
+    assert "/v2/tools" not in client.get("/v2/static/nav.js").text
 
 
 def test_console_is_classic_only(client):
@@ -381,9 +408,6 @@ def test_v2_audit_sends_the_declared_provider(client):
     assert 'declared_provider: $("#i-prov").value.trim()' in html
     assert 'claimed: "#i-claimed", provider: "#i-prov"' in html
     assert "/v2/static/relaycfg.js" in html and "/modelpicker.js" not in html
-    tools = client.get("/v2/tools").text
-    assert '<input type="hidden" id="e-provider">' in tools and 'kind: "embedding"' in tools
-    assert "/v2/static/relaycfg.js" in tools and "/modelpicker.js" not in tools
 
 
 def test_v2_accessibility_report_page(client):
@@ -461,7 +485,7 @@ def test_v2_header_links_the_accessibility_report(client):
     assert 'data-en-aria-label="Accessibility"' in js and 'ico("a11y"' in js
     assert "footer" not in js.split("*/", 1)[1]
     assert "a11y:" in client.get("/icons.js").text
-    for path in ("/v2/", "/v2/history", "/v2/watches", "/v2/tools", "/v2/kb", "/v2/analytics", "/v2/accessibility"):
+    for path in ("/v2/", "/v2/history", "/v2/watches", "/v2/kb", "/v2/analytics", "/v2/accessibility"):
         assert '<script src="/v2/static/nav.js"></script>' in _unversioned(client.get(path).text), path
 
 

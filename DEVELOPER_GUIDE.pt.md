@@ -335,7 +335,11 @@ descodificação (cabeçalhos de imagem, WAV) usa apenas a biblioteca padrão.
 
 - **Páginas.** A interface clássica (`/`, `/console`, `/history`, `/watches`,
   `/tools`) e a nova interface (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/tools`, `/v2/kb`) são ficheiros HTML estáticos. `?ui=v2` / `?ui=v1` muda
+  `/v2/kb`) são ficheiros HTML estáticos. A nova interface não tem página
+  Ferramentas: as auditorias de embeddings e rerank começam na página de
+  auditoria com o seletor de tipo de endpoint (`/v2/?surface=embedding|rerank`),
+  e `/v2/tools` serve uma pequena página que redireciona para lá os links antigos
+  (`#rerank` escolhe rerank, `?rerun=` é passado adiante). `?ui=v2` / `?ui=v1` muda
   de uma para a outra e um cookie memoriza a escolha, pelo que um URL clássico
   redireciona para o seu equivalente novo depois de escolhida a nova interface.
 - **API.** `/api/audit/stream` executa uma auditoria e transmite os seus eventos
@@ -426,7 +430,7 @@ servidos a partir da raiz: `lang.js` (mudança de idioma), `locales.js` (dados d
 tradução), `i18n.js` (tradução das constatações), `icons.js`, `modelpicker.js`
 (**Obter modelos**), `secretfield.js` e `perf.js` (gráficos de desempenho).
 
-As páginas v2 **Auditoria** e **Ferramentas** configuram relays com
+A página v2 **Auditoria** configura relays com
 `v2/relaycfg.js`: escolha de relay/provedor → URL base → os modelos do relay
 (`/api/models`, ao mudar, em cache por URL/chave/protocolo) → modelo declarado da
 base de conhecimento (`/api/kb/resolve` pré-seleciona-o) → provedor derivado,
@@ -463,7 +467,7 @@ outros gráficos, só quando chegam dados novos e nunca com movimento reduzido o
 com a animação desligada no cabeçalho.
 
 O cabeçalho da página e o painel de filtros ficam acima de cinco separadores
-internos (`v2/tabs.js`, como em Ferramentas e Conhecimento): cada
+internos (`v2/tabs.js`, como em Conhecimento): cada
 entrada de `PANELS` indica o seu `tab`, e só os painéis do separador visível
 carregam; uma alteração de filtro recarrega esse separador e marca os outros
 como desatualizados (`activate()` carrega-os quando mostrados). Aqui `tabs.js`

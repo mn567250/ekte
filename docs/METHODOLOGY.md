@@ -901,7 +901,8 @@ detectors; the suite still sets the depth. An embedding audit sends only
 
 **Vector drift.** Every run stores the first 64 components of the unit-length
 vector of one fixed input. The next run of the same target and claimed model
-(`zing embed`, the Tools page or an embedding monitor) compares its vector
+(`zing embed`, an embedding audit started on the web UI's Audit page through
+the endpoint-type selector, or an embedding monitor) compares its vector
 with that sample: cosine **≥ 0.995** is stable (PASS), **0.95 to 0.995** has
 shifted (WARN, MEDIUM: a re-deployment or quantisation), below **0.95** or a
 different length means the model was swapped (FAIL, HIGH). The first run has

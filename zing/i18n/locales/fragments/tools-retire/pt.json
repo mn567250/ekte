@@ -1,0 +1,6 @@
+{
+ "strings": {
+  "Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.": "Endpoints sem modelos próprios, p. ex. relays guardados na página Auditoria. São oferecidos lá na lista de relays; um desativado não.",
+  "No relays yet. Add one here, or save one from the relay list on the Audit page.": "Ainda não há relays. Adicione um aqui ou guarde um a partir da lista de relays na página Auditoria."
+ }
+}

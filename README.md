@@ -231,8 +231,8 @@ In the new UI the form guides you through the configuration:
 
 A relay that is not in the list yet can be kept with **Save to knowledge base**
 under a name you give it; next time it is one pick away. The trusted baseline
-(**Compare against a trusted baseline**) and the **Tools** page are configured
-the same way. The classic UI keeps the plain fields with **Fetch models**.
+(**Compare against a trusted baseline**) and the embedding and rerank audits are
+configured the same way. The classic UI keeps the plain fields with **Fetch models**.
 
 Then **Start audit** and watch the checks run **live**: every check shows its
 score and how long it took, and a check with findings expands to show the
@@ -255,7 +255,7 @@ choice is remembered per browser.
 |---|---|---|---|
 | **Audit** | `/` | `/v2/` | Audit a relay (optionally against a baseline) and read the report |
 | **Console** | `/console` | — | The same audit as a compact, log-style console |
-| **Tools** | `/tools` | `/v2/tools` | Embedding and rerank audits |
+| **Tools** | `/tools` | — | Embedding and rerank audits; in the new UI they start on the **Audit** page through the endpoint-type selector (`/v2/tools` forwards there) |
 | **History** | `/history` | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
 | **Analytics** | — | `/v2/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
 | **Monitors** | `/watches` | `/v2/watches` | Scheduled re-audits with webhook alerts |
@@ -606,8 +606,9 @@ History, Analytics and Monitors as chat audits; only the detectors differ.
 History and Analytics filter by endpoint type, and Analytics shows only the
 metrics that apply.
 
-To monitor an embeddings or rerank endpoint, run it on the **Tools** page and
-choose **Monitor this**, or **Schedule as monitor** on its History row. The
+To monitor an embeddings or rerank endpoint, run it on the **Audit** page (pick
+**Embeddings** or **Reranking** in the endpoint-type selector; in the classic UI
+on the **Tools** page) and choose **Monitor this**, or **Schedule as monitor** on its History row. The
 monitor re-runs the audit on its schedule, with the same knowledge-base pin,
 alert threshold and regression alerts as a chat monitor, and checks **drift**
 against its previous run (the vectors of an embedding probe, the ranking and
@@ -652,8 +653,9 @@ serves a substitute), determinism (same input → cosine ≈ 1), distinctness
 profiles: OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large`
 (3072), `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Both are also on the web UI's **Tools** page (**Embedding audit**, **Rerank
-audit**). The rerank audit always uses the built-in probes, so every run stays
+Both are also in the web UI: in the new UI they start on the **Audit** page
+through the endpoint-type selector (**Embeddings**, **Reranking**), in the
+classic UI on the **Tools** page (**Embedding audit**, **Rerank audit**). The rerank audit always uses the built-in probes, so every run stays
 comparable for drift and monitoring.
 
 ### Image and audio (TTS) generation
@@ -732,7 +734,7 @@ OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM and Moonshot
      provider YAML the same way; **Add a relay** takes a name and a base URL.
      **Which profile does a model id use?** shows how an id resolves; your
      entries can be exported as YAML;
-   - on the web UI's **Audit** and **Tools** pages: **Save to knowledge base**
+   - on the web UI's **Audit** page (classic UI: also **Tools**): **Save to knowledge base**
      keeps a relay's name and base URL (a provider entry without models), listed
      under **Knowledge → Relays**;
    - on the CLI: `zing kb-prompt <model>`, `zing kb-import <file>` (add `--check`

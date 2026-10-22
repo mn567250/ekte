@@ -941,7 +941,9 @@ sustituido en chat.
 
 **Deriva de vectores.** Cada ejecución guarda los primeros 64 componentes del
 vector normalizado de una entrada fija. La siguiente ejecución del mismo destino y
-modelo declarado (`zing embed`, la página Herramientas o un monitor de embeddings)
+modelo declarado (`zing embed`, una auditoría de embeddings iniciada en la página
+Auditoría de la interfaz web con el selector de tipo de endpoint, o un monitor de
+embeddings)
 compara su vector con esa muestra: un coseno **≥ 0,995** es estable (PASS), de
 **0,95 a 0,995** se ha desplazado (WARN, MEDIA: un nuevo despliegue o una
 cuantización), por debajo de **0,95** o con otra longitud el modelo se ha

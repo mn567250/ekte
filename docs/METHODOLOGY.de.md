@@ -946,7 +946,9 @@ Bewertung 0–100 und Note A–F, mit Gewichten je Surface. Eine abweichende Dim
 
 **Vektordrift.** Jeder Lauf speichert die ersten 64 Komponenten des auf Länge 1
 normierten Vektors einer festen Eingabe. Der nächste Lauf desselben Ziels und
-angegebenen Modells (`zing embed`, die Seite Werkzeuge oder ein Embedding-Monitor)
+angegebenen Modells (`zing embed`, eine Embedding-Prüfung, die auf der Seite
+Prüfung der Weboberfläche über die Auswahl des Endpunkttyps startet, oder ein
+Embedding-Monitor)
 vergleicht seinen Vektor mit dieser Stichprobe: Kosinus **≥ 0,995** ist stabil
 (PASS), **0,95 bis 0,995** hat sich verschoben (WARN, MITTEL: eine neue
 Bereitstellung oder Quantisierung), unter **0,95** oder eine andere Länge bedeutet,

@@ -240,8 +240,8 @@ Dans la nouvelle interface, le formulaire guide la configuration :
 
 Un relais absent de la liste peut être conservé avec **Enregistrer dans la
 base** sous le nom de votre choix ; la fois suivante, il suffit de le choisir.
-La référence de confiance (**Comparer à une référence de confiance**) et la page
-**Outils** se configurent de la même façon. L'interface classique garde les
+La référence de confiance (**Comparer à une référence de confiance**) et les
+audits d'embedding et de rerank se configurent de la même façon. L'interface classique garde les
 champs simples avec **Récupérer les modèles**.
 
 Puis **Lancer l'audit**
@@ -267,7 +267,7 @@ navigateur.
 |---|---|---|---|
 | **Audit** | `/` | `/v2/` | Auditer un relais (éventuellement face à une référence) et lire le rapport |
 | **Console** | `/console` | — | Le même audit sous forme de console compacte, façon journal |
-| **Outils** | `/tools` | `/v2/tools` | Audits d'embedding et de rerank |
+| **Outils** | `/tools` | — | Audits d'embedding et de rerank ; dans la nouvelle interface, ils démarrent sur la page **Audit** via le sélecteur de type de point d'accès (`/v2/tools` y redirige) |
 | **Historique** | `/history` | `/v2/history` | Chaque audit exécuté sur cette machine, groupé par relais + modèle annoncé, avec tendances |
 | **Analyses** | — | `/v2/analytics` | Relais et modèles comparés dans le temps : indicateurs, graphiques avec tableaux de données, classements |
 | **Surveillances** | `/watches` | `/v2/watches` | Ré-audits planifiés avec alertes webhook |
@@ -645,7 +645,9 @@ de chat ; seuls les détecteurs diffèrent. L'historique et l'analytique filtren
 type d'endpoint, et l'analytique n'affiche que les métriques qui s'appliquent.
 
 Pour surveiller un endpoint d'embeddings ou de rerank, auditez-le sur la page
-**Outils** et choisissez **Surveiller**, ou **Planifier comme surveillance** sur sa
+**Audit** (choisissez **Embeddings** ou **Reclassement** dans le sélecteur de type
+de point d'accès ; dans l'interface classique, sur la page **Outils**) et
+choisissez **Surveiller**, ou **Planifier comme surveillance** sur sa
 ligne d'historique. La surveillance relance l'audit selon son planning, avec le
 même épinglage de la base de connaissances, le même seuil d'alerte et les mêmes
 alertes de régression qu'une surveillance de chat, et vérifie la **dérive** par
@@ -694,8 +696,10 @@ inférieur à 1) et le champ `model` renvoyé. Profils intégrés : OpenAI
 `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Les deux se trouvent aussi sur la page **Outils** de l'interface web (**Audit
-d'embedding**, **Audit de rerank**). L'audit de rerank utilise toujours les sondes
+Les deux se trouvent aussi dans l'interface web : dans la nouvelle interface, ils
+démarrent sur la page **Audit** via le sélecteur de type de point d'accès
+(**Embeddings**, **Reclassement**) ; dans la classique, sur la page **Outils**
+(**Audit d'embedding**, **Audit de rerank**). L'audit de rerank utilise toujours les sondes
 intégrées, pour que chaque exécution reste comparable pour la dérive et la
 surveillance.
 
@@ -781,7 +785,7 @@ l'emportant :
      fournisseur de la même façon ; **Ajouter un relais** demande un nom et une URL
      de base. **Quel profil un identifiant de modèle utilise-t-il ?** montre comment
      un id se résout ; vos entrées s'exportent en YAML ;
-   - sur les pages **Audit** et **Outils** de l'interface web : **Enregistrer
+   - sur la page **Audit** de l'interface web (classique : aussi **Outils**) : **Enregistrer
      dans la base** conserve le nom et l'URL de base d'un relais (une entrée de
      fournisseur sans modèles), listé sous **Connaissances → Relais** ;
    - en ligne de commande : `zing kb-prompt <model>`, `zing kb-import <file>`

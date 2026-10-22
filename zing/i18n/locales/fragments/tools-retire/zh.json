@@ -1,0 +1,6 @@
+{
+ "strings": {
+  "Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.": "没有自有模型的端点，例如你在检测页面保存的中转站。它们会出现在那里的中转站列表中；停用的则不会。",
+  "No relays yet. Add one here, or save one from the relay list on the Audit page.": "还没有中转站。在下方添加，或在检测页面的中转站列表中保存。"
+ }
+}

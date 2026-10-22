@@ -26,8 +26,6 @@
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
-    - link "Werkzeuge":
-      - /url: /v2/tools
     - link "Verlauf":
       - /url: /v2/history
     - link "Analyse":

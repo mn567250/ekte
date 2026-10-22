@@ -76,6 +76,7 @@ from typing import Any
 # (CLI `serve`) or by the web tests, both of which handle a missing dependency.
 from fastapi import FastAPI, Request
 from fastapi.responses import (
+    HTMLResponse,
     JSONResponse,
     RedirectResponse,
     Response,
@@ -120,8 +121,42 @@ _UI_PAGES: dict[str, tuple[str, str]] = {
     "/": ("index.html", "/v2/"),
     "/history": ("history.html", "/v2/history"),
     "/watches": ("watches.html", "/v2/watches"),
-    "/tools": ("tools.html", "/v2/tools"),
+    # v2 has no Tools page: embedding and rerank audits start on the audit page
+    # through its endpoint-type selector.
+    "/tools": ("tools.html", "/v2/?surface=embedding"),
 }
+
+# /v2/tools was retired for the audit page's endpoint-type selector. Old links
+# and bookmarks keep working: the old page picked its rerank tab by the URL
+# fragment (#rerank), which never reaches the server, so this tiny page reads
+# location.hash and forwards to /v2/?surface=..., passing any ?rerun=<id> on.
+# Without JavaScript the meta refresh goes to the embedding surface.
+_V2_TOOLS_REDIRECT = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="0; url=/v2/?surface=embedding">
+<title>zing: embedding and rerank audits moved to the audit page</title>
+<script>
+(function () {
+  var rerun = new URLSearchParams(location.search).get("rerun");
+  var to = "/v2/?surface=" + (location.hash === "#rerank" ? "rerank" : "embedding");
+  if (rerun) to += "&rerun=" + encodeURIComponent(rerun);
+  location.replace(to);
+})();
+</script>
+</head>
+<body>
+<main>
+<h1>Embedding and rerank audits moved</h1>
+<p>They now start on the audit page, through its endpoint-type selector.</p>
+<noscript><p><a href="/v2/?surface=embedding">Embedding audit</a> ·
+<a href="/v2/?surface=rerank">Rerank audit</a></p></noscript>
+</main>
+</body>
+</html>
+"""
 
 # How often the watch scheduler wakes to look for due re-audits. The interval an
 # individual watch runs on is its own (much larger) interval_sec; this is just
@@ -720,7 +755,14 @@ def create_app() -> FastAPI:
 
     @app.get("/v2/tools")
     async def v2_tools(request: Request) -> Any:
-        return _v2_page(request, "/tools")
+        # Retired (see _V2_TOOLS_REDIRECT); ?ui=v1 still goes to the classic
+        # Tools page.
+        resp: Response
+        if request.query_params.get("ui") == "v1":
+            resp = RedirectResponse("/tools", status_code=307)
+        else:
+            resp = HTMLResponse(_V2_TOOLS_REDIRECT, headers={"Cache-Control": "no-store"})
+        return _remember_ui(resp, request.query_params.get("ui"))
 
     @app.get("/v2/kb")
     async def v2_kb(request: Request) -> Any:
