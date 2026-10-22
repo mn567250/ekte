@@ -1132,7 +1132,14 @@ def embed_command(
         raise typer.Exit(code=2) from exc
     if dry_run:
         _emit_dry_run(
-            _build_dry_run_plan(target, AuditOptions(suite=suite, surface="embedding"), None, None, "check"),
+            _build_dry_run_plan(
+                target,
+                AuditOptions(
+                    suite=suite, surface="embedding",
+                    embedding_dimensions=max(0, claimed_dimensions or 0),
+                ),
+                None, None, "check",
+            ),
             machine=as_json,
         )
 

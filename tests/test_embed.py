@@ -268,12 +268,16 @@ async def test_rerank_runs_the_rerank_surface_and_saves_it(patch_runner, spy_pre
     verdict = tool_verdict(first, rid)
     assert {"risk_level", "score", "findings", "target", "report_id", "rating", "headline"} <= set(verdict)
     assert verdict["surface"] == "rerank" and SECRET not in json.dumps(verdict)
-    # The second run gets the first as its drift reference; an unsaved run none.
+    # The second run gets the first as its drift reference; an unsaved run
+    # still compares with the newest saved one, but is not saved itself.
     _, rid2 = await run_rerank_audit(target, suite="smoke")
     assert rid2 != rid
     assert spy_previous[0] is None and spy_previous[1]["surface"] == "rerank"
     _, rid3 = await run_rerank_audit(target, suite="smoke", save=False)
-    assert rid3 is None and spy_previous[2] is None
+    assert rid3 is None and spy_previous[2]["generated_at"] == history.get(rid2)["generated_at"]
+    assert history.latest_for(target.base_url, RR_MODEL, surface="rerank")["generated_at"] == (
+        history.get(rid2)["generated_at"]
+    )
 
 
 async def test_rerank_drift_reference_is_never_an_embedding_run(patch_runner, spy_previous):

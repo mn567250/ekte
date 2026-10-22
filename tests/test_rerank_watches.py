@@ -128,3 +128,13 @@ def test_monitor_this_from_a_rerank_run(tmp_path, monkeypatch, client):
     assert w["embedding_dimensions"] == 0 and w["source_report_id"] == rid
     assert w["performance_streaming"] is True and w["stream_mode"] is None
     assert w["enabled"] is False and w["interval_sec"] is None
+
+
+def test_monitor_this_refuses_a_run_of_an_unknown_surface(tmp_path, monkeypatch, client):
+    from zing.web import history
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    rid = history.save(_report(surface="hologram"))
+    r = client.post(f"/api/watches/from-history/{rid}", json={})
+    assert r.status_code == 400 and "surface" in r.json()["error"]
+    assert client.get("/api/watches").json() == []

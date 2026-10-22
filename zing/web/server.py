@@ -1467,7 +1467,10 @@ def create_app() -> FastAPI:
         except ConfigError as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
         name = tgt.get("name")
-        surface = str(report.get("surface") or "chat")
+        try:
+            surface = validate_surface(report.get("surface"))
+        except ConfigError as exc:  # a run of a surface this version cannot audit
+            return JSONResponse({"error": str(exc)}, status_code=400)
         embedding = surface == "embedding"
         # The Tools page passes the claimed vector length it audited with (the
         # report does not keep it); 0 takes the knowledge base's.

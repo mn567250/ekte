@@ -196,10 +196,11 @@ async def _run_surface(
     save: bool,
 ) -> tuple[AuditReport, int | None]:
     """One check-mode run of ``options.surface``, with the previous saved run of
-    that surface as the drift reference, saved to history when ``save``."""
+    that surface as the drift reference (read even when not saving: an unsaved
+    check still compares), saved to history when ``save``."""
     from zing.runner import run_audit
 
-    previous = await asyncio.to_thread(_previous, target, options.surface) if save else None
+    previous = await asyncio.to_thread(_previous, target, options.surface)
     report = await run_audit(
         target, options, mode="check", command=command, kb_dirs=kb_dirs, previous_report=previous
     )
