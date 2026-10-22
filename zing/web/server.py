@@ -199,6 +199,21 @@ def _v2_page(request: Request, path: str) -> Response:
     return _remember_ui(resp, ui)
 
 
+def check_surface_dimensions(surface: str, dimensions: list[str]) -> None:
+    """Refuse a custom suite's dimensions that ``surface`` does not audit.
+
+    The chat dimensions mean nothing to an embedding or rerank audit; /api/jobs
+    and /api/watches share this check so both answer 400 the same way.
+    Raises ConfigError.
+    """
+    if surface == "chat":
+        return
+    own = {d.value for d in weights_for(surface)}
+    other = [d for d in dimensions if d not in own]
+    if other:
+        raise ConfigError(f"Dimensions not audited on the {surface} surface: {', '.join(other)}")
+
+
 def _coerce_int(value: Any) -> int:
     """Best-effort int from JSON input (str/float/None all tolerated). 0 on failure."""
     if value is None:
@@ -1057,14 +1072,8 @@ def create_app() -> FastAPI:
         surface = validate_surface(body.get("surface"))
         suite = validate_suite(str(body.get("suite") or "standard"))
         dimensions = validate_dimensions(suite, body.get("dimensions"))
-        if surface != "chat":
-            # a custom suite on another surface picks among that surface's dimensions
-            own = {d.value for d in weights_for(surface)}
-            other = [d for d in dimensions if d not in own]
-            if other:
-                raise ConfigError(
-                    f"Dimensions not audited on the {surface} surface: {', '.join(other)}"
-                )
+        # a custom suite on another surface picks among that surface's dimensions
+        check_surface_dimensions(surface, dimensions)
         target = build_target(
             kind="target",
             name=body.get("name") or "target",
@@ -1460,6 +1469,7 @@ def create_app() -> FastAPI:
             suite = validate_suite(str(body.get("suite") or "standard"))
             dimensions = validate_dimensions(suite, body.get("dimensions"))
             surface = validate_surface(body.get("surface"))
+            check_surface_dimensions(surface, dimensions)
             build_target(
                 kind="target",
                 name=body.get("name") or "watch",
@@ -1540,6 +1550,7 @@ def create_app() -> FastAPI:
         name = tgt.get("name")
         try:
             surface = validate_surface(report.get("surface"))
+            check_surface_dimensions(surface, dimensions)
         except ConfigError as exc:  # a run of a surface this version cannot audit
             return JSONResponse({"error": str(exc)}, status_code=400)
         embedding = surface == "embedding"
@@ -1629,6 +1640,14 @@ def create_app() -> FastAPI:
                     status_code=400,
                 )
             dims = raw
+        if body.get("dimensions") is not None:
+            # an edit's suite and dimensions pass the same checks as on create
+            try:
+                suite = validate_suite(str(body.get("suite") or row.get("suite") or "standard"))
+                picked = validate_dimensions(suite, body.get("dimensions"))
+                check_surface_dimensions(validate_surface(row.get("surface")), picked)
+            except ConfigError as exc:
+                return JSONResponse({"error": str(exc)}, status_code=400)
         if body.get("surface") is not None and body.get("surface") != row.get("surface"):
             # What a monitor audits is fixed; create a new one for another surface.
             return JSONResponse({"error": "a monitor's surface cannot be changed"}, status_code=400)
