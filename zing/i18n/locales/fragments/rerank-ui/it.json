@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Reranking": "Riordinamento",
+  "Do the rankings come from the claimed model?": "Le classifiche provengono dal modello dichiarato?",
+  "Does the obvious answer rank first?": "La risposta ovvia è al primo posto?",
+  "Does the same request give the same ranking?": "La stessa richiesta dà la stessa classifica?"
+ }
+}
