@@ -1,0 +1,7 @@
+{
+ "strings": {
+  "Claimed dimension": "Claimed dimension",
+  "Empty = from the knowledge base": "Empty = from the knowledge base",
+  "The vector length the claimed model returns. Empty or 0: taken from the knowledge base.": "The vector length the claimed model returns. Empty or 0: taken from the knowledge base."
+ }
+}

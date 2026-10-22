@@ -48,6 +48,14 @@
       - listitem: Informe
     - region "Configurar":
       - heading "Configurar" [level=2]
+      - group "Tipo de endpoint surface":
+        - text: Tipo de endpoint surface
+        - radio "Chat" [checked]
+        - text: Chat
+        - radio "Embeddings"
+        - text: Embeddings
+        - radio "Reordenación"
+        - text: Reordenación
       - text: Relay / proveedor Opcional
       - combobox "Relay / proveedor Opcional":
         - option "Selecciona un relay o proveedor…" [selected]

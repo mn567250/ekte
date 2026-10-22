@@ -31,6 +31,7 @@ console.log(JSON.stringify({
     .map(u => (H.matchRelay(u, kb) || {}).provider || null),
   chat: H.claimedGroups(kb, "chat").map(x => [x.provider, x.models.map(m => m.id)]),
   embedding: H.claimedGroups(kb, "embedding").map(x => [x.provider, x.models.map(m => m.id)]),
+  rerank: H.claimedGroups(kb, "rerank").map(x => [x.provider, x.models.map(m => m.id)]),
   states: [
     { ok: true, models: ["a", "b"] }, { ok: true, models: [] }, { ok: false, status_code: 401, error: "no" },
     { ok: false, status_code: 403 }, { ok: false, status_code: 500, error: "boom" }, { ok: false, error: "timeout" }, null,
@@ -51,6 +52,8 @@ def test_relaycfg_helpers():
     # claimed models by kind (a model without kind is a chat model); relays have none
     assert out["chat"] == [["openai", ["gpt-4o"]], ["deepseek", ["deepseek-chat"]], ["nourl", ["x"]]]
     assert out["embedding"] == [["openai", ["text-embedding-3-small"]]]
+    # rerank models are never offered as chat ones (this knowledge base has none)
+    assert out["rerank"] == []
     assert out["states"] == [
         {"kind": "ok", "count": 2},
         {"kind": "empty", "count": 0},

@@ -48,6 +48,14 @@
       - listitem: Report
     - region "Configure":
       - heading "Configure" [level=2]
+      - group "Endpoint type surface":
+        - text: Endpoint type surface
+        - radio "Chat" [checked]
+        - text: Chat
+        - radio "Embeddings"
+        - text: Embeddings
+        - radio "Reranking"
+        - text: Reranking
       - text: Relay / provider Optional
       - combobox "Relay / provider Optional":
         - option "Select a relay or provider…" [selected]
