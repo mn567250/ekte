@@ -1,8 +1,9 @@
 """Tests for the web Tools page (embedding + rerank auditors).
 
 Skipped automatically when the optional web extra (fastapi) isn't installed.
-No network is touched: the auditors are monkeypatched to return canned verdict
-dicts, so we only exercise the HTTP plumbing — request parsing, the claimed
+No network is touched: most tests monkeypatch the auditors to return canned
+verdict dicts (the end-to-end ones run the runner against a mock transport), so
+they exercise the HTTP plumbing — request parsing, the claimed
 dimension (0 = the runner resolves it from the KB), ConfigError -> 400, secret
 hygiene, and the served page/nav.
 """
@@ -188,75 +189,97 @@ def test_embed_endpoint_runs_the_runner_and_saves(client, monkeypatch):
     assert saved["surface"] == "embedding" and saved["target"]["model"] == "e-model"
 
 
-def test_rerank_endpoint_uses_builtin_probe_and_hides_secret(client, monkeypatch):
-    captured = {}
+def _fake_rerank_audit(monkeypatch, captured: dict) -> None:
+    """Stand in for the runner-backed rerank audit (saved as history row 9)."""
 
-    async def fake_audit(target, query, documents, expected_top_index):
-        captured["query"] = query
-        captured["documents"] = documents
-        captured["expected_top_index"] = expected_top_index
-        captured["api_key"] = target.api_key
-        return _rerank_verdict(target)
+    async def fake_run(target, *, suite="standard", **_):
+        captured.update(suite=suite, api_key=target.api_key, model=target.model)
+        return target, 9
 
-    monkeypatch.setattr(embed_audit, "audit_rerank", fake_audit)
+    def fake_verdict(report, report_id=None):
+        return {**_rerank_verdict(report), "report_id": report_id}
 
-    # No query/documents -> the built-in known-answer probe is used.
+    monkeypatch.setattr(embed_audit, "run_rerank_audit", fake_run)
+    monkeypatch.setattr(embed_audit, "tool_verdict", fake_verdict)
+
+
+def test_rerank_endpoint_returns_verdict_and_hides_secret(client, monkeypatch):
+    captured: dict = {}
+    _fake_rerank_audit(monkeypatch, captured)
     r = client.post(
         "/api/rerank",
-        json={
-            "base_url": "https://relay.rerank.test/v1",
-            "api_key": SECRET,
-            "model": "bge-reranker-v2-m3",
-        },
+        json={"base_url": "https://relay.rerank.test/v1", "api_key": SECRET, "model": "r-model"},
     )
     assert r.status_code == 200
     body = r.json()
-    assert body["risk_level"] == "clean"
+    assert body["risk_level"] == "clean" and body["report_id"] == 9
     assert body["findings"][0]["id"] == "rerank.known_answer"
-    # Built-in probe wired in.
-    assert isinstance(captured["query"], str) and captured["query"]
-    assert len(captured["documents"]) >= 2
-    assert 0 <= captured["expected_top_index"] < len(captured["documents"])
-    # Secret hygiene.
+    # The default suite, and the key reached the audit (but not the response).
+    assert captured == {"suite": "standard", "api_key": SECRET, "model": "r-model"}
     assert SECRET not in r.text
     assert "api_key" not in body["target"]
 
 
-def test_rerank_accepts_custom_probe(client, monkeypatch):
-    captured = {}
-
-    async def fake_audit(target, query, documents, expected_top_index):
-        captured.update(
-            query=query, documents=documents, expected_top_index=expected_top_index
-        )
-        return _rerank_verdict(target)
-
-    monkeypatch.setattr(embed_audit, "audit_rerank", fake_audit)
-    r = client.post(
-        "/api/rerank",
-        json={
-            "base_url": "https://relay.rerank.test/v1",
-            "api_key": SECRET,
-            "model": "bge-reranker-v2-m3",
-            "query": "which fruit is yellow?",
-            "documents": ["A banana is yellow.", "The sky is blue."],
-            "expected_top_index": 0,
-        },
-    )
+def test_rerank_endpoint_passes_the_suite(client, monkeypatch):
+    captured: dict = {}
+    _fake_rerank_audit(monkeypatch, captured)
+    r = client.post("/api/rerank", json={"base_url": "https://relay.rerank.test/v1",
+                                         "model": "r-model", "suite": "deep"})
     assert r.status_code == 200
-    assert captured["query"] == "which fruit is yellow?"
-    assert captured["documents"] == ["A banana is yellow.", "The sky is blue."]
-    assert captured["expected_top_index"] == 0
+    assert captured["suite"] == "deep"
 
 
 def test_rerank_bad_target_is_400(client, monkeypatch):
-    async def fake_audit(*a, **k):  # pragma: no cover - never called
+    async def fake_run(*a, **k):  # pragma: no cover - never called
         raise AssertionError("auditor must not run on a bad target")
 
-    monkeypatch.setattr(embed_audit, "audit_rerank", fake_audit)
-    r = client.post("/api/rerank", json={"base_url": "", "model": ""})
+    monkeypatch.setattr(embed_audit, "run_rerank_audit", fake_run)
+    r = client.post("/api/rerank", json={"base_url": "", "model": "", "api_key": SECRET})
     assert r.status_code == 400
     assert "error" in r.json()
+    assert SECRET not in r.text
+    # an unknown suite is a 400 too
+    r = client.post("/api/rerank", json={"base_url": "https://relay.rerank.test/v1", "model": "m",
+                                         "suite": "bogus"})
+    assert r.status_code == 400
+
+
+def test_rerank_endpoint_runs_the_runner_and_saves(client, monkeypatch):
+    # End to end through the real runner against a mock /rerank endpoint; holds
+    # whichever rerank detectors are registered.
+    import json as _json
+
+    import httpx
+
+    from zing.clients import OpenAICompatibleClient
+    from zing.web import history
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = _json.loads(request.content or b"{}")
+        words = set(str(body.get("query") or "").lower().split())
+        docs = body.get("documents") or []
+        results = [{"index": i, "relevance_score": len(words & set(str(d).lower().split())) / 10}
+                   for i, d in enumerate(docs)]
+        results.sort(key=lambda x: -x["relevance_score"])
+        return httpx.Response(200, json={"model": "r-model", "results": results})
+
+    monkeypatch.setattr(
+        "zing.runner.make_client",
+        lambda target, **_: OpenAICompatibleClient(target, transport=httpx.MockTransport(handler)),
+    )
+    r = client.post("/api/rerank", json={"base_url": "https://relay.rerank-e2e.test/v1",
+                                         "api_key": SECRET, "model": "r-model", "suite": "smoke"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["surface"] == "rerank" and body["suite"] == "smoke"
+    assert isinstance(body["report_id"], int)
+    assert {"risk_level", "score", "findings", "target", "rating", "headline"} <= set(body)
+    assert all(f["id"].startswith(("rerank.", "performance.")) for f in body["findings"])
+    assert SECRET not in r.text
+    saved = history.get(body["report_id"])
+    assert saved["surface"] == "rerank" and saved["target"]["model"] == "r-model"
+    rows = client.get("/api/history").json()
+    assert any(row.get("id") == body["report_id"] and row.get("surface") == "rerank" for row in rows)
 
 
 def test_serves_tools_page_and_index_nav(client):
