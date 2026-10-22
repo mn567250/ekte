@@ -57,13 +57,19 @@
   .seg.radio > span { position: relative; display: grid; }
   .seg.radio label {
     text-align: center; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
-    color: var(--ink-muted); background: var(--surface); border: 1.5px solid var(--line); border-radius: 11px;
-    padding: 10px 8px; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    color: var(--ink-muted); background: var(--surface); border: 1.5px solid transparent; border-radius: 11px;
+    padding: 10px 8px; transition: background 0.15s, color 0.15s;
   }
-  /* the radio itself covers its option, so it carries the focus ring */
-  .seg.radio input { appearance: none; position: absolute; inset: 0; z-index: 1; margin: 0; border-radius: 11px; background: transparent; cursor: pointer; }
+  /* the radio itself covers its option: it draws the boundary (3:1, like the
+     text fields) and carries the focus ring */
+  .seg.radio input {
+    appearance: none; position: absolute; inset: 0; z-index: 1; margin: 0; cursor: pointer;
+    border: 1.5px solid var(--border); border-radius: 11px; background: transparent; transition: border-color 0.15s;
+  }
+  .seg.radio input:hover { border-color: var(--ink-muted); }
   .seg.radio input:hover + label { color: var(--ink); }
-  .seg.radio input:checked + label { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
+  .seg.radio input:checked { border-color: var(--primary); }
+  .seg.radio input:checked + label { color: var(--on-primary); background: var(--primary); }
   .cmp { margin: 4px 0 16px; }
   .cmp .disclosure { justify-content: flex-start; }
   .cmp .disclosure > .pico { flex: none; }
