@@ -1074,7 +1074,7 @@ def _print_embed_verdict(verdict: dict, title: str) -> None:
         f"Target : {tgt['name']}  ·  model [bold]{tgt['model']}[/]"
         f"{'  ·  claimed ' + tgt['claimed_model'] if tgt.get('claimed_model') else ''}"
         f"{'  ·  provider ' + tgt['declared_provider'] if tgt.get('declared_provider') else ''}\n"
-        f"Score  : {verdict['score']}/100"
+        f"Score  : {'—' if verdict['score'] is None else verdict['score']}/100"
     )
     console.print(Panel(body, title=f"[{style}]{label}[/]  —  {title}", border_style=style.split()[-1]))
 

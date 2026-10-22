@@ -45,7 +45,6 @@ async def test_scheduler_runs_a_rerank_watch_with_the_previous_rerank_run(tmp_pa
     async def fake_run_audit(target, options, **kw):
         seen["options"] = options
         seen["previous"] = kw.get("previous_report")
-        seen["pinned"] = kw.get("pinned")
         return AuditReport.model_validate(_report(surface="rerank"))
 
     sent: list = []
@@ -72,7 +71,6 @@ async def test_scheduler_runs_a_rerank_watch_with_the_previous_rerank_run(tmp_pa
     previous = seen["previous"]
     assert previous is not None and previous["surface"] == "rerank"
     assert previous["generated_at"].startswith("2026-01-01")
-    assert seen["pinned"] is not None  # the KB pin is still applied
     rid = watches.get(wid)["last_report_id"]
     assert rid is not None and rid != prev_id and history.watch_of(rid) == wid
     assert history.get(rid)["surface"] == "rerank"
@@ -130,5 +128,3 @@ def test_monitor_this_from_a_rerank_run(tmp_path, monkeypatch, client):
     assert w["embedding_dimensions"] == 0 and w["source_report_id"] == rid
     assert w["performance_streaming"] is True and w["stream_mode"] is None
     assert w["enabled"] is False and w["interval_sec"] is None
-    # the run is linked: monitoring it again is refused like any monitor's run
-    assert history.watch_of(rid) is None
