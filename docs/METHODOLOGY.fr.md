@@ -989,8 +989,8 @@ annoncées, ÉLEVÉ) ou un modèle substitué (identité du modèle, ÉLEVÉ) re
 **Dérive du classement.** Chaque exécution conserve le classement et les scores
 arrondis d'une sonde fixe à pertinence graduée. L'exécution suivante de la même
 cible et du même modèle annoncé s'y compare : le même classement avec des scores à
-moins de **1 %** est stable (PASS), de **1 % à 10 %** il s'est déplacé (WARN,
-MOYEN), un autre classement ou un écart de plus de **10 %** signifie que le modèle
+moins de **0,01** (plus grand écart de score, relatif au score seulement au-delà de 1) est stable (PASS), de **0,01 à 0,1** il s'est déplacé (WARN,
+MOYEN), un autre classement ou un écart de plus de **0,1** signifie que le modèle
 a été substitué (FAIL, ÉLEVÉ). La première exécution enregistre la référence
 (INFO) ; une sonde modifiée n'est jamais prise pour une dérive.
 

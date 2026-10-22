@@ -984,9 +984,9 @@ ALTA) eleva el riesgo a ALTO.
 **Deriva de la clasificación.** Cada ejecución guarda la clasificación y las
 puntuaciones redondeadas de una sonda fija de relevancia graduada. La siguiente
 ejecución del mismo destino y modelo declarado la compara: la misma clasificación
-con puntuaciones dentro del **1 %** es estable (PASS), del **1 % al 10 %** se ha
-desplazado (WARN, MEDIA), una clasificación distinta o un cambio de más del
-**10 %** significa que el modelo se ha sustituido (FAIL, ALTA). La primera
+con puntuaciones dentro de **0,01** (el mayor cambio de puntuación, relativo a la puntuación solo cuando supera 1) es estable (PASS), de **0,01 a 0,1** se ha
+desplazado (WARN, MEDIA), una clasificación distinta o un cambio de más de
+**0,1** significa que el modelo se ha sustituido (FAIL, ALTA). La primera
 ejecución registra la referencia (INFO); una sonda cambiada nunca se toma por
 deriva.
 

@@ -983,8 +983,8 @@ rischio ALTO.
 **Deriva della classifica.** Ogni esecuzione conserva la classifica e i punteggi
 arrotondati di una sonda fissa a rilevanza graduata. L'esecuzione successiva dello
 stesso target e modello dichiarato la confronta: la stessa classifica con punteggi
-entro l'**1 %** è stabile (PASS), dall'**1 % al 10 %** si è spostata (WARN, MEDIA),
-un'altra classifica o una variazione oltre il **10 %** significa che il modello è
+entro **0,01** (la variazione di punteggio più grande, relativa al punteggio solo oltre 1) è stabile (PASS), da **0,01 a 0,1** si è spostata (WARN, MEDIA),
+un'altra classifica o una variazione oltre **0,1** significa che il modello è
 stato sostituito (FAIL, ALTA). La prima esecuzione registra il riferimento (INFO);
 una sonda cambiata non viene mai presa per deriva.
 

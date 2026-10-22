@@ -14,11 +14,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   rerank checks through the runner, score them (model identity 30, capability
   claims 30, performance 20, reliability 10, connectivity 10) and save them to
   History. Checks: connectivity, a known-answer probe, the echoed model field,
-  determinism, ranking drift against the previous run (scores within 1%
-  stable, 1–10% shifted, a different ranking or more swapped) and a rerank
-  performance probe (`performance.rerank`: 4 vs 32 documents; gated like the
-  chat probe). History, Analytics and Monitors show and filter the rerank
-  surface; a rerank monitor checks drift against its previous run.
+  determinism, ranking drift against the previous run (largest score
+  change below 0.01 stable, 0.01–0.1 shifted, a different ranking or more
+  swapped) and the rerank performance probe (entry below). History, Analytics
+  and Monitors show and filter the rerank surface; a rerank monitor checks
+  drift against its previous run.
 - **Editable claimed dimension of an embedding monitor.** The v2 Monitors card
   edits `embedding_dimensions` inline (empty or 0: from the knowledge base);
   before, only the API could change it.

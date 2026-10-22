@@ -989,8 +989,8 @@ bekannter Antwort (Fähigkeitsangaben, HOCH) oder ein ausgetauschtes Modell
 **Rangfolge-Drift.** Jeder Lauf speichert die Rangfolge und die gerundeten Scores
 eines festen Tests mit abgestufter Relevanz. Der nächste Lauf desselben Ziels und
 angegebenen Modells vergleicht damit: dieselbe Rangfolge mit Scores innerhalb von
-**1 %** ist stabil (PASS), **1 % bis 10 %** hat sich verschoben (WARN, MITTEL), eine
-andere Rangfolge oder eine Änderung um mehr als **10 %** bedeutet, dass das Modell
+**0,01** (größte Score-Änderung, nur bei Scores über 1 relativ zum Score) ist stabil (PASS), **0,01 bis 0,1** hat sich verschoben (WARN, MITTEL), eine
+andere Rangfolge oder eine Änderung um mehr als **0,1** bedeutet, dass das Modell
 ausgetauscht wurde (FAIL, HOCH). Der erste Lauf hält die Referenz fest (INFO); ein
 geänderter Test wird nie für Drift gehalten.
 

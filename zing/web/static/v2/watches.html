@@ -472,9 +472,12 @@
 
   // What the monitor audits: a chat endpoint, an embeddings one or a rerank one.
   var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
+  function isChat(w) { return !w.surface || w.surface === "chat"; }
   function surfaceCell(w) {
-    var m = SURFACE[w.surface] || SURFACE.chat;
-    return SURFACE[w.surface] && w.surface !== "chat" ? '<span class="badge machine-soft">' + esc(T(m[0], m[1])) + "</span>" : esc(T(m[0], m[1]));
+    if (isChat(w)) return esc(T(SURFACE.chat[0], SURFACE.chat[1]));
+    var m = SURFACE[w.surface];
+    // a surface this page does not know yet shows its own name, never "Chat"
+    return '<span class="badge machine-soft">' + esc(m ? T(m[0], m[1]) : w.surface) + "</span>";
   }
   // The embedding and rerank speed probes are gated like the chat one; monitors have no baseline.
   function toolPerfNote(w) {
@@ -502,8 +505,8 @@
     var name = w.name || "watch";
     var draft = needsSetup(w);
     var embed = w.surface === "embedding";
-    // embeddings and rerank do not stream: no streaming mode to show
-    var tool = embed || w.surface === "rerank";
+    // embeddings and rerank (any non-chat surface) do not stream: no streaming mode to show
+    var tool = !isChat(w);
     var claimed = w.claimed_model && w.claimed_model !== w.model
       ? '<span class="aside">' + esc(T("声称的模型", "Claimed model")) + " <code>" + esc(w.claimed_model) + "</code></span>"
       : "";

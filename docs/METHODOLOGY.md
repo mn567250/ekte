@@ -952,9 +952,9 @@ swapped model (model identity, HIGH) makes the risk HIGH.
 
 **Ranking drift.** Every run stores the ranking and the rounded scores of one
 fixed probe of graded relevance. The next run of the same target and claimed
-model compares with it: the same ranking with scores within **1%** is stable
-(PASS), **1% to 10%** has shifted (WARN, MEDIUM), a different ranking or a
-change of more than **10%** means the model was swapped (FAIL, HIGH). The first
+model compares with it: the same ranking with scores within **0.01** (the largest score change, relative to the score only where it exceeds 1) is stable
+(PASS), **0.01 to 0.1** has shifted (WARN, MEDIUM), a different ranking or a
+change of more than **0.1** means the model was swapped (FAIL, HIGH). The first
 run records the baseline (INFO); a changed probe is never taken for drift.
 
 **Performance probe.** `performance.rerank`, described with the other probes

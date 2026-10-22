@@ -1017,8 +1017,10 @@ def test_tool_monitor_cards(open_routed_page, base_url: str, lang: str) -> None:
     _mock_list(page, "/api/watches", watches)
     issues: list[str] = []
     s = page.evaluate(DIMS_STATE_JS, 900101)
-    if len([x for x in s["surfaces"] if x]) != 2:
-        issues.append(f"the embedding and rerank cards do not both name their surface: {s['surfaces']}")
+    want = {"en": ["Embeddings", "Reranking"]}.get(lang)
+    named = [x for x in s["surfaces"] if x]
+    if len(named) != 2 or named[0] == named[1] or (want and named != want):
+        issues.append(f"the embedding and rerank cards do not each name their surface: {s['surfaces']}")
     if page.locator('#w-900102 [data-act="edit-dims"]').count():
         issues.append("a rerank card offers a claimed dimension")
     page.locator('#w-900101 [data-act="edit-dims"]').focus()

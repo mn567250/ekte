@@ -976,8 +976,8 @@ risco ALTO.
 **Deriva da classificação.** Cada execução guarda a classificação e as pontuações
 arredondadas de uma sonda fixa de relevância graduada. A execução seguinte do
 mesmo alvo e modelo declarado compara-se com ela: a mesma classificação com
-pontuações dentro de **1 %** é estável (PASS), de **1 % a 10 %** deslocou-se
-(WARN, MÉDIA), uma classificação diferente ou uma variação superior a **10 %**
+pontuações dentro de **0,01** (a maior variação de pontuação, relativa à pontuação só quando passa de 1) é estável (PASS), de **0,01 a 0,1** deslocou-se
+(WARN, MÉDIA), uma classificação diferente ou uma variação superior a **0,1**
 significa que o modelo foi substituído (FAIL, ALTA). A primeira execução regista a
 referência (INFO); uma sonda alterada nunca é tomada por deriva.
 
