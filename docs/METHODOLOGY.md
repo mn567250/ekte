@@ -933,6 +933,39 @@ serialised (linear, WARN LOW).
 
 ---
 
+## Rerank surface
+
+A rerank audit (`surface` `rerank`) sends only `POST /rerank` requests and is
+scored on the shared 0–100 scale and A–F grade with its own weights: model
+identity 30, capability claims 30, performance 20, concurrency reliability 10,
+connectivity 10. A failed known-answer ranking (capability claims, HIGH) or a
+swapped model (model identity, HIGH) makes the risk HIGH.
+
+| Check | Id | Dimension | What it tests |
+|---|---|---|---|
+| Connectivity | `rerank.connectivity` | Connectivity | the endpoint returns a well-formed ranking |
+| Known answer | `rerank.known_answer` | Capability claims | a probe with one obviously relevant document ranks it first |
+| Echoed model | `rerank.identity` | Model identity | the response's `model` field names the claimed model |
+| Ranking drift | `rerank.drift` | Model identity | the pinned probe's ranking and scores vs the previous saved run |
+| Determinism | `rerank.determinism` | Concurrency reliability | the same query twice gives the same ranking and scores |
+| Performance probe | `performance.rerank` | Performance | latency, cold start, documents/s, document-count scaling |
+
+**Ranking drift.** Every run stores the ranking and the rounded scores of one
+fixed probe of graded relevance. The next run of the same target and claimed
+model compares with it: the same ranking with scores within **0.01** (the largest score change, relative to the score only where it exceeds 1) is stable
+(PASS), **0.01 to 0.1** has shifted (WARN, MEDIUM), a different ranking or a
+change of more than **0.1** means the model was swapped (FAIL, HIGH). The first
+run records the baseline (INFO); a changed probe is never taken for drift.
+
+**Performance probe.** `performance.rerank`, described with the other probes
+above: gated like the chat probe (deep, full and custom; on standard only with
+a baseline), 4 vs 32 documents per query, nonce-varied queries for cache
+detection, and a response that leaves documents unscored counts as a failed
+request. There is no knowledge-base speed reference; raw speed only counts
+against a baseline.
+
+---
+
 ## Trick → detector mapping
 
 The 16 relay tricks from the research map onto zing as follows.

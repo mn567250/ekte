@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Enter a whole number from 0 to 65536.": "请输入 0 到 65536 之间的整数。",
+  "Empty or 0: taken from the knowledge base.": "留空或 0：取自知识库。",
+  "Change the claimed dimension": "修改声称维度",
+  "Claimed dimension saved.": "声称维度已保存。"
+ }
+}

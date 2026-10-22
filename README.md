@@ -597,21 +597,25 @@ These endpoints return vectors, rankings, images or audio instead of chat, so
 zing audits them with focused probes instead of the chat prompts. Each prints a
 verdict and supports `--json` and `--fail-on-risk`.
 
-### Endpoint type (surface) and embedding monitors
+### Endpoint type (surface), embedding and rerank monitors
 
 Every audit, history row and monitor has an **endpoint type** (`surface`):
-`chat` (the default) or `embedding`. It is independent of the suite. Embedding
-audits run through the same runner, scoring (0–100, A–F), History, Analytics
-and Monitors as chat audits; only the detectors differ. History and Analytics
-filter by endpoint type, and Analytics shows only the metrics that apply.
+`chat` (the default), `embedding` or `rerank`. It is independent of the suite.
+Embedding and rerank audits run through the same runner, scoring (0–100, A–F),
+History, Analytics and Monitors as chat audits; only the detectors differ.
+History and Analytics filter by endpoint type, and Analytics shows only the
+metrics that apply.
 
-To monitor an embeddings endpoint, run it on the **Tools** page and choose
-**Monitor this**, or **Schedule as monitor** on its History row. The monitor
-re-runs the embedding audit on its schedule, with the same knowledge-base pin,
-alert threshold and regression alerts as a chat monitor, and checks **vector
-drift** against its previous run. The embedding speed probe (latency, cold
-start, inputs/s, batch scaling) runs only on the deep, full or custom suites,
-or on standard with a baseline.
+To monitor an embeddings or rerank endpoint, run it on the **Tools** page and
+choose **Monitor this**, or **Schedule as monitor** on its History row. The
+monitor re-runs the audit on its schedule, with the same knowledge-base pin,
+alert threshold and regression alerts as a chat monitor, and checks **drift**
+against its previous run (the vectors of an embedding probe, the ranking and
+scores of a rerank probe). An embedding monitor's claimed dimension can be
+changed on its card (empty or 0: from the knowledge base). The speed probes
+(embeddings: latency, cold start, inputs/s, batch scaling; rerank: latency,
+cold start, documents/s, 4 vs 32 documents) run only on the deep, full or
+custom suites, or on standard with a baseline.
 
 ### Embeddings and rerank
 
@@ -626,7 +630,19 @@ zing embed --base-url ... --model my-embed --claimed-dimensions 1024 --json
 # Rerank: a built-in known-answer probe — a genuine reranker must rank the
 # obviously relevant document first.
 zing rerank --base-url https://relay.example.com/v1 --model my-rerank
+
+# Deeper: adds the rerank speed probe; --no-save keeps the run out of History.
+zing rerank --base-url ... --model my-rerank --suite deep --no-save
+# See the checks and the estimated calls first, without sending a request:
+zing rerank --base-url ... --model my-rerank --dry-run
 ```
+
+`rerank` checks connectivity, the **known-answer probe** (the obviously relevant
+document must rank first), the echoed `model` field, determinism (the same
+query twice gives the same ranking and scores) and **ranking drift** against
+the previous saved run. `zing embed` and `zing rerank` take `--suite` and
+`--save/--no-save` (saved by default, so the next run has a drift reference)
+and `--dry-run`.
 
 `embed` checks connectivity, **dimension match** (the returned vector length
 against the claimed model's native dimension — the headline bait-and-switch
@@ -637,7 +653,8 @@ profiles: OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large`
 (3072), `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
 Both are also on the web UI's **Tools** page (**Embedding audit**, **Rerank
-audit**), where the rerank probe can be replaced by your own query and documents.
+audit**). The rerank audit always uses the built-in probes, so every run stays
+comparable for drift and monitoring.
 
 ### Image and audio (TTS) generation
 

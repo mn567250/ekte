@@ -920,6 +920,86 @@ delle API native, e un obiettivo più lento viene annotato, mai conteggiato. Tut
 rilevazioni sono al massimo di gravità BASSA: questa dimensione muove il
 punteggio, mai il verdetto di rischio.
 
+## Superficie di embedding
+
+La **superficie** di una verifica (`chat` per impostazione predefinita, o
+`embedding`) sceglie i rilevatori; la suite fissa sempre la profondità. Una
+verifica di embedding invia solo richieste `POST /embeddings` e riutilizza le
+dimensioni della chat e il punteggio comune 0–100 e voto A–F, con pesi per
+superficie. Una dimensione che non corrisponde (identità del modello, ALTA) rende
+il rischio ALTO, come un modello sostituito nella chat.
+
+| Controllo | Id | Dimensione | Cosa verifica |
+|---|---|---|---|
+| Connettività | `embed.connectivity` | Connettività | l'endpoint restituisce vettori ben formati |
+| Dimensione del vettore | `embed.dimension` | Identità del modello | lunghezza restituita contro la dimensione nativa del modello dichiarato (base di conoscenza, o `claimed_dimensions`) |
+| Modello restituito | `embed.model_field` | Identità del modello | il campo `model` della risposta nomina il modello dichiarato |
+| Deriva dei vettori | `embed.drift` | Identità del modello | il vettore dell'input fisso della sonda contro l'esecuzione salvata precedente |
+| Determinismo | `embed.determinism` | Affidabilità in concorrenza | lo stesso input due volte dà coseno ≥ 0,9999 |
+| Distinzione | `embed.distinctness` | Capacità dichiarate | input non correlati danno coseno inferiore a 0,98 |
+| Sonda delle prestazioni | `performance.embed` | Prestazioni | latenza, avvio a freddo, throughput, scalabilità a lotti |
+
+**Deriva dei vettori.** Ogni esecuzione conserva le prime 64 componenti del
+vettore normalizzato di un input fisso. L'esecuzione successiva dello stesso
+target e modello dichiarato (`zing embed`, la pagina Strumenti o un monitor di
+embedding) confronta il suo vettore con quel campione: coseno **≥ 0,995** è stabile
+(PASS), da **0,95 a 0,995** si è spostato (WARN, MEDIA: un nuovo rilascio o una
+quantizzazione), sotto **0,95** o con un'altra lunghezza il modello è stato
+sostituito (FAIL, ALTA). La prima esecuzione non ha nulla da confrontare e
+registra il riferimento (INFO).
+
+**Sonda delle prestazioni.** Abilitata come la sonda della chat: gira in deep, full
+e custom, e in standard solo con una baseline. Dopo un ping e una richiesta di
+riscaldamento (avvio a freddo) invia richieste uniformi con un input, lotti di 16
+input e, in deep/full, una raffica concorrente. Ogni input porta un nonce casuale;
+vettori identici per input diversi vengono segnalati come in cache ed esclusi
+dalle statistiche. Riporta latenza p50/p95, avvio a freddo, input/s e token di
+input/s, la regolarità di latenza e throughput, gli errori e la stabilità sotto
+carico. La **scalabilità a lotti** confronta la latenza per input di un lotto con
+quella di una richiesta singola: da 0,6x in su il lotto viene diviso o serializzato
+(lineare, WARN BASSA). Non c'è un riferimento di velocità nella base di
+conoscenza; la velocità grezza conta solo rispetto a una baseline.
+
+---
+
+## Superficie di rerank
+
+Una verifica di rerank (`surface` `rerank`) invia solo richieste `POST /rerank` ed
+è valutata sulla scala comune 0–100 e voto A–F con pesi propri: identità del
+modello 30, capacità dichiarate 30, prestazioni 20, affidabilità in concorrenza
+10, connettività 10. Una classifica a risposta nota sbagliata (capacità
+dichiarate, ALTA) o un modello sostituito (identità del modello, ALTA) rende il
+rischio ALTO.
+
+| Controllo | Id | Dimensione | Cosa verifica |
+|---|---|---|---|
+| Connettività | `rerank.connectivity` | Connettività | l'endpoint restituisce una classifica ben formata |
+| Risposta nota | `rerank.known_answer` | Capacità dichiarate | una sonda con un documento chiaramente pertinente lo mette primo |
+| Modello restituito | `rerank.identity` | Identità del modello | il campo `model` della risposta nomina il modello dichiarato |
+| Deriva della classifica | `rerank.drift` | Identità del modello | classifica e punteggi della sonda fissa contro l'esecuzione salvata precedente |
+| Determinismo | `rerank.determinism` | Affidabilità in concorrenza | la stessa query due volte dà la stessa classifica e gli stessi punteggi |
+| Sonda delle prestazioni | `performance.rerank` | Prestazioni | latenza, avvio a freddo, documenti/s, scalabilità con il numero di documenti |
+
+**Deriva della classifica.** Ogni esecuzione conserva la classifica e i punteggi
+arrotondati di una sonda fissa a rilevanza graduata. L'esecuzione successiva dello
+stesso target e modello dichiarato la confronta: la stessa classifica con punteggi
+entro **0,01** (la variazione di punteggio più grande, relativa al punteggio solo oltre 1) è stabile (PASS), da **0,01 a 0,1** si è spostata (WARN, MEDIA),
+un'altra classifica o una variazione oltre **0,1** significa che il modello è
+stato sostituito (FAIL, ALTA). La prima esecuzione registra il riferimento (INFO);
+una sonda cambiata non viene mai presa per deriva.
+
+**Sonda delle prestazioni.** Abilitata come la sonda della chat (deep, full e
+custom; in standard solo con una baseline). Ogni giro invia una query unica su
+**4 documenti** e una su **32**; in deep/full segue una raffica concorrente. Le
+risposte i cui punteggi fini ripetono quelli di un'altra query vengono segnalate
+come in cache ed escluse dalle statistiche; una risposta che lascia documenti
+senza punteggio conta come richiesta fallita. Riporta latenza p50/p95, avvio a
+freddo, documenti/s e token di input/s, regolarità, errori e stabilità sotto
+carico. **Scalabilità con il numero di documenti**: quando una richiesta con 32
+documenti costa per documento 0,6x o più di una con 4, il relay divide o serializza
+i documenti (lineare, WARN BASSA). Non c'è un riferimento di velocità nella base di
+conoscenza; la velocità grezza conta solo rispetto a una baseline.
+
 ---
 
 ## Corrispondenza trucco → rilevatore

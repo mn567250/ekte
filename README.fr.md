@@ -631,10 +631,31 @@ gèrent en ligne de commande.
 
 ## Audits d'embedding, de rerank, d'images et d'audio
 
-Ces endpoints renvoient des vecteurs, des classements, des images ou de l'audio
-au lieu de chat ; zing les audite donc avec des auditeurs autonomes et ciblés
-plutôt qu'avec le pipeline de chat à dix dimensions. Chacun affiche un verdict
-et prend en charge `--json` et `--fail-on-risk`.
+Ces endpoints renvoient des vecteurs, des classements, des images ou de l'audio au
+lieu de chat ; zing les audite donc avec des sondes dédiées au lieu des prompts de
+chat. Chacun affiche un verdict et prend en charge `--json` et `--fail-on-risk`.
+
+### Type d'endpoint (surface), surveillances d'embedding et de rerank
+
+Chaque audit, ligne d'historique et surveillance a un **type d'endpoint**
+(`surface`) : `chat` (par défaut), `embedding` ou `rerank`. Il est indépendant de
+la suite. Les audits d'embedding et de rerank passent par le même runner, le même
+score (0–100, A–F), l'historique, l'analytique et les surveillances que les audits
+de chat ; seuls les détecteurs diffèrent. L'historique et l'analytique filtrent par
+type d'endpoint, et l'analytique n'affiche que les métriques qui s'appliquent.
+
+Pour surveiller un endpoint d'embeddings ou de rerank, auditez-le sur la page
+**Outils** et choisissez **Surveiller**, ou **Planifier comme surveillance** sur sa
+ligne d'historique. La surveillance relance l'audit selon son planning, avec le
+même épinglage de la base de connaissances, le même seuil d'alerte et les mêmes
+alertes de régression qu'une surveillance de chat, et vérifie la **dérive** par
+rapport à son exécution précédente (les vecteurs d'une sonde d'embedding, le
+classement et les scores d'une sonde de rerank). La dimension annoncée d'une
+surveillance d'embedding se modifie sur sa carte (vide ou 0 : depuis la base de
+connaissances). Les sondes de vitesse (embeddings : latence, démarrage à froid,
+entrées/s, mise à l'échelle par lots ; rerank : latence, démarrage à froid,
+documents/s, 4 contre 32 documents) ne tournent que dans les suites deep, full ou
+custom, ou en standard avec une référence.
 
 ### Embeddings et rerank
 
@@ -649,7 +670,20 @@ zing embed --base-url ... --model my-embed --claimed-dimensions 1024 --json
 # Rerank : une sonde intégrée à réponse connue — un vrai reranker doit classer
 # en premier le document manifestement pertinent.
 zing rerank --base-url https://relay.example.com/v1 --model my-rerank
+
+# Plus poussé : ajoute la sonde de vitesse du rerank ; --no-save garde l'exécution hors de l'historique.
+zing rerank --base-url ... --model my-rerank --suite deep --no-save
+# Voir d'abord les vérifications et les appels estimés, sans envoyer de requête :
+zing rerank --base-url ... --model my-rerank --dry-run
 ```
+
+`rerank` vérifie la connectivité, la **sonde à réponse connue** (le document
+manifestement pertinent doit arriver en tête), le champ `model` renvoyé, le
+déterminisme (la même requête deux fois donne le même classement et les mêmes
+scores) et la **dérive du classement** par rapport à l'exécution enregistrée
+précédente. `zing embed` et `zing rerank` acceptent `--suite`,
+`--save/--no-save` (enregistré par défaut, pour que l'exécution suivante ait une
+référence de dérive) et `--dry-run`.
 
 `embed` vérifie la connectivité, la **correspondance de dimension** (longueur du
 vecteur renvoyé face à la dimension native du modèle annoncé — le signal phare de
@@ -661,8 +695,9 @@ inférieur à 1) et le champ `model` renvoyé. Profils intégrés : OpenAI
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
 Les deux se trouvent aussi sur la page **Outils** de l'interface web (**Audit
-d'embedding**, **Audit de rerank**), où la sonde de rerank peut être remplacée par
-votre propre requête et vos propres documents.
+d'embedding**, **Audit de rerank**). L'audit de rerank utilise toujours les sondes
+intégrées, pour que chaque exécution reste comparable pour la dérive et la
+surveillance.
 
 ### Génération d'images et d'audio (TTS)
 

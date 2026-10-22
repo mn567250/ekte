@@ -920,6 +920,89 @@ amplias de las API nativas, y un objetivo más lento solo se anota, nunca comput
 los hallazgos son como mucho de gravedad BAJA: esta dimensión mueve la
 puntuación, nunca el veredicto de riesgo.
 
+## Superficie de embeddings
+
+La **superficie** de una auditoría (`chat` por defecto, o `embedding`) elige los
+detectores; la suite sigue fijando la profundidad. Una auditoría de embeddings
+solo envía peticiones `POST /embeddings` y reutiliza las dimensiones de chat y la
+puntuación común 0–100 y nota A–F, con pesos por superficie. Una dimensión que no
+coincide (identidad del modelo, ALTA) eleva el riesgo a ALTO, como un modelo
+sustituido en chat.
+
+| Comprobación | Id | Dimensión | Qué comprueba |
+|---|---|---|---|
+| Conectividad | `embed.connectivity` | Conectividad | el endpoint devuelve vectores bien formados |
+| Dimensión del vector | `embed.dimension` | Identidad del modelo | longitud devuelta frente a la dimensión nativa del modelo declarado (base de conocimiento o `claimed_dimensions`) |
+| Modelo devuelto | `embed.model_field` | Identidad del modelo | el campo `model` de la respuesta nombra el modelo declarado |
+| Deriva de vectores | `embed.drift` | Identidad del modelo | el vector de la entrada fija de la sonda frente a la ejecución guardada anterior |
+| Determinismo | `embed.determinism` | Fiabilidad en concurrencia | la misma entrada dos veces da coseno ≥ 0,9999 |
+| Distinción | `embed.distinctness` | Capacidades declaradas | entradas no relacionadas dan coseno inferior a 0,98 |
+| Sonda de rendimiento | `performance.embed` | Rendimiento | latencia, arranque en frío, rendimiento, escalado por lotes |
+
+**Deriva de vectores.** Cada ejecución guarda los primeros 64 componentes del
+vector normalizado de una entrada fija. La siguiente ejecución del mismo destino y
+modelo declarado (`zing embed`, la página Herramientas o un monitor de embeddings)
+compara su vector con esa muestra: un coseno **≥ 0,995** es estable (PASS), de
+**0,95 a 0,995** se ha desplazado (WARN, MEDIA: un nuevo despliegue o una
+cuantización), por debajo de **0,95** o con otra longitud el modelo se ha
+sustituido (FAIL, ALTA). La primera ejecución no tiene con qué comparar y registra
+la referencia (INFO).
+
+**Sonda de rendimiento.** Se habilita como la sonda de chat: se ejecuta en deep,
+full y custom, y en standard solo con una referencia. Tras un ping y una petición
+de calentamiento (arranque en frío) envía peticiones uniformes de una entrada,
+lotes de 16 entradas y, en deep/full, una ráfaga concurrente. Cada entrada lleva un
+nonce aleatorio; vectores idénticos para entradas distintas se marcan como
+cacheados y quedan fuera de las estadísticas. Informa de la latencia p50/p95, el
+arranque en frío, entradas/s y tokens de entrada/s, la regularidad de latencia y
+rendimiento, los errores y la estabilidad bajo carga. El **escalado por lotes**
+compara la latencia por entrada de un lote con la de una petición individual: a
+partir de 0,6x el lote se divide o se serializa (lineal, WARN BAJA). No hay
+referencia de velocidad en la base de conocimiento; la velocidad bruta solo cuenta
+frente a una referencia.
+
+---
+
+## Superficie de rerank
+
+Una auditoría de rerank (`surface` `rerank`) solo envía peticiones `POST /rerank`
+y se puntúa en la escala común 0–100 y nota A–F con sus propios pesos: identidad
+del modelo 30, capacidades declaradas 30, rendimiento 20, fiabilidad en
+concurrencia 10, conectividad 10. Fallar la clasificación de respuesta conocida
+(capacidades declaradas, ALTA) o un modelo sustituido (identidad del modelo,
+ALTA) eleva el riesgo a ALTO.
+
+| Comprobación | Id | Dimensión | Qué comprueba |
+|---|---|---|---|
+| Conectividad | `rerank.connectivity` | Conectividad | el endpoint devuelve una clasificación bien formada |
+| Respuesta conocida | `rerank.known_answer` | Capacidades declaradas | una sonda con un documento obviamente relevante lo coloca primero |
+| Modelo devuelto | `rerank.identity` | Identidad del modelo | el campo `model` de la respuesta nombra el modelo declarado |
+| Deriva de la clasificación | `rerank.drift` | Identidad del modelo | la clasificación y las puntuaciones de la sonda fija frente a la ejecución guardada anterior |
+| Determinismo | `rerank.determinism` | Fiabilidad en concurrencia | la misma consulta dos veces da la misma clasificación y las mismas puntuaciones |
+| Sonda de rendimiento | `performance.rerank` | Rendimiento | latencia, arranque en frío, documentos/s, escalado con el número de documentos |
+
+**Deriva de la clasificación.** Cada ejecución guarda la clasificación y las
+puntuaciones redondeadas de una sonda fija de relevancia graduada. La siguiente
+ejecución del mismo destino y modelo declarado la compara: la misma clasificación
+con puntuaciones dentro de **0,01** (el mayor cambio de puntuación, relativo a la puntuación solo cuando supera 1) es estable (PASS), de **0,01 a 0,1** se ha
+desplazado (WARN, MEDIA), una clasificación distinta o un cambio de más de
+**0,1** significa que el modelo se ha sustituido (FAIL, ALTA). La primera
+ejecución registra la referencia (INFO); una sonda cambiada nunca se toma por
+deriva.
+
+**Sonda de rendimiento.** Se habilita como la sonda de chat (deep, full y custom;
+en standard solo con una referencia). Cada ronda envía una consulta única sobre
+**4 documentos** y otra sobre **32**; en deep/full sigue una ráfaga concurrente.
+Las respuestas cuyas puntuaciones finas repiten las de otra consulta se marcan
+como cacheadas y quedan fuera de las estadísticas; una respuesta que deja
+documentos sin puntuar cuenta como petición fallida. Informa de la latencia p50/p95,
+el arranque en frío, documentos/s y tokens de entrada/s, la regularidad, los
+errores y la estabilidad bajo carga. **Escalado con el número de documentos**:
+cuando una petición de 32 documentos cuesta por documento 0,6x o más que una de 4,
+el relay divide o serializa los documentos (lineal, WARN BAJA). No hay referencia
+de velocidad en la base de conocimiento; la velocidad bruta solo cuenta frente a
+una referencia.
+
 ---
 
 ## Correspondencia truco → detector

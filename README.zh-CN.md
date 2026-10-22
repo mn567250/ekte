@@ -475,8 +475,20 @@ zing watch --base-url https://relay.example.com/v1 --api-key env:ZING_API_KEY \
 
 ## Embedding、rerank、图像与音频检测
 
-这些端点返回的是向量、排序、图像或音频，而不是对话，因此 zing 用独立的专用检测器来审计，
-而不走十维度的对话流水线。每个都会输出结论，并支持 `--json` 和 `--fail-on-risk`。
+这些端点返回的是向量、排序、图像或音频，而不是对话，因此 zing 用专门的探测而不是对话提示词来审计。
+每个都会输出结论，并支持 `--json` 和 `--fail-on-risk`。
+
+### 接口类型（surface）、嵌入与重排监控
+
+每次审计、每条历史记录和每个监控都有一个**接口类型**（`surface`）：`chat`（默认）、`embedding`
+或 `rerank`，与测试套件相互独立。嵌入与重排审计和对话审计走同一个 runner、同一套评分（0–100、A–F）、
+检测历史、分析和监控，只是检测器不同。检测历史和分析可按接口类型筛选，分析只显示适用的指标。
+
+要监控嵌入或重排端点，先在**工具**页面审计它，然后选择**监控此端点**，或在检测历史中该行选择
+**设为监控**。监控按计划重新审计，知识库固定、告警阈值和回退告警与对话监控相同，并对照上一次运行检查
+**漂移**（嵌入探测的向量，重排探测的排序和分数）。嵌入监控的声称维度可以在其卡片上修改（留空或 0：
+取自知识库）。速度探测（嵌入：延迟、冷启动、输入/秒、批量扩展；重排：延迟、冷启动、文档/秒、4 与 32
+个文档对比）只在 deep、full 或 custom 套件下运行，或在有基线的 standard 下运行。
 
 ### Embedding 与 rerank
 
@@ -490,7 +502,16 @@ zing embed --base-url ... --model my-embed --claimed-dimensions 1024 --json
 
 # Rerank：内置一个答案已知的探测——真正的 reranker 必须把明显相关的文档排在第一。
 zing rerank --base-url https://relay.example.com/v1 --model my-rerank
+
+# 更深入：加上重排速度探测；--no-save 让这次运行不进入检测历史。
+zing rerank --base-url ... --model my-rerank --suite deep --no-save
+# 先查看检查项和预计调用次数，不发送任何请求：
+zing rerank --base-url ... --model my-rerank --dry-run
 ```
+
+`rerank` 检查连通性、**已知答案探测**（明显相关的文档必须排第一）、回包中的 `model` 字段、确定性
+（同一查询两次得到相同的排序和分数）以及相对上一次已保存运行的**排序漂移**。`zing embed` 和
+`zing rerank` 都支持 `--suite`、`--save/--no-save`（默认保存，下一次运行才有漂移参照）和 `--dry-run`。
 
 `embed` 检查连通性、**维度匹配**（返回向量的长度 vs 声称模型的原生维度——最核心的
 「货不对板」信号：声称是 3072 维 `text-embedding-3-large`、却返回 1024 维的中转站，提供的是替代品）、
@@ -498,8 +519,8 @@ zing rerank --base-url https://relay.example.com/v1 --model my-rerank
 内置画像：OpenAI `text-embedding-3-small`（1536）、`text-embedding-3-large`（3072）、
 `text-embedding-ada-002`（1536），Qwen `text-embedding-v3`/`-v4`（1024）。
 
-两者也都在 Web 界面的**工具**页面中（**嵌入审计**、**重排审计**），在那里还可以用你自己的
-查询和文档替换 rerank 探测。
+两者也都在 Web 界面的**工具**页面中（**嵌入审计**、**重排审计**）。重排审计始终使用内置探测，
+这样每次运行在漂移检查和监控中都可以相互比较。
 
 ### 图像与音频（TTS）生成
 

@@ -8,6 +8,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Rerank audits as first-class audits.** `rerank` is a third endpoint type
+  next to `chat` and `embedding`. `zing rerank` (with `--suite`,
+  `--save/--no-save` and `--dry-run`), `/api/rerank` and the Tools page run the
+  rerank checks through the runner, score them (model identity 30, capability
+  claims 30, performance 20, reliability 10, connectivity 10) and save them to
+  History. Checks: connectivity, a known-answer probe, the echoed model field,
+  determinism, ranking drift against the previous run (largest score
+  change below 0.01 stable, 0.01–0.1 shifted, a different ranking or more
+  swapped) and the rerank performance probe (entry below). History, Analytics
+  and Monitors show and filter the rerank surface; a rerank monitor checks
+  drift against its previous run.
+- **Editable claimed dimension of an embedding monitor.** The v2 Monitors card
+  edits `embedding_dimensions` inline (empty or 0: from the knowledge base);
+  before, only the API could change it.
+- **Surfaces in every language.** The translated README, developer guide and
+  methodology now describe the endpoint type, the embedding checks (drift
+  thresholds 0.995 / 0.95, the embedding probe) and the rerank surface.
 - **Rerank performance probe (`performance.rerank`).** On the rerank surface,
   latency, cold start, documents/s, consistency, errors, load stability and
   document-count scaling (4 vs 32 documents per query), with cache detection
