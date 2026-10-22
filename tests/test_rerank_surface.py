@@ -115,8 +115,11 @@ async def test_clean_rerank_audit(serve):
     report = await run_audit(_target(), _opts(suite="deep"))
     assert report.surface == "rerank"
     assert {d.id for d in report.detectors} >= RERANK_IDS
-    assert all(d.status in (Status.PASS, Status.INFO) for d in report.detectors), [
-        (d.id, d.status, d.error) for d in report.detectors]
+    # The performance probe judges wall-clock timings, which a busy runner can
+    # push to WARN; it has its own timing-independent tests (test_rerank_perf).
+    functional = [d for d in report.detectors if d.id in RERANK_IDS]
+    assert all(d.status in (Status.PASS, Status.INFO) for d in functional), [
+        (d.id, d.status, d.error) for d in functional]
     assert report.verdict.risk_level == RiskLevel.CLEAN
     assert {d.dimension for d in report.detectors if d.id in RERANK_IDS} == {
         Dimension.CONNECTIVITY, Dimension.CAPABILITY, Dimension.MODEL_IDENTITY,
