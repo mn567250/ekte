@@ -50,6 +50,19 @@
   .seg.q button { min-width: 0; }
   #suite.seg.q { grid-template-columns: repeat(5, minmax(min-content, 1fr)); }
   @media (max-width: 560px) { .seg.q, #suite.seg.q { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* the endpoint type: native radios dressed as a segmented control */
+  fieldset.grp { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
+  fieldset.grp > legend { padding: 0; }
+  .seg.radio { display: grid; grid-template-columns: repeat(3, minmax(min-content, 1fr)); }
+  .seg.radio label {
+    position: relative; text-align: center; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
+    color: var(--ink-muted); background: var(--surface); border: 1.5px solid var(--line); border-radius: 11px;
+    padding: 10px 8px; transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .seg.radio label:hover { color: var(--ink); }
+  .seg.radio input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .seg.radio label:has(input:checked) { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
+  .seg.radio label:has(input:focus-visible) { outline: 2px solid var(--primary); outline-offset: 2px; }
   .cmp { margin: 4px 0 16px; }
   .cmp .disclosure { justify-content: flex-start; }
   .cmp .disclosure > .pico { flex: none; }
@@ -210,6 +223,14 @@
       <h2 class="sr-only" id="h-config" tabindex="-1" data-en="Configure">配置</h2>
       <div class="form-card">
         <form id="form" novalidate>
+          <!-- What is audited (?surface=embedding|rerank preselects): the
+               chat-only fields below are hidden on the other surfaces -->
+          <fieldset class="grp">
+            <legend class="lab"><span data-en="Endpoint type">接口类型</span> <span class="key">surface</span></legend>
+            <div class="seg radio" id="surface">
+              <label><input type="radio" name="surface" value="chat" checked><span data-en="Chat">对话</span></label><label><input type="radio" name="surface" value="embedding"><span data-en="Embeddings">嵌入</span></label><label><input type="radio" name="surface" value="rerank"><span data-en="Reranking">重排</span></label>
+            </div>
+          </fieldset>
           <div class="grp">
             <label class="lab" for="i-url"><span data-en="Relay URL">中转站地址</span> <span class="key">base_url</span></label>
             <input class="in" id="i-url" type="text" inputmode="url" autocomplete="username" spellcheck="false" autocapitalize="off" placeholder="https://relay.example.com/v1">
@@ -232,9 +253,14 @@
               <div class="hint" id="i-claimed-hint" data-en="Only if the relay sells it under another name — zing checks the answers against this model.">仅当中转站以另一个名字售卖时填写 —— zing 会按这个模型核对回答。</div>
             </div>
           </div>
+          <div class="grp" id="edims-grp" hidden>
+            <label class="lab" for="i-edims"><span data-en="Claimed dimension">声称维度</span> <span class="key">embedding_dimensions</span> <span class="opt" data-en="Optional">可选</span></label>
+            <input class="in" id="i-edims" type="number" min="0" step="1" inputmode="numeric" aria-describedby="i-edims-hint" placeholder="留空 = 取自知识库" data-en-placeholder="Empty = from the knowledge base">
+            <div class="hint" id="i-edims-hint" data-en="The vector length the claimed model returns. Empty or 0: taken from the knowledge base.">声称的模型返回的向量长度。留空或 0：取自知识库。</div>
+          </div>
           <!-- declared_provider: derived from the claimed model's profile (relaycfg.js) -->
           <input type="hidden" id="i-prov">
-          <div class="grp">
+          <div class="grp" id="api-grp">
             <span class="lab" id="lab-api" data-en="Protocol">协议</span>
             <div class="seg q" id="api" role="group" aria-labelledby="lab-api">
               <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">自动</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>
@@ -280,7 +306,7 @@
                 <label class="lab" for="b-model"><span data-en="Baseline model">基线模型</span> <span class="key">model</span></label>
                 <input class="in" id="b-model" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="同款官方模型 id" data-en-placeholder="Official id of the same model">
               </div>
-              <div class="grp" style="margin-bottom:0">
+              <div class="grp" id="bapi-grp" style="margin-bottom:0">
                 <span class="lab" id="lab-bapi" data-en="Baseline protocol">基线协议</span>
                 <div class="seg q" id="b-api" role="group" aria-labelledby="lab-bapi">
                   <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">自动</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>
@@ -403,11 +429,44 @@
   });
   // Custom suite: the dimensions to run.
   var dims = ZING_DIMPICK.bind($("#dims"), function () { syncProbeMode(); });
+  // ---------- endpoint type (surface) ----------
+  // The dimensions each non-chat surface scores (zing/scoring.py); chat has all.
+  var SURFACE_DIMS = {
+    embedding: ["model_identity", "capability", "connectivity", "reliability", "performance"],
+    rerank: ["model_identity", "capability", "connectivity", "reliability", "performance"],
+  };
+  function surfaceVal() {
+    var r = document.querySelector('#surface input:checked');
+    return r ? r.value : "chat";
+  }
+  function dimsOf(surface) {
+    var own = SURFACE_DIMS[surface];
+    return dims.value().filter(function (d) { return !own || own.indexOf(d) >= 0; });
+  }
+  // Show the fields of the chosen surface: protocol, probe request mode and the
+  // chat-only dimensions are chat settings, the claimed vector length an
+  // embedding one. Hidden groups take their labels and hints with them.
+  function syncSurface() {
+    var s = surfaceVal(), chat = s === "chat", own = SURFACE_DIMS[s];
+    $("#api-grp").hidden = !chat;
+    $("#bapi-grp").hidden = !chat;
+    $("#edims-grp").hidden = s !== "embedding";
+    $$("#dims button").forEach(function (b) { b.hidden = !!own && own.indexOf(b.getAttribute("data-v")) < 0; });
+    if (relayCfg && relayCfg.setKind) relayCfg.setKind(s);
+    syncProbeMode();
+  }
+  function setSurface(v) {
+    var r = document.querySelector('#surface input[value="' + v + '"]');
+    if (r) { r.checked = true; syncSurface(); }
+  }
+  $("#surface").addEventListener("change", syncSurface);
   // Probe request mode: chosen on standard/deep/custom; full measures both; smoke has no probe.
   function syncProbeMode() {
     var suite = segVal("suite"), full = suite === "full", smoke = suite === "smoke";
     var custom = suite === "custom", noPerf = custom && dims.value().indexOf("performance") < 0;
     $("#dims-grp").hidden = !custom;
+    // embedding and rerank requests never stream: no probe request mode
+    $("#pmode-grp").hidden = surfaceVal() !== "chat";
     $$("#pmode button").forEach(function (b) { b.disabled = full || smoke || noPerf; });
     $("#pmode-hint").textContent = smoke
       ? T("smoke 套件不做性能探测。", "The smoke suite runs no performance probe.")
@@ -644,9 +703,16 @@
       declared_provider: $("#i-prov").value.trim(),
       api: segVal("api"),
       suite: segVal("suite"),
+      surface: surfaceVal(),
       performance_streaming: segVal("pmode") === "stream",
     };
-    if (payload.suite === "custom") payload.dimensions = dims.value();
+    if (payload.surface !== "chat") {
+      // the protocol and the probe request mode are chat settings
+      payload.api = "auto";
+      payload.performance_streaming = true;
+    }
+    if (payload.surface === "embedding") payload.embedding_dimensions = Math.max(0, parseInt($("#i-edims").value, 10) || 0);
+    if (payload.suite === "custom") payload.dimensions = dimsOf(payload.surface);
     if (!payload.base_url || !payload.model) {
       if (!payload.base_url) invalid("#i-url");
       if (!payload.model) invalid("#i-model");
@@ -667,7 +733,7 @@
       fieldCtl(bUrl ? "#b-model" : "#b-url").focus();
       return;
     }
-    if (bUrl && bModel) payload.baseline = { base_url: bUrl, api_key: $("#b-key").value.trim(), model: bModel, api: segVal("b-api") };
+    if (bUrl && bModel) payload.baseline = { base_url: bUrl, api_key: $("#b-key").value.trim(), model: bModel, api: payload.surface === "chat" ? segVal("b-api") : "auto" };
     if (window.ZingSecret) ZingSecret.remember($("#form"));
 
     setGoBusy(true);
@@ -955,6 +1021,12 @@
       relayLabel: ["基线中转站 / 厂商", "Baseline relay / provider"],
     });
   }
+  // /v2/?surface=embedding|rerank (e.g. from History or the docs) preselects the endpoint type.
+  (function () {
+    var v = null;
+    try { v = new URLSearchParams(location.search).get("surface"); } catch (e) {}
+    if (v) setSurface(v);
+  })();
   // /v2/?rerun=<history id> (from History): fill the form with that run's
   // configuration. The API key is never stored in history, so the key field
   // keeps its default / the browser's saved credential for the URL.
@@ -975,6 +1047,7 @@
           url: t.base_url || "", model: t.model || "", provider: t.declared_provider || "",
           claimed: t.claimed_model && t.claimed_model !== t.model ? t.claimed_model : "",
         };
+        setSurface(rep.surface || "chat");
         if (relayCfg) relayCfg.set(v);
         else { $("#i-url").value = v.url; $("#i-model").value = v.model; $("#i-claimed").value = v.claimed; $("#i-prov").value = v.provider; }
         seg("api", t.api_auto === false && t.api ? t.api : "auto");
