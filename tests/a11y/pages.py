@@ -50,8 +50,10 @@ TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_flows.py::test_failing_audit_flow": ("audit",),
     "test_flows.py::test_monitor_flow": ("history", "monitors"),  # starts on History
     "test_flows.py::test_kb_flow": ("kb",),
+    "test_flows.py::test_surface_flow": ("audit",),
     "test_structure.py::test_report_states_not_by_colour_alone": ("history",),
     "test_structure.py::test_list_states_not_by_colour_alone": ("history", "monitors"),
+    "test_structure.py::test_surface_result_states_not_by_colour_alone": ("audit",),
 }
 
 

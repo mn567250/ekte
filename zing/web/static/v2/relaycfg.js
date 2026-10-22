@@ -401,9 +401,9 @@
     // ---- 4: list the relay's models ----
     function listModels(force) {
       var u = url.value.trim();
-      if (fctl) fctl.abort();
-      fctl = null;
       if (!u) {
+        if (fctl) fctl.abort();
+        fctl = null;
         fstate = null; fetched = []; fkey = "";
         paintModels();
         if (!m.chosen) m.setManual(true);
@@ -412,7 +412,11 @@
       }
       var body = { base_url: u, api_key: key ? key.value.trim() : "", api: api() || "auto" };
       var ck = body.base_url + "|" + body.api_key + "|" + body.api;
+      // the same request again (e.g. the key's change, then the URL's): let the
+      // one in flight finish, aborting it would leave the status busy
       if (!force && ck === fkey) return Promise.resolve();
+      if (fctl) fctl.abort();
+      fctl = null;
       fkey = ck;
       var seq = ++fseq;
       fstate = "busy";

@@ -9,7 +9,8 @@ server (zing_proc.py) and a fake OpenAI-compatible relay on 127.0.0.1
 2. failing audits: an empty form, a URL the server refuses, an unreachable relay;
 3. a monitor: scheduled from History, activated with an API key (which opens
    the master-key dialog), edited, paused, the key locked and unlocked, deleted;
-4. look-up, filter, check/save/delete of an entry on /v2/kb.
+4. look-up, filter, check/save/delete of an entry on /v2/kb;
+5. the audit page's embedding and rerank endpoint types (and a rerun).
 
 At every step an init script (TRACK_JS) watches the DOM with a
 MutationObserver installed before the page's own scripts run:
@@ -47,7 +48,7 @@ from typing import Any
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Locator, Page
 
-from tests.a11y.fake_relay import FakeRelay
+from tests.a11y.fake_relay import EMBED_DIM, FakeRelay
 from tests.a11y.harness import (
     DESKTOP,
     LANGS,
@@ -940,3 +941,75 @@ def test_aria_tree_names(browser, contexts, zing_seeded, page_id: str, lang: str
     for el in named_generics:
         issues.append(f"{el}: this role cannot carry a name, give it a role or drop the label  —  BITV 9.4.1.2 / 9.1.3.1")
     assert_no_issues(issues, f"{page_id} [{lang}]", "aria-names")
+
+
+# --------------------------------------------------------------------------- #
+# 5: the audit page's embedding and rerank surfaces (formerly /v2/tools)
+# --------------------------------------------------------------------------- #
+def type_model(page: Page, input_sel: str, model: str) -> None:
+    """Type a model id, switching the relay's model list to free text if needed."""
+    if not page.locator(input_sel).is_visible():
+        press(page, f".grp:has({input_sel}) .zmp-custom")
+    page.fill(input_sel, model)
+    page.dispatch_event(input_sel, "change")
+
+
+def fill_surface(page: Page, url: str, model: str) -> None:
+    """Fill the form for a non-chat surface: key, relay URL, model, smoke suite."""
+    page.fill("#i-key", "sk-test")
+    enter_url(page, "#i-url", "#i-model", url)
+    type_model(page, "#i-model", model)
+    page.click('#suite button[data-v="smoke"]')
+
+
+def pick_surface(page: Page, surface: str) -> None:
+    """Choose the endpoint type with the arrow keys, as a keyboard user would."""
+    page.locator("#surface input:checked").focus()
+    for _ in range(3):
+        if page.locator(f"#surface input[value={surface}]").is_checked():
+            return
+        page.keyboard.press("ArrowRight")
+    raise AssertionError(f"the arrow keys never reach the {surface} endpoint type")
+
+
+LATEST_RUN_JS = """
+async () => {
+  const rows = await (await fetch('/api/history?limit=1')).json();
+  return (Array.isArray(rows) ? rows : rows.items)[0].id;
+}
+"""
+
+
+@pytest.mark.bitv("9.4.1.3", "9.2.4.3", "9.3.3.1")
+@pytest.mark.parametrize("lang", FLOW_LANGS)
+def test_surface_flow(browser, contexts, zing, relay, broken_relay, lang: str) -> None:
+    """Audit an embedding endpoint (and rerun it), then a rerank endpoint
+    (working and broken), on the audit page's endpoint-type selector."""
+    flow = open_flow(contexts, browser, zing.url, "/v2/", lang, AUDIT_MESSAGES, "surface flow")
+    page = flow.page
+    flow.step("choose the embedding endpoint type", lambda: pick_surface(page, "embedding"))
+    flow.step("embedding: submit the empty form", lambda: press(page, "#go"))
+    if not page.locator("#formerr").inner_text().strip():
+        flow.issues.append("embedding: submit the empty form: no error message is shown  —  BITV 9.3.3.1")
+
+    def embed() -> None:
+        fill_surface(page, relay.url, "a11y-embed")
+        page.fill("#i-edims", str(EMBED_DIM))
+
+    flow.step("embedding: fill the form", embed)
+    run_to_report(flow, "embedding: audit the endpoint")
+    rid = page.evaluate(LATEST_RUN_JS)
+    flow.navigate(f"embedding: rerun #{rid}", lambda: page.goto(f"{zing.url}/v2/?rerun={rid}"), "**/v2/?rerun=*", AUDIT_MESSAGES)
+    page.wait_for_function("() => document.querySelector('#i-edims').value !== ''")
+    if page.input_value("#i-edims") != str(EMBED_DIM) or not page.locator("#sf-embedding").is_checked():
+        flow.issues.append(f"rerun: the claimed dimension is {page.input_value('#i-edims')!r}, want {EMBED_DIM}")
+
+    flow.step("choose the rerank endpoint type", lambda: pick_surface(page, "rerank"))
+    flow.step("rerank: fill the form", lambda: fill_surface(page, relay.url, "a11y-rerank"))
+    run_to_report(flow, "rerank: audit the endpoint")
+    flow.step("back to the form", lambda: press(page, '#report [data-action="0"]'))
+    if not page.evaluate("() => !!document.activeElement && !!document.activeElement.closest('#v1')"):
+        flow.issues.append("back to the form: the form is shown but focus is not in it  —  BITV 9.2.4.3")
+    fill_surface(page, broken_relay.url, "a11y-rerank")
+    run_to_report(flow, "rerank: a relay that answers HTTP 500")
+    flow.done("#formerr", "#now")
