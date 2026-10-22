@@ -471,7 +471,7 @@
   }
 
   // What the monitor audits: a chat endpoint, an embeddings one or a rerank one.
-  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Rerank"] };
+  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
   function surfaceCell(w) {
     var m = SURFACE[w.surface] || SURFACE.chat;
     return SURFACE[w.surface] && w.surface !== "chat" ? '<span class="badge machine-soft">' + esc(T(m[0], m[1])) + "</span>" : esc(T(m[0], m[1]));

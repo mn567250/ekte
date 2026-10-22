@@ -613,7 +613,7 @@
     var o = state.opts || {};
     return o.surfaces && o.surfaces.length ? o.surfaces[0].value : "chat";
   }
-  var SURFACE_L = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Rerank"] };
+  var SURFACE_L = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
   function surfaceLabel(v) { return SURFACE_L[v] ? T(SURFACE_L[v][0], SURFACE_L[v][1]) : v; }
 
   /* ---------------- data ---------------- */
