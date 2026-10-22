@@ -26,6 +26,11 @@ from zing.detectors import (  # noqa: F401  -- imported for registration side ef
     protocol_attrs,
     quality_judge,  # noqa: F401
     reliability,
+    rerank_connectivity,
+    rerank_determinism,
+    rerank_drift,
+    rerank_identity,
+    rerank_known_answer,
     rerank_performance,
     security,
     streaming,

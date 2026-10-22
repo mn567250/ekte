@@ -224,6 +224,8 @@ async def run_audit(
             probe_planned *= len(probe_modes(options))
         elif any(d.id == "performance.embed" for d in detectors):
             probe_planned *= 2  # a single-input and a batch request per round
+        elif any(d.id == "performance.rerank" for d in detectors):
+            probe_planned *= 2  # a 4- and a 32-document request per round
         else:
             probe_planned = 0
         _emit({"type": "start", "total": total, "suite": options.suite,

@@ -125,6 +125,13 @@ async def test_rerank_probe_measures_latency_and_document_scaling(serve):
     assert {e["record"]["phase"] for e in probe} >= {"ping", "warmup", "probe", DOCS_PHASE,
                                                     "probe_concurrent"}
     assert {e["record"]["op"] for e in probe} == {"list_models", "rerank"}
+    # the dry-run estimate matches the calls actually made
+    opts = AuditOptions(surface="rerank", suite="deep", performance_requests=12,
+                        reliability_concurrency=2)
+    assert RerankPerformanceDetector.estimated_calls(opts, has_baseline=False) == len(probe)
+    assert RerankPerformanceDetector.estimated_calls(opts, has_baseline=True) == 2 * len(probe)
+    start = next(e for e in events if e["type"] == "start")
+    assert start["probe_requests"] == 24
 
 
 async def test_rerank_probe_detects_repeated_scores(serve):

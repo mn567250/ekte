@@ -921,9 +921,10 @@ no knowledge-base speed reference; raw speed only counts against a baseline.
 **Rerank performance probe** (`performance.rerank`, surface `rerank`). The
 same probe for `POST /rerank`, gated like the chat probe. Each round sends one
 query over 4 documents and one over 32; the burst uses 4. Every query and
-document carries the request's random nonce, and fine-grained scores (not a
-round number to 3 decimals) repeated exactly for another request are flagged
-as cached and left out of the statistics; a 200 that leaves documents
+document carries the request's random nonce; fine-grained scores (not a
+round number to 3 decimals) repeated exactly for a different set of documents
+are flagged as cached and left out of the statistics (a deterministic scorer
+may repeat them for the same documents); a 200 that leaves documents
 unscored counts as a failed request. It reports latency p50/p95, cold start,
 documents/s and input tokens/s, the latency/throughput consistency, errors and
 load stability. **Document-count scaling** compares the per-document latency

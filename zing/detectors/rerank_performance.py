@@ -9,10 +9,14 @@ per-document latency is about that of a 4-document one suggests a relay that
 splits or serialises the documents.
 
 Every query and document is unique (a random request id marks each), so no
-response can come from a cache. A response whose scores repeat, exactly, those
-seen for another request is flagged as cached and left out of the stats. Only fine-grained scores
-count (a value that is not a round number to 3 decimals): coarse scores, as
-from a lexical scorer, can repeat legitimately. A 200 that does not score every
+response can come from a cache. The documents' topics rotate, so a request's
+*arrangement* (which topics, how many) recurs every few rounds: a response
+whose scores repeat, exactly, those seen for another arrangement ignored the
+documents (a stub or a stored answer) and is flagged as cached and left out of
+the stats. A deterministic scorer may repeat its scores for the same
+arrangement, so that is never flagged. Only fine-grained scores count (a value
+that is not a round number to 3 decimals): coarse scores, as from a lexical
+scorer, can repeat legitimately. A 200 that does not score every
 document counts as a failed request. Rerank does not stream.
 
 There is no knowledge-base speed reference for rerank models: the probe scores
@@ -28,6 +32,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from zing import prompts
+from zing.config import AuditOptions
 from zing.context import AuditContext
 from zing.detectors import perf_probe
 from zing.detectors.base import Detector, register
@@ -119,13 +124,25 @@ class RerankPerformanceDetector(Detector):
     def applies(cls, suite: str, *, has_baseline: bool) -> bool:
         return perf_probe.probe_applies(suite, has_baseline=has_baseline)
 
+    @classmethod
+    def estimated_calls(cls, options: AuditOptions, *, has_baseline: bool) -> int:
+        """API calls the probe makes across all endpoints — for ``--dry-run``:
+        pings, a warm-up, two requests per round and the burst (4 documents)."""
+        n = planned_probe_requests(options, has_baseline=has_baseline)
+        if n == 0:
+            return 0
+        per_endpoint = perf_probe.PINGS + 1 + n * 2 + burst_size(options, n)
+        return per_endpoint * (2 if has_baseline else 1)
+
     def __init__(self) -> None:
         self._counter = 0
         self._topics: list[str] = prompts.get("performance.topics")
         # seq of each recorded request -> documents it carried
         self._docs: dict[int, int] = {}
+        # (endpoint, scores digest) -> the arrangement first answered with them
+        self._answered: dict[tuple[str, str], tuple[int, int]] = {}
 
-    def _request(self, size: int) -> tuple[str, list[str]]:
+    def _request(self, size: int) -> tuple[str, list[str], tuple[int, int]]:
         topics = self._topics
         start = self._counter
         self._counter += 1
@@ -136,10 +153,10 @@ class RerankPerformanceDetector(Detector):
                          topic=topics[(start + i) % len(topics)])
             for i in range(size)
         ]
-        return query, documents
+        return query, documents, (start % len(topics), size)
 
     async def _call(self, ep: Endpoint, size: int) -> RequestRecord | None:
-        query, documents = self._request(size)
+        query, documents, arrangement = self._request(size)
         if size > FEW:
             with phase_scope(DOCS_PHASE):
                 result, ranked = await ep.client.rerank(query, documents)
@@ -153,13 +170,13 @@ class RerankPerformanceDetector(Detector):
         if record.ok and len({item.get("index") for item in ranked}) != size:
             record.ok = False
             record.error_type = "IncompleteRanking"
-        # The same fine-grained scores for a different (unique) request: a cache hit.
+        # The same fine-grained scores for other documents: a cache hit.
         if record.ok and any(_fine(item.get("relevance_score")) for item in ranked):
             scores = [(item.get("index"), item.get("relevance_score")) for item in ranked]
             digest = hashlib.sha256(repr(scores).encode("utf-8")).hexdigest()
-            if digest in ep.seen:
+            first = self._answered.setdefault((ep.label, digest), arrangement)
+            if first != arrangement:
                 record.cached = True
-            ep.seen.add(digest)
         return record
 
     async def run(self, ctx: AuditContext) -> DetectorResult:
