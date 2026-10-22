@@ -33,7 +33,7 @@ def _versioned(html: str) -> list[str]:
 
 
 @pytest.mark.parametrize(
-    "path", ["/v2/", "/v2/history", "/v2/watches", "/v2/tools", "/v2/kb", "/v2/analytics", "/v2/accessibility"]
+    "path", ["/v2/", "/v2/history", "/v2/watches", "/v2/kb", "/v2/analytics", "/v2/accessibility"]
 )
 def test_v2_pages_version_their_assets_and_are_revalidated(client, path):
     r = client.get(path)

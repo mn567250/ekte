@@ -1046,60 +1046,6 @@ def test_tool_monitor_cards(open_routed_page, base_url: str, lang: str) -> None:
     assert_no_issues(issues, f"tool monitor cards [{lang}]", "tool-monitors")
 
 
-EMBED_RESULT = {
-    "risk_level": "high", "score": 50,
-    "target": {"base_url": "http://relay.invalid/v1", "model": "text-embedding-3-small"},
-    "findings": [{"id": "embed.dimension", "status": "fail", "title": "Vector dimension", "summary": "Vector dimension check.",
-                  "evidence": {"returned": 1536, "claimed": 1536}}],
-}  # fmt: skip
-
-SUBMIT_EMBED_JS = """
-() => {
-  document.getElementById('e-url').value = 'http://relay.invalid/v1';
-  document.getElementById('e-model').value = 'text-embedding-3-small';
-  document.getElementById('embed-form').requestSubmit();
-}
-"""
-
-
-@pytest.mark.bitv("9.1.4.1")
-@pytest.mark.parametrize("lang", LANGS)
-def test_tool_result_states_not_by_colour_alone(open_routed_page, lang: str) -> None:
-    """9.1.4.1 Use of colour: the embedding check's result card (verdict badge,
-    check status) in every state, from a mocked /api/embed answer."""
-    page = open_routed_page(PAGES["tools"], lang)
-    page.add_style_tag(content=NO_TRANSITIONS_CSS)
-    answer: dict[str, Any] = {}
-
-    def handle(route: Any) -> None:
-        if route.request.method == "POST" and urlparse(route.request.url).path == "/api/embed":
-            route.fulfill(status=200, content_type="application/json", body=json.dumps(answer))
-        else:
-            route.fallback()
-
-    page.context.route("**/api/**", handle)
-    sets = {
-        "verdict badge": [(v, dict(EMBED_RESULT, risk_level=v)) for v in RISKS],
-        "check status": [
-            (v, dict(EMBED_RESULT, findings=[dict(EMBED_RESULT["findings"][0], status=v)])) for v in STATUSES
-        ],
-    }
-    issues: list[str] = []
-    for what, variants in sets.items():
-        states = []
-        for name, data in variants:
-            answer.clear()
-            answer.update(data)
-            page.evaluate("() => { document.getElementById('e-out').innerHTML = ''; }")
-            with page.expect_response("**/api/embed"):
-                page.evaluate(SUBMIT_EMBED_JS)
-            page.wait_for_selector("#e-out .res")
-            settle(page)
-            states.append((name, page.evaluate(SIGNATURE_JS, "#e-out .res")))
-        issues += colour_only_pairs(states, what)
-    assert_no_issues(issues, f"tools [{lang}]", "use-of-colour")
-
-
 # links inside running text: underlined, or 3:1 against the text around them
 # plus an underline on hover and focus (WCAG technique G183, failure F73)
 INLINE_LINKS_JS = (

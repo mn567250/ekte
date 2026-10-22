@@ -142,7 +142,7 @@
       <!-- RELAYS -->
       <section role="tabpanel" id="panel-relays" aria-labelledby="tab-relays" tabindex="0" hidden>
         <h2 class="form-title" data-kb="title" id="relays-title" tabindex="-1"><span data-en="All relays">全部中转站</span> <span class="count" data-kb="count"></span></h2>
-        <p class="hint" data-en="Endpoints without models of their own, e.g. relays you saved on the Audit or Tools page. They are offered in the relay list there; a switched-off relay is not.">没有自有模型的端点，例如你在检测或工具页面保存的中转站。它们会出现在那里的中转站列表中；停用的则不会。</p>
+        <p class="hint" data-en="Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.">没有自有模型的端点，例如你在检测页面保存的中转站。它们会出现在那里的中转站列表中；停用的则不会。</p>
         <details class="add" data-kb="add" id="add-relays">
           <summary><span class="pico" data-icon="plus"></span><span data-en="Add a relay">添加中转站</span></summary>
           <div class="add-body"><div data-kb="add-body"></div></div>
@@ -250,7 +250,7 @@
       name: function (r) { return L.markCJK(r.display_name) + " " + code(r.provider); },
       meta: function (r) { return (r.base_urls || []).map(code); },
       count: counts(["1 个中转站", "1 relay"], ["{n} 个中转站", "{n} relays"]),
-      empty: function () { return T("还没有中转站。在下方添加，或在检测和工具页面的中转站列表中保存。", "No relays yet. Add one here, or save one from the relay list on the Audit and Tools pages."); },
+      empty: function () { return T("还没有中转站。在下方添加，或在检测页面的中转站列表中保存。", "No relays yet. Add one here, or save one from the relay list on the Audit page."); },
       add: function (el) { S.relayForm(el, page, { prefix: "r" }); },
     },
   };

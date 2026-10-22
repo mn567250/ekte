@@ -9,8 +9,7 @@ server (zing_proc.py) and a fake OpenAI-compatible relay on 127.0.0.1
 2. failing audits: an empty form, a URL the server refuses, an unreachable relay;
 3. a monitor: scheduled from History, activated with an API key (which opens
    the master-key dialog), edited, paused, the key locked and unlocked, deleted;
-4. the embedding and rerank checks on /v2/tools;
-5. look-up, filter, check/save/delete of an entry on /v2/kb.
+4. look-up, filter, check/save/delete of an entry on /v2/kb.
 
 At every step an init script (TRACK_JS) watches the DOM with a
 MutationObserver installed before the page's own scripts run:
@@ -578,53 +577,7 @@ def test_monitor_flow(browser, contexts, zing, relay, lang: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# 4: tools (embedding / rerank)
-# --------------------------------------------------------------------------- #
-TOOLS_MESSAGES = ["#e-out", "#r-out", ".zmp-status"]
-
-
-def type_model(page: Page, input_sel: str, model: str) -> None:
-    """Type a model id, switching the relay's model list to free text if needed."""
-    if not page.locator(input_sel).is_visible():
-        press(page, f".grp:has({input_sel}) .zmp-custom")
-    page.fill(input_sel, model)
-    page.dispatch_event(input_sel, "change")
-
-
-@pytest.mark.bitv("9.4.1.3", "9.2.4.3", "9.3.3.1")
-@pytest.mark.parametrize("lang", FLOW_LANGS)
-def test_tools_flow(browser, contexts, zing, relay, broken_relay, lang: str) -> None:
-    """Check an embedding endpoint and a rerank endpoint (working and broken)."""
-    flow = open_flow(contexts, browser, zing.url, "/v2/tools", lang, TOOLS_MESSAGES, "tools flow")
-    page = flow.page
-    flow.step("embedding: submit the empty form", lambda: press(page, "#e-go"))
-
-    def embed() -> None:
-        page.fill("#e-key", "sk-test")
-        enter_url(page, "#e-url", "#e-model", relay.url)
-        type_model(page, "#e-model", "text-embedding-3-small")
-        press(page, "#e-go")
-        page.wait_for_selector("#e-out .res")
-
-    flow.step("embedding: verify the endpoint", embed)
-    flow.step("switch to the rerank tab", lambda: (press(page, "#tab-embed", "ArrowRight"), page.wait_for_selector("#panel-rerank:not([hidden])")))
-
-    def rerank(url: str) -> Callable[[], None]:
-        def run() -> None:
-            page.fill("#r-key", "sk-test")
-            enter_url(page, "#r-url", "#r-model", url)
-            type_model(page, "#r-model", "bge-reranker-v2-m3")
-            press(page, "#r-go")
-            page.wait_for_selector("#r-out .res")
-        return run
-
-    flow.step("rerank: verify the endpoint", rerank(relay.url))
-    flow.step("rerank: a relay that answers HTTP 500", rerank(broken_relay.url))
-    flow.done("#e-out", "#r-out")
-
-
-# --------------------------------------------------------------------------- #
-# 5: knowledge base
+# 4: knowledge base
 # --------------------------------------------------------------------------- #
 KB_MESSAGES = [
     "#res", "#kbwarn", "#m-err", "#m-ok", "#m-scan", "#m-copy-msg", "#p-err", "#p-ok", "#p-scan", "#r-err", "#r-ok",

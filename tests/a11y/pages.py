@@ -32,7 +32,6 @@ PAGES: dict[str, str] = {
     "audit": "/v2/",
     "history": "/v2/history",
     "monitors": "/v2/watches",
-    "tools": "/v2/tools",
     "kb": "/v2/kb",
     "analytics": "/v2/analytics",
     "accessibility": "/v2/accessibility",
@@ -50,11 +49,9 @@ TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_flows.py::test_audit_flow": ("audit",),
     "test_flows.py::test_failing_audit_flow": ("audit",),
     "test_flows.py::test_monitor_flow": ("history", "monitors"),  # starts on History
-    "test_flows.py::test_tools_flow": ("tools",),
     "test_flows.py::test_kb_flow": ("kb",),
     "test_structure.py::test_report_states_not_by_colour_alone": ("history",),
     "test_structure.py::test_list_states_not_by_colour_alone": ("history", "monitors"),
-    "test_structure.py::test_tool_result_states_not_by_colour_alone": ("tools",),
 }
 
 
@@ -114,7 +111,6 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "index.html", ("audit",)),
     (_V2 + "history.html", ("history",)),
     (_V2 + "watches.html", ("monitors",)),
-    (_V2 + "tools.html", ("tools",)),
     (_V2 + "kb.html", ("kb",)),
     (_V2 + "kbsection.js", ("kb",)),
     (_V2 + "kbview.js", ("kb",)),
@@ -129,22 +125,22 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # the page fetches bitv-report.json; the catalogue is what it is built from
     (_V2 + "bitv-*.json", ("accessibility",)),
     (_V2 + "dimpick.js", ("audit",)),
-    (_V2 + "relaycfg.js", ("audit", "tools")),
+    (_V2 + "relaycfg.js", ("audit",)),
     (_V2 + "report.js", ("audit", "history")),
     (_V2 + "report.css", ("audit", "history")),
     (_V2 + "perf.css", ("audit", "history")),
     (_V2 + "masterkey.js", ("monitors",)),
-    (_V2 + "tabs.js", ("tools", "kb", "analytics", "audit", "monitors")),
+    (_V2 + "tabs.js", ("kb", "analytics", "audit", "monitors")),
     (_V2 + "jobs.js", ("audit", "monitors")),
     (_V2 + "jobs.css", ("audit", "monitors")),
-    (_V2 + "fields.css", ("audit", "kb", "monitors", "tools")),
+    (_V2 + "fields.css", ("audit", "kb", "monitors")),
     (_V2 + "nav.js", ALL),
     (_V2 + "theme.js", ALL),
     (_V2 + "tokens.css", ALL),
     (_V2 + "zing.css", ALL),
     # -- assets shared with the classic UI (zing/web/static/*.js) --
     (_ST + "perf.js", ("audit", "history")),
-    (_ST + "secretfield.js", ("audit", "monitors", "tools")),
+    (_ST + "secretfield.js", ("audit", "monitors")),
     (_ST + "i18n.js", ALL),
     (_ST + "icons.js", ALL),
     (_ST + "lang.js", ALL),
@@ -168,8 +164,8 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("zing/web/masterkey.py", ("monitors",)),
     ("zing/web/*.py", ALL),  # server, security, caching, __init__: every page
     # the knowledge base: the Knowledge page lists it, the relay configuration
-    # of the audit and tools pages picks providers and models from it
-    ("zing/knowledge/**", ("audit", "kb", "tools")),
+    # of the audit page picks providers and models from it
+    ("zing/knowledge/**", ("audit", "kb")),
     # -- the audit pipeline: the audit flow (test_flows.py) runs a real audit
     # against a fake relay and renders its report; the report export is on
     # the audit and History pages. tests/test_a11y_pages.py checks that every
@@ -186,7 +182,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("zing/config.py", ("audit",)),
     ("zing/context.py", ("audit",)),
     ("zing/models.py", ("audit",)),
-    ("zing/embed_audit.py", ("tools",)),  # the embedding check on the tools page
+    ("zing/embed_audit.py", ("audit",)),  # the embedding check (the audit page's surface selector)
     ("zing/notify.py", ("monitors",)),  # monitor webhooks
     ("zing/secretbox.py", ("monitors",)),  # the monitors' stored keys
     ("zing/datadir.py", ("audit", "history", "monitors")),  # where history and monitors live
@@ -303,10 +299,9 @@ def affected(paths: Iterable[str]) -> Scope:
 # JUnit XML (1,299 tests, 4,465 s of test time; tests/a11y/README.md). Tests tied to no page (cross-page
 # checks, self-checks) run in every selection and weigh in as "common".
 WEIGHTS: dict[str, float] = {
-    "audit": 0.12,
+    "audit": 0.20,  # includes the former tools page's 0.08 (its checks moved to the audit page)
     "history": 0.24,
     "monitors": 0.09,
-    "tools": 0.08,
     "kb": 0.23,
     "analytics": 0.10,
     "accessibility": 0.10,
