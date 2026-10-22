@@ -319,8 +319,11 @@ All decoding (image headers, WAV) is standard library only.
 `zing/web/server.py` is a FastAPI app created by `create_app()`:
 
 - **Pages.** The classic UI (`/`, `/console`, `/history`, `/watches`, `/tools`)
-  and the new UI (`/v2/`, `/v2/history`, `/v2/watches`, `/v2/tools`, `/v2/kb`)
-  are static HTML files. `?ui=v2` / `?ui=v1` switches and a cookie remembers the
+  and the new UI (`/v2/`, `/v2/history`, `/v2/watches`, `/v2/kb`)
+  are static HTML files. The new UI has no Tools page: embedding and rerank
+  audits start on the audit page through the endpoint-type selector
+  (`/v2/?surface=embedding|rerank`), and `/v2/tools` serves a small page that
+  forwards old links there (`#rerank` picks rerank, `?rerun=` is passed on). `?ui=v2` / `?ui=v1` switches and a cookie remembers the
   choice, so a classic URL redirects to its new counterpart once the new UI was
   chosen.
 - **API.** `/api/audit/stream` runs an audit and streams its events over SSE;
@@ -408,7 +411,7 @@ Every colour of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
 scripts use `var(--…)` only, never a literal colour.
 
-The v2 **Audit** and **Tools** pages configure relays with `v2/relaycfg.js`:
+The v2 **Audit** page configures relays with `v2/relaycfg.js`:
 relay/provider select → base URL → the relay's models (`/api/models`, on change,
 cached per URL/key/protocol) → claimed model from the knowledge base
 (`/api/kb/resolve` preselects it) → derived declared provider, plus **Save to
@@ -442,7 +445,7 @@ like every other chart, only when new data arrives and never under reduced
 motion or the header's "Motion off".
 
 The page header and the filter panel sit above five in-page tabs
-(`v2/tabs.js`, as on Tools and Knowledge): each `PANELS` entry names its `tab`,
+(`v2/tabs.js`, as on Knowledge): each `PANELS` entry names its `tab`,
 and only the shown tab's panels load; a filter change reloads that tab and
 marks the others stale (`activate()` loads them when shown). `tabs.js` takes
 `writeHash: false` here, because the page writes the whole view into the
