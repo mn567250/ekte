@@ -240,8 +240,8 @@ In der neuen Oberfläche führt das Formular durch die Konfiguration:
 Ein Relay, das noch nicht in der Liste steht, lässt sich mit **In der
 Wissensbasis speichern** unter einem Namen Ihrer Wahl behalten; beim nächsten Mal
 ist es eine Auswahl entfernt. Die vertrauenswürdige Referenz (**Mit
-vertrauenswürdiger Referenz vergleichen**) und die Seite **Werkzeuge** werden
-genauso konfiguriert. Die klassische Oberfläche behält die einfachen Felder mit
+vertrauenswürdiger Referenz vergleichen**) sowie die Embedding- und
+Rerank-Prüfungen werden genauso konfiguriert. Die klassische Oberfläche behält die einfachen Felder mit
 **Modelle abrufen**.
 
 Dann
@@ -267,7 +267,7 @@ Oberfläche** zurückführt. Die Wahl wird pro Browser gespeichert.
 |---|---|---|---|
 | **Prüfung** | `/` | `/v2/` | Ein Relay prüfen (optional gegen eine Referenz) und den Bericht lesen |
 | **Konsole** | `/console` | — | Dieselbe Prüfung als kompakte Konsole im Log-Stil |
-| **Werkzeuge** | `/tools` | `/v2/tools` | Embedding- und Rerank-Prüfungen |
+| **Werkzeuge** | `/tools` | — | Embedding- und Rerank-Prüfungen; in der neuen Oberfläche starten sie auf der Seite **Prüfung** über die Auswahl des Endpunkttyps (`/v2/tools` leitet dorthin weiter) |
 | **Verlauf** | `/history` | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
 | **Analyse** | — | `/v2/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
 | **Überwachung** | `/watches` | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
@@ -650,7 +650,8 @@ wie Chat-Prüfungen; nur die Detektoren unterscheiden sich. Verlauf und Analyse
 filtern nach Endpunkttyp, und die Analyse zeigt nur die Kennzahlen, die zutreffen.
 
 Um einen Embeddings- oder Rerank-Endpunkt zu überwachen, prüfen Sie ihn auf der
-Seite **Werkzeuge** und wählen **Überwachen**, oder **Als Überwachung einplanen** in
+Seite **Prüfung** (Endpunkttyp **Embeddings** oder **Reranking** wählen; in der
+klassischen Oberfläche auf der Seite **Werkzeuge**) und wählen **Überwachen**, oder **Als Überwachung einplanen** in
 seiner Verlaufszeile. Der Monitor wiederholt die Prüfung nach Zeitplan, mit
 derselben Fixierung der Wissensbasis, derselben Alarmschwelle und denselben
 Regressionsalarmen wie ein Chat-Monitor, und prüft die **Drift** gegenüber
@@ -699,7 +700,9 @@ das zurückgegebene `model`-Feld. Mitgelieferte Profile: OpenAI
 `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Beide gibt es auch auf der Seite **Werkzeuge** der Weboberfläche
+Beide gibt es auch in der Weboberfläche: In der neuen Oberfläche starten sie auf
+der Seite **Prüfung** über die Auswahl des Endpunkttyps (**Embeddings**,
+**Reranking**), in der klassischen auf der Seite **Werkzeuge**
 (**Embedding-Prüfung**, **Rerank-Prüfung**). Die Rerank-Prüfung nutzt immer die
 eingebauten Tests, damit jeder Lauf für Drift und Überwachung vergleichbar bleibt.
 
@@ -784,7 +787,7 @@ ab (`zing kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
      Anbieter-YAML auf dieselbe Weise; **Relay hinzufügen** nimmt Namen und
      Basis-URL. **Welches Profil verwendet eine Modell-ID?** zeigt, wie eine ID
      aufgelöst wird; Ihre Einträge lassen sich als YAML exportieren;
-   - auf den Seiten **Prüfung** und **Werkzeuge** der Weboberfläche: **In der
+   - auf der Seite **Prüfung** der Weboberfläche (klassisch auch **Werkzeuge**): **In der
      Wissensbasis speichern** behält Namen und Basis-URL eines Relays (ein
      Anbieter-Eintrag ohne Modelle), aufgeführt unter **Wissen → Relays**;
    - auf der Kommandozeile: `zing kb-prompt <model>`, `zing kb-import <file>`

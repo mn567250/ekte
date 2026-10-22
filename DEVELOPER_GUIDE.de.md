@@ -335,7 +335,11 @@ nutzt nur die Standardbibliothek.
 
 - **Seiten.** Die klassische Oberfläche (`/`, `/console`, `/history`,
   `/watches`, `/tools`) und die neue Oberfläche (`/v2/`, `/v2/history`,
-  `/v2/watches`, `/v2/tools`, `/v2/kb`) sind statische HTML-Dateien. `?ui=v2` /
+  `/v2/watches`, `/v2/kb`) sind statische HTML-Dateien. Die neue Oberfläche hat
+  keine Werkzeuge-Seite: Embedding- und Rerank-Prüfungen starten auf der
+  Prüfseite über die Auswahl des Endpunkttyps (`/v2/?surface=embedding|rerank`),
+  und `/v2/tools` liefert eine kleine Seite, die alte Links dorthin weiterleitet
+  (`#rerank` wählt Rerank, `?rerun=` wird weitergegeben). `?ui=v2` /
   `?ui=v1` schaltet um, und ein Cookie merkt sich die Wahl, sodass eine klassische
   URL auf ihr neues Gegenstück umleitet, sobald die neue Oberfläche gewählt wurde.
 - **API.** `/api/audit/stream` führt eine Prüfung aus und streamt ihre Ereignisse
@@ -429,7 +433,7 @@ von der Wurzel ausgeliefert: `lang.js` (Sprachwahl), `locales.js`
 `modelpicker.js` (**Modelle abrufen**), `secretfield.js` und `perf.js`
 (Leistungsdiagramme).
 
-Die v2-Seiten **Prüfung** und **Werkzeuge** konfigurieren Relays mit
+Die v2-Seite **Prüfung** konfiguriert Relays mit
 `v2/relaycfg.js`: Auswahl Relay/Anbieter → Basis-URL → die Modelle des Relays
 (`/api/models`, bei Änderung, zwischengespeichert pro URL/Schlüssel/Protokoll) →
 angegebenes Modell aus der Wissensbasis (`/api/kb/resolve` wählt es vor) →
@@ -467,7 +471,7 @@ bei allen anderen Diagrammen nur bei neuen Daten und nie bei reduzierter
 Bewegung oder „Animation aus“ im Kopfbereich.
 
 Seitenkopf und Filterpanel stehen über fünf seiteninternen Tabs
-(`v2/tabs.js`, wie bei Werkzeuge und Wissen): Jeder `PANELS`-Eintrag
+(`v2/tabs.js`, wie bei Wissen): Jeder `PANELS`-Eintrag
 nennt seinen `tab`, und nur die Bereiche des angezeigten Tabs laden; eine
 Filteränderung lädt diesen Tab neu und markiert die anderen als veraltet
 (`activate()` lädt sie beim Anzeigen). `tabs.js` bekommt hier
