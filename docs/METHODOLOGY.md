@@ -920,6 +920,43 @@ no knowledge-base speed reference; raw speed only counts against a baseline.
 
 ---
 
+## Rerank surface
+
+A rerank audit (`surface` `rerank`) sends only `POST /rerank` requests and is
+scored on the shared 0–100 scale and A–F grade with its own weights: model
+identity 30, capability claims 30, performance 20, concurrency reliability 10,
+connectivity 10. A failed known-answer ranking (capability claims, HIGH) or a
+swapped model (model identity, HIGH) makes the risk HIGH.
+
+| Check | Id | Dimension | What it tests |
+|---|---|---|---|
+| Connectivity | `rerank.connectivity` | Connectivity | the endpoint returns a well-formed ranking |
+| Known answer | `rerank.known_answer` | Capability claims | a probe with one obviously relevant document ranks it first |
+| Echoed model | `rerank.identity` | Model identity | the response's `model` field names the claimed model |
+| Ranking drift | `rerank.drift` | Model identity | the pinned probe's ranking and scores vs the previous saved run |
+| Determinism | `rerank.determinism` | Concurrency reliability | the same query twice gives the same ranking and scores |
+| Performance probe | `performance.rerank` | Performance | latency, cold start, documents/s, document-count scaling |
+
+**Ranking drift.** Every run stores the ranking and the rounded scores of one
+fixed probe of graded relevance. The next run of the same target and claimed
+model compares with it: the same ranking with scores within **1%** is stable
+(PASS), **1% to 10%** has shifted (WARN, MEDIUM), a different ranking or a
+change of more than **10%** means the model was swapped (FAIL, HIGH). The first
+run records the baseline (INFO); a changed probe is never taken for drift.
+
+**Performance probe.** Gated like the chat probe (deep, full and custom; on
+standard only with a baseline). Each round sends one unique query over
+**4 documents** and one over **32**; on deep/full a concurrent burst follows.
+Responses whose fine-grained scores repeat those of another query are flagged
+as cached and left out of the statistics. It reports latency p50/p95, cold
+start, documents/s and input tokens/s, consistency, errors and load stability.
+**Document scaling**: when a 32-document request costs 0.6x or more per
+document of a 4-document one, the relay splits or serialises the documents
+(linear, WARN LOW). There is no knowledge-base speed reference; raw speed only
+counts against a baseline.
+
+---
+
 ## Trick → detector mapping
 
 The 16 relay tricks from the research map onto zing as follows.
