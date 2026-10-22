@@ -236,8 +236,8 @@ Na nova interface o formulário guia a configuração:
 
 Um relay que ainda não está na lista pode ser mantido com **Salvar na base** com
 o nome que lhe der; da próxima vez basta escolhê-lo. A referência confiável
-(**Comparar com uma referência confiável**) e a página **Ferramentas** são
-configuradas da mesma forma. A interface clássica mantém os campos simples com
+(**Comparar com uma referência confiável**) e as auditorias de embeddings e rerank
+são configuradas da mesma forma. A interface clássica mantém os campos simples com
 **Obter modelos**.
 
 Depois, **Iniciar auditoria** e acompanhe
@@ -263,7 +263,7 @@ clássica** volta atrás. A escolha é memorizada por navegador.
 |---|---|---|---|
 | **Auditoria** | `/` | `/v2/` | Auditar um relay (opcionalmente face a uma referência) e ler o relatório |
 | **Consola** | `/console` | — | A mesma auditoria como consola compacta, em estilo de registo |
-| **Ferramentas** | `/tools` | `/v2/tools` | Auditorias de embeddings e rerank |
+| **Ferramentas** | `/tools` | — | Auditorias de embeddings e rerank; na nova interface começam na página **Auditoria** com o seletor de tipo de endpoint (`/v2/tools` redireciona para lá) |
 | **Histórico** | `/history` | `/v2/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
 | **Análises** | — | `/v2/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
 | **Monitores** | `/watches` | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
@@ -637,7 +637,9 @@ chat; só os detetores mudam. O histórico e a análise filtram por tipo de endp
 e a análise mostra apenas as métricas aplicáveis.
 
 Para monitorizar um endpoint de embeddings ou rerank, audite-o na página
-**Ferramentas** e escolha **Monitorar**, ou **Agendar como monitor** na sua linha
+**Auditoria** (escolha **Embeddings** ou **Reordenação** no seletor de tipo de
+endpoint; na interface clássica, na página **Ferramentas**) e escolha
+**Monitorar**, ou **Agendar como monitor** na sua linha
 do histórico. O monitor repete a auditoria segundo o agendamento, com a mesma
 fixação da base de conhecimento, o mesmo limiar de alerta e os mesmos alertas de
 regressão de um monitor de chat, e verifica a **deriva** face à sua execução
@@ -685,8 +687,10 @@ devolve 1024-d serve um substituto), o determinismo (mesma entrada → cosseno �
 `text-embedding-3-large` (3072), `text-embedding-ada-002` (1536), Qwen
 `text-embedding-v3`/`-v4` (1024).
 
-Ambos estão também na página **Ferramentas** da interface web (**Auditoria de
-embeddings**, **Auditoria de rerank**). A auditoria de rerank usa sempre as sondas
+Ambos estão também na interface web: na nova interface começam na página
+**Auditoria** com o seletor de tipo de endpoint (**Embeddings**, **Reordenação**);
+na clássica, na página **Ferramentas** (**Auditoria de embeddings**, **Auditoria
+de rerank**). A auditoria de rerank usa sempre as sondas
 integradas, para que cada execução continue comparável para a deriva e a
 monitorização.
 
@@ -770,7 +774,7 @@ Moonshot (`zing kb` lista-os). Há três camadas; as posteriores prevalecem:
      **Adicionar um relay** pede um nome e um URL base. **Qual perfil um ID de
      modelo usa?** mostra como um id é resolvido; as suas entradas podem ser
      exportadas como YAML;
-   - nas páginas **Auditoria** e **Ferramentas** da interface web: **Salvar na
+   - na página **Auditoria** da interface web (na clássica, também **Ferramentas**): **Salvar na
      base** mantém o nome e o URL base de um relay (uma entrada de provedor sem
      modelos), listado em **Conhecimento → Relays**;
    - na linha de comandos: `zing kb-prompt <model>`, `zing kb-import <file>`
