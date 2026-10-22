@@ -65,7 +65,8 @@ example embedding speed is traceable over time.
 10. **Entry points.** `/api/embed` and `zing embed` become thin wrappers around
     the runner with `surface=embedding`; the Tools page keeps working.
 
-v1 scope: embeddings only. Rerank, image and TTS follow the same pattern.
+v1 scope: embeddings only. Rerank follows in v2 (below); image and TTS follow
+the same pattern.
 
 ## Implementation batches
 
@@ -80,3 +81,37 @@ All four batches are done.
 3. (done) History surface badge/filter; Analytics mandatory surface filter,
    `Metric.surfaces`, integrity ids; report view hides chat-only sections.
 4. (done) Monitors with a surface, "Monitor this" on Tools; docs and CHANGELOG.
+
+## v2: rerank
+
+Rerank is the third surface, built the same way; nothing above changes.
+
+| Rerank check | Id | Dimension |
+|---|---|---|
+| connectivity | `rerank.connectivity` | CONNECTIVITY |
+| known-answer probe: the obvious document ranks first | `rerank.known_answer` | CAPABILITY |
+| echoed model field | `rerank.identity` | MODEL_IDENTITY |
+| ranking and scores of a pinned probe vs the previous run | `rerank.drift` | MODEL_IDENTITY |
+| determinism (same query twice) | `rerank.determinism` | RELIABILITY |
+| performance probe (4 vs 32 documents) | `performance.rerank` | PERFORMANCE |
+
+- **Scoring.** Weights MODEL_IDENTITY 30, CAPABILITY 30, PERFORMANCE 20,
+  RELIABILITY 10, CONNECTIVITY 10; a HIGH on model identity or capability
+  makes the risk HIGH.
+- **Recorder.** `op=rerank` (`zing.config.SURFACE_OPS`); rerank does not
+  stream.
+- **Probe.** Shared phase loop and gating of `perf_probe`; the second axis is
+  the document count (4 vs 32 per query): a per-document latency at 0.6x or
+  more of the small request's is linear scaling (a relay that splits or
+  serialises). No knowledge-base speed reference.
+- **Entry points.** `/api/rerank` and `zing rerank` through the runner, with
+  `--suite`, `--save/--no-save` and a dry-run estimate (as for `zing embed`).
+- **History, Analytics, Monitors.** Surface badge and filter, rerank label in
+  the Analytics surface select, rerank integrity ids; monitors with
+  `surface=rerank` check drift against their previous run. The v2 Monitors
+  card also edits an embedding watch's claimed dimension (before, API only).
+- **Docs.** README, DEVELOPER_GUIDE and METHODOLOGY in all seven languages
+  cover the surface axis, embeddings and rerank.
+
+All rerank batches are done: surface foundation, detectors, probe, entry
+points, Tools / History / report UI, Monitors / Analytics UI and docs.

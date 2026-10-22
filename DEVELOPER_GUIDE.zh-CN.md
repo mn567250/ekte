@@ -21,6 +21,7 @@
   - [知识库](#知识库)
   - [提示词库](#提示词库)
   - [报告](#报告)
+  - [接口类型（surface）](#接口类型surface)
   - [独立审计器](#独立审计器)
   - [Web 服务](#web-服务)
   - [Web 前端](#web-前端)
@@ -224,11 +225,35 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 所有由中转站控制的文本在输出前都会脱敏并转义（HTML / Markdown）。Web 界面的
 `POST /api/report/export` 复用这些渲染器来实现**下载报告**，并把面向人阅读的文本翻译成界面语言。
 
+### 接口类型（surface）
+
+**surface** 是被审计端点的类型：`chat`（默认）、`embedding` 或 `rerank`（`zing.config.SURFACES`；
+以后还有图像、TTS）。它是与测试套件并列的第二个维度，由 `AuditOptions.surface`、`AuditReport.surface`
+以及 `history.db` 和 `watches.db` 中可为空的 `surface` 列承载（`NULL` 和缺失的 JSON 字段都表示
+`chat`；无需迁移）。
+
+- 检测器声明 `surface: ClassVar[str]`；`select_detectors` 先按它筛选，再按套件层级筛选。嵌入和重排
+  检测器复用现有维度。
+- 评分权重以及画像 / 核心 / 基础设施维度集合按 surface 区分（`scoring.SURFACE_WEIGHTS`）；对话保持原值。
+- 记录器把嵌入调用标为 `op="embed"`，重排调用标为 `op="rerank"`（`zing.config.SURFACE_OPS`）；
+  `perf/summary.py` 中的函数接受 `op` 参数（默认 `complete`）。
+- `embed_audit.run_embedding_audit()` 和 `run_rerank_audit()`（供 `zing embed` / `zing rerank` 和
+  `/api/embed` / `/api/rerank` 使用）以 `surface="embedding"` 或 `"rerank"` 运行 runner，把同一 surface
+  上一次已保存的运行作为 `previous_report`（漂移）传入，并保存报告（`--no-save` 时不保存）。
+- 重排检测器：`rerank.connectivity`、`rerank.known_answer`（CAPABILITY）、`rerank.identity` 和
+  `rerank.drift`（MODEL_IDENTITY）、`rerank.determinism`（RELIABILITY）以及 `performance.rerank`。
+  权重：MODEL_IDENTITY 30、CAPABILITY 30、PERFORMANCE 20、RELIABILITY 10、CONNECTIVITY 10。
+- 监控：监控的 `surface` 和 `embedding_dimensions`（0 = 取自知识库）在 `_run_one_watch_inner` 中写入
+  `AuditOptions`；嵌入或重排监控在审计前用 `history.latest_for(..., surface=...)` 读取漂移参照，
+  告警只与同一 surface 的运行比较。surface 在创建时确定（`POST /api/watches`、
+  `/api/watches/from-history/{id}`，后者也接受 `embedding_dimensions`），`PATCH` 不能修改；`PATCH`
+  可以修改嵌入监控的 `embedding_dimensions`（v2 监控卡片可直接编辑）。
+
 ### 独立审计器
 
-Embedding/rerank（`embed_audit.py`）和图像/音频（`media_audit.py`）不是对话接口，因此各有
-自己的小型审计器和结论，而不走检测器流水线。它们共用客户端的 HTTP 设置、知识库（原生维度、
-图像尺寸、音色）和提示词库。所有解码（图像文件头、WAV）只使用标准库。
+图像/音频（`media_audit.py`）还不是 surface，因此各有自己的小型审计器和结论，而不走检测器流水线。它们
+共用客户端的 HTTP 设置、知识库（原生维度、图像尺寸、音色）和提示词库。所有解码（图像文件头、WAV）只
+使用标准库。
 
 ### Web 服务
 

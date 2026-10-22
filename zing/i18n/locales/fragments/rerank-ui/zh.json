@@ -1,0 +1,9 @@
+{
+ "strings": {
+  "Reranking": "重排",
+  "Do the rankings come from the claimed model?": "排序是否来自声称的模型？",
+  "Does the obvious answer rank first?": "显而易见的答案是否排在首位？",
+  "Does the same request give the same ranking?": "同一请求是否得到同一排序？",
+  "The rerank audit uses built-in known-answer probes, so results stay comparable across runs and monitors.": "重排审计使用内置的已知答案探针，因此各次运行与监控的结果可以直接比较。"
+ }
+}

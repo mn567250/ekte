@@ -22,7 +22,9 @@ SUITES = ("smoke", "standard", "deep", "full", "custom")
 DIMENSIONS = tuple(d.value for d in Dimension)
 # What kind of endpoint is audited, orthogonal to the suite (the depth). A
 # missing value (old reports, NULL database columns) means ``chat``.
-SURFACES = ("chat", "embedding")
+SURFACES = ("chat", "embedding", "rerank")
+# The request op whose records measure a surface (performance, errors view).
+SURFACE_OPS = {"chat": "complete", "embedding": "embed", "rerank": "rerank"}
 FORMATS = ("json", "md", "html", "pdf", "all")
 RISK_LEVELS = ("low", "medium", "high")
 APIS = ("auto", "openai", "anthropic", "responses")

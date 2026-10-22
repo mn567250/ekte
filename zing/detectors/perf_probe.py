@@ -1,7 +1,8 @@
 """Surface-neutral parts of the performance probes.
 
-The chat probe (:mod:`zing.detectors.performance`) and the embedding probe
-(:mod:`zing.detectors.embed_performance`) share their gating, the phase loop
+The chat probe (:mod:`zing.detectors.performance`), the embedding probe
+(:mod:`zing.detectors.embed_performance`) and the rerank probe
+(:mod:`zing.detectors.rerank_performance`) share their gating, the phase loop
 (ping → warm-up → N probes → burst, target and baseline alternating), and the
 consistency, error and load findings. Each probe brings its own request, its own
 scoring scale and its surface-specific findings.
@@ -43,6 +44,7 @@ CONSISTENCY_TITLE = {
     "Decode throughput": "Decode throughput consistency",
     "End-to-end throughput": "End-to-end throughput consistency",
     "Embedding throughput": "Embedding throughput consistency",
+    "Rerank throughput": "Rerank throughput consistency",
 }
 # Share of probe requests that failed (rate limits excluded).
 _ERROR_RATE_OK = 0.02

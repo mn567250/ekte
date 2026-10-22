@@ -274,32 +274,42 @@ translated to the UI language.
 
 ### Surfaces
 
-The **surface** is the kind of endpoint audited: `chat` (default) or
-`embedding` (`zing.config.SURFACES`; later rerank, image, TTS). It is a second
+The **surface** is the kind of endpoint audited: `chat` (default),
+`embedding` or `rerank` (`zing.config.SURFACES`; later image, TTS). It is a second
 axis next to the suite, carried by `AuditOptions.surface`, `AuditReport.surface`
 and a nullable `surface` column in `history.db` and `watches.db` (`NULL` and a
 missing JSON field mean `chat`; no migration).
 
 - Detectors declare `surface: ClassVar[str]`; `select_detectors` filters by it
-  before the suite tier. The embedding detectors reuse the existing dimensions.
+  before the suite tier. The embedding and rerank detectors reuse the existing
+  dimensions.
 - Scoring weights and the profile / core / infra dimension sets are per surface
   (`scoring.SURFACE_WEIGHTS`); chat keeps its values.
-- The recorder tags embedding calls `op="embed"`; `perf/summary.py` functions
-  take an `op` parameter (default `complete`).
-- `embed_audit.run_embedding_audit()` (used by `zing embed` and `/api/embed`)
-  runs the runner with `surface="embedding"`, passes the previous saved
-  embedding run as `previous_report` (vector drift) and saves the report.
+- The recorder tags embedding calls `op="embed"` and rerank calls
+  `op="rerank"` (`zing.config.SURFACE_OPS`); `perf/summary.py` functions take
+  an `op` parameter (default `complete`).
+- `embed_audit.run_embedding_audit()` and `run_rerank_audit()` (used by
+  `zing embed` / `zing rerank` and `/api/embed` / `/api/rerank`) run the runner
+  with `surface="embedding"` or `"rerank"`, pass the previous saved run of the
+  same surface as `previous_report` (drift) and save the report unless told
+  not to (`--no-save`).
+- Rerank detectors: `rerank.connectivity`, `rerank.known_answer` (CAPABILITY),
+  `rerank.identity` and `rerank.drift` (MODEL_IDENTITY), `rerank.determinism`
+  (RELIABILITY) and `performance.rerank`. Weights: MODEL_IDENTITY 30,
+  CAPABILITY 30, PERFORMANCE 20, RELIABILITY 10, CONNECTIVITY 10.
 - Monitors: a watch's `surface` and `embedding_dimensions` (0 = from the KB)
-  feed `AuditOptions` in `_run_one_watch_inner`; an embedding watch reads its
-  drift reference with `history.latest_for(..., surface="embedding")` before the
-  audit and compares alerts only with runs of the same surface. The surface is
-  set at creation (`POST /api/watches`, `/api/watches/from-history/{id}`, which
-  also takes `embedding_dimensions`) and cannot be changed by `PATCH`.
+  feed `AuditOptions` in `_run_one_watch_inner`; an embedding or rerank watch
+  reads its drift reference with `history.latest_for(..., surface=...)` before
+  the audit and compares alerts only with runs of the same surface. The surface
+  is set at creation (`POST /api/watches`, `/api/watches/from-history/{id}`,
+  which also takes `embedding_dimensions`) and cannot be changed by `PATCH`;
+  `PATCH` changes an embedding watch's `embedding_dimensions` (the v2 Monitors
+  card edits it inline).
 
 ### Standalone auditors
 
-Rerank (`embed_audit.audit_rerank`) and image/audio (`media_audit.py`) are not
-surfaces yet, so they have their own small auditors with their own verdict
+Image/audio (`media_audit.py`) are not surfaces yet, so they have their own
+small auditors with their own verdict
 dict instead of the detector pipeline. They share the clients' HTTP settings, the
 knowledge base (native dimensions, image sizes, voices) and the prompt library.
 All decoding (image headers, WAV) is standard library only.

@@ -1,13 +1,9 @@
 """Entry points for the non-chat Tools: embedding and rerank audits.
 
-Embedding audits run through the runner as the ``embedding`` surface (the
-detectors live in ``zing/detectors/embed_*.py``), are saved to history like any
-audit, and come back to the Tools page as a small verdict dict
-(:func:`tool_verdict`).
-
-The rerank audit is still a standalone known-answer probe that bypasses the
-runner: one document is obviously the most relevant to the query, and a
-genuine reranker ranks it first.
+Both run through the runner as their own surface (``embedding``: the detectors
+in ``zing/detectors/embed_*.py``; ``rerank``: those in
+``zing/detectors/rerank_*.py``), are saved to history like any audit, and come
+back to the Tools page as a small verdict dict (:func:`tool_verdict`).
 """
 
 from __future__ import annotations
@@ -17,7 +13,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-from zing.clients import make_client
 from zing.config import AuditOptions
 from zing.detectors.embedding import cosine_similarity  # noqa: F401  -- re-exported
 from zing.models import AuditReport, RiskLevel, Severity, Status, TargetConfig
@@ -92,12 +87,12 @@ def _verdict(
 
 
 # --------------------------------------------------------------------------- #
-# Embedding audit (through the runner)
+# Embedding and rerank audits (through the runner)
 # --------------------------------------------------------------------------- #
 def tool_verdict(report: AuditReport, report_id: int | None = None) -> dict[str, Any]:
-    """The Tools page's small verdict dict for an embedding-surface report:
-    ``risk_level``, ``score``, the flattened ``findings`` and the redacted
-    ``target`` (the rerank verdict's shape), plus the saved ``report_id``."""
+    """The Tools page's small verdict dict for a non-chat report: ``risk_level``,
+    ``score``, the flattened ``findings`` and the redacted ``target``, plus
+    ``rating``, ``headline``, ``surface``, ``suite`` and the saved ``report_id``."""
     findings = [
         {
             "id": f.id,
@@ -131,12 +126,12 @@ def tool_verdict(report: AuditReport, report_id: int | None = None) -> dict[str,
     }
 
 
-def _previous(target: TargetConfig) -> dict[str, Any] | None:
-    """The last saved embedding run of this target and claimed model (best-effort)."""
+def _previous(target: TargetConfig, surface: str) -> dict[str, Any] | None:
+    """The last saved ``surface`` run of this target and claimed model (best-effort)."""
     try:
         from zing.web import history
 
-        return history.latest_for(target.base_url, target.claimed, surface="embedding")
+        return history.latest_for(target.base_url, target.claimed, surface=surface)
     except Exception:
         return None
 
@@ -168,107 +163,46 @@ async def run_embedding_audit(
     model is the reference for the vector-drift check; with ``save`` the report
     goes to history. Returns the report and its history id (None if not saved).
     """
-    from zing.runner import run_audit
-
-    previous = await asyncio.to_thread(_previous, target) if save else None
     options = AuditOptions(
         suite=suite, surface="embedding", embedding_dimensions=max(0, claimed_dimensions)
     )
+    return await _run_surface(target, options, kb_dirs=kb_dirs, command=command, save=save)
+
+
+async def run_rerank_audit(
+    target: TargetConfig,
+    *,
+    suite: str = "standard",
+    kb_dirs: list[Path] | None = None,
+    command: str | None = None,
+    save: bool = True,
+) -> tuple[AuditReport, int | None]:
+    """Audit a rerank endpoint with the runner (surface ``rerank``).
+
+    The previous saved run of the same target and claimed model is the
+    reference for the ranking-drift check; with ``save`` the report goes to
+    history. Returns the report and its history id (None if not saved).
+    """
+    options = AuditOptions(suite=suite, surface="rerank")
+    return await _run_surface(target, options, kb_dirs=kb_dirs, command=command, save=save)
+
+
+async def _run_surface(
+    target: TargetConfig,
+    options: AuditOptions,
+    *,
+    kb_dirs: list[Path] | None,
+    command: str | None,
+    save: bool,
+) -> tuple[AuditReport, int | None]:
+    """One check-mode run of ``options.surface``, with the previous saved run of
+    that surface as the drift reference (read even when not saving: an unsaved
+    check still compares), saved to history when ``save``."""
+    from zing.runner import run_audit
+
+    previous = await asyncio.to_thread(_previous, target, options.surface)
     report = await run_audit(
         target, options, mode="check", command=command, kb_dirs=kb_dirs, previous_report=previous
     )
     report_id = await asyncio.to_thread(_save, report) if save else None
     return report, report_id
-
-
-# --------------------------------------------------------------------------- #
-# Rerank audit (known-answer probe)
-# --------------------------------------------------------------------------- #
-async def audit_rerank(
-    target: TargetConfig,
-    query: str,
-    documents: list[str],
-    expected_top_index: int,
-) -> dict[str, Any]:
-    """Known-answer rerank probe.
-
-    One document in ``documents`` is obviously the most relevant answer to
-    ``query`` (at ``expected_top_index``). A genuine reranker ranks it first; we
-    flag it if it does not. Returns the same small verdict dict shape.
-    """
-    findings: list[dict[str, Any]] = []
-
-    async with make_client(target) as client:
-        outcome, results = await client.rerank(query, documents)
-
-    if not outcome.ok:
-        findings.append(
-            _finding(
-                "rerank.connectivity",
-                "Rerank endpoint unreachable",
-                Status.ERROR,
-                Severity.HIGH,
-                f"POST /rerank failed: {outcome.error_message or outcome.status_code}",
-                {"status_code": outcome.status_code, "error": outcome.error_message},
-            )
-        )
-        return _verdict(findings, target)
-
-    if not results:
-        findings.append(
-            _finding(
-                "rerank.connectivity",
-                "Rerank response empty",
-                Status.ERROR,
-                Severity.HIGH,
-                "Endpoint returned no ranking results.",
-                {"results": 0},
-            )
-        )
-        return _verdict(findings, target)
-
-    findings.append(
-        _finding(
-            "rerank.connectivity",
-            "Rerank endpoint reachable",
-            Status.PASS,
-            Severity.INFO,
-            f"Got {len(results)} ranked results.",
-            {"results": len(results)},
-        )
-    )
-
-    top = results[0]
-    top_index = top["index"]
-    ranking = [r["index"] for r in results]
-    if top_index == expected_top_index:
-        findings.append(
-            _finding(
-                "rerank.known_answer",
-                "Reranker ranks the obvious answer first",
-                Status.PASS,
-                Severity.INFO,
-                (
-                    f"Document {expected_top_index} (the clearly-relevant one) ranked "
-                    f"first with score {top['relevance_score']:.4f}."
-                ),
-                {"top_index": top_index, "expected": expected_top_index, "ranking": ranking},
-            )
-        )
-    else:
-        findings.append(
-            _finding(
-                "rerank.known_answer",
-                "Reranker does NOT rank the obvious answer first",
-                Status.WARN,
-                Severity.HIGH,
-                (
-                    f"Expected document {expected_top_index} to rank first, but "
-                    f"document {top_index} did. The reranker is not behaving as a "
-                    f"genuine relevance model would."
-                ),
-                {"top_index": top_index, "expected": expected_top_index, "ranking": ranking},
-            )
-        )
-
-    return _verdict(findings, target)

@@ -1,0 +1,9 @@
+{
+ "strings": {
+  "Reranking": "Reordenação",
+  "Do the rankings come from the claimed model?": "As classificações vêm do modelo declarado?",
+  "Does the obvious answer rank first?": "A resposta óbvia fica em primeiro lugar?",
+  "Does the same request give the same ranking?": "O mesmo pedido dá a mesma classificação?",
+  "The rerank audit uses built-in known-answer probes, so results stay comparable across runs and monitors.": "A auditoria de rerank usa sondas integradas de resposta conhecida, para que os resultados continuem comparáveis entre execuções e monitores."
+ }
+}

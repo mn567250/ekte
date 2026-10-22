@@ -926,6 +926,87 @@ Mediane nativer APIs, und ein langsameres Ziel wird nur vermerkt, nie gewertet. 
 Befunde haben höchstens Schweregrad NIEDRIG; diese Dimension bewegt also die
 Bewertung, nie das Risikourteil.
 
+## Embedding-Surface
+
+Die **Surface** einer Prüfung (standardmäßig `chat`, oder `embedding`) wählt die
+Detektoren; die Suite bestimmt weiter die Tiefe. Eine Embedding-Prüfung sendet nur
+Anfragen an `POST /embeddings` und nutzt die Chat-Dimensionen sowie die gemeinsame
+Bewertung 0–100 und Note A–F, mit Gewichten je Surface. Eine abweichende Dimension
+(Modellidentität, HOCH) macht das Risiko HOCH, wie ein ausgetauschtes Modell im Chat.
+
+| Prüfung | Id | Dimension | Was sie prüft |
+|---|---|---|---|
+| Konnektivität | `embed.connectivity` | Konnektivität | der Endpunkt liefert wohlgeformte Vektoren |
+| Vektordimension | `embed.dimension` | Modellidentität | zurückgegebene Länge gegenüber der nativen Dimension des angegebenen Modells (Wissensbasis oder `claimed_dimensions`) |
+| Zurückgegebenes Modell | `embed.model_field` | Modellidentität | das Feld `model` der Antwort nennt das angegebene Modell |
+| Vektordrift | `embed.drift` | Modellidentität | der Vektor der fixierten Testeingabe gegenüber dem vorigen gespeicherten Lauf |
+| Determinismus | `embed.determinism` | Zuverlässigkeit bei Nebenläufigkeit | dieselbe Eingabe zweimal ergibt Kosinus ≥ 0,9999 |
+| Unterscheidbarkeit | `embed.distinctness` | Fähigkeitsangaben | unzusammenhängende Eingaben ergeben Kosinus unter 0,98 |
+| Leistungsmessung | `performance.embed` | Leistung | Latenz, Kaltstart, Durchsatz, Batch-Skalierung |
+
+**Vektordrift.** Jeder Lauf speichert die ersten 64 Komponenten des auf Länge 1
+normierten Vektors einer festen Eingabe. Der nächste Lauf desselben Ziels und
+angegebenen Modells (`zing embed`, die Seite Werkzeuge oder ein Embedding-Monitor)
+vergleicht seinen Vektor mit dieser Stichprobe: Kosinus **≥ 0,995** ist stabil
+(PASS), **0,95 bis 0,995** hat sich verschoben (WARN, MITTEL: eine neue
+Bereitstellung oder Quantisierung), unter **0,95** oder eine andere Länge bedeutet,
+dass das Modell ausgetauscht wurde (FAIL, HOCH). Der erste Lauf hat keinen
+Vergleich und hält die Referenz fest (INFO).
+
+**Leistungsmessung.** Freigegeben wie die Chat-Messung: sie läuft in deep, full und
+custom und in standard nur mit Baseline. Nach einem Ping und einer
+Aufwärmanfrage (Kaltstart) sendet sie gleichförmige Anfragen mit einer Eingabe,
+Batches mit 16 Eingaben und in deep/full einen nebenläufigen Burst. Jede Eingabe
+trägt eine zufällige Nonce; identische Vektoren für verschiedene Eingaben werden
+als zwischengespeichert markiert und aus der Statistik genommen. Sie meldet Latenz
+p50/p95, Kaltstart, Eingaben/s und Eingabe-Token/s, die Gleichmäßigkeit von Latenz
+und Durchsatz, Fehler und Stabilität unter Last. Die **Batch-Skalierung**
+vergleicht die Latenz je Eingabe eines Batches mit der einer Einzelanfrage: ab
+0,6x wird der Batch aufgeteilt oder nacheinander verarbeitet (linear, WARN
+NIEDRIG). Es gibt keine Geschwindigkeitsreferenz in der Wissensbasis; die reine
+Geschwindigkeit zählt nur gegenüber einer Baseline.
+
+---
+
+## Rerank-Surface
+
+Eine Rerank-Prüfung (`surface` `rerank`) sendet nur Anfragen an `POST /rerank` und
+wird auf der gemeinsamen Skala 0–100 und Note A–F mit eigenen Gewichten bewertet:
+Modellidentität 30, Fähigkeitsangaben 30, Leistung 20, Zuverlässigkeit bei
+Nebenläufigkeit 10, Konnektivität 10. Eine verfehlte Rangfolge beim Test mit
+bekannter Antwort (Fähigkeitsangaben, HOCH) oder ein ausgetauschtes Modell
+(Modellidentität, HOCH) macht das Risiko HOCH.
+
+| Prüfung | Id | Dimension | Was sie prüft |
+|---|---|---|---|
+| Konnektivität | `rerank.connectivity` | Konnektivität | der Endpunkt liefert eine wohlgeformte Rangfolge |
+| Bekannte Antwort | `rerank.known_answer` | Fähigkeitsangaben | ein Test mit einem offensichtlich relevanten Dokument stellt es an die erste Stelle |
+| Zurückgegebenes Modell | `rerank.identity` | Modellidentität | das Feld `model` der Antwort nennt das angegebene Modell |
+| Rangfolge-Drift | `rerank.drift` | Modellidentität | Rangfolge und Scores des fixierten Tests gegenüber dem vorigen gespeicherten Lauf |
+| Determinismus | `rerank.determinism` | Zuverlässigkeit bei Nebenläufigkeit | dieselbe Anfrage zweimal ergibt dieselbe Rangfolge und dieselben Scores |
+| Leistungsmessung | `performance.rerank` | Leistung | Latenz, Kaltstart, Dokumente/s, Skalierung mit der Dokumentenzahl |
+
+**Rangfolge-Drift.** Jeder Lauf speichert die Rangfolge und die gerundeten Scores
+eines festen Tests mit abgestufter Relevanz. Der nächste Lauf desselben Ziels und
+angegebenen Modells vergleicht damit: dieselbe Rangfolge mit Scores innerhalb von
+**0,01** (größte Score-Änderung, nur bei Scores über 1 relativ zum Score) ist stabil (PASS), **0,01 bis 0,1** hat sich verschoben (WARN, MITTEL), eine
+andere Rangfolge oder eine Änderung um mehr als **0,1** bedeutet, dass das Modell
+ausgetauscht wurde (FAIL, HOCH). Der erste Lauf hält die Referenz fest (INFO); ein
+geänderter Test wird nie für Drift gehalten.
+
+**Leistungsmessung.** Freigegeben wie die Chat-Messung (deep, full und custom; in
+standard nur mit Baseline). Jede Runde sendet eine eindeutige Anfrage über
+**4 Dokumente** und eine über **32**; in deep/full folgt ein nebenläufiger Burst.
+Antworten, deren feinkörnige Scores die einer anderen Anfrage wiederholen, werden
+als zwischengespeichert markiert und aus der Statistik genommen; eine Antwort, die
+Dokumente ohne Score lässt, zählt als fehlgeschlagene Anfrage. Sie meldet Latenz
+p50/p95, Kaltstart, Dokumente/s und Eingabe-Token/s, Gleichmäßigkeit, Fehler und
+Stabilität unter Last. **Skalierung mit der Dokumentenzahl**: kostet eine Anfrage
+mit 32 Dokumenten je Dokument 0,6x oder mehr einer mit 4 Dokumenten, teilt das
+Relay die Dokumente auf oder verarbeitet sie nacheinander (linear, WARN NIEDRIG).
+Es gibt keine Geschwindigkeitsreferenz in der Wissensbasis; die reine
+Geschwindigkeit zählt nur gegenüber einer Baseline.
+
 ---
 
 ## Zuordnung Trick → Detektor

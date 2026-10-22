@@ -353,7 +353,7 @@ class RequestRecord(BaseModel):
     endpoint: str = "target"  # "target" | "baseline"
     detector: str | None = None
     phase: str = "passive"
-    op: str = "complete"  # "complete" | "embed" | "list_models"
+    op: str = "complete"  # "complete" | "embed" | "rerank" | "list_models"
     stream: bool = False
     start_ms: float = 0.0  # offset from the start of the audit
 
@@ -656,7 +656,7 @@ class AuditReport(BaseModel):
     started_at: str | None = None
     command: str | None = None
     suite: str
-    # What kind of endpoint was audited ("chat" or "embedding"). Reports from
+    # What kind of endpoint was audited ("chat", "embedding" or "rerank"). Reports from
     # before this was recorded are chat audits.
     surface: str = "chat"
     # The dimensions a ``custom`` suite ran (None for the fixed suites).

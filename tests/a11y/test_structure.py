@@ -983,6 +983,69 @@ def test_list_states_not_by_colour_alone(open_routed_page, base_url: str, lang: 
     assert_no_issues(issues, f"history + monitors [{lang}]", "use-of-colour")
 
 
+DIMS_STATE_JS = """
+(id) => {
+  const a = document.activeElement, card = document.getElementById('w-' + id);
+  const input = card.querySelector('[data-act="f-dims"]');
+  const err = input && document.getElementById('dme-' + id);
+  return {
+    focus: a ? (a.getAttribute('data-act') || a.tagName) : null,
+    name: input ? input.getAttribute('aria-label') : null,
+    described: input ? (input.getAttribute('aria-describedby') || '').split(' ')
+      .filter(x => { const e = document.getElementById(x); return e && !e.hidden && e.textContent.trim(); }).length : 0,
+    invalid: input ? input.getAttribute('aria-invalid') : null,
+    error: err && !err.hidden ? err.textContent.trim() : '',
+    surfaces: [...document.querySelectorAll('.mon')].map(c => c.querySelector('.mon-meta .badge') ? c.querySelector('.mon-meta .badge').textContent.trim() : ''),
+  };
+}
+"""
+
+
+@pytest.mark.bitv("9.3.3.1", "9.3.3.2", "9.4.1.2", "9.2.4.3")
+@pytest.mark.parametrize("lang", LANGS)
+def test_tool_monitor_cards(open_routed_page, base_url: str, lang: str) -> None:
+    """Embedding and rerank monitor cards: the surface reads as text, and the
+    claimed-dimension editor is named, described, reports a wrong value next to
+    the field with focus on it, and Escape returns focus to its button."""
+    import httpx
+
+    mon = httpx.get(base_url + "/api/watches", timeout=10).json()[0]
+    base = dict(mon, interval_sec=3600, enabled=False, running=False)
+    watches = [dict(base, id=900101, surface="embedding", embedding_dimensions=1536),
+               dict(base, id=900102, surface="rerank", embedding_dimensions=0)]  # fmt: skip
+    page = open_routed_page(PAGES["monitors"], lang)
+    _mock_list(page, "/api/watches", watches)
+    issues: list[str] = []
+    s = page.evaluate(DIMS_STATE_JS, 900101)
+    want = {"en": ["Embeddings", "Reranking"]}.get(lang)
+    named = [x for x in s["surfaces"] if x]
+    if len(named) != 2 or named[0] == named[1] or (want and named != want):
+        issues.append(f"the embedding and rerank cards do not each name their surface: {s['surfaces']}")
+    if page.locator('#w-900102 [data-act="edit-dims"]').count():
+        issues.append("a rerank card offers a claimed dimension")
+    page.locator('#w-900101 [data-act="edit-dims"]').focus()
+    page.keyboard.press("Enter")
+    settle(page)
+    s = page.evaluate(DIMS_STATE_JS, 900101)
+    if s["focus"] != "f-dims":
+        issues.append(f"opening the editor puts focus on {s['focus']}, not on the field")
+    if not s["name"] or not s["described"]:
+        issues.append("the claimed-dimension field has no name or no hint")
+    page.keyboard.press("Control+a")
+    page.keyboard.type("12x")
+    page.keyboard.press("Enter")
+    settle(page)
+    s = page.evaluate(DIMS_STATE_JS, 900101)
+    if s["invalid"] != "true" or not s["error"] or s["focus"] != "f-dims":
+        issues.append(f"a wrong value is not reported on the field: {s}")
+    page.keyboard.press("Escape")
+    settle(page)
+    s = page.evaluate(DIMS_STATE_JS, 900101)
+    if s["focus"] != "edit-dims":
+        issues.append(f"Escape leaves focus on {s['focus']}, not on the edit button")
+    assert_no_issues(issues, f"tool monitor cards [{lang}]", "tool-monitors")
+
+
 EMBED_RESULT = {
     "risk_level": "high", "score": 50,
     "target": {"base_url": "http://relay.invalid/v1", "model": "text-embedding-3-small"},

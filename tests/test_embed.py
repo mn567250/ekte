@@ -1,15 +1,17 @@
 """Embedding and rerank auditor tests.
 
-These cover the non-chat surface: ``zing.embed_audit.run_embedding_audit`` and
-``audit_rerank`` plus the OpenAI-compatible client's ``embeddings``/``rerank``
+These cover the non-chat surfaces: ``zing.embed_audit.run_embedding_audit`` and
+``run_rerank_audit`` plus the OpenAI-compatible client's ``embeddings``/``rerank``
 methods. We inject an ``httpx.MockTransport`` into the real client (mirroring the
 mock-client style in ``tests/test_anthropic.py``) so no network is touched, and
-patch ``make_client`` so the auditor uses our transport-backed client.
+patch the runner's ``make_client`` so the audit uses our transport-backed client.
 
 Scenarios:
   * /embeddings through ``run_embedding_audit`` — correct dims => PASS; wrong
     dims => high-severity mismatch; runs saved to history feed vector drift.
-  * /rerank — correct top => PASS; wrong top => WARN.
+  * /rerank through ``run_rerank_audit`` and ``zing rerank`` — the rerank
+    surface, saved to history, the previous rerank run as drift reference.
+  * ``--dry-run`` — the non-chat performance probes get real call estimates.
 """
 
 from __future__ import annotations
@@ -22,7 +24,7 @@ import httpx
 import pytest
 
 from zing.clients import OpenAICompatibleClient
-from zing.embed_audit import audit_rerank, cosine_similarity, run_embedding_audit, tool_verdict
+from zing.embed_audit import cosine_similarity, run_embedding_audit, run_rerank_audit, tool_verdict
 from zing.models import TargetConfig
 
 BASE = "https://relay.embed.test/v1"
@@ -120,19 +122,6 @@ class EmbedMock:
 
 def _target(**kw) -> TargetConfig:
     return TargetConfig(name="t", kind="target", base_url=BASE, api_key=SECRET, model=MODEL, **kw)
-
-
-@pytest.fixture
-def patch_client(monkeypatch):
-    """Patch zing.embed_audit.make_client to wire a chosen mock transport in."""
-
-    def _install(mock: EmbedMock) -> None:
-        def _factory(target, *, transport=None):
-            return OpenAICompatibleClient(target, transport=mock.transport)
-
-        monkeypatch.setattr("zing.embed_audit.make_client", _factory)
-
-    return _install
 
 
 # --------------------------------------------------------------------------- #
@@ -241,33 +230,63 @@ async def test_embed_runs_are_saved_and_drift_uses_the_previous_one(patch_runner
 
 
 # --------------------------------------------------------------------------- #
-# Rerank audit
+# Rerank audit (the runner's rerank surface, saved to history)
 # --------------------------------------------------------------------------- #
-_RR_QUERY = "What is the capital of France?"
-_RR_DOCS = [
-    "Bananas are a good source of potassium.",
-    "The Great Wall of China is very long.",
-    "Paris is the capital of France.",
-    "Photosynthesis happens in plants.",
-]
+# These hold whichever rerank detectors are registered (none, on their own).
+RR_MODEL = "stub-rerank"
 
 
-async def test_rerank_correct_top_pass(patch_client):
-    patch_client(EmbedMock(rerank_top=2))
-    verdict = await audit_rerank(_target(), _RR_QUERY, _RR_DOCS, expected_top_index=2)
-    assert verdict["risk_level"] == "clean"
-    ka = _finding(verdict, "rerank.known_answer")
-    assert ka["status"] == "pass"
+def _rr_target(base_url: str = BASE) -> TargetConfig:
+    return TargetConfig(name="t", kind="target", base_url=base_url, api_key=SECRET, model=RR_MODEL)
 
 
-async def test_rerank_wrong_top_warn(patch_client):
-    patch_client(EmbedMock(rerank_top=0))
-    verdict = await audit_rerank(_target(), _RR_QUERY, _RR_DOCS, expected_top_index=2)
-    ka = _finding(verdict, "rerank.known_answer")
-    assert ka["status"] == "warn"
-    assert ka["severity"] == "high"
-    assert verdict["risk_level"] == "high"
-    assert ka["evidence"]["top_index"] == 0
+@pytest.fixture
+def spy_previous(monkeypatch):
+    """Record the ``previous_report`` each run_audit call gets."""
+    import zing.runner
+
+    seen: list = []
+    real = zing.runner.run_audit
+
+    async def spy(*args, **kwargs):
+        seen.append(kwargs.get("previous_report"))
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr(zing.runner, "run_audit", spy)
+    return seen
+
+
+async def test_rerank_runs_the_rerank_surface_and_saves_it(patch_runner, spy_previous):
+    from zing.web import history
+
+    patch_runner(EmbedMock(rerank_top=2, served_model=RR_MODEL))
+    target = _rr_target("https://relay.rerank-runs.test/v1")  # no saved runs yet
+    first, rid = await run_rerank_audit(target, suite="smoke")
+    assert first.surface == "rerank" and first.suite == "smoke"
+    assert all(d.id.startswith(("rerank.", "performance.rerank")) for d in first.detectors)
+    assert rid is not None and history.get(rid)["surface"] == "rerank"
+    verdict = tool_verdict(first, rid)
+    assert {"risk_level", "score", "findings", "target", "report_id", "rating", "headline"} <= set(verdict)
+    assert verdict["surface"] == "rerank" and SECRET not in json.dumps(verdict)
+    # The second run gets the first as its drift reference; an unsaved run
+    # still compares with the newest saved one, but is not saved itself.
+    _, rid2 = await run_rerank_audit(target, suite="smoke")
+    assert rid2 != rid
+    assert spy_previous[0] is None and spy_previous[1]["surface"] == "rerank"
+    _, rid3 = await run_rerank_audit(target, suite="smoke", save=False)
+    assert rid3 is None and spy_previous[2]["generated_at"] == history.get(rid2)["generated_at"]
+    assert history.latest_for(target.base_url, RR_MODEL, surface="rerank")["generated_at"] == (
+        history.get(rid2)["generated_at"]
+    )
+
+
+async def test_rerank_drift_reference_is_never_an_embedding_run(patch_runner, spy_previous):
+    # Same target and model, but the saved run is an embedding one.
+    patch_runner(EmbedMock(dim=8, served_model=RR_MODEL))
+    target = _rr_target("https://relay.mixed.test/v1")
+    await run_embedding_audit(target, claimed_dimensions=8, suite="smoke")
+    await run_rerank_audit(target, suite="smoke")
+    assert spy_previous[-1] is None
 
 
 def _finding(verdict: dict, finding_id: str) -> dict:
@@ -292,3 +311,79 @@ def test_cli_embed_runs_the_embedding_surface(patch_runner):
     assert verdict["surface"] == "embedding" and verdict["risk_level"] == "high"
     assert verdict["report_id"] is None
     assert SECRET not in result.stdout
+
+
+def test_cli_rerank_runs_the_rerank_surface_and_saves(patch_runner):
+    from typer.testing import CliRunner
+
+    from zing.cli import app
+    from zing.web import history
+
+    patch_runner(EmbedMock(rerank_top=2, served_model=RR_MODEL))
+    args = ["rerank", "--base-url", BASE, "--api-key", SECRET, "--model", RR_MODEL,
+            "--suite", "smoke", "--json"]
+    result = CliRunner().invoke(app, args)
+    assert result.exit_code == 0, result.output
+    verdict = json.loads(result.stdout)
+    assert verdict["surface"] == "rerank" and verdict["suite"] == "smoke"
+    assert verdict["report_id"] is not None
+    assert history.get(verdict["report_id"])["surface"] == "rerank"
+    assert SECRET not in result.stdout
+    result = CliRunner().invoke(app, [*args, "--no-save"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)["report_id"] is None
+    # An unknown suite is a config error.
+    bad = CliRunner().invoke(app, [*args[:-3], "--suite", "nope"])
+    assert bad.exit_code == 2
+
+
+def test_cli_rerank_and_embed_dry_run_make_no_requests(monkeypatch):
+    from typer.testing import CliRunner
+
+    from zing.cli import app
+
+    def boom(*_a, **_k):
+        raise AssertionError("a dry run must not build a client")
+
+    monkeypatch.setattr("zing.runner.make_client", boom)
+    for cmd in ("rerank", "embed"):
+        result = CliRunner().invoke(app, [cmd, "--base-url", BASE, "--model", RR_MODEL,
+                                          "--suite", "deep", "--dry-run", "--json"])
+        assert result.exit_code == 0, result.output
+        plan = json.loads(result.stdout)
+        assert plan["dry_run"] is True and plan["suite"] == "deep"
+        assert plan["estimated_api_calls"] == sum(d["est_calls"] for d in plan["detectors"])
+
+
+def test_dry_run_estimates_the_non_chat_performance_probes():
+    from zing.cli import _build_dry_run_plan, _surface_probe_calls
+    from zing.config import AuditOptions
+    from zing.detectors.perf_probe import PINGS, burst_size
+
+    target = _rr_target()
+    opts = AuditOptions(suite="deep", surface="embedding", performance_requests=10)
+    plan = _build_dry_run_plan(target, opts, None, None, "check")
+    perf = next(d for d in plan["detectors"] if d["id"] == "performance.embed")
+    # pings + warm-up + 10 rounds of (single, batch) + a burst of singles —
+    # not the detector's static cost_hint.
+    assert perf["est_calls"] == PINGS + 1 + 10 * 2 + burst_size(opts, 10)
+    off = AuditOptions(suite="deep", surface="embedding", performance_requests=0)
+    plan = _build_dry_run_plan(target, off, None, None, "check")
+    assert next(d for d in plan["detectors"] if d["id"] == "performance.embed")["est_calls"] == 0
+    smoke = AuditOptions(suite="smoke", surface="embedding")
+    plan = _build_dry_run_plan(target, smoke, None, None, "check")
+    assert all(d["id"] != "performance.embed" for d in plan["detectors"])
+
+    # The rerank probe: the same shape, unless the detector declares its own.
+    class Rerank:
+        id = "performance.rerank"
+
+    class Declared(Rerank):
+        @staticmethod
+        def estimated_calls(options, *, has_baseline):
+            return 7
+
+    rr = AuditOptions(suite="deep", surface="rerank", performance_requests=10)
+    assert _surface_probe_calls(Rerank, rr, has_baseline=False) == PINGS + 1 + 20 + burst_size(rr, 10)
+    assert _surface_probe_calls(Rerank, rr, has_baseline=True) == 2 * (PINGS + 1 + 20 + burst_size(rr, 10))
+    assert _surface_probe_calls(Declared, rr, has_baseline=False) == 7

@@ -25,7 +25,7 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 
-from zing import __version__, prompts
+from zing import __version__
 from zing import i18n as _i18n
 from zing.config import (
     DIMENSIONS,
@@ -351,6 +351,30 @@ def _emit_machine_error(exc: Exception, *, error_type: str = "config_error") -> 
     raise typer.Exit(code=2)
 
 
+# The non-chat performance probes: request modes per probe round and in the
+# burst (embedding: a single input and a batch of 16 per round, singles in the
+# burst; rerank is taken to share that shape unless its detector declares
+# ``estimated_calls``).
+_SURFACE_PROBES = {"performance.embed": (2, 1), "performance.rerank": (2, 1)}
+
+
+def _surface_probe_calls(detector: Any, options: AuditOptions, *, has_baseline: bool) -> int:
+    """API calls a non-chat performance probe makes across all endpoints: pings,
+    a warm-up, the probe rounds and the burst (see ``perf_probe.run_phases``).
+    A detector with its own ``estimated_calls(options, has_baseline=)`` wins."""
+    own = getattr(detector, "estimated_calls", None)
+    if callable(own):
+        return int(own(options, has_baseline=has_baseline))
+    from zing.detectors.perf_probe import PINGS, burst_size, planned_probe_requests
+
+    n = planned_probe_requests(options, has_baseline=has_baseline)
+    if n == 0:
+        return 0
+    modes, burst_modes = _SURFACE_PROBES[detector.id]
+    per_endpoint = PINGS + 1 + n * modes + burst_size(options, n) * burst_modes
+    return per_endpoint * (2 if has_baseline else 1)
+
+
 def _build_dry_run_plan(target, options, baseline, judge_target, mode: str) -> dict:
     """What `zing check/compare` WOULD do — selected detectors and an API-call
     estimate — without issuing a single request, so an agent can budget cost."""
@@ -371,6 +395,8 @@ def _build_dry_run_plan(target, options, baseline, judge_target, mode: str) -> d
         if d.id == "performance":
             # Already counts both endpoints; kept out of the compare-mode factor.
             calls = probe_calls = estimated_probe_calls(options, has_baseline=has_baseline)
+        elif d.id in _SURFACE_PROBES:
+            calls = probe_calls = _surface_probe_calls(d, options, has_baseline=has_baseline)
         elif d.id == "reliability":
             calls = options.reliability_requests
         else:
@@ -401,7 +427,7 @@ def _build_dry_run_plan(target, options, baseline, judge_target, mode: str) -> d
         "estimated_api_calls": total,
         "note": (
             "Rough upper bound; reliability uses --reliability-requests, the "
-            "performance probe --performance-requests. "
+            "performance probes --performance-requests. "
             "No API calls were made."
         ),
     }
@@ -1048,7 +1074,7 @@ def _print_embed_verdict(verdict: dict, title: str) -> None:
         f"Target : {tgt['name']}  ·  model [bold]{tgt['model']}[/]"
         f"{'  ·  claimed ' + tgt['claimed_model'] if tgt.get('claimed_model') else ''}"
         f"{'  ·  provider ' + tgt['declared_provider'] if tgt.get('declared_provider') else ''}\n"
-        f"Score  : {verdict['score']}/100"
+        f"Score  : {'—' if verdict['score'] is None else verdict['score']}/100"
     )
     console.print(Panel(body, title=f"[{style}]{label}[/]  —  {title}", border_style=style.split()[-1]))
 
@@ -1082,6 +1108,7 @@ def embed_command(
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Show the detectors and estimated API calls without making requests.")] = False,
 ) -> None:
     """Audit an embeddings endpoint (a non-chat surface).
 
@@ -1103,6 +1130,18 @@ def embed_command(
             _emit_machine_error(exc)
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+    if dry_run:
+        _emit_dry_run(
+            _build_dry_run_plan(
+                target,
+                AuditOptions(
+                    suite=suite, surface="embedding",
+                    embedding_dimensions=max(0, claimed_dimensions or 0),
+                ),
+                None, None, "check",
+            ),
+            machine=as_json,
+        )
 
     # Through the runner as the embedding surface; the claimed dimension comes
     # from the knowledge base unless overridden (0 = unknown). The previous saved
@@ -1135,40 +1174,59 @@ def rerank_command(
     base_url: Annotated[str | None, typer.Option("--base-url", help="Rerank endpoint base URL, e.g. https://relay.example.com/v1.")] = None,
     api_key: Annotated[str | None, typer.Option("--api-key", help="API key, or env:VAR / file:/path reference.")] = None,
     model: Annotated[str | None, typer.Option("--model", help="Rerank model id actually sent in requests.")] = None,
-    declared_provider: Annotated[str | None, typer.Option("--declared-provider", help="Provider hint (for display).")] = None,
+    claimed_model: Annotated[str | None, typer.Option("--claimed-model", help="Model the relay claims to serve, if different from --model.")] = None,
+    declared_provider: Annotated[str | None, typer.Option("--declared-provider", help="Provider hint for KB lookup (cohere, jina, ...).")] = None,
+    suite: Annotated[str, typer.Option("--suite", help="smoke | standard | deep | full (deep/full add the performance probe).")] = "standard",
+    save: Annotated[bool, typer.Option("--save/--no-save", help="Save the report to the local history (the next run's ranking-drift reference).")] = True,
+    kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Show the detectors and estimated API calls without making requests.")] = False,
 ) -> None:
-    """Audit a rerank endpoint with a built-in known-answer probe (non-chat surface).
+    """Audit a rerank endpoint (a non-chat surface).
 
-    Sends a query with one obviously-relevant document mixed among distractors; a
-    genuine reranker must rank that document first. Prints pass/fail.
+    Runs the rerank-surface detectors — connectivity, known-answer ranking,
+    echoed model, determinism, ranking drift since the last saved run, and on
+    deep/full a performance probe — instead of the chat detectors.
     """
     try:
         target = build_target(
             kind="target", name=None, base_url=base_url, api_key=api_key, model=model,
-            declared_provider=declared_provider,
+            declared_provider=declared_provider, claimed_model=claimed_model,
         )
         fail_on_risk = validate_risk(fail_on_risk)
+        suite = validate_suite(suite)
     except ConfigError as exc:
         if as_json:
             _emit_machine_error(exc)
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+    if dry_run:
+        _emit_dry_run(
+            _build_dry_run_plan(target, AuditOptions(suite=suite, surface="rerank"), None, None, "check"),
+            machine=as_json,
+        )
 
-    # Built-in known-answer probe: document 2 is the clear answer to the query.
-    query = prompts.text("rerank.cli.query")
-    documents = prompts.get("rerank.cli.documents")
-    expected_top_index = 2
+    # Through the runner as the rerank surface. The previous saved run of this
+    # target is the ranking-drift reference, and the report is saved to history
+    # (best-effort) unless --no-save.
+    from zing.embed_audit import run_rerank_audit, tool_verdict
 
-    from zing.embed_audit import audit_rerank
-
-    verdict = _run_async(audit_rerank(target, query, documents, expected_top_index))
+    report, report_id = _run_async(
+        run_rerank_audit(
+            target,
+            suite=suite,
+            kb_dirs=list(kb_dir) if kb_dir else None,
+            command="zing rerank",
+            save=save,
+        )
+    )
+    verdict = tool_verdict(report, report_id)
 
     if as_json:
         print(json.dumps(verdict, ensure_ascii=False, indent=2))
     else:
-        _print_embed_verdict(verdict, "Rerank audit (known-answer probe)")
+        _print_embed_verdict(verdict, "Rerank audit")
 
     raise typer.Exit(code=_embed_exit_code(verdict, fail_on_risk))
 

@@ -40,12 +40,7 @@
   .cta[aria-busy="true"] .go, .cta[aria-busy="true"] .lbl, .cta .blbl { display: none; }
   .cta[aria-busy="true"] .blbl { display: inline; }
   @keyframes tspin { to { transform: rotate(360deg); } }
-  .probe { margin: 2px 0 16px; }
-  .probe .disclosure > span:first-child { display: inline-flex; align-items: center; gap: 8px; }
-  .probe .adv-hint { font-size: 12.5px; color: var(--ink-muted); line-height: 1.55; margin: 0 0 12px; }
-  .probe .cv { width: 16px; height: 16px; flex: none; align-items: center; justify-content: center; }
-  .probe .cv .zicon, .probe .pico .zicon { width: 15px; height: 15px; }
-  .probe textarea.in { min-height: 104px; resize: vertical; line-height: 1.5; }
+  .probe-hint { margin: 2px 0 16px; }
   .narrow { max-width: 260px; }
 
   /* ---- result ---- */
@@ -187,29 +182,9 @@
             <div class="hint seg-hint" data-en="Embedding and rerank endpoints only speak the OpenAI-compatible API.">嵌入与重排端点只走 OpenAI 兼容接口。</div>
           </div>
 
-          <div class="disclosure-box probe" id="r-adv">
-            <button type="button" class="disclosure" id="r-adv-t" aria-expanded="false" aria-controls="r-adv-body">
-              <span><span class="pico" data-icon="plus"></span><span data-en="Custom probe (defaults to the built-in known-answer probe)">自定义探针（默认用内置的已知答案探针）</span></span>
-              <span class="cv" data-icon="chevronDown"></span>
-            </button>
-            <div class="disclosure-body" id="r-adv-body" hidden>
-              <p class="adv-hint" data-en="Leave empty to use zing's built-in probe: a question plus several documents, where the <b>single obvious answer</b> should be ranked first. To customize, enter a query, one document per line, and the line number (0-based) of the document expected to rank first.">不填则使用 zing 内置探针：一个问题加几段文档，其中<b>唯一显而易见的答案</b>应被排在首位。若要自定义，填入查询、每行一段文档，并指定预期排首位的文档行号（从 0 起）。</p>
-              <div class="grp">
-                <label class="lab" for="r-query"><span data-en="Query">查询</span> <span class="key">query</span></label>
-                <input class="in" id="r-query" placeholder="留空 = 使用内置探针" data-en-placeholder="Empty = built-in probe">
-              </div>
-              <div class="grp">
-                <label class="lab" for="r-docs"><span data-en="Documents (one per line)">文档（每行一段）</span> <span class="key">documents</span></label>
-                <textarea class="in" id="r-docs" rows="4" placeholder="至少两行，每行一段文档" data-en-placeholder="At least two lines, one document each"></textarea>
-              </div>
-              <div class="grp narrow">
-                <label class="lab" for="r-top"><span data-en="Line expected to rank first">预期排首位的行号</span> <span class="key">expected_top_index</span></label>
-                <input class="in" id="r-top" type="number" min="0" step="1" inputmode="numeric" placeholder="留空 = 第一行（0）" data-en-placeholder="Empty = first line (0)">
-              </div>
-            </div>
-          </div>
+          <p class="hint probe-hint" id="r-probe-hint" data-en="The rerank audit uses built-in known-answer probes, so results stay comparable across runs and monitors.">重排审计使用内置的已知答案探针，因此各次运行与监控的结果可以直接比较。</p>
 
-          <button type="submit" class="cta" id="r-go"><span class="spin" aria-hidden="true"></span><span class="lbl" data-en="Verify rerank endpoint">核验重排端点</span><span class="blbl" data-en="Running checks…">检测中…</span> <span class="pico go" data-icon="arrowRight"></span></button>
+          <button type="submit" class="cta" id="r-go" aria-describedby="r-probe-hint"><span class="spin" aria-hidden="true"></span><span class="lbl" data-en="Verify rerank endpoint">核验重排端点</span><span class="blbl" data-en="Running checks…">检测中…</span> <span class="pico go" data-icon="arrowRight"></span></button>
           <div class="reassure" data-en="Requests are sent from <b>your local zing server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.">请求在 <b>你本地的 zing 服务</b> 发起，密钥只用于连接目标中转站，<b>不上传任何第三方</b>。</div>
         </form>
         <div class="out" id="r-out" aria-live="polite"></div>
@@ -244,7 +219,7 @@
   $$("[data-icon]").forEach(function (el) { el.innerHTML = ico(el.getAttribute("data-icon")); });
 
   // ---------- tabs (v2/tabs.js; #rerank links the second) ----------
-  window.ZingTabs.init($(".tabs[role=tablist]"));
+  var tabs = window.ZingTabs.init($(".tabs[role=tablist]"));
 
   // ---------- segmented controls ----------
   $$("[data-seg] button").forEach(function (b) {
@@ -256,14 +231,6 @@
     var on = $('[data-seg="' + name + '"] [aria-pressed="true"]');
     return on ? on.getAttribute("data-v") : "auto";
   }
-
-  // ---------- custom-probe disclosure ----------
-  $("#r-adv-t").addEventListener("click", function () {
-    var btn = this, open = btn.getAttribute("aria-expanded") !== "true";
-    btn.setAttribute("aria-expanded", String(open));
-    $("#r-adv-body").hidden = !open;
-    $("#r-adv").classList.toggle("open", open);
-  });
 
   // ---------- result rendering ----------
   var RISK = {
@@ -284,6 +251,7 @@
     "embed.model_field": ["model_returned"],
     "rerank.connectivity": ["results", "status_code"],
     "rerank.known_answer": ["top_index", "expected", "ranking"],
+    "rerank.identity": ["model_returned"],
   };
   var scoreC = function (v) { return v == null ? "" : v >= 85 ? "good" : v >= 70 ? "warn" : "bad"; };
   function statusLabel(s) {
@@ -341,8 +309,8 @@
       savedHTML(v) +
       "</section>";
   }
-  // A run saved to history (embedding audits are): link to it, and offer to
-  // schedule it as a monitor with the same configuration.
+  // A run saved to history (embedding and rerank audits are): link to it, and
+  // offer to schedule it as a monitor with the same configuration.
   function savedHTML(v) {
     if (v.report_id == null) return "";
     var id = esc(String(v.report_id));
@@ -439,29 +407,6 @@
     if (isBusy($("#r-go"))) return;
     var payload = { base_url: $("#r-url").value.trim(), api_key: $("#r-key").value.trim(), model: $("#r-model").value.trim(), api: segVal("r-api") };
     if (!payload.base_url || !payload.model) { showErr("#r-out", needTarget); (payload.base_url ? $("#r-model") : $("#r-url")).focus(); return; }
-    var q = $("#r-query").value.trim();
-    // line numbers refer to the textarea as typed: drop trailing blank lines only,
-    // and map the expected line past any blank lines in between
-    var lines = $("#r-docs").value.split("\n").map(function (s) { return s.trim(); });
-    while (lines.length && !lines[lines.length - 1]) lines.pop();
-    var docs = lines.filter(Boolean);
-    var top = $("#r-top").value.trim();
-    if (q || docs.length || top) {
-      // a half-filled custom probe would silently fall back to the built-in one
-      if (!q || docs.length < 2) {
-        showErr("#r-out", function () { return esc(tt("自定义探针需要一个查询和至少两段文档。", "The custom probe needs a query and at least two documents.")); });
-        return;
-      }
-      var line = top ? parseInt(top, 10) : 0;
-      if (!(line >= 0 && line < lines.length && lines[line])) {
-        var n = lines.length - 1;
-        showErr("#r-out", function () { return esc(tt("预期行号必须在 0 到 {n} 之间。", "The expected line must be between 0 and {n}.").replace("{n}", n)); });
-        return;
-      }
-      payload.query = q;
-      payload.documents = docs;
-      payload.expected_top_index = lines.slice(0, line).filter(Boolean).length;
-    }
     if (window.ZingSecret) ZingSecret.remember($("#rerank-form"));
     postAudit("/api/rerank", payload, $("#r-go"), "#r-out");
   });
@@ -476,21 +421,32 @@
     });
   });
 
-  // ---------- ?rerun=<id>: prefill the embedding form from a saved run ----------
+  // ---------- ?rerun=<id>: prefill the run's form from a saved run ----------
+  // History links a rerank run with #rerank, so its tab is already selected;
+  // a link without the hash is switched to the run's tab here.
+  // all values first, then the input events (relaycfg.js reacts to them)
+  function prefill(fields) {
+    var sels = Object.keys(fields);
+    sels.forEach(function (s) { $(s).value = fields[s]; });
+    sels.forEach(function (s) { $(s).dispatchEvent(new Event("input", { bubbles: true })); });
+  }
   var rerunId = new URLSearchParams(location.search).get("rerun");
   if (rerunId) {
     fetch("/api/history/" + encodeURIComponent(rerunId))
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (rep) {
         var t = (rep && rep.target) || {};
-        if (!rep || rep.surface !== "embedding") return;
-        $("#e-url").value = t.base_url || "";
-        $("#e-model").value = t.model || "";
-        $("#e-claimed").value = t.claimed_model && t.claimed_model !== t.model ? t.claimed_model : "";
-        $("#e-provider").value = t.declared_provider || "";
-        ["#e-url", "#e-model", "#e-claimed"].forEach(function (s) {
-          $(s).dispatchEvent(new Event("input", { bubbles: true }));
-        });
+        if (!rep) return;
+        if (rep.surface === "embedding") {
+          $("#e-provider").value = t.declared_provider || "";
+          prefill({
+            "#e-url": t.base_url || "", "#e-model": t.model || "",
+            "#e-claimed": t.claimed_model && t.claimed_model !== t.model ? t.claimed_model : "",
+          });
+        } else if (rep.surface === "rerank") {
+          if (tabs && tabs.current() !== "rerank") tabs.select("rerank", false);
+          prefill({ "#r-url": t.base_url || "", "#r-model": t.model || "" });
+        }
       })
       .catch(function () {});
   }

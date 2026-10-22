@@ -18,7 +18,7 @@ from typing import Any
 import zing.detectors  # noqa: F401  -- populates the detector REGISTRY
 from zing import __version__, prompts
 from zing.clients import Client, detect_api, make_client
-from zing.config import AuditOptions
+from zing.config import SURFACE_OPS, AuditOptions
 from zing.context import AuditContext
 from zing.detectors.base import run_detector, select_detectors
 from zing.detectors.performance import planned_probe_requests, probe_modes, stream_mode
@@ -166,9 +166,8 @@ async def run_audit(
         on_record=lambda rec: _emit({"type": "request_done", "record": trend.tag(rec.model_dump())}),
     )
 
-    embedding = options.surface == "embedding"
-    # Embeddings do not stream.
-    request_mode = "non_stream" if embedding else stream_mode(options)
+    # Only chat completions stream; the other surfaces' requests do not.
+    request_mode = "non_stream" if options.surface != "chat" else stream_mode(options)
 
     async with AsyncExitStack() as stack:
         client = await stack.enter_async_context(make_client(target))
@@ -225,6 +224,8 @@ async def run_audit(
             probe_planned *= len(probe_modes(options))
         elif any(d.id == "performance.embed" for d in detectors):
             probe_planned *= 2  # a single-input and a batch request per round
+        elif any(d.id == "performance.rerank" for d in detectors):
+            probe_planned *= 2  # a 4- and a 32-document request per round
         else:
             probe_planned = 0
         _emit({"type": "start", "total": total, "suite": options.suite,
@@ -249,9 +250,10 @@ async def run_audit(
         recorder.records,
         tokenizer=recorder.tokenizer,
         has_baseline=baseline is not None,
-        probe_max_tokens=options.performance_max_tokens,
+        # Only chat probes have an output budget; embedding and rerank calls return no tokens.
+        probe_max_tokens=options.performance_max_tokens if options.surface == "chat" else None,
         concurrency=options.reliability_concurrency,
-        op="embed" if embedding else "complete",
+        op=SURFACE_OPS[options.surface],
     )
     selected = list(options.dimensions) if options.suite == "custom" else None
     dimensions = build_dimensions(results, reliability, selected=selected, surface=options.surface)
