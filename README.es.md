@@ -627,9 +627,30 @@ gestionan desde la línea de comandos.
 ## Auditorías de embeddings, rerank, imagen y audio
 
 Estos endpoints devuelven vectores, clasificaciones, imágenes o audio en lugar de
-chat, así que zing los audita con auditores independientes y específicos en
-lugar del pipeline de chat de diez dimensiones. Cada uno imprime un veredicto y
-admite `--json` y `--fail-on-risk`.
+chat, así que zing los audita con sondas específicas en lugar de los prompts de
+chat. Cada uno imprime un veredicto y admite `--json` y `--fail-on-risk`.
+
+### Tipo de endpoint (superficie), monitores de embeddings y rerank
+
+Cada auditoría, fila del historial y monitor tiene un **tipo de endpoint**
+(`surface`): `chat` (por defecto), `embedding` o `rerank`. Es independiente de la
+suite. Las auditorías de embeddings y rerank pasan por el mismo runner, la misma
+puntuación (0–100, A–F), el historial, la analítica y los monitores que las de
+chat; solo cambian los detectores. El historial y la analítica filtran por tipo de
+endpoint, y la analítica muestra solo las métricas que aplican.
+
+Para vigilar un endpoint de embeddings o rerank, audítelo en la página
+**Herramientas** y elija **Monitorizar**, o **Programar como monitor** en su fila
+del historial. El monitor repite la auditoría según su calendario, con la misma
+fijación de la base de conocimiento, el mismo umbral de alerta y las mismas
+alertas de regresión que un monitor de chat, y comprueba la **deriva** frente a
+su ejecución anterior (los vectores de una sonda de embeddings, la clasificación y
+las puntuaciones de una sonda de rerank). La dimensión declarada de un monitor de
+embeddings se puede cambiar en su tarjeta (vacía o 0: de la base de
+conocimiento). Las sondas de velocidad (embeddings: latencia, arranque en frío,
+entradas/s, escalado por lotes; rerank: latencia, arranque en frío, documentos/s,
+4 frente a 32 documentos) solo se ejecutan en las suites deep, full o custom, o en
+standard con una referencia.
 
 ### Embeddings y rerank
 
@@ -644,7 +665,20 @@ zing embed --base-url ... --model my-embed --claimed-dimensions 1024 --json
 # Rerank: una sonda integrada de respuesta conocida — un reranker auténtico debe poner
 # primero el documento evidentemente relevante.
 zing rerank --base-url https://relay.example.com/v1 --model my-rerank
+
+# Más a fondo: añade la sonda de velocidad de rerank; --no-save deja la ejecución fuera del historial.
+zing rerank --base-url ... --model my-rerank --suite deep --no-save
+# Ver antes las comprobaciones y las llamadas estimadas, sin enviar ninguna petición:
+zing rerank --base-url ... --model my-rerank --dry-run
 ```
+
+`rerank` comprueba la conectividad, la **sonda de respuesta conocida** (el
+documento obviamente relevante debe quedar primero), el campo `model` devuelto,
+el determinismo (la misma consulta dos veces da la misma clasificación y las
+mismas puntuaciones) y la **deriva de la clasificación** frente a la ejecución
+guardada anterior. `zing embed` y `zing rerank` aceptan `--suite`,
+`--save/--no-save` (se guarda por defecto, para que la siguiente ejecución tenga
+una referencia de deriva) y `--dry-run`.
 
 `embed` comprueba la conectividad, la **coincidencia de dimensión** (longitud del
 vector devuelto frente a la dimensión nativa del modelo declarado — la señal

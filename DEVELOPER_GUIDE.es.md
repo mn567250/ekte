@@ -22,6 +22,7 @@ funciona y se puntúa cada comprobación, en la [Metodología](docs/METHODOLOGY.
   - [Base de conocimiento](#base-de-conocimiento)
   - [Biblioteca de prompts](#biblioteca-de-prompts)
   - [Informes](#informes)
+  - [Superficies](#superficies)
   - [Auditores independientes](#auditores-independientes)
   - [Servidor web](#servidor-web)
   - [Frontend web](#frontend-web)
@@ -285,14 +286,50 @@ se escapa (HTML / Markdown) antes de la salida. `POST /api/report/export` de la
 interfaz web reutiliza estos renderizadores para la fila **Descargar informe**,
 con los textos legibles traducidos al idioma de la interfaz.
 
+### Superficies
+
+La **superficie** es el tipo de endpoint auditado: `chat` (por defecto),
+`embedding` o `rerank` (`zing.config.SURFACES`; más adelante imagen, TTS). Es un
+segundo eje junto a la suite, que llevan `AuditOptions.surface`,
+`AuditReport.surface` y una columna `surface` anulable en `history.db` y
+`watches.db` (`NULL` y un campo JSON ausente significan `chat`; sin migración).
+
+- Los detectores declaran `surface: ClassVar[str]`; `select_detectors` filtra por
+  ella antes del nivel de suite. Los detectores de embeddings y rerank reutilizan
+  las dimensiones existentes.
+- Los pesos de puntuación y los conjuntos de dimensiones de perfil / núcleo /
+  infraestructura son por superficie (`scoring.SURFACE_WEIGHTS`); chat conserva
+  sus valores.
+- El grabador marca las llamadas de embeddings con `op="embed"` y las de rerank con
+  `op="rerank"` (`zing.config.SURFACE_OPS`); las funciones de `perf/summary.py`
+  aceptan un parámetro `op` (por defecto `complete`).
+- `embed_audit.run_embedding_audit()` y `run_rerank_audit()` (usadas por
+  `zing embed` / `zing rerank` y `/api/embed` / `/api/rerank`) ejecutan el runner
+  con `surface="embedding"` o `"rerank"`, pasan la ejecución guardada anterior de
+  la misma superficie como `previous_report` (deriva) y guardan el informe salvo
+  que se indique lo contrario (`--no-save`).
+- Detectores de rerank: `rerank.connectivity`, `rerank.known_answer`
+  (CAPABILITY), `rerank.identity` y `rerank.drift` (MODEL_IDENTITY),
+  `rerank.determinism` (RELIABILITY) y `performance.rerank`. Pesos:
+  MODEL_IDENTITY 30, CAPABILITY 30, PERFORMANCE 20, RELIABILITY 10,
+  CONNECTIVITY 10.
+- Monitores: la `surface` y `embedding_dimensions` (0 = de la base de
+  conocimiento) de un monitor alimentan `AuditOptions` en `_run_one_watch_inner`;
+  un monitor de embeddings o rerank lee su referencia de deriva con
+  `history.latest_for(..., surface=...)` antes de la auditoría y compara las
+  alertas solo con ejecuciones de la misma superficie. La superficie se fija al
+  crearlo (`POST /api/watches`, `/api/watches/from-history/{id}`, que también
+  acepta `embedding_dimensions`) y `PATCH` no la cambia; `PATCH` cambia
+  `embedding_dimensions` de un monitor de embeddings (la tarjeta de Monitores v2
+  lo edita en línea).
+
 ### Auditores independientes
 
-Embeddings/rerank (`embed_audit.py`) e imagen/audio (`media_audit.py`) no son
-superficies de chat, así que tienen sus propios auditores pequeños con su propio
-veredicto en lugar del pipeline de detectores. Comparten los ajustes HTTP de los
-clientes, la base de conocimiento (dimensiones nativas, tamaños de imagen, voces)
-y la biblioteca de prompts. Toda la decodificación (cabeceras de imagen, WAV) usa
-solo la biblioteca estándar.
+Imagen/audio (`media_audit.py`) aún no son superficies, así que tienen sus propios
+auditores pequeños con su propio veredicto en lugar del pipeline de detectores.
+Comparten los ajustes HTTP de los clientes, la base de conocimiento (dimensiones
+nativas, tamaños de imagen, voces) y la biblioteca de prompts. Toda la
+decodificación (cabeceras de imagen, WAV) usa solo la biblioteca estándar.
 
 ### Servidor web
 
