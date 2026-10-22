@@ -925,6 +925,87 @@ larges des API natives, et une cible plus lente est notée, jamais comptée. Tou
 constats sont au plus de gravité FAIBLE : cette dimension fait bouger le score,
 jamais le verdict de risque.
 
+## Surface d'embedding
+
+La **surface** d'un audit (`chat` par défaut, ou `embedding`) choisit les
+détecteurs ; la suite fixe toujours la profondeur. Un audit d'embedding n'envoie
+que des requêtes `POST /embeddings` et réutilise les dimensions du chat ainsi que
+le score commun 0–100 et la note A–F, avec des poids par surface. Une dimension
+qui ne correspond pas (identité du modèle, ÉLEVÉ) rend le risque ÉLEVÉ, comme un
+modèle substitué en chat.
+
+| Vérification | Id | Dimension | Ce qu'elle teste |
+|---|---|---|---|
+| Connectivité | `embed.connectivity` | Connectivité | l'endpoint renvoie des vecteurs bien formés |
+| Dimension du vecteur | `embed.dimension` | Identité du modèle | longueur renvoyée contre la dimension native du modèle annoncé (base de connaissances, ou `claimed_dimensions`) |
+| Modèle renvoyé | `embed.model_field` | Identité du modèle | le champ `model` de la réponse nomme le modèle annoncé |
+| Dérive des vecteurs | `embed.drift` | Identité du modèle | le vecteur de l'entrée épinglée de la sonde contre l'exécution enregistrée précédente |
+| Déterminisme | `embed.determinism` | Fiabilité en concurrence | la même entrée deux fois donne un cosinus ≥ 0,9999 |
+| Distinction | `embed.distinctness` | Capacités annoncées | des entrées sans rapport donnent un cosinus inférieur à 0,98 |
+| Sonde de performance | `performance.embed` | Performance | latence, démarrage à froid, débit, mise à l'échelle par lots |
+
+**Dérive des vecteurs.** Chaque exécution conserve les 64 premières composantes du
+vecteur normalisé d'une entrée fixe. L'exécution suivante de la même cible et du
+même modèle annoncé (`zing embed`, la page Outils ou une surveillance d'embedding)
+compare son vecteur à cet échantillon : un cosinus **≥ 0,995** est stable (PASS),
+de **0,95 à 0,995** il s'est déplacé (WARN, MOYEN : un redéploiement ou une
+quantification), sous **0,95** ou avec une autre longueur le modèle a été
+substitué (FAIL, ÉLEVÉ). La première exécution n'a rien à comparer et enregistre
+la référence (INFO).
+
+**Sonde de performance.** Activée comme la sonde de chat : elle tourne en deep,
+full et custom, et en standard seulement avec une référence. Après un ping et une
+requête de chauffe (démarrage à froid), elle envoie des requêtes uniformes à une
+entrée, des lots de 16 entrées et, en deep/full, une rafale concurrente. Chaque
+entrée porte un nonce aléatoire ; des vecteurs identiques pour des entrées
+différentes sont signalés comme mis en cache et exclus des statistiques. Elle
+rapporte la latence p50/p95, le démarrage à froid, les entrées/s et les jetons
+d'entrée/s, la régularité de la latence et du débit, les erreurs et la stabilité
+sous charge. La **mise à l'échelle par lots** compare la latence par entrée d'un
+lot à celle d'une requête seule : à partir de 0,6x le lot est découpé ou sérialisé
+(linéaire, WARN FAIBLE). Il n'y a pas de référence de vitesse dans la base de
+connaissances ; la vitesse brute ne compte que face à une référence.
+
+---
+
+## Surface de rerank
+
+Un audit de rerank (`surface` `rerank`) n'envoie que des requêtes `POST /rerank` et
+est noté sur l'échelle commune 0–100 et la note A–F avec ses propres poids :
+identité du modèle 30, capacités annoncées 30, performance 20, fiabilité en
+concurrence 10, connectivité 10. Un classement à réponse connue raté (capacités
+annoncées, ÉLEVÉ) ou un modèle substitué (identité du modèle, ÉLEVÉ) rend le risque
+ÉLEVÉ.
+
+| Vérification | Id | Dimension | Ce qu'elle teste |
+|---|---|---|---|
+| Connectivité | `rerank.connectivity` | Connectivité | l'endpoint renvoie un classement bien formé |
+| Réponse connue | `rerank.known_answer` | Capacités annoncées | une sonde avec un document manifestement pertinent le place en tête |
+| Modèle renvoyé | `rerank.identity` | Identité du modèle | le champ `model` de la réponse nomme le modèle annoncé |
+| Dérive du classement | `rerank.drift` | Identité du modèle | le classement et les scores de la sonde épinglée contre l'exécution enregistrée précédente |
+| Déterminisme | `rerank.determinism` | Fiabilité en concurrence | la même requête deux fois donne le même classement et les mêmes scores |
+| Sonde de performance | `performance.rerank` | Performance | latence, démarrage à froid, documents/s, évolution selon le nombre de documents |
+
+**Dérive du classement.** Chaque exécution conserve le classement et les scores
+arrondis d'une sonde fixe à pertinence graduée. L'exécution suivante de la même
+cible et du même modèle annoncé s'y compare : le même classement avec des scores à
+moins de **1 %** est stable (PASS), de **1 % à 10 %** il s'est déplacé (WARN,
+MOYEN), un autre classement ou un écart de plus de **10 %** signifie que le modèle
+a été substitué (FAIL, ÉLEVÉ). La première exécution enregistre la référence
+(INFO) ; une sonde modifiée n'est jamais prise pour une dérive.
+
+**Sonde de performance.** Activée comme la sonde de chat (deep, full et custom ; en
+standard seulement avec une référence). Chaque tour envoie une requête unique sur
+**4 documents** et une sur **32** ; en deep/full suit une rafale concurrente. Les
+réponses dont les scores fins répètent ceux d'une autre requête sont signalées
+comme mises en cache et exclues des statistiques. Elle rapporte la latence
+p50/p95, le démarrage à froid, les documents/s et les jetons d'entrée/s, la
+régularité, les erreurs et la stabilité sous charge. **Évolution selon le nombre de
+documents** : quand une requête de 32 documents coûte par document 0,6x ou plus
+d'une requête de 4, le relais découpe ou sérialise les documents (linéaire, WARN
+FAIBLE). Il n'y a pas de référence de vitesse dans la base de connaissances ; la
+vitesse brute ne compte que face à une référence.
+
 ---
 
 ## Correspondance astuce → détecteur
