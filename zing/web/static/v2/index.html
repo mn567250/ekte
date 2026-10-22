@@ -54,6 +54,8 @@
   fieldset.grp { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   fieldset.grp > legend { padding: 0; }
   .seg.radio { display: grid; grid-template-columns: repeat(3, minmax(min-content, 1fr)); }
+  /* long labels (e.g. "Riordinamento") must not push a 320 px page sideways */
+  @media (max-width: 400px) { .seg.radio { grid-template-columns: minmax(0, 1fr); } }
   .seg.radio > span { position: relative; display: grid; }
   .seg.radio label {
     text-align: center; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
