@@ -339,7 +339,11 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
 
 - **Pagine.** L'interfaccia classica (`/`, `/console`, `/history`, `/watches`,
   `/tools`) e la nuova interfaccia (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/tools`, `/v2/kb`) sono file HTML statici. `?ui=v2` / `?ui=v1` passa
+  `/v2/kb`) sono file HTML statici. La nuova interfaccia non ha una pagina
+  Strumenti: le verifiche di embedding e rerank partono dalla pagina di verifica
+  con il selettore del tipo di endpoint (`/v2/?surface=embedding|rerank`), e
+  `/v2/tools` serve una piccola pagina che vi rimanda i vecchi link (`#rerank`
+  sceglie il rerank, `?rerun=` viene passato). `?ui=v2` / `?ui=v1` passa
   dall'una all'altra e un cookie ricorda la scelta, così un URL classico
   reindirizza al suo equivalente nuovo una volta scelta la nuova interfaccia.
 - **API.** `/api/audit/stream` esegue una verifica e ne trasmette gli eventi via
@@ -432,7 +436,7 @@ traduzione), `i18n.js` (traduzione delle rilevazioni), `icons.js`,
 `modelpicker.js` (**Recupera modelli**), `secretfield.js` e `perf.js` (grafici
 delle prestazioni).
 
-Le pagine v2 **Verifica** e **Strumenti** configurano i relay con
+La pagina v2 **Verifica** configura i relay con
 `v2/relaycfg.js`: scelta relay/provider → URL di base → i modelli del relay
 (`/api/models`, al cambiamento, in cache per URL/chiave/protocollo) → modello
 dichiarato dalla base di conoscenza (`/api/kb/resolve` lo preseleziona) →
@@ -471,7 +475,7 @@ solo quando arrivano dati nuovi e mai con il movimento ridotto o con
 l'animazione disattivata nell'intestazione.
 
 L'intestazione della pagina e il pannello dei filtri stanno sopra cinque schede
-interne (`v2/tabs.js`, come in Strumenti e Conoscenza): ogni voce di
+interne (`v2/tabs.js`, come in Conoscenza): ogni voce di
 `PANELS` indica la sua `tab`, e si caricano solo i pannelli della scheda
 visibile; una modifica dei filtri ricarica quella scheda e segna le altre come
 non aggiornate (`activate()` le carica quando vengono mostrate). Qui `tabs.js`

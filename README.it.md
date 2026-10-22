@@ -237,8 +237,8 @@ Nella nuova interfaccia il modulo guida la configurazione:
 
 Un relay non ancora in elenco si può conservare con **Salva nella base** con un
 nome a tua scelta; la volta successiva basta sceglierlo. Il riferimento
-affidabile (**Confronta con un riferimento affidabile**) e la pagina
-**Strumenti** si configurano allo stesso modo. L'interfaccia classica mantiene i
+affidabile (**Confronta con un riferimento affidabile**) e le verifiche di
+embedding e rerank si configurano allo stesso modo. L'interfaccia classica mantiene i
 campi semplici con **Recupera modelli**.
 
 Poi **Avvia
@@ -264,7 +264,7 @@ nuova interfaccia** passa alla **nuova interfaccia** sotto `/v2/`, il cui link
 |---|---|---|---|
 | **Verifica** | `/` | `/v2/` | Verificare un relay (eventualmente rispetto a un riferimento) e leggere il rapporto |
 | **Console** | `/console` | — | La stessa verifica come console compatta, in stile registro |
-| **Strumenti** | `/tools` | `/v2/tools` | Verifiche di embedding e rerank |
+| **Strumenti** | `/tools` | — | Verifiche di embedding e rerank; nella nuova interfaccia partono dalla pagina **Verifica** con il selettore del tipo di endpoint (`/v2/tools` rimanda lì) |
 | **Cronologia** | `/history` | `/v2/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
 | **Analisi** | — | `/v2/analytics` | Relay e modelli confrontati nel tempo: indicatori, grafici con tabelle di dati, classifiche |
 | **Monitor** | `/watches` | `/v2/watches` | Verifiche ripetute pianificate con avvisi via webhook |
@@ -637,7 +637,9 @@ chat; cambiano solo i rilevatori. Cronologia e analisi filtrano per tipo di
 endpoint, e l'analisi mostra solo le metriche pertinenti.
 
 Per monitorare un endpoint di embedding o rerank, verificalo nella pagina
-**Strumenti** e scegli **Monitora**, oppure **Pianifica come monitor** sulla sua
+**Verifica** (scegli **Embedding** o **Riordinamento** nel selettore del tipo di
+endpoint; nell'interfaccia classica, nella pagina **Strumenti**) e scegli
+**Monitora**, oppure **Pianifica come monitor** sulla sua
 riga della cronologia. Il monitor ripete la verifica secondo la pianificazione, con
 lo stesso fissaggio della base di conoscenza, la stessa soglia di avviso e gli
 stessi avvisi di regressione di un monitor di chat, e controlla la **deriva**
@@ -686,7 +688,9 @@ coseno nettamente sotto 1) e il campo `model` restituito. Profili integrati:
 OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Entrambi sono anche nella pagina **Strumenti** dell'interfaccia web (**Verifica
+Entrambi sono anche nell'interfaccia web: nella nuova interfaccia partono dalla
+pagina **Verifica** con il selettore del tipo di endpoint (**Embedding**,
+**Riordinamento**), in quella classica dalla pagina **Strumenti** (**Verifica
 embedding**, **Verifica rerank**). La verifica rerank usa sempre le sonde
 integrate, così ogni esecuzione resta confrontabile per la deriva e il
 monitoraggio.
@@ -772,7 +776,7 @@ coprono OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM e Moonshot
      un relay** chiede un nome e un URL di base. **Quale profilo usa un ID di
      modello?** mostra come si risolve un id; le tue voci si possono esportare in
      YAML;
-   - nelle pagine **Verifica** e **Strumenti** dell'interfaccia web: **Salva
+   - nella pagina **Verifica** dell'interfaccia web (classica: anche **Strumenti**): **Salva
      nella base** conserva nome e URL di base di un relay (una voce di provider
      senza modelli), elencato in **Conoscenza → Relay**;
    - da riga di comando: `zing kb-prompt <model>`, `zing kb-import <file>`

@@ -941,8 +941,9 @@ il rischio ALTO, come un modello sostituito nella chat.
 
 **Deriva dei vettori.** Ogni esecuzione conserva le prime 64 componenti del
 vettore normalizzato di un input fisso. L'esecuzione successiva dello stesso
-target e modello dichiarato (`zing embed`, la pagina Strumenti o un monitor di
-embedding) confronta il suo vettore con quel campione: coseno **≥ 0,995** è stabile
+target e modello dichiarato (`zing embed`, una verifica di embedding avviata dalla
+pagina Verifica dell'interfaccia web con il selettore del tipo di endpoint, o un
+monitor di embedding) confronta il suo vettore con quel campione: coseno **≥ 0,995** è stabile
 (PASS), da **0,95 a 0,995** si è spostato (WARN, MEDIA: un nuovo rilascio o una
 quantizzazione), sotto **0,95** o con un'altra lunghezza il modello è stato
 sostituito (FAIL, ALTA). La prima esecuzione non ha nulla da confrontare e
