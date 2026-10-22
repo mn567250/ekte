@@ -1,0 +1,17 @@
+{
+ "strings": {
+  "Rerank latency and throughput were measured.": "已测量重排序的延迟和吞吐量。",
+  "A query over 32 documents costs far less per document than one over 4.": "对 32 个文档的查询，每个文档的开销远低于对 4 个文档的查询。",
+  "A query over 32 documents costs about as much per document as one over 4 (consistent with a relay that splits or serialises the documents).": "对 32 个文档的查询，每个文档的开销与对 4 个文档的查询大致相同（符合中转站拆分或串行处理文档的情况）。",
+  "Too few samples to judge how latency scales with the number of documents.": "样本太少，无法判断延迟如何随文档数量变化。",
+  "Unique probe queries came back with repeated scores (left out of the statistics).": "唯一的探测查询返回了重复的分数（已从统计中排除）。",
+  "The baseline returned repeated scores for unique probe queries (not scored).": "基准对唯一的探测查询返回了重复的分数（不计分）。",
+  "Rerank probe results": "重排序探测结果",
+  "Rerank throughput consistency": "重排序吞吐量的稳定性",
+  "Document-count latency scaling": "延迟随文档数量的扩展",
+  "Rerank latency grows linearly with the number of documents": "重排序延迟随文档数量线性增长",
+  "Unique probe queries returned repeated scores": "唯一的探测查询返回了重复的分数",
+  "A relay that returns the same scores for different queries may be serving stored results; compare with a trusted baseline.": "对不同查询返回相同分数的中转站可能在提供缓存的结果；请与可信基准进行比较。",
+  "Rerank performance probe": "重排序性能探测"
+ }
+}
