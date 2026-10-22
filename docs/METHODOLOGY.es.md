@@ -994,7 +994,8 @@ deriva.
 en standard solo con una referencia). Cada ronda envía una consulta única sobre
 **4 documentos** y otra sobre **32**; en deep/full sigue una ráfaga concurrente.
 Las respuestas cuyas puntuaciones finas repiten las de otra consulta se marcan
-como cacheadas y quedan fuera de las estadísticas. Informa de la latencia p50/p95,
+como cacheadas y quedan fuera de las estadísticas; una respuesta que deja
+documentos sin puntuar cuenta como petición fallida. Informa de la latencia p50/p95,
 el arranque en frío, documentos/s y tokens de entrada/s, la regularidad, los
 errores y la estabilidad bajo carga. **Escalado con el número de documentos**:
 cuando una petición de 32 documentos cuesta por documento 0,6x o más que una de 4,

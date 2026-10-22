@@ -998,7 +998,8 @@ geänderter Test wird nie für Drift gehalten.
 standard nur mit Baseline). Jede Runde sendet eine eindeutige Anfrage über
 **4 Dokumente** und eine über **32**; in deep/full folgt ein nebenläufiger Burst.
 Antworten, deren feinkörnige Scores die einer anderen Anfrage wiederholen, werden
-als zwischengespeichert markiert und aus der Statistik genommen. Sie meldet Latenz
+als zwischengespeichert markiert und aus der Statistik genommen; eine Antwort, die
+Dokumente ohne Score lässt, zählt als fehlgeschlagene Anfrage. Sie meldet Latenz
 p50/p95, Kaltstart, Dokumente/s und Eingabe-Token/s, Gleichmäßigkeit, Fehler und
 Stabilität unter Last. **Skalierung mit der Dokumentenzahl**: kostet eine Anfrage
 mit 32 Dokumenten je Dokument 0,6x oder mehr einer mit 4 Dokumenten, teilt das

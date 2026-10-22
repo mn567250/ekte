@@ -1,0 +1,17 @@
+{
+ "strings": {
+  "Rerank latency and throughput were measured.": "Latenz und Durchsatz des Rerankings wurden gemessen.",
+  "A query over 32 documents costs far less per document than one over 4.": "Eine Anfrage über 32 Dokumente kostet pro Dokument weit weniger als eine über 4.",
+  "A query over 32 documents costs about as much per document as one over 4 (consistent with a relay that splits or serialises the documents).": "Eine Anfrage über 32 Dokumente kostet pro Dokument etwa so viel wie eine über 4 (passt zu einem Relay, das die Dokumente aufteilt oder nacheinander verarbeitet).",
+  "Too few samples to judge how latency scales with the number of documents.": "Zu wenige Messungen, um zu beurteilen, wie die Latenz mit der Zahl der Dokumente wächst.",
+  "Unique probe queries came back with repeated scores (left out of the statistics).": "Eindeutige Testanfragen lieferten wiederholte Scores (aus der Statistik herausgenommen).",
+  "The baseline returned repeated scores for unique probe queries (not scored).": "Die Baseline lieferte wiederholte Scores für eindeutige Testanfragen (nicht bewertet).",
+  "Rerank probe results": "Ergebnisse der Reranking-Messung",
+  "Rerank throughput consistency": "Gleichmäßigkeit des Reranking-Durchsatzes",
+  "Document-count latency scaling": "Latenz-Skalierung mit der Dokumentenzahl",
+  "Rerank latency grows linearly with the number of documents": "Reranking-Latenz wächst linear mit der Zahl der Dokumente",
+  "Unique probe queries returned repeated scores": "Eindeutige Testanfragen lieferten wiederholte Scores",
+  "A relay that returns the same scores for different queries may be serving stored results; compare with a trusted baseline.": "Ein Relay, das für verschiedene Anfragen dieselben Scores liefert, gibt womöglich gespeicherte Ergebnisse aus; vergleichen Sie mit einer vertrauenswürdigen Baseline.",
+  "Rerank performance probe": "Reranking-Leistungsmessung"
+ }
+}

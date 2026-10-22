@@ -700,8 +700,8 @@ das zurückgegebene `model`-Feld. Mitgelieferte Profile: OpenAI
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
 Beide gibt es auch auf der Seite **Werkzeuge** der Weboberfläche
-(**Embedding-Prüfung**, **Rerank-Prüfung**); dort lässt sich der Rerank-Test durch
-eine eigene Anfrage und eigene Dokumente ersetzen.
+(**Embedding-Prüfung**, **Rerank-Prüfung**). Die Rerank-Prüfung nutzt immer die
+eingebauten Tests, damit jeder Lauf für Drift und Überwachung vergleichbar bleibt.
 
 ### Bild- und Audio-Generierung (TTS)
 

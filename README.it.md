@@ -687,8 +687,9 @@ OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
 Entrambi sono anche nella pagina **Strumenti** dell'interfaccia web (**Verifica
-embedding**, **Verifica rerank**), dove la sonda di rerank può essere sostituita
-dalla tua query e dai tuoi documenti.
+embedding**, **Verifica rerank**). La verifica rerank usa sempre le sonde
+integrate, così ogni esecuzione resta confrontabile per la deriva e il
+monitoraggio.
 
 ### Generazione di immagini e audio (TTS)
 

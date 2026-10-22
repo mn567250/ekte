@@ -985,7 +985,8 @@ referência (INFO); uma sonda alterada nunca é tomada por deriva.
 standard só com uma referência). Cada ronda envia uma consulta única sobre
 **4 documentos** e outra sobre **32**; em deep/full segue-se uma rajada
 concorrente. As respostas cujas pontuações finas repetem as de outra consulta são
-marcadas como em cache e ficam fora das estatísticas. Reporta a latência p50/p95,
+marcadas como em cache e ficam fora das estatísticas; uma resposta que deixa
+documentos sem pontuação conta como pedido falhado. Reporta a latência p50/p95,
 o arranque a frio, documentos/s e tokens de entrada/s, a regularidade, os erros e
 a estabilidade sob carga. **Escala com o número de documentos**: quando um pedido
 de 32 documentos custa por documento 0,6x ou mais do que um de 4, o relay divide ou

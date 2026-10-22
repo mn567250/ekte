@@ -998,7 +998,8 @@ a été substitué (FAIL, ÉLEVÉ). La première exécution enregistre la réfé
 standard seulement avec une référence). Chaque tour envoie une requête unique sur
 **4 documents** et une sur **32** ; en deep/full suit une rafale concurrente. Les
 réponses dont les scores fins répètent ceux d'une autre requête sont signalées
-comme mises en cache et exclues des statistiques. Elle rapporte la latence
+comme mises en cache et exclues des statistiques ; une réponse qui laisse des
+documents sans score compte comme une requête en échec. Elle rapporte la latence
 p50/p95, le démarrage à froid, les documents/s et les jetons d'entrée/s, la
 régularité, les erreurs et la stabilité sous charge. **Évolution selon le nombre de
 documents** : quand une requête de 32 documents coûte par document 0,6x ou plus

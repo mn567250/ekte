@@ -519,8 +519,8 @@ zing rerank --base-url ... --model my-rerank --dry-run
 内置画像：OpenAI `text-embedding-3-small`（1536）、`text-embedding-3-large`（3072）、
 `text-embedding-ada-002`（1536），Qwen `text-embedding-v3`/`-v4`（1024）。
 
-两者也都在 Web 界面的**工具**页面中（**嵌入审计**、**重排审计**），在那里还可以用你自己的
-查询和文档替换 rerank 探测。
+两者也都在 Web 界面的**工具**页面中（**嵌入审计**、**重排审计**）。重排审计始终使用内置探测，
+这样每次运行在漂移检查和监控中都可以相互比较。
 
 ### 图像与音频（TTS）生成
 

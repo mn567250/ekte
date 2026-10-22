@@ -992,7 +992,8 @@ una sonda cambiata non viene mai presa per deriva.
 custom; in standard solo con una baseline). Ogni giro invia una query unica su
 **4 documenti** e una su **32**; in deep/full segue una raffica concorrente. Le
 risposte i cui punteggi fini ripetono quelli di un'altra query vengono segnalate
-come in cache ed escluse dalle statistiche. Riporta latenza p50/p95, avvio a
+come in cache ed escluse dalle statistiche; una risposta che lascia documenti
+senza punteggio conta come richiesta fallita. Riporta latenza p50/p95, avvio a
 freddo, documenti/s e token di input/s, regolarità, errori e stabilità sotto
 carico. **Scalabilità con il numero di documenti**: quando una richiesta con 32
 documenti costa per documento 0,6x o più di una con 4, il relay divide o serializza

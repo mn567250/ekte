@@ -45,6 +45,7 @@ from pathlib import Path
 from typing import Any
 
 from zing import datadir, i18n, secretbox
+from zing.config import SURFACES
 from zing.knowledge import snapshot as kb_snapshot
 
 # Full column set, in table order. ``api_key`` lives here for the scheduler, but
@@ -147,7 +148,7 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
     # (the full suite measures both either way).
     if "performance_streaming" not in cols:
         conn.execute("ALTER TABLE watches ADD COLUMN performance_streaming INTEGER")
-    # The audited surface ("chat" or "embedding"); NULL reads as chat.
+    # The audited surface ("chat", "embedding" or "rerank"); NULL reads as chat.
     if "surface" not in cols:
         conn.execute("ALTER TABLE watches ADD COLUMN surface TEXT")
     # An embedding watch's claimed vector length; NULL or 0 takes the KB's.
@@ -452,7 +453,7 @@ def create(
     declared_provider, suite, dimensions (list; the custom suite's), interval_sec,
     alert_on, webhooks (list), language (alert language code; unknown/missing ->
     English), performance_streaming (False: the probe sends non-streaming
-    requests), surface ("chat" or "embedding"; missing -> chat),
+    requests), surface ("chat", "embedding" or "rerank"; missing or unknown -> chat),
     embedding_dimensions (an embedding watch's claimed vector length; 0 or
     missing -> the knowledge base's). Unknown keys are ignored;
     missing keys fall back to sensible defaults. ``knowledge`` (a
@@ -466,6 +467,7 @@ def create(
     if not isinstance(webhooks, list):
         webhooks = [webhooks]
     webhooks = [str(w).strip() for w in webhooks if str(w).strip()]
+    surface = cfg.get("surface") if cfg.get("surface") in SURFACES else "chat"
     interval: int | None
     if draft:
         interval = None
@@ -493,8 +495,9 @@ def create(
         cfg.get("source_report_id") if draft else None,
         _duration(cfg.get("run_duration_sec")),
         0 if cfg.get("performance_streaming") is False else 1,
-        cfg.get("surface") or "chat",
-        _dims(cfg.get("embedding_dimensions")) or None,
+        surface,
+        # a claimed vector length means something only to an embedding watch
+        (_dims(cfg.get("embedding_dimensions")) or None) if surface == "embedding" else None,
     )
     with _connect() as conn:
         cur = conn.execute(

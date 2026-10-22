@@ -653,7 +653,8 @@ profiles: OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large`
 (3072), `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
 Both are also on the web UI's **Tools** page (**Embedding audit**, **Rerank
-audit**), where the rerank probe can be replaced by your own query and documents.
+audit**). The rerank audit always uses the built-in probes, so every run stays
+comparable for drift and monitoring.
 
 ### Image and audio (TTS) generation
 

@@ -78,8 +78,8 @@ def track_progress(state: dict[str, Any], event: dict[str, Any]) -> None:
             state["probe_done"] = state.get("probe_done", 0) + 1
 
 
-# The performance probes (chat and embedding), by detector id.
-_PROBES = ("performance", "performance.embed")
+# The performance probes (chat, embedding and rerank), by detector id.
+_PROBES = ("performance", "performance.embed", "performance.rerank")
 
 
 def progress_pct(state: dict[str, Any]) -> int:

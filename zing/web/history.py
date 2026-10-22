@@ -177,7 +177,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(
         conn, "history", {**dict.fromkeys(_PERF_COLS, "REAL"), _PERF_DONE: "INTEGER"}
     )
-    # The audited surface ("chat" or "embedding"); NULL (rows saved before
+    # The audited surface ("chat", "embedding" or "rerank"); NULL (rows saved before
     # surfaces existed) reads as chat.
     kb_snapshot.add_link_columns(conn, "history", {"surface": "TEXT"})
     # Version 2: where a row's request records are, and the analytics tables.
@@ -743,7 +743,7 @@ def analytics_request_classes(
     ids: Iterable[int], endpoint: str = "target", op: str = "complete"
 ) -> list[dict[str, Any]]:
     """Calls of the given runs (``op``: ``complete`` for completion calls,
-    ``embed`` for embedding calls) counted in SQL by run, minute after
+    ``embed`` for embedding calls, ``rerank`` for rerank calls) counted in SQL by run, minute after
     the run's start (``minute``: whole minutes of ``start_ms``) and outcome
     class (``cls``, one of :data:`REQUEST_CLASSES`): rows ``history_id``,
     ``minute``, ``cls``, ``n``. Never loads the records themselves; a run

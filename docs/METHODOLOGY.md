@@ -918,6 +918,19 @@ input tokens/s, the latency/throughput consistency, errors and load stability.
 at 0.6x or more the batch is split or serialised (linear, WARN LOW). There is
 no knowledge-base speed reference; raw speed only counts against a baseline.
 
+**Rerank performance probe** (`performance.rerank`, surface `rerank`). The
+same probe for `POST /rerank`, gated like the chat probe. Each round sends one
+query over 4 documents and one over 32; the burst uses 4. Every query and
+document carries the request's random nonce; fine-grained scores (not a
+round number to 3 decimals) repeated exactly for a different set of documents
+are flagged as cached and left out of the statistics (a deterministic scorer
+may repeat them for the same documents); a 200 that leaves documents
+unscored counts as a failed request. It reports latency p50/p95, cold start,
+documents/s and input tokens/s, the latency/throughput consistency, errors and
+load stability. **Document-count scaling** compares the per-document latency
+of 32 documents with that of 4: at 0.6x or more the documents are split or
+serialised (linear, WARN LOW).
+
 ---
 
 ## Rerank surface
@@ -944,16 +957,12 @@ model compares with it: the same ranking with scores within **1%** is stable
 change of more than **10%** means the model was swapped (FAIL, HIGH). The first
 run records the baseline (INFO); a changed probe is never taken for drift.
 
-**Performance probe.** Gated like the chat probe (deep, full and custom; on
-standard only with a baseline). Each round sends one unique query over
-**4 documents** and one over **32**; on deep/full a concurrent burst follows.
-Responses whose fine-grained scores repeat those of another query are flagged
-as cached and left out of the statistics. It reports latency p50/p95, cold
-start, documents/s and input tokens/s, consistency, errors and load stability.
-**Document scaling**: when a 32-document request costs 0.6x or more per
-document of a 4-document one, the relay splits or serialises the documents
-(linear, WARN LOW). There is no knowledge-base speed reference; raw speed only
-counts against a baseline.
+**Performance probe.** `performance.rerank`, described with the other probes
+above: gated like the chat probe (deep, full and custom; on standard only with
+a baseline), 4 vs 32 documents per query, nonce-varied queries for cache
+detection, and a response that leaves documents unscored counts as a failed
+request. There is no knowledge-base speed reference; raw speed only counts
+against a baseline.
 
 ---
 

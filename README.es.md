@@ -690,8 +690,9 @@ coseno ≈ 1), la distinción (entradas sin relación → coseno claramente infe
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
 Ambos están también en la página **Herramientas** de la interfaz web
-(**Auditoría de embeddings**, **Auditoría de rerank**), donde la sonda de rerank
-puede sustituirse por tu propia consulta y tus propios documentos.
+(**Auditoría de embeddings**, **Auditoría de rerank**). La auditoría de rerank usa
+siempre las sondas integradas, para que cada ejecución siga siendo comparable para
+la deriva y la monitorización.
 
 ### Generación de imagen y audio (TTS)
 

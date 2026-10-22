@@ -695,8 +695,9 @@ inférieur à 1) et le champ `model` renvoyé. Profils intégrés : OpenAI
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
 Les deux se trouvent aussi sur la page **Outils** de l'interface web (**Audit
-d'embedding**, **Audit de rerank**), où la sonde de rerank peut être remplacée par
-votre propre requête et vos propres documents.
+d'embedding**, **Audit de rerank**). L'audit de rerank utilise toujours les sondes
+intégrées, pour que chaque exécution reste comparable pour la dérive et la
+surveillance.
 
 ### Génération d'images et d'audio (TTS)
 

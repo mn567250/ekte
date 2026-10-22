@@ -686,8 +686,9 @@ devolve 1024-d serve um substituto), o determinismo (mesma entrada → cosseno �
 `text-embedding-v3`/`-v4` (1024).
 
 Ambos estão também na página **Ferramentas** da interface web (**Auditoria de
-embeddings**, **Auditoria de rerank**), onde a sonda de rerank pode ser
-substituída pela sua própria consulta e pelos seus próprios documentos.
+embeddings**, **Auditoria de rerank**). A auditoria de rerank usa sempre as sondas
+integradas, para que cada execução continue comparável para a deriva e a
+monitorização.
 
 ### Geração de imagem e áudio (TTS)
 
