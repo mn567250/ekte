@@ -8,11 +8,11 @@ described in [docs/ACCESSIBILITY.md](../../docs/ACCESSIBILITY.md).
 
 ```sh
 ZING_A11Y_PAGES=history pytest tests/a11y -m a11y -n auto        # History only
-ZING_A11Y_PAGES=tools,kb pytest tests/a11y -m a11y --collect-only -q
+ZING_A11Y_PAGES=audit,kb pytest tests/a11y -m a11y --collect-only -q
 ```
 
 `ZING_A11Y_PAGES` is a comma list of page ids (`PAGES` in `pages.py`: `audit`,
-`history`, `monitors`, `tools`, `kb`, `analytics`, `accessibility`), or `all`; an unknown
+`history`, `monitors`, `kb`, `analytics`, `accessibility`), or `all`; an unknown
 id is a usage error. A test runs when it is tied to a selected page:
 
 - tests parametrised by `page_id`, or by a `state` such as `history-charts` or
@@ -23,19 +23,18 @@ id is a usage error. A test runs when it is tied to a selected page:
   and identification, page titles, reachability; the self-checks) always runs.
 
 It combines with `ZING_A11Y_SHARD=k/n`, which then splits the selection.
-Collected with `ZING_A11Y_PAGES=<page>` (1,299 tests in all; 26 of them, 4 %
+Collected with `ZING_A11Y_PAGES=<page>` (1,138 tests in all; 33 of them, 4 %
 of the test time, run with any selection), and each page's share of a full
 run's test time (`WEIGHTS` in `pages.py`):
 
 | Page | Tests | Share of the run time |
 |---|---:|---:|
-| audit | 213 | 12 % |
-| history | 234 | 24 % |
-| monitors | 212 | 9 % |
-| tools | 206 | 8 % |
-| kb | 199 | 23 % |
-| analytics | 203 | 10 % |
-| accessibility | 197 | 10 % |
+| audit | 229 | 20 % |
+| history | 236 | 24 % |
+| monitors | 221 | 9 % |
+| kb | 207 | 23 % |
+| analytics | 214 | 10 % |
+| accessibility | 205 | 10 % |
 
 ## Which pages a change affects
 
