@@ -589,8 +589,16 @@
       refresh: function () { return listModels(true); },
       // Switch the claimed-model list to another kind (the audit page's endpoint type).
       setKind: function (k) {
-        kind = k || "chat";
-        paintClaimed();
+        k = k || "chat";
+        if (k === kind) return;
+        kind = k;
+        if (!c) return;
+        // a claimed model of the other kind does not carry over
+        claimed.value = "";
+        c.chosen = false;
+        c.setManual(false);
+        paintClaimed();  // back to manual entry when this kind has no models
+        c.paint();
       },
     };
   }

@@ -1085,9 +1085,9 @@ def create_app() -> FastAPI:
             "surface": surface,
             "dimensions": list(dimensions or []),
             "baseline_url": baseline.base_url if baseline is not None else None,
-            "api": detect_api(target),
+            # protocol and probe request mode are chat settings
+            "api": detect_api(target) if surface == "chat" else None,
             "api_auto": target.api == "auto",
-            # embedding and rerank requests never stream: no probe request mode
             "stream_mode": stream_mode(options) if surface == "chat" else None,
         }
         urls = [target.base_url, baseline.base_url if baseline is not None else None]

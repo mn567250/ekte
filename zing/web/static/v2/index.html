@@ -463,14 +463,14 @@
     syncProbeMode();
   }
   function setSurface(v) {
-    var r = document.querySelector('#surface input[value="' + v + '"]');
+    var r = $$('#surface input').filter(function (x) { return x.value === v; })[0];
     if (r) { r.checked = true; syncSurface(); }
   }
   $("#surface").addEventListener("change", syncSurface);
   // Probe request mode: chosen on standard/deep/custom; full measures both; smoke has no probe.
   function syncProbeMode() {
     var suite = segVal("suite"), full = suite === "full", smoke = suite === "smoke";
-    var custom = suite === "custom", noPerf = custom && dims.value().indexOf("performance") < 0;
+    var custom = suite === "custom", noPerf = custom && dimsOf(surfaceVal()).indexOf("performance") < 0;
     $("#dims-grp").hidden = !custom;
     // embedding and rerank requests never stream: no probe request mode
     $("#pmode-grp").hidden = surfaceVal() !== "chat";
@@ -1028,6 +1028,7 @@
       relayLabel: ["基线中转站 / 厂商", "Baseline relay / provider"],
     });
   }
+  syncSurface();  // a radio state the browser restored on reload
   // /v2/?surface=embedding|rerank (e.g. from History or the docs) preselects the endpoint type.
   (function () {
     var v = null;
@@ -1060,7 +1061,8 @@
         seg("api", t.api_auto === false && t.api ? t.api : "auto");
         seg("suite", rep.suite || "standard");
         if (rep.suite === "custom") dims.set(rep.dimensions_selected);
-        seg("pmode", rep.stream_mode === "non_stream" ? "non_stream" : "stream");
+        // the other surfaces never stream: their runs leave the chat setting alone
+        if ((rep.surface || "chat") === "chat") seg("pmode", rep.stream_mode === "non_stream" ? "non_stream" : "stream");
         syncProbeMode();
       })
       .catch(function () {});
