@@ -158,6 +158,8 @@
   "embed.distinct_b": "Quarterly revenue grew on strong cloud-infrastructure demand.",
   "embed.drift_input": "A lighthouse keeper climbs the spiral stairs at dusk to light the lamp.",
   "embed.perf_input": "Request {{nonce}}. A short note about {{topic}}.",
+  "rerank.perf_query": "Request {{nonce}}. Which passage explains {{topic}}?",
+  "rerank.perf_document": "Passage {{n}} of request {{nonce}}: a short note about {{topic}}.",
   "rerank.web.query": "What is the capital of France?",
   "rerank.web.documents": [
    "Bananas are a good source of potassium.",

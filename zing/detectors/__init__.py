@@ -31,6 +31,7 @@ from zing.detectors import (  # noqa: F401  -- imported for registration side ef
     rerank_drift,
     rerank_identity,
     rerank_known_answer,
+    rerank_performance,
     security,
     streaming,
     vision,
