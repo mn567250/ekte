@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from zing.context import AuditContext
 from zing.detectors.base import register
-from zing.detectors.rerank import RerankDetector, known_answer_probe, ranks_all
+from zing.detectors.rerank import RerankDetector, known_answer_probe, rerank
 from zing.detectors.scale import Scale, outcome
 from zing.models import DetectorResult, Dimension, Severity, Status
 
@@ -27,7 +27,7 @@ class RerankConnectivityDetector(RerankDetector):
     async def run(self, ctx: AuditContext) -> DetectorResult:
         result = self.new_result(scoring=SCALE.scoring())
         query, documents = known_answer_probe()
-        res, results = await ctx.client.rerank(query, documents)
+        res, results, problem = await rerank(ctx, query, documents)
         if not res.ok:
             result.findings.append(
                 SCALE.finding(
@@ -38,14 +38,13 @@ class RerankConnectivityDetector(RerankDetector):
                     recommendation="Verify base_url, api_key, and that the model id is served.",
                 )
             )
-        elif not ranks_all(results, documents):
+        elif problem is not None:
             result.findings.append(
                 SCALE.finding(
                     "rerank.connectivity", "malformed",
                     title="Rerank response malformed",
-                    summary=f"Expected a score for each of {len(documents)} documents, "
-                    f"got {len(results)} results.",
-                    evidence={"results": len(results), "documents": len(documents)},
+                    summary=f"The rerank response is unusable: {problem}.",
+                    evidence={"documents": len(documents)},
                 )
             )
         else:

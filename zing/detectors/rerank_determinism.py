@@ -9,6 +9,7 @@ from zing.detectors.rerank import (
     RerankDetector,
     drift_probe,
     max_score_delta,
+    order_flips,
     ranking,
     rerank,
     scores,
@@ -51,7 +52,8 @@ class RerankDeterminismDetector(RerankDetector):
             result.status = Status.INCONCLUSIVE
             return result
         delta = max_score_delta(scores(first), scores(second))
-        same_order = ranking(first) == ranking(second)
+        # near-tied documents trading places within the tolerance still count as same
+        same_order = order_flips(scores(first), scores(second), DET_SCORE_TOLERANCE) == 0
         evidence = {"same_ranking": same_order, "max_score_delta": round(delta, 8),
                     "threshold": DET_SCORE_TOLERANCE,
                     "ranking": ranking(first), "second_ranking": ranking(second)}

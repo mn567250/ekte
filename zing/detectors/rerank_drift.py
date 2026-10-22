@@ -10,12 +10,20 @@ from typing import Any
 from zing.context import AuditContext
 from zing.detectors.base import register
 from zing.detectors.embedding import sha
-from zing.detectors.rerank import RerankDetector, drift_probe, max_score_delta, ranking, rerank
+from zing.detectors.rerank import (
+    RerankDetector,
+    drift_probe,
+    max_score_delta,
+    order_flips,
+    ranking,
+    rerank,
+    scores,
+)
 from zing.detectors.scale import Scale, outcome
 from zing.models import DetectorResult, Dimension, Severity, Status
 
-# Largest score change on the pinned probe, relative to the score's magnitude
-# (at least 1), with the same ranking.
+# Largest score change on the pinned probe, on the score scale (relative to the
+# score's magnitude for scores above 1), with the same ranking.
 DRIFT_STABLE = 0.01
 DRIFT_SHIFTED = 0.1
 DRIFT_DIGITS = 5
@@ -24,11 +32,11 @@ SCALE = Scale(
     outcome("rerank.drift", "stable", 100.0, Status.PASS,
             label="The pinned probe's ranking and scores match the previous run."),
     outcome("rerank.drift", "shifted", 60.0, Status.WARN, Severity.MEDIUM,
-            label="The pinned probe's scores moved since the previous run (by 1% to 10%), "
-            "with the same ranking."),
+            label="The pinned probe's scores moved since the previous run (by 0.01 to 0.1 on "
+            "the score scale), with the same ranking."),
     outcome("rerank.drift", "swapped", 0.0, Status.FAIL, Severity.HIGH,
             label="The pinned probe's ranking changed since the previous run, or its scores "
-            "moved by more than 10%: the model was swapped."),
+            "moved by more than 0.1 on the score scale: the model was swapped."),
     outcome("rerank.drift", "baseline", None, Status.INFO,
             label="No previous run to compare with; this run's ranking is the baseline."),
     outcome("rerank.drift", "no_ranking", None, Status.INCONCLUSIVE,
@@ -77,7 +85,7 @@ class RerankDriftDetector(RerankDetector):
             result.status = Status.INCONCLUSIVE
             return result
 
-        by_index = {r["index"]: r["relevance_score"] for r in results}
+        by_index = scores(results)
         evidence: dict[str, Any] = {
             "probe_sha": probe_sha(query, documents),
             "ranking": ranking(results),
@@ -99,7 +107,8 @@ class RerankDriftDetector(RerankDetector):
             current = dict(enumerate(evidence["scores"]))
             previous = {i: float(s) for i, s in enumerate(prev["scores"])}
             delta = max_score_delta(current, previous)
-            same_order = [int(i) for i in prev["ranking"]] == evidence["ranking"]
+            # near-tied documents trading places within DRIFT_STABLE are not a swap
+            same_order = order_flips(current, previous, DRIFT_STABLE) == 0
             key = (
                 "swapped" if not same_order or delta > DRIFT_SHIFTED
                 else "shifted" if delta > DRIFT_STABLE
@@ -118,7 +127,7 @@ class RerankDriftDetector(RerankDetector):
                     else "Scores shifted since the previous run" if key == "shifted"
                     else "Ranking changed since the previous run",
                     summary=f"The pinned probe's ranking is {'the same as' if same_order else 'different from'} "
-                    f"the previous run's; the largest score change is {delta:.2%}.",
+                    f"the previous run's; the largest score change is {delta:.4f}.",
                     evidence=evidence,
                     recommendation="A different ranking for the same probe means the relay now "
                     "serves another model; search results will no longer match earlier ones."

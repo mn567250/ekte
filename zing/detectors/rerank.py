@@ -52,6 +52,21 @@ def max_score_delta(first: dict[int, float], second: dict[int, float]) -> float:
     return max((score_delta(first[i], second[i]) for i in common), default=0.0)
 
 
+def order_flips(first: dict[int, float], second: dict[int, float], tolerance: float) -> int:
+    """Pairs of documents the two runs order oppositely, each by more than
+    ``tolerance`` (:func:`score_delta`): near-tied documents trading places
+    from float jitter do not count."""
+    common = sorted(first.keys() & second.keys())
+    flips = 0
+    for n, i in enumerate(common):
+        for j in common[n + 1:]:
+            a, b = first[i] - first[j], second[i] - second[j]
+            if (a * b < 0 and score_delta(first[i], first[j]) > tolerance
+                    and score_delta(second[i], second[j]) > tolerance):
+                flips += 1
+    return flips
+
+
 def ranking(results: list[dict[str, Any]]) -> list[int]:
     return [r["index"] for r in results]
 
@@ -72,7 +87,9 @@ async def rerank(
     call failed or did not score every document exactly once."""
     result, results = await ctx.client.rerank(query, documents)
     if not result.ok:
-        return result, [], result.error_message or f"HTTP {result.status_code}"
+        return result, [], (
+            result.error_message or result.error_type or f"HTTP {result.status_code}"
+        )
     if not ranks_all(results, documents):
         return result, [], (
             f"expected a score for each of {len(documents)} documents, got {len(results)} results"

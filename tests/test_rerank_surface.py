@@ -13,7 +13,7 @@ import pytest
 from zing import prompts
 from zing.config import AuditOptions
 from zing.detectors.base import select_detectors
-from zing.detectors.rerank import KNOWN_ANSWER_TOP, max_score_delta, score_delta
+from zing.detectors.rerank import KNOWN_ANSWER_TOP, max_score_delta, order_flips, score_delta
 from zing.detectors.rerank_drift import previous_drift
 from zing.models import Dimension, RiskLevel, Status, TargetConfig
 from zing.runner import run_audit
@@ -196,3 +196,26 @@ def test_previous_drift_and_score_deltas():
     assert score_delta(0.2, 0.3) == pytest.approx(0.1)
     assert max_score_delta({0: 0.1, 1: 0.5}, {0: 0.1, 1: 0.45, 2: 9.0}) == pytest.approx(0.05)
     assert max_score_delta({}, {}) == 0.0
+
+
+def test_order_flips_ignore_near_ties():
+    assert order_flips({0: 0.9, 1: 0.5}, {0: 0.9, 1: 0.5}, 1e-4) == 0
+    # two near-tied documents trading places from jitter: not a flip
+    assert order_flips({0: 0.50001, 1: 0.50000}, {0: 0.50000, 1: 0.50001}, 1e-4) == 0
+    assert order_flips({0: 0.9, 1: 0.5, 2: 0.1}, {0: 0.1, 1: 0.5, 2: 0.9}, 1e-4) == 3
+
+
+async def test_a_tie_with_the_known_answer_counts_as_first(serve):
+    class Saturated(RerankServer):
+        def _handle(self, request):
+            if not request.url.path.endswith("/rerank"):
+                return super()._handle(request)
+            docs = json.loads(request.content)["documents"]
+            results = [{"index": i, "relevance_score": 1.0 if i in (0, KNOWN_ANSWER_TOP) else 0.1}
+                       for i in range(len(docs))]
+            return httpx.Response(200, json={"model": MODEL, "results": results})
+
+    serve(Saturated())
+    report = await run_audit(_target(), _opts(suite="smoke"))
+    known = _finding(report, "rerank.known_answer")
+    assert known.outcome == "first" and known.evidence["top_index"] == 0

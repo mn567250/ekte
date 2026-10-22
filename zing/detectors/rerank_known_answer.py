@@ -11,6 +11,7 @@ from zing.detectors.rerank import (
     known_answer_probe,
     ranking,
     rerank,
+    scores,
 )
 from zing.detectors.scale import Scale, outcome
 from zing.models import DetectorResult, Dimension, Severity, Status
@@ -49,13 +50,14 @@ class RerankKnownAnswerDetector(RerankDetector):
         top = results[0]
         evidence = {"top_index": top["index"], "expected": KNOWN_ANSWER_TOP,
                     "ranking": ranking(results)}
-        if top["index"] == KNOWN_ANSWER_TOP:
+        # a tie with the top score counts as first (the sort keeps input order)
+        if scores(results)[KNOWN_ANSWER_TOP] >= top["relevance_score"]:
             result.findings.append(
                 SCALE.finding(
                     "rerank.known_answer", "first",
                     title="Reranker ranks the obvious answer first",
                     summary=f"Document {KNOWN_ANSWER_TOP} (the clearly relevant one) ranked "
-                    f"first with score {top['relevance_score']:.4f}.",
+                    f"first with score {scores(results)[KNOWN_ANSWER_TOP]:.4f}.",
                     evidence=evidence,
                 )
             )
