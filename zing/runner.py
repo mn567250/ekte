@@ -250,7 +250,8 @@ async def run_audit(
         recorder.records,
         tokenizer=recorder.tokenizer,
         has_baseline=baseline is not None,
-        probe_max_tokens=options.performance_max_tokens,
+        # Only chat probes have an output budget; embedding and rerank calls return no tokens.
+        probe_max_tokens=options.performance_max_tokens if options.surface == "chat" else None,
         concurrency=options.reliability_concurrency,
         op=SURFACE_OPS[options.surface],
     )

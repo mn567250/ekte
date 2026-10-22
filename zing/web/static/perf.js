@@ -114,7 +114,8 @@
   }
   function phaseName(p) {
     return p === "probe" ? T("性能探测", "probe") : p === "passive" ? T("常规检测", "audit")
-      : p === "probe_batch" ? T("批量探测", "batch probe") : String(p || "—");
+      : p === "probe_batch" ? T("批量探测", "batch probe")
+      : p === "probe_docs" ? T("文档数探测", "document-count probe") : String(p || "—");
   }
   // The calls of a non-chat surface (zing/config.py SURFACE_OPS): embedding
   // and rerank calls return no tokens and never stream.

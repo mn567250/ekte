@@ -12,6 +12,7 @@
   "Rerank latency grows linearly with the number of documents": "La latencia del reranking crece linealmente con el número de documentos",
   "Unique probe queries returned repeated scores": "Consultas de prueba únicas devolvieron puntuaciones repetidas",
   "A relay that returns the same scores for different queries may be serving stored results; compare with a trusted baseline.": "Un relay que devuelve las mismas puntuaciones para consultas distintas puede estar sirviendo resultados almacenados; compare con una línea base de confianza.",
-  "Rerank performance probe": "Prueba de rendimiento de reranking"
+  "Rerank performance probe": "Prueba de rendimiento de reranking",
+  "document-count probe": "sonda por número de documentos"
  }
 }

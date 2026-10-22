@@ -12,6 +12,7 @@
   "Rerank latency grows linearly with the number of documents": "Rerank latency grows linearly with the number of documents",
   "Unique probe queries returned repeated scores": "Unique probe queries returned repeated scores",
   "A relay that returns the same scores for different queries may be serving stored results; compare with a trusted baseline.": "A relay that returns the same scores for different queries may be serving stored results; compare with a trusted baseline.",
-  "Rerank performance probe": "Rerank performance probe"
+  "Rerank performance probe": "Rerank performance probe",
+  "document-count probe": "document-count probe"
  }
 }

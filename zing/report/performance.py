@@ -96,9 +96,10 @@ def _source_line(perf: PerformanceReport) -> str:
     if perf.source == "probe":
         modes = [perf.mode] + [m.mode for m in perf.modes]
         kind = " and ".join(MODE_LABELS.get(m, m) for m in modes)
+        tokens = f", {perf.probe_max_tokens} output tokens each" if perf.probe_max_tokens else ""
         return (
             f"Source: dedicated probe — {perf.probe_requests} uncacheable {kind} "
-            f"requests per endpoint, {perf.probe_max_tokens or '?'} output tokens each."
+            f"requests per endpoint{tokens}."
         )
     return "Source: the audit's own requests (no dedicated probe in this suite)."
 
