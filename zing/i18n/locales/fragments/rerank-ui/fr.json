@@ -3,6 +3,7 @@
   "Reranking": "Reclassement",
   "Do the rankings come from the claimed model?": "Les classements viennent-ils du modèle annoncé ?",
   "Does the obvious answer rank first?": "La réponse évidente est-elle classée en premier ?",
-  "Does the same request give the same ranking?": "La même requête donne-t-elle le même classement ?"
+  "Does the same request give the same ranking?": "La même requête donne-t-elle le même classement ?",
+  "The rerank audit uses built-in known-answer probes, so results stay comparable across runs and monitors.": "L’audit de rerank utilise des sondes intégrées à réponse connue, afin que les résultats restent comparables d’une exécution et d’un moniteur à l’autre."
  }
 }
