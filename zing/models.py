@@ -659,6 +659,10 @@ class AuditReport(BaseModel):
     # What kind of endpoint was audited ("chat", "embedding" or "rerank"). Reports from
     # before this was recorded are chat audits.
     surface: str = "chat"
+    # The vector length claimed for an embedding audit (``embedding_dimensions``;
+    # 0 = taken from the knowledge base, and for the other surfaces). Reports from
+    # before this was recorded read as 0.
+    embedding_dimensions: int = 0
     # The dimensions a ``custom`` suite ran (None for the fixed suites).
     dimensions_selected: list[str] | None = None
     # Request mode the performance probe was configured with: "stream",

@@ -145,3 +145,17 @@ def test_watches_refuse_chat_only_dimensions_like_jobs(tmp_path, monkeypatch, cl
     # chat keeps every dimension
     chat = {**body, "surface": "chat"}
     assert client.post("/api/watches", json=chat).status_code == 201
+
+
+def test_monitor_this_keeps_the_runs_claimed_dimension(tmp_path, monkeypatch, client):
+    """Without one in the request, "monitor this" takes the run's claimed dimension."""
+    from zing.web import history
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    rid = history.save(_report(surface="embedding", embedding_dimensions=1024))
+    assert client.post(f"/api/watches/from-history/{rid}", json={}).status_code == 201
+    [w] = client.get("/api/watches").json()
+    assert w["embedding_dimensions"] == 1024
+    # the audit page's ?rerun= prefills the claimed dimension from the report
+    html = client.get("/v2/").text
+    assert 'rep.embedding_dimensions > 0 ? String(rep.embedding_dimensions)' in html

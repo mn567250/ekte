@@ -443,3 +443,21 @@ def test_dry_run_estimates_the_non_chat_performance_probes():
     assert _surface_probe_calls(Rerank, rr, has_baseline=False) == PINGS + 1 + 20 + burst_size(rr, 10)
     assert _surface_probe_calls(Rerank, rr, has_baseline=True) == 2 * (PINGS + 1 + 20 + burst_size(rr, 10))
     assert _surface_probe_calls(Declared, rr, has_baseline=False) == 7
+
+
+async def test_report_stores_the_claimed_dimension(patch_runner):
+    """The claimed vector length is in the report, so a rerun can restore it;
+    reports from before it was recorded still load (as 0)."""
+    from zing.models import AuditReport
+
+    patch_runner(EmbedMock(dim=1536))
+    report, _ = await run_embedding_audit(_target(), claimed_dimensions=3072, save=False)
+    assert report.embedding_dimensions == 3072
+    old = report.model_dump(mode="json")
+    assert AuditReport.model_validate(old).embedding_dimensions == 3072
+    del old["embedding_dimensions"]
+    assert AuditReport.model_validate(old).embedding_dimensions == 0
+    report, _ = await run_embedding_audit(_target(), save=False)
+    assert report.embedding_dimensions == 0
+    report, _ = await run_rerank_audit(_target(), save=False)
+    assert report.embedding_dimensions == 0

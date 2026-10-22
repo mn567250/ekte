@@ -289,6 +289,9 @@ async def run_audit(
         command=command,
         suite=options.suite,
         surface=options.surface,
+        embedding_dimensions=(
+            max(0, options.embedding_dimensions) if options.surface == "embedding" else 0
+        ),
         dimensions_selected=selected,
         stream_mode=request_mode,
         target=_redact(target),

@@ -1061,6 +1061,8 @@
         seg("api", t.api_auto === false && t.api ? t.api : "auto");
         seg("suite", rep.suite || "standard");
         if (rep.suite === "custom") dims.set(rep.dimensions_selected);
+        // the claimed vector length (0 or missing: from the knowledge base)
+        $("#i-edims").value = rep.surface === "embedding" && rep.embedding_dimensions > 0 ? String(rep.embedding_dimensions) : "";
         // the other surfaces never stream: their runs leave the chat setting alone
         if ((rep.surface || "chat") === "chat") seg("pmode", rep.stream_mode === "non_stream" ? "non_stream" : "stream");
         syncProbeMode();

@@ -1556,7 +1556,11 @@ def create_app() -> FastAPI:
         embedding = surface == "embedding"
         # The Tools page passes the claimed vector length it audited with (the
         # report does not keep it); 0 takes the knowledge base's.
-        claimed_dims = _coerce_int(body.get("embedding_dimensions")) if isinstance(body, dict) else 0
+        # the request's claimed vector length, else the one the run claimed
+        claimed_dims = _coerce_int(
+            (body.get("embedding_dimensions") if isinstance(body, dict) else None)
+            or report.get("embedding_dimensions")
+        )
         cfg = {
             "name": name if name and name != "target" else (tgt.get("claimed_model") or tgt.get("model")),
             "base_url": tgt.get("base_url"),
