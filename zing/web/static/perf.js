@@ -116,15 +116,18 @@
     return p === "probe" ? T("性能探测", "probe") : p === "passive" ? T("常规检测", "audit")
       : p === "probe_batch" ? T("批量探测", "batch probe") : String(p || "—");
   }
-  // The calls the charts show: completion calls, or an embedding audit's
-  // embedding calls (a chat report has none of those).
-  function isCall(r) { return r.op === "complete" || r.op === "embed"; }
-  // a request that could have streamed but did not (embedding calls never stream)
-  function unstreamed(r) { return !r.stream && r.op !== "embed"; }
-  // An embedding audit's performance: latency only, no tokens out, no streaming.
+  // The calls of a non-chat surface (zing/config.py SURFACE_OPS): embedding
+  // and rerank calls return no tokens and never stream.
+  function isSurfaceCall(r) { return r.op === "embed" || r.op === "rerank"; }
+  // The calls the charts show: completion calls, or a non-chat audit's
+  // embedding/rerank calls (a chat report has none of those).
+  function isCall(r) { return r.op === "complete" || isSurfaceCall(r); }
+  // a request that could have streamed but did not (non-chat calls never stream)
+  function unstreamed(r) { return !r.stream && !isSurfaceCall(r); }
+  // A non-chat audit's performance: latency only, no tokens out, no streaming.
   function isEmbed(perf) {
     var recs = (perf && perf.requests) || [];
-    return recs.some(function (r) { return r.op === "embed"; }) && !recs.some(function (r) { return r.op === "complete"; });
+    return recs.some(isSurfaceCall) && !recs.some(function (r) { return r.op === "complete"; });
   }
 
   var METRICS = [
@@ -843,7 +846,7 @@
   Live.prototype.render = function () {
     if (!this.host || !this.records.length) return;
     var recs = this.records;
-    // completion calls, or an embedding job's embedding calls
+    // completion calls, or a non-chat job's embedding/rerank calls
     var calls = recs.filter(isCall);
     var embedOnly = calls.length > 0 && !calls.some(function (r) { return r.op === "complete"; });
     var target = calls.filter(function (r) { return r.endpoint !== "baseline" && r.ok && !r.cached; });
