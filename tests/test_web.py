@@ -419,7 +419,7 @@ def test_v2_accessibility_report_page(client):
     assert '<link rel="stylesheet" href="/v2/static/zing.css" />' in html
     assert '<header class="znav" data-page="a11y"' in html
     assert '<script src="/v2/static/nav.js"></script>' in html
-    assert '<main id="main" tabindex="-1">' in html and "<footer>" in html
+    assert '<main id="main" tabindex="-1">' in html and "<footer>" not in html  # nav.js adds the shared one
     assert "/v2/static/bitv-report.json" in html
     assert "https://github.com/cenbonew/zing/issues" in html
     # v2 only: ?ui=v1 goes to the classic start page
@@ -483,7 +483,9 @@ def test_v2_header_links_the_accessibility_report(client):
     js = client.get("/v2/static/nav.js").text
     assert '<a class="a11y" href="/v2/accessibility"' in js
     assert 'data-en-aria-label="Accessibility"' in js and 'ico("a11y"' in js
-    assert "footer" not in js.split("*/", 1)[1]
+    # the one shared page footer (all local / black box) comes from nav.js
+    assert 'footer.className = "zdisc"' in js or 'f.className = "zdisc"' in js
+    assert "data-trust" not in js.split("*/", 1)[1]
     assert "a11y:" in client.get("/icons.js").text
     for path in ("/v2/", "/v2/history", "/v2/watches", "/v2/kb", "/v2/analytics", "/v2/accessibility"):
         assert '<script src="/v2/static/nav.js"></script>' in _unversioned(client.get(path).text), path
