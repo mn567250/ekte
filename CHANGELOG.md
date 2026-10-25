@@ -6,6 +6,25 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **API keys of monitors are no longer stored by default.** As upstream
+  promised, a monitor's API key now stays in the memory of `zing serve` only
+  and is never written to disk; after a restart the monitor waits (no failed
+  run, no alert) until the key is entered again, and `env:`/`file:` references
+  keep working. Storing keys encrypted in `watches.db` (with the master key) is
+  an opt-in: **API key storage** on the v2 Monitors page offers **Don't store
+  keys** and **Store encrypted on this machine**, and switching moves the keys
+  along (to memory: erased from `watches.db` with the check value, free pages
+  scrubbed). The page notice shows the mode in effect, asks before a switch,
+  reports how many keys moved and names the monitors that need their key
+  again; the master key bar appears only while keys are stored. The classic UI
+  never stores a key. Installs that already store encrypted keys, or set
+  `ZING_SECRET_KEY` / keep a legacy `secret.key`, keep storing them; plain-text
+  keys of older versions move out of the database into memory. New:
+  `POST /api/secret/storage`; `GET /api/secret` and `zing secret status` report
+  the mode.
+
 ### Added
 
 - **Rerank audits as first-class audits.** `rerank` is a third endpoint type

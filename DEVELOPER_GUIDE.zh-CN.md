@@ -345,6 +345,15 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 开始时间是报告的 `started_at`；早于该字段的报告取 `generated_at` 减去其请求记录覆盖的时长
 （`started_at_estimated` = 1）。
 
+监控的 API 密钥保存在哪里由用户决定（`watches.get_key_storage()`，`secret_meta` 中的一行）：
+默认的 `memory` 不保存任何密钥——`api_key` 列只存标记 `mem:`，密钥留在 `watches._memory_keys` 中直到进程结束
+（重启后该行为 `key_missing`，调度器把它当作已锁定的密钥处理：运行会等待，不告警）；`encrypted` 按下文方式保存。
+尚无该行时，已有加密密钥或校验值的存储、或设置了 `ZING_SECRET_KEY` / 旧版 `secret.key` 的安装从 `encrypted` 开始；
+该选择在启动时记录。`Vault.set_storage()`（`POST /api/secret/storage`）在一个事务中切换并迁移密钥
+（`keys_to_memory()` 清除加密密钥和校验值并清理文件；`keys_to_store()` 加密内存中的密钥）。
+请求可以传入 `key_storage: "memory"`，使其密钥无论设置如何都不进入数据库（经典界面总是这样做）；
+任何请求都无法强制保存。
+
 保存的 API 密钥由 `zing/secretbox.py` 加密（Fernet，存为 `enc:v1:…`；`env:`/`file:` 引用保持原样）。
 主密钥本身从不保存：`web/masterkey.py`（`Vault`，服务器与 `zing secret` 共用）在主密钥来自
 `ZING_SECRET_KEY`、旧版 `secret.key` 或用户在监控页面的输入后，把它保存在服务器内存中；`watches.db`

@@ -546,6 +546,22 @@ erneut. Die Startzeit eines Laufs ist `started_at` des Berichts; Berichte von
 vor diesem Feld erhalten `generated_at` minus die Zeitspanne ihrer
 Anfrage-Datensätze (`started_at_estimated` = 1).
 
+Wo die API-Schlüssel der Überwachungen liegen, entscheidet der Nutzer
+(`watches.get_key_storage()`, eine Zeile in `secret_meta`): `memory`, die
+Voreinstellung, speichert keinen — die Spalte `api_key` enthält nur die Markierung
+`mem:`, der Schlüssel liegt in `watches._memory_keys`, bis der Prozess endet (nach
+einem Neustart ist die Zeile `key_missing`, was der Scheduler wie einen gesperrten
+Schlüssel behandelt: der Lauf wartet, kein Alarm); `encrypted` speichert sie wie
+unten beschrieben. Ohne Zeile startet ein Speicher, der schon verschlüsselte
+Schlüssel oder einen Prüfwert hat, oder mit gesetztem `ZING_SECRET_KEY` / altem
+`secret.key`, in `encrypted`; die Wahl wird beim Start festgehalten.
+`Vault.set_storage()` (`POST /api/secret/storage`) schaltet um und verschiebt die
+Schlüssel in einer Transaktion (`keys_to_memory()` löscht die verschlüsselten und
+den Prüfwert und bereinigt die Datei; `keys_to_store()` versiegelt die gehaltenen).
+Eine Anfrage kann `key_storage: "memory"` mitgeben, damit ihr Schlüssel unabhängig
+von der Einstellung nicht in die Datenbank gelangt (die klassische Oberfläche tut
+das immer); Speichern erzwingen lässt sich nicht.
+
 Gespeicherte API-Schlüssel verschlüsselt `zing/secretbox.py` (Fernet,
 gespeichert als `enc:v1:…`; `env:`/`file:`-Verweise bleiben unverändert). Der
 Hauptschlüssel selbst wird nie gespeichert: `web/masterkey.py` (`Vault`,

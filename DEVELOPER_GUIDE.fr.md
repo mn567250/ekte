@@ -554,6 +554,22 @@ exécution est le `started_at` du rapport ; les rapports antérieurs à ce champ
 reçoivent `generated_at` moins la durée couverte par leurs enregistrements de
 requêtes (`started_at_estimated` = 1).
 
+L'endroit où sont conservées les clés API des surveillances est le choix de
+l'utilisateur (`watches.get_key_storage()`, une ligne de `secret_meta`) :
+`memory`, par défaut, n'en enregistre aucune — la colonne `api_key` ne contient
+que le marqueur `mem:` et la clé vit dans `watches._memory_keys` jusqu'à l'arrêt
+du processus (après un redémarrage la ligne est `key_missing`, que le
+planificateur traite comme une clé verrouillée : l'exécution attend, sans
+alerte) ; `encrypted` les enregistre comme décrit ci-dessous. Sans ligne, un
+stockage qui a déjà des clés chiffrées ou une valeur de contrôle, ou avec
+`ZING_SECRET_KEY` / un ancien `secret.key`, démarre en `encrypted` ; le choix est
+enregistré au démarrage. `Vault.set_storage()` (`POST /api/secret/storage`)
+bascule et déplace les clés en une transaction (`keys_to_memory()` efface les
+clés chiffrées et la valeur de contrôle et nettoie le fichier ; `keys_to_store()`
+scelle celles en mémoire). Une requête peut passer `key_storage: "memory"` pour
+garder sa clé hors de la base quel que soit le réglage (l'interface classique le
+fait toujours) ; rien ne peut forcer l'enregistrement.
+
 Les clés API enregistrées sont chiffrées par `zing/secretbox.py` (Fernet,
 stockées sous la forme `enc:v1:…` ; les références `env:`/`file:` restent telles
 quelles). La clé maîtresse elle-même n'est jamais stockée : `web/masterkey.py`

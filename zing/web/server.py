@@ -47,6 +47,9 @@ Endpoints:
   POST /api/secret/unlock    enter the master key {key} after a restart
   POST /api/secret/lock      forget it; monitors pause
   POST /api/secret/reset     the key is lost: drop the encrypted API keys
+  POST /api/secret/storage   {mode: "memory" | "encrypted"}: store no API key
+                             (held in memory until a restart) or store them
+                             encrypted; moves the keys along
 
 The audit runs in-process with the same `run_audit` the CLI uses; a progress
 callback pushes per-detector events into a queue the SSE generator drains. The
@@ -293,6 +296,11 @@ class WatchLocked(Exception):
     """Raised when a watch's API key waits for the master key to be entered."""
 
 
+class WatchKeyMissing(Exception):
+    """Raised when a watch's API key is not stored and was lost with a restart;
+    the run waits until the user enters it again."""
+
+
 _log = logging.getLogger("zing.web")
 
 
@@ -315,6 +323,10 @@ async def _run_one_watch(row: dict[str, Any]) -> None:
         # Not a failure: the run waits for the master key, and runs as soon as
         # it is entered (the run time is left alone so it is still due then).
         raise WatchLocked(wid)
+    if row.get("key_missing"):
+        # Not a failure either: keys are not stored, so the run waits for the
+        # user to enter the key again (no alert, the run time is left alone).
+        raise WatchKeyMissing(wid)
     if row.get("key_error"):
         # Never audit with a missing key: it would fail and alert falsely.
         # Move the run time on (so the scheduler doesn't retry every tick)
@@ -674,6 +686,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     try:
         _log_secret_key(vault.startup())
+        vault.take_stored_keys()
     except Exception as exc:
         _log.warning("watch store: %s", exc)
     task = asyncio.create_task(_scheduler_loop())
@@ -693,7 +706,12 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 def _log_secret_key(status: dict[str, Any]) -> None:
     """Say once at startup whether the monitors' master key is loaded."""
     state = status.get("state")
-    if state == "unlocked":
+    if status.get("storage") == "memory":
+        _log.warning(
+            "monitor API keys are not stored: they stay in memory until zing serve stops "
+            "(choose on the Monitors page)"
+        )
+    elif state == "unlocked":
         _log.warning(
             "monitor API keys are encrypted with the master key from %s (fingerprint %s)",
             status.get("source"), status.get("fingerprint"),
@@ -709,6 +727,22 @@ def _log_secret_key(status: dict[str, Any]) -> None:
         )
     if "env_in_data_dir" in status.get("warnings", []):
         _log.warning("ZING_SECRET_KEY points into the data directory: keep the key elsewhere")
+
+
+def _key_storage_override(body: Any) -> str | None:
+    """``memory`` when the request asks for its key not to be stored (the
+    classic UI always does); never a way to store a key against the setting."""
+    if isinstance(body, dict) and body.get("key_storage") == "memory":
+        return "memory"
+    return None
+
+
+def _missing_key_response() -> JSONResponse:
+    return JSONResponse(
+        {"error": "the API key is not stored and zing serve restarted: enter it again",
+         "key_missing": True},
+        status_code=409,
+    )
 
 
 def _locked_response(_exc: Exception | None = None) -> JSONResponse:
@@ -1507,7 +1541,9 @@ def create_app() -> FastAPI:
         from zing.secretbox import SecretLocked
 
         try:
-            wid = await asyncio.to_thread(watches.create, cfg, knowledge=knowledge)
+            wid = await asyncio.to_thread(
+                watches.create, cfg, knowledge=knowledge, key_storage=_key_storage_override(body)
+            )
         except SecretLocked as exc:
             return _locked_response(exc)
         return JSONResponse({"ok": True, "id": wid}, status_code=201)
@@ -1679,6 +1715,7 @@ def create_app() -> FastAPI:
                     alert_on=alert_on,
                     webhooks=hooks,
                     embedding_dimensions=dims,
+                    key_storage=_key_storage_override(body),
                 )
             except SecretLocked as exc:
                 return _locked_response(exc)
@@ -1715,6 +1752,8 @@ def create_app() -> FastAPI:
             return JSONResponse({"ok": False, "cancelled": True})
         except WatchLocked as exc:
             return _locked_response(exc)
+        except WatchKeyMissing:
+            return _missing_key_response()
         except WatchKeyUnreadable:
             return JSONResponse(
                 {"error": "the stored API key cannot be decrypted (master key lost or "
@@ -1838,6 +1877,28 @@ def create_app() -> FastAPI:
         except VaultError as exc:
             return _secret_json({"error": str(exc)}, status_code=exc.status)
         return _secret_json({**vault.status(), "dropped": dropped})
+
+    @app.post("/api/secret/storage")
+    async def secret_storage(request: Request) -> Any:
+        """Store no API key (``memory``) or store them encrypted; the keys move along."""
+        from zing.secretbox import SecretLocked
+        from zing.web.masterkey import VaultError, vault
+
+        try:
+            body = await request.json()
+        except ValueError:
+            body = None
+        mode = body.get("mode") if isinstance(body, dict) else None
+
+        def switch() -> JSONResponse:
+            try:
+                return _secret_json(vault.set_storage(str(mode or "")))
+            except SecretLocked as exc:
+                return _locked_response(exc)
+            except VaultError as exc:
+                return _secret_json({"error": str(exc)}, status_code=exc.status)
+
+        return await asyncio.to_thread(switch)
 
     # ----- Tools: embedding & rerank auditors (non-chat surface) ---------- #
     @app.get("/tools")

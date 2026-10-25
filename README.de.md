@@ -628,6 +628,22 @@ wurden. Die Warn-Webhooks eines Laufs werden gleichzeitig gesendet, sodass ein
 langsamer oder toter Webhook die anderen nicht aufhält. Schlüssel werden
 verschlüsselt in Ihrem lokalen Datenverzeichnis gespeichert und nie an den Browser zurückgegeben.
 
+**Speicherung der API-Schlüssel.** Standardmäßig **speichert** zing die
+API-Schlüssel der Überwachungen **nicht**: Ein eingegebener Schlüssel bleibt nur
+im Arbeitsspeicher von `zing serve` und wird nie auf die Festplatte geschrieben.
+Nach einem Neustart nennt die Seite **Überwachungen** die Überwachungen, die
+ihren Schlüssel erneut brauchen; sie warten (kein Fehllauf, kein Alarm), bis Sie
+ihn eingeben. Überwachungen ohne Schlüssel und `env:`/`file:`-Verweise laufen
+weiter. Sollen Schlüssel Neustarts überstehen, wählen Sie auf der v2-Seite
+**Überwachungen** unter **Speicherung der API-Schlüssel** die Option
+**Verschlüsselt auf diesem Rechner speichern**: Die Schlüssel liegen dann mit
+einem Hauptschlüssel verschlüsselt in `watches.db`. Zurückschalten verschiebt die
+gespeicherten Schlüssel in den Arbeitsspeicher und löscht sie aus `watches.db`.
+Der Seitenhinweis zeigt den aktiven Modus, fragt vor dem Umschalten nach und
+meldet, was verschoben wurde. Die klassische Oberfläche (`/watches`) speichert
+nie einen Schlüssel. Installationen, die bereits verschlüsselte Schlüssel
+speichern oder `ZING_SECRET_KEY` setzen, speichern sie weiter, bis Sie umschalten.
+
 **Hauptschlüssel.** Die API-Schlüssel der Überwachungen sind mit einem
 Hauptschlüssel verschlüsselt, den zing nie auf die Festplatte schreibt. Wenn Sie
 zum ersten Mal einen API-Schlüssel speichern, erstellt die Seite **Überwachung**

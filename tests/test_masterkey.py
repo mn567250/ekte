@@ -28,7 +28,14 @@ SECRET = "sk-relay-secret-abc123"
 def _fresh(tmp_path, monkeypatch):
     monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
     vault.reset_state()  # a first start: no key yet
+    _store_encrypted()  # these tests are about the master key: keys are stored
     vault.startup()
+
+
+def _store_encrypted():
+    watches.init()
+    with watches._connect() as conn:
+        watches._set_storage(conn, watches.STORAGE_ENCRYPTED)
 
 
 @pytest.fixture

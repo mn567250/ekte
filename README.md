@@ -583,12 +583,24 @@ behind running monitors, too). A run's time is when its audit starts, after any
 wait. The regression check compares against the most recent saved run of the
 same relay and model, however many other runs were saved since. Alert webhooks
 of a run are sent at the same time, so a slow or dead one does not hold up the
-others. Keys are stored encrypted in your local data directory
-and are never sent back to the browser.
+others. API keys are never sent back to the browser.
 
-**Master key.** The monitors' API keys are encrypted with a master key that zing
-never writes to disk. The first time you store an API key, the **Monitors** page
-creates it and shows it once: copy or download it, keep it in a password manager
+**API key storage.** By default zing **does not store** the monitors' API keys:
+a key you enter stays in the memory of `zing serve` only and is never written to
+disk. After a restart the **Monitors** page names the monitors that need their
+key again, and they wait (no failed run, no alert) until you enter it; keyless
+monitors and `env:`/`file:` references keep running. To have keys survive
+restarts, pick **Store encrypted on this machine** under **API key storage** on
+the v2 **Monitors** page: the keys are then kept in `watches.db`, encrypted with
+a master key. Switching back moves the stored keys into memory and erases them
+from `watches.db`. The page notice says which mode is in effect, asks before a
+switch and reports what moved. The classic UI (`/watches`) never stores a key,
+whatever the setting. An install that already stored encrypted keys, or that
+sets `ZING_SECRET_KEY`, keeps storing them until you switch.
+
+**Master key.** When keys are stored, they are encrypted with a master key that
+zing never writes to disk. The first time you choose to store keys, the
+**Monitors** page creates it and shows it once: copy or download it, keep it in a password manager
 (your browser can save it), then paste it back to confirm. After every restart
 of `zing serve` the page asks for it again (the browser can fill it in); until
 then, monitors that need it wait, while keyless monitors and `env:`/`file:` keys
@@ -801,13 +813,14 @@ redacted and escaped before it is written.
   zing contacts only the endpoints you configure (target, baseline, judge,
   webhooks); it downloads nothing at runtime, not even tokenizer files.
 - **Keys.** Reports and history keep only a fingerprint of an API key. The
-  monitors' keys are stored encrypted in `watches.db`; the master key that
-  decrypts them is never written to the data directory (you keep it, see
-  **Monitoring** above), so a copy of the directory reveals no API key. The
-  directory is owner-only all the same.
+  monitors' keys are not stored by default (they stay in the server's memory).
+  If you opt in to storing them, they are encrypted in `watches.db` and the
+  master key that decrypts them is never written to the data directory (you
+  keep it, see **Monitoring** above). Either way a copy of the directory
+  reveals no API key. The directory is owner-only all the same.
 - **Data directory.** `~/.zing` (or `ZING_DATA_DIR`), created `0700` with `0600`
-  files: `history.db` (audit history), `watches.db` (monitors, with their keys
-  encrypted) and `kb.db` (your knowledge-base entries). Delete the directory to
+  files: `history.db` (audit history), `watches.db` (monitors; their keys only
+  if you chose to store them, encrypted) and `kb.db` (your knowledge-base entries). Delete the directory to
   remove everything. `zing data-dir` prints where it is; `--data-dir PATH`
   picks another one for a single run, e.g. `zing serve --data-dir .` keeps the
   databases in the current folder. They are plain SQLite files, so you can open

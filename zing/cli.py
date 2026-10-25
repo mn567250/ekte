@@ -1446,8 +1446,20 @@ def secret_status() -> None:
     console.print(line)
     if st.get("error"):
         err_console.print(f"[red]{st['error']}[/red]")
-    counts = st["counts"]
-    console.print("watch API keys: " + ", ".join(f"{n} {k}" for k, n in counts.items()))
+    counts = dict(st["counts"])
+    # Keys that are not stored live in the memory of `zing serve`, not here.
+    not_stored = counts.pop("memory", 0) + counts.pop("missing", 0)
+    if st.get("storage") == "memory":
+        console.print(
+            "API key storage: [bold]none[/bold] — keys entered in `zing serve` stay in its "
+            "memory until it stops (change it on the Monitors page)"
+        )
+    else:
+        console.print("API key storage: [bold]encrypted[/bold] in watches.db")
+    console.print(
+        "watch API keys: "
+        + ", ".join(f"{n} {k}" for k, n in {**counts, "not stored": not_stored}.items())
+    )
     if st["state"] == "locked":
         console.print("Enter the key on the Monitors page of `zing serve` to run monitors.")
     if "legacy_key_file" in st["warnings"]:
@@ -1465,7 +1477,11 @@ def secret_status() -> None:
             "restore it, or re-enter those keys in the web UI."
         )
     if counts.get("plain"):
-        console.print("Plain-text keys are encrypted as soon as the master key is entered.")
+        console.print(
+            "Plain-text keys are moved out of the database into memory when `zing serve` starts."
+            if st.get("storage") == "memory"
+            else "Plain-text keys are encrypted as soon as the master key is entered."
+        )
 
 
 @secret_app.command("export")

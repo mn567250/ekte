@@ -41,8 +41,16 @@
     - link "Histórico":
       - /url: /v2/history
     - text: e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa seu limite ou piora em relação à última vez, o zing alerta seus webhooks (Slack / Feishu / DingTalk / JSON genérico).
-  - text: Ainda sem chave mestra É criada quando guarda a primeira chave API.
-  - button "Criar agora"
+  - status:
+    - text: As chaves de API não são guardadas As chaves que introduz ficam apenas na memória do zing serve e nunca são escritas no disco; introduza-as novamente após um reinício. As referências env:VAR continuam a funcionar.
+    - button "Alterar"
+  - group "Armazenamento das chaves de API":
+    - text: Armazenamento das chaves de API
+    - radio "Não guardar chaves" [checked]
+    - text: Não guardar chaves
+    - radio "Guardar cifradas neste computador"
+    - text: Guardar cifradas neste computador
+    - paragraph: As chaves de API ficam na memória do zing serve e nunca são escritas no disco; introduza-as novamente após cada reinício. Use env:VAR para monitores que tenham de funcionar sem supervisão.
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Pesquisar
@@ -155,7 +163,7 @@
         - button "Ativar monitor"
       - button "Executar agora"
       - button "Eliminar"
-    - paragraph: "Tudo é executado localmente. A chave API é guardada encriptada, apenas na base de dados local em ~/.zing nesta máquina; nunca aparece na lista de monitores nem é enviada ao navegador. A chave mestra que a desencripta nunca é escrita no disco: guarda-a você e introduz-a após cada reinício."
+    - paragraph: "Tudo corre localmente. A chave de API não é guardada: fica apenas na memória do zing serve e nunca é escrita no disco, mostrada na lista de monitores ou enviada ao navegador. Introduza-a novamente quando o zing serve reiniciar."
 - contentinfo:
   - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
   - paragraph: "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."
