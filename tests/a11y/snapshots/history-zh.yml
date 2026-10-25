@@ -37,10 +37,6 @@
 - main:
   - heading "检测历史与趋势" [level=1]
   - paragraph: 这里是你在本机跑过的每一次验真。按「中转站 + 声称模型」分组，附一条健康分趋势曲线；点任意一行可展开当时那份报告。
-  - paragraph:
-    - text: 历史只保存在
-    - code: ~/.zing
-    - text: 下的本地 SQLite 文件里，不会上传。
   - status: 本机有 15 次检测 最早一次为 2026年9月26日 · API 密钥从不保存
   - region "筛选":
     - button "筛选" [expanded]
@@ -308,3 +304,6 @@
   - text: 共 15 条记录
   - button "清空历史"
   - status
+- contentinfo:
+  - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
+  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

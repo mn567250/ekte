@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Connaissances":
       - /url: /v2/kb
-  - paragraph: Exécution locale · les clés ne sortent jamais
 - main:
   - heading "Placez une sentinelle planifiée sur votre relais" [level=1]
   - paragraph:
@@ -158,6 +157,5 @@
       - button "Supprimer"
     - paragraph: "Tout s'exécute en local. La clé API est stockée chiffrée, uniquement dans la base de données locale sous ~/.zing sur cette machine ; elle n'apparaît jamais dans la liste des surveillances et n'est jamais envoyée au navigateur. La clé maîtresse qui la déchiffre n'est jamais écrite sur le disque : vous la conservez et la saisissez après chaque redémarrage."
 - contentinfo:
-  - paragraph:
-    - text: zing · vérification de relais · les surveillances sont planifiées en arrière-plan par le processus
-    - code: zing serve
+  - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
+  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

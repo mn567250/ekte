@@ -37,10 +37,6 @@
 - main:
   - heading "Analyses des audits" [level=1]
   - paragraph: "Comparez relais et modèles dans le temps avec ce que zing a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation."
-  - paragraph:
-    - text: Calculé à partir de l'historique local dans
-    - code: ~/.zing
-    - text: — rien n'est envoyé.
   - status: 1 exécution plus ancienne a une heure de début estimée Les graphiques par heure de la journée les placent approximativement.
   - status: "Mis à jour : 14 exécutions sur cette période."
   - region "Filtres":
@@ -110,3 +106,6 @@
         - listitem: Vitesse de décodage 62,9 tok/s Pas de données sur la période précédente
         - listitem: Ratio de facturation (entrée) 103 % Pas de données sur la période précédente Données de 9 exécutions sur 14
         - listitem: Ratio de facturation (sortie) 102 % Pas de données sur la période précédente Données de 9 exécutions sur 14
+- contentinfo:
+  - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
+  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

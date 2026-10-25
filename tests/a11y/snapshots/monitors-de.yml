@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Wissen":
       - /url: /v2/kb
-  - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät
 - main:
   - heading "Stellen Sie Ihrem Relay einen zeitgesteuerten Wächter zur Seite" [level=1]
   - paragraph:
@@ -158,7 +157,5 @@
       - button "Löschen"
     - paragraph: "Alles läuft lokal. Der API-Schlüssel wird verschlüsselt und nur in der lokalen Datenbank unter ~/.zing auf diesem Rechner gespeichert; er erscheint nie in der Überwachungsliste und wird nie an den Browser gesendet. Der Hauptschlüssel, der ihn entschlüsselt, wird nie auf die Festplatte geschrieben: Sie bewahren ihn auf und geben ihn nach jedem Neustart ein."
 - contentinfo:
-  - paragraph:
-    - text: zing · Relay-Echtheitsprüfung · Überwachungen werden vom Prozess
-    - code: zing serve
-    - text: im Hintergrund geplant
+  - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
+  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

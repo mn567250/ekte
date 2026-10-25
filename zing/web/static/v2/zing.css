@@ -94,14 +94,6 @@ main[tabindex="-1"]:focus { outline: none; }
 .znav .tail { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .znav .classic { font-size: 12px; font-weight: 600; color: var(--ink-muted); text-decoration: none; white-space: nowrap; }
 .znav .classic:hover { color: var(--primary); text-decoration: underline; }
-.trust {
-  display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px 0 0;
-  font-size: 12px; color: var(--ink-muted);
-}
-/* inside the header (banner landmark): its own last row, same spacing as before */
-.znav .trust { flex: 1 0 100%; margin: 0 0 -6px; }
-.trust b { color: var(--ink-muted); }
-.trust .zicon { width: 13px; height: 13px; }
 /* Six sections no longer fit beside the logo and language switch: the links
    always get their own row (scrollable on phones). nav.js renders them after
    .tail, so DOM, reading and Tab order follow the rows (BITV 9.1.3.2 / 9.2.4.3). */
@@ -363,9 +355,12 @@ select.in {
 .empty .zicon { width: 28px; height: 28px; color: var(--ink-muted); }
 .foot { text-align: center; color: var(--ink-muted); font-size: 12px; padding: 16px 0 32px; line-height: 1.6; }
 .foot code { font-size: 11.5px; }
+/* the shared disclaimer footer (nav.js): all local, black box */
+.zdisc { text-align: center; color: var(--ink-muted); font-size: 12px; line-height: 1.6; padding: 16px 0 32px; }
+.zdisc p { margin: 0 0 4px; }
 /* a page without a footer keeps the same space below its last card as one with
    (the footer's one-line .foot: 12px margins, 16px + 32px padding, ~19px text) */
-.wrap > main:last-child { padding-bottom: 92px; }
+.wrap > main:last-child { padding-bottom: 24px; }
 
 /* inline canonical SVG icons (icons.js) inherit currentColor */
 .pico { display: inline-flex; vertical-align: -0.12em; }

@@ -169,6 +169,5 @@
       - link "comunicar um problema de acessibilidade no GitHub":
         - /url: https://github.com/cenbonew/zing/issues
 - contentinfo:
-  - paragraph:
-    - text: zing · verificação de relays · este relatório é gerado a partir dos testes automatizados de acessibilidade em
-    - code: tests/a11y
+  - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
+  - paragraph: "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

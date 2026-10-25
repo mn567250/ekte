@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Wissen":
       - /url: /v2/kb
-  - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät
 - main:
   - heading "Die Wissensbasis, gegen die zing prüft" [level=1]
   - paragraph:
@@ -123,9 +122,5 @@
         # … more items of the same shape
     # … more items of the same shape
 - contentinfo:
-  - paragraph:
-    - text: zing · Relay-Realitätscheck · mitgelieferte Profile liegen in
-    - code: zing/knowledge/data
-    - text: ;
-    - code: ZING_KB_DIR
-    - text: und deine Einträge kommen darüber
+  - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
+  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

@@ -4,8 +4,9 @@
  *   <header class="znav" data-page="audit|history|analytics|monitors|kb"></header>
  * and loads, right after /icons.js and before its own page script:
  *   <script src="/v2/static/nav.js"></script>
- * Optional: data-trust on the header adds the "runs locally" line under it
- * (inside the header, so it stays in the banner landmark).
+ * The script also appends the one shared page footer (.zdisc) to .wrap: the
+ * two disclaimers every page carries, "all local" and "black box, do not
+ * blame". There is no disclaimer above the hero title on any page.
  * The header starts with a skip link to the page's <main id="main"
  * tabindex="-1"> (BITV 9.2.4.1 bypass blocks), visible only on focus.
  *
@@ -31,6 +32,10 @@
     ["analytics", "/v2/analytics", "bars", "分析", "Analytics"],
     ["kb", "/v2/kb", "book", "知识库", "Knowledge"],
   ];
+
+  // [zh, en]
+  var DISC_LOCAL = ["全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。", 'All local: audits run from your own machine, and your API keys never leave it.'];
+  var DISC_BOX = ["黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。", 'A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.'];
 
   function ico(name, opts) {
     return window.zingIcon ? window.zingIcon(name, opts || {}) : "";
@@ -70,14 +75,6 @@
       ico("a11y", { size: 16 }) + "</a>" +
       "</div>" +
       '<nav class="links" aria-label="主导航" data-en-aria-label="Main navigation">' + links + "</nav>";
-    if (header.hasAttribute("data-trust")) {
-      var p = document.createElement("p");
-      p.className = "trust";
-      p.innerHTML =
-        ico("lock") +
-        ' <span data-en="Runs locally · keys <b>never leave</b>">本地运行 · 密钥<b>不经手</b></span>';
-      header.appendChild(p);
-    }
     var ts = header.querySelector("select.theme-sel");
     if (window.ZING_THEME) {
       ts.value = window.ZING_THEME.get();
@@ -119,8 +116,27 @@
     }
   }
 
+  // The shared footer: after <main>, as the last child of .wrap.
+  function footer(header) {
+    var wrap = header.parentNode;
+    if (!wrap || wrap.querySelector("footer.zdisc")) return;
+    var f = document.createElement("footer");
+    f.className = "zdisc";
+    f.innerHTML =
+      '<p data-en="' + esc(DISC_LOCAL[1]) + '">' + DISC_LOCAL[0] + "</p>" +
+      '<p data-en="' + esc(DISC_BOX[1]) + '">' + DISC_BOX[0] + "</p>";
+    wrap.appendChild(f);
+  }
+
   var headers = document.querySelectorAll("header.znav");
   for (var i = 0; i < headers.length; i++) render(headers[i]);
+  // Appended once the page is parsed, so it lands after <main>, not before it.
+  function addFooters() {
+    for (var k = 0; k < headers.length; k++) footer(headers[k]);
+    if (window.ZING_LANG) window.ZING_LANG.apply(document);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addFooters);
+  else addFooters();
   // If lang.js already booted (script loaded late), translate the new markup.
   if (window.ZING_LANG && document.readyState !== "loading") window.ZING_LANG.apply(document);
 })();

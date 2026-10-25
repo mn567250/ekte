@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Knowledge":
       - /url: /v2/kb
-  - paragraph: Runs locally · keys never leave
 - main:
   - heading "Put a scheduled sentinel on your relay" [level=1]
   - paragraph:
@@ -158,7 +157,5 @@
       - button "Delete"
     - paragraph: "Everything runs locally. The API key is stored encrypted, only in the local database under ~/.zing on this machine; it never appears in the monitor list and is never sent to the browser. The master key that decrypts it is never written to disk: you keep it, and enter it after each restart."
 - contentinfo:
-  - paragraph:
-    - text: zing · relay reality check · monitors are scheduled in the background by the
-    - code: zing serve
-    - text: process
+  - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
+  - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

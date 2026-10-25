@@ -37,10 +37,6 @@
 - main:
   - heading "Historial y tendencias de auditorías" [level=1]
   - paragraph: Todas las verificaciones que ha ejecutado en este equipo, agrupadas por «intermediario + modelo declarado», con una línea de tendencia de la puntuación de salud; haga clic en una fila para desplegar ese informe.
-  - paragraph:
-    - text: El historial solo se guarda en un archivo SQLite local en
-    - code: ~/.zing
-    - text: ; no se envía nada.
   - status: 15 ejecuciones en este equipo Guardado desde 26 sept 2026 · las claves de API nunca se guardan
   - region "Filtros":
     - button "Filtros" [expanded]
@@ -308,3 +304,6 @@
   - text: "Auditorías guardadas: 15"
   - button "Borrar historial"
   - status
+- contentinfo:
+  - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
+  - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

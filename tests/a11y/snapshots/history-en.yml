@@ -37,10 +37,6 @@
 - main:
   - heading "Audit history & trends" [level=1]
   - paragraph: Every verification you have run on this machine. Grouped by "relay + claimed model", with a health-score trend line; click any row to expand that report.
-  - paragraph:
-    - text: History lives only in a local SQLite file under
-    - code: ~/.zing
-    - text: — nothing is uploaded.
   - status: 15 runs on this machine Saved since Sep 26, 2026 · API keys are never stored
   - region "Filters":
     - button "Filters" [expanded]
@@ -308,3 +304,6 @@
   - text: "Saved audits: 15"
   - button "Clear history"
   - status
+- contentinfo:
+  - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
+  - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

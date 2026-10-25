@@ -28,9 +28,6 @@
      ("Sep 29, 2026, 3:40 PM") and risk label (DE "Abweichungen gefunden", FR
      "Tromperie sur la marchandise") of every language stay on one line. */
   .hist { --cols: minmax(0, 1.1fr) minmax(0, 1.5fr) 2.8em 4.8em 18px; --cgap: 12px; --del: 36px; }
-  .local-note { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
-  .local-note .zicon { width: 13px; height: 13px; flex: none; }
-  .local-note code { font-size: 11.5px; color: var(--ink-muted); background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
 
   .hist { margin-top: 22px; overflow: hidden; }
   .hist:focus { outline: none; }
@@ -249,7 +246,6 @@
     <div class="hero">
       <h1 data-en="Audit <span class='u'>history</span> &amp; trends">检测<span class='u'>历史</span>与趋势</h1>
       <p data-en="Every verification you have run on this machine. Grouped by &quot;relay + claimed model&quot;, with a health-score trend line; click any row to expand that report.">这里是你在本机跑过的每一次验真。按「中转站 + 声称模型」分组，附一条健康分趋势曲线；点任意一行可展开当时那份报告。</p>
-      <p class="local-note"><span class="pico" id="lockIcon"></span><span data-en="History lives only in a local SQLite file under &lt;code&gt;~/.zing&lt;/code&gt; — nothing is uploaded.">历史只保存在 <code>~/.zing</code> 下的本地 SQLite 文件里，不会上传。</span></p>
     </div>
     <!-- the page notice (notice.js) -->
     <div class="znote" id="note" hidden></div>
@@ -333,7 +329,6 @@
     onReset: function () { resetFilters(); },
   });
 
-  $("#lockIcon").innerHTML = ico("lock");
 
   /* ---------------- filters ---------------- */
   // per-viewer convenience only: storage may be missing or throw

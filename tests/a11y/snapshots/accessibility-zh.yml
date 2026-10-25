@@ -169,7 +169,5 @@
       - link "在 GitHub 上报告无障碍问题":
         - /url: https://github.com/cenbonew/zing/issues
 - contentinfo:
-  - paragraph:
-    - text: zing · 中转站验真 · 本报告由
-    - code: tests/a11y
-    - text: 中的自动化无障碍测试生成
+  - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
+  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

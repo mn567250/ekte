@@ -1,5 +1,7 @@
 {
  "strings": {
+  "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.": "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+  "All local: audits run from your own machine, and your API keys never leave it.": "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai.",
   "Skip to main content": "Vai al contenuto principale"
  }
 }

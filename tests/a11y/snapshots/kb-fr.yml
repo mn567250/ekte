@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Connaissances":
       - /url: /v2/kb
-  - paragraph: Exécution locale · les clés ne sortent jamais
 - main:
   - heading "La base de connaissances utilisée par zing" [level=1]
   - paragraph:
@@ -123,9 +122,5 @@
         # … more items of the same shape
     # … more items of the same shape
 - contentinfo:
-  - paragraph:
-    - text: zing · vérification des relais · les profils fournis se trouvent dans
-    - code: zing/knowledge/data
-    - text: ;
-    - code: ZING_KB_DIR
-    - text: et vos entrées s’y superposent
+  - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
+  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

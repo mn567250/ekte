@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Conocimiento":
       - /url: /v2/kb
-  - paragraph: Se ejecuta en local · las claves nunca salen
 - main:
   - heading "¿Este intermediario sirve el modelo real?" [level=1]
   - paragraph: Elige el relay, el modelo que quieres auditar y, si se vende con otro nombre, el modelo que dice ser. zing ejecuta en tu equipo una batería completa de pruebas de caja negra y genera un informe de verificación legible y respaldado por evidencias.
@@ -124,4 +123,6 @@
       - text: Las pruebas se envían desde su servidor zing local; la clave solo se usa para conectar con el intermediario objetivo y nunca se envía a terceros.
       - alert
       - status
-      - text: zing aporta evidencias reproducibles de riesgo y desviación, no un veredicto legal.
+- contentinfo:
+  - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
+  - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

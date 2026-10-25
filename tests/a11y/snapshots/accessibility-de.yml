@@ -169,7 +169,5 @@
       - link "Barriere auf GitHub melden":
         - /url: https://github.com/cenbonew/zing/issues
 - contentinfo:
-  - paragraph:
-    - text: zing · Relay-Realitätscheck · dieser Bericht wird aus den automatisierten Barrierefreiheitstests in
-    - code: tests/a11y
-    - text: erzeugt
+  - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
+  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
