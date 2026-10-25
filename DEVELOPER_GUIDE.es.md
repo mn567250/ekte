@@ -124,7 +124,6 @@ zing/
 tests/                 suite pytest; conftest.py contiene el relay simulado
 docs/                  METHODOLOGY (7 idiomas), CI.md, DOCKER.md, PUBLISHING.md
 examples/zing.yaml     archivo de configuración comentado
-prototypes/            prototipos HTML estáticos del diseño de la interfaz web (no se distribuyen)
 action.yml             la action compuesta de GitHub
 Dockerfile             imagen de la interfaz web
 ```
@@ -433,6 +432,25 @@ sirven desde la raíz: `lang.js` (cambio de idioma), `locales.js` (datos de
 traducción), `i18n.js` (traducción de hallazgos), `icons.js`, `modelpicker.js`
 (**Obtener modelos**), `secretfield.js` y `perf.js` (gráficos de rendimiento).
 
+Cada página v2 salvo Accesibilidad tiene un **aviso de página** justo bajo su
+hero (`<div class="znote" id="note">`, dibujado por `v2/notice.js`, con estilo
+`.znote` en `zing.css`): `ZingNotice.show(el, {level, title, detail, items,
+actions})`; el nivel `info`, `success`, `warning` o `critical` fija el tinte, el
+borde y el icono (critical es `role="alert"`, los demás `role="status"`; mostrar
+el mismo aviso otra vez no cambia nada). La página elige el mensaje más
+importante y lista los demás en `items`. Auditoría: servidor inalcanzable /
+auditorías en curso / la ejecución guardada más reciente / se ejecuta
+localmente; Historial: historial ilegible / ejecuciones de monitores en pausa
+(clave maestra bloqueada) o ejecuciones antiguas aún en proceso / número de
+ejecuciones; Analítica: datos ilegibles / ejecuciones aún no incluidas en los
+gráficos o con hora de inicio estimada / en qué se basa; Conocimiento: error de
+carga / entradas omitidas o ignoradas / elementos desactivados / completa.
+Monitores conserva su barra de clave maestra (`masterkey.js`), con el mismo
+aspecto y lugar. Las cifras del historial completo vienen de
+`GET /api/history/status` (`history.status()`: número de ejecuciones, la más
+antigua y la más reciente, filas que el backfill de analítica aún no procesó,
+ejecuciones con hora de inicio estimada).
+
 La página v2 **Auditoría** configura los relays con
 `v2/relaycfg.js`: selección de relay/proveedor → URL base → los modelos del relay
 (`/api/models`, al cambiar, en caché por URL/clave/protocolo) → modelo declarado
@@ -482,7 +500,7 @@ fragmento — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), que
 si falta la API del portapapeles o la rechaza); un fragmento sin `tab` abre el
 Resumen, y un enlace pegado (`hashchange`) vuelve a leer la vista. El panel de
 filtros plegable es `v2/filterpanel.js` + `v2/filterpanel.css`, compartido con
-el Historial: `ZingFilterPanel.create(section, {label, title, storeKey, open,
+el Historial, Monitores y Conocimiento: `ZingFilterPanel.create(section, {label, title, storeKey, open,
 onReset})` devuelve `render({body, foot, count, summary})`,
 `sync({count, summary})`, `setOpen()` y `focusStart()`; la página tiene sus
 filtros y campos, el panel el botón con la insignia de filtros activos, el

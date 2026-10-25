@@ -1,0 +1,11 @@
+{
+ "strings": {
+  "Hide details": "Hide details",
+  "Last risk": "Last risk",
+  "Name, relay, model…": "Name, relay, model…",
+  "No monitor matches the filters.": "No monitor matches the filters.",
+  "No result yet": "No result yet",
+  "Show details": "Show details",
+  "Showing {n} of {total} monitors": "Showing {n} of {total} monitors"
+ }
+}

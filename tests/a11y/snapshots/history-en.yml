@@ -26,12 +26,12 @@
   - navigation "Main navigation":
     - link "Audit":
       - /url: /v2/
+    - link "Monitors":
+      - /url: /v2/watches
     - link "History":
       - /url: /v2/history
     - link "Analytics":
       - /url: /v2/analytics
-    - link "Monitors":
-      - /url: /v2/watches
     - link "Knowledge":
       - /url: /v2/kb
 - main:
@@ -41,6 +41,7 @@
     - text: History lives only in a local SQLite file under
     - code: ~/.zing
     - text: — nothing is uploaded.
+  - status: 15 runs on this machine Saved since Sep 26, 2026 · API keys are never stored
   - region "Filters":
     - button "Filters" [expanded]
     - text: Search

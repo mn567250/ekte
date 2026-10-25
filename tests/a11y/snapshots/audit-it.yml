@@ -26,18 +26,21 @@
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
+    - link "Monitor":
+      - /url: /v2/watches
     - link "Cronologia":
       - /url: /v2/history
     - link "Analisi":
       - /url: /v2/analytics
-    - link "Monitor":
-      - /url: /v2/watches
     - link "Conoscenza":
       - /url: /v2/kb
   - paragraph: Esecuzione locale · le chiavi non escono mai
 - main:
   - heading "Questo intermediario serve il modello vero?" [level=1]
   - paragraph: Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. zing esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.
+  - status:
+    - text: Ultimo audit completato gateway.a-very-long-relay-hostname.example.org · model-b · punteggio 72/100 · 27 set 2026, 10:02
+    - button "Apri report"
   - tablist "Audit":
     - tab "Nuovo audit" [selected]
     - tab "In corso"

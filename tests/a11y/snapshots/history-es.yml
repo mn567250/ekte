@@ -26,12 +26,12 @@
   - navigation "Navegación principal":
     - link "Auditoría":
       - /url: /v2/
+    - link "Monitores":
+      - /url: /v2/watches
     - link "Historial":
       - /url: /v2/history
     - link "Analítica":
       - /url: /v2/analytics
-    - link "Monitores":
-      - /url: /v2/watches
     - link "Conocimiento":
       - /url: /v2/kb
 - main:
@@ -41,6 +41,7 @@
     - text: El historial solo se guarda en un archivo SQLite local en
     - code: ~/.zing
     - text: ; no se envía nada.
+  - status: 15 ejecuciones en este equipo Guardado desde 26 sept 2026 · las claves de API nunca se guardan
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Buscar

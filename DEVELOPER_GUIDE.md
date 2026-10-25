@@ -123,7 +123,6 @@ zing/
 tests/                 pytest suite; conftest.py holds the mock relay
 docs/                  METHODOLOGY (7 languages), CI.md, DOCKER.md, PUBLISHING.md
 examples/zing.yaml     annotated config file
-prototypes/            static HTML design prototypes of the web UI (not shipped)
 action.yml             the GitHub composite action
 Dockerfile             web UI image
 ```
@@ -411,6 +410,23 @@ Every colour of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
 scripts use `var(--…)` only, never a literal colour.
 
+Every v2 page but Accessibility has one **page notice** right under its hero
+(`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
+in `zing.css`): `ZingNotice.show(el, {level, title, detail, items, actions})`
+with the level `info`, `success`, `warning` or `critical` setting tint, border
+and icon (critical is `role="alert"`, the others `role="status"`; showing the
+same notice again changes nothing). The page picks the most important message
+and lists the others in `items`. Audit: server unreachable / audits running /
+the newest saved run / runs locally; History: history unreadable / monitor
+runs paused (master key locked) or older runs still processed / run count;
+Analytics: data unreadable / runs not yet in the charts or with an estimated
+start time / what it is based on; Knowledge: load failure / skipped or
+ignored entries / switched-off items / complete. Monitors keeps its master-key
+bar (`masterkey.js`), which looks and sits the same. The history-wide numbers
+come from `GET /api/history/status` (`history.status()`: run count, oldest and
+newest run, rows the analytics backfill has not processed,
+runs with an estimated start time).
+
 The v2 **Audit** page configures relays with `v2/relaycfg.js`:
 relay/provider select → base URL → the relay's models (`/api/models`, on change,
 cached per URL/key/protocol) → claimed model from the knowledge base
@@ -453,7 +469,7 @@ fragment itself — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`)
 which **Copy link to this view** copies (a selected read-only field where the
 clipboard API is missing or refuses); a fragment without `tab` opens Overview,
 and a pasted link (`hashchange`) re-reads the view. The collapsible filter
-panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History:
+panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History, Monitors and Knowledge:
 `ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})`
 returns `render({body, foot, count, summary})`, `sync({count, summary})`,
 `setOpen()` and `focusStart()`; the page owns its filters and fields, the panel

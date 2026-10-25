@@ -121,8 +121,9 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "charts.css", ("analytics", "accessibility")),
     (_V2 + "chartmotion.js", ("audit", "history", "analytics", "accessibility")),
     (_V2 + "chartmotion.css", ("audit", "history", "analytics", "accessibility")),
-    (_V2 + "filterpanel.js", ("history", "analytics", "kb")),
-    (_V2 + "filterpanel.css", ("history", "analytics", "kb")),
+    (_V2 + "filterpanel.js", ("history", "monitors", "analytics", "kb")),
+    (_V2 + "filterpanel.css", ("history", "monitors", "analytics", "kb")),
+    (_V2 + "notice.js", ("audit", "history", "analytics", "kb")),
     (_V2 + "accessibility.html", ("accessibility",)),
     # the page fetches bitv-report.json; the catalogue is what it is built from
     (_V2 + "bitv-*.json", ("accessibility",)),
@@ -198,6 +199,8 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("zing/i18n/locales/fragments/v2-download/*", ("audit", "history")),
     ("zing/i18n/locales/fragments/v2-exec-log/*", ("audit", "history")),
     ("zing/i18n/locales/fragments/v2-scoring/*", ("audit", "history", "analytics")),
+    ("zing/i18n/locales/fragments/v2-monitors-filter/*", ("monitors",)),
+    ("zing/i18n/locales/fragments/v2-notices/*", ("audit", "history", "analytics", "kb")),
     # v2-analytics also holds the navigation label "Analytics", shown on every page
     ("zing/i18n/**", ALL),
     # -- the suite itself --

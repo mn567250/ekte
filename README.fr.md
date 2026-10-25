@@ -268,16 +268,20 @@ navigateur.
 | **Audit** | `/` | `/v2/` | Auditer un relais (éventuellement face à une référence) et lire le rapport |
 | **Console** | `/console` | — | Le même audit sous forme de console compacte, façon journal |
 | **Outils** | `/tools` | — | Audits d'embedding et de rerank ; dans la nouvelle interface, ils démarrent sur la page **Audit** via le sélecteur de type de point d'accès (`/v2/tools` y redirige) |
+| **Surveillances** | `/watches` | `/v2/watches` | Ré-audits planifiés avec alertes webhook |
 | **Historique** | `/history` | `/v2/history` | Chaque audit exécuté sur cette machine, groupé par relais + modèle annoncé, avec tendances |
 | **Analyses** | — | `/v2/analytics` | Relais et modèles comparés dans le temps : indicateurs, graphiques avec tableaux de données, classements |
-| **Surveillances** | `/watches` | `/v2/watches` | Ré-audits planifiés avec alertes webhook |
 | **Connaissances** | — | `/v2/kb` | La base de connaissances en trois onglets — modèles, fournisseurs, relais : parcourir, activer/désactiver, ajouter les vôtres |
 
 La nouvelle interface ajoute : des filtres et des tendances configurables (score,
 note, latence p50, tokens/s) dans l'**Historique** ; **Planifier comme
 surveillance** et **Relancer l'audit** sur chaque exécution de l'Historique ; **Télécharger le rapport**
 dans tous les formats ; un sélecteur de thème (Automatique / Clair / Sombre) ; et
-la page **Connaissances**.
+la page **Connaissances**. Chaque page sauf Accessibilité affiche un avis juste
+sous son introduction, coloré selon son importance (information, succès,
+avertissement, critique) : p. ex. le dernier audit terminé sur **Audit**, la clé
+maîtresse sur **Surveillances**, les exécutions encore en traitement sur
+**Historique** et **Analyses**, les entrées ignorées sur **Connaissances**.
 
 **Audits en arrière-plan (nouvelle interface).** Un audit lancé depuis la page
 **Audit** continue quand vous changez de page ou fermez l'onglet ; **Continuer en
@@ -336,7 +340,7 @@ conserve l’onglet, les filtres et chaque option des graphiques
 (`#tab=reliability&range=30&relay=…&eb=dow_hour`), et **Copier le lien vers
 cette vue** la copie (ou l’affiche dans un champ à copier si le navigateur ne
 le permet pas) : le lien rouvre exactement cette vue. Le panneau de filtres est
-le même sur **Historique** et **Analyses** : fermé, il indique combien de
+le même sur **Historique**, **Surveillances** et **Analyses** : fermé, il indique combien de
 filtres sont actifs et les nomme sur une ligne (p. ex. « 30 derniers jours ·
 standard · Streaming · Example Relay »), si bien qu’une vue partagée dit ce
 qu’elle montre.
@@ -593,7 +597,11 @@ exécution dans l'**Historique** et envoie les mêmes alertes webhook :
   personnalisées) dans une surveillance en pause sur la page **Surveillances** ;
   définissez-y son intervalle et sa clé API (l'Historique ne stocke jamais de
   clés) puis activez-la. Intervalle, clé, **Seuil d'alerte**, webhooks et
-  **Langue des alertes** se modifient directement sur chaque surveillance.
+  **Langue des alertes** se modifient directement sur chaque surveillance. Un
+  clic sur le nom replie la carte au nom, à l'état et à la dernière exécution
+  (**Tout replier** / **Tout déplier** au-dessus de la liste ; mémorisé par
+  navigateur), et le panneau de filtres (recherche, état, dernier risque, type
+  d'endpoint, relais, suite) réduit une longue liste comme dans l'**Historique**.
 - **Interface classique :** remplissez le formulaire de la page
   **Surveillances** puis **Ajouter la surveillance**.
 

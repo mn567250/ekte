@@ -1,0 +1,11 @@
+{
+ "strings": {
+  "Hide details": "Masquer les détails",
+  "Last risk": "Dernier risque",
+  "Name, relay, model…": "Nom, relais, modèle…",
+  "No monitor matches the filters.": "Aucune surveillance ne correspond aux filtres.",
+  "No result yet": "Pas encore de résultat",
+  "Show details": "Afficher les détails",
+  "Showing {n} of {total} monitors": "{n} surveillance(s) affichée(s) sur {total}"
+ }
+}

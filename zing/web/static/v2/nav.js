@@ -26,9 +26,9 @@
   var LINKS = [
     // [page id, href, icon, zh, en]
     ["audit", "/v2/", "bolt", "检测", "Audit"],
+    ["monitors", "/v2/watches", "bell", "监控", "Monitors"],
     ["history", "/v2/history", "chart", "检测历史", "History"],
     ["analytics", "/v2/analytics", "bars", "分析", "Analytics"],
-    ["monitors", "/v2/watches", "bell", "监控", "Monitors"],
     ["kb", "/v2/kb", "book", "知识库", "Knowledge"],
   ];
 

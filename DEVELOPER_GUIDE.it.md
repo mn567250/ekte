@@ -126,7 +126,6 @@ zing/
 tests/                 suite pytest; conftest.py contiene il relay simulato
 docs/                  METHODOLOGY (7 lingue), CI.md, DOCKER.md, PUBLISHING.md
 examples/zing.yaml     file di configurazione commentato
-prototypes/            prototipi HTML statici del design dell'interfaccia web (non distribuiti)
 action.yml             l'action composita di GitHub
 Dockerfile             immagine dell'interfaccia web
 ```
@@ -436,6 +435,25 @@ traduzione), `i18n.js` (traduzione delle rilevazioni), `icons.js`,
 `modelpicker.js` (**Recupera modelli**), `secretfield.js` e `perf.js` (grafici
 delle prestazioni).
 
+Ogni pagina v2 tranne Accessibilità ha un **avviso di pagina** subito sotto
+l'hero (`<div class="znote" id="note">`, disegnato da `v2/notice.js`, con lo
+stile `.znote` in `zing.css`): `ZingNotice.show(el, {level, title, detail,
+items, actions})`; il livello `info`, `success`, `warning` o `critical` imposta
+tinta, bordo e icona (critical è `role="alert"`, gli altri `role="status"`;
+mostrare di nuovo lo stesso avviso non cambia nulla). La pagina sceglie il
+messaggio più importante ed elenca gli altri in `items`. Verifica: server non
+raggiungibile / audit in corso / l'esecuzione salvata più recente / eseguito in
+locale; Cronologia: cronologia illeggibile / esecuzioni dei monitor in pausa
+(chiave master bloccata) o esecuzioni precedenti ancora in elaborazione / numero
+di esecuzioni; Analisi: dati illeggibili / esecuzioni non ancora nei grafici o
+con orario di inizio stimato / su cosa si basa; Conoscenza: errore di
+caricamento / voci saltate o ignorate / elementi disattivati / completa. Monitor
+mantiene la sua barra della chiave master (`masterkey.js`), con lo stesso aspetto
+e posto. I numeri dell'intera cronologia vengono da `GET /api/history/status`
+(`history.status()`: numero di esecuzioni, la più vecchia e la più recente,
+righe non ancora elaborate dal backfill delle analisi, esecuzioni con orario di
+inizio stimato).
+
 La pagina v2 **Verifica** configura i relay con
 `v2/relaycfg.js`: scelta relay/provider → URL di base → i modelli del relay
 (`/api/models`, al cambiamento, in cache per URL/chiave/protocollo) → modello
@@ -485,7 +503,7 @@ frammento — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), che
 l'API degli appunti manca o rifiuta); un frammento senza `tab` apre la
 Panoramica, e un link incollato (`hashchange`) rilegge la vista. Il pannello dei
 filtri richiudibile è `v2/filterpanel.js` + `v2/filterpanel.css`, condiviso con
-la Cronologia: `ZingFilterPanel.create(section, {label, title, storeKey, open,
+la Cronologia, Monitor e Conoscenza: `ZingFilterPanel.create(section, {label, title, storeKey, open,
 onReset})` restituisce `render({body, foot, count, summary})`,
 `sync({count, summary})`, `setOpen()` e `focusStart()`; la pagina gestisce i
 propri filtri e campi, il pannello il pulsante con il badge dei filtri attivi,

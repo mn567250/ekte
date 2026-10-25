@@ -126,7 +126,6 @@ zing/
 tests/                 pytest-Suite; conftest.py enthält das Mock-Relay
 docs/                  METHODOLOGY (7 Sprachen), CI.md, DOCKER.md, PUBLISHING.md
 examples/zing.yaml     kommentierte Konfigurationsdatei
-prototypes/            statische HTML-Designprototypen der Weboberfläche (nicht ausgeliefert)
 action.yml             die GitHub Composite Action
 Dockerfile             Image der Weboberfläche
 ```
@@ -433,6 +432,25 @@ von der Wurzel ausgeliefert: `lang.js` (Sprachwahl), `locales.js`
 `modelpicker.js` (**Modelle abrufen**), `secretfield.js` und `perf.js`
 (Leistungsdiagramme).
 
+Jede v2-Seite außer Barrierefreiheit hat direkt unter ihrem Hero einen
+**Seitenhinweis** (`<div class="znote" id="note">`, gezeichnet von
+`v2/notice.js`, gestaltet von `.znote` in `zing.css`):
+`ZingNotice.show(el, {level, title, detail, items, actions})`; die Stufe `info`,
+`success`, `warning` oder `critical` setzt Tönung, Rahmen und Symbol (critical ist
+`role="alert"`, die anderen `role="status"`; derselbe Hinweis erneut ändert
+nichts). Die Seite wählt die wichtigste Meldung und listet die übrigen in
+`items`. Prüfung: Server nicht erreichbar / laufende Prüfungen / der neueste
+gespeicherte Lauf / läuft lokal; Verlauf: Verlauf nicht lesbar /
+Überwachungsläufe pausiert (Hauptschlüssel gesperrt) oder ältere Läufe noch in
+Verarbeitung / Anzahl der Läufe; Analyse: Daten nicht lesbar / Läufe noch nicht
+in den Diagrammen oder mit geschätzter Startzeit / worauf sie beruht; Wissen:
+Ladefehler / übersprungene oder ignorierte Einträge / ausgeschaltete Einträge /
+vollständig. Überwachung behält ihre Hauptschlüssel-Leiste (`masterkey.js`), die
+gleich aussieht und am selben Platz sitzt. Die Zahlen zum ganzen Verlauf kommen
+von `GET /api/history/status` (`history.status()`: Anzahl der Läufe, ältester und
+neuester Lauf, noch nicht vom Analyse-Backfill verarbeitete Zeilen, Läufe mit
+geschätzter Startzeit).
+
 Die v2-Seite **Prüfung** konfiguriert Relays mit
 `v2/relaycfg.js`: Auswahl Relay/Anbieter → Basis-URL → die Modelle des Relays
 (`/api/models`, bei Änderung, zwischengespeichert pro URL/Schlüssel/Protokoll) →
@@ -481,7 +499,7 @@ Fragment — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), das
 Feld, wenn die Zwischenablage-API fehlt oder ablehnt); ein Fragment ohne `tab`
 öffnet den Überblick, ein eingefügter Link (`hashchange`) liest die Ansicht neu.
 Das einklappbare Filterpanel ist `v2/filterpanel.js` + `v2/filterpanel.css`,
-gemeinsam mit dem Verlauf: `ZingFilterPanel.create(section, {label, title,
+gemeinsam mit Verlauf, Überwachung und Wissen: `ZingFilterPanel.create(section, {label, title,
 storeKey, open, onReset})` liefert `render({body, foot, count, summary})`,
 `sync({count, summary})`, `setOpen()` und `focusStart()`; die Seite besitzt ihre
 Filter und Felder, das Panel den Umschalter mit dem Zähler aktiver Filter, die

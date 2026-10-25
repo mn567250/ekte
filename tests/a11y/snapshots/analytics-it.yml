@@ -26,12 +26,12 @@
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
+    - link "Monitor":
+      - /url: /v2/watches
     - link "Cronologia":
       - /url: /v2/history
     - link "Analisi":
       - /url: /v2/analytics
-    - link "Monitor":
-      - /url: /v2/watches
     - link "Conoscenza":
       - /url: /v2/kb
 - main:
@@ -41,6 +41,7 @@
     - text: Calcolato dalla cronologia locale in
     - code: ~/.zing
     - text: — nulla viene caricato.
+  - status: 1 esecuzione precedente ha un orario di inizio stimato I grafici per ora del giorno li collocano in modo approssimativo.
   - status: "Aggiornato: 14 esecuzioni in questo periodo."
   - region "Filtri":
     - button "Filtri" [expanded]

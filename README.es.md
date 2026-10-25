@@ -265,15 +265,20 @@ clásica** vuelve atrás. La elección se recuerda por navegador.
 | **Auditoría** | `/` | `/v2/` | Auditar un relay (opcionalmente frente a una referencia) y leer el informe |
 | **Consola** | `/console` | — | La misma auditoría como consola compacta, estilo registro |
 | **Herramientas** | `/tools` | — | Auditorías de embeddings y rerank; en la nueva interfaz empiezan en la página **Auditoría** con el selector de tipo de endpoint (`/v2/tools` redirige allí) |
+| **Monitores** | `/watches` | `/v2/watches` | Reauditorías programadas con alertas por webhook |
 | **Historial** | `/history` | `/v2/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
 | **Analítica** | — | `/v2/analytics` | Relays y modelos comparados en el tiempo: indicadores, gráficos con tablas de datos, clasificaciones |
-| **Monitores** | `/watches` | `/v2/watches` | Reauditorías programadas con alertas por webhook |
 | **Conocimiento** | — | `/v2/kb` | La base de conocimiento en tres pestañas — modelos, proveedores, relays: explorar, activar/desactivar, añadir lo tuyo |
 
 La nueva interfaz añade: filtros y tendencias configurables (puntuación, nota,
 latencia p50, tokens/s) en el **Historial**; **Programar como monitor** y **Repetir auditoría** en cada
 ejecución del Historial; **Descargar informe** en todos los formatos; un selector
-de tema (Automático / Claro / Oscuro); y la página **Conocimiento**.
+de tema (Automático / Claro / Oscuro); y la página **Conocimiento**. Cada página
+salvo Accesibilidad tiene un aviso justo bajo su introducción, coloreado según
+su importancia (información, éxito, advertencia, crítico): p. ej. la última
+auditoría terminada en **Auditoría**, la clave maestra en **Monitores**, las
+ejecuciones aún en proceso en **Historial** y **Analítica**, las entradas
+omitidas en **Conocimiento**.
 
 **Auditorías en segundo plano (nueva interfaz).** Una auditoría iniciada en la
 página **Auditoría** sigue en marcha cuando cambias de página o cierras la
@@ -331,7 +336,7 @@ viendo. La URL guarda la pestaña, los filtros y cada opción de los gráficos
 (`#tab=reliability&range=30&relay=…&eb=dow_hour`), y **Copiar el enlace a esta
 vista** la copia (o la muestra en un campo para copiarla si el navegador no lo
 permite): el enlace abre exactamente esa vista. El panel de filtros es el mismo
-en **Historial** y **Analítica**: cerrado, indica cuántos filtros están activos
+en **Historial**, **Monitores** y **Analítica**: cerrado, indica cuántos filtros están activos
 y los nombra en una línea (p. ej. «Últimos 30 días · standard · Streaming ·
 Example Relay»), así una vista compartida dice lo que muestra.
 
@@ -590,7 +595,11 @@ ejecución en el **Historial** y envía las mismas alertas por webhook:
   en pausa de la página **Monitores**; allí fija su intervalo y su clave API (el
   Historial nunca guarda claves) y actívalo. Intervalo, clave, **Umbral de
   alerta**, webhooks e **Idioma de las alertas** se editan directamente en cada
-  monitor.
+  monitor. Al pulsar el nombre de un monitor su tarjeta se pliega a nombre,
+  estado y última ejecución (**Contraer todo** / **Expandir todo** sobre la
+  lista; se recuerda por navegador), y el panel de filtros (búsqueda, estado,
+  último riesgo, tipo de endpoint, relay, suite) acota una lista larga como en
+  el **Historial**.
 - **Interfaz clásica:** rellena el formulario de la página **Monitores** y pulsa
   **Añadir monitor**.
 

@@ -26,12 +26,12 @@
   - navigation "Navigation principale":
     - link "Audit":
       - /url: /v2/
+    - link "Surveillances":
+      - /url: /v2/watches
     - link "Historique":
       - /url: /v2/history
     - link "Analyses":
       - /url: /v2/analytics
-    - link "Surveillances":
-      - /url: /v2/watches
     - link "Connaissances":
       - /url: /v2/kb
   - paragraph: Exécution locale · les clés ne sortent jamais
@@ -41,6 +41,7 @@
     - text: "Chaque audit compare un relais au profil du modèle qu'il annonce : fenêtre de contexte, limite de sortie, capacités, identité et empreintes comportementales. Vous trouvez ici chaque modèle, fournisseur et relais que zing connaît — ceux fournis et les vôtres — et pouvez activer ou désactiver chacun d'eux ou ajouter les vôtres. Vos modifications sont enregistrées dans kb.db sur cette machine et utilisées par l'interface web comme par"
     - code: zing check
     - text: .
+  - status: Base de connaissances complète 98 modèles · 7 fournisseurs · 1 relais, tous activés
   - region "Filtres":
     - button "Filtres" [expanded]
     - text: Identifiant du modèle

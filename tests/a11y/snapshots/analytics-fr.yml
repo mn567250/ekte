@@ -26,12 +26,12 @@
   - navigation "Navigation principale":
     - link "Audit":
       - /url: /v2/
+    - link "Surveillances":
+      - /url: /v2/watches
     - link "Historique":
       - /url: /v2/history
     - link "Analyses":
       - /url: /v2/analytics
-    - link "Surveillances":
-      - /url: /v2/watches
     - link "Connaissances":
       - /url: /v2/kb
 - main:
@@ -41,6 +41,7 @@
     - text: Calculé à partir de l'historique local dans
     - code: ~/.zing
     - text: — rien n'est envoyé.
+  - status: 1 exécution plus ancienne a une heure de début estimée Les graphiques par heure de la journée les placent approximativement.
   - status: "Mis à jour : 14 exécutions sur cette période."
   - region "Filtres":
     - button "Filtres" [expanded]

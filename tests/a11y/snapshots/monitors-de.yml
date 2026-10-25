@@ -26,12 +26,12 @@
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
+    - link "Überwachung":
+      - /url: /v2/watches
     - link "Verlauf":
       - /url: /v2/history
     - link "Analyse":
       - /url: /v2/analytics
-    - link "Überwachung":
-      - /url: /v2/watches
     - link "Wissen":
       - /url: /v2/kb
   - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät
@@ -44,13 +44,39 @@
     - text: und wählen Als Überwachung einplanen — legen Sie dann hier das Intervall fest und schalten Sie sie ein. Überschreitet das Risiko Ihre Schwelle oder wird es schlechter als beim letzten Mal, alarmiert zing Ihre Webhooks (Slack / Feishu / DingTalk / generisches JSON).
   - text: Noch kein Hauptschlüssel Er wird erstellt, wenn Sie den ersten API-Schlüssel speichern.
   - button "Jetzt erstellen"
+  - region "Filter":
+    - button "Filter" [expanded]
+    - text: Suche
+    - searchbox "Suche"
+    - text: Status
+    - combobox "Status":
+      - option "Alle" [selected]
+      - option "Einrichtung nötig"
+    - text: Letztes Risiko
+    - combobox "Letztes Risiko":
+      - option "Alle" [selected]
+      - option "Noch kein Ergebnis"
+    - text: Endpunkttyp
+    - combobox "Endpunkttyp":
+      - option "Alle" [selected]
+      - option "Chat"
+    - text: Relay / Anbieter
+    - combobox "Relay / Anbieter":
+      - option "Alle" [selected]
+      - option "127.0.0.1:9099"
+    - text: Suite
+    - combobox "Suite":
+      - option "Alle" [selected]
+      - option "standard"
+    - text: 1 von 1 Überwachungen angezeigt
   - tablist "Überwachungsansichten":
     - tab "Konfigurieren" [selected]
     - tab "Läuft"
   - tabpanel "Konfigurieren":
     - heading "Eingerichtete Überwachungen 1 Überwachung" [level=2]
     - article "gpt-4o":
-      - heading "gpt-4o" [level=3]
+      - heading "gpt-4o" [level=3]:
+        - button "gpt-4o" [expanded]
       - text: Einrichtung nötig
       - switch "Überwachung aktiv" [disabled]
       - text: Überwachung aktiv

@@ -214,6 +214,8 @@
       <p data-en="Compare relays and models over time with what zing measured on this machine: scores, speed, success rates and billing.">用 zing 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。</p>
       <p class="local-note"><span class="pico" id="lockIcon"></span><span data-en="Computed from the local history under &lt;code&gt;~/.zing&lt;/code&gt; — nothing is uploaded.">基于 <code>~/.zing</code> 下的本地历史计算，不会上传。</span></p>
     </div>
+    <!-- the page notice (notice.js) -->
+    <div class="znote" id="note" hidden></div>
     <p class="sr-only" id="live" role="status"></p>
 
     <section class="card empty-box" id="empty" hidden></section>
@@ -325,6 +327,7 @@
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
+<script src="/v2/static/notice.js"></script>
 <script src="/v2/static/charts.js"></script>
 <script src="/v2/static/chartmotion.js"></script>
 <script src="/v2/static/filterpanel.js"></script>
@@ -646,16 +649,20 @@
       // a linked surface without runs: the most common one instead
       if (!o.runs && F.surface && (o.surfaces || []).length) { F.surface = null; return loadOptions(); }
       state.opts = o;
+      loadNote();
       if (!o.runs) return renderEmpty();
       resolveDefaults();
       $("#views").hidden = false;
       renderFilters();
       refresh();
     }).catch(function (e) {
+      note.err = true;
+      paintNote();
       var box = $("#empty");
       box.hidden = false;
       box.classList.remove("empty-box");
-      box.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取分析数据：", "Could not load analytics: ")) + esc(errText(e)) +
+      // the notice announces the failure: this box is no second alert
+      box.innerHTML = '<div class="errbox">' + esc(T("无法读取分析数据：", "Could not load analytics: ")) + esc(errText(e)) +
         "<br>" + esc(T("请确认本地 zing 服务在运行。", "Make sure the local zing service is running.")) + "</div>";
       say("");
     });
@@ -676,6 +683,7 @@
     }
     writeState();
     invalidate();
+    paintNote();
     var seq = ++state.seq.all;
     say(T("正在加载分析…", "Loading analytics…"));
     activate(V.tab).then(function () {
@@ -791,6 +799,59 @@
   }
 
   /* ---------------- empty history ---------------- */
+  /* ---------------- page notice (notice.js) ---------------- */
+  // critical: the data cannot be loaded; warning: older runs not processed
+  // yet and / or runs with an estimated start time; info: what it is based on
+  var note = { status: null, err: false };
+  function paintNote() {
+    var n = null, s = note.status, o = state.opts;
+    if (note.err) {
+      n = { level: "critical", title: T("无法加载分析数据", "Analytics could not be loaded"),
+        detail: T("本地 zing 服务没有响应。", "The local zing service did not answer."),
+        actions: [{ act: "retry", label: T("重试", "Retry"), primary: true }] };
+    } else if (s && o) {
+      var warn = [];
+      if (s.pending) {
+        warn.push([s.pending === 1 ? T("1 次较早的检测尚未计入图表", "1 older run is not in the charts yet")
+          : Tf("{n} 次较早的检测尚未计入图表", "{n} older runs are not in the charts yet", { n: s.pending }),
+          T("它们仍在处理中。", "They are still being processed.")]);
+      }
+      if (s.estimated) {
+        warn.push([s.estimated === 1 ? T("1 次较早的检测开始时间为估算", "1 older run has an estimated start time")
+          : Tf("{n} 次较早的检测开始时间为估算", "{n} older runs have an estimated start time", { n: s.estimated }),
+          T("按时间段的图表只能大致放置它们。", "Time-of-day charts place them approximately.")]);
+      }
+      if (warn.length) {
+        n = { level: "warning", title: warn[0][0], detail: warn[0][1],
+          items: warn.slice(1).map(function (w) { return w[0] + ": " + w[1]; }) };
+      } else if (o.runs) {
+        var r = rangeOf();
+        var period = F.range !== "custom" ? T(RANGE_L[F.range][0], RANGE_L[F.range][1]) : r.error ? "" : dayRange(r.from, r.to);
+        var relays = (o.relays || []).length;
+        n = { level: "info",
+          title: Tf("基于{relays}的{runs}", "Based on {runs} of {relays}", {
+            runs: o.runs === 1 ? T("1 次已保存检测", "1 saved run") : Tf("{n} 次已保存检测", "{n} saved runs", { n: o.runs }),
+            relays: relays === 1 ? T("1 个中转站", "1 relay") : Tf("{n} 个中转站", "{n} relays", { n: relays }) }),
+          detail: (period ? Tf("显示：{period}", "Showing: {period}", { period: period }) + " · " : "") +
+            T("时间按你的本地时区显示", "times in your local time zone") };
+      } else {
+        n = { level: "info", title: T("还没有检测", "No runs yet"),
+          detail: T("分析基于本机保存的检测计算。", "Analytics are computed from the audits saved on this machine.") };
+      }
+    }
+    window.ZingNotice.show($("#note"), n);
+  }
+  function loadNote() {
+    return fetch("/api/history/status")
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (d) { note.status = d; note.err = false; }, function () { note.err = true; })
+      .then(paintNote);
+  }
+  $("#note").addEventListener("click", function (e) {
+    if (e.target.closest('[data-note-act="retry"]')) { note.err = false; paintNote(); $("#empty").hidden = true; loadOptions(); }
+  });
+  window.addEventListener("zing:lang", paintNote);
+
   function renderEmpty() {
     var box = $("#empty");
     box.hidden = false;

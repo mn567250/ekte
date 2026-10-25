@@ -334,10 +334,38 @@ select.in {
   background: var(--danger-tint); border: 1px solid var(--danger); color: var(--danger);
   border-radius: 14px; padding: 14px 16px; margin-top: 14px; font-size: 14px; line-height: 1.5;
 }
+/* the page notice (notice.js): one per page, right under the hero; icon, text
+   and buttons share one vertical centre line; the level
+   sets tint, border and icon colour, the text stays --ink for contrast */
+.znote {
+  display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap;
+  margin: 18px 0 0; padding: 12px 14px; border-radius: 14px;
+  border: 1px solid var(--line); background: var(--sunken);
+}
+.znote[hidden] { display: none; }
+.znote .ico { display: inline-flex; }
+.znote .ico .zicon { width: 18px; height: 18px; }
+.znote .txt { flex: 1 1 260px; min-width: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }
+.znote .txt b { font-weight: 700; }
+.znote .meta { color: var(--ink-muted); }
+.znote .txt ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-muted); }
+.znote .txt code { font-size: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+.znote .act { display: flex; gap: 6px; flex-wrap: wrap; }
+.znote.info { background: var(--info-tint); border-color: var(--info); }
+.znote.info .ico { color: var(--info); }
+.znote.success { background: var(--success-tint); border-color: var(--success); }
+.znote.success .ico { color: var(--success); }
+.znote.warning { background: var(--warning-tint); border-color: var(--warning); }
+.znote.warning .ico { color: var(--warning); }
+.znote.critical { background: var(--danger-tint); border-color: var(--danger); }
+.znote.critical .ico { color: var(--danger); }
 .empty { text-align: center; padding: 36px 20px; color: var(--ink-muted); font-size: 14.5px; }
 .empty .zicon { width: 28px; height: 28px; color: var(--ink-muted); }
 .foot { text-align: center; color: var(--ink-muted); font-size: 12px; padding: 16px 0 32px; line-height: 1.6; }
 .foot code { font-size: 11.5px; }
+/* a page without a footer keeps the same space below its last card as one with
+   (the footer's one-line .foot: 12px margins, 16px + 32px padding, ~19px text) */
+.wrap > main:last-child { padding-bottom: 92px; }
 
 /* inline canonical SVG icons (icons.js) inherit currentColor */
 .pico { display: inline-flex; vertical-align: -0.12em; }

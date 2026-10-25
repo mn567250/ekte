@@ -240,3 +240,33 @@ def test_latest_for_is_one_lookup_on_the_target_index(data):
         ).fetchall()
     detail = " ".join(str(row[-1]) for row in plan)
     assert "idx_history_target" in detail and "TEMP B-TREE" not in detail
+
+
+def test_status_sums_up_the_history_for_the_page_notices(data):
+    s = history.status()
+    assert (s["runs"], s["oldest"], s["latest"], s["pending"]) == (0, None, None, 0)
+    reports = [_report(i, None) for i in range(3)]
+    for r in reports:
+        r["generated_at"] = "2026-10-01T10:00:00+00:00"
+    ids = [history.save(r) for r in reports]
+    s = history.status()
+    assert s["runs"] == 3 and s["latest"]["id"] == ids[-1] and s["latest"]["score"] == 92.0
+    assert s["latest"]["surface"] == "chat" and s["pending"] == 0
+    # these reports carry no started_at: their start time is estimated
+    assert s["estimated"] == 3
+    # a row the analytics backfill has not reached yet counts as pending
+    conn = sqlite3.connect(data / "history.db")
+    conn.execute(f"UPDATE history SET {history._SPLIT} = NULL WHERE id = ?", (ids[0],))
+    conn.commit()
+    conn.close()
+    assert history.status()["pending"] == 1
+
+
+def test_status_endpoint_is_not_taken_for_a_report_id(data):
+    from fastapi.testclient import TestClient
+
+    from zing.web.server import create_app
+
+    history.save(_report(0, None))
+    r = TestClient(create_app(), base_url="http://localhost").get("/api/history/status")
+    assert r.status_code == 200 and r.json()["runs"] == 1

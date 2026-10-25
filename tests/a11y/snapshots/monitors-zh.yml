@@ -26,12 +26,12 @@
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
+    - link "监控":
+      - /url: /v2/watches
     - link "检测历史":
       - /url: /v2/history
     - link "分析":
       - /url: /v2/analytics
-    - link "监控":
-      - /url: /v2/watches
     - link "知识库":
       - /url: /v2/kb
   - paragraph: 本地运行 · 密钥不经手
@@ -44,13 +44,39 @@
     - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
   - text: 尚无主密钥 保存第一个 API 密钥时会创建它。
   - button "立即创建"
+  - region "筛选":
+    - button "筛选" [expanded]
+    - text: 搜索
+    - searchbox "搜索"
+    - text: 状态
+    - combobox "状态":
+      - option "全部" [selected]
+      - option "待设置"
+    - text: 上次风险
+    - combobox "上次风险":
+      - option "全部" [selected]
+      - option "尚无结果"
+    - text: 接口类型
+    - combobox "接口类型":
+      - option "全部" [selected]
+      - option "对话"
+    - text: 中转站
+    - combobox "中转站":
+      - option "全部" [selected]
+      - option "127.0.0.1:9099"
+    - text: 套件
+    - combobox "套件":
+      - option "全部" [selected]
+      - option "standard"
+    - text: 显示 1/1 个监控
   - tablist "监控视图":
     - tab "配置" [selected]
     - tab "运行中"
   - tabpanel "配置":
     - heading "已配置的监控 共 1 项" [level=2]
     - article "gpt-4o":
-      - heading "gpt-4o" [level=3]
+      - heading "gpt-4o" [level=3]:
+        - button "gpt-4o" [expanded]
       - text: 待设置
       - switch "监控生效" [disabled]
       - text: 监控生效

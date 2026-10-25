@@ -100,6 +100,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   colour scale in both themes. The API takes `block` with `bucket=dow_hour`;
   each block's median comes from its raw runs.
 
+- **One page notice on every page of the web UI v2** (Accessibility aside),
+  right under the page introduction and coloured by importance: information,
+  success, warning or critical (critical is announced at once, the others
+  politely). Audit: the server cannot be reached / audits are running / the
+  last finished audit / runs locally. History: the history cannot be read /
+  monitor runs are paused because the master key is locked, or older runs are
+  still being processed / how many runs since when. Analytics: the data cannot
+  be loaded / older runs not yet in the charts or with an estimated start time /
+  what the numbers are based on. Knowledge: load failure / skipped or ignored
+  entries / switched-off packaged items / complete. The Monitors master-key bar
+  has the same look and place. New endpoint `GET /api/history/status`.
+- **Collapsible monitor cards and a filter panel on Monitors (web UI v2).** A
+  click on a monitor's name collapses its card to name, status, URL and last
+  run; **Collapse all** / **Expand all** above the list, remembered per
+  browser. The filter panel of History and Analytics now also filters monitors
+  by search, status, last risk, endpoint type, relay and suite; a link to one
+  monitor clears filters that would hide it.
+
 ### Changed
 
 - **No Tools page in the web UI v2.** Embedding and rerank audits start on the
@@ -160,6 +178,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (not on a language switch, under `prefers-reduced-motion` or with motion off).
 - Analytics API answers are cached in-process for up to 30 seconds and dropped
   on every saved, deleted or cleared run.
+- **Navigation order (web UI v2):** Audit, Monitors, History, Analytics,
+  Knowledge.
+- **Status colours (web UI v2):** "No master key yet" is critical and an
+  unlocked master key is success; switched-off knowledge-base items are
+  information instead of an error.
+- **Same space below the last card on every page (web UI v2):** pages without
+  a footer (Audit, History, Analytics) no longer end flush with the bottom.
+
+### Removed
+
+- The design prototypes (`prototypes/`) and the implementation plans
+  (`docs/CHART_MOTION_PLAN.md`, `docs/TOOL_SURFACES_PLAN.md`); they described
+  work that has shipped.
 
 ### Fixed
 

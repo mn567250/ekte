@@ -213,6 +213,8 @@
       <h1 id="h-form" tabindex="-1" data-en="Is this relay serving the <span class='u'>real thing</span>?">这家中转站，给的是<span class="u">真货</span>吗？</h1>
       <p data-en="Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
     </div>
+    <!-- the page notice (notice.js) -->
+    <div class="znote" id="note" hidden></div>
 
     <div class="card card-pad tab-card">
     <div class="tabs" role="tablist" aria-label="检测" data-en-aria-label="Audits">
@@ -386,6 +388,7 @@
 <script src="/secretfield.js"></script>
 <script src="/v2/static/relaycfg.js"></script>
 <script src="/v2/static/nav.js"></script>
+<script src="/v2/static/notice.js"></script>
 <script src="/v2/static/report.js"></script>
 <script src="/v2/static/dimpick.js"></script>
 <script>
@@ -394,6 +397,9 @@
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return [].slice.call(document.querySelectorAll(s)); };
   var T = function (zh, en) { return window.ZING_LANG ? ZING_LANG.t(zh, en) : en; };
+  var Tf = function (zh, en, vars) {
+    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+  };
   var srv = function (s) { return window.ZING_LANG ? ZING_LANG.server(s) : s; };
   var ico = function (name, opts) { return window.zingIcon ? zingIcon(name, opts || {}) : ""; };
   function esc(s) {
@@ -512,9 +518,62 @@
   });
   // the Running tab stays selectable while nothing runs (the panel says so);
   // the badge counts queued + running audits and is part of the tab's name
+  // ---------- page notice (notice.js) ----------
+  // critical: the local server does not answer; warning: audits are running;
+  // success: the newest saved run; info (nothing saved yet): runs locally
+  var note = { status: null, err: false, active: 0 };
+  function paintNote() {
+    var n = null, r = note.status && note.status.latest;
+    if (note.err) {
+      n = { level: "critical", title: T("无法连接 zing serve", "zing serve cannot be reached"),
+        detail: T("本地服务已停止或重启：检测无法开始。", "The local server stopped or restarted: audits cannot start."),
+        actions: [{ act: "retry", label: T("重试", "Retry"), primary: true }] };
+    } else if (note.active) {
+      n = { level: "warning",
+        title: note.active === 1 ? T("1 项检测正在运行", "1 audit is running") : Tf("{n} 项检测正在运行", "{n} audits are running", { n: note.active }),
+        detail: T("同一中转站的新检测会等它们结束后再开始。", "A new audit of the same relay waits until they finish."),
+        actions: [{ act: "running", label: T("查看运行中", "Show running") }] };
+    } else if (r) {
+      var host = r.base_url || "";
+      try { host = new URL(r.base_url).host; } catch (e) { /* keep as is */ }
+      var when = "";
+      try { when = ZING_LANG.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(new Date(r.ts)); } catch (e) { when = r.ts || ""; }
+      n = { level: "success", title: T("上次检测已完成", "Last audit finished"),
+        detail: [host, r.claimed_model || r.model,
+          typeof r.score === "number" ? Tf("评分 {n}/100", "score {n}/100", { n: Math.round(r.score) }) : "", when]
+          .filter(Boolean).join(" · "),
+        actions: [{ act: "open", label: T("打开报告", "Open report") }] };
+    } else if (note.status) {
+      n = { level: "info", icon: "lock", title: T("本地运行", "Runs locally"),
+        detail: T("API 密钥只发给你检测的中转站；检测从不保存它。", "Your API key goes only to the relay you test; an audit never stores it.") };
+    }
+    window.ZingNotice.show($("#note"), n);
+  }
+  function loadNote() {
+    return fetch("/api/history/status")
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (d) { note.status = d; note.err = false; }, function () { note.err = true; })
+      .then(paintNote);
+  }
+  $("#note").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-note-act]");
+    if (!b) return;
+    var act = b.getAttribute("data-note-act");
+    if (act === "retry") loadNote();
+    else if (act === "running") tabs.select("running", true);
+    else if (act === "open" && note.status && note.status.latest) location.href = "/v2/history#r-" + note.status.latest.id;
+  });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) loadNote(); });
+  window.addEventListener("zing:lang", paintNote);
+  loadNote();
+
   var jobs = window.ZingJobs.init($("#jobs"), {
     kind: "audit",
     onChange: function (active, rows) {
+      // an audit ended: the newest saved run changed
+      if (active < note.active) loadNote();
+      note.active = active;
+      paintNote();
       $("#jobs-empty").hidden = rows > 0;
       var c = $("#running-count");
       c.hidden = !active;

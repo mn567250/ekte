@@ -75,9 +75,13 @@
   margin: 18px 0 0; padding: 12px 14px; border-radius: 14px;
   background: var(--sunken); border: 1px solid var(--line);
 }
-.zmk-bar.ok { background: var(--success-tint); border-color: var(--line); }
+/* severity: unlocked = success, locked = warning, no key / wrong key = critical */
+.zmk-bar.ok { background: var(--success-tint); border-color: var(--success); }
 .zmk-bar.warn { background: var(--warning-tint); border-color: var(--warning); }
 .zmk-bar.bad { background: var(--danger-tint); border-color: var(--danger); }
+.zmk-bar.ok .zmk-ico { color: var(--success); }
+.zmk-bar.warn .zmk-ico { color: var(--warning); }
+.zmk-bar.bad .zmk-ico { color: var(--danger); }
 .zmk-line { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
 .zmk-ico { display: inline-flex; color: var(--ink-muted); }
 .zmk-ico .zicon { width: 18px; height: 18px; }

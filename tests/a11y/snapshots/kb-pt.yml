@@ -26,12 +26,12 @@
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
+    - link "Monitores":
+      - /url: /v2/watches
     - link "Histórico":
       - /url: /v2/history
     - link "Análises":
       - /url: /v2/analytics
-    - link "Monitores":
-      - /url: /v2/watches
     - link "Conhecimento":
       - /url: /v2/kb
   - paragraph: Execução local · as chaves nunca saem
@@ -41,6 +41,7 @@
     - text: "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, provedor e relay que o zing conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adicionar os seus. As suas alterações são guardadas em kb.db nesta máquina e usadas tanto pela interface web como pelo"
     - code: zing check
     - text: .
+  - status: Base de conhecimento completa 98 modelos · 7 provedores · 1 relay, todos ativados
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: ID do modelo

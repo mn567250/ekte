@@ -26,12 +26,12 @@
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
+    - link "Überwachung":
+      - /url: /v2/watches
     - link "Verlauf":
       - /url: /v2/history
     - link "Analyse":
       - /url: /v2/analytics
-    - link "Überwachung":
-      - /url: /v2/watches
     - link "Wissen":
       - /url: /v2/kb
   - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät
@@ -41,6 +41,7 @@
     - text: "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das zing kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder ausschalten oder eigene hinzufügen. Deine Änderungen werden in kb.db auf diesem Rechner gespeichert und von der Web-Oberfläche wie von"
     - code: zing check
     - text: verwendet.
+  - status: Wissensbasis vollständig 98 Modelle · 7 Anbieter · 1 Relay, alle eingeschaltet
   - region "Filter":
     - button "Filter" [expanded]
     - text: Modell-ID

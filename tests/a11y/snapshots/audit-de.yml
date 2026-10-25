@@ -26,18 +26,21 @@
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
+    - link "Überwachung":
+      - /url: /v2/watches
     - link "Verlauf":
       - /url: /v2/history
     - link "Analyse":
       - /url: /v2/analytics
-    - link "Überwachung":
-      - /url: /v2/watches
     - link "Wissen":
       - /url: /v2/kb
   - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät
 - main:
   - heading "Liefert dieses Relay das echte Modell?" [level=1]
   - paragraph: Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. zing führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.
+  - status:
+    - text: Letzte Prüfung abgeschlossen gateway.a-very-long-relay-hostname.example.org · model-b · Bewertung 72/100 · 27.09.2026, 10:02
+    - button "Bericht öffnen"
   - tablist "Audits":
     - tab "Neues Audit" [selected]
     - tab "Läuft"
