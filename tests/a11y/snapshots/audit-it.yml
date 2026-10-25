@@ -67,8 +67,7 @@
       - text: Chiave API Supporta env:VAR / file:/percorso
       - textbox "Chiave API":
         - /placeholder: sk-... o env:ZING_API_KEY
-        - text: env:ZING_API_KEY
-      - button "Mostra chiave" [pressed]
+      - button "Mostra chiave"
       - text: Modello richiesto model
       - textbox "Modello richiesto model":
         - /placeholder: deepseek-chat

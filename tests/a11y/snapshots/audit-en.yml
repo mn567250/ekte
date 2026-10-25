@@ -67,8 +67,7 @@
       - text: API key Supports env:VAR / file:/path
       - textbox "API key":
         - /placeholder: sk-... or env:ZING_API_KEY
-        - text: env:ZING_API_KEY
-      - button "Show key" [pressed]
+      - button "Show key"
       - text: Model to request model
       - textbox "Model to request model":
         - /placeholder: deepseek-chat
