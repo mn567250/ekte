@@ -1,5 +1,5 @@
 # zing knowledge base — Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)
-# Auto-generated from web-verified research (mid-2026). Edit freely.
+# Auto-generated from web-verified research (2026-10-25). Edit freely.
 provider: qwen
 display_name: Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)
 openai_compatible: true
@@ -34,7 +34,7 @@ models:
   - voyage
   - gemini
   - google
-  notes: 'DashScope text-embedding model (POST /compatible-mode/v1/embeddings). Default 1024-dim output; selectable dimensions 2048/1536/1024/768/512/256/128/64 via the `dimensions` parameter. 8192-token input limit. Built on the Qwen3-Embedding line; multilingual.'
+  notes: DashScope text-embedding model (POST /compatible-mode/v1/embeddings). Default 1024-dim output; selectable dimensions 2048/1536/1024/768/512/256/128/64 via the `dimensions` parameter. 8192-token input limit. Built on the Qwen3-Embedding line; multilingual.
 - id: text-embedding-v3
   aliases: []
   family: text-embedding
@@ -59,7 +59,7 @@ models:
   - voyage
   - gemini
   - google
-  notes: 'DashScope text-embedding model (POST /compatible-mode/v1/embeddings). Default 1024-dim output; selectable dimensions 1024/768/512 via the `dimensions` parameter. 8192-token input limit. Multilingual.'
+  notes: DashScope text-embedding model (POST /compatible-mode/v1/embeddings). Default 1024-dim output; selectable dimensions 1024/768/512 via the `dimensions` parameter. 8192-token input limit. Multilingual.
 - id: wan2.2-t2i-flash
   aliases:
   - wanx2.1-t2i-turbo
@@ -94,7 +94,7 @@ models:
   - midjourney
   - stability
   - flux
-  notes: 'Alibaba Tongyi Wanxiang (通义万相) text-to-image model on DashScope. Common sizes 1024x1024 plus 16:9 / 9:16 variants (e.g. 1280x720). DashScope serves this via its image-synthesis API; an OpenAI-style /images/generations relay should still honor the requested size. Returned sizes outside this set behind a claimed Wan id are a downgrade tell.'
+  notes: Alibaba Tongyi Wanxiang (通义万相) text-to-image model on DashScope. Common sizes 1024x1024 plus 16:9 / 9:16 variants (e.g. 1280x720). DashScope serves this via its image-synthesis API; an OpenAI-style /images/generations relay should still honor the requested size. Returned sizes outside this set behind a claimed Wan id are a downgrade tell.
 - id: qwen3-tts-flash
   aliases:
   - qwen-tts
@@ -128,7 +128,120 @@ models:
   - azure
   - 字节
   - doubao
-  notes: 'Alibaba Qwen text-to-speech model on DashScope. Multilingual / multi-dialect with named voices (Cherry, Serena, Ethan, Chelsie, ...). Streaming and non-streaming synthesis. A relay returning a foreign voice set or non-audio body behind a claimed Qwen-TTS id is a tell.'
+  notes: Alibaba Qwen text-to-speech model on DashScope. Multilingual / multi-dialect with named voices (Cherry, Serena, Ethan, Chelsie, ...). Streaming and non-streaming synthesis. A relay returning a foreign voice set or non-audio body behind a claimed Qwen-TTS id is a tell.
+- id: qwen3.8-max
+  aliases:
+  - qwen3.8-max-0902
+  - qwen3.8-max-2026-09-02
+  family: qwen3.8
+  context_window_tokens: 1000000
+  max_output_tokens: 131072
+  knowledge_cutoff: ~2026 (not officially disclosed)
+  tokenizer: qwen (tiktoken-based BPE, vocab ~151936)
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - qwen
+  - tongyi
+  - 通义千问
+  - 通义
+  - alibaba
+  - 阿里云
+  - 阿里巴巴
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - llama
+  - meta
+  - mistral
+  notes: 'Flagship as of 2026-10: announced 2026-08-03, Alibaba''s largest model (2.4T parameters); open weights followed 2026-08-12 as Qwen3.8-2.4T-A95B (without some cloud features such as image input). Snapshot qwen3.8-max-0902 (alias qwen3.8-max-2026-09-02) is a post-training upgrade. 1M context (~991,808 input), 131,072 max output. Hybrid thinking: enable_thinking switches reasoning per request. Structured output supported. ~$2.00/$6.00 per MTok.'
+- id: qwen3.8-flash
+  aliases: []
+  family: qwen3.8
+  context_window_tokens: 1000000
+  max_output_tokens: 131072
+  knowledge_cutoff: ~2025-2026 (undisclosed)
+  tokenizer: qwen (tiktoken-based BPE)
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - qwen
+  - tongyi
+  - 通义千问
+  - 通义
+  - alibaba
+  - 阿里云
+  - 阿里巴巴
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - llama
+  - meta
+  - mistral
+  notes: Released ~2026-08-26. Fast/cheap Qwen3.8 tier, 1M context (~991,808 input), 131,072 max output, thinking-capable, structured output. ~$0.15/$0.47 per MTok. qwen3.8-omni-flash is the omni-modal sibling at the same price.
+- id: qwen3.7-plus
+  aliases: []
+  family: qwen3.7
+  context_window_tokens: 1000000
+  max_output_tokens: 65536
+  knowledge_cutoff: ~2025-2026 (undisclosed)
+  tokenizer: qwen (tiktoken-based BPE)
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - qwen
+  - tongyi
+  - 通义千问
+  - 通义
+  - alibaba
+  - 阿里云
+  - 阿里巴巴
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - llama
+  - meta
+  - mistral
+  notes: Qwen3.7-generation commercial mid tier. 1M context (~991,808 input), 65,536 max output. enable_thinking optional, default false (thinking_budget only applies when true). Structured output supported.
 - id: qwen3.7-max
   aliases:
   - qwen3.7-max-preview
@@ -165,7 +278,7 @@ models:
   - llama
   - meta
   - mistral
-  notes: 'Flagship proprietary agent/reasoning model announced at Alibaba Cloud Summit 2026-05-20. 1M-token context (up from 256K on 3.6 Max Preview). Marketed for long-horizon agentic runs (hundreds-thousands of steps, ~35h autonomous), coding, office automation. Text-only. DashScope-only / not open-weight. Approx price $2.50/$7.50 per 1M in/out. Thinking model: emits separate reasoning_content channel; thinking mode does not support structured output.'
+  notes: 'Previous flagship (superseded by qwen3.8-max, 2026-08-03): proprietary agent/reasoning model announced at Alibaba Cloud Summit 2026-05-20. 1M-token context (up from 256K on 3.6 Max Preview). Marketed for long-horizon agentic runs (hundreds-thousands of steps, ~35h autonomous), coding, office automation. Text-only. DashScope-only / not open-weight. Approx price $2.50/$7.50 per 1M in/out. Thinking model: emits separate reasoning_content channel; thinking mode does not support structured output.'
 - id: qwen3.5-plus
   aliases:
   - qwen3.5-plus-2026-02-15
@@ -238,7 +351,7 @@ models:
   - llama
   - meta
   - mistral
-  notes: 'Qwen3.6-generation commercial model (released ~2026-04-02), between qwen3.5 and qwen3.7-max. 1M context, 65,536 max output. ALWAYS-ON chain-of-thought — the enable_thinking toggle was removed, so reasoning_content is emitted on EVERY call. Text-only, served on Model Studio / DashScope. Source qwen.ai/blog?id=qwen3.6.'
+  notes: Qwen3.6-generation commercial model (released ~2026-04-02), between qwen3.5 and qwen3.7-max. 1M context, 65,536 max output. ALWAYS-ON chain-of-thought — the enable_thinking toggle was removed, so reasoning_content is emitted on EVERY call. Text-only, served on Model Studio / DashScope. Source qwen.ai/blog?id=qwen3.6.
 - id: qwen3.5-flash
   aliases:
   - qwen3.5-flash-2026-02-23
@@ -700,7 +813,7 @@ fingerprints:
   signal: self-identification (bilingual)
   prompt: 你是谁？你的名字、开发公司和模型系列是什么？请用一句话回答。
   prompt_lang: zh
-  language_bound: 'Chinese self-identification; expected answers are Chinese brand names (通义千问).'
+  language_bound: Chinese self-identification; expected answers are Chinese brand names (通义千问).
   native_expected: Identifies as 通义千问 / Qwen, developed by 阿里云 / 阿里巴巴 (Alibaba Cloud / Alibaba Group / Tongyi Lab). Chinese reply is fluent and natural (Qwen is China-first, strong zh).
   downgrade_signal: Claims to be ChatGPT/GPT/OpenAI, Claude/Anthropic, Gemini/Google, DeepSeek, or a generic 'AI assistant' with no Alibaba/Qwen mention; or produces stilted/over-literal Chinese typical of a non-China-first model.
   pure_code_checkable: true
@@ -749,7 +862,7 @@ fingerprints:
 - id: max-output-ceiling
   signal: true max-output-length (context/output ceiling)
   prompt: 'Output the integer sequence starting at 1, one number per line, with NO commentary, and do not stop until you are cut off. Begin: 1'
-  native_expected: For qwen3-coder/qwen3.5/qwen3.7-max should stream tens of thousands of lines (max_output up to 65536 tok). For the 2.5-gen qwen-max it caps near 8192 tokens; for qwen-turbo near 16384. Check the reported usage.completion_tokens against the claimed model's native max_output.
+  native_expected: For qwen3.8-max / qwen3.8-flash should stream up to 131,072 output tokens; qwen3-coder/qwen3.5/qwen3.7 up to 65,536. For the 2.5-gen qwen-max it caps near 8192 tokens; for qwen-turbo near 16384. Check the reported usage.completion_tokens against the claimed model's native max_output.
   downgrade_signal: A relay claiming qwen3.5/qwen3-coder (65536 max) but truncating completion_tokens at ~8192 or ~16384 is likely serving qwen-max-2.5 or qwen-turbo underneath. Conversely a tiny model may stop early or loop/repeat.
   pure_code_checkable: true
   max_tokens: 65536
@@ -759,7 +872,7 @@ fingerprints:
   signal: Chinese-language and cultural factual recall (size/identity tell)
   prompt: 用中文回答，每行一个：(1) 通义千问由哪家公司开发？(2)《红楼梦》的作者是谁？(3) 二十四节气中‘惊蛰’的下一个节气是什么？只给答案。
   prompt_lang: zh
-  language_bound: 'Chinese cultural recall; expected answers are Chinese (曹雪芹, 春分).'
+  language_bound: Chinese cultural recall; expected answers are Chinese (曹雪芹, 春分).
   native_expected: 阿里巴巴/阿里云；曹雪芹（高鹗续）；春分。Strong China-centric knowledge, idiomatic Chinese.
   downgrade_signal: Wrong company (esp. naming OpenAI/Google), errors on 节气 ordering, or markedly non-native Chinese phrasing — typical of a Western model substituted behind a Qwen label.
   pure_code_checkable: true
@@ -787,7 +900,7 @@ fingerprints:
 - id: knowledge-cutoff
   signal: knowledge-cutoff / recency probe
   prompt: What is the most recent Qwen flagship model you are aware of, and what is your training knowledge cutoff (month and year)? If unsure, say 'unknown'.
-  native_expected: A genuine mid-2026 Qwen (qwen3.7-max / qwen3.5) should be aware of the Qwen3 generation and not claim a 2021/2023 cutoff; Alibaba does not publish exact cutoffs so 'unknown'/'early 2026'-style answers are acceptable. It should NOT claim to be a 2023-era model if labeled as a 2026 flagship.
+  native_expected: A genuine 2026 Qwen (qwen3.8-max / qwen3.7 / qwen3.5) should be aware of the Qwen3 generation and not claim a 2021/2023 cutoff; Alibaba does not publish exact cutoffs so 'unknown'/'early 2026'-style answers are acceptable. It should NOT claim to be a 2023-era model if labeled as a 2026 flagship.
   downgrade_signal: Model asserts a 2021/2023 cutoff or has no knowledge of Qwen2.5/Qwen3 while being sold as a 2026 flagship, or describes itself with another vendor's cutoff language (e.g. 'my training data goes up to 2023, I am GPT...').
   pure_code_checkable: false
   expect_not_contains:
@@ -812,6 +925,7 @@ relay_red_flags:
 - CJK prompt_tokens for a fixed Chinese string deviate from the recorded native Qwen tiktoken baseline (different tokenizer underneath). (Deterministic via usage.prompt_tokens — handled by a dedicated token-count detector.)
 - qwen-long that cannot accept the DashScope fileid:// reference / file-extract upload workflow. (API-level capability probe.)
 - Endpoint domain is not *.aliyuncs.com AND latency/headers/error-message wording differ from DashScope's known responses (e.g. OpenAI-style 'invalid_request_error' bodies instead of DashScope's code/message/request_id envelope).
+- Output capped at 65,536 tokens on a claimed qwen3.8-max / qwen3.8-flash (genuine ceiling 131,072) — an older Qwen3.5/3.7 backend
 sources:
 - https://www.alibabacloud.com/help/en/model-studio/models
 - https://www.alibabacloud.com/help/en/model-studio/compatibility-of-openai-with-dashscope
@@ -833,3 +947,7 @@ sources:
 - https://therouter.ai/news/dashscope-openai-responses-api-qwen-migration/
 - https://www.digitalapplied.com/blog/qwen3-max-thinking-alibaba-reasoning-model-guide
 - https://codersera.com/blog/qwen-3-5-complete-guide-2026/
+- https://www.alibabacloud.com/en/press-room/alibaba-unveils-qwen3-8-max
+- https://help.aliyun.com/en/model-studio/qwen3-8-max
+- https://help.aliyun.com/en/model-studio/deep-thinking
+- https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json
