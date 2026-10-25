@@ -26,8 +26,6 @@
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
-    - link "工具":
-      - /url: /v2/tools
     - link "检测历史":
       - /url: /v2/history
     - link "分析":
@@ -50,6 +48,14 @@
       - listitem: 报告
     - region "配置":
       - heading "配置" [level=2]
+      - group "接口类型 surface":
+        - text: 接口类型 surface
+        - radio "对话" [checked]
+        - text: 对话
+        - radio "嵌入"
+        - text: 嵌入
+        - radio "重排"
+        - text: 重排
       - text: 中转站 / 厂商 可选
       - combobox "中转站 / 厂商 可选":
         - option "选择中转站或厂商…" [selected]

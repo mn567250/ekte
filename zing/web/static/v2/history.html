@@ -978,13 +978,13 @@
   function byMonitor(r) { return !!r && r.watch_id != null; }
 
   // Re-run: open the audit form prefilled with this run's configuration. A
-  // non-chat run opens the Tools page on its surface's tab (#rerank selects
-  // the rerank tab; the embedding tab is the default).
-  var TOOLS_TAB = { embedding: "", rerank: "#rerank" };
+  // non-chat run preselects its surface in the audit page's endpoint-type
+  // selector (?surface=embedding|rerank).
+  var RERUN_SURFACES = { embedding: 1, rerank: 1 };
   function rerun(id) {
     var row = (state.rows || []).filter(function (r) { return String(r.id) === String(id); })[0];
-    var s = row ? surfaceOf(row) : "chat", q = "?rerun=" + encodeURIComponent(id);
-    location.href = TOOLS_TAB.hasOwnProperty(s) ? "/v2/tools" + q + TOOLS_TAB[s] : "/v2/" + q;
+    var s = row ? surfaceOf(row) : "chat", q = "rerun=" + encodeURIComponent(id);
+    location.href = RERUN_SURFACES.hasOwnProperty(s) ? "/v2/?surface=" + s + "&" + q : "/v2/?" + q;
   }
 
   function rerunBtnHTML(r) {

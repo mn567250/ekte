@@ -946,7 +946,9 @@ modèle substitué en chat.
 
 **Dérive des vecteurs.** Chaque exécution conserve les 64 premières composantes du
 vecteur normalisé d'une entrée fixe. L'exécution suivante de la même cible et du
-même modèle annoncé (`zing embed`, la page Outils ou une surveillance d'embedding)
+même modèle annoncé (`zing embed`, un audit d'embedding lancé sur la page Audit de
+l'interface web via le sélecteur de type de point d'accès, ou une surveillance
+d'embedding)
 compare son vecteur à cet échantillon : un cosinus **≥ 0,995** est stable (PASS),
 de **0,95 à 0,995** il s'est déplacé (WARN, MOYEN : un redéploiement ou une
 quantification), sous **0,95** ou avec une autre longueur le modèle a été

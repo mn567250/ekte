@@ -260,7 +260,9 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 `zing/web/server.py` 是由 `create_app()` 创建的 FastAPI 应用：
 
 - **页面。** 经典界面（`/`、`/console`、`/history`、`/watches`、`/tools`）和新界面
-  （`/v2/`、`/v2/history`、`/v2/watches`、`/v2/tools`、`/v2/kb`）都是静态 HTML 文件。
+  （`/v2/`、`/v2/history`、`/v2/watches`、`/v2/kb`）都是静态 HTML 文件。新界面没有工具页面：嵌入和
+  重排检测从检测页面的接口类型选择器开始（`/v2/?surface=embedding|rerank`），`/v2/tools` 提供一个小页面，
+  把旧链接转到那里（`#rerank` 选择重排，`?rerun=` 会一并传递）。
   `?ui=v2` / `?ui=v1` 用于切换，并由 cookie 记住选择；选了新界面之后，经典界面的 URL
   会重定向到对应的新页面。
 - **API。** `/api/audit/stream` 运行检测并通过 SSE 推送事件；`/api/models` 列出中转站的模型；
@@ -303,7 +305,7 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 `i18n.js`（发现的翻译）、`icons.js`、`modelpicker.js`（**获取模型列表**）、`secretfield.js`
 和 `perf.js`（性能图表）。
 
-v2 的**检测**和**工具**页面用 `v2/relaycfg.js` 配置中转站：选择中转站/厂商 → 基础地址 → 中转站的模型
+v2 的**检测**页面用 `v2/relaycfg.js` 配置中转站：选择中转站/厂商 → 基础地址 → 中转站的模型
 （`/api/models`，在改变时获取，按地址/密钥/协议缓存）→ 从知识库选择声称的模型（`/api/kb/resolve`
 预选）→ 推导出声明的厂商，另有**保存到知识库**（`POST /api/kb/relays`）。其纯函数在 node 下测试；
 经典页面继续使用 `modelpicker.js`。
@@ -312,7 +314,7 @@ v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`o
 
 每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`ZingCharts.heatmap` 绘制「星期几 × 小时」网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`ZingCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。`ZingCharts.donut`（由一个整体的各部分组成的圆环，中间是 HTML 数字）和 `ZingCharts.meter`（由各部分组成的细条）绘制无障碍报告的「覆盖范围」卡片；它们的 `k-*` 颜色（谁判定一个步骤：蓝色为测试套件，紫色为人）来自 `tokens.css`。`v2/chartmotion.js`（`ZingMotion.enter`）与其他图表一样，仅在有新数据时按顺时针绘制圆环、让细条从左侧伸展，在减少动态效果或页眉「关闭动画」时从不播放。
 
-页面标题和筛选面板位于五个页内标签页之上（`v2/tabs.js`，与工具和知识库页面相同）：每个 `PANELS` 条目注明所属的 `tab`，只加载当前显示的标签页的面板；筛选变化时重新加载该标签页，其他标签页标记为过期（`activate()` 在显示时加载）。这里给 `tabs.js` 传入 `writeHash: false`，因为页面自己把整个视图写进网址片段——`#tab=trends&range=30&suite=…&metric=…`（`stateQuery()`），**复制此视图的链接**复制的就是它（剪贴板 API 不存在或被拒绝时，改为显示并选中一个只读文本框）；不含 `tab` 的片段打开概览，粘贴进来的链接（`hashchange`）会重新读取视图。可折叠的筛选面板是 `v2/filterpanel.js` + `v2/filterpanel.css`，与检测历史共用：`ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})` 返回 `render({body, foot, count, summary})`、`sync({count, summary})`、`setOpen()` 和 `focusStart()`；页面负责自己的筛选条件和字段，面板负责带生效筛选计数的切换按钮、收起时显示的一行摘要、记住的展开状态以及**重置筛选**。
+页面标题和筛选面板位于五个页内标签页之上（`v2/tabs.js`，与知识库页面相同）：每个 `PANELS` 条目注明所属的 `tab`，只加载当前显示的标签页的面板；筛选变化时重新加载该标签页，其他标签页标记为过期（`activate()` 在显示时加载）。这里给 `tabs.js` 传入 `writeHash: false`，因为页面自己把整个视图写进网址片段——`#tab=trends&range=30&suite=…&metric=…`（`stateQuery()`），**复制此视图的链接**复制的就是它（剪贴板 API 不存在或被拒绝时，改为显示并选中一个只读文本框）；不含 `tab` 的片段打开概览，粘贴进来的链接（`hashchange`）会重新读取视图。可折叠的筛选面板是 `v2/filterpanel.js` + `v2/filterpanel.css`，与检测历史共用：`ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})` 返回 `render({body, foot, count, summary})`、`sync({count, summary})`、`setOpen()` 和 `focusStart()`；页面负责自己的筛选条件和字段，面板负责带生效筛选计数的切换按钮、收起时显示的一行摘要、记住的展开状态以及**重置筛选**。
 
 **翻译约定。** 写在 HTML 中的中文是原文，保持不动；每个元素在 `data-en`（以及
 `data-en-placeholder`、`data-en-title`、`data-en-aria-label`）中携带英文文本。英文文本是

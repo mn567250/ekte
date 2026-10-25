@@ -339,7 +339,11 @@ décodage (en-têtes d'image, WAV) n'utilise que la bibliothèque standard.
 
 - **Pages.** L'interface classique (`/`, `/console`, `/history`, `/watches`,
   `/tools`) et la nouvelle interface (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/tools`, `/v2/kb`) sont des fichiers HTML statiques. `?ui=v2` / `?ui=v1`
+  `/v2/kb`) sont des fichiers HTML statiques. La nouvelle interface n'a pas de
+  page Outils : les audits d'embedding et de rerank démarrent sur la page d'audit
+  via le sélecteur de type de point d'accès (`/v2/?surface=embedding|rerank`), et
+  `/v2/tools` sert une petite page qui y redirige les anciens liens (`#rerank`
+  choisit le rerank, `?rerun=` est transmis). `?ui=v2` / `?ui=v1`
   bascule et un cookie mémorise le choix, de sorte qu'une URL classique redirige
   vers son équivalent une fois la nouvelle interface choisie.
 - **API.** `/api/audit/stream` exécute un audit et diffuse ses événements en SSE ;
@@ -434,7 +438,7 @@ de traduction), `i18n.js` (traduction des constats), `icons.js`,
 `modelpicker.js` (**Récupérer les modèles**), `secretfield.js` et `perf.js`
 (graphiques de performance).
 
-Les pages v2 **Audit** et **Outils** configurent les relais avec
+La page v2 **Audit** configure les relais avec
 `v2/relaycfg.js` : choix du relais/fournisseur → URL de base → les modèles du
 relais (`/api/models`, au changement, mis en cache par URL/clé/protocole) → modèle
 annoncé depuis la base de connaissances (`/api/kb/resolve` le présélectionne) →
@@ -473,7 +477,7 @@ comme pour les autres graphiques, seulement à l'arrivée de nouvelles données 
 jamais avec le mouvement réduit ou l'animation coupée dans l'en-tête.
 
 L'en-tête de la page et le panneau de filtres sont au-dessus de cinq onglets
-internes (`v2/tabs.js`, comme sur Outils et Connaissances) : chaque
+internes (`v2/tabs.js`, comme sur Connaissances) : chaque
 entrée de `PANELS` nomme son `tab`, et seuls les panneaux de l'onglet affiché se
 chargent ; un changement de filtre recharge cet onglet et marque les autres
 comme périmés (`activate()` les charge à l'affichage). `tabs.js` reçoit ici

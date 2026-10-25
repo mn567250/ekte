@@ -26,8 +26,6 @@
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
-    - link "Strumenti":
-      - /url: /v2/tools
     - link "Cronologia":
       - /url: /v2/history
     - link "Analisi":
@@ -50,6 +48,14 @@
       - listitem: Report
     - region "Configura":
       - heading "Configura" [level=2]
+      - group "Tipo di endpoint surface":
+        - text: Tipo di endpoint surface
+        - radio "Chat" [checked]
+        - text: Chat
+        - radio "Embedding"
+        - text: Embedding
+        - radio "Riordinamento"
+        - text: Riordinamento
       - text: Relay / provider Facoltativo
       - combobox "Relay / provider Facoltativo":
         - option "Seleziona un relay o un provider…" [selected]

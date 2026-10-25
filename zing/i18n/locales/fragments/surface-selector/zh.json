@@ -1,0 +1,7 @@
+{
+ "strings": {
+  "Claimed dimension": "声称维度",
+  "Empty = from the knowledge base": "留空 = 取自知识库",
+  "The vector length the claimed model returns. Empty or 0: taken from the knowledge base.": "声称的模型返回的向量长度。留空或 0：取自知识库。"
+ }
+}

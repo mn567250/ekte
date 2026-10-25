@@ -40,7 +40,6 @@ PAGE_HTML = {
     "audit": "index.html",
     "history": "history.html",
     "monitors": "watches.html",
-    "tools": "tools.html",
     "kb": "kb.html",
     "analytics": "analytics.html",
     "accessibility": "accessibility.html",
@@ -66,7 +65,7 @@ def test_pages_of_test():
     # parametrised by page_id
     assert pages_of_test("test_axe.py", "test_wcag_rules_as_loaded", {"page_id": "kb", "lang": "en"}) == {"kb"}
     # test_time_media.py states: "<page>", "<page>+expanded", "<page>-<state>"
-    assert pages_of_test("test_time_media.py", "test_no_time_limits", {"state": "tools"}) == {"tools"}
+    assert pages_of_test("test_time_media.py", "test_no_time_limits", {"state": "kb"}) == {"kb"}
     assert pages_of_test("test_time_media.py", "test_no_time_limits", {"state": "kb+expanded"}) == {"kb"}
     assert pages_of_test("test_time_media.py", "x", {"state": "monitors-running"}) == {"monitors"}
     assert pages_of_test("test_time_media.py", "x", {"state": "history-charts", "theme": "dark"}) == {"history"}
@@ -144,10 +143,10 @@ def test_single_page_files():
 
 def test_multi_page_files_union_in_page_order():
     s = scope("zing/web/static/v2/tabs.js", "zing/web/static/v2/report.js")
-    assert s.pages == ("audit", "history", "monitors", "tools", "kb", "analytics") and not s.full
+    assert s.pages == ("audit", "history", "monitors", "kb", "analytics") and not s.full
     assert "zing/web/static/v2/report.js -> audit, history" in s.reason
     assert scope("zing/i18n/locales/fragments/v2-scoring/de.json").pages == ("audit", "history", "analytics")
-    assert scope("zing/knowledge/data/openai.yaml").pages == ("audit", "tools", "kb")
+    assert scope("zing/knowledge/data/openai.yaml").pages == ("audit", "kb")
 
 
 @pytest.mark.parametrize("path", [
@@ -269,7 +268,7 @@ def test_every_page_affected_is_a_full_run():
 
 
 def test_paths_are_normalised():
-    assert scope("./zing/web/static/v2/tools.html", " ", "zing/web/static/v2/tools.html\n").pages == ("tools",)
+    assert scope("./zing/web/static/v2/kb.html", " ", "zing/web/static/v2/kb.html\n").pages == ("kb",)
 
 
 def test_every_existing_ui_file_has_a_rule():
@@ -334,10 +333,10 @@ def test_matrix_full_run_keeps_four_round_robin_shards():
 
 
 def test_matrix_partial_runs_share_the_selection():
-    one = matrix(scope("zing/web/static/v2/tools.html"))
-    assert one == [{"shard": "1/1", "pages": "tools"}]
-    two = matrix(scope("zing/web/static/v2/tools.html", "zing/web/static/v2/history.html"))
-    assert len(two) == 2 and {e["pages"] for e in two} == {"history,tools"}
+    one = matrix(scope("zing/web/static/v2/watches.html"))
+    assert one == [{"shard": "1/1", "pages": "monitors"}]
+    two = matrix(scope("zing/web/static/v2/kb.html", "zing/web/static/v2/history.html"))
+    assert len(two) == 2 and {e["pages"] for e in two} == {"history,kb"}
     five = matrix(scope(*(f"zing/web/static/v2/{f}" for f in list(PAGE_HTML.values())[:5])))
     assert 2 < len(five) <= 4 and [e["shard"] for e in five] == [f"{k}/{len(five)}" for k in range(1, len(five) + 1)]
 
@@ -362,9 +361,9 @@ def test_cli_files_and_full(capsys):
 def test_cli_stdin(capsys, monkeypatch):
     import io
 
-    monkeypatch.setattr(sys, "stdin", io.StringIO("docs/CI.md\nzing/web/static/v2/tools.html\n"))
+    monkeypatch.setattr(sys, "stdin", io.StringIO("docs/CI.md\nzing/web/static/v2/watches.html\n"))
     affected_cli.main(["--files", "-"])
-    assert json.loads(capsys.readouterr().out)["pages"] == ["tools"]
+    assert json.loads(capsys.readouterr().out)["pages"] == ["monitors"]
 
 
 def test_cli_git_failure_runs_everything(capsys, tmp_path, monkeypatch):

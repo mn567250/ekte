@@ -26,8 +26,6 @@
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
-    - link "Ferramentas":
-      - /url: /v2/tools
     - link "Histórico":
       - /url: /v2/history
     - link "Análises":
@@ -50,6 +48,14 @@
       - listitem: Relatório
     - region "Configurar":
       - heading "Configurar" [level=2]
+      - group "Tipo de endpoint surface":
+        - text: Tipo de endpoint surface
+        - radio "Chat" [checked]
+        - text: Chat
+        - radio "Embeddings"
+        - text: Embeddings
+        - radio "Reordenação"
+        - text: Reordenação
       - text: Relay / provedor Opcional
       - combobox "Relay / provedor Opcional":
         - option "Selecione um relay ou provedor…" [selected]

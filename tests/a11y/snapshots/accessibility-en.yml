@@ -26,8 +26,6 @@
   - navigation "Main navigation":
     - link "Audit":
       - /url: /v2/
-    - link "Tools":
-      - /url: /v2/tools
     - link "History":
       - /url: /v2/history
     - link "Analytics":

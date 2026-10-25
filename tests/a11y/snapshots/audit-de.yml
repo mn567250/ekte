@@ -26,8 +26,6 @@
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
-    - link "Werkzeuge":
-      - /url: /v2/tools
     - link "Verlauf":
       - /url: /v2/history
     - link "Analyse":
@@ -50,6 +48,14 @@
       - listitem: Bericht
     - region "Konfigurieren":
       - heading "Konfigurieren" [level=2]
+      - group "Endpunkttyp surface":
+        - text: Endpunkttyp surface
+        - radio "Chat" [checked]
+        - text: Chat
+        - radio "Embeddings"
+        - text: Embeddings
+        - radio "Reranking"
+        - text: Reranking
       - text: Relay / Anbieter Optional
       - combobox "Relay / Anbieter Optional":
         - option "Relay oder Anbieter wählen…" [selected]

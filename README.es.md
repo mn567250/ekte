@@ -237,8 +237,8 @@ En la nueva interfaz el formulario te guía por la configuración:
 
 Un relay que aún no está en la lista se puede conservar con **Guardar en la
 base** con el nombre que le des; la próxima vez estará a una selección. La
-referencia de confianza (**Comparar con una referencia de confianza**) y la
-página **Herramientas** se configuran igual. La interfaz clásica mantiene los
+referencia de confianza (**Comparar con una referencia de confianza**) y las
+auditorías de embeddings y rerank se configuran igual. La interfaz clásica mantiene los
 campos simples con **Obtener modelos**.
 
 Después, **Iniciar auditoría** y
@@ -264,7 +264,7 @@ clásica** vuelve atrás. La elección se recuerda por navegador.
 |---|---|---|---|
 | **Auditoría** | `/` | `/v2/` | Auditar un relay (opcionalmente frente a una referencia) y leer el informe |
 | **Consola** | `/console` | — | La misma auditoría como consola compacta, estilo registro |
-| **Herramientas** | `/tools` | `/v2/tools` | Auditorías de embeddings y rerank |
+| **Herramientas** | `/tools` | — | Auditorías de embeddings y rerank; en la nueva interfaz empiezan en la página **Auditoría** con el selector de tipo de endpoint (`/v2/tools` redirige allí) |
 | **Historial** | `/history` | `/v2/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
 | **Analítica** | — | `/v2/analytics` | Relays y modelos comparados en el tiempo: indicadores, gráficos con tablas de datos, clasificaciones |
 | **Monitores** | `/watches` | `/v2/watches` | Reauditorías programadas con alertas por webhook |
@@ -640,7 +640,9 @@ chat; solo cambian los detectores. El historial y la analítica filtran por tipo
 endpoint, y la analítica muestra solo las métricas que aplican.
 
 Para vigilar un endpoint de embeddings o rerank, audítelo en la página
-**Herramientas** y elija **Monitorizar**, o **Programar como monitor** en su fila
+**Auditoría** (elija **Embeddings** o **Reordenación** en el selector de tipo de
+endpoint; en la interfaz clásica, en la página **Herramientas**) y elija
+**Monitorizar**, o **Programar como monitor** en su fila
 del historial. El monitor repite la auditoría según su calendario, con la misma
 fijación de la base de conocimiento, el mismo umbral de alerta y las mismas
 alertas de regresión que un monitor de chat, y comprueba la **deriva** frente a
@@ -689,8 +691,10 @@ coseno ≈ 1), la distinción (entradas sin relación → coseno claramente infe
 `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Ambos están también en la página **Herramientas** de la interfaz web
-(**Auditoría de embeddings**, **Auditoría de rerank**). La auditoría de rerank usa
+Ambos están también en la interfaz web: en la nueva interfaz empiezan en la
+página **Auditoría** con el selector de tipo de endpoint (**Embeddings**,
+**Reordenación**); en la clásica, en la página **Herramientas** (**Auditoría de
+embeddings**, **Auditoría de rerank**). La auditoría de rerank usa
 siempre las sondas integradas, para que cada ejecución siga siendo comparable para
 la deriva y la monitorización.
 
@@ -774,7 +778,7 @@ y Moonshot (`zing kb` los lista). Hay tres capas; las posteriores prevalecen:
      **Añadir un relay** pide un nombre y una URL base. **¿Qué perfil usa un ID de
      modelo?** muestra cómo se resuelve un id; tus entradas se pueden exportar
      como YAML;
-   - en las páginas **Auditoría** y **Herramientas** de la interfaz web:
+   - en la página **Auditoría** de la interfaz web (en la clásica, también **Herramientas**):
      **Guardar en la base** conserva el nombre y la URL base de un relay (una
      entrada de proveedor sin modelos), que aparece en **Conocimiento → Relays**;
    - en la línea de comandos: `zing kb-prompt <model>`, `zing kb-import <file>`

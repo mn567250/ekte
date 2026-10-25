@@ -26,8 +26,6 @@
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
-    - link "工具":
-      - /url: /v2/tools
     - link "检测历史":
       - /url: /v2/history
     - link "分析":

@@ -1046,60 +1046,6 @@ def test_tool_monitor_cards(open_routed_page, base_url: str, lang: str) -> None:
     assert_no_issues(issues, f"tool monitor cards [{lang}]", "tool-monitors")
 
 
-EMBED_RESULT = {
-    "risk_level": "high", "score": 50,
-    "target": {"base_url": "http://relay.invalid/v1", "model": "text-embedding-3-small"},
-    "findings": [{"id": "embed.dimension", "status": "fail", "title": "Vector dimension", "summary": "Vector dimension check.",
-                  "evidence": {"returned": 1536, "claimed": 1536}}],
-}  # fmt: skip
-
-SUBMIT_EMBED_JS = """
-() => {
-  document.getElementById('e-url').value = 'http://relay.invalid/v1';
-  document.getElementById('e-model').value = 'text-embedding-3-small';
-  document.getElementById('embed-form').requestSubmit();
-}
-"""
-
-
-@pytest.mark.bitv("9.1.4.1")
-@pytest.mark.parametrize("lang", LANGS)
-def test_tool_result_states_not_by_colour_alone(open_routed_page, lang: str) -> None:
-    """9.1.4.1 Use of colour: the embedding check's result card (verdict badge,
-    check status) in every state, from a mocked /api/embed answer."""
-    page = open_routed_page(PAGES["tools"], lang)
-    page.add_style_tag(content=NO_TRANSITIONS_CSS)
-    answer: dict[str, Any] = {}
-
-    def handle(route: Any) -> None:
-        if route.request.method == "POST" and urlparse(route.request.url).path == "/api/embed":
-            route.fulfill(status=200, content_type="application/json", body=json.dumps(answer))
-        else:
-            route.fallback()
-
-    page.context.route("**/api/**", handle)
-    sets = {
-        "verdict badge": [(v, dict(EMBED_RESULT, risk_level=v)) for v in RISKS],
-        "check status": [
-            (v, dict(EMBED_RESULT, findings=[dict(EMBED_RESULT["findings"][0], status=v)])) for v in STATUSES
-        ],
-    }
-    issues: list[str] = []
-    for what, variants in sets.items():
-        states = []
-        for name, data in variants:
-            answer.clear()
-            answer.update(data)
-            page.evaluate("() => { document.getElementById('e-out').innerHTML = ''; }")
-            with page.expect_response("**/api/embed"):
-                page.evaluate(SUBMIT_EMBED_JS)
-            page.wait_for_selector("#e-out .res")
-            settle(page)
-            states.append((name, page.evaluate(SIGNATURE_JS, "#e-out .res")))
-        issues += colour_only_pairs(states, what)
-    assert_no_issues(issues, f"tools [{lang}]", "use-of-colour")
-
-
 # links inside running text: underlined, or 3:1 against the text around them
 # plus an underline on hover and focus (WCAG technique G183, failure F73)
 INLINE_LINKS_JS = (
@@ -1183,3 +1129,42 @@ def test_links_in_text_not_by_colour_alone(open_page, page_id: str, theme: str) 
             missing = " and ".join(x for x, ok in (("hover", hover), ("focus", focus)) if not ok)
             issues.append(f"link in text is told apart by colour only, no underline on {missing}: {link['desc']}")
     assert_no_issues(issues, f"{page_id} [en, {theme}]", "use-of-colour")
+
+
+def _surface_report(surface: str) -> dict[str, Any]:
+    """The fixture report as an embedding or rerank run: that surface's
+    dimension and one detector with one finding."""
+    report = json.loads(REPORT_FIXTURE.read_text(encoding="utf-8"))
+    det = report["detectors"][0]
+    finding = dict(det["findings"][0], id=f"{surface}.dimension" if surface == "embedding" else f"{surface}.order",
+                   title="Vector dimension" if surface == "embedding" else "Ranking order",
+                   summary="The endpoint's answer was checked.", evidence={"returned": 64, "claimed": 64})
+    report.update(
+        surface=surface, suite="smoke", stream_mode=None,
+        embedding_dimensions=64 if surface == "embedding" else 0,
+        dimensions=[dict(report["dimensions"][4], dimension="capability")],
+        detectors=[dict(det, id=surface, name=f"{surface} check", dimension="capability", evidence={},
+                        findings=[finding])],
+    )  # fmt: skip
+    return report
+
+
+@pytest.mark.bitv("9.1.4.1")
+@pytest.mark.parametrize("surface", ["embedding", "rerank"])
+@pytest.mark.parametrize("lang", LANGS)
+def test_surface_result_states_not_by_colour_alone(open_page, lang: str, surface: str) -> None:
+    """9.1.4.1 Use of colour: an embedding or rerank audit's report on the
+    audit page (risk badge, dimension, check and finding status) shows each
+    state by text or icon too, not by colour alone."""
+    page = open_page(f"{PAGES['audit']}?surface={surface}", lang)
+    page.add_style_tag(content=NO_TRANSITIONS_CSS)
+    issues: list[str] = []
+    for what, variants in _report_state_sets(_surface_report(surface)).items():
+        states = []
+        for name, rep in variants:
+            page.evaluate("(r) => window.ZingAuditPage.showReport(r)", rep)
+            page.wait_for_selector("#v3.show #report >> :is(h1, h2)")
+            settle(page)
+            states.append((name, page.evaluate(SIGNATURE_JS, "#report")))
+        issues += colour_only_pairs(states, what)
+    assert_no_issues(issues, f"audit ?surface={surface} [{lang}]", "use-of-colour")

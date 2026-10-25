@@ -337,7 +337,11 @@ decodificación (cabeceras de imagen, WAV) usa solo la biblioteca estándar.
 
 - **Páginas.** La interfaz clásica (`/`, `/console`, `/history`, `/watches`,
   `/tools`) y la nueva interfaz (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/tools`, `/v2/kb`) son archivos HTML estáticos. `?ui=v2` / `?ui=v1` cambia
+  `/v2/kb`) son archivos HTML estáticos. La nueva interfaz no tiene página de
+  Herramientas: las auditorías de embeddings y rerank empiezan en la página de
+  auditoría con el selector de tipo de endpoint (`/v2/?surface=embedding|rerank`),
+  y `/v2/tools` sirve una pequeña página que redirige allí los enlaces antiguos
+  (`#rerank` elige rerank, `?rerun=` se transmite). `?ui=v2` / `?ui=v1` cambia
   de una a otra y una cookie recuerda la elección, de modo que una URL clásica
   redirige a su equivalente nuevo una vez elegida la nueva interfaz.
 - **API.** `/api/audit/stream` ejecuta una auditoría y transmite sus eventos por
@@ -429,7 +433,7 @@ sirven desde la raíz: `lang.js` (cambio de idioma), `locales.js` (datos de
 traducción), `i18n.js` (traducción de hallazgos), `icons.js`, `modelpicker.js`
 (**Obtener modelos**), `secretfield.js` y `perf.js` (gráficos de rendimiento).
 
-Las páginas v2 **Auditoría** y **Herramientas** configuran los relays con
+La página v2 **Auditoría** configura los relays con
 `v2/relaycfg.js`: selección de relay/proveedor → URL base → los modelos del relay
 (`/api/models`, al cambiar, en caché por URL/clave/protocolo) → modelo declarado
 de la base de conocimiento (`/api/kb/resolve` lo preselecciona) → proveedor
@@ -468,7 +472,7 @@ como en los demás gráficos, solo cuando llegan datos nuevos y nunca con
 movimiento reducido ni con la animación desactivada en la cabecera.
 
 La cabecera de la página y el panel de filtros están sobre cinco pestañas
-internas (`v2/tabs.js`, como en Herramientas y Conocimiento): cada
+internas (`v2/tabs.js`, como en Conocimiento): cada
 entrada de `PANELS` indica su `tab`, y solo se cargan los paneles de la pestaña
 visible; un cambio de filtro recarga esa pestaña y marca las demás como
 obsoletas (`activate()` las carga al mostrarlas). Aquí `tabs.js` recibe

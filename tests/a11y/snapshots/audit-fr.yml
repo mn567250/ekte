@@ -26,8 +26,6 @@
   - navigation "Navigation principale":
     - link "Audit":
       - /url: /v2/
-    - link "Outils":
-      - /url: /v2/tools
     - link "Historique":
       - /url: /v2/history
     - link "Analyses":
@@ -50,6 +48,14 @@
       - listitem: Rapport
     - region "Configurer":
       - heading "Configurer" [level=2]
+      - group "Type de point d'accès surface":
+        - text: Type de point d'accès surface
+        - radio "Chat" [checked]
+        - text: Chat
+        - radio "Embeddings"
+        - text: Embeddings
+        - radio "Reclassement"
+        - text: Reclassement
       - text: Relais / fournisseur Facultatif
       - combobox "Relais / fournisseur Facultatif":
         - option "Sélectionnez un relais ou un fournisseur…" [selected]

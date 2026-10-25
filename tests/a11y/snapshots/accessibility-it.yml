@@ -26,8 +26,6 @@
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
-    - link "Strumenti":
-      - /url: /v2/tools
     - link "Cronologia":
       - /url: /v2/history
     - link "Analisi":

@@ -122,3 +122,40 @@ def test_monitor_this_from_an_embedding_run(tmp_path, monkeypatch, client):
     assert w["surface"] == "embedding" and w["suite"] == "deep"
     assert w["embedding_dimensions"] == 768 and w["source_report_id"] == rid
     assert w["enabled"] is False and w["interval_sec"] is None
+
+
+
+@pytest.mark.parametrize("surface", ["embedding", "rerank"])
+def test_watches_refuse_chat_only_dimensions_like_jobs(tmp_path, monkeypatch, client, surface):
+    """/api/watches create and edit share /api/jobs' per-surface dimension check."""
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    body = {"base_url": _URL, "model": "m", "surface": surface, "suite": "custom",
+            "dimensions": ["capability", "streaming"]}
+    job = client.post("/api/jobs", json=body)
+    watch = client.post("/api/watches", json=body)
+    assert job.status_code == watch.status_code == 400
+    assert job.json()["error"] == watch.json()["error"]
+    assert "streaming" in watch.json()["error"]
+
+    ok = {**body, "dimensions": ["capability"]}
+    wid = client.post("/api/watches", json=ok).json()["id"]
+    r = client.patch(f"/api/watches/{wid}", json={"dimensions": ["billing"]})
+    assert r.status_code == 400 and "billing" in r.json()["error"]
+    assert client.patch(f"/api/watches/{wid}", json={"dimensions": ["capability"]}).status_code == 200
+    # chat keeps every dimension
+    chat = {**body, "surface": "chat"}
+    assert client.post("/api/watches", json=chat).status_code == 201
+
+
+def test_monitor_this_keeps_the_runs_claimed_dimension(tmp_path, monkeypatch, client):
+    """Without one in the request, "monitor this" takes the run's claimed dimension."""
+    from zing.web import history
+
+    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    rid = history.save(_report(surface="embedding", embedding_dimensions=1024))
+    assert client.post(f"/api/watches/from-history/{rid}", json={}).status_code == 201
+    [w] = client.get("/api/watches").json()
+    assert w["embedding_dimensions"] == 1024
+    # the audit page's ?rerun= prefills the claimed dimension from the report
+    html = client.get("/v2/").text
+    assert 'rep.embedding_dimensions > 0 ? String(rep.embedding_dimensions)' in html

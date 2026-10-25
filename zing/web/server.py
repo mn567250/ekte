@@ -20,7 +20,8 @@ Endpoints:
   POST /api/audit/stream     run an audit; stream detector progress, batched
                              per-request timing records and the final report
                              as Server-Sent Events (text/event-stream)
-  POST /api/jobs             queue an audit as a background job (same body as
+  POST /api/jobs             queue an audit (any surface: chat, embedding, rerank)
+                             as a background job (same body as
                              /api/audit/stream); it runs on whatever page is open
   GET  /api/jobs             queued and running audits (and running monitors),
                              recently finished ones too, with progress
@@ -75,6 +76,7 @@ from typing import Any
 # (CLI `serve`) or by the web tests, both of which handle a missing dependency.
 from fastapi import FastAPI, Request
 from fastapi.responses import (
+    HTMLResponse,
     JSONResponse,
     RedirectResponse,
     Response,
@@ -97,6 +99,7 @@ from zing.detectors.performance import stream_mode
 from zing.models import KnowledgeUsage, TargetConfig
 from zing.perf.trend import attach_trends
 from zing.runner import run_audit
+from zing.scoring import weights_for
 from zing.web import jobs
 from zing.web.caching import (
     GZIP_MINIMUM_SIZE,
@@ -118,8 +121,42 @@ _UI_PAGES: dict[str, tuple[str, str]] = {
     "/": ("index.html", "/v2/"),
     "/history": ("history.html", "/v2/history"),
     "/watches": ("watches.html", "/v2/watches"),
-    "/tools": ("tools.html", "/v2/tools"),
+    # v2 has no Tools page: embedding and rerank audits start on the audit page
+    # through its endpoint-type selector.
+    "/tools": ("tools.html", "/v2/?surface=embedding"),
 }
+
+# /v2/tools was retired for the audit page's endpoint-type selector. Old links
+# and bookmarks keep working: the old page picked its rerank tab by the URL
+# fragment (#rerank), which never reaches the server, so this tiny page reads
+# location.hash and forwards to /v2/?surface=..., passing any ?rerun=<id> on.
+# Without JavaScript the meta refresh goes to the embedding surface.
+_V2_TOOLS_REDIRECT = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="0; url=/v2/?surface=embedding">
+<title>zing: embedding and rerank audits moved to the audit page</title>
+<script>
+(function () {
+  var rerun = new URLSearchParams(location.search).get("rerun");
+  var to = "/v2/?surface=" + (location.hash === "#rerank" ? "rerank" : "embedding");
+  if (rerun) to += "&rerun=" + encodeURIComponent(rerun);
+  location.replace(to);
+})();
+</script>
+</head>
+<body>
+<main>
+<h1>Embedding and rerank audits moved</h1>
+<p>They now start on the audit page, through its endpoint-type selector.</p>
+<noscript><p><a href="/v2/?surface=embedding">Embedding audit</a> ·
+<a href="/v2/?surface=rerank">Rerank audit</a></p></noscript>
+</main>
+</body>
+</html>
+"""
 
 # How often the watch scheduler wakes to look for due re-audits. The interval an
 # individual watch runs on is its own (much larger) interval_sec; this is just
@@ -160,6 +197,21 @@ def _v2_page(request: Request, path: str) -> Response:
     else:
         resp = html_page(_V2 / _UI_PAGES[path][0], request.scope)
     return _remember_ui(resp, ui)
+
+
+def check_surface_dimensions(surface: str, dimensions: list[str]) -> None:
+    """Refuse a custom suite's dimensions that ``surface`` does not audit.
+
+    The chat dimensions mean nothing to an embedding or rerank audit; /api/jobs
+    and /api/watches share this check so both answer 400 the same way.
+    Raises ConfigError.
+    """
+    if surface == "chat":
+        return
+    own = {d.value for d in weights_for(surface)}
+    other = [d for d in dimensions if d not in own]
+    if other:
+        raise ConfigError(f"Dimensions not audited on the {surface} surface: {', '.join(other)}")
 
 
 def _coerce_int(value: Any) -> int:
@@ -718,7 +770,14 @@ def create_app() -> FastAPI:
 
     @app.get("/v2/tools")
     async def v2_tools(request: Request) -> Any:
-        return _v2_page(request, "/tools")
+        # Retired (see _V2_TOOLS_REDIRECT); ?ui=v1 still goes to the classic
+        # Tools page.
+        resp: Response
+        if request.query_params.get("ui") == "v1":
+            resp = RedirectResponse("/tools", status_code=307)
+        else:
+            resp = HTMLResponse(_V2_TOOLS_REDIRECT, headers={"Cache-Control": "no-store"})
+        return _remember_ui(resp, request.query_params.get("ui"))
 
     @app.get("/v2/kb")
     async def v2_kb(request: Request) -> Any:
@@ -1010,8 +1069,11 @@ def create_app() -> FastAPI:
         """
         bl = body.get("baseline") or {}
         has_baseline = bool(bl.get("base_url") and bl.get("model"))
+        surface = validate_surface(body.get("surface"))
         suite = validate_suite(str(body.get("suite") or "standard"))
         dimensions = validate_dimensions(suite, body.get("dimensions"))
+        # a custom suite on another surface picks among that surface's dimensions
+        check_surface_dimensions(surface, dimensions)
         target = build_target(
             kind="target",
             name=body.get("name") or "target",
@@ -1035,18 +1097,34 @@ def create_app() -> FastAPI:
         options = AuditOptions(
             suite=suite,
             dimensions=dimensions,
-            # probe request mode (standard/deep; the full suite measures both)
-            performance_streaming=body.get("performance_streaming") is not False,
+            # probe request mode (standard/deep; the full suite measures both);
+            # a chat setting: the other surfaces' requests never stream
+            performance_streaming=surface != "chat" or body.get("performance_streaming") is not False,
+            surface=surface,
+            # embedding: the claimed vector length (0 = from the knowledge base)
+            embedding_dimensions=(
+                max(0, _coerce_int(body.get("embedding_dimensions"))) if surface == "embedding" else 0
+            ),
         )
 
         async def run(emit: jobs.Emit) -> dict[str, Any]:
-            report = await run_audit(
-                target,
-                options,
-                baseline=baseline,
-                mode="compare" if baseline is not None else "check",
-                on_event=emit,
-            )
+            if surface != "chat":
+                # The Tools' run (the surface's previous saved run as the drift
+                # reference), unsaved: the job saves it like a chat audit.
+                from zing.embed_audit import _run_surface
+
+                report, _ = await _run_surface(
+                    target, options, kb_dirs=None, command=None, save=False,
+                    baseline=baseline, on_event=emit,
+                )
+            else:
+                report = await run_audit(
+                    target,
+                    options,
+                    baseline=baseline,
+                    mode="compare" if baseline is not None else "check",
+                    on_event=emit,
+                )
             return json.loads(report.model_dump_json())
 
         # What the history page lists for the job: no key, nothing secret.
@@ -1055,11 +1133,13 @@ def create_app() -> FastAPI:
             "model": target.model,
             "claimed_model": target.claimed_model or target.model,
             "suite": suite,
+            "surface": surface,
             "dimensions": list(dimensions or []),
             "baseline_url": baseline.base_url if baseline is not None else None,
-            "api": detect_api(target),
+            # protocol and probe request mode are chat settings
+            "api": detect_api(target) if surface == "chat" else None,
             "api_auto": target.api == "auto",
-            "stream_mode": stream_mode(options),
+            "stream_mode": stream_mode(options) if surface == "chat" else None,
         }
         urls = [target.base_url, baseline.base_url if baseline is not None else None]
         return jobs.manager.submit(summary, urls, run)
@@ -1389,6 +1469,7 @@ def create_app() -> FastAPI:
             suite = validate_suite(str(body.get("suite") or "standard"))
             dimensions = validate_dimensions(suite, body.get("dimensions"))
             surface = validate_surface(body.get("surface"))
+            check_surface_dimensions(surface, dimensions)
             build_target(
                 kind="target",
                 name=body.get("name") or "watch",
@@ -1469,12 +1550,17 @@ def create_app() -> FastAPI:
         name = tgt.get("name")
         try:
             surface = validate_surface(report.get("surface"))
+            check_surface_dimensions(surface, dimensions)
         except ConfigError as exc:  # a run of a surface this version cannot audit
             return JSONResponse({"error": str(exc)}, status_code=400)
         embedding = surface == "embedding"
         # The Tools page passes the claimed vector length it audited with (the
         # report does not keep it); 0 takes the knowledge base's.
-        claimed_dims = _coerce_int(body.get("embedding_dimensions")) if isinstance(body, dict) else 0
+        # the request's claimed vector length, else the one the run claimed
+        claimed_dims = _coerce_int(
+            (body.get("embedding_dimensions") if isinstance(body, dict) else None)
+            or report.get("embedding_dimensions")
+        )
         cfg = {
             "name": name if name and name != "target" else (tgt.get("claimed_model") or tgt.get("model")),
             "base_url": tgt.get("base_url"),
@@ -1558,6 +1644,14 @@ def create_app() -> FastAPI:
                     status_code=400,
                 )
             dims = raw
+        if body.get("dimensions") is not None:
+            # an edit's suite and dimensions pass the same checks as on create
+            try:
+                suite = validate_suite(str(body.get("suite") or row.get("suite") or "standard"))
+                picked = validate_dimensions(suite, body.get("dimensions"))
+                check_surface_dimensions(validate_surface(row.get("surface")), picked)
+            except ConfigError as exc:
+                return JSONResponse({"error": str(exc)}, status_code=400)
         if body.get("surface") is not None and body.get("surface") != row.get("surface"):
             # What a monitor audits is fixed; create a new one for another surface.
             return JSONResponse({"error": "a monitor's surface cannot be changed"}, status_code=400)

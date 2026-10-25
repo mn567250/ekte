@@ -26,8 +26,6 @@
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
-    - link "Ferramentas":
-      - /url: /v2/tools
     - link "Histórico":
       - /url: /v2/history
     - link "Análises":
