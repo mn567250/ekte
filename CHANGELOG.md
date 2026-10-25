@@ -194,6 +194,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Embedding and rerank performance charts.** The live panel of an
+  embedding or rerank audit showed the chat metric tabs (TTFT, decode speed,
+  inter-chunk latency), which have no data for these calls; it now shows
+  latency only, as the report does. The running median and its p25–p75 band
+  were missing for these audits, live and in the report, because the trend
+  tagging only took completion calls; it now takes every call the chart plots.
+
 - **Analytics chart tooltips (web UI v2)** show next to the pointer in every
   chart. In Peak hours, the tooltip used to stay at the top of the grid, far
   from a hovered cell lower down.

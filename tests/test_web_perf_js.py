@@ -308,6 +308,25 @@ def test_live_builds_the_data_table_only_when_open():
     assert "failed (502)" in opened
 
 
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_live_embedding_audit_offers_latency_only_with_its_trend():
+    # an embedding audit's calls return no tokens and never stream: the live
+    # panel shows the latency tab alone (as its report does), and the stream's
+    # running median draws the line and band behind the dots
+    from zing.perf.trend import attach_trends
+    recs = [RequestRecord(seq=i, endpoint="target", phase="probe", op="embed", ok=True, stream=False,
+                          status_code=200, start_ms=i * 100.0, duration_ms=10.0 + i).model_dump()
+            for i in range(6)]
+    attach_trends(recs)
+    html = json.loads(subprocess.run(
+        ["node", "-e", _LIVE_OPEN_JS, str(_STATIC), json.dumps(recs)],
+        capture_output=True, text=True, check=True,
+    ).stdout)["false"]
+    assert html.count('role="tab"') == 1 and 'data-metric="latency"' in html
+    assert "TTFT" not in html and "Decode speed" not in html and "Inter-chunk" not in html
+    assert '<g class="zp-band">' in html and '<g class="zp-trend">' in html
+
 _REC_JS = """window.mk = (i, ok = true) => ({seq: i, endpoint: i % 2 ? 'baseline' : 'target', phase: 'probe',
   op: 'complete', stream: true, start_ms: i * 400, ok, status_code: ok ? 200 : 502,
   duration_ms: 800 + (i % 7) * 40, ttft_ms: 300 + i, decode_tps_local: 60, itl_mean_ms: 9});"""
