@@ -41,7 +41,7 @@
     - text: "Ogni audit confronta un relay con il profilo del modello che dichiara: finestra di contesto, limite di output, capacità, identità e impronte comportamentali. Qui trovi ogni modello, provider e relay che zing conosce — inclusi e tuoi — e puoi attivarli o disattivarli uno per uno o aggiungerne di tuoi. Le tue modifiche sono salvate in kb.db su questo computer e usate sia dall'interfaccia web sia da"
     - code: zing check
     - text: .
-  - status: Base di conoscenza completa 98 modelli · 7 provider · 1 relay, tutti attivi
+  - status: Base di conoscenza completa 130 modelli · 7 provider · 1 relay, tutti attivi
   - region "Filtri":
     - button "Filtri" [expanded]
     - text: ID del modello
@@ -66,7 +66,7 @@
       - option "Tutti" [selected]
       - option "Incluso"
       - option "Tuo"
-    - status: Mostrati 98 di 98 modelli · 7 di 7 provider · 1 di 1 relay
+    - status: Mostrati 130 di 130 modelli · 7 di 7 provider · 1 di 1 relay
   - link "Esporta le tue voci come YAML":
     - /url: /api/kb/export
   - tablist "Sezioni della base di conoscenza":
@@ -74,7 +74,7 @@
     - tab "Provider"
     - tab "Relay"
   - tabpanel "Modelli":
-    - heading "Tutti i modelli 98 modelli" [level=2]
+    - heading "Tutti i modelli 130 modelli" [level=2]
     - paragraph: "I profili di modello con cui gli audit confrontano. Un modello disattivato non viene più risolto: i suoi audit girano senza profilo."
     - group:
       - text: Aggiungi un modello
@@ -104,19 +104,21 @@
     - group:
       - text: Anthropic (Claude)
       - code: anthropic
-      - text: 14 modelli
+      - text: 23 modelli
       - list:
         - listitem:
-          - code: claude-opus-4-8
+          - code: claude-fable-5-1
           - text: Incluso Contesto 1000000 Output max. 128000 Alias
-          - code: claude-opus-4-8
+          - code: claude-fable-5-1
           - text: ","
-          - code: opus
+          - code: fable
           - text: ","
-          - code: opus 4.8
+          - code: fable 5.1
+          - text: ","
+          - code: claude fable 5.1
           - text: ","
           - code: most powerful
-          - switch "claude-opus-4-8 Attivo" [checked]
+          - switch "claude-fable-5-1 Attivo" [checked]
           - emphasis: Attivo
         # … more items of the same shape
     # … more items of the same shape

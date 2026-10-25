@@ -41,7 +41,7 @@
     - text: "Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay zing knows — packaged ones and yours — and can switch each of them on or off or add your own. Your changes are stored in kb.db on this machine and used by the web UI and"
     - code: zing check
     - text: alike.
-  - status: Knowledge base complete 98 models · 7 providers · 1 relay, all switched on
+  - status: Knowledge base complete 130 models · 7 providers · 1 relay, all switched on
   - region "Filters":
     - button "Filters" [expanded]
     - text: Model id
@@ -66,7 +66,7 @@
       - option "All" [selected]
       - option "Packaged"
       - option "Yours"
-    - status: Showing 98 of 98 models · 7 of 7 providers · 1 of 1 relays
+    - status: Showing 130 of 130 models · 7 of 7 providers · 1 of 1 relays
   - link "Export your entries as YAML":
     - /url: /api/kb/export
   - tablist "Knowledge base sections":
@@ -74,7 +74,7 @@
     - tab "Providers"
     - tab "Relays"
   - tabpanel "Models":
-    - heading "All models 98 models" [level=2]
+    - heading "All models 130 models" [level=2]
     - paragraph: "The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile."
     - group:
       - text: Add a model
@@ -104,19 +104,21 @@
     - group:
       - text: Anthropic (Claude)
       - code: anthropic
-      - text: 14 models
+      - text: 23 models
       - list:
         - listitem:
-          - code: claude-opus-4-8
+          - code: claude-fable-5-1
           - text: Packaged Context 1000000 Max output 128000 Aliases
-          - code: claude-opus-4-8
+          - code: claude-fable-5-1
           - text: ","
-          - code: opus
+          - code: fable
           - text: ","
-          - code: opus 4.8
+          - code: fable 5.1
+          - text: ","
+          - code: claude fable 5.1
           - text: ","
           - code: most powerful
-          - switch "claude-opus-4-8 Enabled" [checked]
+          - switch "claude-fable-5-1 Enabled" [checked]
           - emphasis: Enabled
         # … more items of the same shape
     # … more items of the same shape

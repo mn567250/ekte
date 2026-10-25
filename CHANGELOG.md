@@ -120,6 +120,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Knowledge base refreshed to the lineups of 2026-10-25.** The packaged
+  profiles add Claude Fable 5.1 / 5, Mythos 5.1 / 5, Opus 5.5 / 5, Sonnet 5.5 / 5
+  and Haiku 5.5; GPT-6 Astra / Sol / Luna, GPT-6.1 Sol, GPT-5.6 Sol / Terra /
+  Luna and GPT Image 2; Gemini 4 Argon, 3.8 / 3.6 Flash, 3.5 Flash-Lite and
+  Embedding 2; DeepSeek V4.1 Flash (`deepseek-flash`); GLM-5.3, 5.3-Flash, 5.2
+  and 5-Code; Kimi K3 and K2.7 Code; Qwen3.8-Max / Flash and Qwen3.7-Plus. The
+  bare `opus`, `sonnet` and `haiku` aliases now resolve to the 5.5 models.
+  Retired and deprecated models (o1, o4-mini, gpt-4.1-nano and gpt-image-1 shut
+  down 2026-10-23; Claude Opus 4.1 / 4 and Sonnet 4; `deepseek-chat` /
+  `deepseek-reasoner`; Gemini 3 Pro Preview) stay listed as decoys, with their
+  status and dates in the notes, and the provider probes and relay red flags
+  name the new models.
 - **No Tools page in the web UI v2.** Embedding and rerank audits start on the
   audit page through its endpoint-type selector (`/v2/?surface=embedding` or
   `?surface=rerank`), so the v2 nav has no Tools entry. `/v2/tools` forwards

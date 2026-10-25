@@ -4,7 +4,6 @@ an in-process mock /rerank endpoint."""
 from __future__ import annotations
 
 import json
-import random
 import re
 
 import httpx
@@ -31,7 +30,9 @@ def _words(text: str) -> set[str]:
 class RerankServer:
     """Relevance = word overlap with the query. ``reverse`` ranks backwards (a
     swapped or broken model), ``scale`` rescales the scores, ``noise`` adds
-    random jitter per call, ``status`` fails every call."""
+    jitter that alternates between calls (every other call scores ``noise``
+    higher, so two calls always differ by exactly that much), ``status`` fails
+    every call."""
 
     def __init__(self, *, served: str | None = MODEL, reverse: bool = False, scale: float = 1.0,
                  noise: float = 0.0, status: int = 200, drop: bool = False):
@@ -58,7 +59,7 @@ class RerankServer:
             score = len(query & words) / (len(words) or 1) * self.scale
             if self.reverse:
                 score = 1.0 - score
-            score += random.uniform(0, self.noise) + 0.001 * i  # no ties
+            score += self.noise * (self.calls % 2) + 0.001 * i  # no ties
             results.append({"index": i, "relevance_score": score})
         if self.drop:
             results = results[:1]

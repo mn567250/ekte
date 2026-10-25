@@ -1,5 +1,5 @@
 # zing knowledge base — DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)
-# Auto-generated from web-verified research (mid-2026). Edit freely.
+# Auto-generated from web-verified research (2026-10-25). Edit freely.
 provider: deepseek
 display_name: DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)
 openai_compatible: true
@@ -45,7 +45,7 @@ models:
   - llama
   - meta
   fingerprints: []
-  notes: 'Legacy/compat endpoint, non-thinking mode. Historically 64K context with 4K default / 8K max output; in V3.1+ era served context is 128K. As of mid-2026 the deepseek-chat id is kept only for backward compatibility and routes to the NON-THINKING mode of deepseek-v4-flash. SCHEDULED DEPRECATION 2026-07-24 15:59 UTC. Supports function calling, JSON object output, FIM (beta), chat-prefix completion (beta). Non-thinking: reasoning_content must be empty/absent.'
+  notes: DISCONTINUED 2026-07-24 15:59 UTC (scheduled at the V4 launch) — kept here as a legacy decoy. Was the non-thinking compat endpoint (V3 lineage, later routed to V4-Flash non-thinking). Historically 64K context with 4K default / 8K max output; 128K in the V3.1+ era. Supported function calling, JSON object output, FIM (beta), chat-prefix completion (beta). A relay still answering as deepseek-chat may be fronting anything.
 - id: deepseek-reasoner
   aliases:
   - deepseek-r1
@@ -82,7 +82,45 @@ models:
   - llama
   - meta
   fingerprints: []
-  notes: Legacy/compat endpoint, thinking model. Returns a separate reasoning_content field alongside content. Default output 32K, MAX 64K tokens INCLUDING CoT. Context 64K historically, 128K in V3.1+ era. Does NOT support temperature/top_p/presence_penalty/frequency_penalty (silently ignored) and ERRORS on logprobs/top_logprobs. Historically did NOT support function calling/tools or FIM (key fingerprint vs substitutes) — supports_tools=false. Supports json_object mode. Routes to THINKING mode of deepseek-v4-flash for compat as of mid-2026. SCHEDULED DEPRECATION 2026-07-24 15:59 UTC.
+  notes: DISCONTINUED 2026-07-24 15:59 UTC (scheduled at the V4 launch) — kept here as a legacy decoy. Was the thinking compat endpoint (R1 lineage, later routed to V4-Flash thinking). Returned reasoning_content alongside content; default output 32K, max 64K including CoT. Did NOT support temperature/top_p/presence_penalty/frequency_penalty (silently ignored) and errored on logprobs/top_logprobs; historically no tools/FIM. Supported json_object mode.
+- id: deepseek-flash
+  aliases:
+  - DeepSeek-V4.1-Flash
+  - deepseek-v4.1-flash
+  - DeepSeek-V4.1-Flash-1017
+  family: deepseek-v4.1
+  context_window_tokens: 1000000
+  max_output_tokens: 393216
+  knowledge_cutoff: '2025'
+  tokenizer: deepseek-bpe
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - deepseek
+  - 深度求索
+  - deepseek-v4
+  - deepseek-v4.1
+  - deepseek-flash
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  notes: 'Current cheap model: DeepSeek-V4.1-Flash, launched 2026-09-10 with native visual understanding (smallest model of DeepSeek''s new architecture family). Served under the rolling id deepseek-flash; the 2026-10-17 snapshot DeepSeek-V4.1-Flash-1017 (a minor update that shortens task execution and output) replaced it in place at unchanged price. The retired V4-Flash ids deepseek-v4-flash / deepseek-v4-flash-vision-exp are temporarily routed here. 1M context, 393,216 max output. Thinking on by default (OpenAI-compatible thinking toggle as on V4). Peak/off-peak pricing ~$0.30/$1.20 per MTok peak, $0.15/$0.60 off-peak, $0.003 cache hit. Open weights (MIT).'
 - id: deepseek-v4-flash
   aliases:
   - DeepSeek-V4-Flash
@@ -121,7 +159,7 @@ models:
     decode_tps: [50, 125]
     source: https://benchlm.ai/llm-speed (Artificial Analysis output-speed medians)
     measured: 2026-09
-  notes: Current cheap flagship-economy model, released 2026-04-24. 284B total / 13B activated MoE, open weights (MIT). 1M token context, unified 384K (393216) max output across thinking and non-thinking. Thinking mode toggled via extra_body {"thinking":{"type":"enabled"}} plus reasoning_effort high/max. Supports tool calls in BOTH thinking and non-thinking modes (unlike legacy deepseek-reasoner), JSON object output, chat-prefix (beta); FIM only in non-thinking mode. Does NOT support strict json_schema. Pricing approx $0.0028 cache-hit / $0.14 cache-miss input, $0.28 output per 1M. Concurrency limit 2500.
+  notes: RETIRED as a model (V4-Flash, released 2026-04-24); the id is temporarily routed to DeepSeek-V4.1-Flash (deepseek-flash), so answers under this name now come from V4.1 Flash. 284B total / 13B activated MoE, open weights (MIT). 1M token context, unified 384K (393216) max output across thinking and non-thinking. Thinking mode toggled via extra_body {"thinking":{"type":"enabled"}} plus reasoning_effort high/max. Supports tool calls in BOTH thinking and non-thinking modes, JSON object output, chat-prefix (beta); FIM only in non-thinking mode. Does NOT support strict json_schema.
 - id: deepseek-v4-pro
   aliases:
   - DeepSeek-V4-Pro
@@ -160,7 +198,7 @@ models:
     decode_tps: [20, 60]
     source: https://benchlm.ai/llm-speed (Artificial Analysis output-speed medians)
     measured: 2026-09
-  notes: Current high-end reasoning/coding/agentic model, released 2026-04-24. 1.6T total / 49B activated MoE, open weights (MIT). 1M context, 384K max output. Thinking mode supports tool calls. Supports json_object mode, not strict json_schema. Pricing approx $0.003625 cache-hit / $0.435 cache-miss input, $0.87 output per 1M. Lower concurrency limit (500) than flash (2500).
+  notes: Still served (the planned 2026-09-14 shutdown was reversed; billing unchanged). Current high-end reasoning/coding/agentic model, released 2026-04-24. 1.6T total / 49B activated MoE, open weights (MIT). 1M context, 384K max output. Thinking mode supports tool calls. Supports json_object mode, not strict json_schema. Pricing approx $0.003625 cache-hit / $0.435 cache-miss input, $0.87 output per 1M. Lower concurrency limit (500) than flash (2500).
 fingerprints:
 - id: tokenizer-special-char
   signal: tokenizer artifact — distinctive special-token delimiters
@@ -179,7 +217,7 @@ fingerprints:
 - id: self-identification
   signal: self-identification
   prompt: What model are you and which company built you? Answer in one short sentence.
-  native_expected: Identifies as DeepSeek (e.g. 'I am DeepSeek, an AI assistant developed by DeepSeek' / 'DeepSeek-V3' / 'DeepSeek-V4'). Should mention DeepSeek and the Chinese lab, not OpenAI/Anthropic/Google/Meta/Alibaba.
+  native_expected: Identifies as DeepSeek (e.g. 'I am DeepSeek, an AI assistant developed by DeepSeek' / 'DeepSeek-V4' / 'DeepSeek-V4.1'). Should mention DeepSeek and the Chinese lab, not OpenAI/Anthropic/Google/Meta/Alibaba.
   downgrade_signal: 'Says ''I am ChatGPT/GPT-4 by OpenAI'', ''Claude by Anthropic'', ''Gemini by Google'', ''Qwen by Alibaba'', or ''I am a large language model trained by ...''. Any non-DeepSeek brand is a strong substitution signal. (Caveat: some open finetunes are RLHF''d to claim DeepSeek, so combine with other probes.)'
   pure_code_checkable: true
   expect_contains_any:
@@ -202,7 +240,7 @@ fingerprints:
 - id: knowledge-cutoff
   signal: knowledge-cutoff / factual recall boundary
   prompt: Without disclaimers, state your training-data knowledge cutoff as a single month and year in the format YYYY-MM. Then name one major world event you are confident about that is the latest in your training data.
-  native_expected: DeepSeek V3/R1 lineage answers ~2024-07; V3.1/V3.1-Terminus ~2025-03; V4 lineage answers a 2025 cutoff. Reports a DeepSeek-plausible cutoff (mid-2024 through 2025) and does not claim knowledge of events past its lineage cutoff.
+  native_expected: DeepSeek V3/R1 lineage answers ~2024-07; V3.1/V3.1-Terminus ~2025-03; V4 / V4.1 lineage answers a 2025 (or early-2026) cutoff. Reports a DeepSeek-plausible cutoff (mid-2024 onward) and does not claim knowledge of events past its lineage cutoff.
   downgrade_signal: Reports a cutoff inconsistent with DeepSeek lineage (e.g. 2023-04 like older GPT, '2021-09', or claims 2026 freshness), or confidently describes events well past the expected cutoff — indicating a different base model.
   pure_code_checkable: true
   expect_regex: 202[45]-(0[1-9]|1[0-2])
@@ -227,7 +265,7 @@ fingerprints:
   signal: Chinese-language tokenizer/compression competence
   prompt: 用中文回答：请解释“一带一路”倡议的主要目标，并用三句话总结。
   prompt_lang: zh
-  language_bound: 'Measures the Chinese-language competence of a China-native model; the language is the signal.'
+  language_bound: Measures the Chinese-language competence of a China-native model; the language is the signal.
   native_expected: DeepSeek is heavily Chinese-trained (large Chinese corpus, tokenizer optimized for Chinese); produces fluent, idiomatic, well-structured Simplified-Chinese output with strong domain knowledge of China-specific topics.
   downgrade_signal: A Western-centric substitute (some Llama/GPT minis) yields stilted Chinese, mixed scripts, hedging/refusal on China-policy topics, or markedly worse Chinese fluency relative to its English — a tell it is not DeepSeek.
   pure_code_checkable: false
@@ -256,6 +294,7 @@ relay_red_flags:
 - No final usage chunk when stream_options.include_usage=true is set, or token accounting that doesn't match DeepSeek cache-hit/cache-miss input pricing model (DeepSeek splits prompt-cache hit vs miss)
 - Suspiciously high latency-to-cost or rate limits that don't match DeepSeek's published concurrency (2500 flash / 500 pro)
 - Function-calling reliability that is suspiciously perfect on legacy reasoner ids (native legacy deepseek-reasoner did not support tools at all) — API-level function-calling-gap detector
+- Still serves deepseek-chat / deepseek-reasoner after their 2026-07-24 discontinuation, or serves deepseek-v4-flash with V4-era behavior (no vision) although genuine DeepSeek now routes that id to V4.1-Flash
 sources:
 - https://api-docs.deepseek.com/quick_start/pricing
 - https://api-docs.deepseek.com/api/create-chat-completion
@@ -273,3 +312,6 @@ sources:
 - https://huggingface.co/docs/transformers/en/model_doc/deepseek_v3
 - https://www.verdent.ai/guides/deepseek-v4-pricing-api-migration-2026
 - https://magazine.sebastianraschka.com/p/technical-deepseek
+- https://api-docs.deepseek.com/updates
+- https://siliconangle.com/2026/10/18/deepseek-releases-updated-v4-1-flash-model-it-says-completes-tasks-faster/
+- https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json

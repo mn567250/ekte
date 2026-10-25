@@ -1,5 +1,5 @@
 # zing knowledge base — Zhipu AI (智谱 / Z.ai) — BigModel open platform
-# Auto-generated from web-verified research (mid-2026). Edit freely.
+# Auto-generated from web-verified research (2026-10-25). Edit freely.
 provider: glm
 display_name: Zhipu AI (智谱 / Z.ai) — BigModel open platform
 openai_compatible: true
@@ -10,6 +10,163 @@ base_url_hints:
 - /paas/v4/chat/completions
 default_tool_format: openai_function
 models:
+- id: glm-5.3
+  aliases: []
+  family: glm-5
+  context_window_tokens: 1000000
+  max_output_tokens: 131072
+  knowledge_cutoff: not officially published (~2025)
+  tokenizer: glm
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - glm
+  - zhipu
+  - 智谱
+  - z.ai
+  - bigmodel
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - 通义
+  - deepseek
+  - llama
+  - meta
+  - ernie
+  - 文心
+  - baidu
+  notes: 'Flagship as of 2026-10: launched 2026-08-14 (API live 2026-08-18). Post-training upgrade on the GLM-5.2 base (~753B MoE). 1M-token context, 128K max output, text-only input. Hybrid thinking (thinking={type:enabled/disabled}). ~$1.40/$4.40 per MTok. Open-weight status reported inconsistently.'
+- id: glm-5.3-flash
+  aliases: []
+  family: glm-5
+  context_window_tokens: 1048576
+  max_output_tokens: 131072
+  knowledge_cutoff: not officially published (~2025)
+  tokenizer: glm
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - glm
+  - zhipu
+  - 智谱
+  - z.ai
+  - bigmodel
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - 通义
+  - deepseek
+  - llama
+  - meta
+  - ernie
+  - 文心
+  - baidu
+  notes: 'Released ~2026-08-26 (single-source detail): ~320B total / 18B active MoE, natively multimodal, 1M context, 128K max output. Cheap tier, ~$0.15/$0.50 per MTok. Prime downgrade target behind a claimed glm-5.3.'
+- id: glm-5.2
+  aliases: []
+  family: glm-5
+  context_window_tokens: 1000000
+  max_output_tokens: 131072
+  knowledge_cutoff: not officially published (~2025)
+  tokenizer: glm
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - glm
+  - zhipu
+  - 智谱
+  - z.ai
+  - bigmodel
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - 通义
+  - deepseek
+  - llama
+  - meta
+  - ernie
+  - 文心
+  - baidu
+  notes: Released ~2026-06-13. ~753B MoE base of GLM-5.3; first GLM with a 1M-token context (GLM-5/5.1 were 200K). 128K max output, hybrid thinking. ~$1.40/$4.40 per MTok.
+- id: glm-5-code
+  aliases: []
+  family: glm-5
+  context_window_tokens: 204800
+  max_output_tokens: 131072
+  knowledge_cutoff: not officially published (~2025)
+  tokenizer: glm
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - glm
+  - zhipu
+  - 智谱
+  - z.ai
+  - bigmodel
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - 通义
+  - deepseek
+  - llama
+  - meta
+  - ernie
+  - 文心
+  - baidu
+  notes: Coding-specialised GLM-5 variant. 200K context, 128K max output, thinking-capable. ~$1.20/$5.00 per MTok.
 - id: glm-5.1
   aliases: []
   family: glm-5
@@ -49,7 +206,7 @@ models:
   - 文心
   - baidu
   fingerprints: []
-  notes: Released ~2026-03-27. Flagship reasoning model, ~754B MoE. 200K (204800) context, 128K (131072) max output. Hybrid thinking via thinking={type:enabled/disabled}. Default temperature 1.0, top_p 0.95.
+  notes: Superseded by GLM-5.2 / 5.3 (1M context); still served. Released ~2026-03-27. Flagship reasoning model, ~754B MoE. 200K (204800) context, 128K (131072) max output. Hybrid thinking via thinking={type:enabled/disabled}. Default temperature 1.0, top_p 0.95.
 - id: glm-5
   aliases: []
   family: glm-5
@@ -617,7 +774,7 @@ fingerprints:
   signal: self-identification (vendor/model family)
   prompt: 你是谁？你是哪家公司开发的哪个模型？只回答一句话。
   prompt_lang: zh
-  language_bound: 'Native-language self-identification of a China-native model; expected answers include 智谱.'
+  language_bound: Native-language self-identification of a China-native model; expected answers include 智谱.
   native_expected: Identifies as GLM (智谱 / Zhipu AI / Z.ai), e.g. 'I am GLM, developed by Zhipu AI (智谱AI / Z.ai)'. Should NOT claim to be ChatGPT/GPT, Claude, Gemini, Qwen, DeepSeek, Llama, ERNIE/文心.
   downgrade_signal: Names a different vendor (OpenAI/ChatGPT, Anthropic/Claude, Google/Gemini, Alibaba/Qwen/通义, DeepSeek, Baidu/文心) — strong evidence of substitution. Generic 'I am an AI assistant' with no GLM/Zhipu mention is also suspect.
   pure_code_checkable: true
@@ -660,7 +817,7 @@ fingerprints:
 - id: true-max-output
   signal: true max-output-length (context/output truncation)
   prompt: Print the integers from 1 to 4000, one per line, as "N" with no other text. Start now.
-  native_expected: Genuine glm-4.6/4.7/5 (128K max output) can stream a very long completion well past ~16K tokens without hitting a low ceiling; the request with a high max_tokens is accepted.
+  native_expected: Genuine glm-4.6/4.7/5.x (128K max output) can stream a very long completion well past ~16K tokens without hitting a low ceiling; the request with a high max_tokens is accepted.
   downgrade_signal: Output truncates near ~4K/8K/16K tokens, or the API rejects max_tokens>16384, indicating a smaller substitute model or a relay capping context/output (a cheaper glm-4-flash has only 16K, glm-4-plus ~4K output).
   pure_code_checkable: true
   expect_regex: (?s)\b3990\b.*\b4000\b
@@ -670,7 +827,7 @@ fingerprints:
 - id: knowledge-cutoff-lineage
   signal: knowledge-cutoff / recency recall (model recency)
   prompt: Without browsing, name the immediate predecessor model to GLM-4.7 released by your own company, and the month it was released. One line.
-  native_expected: 'A genuine GLM-4.7/5-generation model should know its own family history: GLM-4.6 (released Sept 2025) preceded GLM-4.7 (Dec 2025). GLM-5 (Feb 2026) family knows GLM-4.7 preceded it.'
+  native_expected: 'A genuine GLM-4.7/5-generation model should know its own family history: GLM-4.6 (released Sept 2025) preceded GLM-4.7 (Dec 2025). GLM-5 (Feb 2026) family knows GLM-4.7 preceded it; later GLM-5.x models (5.1 Mar 2026, 5.2 Jun 2026, 5.3 Aug 2026) may also know GLM-5.'
   downgrade_signal: Claims no knowledge of GLM-4.6/4.7, gives wrong predecessor, or describes a different vendor's lineup — indicates substitution or an older/cheaper model unaware of its own newer siblings.
   pure_code_checkable: false
   max_tokens: 128
@@ -680,7 +837,7 @@ fingerprints:
   signal: Chinese-language fluency and bilingual default
   prompt: 用一句话解释什么是傅里叶变换，并给出一个生活中的类比。
   prompt_lang: zh
-  language_bound: 'Measures the Chinese technical fluency of a China-native model; the language is the signal.'
+  language_bound: Measures the Chinese technical fluency of a China-native model; the language is the signal.
   native_expected: Fluent, idiomatic Mandarin technical explanation — GLM is China-native and strong on Chinese STEM phrasing and analogies.
   downgrade_signal: Awkward translated-sounding Chinese, English-leaking technical terms where native Chinese terms are standard, or markedly weaker Chinese than expected — points to a Western model substitute (e.g. a GPT/Llama backend) masquerading as GLM.
   pure_code_checkable: false
@@ -708,6 +865,7 @@ relay_red_flags:
 - Markedly weak or translated-sounding Chinese on STEM tasks, where a China-native GLM should be fluent.
 - Default sampling behavior doesn't match claimed model (glm-4.6/4.7/5 default temperature 1.0 / top_p 0.95; glm-4.5 defaults to 0.6) — e.g. fully deterministic outputs at default settings.
 - Model is unaware of its own family lineage (cannot place GLM-4.6 before GLM-4.7 before GLM-5) or unaware of late-2025/early-2026 GLM releases it should know.
+- Context-length errors well below 1M on a claimed glm-5.2 / glm-5.3 / glm-5.3-flash (genuine models take 1M), i.e. a 200K GLM-5/5.1 or smaller model behind the name
 sources:
 - https://docs.bigmodel.cn/cn/guide/start/model-overview
 - https://docs.bigmodel.cn/cn/guide/models/text/glm-5
@@ -732,3 +890,7 @@ sources:
 - https://arxiv.org/html/2602.15763v1
 - https://llm-stats.com/models/glm-4.7
 - https://llm-stats.com/blog/research/glm-4-6-launch
+- https://docs.z.ai/guides/llm/glm-5.3
+- https://docs.z.ai/guides/overview/pricing
+- https://help.aliyun.com/en/model-studio/glm-5-3-by-zhipu
+- https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json
