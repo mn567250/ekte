@@ -370,6 +370,8 @@
           esc(T("它不是加密已保存 API 密钥所用的主密钥。请改回正确的值，或取消设置它并重置。",
             "It is not the master key the stored API keys were encrypted with. Set it back, or unset it and reset.")) + "</span>";
       } else {
+        // no key yet: nothing can be stored or run with a key until one exists
+        kind = "bad";
         html = "<b>" + esc(T("尚无主密钥", "No master key yet")) + "</b> <span class=\"zmk-meta\">" +
           esc(T("保存第一个 API 密钥时会创建它。", "It is created when you store the first API key.")) + "</span>";
       }

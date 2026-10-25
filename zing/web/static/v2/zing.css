@@ -334,6 +334,11 @@ select.in {
   background: var(--danger-tint); border: 1px solid var(--danger); color: var(--danger);
   border-radius: 14px; padding: 14px 16px; margin-top: 14px; font-size: 14px; line-height: 1.5;
 }
+/* the same box for lower severities: a problem to look at, and plain information */
+.warnbox, .infobox { border-radius: 14px; padding: 14px 16px; margin-top: 14px; font-size: 14px; line-height: 1.5; }
+.warnbox { background: var(--warning-tint); border: 1px solid var(--warning); color: var(--warning); }
+.infobox { background: var(--info-tint); border: 1px solid var(--info); color: var(--info); }
+.errbox[hidden], .warnbox[hidden], .infobox[hidden] { display: none; }
 .empty { text-align: center; padding: 36px 20px; color: var(--ink-muted); font-size: 14.5px; }
 .empty .zicon { width: 28px; height: 28px; color: var(--ink-muted); }
 .foot { text-align: center; color: var(--ink-muted); font-size: 12px; padding: 16px 0 32px; line-height: 1.6; }

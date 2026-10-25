@@ -581,7 +581,7 @@ def test_monitor_flow(browser, contexts, zing, relay, lang: str) -> None:
 # 4: knowledge base
 # --------------------------------------------------------------------------- #
 KB_MESSAGES = [
-    "#res", "#kbwarn", "#m-err", "#m-ok", "#m-scan", "#m-copy-msg", "#p-err", "#p-ok", "#p-scan", "#r-err", "#r-ok",
+    "#res", "#kbwarn", "#kbinfo", "#m-err", "#m-ok", "#m-scan", "#m-copy-msg", "#p-err", "#p-ok", "#p-scan", "#r-err", "#r-ok",
     "li.item [role=status]",
 ]  # fmt: skip
 # while filtering, the number of matching items is the answer the user waits for

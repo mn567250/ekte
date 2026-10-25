@@ -98,7 +98,9 @@
       <p data-en="Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay zing knows — packaged ones and <b>yours</b> — and can switch each of them on or off or add your own. Your changes are stored in <b>kb.db</b> on this machine and used by the web UI and <code>zing check</code> alike.">每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 zing 已知的全部模型、厂商与中转站——内置的和<b>你的</b>——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 <b>kb.db</b> 中，网页界面和 <code>zing check</code> 都会使用。</p>
     </div>
 
-    <div class="errbox" id="kbwarn" role="alert" hidden></div>
+    <!-- problems with your entries (warning) and switched-off packaged items (information) -->
+    <div class="warnbox" id="kbwarn" role="alert" hidden></div>
+    <div class="infobox" id="kbinfo" role="status" hidden></div>
 
     <!-- one filter for every tab (filterpanel.js) -->
     <section class="card filters" id="filters" hidden></section>
@@ -261,11 +263,11 @@
     if (data && data.user_kb === false) {
       lines.push(T("你的条目和开关当前被忽略（ZING_NO_USER_KB），无法更改。", "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed."));
     }
-    if (data && data.disabled) {
-      lines.push(data.disabled === 1
-        ? T("1 个内置项已停用。", "1 packaged item is switched off.")
-        : Tf("{n} 个内置项已停用。", "{n} packaged items are switched off.", { n: data.disabled }));
-    }
+    var info = $("kbinfo");
+    info.hidden = !(data && data.disabled);
+    info.textContent = !info.hidden ? (data.disabled === 1
+      ? T("1 个内置项已停用。", "1 packaged item is switched off.")
+      : Tf("{n} 个内置项已停用。", "{n} packaged items are switched off.", { n: data.disabled })) : "";
     if (w.length) lines.push(T("以下条目已跳过：", "These entries were skipped:"));
     box.hidden = !lines.length;
     box.innerHTML = lines.map(esc).join(" ") + (w.length ? "<ul>" + w.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "");
