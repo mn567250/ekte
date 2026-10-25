@@ -1302,6 +1302,13 @@ def create_app() -> FastAPI:
 
         return JSONResponse(history.trend(base_url, claimed_model, limit))
 
+    @app.get("/api/history/status")
+    def history_status() -> Any:
+        """The history as a whole, for the pages' notices (history.status)."""
+        from zing.web import history
+
+        return JSONResponse(history.status())
+
     @app.get("/api/history/{rid}")
     def history_get(rid: int, trend: int = 0) -> Any:
         """A saved report as stored; ``trend=1`` (the pages that show it) adds

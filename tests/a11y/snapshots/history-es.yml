@@ -41,6 +41,7 @@
     - text: El historial solo se guarda en un archivo SQLite local en
     - code: ~/.zing
     - text: ; no se envía nada.
+  - status: 15 ejecuciones en este equipo Guardado desde 26 sept 2026 · las claves de API nunca se guardan
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Buscar

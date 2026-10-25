@@ -438,7 +438,7 @@ def test_v2_analytics_page(client):
     assert '<link rel="stylesheet" href="/v2/static/charts.css" />' in html
     assert '<header class="znav" data-page="analytics"' in html
     assert '<main id="main" tabindex="-1">' in html
-    assert '<script src="/v2/static/nav.js"></script>\n<script src="/v2/static/charts.js"></script>' in html
+    assert '<script src="/v2/static/nav.js"></script>\n<script src="/v2/static/notice.js"></script>\n<script src="/v2/static/charts.js"></script>' in html
     for api in ("/api/analytics/options", "/api/analytics/summary", "/api/analytics/series", "/api/analytics/leaderboard"):
         assert api in html
     # no outgoing requests: every script and stylesheet is local

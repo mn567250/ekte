@@ -462,6 +462,31 @@ def recent(limit: int = 50, perf: bool = False) -> list[dict[str, Any]]:
     return out
 
 
+def status() -> dict[str, Any]:
+    """What the pages' notices say about the history as a whole: how many runs,
+    since when, the newest one (summary columns), how many rows the analytics
+    backfill has not processed yet (``pending``) and how many runs have an
+    estimated start time (``estimated``)."""
+    with _connect() as conn:
+        runs, oldest = conn.execute("SELECT COUNT(*), MIN(ts) FROM history").fetchone()
+        row = conn.execute(
+            f"SELECT {', '.join(_SUMMARY_COLS)} FROM history ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        pending = conn.execute(
+            f"SELECT COUNT(*) FROM ({_ANALYTICS_TODO})", (analytics_store.EXTRACT_VERSION,)
+        ).fetchone()[0]
+        estimated = conn.execute(
+            "SELECT COUNT(*) FROM history_metrics WHERE started_at_estimated = 1"
+        ).fetchone()[0]
+    return {
+        "runs": int(runs or 0),
+        "oldest": oldest,
+        "latest": _with_surface(dict(row)) if row else None,
+        "pending": int(pending or 0),
+        "estimated": int(estimated or 0),
+    }
+
+
 def _with_surface(row: dict[str, Any]) -> dict[str, Any]:
     """``row`` with a NULL ``surface`` (saved before surfaces existed) read as chat."""
     row["surface"] = row.get("surface") or "chat"

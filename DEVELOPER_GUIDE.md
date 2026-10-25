@@ -411,6 +411,23 @@ Every colour of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
 scripts use `var(--…)` only, never a literal colour.
 
+Every v2 page but Accessibility has one **page notice** right under its hero
+(`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
+in `zing.css`): `ZingNotice.show(el, {level, title, detail, items, actions})`
+with the level `info`, `success`, `warning` or `critical` setting tint, border
+and icon (critical is `role="alert"`, the others `role="status"`; showing the
+same notice again changes nothing). The page picks the most important message
+and lists the others in `items`. Audit: server unreachable / audits running /
+the newest saved run / runs locally; History: history unreadable / monitor
+runs paused (master key locked) or older runs still processed / run count;
+Analytics: data unreadable / runs not yet in the charts or with an estimated
+start time / what it is based on; Knowledge: load failure / skipped or
+ignored entries / switched-off items / complete. Monitors keeps its master-key
+bar (`masterkey.js`), which looks and sits the same. The history-wide numbers
+come from `GET /api/history/status` (`history.status()`: run count, oldest and
+newest run, rows the analytics backfill has not processed,
+runs with an estimated start time).
+
 The v2 **Audit** page configures relays with `v2/relaycfg.js`:
 relay/provider select → base URL → the relay's models (`/api/models`, on change,
 cached per URL/key/protocol) → claimed model from the knowledge base

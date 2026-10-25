@@ -41,6 +41,7 @@
     - text: Computed from the local history under
     - code: ~/.zing
     - text: — nothing is uploaded.
+  - status: 1 older run has an estimated start time Time-of-day charts place them approximately.
   - status: "Updated: 14 runs in this range."
   - region "Filters":
     - button "Filters" [expanded]

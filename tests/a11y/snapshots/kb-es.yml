@@ -41,6 +41,7 @@
     - text: "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Aquí encuentras cada modelo, proveedor y relay que zing conoce —los incluidos y los tuyos— y puedes activar o desactivar cada uno o añadir los tuyos. Tus cambios se guardan en kb.db en este equipo y los usan tanto la interfaz web como"
     - code: zing check
     - text: .
+  - status: Base de conocimiento completa 98 modelos · 7 proveedores · 1 relay, todos activados
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: ID del modelo

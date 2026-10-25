@@ -41,6 +41,7 @@
     - text: O histórico fica apenas num ficheiro SQLite local em
     - code: ~/.zing
     - text: — nada é enviado.
+  - status: 15 execuções nesta máquina Guardado desde 26/09/2026 · as chaves de API nunca são guardadas
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Pesquisar

@@ -41,6 +41,7 @@
     - text: Berechnet aus dem lokalen Verlauf unter
     - code: ~/.zing
     - text: — nichts wird hochgeladen.
+  - status: 1 älterer Lauf hat eine geschätzte Startzeit Diagramme nach Tageszeit ordnen sie nur ungefähr ein.
   - status: "Aktualisiert: 14 Läufe in diesem Zeitraum."
   - region "Filter":
     - button "Filter" [expanded]

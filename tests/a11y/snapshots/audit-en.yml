@@ -38,6 +38,9 @@
 - main:
   - heading "Is this relay serving the real thing?" [level=1]
   - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.
+  - status:
+    - text: Last audit finished gateway.a-very-long-relay-hostname.example.org · model-b · score 72/100 · Sep 27, 2026, 10:02 AM
+    - button "Open report"
   - tablist "Audits":
     - tab "New audit" [selected]
     - tab "Running"

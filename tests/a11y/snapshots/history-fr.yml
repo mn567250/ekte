@@ -41,6 +41,7 @@
     - text: L'historique reste uniquement dans un fichier SQLite local sous
     - code: ~/.zing
     - text: — rien n'est transmis.
+  - status: 15 exécutions sur cette machine Enregistré depuis le 26 sept. 2026 · les clés d’API ne sont jamais stockées
   - region "Filtres":
     - button "Filtres" [expanded]
     - text: Rechercher

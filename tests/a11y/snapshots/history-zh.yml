@@ -41,6 +41,7 @@
     - text: 历史只保存在
     - code: ~/.zing
     - text: 下的本地 SQLite 文件里，不会上传。
+  - status: 本机有 15 次检测 最早一次为 2026年9月26日 · API 密钥从不保存
   - region "筛选":
     - button "筛选" [expanded]
     - text: 搜索

@@ -98,9 +98,8 @@
       <p data-en="Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay zing knows — packaged ones and <b>yours</b> — and can switch each of them on or off or add your own. Your changes are stored in <b>kb.db</b> on this machine and used by the web UI and <code>zing check</code> alike.">每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 zing 已知的全部模型、厂商与中转站——内置的和<b>你的</b>——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 <b>kb.db</b> 中，网页界面和 <code>zing check</code> 都会使用。</p>
     </div>
 
-    <!-- problems with your entries (warning) and switched-off packaged items (information) -->
-    <div class="warnbox" id="kbwarn" role="alert" hidden></div>
-    <div class="infobox" id="kbinfo" role="status" hidden></div>
+    <!-- the page notice (notice.js) -->
+    <div class="znote" id="note" hidden></div>
 
     <!-- one filter for every tab (filterpanel.js) -->
     <section class="card filters" id="filters" hidden></section>
@@ -158,6 +157,7 @@
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
+<script src="/v2/static/notice.js"></script>
 <script src="/v2/static/tabs.js"></script>
 <script src="/v2/static/filterpanel.js"></script>
 <script src="/v2/static/kbview.js"></script>
@@ -257,21 +257,61 @@
     },
   };
 
-  // ---- page-level: warnings, export ------------------------------------------ //
+  // ---- page notice: load failure, skipped / ignored entries, switched off ---- //
+  // One notice (notice.js); the most important message sets its level, the
+  // others are listed in it.
   function paintWarn() {
-    var box = $("kbwarn"), lines = [], w = (data && data.warnings) || [];
-    if (data && data.user_kb === false) {
-      lines.push(T("你的条目和开关当前被忽略（ZING_NO_USER_KB），无法更改。", "Your entries and switches are currently ignored (ZING_NO_USER_KB) and cannot be changed."));
+    var note = $("note");
+    if (!data) {
+      window.ZingNotice.show(note, loadErr ? {
+        level: "critical", title: T("无法加载知识库", "Knowledge base could not be loaded"),
+        detail: T("加载完成前，检测无法与任何资料比对。", "Audits cannot compare against any profile until it loads."),
+        actions: [{ act: "retry", label: T("重试", "Retry"), primary: true }],
+      } : null);
+      return;
     }
-    var info = $("kbinfo");
-    info.hidden = !(data && data.disabled);
-    info.textContent = !info.hidden ? (data.disabled === 1
-      ? T("1 个内置项已停用。", "1 packaged item is switched off.")
-      : Tf("{n} 个内置项已停用。", "{n} packaged items are switched off.", { n: data.disabled })) : "";
-    if (w.length) lines.push(T("以下条目已跳过：", "These entries were skipped:"));
-    box.hidden = !lines.length;
-    box.innerHTML = lines.map(esc).join(" ") + (w.length ? "<ul>" + w.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "");
+    var w = data.warnings || [], ignored = data.user_kb === false, off = data.disabled || 0;
+    var offText = off === 1 ? T("1 个内置项已停用", "1 packaged item is switched off")
+      : Tf("{n} 个内置项已停用", "{n} packaged items are switched off", { n: off });
+    var ignoredText = T("你的条目被忽略：已设置 ZING_NO_USER_KB，开关和新增条目都无法更改。",
+      "Your entries are ignored: ZING_NO_USER_KB is set, so switches and additions cannot be changed.");
+    if (w.length) {
+      window.ZingNotice.show(note, {
+        level: "warning",
+        title: w.length === 1 ? T("你的 1 个条目被跳过", "1 of your entries was skipped")
+          : Tf("你的 {n} 个条目被跳过", "{n} of your entries were skipped", { n: w.length }),
+        detail: T("请修正或删除它们；在此之前检测会忽略它们。", "Fix or delete them; audits ignore them meanwhile."),
+        items: w.concat(ignored ? [ignoredText] : []).concat(off ? [offText] : []),
+      });
+    } else if (ignored) {
+      window.ZingNotice.show(note, {
+        level: "warning", title: T("你的条目被忽略", "Your entries are ignored"),
+        detail: T("已设置 ZING_NO_USER_KB：开关和新增条目都无法更改。", "ZING_NO_USER_KB is set: switches and additions cannot be changed."),
+        items: off ? [offText] : [],
+      });
+    } else if (off) {
+      window.ZingNotice.show(note, {
+        level: "info", title: offText,
+        detail: T("检测这些项时没有资料可比对。", "Audits of them run without a profile to compare against.") +
+          (data.entry_count ? " · " + Tf("{n} 个条目是你的，保存在 kb.db", "{n} entries are yours, stored in kb.db", { n: data.entry_count }) : ""),
+      });
+    } else {
+      var n = function (k, one, many) {
+        var c = V.itemsOf(data, k).length;
+        return c === 1 ? T(one[0], one[1]) : Tf(many[0], many[1], { n: c });
+      };
+      window.ZingNotice.show(note, {
+        level: "success", title: T("知识库完整", "Knowledge base complete"),
+        detail: Tf("{list}，全部已启用", "{list}, all switched on", { list: [
+          n("models", ["1 个模型", "1 model"], ["{n} 个模型", "{n} models"]),
+          n("providers", ["1 个厂商", "1 provider"], ["{n} 个厂商", "{n} providers"]),
+          n("relays", ["1 个中转站", "1 relay"], ["{n} 个中转站", "{n} relays"])].join(" · ") }),
+      });
+    }
   }
+  $("note").addEventListener("click", function (ev) {
+    if (ev.target.closest('[data-note-act="retry"]')) load();
+  });
 
   // ---- the filter card: one set of filters for every tab --------------------- //
   // Model id, provider, relay and source, each offering only the values that

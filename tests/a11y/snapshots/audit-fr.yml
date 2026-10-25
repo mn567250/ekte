@@ -38,6 +38,9 @@
 - main:
   - heading "Ce relais sert-il le vrai modèle ?" [level=1]
   - paragraph: Choisissez le relais, le modèle à auditer et, s'il est vendu sous un autre nom, le modèle qu'il prétend être. zing exécute sur votre machine une batterie complète de tests en boîte noire et produit un rapport de vérification lisible et étayé par des preuves.
+  - status:
+    - text: Dernier audit terminé gateway.a-very-long-relay-hostname.example.org · model-b · score 72/100 · 27 sept. 2026, 10:02
+    - button "Ouvrir le rapport"
   - tablist "Audits":
     - tab "Nouvel audit" [selected]
     - tab "En cours"

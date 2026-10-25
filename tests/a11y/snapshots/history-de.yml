@@ -41,6 +41,7 @@
     - text: Der Verlauf liegt nur in einer lokalen SQLite-Datei unter
     - code: ~/.zing
     - text: — nichts wird hochgeladen.
+  - status: 15 Läufe auf diesem Rechner Gespeichert seit 26.09.2026 · API-Schlüssel werden nie gespeichert
   - region "Filter":
     - button "Filter" [expanded]
     - text: Suche

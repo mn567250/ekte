@@ -251,6 +251,8 @@
       <p data-en="Every verification you have run on this machine. Grouped by &quot;relay + claimed model&quot;, with a health-score trend line; click any row to expand that report.">这里是你在本机跑过的每一次验真。按「中转站 + 声称模型」分组，附一条健康分趋势曲线；点任意一行可展开当时那份报告。</p>
       <p class="local-note"><span class="pico" id="lockIcon"></span><span data-en="History lives only in a local SQLite file under &lt;code&gt;~/.zing&lt;/code&gt; — nothing is uploaded.">历史只保存在 <code>~/.zing</code> 下的本地 SQLite 文件里，不会上传。</span></p>
     </div>
+    <!-- the page notice (notice.js) -->
+    <div class="znote" id="note" hidden></div>
 
     <section class="card filters" id="filters" hidden></section>
 
@@ -265,6 +267,7 @@
 <script src="/v2/static/chartmotion.js"></script>
 <script src="/icons.js"></script>
 <script src="/v2/static/nav.js"></script>
+<script src="/v2/static/notice.js"></script>
 <script src="/v2/static/filterpanel.js"></script>
 <script src="/v2/static/report.js"></script>
 <script>
@@ -674,8 +677,64 @@
         renderFilters();
         render();
       })
-      .then(function () { host.setAttribute("aria-busy", "false"); });
+      .then(function () { host.setAttribute("aria-busy", "false"); loadNote(); });
   }
+
+  /* ---------------- page notice (notice.js) ---------------- */
+  // critical: the history cannot be read; warning: monitor runs are paused
+  // (master key locked) and / or older runs are still being processed;
+  // info: how many runs, where and since when
+  var note = { status: null, err: false, locked: false };
+  function paintNote() {
+    var n = null, s = note.status;
+    if (note.err || state.error != null) {
+      n = { level: "critical", title: T("无法加载检测历史", "History could not be loaded"),
+        detail: T("数据库被其他进程锁定、已损坏，或本地 zing 服务未运行。", "The database is locked by another process or damaged, or the local zing service is not running."),
+        actions: [{ act: "retry", label: T("重试", "Retry"), primary: true }] };
+    } else if (s) {
+      var warn = [];
+      if (note.locked) {
+        warn.push([T("监控运行已暂停", "Monitor runs are paused"),
+          T("主密钥已锁定：计划的监控运行已暂停，因此这里不会保存新的运行。", "Master key locked: scheduled monitor runs are paused, so no new runs are saved here.")]);
+      }
+      if (s.pending) {
+        warn.push([s.pending === 1 ? T("1 次较早的检测仍在处理中", "1 older run is still being processed")
+          : Tf("{n} 次较早的检测仍在处理中", "{n} older runs are still being processed", { n: s.pending }),
+          T("处理完成前，部分细节可能缺失。", "Some details may be missing until it is done.")]);
+      }
+      if (warn.length) {
+        n = { level: "warning", title: warn[0][0], detail: warn[0][1],
+          items: warn.slice(1).map(function (w) { return w[0] + ": " + w[1]; }),
+          actions: note.locked ? [{ act: "unlock", label: T("解锁", "Unlock"), primary: true }] : [] };
+      } else if (s.runs) {
+        var since = "";
+        try { since = ZING_LANG.dateFmt({ dateStyle: "medium" }).format(new Date(s.oldest)); } catch (e) { since = s.oldest || ""; }
+        n = { level: "info",
+          title: s.runs === 1 ? T("本机有 1 次检测", "1 run on this machine") : Tf("本机有 {n} 次检测", "{n} runs on this machine", { n: s.runs }),
+          detail: Tf("最早一次为 {date} · API 密钥从不保存", "Saved since {date} · API keys are never stored", { date: since }) };
+      } else {
+        n = { level: "info", title: T("还没有检测", "No runs yet"),
+          detail: T("你运行的每次检测都会保存在这里，仅在本机。", "Every audit you run is saved here, on this machine only.") };
+      }
+    }
+    window.ZingNotice.show($("#note"), n);
+  }
+  function loadNote() {
+    var st = fetch("/api/history/status").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+    var mk = fetch("/api/secret").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    return Promise.all([st, mk])
+      .then(function (res) { note.status = res[0]; note.locked = !!(res[1] && res[1].state === "locked"); note.err = false; },
+        function () { note.err = true; })
+      .then(paintNote);
+  }
+  $("#note").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-note-act]");
+    if (!b) return;
+    var act = b.getAttribute("data-note-act");
+    if (act === "retry") load();
+    else if (act === "unlock") location.href = "/v2/watches";
+  });
+  window.addEventListener("zing:lang", paintNote);
 
   /* ---------------- rendering ---------------- */
   function render() {
@@ -694,7 +753,7 @@
     if (frow) need[frow.getAttribute("data-id")] = 1;
 
     if (state.error != null) {
-      host.innerHTML = '<div class="errbox" role="alert">' + esc(T("无法读取历史：", "Could not read history: ")) + esc(state.error) +
+      host.innerHTML = '<div class="errbox">' + esc(T("无法读取历史：", "Could not read history: ")) + esc(state.error) +
         "<br>" + esc(T("请确认本地 zing 服务在运行。", "Make sure the local zing service is running.")) + "</div>";
       return;
     }

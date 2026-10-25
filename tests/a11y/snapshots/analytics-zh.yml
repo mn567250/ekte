@@ -41,6 +41,7 @@
     - text: 基于
     - code: ~/.zing
     - text: 下的本地历史计算，不会上传。
+  - status: 1 次较早的检测开始时间为估算 按时间段的图表只能大致放置它们。
   - status: 已更新：此范围内 14 次检测。
   - region "筛选":
     - button "筛选" [expanded]

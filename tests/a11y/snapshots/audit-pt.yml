@@ -38,6 +38,9 @@
 - main:
   - heading "Este intermediário serve o modelo verdadeiro?" [level=1]
   - paragraph: Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O zing executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.
+  - status:
+    - text: Última auditoria concluída gateway.a-very-long-relay-hostname.example.org · model-b · pontuação 72/100 · 27/09/2026, 10:02
+    - button "Abrir relatório"
   - tablist "Auditorias":
     - tab "Nova auditoria" [selected]
     - tab "Em andamento"

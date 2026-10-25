@@ -38,6 +38,9 @@
 - main:
   - heading "¿Este intermediario sirve el modelo real?" [level=1]
   - paragraph: Elige el relay, el modelo que quieres auditar y, si se vende con otro nombre, el modelo que dice ser. zing ejecuta en tu equipo una batería completa de pruebas de caja negra y genera un informe de verificación legible y respaldado por evidencias.
+  - status:
+    - text: Última auditoría finalizada gateway.a-very-long-relay-hostname.example.org · model-b · puntuación 72/100 · 27 sept 2026, 10:02
+    - button "Abrir informe"
   - tablist "Auditorías":
     - tab "Nueva auditoría" [selected]
     - tab "En curso"
