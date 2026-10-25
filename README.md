@@ -256,15 +256,19 @@ choice is remembered per browser.
 | **Audit** | `/` | `/v2/` | Audit a relay (optionally against a baseline) and read the report |
 | **Console** | `/console` | — | The same audit as a compact, log-style console |
 | **Tools** | `/tools` | — | Embedding and rerank audits; in the new UI they start on the **Audit** page through the endpoint-type selector (`/v2/tools` forwards there) |
+| **Monitors** | `/watches` | `/v2/watches` | Scheduled re-audits with webhook alerts |
 | **History** | `/history` | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
 | **Analytics** | — | `/v2/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
-| **Monitors** | `/watches` | `/v2/watches` | Scheduled re-audits with webhook alerts |
 | **Knowledge** | — | `/v2/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
 
 The new UI adds: filters and configurable trends (score, grade, latency p50,
 tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
 report** in every format; a theme switch (Auto theme / Light / Dark); and the
-**Knowledge** page.
+**Knowledge** page. Every page but Accessibility has one notice right under its
+introduction, coloured by importance (information, success, warning,
+critical): e.g. the last finished audit on **Audit**, the master key on
+**Monitors**, runs still being processed on **History** and **Analytics**,
+skipped entries on **Knowledge**.
 
 **Background audits (new UI).** An audit started on the **Audit** page keeps
 running when you switch pages or close the tab; **Continue in background** sends

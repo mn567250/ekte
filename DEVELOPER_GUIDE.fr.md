@@ -127,7 +127,6 @@ zing/
 tests/                 suite pytest ; conftest.py contient le relais simulé
 docs/                  METHODOLOGY (7 langues), CI.md, DOCKER.md, PUBLISHING.md
 examples/zing.yaml     fichier de configuration commenté
-prototypes/            prototypes HTML statiques de l'interface web (non livrés)
 action.yml             l'action composite GitHub
 Dockerfile             image de l'interface web
 ```
@@ -438,6 +437,25 @@ de traduction), `i18n.js` (traduction des constats), `icons.js`,
 `modelpicker.js` (**Récupérer les modèles**), `secretfield.js` et `perf.js`
 (graphiques de performance).
 
+Chaque page v2 sauf Accessibilité affiche un **avis de page** juste sous son
+hero (`<div class="znote" id="note">`, dessiné par `v2/notice.js`, stylé par
+`.znote` dans `zing.css`) : `ZingNotice.show(el, {level, title, detail, items,
+actions})` ; le niveau `info`, `success`, `warning` ou `critical` fixe la teinte,
+la bordure et l'icône (critical est `role="alert"`, les autres `role="status"` ;
+afficher le même avis à nouveau ne change rien). La page choisit le message le
+plus important et liste les autres dans `items`. Audit : serveur injoignable /
+audits en cours / la dernière exécution enregistrée / s'exécute localement ;
+Historique : historique illisible / exécutions des surveillances en pause (clé
+maîtresse verrouillée) ou anciennes exécutions encore en traitement / nombre
+d'exécutions ; Analyses : données illisibles / exécutions pas encore dans les
+graphiques ou avec une heure de début estimée / sur quoi elles reposent ;
+Connaissances : échec du chargement / entrées ignorées / éléments désactivés /
+complète. Surveillances garde sa barre de clé maîtresse (`masterkey.js`), au même
+aspect et au même endroit. Les chiffres de tout l'historique viennent de
+`GET /api/history/status` (`history.status()` : nombre d'exécutions, la plus
+ancienne et la plus récente, lignes que le backfill des analyses n'a pas encore
+traitées, exécutions à l'heure de début estimée).
+
 La page v2 **Audit** configure les relais avec
 `v2/relaycfg.js` : choix du relais/fournisseur → URL de base → les modèles du
 relais (`/api/models`, au changement, mis en cache par URL/clé/protocole) → modèle
@@ -487,7 +505,7 @@ vers cette vue** copie (un champ en lecture seule sélectionné si l'API du
 presse-papiers manque ou refuse) ; un fragment sans `tab` ouvre la vue
 d'ensemble, et un lien collé (`hashchange`) relit la vue. Le panneau de filtres
 repliable est `v2/filterpanel.js` + `v2/filterpanel.css`, partagé avec
-l'Historique : `ZingFilterPanel.create(section, {label, title, storeKey, open,
+l'Historique, Surveillances et Connaissances : `ZingFilterPanel.create(section, {label, title, storeKey, open,
 onReset})` renvoie `render({body, foot, count, summary})`,
 `sync({count, summary})`, `setOpen()` et `focusStart()` ; la page possède ses
 filtres et ses champs, le panneau le bouton avec le badge des filtres actifs, le

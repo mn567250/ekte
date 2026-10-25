@@ -264,15 +264,20 @@ clássica** volta atrás. A escolha é memorizada por navegador.
 | **Auditoria** | `/` | `/v2/` | Auditar um relay (opcionalmente face a uma referência) e ler o relatório |
 | **Consola** | `/console` | — | A mesma auditoria como consola compacta, em estilo de registo |
 | **Ferramentas** | `/tools` | — | Auditorias de embeddings e rerank; na nova interface começam na página **Auditoria** com o seletor de tipo de endpoint (`/v2/tools` redireciona para lá) |
+| **Monitores** | `/watches` | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
 | **Histórico** | `/history` | `/v2/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
 | **Análises** | — | `/v2/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
-| **Monitores** | `/watches` | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
 | **Conhecimento** | — | `/v2/kb` | A base de conhecimento em três separadores — modelos, provedores, relays: explorar, ativar/desativar, adicionar os seus |
 
 A nova interface acrescenta: filtros e tendências configuráveis (pontuação, nota,
 latência p50, tokens/s) no **Histórico**; **Agendar como monitor** e **Executar auditoria novamente** em cada
 execução do Histórico; **Transferir relatório** em todos os formatos; um seletor
-de tema (Automático / Claro / Escuro); e a página **Conhecimento**.
+de tema (Automático / Claro / Escuro); e a página **Conhecimento**. Cada página
+exceto Acessibilidade tem um aviso logo abaixo da introdução, colorido segundo a
+importância (informação, sucesso, aviso, crítico): p. ex. a última auditoria
+concluída em **Auditoria**, a chave mestra em **Monitores**, as execuções ainda
+em processamento em **Histórico** e **Análises**, as entradas ignoradas em
+**Conhecimento**.
 
 **Auditorias em segundo plano (nova interface).** Uma auditoria iniciada na
 página **Auditoria** continua quando muda de página ou fecha o separador;
@@ -329,7 +334,7 @@ cabeçalho da página e um painel de filtros comum; só o separador que está a 
 (`#tab=reliability&range=30&relay=…&eb=dow_hour`), e **Copiar a ligação para
 esta vista** copia-o (ou mostra-o num campo para copiar quando o navegador não
 o permite): a ligação abre exatamente essa vista. O painel de filtros é o mesmo
-em **Histórico** e **Análises**: fechado, indica quantos filtros estão ativos e
+em **Histórico**, **Monitores** e **Análises**: fechado, indica quantos filtros estão ativos e
 nomeia-os numa linha (p. ex. «Últimos 30 dias · standard · Streaming · Example
 Relay»), assim uma vista partilhada diz o que mostra.
 
@@ -587,7 +592,11 @@ segundo plano dentro do processo do servidor, regista cada execução no
   declarado, fornecedor, suite, dimensões personalizadas) para um monitor em
   pausa na página **Monitores**; defina aí o intervalo e a chave API (o Histórico
   nunca guarda chaves) e ative-o. Intervalo, chave, **Limite de alerta**,
-  webhooks e **Idioma dos alertas** editam-se diretamente em cada monitor.
+  webhooks e **Idioma dos alertas** editam-se diretamente em cada monitor. Um
+  clique no nome recolhe o cartão para nome, estado e última execução
+  (**Recolher tudo** / **Expandir tudo** acima da lista; guardado por
+  navegador), e o painel de filtros (pesquisa, estado, último risco, tipo de
+  endpoint, relay, suite) restringe uma lista longa como no **Histórico**.
 - **Interface clássica:** preencha o formulário da página **Monitores** e clique
   em **Adicionar monitor**.
 

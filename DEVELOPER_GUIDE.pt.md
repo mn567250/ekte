@@ -125,7 +125,6 @@ zing/
 tests/                 suite pytest; conftest.py contém o relay simulado
 docs/                  METHODOLOGY (7 idiomas), CI.md, DOCKER.md, PUBLISHING.md
 examples/zing.yaml     ficheiro de configuração comentado
-prototypes/            protótipos HTML estáticos do design da interface web (não distribuídos)
 action.yml             a action composta do GitHub
 Dockerfile             imagem da interface web
 ```
@@ -430,6 +429,24 @@ servidos a partir da raiz: `lang.js` (mudança de idioma), `locales.js` (dados d
 tradução), `i18n.js` (tradução das constatações), `icons.js`, `modelpicker.js`
 (**Obter modelos**), `secretfield.js` e `perf.js` (gráficos de desempenho).
 
+Cada página v2 exceto Acessibilidade tem um **aviso de página** logo abaixo do
+hero (`<div class="znote" id="note">`, desenhado por `v2/notice.js`, com o estilo
+`.znote` em `zing.css`): `ZingNotice.show(el, {level, title, detail, items,
+actions})`; o nível `info`, `success`, `warning` ou `critical` define a
+tonalidade, a margem e o ícone (critical é `role="alert"`, os outros
+`role="status"`; mostrar o mesmo aviso outra vez não muda nada). A página escolhe
+a mensagem mais importante e lista as outras em `items`. Auditoria: servidor
+inacessível / auditorias em curso / a execução guardada mais recente / executa
+localmente; Histórico: histórico ilegível / execuções dos monitores em pausa
+(chave mestra bloqueada) ou execuções antigas ainda em processamento / número de
+execuções; Análises: dados ilegíveis / execuções ainda fora dos gráficos ou com
+hora de início estimada / em que se baseia; Conhecimento: falha ao carregar /
+entradas ignoradas / itens desativados / completa. Monitores mantém a sua barra
+da chave mestra (`masterkey.js`), com o mesmo aspeto e lugar. Os números de todo
+o histórico vêm de `GET /api/history/status` (`history.status()`: número de
+execuções, a mais antiga e a mais recente, linhas que o backfill das análises
+ainda não processou, execuções com hora de início estimada).
+
 A página v2 **Auditoria** configura relays com
 `v2/relaycfg.js`: escolha de relay/provedor → URL base → os modelos do relay
 (`/api/models`, ao mudar, em cache por URL/chave/protocolo) → modelo declarado da
@@ -477,7 +494,7 @@ fragmento — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), que
 quando a API da área de transferência falta ou recusa); um fragmento sem `tab`
 abre a Visão geral, e uma ligação colada (`hashchange`) volta a ler a vista. O
 painel de filtros recolhível é `v2/filterpanel.js` + `v2/filterpanel.css`,
-partilhado com o Histórico: `ZingFilterPanel.create(section, {label, title,
+partilhado com o Histórico, Monitores e Conhecimento: `ZingFilterPanel.create(section, {label, title,
 storeKey, open, onReset})` devolve `render({body, foot, count, summary})`,
 `sync({count, summary})`, `setOpen()` e `focusStart()`; a página tem os seus
 filtros e campos, o painel o botão com o distintivo de filtros ativos, o resumo

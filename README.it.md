@@ -265,15 +265,20 @@ nuova interfaccia** passa alla **nuova interfaccia** sotto `/v2/`, il cui link
 | **Verifica** | `/` | `/v2/` | Verificare un relay (eventualmente rispetto a un riferimento) e leggere il rapporto |
 | **Console** | `/console` | — | La stessa verifica come console compatta, in stile registro |
 | **Strumenti** | `/tools` | — | Verifiche di embedding e rerank; nella nuova interfaccia partono dalla pagina **Verifica** con il selettore del tipo di endpoint (`/v2/tools` rimanda lì) |
+| **Monitor** | `/watches` | `/v2/watches` | Verifiche ripetute pianificate con avvisi via webhook |
 | **Cronologia** | `/history` | `/v2/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
 | **Analisi** | — | `/v2/analytics` | Relay e modelli confrontati nel tempo: indicatori, grafici con tabelle di dati, classifiche |
-| **Monitor** | `/watches` | `/v2/watches` | Verifiche ripetute pianificate con avvisi via webhook |
 | **Conoscenza** | — | `/v2/kb` | La base di conoscenza in tre schede — modelli, provider, relay: sfogliare, attivare/disattivare, aggiungere i propri |
 
 La nuova interfaccia aggiunge: filtri e tendenze configurabili (punteggio, voto,
 latenza p50, token/s) nella **Cronologia**; **Pianifica come monitor** e **Riesegui audit** su ogni
 esecuzione della Cronologia; **Scarica il rapporto** in tutti i formati; un
 selettore del tema (Automatico / Chiaro / Scuro); e la pagina **Conoscenza**.
+Ogni pagina tranne Accessibilità ha un avviso subito sotto l'introduzione,
+colorato secondo l'importanza (informazione, successo, avviso, critico): ad es.
+l'ultimo audit concluso in **Verifica**, la chiave master in **Monitor**, le
+esecuzioni ancora in elaborazione in **Cronologia** e **Analisi**, le voci
+saltate in **Conoscenza**.
 
 **Audit in background (nuova interfaccia).** Un audit avviato dalla pagina
 **Audit** continua quando cambi pagina o chiudi la scheda; **Continua in
@@ -331,7 +336,7 @@ la scheda, i filtri e ogni opzione dei grafici
 (`#tab=reliability&range=30&relay=…&eb=dow_hour`), e **Copia il link a questa
 vista** lo copia (o lo mostra in un campo da copiare se il browser non lo
 consente): il link apre esattamente quella vista. Il pannello dei filtri è lo
-stesso in **Cronologia** e **Analisi**: chiuso, indica quanti filtri sono
+stesso in **Cronologia**, **Monitor** e **Analisi**: chiuso, indica quanti filtri sono
 attivi e li nomina in una riga (ad es. «Ultimi 30 giorni · standard · Streaming
 · Example Relay»), così una vista condivisa dice cosa mostra.
 
@@ -587,7 +592,11 @@ esecuzione nella **Cronologia** e invia gli stessi avvisi via webhook:
   personalizzate) in un monitor in pausa nella pagina **Monitor**; lì imposta
   l'intervallo e la chiave API (la Cronologia non salva mai le chiavi) e
   attivalo. Intervallo, chiave, **Soglia di avviso**, webhook e **Lingua degli
-  avvisi** si modificano direttamente su ogni monitor.
+  avvisi** si modificano direttamente su ogni monitor. Un clic sul nome
+  comprime la scheda a nome, stato e ultima esecuzione (**Comprimi tutto** /
+  **Espandi tutto** sopra l'elenco; ricordato per browser), e il pannello dei
+  filtri (ricerca, stato, ultimo rischio, tipo di endpoint, relay, suite)
+  restringe un elenco lungo come nella **Cronologia**.
 - **Interfaccia classica:** compila il modulo della pagina **Monitor** e scegli
   **Aggiungi monitor**.
 

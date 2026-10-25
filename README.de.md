@@ -268,15 +268,20 @@ Oberfläche** zurückführt. Die Wahl wird pro Browser gespeichert.
 | **Prüfung** | `/` | `/v2/` | Ein Relay prüfen (optional gegen eine Referenz) und den Bericht lesen |
 | **Konsole** | `/console` | — | Dieselbe Prüfung als kompakte Konsole im Log-Stil |
 | **Werkzeuge** | `/tools` | — | Embedding- und Rerank-Prüfungen; in der neuen Oberfläche starten sie auf der Seite **Prüfung** über die Auswahl des Endpunkttyps (`/v2/tools` leitet dorthin weiter) |
+| **Überwachung** | `/watches` | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
 | **Verlauf** | `/history` | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
 | **Analyse** | — | `/v2/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
-| **Überwachung** | `/watches` | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
 | **Wissen** | — | `/v2/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
 
 Die neue Oberfläche bietet zusätzlich: Filter und konfigurierbare Trends
 (Bewertung, Note, Latenz p50, Token/s) im **Verlauf**; **Als Überwachung
 einplanen** und **Audit erneut ausführen** bei jedem Lauf im Verlauf; **Bericht herunterladen** in jedem Format;
 eine Designauswahl (Automatisch / Hell / Dunkel); und die Seite **Wissen**.
+Jede Seite außer Barrierefreiheit hat direkt unter ihrer Einleitung einen
+Hinweis, eingefärbt nach Wichtigkeit (Information, Erfolg, Warnung, kritisch):
+z. B. die zuletzt abgeschlossene Prüfung auf **Prüfung**, der Hauptschlüssel auf
+**Überwachung**, noch zu verarbeitende Läufe auf **Verlauf** und **Analyse**,
+übersprungene Einträge auf **Wissen**.
 
 **Audits im Hintergrund (neue Oberfläche).** Ein auf der Seite **Audit**
 gestartetes Audit läuft weiter, wenn Sie die Seite wechseln oder den Tab
@@ -336,7 +341,7 @@ enthält Tab, Filter und jede Diagrammoption
 (`#tab=reliability&range=30&relay=…&eb=dow_hour`), und **Link zu dieser
 Ansicht kopieren** kopiert sie (oder zeigt sie in einem Feld zum Kopieren, wo
 der Browser das nicht erlaubt): Der Link öffnet genau diese Ansicht. Das
-Filterpanel ist auf **Verlauf** und **Analyse** dasselbe: Geschlossen zeigt es,
+Filterpanel ist auf **Verlauf**, **Überwachung** und **Analyse** dasselbe: Geschlossen zeigt es,
 wie viele Filter aktiv sind, und nennt sie in einer Zeile (z. B. „Letzte 30
 Tage · standard · Streaming · Example Relay“), so sagt eine geteilte Ansicht,
 was sie zeigt.
@@ -599,7 +604,11 @@ und sendet dieselben Webhook-Warnungen:
   eine pausierte Überwachung auf der Seite **Überwachung**; dort Intervall und
   API-Schlüssel setzen (der Verlauf speichert nie Schlüssel) und sie
   einschalten. Intervall, Schlüssel, **Warnschwelle**, Webhooks und **Sprache der
-  Warnungen** lassen sich auf jeder Überwachung direkt bearbeiten.
+  Warnungen** lassen sich auf jeder Überwachung direkt bearbeiten. Ein Klick auf
+  den Namen klappt die Karte auf Name, Status und letzten Lauf zusammen
+  (**Alle einklappen** / **Alle aufklappen** über der Liste; pro Browser
+  gemerkt), und das Filterpanel (Suche, Status, letztes Risiko, Endpunkttyp,
+  Relay, Suite) grenzt eine lange Liste ein wie im **Verlauf**.
 - **Klassische Oberfläche:** das Formular auf der Seite **Überwachung** ausfüllen
   und **Überwachung hinzufügen**.
 

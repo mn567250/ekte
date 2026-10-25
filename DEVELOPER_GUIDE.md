@@ -123,7 +123,6 @@ zing/
 tests/                 pytest suite; conftest.py holds the mock relay
 docs/                  METHODOLOGY (7 languages), CI.md, DOCKER.md, PUBLISHING.md
 examples/zing.yaml     annotated config file
-prototypes/            static HTML design prototypes of the web UI (not shipped)
 action.yml             the GitHub composite action
 Dockerfile             web UI image
 ```
