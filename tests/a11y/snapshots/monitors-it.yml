@@ -41,8 +41,16 @@
     - link "Cronologia":
       - /url: /v2/history
     - text: e scegli Pianifica come monitor, poi imposta qui l’intervallo e attivalo. Quando il rischio supera la soglia o peggiora rispetto all’ultima volta, zing avvisa i tuoi webhook (Slack / Feishu / DingTalk / JSON generico).
-  - text: Ancora nessuna chiave principale Viene creata quando salvi la prima chiave API.
-  - button "Crea ora"
+  - status:
+    - text: Le chiavi API non vengono salvate Le chiavi inserite restano solo nella memoria di zing serve e non vengono mai scritte su disco; reinseriscile dopo un riavvio. I riferimenti env:VAR continuano a funzionare.
+    - button "Modifica"
+  - group "Archiviazione delle chiavi API":
+    - text: Archiviazione delle chiavi API
+    - radio "Non salvare le chiavi" [checked]
+    - text: Non salvare le chiavi
+    - radio "Salva cifrate su questo computer"
+    - text: Salva cifrate su questo computer
+    - paragraph: Le chiavi API restano nella memoria di zing serve e non vengono mai scritte su disco; reinseriscile dopo ogni riavvio. Usa env:VAR per i monitor che devono funzionare senza supervisione.
   - region "Filtri":
     - button "Filtri" [expanded]
     - text: Cerca
@@ -155,7 +163,7 @@
         - button "Attiva monitor"
       - button "Esegui ora"
       - button "Elimina"
-    - paragraph: "Tutto gira in locale. La chiave API è salvata cifrata, solo nel database locale in ~/.zing su questo computer; non compare mai nell'elenco dei monitor e non viene mai inviata al browser. La chiave principale che la decifra non viene mai scritta su disco: la conservi tu e la inserisci dopo ogni riavvio."
+    - paragraph: "Tutto viene eseguito in locale. La chiave API non viene salvata: resta solo nella memoria di zing serve e non viene mai scritta su disco, mostrata nell'elenco dei monitor o inviata al browser. Reinseriscila dopo il riavvio di zing serve."
 - contentinfo:
   - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
   - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

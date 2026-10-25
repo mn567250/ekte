@@ -41,8 +41,16 @@
     - link "Historial":
       - /url: /v2/history
     - text: y elige Programar como monitor; luego define aquí su intervalo y actívalo. Cuando el riesgo supera tu umbral o empeora respecto a la última vez, zing avisa a tus webhooks (Slack / Feishu / DingTalk / JSON genérico).
-  - text: Aún no hay clave maestra Se crea cuando guardas la primera clave API.
-  - button "Crear ahora"
+  - status:
+    - text: Las claves API no se guardan Las claves que introduces solo permanecen en la memoria de zing serve y nunca se escriben en el disco; vuelve a introducirlas tras un reinicio. Las referencias env:VAR siguen funcionando.
+    - button "Cambiar"
+  - group "Almacenamiento de claves API":
+    - text: Almacenamiento de claves API
+    - radio "No guardar claves" [checked]
+    - text: No guardar claves
+    - radio "Guardar cifradas en este equipo"
+    - text: Guardar cifradas en este equipo
+    - paragraph: Las claves API permanecen en la memoria de zing serve y nunca se escriben en el disco; vuelve a introducirlas tras cada reinicio. Usa env:VAR para monitores que deban funcionar sin supervisión.
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Buscar
@@ -155,7 +163,7 @@
         - button "Activar monitor"
       - button "Ejecutar ahora"
       - button "Eliminar"
-    - paragraph: "Todo se ejecuta localmente. La clave API se guarda cifrada, solo en la base de datos local bajo ~/.zing en este equipo; nunca aparece en la lista de monitores ni se envía al navegador. La clave maestra que la descifra nunca se escribe en disco: la guardas tú y la introduces tras cada reinicio."
+    - paragraph: "Todo se ejecuta localmente. La clave API no se guarda: permanece solo en la memoria de zing serve y nunca se escribe en el disco, se muestra en la lista de monitores ni se envía al navegador. Vuelve a introducirla cuando zing serve se reinicie."
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
   - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

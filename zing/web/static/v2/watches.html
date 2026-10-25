@@ -1432,9 +1432,10 @@
     ks.ask = ks.st && mode !== ks.st.storage ? mode : null;
     ks.fail = null;
     ks.done = null;
+    // focus stays on the radio (no change of context on input): the notice,
+    // a status region, announces the question and holds the confirm button
     paintStorage();
     paintNote();
-    if (ks.ask) focusNote("ks-yes");
   }
   function switchStorage() {
     var mode = ks.ask;

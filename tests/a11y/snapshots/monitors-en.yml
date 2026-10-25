@@ -41,8 +41,16 @@
     - link "History":
       - /url: /v2/history
     - text: and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).
-  - text: No master key yet It is created when you store the first API key.
-  - button "Create now"
+  - status:
+    - text: API keys are not stored Keys you enter stay in the memory of zing serve only and are never written to disk; enter them again after a restart. env:VAR references keep working.
+    - button "Change"
+  - group "API key storage":
+    - text: API key storage
+    - radio "Don't store keys" [checked]
+    - text: Don't store keys
+    - radio "Store encrypted on this machine"
+    - text: Store encrypted on this machine
+    - paragraph: API keys stay in the memory of zing serve and are never written to disk; enter them again after each restart. Use env:VAR for monitors that must run unattended.
   - region "Filters":
     - button "Filters" [expanded]
     - text: Search
@@ -155,7 +163,7 @@
         - button "Activate monitor"
       - button "Run now"
       - button "Delete"
-    - paragraph: "Everything runs locally. The API key is stored encrypted, only in the local database under ~/.zing on this machine; it never appears in the monitor list and is never sent to the browser. The master key that decrypts it is never written to disk: you keep it, and enter it after each restart."
+    - paragraph: "Everything runs locally. The API key is not stored: it stays in the memory of zing serve only and is never written to disk, shown in the monitor list or sent to the browser. Enter it again after zing serve restarts."
 - contentinfo:
   - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
   - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

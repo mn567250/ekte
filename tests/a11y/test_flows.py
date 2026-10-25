@@ -499,7 +499,7 @@ def test_failing_audit_flow(browser, contexts, zing, broken_relay, lang: str) ->
 # --------------------------------------------------------------------------- #
 # 3: monitors (incl. the master-key dialogs)
 # --------------------------------------------------------------------------- #
-MONITOR_MESSAGES = [".mon-msg", ".zmk-msg", ".zmk-err", "[data-zmk=copied]", "[id^='m-']"]
+MONITOR_MESSAGES = ["#note", ".mon-msg", ".zmk-msg", ".zmk-err", "[data-zmk=copied]", "[id^='m-']"]
 DLG = "dialog.zmk-dlg"
 
 
@@ -512,8 +512,9 @@ def wait_text(page: Page, selector: str) -> None:
 @pytest.mark.bitv("9.4.1.3", "9.2.4.3", "9.4.1.2")
 @pytest.mark.parametrize("lang", FLOW_LANGS)
 def test_monitor_flow(browser, contexts, zing, relay, lang: str) -> None:
-    """Schedule a run as a monitor, activate it with an API key (creating the
-    master key in its dialog), edit, pause, lock/unlock the key, delete it."""
+    """Schedule a run as a monitor, activate it with an API key (not stored),
+    choose to store keys encrypted (creating the master key in its dialog),
+    edit, pause, lock/unlock the key, delete it, stop storing keys."""
     flow = open_flow(
         contexts, browser, zing.url, "/v2/history", lang, MONITOR_MESSAGES, "monitor flow",
         permissions=["clipboard-read", "clipboard-write"],
@@ -530,8 +531,12 @@ def test_monitor_flow(browser, contexts, zing, relay, lang: str) -> None:
         page.fill(".setup input[data-act=f-key]", "sk-test")
 
     flow.step("set interval and API key", setup)
-    flow.step("activate: the master-key dialog opens", lambda: (
-        press(page, ".setup [data-act=activate]"), page.wait_for_selector(f"{DLG}[open]")))
+    flow.step("activate: the key stays in memory, no master key needed", lambda: (
+        press(page, ".setup [data-act=activate]"), wait_text(page, ".mon-msg")))
+    flow.step("choose to store keys encrypted: the notice asks", lambda: (
+        press(page, "#ks-encrypted", " "), page.wait_for_selector("#note [data-note-act=ks-yes]")))
+    flow.step("confirm: the master-key dialog opens", lambda: (
+        press(page, "#note [data-note-act=ks-yes]"), page.wait_for_selector(f"{DLG}[open]")))
     flow.step("show the new master key", lambda: (
         press(page, "[data-zmk=show]"),
         page.wait_for_function("() => (document.querySelector('#zmk-key') || {}).value")))
@@ -544,9 +549,9 @@ def test_monitor_flow(browser, contexts, zing, relay, lang: str) -> None:
         page.fill("#zmk-typed", key)
         page.keyboard.press("Enter")
         page.wait_for_selector(f"{DLG}:not([open])", state="attached")
-        wait_text(page, ".mon-msg")
+        page.wait_for_selector("#note.success")
 
-    flow.step("enter the key: dialog closes, monitor activated", confirm)
+    flow.step("enter the key: dialog closes, the key is stored encrypted", confirm)
     flow.step("edit the interval", lambda: press(page, "[data-act=edit-interval]"))
 
     def save_interval() -> None:
@@ -574,7 +579,11 @@ def test_monitor_flow(browser, contexts, zing, relay, lang: str) -> None:
     flow.step("unlock with the key", unlock)
     flow.step("delete: ask", lambda: press(page, "[data-act=del]"))
     flow.step("delete: confirm", lambda: (press(page, "[data-act=del-yes]"), page.wait_for_selector(".mon", state="detached")))
-    flow.done(".mon-msg", ".zmk-msg", "[data-zmk=copied]")
+    flow.step("choose not to store keys: the notice asks", lambda: (
+        press(page, "#ks-memory", " "), page.wait_for_selector("#note [data-note-act=ks-yes]")))
+    flow.step("confirm: keys are no longer stored", lambda: (
+        press(page, "#note [data-note-act=ks-yes]"), page.wait_for_selector("#mk-bar[hidden]", state="attached")))
+    flow.done("#note", ".mon-msg", ".zmk-msg", "[data-zmk=copied]")
 
 
 # --------------------------------------------------------------------------- #
