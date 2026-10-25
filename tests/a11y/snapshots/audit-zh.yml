@@ -67,8 +67,7 @@
       - text: API 密钥 支持 env:VAR / file:/path
       - textbox "API 密钥":
         - /placeholder: sk-... 或 env:ZING_API_KEY
-        - text: env:ZING_API_KEY
-      - button "显示密钥" [pressed]
+      - button "显示密钥"
       - text: 请求的模型 model
       - textbox "请求的模型 model":
         - /placeholder: deepseek-chat

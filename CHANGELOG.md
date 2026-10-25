@@ -120,6 +120,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The v2 Audit page no longer pre-fills the API key with `env:ZING_API_KEY`.**
+  The field starts empty and masked, so the key is entered per relay (or filled
+  by the browser's password manager for that relay URL); `env:VAR` / `file:/path`
+  references still work, and the eye button still shows the key.
 - **Knowledge base refreshed to the lineups of 2026-10-25.** The packaged
   profiles add Claude Fable 5.1 / 5, Mythos 5.1 / 5, Opus 5.5 / 5, Sonnet 5.5 / 5
   and Haiku 5.5; GPT-6 Astra / Sol / Luna, GPT-6.1 Sol, GPT-5.6 Sol / Terra /

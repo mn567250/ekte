@@ -67,8 +67,7 @@
       - text: API-Schlüssel Unterstützt env:VAR / file:/pfad
       - textbox "API-Schlüssel":
         - /placeholder: sk-... oder env:ZING_API_KEY
-        - text: env:ZING_API_KEY
-      - button "Schlüssel anzeigen" [pressed]
+      - button "Schlüssel anzeigen"
       - text: Angefragtes Modell model
       - textbox "Angefragtes Modell model":
         - /placeholder: deepseek-chat
