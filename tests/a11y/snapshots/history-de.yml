@@ -37,10 +37,6 @@
 - main:
   - heading "Prüfverlauf & Trends" [level=1]
   - paragraph: Jede Prüfung, die Sie auf diesem Rechner ausgeführt haben, gruppiert nach „Relay + angegebenes Modell“, mit einer Trendlinie des Health-Scores; klicken Sie auf eine Zeile, um den Bericht aufzuklappen.
-  - paragraph:
-    - text: Der Verlauf liegt nur in einer lokalen SQLite-Datei unter
-    - code: ~/.zing
-    - text: — nichts wird hochgeladen.
   - status: 15 Läufe auf diesem Rechner Gespeichert seit 26.09.2026 · API-Schlüssel werden nie gespeichert
   - region "Filter":
     - button "Filter" [expanded]
@@ -308,3 +304,6 @@
   - text: "Gespeicherte Audits: 15"
   - button "Verlauf löschen"
   - status
+- contentinfo:
+  - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
+  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

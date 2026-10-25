@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "知识库":
       - /url: /v2/kb
-  - paragraph: 本地运行 · 密钥不经手
 - main:
   - heading "zing 用来比对的知识库" [level=1]
   - paragraph:
@@ -121,9 +120,5 @@
         # … more items of the same shape
     # … more items of the same shape
 - contentinfo:
-  - paragraph:
-    - text: zing · 中转站验真 · 内置资料位于
-    - code: zing/knowledge/data
-    - text: ；
-    - code: ZING_KB_DIR
-    - text: 与你的条目叠加在其上
+  - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
+  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

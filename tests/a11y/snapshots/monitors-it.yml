@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Conoscenza":
       - /url: /v2/kb
-  - paragraph: Esecuzione locale · le chiavi non escono mai
 - main:
   - heading "Metti una sentinella programmata sul tuo intermediario" [level=1]
   - paragraph:
@@ -158,6 +157,5 @@
       - button "Elimina"
     - paragraph: "Tutto gira in locale. La chiave API è salvata cifrata, solo nel database locale in ~/.zing su questo computer; non compare mai nell'elenco dei monitor e non viene mai inviata al browser. La chiave principale che la decifra non viene mai scritta su disco: la conservi tu e la inserisci dopo ogni riavvio."
 - contentinfo:
-  - paragraph:
-    - text: zing · verifica degli intermediari · i monitor sono pianificati in background dal processo
-    - code: zing serve
+  - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
+  - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Knowledge":
       - /url: /v2/kb
-  - paragraph: Runs locally · keys never leave
 - main:
   - heading "The knowledge base zing audits against" [level=1]
   - paragraph:
@@ -121,9 +120,5 @@
         # … more items of the same shape
     # … more items of the same shape
 - contentinfo:
-  - paragraph:
-    - text: zing · relay reality check · packaged profiles live in
-    - code: zing/knowledge/data
-    - text: ;
-    - code: ZING_KB_DIR
-    - text: and your entries are layered on top
+  - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
+  - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

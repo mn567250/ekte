@@ -37,10 +37,6 @@
 - main:
   - heading "Historique et tendances des audits" [level=1]
   - paragraph: Toutes les vérifications lancées sur cette machine, regroupées par « relais + modèle annoncé », avec une courbe d'évolution du score de santé ; cliquez sur une ligne pour déplier le rapport.
-  - paragraph:
-    - text: L'historique reste uniquement dans un fichier SQLite local sous
-    - code: ~/.zing
-    - text: — rien n'est transmis.
   - status: 15 exécutions sur cette machine Enregistré depuis le 26 sept. 2026 · les clés d’API ne sont jamais stockées
   - region "Filtres":
     - button "Filtres" [expanded]
@@ -308,3 +304,6 @@
   - text: "Audits enregistrés : 15"
   - button "Effacer l'historique"
   - status
+- contentinfo:
+  - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
+  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

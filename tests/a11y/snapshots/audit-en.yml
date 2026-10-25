@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Knowledge":
       - /url: /v2/kb
-  - paragraph: Runs locally · keys never leave
 - main:
   - heading "Is this relay serving the real thing?" [level=1]
   - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.
@@ -124,4 +123,6 @@
       - text: Tests are sent from your local zing server; the key is only used to connect to the target relay and is never uploaded to any third party.
       - alert
       - status
-      - text: zing provides reproducible evidence of risk and deviation, not a legal verdict.
+- contentinfo:
+  - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
+  - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

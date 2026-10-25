@@ -37,10 +37,6 @@
 - main:
   - heading "Cronologia e tendenze delle verifiche" [level=1]
   - paragraph: Tutte le verifiche eseguite su questa macchina, raggruppate per «intermediario + modello dichiarato», con una linea di tendenza del punteggio di salute; fai clic su una riga per espandere il rapporto.
-  - paragraph:
-    - text: La cronologia resta solo in un file SQLite locale in
-    - code: ~/.zing
-    - text: — non viene inviato nulla.
   - status: 15 esecuzioni su questa macchina Salvato dal 26 set 2026 · le chiavi API non vengono mai salvate
   - region "Filtri":
     - button "Filtri" [expanded]
@@ -308,3 +304,6 @@
   - text: "Audit salvati: 15"
   - button "Cancella cronologia"
   - status
+- contentinfo:
+  - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
+  - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Conoscenza":
       - /url: /v2/kb
-  - paragraph: Esecuzione locale · le chiavi non escono mai
 - main:
   - heading "La base di conoscenza usata da zing" [level=1]
   - paragraph:
@@ -121,9 +120,5 @@
         # … more items of the same shape
     # … more items of the same shape
 - contentinfo:
-  - paragraph:
-    - text: zing · verifica dei relay · i profili inclusi si trovano in
-    - code: zing/knowledge/data
-    - text: ;
-    - code: ZING_KB_DIR
-    - text: e le tue voci si sovrappongono
+  - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
+  - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

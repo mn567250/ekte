@@ -37,10 +37,6 @@
 - main:
   - heading "Análises das auditorias" [level=1]
   - paragraph: "Compare relays e modelos ao longo do tempo com o que o zing mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação."
-  - paragraph:
-    - text: Calculado a partir do histórico local em
-    - code: ~/.zing
-    - text: — nada é enviado.
   - status: 1 execução mais antiga tem uma hora de início estimada Os gráficos por hora do dia posicionam-nas de forma aproximada.
   - status: "Atualizado: 14 execuções neste período."
   - region "Filtros":
@@ -110,3 +106,6 @@
         - listitem: Velocidade de decodificação 62,9 tok/s Sem dados no período anterior
         - listitem: Rácio de faturação (entrada) 103% Sem dados no período anterior Dados de 9 de 14 execuções
         - listitem: Rácio de faturação (saída) 102% Sem dados no período anterior Dados de 9 de 14 execuções
+- contentinfo:
+  - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
+  - paragraph: "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Conocimiento":
       - /url: /v2/kb
-  - paragraph: Se ejecuta en local · las claves nunca salen
 - main:
   - heading "Ponga un centinela programado en su intermediario" [level=1]
   - paragraph:
@@ -158,6 +157,5 @@
       - button "Eliminar"
     - paragraph: "Todo se ejecuta localmente. La clave API se guarda cifrada, solo en la base de datos local bajo ~/.zing en este equipo; nunca aparece en la lista de monitores ni se envía al navegador. La clave maestra que la descifra nunca se escribe en disco: la guardas tú y la introduces tras cada reinicio."
 - contentinfo:
-  - paragraph:
-    - text: zing · verificación de intermediarios · los monitores los programa en segundo plano el proceso
-    - code: zing serve
+  - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
+  - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

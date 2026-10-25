@@ -37,10 +37,6 @@
 - main:
   - heading "Audit analytics" [level=1]
   - paragraph: "Compare relays and models over time with what zing measured on this machine: scores, speed, success rates and billing."
-  - paragraph:
-    - text: Computed from the local history under
-    - code: ~/.zing
-    - text: — nothing is uploaded.
   - status: 1 older run has an estimated start time Time-of-day charts place them approximately.
   - status: "Updated: 14 runs in this range."
   - region "Filters":
@@ -110,3 +106,6 @@
         - listitem: Decode speed 62.9 tok/s No data in the previous period
         - listitem: Billing ratio (prompt) 103% No data in the previous period Data from 9 of 14 runs
         - listitem: Billing ratio (completion) 102% No data in the previous period Data from 9 of 14 runs
+- contentinfo:
+  - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
+  - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

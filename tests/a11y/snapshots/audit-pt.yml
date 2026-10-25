@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Conhecimento":
       - /url: /v2/kb
-  - paragraph: Execução local · as chaves nunca saem
 - main:
   - heading "Este intermediário serve o modelo verdadeiro?" [level=1]
   - paragraph: Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O zing executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.
@@ -124,4 +123,6 @@
       - text: Os testes são enviados a partir do seu servidor zing local; a chave só é usada para ligar ao intermediário alvo e nunca é enviada a terceiros.
       - alert
       - status
-      - text: O zing fornece evidências reprodutíveis de risco e desvio, não um veredito jurídico.
+- contentinfo:
+  - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
+  - paragraph: "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

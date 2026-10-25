@@ -169,6 +169,5 @@
       - link "signaler un problème d'accessibilité sur GitHub":
         - /url: https://github.com/cenbonew/zing/issues
 - contentinfo:
-  - paragraph:
-    - text: zing · vérification des relais · ce rapport est généré à partir des tests d'accessibilité automatisés de
-    - code: tests/a11y
+  - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
+  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

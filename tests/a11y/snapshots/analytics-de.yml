@@ -37,10 +37,6 @@
 - main:
   - heading "Audit-Analyse" [level=1]
   - paragraph: "Vergleichen Sie Relays und Modelle im Zeitverlauf mit dem, was zing auf diesem Rechner gemessen hat: Scores, Geschwindigkeit, Erfolgsquoten und Abrechnung."
-  - paragraph:
-    - text: Berechnet aus dem lokalen Verlauf unter
-    - code: ~/.zing
-    - text: — nichts wird hochgeladen.
   - status: 1 älterer Lauf hat eine geschätzte Startzeit Diagramme nach Tageszeit ordnen sie nur ungefähr ein.
   - status: "Aktualisiert: 14 Läufe in diesem Zeitraum."
   - region "Filter":
@@ -110,3 +106,6 @@
         - listitem: Dekodiertempo 62,9 tok/s Keine Daten im vorigen Zeitraum
         - listitem: Abrechnungsverhältnis (Eingabe) 103 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
         - listitem: Abrechnungsverhältnis (Ausgabe) 102 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
+- contentinfo:
+  - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
+  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

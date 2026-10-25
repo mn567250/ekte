@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Conhecimento":
       - /url: /v2/kb
-  - paragraph: Execução local · as chaves nunca saem
 - main:
   - heading "Coloque uma sentinela agendada no seu intermediário" [level=1]
   - paragraph:
@@ -158,6 +157,5 @@
       - button "Eliminar"
     - paragraph: "Tudo é executado localmente. A chave API é guardada encriptada, apenas na base de dados local em ~/.zing nesta máquina; nunca aparece na lista de monitores nem é enviada ao navegador. A chave mestra que a desencripta nunca é escrita no disco: guarda-a você e introduz-a após cada reinício."
 - contentinfo:
-  - paragraph:
-    - text: zing · verificação de intermediários · os monitores são agendados em segundo plano pelo processo
-    - code: zing serve
+  - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
+  - paragraph: "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

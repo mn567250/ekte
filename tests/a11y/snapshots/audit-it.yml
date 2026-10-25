@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Conoscenza":
       - /url: /v2/kb
-  - paragraph: Esecuzione locale · le chiavi non escono mai
 - main:
   - heading "Questo intermediario serve il modello vero?" [level=1]
   - paragraph: Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. zing esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.
@@ -124,4 +123,6 @@
       - text: I test partono dal tuo server zing locale; la chiave serve solo a collegarsi all'intermediario di destinazione e non viene mai inviata a terzi.
       - alert
       - status
-      - text: zing fornisce prove riproducibili di rischio e scostamento, non un verdetto legale.
+- contentinfo:
+  - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
+  - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

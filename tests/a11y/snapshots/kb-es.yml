@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "Conocimiento":
       - /url: /v2/kb
-  - paragraph: Se ejecuta en local · las claves nunca salen
 - main:
   - heading "La base de conocimiento con la que audita zing" [level=1]
   - paragraph:
@@ -121,9 +120,5 @@
         # … more items of the same shape
     # … more items of the same shape
 - contentinfo:
-  - paragraph:
-    - text: zing · verificación de relays · los perfiles incluidos están en
-    - code: zing/knowledge/data
-    - text: ;
-    - code: ZING_KB_DIR
-    - text: y tus entradas se superponen
+  - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
+  - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

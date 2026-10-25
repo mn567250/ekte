@@ -34,7 +34,6 @@
       - /url: /v2/analytics
     - link "知识库":
       - /url: /v2/kb
-  - paragraph: 本地运行 · 密钥不经手
 - main:
   - heading "这家中转站，给的是真货吗？" [level=1]
   - paragraph: 选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。
@@ -124,4 +123,6 @@
       - text: 检测在 你本地的 zing 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。
       - alert
       - status
-      - text: zing 给出的是风险与偏离的可复现证据，不是法律结论。
+- contentinfo:
+  - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
+  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

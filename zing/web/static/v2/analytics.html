@@ -27,9 +27,6 @@
    * has its data table (BITV 9.1.1.1 / 9.1.3.1). Below 600px everything
    * stacks; wide tables scroll inside their own focusable region, never the
    * page (BITV 9.1.4.10). */
-  .local-note { display: flex; align-items: center; gap: 7px; margin: 12px 0 0; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
-  .local-note .zicon { width: 13px; height: 13px; flex: none; }
-  .local-note code { font-size: 11.5px; color: var(--ink-muted); background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
 
   /* each top-level tab panel is one card (.tab-card, zing.css): its
    * sub-tab switch first, then the selected sub-panel inside the same card */
@@ -212,7 +209,6 @@
     <div class="hero">
       <h1 data-en="Audit <span class='u'>analytics</span>">检测<span class='u'>分析</span></h1>
       <p data-en="Compare relays and models over time with what zing measured on this machine: scores, speed, success rates and billing.">用 zing 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。</p>
-      <p class="local-note"><span class="pico" id="lockIcon"></span><span data-en="Computed from the local history under &lt;code&gt;~/.zing&lt;/code&gt; — nothing is uploaded.">基于 <code>~/.zing</code> 下的本地历史计算，不会上传。</span></p>
     </div>
     <!-- the page notice (notice.js) -->
     <div class="znote" id="note" hidden></div>
@@ -1978,7 +1974,6 @@
   });
 
   /* ---------------- boot ---------------- */
-  $("#lockIcon").innerHTML = ico("lock");
   $("#shareIcon").innerHTML = ico("link");
   var resizeT = null;
   window.addEventListener("resize", function () {
