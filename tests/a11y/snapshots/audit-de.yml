@@ -26,12 +26,12 @@
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
+    - link "Überwachung":
+      - /url: /v2/watches
     - link "Verlauf":
       - /url: /v2/history
     - link "Analyse":
       - /url: /v2/analytics
-    - link "Überwachung":
-      - /url: /v2/watches
     - link "Wissen":
       - /url: /v2/kb
   - paragraph: Läuft lokal · Schlüssel verlassen nie das Gerät

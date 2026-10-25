@@ -1,0 +1,11 @@
+{
+ "strings": {
+  "Hide details": "Nascondi dettagli",
+  "Last risk": "Ultimo rischio",
+  "Name, relay, model…": "Nome, relay, modello…",
+  "No monitor matches the filters.": "Nessun monitor corrisponde ai filtri.",
+  "No result yet": "Ancora nessun risultato",
+  "Show details": "Mostra dettagli",
+  "Showing {n} of {total} monitors": "{n} di {total} monitor mostrati"
+ }
+}

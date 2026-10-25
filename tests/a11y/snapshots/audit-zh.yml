@@ -26,12 +26,12 @@
   - navigation "主导航":
     - link "检测":
       - /url: /v2/
+    - link "监控":
+      - /url: /v2/watches
     - link "检测历史":
       - /url: /v2/history
     - link "分析":
       - /url: /v2/analytics
-    - link "监控":
-      - /url: /v2/watches
     - link "知识库":
       - /url: /v2/kb
   - paragraph: 本地运行 · 密钥不经手

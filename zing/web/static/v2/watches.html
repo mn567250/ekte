@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/v2/static/zing.css" />
 <link rel="stylesheet" href="/v2/static/fields.css" />
 <link rel="stylesheet" href="/v2/static/jobs.css" />
+<link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <style>
   /* ---- monitors page (v2) — page-only rules; colours via zing.css tokens ---- */
   /* inline field errors */
@@ -125,6 +126,28 @@
   /* nested in the .tab-card: a quieter item surface instead of a second card shadow */
   .tab-card .mon { box-shadow: none; border-color: var(--line); border-radius: 16px; }
   .tab-card .section-title { margin-top: 0; }
+  /* collapse toggle: the monitor's name is the button (as History's group headings) */
+  .mtog {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 100%; margin: -3px 0; padding: 3px 6px 3px 2px; cursor: pointer;
+    font: inherit; letter-spacing: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 8px;
+  }
+  .mtog:hover { background: var(--sunken); }
+  .mtog .t { overflow-wrap: anywhere; min-width: 0; }
+  .mtog .zicon { width: 16px; height: 16px; flex: none; color: var(--ink-muted); transition: transform 0.2s; }
+  .mtog[aria-expanded="false"] .zicon { transform: rotate(-90deg); }
+  .mon-meta[hidden], .mon-act[hidden], .setup[hidden] { display: none; }
+  /* filter fields (inside the shared panel above the card, filterpanel.css) */
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; }
+  .fgrid .fq { grid-column: 1 / -1; }
+  @media (min-width: 700px) { .fgrid .fq { grid-column: auto; } }
+  .fgrid label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .fgrid label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
+  .fgrid .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
+  .fgrid select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
+  .mon-tools { display: flex; justify-content: flex-end; margin: -4px 0 8px; }
+  .mon-tools[hidden] { display: none; }
+  .mon-tools .linkbtn { font-size: 12.5px; font-weight: 600; }
+  .nomatch p { margin: 0 0 10px; }
   .mon:focus { outline: none; }
   .mon:focus-visible { outline: 3px solid var(--info); outline-offset: 3px; }
 </style>
@@ -141,6 +164,9 @@
     <!-- the master key that encrypts the stored API keys -->
     <div id="mk-bar" aria-live="polite"></div>
 
+    <!-- filters of the Configure list (filterpanel.js), above the card as on History and Knowledge -->
+    <section class="card filters" id="filters" hidden></section>
+
     <div class="card card-pad tab-card">
       <div class="tabs" role="tablist" aria-label="监控视图" data-en-aria-label="Monitor views">
         <button type="button" role="tab" id="tab-configure" aria-selected="true" aria-controls="panel-configure" tabindex="0"><span class="pico" data-icon="bell"></span><span data-en="Configure">配置</span></button>
@@ -150,6 +176,7 @@
       <section role="tabpanel" id="panel-configure" aria-labelledby="tab-configure" tabindex="0">
         <!-- list -->
         <h2 class="section-title" id="list-title" tabindex="-1"><span data-en="Configured monitors">已配置的监控</span> <span class="count" id="count"></span></h2>
+        <div class="mon-tools" id="mon-tools" hidden><button type="button" class="linkbtn" id="mall"></button></div>
         <div class="mons" id="list" aria-live="polite"><p class="empty" data-en="Loading…">加载中…</p></div>
         <p class="reassure"><span class="pico" id="lock-icon"></span> <span data-en="Everything <b>runs locally</b>. The API key is stored <b>encrypted</b>, only in the local database under <b>~/.zing</b> on this machine; it <b>never</b> appears in the monitor list and is never sent to the browser. The master key that decrypts it is <b>never written to disk</b>: you keep it, and enter it after each restart.">全程<b>本地运行</b>。API Key 仅<b>加密</b>保存在本机 <b>~/.zing</b> 的本地数据库里，<b>绝不</b>出现在监控列表里、也不会发给浏览器。用于解密的主密钥<b>从不写入磁盘</b>：由你保管，每次重启后再输入。</span></p>
       </section>
@@ -169,6 +196,7 @@
 <script src="/v2/static/jobs.js"></script>
 <script src="/secretfield.js"></script>
 <script src="/v2/static/masterkey.js"></script>
+<script src="/v2/static/filterpanel.js"></script>
 <script src="/v2/static/nav.js"></script>
 <script>
 (function () {
@@ -391,7 +419,7 @@
       fields += '<div><label class="lab" for="k-' + w.id + '">' + esc(T("API 密钥", "API key")) + ' <span class="opt">' + esc(T("（可选）", "(optional)")) + "</span></label>" + keyInput(w, s) +
         '<p class="hint">' + esc(T("检测历史不保存密钥。本地或自托管模型可留空。", "History never stores the key. Leave it empty for a local or self-hosted model.")) + "</p></div>";
     }
-    return '<form class="setup" data-id="' + w.id + '" novalidate aria-labelledby="su-' + w.id + '">' +
+    return '<form class="setup" id="sb-' + w.id + '" data-id="' + w.id + '" novalidate aria-labelledby="su-' + w.id + '"' + (isShut(w) ? " hidden" : "") + ">" +
       '<h4 id="su-' + w.id + '">' + esc(T("设置后即可启用", "Finish setup to switch it on")) + "</h4>" +
       "<p>" + esc(T("配置取自检测历史中的那次运行。设置运行间隔后启用即可。", "The configuration comes from the run in History. Set how often it runs, then activate it.")) + "</p>" +
       '<div class="fields">' + fields + "</div>" +
@@ -558,10 +586,17 @@
     var langLabel = T("告警语言", "Alert language");
     var thrLabel = T("告警阈值", "Alert threshold");
     var swText = draft ? T("待设置", "Needs setup") : w.enabled ? T("启用中", "Enabled") : T("已暂停", "Paused");
+    // collapsed: name, status, URL, last run and progress stay; the settings,
+    // the setup box and the actions are hidden
+    var shut = isShut(w), hide = shut ? " hidden" : "";
+    var controls = "md-" + w.id + " ma-" + w.id + (draft ? " sb-" + w.id : "");
     return (
       '<article class="card mon' + (w.enabled ? "" : " off") + '" id="w-' + w.id + '" data-id="' + w.id + '" aria-labelledby="mn-' + w.id + '">' +
         '<div class="mon-top">' +
-          '<div class="mon-title"><h3 class="mon-name" id="mn-' + w.id + '">' + esc(name) + "</h3>" + badge(w) + "</div>" +
+          // the name is the collapse toggle: heading navigation still lands on it
+          '<div class="mon-title"><h3 class="mon-name" id="mn-' + w.id + '"><button type="button" class="mtog" data-act="fold" data-id="' + w.id + '"' +
+            ' aria-expanded="' + !shut + '" aria-controls="' + controls + '" title="' + esc(shut ? T("显示详情", "Show details") : T("隐藏详情", "Hide details")) + '">' +
+            icon("chevronDown") + '<span class="t">' + esc(name) + "</span></button></h3>" + badge(w) + "</div>" +
           '<label class="switch"><input type="checkbox" role="switch" data-act="enabled" data-id="' + w.id + '"' + (w.enabled ? " checked" : "") +
             (draft ? " disabled" : "") + ' aria-labelledby="swl-' + w.id + '" aria-describedby="mn-' + w.id + " sws-" + w.id + '"><span></span> ' +
             '<span class="sw-l" id="swl-' + w.id + '">' + esc(T("监控生效", "Monitor active")) + "</span> " +
@@ -569,7 +604,7 @@
         "</div>" +
         '<div class="mon-body">' +
           '<div class="mon-url">' + esc(w.base_url || "") + "</div>" +
-          '<dl class="mon-meta">' +
+          '<dl class="mon-meta" id="md-' + w.id + '"' + hide + ">" +
             meta(T("请求的模型", "Model to request"), "<code>" + esc(w.model || "?") + "</code>" + claimed) +
             meta(T("接口类型", "Endpoint type"), surfaceCell(w)) +
             meta(T("测试套件", "Test suite"), "<code>" + esc(w.suite || "standard") + "</code>" +
@@ -590,10 +625,172 @@
         progress +
         (draft ? setupBox(w, s) : "") +
         '<div class="mon-msg ' + (s.msgKind || "") + '" role="status">' + (s.msg ? esc(s.msg()) : "") + "</div>" +
-        '<div class="mon-act">' + actions + "</div>" +
+        '<div class="mon-act" id="ma-' + w.id + '"' + hide + ">" + actions + "</div>" +
       "</article>"
     );
   }
+
+  // ---- collapsed cards (per viewer; storage may be missing or throw) ------- //
+  var CKEY = "zing.v2.monitors.collapsed", FKEY = "zing.v2.monitors.filters", OKEY = "zing.v2.monitors.filtersOpen";
+  function loadJSON(k, dflt) {
+    try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v && typeof v === "object" ? v : dflt; } catch (e) { return dflt; }
+  }
+  function saveJSON(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ }
+  }
+  var collapsed = (function () {
+    var c = loadJSON(CKEY, {}), out = {};
+    Object.keys(c).forEach(function (k) { if (c[k] === true) out[k] = true; });
+    return out;
+  })();
+  function isShut(w) { return !!collapsed[w.id]; }
+  function setShut(id, shut) {
+    var s = st(id);
+    if (shut) {
+      collapsed[id] = true;
+      // an open editor or delete question goes with the hidden part
+      s.edit = null; s.vals = {}; s.errs = {}; s.confirm = false;
+    } else {
+      delete collapsed[id];
+    }
+  }
+  function paintTools(shown) {
+    var box = $("mon-tools"), b = $("mall");
+    box.hidden = shown.length < 2;
+    var anyOpen = shown.some(function (w) { return !isShut(w); });
+    b.setAttribute("data-all", anyOpen ? "collapse" : "expand");
+    b.textContent = anyOpen ? T("全部折叠", "Collapse all") : T("全部展开", "Expand all");
+  }
+  $("mall").addEventListener("click", function () {
+    var shut = this.getAttribute("data-all") === "collapse";
+    (watches || []).filter(matches).forEach(function (w) { setShut(w.id, shut); });
+    saveJSON(CKEY, collapsed);
+    render();
+  });
+
+  // ---- filters (filterpanel.js) ------------------------------------------- //
+  var FDEF = { q: "", status: "", risk: "", surface: "", host: "", suite: "" };
+  var F = (function () {
+    var f = Object.assign({}, FDEF), saved = loadJSON(FKEY, {});
+    Object.keys(FDEF).forEach(function (k) { if (typeof saved[k] === "string") f[k] = saved[k]; });
+    return f;
+  })();
+  function saveFilters() { saveJSON(FKEY, F); }
+  var STATUS = {
+    running: ["运行中", "Running"], active: ["启用中", "Enabled"], paused: ["已暂停", "Paused"], setup: ["待设置", "Needs setup"],
+  };
+  function statusOf(w) { return isRunning(w) ? "running" : needsSetup(w) ? "setup" : w.enabled ? "active" : "paused"; }
+  function riskOf(w) { return w.last_risk || "none"; }
+  function surfaceOf(w) { return isChat(w) ? "chat" : w.surface; }
+  function hostOf(w) {
+    try { return new URL(w.base_url).host; } catch (e) { return w.base_url || ""; }
+  }
+  function suiteOf(w) { return w.suite || "standard"; }
+  function riskName(v) { return v === "none" ? T("尚无结果", "No result yet") : riskLabel(v); }
+  function surfaceName(v) { var m = SURFACE[v]; return m ? T(m[0], m[1]) : v; }
+  function matches(w) {
+    if (F.status && statusOf(w) !== F.status) return false;
+    if (F.risk && riskOf(w) !== F.risk) return false;
+    if (F.surface && surfaceOf(w) !== F.surface) return false;
+    if (F.host && hostOf(w) !== F.host) return false;
+    if (F.suite && suiteOf(w) !== F.suite) return false;
+    var q = F.q.trim().toLowerCase();
+    if (q && [w.name, w.base_url, w.model, w.claimed_model, w.suite].join(" ").toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  }
+  // the values that exist (in a fixed order where there is one); the current
+  // pick stays listed even when no monitor has it any more
+  function distinct(fn, cur, order) {
+    var seen = {};
+    (watches || []).forEach(function (w) { seen[fn(w)] = 1; });
+    if (cur) seen[cur] = 1;
+    var vals = Object.keys(seen).filter(Boolean);
+    return order ? order.filter(function (v) { return seen[v]; }).concat(vals.filter(function (v) { return order.indexOf(v) < 0; }).sort())
+      : vals.sort(function (a, b) { return a.localeCompare(b); });
+  }
+  function filterOpts() {
+    return {
+      status: distinct(statusOf, F.status, ["running", "active", "paused", "setup"]).map(function (v) {
+        return { v: v, t: STATUS[v] ? T(STATUS[v][0], STATUS[v][1]) : v };
+      }),
+      risk: distinct(riskOf, F.risk, ["high", "medium", "low", "clean", "inconclusive", "none"]).map(function (v) { return { v: v, t: riskName(v) }; }),
+      surface: distinct(surfaceOf, F.surface, ["chat", "embedding", "rerank"]).map(function (v) { return { v: v, t: surfaceName(v) }; }),
+      host: distinct(hostOf, F.host).map(function (v) { return { v: v, t: v }; }),
+      suite: distinct(suiteOf, F.suite).map(function (v) { return { v: v, t: v }; }),
+    };
+  }
+  var FLABEL = {
+    status: ["状态", "Status"], risk: ["上次风险", "Last risk"], surface: ["接口类型", "Endpoint type"],
+    host: ["中转站", "Relay / provider"], suite: ["套件", "Suite"],
+  };
+  function selectHTML(k, list) {
+    return '<label><span>' + esc(T(FLABEL[k][0], FLABEL[k][1])) + '</span><select class="in" data-f="' + k + '">' +
+      '<option value="">' + esc(T("全部", "All")) + "</option>" +
+      list.map(function (o) {
+        return '<option value="' + esc(o.v) + '"' + (o.v === F[k] ? " selected" : "") + ">" + esc(o.t) + "</option>";
+      }).join("") + "</select></label>";
+  }
+  function activeCount() {
+    return Object.keys(FDEF).filter(function (k) { return F[k].trim() !== FDEF[k]; }).length;
+  }
+  function filterSummary() {
+    var o = filterOpts(), out = [];
+    if (F.q.trim()) out.push(Tf("{label}：{value}", "{label}: {value}", { label: T("搜索", "Search"), value: F.q.trim() }));
+    Object.keys(FLABEL).forEach(function (k) {
+      if (!F[k]) return;
+      var hit = o[k].filter(function (x) { return x.v === F[k]; })[0];
+      out.push(Tf("{label}：{value}", "{label}: {value}", { label: T(FLABEL[k][0], FLABEL[k][1]), value: hit ? hit.t : F[k] }));
+    });
+    return out;
+  }
+  var fpanel = window.ZingFilterPanel.create($("filters"), {
+    storeKey: OKEY,
+    onReset: function () {
+      F = Object.assign({}, FDEF);
+      saveFilters();
+      filtersKey = null;
+      render();
+    },
+  });
+  // The panel is rebuilt only when its options change (a poll re-renders the
+  // list every 2 s while a monitor runs; rebuilding then would cut into typing)
+  var filtersKey = null;
+  function paintFilters() {
+    var sec = $("filters");
+    if (!watches || !watches.length) {
+      sec.hidden = true;
+      sec.innerHTML = "";
+      filtersKey = null;
+      return;
+    }
+    var o = filterOpts(), key = JSON.stringify(o);
+    if (key !== filtersKey) {
+      filtersKey = key;
+      fpanel.render({
+        count: activeCount(), summary: filterSummary(),
+        body: '<div class="fgrid">' +
+          '<label class="fq"><span>' + esc(T("搜索", "Search")) + '</span><input class="in" type="search" data-f="q" value="' + esc(F.q) +
+          '" placeholder="' + esc(T("名称、中转站、模型…", "Name, relay, model…")) + '" autocomplete="off" /></label>' +
+          Object.keys(FLABEL).map(function (k) { return selectHTML(k, o[k]); }).join("") + "</div>",
+        foot: '<span id="fcount" aria-live="polite"></span>',
+      });
+    } else {
+      fpanel.sync({ count: activeCount(), summary: filterSummary() });
+    }
+    var shown = watches.filter(matches).length, fc = $("fcount");
+    var text = Tf("显示 {n}/{total} 个监控", "Showing {n} of {total} monitors", { n: shown, total: watches.length });
+    if (fc && fc.textContent !== text) fc.textContent = text;
+  }
+  function onFilter(ev) {
+    var k = ev.target.getAttribute("data-f");
+    // a text field fires "change" again on blur: only react to real changes
+    if (!k || !(k in F) || F[k] === String(ev.target.value)) return;
+    F[k] = String(ev.target.value);
+    saveFilters();
+    render();
+  }
+  $("filters").addEventListener("input", onFilter);
+  $("filters").addEventListener("change", onFilter);
 
   var flashId = null, focusSetup = false;
   function render() {
@@ -606,6 +803,19 @@
     if (!watches) return;
     var n = watches.length;
     $("count").textContent = n ? (n === 1 ? T("共 1 项", "1 monitor") : Tf("共 {n} 项", "{n} monitors", { n: n })) : "";
+    // a deep-linked monitor is never hidden by the filters
+    if (flashId != null && byId(flashId) && !matches(byId(flashId))) {
+      F = Object.assign({}, FDEF);
+      saveFilters();
+      filtersKey = null;
+    }
+    paintFilters();
+    if (flashId != null && collapsed[flashId]) {
+      delete collapsed[flashId];
+      saveJSON(CKEY, collapsed);
+    }
+    var shown = watches.filter(matches);
+    paintTools(shown);
     if (!n) {
       list.innerHTML =
         '<div class="empty boxed">' + icon("bell") +
@@ -619,7 +829,12 @@
       keep = [a.getAttribute("data-act"), a.getAttribute("data-id")];
       try { caret = a.selectionStart; } catch (e) { caret = null; }
     }
-    list.innerHTML = watches.map(card).join("");
+    if (!shown.length) {
+      list.innerHTML = '<div class="empty boxed nomatch"><p>' + esc(T("没有符合筛选条件的监控。", "No monitor matches the filters.")) + "</p>" +
+        '<button type="button" class="btn sm" data-act="freset">' + esc(T("重置筛选", "Reset filters")) + "</button></div>";
+    } else {
+      list.innerHTML = shown.map(card).join("");
+    }
     if (window.ZingSecret) window.ZingSecret.enhance(list);
     if (keep) {
       var alt = { del: "del-no", "del-no": "del", "del-yes": "del", run: "stop", stop: "run" }[keep[0]] || keep[0];
@@ -839,8 +1054,21 @@
   $("list").addEventListener("click", function (ev) {
     var t = ev.target.closest("button[data-act]");
     if (!t) return;
-    var id = t.getAttribute("data-id"), act = t.getAttribute("data-act"), s = st(id);
-    if (act === "activate") {
+    var id = t.getAttribute("data-id"), act = t.getAttribute("data-act");
+    if (act === "freset") {
+      F = Object.assign({}, FDEF);
+      saveFilters();
+      filtersKey = null;
+      render();
+      fpanel.focusStart();
+      return;
+    }
+    var s = st(id);
+    if (act === "fold") {
+      setShut(id, t.getAttribute("aria-expanded") === "true");
+      saveJSON(CKEY, collapsed);
+      render();
+    } else if (act === "activate") {
       ev.preventDefault();
       activate(id);
     } else if (/^edit-/.test(act)) {
@@ -959,6 +1187,7 @@
         .then(function (r) {
           if (!r.ok) throw new Error("HTTP " + r.status);
           delete ui[id];
+          if (collapsed[id]) { delete collapsed[id]; saveJSON(CKEY, collapsed); }
           return load().then(function () { $("list-title").focus(); });
         })
         .catch(function () {
@@ -1048,7 +1277,7 @@
   $("lock-icon").innerHTML = icon("lock");
   if (window.ZingMasterKey) window.ZingMasterKey.mountBar($("mk-bar"), function () { load(); });
   // language switch: re-render everything in place
-  window.addEventListener("zing:lang", render);
+  window.addEventListener("zing:lang", function () { filtersKey = null; render(); });
   load();
 })();
 </script>

@@ -26,12 +26,12 @@
   - navigation "Main navigation":
     - link "Audit":
       - /url: /v2/
+    - link "Monitors":
+      - /url: /v2/watches
     - link "History":
       - /url: /v2/history
     - link "Analytics":
       - /url: /v2/analytics
-    - link "Monitors":
-      - /url: /v2/watches
     - link "Knowledge":
       - /url: /v2/kb
   - paragraph: Runs locally · keys never leave

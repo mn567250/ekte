@@ -26,12 +26,12 @@
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
+    - link "Monitor":
+      - /url: /v2/watches
     - link "Cronologia":
       - /url: /v2/history
     - link "Analisi":
       - /url: /v2/analytics
-    - link "Monitor":
-      - /url: /v2/watches
     - link "Conoscenza":
       - /url: /v2/kb
   - paragraph: Esecuzione locale · le chiavi non escono mai
@@ -44,13 +44,39 @@
     - text: e scegli Pianifica come monitor, poi imposta qui l’intervallo e attivalo. Quando il rischio supera la soglia o peggiora rispetto all’ultima volta, zing avvisa i tuoi webhook (Slack / Feishu / DingTalk / JSON generico).
   - text: Ancora nessuna chiave principale Viene creata quando salvi la prima chiave API.
   - button "Crea ora"
+  - region "Filtri":
+    - button "Filtri" [expanded]
+    - text: Cerca
+    - searchbox "Cerca"
+    - text: Stato
+    - combobox "Stato":
+      - option "Tutti" [selected]
+      - option "Da configurare"
+    - text: Ultimo rischio
+    - combobox "Ultimo rischio":
+      - option "Tutti" [selected]
+      - option "Ancora nessun risultato"
+    - text: Tipo di endpoint
+    - combobox "Tipo di endpoint":
+      - option "Tutti" [selected]
+      - option "Chat"
+    - text: Relay / provider
+    - combobox "Relay / provider":
+      - option "Tutti" [selected]
+      - option "127.0.0.1:9099"
+    - text: Suite
+    - combobox "Suite":
+      - option "Tutti" [selected]
+      - option "standard"
+    - text: 1 di 1 monitor mostrati
   - tablist "Viste dei monitor":
     - tab "Configura" [selected]
     - tab "In corso"
   - tabpanel "Configura":
     - heading "Monitor configurati 1 monitor" [level=2]
     - article "gpt-4o":
-      - heading "gpt-4o" [level=3]
+      - heading "gpt-4o" [level=3]:
+        - button "gpt-4o" [expanded]
       - text: Da configurare
       - switch "Monitor attivo" [disabled]
       - text: Monitor attivo

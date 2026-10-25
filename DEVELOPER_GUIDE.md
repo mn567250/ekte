@@ -453,7 +453,7 @@ fragment itself — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`)
 which **Copy link to this view** copies (a selected read-only field where the
 clipboard API is missing or refuses); a fragment without `tab` opens Overview,
 and a pasted link (`hashchange`) re-reads the view. The collapsible filter
-panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History:
+panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History, Monitors and Knowledge:
 `ZingFilterPanel.create(section, {label, title, storeKey, open, onReset})`
 returns `render({body, foot, count, summary})`, `sync({count, summary})`,
 `setOpen()` and `focusStart()`; the page owns its filters and fields, the panel

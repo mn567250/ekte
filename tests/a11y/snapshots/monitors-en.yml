@@ -26,12 +26,12 @@
   - navigation "Main navigation":
     - link "Audit":
       - /url: /v2/
+    - link "Monitors":
+      - /url: /v2/watches
     - link "History":
       - /url: /v2/history
     - link "Analytics":
       - /url: /v2/analytics
-    - link "Monitors":
-      - /url: /v2/watches
     - link "Knowledge":
       - /url: /v2/kb
   - paragraph: Runs locally · keys never leave
@@ -44,13 +44,39 @@
     - text: and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).
   - text: No master key yet It is created when you store the first API key.
   - button "Create now"
+  - region "Filters":
+    - button "Filters" [expanded]
+    - text: Search
+    - searchbox "Search"
+    - text: Status
+    - combobox "Status":
+      - option "All" [selected]
+      - option "Needs setup"
+    - text: Last risk
+    - combobox "Last risk":
+      - option "All" [selected]
+      - option "No result yet"
+    - text: Endpoint type
+    - combobox "Endpoint type":
+      - option "All" [selected]
+      - option "Chat"
+    - text: Relay / provider
+    - combobox "Relay / provider":
+      - option "All" [selected]
+      - option "127.0.0.1:9099"
+    - text: Suite
+    - combobox "Suite":
+      - option "All" [selected]
+      - option "standard"
+    - text: Showing 1 of 1 monitors
   - tablist "Monitor views":
     - tab "Configure" [selected]
     - tab "Running"
   - tabpanel "Configure":
     - heading "Configured monitors 1 monitor" [level=2]
     - article "gpt-4o":
-      - heading "gpt-4o" [level=3]
+      - heading "gpt-4o" [level=3]:
+        - button "gpt-4o" [expanded]
       - text: Needs setup
       - switch "Monitor active" [disabled]
       - text: Monitor active

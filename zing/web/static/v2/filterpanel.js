@@ -1,5 +1,5 @@
-/* zing web UI v2 — the collapsible filter panel shared by History and
- * Analytics (styles: filterpanel.css).
+/* zing web UI v2 — the collapsible filter panel shared by History, Monitors,
+ * Analytics and Knowledge (styles: filterpanel.css).
  *
  * The page owns its filters and their fields; this owns the frame around
  * them, rendered into an empty <section class="card filters" id="filters">:

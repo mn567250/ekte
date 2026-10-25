@@ -314,7 +314,7 @@ them; only the tab you look at loads. The URL keeps the tab, the filters and
 every chart option (`#tab=reliability&range=30&relay=…&eb=dow_hour`), and
 **Copy link to this view** copies it (or shows it in a field to copy where the
 browser does not allow that): opening the link shows exactly that view. The
-filter panel is the same on **History** and **Analytics**: closed, it shows how
+filter panel is the same on **History**, **Monitors** and **Analytics**: closed, it shows how
 many filters are active and names them in one line (e.g. "Last 30 days ·
 standard · Streaming · Example Relay"), so a shared view says what it shows.
 
@@ -562,7 +562,10 @@ webhook alerts:
   custom dimensions) into a paused monitor on the **Monitors** page; set its
   interval and API key there (History never stores keys) and switch it on.
   Interval, key, **Alert threshold**, webhooks and **Alert language** can be
-  edited in place on each monitor.
+  edited in place on each monitor. Click a monitor's name to collapse its card
+  to name, status and last run (**Collapse all** / **Expand all** above the
+  list; remembered per browser), and narrow a long list with the filter panel
+  (search, status, last risk, endpoint type, relay, suite) as on **History**.
 - **Classic UI:** fill in the form on the **Monitors** page and **Add monitor**.
 
 Each monitor has its own alert language (defaulting to the UI language), can be

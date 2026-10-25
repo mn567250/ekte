@@ -138,7 +138,7 @@ def test_single_page_files():
     assert scope("tests/a11y/snapshots/kb-zh.yml").pages == ("kb",)
     assert scope("zing/web/analytics.py").pages == ("analytics",)
     assert scope("zing/web/static/v2/charts.js").pages == ("analytics", "accessibility")
-    assert scope("zing/web/static/v2/filterpanel.js").pages == ("history", "kb", "analytics")
+    assert scope("zing/web/static/v2/filterpanel.js").pages == ("history", "monitors", "kb", "analytics")
 
 
 def test_multi_page_files_union_in_page_order():

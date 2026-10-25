@@ -26,12 +26,12 @@
   - navigation "Navegación principal":
     - link "Auditoría":
       - /url: /v2/
+    - link "Monitores":
+      - /url: /v2/watches
     - link "Historial":
       - /url: /v2/history
     - link "Analítica":
       - /url: /v2/analytics
-    - link "Monitores":
-      - /url: /v2/watches
     - link "Conocimiento":
       - /url: /v2/kb
   - paragraph: Se ejecuta en local · las claves nunca salen

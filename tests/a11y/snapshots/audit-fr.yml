@@ -26,12 +26,12 @@
   - navigation "Navigation principale":
     - link "Audit":
       - /url: /v2/
+    - link "Surveillances":
+      - /url: /v2/watches
     - link "Historique":
       - /url: /v2/history
     - link "Analyses":
       - /url: /v2/analytics
-    - link "Surveillances":
-      - /url: /v2/watches
     - link "Connaissances":
       - /url: /v2/kb
   - paragraph: Exécution locale · les clés ne sortent jamais

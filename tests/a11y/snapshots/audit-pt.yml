@@ -26,12 +26,12 @@
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
+    - link "Monitores":
+      - /url: /v2/watches
     - link "Histórico":
       - /url: /v2/history
     - link "Análises":
       - /url: /v2/analytics
-    - link "Monitores":
-      - /url: /v2/watches
     - link "Conhecimento":
       - /url: /v2/kb
   - paragraph: Execução local · as chaves nunca saem
