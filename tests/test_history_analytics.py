@@ -568,16 +568,16 @@ def test_pending_rows_are_found_through_indexes(data):
     assert "SCAN history " not in detail.replace("SCAN history USING INDEX", "") + " "
 
 
-def test_fresh_database_has_the_v3_schema(data):
+def test_fresh_database_has_the_current_schema(data):
     history.init()
     with _db(data) as conn:
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master")}
         cols = {r[1] for r in conn.execute("PRAGMA table_info(history)")}
         metric_cols = {r[1] for r in conn.execute("PRAGMA table_info(history_metrics)")}
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == history._SCHEMA_VERSION
     assert {"history_metrics", "history_dimensions", "history_requests",
             "idx_history_metrics_started", "idx_history_model"} <= tables
-    assert "requests_split" in cols
+    assert {"requests_split", "surface"} <= cols
     assert {"decode_tps_p5", "decode_tps_p95"} <= metric_cols
 
 
@@ -624,9 +624,24 @@ def test_a_v2_database_gets_the_decode_tails_of_its_older_runs(data):
     history.init()
     with _db(data) as conn:
         row = conn.execute("SELECT * FROM history_metrics WHERE history_id = ?", (rid,)).fetchone()
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == history._SCHEMA_VERSION
     assert row["decode_tps_p5"] == pytest.approx(11.0) and row["decode_tps_p95"] == pytest.approx(29.0)
     assert row["extract_version"] == analytics_store.EXTRACT_VERSION
+
+
+def test_a_v3_database_gets_the_surface_column(data):
+    rid = history.save(_fixture())
+    with _db(data) as conn:  # as zing with schema 3 left it, before surfaces
+        conn.execute("ALTER TABLE history DROP COLUMN surface")
+        conn.execute("PRAGMA user_version = 3")
+    history.init()
+    with _db(data) as conn:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(history)")}
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == history._SCHEMA_VERSION
+    assert "surface" in cols
+    # the list and analytics reads select the column; an old run reads as chat
+    assert [r["surface"] for r in history.recent() if r["id"] == rid] == ["chat"]
+    assert [r["surface"] for r in history.analytics_runs() if r["id"] == rid] == ["chat"]
 
 
 # --------------------------------------------------------------------------- #

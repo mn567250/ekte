@@ -88,7 +88,7 @@ _DB_NAME = "history.db"
 # ``PRAGMA user_version`` of a database whose schema is current. Every schema
 # change goes into _migrate() *and* bumps this number: databases already at this
 # version skip _migrate() entirely.
-_SCHEMA_VERSION = 3
+_SCHEMA_VERSION = 4
 _BACKFILL_BATCH = 100
 # Rows per analytics backfill transaction: each one parses a whole report, so
 # fewer than the perf backfill, to keep the write lock short.
@@ -177,8 +177,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(
         conn, "history", {**dict.fromkeys(_PERF_COLS, "REAL"), _PERF_DONE: "INTEGER"}
     )
-    # The audited surface ("chat", "embedding" or "rerank"); NULL (rows saved before
-    # surfaces existed) reads as chat.
+    # Version 4: the audited surface ("chat", "embedding" or "rerank"); NULL (rows
+    # saved before surfaces existed) reads as chat.
     kb_snapshot.add_link_columns(conn, "history", {"surface": "TEXT"})
     # Version 2: where a row's request records are, and the analytics tables.
     kb_snapshot.add_link_columns(conn, "history", {_SPLIT: "INTEGER"})
