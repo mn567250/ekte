@@ -112,7 +112,7 @@
   "Keyboard": "Teclado",
   "Every control is reached with the Tab key; popups, dialogs and tabs work with the keyboard.": "Todos os controlos são alcançados com a tecla Tab; janelas de contexto, caixas de diálogo e separadores funcionam com o teclado.",
   "No Keyboard Trap": "Sem bloqueio do teclado",
-  "Tabbing through the page always leaves it again.": "Ao percorrer a página com Tab, o foco sai sempre dela.",
+  "Tabbing through the page, you can always leave it again.": "Ao percorrer a página com Tab, é sempre possível sair dela.",
   "Character Key Shortcuts": "Atalhos de teclado por caráter",
   "Single printable keys pressed on the page trigger no action.": "Premir uma única tecla imprimível na página não desencadeia nenhuma ação.",
   "Timing Adjustable": "Tempo ajustável",
