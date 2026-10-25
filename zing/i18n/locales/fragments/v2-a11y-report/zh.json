@@ -39,7 +39,7 @@
   "Keyboard": "键盘",
   "Every control is reached with the Tab key; popups, dialogs and tabs work with the keyboard.": "每个控件都可通过 Tab 键到达；弹出内容、对话框和选项卡都可用键盘操作。",
   "No Keyboard Trap": "无键盘陷阱",
-  "Tabbing through the page always leaves it again.": "使用 Tab 键遍历页面时，焦点总能离开页面。",
+  "Tabbing through the page, you can always leave it again.": "使用 Tab 键遍历页面时，焦点总能离开页面。",
   "Character Key Shortcuts": "字符键快捷键",
   "Single printable keys pressed on the page trigger no action.": "在页面上按下单个可打印字符键不会触发任何操作。",
   "Timing Adjustable": "可调整的时间",

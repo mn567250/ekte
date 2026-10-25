@@ -179,7 +179,7 @@
    "level": "A",
    "title": "No Keyboard Trap",
    "automation": "auto",
-   "how": "Tabbing through the page always leaves it again."
+   "how": "Tabbing through the page, you can always leave it again."
   },
   {
    "step": "9.2.1.4",

@@ -460,7 +460,7 @@
       '<label class="fq"><span>' + esc(T("搜索", "Search")) + '</span><input class="in" type="search" data-f="q" value="' + esc(f.q) +
       '" placeholder="' + esc(T("中转站、模型、套件、协议…", "Relay, model, suite, protocol…")) + '" autocomplete="off" /></label>' +
       selectHTML("surface", T("接口类型", "Endpoint type"), surfaces) +
-      selectHTML("host", T("中转站", "Relay / provider"), asOpts(distinct(function (r) { return hostOf(r.base_url); }, f.host))) +
+      selectHTML("host", T("中转站 / 厂商", "Relay / provider"), asOpts(distinct(function (r) { return hostOf(r.base_url); }, f.host))) +
       selectHTML("model", T("声称模型", "Claimed model"), asOpts(distinct(function (r) { return r.claimed_model || ""; }, f.model))) +
       selectHTML("suite", T("套件", "Suite"), suites) +
       selectHTML("mode", T("模式", "Mode"), asOpts(distinct(modeOf, f.mode))) +

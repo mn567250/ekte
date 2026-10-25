@@ -112,7 +112,7 @@
   "Keyboard": "Tastiera",
   "Every control is reached with the Tab key; popups, dialogs and tabs work with the keyboard.": "Ogni controllo si raggiunge con il tasto Tab; popup, finestre di dialogo e schede funzionano con la tastiera.",
   "No Keyboard Trap": "Nessun impedimento all'uso della tastiera",
-  "Tabbing through the page always leaves it again.": "Scorrendo la pagina con Tab, il focus ne esce sempre.",
+  "Tabbing through the page, you can always leave it again.": "Scorrendo la pagina con Tab, se ne può sempre uscire.",
   "Character Key Shortcuts": "Tasti di scelta rapida a carattere singolo",
   "Single printable keys pressed on the page trigger no action.": "Premere un singolo tasto stampabile sulla pagina non attiva alcuna azione.",
   "Timing Adjustable": "Regolazione dei tempi",

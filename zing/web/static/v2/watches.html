@@ -720,7 +720,7 @@
   }
   var FLABEL = {
     status: ["状态", "Status"], risk: ["上次风险", "Last risk"], surface: ["接口类型", "Endpoint type"],
-    host: ["中转站", "Relay / provider"], suite: ["套件", "Suite"],
+    host: ["中转站 / 厂商", "Relay / provider"], suite: ["套件", "Suite"],
   };
   function selectHTML(k, list) {
     return '<label><span>' + esc(T(FLABEL[k][0], FLABEL[k][1])) + '</span><select class="in" data-f="' + k + '">' +

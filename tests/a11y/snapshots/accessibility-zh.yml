@@ -47,11 +47,11 @@
     - definition:
       - code: <id>
     - term: zing 版本
-    - definition: 0.20.0
+    - definition: 0.20.2
     - term: axe-core 版本
     - definition: 4.13.0
     - term: 测试
-    - definition: 1297 个已运行，1297 个通过，0 个失败，0 个跳过
+    - definition: 1156 个已运行，1156 个通过，0 个失败，0 个跳过
     - term: 语言
     - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
     - term: 主题
@@ -61,7 +61,6 @@
       - code: /v2/
       - code: /v2/history
       - code: /v2/watches
-      - code: /v2/tools
       - code: /v2/kb
       - code: /v2/analytics
       - code: /v2/accessibility
@@ -129,8 +128,9 @@
               - group:
                 - text: 非文本内容
                 - paragraph: 测试方式： 图像、图标、SVG 和控件都有文本替代。每个替代文本是否有意义由人工判断。
-                - paragraph: 自动化测试： 30 个已运行，30 个通过，0 个失败，180 个跳过
+                - paragraph: 自动化测试： 30 个已运行，30 个通过，0 个失败，156 个跳过
                 - paragraph:
+                  - code: test_audit_surface_states
                   - code: test_wcag_rules_as_loaded
                   - code: test_wcag_rules_every_tab_panel
                   - code: test_wcag_rules_expanded

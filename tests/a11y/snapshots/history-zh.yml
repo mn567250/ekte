@@ -46,8 +46,8 @@
     - combobox "接口类型":
       - option "全部" [selected]
       - option "对话"
-    - text: 中转站
-    - combobox "中转站":
+    - text: 中转站 / 厂商
+    - combobox "中转站 / 厂商":
       - option "全部" [selected]
       - option "127.0.0.1:9099"
       - option "gateway.a-very-long-relay-hostname.example.org"

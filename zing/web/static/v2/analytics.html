@@ -933,7 +933,7 @@
       selectHTML("source", T("来源", "Source"), [
         { v: "manual", t: T("手动", "Manual") }, { v: "monitor", t: T("监控", "Monitor") },
       ], F.source === "all" ? "" : F.source) +
-      selectHTML("relay", T("中转站", "Relay / provider"), (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; }), F.relay) +
+      selectHTML("relay", T("中转站 / 厂商", "Relay / provider"), (o.relays || []).map(function (x) { return { v: x.key, t: relayLabel(x) }; }), F.relay) +
       selectHTML("model", T("声称模型", "Claimed model"), (o.models || []).map(function (x) { return { v: x.key, t: x.key }; }), F.model) +
       "</div>" });
   }
