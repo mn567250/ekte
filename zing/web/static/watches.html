@@ -182,7 +182,7 @@
       </div>
       <div class="formerr" id="formerr"></div>
       <button class="cta" id="add"><span id="add-icon" class="cta-ico"></span> <span data-en="Add monitor">添加监控</span></button>
-      <div class="reassure"><span id="lock-icon" class="reassure-ico"></span> <span data-en="Everything <b>runs locally</b>. The API key is stored <b>encrypted</b>, only in the local database under <b>~/.zing</b> on this machine; it <b>never</b> appears in the monitor list and is never sent to the browser.">全程<b>本地运行</b>。API Key 仅<b>加密</b>保存在本机 <b>~/.zing</b> 的本地数据库里，<b>绝不</b>出现在监控列表里、也不会发给浏览器。</span></div>
+      <div class="reassure"><span id="lock-icon" class="reassure-ico"></span> <span data-en="Everything <b>runs locally</b>. The API key is <b>never stored</b>: it stays in the memory of zing serve until it stops, and is never written to disk, shown in the monitor list or sent to the browser. Enter it again after a restart, or use <b>env:VAR</b> for a monitor that must survive one.">全程<b>本地运行</b>。API Key <b>从不保存</b>：它只留在 zing serve 的内存中直到其停止，<b>绝不</b>写入磁盘、出现在监控列表里或发给浏览器。重启后请重新输入，或使用 <b>env:变量名</b> 让监控在重启后继续运行。</span></div>
     </form>
   </div>
 
@@ -289,6 +289,8 @@
         '</div>' +
         '<div class="wmeta">' +
           '<span>' + T("上次：", "Last run: ") + fmtTime(w.last_run_ts) + scorePart + '</span>' +
+          (w.key_status === "missing" ? '<span style="color:var(--bad)">' +
+            T("API 密钥未保存，重启后已丢失：请删除后重新添加。", "API key not stored and lost on restart: delete and add the monitor again.") + '</span>' : "") +
         '</div>' +
         '<div class="wact">' +
           '<button class="run" data-run="'+w.id+'">' + icon("play") + T("立即运行", "Run now") + '</button>' +
@@ -343,7 +345,9 @@
       interval_sec: minutes * 60,
       enabled: $("f-enabled").checked,
       webhooks: hooks,
-      language: $("f-lang").value
+      language: $("f-lang").value,
+      // the classic UI never stores an API key: it stays in the server's memory
+      key_storage: "memory"
     };
     if(embed && $("f-dims").value.trim()) body.embedding_dimensions = parseInt($("f-dims").value, 10) || 0;
     var btn = $("add");
@@ -365,7 +369,8 @@
     }).catch(function(){ btn.disabled = false; showErr(function(){ return T("网络错误，创建失败", "Network error — failed to create monitor"); }); });
   });
 
-  // The master key is created and entered on the v2 Monitors page.
+  // Monitors whose key is stored encrypted (chosen on the v2 Monitors page)
+  // need the master key, which is created and entered there.
   function lockedMsg(){
     return T("主密钥已锁定或尚未创建：请在新版监控页面（/v2/watches）中输入或创建。",
       "The master key is locked or not created yet: enter or create it on the new Monitors page (/v2/watches).");
@@ -381,7 +386,10 @@
       t.innerHTML = icon("refresh") + T("运行中…", "Running…");
       fetch("/api/watches/"+runId+"/run", {method:"POST"}).then(function(r){
         if(r.status === 423){ t.disabled = false; t.innerHTML = orig; alert(lockedMsg()); return null; }
-        return r.json();
+        return r.json().then(function(j){
+          if(j && j.key_missing){ t.disabled = false; t.innerHTML = orig; alert(T("API 密钥未保存，zing serve 重启后已丢失。", "The API key is not stored and was lost when zing serve restarted.")); }
+          return j;
+        });
       }).then(function(){ load(); }).catch(function(){
         t.disabled = false; t.innerHTML = orig; alert(T("运行失败", "Run failed"));
       });

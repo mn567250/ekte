@@ -23,8 +23,16 @@ zing is a local-first auditing tool. The security properties that matter most:
   through the redactor (`zing/utils/redact.py`) before serialization. A path that
   lets a configured key or another secret reach a JSON/Markdown/HTML report is an
   in-scope vulnerability.
-- **Stored monitor keys.** `zing serve` keeps each monitor's API key in
-  `watches.db`, encrypted with Fernet (`zing/secretbox.py`). The master key is
+- **Monitor keys.** By default `zing serve` does not store a monitor's API key:
+  `watches.db` holds only the marker `mem:` and the key stays in the server's
+  memory until it stops (`zing/web/watches.py`); the classic UI never stores
+  one. Storing keys is opt-in (**API key storage** on the v2 Monitors page,
+  `POST /api/secret/storage`); switching back erases the encrypted keys and the
+  check value from `watches.db` and scrubs SQLite's free pages and WAL. A path
+  that writes a key in clear to disk, or stores one while storage is off, is an
+  in-scope vulnerability.
+- **Stored monitor keys.** When the user opts in, `zing serve` keeps each
+  monitor's API key in `watches.db`, encrypted with Fernet (`zing/secretbox.py`). The master key is
   **never written to the data directory**: the Monitors page shows it once
   when it is created, the user keeps it (password manager, the browser's
   vault) and enters it again after every restart; until then the server holds

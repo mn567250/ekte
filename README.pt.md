@@ -616,6 +616,21 @@ execução são enviados ao mesmo tempo, para que um lento ou inacessível não
 atrase os outros. As chaves são guardadas encriptadas no seu diretório de dados
 local e nunca são devolvidas ao navegador.
 
+**Armazenamento das chaves de API.** Por omissão, o zing **não guarda** as
+chaves de API dos monitores: uma chave introduzida fica apenas na memória do
+`zing serve` e nunca é escrita no disco. Após um reinício, a página
+**Monitores** indica os monitores que precisam novamente da chave; aguardam (sem
+execução falhada nem alerta) até a introduzir. Os monitores sem chave e as
+referências `env:`/`file:` continuam a funcionar. Para que as chaves sobrevivam
+a reinícios, escolha **Guardar cifradas neste computador** em **Armazenamento
+das chaves de API** na página **Monitores** v2: as chaves passam a ser guardadas
+em `watches.db`, cifradas com uma chave mestra. Voltar atrás move as chaves
+guardadas para a memória e apaga-as de `watches.db`. O aviso da página mostra o
+modo ativo, pede confirmação antes de mudar e indica o que foi movido. A
+interface clássica (`/watches`) nunca guarda uma chave. Uma instalação que já
+guardava chaves cifradas, ou que define `ZING_SECRET_KEY`, continua a guardá-las
+até mudar.
+
 **Chave mestra.** As chaves API dos monitores são encriptadas com uma chave
 mestra que o zing nunca escreve no disco. Da primeira vez que guarda uma chave
 API, a página **Monitores** cria-a e mostra-a uma única vez: copie-a ou

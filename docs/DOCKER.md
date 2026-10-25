@@ -23,7 +23,7 @@ stored in a watch — to your network.
 | `ZING_HOST` | `127.0.0.1` (`0.0.0.0` in the image) | Bind address. Anything but loopback needs `ZING_CONTAINER=1`. `--host` wins over it. |
 | `ZING_PORT` | `8000` | Port inside the container. `--port` wins over it. |
 | `ZING_DATA_DIR` | `~/.zing` (`/data` in the image) | Audit history, monitors (including their API keys) and your own knowledge-base entries. Mount a volume here to keep them. |
-| `ZING_SECRET_KEY` | unset | Master key that encrypts the monitors' stored API keys: the key the Monitors page (or `zing secret rotate`) showed you, or `file:/run/secrets/zing_key` / `env:VAR`. Unset, you enter the key on the Monitors page after every container start. Never stored in `ZING_DATA_DIR`. See below. |
+| `ZING_SECRET_KEY` | unset | Master key that encrypts the monitors' stored API keys: the key the Monitors page (or `zing secret rotate`) showed you, or `file:/run/secrets/zing_key` / `env:VAR`. Unset, you enter the key on the Monitors page after every container start. Never stored in `ZING_DATA_DIR`. Setting it on a fresh data directory selects encrypted key storage; without it, monitor API keys are not stored at all and must be entered again after every container start. See below. |
 | `ZING_KB_DIR` | unset | Extra knowledge-base YAML directory, mounted read-only for example (`-v ./profiles:/kb:ro -e ZING_KB_DIR=/kb`). |
 | `ZING_NO_USER_KB` | unset | `1` ignores the knowledge-base entries you added in the UI (`kb.db`). |
 | `ZING_ALLOWED_HOSTS` | unset | Comma-separated extra host names the UI answers to, if you reach it under another name than `localhost`/`127.0.0.1`. |

@@ -5,6 +5,11 @@
  *   ZingMasterKey.mountBar(el, onChange)   status line + the allowed actions
  *   ZingMasterKey.withKey(doFetch)         run doFetch(); on 423 (no master key)
  *                                          open the right dialog, then retry once
+ *   ZingMasterKey.setStorage(mode)         "memory" (store no API key) or
+ *                                          "encrypted"; asks for the key as needed
+ *
+ * A master key exists only to encrypt stored API keys: while none are stored
+ * (storage "memory", the default) the status bar stays hidden.
  *
  * The server never stores the key on disk and holds it in memory only until
  * it restarts, so the user keeps it: the new-key dialog shows it once, offers
@@ -104,6 +109,24 @@
     return doFetch().then(function (r) {
       if (!r || r.status !== 423) return r;
       return (ask || ensure)().then(function (ok) { return ok ? doFetch() : r; });
+    });
+  }
+
+  // Switch where API keys are kept. A switch that needs the master key (to
+  // open the stored keys, or to encrypt them) asks for it first. Resolves
+  // {ok, status, body}; body is the new status with `moved` on success.
+  function setStorage(mode) {
+    return withKey(function () {
+      return fetch("/api/secret/storage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: mode }),
+      });
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (r.ok) announce();
+        return { ok: r.ok, status: r.status, body: j || {} };
+      });
     });
   }
 
@@ -354,7 +377,9 @@
       return '<button type="button" class="btn sm' + (cls ? " " + cls : "") + '" data-mk="' + act + '">' + esc(label) + "</button>";
     }
     function draw() {
-      if (!st || !st.state) { el.innerHTML = ""; return; }
+      // no API key is stored: there is nothing for a master key to do
+      if (!st || !st.state || st.storage === "memory") { el.innerHTML = ""; el.className = ""; el.hidden = true; return; }
+      el.hidden = false;
       var acts = st.actions || [], html = "", kind = "";
       if (st.state === "unlocked") {
         kind = "ok";
@@ -478,5 +503,6 @@
     newKeyDialog: newKeyDialog,
     unlockDialog: unlockDialog,
     mountBar: mountBar,
+    setStorage: setStorage,
   };
 })();

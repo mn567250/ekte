@@ -13,16 +13,26 @@ opens a fresh short-lived connection so the module is safe to call from
 FastAPI's threadpool, lazily creates its table, and is best-effort: a malformed
 row must never crash the scheduler loop.
 
-Secret handling: the stored ``api_key`` is what the scheduler needs to actually
-run the audit, so it is kept in the DB — encrypted with :mod:`zing.secretbox`
-(``enc:v1:…``); ``env:``/``file:`` references are kept as they are. The master
-key itself is never stored here, only its check value (``secret_meta``), which
-:func:`adopt_key` rewrites in the same transaction as the keys it re-encrypts.
-:func:`list_all` (the listing the browser sees) NEVER returns the key, only
-whether one is stored and can be decrypted; :func:`get` and :func:`due`, used
-server-side by the scheduler, return it decrypted. A key that cannot be
-decrypted comes back as ``None`` with ``key_error`` set, never as a guess, and
-``key_locked`` when that is only because the master key is not entered yet.
+Secret handling: the scheduler needs a watch's ``api_key`` to run the audit.
+Where it keeps it is the user's choice (:func:`get_key_storage`, a
+``secret_meta`` row):
+
+``memory`` (the default)  the key is never stored. The ``api_key`` column holds
+                          only the marker ``mem:`` and the key itself stays in
+                          this process's memory (:data:`_memory_keys`) until
+                          ``zing serve`` stops; then it has to be entered again.
+``encrypted``             the key is kept in the DB, encrypted with
+                          :mod:`zing.secretbox` (``enc:v1:…``).
+
+``env:``/``file:`` references hold no secret and are kept as they are in both
+modes. The master key itself is never stored here, only its check value
+(``secret_meta``), which :func:`adopt_key` rewrites in the same transaction as
+the keys it re-encrypts. :func:`list_all` (the listing the browser sees) NEVER
+returns the key, only whether one is held and can be used; :func:`get` and
+:func:`due`, used server-side by the scheduler, return it in clear. A key that
+cannot be used comes back as ``None`` with ``key_error`` set, never as a guess;
+``key_locked`` when that is only because the master key is not entered yet,
+``key_missing`` when a key that is not stored was lost with a restart.
 
 Pinned knowledge-base profile: when a watch is created, the profile its
 claimed model resolves to is snapshotted into this database (``kb_snapshots``,
@@ -35,9 +45,12 @@ model matched no profile at creation resolves the live knowledge base per run.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
+import os
 import sqlite3
+import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -186,8 +199,144 @@ def _set_canary(conn: sqlite3.Connection, value: str | None) -> None:
 
 _SECRET_ROWS = (
     "SELECT id, api_key FROM watches WHERE COALESCE(api_key, '') != ''"
-    " AND api_key NOT LIKE 'env:%' AND api_key NOT LIKE 'file:%'"
+    " AND api_key NOT LIKE 'env:%' AND api_key NOT LIKE 'file:%' AND api_key NOT LIKE 'mem:%'"
 )
+
+# ----- where the API keys are kept (see the module docstring) --------------- #
+STORAGE_MEMORY = "memory"
+STORAGE_ENCRYPTED = "encrypted"
+STORAGE_MODES = (STORAGE_MEMORY, STORAGE_ENCRYPTED)
+
+# The keys of ``memory`` mode, by watch id. Never written anywhere.
+_memory_keys: dict[int, str] = {}
+_memory_lock = threading.Lock()
+
+
+def _remember(wid: int, key: str | None) -> None:
+    with _memory_lock:
+        if key:
+            _memory_keys[int(wid)] = key
+        else:
+            _memory_keys.pop(int(wid), None)
+
+
+def _held(wid: Any) -> str | None:
+    try:
+        wid = int(wid)
+    except (TypeError, ValueError):
+        return None
+    with _memory_lock:
+        return _memory_keys.get(wid)
+
+
+def forget_memory_keys() -> None:
+    """Drop every key held in memory (as when ``zing serve`` stops)."""
+    with _memory_lock:
+        _memory_keys.clear()
+
+
+def _stored_storage(conn: sqlite3.Connection) -> str | None:
+    row = conn.execute("SELECT value FROM secret_meta WHERE name = 'key_storage'").fetchone()
+    return row["value"] if row and row["value"] in STORAGE_MODES else None
+
+
+def _default_storage(conn: sqlite3.Connection) -> str:
+    """No choice made yet: keep what an older version set up, else store nothing.
+
+    A store that already holds encrypted keys or a master key check value, and
+    a setup that provides a master key (``ZING_SECRET_KEY``, a legacy
+    ``secret.key``), keep encrypting; everything else stores no key.
+    """
+    has_encrypted = conn.execute(
+        "SELECT 1 FROM secret_meta WHERE name = 'canary'"
+        " UNION ALL SELECT 1 FROM watches WHERE api_key LIKE 'enc:%' LIMIT 1"
+    ).fetchone()
+    if has_encrypted or os.environ.get(secretbox.ENV, "").strip():
+        return STORAGE_ENCRYPTED
+    with contextlib.suppress(OSError):
+        if secretbox.legacy_key_file().exists():
+            return STORAGE_ENCRYPTED
+    return STORAGE_MEMORY
+
+
+def _set_storage(conn: sqlite3.Connection, mode: str) -> None:
+    conn.execute(
+        "INSERT OR REPLACE INTO secret_meta (name, value) VALUES ('key_storage', ?)", (mode,)
+    )
+
+
+def get_key_storage() -> str:
+    """``memory`` (API keys are never stored) or ``encrypted``."""
+    with _connect() as conn:
+        return _stored_storage(conn) or _default_storage(conn)
+
+
+def settle_key_storage() -> str:
+    """Record the default choice once (at startup), so it does not change later
+    with the environment; returns the mode in effect."""
+    with _connect() as conn:
+        mode = _stored_storage(conn)
+        if mode is None:
+            mode = _default_storage(conn)
+            _set_storage(conn, mode)
+        return mode
+
+
+def keys_to_memory(box: secretbox.SecretBox | None) -> int:
+    """Stop storing API keys: move every stored key into memory, in one transaction.
+
+    Encrypted keys are opened with ``box`` (raises SecretLocked without one
+    when there are any, before anything is written); one it cannot open is
+    dropped and has to be entered again, as it could not be used anyway. The
+    check value goes too, and the freed pages are scrubbed. Returns how many
+    keys now live in memory.
+    """
+    with _connect() as conn:
+        held: dict[int, str] = {}
+        rows = conn.execute(_SECRET_ROWS).fetchall()
+        for r in rows:
+            stored = r["api_key"]
+            if not secretbox.is_sealed(stored):
+                held[int(r["id"])] = stored
+                continue
+            if box is None:
+                raise secretbox.SecretLocked("enter the master key to move the stored keys")
+            try:
+                held[int(r["id"])] = box.open(stored)
+            except secretbox.SecretError as exc:
+                _log.warning("watch %s: %s; enter its key again", r["id"], exc)
+        conn.executemany(
+            "UPDATE watches SET api_key = ? WHERE id = ?",
+            [(secretbox.MEMORY, r["id"]) for r in rows],
+        )
+        _set_canary(conn, None)
+        _set_storage(conn, STORAGE_MEMORY)
+    with _memory_lock:
+        _memory_keys.update(held)
+    _status_cache.clear()
+    _scrub()
+    return len(held)
+
+
+def keys_to_store(box: secretbox.SecretBox) -> int:
+    """Store API keys encrypted: seal every key held in memory into the DB.
+
+    A watch whose key was lost with a restart keeps waiting for it. Returns
+    how many keys were written.
+    """
+    with _connect() as conn:
+        ids = [
+            int(r["id"])
+            for r in conn.execute("SELECT id FROM watches WHERE api_key LIKE 'mem:%'").fetchall()
+        ]
+        with _memory_lock:
+            updates = [(box.seal(_memory_keys[i]), i) for i in ids if i in _memory_keys]
+        conn.executemany("UPDATE watches SET api_key = ? WHERE id = ?", updates)
+        _set_storage(conn, STORAGE_ENCRYPTED)
+    with _memory_lock:
+        for _, i in updates:
+            _memory_keys.pop(i, None)
+    return len(updates)
 
 
 def migrate_keys(box: secretbox.SecretBox) -> int:
@@ -263,15 +412,19 @@ def _scrub() -> None:
 
 
 def key_counts(box: secretbox.SecretBox | None = None) -> dict[str, int]:
-    """How many stored keys are encrypted, references, plain, locked or unreadable."""
-    counts = {"encrypted": 0, "reference": 0, "plain": 0, "locked": 0, "unreadable": 0}
+    """How many keys are encrypted, references, plain, locked, unreadable,
+    held in memory only, or lost with a restart (missing)."""
+    counts = {
+        "encrypted": 0, "reference": 0, "plain": 0, "locked": 0, "unreadable": 0,
+        "memory": 0, "missing": 0,
+    }
     box = box or secretbox.current()
     with _connect() as conn:
         rows = conn.execute(
-            "SELECT api_key FROM watches WHERE COALESCE(api_key, '') != ''"
+            "SELECT id, api_key FROM watches WHERE COALESCE(api_key, '') != ''"
         ).fetchall()
     for r in rows:
-        status = _key_status(r["api_key"], box)
+        status = _key_status(r["api_key"], box, r["id"])
         counts[status] = counts.get(status, 0) + 1
     return counts
 
@@ -295,12 +448,15 @@ def _can_open(box: secretbox.SecretBox, stored: str) -> bool:
     return ok
 
 
-def _key_status(stored: str | None, box: secretbox.SecretBox | None) -> str:
-    """none | encrypted | reference | plain | locked | unreadable — never the key."""
+def _key_status(stored: str | None, box: secretbox.SecretBox | None, wid: Any = None) -> str:
+    """none | encrypted | reference | plain | locked | unreadable | memory |
+    missing — never the key."""
     if not stored:
         return "none"
     if secretbox.is_reference(stored):
         return "reference"
+    if secretbox.is_memory(stored):
+        return "memory" if _held(wid) is not None else "missing"
     if not secretbox.is_sealed(stored):
         return "plain"
     if box is None:
@@ -311,11 +467,19 @@ def _key_status(stored: str | None, box: secretbox.SecretBox | None) -> str:
 def _open_key(d: dict[str, Any]) -> None:
     """Decrypt ``d["api_key"]`` in place; on failure set ``key_error`` instead.
 
-    ``key_locked`` says the failure is only a master key not entered yet.
+    ``key_locked`` says the failure is only a master key not entered yet,
+    ``key_missing`` that the key is not stored and was lost with a restart.
     """
     d["key_error"] = None
     d["key_locked"] = False
+    d["key_missing"] = False
     stored = d.get("api_key")
+    if secretbox.is_memory(stored):
+        d["api_key"] = _held(d.get("id"))
+        if d["api_key"] is None:
+            d["key_error"] = "the API key is not stored and zing serve restarted: enter it again"
+            d["key_missing"] = True
+        return
     if not secretbox.is_sealed(stored):
         d["api_key"] = stored or ""
         return
@@ -331,12 +495,22 @@ def _open_key(d: dict[str, Any]) -> None:
         d["key_error"] = str(exc)
 
 
-def _seal(value: str | None) -> str:
-    """Encrypt a key for storage. Only a real secret needs the master key
-    (raises SecretLocked without one); keyless watches and references don't."""
-    if not secretbox.needs_seal(value):
-        return str(value or "")
-    return secretbox.default().seal(value)
+def _store_key(value: str | None, storage: str | None = None) -> tuple[str, str | None]:
+    """What to write to the ``api_key`` column, and what to hold in memory.
+
+    Keyless watches and references are stored as they are. A real secret is
+    held in memory (``memory`` mode) or encrypted (``encrypted`` mode; raises
+    SecretLocked without a master key). ``storage`` overrides the mode: the
+    classic UI never stores a key.
+    """
+    value = str(value or "")
+    if not value or secretbox.is_reference(value):
+        return value, None
+    if (storage or get_key_storage()) == STORAGE_MEMORY:
+        return secretbox.MEMORY, value
+    if secretbox.needs_seal(value) or secretbox.is_memory(value):
+        return secretbox.default().seal(value), None
+    return value, None
 
 
 def _row_to_dict(row: sqlite3.Row, *, include_key: bool) -> dict[str, Any]:
@@ -445,7 +619,11 @@ def _dims(raw: Any) -> int:
 
 
 def create(
-    cfg: dict[str, Any], knowledge: dict[str, Any] | None = None, *, draft: bool = False
+    cfg: dict[str, Any],
+    knowledge: dict[str, Any] | None = None,
+    *,
+    draft: bool = False,
+    key_storage: str | None = None,
 ) -> int:
     """Insert a new watch from a config dict; return its new id.
 
@@ -461,6 +639,7 @@ def create(
 
     ``draft=True`` stores a watch scheduled from a history run: paused and with
     no interval (NULL) until the user sets one, linked to ``source_report_id``.
+    ``key_storage`` overrides where the key is kept (see :func:`_store_key`).
     """
     cfg = cfg or {}
     webhooks = cfg.get("webhooks") or []
@@ -476,10 +655,11 @@ def create(
             interval = max(30, int(cfg.get("interval_sec") or 3600))
         except (TypeError, ValueError):
             interval = 3600
+    stored_key, held = _store_key(cfg.get("api_key"), key_storage)
     row = (
         cfg.get("name") or "watch",
         cfg.get("base_url"),
-        _seal(cfg.get("api_key")),
+        stored_key,
         cfg.get("model"),
         cfg.get("claimed_model") or None,
         cfg.get("api") or "auto",
@@ -513,16 +693,16 @@ def create(
         wid = int(cur.lastrowid or -1)
         if knowledge is not None:
             _pin(conn, wid, knowledge)
-        return wid
+    _remember(wid, held)
+    return wid
 
 
 def list_all() -> list[dict[str, Any]]:
     """All watches, newest first, WITHOUT api_key (safe for the browser).
 
-    ``has_key`` says whether a key is stored and ``key_status`` how (see
+    ``has_key`` says whether a key is set and ``key_status`` how (see
     :func:`_key_status`; ``locked`` waits for the master key, ``unreadable``
-    must be re-entered), without
-    revealing it.
+    and ``missing`` must be re-entered), without revealing it.
     """
     cols = ", ".join(_LIST_COLS)
     with _connect() as conn:
@@ -535,7 +715,7 @@ def list_all() -> list[dict[str, Any]]:
         d = _row_to_dict(r, include_key=False)
         stored = d.pop("_stored_key", None)
         d["has_key"] = bool(stored)
-        d["key_status"] = _key_status(stored, box)
+        d["key_status"] = _key_status(stored, box, d.get("id"))
         out.append(d)
     return out
 
@@ -579,19 +759,23 @@ def update(
     alert_on: str | None = None,
     webhooks: list[str] | None = None,
     embedding_dimensions: int | None = None,
+    key_storage: str | None = None,
 ) -> None:
     """Change a watch's schedule, key or alert settings; ``None`` leaves a field as is.
 
     Callers validate the values (see the PATCH endpoint); this only stores them.
+    ``key_storage`` overrides where a new key is kept (see :func:`_store_key`).
     """
+    held: str | None = None
     sets: list[str] = []
     vals: list[Any] = []
     if interval_sec is not None:
         sets.append("interval_sec = ?")
         vals.append(int(interval_sec))
     if api_key is not None:
+        stored_key, held = _store_key(api_key, key_storage)
         sets.append("api_key = ?")
-        vals.append(_seal(api_key))
+        vals.append(stored_key)
     if alert_on is not None:
         sets.append("alert_on = ?")
         vals.append(alert_on)
@@ -605,6 +789,8 @@ def update(
         return
     with _connect() as conn:
         conn.execute(f"UPDATE watches SET {', '.join(sets)} WHERE id = ?", (*vals, int(wid)))
+    if api_key is not None:
+        _remember(wid, held)
 
 
 def delete(wid: int) -> None:
@@ -612,6 +798,7 @@ def delete(wid: int) -> None:
     with _connect() as conn:
         conn.execute("DELETE FROM watches WHERE id = ?", (int(wid),))
         kb_snapshot.prune(conn, "watches")
+    _remember(wid, None)
 
 
 def mark_run(

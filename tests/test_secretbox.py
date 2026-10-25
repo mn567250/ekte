@@ -19,6 +19,7 @@ from typer.testing import CliRunner  # noqa: E402
 
 from zing import secretbox  # noqa: E402
 from zing.cli import app  # noqa: E402
+from zing.web import watches  # noqa: E402
 from zing.web.masterkey import vault  # noqa: E402
 
 SECRET = "sk-super-secret-123"
@@ -28,6 +29,10 @@ SECRET = "sk-super-secret-123"
 def _fresh(tmp_path, monkeypatch):
     # conftest holds a fresh master key in memory for every test.
     monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    # These tests are about encrypted storage (the opt-in key storage mode).
+    watches.init()
+    with watches._connect() as conn:
+        watches._set_storage(conn, watches.STORAGE_ENCRYPTED)
 
 
 def _restart():

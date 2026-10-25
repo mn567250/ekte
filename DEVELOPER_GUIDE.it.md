@@ -551,6 +551,22 @@ inizio di un'esecuzione è lo `started_at` del rapporto; i rapporti precedenti a
 quel campo ricevono `generated_at` meno l'intervallo coperto dai loro record
 delle richieste (`started_at_estimated` = 1).
 
+Dove vengono conservate le chiavi API dei monitor lo sceglie l'utente
+(`watches.get_key_storage()`, una riga di `secret_meta`): `memory`, il valore
+predefinito, non ne salva nessuna — la colonna `api_key` contiene solo il
+marcatore `mem:` e la chiave vive in `watches._memory_keys` finché il processo non
+termina (dopo un riavvio la riga è `key_missing`, che lo scheduler tratta come una
+chiave bloccata: l'esecuzione attende, nessun avviso); `encrypted` le salva come
+descritto sotto. Senza riga, un archivio che ha già chiavi cifrate o un valore di
+controllo, o con `ZING_SECRET_KEY` / un vecchio `secret.key`, parte in
+`encrypted`; la scelta viene registrata all'avvio. `Vault.set_storage()`
+(`POST /api/secret/storage`) cambia modalità e sposta le chiavi in una transazione
+(`keys_to_memory()` cancella quelle cifrate e il valore di controllo e ripulisce il
+file; `keys_to_store()` sigilla quelle in memoria). Una richiesta può passare
+`key_storage: "memory"` per tenere la sua chiave fuori dal database qualunque sia
+l'impostazione (l'interfaccia classica lo fa sempre); niente può forzare il
+salvataggio.
+
 Le chiavi API salvate sono cifrate da `zing/secretbox.py` (Fernet, salvate come
 `enc:v1:…`; i riferimenti `env:`/`file:` restano come sono). La chiave
 principale non viene mai salvata: `web/masterkey.py` (`Vault`, condiviso dal

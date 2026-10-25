@@ -4,7 +4,9 @@ A stored secret is sealed as ``enc:v1:<Fernet token>``: AES-128-CBC with an
 HMAC-SHA256 tag, from ``cryptography`` (part of the ``web`` extra, the only
 place secrets are stored). Values that are only pointers to a secret
 (``env:VAR`` / ``file:/path``, see :func:`zing.config.resolve_secret`) and the
-empty string are stored as is.
+empty string are stored as is, and so is :data:`MEMORY`, the marker of a key
+that is deliberately not stored (it is held in the server's memory only, see
+:mod:`zing.web.watches`).
 
 The master key is never written to the data directory. It lives in this
 process's memory only (:func:`unlock` / :func:`lock` / :func:`current`), put
@@ -39,6 +41,8 @@ from zing import datadir
 
 PREFIX = "enc:v1:"
 _REFERENCES = ("env:", "file:")
+# Stored in place of a key that is held in memory only: it holds no secret.
+MEMORY = "mem:"
 _KEY_FILE = "secret.key"
 ENV = "ZING_SECRET_KEY"
 
@@ -78,9 +82,15 @@ def is_reference(stored: str | None) -> bool:
     return bool(stored) and str(stored).startswith(_REFERENCES)
 
 
+def is_memory(stored: str | None) -> bool:
+    return bool(stored) and str(stored).startswith(MEMORY)
+
+
 def needs_seal(stored: str | None) -> bool:
     """True for a raw secret still stored in plain text."""
-    return bool(stored) and not is_sealed(stored) and not is_reference(stored)
+    return (
+        bool(stored) and not is_sealed(stored) and not is_reference(stored) and not is_memory(stored)
+    )
 
 
 class SecretBox:

@@ -622,6 +622,22 @@ exécution sont envoyés en même temps, si bien qu'un webhook lent ou hors serv
 ne retarde pas les autres. Les clés sont stockées chiffrées dans
 votre répertoire de données local et ne sont jamais renvoyées au navigateur.
 
+**Stockage des clés API.** Par défaut, zing **n'enregistre pas** les clés API
+des surveillances : une clé saisie reste uniquement dans la mémoire de
+`zing serve` et n'est jamais écrite sur le disque. Après un redémarrage, la page
+**Surveillances** indique celles qui ont de nouveau besoin de leur clé ; elles
+attendent (sans exécution en échec ni alerte) que vous la saisissiez. Les
+surveillances sans clé et les références `env:`/`file:` continuent de tourner.
+Pour que les clés survivent aux redémarrages, choisissez **Enregistrer chiffrées
+sur cette machine** sous **Stockage des clés API** sur la page **Surveillances**
+v2 : les clés sont alors conservées dans `watches.db`, chiffrées avec une clé
+maîtresse. Revenir en arrière déplace les clés enregistrées en mémoire et les
+efface de `watches.db`. La notice de la page indique le mode actif, demande
+confirmation avant un changement et rapporte ce qui a été déplacé. L'interface
+classique (`/watches`) n'enregistre jamais de clé. Une installation qui
+enregistrait déjà des clés chiffrées, ou qui définit `ZING_SECRET_KEY`, continue
+de les enregistrer jusqu'à ce que vous changiez.
+
 **Clé maîtresse.** Les clés API des surveillances sont chiffrées avec une clé
 maîtresse que zing n'écrit jamais sur le disque. La première fois que vous
 enregistrez une clé API, la page **Surveillances** la crée et l'affiche une

@@ -542,6 +542,22 @@ A hora de início de uma execução é o `started_at` do relatório; os relatór
 anteriores a esse campo recebem `generated_at` menos o intervalo dos seus
 registos de pedidos (`started_at_estimated` = 1).
 
+Onde ficam as chaves de API dos monitores é escolha do utilizador
+(`watches.get_key_storage()`, uma linha de `secret_meta`): `memory`, a
+predefinição, não guarda nenhuma — a coluna `api_key` tem apenas o marcador
+`mem:` e a chave vive em `watches._memory_keys` até o processo terminar (após um
+reinício a linha fica `key_missing`, que o agendador trata como uma chave
+bloqueada: a execução aguarda, sem alerta); `encrypted` guarda-as como descrito
+abaixo. Sem linha, um armazenamento que já tem chaves cifradas ou um valor de
+verificação, ou com `ZING_SECRET_KEY` / um `secret.key` antigo, começa em
+`encrypted`; a escolha é registada no arranque. `Vault.set_storage()`
+(`POST /api/secret/storage`) muda o modo e move as chaves numa transação
+(`keys_to_memory()` apaga as cifradas e o valor de verificação e limpa o
+ficheiro; `keys_to_store()` sela as que estão em memória). Um pedido pode passar
+`key_storage: "memory"` para manter a sua chave fora da base de dados seja qual
+for a definição (a interface clássica fá-lo sempre); nada pode forçar o
+armazenamento.
+
 As chaves API guardadas são encriptadas por `zing/secretbox.py` (Fernet,
 guardadas como `enc:v1:…`; as referências `env:`/`file:` ficam como estão). A
 chave mestra nunca é guardada: `web/masterkey.py` (`Vault`, partilhado pelo

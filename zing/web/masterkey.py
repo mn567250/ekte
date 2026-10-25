@@ -17,6 +17,11 @@ States (:meth:`Vault.status`):
 ``env_mismatch``   ``ZING_SECRET_KEY`` is set but is not the key the stored
                    secrets use; only fixing the variable helps
 
+Whether there is a master key at all is the user's choice: with key storage
+``memory`` (:func:`zing.web.watches.get_key_storage`, the default) no API key
+is stored, so none is needed; :meth:`Vault.set_storage` switches between the
+modes and moves the keys along.
+
 A new key (first key, moving a legacy key out, rotation) is always the same
 two steps: :meth:`Vault.begin_new` hands it out once, :meth:`Vault.confirm_new`
 takes it back (pasted by the user) before anything is written, so the key in
@@ -68,9 +73,11 @@ class Vault:
         self.reset_state()
 
     def reset_state(self) -> None:
-        """Forget everything held in memory (as after a restart)."""
+        """Forget everything held in memory (as after a restart), the API keys
+        that are not stored included."""
         with self._lock:
             secretbox.lock()
+            watches.forget_memory_keys()
             self._canary_seen: str | None = None
             self._pending: tuple[str, float] | None = None
             self._env_error: str | None = None
@@ -81,24 +88,47 @@ class Vault:
 
         Called when the server starts (and by the CLI). A key already held is
         kept. Never raises: a broken variable or file is reported in the status.
+        When no API key is stored (``memory``) no master key is loaded.
         """
         with self._lock:
             watches.init()
-            if secretbox.current() is None:
-                self._env_error = None
-                try:
-                    box = secretbox.env_box()
-                except secretbox.SecretError as exc:
-                    self._env_error = str(exc)
-                    box = None
-                if box is None and self._env_error is None:
-                    try:
-                        box = secretbox.legacy_box()
-                    except secretbox.SecretError as exc:
-                        _log.warning("master key: %s", exc)
-                if box is not None:
-                    self._adopt_known(box)
+            if watches.settle_key_storage() == watches.STORAGE_ENCRYPTED:
+                self._load_known()
             return self.status()
+
+    def take_stored_keys(self) -> int:
+        """When no API key may be stored, move the ones an older version left in
+        the database (in plain text) into this process's memory. Only the
+        server calls this: it is the process that runs the monitors."""
+        with self._lock:
+            if watches.get_key_storage() != watches.STORAGE_MEMORY:
+                return 0
+            try:
+                moved = watches.keys_to_memory(secretbox.current())
+            except secretbox.SecretError as exc:
+                _log.warning("API keys: %s", exc)
+                return 0
+            if moved:
+                _log.warning("moved %d stored API key(s) out of the database into memory", moved)
+            return moved
+
+    def _load_known(self) -> None:
+        """Hold the key from ``ZING_SECRET_KEY`` or a legacy file, if any."""
+        if secretbox.current() is not None:
+            return
+        self._env_error = None
+        try:
+            box = secretbox.env_box()
+        except secretbox.SecretError as exc:
+            self._env_error = str(exc)
+            box = None
+        if box is None and self._env_error is None:
+            try:
+                box = secretbox.legacy_box()
+            except secretbox.SecretError as exc:
+                _log.warning("master key: %s", exc)
+        if box is not None:
+            self._adopt_known(box)
 
     def _adopt_known(self, box: secretbox.SecretBox) -> None:
         """Hold a key that came from the environment or a legacy file."""
@@ -165,6 +195,7 @@ class Vault:
             if secretbox.env_in_data_dir():
                 warnings.append("env_in_data_dir")
             return {
+                "storage": watches.get_key_storage(),
                 "state": state,
                 "source": source,
                 "fingerprint": box.fingerprint() if box is not None else None,
@@ -242,6 +273,37 @@ class Vault:
         secretbox.lock()
         self._canary_seen = None
         self._pending = None
+
+    def set_storage(self, mode: str) -> dict[str, Any]:
+        """Switch between storing no API key (``memory``) and storing them
+        encrypted, moving the keys along. The status gains ``moved``: how many
+        keys changed place.
+
+        To ``memory``: the encrypted keys are opened (raises SecretLocked when
+        there are some and the master key is not entered), held in memory and
+        erased from the database with the check value; the master key is then
+        forgotten, a legacy ``secret.key`` removed. To ``encrypted``: needs a
+        master key (from ``ZING_SECRET_KEY``, else SecretLocked until one is
+        created or entered); the keys held in memory are sealed into the database.
+        """
+        if mode not in watches.STORAGE_MODES:
+            raise VaultError("mode must be one of: " + ", ".join(watches.STORAGE_MODES), 400)
+        with self._lock:
+            if mode == watches.get_key_storage():
+                return {**self.status(), "moved": 0}
+            if mode == watches.STORAGE_MEMORY:
+                box = secretbox.current() if self.verify() else None
+                moved = watches.keys_to_memory(box)
+                self._forget()
+                self._env_error = None
+                secretbox.remove_legacy_key_file()
+            else:
+                self._load_known()
+                box = secretbox.current()
+                if box is None:
+                    raise secretbox.SecretLocked("create or enter the master key first")
+                moved = watches.keys_to_store(box)
+            return {**self.status(), "moved": moved}
 
     def reset(self) -> int:
         """The key is lost: drop every encrypted API key and start over.

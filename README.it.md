@@ -617,6 +617,21 @@ un'esecuzione vengono inviati contemporaneamente, così uno lento o non
 raggiungibile non blocca gli altri. Le chiavi sono salvate cifrate nella tua
 directory dei dati locale e non vengono mai restituite al browser.
 
+**Archiviazione delle chiavi API.** Per impostazione predefinita zing **non
+salva** le chiavi API dei monitor: una chiave inserita resta solo nella memoria
+di `zing serve` e non viene mai scritta su disco. Dopo un riavvio la pagina
+**Monitor** indica i monitor che hanno di nuovo bisogno della chiave; attendono
+(nessuna esecuzione fallita, nessun avviso) finché non la reinserisci. I monitor
+senza chiave e i riferimenti `env:`/`file:` continuano a funzionare. Perché le
+chiavi sopravvivano ai riavvii, scegli **Salva cifrate su questo computer** in
+**Archiviazione delle chiavi API** nella pagina **Monitor** v2: le chiavi vengono
+allora conservate in `watches.db`, cifrate con una chiave principale. Tornare
+indietro sposta le chiavi salvate in memoria e le cancella da `watches.db`. L'avviso
+della pagina mostra la modalità attiva, chiede conferma prima di cambiare e
+riporta cosa è stato spostato. L'interfaccia classica (`/watches`) non salva mai
+una chiave. Un'installazione che salvava già chiavi cifrate, o che imposta
+`ZING_SECRET_KEY`, continua a salvarle finché non cambi.
+
 **Chiave principale.** Le chiavi API dei monitor sono cifrate con una chiave
 principale che zing non scrive mai su disco. La prima volta che salvi una chiave
 API, la pagina **Monitor** la crea e la mostra una sola volta: copiala o

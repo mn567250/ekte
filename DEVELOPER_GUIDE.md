@@ -487,8 +487,8 @@ the backend (detector names, recommendations, verdict sentences).
 
 `zing/datadir.py` owns `$ZING_DATA_DIR` (default `~/.zing`), created `0700`,
 with `0600` SQLite files: `history.db` (`web/history.py`), `watches.db`
-(`web/watches.py`, which holds the monitors' API keys, encrypted) and `kb.db`
-(`knowledge/store.py`). Each call opens a short-lived connection, so the stores
+(`web/watches.py`; the monitors' API keys only if the user chose to store
+them, encrypted) and `kb.db` (`knowledge/store.py`). Each call opens a short-lived connection, so the stores
 are safe on FastAPI's thread pool. The global `--data-dir` option (also on
 `zing serve`) just sets `ZING_DATA_DIR` to the absolute path, and
 `zing data-dir` prints the resolved directory. A directory that already exists
@@ -513,6 +513,20 @@ written by an older `EXTRACT_VERSION`; `history.backfill_analytics()` runs it
 again on demand. A run's start time is the report's `started_at`; reports from
 before that field get `generated_at` minus the span of their request records
 (`started_at_estimated` = 1).
+
+Where the monitors' API keys are kept is the user's choice
+(`watches.get_key_storage()`, a `secret_meta` row): `memory`, the default, stores
+none — the `api_key` column holds the marker `mem:` and the key lives in
+`watches._memory_keys` until the process stops (a restart leaves the row
+`key_missing`, which the scheduler treats like a locked key: the run waits, no
+alert); `encrypted` stores them as below. With no row yet, a store that already
+has encrypted keys or a check value, or a set `ZING_SECRET_KEY` / legacy
+`secret.key`, starts in `encrypted`; the choice is recorded at startup.
+`Vault.set_storage()` (`POST /api/secret/storage`) switches and moves the keys
+in one transaction (`keys_to_memory()` erases the encrypted ones and the check
+value and scrubs the file; `keys_to_store()` seals the held ones). A request
+can pass `key_storage: "memory"` to keep its key out of the database whatever
+the setting (the classic UI always does); nothing can force storage.
 
 Stored API keys are encrypted by `zing/secretbox.py` (Fernet, stored as
 `enc:v1:…`; `env:`/`file:` references stay as they are). The master key itself
