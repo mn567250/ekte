@@ -850,6 +850,8 @@
     // completion calls, or a non-chat job's embedding/rerank calls
     var calls = recs.filter(isCall);
     var embedOnly = calls.length > 0 && !calls.some(function (r) { return r.op === "complete"; });
+    // an embedding/rerank audit has latency only (no tokens, no streaming)
+    if (embedOnly) this.metric = "latency";
     var target = calls.filter(function (r) { return r.endpoint !== "baseline" && r.ok && !r.cached; });
     var probeDone = calls.filter(function (r) { return r.endpoint !== "baseline" && r.phase === "probe"; }).length;
     var tps = target.map(function (r) { return r.decode_tps_local != null ? r.decode_tps_local : r.decode_tps_reported; });
@@ -883,7 +885,8 @@
         [decodeLabel, withUnit(tpsP50, "tok/s")],
       ]),
       probe: null,
-      tabs: tabs(this.metric, this.pid),
+      embed: embedOnly,
+      tabs: tabs(this.metric, this.pid, embedOnly),
       scale: this.probeTotal > 0 || hasProbe(recs) ? scaleBar(sc, chartV) : "",
       chart: chartV,
       legend: legend(recs, this.hasBaseline, chartV.over),
@@ -971,7 +974,7 @@
       plot: root.querySelector(".zp-plot"),
       legend: root.querySelector(".zp-legend"),
       say: root.querySelector(".zp-sr"),
-      cache: { tabs: v.tabs, tabsKey: tabs(METRICS[0].id, this.pid), scale: v.scale, chart: v.chart.html, empty: v.chart.empty, legend: v.legend },
+      cache: { tabs: v.tabs, tabsKey: tabs(METRICS[0].id, this.pid, v.embed), scale: v.scale, chart: v.chart.html, empty: v.chart.empty, legend: v.legend },
     };
     this.wirePlot();
     wireTabs(root, function (id) { self.setMetric(id); });
@@ -1029,7 +1032,7 @@
       setAttr(el.probe.bar, "aria-valuenow", v.probe.now);
       if (el.probe.fill.style.width !== v.probe.width) el.probe.fill.style.width = v.probe.width;
     }
-    var tabsKey = tabs(METRICS[0].id, this.pid);
+    var tabsKey = tabs(METRICS[0].id, this.pid, v.embed);
     if (v.tabs !== c.tabs && tabsKey === c.tabsKey) {
       // another metric: move the selection, keeping the buttons (and focus)
       el.tabs.querySelectorAll("[data-metric]").forEach(function (b) {

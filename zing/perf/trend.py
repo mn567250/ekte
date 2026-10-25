@@ -19,6 +19,10 @@ from typing import Any
 
 TREND_WINDOW = 5
 
+# the calls the chart plots (perf.js isCall): completions, and a non-chat
+# audit's embedding/rerank calls (zing/config.py SURFACE_OPS)
+CHART_OPS = frozenset({"complete", "embed", "rerank"})
+
 
 def _decode_tps(rec: dict[str, Any]) -> Any:
     local = rec.get("decode_tps_local")
@@ -58,7 +62,7 @@ class RunningMedian:
 
     def tag(self, rec: dict[str, Any]) -> dict[str, Any]:
         """Add ``trend`` to ``rec`` (in place) and return it."""
-        if rec.get("op", "complete") != "complete" or not rec.get("ok") or rec.get("cached"):
+        if rec.get("op", "complete") not in CHART_OPS or not rec.get("ok") or rec.get("cached"):
             return rec
         endpoint = "baseline" if rec.get("endpoint") == "baseline" else "target"
         trend: dict[str, float] = {}

@@ -43,3 +43,13 @@ def test_failed_cached_and_other_calls_neither_feed_nor_get_a_trend():
     assert "trend" not in failed and "trend" not in cached and "trend" not in models
     assert "trend_band" not in failed and "trend_band" not in cached
     assert last["trend"]["latency"] == 200
+
+
+def test_embedding_and_rerank_calls_get_a_latency_trend():
+    # a non-chat audit's chart plots these calls (perf.js isCall), so the
+    # live stream must tag them like completions
+    tagger = RunningMedian()
+    for i, op in enumerate(["embed", "embed", "rerank"], 1):
+        rec = tagger.tag({"seq": i, "op": op, "endpoint": "target", "ok": True, "duration_ms": 10.0 * i})
+    assert rec["trend"] == {"latency": 20.0}
+    assert rec["trend_band"] == {"latency": [15.0, 25.0]}
