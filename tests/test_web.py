@@ -400,6 +400,15 @@ def test_console_is_classic_only(client):
     assert client.get("/console", follow_redirects=False).status_code == 200
 
 
+def test_v2_audit_api_key_starts_empty_and_masked(client):
+    # no shared env:ZING_API_KEY default: each relay brings its own key, and
+    # an empty field starts masked (only a reference value starts revealed)
+    html = client.get("/v2/").text
+    tag = re.search(r'<input[^>]*\bid="i-key"[^>]*>', html).group(0)
+    assert 'type="password"' in tag and 'data-secret="i-url"' in tag
+    assert "value=" not in tag
+
+
 def test_v2_audit_sends_the_declared_provider(client):
     # the declared provider is derived by the relay configuration (a hidden
     # field) and still sent with the audit

@@ -67,8 +67,7 @@
       - text: Clave de API Admite env:VAR / file:/ruta
       - textbox "Clave de API":
         - /placeholder: sk-... o env:ZING_API_KEY
-        - text: env:ZING_API_KEY
-      - button "Mostrar clave" [pressed]
+      - button "Mostrar clave"
       - text: Modelo solicitado model
       - textbox "Modelo solicitado model":
         - /placeholder: deepseek-chat

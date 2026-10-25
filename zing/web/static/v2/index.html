@@ -251,7 +251,7 @@
               <label class="lab" for="i-key" data-en="API key">API 密钥</label>
               <span class="aside" id="i-key-aside" data-en="Supports env:VAR / file:/path">支持 env:VAR / file:/path</span>
             </div>
-            <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="i-key-aside" placeholder="sk-... 或 env:ZING_API_KEY" data-en-placeholder="sk-... or env:ZING_API_KEY" value="env:ZING_API_KEY">
+            <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="i-key-aside" placeholder="sk-... 或 env:ZING_API_KEY" data-en-placeholder="sk-... or env:ZING_API_KEY">
           </div>
           <div class="two">
             <div class="grp">
@@ -1097,7 +1097,7 @@
   })();
   // /v2/?rerun=<history id> (from History): fill the form with that run's
   // configuration. The API key is never stored in history, so the key field
-  // keeps its default / the browser's saved credential for the URL.
+  // stays empty unless the browser fills its saved credential for the URL.
   (function () {
     var id = null;
     try { id = new URLSearchParams(location.search).get("rerun"); } catch (e) {}
