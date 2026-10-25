@@ -68,8 +68,8 @@
       - option "全部" [selected]
       - option "手动"
       - option "监控"
-    - text: 中转站
-    - combobox "中转站":
+    - text: 中转站 / 厂商
+    - combobox "中转站 / 厂商":
       - option "全部" [selected]
       - option "Example Relay"
       - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
