@@ -105,7 +105,7 @@ uv tool install 'zing-audit[web]'  # uv，从 PyPI
 uv pip install -e '.[web]'         # uv，从源码
 ```
 
-不再需要 `tokenizers` 附加项：自 0.19.0 起它是空的，保留它只是为了让旧的安装命令仍然可用。
+不再需要 `tokenizers` 附加项：它是空的，保留它只是为了让旧的安装命令仍然可用。
 zing 用内置的启发式方法计数 token，运行时不下载任何东西（也不下载分词器文件），因此在只能访问
 被检测中转站的受限或离线环境中同样可以运行。
 
@@ -569,7 +569,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.20.0         # 固定到发布标签
+        uses: cenbonew/zing@v0.11.0         # 固定到发布标签
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # 调用方的密钥；绝不回显

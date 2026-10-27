@@ -17,7 +17,7 @@ from zing.web import analytics_store, history
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
-# history.db as schema version 1 (zing 0.19) left it.
+# history.db as schema version 1 left it.
 _V1_SCHEMA = (
     "CREATE TABLE history (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, base_url TEXT,"
     " claimed_model TEXT, model TEXT, mode TEXT, suite TEXT, risk_level TEXT, score REAL,"
@@ -49,7 +49,7 @@ def _old_shaped(i: int = 0) -> dict:
     report = _fixture()
     report.pop("started_at")
     report["generated_at"] = f"2026-0{1 + i % 9}-1{i % 10}T10:00:00+00:00"
-    report["tool_version"] = "0.15.0"
+    report["tool_version"] = "0.9.0"
     for rec in report["performance"]["requests"]:
         for key in ("relay_processing_ms", "server_ms", "cached", "reasoning_tokens"):
             rec.pop(key, None)
@@ -346,7 +346,7 @@ def test_extract_metrics_of_an_old_shaped_report():
     report["performance"]["target"] = {"latency_ms": {"p50": 800}}
     metrics, _ = analytics_store.extract_metrics(report)
     assert metrics["started_at_estimated"] == 1
-    assert metrics["tool_version"] == "0.15.0"
+    assert metrics["tool_version"] == "0.9.0"
     assert metrics["kb_profile_hash"] is None and metrics["kb_provider"] is None
     assert metrics["latency_p50_ms"] == 800.0
     assert metrics["success_rate"] is None and metrics["error_rate"] is None
