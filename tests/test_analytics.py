@@ -33,7 +33,7 @@ def _report(
     suite: str = "standard",
     stream_mode: str = "stream",
     api: str = "openai",
-    tool_version: str = "0.20.0",
+    tool_version: str = "0.11.0",
     kb_hash: str | None = "kb1",
     ttft: float | None = 300.0,
     tps: float | None = 50.0,
@@ -165,7 +165,7 @@ def seeded(data):
     for day in range(4):
         for i in range(3):
             _save(T0 + timedelta(days=day, minutes=i), base_url=RELAY, ttft=100.0 * (i + 1),
-                  score=70.0 + i, tool_version="0.19.2" if day < 2 else "0.20.0",
+                  score=70.0 + i, tool_version="0.10.0" if day < 2 else "0.11.0",
                   kb_hash="kb1" if day < 3 else "kb2")
     _save(T0, base_url=OPENAI, model="model-b", score=95.0, suite="quick", watch_id=7)
     _save(T0 + timedelta(days=1), base_url=OPENAI, model="model-b", score=91.0, watch_id=7,
@@ -228,7 +228,7 @@ def test_series_daily_with_coverage_low_n_mixed_and_annotations(seeded):
     assert relay["mixed"] == {"suite": False, "stream_mode": False, "api": False}
     kinds = [(a["kind"], a["from"], a["to"], a["bucket"]) for a in relay["annotations"]]
     assert kinds == [
-        ("tool_version", "0.19.2", "0.20.0", "2026-03-04T00:00:00+00:00"),
+        ("tool_version", "0.10.0", "0.11.0", "2026-03-04T00:00:00+00:00"),
         ("kb_profile", "kb1", "kb2", "2026-03-05T00:00:00+00:00"),
     ]
     openai = out["series"][1]

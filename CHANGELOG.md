@@ -6,7 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
+Everything since the last upstream release, 0.11.0. This fork publishes no
+versions of its own; its changes are grouped by topic below, newest first.
+
+### Latest changes
+
+#### Changed
 
 - **API keys of monitors are no longer stored by default.** As upstream
   promised, a monitor's API key now stays in the memory of `zing serve` only
@@ -25,7 +30,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `POST /api/secret/storage`; `GET /api/secret` and `zing secret status` report
   the mode.
 
-### Added
+#### Added
 
 - **Rerank audits as first-class audits.** `rerank` is a third endpoint type
   next to `chat` and `embedding`. `zing rerank` (with `--suite`,
@@ -137,7 +142,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   by search, status, last risk, endpoint type, relay and suite; a link to one
   monitor clears filters that would hide it.
 
-### Changed
+#### Changed
 
 - **The v2 Audit page no longer pre-fills the API key with `env:ZING_API_KEY`.**
   The field starts empty and masked, so the key is entered per relay (or filled
@@ -221,13 +226,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Same space below the last card on every page (web UI v2):** pages without
   a footer (Audit, History, Analytics) no longer end flush with the bottom.
 
-### Removed
+#### Removed
 
 - The design prototypes (`prototypes/`) and the implementation plans
   (`docs/CHART_MOTION_PLAN.md`, `docs/TOOL_SURFACES_PLAN.md`); they described
   work that has shipped.
 
-### Fixed
+#### Fixed
 
 - **Embedding and rerank performance charts.** The live panel of an
   embedding or rerank audit showed the chat metric tabs (TTFT, decode speed,
@@ -244,9 +249,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   browsers without scroll anchoring (Safari) moved the view up to the panel's
   heading. Every panel now keeps its height until its chart is drawn.
 
-## [0.20.2] — Correct verdicts for honest endpoints
+### Correct verdicts for honest endpoints
 
-### Fixed
+#### Fixed
 
 Verdict correctness: an audit of the dimensions and detectors found several ways an
 honest endpoint was marked divergent. All of them are fixed.
@@ -302,9 +307,9 @@ honest endpoint was marked divergent. All of them are fixed.
   Context-window summaries name the probed window (and the declared one beside
   it), so a capped probe no longer reads as measured against the full claim.
 
-## [0.20.1] — LLM review of the texts in the accessibility report
+### LLM review of the texts in the accessibility report
 
-### Added
+#### Added
 
 - **The LLM review of the texts runs locally and against any endpoint.**
   `python -m tests.a11y.llm_review` takes `--base-url`, `--api-key` (raw,
@@ -317,7 +322,7 @@ honest endpoint was marked divergent. All of them are fixed.
   endpoint needs no key and costs nothing. A key is only sent to the host it
   was configured for.
 
-### Changed
+#### Changed
 
 - **The accessibility report uses the LLM review.** When
   `a11y-llm-review.json` is present (or given with `--llm`),
@@ -339,7 +344,7 @@ honest endpoint was marked divergent. All of them are fixed.
   replaces the older one; long review notes are cut at a line and their
   finding count is kept.
 
-### Fixed
+#### Fixed
 
 - **A check's elapsed time survives "Continue in background".** Reopening a
   running audit in UI v2 restarted the time of the check in progress at zero,
@@ -347,9 +352,9 @@ honest endpoint was marked divergent. All of them are fixed.
   stamps each `detector_start` event with its start time (`at`), and the live
   view times the running check from it.
 
-## [0.20.0] — analytics page
+### Analytics page
 
-### Added
+#### Added
 
 - **Reports record when the audit started (`started_at`).** An ISO UTC
   timestamp taken at the same instant the request records' `start_ms` offsets
@@ -441,7 +446,7 @@ honest endpoint was marked divergent. All of them are fixed.
   integrity cell has one accessible name ("All 7 passed", "Failed: 4 of 7
   passed · 2 failed"); the peak-hours hint speaks of hatched cells.
 
-### Changed
+#### Changed
 
 - **History's closed filter panel names the active filters.** Next to the
   count of active filters, a line under the toggle lists them (e.g. "Last 30
@@ -470,7 +475,7 @@ honest endpoint was marked divergent. All of them are fixed.
   or left as it was, and rows that still hold their records inline keep
   working.
 
-### Fixed
+#### Fixed
 
 - **Performance chart tooltips no longer track pointer movement.** They open
   when the pointer enters a mark (Audit and History pages), as the other
@@ -483,9 +488,9 @@ honest endpoint was marked divergent. All of them are fixed.
   performance", could not shrink and was cut off at 320 px wide (Audit and
   History); it now wraps like its value.
 
-## [0.19.2] — fixes for local and reasoning models
+### Fixes for local and reasoning models
 
-### Changed
+#### Changed
 
 - **Accessibility report link moved to the header (UI v2).** The link to the
   conformance report is no longer a text link at the bottom of every page but
@@ -495,7 +500,7 @@ honest endpoint was marked divergent. All of them are fixed.
   multiple-ways test (9.2.4.5) now counts links in the page header as
   site-wide navigation.
 
-### Fixed
+#### Fixed
 
 - **Local servers no longer read as response caches.** Ollama, llama.cpp and
   LM Studio reuse the KV cache of the chat template (system prompt, role
@@ -539,9 +544,9 @@ honest endpoint was marked divergent. All of them are fixed.
   short probes are sent with the 4,096-token limit from the start instead of
   twice, which halves the long context-window requests on slow local servers.
 
-## [0.19.1] — history sorting and grouping
+### History sorting and grouping
 
-### Added
+#### Added
 
 - **History (UI v2): sort, collapse groups, fold the filters.** The column
   header (Time · Risk · Score · Grade) now sorts: rows within each relay group,
@@ -555,7 +560,7 @@ honest endpoint was marked divergent. All of them are fixed.
   disclosure / toggle buttons that keep focus in place, and a status message
   announces each new sort order (`tests/a11y/test_history_controls.py`).
 
-## [0.19.0] — backend performance
+### Backend performance
 
 **Upgrade note.** Token counting no longer uses tiktoken, and installs that had
 the `tokenizers` extra are scored differently by the billing audit: prompt
@@ -566,7 +571,7 @@ the same relay before and after the upgrade can therefore differ in the
 empty), so `pip install 'zing-audit[tokenizers,web]'` keeps working; drop it
 from new install commands.
 
-### Added
+#### Added
 
 - **`history.latest_for(base_url, claimed_model)`** returns the newest saved
   report of one target and model with a single lookup on the existing
@@ -577,7 +582,7 @@ from new install commands.
   served with `Content-Encoding: gzip`, `Vary: Accept-Encoding` and its own
   ETag (`"…-gz"`).
 
-### Changed
+#### Changed
 
 - **Context-window filler is built in linear time, off the event loop.**
   `build_filler()` re-joined and re-counted the whole text every 50 lines, so
@@ -635,7 +640,7 @@ from new install commands.
   accessibility suite and its report on pull requests into `perf/integration`;
   it still runs on that branch's pushes and on its pull request into `main`.
 
-### Removed
+#### Removed
 
 - **tiktoken support** and `is_exact_tokenizer()` in `zing/utils/tokenize.py`;
   the `tokenizers` extra no longer installs anything.
@@ -645,7 +650,7 @@ from new install commands.
   `above_heuristic` Warning remains.
 - The `tokens_exact` parameter of `build_performance()`.
 
-### Fixed
+#### Fixed
 
 - **Monitor regression alerts no longer stop after 50 other runs.** The
   previous run of a monitor's target was searched among the newest 50 history
@@ -662,9 +667,9 @@ from new install commands.
 - **`/console` is served precompressed** with its `-gz` ETag and answers
   conditional requests with 304, like the other pages.
 
-## [0.18.0] — web UI v2: guided relay configuration
+### Web UI v2: guided relay configuration
 
-### Added
+#### Added
 
 - **Guided relay configuration on the v2 Audit and Tools pages.** The form now
   starts with **Relay / provider**: a provider of the knowledge base or a relay
@@ -707,7 +712,7 @@ from new install commands.
   `relay` flag and its `entry_id`, and each model's `kind` (`chat` /
   `embedding`).
 
-### Changed
+#### Changed
 
 - **Declared provider is derived** in web UI v2 instead of typed: the claimed
   model's provider, else the provider the requested model resolves to (exact id
@@ -729,9 +734,9 @@ from new install commands.
   three tabs; lists of switchable items are condensed in the accessibility-tree
   snapshots like table rows.
 
-## [0.17.3] — readable durations and numbers in reports
+### Readable durations and numbers in reports
 
-### Fixed
+#### Fixed
 
 - **Report numbers no longer use scientific notation.** Evidence durations
   (`*_ms`, `*_s`) read in mixed units with only the units they need (`6 s 97 ms`,
@@ -739,9 +744,9 @@ from new install commands.
   written out in full (`123457`, `0.0000123`). Reliability latencies use the same
   format, in the HTML, Markdown and PDF reports and the web UI report.
 
-## [0.17.2] — request timeouts that fit slow and local models
+### Request timeouts that fit slow and local models
 
-### Changed
+#### Changed
 
 - **Timeouts scale with the request.** `timeout_sec` (`--timeout`, default 60 s) is
   now the base of each completion's timeout, which grows with the prompt size and
@@ -759,7 +764,7 @@ from new install commands.
   deadline fails as `DeadlineTimeout` and counts as a timeout in the performance
   section. Requests are still not retried.
 
-### Fixed
+#### Fixed
 
 - **A slow endpoint is no longer reported as truncating its context.** A
   context-window probe that times out ends the ladder without counting as a recall
@@ -769,9 +774,9 @@ from new install commands.
   declared one". A timed-out depth probe no longer reads as a lost-in-the-middle
   needle.
 
-## [0.17.1] — web UI v2 performance: faster pages and API, no outgoing requests
+### Web UI v2 performance: faster pages and API, no outgoing requests ([#102](https://github.com/mn567250/zing-audit/pull/102))
 
-### Changed
+#### Changed
 
 - **One TLS context per process.** Relay clients and webhook alerts share one
   `ssl.SSLContext`, built once in a worker thread, instead of loading the CA bundle
@@ -880,9 +885,9 @@ from new install commands.
   scrolled near (`content-visibility`). With 500 saved runs the page builds
   about half the DOM and resetting a filter takes roughly a third of the time.
 
-## [0.17.0] — web UI v2 accessibility (BITV 2.0 / EN 301 549)
+### Web UI v2 accessibility (BITV 2.0 / EN 301 549) ([#82](https://github.com/mn567250/zing-audit/pull/82))
 
-### Added
+#### Added
 
 - **Accessibility of web UI v2 (BITV 2.0 / EN 301 549 / WCAG 2.1 AA).**
   A browser test suite (`tests/a11y/`, `pytest -m a11y`, Playwright with a
@@ -902,7 +907,7 @@ from new install commands.
 - Optional advisory LLM review of link texts, headings, labels and error
   messages (`python -m tests.a11y.llm_review`, needs `ANTHROPIC_API_KEY`).
 
-### Fixed
+#### Fixed
 
 - **Web UI v2 accessibility (BITV 2.0).** Skip link and landmarks on every page; 3:1
   borders for form controls; readable paused-monitor cards; no truncated text
@@ -912,9 +917,9 @@ from new install commands.
   re-renders; announced result counts; chart points, legend keys and report
   statuses that do not rely on colour alone.
 
-## [0.16.11] — performance timeline axes fit the data
+### Performance timeline axes fit the data ([#60](https://github.com/mn567250/zing-audit/pull/60))
 
-### Fixed
+#### Fixed
 
 - **The performance timeline's axes fit the data.** Each axis maximum used to
   round up to 1/2/2.5/5/10 × 10ⁿ with four intervals, so an audit ending at
@@ -922,22 +927,22 @@ from new install commands.
   most six intervals) and rounds up to its next multiple (0–600 s by 100 s), in
   the live panel and the HTML and PDF reports.
 
-## [0.16.10] — History v2: filter by execution (ad-hoc / monitor)
+### History v2: filter by execution (ad-hoc / monitor) ([#59](https://github.com/mn567250/zing-audit/pull/59))
 
-### Added
+#### Added
 
 - **History v2: Execution filter** (ad-hoc / monitor), and a Monitor badge
   on the runs a monitor produced.
 
-## [0.16.9] — v2 hero descriptions fill the page width
+### V2 hero descriptions fill the page width ([#58](https://github.com/mn567250/zing-audit/pull/58))
 
-### Changed
+#### Changed
 
 - **v2 hero descriptions fill the page width.**
 
-## [0.16.8] — v2 History: re-run an audit
+### V2 History: re-run an audit ([#57](https://github.com/mn567250/zing-audit/pull/57))
 
-### Added
+#### Added
 
 - **Re-run an audit from History.** Every History run has a refresh button next
   to the monitor bell, and every expanded report ends with a **Re-run audit**
@@ -947,25 +952,25 @@ from new install commands.
   keeps its default or your browser's saved credential for that relay; a
   compare run's baseline is not restored.
 
-## [0.16.7] — v2: live view for running monitors
+### V2: live view for running monitors ([#56](https://github.com/mn567250/zing-audit/pull/56))
 
-### Added
+#### Added
 
 - **Live view for running monitors (v2).** A running monitor keeps an event
   log, so `/v2/?job=monitor-<id>` follows it like an audit; History shows
   **Watch live** next to **Open monitor**.
 
-## [0.16.6] — fix live performance tiles without TTFT / decode speed
+### Fix live performance tiles without TTFT / decode speed ([#55](https://github.com/mn567250/zing-audit/pull/55))
 
-### Fixed
+#### Fixed
 
 - **Live performance tiles showed no TTFT / decode speed** ("— ms" /
   "— tok/s") while only non-streamed calls had finished. They now fall back to
   end-to-end speed, as the final report does, and empty tiles drop the unit.
 
-## [0.16.5] — protocol, auto-detection and request mode in reports, history and monitors
+### Protocol, auto-detection and request mode in reports, history and monitors ([#54](https://github.com/mn567250/zing-audit/pull/54))
 
-### Added
+#### Added
 
 - **Protocol and request mode in every report, history row and monitor.**
   A report now records the wire protocol each endpoint spoke
@@ -979,17 +984,17 @@ from new install commands.
   keep a non-streaming probe setting, and a monitor scheduled from a run keeps
   the run's protocol when it was set by hand.
 
-## [0.16.4] — fix the running check's clock in web UI v2
+### Fix the running check's clock in web UI v2 ([#53](https://github.com/mn567250/zing-audit/pull/53))
 
-### Fixed
+#### Fixed
 
 - **Web UI v2: the running check's clock showed a huge time** (e.g.
   "1.791.104.830 s"). It subtracted a `performance.now()` start from
   `Date.now()`, i.e. it counted from 1970; both now use `Date.now()`.
 
-## [0.16.3] — `--data-dir` option and `zing data-dir`
+### `--data-dir` option and `zing data-dir` ([#52](https://github.com/mn567250/zing-audit/pull/52))
 
-### Added
+#### Added
 
 - **Choose and find the data directory.** A new `--data-dir PATH` option
   (global, and on `zing serve`) puts `history.db`, `watches.db` and `kb.db` in
@@ -998,18 +1003,18 @@ from new install commands.
   at startup, and the new `zing data-dir` command prints it for scripts
   (`sqlite3 "$(zing data-dir)/history.db"`). The default stays `~/.zing`.
 
-## [0.16.2] — encrypted API keys and the master key documented in every language
+### Encrypted API keys and the master key documented in every language ([#51](https://github.com/mn567250/zing-audit/pull/51))
 
-### Documentation
+#### Documentation
 
 - **Encrypted API keys and the master key in every language.** The master-key
   dialogs and the Monitors page's key texts are translated into every UI
   language, and the READMEs and developer guides in all languages describe the
   encrypted storage.
 
-## [0.16.1] — master key kept out of the data folder, managed on the Monitors page
+### Master key kept out of the data folder, managed on the Monitors page ([#50](https://github.com/mn567250/zing-audit/pull/50))
 
-### Added
+#### Added
 
 - **The master key stays out of the data folder, managed on the Monitors
   page.** zing never writes the master key to disk. The first time a monitor
@@ -1028,9 +1033,9 @@ from new install commands.
   key and locks itself. `zing secret status | export | rotate` follow the
   same rules (`rotate` also creates the first key and prints it once).
 
-## [0.16.0] — monitor API keys encrypted at rest
+### Monitor API keys encrypted at rest ([#49](https://github.com/mn567250/zing-audit/pull/49))
 
-### Added
+#### Added
 
 - **Monitor API keys are encrypted at rest.** `zing serve` now stores each
   watch's API key in `watches.db` as a Fernet token (`enc:v1:…`, AES with an
@@ -1044,9 +1049,9 @@ from new install commands.
   The `web` extra now depends on `cryptography`. Downgrading to an older zing
   leaves the stored keys unusable (re-enter them there).
 
-## [0.15.22] — background audits, one audit per relay at a time
+### Background audits, one audit per relay at a time ([#48](https://github.com/mn567250/zing-audit/pull/48))
 
-### Added
+#### Added
 
 - **Background audits in the new UI.** An audit is now a job owned by the
   `zing serve` process instead of the browser tab: switching pages, reloading
@@ -1065,9 +1070,9 @@ from new install commands.
   the classic UI's audits wait in the same queue; a waiting monitor shows as
   queued on the Monitors page.
 
-## [0.15.21] — PDF reports typeset with ReportLab
+### PDF reports typeset with ReportLab ([#47](https://github.com/mn567250/zing-audit/pull/47))
 
-### Changed
+#### Changed
 
 - **PDF reports no longer need a system library.** The PDF is typeset natively
   with ReportLab (pure Python, BSD-licensed) instead of converting the HTML
@@ -1080,9 +1085,9 @@ from new install commands.
   shipped. The `pdf` extra is now empty and kept only so older install commands
   still work; the Docker image drops Pango and its fonts.
 
-## [0.15.20] — READMEs split into user READMEs and developer guides
+### READMEs split into user READMEs and developer guides ([#46](https://github.com/mn567250/zing-audit/pull/46))
 
-### Documentation
+#### Documentation
 
 - **READMEs split into user and developer documentation, in all seven
   languages.** Each `README.<lang>.md` now covers only using zing (install,
@@ -1096,9 +1101,9 @@ from new install commands.
   knowledge base) and use the web UI's and the Methodology's wording in each
   language. `docs/CI.md` pins `v0.11.0` and lists the `responses` protocol.
 
-## [0.15.19] — METHODOLOGY rewritten, one file per language
+### METHODOLOGY rewritten, one file per language ([#45](https://github.com/mn567250/zing-audit/pull/45))
 
-### Documentation
+#### Documentation
 
 - **METHODOLOGY rewritten for the current implementation, one file per
   language** (en, zh-CN, fr, es, pt, it, de, with the READMEs' language
@@ -1108,16 +1113,16 @@ from new install commands.
   Unimplemented research ideas are marked as roadmap. Scale tables use the web
   UI's own labels in each language.
 
-## [0.15.18] — READMEs: `pdf` extra in install commands
+### READMEs: `pdf` extra in install commands ([#44](https://github.com/mn567250/zing-audit/pull/44))
 
-### Documentation
+#### Documentation
 
 - **READMEs: the `pdf` extra in the install commands**, and the web UI
   section lists every download format.
 
-## [0.15.17] — v2 UI: one relay config; Fetch models for every provider
+### V2 UI: one relay config; Fetch models for every provider ([#43](https://github.com/mn567250/zing-audit/pull/43))
 
-### Changed
+#### Changed
 
 - **One relay configuration in the v2 UI, with "Fetch models" everywhere.**
   The audit, embedding and rerank forms (and the audit's trusted baseline) share
@@ -1128,9 +1133,9 @@ from new install commands.
   does not know yet ("Relay only"), so a model newer than the knowledge base can
   still be picked for an audit, embedding or rerank check.
 
-## [0.15.16] — v2 UI: aligned buttons, fields and texts in every language
+### V2 UI: aligned buttons, fields and texts in every language ([#42](https://github.com/mn567250/zing-audit/pull/42))
 
-### Fixed
+#### Fixed
 
 - **v2 UI: buttons, fields and texts line up in every language.** Checked on all
   v2 pages and their interactive states (tabs, disclosures, custom suite, scan,
@@ -1145,16 +1150,16 @@ from new install commands.
   Models table headers no longer break. Two monitor status texts were untranslated,
   and French text now keeps `? ! : ;` on the line of the word before them.
 
-## [0.15.15] — Monitors: live progress, Cancel, run-time-aware intervals
+### Monitors: live progress, Cancel, run-time-aware intervals ([#41](https://github.com/mn567250/zing-audit/pull/41))
 
-### Added
+#### Added
 
 - **Monitors: live progress and Cancel.** A running monitor reports a rough
   percent done in `/api/watches` and can be stopped with the new
   `POST /api/watches/{id}/cancel`; a cancelled run keeps the card's last result.
   The v2 page shows a progress bar and swaps Run now for Cancel run.
 
-### Changed
+#### Changed
 
 - **Monitor intervals are never shorter than one run.** Each monitor stores
   how long a full run takes (from the History run it was scheduled from, then
@@ -1162,25 +1167,25 @@ from new install commands.
   20, 30 min, 1–24 h), none shorter than that run time, and the server rejects
   shorter or over-24 h intervals.
 
-## [0.15.14] — History: no "Schedule as monitor" for monitor runs
+### History: no "Schedule as monitor" for monitor runs ([#40](https://github.com/mn567250/zing-audit/pull/40))
 
-### Changed
+#### Changed
 
 - **History: no "Schedule as monitor" for runs a monitor produced.** Monitor
   runs are saved with the id of their watch (new `history.watch_id` column,
   added to existing databases on open); the v2 History page disables the bell
   for them and `POST /api/watches/from-history/{id}` refuses them with 409.
 
-## [0.15.13] — v2 Monitors: edit button never renders empty
+### V2 Monitors: edit button never renders empty ([#39](https://github.com/mn567250/zing-audit/pull/39))
 
-### Fixed
+#### Fixed
 
 - **v2 Monitors: the edit button could render empty.** The pen glyph is now
   inlined.
 
-## [0.15.12] — v2 Monitors: running state
+### V2 Monitors: running state ([#38](https://github.com/mn567250/zing-audit/pull/38))
 
-### Added
+#### Added
 
 - **v2 Monitors show when a monitor is running.** A Running badge and status
   line (Running / Waiting for next scheduled run); Run now and Delete are
@@ -1188,31 +1193,31 @@ from new install commands.
   now), adds `running` to `/api/watches`, rejects overlapping runs with 409, and
   the scheduler skips a monitor that is still running.
 
-## [0.15.11] — remove the v2 console page
+### Remove the v2 console page ([#37](https://github.com/mn567250/zing-audit/pull/37))
 
-### Removed
+#### Removed
 
 - **The v2 console page** (`/v2/console`) — it was one more view to maintain.
   `/console` stays the classic page and is no longer redirected by the v2 cookie.
 
-## [0.15.10] — monitor "Open in history" prefills the History filters
+### Monitor "Open in history" prefills the History filters ([#36](https://github.com/mn567250/zing-audit/pull/36))
 
-### Added
+#### Added
 
 - **"Open in history" on a monitor prefills the History filters** (relay,
   model, suite) for that monitor; filters from the link replace the remembered
   ones so stale filters cannot hide its runs.
 
-## [0.15.9] — v2 Monitors: pen icon edit buttons
+### V2 Monitors: pen icon edit buttons ([#34](https://github.com/mn567250/zing-audit/pull/34))
 
-### Changed
+#### Changed
 
 - **v2 Monitors: pen icon buttons for editing** instead of the Change /
   Replace / Edit text buttons.
 
-## [0.15.8] — report: every dimension listed and expandable
+### Report: every dimension listed and expandable ([#35](https://github.com/mn567250/zing-audit/pull/35))
 
-### Changed
+#### Changed
 
 - **Every dimension is listed and expandable in the audit report; performance
   is one of them.** The v2 report view and the Markdown/HTML/PDF reports list
@@ -1224,38 +1229,38 @@ from new install commands.
   a renderer (`DIM_EXTRAS` in `v2/report.js`, `_EXTRAS` in
   `zing/report/dimensions.py`).
 
-## [0.15.7] — History v2: filled Latency p50 and Tokens/s trends
+### History v2: filled Latency p50 and Tokens/s trends ([#32](https://github.com/mn567250/zing-audit/pull/32))
 
-### Changed
+#### Changed
 
 - **History v2: the Latency p50 and Tokens/s trends fill the area under their
   line.**
 
-## [0.15.6] — lint fix in the watch update handler
+### Lint fix in the watch update handler ([#33](https://github.com/mn567250/zing-audit/pull/33))
 
-### Fixed
+#### Fixed
 
 - **Lint:** ruff SIM102 in the watch update handler.
 
-## [0.15.5] — v2 monitors: optional API key
+### V2 monitors: optional API key ([#31](https://github.com/mn567250/zing-audit/pull/31))
 
-### Changed
+#### Changed
 
 - **v2 monitors: the API key is optional**, as on the audit page. A monitor
   scheduled from History can be activated and run without one, so local and
   self-hosted models (Ollama, LM Studio) work; the setup box labels the key
   field optional.
 
-## [0.15.4] — v2: live performance colours match the audit progress accent
+### V2: live performance colours match the audit progress accent ([#30](https://github.com/mn567250/zing-audit/pull/30))
 
-### Changed
+#### Changed
 
 - **v2: live performance colours match the audit progress accent** on the
   audit and console pages.
 
-## [0.15.3] — v2 audit page: declared provider, live per-check timing, execution log
+### V2 audit page: declared provider, live per-check timing, execution log ([#29](https://github.com/mn567250/zing-audit/pull/29))
 
-### Added
+#### Added
 
 - **Declared provider on the v2 audit page.** The audit form takes an optional
   `declared_provider` (as the console already did), sends it with the audit and
@@ -1270,9 +1275,9 @@ from new install commands.
   slowest check. It appears wherever the v2 report is shown (audit, console,
   history), including reports saved before this change.
 
-## [0.15.2] — PDF reports; every format downloadable from the v2 UI
+### PDF reports; every format downloadable from the v2 UI ([#28](https://github.com/mn567250/zing-audit/pull/28))
 
-### Added
+#### Added
 
 - **PDF reports.** `--format pdf` writes the HTML report typeset as PDF, and
   `--format all` (the default) adds it next to JSON, Markdown and HTML. PDF
@@ -1285,9 +1290,9 @@ from new install commands.
   HTML and PDF. Text is exported in the UI language as before; Markdown, HTML
   and PDF are rendered by the new `POST /api/report/export?format=…` endpoint.
 
-## [0.15.1] — Monitors v2: schedule monitors from History
+### Monitors v2: schedule monitors from History ([#27](https://github.com/mn567250/zing-audit/pull/27))
 
-### Added
+#### Added
 
 - **Schedule a History run as a monitor (v2 UI).** Every run in v2 History has
   a **Schedule as monitor** action (a bell button on the row and a button in the
@@ -1302,9 +1307,9 @@ from new install commands.
   skips a monitor that has no interval yet, and such a monitor can't be
   switched on until its interval is set.
 
-## [0.15.0] — custom suite; performance as a scored dimension
+### Custom suite; performance as a scored dimension ([#26](https://github.com/mn567250/zing-audit/pull/26))
 
-### Added
+#### Added
 
 - **Custom suite: run only the dimensions you pick.** `--suite custom` with
   `--dimension/-D` (repeatable or comma-separated; `-D` alone implies custom, and
@@ -1324,16 +1329,16 @@ from new install commands.
   counts against it. Findings stay at most low severity, so they never move the
   risk verdict.
 
-### Changed
+#### Changed
 
 - **Dimension weights rebalanced for performance** (still 100): model_identity
   22→21, context_window 20→19, capability 14→13, reliability 8→6, connectivity
   8→7, performance 6. The `performance.throughput_mismatch` finding became the
   `faster` outcome of `performance.reference`.
 
-## [0.14.9] — History v2: filters and configurable trends; v2 theme switch
+### History v2: filters and configurable trends; v2 theme switch ([#25](https://github.com/mn567250/zing-audit/pull/25))
 
-### Added
+#### Added
 
 - **History (v2): filters and a latency trend.** A filter bar (search, relay,
   claimed model, suite, mode, risk, minimum score, period) narrows the history;
@@ -1346,39 +1351,39 @@ from new install commands.
 - **Theme switch (v2).** The v2 header has an Auto / Light / Dark picker,
   remembered per browser and applied before first paint on every v2 page.
 
-## [0.14.8] — scoring scales for every remaining detector
+### Scoring scales for every remaining detector ([#24](https://github.com/mn567250/zing-audit/pull/24))
 
-### Added
+#### Added
 
 - **Every remaining detector publishes its scoring scale** (capability,
   vision, context window, streaming, reliability, performance, security,
   injected prompt, integrity, prompt cache, LLM judge).
 
-### Changed
+#### Changed
 
 - **`capability`: inconclusive checks no longer count** (a probe that failed
   to complete scored 50), as in `protocol`.
 - **`security`: the lowest cap wins.** Plain http plus a verbatim API-key echo
   now scores 30 (the key-echo cap), not 40.
 
-## [0.14.7] — deduction scales for model_identity and billing
+### Deduction scales for model_identity and billing ([#23](https://github.com/mn567250/zing-audit/pull/23))
 
-### Added
+#### Added
 
 - **Deduction scales for `model_identity` and `billing`.** They start at 100,
   and each finding deducts points and/or caps the score (`Finding.deduction` /
   `Finding.cap`).
 
-## [0.14.6] — scoring scales for connectivity and determinism
+### Scoring scales for connectivity and determinism ([#22](https://github.com/mn567250/zing-audit/pull/22))
 
-### Added
+#### Added
 
 - **Scoring scales for `connectivity` and `determinism`.** Both detectors
   publish their scale of outcomes and points, like `protocol`.
 
-## [0.14.5] — performance: error rate counts every request
+### Performance: error rate counts every request ([#21](https://github.com/mn567250/zing-audit/pull/21))
 
-### Fixed
+#### Fixed
 
 - **Performance: the error rate ignored failed audit requests** when the
   dedicated probe ran. It was computed over the probe requests only, so the report
@@ -1387,9 +1392,9 @@ from new install commands.
   endpoint: the audit's own, warm-up, burst and probe. Latency and speed stats still
   come from the probe alone.
 
-## [0.14.4] — protocol: request- and response-attribute detectors
+### Protocol: request- and response-attribute detectors ([#20](https://github.com/mn567250/zing-audit/pull/20))
 
-### Added
+#### Added
 
 - **Protocol: request- and response-attribute detectors.** Two new detectors in
   the protocol dimension check the wire contract attribute by attribute, for
@@ -1411,9 +1416,9 @@ from new install commands.
   `DetectorScoring.titles`; `RequestSpec.capture_raw` /
   `CompletionOutcome.raw_body` (redacted raw response body, on request).
 
-## [0.14.3] — v2 report: scoring scale in an info tip per check
+### V2 report: scoring scale in an info tip per check ([#19](https://github.com/mn567250/zing-audit/pull/19))
 
-### Changed
+#### Changed
 
 - **v2 report: scoring scale in an info tip per check.** Each check's points
   carry an info toggletip listing every outcome that check could have had, with
@@ -1421,9 +1426,9 @@ from new install commands.
   below its checks and a repeated outcome line under every check title. It opens
   on hover or keyboard focus, stays open on click (touch) and closes on Escape.
 
-## [0.14.2] — transparent dimension scoring, piloted on protocol
+### Transparent dimension scoring, piloted on protocol ([#18](https://github.com/mn567250/zing-audit/pull/18))
 
-### Added
+#### Added
 
 - **Transparent dimension scoring.** Every report now explains each dimension:
   how its score was computed (equal-weight mean of its detectors), where its
@@ -1435,15 +1440,15 @@ from new install commands.
   `Finding.score`; the compact JSON carries each finding's `points`. The
   `protocol` detector is the first with a published scale.
 
-### Changed
+#### Changed
 
 - **`protocol`: inconclusive checks no longer count.** A check without a usable
   response used to score 50 and pull the detector down; it is now left out of
   the mean (the detector has no score when no check counted).
 
-## [0.14.1] — local-only `zing serve`, your own knowledge-base profiles (`kb.db`)
+### Local-only `zing serve`, your own knowledge-base profiles (`kb.db`) ([#17](https://github.com/mn567250/zing-audit/pull/17))
 
-### Added
+#### Added
 
 - **Docker image for the web UI** (`Dockerfile`, [docs/DOCKER.md](docs/DOCKER.md)).
   Inside a container the server may listen on the container's interfaces when
@@ -1478,7 +1483,7 @@ from new install commands.
   The Monitors page shows the pinned profile, flags when the knowledge base has
   changed since, and re-pins on request.
 
-### Security
+#### Security
 
 - **`zing serve` is local-only by construction.** It refuses any bind address
   other than loopback (`127.0.0.1`, `::1`, `localhost`); `--host 0.0.0.0` is no
@@ -1491,9 +1496,9 @@ from new install commands.
   creates it) is `0700`, and `history.db` / `watches.db` (which holds monitor
   API keys) are `0600`.
 
-## [0.14.0] — web UI v2 side by side with the classic UI
+### Web UI v2 side by side with the classic UI ([#16](https://github.com/mn567250/zing-audit/pull/16))
 
-### Added
+#### Added
 
 - **Web UI v2, served side by side with the classic UI for A/B comparison.**
   `/v2/`, `/v2/history`, `/v2/watches`, `/v2/tools` and `/v2/console` rebuild
@@ -1510,7 +1515,7 @@ from new install commands.
 - **Locale fragments**: `zing/i18n/locales/fragments/<feature>/<code>.json` add
   UI strings to a language without editing the main locale files.
 
-### Changed
+#### Changed
 
 - **Web UI language menu shows language names** (English, 中文, Français, …)
   instead of flags, and the Chinese UI now translates backend text (verdict
@@ -1519,7 +1524,7 @@ from new install commands.
   screen-reader-accessible, charts have a text summary and a data table, and
   numbers use the UI language's format.
 
-### Fixed
+#### Fixed
 
 - **Web UI: a page no longer stays blank if a script fails** while loading.
 - **"Error response schema" finding when the relay sends no HTTP response** read
@@ -1529,9 +1534,9 @@ from new install commands.
   (an invalid colour token).
 - **`zing serve --help` dropped `[web]`** from the install hint (Rich markup).
 
-## [0.13.3] — web UI: masked API key fields
+### Web UI: masked API key fields ([#6](https://github.com/mn567250/zing-audit/pull/6))
 
-### Added
+#### Added
 
 - **Masked API key fields in the web UI.** Every key input is now a password
   field with a show/hide eye toggle, so keys stay hidden on screen shares.
@@ -1539,9 +1544,9 @@ from new install commands.
   run starts. The relay `base_url` acts as the username, so the browser's password
   manager can save and fill one key per relay.
 
-## [0.13.2] — README translations (FR, ES, PT, IT, DE)
+### README translations (FR, ES, PT, IT, DE) ([#5](https://github.com/mn567250/zing-audit/pull/5))
 
-### Added
+#### Added
 
 - **README translations** in French (`README.fr.md`), Spanish (`README.es.md`),
   Portuguese (`README.pt.md`), Italian (`README.it.md`) and German
@@ -1549,15 +1554,15 @@ from new install commands.
   The English `README.md` no longer contains Chinese text, and `README.zh-CN.md`
   is brought up to date with it.
 
-## [0.13.1] — README: uv install instructions
+### README: uv install instructions ([#4](https://github.com/mn567250/zing-audit/pull/4))
 
-### Documentation
+#### Documentation
 
 - **README: install with uv**, from PyPI and from source.
 
-## [0.13.0] — performance section and probe in every report
+### Performance section and probe in every report ([#3](https://github.com/mn567250/zing-audit/pull/3))
 
-### Added
+#### Added
 
 - **Performance section in every report.** Latency, time to first token, decode
   and end-to-end tokens/s (from the relay's `usage` and from a local token count),
@@ -1582,9 +1587,9 @@ from new install commands.
   audit runs, the full section in the report and in `/history`, and a latency
   trend per target.
 
-## [0.12.1] — web UI: custom provider that fetches the relay's model list
+### Web UI: custom provider that fetches the relay's model list ([#2](https://github.com/mn567250/zing-audit/pull/2))
 
-### Added
+#### Added
 
 - **Web UI: custom provider with live model fetch.** The model picker's provider
   list gains **Custom (from relay)**. With a base_url filled in, **Fetch models**
@@ -1594,9 +1599,9 @@ from new install commands.
   into the requested `model` field. The API key is optional, so keyless
   self-hosted endpoints such as Ollama or LM Studio work too.
 
-## [0.12.0] — web UI in seven languages, translated alerts, prompt library
+### Web UI in seven languages, translated alerts, prompt library ([#1](https://github.com/mn567250/zing-audit/pull/1))
 
-### Added
+#### Added
 
 - **Web UI: language switch.** Every page (`/`, `/console`, `/history`, `/tools`,
   `/watches`) gets a **🇬🇧 EN · 🇨🇳 CN · 🇫🇷 FR · 🇪🇸 ES · 🇵🇹 PT · 🇮🇹 IT · 🇩🇪 DE**
@@ -1633,13 +1638,13 @@ from new install commands.
   echo, native self-id, cultural recall) stay Chinese because the language is the
   measurement, and must say so. Reports gain `prompt_languages`, shown in the web UI.
 
-### Changed
+#### Changed
 
 - **Vision probe asks in English only.** It was bilingual
   ("仅用一个词回答：图片是什么颜色？/ In one word, what color is this image?"); Chinese
   answers are still accepted.
 
-### Fixed
+#### Fixed
 
 - **Web UI: finding summaries that fell back to English.** Findings emitted by several
   detector branches (pass / warn / inconclusive, request failures) had no matching
@@ -1900,60 +1905,7 @@ streaming, or inflates token billing (货不对板检测).
   text is redacted before it reaches any report (JSON/Markdown/HTML).
 - `--fail-under` / `--fail-on-risk` exit-code gates for CI use.
 
-[Unreleased]: https://github.com/mn567250/zing-audit/compare/7687cf6...HEAD
-[0.17.1]: https://github.com/mn567250/zing-audit/pull/102
-[0.17.0]: https://github.com/mn567250/zing-audit/pull/82
-[0.16.11]: https://github.com/mn567250/zing-audit/pull/60
-[0.16.10]: https://github.com/mn567250/zing-audit/pull/59
-[0.16.9]: https://github.com/mn567250/zing-audit/pull/58
-[0.16.8]: https://github.com/mn567250/zing-audit/pull/57
-[0.16.7]: https://github.com/mn567250/zing-audit/pull/56
-[0.16.6]: https://github.com/mn567250/zing-audit/pull/55
-[0.16.5]: https://github.com/mn567250/zing-audit/pull/54
-[0.16.4]: https://github.com/mn567250/zing-audit/pull/53
-[0.16.3]: https://github.com/mn567250/zing-audit/pull/52
-[0.16.2]: https://github.com/mn567250/zing-audit/pull/51
-[0.16.1]: https://github.com/mn567250/zing-audit/pull/50
-[0.16.0]: https://github.com/mn567250/zing-audit/pull/49
-[0.15.22]: https://github.com/mn567250/zing-audit/pull/48
-[0.15.21]: https://github.com/mn567250/zing-audit/pull/47
-[0.15.20]: https://github.com/mn567250/zing-audit/pull/46
-[0.15.19]: https://github.com/mn567250/zing-audit/pull/45
-[0.15.18]: https://github.com/mn567250/zing-audit/pull/44
-[0.15.17]: https://github.com/mn567250/zing-audit/pull/43
-[0.15.16]: https://github.com/mn567250/zing-audit/pull/42
-[0.15.15]: https://github.com/mn567250/zing-audit/pull/41
-[0.15.14]: https://github.com/mn567250/zing-audit/pull/40
-[0.15.13]: https://github.com/mn567250/zing-audit/pull/39
-[0.15.12]: https://github.com/mn567250/zing-audit/pull/38
-[0.15.11]: https://github.com/mn567250/zing-audit/pull/37
-[0.15.10]: https://github.com/mn567250/zing-audit/pull/36
-[0.15.9]: https://github.com/mn567250/zing-audit/pull/34
-[0.15.8]: https://github.com/mn567250/zing-audit/pull/35
-[0.15.7]: https://github.com/mn567250/zing-audit/pull/32
-[0.15.6]: https://github.com/mn567250/zing-audit/pull/33
-[0.15.5]: https://github.com/mn567250/zing-audit/pull/31
-[0.15.4]: https://github.com/mn567250/zing-audit/pull/30
-[0.15.3]: https://github.com/mn567250/zing-audit/pull/29
-[0.15.2]: https://github.com/mn567250/zing-audit/pull/28
-[0.15.1]: https://github.com/mn567250/zing-audit/pull/27
-[0.15.0]: https://github.com/mn567250/zing-audit/pull/26
-[0.14.9]: https://github.com/mn567250/zing-audit/pull/25
-[0.14.8]: https://github.com/mn567250/zing-audit/pull/24
-[0.14.7]: https://github.com/mn567250/zing-audit/pull/23
-[0.14.6]: https://github.com/mn567250/zing-audit/pull/22
-[0.14.5]: https://github.com/mn567250/zing-audit/pull/21
-[0.14.4]: https://github.com/mn567250/zing-audit/pull/20
-[0.14.3]: https://github.com/mn567250/zing-audit/pull/19
-[0.14.2]: https://github.com/mn567250/zing-audit/pull/18
-[0.14.1]: https://github.com/mn567250/zing-audit/pull/17
-[0.14.0]: https://github.com/mn567250/zing-audit/pull/16
-[0.13.3]: https://github.com/mn567250/zing-audit/pull/6
-[0.13.2]: https://github.com/mn567250/zing-audit/pull/5
-[0.13.1]: https://github.com/mn567250/zing-audit/pull/4
-[0.13.0]: https://github.com/mn567250/zing-audit/pull/3
-[0.12.1]: https://github.com/mn567250/zing-audit/pull/2
-[0.12.0]: https://github.com/mn567250/zing-audit/pull/1
+[Unreleased]: https://github.com/mn567250/zing-audit/compare/fadd570...HEAD
 [0.11.0]: https://github.com/cenbonew/zing/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/cenbonew/zing/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/cenbonew/zing/compare/v0.8.0...v0.9.0

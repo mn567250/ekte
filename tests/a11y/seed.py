@@ -43,7 +43,7 @@ RUNS = [
 def _report(started: datetime, base_url: str, model: str, score: float, saved: bool, newer: bool) -> dict[str, Any]:
     risk = "high" if score < 65 else "low" if score < 80 else "clean"
     report: dict[str, Any] = {
-        "tool_version": "0.20.0" if newer else "0.19.2",
+        "tool_version": "0.11.0" if newer else "0.10.0",
         "mode": "check",
         "started_at": started.isoformat(),
         "generated_at": (started + timedelta(minutes=2)).isoformat(),

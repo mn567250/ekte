@@ -111,7 +111,7 @@ uv tool install 'zing-audit[web]'  # uv, a partir do PyPI
 uv pip install -e '.[web]'         # uv, a partir do código-fonte
 ```
 
-O extra `tokenizers` já não é necessário: desde a 0.19.0 está vazio e só é
+O extra `tokenizers` já não é necessário: está vazio e só é
 mantido para que os comandos de instalação antigos continuem a funcionar. O zing
 conta os tokens com uma heurística integrada e não descarrega nada em tempo de
 execução (nenhum ficheiro de tokenizer), pelo que também funciona em ambientes
@@ -761,7 +761,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: zing
-        uses: cenbonew/zing@v0.20.0         # fixar numa tag de versão
+        uses: cenbonew/zing@v0.11.0         # fixar numa tag de versão
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # segredo de quem chama; nunca é mostrado
