@@ -221,7 +221,7 @@ pip install 'ekte[web]'     # oder: uv tool install 'ekte[web]'
 ekte serve                        # öffnet http://localhost:8000
 ```
 
-In der neuen Oberfläche führt das Formular durch die Konfiguration:
+Das Formular führt durch die Konfiguration:
 
 1. Wählen Sie **Relay / Anbieter**: einen Anbieter der Wissensbasis oder ein von
    Ihnen gespeichertes Relay. Seine Basis-URL wird ausgefüllt (weitere bekannte
@@ -242,16 +242,14 @@ Ein Relay, das noch nicht in der Liste steht, lässt sich mit **In der
 Wissensbasis speichern** unter einem Namen Ihrer Wahl behalten; beim nächsten Mal
 ist es eine Auswahl entfernt. Die vertrauenswürdige Referenz (**Mit
 vertrauenswürdiger Referenz vergleichen**) sowie die Embedding- und
-Rerank-Prüfungen werden genauso konfiguriert. Die klassische Oberfläche behält die einfachen Felder mit
-**Modelle abrufen**.
+Rerank-Prüfungen werden genauso konfiguriert.
 
 Dann
 **Prüfung starten** und die Prüfungen **live** verfolgen: jede Prüfung zeigt ihre
 Bewertung und Dauer, und eine Prüfung mit Befunden klappt auf und zeigt die
 Belege. Das Ergebnis ist ein teilbarer Urteilsbericht: Note, die **Prüfungen je
 Dimension** mit ihren Bewertungsskalen, Befunde in verständlicher Sprache und der
-Leistungsabschnitt (in der neuen Oberfläche zusätzlich ein
-**Ausführungsprotokoll** aller Detektoren).
+Leistungsabschnitt sowie ein **Ausführungsprotokoll** aller Detektoren.
 
 Alles läuft auf Ihrem Rechner: ein im Browser eingegebener Schlüssel erreicht nur
 Ihren lokalen ekte-Server und das geprüfte Relay, niemals Dritte. Siehe
@@ -259,32 +257,29 @@ Ihren lokalen ekte-Server und das geprüfte Relay, niemals Dritte. Siehe
 
 ### Seiten
 
-Die Weboberfläche gibt es in zwei Versionen mit demselben Server und denselben
-Daten. Die **klassische Oberfläche** öffnet unter `/`; ihr Link **Neue Oberfläche
-testen** wechselt zur **neuen Oberfläche** unter `/v2/`, deren Link **Klassische
-Oberfläche** zurückführt. Die Wahl wird pro Browser gespeichert.
+Die Weboberfläche liegt unter `/v2/`, wo `ekte serve` sie öffnet. Die Adressen
+der früheren klassischen Oberfläche (`/`, `/history`, `/watches`, `/tools`,
+`/console`) leiten auf die passende Seite weiter.
 
-| Seite | Klassische Oberfläche | Neue Oberfläche | Wofür |
-|---|---|---|---|
-| **Prüfung** | `/` | `/v2/` | Ein Relay prüfen (optional gegen eine Referenz) und den Bericht lesen |
-| **Konsole** | `/console` | — | Dieselbe Prüfung als kompakte Konsole im Log-Stil |
-| **Werkzeuge** | `/tools` | — | Embedding- und Rerank-Prüfungen; in der neuen Oberfläche starten sie auf der Seite **Prüfung** über die Auswahl des Endpunkttyps (`/v2/tools` leitet dorthin weiter) |
-| **Überwachung** | `/watches` | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
-| **Verlauf** | `/history` | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
-| **Analyse** | — | `/v2/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
-| **Wissen** | — | `/v2/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
+| Seite | Adresse | Wofür |
+|---|---|---|
+| **Prüfung** | `/v2/` | Ein Relay prüfen (optional gegen eine Referenz) und den Bericht lesen; auch Embedding- und Rerank-Prüfungen starten hier, über die Auswahl des Endpunkttyps |
+| **Überwachung** | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
+| **Verlauf** | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
+| **Analyse** | `/v2/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
+| **Wissen** | `/v2/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
 
-Die neue Oberfläche bietet zusätzlich: Filter und konfigurierbare Trends
+Auf den Seiten außerdem: Filter und konfigurierbare Trends
 (Bewertung, Note, Latenz p50, Token/s) im **Verlauf**; **Als Überwachung
 einplanen** und **Audit erneut ausführen** bei jedem Lauf im Verlauf; **Bericht herunterladen** in jedem Format;
-eine Designauswahl (Automatisch / Hell / Dunkel); und die Seite **Wissen**.
+und eine Designauswahl (Automatisch / Hell / Dunkel).
 Jede Seite außer Barrierefreiheit hat direkt unter ihrer Einleitung einen
 Hinweis, eingefärbt nach Wichtigkeit (Information, Erfolg, Warnung, kritisch):
 z. B. die zuletzt abgeschlossene Prüfung auf **Prüfung**, der Hauptschlüssel auf
 **Überwachung**, noch zu verarbeitende Läufe auf **Verlauf** und **Analyse**,
 übersprungene Einträge auf **Wissen**.
 
-**Audits im Hintergrund (neue Oberfläche).** Ein auf der Seite **Audit**
+**Audits im Hintergrund.** Ein auf der Seite **Audit**
 gestartetes Audit läuft weiter, wenn Sie die Seite wechseln oder den Tab
 schließen; **Im Hintergrund fortsetzen** schickt es bewusst dorthin. Der
 **Verlauf** zeigt jedes wartende und laufende Audit (und jede laufende
@@ -597,21 +592,17 @@ sprachneutral, übersetzt die für Menschen lesbaren (`text`, `headline`,
 
 **In der Weboberfläche** führt `ekte serve` dieselben Überwachungen in einem
 Hintergrund-Scheduler im Serverprozess aus, speichert jeden Lauf im **Verlauf**
-und sendet dieselben Webhook-Warnungen:
-
-- **Neue Oberfläche:** einen Lauf im **Verlauf** öffnen und **Als Überwachung
-  einplanen** wählen. ekte übernimmt die Konfiguration dieses Laufs (Relay,
-  Modell, angegebenes Modell, Anbieter, Suite, benutzerdefinierte Dimensionen) in
-  eine pausierte Überwachung auf der Seite **Überwachung**; dort Intervall und
-  API-Schlüssel setzen (der Verlauf speichert nie Schlüssel) und sie
-  einschalten. Intervall, Schlüssel, **Warnschwelle**, Webhooks und **Sprache der
-  Warnungen** lassen sich auf jeder Überwachung direkt bearbeiten. Ein Klick auf
-  den Namen klappt die Karte auf Name, Status und letzten Lauf zusammen
-  (**Alle einklappen** / **Alle aufklappen** über der Liste; pro Browser
-  gemerkt), und das Filterpanel (Suche, Status, letztes Risiko, Endpunkttyp,
-  Relay, Suite) grenzt eine lange Liste ein wie im **Verlauf**.
-- **Klassische Oberfläche:** das Formular auf der Seite **Überwachung** ausfüllen
-  und **Überwachung hinzufügen**.
+und sendet dieselben Webhook-Warnungen. Einen Lauf im **Verlauf** öffnen und **Als Überwachung
+einplanen** wählen. ekte übernimmt die Konfiguration dieses Laufs (Relay,
+Modell, angegebenes Modell, Anbieter, Suite, benutzerdefinierte Dimensionen) in
+eine pausierte Überwachung auf der Seite **Überwachung**; dort Intervall und
+API-Schlüssel setzen (der Verlauf speichert nie Schlüssel) und sie
+einschalten. Intervall, Schlüssel, **Warnschwelle**, Webhooks und **Sprache der
+Warnungen** lassen sich auf jeder Überwachung direkt bearbeiten. Ein Klick auf
+den Namen klappt die Karte auf Name, Status und letzten Lauf zusammen
+(**Alle einklappen** / **Alle aufklappen** über der Liste; pro Browser
+gemerkt), und das Filterpanel (Suche, Status, letztes Risiko, Endpunkttyp,
+Relay, Suite) grenzt eine lange Liste ein wie im **Verlauf**.
 
 Jede Überwachung hat ihre eigene Warnsprache (standardmäßig die Sprache der
 Oberfläche), lässt sich sofort ausführen, pausieren oder löschen und bleibt an
@@ -635,14 +626,13 @@ im Arbeitsspeicher von `ekte serve` und wird nie auf die Festplatte geschrieben.
 Nach einem Neustart nennt die Seite **Überwachungen** die Überwachungen, die
 ihren Schlüssel erneut brauchen; sie warten (kein Fehllauf, kein Alarm), bis Sie
 ihn eingeben. Überwachungen ohne Schlüssel und `env:`/`file:`-Verweise laufen
-weiter. Sollen Schlüssel Neustarts überstehen, wählen Sie auf der v2-Seite
+weiter. Sollen Schlüssel Neustarts überstehen, wählen Sie auf der Seite
 **Überwachungen** unter **Speicherung der API-Schlüssel** die Option
 **Verschlüsselt auf diesem Rechner speichern**: Die Schlüssel liegen dann mit
 einem Hauptschlüssel verschlüsselt in `watches.db`. Zurückschalten verschiebt die
 gespeicherten Schlüssel in den Arbeitsspeicher und löscht sie aus `watches.db`.
 Der Seitenhinweis zeigt den aktiven Modus, fragt vor dem Umschalten nach und
-meldet, was verschoben wurde. Die klassische Oberfläche (`/watches`) speichert
-nie einen Schlüssel. Installationen, die bereits verschlüsselte Schlüssel
+meldet, was verschoben wurde. Installationen, die bereits verschlüsselte Schlüssel
 speichern oder `EKTE_SECRET_KEY` setzen, speichern sie weiter, bis Sie umschalten.
 
 **Hauptschlüssel.** Die API-Schlüssel der Überwachungen sind mit einem
@@ -676,8 +666,7 @@ wie Chat-Prüfungen; nur die Detektoren unterscheiden sich. Verlauf und Analyse
 filtern nach Endpunkttyp, und die Analyse zeigt nur die Kennzahlen, die zutreffen.
 
 Um einen Embeddings- oder Rerank-Endpunkt zu überwachen, prüfen Sie ihn auf der
-Seite **Prüfung** (Endpunkttyp **Embeddings** oder **Reranking** wählen; in der
-klassischen Oberfläche auf der Seite **Werkzeuge**) und wählen **Überwachen**, oder **Als Überwachung einplanen** in
+Seite **Prüfung** (Endpunkttyp **Embeddings** oder **Reranking** wählen) und wählen **Überwachen**, oder **Als Überwachung einplanen** in
 seiner Verlaufszeile. Der Monitor wiederholt die Prüfung nach Zeitplan, mit
 derselben Fixierung der Wissensbasis, derselben Alarmschwelle und denselben
 Regressionsalarmen wie ein Chat-Monitor, und prüft die **Drift** gegenüber
@@ -726,10 +715,8 @@ das zurückgegebene `model`-Feld. Mitgelieferte Profile: OpenAI
 `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Beide gibt es auch in der Weboberfläche: In der neuen Oberfläche starten sie auf
-der Seite **Prüfung** über die Auswahl des Endpunkttyps (**Embeddings**,
-**Reranking**), in der klassischen auf der Seite **Werkzeuge**
-(**Embedding-Prüfung**, **Rerank-Prüfung**). Die Rerank-Prüfung nutzt immer die
+Beide gibt es auch in der Weboberfläche: Sie starten auf der Seite **Prüfung**
+über die Auswahl des Endpunkttyps (**Embeddings**, **Reranking**). Die Rerank-Prüfung nutzt immer die
 eingebauten Tests, damit jeder Lauf für Drift und Überwachung vergleichbar bleibt.
 
 ### Bild- und Audio-Generierung (TTS)
@@ -813,7 +800,7 @@ ab (`ekte kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
      Anbieter-YAML auf dieselbe Weise; **Relay hinzufügen** nimmt Namen und
      Basis-URL. **Welches Profil verwendet eine Modell-ID?** zeigt, wie eine ID
      aufgelöst wird; Ihre Einträge lassen sich als YAML exportieren;
-   - auf der Seite **Prüfung** der Weboberfläche (klassisch auch **Werkzeuge**): **In der
+   - auf der Seite **Prüfung** der Weboberfläche: **In der
      Wissensbasis speichern** behält Namen und Basis-URL eines Relays (ein
      Anbieter-Eintrag ohne Modelle), aufgeführt unter **Wissen → Relays**;
    - auf der Kommandozeile: `ekte kb-prompt <model>`, `ekte kb-import <file>`
@@ -938,9 +925,10 @@ unter neuem Namen fort. Was sich für eine bestehende Installation ändert:
   zing, falls es noch läuft; löschen Sie es selbst, sobald Sie es nicht mehr
   brauchen. Ein mit `EKTE_DATA_DIR`, `ZING_DATA_DIR` oder `--data-dir`
   gesetztes Verzeichnis wird so verwendet, wie es ist.
-- **Web-Oberfläche.** Sprache, Design und Filter, die Wahl zwischen klassischer
-  und v2-Oberfläche sowie ein im Passwortmanager des Browsers gespeicherter
-  Master-Schlüssel werden übernommen.
+- **Web-Oberfläche.** Sprache, Design und Filter sowie ein im Passwortmanager
+  des Browsers gespeicherter Master-Schlüssel werden übernommen. Die klassische
+  Oberfläche von zing gibt es nicht mehr: Ihre Adressen (`/`, `/history`,
+  `/watches`, `/tools`, `/console`) öffnen die passende Seite unter `/v2/`.
 - **Berichte und Prüfanfragen.** Berichte, Webhooks und Dateinamen heißen
   `ekte` (z. B. `"tool": "ekte"`, `ekte-report.json`), ebenso die Prüfanfragen
   an Relays. Skripte, die darin nach `zing` suchen, müssen angepasst werden.

@@ -116,7 +116,7 @@ def test_perf_js_css_colours_only_through_variables():
     assert defaults
     decls = dict(d.split(":", 1) for d in defaults.group(1).split(";"))
     assert all(k.startswith("--zp-") for k in decls)
-    assert decls["--zp-t"] == "#2a78d6" and decls["--zp-tile"] == "#f5f8f4"  # classic values
+    assert decls["--zp-t"] == "#2a78d6" and decls["--zp-tile"] == "#f5f8f4"  # built-in defaults
     rest = css[defaults.end():]
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b|rgba?\(|(?<![\w-])(white|black)(?![\w-])", rest)
     # v2 maps every property the injected CSS uses.

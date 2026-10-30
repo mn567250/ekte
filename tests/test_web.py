@@ -19,6 +19,10 @@ from ekte.web.server import create_app  # noqa: E402
 _VERSION = re.compile(r"\?v=[0-9a-f]+(?=[\"'])")
 
 
+# every page of the web UI
+_V2_URLS = ("/v2/", "/v2/history", "/v2/watches", "/v2/analytics", "/v2/kb", "/v2/accessibility")
+
+
 def _unversioned(html: str) -> str:
     """A served page as written on disk: without the ?v=<hash> on asset URLs."""
     return _VERSION.sub("", html)
@@ -83,28 +87,24 @@ def test_serves_lang_js_and_pages_load_it(client):
     assert loc.status_code == 200
     assert "application/javascript" in loc.headers["content-type"]
     assert "EKTE_LOCALES" in loc.text
-    for path in ("/", "/console", "/history", "/tools", "/watches"):
+    for path in _V2_URLS:
         html = _unversioned(client.get(path).text)
         # locales must load before lang.js, which reads them at switch time
         assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
-        # the dropdown is filled from LANG_LIST in lang.js, not per page
-        assert 'class="lang-sel"' in html and "<option" not in html.split('class="lang-sel"')[1].split("</select>")[0]
+    # the dropdown comes from nav.js and is filled from LANG_LIST in lang.js, not per page
+    nav = client.get("/v2/static/nav.js").text
+    assert re.search(r"<select class=\"lang-sel\"[^>]*></select>", nav)
     # the language list and translations come from ekte/i18n/locales/*.json
     assert loc.text.startswith("window.EKTE_I18N_DATA = {")
     for code in ("en", "zh", "fr", "es", "pt", "it", "de"):
         assert f'"code":"{code}"' in loc.text
 
 
-def test_serves_icons_and_modelpicker_js(client):
+def test_serves_icons_js(client):
     icons = client.get("/icons.js")
     assert icons.status_code == 200
     assert "application/javascript" in icons.headers["content-type"]
     assert "EKTE_ICONS" in icons.text and "ekteIcon" in icons.text
-
-    mp = client.get("/modelpicker.js")
-    assert mp.status_code == 200
-    assert "application/javascript" in mp.headers["content-type"]
-    assert "EkteModelPicker" in mp.text
 
 
 def test_api_kb_lists_providers_with_models(client):
@@ -286,9 +286,9 @@ def test_api_key_fields_are_masked_and_paired_with_their_url(client):
     assert js.status_code == 200
     assert "application/javascript" in js.headers["content-type"]
     assert "EkteSecret" in js.text
-    for path in ("/", "/console", "/tools", "/watches"):
+    for path in ("/v2/",):  # the monitors' key fields are rendered by watches.html's script
         html = _unversioned(client.get(path).text)
-        assert '<script src="/icons.js"></script>\n<script src="/secretfield.js"></script>' in html
+        assert '<script src="/secretfield.js"></script>' in html
         keys = re.findall(r'<input[^>]*\bid="\w+-key"[^>]*>', html)
         assert keys, path
         for tag in keys:
@@ -304,15 +304,15 @@ def test_api_key_fields_are_masked_and_paired_with_their_url(client):
             assert form.count('autocomplete="username"') == n, path
 
 
-# ----- v2 UI, served side by side with the classic one (A/B) ------------- #
+# ----- the web UI (v2) ------------------------------------------------- #
 
 _V2_PAGES = {"/": "audit", "/history": "history", "/watches": "monitors"}
 
 
 def test_v2_pages_share_the_design_system(client):
-    for classic, page in _V2_PAGES.items():
-        r = client.get("/v2" + classic if classic != "/" else "/v2/")
-        assert r.status_code == 200 and "text/html" in r.headers["content-type"], classic
+    for path, page in _V2_PAGES.items():
+        r = client.get("/v2" + path if path != "/" else "/v2/")
+        assert r.status_code == 200 and "text/html" in r.headers["content-type"], path
         html = _unversioned(r.text)
         assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
         assert '<link rel="stylesheet" href="/v2/static/ekte.css" />' in html
@@ -337,55 +337,22 @@ def test_v2_monitors_page_manages_the_master_key(client):
     assert "localStorage" not in js and "sessionStorage" not in js
 
 
-def test_ui_switch_is_remembered_in_a_cookie(client):
-    # default: classic, no redirect
-    r = client.get("/history", follow_redirects=False)
-    assert r.status_code == 200 and "ekte_ui" not in r.headers.get("set-cookie", "")
-    # ?ui=v2 on a classic page: go to its v2 counterpart and remember the choice
-    r = client.get("/history?ui=v2", follow_redirects=False)
-    assert r.status_code == 307 and r.headers["location"] == "/v2/history"
-    assert "ekte_ui=v2" in r.headers["set-cookie"]
-    # with the cookie, classic pages redirect to v2
-    client.cookies.set("ekte_ui", "v2")
-    for classic in _V2_PAGES:
-        r = client.get(classic, follow_redirects=False)
-        assert r.status_code == 307, classic
-        assert r.headers["location"] == ("/v2/" if classic == "/" else "/v2" + classic)
-    # the classic Tools page has no v2 page of its own: the audit page's surface selector
-    r = client.get("/tools", follow_redirects=False)
-    assert r.status_code == 307 and r.headers["location"] == "/v2/?surface=embedding"
-    # ?ui=v1 on a v2 page: back to classic, remembered as v1
-    r = client.get("/v2/watches?ui=v1", follow_redirects=False)
-    assert r.status_code == 307 and r.headers["location"] == "/watches"
-    assert "ekte_ui=v1" in r.headers["set-cookie"]
-    client.cookies.clear()
-    assert client.get("/watches", follow_redirects=False).status_code == 200
-
-
-def test_ui_choice_made_before_the_rename_still_applies(client):
-    # zing_ui=v2 from an install that still ran as zing: v2 until ekte_ui is set
-    client.cookies.set("zing_ui", "v2")
-    r = client.get("/history", follow_redirects=False)
-    assert r.status_code == 307 and r.headers["location"] == "/v2/history"
-    # choosing v1 writes ekte_ui=v1, which wins over the legacy cookie (left as is)
+def test_classic_addresses_redirect_to_the_v2_pages(client):
+    # the classic UI is gone; bookmarks and old links land on its v2 pages
+    for old, new in (("/", "/v2/"), ("/history", "/v2/history"), ("/watches", "/v2/watches"),
+                     ("/tools", "/v2/?surface=embedding"), ("/console", "/v2/")):
+        r = client.get(old, follow_redirects=False)
+        assert r.status_code == 308 and r.headers["location"] == new, old
+    # the query string comes along (e.g. a re-run link)
+    assert client.get("/history?rerun=7", follow_redirects=False).headers["location"] == "/v2/history?rerun=7"
+    assert client.get("/tools?rerun=7", follow_redirects=False).headers["location"] == "/v2/?surface=embedding&rerun=7"
+    # no UI switch and no UI cookie any more, also not from before the rename
+    client.cookies.set("zing_ui", "v1")
     r = client.get("/v2/history?ui=v1", follow_redirects=False)
-    assert "ekte_ui=v1" in r.headers["set-cookie"] and "zing_ui" not in r.headers["set-cookie"]
-    client.cookies.set("ekte_ui", "v1")
-    assert client.get("/history", follow_redirects=False).status_code == 200
+    assert r.status_code == 200 and "set-cookie" not in r.headers
     client.cookies.clear()
-
-
-def test_language_cookie_made_before_the_rename_still_applies(client):
-    client.cookies.set("zing_lang", "de")
-    legacy = client.get("/locales.js").text
-    client.cookies.clear()
-    assert legacy == client.get("/locales.js?lang=de").text
-    assert len(legacy) < len(client.get("/locales.js").text)  # one language, not all
-
-
-def test_classic_pages_link_to_the_v2_ui(client):
-    for classic in (*_V2_PAGES, "/tools"):
-        assert 'class="try-v2" href="?ui=v2"' in client.get(classic).text, classic
+    for path in ("/index.html", "/modelpicker.js"):
+        assert "EkteModelPicker" not in client.get(path).text
 
 
 def test_v2_tools_forwards_to_the_audit_page_surface(client):
@@ -405,20 +372,14 @@ def test_v2_tools_forwards_to_the_audit_page_surface(client):
     noscript = html.split("<noscript>", 1)[1].split("</noscript>", 1)[0]
     assert 'href="/v2/?surface=embedding"' in noscript and 'href="/v2/?surface=rerank"' in noscript
     assert 'data-page="tools"' not in html
-    # ?ui=v1 still goes to the classic Tools page, which is unchanged
-    r = client.get("/v2/tools?ui=v1", follow_redirects=False)
-    assert r.status_code == 307 and r.headers["location"] == "/tools"
-    assert 'class="try-v2" href="?ui=v2"' in client.get("/tools").text
     assert "/v2/tools" not in client.get("/v2/static/nav.js").text
 
 
-def test_console_is_classic_only(client):
+def test_there_is_no_console_page(client):
     # unknown /v2/ paths fall back to the v2 audit page, never a console page
     html = client.get("/v2/console").text
     assert 'data-page="audit"' in html and 'data-page="console"' not in html
     assert "/v2/console" not in client.get("/v2/static/nav.js").text
-    client.cookies.set("ekte_ui", "v2")
-    assert client.get("/console", follow_redirects=False).status_code == 200
 
 
 def test_v2_audit_api_key_starts_empty_and_masked(client):
@@ -452,9 +413,6 @@ def test_v2_accessibility_report_page(client):
     assert '<main id="main" tabindex="-1">' in html and "<footer>" not in html  # nav.js adds the shared one
     assert "/v2/static/bitv-report.json" in html
     assert "https://github.com/mn567250/ekte/issues" in html
-    # v2 only: ?ui=v1 goes to the classic start page
-    r = client.get("/v2/accessibility?ui=v1", follow_redirects=False)
-    assert r.status_code == 307 and r.headers["location"] == "/"
 
 
 def test_v2_analytics_page(client):
@@ -487,9 +445,6 @@ def test_v2_analytics_page(client):
                         ("filterpanel.css", "text/css")):
         r = client.get("/v2/static/" + asset)
         assert r.status_code == 200 and kind in r.headers["content-type"], asset
-    # v2 only: ?ui=v1 goes to the classic history page
-    r = client.get("/v2/analytics?ui=v1", follow_redirects=False)
-    assert r.status_code == 307 and r.headers["location"] == "/history"
 
 
 def test_v2_accessibility_report_data_is_served(client):

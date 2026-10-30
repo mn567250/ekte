@@ -282,13 +282,11 @@ def test_rerank_endpoint_runs_the_runner_and_saves(client, monkeypatch):
     assert any(row.get("id") == body["report_id"] and row.get("surface") == "rerank" for row in rows)
 
 
-def test_serves_tools_page_and_index_nav(client):
-    r = client.get("/tools")
-    assert r.status_code == 200 and "text/html" in r.headers["content-type"]
-    assert "工具箱" in r.text and "嵌入审计" in r.text and "重排审计" in r.text
-    # The home page links to /tools in its nav.
-    index = client.get("/").text
-    assert 'href="/tools"' in index
+def test_embedding_and_rerank_audits_start_on_the_audit_page(client):
+    # the Tools page is gone: its address opens the audit page's embedding surface
+    r = client.get("/tools", follow_redirects=False)
+    assert r.status_code == 308 and r.headers["location"] == "/v2/?surface=embedding"
+    assert 'data-page="audit"' in client.get("/v2/?surface=rerank").text
 
 
 # ----- /api/models: relay model listing for the picker's custom provider ----- #
@@ -376,8 +374,7 @@ def test_models_endpoint_bad_base_url_is_400(client):
     assert "base_url" in r.json()["error"]
 
 
-def test_modelpicker_offers_custom_relay_provider(client):
-    r = client.get("/modelpicker.js")
+def test_relay_config_lists_the_relays_models(client):
+    r = client.get("/v2/static/relaycfg.js")
     assert r.status_code == 200
-    assert "/api/models" in r.text
-    assert "Custom (from relay)" in r.text
+    assert 'fetch("/api/models"' in r.text

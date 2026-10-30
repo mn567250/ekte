@@ -221,7 +221,7 @@ pip install 'ekte[web]'     # ou : uv tool install 'ekte[web]'
 ekte serve                        # ouvre http://localhost:8000
 ```
 
-Dans la nouvelle interface, le formulaire guide la configuration :
+Le formulaire guide la configuration :
 
 1. Choisissez le **Relais / fournisseur** : un fournisseur de la base de
    connaissances ou un relais que vous avez enregistré. Son URL de base est
@@ -242,15 +242,14 @@ Dans la nouvelle interface, le formulaire guide la configuration :
 Un relais absent de la liste peut être conservé avec **Enregistrer dans la
 base** sous le nom de votre choix ; la fois suivante, il suffit de le choisir.
 La référence de confiance (**Comparer à une référence de confiance**) et les
-audits d'embedding et de rerank se configurent de la même façon. L'interface classique garde les
-champs simples avec **Récupérer les modèles**.
+audits d'embedding et de rerank se configurent de la même façon.
 
 Puis **Lancer l'audit**
 et suivez les vérifications **en direct** : chaque vérification affiche son score
 et sa durée, et une vérification avec des constats se déplie pour montrer les
 preuves. Le résultat est un rapport de verdict partageable : note, **Contrôles par
-dimension** avec leurs barèmes, constats en langage clair et section performance
-(dans la nouvelle interface aussi un **Journal d'exécution** de chaque détecteur).
+dimension** avec leurs barèmes, constats en langage clair, section performance et
+**Journal d'exécution** de chaque détecteur.
 
 Tout s'exécute sur votre machine : une clé saisie dans le navigateur n'atteint
 que votre serveur ekte local et le relais audité, jamais un tiers. Voir
@@ -258,33 +257,29 @@ que votre serveur ekte local et le relais audité, jamais un tiers. Voir
 
 ### Pages
 
-L'interface web existe en deux versions qui partagent le même serveur et les
-mêmes données. L'**interface classique** s'ouvre sur `/` ; son lien **Essayer la
-nouvelle interface** passe à la **nouvelle interface** sous `/v2/`, dont le lien
-**Interface classique** ramène à la première. Le choix est mémorisé par
-navigateur.
+L'interface web se trouve sous `/v2/`, où `ekte serve` l'ouvre. Les adresses de
+l'ancienne interface classique (`/`, `/history`, `/watches`, `/tools`,
+`/console`) redirigent vers la page correspondante.
 
-| Page | Interface classique | Nouvelle interface | À quoi elle sert |
-|---|---|---|---|
-| **Audit** | `/` | `/v2/` | Auditer un relais (éventuellement face à une référence) et lire le rapport |
-| **Console** | `/console` | — | Le même audit sous forme de console compacte, façon journal |
-| **Outils** | `/tools` | — | Audits d'embedding et de rerank ; dans la nouvelle interface, ils démarrent sur la page **Audit** via le sélecteur de type de point d'accès (`/v2/tools` y redirige) |
-| **Surveillances** | `/watches` | `/v2/watches` | Ré-audits planifiés avec alertes webhook |
-| **Historique** | `/history` | `/v2/history` | Chaque audit exécuté sur cette machine, groupé par relais + modèle annoncé, avec tendances |
-| **Analyses** | — | `/v2/analytics` | Relais et modèles comparés dans le temps : indicateurs, graphiques avec tableaux de données, classements |
-| **Connaissances** | — | `/v2/kb` | La base de connaissances en trois onglets — modèles, fournisseurs, relais : parcourir, activer/désactiver, ajouter les vôtres |
+| Page | Adresse | À quoi elle sert |
+|---|---|---|
+| **Audit** | `/v2/` | Auditer un relais (éventuellement face à une référence) et lire le rapport ; les audits d'embedding et de rerank démarrent aussi ici, via le sélecteur de type de point d'accès |
+| **Surveillances** | `/v2/watches` | Ré-audits planifiés avec alertes webhook |
+| **Historique** | `/v2/history` | Chaque audit exécuté sur cette machine, groupé par relais + modèle annoncé, avec tendances |
+| **Analyses** | `/v2/analytics` | Relais et modèles comparés dans le temps : indicateurs, graphiques avec tableaux de données, classements |
+| **Connaissances** | `/v2/kb` | La base de connaissances en trois onglets — modèles, fournisseurs, relais : parcourir, activer/désactiver, ajouter les vôtres |
 
-La nouvelle interface ajoute : des filtres et des tendances configurables (score,
+Sur les pages, en outre : des filtres et des tendances configurables (score,
 note, latence p50, tokens/s) dans l'**Historique** ; **Planifier comme
 surveillance** et **Relancer l'audit** sur chaque exécution de l'Historique ; **Télécharger le rapport**
-dans tous les formats ; un sélecteur de thème (Automatique / Clair / Sombre) ; et
-la page **Connaissances**. Chaque page sauf Accessibilité affiche un avis juste
+dans tous les formats ; et un sélecteur de thème (Automatique / Clair / Sombre).
+Chaque page sauf Accessibilité affiche un avis juste
 sous son introduction, coloré selon son importance (information, succès,
 avertissement, critique) : p. ex. le dernier audit terminé sur **Audit**, la clé
 maîtresse sur **Surveillances**, les exécutions encore en traitement sur
 **Historique** et **Analyses**, les entrées ignorées sur **Connaissances**.
 
-**Audits en arrière-plan (nouvelle interface).** Un audit lancé depuis la page
+**Audits en arrière-plan.** Un audit lancé depuis la page
 **Audit** continue quand vous changez de page ou fermez l'onglet ; **Continuer en
 arrière-plan** l'y envoie volontairement. L'**Historique** liste chaque audit en
 file d'attente ou en cours (et chaque surveillance en cours) avec sa
@@ -296,7 +291,7 @@ propre machine attendent aussi) ; les audits de relais différents s'exécutent
 en parallèle, quatre au plus à la fois (`EKTE_MAX_PARALLEL_AUDITS`). Les
 surveillances attendent leur relais de la même façon.
 
-**Analyses (nouvelle interface).** `/v2/analytics` transforme l'historique
+**Analyses.** `/v2/analytics` transforme l'historique
 local en comparaisons : des indicateurs pour la période choisie (exécutions,
 score médian, part à risque élevé, taux de réussite, TTFT, vitesse de sortie,
 ratios de facturation) avec l'écart par rapport à la période de même durée qui
@@ -590,21 +585,17 @@ charge utile JSON générique garde ses clés et ses valeurs machine (`risk_leve
 
 **Dans l'interface web**, `ekte serve` exécute les mêmes surveillances dans un
 planificateur en arrière-plan au sein du processus serveur, enregistre chaque
-exécution dans l'**Historique** et envoie les mêmes alertes webhook :
-
-- **Nouvelle interface :** ouvrez une exécution dans l'**Historique** et
-  choisissez **Planifier comme surveillance**. ekte copie la configuration de
-  cette exécution (relais, modèle, modèle annoncé, fournisseur, suite, dimensions
-  personnalisées) dans une surveillance en pause sur la page **Surveillances** ;
-  définissez-y son intervalle et sa clé API (l'Historique ne stocke jamais de
-  clés) puis activez-la. Intervalle, clé, **Seuil d'alerte**, webhooks et
-  **Langue des alertes** se modifient directement sur chaque surveillance. Un
-  clic sur le nom replie la carte au nom, à l'état et à la dernière exécution
-  (**Tout replier** / **Tout déplier** au-dessus de la liste ; mémorisé par
-  navigateur), et le panneau de filtres (recherche, état, dernier risque, type
-  d'endpoint, relais, suite) réduit une longue liste comme dans l'**Historique**.
-- **Interface classique :** remplissez le formulaire de la page
-  **Surveillances** puis **Ajouter la surveillance**.
+exécution dans l'**Historique** et envoie les mêmes alertes webhook. Ouvrez une exécution dans l'**Historique** et
+choisissez **Planifier comme surveillance**. ekte copie la configuration de
+cette exécution (relais, modèle, modèle annoncé, fournisseur, suite, dimensions
+personnalisées) dans une surveillance en pause sur la page **Surveillances** ;
+définissez-y son intervalle et sa clé API (l'Historique ne stocke jamais de
+clés) puis activez-la. Intervalle, clé, **Seuil d'alerte**, webhooks et
+**Langue des alertes** se modifient directement sur chaque surveillance. Un
+clic sur le nom replie la carte au nom, à l'état et à la dernière exécution
+(**Tout replier** / **Tout déplier** au-dessus de la liste ; mémorisé par
+navigateur), et le panneau de filtres (recherche, état, dernier risque, type
+d'endpoint, relais, suite) réduit une longue liste comme dans l'**Historique**.
 
 Chaque surveillance a sa propre langue d'alerte (par défaut celle de
 l'interface), peut être exécutée maintenant, mise en pause ou supprimée, et
@@ -630,12 +621,12 @@ des surveillances : une clé saisie reste uniquement dans la mémoire de
 attendent (sans exécution en échec ni alerte) que vous la saisissiez. Les
 surveillances sans clé et les références `env:`/`file:` continuent de tourner.
 Pour que les clés survivent aux redémarrages, choisissez **Enregistrer chiffrées
-sur cette machine** sous **Stockage des clés API** sur la page **Surveillances**
-v2 : les clés sont alors conservées dans `watches.db`, chiffrées avec une clé
+sur cette machine** sous **Stockage des clés API** sur la page **Surveillances** :
+les clés sont alors conservées dans `watches.db`, chiffrées avec une clé
 maîtresse. Revenir en arrière déplace les clés enregistrées en mémoire et les
 efface de `watches.db`. La notice de la page indique le mode actif, demande
-confirmation avant un changement et rapporte ce qui a été déplacé. L'interface
-classique (`/watches`) n'enregistre jamais de clé. Une installation qui
+confirmation avant un changement et rapporte ce qui a été déplacé. Une
+installation qui
 enregistrait déjà des clés chiffrées, ou qui définit `EKTE_SECRET_KEY`, continue
 de les enregistrer jusqu'à ce que vous changiez.
 
@@ -671,7 +662,7 @@ type d'endpoint, et l'analytique n'affiche que les métriques qui s'appliquent.
 
 Pour surveiller un endpoint d'embeddings ou de rerank, auditez-le sur la page
 **Audit** (choisissez **Embeddings** ou **Reclassement** dans le sélecteur de type
-de point d'accès ; dans l'interface classique, sur la page **Outils**) et
+de point d'accès) et
 choisissez **Surveiller**, ou **Planifier comme surveillance** sur sa
 ligne d'historique. La surveillance relance l'audit selon son planning, avec le
 même épinglage de la base de connaissances, le même seuil d'alerte et les mêmes
@@ -721,10 +712,9 @@ inférieur à 1) et le champ `model` renvoyé. Profils intégrés : OpenAI
 `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Les deux se trouvent aussi dans l'interface web : dans la nouvelle interface, ils
-démarrent sur la page **Audit** via le sélecteur de type de point d'accès
-(**Embeddings**, **Reclassement**) ; dans la classique, sur la page **Outils**
-(**Audit d'embedding**, **Audit de rerank**). L'audit de rerank utilise toujours les sondes
+Les deux se trouvent aussi dans l'interface web : ils démarrent sur la page
+**Audit** via le sélecteur de type de point d'accès (**Embeddings**,
+**Reclassement**). L'audit de rerank utilise toujours les sondes
 intégrées, pour que chaque exécution reste comparable pour la dérive et la
 surveillance.
 
@@ -810,7 +800,7 @@ l'emportant :
      fournisseur de la même façon ; **Ajouter un relais** demande un nom et une URL
      de base. **Quel profil un identifiant de modèle utilise-t-il ?** montre comment
      un id se résout ; vos entrées s'exportent en YAML ;
-   - sur la page **Audit** de l'interface web (classique : aussi **Outils**) : **Enregistrer
+   - sur la page **Audit** de l'interface web : **Enregistrer
      dans la base** conserve le nom et l'URL de base d'un relais (une entrée de
      fournisseur sans modèles), listé sous **Connaissances → Relais** ;
    - en ligne de commande : `ekte kb-prompt <model>`, `ekte kb-import <file>`
@@ -938,9 +928,11 @@ ekte poursuit [zing](https://github.com/cenbonew/zing) (dernière version :
   tel quel, pour zing s'il tourne encore ; supprimez-le vous-même quand vous n'en
   avez plus besoin. Un répertoire défini par `EKTE_DATA_DIR`, `ZING_DATA_DIR` ou
   `--data-dir` est utilisé tel quel.
-- **Interface web.** La langue, le thème et les filtres, le choix entre
-  l'interface classique et la v2, ainsi qu'une clé maîtresse enregistrée dans le
-  gestionnaire de mots de passe du navigateur sont repris.
+- **Interface web.** La langue, le thème et les filtres, ainsi qu'une clé
+  maîtresse enregistrée dans le gestionnaire de mots de passe du navigateur, sont
+  repris. L'interface classique de zing n'existe plus : ses adresses (`/`,
+  `/history`, `/watches`, `/tools`, `/console`) ouvrent la page correspondante
+  sous `/v2/`.
 - **Rapports et sondes.** Les rapports, les webhooks et les noms de fichiers
   indiquent `ekte` (p. ex. `"tool": "ekte"`, `ekte-report.json`), tout comme les
   sondes envoyées aux relais. Les scripts qui y cherchent `zing` doivent être

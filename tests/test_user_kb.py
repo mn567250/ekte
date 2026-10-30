@@ -685,7 +685,7 @@ def test_kb_page_and_nav(client):
     assert r.status_code == 200 and '<header class="znav" data-page="kb"' in r.text
     assert re.search(r'<script src="/v2/static/nav\.js(\?v=[0-9a-f]+)?"></script>', r.text)
     assert '"/v2/kb"' in client.get("/v2/static/nav.js").text
-    assert client.get("/v2/kb?ui=v1", follow_redirects=False).headers["location"] == "/"
+    assert client.get("/v2/kb?ui=v1", follow_redirects=False).status_code == 200  # no UI switch any more
 
 
 def test_watch_api_pins_and_repins(client):

@@ -214,7 +214,7 @@ pip install 'ekte[web]'     # or: uv tool install 'ekte[web]'
 ekte serve                        # opens http://localhost:8000
 ```
 
-In the new UI the form guides you through the configuration:
+The form guides you through the configuration:
 
 1. Choose the **Relay / provider**: a provider of the knowledge base or a relay
    you saved. Its base URL is filled in (other known URLs of the provider are
@@ -233,13 +233,13 @@ In the new UI the form guides you through the configuration:
 A relay that is not in the list yet can be kept with **Save to knowledge base**
 under a name you give it; next time it is one pick away. The trusted baseline
 (**Compare against a trusted baseline**) and the embedding and rerank audits are
-configured the same way. The classic UI keeps the plain fields with **Fetch models**.
+configured the same way.
 
 Then **Start audit** and watch the checks run **live**: every check shows its
 score and how long it took, and a check with findings expands to show the
 evidence. The result is a shareable verdict report: grade, the per-dimension
 checks with their scoring scales, plain-language findings and the performance
-section (in the new UI also an **Execution log** of every detector).
+section, and an **Execution log** of every detector.
 
 Everything runs on your machine: a key typed in the browser reaches only your
 local ekte server and the relay you audit, never a third party. See
@@ -247,31 +247,27 @@ local ekte server and the relay you audit, never a third party. See
 
 ### Pages
 
-The web UI comes in two versions that share the same server and data. The
-**classic UI** opens at `/`; its **Try the new UI** link switches to the **new
-UI** under `/v2/`, and the new UI's **Classic UI** link switches back. The
-choice is remembered per browser.
+The web UI lives under `/v2/`, where `ekte serve` opens it. The addresses of
+the earlier classic UI (`/`, `/history`, `/watches`, `/tools`, `/console`)
+redirect to the matching page.
 
-| Page | Classic UI | New UI | What it is for |
-|---|---|---|---|
-| **Audit** | `/` | `/v2/` | Audit a relay (optionally against a baseline) and read the report |
-| **Console** | `/console` | — | The same audit as a compact, log-style console |
-| **Tools** | `/tools` | — | Embedding and rerank audits; in the new UI they start on the **Audit** page through the endpoint-type selector (`/v2/tools` forwards there) |
-| **Monitors** | `/watches` | `/v2/watches` | Scheduled re-audits with webhook alerts |
-| **History** | `/history` | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
-| **Analytics** | — | `/v2/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
-| **Knowledge** | — | `/v2/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
+| Page | Address | What it is for |
+|---|---|---|
+| **Audit** | `/v2/` | Audit a relay (optionally against a baseline) and read the report; embedding and rerank audits start here too, through the endpoint-type selector |
+| **Monitors** | `/v2/watches` | Scheduled re-audits with webhook alerts |
+| **History** | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
+| **Analytics** | `/v2/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
+| **Knowledge** | `/v2/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
 
-The new UI adds: filters and configurable trends (score, grade, latency p50,
+Across the pages: filters and configurable trends (score, grade, latency p50,
 tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
-report** in every format; a theme switch (Auto theme / Light / Dark); and the
-**Knowledge** page. Every page but Accessibility has one notice right under its
+report** in every format; and a theme switch (Auto theme / Light / Dark). Every page but Accessibility has one notice right under its
 introduction, coloured by importance (information, success, warning,
 critical): e.g. the last finished audit on **Audit**, the master key on
 **Monitors**, runs still being processed on **History** and **Analytics**,
 skipped entries on **Knowledge**.
 
-**Background audits (new UI).** An audit started on the **Audit** page keeps
+**Background audits.** An audit started on the **Audit** page keeps
 running when you switch pages or close the tab; **Continue in background** sends
 it there on purpose. **History** lists every queued and running audit (and every
 running monitor) with its progress; **Watch live** reopens the live view, which
@@ -281,7 +277,7 @@ after another, so they never skew each other's latency or reliability results
 machine queue too); audits of different relays run in parallel, at most four at
 once (`EKTE_MAX_PARALLEL_AUDITS`). Monitors wait for their relay the same way.
 
-**Analytics (new UI).** `/v2/analytics` turns the local history into
+**Analytics.** `/v2/analytics` turns the local history into
 comparisons: KPI tiles for the chosen period (runs, median score, high-risk
 share, success rate, TTFT, decode speed, billing ratios) with the change
 against the period of the same length before; a chart of any metric per relay,
@@ -560,18 +556,15 @@ reports the `language`.
 
 **In the web UI**, `ekte serve` runs the same monitors in a background scheduler
 inside the server process, stores every run in **History** and sends the same
-webhook alerts:
-
-- **New UI:** open a run in **History** and choose **Schedule as monitor**. ekte
-  copies that run's configuration (relay, model, claimed model, provider, suite,
-  custom dimensions) into a paused monitor on the **Monitors** page; set its
-  interval and API key there (History never stores keys) and switch it on.
-  Interval, key, **Alert threshold**, webhooks and **Alert language** can be
-  edited in place on each monitor. Click a monitor's name to collapse its card
-  to name, status and last run (**Collapse all** / **Expand all** above the
-  list; remembered per browser), and narrow a long list with the filter panel
-  (search, status, last risk, endpoint type, relay, suite) as on **History**.
-- **Classic UI:** fill in the form on the **Monitors** page and **Add monitor**.
+webhook alerts. Open a run in **History** and choose **Schedule as monitor**. ekte
+copies that run's configuration (relay, model, claimed model, provider, suite,
+custom dimensions) into a paused monitor on the **Monitors** page; set its
+interval and API key there (History never stores keys) and switch it on.
+Interval, key, **Alert threshold**, webhooks and **Alert language** can be
+edited in place on each monitor. Click a monitor's name to collapse its card
+to name, status and last run (**Collapse all** / **Expand all** above the
+list; remembered per browser), and narrow a long list with the filter panel
+(search, status, last risk, endpoint type, relay, suite) as on **History**.
 
 Each monitor has its own alert language (defaulting to the UI language), can be
 run now, paused or deleted, and pins the knowledge-base profile it was created
@@ -592,11 +585,10 @@ disk. After a restart the **Monitors** page names the monitors that need their
 key again, and they wait (no failed run, no alert) until you enter it; keyless
 monitors and `env:`/`file:` references keep running. To have keys survive
 restarts, pick **Store encrypted on this machine** under **API key storage** on
-the v2 **Monitors** page: the keys are then kept in `watches.db`, encrypted with
+the **Monitors** page: the keys are then kept in `watches.db`, encrypted with
 a master key. Switching back moves the stored keys into memory and erases them
 from `watches.db`. The page notice says which mode is in effect, asks before a
-switch and reports what moved. The classic UI (`/watches`) never stores a key,
-whatever the setting. An install that already stored encrypted keys, or that
+switch and reports what moved. An install that already stored encrypted keys, or that
 sets `EKTE_SECRET_KEY`, keeps storing them until you switch.
 
 **Master key.** When keys are stored, they are encrypted with a master key that
@@ -627,8 +619,7 @@ History and Analytics filter by endpoint type, and Analytics shows only the
 metrics that apply.
 
 To monitor an embeddings or rerank endpoint, run it on the **Audit** page (pick
-**Embeddings** or **Reranking** in the endpoint-type selector; in the classic UI
-on the **Tools** page) and choose **Monitor this**, or **Schedule as monitor** on its History row. The
+**Embeddings** or **Reranking** in the endpoint-type selector) and choose **Monitor this**, or **Schedule as monitor** on its History row. The
 monitor re-runs the audit on its schedule, with the same knowledge-base pin,
 alert threshold and regression alerts as a chat monitor, and checks **drift**
 against its previous run (the vectors of an embedding probe, the ranking and
@@ -673,9 +664,8 @@ serves a substitute), determinism (same input → cosine ≈ 1), distinctness
 profiles: OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large`
 (3072), `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Both are also in the web UI: in the new UI they start on the **Audit** page
-through the endpoint-type selector (**Embeddings**, **Reranking**), in the
-classic UI on the **Tools** page (**Embedding audit**, **Rerank audit**). The rerank audit always uses the built-in probes, so every run stays
+Both are also in the web UI: they start on the **Audit** page through the
+endpoint-type selector (**Embeddings**, **Reranking**). The rerank audit always uses the built-in probes, so every run stays
 comparable for drift and monitoring.
 
 ### Image and audio (TTS) generation
@@ -754,7 +744,7 @@ OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM and Moonshot
      provider YAML the same way; **Add a relay** takes a name and a base URL.
      **Which profile does a model id use?** shows how an id resolves; your
      entries can be exported as YAML;
-   - on the web UI's **Audit** page (classic UI: also **Tools**): **Save to knowledge base**
+   - on the web UI's **Audit** page: **Save to knowledge base**
      keeps a relay's name and base URL (a provider entry without models), listed
      under **Knowledge → Relays**;
    - on the CLI: `ekte kb-prompt <model>`, `ekte kb-import <file>` (add `--check`
@@ -871,8 +861,10 @@ ekte continues [zing](https://github.com/cenbonew/zing) (its last release was
   then on works from `~/.ekte` only. `~/.zing` is left as it is, for zing if it
   still runs; delete it yourself once you no longer need it. A directory set
   with `EKTE_DATA_DIR`, `ZING_DATA_DIR` or `--data-dir` is used as it is.
-- **Web UI.** Language, theme and filter settings, the classic/v2 choice and a
-  master key saved in the browser's password manager carry over.
+- **Web UI.** Language, theme and filter settings and a master key saved in the
+  browser's password manager carry over. zing's classic UI is gone: its
+  addresses (`/`, `/history`, `/watches`, `/tools`, `/console`) open the
+  matching page under `/v2/`.
 - **Reports and probes.** Reports, webhooks and file names say `ekte` (e.g.
   `"tool": "ekte"`, `ekte-report.json`), and so do the probes sent to relays.
   Scripts that look for `zing` in them need updating.

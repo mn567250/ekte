@@ -2,12 +2,11 @@
  *
  * Link after ekte.css on pages that use them:
  *   <link rel="stylesheet" href="/v2/static/fields.css" />
- * and enhance the picker with EkteModelPicker.enhance({ …, unstyled: true })
- * (without `unstyled` it paints its classic inline styles instead).
+ * The model picker is built by relaycfg.js with the .zmp classes below.
  * Colours only through the ekte.css tokens, so light and dark both work.
  */
 
-/* ---------- model picker (/modelpicker.js, unstyled mode) ---------- */
+/* ---------- model picker (built by relaycfg.js) ---------- */
 .zmp { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .zmp-sels { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .zmp .zmp-sel {

@@ -1,7 +1,7 @@
 /* ekte web UI v2 — the performance panel (/perf.js) on the v2 tokens.
  *
  * perf.js injects its layout with every colour as a --zp-* property whose
- * classic default has zero specificity (:where), so these mappings win. The
+ * built-in default has zero specificity (:where), so these mappings win. The
  * tooltip is appended to <body>, hence .zp-tip here too. Both themes come
  * from tokens.css; nothing here is set per theme.
  */
@@ -59,8 +59,8 @@
 :root .zp-h { font-family: var(--disp); font-weight: 600; }
 :root .zp-tip { font-family: var(--mono); box-shadow: var(--shadow-pop); }
 
-/* wide tables scroll inside the card on narrow screens (classic lets them
-   overflow; a plain wrapper there keeps its margins collapsing as before) */
+/* wide tables scroll inside the card on narrow screens (the built-in styles
+   let them overflow) */
 :root .zp-wide { overflow-x: auto; }
 :root .zp-wide > .zp-table { margin-top: 0; }
 

@@ -13,8 +13,7 @@
  * The markup follows the i18n convention of the whole UI (Chinese inline,
  * English in data-en), so lang.js translates it at boot and on every switch;
  * the language <select class="lang-sel"> is filled by lang.js too. The theme
- * <select class="theme-sel"> is driven by theme.js (loaded in <head>). The
- * "Classic UI" link goes back to the classic page (?ui=v1 — see server.py).
+ * <select class="theme-sel"> is driven by theme.js (loaded in <head>).
  *
  * The last item of .tail, next to the language switch, is an icon-only link
  * to the accessibility conformance report (/v2/accessibility), so it sits in
@@ -61,7 +60,6 @@
       '<a class="logo" href="/v2/" aria-label="ekte"><span class="b">' + ico("logo", { size: 18 }) +
       "</span><span>ekte<b>.</b></span></a>" +
       '<div class="tail">' +
-      '<a class="classic" href="?ui=v1" data-en="Classic UI">经典界面</a>' +
       '<select class="theme-sel" aria-label="主题" title="主题" data-en-aria-label="Theme" data-en-title="Theme">' +
       '<option value="system" data-en="Auto theme">跟随系统</option>' +
       '<option value="light" data-en="Light">浅色</option>' +

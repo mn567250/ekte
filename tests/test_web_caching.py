@@ -53,8 +53,9 @@ def test_v2_pages_version_their_assets_and_are_revalidated(client, path):
     assert again.headers["x-frame-options"] == "DENY"
 
 
-def test_classic_pages_and_spa_fallback_are_versioned_too(client):
-    for path in ("/?ui=v1", "/history", "/v2/some/deep/link", "/some/deep/link"):
+def test_old_addresses_and_spa_fallback_are_versioned_too(client):
+    # "/" and "/history" redirect to their v2 pages (followed here)
+    for path in ("/", "/history", "/v2/some/deep/link", "/some/deep/link"):
         r = client.get(path)
         assert r.status_code == 200
         assert r.headers["cache-control"] == "no-cache"

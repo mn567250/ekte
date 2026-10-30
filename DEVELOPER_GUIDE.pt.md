@@ -121,8 +121,8 @@ ekte/
     analytics.py       consultas de análise: KPI, séries temporais, classificações
     watches.py         armazenamento dos monitores (watches.db)
     masterkey.py       estados e ações da chave mestra (servidor e `ekte secret`)
-    static/            páginas da interface clássica e scripts partilhados (lang.js, i18n.js, …)
-    static/v2/         páginas, estilos e scripts da nova interface
+    static/            scripts partilhados por todas as páginas (lang.js, i18n.js, icons.js, …)
+    static/v2/         páginas, estilos e scripts da interface web
 tests/                 suite pytest; conftest.py contém o relay simulado
 docs/                  METHODOLOGY (7 idiomas), CI.md, DOCKER.md, PUBLISHING.md
 examples/ekte.yaml     ficheiro de configuração comentado
@@ -333,19 +333,21 @@ descodificação (cabeçalhos de imagem, WAV) usa apenas a biblioteca padrão.
 
 `ekte/web/server.py` é uma app FastAPI criada por `create_app()`:
 
-- **Páginas.** A interface clássica (`/`, `/console`, `/history`, `/watches`,
-  `/tools`) e a nova interface (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/kb`) são ficheiros HTML estáticos. A nova interface não tem página
+- **Páginas.** A interface web (`/v2/`, `/v2/history`, `/v2/watches`,
+  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) é HTML estático. Não há página
   Ferramentas: as auditorias de embeddings e rerank começam na página de
   auditoria com o seletor de tipo de endpoint (`/v2/?surface=embedding|rerank`),
   e `/v2/tools` serve uma pequena página que redireciona para lá os links antigos
-  (`#rerank` escolhe rerank, `?rerun=` é passado adiante). `?ui=v2` / `?ui=v1` muda
-  de uma para a outra e um cookie memoriza a escolha, pelo que um URL clássico
-  redireciona para o seu equivalente novo depois de escolhida a nova interface.
-- **API.** `/api/audit/stream` executa uma auditoria e transmite os seus eventos
-  por SSE; `/api/models` lista os modelos de um relay; `/api/report/export`
-  renderiza um relatório; `/api/history…`, `/api/watches…`, `/api/kb…`,
-  `/api/embed` e `/api/rerank` servem as restantes páginas.
+  (`#rerank` escolhe rerank, `?rerun=` é passado adiante). Os endereços da
+  interface clássica removida (`/`, `/history`, `/watches`, `/tools`, `/console`)
+  redirecionam (308) para as suas páginas v2, com a query string.
+- **API.** `/api/jobs…` executa as auditorias (ver abaixo); `/api/models` lista
+  os modelos de um relay; `/api/report/export` renderiza um relatório;
+  `/api/history…`, `/api/watches…`, `/api/kb…` e `/api/analytics…` servem as
+  restantes páginas. `/api/audit/stream` (uma auditoria transmitida por SSE),
+  `/api/embed` e `/api/rerank` (uma auditoria síncrona de embeddings / rerank)
+  já não são usados pela interface web; o seu futuro é acompanhado nas issues #3
+  e #4.
 - **Relays.** `POST /api/kb/relays` guarda um relay `{name, base_url}` (400 para
   dados inválidos, 409 se o nome ou o URL já forem conhecidos).
 - **Análises.** `GET /api/analytics/options` (relays, modelos, suites, modos de
@@ -383,8 +385,8 @@ descodificação (cabeçalhos de imagem, WAV) usa apenas a biblioteca padrão.
   lista os trabalhos em fila, em curso e acabados há pouco (e os monitores em
   execução) com o progresso, `GET /api/jobs/{id}/events` reproduz o registo de
   eventos e depois segue-o ao vivo por SSE, e `POST /api/jobs/{id}/cancel`
-  pára-o. A nova interface usa-os, por isso uma auditoria sobrevive à página;
-  `/api/audit/stream` (interface clássica) envolve o mesmo trabalho e cancela-o
+  pára-o. A interface web usa-os, por isso uma auditoria sobrevive à página;
+  `/api/audit/stream` envolve o mesmo trabalho e cancela-o
   quando o fluxo fecha. Um bloqueio por relay deixa uma só auditoria (ou
   execução de monitor) usar um relay de cada vez, por nome de host, com todos os
   endereços loopback como um host; no máximo `EKTE_MAX_PARALLEL_AUDITS`
@@ -422,13 +424,12 @@ descodificação (cabeçalhos de imagem, WAV) usa apenas a biblioteca padrão.
 ### Frontend web
 
 O frontend é HTML, CSS e JavaScript de navegador simples, sem módulos nem passo
-de build. As páginas clássicas estão em `ekte/web/static/`; a nova interface, em
-`ekte/web/static/v2/`, partilha um cabeçalho (`nav.js`), o renderizador de
+de build. As páginas estão em `ekte/web/static/v2/` e partilham um cabeçalho (`nav.js`), o renderizador de
 relatórios (`report.js`), o seletor de tema (`theme.js`) e os estilos
 (`tokens.css`, `ekte.css`, `fields.css`, `report.css`, `perf.css`). Os scripts partilhados são
 servidos a partir da raiz: `lang.js` (mudança de idioma), `locales.js` (dados de
-tradução), `i18n.js` (tradução das constatações), `icons.js`, `modelpicker.js`
-(**Obter modelos**), `secretfield.js` e `perf.js` (gráficos de desempenho).
+tradução), `i18n.js` (tradução das constatações), `icons.js` (com o logótipo do
+ekte), `secretfield.js` e `perf.js` (gráficos de desempenho).
 
 Cada página v2 exceto Acessibilidade tem um **aviso de página** logo abaixo do
 hero (`<div class="znote" id="note">`, desenhado por `v2/notice.js`, com o estilo
@@ -453,7 +454,7 @@ A página v2 **Auditoria** configura relays com
 (`/api/models`, ao mudar, em cache por URL/chave/protocolo) → modelo declarado da
 base de conhecimento (`/api/kb/resolve` pré-seleciona-o) → provedor derivado,
 mais **Salvar na base** (`POST /api/kb/relays`). As suas funções puras são
-testadas com node; as páginas clássicas mantêm `modelpicker.js`.
+testadas com node.
 
 A página v2 **Análises** (`v2/analytics.html`) só lê `/api/analytics/*`
 (`options` também lista os pares relay × modelo, `relay_models`, para o seletor
@@ -556,8 +557,7 @@ verificação, ou com `EKTE_SECRET_KEY` / um `secret.key` antigo, começa em
 (`keys_to_memory()` apaga as cifradas e o valor de verificação e limpa o
 ficheiro; `keys_to_store()` sela as que estão em memória). Um pedido pode passar
 `key_storage: "memory"` para manter a sua chave fora da base de dados seja qual
-for a definição (a interface clássica fá-lo sempre); nada pode forçar o
-armazenamento.
+for a definição; nada pode forçar o armazenamento.
 
 As chaves API guardadas são encriptadas por `ekte/secretbox.py` (Fernet,
 guardadas como `enc:v1:…`; as referências `env:`/`file:` ficam como estão). A
@@ -714,7 +714,7 @@ pytest -n auto               # em paralelo, um worker por CPU (pytest-xdist)
   (`test_anthropic.py`, `test_responses.py`); o servidor web é testado com o
   cliente de testes do FastAPI (`test_web*.py`), incluindo as proteções de
   utilização local (`test_web_security.py`).
-- Os scripts do navegador (`lang.js`, `modelpicker.js`, `v2/relaycfg.js`, `perf.js`,
+- Os scripts do navegador (`lang.js`, `v2/relaycfg.js`, `perf.js`,
   `secretfield.js`, `v2/report.js`, as traduções) são avaliados com `node` em
   `test_web_*_js.py` e `test_web_locales.py`; são ignorados sem Node.js.
 - Nenhum teste pode aceder à rede.
@@ -724,7 +724,7 @@ pytest -n auto               # em paralelo, um worker por CPU (pytest-xdist)
   Importe-os dentro do comando que precisa deles.
 - `test_filler_perf.py` fixa o texto de enchimento byte a byte e falha quando a
   sonda da janela de contexto bloqueia o event loop.
-- `tests/a11y/` verifica a nova interface web (v2) face a BITV 2.0 / EN 301 549 /
+- `tests/a11y/` verifica a interface web (v2) face a BITV 2.0 / EN 301 549 /
   WCAG 2.1 AA num navegador real (Playwright + axe-core), em cada idioma da
   interface e em ambos os temas:
   `pip install -e '.[web,a11y]' && playwright install chromium`, depois

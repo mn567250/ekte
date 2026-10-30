@@ -122,8 +122,8 @@ ekte/
     analytics.py       Analyseabfragen: Kennzahlen, Zeitreihen, Ranglisten
     watches.py         Speicher der Überwachungen (watches.db)
     masterkey.py       Zustände und Aktionen des Hauptschlüssels (Server und `ekte secret`)
-    static/            Seiten der klassischen Oberfläche und gemeinsame Skripte (lang.js, i18n.js, …)
-    static/v2/         Seiten, Styles und Skripte der neuen Oberfläche
+    static/            Skripte, die alle Seiten teilen (lang.js, i18n.js, icons.js, …)
+    static/v2/         Seiten, Styles und Skripte der Weboberfläche
 tests/                 pytest-Suite; conftest.py enthält das Mock-Relay
 docs/                  METHODOLOGY (7 Sprachen), CI.md, DOCKER.md, PUBLISHING.md
 examples/ekte.yaml     kommentierte Konfigurationsdatei
@@ -333,19 +333,21 @@ nutzt nur die Standardbibliothek.
 
 `ekte/web/server.py` ist eine FastAPI-App, erzeugt von `create_app()`:
 
-- **Seiten.** Die klassische Oberfläche (`/`, `/console`, `/history`,
-  `/watches`, `/tools`) und die neue Oberfläche (`/v2/`, `/v2/history`,
-  `/v2/watches`, `/v2/kb`) sind statische HTML-Dateien. Die neue Oberfläche hat
-  keine Werkzeuge-Seite: Embedding- und Rerank-Prüfungen starten auf der
+- **Seiten.** Die Weboberfläche (`/v2/`, `/v2/history`, `/v2/watches`,
+  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) besteht aus statischem HTML.
+  Es gibt keine Werkzeuge-Seite: Embedding- und Rerank-Prüfungen starten auf der
   Prüfseite über die Auswahl des Endpunkttyps (`/v2/?surface=embedding|rerank`),
   und `/v2/tools` liefert eine kleine Seite, die alte Links dorthin weiterleitet
-  (`#rerank` wählt Rerank, `?rerun=` wird weitergegeben). `?ui=v2` /
-  `?ui=v1` schaltet um, und ein Cookie merkt sich die Wahl, sodass eine klassische
-  URL auf ihr neues Gegenstück umleitet, sobald die neue Oberfläche gewählt wurde.
-- **API.** `/api/audit/stream` führt eine Prüfung aus und streamt ihre Ereignisse
-  per SSE; `/api/models` listet die Modelle eines Relays; `/api/report/export`
-  rendert einen Bericht; `/api/history…`, `/api/watches…`, `/api/kb…`,
-  `/api/embed` und `/api/rerank` bedienen die übrigen Seiten.
+  (`#rerank` wählt Rerank, `?rerun=` wird weitergegeben). Die Adressen der
+  entfernten klassischen Oberfläche (`/`, `/history`, `/watches`, `/tools`,
+  `/console`) leiten (308) auf ihre v2-Seiten um, mit dem Query-String.
+- **API.** `/api/jobs…` führt Prüfungen aus (siehe unten); `/api/models` listet
+  die Modelle eines Relays; `/api/report/export` rendert einen Bericht;
+  `/api/history…`, `/api/watches…`, `/api/kb…` und `/api/analytics…` bedienen
+  die übrigen Seiten. `/api/audit/stream` (eine Prüfung, per SSE gestreamt),
+  `/api/embed` und `/api/rerank` (je eine synchrone Embedding- / Rerank-Prüfung)
+  nutzt die Weboberfläche nicht mehr; ihre Zukunft wird in den Issues #3 und #4
+  verfolgt.
 - **Relays.** `POST /api/kb/relays` speichert ein Relay `{name, base_url}` (400
   bei ungültiger Eingabe, 409, wenn Name oder URL schon bekannt sind).
 - **Analysen.** `GET /api/analytics/options` (Relays, Modelle, Suites,
@@ -383,9 +385,9 @@ nutzt nur die Standardbibliothek.
   wartende, laufende und kürzlich beendete Aufträge (und laufende
   Überwachungen) mit Fortschritt, `GET /api/jobs/{id}/events` spielt das
   Ereignisprotokoll ab und folgt ihm dann live per SSE, `POST
-  /api/jobs/{id}/cancel` bricht ab. Die neue Oberfläche nutzt diese Endpunkte,
-  daher überdauert eine Prüfung die Seite; `/api/audit/stream` (klassische
-  Oberfläche) verwendet denselben Auftrag und bricht ihn ab, wenn der Strom
+  /api/jobs/{id}/cancel` bricht ab. Die Weboberfläche nutzt diese Endpunkte,
+  daher überdauert eine Prüfung die Seite; `/api/audit/stream` verwendet
+  denselben Auftrag und bricht ihn ab, wenn der Strom
   endet. Eine Relay-Sperre lässt je Relay nur eine Prüfung (oder einen
   Überwachungslauf) zu, nach Hostname, alle Loopback-Adressen als ein Host;
   höchstens `EKTE_MAX_PARALLEL_AUDITS` (Standard 4) laufen gleichzeitig,
@@ -424,14 +426,12 @@ nutzt nur die Standardbibliothek.
 ### Web-Frontend
 
 Das Frontend ist reines HTML, CSS und Browser-JavaScript ohne Module und ohne
-Build-Schritt. Die klassischen Seiten liegen in `ekte/web/static/`; die neue
-Oberfläche in `ekte/web/static/v2/` teilt sich eine Kopfzeile (`nav.js`), den
+Build-Schritt. Die Seiten liegen in `ekte/web/static/v2/` und teilen sich eine Kopfzeile (`nav.js`), den
 Bericht-Renderer (`report.js`), die Designauswahl (`theme.js`) und die Styles
 (`tokens.css`, `ekte.css`, `fields.css`, `report.css`, `perf.css`). Gemeinsame Skripte werden
 von der Wurzel ausgeliefert: `lang.js` (Sprachwahl), `locales.js`
-(Übersetzungsdaten), `i18n.js` (Übersetzung der Befunde), `icons.js`,
-`modelpicker.js` (**Modelle abrufen**), `secretfield.js` und `perf.js`
-(Leistungsdiagramme).
+(Übersetzungsdaten), `i18n.js` (Übersetzung der Befunde), `icons.js` (samt
+ekte-Logo), `secretfield.js` und `perf.js` (Leistungsdiagramme).
 
 Jede v2-Seite außer Barrierefreiheit hat direkt unter ihrem Hero einen
 **Seitenhinweis** (`<div class="znote" id="note">`, gezeichnet von
@@ -457,8 +457,7 @@ Die v2-Seite **Prüfung** konfiguriert Relays mit
 (`/api/models`, bei Änderung, zwischengespeichert pro URL/Schlüssel/Protokoll) →
 angegebenes Modell aus der Wissensbasis (`/api/kb/resolve` wählt es vor) →
 abgeleiteter Anbieter, dazu **In der Wissensbasis speichern** (`POST
-/api/kb/relays`). Seine reinen Hilfsfunktionen werden unter node getestet; die
-klassischen Seiten behalten `modelpicker.js`.
+/api/kb/relays`). Seine reinen Hilfsfunktionen werden unter node getestet.
 
 Die v2-Seite **Analyse** (`v2/analytics.html`) liest nur `/api/analytics/*`
 (`options` nennt auch die Paare Relay × Modell, `relay_models`, für die
@@ -560,8 +559,8 @@ Schlüssel oder einen Prüfwert hat, oder mit gesetztem `EKTE_SECRET_KEY` / alte
 Schlüssel in einer Transaktion (`keys_to_memory()` löscht die verschlüsselten und
 den Prüfwert und bereinigt die Datei; `keys_to_store()` versiegelt die gehaltenen).
 Eine Anfrage kann `key_storage: "memory"` mitgeben, damit ihr Schlüssel unabhängig
-von der Einstellung nicht in die Datenbank gelangt (die klassische Oberfläche tut
-das immer); Speichern erzwingen lässt sich nicht.
+von der Einstellung nicht in die Datenbank gelangt; Speichern erzwingen lässt
+sich nicht.
 
 Gespeicherte API-Schlüssel verschlüsselt `ekte/secretbox.py` (Fernet,
 gespeichert als `enc:v1:…`; `env:`/`file:`-Verweise bleiben unverändert). Der
@@ -723,7 +722,7 @@ pytest -n auto               # parallel, ein Worker pro CPU (pytest-xdist)
   `test_responses.py`); der Webserver wird über den Testclient von FastAPI
   getestet (`test_web*.py`), einschließlich der Schutzmaßnahmen für den lokalen
   Betrieb (`test_web_security.py`).
-- Die Browser-Skripte (`lang.js`, `modelpicker.js`, `v2/relaycfg.js`, `perf.js`,
+- Die Browser-Skripte (`lang.js`, `v2/relaycfg.js`, `perf.js`,
   `secretfield.js`, `v2/report.js`, die Übersetzungen) werden in
   `test_web_*_js.py` und `test_web_locales.py` unter `node` ausgeführt; ohne
   Node.js werden sie übersprungen.
@@ -734,7 +733,7 @@ pytest -n auto               # parallel, ein Worker pro CPU (pytest-xdist)
   diese innerhalb des Befehls, der sie braucht.
 - `test_filler_perf.py` legt den Fülltext Byte für Byte fest und schlägt fehl,
   wenn der Kontextfenster-Test die Event-Loop blockiert.
-- `tests/a11y/` prüft die neue Oberfläche (v2) gegen BITV 2.0 / EN 301 549 /
+- `tests/a11y/` prüft die Weboberfläche (v2) gegen BITV 2.0 / EN 301 549 /
   WCAG 2.1 AA in einem echten Browser (Playwright + axe-core), in jeder
   Oberflächensprache und beiden Themes:
   `pip install -e '.[web,a11y]' && playwright install chromium`, dann

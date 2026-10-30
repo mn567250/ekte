@@ -142,20 +142,13 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "tokens.css", ALL),
     (_V2 + "favicon.svg", ALL),
     (_V2 + "ekte.css", ALL),
-    # -- assets shared with the classic UI (ekte/web/static/*.js) --
+    # -- top-level scripts (ekte/web/static/*.js) --
     (_ST + "perf.js", ("audit", "history")),
     (_ST + "secretfield.js", ("audit", "monitors")),
     (_ST + "i18n.js", ALL),
     (_ST + "icons.js", ALL),
     (_ST + "lang.js", ALL),
     (_ST + "locales.js", ALL),
-    # classic UI only: no v2 page loads these
-    (_ST + "modelpicker.js", NONE),
-    (_ST + "console.html", NONE),
-    (_ST + "index.html", NONE),
-    (_ST + "history.html", NONE),
-    (_ST + "tools.html", NONE),
-    (_ST + "watches.html", NONE),
     # -- server side --
     (
         "ekte/web/history.py",

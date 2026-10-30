@@ -199,7 +199,6 @@ def test_fail_safe_is_reached_only_by_unmatched_files():
     ["README.md", "README.de.md", "docs/METHODOLOGY.md", "docs/ACCESSIBILITY.md", "CHANGELOG.md"],
     ["tests/test_model_identity.py", "ekte/cli.py", "ekte/__main__.py", "ekte/media_audit.py"],
     ["tests/a11y/README.md", "tests/a11y/llm_review.py", "tests/test_a11y_llm_review.py"],
-    ["ekte/web/static/console.html", "ekte/web/static/index.html", "ekte/web/static/modelpicker.js"],
     [],
 ])
 def test_files_outside_web_ui_v2_select_nothing(paths):

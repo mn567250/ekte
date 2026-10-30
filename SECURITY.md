@@ -25,8 +25,8 @@ ekte is a local-first auditing tool. The security properties that matter most:
   in-scope vulnerability.
 - **Monitor keys.** By default `ekte serve` does not store a monitor's API key:
   `watches.db` holds only the marker `mem:` and the key stays in the server's
-  memory until it stops (`ekte/web/watches.py`); the classic UI never stores
-  one. Storing keys is opt-in (**API key storage** on the v2 Monitors page,
+  memory until it stops (`ekte/web/watches.py`). Storing keys is opt-in
+  (**API key storage** on the Monitors page,
   `POST /api/secret/storage`); switching back erases the encrypted keys and the
   check value from `watches.db` and scrubs SQLite's free pages and WAL. A path
   that writes a key in clear to disk, or stores one while storage is off, is an

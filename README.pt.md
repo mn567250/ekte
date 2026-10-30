@@ -219,7 +219,7 @@ pip install 'ekte[web]'     # ou: uv tool install 'ekte[web]'
 ekte serve                        # abre http://localhost:8000
 ```
 
-Na nova interface o formulário guia a configuração:
+O formulário guia a configuração:
 
 1. Escolha o **Relay / provedor**: um provedor da base de conhecimento ou um
    relay que guardou. O seu URL base é preenchido (os outros URL conhecidos do
@@ -238,16 +238,15 @@ Na nova interface o formulário guia a configuração:
 Um relay que ainda não está na lista pode ser mantido com **Salvar na base** com
 o nome que lhe der; da próxima vez basta escolhê-lo. A referência confiável
 (**Comparar com uma referência confiável**) e as auditorias de embeddings e rerank
-são configuradas da mesma forma. A interface clássica mantém os campos simples com
-**Obter modelos**.
+são configuradas da mesma forma.
 
 Depois, **Iniciar auditoria** e acompanhe
 as verificações **ao vivo**: cada verificação mostra a sua pontuação e quanto
 tempo levou, e uma verificação com constatações expande-se para mostrar as
 evidências. O resultado é um relatório de veredito que pode partilhar: nota,
 **Verificações por dimensão** com as suas escalas de pontuação, constatações em
-linguagem clara e a secção de desempenho (na nova interface, também um
-**Registro de execução** de cada detector).
+linguagem clara, a secção de desempenho e um **Registro de execução** de cada
+detector.
 
 Tudo corre na sua máquina: uma chave escrita no navegador só chega ao seu
 servidor ekte local e ao relay que audita, nunca a terceiros. Consulte
@@ -255,32 +254,29 @@ servidor ekte local e ao relay que audita, nunca a terceiros. Consulte
 
 ### Páginas
 
-A interface web tem duas versões que partilham o mesmo servidor e os mesmos
-dados. A **interface clássica** abre em `/`; a sua ligação **Experimentar a nova
-interface** passa para a **nova interface** em `/v2/`, cuja ligação **Interface
-clássica** volta atrás. A escolha é memorizada por navegador.
+A interface web está em `/v2/`, onde o `ekte serve` a abre. Os endereços da
+antiga interface clássica (`/`, `/history`, `/watches`, `/tools`, `/console`)
+redirecionam para a página correspondente.
 
-| Página | Interface clássica | Nova interface | Para que serve |
-|---|---|---|---|
-| **Auditoria** | `/` | `/v2/` | Auditar um relay (opcionalmente face a uma referência) e ler o relatório |
-| **Consola** | `/console` | — | A mesma auditoria como consola compacta, em estilo de registo |
-| **Ferramentas** | `/tools` | — | Auditorias de embeddings e rerank; na nova interface começam na página **Auditoria** com o seletor de tipo de endpoint (`/v2/tools` redireciona para lá) |
-| **Monitores** | `/watches` | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
-| **Histórico** | `/history` | `/v2/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
-| **Análises** | — | `/v2/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
-| **Conhecimento** | — | `/v2/kb` | A base de conhecimento em três separadores — modelos, provedores, relays: explorar, ativar/desativar, adicionar os seus |
+| Página | Endereço | Para que serve |
+|---|---|---|
+| **Auditoria** | `/v2/` | Auditar um relay (opcionalmente face a uma referência) e ler o relatório; as auditorias de embeddings e rerank também começam aqui, com o seletor de tipo de endpoint |
+| **Monitores** | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
+| **Histórico** | `/v2/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
+| **Análises** | `/v2/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
+| **Conhecimento** | `/v2/kb` | A base de conhecimento em três separadores — modelos, provedores, relays: explorar, ativar/desativar, adicionar os seus |
 
-A nova interface acrescenta: filtros e tendências configuráveis (pontuação, nota,
+Nas páginas há ainda: filtros e tendências configuráveis (pontuação, nota,
 latência p50, tokens/s) no **Histórico**; **Agendar como monitor** e **Executar auditoria novamente** em cada
-execução do Histórico; **Transferir relatório** em todos os formatos; um seletor
-de tema (Automático / Claro / Escuro); e a página **Conhecimento**. Cada página
+execução do Histórico; **Transferir relatório** em todos os formatos; e um seletor
+de tema (Automático / Claro / Escuro). Cada página
 exceto Acessibilidade tem um aviso logo abaixo da introdução, colorido segundo a
 importância (informação, sucesso, aviso, crítico): p. ex. a última auditoria
 concluída em **Auditoria**, a chave mestra em **Monitores**, as execuções ainda
 em processamento em **Histórico** e **Análises**, as entradas ignoradas em
 **Conhecimento**.
 
-**Auditorias em segundo plano (nova interface).** Uma auditoria iniciada na
+**Auditorias em segundo plano.** Uma auditoria iniciada na
 página **Auditoria** continua quando muda de página ou fecha o separador;
 **Continuar em segundo plano** envia-a para lá de propósito. O **Histórico**
 lista cada auditoria em fila e em curso (e cada monitor em execução) com o seu
@@ -292,7 +288,7 @@ própria máquina também esperam); auditorias de relays diferentes correm em
 paralelo, no máximo quatro de cada vez (`EKTE_MAX_PARALLEL_AUDITS`). Os
 monitores esperam pelo seu relay da mesma forma.
 
-**Análises (nova interface).** `/v2/analytics` transforma o histórico local em
+**Análises.** `/v2/analytics` transforma o histórico local em
 comparações: indicadores do período escolhido (execuções, pontuação mediana,
 proporção de risco alto, taxa de sucesso, TTFT, velocidade de saída, rácios de
 faturação) com a variação face ao período anterior de igual duração; um gráfico
@@ -586,20 +582,16 @@ JSON genérico mantém neutras as suas chaves e valores de máquina (`risk_level
 
 **Na interface web**, `ekte serve` executa os mesmos monitores num agendador em
 segundo plano dentro do processo do servidor, regista cada execução no
-**Histórico** e envia os mesmos alertas por webhook:
-
-- **Nova interface:** abra uma execução no **Histórico** e escolha **Agendar como
-  monitor**. O ekte copia a configuração dessa execução (relay, modelo, modelo
-  declarado, fornecedor, suite, dimensões personalizadas) para um monitor em
-  pausa na página **Monitores**; defina aí o intervalo e a chave API (o Histórico
-  nunca guarda chaves) e ative-o. Intervalo, chave, **Limite de alerta**,
-  webhooks e **Idioma dos alertas** editam-se diretamente em cada monitor. Um
-  clique no nome recolhe o cartão para nome, estado e última execução
-  (**Recolher tudo** / **Expandir tudo** acima da lista; guardado por
-  navegador), e o painel de filtros (pesquisa, estado, último risco, tipo de
-  endpoint, relay, suite) restringe uma lista longa como no **Histórico**.
-- **Interface clássica:** preencha o formulário da página **Monitores** e clique
-  em **Adicionar monitor**.
+**Histórico** e envia os mesmos alertas por webhook. Abra uma execução no **Histórico** e escolha **Agendar como
+monitor**. O ekte copia a configuração dessa execução (relay, modelo, modelo
+declarado, fornecedor, suite, dimensões personalizadas) para um monitor em
+pausa na página **Monitores**; defina aí o intervalo e a chave API (o Histórico
+nunca guarda chaves) e ative-o. Intervalo, chave, **Limite de alerta**,
+webhooks e **Idioma dos alertas** editam-se diretamente em cada monitor. Um
+clique no nome recolhe o cartão para nome, estado e última execução
+(**Recolher tudo** / **Expandir tudo** acima da lista; guardado por
+navegador), e o painel de filtros (pesquisa, estado, último risco, tipo de
+endpoint, relay, suite) restringe uma lista longa como no **Histórico**.
 
 Cada monitor tem o seu próprio idioma de alertas (por predefinição, o da
 interface), pode ser executado agora, pausado ou eliminado, e fica fixado ao
@@ -624,11 +616,11 @@ chaves de API dos monitores: uma chave introduzida fica apenas na memória do
 execução falhada nem alerta) até a introduzir. Os monitores sem chave e as
 referências `env:`/`file:` continuam a funcionar. Para que as chaves sobrevivam
 a reinícios, escolha **Guardar cifradas neste computador** em **Armazenamento
-das chaves de API** na página **Monitores** v2: as chaves passam a ser guardadas
+das chaves de API** na página **Monitores**: as chaves passam a ser guardadas
 em `watches.db`, cifradas com uma chave mestra. Voltar atrás move as chaves
 guardadas para a memória e apaga-as de `watches.db`. O aviso da página mostra o
-modo ativo, pede confirmação antes de mudar e indica o que foi movido. A
-interface clássica (`/watches`) nunca guarda uma chave. Uma instalação que já
+modo ativo, pede confirmação antes de mudar e indica o que foi movido. Uma
+instalação que já
 guardava chaves cifradas, ou que define `EKTE_SECRET_KEY`, continua a guardá-las
 até mudar.
 
@@ -663,7 +655,7 @@ e a análise mostra apenas as métricas aplicáveis.
 
 Para monitorizar um endpoint de embeddings ou rerank, audite-o na página
 **Auditoria** (escolha **Embeddings** ou **Reordenação** no seletor de tipo de
-endpoint; na interface clássica, na página **Ferramentas**) e escolha
+endpoint) e escolha
 **Monitorar**, ou **Agendar como monitor** na sua linha
 do histórico. O monitor repete a auditoria segundo o agendamento, com a mesma
 fixação da base de conhecimento, o mesmo limiar de alerta e os mesmos alertas de
@@ -712,10 +704,8 @@ devolve 1024-d serve um substituto), o determinismo (mesma entrada → cosseno �
 `text-embedding-3-large` (3072), `text-embedding-ada-002` (1536), Qwen
 `text-embedding-v3`/`-v4` (1024).
 
-Ambos estão também na interface web: na nova interface começam na página
-**Auditoria** com o seletor de tipo de endpoint (**Embeddings**, **Reordenação**);
-na clássica, na página **Ferramentas** (**Auditoria de embeddings**, **Auditoria
-de rerank**). A auditoria de rerank usa sempre as sondas
+Ambos estão também na interface web: começam na página **Auditoria** com o
+seletor de tipo de endpoint (**Embeddings**, **Reordenação**). A auditoria de rerank usa sempre as sondas
 integradas, para que cada execução continue comparável para a deriva e a
 monitorização.
 
@@ -799,7 +789,7 @@ Moonshot (`ekte kb` lista-os). Há três camadas; as posteriores prevalecem:
      **Adicionar um relay** pede um nome e um URL base. **Qual perfil um ID de
      modelo usa?** mostra como um id é resolvido; as suas entradas podem ser
      exportadas como YAML;
-   - na página **Auditoria** da interface web (na clássica, também **Ferramentas**): **Salvar na
+   - na página **Auditoria** da interface web: **Salvar na
      base** mantém o nome e o URL base de um relay (uma entrada de provedor sem
      modelos), listado em **Conhecimento → Relays**;
    - na linha de comandos: `ekte kb-prompt <model>`, `ekte kb-import <file>`
@@ -924,9 +914,10 @@ a 0.11.0) com um novo nome. O que muda numa instalação existente:
   para o zing se ainda estiver em uso; apague-o quando já não precisar dele. Um
   diretório definido com `EKTE_DATA_DIR`, `ZING_DATA_DIR` ou `--data-dir` é
   usado tal como está.
-- **Interface web.** O idioma, o tema e os filtros, a escolha entre a interface
-  clássica e a v2 e uma chave mestra guardada no gestor de palavras-passe do
-  navegador mantêm-se.
+- **Interface web.** O idioma, o tema e os filtros e uma chave mestra guardada no
+  gestor de palavras-passe do navegador mantêm-se. A interface clássica do zing
+  deixou de existir: os seus endereços (`/`, `/history`, `/watches`, `/tools`,
+  `/console`) abrem a página correspondente em `/v2/`.
 - **Relatórios e sondas.** Os relatórios, os webhooks e os nomes de ficheiros
   indicam `ekte` (p. ex. `"tool": "ekte"`, `ekte-report.json`), tal como as
   sondas enviadas aos relays. Os scripts que procuram `zing` neles têm de ser

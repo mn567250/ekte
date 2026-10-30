@@ -500,8 +500,8 @@ def _store_key(value: str | None, storage: str | None = None) -> tuple[str, str 
 
     Keyless watches and references are stored as they are. A real secret is
     held in memory (``memory`` mode) or encrypted (``encrypted`` mode; raises
-    SecretLocked without a master key). ``storage`` overrides the mode: the
-    classic UI never stores a key.
+    SecretLocked without a master key). ``storage`` overrides the mode
+    (``memory``: a request that asks for its key not to be stored).
     """
     value = str(value or "")
     if not value or secretbox.is_reference(value):

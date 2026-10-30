@@ -205,9 +205,9 @@ def test_storage_route_validates_and_keeps_the_csrf_checks(client):
 
 
 # --------------------------------------------------------------------------- #
-# The classic UI never stores a key
+# A request can keep its key out of the database
 # --------------------------------------------------------------------------- #
-def test_classic_ui_keys_stay_in_memory_even_when_storing_is_on(client):
+def test_key_storage_memory_keeps_a_key_in_memory_even_when_storing_is_on(client):
     _store_mode("encrypted")
     _setup(client)
     body = {"base_url": "https://relay.test/v1", "model": "m", "api_key": SECRET,

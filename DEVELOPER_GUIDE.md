@@ -119,8 +119,8 @@ ekte/
     analytics.py       analytics queries: KPIs, time series, leaderboards
     watches.py         monitor store (watches.db)
     masterkey.py       the master key's states and actions (server and `ekte secret`)
-    static/            classic UI pages and the shared scripts (lang.js, i18n.js, …)
-    static/v2/         the new UI's pages, styles and scripts
+    static/            scripts shared by every page (lang.js, i18n.js, icons.js, …)
+    static/v2/         the web UI's pages, styles and scripts
 tests/                 pytest suite; conftest.py holds the mock relay
 docs/                  METHODOLOGY (7 languages), CI.md, DOCKER.md, PUBLISHING.md
 examples/ekte.yaml     annotated config file
@@ -318,18 +318,19 @@ All decoding (image headers, WAV) is standard library only.
 
 `ekte/web/server.py` is a FastAPI app created by `create_app()`:
 
-- **Pages.** The classic UI (`/`, `/console`, `/history`, `/watches`, `/tools`)
-  and the new UI (`/v2/`, `/v2/history`, `/v2/watches`, `/v2/kb`)
-  are static HTML files. The new UI has no Tools page: embedding and rerank
-  audits start on the audit page through the endpoint-type selector
-  (`/v2/?surface=embedding|rerank`), and `/v2/tools` serves a small page that
-  forwards old links there (`#rerank` picks rerank, `?rerun=` is passed on). `?ui=v2` / `?ui=v1` switches and a cookie remembers the
-  choice, so a classic URL redirects to its new counterpart once the new UI was
-  chosen.
-- **API.** `/api/audit/stream` runs an audit and streams its events over SSE;
-  `/api/models` lists a relay's models; `/api/report/export` renders a report;
-  `/api/history…`, `/api/watches…`, `/api/kb…`, `/api/embed` and `/api/rerank`
-  back the other pages.
+- **Pages.** The web UI (`/v2/`, `/v2/history`, `/v2/watches`, `/v2/analytics`,
+  `/v2/kb`, `/v2/accessibility`) is static HTML. There is no Tools page:
+  embedding and rerank audits start on the audit page through the endpoint-type
+  selector (`/v2/?surface=embedding|rerank`), and `/v2/tools` serves a small page
+  that forwards old links there (`#rerank` picks rerank, `?rerun=` is passed on).
+  The addresses of the removed classic UI (`/`, `/history`, `/watches`, `/tools`,
+  `/console`) redirect (308) to their v2 pages, keeping the query string.
+- **API.** `/api/jobs…` runs audits (below); `/api/models` lists a relay's
+  models; `/api/report/export` renders a report; `/api/history…`,
+  `/api/watches…`, `/api/kb…` and `/api/analytics…` back the other pages.
+  `/api/audit/stream` (one audit streamed over SSE), `/api/embed` and
+  `/api/rerank` (one synchronous embedding / rerank audit) are no longer used by
+  the web UI; their future is tracked in issues #3 and #4.
 - **Relays.** `POST /api/kb/relays` saves a relay `{name, base_url}` (400 for bad
   input, 409 when the name or URL is already known).
 - **Analytics.** `GET /api/analytics/options` (relays, models, suites, stream
@@ -365,8 +366,8 @@ All decoding (image headers, WAV) is standard library only.
   server. `POST /api/jobs` queues one, `GET /api/jobs` lists queued, running and
   recently finished jobs (plus running monitors) with progress,
   `GET /api/jobs/{id}/events` replays the job's event log and then follows it
-  live over SSE, and `POST /api/jobs/{id}/cancel` stops it. The new UI uses
-  these, so an audit outlives the page; `/api/audit/stream` (classic UI) wraps
+  live over SSE, and `POST /api/jobs/{id}/cancel` stops it. The web UI uses
+  these, so an audit outlives the page; `/api/audit/stream` wraps
   the same job and cancels it when the stream closes. A relay gate lets one
   audit (or monitor run) at a time use a relay, keyed by host name with every
   loopback address as one host, and at most `EKTE_MAX_PARALLEL_AUDITS`
@@ -400,13 +401,12 @@ All decoding (image headers, WAV) is standard library only.
 ### Web front end
 
 The front end is plain HTML, CSS and browser JavaScript without modules or a
-build step. The classic pages live in `ekte/web/static/`; the new UI in
-`ekte/web/static/v2/` shares one header (`nav.js`), the report renderer
+build step. The pages live in `ekte/web/static/v2/` and share one header (`nav.js`), the report renderer
 (`report.js`), the theme switch (`theme.js`) and the styles (`tokens.css`, `ekte.css`,
 `fields.css`, `report.css`, `perf.css`). Shared scripts are served from the root:
 `lang.js` (language switch), `locales.js` (translation data), `i18n.js` (finding
-translations), `icons.js`, `modelpicker.js` (**Fetch models**), `secretfield.js`
-and `perf.js` (performance charts).
+translations), `icons.js` (including the ekte logo), `secretfield.js` and
+`perf.js` (performance charts).
 Every colour of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
 scripts use `var(--…)` only, never a literal colour.
@@ -432,8 +432,7 @@ The v2 **Audit** page configures relays with `v2/relaycfg.js`:
 relay/provider select → base URL → the relay's models (`/api/models`, on change,
 cached per URL/key/protocol) → claimed model from the knowledge base
 (`/api/kb/resolve` preselects it) → derived declared provider, plus **Save to
-knowledge base** (`POST /api/kb/relays`). Its pure helpers are tested under node;
-the classic pages keep `modelpicker.js`.
+knowledge base** (`POST /api/kb/relays`). Its pure helpers are tested under node.
 
 The v2 **Analytics** page (`v2/analytics.html`) reads only `/api/analytics/*`
 (`options` also lists the relay × model pairs, `relay_models`, for its series
@@ -527,7 +526,7 @@ has encrypted keys or a check value, or a set `EKTE_SECRET_KEY` / legacy
 in one transaction (`keys_to_memory()` erases the encrypted ones and the check
 value and scrubs the file; `keys_to_store()` seals the held ones). A request
 can pass `key_storage: "memory"` to keep its key out of the database whatever
-the setting (the classic UI always does); nothing can force storage.
+the setting; nothing can force storage.
 
 Stored API keys are encrypted by `ekte/secretbox.py` (Fernet, stored as
 `enc:v1:…`; `env:`/`file:` references stay as they are). The master key itself
@@ -632,7 +631,7 @@ cookie `lang.js` sets; every language without either), built and gzipped once
 per variant and revalidated by `ETag`; switching loads the new language on
 demand.
 
-- **New UI text:** write the Chinese in the HTML and the English in `data-en`
+- **UI text:** write the Chinese in the HTML and the English in `data-en`
   (or use `T(zh, en)`), then add the English key to `en.json` or a fragment and
   its translation to every other language.
 - **New language:** add `ekte/i18n/locales/<code>.json` (copy `de.json`) and a
@@ -679,7 +678,7 @@ pytest -n auto               # in parallel, one worker per CPU (pytest-xdist)
   `test_responses.py`); the web server is tested through FastAPI's test client
   (`test_web*.py`), including the local-only protections
   (`test_web_security.py`).
-- The browser scripts (`lang.js`, `modelpicker.js`, `v2/relaycfg.js`, `perf.js`, `secretfield.js`,
+- The browser scripts (`lang.js`, `v2/relaycfg.js`, `perf.js`, `secretfield.js`,
   `v2/report.js`, the locales) are evaluated under `node` in
   `test_web_*_js.py` and `test_web_locales.py`; they are skipped without Node.js.
 - No test may reach the network.

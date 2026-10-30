@@ -109,8 +109,8 @@ ekte/
     analytics.py       分析查询：关键指标、时间序列、排行榜
     watches.py         监控存储（watches.db）
     masterkey.py       主密钥的状态与操作（服务器与 `ekte secret`）
-    static/            经典界面页面与共用脚本（lang.js、i18n.js 等）
-    static/v2/         新界面的页面、样式和脚本
+    static/            所有页面共用的脚本（lang.js、i18n.js、icons.js 等）
+    static/v2/         Web 界面的页面、样式和脚本
 tests/                 pytest 测试套件；conftest.py 中是模拟中转站
 docs/                  METHODOLOGY（7 种语言）、CI.md、DOCKER.md、PUBLISHING.md
 examples/ekte.yaml     带注释的配置文件
@@ -259,23 +259,25 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 
 `ekte/web/server.py` 是由 `create_app()` 创建的 FastAPI 应用：
 
-- **页面。** 经典界面（`/`、`/console`、`/history`、`/watches`、`/tools`）和新界面
-  （`/v2/`、`/v2/history`、`/v2/watches`、`/v2/kb`）都是静态 HTML 文件。新界面没有工具页面：嵌入和
+- **页面。** Web 界面（`/v2/`、`/v2/history`、`/v2/watches`、`/v2/analytics`、`/v2/kb`、
+  `/v2/accessibility`）是静态 HTML。没有工具页面：嵌入和
   重排检测从检测页面的接口类型选择器开始（`/v2/?surface=embedding|rerank`），`/v2/tools` 提供一个小页面，
   把旧链接转到那里（`#rerank` 选择重排，`?rerun=` 会一并传递）。
-  `?ui=v2` / `?ui=v1` 用于切换，并由 cookie 记住选择；选了新界面之后，经典界面的 URL
-  会重定向到对应的新页面。
-- **API。** `/api/audit/stream` 运行检测并通过 SSE 推送事件；`/api/models` 列出中转站的模型；
-  `/api/report/export` 渲染报告；`/api/history…`、`/api/watches…`、`/api/kb…`、`/api/embed`
-  和 `/api/rerank` 为其他页面提供服务。
+  已移除的经典界面的地址（`/`、`/history`、`/watches`、`/tools`、`/console`）会连同查询字符串
+  重定向（308）到对应的 v2 页面。
+- **API。** `/api/jobs…` 运行检测（见下文）；`/api/models` 列出中转站的模型；
+  `/api/report/export` 渲染报告；`/api/history…`、`/api/watches…`、`/api/kb…` 和
+  `/api/analytics…` 为其他页面提供服务。`/api/audit/stream`（通过 SSE 推送的一次检测）、
+  `/api/embed` 和 `/api/rerank`（一次同步的嵌入 / 重排检测）已不再被 Web 界面使用；
+  它们的去留在 issue #3 和 #4 中跟进。
 - **中转站。** `POST /api/kb/relays` 保存中转站 `{name, base_url}`（输入无效时返回 400，名称或地址已存在时返回 409）。
 - **分析。** `GET /api/analytics/options`（历史中出现的中转站、模型、套件、流式模式、API 及日期范围）、`/api/analytics/summary`（`from`–`to` 区间的关键指标，并与之前等长区间对比）、`/api/analytics/series`（按 `group=relay|model|relay_model` 给出 `metric`，最多 4 个 `keys`，按查看者时区 `tz` 或 `tz_offset` 划分为 `bucket=hour|day|week|dow_hour` 区间；`dow_hour` 还接受 `block`（每行小时数）和 `fold=week|4weeks|month_week`，在检测覆盖 90 天或 180 天之前回退为 `week`）以及 `/api/analytics/leaderboard`（`model=` 列出其各中转站，或 `relay=` 列出其各模型）。所有端点都接受筛选参数 `from`、`to`、`suite`、`stream_mode`、`api`、`source=all|manual|monitor`、`relay` 和 `model`。`ekte/web/analytics.py` 基于 `history.analytics_runs()` 在 Python 中完成全部计算：指标 id 来自固定白名单；中转站在查询时按知识库条目分组；某次运行未测得的值不参与计算（每个值都带有 `n` 和 `coverage`）；运行次数少于 `MIN_RUNS`（3）的区间标记为 `low_n`。参数无效时返回 400；响应带 `Cache-Control: no-store`。
 - **分析面板。** `/api/analytics/breakdown`（在所选区间内按 `group=relay|model|relay_model|all` 给出最多 8 个 `metrics`）、`/api/analytics/errors`（目标端补全调用按结果类别 `success|client_4xx|rate_limited|server_5xx|timeout|network|other` 统计，按 `group=relay|model` 和 `bucket` 划分，由 `history.analytics_request_classes()` 在 SQL 中计数，不加载请求行；调用时间为所属检测的开始时间加上偏移，精确到分钟；`covered` 为有请求记录的检测次数）以及 `/api/analytics/integrity`（每个「中转站 × 模型」的身份、能力、图像理解、流式、协议、完整性、注入提示词与连通性检测器的通过 / 警告 / 失败次数，模型不符占比，以及实测 / 声明上下文窗口的中位数比例）。`/api/analytics/series` 也接受 `group=all`。筛选与错误处理同上。
 - **后台检测。** `jobs.py` 把每次检测作为服务器拥有的任务运行。`POST /api/jobs` 排入一个任务，
   `GET /api/jobs` 列出排队中、运行中和刚结束的任务（以及运行中的监控）及其进度，
   `GET /api/jobs/{id}/events` 先回放任务的事件日志，再通过 SSE 实时跟随，
-  `POST /api/jobs/{id}/cancel` 停止任务。新界面使用这些接口，因此检测不随页面结束；
-  `/api/audit/stream`（经典界面）包装同一种任务，并在数据流关闭时取消它。
+  `POST /api/jobs/{id}/cancel` 停止任务。Web 界面使用这些接口，因此检测不随页面结束；
+  `/api/audit/stream` 包装同一种任务，并在数据流关闭时取消它。
   中转站互斥让同一中转站同一时间只运行一项检测（或一次监控运行），按主机名区分，所有回环地址视为同一主机；
   同时最多运行 `EKTE_MAX_PARALLEL_AUDITS`（默认 4）项，等待者按到达顺序执行。
 - **监控调度器。** 应用的 lifespan 启动一个后台循环，把每个到期的监控作为独立任务启动，
@@ -298,19 +300,17 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 
 ### Web 前端
 
-前端是纯 HTML、CSS 和浏览器 JavaScript，不使用模块，也没有构建步骤。经典页面位于
-`ekte/web/static/`；新界面位于 `ekte/web/static/v2/`，共用一个页头（`nav.js`）、报告渲染器
+前端是纯 HTML、CSS 和浏览器 JavaScript，不使用模块，也没有构建步骤。页面位于
+`ekte/web/static/v2/`，共用一个页头（`nav.js`）、报告渲染器
 （`report.js`）、主题切换（`theme.js`）和样式（`tokens.css`、`ekte.css`、`fields.css`、`report.css`、
 `perf.css`）。共用脚本从根路径提供：`lang.js`（语言切换）、`locales.js`（翻译数据）、
-`i18n.js`（发现的翻译）、`icons.js`、`modelpicker.js`（**获取模型列表**）、`secretfield.js`
-和 `perf.js`（性能图表）。
+`i18n.js`（发现的翻译）、`icons.js`（包括 ekte 标志）、`secretfield.js` 和 `perf.js`（性能图表）。
 
 除无障碍页面外，每个 v2 页面在 hero 正下方都有一条**页面提示**（`<div class="znote" id="note">`，由 `v2/notice.js` 绘制，样式为 `ekte.css` 中的 `.znote`）：`EkteNotice.show(el, {level, title, detail, items, actions})`；级别 `info`、`success`、`warning` 或 `critical` 决定底色、边框和图标（critical 为 `role="alert"`，其余为 `role="status"`；再次显示相同提示不会有任何变化）。页面选出最重要的消息，其余列在 `items` 里。检测：服务无法连接 / 有检测在运行 / 最新保存的运行 / 本地运行；检测历史：无法读取历史 / 监控运行已暂停（主密钥已锁定）或较早的运行仍在处理 / 运行次数；分析：无法读取数据 / 运行尚未计入图表或开始时间为估算 / 数据依据；知识库：加载失败 / 条目被跳过或被忽略 / 已停用的条目 / 完整。监控页面保留它的主密钥栏（`masterkey.js`），外观和位置相同。整个历史的数字来自 `GET /api/history/status`（`history.status()`：运行次数、最早和最新的运行、分析回填尚未处理的行、开始时间为估算的运行）。
 
 v2 的**检测**页面用 `v2/relaycfg.js` 配置中转站：选择中转站/厂商 → 基础地址 → 中转站的模型
 （`/api/models`，在改变时获取，按地址/密钥/协议缓存）→ 从知识库选择声称的模型（`/api/kb/resolve`
-预选）→ 推导出声明的厂商，另有**保存到知识库**（`POST /api/kb/relays`）。其纯函数在 node 下测试；
-经典页面继续使用 `modelpicker.js`。
+预选）→ 推导出声明的厂商，另有**保存到知识库**（`POST /api/kb/relays`）。其纯函数在 node 下测试。
 
 v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`options` 还列出「中转站 × 模型」组合 `relay_models`，供数据系列选择使用）。页面在同一个筛选栏下每个面板一个 `<section class="card panel">`，便于加入新面板；筛选与视图保存在网址片段（`#range=30&metric=score&…`）和 `localStorage` 中。图表来自 `v2/charts.js`（`EkteCharts.timeChart`：手绘内联 SVG，含中位数折线、p25–p75 色带、空时间段留空、`low_n` 时间段的淡化标记、标注线和悬停提示；`fmt` / `fmtDelta` 按单位格式化数值）和 `v2/charts.css`（每个主题四种经过校验的系列颜色，并以标记形状区分）。每张图表也都以数据表呈现。
 
@@ -352,7 +352,7 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 尚无该行时，已有加密密钥或校验值的存储、或设置了 `EKTE_SECRET_KEY` / 旧版 `secret.key` 的安装从 `encrypted` 开始；
 该选择在启动时记录。`Vault.set_storage()`（`POST /api/secret/storage`）在一个事务中切换并迁移密钥
 （`keys_to_memory()` 清除加密密钥和校验值并清理文件；`keys_to_store()` 加密内存中的密钥）。
-请求可以传入 `key_storage: "memory"`，使其密钥无论设置如何都不进入数据库（经典界面总是这样做）；
+请求可以传入 `key_storage: "memory"`，使其密钥无论设置如何都不进入数据库；
 任何请求都无法强制保存。
 
 保存的 API 密钥由 `ekte/secretbox.py` 加密（Fernet，存为 `enc:v1:…`；`env:`/`file:` 引用保持原样）。
@@ -465,14 +465,14 @@ pytest -n auto               # 并行运行，每个 CPU 一个 worker（pytest-
 - Anthropic 与 Responses 客户端有各自的测试（`test_anthropic.py`、`test_responses.py`）；
   Web 服务通过 FastAPI 的测试客户端测试（`test_web*.py`），包括仅限本地的防护
   （`test_web_security.py`）。
-- 浏览器脚本（`lang.js`、`modelpicker.js`、`v2/relaycfg.js`、`perf.js`、`secretfield.js`、`v2/report.js`、
+- 浏览器脚本（`lang.js`、`v2/relaycfg.js`、`perf.js`、`secretfield.js`、`v2/report.js`、
   翻译数据）在 `test_web_*_js.py` 和 `test_web_locales.py` 中由 `node` 执行；没有 Node.js 时跳过。
 - 任何测试都不得访问网络。
 - `test_cli_startup.py` 保证 CLI 启动迅速：导入 `ekte.cli` 时不得加载 HTTP 客户端、runner、
   知识库加载器、报告渲染器（ReportLab）或 Web 服务器。请在需要它们的命令内部导入。
 - `test_filler_perf.py` 逐字节固定填充文本，并在上下文窗口探测卡住事件循环时失败。
 - `tests/a11y/` 在真实浏览器中（Playwright + axe-core），以每种界面语言和两种主题，按
-  BITV 2.0 / EN 301 549 / WCAG 2.1 AA 检查新界面（v2）：
+  BITV 2.0 / EN 301 549 / WCAG 2.1 AA 检查 Web 界面（v2）：
   `pip install -e '.[web,a11y]' && playwright install chromium`，然后运行 `pytest -m a11y`。
   没有 Playwright 时跳过该目录。哪些已自动化、哪些仍需人工 BITV 审查，见
   [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)（英文）。

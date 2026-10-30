@@ -219,7 +219,7 @@ pip install 'ekte[web]'     # oppure: uv tool install 'ekte[web]'
 ekte serve                        # apre http://localhost:8000
 ```
 
-Nella nuova interfaccia il modulo guida la configurazione:
+Il modulo guida la configurazione:
 
 1. Scegli il **Relay / provider**: un provider della base di conoscenza o un
    relay che hai salvato. Il suo URL di base viene compilato (gli altri URL noti
@@ -239,16 +239,15 @@ Nella nuova interfaccia il modulo guida la configurazione:
 Un relay non ancora in elenco si può conservare con **Salva nella base** con un
 nome a tua scelta; la volta successiva basta sceglierlo. Il riferimento
 affidabile (**Confronta con un riferimento affidabile**) e le verifiche di
-embedding e rerank si configurano allo stesso modo. L'interfaccia classica mantiene i
-campi semplici con **Recupera modelli**.
+embedding e rerank si configurano allo stesso modo.
 
 Poi **Avvia
 verifica** e segui i controlli **in tempo reale**: ogni controllo mostra il suo
 punteggio e quanto è durato, e un controllo con rilevazioni si espande per
 mostrare le prove. Il risultato è un rapporto con il verdetto da condividere:
 voto, **Controlli per dimensione** con le loro scale dei punteggi, rilevazioni in
-linguaggio chiaro e la sezione prestazioni (nella nuova interfaccia anche un
-**Registro di esecuzione** di ogni rilevatore).
+linguaggio chiaro, la sezione prestazioni e un **Registro di esecuzione** di ogni
+rilevatore.
 
 Tutto gira sulla tua macchina: una chiave digitata nel browser raggiunge solo il
 tuo server ekte locale e il relay che verifichi, mai terze parti. Vedi
@@ -256,32 +255,29 @@ tuo server ekte locale e il relay che verifichi, mai terze parti. Vedi
 
 ### Pagine
 
-L'interfaccia web esiste in due versioni che condividono lo stesso server e gli
-stessi dati. L'**interfaccia classica** si apre su `/`; il suo link **Prova la
-nuova interfaccia** passa alla **nuova interfaccia** sotto `/v2/`, il cui link
-**Interfaccia classica** riporta indietro. La scelta è ricordata per browser.
+L'interfaccia web si trova sotto `/v2/`, dove `ekte serve` la apre. Gli indirizzi
+della vecchia interfaccia classica (`/`, `/history`, `/watches`, `/tools`,
+`/console`) rimandano alla pagina corrispondente.
 
-| Pagina | Interfaccia classica | Nuova interfaccia | A cosa serve |
-|---|---|---|---|
-| **Verifica** | `/` | `/v2/` | Verificare un relay (eventualmente rispetto a un riferimento) e leggere il rapporto |
-| **Console** | `/console` | — | La stessa verifica come console compatta, in stile registro |
-| **Strumenti** | `/tools` | — | Verifiche di embedding e rerank; nella nuova interfaccia partono dalla pagina **Verifica** con il selettore del tipo di endpoint (`/v2/tools` rimanda lì) |
-| **Monitor** | `/watches` | `/v2/watches` | Verifiche ripetute pianificate con avvisi via webhook |
-| **Cronologia** | `/history` | `/v2/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
-| **Analisi** | — | `/v2/analytics` | Relay e modelli confrontati nel tempo: indicatori, grafici con tabelle di dati, classifiche |
-| **Conoscenza** | — | `/v2/kb` | La base di conoscenza in tre schede — modelli, provider, relay: sfogliare, attivare/disattivare, aggiungere i propri |
+| Pagina | Indirizzo | A cosa serve |
+|---|---|---|
+| **Verifica** | `/v2/` | Verificare un relay (eventualmente rispetto a un riferimento) e leggere il rapporto; anche le verifiche di embedding e rerank partono da qui, con il selettore del tipo di endpoint |
+| **Monitor** | `/v2/watches` | Verifiche ripetute pianificate con avvisi via webhook |
+| **Cronologia** | `/v2/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
+| **Analisi** | `/v2/analytics` | Relay e modelli confrontati nel tempo: indicatori, grafici con tabelle di dati, classifiche |
+| **Conoscenza** | `/v2/kb` | La base di conoscenza in tre schede — modelli, provider, relay: sfogliare, attivare/disattivare, aggiungere i propri |
 
-La nuova interfaccia aggiunge: filtri e tendenze configurabili (punteggio, voto,
+Inoltre, nelle pagine: filtri e tendenze configurabili (punteggio, voto,
 latenza p50, token/s) nella **Cronologia**; **Pianifica come monitor** e **Riesegui audit** su ogni
-esecuzione della Cronologia; **Scarica il rapporto** in tutti i formati; un
-selettore del tema (Automatico / Chiaro / Scuro); e la pagina **Conoscenza**.
+esecuzione della Cronologia; **Scarica il rapporto** in tutti i formati; e un
+selettore del tema (Automatico / Chiaro / Scuro).
 Ogni pagina tranne Accessibilità ha un avviso subito sotto l'introduzione,
 colorato secondo l'importanza (informazione, successo, avviso, critico): ad es.
 l'ultimo audit concluso in **Verifica**, la chiave master in **Monitor**, le
 esecuzioni ancora in elaborazione in **Cronologia** e **Analisi**, le voci
 saltate in **Conoscenza**.
 
-**Audit in background (nuova interfaccia).** Un audit avviato dalla pagina
+**Audit in background.** Un audit avviato dalla pagina
 **Audit** continua quando cambi pagina o chiudi la scheda; **Continua in
 background** ce lo manda di proposito. La **Cronologia** elenca ogni audit in
 coda e in corso (e ogni monitor in esecuzione) con il suo avanzamento; **Guarda
@@ -293,7 +289,7 @@ attendono); gli audit di relay diversi vengono eseguiti in parallelo, al massimo
 quattro alla volta (`EKTE_MAX_PARALLEL_AUDITS`). I monitor attendono il loro
 relay allo stesso modo.
 
-**Analisi (nuova interfaccia).** `/v2/analytics` trasforma la cronologia
+**Analisi.** `/v2/analytics` trasforma la cronologia
 locale in confronti: indicatori per il periodo scelto (esecuzioni, punteggio
 mediano, quota ad alto rischio, tasso di successo, TTFT, velocità di output,
 rapporti di fatturazione) con la variazione rispetto al periodo precedente di
@@ -585,21 +581,17 @@ indica la `language`.
 
 **Nell'interfaccia web**, `ekte serve` esegue gli stessi monitor in uno
 scheduler in background all'interno del processo del server, registra ogni
-esecuzione nella **Cronologia** e invia gli stessi avvisi via webhook:
-
-- **Nuova interfaccia:** apri un'esecuzione nella **Cronologia** e scegli
-  **Pianifica come monitor**. ekte copia la configurazione di quell'esecuzione
-  (relay, modello, modello dichiarato, fornitore, suite, dimensioni
-  personalizzate) in un monitor in pausa nella pagina **Monitor**; lì imposta
-  l'intervallo e la chiave API (la Cronologia non salva mai le chiavi) e
-  attivalo. Intervallo, chiave, **Soglia di avviso**, webhook e **Lingua degli
-  avvisi** si modificano direttamente su ogni monitor. Un clic sul nome
-  comprime la scheda a nome, stato e ultima esecuzione (**Comprimi tutto** /
-  **Espandi tutto** sopra l'elenco; ricordato per browser), e il pannello dei
-  filtri (ricerca, stato, ultimo rischio, tipo di endpoint, relay, suite)
-  restringe un elenco lungo come nella **Cronologia**.
-- **Interfaccia classica:** compila il modulo della pagina **Monitor** e scegli
-  **Aggiungi monitor**.
+esecuzione nella **Cronologia** e invia gli stessi avvisi via webhook. Apri un'esecuzione nella **Cronologia** e scegli
+**Pianifica come monitor**. ekte copia la configurazione di quell'esecuzione
+(relay, modello, modello dichiarato, fornitore, suite, dimensioni
+personalizzate) in un monitor in pausa nella pagina **Monitor**; lì imposta
+l'intervallo e la chiave API (la Cronologia non salva mai le chiavi) e
+attivalo. Intervallo, chiave, **Soglia di avviso**, webhook e **Lingua degli
+avvisi** si modificano direttamente su ogni monitor. Un clic sul nome
+comprime la scheda a nome, stato e ultima esecuzione (**Comprimi tutto** /
+**Espandi tutto** sopra l'elenco; ricordato per browser), e il pannello dei
+filtri (ricerca, stato, ultimo rischio, tipo di endpoint, relay, suite)
+restringe un elenco lungo come nella **Cronologia**.
 
 Ogni monitor ha la propria lingua degli avvisi (per impostazione predefinita
 quella dell'interfaccia), si può eseguire subito, mettere in pausa o eliminare,
@@ -625,12 +617,11 @@ di `ekte serve` e non viene mai scritta su disco. Dopo un riavvio la pagina
 (nessuna esecuzione fallita, nessun avviso) finché non la reinserisci. I monitor
 senza chiave e i riferimenti `env:`/`file:` continuano a funzionare. Perché le
 chiavi sopravvivano ai riavvii, scegli **Salva cifrate su questo computer** in
-**Archiviazione delle chiavi API** nella pagina **Monitor** v2: le chiavi vengono
+**Archiviazione delle chiavi API** nella pagina **Monitor**: le chiavi vengono
 allora conservate in `watches.db`, cifrate con una chiave principale. Tornare
 indietro sposta le chiavi salvate in memoria e le cancella da `watches.db`. L'avviso
 della pagina mostra la modalità attiva, chiede conferma prima di cambiare e
-riporta cosa è stato spostato. L'interfaccia classica (`/watches`) non salva mai
-una chiave. Un'installazione che salvava già chiavi cifrate, o che imposta
+riporta cosa è stato spostato. Un'installazione che salvava già chiavi cifrate, o che imposta
 `EKTE_SECRET_KEY`, continua a salvarle finché non cambi.
 
 **Chiave principale.** Le chiavi API dei monitor sono cifrate con una chiave
@@ -663,7 +654,7 @@ endpoint, e l'analisi mostra solo le metriche pertinenti.
 
 Per monitorare un endpoint di embedding o rerank, verificalo nella pagina
 **Verifica** (scegli **Embedding** o **Riordinamento** nel selettore del tipo di
-endpoint; nell'interfaccia classica, nella pagina **Strumenti**) e scegli
+endpoint) e scegli
 **Monitora**, oppure **Pianifica come monitor** sulla sua
 riga della cronologia. Il monitor ripete la verifica secondo la pianificazione, con
 lo stesso fissaggio della base di conoscenza, la stessa soglia di avviso e gli
@@ -713,10 +704,8 @@ coseno nettamente sotto 1) e il campo `model` restituito. Profili integrati:
 OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
 `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
 
-Entrambi sono anche nell'interfaccia web: nella nuova interfaccia partono dalla
-pagina **Verifica** con il selettore del tipo di endpoint (**Embedding**,
-**Riordinamento**), in quella classica dalla pagina **Strumenti** (**Verifica
-embedding**, **Verifica rerank**). La verifica rerank usa sempre le sonde
+Entrambi sono anche nell'interfaccia web: partono dalla pagina **Verifica** con il
+selettore del tipo di endpoint (**Embedding**, **Riordinamento**). La verifica rerank usa sempre le sonde
 integrate, così ogni esecuzione resta confrontabile per la deriva e il
 monitoraggio.
 
@@ -801,7 +790,7 @@ coprono OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM e Moonshot
      un relay** chiede un nome e un URL di base. **Quale profilo usa un ID di
      modello?** mostra come si risolve un id; le tue voci si possono esportare in
      YAML;
-   - nella pagina **Verifica** dell'interfaccia web (classica: anche **Strumenti**): **Salva
+   - nella pagina **Verifica** dell'interfaccia web: **Salva
      nella base** conserva nome e URL di base di un relay (una voce di provider
      senza modelli), elencato in **Conoscenza → Relay**;
    - da riga di comando: `ekte kb-prompt <model>`, `ekte kb-import <file>`
@@ -926,9 +915,10 @@ con un nome nuovo. Cosa cambia per un'installazione esistente:
   quel momento lavora solo con `~/.ekte`. `~/.zing` resta com'è, per zing se è
   ancora in uso; eliminalo tu quando non ti serve più. Una directory impostata
   con `EKTE_DATA_DIR`, `ZING_DATA_DIR` o `--data-dir` viene usata così com'è.
-- **Interfaccia web.** Lingua, tema e filtri, la scelta tra interfaccia classica
-  e v2 e una chiave master salvata nel gestore di password del browser vengono
-  mantenuti.
+- **Interfaccia web.** Lingua, tema e filtri e una chiave master salvata nel
+  gestore di password del browser vengono mantenuti. L'interfaccia classica di
+  zing non esiste più: i suoi indirizzi (`/`, `/history`, `/watches`, `/tools`,
+  `/console`) aprono la pagina corrispondente sotto `/v2/`.
 - **Report e sonde.** Report, webhook e nomi dei file riportano `ekte` (ad es.
   `"tool": "ekte"`, `ekte-report.json`), così come le sonde inviate ai relay. Gli
   script che vi cercano `zing` vanno aggiornati.

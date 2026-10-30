@@ -34,13 +34,13 @@
  * with its own legend entry, so identity is never carried by color alone.
  *
  * Theming: every colour in the injected CSS is a --zp-* custom property whose
- * default (declared with zero specificity, see CSS below) is the classic look.
+ * default (declared with zero specificity, see CSS below) is a neutral built-in look.
  * A page restyles the panel by setting those properties on .zp-section,
  * .zp-live and .zp-tip (the tooltip lives on <body>), e.g. /v2/static/perf.css.
  *
  * Accessibility: the metric tabs are an ARIA tablist (arrow keys, Home, End);
  * each chart has a summary as its accessible name, and a data table with what
- * the hover tooltips show (visually hidden in the classic UI until focused).
+ * the hover tooltips show (visually hidden with the built-in styles until focused).
  */
 (function () {
   "use strict";
@@ -1116,7 +1116,7 @@
   };
 
   // ---- styles (injected once) ------------------------------------------- //
-  // Every colour is a --zp-* property. The defaults (the classic palette) sit
+  // Every colour is a --zp-* property. The defaults (a neutral palette) sit
   // in :where(), i.e. zero specificity, so any page rule setting them wins.
   var CSS =
     ":where(.zp-section,.zp-live,.zp-tip){--zp-t:#2a78d6;--zp-b:#eb6834;--zp-x:#d03b3b;--zp-surface:#fffefb;" +
