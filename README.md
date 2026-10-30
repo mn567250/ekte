@@ -47,6 +47,7 @@ and is scored is in the [Methodology](docs/METHODOLOGY.md).
 - [Privacy and local data](#privacy-and-local-data)
 - [Responsible use](#responsible-use)
 - [Further documentation](#further-documentation)
+- [Coming from zing](#coming-from-zing)
 - [License](#license)
 
 ## Why
@@ -717,7 +718,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@main         # pin to a release tag
+        uses: mn567250/ekte@vX.Y.Z       # pin to a release tag
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # caller secret; never echoed
@@ -852,6 +853,29 @@ on a single run without reviewing sample size, cost settings and local law. Run
 | [docs/DOCKER.md](docs/DOCKER.md) | Running the web UI in a container |
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each release |
 | [SECURITY.md](SECURITY.md) | Reporting a vulnerability |
+
+## Coming from zing
+
+ekte continues [zing](https://github.com/cenbonew/zing) (its last release was
+0.11.0) under a new name. What changes for an existing install:
+
+- **Package and command.** `pip install ekte` (was `zing-audit`), the command
+  `ekte` (was `zing`), the Python package `ekte`. Extras keep their names, e.g.
+  `pip install 'ekte[web]'`. The two packages don't share a command or a module,
+  so `zing-audit` can stay installed next to ekte.
+- **Environment variables.** `EKTE_*` replaces `ZING_*` (`EKTE_DATA_DIR`,
+  `EKTE_SECRET_KEY`, `EKTE_HOST`, …). An old `ZING_*` variable still works while
+  its `EKTE_*` name is unset; ekte names it once on stderr.
+- **Data directory.** On its first run ekte copies `~/.zing` to `~/.ekte`
+  (history, monitors, knowledge base) if `~/.ekte` does not exist yet, and from
+  then on works from `~/.ekte` only. `~/.zing` is left as it is, for zing if it
+  still runs; delete it yourself once you no longer need it. A directory set
+  with `EKTE_DATA_DIR`, `ZING_DATA_DIR` or `--data-dir` is used as it is.
+- **Web UI.** Language, theme and filter settings, the classic/v2 choice and a
+  master key saved in the browser's password manager carry over.
+- **Reports and probes.** Reports, webhooks and file names say `ekte` (e.g.
+  `"tool": "ekte"`, `ekte-report.json`), and so do the probes sent to relays.
+  Scripts that look for `zing` in them need updating.
 
 ## License
 

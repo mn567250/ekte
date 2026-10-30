@@ -5,7 +5,7 @@ name: Release to PyPI
 #
 # ONE-TIME SETUP on PyPI (https://pypi.org/manage/account/publishing/):
 #   Add a "pending publisher" for project `ekte` with:
-#     Owner:            cenbonew
+#     Owner:            mn567250
 #     Repository name:  ekte
 #     Workflow name:    release.yml
 #     Environment name: pypi
@@ -39,6 +39,8 @@ jobs:
   publish:
     name: Publish to PyPI
     needs: build
+    # Only this repository publishes; a fork or mirror that pushes a v* tag never does.
+    if: github.repository == 'mn567250/ekte'
     runs-on: ubuntu-latest
     environment:
       name: pypi

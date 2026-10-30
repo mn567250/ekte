@@ -105,6 +105,7 @@ ekte/
   media_audit.py       standalone image and audio (TTS) auditor
   notify.py            webhook alerts (Slack / Feishu / DingTalk / generic JSON)
   datadir.py           the local data directory and its SQLite files
+  legacy.py            the ZING_* settings and the ~/.zing copy from before the rename
   secretbox.py         encryption of stored secrets; the master key held in memory
   i18n/                translations shared by the web UI and the alerts
     locales/           <code>.json per language, fragments/<feature>/<code>.json
@@ -537,6 +538,15 @@ is never stored: `web/masterkey.py` (`Vault`, shared by the server and
 A new key re-encrypts every stored key and rewrites the check value in one
 transaction. The key lives in one process's memory, so run one server per data
 directory.
+
+`ekte/legacy.py` keeps installs from before the rename working: every `EKTE_*`
+setting is read through `legacy.getenv`, which falls back to the old `ZING_*`
+name (noticed once on stderr), and `datadir.data_dir()` copies `~/.zing` to
+`~/.ekte` once when only the old directory exists (SQLite files through the
+backup API, into a temporary sibling renamed into place). `~/.zing` is never
+changed or deleted. `lang.js` copies the browser's `zing.*` settings to `ekte.*`
+the same way, and the server still reads the `zing_lang` / `zing_ui` cookies
+until the `ekte_*` ones exist.
 
 ## Contributing
 

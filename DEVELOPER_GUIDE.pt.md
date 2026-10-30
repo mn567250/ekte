@@ -107,6 +107,7 @@ ekte/
   media_audit.py       auditor autónomo de imagem e áudio (TTS)
   notify.py            alertas por webhook (Slack / Feishu / DingTalk / JSON genérico)
   datadir.py           o diretório de dados local e os seus ficheiros SQLite
+  legacy.py            as definições ZING_* e a cópia de ~/.zing de antes da mudança de nome
   secretbox.py         encriptação dos segredos guardados; a chave mestra em memória
   i18n/                traduções partilhadas pela interface web e pelos alertas
     locales/           <code>.json por idioma, fragments/<feature>/<code>.json
@@ -568,6 +569,15 @@ que rejeita uma chave errada. Uma chave nova volta a encriptar cada chave
 guardada e reescreve o valor de verificação numa única transação. A chave vive
 na memória de um só processo, por isso execute um servidor por diretório de
 dados.
+
+`ekte/legacy.py` mantém a funcionar as instalações de antes da mudança de nome:
+cada definição `EKTE_*` é lida com `legacy.getenv`, que recorre ao nome antigo
+`ZING_*` (indicado uma vez no stderr), e `datadir.data_dir()` copia `~/.zing`
+para `~/.ekte` uma única vez quando só existe o diretório antigo (ficheiros
+SQLite através da API de backup, para um diretório temporário ao lado que depois
+é renomeado). `~/.zing` nunca é alterado nem apagado. `lang.js` copia da mesma
+forma as definições `zing.*` do navegador para `ekte.*`, e o servidor continua a
+ler os cookies `zing_lang` / `zing_ui` enquanto os `ekte_*` não existirem.
 
 ## Contribuir
 

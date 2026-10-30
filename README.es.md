@@ -48,6 +48,7 @@ funciona y se puntúa cada comprobación, en la [Metodología](docs/METHODOLOGY.
 - [Privacidad y datos locales](#privacidad-y-datos-locales)
 - [Uso responsable](#uso-responsable)
 - [Más documentación](#más-documentación)
+- [Si vienes de zing](#si-vienes-de-zing)
 - [Licencia](#licencia)
 
 ## Por qué
@@ -765,7 +766,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@main         # fijar a una etiqueta de versión
+        uses: mn567250/ekte@vX.Y.Z       # fijar a una etiqueta de versión
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # secreto del llamante; nunca se muestra
@@ -908,6 +909,33 @@ una referencia de confianza antes de sacar conclusiones firmes.
 | [docs/DOCKER.md](docs/DOCKER.md) | Ejecutar la interfaz web en un contenedor (en inglés) |
 | [CHANGELOG.md](CHANGELOG.md) | Qué cambió en cada versión (en inglés) |
 | [SECURITY.md](SECURITY.md) | Informar de una vulnerabilidad (en inglés) |
+
+## Si vienes de zing
+
+ekte continúa [zing](https://github.com/cenbonew/zing) (su última versión fue la
+0.11.0) con un nombre nuevo. Qué cambia en una instalación existente:
+
+- **Paquete y comando.** `pip install ekte` (antes `zing-audit`), el comando
+  `ekte` (antes `zing`), el paquete de Python `ekte`. Los extras conservan su
+  nombre, p. ej. `pip install 'ekte[web]'`. Los dos paquetes no comparten
+  comando ni módulo, así que `zing-audit` puede seguir instalado junto a ekte.
+- **Variables de entorno.** `EKTE_*` sustituye a `ZING_*` (`EKTE_DATA_DIR`,
+  `EKTE_SECRET_KEY`, `EKTE_HOST`, …). Una variable `ZING_*` antigua sigue
+  funcionando mientras su nombre `EKTE_*` no esté definido; ekte la menciona una
+  vez en stderr.
+- **Directorio de datos.** En su primera ejecución, ekte copia `~/.zing` a
+  `~/.ekte` (historial, monitores, base de conocimiento) si `~/.ekte` aún no
+  existe, y desde entonces trabaja solo con `~/.ekte`. `~/.zing` queda tal cual,
+  para zing si todavía se ejecuta; bórralo tú cuando ya no lo necesites. Un
+  directorio indicado con `EKTE_DATA_DIR`, `ZING_DATA_DIR` o `--data-dir` se usa
+  tal como está.
+- **Interfaz web.** Se conservan el idioma, el tema y los filtros, la elección
+  entre la interfaz clásica y la v2, y una clave maestra guardada en el gestor de
+  contraseñas del navegador.
+- **Informes y sondeos.** Los informes, los webhooks y los nombres de archivo
+  dicen `ekte` (p. ej. `"tool": "ekte"`, `ekte-report.json`), igual que los
+  sondeos enviados a los relays. Los scripts que buscan `zing` en ellos deben
+  actualizarse.
 
 ## Licencia
 

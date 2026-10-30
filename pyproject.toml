@@ -44,8 +44,8 @@ dependencies = [
 
 [project.optional-dependencies]
 # Token counts always use the built-in heuristic (no runtime downloads, so ekte
-# runs in restricted environments); the empty extra keeps
-# `pip install 'ekte[tokenizers]'` from older instructions working.
+# runs in restricted environments); the empty extra keeps older install commands
+# working (zing-audit[tokenizers] -> `pip install 'ekte[tokenizers]'`).
 tokenizers = []
 # Local web UI: `ekte serve`.
 web = [
@@ -57,8 +57,8 @@ web = [
 # Accessibility tests of the web UI (tests/a11y, `pytest -m a11y`): a real
 # browser via Playwright; run `playwright install chromium` once.
 a11y = ["playwright>=1.47"]
-# PDF reports are part of the core install now; the empty extra keeps
-# `pip install 'ekte[pdf]'` from older instructions working.
+# PDF reports are part of the core install now; the empty extra keeps older
+# install commands working (zing-audit[pdf] -> `pip install 'ekte[pdf]'`).
 pdf = []
 dev = [
     "pytest>=8.0",

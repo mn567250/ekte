@@ -43,6 +43,7 @@
 - [隐私与本地数据](#隐私与本地数据)
 - [负责任使用](#负责任使用)
 - [更多文档](#更多文档)
+- [从 zing 迁移](#从-zing-迁移)
 - [许可证](#许可证)
 
 ## 为什么需要它
@@ -569,7 +570,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@main         # 固定到发布标签
+        uses: mn567250/ekte@vX.Y.Z       # 固定到发布标签
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # 调用方的密钥；绝不回显
@@ -674,6 +675,27 @@ ekte 是黑盒审计辅助工具。它**无法证明**：
 | [docs/DOCKER.md](docs/DOCKER.md) | 在容器中运行 Web 界面（英文） |
 | [CHANGELOG.md](CHANGELOG.md) | 每个版本的变更（英文） |
 | [SECURITY.md](SECURITY.md) | 报告安全漏洞（英文） |
+
+## 从 zing 迁移
+
+ekte 以新名称延续 [zing](https://github.com/cenbonew/zing)（其最后一个版本为
+0.11.0）。对已有安装而言的变化：
+
+- **包与命令。** `pip install ekte`（原为 `zing-audit`），命令 `ekte`（原为
+  `zing`），Python 包 `ekte`。附加项名称不变，例如 `pip install 'ekte[web]'`。
+  两个包既不共用命令也不共用模块，因此 `zing-audit` 可以与 ekte 同时安装。
+- **环境变量。** `EKTE_*` 取代 `ZING_*`（`EKTE_DATA_DIR`、`EKTE_SECRET_KEY`、
+  `EKTE_HOST` 等）。只要对应的 `EKTE_*` 未设置，旧的 `ZING_*` 变量仍然有效；
+  ekte 会在 stderr 上提示一次。
+- **数据目录。** 首次运行时，如果 `~/.ekte` 尚不存在，ekte 会把 `~/.zing`
+  复制到 `~/.ekte`（历史记录、监控、知识库），此后只使用 `~/.ekte`。
+  `~/.zing` 保持原样，供仍在运行的 zing 使用；不再需要时请自行删除。通过
+  `EKTE_DATA_DIR`、`ZING_DATA_DIR` 或 `--data-dir` 指定的目录按原样使用。
+- **Web 界面。** 语言、主题和筛选设置、经典版/v2 的选择，以及保存在浏览器
+  密码管理器中的主密钥都会沿用。
+- **报告与探测。** 报告、webhook 和文件名都使用 `ekte`（例如
+  `"tool": "ekte"`、`ekte-report.json`），发送给中转站的探测请求也是如此。
+  在其中查找 `zing` 的脚本需要更新。
 
 ## 许可证
 

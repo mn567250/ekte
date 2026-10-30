@@ -108,6 +108,7 @@ ekte/
   media_audit.py       eigenständiger Prüfer für Bild und Audio (TTS)
   notify.py            Webhook-Warnungen (Slack / Feishu / DingTalk / generisches JSON)
   datadir.py           das lokale Datenverzeichnis und seine SQLite-Dateien
+  legacy.py            die ZING_*-Einstellungen und die Kopie von ~/.zing aus der Zeit vor der Umbenennung
   secretbox.py         Verschlüsselung gespeicherter Geheimnisse; der Hauptschlüssel im Speicher
   i18n/                Übersetzungen, geteilt von Weboberfläche und Warnungen
     locales/           <code>.json je Sprache, fragments/<feature>/<code>.json
@@ -572,6 +573,16 @@ Prüfwert (`secret_meta`), der einen falschen Schlüssel abweist. Ein neuer
 Schlüssel verschlüsselt jeden gespeicherten Schlüssel neu und schreibt den
 Prüfwert in einer einzigen Transaktion. Der Schlüssel liegt im Speicher eines
 Prozesses, betreiben Sie daher einen Server pro Datenverzeichnis.
+
+`ekte/legacy.py` hält Installationen aus der Zeit vor der Umbenennung lauffähig:
+Jede `EKTE_*`-Einstellung wird über `legacy.getenv` gelesen, das auf den alten
+`ZING_*`-Namen zurückfällt (einmal auf stderr gemeldet), und
+`datadir.data_dir()` kopiert `~/.zing` einmalig nach `~/.ekte`, wenn nur das
+alte Verzeichnis existiert (SQLite-Dateien über die Backup-API, in ein
+temporäres Nachbarverzeichnis, das anschließend umbenannt wird). `~/.zing` wird
+nie geändert oder gelöscht. `lang.js` kopiert die `zing.*`-Einstellungen des
+Browsers ebenso nach `ekte.*`, und der Server liest die Cookies `zing_lang` /
+`zing_ui`, solange die `ekte_*`-Cookies fehlen.
 
 ## Mitwirken
 

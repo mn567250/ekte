@@ -95,6 +95,7 @@ ekte/
   media_audit.py       独立的图像与音频（TTS）审计器
   notify.py            Webhook 告警（Slack / 飞书 / 钉钉 / 通用 JSON）
   datadir.py           本地数据目录及其 SQLite 文件
+  legacy.py            改名前的 ZING_* 设置与 ~/.zing 的复制
   secretbox.py         已保存机密的加密；内存中的主密钥
   i18n/                Web 界面与告警共用的翻译
     locales/           每种语言一个 <code>.json，以及 fragments/<feature>/<code>.json
@@ -359,6 +360,8 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 `EKTE_SECRET_KEY`、旧版 `secret.key` 或用户在监控页面的输入后，把它保存在服务器内存中；`watches.db`
 只保存一个校验值（`secret_meta`），用来拒绝错误的密钥。更换密钥时，所有已保存的密钥会在同一个事务中
 重新加密并改写校验值。主密钥只存在于一个进程的内存中，因此每个数据目录只运行一个服务器。
+
+`ekte/legacy.py` 让改名前的安装继续可用：每个 `EKTE_*` 设置都通过 `legacy.getenv` 读取，未设置时回退到旧的 `ZING_*` 名称（在 stderr 上提示一次）；当只有旧目录存在时，`datadir.data_dir()` 会把 `~/.zing` 一次性复制到 `~/.ekte`（SQLite 文件通过备份 API 复制，先写入同级临时目录再重命名）。`~/.zing` 永远不会被修改或删除。`lang.js` 以同样方式把浏览器中的 `zing.*` 设置复制为 `ekte.*`，服务器在 `ekte_*` cookie 出现之前仍会读取 `zing_lang` / `zing_ui`。
 
 ## 参与贡献
 

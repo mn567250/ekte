@@ -12,7 +12,7 @@ Before the first release, register a *pending publisher* so PyPI trusts this rep
    (<https://pypi.org/manage/account/publishing/>).
 2. Fill in:
    - **PyPI project name:** `ekte`
-   - **Owner:** `cenbonew`
+   - **Owner:** `mn567250`
    - **Repository name:** `ekte`
    - **Workflow name:** `release.yml`
    - **Environment name:** `pypi`
@@ -22,6 +22,11 @@ Before the first release, register a *pending publisher* so PyPI trusts this rep
 
 After the first successful publish, `ekte` becomes a normal Trusted Publisher
 and the pending entry is consumed.
+
+The publish job runs only in `mn567250/ekte` (`if: github.repository == …`), so a
+fork or mirror that pushes a `v*` tag never publishes. While no release is planned,
+the workflow can stay disabled (**Actions → Release to PyPI → ⋯ → Disable workflow**);
+enable it again before pushing a release tag.
 
 ## Cutting a release
 

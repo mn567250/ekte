@@ -44,7 +44,7 @@ inputs:
   version:
     description: >-
       pip install spec for ekte. Defaults to the latest published `ekte`.
-      Pin it for reproducible runs, e.g. `ekte==0.11.0`.
+      Pin it for reproducible runs, e.g. `ekte==X.Y.Z`.
     required: false
     default: "ekte"
 

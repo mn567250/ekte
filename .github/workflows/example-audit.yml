@@ -29,7 +29,8 @@ jobs:
     steps:
       - name: Audit the relay
         id: ekte
-        # Pin to a release tag for reproducible, supply-chain-safe runs.
+        # In your own repo, pin to a release tag (@vX.Y.Z) for reproducible,
+        # supply-chain-safe runs.
         uses: mn567250/ekte@main
         with:
           base-url: https://relay.example.com/v1
@@ -39,7 +40,7 @@ jobs:
           declared-provider: openai
           suite: standard
           fail-on-risk: ${{ inputs.fail-on-risk || 'high' }}
-          # version: ekte==0.8.0   # optional: pin the CLI too
+          # version: ekte==X.Y.Z   # optional: pin the CLI too
 
       - name: Show the verdict
         # `always()` so this still reports even when the gate above failed.

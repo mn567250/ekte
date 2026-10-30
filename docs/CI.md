@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@main     # pin to a tag — see "Pinning" below
+        uses: mn567250/ekte@vX.Y.Z   # pin to a tag — see "Pinning" below
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -60,7 +60,7 @@ jobs:
 | `suite`             | no       | `standard`    | Detector suite: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | no       | `high`        | Fail the job when risk `>=` this level: `low` \| `medium` \| `high`. |
 | `python-version`    | no       | `3.12`        | Python version used to install and run `ekte`. |
-| `version`           | no       | `ekte`  | pip install spec. Pin for reproducible runs, e.g. `ekte==0.11.0`. |
+| `version`           | no       | `ekte`  | pip install spec. Pin for reproducible runs, e.g. `ekte==X.Y.Z`. |
 
 ## Outputs
 
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@main
+        uses: mn567250/ekte@vX.Y.Z
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -112,10 +112,10 @@ jobs:
 
 ## Pinning
 
-Pin the action to a **release tag** (`mn567250/ekte@main`) rather than a moving
+Pin the action to a **release tag** (`mn567250/ekte@vX.Y.Z`) rather than a moving
 branch. This keeps audits reproducible and protects you from unexpected changes
 to the action. For fully reproducible CLI behavior, also pin the `version` input
-to an exact release, e.g. `version: ekte==0.11.0`.
+to an exact release, e.g. `version: ekte==X.Y.Z`.
 
 A ready-to-copy scheduled example lives at
 [`.github/workflows/example-audit.yml`](../.github/workflows/example-audit.yml).
