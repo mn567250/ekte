@@ -1,13 +1,92 @@
 # Changelog
 
-All notable changes to **zing** are documented here. The format is based on
+All notable changes to **ekte** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+ekte has three eras:
+
+- **0.30.0 and later: ekte.** Published on PyPI as `ekte`, developed at
+  [mn567250/ekte](https://github.com/mn567250/ekte).
+- **0.21.0: the fork era.** Everything the fork
+  [mn567250/zing-audit](https://github.com/mn567250/zing-audit) added to zing
+  after 0.11.0, in one version. It was never published to PyPI; the fork's
+  pull requests are linked in its topic headings.
+- **0.1.0 – 0.11.0: zing.** Developed by the zing contributors at
+  [cenbonew/zing](https://github.com/cenbonew/zing) and published on PyPI as
+  `zing-audit`.
+
 ## [Unreleased]
 
-Everything since the last upstream release, 0.11.0. This fork publishes no
-versions of its own; its changes are grouped by topic below, newest first.
+## [0.30.0] — ekte: renamed from zing, own logo, only the v2 web UI
+
+zing is now **ekte** (Norwegian for "genuine"). The first release under the new
+name; moving from zing is described in the README under **Coming from zing**.
+
+### Changed
+
+- **New name everywhere.** PyPI package `ekte` (was `zing-audit`), command
+  `ekte` (was `zing`), Python package `ekte`, repository
+  [mn567250/ekte](https://github.com/mn567250/ekte). Extras keep their names
+  (`pip install 'ekte[web]'`); `zing-audit` can stay installed next to ekte, as
+  the two share no command or module.
+- **Environment variables are `EKTE_*`** (`EKTE_DATA_DIR`, `EKTE_SECRET_KEY`,
+  `EKTE_HOST`, `EKTE_PORT`, `EKTE_KB_DIR`, …). The Docker image sets
+  `EKTE_CONTAINER`, `EKTE_HOST`, `EKTE_PORT` and `EKTE_DATA_DIR`.
+- **Data directory `~/.ekte`.** On the first run, when `~/.ekte` does not exist
+  yet and `~/.zing` does, `~/.zing` is copied to `~/.ekte` (history, monitors,
+  knowledge base; the databases through SQLite's backup API, so a zing running
+  at the same time cannot leave a torn copy). ekte then works from `~/.ekte`
+  only. `~/.zing` is never changed or deleted: the notice says so, and deleting
+  it is left to you. A directory set with `EKTE_DATA_DIR`, `ZING_DATA_DIR` or
+  `--data-dir` is used as it is.
+- **Reports, webhooks and files say `ekte`.** Report and webhook payloads carry
+  `"tool": "ekte"`, downloads are named `ekte-report…`, requests send the
+  `User-Agent` `ekte/0.1`, and the probes sent to relays use `ekte` (e.g.
+  `EKTE_URL=…`, `pip install ekte==0.1.0`). Scripts that look
+  for `zing` in any of these need updating. The accessibility report's version
+  field is `ekte_version` (schema `ekte-bitv-report/1`).
+- **New logo.** The standard check mark in an open hexagon replaces the
+  lightning bolt as the brand in the navigation; the bolt stays for running an
+  audit. New favicon, in the light and the dark theme.
+- **The web UI is the v2 UI only.** Its pages stay under `/v2/`. The addresses
+  of the classic UI (`/`, `/history`, `/watches`, `/tools`, `/console`) redirect
+  (308) to the matching v2 page and keep the query string, so bookmarks and
+  re-run links still work.
+- **Releases are published only from `mn567250/ekte`** (PyPI Trusted
+  Publishing; the publish job is skipped in any other repository).
+
+### Deprecated
+
+- **`ZING_*` environment variables.** Each is still read while its `EKTE_*`
+  name is unset, with a one-time notice on stderr.
+
+### Removed
+
+- **The classic web UI (v1):** its pages (audit, console, history, monitors,
+  tools), the model picker script `modelpicker.js`, the `?ui=v1|v2` switch and
+  the UI-choice cookie. Everything they offered is on the v2 pages; embedding
+  and rerank audits start on the audit page through the endpoint-type selector.
+  The HTTP endpoints only the classic pages called stay for now:
+  `/api/audit/stream`, `/api/embed`, `/api/rerank` and `/api/history/trend`
+  ([#3](https://github.com/mn567250/ekte/issues/3),
+  [#4](https://github.com/mn567250/ekte/issues/4),
+  [#5](https://github.com/mn567250/ekte/issues/5)).
+
+### Migration from zing
+
+- Install `ekte` and run `ekte` instead of `zing`; rename `ZING_*` variables to
+  `EKTE_*` (in a container you must, see `docs/DOCKER.md`).
+- The web UI keeps your language, theme and filter settings and a master key
+  saved in the browser's password manager; the server still honours the
+  `zing_lang` cookie until the `ekte_lang` one exists.
+- In GitHub workflows, use `mn567250/ekte@vX.Y.Z` and `version: ekte==X.Y.Z`.
+
+## [0.21.0] — the fork era (mn567250/zing-audit), never published to PyPI
+
+Everything the fork added to zing 0.11.0, before the rename to ekte, grouped by
+topic, newest first. This text still uses the names of that time (`zing`,
+`ZING_*`, `~/.zing`, the classic UI); see 0.30.0 for what they are now.
 
 ### Latest changes
 
@@ -1905,7 +1984,9 @@ streaming, or inflates token billing (货不对板检测).
   text is redacted before it reaches any report (JSON/Markdown/HTML).
 - `--fail-under` / `--fail-on-risk` exit-code gates for CI use.
 
-[Unreleased]: https://github.com/mn567250/zing-audit/compare/fadd570...HEAD
+[Unreleased]: https://github.com/mn567250/ekte/compare/v0.30.0...HEAD
+[0.30.0]: https://github.com/mn567250/ekte/compare/v0.21.0...v0.30.0
+[0.21.0]: https://github.com/mn567250/ekte/compare/v0.11.0...v0.21.0
 [0.11.0]: https://github.com/cenbonew/zing/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/cenbonew/zing/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/cenbonew/zing/compare/v0.8.0...v0.9.0
