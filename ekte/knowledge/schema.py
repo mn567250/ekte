@@ -34,7 +34,7 @@ class FingerprintProbe(BaseModel):
     max_tokens: int = 256
     temperature: float = 0.0
     weight: float = 1.0
-    # Language of the prompt. Probes are English (like zing/prompts/en.json)
+    # Language of the prompt. Probes are English (like ekte/prompts/en.json)
     # unless the language IS the measurement (e.g. Chinese fluency of a
     # China-native model); then ``language_bound`` says why, and the probe is
     # sent as written regardless of any UI or alert language.
@@ -168,11 +168,11 @@ class KnowledgeBase(BaseModel):
     entries: dict[str, dict[str, Any]] = Field(default_factory=dict)
     shadowed: dict[str, str] = Field(default_factory=dict)
     # False when the user's kb.db entries were deliberately left out
-    # (--no-user-kb / ZING_NO_USER_KB).
+    # (--no-user-kb / EKTE_NO_USER_KB).
     user_kb: bool = True
     # kb.db entries that were skipped (invalid, unknown provider, ...).
     warnings: list[str] = Field(default_factory=list)
-    # packaged / ZING_KB_DIR items switched off in kb.db ("provider:<p>" or
+    # packaged / EKTE_KB_DIR items switched off in kb.db ("provider:<p>" or
     # "model:<p>/<id>"), left out of ``providers``.
     disabled: list[str] = Field(default_factory=list)
 

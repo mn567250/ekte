@@ -1,7 +1,7 @@
 /* chartmotion.js — opt-in entrance motion for charts drawn by charts.js.
  *
  * Plain browser global, no libraries; load after charts.js. Exposes
- * window.ZingMotion with:
+ * window.EkteMotion with:
  *   - enter(host)          call right after a draw whose DATA changed (a new
  *                          filter, metric or range) — not after a redraw for
  *                          a resize or a language switch
@@ -19,7 +19,7 @@
  *                          formats item it's value v on the way
  *   enter() also takes the <svg> itself instead of its host. A donut draws
  *   clockwise, part after part; a host without an <svg> but with meters
- *   (ZingCharts.meter) grows each meter from the left, its parts one after
+ *   (EkteCharts.meter) grows each meter from the left, its parts one after
  *   the other.
  *
  * It never changes what the chart says: no element is added or removed and
@@ -296,5 +296,5 @@
     window.requestAnimationFrame(step);
   }
 
-  window.ZingMotion = { enter: enter, fresh: fresh, pop: pop, rescale: rescale, count: count };
+  window.EkteMotion = { enter: enter, fresh: fresh, pop: pop, rescale: rescale, count: count };
 })();

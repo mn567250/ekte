@@ -23,7 +23,7 @@ import pytest
 from tests.a11y import llm_review as lr
 
 RAW = {
-    "title": "  zing —   audit  ",
+    "title": "  ekte —   audit  ",
     "lang": "en",
     "headings": [[1, "Audit"], [1, "Audit"], [2, "x" * 400]],
     "links": [
@@ -82,7 +82,7 @@ F_LINK = {"step": "9.2.4.4", "lang": "en", "element": 'link "More"', "problem": 
 # --------------------------------------------------------------------------- #
 def test_compact_page_cleans_groups_and_payload_caps() -> None:
     rec = lr.compact_page(RAW, [{"form": "Start", "text": " Invalid ", "field": ""}])
-    assert rec["title"] == "zing — audit"
+    assert rec["title"] == "ekte — audit"
     pay = lr.page_payload(rec)
     # identical headings are merged with a count (not silently dropped)
     assert pay["headings"][0] == [1, "Audit", 2] and len(pay["headings"]) == 2
@@ -612,9 +612,9 @@ def test_estimate_tokens_counts_cjk_conservatively() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# endpoint: command line, zing.yaml, environment, defaults
+# endpoint: command line, ekte.yaml, environment, defaults
 # --------------------------------------------------------------------------- #
-ZING_YAML = """\
+EKTE_YAML = """\
 target:
   base_url: https://relay.example.com/v1
   api_key: env:RELAY_KEY
@@ -631,14 +631,14 @@ judge:
 ENV = {"JUDGE_KEY": "sk-judge", "OPENAI_KEY": "sk-openai", "RELAY_KEY": "sk-relay", "ANTHROPIC_API_KEY": "sk-ant"}
 
 
-def _yaml(tmp_path: Any, text: str = ZING_YAML) -> str:
-    f = tmp_path / "zing.yaml"
+def _yaml(tmp_path: Any, text: str = EKTE_YAML) -> str:
+    f = tmp_path / "ekte.yaml"
     f.write_text(text, encoding="utf-8")
     return str(f)
 
 
 def test_endpoint_defaults_to_the_anthropic_api(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir(tmp_path)  # no ./zing.yaml
+    monkeypatch.chdir(tmp_path)  # no ./ekte.yaml
     ep = lr.resolve_endpoint(env={"ANTHROPIC_API_KEY": "sk-ant"})
     assert ep == lr.Endpoint(lr.API_BASE, "sk-ant", lr.MODEL, "anthropic", "default")
     assert ep.url == lr.API_URL and ep.official and not ep.local
@@ -648,24 +648,24 @@ def test_endpoint_defaults_to_the_anthropic_api(tmp_path: Any, monkeypatch: pyte
     assert not ep.official
 
 
-def test_endpoint_from_zing_yaml_judge_then_baseline_then_target(tmp_path: Any) -> None:
+def test_endpoint_from_ekte_yaml_judge_then_baseline_then_target(tmp_path: Any) -> None:
     cfg = _yaml(tmp_path)
     ep = lr.resolve_endpoint(config=cfg, env=ENV)
     assert (ep.base_url, ep.api_key, ep.model, ep.api, ep.source) == (
-        "https://judge.example.com/v1", "sk-judge", "claude-sonnet-5-5", "anthropic", "zing.yaml:judge")
-    no_judge = ZING_YAML.split("judge:")[0]
+        "https://judge.example.com/v1", "sk-judge", "claude-sonnet-5-5", "anthropic", "ekte.yaml:judge")
+    no_judge = EKTE_YAML.split("judge:")[0]
     ep = lr.resolve_endpoint(config=_yaml(tmp_path, no_judge), env=ENV)
     assert (ep.base_url, ep.api_key, ep.api, ep.source) == (
-        "https://api.openai.com/v1", "sk-openai", "openai", "zing.yaml:baseline")
+        "https://api.openai.com/v1", "sk-openai", "openai", "ekte.yaml:baseline")
     ep = lr.resolve_endpoint(config=_yaml(tmp_path, no_judge.split("baseline:")[0]), env=ENV)
-    assert (ep.api_key, ep.model, ep.source) == ("sk-relay", "gpt-4o", "zing.yaml:target")
+    assert (ep.api_key, ep.model, ep.source) == ("sk-relay", "gpt-4o", "ekte.yaml:target")
     assert ep.url == "https://relay.example.com/v1/chat/completions"
 
 
-def test_endpoint_default_config_is_the_working_directory_zing_yaml(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_endpoint_default_config_is_the_working_directory_ekte_yaml(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     _yaml(tmp_path)
     monkeypatch.chdir(tmp_path)
-    assert lr.resolve_endpoint(env=ENV).source == "zing.yaml:judge"
+    assert lr.resolve_endpoint(env=ENV).source == "ekte.yaml:judge"
 
 
 def test_endpoint_command_line_wins_per_field(tmp_path: Any) -> None:
@@ -686,7 +686,7 @@ def test_endpoint_command_line_wins_per_field(tmp_path: Any) -> None:
 
 
 def test_endpoint_needs_a_model_for_another_url(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
-    from zing.config import ConfigError
+    from ekte.config import ConfigError
 
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ConfigError, match="--model"):
@@ -1010,7 +1010,7 @@ def chromium() -> Iterator[Any]:
     pw = sync_api.sync_playwright().start()
     try:
         try:
-            browser = pw.chromium.launch(executable_path=os.environ.get("ZING_A11Y_CHROMIUM") or None)
+            browser = pw.chromium.launch(executable_path=os.environ.get("EKTE_A11Y_CHROMIUM") or None)
         except Exception as exc:  # no browser installed
             pytest.skip(f"no Chromium for Playwright: {exc}")
         yield browser

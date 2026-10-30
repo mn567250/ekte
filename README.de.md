@@ -1,12 +1,12 @@
-# zing — Realitätscheck für LLM-Relays
+# ekte — Realitätscheck für LLM-Relays
 
 > [🇬🇧 English](README.md) · [🇨🇳 中文](README.zh-CN.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇵🇹 Português](README.pt.md) · [🇮🇹 Italiano](README.it.md) · **🇩🇪 Deutsch**
 
-[![CI](https://github.com/cenbonew/zing/actions/workflows/ci.yml/badge.svg)](https://github.com/cenbonew/zing/actions/workflows/ci.yml)
+[![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
-**zing** ist ein Local-first-Werkzeug, das prüft, ob ein API-Relay
+**ekte** ist ein Local-first-Werkzeug, das prüft, ob ein API-Relay
 (Wiederverkäufer / Proxy) tatsächlich das Modell liefert, das es angibt — oder ob
 es stillschweigend ein billigeres unterschiebt, das Kontextfenster kürzt,
 Streaming vortäuscht oder die Token-Abrechnung aufbläht. Kurz: Bekommen Sie, wofür
@@ -15,16 +15,16 @@ Messages API** und die **OpenAI Responses API** (`/v1/responses`) — automatisc
 erkannt oder erzwungen mit `--api openai|anthropic|responses`.
 
 Sie geben ihm den Endpunkt eines Relays und das Modell, das es angeblich liefert;
-zing führt eine Reihe von Black-Box-Tests aus, vergleicht das beobachtete
+ekte führt eine Reihe von Black-Box-Tests aus, vergleicht das beobachtete
 Verhalten mit einer mitgelieferten Wissensbasis von **98 Modellprofilen von 7
 Anbietern** und gibt ein klares, mit Belegen untermauertes Urteil aus — auf der
 Kommandozeile, in einer lokalen Weboberfläche oder als JSON für ein anderes
 Werkzeug oder LLM.
 
-> zing liefert **Black-Box-Belege für Abweichungen und Risiken, keinen
+> ekte liefert **Black-Box-Belege für Abweichungen und Risiken, keinen
 > kryptografischen Betrugsnachweis.** Siehe [Verantwortungsvoller Einsatz](#verantwortungsvoller-einsatz).
 
-Dieses README richtet sich an alle, die zing **nutzen**. Wie zing aufgebaut,
+Dieses README richtet sich an alle, die ekte **nutzen**. Wie ekte aufgebaut,
 getestet und veröffentlicht wird, steht im [Entwicklerhandbuch](DEVELOPER_GUIDE.de.md);
 wie jede Prüfung funktioniert und bewertet wird, in der
 [Methodik](docs/METHODOLOGY.de.md).
@@ -36,7 +36,7 @@ wie jede Prüfung funktioniert und bewertet wird, in der
 - [Warum](#warum)
 - [Installation](#installation)
 - [Schnellstart](#schnellstart)
-- [Weboberfläche (`zing serve`)](#weboberfläche-zing-serve)
+- [Weboberfläche (`ekte serve`)](#weboberfläche-ekte-serve)
 - [Was geprüft wird](#was-geprüft-wird)
 - [Wie das Urteil zustande kommt](#wie-das-urteil-zustande-kommt)
 - [Suiten](#suiten)
@@ -64,21 +64,21 @@ Auge schwer zu erkennen:
 - Die gemeldeten `usage`-Token sind aufgebläht, sodass Ihr Guthaben schneller schwindet als nötig.
 - Ein Modell, das Tool-Calling / JSON-Modus unterstützen sollte, tut es stillschweigend nicht.
 
-zing macht aus „da stimmt doch was nicht“ einen reproduzierbaren Bericht.
+ekte macht aus „da stimmt doch was nicht“ einen reproduzierbaren Bericht.
 
 ## Installation
 
-Erfordert Python 3.10+. Jede der folgenden Varianten stellt den Befehl `zing` bereit.
+Erfordert Python 3.10+. Jede der folgenden Varianten stellt den Befehl `ekte` bereit.
 
 ### Mit pip
 
 ```bash
 # von PyPI
-pip install zing-audit
+pip install ekte
 
 # oder aus dem Quellcode
-git clone https://github.com/cenbonew/zing
-cd zing
+git clone https://github.com/mn567250/ekte
+cd ekte
 pip install -e .
 ```
 
@@ -86,35 +86,35 @@ pip install -e .
 
 ```bash
 # von PyPI, als eigenständiges Werkzeug in Ihrem PATH
-uv tool install zing-audit
+uv tool install ekte
 
 # oder einmalig ausführen, ohne zu installieren
-uvx --from zing-audit zing --help
+uvx --from ekte ekte --help
 
 # oder aus dem Quellcode, in eine projektlokale virtuelle Umgebung
-git clone https://github.com/cenbonew/zing
-cd zing
+git clone https://github.com/mn567250/ekte
+cd ekte
 uv venv
 uv pip install -e .
 source .venv/bin/activate       # Windows: .venv\Scripts\activate
 ```
 
 Sie können auch direkt aus dem Git-Repository installieren, ohne es zu klonen:
-`uv tool install git+https://github.com/cenbonew/zing`.
+`uv tool install git+https://github.com/mn567250/ekte`.
 
 ### Optionale Extras
 
-- `web` — die lokale Weboberfläche (`zing serve`).
+- `web` — die lokale Weboberfläche (`ekte serve`).
 
 ```bash
-pip install 'zing-audit[web]'      # pip, von PyPI
+pip install 'ekte[web]'      # pip, von PyPI
 pip install -e '.[web]'            # pip, aus dem Quellcode
-uv tool install 'zing-audit[web]'  # uv, von PyPI
+uv tool install 'ekte[web]'  # uv, von PyPI
 uv pip install -e '.[web]'         # uv, aus dem Quellcode
 ```
 
 Das Extra `tokenizers` wird nicht mehr gebraucht: Es ist leer und
-bleibt nur erhalten, damit ältere Installationsbefehle weiter funktionieren. zing
+bleibt nur erhalten, damit ältere Installationsbefehle weiter funktionieren. ekte
 zählt Token mit einer eingebauten Heuristik und lädt zur Laufzeit nichts herunter
 (keine Tokenizer-Dateien), läuft also auch in eingeschränkten oder Offline-Umgebungen,
 die nur die geprüften Relays erreichen.
@@ -129,8 +129,8 @@ und Windows.
 Aus einem Checkout des Quellcodes:
 
 ```bash
-docker build -t zing .
-docker run --rm -p 127.0.0.1:8000:8000 -v zing-data:/data zing
+docker build -t ekte .
+docker run --rm -p 127.0.0.1:8000:8000 -v ekte-data:/data ekte
 # http://localhost:8000 öffnen
 ```
 
@@ -142,82 +142,82 @@ und [docs/DOCKER.md](docs/DOCKER.md).
 
 ```bash
 # 1) ein Relay gegen seine Angaben prüfen (Modell-ID + Anbieterhinweis)
-export ZING_API_KEY=sk-ihr-relay-schluessel
-zing check \
+export EKTE_API_KEY=sk-ihr-relay-schluessel
+ekte check \
   --base-url https://relay.example.com/v1 \
-  --api-key env:ZING_API_KEY \
+  --api-key env:EKTE_API_KEY \
   --model gpt-4o \
   --suite standard
 
 # 2) die stärkste Prüfung: Vergleich mit einer vertrauenswürdigen Referenz desselben Modells
 export OPENAI_API_KEY=sk-ihr-openai-schluessel
-zing compare \
-  --target-base-url https://relay.example.com/v1 --target-api-key env:ZING_API_KEY --target-model gpt-4o \
+ekte compare \
+  --target-base-url https://relay.example.com/v1 --target-api-key env:EKTE_API_KEY --target-model gpt-4o \
   --baseline-base-url https://api.openai.com/v1 --baseline-api-key env:OPENAI_API_KEY --baseline-model gpt-4o \
   --suite deep
 
 # 3) ein natives Anthropic-Relay (Messages API) prüfen — das Protokoll wird anhand von
 #    base_url/model automatisch erkannt oder mit --api anthropic erzwungen
-zing check --base-url https://relay.example.com/v1 --model claude-opus-4-8 \
-  --api-key env:ZING_API_KEY --api anthropic
+ekte check --base-url https://relay.example.com/v1 --model claude-opus-4-8 \
+  --api-key env:EKTE_API_KEY --api anthropic
 
 # 4) einen vermuteten Austausch bestätigen: die ECHTE Modell-ID des Relays gegen das Profil
 #    prüfen, unter dem es verkauft wird (hier: ein Doubao-Modell, ausgegeben als deepseek-v4-flash)
-zing check --base-url https://relay.example.com/v1 --api-key env:ZING_API_KEY \
+ekte check --base-url https://relay.example.com/v1 --api-key env:EKTE_API_KEY \
   --model doubao-seed-2-0-lite --claimed-model deepseek-v4-flash
 
 # 5) die Modelle auflisten, die ein Endpunkt bewirbt
-zing models --base-url https://relay.example.com/v1 --api-key env:ZING_API_KEY
+ekte models --base-url https://relay.example.com/v1 --api-key env:EKTE_API_KEY
 
 # 6) die Wissensbasis ansehen
-zing kb            # alle Profile, mit ihrer Quelle
-zing kb deepseek   # ein Anbieter
+ekte kb            # alle Profile, mit ihrer Quelle
+ekte kb deepseek   # ein Anbieter
 
 # 7) eine Konfiguration zum Einchecken erzeugen
-zing init          # schreibt zing.yaml
-zing check -c zing.yaml
+ekte init          # schreibt ekte.yaml
+ekte check -c ekte.yaml
 ```
 
 API-Schlüssel lassen sich direkt, als `env:VAR` oder als `file:/pfad` angeben;
 Berichte enthalten immer nur einen Fingerabdruck des Schlüssels. Eine vollständige
-Konfigurationsdatei finden Sie in [`examples/zing.yaml`](examples/zing.yaml).
+Konfigurationsdatei finden Sie in [`examples/ekte.yaml`](examples/ekte.yaml).
 
 ### Als Werkzeug für ein LLM / einen Agenten
 
-zing ist dafür gebaut, von einem anderen Programm oder Modell gesteuert zu werden.
+ekte ist dafür gebaut, von einem anderen Programm oder Modell gesteuert zu werden.
 Alles geht als JSON nach stdout, auch Fehler, und der Exit-Code dient als Schranke.
 
 ```bash
 # schlankes, agentenfreundliches Urteil (~5x kleiner als --json: ohne umfangreiche Belege)
-zing check --base-url ... --model gpt-4o --compact | jq .verdict.risk
+ekte check --base-url ... --model gpt-4o --compact | jq .verdict.risk
 
 # vollständiger strukturierter Bericht, wenn Sie die Belege jedes Befunds brauchen
-zing check --base-url ... --model gpt-4o --json
+ekte check --base-url ... --model gpt-4o --json
 
 # erst das Budget: welche Detektoren laufen + geschätzte API-Aufrufe, OHNE einen auszuführen
-zing check --base-url ... --model gpt-4o --suite deep --dry-run --json
+ekte check --base-url ... --model gpt-4o --suite deep --dry-run --json
 
 # Schranke über den Exit-Code (1 bei Risiko >= medium oder einer Bewertung unter --fail-under);
 # Konfigurations-/Aufruffehler enden mit 2, als JSON
-zing check --base-url ... --model gpt-4o --compact --fail-on-risk medium
+ekte check --base-url ... --model gpt-4o --compact --fail-on-risk medium
 
 # maschinenlesbare Erkundung
-zing kb --json                      # die gesamte Wissensbasis
-zing models --base-url ... --json   # was ein Endpunkt bewirbt
+ekte kb --json                      # die gesamte Wissensbasis
+ekte models --base-url ... --json   # was ein Endpunkt bewirbt
 ```
 
 Im Modus `--json`/`--compact` gibt eine fehlerhafte Konfiguration `{"error": {...}}`
 (Exit-Code 2) statt einer Meldung für Menschen aus, sodass eine Pipeline Fehler
 einheitlich auswerten kann.
 
-## Weboberfläche (`zing serve`)
+## Weboberfläche (`ekte serve`)
 
 Lieber klicken? Eine lokale Weboberfläche nutzt dieselbe Engine — ganz ohne
 Kommandozeile.
 
 ```bash
-pip install 'zing-audit[web]'     # oder: uv tool install 'zing-audit[web]'
-zing serve                        # öffnet http://localhost:8000
+pip install 'ekte[web]'     # oder: uv tool install 'ekte[web]'
+ekte serve                        # öffnet http://localhost:8000
 ```
 
 In der neuen Oberfläche führt das Formular durch die Konfiguration:
@@ -227,7 +227,7 @@ In der neuen Oberfläche führt das Formular durch die Konfiguration:
    URLs des Anbieters werden als Vorschläge angeboten). Für jedes andere Relay
    wählen Sie **Andere (URL eingeben)** und geben die **Relay-URL** ein.
 2. Ergänzen Sie den **API-Schlüssel**, falls das Relay einen braucht.
-3. zing listet die Modelle des Relays selbst auf (bei der Auswahl eines Relays
+3. ekte listet die Modelle des Relays selbst auf (bei der Auswahl eines Relays
    und immer, wenn sich URL oder Schlüssel ändern; **Modelle neu laden** fragt
    erneut). Wählen Sie das **Angefragte Modell**. Ein Relay ohne Modellliste
    fällt auf die Eingabe der ID zurück (**Manuell eingeben**).
@@ -235,7 +235,7 @@ In der neuen Oberfläche führt das Formular durch die Konfiguration:
    Wissensbasis: das Modell, das das Relay zu liefern behauptet. Ist das
    angefragte Modell in der Wissensbasis, ist es vorausgewählt; ändern Sie es
    nur, wenn das Relay das Modell unter anderem Namen verkauft. Das
-   Anbieterprofil, gegen das zing prüft, ergibt sich daraus.
+   Anbieterprofil, gegen das ekte prüft, ergibt sich daraus.
 
 Ein Relay, das noch nicht in der Liste steht, lässt sich mit **In der
 Wissensbasis speichern** unter einem Namen Ihrer Wahl behalten; beim nächsten Mal
@@ -253,7 +253,7 @@ Leistungsabschnitt (in der neuen Oberfläche zusätzlich ein
 **Ausführungsprotokoll** aller Detektoren).
 
 Alles läuft auf Ihrem Rechner: ein im Browser eingegebener Schlüssel erreicht nur
-Ihren lokalen zing-Server und das geprüfte Relay, niemals Dritte. Siehe
+Ihren lokalen ekte-Server und das geprüfte Relay, niemals Dritte. Siehe
 [Datenschutz und lokale Daten](#datenschutz-und-lokale-daten).
 
 ### Seiten
@@ -292,7 +292,7 @@ und holt alles bisher Geschehene nach. Audits desselben Relays laufen
 nacheinander, damit sie Latenz- und Zuverlässigkeitswerte nicht gegenseitig
 verfälschen (alle Loopback-Adressen zählen als ein Host, also warten auch
 Modelle auf Ihrem eigenen Rechner); Audits verschiedener Relays laufen parallel,
-höchstens vier gleichzeitig (`ZING_MAX_PARALLEL_AUDITS`). Überwachungen warten
+höchstens vier gleichzeitig (`EKTE_MAX_PARALLEL_AUDITS`). Überwachungen warten
 ebenso auf ihr Relay.
 
 **Analyse (neue UI).** `/v2/analytics` macht aus dem lokalen Verlauf
@@ -328,7 +328,7 @@ Fähigkeitsprüfungen pro Relay × Modell, der Anteil der Läufe mit abweichend
 zurückgemeldetem Modell und der gemessene Anteil am angegebenen
 Kontextfenster), **Abrechnung und Tokens** (Abrechnungsverhältnisse im
 Zeitverlauf gegen die 100-%-Linie — darüber meldet das Relay mehr Tokens, als
-zing gezählt hat — sowie Anteile von Reasoning- und gecachten Eingabe-Tokens)
+ekte gezählt hat — sowie Anteile von Reasoning- und gecachten Eingabe-Tokens)
 und **Relay-Overhead** (die vom Relay gemeldete Verarbeitungszeit neben der
 Netzwerk-Umlaufzeit dorthin).
 
@@ -356,16 +356,16 @@ Ein Sprachmenü in der Kopfzeile jeder Seite schaltet die Oberfläche zwischen
 Aus der Oberfläche heruntergeladene Berichte (**Bericht herunterladen**: JSON,
 Markdown, HTML oder PDF) folgen der gewählten Sprache: JSON-Schlüssel,
 Enum-Werte (`risk_level`, `status`, `severity`, …), IDs und Belege bleiben exakt
-wie im Bericht der CLI (das JSON ist weiterhin ein gültiger zing-Bericht),
+wie im Bericht der CLI (das JSON ist weiterhin ein gültiger ekte-Bericht),
 während die für Menschen lesbaren Werte (Überschrift und Zusammenfassung des
 Urteils, Titel und Zusammenfassungen der Befunde, Empfehlungen, Detektornamen,
 Hinweise) übersetzt werden und der Dateiname die Sprache trägt
-(`zing-report.de.json`, `zing-report.de.pdf`). Die Abschnittsüberschriften der
+(`ekte-report.de.json`, `ekte-report.de.pdf`). Die Abschnittsüberschriften der
 Markdown-/HTML-/PDF-Dateien sind englisch. Die Berichte der CLI mit
 `--format json|md|html|pdf` bleiben englisch.
 
 **An den geprüften Endpunkt gesendete Prompts folgen nicht der Sprache der
-Oberfläche.** Jeder Text, den zing an eine LLM-API sendet, ist englisch, damit
+Oberfläche.** Jeder Text, den ekte an eine LLM-API sendet, ist englisch, damit
 dasselbe Relay dasselbe Urteil erhält, egal wer den Bericht liest
 (Antwortprüfungen und Token-Schätzungen sind auf genau diese Texte kalibriert).
 Die einzigen Ausnahmen sind Fingerabdrücke der Wissensbasis, deren Sprache
@@ -377,7 +377,7 @@ Anfrage-Datensatzes zählt ab diesem Zeitpunkt.
 
 ## Was geprüft wird
 
-zing bewertet zehn Dimensionen. Die vier **Kerndimensionen** — Modellidentität,
+ekte bewertet zehn Dimensionen. Die vier **Kerndimensionen** — Modellidentität,
 Kontextfenster, angegebene Fähigkeiten und Abrechnung & Verbrauch — decken einen
 Etikettenschwindel am direktesten auf. Die Namen sind die der
 Weboberfläche und der Berichte.
@@ -401,7 +401,7 @@ Fehlalarmen.
 
 ## Wie das Urteil zustande kommt
 
-Kurz gefasst (Details in der [Methodik](docs/METHODOLOGY.de.md#wie-zing-bewertet)):
+Kurz gefasst (Details in der [Methodik](docs/METHODOLOGY.de.md#wie-ekte-bewertet)):
 
 - Jeder Detektor veröffentlicht seine **Bewertungsskala** — jedes mögliche
   Ergebnis jeder Prüfung mit seinen Punkten —, und die Weboberfläche zeigt sie
@@ -463,8 +463,8 @@ Führen Sie nur die Dimensionen aus, die Sie interessieren — das spart Zeit un
 Token. Jeder Detektor jeder gewählten Dimension läuft wie bei `deep`:
 
 ```bash
-zing check --base-url ... --model gpt-4o -D protocol -D performance
-zing check --base-url ... --model gpt-4o --suite custom --dimension billing,streaming
+ekte check --base-url ... --model gpt-4o -D protocol -D performance
+ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,streaming
 ```
 
 `--dimension/-D` ist wiederholbar oder kommagetrennt und impliziert
@@ -530,7 +530,7 @@ wird nur bei ausreichend Stichproben angezeigt (p90 ab 10, p95 ab 20, p99 ab 100
 speichert die Zeiten jeder Anfrage (nur Zahlen, kein Text); HTML-Bericht und
 Weboberfläche stellen sie entlang der Zeitachse der Prüfung dar.
 
-Audits, die in `zing serve` gleichzeitig laufen (mehrere Browser-Tabs,
+Audits, die in `ekte serve` gleichzeitig laufen (mehrere Browser-Tabs,
 Überwachungen), verfälschen sich nicht gegenseitig die Zeiten: CPU-intensive
 Vorbereitung, etwa das Erstellen der langen Kontextfenster-Prompts, läuft
 außerhalb der Event-Loop des Servers.
@@ -547,7 +547,7 @@ als nicht eindeutig, nicht als Kürzung.
 
 ## Vergleichsmodus und LLM-Richter
 
-zing hat zwei Erkennungsmodi:
+ekte hat zwei Erkennungsmodi:
 
 - **Reiner Code (Standard):** jeder Detektor außer `quality_judge` entscheidet per
   deterministischem Code — Fingerabdrücke, Kontext-Durchlauf,
@@ -560,11 +560,11 @@ zing hat zwei Erkennungsmodi:
   `quality_judge`.
 
 ```bash
-zing check --base-url ... --model gpt-4o --suite deep --judge \
+ekte check --base-url ... --model gpt-4o --suite deep --judge \
   --judge-base-url https://api.openai.com/v1 --judge-api-key env:OPENAI_API_KEY --judge-model gpt-4o-mini
 ```
 
-Der **Vergleichsmodus** (`zing compare` oder **Mit vertrauenswürdiger Referenz
+Der **Vergleichsmodus** (`ekte compare` oder **Mit vertrauenswürdiger Referenz
 vergleichen** in der Weboberfläche) führt dieselben Tests gleichzeitig gegen eine
 vertrauenswürdige Referenz des angegebenen Modells aus. Er ist der stärkste Weg
 zur Bestätigung: Identitätsantworten, abgelehnte Anfrageparameter,
@@ -575,13 +575,13 @@ nutzt der Vergleichsmodus die Referenz als Richter.
 ## Überwachung
 
 Ein Relay kann heute das echte Modell liefern und es nächste Woche
-stillschweigend austauschen. `zing watch` wiederholt die Prüfung nach Zeitplan,
+stillschweigend austauschen. `ekte watch` wiederholt die Prüfung nach Zeitplan,
 speichert jeden Lauf im Verlauf und alarmiert einen Webhook, wenn das Risiko eine
 Schwelle überschreitet oder sich gegenüber dem vorherigen Lauf
 **verschlechtert**.
 
 ```bash
-zing watch --base-url https://relay.example.com/v1 --api-key env:ZING_API_KEY \
+ekte watch --base-url https://relay.example.com/v1 --api-key env:EKTE_API_KEY \
   --model gpt-4o --suite standard --interval 3600 \
   --alert-on medium --webhook "$FEISHU_WEBHOOK" \
   --alert-lang de                                     # oder --once für cron
@@ -594,12 +594,12 @@ JSON-Nutzlast hält ihre Schlüssel und Maschinenwerte (`risk_level`, `score`, �
 sprachneutral, übersetzt die für Menschen lesbaren (`text`, `headline`,
 `key_findings`) und gibt die `language` an.
 
-**In der Weboberfläche** führt `zing serve` dieselben Überwachungen in einem
+**In der Weboberfläche** führt `ekte serve` dieselben Überwachungen in einem
 Hintergrund-Scheduler im Serverprozess aus, speichert jeden Lauf im **Verlauf**
 und sendet dieselben Webhook-Warnungen:
 
 - **Neue Oberfläche:** einen Lauf im **Verlauf** öffnen und **Als Überwachung
-  einplanen** wählen. zing übernimmt die Konfiguration dieses Laufs (Relay,
+  einplanen** wählen. ekte übernimmt die Konfiguration dieses Laufs (Relay,
   Modell, angegebenes Modell, Anbieter, Suite, benutzerdefinierte Dimensionen) in
   eine pausierte Überwachung auf der Seite **Überwachung**; dort Intervall und
   API-Schlüssel setzen (der Verlauf speichert nie Schlüssel) und sie
@@ -619,7 +619,7 @@ binden.
 
 Fällige Überwachungen laufen gleichzeitig, jede als eigenes Audit, aber nie mehr
 als ein Audit pro Relay-Host auf einmal und insgesamt höchstens
-`ZING_MAX_PARALLEL_AUDITS`; ein Lauf wartet auf einen freien Platz (auch ein von
+`EKTE_MAX_PARALLEL_AUDITS`; ein Lauf wartet auf einen freien Platz (auch ein von
 Hand gestartetes Audit kann sich hinter laufenden Überwachungen einreihen). Die
 Zeit eines Laufs ist der Start seines Audits, nach einer etwaigen Wartezeit. Die
 Prüfung auf Verschlechterung vergleicht mit dem zuletzt gespeicherten Lauf
@@ -628,9 +628,9 @@ wurden. Die Warn-Webhooks eines Laufs werden gleichzeitig gesendet, sodass ein
 langsamer oder toter Webhook die anderen nicht aufhält. Schlüssel werden
 verschlüsselt in Ihrem lokalen Datenverzeichnis gespeichert und nie an den Browser zurückgegeben.
 
-**Speicherung der API-Schlüssel.** Standardmäßig **speichert** zing die
+**Speicherung der API-Schlüssel.** Standardmäßig **speichert** ekte die
 API-Schlüssel der Überwachungen **nicht**: Ein eingegebener Schlüssel bleibt nur
-im Arbeitsspeicher von `zing serve` und wird nie auf die Festplatte geschrieben.
+im Arbeitsspeicher von `ekte serve` und wird nie auf die Festplatte geschrieben.
 Nach einem Neustart nennt die Seite **Überwachungen** die Überwachungen, die
 ihren Schlüssel erneut brauchen; sie warten (kein Fehllauf, kein Alarm), bis Sie
 ihn eingeben. Überwachungen ohne Schlüssel und `env:`/`file:`-Verweise laufen
@@ -642,27 +642,27 @@ gespeicherten Schlüssel in den Arbeitsspeicher und löscht sie aus `watches.db`
 Der Seitenhinweis zeigt den aktiven Modus, fragt vor dem Umschalten nach und
 meldet, was verschoben wurde. Die klassische Oberfläche (`/watches`) speichert
 nie einen Schlüssel. Installationen, die bereits verschlüsselte Schlüssel
-speichern oder `ZING_SECRET_KEY` setzen, speichern sie weiter, bis Sie umschalten.
+speichern oder `EKTE_SECRET_KEY` setzen, speichern sie weiter, bis Sie umschalten.
 
 **Hauptschlüssel.** Die API-Schlüssel der Überwachungen sind mit einem
-Hauptschlüssel verschlüsselt, den zing nie auf die Festplatte schreibt. Wenn Sie
+Hauptschlüssel verschlüsselt, den ekte nie auf die Festplatte schreibt. Wenn Sie
 zum ersten Mal einen API-Schlüssel speichern, erstellt die Seite **Überwachung**
 ihn und zeigt ihn ein einziges Mal: kopieren oder herunterladen, in einem
 Passwortmanager aufbewahren (Ihr Browser kann ihn speichern) und zur Bestätigung
-wieder einfügen. Nach jedem Neustart von `zing serve` fragt die Seite erneut
+wieder einfügen. Nach jedem Neustart von `ekte serve` fragt die Seite erneut
 danach (der Browser kann ihn ausfüllen); bis dahin warten Überwachungen, die ihn
 brauchen, während Überwachungen ohne Schlüssel oder mit
 `env:`/`file:`-Schlüsseln weiterlaufen. Die Statusleiste der Seite bietet
 außerdem **Sperren**, **Wechseln** und **Schlüssel vergessen?** (verwirft die
 verschlüsselten API-Schlüssel, damit Sie sie neu eingeben können). Für
 unbeaufsichtigten Betrieb oder Docker übergeben Sie den Schlüssel als
-`ZING_SECRET_KEY` (siehe [docs/DOCKER.md](docs/DOCKER.md));
-`zing secret status | export | rotate` verwalten ihn auf der Kommandozeile.
+`EKTE_SECRET_KEY` (siehe [docs/DOCKER.md](docs/DOCKER.md));
+`ekte secret status | export | rotate` verwalten ihn auf der Kommandozeile.
 
 ## Prüfungen für Embedding, Rerank, Bild und Audio
 
 Diese Endpunkte liefern Vektoren, Rangfolgen, Bilder oder Audio statt Chat, daher
-prüft zing sie mit fokussierten Tests statt mit den Chat-Prompts. Jeder gibt ein
+prüft ekte sie mit fokussierten Tests statt mit den Chat-Prompts. Jeder gibt ein
 Urteil aus und unterstützt `--json` und `--fail-on-risk`.
 
 ### Endpunkttyp (Surface), Embedding- und Rerank-Monitore
@@ -691,27 +691,27 @@ laufen nur in den Suiten deep, full oder custom oder in standard mit Baseline.
 
 ```bash
 # Die erwartete Vektordimension wird für das angegebene Modell aus der Wissensbasis ermittelt.
-zing embed --base-url https://relay.example.com/v1 \
+ekte embed --base-url https://relay.example.com/v1 \
            --model text-embedding-3-large --claimed-model text-embedding-3-large --fail-on-risk high
 
 # Oder die erwartete Dimension direkt vorgeben:
-zing embed --base-url ... --model my-embed --claimed-dimensions 1024 --json
+ekte embed --base-url ... --model my-embed --claimed-dimensions 1024 --json
 
 # Rerank: ein eingebauter Test mit bekannter Antwort — ein echter Reranker muss das
 # offensichtlich relevante Dokument an erster Stelle einordnen.
-zing rerank --base-url https://relay.example.com/v1 --model my-rerank
+ekte rerank --base-url https://relay.example.com/v1 --model my-rerank
 
 # Gründlicher: mit der Rerank-Geschwindigkeitsmessung; --no-save hält den Lauf aus dem Verlauf.
-zing rerank --base-url ... --model my-rerank --suite deep --no-save
+ekte rerank --base-url ... --model my-rerank --suite deep --no-save
 # Zuerst die Prüfungen und die geschätzten Aufrufe ansehen, ohne Anfrage:
-zing rerank --base-url ... --model my-rerank --dry-run
+ekte rerank --base-url ... --model my-rerank --dry-run
 ```
 
 `rerank` prüft Konnektivität, den **Test mit bekannter Antwort** (das
 offensichtlich relevante Dokument muss an erster Stelle stehen), das
 zurückgegebene `model`-Feld, Determinismus (dieselbe Anfrage zweimal ergibt
 dieselbe Rangfolge und dieselben Scores) und die **Rangfolge-Drift** gegenüber
-dem vorigen gespeicherten Lauf. `zing embed` und `zing rerank` nehmen `--suite`,
+dem vorigen gespeicherten Lauf. `ekte embed` und `ekte rerank` nehmen `--suite`,
 `--save/--no-save` (standardmäßig gespeichert, damit der nächste Lauf eine
 Drift-Referenz hat) und `--dry-run`.
 
@@ -741,12 +741,12 @@ Bildabmessungen aus den Header-Bytes (PNG/JPEG/GIF/WebP), WAV-Dauer über `wave`
 # Liefert ein Relay, das DALL·E 3 angibt, wirklich das angeforderte 1792x1024? Ein
 # verkleinertes Bild oder eines in falscher Größe (oder außerhalb der nativen Größen des
 # angegebenen Modells laut Wissensbasis) ist das Hauptsignal für einen Etikettenschwindel.
-zing image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
+ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
   --model dall-e-3 --claimed-model dall-e-3 --size 1792x1024 --fail-on-risk high
 
 # Liefert ein Relay, das tts-1-hd angibt, echtes Audio, dessen Länge mit der Eingabe
 # wächst (kein fester Platzhalter, kein als Audio getarntes HTML/JSON)?
-zing audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
+ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
   --model tts-1-hd --voice alloy --format wav --save clip.wav
 ```
 
@@ -763,7 +763,7 @@ tts-1/tts-1-hd/gpt-4o-mini-tts sowie Bild-/TTS-Profile von Qwen.
 ## Einsatz in CI (GitHub Action)
 
 Machen Sie jeden Workflow mit der mitgelieferten Composite Action von einer
-Relay-Prüfung abhängig. Sie führt `zing check --compact --fail-on-risk` aus,
+Relay-Prüfung abhängig. Sie führt `ekte check --compact --fail-on-risk` aus,
 stellt `risk` / `score` / `rating` als Ausgaben bereit, schreibt eine
 Zusammenfassung in den Lauf und lässt den Job fehlschlagen, wenn die
 Risikoschranke auslöst.
@@ -773,14 +773,14 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - id: zing
-        uses: cenbonew/zing@v0.11.0         # auf ein Release-Tag festlegen
+      - id: ekte
+        uses: mn567250/ekte@main         # auf ein Release-Tag festlegen
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}   # Secret des Aufrufers; wird nie ausgegeben
           model: gpt-4o
           fail-on-risk: high
-      - run: echo "risk=${{ steps.zing.outputs.risk }} score=${{ steps.zing.outputs.score }}"
+      - run: echo "risk=${{ steps.ekte.outputs.risk }} score=${{ steps.ekte.outputs.score }}"
 ```
 
 Der Relay-Schlüssel wird über eine Umgebungsvariable weitergereicht
@@ -790,21 +790,21 @@ Deployment-Schranke.
 
 ## Wissensbasis
 
-zing beurteilt ein Relay anhand des **Profils** des angegebenen Modells: natives
+ekte beurteilt ein Relay anhand des **Profils** des angegebenen Modells: natives
 Kontextfenster, maximale Ausgabe, Wissensstichtag, Tokenizer, Fähigkeitsflags,
 Identitätsschlüsselwörter und Verhaltens-Fingerabdrücke. Die mitgelieferten
 Profile decken OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM und Moonshot
-ab (`zing kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
+ab (`ekte kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
 
 1. **Mitgelieferte** Profile, eine YAML-Datei pro Anbieter in
-   [`zing/knowledge/data/`](zing/knowledge/data).
+   [`ekte/knowledge/data/`](ekte/knowledge/data).
 2. **Ein Verzeichnis eigener YAML-Dateien**: `--kb-dir ./my-profiles`
-   (wiederholbar) oder `ZING_KB_DIR`.
+   (wiederholbar) oder `EKTE_KB_DIR`.
 3. **Ihre Einträge** (`kb.db` im Datenverzeichnis), hinzugefügt ohne YAML-Dateien
    oder editierbare Installation:
    - auf der Seite **Wissen** der Weboberfläche (`/v2/kb`), mit je einem Tab für
      **Modelle**, **Anbieter** und **Relays**. Jeder Tab listet den vollständigen
-     Bestand — mitgeliefert, `ZING_KB_DIR` und eigene (markiert mit **Eigener**) —
+     Bestand — mitgeliefert, `EKTE_KB_DIR` und eigene (markiert mit **Eigener**) —
      mit Filter, einem Ein/Aus-Schalter pro Element und einem Formular
      **… hinzufügen**: **Modell hinzufügen** → **Recherche-Prompt kopieren** und in
      den KI-Assistenten Ihrer Wahl einfügen, das YAML seiner Antwort hochladen oder
@@ -815,10 +815,10 @@ ab (`zing kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
    - auf der Seite **Prüfung** der Weboberfläche (klassisch auch **Werkzeuge**): **In der
      Wissensbasis speichern** behält Namen und Basis-URL eines Relays (ein
      Anbieter-Eintrag ohne Modelle), aufgeführt unter **Wissen → Relays**;
-   - auf der Kommandozeile: `zing kb-prompt <model>`, `zing kb-import <file>`
-     (mit `--check` nur prüfen) und `zing kb-export`.
+   - auf der Kommandozeile: `ekte kb-prompt <model>`, `ekte kb-import <file>`
+     (mit `--check` nur prüfen) und `ekte kb-export`.
 
-Vor dem Speichern prüft zing einen Eintrag: Schema und Grenzen, unsichere
+Vor dem Speichern prüft ekte einen Eintrag: Schema und Grenzen, unsichere
 reguläre Ausdrücke, jeden Prompt, den er senden würde, und Modell-IDs, die zu
 einem anderen Profil aufgelöst würden. Ein eigenes Modell mit der ID eines
 mitgelieferten ersetzt dieses (als *Überschattung* ausgewiesen), ändert aber nie
@@ -826,11 +826,11 @@ die Einstellungen eines mitgelieferten Anbieters; Fingerabdrücke werden anhand
 ihrer ID zusammengeführt. Das Ausschalten eines mitgelieferten Modells, Anbieters
 oder Relays auf der Seite **Wissen** wird ebenfalls in `kb.db` gespeichert: eine
 ausgeschaltete Modell-ID wird nicht mehr aufgelöst, ein ausgeschalteter Anbieter
-nimmt seine Modelle und Basis-URLs mit. `zing check` und `zing serve` nutzen genau
-dieselben Profile; `--no-user-kb` (oder `ZING_NO_USER_KB=1`) lässt Ihre Einträge
+nimmt seine Modelle und Basis-URLs mit. `ekte check` und `ekte serve` nutzen genau
+dieselben Profile; `--no-user-kb` (oder `EKTE_NO_USER_KB=1`) lässt Ihre Einträge
 und Schalter weg.
 
-Ein Modell mit leeren `identity_keywords` wird so nicht gespeichert: zing
+Ein Modell mit leeren `identity_keywords` wird so nicht gespeichert: ekte
 ergänzt seine eigenen Markenwörter aus den Namen von Anbieter und Modell (etwa
 `glm` und `z.ai`) und zeigt eine Warnung,
 sie zu prüfen, denn ohne sie könnte die Identitätsprüfung den eigenen Hersteller
@@ -844,7 +844,7 @@ Wissensbasis überprüfbar bleibt.
 
 ## Berichte
 
-`zing check` und `zing compare` geben ein Urteil aus und schreiben den Bericht nach
+`ekte check` und `ekte compare` geben ein Urteil aus und schreiben den Bericht nach
 `reports/` (`--out-dir`) als JSON, Markdown, HTML und PDF (`--format all`, der
 Standard); `--format json|md|html|pdf` schreibt ein einzelnes Format. `--json` und
 `--compact` geben stattdessen auf stdout aus.
@@ -870,10 +870,10 @@ Relay kontrollierter Text wird vor dem Schreiben geschwärzt und maskiert.
 
 ## Datenschutz und lokale Daten
 
-- **Nur lokal.** `zing serve` lauscht nur auf Loopback (`127.0.0.1`, `::1`,
+- **Nur lokal.** `ekte serve` lauscht nur auf Loopback (`127.0.0.1`, `::1`,
   `localhost`), antwortet nur unter diesen Hostnamen und weist
   seitenübergreifende Anfragen ab; es hat keine Anmeldung, weil nichts außerhalb
-  Ihres Rechners es erreichen kann. zing kontaktiert nur die Endpunkte, die Sie
+  Ihres Rechners es erreichen kann. ekte kontaktiert nur die Endpunkte, die Sie
   konfigurieren (Ziel, Referenz, Richter, Webhooks); zur Laufzeit lädt es nichts
   herunter, nicht einmal Tokenizer-Dateien.
 - **Schlüssel.** Berichte und Verlauf speichern von einem API-Schlüssel nur
@@ -882,21 +882,21 @@ Relay kontrollierter Text wird vor dem Schreiben geschwärzt und maskiert.
   Datenverzeichnis gespeichert (Sie bewahren ihn auf, siehe **Überwachung**
   oben), sodass eine Kopie des Verzeichnisses keinen API-Schlüssel preisgibt.
   Zugriff auf das Verzeichnis haben trotzdem nur Sie.
-- **Datenverzeichnis.** `~/.zing` (oder `ZING_DATA_DIR`), angelegt mit `0700`
+- **Datenverzeichnis.** `~/.ekte` (oder `EKTE_DATA_DIR`), angelegt mit `0700`
   und Dateien mit `0600`: `history.db` (Prüfverlauf), `watches.db`
   (Überwachungen samt verschlüsselter Schlüssel) und `kb.db` (Ihre
   Wissensbasis-Einträge). Löschen Sie das Verzeichnis, um alles zu entfernen.
-  `zing data-dir` zeigt, wo es liegt; `--data-dir PFAD` wählt für einen Lauf
-  ein anderes, z. B. legt `zing serve --data-dir .` die Datenbanken im
+  `ekte data-dir` zeigt, wo es liegt; `--data-dir PFAD` wählt für einen Lauf
+  ein anderes, z. B. legt `ekte serve --data-dir .` die Datenbanken im
   aktuellen Ordner ab. Es sind normale SQLite-Dateien, die Sie für eigene
-  Auswertungen öffnen können (während zing läuft, am besten nur lesend).
+  Auswertungen öffnen können (während ekte läuft, am besten nur lesend).
   `history_metrics` enthält eine Zeile Messwerte pro Lauf, `history_requests`
   jeden Anfrage-Datensatz (dort einmal gespeichert, nicht in jedem Bericht).
   Committen Sie `watches.db` nicht, falls der Ordner ein Repository ist.
 
 ## Verantwortungsvoller Einsatz
 
-zing ist ein Hilfsmittel für Black-Box-Prüfungen. Es **kann nicht beweisen**,
+ekte ist ein Hilfsmittel für Black-Box-Prüfungen. Es **kann nicht beweisen**,
 
 - dass ein Anbieter Ihre Prompts speichert oder damit trainiert,
 - dass er immer an genau ein bestimmtes Modell weiterleitet (Relays können probabilistisch routen),
@@ -905,7 +905,7 @@ zing ist ein Hilfsmittel für Black-Box-Prüfungen. Es **kann nicht beweisen**,
 Nutzen Sie die Berichte für Ihre eigene Sorgfaltsprüfung. **Beschuldigen Sie einen
 Anbieter nicht öffentlich** auf Grundlage eines einzelnen Laufs, ohne
 Stichprobengröße, Kosteneinstellungen und lokales Recht zu prüfen. Führen Sie
-`zing compare` gegen eine vertrauenswürdige Referenz aus, bevor Sie weitreichende
+`ekte compare` gegen eine vertrauenswürdige Referenz aus, bevor Sie weitreichende
 Schlüsse ziehen.
 
 ## Weitere Dokumentation

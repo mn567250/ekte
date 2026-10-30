@@ -16,17 +16,17 @@ pytest.importorskip("cryptography")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from zing import secretbox  # noqa: E402
-from zing.web import watches  # noqa: E402
-from zing.web.masterkey import vault  # noqa: E402
-from zing.web.server import create_app  # noqa: E402
+from ekte import secretbox  # noqa: E402
+from ekte.web import watches  # noqa: E402
+from ekte.web.masterkey import vault  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 SECRET = "sk-relay-secret-not-stored-42"
 
 
 @pytest.fixture(autouse=True)
 def _fresh(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     _restart()  # a first start: nothing chosen yet
 
 
@@ -102,7 +102,7 @@ def test_a_restart_loses_the_key_and_the_monitor_waits(client):
 
 
 async def test_scheduler_waits_for_a_missing_key(client, monkeypatch):
-    from zing.web import server
+    from ekte.web import server
 
     wid = _watch()
     _restart()
@@ -143,10 +143,10 @@ def test_an_install_with_encrypted_keys_keeps_storing_them(client):
     assert watches.get_key_storage() == "encrypted"
 
 
-def test_zing_secret_key_selects_encrypted_storage(monkeypatch):
+def test_ekte_secret_key_selects_encrypted_storage(monkeypatch):
     with sqlite3.connect(watches._db_path()) as conn:
         conn.execute("DELETE FROM secret_meta WHERE name = 'key_storage'")
-    monkeypatch.setenv("ZING_SECRET_KEY", secretbox.generate_key())
+    monkeypatch.setenv("EKTE_SECRET_KEY", secretbox.generate_key())
     st = _restart()
     assert st["storage"] == "encrypted" and st["state"] == "unlocked"
 

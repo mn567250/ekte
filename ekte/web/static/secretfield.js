@@ -1,4 +1,4 @@
-/* zing web UI — masked API key fields with a show/hide toggle.
+/* ekte web UI — masked API key fields with a show/hide toggle.
  *
  * Plain browser global, no modules; load after /lang.js and /icons.js.
  * The markup does the real work, so keys stay masked even without JS:
@@ -15,7 +15,7 @@
  * falling back to --faint / --ink / --teal (the v2 UI sets them in
  * /v2/static/fields.css).
  *
- * Exposes window.ZingSecret with:
+ * Exposes window.EkteSecret with:
  *   - enhance(root)       add the eye toggle to every input[data-secret] under root
  *                         (idempotent; runs on the document at load)
  *   - isReference(value)  true for env:VAR / file:/path — not secrets, so they
@@ -42,12 +42,12 @@
   }
 
   function icon(name) {
-    return window.zingIcon ? window.zingIcon(name) : "";
+    return window.ekteIcon ? window.ekteIcon(name) : "";
   }
 
   function setShown(input, shown) {
     input.type = shown ? "text" : "password";
-    var btn = input.__zingEye;
+    var btn = input.__ekteEye;
     if (!btn) return;
     btn.setAttribute("aria-pressed", shown ? "true" : "false");
     btn.innerHTML = icon(shown ? "eyeOff" : "eye");
@@ -67,7 +67,7 @@
     var inputs = (root || document).querySelectorAll("input[data-secret]");
     for (var i = 0; i < inputs.length; i++) {
       var input = inputs[i];
-      if (input.__zingEye) continue;
+      if (input.__ekteEye) continue;
       var wrap = document.createElement("span");
       wrap.className = "secret-wrap zsf";
       input.parentNode.insertBefore(wrap, input);
@@ -92,7 +92,7 @@
         }
       }
       wrap.appendChild(btn);
-      input.__zingEye = btn;
+      input.__ekteEye = btn;
       btn.addEventListener("mousedown", function (e) {
         e.preventDefault(); // keep focus (and the caret) in the input
       });
@@ -102,7 +102,7 @@
         };
       })(input));
       setShown(input, isReference(input.value));
-      if (window.ZING_LANG) window.ZING_LANG.apply(wrap);
+      if (window.EKTE_LANG) window.EKTE_LANG.apply(wrap);
     }
   }
 
@@ -130,7 +130,7 @@
     } catch (e) {}
   }
 
-  window.ZingSecret = { enhance: enhance, isReference: isReference, remember: remember };
+  window.EkteSecret = { enhance: enhance, isReference: isReference, remember: remember };
 
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") {

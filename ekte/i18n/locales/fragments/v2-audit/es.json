@@ -15,7 +15,7 @@
   "New audit": "Nueva auditoría",
   "No audits are running": "No hay auditorías en curso",
   "On": "Activado",
-  "Only if the relay sells it under another name — zing checks the answers against this model.": "Solo si el intermediario lo vende con otro nombre — zing contrasta las respuestas con este modelo.",
+  "Only if the relay sells it under another name — ekte checks the answers against this model.": "Solo si el intermediario lo vende con otro nombre — ekte contrasta las respuestas con este modelo.",
   "Please enter the relay URL and the model to request.": "Introduce la URL del intermediario y el modelo solicitado.",
   "Relay URL": "URL del intermediario",
   "Report": "Informe",

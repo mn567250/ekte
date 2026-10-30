@@ -15,27 +15,27 @@ from types import SimpleNamespace
 
 import pytest
 
-import zing.detectors as detectors_pkg
-from zing import i18n
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors import REGISTRY
-from zing.detectors.capability import CapabilityDetector
-from zing.detectors.context_window import SCALE as CW_SCALE
-from zing.detectors.context_window import ContextWindowDetector, _window_deduction
-from zing.detectors.quality_judge import SCALE as JUDGE_SCALE
-from zing.detectors.quality_judge import QualityJudgeDetector, _suspicious_outcome
-from zing.detectors.reliability import ReliabilityDetector, _latency_deduction
-from zing.detectors.scale import DeductionScale, Scale
-from zing.detectors.security import SecurityDetector
-from zing.detectors.streaming import StreamingDetector
-from zing.models import CompletionOutcome, DetectorResult, Severity, Status, TargetConfig
+import ekte.detectors as detectors_pkg
+from ekte import i18n
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors import REGISTRY
+from ekte.detectors.capability import CapabilityDetector
+from ekte.detectors.context_window import SCALE as CW_SCALE
+from ekte.detectors.context_window import ContextWindowDetector, _window_deduction
+from ekte.detectors.quality_judge import SCALE as JUDGE_SCALE
+from ekte.detectors.quality_judge import QualityJudgeDetector, _suspicious_outcome
+from ekte.detectors.reliability import ReliabilityDetector, _latency_deduction
+from ekte.detectors.scale import DeductionScale, Scale
+from ekte.detectors.security import SecurityDetector
+from ekte.detectors.streaming import StreamingDetector
+from ekte.models import CompletionOutcome, DetectorResult, Severity, Status, TargetConfig
 
 
 def _scales() -> dict[str, Scale]:
     out = {}
     for m in pkgutil.iter_modules(detectors_pkg.__path__):
-        mod = importlib.import_module(f"zing.detectors.{m.name}")
+        mod = importlib.import_module(f"ekte.detectors.{m.name}")
         for name, value in vars(mod).items():
             if name.endswith("SCALE") and isinstance(value, Scale):
                 out[f"{m.name}.{name}"] = value

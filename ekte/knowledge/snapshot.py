@@ -18,8 +18,8 @@ import sqlite3
 import time
 from typing import Any
 
-from zing.knowledge.schema import KnowledgeBase, ModelProfile, ProviderProfile, ResolvedProfile
-from zing.models import KnowledgeEntryRef, KnowledgeUsage
+from ekte.knowledge.schema import KnowledgeBase, ModelProfile, ProviderProfile, ResolvedProfile
+from ekte.models import KnowledgeEntryRef, KnowledgeUsage
 
 
 def snapshot(resolved: ResolvedProfile) -> dict[str, Any]:

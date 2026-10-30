@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from zing.context import AuditContext
-from zing.detectors.base import register
-from zing.detectors.embedding import sha
-from zing.detectors.rerank import (
+from ekte.context import AuditContext
+from ekte.detectors.base import register
+from ekte.detectors.embedding import sha
+from ekte.detectors.rerank import (
     RerankDetector,
     drift_probe,
     max_score_delta,
@@ -19,8 +19,8 @@ from zing.detectors.rerank import (
     rerank,
     scores,
 )
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, Severity, Status
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, Severity, Status
 
 # Largest score change on the pinned probe, on the score scale (relative to the
 # score's magnitude for scores above 1), with the same ranking.

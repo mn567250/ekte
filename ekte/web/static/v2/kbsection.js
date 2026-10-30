@@ -1,7 +1,7 @@
-/* zing web UI v2 — Knowledge page: one section component for every tab.
+/* ekte web UI v2 — Knowledge page: one section component for every tab.
  *
  * Each tab (models, providers, relays) is the same thing: the complete set of
- * its items — packaged, ZING_KB_DIR and the user's own, the latter marked with
+ * its items — packaged, EKTE_KB_DIR and the user's own, the latter marked with
  * a "Yours" badge — each with an on/off switch, a delete button for the
  * user's own items, and an "Add …" form. One filter above the tabs (kb.html)
  * applies to every section. Only a small config differs per tab (kb.html).
@@ -13,7 +13,7 @@
  *   [data-kb=add]       <details> holding the add form, built by cfg.add
  *   [data-kb=list]      the items
  *
- * ZingKbSection.mount(panel, cfg, page) → { render() }
+ * EkteKbSection.mount(panel, cfg, page) → { render() }
  *   cfg.kind     "models" | "providers" | "relays" (the key in the API data)
  *   cfg.groupBy  optional item field: items are grouped in <details>
  *   cfg.group(g) the html of a group's summary
@@ -28,15 +28,15 @@
  * Returns { render(), rendered(), filter() → { n, total }, openAdd(focus) };
  * filter() re-applies page.filters() after they change.
  *
- * Add forms (ZingKbSection.wizard / relayForm) carry Chinese text with data-en
- * like the static markup and are translated with ZING_LANG.apply(), so a
+ * Add forms (EkteKbSection.wizard / relayForm) carry Chinese text with data-en
+ * like the static markup and are translated with EKTE_LANG.apply(), so a
  * language switch keeps what the user typed.
  */
 (function () {
   "use strict";
 
-  var V = window.ZingKbView._;
-  var L = window.ZING_LANG;
+  var V = window.EkteKbView._;
+  var L = window.EKTE_LANG;
 
   function T(zh, en) { return window.T ? window.T(zh, en) : en; }
   function Tf(zh, en, vals) {
@@ -44,7 +44,7 @@
     Object.keys(vals || {}).forEach(function (k) { s = s.split("{" + k + "}").join(String(vals[k])); });
     return s;
   }
-  function icon(name, opts) { return typeof window.zingIcon === "function" ? window.zingIcon(name, opts) : ""; }
+  function icon(name, opts) { return typeof window.ekteIcon === "function" ? window.ekteIcon(name, opts) : ""; }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -70,13 +70,13 @@
   function sourceBadge(src) {
     var k = V.sourceKind(src);
     if (k === "yours") return '<span class="badge good">' + esc(T("你的", "Yours")) + "</span>";
-    if (k === "kbdir") return '<span class="badge sky" title="' + esc(V.sourceFile(src)) + '">ZING_KB_DIR</span>';
+    if (k === "kbdir") return '<span class="badge sky" title="' + esc(V.sourceFile(src)) + '">EKTE_KB_DIR</span>';
     return '<span class="badge grey">' + esc(T("内置", "Packaged")) + "</span>";
   }
   function sourceText(src) {
     var k = V.sourceKind(src), f = V.sourceFile(src);
     if (k === "yours") return Tf("你的条目 {id}", "your entry {id}", { id: f });
-    if (k === "kbdir") return "ZING_KB_DIR " + f;
+    if (k === "kbdir") return "EKTE_KB_DIR " + f;
     return Tf("内置 {file}", "packaged {file}", { file: f });
   }
 
@@ -279,7 +279,7 @@
       '<input type="file" id="' + id("file") + '" accept=".yaml,.yml,text/yaml,application/yaml,text/plain" hidden>' +
       '<span class="hint mono" id="' + id("file-name") + '"></span></div></div>' +
       '<div class="step"><h3><span class="n">' + (++n) + '</span><span data-en="Check and save">检查并保存</span></h3>' +
-      '<p class="hint" data-en="The check validates the schema and limits, flags unsafe regular expressions, lists every prompt zing would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.">检查会校验结构与上限、标记不安全的正则表达式、列出 zing 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。</p>' +
+      '<p class="hint" data-en="The check validates the schema and limits, flags unsafe regular expressions, lists every prompt ekte would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.">检查会校验结构与上限、标记不安全的正则表达式、列出 ekte 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。</p>' +
       '<div class="row"><button class="btn" type="button" id="' + id("check") + '">' + icon("search") + ' <span data-en="Check">检查</span></button>' +
       '<button class="btn pri" type="button" id="' + id("save") + '" disabled>' + icon("check") + ' <span data-en="Save to knowledge base">保存到知识库</span></button></div>' +
       '<div aria-live="polite"><div class="scan" id="' + id("scan") + '" hidden></div>' +
@@ -387,7 +387,7 @@
           return "<li><code>" + esc(c.id) + "</code>: " + esc(c.before || "—") + " → " + esc(c.after || "—") + "</li>";
         });
       if (s.probes && s.probes.length) {
-        html += "<div><h4>" + esc(Tf("将发送给中转站的提示词（{n}）", "Prompts zing will send to relays ({n})", { n: s.probes.length })) + "</h4>" +
+        html += "<div><h4>" + esc(Tf("将发送给中转站的提示词（{n}）", "Prompts ekte will send to relays ({n})", { n: s.probes.length })) + "</h4>" +
           "<details><summary>" + esc(T("逐条查看", "Review them")) + "</summary><ul>" +
           s.probes.map(function (pr) {
             return "<li><code>" + esc(pr.id) + "</code> (" + esc(pr.owner) + ", " + esc(pr.prompt_lang) + ")<pre>" + esc(pr.prompt) + "</pre></li>";
@@ -447,7 +447,7 @@
       });
     });
 
-    window.addEventListener("zing:lang", function () { paintCopyMsg(); paintScan(); paintForm(); });
+    window.addEventListener("ekte:lang", function () { paintCopyMsg(); paintScan(); paintForm(); });
   }
 
   // ---- add form: a relay (name + base URL) --------------------------------- //
@@ -510,8 +510,8 @@
         fail(null, function () { return T("网络错误，保存失败。", "Network error — not saved."); });
       }).then(function () { setBusy(btn, false); });
     });
-    window.addEventListener("zing:lang", paint);
+    window.addEventListener("ekte:lang", paint);
   }
 
-  window.ZingKbSection = { mount: mount, wizard: wizard, relayForm: relayForm, sourceText: sourceText, esc: esc, Tf: Tf };
+  window.EkteKbSection = { mount: mount, wizard: wizard, relayForm: relayForm, sourceText: sourceText, esc: esc, Tf: Tf };
 })();

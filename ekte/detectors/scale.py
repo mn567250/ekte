@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from zing.models import DetectorScoring, Finding, ScoringOutcome, Severity, Status
+from ekte.models import DetectorScoring, Finding, ScoringOutcome, Severity, Status
 
 
 def outcome(

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="zing — relay reality check">zing — 中转站验真</title>
+<title data-en="ekte — relay reality check">ekte — 中转站验真</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <style>
@@ -155,7 +155,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="logo"><span class="b" id="logo-b"></span><span>zing<b>.</b></span></div>
+    <div class="logo"><span class="b" id="logo-b"></span><span>ekte<b>.</b></span></div>
     <a class="pill" href="/tools" style="margin-left:auto;text-decoration:none"><span class="pico" id="ic-tools"></span> <span data-en="Tools">工具</span></a>
     <a class="pill" href="/history" style="text-decoration:none"><span class="pico" id="ic-history"></span> <span data-en="History">检测历史</span></a>
     <a class="pill" href="/watches" style="text-decoration:none"><span class="pico" id="ic-watches"></span> <span data-en="Monitors">监控</span></a>
@@ -168,14 +168,14 @@
   <section class="view show" id="v1">
     <div class="hero">
       <h1 data-en="Is this relay serving the <span class='u'>real thing</span>?">这家中转站，给的是<span class="u">真货</span>吗？</h1>
-      <p data-en="Enter the relay's address and the model it claims to serve. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">填入中转站地址和它声称的模型，zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
+      <p data-en="Enter the relay's address and the model it claims to serve. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">填入中转站地址和它声称的模型，ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
     </div>
     <div class="card" style="margin-top:20px">
       <form id="form" onsubmit="return false">
         <div class="grp"><div class="lab" data-en="Relay address base_url">中转站地址 base_url</div><input class="in" id="i-url" autocomplete="username" spellcheck="false" placeholder="https://relay.example.com/v1" value="https://api.deepseek.com/v1"></div>
         <div class="grp">
           <div class="row-help"><div class="lab" style="margin:0">API Key</div><span style="font-size:11.5px;color:var(--faint)" data-en="Supports env:VAR / file:/path">支持 env:VAR / file:/path</span></div>
-          <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" placeholder="sk-... 或 env:ZING_API_KEY" data-en-placeholder="sk-... or env:ZING_API_KEY" value="env:ZING_API_KEY">
+          <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" placeholder="sk-... 或 env:EKTE_API_KEY" data-en-placeholder="sk-... or env:EKTE_API_KEY" value="env:EKTE_API_KEY">
         </div>
         <div class="two">
           <div class="grp"><div class="lab" data-en="Claimed model">声称的模型</div><input class="in" id="i-model" value="deepseek-v4-flash"></div>
@@ -198,7 +198,7 @@
         <div class="cmp" id="cmp">
           <button type="button" class="cmp-toggle" id="cmp-t"><span><span class="pico" id="ic-plus"></span> <span data-en="Compare against a trusted baseline (compare · stronger verdict)">对照可信基线（compare · 更强结论）</span></span><span class="cv" id="ic-cv"></span></button>
           <div class="cmp-body" id="cmp-body"><div class="cmp-inner">
-            <p class="cmp-hint" data-en="Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). zing uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.">填一个你<b>信任的同款模型端点</b>（如官方 API）。zing 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。</p>
+            <p class="cmp-hint" data-en="Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.">填一个你<b>信任的同款模型端点</b>（如官方 API）。ekte 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。</p>
             <div class="grp"><div class="lab" data-en="Baseline base_url">基线 base_url</div><input class="in" id="b-url" placeholder="https://api.deepseek.com/v1"></div>
             <div class="grp"><div class="lab" data-en="Baseline API Key">基线 API Key</div><input class="in" id="b-key" type="password" data-secret="b-url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="sk-... 或 env:OPENAI_API_KEY" data-en-placeholder="sk-... or env:OPENAI_API_KEY"></div>
             <div class="two">
@@ -209,11 +209,11 @@
           </div></div>
         </div>
         <button class="cta" id="go"><span data-en="Start audit">开始检测</span> <span id="ic-go-arrow"></span></button>
-        <div class="reassure" data-en="Tests are sent from <b>your local zing server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.">检测在 <b>你本地的 zing 服务</b> 发起，密钥只用于连接目标中转站，<b>不上传任何第三方</b>。</div>
+        <div class="reassure" data-en="Tests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.">检测在 <b>你本地的 ekte 服务</b> 发起，密钥只用于连接目标中转站，<b>不上传任何第三方</b>。</div>
         <div id="formerr"></div>
       </form>
     </div>
-    <div class="foot" data-en="zing provides reproducible evidence of risk and deviation, not a legal verdict.">zing 给出的是风险与偏离的可复现证据，不是法律结论。</div>
+    <div class="foot" data-en="ekte provides reproducible evidence of risk and deviation, not a legal verdict.">ekte 给出的是风险与偏离的可复现证据，不是法律结论。</div>
   </section>
 
   <!-- STEP 2 -->
@@ -238,7 +238,7 @@
         <button id="again" data-en="Test another">再测一个</button>
         <button class="pri" id="dl" data-en="Download report (JSON)">下载报告 (JSON)</button>
       </div>
-      <div class="foot" data-en="Want the strongest verdict? Re-check against an official baseline with <code>zing compare</code>.">想要最强结论？用 <code>zing compare</code> 对照官方基线复检。</div>
+      <div class="foot" data-en="Want the strongest verdict? Re-check against an official baseline with <code>ekte compare</code>.">想要最强结论？用 <code>ekte compare</code> 对照官方基线复检。</div>
     </div>
   </section>
 </div>
@@ -264,16 +264,16 @@ const DIMNAME_EN={model_identity:["Model identity","Is it the model it claims to
   capability:["Capability claims","Are tools/JSON really supported?"],billing:["Billing & usage","Is token usage inflated?"],
   protocol:["Protocol compliance","Is the API spec-compliant?"],connectivity:["Connectivity","Reliably reachable?"],reliability:["Concurrency reliability","Stable under load?"],
   streaming:["Streaming authenticity","Real streaming or faked?"],security:["Transport security","Are keys handled safely?"],performance:["Performance","Is its speed consistent?"]};
-const dimName=k=>ZING_LANG.isZh()?DIMNAME[k]:(DIMNAME_EN[k]&&DIMNAME_EN[k].map(ZING_LANG.tr));
-const srv=s=>ZING_LANG.server(s);
-// canonical icon-name per status; rendered as SVG via zingIcon().
+const dimName=k=>EKTE_LANG.isZh()?DIMNAME[k]:(DIMNAME_EN[k]&&DIMNAME_EN[k].map(EKTE_LANG.tr));
+const srv=s=>EKTE_LANG.server(s);
+// canonical icon-name per status; rendered as SVG via ekteIcon().
 // inconclusive/not_run have no dedicated glyph -> closest canonical is "info".
 const ICON_NAME={pass:"check",warn:"warning",fail:"x",info:"info",inconclusive:"info",not_run:"info",error:"x"};
-const ico=(name,opts)=>(window.zingIcon?zingIcon(name,opts||{}):"");
+const ico=(name,opts)=>(window.ekteIcon?ekteIcon(name,opts||{}):"");
 const ICON=new Proxy({},{get:(_,k)=>ico(ICON_NAME[k]||"info")});
 
 let lastReport=null;
-const live=window.ZingPerf?new ZingPerf.Live(document.getElementById("perf-live")):null;
+const live=window.EktePerf?new EktePerf.Live(document.getElementById("perf-live")):null;
 // live scan state, kept so a language switch can re-render it in place
 let nowText=()=>T("连接端点…","Connecting to endpoint…"), feedItems=[], formErr=null;
 function setNow(fn){nowText=fn;$("#now").textContent=fn();}
@@ -294,9 +294,9 @@ $("#cmp-t").onclick=()=>{const c=$("#cmp"),body=$("#cmp-body"),open=c.classList.
   body.style.maxHeight=open?body.scrollHeight+30+"px":"0";};
 $("#again").onclick=()=>go(1);
 // download: same JSON keys/schema, human-readable values in the UI language
-$("#dl").onclick=()=>{if(!lastReport)return;const rep=window.ZING_I18N?ZING_I18N.exportReport(lastReport):lastReport;
+$("#dl").onclick=()=>{if(!lastReport)return;const rep=window.EKTE_I18N?EKTE_I18N.exportReport(lastReport):lastReport;
   const blob=new Blob([JSON.stringify(rep,null,2)],{type:"application/json"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="zing-report."+ZING_LANG.get()+".json";a.click();};
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ekte-report."+EKTE_LANG.get()+".json";a.click();};
 
 $("#go").onclick=startAudit;
 
@@ -311,7 +311,7 @@ async function startAudit(){
   if(!payload.base_url||!payload.model){setFormErr(()=>T("请填写中转站地址和声称的模型。","Please enter the relay address and the claimed model."));return;}
   const bUrl=$("#b-url").value.trim(), bModel=$("#b-model").value.trim();
   if(bUrl&&bModel){payload.baseline={base_url:bUrl,api_key:$("#b-key").value.trim(),model:bModel,api:$("#b-api .on").dataset.v};}
-  if(window.ZingSecret)ZingSecret.remember($("#form"));
+  if(window.EkteSecret)EkteSecret.remember($("#form"));
   $("#go").disabled=true;
   $("#dets").innerHTML=""; $("#feed").innerHTML=""; feedItems=[]; if(live)live.reset({}); $("#pbar").style.width="0"; setNow(()=>T("连接端点…","Connecting to endpoint…"));
   go(2);
@@ -361,7 +361,7 @@ function handle(ev,seen){
   }
 }
 function zhDet(ev){const m=dimName(ev.dimension);return (m?m[0]:ev.dimension)+" · "+srv(ev.name||ev.id);}
-function loc(f){return (window.ZING_I18N&&ZING_I18N.localizeFinding)?ZING_I18N.localizeFinding(f.id,f.summary,f.evidence,f.title,f.status):{title:srv(f.title),summary:srv(f.summary||"")};}
+function loc(f){return (window.EKTE_I18N&&EKTE_I18N.localizeFinding)?EKTE_I18N.localizeFinding(f.id,f.summary,f.evidence,f.title,f.status):{title:srv(f.title),summary:srv(f.summary||"")};}
 function feedHTML(ev,f){
   const c=VAR(SEVC[f.severity]||STATC[f.status]||"grey"), hi=evHi(f), L=loc(f);
   return `<div class="fdot" style="background:${c}">${ICON[f.status]||"!"}</div>
@@ -403,7 +403,7 @@ function renderReport(r){
         <div class="vscores">
           <div>${T("综合健康分","Overall health score")} <b style="color:${VAR(scoreC(sc))}">${sc==null?"—":sc}</b>/100</div>
           <div>${T("结论置信度","Verdict confidence")} <b>${zhConf(v.confidence)}</b></div>
-          <div>${T("风险等级","Risk level")} <b style="color:${gradeC}">${esc(ZING_LANG.code(v.risk_level||""))}</b></div>
+          <div>${T("风险等级","Risk level")} <b style="color:${gradeC}">${esc(EKTE_LANG.code(v.risk_level||""))}</b></div>
         </div>
       </div>
     </div>
@@ -415,7 +415,7 @@ function renderReport(r){
       <span>${T("模式","Mode")} <code>${esc(r.mode||"check")}</code></span>
       <span>${T("套件","Suite")} <code>${esc(r.suite)}</code></span>
       ${(r.prompt_languages||[]).length?`<span>${T("探测语言","Probe languages")} <code>${esc(r.prompt_languages.map(c=>c.toUpperCase()).join(" · "))}</code></span>`:""}
-      <span>zing v${esc(r.tool_version||"")}</span>
+      <span>ekte v${esc(r.tool_version||"")}</span>
     </div>
 
     <div class="sect"><h3>${T("逐项体检","Per-dimension checks")} <span>${dims.length} dimensions</span></h3>${dims.map(dimRow).join("")}</div>
@@ -423,13 +423,13 @@ function renderReport(r){
     ${findings.length?`<div class="sect"><h3>${T("关注点","Findings")} <span>${findings.length} findings</span></h3>${findings.map(findRow).join("")}</div>`
       :`<div class="sect"><h3>${T("关注点","Findings")} <span>findings</span></h3><p style="color:var(--ink2);font-size:14px;margin:0">${T("未发现警告或失败项 —— 各维度表现与所声称模型一致。","No warnings or failures — every dimension is consistent with the claimed model.")}</p></div>`}
 
-    ${r.performance&&window.ZingPerf?`<div class="sect" id="perf-sect"><h3>${T("性能","Performance")} <span>performance</span></h3>${ZingPerf.section(r.performance)}</div>`:""}
+    ${r.performance&&window.EktePerf?`<div class="sect" id="perf-sect"><h3>${T("性能","Performance")} <span>performance</span></h3>${EktePerf.section(r.performance)}</div>`:""}
 
-    <div class="disc">${T("zing 出具的是<strong>行为偏离与风险的可复现证据</strong>，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。",
-      "zing provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run.")}</div>`;
+    <div class="disc">${T("ekte 出具的是<strong>行为偏离与风险的可复现证据</strong>，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。",
+      "ekte provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run.")}</div>`;
 
   requestAnimationFrame(()=>{$$("#doc .ba i").forEach(i=>{i.style.width=i.dataset.w+"%";i.style.background=i.dataset.c;});});
-  if(r.performance&&window.ZingPerf)ZingPerf.wireSection($("#perf-sect"),r.performance);
+  if(r.performance&&window.EktePerf)EktePerf.wireSection($("#perf-sect"),r.performance);
   $$("#doc .more").forEach(m=>m.onclick=()=>{const ev=m.previousElementSibling;ev.classList.toggle("show");m.textContent=ev.classList.contains("show")?T("收起证据","Hide evidence"):T("查看证据","Show evidence");});
 }
 function dimRow(d){const [nm,desc]=dimName(d.dimension)||[d.dimension,""];const c=VAR(scoreC(d.score));const sc=d.score==null?"—":d.score;
@@ -449,7 +449,7 @@ function riskGlyph(r){return ico(r==="high"?"x":r==="clean"?"check":r==="inconcl
 function zhHead(v){
   // reports that record verdict.drivers carry a headline naming what drove the risk
   if(Array.isArray(v.drivers)&&v.headline)return srv(v.headline).replace(/\s*[(（][^()（）]*[)）]$/,"");
-  const m=!ZING_LANG.isZh()
+  const m=!EKTE_LANG.isZh()
   ?{clean:"Behavior is consistent with the claimed model",low:"Mostly consistent, with a few minor issues",medium:"Some behavior does not match the claimed model — verify",high:"It is not serving the model it claims",inconclusive:"Insufficient signal to decide (connectivity or coverage too low)"}
   :{clean:"行为与所声称的模型一致",low:"基本一致，存在少量小问题",medium:"部分行为与所声称的模型不符 —— 建议核实",high:"它给的并不是你所声称的模型",inconclusive:"信号不足，无法判定（连通或覆盖不够）"};
   const h=m[v.risk_level];return h?T(h,h):srv(v.headline)||"";}
@@ -457,7 +457,7 @@ function zhConf(c){const m={high:["高","High"],medium:["中","Medium"],low:["�
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
 // --- language switch: re-render everything generated by script ---
-window.addEventListener("zing:lang",()=>{
+window.addEventListener("ekte:lang",()=>{
   $("#now").textContent=nowText();
   $$("#dets .det").forEach(d=>{const s=d.querySelector(".dt");if(s&&d.__ev)s.textContent=zhDet(d.__ev);});
   feedItems.forEach(({el,ev,f})=>{el.innerHTML=feedHTML(ev,f);});
@@ -489,8 +489,8 @@ window.addEventListener("zing:lang",()=>{
   // "声称的模型" (#i-model) is the canonical claimed-model value the picker writes into.
   // This form has no provider text input (protocol is a segmented control), so providerInput is omitted.
   // The "Custom (from relay)" provider lists #i-url's own /models (API key optional).
-  if(window.ZingModelPicker){
-    try{ZingModelPicker.enhance({claimedInput:"#i-model",urlInput:"#i-url",keyInput:"#i-key",api:()=>$("#api .on").dataset.v});}catch(e){}
+  if(window.EkteModelPicker){
+    try{EkteModelPicker.enhance({claimedInput:"#i-model",urlInput:"#i-url",keyInput:"#i-key",api:()=>$("#api .on").dataset.v});}catch(e){}
   }
 })();
 </script>

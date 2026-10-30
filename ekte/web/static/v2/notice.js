@@ -1,11 +1,11 @@
-/* zing web UI v2 — the one page notice (styles: .znote in zing.css).
+/* ekte web UI v2 — the one page notice (styles: .znote in ekte.css).
  *
  * Every page that has one keeps it in the same place, right under the hero:
  *   <div class="znote" id="note" hidden></div>
  * The page decides what it says; this draws it, so it looks and reads the
  * same everywhere:
  *
- *   ZingNotice.show(el, n)   n = null hides it, else
+ *   EkteNotice.show(el, n)   n = null hides it, else
  *     { level: "info" | "success" | "warning" | "critical",
  *       icon:    optional icons.js name (default: by level),
  *       title:   text, bold,
@@ -45,7 +45,7 @@
       return;
     }
     var level = ICON[n.level] ? n.level : "info";
-    var ico = window.zingIcon ? window.zingIcon(n.icon || ICON[level], { size: 18 }) : "";
+    var ico = window.ekteIcon ? window.ekteIcon(n.icon || ICON[level], { size: 18 }) : "";
     var html = '<span class="ico">' + ico + "</span>" +
       '<div class="txt"><b>' + esc(n.title) + "</b>" + (n.detail ? ' <span class="meta">' + seg(n.detail) + "</span>" : "") +
       (n.items && n.items.length ? "<ul>" + n.items.map(function (i) { return "<li>" + seg(i) + "</li>"; }).join("") + "</ul>" : "") +
@@ -62,5 +62,5 @@
     el.hidden = false;
   }
 
-  window.ZingNotice = { show: show };
+  window.EkteNotice = { show: show };
 })();

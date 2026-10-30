@@ -1,4 +1,4 @@
-"""Unit tests for zing.notify — webhook alert formatters and delivery.
+"""Unit tests for ekte.notify — webhook alert formatters and delivery.
 
 No network: :func:`send` is exercised against an ``httpx.MockTransport`` injected
 into a patched ``httpx.AsyncClient`` so we can assert the request shape and the
@@ -12,7 +12,7 @@ import json
 import httpx
 import pytest
 
-from zing import notify
+from ekte import notify
 
 # A representative high-risk report dict (AuditReport.model_dump() shape).
 REPORT = {
@@ -65,7 +65,7 @@ def test_build_text_delta_when_previous_given():
 
 def test_build_text_defaults_to_english():
     text = notify.build_text(REPORT, PREV_LOW)
-    assert text.startswith("🛰️ zing relay audit alert")
+    assert text.startswith("🛰️ ekte relay audit alert")
     assert "Risk: 🔴 High risk (HIGH)" in text and "Score: 42.0/100 (grade D)" in text
     # the only Chinese left is the fixture's own sample finding titles
     for sample in REPORT["verdict"]["key_findings"]:
@@ -75,7 +75,7 @@ def test_build_text_defaults_to_english():
 
 def test_build_text_chinese_keeps_original_wording():
     text = notify.build_text(REPORT, PREV_LOW, lang="zh")
-    assert text.startswith("🛰️ zing 中继体检告警")
+    assert text.startswith("🛰️ ekte 中继体检告警")
     assert "风险：🔴 高风险（HIGH）" in text and "评分：42.0/100（评级 D）" in text
     assert "较上次：🔵 低风险（LOW） → 🔴 高风险（HIGH）（恶化 ⬆️）" in text
 
@@ -84,7 +84,7 @@ def test_unknown_language_falls_back_to_english():
     assert notify.build_text(REPORT, lang="xx") == notify.build_text(REPORT)
 
 
-# A real report (from `zing check` against a dishonest local relay).
+# A real report (from `ekte check` against a dishonest local relay).
 def _real_report():
     from pathlib import Path
 
@@ -93,7 +93,7 @@ def _real_report():
 
 @pytest.mark.parametrize("lang", ["en", "zh", "fr", "es", "pt", "it", "de"])
 def test_real_alert_is_fully_in_its_language(lang):
-    from zing import i18n
+    from ekte import i18n
 
     report = _real_report()
     text = notify.build_text(report, PREV_LOW, lang=lang)
@@ -146,7 +146,7 @@ def test_format_dingtalk_shape():
 
 def test_format_generic_shape():
     payload = notify.format_generic(REPORT, PREV_LOW)
-    assert payload["tool"] == "zing"
+    assert payload["tool"] == "ekte"
     assert payload["event"] == "audit_alert"
     assert payload["risk_level"] == "high"
     assert payload["score"] == 42.0

@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="zing — monitors">zing — 监控</title>
+<title data-en="ekte — monitors">ekte — 监控</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/zing.css" />
+<link rel="stylesheet" href="/v2/static/ekte.css" />
 <link rel="stylesheet" href="/v2/static/fields.css" />
 <link rel="stylesheet" href="/v2/static/jobs.css" />
 <link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <style>
-  /* ---- monitors page (v2) — page-only rules; colours via zing.css tokens ---- */
+  /* ---- monitors page (v2) — page-only rules; colours via ekte.css tokens ---- */
   /* inline field errors */
   .in[aria-invalid="true"] { border-color: var(--danger); }
   .in[aria-invalid="true"]:focus { box-shadow: 0 0 0 4px var(--danger-tint); }
@@ -28,7 +28,7 @@
     max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .sw-t { font-style: normal; }
-  /* zing.css styles every `.switch span` as the knob: keep the label text a plain inline span */
+  /* ekte.css styles every `.switch span` as the knob: keep the label text a plain inline span */
   .switch .sw-l { position: static; width: auto; height: auto; margin: 0; border-radius: 0; background: none; box-shadow: none; transition: none; }
   /* the unit suffix sits where the native spinner would */
   .unit-in input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
@@ -183,7 +183,7 @@
   <main id="main" tabindex="-1">
     <div class="hero">
       <h1 data-en="Put a <span class='u'>scheduled sentinel</span> on your relay">给中转站设个<span class="u">定时哨兵</span></h1>
-      <p data-en="Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/v2/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).">每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在<a href="/v2/history">检测历史</a>中打开一次运行，选择<b>设为监控</b>，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
+      <p data-en="Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/v2/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).">每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在<a href="/v2/history">检测历史</a>中打开一次运行，选择<b>设为监控</b>，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
     </div>
 
     <!-- the page notice (notice.js) -->
@@ -242,10 +242,10 @@
   "use strict";
 
   var $ = function (id) { return document.getElementById(id); };
-  var L = window.ZING_LANG;
+  var L = window.EKTE_LANG;
 
   function icon(name, opts) {
-    return typeof window.zingIcon === "function" ? window.zingIcon(name, opts) : "";
+    return typeof window.ekteIcon === "function" ? window.ekteIcon(name, opts) : "";
   }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -270,7 +270,7 @@
   var RISK_CLASS = { clean: "good", low: "sky", medium: "warn", high: "bad", inconclusive: "grey" };
 
   function riskLabel(v) {
-    return window.ZING_I18N ? window.ZING_I18N.label("RISK_LEVEL", v) : v;
+    return window.EKTE_I18N ? window.EKTE_I18N.label("RISK_LEVEL", v) : v;
   }
   function fmtEvery(sec) {
     sec = Number(sec) || 0;
@@ -443,7 +443,7 @@
       ' id="ku-' + w.id + '" value="' + esc(w.base_url || "") + '">' +
       '<input class="in mono" type="password" id="k-' + w.id + '" data-secret="ku-' + w.id + '" data-act="f-key" data-id="' + w.id + '"' +
       ' autocomplete="current-password" spellcheck="false" autocapitalize="off"' +
-      ' placeholder="' + esc(T("sk-... 或 env:ZING_API_KEY", "sk-... or env:ZING_API_KEY")) + '"' +
+      ' placeholder="' + esc(T("sk-... 或 env:EKTE_API_KEY", "sk-... or env:EKTE_API_KEY")) + '"' +
       (small ? ' aria-label="' + esc(T("API 密钥", "API key")) + '"' : "") +
       ' value="' + esc(s.vals.key || "") + '" aria-describedby="ke-' + w.id + '"' + invalid(s.errs.key) + ">" +
       err("ke-" + w.id, s.errs.key);
@@ -482,7 +482,7 @@
         esc(T("无法读取，请重新输入", "Unreadable – re-enter")) + "</span>" + linkBtn("edit-key", w.id, T("输入", "Enter"));
     }
     if (w.key_status === "missing") {
-      return '<span style="color:var(--warning)" title="' + esc(T("API 密钥不保存，zing serve 重启后已丢失", "API keys are not stored: this one was lost when zing serve restarted")) + '">' +
+      return '<span style="color:var(--warning)" title="' + esc(T("API 密钥不保存，ekte serve 重启后已丢失", "API keys are not stored: this one was lost when ekte serve restarted")) + '">' +
         esc(T("未保存 · 请重新输入", "Not stored – re-enter")) + "</span>" + linkBtn("edit-key", w.id, T("输入", "Enter"));
     }
     var label = {
@@ -680,7 +680,7 @@
   }
 
   // ---- collapsed cards (per viewer; storage may be missing or throw) ------- //
-  var CKEY = "zing.v2.monitors.collapsed", FKEY = "zing.v2.monitors.filters", OKEY = "zing.v2.monitors.filtersOpen";
+  var CKEY = "ekte.v2.monitors.collapsed", FKEY = "ekte.v2.monitors.filters", OKEY = "ekte.v2.monitors.filtersOpen";
   function loadJSON(k, dflt) {
     try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v && typeof v === "object" ? v : dflt; } catch (e) { return dflt; }
   }
@@ -792,7 +792,7 @@
     });
     return out;
   }
-  var fpanel = window.ZingFilterPanel.create($("filters"), {
+  var fpanel = window.EkteFilterPanel.create($("filters"), {
     storeKey: OKEY,
     onReset: function () {
       F = Object.assign({}, FDEF);
@@ -884,7 +884,7 @@
     } else {
       list.innerHTML = shown.map(card).join("");
     }
-    if (window.ZingSecret) window.ZingSecret.enhance(list);
+    if (window.EkteSecret) window.EkteSecret.enhance(list);
     if (keep) {
       var alt = { del: "del-no", "del-no": "del", "del-yes": "del", run: "stop", stop: "run" }[keep[0]] || keep[0];
       var el = list.querySelector('[data-act="' + keep[0] + '"][data-id="' + keep[1] + '"]') ||
@@ -954,10 +954,10 @@
       });
   }
 
-  // Saving or using an API key may need the master key first: ZingMasterKey
+  // Saving or using an API key may need the master key first: EkteMasterKey
   // turns a 423 into the create / unlock dialog, then retries once.
   function withKey(doFetch) {
-    return window.ZingMasterKey ? window.ZingMasterKey.withKey(doFetch) : doFetch();
+    return window.EkteMasterKey ? window.EkteMasterKey.withKey(doFetch) : doFetch();
   }
   function patch(id, body) {
     return withKey(function () {
@@ -1150,7 +1150,7 @@
             var e = res.body && res.body.error;
             if (res.status === 409 && res.body && res.body.key_missing) {
               s.msgKind = "bad";
-              s.msg = function () { return T("API 密钥未保存，zing serve 重启后已丢失：请重新输入。", "The API key is not stored and was lost when zing serve restarted — enter it again."); };
+              s.msg = function () { return T("API 密钥未保存，ekte serve 重启后已丢失：请重新输入。", "The API key is not stored and was lost when ekte serve restarted — enter it again."); };
               return;
             }
             if (res.status === 409) { s.msg = null; return; }
@@ -1335,15 +1335,15 @@
     });
     // the hint explains the option that is checked (in effect, or about to be)
     $("ks-hint").textContent = !mode ? "" : mode === "memory"
-      ? T("API 密钥只保存在 zing serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。",
-        "API keys stay in the memory of zing serve and are never written to disk; enter them again after each restart. Use env:VAR for monitors that must run unattended.")
-      : T("API 密钥加密保存在本机 ~/.zing/watches.db 中；用于解密的主密钥从不写入磁盘，每次重启后需输入。",
-        "API keys are stored encrypted in ~/.zing/watches.db on this machine; the master key that decrypts them is never written to disk — enter it after each restart.");
+      ? T("API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。",
+        "API keys stay in the memory of ekte serve and are never written to disk; enter them again after each restart. Use env:VAR for monitors that must run unattended.")
+      : T("API 密钥加密保存在本机 ~/.ekte/watches.db 中；用于解密的主密钥从不写入磁盘，每次重启后需输入。",
+        "API keys are stored encrypted in ~/.ekte/watches.db on this machine; the master key that decrypts them is never written to disk — enter it after each restart.");
     $("reassure-text").innerHTML = ks.st && ks.st.storage === "encrypted"
-      ? T("全程<b>本地运行</b>。API Key 仅<b>加密</b>保存在本机 <b>~/.zing</b> 的本地数据库里，<b>绝不</b>出现在监控列表里、也不会发给浏览器。用于解密的主密钥<b>从不写入磁盘</b>：由你保管，每次重启后再输入。",
-        "Everything <b>runs locally</b>. The API key is stored <b>encrypted</b>, only in the local database under <b>~/.zing</b> on this machine; it <b>never</b> appears in the monitor list and is never sent to the browser. The master key that decrypts it is <b>never written to disk</b>: you keep it, and enter it after each restart.")
-      : T("全程<b>本地运行</b>。API Key <b>不会被保存</b>：它只留在 zing serve 的内存中，<b>绝不</b>写入磁盘、出现在监控列表里或发给浏览器。zing serve 重启后请重新输入。",
-        "Everything <b>runs locally</b>. The API key is <b>not stored</b>: it stays in the memory of zing serve only and is <b>never</b> written to disk, shown in the monitor list or sent to the browser. Enter it again after zing serve restarts.");
+      ? T("全程<b>本地运行</b>。API Key 仅<b>加密</b>保存在本机 <b>~/.ekte</b> 的本地数据库里，<b>绝不</b>出现在监控列表里、也不会发给浏览器。用于解密的主密钥<b>从不写入磁盘</b>：由你保管，每次重启后再输入。",
+        "Everything <b>runs locally</b>. The API key is stored <b>encrypted</b>, only in the local database under <b>~/.ekte</b> on this machine; it <b>never</b> appears in the monitor list and is never sent to the browser. The master key that decrypts it is <b>never written to disk</b>: you keep it, and enter it after each restart.")
+      : T("全程<b>本地运行</b>。API Key <b>不会被保存</b>：它只留在 ekte serve 的内存中，<b>绝不</b>写入磁盘、出现在监控列表里或发给浏览器。ekte serve 重启后请重新输入。",
+        "Everything <b>runs locally</b>. The API key is <b>not stored</b>: it stays in the memory of ekte serve only and is <b>never</b> written to disk, shown in the monitor list or sent to the browser. Enter it again after ekte serve restarts.");
   }
   function paintNote() {
     var n = null, c = (ks.st && ks.st.counts) || {};
@@ -1356,20 +1356,20 @@
       var stored = keysStored(c);
       n = { level: ks.fail ? "critical" : "warning", title: T("不再保存 API 密钥？", "Stop storing API keys?"),
         detail: stored
-          ? (stored === 1 ? T("已保存的 1 个 API 密钥将移入 zing serve 的内存，并从 watches.db 中清除；主密钥不再需要。zing serve 重启后需重新输入，相关监控会等待。",
-            "The 1 stored API key moves into the memory of zing serve and is erased from watches.db; the master key is no longer needed. After a restart of zing serve you enter it again; its monitor waits until then.")
-            : Tf("已保存的 {n} 个 API 密钥将移入 zing serve 的内存，并从 watches.db 中清除；主密钥不再需要。zing serve 重启后需重新输入，相关监控会等待。",
-            "The {n} stored API keys move into the memory of zing serve and are erased from watches.db; the master key is no longer needed. After a restart of zing serve you enter them again; their monitors wait until then.", { n: stored }))
-          : T("之后输入的 API 密钥只保存在 zing serve 的内存中，重启后需重新输入。",
-            "API keys you enter from now on stay in the memory of zing serve only; enter them again after a restart."),
+          ? (stored === 1 ? T("已保存的 1 个 API 密钥将移入 ekte serve 的内存，并从 watches.db 中清除；主密钥不再需要。ekte serve 重启后需重新输入，相关监控会等待。",
+            "The 1 stored API key moves into the memory of ekte serve and is erased from watches.db; the master key is no longer needed. After a restart of ekte serve you enter it again; its monitor waits until then.")
+            : Tf("已保存的 {n} 个 API 密钥将移入 ekte serve 的内存，并从 watches.db 中清除；主密钥不再需要。ekte serve 重启后需重新输入，相关监控会等待。",
+            "The {n} stored API keys move into the memory of ekte serve and are erased from watches.db; the master key is no longer needed. After a restart of ekte serve you enter them again; their monitors wait until then.", { n: stored }))
+          : T("之后输入的 API 密钥只保存在 ekte serve 的内存中，重启后需重新输入。",
+            "API keys you enter from now on stay in the memory of ekte serve only; enter them again after a restart."),
         items: ks.fail ? [ks.fail] : null,
         actions: [{ act: "ks-yes", label: T("不再保存", "Stop storing keys"), primary: true },
           { act: "ks-no", label: T("取消", "Cancel") }] };
     } else if (ks.ask === "encrypted") {
       var held = c.memory || 0;
       n = { level: ks.fail ? "critical" : "info", icon: "lock", title: T("在本机加密保存 API 密钥？", "Store API keys encrypted on this machine?"),
-        detail: T("API 密钥将用主密钥加密后保存在 ~/.zing/watches.db 中，重启后监控照常运行。主密钥从不写入磁盘：你现在创建（或输入）它，每次重启后再输入。",
-          "API keys are kept in ~/.zing/watches.db, encrypted with a master key, so monitors keep their keys across restarts. The master key is never written to disk: you create (or enter) it now and enter it after every restart.") +
+        detail: T("API 密钥将用主密钥加密后保存在 ~/.ekte/watches.db 中，重启后监控照常运行。主密钥从不写入磁盘：你现在创建（或输入）它，每次重启后再输入。",
+          "API keys are kept in ~/.ekte/watches.db, encrypted with a master key, so monitors keep their keys across restarts. The master key is never written to disk: you create (or enter) it now and enter it after every restart.") +
           (held ? " " + (held === 1 ? T("内存中的 1 个密钥会被保存。", "The 1 key held in memory is stored.")
             : Tf("内存中的 {n} 个密钥会被保存。", "The {n} keys held in memory are stored.", { n: held })) : ""),
         items: ks.fail ? [ks.fail] : null,
@@ -1381,7 +1381,7 @@
         ? { level: "success", title: T("API 密钥不再保存", "API keys are no longer stored"),
           detail: (m ? (m === 1 ? T("1 个密钥已移入内存，并已从 watches.db 中清除。", "1 key moved into memory and was erased from watches.db.")
             : Tf("{n} 个密钥已移入内存，并已从 watches.db 中清除。", "{n} keys moved into memory and were erased from watches.db.", { n: m })) + " " : "") +
-            T("zing serve 重启后需重新输入。", "Enter them again after a restart of zing serve.") }
+            T("ekte serve 重启后需重新输入。", "Enter them again after a restart of ekte serve.") }
         : { level: "success", title: T("API 密钥现已加密保存", "API keys are now stored encrypted"),
           detail: (m ? (m === 1 ? T("1 个密钥已加密保存到 watches.db。", "1 key was encrypted into watches.db.")
             : Tf("{n} 个密钥已加密保存到 watches.db。", "{n} keys were encrypted into watches.db.", { n: m })) + " " : "") +
@@ -1399,8 +1399,8 @@
         title: k === 1 ? T("1 个监控需要重新输入 API 密钥", "1 monitor needs its API key again")
           : Tf("{n} 个监控需要重新输入 API 密钥", "{n} monitors need their API key again", { n: k }),
         detail: missing
-          ? T("API 密钥不保存，zing serve 重启后已丢失。这些监控会等待，直到你重新输入密钥。",
-            "API keys are not stored, so they were lost when zing serve restarted. These monitors wait until you enter the key again.")
+          ? T("API 密钥不保存，ekte serve 重启后已丢失。这些监控会等待，直到你重新输入密钥。",
+            "API keys are not stored, so they were lost when ekte serve restarted. These monitors wait until you enter the key again.")
           : T("加密它们的主密钥已丢失或更换。", "The master key that encrypted them was lost or changed."),
         actions: [{ act: "show-key", label: T("查看", "Show"), primary: true }] };
     } else if (locked && ks.st && ks.st.state === "locked") {
@@ -1411,14 +1411,14 @@
     } else if (ks.st) {
       n = ks.st.storage === "memory"
         ? { level: "info", icon: "lock", title: T("API 密钥不会被保存", "API keys are not stored"),
-          detail: T("你输入的密钥只留在 zing serve 的内存中，从不写入磁盘；重启后需重新输入。env: 变量引用照常工作。",
-            "Keys you enter stay in the memory of zing serve only and are never written to disk; enter them again after a restart. env:VAR references keep working.") }
+          detail: T("你输入的密钥只留在 ekte serve 的内存中，从不写入磁盘；重启后需重新输入。env: 变量引用照常工作。",
+            "Keys you enter stay in the memory of ekte serve only and are never written to disk; enter them again after a restart. env:VAR references keep working.") }
         : { level: "info", icon: "lock", title: T("API 密钥已加密保存", "API keys are stored encrypted"),
-          detail: T("保存在本机 ~/.zing/watches.db 中；用于解密的主密钥从不写入磁盘。",
-            "In ~/.zing/watches.db on this machine; the master key that decrypts them is never written to disk.") };
+          detail: T("保存在本机 ~/.ekte/watches.db 中；用于解密的主密钥从不写入磁盘。",
+            "In ~/.ekte/watches.db on this machine; the master key that decrypts them is never written to disk.") };
       n.actions = [{ act: "ks-change", label: T("更改", "Change") }];
     }
-    window.ZingNotice.show($("note"), n);
+    window.EkteNotice.show($("note"), n);
   }
   function focusNote(act) {
     var b = $("note").querySelector('[data-note-act="' + act + '"]');
@@ -1439,10 +1439,10 @@
   }
   function switchStorage() {
     var mode = ks.ask;
-    if (!mode || ks.busy || !window.ZingMasterKey) return;
+    if (!mode || ks.busy || !window.EkteMasterKey) return;
     ks.busy = true;
     paintStorage();
-    window.ZingMasterKey.setStorage(mode).then(function (res) {
+    window.EkteMasterKey.setStorage(mode).then(function (res) {
       ks.busy = false;
       if (res.ok) {
         ks.ask = null;
@@ -1481,18 +1481,18 @@
     else if (act === "ks-yes") switchStorage();
     else if (act === "ks-no") { askStorage(null); focusStorage(); }
     else if (act === "ks-change") focusStorage();
-    else if (act === "unlock" && window.ZingMasterKey) {
-      window.ZingMasterKey.ensure().then(function (ok) { if (ok) { load(); loadSecret(); } });
+    else if (act === "unlock" && window.EkteMasterKey) {
+      window.EkteMasterKey.ensure().then(function (ok) { if (ok) { load(); loadSecret(); } });
     } else if (act === "show-key") {
       var w = (watches || []).filter(function (x) { return x.key_status === "missing" || x.key_status === "unreadable"; })[0];
       if (w) location.hash = "#w-" + w.id;
     }
   });
-  window.addEventListener("zing:masterkey", function () { loadSecret(); });
+  window.addEventListener("ekte:masterkey", function () { loadSecret(); });
 
   // ---------- tabs: Configure / Running (v2/tabs.js, v2/jobs.js) ----------
   document.querySelectorAll("[data-icon]").forEach(function (el) { el.innerHTML = icon(el.getAttribute("data-icon")); });
-  var tabs = window.ZingTabs.init(document.querySelector(".tabs[role=tablist]"), {
+  var tabs = window.EkteTabs.init(document.querySelector(".tabs[role=tablist]"), {
     // #w-<id> deep links name a monitor in the Configure tab
     fromHash: function (h) { return /^w-/.test(h) ? "configure" : h; },
   });
@@ -1504,7 +1504,7 @@
     focusSetup = true;
     render();
   });
-  window.ZingJobs.init($("jobs"), {
+  window.EkteJobs.init($("jobs"), {
     kind: "monitor",
     onChange: function (active, rows) {
       // the tab stays selectable while nothing runs: the panel says so;
@@ -1517,9 +1517,9 @@
   });
 
   $("lock-icon").innerHTML = icon("lock");
-  if (window.ZingMasterKey) window.ZingMasterKey.mountBar($("mk-bar"), function () { load(); loadSecret(); });
+  if (window.EkteMasterKey) window.EkteMasterKey.mountBar($("mk-bar"), function () { load(); loadSecret(); });
   // language switch: re-render everything in place
-  window.addEventListener("zing:lang", function () { filtersKey = null; render(); paintStorage(); paintNote(); });
+  window.addEventListener("ekte:lang", function () { filtersKey = null; render(); paintStorage(); paintNote(); });
   load();
   loadSecret();
 })();

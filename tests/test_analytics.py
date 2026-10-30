@@ -1,4 +1,4 @@
-"""Analytics queries (zing/web/analytics.py) and the /api/analytics endpoints."""
+"""Analytics queries (ekte/web/analytics.py) and the /api/analytics endpoints."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from zing.knowledge import store
-from zing.knowledge.relays import add_relay
-from zing.web import analytics, history
-from zing.web.analytics import AnalyticsError
+from ekte.knowledge import store
+from ekte.knowledge.relays import add_relay
+from ekte.web import analytics, history
+from ekte.web.analytics import AnalyticsError
 
 OPENAI = "https://api.openai.com/v1"
 RELAY = "https://relay.example/v1"
@@ -19,7 +19,7 @@ T0 = datetime(2026, 3, 2, 12, 0, tzinfo=timezone.utc)  # a Monday
 
 @pytest.fixture
 def data(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     return tmp_path
 
 
@@ -41,7 +41,7 @@ def _report(
     protocol: float | None = 90.0,
     old: bool = False,
 ) -> dict:
-    """A report as save() gets it; ``old`` drops what older zing versions lacked."""
+    """A report as save() gets it; ``old`` drops what older ekte versions lacked."""
     generated = (started or T0) + timedelta(minutes=2)
     report: dict = {
         "tool_version": tool_version,
@@ -459,7 +459,7 @@ def client(seeded):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from zing.web.server import create_app
+    from ekte.web.server import create_app
 
     return TestClient(create_app(), base_url="http://localhost")
 

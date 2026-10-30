@@ -5,7 +5,7 @@ streamed, and compares time-to-first-token. A sharp TTFT collapse on the repeate
 prefix — but not on the control — indicates the relay caches by prompt prefix.
 
 This is reported as INFORMATION, never a failure: prefix caching is a legitimate
-latency/cost optimization. zing cannot prove *cross-user* cache sharing (the real
+latency/cost optimization. ekte cannot prove *cross-user* cache sharing (the real
 privacy risk) from a single key — that needs genuinely distinct accounts — so the
 finding states that limitation explicitly rather than overclaiming.
 """
@@ -14,12 +14,12 @@ from __future__ import annotations
 
 import asyncio
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import build_filler, stable_marker
-from zing.detectors.scale import Scale, outcome
-from zing.models import (
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import build_filler, stable_marker
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import (
     CompletionOutcome,
     DetectorResult,
     Dimension,
@@ -99,7 +99,7 @@ class PromptCacheDetector(Detector):
                     summary=(
                         f"A repeated prefix returned far faster (~{warm:.0f} ms vs cold "
                         f"~{cold:.0f} ms, control ~{control:.0f} ms) — prompt-prefix "
-                        "caching is active. This is a legitimate optimization; zing "
+                        "caching is active. This is a legitimate optimization; ekte "
                         "cannot prove cross-user cache sharing from a single key."
                     ),
                     evidence=times,

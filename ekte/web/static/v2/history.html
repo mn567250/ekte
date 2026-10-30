@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="zing — audit history">zing — 检测历史</title>
+<title data-en="ekte — audit history">ekte — 检测历史</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/zing.css" />
+<link rel="stylesheet" href="/v2/static/ekte.css" />
 <link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <link rel="stylesheet" href="/v2/static/report.css" />
 <link rel="stylesheet" href="/v2/static/perf.css" />
 <link rel="stylesheet" href="/v2/static/chartmotion.css" />
 <style>
-  /* History page. Tokens only (zing.css); light + dark.
+  /* History page. Tokens only (ekte.css); light + dark.
    *
    * Every group shares ONE column grid (--cols), so Risk / Score / Grade line
    * up across relays. Below 600px each row stacks instead (no h-scroll).
@@ -22,7 +22,7 @@
    * Grade letter colour (by grade, not by risk):
    *   A, B -> good · C -> sky · D -> warn · E, F -> bad · none -> grey.
    * Scores (row score, trend value, sparkline) use the same families through
-   * the grade thresholds of zing/scoring.py (>=80 good, >=70 sky, >=60 warn). */
+   * the grade thresholds of ekte/scoring.py (>=80 good, >=70 sky, >=60 warn). */
   /* Columns: time (with mode / suite under it) · risk · score · grade · chevron.
      Mode sits under the date instead of in its own column so the longest date
      ("Sep 29, 2026, 3:40 PM") and risk label (DE "Abweichungen gefunden", FR
@@ -270,7 +270,7 @@
 (function () {
   "use strict";
   var $ = function (s, r) { return (r || document).querySelector(s); };
-  var ico = function (n, o) { return window.zingIcon ? window.zingIcon(n, o || {}) : ""; };
+  var ico = function (n, o) { return window.ekteIcon ? window.ekteIcon(n, o || {}) : ""; };
   var esc = function (s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
@@ -292,7 +292,7 @@
   var num = function (s) { return typeof s === "number" ? String(Math.round(s)) : "—"; };
 
   var host = $("#hist"), fbar = $("#filters");
-  var FKEY = "zing.v2.history.filters", NONE = "__none__";
+  var FKEY = "ekte.v2.history.filters", NONE = "__none__";
   var fromQuery; // set by loadFilters() when the URL carries filters
   var FDEF = { surface: "", host: "", model: "", suite: "", mode: "", api: "", detect: "", stream: "", risk: "", min: "", days: "", exec: "", q: "" };
   var state = { rows: null, error: null, reports: {}, open: null, confirm: null, filters: loadFilters() };
@@ -311,7 +311,7 @@
   function saveJSON(key, v) {
     try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* ignore */ }
   }
-  var SKEY = "zing.v2.history.sort", CKEY = "zing.v2.history.collapsed", OKEY = "zing.v2.history.filtersOpen";
+  var SKEY = "ekte.v2.history.sort", CKEY = "ekte.v2.history.collapsed", OKEY = "ekte.v2.history.filtersOpen";
   var SORTS = ["time", "risk", "score", "grade"];
   state.sort = (function () {
     var s = loadJSON(SKEY, null);
@@ -323,7 +323,7 @@
     return out;
   })();
   // the collapsible frame (filterpanel.js); a link that carried filters opens it
-  var panel = window.ZingFilterPanel.create(fbar, {
+  var panel = window.EkteFilterPanel.create(fbar, {
     storeKey: OKEY,
     open: !!fromQuery,
     onReset: function () { resetFilters(); },
@@ -467,7 +467,7 @@
       selectHTML("api", T("协议", "Protocol"), apis) +
       selectHTML("detect", T("协议识别", "Protocol detection"), detects) +
       selectHTML("stream", T("探测请求", "Probe requests"), streams) +
-      selectHTML("risk", T("风险", "Risk"), risks.map(function (l) { return { v: l, t: ZING_I18N.label("RISK_LEVEL", l) }; })) +
+      selectHTML("risk", T("风险", "Risk"), risks.map(function (l) { return { v: l, t: EKTE_I18N.label("RISK_LEVEL", l) }; })) +
       '<label><span>' + esc(T("最低健康分", "Min. score")) + '</span><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-f="min" value="' +
       esc(f.min) + '" placeholder="0" /></label>' +
       selectHTML("days", T("时间范围", "Period"), ["7", "30", "90"].map(function (v) { return { v: v, t: daysLabel(v) }; })) +
@@ -497,7 +497,7 @@
     if (f.api) out.push(f.api === NONE ? lab(T("协议", "Protocol"), unknown) : f.api);
     if (f.detect) out.push(lab(T("协议识别", "Protocol detection"), f.detect === NONE ? unknown : detectLabel(f.detect)));
     if (f.stream) out.push(f.stream === NONE ? lab(T("探测请求", "Probe requests"), unknown) : streamLabel(f.stream));
-    if (f.risk) out.push(lab(T("风险", "Risk"), ZING_I18N.label("RISK_LEVEL", f.risk)));
+    if (f.risk) out.push(lab(T("风险", "Risk"), EKTE_I18N.label("RISK_LEVEL", f.risk)));
     if (f.min !== "") out.push(lab(T("最低健康分", "Min. score"), f.min));
     if (f.exec) out.push(f.exec === "monitor" ? T("监控", "Monitor") : T("手动", "Ad-hoc"));
     return out;
@@ -537,7 +537,7 @@
     var d = new Date(ts);
     if (isNaN(d)) return String(ts);
     try {
-      return ZING_LANG.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(d);
+      return EKTE_LANG.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(d);
     } catch (e) {
       return d.toLocaleString();
     }
@@ -684,7 +684,7 @@
     var n = null, s = note.status;
     if (note.err || state.error != null) {
       n = { level: "critical", title: T("无法加载检测历史", "History could not be loaded"),
-        detail: T("数据库被其他进程锁定、已损坏，或本地 zing 服务未运行。", "The database is locked by another process or damaged, or the local zing service is not running."),
+        detail: T("数据库被其他进程锁定、已损坏，或本地 ekte 服务未运行。", "The database is locked by another process or damaged, or the local ekte service is not running."),
         actions: [{ act: "retry", label: T("重试", "Retry"), primary: true }] };
     } else if (s) {
       var warn = [];
@@ -703,7 +703,7 @@
           actions: note.locked ? [{ act: "unlock", label: T("解锁", "Unlock"), primary: true }] : [] };
       } else if (s.runs) {
         var since = "";
-        try { since = ZING_LANG.dateFmt({ dateStyle: "medium" }).format(new Date(s.oldest)); } catch (e) { since = s.oldest || ""; }
+        try { since = EKTE_LANG.dateFmt({ dateStyle: "medium" }).format(new Date(s.oldest)); } catch (e) { since = s.oldest || ""; }
         n = { level: "info",
           title: s.runs === 1 ? T("本机有 1 次检测", "1 run on this machine") : Tf("本机有 {n} 次检测", "{n} runs on this machine", { n: s.runs }),
           detail: Tf("最早一次为 {date} · API 密钥从不保存", "Saved since {date} · API keys are never stored", { date: since }) };
@@ -712,7 +712,7 @@
           detail: T("你运行的每次检测都会保存在这里，仅在本机。", "Every audit you run is saved here, on this machine only.") };
       }
     }
-    window.ZingNotice.show($("#note"), n);
+    window.EkteNotice.show($("#note"), n);
   }
   function loadNote() {
     var st = fetch("/api/history/status").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
@@ -729,7 +729,7 @@
     if (act === "retry") load();
     else if (act === "unlock") location.href = "/v2/watches";
   });
-  window.addEventListener("zing:lang", paintNote);
+  window.addEventListener("ekte:lang", paintNote);
 
   /* ---------------- rendering ---------------- */
   function render() {
@@ -749,7 +749,7 @@
 
     if (state.error != null) {
       host.innerHTML = '<div class="errbox">' + esc(T("无法读取历史：", "Could not read history: ")) + esc(state.error) +
-        "<br>" + esc(T("请确认本地 zing 服务在运行。", "Make sure the local zing service is running.")) + "</div>";
+        "<br>" + esc(T("请确认本地 ekte 服务在运行。", "Make sure the local ekte service is running.")) + "</div>";
       return;
     }
     if (!state.rows) return;
@@ -925,7 +925,7 @@
       fam: function () { return "tps"; },
       kpi: function (v) { return String(Math.round(v)); } },
   ];
-  var TKEY = "zing.v2.history.trends", TDEF = ["score", "lat"];
+  var TKEY = "ekte.v2.history.trends", TDEF = ["score", "lat"];
   state.trends = (function () {
     try {
       var t = JSON.parse(localStorage.getItem(TKEY) || "null");
@@ -1006,7 +1006,7 @@
       '<button type="button" class="rmain" id="r-' + esc(id) + '" aria-expanded="' + open + '" aria-controls="p-' + esc(id) + '">' +
       '<span class="c-date">' + esc(fmtTime(r.ts)) + "</span>" +
       '<span class="c-risk"><span class="badge ' + (RISKC[lvl] || "grey") + '">' + ico(RISKI[lvl] || "info") + " " +
-      esc(ZING_I18N.label("RISK_LEVEL", lvl)) + "</span></span>" +
+      esc(EKTE_I18N.label("RISK_LEVEL", lvl)) + "</span></span>" +
       '<span class="c-score f-' + scoreC(r.score) + '"><span class="sr-only">' + esc(T("健康分", "Score")) + " </span>" + num(r.score) + "</span>" +
       '<span class="c-grade f-' + gradeC(r.rating) + '"><span class="sr-only">' + esc(T("评级", "Grade")) + " </span>" + esc(r.rating || "–") + "</span>" +
       '<span class="c-mode"><b>' + esc(r.mode || "check") + "</b>" + surfaceHTML(r) + (byMonitor(r) ? ' <span class="badge sky">' + ico("bell") + " " + esc(T("监控", "Monitor")) + "</span>" : "") + (r.suite ? " · " + esc(r.suite) : "") + protoHTML(r) +
@@ -1063,13 +1063,13 @@
     el.className = "rep";
     panel.innerHTML = "";
     panel.appendChild(el);
-    ZingReport.render(el, report, {
+    EkteReport.render(el, report, {
       actions: (byMonitor(row) ? [] : [
         { zh: "设为监控", en: "Schedule as monitor", primary: true, onClick: function () { schedule(id); } },
       ]).concat([
         { zh: "重新检测", en: "Re-run audit", onClick: function () { rerun(id); } },
       ]),
-      download: { name: "zing-report-" + panel.getAttribute("data-id") },
+      download: { name: "ekte-report-" + panel.getAttribute("data-id") },
     });
   }
 
@@ -1100,7 +1100,7 @@
     fetch("/api/watches/from-history/" + encodeURIComponent(id), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ language: ZING_LANG.get() }),
+      body: JSON.stringify({ language: EKTE_LANG.get() }),
     })
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (j) {
@@ -1110,7 +1110,7 @@
       })
       .catch(function (e) {
         if (btn) btn.disabled = false;
-        if (msg) msg.textContent = T("无法设为监控：", "Could not schedule this run: ") + ZING_LANG.server(String((e && e.message) || e));
+        if (msg) msg.textContent = T("无法设为监控：", "Could not schedule this run: ") + EKTE_LANG.server(String((e && e.message) || e));
       });
   }
 
@@ -1213,7 +1213,7 @@
 
   // live language switch: re-render from cached data (no refetch); the open
   // report is re-rendered by report.js and carried over by render().
-  window.addEventListener("zing:lang", function () { renderFilters(); render(); });
+  window.addEventListener("ekte:lang", function () { renderFilters(); render(); });
 
   load();
 })();

@@ -1,26 +1,26 @@
 """Load provider YAML profiles into a :class:`KnowledgeBase`.
 
 Profiles ship inside the package under ``data/``. Users can drop additional or
-override YAML files via ``--kb-dir`` (or the ``ZING_KB_DIR`` env var) without
+override YAML files via ``--kb-dir`` (or the ``EKTE_KB_DIR`` env var) without
 forking the project, and add their own models in the web UI (stored in
-``kb.db`` in the data directory, see :mod:`zing.knowledge.store`).
+``kb.db`` in the data directory, see :mod:`ekte.knowledge.store`).
 
 Layers, later ones winning:
 
 1. packaged ``data/*.yaml``;
-2. ``--kb-dir`` directories, then ``ZING_KB_DIR`` — a file for an existing
+2. ``--kb-dir`` directories, then ``EKTE_KB_DIR`` — a file for an existing
    ``provider:`` replaces that whole provider (unchanged behaviour);
 3. the user's ``kb.db`` entries, merged per model and per fingerprint id (see
-   :mod:`zing.knowledge.store`). Left out with ``include_user=False``, or
-   ``ZING_NO_USER_KB=1``;
-4. packaged / ``ZING_KB_DIR`` providers and models the user switched off in
+   :mod:`ekte.knowledge.store`). Left out with ``include_user=False``, or
+   ``EKTE_NO_USER_KB=1``;
+4. packaged / ``EKTE_KB_DIR`` providers and models the user switched off in
    ``kb.db`` are removed (a provider with all its models). Also left out with
    ``include_user=False``. ``full=True`` skips this step and applies disabled
    entries too: the complete set, for listing it with on/off switches.
 
 An edit (or a new kb.db entry) applies to the next call without a restart.
 Merged results are cached, keyed on everything they are built from: the
-``--kb-dir`` / ``ZING_KB_DIR`` files (path and content digest), the user-KB switch,
+``--kb-dir`` / ``EKTE_KB_DIR`` files (path and content digest), the user-KB switch,
 the kb.db location, the kb.db entries and switched-off items themselves (two
 small queries per call),
 so an import, edit, toggle or delete is picked up immediately. The packaged
@@ -44,15 +44,15 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-from zing.knowledge.schema import (
+from ekte.knowledge.schema import (
     FingerprintProbe,
     KnowledgeBase,
     ModelProfile,
     ProviderProfile,
 )
-from zing.utils import yamlio
+from ekte.utils import yamlio
 
-_DATA_PACKAGE = "zing.knowledge.data"
+_DATA_PACKAGE = "ekte.knowledge.data"
 
 
 def _parse_provider(text: str, source: str) -> ProviderProfile:
@@ -91,10 +91,10 @@ def _load_dir(directory: Path) -> dict[str, tuple[ProviderProfile, str]]:
 
 
 def user_kb_enabled(include_user: bool | None = None) -> bool:
-    """Whether kb.db entries apply: an explicit choice, else not ``ZING_NO_USER_KB``."""
+    """Whether kb.db entries apply: an explicit choice, else not ``EKTE_NO_USER_KB``."""
     if include_user is not None:
         return include_user
-    return (os.environ.get("ZING_NO_USER_KB") or "").strip().lower() not in ("1", "true", "yes", "on")
+    return (os.environ.get("EKTE_NO_USER_KB") or "").strip().lower() not in ("1", "true", "yes", "on")
 
 
 def entry_source(entry: dict[str, Any]) -> str:
@@ -205,7 +205,7 @@ def apply_user_entries(kb: KnowledgeBase, entries: list[dict[str, Any]]) -> None
 
 
 def apply_disabled(kb: KnowledgeBase, items: list[tuple[str, str, str]]) -> None:
-    """Remove switched-off packaged / ``ZING_KB_DIR`` items from ``kb`` in place.
+    """Remove switched-off packaged / ``EKTE_KB_DIR`` items from ``kb`` in place.
 
     The user's own entries are switched off by their ``enabled`` column, so an
     item whose source is a kb.db entry is left alone here.
@@ -284,7 +284,7 @@ def load_knowledge_base(
     result is the shared instance, which the caller must treat as read-only.
     """
     dirs: list[Path] = list(extra_dirs or [])
-    env_dir = os.environ.get("ZING_KB_DIR")
+    env_dir = os.environ.get("EKTE_KB_DIR")
     if env_dir:
         dirs.append(Path(env_dir))
     use_user = user_kb_enabled(include_user)
@@ -298,8 +298,8 @@ def load_knowledge_base(
     cacheable = True
     db_location = ""
     if use_user:
-        from zing import datadir
-        from zing.knowledge import store
+        from ekte import datadir
+        from ekte.knowledge import store
 
         try:
             db_location = str(datadir.db_path(store.DB_NAME).resolve())

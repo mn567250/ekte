@@ -14,7 +14,7 @@ scored on the same dimensions:
 * ``embed.determinism`` — the same input twice gives the same vector (RELIABILITY);
 * ``embed.distinctness`` — unrelated inputs give clearly different vectors
   (CAPABILITY);
-* ``performance.embed`` — the performance probe (:mod:`zing.detectors.embed_performance`).
+* ``performance.embed`` — the performance probe (:mod:`ekte.detectors.embed_performance`).
 
 All math is pure stdlib — no numpy dependency.
 """
@@ -25,8 +25,8 @@ import hashlib
 import math
 from typing import Any
 
-from zing.context import AuditContext
-from zing.detectors.base import Detector
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector
 
 SURFACE = "embedding"
 

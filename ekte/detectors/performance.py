@@ -39,12 +39,12 @@ import hashlib
 import secrets
 from collections.abc import Sequence
 
-from zing import prompts
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors import perf_probe
-from zing.detectors.base import Detector, register
-from zing.detectors.perf_probe import (
+from ekte import prompts
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors import perf_probe
+from ekte.detectors.base import Detector, register
+from ekte.detectors.perf_probe import (
     PINGS,
     STANDARD_COMPARE_REQUESTS,
     burst_size,
@@ -53,16 +53,16 @@ from zing.detectors.perf_probe import (
     load_outcomes,
     planned_probe_requests,
 )
-from zing.detectors.perf_probe import Endpoint as _Endpoint
-from zing.detectors.perf_probe import deep as _deep
-from zing.detectors.perf_probe import fmt as _fmt
-from zing.detectors.perf_probe import r as _r
-from zing.detectors.perf_probe import signed as _signed
-from zing.detectors.perf_probe import tail_key as _tail_key
-from zing.detectors.perf_probe import tail_ratio as _tail_ratio
-from zing.detectors.scale import Scale, outcome
-from zing.knowledge.schema import PerformanceReference
-from zing.models import (
+from ekte.detectors.perf_probe import Endpoint as _Endpoint
+from ekte.detectors.perf_probe import deep as _deep
+from ekte.detectors.perf_probe import fmt as _fmt
+from ekte.detectors.perf_probe import r as _r
+from ekte.detectors.perf_probe import signed as _signed
+from ekte.detectors.perf_probe import tail_key as _tail_key
+from ekte.detectors.perf_probe import tail_ratio as _tail_ratio
+from ekte.detectors.scale import Scale, outcome
+from ekte.knowledge.schema import PerformanceReference
+from ekte.models import (
     DetectorResult,
     Dimension,
     EndpointPerformance,
@@ -71,9 +71,9 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.perf import summarize_endpoint
-from zing.perf.recorder import last_record
-from zing.perf.summary import hidden_reasoning
+from ekte.perf import summarize_endpoint
+from ekte.perf.recorder import last_record
+from ekte.perf.summary import hidden_reasoning
 
 __all__ = [
     "PINGS",
@@ -349,7 +349,7 @@ class PerformanceDetector(Detector):
                     "hidden_reasoning",
                     title="Reasoning tokens in the probe",
                     summary="The model spends hidden reasoning tokens: TTFT is the time to the "
-                    "first visible token and includes thinking. zing sets no reasoning "
+                    "first visible token and includes thinking. ekte sets no reasoning "
                     "effort, so the model thinks at its default effort.",
                     evidence={
                         "reasoning_tokens": sum(r.reasoning_tokens or 0 for r in probe_records),

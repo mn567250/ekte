@@ -1,6 +1,6 @@
 """The performance section of the Markdown, HTML and compact reports.
 
-Pure functions of :class:`~zing.models.PerformanceReport`. The HTML view draws
+Pure functions of :class:`~ekte.models.PerformanceReport`. The HTML view draws
 its charts as inline SVG (no scripts, no external assets) so the report stays a
 single self-contained file: one timeline per metric, switched with CSS-only
 tabs, with a native tooltip on every point.
@@ -12,7 +12,7 @@ import html
 import math
 from collections.abc import Callable
 
-from zing.models import (
+from ekte.models import (
     EndpointPerformance,
     PerformanceComparison,
     PerformanceReport,
@@ -306,7 +306,7 @@ def nice_axis(value: float) -> tuple[float, float, int]:
 
     The step is the smallest 1, 2, 2.5 or 5 x 10^n that covers ``value`` in at
     most 6 intervals, and the maximum the next multiple of it (510 -> 0..600 by
-    100, not 0..1000). Same as niceAxis in zing/web/static/perf.js.
+    100, not 0..1000). Same as niceAxis in ekte/web/static/perf.js.
     """
     if value <= 0:
         return 1.0, 0.25, 4

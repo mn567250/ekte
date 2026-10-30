@@ -1,8 +1,8 @@
 """Scan, check and import knowledge-base YAML into the user's kb.db.
 
-The intended flow (web UI: Knowledge base page, CLI: ``zing kb prompt``):
+The intended flow (web UI: Knowledge base page, CLI: ``ekte kb prompt``):
 
-1. the user copies a research prompt (:mod:`zing.knowledge.research`) into an
+1. the user copies a research prompt (:mod:`ekte.knowledge.research`) into an
    external AI assistant, which answers with a provider YAML document;
 2. the user uploads/pastes that YAML;
 3. :func:`scan` checks it — nothing is written — and reports errors (which
@@ -13,7 +13,7 @@ The intended flow (web UI: Knowledge base page, CLI: ``zing kb prompt``):
 The YAML comes from an AI and is treated as untrusted input:
 
 * size-limited, parsed with PyYAML's safe loader (libyaml's C parser when
-  available, :mod:`zing.utils.yamlio`) and refused when it uses
+  available, :mod:`ekte.utils.yamlio`) and refused when it uses
   anchors/aliases (no "billion laughs" expansion), nests more than
   ``MAX_NESTING`` levels or uses a tag outside the safe subset;
 * validated against the same pydantic schema as the packaged profiles (unknown
@@ -23,15 +23,15 @@ The YAML comes from an AI and is treated as untrusted input:
   on the server against relay output, so a catastrophic-backtracking pattern
   would stall audits;
 * a model without ``identity_keywords`` gets its own brand words filled in
-  (provider and model names, :mod:`zing.knowledge.identity`) with a warning;
-* every fingerprint prompt (text zing will send to audited endpoints) is
+  (provider and model names, :mod:`ekte.knowledge.identity`) with a warning;
+* every fingerprint prompt (text ekte will send to audited endpoints) is
   listed back so the user can review it before saving;
 * resolution changes are reported: an id or alias that would make an existing
   model id resolve to a different profile, and user models that shadow a
-  packaged or ``ZING_KB_DIR`` model.
+  packaged or ``EKTE_KB_DIR`` model.
 
 Merge semantics match the loader: a new provider is stored whole; for an
-existing (packaged / ``ZING_KB_DIR``) provider only its lists are added —
+existing (packaged / ``EKTE_KB_DIR``) provider only its lists are added —
 fingerprints by id, hints and red flags as a union — and single-value fields
 are ignored with a warning; models are stored one entry each.
 """
@@ -45,11 +45,11 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from zing.knowledge import store
-from zing.knowledge.identity import own_brand_words
-from zing.knowledge.loader import load_knowledge_base
-from zing.knowledge.schema import FingerprintProbe, KnowledgeBase, ProviderProfile
-from zing.utils import yamlio
+from ekte.knowledge import store
+from ekte.knowledge.identity import own_brand_words
+from ekte.knowledge.loader import load_knowledge_base
+from ekte.knowledge.schema import FingerprintProbe, KnowledgeBase, ProviderProfile
+from ekte.utils import yamlio
 
 MAX_YAML_BYTES = 512 * 1024
 MAX_MODELS = 200
@@ -78,7 +78,7 @@ class ScanResult:
     warnings: list[dict[str, str]] = field(default_factory=list)
     providers: list[dict[str, Any]] = field(default_factory=list)
     models: list[dict[str, Any]] = field(default_factory=list)
-    # Every prompt zing would send to audited endpoints: review before saving.
+    # Every prompt ekte would send to audited endpoints: review before saving.
     probes: list[dict[str, str]] = field(default_factory=list)
     resolution_changes: list[dict[str, str | None]] = field(default_factory=list)
     # What import_yaml would write: (kind, provider, model_id, body).
@@ -113,7 +113,7 @@ def _pydantic_errors(result: ScanResult, prefix: str, exc: ValidationError) -> N
     for err in exc.errors()[:50]:
         msg = err.get("msg", "invalid")
         if err.get("type") == "extra_forbidden":
-            msg = "unknown field (not part of the zing profile schema)"
+            msg = "unknown field (not part of the ekte profile schema)"
         result.error(_loc(prefix, tuple(err.get("loc") or ())), msg)
 
 
@@ -156,7 +156,7 @@ def _check_fingerprints(
     result: ScanResult, path: str, fps: list[FingerprintProbe], owner: str
 ) -> None:
     # Imported here: the knowledge layer otherwise does not load the detectors.
-    from zing.detectors.model_identity import ModelIdentityDetector
+    from ekte.detectors.model_identity import ModelIdentityDetector
 
     # The identity check skips pure-code probes that need more output than this.
     identity_cap = ModelIdentityDetector.MAX_FINGERPRINT_OUTPUT

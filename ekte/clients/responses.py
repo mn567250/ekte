@@ -2,7 +2,7 @@
 
 A growing number of relays front OpenAI's newer ``/responses`` endpoint rather
 than the classic ``/chat/completions`` one. This client speaks that protocol while
-presenting the exact same :class:`~zing.models.CompletionOutcome` surface as the
+presenting the exact same :class:`~ekte.models.CompletionOutcome` surface as the
 other clients, so every detector runs against it unchanged. It translates a
 :class:`RequestSpec` (OpenAI Chat-shaped) into a Responses request (``input`` items
 plus top-level ``instructions``) and normalizes the response — the ``output`` item
@@ -16,10 +16,10 @@ import json
 import time
 from typing import Any
 
-from zing.clients.base import BaseHTTPClient
-from zing.models import CompletionOutcome, RequestSpec
-from zing.utils.redact import redact_headers, redact_text
-from zing.utils.sse import parse_sse_line, try_load_event
+from ekte.clients.base import BaseHTTPClient
+from ekte.models import CompletionOutcome, RequestSpec
+from ekte.utils.redact import redact_headers, redact_text
+from ekte.utils.sse import parse_sse_line, try_load_event
 
 _DEFAULT_MAX_TOKENS = 1024
 
@@ -43,7 +43,7 @@ class ResponsesClient(BaseHTTPClient):
     def _headers(self) -> dict[str, str]:
         headers = {
             "Content-Type": "application/json",
-            "User-Agent": "zing-audit/0.1",
+            "User-Agent": "ekte/0.1",
         }
         if self.config.api_key:
             headers["Authorization"] = f"Bearer {self.config.api_key}"

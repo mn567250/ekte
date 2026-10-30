@@ -1,4 +1,4 @@
-/* zing web UI v2 — report view (rendered by /v2/static/report.js). Tokens only. */
+/* ekte web UI v2 — report view (rendered by /v2/static/report.js). Tokens only. */
 .zr { overflow: hidden; padding: 0; min-width: 0; overflow-wrap: anywhere; }
 .zr .ribbon { height: 5px; background: var(--ink-muted); }
 .zr.good .ribbon { background: var(--success); }

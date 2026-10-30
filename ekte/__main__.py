@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from zing.cli import app
+from ekte.cli import app
 
 if __name__ == "__main__":
     app()

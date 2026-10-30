@@ -14,17 +14,17 @@ instead (``effective_source``).
 
 :func:`set_enabled` switches one item: the user's own entries by their
 ``enabled`` column, everything else with the ``kb_disabled`` table (see
-:mod:`zing.knowledge.store`).
+:mod:`ekte.knowledge.store`).
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from zing.knowledge import store
-from zing.knowledge.loader import load_knowledge_base
-from zing.knowledge.relays import RELAY_ORIGIN, base_urls, is_relay
-from zing.knowledge.schema import KnowledgeBase
+from ekte.knowledge import store
+from ekte.knowledge.loader import load_knowledge_base
+from ekte.knowledge.relays import RELAY_ORIGIN, base_urls, is_relay
+from ekte.knowledge.schema import KnowledgeBase
 
 _ENTRY_PREFIX = "kb.db:entry/"
 
@@ -146,7 +146,7 @@ def set_enabled(key: str, enabled: bool) -> None:
     """Switch the item ``key`` on or off; :class:`ToggleError` when that is not possible."""
     effective = load_knowledge_base(copy=False)
     if not effective.user_kb:
-        raise ToggleError(409, "your kb.db is ignored (ZING_NO_USER_KB); nothing can be switched")
+        raise ToggleError(409, "your kb.db is ignored (EKTE_NO_USER_KB); nothing can be switched")
     kind, _, rest = str(key or "").partition(":")
     if kind == "entry":
         try:

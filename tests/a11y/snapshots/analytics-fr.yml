@@ -1,9 +1,9 @@
 - banner:
   - link "Aller au contenu principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "Interface classique":
     - /url: "?ui=v1"
   - combobox "Thème":
@@ -36,7 +36,7 @@
       - /url: /v2/kb
 - main:
   - heading "Analyses des audits" [level=1]
-  - paragraph: "Comparez relais et modèles dans le temps avec ce que zing a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation."
+  - paragraph: "Comparez relais et modèles dans le temps avec ce que ekte a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation."
   - status: 1 exécution plus ancienne a une heure de début estimée Les graphiques par heure de la journée les placent approximativement.
   - status: "Mis à jour : 14 exécutions sur cette période."
   - region "Filtres":
@@ -108,4 +108,4 @@
         - listitem: Ratio de facturation (sortie) 102 % Pas de données sur la période précédente Données de 9 exécutions sur 14
 - contentinfo:
   - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
-  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."
+  - paragraph: "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

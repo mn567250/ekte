@@ -10,7 +10,7 @@
   "Expand all": "Expand all",
   "Filters": "Filters",
   "Health score trend across {n} audits: from {first} to {last}, {dir}.": "Health score trend across {n} audits: from {first} to {last}, {dir}.",
-  "History lives only in a local SQLite file under <code>~/.zing</code> — nothing is uploaded.": "History lives only in a local SQLite file under <code>~/.zing</code> — nothing is uploaded.",
+  "History lives only in a local SQLite file under <code>~/.ekte</code> — nothing is uploaded.": "History lives only in a local SQLite file under <code>~/.ekte</code> — nothing is uploaded.",
   "Last 30 days": "Last 30 days",
   "Last 7 days": "Last 7 days",
   "Last 90 days": "Last 90 days",

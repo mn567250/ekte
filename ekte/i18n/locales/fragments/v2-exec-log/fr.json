@@ -6,7 +6,7 @@
   "{t} in total": "{t} au total",
   "Checks run one after another; the slowest was {name} ({t}).": "Les vérifications s'exécutent l'une après l'autre ; la plus lente était {name} ({t}).",
   "Error: ": "Erreur : ",
-  "Helps zing pick the right model profile when the model name alone is ambiguous. Choosing a model from the list fills it in.": "Aide zing à choisir le bon profil de modèle lorsque le nom du modèle seul est ambigu. Choisir un modèle dans la liste le remplit.",
+  "Helps ekte pick the right model profile when the model name alone is ambiguous. Choosing a model from the list fills it in.": "Aide ekte à choisir le bon profil de modèle lorsque le nom du modèle seul est ambigu. Choisir un modèle dans la liste le remplit.",
   "Each check shows its score and how long it took; checks with findings expand to show the evidence.": "Chaque vérification affiche son score et sa durée ; les vérifications avec des constats se déplient pour montrer les preuves."
  }
 }

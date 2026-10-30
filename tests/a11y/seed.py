@@ -3,7 +3,7 @@
 :func:`seed_analytics` saves a relay in the knowledge base and a dozen runs
 over the last week before ``end``: two relays (the saved one and a long URL
 the knowledge base does not know), two models, manual and monitor runs,
-buckets with three runs and buckets with fewer (drawn faded), a zing
+buckets with three runs and buckets with fewer (drawn faded), a ekte
 version and knowledge-base profile change (annotation markers), request
 records with rate limits, server errors and timeouts (errors panel),
 identity / context-window / capability detector results (integrity panel),
@@ -132,9 +132,9 @@ def _integrity(model: str, score: float, saved: bool) -> list[dict[str, Any]]:
 
 
 def seed_analytics(end: datetime, watch_id: int | None) -> None:
-    """Save the relay and the runs (call with ZING_DATA_DIR set, after history.init())."""
-    from zing.knowledge.relays import RelayError, add_relay
-    from zing.web import history
+    """Save the relay and the runs (call with EKTE_DATA_DIR set, after history.init())."""
+    from ekte.knowledge.relays import RelayError, add_relay
+    from ekte.web import history
 
     with contextlib.suppress(RelayError):  # already saved
         add_relay(*SAVED_RELAY)

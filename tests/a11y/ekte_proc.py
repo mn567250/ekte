@@ -1,15 +1,15 @@
-"""A private zing web server in a subprocess, for tests that change state.
+"""A private ekte web server in a subprocess, for tests that change state.
 
 The session server of harness.py is shared by every a11y test of a worker, so
 flows that create monitors, set a master key or run audits get a server of
 their own: a separate process (the data directory is process-wide state) with
-a throwaway ``ZING_DATA_DIR`` that holds the saved report fixture and,
+a throwaway ``EKTE_DATA_DIR`` that holds the saved report fixture and,
 optionally, the monitor scheduled from it and a week of runs for the Analytics
 page (seed.py), with fixed timestamps so pages
 render the same on every run.
 
-``python -m tests.a11y.zing_proc PORT DATA_DIR SEED_MONITOR`` is what the
-subprocess runs; :class:`ZingProc` starts and stops it.
+``python -m tests.a11y.ekte_proc PORT DATA_DIR SEED_MONITOR`` is what the
+subprocess runs; :class:`EkteProc` starts and stops it.
 """
 
 from __future__ import annotations
@@ -36,18 +36,18 @@ def _wait_health(url: str, proc: subprocess.Popen[Any] | None = None, timeout: f
     end = time.monotonic() + timeout
     while time.monotonic() < end:
         if proc is not None and proc.poll() is not None:
-            raise RuntimeError(f"zing server exited with {proc.returncode}")
+            raise RuntimeError(f"ekte server exited with {proc.returncode}")
         try:
             if httpx.get(url + "/api/health", timeout=1).status_code == 200:
                 return
         except httpx.HTTPError:
             pass
         time.sleep(0.05)
-    raise RuntimeError("zing server did not start")
+    raise RuntimeError("ekte server did not start")
 
 
-class ZingProc:
-    """``with ZingProc(tmp_path) as z: z.url``: a fresh zing server."""
+class EkteProc:
+    """``with EkteProc(tmp_path) as z: z.url``: a fresh ekte server."""
 
     def __init__(self, data_dir: Path, seed_monitor: bool = False) -> None:
         from tests.a11y.harness import _free_port
@@ -58,12 +58,12 @@ class ZingProc:
         self.seed_monitor = seed_monitor
         self.proc: subprocess.Popen[bytes] | None = None
 
-    def __enter__(self) -> ZingProc:
-        env = dict(os.environ, ZING_DATA_DIR=str(self.data_dir), PYTHONPATH=str(ROOT))
-        for k in ("ZING_KB_DIR", "ZING_NO_USER_KB", "ZING_SECRET_KEY"):
+    def __enter__(self) -> EkteProc:
+        env = dict(os.environ, EKTE_DATA_DIR=str(self.data_dir), PYTHONPATH=str(ROOT))
+        for k in ("EKTE_KB_DIR", "EKTE_NO_USER_KB", "EKTE_SECRET_KEY"):
             env.pop(k, None)
         self.proc = subprocess.Popen(
-            [sys.executable, "-m", "tests.a11y.zing_proc", str(self.port), str(self.data_dir), str(int(self.seed_monitor))],
+            [sys.executable, "-m", "tests.a11y.ekte_proc", str(self.port), str(self.data_dir), str(int(self.seed_monitor))],
             cwd=str(ROOT),
             env=env,
             stdin=subprocess.DEVNULL,
@@ -74,7 +74,7 @@ class ZingProc:
             end = time.monotonic() + 30
             while not (self.data_dir / ".seeded").exists():
                 if time.monotonic() > end or self.proc.poll() is not None:
-                    raise RuntimeError("zing server did not finish seeding")
+                    raise RuntimeError("ekte server did not finish seeding")
                 time.sleep(0.05)
         except BaseException:
             self.__exit__()
@@ -95,9 +95,9 @@ def _main(port: int, data_dir: Path, seed_monitor: bool) -> None:
     import httpx
     import uvicorn
 
+    from ekte.web import history, watches
+    from ekte.web.server import create_app
     from tests.a11y.seed import seed_analytics
-    from zing.web import history, watches
-    from zing.web.server import create_app
 
     history.init()
     rid = history.save(json.loads(REPORT_FIXTURE.read_text(encoding="utf-8")))

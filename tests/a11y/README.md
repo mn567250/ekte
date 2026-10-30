@@ -7,11 +7,11 @@ described in [docs/ACCESSIBILITY.md](../../docs/ACCESSIBILITY.md).
 ## Testing some pages
 
 ```sh
-ZING_A11Y_PAGES=history pytest tests/a11y -m a11y -n auto        # History only
-ZING_A11Y_PAGES=audit,kb pytest tests/a11y -m a11y --collect-only -q
+EKTE_A11Y_PAGES=history pytest tests/a11y -m a11y -n auto        # History only
+EKTE_A11Y_PAGES=audit,kb pytest tests/a11y -m a11y --collect-only -q
 ```
 
-`ZING_A11Y_PAGES` is a comma list of page ids (`PAGES` in `pages.py`: `audit`,
+`EKTE_A11Y_PAGES` is a comma list of page ids (`PAGES` in `pages.py`: `audit`,
 `history`, `monitors`, `kb`, `analytics`, `accessibility`), or `all`; an unknown
 id is a usage error. A test runs when it is tied to a selected page:
 
@@ -22,8 +22,8 @@ id is a usage error. A test runs when it is tied to a selected page:
 - everything else (the checks that compare every page: consistent navigation
   and identification, page titles, reachability; the self-checks) always runs.
 
-It combines with `ZING_A11Y_SHARD=k/n`, which then splits the selection.
-Collected with `ZING_A11Y_PAGES=<page>` (1,138 tests in all; 33 of them, 4 %
+It combines with `EKTE_A11Y_SHARD=k/n`, which then splits the selection.
+Collected with `EKTE_A11Y_PAGES=<page>` (1,138 tests in all; 33 of them, 4 %
 of the test time, run with any selection), and each page's share of a full
 run's test time (`WEIGHTS` in `pages.py`):
 
@@ -40,9 +40,9 @@ run's test time (`WEIGHTS` in `pages.py`):
 
 ```sh
 python -m tests.a11y.affected --base origin/main --head HEAD
-# {"pages": ["history"], "full": false, "reason": "zing/web/static/v2/history.html -> history"}
-python -m tests.a11y.affected --files zing/web/static/v2/nav.js
-# {"pages": ["audit", …, "accessibility"], "full": true, "reason": "zing/web/static/v2/nav.js affects every page"}
+# {"pages": ["history"], "full": false, "reason": "ekte/web/static/v2/history.html -> history"}
+python -m tests.a11y.affected --files ekte/web/static/v2/nav.js
+# {"pages": ["audit", …, "accessibility"], "full": true, "reason": "ekte/web/static/v2/nav.js affects every page"}
 ```
 
 `affected.py` (standard library only) diffs the two commits from their merge
@@ -50,12 +50,12 @@ base, or takes `--files` (`-` reads stdin), and maps every changed file through
 `RULES` in `pages.py`; the first matching glob decides. Each page's HTML and
 the scripts and styles only it loads select that page; assets loaded by some
 pages select those (`report.js`: audit and History); files every page uses
-(`nav.js`, `zing.css`, `theme.js`, `i18n.js`, the locales, `server.py`, this
+(`nav.js`, `ekte.css`, `theme.js`, `i18n.js`, the locales, `server.py`, this
 directory, `ci.yml`, `pyproject.toml`, `uv.lock`, the seeded report fixture)
-select all of them. The audit pipeline (`zing/detectors/`, `zing/runner.py`,
-`zing/clients/`, `zing/scoring.py`, `zing/report/`) selects the audit page:
+select all of them. The audit pipeline (`ekte/detectors/`, `ekte/runner.py`,
+`ekte/clients/`, `ekte/scoring.py`, `ekte/report/`) selects the audit page:
 its flow runs a real audit against a fake relay and renders the report.
-Other files outside the web UI (docs, other tests, the CLI) select none. **Fail-safe:** a file under `zing/web/`, `zing/i18n/` or
+Other files outside the web UI (docs, other tests, the CLI) select none. **Fail-safe:** a file under `ekte/web/`, `ekte/i18n/` or
 `tests/a11y/` that no rule matches selects everything, and so does a failing
 `git diff`.
 
@@ -66,7 +66,7 @@ In CI the `accessibility scope` job runs it on pull requests; pushes (to
 runs test every page. A full run is four round-robin
 shards; a partial run gets one to four jobs by the summed weight of its pages
 (`WEIGHTS`, `job_count` in `pages.py`), each running the whole selection with
-`ZING_A11Y_SHARD=k/n`, so the jobs stay even however large a page is.
+`EKTE_A11Y_SHARD=k/n`, so the jobs stay even however large a page is.
 
 **Keeping the mapping right.** A new page is added to `PAGES` (the harness and
 every `page_id` test pick it up) and gets rules for its HTML and its own
@@ -74,7 +74,7 @@ assets in `RULES`. A new test that opens one fixed page without a `page_id`
 parameter gets a `TEST_PAGES` entry (unmapped, it simply always runs). A new
 asset shared by several pages gets a rule naming them (unmapped, it runs
 everything). `tests/test_a11y_pages.py` checks the tables against the sources:
-every file under `zing/web/`, `zing/i18n/` and `tests/a11y/` has a rule, every
+every file under `ekte/web/`, `ekte/i18n/` and `tests/a11y/` has a rule, every
 `<script>`/`<link>` of a page is mapped to that page, `TEST_PAGES` entries name
 every page their test opens, and a narrowed locale fragment is used on no
 other page. Locale fragments re-declare shared strings ("Cancel", "API key"),
@@ -112,19 +112,19 @@ python -m tests.a11y.llm_review --out a11y-llm-review.json
 python -m tests.a11y.llm_review --base-url http://localhost:11434/v1 --model qwen3
 
 # the endpoint of an audit configuration (judge, else baseline, else target)
-python -m tests.a11y.llm_review --config zing.yaml
+python -m tests.a11y.llm_review --config ekte.yaml
 ```
 
 **Endpoint.** Each of `--base-url`, `--api-key` (raw, `env:VAR` or
 `file:/path`), `--model` and `--api` (`auto`, `anthropic`, `openai`) is
-optional. A missing one is taken from the zing configuration (`--config`,
-default `./zing.yaml` when it exists): its `judge` endpoint, else `baseline`,
-else `target`, the same order zing's own judge uses. Then from
+optional. A missing one is taken from the ekte configuration (`--config`,
+default `./ekte.yaml` when it exists): its `judge` endpoint, else `baseline`,
+else `target`, the same order ekte's own judge uses. Then from
 `ANTHROPIC_BASE_URL` / `ANTHROPIC_API_KEY`, then the defaults (the Anthropic
 API, `claude-opus-5-5`). A key or model is only taken from the source that
 gave the URL, so a configured key is never sent to another host; a URL that is
 neither configured nor Anthropic's needs `--model`. The protocol is detected
-like an audit target's (`zing.clients.detect_api`): the Anthropic Messages API
+like an audit target's (`ekte.clients.detect_api`): the Anthropic Messages API
 or OpenAI-compatible chat completions (structured output via
 `response_format`, falling back to JSON mode on servers without it; `<think>`
 blocks and code fences in the answer are ignored). A local or private-network
@@ -162,7 +162,7 @@ asserts and always exits 0; without a key for a remote endpoint it prints a
 notice and writes a `skipped` report.
 
 **Review and update the report in one command.** The page shows
-`zing/web/static/v2/bitv-report.json`; the review file alone does not change
+`ekte/web/static/v2/bitv-report.json`; the review file alone does not change
 it. `--update-report` applies the finished review to that report right away
 (another path can follow the option):
 
@@ -176,7 +176,7 @@ Each step of the report keeps its status from the tests alone
 (`status_tests`), so a new review replaces the previous one instead of adding
 to it. A dry run or a failed review leaves the report unchanged. Without
 running a new review, `python -m tests.a11y.conformance --update
-zing/web/static/v2/bitv-report.json --llm a11y-llm-review.json` applies an
+ekte/web/static/v2/bitv-report.json --llm a11y-llm-review.json` applies an
 existing review file (`--no-llm` removes it again).
 
 Notes:

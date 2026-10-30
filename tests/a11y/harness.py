@@ -4,7 +4,7 @@ Starts the real app (``create_app``) on a free local port with a throwaway data
 dir that holds one saved report, one monitor and a week of runs for the
 Analytics page (seed.py), and drives it with Playwright
 (Chromium). Every test is parametrised over the UI languages found in
-``zing/i18n/locales`` and, where colours matter, over the light and dark theme.
+``ekte/i18n/locales`` and, where colours matter, over the light and dark theme.
 
 Run with ``pytest -m a11y`` (needs ``pip install -e '.[web,a11y]'`` and a
 Chromium for Playwright: ``playwright install chromium``). Without Playwright
@@ -42,12 +42,12 @@ AXE = Path(__file__).resolve().parent / "vendor" / "axe.min.js"
 REPORT_FIXTURE = ROOT / "tests" / "fixtures" / "web_report.json"
 # findings as JSON (one file per pytest-xdist worker)
 _WORKER = os.environ.get("PYTEST_XDIST_WORKER", "")
-RESULTS_FILE = Path(os.environ.get("ZING_A11Y_REPORT", ROOT / "a11y-report.json"))
+RESULTS_FILE = Path(os.environ.get("EKTE_A11Y_REPORT", ROOT / "a11y-report.json"))
 if _WORKER:
     RESULTS_FILE = RESULTS_FILE.with_name(f"{RESULTS_FILE.stem}-{_WORKER}{RESULTS_FILE.suffix}")
 
-# Every UI language (zing/i18n/locales/*.json), English first.
-LANGS = sorted((p.stem for p in (ROOT / "zing" / "i18n" / "locales").glob("*.json")), key=lambda c: (c != "en", c))
+# Every UI language (ekte/i18n/locales/*.json), English first.
+LANGS = sorted((p.stem for p in (ROOT / "ekte" / "i18n" / "locales").glob("*.json")), key=lambda c: (c != "en", c))
 THEMES = ["light", "dark"]
 
 WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
@@ -68,12 +68,12 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     import httpx
     import uvicorn
 
-    data = tmp_path_factory.mktemp("zing-a11y-data")
-    old = os.environ.get("ZING_DATA_DIR")
-    os.environ["ZING_DATA_DIR"] = str(data)
+    data = tmp_path_factory.mktemp("ekte-a11y-data")
+    old = os.environ.get("EKTE_DATA_DIR")
+    os.environ["EKTE_DATA_DIR"] = str(data)
 
-    from zing.web import history
-    from zing.web.server import create_app
+    from ekte.web import history
+    from ekte.web.server import create_app
 
     history.init()
     rid = history.save(json.loads(REPORT_FIXTURE.read_text(encoding="utf-8")))
@@ -91,7 +91,7 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
             pass
         time.sleep(0.05)
     else:  # pragma: no cover
-        raise RuntimeError("zing web server did not start")
+        raise RuntimeError("ekte web server did not start")
 
     # one monitor, so the monitors page has a populated list
     with httpx.Client(base_url=url, headers={"Origin": url}, timeout=10) as c:
@@ -104,9 +104,9 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     server.should_exit = True
     thread.join(timeout=10)
     if old is None:
-        os.environ.pop("ZING_DATA_DIR", None)
+        os.environ.pop("EKTE_DATA_DIR", None)
     else:
-        os.environ["ZING_DATA_DIR"] = old
+        os.environ["EKTE_DATA_DIR"] = old
 
 
 # --------------------------------------------------------------------------- #
@@ -115,9 +115,9 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
 @pytest.fixture(scope="session")
 def browser() -> Iterator[Browser]:
     with sync_playwright() as pw:
-        # ZING_A11Y_CHROMIUM: use an already installed Chromium instead of
+        # EKTE_A11Y_CHROMIUM: use an already installed Chromium instead of
         # the one matching this Playwright release
-        exe = os.environ.get("ZING_A11Y_CHROMIUM") or None
+        exe = os.environ.get("EKTE_A11Y_CHROMIUM") or None
         b = pw.chromium.launch(executable_path=exe)
         yield b
         b.close()
@@ -147,8 +147,8 @@ class Opener:
         self.contexts.append(ctx)
         track_network(ctx)
         ctx.add_init_script(
-            f"try {{ localStorage.setItem('zing.lang', {json.dumps(lang)});"
-            f" localStorage.setItem('zing.v2.theme', {json.dumps(theme)}); }} catch (e) {{}}"
+            f"try {{ localStorage.setItem('ekte.lang', {json.dumps(lang)});"
+            f" localStorage.setItem('ekte.v2.theme', {json.dumps(theme)}); }} catch (e) {{}}"
         )
         # offline: web fonts etc. are not part of what is tested
         ctx.route(

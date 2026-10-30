@@ -1,7 +1,7 @@
 """Embedding performance probe — latency and throughput of ``POST /embeddings``.
 
-The embedding counterpart of the chat probe (:mod:`zing.detectors.performance`),
-sharing its gating and phase loop (:mod:`zing.detectors.perf_probe`): pings, a
+The embedding counterpart of the chat probe (:mod:`ekte.detectors.performance`),
+sharing its gating and phase loop (:mod:`ekte.detectors.perf_probe`): pings, a
 warm-up (reported as cold start), N probe rounds, and on deep/full a burst at the
 reliability concurrency. Each round sends one single-input request and one
 batch of 16 inputs — the second axis, in place of the chat probe's streaming
@@ -24,11 +24,11 @@ import secrets
 from collections.abc import Sequence
 from typing import Any
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors import perf_probe
-from zing.detectors.base import Detector, register
-from zing.detectors.perf_probe import (
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors import perf_probe
+from ekte.detectors.base import Detector, register
+from ekte.detectors.perf_probe import (
     Endpoint,
     burst_size,
     consistency_outcomes,
@@ -39,8 +39,8 @@ from zing.detectors.perf_probe import (
     r,
     signed,
 )
-from zing.detectors.scale import Scale, outcome
-from zing.models import (
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import (
     DetectorResult,
     Dimension,
     EndpointPerformance,
@@ -48,9 +48,9 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.perf import phase_scope, summarize_endpoint
-from zing.perf.recorder import last_record
-from zing.utils.stats import percentile
+from ekte.perf import phase_scope, summarize_endpoint
+from ekte.perf.recorder import last_record
+from ekte.utils.stats import percentile
 
 OP = "embed"
 # Inputs per batch request, and the phase its records carry (kept out of the

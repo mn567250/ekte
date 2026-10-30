@@ -6,6 +6,6 @@ user opts into ``--judge``, detectors may additionally consult a *trusted* model
 fuzzy signals like quality, style, or semantic equivalence.
 """
 
-from zing.judge.judge import Judge, JudgeUnavailable
+from ekte.judge.judge import Judge, JudgeUnavailable
 
 __all__ = ["Judge", "JudgeUnavailable"]

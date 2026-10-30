@@ -1,11 +1,11 @@
 import pytest
 
-from zing.web import jobs
+from ekte.web import jobs
 
 
 def test_running_monitor_is_followable_as_a_job():
     pytest.importorskip("fastapi")
-    from zing.web import server
+    from ekte.web import server
 
     job = jobs.Job({"kind": "monitor", "watch_id": 7}, frozenset())
     job.id = "monitor-7"

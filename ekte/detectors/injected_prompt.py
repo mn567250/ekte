@@ -17,13 +17,13 @@ single tell stays low and never escalates overall risk on its own.
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import usage_field
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
-from zing.utils.tokenize import estimate_messages_tokens
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import usage_field
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte.utils.tokenize import estimate_messages_tokens
 
 # Overhead (reported prompt_tokens − estimate) above this, holding roughly constant
 # across message sizes, reads as a hidden prepended prompt rather than template noise.

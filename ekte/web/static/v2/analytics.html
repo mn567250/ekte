@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="zing — analytics">zing — 分析</title>
+<title data-en="ekte — analytics">ekte — 分析</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/zing.css" />
+<link rel="stylesheet" href="/v2/static/ekte.css" />
 <link rel="stylesheet" href="/v2/static/charts.css" />
 <link rel="stylesheet" href="/v2/static/chartmotion.css" />
 <link rel="stylesheet" href="/v2/static/filterpanel.css" />
 <style>
-  /* Analytics page. Tokens only (zing.css, charts.css, filterpanel.css);
+  /* Analytics page. Tokens only (ekte.css, charts.css, filterpanel.css);
    * light + dark.
    *
    * The collapsible filter panel (filterpanel.js) and "Copy link to this
@@ -28,7 +28,7 @@
    * stacks; wide tables scroll inside their own focusable region, never the
    * page (BITV 9.1.4.10). */
 
-  /* each top-level tab panel is one card (.tab-card, zing.css): its
+  /* each top-level tab panel is one card (.tab-card, ekte.css): its
    * sub-tab switch first, then the selected sub-panel inside the same card */
   #views > .tab-card { min-width: 0; }
   .panel { min-width: 0; }
@@ -195,7 +195,7 @@
     .ctl { grid-template-columns: 1fr; }
     #heat-ctl .ctl > label:has(> [data-v]) { flex-basis: 100%; }
   }
-  /* phones: zing.css stacks .tabs; two short sections still fit side by side */
+  /* phones: ekte.css stacks .tabs; two short sections still fit side by side */
   @media (max-width: 480px) {
     .subtabs { flex-direction: row; }
     .subtabs [role="tab"] { flex: 1 1 auto; padding: 8px 10px; }
@@ -208,7 +208,7 @@
   <main id="main" tabindex="-1">
     <div class="hero">
       <h1 data-en="Audit <span class='u'>analytics</span>">检测<span class='u'>分析</span></h1>
-      <p data-en="Compare relays and models over time with what zing measured on this machine: scores, speed, success rates and billing.">用 zing 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。</p>
+      <p data-en="Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing.">用 ekte 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。</p>
     </div>
     <!-- the page notice (notice.js) -->
     <div class="znote" id="note" hidden></div>
@@ -310,7 +310,7 @@
       <section class="card card-pad tab-card" role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" tabindex="0" hidden>
         <section class="panel" id="panel-bill" aria-labelledby="bill-h" aria-busy="true">
           <h2 id="bill-h" data-en="Billing and tokens">计费与 token</h2>
-          <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens zing counted. Above 100%: the relay reports more tokens than zing counted (you may be billed for more). zing's counts are estimates, so small deviations are normal.">计费比 = 中转站报告的 token ÷ zing 统计的 token。高于 100%：中转站报告的 token 多于 zing 统计的（可能多计费）。zing 的统计是估算，小幅偏差属正常。</p>
+          <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.">计费比 = 中转站报告的 token ÷ ekte 统计的 token。高于 100%：中转站报告的 token 多于 ekte 统计的（可能多计费）。ekte 的统计是估算，小幅偏差属正常。</p>
           <div class="pbody">
             <div id="bill-ctl"></div>
             <div id="bill-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
@@ -332,8 +332,8 @@
 (function () {
   "use strict";
   var $ = function (s, r) { return (r || document).querySelector(s); };
-  var ico = function (n, o) { return window.zingIcon ? window.zingIcon(n, o || {}) : ""; };
-  var C = window.ZingCharts, esc = C.esc, fmt = C.fmt;
+  var ico = function (n, o) { return window.ekteIcon ? window.ekteIcon(n, o || {}) : ""; };
+  var C = window.EkteCharts, esc = C.esc, fmt = C.fmt;
   // escaped text that may wrap after "/" and "." (relay URLs)
   var brk = function (s) { return esc(s).replace(/([/.])/g, "$1<wbr>"); };
   // T(zh, en) with {name} placeholders filled after translation
@@ -375,9 +375,9 @@
   };
   var DIM = "dim:";
   function dimName(k) {
-    var I = window.ZING_I18N;
+    var I = window.EKTE_I18N;
     if (!I || !I.DIMENSIONS[k]) return k;
-    return ZING_LANG.isZh() ? I.DIMENSIONS[k][0] : ZING_LANG.tr(I.EN.DIMENSIONS[k][0]);
+    return EKTE_LANG.isZh() ? I.DIMENSIONS[k][0] : EKTE_LANG.tr(I.EN.DIMENSIONS[k][0]);
   }
   function metricName(id) {
     if (String(id).indexOf(DIM) === 0) return Tf("维度：{name}", "Dimension: {name}", { name: dimName(id.slice(DIM.length)) });
@@ -420,7 +420,7 @@
   // (#tab=trends&range=30&…: shareable, bookmarkable, "Copy link to this
   // view"); the last view is also remembered per viewer (localStorage, may
   // be missing or throw). A fragment without tab= opens Overview.
-  var VKEY = "zing.v2.analytics.view", OKEY = "zing.v2.analytics.filtersOpen";
+  var VKEY = "ekte.v2.analytics.view", OKEY = "ekte.v2.analytics.filtersOpen";
   var TABS = ["overview", "trends", "reliability", "integrity", "billing"];
   // tabs with two panels show one at a time (sub-tabs); its fragment key
   var SUBS = { overview: ["kpi", "lb"], trends: ["cmp", "heat"], reliability: ["err", "ovh"] };
@@ -591,12 +591,12 @@
     return q;
   }
   function dfmt(opts, d) {
-    try { return ZING_LANG.dateFmt(opts).format(d); } catch (e) { return d.toLocaleString(); }
+    try { return EKTE_LANG.dateFmt(opts).format(d); } catch (e) { return d.toLocaleString(); }
   }
   function dayRange(a, b) {
     var last = new Date(b.getTime() - 1);
     try {
-      var f = ZING_LANG.dateFmt({ dateStyle: "medium" });
+      var f = EKTE_LANG.dateFmt({ dateStyle: "medium" });
       if (f.formatRange) return f.formatRange(a, last);
     } catch (e) { /* ignore */ }
     return dfmt({ dateStyle: "medium" }, a) + " – " + dfmt({ dateStyle: "medium" }, last);
@@ -626,7 +626,7 @@
   }
   var live = $("#live");
   function say(msg) { live.textContent = msg; }
-  function errText(e) { return ZING_LANG.server(String((e && e.message) || e)); }
+  function errText(e) { return EKTE_LANG.server(String((e && e.message) || e)); }
   function busy(id, on) { $(id).setAttribute("aria-busy", on ? "true" : "false"); }
   // Every panel re-render goes through here: a render empties its chart box
   // before drawing it, and a page that is briefly shorter clamps the scroll
@@ -659,7 +659,7 @@
       box.classList.remove("empty-box");
       // the notice announces the failure: this box is no second alert
       box.innerHTML = '<div class="errbox">' + esc(T("无法读取分析数据：", "Could not load analytics: ")) + esc(errText(e)) +
-        "<br>" + esc(T("请确认本地 zing 服务在运行。", "Make sure the local zing service is running.")) + "</div>";
+        "<br>" + esc(T("请确认本地 ekte 服务在运行。", "Make sure the local ekte service is running.")) + "</div>";
       say("");
     });
   }
@@ -803,7 +803,7 @@
     var n = null, s = note.status, o = state.opts;
     if (note.err) {
       n = { level: "critical", title: T("无法加载分析数据", "Analytics could not be loaded"),
-        detail: T("本地 zing 服务没有响应。", "The local zing service did not answer."),
+        detail: T("本地 ekte 服务没有响应。", "The local ekte service did not answer."),
         actions: [{ act: "retry", label: T("重试", "Retry"), primary: true }] };
     } else if (s && o) {
       var warn = [];
@@ -835,7 +835,7 @@
           detail: T("分析基于本机保存的检测计算。", "Analytics are computed from the audits saved on this machine.") };
       }
     }
-    window.ZingNotice.show($("#note"), n);
+    window.EkteNotice.show($("#note"), n);
   }
   function loadNote() {
     return fetch("/api/history/status")
@@ -846,7 +846,7 @@
   $("#note").addEventListener("click", function (e) {
     if (e.target.closest('[data-note-act="retry"]')) { note.err = false; paintNote(); $("#empty").hidden = true; loadOptions(); }
   });
-  window.addEventListener("zing:lang", paintNote);
+  window.addEventListener("ekte:lang", paintNote);
 
   function renderEmpty() {
     var box = $("#empty");
@@ -902,7 +902,7 @@
     if (F.model) out.push(F.model);
     return out;
   }
-  var fpanel = window.ZingFilterPanel.create($("#filters"), {
+  var fpanel = window.EkteFilterPanel.create($("#filters"), {
     storeKey: OKEY,
     onReset: function () { resetFilters(); },
   });
@@ -1066,8 +1066,8 @@
       var from = was && was.unit === c.unit ? was.v : 0;
       if (from !== c.value) items.push({ el: el, from: from, to: c.value, unit: c.unit });
     });
-    if (state.still || !window.ZingMotion || !items.length) return;
-    window.ZingMotion.count(items, function (v, it) { return fmt(v, it.unit); });
+    if (state.still || !window.EkteMotion || !items.length) return;
+    window.EkteMotion.count(items, function (v, it) { return fmt(v, it.unit); });
   }
   $("#kpi-body").addEventListener("click", function (ev) {
     if (ev.target.closest("#kreset")) {
@@ -1163,7 +1163,7 @@
   }
   function markText(a) {
     return a.kind === "tool_version"
-      ? Tf("zing 版本 {from} → {to}", "zing version {from} → {to}", { from: a.from, to: a.to })
+      ? Tf("ekte 版本 {from} → {to}", "ekte version {from} → {to}", { from: a.from, to: a.to })
       : T("知识库档案有变化（评分依据变了，不是中转站变了）", "Knowledge-base profile changed (the reference changed, not the relay)");
   }
 
@@ -1231,7 +1231,7 @@
     }
     if (marks.length) {
       notes += '<div class="note">' + ico("info") + "<span>" +
-        esc(T("图中虚线标出评分依据的变化（v = zing 版本，KB = 知识库档案）：", "Dashed lines in the chart mark changes to how runs are scored (v = zing version, KB = knowledge-base profile):")) +
+        esc(T("图中虚线标出评分依据的变化（v = ekte 版本，KB = 知识库档案）：", "Dashed lines in the chart mark changes to how runs are scored (v = ekte version, KB = knowledge-base profile):")) +
         "<ul>" + marks.map(function (k) {
           return "<li>" + esc(bucketTime(k.t)) + " · " + esc(k.who.join(", ")) + ": " + esc(k.text) + "</li>";
         }).join("") + "</ul></span></div>";
@@ -1474,7 +1474,7 @@
   function hourName(h) {
     var h12 = false;
     try {
-      var hc = ZING_LANG.dateFmt({ hour: "numeric" }).resolvedOptions().hourCycle;
+      var hc = EKTE_LANG.dateFmt({ hour: "numeric" }).resolvedOptions().hourCycle;
       h12 = hc === "h11" || hc === "h12";
     } catch (e) { /* 24-hour labels */ }
     return h12 ? dfmt({ hour: "numeric" }, dayDate(1, h)) : (h < 10 ? "0" : "") + h;
@@ -1482,7 +1482,7 @@
   // a row label of the grid: the start hour, or start–end for blocks of several hours
   function rowName(h, n) {
     if (!n || n < 2) return hourName(h);
-    var e = h + n, hc = ZING_LANG.dateFmt({ hour: "numeric" }).resolvedOptions().hourCycle;
+    var e = h + n, hc = EKTE_LANG.dateFmt({ hour: "numeric" }).resolvedOptions().hourCycle;
     if (hc === "h11" || hc === "h12") return hourName(h) + "–" + hourName(e % 24);
     return hourName(h) + ":00–" + (e >= 24 ? "24" : hourName(e)) + ":00";
   }
@@ -1933,7 +1933,7 @@
     host.zcW = host.clientWidth;
     draw(host, cfg);
     // new data moves in (chartmotion.js); a language re-render stays still
-    if (!state.still && window.ZingMotion) window.ZingMotion.enter(host);
+    if (!state.still && window.EkteMotion) window.EkteMotion.enter(host);
   }
   function redrawCharts() {
     Object.keys(state.charts).forEach(function (k) {
@@ -1981,7 +1981,7 @@
     resizeT = setTimeout(redrawCharts, 150);
   });
   // live language switch: re-render from the data already loaded
-  window.addEventListener("zing:lang", function () {
+  window.addEventListener("ekte:lang", function () {
     if (!state.opts || !state.opts.runs) { if (state.opts) renderEmpty(); return; }
     renderFilters();
     state.still = true;
@@ -2002,7 +2002,7 @@
   });
   readState();
   var wanted = V.tab;
-  var tabs = window.ZingTabs.init($("#atabs"), {
+  var tabs = window.EkteTabs.init($("#atabs"), {
     writeHash: false,
     // #tab=…&range=… (no tab: Overview); other fragments (#main) are no view
     fromHash: function (h) {
@@ -2023,7 +2023,7 @@
   // the sub-tabs: #…&os=lb etc. (absent: the first)
   Object.keys(SUBS).forEach(function (t) {
     var want = V.sub[t];
-    var st = window.ZingTabs.init($("#stabs-" + t), {
+    var st = window.EkteTabs.init($("#stabs-" + t), {
       writeHash: false,
       fromHash: function (h) {
         if (h.indexOf("=") < 0) return null;

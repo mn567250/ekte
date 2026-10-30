@@ -1,7 +1,7 @@
 """Response-integrity / tampering detector.
 
 A malicious proxy can rewrite content in flight — typosquatting an install URL or
-package name, swapping a domain — while leaving everything else intact. zing sends
+package name, swapping a domain — while leaving everything else intact. ekte sends
 known-answer canaries ("output exactly this line") whose values are sensitive
 (a URL, a pinned package) and checks whether the structure comes back with the
 value SUBSTITUTED.
@@ -20,12 +20,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import contains_ci
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import contains_ci
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
 
 
 @dataclass
@@ -51,16 +51,16 @@ _CANARIES: tuple[_Canary, ...] = (
     _Canary(
         id="install_url",
         prompt=prompts.text("integrity.install_url"),
-        expected="https://downloads.zing-audit.test/safe/setup.sh",
-        pattern=re.compile(r"ZING_URL=https?://(?P<val>[^/\s\"']+)"),
-        correct="downloads.zing-audit.test",
+        expected="https://downloads.ekte.test/safe/setup.sh",
+        pattern=re.compile(r"EKTE_URL=https?://(?P<val>[^/\s\"']+)"),
+        correct="downloads.ekte.test",
     ),
     _Canary(
         id="package_pin",
         prompt=prompts.text("integrity.package_pin"),
-        expected="zing-audit==0.1.0",
+        expected="ekte==0.1.0",
         pattern=re.compile(r"pip install (?P<val>[A-Za-z0-9._-]+==[0-9][0-9A-Za-z.\-]*)"),
-        correct="zing-audit==0.1.0",
+        correct="ekte==0.1.0",
     ),
 )
 
@@ -147,11 +147,11 @@ class IntegrityDetector(Detector):
                 tail = (
                     ". The trusted baseline returned no usable answer (error, empty or "
                     "cut off) for the substituted canary value(s), so the substitution is "
-                    "not corroborated; re-run `zing compare` once the baseline answers."
+                    "not corroborated; re-run `ekte compare` once the baseline answers."
                 )
             else:
                 tail = (
-                    ". Treat as a strong signal; run `zing compare` against a "
+                    ". Treat as a strong signal; run `ekte compare` against a "
                     "trusted baseline to confirm."
                 )
             result.findings.append(

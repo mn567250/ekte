@@ -1,4 +1,4 @@
-/* zing web UI v2 — the performance panel (/perf.js) on the v2 tokens.
+/* ekte web UI v2 — the performance panel (/perf.js) on the v2 tokens.
  *
  * perf.js injects its layout with every colour as a --zp-* property whose
  * classic default has zero specificity (:where), so these mappings win. The

@@ -1,4 +1,4 @@
-/* zing web UI v2 — the one shared header.
+/* ekte web UI v2 — the one shared header.
  *
  * Every v2 page has, as the first thing in <div class="wrap">:
  *   <header class="znav" data-page="audit|history|analytics|monitors|kb"></header>
@@ -35,10 +35,10 @@
 
   // [zh, en]
   var DISC_LOCAL = ["全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。", 'All local: audits run from your own machine, and your API keys never leave it.'];
-  var DISC_BOX = ["黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。", 'A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.'];
+  var DISC_BOX = ["黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。", 'A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.'];
 
   function ico(name, opts) {
-    return window.zingIcon ? window.zingIcon(name, opts || {}) : "";
+    return window.ekteIcon ? window.ekteIcon(name, opts || {}) : "";
   }
 
   function esc(s) {
@@ -58,8 +58,8 @@
     }).join("");
     header.innerHTML =
       '<a class="skip-link" href="#main" data-en="Skip to main content">跳到主要内容</a>' +
-      '<a class="logo" href="/v2/" aria-label="zing"><span class="b">' + ico("bolt", { size: 16 }) +
-      "</span><span>zing<b>.</b></span></a>" +
+      '<a class="logo" href="/v2/" aria-label="ekte"><span class="b">' + ico("bolt", { size: 16 }) +
+      "</span><span>ekte<b>.</b></span></a>" +
       '<div class="tail">' +
       '<a class="classic" href="?ui=v1" data-en="Classic UI">经典界面</a>' +
       '<select class="theme-sel" aria-label="主题" title="主题" data-en-aria-label="Theme" data-en-title="Theme">' +
@@ -76,16 +76,16 @@
       "</div>" +
       '<nav class="links" aria-label="主导航" data-en-aria-label="Main navigation">' + links + "</nav>";
     var ts = header.querySelector("select.theme-sel");
-    if (window.ZING_THEME) {
-      ts.value = window.ZING_THEME.get();
-      ts.addEventListener("change", function () { window.ZING_THEME.set(ts.value); });
+    if (window.EKTE_THEME) {
+      ts.value = window.EKTE_THEME.get();
+      ts.addEventListener("change", function () { window.EKTE_THEME.set(ts.value); });
     } else {
       ts.remove(); // page without theme.js
     }
     var ms = header.querySelector("select.motion-sel");
-    if (window.ZING_MOTION) {
-      ms.value = window.ZING_MOTION.get();
-      ms.addEventListener("change", function () { window.ZING_MOTION.set(ms.value); });
+    if (window.EKTE_MOTION) {
+      ms.value = window.EKTE_MOTION.get();
+      ms.addEventListener("change", function () { window.EKTE_MOTION.set(ms.value); });
     } else {
       ms.remove();
     }
@@ -133,10 +133,10 @@
   // Appended once the page is parsed, so it lands after <main>, not before it.
   function addFooters() {
     for (var k = 0; k < headers.length; k++) footer(headers[k]);
-    if (window.ZING_LANG) window.ZING_LANG.apply(document);
+    if (window.EKTE_LANG) window.EKTE_LANG.apply(document);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addFooters);
   else addFooters();
   // If lang.js already booted (script loaded late), translate the new markup.
-  if (window.ZING_LANG && document.readyState !== "loading") window.ZING_LANG.apply(document);
+  if (window.EKTE_LANG && document.readyState !== "loading") window.EKTE_LANG.apply(document);
 })();

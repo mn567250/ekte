@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="zing — relay reality check">zing — 中转站验真</title>
+<title data-en="ekte — relay reality check">ekte — 中转站验真</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/zing.css" />
+<link rel="stylesheet" href="/v2/static/ekte.css" />
 <link rel="stylesheet" href="/v2/static/fields.css" />
 <link rel="stylesheet" href="/v2/static/report.css" />
 <link rel="stylesheet" href="/v2/static/perf.css" />
@@ -211,7 +211,7 @@
   <main id="main" tabindex="-1">
     <div class="hero">
       <h1 id="h-form" tabindex="-1" data-en="Is this relay serving the <span class='u'>real thing</span>?">这家中转站，给的是<span class="u">真货</span>吗？</h1>
-      <p data-en="Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
+      <p data-en="Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
     </div>
     <!-- the page notice (notice.js) -->
     <div class="znote" id="note" hidden></div>
@@ -251,7 +251,7 @@
               <label class="lab" for="i-key" data-en="API key">API 密钥</label>
               <span class="aside" id="i-key-aside" data-en="Supports env:VAR / file:/path">支持 env:VAR / file:/path</span>
             </div>
-            <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="i-key-aside" placeholder="sk-... 或 env:ZING_API_KEY" data-en-placeholder="sk-... or env:ZING_API_KEY">
+            <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="i-key-aside" placeholder="sk-... 或 env:EKTE_API_KEY" data-en-placeholder="sk-... or env:EKTE_API_KEY">
           </div>
           <div class="two">
             <div class="grp">
@@ -261,7 +261,7 @@
             <div class="grp">
               <label class="lab" for="i-claimed"><span data-en="Claimed model">声称的模型</span> <span class="key">claimed_model</span> <span class="opt" data-en="Optional">可选</span></label>
               <input class="in" id="i-claimed" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="i-claimed-hint" placeholder="留空 = 同请求的模型" data-en-placeholder="Empty = same as model to request">
-              <div class="hint" id="i-claimed-hint" data-en="Only if the relay sells it under another name — zing checks the answers against this model.">仅当中转站以另一个名字售卖时填写 —— zing 会按这个模型核对回答。</div>
+              <div class="hint" id="i-claimed-hint" data-en="Only if the relay sells it under another name — ekte checks the answers against this model.">仅当中转站以另一个名字售卖时填写 —— ekte 会按这个模型核对回答。</div>
             </div>
           </div>
           <div class="grp" id="edims-grp" hidden>
@@ -304,7 +304,7 @@
               <span class="cv" data-icon="chevronDown"></span>
             </button>
             <div class="disclosure-body" id="cmp-body" hidden>
-              <p class="cmp-hint" data-en="Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). zing uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.">填一个你<b>信任的同款模型端点</b>（如官方 API）。zing 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。</p>
+              <p class="cmp-hint" data-en="Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.">填一个你<b>信任的同款模型端点</b>（如官方 API）。ekte 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。</p>
               <div class="grp">
                 <label class="lab" for="b-url"><span data-en="Baseline URL">基线地址</span> <span class="key">base_url</span></label>
                 <input class="in" id="b-url" type="text" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="https://api.openai.com/v1">
@@ -327,7 +327,7 @@
           </div>
 
           <button type="submit" class="cta" id="go"><span data-en="Start audit">开始检测</span> <span class="pico" data-icon="arrowRight"></span></button>
-          <div class="reassure" data-en="Tests are sent from <b>your local zing server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.">检测在 <b>你本地的 zing 服务</b> 发起，密钥只用于连接目标中转站，<b>不上传任何第三方</b>。</div>
+          <div class="reassure" data-en="Tests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.">检测在 <b>你本地的 ekte 服务</b> 发起，密钥只用于连接目标中转站，<b>不上传任何第三方</b>。</div>
           <div id="formerr" role="alert"></div>
           <div id="formnote" role="status"></div>
         </form>
@@ -365,7 +365,7 @@
     <!-- STEP 3: report -->
     <section class="view" id="v3" aria-label="报告" data-en-aria-label="Report">
       <div id="report" tabindex="-1"></div>
-      <div class="foot" id="cmp-tip" data-en="Want the strongest verdict? Re-check against an official baseline with <code>zing compare</code>.">想要最强结论？用 <code>zing compare</code> 对照官方基线复检。</div>
+      <div class="foot" id="cmp-tip" data-en="Want the strongest verdict? Re-check against an official baseline with <code>ekte compare</code>.">想要最强结论？用 <code>ekte compare</code> 对照官方基线复检。</div>
     </section>
     </section>
 
@@ -395,12 +395,12 @@
   "use strict";
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return [].slice.call(document.querySelectorAll(s)); };
-  var T = function (zh, en) { return window.ZING_LANG ? ZING_LANG.t(zh, en) : en; };
+  var T = function (zh, en) { return window.EKTE_LANG ? EKTE_LANG.t(zh, en) : en; };
   var Tf = function (zh, en, vars) {
     return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
   };
-  var srv = function (s) { return window.ZING_LANG ? ZING_LANG.server(s) : s; };
-  var ico = function (name, opts) { return window.zingIcon ? zingIcon(name, opts || {}) : ""; };
+  var srv = function (s) { return window.EKTE_LANG ? EKTE_LANG.server(s) : s; };
+  var ico = function (name, opts) { return window.ekteIcon ? ekteIcon(name, opts || {}) : ""; };
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
@@ -422,7 +422,7 @@
     reliability: ["并发可靠", "Concurrency reliability"], streaming: ["流式真实", "Streaming authenticity"],
     security: ["传输安全", "Transport security"], performance: ["性能表现", "Performance"],
   };
-  function statusLabel(s) { return window.ZING_I18N ? ZING_I18N.label("STATUS", s) : s; }
+  function statusLabel(s) { return window.EKTE_I18N ? EKTE_I18N.label("STATUS", s) : s; }
   function detName(ev) {
     var d = DIM[ev.dimension];
     return (d ? T(d[0], d[1]) : ev.dimension || "") + " · " + srv(ev.name || ev.id);
@@ -442,9 +442,9 @@
     });
   });
   // Custom suite: the dimensions to run.
-  var dims = ZING_DIMPICK.bind($("#dims"), function () { syncProbeMode(); });
+  var dims = EKTE_DIMPICK.bind($("#dims"), function () { syncProbeMode(); });
   // ---------- endpoint type (surface) ----------
-  // The dimensions each non-chat surface scores (zing/scoring.py); chat has all.
+  // The dimensions each non-chat surface scores (ekte/scoring.py); chat has all.
   var SURFACE_DIMS = {
     embedding: ["model_identity", "capability", "connectivity", "reliability", "performance"],
     rerank: ["model_identity", "capability", "connectivity", "reliability", "performance"],
@@ -512,7 +512,7 @@
   // to that audit, so the hash is ignored and "New audit" stays selected.
   var hasJobParam = false;
   try { hasJobParam = !!new URLSearchParams(location.search).get("job"); } catch (e) {}
-  var tabs = window.ZingTabs.init($(".tabs[role=tablist]"), {
+  var tabs = window.EkteTabs.init($(".tabs[role=tablist]"), {
     fromHash: function (h) { return hasJobParam ? "new" : h; },
   });
   // the Running tab stays selectable while nothing runs (the panel says so);
@@ -524,7 +524,7 @@
   function paintNote() {
     var n = null, r = note.status && note.status.latest;
     if (note.err) {
-      n = { level: "critical", title: T("无法连接 zing serve", "zing serve cannot be reached"),
+      n = { level: "critical", title: T("无法连接 ekte serve", "ekte serve cannot be reached"),
         detail: T("本地服务已停止或重启：检测无法开始。", "The local server stopped or restarted: audits cannot start."),
         actions: [{ act: "retry", label: T("重试", "Retry"), primary: true }] };
     } else if (note.active) {
@@ -536,7 +536,7 @@
       var host = r.base_url || "";
       try { host = new URL(r.base_url).host; } catch (e) { /* keep as is */ }
       var when = "";
-      try { when = ZING_LANG.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(new Date(r.ts)); } catch (e) { when = r.ts || ""; }
+      try { when = EKTE_LANG.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(new Date(r.ts)); } catch (e) { when = r.ts || ""; }
       n = { level: "success", title: T("上次检测已完成", "Last audit finished"),
         detail: [host, r.claimed_model || r.model,
           typeof r.score === "number" ? Tf("评分 {n}/100", "score {n}/100", { n: Math.round(r.score) }) : "", when]
@@ -546,7 +546,7 @@
       n = { level: "info", icon: "lock", title: T("本地运行", "Runs locally"),
         detail: T("API 密钥只发给你检测的中转站；检测从不保存它。", "Your API key goes only to the relay you test; an audit never stores it.") };
     }
-    window.ZingNotice.show($("#note"), n);
+    window.EkteNotice.show($("#note"), n);
   }
   function loadNote() {
     return fetch("/api/history/status")
@@ -563,10 +563,10 @@
     else if (act === "open" && note.status && note.status.latest) location.href = "/v2/history#r-" + note.status.latest.id;
   });
   document.addEventListener("visibilitychange", function () { if (!document.hidden) loadNote(); });
-  window.addEventListener("zing:lang", paintNote);
+  window.addEventListener("ekte:lang", paintNote);
   loadNote();
 
-  var jobs = window.ZingJobs.init($("#jobs"), {
+  var jobs = window.EkteJobs.init($("#jobs"), {
     kind: "audit",
     onChange: function (active, rows) {
       // an audit ended: the newest saved run changed
@@ -638,7 +638,7 @@
   // Wall-clock of the audit and of the check in progress (display only: the
   // times of finished checks come from the server).
   var clock = { t0: 0, timer: null, li: null, start: 0 };
-  function dur(ms) { return window.ZingReport ? ZingReport.duration(ms) : Math.round(ms) + " ms"; }
+  function dur(ms) { return window.EkteReport ? EkteReport.duration(ms) : Math.round(ms) + " ms"; }
   function tick() {
     renderCount();
     var ms = clock.li && clock.li.querySelector(".ms");
@@ -662,7 +662,7 @@
   // progress and links back here (?job=<id>), where the log is replayed.
   // Audits of a relay that is busy with another audit wait in a queue.
   var controller = null, lastReport = null, jobId = null;
-  var live = window.ZingPerf ? new ZingPerf.Live($("#perf-live")) : null;
+  var live = window.EktePerf ? new EktePerf.Live($("#perf-live")) : null;
 
   $("#form").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -801,7 +801,7 @@
       return;
     }
     if (bUrl && bModel) payload.baseline = { base_url: bUrl, api_key: $("#b-key").value.trim(), model: bModel, api: payload.surface === "chat" ? segVal("b-api") : "auto" };
-    if (window.ZingSecret) ZingSecret.remember($("#form"));
+    if (window.EkteSecret) EkteSecret.remember($("#form"));
 
     setGoBusy(true);
     var job;
@@ -984,7 +984,7 @@
           : "") + '<span class="ms">' + esc(dur(done.duration_ms)) + "</span>"
       : '<span class="ms" aria-hidden="true"></span>';
     li.querySelector(".dh").innerHTML = '<span class="ic" aria-hidden="true">' + icon + "</span>" + head + '<span class="dm">' + meta + "</span>";
-    if (!fs.length || !window.ZingReport) return;
+    if (!fs.length || !window.EkteReport) return;
     var p = li.querySelector(".dev");
     if (!p) {
       p = document.createElement("div");
@@ -993,7 +993,7 @@
       p.hidden = !li.__open;
       li.appendChild(p);
     }
-    p.innerHTML = fs.map(ZingReport.findingDetail).join("");
+    p.innerHTML = fs.map(EkteReport.findingDetail).join("");
   }
   function scoreC(v) { return v >= 85 ? "good" : v >= 70 ? "warn" : "bad"; }
   $("#dets").addEventListener("click", function (e) {
@@ -1007,7 +1007,7 @@
   });
 
   function loc(f) {
-    if (window.ZING_I18N && ZING_I18N.localizeFinding) return ZING_I18N.localizeFinding(f.id, f.summary, f.evidence, f.title, f.status);
+    if (window.EKTE_I18N && EKTE_I18N.localizeFinding) return EKTE_I18N.localizeFinding(f.id, f.summary, f.evidence, f.title, f.status);
     return { title: srv(f.title), summary: srv(f.summary || "") };
   }
   function evHi(f) {
@@ -1044,18 +1044,18 @@
     $("#radar").classList.add("done");
     $("#bg").hidden = true;
     $("#cancel").hidden = true;
-    ZingReport.render($("#report"), report, {
+    EkteReport.render($("#report"), report, {
       actions: [
         { zh: "再测一个", en: "Test another", onClick: function () { setJobParam(null); go(1); } },
       ],
-      download: { name: "zing-report" },
+      download: { name: "ekte-report" },
     });
     $("#cmp-tip").hidden = !!report.baseline;
     go(3);
   }
 
   // ---------- language switch: re-render script-generated text ----------
-  window.addEventListener("zing:lang", function () {
+  window.addEventListener("ekte:lang", function () {
     $("#now").textContent = nowText();
     renderCount();
     var focused = document.activeElement && document.activeElement.closest ? document.activeElement.closest(".det") : null;
@@ -1078,12 +1078,12 @@
   // (knowledge base); the trusted baseline is configured the same way, without
   // a claimed model.
   var relayCfg = null;
-  if (window.ZingRelayConfig) {
-    relayCfg = ZingRelayConfig.bind({
+  if (window.EkteRelayConfig) {
+    relayCfg = EkteRelayConfig.bind({
       url: "#i-url", key: "#i-key", model: "#i-model", claimed: "#i-claimed", provider: "#i-prov",
       api: function () { return segVal("api"); },
     });
-    ZingRelayConfig.bind({
+    EkteRelayConfig.bind({
       url: "#b-url", key: "#b-key", model: "#b-model", api: function () { return segVal("b-api"); },
       relayLabel: ["基线中转站 / 厂商", "Baseline relay / provider"],
     });
@@ -1150,7 +1150,7 @@
 
   // test hook: render a report without running an audit (used by the e2e checks)
   var hookState = { seen: {}, finished: false };
-  window.ZingAuditPage = { showReport: showReport, handle: function (ev) { handle(ev, hookState); } };
+  window.EkteAuditPage = { showReport: showReport, handle: function (ev) { handle(ev, hookState); } };
 })();
 </script>
 </body>

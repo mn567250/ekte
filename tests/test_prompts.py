@@ -1,4 +1,4 @@
-"""The prompt library (zing/prompts) and the language of everything sent to an API.
+"""The prompt library (ekte/prompts) and the language of everything sent to an API.
 
 Probes are English and independent of the UI/alert language; the only
 non-English prompts are knowledge-base fingerprints whose language is the
@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from zing import prompts
-from zing.knowledge import load_knowledge_base
+from ekte import prompts
+from ekte.knowledge import load_knowledge_base
 
 ROOT = Path(__file__).resolve().parent.parent
 # CJK *script* (ideographs, kana). Fullwidth punctuation is not language text:
@@ -36,14 +36,14 @@ def _strings(value):
 
 
 def test_library_is_english_and_labelled():
-    data = json.loads((ROOT / "zing" / "prompts" / "en.json").read_text("utf-8"))
+    data = json.loads((ROOT / "ekte" / "prompts" / "en.json").read_text("utf-8"))
     assert data["meta"]["code"] == prompts.PROBE_LANG == "en"
     offenders = [pid for pid in prompts.ids() for s in _strings(prompts.get(pid)) if CJK.search(s)]
     assert offenders == []
 
 
 def test_every_library_prompt_is_used_and_every_used_id_exists():
-    source = "\n".join(p.read_text("utf-8") for p in (ROOT / "zing").rglob("*.py"))
+    source = "\n".join(p.read_text("utf-8") for p in (ROOT / "ekte").rglob("*.py"))
     used = set(re.findall(r'prompts\.(?:text|get)\(\s*"([^"]+)"', source))
     assert used, "no prompt lookups found"
     assert used - set(prompts.ids()) == set(), "code uses unknown prompt ids"
@@ -51,8 +51,8 @@ def test_every_library_prompt_is_used_and_every_used_id_exists():
 
 
 def test_text_fills_placeholders_strictly():
-    assert prompts.text("connectivity.echo", marker="ZING-1") == (
-        "Reply with exactly this text and nothing else: ZING-1"
+    assert prompts.text("connectivity.echo", marker="EKTE-1") == (
+        "Reply with exactly this text and nothing else: EKTE-1"
     )
     # Single braces are literal (JSON inside a prompt).
     assert '{"status":"ok","value":7429}' in prompts.text("capability.json_mode")
@@ -87,7 +87,7 @@ def test_non_english_fingerprints_declare_why():
 
 
 def test_fingerprint_schema_rejects_unexplained_language():
-    from zing.knowledge.schema import FingerprintProbe
+    from ekte.knowledge.schema import FingerprintProbe
 
     with pytest.raises(ValueError):
         FingerprintProbe(id="x", signal="s", prompt="你好", prompt_lang="zh")
@@ -96,13 +96,13 @@ def test_fingerprint_schema_rejects_unexplained_language():
 
 # CJK may appear in detector code only in tables that MATCH answers (brand
 # names, colour words, "can't see the image" phrases) — never in text sent to
-# an API, which lives in zing/prompts/en.json or the knowledge base.
+# an API, which lives in ekte/prompts/en.json or the knowledge base.
 _ANSWER_MATCHERS = {"_RIVAL_BRANDS", "VENDOR_BRANDS", "_EXPECTED_COLORS", "_BLIND_PHRASES", "_TOKEN_RE", "_CJK_RE"}
 
 
 def test_code_sends_no_hard_coded_non_english_text():
     offenders = []
-    for path in sorted((ROOT / "zing").rglob("*.py")):
+    for path in sorted((ROOT / "ekte").rglob("*.py")):
         tree = ast.parse(path.read_text("utf-8"))
         allowed: set[int] = set()
         for node in ast.walk(tree):
@@ -129,15 +129,15 @@ def test_code_sends_no_hard_coded_non_english_text():
                 offenders.append(f"{path.relative_to(ROOT)}:{node.lineno}: {node.value[:60]!r}")
     # Remaining CJK literals are user-facing wording handled elsewhere (the
     # i18n glossary, CLI help text, finding summaries) — none is sent to an API.
-    allowed_non_api = {"zing/i18n/__init__.py", "zing/cli.py", "zing/embed_audit.py", "zing/media_audit.py",
-                       "zing/detectors/vision.py", "zing/utils/tokenize.py"}
+    allowed_non_api = {"ekte/i18n/__init__.py", "ekte/cli.py", "ekte/embed_audit.py", "ekte/media_audit.py",
+                       "ekte/detectors/vision.py", "ekte/utils/tokenize.py"}
     unexpected = [o for o in offenders if o.split(":")[0] not in allowed_non_api]
     assert unexpected == []
 
 
 def test_report_records_prompt_languages():
-    from zing.models import DetectorResult, Dimension
-    from zing.runner import _prompt_languages
+    from ekte.models import DetectorResult, Dimension
+    from ekte.runner import _prompt_languages
 
     plain = DetectorResult(id="protocol", name="p", dimension=Dimension.PROTOCOL)
     ident = DetectorResult(id="model_identity", name="m", dimension=Dimension.MODEL_IDENTITY,

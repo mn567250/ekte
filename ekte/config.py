@@ -13,8 +13,8 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from zing.models import Dimension, TargetConfig
-from zing.utils import yamlio
+from ekte.models import Dimension, TargetConfig
+from ekte.utils import yamlio
 
 # ``custom`` runs the dimensions the user picks (``AuditOptions.dimensions``) at
 # deep depth; the others are cumulative tiers.
@@ -244,14 +244,14 @@ def validate_risk(value: str | None) -> str | None:
 
 
 TEMPLATE = """\
-# zing configuration — LLM relay reality check
-# Run:  zing check -c zing.yaml
-# Docs: https://github.com/cenbonew/zing
+# ekte configuration — LLM relay reality check
+# Run:  ekte check -c ekte.yaml
+# Docs: https://github.com/mn567250/ekte
 
 target:
   name: my-relay
   base_url: https://relay.example.com/v1
-  api_key: env:ZING_API_KEY        # env:VAR | file:/path | raw value
+  api_key: env:EKTE_API_KEY        # env:VAR | file:/path | raw value
   model: gpt-4o
   api: auto                        # auto | openai | anthropic (wire protocol)
   declared_provider: openai        # optional; inferred from model id if omitted
@@ -259,7 +259,7 @@ target:
   max_request_sec: 900             # hard cap per request (seconds)
   headers: {}
 
-# Optional trusted baseline for `zing compare` (strongest downgrade evidence).
+# Optional trusted baseline for `ekte compare` (strongest downgrade evidence).
 baseline:
   name: openai-official
   base_url: https://api.openai.com/v1

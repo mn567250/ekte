@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from zing.utils.net import is_local_host
+from ekte.utils.net import is_local_host
 
 
 @pytest.mark.parametrize(

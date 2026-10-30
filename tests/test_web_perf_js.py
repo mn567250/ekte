@@ -1,4 +1,4 @@
-"""The web UI's performance panel (zing/web/static/perf.js), evaluated under node."""
+"""The web UI's performance panel (ekte/web/static/perf.js), evaluated under node."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from zing.models import RequestRecord
-from zing.perf import build_performance
+from ekte.models import RequestRecord
+from ekte.perf import build_performance
 
 _JS = r"""
 const path = require("path");
@@ -20,7 +20,7 @@ global.window = {};
 global.document = undefined;  // no DOM: the style injection must be skipped
 require(path.join(process.argv[1], "perf.js"));
 const perf = JSON.parse(process.argv[2]);
-const P = window.ZingPerf;
+const P = window.EktePerf;
 console.log(JSON.stringify({
   section: P.section(perf),
   empty: P.section(null),
@@ -41,7 +41,7 @@ def test_perf_js_renders_section_and_chart():
     recs.append(RequestRecord(seq=9, endpoint="target", phase="probe", ok=False, status_code=502))
     perf = build_performance(recs, has_baseline=True, probe_max_tokens=128)
     assert perf is not None
-    static = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+    static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     out = json.loads(subprocess.run(
         ["node", "-e", _JS, str(static), perf.model_dump_json()],
         capture_output=True, text=True, check=True,
@@ -71,7 +71,7 @@ def test_perf_js_colors_deltas_and_shows_both_modes():
                 ))
     perf = build_performance(recs, has_baseline=True)
     assert perf is not None and [m.mode for m in perf.modes] == ["non_stream"]
-    static = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+    static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     section = json.loads(subprocess.run(
         ["node", "-e", _JS, str(static), perf.model_dump_json()],
         capture_output=True, text=True, check=True,
@@ -84,7 +84,7 @@ def test_perf_js_colors_deltas_and_shows_both_modes():
     assert "End-to-end speed p50" in section  # non-stream tiles
 
 
-_STATIC = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+_STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
 
 
 def _render(perf_json: str) -> dict:
@@ -141,7 +141,7 @@ def test_perf_js_tabs_and_chart_are_accessible():
 
 
 def test_perf_fragment_translates_every_key():
-    base = Path(__file__).resolve().parent.parent / "zing" / "i18n" / "locales" / "fragments" / "v2-perf"
+    base = Path(__file__).resolve().parent.parent / "ekte" / "i18n" / "locales" / "fragments" / "v2-perf"
     en = json.loads((base / "en.json").read_text(encoding="utf-8"))["strings"]
     assert all(k == v for k, v in en.items())
     for code in ("fr", "es", "pt", "it", "de"):
@@ -156,7 +156,7 @@ global.document = undefined;
 require(path.join(process.argv[1], "perf.js"));
 global.document = { activeElement: null };  // after load: style injection stays skipped
 const host = { innerHTML: "", contains: () => false, querySelector: () => null, querySelectorAll: () => [] };
-const live = new window.ZingPerf.Live(host);
+const live = new window.EktePerf.Live(host);
 live.records = JSON.parse(process.argv[2]);
 live.render();
 console.log(JSON.stringify({ html: host.innerHTML }));
@@ -198,7 +198,7 @@ global.window = {};
 global.document = undefined;
 require(path.join(process.argv[1], "perf.js"));
 const recs = JSON.parse(process.argv[2]);
-console.log(JSON.stringify({chart: window.ZingPerf.chart(recs, "ttft"), axis: window.ZingPerf.niceAxis(510)}));
+console.log(JSON.stringify({chart: window.EktePerf.chart(recs, "ttft"), axis: window.EktePerf.niceAxis(510)}));
 """
 
 
@@ -209,7 +209,7 @@ def test_perf_js_axes_fit_the_data():
     recs = [{"seq": i, "op": "complete", "endpoint": "target", "phase": "probe", "ok": True,
              "stream": True, "start_ms": i * 50_000.0, "duration_ms": 900.0, "ttft_ms": 300.0 + i * 5}
             for i in range(11)]
-    static = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+    static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     out = json.loads(subprocess.run(
         ["node", "-e", _AXIS_JS, str(static), json.dumps(recs)],
         capture_output=True, text=True, check=True,
@@ -228,11 +228,11 @@ let made = 0;
 const Real = Intl.NumberFormat;
 Intl.NumberFormat = function (locale, opts) { made++; return new Real(locale, opts); };
 require(path.join(process.argv[1], "perf.js"));
-const P = window.ZingPerf;
+const P = window.EktePerf;
 const recs = JSON.parse(process.argv[2]);
 const out = {};
 for (const locale of ["", "en-US", "de-DE", "zh-CN"]) {
-  window.ZING_LANG = locale ? { t: (zh, en) => en, locale: () => locale } : undefined;
+  window.EKTE_LANG = locale ? { t: (zh, en) => en, locale: () => locale } : undefined;
   const loc = locale || undefined;
   const a = P.chart(recs, "latency"), b = P.chart(recs, "latency");
   // what the cached formatters must match: Number#toLocaleString
@@ -275,7 +275,7 @@ global.document = { activeElement: null };
 const out = {};
 for (const open of [false, true]) {
   const host = { innerHTML: "", contains: () => false, querySelector: () => null, querySelectorAll: () => [] };
-  const live = new window.ZingPerf.Live(host);
+  const live = new window.EktePerf.Live(host);
   live.reset({ probeTotal: 10 });
   live.records = JSON.parse(process.argv[2]);
   live.open = open;
@@ -314,7 +314,7 @@ def test_live_embedding_audit_offers_latency_only_with_its_trend():
     # an embedding audit's calls return no tokens and never stream: the live
     # panel shows the latency tab alone (as its report does), and the stream's
     # running median draws the line and band behind the dots
-    from zing.perf.trend import attach_trends
+    from ekte.perf.trend import attach_trends
     recs = [RequestRecord(seq=i, endpoint="target", phase="probe", op="embed", ok=True, stream=False,
                           status_code=200, start_ms=i * 100.0, duration_ms=10.0 + i).model_dump()
             for i in range(6)]
@@ -336,7 +336,7 @@ def test_live_panel_updates_in_place_in_a_browser():
     sync_api = pytest.importorskip("playwright.sync_api")
     with sync_api.sync_playwright() as pw:
         try:
-            browser = pw.chromium.launch(executable_path=os.environ.get("ZING_A11Y_CHROMIUM") or None)
+            browser = pw.chromium.launch(executable_path=os.environ.get("EKTE_A11Y_CHROMIUM") or None)
         except Exception as e:  # no browser installed
             pytest.skip(f"no Chromium: {e}")
         try:
@@ -352,7 +352,7 @@ def _drive_live_panel(page) -> None:
     page.add_script_tag(content=(_STATIC / "perf.js").read_text(encoding="utf-8"))
     page.add_script_tag(content=_REC_JS)
     page.evaluate("""() => {
-      window.L = new ZingPerf.Live(document.getElementById('host'));
+      window.L = new EktePerf.Live(document.getElementById('host'));
       L.reset({probeTotal: 50, hasBaseline: true});
       for (let i = 0; i < 20; i++) L.records.push(mk(i, i !== 5));
       L.render();
@@ -384,7 +384,7 @@ def _drive_live_panel(page) -> None:
     # the buttons stay; their markup is what a fresh render draws
     assert page.evaluate("document.querySelector('.zp-tabs [data-metric=\"ttft\"]') === firstTab")
     assert page.evaluate("""() => { const h = document.createElement('div'); document.body.appendChild(h);
-      const M = new ZingPerf.Live(h); M.pid = L.pid; M.records = L.records.slice(); M.metric = L.metric; M.render();
+      const M = new EktePerf.Live(h); M.pid = L.pid; M.records = L.records.slice(); M.metric = L.metric; M.render();
       const s = h.querySelector('.zp-tabs').outerHTML; h.remove();
       return s === document.querySelector('#host .zp-tabs').outerHTML; }""")
     tabs = page.evaluate("""() => [...document.querySelectorAll('.zp-tabs [role=tab]')].map(b =>
@@ -413,7 +413,7 @@ def _drive_live_panel(page) -> None:
     assert box["last"].startswith("80") and "failed (502)" in box["last"]
     # the appended table is the one a fresh render builds
     fresh = page.evaluate("""() => { const h = document.createElement('div'); document.body.appendChild(h);
-      const M = new ZingPerf.Live(h); M.records = L.records.slice(); M.metric = L.metric; M.open = true; M.render();
+      const M = new EktePerf.Live(h); M.records = L.records.slice(); M.metric = L.metric; M.open = true; M.render();
       const s = h.querySelector('.zp-data-scroll').innerHTML; h.remove(); return s; }""")
     assert fresh == page.evaluate("document.querySelector('#host .zp-data-scroll').innerHTML")
     # a metric switch rebuilds it for that metric
@@ -421,13 +421,13 @@ def _drive_live_panel(page) -> None:
     assert "Latency" in page.evaluate("document.querySelector('#host .zp-data-scroll thead').textContent")
     # a language switch redraws the labels and keeps focus on the selected tab
     page.focus('.zp-tabs [data-metric="latency"]')
-    page.evaluate("() => { window.ZING_LANG = {t: (zh, en) => zh, locale: () => 'zh-CN'}; L.render(); }")
+    page.evaluate("() => { window.EKTE_LANG = {t: (zh, en) => zh, locale: () => 'zh-CN'}; L.render(); }")
     zh = page.evaluate("""() => [document.activeElement.dataset.metric, document.activeElement.textContent,
       document.querySelector('#host .zp-data summary').textContent,
       document.querySelector('#host .zp-data-scroll thead').textContent.includes('延迟'),
       document.querySelectorAll('#host .zp-data-scroll tbody tr').length]""")
     assert zh == ["latency", "延迟", "查看数据表", True, 81]
-    page.evaluate("() => { delete window.ZING_LANG; L.render(); }")
+    page.evaluate("() => { delete window.EKTE_LANG; L.render(); }")
     # tooltips work on marks drawn after the first render
     page.locator("#host .zp-pt").last.hover()
     tip = page.evaluate("() => { const t = document.querySelector('.zp-tip'); return [t.style.display, t.textContent]; }")
@@ -448,7 +448,7 @@ global.window = {};
 global.document = undefined;
 require(path.join(process.argv[1], "perf.js"));
 global.document = { activeElement: null };
-const P = window.ZingPerf;
+const P = window.EktePerf;
 const recs = JSON.parse(process.argv[2]);
 const live = (total, n, user) => {
   const host = { innerHTML: "", contains: () => false, querySelector: () => null, querySelectorAll: () => [] };
@@ -475,7 +475,7 @@ console.log(JSON.stringify({
 
 
 def _scale_records() -> list[dict]:
-    from zing.perf.trend import attach_trends
+    from ekte.perf.trend import attach_trends
 
     recs: list[dict] = []
     for i, ms in enumerate([12_000, 58_000, 9_000, 101_000, 3_500, 74_000, 22_000, 98_000, 41_000, 7_500]):

@@ -727,8 +727,8 @@ def test_sensory_heuristic_self_check() -> None:
     assert_no_issues(issues, "sensory heuristic", "sensory-characteristics")
 
 
-LOCALES = Path(__file__).resolve().parents[2] / "zing" / "i18n" / "locales"
-STATIC = Path(__file__).resolve().parents[2] / "zing" / "web" / "static"
+LOCALES = Path(__file__).resolve().parents[2] / "ekte" / "i18n" / "locales"
+STATIC = Path(__file__).resolve().parents[2] / "ekte" / "web" / "static"
 
 
 def _locale_strings() -> Iterator[tuple[str, str, str]]:
@@ -891,7 +891,7 @@ RENDER_REPORT_JS = """
   host = document.createElement('div');
   host.id = 'a11y-states';
   (document.querySelector('main') || document.body).appendChild(host);
-  ZingReport.render(host, report, {});
+  EkteReport.render(host, report, {});
 }
 """
 
@@ -1162,7 +1162,7 @@ def test_surface_result_states_not_by_colour_alone(open_page, lang: str, surface
     for what, variants in _report_state_sets(_surface_report(surface)).items():
         states = []
         for name, rep in variants:
-            page.evaluate("(r) => window.ZingAuditPage.showReport(r)", rep)
+            page.evaluate("(r) => window.EkteAuditPage.showReport(r)", rep)
             page.wait_for_selector("#v3.show #report >> :is(h1, h2)")
             settle(page)
             states.append((name, page.evaluate(SIGNATURE_JS, "#report")))

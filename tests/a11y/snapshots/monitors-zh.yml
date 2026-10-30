@@ -1,9 +1,9 @@
 - banner:
   - link "跳到主要内容":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "经典界面":
     - /url: "?ui=v1"
   - combobox "主题":
@@ -40,9 +40,9 @@
     - text: 每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在
     - link "检测历史":
       - /url: /v2/history
-    - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
+    - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
   - status:
-    - text: "API 密钥不会被保存 你输入的密钥只留在 zing serve 的内存中，从不写入磁盘；重启后需重新输入。env: 变量引用照常工作。"
+    - text: "API 密钥不会被保存 你输入的密钥只留在 ekte serve 的内存中，从不写入磁盘；重启后需重新输入。env: 变量引用照常工作。"
     - button "更改"
   - group "API 密钥保存方式":
     - text: API 密钥保存方式
@@ -50,7 +50,7 @@
     - text: 不保存密钥
     - radio "加密保存在本机"
     - text: 加密保存在本机
-    - paragraph: API 密钥只保存在 zing serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。
+    - paragraph: API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。
   - region "筛选":
     - button "筛选" [expanded]
     - text: 搜索
@@ -157,13 +157,13 @@
         - paragraph: 上次完整运行耗时 1 秒，因此最短间隔为每 5 分钟。
         - text: API 密钥 （可选）
         - textbox "API 密钥 （可选）":
-          - /placeholder: sk-... 或 env:ZING_API_KEY
+          - /placeholder: sk-... 或 env:EKTE_API_KEY
         - button "显示密钥"
         - paragraph: 检测历史不保存密钥。本地或自托管模型可留空。
         - button "启用监控"
       - button "立即运行"
       - button "删除"
-    - paragraph: 全程本地运行。API Key 不会被保存：它只留在 zing serve 的内存中，绝不写入磁盘、出现在监控列表里或发给浏览器。zing serve 重启后请重新输入。
+    - paragraph: 全程本地运行。API Key 不会被保存：它只留在 ekte serve 的内存中，绝不写入磁盘、出现在监控列表里或发给浏览器。ekte serve 重启后请重新输入。
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
-  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。
+  - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>zing.console — relay reality check</title>
+<title>ekte.console — relay reality check</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <style>
@@ -185,7 +185,7 @@
 </head>
 <body>
 <header><div class="wrap bar">
-  <div class="logo"><span class="zap" id="logo-icon"></span> <span>zing<b>.</b>console</span><span class="v" id="ver">dev</span></div>
+  <div class="logo"><span class="zap" id="logo-icon"></span> <span>ekte<b>.</b>console</span><span class="v" id="ver">dev</span></div>
   <nav class="nav">
     <a class="on" href="#" data-en="Scan">扫描</a><a href="/" data-en="Report view /">报告视图 /</a><a href="/history" data-en="History /history">历史 /history</a>
   </nav>
@@ -196,7 +196,7 @@
 <main class="wrap">
   <section class="lede">
     <h1 data-en="Relay <span class='hl'>bait-and-switch</span> test bench">中转站<span class="hl">货不对板</span>检测台</h1>
-    <p data-en="Point it at a relay's <span class='kbd'>base_url</span> and the model it claims. zing runs a full suite of black-box probes, compares the results with built-in native model profiles, and gives an evidence-backed verdict — not a gut feeling. Power-user console with a terminal-style live detector log.">把它指向一个中转站的 <span class="kbd">base_url</span> 与声称的模型，zing 跑一整套黑盒探针，对照内置的原生模型画像，给出有证据支撑的结论——而不是凭感觉。Power-user console with a terminal-style live detector log.</p>
+    <p data-en="Point it at a relay's <span class='kbd'>base_url</span> and the model it claims. ekte runs a full suite of black-box probes, compares the results with built-in native model profiles, and gives an evidence-backed verdict — not a gut feeling. Power-user console with a terminal-style live detector log.">把它指向一个中转站的 <span class="kbd">base_url</span> 与声称的模型，ekte 跑一整套黑盒探针，对照内置的原生模型画像，给出有证据支撑的结论——而不是凭感觉。Power-user console with a terminal-style live detector log.</p>
   </section>
 
   <div class="grid">
@@ -206,7 +206,7 @@
       <div class="bd">
         <div id="formerr"></div>
         <div class="fld"><label>base_url</label><input id="i-url" autocomplete="username" spellcheck="false" placeholder="https://relay.example.com/v1" value="https://api.deepseek.com/v1"></div>
-        <div class="fld"><label>api_key <span class="hint">env:VAR / file:/path</span></label><input id="i-key" value="env:ZING_API_KEY" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off"></div>
+        <div class="fld"><label>api_key <span class="hint">env:VAR / file:/path</span></label><input id="i-key" value="env:EKTE_API_KEY" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off"></div>
         <div class="two">
           <div class="fld"><label data-en="claimed model (model)">声称模型 (model)</label><input id="i-model" value="deepseek-v4-flash"></div>
           <div class="fld"><label>claimed_model <span class="hint">opt</span></label><input id="i-claimed" placeholder="留空=同上" data-en-placeholder="empty = same as above"></div>
@@ -264,14 +264,14 @@
       </div>
     </div>
   </div>
-  <div class="foot" data-en="zing reports reproducible evidence of behavioral deviation and risk, not cryptographic proof of fraud. · <a href='/'>switch to report view /</a> · a baseline comparison gives the strongest verdict.">zing 报告的是行为偏离与风险的可复现证据，不是欺诈的密码学证明。· <a href="/">switch to report view /</a> · 有基线对照可得最强结论。</div>
+  <div class="foot" data-en="ekte reports reproducible evidence of behavioral deviation and risk, not cryptographic proof of fraud. · <a href='/'>switch to report view /</a> · a baseline comparison gives the strongest verdict.">ekte 报告的是行为偏离与风险的可复现证据，不是欺诈的密码学证明。· <a href="/">switch to report view /</a> · 有基线对照可得最强结论。</div>
 </main>
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
-/* canonical SVG icon helper (icons.js -> window.zingIcon); never throws */
-function ic(name,opts){try{return window.zingIcon?window.zingIcon(name,opts||{}):"";}catch(e){return "";}}
+/* canonical SVG icon helper (icons.js -> window.ekteIcon); never throws */
+function ic(name,opts){try{return window.ekteIcon?window.ekteIcon(name,opts||{}):"";}catch(e){return "";}}
 
 /* inject static-markup icons once on load */
 function paintStaticIcons(){
@@ -281,13 +281,13 @@ function paintStaticIcons(){
 }
 paintStaticIcons();
 
-/* 10 dimensions: id, zh name, weight (canonical weighting, zing/scoring.py) */
+/* 10 dimensions: id, zh name, weight (canonical weighting, ekte/scoring.py) */
 const DIM_EN = {model_identity:"Model identity",context_window:"Context window",capability:"Capabilities",billing:"Billing",
   protocol:"Protocol",connectivity:"Connectivity",reliability:"Reliability",streaming:"Streaming",security:"Security",performance:"Performance"};
 const dimLabel=(k,nm)=>T(nm.split(" ")[0],DIM_EN[k]||k);
-const srv=s=>ZING_LANG.server(s);
+const srv=s=>EKTE_LANG.server(s);
 /* finding text: CN keeps the backend original; other languages use the i18n catalog */
-const fLoc=f=>(!ZING_LANG.isZh()&&window.ZING_I18N)?ZING_I18N.localizeFinding(f.id,f.summary,f.evidence,f.title,f.status):{title:srv(f.title),summary:srv(f.summary)};
+const fLoc=f=>(!EKTE_LANG.isZh()&&window.EKTE_I18N)?EKTE_I18N.localizeFinding(f.id,f.summary,f.evidence,f.title,f.status):{title:srv(f.title),summary:srv(f.summary)};
 /* UI state kept as text generators so a language switch can re-render it */
 let lastReport=null, verdictIdle=()=>T("运行审计后在此显示结论 ▌","The verdict appears here after an audit ▌"), verdictIdleHtml=false, errFn=null;
 let runLabel=()=>T("运行审计 / run audit","run audit");
@@ -344,8 +344,8 @@ function renderDims(){
 /* short status shown in a dimension tile that has no score */
 function dimStatus(status){
   const s=status?({pass:"pass",info:"info",inconclusive:"n/a",not_run:"—",warn:"warn",fail:"fail",error:"err"}[status]||"—"):"—";
-  if(s==="—"||ZING_LANG.get()==="en"||ZING_LANG.isZh()) return s;
-  return s==="n/a"?ZING_LANG.tr("n/a"):ZING_LANG.code(status).toLowerCase();
+  if(s==="—"||EKTE_LANG.get()==="en"||EKTE_LANG.isZh()) return s;
+  return s==="n/a"?EKTE_LANG.tr("n/a"):EKTE_LANG.code(status).toLowerCase();
 }
 function fillDim(k,v,status){
   const sc=$("#sc-"+k), m=$("#m-"+k); if(!sc)return;
@@ -378,7 +378,7 @@ async function startAudit(){
     payload.baseline={base_url:bUrl,api_key:$("#b-key").value.trim(),model:bModel,api:$("#b-api .on").dataset.v};
   }
 
-  if(window.ZingSecret)ZingSecret.remember($("#form"));
+  if(window.EkteSecret)EkteSecret.remember($("#form"));
   running=true;
   $("#run").disabled=true; setRunLabel(()=>T("审计中…","auditing…"));
   resetView();
@@ -476,7 +476,7 @@ function doneRow(ev){
   const hasBody = findings.length>0;
   ln.innerHTML=`<span class="t">${stamp()}</span><span class="ic">${ICON[ev.status]||"·"}</span>`+
     `<span class="dn${hasBody?' has':''}">${esc(ev.id)} · ${tx(()=>srv(ev.name||""))} <span class="c-dim">[${esc(ev.dimension||"")}]</span></span>`+
-    `<span class="res"><span class="${cls}">${tx(()=>ZING_LANG.code(ev.status||""))}</span> ${scoreTxt}${ms}</span>`;
+    `<span class="res"><span class="${cls}">${tx(()=>EKTE_LANG.code(ev.status||""))}</span> ${scoreTxt}${ms}</span>`;
   if(hasBody){
     rows[ev.id]={row:ln, ev, findings};
     ln.querySelector(".dn").onclick=()=>toggleFindings(ln, ev, findings);
@@ -496,7 +496,7 @@ function toggleFindings(row, ev, findings){
 function findingHtml(ev,f){
   const sevc="c-"+(SEVC[f.severity]||STATC[f.status]||"dim");
   let h=`<span class="fhd">${ICON[f.status]||"·"} ${tx(()=>fLoc(f).title||f.id||"finding")}</span> `+
-        `<span class="sev ${sevc}">[${tx(()=>ZING_LANG.code(f.severity||f.status||""))}]</span>`;
+        `<span class="sev ${sevc}">[${tx(()=>EKTE_LANG.code(f.severity||f.status||""))}]</span>`;
   if(f.summary) h+=`<span class="sum">${tx(()=>fLoc(f).summary)}</span>`;
   if(f.recommendation) h+=`<span class="rec">${ic("arrowRight",{size:13})} ${tx(()=>srv(f.recommendation))}</span>`;
   const e=f.evidence;
@@ -515,7 +515,7 @@ function notableLine(ev,f){
   const ln=document.createElement("div"); ln.className="ln";
   ln.innerHTML=`<span class="t">${stamp()}</span><span class="ic">${ICON[f.status]||"!"}</span>`+
     `<span class="dn has">${ic("cornerDownRight",{size:14})} <span class="${sevc}">${tx(()=>fLoc(f).title||f.id||"finding")}</span> <span class="c-dim">(${esc(ev.id)})</span></span>`+
-    `<span class="res"><span class="${sevc}">${tx(()=>ZING_LANG.code(f.severity||f.status||""))}</span></span>`;
+    `<span class="res"><span class="${sevc}">${tx(()=>EKTE_LANG.code(f.severity||f.status||""))}</span></span>`;
   ln.querySelector(".dn").onclick=()=>{
     const nx=ln.nextElementSibling;
     if(nx&&nx.classList.contains("ev")&&nx.dataset.for==="nl"){nx.remove();return;}
@@ -535,7 +535,7 @@ function renderReport(r){
   });
   lastReport=r;
   showVerdict(r);
-  $("#tag").innerHTML=`<i>●</i> ${esc(r.target&&r.target.base_url||"")} · zing v${esc(r.tool_version||"")}`;
+  $("#tag").innerHTML=`<i>●</i> ${esc(r.target&&r.target.base_url||"")} · ekte v${esc(r.tool_version||"")}`;
 }
 
 function showVerdict(r){
@@ -557,7 +557,7 @@ function showVerdict(r){
       <div class="score"><b class="c-${sc==null?'grey':scoreCol(sc)}">${sc==null?"—":sc}</b><span>/100 · ${esc(v.rating||"–")}</span></div>
     </div>
     <div class="meta">
-      <span class="pill bg-${col}">${esc(ZING_LANG.code(risk.txt+" RISK"))}</span>
+      <span class="pill bg-${col}">${esc(EKTE_LANG.code(risk.txt+" RISK"))}</span>
       <h2>${esc(zhHead(v))}</h2>
       <p>${esc(srv(v.summary||v.headline||""))} <span class="c-dim">${T("置信度/confidence","confidence")} ${esc(v.confidence||"—")}.</span></p>
       ${kf.length?`<ul class="kf">${kf.map(k=>{
@@ -573,7 +573,7 @@ function showVerdict(r){
 function zhHead(v){
   // reports that record verdict.drivers carry a headline naming what drove the risk
   if(Array.isArray(v.drivers)&&v.headline)return srv(v.headline).replace(/\s*[(（][^()（）]*[)）]$/,"");
-  const m=!ZING_LANG.isZh()
+  const m=!EKTE_LANG.isZh()
     ?{clean:"Behavior is consistent with the claimed model",low:"Mostly consistent, with a few minor issues",
       medium:"Some behavior does not match the claimed model — verify",high:"It is not serving the model it claims",
       inconclusive:"Insufficient signal to decide (connectivity or coverage too low)"}
@@ -585,7 +585,7 @@ function zhHead(v){
 }
 
 /* language switch: re-label script-generated UI in place (scores/log are kept) */
-window.addEventListener("zing:lang",()=>{
+window.addEventListener("ekte:lang",()=>{
   $("#run-label").textContent=runLabel();
   if(errFn)setErr(errFn);
   DIMS.forEach(([k,nm,wt])=>{const el=$(`.dim[data-k="${k}"]`);if(!el)return;
@@ -600,8 +600,8 @@ $("#verdict").textContent=verdictIdle();
 
 /* model picker: enhance the claimed-model input (stays the value source) */
 try{
-  if(window.ZingModelPicker){
-    window.ZingModelPicker.enhance({claimedInput:"#i-claimed",providerInput:"#i-prov",
+  if(window.EkteModelPicker){
+    window.EkteModelPicker.enhance({claimedInput:"#i-claimed",providerInput:"#i-prov",
       urlInput:"#i-url",keyInput:"#i-key",modelInput:"#i-model",api:()=>$("#api .on").dataset.v});
   }
 }catch(e){}

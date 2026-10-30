@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 
-from zing.knowledge.schema import ModelProfile, ProviderProfile
+from ekte.knowledge.schema import ModelProfile, ProviderProfile
 
 # Known LLM vendors, each with the brand words that name it (incl. Chinese). The
 # identity detector treats all of them as rival brands except the model's own

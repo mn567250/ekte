@@ -7,7 +7,7 @@ real relay behaviour.
 
 from __future__ import annotations
 
-from zing.models import (
+from ekte.models import (
     DetectorResult,
     Dimension,
     Finding,
@@ -15,7 +15,7 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.scoring import build_dimensions, build_verdict, overall_score
+from ekte.scoring import build_dimensions, build_verdict, overall_score
 
 
 def _result(

@@ -1,6 +1,6 @@
-# Example consumer workflow for the `zing relay audit` composite action.
+# Example consumer workflow for the `ekte relay audit` composite action.
 #
-# Copy this into your own repo (or use the action directly from cenbonew/zing).
+# Copy this into your own repo (or use the action directly from mn567250/ekte).
 # It runs a relay health audit on a daily schedule and on demand, then gates a
 # follow-up step on the result. The relay key comes from a repository secret —
 # create one named RELAY_API_KEY under Settings → Secrets and variables → Actions.
@@ -28,9 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Audit the relay
-        id: zing
+        id: ekte
         # Pin to a release tag for reproducible, supply-chain-safe runs.
-        uses: cenbonew/zing@v0.8.0
+        uses: mn567250/ekte@main
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -39,12 +39,12 @@ jobs:
           declared-provider: openai
           suite: standard
           fail-on-risk: ${{ inputs.fail-on-risk || 'high' }}
-          # version: zing-audit==0.8.0   # optional: pin the CLI too
+          # version: ekte==0.8.0   # optional: pin the CLI too
 
       - name: Show the verdict
         # `always()` so this still reports even when the gate above failed.
         if: always()
         run: |
-          echo "risk=${{ steps.zing.outputs.risk }}"
-          echo "score=${{ steps.zing.outputs.score }}"
-          echo "rating=${{ steps.zing.outputs.rating }}"
+          echo "risk=${{ steps.ekte.outputs.risk }}"
+          echo "score=${{ steps.ekte.outputs.score }}"
+          echo "rating=${{ steps.ekte.outputs.rating }}"

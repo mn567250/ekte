@@ -1,9 +1,9 @@
 - banner:
   - link "Vai al contenuto principale":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "Interfaccia classica":
     - /url: "?ui=v1"
   - combobox "Tema":
@@ -46,7 +46,7 @@
     - term: Commit
     - definition:
       - code: <id>
-    - term: Versione di zing
+    - term: Versione di ekte
     - definition: 0.11.0
     - term: Versione di axe-core
     - definition: 4.13.0
@@ -142,7 +142,7 @@
   - region "Dichiarazione di accessibilità":
     - heading "Dichiarazione di accessibilità" [level=2]
     - heading "Stato di conformità" [level=3]
-    - paragraph: L'interfaccia web v2 di zing è parzialmente conforme a BITV 2.0, EN 301549 e WCAG 2.1 livello AA.
+    - paragraph: L'interfaccia web v2 di ekte è parzialmente conforme a BITV 2.0, EN 301549 e WCAG 2.1 livello AA.
     - heading "Limitazioni note" [level=3]
     - paragraph: "La parte automatica di questi passi è superata; il resto richiede ancora una revisione manuale:"
     - list:
@@ -167,7 +167,7 @@
     - paragraph:
       - text: "Hai trovato una barriera o qualcosa è difficile da usare con le tecnologie assistive? Segnalacelo:"
       - link "segnala un problema di accessibilità su GitHub":
-        - /url: https://github.com/cenbonew/zing/issues
+        - /url: https://github.com/mn567250/ekte/issues
 - contentinfo:
   - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
-  - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."
+  - paragraph: "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

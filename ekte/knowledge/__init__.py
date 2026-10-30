@@ -5,8 +5,8 @@ compare a relay's observed behavior against the matched profile to spot
 substitution, downgrade, and truncation.
 """
 
-from zing.knowledge.loader import load_knowledge_base
-from zing.knowledge.schema import (
+from ekte.knowledge.loader import load_knowledge_base
+from ekte.knowledge.schema import (
     FingerprintProbe,
     KnowledgeBase,
     ModelProfile,

@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import register
-from zing.detectors.embedding import (
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import register
+from ekte.detectors.embedding import (
     DISTINCT_MAX_COSINE,
     EmbeddingDetector,
     cosine_similarity,
     embed,
 )
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, Severity, Status
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, Severity, Status
 
 SCALE = Scale(
     outcome("embed.distinctness", "distinct", 100.0, Status.PASS,

@@ -1,16 +1,16 @@
-# zing — Metodología
+# ekte — Metodología
 
 > [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · **🇪🇸 Español** · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · [🇩🇪 Deutsch](METHODOLOGY.de.md)
 
-Este documento explica cómo llega **zing** a su veredicto: qué sondas de caja
+Este documento explica cómo llega **ekte** a su veredicto: qué sondas de caja
 negra envía cada detector, cómo sus resultados se convierten en puntos, cómo
 los puntos se convierten en puntuaciones de dimensión y en una puntuación
 global, y cómo se decide el veredicto de riesgo. Describe la implementación
 actual; cada tabla de puntuación de abajo es la escala publicada del detector
-(`SCALE` en `zing/detectors/*.py`), con la misma redacción que la interfaz web
+(`SCALE` en `ekte/detectors/*.py`), con la misma redacción que la interfaz web
 muestra en **Escala de puntuación**.
 
-> zing aporta **evidencia de caja negra de desviaciones y riesgos, no una
+> ekte aporta **evidencia de caja negra de desviaciones y riesgos, no una
 > prueba criptográfica de fraude.** Consulta [Límites y uso responsable](#límites-y-uso-responsable).
 
 ---
@@ -19,20 +19,20 @@ muestra en **Escala de puntuación**.
 
 Un relay puede, por motivos legítimos, desviarse, actualizar sus snapshots,
 compartir capacidad o almacenar en búfer un upstream que no sabe hacer
-streaming. Por eso zing trata cada señal aislada como un *indicador de riesgo*,
+streaming. Por eso ekte trata cada señal aislada como un *indicador de riesgo*,
 nunca como un veredicto: los hallazgos se basan en evidencia, se formulan con
 cautela, y un resultado ambiguo queda **no concluyente** en lugar de forzarse a
 correcto o fallo. El veredicto de riesgo solo llega a «alto» con evidencia
 sólida de gravedad alta, y la confirmación más fuerte es siempre el **modo
-comparación** (`zing compare`): ejecutar las mismas sondas, al mismo tiempo,
+comparación** (`ekte compare`): ejecutar las mismas sondas, al mismo tiempo,
 contra una *referencia de confianza del modelo declarado*.
 
-## Cómo puntúa zing
+## Cómo puntúa ekte
 
 ### Puntuación del detector
 
 Cada detector publica su **escala de puntuación** (`DetectorResult.scoring`,
-construida con `zing/detectors/scale.py`): cada resultado posible de cada una de
+construida con `ekte/detectors/scale.py`): cada resultado posible de cada una de
 sus comprobaciones, con estado, gravedad y efecto en la puntuación. Cada
 hallazgo registra el `outcome` alcanzado, así que informe y comportamiento no
 pueden divergir. Una escala usa uno de dos métodos:
@@ -52,7 +52,7 @@ los sujetos bajo su comprobación.
 
 ### Puntuación y estado de una dimensión
 
-zing puntúa diez dimensiones. La puntuación de una dimensión es la **media con
+ekte puntúa diez dimensiones. La puntuación de una dimensión es la **media con
 igual peso de las puntuaciones de sus detectores**: un detector con muchas
 comprobaciones no pesa más que uno con pocas, y un detector sin puntuación
 numérica queda fuera. Su estado es el peor estado que concluyeron sus
@@ -68,7 +68,7 @@ internamente aparece con estado **Error** y nunca interrumpe la auditoría.
 ### Puntuación global, nota y pesos
 
 La **puntuación de salud global** es la media ponderada de las dimensiones que
-produjeron una puntuación (`DIMENSION_WEIGHTS` en `zing/scoring.py`). Una
+produjeron una puntuación (`DIMENSION_WEIGHTS` en `ekte/scoring.py`). Una
 dimensión que no se ejecutó (fuera de la suite, o no seleccionada en una
 ejecución `custom`) sale del cálculo y los pesos restantes se renormalizan. La
 nota es A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) o F.
@@ -95,7 +95,7 @@ El nivel de riesgo depende de la **gravedad de los hallazgos**, no de la
 puntuación. Los hallazgos de la dimensión de conectividad quedan fuera: un relay
 caído o limitado no pudo evaluarse, y eso no prueba que responda otro modelo.
 Tampoco cuentan los **avisos de transporte** (`ADVISORY_CHECKS` en
-`zing/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): el HTTP sin cifrar, los fallos o
+`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): el HTTP sin cifrar, los fallos o
 la lentitud bajo carga dicen cómo se llega al relay, no qué modelo sirve.
 Siguen bajando la puntuación y el estado de su dimensión, aparecen tras los
 hallazgos de sustitución entre los hallazgos clave y el resumen los menciona
@@ -158,7 +158,7 @@ devuelta siguen elevando el riesgo.
   juez de confianza, configurado aparte (nunca el objetivo), si las respuestas
   del objetivo se parecen al modelo declarado. Sin `--judge-base-url`, el modo
   comparación usa la referencia como juez.
-- **Modo comparación** (`zing compare`) da a las sondas una referencia de
+- **Modo comparación** (`ekte compare`) da a las sondas una referencia de
   confianza: `model_identity` registra la autoidentificación de la referencia
   junto a la del objetivo, `protocol_request` reenvía a la referencia los
   parámetros rechazados, `integrity` eleva a CRÍTICA una sustitución que la
@@ -166,7 +166,7 @@ devuelta siguen elevando el riesgo.
   `performance` sondea ambos endpoints de forma alterna. La confianza solo puede
   ser alta con una referencia.
 - **Base de conocimiento:** el perfil del modelo declarado
-  (`zing/knowledge/data/*.yaml` más tus propias entradas en `kb.db`) aporta la
+  (`ekte/knowledge/data/*.yaml` más tus propias entradas en `kb.db`) aporta la
   ventana de contexto declarada, la salida máxima, el tokenizer, las
   capacidades, las palabras clave de identidad y las huellas de comportamiento
   con las que se juzgan las sondas. Cada informe registra el perfil usado
@@ -180,7 +180,7 @@ devuelta siguen elevando el riesgo.
   proveedor se aplican a cada uno de sus modelos; una que solo encaja con
   algunos (una fecha de corte, un nivel de tamaño) figura solo en ellos.
 - **Idioma de los prompts:** cada texto de sonda está en
-  `zing/prompts/en.json` y es en inglés sea cual sea el idioma de la interfaz;
+  `ekte/prompts/en.json` y es en inglés sea cual sea el idioma de la interfaz;
   solo las huellas cuyo idioma *es* la medida declaran `prompt_lang` y
   `language_bound`. Cada informe lista los idiomas de las sondas usadas
   (`prompt_languages`).
@@ -217,7 +217,7 @@ merece auditarse.
 una completion de chat a `temperature=0` que pide al modelo repetir un canario
 exacto; registra la latencia y el campo `model` devuelto.
 
-**Escala de puntuación** (`zing/detectors/connectivity.py`):
+**Escala de puntuación** (`ekte/detectors/connectivity.py`):
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
@@ -277,7 +277,7 @@ aplicable (no computa) en lugar de culpar al relay.
 
 **Cómo funciona.** Una llamada normal sin streaming; cada atributo del
 protocolo del objetivo (OpenAI Chat Completions, Anthropic Messages u OpenAI
-Responses; catálogo en `zing/detectors/wire_attrs.py`) se juzga sobre el cuerpo
+Responses; catálogo en `ekte/detectors/wire_attrs.py`) se juzga sobre el cuerpo
 en bruto. Los atributos principales son, por ejemplo, `model`,
 `choices[0].message.role/content`, `finish_reason`, `usage.prompt_tokens`,
 `usage.completion_tokens` y `usage.total_tokens` (que debe ser la suma de los
@@ -368,7 +368,7 @@ debe devolverlo.
   limitada por `--max-context-tokens` (200K por defecto). Cada veredicto se
   juzga frente a `upper`, nunca frente a la parte de una ventana declarada
   mayor que quede por encima del tope.
-- **Los tamaños son tokens reales.** La estimación de tokens integrada en zing
+- **Los tamaños son tokens reales.** La estimación de tokens integrada en ekte
   cuenta este relleno entre un 12 % (o200k) y un 15 % (cl100k) por debajo de
   los tokenizadores reales, así que cada prompt se construye a tamaño ÷ 1,2
   según la estimación (aguja y pregunta incluidas): un peldaño de tamaño N cabe
@@ -536,7 +536,7 @@ responder.
 |  | No hay respuestas del objetivo que juzgar. | No concluyente · Baja | No computa |
 
 **Advertencias.** Las API oficiales actualizan sus snapshots en silencio; una
-desviación puede ser deriva benigna — zing informa «divergente», nunca
+desviación puede ser deriva benigna — ekte informa «divergente», nunca
 «sustitución probada». Los modelos alucinan su propio nombre, así que la
 autoidentificación sola nunca decide. Un relay podría memorizar una serie de
 sondas fija. Un veredicto de confianza alta exige el modo comparación contra el
@@ -676,7 +676,7 @@ como señal de corroboración, `prompt.injected-system-prompt`.
 **Cómo funciona.** Una llamada determinista (un párrafo conocido que resumir,
 `temperature=0`). El prompt y la respuesta visible se cuentan de forma
 independiente con una heurística sensible al idioma (aprox. ±25 %), para todas
-las familias de modelos: zing no usa ninguna biblioteca de tokenizer ni descarga
+las familias de modelos: ekte no usa ninguna biblioteca de tokenizer ni descarga
 ninguna. Tokens de prompt informados por encima de 2,5× la estimación y más de
 50 tokens por encima cuentan como inflado. Los tokens de completion de un modelo
 de razonamiento incluyen legítimamente tokens de razonamiento ocultos y no se
@@ -741,7 +741,7 @@ Las mediciones de velocidad dedicadas pertenecen a la dimensión `performance`.
 
 **Advertencias.** Los proveedores reales también se ralentizan y devuelven 429
 bajo carga real. Una instantánea no capta el comportamiento según la hora;
-`zing watch` vuelve a auditar según un calendario.
+`ekte watch` vuelve a auditar según un calendario.
 
 **No implementado.** La medición de calidad a lo largo del tiempo y con carga
 variable, y las señales de clave upstream compartida
@@ -840,7 +840,7 @@ dialectos remodela el JSON de las llamadas a herramientas; solo cuenta una
 sustitución del *valor*. Una manipulación condicional (solo para ciertas
 palabras clave, clientes o tras un calentamiento) puede escapar a un número
 finito de sondas. El registro en caja negra es **imposible de probar** desde el
-cliente, y zing no puede mostrar una caché compartida *entre usuarios* con una
+cliente, y ekte no puede mostrar una caché compartida *entre usuarios* con una
 sola clave: la ausencia de una señal temporal no prueba que los prompts no se
 registren.
 
@@ -941,7 +941,7 @@ sustituido en chat.
 
 **Deriva de vectores.** Cada ejecución guarda los primeros 64 componentes del
 vector normalizado de una entrada fija. La siguiente ejecución del mismo destino y
-modelo declarado (`zing embed`, una auditoría de embeddings iniciada en la página
+modelo declarado (`ekte embed`, una auditoría de embeddings iniciada en la página
 Auditoría de la interfaz web con el selector de tipo de endpoint, o un monitor de
 embeddings)
 compara su vector con esa muestra: un coseno **≥ 0,995** es estable (PASS), de
@@ -1009,7 +1009,7 @@ una referencia.
 
 ## Correspondencia truco → detector
 
-Los 16 trucos de relay de la investigación se reparten así en zing.
+Los 16 trucos de relay de la investigación se reparten así en ekte.
 
 | # | Truco (id) | Gravedad | Detector(es) | Cobertura actual |
 |---|---|---|---|---|
@@ -1034,7 +1034,7 @@ Los 16 trucos de relay de la investigación se reparten así en zing.
 
 ## Límites y uso responsable
 
-**zing informa de desviaciones y riesgos, no de pruebas de fraude.** El
+**ekte informa de desviaciones y riesgos, no de pruebas de fraude.** El
 veredicto usa un lenguaje prudente (clean / low / medium / high /
 inconclusive), deja no concluyentes los resultados ambiguos y solo sube a
 «alto» con evidencia sólida de gravedad alta.
@@ -1062,7 +1062,7 @@ forma más sólida de separar el comportamiento del modelo del del relay, y la
 única de alcanzar una confianza alta.
 
 **Divulgación responsable.** **No acuses públicamente a un proveedor**
-basándote en un informe de zing. Antes de actuar: vuelve a ejecutar con más
+basándote en un informe de ekte. Antes de actuar: vuelve a ejecutar con más
 muestras y en otros momentos, confirma con el modo comparación y descarta
 explicaciones de deriva, red y carga. Si persiste una duda seria, plantéasela
 primero en privado al proveedor, como preguntas sobre el comportamiento

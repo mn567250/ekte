@@ -1,8 +1,8 @@
-"""The local data directory and its SQLite stores, shared by the CLI and `zing serve`.
+"""The local data directory and its SQLite stores, shared by the CLI and `ekte serve`.
 
-Everything zing persists locally — audit history, scheduled watches, the user's
-own knowledge-base entries — lives in ``$ZING_DATA_DIR`` (default ``~/.zing``).
-The watch store holds API keys (encrypted, see :mod:`zing.secretbox`; the
+Everything ekte persists locally — audit history, scheduled watches, the user's
+own knowledge-base entries — lives in ``$EKTE_DATA_DIR`` (default ``~/.ekte``).
+The watch store holds API keys (encrypted, see :mod:`ekte.secretbox`; the
 master key itself is never stored here), so the directory is still created
 owner-only (``0700``) and every database file (plus SQLite's
 ``-wal``/``-shm`` side files) is kept ``0600``.
@@ -25,7 +25,7 @@ _FILE_MODE = 0o600
 
 
 def data_dir() -> Path:
-    return Path(os.environ.get("ZING_DATA_DIR") or (Path.home() / ".zing"))
+    return Path(os.environ.get("EKTE_DATA_DIR") or (Path.home() / ".ekte"))
 
 
 def db_path(name: str) -> Path:
@@ -33,15 +33,15 @@ def db_path(name: str) -> Path:
 
 
 def ensure_data_dir() -> Path:
-    """Create the data directory owner-only. A directory zing did not create
-    (e.g. a mounted volume passed as ``ZING_DATA_DIR``) keeps its mode, except
-    the default ``~/.zing``, which is always tightened."""
+    """Create the data directory owner-only. A directory ekte did not create
+    (e.g. a mounted volume passed as ``EKTE_DATA_DIR``) keeps its mode, except
+    the default ``~/.ekte``, which is always tightened."""
     path = data_dir()
     if not path.is_dir():
         path.mkdir(parents=True, mode=_DIR_MODE, exist_ok=True)
         with contextlib.suppress(OSError):
             path.chmod(_DIR_MODE)
-    elif not os.environ.get("ZING_DATA_DIR"):
+    elif not os.environ.get("EKTE_DATA_DIR"):
         with contextlib.suppress(OSError):
             path.chmod(_DIR_MODE)
     return path

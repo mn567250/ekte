@@ -1,6 +1,6 @@
 {
  "strings": {
-  "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. zing esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.",
+  "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. ekte esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.",
   "← Pick from the list": "← Scegli dall'elenco",
   "Enter manually": "Inserisci a mano",
   "Select a relay or provider…": "Seleziona un relay o un provider…",
@@ -15,7 +15,7 @@
   "The relay lists no models — enter the model manually.": "Il relay non elenca alcun modello: inserisci il modello a mano.",
   "Enter the API key to list the models (HTTP {code}).": "Inserisci la chiave API per elencare i modelli (HTTP {code}).",
   "Could not list the models: ": "Impossibile elencare i modelli: ",
-  "Select a relay or enter its URL, and zing lists its models.": "Seleziona un relay o inseriscine l'URL e zing ne elenca i modelli.",
+  "Select a relay or enter its URL, and ekte lists its models.": "Seleziona un relay o inseriscine l'URL e ekte ne elenca i modelli.",
   "Same as the model to request": "Uguale al modello richiesto",
   "(not in the knowledge base)": "(non presente nella base di conoscenza)",
   "Model profile: {p}": "Profilo del modello: {p}",

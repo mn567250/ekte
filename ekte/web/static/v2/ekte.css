@@ -1,10 +1,10 @@
-/* zing web UI v2 — shared type, shape and base components.
+/* ekte web UI v2 — shared type, shape and base components.
  *
  * The "calm lab report" language (emerald and warm neutrals, system font
  * stacks (no web fonts), generous radii) as ONE stylesheet every v2 page links,
  * right after the colour tokens:
  *   <link rel="stylesheet" href="/v2/static/tokens.css" />
- *   <link rel="stylesheet" href="/v2/static/zing.css" />
+ *   <link rel="stylesheet" href="/v2/static/ekte.css" />
  *
  * Rules for pages:
  *   - colours only through the tokens in tokens.css, never a literal (every

@@ -1,8 +1,8 @@
 """Surface-neutral parts of the performance probes.
 
-The chat probe (:mod:`zing.detectors.performance`), the embedding probe
-(:mod:`zing.detectors.embed_performance`) and the rerank probe
-(:mod:`zing.detectors.rerank_performance`) share their gating, the phase loop
+The chat probe (:mod:`ekte.detectors.performance`), the embedding probe
+(:mod:`ekte.detectors.embed_performance`) and the rerank probe
+(:mod:`ekte.detectors.rerank_performance`) share their gating, the phase loop
 (ping → warm-up → N probes → burst, target and baseline alternating), and the
 consistency, error and load findings. Each probe brings its own request, its own
 scoring scale and its surface-specific findings.
@@ -14,14 +14,14 @@ import asyncio
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Any
 
-from zing.clients import Client
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors.base import CUSTOM_SUITE, SUITE_ORDER
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, EndpointPerformance, Severity, Status
-from zing.perf import RequestRecorder, phase_scope
-from zing.utils.stats import percentile
+from ekte.clients import Client
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.base import CUSTOM_SUITE, SUITE_ORDER
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, EndpointPerformance, Severity, Status
+from ekte.perf import RequestRecorder, phase_scope
+from ekte.utils.stats import percentile
 
 PINGS = 3
 # Probe size on the standard suite, where it only runs in compare mode.

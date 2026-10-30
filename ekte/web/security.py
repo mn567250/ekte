@@ -1,4 +1,4 @@
-"""Local-only hardening for `zing serve`.
+"""Local-only hardening for `ekte serve`.
 
 The web UI has no authentication on purpose: it is a single-user tool that
 only ever listens on the loopback interface. "Only reachable from this machine"
@@ -9,17 +9,17 @@ paths:
 * **Bind address** (:func:`resolve_bind`): loopback only. The one exception is
   a container, where the server must listen on the container's interfaces for
   a published port to reach it; that needs an explicit opt-in
-  (``ZING_CONTAINER=1``) *and* a detected container runtime, and the port is
+  (``EKTE_CONTAINER=1``) *and* a detected container runtime, and the port is
   expected to be published to the host's loopback (``-p 127.0.0.1:8000:8000``).
 * **Host header allowlist** (DNS rebinding): a hostile page can point its own
   domain at 127.0.0.1 and then read and write the local API as same-origin.
-  Only ``localhost``, ``127.0.0.1`` and ``[::1]`` (plus ``ZING_ALLOWED_HOSTS``)
+  Only ``localhost``, ``127.0.0.1`` and ``[::1]`` (plus ``EKTE_ALLOWED_HOSTS``)
   are served; the port is not checked, so any published host port works.
 * **Origin check** (CSRF): state-changing requests carrying a foreign
   ``Origin`` — or ``Sec-Fetch-Site: cross-site`` — are refused.
 * **JSON only**: a state-changing request with a body must be
   ``application/json``. Browsers can send ``text/plain`` cross-site without a
-  CORS preflight; requiring JSON forces that preflight, which zing never
+  CORS preflight; requiring JSON forces that preflight, which ekte never
   answers (it sends no CORS headers).
 * **Response headers**: no framing (clickjacking), no MIME sniffing, no
   referrer leaks.
@@ -64,14 +64,14 @@ def in_container() -> bool:
 
 
 def resolve_bind(host: str | None, port: int | None) -> tuple[str, int]:
-    """The (host, port) `zing serve` may bind.
+    """The (host, port) `ekte serve` may bind.
 
-    ``--host``/``--port`` win, then ``ZING_HOST``/``ZING_PORT``, then
+    ``--host``/``--port`` win, then ``EKTE_HOST``/``EKTE_PORT``, then
     ``127.0.0.1:8000``. A non-loopback host is refused unless
-    ``ZING_CONTAINER=1`` is set and a container runtime is detected.
+    ``EKTE_CONTAINER=1`` is set and a container runtime is detected.
     """
-    chosen = (host or os.environ.get("ZING_HOST") or "127.0.0.1").strip()
-    raw_port = port if port is not None else os.environ.get("ZING_PORT") or 8000
+    chosen = (host or os.environ.get("EKTE_HOST") or "127.0.0.1").strip()
+    raw_port = port if port is not None else os.environ.get("EKTE_PORT") or 8000
     try:
         chosen_port = int(raw_port)
     except (TypeError, ValueError) as exc:
@@ -80,15 +80,15 @@ def resolve_bind(host: str | None, port: int | None) -> tuple[str, int]:
         raise BindError(f"invalid port: {chosen_port}")
     if chosen.strip("[]") in LOOPBACK_HOSTS:
         return chosen.strip("[]"), chosen_port
-    if not _truthy(os.environ.get("ZING_CONTAINER")):
+    if not _truthy(os.environ.get("EKTE_CONTAINER")):
         raise BindError(
-            f"refusing to bind {chosen}: zing serve listens on loopback only "
-            "(127.0.0.1, ::1, localhost). Inside a container, set ZING_CONTAINER=1 "
+            f"refusing to bind {chosen}: ekte serve listens on loopback only "
+            "(127.0.0.1, ::1, localhost). Inside a container, set EKTE_CONTAINER=1 "
             "and publish the port to the host's loopback, e.g. -p 127.0.0.1:8000:8000."
         )
     if not in_container():
         raise BindError(
-            f"refusing to bind {chosen}: ZING_CONTAINER=1 is set but no container "
+            f"refusing to bind {chosen}: EKTE_CONTAINER=1 is set but no container "
             "runtime was detected (/.dockerenv, /run/.containerenv or Kubernetes)."
         )
     return chosen, chosen_port
@@ -97,7 +97,7 @@ def resolve_bind(host: str | None, port: int | None) -> tuple[str, int]:
 def allowed_hosts() -> frozenset[str]:
     extra = {
         h.strip().lower().strip("[]")
-        for h in (os.environ.get("ZING_ALLOWED_HOSTS") or "").split(",")
+        for h in (os.environ.get("EKTE_ALLOWED_HOSTS") or "").split(",")
         if h.strip()
     }
     return LOOPBACK_HOSTS | extra
@@ -150,7 +150,7 @@ class LocalOnlyMiddleware:
         hosts = self.hosts if self.hosts is not None else allowed_hosts()
         host_header = headers.get("host", "")
         if _hostname(host_header) not in hosts:
-            return 421, "unknown host: zing serve only answers to localhost"
+            return 421, "unknown host: ekte serve only answers to localhost"
         if method not in _UNSAFE_METHODS:
             return None
         if headers.get("sec-fetch-site", "").lower() in ("cross-site", "same-site"):

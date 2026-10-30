@@ -117,7 +117,7 @@ SURFACE_STATE_JS = """
 }
 """
 
-# The custom suite's dimensions on the embedding and rerank surfaces (zing/scoring.py).
+# The custom suite's dimensions on the embedding and rerank surfaces (ekte/scoring.py).
 SURFACE_DIMS = ["model_identity", "capability", "connectivity", "reliability", "performance"]
 
 

@@ -1,9 +1,9 @@
 - banner:
   - link "跳到主要内容":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "经典界面":
     - /url: "?ui=v1"
   - combobox "主题":
@@ -36,7 +36,7 @@
       - /url: /v2/kb
 - main:
   - heading "检测分析" [level=1]
-  - paragraph: 用 zing 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。
+  - paragraph: 用 ekte 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。
   - status: 1 次较早的检测开始时间为估算 按时间段的图表只能大致放置它们。
   - status: 已更新：此范围内 14 次检测。
   - region "筛选":
@@ -108,4 +108,4 @@
         - listitem: 计费比（输出） 102% 上一周期无数据 9 / 14 次检测有此数据
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
-  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。
+  - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

@@ -1,12 +1,12 @@
 """Webhook alerting for scheduled re-audits.
 
-`zing watch` re-runs an audit on an interval and, when the verdict crosses a risk
+`ekte watch` re-runs an audit on an interval and, when the verdict crosses a risk
 threshold (or regresses versus the previous saved run), POSTs a concise alert to
 one or more webhooks. Alerts are written in the watch's language (``lang``; English
-by default, any language in ``zing/i18n/locales``), including the verdict headline
+by default, any language in ``ekte/i18n/locales``), including the verdict headline
 and the key findings. This module owns two concerns:
 
-* **Formatting** — turning an :class:`~zing.models.AuditReport` dict into the
+* **Formatting** — turning an :class:`~ekte.models.AuditReport` dict into the
   body each chat platform expects (generic JSON, Slack, Feishu/Lark, DingTalk).
   The text is intentionally compact: a single human-readable digest of risk,
   score, target, and the top key findings, with an optional "since last run"
@@ -28,9 +28,9 @@ from urllib.parse import urlparse
 
 import httpx
 
-from zing import i18n
-from zing.clients.base import get_ssl_context
-from zing.models import RiskLevel
+from ekte import i18n
+from ekte.clients.base import get_ssl_context
+from ekte.models import RiskLevel
 
 # Ordering used to decide whether the current risk is *worse* than the previous
 # run. INCONCLUSIVE deliberately sits below LOW: an inconclusive result is not a
@@ -163,7 +163,7 @@ def build_text(
         score_part += grade if grade.startswith("（") else f" {grade}"
 
     lines = [
-        "🛰️ " + _t(lang, "zing relay audit alert"),
+        "🛰️ " + _t(lang, "ekte relay audit alert"),
         _t(lang, "Risk: {1}", _risk_label(risk, lang)),
         _t(lang, "Score: {1}", score_part),
         _t(lang, "Target: {1}", base_url),
@@ -202,7 +202,7 @@ def format_generic(
     verdict = report.get("verdict") or {}
     target = report.get("target") or {}
     return {
-        "tool": "zing",
+        "tool": "ekte",
         "event": "audit_alert",
         "language": lang,
         "text": build_text(report, previous, lang),

@@ -2,7 +2,7 @@
 
 Some relays front Anthropic's ``/v1/messages`` API rather than OpenAI's
 ``/v1/chat/completions``. This client speaks that protocol while presenting the
-exact same :class:`~zing.models.CompletionOutcome` surface as the OpenAI client,
+exact same :class:`~ekte.models.CompletionOutcome` surface as the OpenAI client,
 so every detector runs against either backend unchanged. It translates a
 :class:`RequestSpec` (OpenAI-shaped) into a Messages request and normalizes the
 response — content blocks, ``tool_use`` blocks, and ``input_tokens``/
@@ -15,10 +15,10 @@ import json
 import time
 from typing import Any
 
-from zing.clients.base import BaseHTTPClient
-from zing.models import CompletionOutcome, RequestSpec
-from zing.utils.redact import redact_headers, redact_text
-from zing.utils.sse import parse_sse_line, try_load_event
+from ekte.clients.base import BaseHTTPClient
+from ekte.models import CompletionOutcome, RequestSpec
+from ekte.utils.redact import redact_headers, redact_text
+from ekte.utils.sse import parse_sse_line, try_load_event
 
 _ANTHROPIC_VERSION = "2023-06-01"
 _DEFAULT_MAX_TOKENS = 1024
@@ -44,7 +44,7 @@ class AnthropicClient(BaseHTTPClient):
     def _headers(self) -> dict[str, str]:
         headers = {
             "Content-Type": "application/json",
-            "User-Agent": "zing-audit/0.1",
+            "User-Agent": "ekte/0.1",
             "anthropic-version": _ANTHROPIC_VERSION,
         }
         if self.config.api_key:

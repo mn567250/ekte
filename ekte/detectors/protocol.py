@@ -3,7 +3,7 @@
 A relay can return content yet still violate the OpenAI chat-completion contract:
 forget prior turns, ignore ``stop``, or reject malformed input with a non-standard
 error body. (Which request/response attributes survive the relay is checked
-attribute by attribute in :mod:`zing.detectors.protocol_attrs`.) Each sub-check exercises one such
+attribute by attribute in :mod:`ekte.detectors.protocol_attrs`.) Each sub-check exercises one such
 contract and scores points from the published scale ``SCALE`` (every possible
 outcome of every check); the detector score is the average of the counted checks.
 An inconclusive check (no usable response) is not counted, nor is the stop check
@@ -12,13 +12,13 @@ on the Responses API, which has no ``stop`` parameter to honor.
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.clients import detect_api
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import contains_ci
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte import prompts
+from ekte.clients import detect_api
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import contains_ci
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
 
 _NO_RESPONSE = "No usable response to judge by."
 

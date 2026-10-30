@@ -1,9 +1,9 @@
 - banner:
   - link "Saltar al contenido principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "Interfaz clásica":
     - /url: "?ui=v1"
   - combobox "Tema":
@@ -35,10 +35,10 @@
     - link "Conocimiento":
       - /url: /v2/kb
 - main:
-  - heading "La base de conocimiento con la que audita zing" [level=1]
+  - heading "La base de conocimiento con la que audita ekte" [level=1]
   - paragraph:
-    - text: "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Aquí encuentras cada modelo, proveedor y relay que zing conoce —los incluidos y los tuyos— y puedes activar o desactivar cada uno o añadir los tuyos. Tus cambios se guardan en kb.db en este equipo y los usan tanto la interfaz web como"
-    - code: zing check
+    - text: "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Aquí encuentras cada modelo, proveedor y relay que ekte conoce —los incluidos y los tuyos— y puedes activar o desactivar cada uno o añadir los tuyos. Tus cambios se guardan en kb.db en este equipo y los usan tanto la interfaz web como"
+    - code: ekte check
     - text: .
   - status: Base de conocimiento completa 130 modelos · 7 proveedores · 1 relay, todos activados
   - region "Filtros":
@@ -97,7 +97,7 @@
         - /placeholder: "provider: …\nmodels:\n- id: …"
       - text: Elegir un archivo .yaml
       - heading "3 Comprobar y guardar" [level=3]
-      - paragraph: La comprobación valida el esquema y los límites, marca expresiones regulares inseguras, lista cada prompt que zing enviaría a los relays y muestra qué ID de modelo se resolverían de otra forma. No se guarda nada hasta que guardes.
+      - paragraph: La comprobación valida el esquema y los límites, marca expresiones regulares inseguras, lista cada prompt que ekte enviaría a los relays y muestra qué ID de modelo se resolverían de otra forma. No se guarda nada hasta que guardes.
       - button "Comprobación"
       - button "Guardar en la base" [disabled]
     - group:
@@ -123,4 +123,4 @@
     # … more items of the same shape
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
-  - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."
+  - paragraph: "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

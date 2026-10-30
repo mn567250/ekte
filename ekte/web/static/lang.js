@@ -1,20 +1,20 @@
-/* zing web UI — language switch (English · 中文 · Français · Español ·
- * Português · Italiano · Deutsch; the list comes from zing/i18n/locales/).
+/* ekte web UI — language switch (English · 中文 · Français · Español ·
+ * Português · Italiano · Deutsch; the list comes from ekte/i18n/locales/).
  *
  * Plain browser global, no modules. Load it in <head> after /locales.js and
  * before any page script, so the current language is known while the page
- * renders. Exposes window.ZING_LANG with:
+ * renders. Exposes window.EKTE_LANG with:
  *   - get()            -> a code from LANGS below ("en", "zh", "fr", …)
  *   - langs()          the registry: [{ code, label, html, locale }] in menu order
  *                      (label is the language's own name: "English", "中文", …)
  *   - isZh()           true when the original Chinese UI is shown
- *   - set(lang)        persist + re-translate static markup + fire "zing:lang";
+ *   - set(lang)        persist + re-translate static markup + fire "ekte:lang";
  *                      when lang's data isn't loaded yet it first loads
  *                      /locales.js?lang=<code> (asynchronously: get() changes
  *                      once it is in); if that fails the language stays as it
  *                      was and the switchers show it again
  *   - t(zh, en)        CN -> zh; otherwise the English text translated via tr()
- *   - tr(en)           English string -> current language (from ZING_LOCALES)
+ *   - tr(en)           English string -> current language (from EKTE_LOCALES)
  *   - trFor(lang, en)  English string -> the given language
  *   - locale()         BCP 47 locale for dates/numbers ("fr-FR", …)
  *   - intl(Ctor, opts[, locale])
@@ -47,16 +47,16 @@
  * A <select class="lang-sel"> anywhere on the page becomes the switcher; its
  * options are generated from LANGS, the single list of supported languages.
  *
- * Adding a language: add zing/i18n/locales/<code>.json (its "meta" gives the
+ * Adding a language: add ekte/i18n/locales/<code>.json (its "meta" gives the
  * menu label — the language's own name, not a flag — <html lang>, locale and
  * menu order). Nothing else changes: pages, T(zh, en) call sites and data-en
  * markup stay as they are, and any string missing from a translation falls
  * back to English. Feature work may ship its strings as fragments,
- * zing/i18n/locales/fragments/<feature>/<code>.json ({"strings": {…}}), which
- * zing/i18n merges into that language's strings before serving /locales.js.
+ * ekte/i18n/locales/fragments/<feature>/<code>.json ({"strings": {…}}), which
+ * ekte/i18n merges into that language's strings before serving /locales.js.
  *
  * Only the chosen language is downloaded: the choice is kept in localStorage
- * ("zing.lang") and mirrored in a "zing_lang" cookie, from which the server
+ * ("ekte.lang") and mirrored in a "ekte_lang" cookie, from which the server
  * picks the one-language /locales.js (no cookie: every language). Should the
  * stored language's data be missing at boot anyway (cookie lost or out of
  * date), the cookie is fixed and the page reloaded once while still hidden
@@ -75,14 +75,14 @@
 (function () {
   "use strict";
 
-  var KEY = "zing.lang";
-  var COOKIE = "zing_lang"; // read by the server for /locales.js
-  var RELOAD = "zing.lang.reload"; // sessionStorage: language reloaded for
+  var KEY = "ekte.lang";
+  var COOKIE = "ekte_lang"; // read by the server for /locales.js
+  var RELOAD = "ekte.lang.reload"; // sessionStorage: language reloaded for
   var DEFAULT = "en";
-  // The supported languages in dropdown order, from zing/i18n/locales/*.json
+  // The supported languages in dropdown order, from ekte/i18n/locales/*.json
   // (via /locales.js). EN and CN are always available: English is the key
   // language and CN the original markup.
-  var LANG_LIST = ((window.ZING_LOCALES || {}).languages || []).slice();
+  var LANG_LIST = ((window.EKTE_LOCALES || {}).languages || []).slice();
   if (!LANG_LIST.length)
     LANG_LIST = [
       { code: "en", label: "English", html: "en", locale: "en-US" },
@@ -134,10 +134,10 @@
   }
 
   function locales() {
-    return window.ZING_LOCALES || {};
+    return window.EKTE_LOCALES || {};
   }
 
-  // Is language `l`'s data loaded? (A ZING_LOCALES without has() is a bundle
+  // Is language `l`'s data loaded? (A EKTE_LOCALES without has() is a bundle
   // that carries every language.)
   function has(l) {
     var L = locales();
@@ -146,7 +146,7 @@
 
   function readCookie() {
     try {
-      var m = /(?:^|;\s*)zing_lang=([^;]*)/.exec(document.cookie || "");
+      var m = /(?:^|;\s*)ekte_lang=([^;]*)/.exec(document.cookie || "");
       return m ? m[1] : null;
     } catch (e) {
       return null;
@@ -258,7 +258,7 @@
   // Backend text (always English) -> language `l`: drop the embedded Chinese
   // terms (not for zh), then translate exact known strings (detector names,
   // recommendations, …) and known sentence patterns (verdict summary and
-  // headline) from ZING_LOCALES; anything unknown stays English.
+  // headline) from EKTE_LOCALES; anything unknown stays English.
   function backendIn(l, text) {
     if (text == null) return text;
     var s = String(text);
@@ -300,17 +300,17 @@
 
   function applyEl(el) {
     if (el.hasAttribute("data-en")) {
-      if (el.__zingZh == null) el.__zingZh = el.innerHTML;
-      var html = lang === "zh" ? el.__zingZh : tr(el.getAttribute("data-en"));
+      if (el.__ekteZh == null) el.__ekteZh = el.innerHTML;
+      var html = lang === "zh" ? el.__ekteZh : tr(el.getAttribute("data-en"));
       if (el.tagName === "TITLE") el.textContent = html;
       else if (el.innerHTML !== html) el.innerHTML = html;
     }
     ATTRS.forEach(function (a) {
       var enA = "data-en-" + a;
       if (!el.hasAttribute(enA)) return;
-      el.__zingZhAttr = el.__zingZhAttr || {};
-      if (!(a in el.__zingZhAttr)) el.__zingZhAttr[a] = el.getAttribute(a);
-      var v = lang === "zh" ? el.__zingZhAttr[a] : tr(el.getAttribute(enA));
+      el.__ekteZhAttr = el.__ekteZhAttr || {};
+      if (!(a in el.__ekteZhAttr)) el.__ekteZhAttr[a] = el.getAttribute(a);
+      var v = lang === "zh" ? el.__ekteZhAttr[a] : tr(el.getAttribute(enA));
       if (v == null) el.removeAttribute(a);
       else el.setAttribute(a, v);
     });
@@ -332,7 +332,7 @@
   }
 
   // Load language `l`'s bundle (/locales.js?lang=l merges itself into
-  // ZING_LOCALES), then done(loaded?). Concurrent calls share one request.
+  // EKTE_LOCALES), then done(loaded?). Concurrent calls share one request.
   var loading = {};
   function load(l, done) {
     if (loading[l]) {
@@ -385,15 +385,15 @@
     persist(lang);
     apply(document);
     try {
-      window.dispatchEvent(new CustomEvent("zing:lang", { detail: { lang: lang } }));
+      window.dispatchEvent(new CustomEvent("ekte:lang", { detail: { lang: lang } }));
     } catch (e) {}
   }
 
   function wireSwitchers() {
     var sw = document.querySelectorAll("select.lang-sel");
     for (var i = 0; i < sw.length; i++) {
-      if (sw[i].__zingWired) continue;
-      sw[i].__zingWired = true;
+      if (sw[i].__ekteWired) continue;
+      sw[i].__ekteWired = true;
       sw[i].innerHTML = "";
       LANG_LIST.forEach(function (l) {
         var o = document.createElement("option");
@@ -464,7 +464,7 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 
-  window.ZING_LANG = {
+  window.EKTE_LANG = {
     get: function () {
       return lang;
     },

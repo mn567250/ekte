@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 
-from zing.models import (
+from ekte.models import (
     ConcurrencyPerformance,
     EndpointPerformance,
     InputSizeBucket,
@@ -22,7 +22,7 @@ from zing.models import (
     ProbeCost,
     RequestRecord,
 )
-from zing.utils.stats import PERCENTILE_MIN_SAMPLES, describe, percentile
+from ekte.utils.stats import PERCENTILE_MIN_SAMPLES, describe, percentile
 
 PROBE_PHASES = ("probe", "probe_concurrent", "warmup")
 
@@ -46,12 +46,12 @@ NOTE_PASSIVE = (
 NOTE_REASONING = (
     "Reasoning tokens detected: TTFT is the time to the first visible token and "
     "includes hidden thinking, and usage-based throughput counts thinking tokens. "
-    "zing does not set a reasoning effort (the modes a relay accepts are unknown), "
+    "ekte does not set a reasoning effort (the modes a relay accepts are unknown), "
     "so the model thinks at its default effort."
 )
 NOTE_ESTIMATED = (
     "Local token counts are estimates (about ±15-20%) from a built-in heuristic; "
-    "zing never downloads a tokenizer."
+    "ekte never downloads a tokenizer."
 )
 NOTE_PERCENTILES = (
     "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, "
@@ -234,7 +234,7 @@ def summarize_endpoint(
     # Reliability counts every call (the audit's own, warm-up, burst and probe),
     # not just the stats pool: a relay failing the audit's requests while the
     # probe succeeds must not show a 0% error rate. A call rejected for its
-    # max_tokens parameter and retried ("param_retry") is zing's, not the relay's.
+    # max_tokens parameter and retried ("param_retry") is ekte's, not the relay's.
     calls = [r for r in completes if r.phase != "param_retry"]
     n = len(calls)
     errors = sum(1 for r in calls if not r.ok and not r.rate_limited)

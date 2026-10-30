@@ -1,4 +1,4 @@
-"""Tests for the local web server (`zing serve`).
+"""Tests for the local web server (`ekte serve`).
 
 Skipped automatically when the optional web extra (fastapi) isn't installed.
 These don't hit the network: they cover health, the served SPA, and the
@@ -14,7 +14,7 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from zing.web.server import create_app  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 _VERSION = re.compile(r"\?v=[0-9a-f]+(?=[\"'])")
 
@@ -33,14 +33,14 @@ def test_health(client):
     r = client.get("/api/health")
     assert r.status_code == 200
     body = r.json()
-    assert body["ok"] is True and body["name"] == "zing"
+    assert body["ok"] is True and body["name"] == "ekte"
 
 
 def test_serves_spa(client):
     r = client.get("/")
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
-    assert "zing" in r.text and "中转站" in r.text
+    assert "ekte" in r.text and "中转站" in r.text
 
 
 def test_spa_fallback_for_deep_link(client):
@@ -71,26 +71,26 @@ def test_serves_console_and_history_and_i18n(client):
         r = client.get(path)
         assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     j = client.get("/i18n.js")
-    assert j.status_code == 200 and "ZING_I18N" in j.text
+    assert j.status_code == 200 and "EKTE_I18N" in j.text
 
 
 def test_serves_lang_js_and_pages_load_it(client):
     js = client.get("/lang.js")
     assert js.status_code == 200
     assert "application/javascript" in js.headers["content-type"]
-    assert "ZING_LANG" in js.text
+    assert "EKTE_LANG" in js.text
     loc = client.get("/locales.js")
     assert loc.status_code == 200
     assert "application/javascript" in loc.headers["content-type"]
-    assert "ZING_LOCALES" in loc.text
+    assert "EKTE_LOCALES" in loc.text
     for path in ("/", "/console", "/history", "/tools", "/watches"):
         html = _unversioned(client.get(path).text)
         # locales must load before lang.js, which reads them at switch time
         assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
         # the dropdown is filled from LANG_LIST in lang.js, not per page
         assert 'class="lang-sel"' in html and "<option" not in html.split('class="lang-sel"')[1].split("</select>")[0]
-    # the language list and translations come from zing/i18n/locales/*.json
-    assert loc.text.startswith("window.ZING_I18N_DATA = {")
+    # the language list and translations come from ekte/i18n/locales/*.json
+    assert loc.text.startswith("window.EKTE_I18N_DATA = {")
     for code in ("en", "zh", "fr", "es", "pt", "it", "de"):
         assert f'"code":"{code}"' in loc.text
 
@@ -99,12 +99,12 @@ def test_serves_icons_and_modelpicker_js(client):
     icons = client.get("/icons.js")
     assert icons.status_code == 200
     assert "application/javascript" in icons.headers["content-type"]
-    assert "ZING_ICONS" in icons.text and "zingIcon" in icons.text
+    assert "EKTE_ICONS" in icons.text and "ekteIcon" in icons.text
 
     mp = client.get("/modelpicker.js")
     assert mp.status_code == 200
     assert "application/javascript" in mp.headers["content-type"]
-    assert "ZingModelPicker" in mp.text
+    assert "EkteModelPicker" in mp.text
 
 
 def test_api_kb_lists_providers_with_models(client):
@@ -131,7 +131,7 @@ def test_api_kb_lists_providers_with_models(client):
 
 
 def test_api_kb_relays_saves_a_relay(client, tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     r = client.post("/api/kb/relays", json={"name": "My Relay", "base_url": "https://relay.example.com/v1/"})
     assert r.status_code == 201, r.text
     saved = r.json()
@@ -155,8 +155,8 @@ def test_api_kb_relays_saves_a_relay(client, tmp_path, monkeypatch):
 
 
 def test_history_module_roundtrip(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import history
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import history
 
     assert history.recent() == []
     sample = {
@@ -179,9 +179,9 @@ def test_history_module_roundtrip(tmp_path, monkeypatch):
 
 
 def test_history_endpoints(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     assert client.get("/api/history").json() == []
-    from zing.web import history
+    from ekte.web import history
 
     rid = history.save({
         "generated_at": "t", "target": {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"},
@@ -210,7 +210,7 @@ def test_serves_perf_js_and_pages_load_it(client):
     js = client.get("/perf.js")
     assert js.status_code == 200
     assert "application/javascript" in js.headers["content-type"]
-    assert "ZingPerf" in js.text
+    assert "EktePerf" in js.text
     for path in ("/", "/history"):
         assert '<script src="/perf.js"></script>' in _unversioned(client.get(path).text)
 
@@ -219,9 +219,9 @@ def test_audit_stream_batches_request_records(tmp_path, monkeypatch, client):
     import asyncio
     import json
 
-    from zing.models import AuditReport, RedactedTarget, Verdict
+    from ekte.models import AuditReport, RedactedTarget, Verdict
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
 
     async def fake_run_audit(target, options, *, on_event=None, **_):
         on_event({"type": "start", "total": 1, "probe_requests": 0})
@@ -236,7 +236,7 @@ def test_audit_stream_batches_request_records(tmp_path, monkeypatch, client):
             verdict=Verdict(),
         )
 
-    monkeypatch.setattr("zing.web.server.run_audit", fake_run_audit)
+    monkeypatch.setattr("ekte.web.server.run_audit", fake_run_audit)
     r = client.post("/api/audit/stream", json={"base_url": "https://x.example/v1", "model": "m"})
     events = [
         json.loads(line[5:]) for line in r.text.splitlines() if line.startswith("data:")
@@ -251,8 +251,8 @@ def test_audit_stream_batches_request_records(tmp_path, monkeypatch, client):
 
 
 def test_history_trend_carries_performance_headline(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import history
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import history
 
     base = {"target": {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"},
             "verdict": {"overall_score": 90.0}}
@@ -267,8 +267,8 @@ def test_history_trend_carries_performance_headline(tmp_path, monkeypatch):
 
 
 def test_history_list_carries_performance_headline_on_request(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import history
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import history
 
     history.save({"target": {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"},
                   "verdict": {"overall_score": 90.0},
@@ -285,7 +285,7 @@ def test_api_key_fields_are_masked_and_paired_with_their_url(client):
     js = client.get("/secretfield.js")
     assert js.status_code == 200
     assert "application/javascript" in js.headers["content-type"]
-    assert "ZingSecret" in js.text
+    assert "EkteSecret" in js.text
     for path in ("/", "/console", "/tools", "/watches"):
         html = _unversioned(client.get(path).text)
         assert '<script src="/icons.js"></script>\n<script src="/secretfield.js"></script>' in html
@@ -315,10 +315,10 @@ def test_v2_pages_share_the_design_system(client):
         assert r.status_code == 200 and "text/html" in r.headers["content-type"], classic
         html = _unversioned(r.text)
         assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
-        assert '<link rel="stylesheet" href="/v2/static/zing.css" />' in html
+        assert '<link rel="stylesheet" href="/v2/static/ekte.css" />' in html
         assert f'<header class="znav" data-page="{page}"' in html
         assert '<script src="/v2/static/nav.js"></script>' in html
-    for asset, kind in (("zing.css", "text/css"), ("nav.js", "javascript"), ("report.js", "javascript"), ("report.css", "text/css")):
+    for asset, kind in (("ekte.css", "text/css"), ("nav.js", "javascript"), ("report.js", "javascript"), ("report.css", "text/css")):
         r = client.get("/v2/static/" + asset)
         assert r.status_code == 200 and kind in r.headers["content-type"], asset
     assert client.get("/v2/static/missing.css").status_code == 404
@@ -340,13 +340,13 @@ def test_v2_monitors_page_manages_the_master_key(client):
 def test_ui_switch_is_remembered_in_a_cookie(client):
     # default: classic, no redirect
     r = client.get("/history", follow_redirects=False)
-    assert r.status_code == 200 and "zing_ui" not in r.headers.get("set-cookie", "")
+    assert r.status_code == 200 and "ekte_ui" not in r.headers.get("set-cookie", "")
     # ?ui=v2 on a classic page: go to its v2 counterpart and remember the choice
     r = client.get("/history?ui=v2", follow_redirects=False)
     assert r.status_code == 307 and r.headers["location"] == "/v2/history"
-    assert "zing_ui=v2" in r.headers["set-cookie"]
+    assert "ekte_ui=v2" in r.headers["set-cookie"]
     # with the cookie, classic pages redirect to v2
-    client.cookies.set("zing_ui", "v2")
+    client.cookies.set("ekte_ui", "v2")
     for classic in _V2_PAGES:
         r = client.get(classic, follow_redirects=False)
         assert r.status_code == 307, classic
@@ -357,7 +357,7 @@ def test_ui_switch_is_remembered_in_a_cookie(client):
     # ?ui=v1 on a v2 page: back to classic and forget v2
     r = client.get("/v2/watches?ui=v1", follow_redirects=False)
     assert r.status_code == 307 and r.headers["location"] == "/watches"
-    assert 'zing_ui=""' in r.headers["set-cookie"] or "Max-Age=0" in r.headers["set-cookie"]
+    assert 'ekte_ui=""' in r.headers["set-cookie"] or "Max-Age=0" in r.headers["set-cookie"]
     client.cookies.clear()
     assert client.get("/watches", follow_redirects=False).status_code == 200
 
@@ -396,12 +396,12 @@ def test_console_is_classic_only(client):
     html = client.get("/v2/console").text
     assert 'data-page="audit"' in html and 'data-page="console"' not in html
     assert "/v2/console" not in client.get("/v2/static/nav.js").text
-    client.cookies.set("zing_ui", "v2")
+    client.cookies.set("ekte_ui", "v2")
     assert client.get("/console", follow_redirects=False).status_code == 200
 
 
 def test_v2_audit_api_key_starts_empty_and_masked(client):
-    # no shared env:ZING_API_KEY default: each relay brings its own key, and
+    # no shared env:EKTE_API_KEY default: each relay brings its own key, and
     # an empty field starts masked (only a reference value starts revealed)
     html = client.get("/v2/").text
     tag = re.search(r'<input[^>]*\bid="i-key"[^>]*>', html).group(0)
@@ -425,12 +425,12 @@ def test_v2_accessibility_report_page(client):
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     html = _unversioned(r.text)
     assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
-    assert '<link rel="stylesheet" href="/v2/static/zing.css" />' in html
+    assert '<link rel="stylesheet" href="/v2/static/ekte.css" />' in html
     assert '<header class="znav" data-page="a11y"' in html
     assert '<script src="/v2/static/nav.js"></script>' in html
     assert '<main id="main" tabindex="-1">' in html and "<footer>" not in html  # nav.js adds the shared one
     assert "/v2/static/bitv-report.json" in html
-    assert "https://github.com/cenbonew/zing/issues" in html
+    assert "https://github.com/mn567250/ekte/issues" in html
     # v2 only: ?ui=v1 goes to the classic start page
     r = client.get("/v2/accessibility?ui=v1", follow_redirects=False)
     assert r.status_code == 307 and r.headers["location"] == "/"
@@ -443,7 +443,7 @@ def test_v2_analytics_page(client):
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     html = _unversioned(r.text)
     assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
-    assert '<link rel="stylesheet" href="/v2/static/zing.css" />' in html
+    assert '<link rel="stylesheet" href="/v2/static/ekte.css" />' in html
     assert '<link rel="stylesheet" href="/v2/static/charts.css" />' in html
     assert '<header class="znav" data-page="analytics"' in html
     assert '<main id="main" tabindex="-1">' in html
@@ -508,7 +508,7 @@ async def test_health_stays_responsive_while_history_loads(tmp_path, monkeypatch
 
     import httpx
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     started, release = threading.Event(), threading.Event()
 
     def slow_recent(limit: int = 50, perf: bool = False) -> list:
@@ -516,7 +516,7 @@ async def test_health_stays_responsive_while_history_loads(tmp_path, monkeypatch
         release.wait(5)  # blocks its thread, as a large SQLite read does
         return []
 
-    monkeypatch.setattr("zing.web.history.recent", slow_recent)
+    monkeypatch.setattr("ekte.web.history.recent", slow_recent)
     transport = httpx.ASGITransport(app=create_app())
     async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as ac:
         slow = asyncio.create_task(ac.get("/api/history", params={"limit": 500}))
@@ -565,7 +565,7 @@ async def _health_answers(transport) -> None:
 
 
 def _fake_report(target):
-    from zing.models import AuditReport, RedactedTarget, Verdict
+    from ekte.models import AuditReport, RedactedTarget, Verdict
 
     return AuditReport(
         tool_version="0", mode="check", suite="standard",
@@ -579,9 +579,9 @@ async def test_health_stays_responsive_while_a_monitor_run_saves(tmp_path, monke
 
     import httpx
 
-    from zing.web import history, server, watches
+    from ekte.web import history, server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
 
     async def fake_run_audit(target, options, **_):
         return _fake_report(target)
@@ -626,9 +626,9 @@ async def test_health_stays_responsive_while_a_monitor_run_saves(tmp_path, monke
 async def test_a_monitor_save_is_never_abandoned(tmp_path, monkeypatch):
     import asyncio
 
-    from zing.web import history, server, watches
+    from ekte.web import history, server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
 
     async def fake_run_audit(target, options, **_):
         return _fake_report(target)
@@ -681,11 +681,11 @@ async def test_scheduler_tick_does_not_block_the_loop(tmp_path, monkeypatch):
 
     import httpx
 
-    from zing.web import server
+    from ekte.web import server
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     slow, started, release = _blocking(result=[])
-    monkeypatch.setattr("zing.web.watches.due", slow)
+    monkeypatch.setattr("ekte.web.watches.due", slow)
     transport = httpx.ASGITransport(app=create_app())
     loop_task = asyncio.create_task(server._scheduler_loop())
     try:
@@ -704,14 +704,14 @@ async def test_health_stays_responsive_while_a_job_saves(tmp_path, monkeypatch):
 
     import httpx
 
-    from zing.web import history, jobs
+    from ekte.web import history, jobs
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
 
     async def fake_run_audit(target, options, **_):
         return _fake_report(target)
 
-    monkeypatch.setattr("zing.web.server.run_audit", fake_run_audit)
+    monkeypatch.setattr("ekte.web.server.run_audit", fake_run_audit)
     real_save = history.save
     slow, started, release = _blocking()
 
@@ -740,9 +740,9 @@ async def test_health_stays_responsive_while_a_job_saves(tmp_path, monkeypatch):
 async def test_a_cancel_during_a_job_save_comes_too_late(tmp_path, monkeypatch):
     import asyncio
 
-    from zing.web import history, jobs
+    from ekte.web import history, jobs
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     real_save = history.save
     slow, started, release = _blocking()
 
@@ -772,7 +772,7 @@ async def test_a_cancel_during_a_job_save_comes_too_late(tmp_path, monkeypatch):
 async def test_settle_delays_a_cancel_until_the_work_is_done():
     import asyncio
 
-    from zing.web import jobs
+    from ekte.web import jobs
 
     gate, log = asyncio.Event(), []
 
@@ -804,7 +804,7 @@ async def test_settle_delays_a_cancel_until_the_work_is_done():
 
 
 async def test_job_save_errors_stay_best_effort(monkeypatch):
-    from zing.web import history, jobs
+    from ekte.web import history, jobs
 
     def broken(*_a, **_k):
         raise RuntimeError("disk full")
@@ -824,11 +824,11 @@ async def test_job_save_errors_stay_best_effort(monkeypatch):
 async def test_audit_knowledge_base_load_does_not_block_the_loop(monkeypatch):
     import asyncio
 
-    from zing.config import AuditOptions, TargetConfig
-    from zing.runner import run_audit
+    from ekte.config import AuditOptions, TargetConfig
+    from ekte.runner import run_audit
 
     slow, started, release = _blocking(exc=RuntimeError("kb stop"))
-    monkeypatch.setattr("zing.runner.load_knowledge_base", slow)
+    monkeypatch.setattr("ekte.runner.load_knowledge_base", slow)
     audit = asyncio.create_task(
         run_audit(TargetConfig(base_url="https://x.example/v1", model="m"), AuditOptions())
     )

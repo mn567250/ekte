@@ -1,9 +1,9 @@
 """Analytics tables of ``history.db``: per-run metrics and request records.
 
-:mod:`zing.web.history` owns the database; this module defines the three
+:mod:`ekte.web.history` owns the database; this module defines the three
 tables it creates for the analytics views, the pure extraction that fills
 them, and the small read/write helpers both ``history.save`` and the
-backfill use (the same split as :mod:`zing.knowledge.snapshot`).
+backfill use (the same split as :mod:`ekte.knowledge.snapshot`).
 
 ``history_metrics`` — one row per run (``history_id``), every value nullable
 (NULL = not measured in that run, never 0):
@@ -14,16 +14,16 @@ backfill use (the same split as :mod:`zing.knowledge.snapshot`).
   recorded: ``generated_at`` minus the span of the request records
   (``max(start_ms + duration_ms)``), else ``generated_at`` itself.
 * ``tool_version``, ``kb_profile_hash``, ``kb_provider``, ``kb_model_id`` —
-  the zing version and knowledge-base profile the run was scored with.
+  the ekte version and knowledge-base profile the run was scored with.
 * ``base_url_norm`` — the target base URL as
-  :func:`zing.knowledge.relays.normalize_url` gives it (relay grouping).
+  :func:`ekte.knowledge.relays.normalize_url` gives it (relay grouping).
 * ``duration_sec`` — summed detector durations (as ``history.run_duration_sec``).
 * ``success_rate``, ``error_rate``, ``timeout_rate``, ``rate_limited_rate`` —
   over every target completion call (``performance.target``).
 * ``latency_p50_ms``, ``latency_p95_ms``, ``ttft_p50_ms``, ``ttft_p95_ms``,
   ``decode_tps_p50`` (local count, else the reported one), ``decode_tps_p5``
   and ``decode_tps_p95`` (the slow and the fast end, from the same requests:
-  :func:`zing.perf.summary.decode_tps_tails`), ``itl_jitter_p50_ms``,
+  :func:`ekte.perf.summary.decode_tps_tails`), ``itl_jitter_p50_ms``,
   ``relay_processing_p50_ms``, ``network_rtt_p50_ms``, ``cold_start_ms``,
   ``concurrency_tps`` (the burst's aggregate output tokens/s, local count first)
   — the target's headline performance.
@@ -49,7 +49,7 @@ target detector (``kind='detector'``, weight NULL).
 
 ``history_requests`` — the run's ``performance.requests`` (target and
 baseline records), one row per record in list order (``ord``), one column per
-:class:`~zing.models.RequestRecord` field, and ``extra``: a JSON object, NULL
+:class:`~ekte.models.RequestRecord` field, and ``extra``: a JSON object, NULL
 for an ordinary record, that holds whatever the columns cannot reproduce
 exactly (unknown keys, values of another type, missing keys, key order). The
 saved report keeps an empty ``requests`` list in their place and
@@ -66,9 +66,9 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from zing.knowledge.relays import normalize_url
-from zing.models import RequestRecord
-from zing.perf.summary import decode_tps_tails
+from ekte.knowledge.relays import normalize_url
+from ekte.models import RequestRecord
+from ekte.perf.summary import decode_tps_tails
 
 # Bump when extract_metrics() changes what it extracts: the backfill then
 # re-extracts every row written by an older version, without a schema change.

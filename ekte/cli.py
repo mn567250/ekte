@@ -1,14 +1,14 @@
-"""zing command-line interface.
+"""ekte command-line interface.
 
 Commands:
-  zing init      write a starter config file
-  zing check     audit one relay endpoint
-  zing compare   audit a relay against a trusted baseline of the same model
-  zing models    quickly probe an endpoint's /models list
-  zing kb        inspect the knowledge base (packaged, ZING_KB_DIR, your entries)
-  zing kb-prompt / kb-import / kb-export   add your own model profiles
-  zing secret    the master key encrypting the API keys `zing serve` stores
-  zing data-dir  print where the SQLite databases live (choose it with --data-dir)
+  ekte init      write a starter config file
+  ekte check     audit one relay endpoint
+  ekte compare   audit a relay against a trusted baseline of the same model
+  ekte models    quickly probe an endpoint's /models list
+  ekte kb        inspect the knowledge base (packaged, EKTE_KB_DIR, your entries)
+  ekte kb-prompt / kb-import / kb-export   add your own model profiles
+  ekte secret    the master key encrypting the API keys `ekte serve` stores
+  ekte data-dir  print where the SQLite databases live (choose it with --data-dir)
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 
-from zing import __version__
-from zing import i18n as _i18n
-from zing.config import (
+from ekte import __version__
+from ekte import i18n as _i18n
+from ekte.config import (
     DIMENSIONS,
     TEMPLATE,
     AuditOptions,
@@ -41,16 +41,16 @@ from zing.config import (
     validate_risk,
     validate_suite,
 )
-from zing.models import RiskLevel, Status
+from ekte.models import RiskLevel, Status
 
 # Heavy imports (the httpx client stack, the knowledge loader, the runner and the
 # report renderers / ReportLab) are deferred into the commands that use them, so
-# `zing --help`, `zing data-dir` and friends start fast.
+# `ekte --help`, `ekte data-dir` and friends start fast.
 if TYPE_CHECKING:
     from collections.abc import Coroutine
 
-    from zing.models import AuditReport, TargetConfig
-    from zing.secretbox import SecretBox
+    from ekte.models import AuditReport, TargetConfig
+    from ekte.secretbox import SecretBox
 
 # Risk ordering for the `watch` alert threshold (clean < low < medium < high).
 _WATCH_RISK_RANK = {
@@ -61,7 +61,7 @@ _WATCH_RISK_RANK = {
     RiskLevel.HIGH: 4,
 }
 
-# Webhook alert languages: one per zing/i18n/locales/<code>.json.
+# Webhook alert languages: one per ekte/i18n/locales/<code>.json.
 _ALERT_LANGS = _i18n.codes()
 
 _DIMENSION_HELP = (
@@ -72,11 +72,11 @@ _DIMENSION_HELP = (
 
 _NO_USER_KB_HELP = (
     "Ignore the knowledge-base entries you added in the web UI (kb.db); "
-    "packaged profiles and ZING_KB_DIR still apply. Env: ZING_NO_USER_KB=1."
+    "packaged profiles and EKTE_KB_DIR still apply. Env: EKTE_NO_USER_KB=1."
 )
 
 app = typer.Typer(
-    name="zing",
+    name="ekte",
     help=(
         "LLM relay reality check — audit whether a relay serves the model it claims "
         "(货不对板检测).\n\n"
@@ -119,7 +119,7 @@ _RISK_ORDER = [
 # Rendering
 # --------------------------------------------------------------------------- #
 def _print_summary(report: AuditReport, written: list[Path]) -> None:
-    from zing.report.performance import fmt_num
+    from ekte.report.performance import fmt_num
 
     v = report.verdict
     style, label = _RISK_STYLE.get(v.risk_level, ("white", v.risk_level.value))
@@ -221,8 +221,8 @@ def _print_summary(report: AuditReport, written: list[Path]) -> None:
             console.print(f"  → {p}")
 
     console.print(
-        "\n[dim]zing reports black-box evidence of divergence and risk, "
-        "not proof of fraud. Use `zing compare` for the strongest verdict.[/dim]"
+        "\n[dim]ekte reports black-box evidence of divergence and risk, "
+        "not proof of fraud. Use `ekte compare` for the strongest verdict.[/dim]"
     )
 
 
@@ -365,7 +365,7 @@ def _surface_probe_calls(detector: Any, options: AuditOptions, *, has_baseline: 
     own = getattr(detector, "estimated_calls", None)
     if callable(own):
         return int(own(options, has_baseline=has_baseline))
-    from zing.detectors.perf_probe import PINGS, burst_size, planned_probe_requests
+    from ekte.detectors.perf_probe import PINGS, burst_size, planned_probe_requests
 
     n = planned_probe_requests(options, has_baseline=has_baseline)
     if n == 0:
@@ -376,11 +376,11 @@ def _surface_probe_calls(detector: Any, options: AuditOptions, *, has_baseline: 
 
 
 def _build_dry_run_plan(target, options, baseline, judge_target, mode: str) -> dict:
-    """What `zing check/compare` WOULD do — selected detectors and an API-call
+    """What `ekte check/compare` WOULD do — selected detectors and an API-call
     estimate — without issuing a single request, so an agent can budget cost."""
-    import zing.detectors  # noqa: F401  -- populate the registry
-    from zing.detectors.base import select_detectors
-    from zing.detectors.performance import estimated_calls as estimated_probe_calls
+    import ekte.detectors  # noqa: F401  -- populate the registry
+    from ekte.detectors.base import select_detectors
+    from ekte.detectors.performance import estimated_calls as estimated_probe_calls
 
     has_judge = bool(options.judge and (judge_target or baseline))
     has_baseline = baseline is not None
@@ -409,7 +409,7 @@ def _build_dry_run_plan(target, options, baseline, judge_target, mode: str) -> d
         # compare-mode detectors also probe the baseline
         total = int((total - probe_calls) * 1.4) + probe_calls
     return {
-        "tool": "zing",
+        "tool": "ekte",
         "version": __version__,
         "dry_run": True,
         "mode": mode,
@@ -473,14 +473,14 @@ def _run_and_report(
     kb_dirs,
     use_user_kb=None,
 ) -> None:
-    from zing.report import render_compact, write_reports
-    from zing.runner import run_audit
+    from ekte.report import render_compact, write_reports
+    from ekte.runner import run_audit
 
     if not (as_json or as_compact):
         # Before the audit, so a bad --format (or missing PDF support) costs no requests.
         fmt = validate_format(fmt)
 
-    command = "zing " + " ".join(sys.argv[1:])
+    command = "ekte " + " ".join(sys.argv[1:])
     report = _run_async(
         run_audit(
             target,
@@ -512,10 +512,10 @@ def _run_and_report(
 # --------------------------------------------------------------------------- #
 @app.command("init")
 def init_config(
-    path: Annotated[Path, typer.Option("--path", "-p", help="Where to write the config.")] = Path("zing.yaml"),
+    path: Annotated[Path, typer.Option("--path", "-p", help="Where to write the config.")] = Path("ekte.yaml"),
     force: Annotated[bool, typer.Option("--force", help="Overwrite if it exists.")] = False,
 ) -> None:
-    """Write a starter zing.yaml config."""
+    """Write a starter ekte.yaml config."""
     if path.exists() and not force:
         err_console.print(f"[red]{path} already exists. Use --force to overwrite.[/red]")
         raise typer.Exit(code=2)
@@ -694,7 +694,7 @@ def models_command(
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
-    from zing.clients import make_client
+    from ekte.clients import make_client
 
     async def _go() -> None:
         async with make_client(target) as client:
@@ -726,8 +726,8 @@ def kb_command(
     as_json: Annotated[bool, typer.Option("--json", help="Print the knowledge base as JSON (for programmatic discovery).")] = False,
     no_user_kb: Annotated[bool, typer.Option("--no-user-kb", help=_NO_USER_KB_HELP)] = False,
 ) -> None:
-    """Inspect the knowledge base: packaged profiles, ZING_KB_DIR and your own entries."""
-    from zing.knowledge import load_knowledge_base
+    """Inspect the knowledge base: packaged profiles, EKTE_KB_DIR and your own entries."""
+    from ekte.knowledge import load_knowledge_base
 
     kb = load_knowledge_base(list(kb_dir) if kb_dir else None, include_user=False if no_user_kb else None)
     provs = [p for p in sorted(kb.providers.values(), key=lambda p: p.provider)
@@ -758,7 +758,7 @@ def kb_command(
                          ensure_ascii=False, indent=2))
         return
 
-    table = Table(title="zing knowledge base")
+    table = Table(title="ekte knowledge base")
     table.add_column("Provider")
     table.add_column("Model")
     table.add_column("Context", justify="right")
@@ -783,7 +783,7 @@ def kb_command(
     total = sum(len(p.models) for p in provs)
     console.print(f"{total} models across {len(provs)} providers.")
     if not kb.user_kb:
-        console.print("[dim]Your own entries (kb.db) are left out (--no-user-kb / ZING_NO_USER_KB).[/dim]")
+        console.print("[dim]Your own entries (kb.db) are left out (--no-user-kb / EKTE_NO_USER_KB).[/dim]")
     for warning in kb.warnings:
         err_console.print(f"[yellow]![/yellow] {warning}")
 
@@ -793,21 +793,21 @@ def kb_prompt_command(
     model: Annotated[str, typer.Argument(help="Model id to research.")],
     provider: Annotated[str | None, typer.Option("--provider", help="Provider key, if known.")] = None,
 ) -> None:
-    """Print a research prompt for an external AI assistant; import its YAML answer with `zing kb-import`."""
-    from zing.knowledge import load_knowledge_base
-    from zing.knowledge.research import research_prompt
+    """Print a research prompt for an external AI assistant; import its YAML answer with `ekte kb-import`."""
+    from ekte.knowledge import load_knowledge_base
+    from ekte.knowledge.research import research_prompt
 
     print(research_prompt(model, provider, load_knowledge_base()), end="")
 
 
 @app.command("kb-import")
 def kb_import_command(
-    path: Annotated[Path, typer.Argument(help="Provider YAML file (e.g. an AI assistant's answer to `zing kb-prompt`).")],
+    path: Annotated[Path, typer.Argument(help="Provider YAML file (e.g. an AI assistant's answer to `ekte kb-prompt`).")],
     check_only: Annotated[bool, typer.Option("--check", help="Only check the file; store nothing.")] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Print the check result as JSON.")] = False,
 ) -> None:
     """Check a profile YAML and store it in your knowledge base (kb.db in the data directory)."""
-    from zing.knowledge.importer import import_yaml, scan
+    from ekte.knowledge.importer import import_yaml, scan
 
     try:
         text = path.read_text(encoding="utf-8")
@@ -844,47 +844,47 @@ def kb_export_command(
     provider: Annotated[str | None, typer.Option("--provider", help="Only this provider.")] = None,
 ) -> None:
     """Print your own knowledge-base entries (kb.db) as provider YAML."""
-    from zing.knowledge.importer import export_yaml
+    from ekte.knowledge.importer import export_yaml
 
     print(export_yaml(provider), end="")
 
 
 _DATA_DIR_HELP = (
-    "Where zing keeps history.db, watches.db and kb.db (default ~/.zing). "
-    "Env: ZING_DATA_DIR."
+    "Where ekte keeps history.db, watches.db and kb.db (default ~/.ekte). "
+    "Env: EKTE_DATA_DIR."
 )
 
 
 def _apply_data_dir(path: Path | None) -> None:
     """Point every store at ``path`` (absolute, so later reads don't depend on the cwd)."""
     if path is not None:
-        os.environ["ZING_DATA_DIR"] = str(path.expanduser().resolve())
+        os.environ["EKTE_DATA_DIR"] = str(path.expanduser().resolve())
 
 
 @app.command("serve")
 def serve_command(
-    host: Annotated[str | None, typer.Option("--host", help="Loopback bind address: 127.0.0.1 (default), ::1 or localhost. Env: ZING_HOST.")] = None,
-    port: Annotated[int | None, typer.Option("--port", "-p", help="Port to serve on (default 8000). Env: ZING_PORT.")] = None,
+    host: Annotated[str | None, typer.Option("--host", help="Loopback bind address: 127.0.0.1 (default), ::1 or localhost. Env: EKTE_HOST.")] = None,
+    port: Annotated[int | None, typer.Option("--port", "-p", help="Port to serve on (default 8000). Env: EKTE_PORT.")] = None,
     open_browser: Annotated[bool | None, typer.Option("--open/--no-open", help="Open the UI in a browser (default: yes, except in a container).")] = None,
     data_dir: Annotated[Path | None, typer.Option("--data-dir", help=_DATA_DIR_HELP)] = None,
 ) -> None:
-    """Serve the local web UI — a point-and-click front end for `zing check`.
+    """Serve the local web UI — a point-and-click front end for `ekte check`.
 
     Runs entirely on your machine: keys entered in the browser reach only this
     local server and the target relay, never a third party. It listens on
-    loopback only; in a container set ZING_CONTAINER=1 and publish the port to
+    loopback only; in a container set EKTE_CONTAINER=1 and publish the port to
     the host's loopback (-p 127.0.0.1:8000:8000). Requires the web extra:
-    `pip install 'zing-audit\\[web]'`.
+    `pip install 'ekte\\[web]'`.
     """
     try:
         import uvicorn
 
-        from zing.web.security import BindError, resolve_bind
-        from zing.web.server import create_app
+        from ekte.web.security import BindError, resolve_bind
+        from ekte.web.server import create_app
     except ImportError as exc:
         err_console.print(
             "[red]The web UI needs the optional 'web' extra.[/red]\n"
-            "Install it with:  [bold]pip install 'zing-audit\\[web]'[/bold]"
+            "Install it with:  [bold]pip install 'ekte\\[web]'[/bold]"
         )
         raise typer.Exit(code=2) from exc
 
@@ -896,8 +896,8 @@ def serve_command(
         raise typer.Exit(code=2) from exc
     loopback = host in ("127.0.0.1", "::1", "localhost")
     url = f"http://localhost:{port}"
-    console.print(f"[green]zing[/green] web UI → [bold]{url}[/bold]   (Ctrl-C to stop)")
-    from zing import datadir
+    console.print(f"[green]ekte[/green] web UI → [bold]{url}[/bold]   (Ctrl-C to stop)")
+    from ekte import datadir
 
     console.print(f"[dim]Data: {datadir.data_dir()}[/dim]")
     if not loopback:
@@ -947,8 +947,8 @@ def watch_command(
     """
     import asyncio
 
-    from zing import notify
-    from zing.runner import run_audit
+    from ekte import notify
+    from ekte.runner import run_audit
 
     try:
         cfg = load_config_file(config)
@@ -962,7 +962,7 @@ def watch_command(
         # then map it to a RiskLevel for threshold comparison.
         validate_risk(alert_on)
         threshold = RiskLevel(alert_on)
-        from zing import i18n
+        from ekte import i18n
 
         if alert_lang.strip().lower() not in i18n.codes():
             raise ConfigError(
@@ -989,7 +989,7 @@ def watch_command(
     def _previous_run(target: TargetConfig) -> dict | None:
         """The most recent prior saved report for this target+claimed model, if any."""
         try:
-            from zing.web import history
+            from ekte.web import history
         except Exception:
             return None
         try:
@@ -1008,14 +1008,14 @@ def watch_command(
 
     async def _cycle() -> None:
         previous = _previous_run(target)
-        command = "zing " + " ".join(sys.argv[1:])
+        command = "ekte " + " ".join(sys.argv[1:])
         report = await run_audit(
             target, options, mode="check", command=command, kb_dirs=kb_dirs
         )
 
         # Persist (best-effort): a history failure must never break the watch loop.
         try:
-            from zing.web import history
+            from ekte.web import history
             history.save(json.loads(report.model_dump_json()))
         except Exception:
             pass
@@ -1053,7 +1053,7 @@ def watch_command(
             await asyncio.sleep(max(1, interval))
 
     console.print(
-        f"[green]zing watch[/] · every [bold]{interval}s[/] · "
+        f"[green]ekte watch[/] · every [bold]{interval}s[/] · "
         f"alert ≥ [bold]{threshold.value}[/]"
         + ("" if not webhooks else f" · {len(webhooks)} webhook(s)")
         + ("  (Ctrl-C to stop)" if not once else "")
@@ -1066,7 +1066,7 @@ def watch_command(
 
 
 def _print_embed_verdict(verdict: dict, title: str) -> None:
-    """Render an embedding/rerank verdict dict (from zing.embed_audit) with rich."""
+    """Render an embedding/rerank verdict dict (from ekte.embed_audit) with rich."""
     risk = RiskLevel(verdict["risk_level"])
     style, label = _RISK_STYLE.get(risk, ("white", risk.value))
     tgt = verdict["target"]
@@ -1147,7 +1147,7 @@ def embed_command(
     # from the knowledge base unless overridden (0 = unknown). The previous saved
     # run of this target is the vector-drift reference, and the report is saved
     # to history (best-effort) unless --no-save.
-    from zing.embed_audit import run_embedding_audit, tool_verdict
+    from ekte.embed_audit import run_embedding_audit, tool_verdict
 
     report, report_id = _run_async(
         run_embedding_audit(
@@ -1155,7 +1155,7 @@ def embed_command(
             claimed_dimensions=claimed_dimensions or 0,
             suite=suite,
             kb_dirs=list(kb_dir) if kb_dir else None,
-            command="zing embed",
+            command="ekte embed",
             save=save,
         )
     )
@@ -1210,14 +1210,14 @@ def rerank_command(
     # Through the runner as the rerank surface. The previous saved run of this
     # target is the ranking-drift reference, and the report is saved to history
     # (best-effort) unless --no-save.
-    from zing.embed_audit import run_rerank_audit, tool_verdict
+    from ekte.embed_audit import run_rerank_audit, tool_verdict
 
     report, report_id = _run_async(
         run_rerank_audit(
             target,
             suite=suite,
             kb_dirs=list(kb_dir) if kb_dir else None,
-            command="zing rerank",
+            command="ekte rerank",
             save=save,
         )
     )
@@ -1282,14 +1282,14 @@ def image_command(
         raise typer.Exit(code=2) from exc
 
     # Resolve the claimed native sizes from the KB for the size-match check.
-    from zing.clients import make_client
-    from zing.knowledge import load_knowledge_base
+    from ekte.clients import make_client
+    from ekte.knowledge import load_knowledge_base
 
     kb = load_knowledge_base(list(kb_dir) if kb_dir else None)
     resolved = kb.resolve(target.claimed, provider_hint=target.declared_provider)
     claimed_sizes = list(resolved.model.image_sizes) if resolved is not None else []
 
-    from zing.media_audit import audit_image
+    from ekte.media_audit import audit_image
 
     async def _go() -> tuple[dict, bytes | None]:
         # Optionally fetch one image for --save using the same client/decoding path.
@@ -1351,8 +1351,8 @@ def audio_command(
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
-    from zing.clients import make_client
-    from zing.media_audit import audit_audio
+    from ekte.clients import make_client
+    from ekte.media_audit import audit_audio
 
     async def _go() -> tuple[dict, bytes | None]:
         sample: bytes | None = None
@@ -1386,7 +1386,7 @@ def main(
 ) -> None:
     _apply_data_dir(data_dir)
     if version:
-        console.print(f"zing {__version__}")
+        console.print(f"ekte {__version__}")
         raise typer.Exit()
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
@@ -1397,22 +1397,22 @@ def main(
 @app.command("data-dir")
 def data_dir_command() -> None:
     """Print the data directory: history.db, watches.db and kb.db (plain SQLite)."""
-    from zing import datadir
+    from ekte import datadir
 
     print(datadir.data_dir().expanduser())
 
 
 secret_app = typer.Typer(
-    help="The master key that encrypts the API keys stored for `zing serve` monitors.",
+    help="The master key that encrypts the API keys stored for `ekte serve` monitors.",
     no_args_is_help=True,
 )
 app.add_typer(secret_app, name="secret")
 
 
 def _secret_box(*, prompt: bool = True) -> SecretBox:
-    """The master key: ZING_SECRET_KEY, a legacy key file, or typed at a prompt."""
-    from zing import secretbox
-    from zing.web.masterkey import VaultError, vault
+    """The master key: EKTE_SECRET_KEY, a legacy key file, or typed at a prompt."""
+    from ekte import secretbox
+    from ekte.web.masterkey import VaultError, vault
 
     st = vault.startup()
     if st["state"] == "locked" and prompt:
@@ -1426,8 +1426,8 @@ def _secret_box(*, prompt: bool = True) -> SecretBox:
         return secretbox.default()
     except secretbox.SecretError as exc:
         msg = st.get("error") or (
-            "no master key yet: create one on the Monitors page of `zing serve`, "
-            "or with `zing secret rotate`"
+            "no master key yet: create one on the Monitors page of `ekte serve`, "
+            "or with `ekte secret rotate`"
             if st["state"] == "uninitialized" else str(exc)
         )
         err_console.print(f"[red]{msg}[/red]")
@@ -1437,7 +1437,7 @@ def _secret_box(*, prompt: bool = True) -> SecretBox:
 @secret_app.command("status")
 def secret_status() -> None:
     """Whether the master key is set up and where it comes from, and the stored keys' state."""
-    from zing.web.masterkey import vault
+    from ekte.web.masterkey import vault
 
     st = vault.startup()
     line = f"master key: [bold]{st['state']}[/bold]"
@@ -1447,11 +1447,11 @@ def secret_status() -> None:
     if st.get("error"):
         err_console.print(f"[red]{st['error']}[/red]")
     counts = dict(st["counts"])
-    # Keys that are not stored live in the memory of `zing serve`, not here.
+    # Keys that are not stored live in the memory of `ekte serve`, not here.
     not_stored = counts.pop("memory", 0) + counts.pop("missing", 0)
     if st.get("storage") == "memory":
         console.print(
-            "API key storage: [bold]none[/bold] — keys entered in `zing serve` stay in its "
+            "API key storage: [bold]none[/bold] — keys entered in `ekte serve` stay in its "
             "memory until it stops (change it on the Monitors page)"
         )
     else:
@@ -1461,15 +1461,15 @@ def secret_status() -> None:
         + ", ".join(f"{n} {k}" for k, n in {**counts, "not stored": not_stored}.items())
     )
     if st["state"] == "locked":
-        console.print("Enter the key on the Monitors page of `zing serve` to run monitors.")
+        console.print("Enter the key on the Monitors page of `ekte serve` to run monitors.")
     if "legacy_key_file" in st["warnings"]:
         err_console.print(
             "[yellow]![/yellow] The master key is still stored next to the databases "
-            "(secret.key): move it out on the Monitors page, or with `zing secret rotate`."
+            "(secret.key): move it out on the Monitors page, or with `ekte secret rotate`."
         )
     if "env_in_data_dir" in st["warnings"]:
         err_console.print(
-            "[yellow]![/yellow] ZING_SECRET_KEY points into the data directory: keep the key elsewhere."
+            "[yellow]![/yellow] EKTE_SECRET_KEY points into the data directory: keep the key elsewhere."
         )
     if counts.get("unreadable"):
         err_console.print(
@@ -1478,7 +1478,7 @@ def secret_status() -> None:
         )
     if counts.get("plain"):
         console.print(
-            "Plain-text keys are moved out of the database into memory when `zing serve` starts."
+            "Plain-text keys are moved out of the database into memory when `ekte serve` starts."
             if st.get("storage") == "memory"
             else "Plain-text keys are encrypted as soon as the master key is entered."
         )
@@ -1486,8 +1486,8 @@ def secret_status() -> None:
 
 @secret_app.command("export")
 def secret_export() -> None:
-    """Print the master key from ZING_SECRET_KEY or a legacy key file, to back it up."""
-    from zing.web.masterkey import SOURCE_UI
+    """Print the master key from EKTE_SECRET_KEY or a legacy key file, to back it up."""
+    from ekte.web.masterkey import SOURCE_UI
 
     box = _secret_box(prompt=False)
     if box.source == SOURCE_UI:  # pragma: no cover - the CLI never holds a typed key here
@@ -1507,31 +1507,31 @@ def secret_rotate() -> None:
     Also creates the first key, and moves a legacy key file out of the data
     directory (the file is deleted). The new key is printed once: store it.
     """
-    from zing import secretbox
-    from zing.web.masterkey import VaultError, vault
+    from ekte import secretbox
+    from ekte.web.masterkey import VaultError, vault
 
     st = vault.startup()
     box = _secret_box() if st["state"] != "uninitialized" else None
     if box is not None and box.source == secretbox.ENV:
-        # zing cannot change an environment variable: rotate in two steps.
+        # ekte cannot change an environment variable: rotate in two steps.
         if len(box.keys) == 1:
             new_key = secretbox.generate_key()
             err_console.print(
-                "The master key comes from ZING_SECRET_KEY, which zing cannot change.\n"
+                "The master key comes from EKTE_SECRET_KEY, which ekte cannot change.\n"
                 "Set it to this value (new key, then the old one), run "
-                "`zing secret rotate` again, then drop the old key:"
+                "`ekte secret rotate` again, then drop the old key:"
             )
             typer.echo(f"{new_key},{box.keys[0]}")
             return
         try:
-            from zing.web import watches
+            from ekte.web import watches
 
             n = watches.adopt_key(box, opener=box)
         except secretbox.SecretError as exc:
             err_console.print(f"[red]Nothing re-encrypted:[/red] {exc}")
             raise typer.Exit(code=1) from exc
         console.print(
-            f"[green]Re-encrypted[/green] {n} key(s) with the first key in ZING_SECRET_KEY "
+            f"[green]Re-encrypted[/green] {n} key(s) with the first key in EKTE_SECRET_KEY "
             f"(fingerprint {box.fingerprint()}); the older key(s) can now be removed from it."
         )
         return
@@ -1543,7 +1543,7 @@ def secret_rotate() -> None:
         raise typer.Exit(code=1) from exc
     err_console.print(
         f"[green]New master key[/green] (fingerprint {st['fingerprint']}). It is shown only "
-        "now and stored nowhere: keep it in a password manager. A running `zing serve` "
+        "now and stored nowhere: keep it in a password manager. A running `ekte serve` "
         "locks itself and asks for it."
     )
     typer.echo(key)

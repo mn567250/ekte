@@ -1,11 +1,11 @@
 """Image-generation and audio/TTS auditor tests.
 
-These cover the non-chat media surface: ``zing.media_audit.audit_image`` /
+These cover the non-chat media surface: ``ekte.media_audit.audit_image`` /
 ``audit_audio`` plus the OpenAI-compatible client's ``images_generate`` /
 ``audio_speech`` methods and the pure-stdlib header parsers.
 
 Sample bytes are synthesized in-test — a real solid-color PNG built with zlib
-(mirroring ``zing/detectors/vision.py``) and a real WAV written by the stdlib
+(mirroring ``ekte/detectors/vision.py``) and a real WAV written by the stdlib
 ``wave`` module — so no image/audio library is needed. We inject an
 ``httpx.MockTransport`` into the real client (mirroring ``tests/test_embed.py``)
 and patch ``make_client`` so the auditor uses our transport-backed client.
@@ -30,15 +30,15 @@ import zlib
 import httpx
 import pytest
 
-from zing.clients import OpenAICompatibleClient
-from zing.media_audit import (
+from ekte.clients import OpenAICompatibleClient
+from ekte.media_audit import (
     audit_audio,
     audit_image,
     detect_audio,
     detect_image,
     wav_duration_seconds,
 )
-from zing.models import TargetConfig
+from ekte.models import TargetConfig
 
 BASE = "https://relay.media.test/v1"
 IMG_MODEL = "dall-e-3"
@@ -200,13 +200,13 @@ def _aud_target(**kw) -> TargetConfig:
 
 @pytest.fixture
 def patch_client(monkeypatch):
-    """Patch zing.media_audit.make_client to wire a chosen mock transport in."""
+    """Patch ekte.media_audit.make_client to wire a chosen mock transport in."""
 
     def _install(mock) -> None:
         def _factory(target, *, transport=None):
             return OpenAICompatibleClient(target, transport=mock.transport)
 
-        monkeypatch.setattr("zing.media_audit.make_client", _factory)
+        monkeypatch.setattr("ekte.media_audit.make_client", _factory)
 
     return _install
 

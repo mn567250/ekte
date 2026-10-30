@@ -15,8 +15,8 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-import zing.embed_audit as embed_audit  # noqa: E402
-from zing.web.server import create_app  # noqa: E402
+import ekte.embed_audit as embed_audit  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 SECRET = "sk-tools-secret-key-abcdef123456"
 
@@ -161,8 +161,8 @@ def test_embed_endpoint_runs_the_runner_and_saves(client, monkeypatch):
     # End to end through the real runner against a mock /embeddings endpoint.
     import httpx
 
-    from zing.clients import OpenAICompatibleClient
-    from zing.web import history
+    from ekte.clients import OpenAICompatibleClient
+    from ekte.web import history
 
     def handler(request: httpx.Request) -> httpx.Response:
         import json as _json
@@ -173,7 +173,7 @@ def test_embed_endpoint_runs_the_runner_and_saves(client, monkeypatch):
         return httpx.Response(200, json={"model": "e-model", "data": data})
 
     monkeypatch.setattr(
-        "zing.runner.make_client",
+        "ekte.runner.make_client",
         lambda target, **_: OpenAICompatibleClient(target, transport=httpx.MockTransport(handler)),
     )
     r = client.post("/api/embed", json={"base_url": "https://relay.embed.test/v1",
@@ -251,8 +251,8 @@ def test_rerank_endpoint_runs_the_runner_and_saves(client, monkeypatch):
 
     import httpx
 
-    from zing.clients import OpenAICompatibleClient
-    from zing.web import history
+    from ekte.clients import OpenAICompatibleClient
+    from ekte.web import history
 
     def handler(request: httpx.Request) -> httpx.Response:
         body = _json.loads(request.content or b"{}")
@@ -264,7 +264,7 @@ def test_rerank_endpoint_runs_the_runner_and_saves(client, monkeypatch):
         return httpx.Response(200, json={"model": "r-model", "results": results})
 
     monkeypatch.setattr(
-        "zing.runner.make_client",
+        "ekte.runner.make_client",
         lambda target, **_: OpenAICompatibleClient(target, transport=httpx.MockTransport(handler)),
     )
     r = client.post("/api/rerank", json={"base_url": "https://relay.rerank-e2e.test/v1",
@@ -298,7 +298,7 @@ def _mock_relay(monkeypatch, handler):
     """Route every client make_client builds through an httpx.MockTransport."""
     import httpx
 
-    import zing.clients as clients
+    import ekte.clients as clients
 
     real = clients.make_client
     seen: list = []

@@ -1,9 +1,9 @@
 - banner:
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "Klassische Oberfläche":
     - /url: "?ui=v1"
   - combobox "Design":
@@ -246,7 +246,7 @@
             - definition: 27.09.2026, 10:02
             - term: Version
             - definition:
-              - code: zing v<version>
+              - code: ekte v<version>
             - heading "Prüfungen je Dimension 1 von 10 Dimensionen ausgeführt" [level=3]
             - button "Protokollkonformität"
             - text: Ist die API spezifikationskonform?
@@ -275,7 +275,7 @@
             - paragraph: Die Prüfungen laufen nacheinander; am langsamsten war context_window (<duration>).
             - button "Alle 6 anzeigen"
             - paragraph:
-              - text: zing liefert
+              - text: ekte liefert
               - strong: reproduzierbare Belege für Verhaltensabweichungen und Risiken
               - text: ", keinen rechtlichen oder kryptografischen Betrugsnachweis. Relays können probabilistisch routen; berücksichtigen Sie Stichprobengröße, Abrechnungseinstellungen und lokales Recht selbst und beschuldigen Sie einen Anbieter nie öffentlich auf Grundlage eines einzigen Laufs."
             - button "Als Überwachung einplanen"
@@ -306,4 +306,4 @@
   - status
 - contentinfo:
   - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
-  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
+  - paragraph: "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

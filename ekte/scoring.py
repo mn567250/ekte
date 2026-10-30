@@ -1,6 +1,6 @@
 """Turn detector results into dimension scores and a headline verdict.
 
-The verdict deliberately uses cautious, evidence-first language: zing reports
+The verdict deliberately uses cautious, evidence-first language: ekte reports
 *divergence and risk*, never a definitive fraud accusation. It is judged on the
 dimensions that actually ran (a custom run checks only its selection), and the
 dimensions that break what the relay advertises (model identity, real context
@@ -9,7 +9,7 @@ window, capability claims, billed usage) decide the risk.
 
 from __future__ import annotations
 
-from zing.models import (
+from ekte.models import (
     DetectorResult,
     Dimension,
     DimensionBreakdown,
@@ -339,7 +339,7 @@ def build_verdict(
     )
 
     # --- risk classification: driven by FINDING SEVERITY, not score alone --- #
-    # zing only reaches HIGH on hard, high-severity evidence — a single soft
+    # ekte only reaches HIGH on hard, high-severity evidence — a single soft
     # signal or a merely-low score never escalates to HIGH on its own.
     # When the profile-backed dimensions ran, they decide whether the claim can
     # be judged at all (relay unreachable, model unprofiled); a custom run
@@ -511,8 +511,8 @@ def _summary(
             "load) are advisories: they lower the score but not the substitution risk."
         )
     if not used_baseline and risk in (RiskLevel.MEDIUM, RiskLevel.HIGH):
-        bits.append("Run `zing compare` against a trusted baseline to strengthen the verdict.")
+        bits.append("Run `ekte compare` against a trusted baseline to strengthen the verdict.")
     bits.append(
-        "zing reports black-box evidence of divergence and risk, not proof of fraud."
+        "ekte reports black-box evidence of divergence and risk, not proof of fraud."
     )
     return " ".join(bits)

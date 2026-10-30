@@ -1,7 +1,7 @@
-"""The monitors' master key life cycle (zing/web/masterkey.py) and its API.
+"""The monitors' master key life cycle (ekte/web/masterkey.py) and its API.
 
 Create (shown once, typed back), unlock after a restart, lock, rotate, move a
-legacy key file out, reset a lost key, ZING_SECRET_KEY, and that the key never
+legacy key file out, reset a lost key, EKTE_SECRET_KEY, and that the key never
 leaks into an error, a cache or the data directory.
 """
 
@@ -16,17 +16,17 @@ pytest.importorskip("cryptography")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from zing import secretbox  # noqa: E402
-from zing.web import masterkey, watches  # noqa: E402
-from zing.web.masterkey import Vault, VaultError, vault  # noqa: E402
-from zing.web.server import create_app  # noqa: E402
+from ekte import secretbox  # noqa: E402
+from ekte.web import masterkey, watches  # noqa: E402
+from ekte.web.masterkey import Vault, VaultError, vault  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 SECRET = "sk-relay-secret-abc123"
 
 
 @pytest.fixture(autouse=True)
 def _fresh(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     vault.reset_state()  # a first start: no key yet
     _store_encrypted()  # these tests are about the master key: keys are stored
     vault.startup()
@@ -183,7 +183,7 @@ def test_restart_locks_and_monitors_wait(client):
 
 
 async def test_scheduler_waits_while_locked(client, monkeypatch):
-    from zing.web import server
+    from ekte.web import server
 
     _setup(client)
     wid = _watch()
@@ -208,7 +208,7 @@ def test_another_process_changing_the_key_locks_the_server(client):
     _setup(client)
     _watch()
     assert vault.verify()
-    # e.g. `zing secret rotate` in another shell
+    # e.g. `ekte secret rotate` in another shell
     watches.adopt_key(secretbox.SecretBox([secretbox.generate_key()], "cli"),
                       opener=secretbox.default())
     assert vault.verify() is False
@@ -268,7 +268,7 @@ def test_legacy_key_file_keeps_working_then_moves_out_with_a_new_key(client, tmp
 
 
 def test_reset_forgets_keys_and_starts_over(client, monkeypatch):
-    from zing.web import server
+    from ekte.web import server
 
     _setup(client)
     wid = _watch()
@@ -287,20 +287,20 @@ def test_reset_forgets_keys_and_starts_over(client, monkeypatch):
 
 
 # --------------------------------------------------------------------------- #
-# ZING_SECRET_KEY
+# EKTE_SECRET_KEY
 # --------------------------------------------------------------------------- #
 def test_env_key_unlocks_by_itself_and_cannot_be_changed_from_the_ui(client, monkeypatch):
     key = secretbox.generate_key()
-    monkeypatch.setenv("ZING_SECRET_KEY", key)
+    monkeypatch.setenv("EKTE_SECRET_KEY", key)
     st = _restart()
-    assert st["state"] == "unlocked" and st["source"] == "ZING_SECRET_KEY" and st["actions"] == []
+    assert st["state"] == "unlocked" and st["source"] == "EKTE_SECRET_KEY" and st["actions"] == []
     wid = _watch()
     assert client.post("/api/secret/new").status_code == 409
     assert client.post("/api/secret/lock").status_code == 409
     _restart()
     assert watches.get(wid)["api_key"] == SECRET
 
-    monkeypatch.setenv("ZING_SECRET_KEY", secretbox.generate_key())
+    monkeypatch.setenv("EKTE_SECRET_KEY", secretbox.generate_key())
     st = _restart()
     assert st["state"] == "env_mismatch" and st["actions"] == [] and st["error"]
     assert client.post(f"/api/watches/{wid}/run").status_code == 423

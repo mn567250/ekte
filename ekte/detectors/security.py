@@ -10,14 +10,14 @@ them indirectly.
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import contains_ci, stable_marker
-from zing.detectors.scale import DeductionScale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
-from zing.utils.net import is_local_host
-from zing.utils.redact import REDACTED_KEY
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import contains_ci, stable_marker
+from ekte.detectors.scale import DeductionScale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte.utils.net import is_local_host
+from ekte.utils.redact import REDACTED_KEY
 
 # Response headers that reveal upstream/proxy identity. Presence is informational:
 # it can corroborate a substitution finding but is not itself a failure. Matched
@@ -50,7 +50,7 @@ def _header_matches(name: str) -> bool:
 # at 100 and each transport-security failure caps it; the lowest cap wins.
 # Plain HTTP to this machine or a private network (a self-hosted model) is only
 # a WARN: the key does not cross the public internet. The TLS check is a
-# transport advisory (zing.scoring.ADVISORY_CHECKS): it lowers this dimension,
+# transport advisory (ekte.scoring.ADVISORY_CHECKS): it lowers this dimension,
 # never the substitution risk.
 SCALE = DeductionScale(
     outcome("security.tls", "https", None, Status.PASS,

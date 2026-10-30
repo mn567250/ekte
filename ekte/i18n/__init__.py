@@ -1,6 +1,6 @@
 """Translations shared by the web UI and the Python side (webhook alerts).
 
-The single source is ``zing/i18n/locales/<code>.json``, one file per language:
+The single source is ``ekte/i18n/locales/<code>.json``, one file per language:
 
 * ``meta``     — ``code``, dropdown ``label``, ``html`` lang, date ``locale`` and
   menu ``order``;
@@ -10,8 +10,8 @@ The single source is ``zing/i18n/locales/<code>.json``, one file per language:
   the original Chinese catalog; ``en`` needs none — the backend is English).
 
 The browser gets the same data through ``/locales.js`` (see :func:`locales_script`:
-the full bundle, or one language's via ``?lang=`` / the ``zing_lang`` cookie);
-this module gives Python code (``zing.notify``) the lookups it needs. Adding a
+the full bundle, or one language's via ``?lang=`` / the ``ekte_lang`` cookie);
+this module gives Python code (``ekte.notify``) the lookups it needs. Adding a
 language means adding one JSON file here — nothing else.
 
 Feature work may also ship its UI strings as fragments,
@@ -95,7 +95,7 @@ def ui(lang: str | None, en: str) -> str:
 _TITLE_FIELD = re.compile(r"\{(\w+)(?:\|(list|server))?\}")
 
 # Result titles a detector builds around a subject, as English templates whose
-# ``{1}`` is the subject: a KB fingerprint's signal (zing/detectors/
+# ``{1}`` is the subject: a KB fingerprint's signal (ekte/detectors/
 # model_identity.py, translated on its own) or an attribute path
 # (protocol_attrs.py, kept). Every other result title is a fixed string. The
 # browser gets the list as ``title_patterns`` in /locales.js.
@@ -228,7 +228,7 @@ def lang_bundle(lang: str) -> dict[str, Any]:
     """What a page in ``lang`` needs: the language list, ``lang``'s own data
     (none for ``en``, the key language) and the translatable keys.
 
-    ``keys`` is ``ZING_LOCALES.keys`` precomputed (every English UI string, every
+    ``keys`` is ``EKTE_LOCALES.keys`` precomputed (every English UI string, every
     finding id), so the identity map ``en.json`` need not be sent.
     """
     data = _load()
@@ -259,7 +259,7 @@ def lang_bundle(lang: str) -> dict[str, Any]:
 # Strings every one-language bundle carries for all languages (see lang_bundle).
 _EVERY_LANGUAGE = (
     "Overall health score {1}/100.",
-    "zing reports black-box evidence of divergence and risk, not proof of fraud.",
+    "ekte reports black-box evidence of divergence and risk, not proof of fraud.",
 )
 
 
@@ -267,7 +267,7 @@ _EVERY_LANGUAGE = (
 def _script(lang: str | None, _version: tuple[int, int]) -> tuple[str, str]:
     payload = bundle() if lang is None else lang_bundle(lang)
     data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    body = f"window.ZING_I18N_DATA = {data};\n" + _STATIC_LOCALES_JS.read_text(encoding="utf-8")
+    body = f"window.EKTE_I18N_DATA = {data};\n" + _STATIC_LOCALES_JS.read_text(encoding="utf-8")
     etag = '"' + hashlib.sha256(body.encode("utf-8")).hexdigest()[:20] + '"'
     return body, etag
 

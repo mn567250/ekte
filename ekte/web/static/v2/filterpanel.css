@@ -1,5 +1,5 @@
-/* zing web UI v2 — the collapsible filter panel (filterpanel.js), shared by
- * History, Monitors, Analytics and Knowledge. Tokens only (zing.css); light + dark.
+/* ekte web UI v2 — the collapsible filter panel (filterpanel.js), shared by
+ * History, Monitors, Analytics and Knowledge. Tokens only (ekte.css); light + dark.
  *
  * Closed by default: the toggle counts the active filters and a line under it
  * names them; the page's note and "Reset filters" below stay visible either

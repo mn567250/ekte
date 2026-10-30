@@ -1,10 +1,10 @@
-"""FastAPI app for `zing serve` — serves the SPA and streams live audits over SSE.
+"""FastAPI app for `ekte serve` — serves the SPA and streams live audits over SSE.
 
 Endpoints:
   GET  /                     the single-page app (classic UI)
   GET  /v2/…                 the v2 UI, served side by side for A/B comparison;
                              ?ui=v1|v2 on any page picks one (remembered in the
-                             `zing_ui` cookie)
+                             `ekte_ui` cookie)
   GET  /v2/analytics         charts and leaderboards over the run history (v2 only)
   GET  /api/health          {ok, version}
   GET  /api/kb               providers (base URLs, saved relays) and their models
@@ -39,7 +39,7 @@ Endpoints:
                                    relay / model and over time buckets
   GET  /api/analytics/integrity    identity, context window and capability
                                    checks per relay x model
-                                   (parameters: zing/web/analytics.py)
+                                   (parameters: ekte/web/analytics.py)
   GET  /api/secret           the monitors' master key: state, fingerprint,
                              allowed actions (never the key)
   POST /api/secret/new       a new master key, shown once …
@@ -56,7 +56,7 @@ callback pushes per-detector events into a queue the SSE generator drains. The
 final report is the model's own redacted `model_dump` (API key fingerprinted,
 relay text scrubbed), so nothing secret crosses to the browser.
 
-Every audit runs as a job (zing/web/jobs.py): audits of the same relay are
+Every audit runs as a job (ekte/web/jobs.py): audits of the same relay are
 queued one after another so they never skew each other's measurements;
 different relays run in parallel. /api/audit/stream ties its job to the
 stream (closing the page stops it); /api/jobs detaches it from the page.
@@ -87,9 +87,9 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from zing import __version__
-from zing.clients import detect_api
-from zing.config import (
+from ekte import __version__
+from ekte.clients import detect_api
+from ekte.config import (
     AuditOptions,
     ConfigError,
     build_target,
@@ -98,20 +98,20 @@ from zing.config import (
     validate_suite,
     validate_surface,
 )
-from zing.detectors.performance import stream_mode
-from zing.models import KnowledgeUsage, TargetConfig
-from zing.perf.trend import attach_trends
-from zing.runner import run_audit
-from zing.scoring import weights_for
-from zing.web import jobs
-from zing.web.caching import (
+from ekte.detectors.performance import stream_mode
+from ekte.models import KnowledgeUsage, TargetConfig
+from ekte.perf.trend import attach_trends
+from ekte.runner import run_audit
+from ekte.scoring import weights_for
+from ekte.web import jobs
+from ekte.web.caching import (
     GZIP_MINIMUM_SIZE,
     CachedStaticFiles,
     CompressionMiddleware,
     encoded_response,
     html_page,
 )
-from zing.web.security import LocalOnlyMiddleware
+from ekte.web.security import LocalOnlyMiddleware
 
 _STATIC = Path(__file__).parent / "static"
 _V2 = _STATIC / "v2"
@@ -119,7 +119,7 @@ _V2 = _STATIC / "v2"
 # The two UIs served side by side (A/B): classic path -> (classic file, v2 path).
 # `?ui=v1|v2` on any of these pages picks a UI and remembers it in a cookie;
 # with the cookie set to v2, classic paths redirect to their v2 counterpart.
-_UI_COOKIE = "zing_ui"
+_UI_COOKIE = "ekte_ui"
 _UI_PAGES: dict[str, tuple[str, str]] = {
     "/": ("index.html", "/v2/"),
     "/history": ("history.html", "/v2/history"),
@@ -140,7 +140,7 @@ _V2_TOOLS_REDIRECT = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="0; url=/v2/?surface=embedding">
-<title>zing: embedding and rerank audits moved to the audit page</title>
+<title>ekte: embedding and rerank audits moved to the audit page</title>
 <script>
 (function () {
   var rerun = new URLSearchParams(location.search).get("rerun");
@@ -250,8 +250,8 @@ def _watch_protocol(row: dict[str, Any]) -> dict[str, Any]:
 
 def _watch_knowledge(row: dict[str, Any], kb: Any = None) -> dict[str, Any]:
     """KnowledgeUsage (with profile snapshot) a watch's claimed model resolves to now."""
-    from zing.knowledge import load_knowledge_base
-    from zing.knowledge.snapshot import knowledge_usage
+    from ekte.knowledge import load_knowledge_base
+    from ekte.knowledge.snapshot import knowledge_usage
 
     claimed = str(row.get("claimed_model") or row.get("model") or "")
     # resolving and describing only read the KB: the shared instance will do
@@ -301,7 +301,7 @@ class WatchKeyMissing(Exception):
     the run waits until the user enters it again."""
 
 
-_log = logging.getLogger("zing.web")
+_log = logging.getLogger("ekte.web")
 
 
 # Progress counters are shared with background audit jobs (see jobs.py).
@@ -331,7 +331,7 @@ async def _run_one_watch(row: dict[str, Any]) -> None:
         # Never audit with a missing key: it would fail and alert falsely.
         # Move the run time on (so the scheduler doesn't retry every tick)
         # and keep the last result on the card.
-        from zing.web import watches
+        from ekte.web import watches
 
         with contextlib.suppress(Exception):
             await asyncio.to_thread(watches.mark_attempt, wid, time.time())
@@ -415,7 +415,7 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
     recorded even on failure so a permanently broken target doesn't get retried
     every tick.
     """
-    from zing.web import history, watches
+    from ekte.web import history, watches
 
     wid = int(row["id"])
     now = time.time()
@@ -548,7 +548,7 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
 
         # Decide whether to alert: risk crossed the configured threshold, OR it
         # regressed versus the previous saved run.
-        from zing.notify import regressed, send
+        from ekte.notify import regressed, send
 
         alert_on = str(row.get("alert_on") or "medium")
         crossed = _risk_meets(risk, alert_on)
@@ -591,7 +591,7 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
 
 def _risk_meets(risk: str | None, threshold: str) -> bool:
     """True when ``risk`` is at or above the ``threshold`` risk level."""
-    from zing.models import RiskLevel
+    from ekte.models import RiskLevel
 
     order = {
         RiskLevel.CLEAN.value: 0,
@@ -629,7 +629,7 @@ def _start_scheduled_watch(row: dict[str, Any]) -> None:
     wid = int(row["id"])
     if wid in _running_watches or wid in _scheduled_watch_tasks:
         return
-    task = asyncio.create_task(_scheduled_watch_run(row), name=f"zing-monitor-{wid}")
+    task = asyncio.create_task(_scheduled_watch_run(row), name=f"ekte-monitor-{wid}")
     _scheduled_watch_tasks[wid] = task
 
     def done(t: asyncio.Task[None]) -> None:
@@ -658,8 +658,8 @@ async def _scheduler_loop() -> None:
     Cancellation (on server shutdown) propagates cleanly; _lifespan cancels
     the runs themselves.
     """
-    from zing.web import watches
-    from zing.web.masterkey import vault
+    from ekte.web import watches
+    from ekte.web.masterkey import vault
 
     def due_now() -> list[dict[str, Any]]:
         # Notice another process changing the master key. While it is
@@ -682,7 +682,7 @@ async def _scheduler_loop() -> None:
 @contextlib.asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Spawn the watch scheduler on startup; cancel it cleanly on shutdown."""
-    from zing.web.masterkey import vault
+    from ekte.web.masterkey import vault
 
     try:
         _log_secret_key(vault.startup())
@@ -708,7 +708,7 @@ def _log_secret_key(status: dict[str, Any]) -> None:
     state = status.get("state")
     if status.get("storage") == "memory":
         _log.warning(
-            "monitor API keys are not stored: they stay in memory until zing serve stops "
+            "monitor API keys are not stored: they stay in memory until ekte serve stops "
             "(choose on the Monitors page)"
         )
     elif state == "unlocked":
@@ -726,7 +726,7 @@ def _log_secret_key(status: dict[str, Any]) -> None:
             "move it out on the Monitors page"
         )
     if "env_in_data_dir" in status.get("warnings", []):
-        _log.warning("ZING_SECRET_KEY points into the data directory: keep the key elsewhere")
+        _log.warning("EKTE_SECRET_KEY points into the data directory: keep the key elsewhere")
 
 
 def _key_storage_override(body: Any) -> str | None:
@@ -739,7 +739,7 @@ def _key_storage_override(body: Any) -> str | None:
 
 def _missing_key_response() -> JSONResponse:
     return JSONResponse(
-        {"error": "the API key is not stored and zing serve restarted: enter it again",
+        {"error": "the API key is not stored and ekte serve restarted: enter it again",
          "key_missing": True},
         status_code=409,
     )
@@ -747,7 +747,7 @@ def _missing_key_response() -> JSONResponse:
 
 def _locked_response(_exc: Exception | None = None) -> JSONResponse:
     """423: the master key has to be entered (or created) first."""
-    from zing.web.masterkey import vault
+    from ekte.web.masterkey import vault
 
     st = vault.status()
     return JSONResponse(
@@ -759,21 +759,21 @@ def _locked_response(_exc: Exception | None = None) -> JSONResponse:
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="zing",
+        title="ekte",
         version=__version__,
         docs_url=None,
         redoc_url=None,
         lifespan=_lifespan,
     )
     # Local-only: Host allowlist (DNS rebinding), Origin + JSON checks (CSRF),
-    # security headers. See zing/web/security.py. Added last, so it runs first:
+    # security headers. See ekte/web/security.py. Added last, so it runs first:
     # refused requests never reach the gzip layer below it.
     app.add_middleware(CompressionMiddleware)  # gzip >= 1 KiB, never for SSE
     app.add_middleware(LocalOnlyMiddleware)
 
     @app.get("/api/health")
     async def health() -> Any:
-        return {"ok": True, "version": __version__, "name": "zing"}
+        return {"ok": True, "version": __version__, "name": "ekte"}
 
     @app.get("/")
     async def index(request: Request) -> Any:
@@ -846,7 +846,7 @@ def create_app() -> FastAPI:
             resp = html_page(_V2 / "accessibility.html", request.scope)
         return _remember_ui(resp, request.query_params.get("ui"))
 
-    # v2 stylesheets / scripts, e.g. /v2/static/zing.css
+    # v2 stylesheets / scripts, e.g. /v2/static/ekte.css
     # `?v=<hash>` URLs (written into pages by html_page) are cached immutably.
     app.mount("/v2/static", CachedStaticFiles(directory=str(_V2)), name="v2-static")
     root_assets = CachedStaticFiles(directory=str(_STATIC))
@@ -857,14 +857,14 @@ def create_app() -> FastAPI:
 
     @app.get("/locales.js")
     async def locales_js(request: Request) -> Any:
-        # Translation data (zing/i18n/locales/*.json) + the lookup logic: one
-        # language's for ?lang= or the zing_lang cookie lang.js writes, else
+        # Translation data (ekte/i18n/locales/*.json) + the lookup logic: one
+        # language's for ?lang= or the ekte_lang cookie lang.js writes, else
         # every language (built and gzipped once, revalidated by ETag; see
         # encoded_response).
-        from zing.i18n import locales_encoded
+        from ekte.i18n import locales_encoded
 
         q = request.query_params.get("lang")
-        lang = q if q is not None else request.cookies.get("zing_lang")
+        lang = q if q is not None else request.cookies.get("ekte_lang")
         # A (re)build serializes and compresses up to ~800 KiB: off the event loop.
         body, etag, gz = await asyncio.to_thread(locales_encoded, lang)
         headers = {"Cache-Control": "no-cache"}
@@ -905,12 +905,12 @@ def create_app() -> FastAPI:
     def kb() -> Any:
         # Public model metadata only — no keys, no secrets. Mirrors the grouping
         # the CLI `kb --json` command uses: providers sorted, each with its models.
-        from zing.knowledge import load_knowledge_base
+        from ekte.knowledge import load_knowledge_base
 
         # base_urls: the usable base URLs from the provider's hints (the relay
         # configuration fills the first one in); relay: a relay the user saved
         # (or any provider without models); kind: chat or embedding model.
-        from zing.knowledge.relays import base_urls, is_relay
+        from ekte.knowledge.relays import base_urls, is_relay
 
         # only read: the shared cached instance (see load_knowledge_base)
         knowledge = load_knowledge_base(copy=False)
@@ -935,7 +935,7 @@ def create_app() -> FastAPI:
     @app.post("/api/kb/relays")
     async def kb_add_relay(request: Request) -> Any:
         # Save a relay (name + base URL) as a provider entry in kb.db.
-        from zing.knowledge.relays import RelayError, add_relay
+        from ekte.knowledge.relays import RelayError, add_relay
 
         body = await request.json()
         if not isinstance(body, dict):
@@ -950,9 +950,9 @@ def create_app() -> FastAPI:
     @app.get("/api/kb/profiles")
     def kb_profiles() -> Any:
         # The Knowledge page: models, providers and relays, each the complete
-        # set (packaged, ZING_KB_DIR and kb.db) with its on/off state — see
-        # zing/knowledge/catalog.py — plus the user's kb.db entries (no bodies).
-        from zing.knowledge import catalog, store
+        # set (packaged, EKTE_KB_DIR and kb.db) with its on/off state — see
+        # ekte/knowledge/catalog.py — plus the user's kb.db entries (no bodies).
+        from ekte.knowledge import catalog, store
 
         data = catalog.catalog()
         data["entries"] = [{k: v for k, v in e.items() if k != "body"} for e in store.list_entries()]
@@ -961,7 +961,7 @@ def create_app() -> FastAPI:
     @app.put("/api/kb/enabled")
     async def kb_set_enabled(request: Request) -> Any:
         # Switch one item on or off: {key: "model:p/id" | "provider:p" | "entry:<id>", enabled}.
-        from zing.knowledge import catalog
+        from ekte.knowledge import catalog
 
         body = await request.json()
         if not isinstance(body, dict) or "enabled" not in body or not isinstance(body.get("key"), str):
@@ -974,15 +974,15 @@ def create_app() -> FastAPI:
 
     @app.get("/api/kb/prompt")
     def kb_prompt(model: str = "", provider: str = "") -> Any:
-        from zing.knowledge import load_knowledge_base
-        from zing.knowledge.research import research_prompt
+        from ekte.knowledge import load_knowledge_base
+        from ekte.knowledge.research import research_prompt
 
         text = research_prompt(model[:200], provider[:64] or None, load_knowledge_base(copy=False))
         return Response(text, media_type="text/plain; charset=utf-8")
 
     @app.post("/api/kb/resolve")
     async def kb_resolve(request: Request) -> Any:
-        from zing.knowledge import load_knowledge_base
+        from ekte.knowledge import load_knowledge_base
 
         body = await request.json()
         # resolving only reads: the shared cached instances, no copies
@@ -1013,14 +1013,14 @@ def create_app() -> FastAPI:
     @app.post("/api/kb/scan")
     async def kb_scan(request: Request) -> Any:
         # Check uploaded YAML; nothing is written.
-        from zing.knowledge.importer import scan
+        from ekte.knowledge.importer import scan
 
         text, _name = await _yaml_body(request)
         return JSONResponse((await asyncio.to_thread(scan, text)).to_dict())
 
     @app.post("/api/kb/import")
     async def kb_import(request: Request) -> Any:
-        from zing.knowledge.importer import import_yaml
+        from ekte.knowledge.importer import import_yaml
 
         text, name = await _yaml_body(request)
         result, ids = await asyncio.to_thread(
@@ -1031,16 +1031,16 @@ def create_app() -> FastAPI:
 
     @app.get("/api/kb/export")
     def kb_export(provider: str = "") -> Any:
-        from zing.knowledge.importer import export_yaml
+        from ekte.knowledge.importer import export_yaml
 
         text = export_yaml(provider or None)
-        fname = f"zing-kb-{provider or 'mine'}.yaml"
+        fname = f"ekte-kb-{provider or 'mine'}.yaml"
         return Response(text, media_type="application/yaml; charset=utf-8",
                         headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
     @app.patch("/api/kb/entries/{entry_id}")
     async def kb_entry_patch(entry_id: int, request: Request) -> Any:
-        from zing.knowledge import store
+        from ekte.knowledge import store
 
         body = await request.json()
         if "enabled" not in body:
@@ -1051,7 +1051,7 @@ def create_app() -> FastAPI:
 
     @app.delete("/api/kb/entries/{entry_id}")
     def kb_entry_delete(entry_id: int) -> Any:
-        from zing.knowledge import store
+        from ekte.knowledge import store
 
         if not store.delete(entry_id):
             return JSONResponse({"error": "not found"}, status_code=404)
@@ -1062,7 +1062,7 @@ def create_app() -> FastAPI:
         # List the relay's own /models so the picker can offer ids it really
         # accepts. The API key is optional: self-hosted relays (Ollama, LM Studio)
         # need none, and an empty key sends no auth header.
-        from zing.clients import make_client
+        from ekte.clients import make_client
 
         body = await request.json()
         try:
@@ -1145,7 +1145,7 @@ def create_app() -> FastAPI:
             if surface != "chat":
                 # The Tools' run (the surface's previous saved run as the drift
                 # reference), unsaved: the job saves it like a chat audit.
-                from zing.embed_audit import _run_surface
+                from ekte.embed_audit import _run_surface
 
                 report, _ = await _run_surface(
                     target, options, kb_dirs=None, command=None, save=False,
@@ -1282,9 +1282,9 @@ def create_app() -> FastAPI:
         # possibly with its text localized) into a downloadable file.
         from pydantic import ValidationError
 
-        from zing.models import AuditReport
-        from zing.report import render_pdf, report_stem
-        from zing.report.render import render_html, render_json, render_markdown
+        from ekte.models import AuditReport
+        from ekte.report import render_pdf, report_stem
+        from ekte.report.render import render_html, render_json, render_markdown
 
         media = {
             "json": "application/json",
@@ -1304,7 +1304,7 @@ def create_app() -> FastAPI:
                 lambda: AuditReport.model_validate(json.loads(raw))
             )
         except (ValueError, ValidationError) as exc:
-            return JSONResponse({"error": f"not a zing report: {exc}"[:500]}, status_code=400)
+            return JSONResponse({"error": f"not a ekte report: {exc}"[:500]}, status_code=400)
 
         body: str | bytes
         if format == "pdf":
@@ -1326,20 +1326,20 @@ def create_app() -> FastAPI:
 
     @app.get("/api/history")
     def history_list(limit: int = 50, perf: bool = False) -> Any:
-        from zing.web import history
+        from ekte.web import history
 
         return JSONResponse(history.recent(limit, perf=perf))
 
     @app.get("/api/history/trend")
     def history_trend(base_url: str, claimed_model: str, limit: int = 30) -> Any:
-        from zing.web import history
+        from ekte.web import history
 
         return JSONResponse(history.trend(base_url, claimed_model, limit))
 
     @app.get("/api/history/status")
     def history_status() -> Any:
         """The history as a whole, for the pages' notices (history.status)."""
-        from zing.web import history
+        from ekte.web import history
 
         return JSONResponse(history.status())
 
@@ -1348,7 +1348,7 @@ def create_app() -> FastAPI:
         """A saved report as stored; ``trend=1`` (the pages that show it) adds
         each request's running medians and their p25–p75 bands for the
         performance chart."""
-        from zing.web import history
+        from ekte.web import history
 
         report = history.get(rid)
         if report is None:
@@ -1360,19 +1360,19 @@ def create_app() -> FastAPI:
 
     @app.delete("/api/history/{rid}")
     def history_delete(rid: int) -> Any:
-        from zing.web import history
+        from ekte.web import history
 
         history.delete(rid)
         return JSONResponse({"ok": True})
 
     @app.delete("/api/history")
     def history_clear() -> Any:
-        from zing.web import history
+        from ekte.web import history
 
         history.clear()
         return JSONResponse({"ok": True})
 
-    # ----- Analytics (zing/web/analytics.py) ------------------------------ #
+    # ----- Analytics (ekte/web/analytics.py) ------------------------------ #
     # Plain `def` handlers (SQLite + the knowledge base load run in the thread
     # pool). Every parameter is validated there: a bad one answers 400.
     # Analytics answers are cached briefly: a filter, tab or block change
@@ -1384,8 +1384,8 @@ def create_app() -> FastAPI:
     analytics_lock = threading.Lock()
 
     def _analytics(call: Any, *args: Any) -> Any:
-        from zing.web import history
-        from zing.web.analytics import AnalyticsError
+        from ekte.web import history
+        from ekte.web.analytics import AnalyticsError
 
         key = json.dumps([call.__name__, args, history.write_mark(), int(time.time() // 30)],
                          sort_keys=True, default=str)
@@ -1409,45 +1409,45 @@ def create_app() -> FastAPI:
 
     @app.get("/api/analytics/options")
     def analytics_options(request: Request) -> Any:
-        from zing.web import analytics
+        from ekte.web import analytics
 
         return _analytics(analytics.options, dict(request.query_params))
 
     @app.get("/api/analytics/summary")
     def analytics_summary(request: Request) -> Any:
-        from zing.web import analytics
+        from ekte.web import analytics
 
         return _analytics(analytics.summary, dict(request.query_params))
 
     @app.get("/api/analytics/series")
     def analytics_series(request: Request) -> Any:
-        from zing.web import analytics
+        from ekte.web import analytics
 
         params = request.query_params
         return _analytics(analytics.series, dict(params), params.getlist("keys"))
 
     @app.get("/api/analytics/leaderboard")
     def analytics_leaderboard(request: Request) -> Any:
-        from zing.web import analytics
+        from ekte.web import analytics
 
         return _analytics(analytics.leaderboard, dict(request.query_params))
 
     @app.get("/api/analytics/breakdown")
     def analytics_breakdown(request: Request) -> Any:
-        from zing.web import analytics
+        from ekte.web import analytics
 
         params = request.query_params
         return _analytics(analytics.breakdown, dict(params), params.getlist("metrics"))
 
     @app.get("/api/analytics/errors")
     def analytics_errors(request: Request) -> Any:
-        from zing.web import analytics
+        from ekte.web import analytics
 
         return _analytics(analytics.errors, dict(request.query_params))
 
     @app.get("/api/analytics/integrity")
     def analytics_integrity(request: Request) -> Any:
-        from zing.web import analytics
+        from ekte.web import analytics
 
         return _analytics(analytics.integrity, dict(request.query_params))
 
@@ -1462,8 +1462,8 @@ def create_app() -> FastAPI:
         Blocking (SQLite + knowledge base load): runs in a worker thread.
         Touches no loop-owned state; live run state is added on the loop.
         """
-        from zing.knowledge import load_knowledge_base
-        from zing.web import watches
+        from ekte.knowledge import load_knowledge_base
+        from ekte.web import watches
 
         # list_all() never returns api_key, so this is safe to send to the browser.
         rows = watches.list_all()
@@ -1502,7 +1502,7 @@ def create_app() -> FastAPI:
 
     @app.post("/api/watches")
     async def watches_create(request: Request) -> Any:
-        from zing.web import watches
+        from ekte.web import watches
 
         body = await request.json()
         # Validate the target + suite up front so bad input is a clean 400.
@@ -1536,9 +1536,9 @@ def create_app() -> FastAPI:
         }
         try:
             knowledge = await asyncio.to_thread(_watch_knowledge, cfg)
-        except Exception as exc:  # e.g. a broken ZING_KB_DIR file
+        except Exception as exc:  # e.g. a broken EKTE_KB_DIR file
             return JSONResponse({"error": f"knowledge base: {exc}"}, status_code=400)
-        from zing.secretbox import SecretLocked
+        from ekte.secretbox import SecretLocked
 
         try:
             wid = await asyncio.to_thread(
@@ -1560,7 +1560,7 @@ def create_app() -> FastAPI:
         A compare run's baseline is dropped: watches run check-only.
         A run a monitor produced is refused: that monitor already exists.
         """
-        from zing.web import history, watches
+        from ekte.web import history, watches
 
         report = await asyncio.to_thread(history.get, rid)
         if report is None:
@@ -1622,21 +1622,21 @@ def create_app() -> FastAPI:
         }
         try:
             knowledge = await asyncio.to_thread(_watch_knowledge, cfg)
-        except Exception as exc:  # e.g. a broken ZING_KB_DIR file
+        except Exception as exc:  # e.g. a broken EKTE_KB_DIR file
             return JSONResponse({"error": f"knowledge base: {exc}"}, status_code=400)
         wid = await asyncio.to_thread(watches.create, cfg, knowledge=knowledge, draft=True)
         return JSONResponse({"ok": True, "id": wid}, status_code=201)
 
     @app.delete("/api/watches/{wid}")
     def watches_delete(wid: int) -> Any:
-        from zing.web import watches
+        from ekte.web import watches
 
         watches.delete(wid)
         return JSONResponse({"ok": True})
 
     @app.patch("/api/watches/{wid}")
     async def watches_patch(wid: int, request: Request) -> Any:
-        from zing.web import watches
+        from ekte.web import watches
 
         row = await asyncio.to_thread(watches.get, wid)
         if row is None:
@@ -1702,7 +1702,7 @@ def create_app() -> FastAPI:
             # A draft needs its schedule before it may run on its own. The key
             # stays optional, as in the audit: local relays need none.
             return JSONResponse({"error": "set an interval first"}, status_code=400)
-        from zing.secretbox import SecretLocked
+        from ekte.secretbox import SecretLocked
 
 
         def store() -> JSONResponse:
@@ -1735,7 +1735,7 @@ def create_app() -> FastAPI:
 
     @app.post("/api/watches/{wid}/run")
     async def watches_run(wid: int) -> Any:
-        from zing.web import watches
+        from ekte.web import watches
 
         row = await asyncio.to_thread(watches.get, wid)
         if row is None:
@@ -1765,7 +1765,7 @@ def create_app() -> FastAPI:
                 {"error": f"{type(exc).__name__}: {exc}"}, status_code=500
             )
         # Return the freshly saved report so the UI can show the result.
-        from zing.web import history
+        from ekte.web import history
 
         def saved_report() -> dict[str, Any] | None:
             refreshed = watches.get(wid)
@@ -1796,7 +1796,7 @@ def create_app() -> FastAPI:
         return key if isinstance(key, str) else ""
 
     def _vault_call(fn: Any, *args: Any) -> JSONResponse:
-        from zing.web.masterkey import VaultError
+        from ekte.web.masterkey import VaultError
 
         try:
             return _secret_json(fn(*args))
@@ -1805,15 +1805,15 @@ def create_app() -> FastAPI:
 
     @app.get("/api/secret")
     def secret_status() -> Any:
-        from zing.web.masterkey import vault
+        from ekte.web.masterkey import vault
 
         return _secret_json(vault.status())
 
     @app.post("/api/secret/new")
     def secret_new() -> Any:
         """A new master key, shown once; confirmed by /api/secret/new/confirm."""
-        from zing.secretbox import SecretBox
-        from zing.web.masterkey import PENDING_TTL_SEC, VaultError, vault
+        from ekte.secretbox import SecretBox
+        from ekte.web.masterkey import PENDING_TTL_SEC, VaultError, vault
 
         try:
             key = vault.begin_new()
@@ -1827,14 +1827,14 @@ def create_app() -> FastAPI:
 
     @app.post("/api/secret/new/confirm")
     async def secret_new_confirm(request: Request) -> Any:
-        from zing.web.masterkey import vault
+        from ekte.web.masterkey import vault
 
         typed = await _typed_key(request)
         return await asyncio.to_thread(_vault_call, vault.confirm_new, typed)
 
     @app.post("/api/secret/unlock")
     async def secret_unlock(request: Request) -> Any:
-        from zing.web.masterkey import vault
+        from ekte.web.masterkey import vault
 
         typed = await _typed_key(request)
         return await asyncio.to_thread(_vault_call, vault.unlock, typed)
@@ -1842,14 +1842,14 @@ def create_app() -> FastAPI:
     @app.post("/api/secret/lock")
     def secret_lock() -> Any:
         # Audits already running finish with the key they decrypted.
-        from zing.web.masterkey import vault
+        from ekte.web.masterkey import vault
 
         return _vault_call(vault.lock)
 
     @app.post("/api/secret/reset")
     async def secret_reset(request: Request) -> Any:
         """The master key is lost: drop the encrypted API keys, start over."""
-        from zing.web.masterkey import VaultError, vault
+        from ekte.web.masterkey import VaultError, vault
 
         try:
             body = await request.json()
@@ -1881,8 +1881,8 @@ def create_app() -> FastAPI:
     @app.post("/api/secret/storage")
     async def secret_storage(request: Request) -> Any:
         """Store no API key (``memory``) or store them encrypted; the keys move along."""
-        from zing.secretbox import SecretLocked
-        from zing.web.masterkey import VaultError, vault
+        from ekte.secretbox import SecretLocked
+        from ekte.web.masterkey import VaultError, vault
 
         try:
             body = await request.json()
@@ -1908,7 +1908,7 @@ def create_app() -> FastAPI:
     @app.post("/api/embed")
     async def embed_audit(request: Request) -> Any:
         # Lazy import: the embed auditor pulls in the client stack only on demand.
-        from zing.embed_audit import run_embedding_audit, tool_verdict
+        from ekte.embed_audit import run_embedding_audit, tool_verdict
 
         body = await request.json()
         try:
@@ -1939,7 +1939,7 @@ def create_app() -> FastAPI:
 
     @app.post("/api/rerank")
     async def rerank_audit(request: Request) -> Any:
-        from zing.embed_audit import run_rerank_audit, tool_verdict
+        from ekte.embed_audit import run_rerank_audit, tool_verdict
 
         body = await request.json()
         try:

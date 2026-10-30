@@ -1,9 +1,9 @@
 - banner:
   - link "Saltar al contenido principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "Interfaz clásica":
     - /url: "?ui=v1"
   - combobox "Tema":
@@ -40,9 +40,9 @@
     - text: Cada monitor vuelve a ejecutar una auditoría que ya realizaste, en tu equipo, con el intervalo que definas. Para añadir uno, abre una ejecución en el
     - link "Historial":
       - /url: /v2/history
-    - text: y elige Programar como monitor; luego define aquí su intervalo y actívalo. Cuando el riesgo supera tu umbral o empeora respecto a la última vez, zing avisa a tus webhooks (Slack / Feishu / DingTalk / JSON genérico).
+    - text: y elige Programar como monitor; luego define aquí su intervalo y actívalo. Cuando el riesgo supera tu umbral o empeora respecto a la última vez, ekte avisa a tus webhooks (Slack / Feishu / DingTalk / JSON genérico).
   - status:
-    - text: Las claves API no se guardan Las claves que introduces solo permanecen en la memoria de zing serve y nunca se escriben en el disco; vuelve a introducirlas tras un reinicio. Las referencias env:VAR siguen funcionando.
+    - text: Las claves API no se guardan Las claves que introduces solo permanecen en la memoria de ekte serve y nunca se escriben en el disco; vuelve a introducirlas tras un reinicio. Las referencias env:VAR siguen funcionando.
     - button "Cambiar"
   - group "Almacenamiento de claves API":
     - text: Almacenamiento de claves API
@@ -50,7 +50,7 @@
     - text: No guardar claves
     - radio "Guardar cifradas en este equipo"
     - text: Guardar cifradas en este equipo
-    - paragraph: Las claves API permanecen en la memoria de zing serve y nunca se escriben en el disco; vuelve a introducirlas tras cada reinicio. Usa env:VAR para monitores que deban funcionar sin supervisión.
+    - paragraph: Las claves API permanecen en la memoria de ekte serve y nunca se escriben en el disco; vuelve a introducirlas tras cada reinicio. Usa env:VAR para monitores que deban funcionar sin supervisión.
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Buscar
@@ -157,13 +157,13 @@
         - paragraph: Una ejecución completa tardó <duration>, así que se ejecuta como máximo cada 5 min.
         - text: Clave de API (opcional)
         - textbox "Clave de API (opcional)":
-          - /placeholder: sk-... o env:ZING_API_KEY
+          - /placeholder: sk-... o env:EKTE_API_KEY
         - button "Mostrar clave"
         - paragraph: El historial nunca guarda la clave. Déjala vacía para un modelo local o autoalojado.
         - button "Activar monitor"
       - button "Ejecutar ahora"
       - button "Eliminar"
-    - paragraph: "Todo se ejecuta localmente. La clave API no se guarda: permanece solo en la memoria de zing serve y nunca se escribe en el disco, se muestra en la lista de monitores ni se envía al navegador. Vuelve a introducirla cuando zing serve se reinicie."
+    - paragraph: "Todo se ejecuta localmente. La clave API no se guarda: permanece solo en la memoria de ekte serve y nunca se escribe en el disco, se muestra en la lista de monitores ni se envía al navegador. Vuelve a introducirla cuando ekte serve se reinicie."
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
-  - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."
+  - paragraph: "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

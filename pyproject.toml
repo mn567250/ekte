@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "zing-audit"
+name = "ekte"
 version = "0.11.0"
 description = "LLM relay reality check — a CLI that audits whether an API relay actually serves the model it claims (货不对板检测)."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
-authors = [{ name = "zing contributors" }]
+authors = [{ name = "ekte contributors" }]
 keywords = [
     "llm",
     "openai",
@@ -43,22 +43,22 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Token counts always use the built-in heuristic (no runtime downloads, so zing
+# Token counts always use the built-in heuristic (no runtime downloads, so ekte
 # runs in restricted environments); the empty extra keeps
-# `pip install 'zing-audit[tokenizers]'` from older instructions working.
+# `pip install 'ekte[tokenizers]'` from older instructions working.
 tokenizers = []
-# Local web UI: `zing serve`.
+# Local web UI: `ekte serve`.
 web = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
-    # Encrypts the API keys stored for monitors (zing/secretbox.py).
+    # Encrypts the API keys stored for monitors (ekte/secretbox.py).
     "cryptography>=42",
 ]
 # Accessibility tests of the web UI (tests/a11y, `pytest -m a11y`): a real
 # browser via Playwright; run `playwright install chromium` once.
 a11y = ["playwright>=1.47"]
 # PDF reports are part of the core install now; the empty extra keeps
-# `pip install 'zing-audit[pdf]'` from older instructions working.
+# `pip install 'ekte[pdf]'` from older instructions working.
 pdf = []
 dev = [
     "pytest>=8.0",
@@ -74,24 +74,24 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/cenbonew/zing"
-Repository = "https://github.com/cenbonew/zing"
-Issues = "https://github.com/cenbonew/zing/issues"
+Homepage = "https://github.com/mn567250/ekte"
+Repository = "https://github.com/mn567250/ekte"
+Issues = "https://github.com/mn567250/ekte/issues"
 
 [project.scripts]
-zing = "zing.cli:app"
+ekte = "ekte.cli:app"
 
 [tool.hatch.build.targets.wheel]
-# packages=["zing"] already bundles zing/knowledge/data/*.yaml (data/ is a real
+# packages=["ekte"] already bundles ekte/knowledge/data/*.yaml (data/ is a real
 # subpackage). Do NOT also force-include them — that adds a second file at the same
 # archive path and aborts the wheel build.
-packages = ["zing"]
+packages = ["ekte"]
 
 [tool.hatch.build.targets.sdist]
 # Ship the source the package needs; keep scratch/reference material out of the
 # sdist (there is no .git here, so hatchling can't infer it from VCS).
 include = [
-    "/zing",
+    "/ekte",
     "/tests",
     "/docs",
     "/examples",

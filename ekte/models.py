@@ -1,4 +1,4 @@
-"""Core data contracts shared across zing.
+"""Core data contracts shared across ekte.
 
 Everything that crosses a module boundary — config, a single API call's outcome,
 a detector's findings, the scored report — is defined here as a pydantic model so
@@ -87,7 +87,7 @@ class TargetConfig(BaseModel):
     def claimed(self) -> str:
         return self.claimed_model or self.model
     # Optional declared metadata used to pick the right knowledge-base profile and
-    # to compare claims vs reality. If absent, zing infers from the model id.
+    # to compare claims vs reality. If absent, ekte infers from the model id.
     declared_provider: str | None = None
     declared_context_window: int | None = None
     declared_max_output: int | None = None
@@ -626,7 +626,7 @@ class KnowledgeUsage(BaseModel):
     # packaged:<file> | kb_dir:<path> | kb.db:entry/<id>
     provider_source: str | None = None
     model_source: str | None = None
-    # The source a user entry replaced (a packaged or ZING_KB_DIR model).
+    # The source a user entry replaced (a packaged or EKTE_KB_DIR model).
     shadows: str | None = None
     user_entries: list[KnowledgeEntryRef] = Field(default_factory=list)
     # False when the run left the user's kb.db out (--no-user-kb).
@@ -644,7 +644,7 @@ class KnowledgeUsage(BaseModel):
 # Top-level report
 # --------------------------------------------------------------------------- #
 class AuditReport(BaseModel):
-    """The serializable artifact zing produces. JSON form is the LLM-facing API."""
+    """The serializable artifact ekte produces. JSON form is the LLM-facing API."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -686,7 +686,7 @@ class AuditReport(BaseModel):
     notes: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     # Languages of the prompts sent to the audited endpoint: the English prompt
-    # library (zing/prompts/en.json) plus any language-bound knowledge-base
+    # library (ekte/prompts/en.json) plus any language-bound knowledge-base
     # fingerprints (e.g. "zh" for the Chinese fluency probes of China-native
     # models). Independent of the UI and alert language.
     prompt_languages: list[str] = Field(default_factory=list)

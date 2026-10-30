@@ -12,8 +12,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
-from zing.context import AuditContext
-from zing.models import DetectorResult, Dimension, Status
+from ekte.context import AuditContext
+from ekte.models import DetectorResult, Dimension, Status
 
 # Suite tiers, cheapest to most thorough. A detector with ``min_suite="standard"``
 # runs in standard, deep, and full but not smoke.

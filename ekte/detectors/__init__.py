@@ -1,11 +1,11 @@
 """Detector package.
 
 Importing this package imports every detector module, which runs each
-``@register`` decorator and populates :data:`zing.detectors.base.REGISTRY`. The
+``@register`` decorator and populates :data:`ekte.detectors.base.REGISTRY`. The
 runner relies on that side effect to discover detectors.
 """
 
-from zing.detectors import (  # noqa: F401  -- imported for registration side effects
+from ekte.detectors import (  # noqa: F401  -- imported for registration side effects
     billing,
     capability,
     connectivity,
@@ -36,7 +36,7 @@ from zing.detectors import (  # noqa: F401  -- imported for registration side ef
     streaming,
     vision,
 )
-from zing.detectors.base import (
+from ekte.detectors.base import (
     REGISTRY,
     Detector,
     register,

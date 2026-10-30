@@ -1,4 +1,4 @@
-"""The claimed-model picker (zing/web/static/modelpicker.js), evaluated under node.
+"""The claimed-model picker (ekte/web/static/modelpicker.js), evaluated under node.
 
 A tiny fake DOM is enough: the picker only creates elements, sets styles,
 classes and attributes, and listens for change/click events.
@@ -62,7 +62,7 @@ class El {
 global.Event = class { constructor(type) { this.type = type; } };
 global.document = { createElement: t => new El(t), querySelector: () => null };
 global.window = { addEventListener() {} };
-window.ZING_LANG = {
+window.EKTE_LANG = {
   isZh: () => lang === "zh",
   t: (zh, en) => (lang === "zh" ? zh : en),
   stripCJK: s => String(s).replace(/[㐀-鿿]+/g, "").replace(/\(\s*\/\s*/g, "(").replace(/\s{2,}/g, " ").trim(),
@@ -81,7 +81,7 @@ function mount(unstyled) {
   const form = new El("form");
   const input = form.appendChild(new El("input"));
   const url = form.appendChild(new El("input"));
-  window.ZingModelPicker.enhance({ claimedInput: input, urlInput: url, unstyled });
+  window.EkteModelPicker.enhance({ claimedInput: input, urlInput: url, unstyled });
   return { form, input };
 }
 function describe(el) {
@@ -111,7 +111,7 @@ setTimeout(() => {
 }, 0);
 """
 
-_STATIC = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+_STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
 
 
 def _run(lang: str) -> dict:
@@ -192,7 +192,7 @@ const model = form.appendChild(new El("input"));
 const url = form.appendChild(new El("input"));
 const prov = form.appendChild(new El("input"));
 url.value = "https://relay.test/v1";
-window.ZingModelPicker.enhance({ claimedInput: model, providerInput: prov, urlInput: url, unstyled: true });
+window.EkteModelPicker.enhance({ claimedInput: model, providerInput: prov, urlInput: url, unstyled: true });
 const tick = () => new Promise(r => setTimeout(r, 0));
 (async () => {
   await tick();

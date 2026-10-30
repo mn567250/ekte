@@ -10,7 +10,7 @@ at 100, failed requests deduct their share (100 - success rate x 100; HTTP 429
 throttling is excluded), and a high tail latency deducts 15% of what is left.
 A single failure in a small burst (or at most 10% of a larger one) is a WARN,
 more is a FAIL; the detector status is the worst of its findings. These are
-transport advisories (``zing.scoring.ADVISORY_CHECKS``): they lower this
+transport advisories (``ekte.scoring.ADVISORY_CHECKS``): they lower this
 dimension but never the substitution risk.
 """
 
@@ -18,11 +18,11 @@ from __future__ import annotations
 
 import asyncio
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.scale import DeductionScale, outcome
-from zing.models import (
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.scale import DeductionScale, outcome
+from ekte.models import (
     DetectorResult,
     Dimension,
     ReliabilitySummary,
@@ -30,7 +30,7 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.utils.stats import summarize
+from ekte.utils.stats import summarize
 
 # A p95 above this (ms) is slow enough to flag and dampen the score.
 _SLOW_P95_MS = 30_000.0

@@ -1,7 +1,7 @@
-/* zing web UI v2 — hand-drawn inline-SVG charts and value formatting.
+/* ekte web UI v2 — hand-drawn inline-SVG charts and value formatting.
  *
  * Plain browser global, no modules, no libraries, no outgoing requests. Load
- * after /lang.js (T, ZING_LANG) and /icons.js. Exposes window.ZingCharts with:
+ * after /lang.js (T, EKTE_LANG) and /icons.js. Exposes window.EkteCharts with:
  *   - esc(s)                  HTML-escaped text (every label from the API
  *                             goes through it: relay names are user input)
  *   - fmt(v, unit, o)         a value in the UI locale with its unit
@@ -90,7 +90,7 @@
     return Tx(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
   }
   function nf(opts) {
-    try { return window.ZING_LANG.numFmt(opts); } catch (e) { return new Intl.NumberFormat(undefined, opts); }
+    try { return window.EKTE_LANG.numFmt(opts); } catch (e) { return new Intl.NumberFormat(undefined, opts); }
   }
 
   var DIGITS = { score: 1, ratio: 1, ms: 0, "tok/s": 1, tokens: 0, count: 1, s: 1 };
@@ -577,7 +577,7 @@
     }).join("") + "</span>";
   }
 
-  window.ZingCharts = {
+  window.EkteCharts = {
     esc: esc,
     fmt: fmt,
     fmtDelta: fmtDelta,

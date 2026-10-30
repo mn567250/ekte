@@ -1,4 +1,4 @@
-"""The masked API key fields (zing/web/static/secretfield.js), evaluated under node."""
+"""The masked API key fields (ekte/web/static/secretfield.js), evaluated under node."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ const path = require("path");
 global.window = {};
 global.document = undefined;  // no DOM: loading must not touch it
 require(path.join(process.argv[1], "secretfield.js"));
-const S = window.ZingSecret;
-const refs = ["env:ZING_API_KEY", " FILE:/run/secrets/k", "sk-abc", "", null, "envy:x"].map(S.isReference);
+const S = window.EkteSecret;
+const refs = ["env:EKTE_API_KEY", " FILE:/run/secrets/k", "sk-abc", "", null, "envy:x"].map(S.isReference);
 
 // remember(): a minimal form with a literal key, a reference and an orphan key.
 const input = (value, secret) => ({ value, type: "text", getAttribute: () => secret });
@@ -36,7 +36,7 @@ setTimeout(() => console.log(JSON.stringify({
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_secretfield_references_and_vault_storage():
-    static = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+    static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     out = json.loads(subprocess.run(
         ["node", "-e", _JS, str(static)], capture_output=True, text=True, check=True,
     ).stdout)

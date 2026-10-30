@@ -11,13 +11,13 @@ import json
 import pytest
 from typer.testing import CliRunner
 
-import zing.detectors  # noqa: F401  -- populate the registry
+import ekte.detectors  # noqa: F401  -- populate the registry
+from ekte.cli import _build_options, app
+from ekte.config import DIMENSIONS, AuditOptions, ConfigError, validate_dimensions
+from ekte.detectors.base import REGISTRY, select_detectors
+from ekte.models import DetectorResult, Dimension, RiskLevel, Status, TargetConfig
+from ekte.scoring import DIMENSION_WEIGHTS, build_dimensions, build_verdict, overall_score
 from tests._helpers import BASE_URL, DEFAULT_MODEL
-from zing.cli import _build_options, app
-from zing.config import DIMENSIONS, AuditOptions, ConfigError, validate_dimensions
-from zing.detectors.base import REGISTRY, select_detectors
-from zing.models import DetectorResult, Dimension, RiskLevel, Status, TargetConfig
-from zing.scoring import DIMENSION_WEIGHTS, build_dimensions, build_verdict, overall_score
 
 
 def _ids(dims: list[str], *, has_baseline: bool = False) -> set[str]:
@@ -157,13 +157,13 @@ def test_verdict_without_model_identity_is_judged_on_the_selection():
 
 
 async def test_custom_audit_reports_its_selection(monkeypatch):
+    from ekte.clients import make_client as real
+    from ekte.runner import run_audit
     from tests._helpers import MockServer
-    from zing.clients import make_client as real
-    from zing.runner import run_audit
 
     server = MockServer()
     monkeypatch.setattr(
-        "zing.runner.make_client", lambda config, **_: real(config, transport=server.transport)
+        "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport)
     )
     events: list[dict] = []
     report = await run_audit(
@@ -186,7 +186,7 @@ def test_audit_stream_custom_without_dimensions_errors():
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from zing.web.server import create_app
+    from ekte.web.server import create_app
 
     client = TestClient(create_app(), base_url="http://localhost")
     r = client.post(
@@ -198,8 +198,8 @@ def test_audit_stream_custom_without_dimensions_errors():
 
 def test_watch_stores_its_dimensions(tmp_path, monkeypatch):
     pytest.importorskip("fastapi")
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import watches
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import watches
 
     wid = watches.create({
         "base_url": "https://relay.test/v1", "model": "gpt-4o",
@@ -212,10 +212,10 @@ def test_watch_stores_its_dimensions(tmp_path, monkeypatch):
 
 def test_watches_api_validates_dimensions(tmp_path, monkeypatch):
     pytest.importorskip("fastapi")
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     from fastapi.testclient import TestClient
 
-    from zing.web.server import create_app
+    from ekte.web.server import create_app
 
     client = TestClient(create_app(), base_url="http://localhost")
     base = {"base_url": "https://relay.test/v1", "model": "gpt-4o", "suite": "custom"}

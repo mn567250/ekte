@@ -1,9 +1,9 @@
 - banner:
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "Klassische Oberfläche":
     - /url: "?ui=v1"
   - combobox "Design":
@@ -46,7 +46,7 @@
     - term: Commit
     - definition:
       - code: <id>
-    - term: zing-Version
+    - term: ekte-Version
     - definition: 0.11.0
     - term: axe-core-Version
     - definition: 4.13.0
@@ -142,7 +142,7 @@
   - region "Erklärung zur Barrierefreiheit":
     - heading "Erklärung zur Barrierefreiheit" [level=2]
     - heading "Stand der Vereinbarkeit" [level=3]
-    - paragraph: Die Web-Oberfläche v2 von zing ist mit BITV 2.0, EN 301549 und WCAG 2.1 Stufe AA teilweise vereinbar.
+    - paragraph: Die Web-Oberfläche v2 von ekte ist mit BITV 2.0, EN 301549 und WCAG 2.1 Stufe AA teilweise vereinbar.
     - heading "Bekannte Einschränkungen" [level=3]
     - paragraph: "Der automatisierte Teil dieser Schritte ist bestanden; der Rest braucht noch eine manuelle Prüfung:"
     - list:
@@ -167,7 +167,7 @@
     - paragraph:
       - text: "Sind Sie auf eine Barriere gestoßen oder ist etwas mit assistiven Technologien schwer zu bedienen? Bitte sagen Sie es uns:"
       - link "Barriere auf GitHub melden":
-        - /url: https://github.com/cenbonew/zing/issues
+        - /url: https://github.com/mn567250/ekte/issues
 - contentinfo:
   - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
-  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
+  - paragraph: "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

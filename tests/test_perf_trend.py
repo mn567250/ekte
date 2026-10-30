@@ -1,8 +1,8 @@
-"""Running medians for the performance chart's trend line (zing/perf/trend.py)."""
+"""Running medians for the performance chart's trend line (ekte/perf/trend.py)."""
 
 from __future__ import annotations
 
-from zing.perf.trend import RunningMedian, attach_trends
+from ekte.perf.trend import RunningMedian, attach_trends
 
 
 def _rec(seq: int, ms: float, *, endpoint: str = "target", ok: bool = True, cached: bool = False) -> dict:

@@ -1,9 +1,9 @@
 - banner:
   - link "Aller au contenu principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "Interface classique":
     - /url: "?ui=v1"
   - combobox "Thème":
@@ -246,7 +246,7 @@
             - definition: 27 sept. 2026, 10:02
             - term: Version
             - definition:
-              - code: zing v<version>
+              - code: ekte v<version>
             - heading "Contrôles par dimension 1 dimensions exécutées sur 10" [level=3]
             - button "Conformité du protocole"
             - text: L'API respecte-t-elle la spécification ?
@@ -275,7 +275,7 @@
             - paragraph: Les vérifications s'exécutent l'une après l'autre ; la plus lente était context_window (<duration>).
             - button "Tout afficher (6)"
             - paragraph:
-              - text: zing fournit des
+              - text: ekte fournit des
               - strong: preuves reproductibles d'écart de comportement et de risque
               - text: ", pas une preuve juridique ou cryptographique de fraude. Les relais peuvent router de façon probabiliste ; tenez compte vous-même de la taille de l'échantillon, des paramètres de facturation et du droit local, et n'accusez jamais publiquement un fournisseur sur la base d'une seule exécution."
             - button "Planifier comme surveillance"
@@ -306,4 +306,4 @@
   - status
 - contentinfo:
   - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
-  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."
+  - paragraph: "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

@@ -15,17 +15,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import zing.detectors  # noqa: F401  -- populates the detector REGISTRY
-from zing import __version__, prompts
-from zing.clients import Client, detect_api, make_client
-from zing.config import SURFACE_OPS, AuditOptions
-from zing.context import AuditContext
-from zing.detectors.base import run_detector, select_detectors
-from zing.detectors.performance import planned_probe_requests, probe_modes, stream_mode
-from zing.judge import Judge
-from zing.knowledge import ResolvedProfile, load_knowledge_base
-from zing.knowledge.snapshot import knowledge_usage, resolved_from_snapshot
-from zing.models import (
+import ekte.detectors  # noqa: F401  -- populates the detector REGISTRY
+from ekte import __version__, prompts
+from ekte.clients import Client, detect_api, make_client
+from ekte.config import SURFACE_OPS, AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.base import run_detector, select_detectors
+from ekte.detectors.performance import planned_probe_requests, probe_modes, stream_mode
+from ekte.judge import Judge
+from ekte.knowledge import ResolvedProfile, load_knowledge_base
+from ekte.knowledge.snapshot import knowledge_usage, resolved_from_snapshot
+from ekte.models import (
     AuditReport,
     DetectorResult,
     Dimension,
@@ -34,10 +34,10 @@ from zing.models import (
     ReliabilitySummary,
     TargetConfig,
 )
-from zing.perf import RequestRecorder, build_performance, detector_scope
-from zing.perf.trend import RunningMedian
-from zing.scoring import build_dimensions, build_verdict
-from zing.utils.redact import fingerprint_secret
+from ekte.perf import RequestRecorder, build_performance, detector_scope
+from ekte.perf.trend import RunningMedian
+from ekte.scoring import build_dimensions, build_verdict
+from ekte.utils.redact import fingerprint_secret
 
 
 def _redact(config: TargetConfig) -> RedactedTarget:
@@ -125,7 +125,7 @@ async def run_audit(
     """Run one audit.
 
     ``use_user_kb`` includes/excludes the user's kb.db entries (default: unless
-    ``ZING_NO_USER_KB``). ``pinned`` audits against a fixed profile snapshot
+    ``EKTE_NO_USER_KB``). ``pinned`` audits against a fixed profile snapshot
     (a watch's) instead of resolving the live knowledge base.
     ``previous_report`` is the last saved report of the same target and claimed
     model, for checks that compare across runs (embedding vector drift).
@@ -272,9 +272,9 @@ async def run_audit(
         f"{d.id}: {d.error}" for d in results if d.error
     ]
     notes = [
-        "zing performs black-box auditing: it gathers reproducible evidence of "
+        "ekte performs black-box auditing: it gathers reproducible evidence of "
         "behavioral divergence, not cryptographic proof of model identity.",
-        "Use `zing compare` against a trusted baseline of the same declared model "
+        "Use `ekte compare` against a trusted baseline of the same declared model "
         "for the strongest downgrade evidence.",
         "Do not publish a report that names a vendor without reviewing sample size, "
         "cost, and local law/policy.",

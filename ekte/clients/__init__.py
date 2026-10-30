@@ -1,6 +1,6 @@
 """HTTP clients for talking to relay endpoints.
 
-Three wire protocols are supported behind one :class:`~zing.models.CompletionOutcome`
+Three wire protocols are supported behind one :class:`~ekte.models.CompletionOutcome`
 interface: OpenAI Chat Completions, the OpenAI Responses API, and the Anthropic
 Messages API. ``make_client`` picks the right one from the target's ``api`` field
 (``auto`` infers it).
@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import httpx
 
-from zing.clients.anthropic import AnthropicClient
-from zing.clients.base import BaseHTTPClient
-from zing.clients.openai_compatible import OpenAICompatibleClient
-from zing.clients.responses import ResponsesClient
-from zing.models import TargetConfig
+from ekte.clients.anthropic import AnthropicClient
+from ekte.clients.base import BaseHTTPClient
+from ekte.clients.openai_compatible import OpenAICompatibleClient
+from ekte.clients.responses import ResponsesClient
+from ekte.models import TargetConfig
 
 Client = BaseHTTPClient
 

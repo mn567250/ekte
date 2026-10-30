@@ -13,7 +13,7 @@ and lists every check behind it, passed and failed alike:
 
 Detectors without a scale still show all their findings, so every dimension is
 covered and a detector gains the points/scale view by adopting
-:class:`zing.detectors.scale.Scale` — nothing here has to change.
+:class:`ekte.detectors.scale.Scale` — nothing here has to change.
 
 Every dimension is listed, those that did not run included (with the reason),
 and a dimension can carry extra content past its checks: register a renderer in
@@ -26,7 +26,7 @@ import html
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from zing.models import (
+from ekte.models import (
     AuditReport,
     DetectorResult,
     Dimension,
@@ -35,8 +35,8 @@ from zing.models import (
     ScoringOutcome,
     Status,
 )
-from zing.report import performance as perf_render
-from zing.scoring import _worst_status, weights_for
+from ekte.report import performance as perf_render
+from ekte.scoring import _worst_status, weights_for
 
 _STATUS_EMOJI: dict[Status, str] = {
     Status.PASS: "✅",

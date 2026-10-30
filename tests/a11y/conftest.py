@@ -21,11 +21,11 @@ _HERE = Path(__file__).resolve().parent
 SLOW_FIRST = ("test_content_on_hover_or_focus", "test_no_character_key_shortcuts", "test_pointer_cancellation")
 
 
-# ZING_A11Y_PAGES="history,kb" runs only the tests of those pages (ids of
+# EKTE_A11Y_PAGES="history,kb" runs only the tests of those pages (ids of
 # tests/a11y/pages.py PAGES, or "all"); applied before the sharding below.
-# ZING_A11Y_SHARD="k/n" runs the k-th of n equal parts of the suite (CI runs
+# EKTE_A11Y_SHARD="k/n" runs the k-th of n equal parts of the suite (CI runs
 # the parts as parallel jobs; tests.a11y.conformance merges their results).
-SHARD_ENV = "ZING_A11Y_SHARD"
+SHARD_ENV = "EKTE_A11Y_SHARD"
 
 
 def _shard() -> tuple[int, int] | None:
@@ -61,7 +61,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     # stable: everything else keeps its order
     items.sort(key=lambda item: getattr(item, "originalname", "") not in SLOW_FIRST)
     a11y = [item for item in items if _HERE in Path(str(item.fspath)).resolve().parents]
-    # ZING_A11Y_PAGES: only the tests of the chosen pages (tests/a11y/pages.py);
+    # EKTE_A11Y_PAGES: only the tests of the chosen pages (tests/a11y/pages.py);
     # tests tied to no page (cross-page checks) always run
     chosen = _pages()
     if chosen is not None:

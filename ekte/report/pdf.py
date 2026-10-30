@@ -1,9 +1,9 @@
-"""Render an :class:`~zing.models.AuditReport` to PDF.
+"""Render an :class:`~ekte.models.AuditReport` to PDF.
 
 The PDF is typeset natively with ReportLab (pure Python, BSD-licensed, no system
 libraries), from the same data and the same helpers as the HTML report: the
-dimension details come from :mod:`zing.report.dimensions`, the performance
-tables and charts from :mod:`zing.report.performance`. The CLI
+dimension details come from :mod:`ekte.report.dimensions`, the performance
+tables and charts from :mod:`ekte.report.performance`. The CLI
 (``--format pdf``) and the web UI's PDF download both call :func:`render_pdf`,
 so the two always produce the same document.
 
@@ -45,11 +45,11 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from zing.models import AuditReport, DetectorResult, Finding, PerformanceReport, Status
-from zing.report import dimensions as dims
-from zing.report import palette
-from zing.report import performance as perf_render
-from zing.report.render import (
+from ekte.models import AuditReport, DetectorResult, Finding, PerformanceReport, Status
+from ekte.report import dimensions as dims
+from ekte.report import palette
+from ekte.report import performance as perf_render
+from ekte.report.render import (
     _DISCLAIMER,
     _RISK_COLOR,
     _RISK_LABEL,
@@ -294,7 +294,7 @@ def _fit(fractions: list[float], width: float = _WIDTH) -> list[float]:
 def _header(report: AuditReport) -> list[Flowable]:
     v = report.verdict
     out: list[Flowable] = [
-        _p(_t("zing audit ", bold=True) + _t(report.target.model, color=_MUTED), "title")
+        _p(_t("ekte audit ", bold=True) + _t(report.target.model, color=_MUTED), "title")
     ]
     label = _RISK_LABEL.get(v.risk_level, v.risk_level.value)
     badge = Table([[_p(_t(label, bold=True, color=_ON_FILL), "badge")]], hAlign="LEFT",
@@ -331,7 +331,7 @@ def _header(report: AuditReport) -> list[Flowable]:
     if report.generated_at:
         meta.append(_t("generated ") + _code(report.generated_at))
     out.append(_p(_t(" · ").join(meta), "meta"))
-    out.append(_p(_t(f"zing v{report.tool_version}"), "meta"))
+    out.append(_p(_t(f"ekte v{report.tool_version}"), "meta"))
     return out
 
 
@@ -684,7 +684,7 @@ def _timeline(perf: PerformanceReport, metric: tuple[str, str, str, Callable[...
 # Document
 # --------------------------------------------------------------------------- #
 def _footer(report: AuditReport) -> Callable[[Any, Any], None]:
-    left = _t(f"zing audit — {report.target.model}", size=7, color=_MUTED)
+    left = _t(f"ekte audit — {report.target.model}", size=7, color=_MUTED)
 
     def draw(canvas: Any, doc: Any) -> None:
         canvas.saveState()
@@ -717,7 +717,7 @@ def render_pdf(report: AuditReport) -> bytes:
         buf, pagesize=A4,
         leftMargin=_MARGIN_X, rightMargin=_MARGIN_X,
         topMargin=_MARGIN_TOP, bottomMargin=_MARGIN_BOTTOM,
-        title=f"zing audit — {report.target.model}", author="zing", creator="zing",
+        title=f"ekte audit — {report.target.model}", author="ekte", creator="ekte",
         subject="LLM relay audit report",
     )
     footer = _footer(report)

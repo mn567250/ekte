@@ -13,11 +13,11 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.scale import Scale, outcome
-from zing.models import (
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import (
     CompletionOutcome,
     DetectorResult,
     Dimension,
@@ -184,13 +184,13 @@ class QualityJudgeDetector(Detector):
                 note = ""
             elif any(b["answer"] for b in baseline_answers):
                 note = (" The trusted baseline did not answer every probe, so it does "
-                        "not corroborate this — re-run `zing compare` once it responds.")
+                        "not corroborate this — re-run `ekte compare` once it responds.")
             elif baseline_answers:
                 note = (" The trusted baseline returned no usable answer to any probe, so "
-                        "it does not corroborate this — re-run `zing compare` once it responds.")
+                        "it does not corroborate this — re-run `ekte compare` once it responds.")
             else:
                 note = (" No trusted baseline was compared, so this stays a "
-                        "corroboration-required signal — run `zing compare`.")
+                        "corroboration-required signal — run `ekte compare`.")
             result.findings.append(
                 SCALE.finding(
                     "quality_judge.verdict",

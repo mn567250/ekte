@@ -21,15 +21,15 @@ from typing import Any
 
 import httpx
 
-from zing.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
-from zing.perf.recorder import (
+from ekte.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
+from ekte.perf.recorder import (
     RequestRecorder,
     current_net_trace,
     net_trace_scope,
     usage_tokens,
 )
-from zing.utils.net import is_local_host
-from zing.utils.redact import redact_json, redact_text
+from ekte.utils.net import is_local_host
+from ekte.utils.redact import redact_json, redact_text
 
 # One TLS context for every relay client in the process. httpx builds a new
 # one per AsyncClient (and one more per proxy mount): loading the CA bundle
@@ -87,7 +87,7 @@ _MAX_PARAM_RETRIES = 3
 # Statuses that never mean a parameter was refused.
 _NOT_PARAM_STATUSES = frozenset({401, 403, 404, 408, 409, 413, 429})
 # The httpx timeout of the completion running in this task (see complete()).
-_CALL_TIMEOUT: ContextVar[httpx.Timeout | None] = ContextVar("zing_call_timeout", default=None)
+_CALL_TIMEOUT: ContextVar[httpx.Timeout | None] = ContextVar("ekte_call_timeout", default=None)
 
 
 def _prompt_tokens(messages: list[dict[str, Any]]) -> int:
@@ -444,7 +444,7 @@ class BaseHTTPClient:
         ``unsupported_params``, so later requests go out adapted from the start;
         at most ``_MAX_PARAM_RETRIES`` repeats.
         Rejected attempts are recorded with phase ``param_retry``: the request
-        was zing's, not a relay error."""
+        was ekte's, not a relay error."""
         for _ in range(_MAX_PARAM_RETRIES):
             sent = self._build_body(spec)
             outcome, record = await self._complete_recorded(spec)

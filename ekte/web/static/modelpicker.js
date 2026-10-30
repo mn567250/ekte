@@ -1,7 +1,7 @@
-/* zing web UI — reusable, page-agnostic claimed-model picker.
+/* ekte web UI — reusable, page-agnostic claimed-model picker.
  *
  * Plain browser global, no modules, no external deps. Exposes:
- *   window.ZingModelPicker.enhance({ claimedInput, providerInput, label })
+ *   window.EkteModelPicker.enhance({ claimedInput, providerInput, label })
  *
  * Turns an EXISTING claimed-model text <input> into a compact two-step picker:
  *   供应商 (provider) <select>  →  模型 (model) <select>
@@ -42,7 +42,7 @@
  * and provider names are shortened ("DeepSeek (DeepSeek-AI / …)" → "DeepSeek").
  *
  * Usage (per-page agent copy):
- *   ZingModelPicker.enhance({ claimedInput: "#e-claimed", providerInput: "#e-provider" });
+ *   EkteModelPicker.enhance({ claimedInput: "#e-claimed", providerInput: "#e-provider" });
  */
 (function () {
   "use strict";
@@ -52,15 +52,15 @@
 
   // UI language (lang.js): CN keeps the original strings, others translate.
   function isEn() {
-    return !!(window.ZING_LANG && !window.ZING_LANG.isZh());
+    return !!(window.EKTE_LANG && !window.EKTE_LANG.isZh());
   }
   function tr(zh, en) {
-    return window.ZING_LANG ? window.ZING_LANG.t(zh, en) : zh;
+    return window.EKTE_LANG ? window.EKTE_LANG.t(zh, en) : zh;
   }
   // KB display names / aliases may contain Chinese brand names; drop them
   // in every language but CN.
   function enText(s) {
-    return isEn() ? window.ZING_LANG.stripCJK(s) : s;
+    return isEn() ? window.EKTE_LANG.stripCJK(s) : s;
   }
 
   function loadKb() {
@@ -436,7 +436,7 @@
       models.forEach(function (m) {
         if (!m || !m.id) return;
         var aliases = (m.aliases || []).filter(function (a) {
-          return !isEn() || (a && window.ZING_LANG.stripCJK(a) === a);
+          return !isEn() || (a && window.EKTE_LANG.stripCJK(a) === a);
         });
         var alias = aliases.length ? aliases[0] : "";
         // Show id, with a short alias hint when it differs from the id.
@@ -545,7 +545,7 @@
     applyMode();
 
     // Re-label everything in place when the UI language changes.
-    window.addEventListener("zing:lang", function () {
+    window.addEventListener("ekte:lang", function () {
       var keepModel = modelSel.value;
       paintLabels();
       fillProviders();
@@ -561,5 +561,5 @@
     });
   }
 
-  window.ZingModelPicker = { enhance: enhance };
+  window.EkteModelPicker = { enhance: enhance };
 })();

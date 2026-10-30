@@ -6,13 +6,13 @@ truncates, summarizes, or RAG-shims long prompts will recall well below its
 claim, or fail a needle buried in the middle while passing start and end. A
 server that keeps only the END of an over-long prompt (a local runtime cutting
 the prompt to its configured context length) still recalls a needle near the
-end, so each size is decided at the START edge first. zing reports the measured
+end, so each size is decided at the START edge first. ekte reports the measured
 divergence; it never asserts fraud outright.
 
 The probe never exceeds the *probed window* ``upper = min(declared, cap)``
 (``--max-context-tokens``), and every rung stays at or below 90% of it, leaving
 room for the answer and the chat template. Sizes are budgets of REAL tokens: the
-haystack is built smaller by zing's heuristic count (see
+haystack is built smaller by ekte's heuristic count (see
 ``_HEURISTIC_UNDERCOUNT``) so a real tokenizer stays within the rung.
 
 Scoring follows the published ``SCALE`` (method "deductions"): the score starts
@@ -29,12 +29,12 @@ from __future__ import annotations
 
 import asyncio
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import build_filler, contains_ci, stable_marker
-from zing.detectors.scale import DeductionScale, outcome
-from zing.models import (
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import build_filler, contains_ci, stable_marker
+from ekte.detectors.scale import DeductionScale, outcome
+from ekte.models import (
     CompletionOutcome,
     DetectorResult,
     Dimension,
@@ -42,7 +42,7 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.utils.tokenize import estimate_tokens
+from ekte.utils.tokenize import estimate_tokens
 
 # A 4xx whose body mentions one of these context-specific phrases is the relay
 # rejecting the prompt for SIZE — strong evidence of where the real ceiling sits.
@@ -88,7 +88,7 @@ _MAX_RUNGS = 7
 # The smallest rung a small window may drop to below the configured floor (a
 # 2K-token window still gets a three-rung ladder: ~1.8K, ~920, ~460).
 _MIN_RUNG = 256
-# zing's stdlib heuristic (zing/utils/tokenize.py) under-counts this filler by
+# ekte's stdlib heuristic (ekte/utils/tokenize.py) under-counts this filler by
 # ~12% (o200k) to ~15% (cl100k) against real tokenizers, so a haystack sized by
 # the heuristic alone would overshoot its rung. Each haystack is built at
 # size / 1.2 heuristic tokens, so its real token count stays within the rung.
@@ -96,7 +96,7 @@ _HEURISTIC_UNDERCOUNT = 1.2
 # What "tokens" means in this detector's sizes and evidence.
 _TOKEN_UNIT = (
     "rung sizes are budgets of real prompt tokens; each haystack is built at "
-    "size / 1.2 by zing's heuristic count, which under-counts real tokenizers by ~12-15%"
+    "size / 1.2 by ekte's heuristic count, which under-counts real tokenizers by ~12-15%"
 )
 
 # Statuses of a probe that produced no answer to judge: a rejected parameter, an
@@ -698,7 +698,7 @@ class ContextWindowDetector(Detector):
         seed = f"ctxwin-{size}-{depth}" + (f"-{attempt}" if attempt else "")
         needle = stable_marker(seed)
         # Building a ~200k-token haystack is CPU work; run it off the event loop so
-        # concurrent audits in `zing serve` keep measuring honest latencies.
+        # concurrent audits in `ekte serve` keep measuring honest latencies.
         # Built smaller by the heuristic's under-count so the REAL token count of
         # the prompt stays within ``size``.
         haystack = await asyncio.to_thread(
@@ -711,7 +711,7 @@ class ContextWindowDetector(Detector):
             RequestSpec(messages=messages, temperature=0.0, max_tokens=64)
         )
         # Stash the needle so the caller's classifier can check recall.
-        outcome.headers.setdefault("x-zing-needle", needle)
+        outcome.headers.setdefault("x-ekte-needle", needle)
         return outcome
 
     @staticmethod
@@ -722,7 +722,7 @@ class ContextWindowDetector(Detector):
         ``rejected_for_size`` is True for a 400..422 whose error text reads like a
         context/length rejection — the relay declining the prompt at this size.
         """
-        needle = outcome.headers.get("x-zing-needle", "")
+        needle = outcome.headers.get("x-ekte-needle", "")
         if outcome.ok and outcome.has_content() and needle:
             if contains_ci(outcome.content, needle):
                 return True, False, "recalled"

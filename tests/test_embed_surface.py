@@ -11,12 +11,12 @@ import time
 import httpx
 import pytest
 
-from zing.config import AuditOptions
-from zing.detectors.base import select_detectors
-from zing.detectors.embed_drift import drift_sample, previous_drift
-from zing.detectors.embed_identity import echoes_model
-from zing.models import Dimension, RiskLevel, Status, TargetConfig
-from zing.runner import run_audit
+from ekte.config import AuditOptions
+from ekte.detectors.base import select_detectors
+from ekte.detectors.embed_drift import drift_sample, previous_drift
+from ekte.detectors.embed_identity import echoes_model
+from ekte.models import Dimension, RiskLevel, Status, TargetConfig
+from ekte.runner import run_audit
 
 BASE = "https://relay.embed.test/v1"
 MODEL = "text-embedding-3-large"
@@ -60,10 +60,10 @@ class EmbedServer:
 @pytest.fixture
 def serve(monkeypatch):
     def install(server: EmbedServer) -> EmbedServer:
-        from zing.clients import make_client as real
+        from ekte.clients import make_client as real
 
         monkeypatch.setattr(
-            "zing.runner.make_client", lambda config, **_: real(config, transport=server.transport)
+            "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport)
         )
         return server
 
@@ -115,7 +115,7 @@ async def test_clean_embedding_audit(serve):
 
 
 async def test_embedding_report_lists_only_its_dimensions(serve):
-    from zing.report import dimensions, render
+    from ekte.report import dimensions, render
 
     serve(EmbedServer())
     report = await run_audit(_target(), _opts(suite="smoke"))
@@ -214,8 +214,8 @@ async def test_embedding_probe_measures_latency_and_batch_scaling(serve):
 
 
 def _scaling(single_ms: float, batch_ms: float, n: int = 6):
-    from zing.detectors.embed_performance import BATCH_PHASE, EmbedPerformanceDetector
-    from zing.models import DetectorResult, RequestRecord
+    from ekte.detectors.embed_performance import BATCH_PHASE, EmbedPerformanceDetector
+    from ekte.models import DetectorResult, RequestRecord
 
     def recs(ms: float, phase: str) -> list:
         return [RequestRecord(seq=i, op="embed", phase=phase, ok=True, duration_ms=ms)
@@ -246,8 +246,8 @@ async def test_embedding_probe_detects_a_cache(serve):
 
 
 async def test_embedding_probe_gating():
-    from zing.detectors.embed_performance import EmbedPerformanceDetector
-    from zing.detectors.performance import PerformanceDetector
+    from ekte.detectors.embed_performance import EmbedPerformanceDetector
+    from ekte.detectors.performance import PerformanceDetector
 
     for suite in ("smoke", "standard", "deep", "full", "custom"):
         for base in (False, True):

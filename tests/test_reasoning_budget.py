@@ -13,11 +13,11 @@ import json
 
 import httpx
 
+from ekte.clients import OpenAICompatibleClient
+from ekte.clients.base import REASONING_RETRY_TOKENS
+from ekte.models import CompletionOutcome, RequestSpec, TargetConfig
+from ekte.perf.recorder import RequestRecorder, is_cache_hit
 from tests._helpers import BASE_URL
-from zing.clients import OpenAICompatibleClient
-from zing.clients.base import REASONING_RETRY_TOKENS
-from zing.models import CompletionOutcome, RequestSpec, TargetConfig
-from zing.perf.recorder import RequestRecorder, is_cache_hit
 
 
 class ThinkingRelay:
@@ -120,11 +120,11 @@ async def test_no_repeat_for_large_budgets_or_plain_truncation():
 
 
 async def test_integrity_ignores_a_canary_cut_off_at_the_limit():
-    from zing.detectors.integrity import IntegrityDetector
+    from ekte.detectors.integrity import IntegrityDetector
 
     class _Client:
         async def complete(self, spec):
-            return CompletionOutcome(ok=True, content="pip install zing-audit==0",
+            return CompletionOutcome(ok=True, content="pip install ekte==0",
                                      finish_reason="length")
 
     class _Ctx:
@@ -214,10 +214,10 @@ async def test_a_repeat_that_did_not_help_is_not_sticky():
 
 
 async def test_runner_gives_a_reasoning_profile_room_up_front(monkeypatch, tmp_path):
+    from ekte.clients import make_client as real
+    from ekte.config import AuditOptions
+    from ekte.runner import run_audit
     from tests._helpers import MockServer
-    from zing.clients import make_client as real
-    from zing.config import AuditOptions
-    from zing.runner import run_audit
 
     (tmp_path / "thinker.yaml").write_text(
         "provider: acme\n"
@@ -233,7 +233,7 @@ async def test_runner_gives_a_reasoning_profile_room_up_front(monkeypatch, tmp_p
         clients.append(client)
         return client
 
-    monkeypatch.setattr("zing.runner.make_client", factory)
+    monkeypatch.setattr("ekte.runner.make_client", factory)
     for model, base_model, expected in (
         ("thinker-1", "thinker-1", [True, True]),
         ("plain-model", "plain-model", [False, False]),

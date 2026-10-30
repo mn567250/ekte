@@ -1,11 +1,11 @@
-/* zing web UI v2 — the monitors' master key: create (shown once), unlock,
+/* ekte web UI v2 — the monitors' master key: create (shown once), unlock,
  * lock, rotate, move a legacy key file out, reset a lost key.
  *
  *   <script src="/v2/static/masterkey.js"></script>   (after lang.js / icons.js)
- *   ZingMasterKey.mountBar(el, onChange)   status line + the allowed actions
- *   ZingMasterKey.withKey(doFetch)         run doFetch(); on 423 (no master key)
+ *   EkteMasterKey.mountBar(el, onChange)   status line + the allowed actions
+ *   EkteMasterKey.withKey(doFetch)         run doFetch(); on 423 (no master key)
  *                                          open the right dialog, then retry once
- *   ZingMasterKey.setStorage(mode)         "memory" (store no API key) or
+ *   EkteMasterKey.setStorage(mode)         "memory" (store no API key) or
  *                                          "encrypted"; asks for the key as needed
  *
  * A master key exists only to encrypt stored API keys: while none are stored
@@ -23,8 +23,8 @@
 (function () {
   "use strict";
 
-  var CRED_ID = "zing-master-key";
-  var CRED_NAME = "zing master key";
+  var CRED_ID = "ekte-master-key";
+  var CRED_NAME = "ekte master key";
 
   function T(zh, en) {
     return typeof window.T === "function" ? window.T(zh, en) : en;
@@ -43,7 +43,7 @@
     });
   }
   function icon(name) {
-    return typeof window.zingIcon === "function" ? window.zingIcon(name) : "";
+    return typeof window.ekteIcon === "function" ? window.ekteIcon(name) : "";
   }
 
   // ---- pure logic (tested under node) ------------------------------------ //
@@ -131,7 +131,7 @@
   }
 
   // Open whatever dialog the current state needs; resolves true once a key is held.
-  // Announces the change ("zing:masterkey") so a mounted status bar follows.
+  // Announces the change ("ekte:masterkey") so a mounted status bar follows.
   function ensure() {
     return status().then(function (st) {
       var need = decide(st);
@@ -144,7 +144,7 @@
     }, function () { return false; });
   }
   function announce() {
-    try { window.dispatchEvent(new Event("zing:masterkey")); } catch (e) { /* old browsers */ }
+    try { window.dispatchEvent(new Event("ekte:masterkey")); } catch (e) { /* old browsers */ }
   }
 
   // ---- dialogs ------------------------------------------------------------ //
@@ -203,7 +203,7 @@
       return T("主密钥的状态已改变，请刷新页面后重试。", "The master key's state changed meanwhile — reload the page and try again.");
     }
     var e = res && res.body && res.body.error;
-    var L = window.ZING_LANG;
+    var L = window.EKTE_LANG;
     return e ? (L && L.server ? L.server(e) : e) : T("出错了，请重试。", "Something went wrong — please try again.");
   }
 
@@ -212,22 +212,22 @@
     setup: function () {
       return {
         title: T("创建主密钥", "Create your master key"),
-        intro: T("主密钥用于加密本机保存的中转站 API 密钥。zing 不会把它写入磁盘：每次重启 zing serve 后，你需要再次输入它，监控才会运行。请把它保存在密码管理器或其他安全的地方，不要放在 zing 的数据目录里。丢失主密钥意味着需要重新输入每个监控的 API 密钥。",
-          "The master key encrypts the relay API keys stored on this machine. zing never writes it to disk: after every restart of zing serve you enter it again before monitors run. Keep it in a password manager or another safe place — not in zing's data folder. Losing it means re-entering every monitor's API key."),
+        intro: T("主密钥用于加密本机保存的中转站 API 密钥。ekte 不会把它写入磁盘：每次重启 ekte serve 后，你需要再次输入它，监控才会运行。请把它保存在密码管理器或其他安全的地方，不要放在 ekte 的数据目录里。丢失主密钥意味着需要重新输入每个监控的 API 密钥。",
+          "The master key encrypts the relay API keys stored on this machine. ekte never writes it to disk: after every restart of ekte serve you enter it again before monitors run. Keep it in a password manager or another safe place — not in ekte's data folder. Losing it means re-entering every monitor's API key."),
       };
     },
     migrate: function () {
       return {
         title: T("把主密钥移出数据目录", "Move your master key out of the data folder"),
-        intro: T("你的主密钥目前保存在数据库旁边（secret.key），能读取该目录的人就能解密你的 API 密钥。zing 会生成一个新的主密钥、用它重新加密所有 API 密钥，并删除 secret.key。之后每次重启都需要输入新密钥。",
-          "Your master key is stored next to the databases (secret.key), so anyone who can read that folder can decrypt your API keys. zing creates a new master key, re-encrypts every API key with it and deletes secret.key. From then on you enter the new key after each restart."),
+        intro: T("你的主密钥目前保存在数据库旁边（secret.key），能读取该目录的人就能解密你的 API 密钥。ekte 会生成一个新的主密钥、用它重新加密所有 API 密钥，并删除 secret.key。之后每次重启都需要输入新密钥。",
+          "Your master key is stored next to the databases (secret.key), so anyone who can read that folder can decrypt your API keys. ekte creates a new master key, re-encrypts every API key with it and deletes secret.key. From then on you enter the new key after each restart."),
       };
     },
     rotate: function () {
       return {
         title: T("更换主密钥", "Rotate the master key"),
-        intro: T("zing 会生成一个新的主密钥并用它重新加密所有 API 密钥。确认之后，旧密钥将不再有效。",
-          "zing creates a new master key and re-encrypts every API key with it. Once you confirm, the old key stops working."),
+        intro: T("ekte 会生成一个新的主密钥并用它重新加密所有 API 密钥。确认之后，旧密钥将不再有效。",
+          "ekte creates a new master key and re-encrypts every API key with it. Once you confirm, the old key stops working."),
       };
     },
   };
@@ -249,7 +249,7 @@
           '<button type="button" class="btn sm" data-zmk="download">' + esc(T("下载 .txt", "Download .txt")) + "</button>" +
           '<span class="hint" data-zmk="copied" role="status"></span></div>' +
           '<label class="zmk-check"><input type="checkbox" data-zmk="saved"> ' +
-            esc(T("我已把它保存在安全的地方（不在 zing 数据目录中）", "I stored it somewhere safe (not in zing's data folder)")) + "</label>" +
+            esc(T("我已把它保存在安全的地方（不在 ekte 数据目录中）", "I stored it somewhere safe (not in ekte's data folder)")) + "</label>" +
           '<div class="zmk-act"><button type="button" class="btn pri" data-zmk="next" disabled>' + esc(T("下一步", "Next")) + "</button>" + cancelBtn() + "</div></div>" +
         '<div class="zmk-step" data-step="confirm" hidden>' +
           "<p>" + esc(T("请粘贴刚才保存的密钥以确认。浏览器可能会提示你把它保存到密码管理器。",
@@ -295,7 +295,7 @@
         var blob = new Blob([CRED_NAME + "\n" + key + "\n"], { type: "text/plain" });
         var a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "zing-master-key.txt";
+        a.download = "ekte-master-key.txt";
         document.body.appendChild(a);
         a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
@@ -323,8 +323,8 @@
     var html =
       '<form method="dialog" class="zmk-body" novalidate>' +
         '<h2 id="zmk-title">' + icon("lock") + esc(T("输入主密钥", "Enter your master key")) + "</h2>" +
-        "<p>" + esc(T("zing serve 重启后不会记住主密钥。输入它即可解锁已保存的 API 密钥，监控会继续运行。",
-          "zing serve does not remember the master key across restarts. Enter it to unlock the stored API keys; monitors carry on.")) + "</p>" +
+        "<p>" + esc(T("ekte serve 重启后不会记住主密钥。输入它即可解锁已保存的 API 密钥，监控会继续运行。",
+          "ekte serve does not remember the master key across restarts. Enter it to unlock the stored API keys; monitors carry on.")) + "</p>" +
         userField() +
         '<label class="lab" for="zmk-unlock">' + esc(T("主密钥", "Master key")) + "</label>" +
         '<input class="in mono" id="zmk-unlock" type="password" name="password" autocomplete="current-password" spellcheck="false" autocapitalize="off" required autofocus>' +
@@ -359,7 +359,7 @@
     return (c.encrypted || 0) + (c.locked || 0) + (c.unreadable || 0) + (c.plain || 0);
   }
   function sourceLabel(src) {
-    if (src === "ZING_SECRET_KEY") return T("来自 ZING_SECRET_KEY", "from ZING_SECRET_KEY");
+    if (src === "EKTE_SECRET_KEY") return T("来自 EKTE_SECRET_KEY", "from EKTE_SECRET_KEY");
     if (src === "legacy") return T("来自数据目录中的 secret.key", "from secret.key in the data folder");
     return T("已输入", "entered by you");
   }
@@ -391,7 +391,7 @@
           esc(T("使用 API 密钥的监控已暂停，输入主密钥后继续。", "Monitors that use an API key are paused until you enter it.")) + "</span>";
       } else if (st.state === "env_mismatch") {
         kind = "bad";
-        html = "<b>" + esc(T("ZING_SECRET_KEY 不匹配", "ZING_SECRET_KEY does not match")) + "</b> <span class=\"zmk-meta\">" +
+        html = "<b>" + esc(T("EKTE_SECRET_KEY 不匹配", "EKTE_SECRET_KEY does not match")) + "</b> <span class=\"zmk-meta\">" +
           esc(T("它不是加密已保存 API 密钥所用的主密钥。请改回正确的值，或取消设置它并重置。",
             "It is not the master key the stored API keys were encrypted with. Set it back, or unset it and reset.")) + "</span>";
       } else {
@@ -415,8 +415,8 @@
           "Your master key is still stored next to the databases (secret.key). Move it out so a backup or synced copy of the data folder cannot reveal your API keys.")) + "</p>";
       }
       if ((st.warnings || []).indexOf("env_in_data_dir") >= 0) {
-        warn += '<p class="zmk-warn">' + esc(T("ZING_SECRET_KEY 指向数据目录内的文件，请把它放到别处。",
-          "ZING_SECRET_KEY points to a file inside the data folder — keep it elsewhere.")) + "</p>";
+        warn += '<p class="zmk-warn">' + esc(T("EKTE_SECRET_KEY 指向数据目录内的文件，请把它放到别处。",
+          "EKTE_SECRET_KEY points to a file inside the data folder — keep it elsewhere.")) + "</p>";
       }
       var reset = "";
       if (resetOpen) {
@@ -488,13 +488,13 @@
     el.addEventListener("keydown", function (ev) {
       if (ev.key === "Escape" && resetOpen) { resetOpen = false; draw(); }
     });
-    window.addEventListener("zing:lang", draw);
-    window.addEventListener("zing:masterkey", refresh);
+    window.addEventListener("ekte:lang", draw);
+    window.addEventListener("ekte:masterkey", refresh);
     refresh();
     return { refresh: refresh };
   }
 
-  window.ZingMasterKey = {
+  window.EkteMasterKey = {
     CRED_ID: CRED_ID,
     decide: decide,
     storeCredential: storeCredential,

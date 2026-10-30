@@ -10,18 +10,18 @@ import re
 
 import pytest
 
-from zing.detectors.context_window import ContextWindowDetector, _build_haystack
-from zing.models import CompletionOutcome, Status
-from zing.utils.tokenize import estimate_tokens
+from ekte.detectors.context_window import ContextWindowDetector, _build_haystack
+from ekte.models import CompletionOutcome, Status
+from ekte.utils.tokenize import estimate_tokens
 
 
-def _outcome(status_code, message, *, needle="ZING-ABC", content="", ok=False):
+def _outcome(status_code, message, *, needle="EKTE-ABC", content="", ok=False):
     return CompletionOutcome(
         ok=ok,
         status_code=status_code,
         content=content,
         error_message=message,
-        headers={"x-zing-needle": needle},
+        headers={"x-ekte-needle": needle},
     )
 
 
@@ -38,7 +38,7 @@ def test_classify_max_tokens_param_error_is_not_size_rejection():
 
 
 def test_classify_recall_hit():
-    o = _outcome(200, None, needle="ZING-ABC", content="the secret pass phrase is ZING-ABC", ok=True)
+    o = _outcome(200, None, needle="EKTE-ABC", content="the secret pass phrase is EKTE-ABC", ok=True)
     recalled, rejected, status = ContextWindowDetector._classify(o, 4000)
     assert recalled is True and status == "recalled"
 
@@ -56,7 +56,7 @@ async def test_truncation_below_claim_is_flagged(audit_context, mock_server):
 
 
 def test_classify_timeout_is_its_own_status():
-    o = CompletionOutcome(ok=False, error_type="ReadTimeout", headers={"x-zing-needle": "N"})
+    o = CompletionOutcome(ok=False, error_type="ReadTimeout", headers={"x-ekte-needle": "N"})
     assert ContextWindowDetector._classify(o, 16000) == (False, False, "timeout")
 
 
@@ -86,7 +86,7 @@ async def test_timeout_is_inconclusive_not_truncation(audit_context):
 # --------------------------------------------------------------------------- #
 # Start edge first: a server that keeps only the END of a long prompt
 # --------------------------------------------------------------------------- #
-_NEEDLE = re.compile(r"pass phrase is (ZING-[0-9A-F]+)")
+_NEEDLE = re.compile(r"pass phrase is (EKTE-[0-9A-F]+)")
 
 
 def _keep_tail_server(audit_context, *, keep_chars: int | None, miss_first: bool = False):
@@ -198,7 +198,7 @@ async def test_front_truncated_size_takes_three_calls_with_a_fresh_start_needle(
 # --------------------------------------------------------------------------- #
 # Ladder, margin, cap and error handling
 # --------------------------------------------------------------------------- #
-# Real tokenizers count the filler up to ~15% higher than zing's heuristic.
+# Real tokenizers count the filler up to ~15% higher than ekte's heuristic.
 _REAL_PER_HEURISTIC = 1.15
 
 
@@ -247,8 +247,8 @@ def test_ladder_rungs_stay_below_the_window():
 
 def test_haystack_real_tokens_stay_within_the_rung():
     for size in (460, 1_843, 7_372, 57_600, 115_200):
-        prompt = _build_haystack(size, needle="ZING-0123456789", depth=0.5, tokenizer=None)
-        assert "ZING-0123456789" in prompt
+        prompt = _build_haystack(size, needle="EKTE-0123456789", depth=0.5, tokenizer=None)
+        assert "EKTE-0123456789" in prompt
         assert estimate_tokens(prompt) * _REAL_PER_HEURISTIC <= size
 
 

@@ -1,24 +1,24 @@
-"""Encryption at rest for secrets zing stores locally (the watch API keys).
+"""Encryption at rest for secrets ekte stores locally (the watch API keys).
 
 A stored secret is sealed as ``enc:v1:<Fernet token>``: AES-128-CBC with an
 HMAC-SHA256 tag, from ``cryptography`` (part of the ``web`` extra, the only
 place secrets are stored). Values that are only pointers to a secret
-(``env:VAR`` / ``file:/path``, see :func:`zing.config.resolve_secret`) and the
+(``env:VAR`` / ``file:/path``, see :func:`ekte.config.resolve_secret`) and the
 empty string are stored as is, and so is :data:`MEMORY`, the marker of a key
 that is deliberately not stored (it is held in the server's memory only, see
-:mod:`zing.web.watches`).
+:mod:`ekte.web.watches`).
 
 The master key is never written to the data directory. It lives in this
 process's memory only (:func:`unlock` / :func:`lock` / :func:`current`), put
-there by :mod:`zing.web.masterkey` from, in order:
+there by :mod:`ekte.web.masterkey` from, in order:
 
-1. ``ZING_SECRET_KEY`` — itself resolved with :func:`~zing.config.resolve_secret`,
-   so a literal key, ``env:OTHER`` or ``file:/run/secrets/zing_key`` all work.
+1. ``EKTE_SECRET_KEY`` — itself resolved with :func:`~ekte.config.resolve_secret`,
+   so a literal key, ``env:OTHER`` or ``file:/run/secrets/ekte_key`` all work.
    A comma-separated list rotates: the first key seals, every key opens.
 2. A legacy ``<data dir>/secret.key`` written by older versions — read (never
    created) until the user moves the key out, which also replaces it.
 3. The user, who enters it in the web UI (or at the CLI prompt) after each
-   start of ``zing serve``.
+   start of ``ekte serve``.
 
 A *check value* (:func:`make_canary`) sealed with the key is stored next to
 the secrets it protects, so a wrong key is rejected even with nothing stored.
@@ -37,18 +37,18 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from zing import datadir
+from ekte import datadir
 
 PREFIX = "enc:v1:"
 _REFERENCES = ("env:", "file:")
 # Stored in place of a key that is held in memory only: it holds no secret.
 MEMORY = "mem:"
 _KEY_FILE = "secret.key"
-ENV = "ZING_SECRET_KEY"
+ENV = "EKTE_SECRET_KEY"
 
 
 # Sealed into the check value; opening it back proves a key is the right one.
-_CANARY = "zing-canary-v1"
+_CANARY = "ekte-canary-v1"
 
 
 class SecretError(Exception):
@@ -65,7 +65,7 @@ def _fernet() -> Any:
     except ImportError as exc:  # pragma: no cover - the web extra ships it
         raise SecretError(
             "encrypting stored keys needs the 'cryptography' package: "
-            "pip install 'zing-audit[web]'"
+            "pip install 'ekte[web]'"
         ) from exc
     return fernet
 
@@ -159,7 +159,7 @@ def parse_key(value: str) -> str:
     try:
         SecretBox([key], "input")
     except SecretError:
-        raise SecretError("not a zing master key (44 characters, letters, digits, - and _)") from None
+        raise SecretError("not a ekte master key (44 characters, letters, digits, - and _)") from None
     return key
 
 
@@ -186,8 +186,8 @@ def _split(value: str) -> list[str]:
 
 
 def env_box() -> SecretBox | None:
-    """The box from ``ZING_SECRET_KEY``, or None when it is unset."""
-    from zing.config import resolve_secret
+    """The box from ``EKTE_SECRET_KEY``, or None when it is unset."""
+    from ekte.config import resolve_secret
 
     raw = os.environ.get(ENV, "").strip()
     if not raw:
@@ -203,7 +203,7 @@ def env_box() -> SecretBox | None:
 
 
 def env_in_data_dir() -> bool:
-    """True when ``ZING_SECRET_KEY=file:`` points inside the data directory."""
+    """True when ``EKTE_SECRET_KEY=file:`` points inside the data directory."""
     raw = os.environ.get(ENV, "").strip()
     if not raw.startswith("file:"):
         return False

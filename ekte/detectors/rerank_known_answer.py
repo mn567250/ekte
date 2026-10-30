@@ -3,9 +3,9 @@ it first (a stub or a random shuffle does not)."""
 
 from __future__ import annotations
 
-from zing.context import AuditContext
-from zing.detectors.base import register
-from zing.detectors.rerank import (
+from ekte.context import AuditContext
+from ekte.detectors.base import register
+from ekte.detectors.rerank import (
     KNOWN_ANSWER_TOP,
     RerankDetector,
     known_answer_probe,
@@ -13,8 +13,8 @@ from zing.detectors.rerank import (
     rerank,
     scores,
 )
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, Severity, Status
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, Severity, Status
 
 SCALE = Scale(
     outcome("rerank.known_answer", "first", 100.0, Status.PASS,

@@ -17,13 +17,13 @@ from __future__ import annotations
 
 import re
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import contains_all, contains_any, contains_word, contains_word_any
-from zing.detectors.scale import DeductionScale, outcome
-from zing.knowledge.identity import AMBIGUOUS_BRAND_WORDS, VENDOR_BRANDS, own_brand_words
-from zing.models import DetectorResult, Dimension, Finding, RequestSpec, Severity, Status
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import contains_all, contains_any, contains_word, contains_word_any
+from ekte.detectors.scale import DeductionScale, outcome
+from ekte.knowledge.identity import AMBIGUOUS_BRAND_WORDS, VENDOR_BRANDS, own_brand_words
+from ekte.models import DetectorResult, Dimension, Finding, RequestSpec, Severity, Status
 
 # Substrings that name a cheaper/smaller tier of a family. If the returned model
 # field carries one of these and the requested id does not, that is a downgrade.
@@ -313,7 +313,7 @@ class ModelIdentityDetector(Detector):
                         f"possible substitution."
                     ),
                     evidence={"diverged": soft_violations},
-                    recommendation="Run `zing compare` against a trusted baseline to corroborate.",
+                    recommendation="Run `ekte compare` against a trusted baseline to corroborate.",
                 )
             )
 
@@ -450,7 +450,7 @@ class ModelIdentityDetector(Detector):
                         "rather than a swap. Corroborate before treating as substitution."
                     ),
                     evidence={**evidence, "forbidden_hits": forbidden_hits},
-                    recommendation="Run `zing compare` against a trusted baseline to disambiguate.",
+                    recommendation="Run `ekte compare` against a trusted baseline to disambiguate.",
                 )
             )
             return False

@@ -10,7 +10,7 @@
   "Key findings": "Wichtigste Befunde",
   "Model to request": "Angefragtes Modell",
   "Please enter the relay URL and the model to request.": "Bitte Relay-URL und angefragtes Modell eingeben.",
-  "Point it at a relay's <span class='key'>base_url</span> and the model it claims. zing runs a full suite of black-box probes, compares the results with built-in native model profiles and gives an evidence-backed verdict. The live detector log shows every probe as it runs.": "Richten Sie es auf die <span class='key'>base_url</span> eines Relays und das Modell, das es angibt. zing führt eine vollständige Suite von Black-Box-Proben aus, vergleicht die Ergebnisse mit integrierten nativen Modellprofilen und liefert ein belegtes Urteil. Das Live-Detektorprotokoll zeigt jede Probe, während sie läuft.",
+  "Point it at a relay's <span class='key'>base_url</span> and the model it claims. ekte runs a full suite of black-box probes, compares the results with built-in native model profiles and gives an evidence-backed verdict. The live detector log shows every probe as it runs.": "Richten Sie es auf die <span class='key'>base_url</span> eines Relays und das Modell, das es angibt. ekte führt eine vollständige Suite von Black-Box-Proben aus, vergleicht die Ergebnisse mit integrierten nativen Modellprofilen und liefert ein belegtes Urteil. Das Live-Detektorprotokoll zeigt jede Probe, während sie läuft.",
   "Relay URL": "Relay-URL",
   "Show full report": "Vollständigen Bericht anzeigen",
   "The key itself, or a reference: <span class='key'>env:VAR</span> · <span class='key'>file:/path</span>": "Der Schlüssel selbst oder ein Verweis: <span class='key'>env:VAR</span> · <span class='key'>file:/path</span>",

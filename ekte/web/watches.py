@@ -1,14 +1,14 @@
 """Scheduled watch store — saved re-audit targets for the web monitor, stdlib only.
 
-`zing serve` can keep a list of *watches*: a target plus a cadence (interval),
+`ekte serve` can keep a list of *watches*: a target plus a cadence (interval),
 suite, an alert threshold, and a set of webhooks. A background scheduler in the
 web server runs each due watch on its interval and POSTs an alert when the risk
 crosses the threshold or regresses versus the previous run. This module is the
 persistence layer for those watch definitions — a tiny SQLite store, no new
 dependency beyond ``sqlite3``.
 
-Storage lives alongside the audit history in ``$ZING_DATA_DIR`` (default
-``~/.zing``) as ``watches.db``. Like :mod:`zing.web.history`, every function
+Storage lives alongside the audit history in ``$EKTE_DATA_DIR`` (default
+``~/.ekte``) as ``watches.db``. Like :mod:`ekte.web.history`, every function
 opens a fresh short-lived connection so the module is safe to call from
 FastAPI's threadpool, lazily creates its table, and is best-effort: a malformed
 row must never crash the scheduler loop.
@@ -20,9 +20,9 @@ Where it keeps it is the user's choice (:func:`get_key_storage`, a
 ``memory`` (the default)  the key is never stored. The ``api_key`` column holds
                           only the marker ``mem:`` and the key itself stays in
                           this process's memory (:data:`_memory_keys`) until
-                          ``zing serve`` stops; then it has to be entered again.
+                          ``ekte serve`` stops; then it has to be entered again.
 ``encrypted``             the key is kept in the DB, encrypted with
-                          :mod:`zing.secretbox` (``enc:v1:…``).
+                          :mod:`ekte.secretbox` (``enc:v1:…``).
 
 ``env:``/``file:`` references hold no secret and are kept as they are in both
 modes. The master key itself is never stored here, only its check value
@@ -57,9 +57,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from zing import datadir, i18n, secretbox
-from zing.config import SURFACES
-from zing.knowledge import snapshot as kb_snapshot
+from ekte import datadir, i18n, secretbox
+from ekte.config import SURFACES
+from ekte.knowledge import snapshot as kb_snapshot
 
 # Full column set, in table order. ``api_key`` lives here for the scheduler, but
 # is filtered out of the public listing (see _LIST_COLS).
@@ -143,7 +143,7 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
         """
     )
     # Databases created before alerts were translatable lack `language`; add
-    # it (NULL = English, see zing.i18n.normalize).
+    # it (NULL = English, see ekte.i18n.normalize).
     cols = {r[1] for r in conn.execute("PRAGMA table_info(watches)")}
     if "language" not in cols:
         conn.execute("ALTER TABLE watches ADD COLUMN language TEXT")
@@ -167,7 +167,7 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
     # An embedding watch's claimed vector length; NULL or 0 takes the KB's.
     if "embedding_dimensions" not in cols:
         conn.execute("ALTER TABLE watches ADD COLUMN embedding_dimensions INTEGER")
-    # The master key's check value (see zing.secretbox.make_canary).
+    # The master key's check value (see ekte.secretbox.make_canary).
     conn.execute("CREATE TABLE IF NOT EXISTS secret_meta (name TEXT PRIMARY KEY, value TEXT)")
     kb_snapshot.ensure_table(conn)
     kb_snapshot.add_link_columns(
@@ -230,7 +230,7 @@ def _held(wid: Any) -> str | None:
 
 
 def forget_memory_keys() -> None:
-    """Drop every key held in memory (as when ``zing serve`` stops)."""
+    """Drop every key held in memory (as when ``ekte serve`` stops)."""
     with _memory_lock:
         _memory_keys.clear()
 
@@ -244,7 +244,7 @@ def _default_storage(conn: sqlite3.Connection) -> str:
     """No choice made yet: keep what an older version set up, else store nothing.
 
     A store that already holds encrypted keys or a master key check value, and
-    a setup that provides a master key (``ZING_SECRET_KEY``, a legacy
+    a setup that provides a master key (``EKTE_SECRET_KEY``, a legacy
     ``secret.key``), keep encrypting; everything else stores no key.
     """
     has_encrypted = conn.execute(
@@ -477,7 +477,7 @@ def _open_key(d: dict[str, Any]) -> None:
     if secretbox.is_memory(stored):
         d["api_key"] = _held(d.get("id"))
         if d["api_key"] is None:
-            d["key_error"] = "the API key is not stored and zing serve restarted: enter it again"
+            d["key_error"] = "the API key is not stored and ekte serve restarted: enter it again"
             d["key_missing"] = True
         return
     if not secretbox.is_sealed(stored):
@@ -576,7 +576,7 @@ def _pin(conn: sqlite3.Connection, wid: int, knowledge: dict[str, Any] | None) -
 def pin(wid: int, knowledge: dict[str, Any] | None) -> None:
     """Pin (or re-pin) a watch to a knowledge-base profile.
 
-    ``knowledge`` is a :class:`~zing.models.KnowledgeUsage` dict with its
+    ``knowledge`` is a :class:`~ekte.models.KnowledgeUsage` dict with its
     ``profile`` snapshot; without one the watch resolves the live KB per run.
     """
     with _connect() as conn:

@@ -1,7 +1,7 @@
 """Rerank performance probe — latency and throughput of ``POST /rerank``.
 
-The rerank counterpart of the embedding probe (:mod:`zing.detectors.embed_performance`),
-sharing the chat probe's gating and phase loop (:mod:`zing.detectors.perf_probe`):
+The rerank counterpart of the embedding probe (:mod:`ekte.detectors.embed_performance`),
+sharing the chat probe's gating and phase loop (:mod:`ekte.detectors.perf_probe`):
 pings, a warm-up (reported as cold start), N probe rounds, and on deep/full a
 burst at the reliability concurrency. Each round sends one query over 4
 documents and one over 32 — the second axis: a 32-document request whose
@@ -31,12 +31,12 @@ import secrets
 from collections.abc import Sequence
 from typing import Any
 
-from zing import prompts
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors import perf_probe
-from zing.detectors.base import Detector, register
-from zing.detectors.perf_probe import (
+from ekte import prompts
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors import perf_probe
+from ekte.detectors.base import Detector, register
+from ekte.detectors.perf_probe import (
     Endpoint,
     burst_size,
     consistency_outcomes,
@@ -47,8 +47,8 @@ from zing.detectors.perf_probe import (
     r,
     signed,
 )
-from zing.detectors.scale import Scale, outcome
-from zing.models import (
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import (
     DetectorResult,
     Dimension,
     EndpointPerformance,
@@ -56,9 +56,9 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.perf import phase_scope, summarize_endpoint
-from zing.perf.recorder import last_record
-from zing.utils.stats import percentile
+from ekte.perf import phase_scope, summarize_endpoint
+from ekte.perf.recorder import last_record
+from ekte.utils.stats import percentile
 
 OP = "rerank"
 # Documents per query on the two axes, and the phase the larger requests carry

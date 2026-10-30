@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from zing.models import AuditReport, RequestRecord
-from zing.web import analytics_store, history
+from ekte.models import AuditReport, RequestRecord
+from ekte.web import analytics_store, history
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -33,7 +33,7 @@ _V1_SCHEMA = (
 
 @pytest.fixture
 def data(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     return tmp_path
 
 
@@ -44,7 +44,7 @@ def _fixture() -> dict:
 
 
 def _old_shaped(i: int = 0) -> dict:
-    """A report as an older zing wrote it: no started_at, request records
+    """A report as an older ekte wrote it: no started_at, request records
     without the newer fields."""
     report = _fixture()
     report.pop("started_at")
@@ -515,11 +515,11 @@ def test_interrupted_backfill_resumes_without_damage(data, monkeypatch):
             _same_report(history.get(rid), report)
 
 
-def test_rows_written_by_an_older_zing_are_picked_up(data):
+def test_rows_written_by_an_older_ekte_are_picked_up(data):
     first = _fixture()
     history.save(first)
     old = _old_shaped(3)
-    with _db(data) as conn:  # an older zing knows neither the column nor the tables
+    with _db(data) as conn:  # an older ekte knows neither the column nor the tables
         conn.execute(
             "INSERT INTO history (ts, base_url, claimed_model, report_json) VALUES (?,?,?,?)",
             ("t", "https://relay.example.com/v1", "gpt-4o-mini", json.dumps(old)),
@@ -544,7 +544,7 @@ def test_a_newer_extract_version_re_extracts(data, monkeypatch):
     assert row["extract_version"] == analytics_store.EXTRACT_VERSION
 
     gone = history.save(_fixture())
-    with _db(data) as conn:  # deleted by an older zing: its analytics rows stay
+    with _db(data) as conn:  # deleted by an older ekte: its analytics rows stay
         conn.execute("DELETE FROM history WHERE id = ?", (gone,))
     monkeypatch.setattr(analytics_store, "EXTRACT_VERSION", analytics_store.EXTRACT_VERSION + 1)
     history.backfill_analytics()
@@ -616,7 +616,7 @@ def test_decode_speed_tails_come_from_the_requests_of_the_p50():
 
 def test_a_v2_database_gets_the_decode_tails_of_its_older_runs(data):
     rid = history.save(_with_decode(_fixture(), [float(v) for v in range(10, 31)]))
-    with _db(data) as conn:  # as zing with schema 2 left it
+    with _db(data) as conn:  # as ekte with schema 2 left it
         conn.execute("ALTER TABLE history_metrics DROP COLUMN decode_tps_p5")
         conn.execute("ALTER TABLE history_metrics DROP COLUMN decode_tps_p95")
         conn.execute("UPDATE history_metrics SET extract_version = 1")
@@ -631,7 +631,7 @@ def test_a_v2_database_gets_the_decode_tails_of_its_older_runs(data):
 
 def test_a_v3_database_gets_the_surface_column(data):
     rid = history.save(_fixture())
-    with _db(data) as conn:  # as zing with schema 3 left it, before surfaces
+    with _db(data) as conn:  # as ekte with schema 3 left it, before surfaces
         conn.execute("ALTER TABLE history DROP COLUMN surface")
         conn.execute("PRAGMA user_version = 3")
     history.init()

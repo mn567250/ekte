@@ -14,13 +14,13 @@ import json
 import httpx
 import pytest
 
-from zing.clients import (
+from ekte.clients import (
     OpenAICompatibleClient,
     ResponsesClient,
     detect_api,
     make_client,
 )
-from zing.models import RequestSpec, TargetConfig
+from ekte.models import RequestSpec, TargetConfig
 
 BASE = "https://api.openai.test/v1"
 MODEL = "gpt-5"

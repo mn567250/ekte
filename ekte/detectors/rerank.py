@@ -18,9 +18,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector
 
 SURFACE = "rerank"
 

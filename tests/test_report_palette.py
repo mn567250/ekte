@@ -1,6 +1,6 @@
-"""The exported reports use the web UI's colour tokens (zing/web/static/v2/tokens.css).
+"""The exported reports use the web UI's colour tokens (ekte/web/static/v2/tokens.css).
 
-zing/report/palette.py reads tokens.css: the HTML report embeds its
+ekte/report/palette.py reads tokens.css: the HTML report embeds its
 declarations and styles itself with var(--…) only; the PDF takes resolved
 values from palette.LIGHT. No other report module carries a colour literal.
 """
@@ -11,11 +11,11 @@ import json
 import re
 from pathlib import Path
 
-from zing.models import AuditReport
-from zing.report import palette, render_html
+from ekte.models import AuditReport
+from ekte.report import palette, render_html
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT = ROOT / "zing" / "report"
+REPORT = ROOT / "ekte" / "report"
 _FIXTURE = Path(__file__).resolve().parent / "fixtures" / "web_report.json"
 
 # a hex colour literal: #rgb / #rrggbb(aa) after ":", ",", "(", a space or a quote

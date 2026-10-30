@@ -1,5 +1,5 @@
-/* zing web UI v2 — the "Running" list (jobs.js), shared by the Audit and
- * Monitors pages. Tokens only (zing.css); light + dark. */
+/* ekte web UI v2 — the "Running" list (jobs.js), shared by the Audit and
+ * Monitors pages. Tokens only (ekte.css); light + dark. */
 .jh { font-size: 12.5px; color: var(--ink-muted); margin: 0 0 10px; line-height: 1.5; }
 .jempty { font-size: 14px; color: var(--ink-muted); margin: 8px 0 0; }
 .jempty[hidden] { display: none; }

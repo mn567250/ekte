@@ -1,12 +1,12 @@
-"""The prompt library: every text zing sends to an LLM API.
+"""The prompt library: every text ekte sends to an LLM API.
 
-Same pattern as the UI/alert translations (``zing/i18n/locales/<code>.json``):
-one JSON file per language, ``zing/prompts/<code>.json``, with a ``meta`` block
+Same pattern as the UI/alert translations (``ekte/i18n/locales/<code>.json``):
+one JSON file per language, ``ekte/prompts/<code>.json``, with a ``meta`` block
 and the entries under ``prompts``. An entry is a string, or JSON data (a list of
 messages, a tool schema, a list of documents, …) sent as-is.
 
 Probe language is fixed, deliberately independent of the UI/alert language: the
-same relay must get the same verdict whoever reads the report, and zing's
+same relay must get the same verdict whoever reads the report, and ekte's
 answer checks, token estimates and fingerprints are calibrated to these exact
 texts. All probes here are English (:data:`PROBE_LANG`). Probes whose language
 *is* the measurement — e.g. the Chinese fluency / tokenizer / self-id
@@ -49,7 +49,7 @@ def get(prompt_id: str) -> Any:
     try:
         return copy.deepcopy(_library()[prompt_id])
     except KeyError:
-        raise KeyError(f"unknown prompt id {prompt_id!r} (see zing/prompts/{PROBE_LANG}.json)") from None
+        raise KeyError(f"unknown prompt id {prompt_id!r} (see ekte/prompts/{PROBE_LANG}.json)") from None
 
 
 def text(prompt_id: str, **values: Any) -> str:

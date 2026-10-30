@@ -1,16 +1,16 @@
-/* zing web UI v2 — the "Running" list of background audits and running
+/* ekte web UI v2 — the "Running" list of background audits and running
  * monitors (/api/jobs), shared by the Audit page (kind "audit") and the
  * Monitors page (kind "monitor"). Styles: jobs.css.
  *
  * Markup: an empty <ul class="jlist" id="…"></ul> inside the page's own panel.
  *
- * ZingJobs.init(list, opts) polls /api/jobs and renders one <li class="job">
+ * EkteJobs.init(list, opts) polls /api/jobs and renders one <li class="job">
  * per queued / running run of that kind (a progress bar with role=progressbar,
  * "Watch live", "Open monitor" for monitors, Cancel), plus failed runs, which
  * never reach History (the server drops them after a while). It polls every
  * 2 s while a run is active and every 5 s otherwise (so a page notices a
  * run that starts elsewhere); polling pauses while the browser tab is hidden and
- * catches up when it is shown again. Re-renders on "zing:lang" from cache.
+ * catches up when it is shown again. Re-renders on "ekte:lang" from cache.
  *   opts.kind            "audit" (everything but monitors, the default) or
  *                        "monitor"
  *   opts.onChange(active, rows)  called after every render with the number
@@ -29,13 +29,13 @@
   var Tf = function (zh, en, vars) {
     return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
   };
-  var ico = function (n, o) { return window.zingIcon ? window.zingIcon(n, o || {}) : ""; };
+  var ico = function (n, o) { return window.ekteIcon ? window.ekteIcon(n, o || {}) : ""; };
   var esc = function (s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
     });
   };
-  var srvT = function (s) { return window.ZING_LANG ? window.ZING_LANG.server(s) : s; };
+  var srvT = function (s) { return window.EKTE_LANG ? window.EKTE_LANG.server(s) : s; };
   var STREAM = {
     stream: ["流式", "Streaming"],
     non_stream: ["非流式", "Non-streaming"],
@@ -47,7 +47,7 @@
     var d = new Date(sec * 1000);
     if (isNaN(d)) return "";
     try {
-      return window.ZING_LANG.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(d);
+      return window.EKTE_LANG.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(d);
     } catch (e) {
       return d.toLocaleString();
     }
@@ -171,11 +171,11 @@
         .then(function () { return st.busy; })
         .then(refresh);
     });
-    window.addEventListener("zing:lang", render);
+    window.addEventListener("ekte:lang", render);
 
     refresh();
     return { refresh: refresh, rows: function () { return st.rows.slice(); } };
   }
 
-  window.ZingJobs = { init: init };
+  window.EkteJobs = { init: init };
 })();

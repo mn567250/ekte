@@ -20,11 +20,11 @@ check is not counted.
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
 
 _NO_RESPONSE = "No usable response to judge by."  # same sentence as protocol's scale
 

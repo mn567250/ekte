@@ -1,4 +1,4 @@
-"""Background audit jobs for `zing serve` — audits that outlive the page.
+"""Background audit jobs for `ekte serve` — audits that outlive the page.
 
 An audit started from the UI runs here as a job owned by the server, not by
 the browser tab: the page that started it only *subscribes* to its events.
@@ -8,7 +8,7 @@ replayed, then the live tail.
 
 Relay gate: audits against the same relay never run at the same time. A
 second audit for a relay that is busy is queued until the first one finishes,
-so concurrency from zing itself never skews latency, throughput or
+so concurrency from ekte itself never skews latency, throughput or
 reliability results (and a locally hosted model is not asked to serve two
 audits at once). Audits against different relays run in parallel, up to
 :data:`MAX_PARALLEL`. Monitors (scheduled re-audits) take the same gate.
@@ -34,13 +34,13 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from typing import Any, TypeVar
 
-from zing.perf.trend import attach_trends
-from zing.utils.net import is_loopback_host, url_host
+from ekte.perf.trend import attach_trends
+from ekte.utils.net import is_loopback_host, url_host
 
 _T = TypeVar("_T")
 
 # How many audits may run at once across all relays.
-MAX_PARALLEL = max(1, int(os.environ.get("ZING_MAX_PARALLEL_AUDITS", "4") or 4))
+MAX_PARALLEL = max(1, int(os.environ.get("EKTE_MAX_PARALLEL_AUDITS", "4") or 4))
 
 # Finished jobs are kept this long (and at most this many) for re-attaching pages.
 _KEEP_FINISHED_SEC = 15 * 60
@@ -389,7 +389,7 @@ async def settle(aw: Awaitable[_T]) -> _T:
 def _save(report: dict[str, Any]) -> int | None:
     """Best-effort persist to history; never let the store break the job."""
     try:
-        from zing.web import history
+        from ekte.web import history
 
         rid = history.save(report)
     except Exception:

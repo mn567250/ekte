@@ -1,6 +1,6 @@
 """Small statistics helpers used by latency / timing analysis.
 
-Kept dependency-free (no numpy) so zing stays lightweight.
+Kept dependency-free (no numpy) so ekte stays lightweight.
 """
 
 from __future__ import annotations

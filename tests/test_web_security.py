@@ -1,4 +1,4 @@
-"""Local-only hardening of `zing serve` (zing/web/security.py) and the data dir.
+"""Local-only hardening of `ekte serve` (ekte/web/security.py) and the data dir.
 
 Skipped automatically when the optional web extra (fastapi) isn't installed.
 """
@@ -14,20 +14,20 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from zing.web import security  # noqa: E402
-from zing.web.server import create_app  # noqa: E402
+from ekte.web import security  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path / "data"))
     return TestClient(create_app(), base_url="http://localhost:8000")
 
 
 # ----- bind address ------------------------------------------------------ #
 @pytest.fixture
 def no_env(monkeypatch):
-    for var in ("ZING_HOST", "ZING_PORT", "ZING_CONTAINER"):
+    for var in ("EKTE_HOST", "EKTE_PORT", "EKTE_CONTAINER"):
         monkeypatch.delenv(var, raising=False)
 
 
@@ -45,24 +45,24 @@ def test_non_loopback_bind_is_refused(no_env, host):
 
 
 def test_env_host_and_port(no_env, monkeypatch):
-    monkeypatch.setenv("ZING_HOST", "localhost")
-    monkeypatch.setenv("ZING_PORT", "9123")
+    monkeypatch.setenv("EKTE_HOST", "localhost")
+    monkeypatch.setenv("EKTE_PORT", "9123")
     assert security.resolve_bind(None, None) == ("localhost", 9123)
     assert security.resolve_bind("127.0.0.1", 8001) == ("127.0.0.1", 8001)  # flags win
-    monkeypatch.setenv("ZING_PORT", "nope")
+    monkeypatch.setenv("EKTE_PORT", "nope")
     with pytest.raises(security.BindError):
         security.resolve_bind(None, None)
 
 
 def test_container_bind_needs_opt_in_and_a_container(no_env, monkeypatch):
-    monkeypatch.setenv("ZING_HOST", "0.0.0.0")
-    monkeypatch.setenv("ZING_CONTAINER", "1")
+    monkeypatch.setenv("EKTE_HOST", "0.0.0.0")
+    monkeypatch.setenv("EKTE_CONTAINER", "1")
     monkeypatch.setattr(security, "in_container", lambda: False)
     with pytest.raises(security.BindError, match="no container runtime"):
         security.resolve_bind(None, None)
     monkeypatch.setattr(security, "in_container", lambda: True)
     assert security.resolve_bind(None, None) == ("0.0.0.0", 8000)
-    monkeypatch.delenv("ZING_CONTAINER")
+    monkeypatch.delenv("EKTE_CONTAINER")
     with pytest.raises(security.BindError):
         security.resolve_bind(None, None)
 
@@ -71,7 +71,7 @@ def test_serve_command_refuses_all_interfaces(no_env, monkeypatch):
     pytest.importorskip("uvicorn")
     from typer.testing import CliRunner
 
-    from zing.cli import app
+    from ekte.cli import app
 
     called = []
     monkeypatch.setattr("uvicorn.run", lambda *a, **k: called.append(k))
@@ -93,8 +93,8 @@ def test_foreign_host_headers_are_refused(client, host):
 
 
 def test_allowed_hosts_env_adds_names(client, monkeypatch):
-    monkeypatch.setenv("ZING_ALLOWED_HOSTS", "zing.internal, other.local")
-    assert client.get("/api/health", headers={"Host": "zing.internal:8000"}).status_code == 200
+    monkeypatch.setenv("EKTE_ALLOWED_HOSTS", "ekte.internal, other.local")
+    assert client.get("/api/health", headers={"Host": "ekte.internal:8000"}).status_code == 200
     assert client.get("/api/health", headers={"Host": "nope.local"}).status_code == 421
 
 
@@ -134,7 +134,7 @@ def test_non_json_bodies_are_refused(client):
 
 
 def test_security_headers_on_every_response(client):
-    for path in ("/", "/v2/", "/api/health", "/v2/static/zing.css"):
+    for path in ("/", "/v2/", "/api/health", "/v2/static/ekte.css"):
         h = client.get(path).headers
         assert h["x-frame-options"] == "DENY", path
         assert h["x-content-type-options"] == "nosniff", path
@@ -152,10 +152,10 @@ def test_streaming_audit_passes_through_the_middleware(client):
 # ----- owner-only data directory ------------------------------------------ #
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX permissions")
 def test_data_dir_and_databases_are_owner_only(tmp_path, monkeypatch):
-    from zing.web import history, watches
+    from ekte.web import history, watches
 
     data = tmp_path / "fresh"
-    monkeypatch.setenv("ZING_DATA_DIR", str(data))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(data))
     watches.create({"base_url": "https://x/v1", "model": "m", "api_key": "sk-secret"})
     history.save({"target": {"base_url": "https://x/v1", "model": "m"}, "verdict": {}})
     assert stat.S_IMODE(os.stat(data).st_mode) == 0o700
@@ -169,9 +169,9 @@ def test_data_dir_and_databases_are_owner_only(tmp_path, monkeypatch):
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX permissions")
 def test_existing_database_files_are_tightened(tmp_path, monkeypatch):
-    from zing.web import watches
+    from ekte.web import watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     db = tmp_path / "watches.db"
     db.touch()
     db.chmod(0o644)

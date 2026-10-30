@@ -12,12 +12,12 @@ import json
 import httpx
 import pytest
 
-from zing.clients import OpenAICompatibleClient
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors.helpers import contains_word, contains_word_any, words_present
-from zing.detectors.model_identity import ModelIdentityDetector
-from zing.models import Severity, Status, TargetConfig
+from ekte.clients import OpenAICompatibleClient
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.helpers import contains_word, contains_word_any, words_present
+from ekte.detectors.model_identity import ModelIdentityDetector
+from ekte.models import Severity, Status, TargetConfig
 
 
 @pytest.mark.parametrize(
@@ -142,7 +142,7 @@ async def test_genuine_deepseek_self_id_passes(knowledge_base):
 
 # ----- own brand words: a profile without identity_keywords --------------- #
 def _own_brand_kb(self_id_fingerprint: bool = False):
-    from zing.knowledge.schema import FingerprintProbe, KnowledgeBase, ModelProfile, ProviderProfile
+    from ekte.knowledge.schema import FingerprintProbe, KnowledgeBase, ModelProfile, ProviderProfile
 
     fps = [FingerprintProbe(
         id="glm.who", signal="self-description", prompt="Who are you? One sentence.",
@@ -168,8 +168,8 @@ async def _run_own_brand(answer: str, *, self_id_fingerprint: bool = False):
 
 
 def test_own_brand_words_from_names():
-    from zing.knowledge.identity import own_brand_words
-    from zing.knowledge.schema import ModelProfile, ProviderProfile
+    from ekte.knowledge.identity import own_brand_words
+    from ekte.knowledge.schema import ModelProfile, ProviderProfile
 
     model = ModelProfile(id="glm-4.6v-flash", family="glm-4.6v")
     # Provider key, display_name and model id, widened to the vendor's other names.
@@ -205,8 +205,8 @@ async def test_rival_brand_still_flagged_without_identity_keywords():
 
 
 def test_own_brand_words_stay_narrow():
-    from zing.knowledge.identity import own_brand_words
-    from zing.knowledge.schema import ModelProfile, ProviderProfile
+    from ekte.knowledge.identity import own_brand_words
+    from ekte.knowledge.schema import ModelProfile, ProviderProfile
 
     # A platform serving another vendor's model: its own brand stays a rival.
     host = ProviderProfile(provider="qwen", display_name="Alibaba Cloud — Model Studio")
@@ -296,7 +296,7 @@ async def test_diverging_model_field_alone_is_evidence(knowledge_base):
 
 # ----- ambiguous brand words ("step", "meta", ...) ------------------------ #
 def test_ambiguous_brand_words_count_only_as_names():
-    from zing.detectors.model_identity import _brand_hits
+    from ekte.detectors.model_identity import _brand_hits
 
     words = ["step", "meta", "qwen"]
     assert _brand_hits("Let me think step by step, a meta question.", words, ambiguous=True) == []
@@ -342,7 +342,7 @@ async def test_ambiguous_word_in_self_id(knowledge_base):
 
 
 async def test_vendor_owning_an_ambiguous_word_keeps_it(knowledge_base):
-    from zing.knowledge.schema import KnowledgeBase, ModelProfile, ProviderProfile
+    from ekte.knowledge.schema import KnowledgeBase, ModelProfile, ProviderProfile
 
     provider = ProviderProfile(
         provider="cohere", display_name="Cohere",

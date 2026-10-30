@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="zing — monitors">zing — 监控</title>
+<title data-en="ekte — monitors">ekte — 监控</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <style>
@@ -110,7 +110,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="logo"><span class="b" id="logo-icon"></span><span>zing<b>.</b></span></div>
+    <div class="logo"><span class="b" id="logo-icon"></span><span>ekte<b>.</b></span></div>
     <a class="pill right" href="/"><span id="back-icon" class="pill-ico"></span> <span data-en="Back to audit">返回检测</span></a>
     <a class="pill" href="/history"><span id="hist-icon" class="pill-ico"></span> <span data-en="History">检测历史</span></a>
     <a class="try-v2" href="?ui=v2" style="font-size:12px;font-weight:700;color:var(--teal);text-decoration:none;white-space:nowrap" data-en="Try the new UI">试用新界面</a>
@@ -119,7 +119,7 @@
 
   <div class="hero">
     <h1 data-en="Put a <span class='u'>scheduled sentinel</span> on your relay">给中转站设个<span class="u">定时哨兵</span></h1>
-    <p data-en="Add a monitor: zing re-runs the black-box audit on your machine at the interval you set. As soon as the risk crosses your threshold or gets worse than last time, it pushes an alert in the language you choose to the webhooks you configured (Slack / Feishu / DingTalk / generic JSON).">添加一个监控：zing 会在你本地按设定的间隔自动重跑黑盒检测。一旦风险越线或较上次恶化，就以你选择的语言向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
+    <p data-en="Add a monitor: ekte re-runs the black-box audit on your machine at the interval you set. As soon as the risk crosses your threshold or gets worse than last time, it pushes an alert in the language you choose to the webhooks you configured (Slack / Feishu / DingTalk / generic JSON).">添加一个监控：ekte 会在你本地按设定的间隔自动重跑黑盒检测。一旦风险越线或较上次恶化，就以你选择的语言向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
   </div>
 
   <!-- add-watch form -->
@@ -128,7 +128,7 @@
       <div class="grp"><div class="lab" data-en="Name">名称</div><input class="in" id="f-name" placeholder="例如：生产中转站 deepseek" data-en-placeholder="e.g. production relay deepseek"></div>
       <div class="grp"><div class="lab" data-en="Relay address base_url">中转站地址 base_url</div><input class="in" id="f-url" autocomplete="username" spellcheck="false" placeholder="https://relay.example.com/v1"></div>
       <div class="two">
-        <div class="grp"><div class="lab">API Key</div><input class="in" id="f-key" type="password" data-secret="f-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" placeholder="sk-... 或 env:ZING_API_KEY" data-en-placeholder="sk-... or env:ZING_API_KEY"></div>
+        <div class="grp"><div class="lab">API Key</div><input class="in" id="f-key" type="password" data-secret="f-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" placeholder="sk-... 或 env:EKTE_API_KEY" data-en-placeholder="sk-... or env:EKTE_API_KEY"></div>
         <div class="grp"><div class="lab" data-en="Declared provider (optional)">声明厂商（可选）</div><input class="in" id="f-prov" placeholder="例如 openai / deepseek" data-en-placeholder="e.g. openai / deepseek"></div>
       </div>
       <div class="two">
@@ -182,7 +182,7 @@
       </div>
       <div class="formerr" id="formerr"></div>
       <button class="cta" id="add"><span id="add-icon" class="cta-ico"></span> <span data-en="Add monitor">添加监控</span></button>
-      <div class="reassure"><span id="lock-icon" class="reassure-ico"></span> <span data-en="Everything <b>runs locally</b>. The API key is <b>never stored</b>: it stays in the memory of zing serve until it stops, and is never written to disk, shown in the monitor list or sent to the browser. Enter it again after a restart, or use <b>env:VAR</b> for a monitor that must survive one.">全程<b>本地运行</b>。API Key <b>从不保存</b>：它只留在 zing serve 的内存中直到其停止，<b>绝不</b>写入磁盘、出现在监控列表里或发给浏览器。重启后请重新输入，或使用 <b>env:变量名</b> 让监控在重启后继续运行。</span></div>
+      <div class="reassure"><span id="lock-icon" class="reassure-ico"></span> <span data-en="Everything <b>runs locally</b>. The API key is <b>never stored</b>: it stays in the memory of ekte serve until it stops, and is never written to disk, shown in the monitor list or sent to the browser. Enter it again after a restart, or use <b>env:VAR</b> for a monitor that must survive one.">全程<b>本地运行</b>。API Key <b>从不保存</b>：它只留在 ekte serve 的内存中直到其停止，<b>绝不</b>写入磁盘、出现在监控列表里或发给浏览器。重启后请重新输入，或使用 <b>env:变量名</b> 让监控在重启后继续运行。</span></div>
     </form>
   </div>
 
@@ -190,7 +190,7 @@
   <div class="sechead"><h2 data-en="Configured monitors">已配置的监控</h2><span id="count"></span></div>
   <div class="wlist" id="list"><div class="empty" data-en="Loading…">加载中…</div></div>
 
-  <div class="foot" data-en="zing · relay reality check · monitors are scheduled in the background by the <code>zing serve</code> process">zing · 中转站验真 · 监控由 <code>zing serve</code> 进程在后台调度</div>
+  <div class="foot" data-en="ekte · relay reality check · monitors are scheduled in the background by the <code>ekte serve</code> process">ekte · 中转站验真 · 监控由 <code>ekte serve</code> 进程在后台调度</div>
 </div>
 
 <script src="/i18n.js"></script>
@@ -200,17 +200,17 @@
 <script>
 (function(){
   "use strict";
-  var RISK_ZH = (window.ZING_I18N && window.ZING_I18N.RISK_LEVEL) || {
+  var RISK_ZH = (window.EKTE_I18N && window.EKTE_I18N.RISK_LEVEL) || {
     clean:"一致", low:"基本可信", medium:"存在偏离", high:"货不对板", inconclusive:"信号不足"
   };
-  var RISK_EN = (window.ZING_I18N && window.ZING_I18N.EN && window.ZING_I18N.EN.RISK_LEVEL) || {
+  var RISK_EN = (window.EKTE_I18N && window.EKTE_I18N.EN && window.EKTE_I18N.EN.RISK_LEVEL) || {
     clean:"Consistent", low:"Mostly trustworthy", medium:"Deviations found", high:"Bait-and-switch", inconclusive:"Insufficient signal"
   };
 
   var $ = function(id){ return document.getElementById(id); };
 
   function icon(name, opts){
-    return (typeof window.zingIcon === "function") ? window.zingIcon(name, opts) : "";
+    return (typeof window.ekteIcon === "function") ? window.ekteIcon(name, opts) : "";
   }
 
   function esc(s){
@@ -227,7 +227,7 @@
 
   // Alert-language options, from the same language registry as the switcher.
   function langOptions(selected){
-    return window.ZING_LANG.langs().map(function(l){
+    return window.EKTE_LANG.langs().map(function(l){
       return '<option value="' + esc(l.code) + '"' + (l.code === selected ? " selected" : "") + '>' + esc(l.label) + '</option>';
     }).join("");
   }
@@ -235,7 +235,7 @@
   var langTouched = false;
   function fillFormLang(){
     var sel = $("f-lang");
-    var keep = langTouched ? sel.value : window.ZING_LANG.get();
+    var keep = langTouched ? sel.value : window.EKTE_LANG.get();
     sel.innerHTML = langOptions(keep);
   }
   fillFormLang();
@@ -245,7 +245,7 @@
     if(!ts) return T("从未运行", "Never run");
     try{
       var d = new Date(ts * 1000);
-      return d.toLocaleString(window.ZING_LANG.locale(), {hour12:false});
+      return d.toLocaleString(window.EKTE_LANG.locale(), {hour12:false});
     }catch(e){ return "—"; }
   }
 
@@ -258,7 +258,7 @@
 
   function render(watches){
     var list = $("list");
-    $("count").textContent = watches.length ? T("共 " + watches.length + " 项", watches.length + window.ZING_LANG.tr(watches.length === 1 ? " item" : " items")) : "";
+    $("count").textContent = watches.length ? T("共 " + watches.length + " 项", watches.length + window.EKTE_LANG.tr(watches.length === 1 ? " item" : " items")) : "";
     if(!watches.length){
       list.innerHTML = '<div class="empty">' + T("还没有任何监控。用上面的表单添加第一个吧。", "No monitors yet. Use the form above to add your first one.") + '</div>';
       return;
@@ -361,9 +361,9 @@
     }).then(function(res){
       btn.disabled = false;
       if(res.locked){ showErr(lockedMsg); return; }
-      if(!res.ok){ showErr(function(){ return window.ZING_LANG.server(res.body.error) || T("创建失败", "Failed to create monitor"); }); return; }
+      if(!res.ok){ showErr(function(){ return window.EKTE_LANG.server(res.body.error) || T("创建失败", "Failed to create monitor"); }); return; }
       // reset the key + name so a fresh add is easy; keep target for convenience
-      if(window.ZingSecret) window.ZingSecret.remember($("form"));
+      if(window.EkteSecret) window.EkteSecret.remember($("form"));
       $("f-name").value = ""; $("f-key").value = "";
       load();
     }).catch(function(){ btn.disabled = false; showErr(function(){ return T("网络错误，创建失败", "Network error — failed to create monitor"); }); });
@@ -387,7 +387,7 @@
       fetch("/api/watches/"+runId+"/run", {method:"POST"}).then(function(r){
         if(r.status === 423){ t.disabled = false; t.innerHTML = orig; alert(lockedMsg()); return null; }
         return r.json().then(function(j){
-          if(j && j.key_missing){ t.disabled = false; t.innerHTML = orig; alert(T("API 密钥未保存，zing serve 重启后已丢失。", "The API key is not stored and was lost when zing serve restarted.")); }
+          if(j && j.key_missing){ t.disabled = false; t.innerHTML = orig; alert(T("API 密钥未保存，ekte serve 重启后已丢失。", "The API key is not stored and was lost when ekte serve restarted.")); }
           return j;
         });
       }).then(function(){ load(); }).catch(function(){
@@ -436,8 +436,8 @@
   })();
 
   // wire the model picker on the "声称模型" field (canonical value holder stays #f-claimed)
-  if(window.ZingModelPicker && typeof window.ZingModelPicker.enhance === "function"){
-    window.ZingModelPicker.enhance({
+  if(window.EkteModelPicker && typeof window.EkteModelPicker.enhance === "function"){
+    window.EkteModelPicker.enhance({
       claimedInput: "#f-claimed",
       providerInput: "#f-prov",
       urlInput: "#f-url",
@@ -449,7 +449,7 @@
   }
 
   // language switch: re-render the list and any form error in place
-  window.addEventListener("zing:lang", function(){
+  window.addEventListener("ekte:lang", function(){
     fillFormLang();
     if(errFn) showErr(errFn);
     load();

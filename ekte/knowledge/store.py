@@ -2,15 +2,15 @@
 
 Profiles added in the web UI (or imported from YAML) are stored here, so a user
 without an editable install — or with only the UI — can add models and use
-them for runs. :func:`zing.knowledge.load_knowledge_base` layers these entries
-on top of the packaged YAML and ``ZING_KB_DIR`` for every command, so
-``zing check`` and ``zing serve`` resolve exactly the same profiles.
+them for runs. :func:`ekte.knowledge.load_knowledge_base` layers these entries
+on top of the packaged YAML and ``EKTE_KB_DIR`` for every command, so
+``ekte check`` and ``ekte serve`` resolve exactly the same profiles.
 
 One table, one row per entry:
 
-* ``kind = 'model'``: a full :class:`~zing.knowledge.schema.ModelProfile` for
+* ``kind = 'model'``: a full :class:`~ekte.knowledge.schema.ModelProfile` for
   ``provider``/``model_id``. It adds a model to that provider, or — the user's
-  entries have the highest priority — replaces a packaged or ``ZING_KB_DIR``
+  entries have the highest priority — replaces a packaged or ``EKTE_KB_DIR``
   model with the same id (reported as *shadowing* it).
 * ``kind = 'provider'``: provider-level data. For a provider that does not
   exist otherwise it is the whole provider (display name, hints, shared
@@ -24,9 +24,9 @@ longer validates (e.g. after an upgrade changed the schema) is skipped with a
 warning rather than breaking every audit.
 
 A second table, ``kb_disabled``, switches off items that are *not* the user's
-own entries (packaged or ``ZING_KB_DIR`` providers and models): one row per
+own entries (packaged or ``EKTE_KB_DIR`` providers and models): one row per
 switched-off ``(kind, provider, model_id)``. The user's own entries keep using
-their ``enabled`` column. Older zing versions ignore the table.
+their ``enabled`` column. Older ekte versions ignore the table.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 
-from zing import datadir
+from ekte import datadir
 
 DB_NAME = "kb.db"
 KINDS = ("provider", "model")
@@ -136,7 +136,7 @@ def upsert(
 ) -> int:
     """Insert or replace the entry for (kind, provider, model_id); return its id.
 
-    Callers validate ``body`` first (see :mod:`zing.knowledge.importer`); the
+    Callers validate ``body`` first (see :mod:`ekte.knowledge.importer`); the
     store only persists it. Replacing keeps the id and ``created_ts``.
     """
     if kind not in KINDS:
@@ -199,7 +199,7 @@ def delete(entry_id: int) -> bool:
 
 
 def disabled_items() -> list[tuple[str, str, str]]:
-    """Switched-off packaged / ``ZING_KB_DIR`` items as ``(kind, provider, model_id)``,
+    """Switched-off packaged / ``EKTE_KB_DIR`` items as ``(kind, provider, model_id)``,
     sorted (``model_id`` is ``""`` for a provider). Empty without a kb.db."""
     if not exists():
         return []
@@ -209,7 +209,7 @@ def disabled_items() -> list[tuple[str, str, str]]:
 
 
 def set_item_enabled(kind: str, provider: str, model_id: str | None, enabled: bool) -> None:
-    """Switch a packaged / ``ZING_KB_DIR`` item on or off (see ``kb_disabled``)."""
+    """Switch a packaged / ``EKTE_KB_DIR`` item on or off (see ``kb_disabled``)."""
     if kind not in KINDS:
         raise ValueError(f"unknown item kind: {kind!r}")
     if kind == "model" and not model_id:

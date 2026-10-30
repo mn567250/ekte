@@ -12,16 +12,16 @@ import re
 from functools import lru_cache
 from typing import Any
 
-from zing import prompts
-from zing.utils.tokenize import estimate_tokens
+from ekte import prompts
+from ekte.utils.tokenize import estimate_tokens
 
-# The filler's pool of natural-ish sentences (zing/prompts/en.json). Varied so it
+# The filler's pool of natural-ish sentences (ekte/prompts/en.json). Varied so it
 # is not trivially compressible by a relay's summarizer shim (which would defeat
 # truncation tests).
 _FILLER_SENTENCES: list[str] = prompts.get("context_window.filler_sentences")
 
 
-def stable_marker(seed: str, prefix: str = "ZING") -> str:
+def stable_marker(seed: str, prefix: str = "EKTE") -> str:
     """A reproducible high-entropy marker derived from ``seed``.
 
     Used as a needle/canary that a model cannot have memorized.

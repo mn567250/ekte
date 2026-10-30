@@ -1,10 +1,10 @@
-# zing — Entwicklerhandbuch
+# ekte — Entwicklerhandbuch
 
 > [🇬🇧 English](DEVELOPER_GUIDE.md) · [🇨🇳 中文](DEVELOPER_GUIDE.zh-CN.md) · [🇫🇷 Français](DEVELOPER_GUIDE.fr.md) · [🇪🇸 Español](DEVELOPER_GUIDE.es.md) · [🇵🇹 Português](DEVELOPER_GUIDE.pt.md) · [🇮🇹 Italiano](DEVELOPER_GUIDE.it.md) · **🇩🇪 Deutsch**
 
-Dieses Handbuch richtet sich an alle, die zing verändern: wie es aufgebaut ist,
+Dieses Handbuch richtet sich an alle, die ekte verändern: wie es aufgebaut ist,
 wie Sie eine Entwicklungsumgebung einrichten, wie Sie mitwirken und wie es
-paketiert, in Docker betrieben und veröffentlicht wird. Was zing tut und wie man
+paketiert, in Docker betrieben und veröffentlicht wird. Was ekte tut und wie man
 es nutzt, steht im [README](README.de.md); wie jede Prüfung funktioniert und
 bewertet wird, in der [Methodik](docs/METHODOLOGY.de.md).
 
@@ -44,7 +44,7 @@ bewertet wird, in der [Methodik](docs/METHODOLOGY.de.md).
 
 ## Grundsätze
 
-zing ist ein Hilfsmittel für Black-Box-Prüfungen: Korrektheit und **ehrliche
+ekte ist ein Hilfsmittel für Black-Box-Prüfungen: Korrektheit und **ehrliche
 Relays nicht fälschlich zu beschuldigen** sind wichtiger, als jeden möglichen
 Trick zu erwischen. Behalten Sie diesen Maßstab bei jeder Änderung im Blick.
 
@@ -57,12 +57,12 @@ Trick zu erwischen. Behalten Sie diesen Maßstab bei jeder Änderung im Blick.
   echte API.
 - **Geheimnisse bleiben, wo sie sind.** API-Schlüssel werden als Fingerabdruck
   festgehalten, nie in Berichten gespeichert. Jeder neue Ausgabepfad muss vom
-  Relay kontrollierten Text durch `zing.utils.redact` leiten und für sein Format
+  Relay kontrollierten Text durch `ekte.utils.redact` leiten und für sein Format
   maskieren.
 - **Dieselben Tests für alle.** Testtexte sind englisch und fest, unabhängig von
   der Sprache der Oberfläche, damit dasselbe Relay dasselbe Urteil erhält (siehe
   [Prompt-Bibliothek](#prompt-bibliothek)).
-- **Nur lokal.** zing kontaktiert nur die vom Nutzer konfigurierten Endpunkte,
+- **Nur lokal.** ekte kontaktiert nur die vom Nutzer konfigurierten Endpunkte,
   und die Weboberfläche lauscht nur auf Loopback (siehe [Webserver](#webserver)).
 
 ## Entwicklungsumgebung
@@ -71,25 +71,25 @@ Erfordert Python 3.10+. Node.js ist optional: die Tests des Browser-JavaScripts
 laufen unter `node` und werden ohne es übersprungen.
 
 ```bash
-git clone https://github.com/cenbonew/zing
-cd zing
+git clone https://github.com/mn567250/ekte
+cd ekte
 pip install -e '.[dev,web]'   # editierbare Installation mit Entwicklerwerkzeugen und Weboberfläche
 pytest                        # Testsuite
-ruff check zing tests         # Lint
-mypy zing                     # Typprüfung
+ruff check ekte tests         # Lint
+mypy ekte                     # Typprüfung
 ```
 
 Mit uv: `uv venv && uv pip install -e '.[dev,web]'`. Systembibliotheken
 sind nicht nötig, auch nicht für PDF-Berichte.
 
-Aus dem Quellcode starten Sie mit `zing …` oder `python -m zing …`. `zing serve`
-liefert die Weboberfläche direkt aus `zing/web/static/` aus, ein Neuladen im
+Aus dem Quellcode starten Sie mit `ekte …` oder `python -m ekte …`. `ekte serve`
+liefert die Weboberfläche direkt aus `ekte/web/static/` aus, ein Neuladen im
 Browser übernimmt also Änderungen am Frontend; es gibt keinen Build-Schritt.
 
 ## Aufbau des Repositorys
 
 ```text
-zing/
+ekte/
   cli.py               Typer-CLI: check, compare, models, kb*, serve, watch, embed, rerank, image, audio
   config.py            YAML-Konfiguration, Geheimnis-Verweise (env:/file:), AuditOptions
   runner.py            run_audit(): verdrahtet alles und führt die Detektoren aus
@@ -101,7 +101,7 @@ zing/
   judge/               der vertrauenswürdige LLM-Richter für quality_judge
   knowledge/           Schema, Loader, Nutzerspeicher (kb.db), Import, Recherche-Prompt, Schnappschüsse
     data/              mitgelieferte Anbieterprofile (*.yaml)
-  prompts/en.json      jeder Text, den zing an eine LLM-API sendet
+  prompts/en.json      jeder Text, den ekte an eine LLM-API sendet
   perf/                Aufzeichnung je Anfrage und der Leistungsabschnitt des Berichts
   report/              Renderer für JSON / Markdown / HTML / PDF und der Writer
   embed_audit.py       eigenständiger Prüfer für Embedding und Rerank
@@ -120,12 +120,12 @@ zing/
     analytics_store.py seine Analysetabellen: Kennzahlen pro Lauf, Anfrage-Datensätze
     analytics.py       Analyseabfragen: Kennzahlen, Zeitreihen, Ranglisten
     watches.py         Speicher der Überwachungen (watches.db)
-    masterkey.py       Zustände und Aktionen des Hauptschlüssels (Server und `zing secret`)
+    masterkey.py       Zustände und Aktionen des Hauptschlüssels (Server und `ekte secret`)
     static/            Seiten der klassischen Oberfläche und gemeinsame Skripte (lang.js, i18n.js, …)
     static/v2/         Seiten, Styles und Skripte der neuen Oberfläche
 tests/                 pytest-Suite; conftest.py enthält das Mock-Relay
 docs/                  METHODOLOGY (7 Sprachen), CI.md, DOCKER.md, PUBLISHING.md
-examples/zing.yaml     kommentierte Konfigurationsdatei
+examples/ekte.yaml     kommentierte Konfigurationsdatei
 action.yml             die GitHub Composite Action
 Dockerfile             Image der Weboberfläche
 ```
@@ -134,16 +134,16 @@ Dockerfile             Image der Weboberfläche
 
 ### Ablauf einer Prüfung
 
-`zing check`, `zing compare`, `zing watch`, der Prüfstrom der Weboberfläche und
+`ekte check`, `ekte compare`, `ekte watch`, der Prüfstrom der Weboberfläche und
 ihr Überwachungs-Scheduler münden alle in dieselbe Funktion,
-`zing.runner.run_audit()`:
+`ekte.runner.run_audit()`:
 
-1. **Konfiguration.** `zing/config.py` führt die YAML-Konfiguration mit den
+1. **Konfiguration.** `ekte/config.py` führt die YAML-Konfiguration mit den
    Kommandozeilenoptionen zu `TargetConfig` (Ziel, optional Referenz und Richter)
    und `AuditOptions` (Suite, Dimensionen, Umfang der Tests, Ausgabe) zusammen.
    Als `env:VAR` oder `file:/pfad` angegebene API-Schlüssel werden hier aufgelöst.
 2. **Wissensbasis.** `load_knowledge_base()` lädt die mitgelieferten Profile,
-   `--kb-dir`/`ZING_KB_DIR` und die `kb.db` des Nutzers und löst das
+   `--kb-dir`/`EKTE_KB_DIR` und die `kb.db` des Nutzers und löst das
    **angegebene** Modell (standardmäßig das angefragte) zu einem Profil auf. Eine
    Überwachung übergibt stattdessen ihren gebundenen Schnappschuss.
 3. **Clients.** `make_client()` erzeugt einen Client für das Ziel (und die
@@ -160,7 +160,7 @@ ihr Überwachungs-Scheduler münden alle in dieselbe Funktion,
 5. **Bewertung.** `scoring.build_dimensions()` und `build_verdict()` machen aus
    den Detektorergebnissen die Dimensionsbewertungen, die Gesamtbewertung und
    Note, das Risikourteil und seine Konfidenz.
-6. **Bericht.** Alles landet in einem `AuditReport` (`zing/models.py`) mit dem
+6. **Bericht.** Alles landet in einem `AuditReport` (`ekte/models.py`) mit dem
    geschwärzten Ziel, dem Schnappschuss des Wissensbasis-Profils, dem
    Leistungsabschnitt und den Testsprachen. Die CLI rendert und schreibt ihn; die
    Weboberfläche streamt ihn.
@@ -171,7 +171,7 @@ Zeiten je Anfrage) Server-Sent Events für die Live-Ansicht.
 
 ### Clients
 
-`zing/clients/` enthält einen Client je Protokoll — `openai_compatible.py`
+`ekte/clients/` enthält einen Client je Protokoll — `openai_compatible.py`
 (Chat Completions), `anthropic.py` (Messages) und `responses.py` (Responses) —
 mit derselben Schnittstelle, gebaut auf der gemeinsamen HTTP-Mechanik in
 `base.py`. `make_client()` in `clients/__init__.py` wählt einen anhand von
@@ -189,11 +189,11 @@ Probe, die die unveränderte Ablehnung bewertet, setzt `RequestSpec.exact_params
 
 ### Detektoren und Bewertungsskalen
 
-Ein Detektor ist eine eigenständige Datei in `zing/detectors/`: eine
+Ein Detektor ist eine eigenständige Datei in `ekte/detectors/`: eine
 Unterklasse von `Detector` (`base.py`) mit `id`, `name`, `dimension`, der ersten
 Suite, in der er läuft (`min_suite`), einem ungefähren `cost_hint` für
 `--dry-run` und `async def run(self, ctx) -> DetectorResult`. `@register` trägt
-ihn in die Registry ein; `zing/detectors/__init__.py` importiert jedes Modul,
+ihn in die Registry ein; `ekte/detectors/__init__.py` importiert jedes Modul,
 damit die Registry vollständig ist.
 
 Jeder Detektor veröffentlicht seine **Bewertungsskala** (`SCALE`, erstellt mit
@@ -205,13 +205,13 @@ auseinanderlaufen können. `Scale` bewertet mit dem Mittelwert der Prüfungen;
 zeigt die Skala unter **Bewertungsskala**; die [Methodik](docs/METHODOLOGY.de.md)
 gibt jede Skala wieder. `connectivity.py` ist das kanonische, kürzeste Beispiel.
 
-Detektoren teilen sich in `zing serve` eine Event-Loop mit allen anderen
+Detektoren teilen sich in `ekte serve` eine Event-Loop mit allen anderen
 Prüfungen, daher darf CPU-intensive Arbeit nicht auf ihr laufen: Eine blockierte
 Loop verzögert die Anfragen anderer Prüfungen und bläht die Latenzen auf, die sie
 messen. `helpers.build_filler()` erzeugt Fülltext in linearer Zeit und merkt sich
 die letzten Größen; die Kontextfenster- und Prompt-Cache-Detektoren rufen es (und
 `build_haystack()`) über `asyncio.to_thread` auf. Token-Zahlen stammen aus
-`zing/utils/tokenize.py`, einer Heuristik nur mit der Standardbibliothek: zing
+`ekte/utils/tokenize.py`, einer Heuristik nur mit der Standardbibliothek: ekte
 importiert keine Tokenizer-Bibliothek und lädt zur Laufzeit nichts herunter,
 läuft also auch in eingeschränkten Umgebungen. Das Argument `tokenizer` von
 `estimate_tokens()` wird angenommen, ändert die Zählung aber nicht, und die
@@ -220,20 +220,20 @@ erhalten und sind immer false.
 
 ### Bewertung und Urteil
 
-`zing/scoring.py` enthält `DIMENSION_WEIGHTS` und die Regeln des Urteils: die
+`ekte/scoring.py` enthält `DIMENSION_WEIGHTS` und die Regeln des Urteils: die
 Bewertung einer Dimension ist der gleich gewichtete Mittelwert ihrer Detektoren,
 die Gesamtbewertung der gewichtete Mittelwert der gelaufenen Dimensionen, und die
 Risikostufe folgt der Schweregrad-Leiter aus
-[Methodik → Wie zing bewertet](docs/METHODOLOGY.de.md#wie-zing-bewertet). Jede
+[Methodik → Wie ekte bewertet](docs/METHODOLOGY.de.md#wie-ekte-bewertet). Jede
 Dimension hält in `DimensionScore.breakdown` fest, wie sie berechnet wurde;
 daraus entstehen **Dimension details** in den Berichten und die aufklappbaren
 Zeilen der **Prüfungen je Dimension** in der Weboberfläche.
 
 ### Wissensbasis
 
-`zing/knowledge/` definiert das Profilschema (`schema.py`: `ProviderProfile`,
+`ekte/knowledge/` definiert das Profilschema (`schema.py`: `ProviderProfile`,
 `ModelProfile`, `FingerprintProbe`), lädt und verschmilzt die Ebenen
-(`loader.py`: mitgeliefertes YAML → `ZING_KB_DIR`/`--kb-dir` → die `kb.db` des
+(`loader.py`: mitgeliefertes YAML → `EKTE_KB_DIR`/`--kb-dir` → die `kb.db` des
 Nutzers), speichert die Einträge des Nutzers (`store.py`), prüft und importiert
 YAML (`importer.py`), erzeugt den Recherche-Prompt für externe Assistenten
 (`research.py`) und hält einen Schnappschuss des Profils fest, das ein Lauf
@@ -260,9 +260,9 @@ Schemaänderung).
 
 ### Prompt-Bibliothek
 
-Jeder Text, den zing an eine LLM-API sendet — Chat-Tests, der Prompt des
+Jeder Text, den ekte an eine LLM-API sendet — Chat-Tests, der Prompt des
 Richters, Tool-Schemata, Eingaben für Embedding / Rerank / Bild / Audio — liegt
-in `zing/prompts/en.json` und wird mit `zing.prompts.text()` / `get()` gelesen.
+in `ekte/prompts/en.json` und wird mit `ekte.prompts.text()` / `get()` gelesen.
 `{{name}}` markiert einen Wert, der zur Laufzeit eingesetzt wird. Die Testsprache
 ist fest auf Englisch gesetzt (`PROBE_LANG`), unabhängig von der Sprache der
 Oberfläche, weil Antwortprüfungen und Token-Schätzungen auf genau diese Texte
@@ -274,7 +274,7 @@ verwendeten Sprachen in `prompt_languages`.
 
 ### Berichte
 
-`zing/report/render.py` rendert einen `AuditReport` als JSON, kompaktes
+`ekte/report/render.py` rendert einen `AuditReport` als JSON, kompaktes
 Agenten-JSON, Markdown und HTML; `dimensions.py` und `performance.py` rendern
 **Dimension details** und den Leistungsabschnitt; `pdf.py` setzt das PDF mit
 ReportLab aus denselben Daten und Hilfsfunktionen (reines Python; nur die
@@ -289,7 +289,7 @@ die Sprache der Oberfläche übersetzten Texten.
 ### Endpunkttypen (Surfaces)
 
 Die **Surface** ist die Art des geprüften Endpunkts: `chat` (Standard),
-`embedding` oder `rerank` (`zing.config.SURFACES`; später Bild, TTS). Sie ist eine
+`embedding` oder `rerank` (`ekte.config.SURFACES`; später Bild, TTS). Sie ist eine
 zweite Achse neben der Suite, getragen von `AuditOptions.surface`,
 `AuditReport.surface` und einer nullbaren Spalte `surface` in `history.db` und
 `watches.db` (`NULL` und ein fehlendes JSON-Feld bedeuten `chat`; keine Migration).
@@ -300,10 +300,10 @@ zweite Achse neben der Suite, getragen von `AuditOptions.surface`,
 - Bewertungsgewichte und die Profil-, Kern- und Infrastruktur-Dimensionsmengen
   gelten je Surface (`scoring.SURFACE_WEIGHTS`); Chat behält seine Werte.
 - Der Recorder markiert Embedding-Aufrufe mit `op="embed"` und Rerank-Aufrufe mit
-  `op="rerank"` (`zing.config.SURFACE_OPS`); die Funktionen in `perf/summary.py`
+  `op="rerank"` (`ekte.config.SURFACE_OPS`); die Funktionen in `perf/summary.py`
   nehmen einen Parameter `op` (Standard `complete`).
 - `embed_audit.run_embedding_audit()` und `run_rerank_audit()` (genutzt von
-  `zing embed` / `zing rerank` und `/api/embed` / `/api/rerank`) starten den Runner
+  `ekte embed` / `ekte rerank` und `/api/embed` / `/api/rerank`) starten den Runner
   mit `surface="embedding"` bzw. `"rerank"`, übergeben den vorigen gespeicherten
   Lauf derselben Surface als `previous_report` (Drift) und speichern den Bericht,
   sofern nicht abgeschaltet (`--no-save`).
@@ -330,7 +330,7 @@ nutzt nur die Standardbibliothek.
 
 ### Webserver
 
-`zing/web/server.py` ist eine FastAPI-App, erzeugt von `create_app()`:
+`ekte/web/server.py` ist eine FastAPI-App, erzeugt von `create_app()`:
 
 - **Seiten.** Die klassische Oberfläche (`/`, `/console`, `/history`,
   `/watches`, `/tools`) und die neue Oberfläche (`/v2/`, `/v2/history`,
@@ -357,7 +357,7 @@ nutzt nur die Standardbibliothek.
   bzw. 180 Tage umfassen) und `/api/analytics/leaderboard`
   (`model=` für dessen Relays oder `relay=` für dessen Modelle). Alle nehmen die
   Filter `from`, `to`, `suite`, `stream_mode`, `api`,
-  `source=all|manual|monitor`, `relay` und `model`. `zing/web/analytics.py`
+  `source=all|manual|monitor`, `relay` und `model`. `ekte/web/analytics.py`
   rechnet alles in Python aus `history.analytics_runs()`: Metrik-IDs kommen aus
   einer festen Positivliste, Relays werden bei jeder Abfrage nach ihrem Eintrag
   in der Wissensbasis gruppiert, ein Wert, den ein Lauf nicht gemessen hat,
@@ -387,18 +387,18 @@ nutzt nur die Standardbibliothek.
   Oberfläche) verwendet denselben Auftrag und bricht ihn ab, wenn der Strom
   endet. Eine Relay-Sperre lässt je Relay nur eine Prüfung (oder einen
   Überwachungslauf) zu, nach Hostname, alle Loopback-Adressen als ein Host;
-  höchstens `ZING_MAX_PARALLEL_AUDITS` (Standard 4) laufen gleichzeitig,
+  höchstens `EKTE_MAX_PARALLEL_AUDITS` (Standard 4) laufen gleichzeitig,
   Wartende in Ankunftsreihenfolge.
 - **Überwachungs-Scheduler.** Der Lifespan der App startet eine
   Hintergrundschleife, die jede fällige Überwachung als eigenen Task startet,
   sodass Überwachungen auf verschiedenen Relays gleichzeitig prüfen; die
   Relay-Sperre gilt weiterhin, daher können Überwachungen die
-  `ZING_MAX_PARALLEL_AUDITS` Plätze füllen, und eine manuelle Prüfung reiht sich
+  `EKTE_MAX_PARALLEL_AUDITS` Plätze füllen, und eine manuelle Prüfung reiht sich
   womöglich dahinter ein. `last_run_ts` eines Laufs ist der Moment, in dem seine
   Prüfung beginnt (nach dem Warten auf sein Relay). Jeder Lauf wird im Verlauf
   gespeichert; die Prüfung auf Verschlechterung vergleicht ihn mit dem zuletzt
   gespeicherten Lauf desselben Ziels und Modells (`history.latest_for()`, ein
-  indizierter Zugriff) und sendet die Webhook-Warnungen (`zing/notify.py`) bei
+  indizierter Zugriff) und sendet die Webhook-Warnungen (`ekte/notify.py`) bei
   Schwellenüberschreitung oder Verschlechterung gleichzeitig.
   `POST /api/watches/{id}/run` antwortet mit 409, solange der Scheduler diese
   Überwachung gerade gestartet hat; ein Zurücksetzen des Hauptschlüssels bricht
@@ -414,7 +414,7 @@ nutzt nur die Standardbibliothek.
   Stylesheet-URLs in Seiten tragen ein `?v=<content hash>` und werden als
   unveränderlich gecacht.
 - **Sicherheit.** `security.py` bestimmt die Bindungsadresse (nur Loopback,
-  außer in einem erkannten Container mit `ZING_CONTAINER=1`) und installiert
+  außer in einem erkannten Container mit `EKTE_CONTAINER=1`) und installiert
   `LocalOnlyMiddleware`: eine Host-Allowlist gegen DNS-Rebinding, Prüfungen von
   Origin und `Sec-Fetch-Site` gegen CSRF, nur JSON als Anfragekörper sowie
   Header gegen Framing, MIME-Sniffing und Referrer. Die Oberfläche hat bewusst
@@ -423,10 +423,10 @@ nutzt nur die Standardbibliothek.
 ### Web-Frontend
 
 Das Frontend ist reines HTML, CSS und Browser-JavaScript ohne Module und ohne
-Build-Schritt. Die klassischen Seiten liegen in `zing/web/static/`; die neue
-Oberfläche in `zing/web/static/v2/` teilt sich eine Kopfzeile (`nav.js`), den
+Build-Schritt. Die klassischen Seiten liegen in `ekte/web/static/`; die neue
+Oberfläche in `ekte/web/static/v2/` teilt sich eine Kopfzeile (`nav.js`), den
 Bericht-Renderer (`report.js`), die Designauswahl (`theme.js`) und die Styles
-(`tokens.css`, `zing.css`, `fields.css`, `report.css`, `perf.css`). Gemeinsame Skripte werden
+(`tokens.css`, `ekte.css`, `fields.css`, `report.css`, `perf.css`). Gemeinsame Skripte werden
 von der Wurzel ausgeliefert: `lang.js` (Sprachwahl), `locales.js`
 (Übersetzungsdaten), `i18n.js` (Übersetzung der Befunde), `icons.js`,
 `modelpicker.js` (**Modelle abrufen**), `secretfield.js` und `perf.js`
@@ -434,8 +434,8 @@ von der Wurzel ausgeliefert: `lang.js` (Sprachwahl), `locales.js`
 
 Jede v2-Seite außer Barrierefreiheit hat direkt unter ihrem Hero einen
 **Seitenhinweis** (`<div class="znote" id="note">`, gezeichnet von
-`v2/notice.js`, gestaltet von `.znote` in `zing.css`):
-`ZingNotice.show(el, {level, title, detail, items, actions})`; die Stufe `info`,
+`v2/notice.js`, gestaltet von `.znote` in `ekte.css`):
+`EkteNotice.show(el, {level, title, detail, items, actions})`; die Stufe `info`,
 `success`, `warning` oder `critical` setzt Tönung, Rahmen und Symbol (critical ist
 `role="alert"`, die anderen `role="status"`; derselbe Hinweis erneut ändert
 nichts). Die Seite wählt die wichtigste Meldung und listet die übrigen in
@@ -464,7 +464,7 @@ Die v2-Seite **Analyse** (`v2/analytics.html`) liest nur `/api/analytics/*`
 Reihenauswahl). Sie hat ein `<section class="card panel">` pro Panel unter einer
 Filterleiste, neue Panels lassen sich also einfügen; Filter und Ansicht stehen
 im URL-Fragment (`#range=30&metric=score&…`) und in `localStorage`. Die
-Diagramme kommen aus `v2/charts.js` (`ZingCharts.timeChart`: handgezeichnetes
+Diagramme kommen aus `v2/charts.js` (`EkteCharts.timeChart`: handgezeichnetes
 Inline-SVG mit Median-Linie, p25–p75-Band, Lücken für leere Abschnitte, blassen
 Markern für `low_n`-Abschnitte, Markierungslinien und Hover-Tooltip; `fmt` /
 `fmtDelta` formatieren Werte nach Einheit) und `v2/charts.css` (vier geprüfte
@@ -475,15 +475,15 @@ Jeder Bereich ist in sich geschlossen: eine `PANELS`-Registry im Seitenskript
 nennt seine Section-ID, `load()` (mit den aktuellen Filtern und der Ansicht
 laden, dann zeichnen) und `render()` (aus den geladenen Daten neu zeichnen,
 z. B. beim Sprachwechsel), sodass Bereiche umgestellt werden können, ohne
-einander zu berühren. `ZingCharts.heatmap` zeichnet das Raster Wochentag ×
+einander zu berühren. `EkteCharts.heatmap` zeichnet das Raster Wochentag ×
 Stunde (fünfstufige einfarbige Skala pro Theme, schraffierte Zellen für
-`low_n`, umrandete leere Zellen), `ZingCharts.stackBars` die gestapelten
+`low_n`, umrandete leere Zellen), `EkteCharts.stackBars` die gestapelten
 Fehlerbalken, und `timeChart` nimmt eine `ref`-Linie (100 %
-Abrechnungsverhältnis). `ZingCharts.donut` (ein Ring aus Teilen eines Ganzen
-mit einer HTML-Zahl in der Mitte) und `ZingCharts.meter` (ein schmaler Balken
+Abrechnungsverhältnis). `EkteCharts.donut` (ein Ring aus Teilen eines Ganzen
+mit einer HTML-Zahl in der Mitte) und `EkteCharts.meter` (ein schmaler Balken
 aus Teilen) zeichnen die Karte „Abdeckung“ des Barrierefreiheitsberichts; ihre
 `k-*`-Farben (wer einen Schritt entscheidet: Blau die Testsuite, Violett eine
-Person) stammen aus `tokens.css`. `v2/chartmotion.js` (`ZingMotion.enter`)
+Person) stammen aus `tokens.css`. `v2/chartmotion.js` (`EkteMotion.enter`)
 zeichnet einen Donut im Uhrzeigersinn und lässt Balken von links wachsen, wie
 bei allen anderen Diagrammen nur bei neuen Daten und nie bei reduzierter
 Bewegung oder „Animation aus“ im Kopfbereich.
@@ -499,7 +499,7 @@ Fragment — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), das
 Feld, wenn die Zwischenablage-API fehlt oder ablehnt); ein Fragment ohne `tab`
 öffnet den Überblick, ein eingefügter Link (`hashchange`) liest die Ansicht neu.
 Das einklappbare Filterpanel ist `v2/filterpanel.js` + `v2/filterpanel.css`,
-gemeinsam mit Verlauf, Überwachung und Wissen: `ZingFilterPanel.create(section, {label, title,
+gemeinsam mit Verlauf, Überwachung und Wissen: `EkteFilterPanel.create(section, {label, title,
 storeKey, open, onReset})` liefert `render({body, foot, count, summary})`,
 `sync({count, summary})`, `setOpen()` und `focusStart()`; die Seite besitzt ihre
 Filter und Felder, das Panel den Umschalter mit dem Zähler aktiver Filter, die
@@ -510,20 +510,20 @@ Offen-Zustand und **Filter zurücksetzen**.
 bleibt unverändert; jedes Element trägt seinen englischen Text in `data-en` (und
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Der englische Text
 ist der Suchschlüssel für alle anderen Sprachen. Skripte nutzen `T(zh, en)` für
-dynamischen Text und `ZING_LANG.server(text)` für Text aus dem Backend
+dynamischen Text und `EKTE_LANG.server(text)` für Text aus dem Backend
 (Detektornamen, Empfehlungen, Sätze des Urteils).
 
 ### Lokale Daten
 
-`zing/datadir.py` verwaltet `$ZING_DATA_DIR` (Standard `~/.zing`), angelegt mit
+`ekte/datadir.py` verwaltet `$EKTE_DATA_DIR` (Standard `~/.ekte`), angelegt mit
 `0700` und SQLite-Dateien mit `0600`: `history.db` (`web/history.py`),
 `watches.db` (`web/watches.py`, enthält die API-Schlüssel der Überwachungen,
 verschlüsselt) und `kb.db` (`knowledge/store.py`). Jeder Aufruf öffnet eine
 kurzlebige Verbindung, daher sind die Speicher im Threadpool von FastAPI sicher.
-Die globale Option `--data-dir` (auch bei `zing serve`) setzt lediglich
-`ZING_DATA_DIR` auf den absoluten Pfad, und `zing data-dir` gibt das aufgelöste
+Die globale Option `--data-dir` (auch bei `ekte serve`) setzt lediglich
+`EKTE_DATA_DIR` auf den absoluten Pfad, und `ekte data-dir` gibt das aufgelöste
 Verzeichnis aus. Ein bereits vorhandenes Verzeichnis behält seine Rechte; nur das
-Standardverzeichnis `~/.zing` wird auf `0700` verschärft. Verlaufszeilen sind nach Ziel und Modell indiziert (`idx_history_target`), was
+Standardverzeichnis `~/.ekte` wird auf `0700` verschärft. Verlaufszeilen sind nach Ziel und Modell indiziert (`idx_history_target`), was
 `history.latest_for()` nutzt, um den vorigen Lauf einer Überwachung zu finden.
 
 Seit Schemaversion 2 (`PRAGMA user_version`) enthält `history.db` auch die
@@ -553,7 +553,7 @@ Voreinstellung, speichert keinen — die Spalte `api_key` enthält nur die Marki
 einem Neustart ist die Zeile `key_missing`, was der Scheduler wie einen gesperrten
 Schlüssel behandelt: der Lauf wartet, kein Alarm); `encrypted` speichert sie wie
 unten beschrieben. Ohne Zeile startet ein Speicher, der schon verschlüsselte
-Schlüssel oder einen Prüfwert hat, oder mit gesetztem `ZING_SECRET_KEY` / altem
+Schlüssel oder einen Prüfwert hat, oder mit gesetztem `EKTE_SECRET_KEY` / altem
 `secret.key`, in `encrypted`; die Wahl wird beim Start festgehalten.
 `Vault.set_storage()` (`POST /api/secret/storage`) schaltet um und verschiebt die
 Schlüssel in einer Transaktion (`keys_to_memory()` löscht die verschlüsselten und
@@ -562,11 +562,11 @@ Eine Anfrage kann `key_storage: "memory"` mitgeben, damit ihr Schlüssel unabhä
 von der Einstellung nicht in die Datenbank gelangt (die klassische Oberfläche tut
 das immer); Speichern erzwingen lässt sich nicht.
 
-Gespeicherte API-Schlüssel verschlüsselt `zing/secretbox.py` (Fernet,
+Gespeicherte API-Schlüssel verschlüsselt `ekte/secretbox.py` (Fernet,
 gespeichert als `enc:v1:…`; `env:`/`file:`-Verweise bleiben unverändert). Der
 Hauptschlüssel selbst wird nie gespeichert: `web/masterkey.py` (`Vault`,
-gemeinsam genutzt von Server und `zing secret`) hält ihn im Speicher des
-Servers, sobald er aus `ZING_SECRET_KEY`, einer alten `secret.key` oder vom
+gemeinsam genutzt von Server und `ekte secret`) hält ihn im Speicher des
+Servers, sobald er aus `EKTE_SECRET_KEY`, einer alten `secret.key` oder vom
 Benutzer auf der Seite Überwachung kommt; `watches.db` enthält nur einen
 Prüfwert (`secret_meta`), der einen falschen Schlüssel abweist. Ein neuer
 Schlüssel verschlüsselt jeden gespeicherten Schlüssel neu und schreibt den
@@ -577,7 +577,7 @@ Prozesses, betreiben Sie daher einen Server pro Datenverzeichnis.
 
 ### Pull Requests
 
-- Halten Sie `pytest`, `ruff check zing tests` und `mypy zing` grün (CI führt alle
+- Halten Sie `pytest`, `ruff check ekte tests` und `mypy ekte` grün (CI führt alle
   drei unter Python 3.10–3.13 aus).
 - Beschreiben Sie den Relay-Trick oder den Fehlalarm, den eine Änderung behebt.
 - Aktualisieren Sie `CHANGELOG.md` unter `[Unreleased]`.
@@ -589,8 +589,8 @@ Mit Ihrem Beitrag stimmen Sie zu, dass er unter der
 
 ### Einen Detektor hinzufügen
 
-1. Legen Sie `zing/detectors/<name>.py` an und importieren Sie es in
-   `zing/detectors/__init__.py`.
+1. Legen Sie `ekte/detectors/<name>.py` an und importieren Sie es in
+   `ekte/detectors/__init__.py`.
 2. Definieren Sie seine `SCALE` (`Scale` oder `DeductionScale` aus `scale.py`)
    mit jedem Ergebnis jeder Prüfung, und erzeugen Sie Befunde nur über sie.
 3. Leiten Sie von `Detector` ab; setzen Sie `id`, `name`, `dimension`,
@@ -600,7 +600,7 @@ Mit Ihrem Beitrag stimmen Sie zu, dass er unter der
    Klasse mit `@register`.
 4. Implementieren Sie `async def run(self, ctx) -> DetectorResult`, beginnend mit
    `self.new_result(scoring=SCALE.scoring())`. Senden Sie Anfragen über
-   `ctx.client` und nehmen Sie jeden Prompt aus `zing/prompts/en.json`.
+   `ctx.client` und nehmen Sie jeden Prompt aus `ekte/prompts/en.json`.
 5. Schreiben Sie Verhaltenstests für den auffälligen und den unauffälligen Pfad
    mit dem Mock-Relay aus `tests/conftest.py`.
 6. Übersetzen Sie neue Titel und Zusammenfassungen von Befunden (siehe
@@ -609,14 +609,14 @@ Mit Ihrem Beitrag stimmen Sie zu, dass er unter der
 
 ### Die Wissensbasis bearbeiten
 
-Profile liegen in `zing/knowledge/data/<provider>.yaml`, eine Datei pro Anbieter.
+Profile liegen in `ekte/knowledge/data/<provider>.yaml`, eine Datei pro Anbieter.
 Jedes Modell enthält sein natives Kontextfenster, die maximale Ausgabe, den
 Wissensstichtag, den Tokenizer, Modalitäten, Fähigkeitsflags, nicht unterstützte
 Parameter, Identitätsschlüsselwörter und Fingerabdrücke (siehe
-`zing/knowledge/schema.py`). Wenn Sie ein numerisches Feld ändern, **nennen Sie
+`ekte/knowledge/schema.py`). Wenn Sie ein numerisches Feld ändern, **nennen Sie
 eine maßgebliche Quelle** (die offizielle Modellkarte, Preisliste oder
 Dokumentation des Anbieters) im Pull Request: ein falscher Wert verursacht
-Fehlalarme gegen ehrliche Relays. `zing kb-import --check <datei>` führt dieselben
+Fehlalarme gegen ehrliche Relays. `ekte kb-import --check <datei>` führt dieselben
 Prüfungen aus wie der Import durch Nutzer (Schema, Grenzen, unsichere reguläre
 Ausdrücke, Prompts, ID-Kollisionen).
 
@@ -629,14 +629,14 @@ als Abweichung.
 Füllen Sie `identity_keywords` immer mit den Hersteller- und Familienwörtern,
 mit denen sich das Modell selbst bezeichnet. Die Identitätsprüfung zählt auch
 Anbieter-Schlüssel, Anzeigenamen und Modell-ID als echte Marke, erweitert um die
-übrigen Namen des Herstellers in `VENDOR_BRANDS` (`zing/knowledge/identity.py`,
+übrigen Namen des Herstellers in `VENDOR_BRANDS` (`ekte/knowledge/identity.py`,
 zugleich die Liste konkurrierender Marken des Detektors); der Import ergänzt
 leere Schlüsselwörter aus diesen Namen mit einer Warnung. Die Markenwörter eines
 neuen Herstellers gehören dort als eine Gruppe hinein.
 
 ### Test-Prompts ändern
 
-Testtexte sind Kalibrierdaten. Eine Änderung in `zing/prompts/en.json` kann
+Testtexte sind Kalibrierdaten. Eine Änderung in `ekte/prompts/en.json` kann
 Antwortprüfungen, Token-Schätzungen und damit Urteile verändern; passen Sie den
 Detektor und seine Tests mit an und nennen Sie die Änderung im CHANGELOG. Lassen
 Sie einen Test nie der Sprache der Oberfläche folgen.
@@ -644,7 +644,7 @@ Sie einen Test nie der Sprache der Oberfläche folgen.
 ### Übersetzungen
 
 Oberfläche und Webhook-Warnungen teilen sich einen Satz Übersetzungen in
-`zing/i18n/locales/<code>.json`:
+`ekte/i18n/locales/<code>.json`:
 
 - `meta` — Code, der Eigenname der Sprache für das Menü, `html`-Sprache,
   Datumsformat und Reihenfolge im Menü;
@@ -654,9 +654,9 @@ Oberfläche und Webhook-Warnungen teilen sich einen Satz Übersetzungen in
   enthält den ursprünglichen chinesischen Katalog).
 
 Features können ihre Texte als Fragmente mitbringen,
-`zing/i18n/locales/fragments/<feature>/<code>.json` mit `{"strings": {…}}`, die
+`ekte/i18n/locales/fragments/<feature>/<code>.json` mit `{"strings": {…}}`, die
 beim Laden in die Sprache eingemischt werden. `/locales.js` liefert nur die
-gewählte Sprache (`?lang=<code>` oder das Cookie `zing_lang`, das `lang.js`
+gewählte Sprache (`?lang=<code>` oder das Cookie `ekte_lang`, das `lang.js`
 setzt; ohne beides alle Sprachen), je Variante einmal erzeugt und mit gzip
 komprimiert und per `ETag` revalidiert;
 ein Sprachwechsel lädt die neue Sprache bei Bedarf nach.
@@ -665,7 +665,7 @@ ein Sprachwechsel lädt die neue Sprache bei Bedarf nach.
   englischen in `data-en` schreiben (oder `T(zh, en)` nutzen), dann den
   englischen Schlüssel in `en.json` oder einem Fragment ergänzen und seine
   Übersetzung in jeder anderen Sprache.
-- **Neue Sprache:** `zing/i18n/locales/<code>.json` anlegen (`de.json` kopieren)
+- **Neue Sprache:** `ekte/i18n/locales/<code>.json` anlegen (`de.json` kopieren)
   und eine Datei je Fragment; Sprachmenü, Seiten, Warnungen und `--alert-lang`
   übernehmen sie.
 - `tests/test_web_locales.py` schlägt fehl, bis jeder Text der Oberfläche und
@@ -683,14 +683,14 @@ Französisch, Spanisch, Portugiesisch, Italienisch und Deutsch:
 
 | Datei | Zielgruppe |
 |---|---|
-| `README.md`, `README.<lang>.md` | Nutzer: was zing tut, Installation, Nutzung von CLI und Weboberfläche |
+| `README.md`, `README.<lang>.md` | Nutzer: was ekte tut, Installation, Nutzung von CLI und Weboberfläche |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Mitwirkende: Architektur, Einrichtung, Mitwirken, Docker, Releases |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Alle: jede Prüfung, ihre Bewertungsskala und ihre Einschränkungen |
 | `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Referenzseiten (englisch) |
 
 Die englischen Dateien sind die Referenz. Wenn Sie eine ändern, ändern Sie die
 anderen im selben Pull Request und verwenden Sie in jeder Sprache die Wortwahl der
-Oberfläche (schlagen Sie den Begriff in `zing/i18n/locales/` nach). Die
+Oberfläche (schlagen Sie den Begriff in `ekte/i18n/locales/` nach). Die
 METHODOLOGY-Dateien geben die Bewertungsskalen mit dem Wortlaut wieder, den die
 Oberfläche unter **Bewertungsskala** zeigt.
 
@@ -705,7 +705,7 @@ pytest -n auto               # parallel, ein Worker pro CPU (pytest-xdist)
 
 - `tests/conftest.py` stellt `MockServer` bereit, einen OpenAI-kompatiblen
   Endpunkt auf `httpx.MockTransport` mit Stellschrauben für jede Abweichung, die
-  zing sucht (geliefertes Modell, Selbstidentifikation, Kontextkürzung,
+  ekte sucht (geliefertes Modell, Selbstidentifikation, Kontextkürzung,
   vorgetäuschtes Streaming, fehlende oder aufgeblähte Nutzung, Tool-Calls,
   JSON-Modus, …). Jede Stellschraube steht standardmäßig auf ehrlichem Verhalten.
 - Die Anthropic- und Responses-Clients haben eigene Tests (`test_anthropic.py`,
@@ -718,7 +718,7 @@ pytest -n auto               # parallel, ein Worker pro CPU (pytest-xdist)
   Node.js werden sie übersprungen.
 - Kein Test darf das Netzwerk erreichen.
 - `test_cli_startup.py` hält den Start der CLI schnell: Der Import von
-  `zing.cli` darf weder die HTTP-Clients noch den Runner, den Wissensbasis-Lader,
+  `ekte.cli` darf weder die HTTP-Clients noch den Runner, den Wissensbasis-Lader,
   die Berichts-Renderer (ReportLab) oder den Webserver laden. Importieren Sie
   diese innerhalb des Befehls, der sie braucht.
 - `test_filler_perf.py` legt den Fülltext Byte für Byte fest und schlägt fehl,
@@ -730,7 +730,7 @@ pytest -n auto               # parallel, ein Worker pro CPU (pytest-xdist)
   `pytest -m a11y`. Ohne Playwright wird das Verzeichnis übersprungen. Was
   automatisiert ist und was noch eine manuelle BITV-Prüfung braucht, steht in
   [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) (englisch).
-- `ZING_A11Y_PAGES=history,kb` führt nur die a11y-Tests dieser Seiten aus (und
+- `EKTE_A11Y_PAGES=history,kb` führt nur die a11y-Tests dieser Seiten aus (und
   die seitenübergreifenden Prüfungen); `python -m tests.a11y.affected --base
   origin/main --head HEAD` gibt aus, welche Seiten eine Änderung betrifft. Beide
   nutzen eine Zuordnung, `tests/a11y/pages.py`: Eine neue Seite kommt dort in
@@ -743,8 +743,8 @@ Das `Dockerfile` baut ein Image der Weboberfläche (Python 3.12 slim mit dem Ext
 unprivilegierter Nutzer mit dem Datenverzeichnis unter `/data`.
 
 ```bash
-docker build -t zing .
-docker run --rm -p 127.0.0.1:8000:8000 -v zing-data:/data zing
+docker build -t ekte .
+docker run --rm -p 127.0.0.1:8000:8000 -v ekte-data:/data ekte
 # http://localhost:8000 öffnen
 ```
 
@@ -752,19 +752,19 @@ docker run --rm -p 127.0.0.1:8000:8000 -v zing-data:/data zing
 veröffentlicht die Oberfläche — und jeden darin eingegebenen oder in einer
 Überwachung gespeicherten API-Schlüssel — in Ihr Netzwerk. Im Container muss der
 Server auf allen Schnittstellen lauschen; das ist nur erlaubt, wenn
-`ZING_CONTAINER=1` gesetzt ist (das Image setzt es) *und* eine
+`EKTE_CONTAINER=1` gesetzt ist (das Image setzt es) *und* eine
 Container-Laufzeit erkannt wird.
 
 | Variable | Standard | Zweck |
 |---|---|---|
-| `ZING_CONTAINER` | nicht gesetzt (`1` im Image) | Erlaubt in einem erkannten Container eine Bindung außerhalb von Loopback |
-| `ZING_HOST` | `127.0.0.1` (`0.0.0.0` im Image) | Bindungsadresse; `--host` hat Vorrang |
-| `ZING_PORT` | `8000` | Port; `--port` hat Vorrang |
-| `ZING_DATA_DIR` | `~/.zing` (`/data` im Image) | Verlauf, Überwachungen (ihre Schlüssel verschlüsselt) und Ihre Wissensbasis-Einträge; hier ein Volume einhängen. `--data-dir` hat Vorrang |
-| `ZING_SECRET_KEY` | nicht gesetzt | Hauptschlüssel der gespeicherten API-Schlüssel der Überwachungen (ein Schlüssel oder `file:/run/secrets/…` / `env:VAR`); nicht gesetzt, fragt die Seite Überwachung nach jedem Start danach. Nie in `ZING_DATA_DIR` gespeichert |
-| `ZING_KB_DIR` | nicht gesetzt | Zusätzliches YAML-Verzeichnis der Wissensbasis, z. B. `-v ./profiles:/kb:ro -e ZING_KB_DIR=/kb` |
-| `ZING_NO_USER_KB` | nicht gesetzt | `1` ignoriert Ihre eigenen Wissensbasis-Einträge (`kb.db`) |
-| `ZING_ALLOWED_HOSTS` | nicht gesetzt | Zusätzliche Hostnamen, unter denen die Oberfläche antwortet, kommagetrennt |
+| `EKTE_CONTAINER` | nicht gesetzt (`1` im Image) | Erlaubt in einem erkannten Container eine Bindung außerhalb von Loopback |
+| `EKTE_HOST` | `127.0.0.1` (`0.0.0.0` im Image) | Bindungsadresse; `--host` hat Vorrang |
+| `EKTE_PORT` | `8000` | Port; `--port` hat Vorrang |
+| `EKTE_DATA_DIR` | `~/.ekte` (`/data` im Image) | Verlauf, Überwachungen (ihre Schlüssel verschlüsselt) und Ihre Wissensbasis-Einträge; hier ein Volume einhängen. `--data-dir` hat Vorrang |
+| `EKTE_SECRET_KEY` | nicht gesetzt | Hauptschlüssel der gespeicherten API-Schlüssel der Überwachungen (ein Schlüssel oder `file:/run/secrets/…` / `env:VAR`); nicht gesetzt, fragt die Seite Überwachung nach jedem Start danach. Nie in `EKTE_DATA_DIR` gespeichert |
+| `EKTE_KB_DIR` | nicht gesetzt | Zusätzliches YAML-Verzeichnis der Wissensbasis, z. B. `-v ./profiles:/kb:ro -e EKTE_KB_DIR=/kb` |
+| `EKTE_NO_USER_KB` | nicht gesetzt | `1` ignoriert Ihre eigenen Wissensbasis-Einträge (`kb.db`) |
+| `EKTE_ALLOWED_HOSTS` | nicht gesetzt | Zusätzliche Hostnamen, unter denen die Oberfläche antwortet, kommagetrennt |
 
 [docs/DOCKER.md](docs/DOCKER.md) ist die vollständige Referenz (englisch),
 einschließlich der Schutzmaßnahmen der Oberfläche.

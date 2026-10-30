@@ -3,7 +3,7 @@
 We do not need exact tokenization — we need a defensible estimate to compare
 against the ``usage`` numbers a relay reports, so we can flag inflated billing or
 implausible counts. The count is always a language-aware stdlib heuristic that
-handles CJK text reasonably: zing must run in restricted environments, so it
+handles CJK text reasonably: ekte must run in restricted environments, so it
 never imports a tokenizer library or downloads an encoding at runtime.
 """
 

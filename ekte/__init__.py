@@ -1,4 +1,4 @@
-"""zing — LLM relay reality check.
+"""ekte — LLM relay reality check.
 
 A local-first CLI that audits whether an OpenAI-compatible or Anthropic-native API
 relay actually serves the model it claims to (货不对板检测): real context window,
@@ -12,7 +12,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 try:
     # Single source of truth: the installed package metadata (pyproject `version`).
-    __version__ = version("zing-audit")
+    __version__ = version("ekte")
 except PackageNotFoundError:  # not installed (e.g. running from a source tree)
     __version__ = "0.0.0+unknown"
 

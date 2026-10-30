@@ -1,9 +1,9 @@
 """Record every API call an audit makes, for the performance section.
 
 A :class:`RequestRecorder` is attached to the target (and baseline) client by the
-runner. The client hands it each call's :class:`~zing.models.CompletionOutcome`
+runner. The client hands it each call's :class:`~ekte.models.CompletionOutcome`
 together with the request and a :class:`NetTrace` of the httpx transport events;
-the recorder turns that into a :class:`~zing.models.RequestRecord`.
+the recorder turns that into a :class:`~ekte.models.RequestRecord`.
 
 Attribution needs no detector changes: the runner sets the current detector id
 in a context variable (:func:`detector_scope`) and the performance probe marks
@@ -20,14 +20,14 @@ from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import Any
 
-from zing.models import CompletionOutcome, RequestRecord, RequestSpec
-from zing.utils.stats import mean, percentile, stdev
-from zing.utils.tokenize import estimate_messages_tokens, estimate_tokens
+from ekte.models import CompletionOutcome, RequestRecord, RequestSpec
+from ekte.utils.stats import mean, percentile, stdev
+from ekte.utils.tokenize import estimate_messages_tokens, estimate_tokens
 
-_DETECTOR: ContextVar[str | None] = ContextVar("zing_perf_detector", default=None)
-_PHASE: ContextVar[str] = ContextVar("zing_perf_phase", default="passive")
-_NET: ContextVar[NetTrace | None] = ContextVar("zing_perf_net", default=None)
-_LAST: ContextVar[RequestRecord | None] = ContextVar("zing_perf_last", default=None)
+_DETECTOR: ContextVar[str | None] = ContextVar("ekte_perf_detector", default=None)
+_PHASE: ContextVar[str] = ContextVar("ekte_perf_phase", default="passive")
+_NET: ContextVar[NetTrace | None] = ContextVar("ekte_perf_net", default=None)
+_LAST: ContextVar[RequestRecord | None] = ContextVar("ekte_perf_last", default=None)
 
 # Headers in which relays / upstreams report their own processing time (ms).
 _PROCESSING_HEADERS = ("openai-processing-ms", "x-envoy-upstream-service-time")

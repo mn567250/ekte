@@ -9,12 +9,12 @@ their statuses.
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import contains_ci, stable_marker
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import contains_ci, stable_marker
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
 
 SCALE = Scale(
     outcome("connectivity.models", "listed", 100.0, Status.PASS,

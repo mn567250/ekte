@@ -20,7 +20,7 @@ from typing import Any
 TREND_WINDOW = 5
 
 # the calls the chart plots (perf.js isCall): completions, and a non-chat
-# audit's embedding/rerank calls (zing/config.py SURFACE_OPS)
+# audit's embedding/rerank calls (ekte/config.py SURFACE_OPS)
 CHART_OPS = frozenset({"complete", "embed", "rerank"})
 
 

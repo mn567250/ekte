@@ -1,9 +1,9 @@
 - banner:
   - link "Vai al contenuto principale":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "Interfaccia classica":
     - /url: "?ui=v1"
   - combobox "Tema":
@@ -36,7 +36,7 @@
       - /url: /v2/kb
 - main:
   - heading "Analisi degli audit" [level=1]
-  - paragraph: "Confronta relay e modelli nel tempo con ciò che zing ha misurato su questa macchina: punteggi, velocità, tassi di successo e fatturazione."
+  - paragraph: "Confronta relay e modelli nel tempo con ciò che ekte ha misurato su questa macchina: punteggi, velocità, tassi di successo e fatturazione."
   - status: 1 esecuzione precedente ha un orario di inizio stimato I grafici per ora del giorno li collocano in modo approssimativo.
   - status: "Aggiornato: 14 esecuzioni in questo periodo."
   - region "Filtri":
@@ -108,4 +108,4 @@
         - listitem: Rapporto di fatturazione (output) 102% Nessun dato nel periodo precedente Dati da 9 esecuzioni su 14
 - contentinfo:
   - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
-  - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."
+  - paragraph: "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

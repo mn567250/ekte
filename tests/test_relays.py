@@ -1,12 +1,12 @@
-"""Relays and providers as endpoints (zing/knowledge/relays.py)."""
+"""Relays and providers as endpoints (ekte/knowledge/relays.py)."""
 
 from __future__ import annotations
 
 import pytest
 
-from zing.knowledge import load_knowledge_base, store
-from zing.knowledge.relays import RelayError, add_relay, base_urls, is_relay, normalize_url, slug
-from zing.knowledge.schema import ProviderProfile
+from ekte.knowledge import load_knowledge_base, store
+from ekte.knowledge.relays import RelayError, add_relay, base_urls, is_relay, normalize_url, slug
+from ekte.knowledge.schema import ProviderProfile
 
 
 @pytest.mark.parametrize(
@@ -58,7 +58,7 @@ def test_is_relay():
 
 
 def test_add_relay(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     saved = add_relay("  Cheap   GPT  ", "https://relay.example/v1/chat/completions")
     assert saved["provider"] == "cheap-gpt" and saved["display_name"] == "Cheap GPT"
     assert saved["base_url"] == "https://relay.example/v1"

@@ -1,9 +1,9 @@
 - banner:
   - link "跳到主要内容":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "经典界面":
     - /url: "?ui=v1"
   - combobox "主题":
@@ -36,7 +36,7 @@
       - /url: /v2/kb
 - main:
   - heading "这家中转站，给的是真货吗？" [level=1]
-  - paragraph: 选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。
+  - paragraph: 选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。
   - status:
     - text: 上次检测已完成 gateway.a-very-long-relay-hostname.example.org · model-b · 评分 72/100 · 2026年9月27日 10:02
     - button "打开报告"
@@ -66,18 +66,18 @@
       - combobox "中转站地址 base_url"
       - text: API 密钥 支持 env:VAR / file:/path
       - textbox "API 密钥":
-        - /placeholder: sk-... 或 env:ZING_API_KEY
+        - /placeholder: sk-... 或 env:EKTE_API_KEY
       - button "显示密钥"
       - text: 请求的模型 model
       - textbox "请求的模型 model":
         - /placeholder: deepseek-chat
       - button "刷新模型列表" [disabled]
-      - status: 选择中转站或填写地址后，zing 会列出它的模型。
+      - status: 选择中转站或填写地址后，ekte 会列出它的模型。
       - text: 声称的模型 claimed_model 可选
       - combobox "声称的模型 claimed_model 可选":
         - option "同请求的模型" [selected]
       - button "手动输入"
-      - text: 仅当中转站以另一个名字售卖时填写 —— zing 会按这个模型核对回答。 协议
+      - text: 仅当中转站以另一个名字售卖时填写 —— ekte 会按这个模型核对回答。 协议
       - group "协议":
         - button "自动" [pressed]
         - button "OpenAI"
@@ -96,7 +96,7 @@
         - button "非流式"
       - text: standard 套件只在对照基线时发送探测请求；否则使用检测自身的请求。
       - button "对照可信基线 compare" [expanded]
-      - paragraph: 填一个你信任的同款模型端点（如官方 API）。zing 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。
+      - paragraph: 填一个你信任的同款模型端点（如官方 API）。ekte 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。
       - text: 基线中转站 / 厂商 可选
       - combobox "基线中转站 / 厂商 可选":
         - option "选择中转站或厂商…" [selected]
@@ -111,7 +111,7 @@
       - textbox "基线模型 model":
         - /placeholder: 同款官方模型 id
       - button "刷新模型列表" [disabled]
-      - status: 选择中转站或填写地址后，zing 会列出它的模型。
+      - status: 选择中转站或填写地址后，ekte 会列出它的模型。
       - text: 基线协议
       - group "基线协议":
         - button "自动" [pressed]
@@ -119,9 +119,9 @@
         - button "Anthropic"
         - button "Responses"
       - button "开始检测"
-      - text: 检测在 你本地的 zing 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。
+      - text: 检测在 你本地的 ekte 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。
       - alert
       - status
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
-  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。
+  - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

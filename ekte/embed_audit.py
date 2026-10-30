@@ -1,8 +1,8 @@
 """Entry points for the non-chat Tools: embedding and rerank audits.
 
 Both run through the runner as their own surface (``embedding``: the detectors
-in ``zing/detectors/embed_*.py``; ``rerank``: those in
-``zing/detectors/rerank_*.py``), are saved to history like any audit, and come
+in ``ekte/detectors/embed_*.py``; ``rerank``: those in
+``ekte/detectors/rerank_*.py``), are saved to history like any audit, and come
 back to the Tools page as a small verdict dict (:func:`tool_verdict`).
 """
 
@@ -14,10 +14,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from zing.config import AuditOptions
-from zing.detectors.embedding import cosine_similarity  # noqa: F401  -- re-exported
-from zing.models import AuditReport, RiskLevel, Severity, Status, TargetConfig
-from zing.utils.redact import fingerprint_secret
+from ekte.config import AuditOptions
+from ekte.detectors.embedding import cosine_similarity  # noqa: F401  -- re-exported
+from ekte.models import AuditReport, RiskLevel, Severity, Status, TargetConfig
+from ekte.utils.redact import fingerprint_secret
 
 
 def _finding(
@@ -130,7 +130,7 @@ def tool_verdict(report: AuditReport, report_id: int | None = None) -> dict[str,
 def _previous(target: TargetConfig, surface: str) -> dict[str, Any] | None:
     """The last saved ``surface`` run of this target and claimed model (best-effort)."""
     try:
-        from zing.web import history
+        from ekte.web import history
 
         return history.latest_for(target.base_url, target.claimed, surface=surface)
     except Exception:
@@ -140,7 +140,7 @@ def _previous(target: TargetConfig, surface: str) -> dict[str, Any] | None:
 def _save(report: AuditReport) -> int | None:
     """Persist to history (best-effort: a store failure must not lose the verdict)."""
     try:
-        from zing.web import history
+        from ekte.web import history
 
         rid = history.save(json.loads(report.model_dump_json()))
     except Exception:
@@ -203,7 +203,7 @@ async def _run_surface(
     reference (read even when not saving: an unsaved check still compares),
     saved to history when ``save``. The audit page's background jobs call it
     with ``save=False`` (the job saves) and their ``on_event`` progress sink."""
-    from zing.runner import run_audit
+    from ekte.runner import run_audit
 
     previous = await asyncio.to_thread(_previous, target, options.surface)
     report = await run_audit(

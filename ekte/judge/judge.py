@@ -6,8 +6,8 @@ import json
 import re
 from typing import Any
 
-from zing.clients import Client
-from zing.models import RequestSpec
+from ekte.clients import Client
+from ekte.models import RequestSpec
 
 _JSON_FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
 _JSON_OBJECT = re.compile(r"\{.*\}", re.DOTALL)

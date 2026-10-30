@@ -1,4 +1,4 @@
-# Publishing zing-audit to PyPI
+# Publishing ekte to PyPI
 
 Releases are automated by [`.github/workflows/release.yml`](../.github/workflows/release.yml),
 which builds the wheel + sdist and publishes them to PyPI via **Trusted Publishing
@@ -11,16 +11,16 @@ Before the first release, register a *pending publisher* so PyPI trusts this rep
 1. Sign in to PyPI and open **Account settings → Publishing → Add a pending publisher**
    (<https://pypi.org/manage/account/publishing/>).
 2. Fill in:
-   - **PyPI project name:** `zing-audit`
+   - **PyPI project name:** `ekte`
    - **Owner:** `cenbonew`
-   - **Repository name:** `zing`
+   - **Repository name:** `ekte`
    - **Workflow name:** `release.yml`
    - **Environment name:** `pypi`
 3. (Recommended) In the GitHub repo, create an **Environment** named `pypi`
    (Settings → Environments) and optionally add required reviewers so a human
    approves each publish.
 
-After the first successful publish, `zing-audit` becomes a normal Trusted Publisher
+After the first successful publish, `ekte` becomes a normal Trusted Publisher
 and the pending entry is consumed.
 
 ## Cutting a release
@@ -29,7 +29,7 @@ and the pending entry is consumed.
    bump `version` in [`pyproject.toml`](../pyproject.toml).
 2. Commit, then tag and push:
    ```bash
-   git tag -a vX.Y.Z -m "zing vX.Y.Z"
+   git tag -a vX.Y.Z -m "ekte vX.Y.Z"
    git push origin vX.Y.Z
    ```
 3. The `Release to PyPI` workflow builds, runs `twine check`, and publishes to PyPI.

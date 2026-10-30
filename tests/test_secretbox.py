@@ -1,8 +1,8 @@
-"""Encryption at rest for the monitors' stored API keys (zing/secretbox.py).
+"""Encryption at rest for the monitors' stored API keys (ekte/secretbox.py).
 
 Covers the box itself, where the master key comes from, the watch store's
 encryption, legacy plain-text migration, an unreadable key in the scheduler and
-the `zing secret` commands. The key's life cycle (create, unlock, lock, rotate,
+the `ekte secret` commands. The key's life cycle (create, unlock, lock, rotate,
 reset) is in test_masterkey.py.
 """
 
@@ -17,10 +17,10 @@ pytest.importorskip("cryptography")
 
 from typer.testing import CliRunner  # noqa: E402
 
-from zing import secretbox  # noqa: E402
-from zing.cli import app  # noqa: E402
-from zing.web import watches  # noqa: E402
-from zing.web.masterkey import vault  # noqa: E402
+from ekte import secretbox  # noqa: E402
+from ekte.cli import app  # noqa: E402
+from ekte.web import watches  # noqa: E402
+from ekte.web.masterkey import vault  # noqa: E402
 
 SECRET = "sk-super-secret-123"
 
@@ -28,7 +28,7 @@ SECRET = "sk-super-secret-123"
 @pytest.fixture(autouse=True)
 def _fresh(tmp_path, monkeypatch):
     # conftest holds a fresh master key in memory for every test.
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     # These tests are about encrypted storage (the opt-in key storage mode).
     watches.init()
     with watches._connect() as conn:
@@ -51,7 +51,7 @@ def _raw_keys(path) -> list[str]:
 
 
 def _watch(**kw):
-    from zing.web import watches
+    from ekte.web import watches
 
     cfg = {"name": "w", "base_url": "https://relay.test/v1", "model": "gpt-4o",
            "api_key": SECRET, "interval_sec": 3600, **kw}
@@ -114,22 +114,22 @@ def test_no_key_file_is_ever_created(tmp_path):
 
 def test_env_key_literal_and_file_reference(tmp_path, monkeypatch):
     key = secretbox.generate_key()
-    monkeypatch.setenv("ZING_SECRET_KEY", key)
+    monkeypatch.setenv("EKTE_SECRET_KEY", key)
     st = _restart()
-    assert st["state"] == "unlocked" and st["source"] == "ZING_SECRET_KEY"
+    assert st["state"] == "unlocked" and st["source"] == "EKTE_SECRET_KEY"
     assert secretbox.default().keys == [key]
     assert not (tmp_path / "secret.key").exists()
 
     other = tmp_path.parent / f"{tmp_path.name}-elsewhere"
     other.write_text(key + "\n")
-    monkeypatch.setenv("ZING_SECRET_KEY", f"file:{other}")
+    monkeypatch.setenv("EKTE_SECRET_KEY", f"file:{other}")
     assert _restart()["state"] == "unlocked" and secretbox.default().keys == [key]
 
 
 def test_env_key_inside_the_data_dir_is_flagged(tmp_path, monkeypatch):
     inside = tmp_path / "k"
     inside.write_text(secretbox.generate_key())
-    monkeypatch.setenv("ZING_SECRET_KEY", f"file:{inside}")
+    monkeypatch.setenv("EKTE_SECRET_KEY", f"file:{inside}")
     assert "env_in_data_dir" in _restart()["warnings"]
 
 
@@ -153,7 +153,7 @@ def test_canary_round_trip():
 # Watch store
 # --------------------------------------------------------------------------- #
 def test_store_encrypts_on_disk_and_decrypts_for_the_scheduler():
-    from zing.web import watches
+    from ekte.web import watches
 
     wid = _watch()
     [raw] = _raw_keys(watches._db_path())
@@ -170,7 +170,7 @@ def test_store_encrypts_on_disk_and_decrypts_for_the_scheduler():
 
 
 def test_references_are_stored_as_is():
-    from zing.web import watches
+    from ekte.web import watches
 
     wid = _watch(api_key="env:RELAY_KEY")
     assert _raw_keys(watches._db_path()) == ["env:RELAY_KEY"]
@@ -179,7 +179,7 @@ def test_references_are_stored_as_is():
 
 
 def test_due_only_returns_due_rows():
-    from zing.web import watches
+    from ekte.web import watches
 
     wid = _watch()
     watches.mark_run(wid, None, None, None, time.time())
@@ -188,7 +188,7 @@ def test_due_only_returns_due_rows():
 
 
 def test_init_migrates_legacy_plain_text_and_scrubs_it():
-    from zing.web import watches
+    from ekte.web import watches
 
     watches.init()
     vault.reset_state()  # an old install: no key yet, plain keys in the DB
@@ -216,7 +216,7 @@ def test_init_migrates_legacy_plain_text_and_scrubs_it():
 
 
 def test_lost_master_key_is_reported_not_guessed(tmp_path):
-    from zing.web import watches
+    from ekte.web import watches
 
     wid = _watch()
     secretbox.unlock(_box())  # another key than the one the store used
@@ -230,7 +230,7 @@ def test_lost_master_key_is_reported_not_guessed(tmp_path):
 
 
 async def test_scheduler_skips_a_watch_whose_key_is_unreadable(tmp_path, monkeypatch):
-    from zing.web import server, watches
+    from ekte.web import server, watches
 
     wid = _watch()
     watches.mark_run(wid, "low", 90.0, None, 1.0)
@@ -247,7 +247,7 @@ async def test_scheduler_skips_a_watch_whose_key_is_unreadable(tmp_path, monkeyp
 
 
 # --------------------------------------------------------------------------- #
-# zing secret
+# ekte secret
 # --------------------------------------------------------------------------- #
 def test_cli_status_never_prompts_and_reports_the_state():
     vault.reset_state()
@@ -257,7 +257,7 @@ def test_cli_status_never_prompts_and_reports_the_state():
 
 
 def test_cli_rotate_creates_prints_once_and_stores_nothing(tmp_path):
-    from zing.web import watches
+    from ekte.web import watches
 
     vault.reset_state()
     res = CliRunner().invoke(app, ["secret", "rotate"])
@@ -280,7 +280,7 @@ def test_cli_rotate_creates_prints_once_and_stores_nothing(tmp_path):
 
 
 def test_cli_rotate_moves_a_legacy_key_file_out(tmp_path):
-    from zing.web import watches
+    from ekte.web import watches
 
     old = secretbox.generate_key()
     secretbox.unlock(_box(old))
@@ -299,10 +299,10 @@ def test_cli_rotate_moves_a_legacy_key_file_out(tmp_path):
 
 
 def test_cli_rotate_env_key_in_two_steps(monkeypatch):
-    from zing.web import watches
+    from ekte.web import watches
 
     old = secretbox.generate_key()
-    monkeypatch.setenv("ZING_SECRET_KEY", old)
+    monkeypatch.setenv("EKTE_SECRET_KEY", old)
     _restart()
     wid = _watch()
     res = CliRunner().invoke(app, ["secret", "rotate"])
@@ -310,10 +310,10 @@ def test_cli_rotate_env_key_in_two_steps(monkeypatch):
     pair = res.stdout.strip().splitlines()[-1]
     new = pair.split(",")[0]
     assert pair == f"{new},{old}"
-    monkeypatch.setenv("ZING_SECRET_KEY", pair)
+    monkeypatch.setenv("EKTE_SECRET_KEY", pair)
     vault.reset_state()
     res = CliRunner().invoke(app, ["secret", "rotate"])
     assert res.exit_code == 0, res.output
-    monkeypatch.setenv("ZING_SECRET_KEY", new)
+    monkeypatch.setenv("EKTE_SECRET_KEY", new)
     assert _restart()["state"] == "unlocked"
     assert watches.get(wid)["api_key"] == SECRET

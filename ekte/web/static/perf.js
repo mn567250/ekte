@@ -1,7 +1,7 @@
-/* zing web UI — the performance panel (live during an audit, and in reports).
+/* ekte web UI — the performance panel (live during an audit, and in reports).
  *
  * Plain browser global, no modules; load after /lang.js. Exposes
- * window.ZingPerf with:
+ * window.EktePerf with:
  *   - Live(host)              live panel fed by the audit stream:
  *                               .reset({probeTotal, hasBaseline})
  *                               .add(records)   RequestRecord dicts (numbers only)
@@ -12,7 +12,7 @@
  *                             the timeline SVG (x = seconds since audit start);
  *                             records with a server-computed `trend` (running
  *                             median of the endpoint's last 5 successful
- *                             requests, zing/perf/trend.py) also get a thin
+ *                             requests, ekte/perf/trend.py) also get a thin
  *                             line per endpoint behind the dots, inside its
  *                             p25–p75 band (`trend_band`); opts.scale "probe"
  *                             focuses the y-axis on the performance probe
@@ -27,7 +27,7 @@
  * Motion (chartmotion.js, if loaded): the live chart sweeps in when it is
  * first drawn or shows another metric, then only new requests pop in; a
  * report's chart sweeps in when it is opened or switches metric. When the
- * y-range changes, the requests slide to their new height (ZingMotion.rescale).
+ * y-range changes, the requests slide to their new height (EkteMotion.rescale).
  *
  * Colors follow the categorical order validated for the reports: target is
  * slot 1 (blue), baseline slot 2 (orange); a failed request is a red cross
@@ -46,17 +46,17 @@
   "use strict";
 
   var T = function (zh, en) {
-    return window.ZING_LANG ? window.ZING_LANG.t(zh, en) : en;
+    return window.EKTE_LANG ? window.EKTE_LANG.t(zh, en) : en;
   };
   // English-keyed lookup without a Chinese variant (CN keeps the English
   // statistics shorthand, e.g. the "min / mean / max" column heads).
   var tr = function (en) {
-    return window.ZING_LANG && window.ZING_LANG.tr ? window.ZING_LANG.tr(en) : en;
+    return window.EKTE_LANG && window.EKTE_LANG.tr ? window.EKTE_LANG.tr(en) : en;
   };
   // Backend notes are fixed English sentences with translations in every
   // language, CN included; server() translates backend text in every language.
   var note = function (s) {
-    return window.ZING_LANG ? window.ZING_LANG.server(s) : s;
+    return window.EKTE_LANG ? window.EKTE_LANG.server(s) : s;
   };
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -70,19 +70,19 @@
     });
   }
   function loc() {
-    return window.ZING_LANG && window.ZING_LANG.locale ? window.ZING_LANG.locale() : undefined;
+    return window.EKTE_LANG && window.EKTE_LANG.locale ? window.EKTE_LANG.locale() : undefined;
   }
   // Number formatting goes through one cached Intl.NumberFormat per locale and
   // digit count: Number#toLocaleString builds a new formatter on every call,
   // which dominated large live tables. The formatters come from
-  // ZING_LANG.intl (lang.js); loaded without it, this script keeps a small
+  // EKTE_LANG.intl (lang.js); loaded without it, this script keeps a small
   // cache of its own. The output is the same as v.toLocaleString(locale,
   // options) (that is how the spec defines it); when Intl is missing, or for
   // a non-number, that call is still what runs.
   var fmts = {};
   var digitOpts = {}; // one options object per digit count
   function numberFormat(locale, opts) {
-    var Z = window.ZING_LANG;
+    var Z = window.EKTE_LANG;
     if (Z && Z.intl) return Z.intl(Intl.NumberFormat, opts, locale);
     // undefined (the browser default) and "" (an error) must not share a key
     var key = (locale === undefined ? "" : "=" + locale) + "|" + (opts ? opts.maximumFractionDigits : "");
@@ -117,7 +117,7 @@
       : p === "probe_batch" ? T("批量探测", "batch probe")
       : p === "probe_docs" ? T("文档数探测", "document-count probe") : String(p || "—");
   }
-  // The calls of a non-chat surface (zing/config.py SURFACE_OPS): embedding
+  // The calls of a non-chat surface (ekte/config.py SURFACE_OPS): embedding
   // and rerank calls return no tokens and never stream.
   function isSurfaceCall(r) { return r.op === "embed" || r.op === "rerank"; }
   // The calls the charts show: completion calls, or a non-chat audit's
@@ -176,7 +176,7 @@
     error_rate: ["错误率", "Error rate"],
   };
 
-  // Same floors as zing/utils/stats.py: a percentile needs this many samples.
+  // Same floors as ekte/utils/stats.py: a percentile needs this many samples.
   var FLOOR = { p50: 1, p75: 4, p90: 10, p95: 20, p99: 100 };
   function pct(sorted, p) {
     if (!sorted.length) return null;
@@ -190,7 +190,7 @@
 
   // A tight axis: the smallest 1/2/2.5/5 x 10^n tick step that covers `v` in at
   // most 6 intervals, and the maximum rounded up to the next multiple of it
-  // (510 -> 0..600 by 100, not 0..1000). Same as nice_axis in zing/report/performance.py.
+  // (510 -> 0..600 by 100, not 0..1000). Same as nice_axis in ekte/report/performance.py.
   function niceAxis(v) {
     if (!(v > 0)) return { max: 1, step: 0.25, n: 4 };
     var base = Math.pow(10, Math.floor(Math.log10(v / 6)));
@@ -205,7 +205,7 @@
   // Probe focus has one fixed range per audit, from the first CALIB probe
   // requests (both endpoints, successful and uncached, in recorded order):
   // p75 + 3 × (p75 − p25), at least 1.5 × p75, on a nice axis. CALIB is the
-  // running median's window (zing/perf/trend.py); until that many probe
+  // running median's window (ekte/perf/trend.py); until that many probe
   // requests are in, the range is provisional.
   var CALIB = 5;
   function probeRange(records, m) {
@@ -638,7 +638,7 @@
     return o.join("");
   }
 
-  // Same rule as PerformanceComparison.target_better in zing/models.py: true /
+  // Same rule as PerformanceComparison.target_better in ekte/models.py: true /
   // false when the target is better / worse, null within 2% or with a side missing.
   function targetBetter(c) {
     if (c.delta == null || c.target == null || c.baseline == null) return null;
@@ -778,14 +778,14 @@
 
   // ---- motion (chartmotion.js) ------------------------------------------ //
   function motion(svg, fresh) {
-    var M = window.ZingMotion;
+    var M = window.EkteMotion;
     if (!M || !svg) return;
     if (fresh) M.pop(svg, fresh);
     else M.enter(svg);
   }
   // the y-range changed: the requests slide from where `old` drew them
   function rescale(old, svg) {
-    var M = window.ZingMotion;
+    var M = window.EkteMotion;
     if (M && M.rescale && old && svg) M.rescale(old, svg);
   }
   // after a live render: a new chart (first draw, another metric) sweeps in,
@@ -1212,7 +1212,7 @@
     document.head.appendChild(st);
   })();
 
-  window.ZingPerf = {
+  window.EktePerf = {
     Live: Live,
     section: section,
     wireSection: wireSection,

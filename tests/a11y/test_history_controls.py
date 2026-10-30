@@ -60,8 +60,8 @@ def _history(open_page: Any, theme: str = "light", viewport: dict[str, int] | No
     open_page.contexts.append(ctx)
     ctx.add_init_script(
         "try { if (!sessionStorage.getItem('a11y.init')) { sessionStorage.setItem('a11y.init', '1');"
-        " localStorage.clear(); localStorage.setItem('zing.lang', 'en');"
-        f" localStorage.setItem('zing.v2.theme', {json.dumps(theme)}); {storage} }} }} catch (e) {{}}"
+        " localStorage.clear(); localStorage.setItem('ekte.lang', 'en');"
+        f" localStorage.setItem('ekte.v2.theme', {json.dumps(theme)}); {storage} }} }} catch (e) {{}}"
     )
     ctx.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
     ctx.route(

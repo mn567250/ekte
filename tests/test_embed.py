@@ -1,6 +1,6 @@
 """Embedding and rerank auditor tests.
 
-These cover the non-chat surfaces: ``zing.embed_audit.run_embedding_audit`` and
+These cover the non-chat surfaces: ``ekte.embed_audit.run_embedding_audit`` and
 ``run_rerank_audit`` plus the OpenAI-compatible client's ``embeddings``/``rerank``
 methods. We inject an ``httpx.MockTransport`` into the real client (mirroring the
 mock-client style in ``tests/test_anthropic.py``) so no network is touched, and
@@ -9,7 +9,7 @@ patch the runner's ``make_client`` so the audit uses our transport-backed client
 Scenarios:
   * /embeddings through ``run_embedding_audit`` — correct dims => PASS; wrong
     dims => high-severity mismatch; runs saved to history feed vector drift.
-  * /rerank through ``run_rerank_audit`` and ``zing rerank`` — the rerank
+  * /rerank through ``run_rerank_audit`` and ``ekte rerank`` — the rerank
     surface, saved to history, the previous rerank run as drift reference.
   * ``--dry-run`` — the non-chat performance probes get real call estimates.
 """
@@ -23,9 +23,9 @@ import math
 import httpx
 import pytest
 
-from zing.clients import OpenAICompatibleClient
-from zing.embed_audit import cosine_similarity, run_embedding_audit, run_rerank_audit, tool_verdict
-from zing.models import TargetConfig
+from ekte.clients import OpenAICompatibleClient
+from ekte.embed_audit import cosine_similarity, run_embedding_audit, run_rerank_audit, tool_verdict
+from ekte.models import TargetConfig
 
 BASE = "https://relay.embed.test/v1"
 MODEL = "text-embedding-3-large"
@@ -174,7 +174,7 @@ async def test_client_rerank_is_sorted():
 def patch_runner(monkeypatch):
     def _install(mock: EmbedMock) -> None:
         monkeypatch.setattr(
-            "zing.runner.make_client",
+            "ekte.runner.make_client",
             lambda target, **_: OpenAICompatibleClient(target, transport=mock.transport),
         )
 
@@ -215,7 +215,7 @@ async def test_embed_kb_dimension_and_connectivity_error(patch_runner):
 
 
 async def test_embed_runs_are_saved_and_drift_uses_the_previous_one(patch_runner):
-    from zing.web import history
+    from ekte.web import history
 
     patch_runner(EmbedMock(dim=3072))
     first, rid = await run_embedding_audit(_target(), claimed_dimensions=3072)
@@ -243,21 +243,21 @@ def _rr_target(base_url: str = BASE) -> TargetConfig:
 @pytest.fixture
 def spy_previous(monkeypatch):
     """Record the ``previous_report`` each run_audit call gets."""
-    import zing.runner
+    import ekte.runner
 
     seen: list = []
-    real = zing.runner.run_audit
+    real = ekte.runner.run_audit
 
     async def spy(*args, **kwargs):
         seen.append(kwargs.get("previous_report"))
         return await real(*args, **kwargs)
 
-    monkeypatch.setattr(zing.runner, "run_audit", spy)
+    monkeypatch.setattr(ekte.runner, "run_audit", spy)
     return seen
 
 
 async def test_rerank_runs_the_rerank_surface_and_saves_it(patch_runner, spy_previous):
-    from zing.web import history
+    from ekte.web import history
 
     patch_runner(EmbedMock(rerank_top=2, served_model=RR_MODEL))
     target = _rr_target("https://relay.rerank-runs.test/v1")  # no saved runs yet
@@ -293,7 +293,7 @@ async def test_rerank_drift_reference_is_never_an_embedding_run(patch_runner, sp
 # The audit page's background jobs (POST /api/jobs with a surface)
 # --------------------------------------------------------------------------- #
 async def _job(ac, body: dict) -> dict:
-    from zing.web import jobs
+    from ekte.web import jobs
 
     created = await ac.post("/api/jobs", json=body)
     assert created.status_code == 200, created.text
@@ -308,8 +308,8 @@ async def _job(ac, body: dict) -> dict:
 async def test_jobs_run_the_embedding_and_rerank_surfaces(patch_runner, spy_previous):
     import httpx
 
-    from zing.web import history
-    from zing.web.server import create_app
+    from ekte.web import history
+    from ekte.web.server import create_app
 
     patch_runner(EmbedMock(dim=3072, served_model=MODEL))
     transport = httpx.ASGITransport(app=create_app())
@@ -355,7 +355,7 @@ def _finding(verdict: dict, finding_id: str) -> dict:
 def test_cli_embed_runs_the_embedding_surface(patch_runner):
     from typer.testing import CliRunner
 
-    from zing.cli import app
+    from ekte.cli import app
 
     patch_runner(EmbedMock(dim=1536))
     result = CliRunner().invoke(app, [
@@ -372,8 +372,8 @@ def test_cli_embed_runs_the_embedding_surface(patch_runner):
 def test_cli_rerank_runs_the_rerank_surface_and_saves(patch_runner):
     from typer.testing import CliRunner
 
-    from zing.cli import app
-    from zing.web import history
+    from ekte.cli import app
+    from ekte.web import history
 
     patch_runner(EmbedMock(rerank_top=2, served_model=RR_MODEL))
     args = ["rerank", "--base-url", BASE, "--api-key", SECRET, "--model", RR_MODEL,
@@ -396,12 +396,12 @@ def test_cli_rerank_runs_the_rerank_surface_and_saves(patch_runner):
 def test_cli_rerank_and_embed_dry_run_make_no_requests(monkeypatch):
     from typer.testing import CliRunner
 
-    from zing.cli import app
+    from ekte.cli import app
 
     def boom(*_a, **_k):
         raise AssertionError("a dry run must not build a client")
 
-    monkeypatch.setattr("zing.runner.make_client", boom)
+    monkeypatch.setattr("ekte.runner.make_client", boom)
     for cmd in ("rerank", "embed"):
         result = CliRunner().invoke(app, [cmd, "--base-url", BASE, "--model", RR_MODEL,
                                           "--suite", "deep", "--dry-run", "--json"])
@@ -412,9 +412,9 @@ def test_cli_rerank_and_embed_dry_run_make_no_requests(monkeypatch):
 
 
 def test_dry_run_estimates_the_non_chat_performance_probes():
-    from zing.cli import _build_dry_run_plan, _surface_probe_calls
-    from zing.config import AuditOptions
-    from zing.detectors.perf_probe import PINGS, burst_size
+    from ekte.cli import _build_dry_run_plan, _surface_probe_calls
+    from ekte.config import AuditOptions
+    from ekte.detectors.perf_probe import PINGS, burst_size
 
     target = _rr_target()
     opts = AuditOptions(suite="deep", surface="embedding", performance_requests=10)
@@ -448,7 +448,7 @@ def test_dry_run_estimates_the_non_chat_performance_probes():
 async def test_report_stores_the_claimed_dimension(patch_runner):
     """The claimed vector length is in the report, so a rerun can restore it;
     reports from before it was recorded still load (as 0)."""
-    from zing.models import AuditReport
+    from ekte.models import AuditReport
 
     patch_runner(EmbedMock(dim=1536))
     report, _ = await run_embedding_audit(_target(), claimed_dimensions=3072, save=False)

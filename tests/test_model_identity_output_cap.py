@@ -13,18 +13,18 @@ import json
 import httpx
 import pytest
 
-from zing.clients import OpenAICompatibleClient
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors.model_identity import ModelIdentityDetector
-from zing.knowledge.schema import (
+from ekte.clients import OpenAICompatibleClient
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.model_identity import ModelIdentityDetector
+from ekte.knowledge.schema import (
     FingerprintProbe,
     KnowledgeBase,
     ModelProfile,
     ProviderProfile,
     ResolvedProfile,
 )
-from zing.models import Status, TargetConfig
+from ekte.models import Status, TargetConfig
 
 CAP = ModelIdentityDetector.MAX_FINGERPRINT_OUTPUT
 
@@ -153,7 +153,7 @@ async def test_genuine_glm_is_not_flagged_by_its_max_output_probe(knowledge_base
     ],
 )
 def test_importer_warns_about_probes_the_identity_check_skips(fp, warned):
-    from zing.knowledge.importer import scan
+    from ekte.knowledge.importer import scan
 
     result = scan(f"provider: x\nmodels:\n- id: m\n  fingerprints:\n  - {fp}\n")
     assert result.ok, result.errors

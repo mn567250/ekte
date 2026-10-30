@@ -1,4 +1,4 @@
-"""Persist a rendered :class:`~zing.models.AuditReport` to disk.
+"""Persist a rendered :class:`~ekte.models.AuditReport` to disk.
 
 ``write_reports`` is the single entry point the CLI calls. It maps a format
 selector to the matching renderer(s), names files deterministically from the
@@ -13,17 +13,17 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
-from zing.models import AuditReport
-from zing.report.render import render_html, render_json, render_markdown
+from ekte.models import AuditReport
+from ekte.report.render import render_html, render_json, render_markdown
 
 
 def render_pdf(report: AuditReport) -> bytes:
-    """The report as PDF bytes (:func:`zing.report.pdf.render_pdf`).
+    """The report as PDF bytes (:func:`ekte.report.pdf.render_pdf`).
 
     ReportLab is imported on first use, so commands that never write a PDF do
     not pay for loading it.
     """
-    from zing.report.pdf import render_pdf as render
+    from ekte.report.pdf import render_pdf as render
 
     return render(report)
 
@@ -57,8 +57,8 @@ def _compact_timestamp(generated_at: str | None) -> str:
 
 
 def report_stem(report: AuditReport) -> str:
-    """``zing-<sanitized target.name>-<YYYYmmddTHHMMSS>`` (file name without extension)."""
-    return f"zing-{_sanitize(report.target.name)}-{_compact_timestamp(report.generated_at)}"
+    """``ekte-<sanitized target.name>-<YYYYmmddTHHMMSS>`` (file name without extension)."""
+    return f"ekte-{_sanitize(report.target.name)}-{_compact_timestamp(report.generated_at)}"
 
 
 def write_reports(report: AuditReport, out_dir: Path, fmt: str) -> list[Path]:
@@ -66,7 +66,7 @@ def write_reports(report: AuditReport, out_dir: Path, fmt: str) -> list[Path]:
 
     ``fmt`` is one of ``json``, ``md``, ``html``, ``pdf`` or ``all``. The
     directory is created if missing. Filenames are
-    ``zing-<sanitized target.name>-<YYYYmmddTHHMMSS>.<ext>``.
+    ``ekte-<sanitized target.name>-<YYYYmmddTHHMMSS>.<ext>``.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

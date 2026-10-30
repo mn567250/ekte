@@ -11,13 +11,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from zing.clients import Client
-from zing.config import AuditOptions
-from zing.judge import Judge
-from zing.knowledge import KnowledgeBase, ResolvedProfile
-from zing.knowledge.schema import PerformanceReference
-from zing.models import TargetConfig
-from zing.perf import RequestRecorder
+from ekte.clients import Client
+from ekte.config import AuditOptions
+from ekte.judge import Judge
+from ekte.knowledge import KnowledgeBase, ResolvedProfile
+from ekte.knowledge.schema import PerformanceReference
+from ekte.models import TargetConfig
+from ekte.perf import RequestRecorder
 
 
 @dataclass

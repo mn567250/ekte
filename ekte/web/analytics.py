@@ -1,13 +1,13 @@
 """Analytics queries over the run history: summary KPIs, time series, leaderboards.
 
-The read side of the analytics tables :mod:`zing.web.analytics_store` defines;
-``zing serve`` answers ``/api/analytics/*`` with the functions at the bottom
+The read side of the analytics tables :mod:`ekte.web.analytics_store` defines;
+``ekte serve`` answers ``/api/analytics/*`` with the functions at the bottom
 (:func:`options`, :func:`summary`, :func:`series`, :func:`leaderboard`,
 :func:`breakdown`, :func:`errors`, :func:`integrity`). Python over
-:func:`zing.web.history.analytics_runs`: no SQL is built from request input,
+:func:`ekte.web.history.analytics_runs`: no SQL is built from request input,
 no ``report_json`` is parsed, and every statistic is computed here — except
 the request counts of :func:`errors`, which SQLite sums per run, minute and
-outcome class (:func:`zing.web.history.analytics_request_classes`), so no
+outcome class (:func:`ekte.web.history.analytics_request_classes`), so no
 request row is loaded.
 
 * **Relays** are grouped by knowledge-base entry, resolved when the query runs
@@ -18,7 +18,7 @@ request row is loaded.
   of its own, keyed and labelled by the URL, ``in_kb`` false. Models are
   grouped by ``claimed_model``.
 * **Run time** is ``started_at`` (estimated for older reports, see
-  :mod:`zing.web.analytics_store`). ``from`` is inclusive, ``to`` exclusive.
+  :mod:`ekte.web.analytics_store`). ``from`` is inclusive, ``to`` exclusive.
 * **Missing values** stay missing: a run that did not measure a metric does not
   count towards it (never as 0); ``n`` says how many runs had a value and
   ``coverage`` = ``n`` / runs.
@@ -58,9 +58,9 @@ from datetime import date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from zing.config import SURFACE_OPS, SURFACES
-from zing.knowledge.relays import normalize_url
-from zing.web import analytics_store, history
+from ekte.config import SURFACE_OPS, SURFACES
+from ekte.knowledge.relays import normalize_url
+from ekte.web import analytics_store, history
 
 # A bucket (or leaderboard cell) with fewer runs than this is flagged low_n.
 MIN_RUNS = 3
@@ -266,11 +266,11 @@ class RelayResolver:
     """
 
     def __init__(self, knowledge: Any | None = None) -> None:
-        from zing.knowledge.relays import base_urls, is_relay
+        from ekte.knowledge.relays import base_urls, is_relay
 
         if knowledge is None:
             try:
-                from zing.knowledge import load_knowledge_base
+                from ekte.knowledge import load_knowledge_base
 
                 knowledge = load_knowledge_base(full=True, copy=False)  # only read
             except Exception:
@@ -769,7 +769,7 @@ def series(params: Mapping[str, Any], keys: Iterable[str] = ()) -> dict[str, Any
 
 
 def _annotations(runs: list[dict[str, Any]], zone: tzinfo, size: str) -> list[dict[str, Any]]:
-    """Where the zing version or the knowledge-base profile changes, run by run
+    """Where the ekte version or the knowledge-base profile changes, run by run
     (unknown values are skipped, not counted as a change)."""
     out = []
     for kind, column in (("tool_version", "tool_version"), ("kb_profile", "kb_profile_hash")):

@@ -1,20 +1,20 @@
-/* zing web UI — translation lookups for every language but EN.
+/* ekte web UI — translation lookups for every language but EN.
  *
- * The translations themselves are data: zing/i18n/locales/<code>.json, shared
+ * The translations themselves are data: ekte/i18n/locales/<code>.json, shared
  * with the Python side (webhook alerts). The server serves /locales.js as
- * `window.ZING_I18N_DATA = {languages, locales}` followed by this file, so
+ * `window.EKTE_I18N_DATA = {languages, locales}` followed by this file, so
  * the data is in place before the code below runs. Load it before /lang.js.
  *
  * /locales.js carries one language when asked for one (`?lang=<code>`, else
- * the `zing_lang` cookie lang.js writes) and every language otherwise. A
+ * the `ekte_lang` cookie lang.js writes) and every language otherwise. A
  * one-language bundle adds `lang`, `keys` (below) and `common` (the other
  * languages' forms of the few strings every page needs for all of them) to
  * the data. A second bundle loaded later (lang.js does, to switch to a
  * language not loaded yet) merges its data into the existing
- * window.ZING_LOCALES instead of replacing it; window.ZING_I18N_DATA then
- * holds that last bundle's data only, so read ZING_LOCALES, not it.
+ * window.EKTE_LOCALES instead of replacing it; window.EKTE_I18N_DATA then
+ * holds that last bundle's data only, so read EKTE_LOCALES, not it.
  *
- * Exposes window.ZING_LOCALES = { strings, findings, patterns, add, has, merge, keys, languages }:
+ * Exposes window.EKTE_LOCALES = { strings, findings, patterns, add, has, merge, keys, languages }:
  *   - strings[lang][english]   UI text; the English string (a `data-en`
  *                              attribute or the 2nd argument of T(zh, en)) is
  *                              the key. Missing keys fall back to English.
@@ -26,30 +26,30 @@
  *                              it, so a reference taken early (i18n.js keeps
  *                              findings.zh) sees data merged later.
  *   - patterns                 [regex, english template, {group: fn}] used by
- *                              ZING_LANG.server() to translate known backend
+ *                              EKTE_LANG.server() to translate known backend
  *                              sentences (verdict summary and headline).
  *   - titlePatterns            English result-title templates whose {1} is a
  *                              subject ("Fingerprint divergence: {1}"; see
- *                              zing.i18n.RESULT_TITLE_PATTERNS), for i18n.js.
+ *                              ekte.i18n.RESULT_TITLE_PATTERNS), for i18n.js.
  *   - add(code, strings, findings)   register a language at runtime.
  *   - has(code)                true when that language's data is loaded
  *                              (always for "en", the key language).
- *   - merge(data)              add() every language of a ZING_I18N_DATA-shaped
+ *   - merge(data)              add() every language of a EKTE_I18N_DATA-shaped
  *                              object ({ locales: { code: { strings, findings } } }).
  *   - keys                    { strings: every translatable English string,
  *                                findings: every finding id }.
  *   - languages                [{ code, label, html, locale, order }] in menu order.
  *
- * Adding a language: add zing/i18n/locales/<code>.json (copy de.json).
+ * Adding a language: add ekte/i18n/locales/<code>.json (copy de.json).
  */
 (function () {
   "use strict";
 
-  var DATA = window.ZING_I18N_DATA || { languages: [], locales: {} };
+  var DATA = window.EKTE_I18N_DATA || { languages: [], locales: {} };
 
   // A further bundle (/locales.js?lang=…, loaded by lang.js on a switch):
   // add its language to the lookups already in place.
-  var prev = window.ZING_LOCALES;
+  var prev = window.EKTE_LOCALES;
   if (prev && typeof prev.merge === "function") {
     prev.merge(DATA);
     return;
@@ -59,7 +59,7 @@
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  // Sentences of the backend verdict summary (zing/scoring.py::_summary).
+  // Sentences of the backend verdict summary (ekte/scoring.py::_summary).
   var P = [
     ["Overall health score ([\\d.]+)/100\\.", "Overall health score {1}/100."],
     ["Custom run: (\\d+) of (\\d+) selected dimensions scored\\.", "Custom run: {1} of {2} selected dimensions scored."],
@@ -122,14 +122,14 @@
     "Not enough signal to judge — connectivity or coverage was insufficient.",
     "No significant divergence findings.",
     "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.",
-    "Run `zing compare` against a trusted baseline to strengthen the verdict.",
+    "Run `ekte compare` against a trusted baseline to strengthen the verdict.",
     "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.",
     "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.",
     "No core dimension (model identity, context window, capability) was selected, so the substitution risk cannot be judged.",
     "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.",
     "No problems found in the checked dimensions; model identity was not verified.",
     "Minor concerns in the checked dimensions; model identity was not verified.",
-    "zing reports black-box evidence of divergence and risk, not proof of fraud.",
+    "ekte reports black-box evidence of divergence and risk, not proof of fraud.",
   ].forEach(function (s) {
     P.push([esc(s), s]);
   });
@@ -175,7 +175,7 @@
       if (code === "en") return; // English is the key language
       add(code, locs[code].strings, locs[code].findings);
     });
-    // A few strings of the languages not loaded (see zing/i18n lang_bundle).
+    // A few strings of the languages not loaded (see ekte/i18n lang_bundle).
     var common = (data && data.common) || {};
     Object.keys(common).forEach(function (code) {
       if (code === "en" || loaded[code]) return;
@@ -197,7 +197,7 @@
   // A one-language bundle sends the keys; the full one has en and zh to read them from.
   var en = DATA.locales.en || {};
   var zh = DATA.locales.zh || {};
-  window.ZING_LOCALES = {
+  window.EKTE_LOCALES = {
     strings: strings,
     findings: findings,
     patterns: P,

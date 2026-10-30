@@ -1,8 +1,8 @@
 """The research prompt users copy into an external AI assistant.
 
-The assistant researches a model and answers with a zing provider YAML
+The assistant researches a model and answers with a ekte provider YAML
 document, which the user then uploads on the Knowledge base page (or imports
-with the API); :mod:`zing.knowledge.importer` checks it before anything is
+with the API); :mod:`ekte.knowledge.importer` checks it before anything is
 stored. The field reference is generated from the pydantic schema, so the
 prompt cannot drift from what the importer accepts.
 """
@@ -14,7 +14,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel
 
-from zing.knowledge.schema import FingerprintProbe, KnowledgeBase, ModelProfile, ProviderProfile
+from ekte.knowledge.schema import FingerprintProbe, KnowledgeBase, ModelProfile, ProviderProfile
 
 # What each field means — the schema itself carries only names, types, defaults.
 _HELP: dict[str, str] = {
@@ -73,7 +73,7 @@ _HELP: dict[str, str] = {
 
 def _type_name(annotation: Any) -> str:
     text = getattr(annotation, "__name__", None) or str(annotation)
-    return text.replace("typing.", "").replace("zing.knowledge.schema.", "")
+    return text.replace("typing.", "").replace("ekte.knowledge.schema.", "")
 
 
 def _fields(model: type[BaseModel], skip: tuple[str, ...] = ()) -> list[str]:
@@ -137,7 +137,7 @@ def research_prompt(model_id: str, provider: str | None = None, kb: KnowledgeBas
     )
     example = yaml.safe_dump(_EXAMPLE, allow_unicode=True, sort_keys=False, width=100)
     parts = [
-        f"Research the large-language-model API model `{model_id}` and write its profile for zing, "
+        f"Research the large-language-model API model `{model_id}` and write its profile for ekte, "
         "an open-source tool that audits whether an API relay really serves the model it claims.",
         provider_line,
         "",
@@ -146,10 +146,10 @@ def research_prompt(model_id: str, provider: str | None = None, kb: KnowledgeBas
         "and release notes. List the URLs under `sources`.",
         "- Never guess numbers. If a value is not officially documented, leave the default "
         "(-1 for token limits, null or an empty list otherwise) and say so in `notes`. A wrong value "
-        "makes zing wrongly accuse honest relays.",
+        "makes ekte wrongly accuse honest relays.",
         "- `identity_keywords` is the exception and is never empty: list the vendor and model-family "
         "words the model uses for itself (e.g. the company, its brand names, the family name), lower-case. "
-        "Without them zing reads the model naming its own vendor as a rival brand.",
+        "Without them ekte reads the model naming its own vendor as a rival brand.",
         "- Fingerprint probes are optional. Only add probes whose expected answer you can justify from "
         "the sources; keep prompts short, English, and free of anything personal. Omit them when unsure.",
         "- Output exactly one YAML document in a single ```yaml code block, nothing else: no anchors (&) "

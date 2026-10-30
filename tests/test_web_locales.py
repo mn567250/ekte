@@ -1,8 +1,8 @@
 """Completeness of the web UI translations and of the downloaded report.
 
-Evaluates the UI's plain-browser JS (zing/web/static) under node, so it is
+Evaluates the UI's plain-browser JS (ekte/web/static) under node, so it is
 skipped when node isn't installed. Adding a language to LANG_LIST in lang.js
-without a full zing/i18n/locales/<code>.json fails here, and so does a
+without a full ekte/i18n/locales/<code>.json fails here, and so does a
 downloaded report that changes the JSON schema or leaves text untranslated.
 """
 
@@ -27,14 +27,14 @@ global.localStorage = { getItem: () => null, setItem() {} };
 require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
-const L = window.ZING_LOCALES, zh = window.ZING_I18N.FINDINGS;
+const L = window.EKTE_LOCALES, zh = window.EKTE_I18N.FINDINGS;
 const ph = s => (String(s).match(/\{\w+(?:\|\w+)?\}/g) || []).sort().join(",");
 const tags = s => (String(s).match(/<\/?[a-z]+/gi) || []).sort().join(",");
 const problems = [];
-const codes = window.ZING_LANG.langs().map(l => l.code).filter(c => c !== "en" && c !== "zh");
+const codes = window.EKTE_LANG.langs().map(l => l.code).filter(c => c !== "en" && c !== "zh");
 for (const c of codes) {
   const s = L.strings[c], f = L.findings[c];
-  if (!s || !f) { problems.push(c + ": no zing/i18n/locales/" + c + ".json"); continue; }
+  if (!s || !f) { problems.push(c + ": no ekte/i18n/locales/" + c + ".json"); continue; }
   for (const k of L.keys.strings) {
     if (!(k in s)) problems.push(c + ": missing string " + JSON.stringify(k));
     else if (ph(k) !== ph(s[k]) || tags(k) !== tags(s[k]))
@@ -49,7 +49,7 @@ for (const c of codes) {
 for (const id of Object.keys(zh)) if (!L.keys.findings.includes(id)) problems.push("finding not translatable: " + id);
 // Branch/generic summary templates are English keys every language, CN
 // included, must translate (CN has no other use for the dictionary).
-for (const t of window.ZING_I18N.TEMPLATES)
+for (const t of window.EKTE_I18N.TEMPLATES)
   for (const c of codes.concat(["zh"])) {
     const d = L.strings[c] || {};
     if (!(t in d)) problems.push(c + ": missing template " + JSON.stringify(t));
@@ -61,10 +61,10 @@ console.log(JSON.stringify({ codes, problems }));
 
 def _ui_js(tmp_path: Path) -> Path:
     """The UI's i18n scripts as the browser gets them (/locales.js carries the
-    JSON data from zing/i18n/locales/ in front of the lookup logic)."""
-    from zing.i18n import locales_script
+    JSON data from ekte/i18n/locales/ in front of the lookup logic)."""
+    from ekte.i18n import locales_script
 
-    static = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+    static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     (tmp_path / "locales.js").write_text(locales_script(), encoding="utf-8")
     for name in ("lang.js", "i18n.js"):
         shutil.copy(static / name, tmp_path / name)
@@ -105,7 +105,7 @@ report.detectors[0].scoring = { method: "mean_of_checks", outcomes: [
     label: "No usable response to judge by." }] };
 // The performance section's notes are fixed backend sentences.
 report.performance = { source: "passive", notes: [
-  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; zing never downloads a tokenizer.",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.",
   "Some requests were served fully or partly from a cache and are left out of the statistics."] };
 const TEXT = /^(verdict\.(headline|summary|key_findings\.\d+)|dimensions\.\d+\.reason|(performance\.)?notes\.\d+|(baseline_)?detectors\.\d+\.(name|findings\.\d+\.(title|summary|recommendation)|scoring\.(outcomes\.\d+\.label|titles\..+)))$/;
 const CJK = /[\u3400-\u9fff]/;
@@ -117,7 +117,7 @@ for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
   global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", querySelectorAll: () => [], addEventListener() {} };
   global.localStorage = { getItem: () => lang, setItem() {} };
   for (const m of ["locales.js", "lang.js", "i18n.js"]) require(path.join(dir, m));
-  const ex = window.ZING_I18N.exportReport(report), a = flat(report, "", {}), b = flat(ex, "", {});
+  const ex = window.EKTE_I18N.exportReport(report), a = flat(report, "", {}), b = flat(ex, "", {});
   const problems = [];
   const ka = Object.keys(a).sort().join("\n"), kb = Object.keys(b).sort().join("\n");
   if (ka !== kb) problems.push("JSON keys differ");
@@ -138,8 +138,8 @@ console.log(JSON.stringify(result));
 def test_downloaded_report_is_translated_with_english_keys(tmp_path):
     # The web UI's "Download report (JSON)" exports this: same keys, enums,
     # ids and evidence as the server's report; human-readable values in the
-    # selected language; and still a valid zing AuditReport.
-    from zing.models import AuditReport
+    # selected language; and still a valid ekte AuditReport.
+    from ekte.models import AuditReport
 
     here = Path(__file__).resolve().parent
     out = subprocess.run(
@@ -154,9 +154,9 @@ def test_downloaded_report_is_translated_with_english_keys(tmp_path):
 
 
 def test_locale_fragments_extend_every_language(tmp_path, monkeypatch):
-    # zing/i18n/locales/fragments/<feature>/<code>.json adds strings to a
+    # ekte/i18n/locales/fragments/<feature>/<code>.json adds strings to a
     # language; an en fragment extends the canonical key list.
-    import zing.i18n as i18n
+    import ekte.i18n as i18n
 
     base = Path(i18n.__file__).resolve().parent / "locales"
     for f in base.glob("*.json"):
@@ -183,7 +183,7 @@ def _backend_sentences() -> list[str]:
     """Fixed English sentences the backend puts in a report: detector names,
     recommendations, scoring-scale labels, verdict headlines, report notes and
     performance notes."""
-    root = Path(__file__).resolve().parent.parent / "zing"
+    root = Path(__file__).resolve().parent.parent / "ekte"
     out: list[str] = []
 
     def lit(node: ast.AST) -> str | None:
@@ -217,9 +217,9 @@ def _backend_sentences() -> list[str]:
 
 
 def test_zh_translates_every_backend_sentence():
-    # The UI shows backend text translated in CN too (ZING_LANG.server), so
+    # The UI shows backend text translated in CN too (EKTE_LANG.server), so
     # zh.json must carry every fixed backend sentence.
-    from zing import i18n
+    from ekte import i18n
 
     sentences = _backend_sentences()
     assert len(sentences) > 40
@@ -240,7 +240,7 @@ for (const k of ["detectors", "baseline_detectors"])
     texts.push(d.name);
     for (const f of d.findings || []) if (f.recommendation) texts.push(f.recommendation);
   }
-console.log(JSON.stringify(texts.map(t => [t, window.ZING_LANG.server(t)])));
+console.log(JSON.stringify(texts.map(t => [t, window.EKTE_LANG.server(t)])));
 """
 
 
@@ -265,7 +265,7 @@ def test_server_text_is_chinese_in_zh(tmp_path):
 
 def test_language_labels_are_endonyms():
     # The switcher names languages, not countries (no flags).
-    from zing import i18n
+    from ekte import i18n
 
     labels = {m["code"]: m["label"] for m in i18n.languages()}
     assert labels == {
@@ -284,7 +284,7 @@ const run = (lang, fire) => {
   global.setTimeout = (fn, ms) => { timers.push({ fn, ms }); return timers.length; };
   global.clearTimeout = id => { if (timers[id - 1]) timers[id - 1].fn = null; };
   global.window = {
-    ZING_LOCALES: { languages: [{ code: "en", label: "English", html: "en", locale: "en-US" },
+    EKTE_LOCALES: { languages: [{ code: "en", label: "English", html: "en", locale: "en-US" },
                                 { code: "zh", label: "中文", html: "zh-CN", locale: "zh-CN" },
                                 { code: "fr", label: "Français", html: "fr", locale: "fr-FR" }] },
     addEventListener(t, fn) { handlers[t] = fn; },
@@ -317,7 +317,7 @@ console.log(JSON.stringify(r));
 def test_hidden_page_is_revealed_if_boot_never_runs(tmp_path):
     # lang.js hides the page until the markup is translated; if boot never
     # runs (e.g. a later script throws), a timer or the first error reveals it.
-    static = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+    static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     shutil.copy(static / "lang.js", tmp_path / "lang.js")
     out = subprocess.run(
         ["node", "-e", _VISIBILITY_JS, str(tmp_path)], capture_output=True, text=True, check=True,
@@ -340,7 +340,7 @@ def test_hidden_page_is_revealed_if_boot_never_runs(tmp_path):
 # --------------------------------------------------------------------------- #
 # Strings used in page source must be translatable
 # --------------------------------------------------------------------------- #
-_STATIC = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+_STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
 _T_CALL = re.compile(r'\bTf?\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"')
 _DATA_EN = re.compile(r'data-en(?:-[a-z-]+)?="([^"]*)"')
 # A ["中文", "English"] pair handed to a helper that calls T/Tf later, e.g.
@@ -370,25 +370,25 @@ def test_page_strings_are_translatable(page):
     # Every English text these pages show must be a key of the merged `en`
     # strings; test_every_ui_language_is_complete then requires all languages
     # to translate it, so a new string cannot silently stay English.
-    from zing import i18n
+    from ekte import i18n
 
     keys = set(i18n._load()["en"].get("strings", {}))
     missing = sorted(_source_strings(_STATIC / page) - keys)
-    assert not missing, f"{page}: add to zing/i18n/locales (fragments): {missing}"
+    assert not missing, f"{page}: add to ekte/i18n/locales (fragments): {missing}"
 
 
 # --------------------------------------------------------------------------- #
 # Per-language /locales.js
 # --------------------------------------------------------------------------- #
 def test_one_language_bundle_carries_only_that_language():
-    from zing import i18n
+    from ekte import i18n
 
     full = i18n.bundle()
     for code in i18n.codes():
         b = i18n.lang_bundle(code)
         assert b["lang"] == code and b["languages"] == full["languages"]
         assert set(b["locales"]) == (set() if code == "en" else {code})
-        # ZING_LOCALES.keys, without shipping the identity map en.json
+        # EKTE_LOCALES.keys, without shipping the identity map en.json
         assert b["keys"]["strings"] == list(full["locales"]["en"]["strings"])
         assert b["keys"]["findings"] == list(full["locales"]["zh"]["findings"])
         assert len(i18n.locales_script(code)) < len(i18n.locales_script()) / 3
@@ -401,7 +401,7 @@ def test_one_language_bundle_carries_only_that_language():
 def test_bundles_are_precompressed_once_and_rebuilt_with_the_data():
     import gzip
 
-    from zing import i18n
+    from ekte import i18n
 
     for lang in (None, "de"):
         body, etag, gz = i18n.locales_encoded(lang)
@@ -419,10 +419,10 @@ def test_locales_route_picks_the_language_and_revalidates():
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from zing.web.server import create_app
+    from ekte.web.server import create_app
 
     def vary(r) -> set[str]:
-        # gzip (zing/web/caching.py) adds Accept-Encoding; only Cookie is ours
+        # gzip (ekte/web/caching.py) adds Accept-Encoding; only Cookie is ours
         return {v.strip().lower() for v in r.headers.get("vary", "").split(",") if v.strip()}
 
     client = TestClient(create_app(), base_url="http://localhost")
@@ -438,7 +438,7 @@ def test_locales_route_picks_the_language_and_revalidates():
     assert "cookie" not in vary(de)  # the query decides, not the cookie
     assert len(de.content) < len(full.content) / 3
 
-    client.cookies.set("zing_lang", "fr")
+    client.cookies.set("ekte_lang", "fr")
     fr = client.get("/locales.js")
     assert '"lang":"fr"' in fr.text and "cookie" in vary(fr)
     assert '"lang":"de"' in client.get("/locales.js?lang=de").text  # query wins
@@ -486,36 +486,36 @@ const run = (o, steps) => {
     require(file(/lang=(\w+)/.exec(s.src)[1]));
     s.onload();
   });
-  const snap = () => ({ lang: window.ZING_LANG.get(), html: document.documentElement.lang,
+  const snap = () => ({ lang: window.EKTE_LANG.get(), html: document.documentElement.lang,
     hidden: document.documentElement.style.visibility === "hidden", select: sel.value,
-    history: window.ZING_LANG.tr("History"), stored, cookie: /zing_lang=(\w+)/.exec(document.cookie)?.[1] || null,
-    session: Object.assign({}, session), pending: appended.length, zhFindings: Object.keys(window.ZING_I18N.FINDINGS).length });
+    history: window.EKTE_LANG.tr("History"), stored, cookie: /ekte_lang=(\w+)/.exec(document.cookie)?.[1] || null,
+    session: Object.assign({}, session), pending: appended.length, zhFindings: Object.keys(window.EKTE_I18N.FINDINGS).length });
   out.boot = snap();
   for (const st of steps || []) {
     try {
-      if (st.set) { sel.value = st.set; window.ZING_LANG.set(st.set); }
+      if (st.set) { sel.value = st.set; window.EKTE_LANG.set(st.set); }
       if (st.serve) serve(st.serve === "fail");
       if (st.timers) timers.splice(0).forEach(fn => fn && fn());
-      if (st.report) out.report = window.ZING_LOCALES.strings;
+      if (st.report) out.report = window.EKTE_LOCALES.strings;
     } catch (e) { out.errors.push(String(e)); }
     (out.after = out.after || []).push(snap());
   }
-  out.locales = window.ZING_LOCALES;
+  out.locales = window.EKTE_LOCALES;
   return out;
 };
 const pick = r => ({ ...r, locales: undefined });
 const r = {
-  same: pick(run({ bundle: "de", stored: "de", cookie: "zing_lang=de", session: { "zing.lang.reload": "de" } })),
-  stale: pick(run({ bundle: "de", stored: "fr", cookie: "zing_lang=de" })),
-  again: pick(run({ bundle: "de", stored: "fr", cookie: "zing_lang=de", session: { "zing.lang.reload": "fr" } }, [{ serve: "ok" }])),
-  noReload: pick(run({ bundle: "de", stored: "fr", cookie: "zing_lang=de" }, [{ timers: true }, { serve: "ok" }])),
-  noStorage: pick(run({ bundle: "de", noStorage: true, cookie: "zing_lang=de" })),
-  common: pick(run({ bundle: "de", stored: "de", cookie: "zing_lang=de" }, [{ report: true }])),
-  againFail: pick(run({ bundle: "de", stored: "fr", cookie: "zing_lang=de", session: { "zing.lang.reload": "fr" } }, [{ serve: "fail" }])),
+  same: pick(run({ bundle: "de", stored: "de", cookie: "ekte_lang=de", session: { "ekte.lang.reload": "de" } })),
+  stale: pick(run({ bundle: "de", stored: "fr", cookie: "ekte_lang=de" })),
+  again: pick(run({ bundle: "de", stored: "fr", cookie: "ekte_lang=de", session: { "ekte.lang.reload": "fr" } }, [{ serve: "ok" }])),
+  noReload: pick(run({ bundle: "de", stored: "fr", cookie: "ekte_lang=de" }, [{ timers: true }, { serve: "ok" }])),
+  noStorage: pick(run({ bundle: "de", noStorage: true, cookie: "ekte_lang=de" })),
+  common: pick(run({ bundle: "de", stored: "de", cookie: "ekte_lang=de" }, [{ report: true }])),
+  againFail: pick(run({ bundle: "de", stored: "fr", cookie: "ekte_lang=de", session: { "ekte.lang.reload": "fr" } }, [{ serve: "fail" }])),
   full: pick(run({ bundle: null, stored: "it" })),
-  toZh: pick(run({ bundle: "en", stored: "en", cookie: "zing_lang=en" }, [{ set: "zh" }, { serve: "ok" }, { set: "en" }, { set: "zh" }])),
-  fail: pick(run({ bundle: "en", stored: "en", cookie: "zing_lang=en" }, [{ set: "de" }, { serve: "fail" }])),
-  superseded: pick(run({ bundle: "en", stored: "en", cookie: "zing_lang=en" }, [{ set: "de" }, { set: "fr" }, { serve: "ok" }])),
+  toZh: pick(run({ bundle: "en", stored: "en", cookie: "ekte_lang=en" }, [{ set: "zh" }, { serve: "ok" }, { set: "en" }, { set: "zh" }])),
+  fail: pick(run({ bundle: "en", stored: "en", cookie: "ekte_lang=en" }, [{ set: "de" }, { serve: "fail" }])),
+  superseded: pick(run({ bundle: "en", stored: "en", cookie: "ekte_lang=en" }, [{ set: "de" }, { set: "fr" }, { serve: "ok" }])),
 };
 // Every one-language bundle merged together is the full bundle.
 const m = run({ bundle: "en", stored: "en" }).locales;
@@ -529,7 +529,7 @@ console.log(JSON.stringify(r));
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_lang_js_loads_the_missing_language_bundle(tmp_path):
-    from zing import i18n
+    from ekte import i18n
 
     _ui_js(tmp_path)
     for code in i18n.codes():
@@ -547,7 +547,7 @@ def test_lang_js_loads_the_missing_language_bundle(tmp_path):
     # Stale cookie: fix it and reload once, the page still hidden.
     b = r["stale"]["boot"]
     assert r["stale"]["reloads"] == 1 and b["cookie"] == "fr" and b["hidden"]
-    assert b["session"] == {"zing.lang.reload": "fr"} and b["stored"] == "fr"
+    assert b["session"] == {"ekte.lang.reload": "fr"} and b["stored"] == "fr"
     # Already reloaded once: no loop; English at once, then the bundle loads.
     a = r["again"]
     assert a["reloads"] == 0 and a["boot"]["lang"] == "en" and not a["boot"]["hidden"]
@@ -609,7 +609,7 @@ global.document = { documentElement: { style: {}, lang: "" }, readyState: "compl
 global.localStorage = { getItem: () => "en", setItem() {} };
 require(path.join(dir, "locales.js"));
 require(path.join(dir, "lang.js"));
-const L = window.ZING_LANG;
+const L = window.EKTE_LANG;
 const d = new Date(Date.UTC(2026, 9, 6, 12, 34)), opts = { dateStyle: "medium", timeStyle: "short" };
 const snap = () => ({
   locale: L.locale(),
@@ -639,7 +639,7 @@ console.log(JSON.stringify({ out, afterEn, afterBack }));
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_shared_intl_formatters_are_cached_per_locale(tmp_path):
-    from zing.i18n import locales_script
+    from ekte.i18n import locales_script
 
     (tmp_path / "locales.js").write_text(locales_script(), encoding="utf-8")
     shutil.copy(_STATIC / "lang.js", tmp_path / "lang.js")
@@ -668,7 +668,7 @@ def test_shared_intl_formatters_are_cached_per_locale(tmp_path):
 # Fingerprint findings: one title per KB signal, in every language
 # --------------------------------------------------------------------------- #
 def _kb_signals() -> set[str]:
-    """Every ``fingerprints[].signal`` in the packaged KB (zing/knowledge/data)."""
+    """Every ``fingerprints[].signal`` in the packaged KB (ekte/knowledge/data)."""
     import yaml
 
     out: set[str] = set()
@@ -682,7 +682,7 @@ def _kb_signals() -> set[str]:
             for v in o:
                 walk(v)
 
-    data = Path(__file__).resolve().parent.parent / "zing" / "knowledge" / "data"
+    data = Path(__file__).resolve().parent.parent / "ekte" / "knowledge" / "data"
     for path in sorted(data.glob("*.yaml")):
         for doc in yaml.safe_load_all(path.read_text(encoding="utf-8")):
             walk(doc)
@@ -693,7 +693,7 @@ def test_every_fingerprint_signal_is_translated():
     # A divergence finding's title names its signal ("Fingerprint divergence:
     # <signal>"); the localized title shows it translated (i18n.js {signal|server}),
     # so every KB signal needs a translation in every language but EN.
-    from zing import i18n
+    from ekte import i18n
 
     signals = _kb_signals()
     assert len(signals) > 20
@@ -717,7 +717,7 @@ for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
   global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", querySelectorAll: () => [], addEventListener() {} };
   global.localStorage = { getItem: () => lang, setItem() {} };
   for (const m of ["locales.js", "lang.js", "i18n.js"]) require(path.join(dir, m));
-  const I = window.ZING_I18N;
+  const I = window.EKTE_I18N;
   const findings = signals.map((s, i) => ({ id: "model_identity.fp.p" + i, title: "Fingerprint divergence: " + s,
     status: "warn", severity: "low", summary: "x", evidence: { probe: "p" + i, signal: s }, recommendation: null }));
   const report = { detectors: [{ name: "x", findings }], verdict: { key_findings: findings.map(f => f.title) } };
@@ -727,7 +727,7 @@ for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
     exported: ex.detectors[0].findings.map(f => f.title), key_findings: ex.verdict.key_findings,
     old: I.localizeFinding("model_identity.fp.p", "x", { probe: "p" }, "Fingerprint divergence: self-identification", "warn").title,
     unknown: I.localizeFinding("model_identity.fp.p", "x", { probe: "p" }, "Fingerprint went sideways", "warn").title,
-    signal: signals.map(s => window.ZING_LANG.server(s)),
+    signal: signals.map(s => window.EKTE_LANG.server(s)),
   };
 }
 console.log(JSON.stringify(out));
@@ -736,7 +736,7 @@ console.log(JSON.stringify(out));
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
-    from zing import i18n
+    from ekte import i18n
 
     signals = sorted(_kb_signals())
     out = json.loads(subprocess.run(
@@ -755,7 +755,7 @@ def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
         # no signal recorded (older report): the result title still names it
         assert r["old"] == fp[0].replace("{signal|server}", i18n.ui(lang, "self-identification")), lang
         assert r["unknown"] == fp[2], lang  # an unknown title and no signal: the generic title
-    # the webhook alerts' titles (zing.notify) agree
+    # the webhook alerts' titles (ekte.notify) agree
     assert i18n.finding_title("de", "model_identity.fp.self-id", "x", {"signal": "self-identification"}) == (
         "Fingerprint-Abweichung: Selbstidentifikation"
     )
@@ -770,13 +770,13 @@ def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
 def _result_titles() -> tuple[set[str], set[str]]:
     """Every finding title the backend can emit: ``(fixed titles, templates)``.
 
-    A title is the ``title=`` of a finding built in zing/detectors (or the title
+    A title is the ``title=`` of a finding built in ekte/detectors (or the title
     argument of the embed/media audits' ``_finding``): a literal, either branch
     of a conditional, a module-level ``{…: title}`` dict looked up, or an
     f-string around one subject (a template, its subject as ``{1}``). Any other
     form fails, so a new dynamic title cannot slip past the translations.
     """
-    root = Path(__file__).resolve().parent.parent / "zing"
+    root = Path(__file__).resolve().parent.parent / "ekte"
     fixed: set[str] = set()
     templates: set[str] = set()
     for path in sorted(root.rglob("*.py")):
@@ -823,7 +823,7 @@ def test_every_result_title_is_translated():
     # The UI, the download and the webhook alerts show a finding's result
     # title ("Endpoint is not HTTPS"), not just its check's, so every title the
     # backend can emit needs a translation in every language but EN.
-    from zing import i18n
+    from ekte import i18n
 
     fixed, templates = _result_titles()
     assert len(fixed) > 150 and "Endpoint is not HTTPS" in fixed
@@ -863,7 +863,7 @@ for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
   global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", querySelectorAll: () => [], addEventListener() {} };
   global.localStorage = { getItem: () => lang, setItem() {} };
   for (const m of ["locales.js", "lang.js", "i18n.js"]) require(path.join(dir, m));
-  const I = window.ZING_I18N;
+  const I = window.EKTE_I18N;
   const f = (id, title, status, evidence) => ({ id, title, status, severity: "info", summary: "x", evidence, recommendation: null });
   const findings = [];
   for (const [id, pass, fail, ev] of cases) findings.push(f(id, pass, "pass", ev), f(id, fail, "fail", ev));
@@ -881,7 +881,7 @@ console.log(JSON.stringify(out));
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_pass_and_fail_of_one_check_get_different_localized_titles(tmp_path):
-    from zing import i18n
+    from ekte import i18n
 
     out = json.loads(subprocess.run(
         ["node", "-e", _PASS_FAIL_JS, str(_ui_js(tmp_path)), json.dumps(_PASS_FAIL)],

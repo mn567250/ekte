@@ -1,4 +1,4 @@
-/* zing web UI v2 — light / dark theme choice.
+/* ekte web UI v2 — light / dark theme choice.
  *
  * Load in <head>, right after /lang.js, so the stored choice is applied before
  * the first paint (no flash):
@@ -9,17 +9,17 @@
  *
  * The choice ("system" | "light" | "dark") is a per-browser convenience in
  * localStorage, shared by every v2 page and kept in sync across open tabs.
- * nav.js renders the <select class="theme-sel"> and calls ZING_THEME.set.
+ * nav.js renders the <select class="theme-sel"> and calls EKTE_THEME.set.
  *
- * Motion ("on" | "off", ZING_MOTION) works the same way: "off" sets
+ * Motion ("on" | "off", EKTE_MOTION) works the same way: "off" sets
  * data-motion="off" on <html>, which stops every animation and transition as
- * prefers-reduced-motion does (zing.css; chartmotion.js / .css, the radar and
+ * prefers-reduced-motion does (ekte.css; chartmotion.js / .css, the radar and
  * spinners too). nav.js renders its <select class="motion-sel">.
  */
 (function () {
   "use strict";
 
-  var KEY = "zing.v2.theme";
+  var KEY = "ekte.v2.theme";
   var root = document.documentElement;
   var pageDefault = root.getAttribute("data-theme") || "";
   var CHOICES = ["system", "light", "dark"];
@@ -54,11 +54,11 @@
     if (ev.key === KEY) apply(get());
   });
 
-  window.ZING_THEME = { get: get, set: set, apply: function () { apply(get()); } };
+  window.EKTE_THEME = { get: get, set: set, apply: function () { apply(get()); } };
   apply(get());
 
   // ---- motion: "on" (default; reduced motion still wins) | "off" ----
-  var MKEY = "zing.v2.motion";
+  var MKEY = "ekte.v2.motion";
   function mget() {
     try { return localStorage.getItem(MKEY) === "off" ? "off" : "on"; } catch (e) { return "on"; }
   }
@@ -76,6 +76,6 @@
   window.addEventListener("storage", function (ev) {
     if (ev.key === MKEY) mapply(mget());
   });
-  window.ZING_MOTION = { get: mget, set: mset };
+  window.EKTE_MOTION = { get: mget, set: mset };
   mapply(mget());
 })();

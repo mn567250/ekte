@@ -6,7 +6,7 @@ import ipaddress
 from urllib.parse import urlsplit
 
 _LOOPBACK_NAMES = frozenset({"localhost", "0.0.0.0", "::1", "::", ""})
-# Names that reach the machine running zing (or its LAN) from inside a container.
+# Names that reach the machine running ekte (or its LAN) from inside a container.
 _LOCAL_NAMES = frozenset({"host.docker.internal", "host.containers.internal", "gateway.docker.internal"})
 
 

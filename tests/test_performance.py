@@ -8,15 +8,15 @@ from datetime import datetime, timedelta, timezone
 import httpx
 import pytest
 
+from ekte.clients import OpenAICompatibleClient
+from ekte.config import AuditOptions
+from ekte.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
+from ekte.perf import RequestRecorder, build_performance, detector_scope, phase_scope
+from ekte.perf.recorder import NetTrace, usage_tokens
+from ekte.perf.summary import NOTE_PASSIVE, NOTE_REASONING, hidden_reasoning, summarize_endpoint
+from ekte.runner import run_audit
+from ekte.utils.stats import describe
 from tests._helpers import BASE_URL, DEFAULT_MODEL
-from zing.clients import OpenAICompatibleClient
-from zing.config import AuditOptions
-from zing.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
-from zing.perf import RequestRecorder, build_performance, detector_scope, phase_scope
-from zing.perf.recorder import NetTrace, usage_tokens
-from zing.perf.summary import NOTE_PASSIVE, NOTE_REASONING, hidden_reasoning, summarize_endpoint
-from zing.runner import run_audit
-from zing.utils.stats import describe
 
 
 def _spec(stream: bool = False) -> RequestSpec:
@@ -83,7 +83,7 @@ def test_usage_tokens_across_protocols(usage, expected):
 
 
 def test_anthropic_usage_keeps_cache_fields():
-    from zing.clients.anthropic import AnthropicClient
+    from ekte.clients.anthropic import AnthropicClient
 
     usage = AnthropicClient._usage(
         {"input_tokens": 3, "output_tokens": 4, "cache_read_input_tokens": 2}
@@ -306,12 +306,12 @@ def test_input_size_buckets():
 # --------------------------------------------------------------------------- #
 @pytest.fixture
 def patched_make_client(monkeypatch, mock_server):
-    from zing.clients import make_client as real
+    from ekte.clients import make_client as real
 
     def factory(config, **_):
         return real(config, transport=mock_server.transport)
 
-    monkeypatch.setattr("zing.runner.make_client", factory)
+    monkeypatch.setattr("ekte.runner.make_client", factory)
     return mock_server
 
 

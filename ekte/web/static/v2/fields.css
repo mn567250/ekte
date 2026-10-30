@@ -1,10 +1,10 @@
-/* zing web UI v2 — form field components: model picker + secret key field.
+/* ekte web UI v2 — form field components: model picker + secret key field.
  *
- * Link after zing.css on pages that use them:
+ * Link after ekte.css on pages that use them:
  *   <link rel="stylesheet" href="/v2/static/fields.css" />
- * and enhance the picker with ZingModelPicker.enhance({ …, unstyled: true })
+ * and enhance the picker with EkteModelPicker.enhance({ …, unstyled: true })
  * (without `unstyled` it paints its classic inline styles instead).
- * Colours only through the zing.css tokens, so light and dark both work.
+ * Colours only through the ekte.css tokens, so light and dark both work.
  */
 
 /* ---------- model picker (/modelpicker.js, unstyled mode) ---------- */

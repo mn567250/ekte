@@ -1,7 +1,7 @@
-/* zing web UI v2 — Knowledge page: pure helpers (no DOM, no text).
+/* ekte web UI v2 — Knowledge page: pure helpers (no DOM, no text).
  *
  * The page lists three kinds of items from GET /api/kb/profiles — models,
- * providers and relays (see zing/knowledge/catalog.py) — through one section
+ * providers and relays (see ekte/knowledge/catalog.py) — through one section
  * component (kbsection.js). What depends only on the data lives here, so it
  * can be tested under node (tests/test_web_kbview_js.py):
  *   sourceKind(src)       "yours" | "kbdir" | "packaged" from an item's source
@@ -110,7 +110,7 @@
     return (data && Array.isArray(data[kind])) ? data[kind] : [];
   }
 
-  window.ZingKbView = {
+  window.EkteKbView = {
     _: {
       sourceKind: sourceKind, sourceFile: sourceFile, modelProvider: modelProvider, matches: matches,
       active: active, options: options, groups: groups, summary: summary, itemsOf: itemsOf,

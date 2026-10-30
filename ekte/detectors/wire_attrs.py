@@ -4,11 +4,11 @@ What a conformant endpoint must send back (``RESPONSE_ATTRS``) and which request
 parameters it must accept (``REQUEST_PARAMS``), per wire protocol ("openai" Chat
 Completions, "anthropic" Messages, "responses" OpenAI Responses). The catalogs
 are data; the functions below are pure, so the detectors in
-:mod:`zing.detectors.protocol_attrs` stay thin and all judgement is testable
+:mod:`ekte.detectors.protocol_attrs` stay thin and all judgement is testable
 without a client.
 
 Each attribute is one subject of a parametrized scale check (see
-:mod:`zing.detectors.scale`): response attributes score against the
+:mod:`ekte.detectors.scale`): response attributes score against the
 ``protocol_response.core`` or ``.minor`` row set, request parameters against
 ``protocol_request.param``.
 """
@@ -19,10 +19,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from zing import prompts
-from zing.detectors.helpers import MISSING, contains_ci, dig
-from zing.detectors.scale import Scale, outcome
-from zing.models import CompletionOutcome, Severity, Status
+from ekte import prompts
+from ekte.detectors.helpers import MISSING, contains_ci, dig
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import CompletionOutcome, Severity, Status
 
 # --------------------------------------------------------------------------- #
 # Response attributes
@@ -215,7 +215,7 @@ Verifier = Callable[[CompletionOutcome], bool]
 class Param:
     """One request parameter: how to send it and, if observable, how to verify it.
 
-    ``spec`` holds :class:`~zing.models.RequestSpec` fields (``extra_body`` for
+    ``spec`` holds :class:`~ekte.models.RequestSpec` fields (``extra_body`` for
     parameters without a field of their own). A param without ``verify`` is
     accept-only: all of them go out together in one call and are only retried
     one by one when that call is rejected. ``sampling`` marks parameters that
@@ -279,7 +279,7 @@ def request_params(protocol: str, *, reasoning: bool = False) -> list[Param]:
             Param("temperature", {"temperature": 0.5}, sampling=True),
             _body("top_p", 0.9, sampling=True),
             _body("top_k", 5, sampling=True),
-            _body("metadata", {"user_id": "zing-audit"}),
+            _body("metadata", {"user_id": "ekte"}),
         ]
     if protocol == "responses":
         return [
@@ -287,8 +287,8 @@ def request_params(protocol: str, *, reasoning: bool = False) -> list[Param]:
             _max_tokens("max_output_tokens"),
             Param("temperature", {"temperature": 0.5}, sampling=True),
             _body("top_p", 0.9, sampling=True),
-            _body("metadata", {"probe": "zing-audit"}),
-            _body("user", "zing-audit"),
+            _body("metadata", {"probe": "ekte"}),
+            _body("user", "ekte"),
         ]
     return [
         _system("system"),
@@ -305,7 +305,7 @@ def request_params(protocol: str, *, reasoning: bool = False) -> list[Param]:
         _body("seed", 7),
         _body("presence_penalty", 0.1, sampling=True),
         _body("frequency_penalty", 0.1, sampling=True),
-        _body("user", "zing-audit"),
+        _body("user", "ekte"),
     ]
 
 

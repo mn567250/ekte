@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="zing — accessibility">zing — 无障碍</title>
+<title data-en="ekte — accessibility">ekte — 无障碍</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/v2/static/theme.js"></script>
 <link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/zing.css" />
+<link rel="stylesheet" href="/v2/static/ekte.css" />
 <link rel="stylesheet" href="/v2/static/charts.css" />
 <link rel="stylesheet" href="/v2/static/chartmotion.css" />
 <style>
-  /* ---- accessibility conformance report (v2) — page-only rules; colours via zing.css tokens ---- */
+  /* ---- accessibility conformance report (v2) — page-only rules; colours via ekte.css tokens ---- */
   .card + .card, .card + h2 { margin-top: 20px; }
   .form-title { font-family: var(--disp); font-weight: 600; font-size: 18px; margin: 0 0 12px; }
   .verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; }
@@ -197,7 +197,7 @@
       <p id="stmt-manual"></p>
       <h3 data-en="Feedback">反馈</h3>
       <p><span data-en="Did you find a barrier, or is something hard to use with assistive technology? Please tell us:">发现了障碍，或者某些功能难以通过辅助技术使用？请告诉我们：</span>
-        <a href="https://github.com/cenbonew/zing/issues" data-en="report an accessibility issue on GitHub">在 GitHub 上报告无障碍问题</a></p>
+        <a href="https://github.com/mn567250/ekte/issues" data-en="report an accessibility issue on GitHub">在 GitHub 上报告无障碍问题</a></p>
     </section>
   </main>
 </div>
@@ -211,7 +211,7 @@
   "use strict";
 
   var $ = function (id) { return document.getElementById(id); };
-  var L = window.ZING_LANG;
+  var L = window.EKTE_LANG;
   var report = null, loadErr = false;
 
   function esc(s) {
@@ -299,7 +299,7 @@
       '<dl class="meta">' +
       "<dt>" + esc(T("生成时间", "Generated")) + "</dt><dd>" + esc(fmtTime(report.generated_at)) + "</dd>" +
       "<dt>" + esc(T("提交", "Commit")) + "</dt><dd>" + (report.commit ? "<code>" + esc(report.commit) + "</code>" : "—") + "</dd>" +
-      "<dt>" + esc(T("zing 版本", "zing version")) + "</dt><dd>" + esc(report.zing_version || "—") + "</dd>" +
+      "<dt>" + esc(T("ekte 版本", "ekte version")) + "</dt><dd>" + esc(report.ekte_version || "—") + "</dd>" +
       "<dt>" + esc(T("axe-core 版本", "axe-core version")) + "</dt><dd>" + esc(report.axe_version || "—") + "</dd>" +
       "<dt>" + esc(T("测试", "Tests")) + "</dt><dd>" + esc(Tf("{run} 个已运行，{passed} 个通过，{failed} 个失败，{skipped} 个跳过",
         "{run} run, {passed} passed, {failed} failed, {skipped} skipped",
@@ -327,14 +327,14 @@
   function sw(cls) { return '<span class="sw ' + cls + '" aria-hidden="true"></span>'; }
   function barRow(label, cls, n, total) {
     return "<li" + (n ? "" : ' class="zero"') + '><span class="lbl">' + sw(cls) + esc(label) + '</span><span class="val">' +
-      esc(pctText(n, total, share(n, total))) + "</span>" + ZingCharts.meter([{ cls: cls, n: n }], total) + "</li>";
+      esc(pctText(n, total, share(n, total))) + "</span>" + EkteCharts.meter([{ cls: cls, n: n }], total) + "</li>";
   }
   function paintCoverage() {
     if (!report) return;
     var t = report.totals, all = t.steps, n = t.applicable, st = t.status;
     var cnt = function (a, s) { return report.steps.filter(function (x) { return x.automation === a && (!s || x.status === s); }).length; };
     var pass = st.pass.count;
-    ZingCharts.donut($("cov-donut"), {
+    EkteCharts.donut($("cov-donut"), {
       total: all,
       parts: RESULTS.map(function (s) { return { cls: KEY[s], n: st[s].count }; }),
       center: { value: num(share(pass, n), 1) + " %", lines: [T("通过", "Pass"), Tf("共 {total} 项", "of {total}", { total: num(n) })] },
@@ -350,7 +350,7 @@
     // failed) and still pending, on the same scale as the bar above
     var p = t.automation.partial.count, done = cnt("partial", "pass") + cnt("partial", "fail"), pend = cnt("partial", "manual review pending");
     $("bars-mh").innerHTML = barRow(autoLabel("partial"), "k-partial", p, n) +
-      '<li class="split">' + ZingCharts.meter([{ cls: "k-pass", n: done }, { cls: "k-pending", n: pend }], n) +
+      '<li class="split">' + EkteCharts.meter([{ cls: "k-pass", n: done }, { cls: "k-pending", n: pend }], n) +
       '<span class="cap"><span class="lbl">' + sw("k-pass") + esc(T("已审核", "Reviewed")) + ' <span class="val">' + esc(ofText(done, p)) + "</span></span>" +
       '<span class="lbl">' + sw("k-pending") + esc(statusLabel("manual review pending")) + ' <span class="val">' + esc(ofText(pend, p)) + "</span></span></span></li>";
     $("cov-hint").textContent = Tf(
@@ -364,14 +364,14 @@
           return esc(BEYOND[b.step] ? BEYOND[b.step]() : b.step) + " — " + esc(statusLabel(b.status));
         }).join("; ")
       : "";
-    if (moved || !window.ZingMotion) return;
+    if (moved || !window.EkteMotion) return;
     // new data (the report arrived): the ring draws, the meters grow and the
     // pass rate counts up; a language switch repaints without motion
     moved = true;
-    ZingMotion.enter($("cov-donut"));
-    ZingMotion.enter($("cov-lanes"));
+    EkteMotion.enter($("cov-donut"));
+    EkteMotion.enter($("cov-lanes"));
     var dv = $("cov-donut").querySelector(".dv");
-    if (dv) ZingMotion.count([{ el: dv, from: 0, to: share(pass, n) }], function (v) { return num(v, 1) + " %"; });
+    if (dv) EkteMotion.count([{ el: dv, from: 0, to: share(pass, n) }], function (v) { return num(v, 1) + " %"; });
   }
 
   // ---- table --------------------------------------------------------------- //
@@ -450,8 +450,8 @@
     }
     var c = report.conformance || {};
     $("stmt-status").textContent = Tf(
-      "zing 网页界面 v2 与 BITV 2.0、EN 301 549 和 WCAG 2.1 AA 级{status}。",
-      "Web UI v2 of zing is {status} with BITV 2.0, EN 301 549 and WCAG 2.1 level AA.",
+      "ekte 网页界面 v2 与 BITV 2.0、EN 301 549 和 WCAG 2.1 AA 级{status}。",
+      "Web UI v2 of ekte is {status} with BITV 2.0, EN 301 549 and WCAG 2.1 level AA.",
       { status: c.status === "fully conformant" ? T("完全符合", "fully conformant") : T("部分符合", "partially conformant") });
     var parts = [
       ["fail", T("以下步骤未通过自动化测试：", "These steps fail the automated tests:")],
@@ -485,7 +485,7 @@
     paintTable();
     paintStatement();
   }
-  window.addEventListener("zing:lang", paintAll);
+  window.addEventListener("ekte:lang", paintAll);
 
   paintAll();
   fetch("/v2/static/bitv-report.json", { cache: "no-cache" })

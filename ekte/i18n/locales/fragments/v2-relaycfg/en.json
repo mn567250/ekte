@@ -1,6 +1,6 @@
 {
  "strings": {
-  "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.",
+  "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.",
   "← Pick from the list": "← Pick from the list",
   "Enter manually": "Enter manually",
   "Select a relay or provider…": "Select a relay or provider…",
@@ -15,7 +15,7 @@
   "The relay lists no models — enter the model manually.": "The relay lists no models — enter the model manually.",
   "Enter the API key to list the models (HTTP {code}).": "Enter the API key to list the models (HTTP {code}).",
   "Could not list the models: ": "Could not list the models: ",
-  "Select a relay or enter its URL, and zing lists its models.": "Select a relay or enter its URL, and zing lists its models.",
+  "Select a relay or enter its URL, and ekte lists its models.": "Select a relay or enter its URL, and ekte lists its models.",
   "Same as the model to request": "Same as the model to request",
   "(not in the knowledge base)": "(not in the knowledge base)",
   "Model profile: {p}": "Model profile: {p}",

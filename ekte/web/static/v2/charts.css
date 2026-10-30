@@ -1,4 +1,4 @@
-/* zing web UI v2 — charts drawn by /v2/static/charts.js.
+/* ekte web UI v2 — charts drawn by /v2/static/charts.js.
  *
  * Four categorical series slots (s0..s3), assigned in this fixed order and
  * following the series, never its rank: --chart-0..3 in tokens.css (slot 0 is

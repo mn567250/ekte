@@ -1,4 +1,4 @@
-"""The collapsible filter panel (zing/web/static/v2/filterpanel.js), checked
+"""The collapsible filter panel (ekte/web/static/v2/filterpanel.js), checked
 the same way on every page that has it: History (test_history_controls.py)
 and Analytics (test_analytics_view.py)."""
 

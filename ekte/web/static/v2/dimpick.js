@@ -5,7 +5,7 @@
  *     <button type="button" aria-pressed="true" data-v="protocol" data-en="Protocol compliance">协议兼容</button>…
  *   </div>
  *
- * window.ZING_DIMPICK.bind(el, onChange) makes the buttons independent
+ * window.EKTE_DIMPICK.bind(el, onChange) makes the buttons independent
  * toggles and returns { value(), set(list) }: value() is the selected
  * dimension ids in markup order, set() selects exactly the given ids.
  */
@@ -39,5 +39,5 @@
     return { value: value, set: set };
   }
 
-  window.ZING_DIMPICK = { bind: bind };
+  window.EKTE_DIMPICK = { bind: bind };
 })();

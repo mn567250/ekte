@@ -1,9 +1,9 @@
 - banner:
   - link "跳到主要内容":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
+    - text: ekte.
   - link "经典界面":
     - /url: "?ui=v1"
   - combobox "主题":
@@ -35,10 +35,10 @@
     - link "知识库":
       - /url: /v2/kb
 - main:
-  - heading "zing 用来比对的知识库" [level=1]
+  - heading "ekte 用来比对的知识库" [level=1]
   - paragraph:
-    - text: 每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 zing 已知的全部模型、厂商与中转站——内置的和你的——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 kb.db 中，网页界面和
-    - code: zing check
+    - text: 每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 ekte 已知的全部模型、厂商与中转站——内置的和你的——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 kb.db 中，网页界面和
+    - code: ekte check
     - text: 都会使用。
   - status: 知识库完整 130 个模型 · 7 个厂商 · 1 个中转站，全部已启用
   - region "筛选":
@@ -97,7 +97,7 @@
         - /placeholder: "provider: …\nmodels:\n- id: …"
       - text: 选择 .yaml 文件
       - heading "3 检查并保存" [level=3]
-      - paragraph: 检查会校验结构与上限、标记不安全的正则表达式、列出 zing 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。
+      - paragraph: 检查会校验结构与上限、标记不安全的正则表达式、列出 ekte 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。
       - button "检查"
       - button "保存到知识库" [disabled]
     - group:
@@ -123,4 +123,4 @@
     # … more items of the same shape
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
-  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。
+  - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

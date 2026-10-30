@@ -1,4 +1,4 @@
-"""Compression and browser caching of the web UI (zing/web/caching.py)."""
+"""Compression and browser caching of the web UI (ekte/web/caching.py)."""
 
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ from starlette.datastructures import Headers  # noqa: E402
 from starlette.responses import PlainTextResponse, StreamingResponse  # noqa: E402
 from starlette.routing import Route  # noqa: E402
 
-from zing.web import caching  # noqa: E402
-from zing.web.server import create_app  # noqa: E402
+from ekte.web import caching  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 IMMUTABLE = "public, max-age=31536000, immutable"
 _REF = re.compile(r'(?:src|href)="(/[^"]+)"')
@@ -41,7 +41,7 @@ def test_v2_pages_version_their_assets_and_are_revalidated(client, path):
     assert r.headers["cache-control"] == "no-cache"
     assert r.headers["content-type"].startswith("text/html")
     urls = _versioned(r.text)
-    assert any(u.startswith("/v2/static/zing.css?v=") for u in urls)
+    assert any(u.startswith("/v2/static/ekte.css?v=") for u in urls)
     assert any(u.startswith("/i18n.js?v=") for u in urls)
     # every local script / stylesheet is versioned; the generated /locales.js is not
     assets = [u for u in _REF.findall(r.text) if re.search(r"\.(?:js|css)(?:\?|$)", u)]

@@ -21,13 +21,13 @@ all and is inconclusive (no score).
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.scale import DeductionScale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
-from zing.perf.recorder import usage_tokens
-from zing.utils import stats
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.scale import DeductionScale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte.perf.recorder import usage_tokens
+from ekte.utils import stats
 
 # Buffered-streaming signals (few chunks / late first token) only make sense once
 # enough text was produced that genuine streaming would have spanned many chunks.

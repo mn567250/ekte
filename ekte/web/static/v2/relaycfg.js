@@ -1,7 +1,7 @@
-/* zing web UI v2 — guided relay configuration (audit, baseline, embedding, rerank).
+/* ekte web UI v2 — guided relay configuration (audit, baseline, embedding, rerank).
  *
  * Plain browser global, no modules. Exposes:
- *   window.ZingRelayConfig.bind(opts) -> { set(values), refresh(), setKind(kind) }
+ *   window.EkteRelayConfig.bind(opts) -> { set(values), refresh(), setKind(kind) }
  *
  * The flow, on the page's existing inputs (they stay the canonical value
  * holders, so form-submit code keeps reading input.value):
@@ -31,7 +31,7 @@
  *
  * Styling: /v2/static/fields.css (.zmp, .zmp-sel, .zmp-fetch, .zmp-status,
  * .zmp-custom from the model picker, plus .rc-*). Pure helpers are exposed as
- * ZingRelayConfig._ for the node tests (tests/test_web_relaycfg_js.py).
+ * EkteRelayConfig._ for the node tests (tests/test_web_relaycfg_js.py).
  */
 (function () {
   "use strict";
@@ -39,14 +39,14 @@
   var OTHER = "__other__";
   var ENDPOINTS = ["/chat/completions", "/completions", "/messages", "/responses", "/embeddings", "/rerank"];
 
-  function T(zh, en) { return window.ZING_LANG ? window.ZING_LANG.t(zh, en) : en; }
-  function isZh() { return !!(window.ZING_LANG && window.ZING_LANG.isZh && window.ZING_LANG.isZh()); }
+  function T(zh, en) { return window.EKTE_LANG ? window.EKTE_LANG.t(zh, en) : en; }
+  function isZh() { return !!(window.EKTE_LANG && window.EKTE_LANG.isZh && window.EKTE_LANG.isZh()); }
   // KB names may carry Chinese brand names: dropped in every language but CN
   // (a name that is only Chinese, e.g. a saved relay, is kept as it is).
   function nameText(s) {
     s = String(s == null ? "" : s);
-    if (isZh() || !window.ZING_LANG || !window.ZING_LANG.stripCJK) return s;
-    return window.ZING_LANG.stripCJK(s).trim() || s;
+    if (isZh() || !window.EKTE_LANG || !window.EKTE_LANG.stripCJK) return s;
+    return window.EKTE_LANG.stripCJK(s).trim() || s;
   }
   // "DeepSeek (DeepSeek-AI / …)" -> "DeepSeek" (the full name stays in the title)
   function shortName(s) {
@@ -55,7 +55,7 @@
   }
 
   // ---------- pure helpers (tested under node) ----------
-  // A typed URL as a base URL, like zing.knowledge.relays.normalize_url.
+  // A typed URL as a base URL, like ekte.knowledge.relays.normalize_url.
   function normUrl(url) {
     url = String(url == null ? "" : url).trim();
     if (!/^https?:\/\/[^\s/?#]+\S*$/i.test(url)) return "";
@@ -334,7 +334,7 @@
       else if (st && st.kind === "empty") { k = "warn"; text = "⚠ " + T("中转站未列出任何模型——请手动填写模型。", "The relay lists no models — enter the model manually."); }
       else if (st && st.kind === "auth") { k = "warn"; text = T("请填写 API 密钥以列出模型（HTTP {code}）。", "Enter the API key to list the models (HTTP {code}).").replace("{code}", st.code); }
       else if (st && st.kind === "error") { k = "error"; text = "✗ " + T("无法列出模型：", "Could not list the models: ") + st.message; }
-      else if (!hasUrl) text = T("选择中转站或填写地址后，zing 会列出它的模型。", "Select a relay or enter its URL, and zing lists its models.");
+      else if (!hasUrl) text = T("选择中转站或填写地址后，ekte 会列出它的模型。", "Select a relay or enter its URL, and ekte lists its models.");
       fStatus.className = "zmp-status" + (k ? " is-" + k : "");
       fStatus.textContent = text;
     }
@@ -533,14 +533,14 @@
         .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (res) {
           if (!res.ok) {
-            saveErr(T("无法保存：", "Could not save: ") + (window.ZING_LANG ? window.ZING_LANG.server(res.d.error || "?") : res.d.error || "?"));
+            saveErr(T("无法保存：", "Could not save: ") + (window.EKTE_LANG ? window.EKTE_LANG.server(res.d.error || "?") : res.d.error || "?"));
             svIn.focus();
             return;
           }
           svIn.value = "";
           openSave(false);
           return loadKb(true).then(function (list) {
-            window.dispatchEvent(new CustomEvent("zing:kb", { detail: list }));
+            window.dispatchEvent(new CustomEvent("ekte:kb", { detail: list }));
             rSel.value = res.d.provider;
             paintSel(rSel);
             fStatus.className = "zmp-status is-ok";
@@ -551,13 +551,13 @@
         .catch(function (e) { saveErr(T("无法保存：", "Could not save: ") + String((e && e.message) || e)); })
         .then(function () { svGo.disabled = false; });
     }
-    window.addEventListener("zing:kb", function (e) {
+    window.addEventListener("ekte:kb", function (e) {
       providers = e.detail || providers;
       paintRelays();
       syncRelay();
       paintClaimed();
     });
-    window.addEventListener("zing:lang", paintAll);
+    window.addEventListener("ekte:lang", paintAll);
 
     // ---- init ----
     m.hasList = false;
@@ -607,7 +607,7 @@
     };
   }
 
-  window.ZingRelayConfig = {
+  window.EkteRelayConfig = {
     bind: bind,
     _: {
       normUrl: normUrl, relayGroups: relayGroups, matchRelay: matchRelay, claimedGroups: claimedGroups,

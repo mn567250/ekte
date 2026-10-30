@@ -1,11 +1,11 @@
 """The master key's life cycle: create, unlock, lock, rotate, reset.
 
-The key that encrypts the monitors' API keys (:mod:`zing.secretbox`) is never
-stored in the data directory. ``zing serve`` holds it in memory once it is
-known, from ``ZING_SECRET_KEY`` (headless / Docker), from a legacy
+The key that encrypts the monitors' API keys (:mod:`ekte.secretbox`) is never
+stored in the data directory. ``ekte serve`` holds it in memory once it is
+known, from ``EKTE_SECRET_KEY`` (headless / Docker), from a legacy
 ``secret.key`` an older version wrote (until the user moves it out), or from
 the user, who enters it in the web UI after every start. Shared by the web
-server and the ``zing secret`` commands, so both follow the same rules.
+server and the ``ekte secret`` commands, so both follow the same rules.
 
 States (:meth:`Vault.status`):
 
@@ -14,11 +14,11 @@ States (:meth:`Vault.status`):
                    when it is lost
 ``unlocked``       the key is in memory; from the UI or a legacy file it can
                    be replaced (``new``: rotate / move out) or locked again
-``env_mismatch``   ``ZING_SECRET_KEY`` is set but is not the key the stored
+``env_mismatch``   ``EKTE_SECRET_KEY`` is set but is not the key the stored
                    secrets use; only fixing the variable helps
 
 Whether there is a master key at all is the user's choice: with key storage
-``memory`` (:func:`zing.web.watches.get_key_storage`, the default) no API key
+``memory`` (:func:`ekte.web.watches.get_key_storage`, the default) no API key
 is stored, so none is needed; :meth:`Vault.set_storage` switches between the
 modes and moves the keys along.
 
@@ -40,10 +40,10 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from zing import secretbox
-from zing.web import watches
+from ekte import secretbox
+from ekte.web import watches
 
-_log = logging.getLogger("zing.web")
+_log = logging.getLogger("ekte.web")
 
 # How long a key handed out by begin_new waits to be confirmed.
 PENDING_TTL_SEC = 600.0
@@ -84,7 +84,7 @@ class Vault:
 
     # ----- state ----------------------------------------------------------- #
     def startup(self) -> dict[str, Any]:
-        """Load the key from ``ZING_SECRET_KEY`` or a legacy file, if there is one.
+        """Load the key from ``EKTE_SECRET_KEY`` or a legacy file, if there is one.
 
         Called when the server starts (and by the CLI). A key already held is
         kept. Never raises: a broken variable or file is reported in the status.
@@ -113,7 +113,7 @@ class Vault:
             return moved
 
     def _load_known(self) -> None:
-        """Hold the key from ``ZING_SECRET_KEY`` or a legacy file, if any."""
+        """Hold the key from ``EKTE_SECRET_KEY`` or a legacy file, if any."""
         if secretbox.current() is not None:
             return
         self._env_error = None
@@ -168,7 +168,7 @@ class Vault:
             return True
 
     def status(self) -> dict[str, Any]:
-        """What the UI and ``zing secret status`` show; never the key itself."""
+        """What the UI and ``ekte secret status`` show; never the key itself."""
         with self._lock:
             box = secretbox.current()
             if box is not None:
@@ -206,7 +206,7 @@ class Vault:
             }
 
     def box(self) -> secretbox.SecretBox:
-        """The held key; raises :class:`~zing.secretbox.SecretLocked` without one."""
+        """The held key; raises :class:`~ekte.secretbox.SecretLocked` without one."""
         return secretbox.default()
 
     def _require(self, action: str) -> dict[str, Any]:
@@ -283,7 +283,7 @@ class Vault:
         there are some and the master key is not entered), held in memory and
         erased from the database with the check value; the master key is then
         forgotten, a legacy ``secret.key`` removed. To ``encrypted``: needs a
-        master key (from ``ZING_SECRET_KEY``, else SecretLocked until one is
+        master key (from ``EKTE_SECRET_KEY``, else SecretLocked until one is
         created or entered); the keys held in memory are sealed into the database.
         """
         if mode not in watches.STORAGE_MODES:

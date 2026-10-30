@@ -1,6 +1,6 @@
-/* zing web UI — Simplified-Chinese localization of audit findings.
+/* ekte web UI — Simplified-Chinese localization of audit findings.
  *
- * Plain browser global, no modules. Exposes window.ZING_I18N with:
+ * Plain browser global, no modules. Exposes window.EKTE_I18N with:
  *   - FINDINGS:   catalog id -> { title, tpl }
  *   - localizeFinding(id, fallbackSummary, evidence) -> { title, summary }
  *   - RISK_LEVEL, STATUS, SEVERITY, CONFIDENCE: enum -> zh label
@@ -112,21 +112,21 @@
   };
 
   function isZh() {
-    return !window.ZING_LANG || window.ZING_LANG.isZh();
+    return !window.EKTE_LANG || window.EKTE_LANG.isZh();
   }
 
   function label(kind, key) {
     var map = (isZh() ? ZH : EN)[kind] || {};
     if (!Object.prototype.hasOwnProperty.call(map, key)) return key;
-    return isZh() ? map[key] : window.ZING_LANG.tr(map[key]);
+    return isZh() ? map[key] : window.EKTE_LANG.tr(map[key]);
   }
 
   // ---- Finding catalog -------------------------------------------------- //
-  // id -> { title, tpl } in Chinese, from zing/i18n/locales/zh.json (served in
+  // id -> { title, tpl } in Chinese, from ekte/i18n/locales/zh.json (served in
   // /locales.js). Placeholders reference keys verified in the finding's
-  // evidence dict in zing/detectors/*.py; the dynamic model_identity.fp.<probe>
+  // evidence dict in ekte/detectors/*.py; the dynamic model_identity.fp.<probe>
   // family is stored under "model_identity.fp.*".
-  var FINDINGS = ((window.ZING_LOCALES || {}).findings || {}).zh || {};
+  var FINDINGS = ((window.EKTE_LOCALES || {}).findings || {}).zh || {};
 
   // Generic fallback title for unknown finding ids.
   var GENERIC_TITLE = "检测项";
@@ -151,7 +151,7 @@
         ok = false;
         return "";
       }
-      if (mod === "server" && typeof v === "string") return window.ZING_LANG ? window.ZING_LANG.server(v) : v;
+      if (mod === "server" && typeof v === "string") return window.EKTE_LANG ? window.EKTE_LANG.server(v) : v;
       if (typeof v === "boolean") return (yesNo || ["是", "否"])[v ? 0 : 1];
       if (typeof v === "number") {
         // Trim noisy floats; keep ints intact.
@@ -179,7 +179,7 @@
   // them all. ALT lists [status or null, English template] tried first for
   // that id; GENERIC covers the request-failure branches that only carry
   // status_code / error_type. The English template is the lookup key into
-  // ZING_LOCALES (strings.<lang>, including "zh"), like every other UI string.
+  // EKTE_LOCALES (strings.<lang>, including "zh"), like every other UI string.
   var ALT = {
     "billing.partial-usage": [
       [null, "usage only gives total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); the breakdown per-token billing relies on is missing and cannot be verified."],
@@ -240,7 +240,7 @@
   // Fill the first English template in `list` that resolves, translated into
   // the current language; null when none does.
   function fillFirst(list, evidence, yesNo) {
-    var L = window.ZING_LANG;
+    var L = window.EKTE_LANG;
     var lang = L ? L.get() : "zh";
     for (var i = 0; i < list.length; i++) {
       var tpl = L ? L.trFor(lang, list[i]) : list[i];
@@ -292,12 +292,12 @@
 
   // The backend's English result title (one per outcome of a check, e.g.
   // "Endpoint is not HTTPS" vs "Endpoint uses HTTPS") in language `lang`,
-  // keyed by the English text like other backend text (ZING_LOCALES strings,
+  // keyed by the English text like other backend text (EKTE_LOCALES strings,
   // zh included), plus the few titles built around a subject (titlePatterns:
   // "Fingerprint divergence: {1}", the subject translated on its own). Null
   // when unknown, so the caller falls back to the check's catalog title.
   function resultTitle(lang, en) {
-    var LOC = window.ZING_LOCALES || {};
+    var LOC = window.EKTE_LOCALES || {};
     var d = (LOC.strings || {})[lang];
     if (!d || !en || lang === "en") return null;
     var has = function (k) {
@@ -333,12 +333,12 @@
    */
   function localizeFinding(id, fallbackSummary, evidence, fallbackTitle, status) {
     if (!isZh()) {
-      var L = window.ZING_LANG;
+      var L = window.EKTE_LANG;
       if (L.get() === "en") {
         // The backend's own English text is authoritative for EN.
         return { title: L.server(fallbackTitle || id || "Check"), summary: L.server(fallbackSummary || "") };
       }
-      var cat = ((window.ZING_LOCALES || {}).findings || {})[L.get()];
+      var cat = ((window.EKTE_LOCALES || {}).findings || {})[L.get()];
       var le = cat && lookupIn(cat, id);
       var ls = summaryFor(id, status, evidence, le && le.tpl, [L.tr("yes"), L.tr("no")]);
       var lt = resultTitle(L.get(), fallbackTitle) || titleOf(le, evidence);
@@ -357,9 +357,9 @@
 
   // ---- Downloadable report ---------------------------------------------- //
   // Same keys and schema as the server's report (it stays valid against
-  // zing's AuditReport model); only human-readable values are translated.
+  // ekte's AuditReport model); only human-readable values are translated.
   function exportFinding(f) {
-    var L = window.ZING_LANG;
+    var L = window.EKTE_LANG;
     var out = Object.assign({}, f);
     if (isZh()) {
       var entry = lookup(f.id);
@@ -376,7 +376,7 @@
   }
 
   function exportReport(report) {
-    var L = window.ZING_LANG;
+    var L = window.EKTE_LANG;
     if (!report || !L) return report;
     var r = JSON.parse(JSON.stringify(report));
     var titles = {}; // English finding title -> exported title
@@ -412,7 +412,7 @@
       v.key_findings = (v.key_findings || []).map(title);
     }
     // A reason is a fixed sentence or the "; "-joined titles of the
-    // dimension's failing findings (see zing/scoring.py).
+    // dimension's failing findings (see ekte/scoring.py).
     (r.dimensions || []).forEach(function (d) {
       if (!d.reason) return;
       var fixed = L.exportText(d.reason);
@@ -431,7 +431,7 @@
     return r;
   }
 
-  window.ZING_I18N = {
+  window.EKTE_I18N = {
     FINDINGS: FINDINGS,
     localizeFinding: localizeFinding,
     RISK_LEVEL: RISK_LEVEL,

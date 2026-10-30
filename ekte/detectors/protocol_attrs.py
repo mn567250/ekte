@@ -5,7 +5,7 @@ A relay can answer while quietly degrading the wire contract: stripping ``n`` or
 ``logprobs`` on the way in, or returning an envelope without ``id``, with
 ``completion_tokens: 0`` or a ``total_tokens`` that is not the sum of its parts.
 Both detectors check each attribute of the wire protocol's catalog
-(:mod:`zing.detectors.wire_attrs`) as one subject of a parametrized scale check,
+(:mod:`ekte.detectors.wire_attrs`) as one subject of a parametrized scale check,
 so every attribute is scored — and listed — on its own while the published scale
 stays small. The detector score is the mean of the counted attributes.
 """
@@ -15,12 +15,12 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from zing import prompts
-from zing.clients import detect_api
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.scale import Scale
-from zing.detectors.wire_attrs import (
+from ekte import prompts
+from ekte.clients import detect_api
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.scale import Scale
+from ekte.detectors.wire_attrs import (
     CALL,
     PARAM,
     REQUEST_SCALE,
@@ -33,7 +33,7 @@ from zing.detectors.wire_attrs import (
     merge_specs,
     request_params,
 )
-from zing.models import CompletionOutcome, DetectorResult, Dimension, Finding, RequestSpec
+from ekte.models import CompletionOutcome, DetectorResult, Dimension, Finding, RequestSpec
 
 # Parameter probes in flight at once: enough to overlap latency, few enough not
 # to trip a relay's rate limit.

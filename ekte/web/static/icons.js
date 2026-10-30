@@ -1,17 +1,17 @@
-/* zing web UI — canonical inline-SVG icon set.
+/* ekte web UI — canonical inline-SVG icon set.
  *
  * Plain browser global, no modules, no external deps. Exposes:
- *   window.ZING_ICONS         name -> raw <svg> markup string
- *   window.zingIcon(name, o)  -> <svg> string with class/size applied
+ *   window.EKTE_ICONS         name -> raw <svg> markup string
+ *   window.ekteIcon(name, o)  -> <svg> string with class/size applied
  *
  * Every icon is a minimal line-icon: viewBox 0 0 24 24, stroke=currentColor so
  * it inherits the surrounding text color, 1.5–2px stroke, rounded caps/joins,
  * no fills, no hardcoded colors. Designed to read cleanly at ~16–22px.
  *
  * Usage (inline into innerHTML):
- *   el.innerHTML = zingIcon("bell");                 // 1em, class "zicon"
- *   el.innerHTML = zingIcon("check", {size: 18, cls: "ok"});
- *   el.innerHTML = ZING_ICONS.bolt;                  // raw markup, no sizing
+ *   el.innerHTML = ekteIcon("bell");                 // 1em, class "zicon"
+ *   el.innerHTML = ekteIcon("check", {size: 18, cls: "ok"});
+ *   el.innerHTML = EKTE_ICONS.bolt;                  // raw markup, no sizing
  *
  * CSS note: the SVG carries class "zicon" (plus any opts.cls). Color it via the
  * parent's `color` (or `.zicon{color:var(--teal)}`); size via font-size or the
@@ -22,7 +22,7 @@
 (function () {
   "use strict";
 
-  // Inner markup only (paths/shapes); the <svg> wrapper is assembled in zingIcon
+  // Inner markup only (paths/shapes); the <svg> wrapper is assembled in ekteIcon
   // so width/height/class can be injected consistently. currentColor everywhere.
   var PATHS = {
     // bolt — lightning logo / run energy
@@ -142,12 +142,12 @@
     );
   }
 
-  // Pre-render a default 1em version of each icon as ZING_ICONS[name].
+  // Pre-render a default 1em version of each icon as EKTE_ICONS[name].
   Object.keys(PATHS).forEach(function (name) {
     ICONS[name] = buildSvg(PATHS[name], "1em", "1em", "zicon");
   });
 
-  function zingIcon(name, opts) {
+  function ekteIcon(name, opts) {
     var inner = PATHS[name];
     if (inner == null) return ""; // unknown name → empty, never throw
     opts = opts || {};
@@ -157,6 +157,6 @@
     return buildSvg(inner, size, size, cls);
   }
 
-  window.ZING_ICONS = ICONS;
-  window.zingIcon = zingIcon;
+  window.EKTE_ICONS = ICONS;
+  window.ekteIcon = ekteIcon;
 })();

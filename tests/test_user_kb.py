@@ -11,10 +11,10 @@ import re
 
 import pytest
 
-from zing.knowledge import load_knowledge_base, store
-from zing.knowledge.importer import export_yaml, import_yaml, scan
-from zing.knowledge.research import research_prompt
-from zing.knowledge.snapshot import content_hash, knowledge_usage, resolved_from_snapshot, snapshot
+from ekte.knowledge import load_knowledge_base, store
+from ekte.knowledge.importer import export_yaml, import_yaml, scan
+from ekte.knowledge.research import research_prompt
+from ekte.knowledge.snapshot import content_hash, knowledge_usage, resolved_from_snapshot, snapshot
 
 NEW_PROVIDER_YAML = """
 provider: acmeai
@@ -37,9 +37,9 @@ models:
 
 @pytest.fixture
 def data_dir(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    monkeypatch.delenv("ZING_NO_USER_KB", raising=False)
-    monkeypatch.delenv("ZING_KB_DIR", raising=False)
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    monkeypatch.delenv("EKTE_NO_USER_KB", raising=False)
+    monkeypatch.delenv("EKTE_KB_DIR", raising=False)
     return tmp_path
 
 
@@ -61,7 +61,7 @@ def test_imported_model_is_used_everywhere(data_dir):
     assert r.model.context_window_tokens == 200000
     assert kb.model_sources["acmeai/acme-large-2"].startswith("kb.db:entry/")
     assert kb.provider_sources["acmeai"].startswith("kb.db:entry/")
-    # opt-out keeps packaged + ZING_KB_DIR only
+    # opt-out keeps packaged + EKTE_KB_DIR only
     assert load_knowledge_base(include_user=False).resolve("acme-large-2") is None
 
 
@@ -119,7 +119,7 @@ def test_a_copying_callers_changes_never_reach_the_cache(data_dir):
 
 
 def test_a_stray_change_to_a_shared_instance_stays_out_of_the_packaged_profiles(data_dir):
-    from zing.knowledge.loader import _load_packaged
+    from ekte.knowledge.loader import _load_packaged
 
     import_yaml(NEW_PROVIDER_YAML, origin="import:acme.yaml")  # a key of this data dir only
     count = len(_load_packaged()["openai"][0].models)
@@ -138,15 +138,15 @@ def test_uncached_loads_are_fresh_copies_even_without_copy(data_dir):
 def test_cache_follows_data_dir(data_dir, tmp_path_factory, monkeypatch):
     import_yaml(NEW_PROVIDER_YAML)
     assert load_knowledge_base().resolve("acme-large-2") is not None
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path_factory.mktemp("other-data")))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path_factory.mktemp("other-data")))
     assert load_knowledge_base().resolve("acme-large-2") is None
-    monkeypatch.setenv("ZING_DATA_DIR", str(data_dir))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(data_dir))
     assert load_knowledge_base().resolve("acme-large-2") is not None
 
 
 def test_env_opt_out(data_dir, monkeypatch):
     import_yaml(NEW_PROVIDER_YAML)
-    monkeypatch.setenv("ZING_NO_USER_KB", "1")
+    monkeypatch.setenv("EKTE_NO_USER_KB", "1")
     kb = load_knowledge_base()
     assert not kb.user_kb and kb.resolve("acme-large-2") is None
 
@@ -234,8 +234,8 @@ def test_switch_off_leaves_the_users_own_entries_alone(data_dir):
 
 
 def test_catalog_lists_complete_sets_with_state(data_dir):
-    from zing.knowledge import catalog
-    from zing.knowledge.relays import add_relay
+    from ekte.knowledge import catalog
+    from ekte.knowledge.relays import add_relay
 
     result, _ids = import_yaml(NEW_PROVIDER_YAML, origin="import:acme.yaml")
     assert result.ok, result.errors
@@ -266,8 +266,8 @@ def test_catalog_lists_complete_sets_with_state(data_dir):
 
 
 def test_catalog_from_shared_loads_matches_copies_and_changes_nothing(data_dir):
-    from zing.knowledge import catalog
-    from zing.knowledge.relays import add_relay
+    from ekte.knowledge import catalog
+    from ekte.knowledge.relays import add_relay
 
     # user entries, a relay, a shadowing model, disabled items of both kinds
     result, ids = import_yaml(NEW_PROVIDER_YAML, origin="import:acme.yaml")
@@ -310,7 +310,7 @@ def test_catalog_from_shared_loads_matches_copies_and_changes_nothing(data_dir):
 
 
 def test_catalog_keeps_your_model_less_provider_among_providers(data_dir):
-    from zing.knowledge import catalog
+    from ekte.knowledge import catalog
 
     result, _ids = import_yaml("provider: newprov\ndisplay_name: New\nbase_url_hints: [https://n.example/v1]\nmodels: []\n")
     assert result.ok, result.errors
@@ -320,7 +320,7 @@ def test_catalog_keeps_your_model_less_provider_among_providers(data_dir):
 
 
 def test_catalog_lists_additions_to_a_packaged_provider(data_dir):
-    from zing.knowledge import catalog
+    from ekte.knowledge import catalog
 
     result, _ids = import_yaml("provider: openai\nbase_url_hints: [https://proxy.example/v1]\nmodels: []\n")
     assert result.ok, result.errors
@@ -387,7 +387,7 @@ def test_scan_is_the_same_with_the_c_and_pure_python_yaml_loaders(data_dir, monk
     # message) must be exactly those of the pure-Python SafeLoader.
     import yaml
 
-    from zing.utils import yamlio
+    from ekte.utils import yamlio
 
     if not hasattr(yaml, "CSafeLoader"):
         pytest.skip("PyYAML built without libyaml")
@@ -467,11 +467,11 @@ def test_snapshot_roundtrip_and_hash_ignores_match_confidence(data_dir):
 
 
 async def test_report_carries_the_knowledge_used(data_dir, mock_server, target_config, monkeypatch):
-    from zing.config import AuditOptions
-    from zing.runner import run_audit
+    from ekte.config import AuditOptions
+    from ekte.runner import run_audit
 
     import_yaml("provider: openai\nmodels:\n- id: gpt-4o\n  context_window_tokens: 1234\n")
-    monkeypatch.setattr("zing.runner.make_client", _mock_client_factory(mock_server))
+    monkeypatch.setattr("ekte.runner.make_client", _mock_client_factory(mock_server))
     report = await run_audit(target_config, AuditOptions(suite="smoke"))
     k = report.knowledge
     assert k is not None and k.matched and k.provider == "openai" and k.model_id == "gpt-4o"
@@ -484,7 +484,7 @@ async def test_report_carries_the_knowledge_used(data_dir, mock_server, target_c
     assert report2.knowledge.model_source == "packaged:openai.yaml"
     assert report2.knowledge.profile_hash != k.profile_hash
     # human renderers show it
-    from zing.report.render import compact_dict, render_html, render_markdown
+    from ekte.report.render import compact_dict, render_html, render_markdown
 
     assert "## Knowledge base" in render_markdown(report)
     assert "Knowledge base" in render_html(report)
@@ -492,33 +492,33 @@ async def test_report_carries_the_knowledge_used(data_dir, mock_server, target_c
 
 
 async def test_pinned_profile_wins_over_the_live_kb(data_dir, mock_server, target_config, monkeypatch):
-    from zing.config import AuditOptions
-    from zing.runner import run_audit
+    from ekte.config import AuditOptions
+    from ekte.runner import run_audit
 
     kb = load_knowledge_base()
     pinned = knowledge_usage(kb, kb.resolve("gpt-4o"), "gpt-4o")
     import_yaml("provider: openai\nmodels:\n- id: gpt-4o\n  context_window_tokens: 1234\n")
-    monkeypatch.setattr("zing.runner.make_client", _mock_client_factory(mock_server))
+    monkeypatch.setattr("ekte.runner.make_client", _mock_client_factory(mock_server))
     report = await run_audit(target_config, AuditOptions(suite="smoke"), pinned=pinned)
     assert report.knowledge.pinned
     assert report.knowledge.profile_hash == pinned.profile_hash
 
 
 async def test_invalid_pinned_snapshot_falls_back_to_the_live_kb(data_dir, mock_server, target_config, monkeypatch):
-    from zing.config import AuditOptions
-    from zing.runner import run_audit
+    from ekte.config import AuditOptions
+    from ekte.runner import run_audit
 
     kb = load_knowledge_base()
     pinned = knowledge_usage(kb, kb.resolve("gpt-4o"), "gpt-4o")
     pinned.profile["model"]["field_from_the_future"] = 1
-    monkeypatch.setattr("zing.runner.make_client", _mock_client_factory(mock_server))
+    monkeypatch.setattr("ekte.runner.make_client", _mock_client_factory(mock_server))
     report = await run_audit(target_config, AuditOptions(suite="smoke"), pinned=pinned)
     assert not report.knowledge.pinned and report.knowledge.matched
     assert any("pinned profile no longer valid" in w for w in report.knowledge.warnings)
 
 
 def _mock_client_factory(mock_server):
-    from zing.clients import OpenAICompatibleClient
+    from ekte.clients import OpenAICompatibleClient
 
     def make(cfg):
         return OpenAICompatibleClient(cfg, transport=mock_server.transport)
@@ -540,7 +540,7 @@ def _report_with(profile_hash: str, snap: dict) -> dict:
 def test_history_stores_each_profile_once_and_prunes(data_dir):
     import sqlite3
 
-    from zing.web import history
+    from ekte.web import history
 
     kb = load_knowledge_base()
     snap = snapshot(kb.resolve("gpt-4o"))
@@ -563,7 +563,7 @@ def test_history_stores_each_profile_once_and_prunes(data_dir):
 def test_history_db_from_before_snapshots_is_migrated(data_dir):
     import sqlite3
 
-    from zing.web import history
+    from ekte.web import history
 
     with sqlite3.connect(data_dir / "history.db") as conn:
         conn.execute(
@@ -579,7 +579,7 @@ def test_history_db_from_before_snapshots_is_migrated(data_dir):
 def test_watch_pins_a_snapshot_and_cleans_up(data_dir):
     import sqlite3
 
-    from zing.web import watches
+    from ekte.web import watches
 
     kb = load_knowledge_base()
     usage = knowledge_usage(kb, kb.resolve("gpt-4o"), "gpt-4o").model_dump(mode="json")
@@ -604,7 +604,7 @@ def client(data_dir):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from zing.web.server import create_app
+    from ekte.web.server import create_app
 
     return TestClient(create_app(), base_url="http://localhost")
 
@@ -703,7 +703,7 @@ def test_watch_api_pins_and_repins(client):
 def test_cli_kb_import_check_and_prompt(data_dir, tmp_path):
     from typer.testing import CliRunner
 
-    from zing.cli import app
+    from ekte.cli import app
 
     f = tmp_path / "acme.yaml"
     f.write_text(NEW_PROVIDER_YAML, encoding="utf-8")

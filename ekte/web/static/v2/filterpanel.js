@@ -1,4 +1,4 @@
-/* zing web UI v2 — the collapsible filter panel shared by History, Monitors,
+/* ekte web UI v2 — the collapsible filter panel shared by History, Monitors,
  * Analytics and Knowledge (styles: filterpanel.css).
  *
  * The page owns its filters and their fields; this owns the frame around
@@ -17,7 +17,7 @@
  * The section and its toggle are named "Filters" on every page, so the same
  * control is identified the same way everywhere (BITV 9.3.2.4).
  *
- * ZingFilterPanel.create(section, opts):
+ * EkteFilterPanel.create(section, opts):
  *   opts.storeKey    localStorage key remembering open / closed (per viewer,
  *                    may be missing or throw); closed by default
  *   opts.open        true: start open whatever is remembered (e.g. a link
@@ -43,7 +43,7 @@
   function Tf(zh, en, vars) {
     return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
   }
-  var ico = function (n) { return window.zingIcon ? window.zingIcon(n, {}) : ""; };
+  var ico = function (n) { return window.ekteIcon ? window.ekteIcon(n, {}) : ""; };
   // the attributes a field is found again by after a re-render
   var KEYS = ["data-f", "data-range", "id"];
 
@@ -123,5 +123,5 @@
     return { render: render, sync: sync, setOpen: setOpen, isOpen: function () { return open; }, focusStart: focusStart };
   }
 
-  window.ZingFilterPanel = { create: create };
+  window.EkteFilterPanel = { create: create };
 })();

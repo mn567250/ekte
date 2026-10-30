@@ -17,7 +17,7 @@ from typing import Any
 # 9.x.x.x / BITV steps): number, level, title, how far the tests decide it and
 # how. The conformance report (tests/a11y/conformance.py) and the report page
 # in web UI v2 (/v2/accessibility) read the same file.
-CATALOGUE_FILE = Path(__file__).resolve().parents[2] / "zing" / "web" / "static" / "v2" / "bitv-catalogue.json"
+CATALOGUE_FILE = Path(__file__).resolve().parents[2] / "ekte" / "web" / "static" / "v2" / "bitv-catalogue.json"
 
 
 def catalogue() -> dict[str, Any]:

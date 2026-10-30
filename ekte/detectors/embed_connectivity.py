@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import register
-from zing.detectors.embedding import EmbeddingDetector
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, Severity, Status
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import register
+from ekte.detectors.embedding import EmbeddingDetector
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, Severity, Status
 
 SCALE = Scale(
     outcome("embed.connectivity", "reachable", 100.0, Status.PASS,

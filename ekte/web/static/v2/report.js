@@ -1,31 +1,31 @@
-/* zing web UI v2 — the audit report view, shared by the audit and history pages.
+/* ekte web UI v2 — the audit report view, shared by the audit and history pages.
  *
  *   <link rel="stylesheet" href="/v2/static/report.css" />
  *   <script src="/v2/static/report.js"></script>   (after lang.js, i18n.js, icons.js,
  *                                                   and perf.js if performance is shown)
  *
- *   ZingReport.render(el, report, {
+ *   EkteReport.render(el, report, {
  *     actions: [{ zh: "再测一个", en: "Test another", primary: false, onClick: fn }, …],
- *     download: { name: "zing-report" },   // optional: JSON / Markdown / HTML / PDF buttons
+ *     download: { name: "ekte-report" },   // optional: JSON / Markdown / HTML / PDF buttons
  *   })
  *     renders `report` (the audit stream's "report" event, or a history row's
  *     report) into `el`, wires its interactions, and re-renders it in place when
  *     the UI language changes (expanded dimensions, evidence and keyboard focus
  *     are kept).
- *   ZingReport.wire(el)    (re)attach the interactions after external re-rendering.
- *   ZingReport.download(report, fmt, name) -> Promise
+ *   EkteReport.wire(el)    (re)attach the interactions after external re-rendering.
+ *   EkteReport.download(report, fmt, name) -> Promise
  *     saves `report` as <name>.<lang>.<ext>, fmt one of json | md | html | pdf.
- *     Text is exported in the UI language first (ZING_I18N.exportReport); JSON is
+ *     Text is exported in the UI language first (EKTE_I18N.exportReport); JSON is
  *     built here, the other formats are rendered by POST /api/report/export.
  *
- * All text goes through T(zh, en) / ZING_LANG.server() / ZING_I18N like the
- * rest of the UI; colours only through the tokens of zing.css.
+ * All text goes through T(zh, en) / EKTE_LANG.server() / EKTE_I18N like the
+ * rest of the UI; colours only through the tokens of ekte.css.
  */
 (function () {
   "use strict";
 
   function T(zh, en) {
-    return window.ZING_LANG ? window.ZING_LANG.t(zh, en) : en;
+    return window.EKTE_LANG ? window.EKTE_LANG.t(zh, en) : en;
   }
   // T() with {placeholders} filled in after translation
   function Tf(zh, en, vals) {
@@ -40,17 +40,17 @@
     both: ["流式 + 非流式", "Streaming + non-streaming"],
   };
   function isZh() {
-    return !!(window.ZING_LANG && window.ZING_LANG.isZh());
+    return !!(window.EKTE_LANG && window.EKTE_LANG.isZh());
   }
   // Backend (English) text in the UI language. CN translates the known
   // backend sentences too, so the summary never shows English inside Chinese.
   function srv(s) {
-    var L = window.ZING_LANG;
+    var L = window.EKTE_LANG;
     if (!L) return s;
     return isZh() && L.exportText ? L.exportText(s) : L.server(s);
   }
   function ico(name, opts) {
-    return window.zingIcon ? window.zingIcon(name, opts || {}) : "";
+    return window.ekteIcon ? window.ekteIcon(name, opts || {}) : "";
   }
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -59,25 +59,25 @@
   }
   // raw evidence (model replies) may quote Chinese: mark it lang="zh" (BITV 9.3.1.2)
   function escEv(s) {
-    var Z = window.ZING_LANG;
+    var Z = window.EKTE_LANG;
     return Z && Z.markCJK ? Z.markCJK(s) : esc(s);
   }
   function reEsc(s) {
     return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
   function label(kind, key) {
-    return window.ZING_I18N ? window.ZING_I18N.label(kind, key) : key;
+    return window.EKTE_I18N ? window.EKTE_I18N.label(kind, key) : key;
   }
   function locale() {
-    return window.ZING_LANG && window.ZING_LANG.locale ? window.ZING_LANG.locale() : undefined;
+    return window.EKTE_LANG && window.EKTE_LANG.locale ? window.EKTE_LANG.locale() : undefined;
   }
   // Intl formatters are costly to build: one per (locale, options), reused,
-  // from ZING_LANG.intl (lang.js). This script also runs without lang.js
+  // from EKTE_LANG.intl (lang.js). This script also runs without lang.js
   // (e.g. evaluated on its own), so it keeps a small cache of its own then.
   // Same output as toLocaleString(locale, options); a bad locale still throws.
   var intlCache = {};
   function intlFmt(Ctor, kind, loc, opts) {
-    var Z = window.ZING_LANG;
+    var Z = window.EKTE_LANG;
     if (Z && Z.intl) return Z.intl(Ctor, opts, loc);
     var k = kind + "|" + (loc === undefined ? "" : JSON.stringify(loc)) + "|" + JSON.stringify(opts || {});
     return intlCache[k] || (intlCache[k] = new Ctor(loc, opts));
@@ -90,7 +90,7 @@
     }
   }
 
-  // risk level -> token family + glyph (the pill text is ZING_I18N.label)
+  // risk level -> token family + glyph (the pill text is EKTE_I18N.label)
   var RISK = {
     clean: { c: "good", g: "check" },
     low: { c: "sky", g: "warning" },
@@ -144,7 +144,7 @@
     performance: ["Performance", "Is its speed consistent?"],
   };
 
-  // Every dimension, in scoring order (zing/scoring.py DIMENSION_WEIGHTS). The
+  // Every dimension, in scoring order (ekte/scoring.py DIMENSION_WEIGHTS). The
   // report lists all of them, those that did not run included, so a missing
   // row is never a mystery; a report from before a dimension existed gets it
   // back as "not run".
@@ -153,7 +153,7 @@
     "streaming", "billing", "reliability", "security", "performance",
   ];
   // Another surface scores only the dimensions it has evidence for
-  // (zing/scoring.py SURFACE_WEIGHTS); a missing surface is chat.
+  // (ekte/scoring.py SURFACE_WEIGHTS); a missing surface is chat.
   var SURFACE_DIMS = {
     embedding: ["connectivity", "model_identity", "capability", "reliability", "performance"],
     rerank: ["connectivity", "model_identity", "capability", "reliability", "performance"],
@@ -187,14 +187,14 @@
   var DIM_EXTRAS = {
     performance: {
       html: function (r) {
-        if (!r.performance || !window.ZingPerf) return "";
-        var body = window.ZingPerf.section(r.performance);
+        if (!r.performance || !window.EktePerf) return "";
+        var body = window.EktePerf.section(r.performance);
         return body
           ? '<h4 class="zr-dh">' + esc(T("性能测量", "Performance measurements")) + "</h4>" + body
           : "";
       },
       wire: function (el, r) {
-        if (window.ZingPerf && r.performance) window.ZingPerf.wireSection(el, r.performance);
+        if (window.EktePerf && r.performance) window.EktePerf.wireSection(el, r.performance);
       },
     },
   };
@@ -227,7 +227,7 @@
     return (
       e &&
       e.map(function (s) {
-        return window.ZING_LANG ? window.ZING_LANG.tr(s) : s;
+        return window.EKTE_LANG ? window.EKTE_LANG.tr(s) : s;
       })
     );
   }
@@ -271,16 +271,16 @@
     return m ? T(m[0], m[1]) : srv(v.headline) || "";
   }
 
-  // The backend summary (zing/scoring.py::_summary) opens with the score line
+  // The backend summary (ekte/scoring.py::_summary) opens with the score line
   // and closes with the disclaimer; the card shows both elsewhere, so drop
   // them — in English (the backend) and in any translated form (a report that
-  // went through ZING_I18N.exportReport and came back via history/import).
+  // went through EKTE_I18N.exportReport and came back via history/import).
   var SCORE_EN = "Overall health score {1}/100.";
-  var DISC_EN = "zing reports black-box evidence of divergence and risk, not proof of fraud.";
+  var DISC_EN = "ekte reports black-box evidence of divergence and risk, not proof of fraud.";
   function summaryRest(s) {
     s = String(s || "");
     var forms = [[SCORE_EN, DISC_EN]];
-    var strings = (window.ZING_LOCALES && window.ZING_LOCALES.strings) || {};
+    var strings = (window.EKTE_LOCALES && window.EKTE_LOCALES.strings) || {};
     Object.keys(strings).forEach(function (code) {
       var d = strings[code] || {};
       forms.push([d[SCORE_EN], d[DISC_EN]]);
@@ -301,7 +301,7 @@
     }
   }
   // a duration in mixed units, only those it needs (mirrors _fmt_duration in
-  // zing/report/render.py): 850 µs, 457 ms, 6 s 97 ms, 1 min 5 s, 2 h 3 min 4 s
+  // ekte/report/render.py): 850 µs, 457 ms, 6 s 97 ms, 1 min 5 s, 2 h 3 min 4 s
   function fmtDuration(ms) {
     var sign = ms < 0 ? "-" : "";
     ms = Math.abs(ms);
@@ -345,8 +345,8 @@
       .join("\n");
   }
   function loc(f) {
-    if (window.ZING_I18N && window.ZING_I18N.localizeFinding)
-      return window.ZING_I18N.localizeFinding(f.id, f.summary, f.evidence, f.title, f.status);
+    if (window.EKTE_I18N && window.EKTE_I18N.localizeFinding)
+      return window.EKTE_I18N.localizeFinding(f.id, f.summary, f.evidence, f.title, f.status);
     return { title: srv(f.title), summary: srv(f.summary || "") };
   }
   function count(n, one, many) {
@@ -770,7 +770,7 @@
     var from = src.indexOf("kb.db:entry/") === 0
       ? Tf("你的条目 #{id}", "your entry #{id}", { id: src.slice(12) })
       : src.indexOf("kb_dir:") === 0
-        ? "ZING_KB_DIR"
+        ? "EKTE_KB_DIR"
         : T("内置", "Packaged");
     var parts = [from];
     if (k.pinned) parts.push(T("监控固定", "pinned by the monitor"));
@@ -840,7 +840,7 @@
       if (!isNaN(dt))
         meta.push(item(T("时间", "Time"), esc(intlFmt(Intl.DateTimeFormat, "d", locale(), { dateStyle: "medium", timeStyle: "short" }).format(dt))));
     }
-    meta.push(item(T("版本", "Version"), code("zing v" + (r.tool_version || "?"))));
+    meta.push(item(T("版本", "Version"), code("ekte v" + (r.tool_version || "?"))));
 
     var actions = (opts.actions || [])
       .map(function (a, i) {
@@ -892,8 +892,8 @@
       execSection(r) +
       '<footer class="zr-foot"><p class="disc">' +
       T(
-        "zing 出具的是<strong>行为偏离与风险的可复现证据</strong>，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。",
-        "zing provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run."
+        "ekte 出具的是<strong>行为偏离与风险的可复现证据</strong>，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。",
+        "ekte provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run."
       ) +
       "</p>" +
       (actions ? '<div class="actions">' + actions + "</div>" : "") +
@@ -903,7 +903,7 @@
   }
 
   function wire(el) {
-    var st = el.__zingReport || {};
+    var st = el.__ekteReport || {};
     var bars = el.querySelectorAll(".zr-dim .bar i");
     var fill = function () {
       for (var i = 0; i < bars.length; i++) bars[i].style.width = bars[i].getAttribute("data-w") + "%";
@@ -973,9 +973,9 @@
 
   function download(report, fmt, name) {
     if (!report) return Promise.resolve();
-    var I = window.ZING_I18N, L = window.ZING_LANG;
+    var I = window.EKTE_I18N, L = window.EKTE_LANG;
     var rep = I && I.exportReport ? I.exportReport(report) : report;
-    var filename = (name || "zing-report") + "." + (L ? L.get() : "en") + "." + fmt;
+    var filename = (name || "ekte-report") + "." + (L ? L.get() : "en") + "." + fmt;
     if (fmt === "json") {
       save(new Blob([JSON.stringify(rep, null, 2)], { type: "application/json" }), filename);
       return Promise.resolve();
@@ -1007,7 +1007,7 @@
 
   function mount(el, report, opts, still) {
     opts = opts || {};
-    el.__zingReport = { report: report, opts: opts, still: !!still };
+    el.__ekteReport = { report: report, opts: opts, still: !!still };
     el.innerHTML = html(report || {}, opts);
     wire(el);
   }
@@ -1017,11 +1017,11 @@
 
   // Re-render every mounted report in the new language, keeping open panels
   // (evidence, dimension details) and the focused control.
-  window.addEventListener("zing:lang", function () {
+  window.addEventListener("ekte:lang", function () {
     var els = document.querySelectorAll(".zr");
     for (var i = 0; i < els.length; i++) {
       var host = els[i].parentNode;
-      var st = host && host.__zingReport;
+      var st = host && host.__ekteReport;
       if (!st) continue;
       var open = [].map.call(host.querySelectorAll(TOGGLES), function (b) {
         return b.getAttribute("aria-expanded") === "true";
@@ -1039,5 +1039,5 @@
     }
   });
 
-  window.ZingReport = { render: render, wire: wire, download: download, duration: duration, findingDetail: findingDetail };
+  window.EkteReport = { render: render, wire: wire, download: download, duration: duration, findingDetail: findingDetail };
 })();

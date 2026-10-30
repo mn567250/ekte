@@ -1,13 +1,13 @@
-"""Render an :class:`~zing.models.AuditReport` to JSON, Markdown, or HTML.
+"""Render an :class:`~ekte.models.AuditReport` to JSON, Markdown, or HTML.
 
 JSON is the canonical machine output (the model's own ``model_dump_json``, so its
-field names match :mod:`zing.models` exactly). Markdown and HTML are derived,
+field names match :mod:`ekte.models` exactly). Markdown and HTML are derived,
 human-facing views of the same data — they never invent facts the report does not
 carry, and every relay/user string is escaped before it reaches HTML (via
 :func:`_esc`) or Markdown (via :func:`_md`), so relay-controlled text cannot inject
 markup, break tables, or spoof structure.
 
-All three renderers are pure: they take a report and return a string. zing reports
+All three renderers are pure: they take a report and return a string. ekte reports
 black-box evidence of divergence and risk, not proof of fraud; the disclaimer in
 each human view says so.
 """
@@ -19,7 +19,7 @@ import json
 from decimal import Decimal
 from typing import Any
 
-from zing.models import (
+from ekte.models import (
     AuditReport,
     KnowledgeUsage,
     RedactedTarget,
@@ -27,18 +27,18 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.report import dimensions as dimension_details
-from zing.report import palette
-from zing.report.performance import (
+from ekte.report import dimensions as dimension_details
+from ekte.report import palette
+from ekte.report.performance import (
     PERF_CSS,
     compact_performance,
 )
 
 _DISCLAIMER = (
-    "zing performs black-box auditing. It gathers reproducible evidence of "
+    "ekte performs black-box auditing. It gathers reproducible evidence of "
     "behavioral divergence and risk — not cryptographic proof of model identity "
     "or fraud. Treat findings as signals to investigate, review sample size and "
-    "cost, and consider `zing compare` against a trusted baseline of the same "
+    "cost, and consider `ekte compare` against a trusted baseline of the same "
     "declared model before drawing conclusions."
 )
 
@@ -200,7 +200,7 @@ def _md(value: object) -> str:
 
 
 def render_json(report: AuditReport) -> str:
-    """Canonical machine output — field names match :mod:`zing.models` exactly."""
+    """Canonical machine output — field names match :mod:`ekte.models` exactly."""
     return report.model_dump_json(indent=2)
 
 
@@ -256,7 +256,7 @@ def compact_dict(report: AuditReport) -> dict:
         }
 
     return {
-        "tool": "zing",
+        "tool": "ekte",
         "version": report.tool_version,
         "generated_at": report.generated_at,
         "mode": report.mode,
@@ -357,7 +357,7 @@ def render_markdown(report: AuditReport) -> str:
     risk_label = _RISK_LABEL.get(v.risk_level, v.risk_level.value)
     score = _fmt_score(v.overall_score)
     rating = v.rating or "—"
-    lines.append(f"# zing audit — {report.target.model}")
+    lines.append(f"# ekte audit — {report.target.model}")
     lines.append("")
     lines.append(
         f"**Risk:** {risk_label}  ·  **Score:** {score}/100  ·  "
@@ -383,7 +383,7 @@ def render_markdown(report: AuditReport) -> str:
     if report.generated_at:
         meta.append(f"generated `{report.generated_at}`")
     lines.append("  ·  ".join(meta))
-    lines.append(f"\n_zing v{report.tool_version}_")
+    lines.append(f"\n_ekte v{report.tool_version}_")
     lines.append("")
 
     # Verdict.
@@ -549,13 +549,13 @@ def render_html(report: AuditReport) -> str:
     out.append("<!DOCTYPE html>")
     out.append('<html lang="en"><head><meta charset="utf-8">')
     out.append('<meta name="viewport" content="width=device-width, initial-scale=1">')
-    out.append(f"<title>zing audit — {_esc(report.target.model)}</title>")
+    out.append(f"<title>ekte audit — {_esc(report.target.model)}</title>")
     out.append(_CSS)
     out.append("</head><body><main>")
 
     # Header + risk badge.
     out.append('<header class="report-head">')
-    out.append(f"<h1>zing audit <span class=\"model\">{_esc(report.target.model)}</span></h1>")
+    out.append(f"<h1>ekte audit <span class=\"model\">{_esc(report.target.model)}</span></h1>")
     out.append(
         f'<div class="badge" style="background:{risk_color}">{_esc(risk_label)}</div>'
     )
@@ -588,7 +588,7 @@ def render_html(report: AuditReport) -> str:
     if report.generated_at:
         meta_bits.append(f"generated <code>{_esc(report.generated_at)}</code>")
     out.append(f'<p class="meta">{" · ".join(meta_bits)}</p>')
-    out.append(f'<p class="meta">zing v{_esc(report.tool_version)}</p>')
+    out.append(f'<p class="meta">ekte v{_esc(report.tool_version)}</p>')
     out.append("</header>")
 
     # Verdict.

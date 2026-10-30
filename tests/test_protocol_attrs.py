@@ -1,6 +1,6 @@
 """Protocol attribute detectors: request parameters in, response attributes out.
 
-The catalogs and judgements (zing/detectors/wire_attrs.py) are pure, so most of
+The catalogs and judgements (ekte/detectors/wire_attrs.py) are pure, so most of
 this is table-driven: a conformant body per wire protocol, then every catalog
 attribute removed or zeroed in turn. The detectors run against a scripted
 ``complete`` so every branch — batched accept, isolation after a rejection,
@@ -16,10 +16,10 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
-from zing.clients import AnthropicClient, OpenAICompatibleClient, ResponsesClient
-from zing.detectors.helpers import MISSING, dig
-from zing.detectors.protocol_attrs import ProtocolRequestDetector, ProtocolResponseDetector
-from zing.detectors.wire_attrs import (
+from ekte.clients import AnthropicClient, OpenAICompatibleClient, ResponsesClient
+from ekte.detectors.helpers import MISSING, dig
+from ekte.detectors.protocol_attrs import ProtocolRequestDetector, ProtocolResponseDetector
+from ekte.detectors.wire_attrs import (
     CORE,
     MINOR,
     PARAM,
@@ -30,8 +30,8 @@ from zing.detectors.wire_attrs import (
     judge,
     request_params,
 )
-from zing.models import CompletionOutcome, RequestSpec, Status, TargetConfig
-from zing.scoring import build_dimensions, build_verdict
+from ekte.models import CompletionOutcome, RequestSpec, Status, TargetConfig
+from ekte.scoring import build_dimensions, build_verdict
 
 BODIES = {
     "openai": {

@@ -26,9 +26,9 @@ htmlcov/
 *.key
 secrets.*
 
-# zing output
+# ekte output
 reports/
-*.zing.json
+*.ekte.json
 
 # Reference material (ChatGPT v0 seed, not part of the project)
 tmp/

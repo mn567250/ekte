@@ -2,7 +2,7 @@
 
 Sends one bounded request with a fixed, known-size prompt and compares the
 relay's reported ``usage`` against an independent token estimate. The estimate is
-always heuristic (zing ships no tokenizer and downloads none), so we tolerate wide
+always heuristic (ekte ships no tokenizer and downloads none), so we tolerate wide
 margins and flag only gross deviations — inflated counts that would overbill the
 buyer, missing accounting that makes billing unverifiable, or internally
 inconsistent totals.
@@ -14,16 +14,16 @@ the lowest cap wins.
 
 from __future__ import annotations
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import usage_field
-from zing.detectors.scale import DeductionScale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
-from zing.utils.tokenize import estimate_messages_tokens, estimate_tokens
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import usage_field
+from ekte.detectors.scale import DeductionScale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte.utils.tokenize import estimate_messages_tokens, estimate_tokens
 
 # The probe summarizes a fixed paragraph (~110 words, "billing.known_paragraph" in
-# zing/prompts/en.json) so the prompt size is stable across runs.
+# ekte/prompts/en.json) so the prompt size is stable across runs.
 
 # Finding titles spelled out (not built from the label), so every title the
 # detector can emit is a fixed string the locales translate.

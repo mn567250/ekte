@@ -1,6 +1,6 @@
-# Contributing to zing
+# Contributing to ekte
 
-Thanks for helping make relay auditing more trustworthy. zing is a black-box
+Thanks for helping make relay auditing more trustworthy. ekte is a black-box
 auditing aid: correctness and **not falsely accusing honest relays** matter more
 than catching every possible trick.
 
@@ -15,7 +15,7 @@ In short:
 
 ```bash
 pip install -e '.[dev,web]'
-pytest && ruff check zing tests && mypy zing
+pytest && ruff check ekte tests && mypy ekte
 ```
 
 - Describe the relay trick or false positive your change addresses.

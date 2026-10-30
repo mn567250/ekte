@@ -1,9 +1,9 @@
 """Local audit history + trends — a tiny SQLite store, stdlib only.
 
-`zing serve` persists every finished AuditReport here so the web app can show a
+`ekte serve` persists every finished AuditReport here so the web app can show a
 history table and per-target score trends. No new dependency: just `sqlite3`.
 
-Storage lives in ``$ZING_DATA_DIR`` (default ``~/.zing``) as ``history.db``.
+Storage lives in ``$EKTE_DATA_DIR`` (default ``~/.ekte``) as ``history.db``.
 Every public function opens a fresh, short-lived connection so the module is
 safe to call from FastAPI's threadpool without sharing a connection across
 threads. Writes are best-effort: a malformed report must never break the audit
@@ -21,17 +21,17 @@ the list and trend views never parse ``report_json``. ``perf_done`` marks a
 row whose headline has been computed, which tells "no performance data" (all
 three NULL) apart from "not computed yet". Rows saved before those columns
 existed are backfilled once after the migration; any row still unmarked (a
-failed backfill, or a row written by an older zing) is computed when it is
+failed backfill, or a row written by an older ekte) is computed when it is
 first read and written back.
 
 Analytics (schema version 2): every saved run also gets a row of extracted
 metrics plus its dimension and detector scores, and its ``performance.requests``
 records move out of ``report_json`` into ``history_requests``, stored once and
 put back by :func:`get` / :func:`latest_for`, so a report reads back identical
-to the one saved (the tables are described in :mod:`zing.web.analytics_store`).
+to the one saved (the tables are described in :mod:`ekte.web.analytics_store`).
 ``requests_split`` says where a row's records are: 1 in ``history_requests``,
 0 inline (or none), NULL not looked at yet (a row from before version 2, or
-one written by an older zing). Such rows are processed by a batched backfill
+one written by an older ekte). Such rows are processed by a batched backfill
 (:func:`backfill_analytics`), which also re-extracts rows whose
 ``extract_version`` is behind ``analytics_store.EXTRACT_VERSION``.
 
@@ -51,9 +51,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from zing import datadir
-from zing.knowledge import snapshot as kb_snapshot
-from zing.web import analytics_store
+from ekte import datadir
+from ekte.knowledge import snapshot as kb_snapshot
+from ekte.web import analytics_store
 
 # Columns returned by the list view (everything except the heavy report_json).
 _SUMMARY_COLS = (
@@ -304,7 +304,7 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
         split = {int(r["id"]): r[_SPLIT] for r in rows}
         conn.execute("BEGIN IMMEDIATE")
         try:
-            # Analytics rows of a run that is gone (deleted by an older zing,
+            # Analytics rows of a run that is gone (deleted by an older ekte,
             # which does not know these tables): ids are never reused.
             for rid in ids:
                 if rid not in split:
@@ -335,7 +335,7 @@ def backfill_analytics() -> None:
     """Bring the analytics tables up to date with every saved run.
 
     Runs once after the schema migration; call it before reading the analytics
-    tables to pick up rows written since by an older zing, or extracted by an
+    tables to pick up rows written since by an older ekte, or extracted by an
     older ``EXTRACT_VERSION``. Costs one query when nothing is left.
     """
     with _connect() as conn:

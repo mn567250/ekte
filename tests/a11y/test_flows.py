@@ -1,8 +1,8 @@
 """Real user flows, status messages, focus management and accessibility-tree
 snapshots (BITV 9.4.1.3, 9.2.4.3, 9.4.1.2, 9.1.3.1, 9.2.4.6).
 
-The main tasks are run end to end in the browser, against a private zing
-server (zing_proc.py) and a fake OpenAI-compatible relay on 127.0.0.1
+The main tasks are run end to end in the browser, against a private ekte
+server (ekte_proc.py) and a fake OpenAI-compatible relay on 127.0.0.1
 (fake_relay.py), so nothing leaves the machine:
 
 1. an audit on /v2/, followed to the rendered report (every language);
@@ -29,7 +29,7 @@ MutationObserver installed before the page's own scripts run:
 
 The accessibility-tree snapshots store Playwright's aria snapshot of <body>
 for every page and language (after expand_all) in tests/a11y/snapshots/ and
-compare against it; ZING_A11Y_UPDATE_SNAPSHOTS=1 rewrites them. Each snapshot
+compare against it; EKTE_A11Y_UPDATE_SNAPSHOTS=1 rewrites them. Each snapshot
 must also name every interactive node and no generic one.
 """
 
@@ -48,6 +48,7 @@ from typing import Any
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Locator, Page
 
+from tests.a11y.ekte_proc import FIXED_TS, EkteProc
 from tests.a11y.fake_relay import EMBED_DIM, FakeRelay
 from tests.a11y.harness import (
     DESKTOP,
@@ -59,10 +60,9 @@ from tests.a11y.harness import (
     settle,
     track_network,
 )
-from tests.a11y.zing_proc import FIXED_TS, ZingProc
 
 SNAP_DIR = Path(__file__).resolve().parent / "snapshots"
-UPDATE = os.environ.get("ZING_A11Y_UPDATE_SNAPSHOTS") == "1"
+UPDATE = os.environ.get("EKTE_A11Y_UPDATE_SNAPSHOTS") == "1"
 FLOW_LANGS = [x for x in ("en", "de") if x in LANGS]
 TIMEOUT = 30_000
 
@@ -72,16 +72,16 @@ TIMEOUT = 30_000
 
 
 @pytest.fixture
-def zing(tmp_path: Path) -> Iterator[ZingProc]:
-    """A fresh zing server (saved report fixture, no monitor, no master key)."""
-    with ZingProc(tmp_path / "data") as z:
+def ekte(tmp_path: Path) -> Iterator[EkteProc]:
+    """A fresh ekte server (saved report fixture, no monitor, no master key)."""
+    with EkteProc(tmp_path / "data") as z:
         yield z
 
 
 @pytest.fixture(scope="session")
-def zing_seeded(tmp_path_factory: pytest.TempPathFactory) -> Iterator[ZingProc]:
-    """A zing server nobody changes: report fixture plus its monitor (snapshots)."""
-    with ZingProc(tmp_path_factory.mktemp("zing-snap"), seed_monitor=True) as z:
+def ekte_seeded(tmp_path_factory: pytest.TempPathFactory) -> Iterator[EkteProc]:
+    """A ekte server nobody changes: report fixture plus its monitor (snapshots)."""
+    with EkteProc(tmp_path_factory.mktemp("ekte-snap"), seed_monitor=True) as z:
         yield z
 
 
@@ -103,8 +103,8 @@ def new_context(browser: Browser, base: str, lang: str, **opts: Any) -> BrowserC
     ctx = browser.new_context(viewport=DESKTOP, color_scheme="light", timezone_id="UTC", locale="en-US", **opts)
     track_network(ctx)
     ctx.add_init_script(
-        f"try {{ localStorage.setItem('zing.lang', {json.dumps(lang)});"
-        f" localStorage.setItem('zing.v2.theme', 'light'); }} catch (e) {{}}"
+        f"try {{ localStorage.setItem('ekte.lang', {json.dumps(lang)});"
+        f" localStorage.setItem('ekte.v2.theme', 'light'); }} catch (e) {{}}"
     )
     ctx.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
     return ctx
@@ -455,9 +455,9 @@ def run_to_report(flow: Flow, name: str) -> None:
 
 @pytest.mark.bitv("9.4.1.3", "9.2.4.3")
 @pytest.mark.parametrize("lang", LANGS)
-def test_audit_flow(browser, contexts, zing, relay, lang: str) -> None:
+def test_audit_flow(browser, contexts, ekte, relay, lang: str) -> None:
     """Start an audit, follow the scan to the report, start another one."""
-    flow = open_flow(contexts, browser, zing.url, "/v2/", lang, AUDIT_MESSAGES, "audit flow")
+    flow = open_flow(contexts, browser, ekte.url, "/v2/", lang, AUDIT_MESSAGES, "audit flow")
     page = flow.page
     flow.step("fill the form; the relay's models are listed", lambda: fill_audit(page, relay.url))
     flow.step("save the relay to the knowledge base", lambda: save_relay(page, f"A11y relay {lang}"))
@@ -473,10 +473,10 @@ def test_audit_flow(browser, contexts, zing, relay, lang: str) -> None:
 
 @pytest.mark.bitv("9.4.1.3", "9.2.4.3", "9.3.3.1")
 @pytest.mark.parametrize("lang", FLOW_LANGS)
-def test_failing_audit_flow(browser, contexts, zing, broken_relay, lang: str) -> None:
+def test_failing_audit_flow(browser, contexts, ekte, broken_relay, lang: str) -> None:
     """Errors: an empty form, a URL the server refuses, a relay that answers
     HTTP 500, a port nobody listens on."""
-    flow = open_flow(contexts, browser, zing.url, "/v2/", lang, AUDIT_MESSAGES, "failing audit flow")
+    flow = open_flow(contexts, browser, ekte.url, "/v2/", lang, AUDIT_MESSAGES, "failing audit flow")
     page = flow.page
     flow.step("submit the empty form", lambda: press(page, "#go"))
     if not page.locator("#formerr").inner_text().strip():
@@ -511,12 +511,12 @@ def wait_text(page: Page, selector: str) -> None:
 
 @pytest.mark.bitv("9.4.1.3", "9.2.4.3", "9.4.1.2")
 @pytest.mark.parametrize("lang", FLOW_LANGS)
-def test_monitor_flow(browser, contexts, zing, relay, lang: str) -> None:
+def test_monitor_flow(browser, contexts, ekte, relay, lang: str) -> None:
     """Schedule a run as a monitor, activate it with an API key (not stored),
     choose to store keys encrypted (creating the master key in its dialog),
     edit, pause, lock/unlock the key, delete it, stop storing keys."""
     flow = open_flow(
-        contexts, browser, zing.url, "/v2/history", lang, MONITOR_MESSAGES, "monitor flow",
+        contexts, browser, ekte.url, "/v2/history", lang, MONITOR_MESSAGES, "monitor flow",
         permissions=["clipboard-read", "clipboard-write"],
     )
     page = flow.page
@@ -654,11 +654,11 @@ def _kb_delete_steps(flow: Flow, tab: str) -> None:
 
 @pytest.mark.bitv("9.4.1.3", "9.2.4.3", "9.3.3.1")
 @pytest.mark.parametrize("lang", FLOW_LANGS)
-def test_kb_flow(browser, contexts, zing, lang: str) -> None:
+def test_kb_flow(browser, contexts, ekte, lang: str) -> None:
     """Every tab of the Knowledge page: filter, switch packaged items off and
     on, add (model wizard, provider wizard, relay form), switch and delete
     your own entry; plus the model-id lookup and the tabs' keyboard use."""
-    flow = open_flow(contexts, browser, zing.url, "/v2/kb", lang, KB_MESSAGES, "knowledge-base flow")
+    flow = open_flow(contexts, browser, ekte.url, "/v2/kb", lang, KB_MESSAGES, "knowledge-base flow")
     page = flow.page
     page.wait_for_selector("#models-list li.item", state="attached")
 
@@ -720,8 +720,8 @@ def test_kb_flow(browser, contexts, zing, lang: str) -> None:
 # Masked before comparing: what may differ between runs or releases without
 # the page's structure changing.
 VOLATILE = [
-    # a release number (zing x.y.z), not an IP address
-    (re.compile(r"(?:(?<=zing )|(?<=\bv))\d+\.\d+\.\d+(?:[-+][\w.]+)?"), "<version>"),
+    # a release number (ekte x.y.z), not an IP address
+    (re.compile(r"(?:(?<=ekte )|(?<=\bv))\d+\.\d+\.\d+(?:[-+][\w.]+)?"), "<version>"),
     # hex ids / fingerprints (digits and letters a-f mixed)
     (re.compile(r"\b(?=[0-9a-f]*[a-f])(?=[0-9a-f]*\d)[0-9a-f]{8,}\b"), "<id>"),
     # measured times
@@ -869,10 +869,10 @@ MASK_REPORT_DATE_JS = """
 async () => {
   let rep;
   try { rep = await (await fetch('/v2/static/bitv-report.json')).json(); } catch (e) { return 0; }
-  if (!rep || !rep.generated_at || !window.ZING_LANG) return 0;
+  if (!rep || !rep.generated_at || !window.EKTE_LANG) return 0;
   const d = new Date(rep.generated_at);
   const forms = new Set();
-  try { forms.add(d.toLocaleString(ZING_LANG.locale(), { dateStyle: 'long', timeStyle: 'short' })); } catch (e) {}
+  try { forms.add(d.toLocaleString(EKTE_LANG.locale(), { dateStyle: 'long', timeStyle: 'short' })); } catch (e) {}
   forms.add(d.toLocaleString());
   let n = 0;
   const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -911,24 +911,24 @@ needs_aria_snapshot = pytest.mark.skipif(
 @pytest.mark.bitv("9.1.3.1", "9.4.1.2", "9.2.4.6")
 @pytest.mark.parametrize("lang", LANGS)
 @pytest.mark.parametrize("page_id", list(PAGES))
-def test_aria_snapshot_unchanged(browser, contexts, zing_seeded, page_id: str, lang: str) -> None:
+def test_aria_snapshot_unchanged(browser, contexts, ekte_seeded, page_id: str, lang: str) -> None:
     """Regression guard: the accessibility tree (roles, names, states, structure)
-    matches the reviewed snapshot. ZING_A11Y_UPDATE_SNAPSHOTS=1 rewrites it."""
-    got = aria_tree(browser, contexts, zing_seeded.url, page_id, lang)[0]
+    matches the reviewed snapshot. EKTE_A11Y_UPDATE_SNAPSHOTS=1 rewrites it."""
+    got = aria_tree(browser, contexts, ekte_seeded.url, page_id, lang)[0]
     path = SNAP_DIR / f"{page_id}-{lang}.yml"
     if UPDATE:
         SNAP_DIR.mkdir(exist_ok=True)
         path.write_text(got, encoding="utf-8")
         return
     if not path.exists():
-        pytest.fail(f"no snapshot {path.name}: review the page, then run with ZING_A11Y_UPDATE_SNAPSHOTS=1")
+        pytest.fail(f"no snapshot {path.name}: review the page, then run with EKTE_A11Y_UPDATE_SNAPSHOTS=1")
     want = path.read_text(encoding="utf-8")
     if got != want:
         diff = "".join(difflib.unified_diff(
             want.splitlines(keepends=True), got.splitlines(keepends=True), f"{path.name} (stored)", "(page now)", n=2))
         issues = [
             "accessibility tree differs from the reviewed snapshot (BITV 9.1.3.1 / 9.4.1.2 / 9.2.4.6);"
-            f" review it, then ZING_A11Y_UPDATE_SNAPSHOTS=1 if intended:\n{diff[:6000]}"
+            f" review it, then EKTE_A11Y_UPDATE_SNAPSHOTS=1 if intended:\n{diff[:6000]}"
         ]
         assert_no_issues(issues, f"{page_id} [{lang}]", "aria-snapshot")
 
@@ -937,10 +937,10 @@ def test_aria_snapshot_unchanged(browser, contexts, zing_seeded, page_id: str, l
 @pytest.mark.bitv("9.4.1.2", "9.1.3.1", "9.2.4.6")
 @pytest.mark.parametrize("lang", LANGS)
 @pytest.mark.parametrize("page_id", list(PAGES))
-def test_aria_tree_names(browser, contexts, zing_seeded, page_id: str, lang: str) -> None:
+def test_aria_tree_names(browser, contexts, ekte_seeded, page_id: str, lang: str) -> None:
     """Every interactive node has a non-empty accessible name; no generic
     node carries one (aria-label on a plain div/span is not announced)."""
-    tree, named_generics = aria_tree(browser, contexts, zing_seeded.url, page_id, lang)
+    tree, named_generics = aria_tree(browser, contexts, ekte_seeded.url, page_id, lang)
     issues: list[str] = []
     for role, name, where in snapshot_nodes(tree):
         if role in NAMED_ROLES and not (name or "").strip():
@@ -991,10 +991,10 @@ async () => {
 
 @pytest.mark.bitv("9.4.1.3", "9.2.4.3", "9.3.3.1")
 @pytest.mark.parametrize("lang", FLOW_LANGS)
-def test_surface_flow(browser, contexts, zing, relay, broken_relay, lang: str) -> None:
+def test_surface_flow(browser, contexts, ekte, relay, broken_relay, lang: str) -> None:
     """Audit an embedding endpoint (and rerun it), then a rerank endpoint
     (working and broken), on the audit page's endpoint-type selector."""
-    flow = open_flow(contexts, browser, zing.url, "/v2/", lang, AUDIT_MESSAGES, "surface flow")
+    flow = open_flow(contexts, browser, ekte.url, "/v2/", lang, AUDIT_MESSAGES, "surface flow")
     page = flow.page
     flow.step("choose the embedding endpoint type", lambda: pick_surface(page, "embedding"))
     flow.step("embedding: submit the empty form", lambda: press(page, "#go"))
@@ -1008,7 +1008,7 @@ def test_surface_flow(browser, contexts, zing, relay, broken_relay, lang: str) -
     flow.step("embedding: fill the form", embed)
     run_to_report(flow, "embedding: audit the endpoint")
     rid = page.evaluate(LATEST_RUN_JS)
-    flow.navigate(f"embedding: rerun #{rid}", lambda: page.goto(f"{zing.url}/v2/?rerun={rid}"), "**/v2/?rerun=*", AUDIT_MESSAGES)
+    flow.navigate(f"embedding: rerun #{rid}", lambda: page.goto(f"{ekte.url}/v2/?rerun={rid}"), "**/v2/?rerun=*", AUDIT_MESSAGES)
     page.wait_for_function("() => document.querySelector('#i-edims').value !== ''")
     if page.input_value("#i-edims") != str(EMBED_DIM) or not page.locator("#sf-embedding").is_checked():
         flow.issues.append(f"rerun: the claimed dimension is {page.input_value('#i-edims')!r}, want {EMBED_DIM}")

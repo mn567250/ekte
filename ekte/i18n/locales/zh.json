@@ -39,10 +39,10 @@
   "medium": "中",
   "No significant divergence findings.": "未发现明显偏离。",
   "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "知识库中未找到所声称的模型，身份/能力检测受限 —— 请传入 --declared-provider 或补充 KB 档案。",
-  "Run `zing compare` against a trusted baseline to strengthen the verdict.": "用 `zing compare` 对照可信基线复检，以加强结论。",
-  "zing reports black-box evidence of divergence and risk, not proof of fraud.": "zing 报告的是偏离与风险的黑盒证据，不是欺诈的证明。",
-  "zing performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.": "zing 执行黑盒审计：收集行为偏离的可复现证据，而非模型身份的密码学证明。",
-  "Use `zing compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.": "用 `zing compare` 对照同款声明模型的可信基线，可获得最强的降级证据。",
+  "Run `ekte compare` against a trusted baseline to strengthen the verdict.": "用 `ekte compare` 对照可信基线复检，以加强结论。",
+  "ekte reports black-box evidence of divergence and risk, not proof of fraud.": "ekte 报告的是偏离与风险的黑盒证据，不是欺诈的证明。",
+  "ekte performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.": "ekte 执行黑盒审计：收集行为偏离的可复现证据，而非模型身份的密码学证明。",
+  "Use `ekte compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.": "用 `ekte compare` 对照同款声明模型的可信基线，可获得最强的降级证据。",
   "Do not publish a report that names a vendor without reviewing sample size, cost, and local law/policy.": "在核实样本量、成本与当地法律/政策之前，请勿发布点名厂商的报告。",
   "Not run in this suite.": "本套件未运行此项。",
   "Ran but produced no numeric score (see findings).": "已运行但未产生数值评分（见关注点）。",
@@ -66,9 +66,9 @@
   "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "请视为偏离信号而非证据；行动前先用指纹与身份检测佐证。",
   "Verify the relay supports stream=true for this model.": "确认该中转站对此模型支持 stream=true。",
   "Verify the relay streams content deltas for this model.": "确认该中转站对此模型以流式返回内容增量。",
-  "Run `zing compare` against a trusted baseline to corroborate.": "用 `zing compare` 对照可信基线加以佐证。",
+  "Run `ekte compare` against a trusted baseline to corroborate.": "用 `ekte compare` 对照可信基线加以佐证。",
   "A response naming a different vendor strongly suggests model substitution.": "回复中提到其他厂商，强烈暗示模型被替换。",
-  "Run `zing compare` against a trusted baseline to disambiguate.": "用 `zing compare` 对照可信基线以消除歧义。",
+  "Run `ekte compare` against a trusted baseline to disambiguate.": "用 `ekte compare` 对照可信基线以消除歧义。",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "响应中出现更低档位或不同系列的模型 id，暗示请求被路由到替身。",
   "Lower --concurrency or --reliability-requests and re-run.": "调低 --concurrency 或 --reliability-requests 后重跑。",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "检查中转站在并发压力下的连接池与上游稳定性（HTTP 429 限流不计入此成功率）。",
@@ -104,7 +104,7 @@
   "Request failed (HTTP {status_code}, type {error_type}).": "请求失败（HTTP {status_code}，类型 {error_type}）。",
   "Request failed (HTTP {status_code}).": "请求失败（HTTP {status_code}）。",
   "Request failed (type {error_type}).": "请求失败（类型 {error_type}）。",
-  "zing relay audit alert": "zing 中继体检告警",
+  "ekte relay audit alert": "ekte 中继体检告警",
   "Risk: {1}": "风险：{1}",
   "Score: {1}": "评分：{1}",
   "(grade {1})": "（评级 {1}）",
@@ -124,9 +124,9 @@
   "{1} ({2})": "{1}（{2}）",
   "Performance probe": "性能探测",
   "Headline numbers come from the audit's own requests, which mix prompt and output sizes; the deep and full suites add a controlled, uncacheable probe.": "核心数字来自本次检测自身的请求，其提示词与输出长度各不相同；deep 与 full 套件会额外发送受控、不可缓存的专用探测。",
-  "Reasoning tokens detected: TTFT is the time to the first visible token and includes hidden thinking, and usage-based throughput counts thinking tokens. zing does not set a reasoning effort (the modes a relay accepts are unknown), so the model thinks at its default effort.": "检测到推理 token：TTFT 是首个可见 token 的时间，包含隐藏的思考过程；基于 usage 的吞吐量也计入了思考 token。zing 不设置推理强度（中转站接受哪些档位未知），因此模型以默认强度思考。",
+  "Reasoning tokens detected: TTFT is the time to the first visible token and includes hidden thinking, and usage-based throughput counts thinking tokens. ekte does not set a reasoning effort (the modes a relay accepts are unknown), so the model thinks at its default effort.": "检测到推理 token：TTFT 是首个可见 token 的时间，包含隐藏的思考过程；基于 usage 的吞吐量也计入了思考 token。ekte 不设置推理强度（中转站接受哪些档位未知），因此模型以默认强度思考。",
   "Local token counts are estimates (about ±15-20%): no exact tokenizer is available for this model family.": "本地 token 计数为估算值（约 ±15-20%）：该模型系列没有可用的精确分词器。",
-  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; zing never downloads a tokenizer.": "本地 token 计数为内置启发式算法的估算值（约 ±15-20%）；zing 从不下载分词器。",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.": "本地 token 计数为内置启发式算法的估算值（约 ±15-20%）；ekte 从不下载分词器。",
   "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests.": "百分位需要足够的样本：p75 需 4 个、p90 需 10 个、p95 需 20 个、p99 需 100 个请求。",
   "Relay processing times come from the relay's own response headers and are unverified.": "中转站自报的处理时间来自其响应头，未经核实。",
   "Some requests were served fully or partly from a cache and are left out of the statistics.": "部分请求全部或部分由缓存返回，已从统计中排除。",
@@ -422,7 +422,7 @@
   ],
   "prompt_cache.detected": [
    "中继按提示前缀做缓存",
-   "重复前缀返回明显更快（warm ~{warm_ms} ms vs cold ~{cold_ms} ms，control ~{control_ms} ms）—— 存在提示前缀缓存。这是合法优化；zing 无法用单一 key 证明是否跨用户共享缓存。"
+   "重复前缀返回明显更快（warm ~{warm_ms} ms vs cold ~{cold_ms} ms，control ~{control_ms} ms）—— 存在提示前缀缓存。这是合法优化；ekte 无法用单一 key 证明是否跨用户共享缓存。"
   ],
   "prompt_cache.none": [
    "未见明显的提示前缀缓存",
@@ -499,7 +499,7 @@
   ],
   "performance.reasoning": [
    "探测中出现推理 token",
-   "模型消耗了隐藏的推理 token（上报 {reasoning_tokens} 个）：TTFT 包含思考时间。zing 不设置推理强度，模型以默认强度思考。"
+   "模型消耗了隐藏的推理 token（上报 {reasoning_tokens} 个）：TTFT 包含思考时间。ekte 不设置推理强度，模型以默认强度思考。"
   ],
   "performance.relay_overhead": [
    "与基线的延迟对比",

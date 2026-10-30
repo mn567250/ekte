@@ -1,6 +1,6 @@
 """The report palette, read from the web UI's colour tokens.
 
-``zing/web/static/v2/tokens.css`` is the one place zing defines colours. The
+``ekte/web/static/v2/tokens.css`` is the one place ekte defines colours. The
 exported reports follow it too:
 
 * the HTML report embeds :func:`tokens_css` (the token declarations, both

@@ -1,4 +1,4 @@
-/* zing web UI v2 — WAI-ARIA tabs with automatic activation, shared by the
+/* ekte web UI v2 — WAI-ARIA tabs with automatic activation, shared by the
  * Tools, Knowledge and Analytics pages.
  *
  * Markup (static, so lang.js translates it and nothing shifts at boot):
@@ -8,7 +8,7 @@
  *   </div>
  *   <section role="tabpanel" id="panel-NAME" aria-labelledby="tab-NAME" tabindex="0"> …
  *
- * ZingTabs.init(tablist, opts) wires the keyboard (←/→/↑/↓ move and select,
+ * EkteTabs.init(tablist, opts) wires the keyboard (←/→/↑/↓ move and select,
  * Home/End), keeps one tab in the tab order (roving tabindex), shows only the
  * selected panel, and mirrors the selection in the URL hash (#NAME; the first
  * tab has none) so a tab can be linked and survives a reload.
@@ -125,5 +125,5 @@
     return { select: select, current: function () { return cur; }, setDisabled: setDisabled };
   }
 
-  window.ZingTabs = { init: init };
+  window.EkteTabs = { init: init };
 })();

@@ -1,12 +1,12 @@
 name: Release to PyPI
 
-# Publishes zing-audit to PyPI on a version tag (v*), using PyPI Trusted
+# Publishes ekte to PyPI on a version tag (v*), using PyPI Trusted
 # Publishing (OIDC) — no API token is stored as a secret.
 #
 # ONE-TIME SETUP on PyPI (https://pypi.org/manage/account/publishing/):
-#   Add a "pending publisher" for project `zing-audit` with:
+#   Add a "pending publisher" for project `ekte` with:
 #     Owner:            cenbonew
-#     Repository name:  zing
+#     Repository name:  ekte
 #     Workflow name:    release.yml
 #     Environment name: pypi
 # After the first successful publish the project becomes a normal Trusted Publisher.
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/zing-audit
+      url: https://pypi.org/p/ekte
     permissions:
       id-token: write          # required for Trusted Publishing (OIDC)
     steps:

@@ -8,12 +8,12 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from zing import prompts
-from zing.context import AuditContext
-from zing.detectors.base import register
-from zing.detectors.embedding import EmbeddingDetector, cosine_similarity, embed, sha
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, Severity, Status
+from ekte import prompts
+from ekte.context import AuditContext
+from ekte.detectors.base import register
+from ekte.detectors.embedding import EmbeddingDetector, cosine_similarity, embed, sha
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, Severity, Status
 
 # Vector drift on the pinned input, as the cosine of the stored samples.
 DRIFT_STABLE = 0.995

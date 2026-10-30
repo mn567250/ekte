@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="zing — audit history">zing — 检测历史</title>
+<title data-en="ekte — audit history">ekte — 检测历史</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <style>
@@ -121,8 +121,8 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="logo"><span class="b" id="logoIcon"></span><span>zing<b>.</b></span></div>
-    <span class="pill"><span id="lockIcon" style="vertical-align:-2px"></span> <span data-en="Local history · stored in <b>~/.zing</b>">本地历史 · 存于 <b>~/.zing</b></span></span>
+    <div class="logo"><span class="b" id="logoIcon"></span><span>ekte<b>.</b></span></div>
+    <span class="pill"><span id="lockIcon" style="vertical-align:-2px"></span> <span data-en="Local history · stored in <b>~/.ekte</b>">本地历史 · 存于 <b>~/.ekte</b></span></span>
     <a class="try-v2" href="?ui=v2" style="font-size:12px;font-weight:700;color:var(--teal);text-decoration:none;white-space:nowrap" data-en="Try the new UI">试用新界面</a>
     <select class="lang-sel" aria-label="语言" title="语言" data-en-aria-label="Language" data-en-title="Language"></select>
   </header>
@@ -162,21 +162,21 @@ const DIMNAME_EN={model_identity:["Model identity","Is it the model it claims to
   capability:["Capability claims","Are tools/JSON really supported?"],billing:["Billing & usage","Is token usage inflated?"],
   protocol:["Protocol compliance","Is the API spec-compliant?"],connectivity:["Connectivity","Reliably reachable?"],reliability:["Concurrency reliability","Stable under load?"],
   streaming:["Streaming authenticity","Real streaming or faked?"],security:["Transport security","Are keys handled safely?"],performance:["Performance","Is its speed consistent?"]};
-const dimName=k=>ZING_LANG.isZh()?DIMNAME[k]:(DIMNAME_EN[k]&&DIMNAME_EN[k].map(ZING_LANG.tr));
-const srv=s=>ZING_LANG.server(s);
+const dimName=k=>EKTE_LANG.isZh()?DIMNAME[k]:(DIMNAME_EN[k]&&DIMNAME_EN[k].map(EKTE_LANG.tr));
+const srv=s=>EKTE_LANG.server(s);
 /* finding text: CN keeps the backend original; other languages use the i18n catalog */
-const fLoc=f=>(!ZING_LANG.isZh()&&window.ZING_I18N)?ZING_I18N.localizeFinding(f.id,f.summary,f.evidence,f.title,f.status):{title:srv(f.title),summary:srv(f.summary)};
+const fLoc=f=>(!EKTE_LANG.isZh()&&window.EKTE_I18N)?EKTE_I18N.localizeFinding(f.id,f.summary,f.evidence,f.title,f.status):{title:srv(f.title),summary:srv(f.summary)};
 // status -> canonical icon name (no question-mark/dash glyphs in the set; use the
 // closest neutral "info" for inconclusive/not_run). Rendered ~13px, inherits currentColor.
 const ICON_NAME={pass:"check",warn:"warning",fail:"x",info:"info",inconclusive:"info",not_run:"info",error:"x"};
-const statusIcon=s=>window.zingIcon(ICON_NAME[s]||"warning",{size:13});
+const statusIcon=s=>window.ekteIcon(ICON_NAME[s]||"warning",{size:13});
 
 let openRow=null;  // currently expanded <tr> trigger, so we can toggle/close
 
 // paint static-markup icons (logo bolt, lock pill, back arrow)
-$("#logoIcon").innerHTML=window.zingIcon("bolt",{size:18});
-$("#lockIcon").innerHTML=window.zingIcon("lock",{size:14});
-$("#backIcon").innerHTML=window.zingIcon("arrowLeft",{size:15});
+$("#logoIcon").innerHTML=window.ekteIcon("bolt",{size:18});
+$("#lockIcon").innerHTML=window.ekteIcon("lock",{size:14});
+$("#backIcon").innerHTML=window.ekteIcon("arrowLeft",{size:15});
 
 let allRows=[];
 const surfaceOf=r=>r.surface||"chat";
@@ -189,7 +189,7 @@ async function load(){
     allRows=Array.isArray(rows)?rows:[];
     render(allRows);
   }catch(e){
-    $("#card").innerHTML=`<div class="empty"><div class="big">${window.zingIcon("warning",{size:34})}</div>${T("无法读取历史：","Could not read history: ")}${esc(String(e.message||e))}<br><br>${T("请确认本地 zing 服务在运行。","Make sure the local zing service is running.")}</div>`;
+    $("#card").innerHTML=`<div class="empty"><div class="big">${window.ekteIcon("warning",{size:34})}</div>${T("无法读取历史：","Could not read history: ")}${esc(String(e.message||e))}<br><br>${T("请确认本地 ekte 服务在运行。","Make sure the local ekte service is running.")}</div>`;
   }
 }
 
@@ -200,7 +200,7 @@ function render(rows){
     if(!rows.length){$("#card").innerHTML=`<div class="empty">${T("没有这种接口类型的检测记录。","No audits of this endpoint type.")}</div>`;return;}
   }
   if(!rows.length){
-    $("#card").innerHTML=`<div class="empty"><div class="big">${window.zingIcon("folder",{size:34})}</div>${T("还没有检测记录。","No audits recorded yet.")}<br><br><a href="/">${T("去跑第一次检测","Run your first audit")} ${window.zingIcon("arrowRight",{size:15})}</a></div>`;
+    $("#card").innerHTML=`<div class="empty"><div class="big">${window.ekteIcon("folder",{size:34})}</div>${T("还没有检测记录。","No audits recorded yet.")}<br><br><a href="/">${T("去跑第一次检测","Run your first audit")} ${window.ekteIcon("arrowRight",{size:15})}</a></div>`;
     return;
   }
   // group by base_url + claimed_model, preserving newest-first encounter order
@@ -243,7 +243,7 @@ function rowHTML(r){
   const sc=r.score==null?"—":Math.round(r.score);
   return `<tr data-id="${r.id}">
     <td class="ts">${esc(fmtTime(r.ts))}</td>
-    <td><span class="bdg" style="background:var(--${risk.bg});color:${VAR(risk.c)}">${riskGlyph(r.risk_level)} ${esc(ZING_LANG.code(r.risk_level||"?"))}</span></td>
+    <td><span class="bdg" style="background:var(--${risk.bg});color:${VAR(risk.c)}">${riskGlyph(r.risk_level)} ${esc(EKTE_LANG.code(r.risk_level||"?"))}</span></td>
     <td class="sc r"><b style="color:${VAR(scoreC(r.score))}">${sc}</b></td>
     <td class="r" style="font-family:var(--disp);font-weight:700;color:${VAR(risk.c)}">${esc(r.rating||"–")}</td>
     <td class="r ms"><b>${esc(r.mode||"check")}</b>${surfaceOf(r)==="embedding"?` <span class="bdg" style="background:var(--skybg);color:${VAR("sky")}">${T("嵌入","Embeddings")}</span>`:""} · ${esc(r.suite||"")}</td>
@@ -266,7 +266,7 @@ function toggleRow(tr){
 
 function wireDrawer(dr,id,rep){
   const ps=dr.querySelector(".perf-sect");
-  if(ps&&rep&&rep.performance&&window.ZingPerf)ZingPerf.wireSection(ps,rep.performance);
+  if(ps&&rep&&rep.performance&&window.EktePerf)EktePerf.wireSection(ps,rep.performance);
   dr.querySelectorAll(".more").forEach(m=>m.onclick=ev=>{ev.stopPropagation();const e=m.previousElementSibling;
     e.classList.toggle("show");m.textContent=e.classList.contains("show")?T("收起证据","Hide evidence"):T("查看证据","Show evidence");});
   requestAnimationFrame(()=>dr.querySelectorAll(".ba i").forEach(i=>{i.style.width=i.dataset.w+"%";i.style.background=i.dataset.c;}));
@@ -278,9 +278,9 @@ function wireDrawer(dr,id,rep){
   if(dl)dl.onclick=ev=>{ev.stopPropagation();
     fetch("/api/history/"+id).then(r=>r.json()).then(raw=>{
       // same JSON keys/schema, human-readable values in the UI language
-      const rep=window.ZING_I18N?ZING_I18N.exportReport(raw):raw;
+      const rep=window.EKTE_I18N?EKTE_I18N.exportReport(raw):raw;
       const blob=new Blob([JSON.stringify(rep,null,2)],{type:"application/json"});
-      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="zing-report-"+id+"."+ZING_LANG.get()+".json";a.click();});};
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ekte-report-"+id+"."+EKTE_LANG.get()+".json";a.click();});};
 }
 
 function reportHTML(r,id){
@@ -304,7 +304,7 @@ function reportHTML(r,id){
         <div class="vscores">
           <div>${T("综合健康分","Overall health score")} <b style="color:${VAR(scoreC(sc))}">${sc==null?"—":Math.round(sc)}</b>/100</div>
           <div>${T("置信度","Confidence")} <b>${esc(zhConf(v.confidence))}</b></div>
-          <div>${T("风险","Risk")} <b style="color:${gradeC}">${esc(ZING_LANG.code(v.risk_level||""))}</b></div>
+          <div>${T("风险","Risk")} <b style="color:${gradeC}">${esc(EKTE_LANG.code(v.risk_level||""))}</b></div>
           <div>${T("时间","Time")} <b style="font-family:var(--mono);font-size:12px">${esc(fmtTime(r.generated_at))}</b></div>
           ${(r.prompt_languages||[]).length?`<div>${T("探测语言","Probe languages")} <b style="font-family:var(--mono);font-size:12px">${esc(r.prompt_languages.map(c=>c.toUpperCase()).join(" · "))}</b></div>`:""}
         </div>
@@ -314,7 +314,7 @@ function reportHTML(r,id){
     ${findings.length
       ?`<div class="sect"><h3>${T("关注点","Findings")} <span>${findings.length} findings</span></h3>${findings.map(findRow).join("")}</div>`
       :`<div class="sect"><h3>${T("关注点","Findings")} <span>findings</span></h3><p style="color:var(--ink2);font-size:13px;margin:0">${T("未发现警告或失败项。","No warnings or failures.")}</p></div>`}
-    ${r.performance&&window.ZingPerf?`<div class="sect perf-sect"><h3>${T("性能","Performance")} <span>performance</span></h3>${ZingPerf.section(r.performance)}</div>`:""}
+    ${r.performance&&window.EktePerf?`<div class="sect perf-sect"><h3>${T("性能","Performance")} <span>performance</span></h3>${EktePerf.section(r.performance)}</div>`:""}
     <div class="drawer-foot">
       <button class="dl-json">${T("下载 JSON","Download JSON")}</button>
       <button class="del">${T("删除此记录","Delete entry")}</button>
@@ -336,11 +336,11 @@ function evText(e){if(!e||typeof e!=="object")return "";const keys=Object.keys(e
 function fmt(x){if(x==null)return "null";if(typeof x==="object")return JSON.stringify(x).slice(0,200);return String(x).slice(0,240);}
 function sevRank(s){return {critical:5,high:4,medium:3,low:2,info:1}[s]||0;}
 function riskGlyph(r){const n=r==="high"?"x":r==="clean"?"check":r==="inconclusive"?"info":"warning";
-  return window.zingIcon(n,{size:14});}
+  return window.ekteIcon(n,{size:14});}
 function zhHead(v){
   // reports that record verdict.drivers carry a headline naming what drove the risk
   if(Array.isArray(v.drivers)&&v.headline)return srv(v.headline).replace(/\s*[(（][^()（）]*[)）]$/,"");
-  const m=!ZING_LANG.isZh()
+  const m=!EKTE_LANG.isZh()
   ?{clean:"Behavior is consistent with the claimed model",low:"Mostly consistent, with a few minor issues",medium:"Some behavior does not match the claimed model — verify",high:"It is not serving the model it claims",inconclusive:"Insufficient signal to decide (connectivity or coverage too low)"}
   :{clean:"行为与所声称的模型一致",low:"基本一致，存在少量小问题",medium:"部分行为与所声称的模型不符 —— 建议核实",high:"它给的并不是你所声称的模型",inconclusive:"信号不足，无法判定（连通或覆盖不够）"};
   const h=m[v.risk_level];return h?T(h,h):srv(v.headline)||"";}
@@ -402,7 +402,7 @@ $("#clr").onclick=()=>{
 };
 
 /* ---- language switch: re-render, keeping the open report drawer ---- */
-window.addEventListener("zing:lang",async()=>{
+window.addEventListener("ekte:lang",async()=>{
   const openId=openRow&&openRow.isConnected?openRow.dataset.id:null;
   await load();
   if(openId){const tr=$(`#card tr[data-id="${openId}"]`);if(tr)toggleRow(tr);}

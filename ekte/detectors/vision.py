@@ -27,18 +27,18 @@ import base64
 import struct
 import zlib
 
-from zing import prompts
-from zing.clients import detect_api
-from zing.context import AuditContext
-from zing.detectors.base import Detector, register
-from zing.detectors.helpers import contains_any
-from zing.detectors.scale import Scale, outcome
-from zing.models import DetectorResult, Dimension, RequestSpec, Severity, Status
-from zing.utils.redact import redact_text
+from ekte import prompts
+from ekte.clients import detect_api
+from ekte.context import AuditContext
+from ekte.detectors.base import Detector, register
+from ekte.detectors.helpers import contains_any
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import DetectorResult, Dimension, RequestSpec, Severity, Status
+from ekte.utils.redact import redact_text
 
 # The known-answer color. Orange (255,140,0) is intentionally non-primary: a
 # text-only model guessing blind is far likelier to say red/green/blue/black/white
-# than to land on "orange". The question is English (zing/prompts/en.json), but
+# than to land on "orange". The question is English (ekte/prompts/en.json), but
 # a China-native model may still answer in Chinese, so both are accepted.
 _COLOR_RGB = (255, 140, 0)
 _EXPECTED_COLORS = ("orange", "橙", "橘")  # 橙色 / 橘色 / 橘黄 all contain these

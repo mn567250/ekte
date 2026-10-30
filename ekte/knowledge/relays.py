@@ -4,7 +4,7 @@ The web UI's relay configuration starts from a list of endpoints: the providers
 of the knowledge base (with the base URLs from their ``base_url_hints``) and the
 relays the user saved. A saved relay is an ordinary kb.db provider entry — a
 ``display_name`` and one ``base_url_hints`` URL, no models, ``origin =
-"relay"`` — so it needs no schema change and older zing versions read it too.
+"relay"`` — so it needs no schema change and older ekte versions read it too.
 
 ``base_url_hints`` are written for the reader (they also hold bare hosts, path
 fragments, URL templates and full endpoint URLs); :func:`base_urls` keeps only
@@ -18,9 +18,9 @@ import re
 import unicodedata
 from typing import Any
 
-from zing.knowledge import store
-from zing.knowledge.loader import load_knowledge_base
-from zing.knowledge.schema import ProviderProfile
+from ekte.knowledge import store
+from ekte.knowledge.loader import load_knowledge_base
+from ekte.knowledge.schema import ProviderProfile
 
 RELAY_ORIGIN = "relay"
 MAX_NAME = 64

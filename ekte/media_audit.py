@@ -25,13 +25,13 @@ import struct
 import wave
 from typing import Any
 
-from zing import prompts
-from zing.clients import make_client
-from zing.embed_audit import _finding, _verdict
-from zing.models import Severity, Status, TargetConfig
+from ekte import prompts
+from ekte.clients import make_client
+from ekte.embed_audit import _finding, _verdict
+from ekte.models import Severity, Status, TargetConfig
 
 # Two clearly-different prompts for the image distinctness probe
-# (zing/prompts/en.json).
+# (ekte/prompts/en.json).
 _IMG_PROMPT_A = prompts.text("image.prompt_a")
 _IMG_PROMPT_B = prompts.text("image.prompt_b")
 

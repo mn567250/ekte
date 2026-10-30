@@ -1,18 +1,18 @@
-# Example zing config. Copy to ./zing.yaml and edit.
-#   zing check -c zing.yaml
-#   zing compare -c zing.yaml --suite deep
+# Example ekte config. Copy to ./ekte.yaml and edit.
+#   ekte check -c ekte.yaml
+#   ekte compare -c ekte.yaml --suite deep
 
 target:
   name: my-relay
   base_url: https://relay.example.com/v1
-  api_key: env:ZING_API_KEY          # env:VAR | file:/path | raw literal
+  api_key: env:EKTE_API_KEY          # env:VAR | file:/path | raw literal
   model: gpt-4o
   declared_provider: openai          # optional; inferred from model id otherwise
   timeout_sec: 60                    # base HTTP timeout; grows with prompt and output size
   max_request_sec: 900               # hard cap per request (seconds)
   headers: {}                        # extra HTTP headers if the relay needs them
 
-# Trusted baseline for `zing compare` (an endpoint you trust to be genuine).
+# Trusted baseline for `ekte compare` (an endpoint you trust to be genuine).
 baseline:
   name: openai-official
   base_url: https://api.openai.com/v1

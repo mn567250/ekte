@@ -8,17 +8,17 @@ import json
 import httpx
 import pytest
 
-from zing.config import AuditOptions
-from zing.detectors.base import select_detectors
-from zing.detectors.rerank_performance import (
+from ekte.config import AuditOptions
+from ekte.detectors.base import select_detectors
+from ekte.detectors.rerank_performance import (
     DOCS_PHASE,
     FEW,
     MANY,
     RerankPerformanceDetector,
     _fine,
 )
-from zing.models import DetectorResult, Dimension, RequestRecord, Status, TargetConfig
-from zing.runner import run_audit
+from ekte.models import DetectorResult, Dimension, RequestRecord, Status, TargetConfig
+from ekte.runner import run_audit
 
 BASE = "https://relay.rerank.test/v1"
 MODEL = "rerank-test"
@@ -55,10 +55,10 @@ class RerankServer:
 @pytest.fixture
 def serve(monkeypatch):
     def install(server: RerankServer) -> RerankServer:
-        from zing.clients import make_client as real
+        from ekte.clients import make_client as real
 
         monkeypatch.setattr(
-            "zing.runner.make_client", lambda config, **_: real(config, transport=server.transport)
+            "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport)
         )
         return server
 
@@ -86,7 +86,7 @@ def test_rerank_probe_is_selected_on_the_rerank_surface_only():
 
 
 def test_rerank_probe_gating_matches_the_chat_probe():
-    from zing.detectors.performance import PerformanceDetector
+    from ekte.detectors.performance import PerformanceDetector
 
     for suite in ("smoke", "standard", "deep", "full", "custom"):
         for base in (False, True):
@@ -197,7 +197,7 @@ def test_document_scaling_classification_on_given_timings():
 
 
 def _findings(records: list[RequestRecord], docs: dict[int, int] | None = None):
-    from zing.perf import summarize_endpoint
+    from ekte.perf import summarize_endpoint
 
     det = RerankPerformanceDetector()
     det._docs = docs or {}

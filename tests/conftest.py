@@ -3,7 +3,7 @@
 Tests never touch the network. We inject an ``httpx.MockTransport`` into the real
 :class:`OpenAICompatibleClient`, so the client, SSE parsing, and detectors all run
 against deterministic, scenario-driven responses. The :class:`MockServer` exposes
-knobs to reproduce the divergences zing hunts for: model downgrade, context
+knobs to reproduce the divergences ekte hunts for: model downgrade, context
 truncation, fake streaming, missing/inflated usage, tool calls, and JSON mode.
 """
 
@@ -13,14 +13,14 @@ from collections.abc import Iterator
 
 import pytest
 
+from ekte.clients import OpenAICompatibleClient
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.knowledge import load_knowledge_base
+from ekte.models import TargetConfig
 from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer  # noqa: F401
-from zing.clients import OpenAICompatibleClient
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.knowledge import load_knowledge_base
-from zing.models import TargetConfig
 
-# per-step results of the a11y suite (ZING_A11Y_RESULTS); registered here so
+# per-step results of the a11y suite (EKTE_A11Y_RESULTS); registered here so
 # the pytest-xdist controller loads it too
 pytest_plugins = ["tests.a11y.results"]
 
@@ -36,15 +36,15 @@ def mock_server() -> MockServer:
 
 @pytest.fixture(scope="session", autouse=True)
 def _isolated_data_dir(tmp_path_factory):
-    """Keep every test away from the developer's real ~/.zing (history,
+    """Keep every test away from the developer's real ~/.ekte (history,
     watches and the user knowledge base in kb.db). Tests that need their own
-    directory still monkeypatch ZING_DATA_DIR per test."""
+    directory still monkeypatch EKTE_DATA_DIR per test."""
     import os
 
-    saved = {k: os.environ.get(k) for k in ("ZING_DATA_DIR", "ZING_KB_DIR", "ZING_NO_USER_KB")}
-    os.environ["ZING_DATA_DIR"] = str(tmp_path_factory.mktemp("zing-data"))
-    os.environ.pop("ZING_KB_DIR", None)
-    os.environ.pop("ZING_NO_USER_KB", None)
+    saved = {k: os.environ.get(k) for k in ("EKTE_DATA_DIR", "EKTE_KB_DIR", "EKTE_NO_USER_KB")}
+    os.environ["EKTE_DATA_DIR"] = str(tmp_path_factory.mktemp("ekte-data"))
+    os.environ.pop("EKTE_KB_DIR", None)
+    os.environ.pop("EKTE_NO_USER_KB", None)
     yield
     for k, v in saved.items():
         if v is None:
@@ -100,12 +100,12 @@ async def audit_context(
 @pytest.fixture(autouse=True)
 def _master_key(monkeypatch):
     """Each test starts with a fresh master key held in memory (as after the
-    user entered it), and ZING_SECRET_KEY unset. Tests of the locked or
+    user entered it), and EKTE_SECRET_KEY unset. Tests of the locked or
     first-run states call ``vault.reset_state()`` themselves."""
-    monkeypatch.delenv("ZING_SECRET_KEY", raising=False)
+    monkeypatch.delenv("EKTE_SECRET_KEY", raising=False)
     try:
-        from zing import secretbox
-        from zing.web.masterkey import vault
+        from ekte import secretbox
+        from ekte.web.masterkey import vault
     except ImportError:  # pragma: no cover - the web extra is not installed
         yield
         return

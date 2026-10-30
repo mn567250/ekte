@@ -8,7 +8,7 @@ Three tables live here, and only here:
 - :data:`PAGES`: page id -> URL path of every page the suite tests
   (``harness.PAGES`` is this dict).
 - :data:`TEST_PAGES`: tests that open a fixed page without a ``page_id``
-  parameter (the History-only files, the flows), so ``ZING_A11Y_PAGES`` can
+  parameter (the History-only files, the flows), so ``EKTE_A11Y_PAGES`` can
   deselect them. Tests parametrised by ``page_id`` (or by a ``state`` such as
   ``history-charts``) need no entry; tests that cover every page at once
   (consistent navigation, page titles, …) have none on purpose and always run.
@@ -38,7 +38,7 @@ PAGES: dict[str, str] = {
 }
 
 # pytest selection (tests/a11y/conftest.py)
-PAGES_ENV = "ZING_A11Y_PAGES"
+PAGES_ENV = "EKTE_A11Y_PAGES"
 
 # Tests without a page_id parameter that open one fixed page (or a few):
 # "<file>" for a whole file, "<file>::<test>" for one test.
@@ -58,7 +58,7 @@ TEST_PAGES: dict[str, tuple[str, ...]] = {
 
 
 def parse_pages(raw: str) -> frozenset[str] | None:
-    """``ZING_A11Y_PAGES`` -> the selected page ids; None = no selection (all).
+    """``EKTE_A11Y_PAGES`` -> the selected page ids; None = no selection (all).
 
     Accepts a comma list of :data:`PAGES` ids, or ``all``; empty means all.
     Raises ValueError for an unknown id."""
@@ -106,8 +106,8 @@ NONE: tuple[str, ...] = ()  # no page: the change cannot affect the UI
 
 # Rules are tried in order; the FIRST matching pattern decides. Patterns are
 # repository-relative globs: * stays within a path segment, ** spans segments.
-_V2 = "zing/web/static/v2/"
-_ST = "zing/web/static/"
+_V2 = "ekte/web/static/v2/"
+_ST = "ekte/web/static/"
 RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # -- web UI v2 pages and the assets each loads (<script>/<link> tags) --
     (_V2 + "index.html", ("audit",)),
@@ -140,8 +140,8 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "nav.js", ALL),
     (_V2 + "theme.js", ALL),
     (_V2 + "tokens.css", ALL),
-    (_V2 + "zing.css", ALL),
-    # -- assets shared with the classic UI (zing/web/static/*.js) --
+    (_V2 + "ekte.css", ALL),
+    # -- assets shared with the classic UI (ekte/web/static/*.js) --
     (_ST + "perf.js", ("audit", "history")),
     (_ST + "secretfield.js", ("audit", "monitors")),
     (_ST + "i18n.js", ALL),
@@ -157,52 +157,52 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_ST + "watches.html", NONE),
     # -- server side --
     (
-        "zing/web/history.py",
+        "ekte/web/history.py",
         ("audit", "history", "monitors", "analytics"),
     ),  # report view, history list, monitor from history, the analytics queries
-    ("zing/web/analytics.py", ("analytics",)),  # the /api/analytics/* endpoints
-    ("zing/web/analytics_store.py", ("analytics",)),
-    ("zing/web/jobs.py", ("audit", "monitors")),  # running audits (the Running tabs)
-    ("zing/web/watches.py", ("history", "monitors")),  # "schedule as monitor" on History
-    ("zing/web/masterkey.py", ("monitors",)),
-    ("zing/web/*.py", ALL),  # server, security, caching, __init__: every page
+    ("ekte/web/analytics.py", ("analytics",)),  # the /api/analytics/* endpoints
+    ("ekte/web/analytics_store.py", ("analytics",)),
+    ("ekte/web/jobs.py", ("audit", "monitors")),  # running audits (the Running tabs)
+    ("ekte/web/watches.py", ("history", "monitors")),  # "schedule as monitor" on History
+    ("ekte/web/masterkey.py", ("monitors",)),
+    ("ekte/web/*.py", ALL),  # server, security, caching, __init__: every page
     # the knowledge base: the Knowledge page lists it, the relay configuration
     # of the audit page picks providers and models from it
-    ("zing/knowledge/**", ("audit", "kb")),
+    ("ekte/knowledge/**", ("audit", "kb")),
     # -- the audit pipeline: the audit flow (test_flows.py) runs a real audit
     # against a fake relay and renders its report; the report export is on
     # the audit and History pages. tests/test_a11y_pages.py checks that every
     # module the server and the runner import has a rule here --
-    ("zing/report/**", ("audit", "history")),
-    ("zing/detectors/**", ("audit",)),
-    ("zing/clients/**", ("audit",)),
-    ("zing/judge/**", ("audit",)),
-    ("zing/perf/**", ("audit",)),
-    ("zing/prompts/**", ("audit",)),
-    ("zing/utils/**", ("audit",)),
-    ("zing/runner.py", ("audit",)),
-    ("zing/scoring.py", ("audit",)),
-    ("zing/config.py", ("audit",)),
-    ("zing/context.py", ("audit",)),
-    ("zing/models.py", ("audit",)),
-    ("zing/embed_audit.py", ("audit",)),  # the embedding check (the audit page's surface selector)
-    ("zing/notify.py", ("monitors",)),  # monitor webhooks
-    ("zing/secretbox.py", ("monitors",)),  # the monitors' stored keys
-    ("zing/datadir.py", ("audit", "history", "monitors")),  # where history and monitors live
-    ("zing/__init__.py", ALL),  # imported by the server (version)
+    ("ekte/report/**", ("audit", "history")),
+    ("ekte/detectors/**", ("audit",)),
+    ("ekte/clients/**", ("audit",)),
+    ("ekte/judge/**", ("audit",)),
+    ("ekte/perf/**", ("audit",)),
+    ("ekte/prompts/**", ("audit",)),
+    ("ekte/utils/**", ("audit",)),
+    ("ekte/runner.py", ("audit",)),
+    ("ekte/scoring.py", ("audit",)),
+    ("ekte/config.py", ("audit",)),
+    ("ekte/context.py", ("audit",)),
+    ("ekte/models.py", ("audit",)),
+    ("ekte/embed_audit.py", ("audit",)),  # the embedding check (the audit page's surface selector)
+    ("ekte/notify.py", ("monitors",)),  # monitor webhooks
+    ("ekte/secretbox.py", ("monitors",)),  # the monitors' stored keys
+    ("ekte/datadir.py", ("audit", "history", "monitors")),  # where history and monitors live
+    ("ekte/__init__.py", ALL),  # imported by the server (version)
     # -- UI strings: fragments are merged into one table per language and
     # re-declare shared keys ("Cancel", "API key", …), so a fragment can change
     # any page; only fragments whose keys are used by known pages alone are
     # narrowed (tests/test_a11y_pages.py checks this against the sources) --
-    ("zing/i18n/locales/fragments/v2-form-errors/*", ("audit",)),
-    ("zing/i18n/locales/fragments/v2-all-dimensions/*", ("audit", "history")),
-    ("zing/i18n/locales/fragments/v2-download/*", ("audit", "history")),
-    ("zing/i18n/locales/fragments/v2-exec-log/*", ("audit", "history")),
-    ("zing/i18n/locales/fragments/v2-scoring/*", ("audit", "history", "analytics")),
-    ("zing/i18n/locales/fragments/v2-monitors-filter/*", ("monitors",)),
-    ("zing/i18n/locales/fragments/v2-notices/*", ("audit", "history", "monitors", "analytics", "kb")),
+    ("ekte/i18n/locales/fragments/v2-form-errors/*", ("audit",)),
+    ("ekte/i18n/locales/fragments/v2-all-dimensions/*", ("audit", "history")),
+    ("ekte/i18n/locales/fragments/v2-download/*", ("audit", "history")),
+    ("ekte/i18n/locales/fragments/v2-exec-log/*", ("audit", "history")),
+    ("ekte/i18n/locales/fragments/v2-scoring/*", ("audit", "history", "analytics")),
+    ("ekte/i18n/locales/fragments/v2-monitors-filter/*", ("monitors",)),
+    ("ekte/i18n/locales/fragments/v2-notices/*", ("audit", "history", "monitors", "analytics", "kb")),
     # v2-analytics also holds the navigation label "Analytics", shown on every page
-    ("zing/i18n/**", ALL),
+    ("ekte/i18n/**", ALL),
     # -- the suite itself --
     ("tests/a11y/README.md", NONE),
     ("tests/a11y/llm_review.py", NONE),  # advisory review, not part of the suite
@@ -221,7 +221,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 # A changed file under these prefixes that no rule matches runs everything.
-FAIL_SAFE = ("zing/web/", "zing/i18n/", "tests/a11y/")
+FAIL_SAFE = ("ekte/web/", "ekte/i18n/", "tests/a11y/")
 
 
 @cache
@@ -329,7 +329,7 @@ def matrix(scope: Scope, full_jobs: int = FULL_JOBS) -> list[dict[str, str]]:
     """GitHub Actions matrix entries {shard, pages} for an a11y run of ``scope``.
 
     Every job runs the same page selection and takes its round-robin share
-    (``ZING_A11Y_SHARD=k/n``), which balances jobs better than splitting by
+    (``EKTE_A11Y_SHARD=k/n``), which balances jobs better than splitting by
     page (one page can be a quarter of the suite)."""
     if not scope.pages:
         return []

@@ -1,6 +1,6 @@
 """Redaction helpers.
 
-zing handles real API keys and provider responses. Reports and logs must never
+ekte handles real API keys and provider responses. Reports and logs must never
 leak secrets, so every value that crosses an output boundary is scrubbed here.
 
 Two sentinels are used so a redacted report can still carry meaning:

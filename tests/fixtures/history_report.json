@@ -3,7 +3,7 @@
  "mode": "compare",
  "generated_at": "2026-10-12T08:11:16.317599+00:00",
  "started_at": "2026-10-12T08:11:15.300755+00:00",
- "command": "zing compare --suite standard",
+ "command": "ekte compare --suite standard",
  "suite": "standard",
  "dimensions_selected": null,
  "stream_mode": "stream",
@@ -35,7 +35,7 @@
   "risk_level": "medium",
   "headline": "Some behavior diverges from the claimed model — investigate. (confidence: medium)",
   "confidence": "medium",
-  "summary": "Overall health score 73.3/100. Findings: 1 high, 4 medium. zing reports black-box evidence of divergence and risk, not proof of fraud.",
+  "summary": "Overall health score 73.3/100. Findings: 1 high, 4 medium. ekte reports black-box evidence of divergence and risk, not proof of fraud.",
   "key_findings": [
    "Endpoint is not HTTPS",
    "Claimed tool-calling not delivered",
@@ -1644,15 +1644,15 @@
   ],
   "notes": [
    "Some requests were served fully or partly from a cache and are left out of the statistics.",
-   "Local token counts are estimates (about ±15-20%) from a built-in heuristic; zing never downloads a tokenizer.",
+   "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.",
    "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests."
   ]
  },
  "judge_used": false,
  "judge_model": null,
  "notes": [
-  "zing performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.",
-  "Use `zing compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.",
+  "ekte performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.",
+  "Use `ekte compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.",
   "Do not publish a report that names a vendor without reviewing sample size, cost, and local law/policy."
  ],
  "warnings": [],
