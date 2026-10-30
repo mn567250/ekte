@@ -28,6 +28,14 @@ stored in a watch — to your network.
 | `EKTE_NO_USER_KB` | unset | `1` ignores the knowledge-base entries you added in the UI (`kb.db`). |
 | `EKTE_ALLOWED_HOSTS` | unset | Comma-separated extra host names the UI answers to, if you reach it under another name than `localhost`/`127.0.0.1`. |
 
+**Coming from the zing image.** Rename `-e ZING_*` options to `EKTE_*`. ekte
+still reads a `ZING_*` variable whose `EKTE_*` name is unset, but the image sets
+`EKTE_CONTAINER`, `EKTE_HOST`, `EKTE_PORT` and `EKTE_DATA_DIR` itself, so an old
+`ZING_HOST`, `ZING_PORT` or `ZING_DATA_DIR` has no effect in the container. The
+data volume stays at `/data` and the unprivileged user keeps uid 10001, so an
+existing `zing-data` volume can be mounted as it is
+(`-v zing-data:/data`).
+
 ## What protects the UI
 
 - **Host allowlist.** Requests whose `Host` header is not `localhost`,
