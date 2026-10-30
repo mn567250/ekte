@@ -5,10 +5,10 @@
   "en": "EN 301 549 V3.2.1, chapter 9",
   "wcag": "WCAG 2.1 level A + AA"
  },
- "generated_at": "2026-10-27T20:33:08+00:00",
- "tests_run_at": "2026-10-27T20:33:00+00:00",
+ "generated_at": "2026-10-30T23:36:19+00:00",
+ "tests_run_at": "2026-10-30T23:36:13+00:00",
  "ekte_version": "0.11.0",
- "commit": "e0db35ee71a4",
+ "commit": "4d03865e23b8",
  "axe_version": "4.13.0",
  "tested": {
   "languages": [
