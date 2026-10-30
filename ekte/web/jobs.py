@@ -28,19 +28,19 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-import os
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from typing import Any, TypeVar
 
+from ekte import legacy
 from ekte.perf.trend import attach_trends
 from ekte.utils.net import is_loopback_host, url_host
 
 _T = TypeVar("_T")
 
 # How many audits may run at once across all relays.
-MAX_PARALLEL = max(1, int(os.environ.get("EKTE_MAX_PARALLEL_AUDITS", "4") or 4))
+MAX_PARALLEL = max(1, int(legacy.getenv("EKTE_MAX_PARALLEL_AUDITS", "4") or 4))
 
 # Finished jobs are kept this long (and at most this many) for re-attaching pages.
 _KEEP_FINISHED_SEC = 15 * 60

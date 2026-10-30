@@ -25,6 +25,9 @@
 
   var CRED_ID = "ekte-master-key";
   var CRED_NAME = "ekte master key";
+  // The id a password manager saved the key under before the rename
+  // (zing -> ekte); still accepted when the saved key is filled in.
+  var LEGACY_CRED_ID = "zing-master-key";
 
   function T(zh, en) {
     return typeof window.T === "function" ? window.T(zh, en) : en;
@@ -79,7 +82,7 @@
         return Promise.resolve("");
       }
       return navigator.credentials.get({ password: true, mediation: "optional" }).then(function (c) {
-        return c && c.id === CRED_ID && c.password ? c.password : "";
+        return c && (c.id === CRED_ID || c.id === LEGACY_CRED_ID) && c.password ? c.password : "";
       }, function () { return ""; });
     } catch (e) {
       return Promise.resolve("");

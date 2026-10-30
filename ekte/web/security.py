@@ -33,6 +33,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from ekte import legacy
+
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
 _UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
@@ -70,8 +72,8 @@ def resolve_bind(host: str | None, port: int | None) -> tuple[str, int]:
     ``127.0.0.1:8000``. A non-loopback host is refused unless
     ``EKTE_CONTAINER=1`` is set and a container runtime is detected.
     """
-    chosen = (host or os.environ.get("EKTE_HOST") or "127.0.0.1").strip()
-    raw_port = port if port is not None else os.environ.get("EKTE_PORT") or 8000
+    chosen = (host or legacy.getenv("EKTE_HOST") or "127.0.0.1").strip()
+    raw_port = port if port is not None else legacy.getenv("EKTE_PORT") or 8000
     try:
         chosen_port = int(raw_port)
     except (TypeError, ValueError) as exc:
@@ -80,7 +82,7 @@ def resolve_bind(host: str | None, port: int | None) -> tuple[str, int]:
         raise BindError(f"invalid port: {chosen_port}")
     if chosen.strip("[]") in LOOPBACK_HOSTS:
         return chosen.strip("[]"), chosen_port
-    if not _truthy(os.environ.get("EKTE_CONTAINER")):
+    if not _truthy(legacy.getenv("EKTE_CONTAINER")):
         raise BindError(
             f"refusing to bind {chosen}: ekte serve listens on loopback only "
             "(127.0.0.1, ::1, localhost). Inside a container, set EKTE_CONTAINER=1 "
@@ -97,7 +99,7 @@ def resolve_bind(host: str | None, port: int | None) -> tuple[str, int]:
 def allowed_hosts() -> frozenset[str]:
     extra = {
         h.strip().lower().strip("[]")
-        for h in (os.environ.get("EKTE_ALLOWED_HOSTS") or "").split(",")
+        for h in (legacy.getenv("EKTE_ALLOWED_HOSTS") or "").split(",")
         if h.strip()
     }
     return LOOPBACK_HOSTS | extra

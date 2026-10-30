@@ -36,7 +36,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import threading
 from collections import OrderedDict
 from functools import lru_cache
@@ -44,6 +43,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
+from ekte import legacy
 from ekte.knowledge.schema import (
     FingerprintProbe,
     KnowledgeBase,
@@ -94,7 +94,7 @@ def user_kb_enabled(include_user: bool | None = None) -> bool:
     """Whether kb.db entries apply: an explicit choice, else not ``EKTE_NO_USER_KB``."""
     if include_user is not None:
         return include_user
-    return (os.environ.get("EKTE_NO_USER_KB") or "").strip().lower() not in ("1", "true", "yes", "on")
+    return (legacy.getenv("EKTE_NO_USER_KB") or "").strip().lower() not in ("1", "true", "yes", "on")
 
 
 def entry_source(entry: dict[str, Any]) -> str:
@@ -284,7 +284,7 @@ def load_knowledge_base(
     result is the shared instance, which the caller must treat as read-only.
     """
     dirs: list[Path] = list(extra_dirs or [])
-    env_dir = os.environ.get("EKTE_KB_DIR")
+    env_dir = legacy.getenv("EKTE_KB_DIR")
     if env_dir:
         dirs.append(Path(env_dir))
     use_user = user_kb_enabled(include_user)

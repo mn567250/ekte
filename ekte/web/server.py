@@ -120,6 +120,9 @@ _V2 = _STATIC / "v2"
 # `?ui=v1|v2` on any of these pages picks a UI and remembers it in a cookie;
 # with the cookie set to v2, classic paths redirect to their v2 counterpart.
 _UI_COOKIE = "ekte_ui"
+# The same choice made before the rename (zing -> ekte); read while ekte_ui is
+# unset, never written or deleted (zing may still serve this host).
+_LEGACY_UI_COOKIE = "zing_ui"
 _UI_PAGES: dict[str, tuple[str, str]] = {
     "/": ("index.html", "/v2/"),
     "/history": ("history.html", "/v2/history"),
@@ -174,7 +177,8 @@ def _remember_ui(resp: Response, choice: str | None) -> Response:
     if choice == "v2":
         resp.set_cookie(_UI_COOKIE, "v2", max_age=365 * 24 * 3600, samesite="lax")
     elif choice == "v1":
-        resp.delete_cookie(_UI_COOKIE)
+        # kept as "v1" rather than deleted, so a legacy zing_ui=v2 no longer applies
+        resp.set_cookie(_UI_COOKIE, "v1", max_age=365 * 24 * 3600, samesite="lax")
     return resp
 
 
@@ -182,7 +186,9 @@ def _classic_page(request: Request, path: str) -> Response:
     """A classic page, or a redirect to its v2 counterpart when v2 is chosen."""
     file, v2_path = _UI_PAGES[path]
     ui = request.query_params.get("ui")
-    choice = ui if ui in ("v1", "v2") else request.cookies.get(_UI_COOKIE)
+    choice = ui if ui in ("v1", "v2") else (
+        request.cookies.get(_UI_COOKIE) or request.cookies.get(_LEGACY_UI_COOKIE)
+    )
     resp: Response
     if choice == "v2":
         resp = RedirectResponse(v2_path, status_code=307)
@@ -858,13 +864,14 @@ def create_app() -> FastAPI:
     @app.get("/locales.js")
     async def locales_js(request: Request) -> Any:
         # Translation data (ekte/i18n/locales/*.json) + the lookup logic: one
-        # language's for ?lang= or the ekte_lang cookie lang.js writes, else
-        # every language (built and gzipped once, revalidated by ETag; see
-        # encoded_response).
+        # language's for ?lang= or the ekte_lang cookie lang.js writes (the
+        # zing_lang cookie of an install from before the rename until lang.js
+        # has written ekte_lang), else every language (built and gzipped once,
+        # revalidated by ETag; see encoded_response).
         from ekte.i18n import locales_encoded
 
         q = request.query_params.get("lang")
-        lang = q if q is not None else request.cookies.get("ekte_lang")
+        lang = q if q is not None else (request.cookies.get("ekte_lang") or request.cookies.get("zing_lang"))
         # A (re)build serializes and compresses up to ~800 KiB: off the event loop.
         body, etag, gz = await asyncio.to_thread(locales_encoded, lang)
         headers = {"Cache-Control": "no-cache"}

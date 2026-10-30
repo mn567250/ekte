@@ -354,12 +354,33 @@ def test_ui_switch_is_remembered_in_a_cookie(client):
     # the classic Tools page has no v2 page of its own: the audit page's surface selector
     r = client.get("/tools", follow_redirects=False)
     assert r.status_code == 307 and r.headers["location"] == "/v2/?surface=embedding"
-    # ?ui=v1 on a v2 page: back to classic and forget v2
+    # ?ui=v1 on a v2 page: back to classic, remembered as v1
     r = client.get("/v2/watches?ui=v1", follow_redirects=False)
     assert r.status_code == 307 and r.headers["location"] == "/watches"
-    assert 'ekte_ui=""' in r.headers["set-cookie"] or "Max-Age=0" in r.headers["set-cookie"]
+    assert "ekte_ui=v1" in r.headers["set-cookie"]
     client.cookies.clear()
     assert client.get("/watches", follow_redirects=False).status_code == 200
+
+
+def test_ui_choice_made_before_the_rename_still_applies(client):
+    # zing_ui=v2 from an install that still ran as zing: v2 until ekte_ui is set
+    client.cookies.set("zing_ui", "v2")
+    r = client.get("/history", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == "/v2/history"
+    # choosing v1 writes ekte_ui=v1, which wins over the legacy cookie (left as is)
+    r = client.get("/v2/history?ui=v1", follow_redirects=False)
+    assert "ekte_ui=v1" in r.headers["set-cookie"] and "zing_ui" not in r.headers["set-cookie"]
+    client.cookies.set("ekte_ui", "v1")
+    assert client.get("/history", follow_redirects=False).status_code == 200
+    client.cookies.clear()
+
+
+def test_language_cookie_made_before_the_rename_still_applies(client):
+    client.cookies.set("zing_lang", "de")
+    legacy = client.get("/locales.js").text
+    client.cookies.clear()
+    assert legacy == client.get("/locales.js?lang=de").text
+    assert len(legacy) < len(client.get("/locales.js").text)  # one language, not all
 
 
 def test_classic_pages_link_to_the_v2_ui(client):

@@ -1,7 +1,9 @@
 """The local data directory and its SQLite stores, shared by the CLI and `ekte serve`.
 
 Everything ekte persists locally — audit history, scheduled watches, the user's
-own knowledge-base entries — lives in ``$EKTE_DATA_DIR`` (default ``~/.ekte``).
+own knowledge-base entries — lives in ``$EKTE_DATA_DIR`` (default ``~/.ekte``;
+on the first run after the rename an existing ``~/.zing`` is copied there, see
+:mod:`ekte.legacy`).
 The watch store holds API keys (encrypted, see :mod:`ekte.secretbox`; the
 master key itself is never stored here), so the directory is still created
 owner-only (``0700``) and every database file (plus SQLite's
@@ -20,12 +22,24 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+from ekte import legacy
+
 _DIR_MODE = 0o700
 _FILE_MODE = 0o600
 
 
+_migration_checked: set[Path] = set()
+
+
 def data_dir() -> Path:
-    return Path(os.environ.get("EKTE_DATA_DIR") or (Path.home() / ".ekte"))
+    explicit = legacy.getenv("EKTE_DATA_DIR")
+    if explicit:
+        return Path(explicit)
+    path = Path.home() / ".ekte"
+    if path not in _migration_checked:
+        _migration_checked.add(path)
+        legacy.migrate_data_dir(path, Path.home() / legacy.LEGACY_DIR_NAME)
+    return path
 
 
 def db_path(name: str) -> Path:
@@ -41,7 +55,7 @@ def ensure_data_dir() -> Path:
         path.mkdir(parents=True, mode=_DIR_MODE, exist_ok=True)
         with contextlib.suppress(OSError):
             path.chmod(_DIR_MODE)
-    elif not os.environ.get("EKTE_DATA_DIR"):
+    elif not legacy.getenv("EKTE_DATA_DIR"):
         with contextlib.suppress(OSError):
             path.chmod(_DIR_MODE)
     return path

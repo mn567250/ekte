@@ -32,12 +32,11 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
-import os
 import threading
 from pathlib import Path
 from typing import Any
 
-from ekte import datadir
+from ekte import datadir, legacy
 
 PREFIX = "enc:v1:"
 _REFERENCES = ("env:", "file:")
@@ -189,7 +188,7 @@ def env_box() -> SecretBox | None:
     """The box from ``EKTE_SECRET_KEY``, or None when it is unset."""
     from ekte.config import resolve_secret
 
-    raw = os.environ.get(ENV, "").strip()
+    raw = legacy.getenv(ENV, "").strip()
     if not raw:
         return None
     try:
@@ -204,7 +203,7 @@ def env_box() -> SecretBox | None:
 
 def env_in_data_dir() -> bool:
     """True when ``EKTE_SECRET_KEY=file:`` points inside the data directory."""
-    raw = os.environ.get(ENV, "").strip()
+    raw = legacy.getenv(ENV, "").strip()
     if not raw.startswith("file:"):
         return False
     try:

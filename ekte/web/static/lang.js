@@ -75,6 +75,24 @@
 (function () {
   "use strict";
 
+  // Settings saved before the rename (zing -> ekte) live under "zing." keys
+  // (language, theme, filters, ...). Copied once to their "ekte." names, here
+  // because this script runs first on every page; the "zing." keys stay, as
+  // zing may still serve this origin.
+  try {
+    var ls = window.localStorage;
+    if (ls.getItem("ekte.migrated") === null) {
+      for (var i = ls.length - 1; i >= 0; i--) {
+        var old = ls.key(i);
+        if (old && old.indexOf("zing.") === 0 && ls.getItem("ekte." + old.slice(5)) === null)
+          ls.setItem("ekte." + old.slice(5), ls.getItem(old));
+      }
+      ls.setItem("ekte.migrated", "1");
+    }
+  } catch (e) {
+    /* storage unavailable: nothing to carry over */
+  }
+
   var KEY = "ekte.lang";
   var COOKIE = "ekte_lang"; // read by the server for /locales.js
   var RELOAD = "ekte.lang.reload"; // sessionStorage: language reloaded for

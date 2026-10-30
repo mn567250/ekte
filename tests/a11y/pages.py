@@ -189,6 +189,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ekte/notify.py", ("monitors",)),  # monitor webhooks
     ("ekte/secretbox.py", ("monitors",)),  # the monitors' stored keys
     ("ekte/datadir.py", ("audit", "history", "monitors")),  # where history and monitors live
+    ("ekte/legacy.py", ("audit", "history", "monitors")),  # ZING_* settings, ~/.zing migration
     ("ekte/__init__.py", ALL),  # imported by the server (version)
     # -- UI strings: fragments are merged into one table per language and
     # re-declare shared keys ("Cancel", "API key", …), so a fragment can change
