@@ -4,8 +4,6 @@
   - link "ekte":
     - /url: /v2/
     - text: ekte.
-  - link "Klassische Oberfläche":
-    - /url: "?ui=v1"
   - combobox "Design":
     - option "Automatisch"
     - option "Hell" [selected]

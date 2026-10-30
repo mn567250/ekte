@@ -4,8 +4,6 @@
   - link "ekte":
     - /url: /v2/
     - text: ekte.
-  - link "经典界面":
-    - /url: "?ui=v1"
   - combobox "主题":
     - option "跟随系统"
     - option "浅色" [selected]

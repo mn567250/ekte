@@ -4,8 +4,6 @@
   - link "ekte":
     - /url: /v2/
     - text: ekte.
-  - link "Interface classique":
-    - /url: "?ui=v1"
   - combobox "Thème":
     - option "Automatique"
     - option "Clair" [selected]
