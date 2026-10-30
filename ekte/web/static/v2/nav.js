@@ -58,7 +58,7 @@
     }).join("");
     header.innerHTML =
       '<a class="skip-link" href="#main" data-en="Skip to main content">跳到主要内容</a>' +
-      '<a class="logo" href="/v2/" aria-label="ekte"><span class="b">' + ico("bolt", { size: 16 }) +
+      '<a class="logo" href="/v2/" aria-label="ekte"><span class="b">' + ico("logo", { size: 18 }) +
       "</span><span>ekte<b>.</b></span></a>" +
       '<div class="tail">' +
       '<a class="classic" href="?ui=v1" data-en="Classic UI">经典界面</a>' +

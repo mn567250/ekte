@@ -140,6 +140,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "nav.js", ALL),
     (_V2 + "theme.js", ALL),
     (_V2 + "tokens.css", ALL),
+    (_V2 + "favicon.svg", ALL),
     (_V2 + "ekte.css", ALL),
     # -- assets shared with the classic UI (ekte/web/static/*.js) --
     (_ST + "perf.js", ("audit", "history")),

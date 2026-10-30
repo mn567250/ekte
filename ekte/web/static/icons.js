@@ -25,7 +25,7 @@
   // Inner markup only (paths/shapes); the <svg> wrapper is assembled in ekteIcon
   // so width/height/class can be injected consistently. currentColor everywhere.
   var PATHS = {
-    // bolt — lightning logo / run energy
+    // bolt — run an audit
     bolt: '<path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13l0-8z"/>',
     // terminal — developer console
     terminal: '<path d="M4 17l6-6-6-6"/><path d="M12 19h8"/>',
@@ -125,6 +125,11 @@
       '<path d="M6.6 6.6C3.9 8.3 2.5 12 2.5 12s3.5 6.5 9.5 6.5a9 9 0 0 0 5.4-1.6"/>' +
       '<path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/>',
   };
+  // logo — the ekte mark: the standard check above inside an open hexagon
+  // ("genuine, verified"); built from PATHS.check so the two never drift apart.
+  PATHS.logo =
+    '<path d="M16.6 5.6L12 3 4.2 7.5v9L12 21l7.8-4.5V13"/>' +
+    '<g transform="translate(2.4 -1.2)">' + PATHS.check + "</g>";
 
   var ICONS = {};
   var SVG_OPEN_TPL =

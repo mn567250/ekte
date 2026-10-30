@@ -864,3 +864,22 @@ async def test_audit_knowledge_base_load_does_not_block_the_loop(monkeypatch):
         release.set()
     with pytest.raises(RuntimeError, match="kb stop"):
         await asyncio.wait_for(audit, 5)
+
+
+def test_every_v2_page_has_the_ekte_favicon(client):
+    import xml.dom.minidom
+
+    r = client.get("/v2/static/favicon.svg")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("image/svg+xml")
+    xml.dom.minidom.parseString(r.content)  # a browser shows no icon for invalid XML
+    for page in ("/v2/", "/v2/history", "/v2/watches", "/v2/analytics", "/v2/kb", "/v2/accessibility"):
+        assert re.search(r'<link rel="icon" href="/v2/static/favicon\.svg[^"]*" type="image/svg\+xml"', client.get(page).text), page
+
+
+def test_the_nav_brand_is_the_ekte_logo():
+    from pathlib import Path
+
+    static = Path(__file__).resolve().parents[1] / "ekte" / "web" / "static"
+    assert 'ico("logo"' in (static / "v2" / "nav.js").read_text(encoding="utf-8")
+    icons = (static / "icons.js").read_text(encoding="utf-8")
+    assert "PATHS.logo =" in icons and "PATHS.check" in icons  # the mark reuses the standard check

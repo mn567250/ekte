@@ -76,7 +76,7 @@ main[tabindex="-1"]:focus { outline: none; }
   width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
   background: var(--primary); color: var(--on-primary); box-shadow: 0 8px 22px -10px var(--primary);
 }
-.znav .logo .b .zicon { width: 16px; height: 16px; }
+.znav .logo .b .zicon { width: 18px; height: 18px; }
 .znav .logo b { color: var(--primary); }
 .znav .links {
   display: flex; gap: 4px; margin-left: auto; min-width: 0;
