@@ -790,6 +790,14 @@ einschließlich der Schutzmaßnahmen der Oberfläche.
 Die Composite Action selbst ist `action.yml`, dokumentiert in
 [docs/CI.md](docs/CI.md).
 
+### Dateien Dritter in der Distribution
+
+Die Source Distribution enthält die Tests, aber keine mitgelieferten Dateien Dritter. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) liegt nur im Git-Repository; sie ist aus dem sdist ausgeschlossen (`exclude` unter `[tool.hatch.build.targets.sdist]` in `pyproject.toml`) und war nie Teil des Wheels.
+
+- Tests, die eine ausgeschlossene Datei brauchen, werden mit klarer Begründung übersprungen, wenn sie fehlt; die Barrierefreiheits-Suite läuft in einem Git-Checkout.
+- `NOTICE` listet jede Datei Dritter auf und sagt, ob sie ausgeliefert wird. Eine neue mitgelieferte Datei gehört in die `exclude`-Liste und in `NOTICE`; muss sie ausgeliefert werden, steht in `NOTICE`, dass sie es wird.
+- `scripts/check_dist_contents.py` baut Wheel und sdist (`uv build`) und schlägt fehl, wenn eine ausgeschlossene Datei oder eine Datei, die `NOTICE` als nicht ausgeliefert aufführt, enthalten ist. Der Workflow `.github/workflows/dist.yml` führt es in einem eigenen Job aus.
+
 ## Releases
 
 1. `[Unreleased]` in `CHANGELOG.md` auf die neue Version umstellen und `version`

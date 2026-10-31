@@ -518,6 +518,14 @@ docker run --rm -p 127.0.0.1:8000:8000 -v ekte-data:/data ekte
 
 复合 Action 本身是 `action.yml`，文档见 [docs/CI.md](docs/CI.md)。
 
+### 发行包中的第三方文件
+
+源码发行包（sdist）包含测试，但不包含随附的第三方文件。`tests/a11y/vendor/axe.min.js`（axe-core，MPL-2.0）只在 git 仓库中；它被排除在 sdist 之外（`pyproject.toml` 中 `[tool.hatch.build.targets.sdist]` 下的 `exclude`），也从未属于 wheel。
+
+- 需要被排除文件的测试在文件缺失时会跳过并给出明确原因；请在 git 检出中运行无障碍测试套件。
+- `NOTICE` 列出每个第三方文件并说明是否分发。新增随附文件时，请加入 `exclude` 列表和 `NOTICE`；若必须随包分发，则在 `NOTICE` 中说明。
+- `scripts/check_dist_contents.py` 构建 wheel 和 sdist（`uv build`），若包含被排除的文件或 `NOTICE` 标明不分发的文件则失败。`.github/workflows/dist.yml` 工作流在单独的 job 中运行它。
+
 ## 发布
 
 1. 把 `CHANGELOG.md` 中的 `[Unreleased]` 改为新版本号，并提升 `pyproject.toml` 中的 `version`。

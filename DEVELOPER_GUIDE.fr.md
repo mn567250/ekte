@@ -798,6 +798,14 @@ ce qui protège l'interface.
 L'action composite elle-même est `action.yml`, documentée dans
 [docs/CI.md](docs/CI.md).
 
+### Fichiers tiers dans la distribution
+
+La distribution source contient les tests, mais aucun fichier tiers embarqué. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) n'est que dans le dépôt git ; il est exclu du sdist (`exclude` sous `[tool.hatch.build.targets.sdist]` dans `pyproject.toml`) et n'a jamais fait partie du wheel.
+
+- Les tests qui ont besoin d'un fichier exclu sont ignorés avec un motif clair quand il est absent ; lancez la suite d'accessibilité depuis un checkout git.
+- `NOTICE` liste chaque fichier tiers et indique s'il est distribué. Ajoutez un nouveau fichier embarqué à la liste `exclude` et à `NOTICE`, ou, s'il doit être livré, indiquez-le dans `NOTICE`.
+- `scripts/check_dist_contents.py` construit le wheel et le sdist (`uv build`) et échoue si un fichier exclu, ou un fichier que `NOTICE` donne pour non distribué, est présent. Le workflow `.github/workflows/dist.yml` l'exécute dans un job séparé.
+
 ## Publication des versions
 
 1. Renommez `[Unreleased]` dans `CHANGELOG.md` en la nouvelle version et

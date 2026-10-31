@@ -742,6 +742,14 @@ the UI.
 
 The composite action itself is `action.yml`, documented in [docs/CI.md](docs/CI.md).
 
+### Third-party files in the distribution
+
+The source distribution contains the tests but no vendored third-party files. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) is in the git repository only; it is excluded from the sdist (`exclude` under `[tool.hatch.build.targets.sdist]` in `pyproject.toml`) and was never part of the wheel.
+
+- Tests that need an excluded file skip with a clear reason when it is absent; run the accessibility suite from a git checkout.
+- `NOTICE` lists every third-party file and says whether it is distributed. Add a new vendored file to the `exclude` list and to `NOTICE`, or, if it must ship, state in `NOTICE` that it does.
+- `scripts/check_dist_contents.py` builds the wheel and the sdist (`uv build`) and fails if an excluded file, or a file that `NOTICE` lists as not distributed, is present. The `.github/workflows/dist.yml` workflow runs it in a separate job.
+
 ## Releases
 
 1. Move `[Unreleased]` in `CHANGELOG.md` to the new version and bump `version`

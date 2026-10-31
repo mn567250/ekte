@@ -348,6 +348,8 @@ async opts => {
 def run_axe(page: Page, tags: list[str] | None = None, rules: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Run axe-core on the page; returns the violations (rule, impact, nodes)."""
     if not page.evaluate("() => !!window.axe"):
+        if not AXE.is_file():
+            pytest.skip(f"axe-core not found at {AXE} (not in the source distribution; use a git checkout)")
         page.add_script_tag(path=str(AXE))
     opts: dict[str, Any] = {"resultTypes": ["violations"]}
     if tags:

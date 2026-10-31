@@ -18,6 +18,15 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Changed
+
+- **No vendored third-party files in the source distribution.** The sdist still
+  contains `tests/`, but not `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0);
+  the accessibility tests that need it skip with a clear reason when it is
+  absent. `NOTICE` states what is and is not distributed, and
+  `scripts/check_dist_contents.py` (CI workflow `dist.yml`) fails if an excluded
+  file ships.
+
 ### Added
 
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
