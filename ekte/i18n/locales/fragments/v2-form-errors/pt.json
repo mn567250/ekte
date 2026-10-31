@@ -1,8 +1,8 @@
 {
  "strings": {
-  "Enter the relay URL, e.g. https://relay.example.com/v1.": "Informe a URL do intermediário, p. ex. https://relay.example.com/v1.",
-  "Enter the model to request, e.g. deepseek-chat.": "Informe o modelo solicitado, p. ex. deepseek-chat.",
-  "Enter the baseline URL, or clear the baseline model.": "Informe a URL de referência ou limpe o modelo de referência.",
-  "Enter the baseline model, or clear the baseline URL.": "Informe o modelo de referência ou limpe a URL de referência."
+  "Enter the relay URL, e.g. https://relay.example.com/v1.": "Indique a URL do intermediário, p. ex. https://relay.example.com/v1.",
+  "Enter the model to request, e.g. deepseek-chat.": "Indique o modelo solicitado, p. ex. deepseek-chat.",
+  "Enter the baseline URL, or clear the baseline model.": "Indique a URL de referência ou limpe o modelo de referência.",
+  "Enter the baseline model, or clear the baseline URL.": "Indique o modelo de referência ou limpe a URL de referência."
  }
 }

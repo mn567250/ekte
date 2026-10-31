@@ -2,8 +2,8 @@
  "strings": {
   "1 key moved into memory and was erased from watches.db.": "1 chave foi movida para a memória e apagada de watches.db.",
   "1 key was encrypted into watches.db.": "1 chave foi guardada cifrada em watches.db.",
-  "1 monitor needs its API key again": "1 monitor precisa novamente da sua chave de API",
-  "1 monitor needs its API key again.": "1 monitor precisa novamente da sua chave de API.",
+  "1 monitor needs its API key again": "1 monitor precisa de novo da sua chave de API",
+  "1 monitor needs its API key again.": "1 monitor precisa de novo da sua chave de API.",
   "1 monitor with an encrypted API key waits until you enter it.": "1 monitor com uma chave de API cifrada aguarda até que a introduza.",
   "A master key has to be created or entered first.": "Primeiro é preciso criar ou introduzir uma chave mestra.",
   "API key not stored and lost on restart: delete and add the monitor again.": "Chave de API não guardada e perdida ao reiniciar: elimine o monitor e adicione-o novamente.",
@@ -48,8 +48,8 @@
   "The {n} stored API keys move into the memory of ekte serve and are erased from watches.db; the master key is no longer needed. After a restart of ekte serve you enter them again; their monitors wait until then.": "As {n} chaves de API guardadas passam para a memória do ekte serve e são apagadas de watches.db; a chave mestra deixa de ser necessária. Após reiniciar o ekte serve, introduz-as novamente; os seus monitores aguardam até lá.",
   "{n} keys moved into memory and were erased from watches.db.": "{n} chaves foram movidas para a memória e apagadas de watches.db.",
   "{n} keys were encrypted into watches.db.": "{n} chaves foram guardadas cifradas em watches.db.",
-  "{n} monitors need their API key again": "{n} monitores precisam novamente da sua chave de API",
-  "{n} monitors need their API key again.": "{n} monitores precisam novamente da sua chave de API.",
+  "{n} monitors need their API key again": "{n} monitores precisam de novo da sua chave de API",
+  "{n} monitors need their API key again.": "{n} monitores precisam de novo da sua chave de API.",
   "{n} monitors with an encrypted API key wait until you enter it.": "{n} monitores com uma chave de API cifrada aguardam até que a introduza."
  }
 }

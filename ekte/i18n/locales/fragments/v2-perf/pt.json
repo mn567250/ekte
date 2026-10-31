@@ -2,7 +2,7 @@
  "strings": {
   "probe": "sonda",
   "audit": "auditoria",
-  "{metric} ({unit}) over time: {n} requests": "{metric} ({unit}) ao longo do tempo: {n} requisições",
+  "{metric} ({unit}) over time: {n} requests": "{metric} ({unit}) ao longo do tempo: {n} pedidos",
   "target median {value}": "mediana do alvo {value}",
   "baseline median {value}": "mediana da referência {value}",
   "{n} failed": "{n} falharam",

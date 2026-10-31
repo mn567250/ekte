@@ -478,7 +478,7 @@ A página v2 **Auditoria** configura relays com
 `v2/relaycfg.js`: escolha de relay/fornecedor → URL base → os modelos do relay
 (`/api/models`, ao mudar, em cache por URL/chave/protocolo) → modelo declarado da
 base de conhecimento (`/api/kb/resolve` pré-seleciona-o) → fornecedor derivado,
-mais **Salvar na base** (`POST /api/kb/relays`). As suas funções puras são
+mais **Guardar na base** (`POST /api/kb/relays`). As suas funções puras são
 testadas com node.
 
 A página v2 **Análises** (`v2/analytics.html`) só lê `/api/analytics/*`
