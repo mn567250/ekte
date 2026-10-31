@@ -2,7 +2,7 @@
   - link "Hopp til hovedinnholdet":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Tema":
     - option "Automatisk tema"
@@ -24,7 +24,7 @@
     - /url: /accessibility
   - navigation "Hovednavigasjon":
     - link "Revisjon":
-      - /url: /v2/
+      - /url: /
     - link "Overvåking":
       - /url: /watches
     - link "Historikk":

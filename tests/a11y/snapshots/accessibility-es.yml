@@ -2,7 +2,7 @@
   - link "Saltar al contenido principal":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Tema":
     - option "Automático"
@@ -24,7 +24,7 @@
     - /url: /accessibility
   - navigation "Navegación principal":
     - link "Auditoría":
-      - /url: /v2/
+      - /url: /
     - link "Monitores":
       - /url: /watches
     - link "Historial":
@@ -57,7 +57,7 @@
     - definition: Claro, Oscuro
     - term: Páginas
     - definition:
-      - code: /v2/
+      - code: /
       - code: /history
       - code: /watches
       - code: /kb

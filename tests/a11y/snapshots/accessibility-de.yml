@@ -2,7 +2,7 @@
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Design":
     - option "Automatisch"
@@ -24,7 +24,7 @@
     - /url: /accessibility
   - navigation "Hauptnavigation":
     - link "Prüfung":
-      - /url: /v2/
+      - /url: /
     - link "Überwachung":
       - /url: /watches
     - link "Verlauf":
@@ -57,7 +57,7 @@
     - definition: Hell, Dunkel
     - term: Seiten
     - definition:
-      - code: /v2/
+      - code: /
       - code: /history
       - code: /watches
       - code: /kb

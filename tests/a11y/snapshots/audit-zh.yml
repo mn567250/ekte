@@ -2,7 +2,7 @@
   - link "跳到主要内容":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "主题":
     - option "跟随系统"
@@ -24,7 +24,7 @@
     - /url: /accessibility
   - navigation "主导航":
     - link "检测":
-      - /url: /v2/
+      - /url: /
     - link "监控":
       - /url: /watches
     - link "检测历史":

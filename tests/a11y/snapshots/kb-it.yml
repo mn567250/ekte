@@ -2,7 +2,7 @@
   - link "Vai al contenuto principale":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Tema":
     - option "Automatico"
@@ -24,7 +24,7 @@
     - /url: /accessibility
   - navigation "Navigazione principale":
     - link "Verifica":
-      - /url: /v2/
+      - /url: /
     - link "Monitor":
       - /url: /watches
     - link "Cronologia":

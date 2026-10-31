@@ -2,7 +2,7 @@
   - link "Skip to main content":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Theme":
     - option "Auto theme"
@@ -24,7 +24,7 @@
     - /url: /accessibility
   - navigation "Main navigation":
     - link "Audit":
-      - /url: /v2/
+      - /url: /
     - link "Monitors":
       - /url: /watches
     - link "History":
