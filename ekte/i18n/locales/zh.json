@@ -1,0 +1,533 @@
+{
+ "meta": {
+  "code": "zh",
+  "label": "中文",
+  "html": "zh-CN",
+  "locale": "zh-CN",
+  "order": 1
+ },
+ "strings": {
+  "Token/usage billing audit": "Token 计费用量审计",
+  "Capability-claim verification": "能力声明核验",
+  "Connectivity & basic completion": "连通性与基础补全",
+  "Real context window & truncation": "真实上下文窗口与截断",
+  "Determinism & cache-correctness": "确定性与缓存正确性",
+  "Injected system-prompt detection": "注入系统提示词检测",
+  "Response integrity / tampering": "响应完整性 / 篡改",
+  "Model identity & downgrade fingerprinting": "模型身份与降级指纹",
+  "Prompt prefix-cache (timing)": "提示前缀缓存（时序）",
+  "OpenAI-compatibility conformance": "OpenAI 兼容性规范",
+  "LLM-judged quality / downgrade assessment": "LLM 评委质量 / 降级评估",
+  "Concurrent reliability & latency": "并发可靠性与延迟",
+  "Transport & secret-handling signals": "传输与密钥处理信号",
+  "Streaming authenticity": "流式真实性",
+  "Multimodal (vision) capability verification": "多模态（视觉）能力核验",
+  "Behavior is consistent with the claimed model.": "行为与所声称的模型一致。",
+  "Mostly consistent with the claimed model; minor concerns.": "基本与所声称的模型一致；存在少量疑点。",
+  "Some behavior diverges from the claimed model — investigate.": "部分行为与所声称的模型不符 —— 建议核实。",
+  "Strong evidence the relay does not deliver the claimed model as advertised.": "有强证据表明该中转站并未按宣传提供所声称的模型。",
+  "Not enough signal to judge — connectivity or coverage was insufficient.": "信号不足，无法判定 —— 连通性或覆盖不够。",
+  "(confidence: {1})": "（置信度：{1}）",
+  "Low": "低",
+  "Medium": "中",
+  "High": "高",
+  "Overall health score {1}/100.": "综合健康分 {1}/100。",
+  "Findings: {1}.": "关注点：{1}。",
+  ", ": "，",
+  "critical": "严重",
+  "high": "高",
+  "medium": "中",
+  "No significant divergence findings.": "未发现明显偏离。",
+  "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "知识库中未找到所声称的模型，身份/能力检测受限 —— 请传入 --declared-provider 或补充 KB 档案。",
+  "Run `ekte compare` against a trusted baseline to strengthen the verdict.": "用 `ekte compare` 对照可信基线复检，以加强结论。",
+  "ekte reports black-box evidence of divergence and risk, not proof of fraud.": "ekte 报告的是偏离与风险的黑盒证据，不是欺诈的证明。",
+  "ekte performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.": "ekte 执行黑盒审计：收集行为偏离的可复现证据，而非模型身份的密码学证明。",
+  "Use `ekte compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.": "用 `ekte compare` 对照同款声明模型的可信基线，可获得最强的降级证据。",
+  "Do not publish a report that names a vendor without reviewing sample size, cost, and local law/policy.": "在核实样本量、成本与当地法律/政策之前，请勿发布点名厂商的报告。",
+  "Not run in this suite.": "本套件未运行此项。",
+  "Ran but produced no numeric score (see findings).": "已运行但未产生数值评分（见关注点）。",
+  "All checks passed.": "所有检查均通过。",
+  "Compare prompt_tokens against a trusted baseline for the same input.": "针对相同输入，将 prompt_tokens 与可信基线对比。",
+  "Verify the relay forwards the full messages array to the model.": "确认中转站把完整的 messages 数组转发给了模型。",
+  "A conformant relay should reject invalid input with a 4xx and an {'error': {...}} body.": "合规的中转站应以 4xx 和 {'error': {...}} 响应体拒绝非法输入。",
+  "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "改写 URL/包名的代理属于供应链风险 —— 请停止使用。",
+  "Treat the advertised context window as unverified.": "请将宣传的上下文窗口视为未经核实。",
+  "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "请调高 --timeout / --max-request-time，或调低 --max-context-tokens，以测量完整窗口。",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "请检查该错误（例如该端点拒绝的某个请求参数），然后重新运行以测量窗口。",
+  "Raise --max-context-tokens to exercise the full declared window.": "请调高 --max-context-tokens 以测试完整的声明窗口。",
+  "Compare against a trusted baseline to confirm.": "请对照可信基线加以确认。",
+  "The relay likely truncates or summarizes long prompts.": "该中转站很可能截断或摘要长提示词。",
+  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} << 声称的 {declared}（占比 {ratio}，疑似静默截断）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
+  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "真实上下文窗口 ~{effective_window} 低于声称的 {declared}（占比 {ratio}，在到达上限前回忆已退化）。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
+  "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "连 ~{smallest_probed} token 的提示都无法回忆；可用窗口远小于声称的 {declared}。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
+  "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "无声称窗口可对比；实测有效窗口 ~{effective_window} token。~{front_truncated_at} token 提示的开头被丢弃，而结尾仍能被回忆（前部截断）。",
+  "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "服务端会静默丢弃长提示的开头；请调大其上下文长度设置，或将声称的窗口视为未经验证。",
+  "Re-run once the endpoint reliably returns completions.": "待端点能稳定返回补全后再重跑。",
+  "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "请视为偏离信号而非证据；行动前先用指纹与身份检测佐证。",
+  "Verify the relay supports stream=true for this model.": "确认该中转站对此模型支持 stream=true。",
+  "Verify the relay streams content deltas for this model.": "确认该中转站对此模型以流式返回内容增量。",
+  "Run `ekte compare` against a trusted baseline to corroborate.": "用 `ekte compare` 对照可信基线加以佐证。",
+  "A response naming a different vendor strongly suggests model substitution.": "回复中提到其他厂商，强烈暗示模型被替换。",
+  "Run `ekte compare` against a trusted baseline to disambiguate.": "用 `ekte compare` 对照可信基线以消除歧义。",
+  "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "响应中出现更低档位或不同系列的模型 id，暗示请求被路由到替身。",
+  "Lower --concurrency or --reliability-requests and re-run.": "调低 --concurrency 或 --reliability-requests 后重跑。",
+  "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "检查中转站在并发压力下的连接池与上游稳定性（HTTP 429 限流不计入此成功率）。",
+  "Confirm with the provider how usage is metered if billing is per-token.": "若按 token 计费，请向服务商确认用量如何计量。",
+  "Cross-check billing against a known-size prompt; possible per-token overbilling.": "用已知长度的提示词核对计费；可能存在按 token 多计费。",
+  "Confirm with the provider how prompt/completion tokens are metered.": "请向服务商确认 prompt/completion token 如何计量。",
+  "Cross-check billing against output length; possible per-token overbilling.": "对照输出长度核对计费；可能存在按 token 多计费。",
+  "Compare token accounting against a trusted baseline of the same model.": "将 token 计量与同款模型的可信基线对比。",
+  "Verify base_url, api_key, and that the model id is served.": "检查 base_url、api_key，并确认该模型 id 确实可用。",
+  "Use an https:// base_url so the bearer token is not exposed on the wire.": "请使用 https:// 的 base_url，以免 bearer token 在传输中暴露。",
+  "Rotate the key and avoid this relay echoing credentials.": "请轮换密钥，并避免使用这个会回显凭据的中转站。",
+  "Confirm the served engine accepts and reasons over image input; a text-only model behind a vision-claimed id is a 货不对板 mismatch.": "确认所提供的引擎能接收并理解图片输入；以视觉模型 id 提供纯文本模型属于货不对板。",
+  "Confirm with varied prompts; a cache that ignores sampling parameters can mask the served model's true behavior.": "请用多样化的提示词确认；忽略采样参数的缓存可能掩盖实际模型的真实行为。",
+  "Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe.": "长文本生成可能达不到声称的上限；请用更长的探针确认。",
+  "Confirm the served engine actually supports function calling.": "确认所提供的引擎确实支持函数调用。",
+  "Verify the served engine honors response_format=json_object.": "确认所提供的引擎遵守 response_format=json_object。",
+  "usage only gives total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); the breakdown per-token billing relies on is missing and cannot be verified.": "usage 仅给出 total={reported_total}（prompt={reported_prompt}，completion={reported_completion}）；按 token 计费所依赖的分项缺失、无法核验。",
+  "JSON mode honored; parsed keys: {parsed_keys|list}.": "JSON 模式生效；解析出的键：{parsed_keys|list}。",
+  "Tool call delivered ({tool_name}); arguments returned as {arguments_type}.": "已返回工具调用（{tool_name}）；参数类型为 {arguments_type}。",
+  "/v1/models is not available (HTTP {status_code}).": "/v1/models 不可用（HTTP {status_code}）。",
+  "At concurrency {concurrency}, all {requests} requests were rate-limited ({rate_limited} × HTTP 429).": "并发 {concurrency} 下，全部 {requests} 个请求均被限流（{rate_limited} 次 HTTP 429）。",
+  "Revealing response headers: {revealing_headers|list}. Informational — can corroborate the upstream identity, not a failure.": "暴露信息的响应头：{revealing_headers|list}。仅供参考 —— 可佐证上游身份，并非失败。",
+  "Inspected {header_count} response headers; none expose upstream identity.": "已检查 {header_count} 个响应头；均未暴露上游身份。",
+  "Self-identifies as a rival brand ({forbidden_hits|list}) without naming the genuine brand.": "自称是竞品品牌（{forbidden_hits|list}），且未提及真实品牌。",
+  "Self-id names the genuine brand but also a rival ({forbidden_hits|list}); usually a benign contrast rather than a swap — corroborate before treating it as substitution.": "自我识别既提到了真实品牌，也提到了竞品（{forbidden_hits|list}）；通常只是无害的对比而非替换 —— 请先佐证再下结论。",
+  "Self-id names neither the genuine brand nor a rival; treat as weak/evasive evidence.": "自我识别既未提到真实品牌，也未提到竞品；视为弱/回避性证据。",
+  "Self-id names the genuine brand.": "自我识别提到了真实品牌。",
+  "Returned {returned}-d vectors; no known dimension for the claimed model to compare against.": "返回 {returned} 维向量；知识库中没有所声称模型的维度可供对比。",
+  "POST /embeddings failed (HTTP {status_code}).": "POST /embeddings 失败（HTTP {status_code}）。",
+  "Expected 4 non-empty vectors, got {returned_vectors}.": "预期 4 个非空向量，实际收到 {returned_vectors} 个。",
+  "POST /rerank failed (HTTP {status_code}).": "POST /rerank 失败（HTTP {status_code}）。",
+  "Invalid request got no HTTP response ({error_type}); could not confirm OpenAI-style client-error handling.": "非法请求没有收到 HTTP 响应（{error_type}）；无法确认是否按 OpenAI 风格处理客户端错误。",
+  "Request failed (HTTP {status_code}, type {error_type}).": "请求失败（HTTP {status_code}，类型 {error_type}）。",
+  "Request failed (HTTP {status_code}).": "请求失败（HTTP {status_code}）。",
+  "Request failed (type {error_type}).": "请求失败（类型 {error_type}）。",
+  "ekte relay audit alert": "ekte 中继体检告警",
+  "Risk: {1}": "风险：{1}",
+  "Score: {1}": "评分：{1}",
+  "(grade {1})": "（评级 {1}）",
+  "Target: {1}": "目标：{1}",
+  "Claimed model: {1}": "声称模型：{1}",
+  "Verdict: {1}": "结论：{1}",
+  "Key findings:": "主要发现：",
+  "Since last run: risk unchanged ({1})": "较上次：风险不变（{1}）",
+  "Since last run: {1} → {2} ({3})": "较上次：{1} → {2}（{3}）",
+  "worse ⬆️": "恶化 ⬆️",
+  "better ⬇️": "改善 ⬇️",
+  "Consistent": "一致",
+  "Low risk": "低风险",
+  "Medium risk": "中风险",
+  "High risk": "高风险",
+  "Undetermined": "无法判定",
+  "{1} ({2})": "{1}（{2}）",
+  "Performance probe": "性能探测",
+  "Headline numbers come from the audit's own requests, which mix prompt and output sizes; the deep and full suites add a controlled, uncacheable probe.": "核心数字来自本次检测自身的请求，其提示词与输出长度各不相同；deep 与 full 套件会额外发送受控、不可缓存的专用探测。",
+  "Reasoning tokens detected: TTFT is the time to the first visible token and includes hidden thinking, and usage-based throughput counts thinking tokens. ekte does not set a reasoning effort (the modes a relay accepts are unknown), so the model thinks at its default effort.": "检测到推理 token：TTFT 是首个可见 token 的时间，包含隐藏的思考过程；基于 usage 的吞吐量也计入了思考 token。ekte 不设置推理强度（中转站接受哪些档位未知），因此模型以默认强度思考。",
+  "Local token counts are estimates (about ±15-20%): no exact tokenizer is available for this model family.": "本地 token 计数为估算值（约 ±15-20%）：该模型系列没有可用的精确分词器。",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.": "本地 token 计数为内置启发式算法的估算值（约 ±15-20%）；ekte 从不下载分词器。",
+  "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests.": "百分位需要足够的样本：p75 需 4 个、p90 需 10 个、p95 需 20 个、p99 需 100 个请求。",
+  "Relay processing times come from the relay's own response headers and are unverified.": "中转站自报的处理时间来自其响应头，未经核实。",
+  "Some requests were served fully or partly from a cache and are left out of the statistics.": "部分请求全部或部分由缓存返回，已从统计中排除。",
+  "A relay that caches unique prompts may be serving stored answers; compare with a trusted baseline.": "对唯一提示词也做缓存的中转站可能在返回存储的答案；请与可信基线对照。",
+  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "请结合模型身份的检测结果一并判断；仅凭速度不能证明模型被替换。",
+  "Strong evidence the relay does not deliver what it advertises: {1}.": "有强证据表明该中转站没有兑现所宣传的内容：{1}。",
+  "Some checks diverge from what is advertised: {1} — investigate.": "部分检查与宣传不符：{1} —— 建议核实。",
+  "No problems found in the checked dimensions; model identity was not verified.": "已检查的维度未发现问题；未核实模型身份。",
+  "Minor concerns in the checked dimensions; model identity was not verified.": "已检查的维度存在少量疑点；未核实模型身份。",
+  "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.": "未选择模型身份，因此本结论只涵盖所选维度，不说明实际提供的是哪个模型。",
+  "Connectivity": "连通性",
+  "Protocol compliance": "协议兼容",
+  "Context window": "上下文窗口",
+  "Model identity": "模型身份",
+  "Capability claims": "能力声明",
+  "Billing & usage": "计费用量",
+  "Concurrency reliability": "并发可靠",
+  "Transport security": "传输安全",
+  "Performance": "性能"
+ },
+ "findings": {
+  "connectivity.models": [
+   "/v1/models 列表",
+   "已列出 {model_count} 个模型；所声称的模型是否在列表中：{claimed_listed}。"
+  ],
+  "connectivity.chat": [
+   "基础对话补全",
+   "返回了内容，耗时 {duration_ms} ms；返回模型为 {model_returned}。"
+  ],
+  "protocol.multi_turn": [
+   "多轮对话记忆",
+   "多轮对话上下文检查；是否回忆起此前提到的颜色：{recalled_blue}。"
+  ],
+  "protocol.stop": [
+   "stop 截断序列处理",
+   "stop 序列处理检查；finish_reason={finish_reason}。"
+  ],
+  "protocol.stop_not_applicable": [
+   "stop 序列检查不适用",
+   "Responses API 没有 stop 参数；未检查 stop 序列处理，也不计分。"
+  ],
+  "protocol.shape": [
+   "响应结构（信封）规范性",
+   "finish_reason={finish_reason}；usage 是否完整：{has_usage}。"
+  ],
+  "protocol.error_schema": [
+   "错误响应结构",
+   "非法请求返回 HTTP {status_code}；错误体是否为 OpenAI 风格：{conforming_error_body}。"
+  ],
+  "protocol_response.core.*": [
+   "响应属性 {attribute}",
+   "{attribute}：{availability}"
+  ],
+  "protocol_response.minor.*": [
+   "响应属性 {attribute}",
+   "{attribute}：{availability}"
+  ],
+  "protocol_request.param.*": [
+   "请求参数 {attribute}",
+   "{attribute}：{availability}"
+  ],
+  "protocol_response.call": [
+   "响应属性探测没有返回响应体",
+   "HTTP {status_code}；没有响应体。"
+  ],
+  "context_window.no_ladder": [
+   "上下文窗口探测无法运行",
+   "在下限与上限之间没有可用的探测尺寸（声称 {declared}，上限 {upper}，下限 {floor}）。"
+  ],
+  "context_window.lost_in_middle": [
+   "中段的针未被回忆（lost-in-the-middle）",
+   "在 ~{mid_size} token 的提示中，开头与结尾被回忆但中段缺失（疑似廉价 RAG/摘要替身）。"
+  ],
+  "context_window.rejected_below_claim": [
+   "在声称窗口之内即拒绝长上下文",
+   "一个 ~{rejected_at} token 的提示因上下文超长被拒，远低于声称的 {declared} token 窗口。"
+  ],
+  "context_window.no_recall": [
+   "没有任何尺寸能回忆出针",
+   "连 ~{smallest_probed} token 的提示都无法回忆；可用窗口远小于实际探测的 {upper} token 窗口（声称 {declared}）。"
+  ],
+  "context_window.truncation": [
+   "真实上下文窗口远小于声称值",
+   "真实上下文窗口 ~{effective_window} << 实际探测的 {upper} token 窗口（声称 {declared}；占比 {ratio}，疑似静默截断）。"
+  ],
+  "context_window.short": [
+   "真实上下文窗口低于声称值",
+   "真实上下文窗口 ~{effective_window} 低于实际探测的 {upper} token 窗口（声称 {declared}；占比 {ratio}，在到达上限前回忆已退化）。"
+  ],
+  "context_window.consistent": [
+   "实测上下文窗口与声称一致",
+   "在 ~{effective_window} token 处仍能回忆出针，接近声称的 {declared}（占比 {ratio}）。"
+  ],
+  "context_window.measured": [
+   "实测有效上下文窗口",
+   "无声称窗口可对比；实测有效窗口 ~{effective_window} token。"
+  ],
+  "context_window.verified_to_cap": [
+   "上下文窗口已在探测上限内验证",
+   "在 ~{effective_window} token 处仍能回忆出针（{probe_cap} token 探测上限下的最高档）；上限以上的声称窗口 {declared} 未被测试。"
+  ],
+  "context_window.probe_error": [
+   "上下文窗口探测收到错误响应",
+   "一个 ~{errored_at} token 的探测收到了错误响应（{error_status}）；这并非截断的证据。"
+  ],
+  "model_identity.no_profile": [
+   "所声称的模型不在知识库中",
+   "知识库中未找到所声称的模型（claimed={claimed_model}，requested={requested_model}）；请传入 --declared-provider 或补充 KB 档案。"
+  ],
+  "model_identity.self_id": [
+   "自我身份识别",
+   "自我身份识别检查（claimed={claimed}）。"
+  ],
+  "model_identity.model_field": [
+   "回显的 model 字段",
+   "响应中的 model 字段为 {returned}，请求的是 {requested}。"
+  ],
+  "model_identity.no_evidence": [
+   "没有可用的身份证据",
+   "自我身份识别和所有指纹探针均未返回可用回答，回显的 model 字段也没有偏离（共 {checks} 项检查）；无法判断模型身份。"
+  ],
+  "model_identity.fp_aggregate": [
+   "多项行为指纹同时偏离",
+   "{diverged} 等多项纯代码指纹偏离了原生行为；请排查是否存在替换。"
+  ],
+  "capability.tools": [
+   "工具调用（function calling）",
+   "工具调用探测；finish_reason={finish_reason}。"
+  ],
+  "capability.tools.encoding": [
+   "非 OpenAI 风格的工具参数编码",
+   "function.arguments 返回为结构化对象（{arguments_type}）而非 JSON 字符串；真正的 OpenAI 兼容接口应返回字符串（疑似替身引擎）。"
+  ],
+  "capability.json_mode": [
+   "JSON 模式（json_object）",
+   "JSON 模式探测；是否解析出对象：{parsed}，请求值是否匹配：{value_matched}。"
+  ],
+  "capability.json_schema": [
+   "严格 JSON Schema",
+   "严格 JSON schema 探测；是否符合 schema：{conforms}。"
+  ],
+  "capability.max_output": [
+   "最大输出长度",
+   "最大输出探测：声称 max_output={declared_max_output}，请求 {requested_max_tokens} token；产出约 {line_count} 行，finish_reason={finish_reason}。"
+  ],
+  "streaming.failed": [
+   "流式请求失败",
+   "流式请求失败（HTTP {status_code}，类型 {error_type}）；请确认该模型支持 stream=true。"
+  ],
+  "streaming.no_content": [
+   "流式响应没有内容",
+   "流式请求成功，但没有返回任何内容（{chunk_count} 个分片）；无法评估流式表现。"
+  ],
+  "streaming.few_chunks": [
+   "响应仅用 ≤2 个分片送达",
+   "{content_chars} 字符仅用 {chunk_count} 个分片送达（先缓冲再切片，并非真正的逐 token 流式）。"
+  ],
+  "streaming.late_ttft": [
+   "首 token 在流的末尾才到达",
+   "首 token 直到约总时长的 {ttft_ratio} 才到达（ttft={ttft_ms} ms / duration={duration_ms} ms，疑似缓冲）。"
+  ],
+  "streaming.reasoning_ttft": [
+   "推理模型的首 token 较晚",
+   "首个可见 token 在第 {ttft_ms} ms 到达（总时长 {duration_ms} ms）；该模型会先推理再回答，因此不计为缓冲。"
+  ],
+  "streaming.uniform_gaps": [
+   "分片间隔均匀且接近零",
+   "{chunk_count} 个分片，平均间隔 ~{mean_delta_ms} ms、CV {delta_cv} —— 分片像是被一次性倾倒。"
+  ],
+  "streaming.no_usage": [
+   "流中没有 usage 分片",
+   "stream_options.include_usage 未在流中返回任何 usage 数据。"
+  ],
+  "streaming.healthy": [
+   "流式表现真实",
+   "共 {chunk_count} 个分片，耗时 {duration_ms} ms，首 token 于 {ttft_ms} ms 到达。"
+  ],
+  "billing.request-failed": [
+   "计费探测请求失败",
+   "计费探测请求失败（HTTP {status_code}，类型 {error_type}）。"
+  ],
+  "billing.missing-usage": [
+   "未返回任何用量统计",
+   "响应未包含 token usage；计费无法独立核验（usage 是否存在：{usage_present}）。"
+  ],
+  "billing.usage-inflation": [
+   "上报的 prompt token 远超估算",
+   "上报 prompt token（{reported_prompt}）远超独立估算（~{estimated_prompt}，比值 {ratio}）；疑似按 token 多计费。"
+  ],
+  "billing.reasoning-tokens": [
+   "completion token 超过可见文本（推理模型）",
+   "上报 completion token（{reported_completion}）超过可见文本估算（~{visible_estimate}，比值 {ratio}）；推理模型含隐藏思考 token，属预期，不视为虚报。"
+  ],
+  "billing.usage-inflation-completion": [
+   "上报的 completion token 远超估算",
+   "上报 completion token（{reported_completion}）远超独立估算（~{estimated_completion}，比值 {ratio}）；疑似按 token 多计费。"
+  ],
+  "billing.usage-undercount-prompt": [
+   "上报的 prompt token 明显低于估算",
+   "上报 prompt token（{reported_prompt}）远低于估算（~{estimated_prompt}）；对买方无害但属异常。"
+  ],
+  "billing.usage-undercount-completion": [
+   "上报的 completion token 明显低于估算",
+   "上报 completion token（{reported_completion}）远低于估算（~{estimated_completion}）；对买方无害但属异常。"
+  ],
+  "billing.total-mismatch": [
+   "usage 总数 ≠ prompt + completion",
+   "上报 total（{total}）不等于 prompt（{prompt}）+ completion（{completion}）。"
+  ],
+  "billing.partial-usage": [
+   "用量明细不完整",
+   "usage 仅给出 total={total}（prompt={prompt}，completion={completion}）；按 token 计费所依赖的分项缺失、无法核验。"
+  ],
+  "billing.usage-consistent": [
+   "用量与独立估算一致",
+   "上报用量在估算容差范围内（prompt 比值 {ratio_prompt}，completion 比值 {ratio_completion}）。"
+  ],
+  "reliability.skipped": [
+   "可靠性探测已禁用",
+   "reliability_requests <= 0（{reliability_requests}）；未发起任何并发压力。"
+  ],
+  "reliability.success_rate": [
+   "并发请求成功率",
+   "并发 {concurrency} 下，{successes} 个请求成功（共 {requests} 个，{rate_limited} 个被限流）。"
+  ],
+  "reliability.rate_limited": [
+   "部分并发请求被限流",
+   "并发 {concurrency} 下有 {rate_limited}/{requests} 个请求返回 HTTP 429；计为限流而非不稳定。"
+  ],
+  "reliability.latency": [
+   "压力下尾延迟偏高",
+   "并发 {concurrency} 下尾延迟偏高，超过阈值。"
+  ],
+  "security.tls": [
+   "传输是否使用 HTTPS",
+   "传输协议：{scheme}。"
+  ],
+  "security.headers": [
+   "上游/代理响应头",
+   "响应头检查（HTTP {status_code}）。"
+  ],
+  "security.key_echo": [
+   "响应是否回显 API key",
+   "API key 回显检查。"
+  ],
+  "security.note": [
+   "黑盒检测的局限",
+   "是否记录提示词、是否复用共享上游 key 无法从客户端侧黑盒证实；可将可靠性与流式时序维度视为间接信号。"
+  ],
+  "injected_prompt.suspected": [
+   "疑似被注入隐藏系统提示词",
+   "上报 prompt token 带有较大的固定额外开销且随消息长度保持恒定，同时模型在被问及时泄漏了指令式内容；疑似被预置了隐藏系统提示词。"
+  ],
+  "injected_prompt.overhead": [
+   "异常的固定输入 token 开销",
+   "prompt token 高于估算且随消息增长保持恒定 —— 与隐藏的预置提示词一致，但仅为单一信号，需佐证。"
+  ],
+  "injected_prompt.leak": [
+   "模型回出了指令式前言（弱信号）",
+   "被要求复述此前指令时，模型返回了指令式文本而非 NONE。模型可能臆造，单独看属弱信号。"
+  ],
+  "injected_prompt.inconclusive": [
+   "无法测量输入 token 开销",
+   "响应中没有可用的 prompt_tokens；已跳过开销检查。"
+  ],
+  "injected_prompt.clean": [
+   "未见注入系统提示词的迹象",
+   "输入 token 开销很小（属模板级别），也未泄漏任何前言。"
+  ],
+  "integrity.tampering": [
+   "检测到由中继控制的值替换",
+   "已知答案的探针返回时结构保留但值被替换（是否经基线佐证：{baseline_corroborated}）；代理改写 URL/包名属供应链风险，应停止使用。"
+  ],
+  "integrity.intact": [
+   "已知答案探针原样返回",
+   "{verbatim} 个探针值被逐字回显；未观察到替换。"
+  ],
+  "integrity.inconclusive": [
+   "完整性探针结果不确定",
+   "模型未逐字回显任何探针，无法评估是否被篡改。"
+  ],
+  "determinism.temp1_variability": [
+   "temperature=1.0 下的输出变异性",
+   "在 temperature=1.0 下采样了 {samples} 次；是否字节完全相同：{identical}。"
+  ],
+  "determinism.temp0_stability": [
+   "temperature=0 下的答案稳定性",
+   "在 temperature=0 下重复同一事实性提示；两次是否相同：{identical}。"
+  ],
+  "prompt_cache.inconclusive": [
+   "前缀缓存时序数据不可用",
+   "一个或多个流式探针未返回可用时序（cold={cold_ms} ms，warm={warm_ms} ms，control={control_ms} ms）。"
+  ],
+  "prompt_cache.detected": [
+   "中继按提示前缀做缓存",
+   "重复前缀返回明显更快（warm ~{warm_ms} ms vs cold ~{cold_ms} ms，control ~{control_ms} ms）—— 存在提示前缀缓存。这是合法优化；ekte 无法用单一 key 证明是否跨用户共享缓存。"
+  ],
+  "prompt_cache.none": [
+   "未见明显的提示前缀缓存",
+   "重复前缀的 TTFT（~{warm_ms} ms）并未明显快于 cold（~{cold_ms} ms）/ control（~{control_ms} ms）。"
+  ],
+  "vision.not_claimed": [
+   "未声称视觉能力 —— 已跳过",
+   "解析出的档案未声明视觉/图像模态；未发送多模态探针（modalities={modalities}）。"
+  ],
+  "vision.color": [
+   "多模态（视觉）能力核验",
+   "通过已知答案的纯色图片探针核验视觉能力（协议 {protocol}）。"
+  ],
+  "quality_judge.unavailable": [
+   "没有可供评判的目标答案",
+   "目标端对任何区分性探针都未返回可用内容（探针 {probes} 个，失败 {failed} 个）。"
+  ],
+  "quality_judge.suspicious": [
+   "LLM 评委：行为与所声称的模型不符（疑似降级/替换/量化）",
+   "评委（置信度 {judge_confidence}）认为答案不像所声称的模型；可能更接近：{likely_actual_tier}。是否经基线佐证：{baseline_corroborated}。"
+  ],
+  "quality_judge.consistent": [
+   "LLM 评委：行为与所声称的模型一致",
+   "评委（置信度 {judge_confidence}）认为答案与所声称的模型一致。"
+  ],
+  "quality_judge.inconclusive": [
+   "LLM 评委：评估结果不确定",
+   "评委无法给出确定结论（置信度 {judge_confidence}）。"
+  ],
+  "embed.connectivity": [
+   "嵌入端点连通性",
+   "返回 {vectors} 个向量，维度 {dimension}。"
+  ],
+  "embed.dimension": [
+   "向量维度是否与所声称模型一致",
+   "返回 {returned} 维向量，所声称模型应为 {claimed} 维。"
+  ],
+  "embed.determinism": [
+   "嵌入是否确定性可复现",
+   "同一输入两次的余弦相似度为 {cosine}（阈值 {threshold}）。"
+  ],
+  "embed.distinctness": [
+   "不同输入是否产生可区分的向量",
+   "两段无关文本的余弦相似度为 {cosine}（阈值 {threshold}）。"
+  ],
+  "embed.model_field": [
+   "回显的 model 字段",
+   "中继上报的模型为 {model_returned}，请求的是 {model_requested}，所声称为 {claimed_model}。"
+  ],
+  "rerank.connectivity": [
+   "重排端点连通性",
+   "返回 {results} 条排序结果。"
+  ],
+  "rerank.known_answer": [
+   "是否把显而易见的答案排在首位",
+   "排在首位的是文档 {top_index}，预期应为文档 {expected}（排名顺序 {ranking}）。"
+  ],
+  "model_identity.fp.*": [
+   "行为指纹偏离：{signal|server}",
+   "针对 {probe} 的纯代码行为指纹检查。",
+   "行为指纹检查"
+  ],
+  "performance.summary": [
+   "性能探测结果",
+   "{successes}/{requests} 个探测请求成功；延迟 p50 {latency_p50_ms} ms，TTFT p50 {ttft_p50_ms} ms，解码速度 p50 {decode_tps_p50} tok/s。"
+  ],
+  "performance.errors": [
+   "探测请求失败率",
+   "{endpoint} 的 {requests} 个探测请求中有 {errors} 个出错、{timeouts} 个超时（{rate_limited} 个被限流）。"
+  ],
+  "performance.cache_hit": [
+   "唯一的探测提示词却命中了缓存",
+   "{endpoint} 有 {cached} 个探测请求返回了缓存结果，尽管每个提示词都是唯一的；它们已从统计中排除。"
+  ],
+  "performance.reasoning": [
+   "探测中出现推理 token",
+   "模型消耗了隐藏的推理 token（上报 {reasoning_tokens} 个）：TTFT 包含思考时间。ekte 不设置推理强度，模型以默认强度思考。"
+  ],
+  "performance.relay_overhead": [
+   "与基线的延迟对比",
+   "目标延迟 p50 {target_latency_p50_ms} ms，基线 {baseline_latency_p50_ms} ms（差值 {latency_p50_delta_ms} ms）。"
+  ],
+  "performance.skipped": [
+   "性能探测已关闭",
+   "performance_requests = {performance_requests}；未发送探测请求。"
+  ],
+  "performance.latency_consistency": [
+   "延迟一致性",
+   "延迟 p50 {p50} ms，p90 {p90} ms——尾部比 {tail_ratio}（{samples} 个请求）。"
+  ],
+  "performance.ttft_consistency": [
+   "首字延迟一致性",
+   "首字延迟 p50 {p50} ms，p90 {p90} ms——尾部比 {tail_ratio}（{samples} 个请求）。"
+  ],
+  "performance.throughput_consistency": [
+   "吞吐一致性",
+   "吞吐 p50 {p50} {unit}，p10 {p10} {unit}——尾部比 {tail_ratio}（{samples} 个请求）。"
+  ],
+  "performance.load_stability": [
+   "并发负载下的延迟",
+   "并发 {concurrency} 时延迟 p50 {burst_latency_p50_ms} ms，逐个请求时 {sequential_latency_p50_ms} ms（{ratio} 倍）。"
+  ],
+  "performance.reference": [
+   "与参考值对比的吞吐",
+   "目标吞吐 {target_tps_p50} tok/s，参考值 {reference_range} tok/s。"
+  ]
+ }
+}

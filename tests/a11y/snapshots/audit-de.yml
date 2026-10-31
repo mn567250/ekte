@@ -1,11 +1,9 @@
 - banner:
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Klassische Oberfläche":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Design":
     - option "Automatisch"
     - option "Hell" [selected]
@@ -36,7 +34,7 @@
       - /url: /v2/kb
 - main:
   - heading "Liefert dieses Relay das echte Modell?" [level=1]
-  - paragraph: Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. zing führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.
+  - paragraph: Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. ekte führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.
   - status:
     - text: Letzte Prüfung abgeschlossen gateway.a-very-long-relay-hostname.example.org · model-b · Bewertung 72/100 · 27.09.2026, 10:02
     - button "Bericht öffnen"
@@ -66,18 +64,18 @@
       - combobox "Relay-URL base_url"
       - text: API-Schlüssel Unterstützt env:VAR / file:/pfad
       - textbox "API-Schlüssel":
-        - /placeholder: sk-... oder env:ZING_API_KEY
+        - /placeholder: sk-... oder env:EKTE_API_KEY
       - button "Schlüssel anzeigen"
       - text: Angefragtes Modell model
       - textbox "Angefragtes Modell model":
         - /placeholder: deepseek-chat
       - button "Modelle neu laden" [disabled]
-      - status: Wähle ein Relay oder gib seine URL ein, dann listet zing seine Modelle auf.
+      - status: Wähle ein Relay oder gib seine URL ein, dann listet ekte seine Modelle auf.
       - text: Angegebenes Modell claimed_model Optional
       - combobox "Angegebenes Modell claimed_model Optional":
         - option "Wie das angefragte Modell" [selected]
       - button "Manuell eingeben"
-      - text: Nur wenn das Relay es unter anderem Namen verkauft — zing prüft die Antworten gegen dieses Modell. Protokoll
+      - text: Nur wenn das Relay es unter anderem Namen verkauft — ekte prüft die Antworten gegen dieses Modell. Protokoll
       - group "Protokoll":
         - button "Auto" [pressed]
         - button "OpenAI"
@@ -96,7 +94,7 @@
         - button "Ohne Streaming"
       - text: Bei standard läuft die Messung nur mit einer Referenz; sonst werden die Anfragen der Prüfung selbst verwendet.
       - button "Mit vertrauenswürdiger Referenz vergleichen compare" [expanded]
-      - paragraph: Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). zing nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit einer Referenz.
+      - paragraph: Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). ekte nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit einer Referenz.
       - text: Relay / Anbieter der Referenz Optional
       - combobox "Relay / Anbieter der Referenz Optional":
         - option "Relay oder Anbieter wählen…" [selected]
@@ -111,7 +109,7 @@
       - textbox "Referenzmodell model":
         - /placeholder: Offizielle ID desselben Modells
       - button "Modelle neu laden" [disabled]
-      - status: Wähle ein Relay oder gib seine URL ein, dann listet zing seine Modelle auf.
+      - status: Wähle ein Relay oder gib seine URL ein, dann listet ekte seine Modelle auf.
       - text: Referenzprotokoll
       - group "Referenzprotokoll":
         - button "Auto" [pressed]
@@ -119,9 +117,9 @@
         - button "Anthropic"
         - button "Responses"
       - button "Prüfung starten"
-      - text: Die Tests werden von Ihrem lokalen zing-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.
+      - text: Die Tests werden von Ihrem lokalen ekte-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.
       - alert
       - status
 - contentinfo:
   - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
-  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
+  - paragraph: "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

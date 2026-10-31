@@ -8,8 +8,8 @@ import json
 
 import httpx
 
-from zing.clients import AnthropicClient, OpenAICompatibleClient, ResponsesClient
-from zing.models import RequestSpec, TargetConfig
+from ekte.clients import AnthropicClient, OpenAICompatibleClient, ResponsesClient
+from ekte.models import RequestSpec, TargetConfig
 
 
 def _sse(events: list[dict], *, done: bool = False) -> httpx.MockTransport:

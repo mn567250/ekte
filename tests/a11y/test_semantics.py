@@ -20,7 +20,7 @@ CJK = "[⺀-⿿　-〿぀-ヿ㄀-ㇿ㐀-䶿一-鿿豈-﫿＀-￯]"
 
 
 def _html_lang(page: Any, lang: str) -> str:
-    return str(page.evaluate("l => (ZING_LANG.langs().find(x => x.code === l) || {}).html || l", lang))
+    return str(page.evaluate("l => (EKTE_LANG.langs().find(x => x.code === l) || {}).html || l", lang))
 
 
 @pytest.mark.bitv("9.3.1.1")
@@ -37,7 +37,7 @@ def test_page_language(open_page, page_id: str, lang: str) -> None:
         issues.append(f"on load <html lang={got!r}>, expected {want!r}")
     other = "de" if lang != "de" else "fr"
     if other in LANGS:
-        page.evaluate("l => ZING_LANG.set(l)", other)
+        page.evaluate("l => EKTE_LANG.set(l)", other)
         settle(page)
         got = page.evaluate("() => document.documentElement.lang")
         if got != _html_lang(page, other):

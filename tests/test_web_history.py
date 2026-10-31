@@ -6,7 +6,7 @@ import sqlite3
 
 import pytest
 
-from zing.web import history
+from ekte.web import history
 
 _TARGET = {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"}
 
@@ -84,12 +84,12 @@ def _user_version(db) -> int:
 
 @pytest.fixture
 def data(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     return tmp_path
 
 
 def _seed_old_db(db, schema: str = _OLD_SCHEMA) -> None:
-    """A database written by a zing from before the headline columns."""
+    """A database written by a ekte from before the headline columns."""
     import json
 
     conn = sqlite3.connect(db)
@@ -170,12 +170,12 @@ def test_failed_backfill_is_computed_on_read_and_stored(data, monkeypatch):
     assert history.recent(500, perf=True) == expected
 
 
-def test_rows_written_by_an_older_zing_are_computed_on_read(data, monkeypatch):
+def test_rows_written_by_an_older_ekte_are_computed_on_read(data, monkeypatch):
     import json
 
     history.save(_report(0, _PERFS[1]))
     db = data / "history.db"
-    conn = sqlite3.connect(db)  # an older zing does not know the new columns
+    conn = sqlite3.connect(db)  # an older ekte does not know the new columns
     for i, perf in enumerate(_PERFS[1:4], 1):
         conn.execute(
             "INSERT INTO history (ts, base_url, claimed_model, report_json) VALUES (?,?,?,?)",
@@ -199,14 +199,14 @@ def test_schema_is_rebuilt_for_a_new_or_deleted_database(data, monkeypatch, tmp_
     assert history.save(_report(1, _PERFS[2])) > 0
 
     other = tmp_path_factory.mktemp("other")
-    monkeypatch.setenv("ZING_DATA_DIR", str(other))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(other))
     assert history.recent() == []
     _seed = other / "history.db"
     assert _user_version(_seed) == history._SCHEMA_VERSION
 
     # An old-schema file put in place of a migrated one is migrated too.
     third = tmp_path_factory.mktemp("third")
-    monkeypatch.setenv("ZING_DATA_DIR", str(third))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(third))
     _seed_old_db(third / "history.db", _OLD_SCHEMA.split(", kb_snapshot_id")[0] + ")")
     got = history.recent(500, perf=True)
     assert len(got) == len(_PERFS) * 30 + 2
@@ -265,7 +265,7 @@ def test_status_sums_up_the_history_for_the_page_notices(data):
 def test_status_endpoint_is_not_taken_for_a_report_id(data):
     from fastapi.testclient import TestClient
 
-    from zing.web.server import create_app
+    from ekte.web.server import create_app
 
     history.save(_report(0, None))
     r = TestClient(create_app(), base_url="http://localhost").get("/api/history/status")

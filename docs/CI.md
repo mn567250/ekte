@@ -1,22 +1,22 @@
-# Gate CI on a zing relay audit
+# Gate CI on a ekte relay audit
 
-`zing` ships a reusable **GitHub composite action** so you can fail a build,
+`ekte` ships a reusable **GitHub composite action** so you can fail a build,
 block a deploy, or run a scheduled health check whenever a relay drifts from the
 model it claims to serve.
 
 Under the hood the action runs:
 
 ```
-zing check --base-url … --api-key env:… --model … --suite … \
+ekte check --base-url … --api-key env:… --model … --suite … \
            --fail-on-risk <level> --compact
 ```
 
 It parses the compact JSON verdict, exposes `risk` / `score` / `rating` as step
-outputs, writes a concise summary to the run's **Summary** tab, and lets `zing`'s
+outputs, writes a concise summary to the run's **Summary** tab, and lets `ekte`'s
 own exit code fail the job (exit `1` when the risk gate trips, `2` on a config
 error).
 
-> The API key is passed to `zing` through an environment variable
+> The API key is passed to `ekte` through an environment variable
 > (`--api-key env:…`), so it never appears on a command line and is never echoed.
 > Always supply it from a repository secret.
 
@@ -37,14 +37,14 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - id: zing
-        uses: cenbonew/zing@v0.11.0     # pin to a tag — see "Pinning" below
+      - id: ekte
+        uses: mn567250/ekte@vX.Y.Z   # pin to a tag — see "Pinning" below
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
           model: gpt-4o
           fail-on-risk: high
-      - run: echo "risk=${{ steps.zing.outputs.risk }} score=${{ steps.zing.outputs.score }}"
+      - run: echo "risk=${{ steps.ekte.outputs.risk }} score=${{ steps.ekte.outputs.score }}"
 ```
 
 ## Inputs
@@ -59,15 +59,15 @@ jobs:
 | `declared-provider` | no       | `""`          | Provider hint for KB lookup (`openai`, `anthropic`, `deepseek`, …). |
 | `suite`             | no       | `standard`    | Detector suite: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | no       | `high`        | Fail the job when risk `>=` this level: `low` \| `medium` \| `high`. |
-| `python-version`    | no       | `3.12`        | Python version used to install and run `zing`. |
-| `version`           | no       | `zing-audit`  | pip install spec. Pin for reproducible runs, e.g. `zing-audit==0.11.0`. |
+| `python-version`    | no       | `3.12`        | Python version used to install and run `ekte`. |
+| `version`           | no       | `ekte`  | pip install spec. Pin for reproducible runs, e.g. `ekte==X.Y.Z`. |
 
 ## Outputs
 
 | Output   | Description |
 | -------- | ----------- |
 | `risk`   | Risk level: `clean` \| `low` \| `medium` \| `high` \| `inconclusive`. |
-| `score`  | Overall score `0`–`100` (empty string if `zing` could not score the relay). |
+| `score`  | Overall score `0`–`100` (empty string if `ekte` could not score the relay). |
 | `rating` | Human-readable rating from the verdict (may be empty). |
 
 ## Gate a deploy on relay health
@@ -88,8 +88,8 @@ jobs:
   relay-health:
     runs-on: ubuntu-latest
     steps:
-      - id: zing
-        uses: cenbonew/zing@v0.11.0
+      - id: ekte
+        uses: mn567250/ekte@vX.Y.Z
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -97,8 +97,8 @@ jobs:
           claimed-model: gpt-4o
           fail-on-risk: medium   # block the deploy on medium-or-worse risk
     outputs:
-      risk: ${{ steps.zing.outputs.risk }}
-      score: ${{ steps.zing.outputs.score }}
+      risk: ${{ steps.ekte.outputs.risk }}
+      score: ${{ steps.ekte.outputs.score }}
 
   deploy:
     needs: relay-health          # only runs if the audit passed the gate
@@ -112,10 +112,10 @@ jobs:
 
 ## Pinning
 
-Pin the action to a **release tag** (`cenbonew/zing@v0.11.0`) rather than a moving
+Pin the action to a **release tag** (`mn567250/ekte@vX.Y.Z`) rather than a moving
 branch. This keeps audits reproducible and protects you from unexpected changes
 to the action. For fully reproducible CLI behavior, also pin the `version` input
-to an exact release, e.g. `version: zing-audit==0.11.0`.
+to an exact release, e.g. `version: ekte==X.Y.Z`.
 
 A ready-to-copy scheduled example lives at
 [`.github/workflows/example-audit.yml`](../.github/workflows/example-audit.yml).

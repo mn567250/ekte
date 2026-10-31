@@ -1,0 +1,1158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title data-en="ekte — relay reality check">ekte — 中转站验真</title>
+<script src="/locales.js"></script>
+<script src="/lang.js"></script>
+<script src="/v2/static/theme.js"></script>
+<link rel="icon" href="/v2/static/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/v2/static/tokens.css" />
+<link rel="stylesheet" href="/v2/static/ekte.css" />
+<link rel="stylesheet" href="/v2/static/fields.css" />
+<link rel="stylesheet" href="/v2/static/report.css" />
+<link rel="stylesheet" href="/v2/static/perf.css" />
+<link rel="stylesheet" href="/v2/static/chartmotion.css" />
+<link rel="stylesheet" href="/v2/static/jobs.css" />
+<style>
+  /* ---------- page: audit (tokens only; light + dark) ---------- */
+  [tabindex="-1"]:focus { outline: none; }
+
+  /* "New audit" / "Running" tabs (v2/tabs.js; the list is v2/jobs.js) */
+  .tabs .tcount {
+    min-width: 1.6em; padding: 1px 7px; border-radius: var(--r-pill); font-size: 12px; font-weight: 700;
+    font-variant-numeric: tabular-nums; background: var(--info-tint); color: var(--info);
+  }
+  .tabs .tcount[hidden] { display: none; }
+  #panel-running { padding-top: 4px; }
+
+  /* stepper */
+  .steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0; flex-wrap: wrap; }
+  .steps li {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--ink-muted);
+    padding: 5px 11px 5px 6px; border-radius: var(--r-pill); border: 1px solid transparent;
+  }
+  .steps .n {
+    width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700;
+    background: var(--sunken); color: var(--ink-muted); border: 1px solid var(--line);
+  }
+  .steps li[aria-current="step"] { color: var(--ink); background: var(--sunken); border-color: var(--line); }
+  .steps li[aria-current="step"] .n { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+  .steps li.done { color: var(--ink-muted); }
+  .steps li.done .n { background: var(--success-tint); color: var(--success); border-color: transparent; }
+  .steps .n .zicon { width: 11px; height: 11px; }
+
+  /* form (inside the tab card: no second frame) */
+  .form-card { margin-top: 18px; }
+  /* four-option segments: one row, 2 × 2 on phones (no mid-word breaks) */
+  /* columns are never narrower than their label (e.g. DE "benutzerdefiniert") */
+  .seg.q { display: grid; grid-template-columns: repeat(4, minmax(min-content, 1fr)); }
+  .seg.q button { min-width: 0; }
+  #suite.seg.q { grid-template-columns: repeat(5, minmax(min-content, 1fr)); }
+  @media (max-width: 560px) { .seg.q, #suite.seg.q { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* the endpoint type: native radios dressed as a segmented control */
+  fieldset.grp { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
+  fieldset.grp > legend { padding: 0; }
+  .seg.radio { display: grid; grid-template-columns: repeat(3, minmax(min-content, 1fr)); }
+  /* long labels (e.g. "Riordinamento") must not push a 320 px page sideways */
+  @media (max-width: 400px) { .seg.radio { grid-template-columns: minmax(0, 1fr); } }
+  .seg.radio > span { position: relative; display: grid; }
+  .seg.radio label {
+    text-align: center; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 13px;
+    color: var(--ink-muted); background: var(--surface); border: 1.5px solid transparent; border-radius: 11px;
+    padding: 10px 8px; transition: background 0.15s, color 0.15s;
+  }
+  /* the radio itself covers its option: it draws the boundary (3:1, like the
+     text fields) and carries the focus ring */
+  .seg.radio input {
+    appearance: none; position: absolute; inset: 0; z-index: 1; margin: 0; cursor: pointer;
+    border: 1.5px solid var(--border); border-radius: 11px; background: transparent; transition: border-color 0.15s;
+  }
+  .seg.radio input:hover { border-color: var(--ink-muted); }
+  .seg.radio input:hover + label { color: var(--ink); }
+  .seg.radio input:checked { border-color: var(--primary); }
+  .seg.radio input:checked + label { color: var(--on-primary); background: var(--primary); }
+  .cmp { margin: 4px 0 16px; }
+  .cmp .disclosure { justify-content: flex-start; }
+  .cmp .disclosure > .pico { flex: none; }
+  .cmp .disclosure .t { flex: 1; display: inline-flex; align-items: center; gap: 4px 7px; flex-wrap: wrap; min-width: 0; }
+  .cmp .disclosure .cv { flex: none; }
+  .cmp .disclosure .key { font-weight: 500; }
+  .cmp .on-badge[hidden] { display: none; }
+  .cmp-hint { font-size: 12.5px; color: var(--ink-muted); line-height: 1.55; margin: 0 0 14px; }
+  .cmp-hint b { color: var(--ink); }
+  .in[aria-invalid="true"] { border-color: var(--danger); }
+
+  /* step 2: scan */
+  .scan { padding: 18px 0 0; text-align: center; }
+  .radar { position: relative; width: 140px; height: 140px; margin: 4px auto; }
+  .radar .ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--line); }
+  .radar .ring.r2 { inset: 22%; }
+  .radar .ripple { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--primary); opacity: 0; animation: z-rip 2.4s ease-out infinite; }
+  .radar .ripple:nth-of-type(4) { animation-delay: 0.8s; }
+  .radar .ripple:nth-of-type(5) { animation-delay: 1.6s; }
+  @keyframes z-rip { 0% { transform: scale(0.35); opacity: 0.5; } 100% { transform: scale(1); opacity: 0; } }
+  .radar .sweep {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0 300deg, var(--primary-tint) 350deg, transparent 360deg);
+    animation: z-sp 1.5s linear infinite;
+  }
+  @keyframes z-sp { to { transform: rotate(360deg); } }
+  .radar .core {
+    position: absolute; inset: 34%; border-radius: 50%; display: grid; place-items: center;
+    background: var(--primary-strong); color: var(--on-primary); box-shadow: var(--shadow-pop);
+  }
+  .radar .core .zicon { width: 22px; height: 22px; }
+  .radar.done .ripple, .radar.done .sweep { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .radar .ripple, .radar .sweep { display: none; }
+    .det.run .ic { animation: none; }
+  }
+  :root[data-motion="off"] .radar .ripple, :root[data-motion="off"] .radar .sweep { display: none; }
+  :root[data-motion="off"] .det.run .ic { animation: none; }
+  .scan h2 { font-family: var(--disp); font-weight: 600; font-size: 20px; margin: 14px 0 4px; }
+  .scan .target { font-size: 12.5px; color: var(--ink-muted); overflow-wrap: anywhere; }
+  .scan .target code { font-size: 12px; background: var(--sunken); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+  .scan .now { color: var(--primary); font-weight: 600; font-size: 13px; min-height: 18px; font-family: var(--mono); margin-top: 8px; overflow-wrap: anywhere; }
+  .prog { max-width: 380px; margin: 14px auto 6px; }
+  .pbar { height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
+  .pbar i { display: block; height: 100%; width: 0; background: var(--primary); transition: width 0.4s ease; }
+  .prog .cnt { font-size: 12px; color: var(--ink-muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .scan-actions { margin: 10px 0 18px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .infobox {
+    background: var(--info-tint); border: 1px solid var(--info); color: var(--ink);
+    border-radius: 14px; padding: 12px 16px; margin-top: 14px; font-size: 14px; line-height: 1.5;
+  }
+  .infobox a { color: var(--info); font-weight: 700; }
+  .blk { text-align: left; max-width: 560px; margin: 18px auto 0; }
+  .blk h3 { font-family: var(--disp); font-weight: 600; font-size: 14px; margin: 0 0 8px; color: var(--ink); }
+  .blk[hidden] { display: none; }
+  .blk .bh { font-size: 12px; color: var(--ink-muted); margin: -4px 0 8px; }
+  .dets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .det {
+    min-width: 0; font-size: 13px; color: var(--ink-muted);
+    background: var(--sunken); border: 1px solid var(--line); border-radius: 11px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .det .dh { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 9px; min-width: 0; padding: 8px 11px; }
+  /* the name takes the row; score + time wrap under it (right-aligned) when it
+     would otherwise be squeezed to a few characters per line */
+  .det .dt { flex: 1 1 14em; min-width: 0; overflow-wrap: break-word; hyphens: auto; text-align: left; }
+  .det .dtg {
+    display: flex; align-items: flex-start; gap: 5px; padding: 0; margin: 0; border: 0; background: none;
+    font: inherit; color: inherit; cursor: pointer;
+  }
+  .det .dtg:hover .nm { text-decoration: underline; }
+  .det .dtg .chev { flex: none; display: inline-grid; margin-top: 2px; color: var(--ink-muted); transition: transform 0.15s; }
+  .det .dtg .chev .zicon { width: 12px; height: 12px; }
+  .det .dtg[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .det .nf { font-size: 11.5px; font-weight: 500; color: var(--ink-muted); white-space: nowrap; }
+  .det .dm { flex: none; margin-left: auto; display: inline-flex; align-items: baseline; gap: 10px; font-variant-numeric: tabular-nums; }
+  .det .sc { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .det .sc.good { color: var(--success); }
+  .det .sc.warn { color: var(--warning); }
+  .det .sc.bad { color: var(--danger); }
+  .det .ms { min-width: 54px; text-align: right; font-family: var(--mono); font-size: 11.5px; color: var(--ink-muted); white-space: nowrap; }
+  .det.run .ms { color: var(--primary); }
+  .det .dev { border-top: 1px solid var(--line); padding: 2px 12px 6px 36px; }
+  .det .dev[hidden] { display: none; }
+  @media (max-width: 520px) { .det .dev { padding-left: 12px; } }
+  .det .ic { flex: 0 0 16px; display: inline-flex; justify-content: center; }
+  .det .ic .zicon { width: 14px; height: 14px; }
+  .det.run { color: var(--ink); border-color: var(--line); }
+  .det.run .ic { color: var(--primary); animation: z-bl 1s steps(2) infinite; }
+  @keyframes z-bl { 50% { opacity: 0.3; } }
+  .det.pass { color: var(--ink); }
+  .det.pass .ic { color: var(--success); }
+  .det.warn .ic { color: var(--warning); }
+  .det.fail .ic, .det.error .ic { color: var(--danger); }
+  .det.info .ic { color: var(--info); }
+  .det.inconclusive .ic, .det.not_run .ic { color: var(--ink-muted); }
+  /* live evidence feed */
+  .feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .fi {
+    display: flex; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--ink-muted);
+    border-radius: 11px; padding: 9px 12px; animation: z-rise 0.35s cubic-bezier(0.2, 0.85, 0.25, 1);
+  }
+  .fi.sky { border-left-color: var(--info); }
+  .fi.warn { border-left-color: var(--warning-fill); }
+  .fi.bad { border-left-color: var(--danger); }
+  .fi .fdot {
+    flex: 0 0 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; margin-top: 1px;
+    color: var(--on-primary); background: var(--ink-muted);
+  }
+  .fi.sky .fdot { background: var(--info); }
+  .fi.warn .fdot { background: var(--warning-fill); color: var(--on-warning); }
+  .fi.bad .fdot { background: var(--danger); }
+  .fi .fdot .zicon { width: 11px; height: 11px; }
+  .fi .fb { flex: 1; min-width: 0; }
+  .fi .fmeta { font-size: 11px; color: var(--ink-muted); font-family: var(--mono); margin-bottom: 2px; overflow-wrap: anywhere; }
+  .fi .ft { font-weight: 700; font-size: 13px; line-height: 1.35; }
+  .fi .fe { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .fi .fe b { color: var(--danger); }
+
+  /* perf.js live panel: colours come from /v2/static/perf.css; fit it to the scan card */
+  #perf-live .zp-live { max-width: 560px; }
+  #perf-live .zp-plot { max-width: 100%; overflow-x: auto; }
+
+  /* step 3 */
+  #report { margin-top: 18px; }
+  /* the report article is a card elsewhere (history); inside the tab card it
+     spans the card's width without a frame of its own */
+  .tab-card .zr.card { margin: 0 -24px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+  @media (max-width: 520px) { .tab-card .zr.card { margin: 0 -18px; } }
+  .tab-card .view > .foot:last-child { padding-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="znav" data-page="audit"></header>
+
+  <main id="main" tabindex="-1">
+    <div class="hero">
+      <h1 id="h-form" tabindex="-1" data-en="Is this relay serving the <span class='u'>real thing</span>?">这家中转站，给的是<span class="u">真货</span>吗？</h1>
+      <p data-en="Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
+    </div>
+    <!-- the page notice (notice.js) -->
+    <div class="znote" id="note" hidden></div>
+
+    <div class="card card-pad tab-card">
+    <div class="tabs" role="tablist" aria-label="检测" data-en-aria-label="Audits">
+      <button type="button" role="tab" id="tab-new" aria-selected="true" aria-controls="panel-new" tabindex="0"><span class="pico" data-icon="search"></span><span data-en="New audit">新检测</span></button>
+      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">运行中</span><span class="tcount" id="running-count" hidden></span></button>
+    </div>
+
+    <section role="tabpanel" id="panel-new" aria-labelledby="tab-new" tabindex="0">
+    <ol class="steps" aria-label="检测进度" data-en-aria-label="Audit progress">
+      <li id="st-1" aria-current="step"><span class="n" aria-hidden="true">1</span><span data-en="Configure">配置</span></li>
+      <li id="st-2"><span class="n" aria-hidden="true">2</span><span data-en="Scan">检测</span></li>
+      <li id="st-3"><span class="n" aria-hidden="true">3</span><span data-en="Report">报告</span></li>
+    </ol>
+
+    <!-- STEP 1: form -->
+    <section class="view show" id="v1" aria-labelledby="h-config">
+      <h2 class="sr-only" id="h-config" tabindex="-1" data-en="Configure">配置</h2>
+      <div class="form-card">
+        <form id="form" novalidate>
+          <!-- What is audited (?surface=embedding|rerank preselects): the
+               chat-only fields below are hidden on the other surfaces -->
+          <fieldset class="grp">
+            <legend class="lab"><span data-en="Endpoint type">接口类型</span> <span class="key">surface</span></legend>
+            <div class="seg radio" id="surface">
+              <span><input type="radio" name="surface" id="sf-chat" value="chat" checked><label for="sf-chat" data-en="Chat">对话</label></span><span><input type="radio" name="surface" id="sf-embedding" value="embedding"><label for="sf-embedding" data-en="Embeddings">嵌入</label></span><span><input type="radio" name="surface" id="sf-rerank" value="rerank"><label for="sf-rerank" data-en="Reranking">重排</label></span>
+            </div>
+          </fieldset>
+          <div class="grp">
+            <label class="lab" for="i-url"><span data-en="Relay URL">中转站地址</span> <span class="key">base_url</span></label>
+            <input class="in" id="i-url" type="text" inputmode="url" autocomplete="username" spellcheck="false" autocapitalize="off" placeholder="https://relay.example.com/v1">
+          </div>
+          <div class="grp">
+            <div class="lab-row">
+              <label class="lab" for="i-key" data-en="API key">API 密钥</label>
+              <span class="aside" id="i-key-aside" data-en="Supports env:VAR / file:/path">支持 env:VAR / file:/path</span>
+            </div>
+            <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="i-key-aside" placeholder="sk-... 或 env:EKTE_API_KEY" data-en-placeholder="sk-... or env:EKTE_API_KEY">
+          </div>
+          <div class="two">
+            <div class="grp">
+              <label class="lab" for="i-model"><span data-en="Model to request">请求的模型</span> <span class="key">model</span></label>
+              <input class="in" id="i-model" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="deepseek-chat">
+            </div>
+            <div class="grp">
+              <label class="lab" for="i-claimed"><span data-en="Claimed model">声称的模型</span> <span class="key">claimed_model</span> <span class="opt" data-en="Optional">可选</span></label>
+              <input class="in" id="i-claimed" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="i-claimed-hint" placeholder="留空 = 同请求的模型" data-en-placeholder="Empty = same as model to request">
+              <div class="hint" id="i-claimed-hint" data-en="Only if the relay sells it under another name — ekte checks the answers against this model.">仅当中转站以另一个名字售卖时填写 —— ekte 会按这个模型核对回答。</div>
+            </div>
+          </div>
+          <div class="grp" id="edims-grp" hidden>
+            <label class="lab" for="i-edims"><span data-en="Claimed dimension">声称维度</span> <span class="key">embedding_dimensions</span> <span class="opt" data-en="Optional">可选</span></label>
+            <input class="in" id="i-edims" type="number" min="0" step="1" inputmode="numeric" aria-describedby="i-edims-hint" placeholder="留空 = 取自知识库" data-en-placeholder="Empty = from the knowledge base">
+            <div class="hint" id="i-edims-hint" data-en="The vector length the claimed model returns. Empty or 0: taken from the knowledge base.">声称的模型返回的向量长度。留空或 0：取自知识库。</div>
+          </div>
+          <!-- declared_provider: derived from the claimed model's profile (relaycfg.js) -->
+          <input type="hidden" id="i-prov">
+          <div class="grp" id="api-grp">
+            <span class="lab" id="lab-api" data-en="Protocol">协议</span>
+            <div class="seg q" id="api" role="group" aria-labelledby="lab-api">
+              <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">自动</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>
+            </div>
+          </div>
+          <div class="grp">
+            <span class="lab" id="lab-suite" data-en="Test suite">检测套件</span>
+            <div class="seg q" id="suite" role="group" aria-labelledby="lab-suite">
+              <button type="button" aria-pressed="false" data-v="smoke">smoke</button><button type="button" aria-pressed="true" data-v="standard">standard</button><button type="button" aria-pressed="false" data-v="deep">deep</button><button type="button" aria-pressed="false" data-v="full">full</button><button type="button" aria-pressed="false" data-v="custom" data-en="custom">自定义</button>
+            </div>
+          </div>
+          <div class="grp" id="dims-grp" hidden>
+            <span class="lab" id="lab-dims" data-en="Dimensions to run">检测维度</span>
+            <div class="chips" id="dims" role="group" aria-labelledby="lab-dims" aria-describedby="dims-hint">
+              <button type="button" aria-pressed="true" data-v="model_identity" data-en="Model identity">模型身份</button><button type="button" aria-pressed="true" data-v="context_window" data-en="Context window">上下文窗口</button><button type="button" aria-pressed="true" data-v="capability" data-en="Capability claims">能力声明</button><button type="button" aria-pressed="true" data-v="protocol" data-en="Protocol compliance">协议兼容</button><button type="button" aria-pressed="true" data-v="connectivity" data-en="Connectivity">连通性</button><button type="button" aria-pressed="true" data-v="streaming" data-en="Streaming authenticity">流式真实</button><button type="button" aria-pressed="true" data-v="billing" data-en="Billing &amp; usage">计费用量</button><button type="button" aria-pressed="true" data-v="reliability" data-en="Concurrency reliability">并发可靠</button><button type="button" aria-pressed="true" data-v="performance" data-en="Performance">性能表现</button><button type="button" aria-pressed="true" data-v="security" data-en="Transport security">传输安全</button>
+            </div>
+            <div class="hint" id="dims-hint" data-en="Only the selected dimensions run, at deep depth; the overall score is computed from them alone.">只运行所选维度（按 deep 深度）；综合得分只按这些维度计算。</div>
+          </div>
+          <div class="grp" id="pmode-grp">
+            <span class="lab" id="lab-pmode" data-en="Performance probe requests">性能探测请求</span>
+            <div class="seg" id="pmode" role="group" aria-labelledby="lab-pmode" aria-describedby="pmode-hint">
+              <button type="button" aria-pressed="true" data-v="stream" data-en="Streaming">流式</button><button type="button" aria-pressed="false" data-v="non_stream" data-en="Non-streaming">非流式</button>
+            </div>
+            <div class="hint" id="pmode-hint"></div>
+          </div>
+
+          <div class="disclosure-box cmp" id="cmp">
+            <button type="button" class="disclosure" id="cmp-t" aria-expanded="false" aria-controls="cmp-body">
+              <span class="pico" data-icon="plus"></span><span class="t"><span data-en="Compare against a trusted baseline">对照可信基线</span> <span class="key">compare</span> <span class="badge good on-badge" id="cmp-on" hidden data-en="On">已启用</span></span>
+              <span class="cv" data-icon="chevronDown"></span>
+            </button>
+            <div class="disclosure-body" id="cmp-body" hidden>
+              <p class="cmp-hint" data-en="Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.">填一个你<b>信任的同款模型端点</b>（如官方 API）。ekte 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。</p>
+              <div class="grp">
+                <label class="lab" for="b-url"><span data-en="Baseline URL">基线地址</span> <span class="key">base_url</span></label>
+                <input class="in" id="b-url" type="text" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="https://api.openai.com/v1">
+              </div>
+              <div class="grp">
+                <label class="lab" for="b-key" data-en="Baseline API key">基线 API 密钥</label>
+                <input class="in" id="b-key" type="password" data-secret="b-url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="sk-... 或 env:OPENAI_API_KEY" data-en-placeholder="sk-... or env:OPENAI_API_KEY">
+              </div>
+              <div class="grp">
+                <label class="lab" for="b-model"><span data-en="Baseline model">基线模型</span> <span class="key">model</span></label>
+                <input class="in" id="b-model" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="同款官方模型 id" data-en-placeholder="Official id of the same model">
+              </div>
+              <div class="grp" id="bapi-grp" style="margin-bottom:0">
+                <span class="lab" id="lab-bapi" data-en="Baseline protocol">基线协议</span>
+                <div class="seg q" id="b-api" role="group" aria-labelledby="lab-bapi">
+                  <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">自动</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="cta" id="go"><span data-en="Start audit">开始检测</span> <span class="pico" data-icon="arrowRight"></span></button>
+          <div class="reassure" data-en="Tests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.">检测在 <b>你本地的 ekte 服务</b> 发起，密钥只用于连接目标中转站，<b>不上传任何第三方</b>。</div>
+          <div id="formerr" role="alert"></div>
+          <div id="formnote" role="status"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- STEP 2: live scan -->
+    <section class="view" id="v2" aria-labelledby="h-scan">
+      <div class="scan">
+        <div class="radar" id="radar" aria-hidden="true"><div class="ring"></div><div class="ring r2"></div><div class="sweep"></div><div class="ripple"></div><div class="ripple"></div><div class="ripple"></div><div class="core" data-icon="bolt"></div></div>
+        <h2 id="h-scan" tabindex="-1" data-en="Running checks…">正在体检…</h2>
+        <div class="target" id="scan-target"></div>
+        <div class="now" id="now" aria-live="polite"></div>
+        <div class="prog">
+          <div class="pbar" id="pbar-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="h-scan"><i id="pbar"></i></div>
+          <div class="cnt" id="cnt"></div>
+        </div>
+        <div class="scan-actions">
+          <button type="button" class="btn sm" id="bg" title="检测会继续运行；可在检测历史中查看进度" data-en-title="The audit keeps running; follow it in History"><span class="pico" data-icon="cornerDownRight"></span><span data-en="Continue in background">转到后台运行</span></button>
+          <button type="button" class="btn sm" id="cancel"><span class="pico" data-icon="x"></span><span data-en="Cancel">取消</span></button>
+        </div>
+        <div class="blk" id="dets-blk" hidden>
+          <h3 data-en="Checks">检测项</h3>
+          <p class="bh" data-en="Each check shows its score and how long it took; checks with findings expand to show the evidence.">每项检测显示得分与耗时；有发现的检测项可展开查看证据。</p>
+          <ul class="dets" id="dets"></ul>
+        </div>
+        <div class="blk" id="feed-blk" hidden>
+          <h3 data-en="Live evidence">实时证据</h3>
+          <ol class="feed" id="feed"></ol>
+        </div>
+        <div id="perf-live"></div>
+      </div>
+    </section>
+
+    <!-- STEP 3: report -->
+    <section class="view" id="v3" aria-label="报告" data-en-aria-label="Report">
+      <div id="report" tabindex="-1"></div>
+      <div class="foot" id="cmp-tip" data-en="Want the strongest verdict? Re-check against an official baseline with <code>ekte compare</code>.">想要最强结论？用 <code>ekte compare</code> 对照官方基线复检。</div>
+    </section>
+    </section>
+
+    <section role="tabpanel" id="panel-running" aria-labelledby="tab-running" tabindex="0" hidden>
+      <p class="jh" data-en="Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.">离开检测页后检测仍会继续运行。同一中转站的检测会依次排队运行，互不干扰检测结果。</p>
+      <p class="jempty" id="jobs-empty" data-en="No audits are running">当前没有正在运行的检测</p>
+      <ul class="jlist" id="jobs"></ul>
+    </section>
+    </div>
+  </main>
+</div>
+
+<script src="/i18n.js"></script>
+<script src="/perf.js"></script>
+<script src="/v2/static/chartmotion.js"></script>
+<script src="/icons.js"></script>
+<script src="/v2/static/tabs.js"></script>
+<script src="/v2/static/jobs.js"></script>
+<script src="/secretfield.js"></script>
+<script src="/v2/static/relaycfg.js"></script>
+<script src="/v2/static/nav.js"></script>
+<script src="/v2/static/notice.js"></script>
+<script src="/v2/static/report.js"></script>
+<script src="/v2/static/dimpick.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return [].slice.call(document.querySelectorAll(s)); };
+  var T = function (zh, en) { return window.EKTE_LANG ? EKTE_LANG.t(zh, en) : en; };
+  var Tf = function (zh, en, vars) {
+    return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
+  };
+  var srv = function (s) { return window.EKTE_LANG ? EKTE_LANG.server(s) : s; };
+  var ico = function (name, opts) { return window.ekteIcon ? ekteIcon(name, opts || {}) : ""; };
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  // read on use: the header's motion switch can change while the page is open
+  function reduceMotion() {
+    return document.documentElement.getAttribute("data-motion") === "off" ||
+      !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  var STATC = { pass: "good", warn: "warn", fail: "bad", info: "sky", inconclusive: "grey", not_run: "grey", error: "bad" };
+  var SEVC = { info: "sky", low: "warn", medium: "warn", high: "bad", critical: "bad" };
+  var ICON_NAME = { pass: "check", warn: "warning", fail: "x", info: "info", inconclusive: "info", not_run: "info", error: "x" };
+  var DIM = {
+    model_identity: ["模型身份", "Model identity"], context_window: ["上下文窗口", "Context window"],
+    capability: ["能力声明", "Capability claims"], billing: ["计费用量", "Billing & usage"],
+    protocol: ["协议兼容", "Protocol compliance"], connectivity: ["连通性", "Connectivity"],
+    reliability: ["并发可靠", "Concurrency reliability"], streaming: ["流式真实", "Streaming authenticity"],
+    security: ["传输安全", "Transport security"], performance: ["性能表现", "Performance"],
+  };
+  function statusLabel(s) { return window.EKTE_I18N ? EKTE_I18N.label("STATUS", s) : s; }
+  function detName(ev) {
+    var d = DIM[ev.dimension];
+    return (d ? T(d[0], d[1]) : ev.dimension || "") + " · " + srv(ev.name || ev.id);
+  }
+
+  // ---------- segmented controls ----------
+  function segVal(id) {
+    var b = document.querySelector("#" + id + ' button[aria-pressed="true"]');
+    return b ? b.getAttribute("data-v") : null;
+  }
+  $$(".seg").forEach(function (seg) {
+    seg.addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b || b.disabled) return;
+      [].forEach.call(seg.children, function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      if (seg.id === "suite") syncProbeMode();
+    });
+  });
+  // Custom suite: the dimensions to run.
+  var dims = EKTE_DIMPICK.bind($("#dims"), function () { syncProbeMode(); });
+  // ---------- endpoint type (surface) ----------
+  // The dimensions each non-chat surface scores (ekte/scoring.py); chat has all.
+  var SURFACE_DIMS = {
+    embedding: ["model_identity", "capability", "connectivity", "reliability", "performance"],
+    rerank: ["model_identity", "capability", "connectivity", "reliability", "performance"],
+  };
+  function surfaceVal() {
+    var r = document.querySelector('#surface input:checked');
+    return r ? r.value : "chat";
+  }
+  function dimsOf(surface) {
+    var own = SURFACE_DIMS[surface];
+    return dims.value().filter(function (d) { return !own || own.indexOf(d) >= 0; });
+  }
+  // Show the fields of the chosen surface: protocol, probe request mode and the
+  // chat-only dimensions are chat settings, the claimed vector length an
+  // embedding one. Hidden groups take their labels and hints with them.
+  function syncSurface() {
+    var s = surfaceVal(), chat = s === "chat", own = SURFACE_DIMS[s];
+    $("#api-grp").hidden = !chat;
+    $("#bapi-grp").hidden = !chat;
+    $("#edims-grp").hidden = s !== "embedding";
+    $$("#dims button").forEach(function (b) { b.hidden = !!own && own.indexOf(b.getAttribute("data-v")) < 0; });
+    if (relayCfg && relayCfg.setKind) relayCfg.setKind(s);
+    syncProbeMode();
+  }
+  function setSurface(v) {
+    var r = $$('#surface input').filter(function (x) { return x.value === v; })[0];
+    if (r) { r.checked = true; syncSurface(); }
+  }
+  $("#surface").addEventListener("change", syncSurface);
+  // Probe request mode: chosen on standard/deep/custom; full measures both; smoke has no probe.
+  function syncProbeMode() {
+    var suite = segVal("suite"), full = suite === "full", smoke = suite === "smoke";
+    var custom = suite === "custom", noPerf = custom && dimsOf(surfaceVal()).indexOf("performance") < 0;
+    $("#dims-grp").hidden = !custom;
+    // embedding and rerank requests never stream: no probe request mode
+    $("#pmode-grp").hidden = surfaceVal() !== "chat";
+    $$("#pmode button").forEach(function (b) { b.disabled = full || smoke || noPerf; });
+    $("#pmode-hint").textContent = smoke
+      ? T("smoke 套件不做性能探测。", "The smoke suite runs no performance probe.")
+      : noPerf
+      ? T("未选择性能表现维度，不做性能探测。", "Performance is not selected, so no probe runs.")
+      : full
+      ? T("full 套件会同时测量流式与非流式。", "The full suite measures both streaming and non-streaming.")
+      : suite === "standard"
+      ? T("standard 套件只在对照基线时发送探测请求；否则使用检测自身的请求。", "On standard the probe runs only with a baseline; otherwise the audit's own requests are used.")
+      : T("非流式用于测量不支持流式的中转站。", "Non-streaming measures relays that cannot stream.");
+  }
+
+  // ---------- compare disclosure ----------
+  function syncCmpBadge() {
+    $("#cmp-on").hidden = !($("#b-url").value.trim() && $("#b-model").value.trim());
+  }
+  function setCmpOpen(open) {
+    $("#cmp-t").setAttribute("aria-expanded", String(open));
+    $("#cmp-body").hidden = !open;
+    $("#cmp").classList.toggle("open", open);
+  }
+  $("#cmp-t").addEventListener("click", function () {
+    setCmpOpen($("#cmp-t").getAttribute("aria-expanded") !== "true");
+  });
+  ["#b-url", "#b-model"].forEach(function (s) { $(s).addEventListener("input", syncCmpBadge); });
+
+  // ---------- tabs: "New audit" (steps + views) / "Running" ----------
+  // v2/tabs.js; #running links the list. With ?job=<id> the page re-attaches
+  // to that audit, so the hash is ignored and "New audit" stays selected.
+  var hasJobParam = false;
+  try { hasJobParam = !!new URLSearchParams(location.search).get("job"); } catch (e) {}
+  var tabs = window.EkteTabs.init($(".tabs[role=tablist]"), {
+    fromHash: function (h) { return hasJobParam ? "new" : h; },
+  });
+  // the Running tab stays selectable while nothing runs (the panel says so);
+  // the badge counts queued + running audits and is part of the tab's name
+  // ---------- page notice (notice.js) ----------
+  // critical: the local server does not answer; warning: audits are running;
+  // success: the newest saved run; info (nothing saved yet): runs locally
+  var note = { status: null, err: false, active: 0 };
+  function paintNote() {
+    var n = null, r = note.status && note.status.latest;
+    if (note.err) {
+      n = { level: "critical", title: T("无法连接 ekte serve", "ekte serve cannot be reached"),
+        detail: T("本地服务已停止或重启：检测无法开始。", "The local server stopped or restarted: audits cannot start."),
+        actions: [{ act: "retry", label: T("重试", "Retry"), primary: true }] };
+    } else if (note.active) {
+      n = { level: "warning",
+        title: note.active === 1 ? T("1 项检测正在运行", "1 audit is running") : Tf("{n} 项检测正在运行", "{n} audits are running", { n: note.active }),
+        detail: T("同一中转站的新检测会等它们结束后再开始。", "A new audit of the same relay waits until they finish."),
+        actions: [{ act: "running", label: T("查看运行中", "Show running") }] };
+    } else if (r) {
+      var host = r.base_url || "";
+      try { host = new URL(r.base_url).host; } catch (e) { /* keep as is */ }
+      var when = "";
+      try { when = EKTE_LANG.dateFmt({ dateStyle: "medium", timeStyle: "short" }).format(new Date(r.ts)); } catch (e) { when = r.ts || ""; }
+      n = { level: "success", title: T("上次检测已完成", "Last audit finished"),
+        detail: [host, r.claimed_model || r.model,
+          typeof r.score === "number" ? Tf("评分 {n}/100", "score {n}/100", { n: Math.round(r.score) }) : "", when]
+          .filter(Boolean).join(" · "),
+        actions: [{ act: "open", label: T("打开报告", "Open report") }] };
+    } else if (note.status) {
+      n = { level: "info", icon: "lock", title: T("本地运行", "Runs locally"),
+        detail: T("API 密钥只发给你检测的中转站；检测从不保存它。", "Your API key goes only to the relay you test; an audit never stores it.") };
+    }
+    window.EkteNotice.show($("#note"), n);
+  }
+  function loadNote() {
+    return fetch("/api/history/status")
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (d) { note.status = d; note.err = false; }, function () { note.err = true; })
+      .then(paintNote);
+  }
+  $("#note").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-note-act]");
+    if (!b) return;
+    var act = b.getAttribute("data-note-act");
+    if (act === "retry") loadNote();
+    else if (act === "running") tabs.select("running", true);
+    else if (act === "open" && note.status && note.status.latest) location.href = "/v2/history#r-" + note.status.latest.id;
+  });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) loadNote(); });
+  window.addEventListener("ekte:lang", paintNote);
+  loadNote();
+
+  var jobs = window.EkteJobs.init($("#jobs"), {
+    kind: "audit",
+    onChange: function (active, rows) {
+      // an audit ended: the newest saved run changed
+      if (active < note.active) loadNote();
+      note.active = active;
+      paintNote();
+      $("#jobs-empty").hidden = rows > 0;
+      var c = $("#running-count");
+      c.hidden = !active;
+      c.textContent = active ? String(active) : "";
+    },
+  });
+  // "Watch live" in the list: follow that audit right here instead of
+  // reloading the page (modified clicks still open a new tab/window)
+  $("#jobs").addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="/v2/?job="]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var id = null;
+    try { id = new URL(a.href).searchParams.get("job"); } catch (err) {}
+    if (!id) return;
+    e.preventDefault();
+    if (id === jobId) { go(2); return; }
+    fetch("/api/jobs/" + encodeURIComponent(id))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (job) {
+        if (job && job.id) follow(job);
+        else location.href = a.href;
+      })
+      .catch(function () { location.href = a.href; });
+  });
+
+  // ---------- views + stepper ----------
+  function go(n) {
+    // the views live in the "New audit" tab: show it before moving focus
+    if (tabs.current() !== "new") tabs.select("new", false);
+    $$(".view").forEach(function (v) { v.classList.remove("show"); });
+    $("#v" + n).classList.add("show");
+    for (var i = 1; i <= 3; i++) {
+      var li = $("#st-" + i);
+      if (i === n) li.setAttribute("aria-current", "step");
+      else li.removeAttribute("aria-current");
+      li.classList.toggle("done", i < n);
+      li.querySelector(".n").innerHTML = i < n ? ico("check") : String(i);
+    }
+    window.scrollTo({ top: 0, behavior: reduceMotion() ? "auto" : "smooth" });
+    // move focus into the new view (the old one is now display:none)
+    (n === 1 ? $("#h-config") : n === 2 ? $("#h-scan") : $("#report")).focus({ preventScroll: true });
+  }
+
+  // ---------- messages kept as functions so a language switch re-renders them ----------
+  var nowText = function () { return T("连接端点…", "Connecting to endpoint…"); };
+  var formErr = null, formNote = null, feedItems = [], progress = { done: 0, total: 0 };
+  function setNow(fn) { nowText = fn; $("#now").textContent = fn(); }
+  function setFormErr(fn) {
+    formErr = fn;
+    $("#formerr").innerHTML = fn ? '<div class="errbox">' + fn() + "</div>" : "";
+  }
+  function setFormNote(fn) {
+    formNote = fn;
+    $("#formnote").innerHTML = fn ? '<div class="infobox">' + fn() + "</div>" : "";
+  }
+  var historyLink = function () { return '<a href="/v2/history">' + esc(T("在检测历史中查看进度", "Follow it in History")) + " →</a>"; };
+  function renderCount() {
+    $("#cnt").textContent = progress.total
+      ? T("已完成 {n} / {total} 项检测", "{n} of {total} checks done").replace("{n}", progress.done).replace("{total}", progress.total) +
+        (clock.t0 ? " · " + dur(Date.now() - clock.t0) : "")
+      : "";
+  }
+  // Wall-clock of the audit and of the check in progress (display only: the
+  // times of finished checks come from the server).
+  var clock = { t0: 0, timer: null, li: null, start: 0 };
+  function dur(ms) { return window.EkteReport ? EkteReport.duration(ms) : Math.round(ms) + " ms"; }
+  function tick() {
+    renderCount();
+    var ms = clock.li && clock.li.querySelector(".ms");
+    if (ms) ms.textContent = dur(Date.now() - clock.start);
+  }
+  function startClock(t0) {
+    stopClock();
+    clock.t0 = t0 || Date.now();
+    clock.timer = setInterval(tick, 250);
+  }
+  function stopClock() {
+    if (clock.timer) clearInterval(clock.timer);
+    clock.timer = null;
+    clock.li = null;
+  }
+
+  // ---------- step 1 -> 2: run the audit ----------
+  // The audit runs on the server as a background job (/api/jobs); this page
+  // only follows its events. Leaving the page, or "Continue in background",
+  // detaches it and the audit runs on — the history page lists it with its
+  // progress and links back here (?job=<id>), where the log is replayed.
+  // Audits of a relay that is busy with another audit wait in a queue.
+  var controller = null, lastReport = null, jobId = null;
+  var live = window.EktePerf ? new EktePerf.Live($("#perf-live")) : null;
+
+  $("#form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    startAudit();
+  });
+  $("#cancel").addEventListener("click", function () {
+    if (!jobId) return;
+    $("#cancel").disabled = true;
+    // the event stream reports the cancellation and goes back to the form
+    fetch("/api/jobs/" + encodeURIComponent(jobId) + "/cancel", { method: "POST" })
+      .catch(function () {})
+      .then(function () { $("#cancel").disabled = false; });
+  });
+  $("#bg").addEventListener("click", function () {
+    detach();
+    go(1);
+    setFormNote(function () {
+      return esc(T("检测已转到后台继续运行。", "The audit keeps running in the background.")) + " " + historyLink();
+    });
+  });
+  // Field errors: a visible message under the field, linked with
+  // aria-describedby while the field is invalid (BITV 9.3.3.1 / 9.3.3.3).
+  var FIELD_MSG = {
+    "#i-url": function () { return T("请填写中转站地址，例如 https://relay.example.com/v1。", "Enter the relay URL, e.g. https://relay.example.com/v1."); },
+    "#i-model": function () { return T("请填写请求的模型，例如 deepseek-chat。", "Enter the model to request, e.g. deepseek-chat."); },
+    "#b-url": function () { return T("请填写基线地址，或清空基线模型。", "Enter the baseline URL, or clear the baseline model."); },
+    "#b-model": function () { return T("请填写基线模型，或清空基线地址。", "Enter the baseline model, or clear the baseline URL."); },
+  };
+  var fieldErrs = {};
+  // The control the user actually sees: while the model picker shows its
+  // selects, the text input behind them is hidden.
+  function fieldCtl(sel) {
+    var el = $(sel), zmp = el.closest(".zmp");
+    if (!zmp || el.getClientRects().length) return el;
+    var sels = zmp.querySelectorAll(".zmp-sel");
+    for (var i = 0; i < sels.length; i++) {
+      if (!sels[i].disabled && !sels[i].value && sels[i].getClientRects().length) return sels[i];
+    }
+    return el;
+  }
+  function markInvalid(el, id, on) {
+    var ids = (el.getAttribute("aria-describedby") || "").split(/\s+/).filter(function (x) { return x && x !== id; });
+    if (on) { el.setAttribute("aria-invalid", "true"); ids.push(id); } else el.removeAttribute("aria-invalid");
+    if (ids.length) el.setAttribute("aria-describedby", ids.join(" ")); else el.removeAttribute("aria-describedby");
+  }
+  function fieldErr(sel, on) {
+    var el = $(sel), grp = el.closest(".grp"), id = el.id + "-err", box = document.getElementById(id);
+    if (!box && !on) return;
+    if (!box) {
+      box = document.createElement("p");
+      box.className = "ferr";
+      box.id = id;
+      grp.appendChild(box);
+    }
+    fieldErrs[sel] = !!on;
+    box.hidden = !on;
+    box.textContent = on ? FIELD_MSG[sel]() : "";
+    [].slice.call(grp.querySelectorAll('[aria-describedby~="' + id + '"]')).forEach(function (x) { markInvalid(x, id, false); });
+    if (on) { markInvalid(el, id, true); markInvalid(fieldCtl(sel), id, true); }
+  }
+  // clear a message as soon as the field (or the baseline pair) is fixed
+  ["#i-url", "#i-model"].forEach(function (s) {
+    $(s).addEventListener("input", function () { if (fieldErrs[s] && $(s).value.trim()) fieldErr(s, false); });
+  });
+  ["#b-url", "#b-model"].forEach(function (s) {
+    $(s).addEventListener("input", function () {
+      if (!!$("#b-url").value.trim() === !!$("#b-model").value.trim()) { fieldErr("#b-url", false); fieldErr("#b-model", false); }
+    });
+  });
+
+  function invalid(sel) { fieldErr(sel, true); }
+
+  // ?job=<id> in the address bar: a reload or the history page re-attaches.
+  function setJobParam(id) {
+    try {
+      var u = new URL(location.href);
+      if (id) u.searchParams.set("job", id); else u.searchParams.delete("job");
+      history.replaceState(null, "", u.pathname + u.search + u.hash);
+    } catch (e) {}
+  }
+  // Stop following the job (it keeps running on the server).
+  function detach() {
+    if (controller) controller.abort();
+    controller = null;
+    jobId = null;
+    stopClock();
+    setJobParam(null);
+  }
+
+  // While the job is being created #go stays focusable (aria-disabled, not
+  // disabled): disabling the focused button would drop focus to <body>.
+  function setGoBusy(busy) {
+    if (busy) $("#go").setAttribute("aria-disabled", "true"); else $("#go").removeAttribute("aria-disabled");
+  }
+  async function startAudit() {
+    if ($("#go").getAttribute("aria-disabled") === "true") return;
+    setFormErr(null);
+    setFormNote(null);
+    Object.keys(FIELD_MSG).forEach(function (x) { fieldErr(x, false); });
+    var payload = {
+      base_url: $("#i-url").value.trim(),
+      api_key: $("#i-key").value.trim(),
+      model: $("#i-model").value.trim(),
+      claimed_model: $("#i-claimed").value.trim(),
+      declared_provider: $("#i-prov").value.trim(),
+      api: segVal("api"),
+      suite: segVal("suite"),
+      surface: surfaceVal(),
+      performance_streaming: segVal("pmode") === "stream",
+    };
+    if (payload.surface !== "chat") {
+      // the protocol and the probe request mode are chat settings
+      payload.api = "auto";
+      payload.performance_streaming = true;
+    }
+    if (payload.surface === "embedding") payload.embedding_dimensions = Math.max(0, parseInt($("#i-edims").value, 10) || 0);
+    if (payload.suite === "custom") payload.dimensions = dimsOf(payload.surface);
+    if (!payload.base_url || !payload.model) {
+      if (!payload.base_url) invalid("#i-url");
+      if (!payload.model) invalid("#i-model");
+      setFormErr(function () { return esc(T("请填写中转站地址和请求的模型。", "Please enter the relay URL and the model to request.")); });
+      fieldCtl(payload.base_url ? "#i-model" : "#i-url").focus();
+      return;
+    }
+    if (payload.dimensions && !payload.dimensions.length) {
+      setFormErr(function () { return esc(T("请至少选择一个检测维度。", "Select at least one dimension to run.")); });
+      $("#dims button").focus();
+      return;
+    }
+    var bUrl = $("#b-url").value.trim(), bModel = $("#b-model").value.trim();
+    if (!!bUrl !== !!bModel) {
+      setCmpOpen(true);
+      invalid(bUrl ? "#b-model" : "#b-url");
+      setFormErr(function () { return esc(T("要对照基线，请同时填写基线地址和基线模型。", "To compare, enter both the baseline URL and the baseline model.")); });
+      fieldCtl(bUrl ? "#b-model" : "#b-url").focus();
+      return;
+    }
+    if (bUrl && bModel) payload.baseline = { base_url: bUrl, api_key: $("#b-key").value.trim(), model: bModel, api: payload.surface === "chat" ? segVal("b-api") : "auto" };
+    if (window.EkteSecret) EkteSecret.remember($("#form"));
+
+    setGoBusy(true);
+    var job;
+    try {
+      var resp = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      job = await resp.json().catch(function () { return {}; });
+      if (!resp.ok) {
+        var bad = job.error || "HTTP " + resp.status;
+        setFormErr(function () { return esc(T("检测失败：", "Audit failed: ")) + esc(srv(bad)); });
+        return;
+      }
+    } catch (err) {
+      var msg = String((err && err.message) || err);
+      setFormErr(function () { return esc(T("连接本地服务失败：", "Could not reach the local service: ")) + esc(msg); });
+      return;
+    } finally {
+      setGoBusy(false);
+    }
+    follow(job);
+  }
+
+  // Show the scan view for a job and follow its events (the server replays
+  // what already happened first, so re-attaching mid-run catches up).
+  async function follow(job) {
+    detach();
+    jobId = job.id;
+    setJobParam(job.id);
+    if (jobs.refresh) jobs.refresh().catch(function () {}); // the Running tab enables now, not at the next poll
+    resetScan(job);
+    go(2);
+    if (job.status !== "queued") startClock(job.started ? job.started * 1000 : 0);
+    var ctl = (controller = new AbortController());
+    var state = { seen: {}, finished: false };
+    try {
+      var resp = await fetch("/api/jobs/" + encodeURIComponent(job.id) + "/events", { signal: ctl.signal });
+      if (!resp.ok || !resp.body) throw new Error("HTTP " + resp.status);
+      var reader = resp.body.getReader(), dec = new TextDecoder(), buf = "";
+      for (;;) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        buf += dec.decode(chunk.value, { stream: true });
+        var i;
+        while ((i = buf.indexOf("\n\n")) >= 0) {
+          var block = buf.slice(0, i);
+          buf = buf.slice(i + 2);
+          var line = block.split("\n").find(function (l) { return l.indexOf("data:") === 0; });
+          if (!line) continue;
+          handle(JSON.parse(line.slice(5).trim()), state);
+        }
+      }
+      if (!state.finished) {
+        go(1);
+        setFormErr(function () { return esc(T("未收到报告（数据流已结束）", "No report received (stream ended)")); });
+      }
+    } catch (err) {
+      if (err && err.name === "AbortError") return; // detached: the audit runs on
+      if (!state.finished) {
+        var msg = String((err && err.message) || err);
+        go(1);
+        setFormErr(function () { return esc(T("连接本地服务失败：", "Could not reach the local service: ")) + esc(msg); });
+      }
+    } finally {
+      if (controller === ctl) {
+        stopClock();
+        controller = null;
+        jobId = null;
+      }
+    }
+  }
+
+  function resetScan(payload) {
+    $("#dets").innerHTML = "";
+    $("#feed").innerHTML = "";
+    $("#dets-blk").hidden = true;
+    $("#feed-blk").hidden = true;
+    $("#radar").classList.remove("done");
+    feedItems = [];
+    progress = { done: 0, total: 0 };
+    clock.t0 = 0;
+    $("#bg").hidden = false;
+    $("#cancel").hidden = false;
+    renderCount();
+    if (live) live.reset({});
+    setProgress(0);
+    $("#scan-target").innerHTML = "<code>" + esc(payload.base_url) + "</code> · <code>" + esc(payload.claimed_model || payload.model) + "</code>";
+    setNow(function () { return T("连接端点…", "Connecting to endpoint…"); });
+  }
+  function setProgress(pct) {
+    $("#pbar").style.width = pct + "%";
+    $("#pbar-wrap").setAttribute("aria-valuenow", String(pct));
+  }
+
+  // One SSE event of /api/jobs/<id>/events.
+  function handle(ev, state) {
+    if (ev.type === "queued") {
+      var hosts = (ev.waiting_for || []).join(", ");
+      setNow(function () {
+        return hosts
+          ? T("排队中：{h} 正在进行另一项检测…", "Queued: another audit is using {h}…").replace("{h}", hosts)
+          : T("排队中：等待空闲的检测位…", "Queued: waiting for a free audit slot…");
+      });
+    } else if (ev.type === "running") {
+      if (!clock.t0) startClock();
+      setNow(function () { return T("连接端点…", "Connecting to endpoint…"); });
+    } else if (ev.type === "cancelled") {
+      state.finished = true;
+      setJobParam(null);
+      go(1);
+      setFormNote(function () { return esc(T("检测已取消。", "Audit cancelled.")); });
+    } else if (ev.type === "start") {
+      setNow(function () { return T("开始检测 ", "Starting audit of ") + (ev.claimed_model || "") + " …"; });
+      if (live) live.reset({ probeTotal: ev.probe_requests || 0, hasBaseline: !!ev.has_baseline });
+    } else if (ev.type === "requests") {
+      if (live) live.add(ev.records);
+    } else if (ev.type === "detector_start") {
+      if (!state.seen[ev.id]) state.seen[ev.id] = addDet(ev);
+      clock.li = state.seen[ev.id];
+      // the server's start time, so a replayed check keeps its elapsed time
+      clock.start = ev.at ? ev.at * 1000 : Date.now();
+      tick();
+      if (ev.total) { progress.total = ev.total; renderCount(); }
+      setNow(function () { return detName(ev) + " …"; });
+    } else if (ev.type === "detector_done") {
+      var d = state.seen[ev.id] || (state.seen[ev.id] = addDet(ev));
+      d.className = "det " + ev.status;
+      d.__status = ev.status;
+      d.__done = ev;
+      renderDet(d);
+      if (clock.li === d) clock.li = null;
+      progress.total = ev.total || progress.total;
+      progress.done = (ev.index || 0) + 1;
+      renderCount();
+      setProgress(Math.round((progress.done / (progress.total || 1)) * 100));
+      (ev.findings || []).forEach(function (f) {
+        if (["fail", "warn", "error"].indexOf(f.status) >= 0 || ["high", "critical"].indexOf(f.severity) >= 0) addFeed(ev, f);
+      });
+    } else if (ev.type === "report") {
+      state.finished = true;
+      showReport(ev.report);
+    } else if (ev.type === "error") {
+      state.finished = true;
+      setJobParam(null);
+      go(1);
+      setFormErr(function () { return esc(T("检测失败：", "Audit failed: ")) + esc(srv(ev.message)); });
+    }
+  }
+
+  // One check of the live list: status, name, score and time; a check with
+  // findings is a disclosure over all of them with their evidence.
+  var detSeq = 0;
+  function addDet(ev) {
+    var li = document.createElement("li");
+    li.className = "det run";
+    li.__ev = ev;
+    li.__status = "run";
+    li.__pid = "det-ev-" + ++detSeq;
+    li.innerHTML = '<div class="dh"></div>';
+    renderDet(li);
+    $("#dets").appendChild(li);
+    $("#dets-blk").hidden = false;
+    return li;
+  }
+  function renderDet(li) {
+    var status = li.__status, done = li.__done, fs = (done && done.findings) || [];
+    var icon = status === "run" ? ico("play") : ico(ICON_NAME[status] || "info");
+    var st = status === "run" ? T("进行中", "Running") : statusLabel(status);
+    var name = '<span class="nm">' + esc(detName(li.__ev)) + '</span><span class="sr-only"> — ' + esc(st) + "</span>";
+    var head = fs.length
+      ? '<button type="button" class="dt dtg" aria-expanded="' + !!li.__open + '" aria-controls="' + li.__pid + '">' +
+        '<span class="chev" aria-hidden="true">' + ico("chevronDown") + "</span><span>" + name + ' <span class="nf">(' +
+        esc((fs.length === 1 ? T("{n} 项", "{n} finding") : T("{n} 项", "{n} findings")).replace("{n}", fs.length)) + ")</span></span></button>"
+      : '<span class="dt">' + name + "</span>";
+    var meta = done
+      ? (done.score != null
+          ? '<span class="sc ' + scoreC(done.score) + '">' + esc(T("{s} 分", "Score {s}").replace("{s}", Math.round(done.score * 10) / 10)) + "</span>"
+          : "") + '<span class="ms">' + esc(dur(done.duration_ms)) + "</span>"
+      : '<span class="ms" aria-hidden="true"></span>';
+    li.querySelector(".dh").innerHTML = '<span class="ic" aria-hidden="true">' + icon + "</span>" + head + '<span class="dm">' + meta + "</span>";
+    if (!fs.length || !window.EkteReport) return;
+    var p = li.querySelector(".dev");
+    if (!p) {
+      p = document.createElement("div");
+      p.className = "dev";
+      p.id = li.__pid;
+      p.hidden = !li.__open;
+      li.appendChild(p);
+    }
+    p.innerHTML = fs.map(EkteReport.findingDetail).join("");
+  }
+  function scoreC(v) { return v >= 85 ? "good" : v >= 70 ? "warn" : "bad"; }
+  $("#dets").addEventListener("click", function (e) {
+    var b = e.target.closest("button.dtg");
+    if (!b) return;
+    var li = b.closest(".det");
+    li.__open = !li.__open;
+    b.setAttribute("aria-expanded", String(li.__open));
+    var p = document.getElementById(b.getAttribute("aria-controls"));
+    if (p) p.hidden = !li.__open;
+  });
+
+  function loc(f) {
+    if (window.EKTE_I18N && EKTE_I18N.localizeFinding) return EKTE_I18N.localizeFinding(f.id, f.summary, f.evidence, f.title, f.status);
+    return { title: srv(f.title), summary: srv(f.summary || "") };
+  }
+  function evHi(f) {
+    var e = f.evidence || {};
+    var pri = ["target_answer", "observed", "self-id", "forbidden_hits", "forbidden_hit", "effective_window", "ratio",
+      "reported_completion", "reported_prompt", "substitutions", "returned", "model_returned", "declared", "scheme", "overhead"];
+    for (var i = 0; i < pri.length; i++) {
+      var k = pri[i];
+      if (e[k] != null && String(e[k]).length) return k + ": " + String(e[k]).slice(0, 220);
+    }
+    var ks = Object.keys(e);
+    return ks.length ? ks[0] + ": " + String(e[ks[0]]).slice(0, 220) : "";
+  }
+  function feedHTML(ev, f) {
+    var hi = evHi(f), L = loc(f);
+    return '<span class="fdot" aria-hidden="true">' + ico(ICON_NAME[f.status] || "info") + "</span>" +
+      '<div class="fb"><div class="fmeta">' + esc(detName(ev)) + " · " + esc(statusLabel(f.status)) + "</div>" +
+      '<div class="ft">' + esc(L.title) + "</div>" +
+      (L.summary ? '<div class="fe">' + esc(L.summary) + "</div>" : "") +
+      (hi ? '<div class="fe"><b>' + esc(T("证据", "Evidence")) + "</b> " + esc(hi) + "</div>" : "") + "</div>";
+  }
+  function addFeed(ev, f) {
+    var li = document.createElement("li");
+    li.className = "fi " + (SEVC[f.severity] || STATC[f.status] || "grey");
+    li.innerHTML = feedHTML(ev, f);
+    $("#feed").appendChild(li);
+    $("#feed-blk").hidden = false;
+    feedItems.push({ el: li, ev: ev, f: f });
+  }
+
+  // ---------- step 3: report ----------
+  function showReport(report) {
+    lastReport = report;
+    $("#radar").classList.add("done");
+    $("#bg").hidden = true;
+    $("#cancel").hidden = true;
+    EkteReport.render($("#report"), report, {
+      actions: [
+        { zh: "再测一个", en: "Test another", onClick: function () { setJobParam(null); go(1); } },
+      ],
+      download: { name: "ekte-report" },
+    });
+    $("#cmp-tip").hidden = !!report.baseline;
+    go(3);
+  }
+
+  // ---------- language switch: re-render script-generated text ----------
+  window.addEventListener("ekte:lang", function () {
+    $("#now").textContent = nowText();
+    renderCount();
+    var focused = document.activeElement && document.activeElement.closest ? document.activeElement.closest(".det") : null;
+    $$("#dets .det").forEach(function (d) { if (d.__ev) renderDet(d); });
+    if (focused && focused.querySelector(".dtg")) focused.querySelector(".dtg").focus();
+    feedItems.forEach(function (x) { x.el.innerHTML = feedHTML(x.ev, x.f); });
+    if (formErr) setFormErr(formErr);
+    Object.keys(fieldErrs).forEach(function (x) { if (fieldErrs[x]) $("#" + $(x).id + "-err").textContent = FIELD_MSG[x](); });
+    if (formNote) setFormNote(formNote);
+    syncProbeMode();
+    if (live) live.render();
+  });
+
+  // ---------- init ----------
+  $$("[data-icon]").forEach(function (el) { el.innerHTML = ico(el.getAttribute("data-icon")); });
+  $("#now").textContent = nowText();
+  syncProbeMode();
+  syncCmpBadge();
+  // Relay / provider -> base URL -> key -> the relay's models -> claimed model
+  // (knowledge base); the trusted baseline is configured the same way, without
+  // a claimed model.
+  var relayCfg = null;
+  if (window.EkteRelayConfig) {
+    relayCfg = EkteRelayConfig.bind({
+      url: "#i-url", key: "#i-key", model: "#i-model", claimed: "#i-claimed", provider: "#i-prov",
+      api: function () { return segVal("api"); },
+    });
+    EkteRelayConfig.bind({
+      url: "#b-url", key: "#b-key", model: "#b-model", api: function () { return segVal("b-api"); },
+      relayLabel: ["基线中转站 / 厂商", "Baseline relay / provider"],
+    });
+  }
+  syncSurface();  // a radio state the browser restored on reload
+  // /v2/?surface=embedding|rerank (e.g. from History or the docs) preselects the endpoint type.
+  (function () {
+    var v = null;
+    try { v = new URLSearchParams(location.search).get("surface"); } catch (e) {}
+    if (v) setSurface(v);
+  })();
+  // /v2/?rerun=<history id> (from History): fill the form with that run's
+  // configuration. The API key is never stored in history, so the key field
+  // stays empty unless the browser fills its saved credential for the URL.
+  (function () {
+    var id = null;
+    try { id = new URLSearchParams(location.search).get("rerun"); } catch (e) {}
+    if (!id) return;
+    function seg(group, v) {
+      var btns = $$("#" + group + " button");
+      if (!btns.some(function (b) { return b.getAttribute("data-v") === v; })) return;
+      btns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-v") === v)); });
+    }
+    fetch("/api/history/" + encodeURIComponent(id) + "?trend=1")
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (rep) {
+        var t = rep.target || {};
+        var v = {
+          url: t.base_url || "", model: t.model || "", provider: t.declared_provider || "",
+          claimed: t.claimed_model && t.claimed_model !== t.model ? t.claimed_model : "",
+        };
+        setSurface(rep.surface || "chat");
+        if (relayCfg) relayCfg.set(v);
+        else { $("#i-url").value = v.url; $("#i-model").value = v.model; $("#i-claimed").value = v.claimed; $("#i-prov").value = v.provider; }
+        seg("api", t.api_auto === false && t.api ? t.api : "auto");
+        seg("suite", rep.suite || "standard");
+        if (rep.suite === "custom") dims.set(rep.dimensions_selected);
+        // the claimed vector length (0 or missing: from the knowledge base)
+        $("#i-edims").value = rep.surface === "embedding" && rep.embedding_dimensions > 0 ? String(rep.embedding_dimensions) : "";
+        // the other surfaces never stream: their runs leave the chat setting alone
+        if ((rep.surface || "chat") === "chat") seg("pmode", rep.stream_mode === "non_stream" ? "non_stream" : "stream");
+        syncProbeMode();
+      })
+      .catch(function () {});
+  })();
+
+  // Re-attach to a background audit: /v2/?job=<id> (from History, or a reload).
+  (function () {
+    var id = null;
+    try { id = new URLSearchParams(location.search).get("job"); } catch (e) {}
+    if (!id) return;
+    fetch("/api/jobs/" + encodeURIComponent(id))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (job) {
+        if (job && job.id) return follow(job);
+        setJobParam(null);
+        setFormNote(function () {
+          return esc(T("这次检测已不在运行列表中，它的报告在检测历史里。", "That audit is no longer running — its report is in History.")) +
+            ' <a href="/v2/history">' + esc(T("打开检测历史", "Open History")) + " →</a>";
+        });
+      })
+      .catch(function () {});
+  })();
+
+  // test hook: render a report without running an audit (used by the e2e checks)
+  var hookState = { seen: {}, finished: false };
+  window.EkteAuditPage = { showReport: showReport, handle: function (ev) { handle(ev, hookState); } };
+})();
+</script>
+</body>
+</html>

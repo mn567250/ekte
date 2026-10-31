@@ -45,8 +45,8 @@ def _paged_history(open_page: Any, theme: str = "light", viewport: dict[str, int
     )
     open_page.contexts.append(ctx)
     ctx.add_init_script(
-        "try { localStorage.setItem('zing.lang', 'en');"
-        f" localStorage.setItem('zing.v2.theme', {json.dumps(theme)}); }} catch (e) {{}}"
+        "try { localStorage.setItem('ekte.lang', 'en');"
+        f" localStorage.setItem('ekte.v2.theme', {json.dumps(theme)}); }} catch (e) {{}}"
     )
     ctx.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
     ctx.route(
@@ -109,7 +109,7 @@ def test_show_more_by_keyboard(open_page) -> None:
         issues.append(f"after the last page focus is on {focused!r}, expected the first added row {first_new!r}")
 
     # a re-render (language switch) keeps the group expanded and the focus
-    page.evaluate("() => window.dispatchEvent(new Event('zing:lang'))")
+    page.evaluate("() => window.dispatchEvent(new Event('ekte:lang'))")
     settle(page)
     if _rows(page) != ROWS:
         issues.append(f"re-render collapsed the group to {_rows(page)} rows")

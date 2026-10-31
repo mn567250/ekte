@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import pytest
 
-from zing.detectors import billing, model_identity
-from zing.detectors.billing import BillingDetector
-from zing.detectors.model_identity import ModelIdentityDetector
-from zing.detectors.scale import DeductionScale
-from zing.models import DetectorResult, Finding, Status
-from zing.report.dimensions import _effect
+from ekte.detectors import billing, model_identity
+from ekte.detectors.billing import BillingDetector
+from ekte.detectors.model_identity import ModelIdentityDetector
+from ekte.detectors.scale import DeductionScale
+from ekte.models import DetectorResult, Finding, Status
+from ekte.report.dimensions import _effect
 
 
 def _matches_scale(result: DetectorResult, scale) -> None:

@@ -1,11 +1,9 @@
 - banner:
   - link "Saltar para o conteúdo principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interface clássica":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Tema":
     - option "Automático"
     - option "Claro" [selected]
@@ -35,10 +33,10 @@
     - link "Conhecimento":
       - /url: /v2/kb
 - main:
-  - heading "A base de conhecimento usada pelo zing" [level=1]
+  - heading "A base de conhecimento usada pelo ekte" [level=1]
   - paragraph:
-    - text: "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, provedor e relay que o zing conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adicionar os seus. As suas alterações são guardadas em kb.db nesta máquina e usadas tanto pela interface web como pelo"
-    - code: zing check
+    - text: "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, provedor e relay que o ekte conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adicionar os seus. As suas alterações são guardadas em kb.db nesta máquina e usadas tanto pela interface web como pelo"
+    - code: ekte check
     - text: .
   - status: Base de conhecimento completa 130 modelos · 7 provedores · 1 relay, todos ativados
   - region "Filtros":
@@ -97,7 +95,7 @@
         - /placeholder: "provider: …\nmodels:\n- id: …"
       - text: Escolher um arquivo .yaml
       - heading "3 Verificar e salvar" [level=3]
-      - paragraph: A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o zing enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é salvo até você salvar.
+      - paragraph: A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o ekte enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é salvo até você salvar.
       - button "Verificação"
       - button "Salvar na base" [disabled]
     - group:
@@ -123,4 +121,4 @@
     # … more items of the same shape
 - contentinfo:
   - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
-  - paragraph: "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."
+  - paragraph: "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

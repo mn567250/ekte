@@ -1,11 +1,9 @@
 - banner:
   - link "Vai al contenuto principale":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interfaccia classica":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Tema":
     - option "Automatico"
     - option "Chiaro" [selected]
@@ -246,7 +244,7 @@
             - definition: 27 set 2026, 10:02
             - term: Versione
             - definition:
-              - code: zing v<version>
+              - code: ekte v<version>
             - heading "Controlli per dimensione 1 di 10 dimensioni eseguite" [level=3]
             - button "Conformità del protocollo"
             - text: L'API rispetta la specifica?
@@ -275,7 +273,7 @@
             - paragraph: I controlli vengono eseguiti uno dopo l'altro; il più lento è stato context_window (<duration>).
             - button "Mostra tutti (6)"
             - paragraph:
-              - text: zing fornisce
+              - text: ekte fornisce
               - strong: prove riproducibili di scostamento del comportamento e di rischio
               - text: ", non una prova legale o crittografica di frode. Gli intermediari possono instradare in modo probabilistico; valuta tu dimensione del campione, impostazioni di fatturazione e legge locale, e non accusare mai pubblicamente un fornitore sulla base di una singola esecuzione."
             - button "Pianifica come monitor"
@@ -306,4 +304,4 @@
   - status
 - contentinfo:
   - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
-  - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."
+  - paragraph: "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

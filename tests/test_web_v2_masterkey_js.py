@@ -1,4 +1,4 @@
-"""The monitors' master key UI (zing/web/static/v2/masterkey.js), evaluated under node."""
+"""The monitors' master key UI (ekte/web/static/v2/masterkey.js), evaluated under node."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ const path = require("path");
 global.window = { addEventListener() {}, dispatchEvent() {} };
 global.Event = function (t) { this.type = t; };
 require(path.join(process.argv[1], "masterkey.js"));
-const M = window.ZingMasterKey;
+const M = window.EkteMasterKey;
 const out = {};
 
 out.decide = [
@@ -53,14 +53,14 @@ function run(statuses, answer) {
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_masterkey_logic_and_vault_storage():
-    static = Path(__file__).resolve().parent.parent / "zing" / "web" / "static" / "v2"
+    static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v2"
     out = json.loads(subprocess.run(
         ["node", "-e", _JS, str(static)], capture_output=True, text=True, check=True,
     ).stdout)
     # A missing key opens setup, a locked one the unlock dialog; otherwise nothing.
     assert out["decide"] == ["setup", "unlock", None, None, None]
     # The browser vault gets one entry under a fixed username, and only for a key.
-    assert out["stored"] == [{"id": "zing-master-key", "name": "zing master key", "password": "k-123"}]
+    assert out["stored"] == [{"id": "ekte-master-key", "name": "ekte master key", "password": "k-123"}]
     # [final status, requests made, dialogs opened]
     assert out["plain"] == [200, 1, 0]
     assert out["unlocked"] == [200, 2, 1]

@@ -1,16 +1,16 @@
-# zing — Methodik
+# ekte — Methodik
 
 > [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · **🇩🇪 Deutsch**
 
-Dieses Dokument erklärt, wie **zing** zu seinem Urteil kommt: welche
+Dieses Dokument erklärt, wie **ekte** zu seinem Urteil kommt: welche
 Black-Box-Tests jeder Detektor sendet, wie aus ihren Ergebnissen Punkte werden,
 wie aus Punkten Dimensionsbewertungen und eine Gesamtbewertung werden und wie
 das Risikourteil entschieden wird. Es beschreibt die aktuelle Implementierung;
 jede Bewertungstabelle unten ist die veröffentlichte Skala des Detektors
-(`SCALE` in `zing/detectors/*.py`) mit demselben Wortlaut, den die
+(`SCALE` in `ekte/detectors/*.py`) mit demselben Wortlaut, den die
 Weboberfläche unter **Bewertungsskala** zeigt.
 
-> zing liefert **Black-Box-Belege für Abweichungen und Risiken, keinen
+> ekte liefert **Black-Box-Belege für Abweichungen und Risiken, keinen
 > kryptografischen Betrugsnachweis.** Siehe [Grenzen & verantwortungsvoller Einsatz](#grenzen--verantwortungsvoller-einsatz).
 
 ---
@@ -18,21 +18,21 @@ Weboberfläche unter **Bewertungsskala** zeigt.
 ## Grundhaltung
 
 Ein Relay kann aus legitimen Gründen abweichen, Snapshots aktualisieren,
-Kapazität bündeln oder einen Upstream puffern, der nicht streamen kann. zing
+Kapazität bündeln oder einen Upstream puffern, der nicht streamen kann. ekte
 behandelt deshalb jedes einzelne Signal als *Risikohinweis*, nie als Urteil:
 Befunde stützen sich auf Belege, sind vorsichtig formuliert, und ein unklares
 Ergebnis bleibt **nicht eindeutig**, statt in Bestanden oder Fehlgeschlagen
 gezwungen zu werden. Das Risikourteil erreicht „hoch“ nur bei harten Belegen mit
 hohem Schweregrad, und der stärkste Weg zur Bestätigung ist immer der
-**Vergleichsmodus** (`zing compare`): dieselben Tests gleichzeitig gegen eine
+**Vergleichsmodus** (`ekte compare`): dieselben Tests gleichzeitig gegen eine
 *vertrauenswürdige Referenz des angegebenen Modells* ausführen.
 
-## Wie zing bewertet
+## Wie ekte bewertet
 
 ### Detektorbewertung
 
 Jeder Detektor veröffentlicht seine **Bewertungsskala**
-(`DetectorResult.scoring`, erstellt mit `zing/detectors/scale.py`): jedes
+(`DetectorResult.scoring`, erstellt mit `ekte/detectors/scale.py`): jedes
 mögliche Ergebnis jeder seiner Prüfungen mit Status, Schweregrad und Wirkung
 auf die Bewertung. Jeder Befund hält das `outcome` fest, das er getroffen hat,
 sodass Bericht und Verhalten nicht auseinanderlaufen können. Eine Skala nutzt
@@ -53,7 +53,7 @@ Gegenstände unter ihrer Prüfung.
 
 ### Bewertung und Status einer Dimension
 
-zing bewertet zehn Dimensionen. Die Bewertung einer Dimension ist der
+ekte bewertet zehn Dimensionen. Die Bewertung einer Dimension ist der
 **gleich gewichtete Mittelwert der Bewertungen ihrer Detektoren**: ein Detektor
 mit vielen Prüfungen wiegt nicht schwerer als einer mit wenigen, und ein
 Detektor ohne numerische Bewertung bleibt außen vor. Ihr Status ist der
@@ -70,7 +70,7 @@ Status **Fehler** und bricht die Prüfung nie ab.
 ### Gesamtbewertung, Note und Gewichte
 
 Der **Gesamt-Health-Score** ist der gewichtete Mittelwert über die Dimensionen,
-die eine Bewertung ergeben haben (`DIMENSION_WEIGHTS` in `zing/scoring.py`).
+die eine Bewertung ergeben haben (`DIMENSION_WEIGHTS` in `ekte/scoring.py`).
 Eine Dimension, die nicht lief (nicht in der Suite oder in einem
 `custom`-Lauf nicht ausgewählt), fällt heraus, und die übrigen Gewichte werden
 neu normiert. Die Note ist A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) oder F.
@@ -98,7 +98,7 @@ der Bewertung. Befunde der Dimension Konnektivität zählen dabei nicht: ein
 Relay, das nicht erreichbar ist oder drosselt, konnte nicht beurteilt werden —
 das ist kein Beleg für ein anderes Modell.
 Auch die **Transport-Hinweise** zählen nicht (`ADVISORY_CHECKS` in
-`zing/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): Klartext-HTTP, Fehler oder
+`ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): Klartext-HTTP, Fehler oder
 Langsamkeit unter Last zeigen, wie das Relay erreicht wird, nicht welches
 Modell es ausliefert. Sie senken weiterhin Bewertung und Status ihrer
 Dimension, stehen in den wichtigsten Befunden nach den Substitutionsbefunden,
@@ -161,7 +161,7 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipula
   konfiguriertes, vertrauenswürdiges Richtermodell (niemals das Ziel), ob die
   Antworten des Ziels wie das angegebene Modell klingen. Ohne
   `--judge-base-url` nutzt der Vergleichsmodus die Referenz als Richter.
-- **Vergleichsmodus** (`zing compare`) gibt den Tests eine vertrauenswürdige
+- **Vergleichsmodus** (`ekte compare`) gibt den Tests eine vertrauenswürdige
   Referenz: `model_identity` hält die Selbstidentifikation der Referenz neben
   der des Ziels fest, `protocol_request` sendet abgelehnte Parameter erneut an
   die Referenz, `integrity` stuft einen Austausch, den die Referenz nicht zeigt,
@@ -169,7 +169,7 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipula
   `performance` misst beide Endpunkte abwechselnd. Hohe Konfidenz ist nur mit
   Referenz erreichbar.
 - **Wissensbasis:** das Profil des angegebenen Modells
-  (`zing/knowledge/data/*.yaml` plus Ihre eigenen Einträge in `kb.db`) liefert
+  (`ekte/knowledge/data/*.yaml` plus Ihre eigenen Einträge in `kb.db`) liefert
   das angegebene Kontextfenster, die maximale Ausgabe, den Tokenizer, die
   Fähigkeitsflags, die Identitätsschlüsselwörter und die
   Verhaltens-Fingerprints, an denen die Tests gemessen werden. Jeder Bericht
@@ -184,7 +184,7 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipula
   Fingerprints gelten für jedes Modell des Anbieters; einer, der nur zu manchen
   Modellen passt (ein Wissensstand, eine Größenstufe), steht nur bei diesen
   Modellen.
-- **Prompt-Sprache:** jeder Testtext liegt in `zing/prompts/en.json` und ist
+- **Prompt-Sprache:** jeder Testtext liegt in `ekte/prompts/en.json` und ist
   Englisch, unabhängig von der UI-Sprache; nur Fingerprints, deren Sprache
   selbst die Messung *ist*, deklarieren `prompt_lang` und `language_bound`.
   Jeder Bericht listet die verwendeten Sprachen der Sonden
@@ -223,7 +223,7 @@ ist) und eine Chat-Completion mit `temperature=0`, die das Modell bittet,
 einen exakten Canary-Marker zurückzugeben; erfasst Latenz und das
 zurückgegebene `model`-Feld.
 
-**Bewertungsskala** (`zing/detectors/connectivity.py`):
+**Bewertungsskala** (`ekte/detectors/connectivity.py`):
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
@@ -284,7 +284,7 @@ vermerkt (nicht gewertet), statt dem Relay die Schuld zu geben.
 
 **Vorgehen.** Ein normaler Aufruf ohne Streaming; jedes Attribut des
 Protokolls des Ziels (OpenAI Chat Completions, Anthropic Messages oder OpenAI
-Responses; Katalog in `zing/detectors/wire_attrs.py`) wird am rohen
+Responses; Katalog in `ekte/detectors/wire_attrs.py`) wird am rohen
 Antwortkörper beurteilt. Zentrale Attribute sind z. B. `model`,
 `choices[0].message.role/content`, `finish_reason`, `usage.prompt_tokens`,
 `usage.completion_tokens` und `usage.total_tokens` (muss die Summe der beiden
@@ -375,7 +375,7 @@ ihn zurückgeben.
   begrenzt durch `--max-context-tokens` (Standard 200K). Jedes Urteil wird an
   `upper` gemessen, nie an dem Teil eines größeren angegebenen Fensters
   oberhalb der Obergrenze.
-- **Größen sind echte Token.** Die eingebaute Token-Schätzung von zing zählt
+- **Größen sind echte Token.** Die eingebaute Token-Schätzung von ekte zählt
   diesen Fülltext gegenüber echten Tokenizern etwa 12 % (o200k) bis 15 %
   (cl100k) zu niedrig; daher wird jeder Prompt laut Schätzung mit Größe ÷ 1,2
   gebaut (Nadel und Frage eingerechnet): eine Stufe der Größe N bleibt innerhalb
@@ -544,7 +544,7 @@ Sonden unbeantwortet ließ.
 |  | Keine Antworten des Ziels zum Beurteilen. | Nicht eindeutig · Niedrig | Nicht gewertet |
 
 **Einschränkungen.** Offizielle APIs aktualisieren Snapshots stillschweigend;
-eine Abweichung kann also harmloser Drift sein — zing meldet „abweichend“, nie
+eine Abweichung kann also harmloser Drift sein — ekte meldet „abweichend“, nie
 „Austausch bewiesen“. Modelle halluzinieren ihren eigenen Namen, die
 Selbstidentifikation allein entscheidet daher nie. Ein Relay könnte eine feste
 Testreihe auswendig lernen. Ein Urteil mit hoher Konfidenz erfordert den
@@ -684,7 +684,7 @@ widersprüchliche `usage`) und, als bestätigendes Signal,
 **Vorgehen.** Ein deterministischer Aufruf (ein bekannter Absatz zum
 Zusammenfassen, `temperature=0`). Prompt und sichtbare Antwort werden
 unabhängig mit einer sprachbewussten Heuristik (etwa ±25 %) gezählt, für jede
-Modellfamilie: zing verwendet keine Tokenizer-Bibliothek und lädt keine herunter.
+Modellfamilie: ekte verwendet keine Tokenizer-Bibliothek und lädt keine herunter.
 Gemeldete Prompt-Token über dem 2,5-Fachen der Schätzung und mehr als 50 Token
 darüber gelten als aufgebläht. Completion-Token eines Reasoning-Modells
 enthalten legitim versteckte Reasoning-Token und werden nicht markiert; sonst
@@ -748,7 +748,7 @@ Die eigenen Geschwindigkeitsmessungen gehören zur Dimension `performance`.
 
 **Einschränkungen.** Auch echte Anbieter werden unter realer Last langsamer und
 liefern 429. Eine Momentaufnahme verpasst tageszeitabhängiges Verhalten;
-`zing watch` prüft nach Zeitplan erneut.
+`ekte watch` prüft nach Zeitplan erneut.
 
 **Nicht implementiert.** Qualitätsmessung über längere Zeit und unter
 wechselnder Last sowie die Signale für einen geteilten Upstream-Schlüssel
@@ -846,7 +846,7 @@ ein Leck allein bleibt daher NIEDRIG. Die Dialektübersetzung formt
 Tool-Call-JSON um; nur ein Austausch des *Werts* zählt. Bedingte Manipulation
 (nur bei bestimmten Schlüsselwörtern, Clients oder nach einer Aufwärmphase)
 kann einer endlichen Zahl von Tests entgehen. Black-Box-Logging ist vom Client
-aus **nicht beweisbar**, und zing kann *nutzerübergreifendes* Cache-Teilen mit
+aus **nicht beweisbar**, und ekte kann *nutzerübergreifendes* Cache-Teilen mit
 einem Schlüssel nicht zeigen: das Fehlen eines Timing-Signals beweist nicht,
 dass Prompts nicht protokolliert werden.
 
@@ -946,7 +946,7 @@ Bewertung 0–100 und Note A–F, mit Gewichten je Surface. Eine abweichende Dim
 
 **Vektordrift.** Jeder Lauf speichert die ersten 64 Komponenten des auf Länge 1
 normierten Vektors einer festen Eingabe. Der nächste Lauf desselben Ziels und
-angegebenen Modells (`zing embed`, eine Embedding-Prüfung, die auf der Seite
+angegebenen Modells (`ekte embed`, eine Embedding-Prüfung, die auf der Seite
 Prüfung der Weboberfläche über die Auswahl des Endpunkttyps startet, oder ein
 Embedding-Monitor)
 vergleicht seinen Vektor mit dieser Stichprobe: Kosinus **≥ 0,995** ist stabil
@@ -1013,7 +1013,7 @@ Geschwindigkeit zählt nur gegenüber einer Baseline.
 
 ## Zuordnung Trick → Detektor
 
-Die 16 Relay-Tricks aus der Recherche verteilen sich wie folgt auf zing.
+Die 16 Relay-Tricks aus der Recherche verteilen sich wie folgt auf ekte.
 
 | # | Trick (Kennung) | Schweregrad | Detektor(en) | Aktuelle Abdeckung |
 |---|---|---|---|---|
@@ -1038,7 +1038,7 @@ Die 16 Relay-Tricks aus der Recherche verteilen sich wie folgt auf zing.
 
 ## Grenzen & verantwortungsvoller Einsatz
 
-**zing meldet Abweichung und Risiko, keinen Betrugsnachweis.** Das Urteil ist
+**ekte meldet Abweichung und Risiko, keinen Betrugsnachweis.** Das Urteil ist
 vorsichtig formuliert (clean / low / medium / high / inconclusive), lässt
 unklare Ergebnisse nicht eindeutig und stuft nur bei harten Belegen mit hohem
 Schweregrad auf „hoch“.
@@ -1067,7 +1067,7 @@ Modellverhalten von Relay-Verhalten zu trennen, und der einzige zu hoher
 Konfidenz.
 
 **Verantwortungsvolle Offenlegung.** **Beschuldigen Sie einen Anbieter nicht
-öffentlich** auf Grundlage eines zing-Berichts. Bevor Sie handeln: mit mehr
+öffentlich** auf Grundlage eines ekte-Berichts. Bevor Sie handeln: mit mehr
 Stichproben und zu anderen Zeiten erneut ausführen, mit dem Vergleichsmodus
 bestätigen und Drift, Netzwerk und Last als Erklärung ausschließen. Bleibt ein
 ernster Verdacht, sprechen Sie den Anbieter zuerst privat an — als Fragen zum

@@ -16,15 +16,15 @@ advisory, the module never asserts and always exits 0.
 Needs Playwright + Chromium (the a11y extra) and the web extra. The endpoint
 is resolved per field (see resolve_endpoint): ``--base-url``, ``--api-key``
 (raw, ``env:VAR`` or ``file:/path``), ``--model`` and ``--api`` first, then the
-zing configuration (``--config``, default ``./zing.yaml``: its ``judge``,
-else ``baseline``, else ``target`` endpoint, as zing's own judge does), then
+ekte configuration (``--config``, default ``./ekte.yaml``: its ``judge``,
+else ``baseline``, else ``target`` endpoint, as ekte's own judge does), then
 ``ANTHROPIC_BASE_URL``/``ANTHROPIC_API_KEY``, then the Anthropic API with
 MODEL. Anthropic Messages and OpenAI-compatible chat-completions endpoints
-(relays, Ollama, LM Studio, vLLM) are both spoken, detected like zing does
-(zing.clients.detect_api). A local endpoint needs no key. ``--dry-run``
+(relays, Ollama, LM Studio, vLLM) are both spoken, detected like ekte does
+(ekte.clients.detect_api). A local endpoint needs no key. ``--dry-run``
 collects the page data and builds the requests without calling the API.
 ``--update-report`` then applies the review to the conformance report shown
-at /v2/accessibility (zing/web/static/v2/bitv-report.json, see
+at /v2/accessibility (ekte/web/static/v2/bitv-report.json, see
 tests/a11y/conformance.py), in the same command.
 
 A report is ALWAYS written to ``--out``, so a broken run can be told apart
@@ -41,7 +41,7 @@ to the app is answered by the review itself (nothing is created, changed or
 deleted) and disclosures that would open destructive confirmations (delete,
 clear, ...) are left closed.
 
-Dependencies: only httpx (already a zing dependency), Playwright, zing's own
+Dependencies: only httpx (already a ekte dependency), Playwright, ekte's own
 configuration helpers and the standard library; the API is called over plain
 HTTPS (streamed).
 
@@ -74,8 +74,8 @@ import httpx
 API_BASE = "https://api.anthropic.com/v1"
 API_URL = API_BASE + "/messages"
 OFFICIAL_HOST = "api.anthropic.com"
-DEFAULT_CONFIG = "zing.yaml"
-# endpoint sections of a zing configuration, in the order zing's judge uses them
+DEFAULT_CONFIG = "ekte.yaml"
+# endpoint sections of a ekte configuration, in the order ekte's judge uses them
 CONFIG_SECTIONS = ("judge", "baseline", "target")
 API_VERSION = "2023-06-01"
 # Most capable current Claude model (per the claude-api skill). It accepts no
@@ -138,7 +138,7 @@ _CJK = re.compile(r"[぀-ヿ㐀-䶿一-鿿豈-﫿가-힯ｦ-ﾟ]")
 
 RUBRIC = """\
 You are an accessibility auditor reviewing the wording of one web application \
-("zing", a tool that verifies AI API relays) against BITV 2.0 / EN 301 549 \
+("ekte", a tool that verifies AI API relays) against BITV 2.0 / EN 301 549 \
 V3.2.1 chapter 9 (= WCAG 2.1 level A and AA). Your opinion is advisory: a human \
 expert will check each finding, so report only problems you are confident about \
 and that a careful human tester would also flag. False positives waste the \
@@ -211,7 +211,7 @@ translations whose MEANING differs (wrong term, opposite meaning, missing \
 negation, a different action, untranslated text left in another language, a \
 placeholder or format example that changed). Do not report style, tone, word \
 order, length, letter case or acceptable synonyms. Product and protocol names \
-(zing, OpenAI, Anthropic, base_url, env:VAR, smoke, standard, deep, full) are \
+(ekte, OpenAI, Anthropic, base_url, env:VAR, smoke, standard, deep, full) are \
 never translated.
 
 General rules:
@@ -1162,7 +1162,7 @@ ENDPOINT_PATHS = {"anthropic": "/messages", "openai": "/chat/completions"}
 @dataclass(frozen=True)
 class Endpoint:
     """Where the review sends its requests. ``source`` says where the base
-    URL came from ("cli", "zing.yaml:judge", "env", "default"); the report
+    URL came from ("cli", "ekte.yaml:judge", "env", "default"); the report
     keeps it (never the key)."""
 
     base_url: str = API_BASE
@@ -1190,7 +1190,7 @@ class Endpoint:
     def local(self) -> bool:
         """This machine or a private network (a self-hosted model): no key
         needed, no cost."""
-        from zing.utils.net import is_local_host
+        from ekte.utils.net import is_local_host
 
         return is_local_host(self.base_url)
 
@@ -1211,20 +1211,20 @@ def resolve_endpoint(
     config: str | None = None,
     env: dict[str, str] | None = None,
 ) -> Endpoint:
-    """The endpoint from the command line, the zing configuration, the
+    """The endpoint from the command line, the ekte configuration, the
     environment and the defaults, in that order per field.
 
-    The configuration is ``config`` or, when None, ``./zing.yaml`` if it
+    The configuration is ``config`` or, when None, ``./ekte.yaml`` if it
     exists; its first section of ``judge``, ``baseline``, ``target`` with a
-    base_url is used, as zing's own judge does. A key or model is only taken
+    base_url is used, as ekte's own judge does. A key or model is only taken
     from the source that gave the base URL (a section, or the environment's
     ANTHROPIC_* for the Anthropic API), so a key is never sent to another
-    host. Secrets may be ``env:VAR`` or ``file:/path`` (zing.config.resolve_secret).
-    The protocol is zing's detection (zing.clients.detect_api) unless ``api``
+    host. Secrets may be ``env:VAR`` or ``file:/path`` (ekte.config.resolve_secret).
+    The protocol is ekte's detection (ekte.clients.detect_api) unless ``api``
     or the section's ``api`` names it; the Responses API is spoken as chat
-    completions. Raises zing.config.ConfigError on a bad configuration."""
-    from zing.clients import detect_api
-    from zing.config import ConfigError, build_target, load_config_file, resolve_secret, section
+    completions. Raises ekte.config.ConfigError on a bad configuration."""
+    from ekte.clients import detect_api
+    from ekte.config import ConfigError, build_target, load_config_file, resolve_secret, section
 
     env = dict(os.environ) if env is None else env
     path = Path(config) if config else Path(DEFAULT_CONFIG)
@@ -1437,12 +1437,12 @@ def _app() -> Iterator[str]:
 
     from tests.a11y.harness import REPORT_FIXTURE, _free_port
 
-    with tempfile.TemporaryDirectory(prefix="zing-llm-review-") as data:
-        old = os.environ.get("ZING_DATA_DIR")
-        os.environ["ZING_DATA_DIR"] = data
+    with tempfile.TemporaryDirectory(prefix="ekte-llm-review-") as data:
+        old = os.environ.get("EKTE_DATA_DIR")
+        os.environ["EKTE_DATA_DIR"] = data
         try:
-            from zing.web import history
-            from zing.web.server import create_app
+            from ekte.web import history
+            from ekte.web.server import create_app
 
             history.init()
             rid = history.save(json.loads(REPORT_FIXTURE.read_text(encoding="utf-8")))
@@ -1457,7 +1457,7 @@ def _app() -> Iterator[str]:
                         break
                 time.sleep(0.05)
             else:
-                raise RuntimeError("zing web server did not start")
+                raise RuntimeError("ekte web server did not start")
             with httpx.Client(base_url=url, headers={"Origin": url}, timeout=10) as c:
                 c.post(f"/api/watches/from-history/{rid}", json={})
             try:
@@ -1467,9 +1467,9 @@ def _app() -> Iterator[str]:
                 thread.join(timeout=10)
         finally:
             if old is None:
-                os.environ.pop("ZING_DATA_DIR", None)
+                os.environ.pop("EKTE_DATA_DIR", None)
             else:
-                os.environ["ZING_DATA_DIR"] = old
+                os.environ["EKTE_DATA_DIR"] = old
 
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
@@ -1537,7 +1537,7 @@ def collect(pages: dict[str, str], langs: list[str], log: Callable[[str], None] 
 
     out: dict[str, dict[str, Any]] = {}
     with _app() as base_url, sync_playwright() as pw:
-        browser = pw.chromium.launch(executable_path=os.environ.get("ZING_A11Y_CHROMIUM") or None)
+        browser = pw.chromium.launch(executable_path=os.environ.get("EKTE_A11Y_CHROMIUM") or None)
         try:
             for pid, path in pages.items():
                 for lang in langs:
@@ -1704,7 +1704,7 @@ def main(argv: list[str] | None = None) -> int:
         "--api", choices=["auto", "anthropic", "openai"], help="wire protocol (default: detected from URL and model)"
     )
     ep.add_argument(
-        "-c", "--config", help=f"zing configuration to take the endpoint from (default: ./{DEFAULT_CONFIG} if present)"
+        "-c", "--config", help=f"ekte configuration to take the endpoint from (default: ./{DEFAULT_CONFIG} if present)"
     )
     ap.add_argument("--effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
     ap.add_argument("--pages", default="", help="comma-separated page ids (default: all v2 pages)")
@@ -1722,12 +1722,12 @@ def main(argv: list[str] | None = None) -> int:
     rep.add_argument(
         "--update-report", nargs="?", const="", metavar="REPORT",
         help="after the review, apply it to the conformance report shown at /v2/accessibility"
-        " (default: zing/web/static/v2/bitv-report.json); an earlier review in it is replaced",
+        " (default: ekte/web/static/v2/bitv-report.json); an earlier review in it is replaced",
     )
     rep.add_argument(
         "--results", nargs="+", metavar="FILE",
         help="with --update-report: build the report afresh from these results of the a11y suite"
-        " (ZING_A11Y_RESULTS) instead of updating the existing one",
+        " (EKTE_A11Y_RESULTS) instead of updating the existing one",
     )
     args = ap.parse_args(argv)
     if args.results and args.update_report is None:
@@ -1737,7 +1737,7 @@ def main(argv: list[str] | None = None) -> int:
         endpoint = resolve_endpoint(
             base_url=args.base_url, api_key=args.api_key, model=args.model, api=args.api, config=args.config
         )
-    except Exception as exc:  # zing.config.ConfigError and friends: advisory, leave a trace
+    except Exception as exc:  # ekte.config.ConfigError and friends: advisory, leave a trace
         summary = f"{type(exc).__name__}: {exc}"
         print(f"llm_review: no usable endpoint: {summary}")
         _write(args.out, {**_base_report(args.model or ""), "status": "error", "error": summary[:2000]})

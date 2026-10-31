@@ -1,0 +1,28 @@
+{
+ "strings": {
+  "API key": "Chiave API",
+  "Audit progress": "Avanzamento dell'audit",
+  "Audits": "Audit",
+  "Baseline API key": "Chiave API di riferimento",
+  "Baseline URL": "URL di riferimento",
+  "Cancel": "Annulla",
+  "Checks": "Controlli",
+  "Compare against a trusted baseline": "Confronta con un riferimento affidabile",
+  "Configure": "Configura",
+  "Empty = same as model to request": "Vuoto = uguale al modello richiesto",
+  "Live evidence": "Prove in tempo reale",
+  "Model to request": "Modello richiesto",
+  "New audit": "Nuovo audit",
+  "No audits are running": "Nessun audit in corso",
+  "On": "Attivo",
+  "Only if the relay sells it under another name — ekte checks the answers against this model.": "Solo se l'intermediario lo vende con un altro nome — ekte confronta le risposte con questo modello.",
+  "Please enter the relay URL and the model to request.": "Inserisci l'URL dell'intermediario e il modello richiesto.",
+  "Relay URL": "URL dell'intermediario",
+  "Report": "Report",
+  "Responses": "Responses",
+  "Running": "In corso",
+  "To compare, enter both the baseline URL and the baseline model.": "Per il confronto, inserisci sia l'URL sia il modello di riferimento.",
+  "{n} of {total} checks done": "{n} di {total} controlli completati",
+  "Baseline relay / provider": "Relay / provider di riferimento"
+ }
+}

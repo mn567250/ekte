@@ -13,12 +13,12 @@ import json
 import httpx
 import pytest
 
-from zing.clients import AnthropicClient, OpenAICompatibleClient, detect_api, make_client
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors.model_identity import ModelIdentityDetector
-from zing.knowledge import load_knowledge_base
-from zing.models import RequestSpec, Status, TargetConfig
+from ekte.clients import AnthropicClient, OpenAICompatibleClient, detect_api, make_client
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.model_identity import ModelIdentityDetector
+from ekte.knowledge import load_knowledge_base
+from ekte.models import RequestSpec, Status, TargetConfig
 
 BASE = "https://api.anthropic.test/v1"
 MODEL = "claude-opus-4-8"

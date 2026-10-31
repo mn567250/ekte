@@ -1,11 +1,9 @@
 - banner:
   - link "Vai al contenuto principale":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interfaccia classica":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Tema":
     - option "Automatico"
     - option "Chiaro" [selected]
@@ -35,10 +33,10 @@
     - link "Conoscenza":
       - /url: /v2/kb
 - main:
-  - heading "La base di conoscenza usata da zing" [level=1]
+  - heading "La base di conoscenza usata da ekte" [level=1]
   - paragraph:
-    - text: "Ogni audit confronta un relay con il profilo del modello che dichiara: finestra di contesto, limite di output, capacità, identità e impronte comportamentali. Qui trovi ogni modello, provider e relay che zing conosce — inclusi e tuoi — e puoi attivarli o disattivarli uno per uno o aggiungerne di tuoi. Le tue modifiche sono salvate in kb.db su questo computer e usate sia dall'interfaccia web sia da"
-    - code: zing check
+    - text: "Ogni audit confronta un relay con il profilo del modello che dichiara: finestra di contesto, limite di output, capacità, identità e impronte comportamentali. Qui trovi ogni modello, provider e relay che ekte conosce — inclusi e tuoi — e puoi attivarli o disattivarli uno per uno o aggiungerne di tuoi. Le tue modifiche sono salvate in kb.db su questo computer e usate sia dall'interfaccia web sia da"
+    - code: ekte check
     - text: .
   - status: Base di conoscenza completa 130 modelli · 7 provider · 1 relay, tutti attivi
   - region "Filtri":
@@ -97,7 +95,7 @@
         - /placeholder: "provider: …\nmodels:\n- id: …"
       - text: Scegli un file .yaml
       - heading "3 Verifica e salva" [level=3]
-      - paragraph: La verifica convalida schema e limiti, segnala le espressioni regolari non sicure, elenca ogni prompt che zing invierebbe ai relay e mostra quali ID di modello verrebbero risolti diversamente. Nulla viene salvato finché non salvi.
+      - paragraph: La verifica convalida schema e limiti, segnala le espressioni regolari non sicure, elenca ogni prompt che ekte invierebbe ai relay e mostra quali ID di modello verrebbero risolti diversamente. Nulla viene salvato finché non salvi.
       - button "Controllo"
       - button "Salva nella base" [disabled]
     - group:
@@ -123,4 +121,4 @@
     # … more items of the same shape
 - contentinfo:
   - paragraph: "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai."
-  - paragraph: "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."
+  - paragraph: "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."

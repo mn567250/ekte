@@ -1,16 +1,16 @@
-# zing — Méthodologie
+# ekte — Méthodologie
 
 > [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · **🇫🇷 Français** · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · [🇩🇪 Deutsch](METHODOLOGY.de.md)
 
-Ce document explique comment **zing** parvient à son verdict : quelles sondes
+Ce document explique comment **ekte** parvient à son verdict : quelles sondes
 en boîte noire chaque détecteur envoie, comment leurs résultats deviennent des
 points, comment les points deviennent des scores de dimension et un score
 global, et comment le verdict de risque est décidé. Il décrit l'implémentation
 actuelle ; chaque tableau de notation ci-dessous est le barème publié du
-détecteur (`SCALE` dans `zing/detectors/*.py`), avec la formulation exacte que
+détecteur (`SCALE` dans `ekte/detectors/*.py`), avec la formulation exacte que
 l'interface web affiche sous **Barème**.
 
-> zing fournit **des preuves en boîte noire d'écarts et de risques, pas une
+> ekte fournit **des preuves en boîte noire d'écarts et de risques, pas une
 > preuve cryptographique de fraude.** Voir [Limites et utilisation responsable](#limites-et-utilisation-responsable).
 
 ---
@@ -18,21 +18,21 @@ l'interface web affiche sous **Barème**.
 ## Position de principe
 
 Un relais peut légitimement dériver, mettre à jour ses instantanés, mutualiser
-sa capacité ou mettre en tampon un amont qui ne sait pas streamer. zing traite
+sa capacité ou mettre en tampon un amont qui ne sait pas streamer. ekte traite
 donc chaque signal isolé comme un *indicateur de risque*, jamais comme un
 verdict : les constats s'appuient sur des preuves, sont formulés avec prudence,
 et un résultat ambigu reste **non concluant** au lieu d'être forcé en réussite
 ou en échec. Le verdict de risque n'atteint « élevé » que sur des preuves
 solides de gravité élevée, et la meilleure confirmation reste toujours le
-**mode comparaison** (`zing compare`) : exécuter les mêmes sondes, au même
+**mode comparaison** (`ekte compare`) : exécuter les mêmes sondes, au même
 moment, contre une *référence de confiance du modèle annoncé*.
 
-## Comment zing note
+## Comment ekte note
 
 ### Score du détecteur
 
 Chaque détecteur publie son **barème** (`DetectorResult.scoring`, construit
-avec `zing/detectors/scale.py`) : chaque résultat possible de chacune de ses
+avec `ekte/detectors/scale.py`) : chaque résultat possible de chacune de ses
 vérifications, avec statut, gravité et effet sur le score. Chaque constat
 enregistre l'`outcome` atteint, de sorte que rapport et comportement ne peuvent
 diverger. Un barème utilise l'une de deux méthodes :
@@ -52,7 +52,7 @@ listent les sujets sous leur vérification.
 
 ### Score et statut d'une dimension
 
-zing note dix dimensions. Le score d'une dimension est la **moyenne à poids
+ekte note dix dimensions. Le score d'une dimension est la **moyenne à poids
 égal des scores de ses détecteurs** : un détecteur riche en vérifications ne
 pèse pas plus qu'un détecteur qui en a peu, et un détecteur sans score
 numérique est laissé de côté. Son statut est le pire statut conclu par ses
@@ -68,7 +68,7 @@ rapporté avec le statut **Erreur** et n'interrompt jamais l'audit.
 ### Score global, note et poids
 
 Le **score de santé global** est la moyenne pondérée des dimensions qui ont
-produit un score (`DIMENSION_WEIGHTS` dans `zing/scoring.py`). Une dimension
+produit un score (`DIMENSION_WEIGHTS` dans `ekte/scoring.py`). Une dimension
 qui ne s'est pas exécutée (absente de la suite ou non choisie dans une
 exécution `custom`) sort du calcul et les poids restants sont renormalisés. La
 note est A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) ou F.
@@ -95,7 +95,7 @@ Le niveau de risque dépend de la **gravité des constats**, pas du score. Les
 constats de la dimension connectivité sont exclus : un relais injoignable ou
 limité n'a pas pu être évalué, ce qui ne prouve pas qu'un autre modèle répond.
 Les **avertissements de transport** sont exclus aussi (`ADVISORY_CHECKS` dans
-`zing/scoring.py` : `security.tls`, `reliability.success_rate`, `reliability.latency`) : le HTTP en clair, les échecs ou
+`ekte/scoring.py` : `security.tls`, `reliability.success_rate`, `reliability.latency`) : le HTTP en clair, les échecs ou
 la lenteur sous charge disent comment le relais est joint, pas quel modèle il
 sert. Ils abaissent toujours le score et le statut de leur dimension, figurent
 après les constats de substitution parmi les constats clés, et le résumé les
@@ -159,7 +159,7 @@ clé API renvoyée font toujours monter le risque.
   de confiance, configuré séparément (jamais la cible), si les réponses de la
   cible ressemblent au modèle annoncé. Sans `--judge-base-url`, le mode
   comparaison utilise la référence comme juge.
-- **Mode comparaison** (`zing compare`) donne aux sondes une référence de
+- **Mode comparaison** (`ekte compare`) donne aux sondes une référence de
   confiance : `model_identity` consigne l'auto-identification de la référence à
   côté de celle de la cible, `protocol_request` renvoie les paramètres rejetés
   à la référence, `integrity` porte à CRITIQUE une substitution que la référence
@@ -167,7 +167,7 @@ clé API renvoyée font toujours monter le risque.
   sonde les deux endpoints en alternance. La confiance ne peut être élevée
   qu'avec une référence.
 - **Base de connaissances :** le profil du modèle annoncé
-  (`zing/knowledge/data/*.yaml` et vos propres entrées dans `kb.db`) fournit la
+  (`ekte/knowledge/data/*.yaml` et vos propres entrées dans `kb.db`) fournit la
   fenêtre de contexte annoncée, la sortie maximale, le tokenizer, les capacités,
   les mots-clés d'identité et les empreintes comportementales auxquels les
   sondes sont comparées. Chaque rapport consigne le profil utilisé
@@ -183,7 +183,7 @@ clé API renvoyée font toujours monter le risque.
   qu'à certains (une date de coupure, un niveau de taille) n'est listée que sur
   ceux-ci.
 - **Langue des prompts :** chaque texte de sonde se trouve dans
-  `zing/prompts/en.json` et reste en anglais quelle que soit la langue de
+  `ekte/prompts/en.json` et reste en anglais quelle que soit la langue de
   l'interface ; seules les empreintes dont la langue *est* la mesure déclarent
   `prompt_lang` et `language_bound`. Chaque rapport liste les langues des
   sondes utilisées (`prompt_languages`).
@@ -221,7 +221,7 @@ relais qui mérite un audit.
 une complétion de chat à `temperature=0` demandant au modèle de répéter un
 canari exact ; relève la latence et le champ `model` renvoyé.
 
-**Barème** (`zing/detectors/connectivity.py`) :
+**Barème** (`ekte/detectors/connectivity.py`) :
 
 | Contrôle | Résultat | Statut | Effet |
 |---|---|---|---|
@@ -281,7 +281,7 @@ applicable (non comptée) au lieu d'incriminer le relais.
 
 **Fonctionnement.** Un appel normal sans streaming ; chaque attribut du
 protocole de la cible (OpenAI Chat Completions, Anthropic Messages ou OpenAI
-Responses ; catalogue dans `zing/detectors/wire_attrs.py`) est jugé sur le
+Responses ; catalogue dans `ekte/detectors/wire_attrs.py`) est jugé sur le
 corps brut. Les attributs essentiels sont par exemple `model`,
 `choices[0].message.role/content`, `finish_reason`, `usage.prompt_tokens`,
 `usage.completion_tokens` et `usage.total_tokens` (qui doit égaler la somme des
@@ -372,7 +372,7 @@ répétitif, et le modèle doit le restituer.
   plafonnée par `--max-context-tokens` (200K par défaut). Chaque verdict est
   jugé par rapport à `upper`, jamais par rapport à la part d'une fenêtre
   annoncée plus grande située au-delà du plafond.
-- **Les tailles sont des tokens réels.** L'estimation de tokens intégrée à zing
+- **Les tailles sont des tokens réels.** L'estimation de tokens intégrée à ekte
   sous-compte ce remplissage d'environ 12 % (o200k) à 15 % (cl100k) par rapport
   aux vrais tokenizers ; chaque prompt est donc construit à taille ÷ 1,2 selon
   l'estimation (aiguille et question comprises) : un échelon de taille N tient
@@ -539,7 +539,7 @@ des sondes sans réponse.
 |  | Aucune réponse de la cible à juger. | Non concluant · Faible | Non compté |
 
 **Mises en garde.** Les API officielles mettent à jour leurs instantanés en
-silence ; un écart peut donc être une dérive bénigne — zing rapporte
+silence ; un écart peut donc être une dérive bénigne — ekte rapporte
 « divergent », jamais « substitution prouvée ». Les modèles hallucinent leur
 propre nom, l'auto-identification seule ne tranche donc jamais. Un relais
 pourrait mémoriser une série de sondes fixe. Un verdict de confiance élevée
@@ -679,7 +679,7 @@ et, comme signal de corroboration, `prompt.injected-system-prompt`.
 **Fonctionnement.** Un appel déterministe (un paragraphe connu à résumer,
 `temperature=0`). Le prompt et la réponse visible sont comptés
 indépendamment avec une heuristique sensible à la langue (environ ±25 %), pour
-toutes les familles de modèles : zing n'utilise aucune bibliothèque de tokenizer
+toutes les familles de modèles : ekte n'utilise aucune bibliothèque de tokenizer
 et n'en télécharge aucune. Des tokens de prompt rapportés au-delà de 2,5×
 l'estimation et de plus de 50 tokens au-dessus comptent comme gonflement. Les
 tokens de complétion d'un modèle de raisonnement incluent légitimement des
@@ -744,7 +744,7 @@ Les mesures de vitesse dédiées relèvent de la dimension `performance`.
 
 **Mises en garde.** Les vrais fournisseurs ralentissent aussi et renvoient des
 429 sous charge réelle. Un instantané rate les comportements liés à l'heure ;
-`zing watch` réaudite selon un calendrier.
+`ekte watch` réaudite selon un calendrier.
 
 **Non implémenté.** La mesure de qualité dans la durée et sous charge variable
 ainsi que les signaux de clé amont partagée (`infra.shared-upstream-key` :
@@ -844,7 +844,7 @@ dialectes remodèle le JSON des appels d'outils ; seule une substitution de
 *valeur* compte. Une falsification conditionnelle (seulement pour certains
 mots-clés, clients ou après un préchauffage) peut échapper à un nombre fini de
 sondes. La journalisation en boîte noire est **improuvable** côté client, et
-zing ne peut pas montrer un partage de cache *entre utilisateurs* avec une
+ekte ne peut pas montrer un partage de cache *entre utilisateurs* avec une
 seule clé : l'absence de signal temporel ne prouve pas que les prompts ne sont
 pas journalisés.
 
@@ -946,7 +946,7 @@ modèle substitué en chat.
 
 **Dérive des vecteurs.** Chaque exécution conserve les 64 premières composantes du
 vecteur normalisé d'une entrée fixe. L'exécution suivante de la même cible et du
-même modèle annoncé (`zing embed`, un audit d'embedding lancé sur la page Audit de
+même modèle annoncé (`ekte embed`, un audit d'embedding lancé sur la page Audit de
 l'interface web via le sélecteur de type de point d'accès, ou une surveillance
 d'embedding)
 compare son vecteur à cet échantillon : un cosinus **≥ 0,995** est stable (PASS),
@@ -1013,7 +1013,7 @@ vitesse brute ne compte que face à une référence.
 
 ## Correspondance astuce → détecteur
 
-Les 16 astuces de relais issues de la recherche se répartissent ainsi dans zing.
+Les 16 astuces de relais issues de la recherche se répartissent ainsi dans ekte.
 
 | # | Astuce (id) | Gravité | Détecteur(s) | Couverture actuelle |
 |---|---|---|---|---|
@@ -1038,7 +1038,7 @@ Les 16 astuces de relais issues de la recherche se répartissent ainsi dans zing
 
 ## Limites et utilisation responsable
 
-**zing rapporte écarts et risques, pas une preuve de fraude.** Le verdict est
+**ekte rapporte écarts et risques, pas une preuve de fraude.** Le verdict est
 formulé avec prudence (clean / low / medium / high / inconclusive), laisse les
 résultats ambigus non concluants et ne passe à « élevé » que sur des preuves
 solides de gravité élevée.
@@ -1067,7 +1067,7 @@ moyen de séparer le comportement du modèle de celui du relais, et le seul
 d'atteindre une confiance élevée.
 
 **Divulgation responsable.** **N'accusez pas publiquement un fournisseur** sur
-la base d'un rapport zing. Avant d'agir : relancez avec plus d'échantillons et à
+la base d'un rapport ekte. Avant d'agir : relancez avec plus d'échantillons et à
 d'autres moments, confirmez en mode comparaison, et écartez les explications de
 dérive, de réseau et de charge. Si un doute sérieux subsiste, parlez-en d'abord
 en privé au fournisseur, sous forme de questions sur le comportement observé,

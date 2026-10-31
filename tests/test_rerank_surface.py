@@ -9,13 +9,13 @@ import re
 import httpx
 import pytest
 
-from zing import prompts
-from zing.config import AuditOptions
-from zing.detectors.base import select_detectors
-from zing.detectors.rerank import KNOWN_ANSWER_TOP, max_score_delta, order_flips, score_delta
-from zing.detectors.rerank_drift import previous_drift
-from zing.models import Dimension, RiskLevel, Status, TargetConfig
-from zing.runner import run_audit
+from ekte import prompts
+from ekte.config import AuditOptions
+from ekte.detectors.base import select_detectors
+from ekte.detectors.rerank import KNOWN_ANSWER_TOP, max_score_delta, order_flips, score_delta
+from ekte.detectors.rerank_drift import previous_drift
+from ekte.models import Dimension, RiskLevel, Status, TargetConfig
+from ekte.runner import run_audit
 
 BASE = "https://relay.rerank.test/v1"
 MODEL = "acme-rerank-v2"
@@ -72,10 +72,10 @@ class RerankServer:
 @pytest.fixture
 def serve(monkeypatch):
     def install(server: RerankServer) -> RerankServer:
-        from zing.clients import make_client as real
+        from ekte.clients import make_client as real
 
         monkeypatch.setattr(
-            "zing.runner.make_client", lambda config, **_: real(config, transport=server.transport)
+            "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport)
         )
         return server
 

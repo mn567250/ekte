@@ -1,11 +1,9 @@
 - banner:
   - link "Saltar al contenido principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interfaz clásica":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Tema":
     - option "Automático"
     - option "Claro" [selected]
@@ -246,7 +244,7 @@
             - definition: 27 sept 2026, 10:02
             - term: Versión
             - definition:
-              - code: zing v<version>
+              - code: ekte v<version>
             - heading "Comprobaciones por dimensión 1 de 10 dimensiones ejecutadas" [level=3]
             - button "Conformidad del protocolo"
             - text: ¿Cumple la API la especificación?
@@ -275,7 +273,7 @@
             - paragraph: Las comprobaciones se ejecutan una tras otra; la más lenta fue context_window (<duration>).
             - button "Mostrar los 6"
             - paragraph:
-              - text: zing aporta
+              - text: ekte aporta
               - strong: evidencias reproducibles de desviación de comportamiento y riesgo
               - text: ", no una prueba legal ni criptográfica de fraude. Los intermediarios pueden enrutar de forma probabilística; valore usted mismo el tamaño de la muestra, la configuración de facturación y la legislación local, y nunca acuse públicamente a un proveedor por una sola ejecución."
             - button "Programar como monitor"
@@ -306,4 +304,4 @@
   - status
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
-  - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."
+  - paragraph: "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

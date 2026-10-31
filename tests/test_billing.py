@@ -9,12 +9,12 @@ import json
 
 import httpx
 
-from zing.clients import OpenAICompatibleClient
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors.billing import BillingDetector
-from zing.models import Severity, Status, TargetConfig
-from zing.utils.tokenize import estimate_messages_tokens, estimate_tokens
+from ekte.clients import OpenAICompatibleClient
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.billing import BillingDetector
+from ekte.models import Severity, Status, TargetConfig
+from ekte.utils.tokenize import estimate_messages_tokens, estimate_tokens
 
 
 async def test_billing_flags_gross_inflation(audit_context, mock_server):
@@ -79,7 +79,7 @@ async def test_billing_reasoning_completion_not_flagged(knowledge_base):
 
 
 async def test_billing_completion_divergence_is_a_soft_signal(knowledge_base):
-    # gpt-4o has an OpenAI-family tokenizer hint, but zing never counts exactly
+    # gpt-4o has an OpenAI-family tokenizer hint, but ekte never counts exactly
     # (no tokenizer is downloaded), so an inflated completion is only a WARN.
     target = TargetConfig(base_url="https://relay.test/v1", api_key="sk-x-123456", model="gpt-4o")
     mock = _ReasoningMock(model="gpt-4o", factor=30)

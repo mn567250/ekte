@@ -5,11 +5,11 @@ from __future__ import annotations
 
 import json
 
-import zing.detectors  # noqa: F401  -- populate the registry
-from zing.cli import _build_dry_run_plan
-from zing.config import AuditOptions
-from zing.detectors.base import REGISTRY
-from zing.models import (
+import ekte.detectors  # noqa: F401  -- populate the registry
+from ekte.cli import _build_dry_run_plan
+from ekte.config import AuditOptions
+from ekte.detectors.base import REGISTRY
+from ekte.models import (
     AuditReport,
     DetectorResult,
     Dimension,
@@ -19,8 +19,8 @@ from zing.models import (
     Status,
     TargetConfig,
 )
-from zing.report import compact_dict, render_compact, render_json
-from zing.scoring import build_dimensions, build_verdict
+from ekte.report import compact_dict, render_compact, render_json
+from ekte.scoring import build_dimensions, build_verdict
 
 
 def _report() -> AuditReport:
@@ -68,7 +68,7 @@ def test_compact_is_lean_and_well_shaped():
     assert "y" * 600 not in compact
 
     c = json.loads(compact)
-    assert c["tool"] == "zing"
+    assert c["tool"] == "ekte"
     assert c["verdict"]["risk"] in ("clean", "low", "medium", "high", "inconclusive")
     assert "model_identity" in c["dimensions"]
     # Actionable findings keep a summary; pass/info findings stay one line.

@@ -10,8 +10,8 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from zing.web import jobs  # noqa: E402
-from zing.web.server import create_app  # noqa: E402
+from ekte.web import jobs  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 
 async def _until(cond, timeout: float = 5.0) -> None:
@@ -102,7 +102,7 @@ async def test_cancelling_a_waiter_frees_its_place():
 
 
 async def test_jobs_queue_per_relay_and_replay_their_log(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     mgr = jobs.JobManager(jobs.RelayGate(limit=4))
     gates = {"a": asyncio.Event(), "b": asyncio.Event()}
 
@@ -164,7 +164,7 @@ async def test_cancel_stops_queued_and_running_jobs():
 
 
 def _fake_report(target):
-    from zing.models import AuditReport, RedactedTarget, Verdict
+    from ekte.models import AuditReport, RedactedTarget, Verdict
 
     return AuditReport(
         tool_version="0", mode="check", suite="standard",
@@ -174,14 +174,14 @@ def _fake_report(target):
 
 
 def test_jobs_endpoints(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
 
     async def fake_run_audit(target, options, *, on_event=None, **_):
         on_event({"type": "start", "total": 1, "probe_requests": 0})
         on_event({"type": "detector_done", "id": "x", "index": 0})
         return _fake_report(target)
 
-    monkeypatch.setattr("zing.web.server.run_audit", fake_run_audit)
+    monkeypatch.setattr("ekte.web.server.run_audit", fake_run_audit)
     # One event loop for every request (as under uvicorn): the job runs on in
     # the background, its history save in a worker thread.
     with TestClient(create_app(), base_url="http://localhost") as client:
@@ -215,7 +215,7 @@ def test_jobs_endpoints(tmp_path, monkeypatch):
 
 
 def test_running_monitors_are_listed_as_jobs():
-    from zing.web import server
+    from ekte.web import server
 
     server._running_watches[4242] = {
         "base_url": "https://m.example/v1", "model": "m", "claimed_model": "m",
@@ -231,8 +231,8 @@ def test_running_monitors_are_listed_as_jobs():
 
 
 async def test_a_monitor_waits_for_an_audit_of_its_relay(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import server, watches
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import server, watches
 
     started = asyncio.Event()
 

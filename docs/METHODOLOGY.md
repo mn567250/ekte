@@ -1,15 +1,15 @@
-# zing — Methodology
+# ekte — Methodology
 
 > **🇬🇧 English** · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · [🇩🇪 Deutsch](METHODOLOGY.de.md)
 
-This document explains how **zing** reaches its verdict: which black-box probes
+This document explains how **ekte** reaches its verdict: which black-box probes
 each detector sends, how their outcomes become points, how points become
 dimension scores and an overall score, and how the risk verdict is decided. It
 describes the current implementation; every scoring table below is the
-detector's published scale (`SCALE` in `zing/detectors/*.py`) with the same
+detector's published scale (`SCALE` in `ekte/detectors/*.py`) with the same
 wording the web UI shows under **Scoring scale**.
 
-> zing reports **black-box evidence of divergence and risk, not cryptographic
+> ekte reports **black-box evidence of divergence and risk, not cryptographic
 > proof of fraud.** See [Limitations & responsible use](#limitations--responsible-use).
 
 ---
@@ -17,20 +17,20 @@ wording the web UI shows under **Scoring scale**.
 ## Core stance
 
 A relay may legitimately drift, update snapshots, pool capacity or buffer an
-upstream that cannot stream. zing therefore treats every single signal as a
+upstream that cannot stream. ekte therefore treats every single signal as a
 *risk indicator*, never as a verdict: findings are evidence-first, worded
 cautiously, and an ambiguous result stays **inconclusive** rather than being
 forced into pass or fail. The risk verdict only reaches HIGH on hard,
 high-severity evidence, and the strongest confirmation path is always
-**compare mode** (`zing compare`): run the same probes against a *trusted
+**compare mode** (`ekte compare`): run the same probes against a *trusted
 baseline of the claimed model* at the same time.
 
-## How zing scores
+## How ekte scores
 
 ### Detector score
 
 Every detector publishes its **scoring scale** (`DetectorResult.scoring`, built
-with `zing/detectors/scale.py`): every possible outcome of each of its checks,
+with `ekte/detectors/scale.py`): every possible outcome of each of its checks,
 with status, severity and effect on the score. Each finding records the
 `outcome` it hit, so report and behavior cannot disagree. A scale uses one of
 two methods:
@@ -49,7 +49,7 @@ once per check, and reports list the subjects under their check.
 
 ### Dimension score and status
 
-zing scores ten dimensions. A dimension's score is the **equal-weight mean of
+ekte scores ten dimensions. A dimension's score is the **equal-weight mean of
 its detectors' scores**: a detector with many checks does not outweigh one with
 few, and a detector without a numeric score is left out. Its status is the
 worst status its detectors concluded, except that a HIGH/CRITICAL finding
@@ -64,7 +64,7 @@ aborts the audit.
 ### Overall score, rating and weights
 
 The **overall health score** is the weighted mean over the dimensions that
-produced a score (`DIMENSION_WEIGHTS` in `zing/scoring.py`). A dimension that
+produced a score (`DIMENSION_WEIGHTS` in `ekte/scoring.py`). A dimension that
 did not run (not in the suite, or not selected in a `custom` run) drops out and
 the remaining weights are renormalised. The rating is A (≥ 90), B (≥ 80),
 C (≥ 70), D (≥ 60) or F.
@@ -98,7 +98,7 @@ The risk level is driven by **finding severity**, not by the score. Findings of
 the connectivity dimension are left out of the ladder: a relay that is down or
 throttled could not be assessed, which is not evidence of a different model.
 The **transport advisories** are left out too (`ADVISORY_CHECKS` in
-`zing/scoring.py`: `security.tls`, `reliability.success_rate`,
+`ekte/scoring.py`: `security.tls`, `reliability.success_rate`,
 `reliability.latency`): plain HTTP, failures or slowness under load say how the
 relay is reached, not which model it serves. They still lower their dimension's
 score and status, are listed after the substitution findings in the key
@@ -170,13 +170,13 @@ result says that model identity was not verified.
   configured, trusted judge model (never the target) whether the target's
   answers read like the claimed model. Without `--judge-base-url`, compare mode
   uses the baseline as the judge.
-- **Compare mode** (`zing compare`) gives the probes a trusted baseline:
+- **Compare mode** (`ekte compare`) gives the probes a trusted baseline:
   `model_identity` records the baseline's self-identification next to the
   target's, `protocol_request` re-sends rejected parameters to the baseline,
   `integrity` escalates a substitution the baseline does not make to CRITICAL,
   `quality_judge` shows the judge both sides, and `performance` probes both
   endpoints alternately. Confidence can only reach high with a baseline.
-- **Knowledge base:** the claimed model's profile (`zing/knowledge/data/*.yaml`
+- **Knowledge base:** the claimed model's profile (`ekte/knowledge/data/*.yaml`
   plus your own entries in `kb.db`) supplies the declared context window, max
   output, tokenizer, capability flags, identity keywords and behavioral
   fingerprints the probes are judged against. Every report records the profile
@@ -189,7 +189,7 @@ result says that model identity was not verified.
   guessed, often cheaper tier. Provider-wide fingerprints apply to every model
   of the provider; one that only fits some models (a knowledge cutoff, a size
   tier) is listed on those models alone.
-- **Prompt language:** every probe text lives in `zing/prompts/en.json` and is
+- **Prompt language:** every probe text lives in `ekte/prompts/en.json` and is
   English whatever the UI language; only fingerprints whose language *is* the
   measurement declare `prompt_lang` and `language_bound`. Each report lists the
   probe languages it used (`prompt_languages`).
@@ -224,7 +224,7 @@ It separates a dead or misconfigured key from a relay worth auditing.
 listed) and one chat completion at `temperature=0` asking the model to echo an
 exact canary marker; records latency and the echoed `model` field.
 
-**Scoring scale** (`zing/detectors/connectivity.py`):
+**Scoring scale** (`ekte/detectors/connectivity.py`):
 
 | Check | Outcome | Status | Effect |
 |---|---|---|---|
@@ -281,7 +281,7 @@ check is noted as not applicable (not counted) instead of blaming the relay.
 
 **How it works.** One normal non-streaming call; every attribute of the target's
 wire protocol (OpenAI Chat Completions, Anthropic Messages or OpenAI Responses;
-catalog in `zing/detectors/wire_attrs.py`) is judged on the raw body. Core
+catalog in `ekte/detectors/wire_attrs.py`) is judged on the raw body. Core
 attributes are e.g. `model`, `choices[0].message.role/content`,
 `finish_reason`, `usage.prompt_tokens`, `usage.completion_tokens` and
 `usage.total_tokens` (which must equal the sum of the two); minor ones are
@@ -364,7 +364,7 @@ marker is embedded in non-repetitive filler, and the model must return it.
 - **Probed window.** The probe runs up to `upper` = the declared window, capped
   by `--max-context-tokens` (default 200K). Every verdict is judged against
   `upper`, never against the part of a larger declared window above the cap.
-- **Sizes are real tokens.** zing's built-in token estimate under-counts this
+- **Sizes are real tokens.** ekte's built-in token estimate under-counts this
   filler by about 12% (o200k) to 15% (cl100k) against real tokenizers, so each
   prompt is built at size ÷ 1.2 by the estimate (needle and question included):
   a size-N rung stays within N real tokens. Sizes in the evidence (`size`,
@@ -520,7 +520,7 @@ baseline that errored or left probes unanswered.
 |  | No target answers to judge. | Inconclusive · Low | Not counted |
 
 **Caveats.** Official APIs update snapshots silently, so divergence can be
-benign drift; zing reports "divergent", never "proven substitution". Models
+benign drift; ekte reports "divergent", never "proven substitution". Models
 hallucinate their own names, so self-identification alone never decides. A relay
 could memorize a fixed probe battery. A high-confidence verdict requires compare
 mode against the exact claimed snapshot.
@@ -650,7 +650,7 @@ a corroborating signal, `prompt.injected-system-prompt`.
 
 **How it works.** One deterministic call (a known paragraph to summarize,
 `temperature=0`). The prompt and the visible answer are counted independently
-with a language-aware heuristic (about ±25%), for every model family: zing uses
+with a language-aware heuristic (about ±25%), for every model family: ekte uses
 no tokenizer library and downloads none. Reported prompt tokens above 2.5× the
 estimate and more than 50 tokens over it count as inflation. Completion tokens
 of a reasoning model legitimately include hidden reasoning tokens and are not
@@ -711,7 +711,7 @@ never raise the risk verdict.
 The dedicated speed measurements belong to the `performance` dimension.
 
 **Caveats.** Genuine providers also slow down and return 429 under real load.
-One snapshot misses time-of-day behavior; `zing watch` re-audits on a schedule.
+One snapshot misses time-of-day behavior; `ekte watch` re-audits on a schedule.
 
 **Not implemented.** Longitudinal and load-conditioned quality probing and the
 shared-upstream-key signals (`infra.shared-upstream-key`: quota decreasing while
@@ -804,7 +804,7 @@ optimization.
 alone stays LOW. Dialect translation reshapes tool-call JSON; only a *value*
 substitution counts. Conditional tampering (only for some keywords, clients or
 after a warm-up) can evade a finite set of probes. Black-box logging is
-**unprovable** from the client, and zing cannot show *cross-user* cache sharing
+**unprovable** from the client, and ekte cannot show *cross-user* cache sharing
 from one key: the absence of a timing signal does not prove prompts are not
 logged.
 
@@ -901,7 +901,7 @@ detectors; the suite still sets the depth. An embedding audit sends only
 
 **Vector drift.** Every run stores the first 64 components of the unit-length
 vector of one fixed input. The next run of the same target and claimed model
-(`zing embed`, an embedding audit started on the web UI's Audit page through
+(`ekte embed`, an embedding audit started on the web UI's Audit page through
 the endpoint-type selector, or an embedding monitor) compares its vector
 with that sample: cosine **≥ 0.995** is stable (PASS), **0.95 to 0.995** has
 shifted (WARN, MEDIUM: a re-deployment or quantisation), below **0.95** or a
@@ -969,7 +969,7 @@ against a baseline.
 
 ## Trick → detector mapping
 
-The 16 relay tricks from the research map onto zing as follows.
+The 16 relay tricks from the research map onto ekte as follows.
 
 | # | Trick (id) | Severity | Detector(s) | Current coverage |
 |---|---|---|---|---|
@@ -994,7 +994,7 @@ The 16 relay tricks from the research map onto zing as follows.
 
 ## Limitations & responsible use
 
-**zing reports divergence and risk, not proof of fraud.** The verdict uses
+**ekte reports divergence and risk, not proof of fraud.** The verdict uses
 cautious language (clean / low / medium / high / inconclusive), keeps ambiguous
 results inconclusive, and escalates to high only on hard, high-severity
 evidence.
@@ -1019,7 +1019,7 @@ baseline of the **exact claimed snapshot** — it is the strongest way to separa
 model behavior from relay behavior and the only way to reach high confidence.
 
 **Responsible disclosure.** Do **not** publicly accuse a vendor on the basis of
-a zing report. Before acting, re-run with more samples and at other times,
+a ekte report. Before acting, re-run with more samples and at other times,
 confirm with compare mode, and rule out drift, network and load explanations.
 If a serious concern remains, raise it privately with the vendor first, as
 questions about observed behavior rather than allegations.

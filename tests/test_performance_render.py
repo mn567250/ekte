@@ -8,11 +8,11 @@ import re
 import pytest
 from rich.console import Console
 
-from zing import cli
-from zing.models import AuditReport, RedactedTarget, RequestRecord, Verdict
-from zing.perf import build_performance
-from zing.report import compact_dict, render_html, render_markdown
-from zing.report.performance import fmt_num, nice_axis, timeline_svg
+from ekte import cli
+from ekte.models import AuditReport, RedactedTarget, RequestRecord, Verdict
+from ekte.perf import build_performance
+from ekte.report import compact_dict, render_html, render_markdown
+from ekte.report.performance import fmt_num, nice_axis, timeline_svg
 
 
 def _rec(seq: int, endpoint: str, **kw) -> RequestRecord:

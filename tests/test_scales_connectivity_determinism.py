@@ -12,10 +12,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from zing.detectors import connectivity, determinism
-from zing.detectors.connectivity import ConnectivityDetector
-from zing.detectors.determinism import DeterminismDetector
-from zing.models import CompletionOutcome, DetectorResult, Status
+from ekte.detectors import connectivity, determinism
+from ekte.detectors.connectivity import ConnectivityDetector
+from ekte.detectors.determinism import DeterminismDetector
+from ekte.models import CompletionOutcome, DetectorResult, Status
 
 
 def _ok(text: str) -> CompletionOutcome:
@@ -55,7 +55,7 @@ async def _connectivity(models_ok: bool, chat: CompletionOutcome | None) -> Dete
         if chat is not None:
             return chat
         # echo the canary the prompt asks for
-        return _ok(next(w for w in spec.messages[0]["content"].split() if w.startswith("ZING-")))
+        return _ok(next(w for w in spec.messages[0]["content"].split() if w.startswith("EKTE-")))
 
     ctx = SimpleNamespace(client=SimpleNamespace(list_models=list_models, complete=complete),
                           target=SimpleNamespace(model="gpt-4o"))

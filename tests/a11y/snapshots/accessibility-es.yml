@@ -1,11 +1,9 @@
 - banner:
   - link "Saltar al contenido principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interfaz clásica":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Tema":
     - option "Automático"
     - option "Claro" [selected]
@@ -46,7 +44,7 @@
     - term: Commit
     - definition:
       - code: <id>
-    - term: Versión de zing
+    - term: Versión de ekte
     - definition: 0.11.0
     - term: Versión de axe-core
     - definition: 4.13.0
@@ -142,7 +140,7 @@
   - region "Declaración de accesibilidad":
     - heading "Declaración de accesibilidad" [level=2]
     - heading "Estado de conformidad" [level=3]
-    - paragraph: La interfaz web v2 de zing es parcialmente conforme con BITV 2.0, EN 301549 y WCAG 2.1 nivel AA.
+    - paragraph: La interfaz web v2 de ekte es parcialmente conforme con BITV 2.0, EN 301549 y WCAG 2.1 nivel AA.
     - heading "Limitaciones conocidas" [level=3]
     - paragraph: "La parte automatizada de estos pasos se supera; el resto aún necesita una revisión manual:"
     - list:
@@ -167,7 +165,7 @@
     - paragraph:
       - text: "¿Ha encontrado una barrera o algo es difícil de usar con tecnologías de apoyo? Díganoslo:"
       - link "informar de un problema de accesibilidad en GitHub":
-        - /url: https://github.com/cenbonew/zing/issues
+        - /url: https://github.com/mn567250/ekte/issues
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
-  - paragraph: "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."
+  - paragraph: "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."

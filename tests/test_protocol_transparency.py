@@ -9,11 +9,11 @@ from pathlib import Path
 
 import pytest
 
-from zing.config import AuditOptions
-from zing.detectors.performance import stream_mode
-from zing.models import AuditReport, TargetConfig
-from zing.report.render import compact_dict, render_html, render_markdown
-from zing.runner import _redact
+from ekte.config import AuditOptions
+from ekte.detectors.performance import stream_mode
+from ekte.models import AuditReport, TargetConfig
+from ekte.report.render import compact_dict, render_html, render_markdown
+from ekte.runner import _redact
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "web_report.json"
 
@@ -23,7 +23,7 @@ def client():
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from zing.web.server import create_app
+    from ekte.web.server import create_app
 
     return TestClient(create_app(), base_url="http://localhost")
 
@@ -81,15 +81,15 @@ def test_renderers_skip_the_fields_for_older_reports():
 
 def test_pdf_renders_the_protocol():
     pytest.importorskip("reportlab")
-    from zing.report.pdf import render_pdf
+    from ekte.report.pdf import render_pdf
 
     assert render_pdf(AuditReport.model_validate(_with_protocol()))[:4] == b"%PDF"
 
 
 def test_history_rows_carry_protocol_and_mode(tmp_path, monkeypatch, client):
-    from zing.web import history
+    from ekte.web import history
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     new = history.save(_with_protocol())
     old = history.save(_fixture())
     rows = {r["id"]: r for r in client.get("/api/history").json()}
@@ -100,9 +100,9 @@ def test_history_rows_carry_protocol_and_mode(tmp_path, monkeypatch, client):
 def test_history_db_from_before_is_migrated(tmp_path, monkeypatch):
     import sqlite3
 
-    from zing.web import history
+    from ekte.web import history
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     conn = sqlite3.connect(tmp_path / "history.db")
     conn.execute(
         "CREATE TABLE history (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, base_url TEXT,"
@@ -117,8 +117,8 @@ def test_history_db_from_before_is_migrated(tmp_path, monkeypatch):
 
 
 def test_schedule_keeps_a_forced_protocol_and_the_request_mode(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import history
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import history
 
     forced = history.save(_with_protocol(api="anthropic", api_auto=False, mode="non_stream"))
     detected = history.save(_with_protocol(api="anthropic", api_auto=True, mode="stream"))
@@ -141,9 +141,9 @@ def test_schedule_keeps_a_forced_protocol_and_the_request_mode(tmp_path, monkeyp
 
 
 async def test_monitor_runs_with_its_request_mode(tmp_path, monkeypatch):
-    from zing.web import history, server, watches
+    from ekte.web import history, server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     seen: list[AuditOptions] = []
     report = AuditReport.model_validate(_with_protocol())
 
@@ -161,9 +161,9 @@ async def test_monitor_runs_with_its_request_mode(tmp_path, monkeypatch):
 
 
 def test_audit_job_summary_names_protocol_and_mode(tmp_path, monkeypatch, client):
-    from zing.web import jobs
+    from ekte.web import jobs
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     captured = {}
 
     class _Job:

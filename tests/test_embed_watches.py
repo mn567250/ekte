@@ -11,7 +11,7 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from zing.web.server import create_app  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "web_report.json"
 _URL = "http://127.0.0.1:9099/v1"
@@ -29,10 +29,10 @@ def client():
 
 
 async def test_scheduler_runs_an_embedding_watch_with_its_drift_reference(tmp_path, monkeypatch):
-    from zing.models import AuditReport
-    from zing.web import history, server, watches
+    from ekte.models import AuditReport
+    from ekte.web import history, server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     # a chat run of the same target must be neither the drift nor the alert reference
     prev_id = history.save(_report(surface="embedding", generated_at="2026-01-01T00:00:00Z"))
     history.save(_report())
@@ -51,7 +51,7 @@ async def test_scheduler_runs_an_embedding_watch_with_its_drift_reference(tmp_pa
         return True
 
     monkeypatch.setattr(server, "run_audit", fake_run_audit)
-    monkeypatch.setattr("zing.notify.send", fake_send)
+    monkeypatch.setattr("ekte.notify.send", fake_send)
     cfg = {
         "base_url": _URL, "api_key": "sk-x", "model": "gpt-4o", "suite": "deep",
         "surface": "embedding", "embedding_dimensions": 1024, "alert_on": "high",
@@ -75,10 +75,10 @@ async def test_scheduler_runs_an_embedding_watch_with_its_drift_reference(tmp_pa
 
 
 async def test_chat_watch_passes_no_drift_reference(tmp_path, monkeypatch):
-    from zing.models import AuditReport
-    from zing.web import history, server, watches
+    from ekte.models import AuditReport
+    from ekte.web import history, server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     history.save(_report(surface="embedding"))
     seen: dict = {}
 
@@ -93,7 +93,7 @@ async def test_chat_watch_passes_no_drift_reference(tmp_path, monkeypatch):
 
 
 def test_create_and_edit_an_embedding_watch(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     body = {"base_url": _URL, "model": "text-embedding-3-small", "surface": "embedding",
             "embedding_dimensions": 512, "performance_streaming": False}
     wid = client.post("/api/watches", json=body).json()["id"]
@@ -112,9 +112,9 @@ def test_create_and_edit_an_embedding_watch(tmp_path, monkeypatch, client):
 
 
 def test_monitor_this_from_an_embedding_run(tmp_path, monkeypatch, client):
-    from zing.web import history
+    from ekte.web import history
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     rid = history.save(_report(surface="embedding", suite="deep"))
     r = client.post(f"/api/watches/from-history/{rid}", json={"embedding_dimensions": 768})
     assert r.status_code == 201
@@ -128,7 +128,7 @@ def test_monitor_this_from_an_embedding_run(tmp_path, monkeypatch, client):
 @pytest.mark.parametrize("surface", ["embedding", "rerank"])
 def test_watches_refuse_chat_only_dimensions_like_jobs(tmp_path, monkeypatch, client, surface):
     """/api/watches create and edit share /api/jobs' per-surface dimension check."""
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     body = {"base_url": _URL, "model": "m", "surface": surface, "suite": "custom",
             "dimensions": ["capability", "streaming"]}
     job = client.post("/api/jobs", json=body)
@@ -149,9 +149,9 @@ def test_watches_refuse_chat_only_dimensions_like_jobs(tmp_path, monkeypatch, cl
 
 def test_monitor_this_keeps_the_runs_claimed_dimension(tmp_path, monkeypatch, client):
     """Without one in the request, "monitor this" takes the run's claimed dimension."""
-    from zing.web import history
+    from ekte.web import history
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     rid = history.save(_report(surface="embedding", embedding_dimensions=1024))
     assert client.post(f"/api/watches/from-history/{rid}", json={}).status_code == 201
     [w] = client.get("/api/watches").json()

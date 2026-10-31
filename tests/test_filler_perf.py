@@ -3,7 +3,7 @@
 ``build_filler`` used to re-join and re-count the whole text every 50 lines —
 quadratic, ~6 s at the default 200k-token probe cap, run synchronously inside the
 async context-window detector. That froze the event loop and corrupted latency
-measured by concurrent audits in ``zing serve``. These tests pin the linear
+measured by concurrent audits in ``ekte serve``. These tests pin the linear
 rewrite to the old output byte-for-byte and guard against the stall returning.
 """
 
@@ -14,10 +14,10 @@ import time
 
 import pytest
 
-from zing.detectors import helpers
-from zing.detectors.context_window import ContextWindowDetector
-from zing.detectors.helpers import build_filler, build_haystack
-from zing.utils.tokenize import estimate_tokens
+from ekte.detectors import helpers
+from ekte.detectors.context_window import ContextWindowDetector
+from ekte.detectors.helpers import build_filler, build_haystack
+from ekte.utils.tokenize import estimate_tokens
 
 
 def _reference_build_filler(target_tokens: int, tokenizer: str | None = None) -> str:
@@ -52,9 +52,9 @@ def test_filler_is_memoized():
 def test_haystack_leaves_cached_filler_untouched():
     # The haystack inserts the needle into a split copy; the shared filler stays clean.
     build_filler.cache_clear()
-    hay = build_haystack(total_tokens=2000, needle="ZING-NEEDLE", depth=0.5)
-    assert "ZING-NEEDLE" in hay
-    assert "ZING-NEEDLE" not in build_filler(2000, None)
+    hay = build_haystack(total_tokens=2000, needle="EKTE-NEEDLE", depth=0.5)
+    assert "EKTE-NEEDLE" in hay
+    assert "EKTE-NEEDLE" not in build_filler(2000, None)
 
 
 def test_filler_200k_tokens_is_fast():

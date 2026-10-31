@@ -1,0 +1,12 @@
+{
+ "strings": {
+  "Execution log": "Ausführungsprotokoll",
+  "{n} check": "{n} Prüfung",
+  "{n} checks": "{n} Prüfungen",
+  "{t} in total": "{t} insgesamt",
+  "Checks run one after another; the slowest was {name} ({t}).": "Die Prüfungen laufen nacheinander; am langsamsten war {name} ({t}).",
+  "Error: ": "Fehler: ",
+  "Helps ekte pick the right model profile when the model name alone is ambiguous. Choosing a model from the list fills it in.": "Hilft ekte, das richtige Modellprofil zu wählen, wenn der Modellname allein nicht eindeutig ist. Die Auswahl eines Modells aus der Liste füllt es aus.",
+  "Each check shows its score and how long it took; checks with findings expand to show the evidence.": "Jede Prüfung zeigt ihre Bewertung und ihre Dauer; Prüfungen mit Befunden lassen sich aufklappen, um die Belege zu zeigen."
+ }
+}

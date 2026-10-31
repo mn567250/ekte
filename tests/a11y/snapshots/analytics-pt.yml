@@ -1,11 +1,9 @@
 - banner:
   - link "Saltar para o conteúdo principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interface clássica":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Tema":
     - option "Automático"
     - option "Claro" [selected]
@@ -36,7 +34,7 @@
       - /url: /v2/kb
 - main:
   - heading "Análises das auditorias" [level=1]
-  - paragraph: "Compare relays e modelos ao longo do tempo com o que o zing mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação."
+  - paragraph: "Compare relays e modelos ao longo do tempo com o que o ekte mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação."
   - status: 1 execução mais antiga tem uma hora de início estimada Os gráficos por hora do dia posicionam-nas de forma aproximada.
   - status: "Atualizado: 14 execuções neste período."
   - region "Filtros":
@@ -108,4 +106,4 @@
         - listitem: Rácio de faturação (saída) 102% Sem dados no período anterior Dados de 9 de 14 execuções
 - contentinfo:
   - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
-  - paragraph: "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."
+  - paragraph: "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

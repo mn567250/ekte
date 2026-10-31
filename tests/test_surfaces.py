@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import pytest
 
-import zing.detectors  # noqa: F401  -- populate the registry
-from zing.config import SURFACE_OPS, SURFACES, AuditOptions, ConfigError, validate_surface
-from zing.detectors import base
-from zing.models import (
+import ekte.detectors  # noqa: F401  -- populate the registry
+from ekte.config import SURFACE_OPS, SURFACES, AuditOptions, ConfigError, validate_surface
+from ekte.detectors import base
+from ekte.models import (
     AuditReport,
     DetectorResult,
     Dimension,
@@ -20,7 +20,7 @@ from zing.models import (
     Severity,
     Status,
 )
-from zing.scoring import (
+from ekte.scoring import (
     DIMENSION_WEIGHTS,
     SURFACE_WEIGHTS,
     build_dimensions,
@@ -222,9 +222,9 @@ def test_rerank_connectivity_high_does_not_escalate():
 # Recorder and performance summary
 # --------------------------------------------------------------------------- #
 async def test_client_records_embedding_calls():
+    from ekte.clients import OpenAICompatibleClient
+    from ekte.perf.recorder import RequestRecorder
     from tests.test_embed import EmbedMock, _target
-    from zing.clients import OpenAICompatibleClient
-    from zing.perf.recorder import RequestRecorder
 
     recorder = RequestRecorder()
     async with OpenAICompatibleClient(_target(), transport=EmbedMock(dim=8).transport) as c:
@@ -253,9 +253,9 @@ def _rerank_transport():
 
 
 async def test_client_records_rerank_calls():
+    from ekte.clients import OpenAICompatibleClient
+    from ekte.perf.recorder import RequestRecorder
     from tests.test_embed import _target
-    from zing.clients import OpenAICompatibleClient
-    from zing.perf.recorder import RequestRecorder
 
     recorder = RequestRecorder()
     async with OpenAICompatibleClient(_target(), transport=_rerank_transport()) as c:
@@ -270,8 +270,8 @@ async def test_client_records_rerank_calls():
 
 
 async def test_client_rerank_without_recorder():
+    from ekte.clients import OpenAICompatibleClient
     from tests.test_embed import _target
-    from zing.clients import OpenAICompatibleClient
 
     async with OpenAICompatibleClient(_target(), transport=_rerank_transport()) as c:
         outcome, results = await c.rerank("which?", ["alpha", "beta"])
@@ -279,8 +279,8 @@ async def test_client_rerank_without_recorder():
 
 
 def test_recorder_records_rerank():
-    from zing.models import CompletionOutcome
-    from zing.perf.recorder import RequestRecorder
+    from ekte.models import CompletionOutcome
+    from ekte.perf.recorder import RequestRecorder
 
     recorder = RequestRecorder()
     outcome = CompletionOutcome(ok=False, error_type="HTTPError", status_code=500)
@@ -290,8 +290,8 @@ def test_recorder_records_rerank():
 
 
 def test_summary_op_parameter():
-    from zing.models import RequestRecord
-    from zing.perf.summary import build_performance, stats_pool, summarize_endpoint
+    from ekte.models import RequestRecord
+    from ekte.perf.summary import build_performance, stats_pool, summarize_endpoint
 
     records = [
         RequestRecord(seq=i, op="embed", phase="probe", ok=True, duration_ms=10.0 * (i + 1))
@@ -313,8 +313,8 @@ def test_summary_op_parameter():
 def test_history_stores_surface_and_null_reads_as_chat(tmp_path, monkeypatch):
     import sqlite3
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import history
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import history
 
     target = {"base_url": "https://relay.test/v1", "claimed_model": "m", "model": "m"}
     old = history.save({"generated_at": "t1", "target": target, "suite": "standard"})
@@ -330,8 +330,8 @@ def test_history_stores_surface_and_null_reads_as_chat(tmp_path, monkeypatch):
 
 
 def test_watch_surface_defaults_to_chat(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import watches
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import watches
 
     cfg = {"name": "w", "base_url": "https://relay.test/v1", "model": "m"}
     chat = watches.create(cfg)

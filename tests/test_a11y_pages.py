@@ -34,7 +34,7 @@ from tests.a11y.pages import (
 
 ROOT = Path(__file__).resolve().parent.parent
 SUITE = ROOT / "tests" / "a11y"
-V2 = ROOT / "zing" / "web" / "static" / "v2"
+V2 = ROOT / "ekte" / "web" / "static" / "v2"
 # the HTML file each page id serves
 PAGE_HTML = {
     "audit": "index.html",
@@ -51,7 +51,7 @@ def scope(*paths: str) -> Scope:
 
 
 # --------------------------------------------------------------------------- #
-# ZING_A11Y_PAGES
+# EKTE_A11Y_PAGES
 # --------------------------------------------------------------------------- #
 def test_parse_pages():
     assert parse_pages("") is None and parse_pages("  ") is None and parse_pages("all") is None
@@ -129,38 +129,38 @@ def test_test_pages_entries_exist_and_cover_the_pages_they_open():
 # changed files -> pages
 # --------------------------------------------------------------------------- #
 def test_single_page_files():
-    assert scope("zing/web/static/v2/history.html").as_dict() == {
-        "pages": ["history"], "full": False, "reason": "zing/web/static/v2/history.html -> history"}
-    assert scope("zing/web/static/v2/kbview.js").pages == ("kb",)
-    assert scope("zing/web/static/v2/watches.html", "zing/web/masterkey.py").pages == ("monitors",)
-    assert scope("zing/web/static/v2/bitv-report.json").pages == ("accessibility",)
+    assert scope("ekte/web/static/v2/history.html").as_dict() == {
+        "pages": ["history"], "full": False, "reason": "ekte/web/static/v2/history.html -> history"}
+    assert scope("ekte/web/static/v2/kbview.js").pages == ("kb",)
+    assert scope("ekte/web/static/v2/watches.html", "ekte/web/masterkey.py").pages == ("monitors",)
+    assert scope("ekte/web/static/v2/bitv-report.json").pages == ("accessibility",)
     assert scope("tests/a11y/test_history_controls.py").pages == ("history",)
     assert scope("tests/a11y/snapshots/kb-zh.yml").pages == ("kb",)
-    assert scope("zing/web/analytics.py").pages == ("analytics",)
-    assert scope("zing/web/static/v2/charts.js").pages == ("analytics", "accessibility")
-    assert scope("zing/web/static/v2/filterpanel.js").pages == ("history", "monitors", "kb", "analytics")
+    assert scope("ekte/web/analytics.py").pages == ("analytics",)
+    assert scope("ekte/web/static/v2/charts.js").pages == ("analytics", "accessibility")
+    assert scope("ekte/web/static/v2/filterpanel.js").pages == ("history", "monitors", "kb", "analytics")
 
 
 def test_multi_page_files_union_in_page_order():
-    s = scope("zing/web/static/v2/tabs.js", "zing/web/static/v2/report.js")
+    s = scope("ekte/web/static/v2/tabs.js", "ekte/web/static/v2/report.js")
     assert s.pages == ("audit", "history", "monitors", "kb", "analytics") and not s.full
-    assert "zing/web/static/v2/report.js -> audit, history" in s.reason
-    assert scope("zing/i18n/locales/fragments/v2-scoring/de.json").pages == ("audit", "history", "analytics")
-    assert scope("zing/knowledge/data/openai.yaml").pages == ("audit", "kb")
+    assert "ekte/web/static/v2/report.js -> audit, history" in s.reason
+    assert scope("ekte/i18n/locales/fragments/v2-scoring/de.json").pages == ("audit", "history", "analytics")
+    assert scope("ekte/knowledge/data/openai.yaml").pages == ("audit", "kb")
 
 
 @pytest.mark.parametrize("path", [
-    "zing/web/static/v2/nav.js",
-    "zing/web/static/v2/tokens.css",
-    "zing/web/static/v2/zing.css",
-    "zing/web/static/v2/theme.js",
-    "zing/web/static/i18n.js",
-    "zing/web/static/locales.js",
-    "zing/web/server.py",
-    "zing/web/security.py",
-    "zing/i18n/locales/de.json",
-    "zing/i18n/__init__.py",
-    "zing/i18n/locales/fragments/v2-history/en.json",  # re-declares "Cancel", used everywhere
+    "ekte/web/static/v2/nav.js",
+    "ekte/web/static/v2/tokens.css",
+    "ekte/web/static/v2/ekte.css",
+    "ekte/web/static/v2/theme.js",
+    "ekte/web/static/i18n.js",
+    "ekte/web/static/locales.js",
+    "ekte/web/server.py",
+    "ekte/web/security.py",
+    "ekte/i18n/locales/de.json",
+    "ekte/i18n/__init__.py",
+    "ekte/i18n/locales/fragments/v2-history/en.json",  # re-declares "Cancel", used everywhere
     "tests/a11y/harness.py",
     "tests/a11y/conftest.py",
     "tests/a11y/vendor/axe.min.js",
@@ -177,29 +177,28 @@ def test_shared_files_run_everything(path):
 
 
 @pytest.mark.parametrize("path", [
-    "zing/web/static/v2/newpage.html",
-    "zing/web/static/v2/newwidget.js",
-    "zing/web/static/newshared.js",
-    "zing/web/newapi.txt",
-    "zing/i18n/README",  # matched by zing/i18n/** (all) anyway
+    "ekte/web/static/v2/newpage.html",
+    "ekte/web/static/v2/newwidget.js",
+    "ekte/web/static/newshared.js",
+    "ekte/web/newapi.txt",
+    "ekte/i18n/README",  # matched by ekte/i18n/** (all) anyway
     "tests/a11y/new_helper.json",
 ])
 def test_fail_safe_unknown_web_files_run_everything(path):
-    s = scope("zing/web/static/v2/history.html", path)
+    s = scope("ekte/web/static/v2/history.html", path)
     assert s.full and s.pages == tuple(PAGES)
 
 
 def test_fail_safe_is_reached_only_by_unmatched_files():
-    assert match("zing/web/static/v2/newpage.html") is None
-    s = scope("zing/web/static/v2/newpage.html")
+    assert match("ekte/web/static/v2/newpage.html") is None
+    s = scope("ekte/web/static/v2/newpage.html")
     assert s.full and "fail-safe" in s.reason
 
 
 @pytest.mark.parametrize("paths", [
     ["README.md", "README.de.md", "docs/METHODOLOGY.md", "docs/ACCESSIBILITY.md", "CHANGELOG.md"],
-    ["tests/test_model_identity.py", "zing/cli.py", "zing/__main__.py", "zing/media_audit.py"],
+    ["tests/test_model_identity.py", "ekte/cli.py", "ekte/__main__.py", "ekte/media_audit.py"],
     ["tests/a11y/README.md", "tests/a11y/llm_review.py", "tests/test_a11y_llm_review.py"],
-    ["zing/web/static/console.html", "zing/web/static/index.html", "zing/web/static/modelpicker.js"],
     [],
 ])
 def test_files_outside_web_ui_v2_select_nothing(paths):
@@ -210,16 +209,16 @@ def test_files_outside_web_ui_v2_select_nothing(paths):
 
 def test_audit_pipeline_runs_the_audit_page():
     # test_audit_flow runs a real audit (fake relay) and renders the report
-    for path in ("zing/detectors/model_identity.py", "zing/runner.py", "zing/clients/anthropic.py",
-                 "zing/scoring.py", "zing/utils/sse.py", "zing/prompts/en.json"):
+    for path in ("ekte/detectors/model_identity.py", "ekte/runner.py", "ekte/clients/anthropic.py",
+                 "ekte/scoring.py", "ekte/utils/sse.py", "ekte/prompts/en.json"):
         assert scope(path).pages == ("audit",), path
-    assert scope("zing/report/render.py").pages == ("audit", "history")
-    s = scope("zing/detectors/context_window.py", "docs/METHODOLOGY.md", "tests/test_context_window.py")
+    assert scope("ekte/report/render.py").pages == ("audit", "history")
+    s = scope("ekte/detectors/context_window.py", "docs/METHODOLOGY.md", "tests/test_context_window.py")
     assert s.pages == ("audit",) and matrix(s) == [{"shard": "1/1", "pages": "audit"}]
 
 
 def _imports(*modules: str) -> dict[str, str]:
-    """zing modules reachable from ``modules`` by import (module -> path), also
+    """ekte modules reachable from ``modules`` by import (module -> path), also
     through imports inside functions."""
     seen: dict[str, str] = {}
     todo = list(modules)
@@ -236,44 +235,44 @@ def _imports(*modules: str) -> dict[str, str]:
         pkg = mod if path.name == "__init__.py" else mod.rpartition(".")[0]
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if isinstance(node, ast.Import):
-                todo += [a.name for a in node.names if a.name.startswith("zing")]
+                todo += [a.name for a in node.names if a.name.startswith("ekte")]
             elif isinstance(node, ast.ImportFrom):
                 base = node.module or ""
                 if node.level:
                     parts = pkg.split(".")
                     base = ".".join(parts[: len(parts) - node.level + 1] + ([base] if base else []))
-                if base.startswith("zing"):
+                if base.startswith("ekte"):
                     todo += [base] + [f"{base}.{a.name}" for a in node.names]
     return seen
 
 
 def test_every_module_the_server_imports_has_a_rule():
     # a module the web UI runs on can break a page, so none may select nothing
-    found = _imports("zing.web.server")
-    assert "zing/runner.py" in found.values() and "zing/report/render.py" in found.values()
+    found = _imports("ekte.web.server")
+    assert "ekte/runner.py" in found.values() and "ekte/report/render.py" in found.values()
     for path in found.values():
         got = match(path)
         assert got, f"{path} is imported by the web server but selects no page"
 
 
 def test_every_module_an_audit_runs_selects_the_audit_page():
-    for path in _imports("zing.runner").values():
+    for path in _imports("ekte.runner").values():
         got = match(path)
         assert got == ALL or (got and "audit" in got), f"{path} runs in an audit but does not select the audit page"
 
 
 def test_every_page_affected_is_a_full_run():
-    s = scope(*(f"zing/web/static/v2/{f}" for f in PAGE_HTML.values()))
+    s = scope(*(f"ekte/web/static/v2/{f}" for f in PAGE_HTML.values()))
     assert s.full and s.pages == tuple(PAGES) and s.reason == "every page is affected"
 
 
 def test_paths_are_normalised():
-    assert scope("./zing/web/static/v2/kb.html", " ", "zing/web/static/v2/kb.html\n").pages == ("kb",)
+    assert scope("./ekte/web/static/v2/kb.html", " ", "ekte/web/static/v2/kb.html\n").pages == ("kb",)
 
 
 def test_every_existing_ui_file_has_a_rule():
     # the fail-safe is for files added later; today's files are all mapped
-    for top in ("zing/web", "zing/i18n", "tests/a11y"):
+    for top in ("ekte/web", "ekte/i18n", "tests/a11y"):
         for path in (ROOT / top).rglob("*"):
             rel = path.relative_to(ROOT).as_posix()
             if path.is_file() and "__pycache__" not in rel:
@@ -284,17 +283,17 @@ def _assets(html: str) -> set[str]:
     out = set()
     for ref in re.findall(r'(?:src|href)="(/[^"?#]+\.(?:js|css))', html):
         if ref.startswith("/v2/static/"):
-            out.add("zing/web/static/v2/" + ref.removeprefix("/v2/static/"))
+            out.add("ekte/web/static/v2/" + ref.removeprefix("/v2/static/"))
         else:
-            out.add("zing/web/static" + ref)
+            out.add("ekte/web/static" + ref)
     for ref in re.findall(r'fetch\("(/v2/static/[^"?#]+)"', html):
-        out.add("zing/web/static/v2/" + ref.removeprefix("/v2/static/"))
+        out.add("ekte/web/static/v2/" + ref.removeprefix("/v2/static/"))
     return out
 
 
 def test_asset_rules_cover_every_page_that_loads_the_asset():
     for pid, file in PAGE_HTML.items():
-        assert match(f"zing/web/static/v2/{file}") == (pid,)
+        assert match(f"ekte/web/static/v2/{file}") == (pid,)
         assets = _assets((V2 / file).read_text(encoding="utf-8"))
         assert assets, file
         for asset in assets:
@@ -307,10 +306,10 @@ def test_narrowed_fragments_are_used_only_on_their_pages():
     # a fragment string used by a file of another page would make the rule
     # skip that page; strings are looked up by their English text
     sources = {p.relative_to(ROOT).as_posix(): p.read_text(encoding="utf-8")
-               for d in ("zing/web/static", "zing/web/static/v2") for p in (ROOT / d).glob("*.*")
+               for d in ("ekte/web/static", "ekte/web/static/v2") for p in (ROOT / d).glob("*.*")
                if p.suffix in (".html", ".js")}
-    fragments = ROOT / "zing" / "i18n" / "locales" / "fragments"
-    narrowed = [(pat, ids) for pat, ids in RULES if pat.startswith("zing/i18n/locales/fragments/") and ids != ALL]
+    fragments = ROOT / "ekte" / "i18n" / "locales" / "fragments"
+    narrowed = [(pat, ids) for pat, ids in RULES if pat.startswith("ekte/i18n/locales/fragments/") and ids != ALL]
     assert narrowed
     for pattern, ids in narrowed:
         name = pattern.split("/")[4]
@@ -333,11 +332,11 @@ def test_matrix_full_run_keeps_four_round_robin_shards():
 
 
 def test_matrix_partial_runs_share_the_selection():
-    one = matrix(scope("zing/web/static/v2/watches.html"))
+    one = matrix(scope("ekte/web/static/v2/watches.html"))
     assert one == [{"shard": "1/1", "pages": "monitors"}]
-    two = matrix(scope("zing/web/static/v2/kb.html", "zing/web/static/v2/history.html"))
+    two = matrix(scope("ekte/web/static/v2/kb.html", "ekte/web/static/v2/history.html"))
     assert len(two) == 2 and {e["pages"] for e in two} == {"history,kb"}
-    five = matrix(scope(*(f"zing/web/static/v2/{f}" for f in list(PAGE_HTML.values())[:5])))
+    five = matrix(scope(*(f"ekte/web/static/v2/{f}" for f in list(PAGE_HTML.values())[:5])))
     assert 2 < len(five) <= 4 and [e["shard"] for e in five] == [f"{k}/{len(five)}" for k in range(1, len(five) + 1)]
 
 
@@ -351,8 +350,8 @@ def test_job_count_grows_with_the_selection():
 # python -m tests.a11y.affected
 # --------------------------------------------------------------------------- #
 def test_cli_files_and_full(capsys):
-    assert affected_cli.main(["--files", "zing/web/static/v2/kb.html", "README.md"]) == 0
-    assert json.loads(capsys.readouterr().out) == {"pages": ["kb"], "full": False, "reason": "zing/web/static/v2/kb.html -> kb"}
+    assert affected_cli.main(["--files", "ekte/web/static/v2/kb.html", "README.md"]) == 0
+    assert json.loads(capsys.readouterr().out) == {"pages": ["kb"], "full": False, "reason": "ekte/web/static/v2/kb.html -> kb"}
     affected_cli.main(["--full", "nightly"])
     out = json.loads(capsys.readouterr().out)
     assert out["full"] and out["pages"] == list(PAGES) and out["reason"] == "nightly"
@@ -361,7 +360,7 @@ def test_cli_files_and_full(capsys):
 def test_cli_stdin(capsys, monkeypatch):
     import io
 
-    monkeypatch.setattr(sys, "stdin", io.StringIO("docs/CI.md\nzing/web/static/v2/watches.html\n"))
+    monkeypatch.setattr(sys, "stdin", io.StringIO("docs/CI.md\nekte/web/static/v2/watches.html\n"))
     affected_cli.main(["--files", "-"])
     assert json.loads(capsys.readouterr().out)["pages"] == ["monitors"]
 
@@ -384,10 +383,10 @@ def test_cli_git_diff(capsys):
 def test_cli_github_output(capsys, tmp_path, monkeypatch):
     target = tmp_path / "out"
     monkeypatch.setenv("GITHUB_OUTPUT", str(target))
-    affected_cli.main(["--files", "zing/web/static/v2/history.html", "--github-output"])
+    affected_cli.main(["--files", "ekte/web/static/v2/history.html", "--github-output"])
     lines = dict(line.split("=", 1) for line in target.read_text().splitlines())
     assert lines["pages"] == "history" and lines["full"] == "false" and lines["run"] == "true"
-    assert json.loads(lines["matrix"]) == {"include": matrix(scope("zing/web/static/v2/history.html"))}
+    assert json.loads(lines["matrix"]) == {"include": matrix(scope("ekte/web/static/v2/history.html"))}
     target.unlink()
     affected_cli.main(["--files", "README.md", "--github-output"])
     lines = dict(line.split("=", 1) for line in target.read_text().splitlines())
@@ -411,15 +410,15 @@ def _ids(proc: subprocess.CompletedProcess[str]) -> list[str]:
 
 
 def test_collection_selects_pages_and_rejects_unknown_ids():
-    everything = _ids(_collect(ZING_A11Y_PAGES="all"))
-    history = _ids(_collect(ZING_A11Y_PAGES="history"))
+    everything = _ids(_collect(EKTE_A11Y_PAGES="all"))
+    history = _ids(_collect(EKTE_A11Y_PAGES="history"))
     assert 0 < len(history) < len(everything)
     assert any("test_history_paging.py" in i for i in history)
     assert not any("-kb-" in i or "[kb-" in i or "test_kb_flow" in i for i in history)
     # cross-page checks stay
     assert any("test_consistent_navigation_and_landmarks" in i for i in history)
     # with the shard on top: the parts add up to the selection
-    parts = [_ids(_collect(ZING_A11Y_PAGES="history", ZING_A11Y_SHARD=f"{k}/2")) for k in (1, 2)]
+    parts = [_ids(_collect(EKTE_A11Y_PAGES="history", EKTE_A11Y_SHARD=f"{k}/2")) for k in (1, 2)]
     assert sorted(parts[0] + parts[1]) == sorted(history)
-    bad = _collect(ZING_A11Y_PAGES="history,reports")
+    bad = _collect(EKTE_A11Y_PAGES="history,reports")
     assert bad.returncode != 0 and "unknown page id(s) reports" in bad.stderr + bad.stdout

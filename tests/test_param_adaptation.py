@@ -16,12 +16,12 @@ import httpx
 from test_anthropic import AnthropicMock
 from test_responses import ResponsesMock
 
+from ekte.clients import AnthropicClient, OpenAICompatibleClient, ResponsesClient
+from ekte.clients.base import rejected_params
+from ekte.models import CompletionOutcome, RequestSpec, TargetConfig
+from ekte.perf.recorder import RequestRecorder
+from ekte.perf.summary import summarize_endpoint
 from tests._helpers import BASE_URL
-from zing.clients import AnthropicClient, OpenAICompatibleClient, ResponsesClient
-from zing.clients.base import rejected_params
-from zing.models import CompletionOutcome, RequestSpec, TargetConfig
-from zing.perf.recorder import RequestRecorder
-from zing.perf.summary import summarize_endpoint
 
 _MAX_TOKENS = (
     "Unsupported parameter: 'max_tokens' is not supported with this model. "
@@ -251,10 +251,10 @@ async def test_responses_client_drops_refused_sampling_parameters():
 
 # -- the runner hands the profile's constraints to the clients -------------- #
 async def test_runner_sets_unsupported_params_from_each_profile(monkeypatch, tmp_path):
+    from ekte.clients import make_client as real
+    from ekte.config import AuditOptions
+    from ekte.runner import run_audit
     from tests._helpers import MockServer
-    from zing.clients import make_client as real
-    from zing.config import AuditOptions
-    from zing.runner import run_audit
 
     (tmp_path / "thinker.yaml").write_text(
         "provider: acme\n"
@@ -271,7 +271,7 @@ async def test_runner_sets_unsupported_params_from_each_profile(monkeypatch, tmp
         clients.append(client)
         return client
 
-    monkeypatch.setattr("zing.runner.make_client", factory)
+    monkeypatch.setattr("ekte.runner.make_client", factory)
     await run_audit(
         TargetConfig(name="t", kind="target", base_url=BASE_URL, model="thinker-1"),
         AuditOptions(suite="custom", dimensions=["connectivity"]),
@@ -288,8 +288,8 @@ async def test_runner_sets_unsupported_params_from_each_profile(monkeypatch, tmp
 async def test_protocol_request_classifies_a_reasoning_models_refusals_as_model_limits():
     from types import SimpleNamespace
 
-    from zing.detectors.protocol_attrs import ProtocolRequestDetector
-    from zing.knowledge import load_knowledge_base
+    from ekte.detectors.protocol_attrs import ProtocolRequestDetector
+    from ekte.knowledge import load_knowledge_base
 
     server = ReasoningEndpoint()
     inner = server.handler

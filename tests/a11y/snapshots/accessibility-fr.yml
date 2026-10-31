@@ -1,11 +1,9 @@
 - banner:
   - link "Aller au contenu principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interface classique":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Thème":
     - option "Automatique"
     - option "Clair" [selected]
@@ -46,7 +44,7 @@
     - term: Commit
     - definition:
       - code: <id>
-    - term: Version de zing
+    - term: Version de ekte
     - definition: 0.11.0
     - term: Version d'axe-core
     - definition: 4.13.0
@@ -142,7 +140,7 @@
   - region "Déclaration d'accessibilité":
     - heading "Déclaration d'accessibilité" [level=2]
     - heading "État de conformité" [level=3]
-    - paragraph: L'interface web v2 de zing est partiellement conforme au BITV 2.0, à l'EN 301549 et aux WCAG 2.1 niveau AA.
+    - paragraph: L'interface web v2 de ekte est partiellement conforme au BITV 2.0, à l'EN 301549 et aux WCAG 2.1 niveau AA.
     - heading "Limites connues" [level=3]
     - paragraph: "La partie automatisée de ces étapes est réussie ; le reste nécessite encore une revue manuelle :"
     - list:
@@ -167,7 +165,7 @@
     - paragraph:
       - text: "Vous avez trouvé un obstacle, ou quelque chose est difficile à utiliser avec une technologie d'assistance ? Dites-le-nous :"
       - link "signaler un problème d'accessibilité sur GitHub":
-        - /url: https://github.com/cenbonew/zing/issues
+        - /url: https://github.com/mn567250/ekte/issues
 - contentinfo:
   - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
-  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."
+  - paragraph: "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

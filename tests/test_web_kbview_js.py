@@ -1,4 +1,4 @@
-"""Pure helpers of the v2 Knowledge page (zing/web/static/v2/kbview.js),
+"""Pure helpers of the v2 Knowledge page (ekte/web/static/v2/kbview.js),
 evaluated under node. The DOM flow itself is covered by the browser suite
 (tests/a11y/test_flows.py)."""
 
@@ -14,7 +14,7 @@ import pytest
 _JS = r"""
 global.window = {};
 require(process.argv[1]);
-const V = window.ZingKbView._;
+const V = window.EkteKbView._;
 const models = [
   { key: "model:openai/gpt-4o", id: "gpt-4o", provider: "openai", provider_name: "OpenAI", aliases: ["gpt-4o-2024-08-06"],
     enabled: true, yours: false, source: "packaged:openai.yaml" },
@@ -55,7 +55,7 @@ console.log(JSON.stringify({
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_kbview_helpers():
-    src = Path(__file__).resolve().parent.parent / "zing" / "web" / "static" / "v2" / "kbview.js"
+    src = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v2" / "kbview.js"
     out = json.loads(subprocess.run(["node", "-e", _JS, str(src)], capture_output=True, text=True, check=True).stdout)
     assert out["kinds"] == ["yours", "kbdir", "packaged", "packaged", "packaged"]
     assert out["files"] == ["#3", "/srv/kb/x.yaml", "openai.yaml"]

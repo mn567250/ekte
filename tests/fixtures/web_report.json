@@ -2,7 +2,7 @@
  "tool_version": "0.11.0",
  "mode": "check",
  "generated_at": "2026-09-27T07:47:04.472446+00:00",
- "command": "zing check --base-url http://127.0.0.1:9099/v1 --model gpt-4o --suite standard",
+ "command": "ekte check --base-url http://127.0.0.1:9099/v1 --model gpt-4o --suite standard",
  "suite": "standard",
  "target": {
   "name": "target",
@@ -20,7 +20,7 @@
   "risk_level": "high",
   "headline": "Strong evidence the relay does not deliver the claimed model as advertised. (confidence: medium)",
   "confidence": "medium",
-  "summary": "Overall health score 52.6/100. Findings: 4 high, 5 medium. Run `zing compare` against a trusted baseline to strengthen the verdict. zing reports black-box evidence of divergence and risk, not proof of fraud.",
+  "summary": "Overall health score 52.6/100. Findings: 4 high, 5 medium. Run `ekte compare` against a trusted baseline to strengthen the verdict. ekte reports black-box evidence of divergence and risk, not proof of fraud.",
   "key_findings": [
    "Reported prompt tokens far exceed estimate",
    "Self-identifies as a rival brand",
@@ -564,8 +564,8 @@
  "judge_used": false,
  "judge_model": null,
  "notes": [
-  "zing performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.",
-  "Use `zing compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.",
+  "ekte performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.",
+  "Use `ekte compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.",
   "Do not publish a report that names a vendor without reviewing sample size, cost, and local law/policy."
  ],
  "warnings": []

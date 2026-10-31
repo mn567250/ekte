@@ -1,4 +1,4 @@
-"""Choosing and finding the data directory: --data-dir and `zing data-dir`."""
+"""Choosing and finding the data directory: --data-dir and `ekte data-dir`."""
 
 from __future__ import annotations
 
@@ -7,37 +7,37 @@ import stat
 
 from typer.testing import CliRunner
 
-from zing import datadir
-from zing.cli import app
+from ekte import datadir
+from ekte.cli import app
 
 
-def test_default_is_home_dot_zing(monkeypatch, tmp_path):
-    monkeypatch.delenv("ZING_DATA_DIR", raising=False)
+def test_default_is_home_dot_ekte(monkeypatch, tmp_path):
+    monkeypatch.delenv("EKTE_DATA_DIR", raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
     result = CliRunner().invoke(app, ["data-dir"])
     assert result.exit_code == 0
-    assert result.output.strip() == str(tmp_path / ".zing")
+    assert result.output.strip() == str(tmp_path / ".ekte")
 
 
 def test_global_option_sets_the_data_dir(monkeypatch, tmp_path):
-    monkeypatch.setenv("ZING_DATA_DIR", "/unused")
+    monkeypatch.setenv("EKTE_DATA_DIR", "/unused")
     result = CliRunner().invoke(app, ["--data-dir", str(tmp_path), "data-dir"])
     assert result.exit_code == 0
     assert result.output.strip() == str(tmp_path.resolve())
 
 
 def test_relative_path_is_made_absolute(monkeypatch, tmp_path):
-    monkeypatch.setenv("ZING_DATA_DIR", "/unused")
+    monkeypatch.setenv("EKTE_DATA_DIR", "/unused")
     monkeypatch.chdir(tmp_path)
     result = CliRunner().invoke(app, ["--data-dir", ".", "data-dir"])
     assert result.exit_code == 0
-    assert os.path.isabs(os.environ["ZING_DATA_DIR"])
+    assert os.path.isabs(os.environ["EKTE_DATA_DIR"])
     assert result.output.strip() == str(tmp_path.resolve())
 
 
 def test_existing_folder_keeps_its_mode(monkeypatch, tmp_path):
     tmp_path.chmod(0o755)
-    monkeypatch.setenv("ZING_DATA_DIR", "/unused")
+    monkeypatch.setenv("EKTE_DATA_DIR", "/unused")
     CliRunner().invoke(app, ["--data-dir", str(tmp_path), "data-dir"])
     with datadir.connect("history.db") as conn:
         conn.execute("CREATE TABLE t (x)")

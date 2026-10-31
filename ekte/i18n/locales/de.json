@@ -1,0 +1,872 @@
+{
+ "meta": {
+  "code": "de",
+  "label": "Deutsch",
+  "html": "de",
+  "locale": "de-DE",
+  "order": 6
+ },
+ "strings": {
+  "Language": "Sprache",
+  "Show key": "Schlüssel anzeigen",
+  "Tools": "Werkzeuge",
+  "History": "Verlauf",
+  "Monitors": "Überwachung",
+  "Runs locally · keys <b>never leave</b>": "Läuft lokal · Schlüssel <b>verlassen nie das Gerät</b>",
+  "Back to audit": "Zurück zur Prüfung",
+  "Relay address base_url": "Relay-Adresse base_url",
+  "Supports env:VAR / file:/path": "Unterstützt env:VAR / file:/pfad",
+  "sk-... or env:EKTE_API_KEY": "sk-... oder env:EKTE_API_KEY",
+  "sk-... or env:OPENAI_API_KEY": "sk-... oder env:OPENAI_API_KEY",
+  "Protocol": "Protokoll",
+  "Auto": "Auto",
+  "Could not reach the local service: ": "Lokaler Dienst nicht erreichbar: ",
+  "Audit failed: ": "Prüfung fehlgeschlagen: ",
+  "Evidence": "Belege",
+  "Hide evidence": "Belege ausblenden",
+  "Show evidence": "Belege anzeigen",
+  "Recommendation: ": "Empfehlung: ",
+  "Overall health score": "Gesamt-Health-Score",
+  "Health score": "Health-Score",
+  "Verdict confidence": "Konfidenz des Urteils",
+  "Confidence": "Konfidenz",
+  "confidence": "Konfidenz",
+  "Risk level": "Risikostufe",
+  "Risk": "Risiko",
+  "Target": "Ziel",
+  "Claimed": "Angegeben",
+  "Tested id": "Getestete ID",
+  "Baseline": "Referenz",
+  "Mode": "Modus",
+  "Suite": "Suite",
+  "Per-dimension checks": "Prüfungen je Dimension",
+  "Findings": "Befunde",
+  "High": "Hoch",
+  "Medium": "Mittel",
+  "Low": "Niedrig",
+  "yes": "ja",
+  "no": "nein",
+  "Check": "Prüfung",
+  "finding": "Befund",
+  "Most likely genuine": "Höchstwahrscheinlich echt",
+  "Mostly trustworthy, minor issues": "Weitgehend vertrauenswürdig, kleinere Mängel",
+  "Deviations, verify": "Abweichungen, bitte prüfen",
+  "Bait-and-switch": "Etikettenschwindel",
+  "Insufficient signal": "Unzureichendes Signal",
+  "Consistent (likely genuine)": "Konsistent (wahrscheinlich echt)",
+  "Mostly trustworthy": "Weitgehend vertrauenswürdig",
+  "Deviations found": "Abweichungen gefunden",
+  "Behavior is consistent with the claimed model": "Das Verhalten entspricht dem angegebenen Modell",
+  "Mostly consistent, with a few minor issues": "Weitgehend konsistent, mit einigen kleineren Mängeln",
+  "Some behavior does not match the claimed model — verify": "Einiges Verhalten passt nicht zum angegebenen Modell — bitte prüfen",
+  "It is not serving the model it claims": "Es liefert nicht das Modell, das es angibt",
+  "Insufficient signal to decide (connectivity or coverage too low)": "Unzureichendes Signal für ein Urteil (Konnektivität oder Abdeckung zu gering)",
+  "Pass": "Bestanden",
+  "Warning": "Warnung",
+  "Fail": "Fehlgeschlagen",
+  "Info": "Info",
+  "Inconclusive": "Nicht eindeutig",
+  "Not run": "Nicht ausgeführt",
+  "Error": "Fehler",
+  "Critical": "Kritisch",
+  "critical": "kritisch",
+  "high": "hoch",
+  "medium": "mittel",
+  "Model identity": "Modellidentität",
+  "Is it the model it claims to be?": "Ist es das Modell, das es zu sein behauptet?",
+  "Context window": "Kontextfenster",
+  "Does it really remember long input?": "Merkt es sich lange Eingaben wirklich?",
+  "Capability claims": "Angegebene Fähigkeiten",
+  "Are tools/JSON really supported?": "Werden Tools/JSON wirklich unterstützt?",
+  "Billing & usage": "Abrechnung & Verbrauch",
+  "Is token usage inflated?": "Ist der Token-Verbrauch aufgebläht?",
+  "Protocol compliance": "Protokollkonformität",
+  "Is the API spec-compliant?": "Ist die API spezifikationskonform?",
+  "Connectivity": "Konnektivität",
+  "Reliably reachable?": "Zuverlässig erreichbar?",
+  "Concurrency reliability": "Zuverlässigkeit unter Parallellast",
+  "Stable under load?": "Stabil unter Last?",
+  "Streaming authenticity": "Echtheit des Streamings",
+  "Real streaming or faked?": "Echtes oder vorgetäuschtes Streaming?",
+  "Transport security": "Transportsicherheit",
+  "Are keys handled safely?": "Werden Schlüssel sicher behandelt?",
+  "Is the endpoint reachable and does basic chat work?": "Ist der Endpunkt erreichbar und funktioniert einfacher Chat?",
+  "Does it follow the OpenAI API spec?": "Folgt es der OpenAI-API-Spezifikation?",
+  "Does it really remember long input, or truncate silently?": "Merkt es sich lange Eingaben wirklich, oder wird still gekürzt?",
+  "Is it really the model it claims to be?": "Ist es wirklich das Modell, das es zu sein behauptet?",
+  "Are tool calling / JSON mode really supported?": "Werden Tool-Aufrufe / JSON-Modus wirklich unterstützt?",
+  "Real streaming, or buffered and faked?": "Echtes Streaming, oder gepuffert und vorgetäuscht?",
+  "Is token usage over-reported?": "Wird der Token-Verbrauch zu hoch gemeldet?",
+  "Success rate and latency under load": "Erfolgsquote und Latenz unter Last",
+  "Transport encryption and key handling": "Transportverschlüsselung und Schlüsselhandhabung",
+  "Capabilities": "Fähigkeiten",
+  "Billing": "Abrechnung",
+  "Reliability": "Zuverlässigkeit",
+  "Streaming": "Streaming",
+  "Security": "Sicherheit",
+  "ekte — relay reality check": "ekte — Relay-Echtheitsprüfung",
+  "Is this relay serving the <span class='u'>real thing</span>?": "Liefert dieses Relay das <span class='u'>echte Modell</span>?",
+  "Enter the relay's address and the model it claims to serve. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Geben Sie die Adresse des Relays und das Modell ein, das es angeblich liefert. ekte führt auf Ihrem Rechner eine vollständige Black-Box-Testsuite aus und erstellt einen verständlichen, belegten Prüfbericht.",
+  "Claimed model": "Angegebenes Modell",
+  "Actual request id": "Tatsächlich angefragte ID",
+  "Optional": "Optional",
+  "Empty = same as above (enter the real id if you suspect a swap)": "Leer = wie oben (bei Verdacht auf Austausch die echte ID eintragen)",
+  "Test suite": "Testsuite",
+  "Compare against a trusted baseline (compare · stronger verdict)": "Mit einer vertrauenswürdigen Referenz vergleichen (compare · stärkeres Urteil)",
+  "Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.": "Geben Sie einen Endpunkt desselben Modells an, dem Sie <b>vertrauen</b> (z. B. die offizielle API). ekte nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit einer Referenz.",
+  "Baseline base_url": "Referenz-base_url",
+  "Baseline API Key": "Referenz-API-Schlüssel",
+  "Baseline model": "Referenzmodell",
+  "Official id of the same model": "Offizielle ID desselben Modells",
+  "Baseline protocol": "Referenzprotokoll",
+  "Start audit": "Prüfung starten",
+  "Tests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.": "Die Tests werden von <b>Ihrem lokalen ekte-Server</b> gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird <b>nie an Dritte übertragen</b>.",
+  "ekte provides reproducible evidence of risk and deviation, not a legal verdict.": "ekte liefert reproduzierbare Belege für Risiken und Abweichungen, kein rechtliches Urteil.",
+  "Running checks…": "Prüfungen laufen…",
+  "Test another": "Weiteres testen",
+  "Download report (JSON)": "Bericht herunterladen (JSON)",
+  "Want the strongest verdict? Re-check against an official baseline with <code>ekte compare</code>.": "Sie möchten das stärkste Urteil? Prüfen Sie mit <code>ekte compare</code> erneut gegen eine offizielle Referenz.",
+  "Connecting to endpoint…": "Verbindung zum Endpunkt…",
+  "Please enter the relay address and the claimed model.": "Bitte Relay-Adresse und angegebenes Modell eingeben.",
+  "Starting audit of ": "Starte Prüfung von ",
+  "No warnings or failures — every dimension is consistent with the claimed model.": "Keine Warnungen oder Fehler — jede Dimension entspricht dem angegebenen Modell.",
+  "ekte provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run.": "ekte liefert <strong>reproduzierbare Belege für Verhaltensabweichungen und Risiken</strong>, keinen rechtlichen oder kryptografischen Betrugsnachweis. Relays können probabilistisch routen; berücksichtigen Sie Stichprobengröße, Abrechnungseinstellungen und lokales Recht selbst und beschuldigen Sie einen Anbieter nie öffentlich auf Grundlage eines einzigen Laufs.",
+  "ekte — audit history": "ekte — Prüfverlauf",
+  "Local history · stored in <b>~/.ekte</b>": "Lokaler Verlauf · gespeichert in <b>~/.ekte</b>",
+  "Audit <span class='u'>history</span> & trends": "Prüf<span class='u'>verlauf</span> & Trends",
+  "Every verification you have run on this machine. Grouped by \"relay + claimed model\", with a health-score trend line; click any row to expand that report.": "Jede Prüfung, die Sie auf diesem Rechner ausgeführt haben, gruppiert nach „Relay + angegebenes Modell“, mit einer Trendlinie des Health-Scores; klicken Sie auf eine Zeile, um den Bericht aufzuklappen.",
+  "Clear history": "Verlauf löschen",
+  "Loading history…": "Verlauf wird geladen…",
+  "History lives only in your local SQLite file and is never uploaded to any third party.": "Der Verlauf liegt nur in Ihrer lokalen SQLite-Datei und wird nie an Dritte übertragen.",
+  "Could not read history: ": "Verlauf konnte nicht gelesen werden: ",
+  "Make sure the local ekte service is running.": "Stellen Sie sicher, dass der lokale ekte-Dienst läuft.",
+  "No audits recorded yet.": "Noch keine Prüfungen gespeichert.",
+  "Run your first audit": "Erste Prüfung ausführen",
+  "(no model declared)": "(kein Modell angegeben)",
+  "Time": "Zeit",
+  "Score": "Score",
+  "Grade": "Note",
+  "Mode / suite": "Modus / Suite",
+  "Loading report…": "Bericht wird geladen…",
+  "Could not load this report: ": "Dieser Bericht konnte nicht geladen werden: ",
+  "Delete this history entry?": "Diesen Verlaufseintrag löschen?",
+  "No dimension data.": "Keine Dimensionsdaten.",
+  "No warnings or failures.": "Keine Warnungen oder Fehler.",
+  "Download JSON": "JSON herunterladen",
+  "Delete entry": "Eintrag löschen",
+  "Clear the entire audit history? This cannot be undone.": "Den gesamten Prüfverlauf löschen? Dies kann nicht rückgängig gemacht werden.",
+  "Scan": "Scan",
+  "Report view /": "Berichtsansicht /",
+  "History /history": "Verlauf /history",
+  "Relay <span class='hl'>bait-and-switch</span> test bench": "Prüfstand für <span class='hl'>Etikettenschwindel</span> bei Relays",
+  "Point it at a relay's <span class='kbd'>base_url</span> and the model it claims. ekte runs a full suite of black-box probes, compares the results with built-in native model profiles, and gives an evidence-backed verdict — not a gut feeling. Power-user console with a terminal-style live detector log.": "Richten Sie es auf die <span class='kbd'>base_url</span> eines Relays und das angegebene Modell. ekte führt eine vollständige Reihe von Black-Box-Sonden aus, vergleicht die Ergebnisse mit eingebauten nativen Modellprofilen und liefert ein belegtes Urteil — kein Bauchgefühl. Konsole für Fortgeschrittene mit Live-Detektorprotokoll im Terminal-Stil.",
+  "target endpoint": "Zielendpunkt",
+  "claimed model (model)": "angegebenes Modell (model)",
+  "empty = same as above": "leer = wie oben",
+  "declared_provider <span class='hint'>opt</span>": "declared_provider <span class='hint'>opt.</span>",
+  "api": "api",
+  "suite": "suite",
+  "+ baseline / compare (trusted baseline · stronger verdict)": "+ Referenz / compare (vertrauenswürdige Referenz · stärkeres Urteil)",
+  "Enter an endpoint for the same model that you trust (e.g. the official API). The quality judge and tamper detection only reach their highest level with a baseline.": "Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit einer Referenz.",
+  "official model id": "offizielle Modell-ID",
+  "verdict": "Urteil",
+  "9 dimension scores": "Scores der 9 Dimensionen",
+  "live detector log": "Live-Detektorprotokoll",
+  "// waiting to start… fill in the form and click \"run audit\"<br>// detector lines stream here — click a line with findings to expand evidence": "// wartet auf Start… Formular ausfüllen und auf „Prüfung starten“ klicken<br>// hier erscheinen die Detektorzeilen — Zeile mit Befunden anklicken, um die Belege aufzuklappen",
+  "ekte reports reproducible evidence of behavioral deviation and risk, not cryptographic proof of fraud. · <a href='/'>switch to report view /</a> · a baseline comparison gives the strongest verdict.": "ekte meldet reproduzierbare Belege für Verhaltensabweichungen und Risiken, keinen kryptografischen Betrugsnachweis. · <a href='/'>zur Berichtsansicht wechseln /</a> · ein Referenzvergleich liefert das stärkste Urteil.",
+  "The verdict appears here after an audit ▌": "Das Urteil erscheint hier nach einer Prüfung ▌",
+  "run audit": "Prüfung starten",
+  "auditing…": "Prüfung läuft…",
+  "re-run": "erneut ausführen",
+  "Audit in progress… ▌": "Prüfung läuft… ▌",
+  "weight": "Gewicht",
+  "! Please enter base_url and model.": "! Bitte base_url und model eingeben.",
+  "! Could not reach the local service: ": "! Lokaler Dienst nicht erreichbar: ",
+  "! Audit failed: ": "! Prüfung fehlgeschlagen: ",
+  "Connection failed": "Verbindung fehlgeschlagen",
+  "Audit aborted": "Prüfung abgebrochen",
+  "No report received (stream ended)": "Kein Bericht empfangen (Stream beendet)",
+  "ekte — Toolbox · embedding / rerank verification": "ekte — Werkzeuge · Embedding-/Rerank-Prüfung",
+  "Toolbox · <span class='u'>embedding / rerank</span> verification": "Werkzeuge · <span class='u'>Embedding-/Rerank</span>-Prüfung",
+  "Embedding and rerank endpoints return vectors or rankings, not chat, so the 9-dimension chat audit does not apply to them. Dedicated probes verify them here: for embeddings the key signal is whether the <b>vector dimension</b> matches the claimed model (the #1 bait-and-switch signal), plus re-tests of determinism and distinctness; for rerank, a known-answer probe checks whether the obvious answer is ranked first.": "Embedding- und Rerank-Endpunkte liefern Vektoren oder Rangfolgen statt Chat, daher greift die Chat-Prüfung mit 9 Dimensionen hier nicht. Spezielle Sonden prüfen sie hier: Bei Embeddings ist das Hauptsignal, ob die <b>Vektordimension</b> zum angegebenen Modell passt (das Signal Nr. 1 für Etikettenschwindel), dazu Wiederholungstests zu Determinismus und Unterscheidbarkeit; bei Rerank prüft eine Sonde mit bekannter Antwort, ob die offensichtliche Antwort zuerst eingestuft wird.",
+  "Embedding audit": "Embedding-Prüfung",
+  "Rerank audit": "Rerank-Prüfung",
+  "Requested model id": "Angefragte Modell-ID",
+  "Claimed model (optional)": "Angegebenes Modell (optional)",
+  "Empty = same as above": "Leer = wie oben",
+  "Claimed dimension (optional)": "Angegebene Dimension (optional)",
+  "Empty = look up in knowledge base": "Leer = in der Wissensbasis nachschlagen",
+  "Declared provider (optional)": "Angegebener Anbieter (optional)",
+  "Verify embedding endpoint": "Embedding-Endpunkt prüfen",
+  "Requests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.": "Die Anfragen werden von <b>Ihrem lokalen ekte-Server</b> gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird <b>nie an Dritte übertragen</b>.",
+  "Rerank model id": "Rerank-Modell-ID",
+  "Custom probe (defaults to the built-in known-answer probe)": "Eigene Sonde (Standard: eingebaute Sonde mit bekannter Antwort)",
+  "Leave empty to use ekte's built-in probe: a question plus several documents, where the <b>single obvious answer</b> should be ranked first. To customize, enter a query, one document per line, and the line number (0-based) of the document expected to rank first.": "Leer lassen, um die eingebaute Sonde von ekte zu verwenden: eine Frage und mehrere Dokumente, bei denen die <b>einzige offensichtliche Antwort</b> zuerst eingestuft werden sollte. Für eine eigene Sonde eine Anfrage, ein Dokument pro Zeile und die Zeilennummer (ab 0) des Dokuments angeben, das zuerst erwartet wird.",
+  "Query": "Anfrage",
+  "Documents (one per line)": "Dokumente (eins pro Zeile)",
+  "Line expected to rank first": "Zeile, die zuerst erwartet wird",
+  "Verify rerank endpoint": "Rerank-Endpunkt prüfen",
+  "Embedding/rerank checks are black-box, non-chat tests: a dimension mismatch is the strongest \"bait-and-switch\" signal; determinism and distinctness are supporting evidence.": "Embedding-/Rerank-Prüfungen sind Black-Box-Tests ohne Chat: Eine abweichende Dimension ist das stärkste Signal für „Etikettenschwindel“; Determinismus und Unterscheidbarkeit sind ergänzende Belege.",
+  "No checks.": "Keine Prüfungen.",
+  "Please enter the relay address and the model id.": "Bitte Relay-Adresse und Modell-ID eingeben.",
+  "ekte — monitors": "ekte — Überwachung",
+  "Put a <span class='u'>scheduled sentinel</span> on your relay": "Stellen Sie Ihrem Relay einen <span class='u'>zeitgesteuerten Wächter</span> zur Seite",
+  "Name": "Name",
+  "e.g. production relay deepseek": "z. B. Produktiv-Relay deepseek",
+  "e.g. openai / deepseek": "z. B. openai / deepseek",
+  "Requested model": "Angefragtes Modell",
+  "Defaults to model": "Standard: model",
+  "Protocol api": "Protokoll api",
+  "Alert threshold": "Warnschwelle",
+  "low and above": "low und höher",
+  "medium and above": "medium und höher",
+  "high only": "nur high",
+  "Check interval (minutes)": "Prüfintervall (Minuten)",
+  "Enable right after creating": "Direkt nach dem Anlegen aktivieren",
+  "Webhook URLs (one per line, optional)": "Webhook-URLs (eine pro Zeile, optional)",
+  "Add monitor": "Überwachung hinzufügen",
+  "Configured monitors": "Eingerichtete Überwachungen",
+  "Loading…": "Wird geladen…",
+  "ekte · relay reality check · monitors are scheduled in the background by the <code>ekte serve</code> process": "ekte · Relay-Echtheitsprüfung · Überwachungen werden vom Prozess <code>ekte serve</code> im Hintergrund geplant",
+  "Not run yet": "Noch nicht ausgeführt",
+  "Never run": "Nie ausgeführt",
+  " h": " Std.",
+  " min": " Min.",
+  " s": " s",
+  "No monitors yet. Use the form above to add your first one.": "Noch keine Überwachungen. Legen Sie die erste mit dem Formular oben an.",
+  " · claimed ": " · angegeben ",
+  " · score <b>": " · Score <b>",
+  " webhook": " Webhook",
+  " webhooks": " Webhooks",
+  " item": " Eintrag",
+  " items": " Einträge",
+  "No webhooks": "Keine Webhooks",
+  "Enabled": "Aktiv",
+  "Paused": "Pausiert",
+  "Model": "Modell",
+  "Every ": "Alle ",
+  "Threshold": "Schwelle",
+  "Last run: ": "Letzter Lauf: ",
+  "Run now": "Jetzt ausführen",
+  "Delete": "Löschen",
+  "Failed to load — please refresh and try again.": "Laden fehlgeschlagen — bitte Seite neu laden und erneut versuchen.",
+  "Failed to create monitor": "Überwachung konnte nicht angelegt werden",
+  "Network error — failed to create monitor": "Netzwerkfehler — Überwachung konnte nicht angelegt werden",
+  "Running…": "Läuft…",
+  "Run failed": "Ausführung fehlgeschlagen",
+  "Delete this monitor?": "Diese Überwachung löschen?",
+  " provider": " Anbieter",
+  " model": " Modell",
+  "Select provider…": "Anbieter wählen…",
+  "Select model…": "Modell wählen…",
+  "← Pick a model": "← Modell auswählen",
+  "Custom input": "Freie Eingabe",
+  "Custom (from relay)": "Benutzerdefiniert (vom Relay)",
+  "Fetch models": "Modelle abrufen",
+  "Fetch models first…": "Zuerst Modelle abrufen…",
+  "Relay only (not in knowledge base)": "Nur beim Relay (nicht in der Wissensbasis)",
+  "Fetching models…": "Modelle werden abgerufen…",
+  "Enter the base_url first": "Zuerst base_url eingeben",
+  "The relay returned no models": "Das Relay hat keine Modelle geliefert",
+  "Models found:": "Gefundene Modelle:",
+  "Token/usage billing audit": "Prüfung der Token-Abrechnung",
+  "Capability-claim verification": "Prüfung der angegebenen Fähigkeiten",
+  "Connectivity & basic completion": "Konnektivität & einfache Vervollständigung",
+  "Real context window & truncation": "Echtes Kontextfenster & Kürzung",
+  "Determinism & cache-correctness": "Determinismus & Cache-Korrektheit",
+  "Injected system-prompt detection": "Erkennung eingeschleuster System-Prompts",
+  "Response integrity / tampering": "Antwortintegrität / Manipulation",
+  "Model identity & downgrade fingerprinting": "Modellidentität & Herabstufungs-Fingerprinting",
+  "Prompt prefix-cache (timing)": "Prompt-Präfix-Cache (Timing)",
+  "OpenAI-compatibility conformance": "Konformität der OpenAI-Kompatibilität",
+  "LLM-judged quality / downgrade assessment": "Qualitäts-/Herabstufungsbewertung durch ein LLM",
+  "Concurrent reliability & latency": "Zuverlässigkeit & Latenz unter Parallellast",
+  "Transport & secret-handling signals": "Signale zu Transport & Geheimnisbehandlung",
+  "Multimodal (vision) capability verification": "Prüfung der multimodalen Fähigkeit (Vision)",
+  "CLEAN": "SAUBER",
+  "LOW": "NIEDRIG",
+  "MEDIUM": "MITTEL",
+  "HIGH": "HOCH",
+  "CRITICAL": "KRITISCH",
+  "INCONCLUSIVE": "UNKLAR",
+  "PASS": "BESTANDEN",
+  "WARN": "WARNUNG",
+  "FAIL": "FEHLGESCHLAGEN",
+  "INFO": "INFO",
+  "NOT_RUN": "NICHT AUSGEFÜHRT",
+  "ERROR": "FEHLER",
+  "n/a": "k. A.",
+  "CLEAN RISK": "KEIN RISIKO",
+  "LOW RISK": "NIEDRIGES RISIKO",
+  "MEDIUM RISK": "MITTLERES RISIKO",
+  "HIGH RISK": "HOHES RISIKO",
+  "INCONCLUSIVE RISK": "RISIKO UNKLAR",
+  "Clean": "Sauber",
+  "Warn": "Warnung",
+  "Compare prompt_tokens against a trusted baseline for the same input.": "Vergleichen Sie prompt_tokens für dieselbe Eingabe mit einer vertrauenswürdigen Referenz.",
+  "Verify the relay forwards the full messages array to the model.": "Prüfen Sie, ob das Relay das vollständige messages-Array an das Modell weiterleitet.",
+  "A conformant relay should reject invalid input with a 4xx and an {'error': {...}} body.": "Ein konformes Relay sollte ungültige Eingaben mit einem 4xx und einem {'error': {...}}-Body ablehnen.",
+  "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "Ein Proxy, der URLs/Paketnamen umschreibt, ist ein Lieferkettenrisiko — nicht mehr verwenden.",
+  "Treat the advertised context window as unverified.": "Betrachten Sie das beworbene Kontextfenster als unbestätigt.",
+  "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Erhöhen Sie --timeout / --max-request-time oder senken Sie --max-context-tokens, um das volle Fenster zu messen.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Prüfen Sie den Fehler (z. B. einen Anfrageparameter, den dieser Endpunkt ablehnt) und führen Sie die Messung erneut aus.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Erhöhen Sie --max-context-tokens, um das volle angegebene Fenster zu prüfen.",
+  "Compare against a trusted baseline to confirm.": "Zur Bestätigung mit einer vertrauenswürdigen Referenz vergleichen.",
+  "The relay likely truncates or summarizes long prompts.": "Das Relay kürzt oder fasst lange Prompts vermutlich zusammen.",
+  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Echtes Kontextfenster ~{effective_window} << angegebene {declared} (Verhältnis {ratio}, Verdacht auf stille Kürzung). Der Anfang eines Prompts von ~{front_truncated_at} Tokens wurde verworfen, während sein Ende noch erinnert wurde (Kürzung von vorn).",
+  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Echtes Kontextfenster ~{effective_window} unter den angegebenen {declared} (Verhältnis {ratio}, Erinnerung lässt vor der Grenze nach). Der Anfang eines Prompts von ~{front_truncated_at} Tokens wurde verworfen, während sein Ende noch erinnert wurde (Kürzung von vorn).",
+  "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Selbst ein Prompt von ~{smallest_probed} Tokens wird nicht erinnert; das nutzbare Fenster liegt weit unter den angegebenen {declared}. Der Anfang eines Prompts von ~{front_truncated_at} Tokens wurde verworfen, während sein Ende noch erinnert wurde (Kürzung von vorn).",
+  "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Kein angegebenes Fenster zum Vergleich; gemessenes effektives Fenster ~{effective_window} Tokens. Der Anfang eines Prompts von ~{front_truncated_at} Tokens wurde verworfen, während sein Ende noch erinnert wurde (Kürzung von vorn).",
+  "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "Der Server verwirft stillschweigend den Anfang langer Prompts; seine Kontextlängen-Einstellung erhöhen oder das angegebene Fenster als unbestätigt betrachten.",
+  "Re-run once the endpoint reliably returns completions.": "Erneut ausführen, sobald der Endpunkt zuverlässig Vervollständigungen liefert.",
+  "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Als Abweichungssignal werten, nicht als Beweis; vor weiteren Schritten mit Fingerprint- und Identitätsdetektoren bestätigen.",
+  "Verify the relay supports stream=true for this model.": "Prüfen Sie, ob das Relay stream=true für dieses Modell unterstützt.",
+  "Verify the relay streams content deltas for this model.": "Prüfen Sie, ob das Relay für dieses Modell Inhalts-Deltas streamt.",
+  "Run `ekte compare` against a trusted baseline to corroborate.": "Führen Sie `ekte compare` gegen eine vertrauenswürdige Referenz aus, um dies zu bestätigen.",
+  "A response naming a different vendor strongly suggests model substitution.": "Eine Antwort, die einen anderen Anbieter nennt, deutet stark auf einen Modellaustausch hin.",
+  "Run `ekte compare` against a trusted baseline to disambiguate.": "Führen Sie `ekte compare` gegen eine vertrauenswürdige Referenz aus, um dies zu klären.",
+  "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "Eine Modell-ID einer kleineren Stufe oder anderen Familie in der Antwort deutet auf ein Routing zu einem Ersatz hin.",
+  "Lower --concurrency or --reliability-requests and re-run.": "--concurrency oder --reliability-requests senken und erneut ausführen.",
+  "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Prüfen Sie den Verbindungspool des Relays und die Upstream-Stabilität unter paralleler Last (HTTP-429-Drosselung ist aus dieser Quote ausgenommen).",
+  "Confirm with the provider how usage is metered if billing is per-token.": "Klären Sie mit dem Anbieter, wie der Verbrauch gemessen wird, falls pro Token abgerechnet wird.",
+  "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Gleichen Sie die Abrechnung mit einem Prompt bekannter Größe ab; mögliche Überabrechnung pro Token.",
+  "Confirm with the provider how prompt/completion tokens are metered.": "Klären Sie mit dem Anbieter, wie Prompt-/Completion-Tokens gemessen werden.",
+  "Cross-check billing against output length; possible per-token overbilling.": "Gleichen Sie die Abrechnung mit der Ausgabelänge ab; mögliche Überabrechnung pro Token.",
+  "Compare token accounting against a trusted baseline of the same model.": "Vergleichen Sie die Token-Zählung mit einer vertrauenswürdigen Referenz desselben Modells.",
+  "Verify base_url, api_key, and that the model id is served.": "Prüfen Sie base_url, api_key und ob die Modell-ID angeboten wird.",
+  "Use an https:// base_url so the bearer token is not exposed on the wire.": "Verwenden Sie eine https://-base_url, damit das Bearer-Token nicht ungeschützt übertragen wird.",
+  "Rotate the key and avoid this relay echoing credentials.": "Rotieren Sie den Schlüssel und meiden Sie dieses Relay, das Zugangsdaten zurückgibt.",
+  "Confirm the served engine accepts and reasons over image input; a text-only model behind a vision-claimed id is a bait-and-switch mismatch.": "Prüfen Sie, ob die bereitgestellte Engine Bildeingaben annimmt und darüber schlussfolgert; ein reines Textmodell hinter einer ID mit angeblicher Vision ist Etikettenschwindel.",
+  "Confirm with varied prompts; a cache that ignores sampling parameters can mask the served model's true behavior.": "Mit variierten Prompts bestätigen; ein Cache, der Sampling-Parameter ignoriert, kann das echte Verhalten des bereitgestellten Modells verdecken.",
+  "Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe.": "Lange Generierungen können hinter der angegebenen Obergrenze zurückbleiben; mit einer längeren Sonde bestätigen.",
+  "Confirm the served engine actually supports function calling.": "Prüfen Sie, ob die bereitgestellte Engine Funktionsaufrufe wirklich unterstützt.",
+  "Verify the served engine honors response_format=json_object.": "Prüfen Sie, ob die bereitgestellte Engine response_format=json_object einhält.",
+  "Overall health score {1}/100.": "Gesamt-Health-Score {1}/100.",
+  "Findings: {1}.": "Befunde: {1}.",
+  "No significant divergence findings.": "Keine wesentlichen Abweichungen festgestellt.",
+  "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "Das angegebene Modell wurde in der Wissensbasis nicht gefunden, daher sind Identitäts-/Fähigkeitsprüfungen eingeschränkt — übergeben Sie --declared-provider oder ergänzen Sie ein KB-Profil.",
+  "Run `ekte compare` against a trusted baseline to strengthen the verdict.": "Führen Sie `ekte compare` gegen eine vertrauenswürdige Referenz aus, um das Urteil zu stärken.",
+  "ekte reports black-box evidence of divergence and risk, not proof of fraud.": "ekte meldet Black-Box-Belege für Abweichungen und Risiken, keinen Betrugsnachweis.",
+  "Behavior is consistent with the claimed model.": "Das Verhalten entspricht dem angegebenen Modell.",
+  "Mostly consistent with the claimed model; minor concerns.": "Weitgehend konsistent mit dem angegebenen Modell; kleinere Bedenken.",
+  "Some behavior diverges from the claimed model — investigate.": "Einiges Verhalten weicht vom angegebenen Modell ab — bitte untersuchen.",
+  "Strong evidence the relay does not deliver the claimed model as advertised.": "Starke Belege, dass das Relay das angegebene Modell nicht wie beworben liefert.",
+  "Not enough signal to judge — connectivity or coverage was insufficient.": "Zu wenig Signal für ein Urteil — Konnektivität oder Abdeckung reichten nicht aus.",
+  "(confidence: {1})": "(Konfidenz: {1})",
+  "ekte performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.": "ekte prüft als Black-Box: Es sammelt reproduzierbare Belege für Verhaltensabweichungen, keinen kryptografischen Nachweis der Modellidentität.",
+  "Use `ekte compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.": "Nutzen Sie `ekte compare` gegen eine vertrauenswürdige Referenz desselben angegebenen Modells für die stärksten Belege einer Herabstufung.",
+  "Do not publish a report that names a vendor without reviewing sample size, cost, and local law/policy.": "Veröffentlichen Sie keinen Bericht, der einen Anbieter nennt, ohne Stichprobengröße, Kosten und lokales Recht/Richtlinien zu prüfen.",
+  "Not run in this suite.": "In dieser Suite nicht ausgeführt.",
+  "Ran but produced no numeric score (see findings).": "Ausgeführt, aber ohne numerischen Score (siehe Befunde).",
+  "All checks passed.": "Alle Prüfungen bestanden.",
+  "usage only gives total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); the breakdown per-token billing relies on is missing and cannot be verified.": "usage nennt nur total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); die Aufschlüsselung, auf der die Abrechnung pro Token beruht, fehlt und ist nicht prüfbar.",
+  "JSON mode honored; parsed keys: {parsed_keys|list}.": "JSON-Modus eingehalten; geparste Schlüssel: {parsed_keys|list}.",
+  "Tool call delivered ({tool_name}); arguments returned as {arguments_type}.": "Tool-Aufruf geliefert ({tool_name}); Argumente als {arguments_type} zurückgegeben.",
+  "/v1/models is not available (HTTP {status_code}).": "/v1/models ist nicht verfügbar (HTTP {status_code}).",
+  "At concurrency {concurrency}, all {requests} requests were rate-limited ({rate_limited} × HTTP 429).": "Bei Parallelität {concurrency} wurden alle {requests} Anfragen gedrosselt ({rate_limited} × HTTP 429).",
+  "Revealing response headers: {revealing_headers|list}. Informational — can corroborate the upstream identity, not a failure.": "Aufschlussreiche Antwortheader: {revealing_headers|list}. Zur Information — kann die Upstream-Identität bestätigen, kein Fehler.",
+  "Inspected {header_count} response headers; none expose upstream identity.": "{header_count} Antwortheader geprüft; keiner verrät die Upstream-Identität.",
+  "Self-identifies as a rival brand ({forbidden_hits|list}) without naming the genuine brand.": "Gibt sich als Konkurrenzmarke aus ({forbidden_hits|list}), ohne die echte Marke zu nennen.",
+  "Self-id names the genuine brand but also a rival ({forbidden_hits|list}); usually a benign contrast rather than a swap — corroborate before treating it as substitution.": "Die Selbstidentifikation nennt die echte Marke, aber auch eine Konkurrenzmarke ({forbidden_hits|list}); meist ein harmloser Vergleich statt eines Austauschs — vor einer Schlussfolgerung bestätigen.",
+  "Self-id names neither the genuine brand nor a rival; treat as weak/evasive evidence.": "Die Selbstidentifikation nennt weder die echte Marke noch eine Konkurrenzmarke; als schwachen/ausweichenden Beleg werten.",
+  "Self-id names the genuine brand.": "Die Selbstidentifikation nennt die echte Marke.",
+  "Returned {returned}-d vectors; no known dimension for the claimed model to compare against.": "Vektoren mit Dimension {returned} zurückgegeben; für das angegebene Modell ist keine Dimension zum Vergleich bekannt.",
+  "POST /embeddings failed (HTTP {status_code}).": "POST /embeddings fehlgeschlagen (HTTP {status_code}).",
+  "Expected 4 non-empty vectors, got {returned_vectors}.": "4 nicht-leere Vektoren erwartet, {returned_vectors} erhalten.",
+  "POST /rerank failed (HTTP {status_code}).": "POST /rerank fehlgeschlagen (HTTP {status_code}).",
+  "Invalid request got no HTTP response ({error_type}); could not confirm OpenAI-style client-error handling.": "Die ungültige Anfrage erhielt keine HTTP-Antwort ({error_type}); eine Fehlerbehandlung im OpenAI-Stil ließ sich nicht bestätigen.",
+  "Request failed (HTTP {status_code}, type {error_type}).": "Anfrage fehlgeschlagen (HTTP {status_code}, Typ {error_type}).",
+  "Request failed (HTTP {status_code}).": "Anfrage fehlgeschlagen (HTTP {status_code}).",
+  "Request failed (type {error_type}).": "Anfrage fehlgeschlagen (Typ {error_type}).",
+  "ekte relay audit alert": "ekte-Warnung zur Relay-Prüfung",
+  "Risk: {1}": "Risiko: {1}",
+  "Score: {1}": "Score: {1}",
+  "(grade {1})": "(Note {1})",
+  "Target: {1}": "Ziel: {1}",
+  "Claimed model: {1}": "Angegebenes Modell: {1}",
+  "Verdict: {1}": "Urteil: {1}",
+  "Key findings:": "Wichtigste Befunde:",
+  "Since last run: risk unchanged ({1})": "Seit dem letzten Lauf: Risiko unverändert ({1})",
+  "Since last run: {1} → {2} ({3})": "Seit dem letzten Lauf: {1} → {2} ({3})",
+  "worse ⬆️": "verschlechtert ⬆️",
+  "better ⬇️": "verbessert ⬇️",
+  "Consistent": "Konsistent",
+  "Low risk": "Niedriges Risiko",
+  "Medium risk": "Mittleres Risiko",
+  "High risk": "Hohes Risiko",
+  "Undetermined": "Nicht bestimmbar",
+  "{1} ({2})": "{1} ({2})",
+  "Alert language": "Sprache der Warnungen",
+  "Add a monitor: ekte re-runs the black-box audit on your machine at the interval you set. As soon as the risk crosses your threshold or gets worse than last time, it pushes an alert in the language you choose to the webhooks you configured (Slack / Feishu / DingTalk / generic JSON).": "Überwachung hinzufügen: ekte führt die Black-Box-Prüfung im eingestellten Intervall auf Ihrem Rechner erneut aus. Sobald das Risiko Ihre Schwelle überschreitet oder sich gegenüber dem letzten Lauf verschlechtert, wird eine Warnung in der von Ihnen gewählten Sprache an die konfigurierten Webhooks gesendet (Slack / Feishu / DingTalk / generisches JSON).",
+  "Probe languages": "Sprachen der Sonden",
+  "No samples yet": "Noch keine Messwerte",
+  "baseline": "Referenz",
+  "target": "Ziel",
+  "failed": "fehlgeschlagen",
+  "Latency": "Latenz",
+  "cached (excluded)": "aus dem Cache (ausgeschlossen)",
+  "audit request (lighter)": "Prüfanfrage (heller)",
+  "failed request": "fehlgeschlagene Anfrage",
+  "Running median": "Gleitender Median",
+  "running median (last 5)": "gleitender Median (letzte 5)",
+  "line: running median of each endpoint's last 5 successful requests": "Linie: gleitender Median der letzten 5 erfolgreichen Anfragen je Endpunkt",
+  "No successful requests to summarize.": "Keine erfolgreichen Anfragen zum Auswerten.",
+  "Metric": "Kennzahl",
+  "Latency p50": "Latenz p50",
+  "Decode speed p50": "Dekodiertempo p50",
+  "Error rate": "Fehlerquote",
+  "succeeded": "erfolgreich",
+  "timeouts": "Zeitüberschreitungen",
+  "Cold start (first request)": "Kaltstart (erste Anfrage)",
+  "Under load": "Unter Last",
+  "aggregate": "gesamt",
+  "Prompt size": "Prompt-Größe",
+  "Source: dedicated probe": "Quelle: eigene Leistungsmessung",
+  "Source: the audit's own requests": "Quelle: die Anfragen der Prüfung selbst",
+  "Informational — not scored": "Nur zur Information — nicht bewertet",
+  "Target vs baseline": "Ziel vs. Referenz",
+  "Ratio": "Verhältnis",
+  "Probe cost": "Kosten der Messung",
+  "Requests": "Anfragen",
+  "Performance · live": "Leistung · live",
+  "Performance probe": "Leistungsmessung",
+  "TTFT": "TTFT",
+  "Decode speed": "Dekodiertempo",
+  "Inter-chunk latency": "Latenz zwischen Chunks",
+  "Time to first token": "Zeit bis zum ersten Token",
+  "Decode speed (usage)": "Dekodiertempo (usage)",
+  "Decode speed (local count)": "Dekodiertempo (lokale Zählung)",
+  "End-to-end speed (usage)": "Gesamttempo (usage)",
+  "End-to-end speed (local count)": "Gesamttempo (lokale Zählung)",
+  "Inter-chunk jitter": "Schwankung zwischen Chunks",
+  "Server time (sent → first output)": "Serverzeit (gesendet → erste Ausgabe)",
+  "Relay-reported processing": "Vom Relay gemeldete Verarbeitung",
+  "Network round trip (GET /models)": "Netzwerk-Umlaufzeit (GET /models)",
+  "TCP connect": "TCP-Verbindung",
+  "TLS handshake": "TLS-Handshake",
+  "Latency p90": "Latenz p90",
+  "TTFT p50": "TTFT p50",
+  "TTFT p90": "TTFT p90",
+  "Decode speed p50 (usage)": "Dekodiertempo p50 (usage)",
+  "Decode speed p50 (local)": "Dekodiertempo p50 (lokal)",
+  "End-to-end speed p50 (local)": "Gesamttempo p50 (lokal)",
+  "Inter-chunk latency p50": "Latenz zwischen Chunks p50",
+  "Server time p50": "Serverzeit p50",
+  "Network round trip p50": "Netzwerk-Umlaufzeit p50",
+  "Performance": "Leistung",
+  "Headline numbers come from the audit's own requests, which mix prompt and output sizes; the deep and full suites add a controlled, uncacheable probe.": "Die Kernzahlen stammen aus den Anfragen der Prüfung selbst, deren Prompt- und Ausgabelängen gemischt sind; die Suiten deep und full ergänzen eine kontrollierte, nicht cachebare Messung.",
+  "Reasoning tokens detected: TTFT is the time to the first visible token and includes hidden thinking, and usage-based throughput counts thinking tokens. ekte does not set a reasoning effort (the modes a relay accepts are unknown), so the model thinks at its default effort.": "Reasoning-Token erkannt: TTFT ist die Zeit bis zum ersten sichtbaren Token und enthält verdecktes Nachdenken, und der usage-basierte Durchsatz zählt Denk-Token mit. ekte setzt keinen Reasoning-Aufwand (welche Stufen ein Relay akzeptiert, ist unbekannt), daher denkt das Modell mit seinem Standardaufwand.",
+  "Local token counts are estimates (about ±15-20%): no exact tokenizer is available for this model family.": "Die lokalen Token-Zahlen sind Schätzungen (etwa ±15-20 %): Für diese Modellfamilie ist kein exakter Tokenizer verfügbar.",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.": "Die lokalen Token-Zahlen sind Schätzungen (etwa ±15-20 %) einer eingebauten Heuristik; ekte lädt nie einen Tokenizer herunter.",
+  "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests.": "Perzentile brauchen genug Stichproben: p75 ab 4, p90 ab 10, p95 ab 20, p99 ab 100 Anfragen.",
+  "Relay processing times come from the relay's own response headers and are unverified.": "Die vom Relay gemeldeten Verarbeitungszeiten stammen aus seinen eigenen Antwort-Headern und sind ungeprüft.",
+  "Some requests were served fully or partly from a cache and are left out of the statistics.": "Einige Anfragen wurden ganz oder teilweise aus einem Cache bedient und sind aus der Statistik ausgeschlossen.",
+  "A relay that caches unique prompts may be serving stored answers; compare with a trusted baseline.": "Ein Relay, das einmalige Prompts cacht, liefert womöglich gespeicherte Antworten; vergleichen Sie mit einer vertrauenswürdigen Referenz.",
+  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "Bewerten Sie dies zusammen mit den Befunden zur Modellidentität; Geschwindigkeit allein beweist keinen Austausch.",
+  "Performance probe requests": "Anfragen der Leistungsmessung",
+  "Non-streaming": "Ohne Streaming",
+  "non-streaming": "ohne Streaming",
+  "The smoke suite runs no performance probe.": "Die Suite smoke führt keine Leistungsmessung aus.",
+  "The full suite measures both streaming and non-streaming.": "Die Suite full misst Streaming und Nicht-Streaming.",
+  "On standard the probe runs only with a baseline; otherwise the audit's own requests are used.": "Bei standard läuft die Messung nur mit einer Referenz; sonst werden die Anfragen der Prüfung selbst verwendet.",
+  "Non-streaming measures relays that cannot stream.": "Ohne Streaming lassen sich Relays messen, die nicht streamen können.",
+  "non-streaming request (hollow)": "Anfrage ohne Streaming (hohl)",
+  "End-to-end speed p50": "Gesamttempo p50",
+  "target better": "Ziel besser",
+  "target worse": "Ziel schlechter",
+  "(within 2% counts as even)": "(bis 2 % Unterschied gilt als gleich)",
+  "Strong evidence the relay does not deliver what it advertises: {1}.": "Starke Belege, dass das Relay nicht liefert, was es bewirbt: {1}.",
+  "Some checks diverge from what is advertised: {1} — investigate.": "Einige Prüfungen weichen vom Beworbenen ab: {1} — bitte untersuchen.",
+  "No problems found in the checked dimensions; model identity was not verified.": "In den geprüften Dimensionen keine Probleme gefunden; die Modellidentität wurde nicht verifiziert.",
+  "Minor concerns in the checked dimensions; model identity was not verified.": "Kleinere Bedenken in den geprüften Dimensionen; die Modellidentität wurde nicht verifiziert.",
+  "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.": "Die Modellidentität war nicht ausgewählt: Dieses Urteil gilt nur für die ausgewählten Dimensionen, nicht dafür, welches Modell bereitgestellt wird.",
+  "It does not deliver what it advertises: {dims}": "Es liefert nicht, was es bewirbt: {dims}",
+  "Some checks do not match what is advertised: {dims} — verify": "Einige Prüfungen passen nicht zum Beworbenen: {dims} — bitte prüfen",
+  "No problems in the checked dimensions (model identity not verified)": "Keine Probleme in den geprüften Dimensionen (Modellidentität nicht verifiziert)",
+  "A few minor issues in the checked dimensions (model identity not verified)": "Einige kleinere Mängel in den geprüften Dimensionen (Modellidentität nicht verifiziert)",
+  "It does not deliver what it advertises": "Es liefert nicht, was es bewirbt"
+ },
+ "findings": {
+  "connectivity.models": [
+   "/v1/models-Liste",
+   "{model_count} Modelle gelistet; angegebenes Modell in der Liste: {claimed_listed}."
+  ],
+  "connectivity.chat": [
+   "Einfache Chat-Vervollständigung",
+   "Inhalt in {duration_ms} ms zurückgegeben; zurückgegebenes Modell: {model_returned}."
+  ],
+  "protocol.multi_turn": [
+   "Gedächtnis über mehrere Runden",
+   "Prüfung des Mehrrunden-Kontexts; zuvor genannte Farbe erinnert: {recalled_blue}."
+  ],
+  "protocol.stop": [
+   "Behandlung von Stop-Sequenzen",
+   "Prüfung der Stop-Sequenz; finish_reason={finish_reason}."
+  ],
+  "protocol.stop_not_applicable": [
+   "Stop-Sequenz-Prüfung nicht anwendbar",
+   "Die Responses API hat keinen stop-Parameter; die Stop-Sequenz wurde nicht geprüft und nicht gezählt."
+  ],
+  "protocol.shape": [
+   "Konformität der Antwortstruktur",
+   "finish_reason={finish_reason}; usage vollständig: {has_usage}."
+  ],
+  "protocol.error_schema": [
+   "Struktur von Fehlerantworten",
+   "Eine ungültige Anfrage liefert HTTP {status_code}; Fehler-Body im OpenAI-Stil: {conforming_error_body}."
+  ],
+  "protocol_response.core.*": [
+   "Antwortattribut {attribute}",
+   "{attribute}: {availability}"
+  ],
+  "protocol_response.minor.*": [
+   "Antwortattribut {attribute}",
+   "{attribute}: {availability}"
+  ],
+  "protocol_request.param.*": [
+   "Anfrageparameter {attribute}",
+   "{attribute}: {availability}"
+  ],
+  "protocol_response.call": [
+   "Antwortattribut-Test ohne Antwortinhalt",
+   "HTTP {status_code}; kein Antwortinhalt."
+  ],
+  "context_window.no_ladder": [
+   "Kontextfenster-Sonde nicht ausführbar",
+   "Keine nutzbare Sondengröße zwischen Unter- und Obergrenze (angegeben {declared}, Obergrenze {upper}, Untergrenze {floor})."
+  ],
+  "context_window.lost_in_middle": [
+   "Nadel in der Mitte nicht erinnert (lost-in-the-middle)",
+   "Bei einem Prompt von ~{mid_size} Tokens werden Anfang und Ende erinnert, die Mitte fehlt (Verdacht auf billigen RAG-/Zusammenfassungs-Ersatz)."
+  ],
+  "context_window.rejected_below_claim": [
+   "Langer Kontext unterhalb des angegebenen Fensters abgelehnt",
+   "Ein Prompt von ~{rejected_at} Tokens wurde wegen zu langem Kontext abgelehnt, weit unter dem angegebenen Fenster von {declared} Tokens."
+  ],
+  "context_window.no_recall": [
+   "Bei keiner Größe wird die Nadel erinnert",
+   "Selbst ein Prompt von ~{smallest_probed} Tokens wird nicht erinnert; das nutzbare Fenster liegt weit unter dem geprüften Fenster von {upper} Tokens (angegeben {declared})."
+  ],
+  "context_window.truncation": [
+   "Echtes Kontextfenster weit kleiner als angegeben",
+   "Echtes Kontextfenster ~{effective_window} << geprüftes Fenster von {upper} Tokens (angegeben {declared}; Verhältnis {ratio}, Verdacht auf stille Kürzung)."
+  ],
+  "context_window.short": [
+   "Echtes Kontextfenster kleiner als angegeben",
+   "Echtes Kontextfenster ~{effective_window} unter dem geprüften Fenster von {upper} Tokens (angegeben {declared}; Verhältnis {ratio}, Erinnerung lässt vor der Grenze nach)."
+  ],
+  "context_window.consistent": [
+   "Gemessenes Kontextfenster entspricht der Angabe",
+   "Die Nadel wird bei ~{effective_window} Tokens noch erinnert, nahe an den angegebenen {declared} (Verhältnis {ratio})."
+  ],
+  "context_window.measured": [
+   "Gemessenes effektives Kontextfenster",
+   "Kein angegebenes Fenster zum Vergleich; gemessenes effektives Fenster ~{effective_window} Tokens."
+  ],
+  "context_window.verified_to_cap": [
+   "Kontextfenster bis zur Probe-Obergrenze bestätigt",
+   "Die Nadel wird bei ~{effective_window} Tokens erinnert, der obersten Stufe unter der Probe-Obergrenze von {probe_cap} Tokens; das angegebene Fenster von {declared} Tokens darüber wurde nicht geprüft."
+  ],
+  "context_window.probe_error": [
+   "Kontextfenster-Sonde mit Fehler beantwortet",
+   "Eine Probe von ~{errored_at} Tokens wurde mit einem Fehler beantwortet ({error_status}); kein Beleg für Kürzung."
+  ],
+  "model_identity.no_profile": [
+   "Angegebenes Modell nicht in der Wissensbasis",
+   "Angegebenes Modell nicht in der Wissensbasis gefunden (claimed={claimed_model}, requested={requested_model}); --declared-provider übergeben oder KB-Profil ergänzen."
+  ],
+  "model_identity.self_id": [
+   "Selbstidentifikation",
+   "Prüfung der Selbstidentifikation (claimed={claimed})."
+  ],
+  "model_identity.model_field": [
+   "Zurückgegebenes model-Feld",
+   "Das model-Feld der Antwort lautet {returned}; angefragt wurde {requested}."
+  ],
+  "model_identity.no_evidence": [
+   "Keine verwertbaren Identitätsbelege",
+   "Weder die Selbstidentifikation noch eine Fingerprint-Sonde lieferte eine verwertbare Antwort, und das zurückgegebene model-Feld weicht nicht ab ({checks} Prüfungen); die Identität ist nicht beurteilbar."
+  ],
+  "model_identity.fp_aggregate": [
+   "Mehrere Verhaltens-Fingerprints weichen ab",
+   "{diverged} und weitere reine Code-Fingerprints weichen vom nativen Verhalten ab; prüfen Sie auf Austausch."
+  ],
+  "model_identity.fp.*": [
+   "Fingerprint-Abweichung: {signal|server}",
+   "Reine Code-Prüfung des Verhaltens-Fingerprints für {probe}.",
+   "Verhaltens-Fingerprint-Prüfung"
+  ],
+  "capability.tools": [
+   "Tool-Aufrufe (function calling)",
+   "Sonde für Tool-Aufrufe; finish_reason={finish_reason}."
+  ],
+  "capability.tools.encoding": [
+   "Tool-Argumente nicht im OpenAI-Stil kodiert",
+   "function.arguments kam als strukturiertes Objekt ({arguments_type}) statt als JSON-String zurück; eine echte OpenAI-kompatible API liefert einen String (Verdacht auf Ersatz-Engine)."
+  ],
+  "capability.json_mode": [
+   "JSON-Modus (json_object)",
+   "Sonde für den JSON-Modus; Objekt geparst: {parsed}, angefragter Wert getroffen: {value_matched}."
+  ],
+  "capability.json_schema": [
+   "Striktes JSON-Schema",
+   "Sonde für striktes JSON-Schema; schemakonform: {conforms}."
+  ],
+  "capability.max_output": [
+   "Maximale Ausgabelänge",
+   "Sonde für maximale Ausgabe: angegebenes max_output={declared_max_output}, {requested_max_tokens} Tokens angefragt; ~{line_count} Zeilen erzeugt, finish_reason={finish_reason}."
+  ],
+  "streaming.failed": [
+   "Streaming-Anfrage fehlgeschlagen",
+   "Die Streaming-Anfrage ist fehlgeschlagen (HTTP {status_code}, Typ {error_type}); prüfen Sie, ob das Modell stream=true unterstützt."
+  ],
+  "streaming.no_content": [
+   "Stream lieferte keinen Inhalt",
+   "Der Streaming-Request war erfolgreich, lieferte aber keinen Inhalt ({chunk_count} Chunks); Streaming konnte nicht beurteilt werden."
+  ],
+  "streaming.few_chunks": [
+   "Antwort in ≤2 Chunks geliefert",
+   "{content_chars} Zeichen in nur {chunk_count} Chunks geliefert (erst gepuffert, dann zerteilt – kein echtes Token-für-Token-Streaming)."
+  ],
+  "streaming.late_ttft": [
+   "Erstes Token erst am Ende des Streams",
+   "Das erste Token kam erst bei ~{ttft_ratio} der Gesamtdauer (ttft={ttft_ms} ms / duration={duration_ms} ms, Verdacht auf Pufferung)."
+  ],
+  "streaming.reasoning_ttft": [
+   "Spätes erstes Token eines Reasoning-Modells",
+   "Erstes sichtbares Token nach {ttft_ms} ms von {duration_ms} ms Gesamtdauer; das Modell denkt vor der Antwort nach, daher nicht als Pufferung gezählt."
+  ],
+  "streaming.uniform_gaps": [
+   "Gleichmäßige, nahezu leere Chunk-Abstände",
+   "{chunk_count} Chunks, mittlerer Abstand ~{mean_delta_ms} ms, CV {delta_cv} — die Chunks wirken auf einmal ausgeschüttet."
+  ],
+  "streaming.no_usage": [
+   "Kein usage-Chunk im Stream",
+   "stream_options.include_usage lieferte keine usage-Daten im Stream."
+  ],
+  "streaming.healthy": [
+   "Streaming ist echt",
+   "{chunk_count} Chunks in {duration_ms} ms, erstes Token nach {ttft_ms} ms."
+  ],
+  "billing.request-failed": [
+   "Anfrage der Abrechnungssonde fehlgeschlagen",
+   "Die Anfrage der Abrechnungssonde ist fehlgeschlagen (HTTP {status_code}, Typ {error_type})."
+  ],
+  "billing.missing-usage": [
+   "Keine Verbrauchsangaben zurückgegeben",
+   "Die Antwort enthält keinen Token-Verbrauch; die Abrechnung lässt sich nicht unabhängig prüfen (usage vorhanden: {usage_present})."
+  ],
+  "billing.usage-inflation": [
+   "Gemeldete Prompt-Tokens weit über der Schätzung",
+   "Gemeldete Prompt-Tokens ({reported_prompt}) weit über der unabhängigen Schätzung (~{estimated_prompt}, Verhältnis {ratio}); Verdacht auf Überabrechnung pro Token."
+  ],
+  "billing.reasoning-tokens": [
+   "Completion-Tokens über dem sichtbaren Text (Reasoning-Modell)",
+   "Gemeldete Completion-Tokens ({reported_completion}) über der Schätzung des sichtbaren Texts (~{visible_estimate}, Verhältnis {ratio}); Reasoning-Modelle haben verborgene Denk-Tokens, das ist erwartet und keine Übermeldung."
+  ],
+  "billing.usage-inflation-completion": [
+   "Gemeldete Completion-Tokens weit über der Schätzung",
+   "Gemeldete Completion-Tokens ({reported_completion}) weit über der unabhängigen Schätzung (~{estimated_completion}, Verhältnis {ratio}); Verdacht auf Überabrechnung pro Token."
+  ],
+  "billing.usage-undercount-prompt": [
+   "Gemeldete Prompt-Tokens deutlich unter der Schätzung",
+   "Gemeldete Prompt-Tokens ({reported_prompt}) weit unter der Schätzung (~{estimated_prompt}); für Käufer unschädlich, aber auffällig."
+  ],
+  "billing.usage-undercount-completion": [
+   "Gemeldete Completion-Tokens deutlich unter der Schätzung",
+   "Gemeldete Completion-Tokens ({reported_completion}) weit unter der Schätzung (~{estimated_completion}); für Käufer unschädlich, aber auffällig."
+  ],
+  "billing.total-mismatch": [
+   "usage-Summe ≠ prompt + completion",
+   "Gemeldete Summe ({total}) ist nicht gleich prompt ({prompt}) + completion ({completion})."
+  ],
+  "billing.partial-usage": [
+   "Verbrauchsaufschlüsselung unvollständig",
+   "usage nennt nur total={total} (prompt={prompt}, completion={completion}); die Aufschlüsselung, auf der die Abrechnung pro Token beruht, fehlt und ist nicht prüfbar."
+  ],
+  "billing.usage-consistent": [
+   "Verbrauch entspricht der unabhängigen Schätzung",
+   "Gemeldeter Verbrauch innerhalb der Toleranz der Schätzung (Verhältnis prompt {ratio_prompt}, completion {ratio_completion})."
+  ],
+  "reliability.skipped": [
+   "Zuverlässigkeitssonde deaktiviert",
+   "reliability_requests <= 0 ({reliability_requests}); keine parallele Last erzeugt."
+  ],
+  "reliability.success_rate": [
+   "Erfolgsquote paralleler Anfragen",
+   "Bei Parallelität {concurrency} waren {successes} Anfragen erfolgreich (von {requests}, {rate_limited} gedrosselt)."
+  ],
+  "reliability.rate_limited": [
+   "Einige parallele Anfragen gedrosselt",
+   "Bei Parallelität {concurrency} lieferten {rate_limited}/{requests} Anfragen HTTP 429; als Drosselung gewertet, nicht als Instabilität."
+  ],
+  "reliability.latency": [
+   "Hohe Tail-Latenz unter Last",
+   "Bei Parallelität {concurrency} ist die Tail-Latenz hoch und überschreitet den Schwellenwert."
+  ],
+  "security.tls": [
+   "Transport über HTTPS?",
+   "Transportprotokoll: {scheme}."
+  ],
+  "security.headers": [
+   "Upstream-/Proxy-Antwortheader",
+   "Prüfung der Antwortheader (HTTP {status_code})."
+  ],
+  "security.key_echo": [
+   "Gibt die Antwort den API-Schlüssel zurück?",
+   "Prüfung auf Rückgabe des API-Schlüssels."
+  ],
+  "security.note": [
+   "Grenzen der Black-Box-Erkennung",
+   "Ob Prompts protokolliert oder ein geteilter Upstream-Schlüssel genutzt wird, lässt sich clientseitig per Black-Box nicht beweisen; die Dimensionen Zuverlässigkeit und Streaming-Timing dienen als indirekte Signale."
+  ],
+  "injected_prompt.suspected": [
+   "Verdacht auf eingeschleusten versteckten System-Prompt",
+   "Die gemeldeten Prompt-Tokens haben einen großen, von der Nachrichtenlänge unabhängigen festen Aufschlag, und das Modell gab auf Nachfrage anweisungsartige Inhalte preis; Verdacht auf einen vorangestellten versteckten System-Prompt."
+  ],
+  "injected_prompt.overhead": [
+   "Auffälliger fester Aufschlag an Eingabe-Tokens",
+   "Prompt-Tokens liegen über der Schätzung und bleiben bei längeren Nachrichten konstant — passt zu einem versteckten vorangestellten Prompt, ist aber nur ein einzelnes Signal und braucht Bestätigung."
+  ],
+  "injected_prompt.leak": [
+   "Modell gab eine anweisungsartige Präambel zurück (schwaches Signal)",
+   "Auf die Bitte, frühere Anweisungen zu wiederholen, gab das Modell anweisungsartigen Text statt NONE zurück. Modelle können erfinden; allein ist das ein schwaches Signal."
+  ],
+  "injected_prompt.inconclusive": [
+   "Aufschlag an Eingabe-Tokens nicht messbar",
+   "Keine nutzbaren prompt_tokens in der Antwort; Aufschlagsprüfung übersprungen."
+  ],
+  "injected_prompt.clean": [
+   "Keine Anzeichen eines eingeschleusten System-Prompts",
+   "Der Aufschlag an Eingabe-Tokens ist minimal (Template-Niveau), und keine Präambel wurde preisgegeben."
+  ],
+  "integrity.tampering": [
+   "Vom Relay gesteuerte Wertersetzung erkannt",
+   "Sonden mit bekannter Antwort kamen mit intakter Struktur, aber ersetzten Werten zurück (durch Referenz bestätigt: {baseline_corroborated}); ein Proxy, der URLs/Paketnamen umschreibt, ist ein Lieferkettenrisiko — nicht mehr verwenden."
+  ],
+  "integrity.intact": [
+   "Sonden mit bekannter Antwort unverändert zurückgegeben",
+   "{verbatim} Sondenwerte wörtlich zurückgegeben; keine Ersetzung beobachtet."
+  ],
+  "integrity.inconclusive": [
+   "Ergebnis der Integritätssonden unklar",
+   "Das Modell gab keine Sonde wörtlich zurück; Manipulation nicht bewertbar."
+  ],
+  "determinism.temp1_variability": [
+   "Ausgabevariabilität bei temperature=1.0",
+   "{samples} Stichproben bei temperature=1.0; byteweise identisch: {identical}."
+  ],
+  "determinism.temp0_stability": [
+   "Antwortstabilität bei temperature=0",
+   "Derselbe Fakten-Prompt bei temperature=0 wiederholt; beide Antworten identisch: {identical}."
+  ],
+  "prompt_cache.inconclusive": [
+   "Timing-Daten zum Präfix-Cache nicht verfügbar",
+   "Eine oder mehrere Streaming-Sonden lieferten kein nutzbares Timing (cold={cold_ms} ms, warm={warm_ms} ms, control={control_ms} ms)."
+  ],
+  "prompt_cache.detected": [
+   "Relay cacht nach Prompt-Präfix",
+   "Ein wiederholtes Präfix kommt deutlich schneller zurück (warm ~{warm_ms} ms vs. cold ~{cold_ms} ms, control ~{control_ms} ms) — ein Prompt-Präfix-Cache ist vorhanden. Das ist eine legitime Optimierung; ekte kann mit nur einem Schlüssel nicht beweisen, ob der Cache nutzerübergreifend geteilt wird."
+  ],
+  "prompt_cache.none": [
+   "Kein deutlicher Prompt-Präfix-Cache",
+   "Die TTFT des wiederholten Präfixes (~{warm_ms} ms) ist nicht deutlich schneller als cold (~{cold_ms} ms) / control (~{control_ms} ms)."
+  ],
+  "vision.not_claimed": [
+   "Keine Vision-Fähigkeit angegeben — übersprungen",
+   "Das aufgelöste Profil nennt keine Vision-/Bild-Modalität; keine multimodale Sonde gesendet (modalities={modalities})."
+  ],
+  "vision.color": [
+   "Prüfung der multimodalen Fähigkeit (Vision)",
+   "Vision-Fähigkeit mit einem einfarbigen Bild mit bekannter Antwort geprüft (Protokoll {protocol})."
+  ],
+  "quality_judge.unavailable": [
+   "Keine Zielantworten zum Bewerten",
+   "Das Ziel lieferte für keine Unterscheidungssonde nutzbaren Inhalt ({probes} Sonden, {failed} fehlgeschlagen)."
+  ],
+  "quality_judge.suspicious": [
+   "LLM-Bewertung: Verhalten passt nicht zum angegebenen Modell (Verdacht auf Herabstufung/Austausch/Quantisierung)",
+   "Der Bewerter (Konfidenz {judge_confidence}) hält die Antworten nicht für die des angegebenen Modells; eher: {likely_actual_tier}. Durch Referenz bestätigt: {baseline_corroborated}."
+  ],
+  "quality_judge.consistent": [
+   "LLM-Bewertung: Verhalten passt zum angegebenen Modell",
+   "Der Bewerter (Konfidenz {judge_confidence}) hält die Antworten für konsistent mit dem angegebenen Modell."
+  ],
+  "quality_judge.inconclusive": [
+   "LLM-Bewertung: Ergebnis unklar",
+   "Der Bewerter kam zu keinem eindeutigen Ergebnis (Konfidenz {judge_confidence})."
+  ],
+  "embed.connectivity": [
+   "Konnektivität des Embedding-Endpunkts",
+   "{vectors} Vektoren zurückgegeben, Dimension {dimension}."
+  ],
+  "embed.dimension": [
+   "Passt die Vektordimension zum angegebenen Modell?",
+   "Vektoren mit Dimension {returned} zurückgegeben; das angegebene Modell sollte {claimed} liefern."
+  ],
+  "embed.determinism": [
+   "Sind die Embeddings reproduzierbar?",
+   "Kosinus-Ähnlichkeit von {cosine} zwischen zwei Durchläufen derselben Eingabe (Schwelle {threshold})."
+  ],
+  "embed.distinctness": [
+   "Ergeben verschiedene Eingaben unterscheidbare Vektoren?",
+   "Kosinus-Ähnlichkeit von {cosine} zwischen zwei unzusammenhängenden Texten (Schwelle {threshold})."
+  ],
+  "embed.model_field": [
+   "Zurückgegebenes model-Feld",
+   "Das Relay meldet das Modell {model_returned}; angefragt: {model_requested}, angegeben: {claimed_model}."
+  ],
+  "rerank.connectivity": [
+   "Konnektivität des Rerank-Endpunkts",
+   "{results} Ranking-Ergebnisse zurückgegeben."
+  ],
+  "rerank.known_answer": [
+   "Wird die offensichtliche Antwort zuerst eingestuft?",
+   "Zuerst eingestuft: Dokument {top_index}; erwartet: Dokument {expected} (Reihenfolge {ranking})."
+  ],
+  "performance.summary": [
+   "Ergebnisse der Leistungsmessung",
+   "{successes}/{requests} Messanfragen erfolgreich; Latenz p50 {latency_p50_ms} ms, TTFT p50 {ttft_p50_ms} ms, Dekodiertempo p50 {decode_tps_p50} tok/s."
+  ],
+  "performance.errors": [
+   "Fehlgeschlagene Messanfragen",
+   "{errors} Fehler und {timeouts} Zeitüberschreitungen bei {requests} Messanfragen an {endpoint} ({rate_limited} gedrosselt)."
+  ],
+  "performance.cache_hit": [
+   "Einmalige Mess-Prompts kamen aus einem Cache",
+   "{cached} Messanfrage(n) an {endpoint} kamen aus dem Cache, obwohl jeder Prompt einmalig war; sie sind aus der Statistik ausgeschlossen."
+  ],
+  "performance.reasoning": [
+   "Reasoning-Token in der Messung",
+   "Das Modell verbraucht verdeckte Reasoning-Token ({reasoning_tokens} gemeldet): TTFT enthält das Nachdenken. ekte setzt keinen Reasoning-Aufwand, das Modell denkt mit Standardaufwand."
+  ],
+  "performance.relay_overhead": [
+   "Latenz im Vergleich zur Referenz",
+   "Ziel-Latenz p50 {target_latency_p50_ms} ms vs. Referenz {baseline_latency_p50_ms} ms (Differenz {latency_p50_delta_ms} ms)."
+  ],
+  "performance.skipped": [
+   "Leistungsmessung deaktiviert",
+   "performance_requests = {performance_requests}; es wurden keine Messanfragen gesendet."
+  ],
+  "performance.latency_consistency": [
+   "Gleichmäßigkeit der Latenz",
+   "Latenz p50 {p50} ms, p90 {p90} ms — Tail-Verhältnis {tail_ratio} über {samples} Anfragen."
+  ],
+  "performance.ttft_consistency": [
+   "Gleichmäßigkeit der Zeit bis zum ersten Token",
+   "TTFT p50 {p50} ms, p90 {p90} ms — Tail-Verhältnis {tail_ratio} über {samples} Anfragen."
+  ],
+  "performance.throughput_consistency": [
+   "Gleichmäßigkeit des Durchsatzes",
+   "Durchsatz p50 {p50} {unit}, p10 {p10} {unit} — Tail-Verhältnis {tail_ratio} über {samples} Anfragen."
+  ],
+  "performance.load_stability": [
+   "Latenz unter paralleler Last",
+   "Latenz p50 {burst_latency_p50_ms} ms bei Parallelität {concurrency} gegenüber {sequential_latency_p50_ms} ms einzeln ({ratio}x)."
+  ],
+  "performance.reference": [
+   "Durchsatz im Vergleich zur Referenz",
+   "Ziel-Durchsatz {target_tps_p50} tok/s, Referenz {reference_range} tok/s."
+  ]
+ }
+}

@@ -1,11 +1,9 @@
 - banner:
   - link "Saltar para o conteúdo principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interface clássica":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Tema":
     - option "Automático"
     - option "Claro" [selected]
@@ -36,7 +34,7 @@
       - /url: /v2/kb
 - main:
   - heading "Este intermediário serve o modelo verdadeiro?" [level=1]
-  - paragraph: Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O zing executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.
+  - paragraph: Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O ekte executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.
   - status:
     - text: Última auditoria concluída gateway.a-very-long-relay-hostname.example.org · model-b · pontuação 72/100 · 27/09/2026, 10:02
     - button "Abrir relatório"
@@ -66,18 +64,18 @@
       - combobox "URL do intermediário base_url"
       - text: Chave de API Aceita env:VAR / file:/caminho
       - textbox "Chave de API":
-        - /placeholder: sk-... ou env:ZING_API_KEY
+        - /placeholder: sk-... ou env:EKTE_API_KEY
       - button "Mostrar chave"
       - text: Modelo pedido model
       - textbox "Modelo pedido model":
         - /placeholder: deepseek-chat
       - button "Atualizar modelos" [disabled]
-      - status: Selecione um relay ou introduza o seu URL, e o zing lista os seus modelos.
+      - status: Selecione um relay ou introduza o seu URL, e o ekte lista os seus modelos.
       - text: Modelo declarado claimed_model Opcional
       - combobox "Modelo declarado claimed_model Opcional":
         - option "Igual ao modelo pedido" [selected]
       - button "Introduzir manualmente"
-      - text: Só se o intermediário o vender com outro nome — o zing confronta as respostas com este modelo. Protocolo
+      - text: Só se o intermediário o vender com outro nome — o ekte confronta as respostas com este modelo. Protocolo
       - group "Protocolo":
         - button "Auto" [pressed]
         - button "OpenAI"
@@ -96,7 +94,7 @@
         - button "Sem streaming"
       - text: No standard a sonda só é executada com uma referência; caso contrário, usam-se as próprias requisições da auditoria.
       - button "Comparar com uma referência confiável compare" [expanded]
-      - paragraph: Indique um endpoint do mesmo modelo em que confie (p. ex. a API oficial). O zing usa-o para corroborar o comportamento do alvo, tornando mais fiáveis os veredictos de substituição/degradação — a avaliação de qualidade e a deteção de adulteração só atingem o nível máximo com uma referência.
+      - paragraph: Indique um endpoint do mesmo modelo em que confie (p. ex. a API oficial). O ekte usa-o para corroborar o comportamento do alvo, tornando mais fiáveis os veredictos de substituição/degradação — a avaliação de qualidade e a deteção de adulteração só atingem o nível máximo com uma referência.
       - text: Relay / provedor de referência Opcional
       - combobox "Relay / provedor de referência Opcional":
         - option "Selecione um relay ou provedor…" [selected]
@@ -111,7 +109,7 @@
       - textbox "Modelo de referência model":
         - /placeholder: id oficial do mesmo modelo
       - button "Atualizar modelos" [disabled]
-      - status: Selecione um relay ou introduza o seu URL, e o zing lista os seus modelos.
+      - status: Selecione um relay ou introduza o seu URL, e o ekte lista os seus modelos.
       - text: Protocolo de referência
       - group "Protocolo de referência":
         - button "Auto" [pressed]
@@ -119,9 +117,9 @@
         - button "Anthropic"
         - button "Responses"
       - button "Iniciar auditoria"
-      - text: Os testes são enviados a partir do seu servidor zing local; a chave só é usada para ligar ao intermediário alvo e nunca é enviada a terceiros.
+      - text: Os testes são enviados a partir do seu servidor ekte local; a chave só é usada para ligar ao intermediário alvo e nunca é enviada a terceiros.
       - alert
       - status
 - contentinfo:
   - paragraph: "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela."
-  - paragraph: "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."
+  - paragraph: "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."

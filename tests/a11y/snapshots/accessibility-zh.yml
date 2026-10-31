@@ -1,11 +1,9 @@
 - banner:
   - link "跳到主要内容":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "经典界面":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "主题":
     - option "跟随系统"
     - option "浅色" [selected]
@@ -46,7 +44,7 @@
     - term: 提交
     - definition:
       - code: <id>
-    - term: zing 版本
+    - term: ekte 版本
     - definition: 0.11.0
     - term: axe-core 版本
     - definition: 4.13.0
@@ -142,7 +140,7 @@
   - region "无障碍声明":
     - heading "无障碍声明" [level=2]
     - heading "符合状态" [level=3]
-    - paragraph: zing 网页界面 v2 与 BITV 2.0、EN 301549 和 WCAG 2.1 AA 级部分符合。
+    - paragraph: ekte 网页界面 v2 与 BITV 2.0、EN 301549 和 WCAG 2.1 AA 级部分符合。
     - heading "已知限制" [level=3]
     - paragraph: 以下步骤的自动化部分已通过，其余部分仍需人工审核：
     - list:
@@ -167,7 +165,7 @@
     - paragraph:
       - text: 发现了障碍，或者某些功能难以通过辅助技术使用？请告诉我们：
       - link "在 GitHub 上报告无障碍问题":
-        - /url: https://github.com/cenbonew/zing/issues
+        - /url: https://github.com/mn567250/ekte/issues
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
-  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。
+  - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

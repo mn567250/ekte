@@ -1,11 +1,9 @@
 - banner:
   - link "Skip to main content":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Classic UI":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Theme":
     - option "Auto theme"
     - option "Light" [selected]
@@ -36,7 +34,7 @@
       - /url: /v2/kb
 - main:
   - heading "Is this relay serving the real thing?" [level=1]
-  - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.
+  - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.
   - status:
     - text: Last audit finished gateway.a-very-long-relay-hostname.example.org · model-b · score 72/100 · Sep 27, 2026, 10:02 AM
     - button "Open report"
@@ -66,18 +64,18 @@
       - combobox "Relay URL base_url"
       - text: API key Supports env:VAR / file:/path
       - textbox "API key":
-        - /placeholder: sk-... or env:ZING_API_KEY
+        - /placeholder: sk-... or env:EKTE_API_KEY
       - button "Show key"
       - text: Model to request model
       - textbox "Model to request model":
         - /placeholder: deepseek-chat
       - button "Refresh models" [disabled]
-      - status: Select a relay or enter its URL, and zing lists its models.
+      - status: Select a relay or enter its URL, and ekte lists its models.
       - text: Claimed model claimed_model Optional
       - combobox "Claimed model claimed_model Optional":
         - option "Same as the model to request" [selected]
       - button "Enter manually"
-      - text: Only if the relay sells it under another name — zing checks the answers against this model. Protocol
+      - text: Only if the relay sells it under another name — ekte checks the answers against this model. Protocol
       - group "Protocol":
         - button "Auto" [pressed]
         - button "OpenAI"
@@ -96,7 +94,7 @@
         - button "Non-streaming"
       - text: On standard the probe runs only with a baseline; otherwise the audit's own requests are used.
       - button "Compare against a trusted baseline compare" [expanded]
-      - paragraph: Enter an endpoint for the same model that you trust (e.g. the official API). zing uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.
+      - paragraph: Enter an endpoint for the same model that you trust (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.
       - text: Baseline relay / provider Optional
       - combobox "Baseline relay / provider Optional":
         - option "Select a relay or provider…" [selected]
@@ -111,7 +109,7 @@
       - textbox "Baseline model model":
         - /placeholder: Official id of the same model
       - button "Refresh models" [disabled]
-      - status: Select a relay or enter its URL, and zing lists its models.
+      - status: Select a relay or enter its URL, and ekte lists its models.
       - text: Baseline protocol
       - group "Baseline protocol":
         - button "Auto" [pressed]
@@ -119,9 +117,9 @@
         - button "Anthropic"
         - button "Responses"
       - button "Start audit"
-      - text: Tests are sent from your local zing server; the key is only used to connect to the target relay and is never uploaded to any third party.
+      - text: Tests are sent from your local ekte server; the key is only used to connect to the target relay and is never uploaded to any third party.
       - alert
       - status
 - contentinfo:
   - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
-  - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."
+  - paragraph: "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

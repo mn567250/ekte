@@ -13,7 +13,7 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from zing.web.server import create_app  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 
 @pytest.fixture
@@ -22,8 +22,8 @@ def client():
 
 
 def test_watch_store_roundtrip(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import watches
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import watches
 
     assert watches.list_all() == []
 
@@ -81,7 +81,7 @@ def test_watch_store_roundtrip(tmp_path, monkeypatch):
 
 
 def test_watches_endpoints_create_list_delete(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
 
     assert client.get("/api/watches").json() == []
 
@@ -121,7 +121,7 @@ def test_watches_endpoints_create_list_delete(tmp_path, monkeypatch, client):
 
 
 def test_watches_create_bad_target_is_clean_400(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     r = client.post("/api/watches", json={"base_url": "", "model": ""})
     assert r.status_code == 400 and "error" in r.json()
     # Nothing was persisted.
@@ -129,7 +129,7 @@ def test_watches_create_bad_target_is_clean_400(tmp_path, monkeypatch, client):
 
 
 def test_watches_create_unknown_suite_is_400(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     r = client.post(
         "/api/watches",
         json={"base_url": "https://x/v1", "model": "gpt-4o", "suite": "bogus"},
@@ -138,21 +138,22 @@ def test_watches_create_unknown_suite_is_400(tmp_path, monkeypatch, client):
 
 
 def test_watches_page_and_nav_link(client):
-    r = client.get("/watches")
+    r = client.get("/v2/watches")
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
-    assert "监控" in r.text
-    # The SPA exposes a nav link to /watches.
-    assert 'href="/watches"' in client.get("/").text
+    assert '<header class="znav" data-page="monitors"' in r.text
+    # every page's nav links to the monitors page; the old address redirects there
+    assert '["monitors", "/v2/watches", "bell", "监控", "Monitors"]' in client.get("/v2/static/nav.js").text
+    assert client.get("/watches", follow_redirects=False).headers["location"] == "/v2/watches"
 
 
 def test_patch_and_run_missing_watch_404(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     assert client.patch("/api/watches/999999", json={"enabled": True}).status_code == 404
     assert client.post("/api/watches/999999/run").status_code == 404
 
 
 def test_watch_alert_language_default_create_patch(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     base = {"base_url": "https://relay.test/v1", "model": "gpt-4o", "webhooks": []}
 
     # No language given -> English; a supported one is stored; junk -> English.
@@ -169,8 +170,8 @@ def test_watch_alert_language_default_create_patch(tmp_path, monkeypatch, client
 def test_watch_db_from_before_alert_languages_is_migrated(tmp_path, monkeypatch):
     import sqlite3
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import watches
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import watches
 
     # A watches table as created by earlier versions (no `language` column).
     path = watches._db_path()
@@ -195,11 +196,11 @@ async def test_scheduled_watch_alerts_in_its_language(tmp_path, monkeypatch):
     import json
     from pathlib import Path
 
-    from zing import notify
-    from zing.models import AuditReport
-    from zing.web import server, watches
+    from ekte import notify
+    from ekte.models import AuditReport
+    from ekte.web import server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     report = AuditReport.model_validate(
         json.loads((Path(__file__).parent / "fixtures" / "web_report.json").read_text("utf-8"))
     )
@@ -230,7 +231,7 @@ def _saved_report(**overrides):
     import json
     from pathlib import Path
 
-    from zing.web import history
+    from ekte.web import history
 
     report = json.loads((Path(__file__).parent / "fixtures" / "web_report.json").read_text("utf-8"))
     report.update(overrides)
@@ -238,7 +239,7 @@ def _saved_report(**overrides):
 
 
 def test_schedule_history_run_creates_a_paused_draft(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     rid = _saved_report()
     r = client.post(f"/api/watches/from-history/{rid}", json={"language": "de"})
     assert r.status_code == 201
@@ -258,10 +259,10 @@ async def test_monitor_runs_are_tagged_and_cannot_be_rescheduled(tmp_path, monke
     import json
     from pathlib import Path
 
-    from zing.models import AuditReport
-    from zing.web import history, server, watches
+    from ekte.models import AuditReport
+    from ekte.web import history, server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     report = AuditReport.model_validate(
         json.loads((Path(__file__).parent / "fixtures" / "web_report.json").read_text("utf-8"))
     )
@@ -285,7 +286,7 @@ async def test_monitor_runs_are_tagged_and_cannot_be_rescheduled(tmp_path, monke
 
 
 def test_schedule_keeps_a_custom_suites_dimensions(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     rid = _saved_report(suite="custom", dimensions_selected=["security", "protocol"])
     client.post(f"/api/watches/from-history/{rid}")
     [w] = client.get("/api/watches").json()
@@ -295,9 +296,9 @@ def test_schedule_keeps_a_custom_suites_dimensions(tmp_path, monkeypatch, client
 def test_draft_needs_interval_but_not_a_key_before_it_runs(tmp_path, monkeypatch, client):
     import time
 
-    from zing.web import watches
+    from ekte.web import watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     wid = client.post(f"/api/watches/from-history/{_saved_report()}").json()["id"]
 
     # never picked up by the scheduler, even if switched on behind the API's back
@@ -324,7 +325,7 @@ def test_draft_needs_interval_but_not_a_key_before_it_runs(tmp_path, monkeypatch
 
 
 def test_patch_validates_schedule_and_alert_settings(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     wid = client.post(
         "/api/watches", json={"base_url": "https://relay.test/v1", "model": "gpt-4o", "api_key": "sk-a"}
     ).json()["id"]
@@ -337,7 +338,7 @@ def test_patch_validates_schedule_and_alert_settings(tmp_path, monkeypatch, clie
     }).status_code == 200
     [w] = client.get("/api/watches").json()
     assert w["interval_sec"] == 900 and w["alert_on"] == "high" and w["webhooks"] == ["https://hooks.test/a"]
-    from zing.web import watches
+    from ekte.web import watches
 
     assert watches.get(wid)["api_key"] == "sk-a"  # a blank key leaves the stored one alone
     # a form-created keyless watch (a relay without auth) can still be switched on
@@ -346,8 +347,8 @@ def test_patch_validates_schedule_and_alert_settings(tmp_path, monkeypatch, clie
 
 
 def test_running_watch_is_flagged_and_rejects_run_now(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import server, watches
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import server, watches
 
     wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "gpt-4o"})
     w = client.get("/api/watches").json()[0]
@@ -364,7 +365,7 @@ def test_running_watch_is_flagged_and_rejects_run_now(tmp_path, monkeypatch, cli
 
 
 def test_watch_progress_counts_detectors_and_probe_requests():
-    from zing.web import server
+    from ekte.web import server
 
     state: dict = {}
     assert server._watch_progress(state) == 0
@@ -385,8 +386,8 @@ def test_watch_progress_counts_detectors_and_probe_requests():
 async def test_cancel_stops_a_running_watch_and_keeps_its_last_result(tmp_path, monkeypatch):
     import asyncio
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
-    from zing.web import server, watches
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import server, watches
 
     started = asyncio.Event()
 
@@ -409,7 +410,7 @@ async def test_cancel_stops_a_running_watch_and_keeps_its_last_result(tmp_path, 
 
 
 def test_min_interval_rounds_the_run_time_up_to_a_step():
-    from zing.web.server import _min_interval_sec
+    from ekte.web.server import _min_interval_sec
 
     assert _min_interval_sec(None) == 300
     assert _min_interval_sec(210) == 300  # 3.5 min -> 5 min
@@ -420,7 +421,7 @@ def test_min_interval_rounds_the_run_time_up_to_a_step():
 
 
 def test_history_run_time_sets_the_monitors_shortest_interval(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     import json
     from pathlib import Path
 
@@ -442,7 +443,7 @@ def test_history_run_time_sets_the_monitors_shortest_interval(tmp_path, monkeypa
 
 
 def _audit_report(target):
-    from zing.models import AuditReport, RedactedTarget, Verdict
+    from ekte.models import AuditReport, RedactedTarget, Verdict
 
     return AuditReport(
         tool_version="0", mode="check", suite="standard",
@@ -492,7 +493,7 @@ async def _scheduler(monkeypatch):
     """Start the scheduler loop with a short tick; returns its task."""
     import asyncio
 
-    from zing.web import server
+    from ekte.web import server
 
     # Many ticks per run: a watch stays due until its run is recorded.
     monkeypatch.setattr(server, "_SCHEDULER_TICK_SEC", 0.01)
@@ -502,7 +503,7 @@ async def _scheduler(monkeypatch):
 async def _stop(loop_task) -> None:
     import asyncio
 
-    from zing.web import server
+    from ekte.web import server
 
     loop_task.cancel()
     with pytest.raises(asyncio.CancelledError):
@@ -516,9 +517,9 @@ async def _stop(loop_task) -> None:
 async def test_due_watches_on_different_relays_run_at_the_same_time(tmp_path, monkeypatch):
     import asyncio
 
-    from zing.web import server, watches
+    from ekte.web import server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     audits = _GatedAudits()
     monkeypatch.setattr(server, "run_audit", audits)
     ids = [
@@ -548,9 +549,9 @@ async def test_due_watches_on_the_same_relay_run_one_after_another(tmp_path, mon
     import asyncio
     import time
 
-    from zing.web import server, watches
+    from ekte.web import server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     audits = _GatedAudits()
     monkeypatch.setattr(server, "run_audit", audits)
     ids = [
@@ -585,9 +586,9 @@ async def test_due_watches_on_the_same_relay_run_one_after_another(tmp_path, mon
 
 
 async def test_a_failing_watch_does_not_stop_the_others(tmp_path, monkeypatch):
-    from zing.web import server, watches
+    from ekte.web import server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     audits = _GatedAudits()
 
     async def audit(target, options, **kw):
@@ -610,10 +611,10 @@ async def test_a_failing_watch_does_not_stop_the_others(tmp_path, monkeypatch):
 
 
 async def test_shutdown_cancels_running_monitors(tmp_path, monkeypatch):
-    from zing.web import server, watches
-    from zing.web.server import create_app
+    from ekte.web import server, watches
+    from ekte.web.server import create_app
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     audits = _GatedAudits()  # never released: the runs are still going at shutdown
     monkeypatch.setattr(server, "run_audit", audits)
     monkeypatch.setattr(server, "_SCHEDULER_TICK_SEC", 0.01)
@@ -632,11 +633,11 @@ async def test_shutdown_cancels_running_monitors(tmp_path, monkeypatch):
 async def test_alert_webhooks_are_sent_at_the_same_time(tmp_path, monkeypatch):
     import asyncio
 
-    from zing import notify
-    from zing.models import RiskLevel
-    from zing.web import server, watches
+    from ekte import notify
+    from ekte.models import RiskLevel
+    from ekte.web import server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
 
     async def fake_run_audit(target, options, **_):
         report = _audit_report(target)
@@ -667,11 +668,11 @@ async def test_alert_webhooks_are_sent_at_the_same_time(tmp_path, monkeypatch):
 
 
 async def test_regression_check_sees_a_run_that_queued_ahead_on_the_relay(tmp_path, monkeypatch):
-    from zing import notify
-    from zing.models import RiskLevel
-    from zing.web import server, watches
+    from ekte import notify
+    from ekte.models import RiskLevel
+    from ekte.web import server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     runs: list[str] = []
     ids: list[int] = []
 
@@ -716,10 +717,10 @@ async def test_run_now_refuses_a_watch_the_scheduler_just_started(tmp_path, monk
 
     import httpx
 
-    from zing.web import server, watches
-    from zing.web.server import create_app
+    from ekte.web import server, watches
+    from ekte.web.server import create_app
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     audits = _GatedAudits()
     monkeypatch.setattr(server, "run_audit", audits)
     wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "m",

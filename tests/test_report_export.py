@@ -9,9 +9,9 @@ from pathlib import Path
 
 import pytest
 
-from zing.config import ConfigError, validate_format
-from zing.models import AuditReport
-from zing.report import render_pdf, write_reports
+from ekte.config import ConfigError, validate_format
+from ekte.models import AuditReport
+from ekte.report import render_pdf, write_reports
 
 _FIXTURE = Path(__file__).resolve().parent / "fixtures" / "web_report.json"
 
@@ -91,7 +91,7 @@ def test_render_pdf_has_scales_groups_and_performance():
 def test_write_reports_pdf_and_all(report, tmp_path):
     [pdf] = write_reports(report, tmp_path / "one", "pdf")
     assert pdf.suffix == ".pdf" and pdf.read_bytes().startswith(b"%PDF-")
-    assert pdf.name == "zing-target-20260927T074704.pdf"
+    assert pdf.name == "ekte-target-20260927T074704.pdf"
     written = write_reports(report, tmp_path / "all", "all")
     assert [p.suffix for p in written] == [".json", ".md", ".html", ".pdf"]
 
@@ -111,21 +111,21 @@ def client():
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from zing.web.server import create_app
+    from ekte.web.server import create_app
 
     return TestClient(create_app(), base_url="http://localhost")
 
 
 @pytest.mark.parametrize(("fmt", "ctype", "start"), [
     ("json", "application/json", b"{"),
-    ("md", "text/markdown; charset=utf-8", b"# zing audit"),
+    ("md", "text/markdown; charset=utf-8", b"# ekte audit"),
     ("html", "text/html; charset=utf-8", b"<!DOCTYPE html>"),
 ])
 def test_export_text_formats(client, report_dict, fmt, ctype, start):
     r = client.post(f"/api/report/export?format={fmt}", json=report_dict)
     assert r.status_code == 200
     assert r.headers["content-type"] == ctype
-    assert r.headers["content-disposition"] == f'attachment; filename="zing-target-20260927T074704.{fmt}"'
+    assert r.headers["content-disposition"] == f'attachment; filename="ekte-target-20260927T074704.{fmt}"'
     assert r.content.startswith(start)
 
 
@@ -140,7 +140,7 @@ def test_export_pdf_is_the_cli_pdf(client, report_dict, report):
     # the web UI and the CLI share one renderer: same input, same document
     r = client.post("/api/report/export?format=pdf", json=report_dict)
     assert r.status_code == 200 and r.headers["content-type"] == "application/pdf"
-    assert r.headers["content-disposition"] == 'attachment; filename="zing-target-20260927T074704.pdf"'
+    assert r.headers["content-disposition"] == 'attachment; filename="ekte-target-20260927T074704.pdf"'
     assert _text(r.content) == _text(render_pdf(report))
 
 
@@ -148,7 +148,7 @@ def test_export_pdf_failure_is_json(client, report_dict, monkeypatch):
     def broken(_report):
         raise ValueError("boom")
 
-    monkeypatch.setattr("zing.report.render_pdf", broken)
+    monkeypatch.setattr("ekte.report.render_pdf", broken)
     r = client.post("/api/report/export?format=pdf", json=report_dict)
     assert r.status_code == 500 and r.json()["error"] == "PDF rendering failed: boom"
 
@@ -157,7 +157,7 @@ def test_export_rejects_bad_input(client, report_dict):
     r = client.post("/api/report/export?format=docx", json=report_dict)
     assert r.status_code == 400 and "unknown format" in r.json()["error"]
     r = client.post("/api/report/export?format=md", json={"not": "a report"})
-    assert r.status_code == 400 and r.json()["error"].startswith("not a zing report")
+    assert r.status_code == 400 and r.json()["error"].startswith("not a ekte report")
 
 
 def test_export_refuses_cross_site_posts(client, report_dict):
@@ -181,13 +181,13 @@ def test_export_refuses_cross_site_posts(client, report_dict):
     (-1200.4, "-1 s 200 ms"),
 ])
 def test_fmt_duration_uses_only_the_units_it_needs(ms, text):
-    from zing.report.render import _fmt_duration
+    from ekte.report.render import _fmt_duration
 
     assert _fmt_duration(ms) == text
 
 
 def test_fmt_evidence_value_never_uses_scientific_notation():
-    from zing.report.render import _fmt_evidence_value as fmt
+    from ekte.report.render import _fmt_evidence_value as fmt
 
     assert fmt(6097.3, "duration_ms") == "6 s 97 ms"
     assert fmt(2.5, "short_duration_s") == "2 s 500 ms"
@@ -200,7 +200,7 @@ def test_fmt_evidence_value_never_uses_scientific_notation():
 
 
 def test_reports_show_readable_durations(report_dict):
-    from zing.report import render_html, render_markdown
+    from ekte.report import render_html, render_markdown
 
     for det in report_dict["detectors"]:
         for f in det["findings"]:

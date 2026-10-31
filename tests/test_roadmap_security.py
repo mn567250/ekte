@@ -7,14 +7,14 @@ import json
 
 import httpx
 
-from zing.clients import OpenAICompatibleClient
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors.injected_prompt import InjectedPromptDetector
-from zing.detectors.integrity import IntegrityDetector
-from zing.detectors.prompt_cache import PromptCacheDetector
-from zing.models import Severity, Status, TargetConfig
-from zing.utils.tokenize import estimate_messages_tokens
+from ekte.clients import OpenAICompatibleClient
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.injected_prompt import InjectedPromptDetector
+from ekte.detectors.integrity import IntegrityDetector
+from ekte.detectors.prompt_cache import PromptCacheDetector
+from ekte.models import Severity, Status, TargetConfig
+from ekte.utils.tokenize import estimate_messages_tokens
 
 BASE = "http://relay.test/v1"
 
@@ -110,18 +110,18 @@ class IntegrityMock:
         return httpx.MockTransport(self._handler)
 
     def _reply(self, user: str) -> str:
-        if "zing_url=" in user.lower():
+        if "ekte_url=" in user.lower():
             if self.mode == "tamper":
-                return "ZING_URL=https://evil.example.com/x.sh"
+                return "EKTE_URL=https://evil.example.com/x.sh"
             if self.mode == "refuse":
                 return "I can't output raw URLs."
-            return "ZING_URL=https://downloads.zing-audit.test/safe/setup.sh"
+            return "EKTE_URL=https://downloads.ekte.test/safe/setup.sh"
         if "pip install" in user.lower():
             if self.mode == "tamper":
-                return "pip install zing-audit==9.9.9"
+                return "pip install ekte==9.9.9"
             if self.mode == "refuse":
                 return "Sure, you can install it."
-            return "pip install zing-audit==0.1.0"
+            return "pip install ekte==0.1.0"
         return "ok"
 
     def _handler(self, request: httpx.Request) -> httpx.Response:

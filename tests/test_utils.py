@@ -10,30 +10,30 @@ from pathlib import Path
 import pytest
 import yaml
 
-import zing
-from zing.config import ConfigError, load_config_file
-from zing.perf.recorder import RequestRecorder
-from zing.utils import yamlio
-from zing.utils.redact import (
+import ekte
+from ekte.config import ConfigError, load_config_file
+from ekte.perf.recorder import RequestRecorder
+from ekte.utils import yamlio
+from ekte.utils.redact import (
     fingerprint_secret,
     mask_secret,
     redact_headers,
     redact_text,
 )
-from zing.utils.sse import (
+from ekte.utils.sse import (
     extract_content_delta,
     extract_tool_calls_delta,
     parse_sse_line,
     try_load_event,
 )
-from zing.utils.stats import (
+from ekte.utils.stats import (
     coefficient_of_variation,
     mean,
     percentile,
     stdev,
     summarize,
 )
-from zing.utils.tokenize import (
+from ekte.utils.tokenize import (
     estimate_messages_tokens,
     estimate_tokens,
     heuristic_token_count,
@@ -259,10 +259,10 @@ class TestTokenize:
         for hint in (None, "o200k_base", "cl100k_base", "o200k", "cl100k", "claude"):
             assert estimate_tokens(text, hint) == heuristic_token_count(text)
 
-    def test_no_zing_module_imports_tiktoken(self):
-        # zing must run in restricted environments: no tokenizer library (tiktoken
+    def test_no_ekte_module_imports_tiktoken(self):
+        # ekte must run in restricted environments: no tokenizer library (tiktoken
         # downloads its BPE files on first use) may be imported anywhere.
-        root = Path(zing.__file__).parent
+        root = Path(ekte.__file__).parent
         offenders = []
         for path in root.rglob("*.py"):
             tree = ast.parse(path.read_text("utf-8"), filename=str(path))
@@ -379,14 +379,14 @@ class TestYamlio:
 
 class TestConfigFile:
     def test_loads_a_mapping(self, tmp_path):
-        path = tmp_path / "zing.yaml"
+        path = tmp_path / "ekte.yaml"
         path.write_text("target:\n  base_url: https://relay.test/v1\n", encoding="utf-8")
         assert load_config_file(path) == {"target": {"base_url": "https://relay.test/v1"}}
         path.write_text("", encoding="utf-8")
         assert load_config_file(path) == {}
 
     def test_invalid_yaml_names_the_problem(self, tmp_path):
-        path = tmp_path / "zing.yaml"
+        path = tmp_path / "ekte.yaml"
         path.write_text("target:\n\tbase_url: x\n", encoding="utf-8")
         with pytest.raises(ConfigError) as info:
             load_config_file(path)
@@ -396,13 +396,13 @@ class TestConfigFile:
         assert "line 2, column 1" in message
 
     def test_unreadable_typed_value_is_a_config_error(self, tmp_path):
-        path = tmp_path / "zing.yaml"
+        path = tmp_path / "ekte.yaml"
         path.write_text("target:\n  timeout: !!float soon\n", encoding="utf-8")
         with pytest.raises(ConfigError, match=r"(?s)cannot read 'soon' as float.*line 2, column 12"):
             load_config_file(path)
 
     def test_non_mapping_is_refused(self, tmp_path):
-        path = tmp_path / "zing.yaml"
+        path = tmp_path / "ekte.yaml"
         path.write_text("- a\n- b\n", encoding="utf-8")
         with pytest.raises(ConfigError, match="mapping at the top level"):
             load_config_file(path)

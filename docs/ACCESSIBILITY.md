@@ -8,19 +8,19 @@ EN 301 549 clause numbers (WCAG 1.4.3 → 9.1.4.3).
 (Playwright + Chromium, rules by [axe-core](https://github.com/dequelabs/axe-core)
 4.13, vendored in `tests/a11y/vendor/`). Every page (`/v2/`, `/v2/history`,
 `/v2/watches`, `/v2/kb`, `/v2/analytics`, `/v2/accessibility`) is checked **in every UI language**
-(`zing/i18n/locales/*.json`: de, en, es, fr, it, pt, zh), in light and dark
+(`ekte/i18n/locales/*.json`: de, en, es, fr, it, pt, zh), in light and dark
 theme, as loaded and with every disclosure opened (rendered report, advanced
 options, monitor details) and every tab panel shown.
 
 ```bash
 pip install -e '.[web,a11y]'
-playwright install chromium            # or ZING_A11Y_CHROMIUM=/path/to/chrome
+playwright install chromium            # or EKTE_A11Y_CHROMIUM=/path/to/chrome
 pytest -m a11y -n auto                 # pytest-xdist, in the dev extra
 ```
 
-Findings are also written to `a11y-report.json` (`ZING_A11Y_REPORT` moves it).
-`ZING_A11Y_SHARD=k/n` runs only the k-th of n equal parts of the suite (the
-slowest tests are spread evenly). `ZING_A11Y_PAGES=history,kb` runs only the
+Findings are also written to `a11y-report.json` (`EKTE_A11Y_REPORT` moves it).
+`EKTE_A11Y_SHARD=k/n` runs only the k-th of n equal parts of the suite (the
+slowest tests are spread evenly). `EKTE_A11Y_PAGES=history,kb` runs only the
 tests of those pages, plus the checks that compare every page (consistent
 navigation and identification, page titles, reachability); the two combine.
 
@@ -36,7 +36,7 @@ upload those files; they become a required check once the suite is green.
 
 ## Coverage by BITV / EN 301 549 test step
 
-The catalogue `zing/web/static/v2/bitv-catalogue.json` is the single source of
+The catalogue `ekte/web/static/v2/bitv-catalogue.json` is the single source of
 truth for the 50 test steps (WCAG 2.1 A + AA): number, level, title, how far
 the tests decide the step and how. `tests/a11y/bitv_map.py`, the conformance
 report and the report page read it. Every a11y test names the steps it decides
@@ -112,15 +112,15 @@ checked too.
 The page **Accessibility** (the accessibility icon next to the language switch
 in the header of every v2 page) shows, per test step, how it is tested and the
 latest result, plus a short accessibility statement (conformance status, known limitations, how it was assessed,
-feedback). It renders `zing/web/static/v2/bitv-report.json`, built from a real
+feedback). It renders `ekte/web/static/v2/bitv-report.json`, built from a real
 run of the suite:
 
 ```bash
-ZING_A11Y_RESULTS=a11y-results.json pytest tests/a11y -m a11y -n auto
+EKTE_A11Y_RESULTS=a11y-results.json pytest tests/a11y -m a11y -n auto
 python -m tests.a11y.conformance --results a11y-results.json [--llm a11y-llm-review.json | --no-llm]
 ```
 
-`ZING_A11Y_RESULTS` makes the plugin `tests/a11y/results.py` write, for every
+`EKTE_A11Y_RESULTS` makes the plugin `tests/a11y/results.py` write, for every
 step, the tests that ran with their outcome and failure summary. Tests added
 later need only the `bitv` marker. axe-core tests cover many steps at once, so
 their outcome is split per rule: a step fails only when an axe rule tagged with
@@ -150,12 +150,12 @@ report is built from the tests alone. Hand-written notes in the older
 The page renders `bitv-report.json` only, so a new review shows up once it has
 been applied to that file: `python -m tests.a11y.llm_review --update-report`
 reviews and updates the report in one command, and
-`python -m tests.a11y.conformance --update zing/web/static/v2/bitv-report.json
+`python -m tests.a11y.conformance --update ekte/web/static/v2/bitv-report.json
 --llm a11y-llm-review.json` applies an existing review file without running
 the suite or the review again. Each step keeps its status from the tests
 alone (`status_tests`), so a newer review replaces the older one.
 
-CI runs the suite with `ZING_A11Y_RESULTS`, one results file per shard. The
+CI runs the suite with `EKTE_A11Y_RESULTS`, one results file per shard. The
 `accessibility report` job merges them (`--results` takes several files),
 generates the report even when tests fail and uploads `bitv-report.json` with
 the other findings. When the `ANTHROPIC_API_KEY` secret is set, it runs the LLM

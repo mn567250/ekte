@@ -34,7 +34,7 @@ def test_required_inputs_present() -> None:
     assert inputs["api"]["default"] == "auto"
     assert inputs["suite"]["default"] == "standard"
     assert inputs["fail-on-risk"]["default"] == "high"
-    assert inputs["version"]["default"] == "zing-audit"
+    assert inputs["version"]["default"] == "ekte"
 
 
 def test_outputs_present() -> None:
@@ -56,14 +56,14 @@ def test_runs_is_composite_with_steps() -> None:
     uses = [s.get("uses", "") for s in steps]
     assert any(u.startswith("actions/setup-python@") for u in uses)
 
-    # The audit step is a bash step that gates on zing's exit code.
+    # The audit step is a bash step that gates on ekte's exit code.
     audit = next(s for s in steps if s.get("id") == "audit")
     assert audit["shell"] == "bash"
     assert "--compact" in audit["run"]
     assert "--fail-on-risk" in audit["run"]
     # Key is forwarded via env + env:VAR reference, never inlined.
-    assert "env:ZING_RELAY_API_KEY" in audit["run"]
-    assert "ZING_RELAY_API_KEY" in audit["env"]
+    assert "env:EKTE_RELAY_API_KEY" in audit["run"]
+    assert "EKTE_RELAY_API_KEY" in audit["env"]
 
 
 def test_api_key_never_echoed() -> None:

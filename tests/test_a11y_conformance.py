@@ -125,7 +125,7 @@ def test_cli_writes_the_report(tmp_path, monkeypatch):
 
 
 def test_shard_results_merge_into_the_results_of_one_run(tmp_path, monkeypatch):
-    """CI runs the suite as parallel shards (ZING_A11Y_SHARD); merging their
+    """CI runs the suite as parallel shards (EKTE_A11Y_SHARD); merging their
     results must give exactly what one run over every test writes."""
     monkeypatch.chdir(tmp_path)  # no a11y-llm-review.json picked up
     axe = results._merge_axe([[_rule("color-contrast", "pass", ["wcag2aa", "wcag143"])]])

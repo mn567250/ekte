@@ -1,11 +1,9 @@
 - banner:
   - link "Aller au contenu principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interface classique":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Thème":
     - option "Automatique"
     - option "Clair" [selected]
@@ -40,9 +38,9 @@
     - text: Chaque surveillance relance un audit que vous avez déjà exécuté, sur votre machine, à l’intervalle choisi. Pour en ajouter une, ouvrez une exécution dans l’
     - link "Historique":
       - /url: /v2/history
-    - text: et choisissez Planifier comme surveillance, puis définissez ici son intervalle et activez-la. Dès que le risque franchit votre seuil ou s’aggrave par rapport à la dernière fois, zing alerte vos webhooks (Slack / Feishu / DingTalk / JSON générique).
+    - text: et choisissez Planifier comme surveillance, puis définissez ici son intervalle et activez-la. Dès que le risque franchit votre seuil ou s’aggrave par rapport à la dernière fois, ekte alerte vos webhooks (Slack / Feishu / DingTalk / JSON générique).
   - status:
-    - text: Les clés API ne sont pas enregistrées Les clés saisies restent uniquement dans la mémoire de zing serve et ne sont jamais écrites sur le disque ; saisissez-les à nouveau après un redémarrage. Les références env:VAR continuent de fonctionner.
+    - text: Les clés API ne sont pas enregistrées Les clés saisies restent uniquement dans la mémoire de ekte serve et ne sont jamais écrites sur le disque ; saisissez-les à nouveau après un redémarrage. Les références env:VAR continuent de fonctionner.
     - button "Modifier"
   - group "Stockage des clés API":
     - text: Stockage des clés API
@@ -50,7 +48,7 @@
     - text: Ne pas enregistrer les clés
     - radio "Enregistrer chiffrées sur cette machine"
     - text: Enregistrer chiffrées sur cette machine
-    - paragraph: Les clés API restent dans la mémoire de zing serve et ne sont jamais écrites sur le disque ; saisissez-les à nouveau après chaque redémarrage. Utilisez env:VAR pour les surveillances qui doivent tourner sans intervention.
+    - paragraph: Les clés API restent dans la mémoire de ekte serve et ne sont jamais écrites sur le disque ; saisissez-les à nouveau après chaque redémarrage. Utilisez env:VAR pour les surveillances qui doivent tourner sans intervention.
   - region "Filtres":
     - button "Filtres" [expanded]
     - text: Rechercher
@@ -157,13 +155,13 @@
         - paragraph: Une exécution complète a pris <duration>, elle s’exécute donc au plus toutes les 5 min.
         - text: Clé API (facultatif)
         - textbox "Clé API (facultatif)":
-          - /placeholder: sk-... ou env:ZING_API_KEY
+          - /placeholder: sk-... ou env:EKTE_API_KEY
         - button "Afficher la clé"
         - paragraph: L’historique ne conserve jamais la clé. Laissez vide pour un modèle local ou auto-hébergé.
         - button "Activer la surveillance"
       - button "Exécuter maintenant"
       - button "Supprimer"
-    - paragraph: "Tout s'exécute localement. La clé API n'est pas enregistrée : elle reste uniquement dans la mémoire de zing serve et n'est jamais écrite sur le disque, affichée dans la liste des surveillances ni envoyée au navigateur. Saisissez-la à nouveau après le redémarrage de zing serve."
+    - paragraph: "Tout s'exécute localement. La clé API n'est pas enregistrée : elle reste uniquement dans la mémoire de ekte serve et n'est jamais écrite sur le disque, affichée dans la liste des surveillances ni envoyée au navigateur. Saisissez-la à nouveau après le redémarrage de ekte serve."
 - contentinfo:
   - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
-  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."
+  - paragraph: "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

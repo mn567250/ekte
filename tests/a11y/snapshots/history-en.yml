@@ -1,11 +1,9 @@
 - banner:
   - link "Skip to main content":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Classic UI":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Theme":
     - option "Auto theme"
     - option "Light" [selected]
@@ -246,7 +244,7 @@
             - definition: Sep 27, 2026, 10:02 AM
             - term: Version
             - definition:
-              - code: zing v<version>
+              - code: ekte v<version>
             - heading "Per-dimension checks 1 of 10 dimensions run" [level=3]
             - button "Protocol compliance"
             - text: Is the API spec-compliant?
@@ -275,7 +273,7 @@
             - paragraph: Checks run one after another; the slowest was context_window (<duration>).
             - button "Show all 6"
             - paragraph:
-              - text: zing provides
+              - text: ekte provides
               - strong: reproducible evidence of behavioral deviation and risk
               - text: ", not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run."
             - button "Schedule as monitor"
@@ -306,4 +304,4 @@
   - status
 - contentinfo:
   - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
-  - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."
+  - paragraph: "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

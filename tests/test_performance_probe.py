@@ -8,20 +8,20 @@ import re
 import httpx
 import pytest
 
-from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
-from zing.clients import OpenAICompatibleClient
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors.base import select_detectors
-from zing.detectors.performance import (
+from ekte.clients import OpenAICompatibleClient
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.base import select_detectors
+from ekte.detectors.performance import (
     PerformanceDetector,
     burst_size,
     estimated_calls,
     planned_probe_requests,
 )
-from zing.models import DetectorResult, Dimension, RequestRecord, Status, TargetConfig
-from zing.perf import RequestRecorder, build_performance, summarize_endpoint
-from zing.runner import run_audit
+from ekte.models import DetectorResult, Dimension, RequestRecord, Status, TargetConfig
+from ekte.perf import RequestRecorder, build_performance, summarize_endpoint
+from ekte.runner import run_audit
+from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
 
 _NONCE = re.compile(r"^Request ([0-9a-f]{16})\. ")
 
@@ -231,7 +231,7 @@ def test_reference_check_against_the_baseline():
 
 
 def test_reference_check_against_the_knowledge_base():
-    from zing.knowledge.schema import PerformanceReference
+    from ekte.knowledge.schema import PerformanceReference
 
     kb = PerformanceReference(decode_tps=(50, 120), source="test")
     recs = [_probe_rec(i, "target", 100.0) for i in range(6)]
@@ -256,7 +256,7 @@ def test_slow_but_steady_endpoint_scores_well():
     for check in ("latency_consistency", "ttft_consistency", "throughput_consistency"):
         assert by_id[f"performance.{check}"].outcome == "steady", check
     assert result.findings and max(f.severity.value == "low" for f in result.findings) is False
-    from zing.detectors.scale import Scale
+    from ekte.detectors.scale import Scale
 
     assert Scale.mean(result.findings) == 100.0
 
@@ -275,7 +275,7 @@ def test_latency_consistency_bands(tail_ms, outcome):
 
 
 def test_tail_ratio_bands():
-    from zing.detectors.performance import _tail_key, _tail_ratio
+    from ekte.detectors.performance import _tail_key, _tail_ratio
 
     assert [_tail_key(r) for r in (1.0, 1.3, 1.5, 2.0, 2.6)] == [
         "steady", "steady", "stable", "variable", "erratic",
@@ -300,10 +300,10 @@ def test_error_rate_and_load_stability():
 @pytest.fixture
 def patched_make_client(monkeypatch):
     server = UniqueReplyServer()
-    from zing.clients import make_client as real
+    from ekte.clients import make_client as real
 
     monkeypatch.setattr(
-        "zing.runner.make_client", lambda config, **_: real(config, transport=server.transport)
+        "ekte.runner.make_client", lambda config, **_: real(config, transport=server.transport)
     )
     return server
 
@@ -367,7 +367,7 @@ async def test_full_suite_measures_both_modes_interleaved(knowledge_base):
 
 
 def test_comparison_direction():
-    from zing.models import PerformanceComparison
+    from ekte.models import PerformanceComparison
 
     lat = PerformanceComparison(metric="latency_p50", unit="ms", target=900, baseline=1000, delta=-100)
     assert lat.target_better is True

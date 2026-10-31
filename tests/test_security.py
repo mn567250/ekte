@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from zing.detectors.security import SecurityDetector
-from zing.models import Severity, Status
+from ekte.detectors.security import SecurityDetector
+from ekte.models import Severity, Status
 
 
 async def test_security_flags_non_https(audit_context):

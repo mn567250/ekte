@@ -1,6 +1,6 @@
-name: "zing relay audit"
+name: "ekte relay audit"
 description: "Audit whether an LLM relay serves its claimed model (货不对板检测); fail CI when risk meets your threshold."
-author: "zing contributors"
+author: "ekte contributors"
 branding:
   icon: "shield"
   color: "purple"
@@ -12,7 +12,7 @@ inputs:
   api-key:
     description: >-
       Relay API key. Pass a caller secret (e.g. ${{ secrets.RELAY_API_KEY }}).
-      It is forwarded to zing via an environment variable and is never echoed.
+      It is forwarded to ekte via an environment variable and is never echoed.
     required: true
   model:
     description: "Model id actually sent in requests."
@@ -38,22 +38,22 @@ inputs:
     required: false
     default: "high"
   python-version:
-    description: "Python version used to install and run zing."
+    description: "Python version used to install and run ekte."
     required: false
     default: "3.12"
   version:
     description: >-
-      pip install spec for zing. Defaults to the latest published `zing-audit`.
-      Pin it for reproducible runs, e.g. `zing-audit==0.11.0`.
+      pip install spec for ekte. Defaults to the latest published `ekte`.
+      Pin it for reproducible runs, e.g. `ekte==X.Y.Z`.
     required: false
-    default: "zing-audit"
+    default: "ekte"
 
 outputs:
   risk:
-    description: "Risk level reported by zing (clean | low | medium | high | inconclusive)."
+    description: "Risk level reported by ekte (clean | low | medium | high | inconclusive)."
     value: ${{ steps.audit.outputs.risk }}
   score:
-    description: "Overall score 0-100 (may be empty if zing could not score the relay)."
+    description: "Overall score 0-100 (may be empty if ekte could not score the relay)."
     value: ${{ steps.audit.outputs.score }}
   rating:
     description: "Human-readable rating from the verdict (may be empty)."
@@ -67,26 +67,26 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Install zing
+    - name: Install ekte
       shell: bash
       run: |
         python -m pip install --upgrade pip
         pip install "${{ inputs.version }}"
 
-    - name: Run zing audit
+    - name: Run ekte audit
       id: audit
       shell: bash
       # The relay key is passed through the environment (never on the command
-      # line and never echoed). `zing check --api-key env:VAR` resolves it.
+      # line and never echoed). `ekte check --api-key env:VAR` resolves it.
       env:
-        ZING_RELAY_API_KEY: ${{ inputs.api-key }}
+        EKTE_RELAY_API_KEY: ${{ inputs.api-key }}
       run: |
         set -o pipefail
 
         args=(
           check
           --base-url "${{ inputs.base-url }}"
-          --api-key "env:ZING_RELAY_API_KEY"
+          --api-key "env:EKTE_RELAY_API_KEY"
           --model "${{ inputs.model }}"
           --api "${{ inputs.api }}"
           --suite "${{ inputs.suite }}"
@@ -100,11 +100,11 @@ runs:
           args+=(--declared-provider "${{ inputs.declared-provider }}")
         fi
 
-        # Capture the compact JSON verdict. zing exits non-zero when the gate
+        # Capture the compact JSON verdict. ekte exits non-zero when the gate
         # trips (or 2 on a config error); remember that code and re-raise it
         # after we have parsed and surfaced the verdict.
         set +e
-        report="$(zing "${args[@]}")"
+        report="$(ekte "${args[@]}")"
         code=$?
         set -e
         printf '%s\n' "$report"
@@ -114,8 +114,8 @@ runs:
         # Reads from a temp file so the JSON never reaches a shell variable that
         # could be word-split, and so the key (which is not in the report) stays
         # out of any parsing surface.
-        printf '%s' "$report" >"${RUNNER_TEMP:-/tmp}/zing-report.json"
-        python - "${RUNNER_TEMP:-/tmp}/zing-report.json" <<'PY' >>"$GITHUB_OUTPUT"
+        printf '%s' "$report" >"${RUNNER_TEMP:-/tmp}/ekte-report.json"
+        python - "${RUNNER_TEMP:-/tmp}/ekte-report.json" <<'PY' >>"$GITHUB_OUTPUT"
         import json, sys
 
         with open(sys.argv[1], encoding="utf-8") as fh:
@@ -131,7 +131,7 @@ runs:
         PY
 
         # Concise human summary on the run's Summary tab.
-        python - "${RUNNER_TEMP:-/tmp}/zing-report.json" "${{ inputs.fail-on-risk }}" "$code" <<'PY' >>"$GITHUB_STEP_SUMMARY"
+        python - "${RUNNER_TEMP:-/tmp}/ekte-report.json" "${{ inputs.fail-on-risk }}" "$code" <<'PY' >>"$GITHUB_STEP_SUMMARY"
         import json, sys
 
         with open(sys.argv[1], encoding="utf-8") as fh:
@@ -142,7 +142,7 @@ runs:
         score = v.get("score")
         score = "—" if score is None else score
         status = "FAILED" if code != "0" else "passed"
-        print("## zing relay audit")
+        print("## ekte relay audit")
         print("")
         print(f"- **Target:** `{target.get('name', '?')}` "
               f"(`{target.get('model', '?')}` @ `{target.get('base_url', '?')}`)")
@@ -155,5 +155,5 @@ runs:
             print(f"> {headline}")
         PY
 
-        # Re-raise zing's own exit code so the gate (or config error) fails the job.
+        # Re-raise ekte's own exit code so the gate (or config error) fails the job.
         exit "$code"

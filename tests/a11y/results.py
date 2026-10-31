@@ -2,7 +2,7 @@
 
 Every a11y test names the BITV 2.0 / EN 301 549 steps it decides with
 ``@pytest.mark.bitv("9.1.4.3", ...)`` (registered in pyproject.toml). With
-``ZING_A11Y_RESULTS=<path>`` set, this plugin writes, after the session, for
+``EKTE_A11Y_RESULTS=<path>`` set, this plugin writes, after the session, for
 each step the tests that ran for it with their outcome and a short failure
 summary. ``python -m tests.a11y.conformance --results <path>`` turns that into
 the conformance report shown at ``/v2/accessibility``.
@@ -45,8 +45,8 @@ import pytest
 
 from tests.a11y.bitv_map import criterion_of
 
-RESULTS_ENV = "ZING_A11Y_RESULTS"
-SCHEMA = "zing-a11y-results/1"
+RESULTS_ENV = "EKTE_A11Y_RESULTS"
+SCHEMA = "ekte-a11y-results/1"
 
 # axe best-practice rules carry no WCAG tag; these back a BITV step (the test
 # using them is marked with that step). Unlisted best-practice rules count

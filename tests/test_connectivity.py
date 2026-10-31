@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from zing.detectors.connectivity import ConnectivityDetector
-from zing.models import Dimension, Status
+from ekte.detectors.connectivity import ConnectivityDetector
+from ekte.models import Dimension, Status
 
 
 async def test_connectivity_honest_relay_passes(audit_context, mock_server):

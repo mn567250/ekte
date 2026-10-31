@@ -1,4 +1,4 @@
-"""Pure helpers of the v2 relay configuration (zing/web/static/v2/relaycfg.js),
+"""Pure helpers of the v2 relay configuration (ekte/web/static/v2/relaycfg.js),
 evaluated under node. The DOM flow itself is covered by the browser suite
 (tests/a11y/test_flows.py)."""
 
@@ -14,7 +14,7 @@ import pytest
 _JS = r"""
 global.window = {};
 require(process.argv[1]);
-const H = window.ZingRelayConfig._;
+const H = window.EkteRelayConfig._;
 const kb = [
   { provider: "openai", display_name: "OpenAI", base_urls: ["https://api.openai.com/v1"], relay: false,
     models: [{ id: "gpt-4o", aliases: [], kind: "chat" }, { id: "text-embedding-3-small", aliases: [], kind: "embedding" }] },
@@ -43,7 +43,7 @@ console.log(JSON.stringify({
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_relaycfg_helpers():
-    src = Path(__file__).resolve().parent.parent / "zing" / "web" / "static" / "v2" / "relaycfg.js"
+    src = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v2" / "relaycfg.js"
     out = json.loads(subprocess.run(["node", "-e", _JS, str(src)], capture_output=True, text=True, check=True).stdout)
     assert out["norm"] == ["https://api.anthropic.com/v1", "http://h:1/v1", "", "https://x.example/v1"]
     # providers with base URLs, then the user's relays; one without a URL is left out

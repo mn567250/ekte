@@ -1,0 +1,7 @@
+{
+ "strings": {
+  "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.": "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+  "All local: audits run from your own machine, and your API keys never leave it.": "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie.",
+  "Skip to main content": "Zum Hauptinhalt springen"
+ }
+}

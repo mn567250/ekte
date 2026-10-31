@@ -1,11 +1,9 @@
 - banner:
   - link "Aller au contenu principal":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Interface classique":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Thème":
     - option "Automatique"
     - option "Clair" [selected]
@@ -35,10 +33,10 @@
     - link "Connaissances":
       - /url: /v2/kb
 - main:
-  - heading "La base de connaissances utilisée par zing" [level=1]
+  - heading "La base de connaissances utilisée par ekte" [level=1]
   - paragraph:
-    - text: "Chaque audit compare un relais au profil du modèle qu'il annonce : fenêtre de contexte, limite de sortie, capacités, identité et empreintes comportementales. Vous trouvez ici chaque modèle, fournisseur et relais que zing connaît — ceux fournis et les vôtres — et pouvez activer ou désactiver chacun d'eux ou ajouter les vôtres. Vos modifications sont enregistrées dans kb.db sur cette machine et utilisées par l'interface web comme par"
-    - code: zing check
+    - text: "Chaque audit compare un relais au profil du modèle qu'il annonce : fenêtre de contexte, limite de sortie, capacités, identité et empreintes comportementales. Vous trouvez ici chaque modèle, fournisseur et relais que ekte connaît — ceux fournis et les vôtres — et pouvez activer ou désactiver chacun d'eux ou ajouter les vôtres. Vos modifications sont enregistrées dans kb.db sur cette machine et utilisées par l'interface web comme par"
+    - code: ekte check
     - text: .
   - status: Base de connaissances complète 130 modèles · 7 fournisseurs · 1 relais, tous activés
   - region "Filtres":
@@ -97,7 +95,7 @@
         - /placeholder: "provider: …\nmodels:\n- id: …"
       - text: Choisir un fichier .yaml
       - heading "3 Vérifier et enregistrer" [level=3]
-      - paragraph: La vérification valide le schéma et les limites, signale les expressions régulières dangereuses, liste chaque prompt que zing enverrait aux relais et montre quels identifiants de modèle seraient résolus différemment. Rien n’est enregistré avant que vous n’enregistriez.
+      - paragraph: La vérification valide le schéma et les limites, signale les expressions régulières dangereuses, liste chaque prompt que ekte enverrait aux relais et montre quels identifiants de modèle seraient résolus différemment. Rien n’est enregistré avant que vous n’enregistriez.
       - button "Contrôle"
       - button "Enregistrer dans la base" [disabled]
     - group:
@@ -123,4 +121,4 @@
     # … more items of the same shape
 - contentinfo:
   - paragraph: "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais."
-  - paragraph: "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."
+  - paragraph: "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."

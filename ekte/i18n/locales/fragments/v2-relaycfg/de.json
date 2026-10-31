@@ -1,0 +1,32 @@
+{
+ "strings": {
+  "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. ekte führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.",
+  "← Pick from the list": "← Aus der Liste wählen",
+  "Enter manually": "Manuell eingeben",
+  "Select a relay or provider…": "Relay oder Anbieter wählen…",
+  "Providers": "Anbieter",
+  "Your relays": "Deine Relays",
+  "Other (enter the URL)": "Andere (URL eingeben)",
+  "Select a model…": "Modell wählen…",
+  "(not listed by the relay)": "(vom Relay nicht gelistet)",
+  "Refresh models": "Modelle neu laden",
+  "Listing the relay's models…": "Modelle des Relays werden abgerufen…",
+  "Models listed by the relay: {n}": "Vom Relay gelistete Modelle: {n}",
+  "The relay lists no models — enter the model manually.": "Das Relay listet keine Modelle – gib das Modell manuell ein.",
+  "Enter the API key to list the models (HTTP {code}).": "Gib den API-Schlüssel ein, um die Modelle aufzulisten (HTTP {code}).",
+  "Could not list the models: ": "Modelle konnten nicht abgerufen werden: ",
+  "Select a relay or enter its URL, and ekte lists its models.": "Wähle ein Relay oder gib seine URL ein, dann listet ekte seine Modelle auf.",
+  "Same as the model to request": "Wie das angefragte Modell",
+  "(not in the knowledge base)": "(nicht in der Wissensbasis)",
+  "Model profile: {p}": "Modellprofil: {p}",
+  "Closest profile: {p} — select it above if it is right.": "Nächstliegendes Profil: {p} – wähle es oben aus, wenn es stimmt.",
+  "This model is not in the knowledge base: the audit runs without a model profile.": "Dieses Modell ist nicht in der Wissensbasis: Die Prüfung läuft ohne Modellprofil.",
+  "Selecting one fills in its URL; for any other relay choose “Other” and enter the URL.": "Die Auswahl füllt die URL aus; für jedes andere Relay wähle „Andere“ und gib die URL ein.",
+  "Name of the relay": "Name des Relays",
+  "Enter a name for the relay.": "Gib einen Namen für das Relay ein.",
+  "Could not save: ": "Speichern fehlgeschlagen: ",
+  "Saved “{name}” to the knowledge base.": "„{name}“ in der Wissensbasis gespeichert.",
+  "Relay": "Relay",
+  "Saved relay: the base URL is filled in on the Audit and Tools pages.": "Gespeichertes Relay: Die Basis-URL wird auf den Seiten Prüfung und Werkzeuge ausgefüllt."
+ }
+}

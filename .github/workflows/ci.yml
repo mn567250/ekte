@@ -34,10 +34,10 @@ jobs:
         run: python -m pip install --upgrade pip && pip install -e '.[dev,web]'
 
       - name: Lint (ruff)
-        run: ruff check zing tests
+        run: ruff check ekte tests
 
       - name: Type-check (mypy)
-        run: mypy zing
+        run: mypy ekte
 
       - name: Test (pytest)
         # pytest-xdist (dev extra): one worker per CPU
@@ -88,8 +88,8 @@ jobs:
     # continue-on-error keeps known violations from failing the run. Drop it
     # (and make the check required) once the suite is green.
     # Parallel jobs from a11y-scope's matrix: a full run is 4 round-robin
-    # shards (ZING_A11Y_SHARD, tests/a11y/conftest.py); a partial run selects
-    # its pages (ZING_A11Y_PAGES) and shares them out over 1-4 jobs by their
+    # shards (EKTE_A11Y_SHARD, tests/a11y/conftest.py); a partial run selects
+    # its pages (EKTE_A11Y_PAGES) and shares them out over 1-4 jobs by their
     # weight (tests/a11y/pages.py). a11y-report merges the results.
     name: accessibility ${{ matrix.shard }}${{ matrix.pages != 'all' && format(' {0}', matrix.pages) || '' }} (informational)
     needs: a11y-scope
@@ -127,12 +127,12 @@ jobs:
         run: playwright install --with-deps chromium
       - name: Test (pytest -m a11y, pages ${{ matrix.pages }}, shard ${{ matrix.shard }})
         env:
-          ZING_A11Y_PAGES: ${{ matrix.pages }}
-          ZING_A11Y_SHARD: ${{ matrix.shard }}
+          EKTE_A11Y_PAGES: ${{ matrix.pages }}
+          EKTE_A11Y_SHARD: ${{ matrix.shard }}
           # per-step results for the BITV conformance report (tests/a11y/results.py)
-          ZING_A11Y_RESULTS: a11y-results-${{ strategy.job-index }}.json
+          EKTE_A11Y_RESULTS: a11y-results-${{ strategy.job-index }}.json
           # findings, one file per xdist worker (tests/a11y/harness.py)
-          ZING_A11Y_REPORT: a11y-report-${{ strategy.job-index }}.json
+          EKTE_A11Y_REPORT: a11y-report-${{ strategy.job-index }}.json
         run: pytest tests/a11y -m a11y -n auto --dist worksteal -q -p no:cacheprovider
       - name: Upload shard results
         if: always()
@@ -246,5 +246,5 @@ jobs:
         run: |
           python -m venv /tmp/verify
           /tmp/verify/bin/pip install dist/*.whl
-          /tmp/verify/bin/zing --version
-          /tmp/verify/bin/zing kb >/dev/null
+          /tmp/verify/bin/ekte --version
+          /tmp/verify/bin/ekte kb >/dev/null

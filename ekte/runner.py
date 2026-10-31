@@ -1,0 +1,310 @@
+"""Audit orchestration: wire up context, run detectors, assemble the report.
+
+Detectors run sequentially against a single endpoint on purpose — concurrent
+hammering would trip rate limits and confound the latency/streaming timing
+measurements. The reliability detector does its own bounded concurrency
+internally.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Callable
+from contextlib import AsyncExitStack, suppress
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+import ekte.detectors  # noqa: F401  -- populates the detector REGISTRY
+from ekte import __version__, prompts
+from ekte.clients import Client, detect_api, make_client
+from ekte.config import SURFACE_OPS, AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.base import run_detector, select_detectors
+from ekte.detectors.performance import planned_probe_requests, probe_modes, stream_mode
+from ekte.judge import Judge
+from ekte.knowledge import ResolvedProfile, load_knowledge_base
+from ekte.knowledge.snapshot import knowledge_usage, resolved_from_snapshot
+from ekte.models import (
+    AuditReport,
+    DetectorResult,
+    Dimension,
+    KnowledgeUsage,
+    RedactedTarget,
+    ReliabilitySummary,
+    TargetConfig,
+)
+from ekte.perf import RequestRecorder, build_performance, detector_scope
+from ekte.perf.trend import RunningMedian
+from ekte.scoring import build_dimensions, build_verdict
+from ekte.utils.redact import fingerprint_secret
+
+
+def _redact(config: TargetConfig) -> RedactedTarget:
+    return RedactedTarget(
+        name=config.name,
+        kind=config.kind,
+        base_url=config.base_url,
+        model=config.model,
+        claimed_model=config.claimed_model,
+        declared_provider=config.declared_provider,
+        api_key_fingerprint=fingerprint_secret(config.api_key),
+        api=detect_api(config),
+        api_auto=(config.api or "auto").lower() == "auto",
+    )
+
+
+def _event_findings(result: DetectorResult) -> list[dict[str, Any]]:
+    """Compact, size-bounded findings for a live progress event (evidence trimmed)."""
+    out: list[dict[str, Any]] = []
+    for f in result.findings:
+        ev: dict[str, Any] = {}
+        for k, v in list(f.evidence.items())[:8]:
+            s: Any = v if isinstance(v, (int, float, bool)) or v is None else str(v)
+            if isinstance(s, str) and len(s) > 240:
+                s = s[:237] + "…"
+            ev[k] = s
+        out.append(
+            {
+                "id": f.id,
+                "title": f.title,
+                "status": f.status.value,
+                "severity": f.severity.value,
+                "summary": f.summary,
+                "recommendation": f.recommendation,
+                "evidence": ev,
+            }
+        )
+    return out
+
+
+def _prompt_languages(detectors: list[DetectorResult]) -> list[str]:
+    """Languages of everything sent to the endpoint: the prompt library's plus
+    those of the language-bound fingerprints that actually ran."""
+    langs = {prompts.PROBE_LANG}
+    for det in detectors:
+        langs.update(det.evidence.get("fingerprint_prompt_langs") or [])
+    return sorted(langs)
+
+
+def _extract_reliability(detectors: list[DetectorResult]) -> ReliabilitySummary | None:
+    for det in detectors:
+        if det.dimension == Dimension.RELIABILITY:
+            payload = det.evidence.get("reliability")
+            if isinstance(payload, dict):
+                try:
+                    return ReliabilitySummary(**payload)
+                except Exception:
+                    return None
+    return None
+
+
+def _fit_client(client: Client, profile: ResolvedProfile | None) -> None:
+    """Tell a client what its endpoint's model is known to need: room to think
+    on short probes (a reasoning model), and the request parameters it refuses
+    (``unsupported_params``, left out or renamed by the client)."""
+    model = profile.model if profile is not None else None
+    client.reasoning_room = bool(model and model.reasoning)
+    client.unsupported_params = set(model.unsupported_params) if model else set()
+
+
+async def run_audit(
+    target: TargetConfig,
+    options: AuditOptions,
+    *,
+    baseline: TargetConfig | None = None,
+    judge_target: TargetConfig | None = None,
+    mode: str = "check",
+    command: str | None = None,
+    kb_dirs: list[Path] | None = None,
+    use_user_kb: bool | None = None,
+    pinned: KnowledgeUsage | None = None,
+    previous_report: dict[str, Any] | None = None,
+    on_event: Callable[[dict[str, Any]], None] | None = None,
+) -> AuditReport:
+    """Run one audit.
+
+    ``use_user_kb`` includes/excludes the user's kb.db entries (default: unless
+    ``EKTE_NO_USER_KB``). ``pinned`` audits against a fixed profile snapshot
+    (a watch's) instead of resolving the live knowledge base.
+    ``previous_report`` is the last saved report of the same target and claimed
+    model, for checks that compare across runs (embedding vector drift).
+    """
+    # YAML + kb.db reads (a deep copy even when cached): off the event loop,
+    # which timestamps the streamed chunks.
+    kb = await asyncio.to_thread(load_knowledge_base, kb_dirs, include_user=use_user_kb)
+    profile: ResolvedProfile | None = None
+    stale_pin: str | None = None
+    if pinned is not None and pinned.profile:
+        try:
+            profile = resolved_from_snapshot(pinned.profile, pinned.match_confidence)
+        except Exception as exc:  # e.g. the schema changed since the snapshot was taken
+            stale_pin = f"pinned profile no longer valid, using the live knowledge base: {str(exc).splitlines()[0]}"
+    if profile is not None and pinned is not None:
+        knowledge = pinned.model_copy(update={"pinned": True, "warnings": list(kb.warnings)})
+    else:
+        # Resolve against the CLAIMED model (defaults to the requested model id), so an
+        # endpoint serving model X can be audited against the profile it's sold as.
+        profile = kb.resolve(target.claimed, target.declared_provider)
+        knowledge = knowledge_usage(kb, profile, target.claimed)
+        if stale_pin:
+            knowledge.warnings.append(stale_pin)
+
+    def _emit(event: dict[str, Any]) -> None:
+        if on_event is not None:
+            # a progress sink must never break the audit
+            with suppress(Exception):
+                on_event(event)
+
+    # Every target/baseline call is logged for the performance section and
+    # streamed as a live progress event.
+    # Each streamed record carries its running medians (the live chart's
+    # trend line), so the browser only draws.
+    trend = RunningMedian()
+    recorder = RequestRecorder(
+        profile.model.tokenizer if profile and profile.model.tokenizer else None,
+        on_record=lambda rec: _emit({"type": "request_done", "record": trend.tag(rec.model_dump())}),
+    )
+
+    # Only chat completions stream; the other surfaces' requests do not.
+    request_mode = "non_stream" if options.surface != "chat" else stream_mode(options)
+
+    async with AsyncExitStack() as stack:
+        client = await stack.enter_async_context(make_client(target))
+        client.recorder, client.endpoint = recorder, "target"
+        _fit_client(client, profile)
+
+        baseline_client = None
+        if baseline is not None:
+            baseline_client = await stack.enter_async_context(make_client(baseline))
+            baseline_client.recorder, baseline_client.endpoint = recorder, "baseline"
+            # The baseline may be another model (--baseline-model): its own profile.
+            if baseline.claimed == target.claimed:
+                _fit_client(baseline_client, profile)
+            else:
+                _fit_client(
+                    baseline_client,
+                    kb.resolve(baseline.claimed, baseline.declared_provider),
+                )
+
+        judge = None
+        if options.judge:
+            jt = judge_target or baseline
+            if jt is not None:
+                judge_client = await stack.enter_async_context(make_client(jt))
+                _fit_client(judge_client, kb.resolve(jt.claimed, jt.declared_provider))
+                judge = Judge(judge_client, jt.model)
+
+        ctx = AuditContext(
+            target=target,
+            client=client,
+            options=options,
+            kb=kb,
+            profile=profile,
+            baseline=baseline,
+            baseline_client=baseline_client,
+            judge=judge,
+            recorder=recorder,
+            previous_report=previous_report,
+        )
+
+        detectors = select_detectors(
+            options.suite,
+            has_judge=judge is not None,
+            has_baseline=baseline_client is not None,
+            enabled=options.enabled,
+            dimensions=options.dimensions,
+            surface=options.surface,
+        )
+        total = len(detectors)
+        has_baseline = baseline_client is not None
+        # Target probe requests across all modes, for the live progress bar.
+        probe_planned = planned_probe_requests(options, has_baseline=has_baseline)
+        if any(d.id == "performance" for d in detectors):
+            probe_planned *= len(probe_modes(options))
+        elif any(d.id == "performance.embed" for d in detectors):
+            probe_planned *= 2  # a single-input and a batch request per round
+        elif any(d.id == "performance.rerank" for d in detectors):
+            probe_planned *= 2  # a 4- and a 32-document request per round
+        else:
+            probe_planned = 0
+        _emit({"type": "start", "total": total, "suite": options.suite,
+               "dimensions": list(options.dimensions), "mode": mode,
+               "target": target.name, "claimed_model": target.claimed,
+               "has_baseline": has_baseline, "probe_requests": probe_planned,
+               "api": detect_api(target), "stream_mode": request_mode})
+        results: list[DetectorResult] = []
+        for i, detector in enumerate(detectors):
+            _emit({"type": "detector_start", "index": i, "total": total,
+                   "id": detector.id, "name": detector.name, "dimension": detector.dimension.value})
+            with detector_scope(detector.id):
+                res = await run_detector(detector, ctx)
+            results.append(res)
+            _emit({"type": "detector_done", "index": i, "total": total,
+                   "id": res.id, "name": res.name, "dimension": res.dimension.value,
+                   "status": res.status.value, "score": res.score,
+                   "duration_ms": res.duration_ms, "findings": _event_findings(res)})
+
+    reliability = _extract_reliability(results)
+    performance = build_performance(
+        recorder.records,
+        tokenizer=recorder.tokenizer,
+        has_baseline=baseline is not None,
+        # Only chat probes have an output budget; embedding and rerank calls return no tokens.
+        probe_max_tokens=options.performance_max_tokens if options.surface == "chat" else None,
+        concurrency=options.reliability_concurrency,
+        op=SURFACE_OPS[options.surface],
+    )
+    selected = list(options.dimensions) if options.suite == "custom" else None
+    dimensions = build_dimensions(results, reliability, selected=selected, surface=options.surface)
+    verdict = build_verdict(
+        results,
+        dimensions,
+        profile_matched=profile is not None,
+        used_judge=judge is not None,
+        used_baseline=baseline_client is not None,
+        selected=selected,
+        match_confidence=profile.match_confidence if profile is not None else None,
+        surface=options.surface,
+    )
+
+    warnings = [
+        f"{d.id}: {d.error}" for d in results if d.error
+    ]
+    notes = [
+        "ekte performs black-box auditing: it gathers reproducible evidence of "
+        "behavioral divergence, not cryptographic proof of model identity.",
+        "Use `ekte compare` against a trusted baseline of the same declared model "
+        "for the strongest downgrade evidence.",
+        "Do not publish a report that names a vendor without reviewing sample size, "
+        "cost, and local law/policy.",
+    ]
+
+    judge_endpoint = judge_target or baseline
+    return AuditReport(
+        tool_version=__version__,
+        mode=mode,
+        generated_at=datetime.now(timezone.utc).isoformat(),
+        started_at=recorder.started_at.isoformat(),
+        command=command,
+        suite=options.suite,
+        surface=options.surface,
+        embedding_dimensions=(
+            max(0, options.embedding_dimensions) if options.surface == "embedding" else 0
+        ),
+        dimensions_selected=selected,
+        stream_mode=request_mode,
+        target=_redact(target),
+        baseline=_redact(baseline) if baseline else None,
+        verdict=verdict,
+        dimensions=dimensions,
+        detectors=results,
+        reliability=reliability,
+        performance=performance,
+        judge_used=judge is not None,
+        judge_model=judge_endpoint.model if (options.judge and judge_endpoint is not None) else None,
+        notes=notes,
+        warnings=warnings,
+        prompt_languages=_prompt_languages(results),
+        knowledge=knowledge,
+    )

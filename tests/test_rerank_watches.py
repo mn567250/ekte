@@ -11,7 +11,7 @@ import pytest
 pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from zing.web.server import create_app  # noqa: E402
+from ekte.web.server import create_app  # noqa: E402
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "web_report.json"
 _URL = "http://127.0.0.1:9099/v1"
@@ -31,10 +31,10 @@ def client():
 
 
 async def test_scheduler_runs_a_rerank_watch_with_the_previous_rerank_run(tmp_path, monkeypatch):
-    from zing.models import AuditReport
-    from zing.web import history, server, watches
+    from ekte.models import AuditReport
+    from ekte.web import history, server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     # Newer chat and embedding runs of the same target must be neither the
     # drift nor the alert reference.
     prev_id = history.save(_report(surface="rerank", generated_at="2026-01-01T00:00:00Z"))
@@ -54,7 +54,7 @@ async def test_scheduler_runs_a_rerank_watch_with_the_previous_rerank_run(tmp_pa
         return True
 
     monkeypatch.setattr(server, "run_audit", fake_run_audit)
-    monkeypatch.setattr("zing.notify.send", fake_send)
+    monkeypatch.setattr("ekte.notify.send", fake_send)
     # A stray claimed vector length means nothing to a rerank watch.
     cfg = {
         "base_url": _URL, "api_key": "sk-x", "model": _MODEL, "suite": "deep",
@@ -80,10 +80,10 @@ async def test_scheduler_runs_a_rerank_watch_with_the_previous_rerank_run(tmp_pa
 
 
 async def test_first_rerank_watch_run_has_no_drift_reference(tmp_path, monkeypatch):
-    from zing.models import AuditReport
-    from zing.web import history, server, watches
+    from ekte.models import AuditReport
+    from ekte.web import history, server, watches
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     history.save(_report(surface="embedding"))
     history.save(_report())
     seen: dict = {}
@@ -99,7 +99,7 @@ async def test_first_rerank_watch_run_has_no_drift_reference(tmp_path, monkeypat
 
 
 def test_create_and_edit_a_rerank_watch(tmp_path, monkeypatch, client):
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     body = {"base_url": _URL, "model": _MODEL, "surface": "rerank", "embedding_dimensions": 512,
             "performance_streaming": False}
     r = client.post("/api/watches", json=body)
@@ -116,9 +116,9 @@ def test_create_and_edit_a_rerank_watch(tmp_path, monkeypatch, client):
 
 
 def test_monitor_this_from_a_rerank_run(tmp_path, monkeypatch, client):
-    from zing.web import history
+    from ekte.web import history
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     rid = history.save(_report(surface="rerank", suite="deep", stream_mode="non_stream"))
     # a claimed vector length sent along is dropped: it is an embedding setting
     r = client.post(f"/api/watches/from-history/{rid}", json={"embedding_dimensions": 768})
@@ -131,9 +131,9 @@ def test_monitor_this_from_a_rerank_run(tmp_path, monkeypatch, client):
 
 
 def test_monitor_this_refuses_a_run_of_an_unknown_surface(tmp_path, monkeypatch, client):
-    from zing.web import history
+    from ekte.web import history
 
-    monkeypatch.setenv("ZING_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     rid = history.save(_report(surface="hologram"))
     r = client.post(f"/api/watches/from-history/{rid}", json={})
     assert r.status_code == 400 and "surface" in r.json()["error"]

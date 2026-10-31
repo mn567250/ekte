@@ -1,11 +1,9 @@
 - banner:
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Klassische Oberfläche":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Design":
     - option "Automatisch"
     - option "Hell" [selected]
@@ -40,9 +38,9 @@
     - text: Jede Überwachung wiederholt ein bereits ausgeführtes Audit auf Ihrem Rechner im festgelegten Intervall. Zum Hinzufügen öffnen Sie einen Lauf im
     - link "Verlauf":
       - /url: /v2/history
-    - text: und wählen Als Überwachung einplanen — legen Sie dann hier das Intervall fest und schalten Sie sie ein. Überschreitet das Risiko Ihre Schwelle oder wird es schlechter als beim letzten Mal, alarmiert zing Ihre Webhooks (Slack / Feishu / DingTalk / generisches JSON).
+    - text: und wählen Als Überwachung einplanen — legen Sie dann hier das Intervall fest und schalten Sie sie ein. Überschreitet das Risiko Ihre Schwelle oder wird es schlechter als beim letzten Mal, alarmiert ekte Ihre Webhooks (Slack / Feishu / DingTalk / generisches JSON).
   - status:
-    - text: API-Schlüssel werden nicht gespeichert Eingegebene Schlüssel bleiben nur im Arbeitsspeicher von zing serve und werden nie auf die Festplatte geschrieben; geben Sie sie nach einem Neustart erneut ein. env:VAR-Verweise funktionieren weiterhin.
+    - text: API-Schlüssel werden nicht gespeichert Eingegebene Schlüssel bleiben nur im Arbeitsspeicher von ekte serve und werden nie auf die Festplatte geschrieben; geben Sie sie nach einem Neustart erneut ein. env:VAR-Verweise funktionieren weiterhin.
     - button "Ändern"
   - group "Speicherung der API-Schlüssel":
     - text: Speicherung der API-Schlüssel
@@ -50,7 +48,7 @@
     - text: Schlüssel nicht speichern
     - radio "Verschlüsselt auf diesem Rechner speichern"
     - text: Verschlüsselt auf diesem Rechner speichern
-    - paragraph: API-Schlüssel bleiben im Arbeitsspeicher von zing serve und werden nie auf die Festplatte geschrieben; geben Sie sie nach jedem Neustart erneut ein. Nutzen Sie env:VAR für Überwachungen, die unbeaufsichtigt laufen müssen.
+    - paragraph: API-Schlüssel bleiben im Arbeitsspeicher von ekte serve und werden nie auf die Festplatte geschrieben; geben Sie sie nach jedem Neustart erneut ein. Nutzen Sie env:VAR für Überwachungen, die unbeaufsichtigt laufen müssen.
   - region "Filter":
     - button "Filter" [expanded]
     - text: Suche
@@ -157,13 +155,13 @@
         - paragraph: Ein vollständiger Lauf dauerte <duration>, daher läuft sie höchstens alle 5 Min..
         - text: API-Schlüssel (optional)
         - textbox "API-Schlüssel (optional)":
-          - /placeholder: sk-... oder env:ZING_API_KEY
+          - /placeholder: sk-... oder env:EKTE_API_KEY
         - button "Schlüssel anzeigen"
         - paragraph: Der Verlauf speichert den Schlüssel nie. Für lokale oder selbst gehostete Modelle leer lassen.
         - button "Überwachung aktivieren"
       - button "Jetzt ausführen"
       - button "Löschen"
-    - paragraph: "Alles läuft lokal. Der API-Schlüssel wird nicht gespeichert: Er bleibt nur im Arbeitsspeicher von zing serve und wird nie auf die Festplatte geschrieben, in der Überwachungsliste angezeigt oder an den Browser gesendet. Geben Sie ihn nach einem Neustart von zing serve erneut ein."
+    - paragraph: "Alles läuft lokal. Der API-Schlüssel wird nicht gespeichert: Er bleibt nur im Arbeitsspeicher von ekte serve und wird nie auf die Festplatte geschrieben, in der Überwachungsliste angezeigt oder an den Browser gesendet. Geben Sie ihn nach einem Neustart von ekte serve erneut ein."
 - contentinfo:
   - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
-  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
+  - paragraph: "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

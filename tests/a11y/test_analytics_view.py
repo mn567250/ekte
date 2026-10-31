@@ -34,7 +34,7 @@ def _open(open_page: Any, fragment: str = "", init: str = "", clipboard: bool = 
     if clipboard:
         ctx.grant_permissions(["clipboard-read", "clipboard-write"], origin=base)
     ctx.add_init_script(
-        "try { localStorage.setItem('zing.lang', 'en'); localStorage.setItem('zing.v2.theme', 'light'); } catch (e) {}" + init
+        "try { localStorage.setItem('ekte.lang', 'en'); localStorage.setItem('ekte.v2.theme', 'light'); } catch (e) {}" + init
     )
     ctx.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
     if route:
@@ -264,7 +264,7 @@ def test_changing_a_panel_option_keeps_the_scroll_position(open_page) -> None:
     # the scroll position at the moment each chart is drawn: Chromium restores
     # a clamped one afterwards (scroll anchoring), Safari keeps it
     page.evaluate(
-        "() => { window.__at = []; const C = window.ZingCharts, draw = C.heatmap;"
+        "() => { window.__at = []; const C = window.EkteCharts, draw = C.heatmap;"
         " C.heatmap = function (host, cfg) { window.__at.push(scrollY); return draw(host, cfg); }; }"
     )
     issues: list[str] = []

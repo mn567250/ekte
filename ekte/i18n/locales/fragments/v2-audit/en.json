@@ -1,0 +1,28 @@
+{
+ "strings": {
+  "API key": "API key",
+  "Audit progress": "Audit progress",
+  "Audits": "Audits",
+  "Baseline API key": "Baseline API key",
+  "Baseline URL": "Baseline URL",
+  "Cancel": "Cancel",
+  "Checks": "Checks",
+  "Compare against a trusted baseline": "Compare against a trusted baseline",
+  "Configure": "Configure",
+  "Empty = same as model to request": "Empty = same as model to request",
+  "Live evidence": "Live evidence",
+  "Model to request": "Model to request",
+  "New audit": "New audit",
+  "No audits are running": "No audits are running",
+  "On": "On",
+  "Only if the relay sells it under another name — ekte checks the answers against this model.": "Only if the relay sells it under another name — ekte checks the answers against this model.",
+  "Please enter the relay URL and the model to request.": "Please enter the relay URL and the model to request.",
+  "Relay URL": "Relay URL",
+  "Report": "Report",
+  "Responses": "Responses",
+  "Running": "Running",
+  "To compare, enter both the baseline URL and the baseline model.": "To compare, enter both the baseline URL and the baseline model.",
+  "{n} of {total} checks done": "{n} of {total} checks done",
+  "Baseline relay / provider": "Baseline relay / provider"
+ }
+}

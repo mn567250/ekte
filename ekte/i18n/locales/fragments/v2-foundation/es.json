@@ -1,0 +1,20 @@
+{
+ "strings": {
+  "Audit": "Auditoría",
+  "Console": "Consola",
+  "Classic UI": "Interfaz clásica",
+  "Try the new UI": "Probar la nueva interfaz",
+  "Main navigation": "Navegación principal",
+  "Relay <span class='u'>bait-and-switch</span> test bench": "Banco de pruebas de <span class='u'>gato por liebre</span> en intermediarios",
+  "This page of the new UI is still being built. Meanwhile, use the <a href=\"?ui=v1\">classic page</a>.": "Esta página de la nueva interfaz aún está en construcción. Mientras tanto, use la <a href=\"?ui=v1\">página clásica</a>.",
+  "ekte — tools": "ekte — herramientas",
+  "ekte.console — relay reality check": "ekte.console — verificación de intermediarios",
+  "Theme": "Tema",
+  "Auto theme": "Automático",
+  "Light": "Claro",
+  "Dark": "Oscuro",
+  "Motion": "Animación",
+  "Motion on": "Animación activada",
+  "Motion off": "Animación desactivada"
+ }
+}

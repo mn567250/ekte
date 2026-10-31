@@ -41,7 +41,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — accessibility",
+    "title": "ekte — accessibility",
     "lang": "en",
     "headings": [
      [
@@ -103,7 +103,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -136,7 +136,7 @@
      },
      {
       "name": "report an accessibility issue on GitHub",
-      "href": "https://github.com/cenbonew/zing/issues",
+      "href": "https://github.com/mn567250/ekte/issues",
       "context": "Did you find a barrier, or is something hard to use with assistive technology? Please tell us: report an accessibility issue on GitHub"
      }
     ],
@@ -552,7 +552,7 @@
      "How it is tested: Status areas are live regions. Whether each status change is announced is judged by a person.",
      "Automated tests: 21 run, 21 passed, 0 failed, 0 skipped",
      "test_analytics_filter_panel_disclosure test_audit_flow test_copy_link_announces_it test_copy_link_falls_back_to_a_selected_field test_failing_audit_flow test_filter_panel_disclosure test_kb_flow test_monitor_flow test_show_more_by_keyboard test_sort_buttons test_surface_flow",
-     "Web UI v2 of zing is partially conformant with BITV 2.0, EN 301 549 and WCAG 2.1 level AA.",
+     "Web UI v2 of ekte is partially conformant with BITV 2.0, EN 301 549 and WCAG 2.1 level AA.",
      "The automated part of these steps passes; the rest still needs a manual review:",
      "9.1.1.1 Non-text Content",
      "9.1.3.1 Info and Relationships",
@@ -582,7 +582,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — Barrierefreiheit",
+    "title": "ekte — Barrierefreiheit",
     "lang": "de",
     "headings": [
      [
@@ -644,7 +644,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -677,7 +677,7 @@
      },
      {
       "name": "Barriere auf GitHub melden",
-      "href": "https://github.com/cenbonew/zing/issues",
+      "href": "https://github.com/mn567250/ekte/issues",
       "context": "Sind Sie auf eine Barriere gestoßen oder ist etwas mit assistiven Technologien schwer zu bedienen? Bitte sagen Sie es uns: Barriere auf GitHub melden"
      }
     ],
@@ -1094,7 +1094,7 @@
      "Wie geprüft wird: Statusbereiche sind Live-Regionen. Ob jede Statusänderung angesagt wird, beurteilt ein Mensch.",
      "Automatisierte Tests: 21 ausgeführt, 21 bestanden, 0 fehlgeschlagen, 0 übersprungen",
      "test_analytics_filter_panel_disclosure test_audit_flow test_copy_link_announces_it test_copy_link_falls_back_to_a_selected_field test_failing_audit_flow test_filter_panel_disclosure test_kb_flow test_monitor_flow test_show_more_by_keyboard test_sort_buttons test_surface_flow",
-     "Die Web-Oberfläche v2 von zing ist mit BITV 2.0, EN 301 549 und WCAG 2.1 Stufe AA teilweise vereinbar.",
+     "Die Web-Oberfläche v2 von ekte ist mit BITV 2.0, EN 301 549 und WCAG 2.1 Stufe AA teilweise vereinbar.",
      "Der automatisierte Teil dieser Schritte ist bestanden; der Rest braucht noch eine manuelle Prüfung:",
      "9.1.1.1 Nicht-Text-Inhalt",
      "9.1.3.1 Info und Beziehungen",
@@ -1123,7 +1123,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — accesibilidad",
+    "title": "ekte — accesibilidad",
     "lang": "es",
     "headings": [
      [
@@ -1185,7 +1185,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -1218,7 +1218,7 @@
      },
      {
       "name": "informar de un problema de accesibilidad en GitHub",
-      "href": "https://github.com/cenbonew/zing/issues",
+      "href": "https://github.com/mn567250/ekte/issues",
       "context": "¿Ha encontrado una barrera o algo es difícil de usar con tecnologías de apoyo? Díganoslo: informar de un problema de accesibilidad en GitHub"
      }
     ],
@@ -1635,7 +1635,7 @@
      "Cómo se prueba: Las zonas de estado son regiones activas. Si cada cambio de estado se anuncia lo juzga una persona.",
      "Pruebas automatizadas: 21 ejecutadas, 21 superadas, 0 fallidas, 0 omitidas",
      "test_analytics_filter_panel_disclosure test_audit_flow test_copy_link_announces_it test_copy_link_falls_back_to_a_selected_field test_failing_audit_flow test_filter_panel_disclosure test_kb_flow test_monitor_flow test_show_more_by_keyboard test_sort_buttons test_surface_flow",
-     "La interfaz web v2 de zing es parcialmente conforme con BITV 2.0, EN 301 549 y WCAG 2.1 nivel AA.",
+     "La interfaz web v2 de ekte es parcialmente conforme con BITV 2.0, EN 301 549 y WCAG 2.1 nivel AA.",
      "La parte automatizada de estos pasos se supera; el resto aún necesita una revisión manual:",
      "9.1.1.1 Contenido no textual",
      "9.1.3.1 Información y relaciones",
@@ -1664,7 +1664,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — accessibilité",
+    "title": "ekte — accessibilité",
     "lang": "fr",
     "headings": [
      [
@@ -1726,7 +1726,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -1759,7 +1759,7 @@
      },
      {
       "name": "signaler un problème d'accessibilité sur GitHub",
-      "href": "https://github.com/cenbonew/zing/issues",
+      "href": "https://github.com/mn567250/ekte/issues",
       "context": "Vous avez trouvé un obstacle, ou quelque chose est difficile à utiliser avec une technologie d'assistance ? Dites-le-nous : signaler un problème d'accessibilité sur GitHub"
      }
     ],
@@ -2176,7 +2176,7 @@
      "Comment c'est testé : Les zones d'état sont des régions actives. L'annonce de chaque changement d'état est jugée par une personne.",
      "Tests automatisés : 21 exécutés, 21 réussis, 0 échoués, 0 ignorés",
      "test_analytics_filter_panel_disclosure test_audit_flow test_copy_link_announces_it test_copy_link_falls_back_to_a_selected_field test_failing_audit_flow test_filter_panel_disclosure test_kb_flow test_monitor_flow test_show_more_by_keyboard test_sort_buttons test_surface_flow",
-     "L'interface web v2 de zing est partiellement conforme au BITV 2.0, à l'EN 301 549 et aux WCAG 2.1 niveau AA.",
+     "L'interface web v2 de ekte est partiellement conforme au BITV 2.0, à l'EN 301 549 et aux WCAG 2.1 niveau AA.",
      "La partie automatisée de ces étapes est réussie ; le reste nécessite encore une revue manuelle :",
      "9.1.1.1 Contenu non textuel",
      "9.1.3.1 Information et relations",
@@ -2205,7 +2205,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — accessibilità",
+    "title": "ekte — accessibilità",
     "lang": "it",
     "headings": [
      [
@@ -2267,7 +2267,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -2300,7 +2300,7 @@
      },
      {
       "name": "segnala un problema di accessibilità su GitHub",
-      "href": "https://github.com/cenbonew/zing/issues",
+      "href": "https://github.com/mn567250/ekte/issues",
       "context": "Hai trovato una barriera o qualcosa è difficile da usare con le tecnologie assistive? Segnalacelo: segnala un problema di accessibilità su GitHub"
      }
     ],
@@ -2717,7 +2717,7 @@
      "Come viene verificato: Le aree di stato sono regioni live. Se ogni cambio di stato viene annunciato lo giudica una persona.",
      "Test automatici: 21 eseguiti, 21 superati, 0 falliti, 0 saltati",
      "test_analytics_filter_panel_disclosure test_audit_flow test_copy_link_announces_it test_copy_link_falls_back_to_a_selected_field test_failing_audit_flow test_filter_panel_disclosure test_kb_flow test_monitor_flow test_show_more_by_keyboard test_sort_buttons test_surface_flow",
-     "L'interfaccia web v2 di zing è parzialmente conforme a BITV 2.0, EN 301 549 e WCAG 2.1 livello AA.",
+     "L'interfaccia web v2 di ekte è parzialmente conforme a BITV 2.0, EN 301 549 e WCAG 2.1 livello AA.",
      "La parte automatica di questi passi è superata; il resto richiede ancora una revisione manuale:",
      "9.1.1.1 Contenuti non testuali",
      "9.1.3.1 Informazioni e correlazioni",
@@ -2746,7 +2746,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — acessibilidade",
+    "title": "ekte — acessibilidade",
     "lang": "pt",
     "headings": [
      [
@@ -2808,7 +2808,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -2841,7 +2841,7 @@
      },
      {
       "name": "comunicar um problema de acessibilidade no GitHub",
-      "href": "https://github.com/cenbonew/zing/issues",
+      "href": "https://github.com/mn567250/ekte/issues",
       "context": "Encontrou uma barreira ou algo é difícil de usar com tecnologias de apoio? Diga-nos: comunicar um problema de acessibilidade no GitHub"
      }
     ],
@@ -3258,7 +3258,7 @@
      "Como é testado: As áreas de estado são regiões dinâmicas. Se cada mudança de estado é anunciada é avaliado por uma pessoa.",
      "Testes automatizados: 21 executados, 21 aprovados, 0 falhados, 0 ignorados",
      "test_analytics_filter_panel_disclosure test_audit_flow test_copy_link_announces_it test_copy_link_falls_back_to_a_selected_field test_failing_audit_flow test_filter_panel_disclosure test_kb_flow test_monitor_flow test_show_more_by_keyboard test_sort_buttons test_surface_flow",
-     "A interface web v2 do zing é parcialmente conforme com a BITV 2.0, a EN 301 549 e as WCAG 2.1 nível AA.",
+     "A interface web v2 do ekte é parcialmente conforme com a BITV 2.0, a EN 301 549 e as WCAG 2.1 nível AA.",
      "A parte automatizada destes passos é aprovada; o resto ainda precisa de uma revisão manual:",
      "9.1.1.1 Conteúdo não textual",
      "9.1.3.1 Informações e relações",
@@ -3287,7 +3287,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — 无障碍",
+    "title": "ekte — 无障碍",
     "lang": "zh-CN",
     "headings": [
      [
@@ -3349,7 +3349,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -3382,7 +3382,7 @@
      },
      {
       "name": "在 GitHub 上报告无障碍问题",
-      "href": "https://github.com/cenbonew/zing/issues",
+      "href": "https://github.com/mn567250/ekte/issues",
       "context": "发现了障碍，或者某些功能难以通过辅助技术使用？请告诉我们： 在 GitHub 上报告无障碍问题"
      }
     ],
@@ -3799,7 +3799,7 @@
      "测试方式： 状态区域是实时区域。每次状态变化是否会被播报由人工判断。",
      "自动化测试： 21 个已运行，21 个通过，0 个失败，0 个跳过",
      "test_analytics_filter_panel_disclosure test_audit_flow test_copy_link_announces_it test_copy_link_falls_back_to_a_selected_field test_failing_audit_flow test_filter_panel_disclosure test_kb_flow test_monitor_flow test_show_more_by_keyboard test_sort_buttons test_surface_flow",
-     "zing 网页界面 v2 与 BITV 2.0、EN 301 549 和 WCAG 2.1 AA 级部分符合。",
+     "ekte 网页界面 v2 与 BITV 2.0、EN 301 549 和 WCAG 2.1 AA 级部分符合。",
      "以下步骤的自动化部分已通过，其余部分仍需人工审核：",
      "9.1.1.1 非文本内容",
      "9.1.3.1 信息和关系",
@@ -3836,13 +3836,13 @@
     "rows": [
      {
       "kind": "title",
-      "en": "zing — accessibility",
-      "de": "zing — Barrierefreiheit",
-      "es": "zing — accesibilidad",
-      "fr": "zing — accessibilité",
-      "it": "zing — accessibilità",
-      "pt": "zing — acessibilidade",
-      "zh": "zing — 无障碍"
+      "en": "ekte — accessibility",
+      "de": "ekte — Barrierefreiheit",
+      "es": "ekte — accesibilidad",
+      "fr": "ekte — accessibilité",
+      "it": "ekte — accessibilità",
+      "pt": "ekte — acessibilidade",
+      "zh": "ekte — 无障碍"
      },
      {
       "kind": "heading",
@@ -3986,13 +3986,13 @@
      },
      {
       "kind": "link",
-      "en": "zing",
-      "de": "zing",
-      "es": "zing",
-      "fr": "zing",
-      "it": "zing",
-      "pt": "zing",
-      "zh": "zing"
+      "en": "ekte",
+      "de": "ekte",
+      "es": "ekte",
+      "fr": "ekte",
+      "it": "ekte",
+      "pt": "ekte",
+      "zh": "ekte"
      },
      {
       "kind": "link",
@@ -6136,13 +6136,13 @@
      },
      {
       "kind": "instruction",
-      "en": "Web UI v2 of zing is partially conformant with BITV 2.0, EN 301 549 and WCAG 2.1 level AA.",
-      "de": "Die Web-Oberfläche v2 von zing ist mit BITV 2.0, EN 301 549 und WCAG 2.1 Stufe AA teilweise vereinbar.",
-      "es": "La interfaz web v2 de zing es parcialmente conforme con BITV 2.0, EN 301 549 y WCAG 2.1 nivel AA.",
-      "fr": "L'interface web v2 de zing est partiellement conforme au BITV 2.0, à l'EN 301 549 et aux WCAG 2.1 niveau AA.",
-      "it": "L'interfaccia web v2 di zing è parzialmente conforme a BITV 2.0, EN 301 549 e WCAG 2.1 livello AA.",
-      "pt": "A interface web v2 do zing é parcialmente conforme com a BITV 2.0, a EN 301 549 e as WCAG 2.1 nível AA.",
-      "zh": "zing 网页界面 v2 与 BITV 2.0、EN 301 549 和 WCAG 2.1 AA 级部分符合。"
+      "en": "Web UI v2 of ekte is partially conformant with BITV 2.0, EN 301 549 and WCAG 2.1 level AA.",
+      "de": "Die Web-Oberfläche v2 von ekte ist mit BITV 2.0, EN 301 549 und WCAG 2.1 Stufe AA teilweise vereinbar.",
+      "es": "La interfaz web v2 de ekte es parcialmente conforme con BITV 2.0, EN 301 549 y WCAG 2.1 nivel AA.",
+      "fr": "L'interface web v2 de ekte est partiellement conforme au BITV 2.0, à l'EN 301 549 et aux WCAG 2.1 niveau AA.",
+      "it": "L'interfaccia web v2 di ekte è parzialmente conforme a BITV 2.0, EN 301 549 e WCAG 2.1 livello AA.",
+      "pt": "A interface web v2 do ekte é parcialmente conforme com a BITV 2.0, a EN 301 549 e as WCAG 2.1 nível AA.",
+      "zh": "ekte 网页界面 v2 与 BITV 2.0、EN 301 549 和 WCAG 2.1 AA 级部分符合。"
      },
      {
       "kind": "instruction",
@@ -6366,13 +6366,13 @@
      },
      {
       "kind": "instruction",
-      "en": "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
-      "de": "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
-      "es": "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
-      "fr": "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
-      "it": "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
-      "pt": "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
-      "zh": "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
+      "en": "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+      "de": "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+      "es": "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+      "fr": "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+      "it": "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+      "pt": "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+      "zh": "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
      }
     ]
    }
@@ -6391,7 +6391,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — analytics",
+    "title": "ekte — analytics",
     "lang": "en",
     "headings": [
      [
@@ -6441,7 +6441,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -6847,7 +6847,7 @@
     ],
     "decorative_images": 34,
     "instructions": [
-     "Compare relays and models over time with what zing measured on this machine: scores, speed, success rates and billing.",
+     "Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing.",
      "Sep 26 – Oct 25, 2026, compared with the period of the same length before (Aug 27 – Sep 25, 2026).",
      "Median score 52.6 No data in the previous period",
      "High-risk share 100% No data in the previous period",
@@ -6857,7 +6857,7 @@
      "Billing ratio (prompt) 666.7% No data in the previous period",
      "Billing ratio (completion) 5,714.3% No data in the previous period",
      "All local: audits run from your own machine, and your API keys never leave it.",
-     "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+     "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
      "The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.",
      "http://127.0.0.1:9099/v1 1 runs",
      "Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier. Schedule a monitor for regular measurements.",
@@ -6867,7 +6867,7 @@
      "Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.",
      "Rows marked “few runs” have fewer than 3 runs — a single audit can be an outlier. Schedule a monitor for regular measurements.",
      "Check results per relay × model (n = runs with a verdict)",
-     "Billing ratio = tokens the relay reports ÷ tokens zing counted. Above 100%: the relay reports more tokens than zing counted (you may be billed for more). zing's counts are estimates, so small deviations are normal.",
+     "Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.",
      "“Billing ratio (prompt)” data from 1 of 1 runs.",
      "Billing ratio (prompt) (Relay, By day)",
      "Medians over the selected range (n = runs that measured a value)",
@@ -6893,7 +6893,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — Analyse",
+    "title": "ekte — Analyse",
     "lang": "de",
     "headings": [
      [
@@ -6943,7 +6943,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -7349,7 +7349,7 @@
     ],
     "decorative_images": 34,
     "instructions": [
-     "Vergleichen Sie Relays und Modelle im Zeitverlauf mit dem, was zing auf diesem Rechner gemessen hat: Scores, Geschwindigkeit, Erfolgsquoten und Abrechnung.",
+     "Vergleichen Sie Relays und Modelle im Zeitverlauf mit dem, was ekte auf diesem Rechner gemessen hat: Scores, Geschwindigkeit, Erfolgsquoten und Abrechnung.",
      "26.09. – 25.10.2026, verglichen mit dem gleich langen Zeitraum davor (27.08. – 25.09.2026).",
      "Modelle 1 +1",
      "Median-Score 52,6 Keine Daten im vorigen Zeitraum",
@@ -7360,7 +7360,7 @@
      "Abrechnungs­verhältnis (Eingabe) 666,7 % Keine Daten im vorigen Zeitraum",
      "Abrechnungs­verhältnis (Ausgabe) 5.714,3 % Keine Daten im vorigen Zeitraum",
      "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie.",
-     "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+     "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
      "Die Linie ist der Median jedes Zeitabschnitts, das Band die mittlere Hälfte der Läufe (25. bis 75. Perzentil). Leere Abschnitte bleiben eine Lücke.",
      "http://127.0.0.1:9099/v1 1 Läufe",
      "Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann. Richten Sie eine Überwachung für regelmäßige Messungen ein.",
@@ -7370,7 +7370,7 @@
      "Ist es das Modell, das es zu sein behauptet – vollständig und mit seinen Funktionen? Ergebnisse der Identitäts-, Kontextfenster- und Fähigkeitsprüfungen pro Relay und Modell.",
      "Mit „wenige Läufe“ markierte Zeilen haben weniger als 3 Läufe — ein einzelnes Audit kann ein Ausreißer sein. Richten Sie eine Überwachung für regelmäßige Messungen ein.",
      "Prüfergebnisse pro Relay × Modell (n = Läufe mit Ergebnis)",
-     "Abrechnungs­verhältnis = vom Relay gemeldete Tokens ÷ von zing gezählte Tokens. Über 100 %: Das Relay meldet mehr Tokens, als zing gezählt hat (Sie zahlen eventuell mehr). zings Zählungen sind Schätzungen, kleine Abweichungen sind normal.",
+     "Abrechnungs­verhältnis = vom Relay gemeldete Tokens ÷ von ekte gezählte Tokens. Über 100 %: Das Relay meldet mehr Tokens, als ekte gezählt hat (Sie zahlen eventuell mehr). ektes Zählungen sind Schätzungen, kleine Abweichungen sind normal.",
      "Daten zu „Abrechnungs­verhältnis (Eingabe)“ aus 1 von 1 Läufen.",
      "Abrechnungs­verhältnis (Eingabe) (Relay, Pro Tag)",
      "Mediane über den gewählten Zeitraum (n = Läufe, die einen Wert gemessen haben)",
@@ -7396,7 +7396,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — analítica",
+    "title": "ekte — analítica",
     "lang": "es",
     "headings": [
      [
@@ -7446,7 +7446,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -7852,7 +7852,7 @@
     ],
     "decorative_images": 34,
     "instructions": [
-     "Compare relays y modelos a lo largo del tiempo con lo que zing midió en este equipo: puntuaciones, velocidad, tasas de éxito y facturación.",
+     "Compare relays y modelos a lo largo del tiempo con lo que ekte midió en este equipo: puntuaciones, velocidad, tasas de éxito y facturación.",
      "26 sept – 25 oct 2026, comparado con el periodo de igual duración anterior (27 ago – 25 sept 2026).",
      "Ejecuciones 1 +1",
      "Modelos 1 +1",
@@ -7864,7 +7864,7 @@
      "Ratio de facturación (entrada) 666,7 % Sin datos en el periodo anterior",
      "Ratio de facturación (salida) 5714,3 % Sin datos en el periodo anterior",
      "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él.",
-     "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+     "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
      "La línea es la mediana de cada intervalo; la banda, la mitad central de las ejecuciones (percentil 25 a 75). Los intervalos vacíos dejan un hueco.",
      "http://127.0.0.1:9099/v1 1 ejecuciones",
      "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico. Programe un monitor para obtener mediciones regulares.",
@@ -7874,7 +7874,7 @@
      "¿Es el modelo que dice ser, completo y con sus funciones? Resultados de las comprobaciones de identidad, ventana de contexto y capacidades por relay y modelo.",
      "Las filas marcadas «pocas ejecuciones» tienen menos de 3 ejecuciones: una sola auditoría puede ser un valor atípico. Programe un monitor para obtener mediciones regulares.",
      "Resultados de las comprobaciones por relay × modelo (n = auditorías con veredicto)",
-     "Ratio de facturación = tokens que informa el relay ÷ tokens que contó zing. Por encima del 100 %: el relay informa más tokens de los que contó zing (puede que pagues de más). Los recuentos de zing son estimaciones, así que las pequeñas desviaciones son normales.",
+     "Ratio de facturación = tokens que informa el relay ÷ tokens que contó ekte. Por encima del 100 %: el relay informa más tokens de los que contó ekte (puede que pagues de más). Los recuentos de ekte son estimaciones, así que las pequeñas desviaciones son normales.",
      "Datos de “Ratio de facturación (entrada)” de 1 de 1 auditorías.",
      "Ratio de facturación (entrada) (Relay, Por día)",
      "Medianas en el periodo seleccionado (n = auditorías que midieron un valor)",
@@ -7900,7 +7900,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — analyses",
+    "title": "ekte — analyses",
     "lang": "fr",
     "headings": [
      [
@@ -7950,7 +7950,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -8356,7 +8356,7 @@
     ],
     "decorative_images": 34,
     "instructions": [
-     "Comparez relais et modèles dans le temps avec ce que zing a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation.",
+     "Comparez relais et modèles dans le temps avec ce que ekte a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation.",
      "26 sept. – 25 oct. 2026, comparé à la période de même durée qui précède (27 août – 25 sept. 2026).",
      "Exécutions 1 +1",
      "Modèles 1 +1",
@@ -8368,7 +8368,7 @@
      "Ratio de facturation (entrée) 666,7 % Pas de données sur la période précédente",
      "Ratio de facturation (sortie) 5 714,3 % Pas de données sur la période précédente",
      "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais.",
-     "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+     "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
      "La ligne est la médiane de chaque intervalle, la bande la moitié centrale des exécutions (25e au 75e centile). Les intervalles vides laissent un trou.",
      "http://127.0.0.1:9099/v1 1 exécutions",
      "Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante. Programmez une surveillance pour des mesures régulières.",
@@ -8378,7 +8378,7 @@
      "Est-ce bien le modèle annoncé, complet et avec ses fonctionnalités ? Résultats des vérifications d'identité, de fenêtre de contexte et de capacités par relais et modèle.",
      "Les lignes marquées « peu d'exécutions » comptent moins de 3 exécutions — un audit isolé peut être une valeur aberrante. Programmez une surveillance pour des mesures régulières.",
      "Résultats des vérifications par relais × modèle (n = audits avec un verdict)",
-     "Ratio de facturation = jetons déclarés par le relais ÷ jetons comptés par zing. Au-dessus de 100 % : le relais déclare plus de jetons que zing n'en a comptés (vous payez peut-être davantage). Les comptes de zing sont des estimations ; de petits écarts sont normaux.",
+     "Ratio de facturation = jetons déclarés par le relais ÷ jetons comptés par ekte. Au-dessus de 100 % : le relais déclare plus de jetons que ekte n'en a comptés (vous payez peut-être davantage). Les comptes de ekte sont des estimations ; de petits écarts sont normaux.",
      "Données « Ratio de facturation (entrée) » pour 1 audits sur 1.",
      "Ratio de facturation (entrée) (Relais, Par jour)",
      "Médianes sur la période choisie (n = audits ayant mesuré une valeur)",
@@ -8404,7 +8404,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — analisi",
+    "title": "ekte — analisi",
     "lang": "it",
     "headings": [
      [
@@ -8454,7 +8454,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -8860,7 +8860,7 @@
     ],
     "decorative_images": 34,
     "instructions": [
-     "Confronta relay e modelli nel tempo con ciò che zing ha misurato su questa macchina: punteggi, velocità, tassi di successo e fatturazione.",
+     "Confronta relay e modelli nel tempo con ciò che ekte ha misurato su questa macchina: punteggi, velocità, tassi di successo e fatturazione.",
      "26 set – 25 ott 2026, confrontato con il periodo di pari durata precedente (27 ago – 25 set 2026).",
      "Esecuzioni 1 +1",
      "Modelli 1 +1",
@@ -8872,7 +8872,7 @@
      "Rapporto di fatturazione (input) 666,7% Nessun dato nel periodo precedente",
      "Rapporto di fatturazione (output) 5714,3% Nessun dato nel periodo precedente",
      "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai.",
-     "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+     "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
      "La linea è la mediana di ogni intervallo, la fascia la metà centrale delle esecuzioni (dal 25° al 75° percentile). Gli intervalli vuoti lasciano un vuoto.",
      "http://127.0.0.1:9099/v1 1 esecuzioni",
      "Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo. Pianifica un monitor per misurazioni regolari.",
@@ -8882,7 +8882,7 @@
      "È il modello che dichiara di essere, completo e con le sue funzioni? Esiti dei controlli di identità, finestra di contesto e capacità per relay e modello.",
      "Le righe segnate «poche esecuzioni» hanno meno di 3 esecuzioni — un singolo audit può essere un valore anomalo. Pianifica un monitor per misurazioni regolari.",
      "Esiti dei controlli per relay × modello (n = audit con un verdetto)",
-     "Rapporto di fatturazione = token dichiarati dal relay ÷ token contati da zing. Sopra il 100%: il relay dichiara più token di quanti ne abbia contati zing (potresti pagare di più). I conteggi di zing sono stime, quindi piccoli scostamenti sono normali.",
+     "Rapporto di fatturazione = token dichiarati dal relay ÷ token contati da ekte. Sopra il 100%: il relay dichiara più token di quanti ne abbia contati ekte (potresti pagare di più). I conteggi di ekte sono stime, quindi piccoli scostamenti sono normali.",
      "Dati di “Rapporto di fatturazione (input)” da 1 audit su 1.",
      "Rapporto di fatturazione (input) (Relay, Per giorno)",
      "Mediane nel periodo selezionato (n = audit che hanno misurato un valore)",
@@ -8908,7 +8908,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — análises",
+    "title": "ekte — análises",
     "lang": "pt",
     "headings": [
      [
@@ -8958,7 +8958,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -9364,7 +9364,7 @@
     ],
     "decorative_images": 34,
     "instructions": [
-     "Compare relays e modelos ao longo do tempo com o que o zing mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação.",
+     "Compare relays e modelos ao longo do tempo com o que o ekte mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação.",
      "26/09/2026 – 25/10/2026, comparado com o período de igual duração anterior (27/08/2026 – 25/09/2026).",
      "Execuções 1 +1",
      "Modelos 1 +1",
@@ -9376,7 +9376,7 @@
      "Rácio de faturação (entrada) 666,7% Sem dados no período anterior",
      "Rácio de faturação (saída) 5714,3% Sem dados no período anterior",
      "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela.",
-     "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+     "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
      "A linha é a mediana de cada intervalo; a faixa, a metade central das execuções (percentil 25 a 75). Intervalos vazios deixam uma lacuna.",
      "http://127.0.0.1:9099/v1 1 execuções",
      "Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico. Agende um monitor para medições regulares.",
@@ -9386,7 +9386,7 @@
      "É o modelo que diz ser, completo e com as suas funcionalidades? Resultados das verificações de identidade, janela de contexto e capacidades por relay e modelo.",
      "As linhas marcadas «poucas execuções» têm menos de 3 execuções — uma única auditoria pode ser um valor atípico. Agende um monitor para medições regulares.",
      "Resultados das verificações por relay × modelo (n = auditorias com veredito)",
-     "Rácio de faturação = tokens que o relay informa ÷ tokens que o zing contou. Acima de 100%: o relay informa mais tokens do que o zing contou (pode estar a pagar a mais). As contagens do zing são estimativas, por isso pequenos desvios são normais.",
+     "Rácio de faturação = tokens que o relay informa ÷ tokens que o ekte contou. Acima de 100%: o relay informa mais tokens do que o ekte contou (pode estar a pagar a mais). As contagens do ekte são estimativas, por isso pequenos desvios são normais.",
      "Dados de “Rácio de faturação (entrada)” de 1 de 1 auditorias.",
      "Rácio de faturação (entrada) (Relay, Por dia)",
      "Medianas no período selecionado (n = auditorias que mediram um valor)",
@@ -9412,7 +9412,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — 分析",
+    "title": "ekte — 分析",
     "lang": "zh-CN",
     "headings": [
      [
@@ -9462,7 +9462,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -9868,7 +9868,7 @@
     ],
     "decorative_images": 34,
     "instructions": [
-     "用 zing 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。",
+     "用 ekte 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。",
      "2026/9/26 – 2026/10/25，与之前同样长度的一段时间（2026/8/27 – 2026/9/25）对比。",
      "检测次数 1 +1",
      "中转站 1 +1",
@@ -9880,7 +9880,7 @@
      "计费比（输入） 666.7% 上一周期无数据",
      "计费比（输出） 5,714.3% 上一周期无数据",
      "全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。",
-     "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
+     "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
      "折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。",
      "http://127.0.0.1:9099/v1 1 次检测",
      "此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。 设置监控以定期测量。",
@@ -9890,7 +9890,7 @@
      "它是不是自称的那个模型，是否完整、功能齐全？按中转站与模型列出身份、上下文窗口与能力检查的结果。",
      "标为“检测较少”的行少于 3 次检测——单次检测可能是离群值。 设置监控以定期测量。",
      "每个中转站 × 模型的检查结果（n = 有结论的检测次数）",
-     "计费比 = 中转站报告的 token ÷ zing 统计的 token。高于 100%：中转站报告的 token 多于 zing 统计的（可能多计费）。zing 的统计是估算，小幅偏差属正常。",
+     "计费比 = 中转站报告的 token ÷ ekte 统计的 token。高于 100%：中转站报告的 token 多于 ekte 统计的（可能多计费）。ekte 的统计是估算，小幅偏差属正常。",
      "1 / 1 次检测有“计费比（输入）”的数据。",
      "计费比（输入）（中转站，按天）",
      "所选范围内的中位数（n = 测得该值的检测次数）",
@@ -9924,13 +9924,13 @@
     "rows": [
      {
       "kind": "title",
-      "en": "zing — analytics",
-      "de": "zing — Analyse",
-      "es": "zing — analítica",
-      "fr": "zing — analyses",
-      "it": "zing — analisi",
-      "pt": "zing — análises",
-      "zh": "zing — 分析"
+      "en": "ekte — analytics",
+      "de": "ekte — Analyse",
+      "es": "ekte — analítica",
+      "fr": "ekte — analyses",
+      "it": "ekte — analisi",
+      "pt": "ekte — análises",
+      "zh": "ekte — 分析"
      },
      {
       "kind": "heading",
@@ -10044,13 +10044,13 @@
      },
      {
       "kind": "link",
-      "en": "zing",
-      "de": "zing",
-      "es": "zing",
-      "fr": "zing",
-      "it": "zing",
-      "pt": "zing",
-      "zh": "zing"
+      "en": "ekte",
+      "de": "ekte",
+      "es": "ekte",
+      "fr": "ekte",
+      "it": "ekte",
+      "pt": "ekte",
+      "zh": "ekte"
      },
      {
       "kind": "link",
@@ -10844,13 +10844,13 @@
      },
      {
       "kind": "instruction",
-      "en": "Compare relays and models over time with what zing measured on this machine: scores, speed, success rates and billing.",
-      "de": "Vergleichen Sie Relays und Modelle im Zeitverlauf mit dem, was zing auf diesem Rechner gemessen hat: Scores, Geschwindigkeit, Erfolgsquoten und Abrechnung.",
-      "es": "Compare relays y modelos a lo largo del tiempo con lo que zing midió en este equipo: puntuaciones, velocidad, tasas de éxito y facturación.",
-      "fr": "Comparez relais et modèles dans le temps avec ce que zing a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation.",
-      "it": "Confronta relay e modelli nel tempo con ciò che zing ha misurato su questa macchina: punteggi, velocità, tassi di successo e fatturazione.",
-      "pt": "Compare relays e modelos ao longo do tempo com o que o zing mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação.",
-      "zh": "用 zing 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。"
+      "en": "Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing.",
+      "de": "Vergleichen Sie Relays und Modelle im Zeitverlauf mit dem, was ekte auf diesem Rechner gemessen hat: Scores, Geschwindigkeit, Erfolgsquoten und Abrechnung.",
+      "es": "Compare relays y modelos a lo largo del tiempo con lo que ekte midió en este equipo: puntuaciones, velocidad, tasas de éxito y facturación.",
+      "fr": "Comparez relais et modèles dans le temps avec ce que ekte a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation.",
+      "it": "Confronta relay e modelli nel tempo con ciò che ekte ha misurato su questa macchina: punteggi, velocità, tassi di successo e fatturazione.",
+      "pt": "Compare relays e modelos ao longo do tempo com o que o ekte mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação.",
+      "zh": "用 ekte 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。"
      },
      {
       "kind": "instruction",
@@ -10974,13 +10974,13 @@
      },
      {
       "kind": "instruction",
-      "en": "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
-      "de": "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
-      "es": "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
-      "fr": "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
-      "it": "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
-      "pt": "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
-      "zh": "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
+      "en": "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+      "de": "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+      "es": "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+      "fr": "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+      "it": "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+      "pt": "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+      "zh": "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
      },
      {
       "kind": "instruction",
@@ -11074,13 +11074,13 @@
      },
      {
       "kind": "instruction",
-      "en": "Billing ratio = tokens the relay reports ÷ tokens zing counted. Above 100%: the relay reports more tokens than zing counted (you may be billed for more). zing's counts are estimates, so small deviations are normal.",
-      "de": "Abrechnungs­verhältnis = vom Relay gemeldete Tokens ÷ von zing gezählte Tokens. Über 100 %: Das Relay meldet mehr Tokens, als zing gezählt hat (Sie zahlen eventuell mehr). zings Zählungen sind Schätzungen, kleine Abweichungen sind normal.",
-      "es": "Ratio de facturación = tokens que informa el relay ÷ tokens que contó zing. Por encima del 100 %: el relay informa más tokens de los que contó zing (puede que pagues de más). Los recuentos de zing son estimaciones, así que las pequeñas desviaciones son normales.",
-      "fr": "Ratio de facturation = jetons déclarés par le relais ÷ jetons comptés par zing. Au-dessus de 100 % : le relais déclare plus de jetons que zing n'en a comptés (vous payez peut-être davantage). Les comptes de zing sont des estimations ; de petits écarts sont normaux.",
-      "it": "Rapporto di fatturazione = token dichiarati dal relay ÷ token contati da zing. Sopra il 100%: il relay dichiara più token di quanti ne abbia contati zing (potresti pagare di più). I conteggi di zing sono stime, quindi piccoli scostamenti sono normali.",
-      "pt": "Rácio de faturação = tokens que o relay informa ÷ tokens que o zing contou. Acima de 100%: o relay informa mais tokens do que o zing contou (pode estar a pagar a mais). As contagens do zing são estimativas, por isso pequenos desvios são normais.",
-      "zh": "计费比 = 中转站报告的 token ÷ zing 统计的 token。高于 100%：中转站报告的 token 多于 zing 统计的（可能多计费）。zing 的统计是估算，小幅偏差属正常。"
+      "en": "Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.",
+      "de": "Abrechnungs­verhältnis = vom Relay gemeldete Tokens ÷ von ekte gezählte Tokens. Über 100 %: Das Relay meldet mehr Tokens, als ekte gezählt hat (Sie zahlen eventuell mehr). ektes Zählungen sind Schätzungen, kleine Abweichungen sind normal.",
+      "es": "Ratio de facturación = tokens que informa el relay ÷ tokens que contó ekte. Por encima del 100 %: el relay informa más tokens de los que contó ekte (puede que pagues de más). Los recuentos de ekte son estimaciones, así que las pequeñas desviaciones son normales.",
+      "fr": "Ratio de facturation = jetons déclarés par le relais ÷ jetons comptés par ekte. Au-dessus de 100 % : le relais déclare plus de jetons que ekte n'en a comptés (vous payez peut-être davantage). Les comptes de ekte sont des estimations ; de petits écarts sont normaux.",
+      "it": "Rapporto di fatturazione = token dichiarati dal relay ÷ token contati da ekte. Sopra il 100%: il relay dichiara più token di quanti ne abbia contati ekte (potresti pagare di più). I conteggi di ekte sono stime, quindi piccoli scostamenti sono normali.",
+      "pt": "Rácio de faturação = tokens que o relay informa ÷ tokens que o ekte contou. Acima de 100%: o relay informa mais tokens do que o ekte contou (pode estar a pagar a mais). As contagens do ekte são estimativas, por isso pequenos desvios são normais.",
+      "zh": "计费比 = 中转站报告的 token ÷ ekte 统计的 token。高于 100%：中转站报告的 token 多于 ekte 统计的（可能多计费）。ekte 的统计是估算，小幅偏差属正常。"
      },
      {
       "kind": "instruction",
@@ -11169,7 +11169,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — relay reality check",
+    "title": "ekte — relay reality check",
     "lang": "en",
     "headings": [
      [
@@ -11187,7 +11187,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -11403,7 +11403,7 @@
       "label": "API KEY",
       "name_from": "label",
       "visible_label": "API key",
-      "placeholder": "sk-... or env:ZING_API_KEY",
+      "placeholder": "sk-... or env:EKTE_API_KEY",
       "description": "Supports env:VAR / file:/path",
       "type": "text"
      },
@@ -11452,16 +11452,16 @@
     "images": [],
     "decorative_images": 15,
     "instructions": [
-     "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.",
+     "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.",
      "Endpoint type surface",
      "Selecting one fills in its URL; for any other relay choose “Other” and enter the URL.",
      "Supports env:VAR / file:/path",
-     "Only if the relay sells it under another name — zing checks the answers against this model.",
+     "Only if the relay sells it under another name — ekte checks the answers against this model.",
      "On standard the probe runs only with a baseline; otherwise the audit's own requests are used.",
-     "Enter an endpoint for the same model that you trust (e.g. the official API). zing uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.",
-     "Tests are sent from your local zing server; the key is only used to connect to the target relay and is never uploaded to any third party.",
+     "Enter an endpoint for the same model that you trust (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.",
+     "Tests are sent from your local ekte server; the key is only used to connect to the target relay and is never uploaded to any third party.",
      "All local: audits run from your own machine, and your API keys never leave it.",
-     "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+     "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
      "Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.",
      "No audits are running"
     ],
@@ -11498,7 +11498,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — Relay-Echtheitsprüfung",
+    "title": "ekte — Relay-Echtheitsprüfung",
     "lang": "de",
     "headings": [
      [
@@ -11516,7 +11516,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -11732,7 +11732,7 @@
       "label": "API-SCHLÜSSEL",
       "name_from": "label",
       "visible_label": "API-Schlüssel",
-      "placeholder": "sk-... oder env:ZING_API_KEY",
+      "placeholder": "sk-... oder env:EKTE_API_KEY",
       "description": "Unterstützt env:VAR / file:/pfad",
       "type": "text"
      },
@@ -11781,17 +11781,17 @@
     "images": [],
     "decorative_images": 15,
     "instructions": [
-     "Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. zing führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.",
+     "Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. ekte führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.",
      "Konfigurieren",
      "Endpunkttyp surface",
      "Die Auswahl füllt die URL aus; für jedes andere Relay wähle „Andere“ und gib die URL ein.",
      "Unterstützt env:VAR / file:/pfad",
-     "Nur wenn das Relay es unter anderem Namen verkauft — zing prüft die Antworten gegen dieses Modell.",
+     "Nur wenn das Relay es unter anderem Namen verkauft — ekte prüft die Antworten gegen dieses Modell.",
      "Bei standard läuft die Messung nur mit einer Referenz; sonst werden die Anfragen der Prüfung selbst verwendet.",
-     "Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). zing nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit ein…",
-     "Die Tests werden von Ihrem lokalen zing-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.",
+     "Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). ekte nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit ein…",
+     "Die Tests werden von Ihrem lokalen ekte-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.",
      "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie.",
-     "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+     "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
      "Audits laufen weiter, wenn Sie die Audit-Seite verlassen. Audits desselben Relays laufen nacheinander, damit sie sich gegenseitig nicht verfälschen.",
      "Es laufen keine Audits"
     ],
@@ -11828,7 +11828,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — verificación de intermediarios",
+    "title": "ekte — verificación de intermediarios",
     "lang": "es",
     "headings": [
      [
@@ -11846,7 +11846,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -12062,7 +12062,7 @@
       "label": "CLAVE DE API",
       "name_from": "label",
       "visible_label": "Clave de API",
-      "placeholder": "sk-... o env:ZING_API_KEY",
+      "placeholder": "sk-... o env:EKTE_API_KEY",
       "description": "Admite env:VAR / file:/ruta",
       "type": "text"
      },
@@ -12111,16 +12111,16 @@
     "images": [],
     "decorative_images": 15,
     "instructions": [
-     "Elige el relay, el modelo que quieres auditar y, si se vende con otro nombre, el modelo que dice ser. zing ejecuta en tu equipo una batería completa de pruebas de caja negra y genera un informe de verificación legible y respaldado por evidencias.",
+     "Elige el relay, el modelo que quieres auditar y, si se vende con otro nombre, el modelo que dice ser. ekte ejecuta en tu equipo una batería completa de pruebas de caja negra y genera un informe de verificación legible y respaldado por evidencias.",
      "Tipo de endpoint surface",
      "Al seleccionar uno se rellena su URL; para cualquier otro relay elige «Otro» e introduce la URL.",
      "Admite env:VAR / file:/ruta",
-     "Solo si el intermediario lo vende con otro nombre — zing contrasta las respuestas con este modelo.",
+     "Solo si el intermediario lo vende con otro nombre — ekte contrasta las respuestas con este modelo.",
      "En standard la sonda solo se ejecuta con una referencia; si no, se usan las propias peticiones de la auditoría.",
-     "Indique un endpoint del mismo modelo en el que confíe (p. ej. la API oficial). zing lo usa para corroborar el comportamiento del objetivo y hacer más fiables los veredictos de sustitución/degradación — la evaluación de calidad y la detección de manipulación solo alcanzan su nivel máximo con una ref…",
-     "Las pruebas se envían desde su servidor zing local; la clave solo se usa para conectar con el intermediario objetivo y nunca se envía a terceros.",
+     "Indique un endpoint del mismo modelo en el que confíe (p. ej. la API oficial). ekte lo usa para corroborar el comportamiento del objetivo y hacer más fiables los veredictos de sustitución/degradación — la evaluación de calidad y la detección de manipulación solo alcanzan su nivel máximo con una ref…",
+     "Las pruebas se envían desde su servidor ekte local; la clave solo se usa para conectar con el intermediario objetivo y nunca se envía a terceros.",
      "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él.",
-     "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+     "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
      "Las auditorías siguen en marcha cuando sales de la página de auditoría. Las auditorías del mismo relay se ejecutan una tras otra, para no distorsionar sus resultados.",
      "No hay auditorías en curso"
     ],
@@ -12157,7 +12157,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — vérification de relais",
+    "title": "ekte — vérification de relais",
     "lang": "fr",
     "headings": [
      [
@@ -12175,7 +12175,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -12391,7 +12391,7 @@
       "label": "CLÉ API",
       "name_from": "label",
       "visible_label": "Clé API",
-      "placeholder": "sk-... ou env:ZING_API_KEY",
+      "placeholder": "sk-... ou env:EKTE_API_KEY",
       "description": "Accepte env:VAR / file:/chemin",
       "type": "text"
      },
@@ -12440,16 +12440,16 @@
     "images": [],
     "decorative_images": 15,
     "instructions": [
-     "Choisissez le relais, le modèle à auditer et, s'il est vendu sous un autre nom, le modèle qu'il prétend être. zing exécute sur votre machine une batterie complète de tests en boîte noire et produit un rapport de vérification lisible et étayé par des preuves.",
+     "Choisissez le relais, le modèle à auditer et, s'il est vendu sous un autre nom, le modèle qu'il prétend être. ekte exécute sur votre machine une batterie complète de tests en boîte noire et produit un rapport de vérification lisible et étayé par des preuves.",
      "Type de point d'accès surface",
      "En choisir un remplit son URL ; pour tout autre relais, choisissez « Autre » et saisissez l'URL.",
      "Accepte env:VAR / file:/chemin",
-     "Seulement si le relais le vend sous un autre nom — zing vérifie les réponses par rapport à ce modèle.",
+     "Seulement si le relais le vend sous un autre nom — ekte vérifie les réponses par rapport à ce modèle.",
      "En standard, la sonde ne s'exécute qu'avec une référence ; sinon, les requêtes de l'audit lui-même sont utilisées.",
-     "Indiquez un point d'accès du même modèle en qui vous avez confiance (p. ex. l'API officielle). zing s'en sert pour corroborer le comportement de la cible et fiabiliser les verdicts de substitution/déclassement — l'évaluation de qualité et la détection de falsification n'atteignent leur niveau maxim…",
-     "Les tests partent de votre serveur zing local ; la clé sert uniquement à se connecter au relais cible et n'est jamais transmise à un tiers.",
+     "Indiquez un point d'accès du même modèle en qui vous avez confiance (p. ex. l'API officielle). ekte s'en sert pour corroborer le comportement de la cible et fiabiliser les verdicts de substitution/déclassement — l'évaluation de qualité et la détection de falsification n'atteignent leur niveau maxim…",
+     "Les tests partent de votre serveur ekte local ; la clé sert uniquement à se connecter au relais cible et n'est jamais transmise à un tiers.",
      "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais.",
-     "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+     "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
      "Les audits continuent quand vous quittez la page d'audit. Les audits d'un même relais s'exécutent l'un après l'autre, pour ne jamais fausser leurs résultats.",
      "Aucun audit en cours"
     ],
@@ -12486,7 +12486,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — verifica degli intermediari",
+    "title": "ekte — verifica degli intermediari",
     "lang": "it",
     "headings": [
      [
@@ -12504,7 +12504,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -12720,7 +12720,7 @@
       "label": "CHIAVE API",
       "name_from": "label",
       "visible_label": "Chiave API",
-      "placeholder": "sk-... o env:ZING_API_KEY",
+      "placeholder": "sk-... o env:EKTE_API_KEY",
       "description": "Supporta env:VAR / file:/percorso",
       "type": "text"
      },
@@ -12769,16 +12769,16 @@
     "images": [],
     "decorative_images": 15,
     "instructions": [
-     "Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. zing esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.",
+     "Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. ekte esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.",
      "Tipo di endpoint surface",
      "Selezionandone uno ne viene compilato l'URL; per qualsiasi altro relay scegli «Altro» e inserisci l'URL.",
      "Supporta env:VAR / file:/percorso",
-     "Solo se l'intermediario lo vende con un altro nome — zing confronta le risposte con questo modello.",
+     "Solo se l'intermediario lo vende con un altro nome — ekte confronta le risposte con questo modello.",
      "Con standard la sonda viene eseguita solo con un riferimento; altrimenti si usano le richieste dell'audit stesso.",
-     "Inserisci un endpoint dello stesso modello di cui ti fidi (ad es. l'API ufficiale). zing lo usa per confermare il comportamento dell'obiettivo, rendendo più affidabili i verdetti di sostituzione/declassamento — la valutazione della qualità e il rilevamento di manomissioni raggiungono il livello mas…",
-     "I test partono dal tuo server zing locale; la chiave serve solo a collegarsi all'intermediario di destinazione e non viene mai inviata a terzi.",
+     "Inserisci un endpoint dello stesso modello di cui ti fidi (ad es. l'API ufficiale). ekte lo usa per confermare il comportamento dell'obiettivo, rendendo più affidabili i verdetti di sostituzione/declassamento — la valutazione della qualità e il rilevamento di manomissioni raggiungono il livello mas…",
+     "I test partono dal tuo server ekte locale; la chiave serve solo a collegarsi all'intermediario di destinazione e non viene mai inviata a terzi.",
      "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai.",
-     "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+     "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
      "Gli audit continuano anche se lasci la pagina di audit. Gli audit dello stesso relay vengono eseguiti uno dopo l'altro, così non falsano i rispettivi risultati.",
      "Nessun audit in corso"
     ],
@@ -12815,7 +12815,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — verificação de intermediários",
+    "title": "ekte — verificação de intermediários",
     "lang": "pt",
     "headings": [
      [
@@ -12833,7 +12833,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -13049,7 +13049,7 @@
       "label": "CHAVE DE API",
       "name_from": "label",
       "visible_label": "Chave de API",
-      "placeholder": "sk-... ou env:ZING_API_KEY",
+      "placeholder": "sk-... ou env:EKTE_API_KEY",
       "description": "Aceita env:VAR / file:/caminho",
       "type": "text"
      },
@@ -13098,16 +13098,16 @@
     "images": [],
     "decorative_images": 15,
     "instructions": [
-     "Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O zing executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.",
+     "Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O ekte executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.",
      "Tipo de endpoint surface",
      "Ao selecionar um, o URL é preenchido; para qualquer outro relay escolha «Outro» e introduza o URL.",
      "Aceita env:VAR / file:/caminho",
-     "Só se o intermediário o vender com outro nome — o zing confronta as respostas com este modelo.",
+     "Só se o intermediário o vender com outro nome — o ekte confronta as respostas com este modelo.",
      "No standard a sonda só é executada com uma referência; caso contrário, usam-se as próprias requisições da auditoria.",
-     "Indique um endpoint do mesmo modelo em que confie (p. ex. a API oficial). O zing usa-o para corroborar o comportamento do alvo, tornando mais fiáveis os veredictos de substituição/degradação — a avaliação de qualidade e a deteção de adulteração só atingem o nível máximo com uma referência.",
-     "Os testes são enviados a partir do seu servidor zing local; a chave só é usada para ligar ao intermediário alvo e nunca é enviada a terceiros.",
+     "Indique um endpoint do mesmo modelo em que confie (p. ex. a API oficial). O ekte usa-o para corroborar o comportamento do alvo, tornando mais fiáveis os veredictos de substituição/degradação — a avaliação de qualidade e a deteção de adulteração só atingem o nível máximo com uma referência.",
+     "Os testes são enviados a partir do seu servidor ekte local; a chave só é usada para ligar ao intermediário alvo e nunca é enviada a terceiros.",
      "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela.",
-     "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+     "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
      "As auditorias continuam quando sai da página de auditoria. Auditorias do mesmo relay correm uma após a outra, para nunca distorcerem os resultados umas das outras.",
      "Nenhuma auditoria em execução"
     ],
@@ -13144,7 +13144,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — 中转站验真",
+    "title": "ekte — 中转站验真",
     "lang": "zh-CN",
     "headings": [
      [
@@ -13162,7 +13162,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -13378,7 +13378,7 @@
       "label": "API 密钥",
       "name_from": "label",
       "visible_label": "API 密钥",
-      "placeholder": "sk-... 或 env:ZING_API_KEY",
+      "placeholder": "sk-... 或 env:EKTE_API_KEY",
       "description": "支持 env:VAR / file:/path",
       "type": "text"
      },
@@ -13427,16 +13427,16 @@
     "images": [],
     "decorative_images": 15,
     "instructions": [
-     "选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。",
+     "选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。",
      "接口类型 surface",
      "选择后会自动填写地址；不在列表中的中转站请选“其他”并填写地址。",
      "支持 env:VAR / file:/path",
-     "仅当中转站以另一个名字售卖时填写 —— zing 会按这个模型核对回答。",
+     "仅当中转站以另一个名字售卖时填写 —— ekte 会按这个模型核对回答。",
      "standard 套件只在对照基线时发送探测请求；否则使用检测自身的请求。",
-     "填一个你信任的同款模型端点（如官方 API）。zing 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。",
-     "检测在 你本地的 zing 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。",
+     "填一个你信任的同款模型端点（如官方 API）。ekte 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。",
+     "检测在 你本地的 ekte 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。",
      "全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。",
-     "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
+     "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
      "离开检测页后检测仍会继续运行。同一中转站的检测会依次排队运行，互不干扰检测结果。",
      "当前没有正在运行的检测"
     ],
@@ -13481,13 +13481,13 @@
     "rows": [
      {
       "kind": "title",
-      "en": "zing — relay reality check",
-      "de": "zing — Relay-Echtheitsprüfung",
-      "es": "zing — verificación de intermediarios",
-      "fr": "zing — vérification de relais",
-      "it": "zing — verifica degli intermediari",
-      "pt": "zing — verificação de intermediários",
-      "zh": "zing — 中转站验真"
+      "en": "ekte — relay reality check",
+      "de": "ekte — Relay-Echtheitsprüfung",
+      "es": "ekte — verificación de intermediarios",
+      "fr": "ekte — vérification de relais",
+      "it": "ekte — verifica degli intermediari",
+      "pt": "ekte — verificação de intermediários",
+      "zh": "ekte — 中转站验真"
      },
      {
       "kind": "heading",
@@ -13521,13 +13521,13 @@
      },
      {
       "kind": "link",
-      "en": "zing",
-      "de": "zing",
-      "es": "zing",
-      "fr": "zing",
-      "it": "zing",
-      "pt": "zing",
-      "zh": "zing"
+      "en": "ekte",
+      "de": "ekte",
+      "es": "ekte",
+      "fr": "ekte",
+      "it": "ekte",
+      "pt": "ekte",
+      "zh": "ekte"
      },
      {
       "kind": "link",
@@ -13971,13 +13971,13 @@
      },
      {
       "kind": "field.placeholder",
-      "en": "sk-... or env:ZING_API_KEY",
-      "de": "sk-... oder env:ZING_API_KEY",
-      "es": "sk-... o env:ZING_API_KEY",
-      "fr": "sk-... ou env:ZING_API_KEY",
-      "it": "sk-... o env:ZING_API_KEY",
-      "pt": "sk-... ou env:ZING_API_KEY",
-      "zh": "sk-... 或 env:ZING_API_KEY"
+      "en": "sk-... or env:EKTE_API_KEY",
+      "de": "sk-... oder env:EKTE_API_KEY",
+      "es": "sk-... o env:EKTE_API_KEY",
+      "fr": "sk-... ou env:EKTE_API_KEY",
+      "it": "sk-... o env:EKTE_API_KEY",
+      "pt": "sk-... ou env:EKTE_API_KEY",
+      "zh": "sk-... 或 env:EKTE_API_KEY"
      },
      {
       "kind": "field.description",
@@ -14101,13 +14101,13 @@
      },
      {
       "kind": "instruction",
-      "en": "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. zing runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.",
-      "de": "Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. zing führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.",
-      "es": "Elige el relay, el modelo que quieres auditar y, si se vende con otro nombre, el modelo que dice ser. zing ejecuta en tu equipo una batería completa de pruebas de caja negra y genera un informe de verificación legible y respaldado por evidencias.",
-      "fr": "Choisissez le relais, le modèle à auditer et, s'il est vendu sous un autre nom, le modèle qu'il prétend être. zing exécute sur votre machine une batterie complète de tests en boîte noire et produit un rapport de vérification lisible et étayé par des preuves.",
-      "it": "Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. zing esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.",
-      "pt": "Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O zing executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.",
-      "zh": "选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。zing 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。"
+      "en": "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.",
+      "de": "Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. ekte führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.",
+      "es": "Elige el relay, el modelo que quieres auditar y, si se vende con otro nombre, el modelo que dice ser. ekte ejecuta en tu equipo una batería completa de pruebas de caja negra y genera un informe de verificación legible y respaldado por evidencias.",
+      "fr": "Choisissez le relais, le modèle à auditer et, s'il est vendu sous un autre nom, le modèle qu'il prétend être. ekte exécute sur votre machine une batterie complète de tests en boîte noire et produit un rapport de vérification lisible et étayé par des preuves.",
+      "it": "Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. ekte esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.",
+      "pt": "Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O ekte executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.",
+      "zh": "选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。"
      },
      {
       "kind": "instruction",
@@ -14151,13 +14151,13 @@
      },
      {
       "kind": "instruction",
-      "en": "Only if the relay sells it under another name — zing checks the answers against this model.",
-      "de": "Nur wenn das Relay es unter anderem Namen verkauft — zing prüft die Antworten gegen dieses Modell.",
-      "es": "Solo si el intermediario lo vende con otro nombre — zing contrasta las respuestas con este modelo.",
-      "fr": "Seulement si le relais le vend sous un autre nom — zing vérifie les réponses par rapport à ce modèle.",
-      "it": "Solo se l'intermediario lo vende con un altro nome — zing confronta le risposte con questo modello.",
-      "pt": "Só se o intermediário o vender com outro nome — o zing confronta as respostas com este modelo.",
-      "zh": "仅当中转站以另一个名字售卖时填写 —— zing 会按这个模型核对回答。"
+      "en": "Only if the relay sells it under another name — ekte checks the answers against this model.",
+      "de": "Nur wenn das Relay es unter anderem Namen verkauft — ekte prüft die Antworten gegen dieses Modell.",
+      "es": "Solo si el intermediario lo vende con otro nombre — ekte contrasta las respuestas con este modelo.",
+      "fr": "Seulement si le relais le vend sous un autre nom — ekte vérifie les réponses par rapport à ce modèle.",
+      "it": "Solo se l'intermediario lo vende con un altro nome — ekte confronta le risposte con questo modello.",
+      "pt": "Só se o intermediário o vender com outro nome — o ekte confronta as respostas com este modelo.",
+      "zh": "仅当中转站以另一个名字售卖时填写 —— ekte 会按这个模型核对回答。"
      },
      {
       "kind": "instruction",
@@ -14171,23 +14171,23 @@
      },
      {
       "kind": "instruction",
-      "en": "Enter an endpoint for the same model that you trust (e.g. the official API). zing uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.",
-      "de": "Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). zing nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit ein…",
-      "es": "Indique un endpoint del mismo modelo en el que confíe (p. ej. la API oficial). zing lo usa para corroborar el comportamiento del objetivo y hacer más fiables los veredictos de sustitución/degradación — la evaluación de calidad y la detección de manipulación solo alcanzan su nivel máximo con una ref…",
-      "fr": "Indiquez un point d'accès du même modèle en qui vous avez confiance (p. ex. l'API officielle). zing s'en sert pour corroborer le comportement de la cible et fiabiliser les verdicts de substitution/déclassement — l'évaluation de qualité et la détection de falsification n'atteignent leur niveau maxim…",
-      "it": "Inserisci un endpoint dello stesso modello di cui ti fidi (ad es. l'API ufficiale). zing lo usa per confermare il comportamento dell'obiettivo, rendendo più affidabili i verdetti di sostituzione/declassamento — la valutazione della qualità e il rilevamento di manomissioni raggiungono il livello mas…",
-      "pt": "Indique um endpoint do mesmo modelo em que confie (p. ex. a API oficial). O zing usa-o para corroborar o comportamento do alvo, tornando mais fiáveis os veredictos de substituição/degradação — a avaliação de qualidade e a deteção de adulteração só atingem o nível máximo com uma referência.",
-      "zh": "填一个你信任的同款模型端点（如官方 API）。zing 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。"
+      "en": "Enter an endpoint for the same model that you trust (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.",
+      "de": "Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). ekte nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit ein…",
+      "es": "Indique un endpoint del mismo modelo en el que confíe (p. ej. la API oficial). ekte lo usa para corroborar el comportamiento del objetivo y hacer más fiables los veredictos de sustitución/degradación — la evaluación de calidad y la detección de manipulación solo alcanzan su nivel máximo con una ref…",
+      "fr": "Indiquez un point d'accès du même modèle en qui vous avez confiance (p. ex. l'API officielle). ekte s'en sert pour corroborer le comportement de la cible et fiabiliser les verdicts de substitution/déclassement — l'évaluation de qualité et la détection de falsification n'atteignent leur niveau maxim…",
+      "it": "Inserisci un endpoint dello stesso modello di cui ti fidi (ad es. l'API ufficiale). ekte lo usa per confermare il comportamento dell'obiettivo, rendendo più affidabili i verdetti di sostituzione/declassamento — la valutazione della qualità e il rilevamento di manomissioni raggiungono il livello mas…",
+      "pt": "Indique um endpoint do mesmo modelo em que confie (p. ex. a API oficial). O ekte usa-o para corroborar o comportamento do alvo, tornando mais fiáveis os veredictos de substituição/degradação — a avaliação de qualidade e a deteção de adulteração só atingem o nível máximo com uma referência.",
+      "zh": "填一个你信任的同款模型端点（如官方 API）。ekte 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。"
      },
      {
       "kind": "instruction",
-      "en": "Tests are sent from your local zing server; the key is only used to connect to the target relay and is never uploaded to any third party.",
-      "de": "Die Tests werden von Ihrem lokalen zing-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.",
-      "es": "Las pruebas se envían desde su servidor zing local; la clave solo se usa para conectar con el intermediario objetivo y nunca se envía a terceros.",
-      "fr": "Les tests partent de votre serveur zing local ; la clé sert uniquement à se connecter au relais cible et n'est jamais transmise à un tiers.",
-      "it": "I test partono dal tuo server zing locale; la chiave serve solo a collegarsi all'intermediario di destinazione e non viene mai inviata a terzi.",
-      "pt": "Os testes são enviados a partir do seu servidor zing local; a chave só é usada para ligar ao intermediário alvo e nunca é enviada a terceiros.",
-      "zh": "检测在 你本地的 zing 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。"
+      "en": "Tests are sent from your local ekte server; the key is only used to connect to the target relay and is never uploaded to any third party.",
+      "de": "Die Tests werden von Ihrem lokalen ekte-Server gesendet; der Schlüssel dient nur der Verbindung zum Ziel-Relay und wird nie an Dritte übertragen.",
+      "es": "Las pruebas se envían desde su servidor ekte local; la clave solo se usa para conectar con el intermediario objetivo y nunca se envía a terceros.",
+      "fr": "Les tests partent de votre serveur ekte local ; la clé sert uniquement à se connecter au relais cible et n'est jamais transmise à un tiers.",
+      "it": "I test partono dal tuo server ekte locale; la chiave serve solo a collegarsi all'intermediario di destinazione e non viene mai inviata a terzi.",
+      "pt": "Os testes são enviados a partir do seu servidor ekte local; a chave só é usada para ligar ao intermediário alvo e nunca é enviada a terceiros.",
+      "zh": "检测在 你本地的 ekte 服务 发起，密钥只用于连接目标中转站，不上传任何第三方。"
      },
      {
       "kind": "instruction",
@@ -14201,13 +14201,13 @@
      },
      {
       "kind": "instruction",
-      "en": "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
-      "de": "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
-      "es": "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
-      "fr": "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
-      "it": "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
-      "pt": "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
-      "zh": "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
+      "en": "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+      "de": "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+      "es": "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+      "fr": "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+      "it": "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+      "pt": "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+      "zh": "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
      },
      {
       "kind": "instruction",
@@ -14277,7 +14277,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — audit history",
+    "title": "ekte — audit history",
     "lang": "en",
     "headings": [
      [
@@ -14355,7 +14355,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -14900,10 +14900,10 @@
     "decorative_images": 87,
     "instructions": [
      "Every verification you have run on this machine. Grouped by \"relay + claimed model\", with a health-score trend line; click any row to expand that report.",
-     "Findings: 4 high, 5 medium. Run `zing compare` against a trusted baseline to strengthen the verdict.",
+     "Findings: 4 high, 5 medium. Run `ekte compare` against a trusted baseline to strengthen the verdict.",
      "http://127.0.0.1:9099/v1",
      "Sep 27, 2026, 7:47 AM",
-     "zing v0.11.0",
+     "ekte v0.11.0",
      "Reliably reachable?",
      "Score from one detector.",
      "Is the API spec-compliant?",
@@ -14933,10 +14933,10 @@
      "Transport security",
      "Streaming authenticity Streaming authenticity Pass · Score 100 3 ms",
      "Streaming authenticity",
-     "zing provides reproducible evidence of behavioral deviation and risk, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run.",
+     "ekte provides reproducible evidence of behavioral deviation and risk, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run.",
      "Saved audits: 1",
      "All local: audits run from your own machine, and your API keys never leave it.",
-     "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."
+     "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."
     ],
     "messages": []
    }
@@ -14956,7 +14956,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — Prüfverlauf",
+    "title": "ekte — Prüfverlauf",
     "lang": "de",
     "headings": [
      [
@@ -15034,7 +15034,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -15579,10 +15579,10 @@
     "decorative_images": 87,
     "instructions": [
      "Jede Prüfung, die Sie auf diesem Rechner ausgeführt haben, gruppiert nach „Relay + angegebenes Modell“, mit einer Trendlinie des Health-Scores; klicken Sie auf eine Zeile, um den Bericht aufzuklappen.",
-     "Befunde: 4 hoch, 5 mittel. Führen Sie `zing compare` gegen eine vertrauenswürdige Referenz aus, um das Urteil zu stärken.",
+     "Befunde: 4 hoch, 5 mittel. Führen Sie `ekte compare` gegen eine vertrauenswürdige Referenz aus, um das Urteil zu stärken.",
      "http://127.0.0.1:9099/v1",
      "27.09.2026, 07:47",
-     "zing v0.11.0",
+     "ekte v0.11.0",
      "Zuverlässig erreichbar?",
      "Bewertung aus einem Detektor.",
      "Ist die API spezifikationskonform?",
@@ -15612,10 +15612,10 @@
      "Transportsicherheit",
      "Echtheit des Streamings Echtheit des Streamings Bestanden · Bewertung 100 3 ms",
      "Echtheit des Streamings",
-     "zing liefert reproduzierbare Belege für Verhaltensabweichungen und Risiken, keinen rechtlichen oder kryptografischen Betrugsnachweis. Relays können probabilistisch routen; berücksichtigen Sie Stichprobengröße, Abrechnungseinstellungen und lokales Recht selbst und beschuldigen Sie einen Anbieter nie…",
+     "ekte liefert reproduzierbare Belege für Verhaltensabweichungen und Risiken, keinen rechtlichen oder kryptografischen Betrugsnachweis. Relays können probabilistisch routen; berücksichtigen Sie Stichprobengröße, Abrechnungseinstellungen und lokales Recht selbst und beschuldigen Sie einen Anbieter nie…",
      "Gespeicherte Audits: 1",
      "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie.",
-     "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
+     "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
     ],
     "messages": []
    }
@@ -15635,7 +15635,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — historial de auditorías",
+    "title": "ekte — historial de auditorías",
     "lang": "es",
     "headings": [
      [
@@ -15713,7 +15713,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -16258,10 +16258,10 @@
     "decorative_images": 87,
     "instructions": [
      "Todas las verificaciones que ha ejecutado en este equipo, agrupadas por «intermediario + modelo declarado», con una línea de tendencia de la puntuación de salud; haga clic en una fila para desplegar ese informe.",
-     "Hallazgos: 4 alto(s), 5 medio(s). Ejecute `zing compare` contra una referencia de confianza para reforzar el veredicto.",
+     "Hallazgos: 4 alto(s), 5 medio(s). Ejecute `ekte compare` contra una referencia de confianza para reforzar el veredicto.",
      "http://127.0.0.1:9099/v1",
      "27 sept 2026, 7:47",
-     "zing v0.11.0",
+     "ekte v0.11.0",
      "¿Accesible de forma fiable?",
      "Puntuación de un solo detector.",
      "¿Cumple la API la especificación?",
@@ -16291,10 +16291,10 @@
      "Seguridad del transporte",
      "Autenticidad del streaming Autenticidad del streaming Correcto · Puntuación 100 3 ms",
      "Autenticidad del streaming",
-     "zing aporta evidencias reproducibles de desviación de comportamiento y riesgo, no una prueba legal ni criptográfica de fraude. Los intermediarios pueden enrutar de forma probabilística; valore usted mismo el tamaño de la muestra, la configuración de facturación y la legislación local, y nunca acuse…",
+     "ekte aporta evidencias reproducibles de desviación de comportamiento y riesgo, no una prueba legal ni criptográfica de fraude. Los intermediarios pueden enrutar de forma probabilística; valore usted mismo el tamaño de la muestra, la configuración de facturación y la legislación local, y nunca acuse…",
      "Auditorías guardadas: 1",
      "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él.",
-     "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."
+     "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."
     ],
     "messages": []
    }
@@ -16314,7 +16314,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — historique des audits",
+    "title": "ekte — historique des audits",
     "lang": "fr",
     "headings": [
      [
@@ -16392,7 +16392,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -16937,10 +16937,10 @@
     "decorative_images": 87,
     "instructions": [
      "Toutes les vérifications lancées sur cette machine, regroupées par « relais + modèle annoncé », avec une courbe d'évolution du score de santé ; cliquez sur une ligne pour déplier le rapport.",
-     "Constats : 4 élevé(s), 5 moyen(s). Lancez `zing compare` face à une référence de confiance pour renforcer le verdict.",
+     "Constats : 4 élevé(s), 5 moyen(s). Lancez `ekte compare` face à une référence de confiance pour renforcer le verdict.",
      "http://127.0.0.1:9099/v1",
      "27 sept. 2026, 07:47",
-     "zing v0.11.0",
+     "ekte v0.11.0",
      "Joignable de façon fiable ?",
      "Score issu d'un seul détecteur.",
      "L'API respecte-t-elle la spécification ?",
@@ -16970,10 +16970,10 @@
      "Sécurité du transport",
      "Authenticité du streaming Authenticité du streaming Réussi · Score 100 3 ms",
      "Authenticité du streaming",
-     "zing fournit des preuves reproductibles d'écart de comportement et de risque, pas une preuve juridique ou cryptographique de fraude. Les relais peuvent router de façon probabiliste ; tenez compte vous-même de la taille de l'échantillon, des paramètres de facturation et du droit local, et n'accusez …",
+     "ekte fournit des preuves reproductibles d'écart de comportement et de risque, pas une preuve juridique ou cryptographique de fraude. Les relais peuvent router de façon probabiliste ; tenez compte vous-même de la taille de l'échantillon, des paramètres de facturation et du droit local, et n'accusez …",
      "Audits enregistrés : 1",
      "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais.",
-     "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."
+     "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution."
     ],
     "messages": []
    }
@@ -16993,7 +16993,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — cronologia delle verifiche",
+    "title": "ekte — cronologia delle verifiche",
     "lang": "it",
     "headings": [
      [
@@ -17071,7 +17071,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -17616,10 +17616,10 @@
     "decorative_images": 87,
     "instructions": [
      "Tutte le verifiche eseguite su questa macchina, raggruppate per «intermediario + modello dichiarato», con una linea di tendenza del punteggio di salute; fai clic su una riga per espandere il rapporto.",
-     "Rilevazioni: 4 alto/i, 5 medio/i. Esegui `zing compare` rispetto a un riferimento affidabile per rafforzare il verdetto.",
+     "Rilevazioni: 4 alto/i, 5 medio/i. Esegui `ekte compare` rispetto a un riferimento affidabile per rafforzare il verdetto.",
      "http://127.0.0.1:9099/v1",
      "27 set 2026, 07:47",
-     "zing v0.11.0",
+     "ekte v0.11.0",
      "Raggiungibile in modo affidabile?",
      "Punteggio da un solo rilevatore.",
      "L'API rispetta la specifica?",
@@ -17649,10 +17649,10 @@
      "Sicurezza del trasporto",
      "Autenticità dello streaming Autenticità dello streaming Superato · Punteggio 100 3 ms",
      "Autenticità dello streaming",
-     "zing fornisce prove riproducibili di scostamento del comportamento e di rischio, non una prova legale o crittografica di frode. Gli intermediari possono instradare in modo probabilistico; valuta tu dimensione del campione, impostazioni di fatturazione e legge locale, e non accusare mai pubblicament…",
+     "ekte fornisce prove riproducibili di scostamento del comportamento e di rischio, non una prova legale o crittografica di frode. Gli intermediari possono instradare in modo probabilistico; valuta tu dimensione del campione, impostazioni di fatturazione e legge locale, e non accusare mai pubblicament…",
      "Audit salvati: 1",
      "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai.",
-     "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."
+     "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione."
     ],
     "messages": []
    }
@@ -17672,7 +17672,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — histórico de auditorias",
+    "title": "ekte — histórico de auditorias",
     "lang": "pt",
     "headings": [
      [
@@ -17750,7 +17750,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -18295,10 +18295,10 @@
     "decorative_images": 87,
     "instructions": [
      "Todas as verificações que executou neste computador, agrupadas por «intermediário + modelo declarado», com uma linha de tendência da pontuação de saúde; clique numa linha para expandir esse relatório.",
-     "Constatações: 4 alto(s), 5 médio(s). Execute `zing compare` contra uma referência de confiança para reforçar o veredito.",
+     "Constatações: 4 alto(s), 5 médio(s). Execute `ekte compare` contra uma referência de confiança para reforçar o veredito.",
      "http://127.0.0.1:9099/v1",
      "27/09/2026, 07:47",
-     "zing v0.11.0",
+     "ekte v0.11.0",
      "Acessível de forma fiável?",
      "Pontuação de um único detector.",
      "A API cumpre a especificação?",
@@ -18328,10 +18328,10 @@
      "Segurança do transporte",
      "Autenticidade do streaming Autenticidade do streaming Aprovado · Pontuação 100 3 ms",
      "Autenticidade do streaming",
-     "O zing fornece evidências reprodutíveis de desvio de comportamento e de risco, não uma prova jurídica ou criptográfica de fraude. Os intermediários podem encaminhar de forma probabilística; pondere por si o tamanho da amostra, as definições de faturação e a lei local, e nunca acuse publicamente um …",
+     "O ekte fornece evidências reprodutíveis de desvio de comportamento e de risco, não uma prova jurídica ou criptográfica de fraude. Os intermediários podem encaminhar de forma probabilística; pondere por si o tamanho da amostra, as definições de faturação e a lei local, e nunca acuse publicamente um …",
      "Auditorias guardadas: 1",
      "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela.",
-     "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."
+     "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução."
     ],
     "messages": []
    }
@@ -18351,7 +18351,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — 检测历史",
+    "title": "ekte — 检测历史",
     "lang": "zh-CN",
     "headings": [
      [
@@ -18429,7 +18429,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -18974,10 +18974,10 @@
     "decorative_images": 87,
     "instructions": [
      "这里是你在本机跑过的每一次验真。按「中转站 + 声称模型」分组，附一条健康分趋势曲线；点任意一行可展开当时那份报告。",
-     "关注点：4 高，5 中。用 `zing compare` 对照可信基线复检，以加强结论。",
+     "关注点：4 高，5 中。用 `ekte compare` 对照可信基线复检，以加强结论。",
      "http://127.0.0.1:9099/v1",
      "2026年9月27日 07:47",
-     "zing v0.11.0",
+     "ekte v0.11.0",
      "稳定可达？",
      "得分来自一个检测器。",
      "接口是否规范？",
@@ -19006,10 +19006,10 @@
      "传输安全",
      "流式真实性 流式真实 通过 · 100 分 3 ms",
      "流式真实",
-     "zing 出具的是行为偏离与风险的可复现证据，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。",
+     "ekte 出具的是行为偏离与风险的可复现证据，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。",
      "共 1 条记录",
      "全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。",
-     "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
+     "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
     ],
     "messages": []
    }
@@ -19036,13 +19036,13 @@
     "rows": [
      {
       "kind": "title",
-      "en": "zing — audit history",
-      "de": "zing — Prüfverlauf",
-      "es": "zing — historial de auditorías",
-      "fr": "zing — historique des audits",
-      "it": "zing — cronologia delle verifiche",
-      "pt": "zing — histórico de auditorias",
-      "zh": "zing — 检测历史"
+      "en": "ekte — audit history",
+      "de": "ekte — Prüfverlauf",
+      "es": "ekte — historial de auditorías",
+      "fr": "ekte — historique des audits",
+      "it": "ekte — cronologia delle verifiche",
+      "pt": "ekte — histórico de auditorias",
+      "zh": "ekte — 检测历史"
      },
      {
       "kind": "heading",
@@ -19226,13 +19226,13 @@
      },
      {
       "kind": "link",
-      "en": "zing",
-      "de": "zing",
-      "es": "zing",
-      "fr": "zing",
-      "it": "zing",
-      "pt": "zing",
-      "zh": "zing"
+      "en": "ekte",
+      "de": "ekte",
+      "es": "ekte",
+      "fr": "ekte",
+      "it": "ekte",
+      "pt": "ekte",
+      "zh": "ekte"
      },
      {
       "kind": "link",
@@ -20146,13 +20146,13 @@
      },
      {
       "kind": "instruction",
-      "en": "Findings: 4 high, 5 medium. Run `zing compare` against a trusted baseline to strengthen the verdict.",
-      "de": "Befunde: 4 hoch, 5 mittel. Führen Sie `zing compare` gegen eine vertrauenswürdige Referenz aus, um das Urteil zu stärken.",
-      "es": "Hallazgos: 4 alto(s), 5 medio(s). Ejecute `zing compare` contra una referencia de confianza para reforzar el veredicto.",
-      "fr": "Constats : 4 élevé(s), 5 moyen(s). Lancez `zing compare` face à une référence de confiance pour renforcer le verdict.",
-      "it": "Rilevazioni: 4 alto/i, 5 medio/i. Esegui `zing compare` rispetto a un riferimento affidabile per rafforzare il verdetto.",
-      "pt": "Constatações: 4 alto(s), 5 médio(s). Execute `zing compare` contra uma referência de confiança para reforçar o veredito.",
-      "zh": "关注点：4 高，5 中。用 `zing compare` 对照可信基线复检，以加强结论。"
+      "en": "Findings: 4 high, 5 medium. Run `ekte compare` against a trusted baseline to strengthen the verdict.",
+      "de": "Befunde: 4 hoch, 5 mittel. Führen Sie `ekte compare` gegen eine vertrauenswürdige Referenz aus, um das Urteil zu stärken.",
+      "es": "Hallazgos: 4 alto(s), 5 medio(s). Ejecute `ekte compare` contra una referencia de confianza para reforzar el veredicto.",
+      "fr": "Constats : 4 élevé(s), 5 moyen(s). Lancez `ekte compare` face à une référence de confiance pour renforcer le verdict.",
+      "it": "Rilevazioni: 4 alto/i, 5 medio/i. Esegui `ekte compare` rispetto a un riferimento affidabile per rafforzare il verdetto.",
+      "pt": "Constatações: 4 alto(s), 5 médio(s). Execute `ekte compare` contra uma referência de confiança para reforçar o veredito.",
+      "zh": "关注点：4 高，5 中。用 `ekte compare` 对照可信基线复检，以加强结论。"
      },
      {
       "kind": "instruction",
@@ -20176,13 +20176,13 @@
      },
      {
       "kind": "instruction",
-      "en": "zing v0.11.0",
-      "de": "zing v0.11.0",
-      "es": "zing v0.11.0",
-      "fr": "zing v0.11.0",
-      "it": "zing v0.11.0",
-      "pt": "zing v0.11.0",
-      "zh": "zing v0.11.0"
+      "en": "ekte v0.11.0",
+      "de": "ekte v0.11.0",
+      "es": "ekte v0.11.0",
+      "fr": "ekte v0.11.0",
+      "it": "ekte v0.11.0",
+      "pt": "ekte v0.11.0",
+      "zh": "ekte v0.11.0"
      },
      {
       "kind": "instruction",
@@ -20476,13 +20476,13 @@
      },
      {
       "kind": "instruction",
-      "en": "zing provides reproducible evidence of behavioral deviation and risk, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run.",
-      "de": "zing liefert reproduzierbare Belege für Verhaltensabweichungen und Risiken, keinen rechtlichen oder kryptografischen Betrugsnachweis. Relays können probabilistisch routen; berücksichtigen Sie Stichprobengröße, Abrechnungseinstellungen und lokales Recht selbst und beschuldigen Sie einen Anbieter nie…",
-      "es": "zing aporta evidencias reproducibles de desviación de comportamiento y riesgo, no una prueba legal ni criptográfica de fraude. Los intermediarios pueden enrutar de forma probabilística; valore usted mismo el tamaño de la muestra, la configuración de facturación y la legislación local, y nunca acuse…",
-      "fr": "zing fournit des preuves reproductibles d'écart de comportement et de risque, pas une preuve juridique ou cryptographique de fraude. Les relais peuvent router de façon probabiliste ; tenez compte vous-même de la taille de l'échantillon, des paramètres de facturation et du droit local, et n'accusez …",
-      "it": "zing fornisce prove riproducibili di scostamento del comportamento e di rischio, non una prova legale o crittografica di frode. Gli intermediari possono instradare in modo probabilistico; valuta tu dimensione del campione, impostazioni di fatturazione e legge locale, e non accusare mai pubblicament…",
-      "pt": "O zing fornece evidências reprodutíveis de desvio de comportamento e de risco, não uma prova jurídica ou criptográfica de fraude. Os intermediários podem encaminhar de forma probabilística; pondere por si o tamanho da amostra, as definições de faturação e a lei local, e nunca acuse publicamente um …",
-      "zh": "zing 出具的是行为偏离与风险的可复现证据，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。"
+      "en": "ekte provides reproducible evidence of behavioral deviation and risk, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run.",
+      "de": "ekte liefert reproduzierbare Belege für Verhaltensabweichungen und Risiken, keinen rechtlichen oder kryptografischen Betrugsnachweis. Relays können probabilistisch routen; berücksichtigen Sie Stichprobengröße, Abrechnungseinstellungen und lokales Recht selbst und beschuldigen Sie einen Anbieter nie…",
+      "es": "ekte aporta evidencias reproducibles de desviación de comportamiento y riesgo, no una prueba legal ni criptográfica de fraude. Los intermediarios pueden enrutar de forma probabilística; valore usted mismo el tamaño de la muestra, la configuración de facturación y la legislación local, y nunca acuse…",
+      "fr": "ekte fournit des preuves reproductibles d'écart de comportement et de risque, pas une preuve juridique ou cryptographique de fraude. Les relais peuvent router de façon probabiliste ; tenez compte vous-même de la taille de l'échantillon, des paramètres de facturation et du droit local, et n'accusez …",
+      "it": "ekte fornisce prove riproducibili di scostamento del comportamento e di rischio, non una prova legale o crittografica di frode. Gli intermediari possono instradare in modo probabilistico; valuta tu dimensione del campione, impostazioni di fatturazione e legge locale, e non accusare mai pubblicament…",
+      "pt": "O ekte fornece evidências reprodutíveis de desvio de comportamento e de risco, não uma prova jurídica ou criptográfica de fraude. Os intermediários podem encaminhar de forma probabilística; pondere por si o tamanho da amostra, as definições de faturação e a lei local, e nunca acuse publicamente um …",
+      "zh": "ekte 出具的是行为偏离与风险的可复现证据，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。"
      },
      {
       "kind": "instruction",
@@ -20506,13 +20506,13 @@
      },
      {
       "kind": "instruction",
-      "en": "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
-      "de": "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
-      "es": "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
-      "fr": "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
-      "it": "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
-      "pt": "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
-      "zh": "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
+      "en": "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+      "de": "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+      "es": "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+      "fr": "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+      "it": "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+      "pt": "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+      "zh": "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
      }
     ]
    }
@@ -20531,12 +20531,12 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — knowledge base",
+    "title": "ekte — knowledge base",
     "lang": "en",
     "headings": [
      [
       1,
-      "The knowledge base zing audits against"
+      "The knowledge base ekte audits against"
      ],
      [
       2,
@@ -20577,7 +20577,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -21032,13 +21032,13 @@
     "images": [],
     "decorative_images": 24,
     "instructions": [
-     "Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay zing knows — packaged ones and yours — and can switch each of them on or off or add your own. Your ch…",
+     "Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay ekte knows — packaged ones and yours — and can switch each of them on or off or add your own. Your ch…",
      "The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.",
      "Let an AI assistant research the model, then check its answer here before it is stored.",
      "Paste it into the AI assistant of your choice. It answers with one YAML document.",
-     "The check validates the schema and limits, flags unsafe regular expressions, lists every prompt zing would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.",
+     "The check validates the schema and limits, flags unsafe regular expressions, lists every prompt ekte would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.",
      "All local: audits run from your own machine, and your API keys never leave it.",
-     "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+     "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
      "The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.",
      "A provider YAML has provider, display_name, base_url_hints and models. For a provider that already exists only its models, fingerprints, base URLs and relay red flags are added.",
      "Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.",
@@ -21075,12 +21075,12 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — Wissensbasis",
+    "title": "ekte — Wissensbasis",
     "lang": "de",
     "headings": [
      [
       1,
-      "Die Wissensbasis, gegen die zing prüft"
+      "Die Wissensbasis, gegen die ekte prüft"
      ],
      [
       2,
@@ -21121,7 +21121,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -21576,13 +21576,13 @@
     "images": [],
     "decorative_images": 24,
     "instructions": [
-     "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das zing kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder…",
+     "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das ekte kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder…",
      "Die Modellprofile, mit denen Prüfungen vergleichen. Ein ausgeschaltetes Modell wird nicht mehr zugeordnet: Prüfungen dafür laufen ohne Profil.",
      "Lass einen KI-Assistenten das Modell recherchieren und prüfe seine Antwort hier, bevor sie gespeichert wird.",
      "Füge ihn in einen KI-Assistenten deiner Wahl ein. Er antwortet mit einem YAML-Dokument.",
-     "Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den zing an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.",
+     "Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den ekte an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.",
      "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie.",
-     "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+     "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
      "Die Herausgeber der Modelle: ihre Basis-URLs, Identität und Fingerabdrücke. Wird ein Anbieter ausgeschaltet, sind auch alle seine Modelle aus.",
      "Ein Anbieter-YAML enthält provider, display_name, base_url_hints und models. Bei einem bereits vorhandenen Anbieter werden nur seine Modelle, Fingerabdrücke, Basis-URLs und Relay-Warnzeichen ergänzt.",
      "Endpunkte ohne eigene Modelle, z. B. Relays, die du auf der Prüfseite gespeichert hast. Sie stehen dort in der Relay-Liste; ein ausgeschaltetes Relay nicht.",
@@ -21619,12 +21619,12 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — base de conocimiento",
+    "title": "ekte — base de conocimiento",
     "lang": "es",
     "headings": [
      [
       1,
-      "La base de conocimiento con la que audita zing"
+      "La base de conocimiento con la que audita ekte"
      ],
      [
       2,
@@ -21665,7 +21665,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -22120,13 +22120,13 @@
     "images": [],
     "decorative_images": 24,
     "instructions": [
-     "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Aquí encuentras cada modelo, proveedor y relay que zing conoce —los incluidos y los tuyos— y puedes activar o desactivar cada uno o añadir…",
+     "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Aquí encuentras cada modelo, proveedor y relay que ekte conoce —los incluidos y los tuyos— y puedes activar o desactivar cada uno o añadir…",
      "Los perfiles de modelo con los que comparan las auditorías. Un modelo desactivado ya no se resuelve: sus auditorías se ejecutan sin perfil.",
      "Deja que un asistente de IA investigue el modelo y comprueba aquí su respuesta antes de guardarla.",
      "Pégalo en el asistente de IA que prefieras. Responde con un documento YAML.",
-     "La comprobación valida el esquema y los límites, marca expresiones regulares inseguras, lista cada prompt que zing enviaría a los relays y muestra qué ID de modelo se resolverían de otra forma. No se guarda nada hasta que guardes.",
+     "La comprobación valida el esquema y los límites, marca expresiones regulares inseguras, lista cada prompt que ekte enviaría a los relays y muestra qué ID de modelo se resolverían de otra forma. No se guarda nada hasta que guardes.",
      "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él.",
-     "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+     "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
      "Quienes publican los modelos: sus URL base, identidad y huellas. Desactivar un proveedor desactiva también todos sus modelos.",
      "Un YAML de proveedor tiene provider, display_name, base_url_hints y models. Para un proveedor que ya existe solo se añaden sus modelos, huellas, URL base y señales de alerta de relays.",
      "Endpoints sin modelos propios, p. ej. relays que guardaste en la página de Auditoría. Se ofrecen allí en la lista de relays; uno desactivado no.",
@@ -22163,12 +22163,12 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — base de connaissances",
+    "title": "ekte — base de connaissances",
     "lang": "fr",
     "headings": [
      [
       1,
-      "La base de connaissances utilisée par zing"
+      "La base de connaissances utilisée par ekte"
      ],
      [
       2,
@@ -22209,7 +22209,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -22664,13 +22664,13 @@
     "images": [],
     "decorative_images": 24,
     "instructions": [
-     "Chaque audit compare un relais au profil du modèle qu'il annonce : fenêtre de contexte, limite de sortie, capacités, identité et empreintes comportementales. Vous trouvez ici chaque modèle, fournisseur et relais que zing connaît — ceux fournis et les vôtres — et pouvez activer ou désactiver chacun …",
+     "Chaque audit compare un relais au profil du modèle qu'il annonce : fenêtre de contexte, limite de sortie, capacités, identité et empreintes comportementales. Vous trouvez ici chaque modèle, fournisseur et relais que ekte connaît — ceux fournis et les vôtres — et pouvez activer ou désactiver chacun …",
      "Les profils de modèle auxquels les audits se comparent. Un modèle désactivé n'est plus résolu : ses audits s'exécutent sans profil.",
      "Laissez un assistant IA se renseigner sur le modèle, puis vérifiez sa réponse ici avant qu’elle soit enregistrée.",
      "Collez-le dans l’assistant IA de votre choix. Il répond avec un document YAML.",
-     "La vérification valide le schéma et les limites, signale les expressions régulières dangereuses, liste chaque prompt que zing enverrait aux relais et montre quels identifiants de modèle seraient résolus différemment. Rien n’est enregistré avant que vous n’enregistriez.",
+     "La vérification valide le schéma et les limites, signale les expressions régulières dangereuses, liste chaque prompt que ekte enverrait aux relais et montre quels identifiants de modèle seraient résolus différemment. Rien n’est enregistré avant que vous n’enregistriez.",
      "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais.",
-     "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+     "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
      "Les éditeurs des modèles : leurs URL de base, leur identité et leurs empreintes. Désactiver un fournisseur désactive aussi tous ses modèles.",
      "Un YAML de fournisseur contient provider, display_name, base_url_hints et models. Pour un fournisseur existant, seuls ses modèles, empreintes, URL de base et signaux d'alerte de relais sont ajoutés.",
      "Points de terminaison sans modèles propres, p. ex. les relais enregistrés sur la page Audit. Ils y sont proposés dans la liste des relais ; un relais désactivé ne l'est pas.",
@@ -22707,12 +22707,12 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — base di conoscenza",
+    "title": "ekte — base di conoscenza",
     "lang": "it",
     "headings": [
      [
       1,
-      "La base di conoscenza usata da zing"
+      "La base di conoscenza usata da ekte"
      ],
      [
       2,
@@ -22753,7 +22753,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -23208,13 +23208,13 @@
     "images": [],
     "decorative_images": 24,
     "instructions": [
-     "Ogni audit confronta un relay con il profilo del modello che dichiara: finestra di contesto, limite di output, capacità, identità e impronte comportamentali. Qui trovi ogni modello, provider e relay che zing conosce — inclusi e tuoi — e puoi attivarli o disattivarli uno per uno o aggiungerne di tuo…",
+     "Ogni audit confronta un relay con il profilo del modello che dichiara: finestra di contesto, limite di output, capacità, identità e impronte comportamentali. Qui trovi ogni modello, provider e relay che ekte conosce — inclusi e tuoi — e puoi attivarli o disattivarli uno per uno o aggiungerne di tuo…",
      "I profili di modello con cui gli audit confrontano. Un modello disattivato non viene più risolto: i suoi audit girano senza profilo.",
      "Lascia che un assistente IA si documenti sul modello, poi verifica qui la risposta prima di salvarla.",
      "Incollalo nell’assistente IA che preferisci. Risponde con un documento YAML.",
-     "La verifica convalida schema e limiti, segnala le espressioni regolari non sicure, elenca ogni prompt che zing invierebbe ai relay e mostra quali ID di modello verrebbero risolti diversamente. Nulla viene salvato finché non salvi.",
+     "La verifica convalida schema e limiti, segnala le espressioni regolari non sicure, elenca ogni prompt che ekte invierebbe ai relay e mostra quali ID di modello verrebbero risolti diversamente. Nulla viene salvato finché non salvi.",
      "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai.",
-     "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+     "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
      "Gli editori dei modelli: URL di base, identità e impronte. Disattivare un provider disattiva anche tutti i suoi modelli.",
      "Uno YAML di provider contiene provider, display_name, base_url_hints e models. Per un provider già esistente vengono aggiunti solo modelli, impronte, URL di base e segnali d'allarme dei relay.",
      "Endpoint senza modelli propri, ad es. i relay salvati nella pagina Audit. Lì sono proposti nell'elenco dei relay; uno disattivato no.",
@@ -23251,12 +23251,12 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — base de conhecimento",
+    "title": "ekte — base de conhecimento",
     "lang": "pt",
     "headings": [
      [
       1,
-      "A base de conhecimento usada pelo zing"
+      "A base de conhecimento usada pelo ekte"
      ],
      [
       2,
@@ -23297,7 +23297,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -23752,13 +23752,13 @@
     "images": [],
     "decorative_images": 24,
     "instructions": [
-     "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, provedor e relay que o zing conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adiciona…",
+     "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, provedor e relay que o ekte conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adiciona…",
      "Os perfis de modelo com que as auditorias comparam. Um modelo desativado deixa de ser resolvido: as suas auditorias correm sem perfil.",
      "Deixe um assistente de IA pesquisar o modelo e verifique a resposta aqui antes de salvá-la.",
      "Cole-o no assistente de IA de sua escolha. Ele responde com um documento YAML.",
-     "A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o zing enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é salvo até você salvar.",
+     "A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o ekte enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é salvo até você salvar.",
      "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela.",
-     "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+     "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
      "Quem publica os modelos: URLs base, identidade e impressões. Desativar um provedor desativa também todos os seus modelos.",
      "Um YAML de provedor tem provider, display_name, base_url_hints e models. Para um provedor que já existe só são adicionados os seus modelos, impressões, URLs base e sinais de alerta de relays.",
      "Endpoints sem modelos próprios, p. ex. relays guardados na página Auditoria. São oferecidos lá na lista de relays; um desativado não.",
@@ -23795,12 +23795,12 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — 知识库",
+    "title": "ekte — 知识库",
     "lang": "zh-CN",
     "headings": [
      [
       1,
-      "zing 用来比对的知识库"
+      "ekte 用来比对的知识库"
      ],
      [
       2,
@@ -23841,7 +23841,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -24296,13 +24296,13 @@
     "images": [],
     "decorative_images": 24,
     "instructions": [
-     "每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 zing 已知的全部模型、厂商与中转站——内置的和你的——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 kb.db 中，网页界面和 zing check 都会使用。",
+     "每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 ekte 已知的全部模型、厂商与中转站——内置的和你的——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 kb.db 中，网页界面和 ekte check 都会使用。",
      "检测时用来比对的模型资料。停用的模型不再参与匹配：检测它时将没有资料可比对。",
      "让 AI 助手调研该模型，然后在这里检查它的回答，再保存。",
      "把它粘贴到你选择的 AI 助手中，它会返回一份 YAML 文档。",
-     "检查会校验结构与上限、标记不安全的正则表达式、列出 zing 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。",
+     "检查会校验结构与上限、标记不安全的正则表达式、列出 ekte 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。",
      "全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。",
-     "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
+     "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
      "模型的发布方：其基础地址、身份与指纹。停用某个厂商也会停用它的全部模型。",
      "一份厂商 YAML 包含 provider、display_name、base_url_hints 和 models。对已有厂商只会补充其模型、指纹、基础地址和中转站警示。",
      "没有自有模型的端点，例如你在检测页面保存的中转站。它们会出现在那里的中转站列表中；停用的则不会。",
@@ -24347,23 +24347,23 @@
     "rows": [
      {
       "kind": "title",
-      "en": "zing — knowledge base",
-      "de": "zing — Wissensbasis",
-      "es": "zing — base de conocimiento",
-      "fr": "zing — base de connaissances",
-      "it": "zing — base di conoscenza",
-      "pt": "zing — base de conhecimento",
-      "zh": "zing — 知识库"
+      "en": "ekte — knowledge base",
+      "de": "ekte — Wissensbasis",
+      "es": "ekte — base de conocimiento",
+      "fr": "ekte — base de connaissances",
+      "it": "ekte — base di conoscenza",
+      "pt": "ekte — base de conhecimento",
+      "zh": "ekte — 知识库"
      },
      {
       "kind": "heading",
-      "en": "The knowledge base zing audits against",
-      "de": "Die Wissensbasis, gegen die zing prüft",
-      "es": "La base de conocimiento con la que audita zing",
-      "fr": "La base de connaissances utilisée par zing",
-      "it": "La base di conoscenza usata da zing",
-      "pt": "A base de conhecimento usada pelo zing",
-      "zh": "zing 用来比对的知识库"
+      "en": "The knowledge base ekte audits against",
+      "de": "Die Wissensbasis, gegen die ekte prüft",
+      "es": "La base de conocimiento con la que audita ekte",
+      "fr": "La base de connaissances utilisée par ekte",
+      "it": "La base di conoscenza usata da ekte",
+      "pt": "A base de conhecimento usada pelo ekte",
+      "zh": "ekte 用来比对的知识库"
      },
      {
       "kind": "heading",
@@ -24457,13 +24457,13 @@
      },
      {
       "kind": "link",
-      "en": "zing",
-      "de": "zing",
-      "es": "zing",
-      "fr": "zing",
-      "it": "zing",
-      "pt": "zing",
-      "zh": "zing"
+      "en": "ekte",
+      "de": "ekte",
+      "es": "ekte",
+      "fr": "ekte",
+      "it": "ekte",
+      "pt": "ekte",
+      "zh": "ekte"
      },
      {
       "kind": "link",
@@ -26357,13 +26357,13 @@
      },
      {
       "kind": "instruction",
-      "en": "Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay zing knows — packaged ones and yours — and can switch each of them on or off or add your own. Your ch…",
-      "de": "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das zing kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder…",
-      "es": "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Aquí encuentras cada modelo, proveedor y relay que zing conoce —los incluidos y los tuyos— y puedes activar o desactivar cada uno o añadir…",
-      "fr": "Chaque audit compare un relais au profil du modèle qu'il annonce : fenêtre de contexte, limite de sortie, capacités, identité et empreintes comportementales. Vous trouvez ici chaque modèle, fournisseur et relais que zing connaît — ceux fournis et les vôtres — et pouvez activer ou désactiver chacun …",
-      "it": "Ogni audit confronta un relay con il profilo del modello che dichiara: finestra di contesto, limite di output, capacità, identità e impronte comportamentali. Qui trovi ogni modello, provider e relay che zing conosce — inclusi e tuoi — e puoi attivarli o disattivarli uno per uno o aggiungerne di tuo…",
-      "pt": "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, provedor e relay que o zing conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adiciona…",
-      "zh": "每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 zing 已知的全部模型、厂商与中转站——内置的和你的——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 kb.db 中，网页界面和 zing check 都会使用。"
+      "en": "Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay ekte knows — packaged ones and yours — and can switch each of them on or off or add your own. Your ch…",
+      "de": "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das ekte kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder…",
+      "es": "Cada auditoría compara un relay con el perfil del modelo que declara: ventana de contexto, límite de salida, capacidades, identidad y huellas de comportamiento. Aquí encuentras cada modelo, proveedor y relay que ekte conoce —los incluidos y los tuyos— y puedes activar o desactivar cada uno o añadir…",
+      "fr": "Chaque audit compare un relais au profil du modèle qu'il annonce : fenêtre de contexte, limite de sortie, capacités, identité et empreintes comportementales. Vous trouvez ici chaque modèle, fournisseur et relais que ekte connaît — ceux fournis et les vôtres — et pouvez activer ou désactiver chacun …",
+      "it": "Ogni audit confronta un relay con il profilo del modello che dichiara: finestra di contesto, limite di output, capacità, identità e impronte comportamentali. Qui trovi ogni modello, provider e relay che ekte conosce — inclusi e tuoi — e puoi attivarli o disattivarli uno per uno o aggiungerne di tuo…",
+      "pt": "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, provedor e relay que o ekte conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adiciona…",
+      "zh": "每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 ekte 已知的全部模型、厂商与中转站——内置的和你的——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 kb.db 中，网页界面和 ekte check 都会使用。"
      },
      {
       "kind": "instruction",
@@ -26397,13 +26397,13 @@
      },
      {
       "kind": "instruction",
-      "en": "The check validates the schema and limits, flags unsafe regular expressions, lists every prompt zing would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.",
-      "de": "Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den zing an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.",
-      "es": "La comprobación valida el esquema y los límites, marca expresiones regulares inseguras, lista cada prompt que zing enviaría a los relays y muestra qué ID de modelo se resolverían de otra forma. No se guarda nada hasta que guardes.",
-      "fr": "La vérification valide le schéma et les limites, signale les expressions régulières dangereuses, liste chaque prompt que zing enverrait aux relais et montre quels identifiants de modèle seraient résolus différemment. Rien n’est enregistré avant que vous n’enregistriez.",
-      "it": "La verifica convalida schema e limiti, segnala le espressioni regolari non sicure, elenca ogni prompt che zing invierebbe ai relay e mostra quali ID di modello verrebbero risolti diversamente. Nulla viene salvato finché non salvi.",
-      "pt": "A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o zing enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é salvo até você salvar.",
-      "zh": "检查会校验结构与上限、标记不安全的正则表达式、列出 zing 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。"
+      "en": "The check validates the schema and limits, flags unsafe regular expressions, lists every prompt ekte would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.",
+      "de": "Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den ekte an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.",
+      "es": "La comprobación valida el esquema y los límites, marca expresiones regulares inseguras, lista cada prompt que ekte enviaría a los relays y muestra qué ID de modelo se resolverían de otra forma. No se guarda nada hasta que guardes.",
+      "fr": "La vérification valide le schéma et les limites, signale les expressions régulières dangereuses, liste chaque prompt que ekte enverrait aux relais et montre quels identifiants de modèle seraient résolus différemment. Rien n’est enregistré avant que vous n’enregistriez.",
+      "it": "La verifica convalida schema e limiti, segnala le espressioni regolari non sicure, elenca ogni prompt che ekte invierebbe ai relay e mostra quali ID di modello verrebbero risolti diversamente. Nulla viene salvato finché non salvi.",
+      "pt": "A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o ekte enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é salvo até você salvar.",
+      "zh": "检查会校验结构与上限、标记不安全的正则表达式、列出 ekte 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。"
      },
      {
       "kind": "instruction",
@@ -26417,13 +26417,13 @@
      },
      {
       "kind": "instruction",
-      "en": "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
-      "de": "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
-      "es": "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
-      "fr": "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
-      "it": "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
-      "pt": "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
-      "zh": "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
+      "en": "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+      "de": "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+      "es": "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+      "fr": "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+      "it": "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+      "pt": "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+      "zh": "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
      },
      {
       "kind": "instruction",
@@ -26502,7 +26502,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — monitors",
+    "title": "ekte — monitors",
     "lang": "en",
     "headings": [
      [
@@ -26528,7 +26528,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -26751,14 +26751,14 @@
       "label": "API KEY (optional)",
       "name_from": "label",
       "visible_label": "API key (optional)",
-      "placeholder": "sk-... or env:ZING_API_KEY",
+      "placeholder": "sk-... or env:EKTE_API_KEY",
       "type": "password"
      }
     ],
     "images": [],
     "decorative_images": 20,
     "instructions": [
-     "Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in History and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Sla…",
+     "Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in History and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Sla…",
      "openai · auto-detected",
      "None Replace",
      "No webhooks Edit",
@@ -26767,9 +26767,9 @@
      "The configuration comes from the run in History. Set how often it runs, then activate it.",
      "One full run took 1 s, so it runs at most every 5 min.",
      "History never stores the key. Leave it empty for a local or self-hosted model.",
-     "Everything runs locally. The API key is stored encrypted, only in the local database under ~/.zing on this machine; it never appears in the monitor list and is never sent to the browser. The master key that decrypts it is never written to disk: you keep it, and enter it after each restart.",
+     "Everything runs locally. The API key is stored encrypted, only in the local database under ~/.ekte on this machine; it never appears in the monitor list and is never sent to the browser. The master key that decrypts it is never written to disk: you keep it, and enter it after each restart.",
      "All local: audits run from your own machine, and your API keys never leave it.",
-     "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+     "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
      "Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.",
      "No monitors are running"
     ],
@@ -26796,7 +26796,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — Überwachung",
+    "title": "ekte — Überwachung",
     "lang": "de",
     "headings": [
      [
@@ -26822,7 +26822,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -27045,7 +27045,7 @@
       "label": "API-SCHLÜSSEL (optional)",
       "name_from": "label",
       "visible_label": "API-Schlüssel (optional)",
-      "placeholder": "sk-... oder env:ZING_API_KEY",
+      "placeholder": "sk-... oder env:EKTE_API_KEY",
       "type": "password"
      }
     ],
@@ -27062,9 +27062,9 @@
      "Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft sie läuft, und aktivieren Sie sie.",
      "Ein vollständiger Lauf dauerte 1 s, daher läuft sie höchstens alle 5 Min..",
      "Der Verlauf speichert den Schlüssel nie. Für lokale oder selbst gehostete Modelle leer lassen.",
-     "Alles läuft lokal. Der API-Schlüssel wird verschlüsselt und nur in der lokalen Datenbank unter ~/.zing auf diesem Rechner gespeichert; er erscheint nie in der Überwachungsliste und wird nie an den Browser gesendet. Der Hauptschlüssel, der ihn entschlüsselt, wird nie auf die Festplatte geschrieben: …",
+     "Alles läuft lokal. Der API-Schlüssel wird verschlüsselt und nur in der lokalen Datenbank unter ~/.ekte auf diesem Rechner gespeichert; er erscheint nie in der Überwachungsliste und wird nie an den Browser gesendet. Der Hauptschlüssel, der ihn entschlüsselt, wird nie auf die Festplatte geschrieben: …",
      "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie.",
-     "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+     "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
      "Laufende Überwachungen. Ein Lauf desselben Relays wartet, bis jede andere Prüfung davon abgeschlossen ist, damit die Ergebnisse nie verfälscht werden.",
      "Es laufen keine Überwachungen"
     ],
@@ -27091,7 +27091,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — monitores",
+    "title": "ekte — monitores",
     "lang": "es",
     "headings": [
      [
@@ -27117,7 +27117,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -27340,7 +27340,7 @@
       "label": "CLAVE DE API (opcional)",
       "name_from": "label",
       "visible_label": "Clave de API (opcional)",
-      "placeholder": "sk-... o env:ZING_API_KEY",
+      "placeholder": "sk-... o env:EKTE_API_KEY",
       "type": "password"
      }
     ],
@@ -27356,9 +27356,9 @@
      "La configuración proviene de la ejecución del Historial. Define cada cuánto se ejecuta y actívalo.",
      "Una ejecución completa tardó 1 s, así que se ejecuta como máximo cada 5 min.",
      "El historial nunca guarda la clave. Déjala vacía para un modelo local o autoalojado.",
-     "Todo se ejecuta localmente. La clave API se guarda cifrada, solo en la base de datos local bajo ~/.zing en este equipo; nunca aparece en la lista de monitores ni se envía al navegador. La clave maestra que la descifra nunca se escribe en disco: la guardas tú y la introduces tras cada reinicio.",
+     "Todo se ejecuta localmente. La clave API se guarda cifrada, solo en la base de datos local bajo ~/.ekte en este equipo; nunca aparece en la lista de monitores ni se envía al navegador. La clave maestra que la descifra nunca se escribe en disco: la guardas tú y la introduces tras cada reinicio.",
      "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él.",
-     "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+     "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
      "Ejecuciones de monitores en curso. Una ejecución del mismo relay espera a que termine cualquier otra auditoría suya, para que los resultados nunca se distorsionen.",
      "No hay monitores en curso"
     ],
@@ -27385,7 +27385,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — surveillances",
+    "title": "ekte — surveillances",
     "lang": "fr",
     "headings": [
      [
@@ -27411,7 +27411,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -27634,7 +27634,7 @@
       "label": "CLÉ API (facultatif)",
       "name_from": "label",
       "visible_label": "Clé API (facultatif)",
-      "placeholder": "sk-... ou env:ZING_API_KEY",
+      "placeholder": "sk-... ou env:EKTE_API_KEY",
       "type": "password"
      }
     ],
@@ -27650,9 +27650,9 @@
      "La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la.",
      "Une exécution complète a pris 1 s, elle s’exécute donc au plus toutes les 5 min.",
      "L’historique ne conserve jamais la clé. Laissez vide pour un modèle local ou auto-hébergé.",
-     "Tout s'exécute en local. La clé API est stockée chiffrée, uniquement dans la base de données locale sous ~/.zing sur cette machine ; elle n'apparaît jamais dans la liste des surveillances et n'est jamais envoyée au navigateur. La clé maîtresse qui la déchiffre n'est jamais écrite sur le disque : vo…",
+     "Tout s'exécute en local. La clé API est stockée chiffrée, uniquement dans la base de données locale sous ~/.ekte sur cette machine ; elle n'apparaît jamais dans la liste des surveillances et n'est jamais envoyée au navigateur. La clé maîtresse qui la déchiffre n'est jamais écrite sur le disque : vo…",
      "Tout en local : les audits partent de votre propre machine et vos clés d'API ne la quittent jamais.",
-     "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+     "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
      "Exécutions de moniteurs en cours. Une exécution du même relais attend la fin de tout autre audit de celui-ci, afin que les résultats ne soient jamais faussés.",
      "Aucune surveillance en cours"
     ],
@@ -27679,7 +27679,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — monitor",
+    "title": "ekte — monitor",
     "lang": "it",
     "headings": [
      [
@@ -27705,7 +27705,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -27928,7 +27928,7 @@
       "label": "CHIAVE API (facoltativo)",
       "name_from": "label",
       "visible_label": "Chiave API (facoltativo)",
-      "placeholder": "sk-... o env:ZING_API_KEY",
+      "placeholder": "sk-... o env:EKTE_API_KEY",
       "type": "password"
      }
     ],
@@ -27945,9 +27945,9 @@
      "La configurazione proviene dall’esecuzione nella Cronologia. Imposta ogni quanto viene eseguito, poi attivalo.",
      "Un’esecuzione completa ha richiesto 1 s, quindi viene eseguito al massimo ogni 5 min.",
      "La cronologia non salva mai la chiave. Lasciala vuota per un modello locale o self-hosted.",
-     "Tutto gira in locale. La chiave API è salvata cifrata, solo nel database locale in ~/.zing su questo computer; non compare mai nell'elenco dei monitor e non viene mai inviata al browser. La chiave principale che la decifra non viene mai scritta su disco: la conservi tu e la inserisci dopo ogni riav…",
+     "Tutto gira in locale. La chiave API è salvata cifrata, solo nel database locale in ~/.ekte su questo computer; non compare mai nell'elenco dei monitor e non viene mai inviata al browser. La chiave principale che la decifra non viene mai scritta su disco: la conservi tu e la inserisci dopo ogni riav…",
      "Tutto in locale: gli audit partono dalla tua macchina e le tue chiavi API non la lasciano mai.",
-     "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+     "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
      "Esecuzioni dei monitor in corso. Un’esecuzione dello stesso relay attende che termini ogni altro audit su di esso, così i risultati non vengono mai falsati.",
      "Nessun monitor in corso"
     ],
@@ -27974,7 +27974,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — monitores",
+    "title": "ekte — monitores",
     "lang": "pt",
     "headings": [
      [
@@ -28000,7 +28000,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -28223,7 +28223,7 @@
       "label": "CHAVE DE API (opcional)",
       "name_from": "label",
       "visible_label": "Chave de API (opcional)",
-      "placeholder": "sk-... ou env:ZING_API_KEY",
+      "placeholder": "sk-... ou env:EKTE_API_KEY",
       "type": "password"
      }
     ],
@@ -28240,9 +28240,9 @@
      "A configuração vem da execução no Histórico. Defina com que frequência ele roda e ative-o.",
      "Uma execução completa demorou 1 s, por isso é executada no máximo a cada 5 min.",
      "O histórico nunca guarda a chave. Deixe vazio para um modelo local ou auto-hospedado.",
-     "Tudo é executado localmente. A chave API é guardada encriptada, apenas na base de dados local em ~/.zing nesta máquina; nunca aparece na lista de monitores nem é enviada ao navegador. A chave mestra que a desencripta nunca é escrita no disco: guarda-a você e introduz-a após cada reinício.",
+     "Tudo é executado localmente. A chave API é guardada encriptada, apenas na base de dados local em ~/.ekte nesta máquina; nunca aparece na lista de monitores nem é enviada ao navegador. A chave mestra que a desencripta nunca é escrita no disco: guarda-a você e introduz-a após cada reinício.",
      "Tudo local: as auditorias partem da sua própria máquina e as suas chaves de API nunca saem dela.",
-     "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+     "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
      "Execuções de monitores em andamento. Uma execução do mesmo relay aguarda o fim de qualquer outra auditoria dele, para que os resultados nunca sejam distorcidos.",
      "Nenhum monitor em execução"
     ],
@@ -28269,7 +28269,7 @@
    "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
-    "title": "zing — 监控",
+    "title": "ekte — 监控",
     "lang": "zh-CN",
     "headings": [
      [
@@ -28295,7 +28295,7 @@
       "href": "#main"
      },
      {
-      "name": "zing",
+      "name": "ekte",
       "href": "/v2/"
      },
      {
@@ -28329,7 +28329,7 @@
      {
       "name": "检测历史",
       "href": "/v2/history",
-      "context": "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在检测历史中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。"
+      "context": "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在检测历史中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。"
      },
      {
       "name": "来自运行 #1 →",
@@ -28518,14 +28518,14 @@
       "label": "API 密钥 （可选）",
       "name_from": "label",
       "visible_label": "API 密钥 （可选）",
-      "placeholder": "sk-... 或 env:ZING_API_KEY",
+      "placeholder": "sk-... 或 env:EKTE_API_KEY",
       "type": "password"
      }
     ],
     "images": [],
     "decorative_images": 20,
     "instructions": [
-     "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在检测历史中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。",
+     "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在检测历史中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。",
      "openai · 自动识别",
      "无 Webhook 编辑",
      "openai/gpt-4o 固定于 2026年10月25日 13:38",
@@ -28533,9 +28533,9 @@
      "配置取自检测历史中的那次运行。设置运行间隔后启用即可。",
      "上次完整运行耗时 1 秒，因此最短间隔为每 5 分钟。",
      "检测历史不保存密钥。本地或自托管模型可留空。",
-     "全程本地运行。API Key 仅加密保存在本机 ~/.zing 的本地数据库里，绝不出现在监控列表里、也不会发给浏览器。用于解密的主密钥从不写入磁盘：由你保管，每次重启后再输入。",
+     "全程本地运行。API Key 仅加密保存在本机 ~/.ekte 的本地数据库里，绝不出现在监控列表里、也不会发给浏览器。用于解密的主密钥从不写入磁盘：由你保管，每次重启后再输入。",
      "全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。",
-     "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
+     "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。",
      "正在进行的监控运行。同一中转站的运行会等它的其他检测结束后再开始，结果不会互相干扰。",
      "当前没有运行中的监控"
     ],
@@ -28570,13 +28570,13 @@
     "rows": [
      {
       "kind": "title",
-      "en": "zing — monitors",
-      "de": "zing — Überwachung",
-      "es": "zing — monitores",
-      "fr": "zing — surveillances",
-      "it": "zing — monitor",
-      "pt": "zing — monitores",
-      "zh": "zing — 监控"
+      "en": "ekte — monitors",
+      "de": "ekte — Überwachung",
+      "es": "ekte — monitores",
+      "fr": "ekte — surveillances",
+      "it": "ekte — monitor",
+      "pt": "ekte — monitores",
+      "zh": "ekte — 监控"
      },
      {
       "kind": "heading",
@@ -28630,13 +28630,13 @@
      },
      {
       "kind": "link",
-      "en": "zing",
-      "de": "zing",
-      "es": "zing",
-      "fr": "zing",
-      "it": "zing",
-      "pt": "zing",
-      "zh": "zing"
+      "en": "ekte",
+      "de": "ekte",
+      "es": "ekte",
+      "fr": "ekte",
+      "it": "ekte",
+      "pt": "ekte",
+      "zh": "ekte"
      },
      {
       "kind": "link",
@@ -29110,23 +29110,23 @@
      },
      {
       "kind": "field.placeholder",
-      "en": "sk-... or env:ZING_API_KEY",
-      "de": "sk-... oder env:ZING_API_KEY",
-      "es": "sk-... o env:ZING_API_KEY",
-      "fr": "sk-... ou env:ZING_API_KEY",
-      "it": "sk-... o env:ZING_API_KEY",
-      "pt": "sk-... ou env:ZING_API_KEY",
-      "zh": "sk-... 或 env:ZING_API_KEY"
+      "en": "sk-... or env:EKTE_API_KEY",
+      "de": "sk-... oder env:EKTE_API_KEY",
+      "es": "sk-... o env:EKTE_API_KEY",
+      "fr": "sk-... ou env:EKTE_API_KEY",
+      "it": "sk-... o env:EKTE_API_KEY",
+      "pt": "sk-... ou env:EKTE_API_KEY",
+      "zh": "sk-... 或 env:EKTE_API_KEY"
      },
      {
       "kind": "instruction",
-      "en": "Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in History and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, zing alerts your webhooks (Sla…",
+      "en": "Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in History and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Sla…",
       "de": "Jede Überwachung wiederholt ein bereits ausgeführtes Audit auf Ihrem Rechner im festgelegten Intervall. Zum Hinzufügen öffnen Sie einen Lauf im Verlauf und wählen Als Überwachung einplanen — legen Sie dann hier das Intervall fest und schalten Sie sie ein. Überschreitet das Risiko Ihre Schwelle oder…",
       "es": "Cada monitor vuelve a ejecutar una auditoría que ya realizaste, en tu equipo, con el intervalo que definas. Para añadir uno, abre una ejecución en el Historial y elige Programar como monitor; luego define aquí su intervalo y actívalo. Cuando el riesgo supera tu umbral o empeora respecto a la última…",
       "fr": "Chaque surveillance relance un audit que vous avez déjà exécuté, sur votre machine, à l’intervalle choisi. Pour en ajouter une, ouvrez une exécution dans l’Historique et choisissez Planifier comme surveillance, puis définissez ici son intervalle et activez-la. Dès que le risque franchit votre seuil…",
       "it": "Ogni monitor riesegue sulla tua macchina un audit che hai già eseguito, all’intervallo che imposti. Per aggiungerne uno, apri un’esecuzione nella Cronologia e scegli Pianifica come monitor, poi imposta qui l’intervallo e attivalo. Quando il rischio supera la soglia o peggiora rispetto all’ultima vo…",
       "pt": "Cada monitor executa novamente, na sua máquina, uma auditoria que você já rodou, no intervalo definido. Para adicionar um, abra uma execução no Histórico e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa seu limite ou piora em relação à última vez, …",
-      "zh": "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在检测历史中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，zing 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。"
+      "zh": "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在检测历史中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。"
      },
      {
       "kind": "instruction",
@@ -29220,13 +29220,13 @@
      },
      {
       "kind": "instruction",
-      "en": "Everything runs locally. The API key is stored encrypted, only in the local database under ~/.zing on this machine; it never appears in the monitor list and is never sent to the browser. The master key that decrypts it is never written to disk: you keep it, and enter it after each restart.",
-      "de": "Alles läuft lokal. Der API-Schlüssel wird verschlüsselt und nur in der lokalen Datenbank unter ~/.zing auf diesem Rechner gespeichert; er erscheint nie in der Überwachungsliste und wird nie an den Browser gesendet. Der Hauptschlüssel, der ihn entschlüsselt, wird nie auf die Festplatte geschrieben: …",
-      "es": "Todo se ejecuta localmente. La clave API se guarda cifrada, solo en la base de datos local bajo ~/.zing en este equipo; nunca aparece en la lista de monitores ni se envía al navegador. La clave maestra que la descifra nunca se escribe en disco: la guardas tú y la introduces tras cada reinicio.",
-      "fr": "Tout s'exécute en local. La clé API est stockée chiffrée, uniquement dans la base de données locale sous ~/.zing sur cette machine ; elle n'apparaît jamais dans la liste des surveillances et n'est jamais envoyée au navigateur. La clé maîtresse qui la déchiffre n'est jamais écrite sur le disque : vo…",
-      "it": "Tutto gira in locale. La chiave API è salvata cifrata, solo nel database locale in ~/.zing su questo computer; non compare mai nell'elenco dei monitor e non viene mai inviata al browser. La chiave principale che la decifra non viene mai scritta su disco: la conservi tu e la inserisci dopo ogni riav…",
-      "pt": "Tudo é executado localmente. A chave API é guardada encriptada, apenas na base de dados local em ~/.zing nesta máquina; nunca aparece na lista de monitores nem é enviada ao navegador. A chave mestra que a desencripta nunca é escrita no disco: guarda-a você e introduz-a após cada reinício.",
-      "zh": "全程本地运行。API Key 仅加密保存在本机 ~/.zing 的本地数据库里，绝不出现在监控列表里、也不会发给浏览器。用于解密的主密钥从不写入磁盘：由你保管，每次重启后再输入。"
+      "en": "Everything runs locally. The API key is stored encrypted, only in the local database under ~/.ekte on this machine; it never appears in the monitor list and is never sent to the browser. The master key that decrypts it is never written to disk: you keep it, and enter it after each restart.",
+      "de": "Alles läuft lokal. Der API-Schlüssel wird verschlüsselt und nur in der lokalen Datenbank unter ~/.ekte auf diesem Rechner gespeichert; er erscheint nie in der Überwachungsliste und wird nie an den Browser gesendet. Der Hauptschlüssel, der ihn entschlüsselt, wird nie auf die Festplatte geschrieben: …",
+      "es": "Todo se ejecuta localmente. La clave API se guarda cifrada, solo en la base de datos local bajo ~/.ekte en este equipo; nunca aparece en la lista de monitores ni se envía al navegador. La clave maestra que la descifra nunca se escribe en disco: la guardas tú y la introduces tras cada reinicio.",
+      "fr": "Tout s'exécute en local. La clé API est stockée chiffrée, uniquement dans la base de données locale sous ~/.ekte sur cette machine ; elle n'apparaît jamais dans la liste des surveillances et n'est jamais envoyée au navigateur. La clé maîtresse qui la déchiffre n'est jamais écrite sur le disque : vo…",
+      "it": "Tutto gira in locale. La chiave API è salvata cifrata, solo nel database locale in ~/.ekte su questo computer; non compare mai nell'elenco dei monitor e non viene mai inviata al browser. La chiave principale che la decifra non viene mai scritta su disco: la conservi tu e la inserisci dopo ogni riav…",
+      "pt": "Tudo é executado localmente. A chave API é guardada encriptada, apenas na base de dados local em ~/.ekte nesta máquina; nunca aparece na lista de monitores nem é enviada ao navegador. A chave mestra que a desencripta nunca é escrita no disco: guarda-a você e introduz-a após cada reinício.",
+      "zh": "全程本地运行。API Key 仅加密保存在本机 ~/.ekte 的本地数据库里，绝不出现在监控列表里、也不会发给浏览器。用于解密的主密钥从不写入磁盘：由你保管，每次重启后再输入。"
      },
      {
       "kind": "instruction",
@@ -29240,13 +29240,13 @@
      },
      {
       "kind": "instruction",
-      "en": "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
-      "de": "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
-      "es": "Una caja negra: zing aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
-      "fr": "Une boîte noire : zing fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
-      "it": "Una scatola nera: zing fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
-      "pt": "Uma caixa-preta: o zing fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
-      "zh": "黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
+      "en": "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.",
+      "de": "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe.",
+      "es": "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución.",
+      "fr": "Une boîte noire : ekte fournit des preuves reproductibles d'écarts, pas une preuve de fraude. N'accusez pas un fournisseur sur la base d'une seule exécution.",
+      "it": "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
+      "pt": "Uma caixa-preta: o ekte fornece evidências reprodutíveis de desvios, não prova de fraude. Não culpe um fornecedor por uma única execução.",
+      "zh": "黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。"
      },
      {
       "kind": "instruction",

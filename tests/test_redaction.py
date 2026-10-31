@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import json
 
-from zing.models import RequestSpec
-from zing.utils.redact import (
+from ekte.models import RequestSpec
+from ekte.utils.redact import (
     REDACTED,
     REDACTED_KEY,
     redact_headers,

@@ -1,11 +1,9 @@
 - banner:
   - link "跳到主要内容":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "经典界面":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "主题":
     - option "跟随系统"
     - option "浅色" [selected]
@@ -246,7 +244,7 @@
             - definition: 2026年9月27日 10:02
             - term: 版本
             - definition:
-              - code: zing v<version>
+              - code: ekte v<version>
             - heading "逐项体检 1 / 10 个维度已运行" [level=3]
             - button "协议兼容"
             - text: 接口是否规范？
@@ -275,7 +273,7 @@
             - paragraph: 各项检测依次运行；最慢的是 context_window（<duration>）。
             - button "显示全部 6 项"
             - paragraph:
-              - text: zing 出具的是
+              - text: ekte 出具的是
               - strong: 行为偏离与风险的可复现证据
               - text: ，不是欺诈的法律/密码学证明。中转站可能按概率路由；请结合样本量、计费设置与当地法律自行判断，切勿仅凭单次结果公开指控厂商。
             - button "设为监控"
@@ -306,4 +304,4 @@
   - status
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
-  - paragraph: 黑盒：zing 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。
+  - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

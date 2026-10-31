@@ -1,4 +1,4 @@
-"""The v2 report view (zing/web/static/v2/report.js), evaluated under node."""
+"""The v2 report view (ekte/web/static/v2/report.js), evaluated under node."""
 
 from __future__ import annotations
 
@@ -26,19 +26,19 @@ require(path.join(dir, "icons.js"));
 require(path.join(dir, "v2", "report.js"));
 const el = { querySelectorAll: () => [], querySelector: () => null };
 let clicked = null;
-window.ZingReport.render(el, JSON.parse(reportJson), { actions: [
+window.EkteReport.render(el, JSON.parse(reportJson), { actions: [
   { zh: "再测一个", en: "Test another" },
   { zh: "下载报告 (JSON)", en: "Download report (JSON)", primary: true, onClick: r => { clicked = r.mode; } },
-], download: { name: "zing-report" } });
-console.log(JSON.stringify({ html: el.innerHTML, globals: Object.keys(window), icons: window.ZING_ICONS }));
+], download: { name: "ekte-report" } });
+console.log(JSON.stringify({ html: el.innerHTML, globals: Object.keys(window), icons: window.EKTE_ICONS }));
 """
 
-_STATIC = Path(__file__).resolve().parent.parent / "zing" / "web" / "static"
+_STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
 _FIXTURE = Path(__file__).resolve().parent / "fixtures" / "web_report.json"
 
 
 def _render(tmp_path: Path, lang: str, report: dict) -> dict:
-    from zing.i18n import locales_script
+    from ekte.i18n import locales_script
 
     (tmp_path / "locales.js").write_text(locales_script(), encoding="utf-8")
     for name in ("lang.js", "i18n.js", "icons.js"):
@@ -92,7 +92,7 @@ def test_report_severity_dots_meters_and_summary(tmp_path):
     assert re.findall(r'data-dl="(\w+)">([^<]+)<', foot) == [
         ("json", "JSON"), ("md", "Markdown"), ("html", "HTML"), ("pdf", "PDF")]
     assert 'role="group" aria-label="Download report"' in foot and 'class="dl-msg" role="status"' in foot
-    assert [g for g in out["globals"] if g.startswith("Zing")] == ["ZingReport"]
+    assert [g for g in out["globals"] if g.startswith("Ekte")] == ["EkteReport"]
 
 
 @needs_node
@@ -119,7 +119,7 @@ def test_report_clean_and_translated_summary(tmp_path):
     # a summary already translated by exportReport (e.g. re-imported in French)
     clean["verdict"]["summary"] = (
         "Score de santé global 96/100. Aucun écart significatif constaté. "
-        "zing rapporte des preuves boîte noire d'écart et de risque, pas une preuve de fraude."
+        "ekte rapporte des preuves boîte noire d'écart et de risque, pas une preuve de fraude."
     )
     html = _render(tmp_path, "en", clean)["html"]
     summary = re.search(r'<p class="sum">(.*?)</p>', html).group(1)
@@ -184,12 +184,12 @@ require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
 require(path.join(dir, "v2", "report.js"));
-const rep = JSON.parse(reportJson), D = window.ZingReport.download;
+const rep = JSON.parse(reportJson), D = window.EkteReport.download;
 (async () => {
-  await D(rep, "json", "zing-report-7");
-  await D(rep, "md", "zing-report-7");
+  await D(rep, "json", "ekte-report-7");
+  await D(rep, "md", "ekte-report-7");
   let err = null;
-  try { await D(rep, "pdf", "zing-report-7"); } catch (e) { err = e.message; }
+  try { await D(rep, "pdf", "ekte-report-7"); } catch (e) { err = e.message; }
   console.log(JSON.stringify({ saved, posted: posted.map(p => ({ ...p, title: p.body.detectors[0].findings[0].title })), err }));
 })();
 """
@@ -204,7 +204,7 @@ def test_download_saves_every_format_in_the_ui_language(tmp_path):
         capture_output=True, text=True, check=True,
     ).stdout)
     # JSON is built in the browser; Markdown/HTML/PDF are rendered by the server
-    assert out["saved"] == ["zing-report-7.de.json", "zing-report-7.de.md"]
+    assert out["saved"] == ["ekte-report-7.de.json", "ekte-report-7.de.md"]
     assert [(p["url"], p["method"], p["type"]) for p in out["posted"]] == [
         ("/api/report/export?format=md", "POST", "application/json"),
         ("/api/report/export?format=pdf", "POST", "application/json"),
@@ -350,10 +350,10 @@ async def test_parametrized_checks_are_translated(tmp_path, lang, words):
 def _deductions_report() -> dict:
     # billing with an inflated prompt (cap 55) and model identity with one
     # diverging fingerprint (-12.5) — detectors on "deductions" scales
-    from zing.detectors import billing, model_identity
-    from zing.detectors.scale import DeductionScale
-    from zing.models import AuditReport, DetectorResult, Dimension, RedactedTarget, Status, Verdict
-    from zing.scoring import build_dimensions
+    from ekte.detectors import billing, model_identity
+    from ekte.detectors.scale import DeductionScale
+    from ekte.models import AuditReport, DetectorResult, Dimension, RedactedTarget, Status, Verdict
+    from ekte.scoring import build_dimensions
 
     b = billing.SCALE
     bill = DetectorResult(id="billing", name="Token/usage billing audit", dimension=Dimension.BILLING,
@@ -470,7 +470,7 @@ require(path.join(dir, "lang.js"));
 require(path.join(dir, "i18n.js"));
 require(path.join(dir, "icons.js"));
 require(path.join(dir, "v2", "report.js"));
-const R = window.ZingReport;
+const R = window.EkteReport;
 console.log(JSON.stringify({ html: R.findingDetail(JSON.parse(findingJson)),
   d: [R.duration(0), R.duration(999.6), R.duration(1234), R.duration(73210), R.duration(null)] }));
 """
@@ -507,15 +507,15 @@ global.localStorage = { getItem: () => "en", setItem() {} };
 for (const m of ["locales.js", "lang.js", "i18n.js", "icons.js"]) require(path.join(dir, m));
 require(path.join(dir, "v2", "report.js"));
 const el = { querySelectorAll: () => [], querySelector: () => null };
-window.ZingReport.render(el, JSON.parse(reportJson), {});
+window.EkteReport.render(el, JSON.parse(reportJson), {});
 console.log(JSON.stringify({ html: el.innerHTML }));
 """
 
 
 @needs_node
 def test_performance_measurements_sit_in_the_performance_dimension(tmp_path):
-    from zing.models import RequestRecord
-    from zing.perf import build_performance
+    from ekte.models import RequestRecord
+    from ekte.perf import build_performance
 
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     recs = [RequestRecord(seq=i, endpoint="target", phase="probe", ok=True, stream=True,
@@ -561,14 +561,14 @@ require(path.join(dir, "v2", "report.js"));
 const report = JSON.parse(reportJson);
 const render = () => {
   const el = { querySelectorAll: () => [], querySelector: () => null };
-  window.ZingReport.render(el, report, {});
+  window.EkteReport.render(el, report, {});
   return el.innerHTML;
 };
 const first = render();
 const after1 = Object.assign({}, made);
 const second = render();
 const after2 = Object.assign({}, made);
-const loc = window.ZING_LANG.locale();
+const loc = window.EKTE_LANG.locale();
 console.log(JSON.stringify({
   first, second, after1, after2, locale: loc,
   time: new Date(report.generated_at).toLocaleString(loc, { dateStyle: "medium", timeStyle: "short" }),
@@ -580,7 +580,7 @@ console.log(JSON.stringify({
 @needs_node
 @pytest.mark.parametrize("lang", ["en", "de", "zh"])
 def test_intl_formatters_are_cached_and_output_unchanged(tmp_path, lang):
-    from zing.i18n import locales_script
+    from ekte.i18n import locales_script
 
     (tmp_path / "locales.js").write_text(locales_script(), encoding="utf-8")
     for name in ("lang.js", "i18n.js", "icons.js"):

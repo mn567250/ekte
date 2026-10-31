@@ -17,13 +17,13 @@ import json
 
 import httpx
 
-from zing.clients import OpenAICompatibleClient
-from zing.config import AuditOptions
-from zing.context import AuditContext
-from zing.detectors.vision import VisionDetector
-from zing.knowledge import load_knowledge_base
-from zing.knowledge.schema import ModelProfile, ProviderProfile, ResolvedProfile
-from zing.models import Severity, Status, TargetConfig
+from ekte.clients import OpenAICompatibleClient
+from ekte.config import AuditOptions
+from ekte.context import AuditContext
+from ekte.detectors.vision import VisionDetector
+from ekte.knowledge import load_knowledge_base
+from ekte.knowledge.schema import ModelProfile, ProviderProfile, ResolvedProfile
+from ekte.models import Severity, Status, TargetConfig
 
 BASE = "https://relay.example.test/v1"
 MODEL = "gpt-vision-test"

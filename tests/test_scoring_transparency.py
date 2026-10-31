@@ -12,9 +12,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from zing.detectors.protocol import SCALE, ProtocolDetector
-from zing.detectors.scale import Scale, outcome
-from zing.models import (
+from ekte.detectors.protocol import SCALE, ProtocolDetector
+from ekte.detectors.scale import Scale, outcome
+from ekte.models import (
     AuditReport,
     CompletionOutcome,
     DetectorResult,
@@ -26,8 +26,8 @@ from zing.models import (
     TargetConfig,
     Verdict,
 )
-from zing.report import compact_dict, render_html, render_markdown
-from zing.scoring import build_dimensions
+from ekte.report import compact_dict, render_html, render_markdown
+from ekte.scoring import build_dimensions
 
 _BLUE = CompletionOutcome(ok=True, status_code=200, content="Your favorite color is blue.",
                           finish_reason="stop",
@@ -280,7 +280,7 @@ async def test_html_groups_the_subjects_of_a_check():
 def _deduction_report() -> AuditReport:
     """A deduction-scored detector with one parametrized check: one subject
     passes, one deducts 20, one errored."""
-    from zing.detectors.scale import DeductionScale
+    from ekte.detectors.scale import DeductionScale
 
     scale = DeductionScale(
         outcome("d.attr", "ok", None, Status.PASS, label="Fine."),
@@ -321,7 +321,7 @@ def test_pdf_group_rows_use_the_detector_scoring_method():
     pytest.importorskip("reportlab")
     from reportlab.platypus import Paragraph, Table
 
-    from zing.report.pdf import _dimension_detector
+    from ekte.report.pdf import _dimension_detector
 
     def texts(flowables) -> list[str]:
         out = []
@@ -340,7 +340,7 @@ def test_pdf_group_rows_use_the_detector_scoring_method():
 def test_group_status_follows_the_scoring_order():
     # Like a dimension status: a warning outranks a detector error, and a pass
     # outranks an informational note.
-    from zing.report.dimensions import _Group
+    from ekte.report.dimensions import _Group
 
     report = _deduction_report()
     group = _Group("d.attr", "Attributes", list(report.detectors[0].findings))

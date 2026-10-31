@@ -1,7 +1,7 @@
 """protocol.error_schema: the no-HTTP-response branch carries its error type.
 
 The web UI localizes this branch's summary with a template keyed on the
-``error_type`` evidence (zing/web/static/i18n.js ALT), so it must be set only
+``error_type`` evidence (ekte/web/static/i18n.js ALT), so it must be set only
 when the invalid request got no HTTP response at all.
 """
 
@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from zing.detectors.protocol import ProtocolDetector
-from zing.models import CompletionOutcome, DetectorResult, Dimension, Status
+from ekte.detectors.protocol import ProtocolDetector
+from ekte.models import CompletionOutcome, DetectorResult, Dimension, Status
 
 
 async def _finding(outcome: CompletionOutcome):

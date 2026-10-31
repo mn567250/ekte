@@ -1,6 +1,6 @@
-"""CLI startup stays lean: importing zing.cli must not load the heavy stacks.
+"""CLI startup stays lean: importing ekte.cli must not load the heavy stacks.
 
-Every invocation (even `zing --help`) pays for whatever zing.cli imports at module
+Every invocation (even `ekte --help`) pays for whatever ekte.cli imports at module
 level, so the httpx client stack, the runner, the knowledge loader, the report
 renderers (ReportLab) and asyncio are imported inside the commands that need them.
 """
@@ -14,20 +14,20 @@ import sys
 
 from typer.testing import CliRunner
 
-from zing.cli import app
+from ekte.cli import app
 
 _LAZY = (
     "httpx",
     "reportlab",
     "asyncio",
-    "zing.runner",
-    "zing.clients",
-    "zing.knowledge",
-    "zing.report",
-    "zing.detectors",
-    "zing.embed_audit",
-    "zing.media_audit",
-    "zing.web",
+    "ekte.runner",
+    "ekte.clients",
+    "ekte.knowledge",
+    "ekte.report",
+    "ekte.detectors",
+    "ekte.embed_audit",
+    "ekte.media_audit",
+    "ekte.web",
     "uvicorn",
 )
 
@@ -36,7 +36,7 @@ def test_import_cli_does_not_load_heavy_modules():
     # A fresh interpreter: this test process has long since imported everything.
     code = (
         "import json, sys\n"
-        "import zing.cli\n"
+        "import ekte.cli\n"
         f"print(json.dumps({{m: m in sys.modules for m in {list(_LAZY)!r}}}))\n"
     )
     proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)

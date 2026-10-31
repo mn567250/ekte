@@ -1,11 +1,9 @@
 - banner:
   - link "Skip to main content":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Classic UI":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Theme":
     - option "Auto theme"
     - option "Light" [selected]
@@ -46,7 +44,7 @@
     - term: Commit
     - definition:
       - code: <id>
-    - term: zing version
+    - term: ekte version
     - definition: 0.11.0
     - term: axe-core version
     - definition: 4.13.0
@@ -142,7 +140,7 @@
   - region "Accessibility statement":
     - heading "Accessibility statement" [level=2]
     - heading "Conformance status" [level=3]
-    - paragraph: Web UI v2 of zing is partially conformant with BITV 2.0, EN 301549 and WCAG 2.1 level AA.
+    - paragraph: Web UI v2 of ekte is partially conformant with BITV 2.0, EN 301549 and WCAG 2.1 level AA.
     - heading "Known limitations" [level=3]
     - paragraph: "The automated part of these steps passes; the rest still needs a manual review:"
     - list:
@@ -167,7 +165,7 @@
     - paragraph:
       - text: "Did you find a barrier, or is something hard to use with assistive technology? Please tell us:"
       - link "report an accessibility issue on GitHub":
-        - /url: https://github.com/cenbonew/zing/issues
+        - /url: https://github.com/mn567250/ekte/issues
 - contentinfo:
   - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
-  - paragraph: "A black box: zing reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."
+  - paragraph: "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."

@@ -12,9 +12,9 @@ import asyncio
 import httpx
 import pytest
 
+from ekte.clients import OpenAICompatibleClient
+from ekte.models import RequestSpec, TargetConfig
 from tests._helpers import BASE_URL
-from zing.clients import OpenAICompatibleClient
-from zing.models import RequestSpec, TargetConfig
 
 
 def _spec(stream: bool = False, **kw) -> RequestSpec:
@@ -188,13 +188,13 @@ async def test_secret_never_leaks_into_evidence(client, mock_server):
 
 
 # --------------------------------------------------------------------------- #
-# one TLS context per process (zing/clients/base.py)
+# one TLS context per process (ekte/clients/base.py)
 # --------------------------------------------------------------------------- #
 async def test_clients_share_one_tls_context_built_off_the_event_loop(monkeypatch):
     import ssl
     import threading
 
-    from zing.clients import base
+    from ekte.clients import base
 
     built: list[int] = []
     real = httpx.create_ssl_context

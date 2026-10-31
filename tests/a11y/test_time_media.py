@@ -19,7 +19,7 @@ visit states only a running app reaches, all without network access:
   polling every 2 s).
 * ``history-charts``: History with three runs of one relay (sparklines for all
   four trend metrics) whose report carries a ``performance`` block built by
-  ``zing.perf.build_performance`` (timeline chart, legend, meters); the seeded
+  ``ekte.perf.build_performance`` (timeline chart, legend, meters); the seeded
   fixture report has no performance data.
 """
 
@@ -36,10 +36,10 @@ import pytest
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, Route
 
+from ekte.models import RequestRecord
+from ekte.perf import build_performance
 from tests.a11y.harness import PAGES, REPORT_FIXTURE, THEMES, assert_no_issues, expand_all, settle
 from tests.a11y.test_visual import ANIMATIONS_JS, COLOR_LIB, DESCRIBE
-from zing.models import RequestRecord
-from zing.perf import build_performance
 
 PAGE_IDS = list(PAGES)
 EXPANDED = [f"{p}+expanded" for p in PAGE_IDS]
@@ -138,7 +138,7 @@ FAKE_JOB_INIT = (
 )
 
 TRENDS_INIT = (
-    "try { localStorage.setItem('zing.v2.history.trends', JSON.stringify(['score', 'grade', 'lat', 'tps'])); } catch (e) {}"
+    "try { localStorage.setItem('ekte.v2.history.trends', JSON.stringify(['score', 'grade', 'lat', 'tps'])); } catch (e) {}"
 )
 
 

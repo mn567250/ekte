@@ -1,11 +1,9 @@
 - banner:
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
-  - link "zing":
+  - link "ekte":
     - /url: /v2/
-    - text: zing.
-  - link "Klassische Oberfläche":
-    - /url: "?ui=v1"
+    - text: ekte.
   - combobox "Design":
     - option "Automatisch"
     - option "Hell" [selected]
@@ -35,10 +33,10 @@
     - link "Wissen":
       - /url: /v2/kb
 - main:
-  - heading "Die Wissensbasis, gegen die zing prüft" [level=1]
+  - heading "Die Wissensbasis, gegen die ekte prüft" [level=1]
   - paragraph:
-    - text: "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das zing kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder ausschalten oder eigene hinzufügen. Deine Änderungen werden in kb.db auf diesem Rechner gespeichert und von der Web-Oberfläche wie von"
-    - code: zing check
+    - text: "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das ekte kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder ausschalten oder eigene hinzufügen. Deine Änderungen werden in kb.db auf diesem Rechner gespeichert und von der Web-Oberfläche wie von"
+    - code: ekte check
     - text: verwendet.
   - status: Wissensbasis vollständig 130 Modelle · 7 Anbieter · 1 Relay, alle eingeschaltet
   - region "Filter":
@@ -97,7 +95,7 @@
         - /placeholder: "provider: …\nmodels:\n- id: …"
       - text: .yaml-Datei wählen
       - heading "3 Prüfen und speichern" [level=3]
-      - paragraph: Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den zing an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.
+      - paragraph: Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den ekte an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.
       - button "Prüfung"
       - button "In der Wissensbasis speichern" [disabled]
     - group:
@@ -123,4 +121,4 @@
     # … more items of the same shape
 - contentinfo:
   - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
-  - paragraph: "Eine Blackbox: zing liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
+  - paragraph: "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."
