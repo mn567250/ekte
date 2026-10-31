@@ -718,7 +718,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # Returnerer et relé som påstår tts-1-hd, ekte lyd der lengden skalerer med
 # inndataen (ikke en fast plassholder, ikke HTML/JSON forkledd som lyd)?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` kontrollerer tilkobling, et gyldig format som kan dekodes, **samsvar i

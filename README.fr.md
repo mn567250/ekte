@@ -740,7 +740,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # Un relais annonçant tts-1-hd renvoie-t-il un vrai audio dont la durée suit l'entrée
 # (pas un substitut fixe, pas du HTML/JSON déguisé en audio) ?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` vérifie la connectivité, un format valide et décodable, la

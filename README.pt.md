@@ -731,7 +731,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # Um relay que declara tts-1-hd devolve áudio real cuja duração cresce com a entrada
 # (não um marcador fixo, nem HTML/JSON disfarçado de áudio)?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` verifica a conectividade, um formato válido e descodificável, a

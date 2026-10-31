@@ -32,6 +32,15 @@ ekte has three eras:
 
 ### Changed
 
+- **Exit codes 3 and 4.** `ekte models` exits 3 (was 1) when the endpoint is
+  unreachable or answers with an error, so it can be told apart from a failed gate;
+  an unexpected internal error exits 4 (was 1 with a traceback). Scripts that
+  treated every non-zero code of `ekte models` as "failed" are unaffected.
+- **`ekte audio --format` is now `--audio-format`**, so `--format` always means the
+  report file format; `ekte image --save` and `ekte audio --save` are now
+  `--save-to`, so `--save` only means "save to history" (`embed`, `rerank`). The
+  old spellings still work (see Deprecated).
+
 - **Supported operating systems: Linux, macOS and Windows.** The CI test job now
   also runs on macOS and Windows (oldest and newest supported Python); the
   Docker image stays Linux. `docs/STABILITY.md#os` lists the differences
@@ -92,6 +101,14 @@ ekte has three eras:
   your own entries; the verdict does not change. The update process (sources,
   who, how often, review) is documented in the developer guide, and changes to
   the bundled data are listed in the changelog.
+- **Command line review (#25).** `docs/CLI.md` is the command reference, generated
+  from the `--help` declarations (`scripts/generate_cli_docs.py`; a test fails when it
+  is stale), with the one exit-code table every command follows: 0 success, 1 gate or
+  check failed, 2 usage or configuration error, 3 endpoint failure, 4 internal error.
+  `--json` is now available on `data-dir`, `config migrate`, `secret status` and
+  `watch` (one JSON object per cycle), so every command that reports a result can
+  print JSON; with `--json` stdout carries only JSON. Tests run every command's
+  `--help`, pin each exit code and check that JSON mode writes only JSON.
 
 - **Versioned schema for the report JSON and webhook payloads.** Every report
   (`--json`, `--format json`, history, `--compact`) and every generic webhook
@@ -184,6 +201,12 @@ ekte has three eras:
 - The README (report protocol fields `target.api`, `target.api_auto`,
   `stream_mode`) and methodology (`verdict.drivers`, `verdict.checked`) were
   missing a paragraph in the de, es, fr, it, pt and zh-CN translations.
+
+### Deprecated
+
+- `ekte audio --format`, and `--save` of `ekte image` and `ekte audio`: use
+  `--audio-format` and `--save-to`. The old options keep working, print a warning on
+  stderr that names the replacement, and are removed in 1.0.0.
 
 ## [0.30.0] — ekte: renamed from zing, own logo, only the v2 web UI
 

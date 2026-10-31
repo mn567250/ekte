@@ -685,7 +685,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # Does a relay claiming tts-1-hd return real audio whose length scales with the
 # input (not a fixed placeholder, not HTML/JSON masquerading as audio)?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` checks connectivity, a valid and decodable format, **size match**

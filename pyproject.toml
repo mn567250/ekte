@@ -81,7 +81,7 @@ Repository = "https://github.com/mn567250/ekte"
 Issues = "https://github.com/mn567250/ekte/issues"
 
 [project.scripts]
-ekte = "ekte.cli:app"
+ekte = "ekte.cli:run"
 
 [tool.hatch.build.targets.wheel]
 # packages=["ekte"] already bundles ekte/knowledge/data/*.yaml (data/ is a real
