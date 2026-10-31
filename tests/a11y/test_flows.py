@@ -890,7 +890,7 @@ def aria_tree(browser: Browser, contexts: list[BrowserContext], base: str, page_
     if key not in _snapshots:
         ctx = new_context(browser, base, lang)
         contexts.append(ctx)
-        ctx.clock.set_fixed_time(dt.datetime.fromtimestamp(FIXED_TS, dt.timezone.utc))
+        ctx.clock.set_fixed_time(dt.datetime.fromtimestamp(FIXED_TS, dt.UTC))
         page = ctx.new_page()
         page.goto(base + PAGES[page_id], wait_until="load")
         settle(page)

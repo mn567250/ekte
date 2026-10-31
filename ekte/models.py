@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # --------------------------------------------------------------------------- #
 # Enums
 # --------------------------------------------------------------------------- #
-class Status(str, Enum):
+class Status(str, Enum):  # noqa: UP042 (StrEnum would change str()/format())
     """Outcome of a check, finding, or dimension."""
 
     PASS = "pass"
@@ -29,7 +29,7 @@ class Status(str, Enum):
     ERROR = "error"
 
 
-class Severity(str, Enum):
+class Severity(str, Enum):  # noqa: UP042 (StrEnum would change str()/format())
     INFO = "info"
     LOW = "low"
     MEDIUM = "medium"
@@ -37,7 +37,7 @@ class Severity(str, Enum):
     CRITICAL = "critical"
 
 
-class Dimension(str, Enum):
+class Dimension(str, Enum):  # noqa: UP042 (StrEnum would change str()/format())
     """Scoring dimensions. Each detector contributes to exactly one."""
 
     CONNECTIVITY = "connectivity"
@@ -52,7 +52,7 @@ class Dimension(str, Enum):
     PERFORMANCE = "performance"
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(str, Enum):  # noqa: UP042 (StrEnum would change str()/format())
     """Headline 货不对板 risk classification."""
 
     CLEAN = "clean"          # consistent with the claimed model

@@ -251,7 +251,7 @@ def build_report(
         for a in AUTOMATION
     }
     test_outcomes = [t.get("outcome") for t in (results.get("tests") or {}).values()]
-    now = now or _dt.datetime.now(_dt.timezone.utc)
+    now = now or _dt.datetime.now(_dt.UTC)
     report = {
         "schema": SCHEMA,
         "standards": cat["standards"],
@@ -529,7 +529,7 @@ def main(argv: list[str] | None = None) -> int:
         write_report(args.out or DEFAULT_OUT, report)
     if args.update:
         old = json.loads(args.update.read_text(encoding="utf-8"))
-        report = apply_review(old, load_review(llm_path), now=_dt.datetime.now(_dt.timezone.utc))
+        report = apply_review(old, load_review(llm_path), now=_dt.datetime.now(_dt.UTC))
         write_report(args.out or args.update, report)
     return 0
 

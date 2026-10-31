@@ -472,7 +472,7 @@ class BaseHTTPClient:
         token = _CALL_TIMEOUT.set(timeout)
         try:
             return await asyncio.wait_for(self._complete(spec), deadline)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return CompletionOutcome(
                 ok=False,
                 duration_ms=(time.perf_counter() - started) * 1000,

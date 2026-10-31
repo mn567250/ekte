@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -14,7 +14,7 @@ from ekte.web.analytics import AnalyticsError
 OPENAI = "https://api.openai.com/v1"
 RELAY = "https://relay.example/v1"
 OTHER = "https://other.example/v1"
-T0 = datetime(2026, 3, 2, 12, 0, tzinfo=timezone.utc)  # a Monday
+T0 = datetime(2026, 3, 2, 12, 0, tzinfo=UTC)  # a Monday
 
 
 @pytest.fixture
@@ -264,7 +264,7 @@ def test_series_score_keeps_old_runs(seeded):
 # Time zones
 # --------------------------------------------------------------------------- #
 def test_buckets_in_viewer_time_zone_across_dst_and_midnight(data):
-    utc = timezone.utc
+    utc = UTC
     times = [
         datetime(2026, 3, 28, 22, 30, tzinfo=utc),  # Sat 23:30 CET
         datetime(2026, 3, 28, 23, 30, tzinfo=utc),  # Sun 00:30 CET
@@ -311,7 +311,7 @@ def test_buckets_in_viewer_time_zone_across_dst_and_midnight(data):
 
 
 def test_dow_hour_folds_into_4_week_cycles_and_weeks_of_the_month(data):
-    utc = timezone.utc
+    utc = UTC
 
     def grid(fold):
         out = analytics.series({"metric": "score", "bucket": "dow_hour", "block": "4", "fold": fold, "tz": "UTC"})
@@ -416,7 +416,7 @@ def test_single_run_all_null_metrics(data):
 
 
 def test_run_time_out_of_range_is_undated(data):
-    _save(datetime(1, 1, 1, 0, 30, tzinfo=timezone.utc))
+    _save(datetime(1, 1, 1, 0, 30, tzinfo=UTC))
     _save(T0)
     out = analytics.series({"metric": "score", "tz": "America/New_York", "bucket": "hour"})
     assert out["series"][0]["runs"] == 1  # the year-1 run cannot be bucketed
@@ -529,7 +529,7 @@ def _with_requests(started, records, **kw) -> int:
 def requests_seeded(data):
     add_relay("Cheap GPT", RELAY)
     # 10:59:50 Berlin (09:59:50 UTC): the second minute of calls lands in the next hour
-    start = datetime(2026, 3, 2, 9, 59, 50, tzinfo=timezone.utc)
+    start = datetime(2026, 3, 2, 9, 59, 50, tzinfo=UTC)
     _with_requests(start, [
         _rec(0, 0), _rec(1, 1000), _rec(2, 2000, ok=False, status=429, error_type="http_error"),
         _rec(3, 61_000, ok=False, status=503, error_type="http_error"),

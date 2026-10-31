@@ -66,7 +66,7 @@ possíveis. Tenha essa fasquia presente em qualquer alteração.
 
 ## Ambiente de desenvolvimento
 
-Requer Python 3.10+. O Node.js é opcional: os testes do JavaScript do navegador
+Requer Python 3.11+. O Node.js é opcional: os testes do JavaScript do navegador
 correm com `node` e são ignorados sem ele.
 
 ```bash
@@ -584,7 +584,7 @@ ler os cookies `zing_lang` / `zing_ui` enquanto os `ekte_*` não existirem.
 ### Pull requests
 
 - Mantenha `pytest`, `ruff check ekte tests` e `mypy ekte` a verde (a CI executa
-  os três com Python 3.10–3.13).
+  os três com Python 3.11–3.14).
 - Descreva o truque de relay ou o falso positivo que a alteração resolve.
 - Atualize `CHANGELOG.md` em `[Unreleased]`.
 - Atualize a documentação afetada — README, este guia, a Metodologia — em
@@ -774,7 +774,7 @@ que protege a interface.
 
 | Workflow | Corre em | Faz |
 |---|---|---|
-| `.github/workflows/ci.yml` | push e pull request para `main` (e os branches de integração `a11y/integration`, `perf/integration`); todas as noites e manual (só acessibilidade) | `ruff`, `mypy` e `pytest` com Python 3.10–3.13 e os extras `dev` e `web`; constrói a wheel e a sdist e verifica que a wheel se instala e carrega a base de conhecimento; executa a suite de acessibilidade (informativa, nunca faz falhar a execução) e carrega os seus resultados: todas as páginas nos pushes e nas execuções noturnas e manuais (com o relatório de conformidade BITV), nos pull requests só as páginas afetadas pela alteração (nenhuma se só muda documentação) — exceto em pull requests para `perf/integration`, onde a lenta suite no navegador é ignorada (corre nos pushes desse branch e no seu pull request para `main`) |
+| `.github/workflows/ci.yml` | push e pull request para `main` (e os branches de integração `a11y/integration`, `perf/integration`); todas as noites e manual (só acessibilidade) | `ruff`, `mypy` e `pytest` com Python 3.11–3.14 e os extras `dev` e `web`; constrói a wheel e a sdist e verifica que a wheel se instala e carrega a base de conhecimento; executa a suite de acessibilidade (informativa, nunca faz falhar a execução) e carrega os seus resultados: todas as páginas nos pushes e nas execuções noturnas e manuais (com o relatório de conformidade BITV), nos pull requests só as páginas afetadas pela alteração (nenhuma se só muda documentação) — exceto em pull requests para `perf/integration`, onde a lenta suite no navegador é ignorada (corre nos pushes desse branch e no seu pull request para `main`) |
 | `.github/workflows/release.yml` | uma tag `v*` | constrói, executa `twine check` e publica no PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | agendamento diário, manual | exemplo de auditoria agendada de um relay com a action |
 

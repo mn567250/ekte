@@ -18,6 +18,14 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Changed
+
+- **Supported Python versions: 3.11 to 3.14.** Python 3.10 is dropped (end of
+  life in October 2026) and Python 3.14 is added: `requires-python` is now
+  `>=3.11`, the classifiers, the CI test matrix, the `ruff` and `mypy` targets
+  and the documentation name 3.11, 3.12, 3.13 and 3.14. A test keeps them in
+  agreement. See the stability policy (docs/STABILITY.md).
+
 ### Added
 
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the

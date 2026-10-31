@@ -67,7 +67,7 @@ Trick zu erwischen. Behalten Sie diesen Maßstab bei jeder Änderung im Blick.
 
 ## Entwicklungsumgebung
 
-Erfordert Python 3.10+. Node.js ist optional: die Tests des Browser-JavaScripts
+Erfordert Python 3.11+. Node.js ist optional: die Tests des Browser-JavaScripts
 laufen unter `node` und werden ohne es übersprungen.
 
 ```bash
@@ -588,7 +588,7 @@ Browsers ebenso nach `ekte.*`, und der Server liest die Cookies `zing_lang` /
 ### Pull Requests
 
 - Halten Sie `pytest`, `ruff check ekte tests` und `mypy ekte` grün (CI führt alle
-  drei unter Python 3.10–3.13 aus).
+  drei unter Python 3.11–3.14 aus).
 - Beschreiben Sie den Relay-Trick oder den Fehlalarm, den eine Änderung behebt.
 - Aktualisieren Sie `CHANGELOG.md` unter `[Unreleased]`.
 - Aktualisieren Sie die betroffene Dokumentation — README, dieses Handbuch, die
@@ -783,7 +783,7 @@ einschließlich der Schutzmaßnahmen der Oberfläche.
 
 | Workflow | Läuft bei | Tut |
 |---|---|---|
-| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `a11y/integration`, `perf/integration`); nächtlich und manuell (nur Barrierefreiheit) | `ruff`, `mypy` und `pytest` unter Python 3.10–3.13 mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch: alle Seiten bei Pushes, nächtlichen und manuellen Läufen (mit dem BITV-Konformitätsbericht), bei Pull Requests nur die Seiten, die die Änderung betrifft (keine bei reinen Doku-Änderungen) — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
+| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `a11y/integration`, `perf/integration`); nächtlich und manuell (nur Barrierefreiheit) | `ruff`, `mypy` und `pytest` unter Python 3.11–3.14 mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch: alle Seiten bei Pushes, nächtlichen und manuellen Läufen (mit dem BITV-Konformitätsbericht), bei Pull Requests nur die Seiten, die die Änderung betrifft (keine bei reinen Doku-Änderungen) — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
 | `.github/workflows/release.yml` | einem Tag `v*` | baut, führt `twine check` aus und veröffentlicht auf PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | täglich, manuell | Beispiel einer geplanten Relay-Prüfung mit der Action |
 

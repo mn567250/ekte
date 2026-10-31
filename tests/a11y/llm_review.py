@@ -1590,7 +1590,7 @@ def collect(pages: dict[str, str], langs: list[str], log: Callable[[str], None] 
 # --------------------------------------------------------------------------- #
 def _base_report(model: str, endpoint: Endpoint | None = None) -> dict[str, Any]:
     out: dict[str, Any] = {
-        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
         "model": model,
         "advisory": True,
         "note": (
@@ -1817,7 +1817,7 @@ def update_report(review_report: dict[str, Any], path: str | None = None, result
             new = conformance.build_report(loaded, review_report, commit=conformance._git_commit())
         else:
             old = json.loads(target.read_text(encoding="utf-8"))
-            new = conformance.apply_review(old, review_report, now=_dt.datetime.now(_dt.timezone.utc))
+            new = conformance.apply_review(old, review_report, now=_dt.datetime.now(_dt.UTC))
         conformance.write_report(target, new)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"llm_review: could not update {target}: {type(exc).__name__}: {exc}")

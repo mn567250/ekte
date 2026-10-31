@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** is a local-first tool that audits whether an API relay (reseller /
 proxy) actually serves the model it claims to — or quietly substitutes a cheaper
@@ -65,7 +65,7 @@ ekte turns "this feels off" into a reproducible report.
 
 ## Install
 
-Requires Python 3.10+. Every option below provides the `ekte` command.
+Requires Python 3.11+. Every option below provides the `ekte` command.
 
 ### With pip
 

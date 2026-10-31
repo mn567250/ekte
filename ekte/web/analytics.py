@@ -54,7 +54,7 @@ import re
 from collections import Counter
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone, tzinfo
+from datetime import UTC, date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -421,7 +421,7 @@ def parse_tz(params: Mapping[str, Any]) -> tuple[tzinfo, str]:
             raise AnalyticsError("tz_offset must be between -840 and 840 minutes")
         zone = timezone(timedelta(minutes=minutes))
         return zone, "UTC" if minutes == 0 else str(zone)
-    return timezone.utc, "UTC"
+    return UTC, "UTC"
 
 
 # --------------------------------------------------------------------------- #
@@ -429,8 +429,8 @@ def parse_tz(params: Mapping[str, Any]) -> tuple[tzinfo, str]:
 # --------------------------------------------------------------------------- #
 # Run times outside this range cannot be shifted into every time zone (a
 # damaged report's year 1 or 9999): such runs count as undated.
-_T_MIN = datetime(1970, 1, 1, tzinfo=timezone.utc)
-_T_MAX = datetime(9999, 1, 1, tzinfo=timezone.utc)
+_T_MIN = datetime(1970, 1, 1, tzinfo=UTC)
+_T_MAX = datetime(9999, 1, 1, tzinfo=UTC)
 
 
 def _prepare(runs: list[dict[str, Any]], resolver: RelayResolver) -> list[dict[str, Any]]:
@@ -618,7 +618,7 @@ def summary(params: Mapping[str, Any]) -> dict[str, Any]:
     previous: tuple[datetime, datetime] | None = None
     if f.start is not None:
         if f.end is None:
-            f.end = datetime.now(timezone.utc)
+            f.end = datetime.now(UTC)
             if f.start >= f.end:
                 raise AnalyticsError("from must be before to")
         try:

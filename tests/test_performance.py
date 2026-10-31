@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -342,9 +342,9 @@ async def test_audit_report_has_passive_performance(patched_make_client, target_
 
 
 def test_recorder_start_time_is_its_t0():
-    before = datetime.now(timezone.utc)
+    before = datetime.now(UTC)
     rec = RequestRecorder()
-    assert before <= rec.started_at <= datetime.now(timezone.utc)
+    assert before <= rec.started_at <= datetime.now(UTC)
 
 
 async def test_stream_server_time_runs_to_first_token():

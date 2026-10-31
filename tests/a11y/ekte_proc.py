@@ -20,7 +20,7 @@ import subprocess
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -112,7 +112,7 @@ def _main(port: int, data_dir: Path, seed_monitor: bool) -> None:
         with watches._connect() as conn:
             conn.execute("UPDATE watches SET created_ts = ?, kb_pinned_ts = ? WHERE id = ?", (FIXED_TS, FIXED_TS, wid))
         # runs for /v2/analytics, in the week before the snapshots' fixed clock
-        seed_analytics(datetime.fromtimestamp(FIXED_TS, timezone.utc), wid)
+        seed_analytics(datetime.fromtimestamp(FIXED_TS, UTC), wid)
     (data_dir / ".seeded").write_text("ok", encoding="utf-8")
     thread.join()
 
