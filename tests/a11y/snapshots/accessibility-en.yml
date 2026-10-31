@@ -45,7 +45,7 @@
     - definition:
       - code: <id>
     - term: ekte version
-    - definition: 0.11.0
+    - definition: 0.30.0
     - term: axe-core version
     - definition: 4.13.0
     - term: Tests

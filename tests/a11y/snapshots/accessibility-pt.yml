@@ -45,7 +45,7 @@
     - definition:
       - code: <id>
     - term: Versão do ekte
-    - definition: 0.11.0
+    - definition: 0.30.0
     - term: Versão do axe-core
     - definition: 4.13.0
     - term: Testes

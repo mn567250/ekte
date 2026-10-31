@@ -45,7 +45,7 @@
     - definition:
       - code: <id>
     - term: ekte 版本
-    - definition: 0.11.0
+    - definition: 0.30.0
     - term: axe-core 版本
     - definition: 4.13.0
     - term: 测试
