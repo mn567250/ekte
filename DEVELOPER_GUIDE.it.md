@@ -262,7 +262,7 @@ modificare.
 
 Anche i relay sono endpoint: `relays.py` trasforma i `base_url_hints` di un
 provider in URL di base utilizzabili (`GET /api/kb` → `base_urls`) e salva un
-relay dall'interfaccia web come voce di provider in `kb.db` (`origin = relay`: un
+relay dall'interfaccia web come voce di fornitore in `kb.db` (`origin = relay`: un
 `display_name` e un URL di base, nessun modello; nessuna modifica allo schema).
 
 ### Libreria dei prompt
@@ -374,12 +374,12 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
   risposte sono `Cache-Control: no-store`.
 - **Pannelli di analisi.** `/api/analytics/breakdown` (fino a 8 `metrics` per
   `group=relay|model|relay_model|all` nel periodo), `/api/analytics/errors` (le
-  chiamate di completamento al target per classe di esito
+  chiamate di completamento all'obiettivo per classe di esito
   `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, per
   `group=relay|model` e per `bucket`, contate in SQL da
   `history.analytics_request_classes()` senza caricare le righe delle
-  richieste; l'ora di una chiamata è l'inizio del suo audit più il suo offset,
-  al minuto; `covered` = audit con registri delle richieste) e
+  richieste; l'ora di una chiamata è l'inizio della sua verifica più il suo offset,
+  al minuto; `covered` = verifiche con registri delle richieste) e
   `/api/analytics/integrity` (conteggi di superati / avvisi / falliti dei
   rilevatori di identità, capacità, visione, streaming, protocollo, integrità,
   prompt iniettato e connettività per relay × modello, la quota di modelli
@@ -466,18 +466,18 @@ mostrare di nuovo lo stesso avviso non cambia nulla). La pagina sceglie il
 messaggio più importante ed elenca gli altri in `items`. Verifica: server non
 raggiungibile / audit in corso / l'esecuzione salvata più recente / eseguito in
 locale; Cronologia: cronologia illeggibile / esecuzioni dei monitor in pausa
-(chiave master bloccata) o esecuzioni precedenti ancora in elaborazione / numero
+(chiave principale bloccata) o esecuzioni precedenti ancora in elaborazione / numero
 di esecuzioni; Analisi: dati illeggibili / esecuzioni non ancora nei grafici o
 con orario di inizio stimato / su cosa si basa; Conoscenza: errore di
 caricamento / voci saltate o ignorate / elementi disattivati / completa. Monitor
-mantiene la sua barra della chiave master (`masterkey.js`), con lo stesso aspetto
+mantiene la sua barra della chiave principale (`masterkey.js`), con lo stesso aspetto
 e posto. I numeri dell'intera cronologia vengono da `GET /api/history/status`
 (`history.status()`: numero di esecuzioni, la più vecchia e la più recente,
 righe non ancora elaborate dal backfill delle analisi, esecuzioni con orario di
 inizio stimato).
 
 La pagina v2 **Verifica** configura i relay con
-`v2/relaycfg.js`: scelta relay/provider → URL di base → i modelli del relay
+`v2/relaycfg.js`: scelta relay/fornitore → URL di base → i modelli del relay
 (`/api/models`, al cambiamento, in cache per URL/chiave/protocollo) → modello
 dichiarato dalla base di conoscenza (`/api/kb/resolve` lo preseleziona) →
 provider derivato, più **Salva nella base** (`POST /api/kb/relays`). Le sue
@@ -558,7 +558,7 @@ anche le tabelle di analisi, definite in `web/analytics_store.py`:
 tassi, percentili di latenza/TTFT/decodifica, rapporti di fatturazione, numero di
 rilevazioni e altro; NULL dove l'esecuzione non ha misurato un valore),
 `history_dimensions` (punteggi di dimensioni e rilevatori) e `history_requests` (i
-record delle richieste dell'esecuzione, obiettivo e baseline, nell'ordine della
+record delle richieste dell'esecuzione, obiettivo e riferimento, nell'ordine della
 lista). I `performance.requests` di un rapporto stanno solo lì: `save()` li toglie
 da `report_json` (`requests_split` marca la riga) e `get()` / `latest_for()` li
 rimettono al loro posto, così un rapporto si rilegge identico a come è stato
@@ -662,7 +662,7 @@ famiglia con cui il modello si identifica. Il controllo d'identità conta anche
 la chiave del provider, il nome visualizzato e l'id del modello come marchio
 autentico, estesi agli altri nomi del produttore in `VENDOR_BRANDS`
 (`ekte/knowledge/identity.py`, che è anche l'elenco dei marchi rivali del
-detector); l'importazione completa le parole chiave vuote a partire da questi
+rilevatore); l'importazione completa le parole chiave vuote a partire da questi
 nomi con un avviso. Le parole di marchio di un nuovo produttore vanno aggiunte
 lì come un gruppo.
 

@@ -87,8 +87,16 @@ rinormalizzati. Il voto è A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) o F.
 | Sicurezza del trasporto | `security` | 6 |  |
 | Prestazioni | `performance` | 6 |  |
 
-Le tre **dimensioni centrali** sono quelle il cui fallimento rivela più
-direttamente una merce non conforme.
+Il verdetto si basa sulle dimensioni che sono state **eseguite**: un'esecuzione
+`custom` controlla solo la propria selezione. Contano due gruppi di dimensioni:
+
+- le **dimensioni di profilo** (identità del modello, finestra di contesto,
+  capacità dichiarate) vengono giudicate rispetto al profilo del modello
+  dichiarato nella base di conoscenza;
+- le **dimensioni centrali** sono le dimensioni di profilo più fatturazione e
+  consumo: il loro fallimento significa che il relay non fornisce ciò che
+  dichiara (un altro modello, una finestra di contesto più piccola, capacità
+  mancanti, fatturazione gonfiata).
 
 ### Verdetto di rischio
 
@@ -105,29 +113,31 @@ continuano ad alzare il rischio.
 
 | Rischio | Etichetta nell'interfaccia | Quando |
 |---|---|---|
-| `inconclusive` | Segnale insufficiente | Nessuna dimensione centrale ha prodotto un risultato utilizzabile (Superato, Avviso o Fallito) — per esempio relay irraggiungibile, modello senza profilo, o esecuzione `custom` senza dimensioni centrali |
+| `inconclusive` | Segnale insufficiente | Niente di utilizzabile da giudicare: se è stata eseguita una dimensione di profilo, nessuna ha prodotto un risultato utilizzabile (Superato, Avviso o Fallito) — relay irraggiungibile o modello senza profilo; altrimenti nessuna dimensione oltre alla connettività ne ha prodotto uno |
 | `high` | Merce non conforme | Una rilevazione CRITICA, una rilevazione ALTA/CRITICA in una dimensione centrale, o due o più rilevazioni ALTE |
 | `medium` | Scostamenti rilevati | Esattamente una rilevazione ALTA fuori dalle dimensioni centrali, o una rilevazione MEDIA in una dimensione centrale |
 | `low` | Per lo più affidabile | Qualsiasi altra rilevazione MEDIA |
 | `clean` | Coerente (probabilmente autentico) | Nessuno dei casi precedenti |
 
-Il verdetto registra le dimensioni i cui riscontri determinano il rischio
+Il verdetto registra le dimensioni le cui rilevazioni determinano il rischio
 (`verdict.drivers`) e le dimensioni che hanno prodotto un risultato utilizzabile
 (`verdict.checked`). Il titolo le segue: parla del modello dichiarato solo quando
 l'identità del modello è tra i fattori determinanti, altrimenti nomina i fattori
-(«Forte evidenza che il relay non fornisce ciò che dichiara: Finestra di
+(«Prove solide che il relay non fornisce ciò che dichiara: Finestra di
 contesto.»). Un verdetto pulito o basso senza un risultato utilizzabile
 sull'identità del modello dice che l'identità del modello non è stata verificata.
 
 ### Affidabilità del verdetto
 
-- **Bassa** — il modello dichiarato non è nella base di conoscenza, corrisponde
-  solo in modo approssimativo a un profilo (`match_confidence` `fuzzy`; il
-  riepilogo lo dice), oppure meno di due dimensioni centrali hanno prodotto un risultato utilizzabile;
+- **Bassa** — una dimensione di profilo è stata eseguita e il modello dichiarato
+  non è nella base di conoscenza o corrisponde solo in modo approssimativo a un
+  profilo (`match_confidence` `fuzzy`; il riepilogo lo dice), oppure troppo
+  poche dimensioni hanno prodotto un risultato utilizzabile;
 - **Media** — almeno due dimensioni centrali hanno prodotto un risultato
-  utilizzabile;
-- **Alta** — è stato usato un riferimento *e* tutte e tre le dimensioni centrali
-  hanno prodotto un risultato utilizzabile, oppure l'affidabilità era media e il
+  utilizzabile (o, in un'esecuzione senza dimensioni centrali, almeno due
+  dimensioni lo hanno fatto);
+- **Alta** — è stato usato un riferimento *e* ogni dimensione centrale eseguita
+  ha prodotto un risultato utilizzabile, oppure l'affidabilità era media e il
   giudice LLM ha restituito un verdetto utilizzabile.
 
 ## Suite, rilevatori e modalità
@@ -219,7 +229,7 @@ sull'identità del modello dice che l'identità del modello non è stata verific
 
 ## `connectivity` — Connettività
 
-**Rileva.** Nessun trucco direttamente: è la porta da cui dipendono tutti gli
+**Rileva.** Nessun trucco in particolare: è la porta da cui dipendono tutti gli
 altri rilevatori. Separa una chiave morta o mal configurata da un relay che vale
 la pena verificare.
 
@@ -237,7 +247,7 @@ canary esatto; registra la latenza e il campo `model` restituito.
 |  | Una chat completion ha restituito contenuto, ma non ha ripetuto il canary. | Superato | 85 pt |
 |  | La chat completion non è riuscita o non ha restituito contenuto. | Fallito · Alta | 0 pt |
 
-Lo stato del detector è il peggiore dei suoi controlli: un `/v1/models`
+Lo stato del rilevatore è il peggiore dei suoi controlli: un `/v1/models`
 disattivato dà un Avviso anche se la chat funziona.
 
 **Avvertenze.** L'assenza di `/v1/models` è innocua; molti relay la
@@ -261,8 +271,8 @@ un colore da un turno precedente; una sequenza `stop` che deve troncare
 l'output; e una richiesta volutamente non valida (`messages` vuoto) che deve
 essere rifiutata con un 4xx, idealmente con un corpo d'errore in stile OpenAI.
 
-La Responses API non ha il parametro `stop`, quindi con un target Responses API
-la prova di stop non viene inviata e la verifica è annotata come non applicabile
+La Responses API non ha il parametro `stop`, quindi con un obiettivo Responses API
+la sonda di stop non viene inviata e la verifica è annotata come non applicabile
 (non conteggiata) invece di incolpare il relay.
 
 | Controllo | Esito | Stato | Effetto |
@@ -382,7 +392,7 @@ il modello deve restituirlo.
   sottostima questo riempimento di circa il 12% (o200k) - 15% (cl100k)
   rispetto ai tokenizer reali, quindi ogni prompt viene costruito a dimensione
   ÷ 1,2 secondo la stima (ago e domanda inclusi): un gradino di dimensione N
-  resta entro N token reali. Le dimensioni nelle evidenze (`size`,
+  resta entro N token reali. Le dimensioni nelle prove (`size`,
   `effective_window`, `top_rung`) sono questi budget di token reali; le righe
   della scala riportano anche la stima con cui è stato costruito un prompt
   (`heuristic_tokens`).
@@ -399,7 +409,7 @@ il modello deve restituirlo.
    dimensione con una sola chiamata. Un fallimento viene verificato alla fine
    (profondità 0,95); se la fine viene richiamata, l'inizio viene sondato ancora
    una volta con un ago nuovo, e un secondo fallimento boccia la dimensione come
-   **troncamento in testa** (indicato nelle evidenze del verdetto). Al più tre
+   **troncamento in testa** (indicato nelle prove del verdetto). Al più tre
    chiamate per dimensione; la scala si ferma al primo fallimento confermato.
 2. Due passi di ricerca binaria tra l'ultima dimensione richiamata e la prima
    fallita.
@@ -410,10 +420,10 @@ il modello deve restituirlo.
 4. Un 4xx il cui messaggio cita la lunghezza del contesto è un rifiuto per
    dimensione; un rifiuto di `max_tokens` (modelli di ragionamento) viene
    ritentato con `max_completion_tokens` e non viene mai letto come un tetto.
-5. Una sonda andata in timeout o a cui si risponde con un errore (un altro
+5. Una sonda che va in timeout o riceve un errore (un altro
    parametro rifiutato, un errore HTTP, un 5xx, una risposta vuota o malformata)
    chiude la scala senza contare come fallimento: la finestra oltre l'ultima
-   dimensione ricordata è riportata come non verificata (non conclusiva, non
+   dimensione richiamata è riportata come non verificata (non conclusiva, non
    valutata), mai come troncamento né `no_recall`. Solo una risposta senza
    l'ago è un fallimento.
 
@@ -467,8 +477,8 @@ quando cambiano il comportamento.
    Un marchio rivale conta solo se manca quello autentico; «Sono Claude, non
    GPT» è un contrasto innocuo.
    Il marchio autentico sono le `identity_keywords` del profilo più i suoi
-   nomi: la chiave del provider, il nome iniziale del nome visualizzato del
-   provider, la prima parola dell'id e della famiglia del modello, e gli altri
+   nomi: la chiave del fornitore, il nome iniziale del nome visualizzato del
+   fornitore, la prima parola dell'id e della famiglia del modello, e gli altri
    nomi di quel produttore nell'elenco integrato (`z.ai` copre anche `zhipu`).
    Un modello che nomina il proprio produttore non è quindi mai un marchio
    rivale, anche quando `identity_keywords` è vuoto. I nomi derivati non
@@ -540,10 +550,10 @@ lasciato sonde senza risposta.
 |---|---|---|---|
 | `quality_judge.verdict` (Verdetto del giudice LLM) | Il giudice ha trovato le risposte coerenti con il modello dichiarato. | Superato | 95 pt |
 |  | Il giudice ha trovato le risposte diverse dal modello dichiarato (confidenza bassa, media o non indicata). | Avviso · Media | 50 pt |
-|  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessuna baseline utilizzabile). | Avviso · Media | 25 pt |
-|  | Il giudice è sicuro e una baseline affidabile ha confermato la differenza. | Fallito · Alta | 25 pt |
+|  | Il giudice è sicuro che le risposte differiscono dal modello dichiarato (nessun riferimento utilizzabile). | Avviso · Media | 25 pt |
+|  | Il giudice è sicuro e un riferimento affidabile ha confermato la differenza. | Fallito · Alta | 25 pt |
 |  | Il giudice non è riuscito a esprimere un verdetto. | Non conclusivo · Bassa | Non conteggiato |
-|  | Nessuna risposta del target da giudicare. | Non conclusivo · Bassa | Non conteggiato |
+|  | Nessuna risposta dell'obiettivo da giudicare. | Non conclusivo · Bassa | Non conteggiato |
 
 **Avvertenze.** Le API ufficiali aggiornano gli snapshot in silenzio, quindi uno
 scostamento può essere una deriva innocua — ekte riporta «divergente», mai
@@ -648,9 +658,9 @@ frammenti con intervalli quasi uguali, CV < 0,1, e sotto i 2 ms: scaricati in
 blocco). Un flusso senza frammento di utilizzo viene segnalato a parte.
 
 Il TTFT è il primo token di contenuto visibile. Per un modello di ragionamento
-(secondo la knowledge base, o che riporta token di ragionamento nell'usage), che
+(secondo la base di conoscenza, o che riporta token di ragionamento nell'usage), che
 riflette prima di rispondere, un primo token tardivo viene quindi solo annotato
-e non conteggiato come buffering; i segnali pochi chunk e intervalli uniformi
+e non conteggiato come buffering; i segnali pochi frammenti e intervalli uniformi
 contano ancora. Uno stream riuscito ma senza contenuti non è conclusivo e non
 viene valutato.
 Se il modello trasmette il suo ragionamento (delta di ragionamento, blocchi di thinking, eventi di ragionamento della Responses API), si misura invece il primo token di qualunque tipo: uno stream genuino inizia presto a ragionare, quindi uno stream in cui ragionamento e risposta arrivano entrambi alla fine è bufferizzato anche per un modello di ragionamento.
@@ -732,8 +742,8 @@ richieste effettivamente tentate: un HTTP 429 è una limitazione onesta e viene
 conteggiato a parte. Il punteggio toglie la quota fallita; una latenza p95
 oltre i 30 s mantiene l'85 % del resto. Una richiesta fallita (cioè un 5xx
 temporaneo sulle 8 predefinite), o al massimo il 10% di un burst più grande, è un
-Avviso finché almeno l'80% riesce; di più è Fallito. Lo stato del detector è il
-peggiore delle sue rilevazioni. Sono avvisi di trasporto: non alzano mai il
+Avviso finché almeno l'80% riesce; di più è Fallito. Lo stato del rilevatore è il
+peggiore tra le sue rilevazioni. Sono avvisi di trasporto: non alzano mai il
 verdetto di rischio.
 
 | Controllo | Esito | Stato | Effetto |
@@ -818,14 +828,14 @@ struttura conta come manomissione. In modalità di confronto, una sostituzione
 che il riferimento affidabile non fa è CRITICA.
 Conferma solo un riferimento che restituisce il canary intatto: se va in errore
 o non restituisce nulla di utilizzabile non conferma nulla, e la sostituzione
-resta MEDIA (evidenza `baseline_unavailable`).
+resta MEDIA (prova `baseline_unavailable`).
 Una risposta troncata al limite di output è non conclusiva, non una sostituzione.
 
 | Controllo | Esito | Stato | Effetto |
 |---|---|---|---|
 | `integrity.verdict` (Integrità delle risposte) | I canary a risposta nota sono tornati intatti. | Superato | 100 pt |
-|  | Un valore canary è stato sostituito (non ancora confermato da una baseline). | Fallito · Media | 45 pt |
-|  | Un valore canary è stato sostituito mentre la baseline affidabile lo ha mantenuto intatto. | Fallito · Critica | 10 pt |
+|  | Un valore canary è stato sostituito (non ancora confermato da un riferimento). | Fallito · Media | 45 pt |
+|  | Un valore canary è stato sostituito mentre il riferimento affidabile lo ha mantenuto intatto. | Fallito · Critica | 10 pt |
 |  | Nessun canary è stato ripetuto alla lettera, quindi la manomissione non è valutabile. | Non conclusivo | Non conteggiato |
 
 ### `prompt_cache` — Cache del prefisso del prompt (tempi)
@@ -918,7 +928,7 @@ base di conoscenza.
 |  | Più lento del riferimento (ad es. locale o hardware più piccolo); non è un fallimento. | Info | Non conteggiato |
 |  | Molto più veloce del riferimento (compatibile con un modello più piccolo). | Avviso · Bassa | 60 pt |
 | `performance.reasoning` | Il modello spende token di ragionamento nascosti; il TTFT include il ragionamento. | Info | Non conteggiato |
-| `performance.relay_overhead` | Latenza confrontata con la baseline affidabile (solo informativo). | Info | Non conteggiato |
+| `performance.relay_overhead` | Latenza confrontata con il riferimento affidabile (solo informativo). | Info | Non conteggiato |
 | `performance.skipped` | La sonda delle prestazioni era disattivata. | Info | Non conteggiato |
 
 **Avvertenze.** La latenza dipende dal percorso di rete e dal carico del
@@ -949,7 +959,7 @@ il rischio ALTO, come un modello sostituito nella chat.
 
 **Deriva dei vettori.** Ogni esecuzione conserva le prime 64 componenti del
 vettore normalizzato di un input fisso. L'esecuzione successiva dello stesso
-target e modello dichiarato (`ekte embed`, una verifica di embedding avviata dalla
+obiettivo e modello dichiarato (`ekte embed`, una verifica di embedding avviata dalla
 pagina Verifica dell'interfaccia web con il selettore del tipo di endpoint, o un
 monitor di embedding) confronta il suo vettore con quel campione: coseno **≥ 0,995** è stabile
 (PASS), da **0,95 a 0,995** si è spostato (WARN, MEDIA: un nuovo rilascio o una
@@ -958,7 +968,7 @@ sostituito (FAIL, ALTA). La prima esecuzione non ha nulla da confrontare e
 registra il riferimento (INFO).
 
 **Sonda delle prestazioni.** Abilitata come la sonda della chat: gira in deep, full
-e custom, e in standard solo con una baseline. Dopo un ping e una richiesta di
+e custom, e in standard solo con un riferimento. Dopo un ping e una richiesta di
 riscaldamento (avvio a freddo) invia richieste uniformi con un input, lotti di 16
 input e, in deep/full, una raffica concorrente. Ogni input porta un nonce casuale;
 vettori identici per input diversi vengono segnalati come in cache ed esclusi
@@ -967,7 +977,7 @@ input/s, la regolarità di latenza e throughput, gli errori e la stabilità sott
 carico. La **scalabilità a lotti** confronta la latenza per input di un lotto con
 quella di una richiesta singola: da 0,6x in su il lotto viene diviso o serializzato
 (lineare, WARN BASSA). Non c'è un riferimento di velocità nella base di
-conoscenza; la velocità grezza conta solo rispetto a una baseline.
+conoscenza; la velocità grezza conta solo rispetto a un riferimento.
 
 ---
 
@@ -991,14 +1001,14 @@ rischio ALTO.
 
 **Deriva della classifica.** Ogni esecuzione conserva la classifica e i punteggi
 arrotondati di una sonda fissa a rilevanza graduata. L'esecuzione successiva dello
-stesso target e modello dichiarato la confronta: la stessa classifica con punteggi
+stesso obiettivo e modello dichiarato la confronta: la stessa classifica con punteggi
 entro **0,01** (la variazione di punteggio più grande, relativa al punteggio solo oltre 1) è stabile (PASS), da **0,01 a 0,1** si è spostata (WARN, MEDIA),
 un'altra classifica o una variazione oltre **0,1** significa che il modello è
 stato sostituito (FAIL, ALTA). La prima esecuzione registra il riferimento (INFO);
 una sonda cambiata non viene mai presa per deriva.
 
 **Sonda delle prestazioni.** Abilitata come la sonda della chat (deep, full e
-custom; in standard solo con una baseline). Ogni giro invia una query unica su
+custom; in standard solo con un riferimento). Ogni giro invia una query unica su
 **4 documenti** e una su **32**; in deep/full segue una raffica concorrente. Le
 risposte i cui punteggi fini ripetono quelli di un'altra query vengono segnalate
 come in cache ed escluse dalle statistiche; una risposta che lascia documenti
@@ -1007,7 +1017,7 @@ freddo, documenti/s e token di input/s, regolarità, errori e stabilità sotto
 carico. **Scalabilità con il numero di documenti**: quando una richiesta con 32
 documenti costa per documento 0,6x o più di una con 4, il relay divide o serializza
 i documenti (lineare, WARN BASSA). Non c'è un riferimento di velocità nella base di
-conoscenza; la velocità grezza conta solo rispetto a una baseline.
+conoscenza; la velocità grezza conta solo rispetto a un riferimento.
 
 ---
 
