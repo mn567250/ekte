@@ -48,7 +48,7 @@ GZIP_MINIMUM_SIZE = 1024
 # Server-Sent Events: never compressed (gzip would hold events back in its
 # buffer). Newer Starlette also skips text/event-stream by itself; matching
 # the paths keeps that true for every supported version.
-_SSE_PATH = re.compile(r"^/api/(?:audit/stream|jobs/[^/]+/events)$")
+_SSE_PATH = re.compile(r"^/api/(?:v1/)?jobs/[^/]+/events$")
 
 
 class CompressionMiddleware:

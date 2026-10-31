@@ -20,6 +20,16 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Removed
+
+- **Four internal HTTP endpoints**, which the web UI no longer used:
+  `POST /api/audit/stream` (queue an audit with `POST /api/v1/jobs` and follow
+  it with `GET /api/v1/jobs/{id}/events`), `POST /api/embed` and
+  `POST /api/rerank` (queue a job with `"surface": "embedding"` or `"rerank"`),
+  and `GET /api/history/trend` with `history.trend()` ([#3](https://github.com/mn567250/ekte/issues/3),
+  [#4](https://github.com/mn567250/ekte/issues/4),
+  [#5](https://github.com/mn567250/ekte/issues/5)).
+
 ### Changed
 
 - **Supported operating systems: Linux, macOS and Windows.** The CI test job now
@@ -43,6 +53,13 @@ ekte has three eras:
   all workflows and `action.yml` for script injection and similar mistakes, and
   `tests/test_workflow_hardening.py` enforces the pinning and permission rules
   offline.
+- **A small public HTTP API under `/api/v1/`:** `POST /api/v1/jobs`,
+  `GET /api/v1/jobs/{id}`, `GET /api/v1/jobs/{id}/events` (SSE),
+  `GET /api/v1/history` and `GET /api/v1/history/{id}`. Shapes, errors and
+  status codes are in the developer guide and pinned by contract tests. Every
+  other `/api/` path is internal; responses carry `X-Ekte-API: internal` (public
+  ones `X-Ekte-API: v1`). The local-only protections apply to `/api/v1/` too
+  ([#22](https://github.com/mn567250/ekte/issues/22)).
 
 - **No vendored third-party files in the source distribution.** The sdist still
   contains `tests/`, but not `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0);

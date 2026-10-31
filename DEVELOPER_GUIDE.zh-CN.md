@@ -24,6 +24,7 @@
   - [接口类型（surface）](#接口类型surface)
   - [独立审计器](#独立审计器)
   - [Web 服务](#web-服务)
+  - [HTTP API v1](#http-api-v1)
   - [Web 前端](#web-前端)
   - [本地数据](#本地数据)
 - [参与贡献](#参与贡献)
@@ -238,8 +239,7 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 - 评分权重以及画像 / 核心 / 基础设施维度集合按 surface 区分（`scoring.SURFACE_WEIGHTS`）；对话保持原值。
 - 记录器把嵌入调用标为 `op="embed"`，重排调用标为 `op="rerank"`（`ekte.config.SURFACE_OPS`）；
   `perf/summary.py` 中的函数接受 `op` 参数（默认 `complete`）。
-- `embed_audit.run_embedding_audit()` 和 `run_rerank_audit()`（供 `ekte embed` / `ekte rerank` 和
-  `/api/embed` / `/api/rerank` 使用）以 `surface="embedding"` 或 `"rerank"` 运行 runner，把同一 surface
+- `embed_audit.run_embedding_audit()` 和 `run_rerank_audit()`（供 `ekte embed` / `ekte rerank` 使用）以 `surface="embedding"` 或 `"rerank"` 运行 runner，把同一 surface
   上一次已保存的运行作为 `previous_report`（漂移）传入，并保存报告（`--no-save` 时不保存）。
 - 重排检测器：`rerank.connectivity`、`rerank.known_answer`（CAPABILITY）、`rerank.identity` 和
   `rerank.drift`（MODEL_IDENTITY）、`rerank.determinism`（RELIABILITY）以及 `performance.rerank`。
@@ -268,17 +268,14 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
   重定向（308）到对应的 v2 页面。
 - **API。** `/api/jobs…` 运行检测（见下文）；`/api/models` 列出中转站的模型；
   `/api/report/export` 渲染报告；`/api/history…`、`/api/watches…`、`/api/kb…` 和
-  `/api/analytics…` 为其他页面提供服务。`/api/audit/stream`（通过 SSE 推送的一次检测）、
-  `/api/embed` 和 `/api/rerank`（一次同步的嵌入 / 重排检测）已不再被 Web 界面使用；
-  它们的去留在 issue #3 和 #4 中跟进。
+  `/api/analytics…` 为其他页面提供服务。 它们均为内部接口；公开子集见 [HTTP API v1](#http-api-v1)。
 - **中转站。** `POST /api/kb/relays` 保存中转站 `{name, base_url}`（输入无效时返回 400，名称或地址已存在时返回 409）。
 - **分析。** `GET /api/analytics/options`（历史中出现的中转站、模型、套件、流式模式、API 及日期范围）、`/api/analytics/summary`（`from`–`to` 区间的关键指标，并与之前等长区间对比）、`/api/analytics/series`（按 `group=relay|model|relay_model` 给出 `metric`，最多 4 个 `keys`，按查看者时区 `tz` 或 `tz_offset` 划分为 `bucket=hour|day|week|dow_hour` 区间；`dow_hour` 还接受 `block`（每行小时数）和 `fold=week|4weeks|month_week`，在检测覆盖 90 天或 180 天之前回退为 `week`）以及 `/api/analytics/leaderboard`（`model=` 列出其各中转站，或 `relay=` 列出其各模型）。所有端点都接受筛选参数 `from`、`to`、`suite`、`stream_mode`、`api`、`source=all|manual|monitor`、`relay` 和 `model`。`ekte/web/analytics.py` 基于 `history.analytics_runs()` 在 Python 中完成全部计算：指标 id 来自固定白名单；中转站在查询时按知识库条目分组；某次运行未测得的值不参与计算（每个值都带有 `n` 和 `coverage`）；运行次数少于 `MIN_RUNS`（3）的区间标记为 `low_n`。参数无效时返回 400；响应带 `Cache-Control: no-store`。
 - **分析面板。** `/api/analytics/breakdown`（在所选区间内按 `group=relay|model|relay_model|all` 给出最多 8 个 `metrics`）、`/api/analytics/errors`（目标端补全调用按结果类别 `success|client_4xx|rate_limited|server_5xx|timeout|network|other` 统计，按 `group=relay|model` 和 `bucket` 划分，由 `history.analytics_request_classes()` 在 SQL 中计数，不加载请求行；调用时间为所属检测的开始时间加上偏移，精确到分钟；`covered` 为有请求记录的检测次数）以及 `/api/analytics/integrity`（每个「中转站 × 模型」的身份、能力、图像理解、流式、协议、完整性、注入提示词与连通性检测器的通过 / 警告 / 失败次数，模型不符占比，以及实测 / 声明上下文窗口的中位数比例）。`/api/analytics/series` 也接受 `group=all`。筛选与错误处理同上。
 - **后台检测。** `jobs.py` 把每次检测作为服务器拥有的任务运行。`POST /api/jobs` 排入一个任务，
   `GET /api/jobs` 列出排队中、运行中和刚结束的任务（以及运行中的监控）及其进度，
   `GET /api/jobs/{id}/events` 先回放任务的事件日志，再通过 SSE 实时跟随，
-  `POST /api/jobs/{id}/cancel` 停止任务。Web 界面使用这些接口，因此检测不随页面结束；
-  `/api/audit/stream` 包装同一种任务，并在数据流关闭时取消它。
+  `POST /api/jobs/{id}/cancel` 停止任务。Web 界面使用这些接口，因此检测不随页面结束。
   中转站互斥让同一中转站同一时间只运行一项检测（或一次监控运行），按主机名区分，所有回环地址视为同一主机；
   同时最多运行 `EKTE_MAX_PARALLEL_AUDITS`（默认 4）项，等待者按到达顺序执行。
 - **监控调度器。** 应用的 lifespan 启动一个后台循环，把每个到期的监控作为独立任务启动，
@@ -298,6 +295,28 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
   `EKTE_CONTAINER=1` 时例外），并安装 `LocalOnlyMiddleware`：防 DNS 重绑定的 Host 白名单、
   防 CSRF 的 `Origin` 与 `Sec-Fetch-Site` 校验、只接受 JSON 请求体，以及防嵌入 / 禁止
   MIME 嗅探 / 不发送 Referrer 的响应头。界面有意不设登录。
+
+### HTTP API v1
+
+HTTP API 的公开部分位于 `/api/v1/` 之下，遵循[稳定性政策](docs/STABILITY.md#surface-http-api)：只有在大版本中、经过弃用期后才会发生不兼容的变更。`/api/` 下的其他路径均为内部接口，任何版本都可能变更。内部响应带有 `X-Ekte-API: internal`，v1 响应带有 `X-Ekte-API: v1`。Web 界面使用内部路径。
+
+| 端点 | 请求 | 响应 |
+|---|---|---|
+| `POST /api/v1/jobs` | JSON 请求体，含 `base_url`, `model`，可选 `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 及该任务；输入无效时返回 400 |
+| `GET /api/v1/jobs/{id}` | 无 | 200 及该任务；id 未知时返回 404 |
+| `GET /api/v1/jobs/{id}/events` | 无 | 200 及 `text/event-stream`：该任务迄今的事件，随后实时推送，以 `done` 结束；id 未知时返回 404 |
+| `GET /api/v1/history` | 可选 `limit`（1–500，默认 50）和 `perf` | 200 及运行摘要的 JSON 数组，最新的在前 |
+| `GET /api/v1/history/{id}` | 无 | 200 及原样保存的报告；id 未知时返回 404 |
+
+任务包含 `id`、`status`（`queued`、`running`、`done`、`error` 或 `cancelled`）、进度字段、报告保存后的 `report_id` 以及 `error`；API 密钥从不返回。每个事件是一行 SSE `data: {JSON}`，带有 `type`；`report` 事件携带报告及其 `report_id`，`done` 始终是最后一个事件。客户端应忽略不认识的事件类型和字段。
+
+每个错误都是只有一个字段 `error` 的 JSON，内容为可读的消息，状态码为以下之一：400（请求无效）、404（未找到）、403（拒绝跨站或跨源请求）、415（请求体不是 JSON）、421（未知主机）。
+
+```json
+{"error": "not found"}
+```
+
+- **仅限本地。** Web 服务的保护措施同样适用于 `/api/v1/`，与其他所有路径一样：默认绑定回环地址、Host 检查、拒绝跨站写入、请求体仅限 JSON。它们以相同的错误格式响应。
 
 ### Web 前端
 

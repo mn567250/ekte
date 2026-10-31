@@ -121,6 +121,16 @@ Send = Callable[[Message], Awaitable[None]]
 ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
 
 
+def api_label(path: str) -> bytes | None:
+    """``v1`` for the public API under /api/v1/, ``internal`` for every other
+    /api/ path, nothing for pages and assets."""
+    if path.startswith("/api/v1/"):
+        return b"v1"
+    if path.startswith("/api/"):
+        return b"internal"
+    return None
+
+
 class LocalOnlyMiddleware:
     """Pure ASGI middleware (streaming-safe) enforcing the rules above."""
 
@@ -133,16 +143,18 @@ class LocalOnlyMiddleware:
             await self.app(scope, receive, send)
             return
         headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers") or []}
+        label = api_label(scope.get("path", ""))
+        api_header = [(b"x-ekte-api", label)] if label else []
         problem = self._check(scope.get("method", "GET").upper(), headers)
         if problem is not None:
             status, message = problem
-            await _reject(send, status, message)
+            await _reject(send, status, message, api_header)
             return
 
         async def send_with_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
                 existing = {k.lower() for k, _ in message.get("headers") or []}
-                extra = [(k, v) for k, v in _SECURITY_HEADERS if k not in existing]
+                extra = [(k, v) for k, v in _SECURITY_HEADERS if k not in existing] + api_header
                 message["headers"] = list(message.get("headers") or []) + extra
             await send(message)
 
@@ -172,12 +184,14 @@ class LocalOnlyMiddleware:
         return None
 
 
-async def _reject(send: Send, status: int, message: str) -> None:
+async def _reject(
+    send: Send, status: int, message: str, extra: list[tuple[bytes, bytes]] | None = None
+) -> None:
     body = ('{"error": "' + message.replace('"', "'") + '"}').encode()
     await send({
         "type": "http.response.start",
         "status": status,
         "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode()),
-                    *_SECURITY_HEADERS],
+                    *_SECURITY_HEADERS, *(extra or [])],
     })
     await send({"type": "http.response.body", "body": body})

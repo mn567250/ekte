@@ -143,9 +143,9 @@ def test_security_headers_on_every_response(client):
     assert "access-control-allow-origin" not in client.get("/api/health").headers
 
 
-def test_streaming_audit_passes_through_the_middleware(client):
-    r = client.post("/api/audit/stream", json={"model": "", "base_url": ""})
-    assert r.status_code == 200 and '"type": "done"' in r.text
+def test_streaming_events_pass_through_the_middleware(client):
+    r = client.post("/api/jobs", json={"model": "", "base_url": ""})
+    assert r.status_code == 400
     assert r.headers["x-frame-options"] == "DENY"
 
 

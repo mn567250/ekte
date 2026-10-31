@@ -158,7 +158,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
         )
         """
     )
-    # Speeds up trend() lookups for a given target+model.
+    # Speeds up lookups for a given target+model.
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_history_target "
         "ON history (base_url, claimed_model, id)"
@@ -591,29 +591,6 @@ def _perf_headline(report_json: str | None) -> dict[str, float | None]:
     tps = p50("decode_tps_local")
     out["decode_tps_p50"] = tps if tps is not None else p50("decode_tps_reported")
     return out
-
-
-def trend(
-    base_url: str, claimed_model: str, limit: int = 30
-) -> list[dict[str, Any]]:
-    """Score and performance history for one target+model, oldest→newest, for a
-    sparkline."""
-    try:
-        limit = max(1, min(int(limit), 365))
-    except (TypeError, ValueError):
-        limit = 30
-    with _connect() as conn:
-        # Take the newest `limit`, then flip to chronological order.
-        rows = conn.execute(
-            f"""SELECT id, ts, score, risk_level, {", ".join(_PERF_COLS)}, {_PERF_DONE}
-               FROM history WHERE base_url = ? AND claimed_model = ?
-               ORDER BY id DESC LIMIT ?""",
-            (base_url, claimed_model, limit),
-        ).fetchall()
-        items = [dict(r) for r in reversed(rows)]
-        _fill_perf(conn, items)
-    keys = ("ts", "score", "risk_level", *_PERF_COLS)
-    return [{k: item[k] for k in keys} for item in items]
 
 
 # Bumped by every write, so cached analytics answers (server.py) are dropped.
