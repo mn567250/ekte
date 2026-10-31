@@ -304,10 +304,13 @@ def compact_dict(report: AuditReport) -> dict:
 
 def _knowledge_lines(k: KnowledgeUsage) -> list[tuple[str, str]]:
     """(label, value) rows describing the knowledge-base profile a run used."""
+    rows: list[tuple[str, str]] = []
+    if k.kb_date:
+        rows.append(("Knowledge-base date", k.kb_date))
     if not k.matched:
-        rows = [("Profile", f"none — no knowledge-base profile matches `{k.requested_model}`")]
+        rows += [("Profile", f"none — no knowledge-base profile matches `{k.requested_model}`")]
     else:
-        rows = [
+        rows += [
             ("Profile", f"{k.provider}/{k.model_id} (match: {k.match_confidence}"
                         f"{', pinned by the watch' if k.pinned else ''})"),
             ("Model source", k.model_source or "—"),
@@ -331,6 +334,7 @@ def _compact_knowledge(k: KnowledgeUsage | None) -> dict | None:
     if k is None:
         return None
     return {
+        "kb_date": k.kb_date,
         "matched": k.matched,
         "provider": k.provider,
         "model_id": k.model_id,

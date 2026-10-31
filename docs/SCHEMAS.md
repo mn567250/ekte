@@ -8,7 +8,7 @@ The English text is canonical; this document is not translated.
 
 | Document | Schema file | Version field | Current |
 |---|---|---|---|
-| Report (`ekte check --json`, `--format json`, history) | [`ekte/schemas/report.schema.json`](../ekte/schemas/report.schema.json) | `schema_version` | 1.0 |
+| Report (`ekte check --json`, `--format json`, history) | [`ekte/schemas/report.schema.json`](../ekte/schemas/report.schema.json) | `schema_version` | 1.1 |
 | Generic webhook payload (`ekte watch`, monitors) | [`ekte/schemas/webhook.schema.json`](../ekte/schemas/webhook.schema.json) | `schema_version` | 1.0 |
 
 The files are generated from the code that produces the documents (the
@@ -37,7 +37,7 @@ platforms' formats and carry no `schema_version`.
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "tool_version": "0.32.0",
   "mode": "check",
   "suite": "standard",

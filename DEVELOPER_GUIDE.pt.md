@@ -31,6 +31,7 @@ como cada verificação funciona e é pontuada, na [Metodologia](docs/METHODOLOG
   - [Pull requests](#pull-requests)
   - [Adicionar um detector](#adicionar-um-detector)
   - [Editar a base de conhecimento](#editar-a-base-de-conhecimento)
+  - [Manter a base de conhecimento atualizada](#manter-a-base-de-conhecimento-atualizada)
   - [Alterar os prompts das sondas](#alterar-os-prompts-das-sondas)
   - [Traduções](#traduções)
   - [Documentação](#documentação)
@@ -638,6 +639,39 @@ genuína, alargados aos restantes nomes do fabricante em `VENDOR_BRANDS`
 detetor); a importação preenche palavras-chave vazias a partir destes nomes com
 um aviso. As palavras de marca de um novo fabricante acrescentam-se aí como um
 grupo.
+
+### Manter a base de conhecimento atualizada
+
+Os dados de fornecedores e modelos envelhecem depressa e cada veredito depende
+deles, por isso o ekte é transparente quanto à sua idade. Cada perfil de
+fornecedor incluído tem `last_verified`, a data em que os seus dados foram
+conferidos pela última vez com a documentação do fornecedor. A mais antiga
+dessas datas é a **data da base de conhecimento**: é guardada em cada relatório
+(`knowledge.kb_date`), mostrada por `ekte kb` e nos relatórios Markdown, HTML e
+PDF, e exposta por `ekte kb --json`. Se for anterior a `STALE_AFTER_DAYS` (180
+dias, em `ekte/knowledge/freshness.py`), o relatório recebe um aviso que remete
+para atualizar o ekte ou adicionar entradas próprias. O aviso nunca altera o
+veredito.
+
+O processo de atualização:
+
+- **Fontes.** Apenas páginas oficiais do fornecedor: lista e fichas de modelos,
+  páginas de preços e limites, avisos de descontinuação e retirada e notas de
+  versão. Inclua o link no pull request.
+- **Quem.** Os mantenedores. Qualquer pessoa pode propor uma alteração com o
+  formulário de issue «Knowledge base update» (fornecedor, id do modelo,
+  alteração, link da fonte e a sua data) ou com um pull request.
+- **Com que frequência.** Pelo menos antes de cada versão menor e, fora do
+  calendário, numa versão de correção quando ocorre uma mudança importante de
+  modelos (um lançamento principal, uma retirada, um id de modelo renomeado). A
+  lista de verificação de versões inclui-o.
+- **Revisão.** Um pull request que altere `ekte/knowledge/data/*.yaml` precisa de
+  uma fonte citada para cada valor alterado e de uma segunda revisão, e
+  `ekte kb-import --check` tem de passar. Atualize `last_verified` de um
+  fornecedor só depois de conferir todo o seu ficheiro, não apenas as linhas
+  alteradas.
+- **Registo de alterações.** Toda a alteração aos dados incluídos consta de
+  `CHANGELOG.md`, porque pode mudar vereditos.
 
 ### Alterar os prompts das sondas
 
