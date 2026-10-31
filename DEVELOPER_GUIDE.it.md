@@ -808,7 +808,7 @@ pytest -n auto               # in parallelo, un worker per CPU (pytest-xdist)
   `httpx.MockTransport` con impostazioni per ogni scostamento che ekte cerca (modello
   servito, autoidentificazione, troncamento del contesto, streaming finto,
   consumo assente o gonfiato, chiamate di strumenti, modalità JSON, …). Ogni
-  impostazione ha per impostazione predefinita il comportamento di un relay onesto.
+  impostazione ha come valore predefinito il comportamento di un relay onesto.
 - I client Anthropic e Responses hanno test propri (`test_anthropic.py`,
   `test_responses.py`); il server web è testato con il client di test di FastAPI
   (`test_web*.py`), comprese le protezioni per l'uso locale
