@@ -421,7 +421,7 @@ async def stream(job: Job, batch_sec: float) -> AsyncIterator[str]:
             timeout = max(0.0, flush_at - loop.time()) if pending else None
             try:
                 event = await asyncio.wait_for(queue.get(), timeout)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 yield sse({"type": "requests", "records": pending})
                 pending = []
                 continue

@@ -28,6 +28,11 @@ ekte has three eras:
   absent. `NOTICE` states what is and is not distributed, and
   `scripts/check_dist_contents.py` (CI workflow `dist.yml`) fails if an excluded
   file ships.
+- **Supported Python versions: 3.11 to 3.14.** Python 3.10 is dropped (end of
+  life in October 2026) and Python 3.14 is added: `requires-python` is now
+  `>=3.11`, the classifiers, the CI test matrix, the `ruff` and `mypy` targets
+  and the documentation name 3.11, 3.12, 3.13 and 3.14. A test keeps them in
+  agreement. See the stability policy (docs/STABILITY.md).
 
 ### Added
 

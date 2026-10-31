@@ -254,7 +254,7 @@ def build_results(tests: dict[str, dict[str, Any]], meta: dict[str, Any]) -> dic
                 g["counts"][k] = g["counts"].get(k, 0) + v
     return {
         "schema": SCHEMA,
-        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
         **meta,
         "tests": {nodeid: {"outcome": rec["outcome"] or "skipped", "steps": rec["steps"]} for nodeid, rec in sorted(tests.items())},
         "steps": dict(sorted(steps.items(), key=lambda kv: [int(x) for x in kv[0].split(".")])),

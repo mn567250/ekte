@@ -17,7 +17,7 @@ import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from ekte.models import CompletionOutcome, RequestRecord, RequestSpec
@@ -228,7 +228,7 @@ class RequestRecorder:
     ) -> None:
         self.t0 = time.perf_counter()
         # Wall-clock time of ``t0``: record ``start_ms`` offsets count from here.
-        self.started_at = datetime.now(timezone.utc)
+        self.started_at = datetime.now(UTC)
         self.tokenizer = tokenizer
         self.records: list[RequestRecord] = []
         self.on_record = on_record

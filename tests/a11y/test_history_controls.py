@@ -48,7 +48,7 @@ def _history(open_page: Any, theme: str = "light", viewport: dict[str, int] | No
     resp.raise_for_status()
     real = resp.json()
     assert real, "the a11y data dir should hold one saved run"
-    now = dt.datetime(2026, 10, 1, 12, 0, tzinfo=dt.timezone.utc)
+    now = dt.datetime(2026, 10, 1, 12, 0, tzinfo=dt.UTC)
     rows = [
         {**real[0], "id": 910000 + i, "claimed_model": m, "score": s, "rating": g, "risk_level": r,
          "ts": (now - dt.timedelta(minutes=ago)).isoformat()}

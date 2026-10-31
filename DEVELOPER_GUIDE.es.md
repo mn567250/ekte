@@ -65,7 +65,7 @@ ese listón en cualquier cambio.
 
 ## Entorno de desarrollo
 
-Requiere Python 3.10+. Node.js es opcional: las pruebas del JavaScript del
+Requiere Python 3.11+. Node.js es opcional: las pruebas del JavaScript del
 navegador se ejecutan con `node` y se omiten sin él.
 
 ```bash
@@ -589,7 +589,7 @@ existan las `ekte_*`.
 ### Pull requests
 
 - Mantén en verde `pytest`, `ruff check ekte tests` y `mypy ekte` (la CI ejecuta
-  los tres con Python 3.10–3.13).
+  los tres con Python 3.11–3.14).
 - Describe el truco de relay o el falso positivo que aborda el cambio.
 - Actualiza `CHANGELOG.md` en `[Unreleased]`.
 - Actualiza la documentación afectada — README, esta guía, la Metodología — en
@@ -780,7 +780,7 @@ lo que protege la interfaz.
 
 | Workflow | Se ejecuta con | Hace |
 |---|---|---|
-| `.github/workflows/ci.yml` | push y pull request a `main` (y a las ramas de integración `a11y/integration`, `perf/integration`); cada noche y manual (solo accesibilidad) | `ruff`, `mypy` y `pytest` con Python 3.10–3.13 y los extras `dev` y `web`; construye la wheel y la sdist y comprueba que la wheel se instala y carga la base de conocimiento; ejecuta la suite de accesibilidad (informativa, nunca hace fallar la ejecución) y sube sus hallazgos: todas las páginas en los push y las ejecuciones nocturnas y manuales (con el informe de conformidad BITV), en las pull requests solo las páginas afectadas por el cambio (ninguna si solo cambia documentación) — salvo en las pull requests a `perf/integration`, donde se omite la lenta suite de navegador (se ejecuta en los push de esa rama y en su pull request a `main`) |
+| `.github/workflows/ci.yml` | push y pull request a `main` (y a las ramas de integración `a11y/integration`, `perf/integration`); cada noche y manual (solo accesibilidad) | `ruff`, `mypy` y `pytest` con Python 3.11–3.14 y los extras `dev` y `web`; construye la wheel y la sdist y comprueba que la wheel se instala y carga la base de conocimiento; ejecuta la suite de accesibilidad (informativa, nunca hace fallar la ejecución) y sube sus hallazgos: todas las páginas en los push y las ejecuciones nocturnas y manuales (con el informe de conformidad BITV), en las pull requests solo las páginas afectadas por el cambio (ninguna si solo cambia documentación) — salvo en las pull requests a `perf/integration`, donde se omite la lenta suite de navegador (se ejecuta en los push de esa rama y en su pull request a `main`) |
 | `.github/workflows/release.yml` | una etiqueta `v*` | construye, ejecuta `twine check` y publica en PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | programación diaria, manual | ejemplo de auditoría programada de un relay con la action |
 

@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** er et verktøy som kjører lokalt og reviderer om et API-relé
 (forhandler / proxy) faktisk leverer modellen det sier det leverer — eller i det
@@ -67,7 +67,7 @@ ekte gjør «dette føles feil» om til en reproduserbar rapport.
 
 ## Installasjon
 
-Krever Python 3.10+. Alle alternativene nedenfor gir deg kommandoen `ekte`.
+Krever Python 3.11+. Alle alternativene nedenfor gir deg kommandoen `ekte`.
 
 ### Med pip
 

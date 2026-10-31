@@ -66,7 +66,7 @@ standarden i tankene ved enhver endring.
 
 ## Utviklingsoppsett
 
-Krever Python 3.10+. Node.js er valgfritt: testene av nettleser-JavaScript kjører
+Krever Python 3.11+. Node.js er valgfritt: testene av nettleser-JavaScript kjører
 under `node` og hoppes over uten det.
 
 ```bash
@@ -569,7 +569,7 @@ informasjonskapslene `zing_lang` / `zing_ui` til `ekte_*`-kapslene finnes.
 ### Pull requests
 
 - Hold `pytest`, `ruff check ekte tests` og `mypy ekte` grønne (CI kjører alle tre
-  på Python 3.10–3.13).
+  på Python 3.11–3.14).
 - Beskriv relétrikset eller den falske positiven en endring tar for seg.
 - Oppdater `CHANGELOG.md` under `[Unreleased]`.
 - Oppdater dokumentasjonen endringen berører — README, denne veiledningen,
@@ -757,7 +757,7 @@ beskytter grensesnittet.
 
 | Arbeidsflyt | Kjører | Gjør |
 |---|---|---|
-| `.github/workflows/ci.yml` | push og pull request til `main` (og integrasjonsgrenene `a11y/integration`, `perf/integration`); hver natt og manuelt (bare tilgjengelighet) | `ruff`, `mypy` og `pytest` på Python 3.10–3.13 med tilleggene `dev` og `web`; bygger wheel og sdist og kontrollerer at wheelen installeres og laster kunnskapsbasen; kjører tilgjengelighetstestene (til informasjon, får aldri kjøringen til å feile) og laster opp funnene: hver side ved push, nattlige og manuelle kjøringer (med BITV-samsvarsrapporten), ved pull requests bare sidene endringen berører (ingen ved rene dokumentasjonsendringer) — unntatt pull requests inn i `perf/integration`, der de trege nettlesertestene hoppes over (de kjører ved push til den grenen og ved dens pull request inn i `main`) |
+| `.github/workflows/ci.yml` | push og pull request til `main` (og integrasjonsgrenene `a11y/integration`, `perf/integration`); hver natt og manuelt (bare tilgjengelighet) | `ruff`, `mypy` og `pytest` på Python 3.11–3.14 med tilleggene `dev` og `web`; bygger wheel og sdist og kontrollerer at wheelen installeres og laster kunnskapsbasen; kjører tilgjengelighetstestene (til informasjon, får aldri kjøringen til å feile) og laster opp funnene: hver side ved push, nattlige og manuelle kjøringer (med BITV-samsvarsrapporten), ved pull requests bare sidene endringen berører (ingen ved rene dokumentasjonsendringer) — unntatt pull requests inn i `perf/integration`, der de trege nettlesertestene hoppes over (de kjører ved push til den grenen og ved dens pull request inn i `main`) |
 | `.github/workflows/release.yml` | en `v*`-tagg | bygger, kjører `twine check` og publiserer til PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | daglig tidsplan, manuelt | eksempel på en planlagt relérevisjon med handlingen |
 

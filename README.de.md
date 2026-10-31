@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** ist ein Local-first-Werkzeug, das prüft, ob ein API-Relay
 (Wiederverkäufer / Proxy) tatsächlich das Modell liefert, das es angibt — oder ob
@@ -69,7 +69,7 @@ ekte macht aus „da stimmt doch was nicht“ einen reproduzierbaren Bericht.
 
 ## Installation
 
-Erfordert Python 3.10+. Jede der folgenden Varianten stellt den Befehl `ekte` bereit.
+Erfordert Python 3.11+. Jede der folgenden Varianten stellt den Befehl `ekte` bereit.
 
 ### Mit pip
 

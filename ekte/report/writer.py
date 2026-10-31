@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from ekte.models import AuditReport
@@ -52,7 +52,7 @@ def _compact_timestamp(generated_at: str | None) -> str:
         except ValueError:
             dt = None
     if dt is None:
-        dt = datetime.now(timezone.utc)
+        dt = datetime.now(UTC)
     return dt.strftime("%Y%m%dT%H%M%S")
 
 

@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** 是一个本地优先的工具，用来检测 API 中转站（转售商 / 代理）是否真的提供了它
 声称的模型——还是偷偷换成更便宜的模型、截断你的上下文窗口、伪造流式输出，或虚报 token
@@ -61,7 +61,7 @@ ekte 把「感觉哪里不对」变成一份可复现的报告。
 
 ## 安装
 
-需要 Python 3.10+。以下任一方式都会提供 `ekte` 命令。
+需要 Python 3.11+。以下任一方式都会提供 `ekte` 命令。
 
 ### 使用 pip
 

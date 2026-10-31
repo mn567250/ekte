@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** è uno strumento local-first che verifica se un relay di API (rivenditore
 / proxy) serve davvero il modello che dichiara — o se lo sostituisce di nascosto
@@ -67,7 +67,7 @@ ekte trasforma un «qui qualcosa non torna» in un rapporto riproducibile.
 
 ## Installazione
 
-Richiede Python 3.10+. Ognuna delle opzioni seguenti fornisce il comando `ekte`.
+Richiede Python 3.11+. Ognuna delle opzioni seguenti fornisce il comando `ekte`.
 
 ### Con pip
 

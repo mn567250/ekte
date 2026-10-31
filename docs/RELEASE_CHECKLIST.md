@@ -20,8 +20,10 @@ fails; everything else depends on you. Process and recovery:
 
 ## Supported Python versions and systems
 
-- [ ] `requires-python` and the classifiers in `pyproject.toml` match what CI tests
-      (Python 3.10 to 3.13 on Linux).
+- [ ] The supported Python versions follow the [stability policy](STABILITY.md#python)
+      (every CPython that is not end-of-life): `requires-python`, the classifiers, the
+      CI matrix and the docs name the same versions (`tests/test_python_versions.py`
+      checks the first three).
 - [ ] The documented supported systems (README, `docs/`) are still true; a new or
       dropped Python version or operating system is in the changelog.
 - [ ] CI is green on the commit you will tag (tests on every supported Python,

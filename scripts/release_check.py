@@ -19,6 +19,7 @@ import argparse
 import json
 import re
 import sys
+import tomllib
 from pathlib import Path
 
 # PEP 440 subset ekte uses: X.Y.Z with optional aN / bN / rcN pre-release.
@@ -55,13 +56,14 @@ def is_prerelease(version: str) -> bool:
 
 
 def package_version(pyproject: Path) -> str:
-    # Regex instead of tomllib: CI also runs on Python 3.10, which lacks tomllib.
-    text = pyproject.read_text(encoding="utf-8")
-    project = re.search(r"^\[project\]\s*$(.*?)(?=^\[|\Z)", text, re.MULTILINE | re.DOTALL)
-    m = project and re.search(r'^version\s*=\s*"([^"]+)"', project.group(1), re.MULTILINE)
-    if not m:
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError as exc:
+        raise ReleaseCheckError(f"cannot parse {pyproject}: {exc}") from exc
+    version = data.get("project", {}).get("version")
+    if not isinstance(version, str):
         raise ReleaseCheckError(f"no [project] version found in {pyproject}")
-    return m.group(1)
+    return version
 
 
 def check_version(tag: str, pyproject: Path) -> str:

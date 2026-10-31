@@ -64,7 +64,7 @@ for any change.
 
 ## Development setup
 
-Requires Python 3.10+. Node.js is optional: the tests of the browser JavaScript
+Requires Python 3.11+. Node.js is optional: the tests of the browser JavaScript
 run under `node` and are skipped without it.
 
 ```bash
@@ -552,7 +552,7 @@ until the `ekte_*` ones exist.
 ### Pull requests
 
 - Keep `pytest`, `ruff check ekte tests` and `mypy ekte` green (CI runs all three
-  on Python 3.10–3.13).
+  on Python 3.11–3.14).
 - Describe the relay trick or the false positive a change addresses.
 - Update `CHANGELOG.md` under `[Unreleased]`.
 - Update the documentation the change touches — README, this guide, the
@@ -736,7 +736,7 @@ the UI.
 
 | Workflow | Runs | Does |
 |---|---|---|
-| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `a11y/integration`, `perf/integration`); nightly and manual (accessibility only) | `ruff`, `mypy` and `pytest` on Python 3.10–3.13 with the `dev` and `web` extras; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the accessibility suite (informational, never fails the run) and uploads its findings: every page on pushes, the nightly and manual runs (with the BITV conformance report), on pull requests only the pages the change affects (none for docs-only changes) — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
+| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `a11y/integration`, `perf/integration`); nightly and manual (accessibility only) | `ruff`, `mypy` and `pytest` on Python 3.11–3.14 with the `dev` and `web` extras; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the accessibility suite (informational, never fails the run) and uploads its findings: every page on pushes, the nightly and manual runs (with the BITV conformance report), on pull requests only the pages the change affects (none for docs-only changes) — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
 | `.github/workflows/release.yml` | a `v*` tag | builds, runs `twine check` and publishes to PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | daily schedule, manual | example of a scheduled relay audit with the action |
 

@@ -21,7 +21,7 @@ import threading
 import time
 import weakref
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -97,7 +97,7 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     with httpx.Client(base_url=url, headers={"Origin": url}, timeout=10) as c:
         wid = c.post(f"/api/watches/from-history/{rid}", json={}).json().get("id")
     # a week of runs over two relays and models, so /v2/analytics draws charts
-    seed_analytics(datetime.now(timezone.utc), wid)
+    seed_analytics(datetime.now(UTC), wid)
 
     yield url
 
