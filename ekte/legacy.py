@@ -1,5 +1,9 @@
 """Compatibility with installs from before ekte was renamed from zing.
 
+The whole compatibility layer is deprecated and removed in ekte 1.0.0
+(docs/STABILITY.md, #26); every notice below names that version. ekte never
+deletes an old ``~/.zing``, also not when the copy is removed.
+
 * **Environment variables.** Every setting is read from ``EKTE_<NAME>``; when
   that is unset, the old ``ZING_<NAME>`` still works, with a one-time
   deprecation notice on stderr (:func:`getenv`).
@@ -25,6 +29,7 @@ from typing import overload
 PREFIX = "EKTE_"
 LEGACY_PREFIX = "ZING_"
 LEGACY_DIR_NAME = ".zing"
+REMOVED_IN = "1.0.0"  # the release that removes this module
 
 _warned: set[str] = set()
 
@@ -49,7 +54,7 @@ def getenv(name: str, default: str | None = None) -> str | None:
         return default
     if old not in _warned:
         _warned.add(old)
-        _notice(f"{old} is deprecated, use {name} instead.")
+        _notice(f"{old} is deprecated and will stop working in ekte {REMOVED_IN}; use {name} instead.")
     return value
 
 
@@ -99,6 +104,7 @@ def migrate_data_dir(new: Path, old: Path) -> bool:
     _notice(
         f"copied the zing data directory {old} to {new} (history, monitors, "
         f"knowledge base); ekte uses {new} from now on. {old} was left as it "
-        "is for zing; delete it yourself once you no longer need it."
+        "is for zing; delete it yourself once you no longer need it. "
+        f"This copy is deprecated and is removed in ekte {REMOVED_IN}; ekte never deletes {old}."
     )
     return True
