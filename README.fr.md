@@ -905,6 +905,7 @@ fortes.
 | [Guide du développeur](DEVELOPER_GUIDE.fr.md) | Architecture, environnement de développement, contribution, traductions, Docker, versions |
 | [docs/CI.md](docs/CI.md) | La GitHub Action : entrées, sorties, exemples (en anglais) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Exécuter l'interface web dans un conteneur (en anglais) |
+| [Stabilité et compatibilité](docs/STABILITY.md) | Ce que protège semver, dépréciation, versions de Python et systèmes pris en charge, mises à jour et retours en arrière (en anglais) |
 | [CHANGELOG.md](CHANGELOG.md) | Les changements de chaque version (en anglais) |
 | [SECURITY.md](SECURITY.md) | Signaler une vulnérabilité (en anglais) |
 

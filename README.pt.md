@@ -892,6 +892,7 @@ de confiança antes de tirar conclusões fortes.
 | [Guia do programador](DEVELOPER_GUIDE.pt.md) | Arquitetura, ambiente de desenvolvimento, contribuições, traduções, Docker, versões |
 | [docs/CI.md](docs/CI.md) | A GitHub Action: entradas, saídas, exemplos (em inglês) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Executar a interface web num contentor (em inglês) |
+| [Estabilidade e compatibilidade](docs/STABILITY.md) | O que o semver protege, descontinuação, versões de Python e sistemas suportados, atualizações e downgrades (em inglês) |
 | [CHANGELOG.md](CHANGELOG.md) | O que mudou em cada versão (em inglês) |
 | [SECURITY.md](SECURITY.md) | Reportar uma vulnerabilidade (em inglês) |
 

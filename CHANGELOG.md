@@ -2,7 +2,9 @@
 
 All notable changes to **ekte** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
-to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+to [Semantic Versioning](https://semver.org/spec/v2.0.0.html); which surfaces
+the version number protects, what counts as breaking and how features are
+deprecated is defined in the [stability and compatibility policy](docs/STABILITY.md).
 
 ekte has three eras:
 
@@ -19,6 +21,15 @@ ekte has three eras:
 ## [Unreleased]
 
 ### Added
+
+- **Stability and compatibility policy.** [docs/STABILITY.md](docs/STABILITY.md)
+  lists every surface as public or internal, defines what counts as breaking,
+  the deprecation policy (a deprecated feature keeps working with a warning for
+  at least one minor release; removal only in a major release), the supported
+  Python versions (every CPython version that is not end-of-life; 3.10 is
+  dropped in 0.31) and operating systems (Linux, macOS, Windows; the Docker
+  image is Linux), the upgrade guarantee for the data directory and that
+  downgrades are unsupported. It is linked from every README.
 
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
   language dropdown of every page (code `nb`, `lang="nb"`, dates and numbers
