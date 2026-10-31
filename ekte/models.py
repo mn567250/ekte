@@ -13,6 +13,11 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+# Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
+# the rules for bumping it are in ekte/schemas/__init__.py and docs/STABILITY.md.
+REPORT_SCHEMA_VERSION = "1.0"
+WEBHOOK_SCHEMA_VERSION = "1.0"
+
 
 # --------------------------------------------------------------------------- #
 # Enums
@@ -648,6 +653,9 @@ class AuditReport(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    # Version of the report JSON schema (ekte/schemas/report.schema.json), independent
+    # of the tool version. Reports written before it existed read as the current one.
+    schema_version: str = REPORT_SCHEMA_VERSION
     tool_version: str
     mode: str  # "check" | "compare"
     generated_at: str | None = None  # ISO timestamp, stamped by the runner

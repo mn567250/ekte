@@ -36,6 +36,14 @@ ekte has three eras:
 
 ### Added
 
+- **Versioned schema for the report JSON and webhook payloads.** Every report
+  (`--json`, `--format json`, history, `--compact`) and every generic webhook
+  payload now carries `schema_version` (`MAJOR.MINOR`, independent of the ekte
+  version; both are 1.0). JSON Schemas are generated from the code and published as
+  `ekte/schemas/report.schema.json` and `ekte/schemas/webhook.schema.json` (they
+  ship in the wheel); `scripts/generate_schemas.py` regenerates them and a test
+  fails when a schema changes without a version bump. Reports without the field
+  read as 1.0. See docs/SCHEMAS.md and the stability policy (#23).
 - **Automated dependency updates and vulnerability checks.** Dependabot proposes
   weekly, grouped updates for the Python dependencies (`uv.lock`) and GitHub
   Actions. The new `Security` workflow audits the locked dependencies with

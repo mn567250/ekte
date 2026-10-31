@@ -256,6 +256,7 @@ def compact_dict(report: AuditReport) -> dict:
         }
 
     return {
+        "schema_version": report.schema_version,
         "tool": "ekte",
         "version": report.tool_version,
         "generated_at": report.generated_at,

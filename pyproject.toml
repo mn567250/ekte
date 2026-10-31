@@ -71,6 +71,8 @@ dev = [
     "types-PyYAML>=6.0",
     # reads exported PDFs back in the tests
     "pypdf>=4.0",
+    # validates real outputs against the published JSON Schemas
+    "jsonschema>=4.20",
 ]
 
 [project.urls]

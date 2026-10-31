@@ -191,10 +191,22 @@ printed by `--json` and stored in the history: top-level `tool_version`, `mode`,
 `detectors`, `reliability`, `performance`, `judge_used`, `notes`, `warnings`,
 `knowledge` and related fields. The lean `--compact` verdict
 (`{"verdict": {"risk", "score", "rating", ...}, "target": {...}}`) is public too.
-API keys never appear in a report. A versioned schema is defined by #23.
+API keys never appear in a report.
 
-Consumers must ignore fields they do not know. Reports written by older versions
-stay readable by newer ones.
+Every report carries `schema_version` (`MAJOR.MINOR`, independent of the ekte
+version). The JSON Schema is published as
+[`ekte/schemas/report.schema.json`](../ekte/schemas/report.schema.json) (it ships
+in the wheel and the sdist) and is generated from the `AuditReport` model. See
+[SCHEMAS.md](SCHEMAS.md) for the format, an example and how to validate.
+
+- A compatible change (a new optional field) raises the **minor** schema version.
+  A breaking change (see [Breaking](#breaking)) raises the **major** schema
+  version, and happens only in a major ekte release after the deprecation period.
+- CI fails when the schema changes without a version bump.
+- Consumers must ignore fields they do not know. Reports written by older
+  versions stay readable by newer ones: a report without `schema_version`
+  (written before 0.32) is schema version 1.0, and history, re-run and
+  re-export read it unchanged.
 
 <a id="surface-webhooks"></a>
 ## Webhook payloads
@@ -206,7 +218,14 @@ regression. The generic payload has the fields `tool`, `event` (`audit_alert`),
 values are language-neutral; `text`, `headline` and `key_findings` are in the
 alert language. The Slack, Feishu/Lark and DingTalk bodies follow the respective
 platform's schema; their text is internal, the platform envelope is public.
-Versioning is defined by #23.
+
+The generic payload carries `schema_version` (`MAJOR.MINOR`, versioned
+independently of the report schema and of ekte). Its JSON Schema is published as
+[`ekte/schemas/webhook.schema.json`](../ekte/schemas/webhook.schema.json),
+generated from the code that builds the payload. Adding a field raises the minor
+version; removing or renaming a field or changing its type or meaning raises the
+major version, in a major ekte release only. CI fails on an unannounced change.
+Consumers must ignore fields they do not know. See [SCHEMAS.md](SCHEMAS.md).
 
 <a id="surface-action"></a>
 ## GitHub Action
