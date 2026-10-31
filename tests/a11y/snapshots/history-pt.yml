@@ -45,8 +45,8 @@
     - combobox "Tipo de endpoint":
       - option "Todos" [selected]
       - option "Chat"
-    - text: Relay / provedor
-    - combobox "Relay / provedor":
+    - text: Relay / fornecedor
+    - combobox "Relay / fornecedor":
       - option "Todos" [selected]
       - option "127.0.0.1:9099"
       - option "gateway.a-very-long-relay-hostname.example.org"
@@ -70,12 +70,12 @@
       - option "Todos" [selected]
       - option "openai"
       - option "(desconhecido)"
-    - text: Detecção do protocolo
-    - combobox "Detecção do protocolo":
+    - text: Deteção do protocolo
+    - combobox "Deteção do protocolo":
       - option "Todos" [selected]
       - option "(desconhecido)"
-    - text: Requisições de sondagem
-    - combobox "Requisições de sondagem":
+    - text: Pedidos de sondagem
+    - combobox "Pedidos de sondagem":
       - option "Todos" [selected]
       - option "Streaming"
       - option "(desconhecido)"
@@ -104,7 +104,7 @@
       - button "Nota"
       - button "Latência p50" [pressed]
       - button "Tokens/s"
-    - text: Mostrando 15 de 15 auditorias
+    - text: A mostrar 15 de 15 auditorias
   - group "Ordenar auditorias":
     - button "Data, ordem decrescente": Data
     - button "Ordenar por Risco": Risco
@@ -237,7 +237,7 @@
             - term: Suite
             - definition:
               - code: standard
-            - term: Requisições da sonda de desempenho
+            - term: Pedidos da sonda de desempenho
             - definition: Streaming
             - term: Perfil de conhecimento
             - definition: Nenhum perfil correspondente
@@ -270,7 +270,7 @@
             - text: A velocidade é constante? Não executado
             - heading "Constatações" [level=3]
             - paragraph: Sem avisos nem falhas — todas as dimensões correspondem ao modelo declarado.
-            - heading "Registro de execução 6 verificações · <duration> no total" [level=3]
+            - heading "Registo de execução 6 verificações · <duration> no total" [level=3]
             - paragraph: As verificações são executadas uma após a outra; a mais lenta foi context_window (<duration>).
             - button "Mostrar todos (6)"
             - paragraph:

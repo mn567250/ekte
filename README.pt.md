@@ -239,7 +239,7 @@ O formulário guia a configuração:
    base de conhecimento, fica pré-selecionado; mude-o apenas se o relay vender o
    modelo com outro nome. Dele resulta o perfil do fornecedor usado na auditoria.
 
-Um relay que ainda não está na lista pode ser mantido com **Salvar na base** com
+Um relay que ainda não está na lista pode ser mantido com **Guardar na base** com
 o nome que lhe der; da próxima vez basta escolhê-lo. A referência de confiança
 (**Comparar com uma referência confiável**) e as auditorias de embeddings e rerank
 são configuradas da mesma forma.
@@ -249,7 +249,7 @@ as verificações **ao vivo**: cada verificação mostra a sua pontuação e qua
 tempo levou, e uma verificação com constatações expande-se para mostrar as
 evidências. O resultado é um relatório de veredito que pode partilhar: nota,
 **Verificações por dimensão** com as suas escalas de pontuação, constatações em
-linguagem clara, a secção de desempenho e um **Registro de execução** de cada
+linguagem clara, a secção de desempenho e um **Registo de execução** de cada
 detetor.
 
 Tudo corre na sua máquina: uma chave escrita no navegador só chega ao seu
@@ -787,16 +787,16 @@ Moonshot (`ekte kb` lista-os). Há três camadas; as posteriores prevalecem:
 3. **As suas entradas** (`kb.db` no diretório de dados), adicionadas sem ficheiros
    YAML nem instalação editável:
    - na página **Conhecimento** da interface web (`/kb`), com um separador
-     para **Modelos**, **Provedores** e **Relays**. Cada separador lista o conjunto
-     completo — incluídos, `EKTE_KB_DIR` e os seus (marcados **Seu**) — com um
+     para **Modelos**, **Fornecedores** e **Relays**. Cada separador lista o conjunto
+     completo — incluídos, `EKTE_KB_DIR` e os seus (marcados **O seu**) — com um
      filtro, um interruptor por item e um formulário **Adicionar …**: **Adicionar
      um modelo** → **Copiar o prompt de pesquisa** para o assistente de IA da sua
      escolha, carregar ou colar o YAML com que ele responde e depois **Verificar e
-     salvar**; **Adicionar um provedor** aceita YAML de fornecedor da mesma forma;
+     guardar**; **Adicionar um fornecedor** aceita YAML de fornecedor da mesma forma;
      **Adicionar um relay** pede um nome e um URL base. **Qual perfil um ID de
      modelo usa?** mostra como um id é resolvido; as suas entradas podem ser
      exportadas como YAML;
-   - na página **Auditoria** da interface web: **Salvar na
+   - na página **Auditoria** da interface web: **Guardar na
      base** mantém o nome e o URL base de um relay (uma entrada de fornecedor sem
      modelos), listado em **Conhecimento → Relays**;
    - na linha de comandos: `ekte kb-prompt <model>`, `ekte kb-import <file>`

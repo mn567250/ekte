@@ -136,6 +136,10 @@ ekte has three eras:
 
 ### Changed
 
+- **Portuguese web UI in European Portuguese.** The Portuguese interface now uses
+  European Portuguese (ficheiro, guardar, registo, fornecedor, pedido, detetor, …),
+  like the documentation; the bold UI labels quoted in the Portuguese docs follow.
+
 - **Documentation reviewed in all eight languages (#34).** Every README,
   developer guide and methodology was read in full as a native speaker would:
   grammar, idiom, register (one form of address per language), one term per

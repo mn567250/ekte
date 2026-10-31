@@ -1,7 +1,7 @@
 {
  "strings": {
   "Chinese-language and cultural factual recall (size/identity tell)": "recordação factual sobre a língua e a cultura chinesas (indício de tamanho/identidade)",
-  "Chinese-language fluency and bilingual default": "fluência em chinês e comportamento bilingue predefinido",
+  "Chinese-language fluency and bilingual default": "fluência em chinês e comportamento bilingue por omissão",
   "Chinese-language tokenizer/compression competence": "eficiência do tokenizer/da compressão em chinês",
   "anomalous/glitch token behavior": "comportamento perante tokens anómalos/glitch",
   "default temperature / sampling fingerprint": "temperatura predefinida / impressão digital de amostragem",

@@ -1,11 +1,11 @@
 {
  "strings": {
   "(unknown)": "(desconhecido)",
-  "auto-detected": "detectado automaticamente",
+  "auto-detected": "detetado automaticamente",
   "set manually": "definido manualmente",
   "Streaming + non-streaming": "Streaming + sem streaming",
-  "Protocol detection": "Detecção do protocolo",
+  "Protocol detection": "Deteção do protocolo",
   "Relay, model, suite, protocol…": "Relay, modelo, suíte, protocolo…",
-  "Probe requests": "Requisições de sondagem"
+  "Probe requests": "Pedidos de sondagem"
  }
 }

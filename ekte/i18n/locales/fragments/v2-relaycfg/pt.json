@@ -3,8 +3,8 @@
   "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O ekte executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.",
   "← Pick from the list": "← Escolher da lista",
   "Enter manually": "Introduzir manualmente",
-  "Select a relay or provider…": "Selecione um relay ou provedor…",
-  "Providers": "Provedores",
+  "Select a relay or provider…": "Selecione um relay ou fornecedor…",
+  "Providers": "Fornecedores",
   "Your relays": "Os seus relays",
   "Other (enter the URL)": "Outro (introduzir o URL)",
   "Select a model…": "Selecione um modelo…",
@@ -24,9 +24,9 @@
   "Selecting one fills in its URL; for any other relay choose “Other” and enter the URL.": "Ao selecionar um, o URL é preenchido; para qualquer outro relay escolha «Outro» e introduza o URL.",
   "Name of the relay": "Nome do relay",
   "Enter a name for the relay.": "Introduza um nome para o relay.",
-  "Could not save: ": "Não foi possível salvar: ",
-  "Saved “{name}” to the knowledge base.": "«{name}» salvo na base de conhecimento.",
+  "Could not save: ": "Não foi possível guardar: ",
+  "Saved “{name}” to the knowledge base.": "«{name}» guardado na base de conhecimento.",
   "Relay": "Relay",
-  "Saved relay: the base URL is filled in on the Audit and Tools pages.": "Relay salvo: o URL base é preenchido nas páginas Auditoria e Ferramentas."
+  "Saved relay: the base URL is filled in on the Audit and Tools pages.": "Relay guardado: o URL base é preenchido nas páginas Auditoria e Ferramentas."
  }
 }
