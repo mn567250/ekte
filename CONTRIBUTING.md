@@ -23,6 +23,9 @@ pytest && ruff check ekte tests && mypy ekte
 - Update `CHANGELOG.md` under `[Unreleased]`, and the documentation in every
   language.
 - Report security issues privately — see [SECURITY.md](SECURITY.md).
+- Be kind: this project follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+  Conduct reports go privately to the maintainer, the same way as security
+  reports.
 
 By contributing you agree your contributions are licensed under the project's
 [Apache-2.0](LICENSE) license.
