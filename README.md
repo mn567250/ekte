@@ -264,7 +264,7 @@ The web UI is served at the root of the address `ekte serve` opens, with the aud
 Across the pages: filters and configurable trends (score, grade, latency p50,
 tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
 report** in every format; and a theme switch (Auto theme / Light / Dark). Every page but Accessibility has one notice right under its
-introduction, coloured by importance (information, success, warning,
+introduction, colored by importance (information, success, warning,
 critical): e.g. the last finished audit on **Audit**, the master key on
 **Monitors**, runs still being processed on **History** and **Analytics**,
 skipped entries on **Knowledge**.
@@ -464,7 +464,7 @@ p90 / p95 / p99 / max / stdev.
 
 When the dedicated probe runs, it scores the **Performance** dimension. The score
 is about **consistency**, not raw speed, so a slow but steady endpoint (a local
-or self-hosted model) is not marked down for not being a data centre:
+or self-hosted model) is not marked down for not being a data center:
 
 | Check | Scored on |
 |---|---|

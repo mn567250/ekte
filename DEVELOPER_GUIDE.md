@@ -430,9 +430,9 @@ build step. The pages live in `ekte/web/static/v2/` and share one header (`nav.j
 `lang.js` (language switch), `locales.js` (translation data), `i18n.js` (finding
 translations), `icons.js` (including the ekte logo), `secretfield.js` and
 `perf.js` (performance charts).
-Every colour of the v2 UI, in both themes, is a token in `v2/tokens.css`
+Every color of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
-scripts use `var(--…)` only, never a literal colour.
+scripts use `var(--…)` only, never a literal color.
 
 Every v2 page but Accessibility has one **page notice** right under its hero
 (`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
@@ -465,7 +465,7 @@ bar, so new panels slot in; filters and view live in the URL fragment
 `v2/charts.js` (`EkteCharts.timeChart`: hand-drawn inline SVG with median line,
 p25–p75 band, gaps for empty buckets, faded markers for `low_n` buckets,
 annotation lines and a hover tooltip; `fmt` / `fmtDelta` format values by unit)
-and `v2/charts.css` (four validated series colours per theme, told apart by
+and `v2/charts.css` (four validated series colors per theme, told apart by
 marker shape too). Every chart is also rendered as a data table.
 
 Each panel is self-contained: a `PANELS` registry in the page script lists its
@@ -477,7 +477,7 @@ for `low_n`, outlined empty cells), `EkteCharts.stackBars` the stacked error
 bars, and `timeChart` takes a `ref` line (100% billing ratio).
 `EkteCharts.donut` (a ring of parts of one whole with an HTML figure in the
 middle) and `EkteCharts.meter` (a thin bar of parts) draw the Coverage card of
-the accessibility report; their `k-*` colours (who decides a step: blue the
+the accessibility report; their `k-*` colors (who decides a step: blue the
 test suite, violet a person) come from `tokens.css`. `v2/chartmotion.js`
 (`EkteMotion.enter`) draws a donut clockwise and grows meters from the left,
 like every other chart, only when new data arrives and never under reduced

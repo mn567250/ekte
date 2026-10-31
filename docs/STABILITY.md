@@ -65,7 +65,7 @@ anything. For each public surface:
 
 | Surface | Not breaking (allowed in any release) | Breaking (major release, after deprecation) |
 |---|---|---|
-| CLI | Adding a command, or an option whose default keeps today's behaviour; a new value for an open-ended option; new output on stderr | Removing or renaming a command, option or value; changing a default so results change; making an optional option required; changing what a documented value means |
+| CLI | Adding a command, or an option whose default keeps today's behavior; a new value for an open-ended option; new output on stderr | Removing or renaming a command, option or value; changing a default so results change; making an optional option required; changing what a documented value means |
 | Exit codes | Using a code for a case that previously crashed with an unlisted code | Changing the meaning of a documented code; moving a documented case to another code |
 | Config file | Adding an optional key; accepting more values for a key | Removing or renaming a key; making a key required; changing the meaning or default of a key so results change; rejecting a file that was valid |
 | Environment variables | Adding a variable | Removing or renaming a variable; changing the meaning of a value |
@@ -160,7 +160,7 @@ is a bug, not a limitation. Dropping an operating system needs a major release.
   the build when the whole package falls below 93% or when the command line,
   the LLM judge or the image and audio auditor fall below their floors (90%,
   95% and 95%; `scripts/check_coverage.py`). The floors are set from the values
-  reached and only go up. Tests check behaviour (inputs, outputs, exit codes,
+  reached and only go up. Tests check behavior (inputs, outputs, exit codes,
   files written) and never reach the network.
 - **Owner-only data directory.** On Linux and macOS ekte creates the data
   directory with mode `0700` and the database files with `0600`. Windows ignores
@@ -191,7 +191,7 @@ Public. The commands are `ekte init`, `check`, `compare`, `models`, `kb`,
   (lean verdict), `--format json|md|html|pdf|all` (files), `kb --json`,
   `models --json`, and the `{"error": {...}}` object printed on stdout for
   configuration errors in `--json` and `--compact` mode.
-- Human-readable console output (tables, colours, wording) is internal and may
+- Human-readable console output (tables, colors, wording) is internal and may
   change in any release. Scripts should read JSON and the exit code.
 - Short aliases (`-c`, `-p`, ...) are as stable as the long option.
 - Consistency rules (command line review, #25): the same option means the same
@@ -325,7 +325,7 @@ Public. The inputs and outputs of [`action.yml`](../action.yml), documented in
   `declared-provider`, `suite`, `fail-on-risk`, `python-version`, `version`.
 - Outputs: `risk`, `score`, `rating`.
 
-The action runs the ekte version selected by the `version` input; its behaviour
+The action runs the ekte version selected by the `version` input; its behavior
 follows this policy. The actions the composite action and the repository's
 workflows use internally are pinned to full commit SHAs and checked by a
 workflow linter in CI; that hardening is not part of the public surface and can
@@ -338,7 +338,7 @@ environment variables, so their values are never interpreted as shell code.
 The location (`~/.ekte`, or `EKTE_DATA_DIR` / `--data-dir`) is public. The files
 inside (`history.db`, `watches.db`, `kb.db`, `secret.key`) and their schemas are
 **internal**: do not read or write them with other tools. What is public is the
-[upgrade guarantee](#upgrade) and the [downgrade behaviour](#downgrade). Use
+[upgrade guarantee](#upgrade) and the [downgrade behavior](#downgrade). Use
 reports, `ekte kb-export` and `ekte secret export` for data you want to take
 elsewhere.
 
