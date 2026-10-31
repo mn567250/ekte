@@ -178,15 +178,16 @@ in the table below and then regenerate the report (see "Recording a review").
 
 Script-driven checks in Chromium (Playwright) on all six pages at the root
 (`/`, `/history`, `/watches`, `/analytics`, `/kb`, `/accessibility`), 31 Oct 2026,
-English, light and dark theme, plus a partial run of `pytest -m a11y -n 8`
-(258 tests passed, a narrowed run; see below). They reduce the work of the
+English, light and dark theme, plus the axe scans of the suite
+(`pytest tests/a11y/test_axe.py -m a11y`: 258 tests passed) and the flow and
+history-control tests (`test_flows.py`, `test_history_controls.py`: 118 passed). They reduce the work of the
 review; they do not replace it.
 
 A complete run of `pytest -m a11y` executes all **1,277** tests of the suite (six
 pages, eight languages, two themes; see [tests/a11y/README.md](../tests/a11y/README.md)).
 A run narrowed with `EKTE_A11Y_PAGES` (pages) or `EKTE_A11Y_SHARD=k/n` (one part
 of the suite, about 256 of 1,277 tests for 1/5) executes only its selection, so
-its count is smaller. A default local run is the complete one; it is not the 258 above.
+its count is smaller. A default local run is the complete one.
 
 | Check | Result |
 |---|---|
