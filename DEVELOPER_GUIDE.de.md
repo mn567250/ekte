@@ -70,7 +70,7 @@ Trick zu erwischen. Behalten Sie diesen Maßstab bei jeder Änderung im Blick.
 
 ## Entwicklungsumgebung
 
-Erfordert Python 3.11+. Linux, macOS und Windows werden in der CI getestet; Tests, die nur unter POSIX sinnvoll sind, werden unter Windows mit ausdrücklichem Grund übersprungen (`skipif(sys.platform == "win32", reason=...)`). Verwende `pathlib`, gib bei Text-E/A `encoding="utf-8"` an und schreibe `/tmp` nie fest. Node.js ist optional: die Tests des Browser-JavaScripts
+Erfordert Python 3.11+. Linux, macOS und Windows werden in der CI getestet; Tests, die nur unter POSIX sinnvoll sind, werden unter Windows mit ausdrücklichem Grund übersprungen (`skipif(sys.platform == "win32", reason=...)`). Verwenden Sie `pathlib`, geben Sie bei Text-E/A `encoding="utf-8"` an und schreiben Sie `/tmp` nie fest. Node.js ist optional: die Tests des Browser-JavaScripts
 laufen unter `node` und werden ohne es übersprungen.
 
 ```bash
@@ -352,7 +352,7 @@ nutzt nur die Standardbibliothek.
 - **Relays.** `POST /api/kb/relays` speichert ein Relay `{name, base_url}` (400
   bei ungültiger Eingabe, 409, wenn Name oder URL schon bekannt sind).
 - **Analysen.** `GET /api/analytics/options` (Relays, Modelle, Suites,
-  Stream-Modi, APIs und der Zeitraum der Historie), `/api/analytics/summary`
+  Stream-Modi, APIs und der Zeitraum des Verlaufs), `/api/analytics/summary`
   (Kennzahlen von `from`–`to` gegenüber dem gleich langen Zeitraum davor),
   `/api/analytics/series` (`metric` je `group=relay|model|relay_model`, bis zu
   4 `keys`, in `bucket=hour|day|week|dow_hour`-Intervallen in der Zeitzone des
@@ -553,7 +553,7 @@ Zeile extrahierter Kennzahlen pro Lauf: Startzeit, Raten, Perzentile von
 Latenz/TTFT/Dekodierung, Abrechnungsverhältnisse, Anzahl der Befunde und mehr;
 NULL, wo der Lauf einen Wert nicht gemessen hat), `history_dimensions` (Werte
 der Dimensionen und Detektoren) und `history_requests` (die Anfrage-Datensätze
-des Laufs, Ziel und Baseline, in Listenreihenfolge). Die `performance.requests`
+des Laufs, Ziel und Referenz, in Listenreihenfolge). Die `performance.requests`
 eines Berichts liegen nur dort: `save()` nimmt sie aus `report_json` heraus
 (`requests_split` markiert die Zeile), `get()` / `latest_for()` setzen sie
 wieder ein, sodass ein Bericht genau so zurückgelesen wird, wie er gespeichert
@@ -588,7 +588,7 @@ gespeichert als `enc:v1:…`; `env:`/`file:`-Verweise bleiben unverändert). Der
 Hauptschlüssel selbst wird nie gespeichert: `web/masterkey.py` (`Vault`,
 gemeinsam genutzt von Server und `ekte secret`) hält ihn im Speicher des
 Servers, sobald er aus `EKTE_SECRET_KEY`, einer alten `secret.key` oder vom
-Benutzer auf der Seite Überwachung kommt; `watches.db` enthält nur einen
+Nutzer auf der Seite Überwachung kommt; `watches.db` enthält nur einen
 Prüfwert (`secret_meta`), der einen falschen Schlüssel abweist. Ein neuer
 Schlüssel verschlüsselt jeden gespeicherten Schlüssel neu und schreibt den
 Prüfwert in einer einzigen Transaktion. Der Schlüssel liegt im Speicher eines
@@ -901,7 +901,7 @@ einmalige PyPI-Einrichtung und der manuelle Ausweg in
 
 1. Die [Release-Checkliste](docs/RELEASE_CHECKLIST.md) abarbeiten: Version und
    Changelog, unterstützte Python-Versionen und Systeme, Aktualität der
-   Wissensbasis, Upgrade-Fixture, Accessibility-Prüfung bei UI-Änderungen,
+   Wissensbasis, Upgrade-Fixture, Barrierefreiheitsprüfung bei UI-Änderungen,
    Dokumentation in allen Sprachen, Sicherheitshinweise.
 2. `version` in `pyproject.toml` setzen und `[Unreleased]` in `CHANGELOG.md` in
    `[X.Y.Z] - JJJJ-MM-TT` umbenennen. Lokal prüfen mit

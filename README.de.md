@@ -281,7 +281,7 @@ z. B. die zuletzt abgeschlossene Prüfung auf **Prüfung**, der Hauptschlüssel 
 **Überwachung**, noch zu verarbeitende Läufe auf **Verlauf** und **Analyse**,
 übersprungene Einträge auf **Wissen**.
 
-**Audits im Hintergrund.** Ein auf der Seite **Audit**
+**Audits im Hintergrund.** Ein auf der Seite **Prüfung**
 gestartetes Audit läuft weiter, wenn Sie die Seite wechseln oder den Tab
 schließen; **Im Hintergrund fortsetzen** schickt es bewusst dorthin. Der
 **Verlauf** zeigt jedes wartende und laufende Audit (und jede laufende
@@ -395,11 +395,11 @@ Weboberfläche und der Berichte.
 | **Konnektivität** | `connectivity` | 7 | Erreichbarkeit des Endpunkts und die beworbene `/v1/models`-Liste |
 | **Echtheit des Streamings** | `streaming` | 6 | Vorgetäuschtes Streaming (erst puffern, dann zerstückeln), erkannt an Anzahl und zeitlichem Abstand der Chunks |
 | **Zuverlässigkeit unter Parallellast** | `reliability` | 6 | Erfolgsquote und Latenz unter paralleler Last (HTTP-429-Drosselung wird gesondert gezählt) |
-| **Transportsicherheit** | `security` | 6 | HTTPS, Header-Hygiene, Echo von Geheimnissen; ein versteckt eingeschleuster System-Prompt; Manipulation von Antworten und Tool-Calls unterwegs (Kanarien mit bekannter Antwort); Prompt-Präfix-Caching (Timing) |
+| **Transportsicherheit** | `security` | 6 | HTTPS, Header-Hygiene, Echo von Geheimnissen; ein versteckt eingeschleuster System-Prompt; Manipulation von Antworten und Tool-Calls unterwegs (Canaries mit bekannter Antwort); Prompt-Präfix-Caching (Timing) |
 | **Leistung** | `performance` | 6 | Wie *gleichmäßig* Latenz, Zeit bis zum ersten Token und Durchsatz sind, Fehlerquote und Verlangsamung unter Last; das Tempo nur im Vergleich zu einer Referenz (siehe [Leistung](#leistung)) |
 
 Die [Methodik](docs/METHODOLOGY.de.md) beschreibt jeden Test, den Relay-Trick, dem
-er entspricht, seine Bewertungsskala und seine Einschränkungen bezüglich
+er entspricht, seine Bewertungsskala und seine Einschränkungen hinsichtlich
 Fehlalarmen.
 
 ## Wie das Urteil zustande kommt
@@ -571,7 +571,7 @@ Der **Vergleichsmodus** (`ekte compare` oder **Mit vertrauenswürdiger Referenz
 vergleichen** in der Weboberfläche) führt dieselben Tests gleichzeitig gegen eine
 vertrauenswürdige Referenz des angegebenen Modells aus. Er ist der stärkste Weg
 zur Bestätigung: Identitätsantworten, abgelehnte Anfrageparameter,
-Manipulations-Kanarien und Leistung werden Seite an Seite beurteilt, und nur eine
+Manipulations-Canaries und Leistung werden Seite an Seite beurteilt, und nur eine
 Referenz lässt die Konfidenz des Urteils *hoch* werden. Ohne `--judge-base-url`
 nutzt der Vergleichsmodus die Referenz als Richter.
 
@@ -630,11 +630,11 @@ verschlüsselt in Ihrem lokalen Datenverzeichnis gespeichert und nie an den Brow
 **Speicherung der API-Schlüssel.** Standardmäßig **speichert** ekte die
 API-Schlüssel der Überwachungen **nicht**: Ein eingegebener Schlüssel bleibt nur
 im Arbeitsspeicher von `ekte serve` und wird nie auf die Festplatte geschrieben.
-Nach einem Neustart nennt die Seite **Überwachungen** die Überwachungen, die
+Nach einem Neustart nennt die Seite **Überwachung** die Überwachungen, die
 ihren Schlüssel erneut brauchen; sie warten (kein Fehllauf, kein Alarm), bis Sie
 ihn eingeben. Überwachungen ohne Schlüssel und `env:`/`file:`-Verweise laufen
 weiter. Sollen Schlüssel Neustarts überstehen, wählen Sie auf der Seite
-**Überwachungen** unter **Speicherung der API-Schlüssel** die Option
+**Überwachung** unter **Speicherung der API-Schlüssel** die Option
 **Verschlüsselt auf diesem Rechner speichern**: Die Schlüssel liegen dann mit
 einem Hauptschlüssel verschlüsselt in `watches.db`. Zurückschalten verschiebt die
 gespeicherten Schlüssel in den Arbeitsspeicher und löscht sie aus `watches.db`.
@@ -682,7 +682,7 @@ eines Rerank-Tests). Die angegebene Dimension eines Embedding-Monitors lässt si
 auf seiner Karte ändern (leer oder 0: aus der Wissensbasis). Die
 Geschwindigkeitsmessungen (Embeddings: Latenz, Kaltstart, Eingaben/s,
 Batch-Skalierung; Rerank: Latenz, Kaltstart, Dokumente/s, 4 gegen 32 Dokumente)
-laufen nur in den Suiten deep, full oder custom oder in standard mit Baseline.
+laufen nur in den Suiten deep, full oder custom oder in standard mit Referenz.
 
 ### Embeddings und Rerank
 
@@ -800,7 +800,7 @@ ab (`ekte kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
    - auf der Seite **Wissen** der Weboberfläche (`/kb`), mit je einem Tab für
      **Modelle**, **Anbieter** und **Relays**. Jeder Tab listet den vollständigen
      Bestand — mitgeliefert, `EKTE_KB_DIR` und eigene (markiert mit **Eigener**) —
-     mit Filter, einem Ein/Aus-Schalter pro Element und einem Formular
+     mit Filter, einem Ein-/Aus-Schalter pro Element und einem Formular
      **… hinzufügen**: **Modell hinzufügen** → **Recherche-Prompt kopieren** und in
      den KI-Assistenten Ihrer Wahl einfügen, das YAML seiner Antwort hochladen oder
      einfügen, dann **Prüfen und speichern**; **Anbieter hinzufügen** nimmt
@@ -930,13 +930,13 @@ unter neuem Namen fort. Was sich für eine bestehende Installation ändert:
   `EKTE_SECRET_KEY`, `EKTE_HOST`, …). Eine alte `ZING_*`-Variable wirkt weiter,
   solange ihr `EKTE_*`-Name nicht gesetzt ist; ekte nennt sie einmal auf stderr.
 - **Datenverzeichnis.** Beim ersten Start kopiert ekte `~/.zing` nach `~/.ekte`
-  (Verlauf, Monitore, Wissensbasis), falls `~/.ekte` noch nicht existiert, und
+  (Verlauf, Überwachungen, Wissensbasis), falls `~/.ekte` noch nicht existiert, und
   arbeitet ab dann nur noch mit `~/.ekte`. `~/.zing` bleibt unverändert, für
   zing, falls es noch läuft; löschen Sie es selbst, sobald Sie es nicht mehr
   brauchen. Ein mit `EKTE_DATA_DIR`, `ZING_DATA_DIR` oder `--data-dir`
   gesetztes Verzeichnis wird so verwendet, wie es ist.
-- **Web-Oberfläche.** Sprache, Design und Filter sowie ein im Passwortmanager
-  des Browsers gespeicherter Master-Schlüssel werden übernommen. Die klassische
+- **Weboberfläche.** Sprache, Design und Filter sowie ein im Passwortmanager
+  des Browsers gespeicherter Hauptschlüssel werden übernommen. Die klassische
   Oberfläche von zing gibt es nicht mehr: Ihre Adressen (`/tools`, `/console`) öffnen die Prüfseite (`/`).
 - **Berichte und Prüfanfragen.** Berichte, Webhooks und Dateinamen heißen
   `ekte` (z. B. `"tool": "ekte"`, `ekte-report.json`), ebenso die Prüfanfragen
