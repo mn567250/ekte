@@ -514,7 +514,7 @@ ekte 创建的每个 SQLite 数据库（`history.db`、`watches.db`、`kb.db`）
 | `README.md`、`README.<lang>.md` | 使用者：ekte 能做什么、安装、命令行与 Web 界面的使用 |
 | `DEVELOPER_GUIDE.md`、`DEVELOPER_GUIDE.<lang>.md` | 贡献者：架构、环境搭建、参与贡献、Docker、发布 |
 | `docs/METHODOLOGY.md`、`docs/METHODOLOGY.<lang>.md` | 所有人：每项检测、它的计分标准和注意事项 |
-| `docs/CI.md`、`docs/DOCKER.md`、`docs/PUBLISHING.md` | 参考页面（英文） |
+| `docs/CI.md`、`docs/DOCKER.md`、`docs/PUBLISHING.md`、`docs/CLI.md`、`docs/SCHEMAS.md`、`docs/STABILITY.md`、`docs/ACCESSIBILITY.md`、`docs/RELEASE_CHECKLIST.md` | 参考页面（英文） |
 
 英文文件为基准。修改其中一份时，请在同一个 Pull Request 中同步修改其他语言，并在每种语言中使用
 界面的用词（在 `ekte/i18n/locales/` 中查找对应术语）。METHODOLOGY 文件中的计分标准措辞与界面
@@ -582,7 +582,7 @@ docker run --rm -p 127.0.0.1:8000:8000 -v ekte-data:/data ekte
 
 | 工作流 | 触发条件 | 作用 |
 |---|---|---|
-| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `a11y/integration`、`perf/integration`）；每晚定时及手动（仅无障碍测试） | 在 Python 3.11–3.14 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果：推送、每晚及手动运行测试所有页面（并生成 BITV 符合性报告），Pull Request 只测试改动影响的页面（仅改文档时不运行）——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
+| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `*/integration`）；每晚定时及手动（仅无障碍测试） | 在 Python 3.11–3.14（Linux；macOS 和 Windows 上为 3.11 和 3.14） 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果：推送、每晚及手动运行测试所有页面（并生成 BITV 符合性报告），Pull Request 只测试改动影响的页面（仅改文档时不运行）——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
 | `.github/workflows/release.yml` | `v*` 标签 | 构建、运行 `twine check` 并发布到 PyPI（Trusted Publishing） |
 | `.github/workflows/example-audit.yml` | 每日定时、手动 | 使用该 Action 定时审计中转站的示例 |
 

@@ -17,6 +17,9 @@ fails; everything else depends on you. Process and recovery:
 - [ ] `python scripts/release_check.py version vX.Y.Z` and
       `python scripts/release_check.py notes vX.Y.Z` succeed locally.
 - [ ] The pinned action version in the READMEs and `docs/CI.md` is updated (final releases).
+- [ ] The `vX.Y.Z` / `X.Y.Z` placeholders in the READMEs (all languages), `docs/CI.md` and
+      `action.yml` name the real release, and the `Development Status` classifier in
+      `pyproject.toml` matches the release (1.0.0: Production/Stable).
 
 ## Supported Python versions and systems
 

@@ -29,6 +29,8 @@ getestet und veröffentlicht wird, steht im [Entwicklerhandbuch](DEVELOPER_GUIDE
 wie jede Prüfung funktioniert und bewertet wird, in der
 [Methodik](docs/METHODOLOGY.de.md).
 
+Was in ekte stabil ist, was als inkompatible Änderung gilt und wie Funktionen auslaufen: [Stabilitäts- und Kompatibilitätsrichtlinie](docs/STABILITY.md) (auf Englisch).
+
 ---
 
 ## Inhalt
@@ -910,6 +912,8 @@ Schlüsse ziehen.
 | [docs/CI.md](docs/CI.md) | Die GitHub Action: Ein- und Ausgaben, Beispiele (englisch) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Die Weboberfläche in einem Container betreiben (englisch) |
 | [Stabilität und Kompatibilität](docs/STABILITY.md) | Was SemVer schützt, Abkündigung, unterstützte Python-Versionen und Systeme, Upgrades und Downgrades (englisch) |
+| [docs/CLI.md](docs/CLI.md) | Alle Befehle und Optionen sowie die Exit-Codes (englisch) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | Die JSON-Formate von Bericht und Webhook und ihre `schema_version` (englisch) |
 | [CHANGELOG.md](CHANGELOG.md) | Was sich in jeder Version geändert hat (englisch) |
 | [SECURITY.md](SECURITY.md) | Eine Sicherheitslücke melden (englisch) |
 

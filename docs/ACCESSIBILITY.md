@@ -1,4 +1,4 @@
-# Accessibility of web UI v2
+# Accessibility of the web UI
 
 The web UI targets **BITV 2.0**, which requires **EN 301 549**, whose
 web chapter 9 is **WCAG 2.1 level A + AA**. BITV-Test step numbers are the
@@ -8,7 +8,7 @@ EN 301 549 clause numbers (WCAG 1.4.3 → 9.1.4.3).
 (Playwright + Chromium, rules by [axe-core](https://github.com/dequelabs/axe-core)
 4.13, vendored in `tests/a11y/vendor/`). Every page (`/`, `/history`,
 `/watches`, `/kb`, `/analytics`, `/accessibility`) is checked **in every UI language**
-(`ekte/i18n/locales/*.json`: de, en, es, fr, it, pt, zh), in light and dark
+(`ekte/i18n/locales/*.json`: de, en, es, fr, it, nb, pt, zh), in light and dark
 theme, as loaded and with every disclosure opened (rendered report, advanced
 options, monitor details) and every tab panel shown.
 
@@ -110,7 +110,7 @@ checked too.
 ## Conformance report (`/accessibility`)
 
 The page **Accessibility** (the accessibility icon next to the language switch
-in the header of every v2 page) shows, per test step, how it is tested and the
+in the header of every page) shows, per test step, how it is tested and the
 latest result, plus a short accessibility statement (conformance status, known limitations, how it was assessed,
 feedback). It renders `ekte/web/static/v2/bitv-report.json`, built from a real
 run of the suite:
@@ -178,8 +178,15 @@ in the table below and then regenerate the report (see "Recording a review").
 
 Script-driven checks in Chromium (Playwright) on all six pages at the root
 (`/`, `/history`, `/watches`, `/analytics`, `/kb`, `/accessibility`), 31 Oct 2026,
-English, light and dark theme, plus `pytest -m a11y -n 8` (258 tests passed; every
-language the run selects). They reduce the work of the review; they do not replace it.
+English, light and dark theme, plus a partial run of `pytest -m a11y -n 8`
+(258 tests passed, a narrowed run; see below). They reduce the work of the
+review; they do not replace it.
+
+A complete run of `pytest -m a11y` executes all **1,277** tests of the suite (six
+pages, eight languages, two themes; see [tests/a11y/README.md](../tests/a11y/README.md)).
+A run narrowed with `EKTE_A11Y_PAGES` (pages) or `EKTE_A11Y_SHARD=k/n` (one part
+of the suite, about 256 of 1,277 tests for 1/5) executes only its selection, so
+its count is smaller. A default local run is the complete one; it is not the 258 above.
 
 | Check | Result |
 |---|---|

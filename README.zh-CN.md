@@ -22,6 +22,8 @@
 本 README 面向 ekte 的**使用者**。ekte 如何构建、测试和发布，见[开发者指南](DEVELOPER_GUIDE.zh-CN.md)；
 每项检测如何工作、如何计分，见[方法论](docs/METHODOLOGY.zh-CN.md)。
 
+ekte 的哪些部分是稳定的、什么算不兼容变更、功能如何弃用：[稳定性与兼容性政策](docs/STABILITY.md)（英文）。
+
 ---
 
 ## 目录
@@ -671,6 +673,8 @@ ekte 是黑盒审计辅助工具。它**无法证明**：
 | [docs/CI.md](docs/CI.md) | GitHub Action：输入、输出、示例（英文） |
 | [docs/DOCKER.md](docs/DOCKER.md) | 在容器中运行 Web 界面（英文） |
 | [稳定性与兼容性](docs/STABILITY.md) | semver 保护什么、弃用政策、支持的 Python 版本与系统、升级与降级（英文） |
+| [docs/CLI.md](docs/CLI.md) | 所有命令与选项，以及退出码（英文） |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | 报告与 webhook 的 JSON 格式及其 `schema_version`（英文） |
 | [CHANGELOG.md](CHANGELOG.md) | 每个版本的变更（英文） |
 | [SECURITY.md](SECURITY.md) | 报告安全漏洞（英文） |
 

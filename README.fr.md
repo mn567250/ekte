@@ -28,6 +28,8 @@ est construit, testé et publié est décrite dans le
 [Guide du développeur](DEVELOPER_GUIDE.fr.md) ; le fonctionnement et la notation
 de chaque vérification dans la [Méthodologie](docs/METHODOLOGY.fr.md).
 
+Ce qui est stable dans ekte, ce qui constitue un changement incompatible et comment les fonctionnalités sont retirées : [Politique de stabilité et de compatibilité](docs/STABILITY.md) (en anglais).
+
 ---
 
 ## Sommaire
@@ -911,6 +913,8 @@ fortes.
 | [docs/CI.md](docs/CI.md) | La GitHub Action : entrées, sorties, exemples (en anglais) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Exécuter l'interface web dans un conteneur (en anglais) |
 | [Stabilité et compatibilité](docs/STABILITY.md) | Ce que protège semver, dépréciation, versions de Python et systèmes pris en charge, mises à jour et retours en arrière (en anglais) |
+| [docs/CLI.md](docs/CLI.md) | Toutes les commandes et options, et les codes de sortie (en anglais) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | Les formats JSON du rapport et du webhook et leur `schema_version` (en anglais) |
 | [CHANGELOG.md](CHANGELOG.md) | Les changements de chaque version (en anglais) |
 | [SECURITY.md](SECURITY.md) | Signaler une vulnérabilité (en anglais) |
 

@@ -26,6 +26,8 @@ This README is for people who **use** ekte. How ekte is built, tested and
 released is in the [Developer guide](DEVELOPER_GUIDE.md); how every check works
 and is scored is in the [Methodology](docs/METHODOLOGY.md).
 
+Which parts of ekte are stable, what counts as a breaking change and how features are deprecated: [Stability and compatibility policy](docs/STABILITY.md) (English).
+
 ---
 
 ## Contents
@@ -843,6 +845,8 @@ on a single run without reviewing sample size, cost settings and local law. Run
 | [docs/CI.md](docs/CI.md) | The GitHub Action: inputs, outputs, examples |
 | [docs/DOCKER.md](docs/DOCKER.md) | Running the web UI in a container |
 | [Stability and compatibility](docs/STABILITY.md) | What semver protects, deprecation, supported Python and systems, upgrades and downgrades |
+| [docs/CLI.md](docs/CLI.md) | Every command and option, and the exit codes (English) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | The report and webhook JSON formats and their `schema_version` (English) |
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each release |
 | [SECURITY.md](SECURITY.md) | Reporting a vulnerability |
 
