@@ -139,6 +139,7 @@ monitor scheduler all end in the same function, `ekte.runner.run_audit()`:
    options into `TargetConfig` (target, optional baseline and judge) and
    `AuditOptions` (suite, dimensions, probe sizes, output). API keys given as
    `env:VAR` or `file:/path` are resolved here.
+   The format is defined in `ekte/configfile.py` (one table of keys, types and defaults) and published as the JSON schema [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), regenerated with `uv run python -m ekte.configfile` (a test fails when it is stale). `ekte/config.py` loads the file through it, so every command validates it. A format change needs a new `CURRENT_VERSION`, the renames in `RENAMES_FROM` (used by `ekte config migrate`) and a changelog entry; a deprecated key goes into `DEPRECATED` with its replacement. See the [stability policy](docs/STABILITY.md#surface-config).
 2. **Knowledge base.** `load_knowledge_base()` loads the packaged profiles,
    `--kb-dir`/`EKTE_KB_DIR` and the user's `kb.db`, and resolves the **claimed**
    model (defaulting to the requested one) to a profile. A monitor passes its

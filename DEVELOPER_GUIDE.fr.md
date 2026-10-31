@@ -144,6 +144,7 @@ son planificateur de surveillances aboutissent tous à la même fonction,
    options de ligne de commande en `TargetConfig` (cible, référence et juge
    facultatifs) et `AuditOptions` (suite, dimensions, taille des sondes, sortie).
    Les clés d'API données en `env:VAR` ou `file:/chemin` sont résolues ici.
+   Le format est défini dans `ekte/configfile.py` (un tableau de clés, de types et de valeurs par défaut) et publié sous forme de schéma JSON [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), régénéré avec `uv run python -m ekte.configfile` (un test échoue s'il est périmé). `ekte/config.py` charge le fichier par ce biais, donc chaque commande le valide. Un changement de format exige un nouveau `CURRENT_VERSION`, les renommages dans `RENAMES_FROM` (utilisés par `ekte config migrate`) et une entrée de changelog ; une clé obsolète va dans `DEPRECATED` avec son remplaçant. Voir la [politique de stabilité](docs/STABILITY.md#surface-config).
 2. **Base de connaissances.** `load_knowledge_base()` charge les profils intégrés,
    `--kb-dir`/`EKTE_KB_DIR` et le `kb.db` de l'utilisateur, puis résout le modèle
    **annoncé** (par défaut le modèle demandé) vers un profil. Une surveillance

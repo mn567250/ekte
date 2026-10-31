@@ -181,6 +181,8 @@ Las claves de API pueden darse en claro, como `env:VAR` o como `file:/ruta`; los
 informes solo contienen una huella de la clave. Tienes un archivo de
 configuración completo en [`examples/ekte.yaml`](examples/ekte.yaml).
 
+El archivo tiene una versión de formato (`version: 1`; un archivo sin versión es el formato 1). Las claves desconocidas, los tipos incorrectos y los valores no válidos se rechazan indicando archivo, línea y clave. `ekte config migrate` actualiza un archivo antiguo. El esquema es [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+
 ### Como herramienta para un LLM / agente
 
 ekte está pensado para que lo controle otro programa o modelo. Todo sale por

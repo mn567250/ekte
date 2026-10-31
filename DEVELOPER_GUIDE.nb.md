@@ -142,6 +142,7 @@ planleggeren for overvåkinger ender alle i samme funksjon,
    kommandolinjevalgene til `TargetConfig` (mål, valgfri referanse og dommer) og
    `AuditOptions` (testsett, dimensjoner, probestørrelser, utdata). API-nøkler
    oppgitt som `env:VAR` eller `file:/sti` løses opp her.
+   Formatet er definert i `ekte/configfile.py` (én tabell med nøkler, typer og standardverdier) og publisert som JSON-skjemaet [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), som genereres på nytt med `uv run python -m ekte.configfile` (en test feiler hvis det er utdatert). `ekte/config.py` laster filen gjennom det, slik at alle kommandoer validerer den. En formatendring krever en ny `CURRENT_VERSION`, omdøpingene i `RENAMES_FROM` (brukt av `ekte config migrate`) og en endringslogg-oppføring; en utdatert nøkkel legges i `DEPRECATED` med erstatningen. Se [stabilitetspolicyen](docs/STABILITY.md#surface-config).
 2. **Kunnskapsbase.** `load_knowledge_base()` laster de medfølgende profilene,
    `--kb-dir`/`EKTE_KB_DIR` og brukerens `kb.db`, og slår opp den **oppgitte**
    modellen (standard er den forespurte) til en profil. En overvåking sender i

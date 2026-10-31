@@ -7,6 +7,7 @@ Commands:
   ekte models    quickly probe an endpoint's /models list
   ekte kb        inspect the knowledge base (packaged, EKTE_KB_DIR, your entries)
   ekte kb-prompt / kb-import / kb-export   add your own model profiles
+  ekte config    migrate a config file to the current format
   ekte secret    the master key encrypting the API keys `ekte serve` stores
   ekte data-dir  print where the SQLite databases live (choose it with --data-dir)
 """
@@ -1400,6 +1401,35 @@ def data_dir_command() -> None:
     from ekte import datadir
 
     print(datadir.data_dir().expanduser())
+
+
+config_app = typer.Typer(help="Work with the configuration file.", no_args_is_help=True)
+app.add_typer(config_app, name="config")
+
+
+@config_app.command("migrate")
+def config_migrate(
+    path: Annotated[Path, typer.Argument(help="The config file to update.")] = Path("ekte.yaml"),
+    check: Annotated[bool, typer.Option("--check", help="Only report; exit 1 if the file is outdated.")] = False,
+) -> None:
+    """Rewrite a config file to the current format (comments are kept)."""
+    from ekte import configfile
+
+    try:
+        old = path.read_text(encoding="utf-8")
+        new, changes = configfile.migrate_text(old, str(path))
+    except (OSError, configfile.ConfigFileError) as exc:
+        err_console.print(f"[red]Config error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    if not changes:
+        console.print(f"{path} is already in format {configfile.CURRENT_VERSION}.")
+        return
+    if check:
+        console.print(f"{path} is outdated: " + "; ".join(changes))
+        raise typer.Exit(code=1)
+    path.with_name(path.name + ".bak").write_text(old, encoding="utf-8")
+    path.write_text(new, encoding="utf-8")
+    console.print(f"Updated {path} (backup: {path.name}.bak): " + "; ".join(changes))
 
 
 secret_app = typer.Typer(

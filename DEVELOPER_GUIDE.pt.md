@@ -142,6 +142,7 @@ e o seu agendador de monitores acabam todos na mesma função,
    linha de comandos em `TargetConfig` (alvo, referência e juiz opcionais) e
    `AuditOptions` (suite, dimensões, dimensão das sondas, saída). As chaves de API
    dadas como `env:VAR` ou `file:/caminho` são resolvidas aqui.
+   O formato é definido em `ekte/configfile.py` (uma tabela de chaves, tipos e valores padrão) e publicado como esquema JSON [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), regenerado com `uv run python -m ekte.configfile` (um teste falha se estiver desatualizado). `ekte/config.py` carrega o arquivo por ele, então todo comando o valida. Uma mudança de formato exige um novo `CURRENT_VERSION`, as renomeações em `RENAMES_FROM` (usadas por `ekte config migrate`) e uma entrada no changelog; uma chave obsoleta vai para `DEPRECATED` com a substituta. Veja a [política de estabilidade](docs/STABILITY.md#surface-config).
 2. **Base de conhecimento.** `load_knowledge_base()` carrega os perfis
    integrados, `--kb-dir`/`EKTE_KB_DIR` e o `kb.db` do utilizador, e resolve o
    modelo **declarado** (por predefinição, o pedido) para um perfil. Um monitor
