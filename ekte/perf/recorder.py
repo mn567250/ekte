@@ -17,7 +17,7 @@ import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ekte.models import CompletionOutcome, RequestRecord, RequestSpec
@@ -232,6 +232,16 @@ class RequestRecorder:
         self.tokenizer = tokenizer
         self.records: list[RequestRecord] = []
         self.on_record = on_record
+
+    def now(self) -> datetime:
+        """The current time on the recorder's clock: ``started_at`` plus the
+        monotonic time since ``t0``.
+
+        Record offsets count on the same clock, so a report stamped with this
+        never ends before its last request. ``datetime.now()`` can lag behind
+        it by its own resolution (about 16 ms on Windows).
+        """
+        return self.started_at + timedelta(seconds=time.perf_counter() - self.t0)
 
     def _base(
         self, endpoint: str, op: str, stream: bool, started: float, outcome: CompletionOutcome

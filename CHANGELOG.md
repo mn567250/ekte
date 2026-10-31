@@ -247,6 +247,10 @@ ekte has three eras:
 
 ### Fixed
 
+- **Report timestamps on Windows.** `generated_at` now comes from the same
+  monotonic clock as the request offsets, so a report never ends before its
+  last request (Windows' wall clock ticks only every ~16 ms).
+
 - **Methodology: billing & usage is a core dimension.** The dimension table in
   every language left its role empty, while the text and the scoring code count
   it as core.

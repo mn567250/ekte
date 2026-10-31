@@ -11,7 +11,6 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from contextlib import AsyncExitStack, suppress
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -289,7 +288,7 @@ async def run_audit(
     return AuditReport(
         tool_version=__version__,
         mode=mode,
-        generated_at=datetime.now(UTC).isoformat(),
+        generated_at=recorder.now().isoformat(),
         started_at=recorder.started_at.isoformat(),
         command=command,
         suite=options.suite,
