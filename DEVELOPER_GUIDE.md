@@ -318,13 +318,14 @@ All decoding (image headers, WAV) is standard library only.
 
 `ekte/web/server.py` is a FastAPI app created by `create_app()`:
 
-- **Pages.** The web UI (`/v2/`, `/v2/history`, `/v2/watches`, `/v2/analytics`,
-  `/v2/kb`, `/v2/accessibility`) is static HTML. There is no Tools page:
-  embedding and rerank audits start on the audit page through the endpoint-type
-  selector (`/v2/?surface=embedding|rerank`), and `/v2/tools` serves a small page
-  that forwards old links there (`#rerank` picks rerank, `?rerun=` is passed on).
-  The addresses of the removed classic UI (`/`, `/history`, `/watches`, `/tools`,
-  `/console`) redirect (308) to their v2 pages, keeping the query string.
+- **Pages.** The web UI (`/`, `/history`, `/watches`, `/analytics`,
+  `/kb`, `/accessibility`) is static HTML served at the root, its scripts and
+  styles under `/static/`. There is no Tools page: embedding and rerank audits
+  start on the audit page through the endpoint-type selector
+  (`/?surface=embedding|rerank`). Until 1.0.0 the former addresses redirect (308) to the
+  page at the root, keeping the query string: `/v2/…` (`/v2/tools` goes to
+  `/?surface=embedding`, and `#rerank` picks rerank) and the removed classic UI's
+  `/tools` and `/console`. These redirects are deprecated and removed in 1.0.0.
 - **API.** `/api/jobs…` runs audits (below); `/api/models` lists a relay's
   models; `/api/report/export` renders a report; `/api/history…`,
   `/api/watches…`, `/api/kb…` and `/api/analytics…` back the other pages.
@@ -545,7 +546,7 @@ name (noticed once on stderr), and `datadir.data_dir()` copies `~/.zing` to
 backup API, into a temporary sibling renamed into place). `~/.zing` is never
 changed or deleted. `lang.js` copies the browser's `zing.*` settings to `ekte.*`
 the same way, and the server still reads the `zing_lang` / `zing_ui` cookies
-until the `ekte_*` ones exist.
+until the `ekte_*` ones exist. All of it is deprecated and removed in 1.0.0 (the notices name that version); ekte never deletes an old `~/.zing`.
 
 ## Contributing
 

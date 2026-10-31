@@ -30,7 +30,7 @@
   {
    "task": "page",
    "page": "accessibility",
-   "path": "/v2/accessibility",
+   "path": "/accessibility",
    "lang": "en",
    "request_chars": 17877,
    "collection": {
@@ -104,7 +104,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Classic UI",
@@ -112,27 +112,27 @@
      },
      {
       "name": "Accessibility",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitors",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "History",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analytics",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Knowledge",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "report an accessibility issue on GitHub",
@@ -418,7 +418,7 @@
      "025d46e8882c",
      "1,156 run, 1,156 passed, 0 failed, 0 skipped",
      "English, Deutsch, Español, Français, Italiano, Português, 中文",
-     "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
+     "/ /history /watches /kb /analytics /accessibility",
      "61.4 % Pass of 44",
      "Not applicable 6 of 50 · 12 %",
      "Pass 27 of 44 · 61.4 %",
@@ -571,7 +571,7 @@
   {
    "task": "page",
    "page": "accessibility",
-   "path": "/v2/accessibility",
+   "path": "/accessibility",
    "lang": "de",
    "request_chars": 20015,
    "collection": {
@@ -645,7 +645,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Klassische Oberfläche",
@@ -653,27 +653,27 @@
      },
      {
       "name": "Barrierefreiheit",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Prüfung",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Überwachung",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Verlauf",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyse",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Wissen",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Barriere auf GitHub melden",
@@ -960,7 +960,7 @@
      "1.156 ausgeführt, 1.156 bestanden, 0 fehlgeschlagen, 0 übersprungen",
      "English, Deutsch, Español, Français, Italiano, Português, 中文",
      "Hell, Dunkel",
-     "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
+     "/ /history /watches /kb /analytics /accessibility",
      "61,4 % Bestanden von 44",
      "Nicht anwendbar 6 von 50 · 12 %",
      "Bestanden 27 von 44 · 61,4 %",
@@ -1112,7 +1112,7 @@
   {
    "task": "page",
    "page": "accessibility",
-   "path": "/v2/accessibility",
+   "path": "/accessibility",
    "lang": "es",
    "request_chars": 19466,
    "collection": {
@@ -1186,7 +1186,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaz clásica",
@@ -1194,27 +1194,27 @@
      },
      {
       "name": "Accesibilidad",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoría",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historial",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analítica",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conocimiento",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "informar de un problema de accesibilidad en GitHub",
@@ -1501,7 +1501,7 @@
      "1156 ejecutadas, 1156 superadas, 0 fallidas, 0 omitidas",
      "English, Deutsch, Español, Français, Italiano, Português, 中文",
      "Claro, Oscuro",
-     "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
+     "/ /history /watches /kb /analytics /accessibility",
      "61,4 % Correcto de 44",
      "No aplicable 6 de 50 · 12 %",
      "Correcto 27 de 44 · 61,4 %",
@@ -1653,7 +1653,7 @@
   {
    "task": "page",
    "page": "accessibility",
-   "path": "/v2/accessibility",
+   "path": "/accessibility",
    "lang": "fr",
    "request_chars": 19879,
    "collection": {
@@ -1727,7 +1727,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface classique",
@@ -1735,27 +1735,27 @@
      },
      {
       "name": "Accessibilité",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Surveillances",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historique",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyses",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Connaissances",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "signaler un problème d'accessibilité sur GitHub",
@@ -2042,7 +2042,7 @@
      "1 156 exécutés, 1 156 réussis, 0 échoués, 0 ignorés",
      "English, Deutsch, Español, Français, Italiano, Português, 中文",
      "Clair, Sombre",
-     "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
+     "/ /history /watches /kb /analytics /accessibility",
      "61,4 % Réussi sur 44",
      "Non applicable 6 sur 50 · 12 %",
      "Réussi 27 sur 44 · 61,4 %",
@@ -2194,7 +2194,7 @@
   {
    "task": "page",
    "page": "accessibility",
-   "path": "/v2/accessibility",
+   "path": "/accessibility",
    "lang": "it",
    "request_chars": 19532,
    "collection": {
@@ -2268,7 +2268,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaccia classica",
@@ -2276,27 +2276,27 @@
      },
      {
       "name": "Accessibilità",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Verifica",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitor",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Cronologia",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analisi",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conoscenza",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "segnala un problema di accessibilità su GitHub",
@@ -2583,7 +2583,7 @@
      "1156 eseguiti, 1156 superati, 0 falliti, 0 saltati",
      "English, Deutsch, Español, Français, Italiano, Português, 中文",
      "Chiaro, Scuro",
-     "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
+     "/ /history /watches /kb /analytics /accessibility",
      "61,4 % Superato su 44",
      "Non applicabile 6 su 50 · 12 %",
      "Superato 27 su 44 · 61,4 %",
@@ -2735,7 +2735,7 @@
   {
    "task": "page",
    "page": "accessibility",
-   "path": "/v2/accessibility",
+   "path": "/accessibility",
    "lang": "pt",
    "request_chars": 19303,
    "collection": {
@@ -2809,7 +2809,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface clássica",
@@ -2817,27 +2817,27 @@
      },
      {
       "name": "Acessibilidade",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoria",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Histórico",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Análises",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conhecimento",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "comunicar um problema de acessibilidade no GitHub",
@@ -3124,7 +3124,7 @@
      "1156 executados, 1156 aprovados, 0 falhados, 0 ignorados",
      "English, Deutsch, Español, Français, Italiano, Português, 中文",
      "Claro, Escuro",
-     "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
+     "/ /history /watches /kb /analytics /accessibility",
      "61,4 % Aprovado de 44",
      "Não aplicável 6 de 50 · 12 %",
      "Aprovado 27 de 44 · 61,4 %",
@@ -3276,7 +3276,7 @@
   {
    "task": "page",
    "page": "accessibility",
-   "path": "/v2/accessibility",
+   "path": "/accessibility",
    "lang": "zh",
    "request_chars": 12026,
    "collection": {
@@ -3350,7 +3350,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "经典界面",
@@ -3358,27 +3358,27 @@
      },
      {
       "name": "无障碍",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "检测",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "监控",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "检测历史",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "分析",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "知识库",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "在 GitHub 上报告无障碍问题",
@@ -3665,7 +3665,7 @@
      "1,156 个已运行，1,156 个通过，0 个失败，0 个跳过",
      "English, Deutsch, Español, Français, Italiano, Português, 中文",
      "浅色, 深色",
-     "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
+     "/ /history /watches /kb /analytics /accessibility",
      "61.4 % 通过 共 44 项",
      "不适用 6 / 50 · 12 %",
      "通过 27 / 44 · 61.4 %",
@@ -3817,7 +3817,7 @@
   {
    "task": "translation",
    "page": "accessibility",
-   "path": "/v2/accessibility",
+   "path": "/accessibility",
    "lang": "all",
    "request_chars": 131477,
    "status": "reviewed",
@@ -4796,13 +4796,13 @@
      },
      {
       "kind": "instruction",
-      "en": "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
-      "de": "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
-      "es": "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
-      "fr": "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
-      "it": "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
-      "pt": "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility",
-      "zh": "/v2/ /v2/history /v2/watches /v2/kb /v2/analytics /v2/accessibility"
+      "en": "/ /history /watches /kb /analytics /accessibility",
+      "de": "/ /history /watches /kb /analytics /accessibility",
+      "es": "/ /history /watches /kb /analytics /accessibility",
+      "fr": "/ /history /watches /kb /analytics /accessibility",
+      "it": "/ /history /watches /kb /analytics /accessibility",
+      "pt": "/ /history /watches /kb /analytics /accessibility",
+      "zh": "/ /history /watches /kb /analytics /accessibility"
      },
      {
       "kind": "instruction",
@@ -6380,7 +6380,7 @@
   {
    "task": "page",
    "page": "analytics",
-   "path": "/v2/analytics",
+   "path": "/analytics",
    "lang": "en",
    "request_chars": 8304,
    "collection": {
@@ -6442,7 +6442,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Classic UI",
@@ -6450,37 +6450,37 @@
      },
      {
       "name": "Accessibility",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitors",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "History",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analytics",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Knowledge",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Schedule a monitor for regular measurements.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Fewer than 3 runs in this bucket — shown faded because a single audit can be an outlier. Schedule a monitor for regular measurements.",
       "count": 2
      },
      {
       "name": "Schedule a monitor for regular measurements.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Rows marked “few runs” have fewer than 3 runs — a single audit can be an outlier. Schedule a monitor for regular measurements.",
       "count": 2
      }
@@ -6882,7 +6882,7 @@
   {
    "task": "page",
    "page": "analytics",
-   "path": "/v2/analytics",
+   "path": "/analytics",
    "lang": "de",
    "request_chars": 9071,
    "collection": {
@@ -6944,7 +6944,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Klassische Oberfläche",
@@ -6952,37 +6952,37 @@
      },
      {
       "name": "Barrierefreiheit",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Prüfung",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Überwachung",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Verlauf",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyse",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Wissen",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Richten Sie eine Überwachung für regelmäßige Messungen ein.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Weniger als 3 Läufe in diesem Zeitabschnitt — blass dargestellt, weil ein einzelnes Audit ein Ausreißer sein kann. Richten Sie eine Überwachung für regelmäßige Messungen ein.",
       "count": 2
      },
      {
       "name": "Richten Sie eine Überwachung für regelmäßige Messungen ein.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Mit „wenige Läufe“ markierte Zeilen haben weniger als 3 Läufe — ein einzelnes Audit kann ein Ausreißer sein. Richten Sie eine Überwachung für regelmäßige Messungen ein.",
       "count": 2
      }
@@ -7385,7 +7385,7 @@
   {
    "task": "page",
    "page": "analytics",
-   "path": "/v2/analytics",
+   "path": "/analytics",
    "lang": "es",
    "request_chars": 9271,
    "collection": {
@@ -7447,7 +7447,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaz clásica",
@@ -7455,37 +7455,37 @@
      },
      {
       "name": "Accesibilidad",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoría",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historial",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analítica",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conocimiento",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Programe un monitor para obtener mediciones regulares.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Menos de 3 ejecuciones en este intervalo: se muestra atenuado porque una sola auditoría puede ser un valor atípico. Programe un monitor para obtener mediciones regulares.",
       "count": 2
      },
      {
       "name": "Programe un monitor para obtener mediciones regulares.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Las filas marcadas «pocas ejecuciones» tienen menos de 3 ejecuciones: una sola auditoría puede ser un valor atípico. Programe un monitor para obtener mediciones regulares.",
       "count": 2
      }
@@ -7889,7 +7889,7 @@
   {
    "task": "page",
    "page": "analytics",
-   "path": "/v2/analytics",
+   "path": "/analytics",
    "lang": "fr",
    "request_chars": 9315,
    "collection": {
@@ -7951,7 +7951,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface classique",
@@ -7959,37 +7959,37 @@
      },
      {
       "name": "Accessibilité",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Surveillances",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historique",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyses",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Connaissances",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Programmez une surveillance pour des mesures régulières.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Moins de 3 exécutions dans cet intervalle — affiché atténué, car un audit isolé peut être une valeur aberrante. Programmez une surveillance pour des mesures régulières.",
       "count": 2
      },
      {
       "name": "Programmez une surveillance pour des mesures régulières.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Les lignes marquées « peu d'exécutions » comptent moins de 3 exécutions — un audit isolé peut être une valeur aberrante. Programmez une surveillance pour des mesures régulières.",
       "count": 2
      }
@@ -8393,7 +8393,7 @@
   {
    "task": "page",
    "page": "analytics",
-   "path": "/v2/analytics",
+   "path": "/analytics",
    "lang": "it",
    "request_chars": 9159,
    "collection": {
@@ -8455,7 +8455,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaccia classica",
@@ -8463,37 +8463,37 @@
      },
      {
       "name": "Accessibilità",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Verifica",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitor",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Cronologia",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analisi",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conoscenza",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Pianifica un monitor per misurazioni regolari.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Meno di 3 esecuzioni in questo intervallo — mostrato attenuato perché un singolo audit può essere un valore anomalo. Pianifica un monitor per misurazioni regolari.",
       "count": 2
      },
      {
       "name": "Pianifica un monitor per misurazioni regolari.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Le righe segnate «poche esecuzioni» hanno meno di 3 esecuzioni — un singolo audit può essere un valore anomalo. Pianifica un monitor per misurazioni regolari.",
       "count": 2
      }
@@ -8897,7 +8897,7 @@
   {
    "task": "page",
    "page": "analytics",
-   "path": "/v2/analytics",
+   "path": "/analytics",
    "lang": "pt",
    "request_chars": 9029,
    "collection": {
@@ -8959,7 +8959,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface clássica",
@@ -8967,37 +8967,37 @@
      },
      {
       "name": "Acessibilidade",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoria",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Histórico",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Análises",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conhecimento",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Agende um monitor para medições regulares.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "Menos de 3 execuções neste intervalo — mostrado esbatido porque uma única auditoria pode ser um valor atípico. Agende um monitor para medições regulares.",
       "count": 2
      },
      {
       "name": "Agende um monitor para medições regulares.",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "As linhas marcadas «poucas execuções» têm menos de 3 execuções — uma única auditoria pode ser um valor atípico. Agende um monitor para medições regulares.",
       "count": 2
      }
@@ -9401,7 +9401,7 @@
   {
    "task": "page",
    "page": "analytics",
-   "path": "/v2/analytics",
+   "path": "/analytics",
    "lang": "zh",
    "request_chars": 5782,
    "collection": {
@@ -9463,7 +9463,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "经典界面",
@@ -9471,37 +9471,37 @@
      },
      {
       "name": "无障碍",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "检测",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "监控",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "检测历史",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "分析",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "知识库",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "设置监控以定期测量。",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "此时间段少于 3 次检测——单次检测可能是离群值，因此淡化显示。 设置监控以定期测量。",
       "count": 2
      },
      {
       "name": "设置监控以定期测量。",
-      "href": "/v2/watches",
+      "href": "/watches",
       "context": "标为“检测较少”的行少于 3 次检测——单次检测可能是离群值。 设置监控以定期测量。",
       "count": 2
      }
@@ -9905,7 +9905,7 @@
   {
    "task": "translation",
    "page": "analytics",
-   "path": "/v2/analytics",
+   "path": "/analytics",
    "lang": "all",
    "request_chars": 36886,
    "status": "reviewed",
@@ -11158,7 +11158,7 @@
   {
    "task": "page",
    "page": "audit",
-   "path": "/v2/",
+   "path": "/",
    "lang": "en",
    "request_chars": 6016,
    "collection": {
@@ -11188,7 +11188,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Classic UI",
@@ -11196,27 +11196,27 @@
      },
      {
       "name": "Accessibility",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitors",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "History",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analytics",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Knowledge",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -11487,7 +11487,7 @@
   {
    "task": "page",
    "page": "audit",
-   "path": "/v2/",
+   "path": "/",
    "lang": "de",
    "request_chars": 6406,
    "collection": {
@@ -11517,7 +11517,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Klassische Oberfläche",
@@ -11525,27 +11525,27 @@
      },
      {
       "name": "Barrierefreiheit",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Prüfung",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Überwachung",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Verlauf",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyse",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Wissen",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -11817,7 +11817,7 @@
   {
    "task": "page",
    "page": "audit",
-   "path": "/v2/",
+   "path": "/",
    "lang": "es",
    "request_chars": 6488,
    "collection": {
@@ -11847,7 +11847,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaz clásica",
@@ -11855,27 +11855,27 @@
      },
      {
       "name": "Accesibilidad",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoría",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historial",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analítica",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conocimiento",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -12146,7 +12146,7 @@
   {
    "task": "page",
    "page": "audit",
-   "path": "/v2/",
+   "path": "/",
    "lang": "fr",
    "request_chars": 6447,
    "collection": {
@@ -12176,7 +12176,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface classique",
@@ -12184,27 +12184,27 @@
      },
      {
       "name": "Accessibilité",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Surveillances",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historique",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyses",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Connaissances",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -12475,7 +12475,7 @@
   {
    "task": "page",
    "page": "audit",
-   "path": "/v2/",
+   "path": "/",
    "lang": "it",
    "request_chars": 6549,
    "collection": {
@@ -12505,7 +12505,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaccia classica",
@@ -12513,27 +12513,27 @@
      },
      {
       "name": "Accessibilità",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Verifica",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitor",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Cronologia",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analisi",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conoscenza",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -12804,7 +12804,7 @@
   {
    "task": "page",
    "page": "audit",
-   "path": "/v2/",
+   "path": "/",
    "lang": "pt",
    "request_chars": 6467,
    "collection": {
@@ -12834,7 +12834,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface clássica",
@@ -12842,27 +12842,27 @@
      },
      {
       "name": "Acessibilidade",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoria",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Histórico",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Análises",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conhecimento",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -13133,7 +13133,7 @@
   {
    "task": "page",
    "page": "audit",
-   "path": "/v2/",
+   "path": "/",
    "lang": "zh",
    "request_chars": 4333,
    "collection": {
@@ -13163,7 +13163,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "经典界面",
@@ -13171,27 +13171,27 @@
      },
      {
       "name": "无障碍",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "检测",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "监控",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "检测历史",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "分析",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "知识库",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -13462,7 +13462,7 @@
   {
    "task": "translation",
    "page": "audit",
-   "path": "/v2/",
+   "path": "/",
    "lang": "all",
    "request_chars": 24210,
    "status": "reviewed",
@@ -14265,7 +14265,7 @@
   {
    "task": "page",
    "page": "history",
-   "path": "/v2/history",
+   "path": "/history",
    "lang": "en",
    "request_chars": 10331,
    "collection": {
@@ -14356,7 +14356,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Classic UI",
@@ -14364,27 +14364,27 @@
      },
      {
       "name": "Accessibility",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitors",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "History",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analytics",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Knowledge",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -14944,7 +14944,7 @@
   {
    "task": "page",
    "page": "history",
-   "path": "/v2/history",
+   "path": "/history",
    "lang": "de",
    "request_chars": 11184,
    "collection": {
@@ -15035,7 +15035,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Klassische Oberfläche",
@@ -15043,27 +15043,27 @@
      },
      {
       "name": "Barrierefreiheit",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Prüfung",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Überwachung",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Verlauf",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyse",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Wissen",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -15623,7 +15623,7 @@
   {
    "task": "page",
    "page": "history",
-   "path": "/v2/history",
+   "path": "/history",
    "lang": "es",
    "request_chars": 11333,
    "collection": {
@@ -15714,7 +15714,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaz clásica",
@@ -15722,27 +15722,27 @@
      },
      {
       "name": "Accesibilidad",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoría",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historial",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analítica",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conocimiento",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -16302,7 +16302,7 @@
   {
    "task": "page",
    "page": "history",
-   "path": "/v2/history",
+   "path": "/history",
    "lang": "fr",
    "request_chars": 11280,
    "collection": {
@@ -16393,7 +16393,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface classique",
@@ -16401,27 +16401,27 @@
      },
      {
       "name": "Accessibilité",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Surveillances",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historique",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyses",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Connaissances",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -16981,7 +16981,7 @@
   {
    "task": "page",
    "page": "history",
-   "path": "/v2/history",
+   "path": "/history",
    "lang": "it",
    "request_chars": 11287,
    "collection": {
@@ -17072,7 +17072,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaccia classica",
@@ -17080,27 +17080,27 @@
      },
      {
       "name": "Accessibilità",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Verifica",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitor",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Cronologia",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analisi",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conoscenza",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -17660,7 +17660,7 @@
   {
    "task": "page",
    "page": "history",
-   "path": "/v2/history",
+   "path": "/history",
    "lang": "pt",
    "request_chars": 11326,
    "collection": {
@@ -17751,7 +17751,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface clássica",
@@ -17759,27 +17759,27 @@
      },
      {
       "name": "Acessibilidade",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoria",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Histórico",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Análises",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conhecimento",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -18339,7 +18339,7 @@
   {
    "task": "page",
    "page": "history",
-   "path": "/v2/history",
+   "path": "/history",
    "lang": "zh",
    "request_chars": 7621,
    "collection": {
@@ -18430,7 +18430,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "经典界面",
@@ -18438,27 +18438,27 @@
      },
      {
       "name": "无障碍",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "检测",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "监控",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "检测历史",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "分析",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "知识库",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -19017,7 +19017,7 @@
   {
    "task": "translation",
    "page": "history",
-   "path": "/v2/history",
+   "path": "/history",
    "lang": "all",
    "request_chars": 37997,
    "status": "reviewed",
@@ -20520,7 +20520,7 @@
   {
    "task": "page",
    "page": "kb",
-   "path": "/v2/kb",
+   "path": "/kb",
    "lang": "en",
    "request_chars": 8320,
    "collection": {
@@ -20578,7 +20578,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Classic UI",
@@ -20586,27 +20586,27 @@
      },
      {
       "name": "Accessibility",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitors",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "History",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analytics",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Knowledge",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -21064,7 +21064,7 @@
   {
    "task": "page",
    "page": "kb",
-   "path": "/v2/kb",
+   "path": "/kb",
    "lang": "de",
    "request_chars": 8479,
    "collection": {
@@ -21122,7 +21122,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Klassische Oberfläche",
@@ -21130,27 +21130,27 @@
      },
      {
       "name": "Barrierefreiheit",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Prüfung",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Überwachung",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Verlauf",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyse",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Wissen",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -21608,7 +21608,7 @@
   {
    "task": "page",
    "page": "kb",
-   "path": "/v2/kb",
+   "path": "/kb",
    "lang": "es",
    "request_chars": 8531,
    "collection": {
@@ -21666,7 +21666,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaz clásica",
@@ -21674,27 +21674,27 @@
      },
      {
       "name": "Accesibilidad",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoría",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historial",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analítica",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conocimiento",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -22152,7 +22152,7 @@
   {
    "task": "page",
    "page": "kb",
-   "path": "/v2/kb",
+   "path": "/kb",
    "lang": "fr",
    "request_chars": 8783,
    "collection": {
@@ -22210,7 +22210,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface classique",
@@ -22218,27 +22218,27 @@
      },
      {
       "name": "Accessibilité",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Surveillances",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historique",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyses",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Connaissances",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -22696,7 +22696,7 @@
   {
    "task": "page",
    "page": "kb",
-   "path": "/v2/kb",
+   "path": "/kb",
    "lang": "it",
    "request_chars": 8474,
    "collection": {
@@ -22754,7 +22754,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaccia classica",
@@ -22762,27 +22762,27 @@
      },
      {
       "name": "Accessibilità",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Verifica",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitor",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Cronologia",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analisi",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conoscenza",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -23240,7 +23240,7 @@
   {
    "task": "page",
    "page": "kb",
-   "path": "/v2/kb",
+   "path": "/kb",
    "lang": "pt",
    "request_chars": 8393,
    "collection": {
@@ -23298,7 +23298,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface clássica",
@@ -23306,27 +23306,27 @@
      },
      {
       "name": "Acessibilidade",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoria",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Histórico",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Análises",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conhecimento",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -23784,7 +23784,7 @@
   {
    "task": "page",
    "page": "kb",
-   "path": "/v2/kb",
+   "path": "/kb",
    "lang": "zh",
    "request_chars": 6652,
    "collection": {
@@ -23842,7 +23842,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "经典界面",
@@ -23850,27 +23850,27 @@
      },
      {
       "name": "无障碍",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "检测",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "监控",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "检测历史",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "分析",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "知识库",
-      "href": "/v2/kb"
+      "href": "/kb"
      }
     ],
     "controls": [
@@ -24328,7 +24328,7 @@
   {
    "task": "translation",
    "page": "kb",
-   "path": "/v2/kb",
+   "path": "/kb",
    "lang": "all",
    "request_chars": 57612,
    "status": "reviewed",
@@ -26491,7 +26491,7 @@
   {
    "task": "page",
    "page": "monitors",
-   "path": "/v2/watches",
+   "path": "/watches",
    "lang": "en",
    "request_chars": 5016,
    "collection": {
@@ -26529,7 +26529,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Classic UI",
@@ -26537,36 +26537,36 @@
      },
      {
       "name": "Accessibility",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitors",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "History",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analytics",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Knowledge",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "History",
-      "href": "/v2/history",
+      "href": "/history",
       "context": "Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in History and choose Schedule as monitor — then set its interval here and switch it on"
      },
      {
       "name": "From run #1 →",
-      "href": "/v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
+      "href": "/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
      }
     ],
     "controls": [
@@ -26785,7 +26785,7 @@
   {
    "task": "page",
    "page": "monitors",
-   "path": "/v2/watches",
+   "path": "/watches",
    "lang": "de",
    "request_chars": 5450,
    "collection": {
@@ -26823,7 +26823,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Klassische Oberfläche",
@@ -26831,36 +26831,36 @@
      },
      {
       "name": "Barrierefreiheit",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Prüfung",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Überwachung",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Verlauf",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyse",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Wissen",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Verlauf",
-      "href": "/v2/history",
+      "href": "/history",
       "context": "Jede Überwachung wiederholt ein bereits ausgeführtes Audit auf Ihrem Rechner im festgelegten Intervall. Zum Hinzufügen öffnen Sie einen Lauf im Verlauf und wählen Als Überwachung einplanen — legen Sie"
      },
      {
       "name": "Aus Lauf #1 →",
-      "href": "/v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
+      "href": "/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
      }
     ],
     "controls": [
@@ -27080,7 +27080,7 @@
   {
    "task": "page",
    "page": "monitors",
-   "path": "/v2/watches",
+   "path": "/watches",
    "lang": "es",
    "request_chars": 5428,
    "collection": {
@@ -27118,7 +27118,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaz clásica",
@@ -27126,36 +27126,36 @@
      },
      {
       "name": "Accesibilidad",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoría",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historial",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analítica",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conocimiento",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Historial",
-      "href": "/v2/history",
+      "href": "/history",
       "context": "Cada monitor vuelve a ejecutar una auditoría que ya realizaste, en tu equipo, con el intervalo que definas. Para añadir uno, abre una ejecución en el Historial y elige Programar como monitor; luego de"
      },
      {
       "name": "De la ejecución #1 →",
-      "href": "/v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
+      "href": "/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
      }
     ],
     "controls": [
@@ -27374,7 +27374,7 @@
   {
    "task": "page",
    "page": "monitors",
-   "path": "/v2/watches",
+   "path": "/watches",
    "lang": "fr",
    "request_chars": 5515,
    "collection": {
@@ -27412,7 +27412,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface classique",
@@ -27420,36 +27420,36 @@
      },
      {
       "name": "Accessibilité",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Audit",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Surveillances",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Historique",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analyses",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Connaissances",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Historique",
-      "href": "/v2/history",
+      "href": "/history",
       "context": "Chaque surveillance relance un audit que vous avez déjà exécuté, sur votre machine, à l’intervalle choisi. Pour en ajouter une, ouvrez une exécution dans l’Historique et choisissez Planifier comme sur"
      },
      {
       "name": "Depuis l’exécution #1 →",
-      "href": "/v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
+      "href": "/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
      }
     ],
     "controls": [
@@ -27668,7 +27668,7 @@
   {
    "task": "page",
    "page": "monitors",
-   "path": "/v2/watches",
+   "path": "/watches",
    "lang": "it",
    "request_chars": 5473,
    "collection": {
@@ -27706,7 +27706,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interfaccia classica",
@@ -27714,36 +27714,36 @@
      },
      {
       "name": "Accessibilità",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Verifica",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitor",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Cronologia",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Analisi",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conoscenza",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Cronologia",
-      "href": "/v2/history",
+      "href": "/history",
       "context": "Ogni monitor riesegue sulla tua macchina un audit che hai già eseguito, all’intervallo che imposti. Per aggiungerne uno, apri un’esecuzione nella Cronologia e scegli Pianifica come monitor, poi impost"
      },
      {
       "name": "Dall’esecuzione #1 →",
-      "href": "/v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
+      "href": "/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
      }
     ],
     "controls": [
@@ -27963,7 +27963,7 @@
   {
    "task": "page",
    "page": "monitors",
-   "path": "/v2/watches",
+   "path": "/watches",
    "lang": "pt",
    "request_chars": 5417,
    "collection": {
@@ -28001,7 +28001,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Interface clássica",
@@ -28009,36 +28009,36 @@
      },
      {
       "name": "Acessibilidade",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "Auditoria",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "Monitores",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "Histórico",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "Análises",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "Conhecimento",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "Histórico",
-      "href": "/v2/history",
+      "href": "/history",
       "context": "Cada monitor executa novamente, na sua máquina, uma auditoria que você já rodou, no intervalo definido. Para adicionar um, abra uma execução no Histórico e escolha Agendar como monitor; depois defina"
      },
      {
       "name": "Da execução #1 →",
-      "href": "/v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
+      "href": "/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
      }
     ],
     "controls": [
@@ -28258,7 +28258,7 @@
   {
    "task": "page",
    "page": "monitors",
-   "path": "/v2/watches",
+   "path": "/watches",
    "lang": "zh",
    "request_chars": 3628,
    "collection": {
@@ -28296,7 +28296,7 @@
      },
      {
       "name": "ekte",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "经典界面",
@@ -28304,36 +28304,36 @@
      },
      {
       "name": "无障碍",
-      "href": "/v2/accessibility"
+      "href": "/accessibility"
      },
      {
       "name": "检测",
-      "href": "/v2/"
+      "href": "/"
      },
      {
       "name": "监控",
-      "href": "/v2/watches"
+      "href": "/watches"
      },
      {
       "name": "检测历史",
-      "href": "/v2/history"
+      "href": "/history"
      },
      {
       "name": "分析",
-      "href": "/v2/analytics"
+      "href": "/analytics"
      },
      {
       "name": "知识库",
-      "href": "/v2/kb"
+      "href": "/kb"
      },
      {
       "name": "检测历史",
-      "href": "/v2/history",
+      "href": "/history",
       "context": "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在检测历史中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。"
      },
      {
       "name": "来自运行 #1 →",
-      "href": "/v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
+      "href": "/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1"
      }
     ],
     "controls": [
@@ -28551,7 +28551,7 @@
   {
    "task": "translation",
    "page": "monitors",
-   "path": "/v2/watches",
+   "path": "/watches",
    "lang": "all",
    "request_chars": 20671,
    "status": "reviewed",

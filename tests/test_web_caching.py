@@ -33,7 +33,7 @@ def _versioned(html: str) -> list[str]:
 
 
 @pytest.mark.parametrize(
-    "path", ["/v2/", "/v2/history", "/v2/watches", "/v2/kb", "/v2/analytics", "/v2/accessibility"]
+    "path", ["/", "/history", "/watches", "/kb", "/analytics", "/accessibility"]
 )
 def test_v2_pages_version_their_assets_and_are_revalidated(client, path):
     r = client.get(path)
@@ -41,7 +41,7 @@ def test_v2_pages_version_their_assets_and_are_revalidated(client, path):
     assert r.headers["cache-control"] == "no-cache"
     assert r.headers["content-type"].startswith("text/html")
     urls = _versioned(r.text)
-    assert any(u.startswith("/v2/static/ekte.css?v=") for u in urls)
+    assert any(u.startswith("/static/ekte.css?v=") for u in urls)
     assert any(u.startswith("/i18n.js?v=") for u in urls)
     # every local script / stylesheet is versioned; the generated /locales.js is not
     assets = [u for u in _REF.findall(r.text) if re.search(r"\.(?:js|css)(?:\?|$)", u)]
@@ -54,8 +54,8 @@ def test_v2_pages_version_their_assets_and_are_revalidated(client, path):
 
 
 def test_old_addresses_and_spa_fallback_are_versioned_too(client):
-    # "/" and "/history" redirect to their v2 pages (followed here)
-    for path in ("/", "/history", "/v2/some/deep/link", "/some/deep/link"):
+    # /v2/history redirects to /history (followed here)
+    for path in ("/", "/history", "/v2/history", "/v2/some/deep/link", "/some/deep/link"):
         r = client.get(path)
         assert r.status_code == 200
         assert r.headers["cache-control"] == "no-cache"
@@ -63,7 +63,7 @@ def test_old_addresses_and_spa_fallback_are_versioned_too(client):
 
 
 def test_versioned_assets_are_immutable_and_unversioned_ones_revalidate(client):
-    urls = _versioned(client.get("/v2/").text)
+    urls = _versioned(client.get("/").text)
     assert len(urls) >= 8
     for url in urls:
         r = client.get(url)
@@ -88,13 +88,13 @@ def test_root_scripts_keep_their_type_and_answer_304(client):
 
 
 def test_missing_static_file_is_still_a_plain_404(client):
-    r = client.get("/v2/static/nope.js?v=abc")
+    r = client.get("/static/nope.js?v=abc")
     assert r.status_code == 404
     assert r.headers["content-type"].startswith("text/plain")
 
 
 def test_responses_are_gzipped_when_large_enough(client):
-    page = client.get("/v2/")
+    page = client.get("/")
     assert page.headers["content-encoding"] == "gzip"
     assert "accept-encoding" in page.headers["vary"].lower()
     assert client.get("/locales.js").headers["content-encoding"] == "gzip"
@@ -102,12 +102,12 @@ def test_responses_are_gzipped_when_large_enough(client):
     # tiny responses are left alone
     assert "content-encoding" not in client.get("/api/health").headers
     # and nothing is compressed for a client that does not ask for it
-    plain = client.get("/v2/", headers={"Accept-Encoding": "identity"})
+    plain = client.get("/", headers={"Accept-Encoding": "identity"})
     assert "content-encoding" not in plain.headers
 
 
 def test_security_checks_still_run_first(client):
-    r = client.get("/v2/", headers={"Host": "evil.example"})
+    r = client.get("/", headers={"Host": "evil.example"})
     assert r.status_code == 421
     assert "content-encoding" not in r.headers
 
@@ -146,13 +146,13 @@ def test_edited_files_get_a_new_version_without_restart(tmp_path, monkeypatch):
     asset = static / "v2" / "a.css"
     asset.write_text("body{}")
     page = static / "v2" / "p.html"
-    page.write_text('<link rel="stylesheet" href="/v2/static/a.css"><a href="/v2/">x</a>')
+    page.write_text('<link rel="stylesheet" href="/static/a.css"><a href="/">x</a>')
     monkeypatch.setattr(caching, "_STATIC", static)
     monkeypatch.setattr(caching, "_V2", static / "v2")
 
     first = caching.html_page(page).body.decode()
     v1 = re.search(r"a\.css\?v=(\w+)", first)
-    assert v1 and 'href="/v2/"' in first
+    assert v1 and 'href="/"' in first
     assert caching.html_page(page).body.decode() == first  # cached
 
     asset.write_text("body{color:red}")
@@ -162,15 +162,15 @@ def test_edited_files_get_a_new_version_without_restart(tmp_path, monkeypatch):
     v2 = re.search(r"a\.css\?v=(\w+)", second)
     assert v2 and v2[1] != v1[1]
 
-    page.write_text('<script src="/v2/static/a.css"></script>')
+    page.write_text('<script src="/static/a.css"></script>')
     st = page.stat()
     os.utime(page, ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000))
     assert "<script" in caching.html_page(page).body.decode()
 
 
 def test_asset_file_stays_inside_the_static_dirs():
-    assert caching.asset_file("/v2/static/../../server.py") is None
-    assert caching.asset_file("/v2/static/") is None
+    assert caching.asset_file("/static/../../server.py") is None
+    assert caching.asset_file("/static/") is None
     assert caching.asset_file("/locales.js") is None
     assert caching.asset_file("/i18n.js") == Path(caching._STATIC) / "i18n.js"
 
@@ -186,7 +186,7 @@ def _raw_get(client, path: str, **headers: str):
 
 
 @pytest.mark.parametrize(
-    "path", ["/v2/", "/", "/console", "/locales.js", "/locales.js?lang=de"]
+    "path", ["/", "/", "/console", "/locales.js", "/locales.js?lang=de"]
 )
 def test_precompressed_bodies_decompress_to_the_identity_bytes(client, path):
     plain, identity = _raw_get(client, path, **{"Accept-Encoding": "identity"})
@@ -224,13 +224,13 @@ def test_refusing_gzip_is_honoured_by_the_middleware_too(client):
 
 
 def test_precompressed_bodies_are_built_once(client, monkeypatch):
-    client.get("/v2/")
+    client.get("/")
     client.get("/locales.js")
     calls = []
     real = gzip.compress
     monkeypatch.setattr(gzip, "compress", lambda *a, **k: calls.append(1) or real(*a, **k))
     for _ in range(3):
-        assert client.get("/v2/").headers["content-encoding"] == "gzip"
+        assert client.get("/").headers["content-encoding"] == "gzip"
         assert client.get("/locales.js").headers["content-encoding"] == "gzip"
     assert not calls
 

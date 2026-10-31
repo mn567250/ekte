@@ -7,7 +7,7 @@
 ``--results`` takes the per-step results the a11y suite writes with
 ``EKTE_A11Y_RESULTS=<path>`` (tests/a11y/results.py) and writes
 ``ekte/web/static/v2/bitv-report.json`` (``--out`` moves it), which the page
-``/v2/accessibility`` renders: per test step (the 50 WCAG 2.1 A/AA criteria,
+``/accessibility`` renders: per test step (the 50 WCAG 2.1 A/AA criteria,
 numbered as EN 301 549 / BITV 9.x.x.x) how it is tested and the latest result.
 ``--llm`` merges a review of the texts (default: ``./a11y-llm-review.json``
 when it exists, as tests/a11y/llm_review.py writes it). A completed LLM review

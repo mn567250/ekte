@@ -157,5 +157,5 @@ def test_monitor_this_keeps_the_runs_claimed_dimension(tmp_path, monkeypatch, cl
     [w] = client.get("/api/watches").json()
     assert w["embedding_dimensions"] == 1024
     # the audit page's ?rerun= prefills the claimed dimension from the report
-    html = client.get("/v2/").text
+    html = client.get("/").text
     assert 'rep.embedding_dimensions > 0 ? String(rep.embedding_dimensions)' in html

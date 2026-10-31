@@ -43,7 +43,7 @@
   "Stored encrypted": "Stockée chiffrée",
   "That is not the master key.": "Ce n'est pas la clé maîtresse.",
   "The master key encrypts the relay API keys stored on this machine. ekte never writes it to disk: after every restart of ekte serve you enter it again before monitors run. Keep it in a password manager or another safe place — not in ekte's data folder. Losing it means re-entering every monitor's API key.": "La clé maîtresse chiffre les clés API des relais enregistrées sur cette machine. ekte ne l'écrit jamais sur le disque : après chaque redémarrage de ekte serve, vous la saisissez à nouveau avant que les surveillances ne s'exécutent. Conservez-la dans un gestionnaire de mots de passe ou un autre endroit sûr — pas dans le répertoire de données de ekte. La perdre oblige à saisir à nouveau la clé API de chaque surveillance.",
-  "The master key is locked or not created yet: enter or create it on the new Monitors page (/v2/watches).": "La clé maîtresse est verrouillée ou pas encore créée : saisissez-la ou créez-la sur la nouvelle page Surveillances (/v2/watches).",
+  "The master key is locked or not created yet: enter or create it on the new Monitors page (/watches).": "La clé maîtresse est verrouillée ou pas encore créée : saisissez-la ou créez-la sur la nouvelle page Surveillances (/watches).",
   "The master key is locked — enter it first.": "La clé maîtresse est verrouillée — saisissez-la d'abord.",
   "The master key was lost or changed, so the stored key cannot be decrypted": "La clé maîtresse a été perdue ou changée, la clé enregistrée ne peut donc pas être déchiffrée",
   "The master key's state changed meanwhile — reload the page and try again.": "L'état de la clé maîtresse a changé entre-temps — rechargez la page et réessayez.",

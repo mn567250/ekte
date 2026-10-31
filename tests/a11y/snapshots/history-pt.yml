@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Acessibilidade":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
     - link "Monitores":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Histórico":
-      - /url: /v2/history
+      - /url: /history
     - link "Análises":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conhecimento":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Histórico e tendências das auditorias" [level=1]
   - paragraph: Todas as verificações que executou neste computador, agrupadas por «intermediário + modelo declarado», com uma linha de tendência da pontuação de saúde; clique numa linha para expandir esse relatório.

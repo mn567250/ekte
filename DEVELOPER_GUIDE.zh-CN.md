@@ -259,12 +259,11 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 
 `ekte/web/server.py` 是由 `create_app()` 创建的 FastAPI 应用：
 
-- **页面。** Web 界面（`/v2/`、`/v2/history`、`/v2/watches`、`/v2/analytics`、`/v2/kb`、
-  `/v2/accessibility`）是静态 HTML。没有工具页面：嵌入和
-  重排检测从检测页面的接口类型选择器开始（`/v2/?surface=embedding|rerank`），`/v2/tools` 提供一个小页面，
-  把旧链接转到那里（`#rerank` 选择重排，`?rerun=` 会一并传递）。
-  已移除的经典界面的地址（`/`、`/history`、`/watches`、`/tools`、`/console`）会连同查询字符串
-  重定向（308）到对应的 v2 页面。
+- **页面。** Web 界面（`/`、`/history`、`/watches`、`/analytics`、`/kb`、
+  `/accessibility`）是在根路径提供的静态 HTML，脚本和样式位于 `/static/`。没有工具页面：嵌入和
+  重排检测从检测页面的接口类型选择器开始（`/?surface=embedding|rerank`）。在 1.0.0 之前，以前的地址会连同查询字符串
+  重定向（308）到根路径下的页面：`/v2/…`（`/v2/tools` 转到 `/?surface=embedding`，`#rerank` 选择重排）
+  以及已移除的经典界面的 `/tools` 和 `/console`。这些重定向已弃用，将在 1.0.0 中移除。
 - **API。** `/api/jobs…` 运行检测（见下文）；`/api/models` 列出中转站的模型；
   `/api/report/export` 渲染报告；`/api/history…`、`/api/watches…`、`/api/kb…` 和
   `/api/analytics…` 为其他页面提供服务。`/api/audit/stream`（通过 SSE 推送的一次检测）、
@@ -361,7 +360,7 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 只保存一个校验值（`secret_meta`），用来拒绝错误的密钥。更换密钥时，所有已保存的密钥会在同一个事务中
 重新加密并改写校验值。主密钥只存在于一个进程的内存中，因此每个数据目录只运行一个服务器。
 
-`ekte/legacy.py` 让改名前的安装继续可用：每个 `EKTE_*` 设置都通过 `legacy.getenv` 读取，未设置时回退到旧的 `ZING_*` 名称（在 stderr 上提示一次）；当只有旧目录存在时，`datadir.data_dir()` 会把 `~/.zing` 一次性复制到 `~/.ekte`（SQLite 文件通过备份 API 复制，先写入同级临时目录再重命名）。`~/.zing` 永远不会被修改或删除。`lang.js` 以同样方式把浏览器中的 `zing.*` 设置复制为 `ekte.*`，服务器在 `ekte_*` cookie 出现之前仍会读取 `zing_lang` / `zing_ui`。
+`ekte/legacy.py` 让改名前的安装继续可用：每个 `EKTE_*` 设置都通过 `legacy.getenv` 读取，未设置时回退到旧的 `ZING_*` 名称（在 stderr 上提示一次）；当只有旧目录存在时，`datadir.data_dir()` 会把 `~/.zing` 一次性复制到 `~/.ekte`（SQLite 文件通过备份 API 复制，先写入同级临时目录再重命名）。`~/.zing` 永远不会被修改或删除。`lang.js` 以同样方式把浏览器中的 `zing.*` 设置复制为 `ekte.*`，服务器在 `ekte_*` cookie 出现之前仍会读取 `zing_lang` / `zing_ui`。以上全部已弃用，将在 1.0.0 中移除（提示中会写明该版本）；ekte 绝不会删除旧的 `~/.zing`。
 
 ## 参与贡献
 

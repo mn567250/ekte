@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibilità":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
     - link "Monitor":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Cronologia":
-      - /url: /v2/history
+      - /url: /history
     - link "Analisi":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conoscenza":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Rapporto di conformità sull'accessibilità" [level=1]
   - paragraph: "Ogni passo di verifica di BITV 2.0 ed EN 301549 (capitolo 9, equivalente a WCAG 2.1 livelli A e AA): come viene verificato e l'ultimo risultato dei test di accessibilità automatici."
@@ -58,11 +58,11 @@
     - term: Pagine
     - definition:
       - code: /v2/
-      - code: /v2/history
-      - code: /v2/watches
-      - code: /v2/kb
-      - code: /v2/analytics
-      - code: /v2/accessibility
+      - code: /history
+      - code: /watches
+      - code: /kb
+      - code: /analytics
+      - code: /accessibility
   - region "Copertura":
     - heading "Copertura" [level=2]
     - heading "Risultato complessivo" [level=3]

@@ -333,14 +333,14 @@ descodificação (cabeçalhos de imagem, WAV) usa apenas a biblioteca padrão.
 
 `ekte/web/server.py` é uma app FastAPI criada por `create_app()`:
 
-- **Páginas.** A interface web (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) é HTML estático. Não há página
-  Ferramentas: as auditorias de embeddings e rerank começam na página de
-  auditoria com o seletor de tipo de endpoint (`/v2/?surface=embedding|rerank`),
-  e `/v2/tools` serve uma pequena página que redireciona para lá os links antigos
-  (`#rerank` escolhe rerank, `?rerun=` é passado adiante). Os endereços da
-  interface clássica removida (`/`, `/history`, `/watches`, `/tools`, `/console`)
-  redirecionam (308) para as suas páginas v2, com a query string.
+- **Páginas.** A interface web (`/`, `/history`, `/watches`,
+  `/analytics`, `/kb`, `/accessibility`) é HTML estático servido na raiz; os scripts e
+  estilos ficam em `/static/`. Não há página Ferramentas: as auditorias de embeddings e rerank
+  começam na página de auditoria com o seletor de tipo de endpoint
+  (`/?surface=embedding|rerank`). Até à 1.0.0 os endereços anteriores redirecionam (308) para a
+  página na raiz, com a query string: `/v2/…` (`/v2/tools` vai para
+  `/?surface=embedding`, e `#rerank` escolhe rerank) e `/tools` e `/console` da interface
+  clássica removida. Estes redirecionamentos estão obsoletos e são removidos na 1.0.0.
 - **API.** `/api/jobs…` executa as auditorias (ver abaixo); `/api/models` lista
   os modelos de um relay; `/api/report/export` renderiza um relatório;
   `/api/history…`, `/api/watches…`, `/api/kb…` e `/api/analytics…` servem as
@@ -577,7 +577,7 @@ para `~/.ekte` uma única vez quando só existe o diretório antigo (ficheiros
 SQLite através da API de backup, para um diretório temporário ao lado que depois
 é renomeado). `~/.zing` nunca é alterado nem apagado. `lang.js` copia da mesma
 forma as definições `zing.*` do navegador para `ekte.*`, e o servidor continua a
-ler os cookies `zing_lang` / `zing_ui` enquanto os `ekte_*` não existirem.
+ler os cookies `zing_lang` / `zing_ui` enquanto os `ekte_*` não existirem. Tudo isto está obsoleto e é removido na 1.0.0 (os avisos indicam essa versão); o ekte nunca apaga um `~/.zing` antigo.
 
 ## Contribuir
 

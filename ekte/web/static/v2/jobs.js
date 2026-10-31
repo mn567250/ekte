@@ -125,10 +125,10 @@
           "<b>" + (q ? "" : pct + "%") + "</b></div>"
         : "";
       var live = isActive(j)
-        ? '<a class="btn sm pri" href="/v2/?job=' + encodeURIComponent(j.id) + '">' + ico("eye") + esc(T("实时查看", "Watch live")) + "</a>"
+        ? '<a class="btn sm pri" href="/?job=' + encodeURIComponent(j.id) + '">' + ico("eye") + esc(T("实时查看", "Watch live")) + "</a>"
         : "";
       var open = (mon
-        ? '<a class="btn sm" href="/v2/watches#w-' + esc(j.watch_id) + '">' + ico("bell") + esc(T("打开监控", "Open monitor")) + "</a>"
+        ? '<a class="btn sm" href="/watches#w-' + esc(j.watch_id) + '">' + ico("bell") + esc(T("打开监控", "Open monitor")) + "</a>"
         : "") + live;
       var cancel = isActive(j)
         ? '<button type="button" class="btn sm danger" data-jcancel="' + esc(j.id) + '">' + ico("x") + esc(T("取消", "Cancel")) + "</button>"

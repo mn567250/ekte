@@ -43,7 +43,7 @@
   "Stored encrypted": "Lagret kryptert",
   "That is not the master key.": "Det er ikke hovednøkkelen.",
   "The master key encrypts the relay API keys stored on this machine. ekte never writes it to disk: after every restart of ekte serve you enter it again before monitors run. Keep it in a password manager or another safe place — not in ekte's data folder. Losing it means re-entering every monitor's API key.": "Hovednøkkelen krypterer relé-API-nøklene som er lagret på denne maskinen. ekte skriver den aldri til disk: etter hver omstart av ekte serve oppgir du den igjen før overvåkinger kjører. Oppbevar den i en passordbehandler eller et annet trygt sted — ikke i ektes datamappe. Mister du den, må du oppgi API-nøkkelen for hver overvåking på nytt.",
-  "The master key is locked or not created yet: enter or create it on the new Monitors page (/v2/watches).": "Hovednøkkelen er låst eller ikke opprettet ennå: oppgi eller opprett den på den nye Overvåking-siden (/v2/watches).",
+  "The master key is locked or not created yet: enter or create it on the new Monitors page (/watches).": "Hovednøkkelen er låst eller ikke opprettet ennå: oppgi eller opprett den på den nye Overvåking-siden (/watches).",
   "The master key is locked — enter it first.": "Hovednøkkelen er låst — oppgi den først.",
   "The master key was lost or changed, so the stored key cannot be decrypted": "Hovednøkkelen gikk tapt eller ble endret, så den lagrede nøkkelen kan ikke dekrypteres",
   "The master key's state changed meanwhile — reload the page and try again.": "Hovednøkkelens tilstand er endret i mellomtiden — last siden på nytt og prøv igjen.",

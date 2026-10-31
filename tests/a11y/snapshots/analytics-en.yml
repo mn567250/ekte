@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibility":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Main navigation":
     - link "Audit":
       - /url: /v2/
     - link "Monitors":
-      - /url: /v2/watches
+      - /url: /watches
     - link "History":
-      - /url: /v2/history
+      - /url: /history
     - link "Analytics":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Knowledge":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Audit analytics" [level=1]
   - paragraph: "Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing."

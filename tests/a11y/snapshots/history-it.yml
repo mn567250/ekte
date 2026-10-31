@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibilità":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
     - link "Monitor":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Cronologia":
-      - /url: /v2/history
+      - /url: /history
     - link "Analisi":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conoscenza":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Cronologia e tendenze delle verifiche" [level=1]
   - paragraph: Tutte le verifiche eseguite su questa macchina, raggruppate per «intermediario + modello dichiarato», con una linea di tendenza del punteggio di salute; fai clic su una riga per espandere il rapporto.

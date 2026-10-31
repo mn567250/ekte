@@ -285,8 +285,8 @@ def test_rerank_endpoint_runs_the_runner_and_saves(client, monkeypatch):
 def test_embedding_and_rerank_audits_start_on_the_audit_page(client):
     # the Tools page is gone: its address opens the audit page's embedding surface
     r = client.get("/tools", follow_redirects=False)
-    assert r.status_code == 308 and r.headers["location"] == "/v2/?surface=embedding"
-    assert 'data-page="audit"' in client.get("/v2/?surface=rerank").text
+    assert r.status_code == 308 and r.headers["location"] == "/?surface=embedding"
+    assert 'data-page="audit"' in client.get("/?surface=rerank").text
 
 
 # ----- /api/models: relay model listing for the picker's custom provider ----- #
@@ -375,6 +375,6 @@ def test_models_endpoint_bad_base_url_is_400(client):
 
 
 def test_relay_config_lists_the_relays_models(client):
-    r = client.get("/v2/static/relaycfg.js")
+    r = client.get("/static/relaycfg.js")
     assert r.status_code == 200
     assert 'fetch("/api/models"' in r.text

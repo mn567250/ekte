@@ -18,7 +18,7 @@ from playwright.sync_api import Page
 from tests.a11y.filter_panel import filter_panel_issues
 from tests.a11y.harness import assert_no_issues, settle, track_network
 
-PATH = "/v2/analytics"
+PATH = "/analytics"
 
 
 def _open(open_page: Any, fragment: str = "", init: str = "", clipboard: bool = False,

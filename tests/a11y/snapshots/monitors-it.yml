@@ -21,24 +21,24 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibilità":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navigazione principale":
     - link "Verifica":
       - /url: /v2/
     - link "Monitor":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Cronologia":
-      - /url: /v2/history
+      - /url: /history
     - link "Analisi":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conoscenza":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Metti una sentinella programmata sul tuo intermediario" [level=1]
   - paragraph:
     - text: Ogni monitor riesegue sulla tua macchina un audit che hai già eseguito, all’intervallo che imposti. Per aggiungerne uno, apri un’esecuzione nella
     - link "Cronologia":
-      - /url: /v2/history
+      - /url: /history
     - text: e scegli Pianifica come monitor, poi imposta qui l’intervallo e attivalo. Quando il rischio supera la soglia o peggiora rispetto all’ultima volta, ekte avvisa i tuoi webhook (Slack / Feishu / DingTalk / JSON generico).
   - status:
     - text: Le chiavi API non vengono salvate Le chiavi inserite restano solo nella memoria di ekte serve e non vengono mai scritte su disco; reinseriscile dopo un riavvio. I riferimenti env:VAR continuano a funzionare.
@@ -134,7 +134,7 @@
         - code: openai/gpt-4o
         - text: fissato 1 ott 2026, 12:00
       - 'link "Dall’esecuzione #1 →"':
-        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Completa la configurazione per attivarlo":
         - heading "Completa la configurazione per attivarlo" [level=4]
         - paragraph: La configurazione proviene dall’esecuzione nella Cronologia. Imposta ogni quanto viene eseguito, poi attivalo.

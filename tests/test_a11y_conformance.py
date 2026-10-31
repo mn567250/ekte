@@ -83,7 +83,7 @@ def _results():
                                                           "message": "page scrolls horizontally", "axe": None},
         "tests/a11y/test_visual.py::test_forced[kb]": {"steps": ["11.7"], "outcome": "passed", "axe": None},
     }
-    meta = {"langs": ["en", "de"], "themes": ["light"], "pages": {"kb": "/v2/kb"}, "axe_version": "4.13.0"}
+    meta = {"langs": ["en", "de"], "themes": ["light"], "pages": {"kb": "/kb"}, "axe_version": "4.13.0"}
     return results.build_results(tests, meta)
 
 
@@ -140,7 +140,7 @@ def test_shard_results_merge_into_the_results_of_one_run(tmp_path, monkeypatch):
                                                           "message": "page scrolls horizontally", "axe": None},
         "tests/a11y/test_visual.py::test_forced[kb]": {"steps": ["11.7", "9.1.4.3"], "outcome": "passed", "axe": None},
     }
-    meta = {"langs": ["en", "de"], "themes": ["light"], "pages": {"kb": "/v2/kb"}, "axe_version": "4.13.0"}
+    meta = {"langs": ["en", "de"], "themes": ["light"], "pages": {"kb": "/kb"}, "axe_version": "4.13.0"}
     names = sorted(tests)
     # dealt like the conftest does: shard k of n takes every n-th test
     parts = [results.build_results({t: tests[t] for t in names[k::2]}, meta) for k in range(2)]

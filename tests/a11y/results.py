@@ -5,7 +5,7 @@ Every a11y test names the BITV 2.0 / EN 301 549 steps it decides with
 ``EKTE_A11Y_RESULTS=<path>`` set, this plugin writes, after the session, for
 each step the tests that ran for it with their outcome and a short failure
 summary. ``python -m tests.a11y.conformance --results <path>`` turns that into
-the conformance report shown at ``/v2/accessibility``.
+the conformance report shown at ``/accessibility``.
 
 New test files need nothing beyond the marker: the plugin reads it from every
 collected item, so tests added later are picked up automatically.

@@ -6,12 +6,12 @@
 <title data-en="ekte — accessibility">ekte — 无障碍</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
-<script src="/v2/static/theme.js"></script>
-<link rel="icon" href="/v2/static/favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/ekte.css" />
-<link rel="stylesheet" href="/v2/static/charts.css" />
-<link rel="stylesheet" href="/v2/static/chartmotion.css" />
+<script src="/static/theme.js"></script>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/static/tokens.css" />
+<link rel="stylesheet" href="/static/ekte.css" />
+<link rel="stylesheet" href="/static/charts.css" />
+<link rel="stylesheet" href="/static/chartmotion.css" />
 <style>
   /* ---- accessibility conformance report (v2) — page-only rules; colours via ekte.css tokens ---- */
   .card + .card, .card + h2 { margin-top: 20px; }
@@ -204,9 +204,9 @@
 </div>
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
-<script src="/v2/static/nav.js"></script>
-<script src="/v2/static/charts.js"></script>
-<script src="/v2/static/chartmotion.js"></script>
+<script src="/static/nav.js"></script>
+<script src="/static/charts.js"></script>
+<script src="/static/chartmotion.js"></script>
 <script>
 (function () {
   "use strict";
@@ -489,7 +489,7 @@
   window.addEventListener("ekte:lang", paintAll);
 
   paintAll();
-  fetch("/v2/static/bitv-report.json", { cache: "no-cache" })
+  fetch("/static/bitv-report.json", { cache: "no-cache" })
     .then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();

@@ -308,7 +308,7 @@ def test_consistent_identification(open_page, lang: str) -> None:
 
     Each page contributes the set of (role, name) it uses for a function in a
     landmark; one page may use several (the logo and the "Audit" link both go
-    to /v2/, the audit form has two model pickers). Two pages clash when they
+    to /, the audit form has two model pickers). Two pages clash when they
     share no (role, name) for the same function: the same thing is called
     differently."""
     found: dict[str, dict[str, set[tuple[str, str]]]] = {}

@@ -50,7 +50,7 @@ it may change in any release without notice.
 | GitHub Action inputs and outputs (`action.yml`) | Public | [GitHub Action](#surface-action) |
 | Data directory and its databases | Public as an upgrade guarantee only | [Data directory](#surface-data) |
 | HTTP API under `/api/` | Internal until decided by #22 | [HTTP API](#surface-http-api) |
-| Web UI addresses (URLs) | Internal until decided by #28 | [Web UI addresses](#surface-web-addresses) |
+| Web UI page addresses (URLs) | Public | [Web UI addresses](#surface-web-addresses) |
 | Python modules (`import ekte...`) | Internal | [Python modules](#surface-python) |
 | Console text, Markdown/HTML/PDF report layout, web UI look and wording | Internal | [Breaking](#breaking) |
 | Knowledge-base contents and scoring weights | Internal (data, not interface) | [Breaking](#breaking) |
@@ -95,9 +95,28 @@ breaking, even if someone relied on the bug.
 - A security fix may break a public surface without a deprecation period when
   there is no safe way to keep it; the changelog says so.
 - Internal surfaces need no deprecation.
+- A removal date can be fixed in advance: see the
+  [compatibility layers](#deprecation-zing).
 
-The zing-era `ZING_*` environment variables and the `~/.zing` data directory are
-deprecated in this sense; their removal is planned by #26.
+<a id="deprecation-zing"></a>
+### Compatibility layers with a fixed removal date
+
+Two compatibility layers are deprecated now and **removed in 1.0.0** (the first
+release candidate, 1.0.0rc1, is already without them). Until then every part
+keeps working, and its deprecation message names the version **1.0.0**. They
+are not part of the 1.x promise.
+
+| Part | Today | Removed in |
+|---|---|---|
+| `ZING_*` environment-variable fallback (when the `EKTE_*` name is unset) | works, one notice on stderr | 1.0.0 |
+| Copy of an old `~/.zing` data directory to `~/.ekte` | works once, notice on stderr | 1.0.0 |
+| Browser carry-over: `zing.*` settings, the `zing_lang` / `zing_ui` cookies, the master key saved under its zing name | works, notice in the browser console (settings) | 1.0.0 |
+| Classic UI addresses (`/tools`, `/console`) | redirect (308) to the audit page | 1.0.0 |
+| `/v2/…` page addresses (see [Web UI addresses](#surface-web-addresses)) | redirect (308) to the page at the root | 1.0.0 |
+
+**Your data stays untouched.** ekte never deletes an old `~/.zing` directory: not
+after the copy, and not when the copy is removed in 1.0.0. After the removal,
+set `EKTE_DATA_DIR=~/.zing` or copy the directory yourself to keep using it.
 
 <a id="python"></a>
 ## Supported Python versions
@@ -240,10 +259,33 @@ until then**: it may change in any release.
 <a id="surface-web-addresses"></a>
 ## Web UI addresses
 
-To be decided by #28 (final addresses; serving the UI at the root). **Internal
-until then**: pages may move in any release. The default bind address (loopback
-`127.0.0.1:8000`) and the `ekte serve` options are public as part of the
-[CLI](#surface-cli).
+Public. Every page has one address, without a version prefix; the audit page
+is the root. A page address does not change within a major version.
+
+| Page | Address |
+|---|---|
+| Audit (also embedding and rerank audits: `/?surface=embedding\|rerank`, re-run: `/?rerun=<history id>`, a background audit: `/?job=<id>`) | `/` |
+| Monitors | `/watches` |
+| History | `/history` |
+| Analytics | `/analytics` |
+| Knowledge base | `/kb` |
+| Accessibility conformance report | `/accessibility` |
+
+- A path that is no page and no API address opens the audit page.
+- The query parameters named above (`surface`, `rerun`, `job`) are public with the page.
+- **Assets** (scripts, stylesheets, icons under `/static/` and the top-level
+  scripts) are internal: their addresses may change in any release.
+- **Deprecated until 1.0.0:** the pages were served under `/v2/` up to 0.32.
+  Every `/v2/…` page address (`/v2/`, `/v2/history`, `/v2/watches`, `/v2/kb`,
+  `/v2/analytics`, `/v2/accessibility`, and the retired `/v2/tools`) redirects
+  permanently (308) to the page at the root, keeping the query string, and so do
+  the classic UI's `/tools` and `/console` (straight to the new address, in one
+  step). These redirects are removed in **1.0.0**; update bookmarks, links and
+  scripts before then. The old `/v2/static/…` asset addresses already stopped
+  working.
+- The local-only protections (loopback bind, `Host` and `Origin` checks) are
+  unchanged. The default bind address (`127.0.0.1:8000`) and the `ekte serve`
+  options are public as part of the [CLI](#surface-cli).
 
 <a id="surface-python"></a>
 ## Python modules

@@ -36,7 +36,7 @@
  * Theming: every colour in the injected CSS is a --zp-* custom property whose
  * default (declared with zero specificity, see CSS below) is a neutral built-in look.
  * A page restyles the panel by setting those properties on .zp-section,
- * .zp-live and .zp-tip (the tooltip lives on <body>), e.g. /v2/static/perf.css.
+ * .zp-live and .zp-tip (the tooltip lives on <body>), e.g. /static/perf.css.
  *
  * Accessibility: the metric tabs are an ARIA tablist (arrow keys, Home, End);
  * each chart has a summary as its accessible name, and a data table with what

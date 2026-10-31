@@ -43,7 +43,7 @@
   "Stored encrypted": "Guardada encriptada",
   "That is not the master key.": "Essa não é a chave mestra.",
   "The master key encrypts the relay API keys stored on this machine. ekte never writes it to disk: after every restart of ekte serve you enter it again before monitors run. Keep it in a password manager or another safe place — not in ekte's data folder. Losing it means re-entering every monitor's API key.": "A chave mestra encripta as chaves API dos relays guardadas nesta máquina. O ekte nunca a escreve no disco: após cada reinício do ekte serve volta a introduzi-la antes de os monitores serem executados. Guarde-a num gestor de palavras-passe ou noutro local seguro — não no diretório de dados do ekte. Perdê-la significa voltar a introduzir a chave API de cada monitor.",
-  "The master key is locked or not created yet: enter or create it on the new Monitors page (/v2/watches).": "A chave mestra está bloqueada ou ainda não foi criada: introduza-a ou crie-a na nova página Monitores (/v2/watches).",
+  "The master key is locked or not created yet: enter or create it on the new Monitors page (/watches).": "A chave mestra está bloqueada ou ainda não foi criada: introduza-a ou crie-a na nova página Monitores (/watches).",
   "The master key is locked — enter it first.": "A chave mestra está bloqueada — introduza-a primeiro.",
   "The master key was lost or changed, so the stored key cannot be decrypted": "A chave mestra perdeu-se ou mudou, por isso a chave guardada não pode ser desencriptada",
   "The master key's state changed meanwhile — reload the page and try again.": "O estado da chave mestra mudou entretanto — recarregue a página e tente novamente.",

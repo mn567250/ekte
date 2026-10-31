@@ -1,7 +1,7 @@
 /* ekte web UI v2 — the audit report view, shared by the audit and history pages.
  *
- *   <link rel="stylesheet" href="/v2/static/report.css" />
- *   <script src="/v2/static/report.js"></script>   (after lang.js, i18n.js, icons.js,
+ *   <link rel="stylesheet" href="/static/report.css" />
+ *   <script src="/static/report.js"></script>   (after lang.js, i18n.js, icons.js,
  *                                                   and perf.js if performance is shown)
  *
  *   EkteReport.render(el, report, {

@@ -6,14 +6,14 @@
 <title data-en="ekte — audit history">ekte — 检测历史</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
-<script src="/v2/static/theme.js"></script>
-<link rel="icon" href="/v2/static/favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/ekte.css" />
-<link rel="stylesheet" href="/v2/static/filterpanel.css" />
-<link rel="stylesheet" href="/v2/static/report.css" />
-<link rel="stylesheet" href="/v2/static/perf.css" />
-<link rel="stylesheet" href="/v2/static/chartmotion.css" />
+<script src="/static/theme.js"></script>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/static/tokens.css" />
+<link rel="stylesheet" href="/static/ekte.css" />
+<link rel="stylesheet" href="/static/filterpanel.css" />
+<link rel="stylesheet" href="/static/report.css" />
+<link rel="stylesheet" href="/static/perf.css" />
+<link rel="stylesheet" href="/static/chartmotion.css" />
 <style>
   /* History page. Tokens only (ekte.css); light + dark.
    *
@@ -261,12 +261,12 @@
 </div>
 <script src="/i18n.js"></script>
 <script src="/perf.js"></script>
-<script src="/v2/static/chartmotion.js"></script>
+<script src="/static/chartmotion.js"></script>
 <script src="/icons.js"></script>
-<script src="/v2/static/nav.js"></script>
-<script src="/v2/static/notice.js"></script>
-<script src="/v2/static/filterpanel.js"></script>
-<script src="/v2/static/report.js"></script>
+<script src="/static/nav.js"></script>
+<script src="/static/notice.js"></script>
+<script src="/static/filterpanel.js"></script>
+<script src="/static/report.js"></script>
 <script>
 (function () {
   "use strict";
@@ -728,7 +728,7 @@
     if (!b) return;
     var act = b.getAttribute("data-note-act");
     if (act === "retry") load();
-    else if (act === "unlock") location.href = "/v2/watches";
+    else if (act === "unlock") location.href = "/watches";
   });
   window.addEventListener("ekte:lang", paintNote);
 
@@ -756,7 +756,7 @@
     if (!state.rows) return;
     if (!state.rows.length) {
       host.innerHTML = '<div class="empty-box"><div class="ic">' + ico("folder") + "</div><p>" +
-        esc(T("还没有检测记录。", "No audits recorded yet.")) + '</p><a class="btn pri" href="/v2/">' +
+        esc(T("还没有检测记录。", "No audits recorded yet.")) + '</p><a class="btn pri" href="/">' +
         esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a></div>";
       return;
     }
@@ -1039,7 +1039,7 @@
   function rerun(id) {
     var row = (state.rows || []).filter(function (r) { return String(r.id) === String(id); })[0];
     var s = row ? surfaceOf(row) : "chat", q = "rerun=" + encodeURIComponent(id);
-    location.href = RERUN_SURFACES.hasOwnProperty(s) ? "/v2/?surface=" + s + "&" + q : "/v2/?" + q;
+    location.href = RERUN_SURFACES.hasOwnProperty(s) ? "/?surface=" + s + "&" + q : "/?" + q;
   }
 
   function rerunBtnHTML(r) {
@@ -1106,7 +1106,7 @@
       .then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (j) {
           if (!r.ok || !j.id) throw new Error((j && j.error) || "HTTP " + r.status);
-          location.href = "/v2/watches#w-" + j.id;
+          location.href = "/watches#w-" + j.id;
         });
       })
       .catch(function (e) {
