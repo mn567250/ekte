@@ -111,14 +111,14 @@ def test_migrate_command(tmp_path):
     runner = CliRunner()
     assert runner.invoke(app, ["config", "migrate", str(p), "--check"]).exit_code == 1
     assert runner.invoke(app, ["config", "migrate", str(p)]).exit_code == 0
-    assert "version: 1" in p.read_text() and (tmp_path / "ekte.yaml.bak").exists()
+    assert "version: 1" in p.read_text(encoding="utf-8") and (tmp_path / "ekte.yaml.bak").exists()
     assert runner.invoke(app, ["config", "migrate", str(p), "--check"]).exit_code == 0
 
 
 def test_init_writes_current_version(tmp_path):
     p = tmp_path / "c.yaml"
     assert CliRunner().invoke(app, ["init", "--path", str(p)]).exit_code == 0
-    assert f"version: {configfile.CURRENT_VERSION}" in p.read_text()
+    assert f"version: {configfile.CURRENT_VERSION}" in p.read_text(encoding="utf-8")
 
 
 def test_published_schema_is_current():

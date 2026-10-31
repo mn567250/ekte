@@ -386,12 +386,12 @@ def test_cli_github_output(capsys, tmp_path, monkeypatch):
     target = tmp_path / "out"
     monkeypatch.setenv("GITHUB_OUTPUT", str(target))
     affected_cli.main(["--files", "ekte/web/static/v2/history.html", "--github-output"])
-    lines = dict(line.split("=", 1) for line in target.read_text().splitlines())
+    lines = dict(line.split("=", 1) for line in target.read_text(encoding="utf-8").splitlines())
     assert lines["pages"] == "history" and lines["full"] == "false" and lines["run"] == "true"
     assert json.loads(lines["matrix"]) == {"include": matrix(scope("ekte/web/static/v2/history.html"))}
     target.unlink()
     affected_cli.main(["--files", "README.md", "--github-output"])
-    lines = dict(line.split("=", 1) for line in target.read_text().splitlines())
+    lines = dict(line.split("=", 1) for line in target.read_text(encoding="utf-8").splitlines())
     assert lines["run"] == "false" and lines["pages"] == "" and json.loads(lines["matrix"]) == {"include": []}
 
 
@@ -403,7 +403,7 @@ def _collect(**env: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-m", "pytest", "tests/a11y", "-m", "a11y", "--collect-only", "-q", "-p", "no:cacheprovider",
          "-p", "no:xdist"],
-        cwd=ROOT, capture_output=True, text=True, env={**os.environ, **env}, timeout=120,
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", env={**os.environ, **env}, timeout=120,
     )
 
 

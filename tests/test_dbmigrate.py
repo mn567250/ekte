@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
 import threading
 
 import pytest
@@ -232,7 +233,8 @@ def test_backup_is_a_consistent_copy_named_with_version_and_pruned(data):
     assert all(p.name.startswith("t.db.v0.") and p.name.endswith(".bak") for p in kept)
     with sqlite3.connect(kept[0]) as c:
         assert c.execute("SELECT x FROM keep").fetchone()[0] == 42
-    assert (kept[0].stat().st_mode & 0o777) == 0o600
+    if sys.platform != "win32":  # POSIX file modes have no effect on Windows
+        assert (kept[0].stat().st_mode & 0o777) == 0o600
     # The newest backups are the ones kept.
     assert [p.name for p in kept] == sorted(created[-1], reverse=True)
 

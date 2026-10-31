@@ -221,6 +221,10 @@ ekte has three eras:
 
 ### Fixed
 
+- **Windows: analytics time zones.** Windows ships no IANA time zone
+  database, so the analytics views failed with "unknown time zone". ekte now
+  depends on `tzdata` on Windows.
+
 - The analytics backfill's backlog query now always uses the
   `idx_history_metrics_version` index. SQLite 3.53 planned a full scan of
   `history_metrics` without it.

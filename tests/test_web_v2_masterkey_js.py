@@ -55,7 +55,7 @@ function run(statuses, answer) {
 def test_masterkey_logic_and_vault_storage():
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v2"
     out = json.loads(subprocess.run(
-        ["node", "-e", _JS, str(static)], capture_output=True, text=True, check=True,
+        ["node", "-e", _JS, str(static)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     # A missing key opens setup, a locked one the unlock dialog; otherwise nothing.
     assert out["decide"] == ["setup", "unlock", None, None, None]

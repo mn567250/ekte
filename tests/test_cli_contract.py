@@ -157,7 +157,7 @@ def test_exit_4_unexpected_error(monkeypatch, capsys):
 
 
 def test_python_dash_m_ekte_runs():
-    res = subprocess.run([sys.executable, "-m", "ekte", "data-dir"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "-m", "ekte", "data-dir"], capture_output=True, text=True, encoding="utf-8")
     assert res.returncode == 0 and res.stdout.strip()
 
 

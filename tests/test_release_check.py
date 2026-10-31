@@ -131,7 +131,7 @@ def test_cli(tmp_path, capsys):
     out = tmp_path / "notes.md"
     assert rc.main(["version", "v0.31.0", "--pyproject", str(py)]) == 0
     assert rc.main(["notes", "v0.31.0", "--changelog", str(cl), "--output", str(out)]) == 0
-    assert out.read_text() == "### Fixed\n\n- fix A\n"
+    assert out.read_text(encoding="utf-8") == "### Fixed\n\n- fix A\n"
     assert rc.main(["changelog", "v0.40.0", "--changelog", str(cl)]) == 1
     assert rc.main(["prerelease", "v1.0.0rc1"]) == 0
     assert capsys.readouterr().out.strip().endswith("true")

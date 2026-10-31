@@ -44,7 +44,7 @@ def test_perf_js_renders_section_and_chart():
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     out = json.loads(subprocess.run(
         ["node", "-e", _JS, str(static), perf.model_dump_json()],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     section = out["section"]
     assert out["empty"] == ""
@@ -74,7 +74,7 @@ def test_perf_js_colors_deltas_and_shows_both_modes():
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     section = json.loads(subprocess.run(
         ["node", "-e", _JS, str(static), perf.model_dump_json()],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["section"]
     # lower latency: better (green ✓); lower decode speed: worse (red ✗)
     assert 'class="r zp-better">✓ -400' in section
@@ -90,7 +90,7 @@ _STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
 def _render(perf_json: str) -> dict:
     js = _JS.replace("tps: P.chart(perf.requests, \"tps\"),", "tps: P.chart(perf.requests, \"tps\"), css: P.CSS,")
     return json.loads(subprocess.run(
-        ["node", "-e", js, str(_STATIC), perf_json], capture_output=True, text=True, check=True,
+        ["node", "-e", js, str(_STATIC), perf_json], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
 
 
@@ -166,7 +166,7 @@ console.log(JSON.stringify({ html: host.innerHTML }));
 def _live(recs: list[RequestRecord]) -> str:
     payload = json.dumps([r.model_dump() for r in recs])
     return json.loads(subprocess.run(
-        ["node", "-e", _LIVE_JS, str(_STATIC), payload], capture_output=True, text=True, check=True,
+        ["node", "-e", _LIVE_JS, str(_STATIC), payload], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["html"]
 
 
@@ -212,7 +212,7 @@ def test_perf_js_axes_fit_the_data():
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     out = json.loads(subprocess.run(
         ["node", "-e", _AXIS_JS, str(static), json.dumps(recs)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     assert out["axis"] == {"max": 600, "step": 100, "n": 6}
     chart = out["chart"]
@@ -257,7 +257,7 @@ def test_perf_js_number_formatters_are_cached_with_the_same_output():
              "decode_tps_local": 0.5}
             for i in range(40)]
     res = json.loads(subprocess.run(
-        ["node", "-e", _FMT_JS, str(_STATIC), json.dumps(recs)], capture_output=True, text=True, check=True,
+        ["node", "-e", _FMT_JS, str(_STATIC), json.dumps(recs)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     for locale, o in res["out"].items():
         assert o == {"stable": True, "latency": True, "ttft": True, "tick": True, "tps": True}, locale
@@ -293,7 +293,7 @@ def test_live_builds_the_data_table_only_when_open():
             for i in range(4)]
     out = json.loads(subprocess.run(
         ["node", "-e", _LIVE_OPEN_JS, str(_STATIC), json.dumps([r.model_dump() for r in recs])],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     closed, opened = out["false"], out["true"]
     # the toggle is there either way (keyboard and screen readers reach it) ...
@@ -321,7 +321,7 @@ def test_live_embedding_audit_offers_latency_only_with_its_trend():
     attach_trends(recs)
     html = json.loads(subprocess.run(
         ["node", "-e", _LIVE_OPEN_JS, str(_STATIC), json.dumps(recs)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["false"]
     assert html.count('role="tab"') == 1 and 'data-metric="latency"' in html
     assert "TTFT" not in html and "Decode speed" not in html and "Inter-chunk" not in html
@@ -494,7 +494,7 @@ def _scale_records() -> list[dict]:
 def test_probe_focus_fixes_the_range_from_the_first_probe_requests():
     out = json.loads(subprocess.run(
         ["node", "-e", _SCALE_JS, str(_STATIC), json.dumps(_scale_records())],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     full, focus = out["full"], out["focus"]
     # full range: everything on the plot, no triangles
@@ -516,7 +516,7 @@ def test_probe_focus_fixes_the_range_from_the_first_probe_requests():
 def test_live_focuses_on_the_probe_while_it_runs_unless_the_user_chose():
     out = json.loads(subprocess.run(
         ["node", "-e", _SCALE_JS, str(_STATIC), json.dumps(_scale_records())],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     pressed = lambda html, s: f'data-scale="{s}" aria-pressed="true"' in html  # noqa: E731
     # "Full range" comes first, then "Probe focus"

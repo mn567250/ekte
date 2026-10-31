@@ -33,7 +33,7 @@ def changed_files(base: str, head: str) -> list[str]:
         ["git", "diff", "--name-only", "--no-renames", f"{base}...{head}"],
         check=True,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8",
     ).stdout
     return [line for line in out.splitlines() if line.strip()]
 

@@ -56,7 +56,7 @@ console.log(JSON.stringify({
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_kbview_helpers():
     src = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v2" / "kbview.js"
-    out = json.loads(subprocess.run(["node", "-e", _JS, str(src)], capture_output=True, text=True, check=True).stdout)
+    out = json.loads(subprocess.run(["node", "-e", _JS, str(src)], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert out["kinds"] == ["yours", "kbdir", "packaged", "packaged", "packaged"]
     assert out["files"] == ["#3", "/srv/kb/x.yaml", "openai.yaml"]
     assert out["modelProvider"] == ["openai", "x", ""]

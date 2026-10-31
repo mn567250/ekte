@@ -74,7 +74,7 @@ def _func(nodeid: str) -> str:
 def _git_commit() -> str | None:
     try:
         out = subprocess.run(
-            ["git", "rev-parse", "--short=12", "HEAD"], cwd=ROOT, capture_output=True, text=True, timeout=10, check=True
+            ["git", "rev-parse", "--short=12", "HEAD"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=10, check=True
         )
     except (OSError, subprocess.SubprocessError):
         return None

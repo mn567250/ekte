@@ -100,11 +100,11 @@ def test_zing_data_dir_is_copied_once_and_kept(home, capsys):
     assert not (new / "history.db-wal").exists()  # side files are not copied ...
     rows = sqlite3.connect(new / "history.db").execute("SELECT id FROM runs ORDER BY id").fetchall()
     assert rows == [(1,), (2,)]  # ... their content is in the copy
-    assert (new / "secret.key").read_text() == "legacy-key\n"
+    assert (new / "secret.key").read_text(encoding="utf-8") == "legacy-key\n"
     if sys.platform != "win32":  # POSIX file modes have no effect on Windows
         assert (new / "secret.key").stat().st_mode & 0o777 == 0o600
         assert new.stat().st_mode & 0o777 == 0o700
-    assert (new / "kb" / "mine.yaml").read_text() == "models: []\n"
+    assert (new / "kb" / "mine.yaml").read_text(encoding="utf-8") == "models: []\n"
     # ~/.zing is left exactly as it was, and zing keeps working on it
     assert sorted(p.relative_to(old) for p in old.rglob("*")) == before
     zing.execute("INSERT INTO runs VALUES (3)")

@@ -47,7 +47,7 @@ def _render(tmp_path: Path, lang: str, report: dict) -> dict:
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     out = subprocess.run(
         ["node", "-e", _JS, str(tmp_path), lang, json.dumps(report)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
     return json.loads(out)
 
@@ -201,7 +201,7 @@ def test_download_saves_every_format_in_the_ui_language(tmp_path):
     _render(tmp_path, "en", report)  # stage the scripts
     out = json.loads(subprocess.run(
         ["node", "-e", _DOWNLOAD_JS, str(tmp_path), json.dumps(report)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     # JSON is built in the browser; Markdown/HTML/PDF are rendered by the server
     assert out["saved"] == ["ekte-report-7.de.json", "ekte-report-7.de.md"]
@@ -484,7 +484,7 @@ def test_finding_detail_shows_all_evidence(tmp_path):
                "evidence": {f"k{i}": i for i in range(15)}}
     out = json.loads(subprocess.run(
         ["node", "-e", _DETAIL_JS, str(tmp_path), json.dumps(finding)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     html = out["html"]
     assert '<span class="dot sm bad"' in html and '<span class="tag bad">High</span>' in html
@@ -527,7 +527,7 @@ def test_performance_measurements_sit_in_the_performance_dimension(tmp_path):
     shutil.copy(_STATIC / "perf.js", tmp_path / "perf.js")
     html = json.loads(subprocess.run(
         ["node", "-e", _PERF_JS, str(tmp_path), json.dumps(report)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["html"]
     # no separate performance section: the measurements are an extra of the
     # performance dimension's details (listed although the fixture never ran it)
@@ -591,7 +591,7 @@ def test_intl_formatters_are_cached_and_output_unchanged(tmp_path, lang):
     report["prompt_languages"] = ["de", "en"]
     out = json.loads(subprocess.run(
         ["node", "-e", _JS_INTL, str(tmp_path), lang, json.dumps(report)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     # same text as Date#toLocaleString / Intl.DisplayNames built per call
     assert out["locale"]

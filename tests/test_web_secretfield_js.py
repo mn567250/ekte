@@ -38,7 +38,7 @@ setTimeout(() => console.log(JSON.stringify({
 def test_secretfield_references_and_vault_storage():
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     out = json.loads(subprocess.run(
-        ["node", "-e", _JS, str(static)], capture_output=True, text=True, check=True,
+        ["node", "-e", _JS, str(static)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     # env:/file: references aren't secrets; everything else is.
     assert out["refs"] == [True, True, False, False, False, False]
