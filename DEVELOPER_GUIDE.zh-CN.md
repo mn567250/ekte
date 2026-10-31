@@ -128,6 +128,7 @@ Dockerfile             Web 界面镜像
 1. **配置。** `ekte/config.py` 把 YAML 配置与命令行选项合并为 `TargetConfig`（目标，
    以及可选的基线和裁判）和 `AuditOptions`（套件、维度、探测规模、输出）。以 `env:VAR`
    或 `file:/path` 给出的 API 密钥在这里解析。
+   格式定义在 `ekte/configfile.py` 中（一张包含键、类型和默认值的表），并发布为 JSON 模式 [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json)，用 `uv run python -m ekte.configfile` 重新生成（模式过期时测试会失败）。`ekte/config.py` 通过它加载文件，因此每个命令都会校验。格式变更需要新的 `CURRENT_VERSION`、`RENAMES_FROM` 中的重命名（供 `ekte config migrate` 使用）和更新日志条目；已弃用的键连同其替代键放入 `DEPRECATED`。参见[稳定性策略](docs/STABILITY.md#surface-config)。
 2. **知识库。** `load_knowledge_base()` 加载内置画像、`--kb-dir`/`EKTE_KB_DIR` 和用户的
    `kb.db`，并把**声称的**模型（默认即请求的模型）解析为一个画像。监控则改为传入它固定的快照。
 3. **客户端。** `make_client()` 按所选或自动识别的协议为目标（及基线）创建客户端。

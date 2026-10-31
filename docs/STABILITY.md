@@ -129,7 +129,7 @@ needs a major release.
 
 Public. The commands are `ekte init`, `check`, `compare`, `models`, `kb`,
 `kb-prompt`, `kb-import`, `kb-export`, `serve`, `watch`, `embed`, `rerank`,
-`image`, `audio`, `data-dir` and `secret` (`status`, `export`, `rotate`), plus
+`image`, `audio`, `data-dir`, `config` (`migrate`) and `secret` (`status`, `export`, `rotate`), plus
 `--version` and `--help`. Their options and values are those shown by
 `ekte <command> --help`.
 
@@ -156,10 +156,28 @@ per command is finalized by #25.
 ## Configuration file
 
 Public. The file is YAML, `ekte.yaml` by default (`ekte init` writes a commented
-starter; `ekte check -c ekte.yaml` reads it). Unknown keys are rejected, so a
-file that uses a key added in a newer release does not load in an older one. A
-versioned format with validation is defined by #24; a file without a version is
-read as version 1.
+starter; `ekte check -c ekte.yaml` reads it).
+
+- **Format version.** The top-level key `version` is the format version; the
+  current one is **1**. A file without `version` is format 1. A file with a
+  newer version than the installed ekte understands is refused with a message
+  to upgrade ekte.
+- **Validation.** Unknown keys, wrong types and invalid values are rejected
+  (exit code 2) with a message naming the file, the line, the key and what is
+  expected. A key added in a newer release therefore does not load in an older
+  one.
+- **Schema.** Every key, with its type, allowed values and default, is in
+  [`schemas/config.schema.json`](schemas/config.schema.json) (JSON Schema,
+  generated from `ekte/configfile.py`). Adding an optional key adds it to the
+  schema; the file for a released format only grows.
+- **Deprecated keys** keep working for the [deprecation period](#deprecation)
+  and print a warning on stderr that names the replacement. There are none in
+  format 1.
+- **New formats.** A change that is breaking by the table above gets a new
+  `version`. Files of an older format are refused with the command that fixes
+  them: `ekte config migrate FILE` rewrites the file to the current format,
+  keeping its comments and writing `FILE.bak` first (`--check` only reports).
+  `ekte init` always writes the current version.
 
 <a id="surface-env"></a>
 ## Environment variables

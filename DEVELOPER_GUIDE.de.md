@@ -143,6 +143,7 @@ ihr Überwachungs-Scheduler münden alle in dieselbe Funktion,
    Kommandozeilenoptionen zu `TargetConfig` (Ziel, optional Referenz und Richter)
    und `AuditOptions` (Suite, Dimensionen, Umfang der Tests, Ausgabe) zusammen.
    Als `env:VAR` oder `file:/pfad` angegebene API-Schlüssel werden hier aufgelöst.
+   Das Format ist in `ekte/configfile.py` definiert (eine Tabelle mit Schlüsseln, Typen und Standardwerten) und als JSON-Schema [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json) veröffentlicht; es wird mit `uv run python -m ekte.configfile` neu erzeugt (ein Test schlägt fehl, wenn es veraltet ist). `ekte/config.py` lädt die Datei darüber, sodass jeder Befehl sie prüft. Eine Formatänderung braucht eine neue `CURRENT_VERSION`, die Umbenennungen in `RENAMES_FROM` (für `ekte config migrate`) und einen Changelog-Eintrag; ein veralteter Schlüssel kommt mit seinem Ersatz in `DEPRECATED`. Siehe die [Stabilitätsrichtlinie](docs/STABILITY.md#surface-config).
 2. **Wissensbasis.** `load_knowledge_base()` lädt die mitgelieferten Profile,
    `--kb-dir`/`EKTE_KB_DIR` und die `kb.db` des Nutzers und löst das
    **angegebene** Modell (standardmäßig das angefragte) zu einem Profil auf. Eine

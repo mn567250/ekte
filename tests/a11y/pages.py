@@ -177,6 +177,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ekte/runner.py", ("audit",)),
     ("ekte/scoring.py", ("audit",)),
     ("ekte/config.py", ("audit",)),
+    ("ekte/configfile.py", ("audit",)),
     ("ekte/context.py", ("audit",)),
     ("ekte/models.py", ("audit",)),
     ("ekte/embed_audit.py", ("audit",)),  # the embedding check (the audit page's surface selector)

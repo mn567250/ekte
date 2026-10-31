@@ -36,6 +36,14 @@ ekte has three eras:
 
 ### Added
 
+- **Versioned, validated configuration file (#24).** `ekte.yaml` has a format
+  `version` (a file without one is format 1; `ekte init` writes it). Unknown
+  keys, wrong types and invalid values are rejected with the file, line and key;
+  deprecated keys warn and name the replacement. The schema is published as
+  `docs/schemas/config.schema.json`. `ekte config migrate` rewrites an older
+  file to the current format. Files that used keys ekte silently ignored before
+  (for example a typo) now fail with a clear error.
+
 - **Automated dependency updates and vulnerability checks.** Dependabot proposes
   weekly, grouped updates for the Python dependencies (`uv.lock`) and GitHub
   Actions. The new `Security` workflow audits the locked dependencies with

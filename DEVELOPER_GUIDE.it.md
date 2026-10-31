@@ -144,6 +144,7 @@ funzione, `ekte.runner.run_audit()`:
    facoltativi) e `AuditOptions` (suite, dimensioni, dimensione delle sonde,
    output). Le chiavi API indicate come `env:VAR` o `file:/percorso` vengono
    risolte qui.
+   Il formato è definito in `ekte/configfile.py` (una tabella di chiavi, tipi e valori predefiniti) e pubblicato come schema JSON [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), rigenerato con `uv run python -m ekte.configfile` (un test fallisce se è obsoleto). `ekte/config.py` carica il file attraverso di esso, quindi ogni comando lo convalida. Una modifica del formato richiede un nuovo `CURRENT_VERSION`, le rinominazioni in `RENAMES_FROM` (usate da `ekte config migrate`) e una voce nel changelog; una chiave deprecata va in `DEPRECATED` con la sua sostituta. Vedi la [politica di stabilità](docs/STABILITY.md#surface-config).
 2. **Base di conoscenza.** `load_knowledge_base()` carica i profili integrati,
    `--kb-dir`/`EKTE_KB_DIR` e il `kb.db` dell'utente, e risolve il modello
    **dichiarato** (per impostazione predefinita quello richiesto) in un profilo.

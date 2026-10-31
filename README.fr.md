@@ -183,6 +183,8 @@ Les clés d'API peuvent être données en clair, sous la forme `env:VAR` ou
 `file:/chemin` ; les rapports ne contiennent jamais qu'une empreinte de la clé. Un
 fichier de configuration complet se trouve dans [`examples/ekte.yaml`](examples/ekte.yaml).
 
+Le fichier porte une version de format (`version: 1` ; un fichier sans version est au format 1). Les clés inconnues, les types erronés et les valeurs invalides sont rejetés avec le fichier, la ligne et la clé. `ekte config migrate` met à jour un ancien fichier. Le schéma est [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+
 ### Comme outil pour un LLM / agent
 
 ekte est conçu pour être piloté par un autre programme ou modèle. Tout part sur
