@@ -154,7 +154,7 @@ planleggeren for overvåkinger ender alle i samme funksjon,
    den valgte eller automatisk gjenkjente protokollen. En `RequestRecorder` pakker
    inn hvert kall for ytelsesdelen.
 4. **Detektorer.** `select_detectors()` velger de registrerte detektorene for
-   testsettet (eller de egendefinerte dimensjonene) og dropper dem som trenger en
+   testsettet (eller de egendefinerte dimensjonene) og utelater dem som trenger en
    dommer eller en referanse som mangler. De kjøres **etter hverandre**, med
    vilje: samtidige forespørsler ville utløst strupinger og forstyrret
    tidsmålingene (pålitelighets- og ytelsesprobene styrer sin egen avgrensede
@@ -407,7 +407,7 @@ standardbiblioteket.
   i en gjenkjent container med `EKTE_CONTAINER=1`) og installerer
   `LocalOnlyMiddleware`: en tillatelsesliste for Host mot DNS-rebinding,
   Origin- og `Sec-Fetch-Site`-kontroller mot CSRF, bare JSON i
-  forespørselsbodyer, og hoder mot innramming / sniffing / referrer.
+  forespørselskropper, og hoder mot innramming / sniffing / referrer.
   Grensesnittet har ingen innlogging, med vilje.
 
 ### HTTP API v1
@@ -863,7 +863,7 @@ Kildedistribusjonen inneholder testene, men ingen medfølgende tredjepartsfiler.
 
 En utgivelse er en versjonstagg; alt annet er automatisert og kontrollert.
 Sjekklisten ligger i [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md), det
-engangs PyPI-oppsettet og den manuelle reserveløsningen i
+engangsoppsettet for PyPI og den manuelle reserveløsningen i
 [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
 ### Lage en utgivelse
@@ -875,7 +875,7 @@ engangs PyPI-oppsettet og den manuelle reserveløsningen i
 2. Sett `version` i `pyproject.toml` og gi `[Unreleased]` i `CHANGELOG.md` nytt navn
    `[X.Y.Z] - ÅÅÅÅ-MM-DD`. Sjekk lokalt med
    `python scripts/release_check.py version vX.Y.Z` og `... notes vX.Y.Z`.
-3. Flett, tagg commiten og push taggen:
+3. Slå sammen, tagg commiten og push taggen:
    `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`, `git push origin vX.Y.Z`.
 4. `release.yml` kontrollerer først med `scripts/release_check.py` at taggen
    samsvarer med pakkeversjonen, at `CHANGELOG.md` har en seksjon for den og at CI er
