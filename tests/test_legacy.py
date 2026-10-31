@@ -59,7 +59,7 @@ def test_getenv_falls_back_to_zing_with_one_notice(monkeypatch, capsys):
     assert legacy.getenv("EKTE_PORT") == "8000"
     assert legacy.getenv("EKTE_PORT") == "8000"
     err = capsys.readouterr().err
-    assert err.count("ZING_PORT is deprecated, use EKTE_PORT instead") == 1
+    assert err.count("ZING_PORT is deprecated and will stop working in ekte 1.0.0; use EKTE_PORT instead") == 1
 
 
 def test_getenv_default_when_neither_is_set(monkeypatch):
@@ -113,6 +113,7 @@ def test_zing_data_dir_is_copied_once_and_kept(home, capsys):
     err = capsys.readouterr().err
     assert f"copied the zing data directory {old} to {new}" in err
     assert "delete it yourself" in err
+    assert "removed in ekte 1.0.0" in err and "never deletes" in err
 
     # from now on ekte works from ~/.ekte: no second copy, no second notice
     (old / "later.txt").write_text("written by zing afterwards")
@@ -149,3 +150,31 @@ def test_failed_copy_leaves_no_half_filled_dir(home, monkeypatch, capsys):
     assert not (home / ".ekte").exists()
     assert not list(home.glob(".ekte.migrating-*"))
     assert "could not copy" in capsys.readouterr().err
+
+
+def snapshot(root):
+    """Every path under root, and the content of the plain files (SQLite's own
+    side files change whenever a connection opens the database)."""
+    return sorted((p.relative_to(root), p.read_bytes() if p.suffix in ("", ".key", ".yaml") and p.is_file() else None)
+                  for p in root.rglob("*"))
+
+
+def test_the_copy_never_deletes_the_old_directory(home, monkeypatch):
+    """Neither a finished copy nor a failed one removes anything from ~/.zing,
+    and nothing in the module can delete it (also not once the copy is removed)."""
+    old, zing = _zing_dir(home)  # zing still runs on it (its connection stays open)
+    before = snapshot(old)
+    removed: list[object] = []
+    real_rmtree = legacy.shutil.rmtree
+    monkeypatch.setattr(legacy.shutil, "rmtree", lambda path, *a, **k: (removed.append(path), real_rmtree(path, *a, **k)))
+    monkeypatch.setattr(legacy.os, "remove", lambda *a, **k: removed.append(a))
+    monkeypatch.setattr(legacy.os, "unlink", lambda *a, **k: removed.append(a))
+    # a failing copy: the temporary sibling is cleaned up, ~/.zing is not
+    monkeypatch.setattr(legacy, "_copy_tree", lambda *a: (_ for _ in ()).throw(OSError("boom")))
+    assert legacy.migrate_data_dir(home / ".ekte", old) is False
+    assert all(not str(r).startswith(str(old)) for r in removed)
+    monkeypatch.undo()
+    assert legacy.migrate_data_dir(home / ".ekte", old) is True
+    assert old.is_dir()
+    assert snapshot(old) == before
+    zing.close()

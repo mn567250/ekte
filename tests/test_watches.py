@@ -138,12 +138,11 @@ def test_watches_create_unknown_suite_is_400(tmp_path, monkeypatch, client):
 
 
 def test_watches_page_and_nav_link(client):
-    r = client.get("/v2/watches")
+    r = client.get("/watches")
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     assert '<header class="znav" data-page="monitors"' in r.text
-    # every page's nav links to the monitors page; the old address redirects there
-    assert '["monitors", "/v2/watches", "bell", "监控", "Monitors"]' in client.get("/v2/static/nav.js").text
-    assert client.get("/watches", follow_redirects=False).headers["location"] == "/v2/watches"
+    # every page's nav links to the monitors page
+    assert '["monitors", "/watches", "bell", "监控", "Monitors"]' in client.get("/static/nav.js").text
 
 
 def test_patch_and_run_missing_watch_404(tmp_path, monkeypatch, client):

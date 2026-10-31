@@ -43,7 +43,7 @@
   "Stored encrypted": "Salvata cifrata",
   "That is not the master key.": "Questa non è la chiave principale.",
   "The master key encrypts the relay API keys stored on this machine. ekte never writes it to disk: after every restart of ekte serve you enter it again before monitors run. Keep it in a password manager or another safe place — not in ekte's data folder. Losing it means re-entering every monitor's API key.": "La chiave principale cifra le chiavi API dei relay salvate su questo computer. ekte non la scrive mai su disco: dopo ogni riavvio di ekte serve la reinserisci prima che i monitor vengano eseguiti. Conservala in un gestore di password o in un altro posto sicuro — non nella directory dei dati di ekte. Se la perdi dovrai reinserire la chiave API di ogni monitor.",
-  "The master key is locked or not created yet: enter or create it on the new Monitors page (/v2/watches).": "La chiave principale è bloccata o non ancora creata: inseriscila o creala nella nuova pagina Monitor (/v2/watches).",
+  "The master key is locked or not created yet: enter or create it on the new Monitors page (/watches).": "La chiave principale è bloccata o non ancora creata: inseriscila o creala nella nuova pagina Monitor (/watches).",
   "The master key is locked — enter it first.": "La chiave principale è bloccata — inseriscila prima.",
   "The master key was lost or changed, so the stored key cannot be decrypted": "La chiave principale è andata persa o è cambiata, quindi la chiave salvata non può essere decifrata",
   "The master key's state changed meanwhile — reload the page and try again.": "Lo stato della chiave principale è cambiato nel frattempo — ricarica la pagina e riprova.",

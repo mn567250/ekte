@@ -329,14 +329,14 @@ standardbiblioteket.
 
 `ekte/web/server.py` er en FastAPI-app som lages av `create_app()`:
 
-- **Sider.** Nettgrensesnittet (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) er statisk HTML. Det finnes
-  ingen Verktøy-side: revisjoner av embedding og rerank starter på
-  revisjonssiden via velgeren for type endepunkt (`/v2/?surface=embedding|rerank`),
-  og `/v2/tools` leverer en liten side som sender gamle lenker videre dit
-  (`#rerank` velger rerank, `?rerun=` sendes videre). Adressene til det fjernede
-  klassiske grensesnittet (`/`, `/history`, `/watches`, `/tools`, `/console`)
-  videresender (308) til v2-sidene sine og beholder spørrestrengen.
+- **Sider.** Nettgrensesnittet (`/`, `/history`, `/watches`,
+  `/analytics`, `/kb`, `/accessibility`) er statisk HTML levert fra roten; skript og
+  stiler ligger under `/static/`. Det finnes ingen Verktøy-side: revisjoner av embedding og rerank
+  starter på revisjonssiden via velgeren for type endepunkt
+  (`/?surface=embedding|rerank`). Fram til 1.0.0 videresender de tidligere adressene (308) til
+  siden i roten og beholder spørrestrengen: `/v2/…` (`/v2/tools` går til
+  `/?surface=embedding`, og `#rerank` velger rerank) samt `/tools` og `/console` fra det fjernede
+  klassiske grensesnittet. Disse videresendingene er foreldet og fjernes i 1.0.0.
 - **API.** `/api/jobs…` kjører revisjoner (nedenfor); `/api/models` viser et
   relés modeller; `/api/report/export` gjengir en rapport; `/api/history…`,
   `/api/watches…`, `/api/kb…` og `/api/analytics…` står bak de andre sidene. Alle er interne; den offentlige delmengden er [HTTP API v1](#http-api-v1).
@@ -581,7 +581,7 @@ så kjør én server per datamappe.
 backup-API-et, til en midlertidig søskenmappe som gis nytt navn på plass).
 `~/.zing` endres eller slettes aldri. `lang.js` kopierer nettleserens
 `zing.*`-innstillinger til `ekte.*` på samme måte, og serveren leser fortsatt
-informasjonskapslene `zing_lang` / `zing_ui` til `ekte_*`-kapslene finnes.
+informasjonskapslene `zing_lang` / `zing_ui` til `ekte_*`-kapslene finnes. Alt dette er foreldet og fjernes i 1.0.0 (varslene nevner den versjonen); ekte sletter aldri en gammel `~/.zing`.
 
 ## Bidra
 

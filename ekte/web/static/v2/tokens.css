@@ -1,7 +1,7 @@
 /* ekte web UI v2 — colour tokens: the ONE place colours are defined.
  *
  * Every v2 page links this file first:
- *   <link rel="stylesheet" href="/v2/static/tokens.css" />
+ *   <link rel="stylesheet" href="/static/tokens.css" />
  * Every other stylesheet, page and script uses var(--…) only, never a literal
  * colour. Each token is written once as light-dark(<light>, <dark>), so the two
  * themes sit side by side and cannot drift apart.

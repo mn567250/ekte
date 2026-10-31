@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Acessibilidade":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
     - link "Monitores":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Histórico":
-      - /url: /v2/history
+      - /url: /history
     - link "Análises":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conhecimento":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "A base de conhecimento usada pelo ekte" [level=1]
   - paragraph:

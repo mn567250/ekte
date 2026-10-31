@@ -3,7 +3,7 @@
  * Every v2 page has, as the first thing in <div class="wrap">:
  *   <header class="znav" data-page="audit|history|analytics|monitors|kb"></header>
  * and loads, right after /icons.js and before its own page script:
- *   <script src="/v2/static/nav.js"></script>
+ *   <script src="/static/nav.js"></script>
  * The script also appends the one shared page footer (.zdisc) to .wrap: the
  * two disclaimers every page carries, "all local" and "black box, do not
  * blame". There is no disclaimer above the hero title on any page.
@@ -16,7 +16,7 @@
  * <select class="theme-sel"> is driven by theme.js (loaded in <head>).
  *
  * The last item of .tail, next to the language switch, is an icon-only link
- * to the accessibility conformance report (/v2/accessibility), so it sits in
+ * to the accessibility conformance report (/accessibility), so it sits in
  * the same place on every page (BITV 9.3.2.3). Its accessible name comes from
  * aria-label (the icon is aria-hidden), its tooltip from title.
  */
@@ -25,11 +25,11 @@
 
   var LINKS = [
     // [page id, href, icon, zh, en]
-    ["audit", "/v2/", "bolt", "检测", "Audit"],
-    ["monitors", "/v2/watches", "bell", "监控", "Monitors"],
-    ["history", "/v2/history", "chart", "检测历史", "History"],
-    ["analytics", "/v2/analytics", "bars", "分析", "Analytics"],
-    ["kb", "/v2/kb", "book", "知识库", "Knowledge"],
+    ["audit", "/", "bolt", "检测", "Audit"],
+    ["monitors", "/watches", "bell", "监控", "Monitors"],
+    ["history", "/history", "chart", "检测历史", "History"],
+    ["analytics", "/analytics", "bars", "分析", "Analytics"],
+    ["kb", "/kb", "book", "知识库", "Knowledge"],
   ];
 
   // [zh, en]
@@ -57,7 +57,7 @@
     }).join("");
     header.innerHTML =
       '<a class="skip-link" href="#main" data-en="Skip to main content">跳到主要内容</a>' +
-      '<a class="logo" href="/v2/" aria-label="ekte"><span class="b">' + ico("logo", { size: 18 }) +
+      '<a class="logo" href="/" aria-label="ekte"><span class="b">' + ico("logo", { size: 18 }) +
       "</span><span>ekte<b>.</b></span></a>" +
       '<div class="tail">' +
       '<select class="theme-sel" aria-label="主题" title="主题" data-en-aria-label="Theme" data-en-title="Theme">' +
@@ -68,7 +68,7 @@
       '<option value="on" data-en="Motion on">动画开</option>' +
       '<option value="off" data-en="Motion off">动画关</option></select>' +
       '<select class="lang-sel" aria-label="语言" title="语言" data-en-aria-label="Language" data-en-title="Language"></select>' +
-      '<a class="a11y" href="/v2/accessibility"' + (page === "a11y" ? ' aria-current="page"' : "") +
+      '<a class="a11y" href="/accessibility"' + (page === "a11y" ? ' aria-current="page"' : "") +
       ' aria-label="无障碍" title="无障碍" data-en-aria-label="Accessibility" data-en-title="Accessibility">' +
       ico("a11y", { size: 16 }) + "</a>" +
       "</div>" +

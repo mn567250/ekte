@@ -6,15 +6,15 @@
 <title data-en="ekte — relay reality check">ekte — 中转站验真</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
-<script src="/v2/static/theme.js"></script>
-<link rel="icon" href="/v2/static/favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/ekte.css" />
-<link rel="stylesheet" href="/v2/static/fields.css" />
-<link rel="stylesheet" href="/v2/static/report.css" />
-<link rel="stylesheet" href="/v2/static/perf.css" />
-<link rel="stylesheet" href="/v2/static/chartmotion.css" />
-<link rel="stylesheet" href="/v2/static/jobs.css" />
+<script src="/static/theme.js"></script>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/static/tokens.css" />
+<link rel="stylesheet" href="/static/ekte.css" />
+<link rel="stylesheet" href="/static/fields.css" />
+<link rel="stylesheet" href="/static/report.css" />
+<link rel="stylesheet" href="/static/perf.css" />
+<link rel="stylesheet" href="/static/chartmotion.css" />
+<link rel="stylesheet" href="/static/jobs.css" />
 <style>
   /* ---------- page: audit (tokens only; light + dark) ---------- */
   [tabindex="-1"]:focus { outline: none; }
@@ -192,7 +192,7 @@
   .fi .fe { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
   .fi .fe b { color: var(--danger); }
 
-  /* perf.js live panel: colours come from /v2/static/perf.css; fit it to the scan card */
+  /* perf.js live panel: colours come from /static/perf.css; fit it to the scan card */
   #perf-live .zp-live { max-width: 560px; }
   #perf-live .zp-plot { max-width: 100%; overflow-x: auto; }
 
@@ -381,16 +381,16 @@
 
 <script src="/i18n.js"></script>
 <script src="/perf.js"></script>
-<script src="/v2/static/chartmotion.js"></script>
+<script src="/static/chartmotion.js"></script>
 <script src="/icons.js"></script>
-<script src="/v2/static/tabs.js"></script>
-<script src="/v2/static/jobs.js"></script>
+<script src="/static/tabs.js"></script>
+<script src="/static/jobs.js"></script>
 <script src="/secretfield.js"></script>
-<script src="/v2/static/relaycfg.js"></script>
-<script src="/v2/static/nav.js"></script>
-<script src="/v2/static/notice.js"></script>
-<script src="/v2/static/report.js"></script>
-<script src="/v2/static/dimpick.js"></script>
+<script src="/static/relaycfg.js"></script>
+<script src="/static/nav.js"></script>
+<script src="/static/notice.js"></script>
+<script src="/static/report.js"></script>
+<script src="/static/dimpick.js"></script>
 <script>
 (function () {
   "use strict";
@@ -561,7 +561,7 @@
     var act = b.getAttribute("data-note-act");
     if (act === "retry") loadNote();
     else if (act === "running") tabs.select("running", true);
-    else if (act === "open" && note.status && note.status.latest) location.href = "/v2/history#r-" + note.status.latest.id;
+    else if (act === "open" && note.status && note.status.latest) location.href = "/history#r-" + note.status.latest.id;
   });
   document.addEventListener("visibilitychange", function () { if (!document.hidden) loadNote(); });
   window.addEventListener("ekte:lang", paintNote);
@@ -583,7 +583,7 @@
   // "Watch live" in the list: follow that audit right here instead of
   // reloading the page (modified clicks still open a new tab/window)
   $("#jobs").addEventListener("click", function (e) {
-    var a = e.target.closest && e.target.closest('a[href^="/v2/?job="]');
+    var a = e.target.closest && e.target.closest('a[href^="/?job="]');
     if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var id = null;
     try { id = new URL(a.href).searchParams.get("job"); } catch (err) {}
@@ -629,7 +629,7 @@
     formNote = fn;
     $("#formnote").innerHTML = fn ? '<div class="infobox">' + fn() + "</div>" : "";
   }
-  var historyLink = function () { return '<a href="/v2/history">' + esc(T("在检测历史中查看进度", "Follow it in History")) + " →</a>"; };
+  var historyLink = function () { return '<a href="/history">' + esc(T("在检测历史中查看进度", "Follow it in History")) + " →</a>"; };
   function renderCount() {
     $("#cnt").textContent = progress.total
       ? T("已完成 {n} / {total} 项检测", "{n} of {total} checks done").replace("{n}", progress.done).replace("{total}", progress.total) +
@@ -1090,13 +1090,15 @@
     });
   }
   syncSurface();  // a radio state the browser restored on reload
-  // /v2/?surface=embedding|rerank (e.g. from History or the docs) preselects the endpoint type.
+  // /?surface=embedding|rerank (e.g. from History or the docs) preselects the endpoint type.
   (function () {
     var v = null;
     try { v = new URLSearchParams(location.search).get("surface"); } catch (e) {}
+    // the retired Tools page's rerank tab (the old tools address with #rerank); the fragment survives the redirect
+    if (v === "embedding" && location.hash === "#rerank") v = "rerank";
     if (v) setSurface(v);
   })();
-  // /v2/?rerun=<history id> (from History): fill the form with that run's
+  // /?rerun=<history id> (from History): fill the form with that run's
   // configuration. The API key is never stored in history, so the key field
   // stays empty unless the browser fills its saved credential for the URL.
   (function () {
@@ -1131,7 +1133,7 @@
       .catch(function () {});
   })();
 
-  // Re-attach to a background audit: /v2/?job=<id> (from History, or a reload).
+  // Re-attach to a background audit: /?job=<id> (from History, or a reload).
   (function () {
     var id = null;
     try { id = new URLSearchParams(location.search).get("job"); } catch (e) {}
@@ -1143,7 +1145,7 @@
         setJobParam(null);
         setFormNote(function () {
           return esc(T("这次检测已不在运行列表中，它的报告在检测历史里。", "That audit is no longer running — its report is in History.")) +
-            ' <a href="/v2/history">' + esc(T("打开检测历史", "Open History")) + " →</a>";
+            ' <a href="/history">' + esc(T("打开检测历史", "Open History")) + " →</a>";
         });
       })
       .catch(function () {});

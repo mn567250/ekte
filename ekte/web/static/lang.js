@@ -78,15 +78,18 @@
   // Settings saved before the rename (zing -> ekte) live under "zing." keys
   // (language, theme, filters, ...). Copied once to their "ekte." names, here
   // because this script runs first on every page; the "zing." keys stay, as
-  // zing may still serve this origin.
+  // zing may still serve this origin. Deprecated: removed in ekte 1.0.0.
   try {
     var ls = window.localStorage;
     if (ls.getItem("ekte.migrated") === null) {
+      var copied = false;
       for (var i = ls.length - 1; i >= 0; i--) {
         var old = ls.key(i);
         if (old && old.indexOf("zing.") === 0 && ls.getItem("ekte." + old.slice(5)) === null)
-          ls.setItem("ekte." + old.slice(5), ls.getItem(old));
+          { ls.setItem("ekte." + old.slice(5), ls.getItem(old)); copied = true; }
       }
+      if (copied && window.console)
+        console.warn("ekte: settings saved under the old zing names were copied; this is deprecated and removed in ekte 1.0.0.");
       ls.setItem("ekte.migrated", "1");
     }
   } catch (e) {

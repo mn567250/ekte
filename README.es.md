@@ -257,17 +257,15 @@ servidor ekte local y al relay que auditas, nunca a terceros. Consulta
 
 ### Páginas
 
-La interfaz web está en `/v2/`, donde la abre `ekte serve`. Las direcciones de
-la antigua interfaz clásica (`/`, `/history`, `/watches`, `/tools`, `/console`)
-redirigen a la página correspondiente.
+La interfaz web se sirve en la raíz de la dirección que abre `ekte serve`, con la página de auditoría en `/`. Las direcciones usadas hasta ahora (`/v2/…`, p. ej. `/v2/history`) y las de la antigua interfaz clásica (`/tools`, `/console`) redirigen de forma permanente a la página correspondiente y conservan la cadena de consulta; estas redirecciones están obsoletas y se eliminan en 1.0.0.
 
 | Página | Dirección | Para qué sirve |
 |---|---|---|
-| **Auditoría** | `/v2/` | Auditar un relay (opcionalmente frente a una referencia) y leer el informe; las auditorías de embeddings y rerank también empiezan aquí, con el selector de tipo de endpoint |
-| **Monitores** | `/v2/watches` | Reauditorías programadas con alertas por webhook |
-| **Historial** | `/v2/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
-| **Analítica** | `/v2/analytics` | Relays y modelos comparados en el tiempo: indicadores, gráficos con tablas de datos, clasificaciones |
-| **Conocimiento** | `/v2/kb` | La base de conocimiento en tres pestañas — modelos, proveedores, relays: explorar, activar/desactivar, añadir lo tuyo |
+| **Auditoría** | `/` | Auditar un relay (opcionalmente frente a una referencia) y leer el informe; las auditorías de embeddings y rerank también empiezan aquí, con el selector de tipo de endpoint |
+| **Monitores** | `/watches` | Reauditorías programadas con alertas por webhook |
+| **Historial** | `/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
+| **Analítica** | `/analytics` | Relays y modelos comparados en el tiempo: indicadores, gráficos con tablas de datos, clasificaciones |
+| **Conocimiento** | `/kb` | La base de conocimiento en tres pestañas — modelos, proveedores, relays: explorar, activar/desactivar, añadir lo tuyo |
 
 Además, en las páginas: filtros y tendencias configurables (puntuación, nota,
 latencia p50, tokens/s) en el **Historial**; **Programar como monitor** y **Repetir auditoría** en cada
@@ -291,7 +289,7 @@ los modelos servidos desde tu propia máquina también esperan); las de relays
 distintos se ejecutan en paralelo, como máximo cuatro a la vez
 (`EKTE_MAX_PARALLEL_AUDITS`). Los monitores esperan a su relay del mismo modo.
 
-**Analítica.** `/v2/analytics` convierte el historial local
+**Analítica.** `/analytics` convierte el historial local
 en comparaciones: indicadores del periodo elegido (ejecuciones, puntuación
 mediana, proporción de riesgo alto, tasa de éxito, TTFT, velocidad de salida,
 ratios de facturación) con el cambio frente al periodo anterior de igual
@@ -789,7 +787,7 @@ y Moonshot (`ekte kb` los lista). Hay tres capas; las posteriores prevalecen:
    (repetible) o `EKTE_KB_DIR`.
 3. **Tus entradas** (`kb.db` en el directorio de datos), añadidas sin archivos
    YAML ni instalación editable:
-   - en la página **Conocimiento** de la interfaz web (`/v2/kb`), con una pestaña
+   - en la página **Conocimiento** de la interfaz web (`/kb`), con una pestaña
      para **Modelos**, **Proveedores** y **Relays**. Cada pestaña lista el conjunto
      completo —incluidos, `EKTE_KB_DIR` y los tuyos (marcados **Tuyo**)— con un
      filtro, un interruptor por elemento y un formulario **Añadir …**: **Añadir un
@@ -928,12 +926,12 @@ ekte continúa [zing](https://github.com/cenbonew/zing) (su última versión fue
   tal como está.
 - **Interfaz web.** Se conservan el idioma, el tema y los filtros, y una clave
   maestra guardada en el gestor de contraseñas del navegador. La interfaz clásica
-  de zing ya no existe: sus direcciones (`/`, `/history`, `/watches`, `/tools`,
-  `/console`) abren la página correspondiente en `/v2/`.
+  de zing ya no existe: sus direcciones (`/tools`, `/console`) abren la página de auditoría (`/`).
 - **Informes y sondeos.** Los informes, los webhooks y los nombres de archivo
   dicen `ekte` (p. ej. `"tool": "ekte"`, `ekte-report.json`), igual que los
   sondeos enviados a los relays. Los scripts que buscan `zing` en ellos deben
   actualizarse.
+- **Calendario.** Toda la capa de compatibilidad (la lectura de `ZING_*`, la copia de `~/.zing`, el traspaso de ajustes del navegador, cookies y la clave maestra guardada, y las direcciones de la interfaz clásica) está obsoleta y se elimina en ekte **1.0.0** (1.0.0rc1 es la primera versión sin ella). Hasta entonces cada parte sigue funcionando y su aviso nombra esta versión; las antiguas direcciones de página `/v2/…` también redirigen hasta 1.0.0. ekte nunca borra un `~/.zing` antiguo, tampoco cuando se elimina la copia.
 
 ## Licencia
 

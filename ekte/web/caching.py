@@ -37,7 +37,7 @@ _V2 = _STATIC / "v2"
 # Top-level scripts served by their own routes (see create_app). /locales.js is
 # generated, not a file, and is left unversioned here.
 ROOT_ASSETS = ("i18n.js", "lang.js", "icons.js", "perf.js", "secretfield.js")
-_V2_PREFIX = "/v2/static/"
+_V2_PREFIX = "/static/"
 
 IMMUTABLE = "public, max-age=31536000, immutable"
 NO_CACHE = "no-cache"

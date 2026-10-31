@@ -259,17 +259,15 @@ Ihren lokalen ekte-Server und das geprüfte Relay, niemals Dritte. Siehe
 
 ### Seiten
 
-Die Weboberfläche liegt unter `/v2/`, wo `ekte serve` sie öffnet. Die Adressen
-der früheren klassischen Oberfläche (`/`, `/history`, `/watches`, `/tools`,
-`/console`) leiten auf die passende Seite weiter.
+Die Weboberfläche wird an der Wurzel der Adresse ausgeliefert, die `ekte serve` öffnet; die Prüfseite liegt unter `/`. Die bisherigen Adressen (`/v2/…`, z. B. `/v2/history`) und die der früheren klassischen Oberfläche (`/tools`, `/console`) leiten dauerhaft auf die passende Seite weiter und behalten die Query-Zeichenfolge bei; diese Weiterleitungen sind veraltet und werden in 1.0.0 entfernt.
 
 | Seite | Adresse | Wofür |
 |---|---|---|
-| **Prüfung** | `/v2/` | Ein Relay prüfen (optional gegen eine Referenz) und den Bericht lesen; auch Embedding- und Rerank-Prüfungen starten hier, über die Auswahl des Endpunkttyps |
-| **Überwachung** | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
-| **Verlauf** | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
-| **Analyse** | `/v2/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
-| **Wissen** | `/v2/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
+| **Prüfung** | `/` | Ein Relay prüfen (optional gegen eine Referenz) und den Bericht lesen; auch Embedding- und Rerank-Prüfungen starten hier, über die Auswahl des Endpunkttyps |
+| **Überwachung** | `/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
+| **Verlauf** | `/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
+| **Analyse** | `/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
+| **Wissen** | `/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
 
 Auf den Seiten außerdem: Filter und konfigurierbare Trends
 (Bewertung, Note, Latenz p50, Token/s) im **Verlauf**; **Als Überwachung
@@ -293,7 +291,7 @@ Modelle auf Ihrem eigenen Rechner); Audits verschiedener Relays laufen parallel,
 höchstens vier gleichzeitig (`EKTE_MAX_PARALLEL_AUDITS`). Überwachungen warten
 ebenso auf ihr Relay.
 
-**Analyse (neue UI).** `/v2/analytics` macht aus dem lokalen Verlauf
+**Analyse (neue UI).** `/analytics` macht aus dem lokalen Verlauf
 Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
 hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,
 Abrechnungsverhältnisse) mit der Änderung gegenüber dem gleich langen Zeitraum
@@ -797,7 +795,7 @@ ab (`ekte kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
    (wiederholbar) oder `EKTE_KB_DIR`.
 3. **Ihre Einträge** (`kb.db` im Datenverzeichnis), hinzugefügt ohne YAML-Dateien
    oder editierbare Installation:
-   - auf der Seite **Wissen** der Weboberfläche (`/v2/kb`), mit je einem Tab für
+   - auf der Seite **Wissen** der Weboberfläche (`/kb`), mit je einem Tab für
      **Modelle**, **Anbieter** und **Relays**. Jeder Tab listet den vollständigen
      Bestand — mitgeliefert, `EKTE_KB_DIR` und eigene (markiert mit **Eigener**) —
      mit Filter, einem Ein/Aus-Schalter pro Element und einem Formular
@@ -935,11 +933,11 @@ unter neuem Namen fort. Was sich für eine bestehende Installation ändert:
   gesetztes Verzeichnis wird so verwendet, wie es ist.
 - **Web-Oberfläche.** Sprache, Design und Filter sowie ein im Passwortmanager
   des Browsers gespeicherter Master-Schlüssel werden übernommen. Die klassische
-  Oberfläche von zing gibt es nicht mehr: Ihre Adressen (`/`, `/history`,
-  `/watches`, `/tools`, `/console`) öffnen die passende Seite unter `/v2/`.
+  Oberfläche von zing gibt es nicht mehr: Ihre Adressen (`/tools`, `/console`) öffnen die Prüfseite (`/`).
 - **Berichte und Prüfanfragen.** Berichte, Webhooks und Dateinamen heißen
   `ekte` (z. B. `"tool": "ekte"`, `ekte-report.json`), ebenso die Prüfanfragen
   an Relays. Skripte, die darin nach `zing` suchen, müssen angepasst werden.
+- **Zeitplan.** Die gesamte Kompatibilitätsschicht (der `ZING_*`-Fallback, die Kopie von `~/.zing`, die Übernahme von Browsereinstellungen, Cookies und dem gespeicherten Hauptschlüssel sowie die Adressen der klassischen Oberfläche) ist veraltet und wird in ekte **1.0.0** entfernt (1.0.0rc1 ist die erste Version ohne sie). Bis dahin funktioniert jeder Teil weiter, und sein Hinweis nennt diese Version; auch die alten Seitenadressen `/v2/…` leiten bis 1.0.0 weiter. ekte löscht ein altes `~/.zing` nie, auch nicht, wenn die Kopie entfernt ist.
 
 ## Lizenz
 

@@ -253,17 +253,15 @@ lokale ekte-server og reléet du reviderer, aldri en tredjepart. Se
 
 ### Sider
 
-Nettgrensesnittet ligger under `/v2/`, der `ekte serve` åpner det. Adressene til
-det tidligere klassiske grensesnittet (`/`, `/history`, `/watches`, `/tools`,
-`/console`) videresender til tilsvarende side.
+Nettgrensesnittet leveres fra roten av adressen `ekte serve` åpner, med revisjonssiden på `/`. Adressene som ble brukt til nå (`/v2/…`, f.eks. `/v2/history`) og adressene til det tidligere klassiske grensesnittet (`/tools`, `/console`) videresendes permanent til tilsvarende side og beholder spørrestrengen; disse videresendingene er foreldet og fjernes i 1.0.0.
 
 | Side | Adresse | Hva den er til |
 |---|---|---|
-| **Revisjon** | `/v2/` | Revider et relé (eventuelt mot en referanse) og les rapporten; revisjoner av embedding og rerank starter også her, via velgeren for type endepunkt |
-| **Overvåking** | `/v2/watches` | Planlagte nye revisjoner med webhook-varsler |
-| **Historikk** | `/v2/history` | Hver revisjon kjørt på denne maskinen, gruppert etter relé + oppgitt modell, med trender |
-| **Analyse** | `/v2/analytics` | Releer og modeller sammenlignet over tid: nøkkeltall, diagrammer med datatabeller, rangeringslister |
-| **Kunnskap** | `/v2/kb` | Kunnskapsbasen i tre faner — modeller, leverandører, releer: bla gjennom, slå av/på, legg til dine egne |
+| **Revisjon** | `/` | Revider et relé (eventuelt mot en referanse) og les rapporten; revisjoner av embedding og rerank starter også her, via velgeren for type endepunkt |
+| **Overvåking** | `/watches` | Planlagte nye revisjoner med webhook-varsler |
+| **Historikk** | `/history` | Hver revisjon kjørt på denne maskinen, gruppert etter relé + oppgitt modell, med trender |
+| **Analyse** | `/analytics` | Releer og modeller sammenlignet over tid: nøkkeltall, diagrammer med datatabeller, rangeringslister |
+| **Kunnskap** | `/kb` | Kunnskapsbasen i tre faner — modeller, leverandører, releer: bla gjennom, slå av/på, legg til dine egne |
 
 På tvers av sidene: filtre og konfigurerbare trender (score, karakter,
 forsinkelse p50, tokens/s) på **Historikk**; **Planlegg som overvåking** og
@@ -286,7 +284,7 @@ fra din egen maskin, settes også i kø); revisjoner av ulike releer kjøres
 parallelt, høyst fire om gangen (`EKTE_MAX_PARALLEL_AUDITS`). Overvåkinger venter
 på reléet sitt på samme måte.
 
-**Analyse.** `/v2/analytics` gjør den lokale historikken om til sammenligninger:
+**Analyse.** `/analytics` gjør den lokale historikken om til sammenligninger:
 nøkkeltall for valgt periode (kjøringer, medianscore, andel høy risiko,
 suksessrate, TTFT, dekodehastighet, faktureringsforhold) med endringen mot like
 lang periode før; et diagram over et hvilket som helst måltall per relé, modell
@@ -773,7 +771,7 @@ dem). Det finnes tre lag, der de senere vinner:
    eller `EKTE_KB_DIR`.
 3. **Dine oppføringer** (`kb.db` i datamappen), lagt til uten YAML-filer eller
    redigerbar installasjon:
-   - på nettgrensesnittets **Kunnskap**-side (`/v2/kb`), med én fane hver for
+   - på nettgrensesnittets **Kunnskap**-side (`/kb`), med én fane hver for
      **Modeller**, **Leverandører** og **Releer**. Hver fane viser hele settet —
      medfølgende, `EKTE_KB_DIR` og dine (merket **Dine**) — med et filter, en
      av/på-bryter per element og et **Legg til …**-skjema: **Legg til en modell**
@@ -908,11 +906,11 @@ ekte viderefører [zing](https://github.com/cenbonew/zing) (siste utgivelse var
   er.
 - **Nettgrensesnitt.** Innstillinger for språk, tema og filtre og en hovednøkkel
   lagret i nettleserens passordbehandler følger med over. zings klassiske
-  grensesnitt er borte: adressene (`/`, `/history`, `/watches`, `/tools`,
-  `/console`) åpner tilsvarende side under `/v2/`.
+  grensesnitt er borte: adressene (`/tools`, `/console`) åpner revisjonssiden (`/`).
 - **Rapporter og prober.** Rapporter, webhooker og filnavn sier `ekte` (f.eks.
   `"tool": "ekte"`, `ekte-report.json`), og det gjør også probene som sendes til
   releer. Skript som ser etter `zing` i dem, må oppdateres.
+- **Tidsplan.** Hele kompatibilitetslaget (`ZING_*`-reserveløsningen, kopien av `~/.zing`, overføringen av nettleserinnstillinger, informasjonskapsler og den lagrede hovednøkkelen, og adressene til det klassiske grensesnittet) er foreldet og fjernes i ekte **1.0.0** (1.0.0rc1 er første utgivelse uten det). Fram til da fungerer hver del som før, og varselet nevner denne versjonen; de gamle sideadressene `/v2/…` videresendes også til 1.0.0. ekte sletter aldri en gammel `~/.zing`, heller ikke når kopien er fjernet.
 
 ## Lisens
 

@@ -60,7 +60,15 @@ ekte has three eras:
   other `/api/` path is internal; responses carry `X-Ekte-API: internal` (public
   ones `X-Ekte-API: v1`). The local-only protections apply to `/api/v1/` too
   ([#22](https://github.com/mn567250/ekte/issues/22)).
-
+- **The web UI is served at the root, without the `/v2/` prefix.** The audit
+  page is `/`, the others are `/watches`, `/history`, `/analytics`, `/kb` and
+  `/accessibility`; scripts and stylesheets moved from `/v2/static/` to
+  `/static/`. Every link ekte generates (pages, alerts, reports, docs in all
+  languages) and the accessibility snapshots use the new addresses. The page
+  addresses are public from now on ([stability policy](docs/STABILITY.md#surface-web-addresses)).
+  Upgrade: update bookmarks and links; old `/v2/…` page addresses keep
+  redirecting until 1.0.0 (see Deprecated). Old `/v2/static/…` asset addresses
+  no longer work.
 - **No vendored third-party files in the source distribution.** The sdist still
   contains `tests/`, but not `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0);
   the accessibility tests that need it skip with a clear reason when it is
@@ -138,6 +146,24 @@ ekte has three eras:
   `docs/METHODOLOGY.nb.md`, linked from the language switcher of every
   README, developer guide and methodology; the scoring tables of the
   methodology use the wording the UI shows under **Scoreskala**.
+
+### Deprecated
+
+- **The whole zing compatibility layer is removed in 1.0.0** (1.0.0rc1 is
+  already without it): the `ZING_*` environment-variable fallback, the copy of
+  an old `~/.zing` data directory, the carry-over of browser settings, cookies
+  and the saved master key from their zing names, and the classic UI address
+  redirects (`/tools`, `/console`). Until then every part keeps working, and its
+  deprecation message (stderr, the browser console, a `Warning` header on the
+  redirects) now names the removal version 1.0.0. ekte never deletes an old
+  `~/.zing`, also not when the copy is removed. The timeline is in the
+  [stability policy](docs/STABILITY.md#deprecation-zing) and under **Coming
+  from zing** in the README (all languages).
+- **`/v2/…` page addresses.** They redirect permanently (308) to the page at
+  the root, keeping the query string, until 1.0.0, where the redirects are
+  removed (`/v2/tools` goes to `/?surface=embedding`; the classic UI addresses
+  redirect straight to the new addresses, without a second hop). Update
+  bookmarks, links and scripts.
 
 ### Fixed
 

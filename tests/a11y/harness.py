@@ -96,7 +96,7 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     # one monitor, so the monitors page has a populated list
     with httpx.Client(base_url=url, headers={"Origin": url}, timeout=10) as c:
         wid = c.post(f"/api/watches/from-history/{rid}", json={}).json().get("id")
-    # a week of runs over two relays and models, so /v2/analytics draws charts
+    # a week of runs over two relays and models, so /analytics draws charts
     seed_analytics(datetime.now(UTC), wid)
 
     yield url

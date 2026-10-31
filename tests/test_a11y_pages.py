@@ -100,8 +100,10 @@ def _pages_named(node: ast.AST) -> set[str]:
             if isinstance(n.slice, ast.Constant) and n.slice.value in PAGES:
                 found.add(n.slice.value)
         elif isinstance(n, ast.Constant) and isinstance(n.value, str):
-            # "/v2/kb", or a URL glob such as "**/v2/watches*"
+            # "/kb", or a URL glob such as "**/watches*"
             path = n.value.removeprefix("**").removesuffix("*")
+            if n.value.startswith("**") and path == "/":
+                continue  # "**/*" matches any URL; it does not name the audit page
             if path in by_path:
                 found.add(by_path[path])
     return found
@@ -282,12 +284,12 @@ def test_every_existing_ui_file_has_a_rule():
 def _assets(html: str) -> set[str]:
     out = set()
     for ref in re.findall(r'(?:src|href)="(/[^"?#]+\.(?:js|css))', html):
-        if ref.startswith("/v2/static/"):
-            out.add("ekte/web/static/v2/" + ref.removeprefix("/v2/static/"))
+        if ref.startswith("/static/"):
+            out.add("ekte/web/static/v2/" + ref.removeprefix("/static/"))
         else:
             out.add("ekte/web/static" + ref)
-    for ref in re.findall(r'fetch\("(/v2/static/[^"?#]+)"', html):
-        out.add("ekte/web/static/v2/" + ref.removeprefix("/v2/static/"))
+    for ref in re.findall(r'fetch\("(/static/[^"?#]+)"', html):
+        out.add("ekte/web/static/v2/" + ref.removeprefix("/static/"))
     return out
 
 

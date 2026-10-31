@@ -249,17 +249,15 @@ local ekte server and the relay you audit, never a third party. See
 
 ### Pages
 
-The web UI lives under `/v2/`, where `ekte serve` opens it. The addresses of
-the earlier classic UI (`/`, `/history`, `/watches`, `/tools`, `/console`)
-redirect to the matching page.
+The web UI is served at the root of the address `ekte serve` opens, with the audit page at `/`. The addresses it used before (`/v2/…`, e.g. `/v2/history`) and those of the earlier classic UI (`/tools`, `/console`) redirect permanently to the matching page, keeping the query string; these redirects are deprecated and removed in 1.0.0.
 
 | Page | Address | What it is for |
 |---|---|---|
-| **Audit** | `/v2/` | Audit a relay (optionally against a baseline) and read the report; embedding and rerank audits start here too, through the endpoint-type selector |
-| **Monitors** | `/v2/watches` | Scheduled re-audits with webhook alerts |
-| **History** | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
-| **Analytics** | `/v2/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
-| **Knowledge** | `/v2/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
+| **Audit** | `/` | Audit a relay (optionally against a baseline) and read the report; embedding and rerank audits start here too, through the endpoint-type selector |
+| **Monitors** | `/watches` | Scheduled re-audits with webhook alerts |
+| **History** | `/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
+| **Analytics** | `/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
+| **Knowledge** | `/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
 
 Across the pages: filters and configurable trends (score, grade, latency p50,
 tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
@@ -279,7 +277,7 @@ after another, so they never skew each other's latency or reliability results
 machine queue too); audits of different relays run in parallel, at most four at
 once (`EKTE_MAX_PARALLEL_AUDITS`). Monitors wait for their relay the same way.
 
-**Analytics.** `/v2/analytics` turns the local history into
+**Analytics.** `/analytics` turns the local history into
 comparisons: KPI tiles for the chosen period (runs, median score, high-risk
 share, success rate, TTFT, decode speed, billing ratios) with the change
 against the period of the same length before; a chart of any metric per relay,
@@ -738,7 +736,7 @@ OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM and Moonshot
    or `EKTE_KB_DIR`.
 3. **Your entries** (`kb.db` in the data directory), added without YAML files
    or an editable install:
-   - in the web UI's **Knowledge** page (`/v2/kb`), with one tab each for
+   - in the web UI's **Knowledge** page (`/kb`), with one tab each for
      **Models**, **Providers** and **Relays**. Every tab lists the complete set —
      packaged, `EKTE_KB_DIR` and yours (marked **Yours**) — with a filter, an
      on/off switch per item and an **Add …** form: **Add a model** → **Copy the
@@ -867,11 +865,11 @@ ekte continues [zing](https://github.com/cenbonew/zing) (its last release was
   with `EKTE_DATA_DIR`, `ZING_DATA_DIR` or `--data-dir` is used as it is.
 - **Web UI.** Language, theme and filter settings and a master key saved in the
   browser's password manager carry over. zing's classic UI is gone: its
-  addresses (`/`, `/history`, `/watches`, `/tools`, `/console`) open the
-  matching page under `/v2/`.
+  addresses (`/tools`, `/console`) open the audit page (`/`).
 - **Reports and probes.** Reports, webhooks and file names say `ekte` (e.g.
   `"tool": "ekte"`, `ekte-report.json`), and so do the probes sent to relays.
   Scripts that look for `zing` in them need updating.
+- **Timeline.** The whole compatibility layer (the `ZING_*` fallback, the `~/.zing` copy, the carry-over of browser settings, cookies and the saved master key, and the classic UI addresses) is deprecated and removed in ekte **1.0.0** (1.0.0rc1 is the first release without it). Until then every part keeps working and its notice names this version; the old `/v2/…` page addresses redirect until 1.0.0 as well. ekte never deletes an old `~/.zing`, also not when the copy is removed.
 
 ## License
 

@@ -339,14 +339,14 @@ décodage (en-têtes d'image, WAV) n'utilise que la bibliothèque standard.
 
 `ekte/web/server.py` est une application FastAPI créée par `create_app()` :
 
-- **Pages.** L'interface web (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) est en HTML statique. Il n'y a
-  pas de page Outils : les audits d'embedding et de rerank démarrent sur la page d'audit
-  via le sélecteur de type de point d'accès (`/v2/?surface=embedding|rerank`), et
-  `/v2/tools` sert une petite page qui y redirige les anciens liens (`#rerank`
-  choisit le rerank, `?rerun=` est transmis). Les adresses de l'interface
-  classique supprimée (`/`, `/history`, `/watches`, `/tools`, `/console`)
-  redirigent (308) vers leurs pages v2, avec la chaîne de requête.
+- **Pages.** L'interface web (`/`, `/history`, `/watches`,
+  `/analytics`, `/kb`, `/accessibility`) est en HTML statique servi à la racine ; ses scripts et
+  styles sont sous `/static/`. Il n'y a pas de page Outils : les audits d'embedding et de rerank
+  démarrent sur la page d'audit via le sélecteur de type de point d'accès
+  (`/?surface=embedding|rerank`). Jusqu'à 1.0.0, les anciennes adresses redirigent (308) vers la
+  page à la racine, avec la chaîne de requête : `/v2/…` (`/v2/tools` mène à
+  `/?surface=embedding`, et `#rerank` choisit le rerank) ainsi que `/tools` et `/console` de l'interface
+  classique supprimée. Ces redirections sont obsolètes et supprimées en 1.0.0.
 - **API.** `/api/jobs…` exécute les audits (voir plus bas) ; `/api/models` liste
   les modèles d'un relais ; `/api/report/export` rend un rapport ;
   `/api/history…`, `/api/watches…`, `/api/kb…` et `/api/analytics…` servent les
@@ -608,7 +608,7 @@ l'ancien répertoire existe (fichiers SQLite via l'API de sauvegarde, dans un
 répertoire temporaire voisin renommé ensuite). `~/.zing` n'est jamais modifié ni
 supprimé. `lang.js` copie de même les réglages `zing.*` du navigateur vers
 `ekte.*`, et le serveur lit encore les cookies `zing_lang` / `zing_ui` tant que
-les cookies `ekte_*` n'existent pas.
+les cookies `ekte_*` n'existent pas. Tout cela est obsolète et supprimé en 1.0.0 (les avis nomment cette version) ; ekte ne supprime jamais un ancien `~/.zing`.
 
 ## Contribuer
 

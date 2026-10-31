@@ -29,12 +29,12 @@ from dataclasses import dataclass
 from functools import cache
 
 PAGES: dict[str, str] = {
-    "audit": "/v2/",
-    "history": "/v2/history",
-    "monitors": "/v2/watches",
-    "kb": "/v2/kb",
-    "analytics": "/v2/analytics",
-    "accessibility": "/v2/accessibility",
+    "audit": "/",
+    "history": "/history",
+    "monitors": "/watches",
+    "kb": "/kb",
+    "analytics": "/analytics",
+    "accessibility": "/accessibility",
 }
 
 # pytest selection (tests/a11y/conftest.py)

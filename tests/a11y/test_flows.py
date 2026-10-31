@@ -5,11 +5,11 @@ The main tasks are run end to end in the browser, against a private ekte
 server (ekte_proc.py) and a fake OpenAI-compatible relay on 127.0.0.1
 (fake_relay.py), so nothing leaves the machine:
 
-1. an audit on /v2/, followed to the rendered report (every language);
+1. an audit on /, followed to the rendered report (every language);
 2. failing audits: an empty form, a URL the server refuses, an unreachable relay;
 3. a monitor: scheduled from History, activated with an API key (which opens
    the master-key dialog), edited, paused, the key locked and unlocked, deleted;
-4. look-up, filter, check/save/delete of an entry on /v2/kb;
+4. look-up, filter, check/save/delete of an entry on /kb;
 5. the audit page's embedding and rerank endpoint types (and a rerun).
 
 At every step an init script (TRACK_JS) watches the DOM with a
@@ -457,7 +457,7 @@ def run_to_report(flow: Flow, name: str) -> None:
 @pytest.mark.parametrize("lang", LANGS)
 def test_audit_flow(browser, contexts, ekte, relay, lang: str) -> None:
     """Start an audit, follow the scan to the report, start another one."""
-    flow = open_flow(contexts, browser, ekte.url, "/v2/", lang, AUDIT_MESSAGES, "audit flow")
+    flow = open_flow(contexts, browser, ekte.url, "/", lang, AUDIT_MESSAGES, "audit flow")
     page = flow.page
     flow.step("fill the form; the relay's models are listed", lambda: fill_audit(page, relay.url))
     flow.step("save the relay to the knowledge base", lambda: save_relay(page, f"A11y relay {lang}"))
@@ -476,7 +476,7 @@ def test_audit_flow(browser, contexts, ekte, relay, lang: str) -> None:
 def test_failing_audit_flow(browser, contexts, ekte, broken_relay, lang: str) -> None:
     """Errors: an empty form, a URL the server refuses, a relay that answers
     HTTP 500, a port nobody listens on."""
-    flow = open_flow(contexts, browser, ekte.url, "/v2/", lang, AUDIT_MESSAGES, "failing audit flow")
+    flow = open_flow(contexts, browser, ekte.url, "/", lang, AUDIT_MESSAGES, "failing audit flow")
     page = flow.page
     flow.step("submit the empty form", lambda: press(page, "#go"))
     if not page.locator("#formerr").inner_text().strip():
@@ -516,12 +516,12 @@ def test_monitor_flow(browser, contexts, ekte, relay, lang: str) -> None:
     choose to store keys encrypted (creating the master key in its dialog),
     edit, pause, lock/unlock the key, delete it, stop storing keys."""
     flow = open_flow(
-        contexts, browser, ekte.url, "/v2/history", lang, MONITOR_MESSAGES, "monitor flow",
+        contexts, browser, ekte.url, "/history", lang, MONITOR_MESSAGES, "monitor flow",
         permissions=["clipboard-read", "clipboard-write"],
     )
     page = flow.page
     flow.navigate(
-        "schedule a run as monitor (History)", lambda: press(page, "button[data-sched]"), "**/v2/watches*", MONITOR_MESSAGES,
+        "schedule a run as monitor (History)", lambda: press(page, "button[data-sched]"), "**/watches*", MONITOR_MESSAGES,
         expect_focus=".setup",
     )
     page.wait_for_selector(".mon .setup")
@@ -658,7 +658,7 @@ def test_kb_flow(browser, contexts, ekte, lang: str) -> None:
     """Every tab of the Knowledge page: filter, switch packaged items off and
     on, add (model wizard, provider wizard, relay form), switch and delete
     your own entry; plus the model-id lookup and the tabs' keyboard use."""
-    flow = open_flow(contexts, browser, ekte.url, "/v2/kb", lang, KB_MESSAGES, "knowledge-base flow")
+    flow = open_flow(contexts, browser, ekte.url, "/kb", lang, KB_MESSAGES, "knowledge-base flow")
     page = flow.page
     page.wait_for_selector("#models-list li.item", state="attached")
 
@@ -868,7 +868,7 @@ _snapshots: dict[tuple[str, str], tuple[str, list[str]]] = {}
 MASK_REPORT_DATE_JS = """
 async () => {
   let rep;
-  try { rep = await (await fetch('/v2/static/bitv-report.json')).json(); } catch (e) { return 0; }
+  try { rep = await (await fetch('/static/bitv-report.json')).json(); } catch (e) { return 0; }
   if (!rep || !rep.generated_at || !window.EKTE_LANG) return 0;
   const d = new Date(rep.generated_at);
   const forms = new Set();
@@ -953,7 +953,7 @@ def test_aria_tree_names(browser, contexts, ekte_seeded, page_id: str, lang: str
 
 
 # --------------------------------------------------------------------------- #
-# 5: the audit page's embedding and rerank surfaces (formerly /v2/tools)
+# 5: the audit page's embedding and rerank surfaces (formerly the Tools page)
 # --------------------------------------------------------------------------- #
 def type_model(page: Page, input_sel: str, model: str) -> None:
     """Type a model id, switching the relay's model list to free text if needed."""
@@ -994,7 +994,7 @@ async () => {
 def test_surface_flow(browser, contexts, ekte, relay, broken_relay, lang: str) -> None:
     """Audit an embedding endpoint (and rerun it), then a rerank endpoint
     (working and broken), on the audit page's endpoint-type selector."""
-    flow = open_flow(contexts, browser, ekte.url, "/v2/", lang, AUDIT_MESSAGES, "surface flow")
+    flow = open_flow(contexts, browser, ekte.url, "/", lang, AUDIT_MESSAGES, "surface flow")
     page = flow.page
     flow.step("choose the embedding endpoint type", lambda: pick_surface(page, "embedding"))
     flow.step("embedding: submit the empty form", lambda: press(page, "#go"))
@@ -1008,7 +1008,7 @@ def test_surface_flow(browser, contexts, ekte, relay, broken_relay, lang: str) -
     flow.step("embedding: fill the form", embed)
     run_to_report(flow, "embedding: audit the endpoint")
     rid = page.evaluate(LATEST_RUN_JS)
-    flow.navigate(f"embedding: rerun #{rid}", lambda: page.goto(f"{ekte.url}/v2/?rerun={rid}"), "**/v2/?rerun=*", AUDIT_MESSAGES)
+    flow.navigate(f"embedding: rerun #{rid}", lambda: page.goto(f"{ekte.url}/?rerun={rid}"), "**/?rerun=*", AUDIT_MESSAGES)
     page.wait_for_function("() => document.querySelector('#i-edims').value !== ''")
     if page.input_value("#i-edims") != str(EMBED_DIM) or not page.locator("#sf-embedding").is_checked():
         flow.issues.append(f"rerun: the claimed dimension is {page.input_value('#i-edims')!r}, want {EMBED_DIM}")

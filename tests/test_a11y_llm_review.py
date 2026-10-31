@@ -797,7 +797,7 @@ def test_review_end_to_end() -> None:
         return httpx.Response(200, json=_answer([F_LINK]))
 
     c, _ = _client(handler)
-    rep = lr.review(records, c, pages={"audit": "/v2/", "kb": "/v2/kb"}, log=lambda s: None)
+    rep = lr.review(records, c, pages={"audit": "/", "kb": "/kb"}, log=lambda s: None)
     # page+lang requests, plus one translation request for the page with 2 languages
     assert [(e["task"], e["page"], e["lang"]) for e in rep["pages"]] == [
         ("page", "audit", "en"),
@@ -808,7 +808,7 @@ def test_review_end_to_end() -> None:
     assert len(asked) == 4
     assert [e["status"] for e in rep["pages"]] == ["reviewed", "reviewed", "reviewed", "error"]
     assert "refusal" in rep["pages"][3]["error"]
-    assert rep["pages"][0]["path"] == "/v2/" and "data" in rep["pages"][0]
+    assert rep["pages"][0]["path"] == "/" and "data" in rep["pages"][0]
     # bug 8: the translation payload is saved for auditing, exactly as sent
     tr = rep["pages"][2]
     assert tr["data"]["langs"] == ["en", "de"] and tr["data"]["rows"]
@@ -906,7 +906,7 @@ def test_main_local_endpoint_needs_no_key(monkeypatch: pytest.MonkeyPatch, tmp_p
 def _fake_harness(monkeypatch: pytest.MonkeyPatch) -> None:
     mod = types.ModuleType("tests.a11y.harness")
     mod.LANGS = ["en", "de"]  # type: ignore[attr-defined]
-    mod.PAGES = {"audit": "/v2/"}  # type: ignore[attr-defined]
+    mod.PAGES = {"audit": "/"}  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "tests.a11y.harness", mod)
 
 
@@ -957,7 +957,7 @@ def _review_run(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
 def _tested_report(path: Any) -> dict[str, Any]:
     from tests.a11y import conformance
 
-    rep = conformance.build_report({"langs": ["en", "de"], "pages": {"audit": "/v2/"}}, None)
+    rep = conformance.build_report({"langs": ["en", "de"], "pages": {"audit": "/"}}, None)
     path.write_text(json.dumps(rep), encoding="utf-8")
     return rep
 
@@ -993,7 +993,7 @@ def test_main_update_report_from_results(monkeypatch: pytest.MonkeyPatch, tmp_pa
 
     _review_run(monkeypatch, tmp_path)
     res = tmp_path / "a11y-results.json"
-    res.write_text(json.dumps(results.build_results({}, {"langs": ["en", "de"], "pages": {"audit": "/v2/"}})), encoding="utf-8")
+    res.write_text(json.dumps(results.build_results({}, {"langs": ["en", "de"], "pages": {"audit": "/"}})), encoding="utf-8")
     bitv = tmp_path / "new.json"
     assert lr.main([*LOCAL, "--out", str(tmp_path / "r.json"), "--update-report", str(bitv), "--results", str(res)]) == 0
     assert json.loads(bitv.read_text(encoding="utf-8"))["review"]["model"] == "qwen3"

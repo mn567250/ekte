@@ -55,6 +55,6 @@ def test_tokens_css_declares_each_colour_once_for_both_themes():
 def test_every_v2_page_links_tokens_before_ekte_css():
     for page in sorted(V2.glob("*.html")):
         html = page.read_text(encoding="utf-8")
-        tok = html.find('href="/v2/static/tokens.css"')
-        ekte = html.find('href="/v2/static/ekte.css"')
+        tok = html.find('href="/static/tokens.css"')
+        ekte = html.find('href="/static/ekte.css"')
         assert 0 <= tok < ekte, f"{page.name}: tokens.css must be linked before ekte.css"

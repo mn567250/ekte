@@ -6,13 +6,13 @@
 <title data-en="ekte — monitors">ekte — 监控</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
-<script src="/v2/static/theme.js"></script>
-<link rel="icon" href="/v2/static/favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/ekte.css" />
-<link rel="stylesheet" href="/v2/static/fields.css" />
-<link rel="stylesheet" href="/v2/static/jobs.css" />
-<link rel="stylesheet" href="/v2/static/filterpanel.css" />
+<script src="/static/theme.js"></script>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/static/tokens.css" />
+<link rel="stylesheet" href="/static/ekte.css" />
+<link rel="stylesheet" href="/static/fields.css" />
+<link rel="stylesheet" href="/static/jobs.css" />
+<link rel="stylesheet" href="/static/filterpanel.css" />
 <style>
   /* ---- monitors page (v2) — page-only rules; colours via ekte.css tokens ---- */
   /* inline field errors */
@@ -184,7 +184,7 @@
   <main id="main" tabindex="-1">
     <div class="hero">
       <h1 data-en="Put a <span class='u'>scheduled sentinel</span> on your relay">给中转站设个<span class="u">定时哨兵</span></h1>
-      <p data-en="Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/v2/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).">每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在<a href="/v2/history">检测历史</a>中打开一次运行，选择<b>设为监控</b>，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
+      <p data-en="Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).">每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在<a href="/history">检测历史</a>中打开一次运行，选择<b>设为监控</b>，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
     </div>
 
     <!-- the page notice (notice.js) -->
@@ -231,13 +231,13 @@
 </div>
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
-<script src="/v2/static/tabs.js"></script>
-<script src="/v2/static/jobs.js"></script>
+<script src="/static/tabs.js"></script>
+<script src="/static/jobs.js"></script>
 <script src="/secretfield.js"></script>
-<script src="/v2/static/masterkey.js"></script>
-<script src="/v2/static/notice.js"></script>
-<script src="/v2/static/filterpanel.js"></script>
-<script src="/v2/static/nav.js"></script>
+<script src="/static/masterkey.js"></script>
+<script src="/static/notice.js"></script>
+<script src="/static/filterpanel.js"></script>
+<script src="/static/nav.js"></script>
 <script>
 (function () {
   "use strict";
@@ -529,7 +529,7 @@
       ["host", host], ["model", w.claimed_model || w.model || ""], ["suite", w.suite || ""]]
       .filter(function (p) { return p[1]; })
       .map(function (p) { return p[0] + "=" + encodeURIComponent(p[1]); }).join("&");
-    return "/v2/history" + (q ? "?" + q : "") + "#r-" + reportId;
+    return "/history" + (q ? "?" + q : "") + "#r-" + reportId;
   }
 
   // Wire protocol: a forced one, or what "auto" detects for this endpoint.
@@ -870,7 +870,7 @@
       list.innerHTML =
         '<div class="empty boxed">' + icon("bell") +
         "<p>" + esc(T("还没有任何监控。", "No monitors yet.")) + "</p>" +
-        '<p><a href="/v2/history">' + esc(T("在检测历史中选择一次运行，设为监控 →", "Pick a run in History and schedule it as a monitor →")) + "</a></p></div>";
+        '<p><a href="/history">' + esc(T("在检测历史中选择一次运行，设为监控 →", "Pick a run in History and schedule it as a monitor →")) + "</a></p></div>";
       return;
     }
     // keep focus on the same control across a re-render
@@ -1297,7 +1297,7 @@
     }
   });
 
-  // /v2/watches#w-<id>: arriving from History's "Schedule as monitor", or
+  // /watches#w-<id>: arriving from History's "Schedule as monitor", or
   // "Open monitor" in the Running list (same page: a hashchange)
   var m = /^#w-(\d+)$/.exec(location.hash || "");
   if (m) {

@@ -335,14 +335,14 @@ nutzt nur die Standardbibliothek.
 
 `ekte/web/server.py` ist eine FastAPI-App, erzeugt von `create_app()`:
 
-- **Seiten.** Die Weboberfläche (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) besteht aus statischem HTML.
-  Es gibt keine Werkzeuge-Seite: Embedding- und Rerank-Prüfungen starten auf der
-  Prüfseite über die Auswahl des Endpunkttyps (`/v2/?surface=embedding|rerank`),
-  und `/v2/tools` liefert eine kleine Seite, die alte Links dorthin weiterleitet
-  (`#rerank` wählt Rerank, `?rerun=` wird weitergegeben). Die Adressen der
-  entfernten klassischen Oberfläche (`/`, `/history`, `/watches`, `/tools`,
-  `/console`) leiten (308) auf ihre v2-Seiten um, mit dem Query-String.
+- **Seiten.** Die Weboberfläche (`/`, `/history`, `/watches`,
+  `/analytics`, `/kb`, `/accessibility`) besteht aus statischem HTML, an der Wurzel ausgeliefert;
+  Skripte und Styles liegen unter `/static/`. Es gibt keine Werkzeuge-Seite:
+  Embedding- und Rerank-Prüfungen starten auf der Prüfseite über die Auswahl des
+  Endpunkttyps (`/?surface=embedding|rerank`). Bis 1.0.0 leiten die früheren Adressen (308) auf die
+  Seite an der Wurzel um und behalten den Query-String bei: `/v2/…` (`/v2/tools` führt auf
+  `/?surface=embedding`, `#rerank` wählt Rerank) sowie `/tools` und `/console` der entfernten
+  klassischen Oberfläche. Diese Weiterleitungen sind veraltet und werden in 1.0.0 entfernt.
 - **API.** `/api/jobs…` führt Prüfungen aus (siehe unten); `/api/models` listet
   die Modelle eines Relays; `/api/report/export` rendert einen Bericht;
   `/api/history…`, `/api/watches…`, `/api/kb…` und `/api/analytics…` bedienen
@@ -600,7 +600,7 @@ alte Verzeichnis existiert (SQLite-Dateien über die Backup-API, in ein
 temporäres Nachbarverzeichnis, das anschließend umbenannt wird). `~/.zing` wird
 nie geändert oder gelöscht. `lang.js` kopiert die `zing.*`-Einstellungen des
 Browsers ebenso nach `ekte.*`, und der Server liest die Cookies `zing_lang` /
-`zing_ui`, solange die `ekte_*`-Cookies fehlen.
+`zing_ui`, solange die `ekte_*`-Cookies fehlen. Alles davon ist veraltet und wird in 1.0.0 entfernt (die Hinweise nennen diese Version); ekte löscht ein altes `~/.zing` nie.
 
 ## Mitwirken
 

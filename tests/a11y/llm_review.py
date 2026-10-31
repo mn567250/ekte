@@ -24,7 +24,7 @@ MODEL. Anthropic Messages and OpenAI-compatible chat-completions endpoints
 (ekte.clients.detect_api). A local endpoint needs no key. ``--dry-run``
 collects the page data and builds the requests without calling the API.
 ``--update-report`` then applies the review to the conformance report shown
-at /v2/accessibility (ekte/web/static/v2/bitv-report.json, see
+at /accessibility (ekte/web/static/v2/bitv-report.json, see
 tests/a11y/conformance.py), in the same command.
 
 A report is ALWAYS written to ``--out``, so a broken run can be told apart
@@ -1721,7 +1721,7 @@ def main(argv: list[str] | None = None) -> int:
     rep = ap.add_argument_group("accessibility report (python -m tests.a11y.conformance)")
     rep.add_argument(
         "--update-report", nargs="?", const="", metavar="REPORT",
-        help="after the review, apply it to the conformance report shown at /v2/accessibility"
+        help="after the review, apply it to the conformance report shown at /accessibility"
         " (default: ekte/web/static/v2/bitv-report.json); an earlier review in it is replaced",
     )
     rep.add_argument(

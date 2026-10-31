@@ -21,24 +21,24 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Acessibilidade":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navegação principal":
     - link "Auditoria":
       - /url: /v2/
     - link "Monitores":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Histórico":
-      - /url: /v2/history
+      - /url: /history
     - link "Análises":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conhecimento":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Coloque uma sentinela agendada no seu intermediário" [level=1]
   - paragraph:
     - text: Cada monitor executa novamente, na sua máquina, uma auditoria que você já rodou, no intervalo definido. Para adicionar um, abra uma execução no
     - link "Histórico":
-      - /url: /v2/history
+      - /url: /history
     - text: e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa seu limite ou piora em relação à última vez, o ekte alerta seus webhooks (Slack / Feishu / DingTalk / JSON genérico).
   - status:
     - text: As chaves de API não são guardadas As chaves que introduz ficam apenas na memória do ekte serve e nunca são escritas no disco; introduza-as novamente após um reinício. As referências env:VAR continuam a funcionar.
@@ -134,7 +134,7 @@
         - code: openai/gpt-4o
         - text: fixado 01/10/2026, 12:00
       - 'link "Da execução #1 →"':
-        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Conclua a configuração para ativá-lo":
         - heading "Conclua a configuração para ativá-lo" [level=4]
         - paragraph: A configuração vem da execução no Histórico. Defina com que frequência ele roda e ative-o.

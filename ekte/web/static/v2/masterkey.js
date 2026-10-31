@@ -1,7 +1,7 @@
 /* ekte web UI v2 — the monitors' master key: create (shown once), unlock,
  * lock, rotate, move a legacy key file out, reset a lost key.
  *
- *   <script src="/v2/static/masterkey.js"></script>   (after lang.js / icons.js)
+ *   <script src="/static/masterkey.js"></script>   (after lang.js / icons.js)
  *   EkteMasterKey.mountBar(el, onChange)   status line + the allowed actions
  *   EkteMasterKey.withKey(doFetch)         run doFetch(); on 423 (no master key)
  *                                          open the right dialog, then retry once
@@ -27,6 +27,7 @@
   var CRED_NAME = "ekte master key";
   // The id a password manager saved the key under before the rename
   // (zing -> ekte); still accepted when the saved key is filled in.
+  // Deprecated: removed in ekte 1.0.0.
   var LEGACY_CRED_ID = "zing-master-key";
 
   function T(zh, en) {

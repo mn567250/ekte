@@ -21,18 +21,18 @@
     - option "Deutsch" [selected]
     - option "Norsk"
   - link "Barrierefreiheit":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Hauptnavigation":
     - link "Prüfung":
       - /url: /v2/
     - link "Überwachung":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Verlauf":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyse":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Wissen":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Konformitätsbericht Barrierefreiheit" [level=1]
   - paragraph: "Jeder Prüfschritt der BITV 2.0 und der EN 301549 (Kapitel 9, entspricht WCAG 2.1 Stufe A und AA): wie er geprüft wird und das letzte Ergebnis der automatisierten Barrierefreiheitstests."
@@ -58,11 +58,11 @@
     - term: Seiten
     - definition:
       - code: /v2/
-      - code: /v2/history
-      - code: /v2/watches
-      - code: /v2/kb
-      - code: /v2/analytics
-      - code: /v2/accessibility
+      - code: /history
+      - code: /watches
+      - code: /kb
+      - code: /analytics
+      - code: /accessibility
   - region "Abdeckung":
     - heading "Abdeckung" [level=2]
     - heading "Gesamtergebnis" [level=3]

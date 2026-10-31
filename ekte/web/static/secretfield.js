@@ -13,7 +13,7 @@
  * (aria-pressed="true" while the key is shown); its colours come from the
  * optional custom properties --zsf-color / --zsf-color-on / --zsf-focus,
  * falling back to --faint / --ink / --teal (the v2 UI sets them in
- * /v2/static/fields.css).
+ * /static/fields.css).
  *
  * Exposes window.EkteSecret with:
  *   - enhance(root)       add the eye toggle to every input[data-secret] under root

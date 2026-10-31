@@ -1,13 +1,13 @@
 # Accessibility of web UI v2
 
-Web UI v2 (`/v2/…`) targets **BITV 2.0**, which requires **EN 301 549**, whose
+The web UI targets **BITV 2.0**, which requires **EN 301 549**, whose
 web chapter 9 is **WCAG 2.1 level A + AA**. BITV-Test step numbers are the
 EN 301 549 clause numbers (WCAG 1.4.3 → 9.1.4.3).
 
 `tests/a11y/` checks as much of this as a machine can, in a real browser
 (Playwright + Chromium, rules by [axe-core](https://github.com/dequelabs/axe-core)
-4.13, vendored in `tests/a11y/vendor/`). Every page (`/v2/`, `/v2/history`,
-`/v2/watches`, `/v2/kb`, `/v2/analytics`, `/v2/accessibility`) is checked **in every UI language**
+4.13, vendored in `tests/a11y/vendor/`). Every page (`/`, `/history`,
+`/watches`, `/kb`, `/analytics`, `/accessibility`) is checked **in every UI language**
 (`ekte/i18n/locales/*.json`: de, en, es, fr, it, pt, zh), in light and dark
 theme, as loaded and with every disclosure opened (rendered report, advanced
 options, monitor details) and every tab panel shown.
@@ -107,7 +107,7 @@ Beyond WCAG: axe best-practice rules (landmarks, heading order, …) and
 **forced colours / Windows high contrast** (`test_forced_colors_mode`) are
 checked too.
 
-## Conformance report (`/v2/accessibility`)
+## Conformance report (`/accessibility`)
 
 The page **Accessibility** (the accessibility icon next to the language switch
 in the header of every v2 page) shows, per test step, how it is tested and the

@@ -134,7 +134,7 @@ def test_non_json_bodies_are_refused(client):
 
 
 def test_security_headers_on_every_response(client):
-    for path in ("/", "/v2/", "/api/health", "/v2/static/ekte.css"):
+    for path in ("/", "/", "/api/health", "/static/ekte.css"):
         h = client.get(path).headers
         assert h["x-frame-options"] == "DENY", path
         assert h["x-content-type-options"] == "nosniff", path

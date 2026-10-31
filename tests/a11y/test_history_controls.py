@@ -69,7 +69,7 @@ def _history(open_page: Any, theme: str = "light", viewport: dict[str, int] | No
         lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(rows)),
     )
     page = ctx.new_page()
-    page.goto(base + "/v2/history", wait_until="networkidle")
+    page.goto(base + "/history", wait_until="networkidle")
     settle(page)
     return page
 

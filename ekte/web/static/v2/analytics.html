@@ -6,13 +6,13 @@
 <title data-en="ekte — analytics">ekte — 分析</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
-<script src="/v2/static/theme.js"></script>
-<link rel="icon" href="/v2/static/favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="/v2/static/tokens.css" />
-<link rel="stylesheet" href="/v2/static/ekte.css" />
-<link rel="stylesheet" href="/v2/static/charts.css" />
-<link rel="stylesheet" href="/v2/static/chartmotion.css" />
-<link rel="stylesheet" href="/v2/static/filterpanel.css" />
+<script src="/static/theme.js"></script>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/static/tokens.css" />
+<link rel="stylesheet" href="/static/ekte.css" />
+<link rel="stylesheet" href="/static/charts.css" />
+<link rel="stylesheet" href="/static/chartmotion.css" />
+<link rel="stylesheet" href="/static/filterpanel.css" />
 <style>
   /* Analytics page. Tokens only (ekte.css, charts.css, filterpanel.css);
    * light + dark.
@@ -323,12 +323,12 @@
 </div>
 <script src="/i18n.js"></script>
 <script src="/icons.js"></script>
-<script src="/v2/static/nav.js"></script>
-<script src="/v2/static/notice.js"></script>
-<script src="/v2/static/charts.js"></script>
-<script src="/v2/static/chartmotion.js"></script>
-<script src="/v2/static/filterpanel.js"></script>
-<script src="/v2/static/tabs.js"></script>
+<script src="/static/nav.js"></script>
+<script src="/static/notice.js"></script>
+<script src="/static/charts.js"></script>
+<script src="/static/chartmotion.js"></script>
+<script src="/static/filterpanel.js"></script>
+<script src="/static/tabs.js"></script>
 <script>
 (function () {
   "use strict";
@@ -854,7 +854,7 @@
     box.hidden = false;
     box.innerHTML = '<div class="ic">' + ico("bars") + "</div><p>" +
       esc(T("还没有检测记录，暂无可分析的数据。", "No audits recorded yet, so there is nothing to analyse.")) +
-      '</p><a class="btn pri" href="/v2/">' + esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a>";
+      '</p><a class="btn pri" href="/">' + esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a>";
     say("");
   }
 
@@ -1228,7 +1228,7 @@
     }
     if (anyLow) {
       notes += '<p class="note">' + ico("info") + "<span>" + esc(lowHint()) + " " +
-        '<a href="/v2/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>";
+        '<a href="/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>";
     }
     if (marks.length) {
       notes += '<div class="note">' + ico("info") + "<span>" +
@@ -1383,7 +1383,7 @@
     var cols = LB_COLS.filter(function (c) { return c[0] === "runs" || c[0] === "last_run" || units[c[0]]; });
     body.innerHTML = (anyLow ? '<p class="note">' + ico("info") + "<span>" +
       esc(Tf("标为“检测较少”的行少于 {min} 次检测——单次检测可能是离群值。", "Rows marked “few runs” have fewer than {min} runs — a single audit can be an outlier.", { min: minRuns() })) + " " +
-      '<a href="/v2/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>" : "") +
+      '<a href="/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>" : "") +
       '<div class="tscroll lbtab" tabindex="0" role="region" aria-labelledby="lbcap"><table class="dt"><caption id="lbcap">' +
       esc(V.lb === "relay" ? Tf("“{name}”的各中转站", "Relays for “{name}”", { name: subj }) : Tf("“{name}”的各模型", "Models for “{name}”", { name: subj })) +
       "</caption><thead><tr>" + head("label", V.lb === "relay" ? T("中转站", "Relay") : T("模型", "Model"), false) +
@@ -1439,7 +1439,7 @@
   }
   function fewNote(hint) {
     return '<p class="note">' + ico("info") + "<span>" + esc(hint || lowHint()) + " " +
-      '<a href="/v2/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>";
+      '<a href="/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>";
   }
   function relayName(key) {
     var x = ((state.opts && state.opts.relays) || []).filter(function (r) { return r.key === key; })[0];
@@ -1762,7 +1762,7 @@
     var nc = function (c) { return '<span class="cn">n=' + esc(String(c.n)) + "</span>" + (c.n && c.low_n ? '<span class="few">' + esc(T("检测较少", "few runs")) + "</span>" : ""); };
     body.innerHTML = (d.rows.some(function (r) { return r.low_n; }) ? '<p class="note">' + ico("info") + "<span>" +
       esc(Tf("标为“检测较少”的行少于 {min} 次检测——单次检测可能是离群值。", "Rows marked “few runs” have fewer than {min} runs — a single audit can be an outlier.", { min: minRuns() })) + " " +
-      '<a href="/v2/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>" : "") +
+      '<a href="/watches">' + esc(T("设置监控以定期测量。", "Schedule a monitor for regular measurements.")) + "</a></span></p>" : "") +
       '<div class="tscroll itab" tabindex="0" role="region" aria-labelledby="int-cap"><table class="dt"><caption id="int-cap">' +
       esc(T("每个中转站 × 模型的检查结果（n = 有结论的检测次数）", "Check results per relay × model (n = runs with a verdict)")) + "</caption><thead><tr>" +
       th(T("中转站 × 模型", "Relay × model")) + th(T("检测次数", "Runs"), true) +
