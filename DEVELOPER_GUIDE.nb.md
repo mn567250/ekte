@@ -764,6 +764,14 @@ beskytter grensesnittet.
 Selve den sammensatte handlingen er `action.yml`, dokumentert i
 [docs/CI.md](docs/CI.md).
 
+### Tredjepartsfiler i distribusjonen
+
+Kildedistribusjonen inneholder testene, men ingen medfølgende tredjepartsfiler. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) ligger bare i git-repoet; den er utelatt fra sdist (`exclude` under `[tool.hatch.build.targets.sdist]` i `pyproject.toml`) og har aldri vært en del av wheel.
+
+- Tester som trenger en utelatt fil, hoppes over med en tydelig begrunnelse når den mangler; kjør tilgjengelighetssuiten fra en git-utsjekk.
+- `NOTICE` lister hver tredjepartsfil og sier om den distribueres. Legg en ny medfølgende fil i `exclude`-listen og i `NOTICE`, eller, hvis den må følge med, skriv i `NOTICE` at den gjør det.
+- `scripts/check_dist_contents.py` bygger wheel og sdist (`uv build`) og feiler hvis en utelatt fil, eller en fil som `NOTICE` oppgir som ikke distribuert, er med. Arbeidsflyten `.github/workflows/dist.yml` kjører det i en egen jobb.
+
 ## Utgivelser
 
 En utgivelse er en versjonstagg; alt annet er automatisert og kontrollert.

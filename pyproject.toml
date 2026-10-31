@@ -117,6 +117,9 @@ include = [
     "/CHANGELOG.md",
     "/pyproject.toml",
 ]
+# Third-party test files are not redistributed (NOTICE; scripts/check_dist_contents.py):
+# axe-core is MPL-2.0; the a11y tests skip when it is absent.
+exclude = ["/tests/a11y/vendor/*.js"]
 
 [tool.ruff]
 line-length = 100

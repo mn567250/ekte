@@ -786,6 +786,14 @@ le protezioni dell'interfaccia.
 
 L'action composita è `action.yml`, documentata in [docs/CI.md](docs/CI.md).
 
+### File di terze parti nella distribuzione
+
+La distribuzione dei sorgenti contiene i test, ma nessun file di terze parti incluso. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) è solo nel repository git; è escluso dallo sdist (`exclude` in `[tool.hatch.build.targets.sdist]` di `pyproject.toml`) e non è mai stato parte del wheel.
+
+- I test che richiedono un file escluso vengono saltati con un motivo chiaro se manca; esegui la suite di accessibilità da un checkout git.
+- `NOTICE` elenca ogni file di terze parti e dice se è distribuito. Aggiungi un nuovo file incluso alla lista `exclude` e a `NOTICE`, oppure, se deve essere distribuito, dichiaralo in `NOTICE`.
+- `scripts/check_dist_contents.py` costruisce wheel e sdist (`uv build`) e fallisce se è presente un file escluso o un file che `NOTICE` indica come non distribuito. Il workflow `.github/workflows/dist.yml` lo esegue in un job separato.
+
 ## Rilasci
 
 Un rilascio è un tag di versione; tutto il resto è automatizzato e verificato. La

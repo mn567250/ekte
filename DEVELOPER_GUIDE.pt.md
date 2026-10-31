@@ -780,6 +780,14 @@ que protege a interface.
 
 A action composta é `action.yml`, documentada em [docs/CI.md](docs/CI.md).
 
+### Arquivos de terceiros na distribuição
+
+A distribuição de código-fonte contém os testes, mas nenhum arquivo de terceiros incluído. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) está apenas no repositório git; é excluído do sdist (`exclude` em `[tool.hatch.build.targets.sdist]` do `pyproject.toml`) e nunca fez parte do wheel.
+
+- Os testes que precisam de um arquivo excluído são ignorados com um motivo claro quando ele falta; execute a suíte de acessibilidade a partir de um checkout git.
+- `NOTICE` lista cada arquivo de terceiros e diz se é distribuído. Adicione um novo arquivo incluído à lista `exclude` e ao `NOTICE` ou, se ele precisar ser distribuído, declare isso no `NOTICE`.
+- `scripts/check_dist_contents.py` constrói o wheel e o sdist (`uv build`) e falha se houver um arquivo excluído ou um arquivo que o `NOTICE` lista como não distribuído. O workflow `.github/workflows/dist.yml` o executa em um job separado.
+
 ## Publicação de versões
 
 Uma versão é uma tag de versão; tudo o resto é automatizado e verificado. A lista
