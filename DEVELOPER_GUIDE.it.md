@@ -659,7 +659,7 @@ modello conta come divergenza.
 
 Compila sempre `identity_keywords` con le parole del produttore e della
 famiglia con cui il modello si identifica. Il controllo d'identità conta anche
-la chiave del provider, il nome visualizzato e l'id del modello come marchio
+la chiave del fornitore, il nome visualizzato e l'id del modello come marchio
 autentico, estesi agli altri nomi del produttore in `VENDOR_BRANDS`
 (`ekte/knowledge/identity.py`, che è anche l'elenco dei marchi rivali del
 rilevatore); l'importazione completa le parole chiave vuote a partire da questi
@@ -716,26 +716,26 @@ controlla a ogni apertura.
 
 Per modificare uno schema:
 
-1. Aggiungete allo store (`web/history.py`, `web/watches.py`,
+1. Aggiungi allo store (`web/history.py`, `web/watches.py`,
    `knowledge/store.py`) una funzione `_vN(conn)` che esegue la modifica e
-   accodate `dbmigrate.Migration(N, _vN)` alla sua tupla `MIGRATIONS`. Non
-   modificate né riordinate mai un passo esistente: i database in uso lo hanno
+   accoda `dbmigrate.Migration(N, _vN)` alla sua tupla `MIGRATIONS`. Non
+   modificare né riordinare mai un passo esistente: i database in uso lo hanno
    già eseguito.
-2. Mantenete il passo idempotente (`CREATE ... IF NOT EXISTS` e
-   `kb_snapshot.add_link_columns()` per le colonne) e non fate commit né
+2. Mantieni il passo idempotente (`CREATE ... IF NOT EXISTS` e
+   `kb_snapshot.add_link_columns()` per le colonne) e non fare commit né
    rollback al suo interno. Il meccanismo esegue ogni passo in una propria
    transazione `BEGIN IMMEDIATE` insieme all'aumento di versione; un passo
    interrotto o fallito lascia quindi il database alla versione precedente.
 3. Un database nuovo parte dalla versione 0 ed esegue tutti i passi; anche un
    database precedente al versionamento ha la versione 0, perciò il passo 1 di
    uno store deve adottare uno schema esistente.
-4. Aggiungete a `tests/test_dbmigrate.py` un test che costruisce lo schema alla
+4. Aggiungi a `tests/test_dbmigrate.py` un test che costruisce lo schema alla
    versione N-1, lo apre e verifica la nuova versione, il nuovo schema e
-   l'integrità dei dati. Se vanno riempite righe di dati esistenti, fatelo nel
+   l'integrità dei dati. Se vanno riempite righe di dati esistenti, fallo nel
    callback `on_migrated` dello store (vedi `history._after_migration`), non
    nel passo.
 
-Cosa fa il meccanismo per voi: un database scritto da un ekte **più recente**
+Cosa fa il meccanismo per te: un database scritto da un ekte **più recente**
 viene rifiutato con `DatabaseTooNewError` (nomina entrambe le versioni e dice
 cosa fare) prima di scrivere qualsiasi cosa; prima del primo passo di
 un'esecuzione, un database non vuoto viene copiato in
@@ -805,10 +805,10 @@ pytest -n auto               # in parallelo, un worker per CPU (pytest-xdist)
 ```
 
 - `tests/conftest.py` fornisce `MockServer`, un endpoint compatibile OpenAI su
-  `httpx.MockTransport` con manopole per ogni scostamento che ekte cerca (modello
+  `httpx.MockTransport` con impostazioni per ogni scostamento che ekte cerca (modello
   servito, autoidentificazione, troncamento del contesto, streaming finto,
   consumo assente o gonfiato, chiamate di strumenti, modalità JSON, …). Ogni
-  manopola ha per impostazione predefinita il comportamento di un relay onesto.
+  impostazione ha per impostazione predefinita il comportamento di un relay onesto.
 - I client Anthropic e Responses hanno test propri (`test_anthropic.py`,
   `test_responses.py`); il server web è testato con il client di test di FastAPI
   (`test_web*.py`), comprese le protezioni per l'uso locale
