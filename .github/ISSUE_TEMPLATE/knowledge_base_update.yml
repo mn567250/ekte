@@ -1,5 +1,5 @@
 name: Knowledge base update
-description: Add or correct a provider or model entry in the knowledge base
+description: Add or correct a provider or model entry in the knowledge base (the source must be an official provider page; see the developer guide, Keeping the knowledge base current)
 labels: ["knowledge-base"]
 body:
   - type: input

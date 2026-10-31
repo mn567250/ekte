@@ -1,6 +1,7 @@
 # ekte knowledge base — DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)
 # Auto-generated from web-verified research (2026-10-25). Edit freely.
 provider: deepseek
+last_verified: '2026-10-25'
 display_name: DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)
 openai_compatible: true
 base_url_hints:

@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/STABILITY.md.
-REPORT_SCHEMA_VERSION = "1.0"
+REPORT_SCHEMA_VERSION = "1.1"
 WEBHOOK_SCHEMA_VERSION = "1.0"
 
 
@@ -624,6 +624,10 @@ class KnowledgeUsage(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     requested_model: str
+    # Date (ISO) up to which the bundled knowledge base was verified: the oldest
+    # ``last_verified`` of the packaged profiles. None in reports from before
+    # this was recorded.
+    kb_date: str | None = None
     matched: bool = False
     match_confidence: str | None = None  # exact | alias | fuzzy
     provider: str | None = None

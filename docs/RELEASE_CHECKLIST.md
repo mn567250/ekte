@@ -36,6 +36,8 @@ fails; everything else depends on you. Process and recovery:
       developer guide).
 - [ ] `ekte kb-import --check` passes for the shipped data, the knowledge-base tests
       pass and the wheel installs and loads the knowledge base.
+- [ ] Every profile's `last_verified` is the date of this release's review ("Keeping the
+      knowledge base current" in the developer guide), so `ekte kb` shows no stale warning.
 
 ## Upgrade fixture
 

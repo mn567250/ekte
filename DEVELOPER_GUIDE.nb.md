@@ -33,6 +33,7 @@ Docker og utgis. Hva ekte gjør og hvordan den brukes, står i
   - [Pull requests](#pull-requests)
   - [Legge til en detektor](#legge-til-en-detektor)
   - [Redigere kunnskapsbasen](#redigere-kunnskapsbasen)
+  - [Holde kunnskapsbasen oppdatert](#holde-kunnskapsbasen-oppdatert)
   - [Endre probeprompter](#endre-probeprompter)
   - [Oversettelser](#oversettelser)
   - [Dokumentasjon](#dokumentasjon)
@@ -641,6 +642,36 @@ andre navn i `VENDOR_BRANDS` (`ekte/knowledge/identity.py`, som også er
 detektorens liste over konkurrerende merker); importen fyller tomme nøkkelord fra
 disse navnene med en advarsel. Legg til merkeordene til en ny leverandør der som
 én gruppe.
+
+### Holde kunnskapsbasen oppdatert
+
+Data om leverandører og modeller blir fort utdatert, og hver konklusjon avhenger
+av dem, så ekte sier åpent hvor gamle de er. Hver medfølgende leverandørprofil
+har `last_verified`, datoen da dataene sist ble sjekket mot leverandørens
+dokumentasjon. Den eldste av disse datoene er **kunnskapsbasens dato**: den
+lagres i hver rapport (`knowledge.kb_date`), vises av `ekte kb` og i
+Markdown-, HTML- og PDF-rapportene, og gis ut av `ekte kb --json`. Er den eldre
+enn `STALE_AFTER_DAYS` (180 dager, i `ekte/knowledge/freshness.py`), får
+rapporten en advarsel som viser til å oppdatere ekte eller legge til egne
+oppføringer. Advarselen endrer aldri konklusjonen.
+
+Oppdateringsprosessen:
+
+- **Kilder.** Bare leverandørens offisielle sider: modelliste og modellkort,
+  sider om priser og grenser, varsler om utfasing og avvikling og
+  utgivelsesnotater. Ta med lenken i pull requesten.
+- **Hvem.** Vedlikeholderne. Alle kan foreslå en endring med
+  issue-skjemaet «Knowledge base update» (leverandør, modell-ID, endring,
+  kildelenke og dens dato) eller med en pull request.
+- **Hvor ofte.** Minst før hver minor-utgivelse, og i en ekstra patch-utgivelse
+  når det skjer en stor modellendring (en ny flaggskipmodell, en avvikling, en
+  omdøpt modell-ID). Utgivelsessjekklisten inneholder dette.
+- **Gjennomgang.** En pull request som endrer `ekte/knowledge/data/*.yaml`
+  trenger oppgitt kilde for hver endrede verdi og en ekstra gjennomgang, og
+  `ekte kb-import --check` må bestå. Sett `last_verified` for en leverandør først
+  etter at du har sjekket hele leverandørfilen, ikke bare de endrede linjene.
+- **Endringslogg.** Hver endring i de medfølgende dataene står i `CHANGELOG.md`,
+  fordi den kan endre konklusjoner.
 
 ### Endre probeprompter
 

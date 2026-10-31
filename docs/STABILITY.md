@@ -75,6 +75,14 @@ anything. For each public surface:
 | HTTP API (`/api/v1/`) | Adding an endpoint, an optional request field or parameter, a response field, an SSE event type or a status code for a new error case | Removing or renaming an endpoint, field or parameter; changing a field's type or meaning; changing the error format; removing an event type or a documented status code |
 | Data directory | Adding files, tables or columns through a migration | Any change that loses data, or that an upgrade within the major version cannot migrate automatically (see [Upgrade guarantee](#upgrade)) |
 
+The bundled knowledge base is data, not interface, but ekte is open about its
+age: every packaged provider profile carries `last_verified`, every report
+carries the **knowledge-base date** (`knowledge.kb_date`, the oldest
+`last_verified`; added in report schema 1.1), and a report gets a warning, never
+a different verdict, when that date is more than 180 days old. Changes to the
+bundled data are listed in the changelog. The update process (sources, who, how
+often, review) is in the developer guide, "Keeping the knowledge base current".
+
 Not covered by the version number, because they are results and presentation and
 not interface: the **verdict of an audit** (scores, risk levels and findings can
 change when detectors, scoring or the knowledge base improve; such changes are

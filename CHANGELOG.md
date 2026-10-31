@@ -83,6 +83,16 @@ ekte has three eras:
 
 ### Added
 
+- **Knowledge-base freshness.** Every bundled provider profile now carries
+  `last_verified` (the date its data was last checked). Reports carry the
+  knowledge-base date (`knowledge.kb_date`, the oldest of those dates; report
+  schema 1.1) and show it in the Markdown, HTML and PDF reports, the compact
+  JSON and `ekte kb` / `ekte kb --json`. When the bundled data is more than 180
+  days old, the report gets a warning that points to updating ekte or adding
+  your own entries; the verdict does not change. The update process (sources,
+  who, how often, review) is documented in the developer guide, and changes to
+  the bundled data are listed in the changelog.
+
 - **Versioned schema for the report JSON and webhook payloads.** Every report
   (`--json`, `--format json`, history, `--compact`) and every generic webhook
   payload now carries `schema_version` (`MAJOR.MINOR`, independent of the ekte

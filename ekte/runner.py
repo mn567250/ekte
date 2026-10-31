@@ -24,6 +24,7 @@ from ekte.detectors.base import run_detector, select_detectors
 from ekte.detectors.performance import planned_probe_requests, probe_modes, stream_mode
 from ekte.judge import Judge
 from ekte.knowledge import ResolvedProfile, load_knowledge_base
+from ekte.knowledge.freshness import bundled_date, stale_warning
 from ekte.knowledge.snapshot import knowledge_usage, resolved_from_snapshot
 from ekte.models import (
     AuditReport,
@@ -141,7 +142,9 @@ async def run_audit(
         except Exception as exc:  # e.g. the schema changed since the snapshot was taken
             stale_pin = f"pinned profile no longer valid, using the live knowledge base: {str(exc).splitlines()[0]}"
     if profile is not None and pinned is not None:
-        knowledge = pinned.model_copy(update={"pinned": True, "warnings": list(kb.warnings)})
+        knowledge = pinned.model_copy(
+            update={"pinned": True, "warnings": list(kb.warnings), "kb_date": bundled_date()}
+        )
     else:
         # Resolve against the CLAIMED model (defaults to the requested model id), so an
         # endpoint serving model X can be audited against the profile it's sold as.
@@ -271,6 +274,8 @@ async def run_audit(
     warnings = [
         f"{d.id}: {d.error}" for d in results if d.error
     ]
+    if (stale := stale_warning(knowledge.kb_date)) is not None:
+        warnings.append(stale)
     notes = [
         "ekte performs black-box auditing: it gathers reproducible evidence of "
         "behavioral divergence, not cryptographic proof of model identity.",

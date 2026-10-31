@@ -729,6 +729,7 @@ def kb_command(
 ) -> None:
     """Inspect the knowledge base: packaged profiles, EKTE_KB_DIR and your own entries."""
     from ekte.knowledge import load_knowledge_base
+    from ekte.knowledge.freshness import bundled_date, stale_warning
 
     kb = load_knowledge_base(list(kb_dir) if kb_dir else None, include_user=False if no_user_kb else None)
     provs = [p for p in sorted(kb.providers.values(), key=lambda p: p.provider)
@@ -755,6 +756,7 @@ def kb_command(
             for m in prov.models
         ]
         print(json.dumps({"count": len(models), "providers": [p.provider for p in provs], "models": models,
+                          "kb_date": bundled_date(),
                           "user_kb": kb.user_kb, "warnings": kb.warnings},
                          ensure_ascii=False, indent=2))
         return
@@ -783,6 +785,11 @@ def kb_command(
     console.print(table)
     total = sum(len(p.models) for p in provs)
     console.print(f"{total} models across {len(provs)} providers.")
+    kb_date = bundled_date()
+    if kb_date:
+        console.print(f"Bundled data last verified on {kb_date}.")
+    if (stale := stale_warning(kb_date)) is not None:
+        err_console.print(f"[yellow]![/yellow] {stale}")
     if not kb.user_kb:
         console.print("[dim]Your own entries (kb.db) are left out (--no-user-kb / EKTE_NO_USER_KB).[/dim]")
     for warning in kb.warnings:

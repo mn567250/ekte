@@ -126,6 +126,9 @@ class ProviderProfile(BaseModel):
 
     provider: str
     display_name: str = ""
+    # ISO date (YYYY-MM-DD) the profile's data was last checked against the
+    # provider's documentation. Required for packaged profiles (tested).
+    last_verified: str | None = None
     openai_compatible: bool = True
     base_url_hints: list[str] = Field(default_factory=list)
     default_tool_format: str = "openai_function"

@@ -1,6 +1,7 @@
 # ekte knowledge base — Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)
 # Auto-generated from web-verified research (2026-10-25). Edit freely.
 provider: gemini
+last_verified: '2026-10-25'
 display_name: Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)
 openai_compatible: true
 base_url_hints:

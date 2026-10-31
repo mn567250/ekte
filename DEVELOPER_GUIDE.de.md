@@ -33,6 +33,7 @@ bewertet wird, in der [Methodik](docs/METHODOLOGY.de.md).
   - [Pull Requests](#pull-requests)
   - [Einen Detektor hinzufügen](#einen-detektor-hinzufügen)
   - [Die Wissensbasis bearbeiten](#die-wissensbasis-bearbeiten)
+  - [Die Wissensbasis aktuell halten](#die-wissensbasis-aktuell-halten)
   - [Test-Prompts ändern](#test-prompts-ändern)
   - [Übersetzungen](#übersetzungen)
   - [Dokumentation](#dokumentation)
@@ -662,6 +663,39 @@ Anbieter-Schlüssel, Anzeigenamen und Modell-ID als echte Marke, erweitert um di
 zugleich die Liste konkurrierender Marken des Detektors); der Import ergänzt
 leere Schlüsselwörter aus diesen Namen mit einer Warnung. Die Markenwörter eines
 neuen Herstellers gehören dort als eine Gruppe hinein.
+
+### Die Wissensbasis aktuell halten
+
+Anbieter- und Modelldaten veralten schnell, und jedes Urteil hängt von ihnen ab;
+deshalb sagt ekte offen, wie alt sie sind. Jedes mitgelieferte Anbieterprofil
+trägt `last_verified`, das Datum, an dem seine Daten zuletzt mit der
+Dokumentation des Anbieters abgeglichen wurden. Das älteste dieser Daten ist das
+**Datum der Wissensbasis**: Es steht in jedem Bericht (`knowledge.kb_date`), wird
+von `ekte kb` sowie in den Markdown-, HTML- und PDF-Berichten angezeigt und von
+`ekte kb --json` ausgegeben. Ist es älter als `STALE_AFTER_DAYS` (180 Tage, in
+`ekte/knowledge/freshness.py`), erhält der Bericht eine Warnung, die auf ein
+Update von ekte oder auf eigene Einträge hinweist. Die Warnung ändert nie das
+Urteil.
+
+Der Aktualisierungsprozess:
+
+- **Quellen.** Nur offizielle Seiten des Anbieters: Modellliste und Modellkarten,
+  Preis- und Limitseiten, Hinweise zu Einstellung und Abkündigung sowie
+  Release Notes. Der Link gehört in den Pull Request.
+- **Wer.** Die Maintainer. Jeder kann eine Änderung über das Issue-Formular
+  „Knowledge base update“ (Anbieter, Modell-ID, Änderung, Quelllink und dessen
+  Datum) oder per Pull Request vorschlagen.
+- **Wie oft.** Mindestens vor jedem Minor-Release und in einem zusätzlichen
+  Patch-Release, wenn sich bei den Modellen Wesentliches ändert (ein neues
+  Flaggschiff, eine Abkündigung, eine umbenannte Modell-ID). Die
+  Release-Checkliste enthält diesen Schritt.
+- **Prüfung.** Ein Pull Request, der `ekte/knowledge/data/*.yaml` ändert,
+  braucht für jeden geänderten Wert eine genannte Quelle und eine zweite
+  Durchsicht; `ekte kb-import --check` muss bestehen. Setzen Sie `last_verified`
+  eines Anbieters erst, nachdem Sie die ganze Anbieterdatei geprüft haben, nicht
+  nur die geänderten Zeilen.
+- **Changelog.** Jede Änderung an den mitgelieferten Daten steht in
+  `CHANGELOG.md`, weil sie Urteile ändern kann.
 
 ### Test-Prompts ändern
 
