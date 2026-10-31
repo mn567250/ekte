@@ -458,7 +458,7 @@ ekte check --base-url ... --model gpt-4o -D protocol -D performance
 ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,streaming
 ```
 
-`--dimension/-D` kan gjentas eller kommaseparereres og innebærer
+`--dimension/-D` kan gjentas eller kommasepareres og innebærer
 `--suite custom`; i en konfigurasjonsfil bruker du
 `run.dimensions: [protocol, performance]`. Dimensjonene er `connectivity`,
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
@@ -791,7 +791,7 @@ dem). Det finnes tre lag, der de senere vinner:
 
 Før en oppføring lagres, kontrollerer ekte den: skjema og grenser, utrygge
 regulære uttrykk, hver prompt den ville sende, og modell-ID-er som ville blitt
-slått opp til en annen profil. En modell av deg med en medfølgende ID erstatter den
+slått opp til en annen profil. En modell du har lagt til med en medfølgende ID erstatter den
 (rapportert som at den *skygger* for den), men endrer aldri en medfølgende
 leverandørs egne innstillinger; fingeravtrykk slås sammen etter ID. Å slå av en
 medfølgende modell, leverandør eller et relé på **Kunnskap**-siden lagres også i
@@ -800,7 +800,7 @@ er slått av, tar modellene og basis-URL-ene sine med seg. `ekte check` og
 `ekte serve` bruker nøyaktig de samme profilene; `--no-user-kb` (eller
 `EKTE_NO_USER_KB=1`) holder oppføringene og bryterne dine utenfor.
 
-En modell med tomme `identity_keywords` lagres ikke slik: ekte fyller inn dens
+En modell med tomme `identity_keywords` lagres ikke slik: ekte fyller inn modellens
 egne merkeord fra leverandør- og modellnavnene (for eksempel `glm` og `z.ai`) og
 viser en advarsel om å kontrollere dem, siden identitetskontrollen uten dem kunne
 tatt modellen som nevner sin egen leverandør, for et konkurrerende merke.

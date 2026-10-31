@@ -252,7 +252,7 @@ aldri risikokonklusjonen.
 ## `protocol` — Protokollsamsvar
 
 **Fanger.** Releer der mellomvaren bryter protokollkontrakten (droppede turer,
-ignorerte stoppsekvenser, feilformede feil, manglende eller nullede svarfelt,
+ignorerte stoppsekvenser, feilformede feil, manglende eller tomme (null) svarfelt,
 fjernede forespørselsparametere) og, via determinisme,
 `cache.ignore-temperature`. Den dekker delvis `capability.json-tool-fakery`.
 

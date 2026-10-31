@@ -48,8 +48,8 @@
 ekte 是黑盒审计辅助工具：正确性以及**不冤枉诚实的中转站**，比抓住每一种可能的作弊手法更重要。
 任何改动都请牢记这条标准。
 
-- **证据优先，不做指控。** 发现只报告*偏离与风险*，从不说「欺诈」。宁可*不确定*，也不要猜测。
-  新增的「高」严重度路径需要确凿、可复现的证据，并且很难在诚实端点上被触发。
+- **证据优先，不做指控。** 发现只报告*偏离与风险*，从不说“欺诈”。宁可*不确定*，也不要猜测。
+  新增的“高”严重度路径需要确凿、可复现的证据，并且很难在诚实端点上被触发。
 - **测试不联网。** 检测器测试针对 `tests/conftest.py` 中的进程内模拟服务
   （httpx `MockTransport`）运行，绝不访问真实 API。
 - **密钥不外泄。** API 密钥只保留指纹，绝不写入报告。任何新的输出路径都必须让中转站控制的文本
@@ -172,7 +172,7 @@ Dockerfile             Web 界面镜像
 每个检测器都公开自己的**计分标准**（`SCALE`，由 `scale.py` 构建）：每个检查项所有可能的结果，
 及其分数、状态和严重程度。发现都由计分标准生成（`SCALE.finding(check, outcome, …)`），
 因此报告与实际行为不可能不一致。`Scale` 取各检查项的平均分；`DeductionScale` 从 100 开始扣分
-或设上限。Web 界面在「**计分标准**」中展示它；[方法论](docs/METHODOLOGY.zh-CN.md)收录了
+或设上限。Web 界面在“**计分标准**”中展示它；[方法论](docs/METHODOLOGY.zh-CN.md)收录了
 每一份计分标准。`connectivity.py` 是最短、最标准的示例。
 
 在 `ekte serve` 中，检测器与其他所有检测共用一个事件循环，因此 CPU 密集的工作不能在其上运行：
@@ -189,7 +189,7 @@ Dockerfile             Web 界面镜像
 平均值（权重相同），综合健康分是已运行维度的加权平均，风险等级遵循
 [方法论 → ekte 如何计分](docs/METHODOLOGY.zh-CN.md#ekte-如何计分)中描述的严重程度阶梯。
 每个维度都在 `DimensionScore.breakdown` 中记录计算过程，报告中的 **Dimension details**
-和 Web 界面「**逐项体检**」的可展开行都由它生成。
+和 Web 界面“**逐项体检**”的可展开行都由它生成。
 
 ### 知识库
 
@@ -197,7 +197,7 @@ Dockerfile             Web 界面镜像
 `FingerprintProbe`），加载并合并各层（`loader.py`：内置 YAML → `EKTE_KB_DIR`/`--kb-dir`
 → 用户的 `kb.db`），保存用户条目（`store.py`），检查并导入 YAML（`importer.py`），
 生成供外部助手使用的调研提示词（`research.py`），并为一次运行所用的画像拍快照（`snapshot.py`）。
-模型 id 依次按精确 id、别名或规范化名称解析，并由声明的厂商缩小范围。模糊匹配取所声称 id
+模型 id 依次按精确 id、别名或规范化名称解析，并由声称的厂商缩小范围。模糊匹配取所声称 id
 中包含的最长知识库名称（快照或带修饰的 id），除非其余部分指向另一个档位或变体（`-mini`、
 `-lite`、`-image` 等）；截断形式的 id 只有在恰好一个模型的名称以它开头时才会解析，因此像
 `gpt-4` 这样有歧义的 id 不会匹配任何画像，而不是被猜成某个档位。每份报告都会记录 id 是如何
@@ -269,10 +269,10 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
   以及已移除的经典界面的 `/tools` 和 `/console`。这些重定向已弃用，将在 1.0.0 中移除。
 - **API。** `/api/jobs…` 运行检测（见下文）；`/api/models` 列出中转站的模型；
   `/api/report/export` 渲染报告；`/api/history…`、`/api/watches…`、`/api/kb…` 和
-  `/api/analytics…` 为其他页面提供服务。 它们均为内部接口；公开子集见 [HTTP API v1](#http-api-v1)。
+  `/api/analytics…` 为其他页面提供服务。它们均为内部接口；公开子集见 [HTTP API v1](#http-api-v1)。
 - **中转站。** `POST /api/kb/relays` 保存中转站 `{name, base_url}`（输入无效时返回 400，名称或地址已存在时返回 409）。
 - **分析。** `GET /api/analytics/options`（历史中出现的中转站、模型、套件、流式模式、API 及日期范围）、`/api/analytics/summary`（`from`–`to` 区间的关键指标，并与之前等长区间对比）、`/api/analytics/series`（按 `group=relay|model|relay_model` 给出 `metric`，最多 4 个 `keys`，按查看者时区 `tz` 或 `tz_offset` 划分为 `bucket=hour|day|week|dow_hour` 区间；`dow_hour` 还接受 `block`（每行小时数）和 `fold=week|4weeks|month_week`，在检测覆盖 90 天或 180 天之前回退为 `week`）以及 `/api/analytics/leaderboard`（`model=` 列出其各中转站，或 `relay=` 列出其各模型）。所有端点都接受筛选参数 `from`、`to`、`suite`、`stream_mode`、`api`、`source=all|manual|monitor`、`relay` 和 `model`。`ekte/web/analytics.py` 基于 `history.analytics_runs()` 在 Python 中完成全部计算：指标 id 来自固定白名单；中转站在查询时按知识库条目分组；某次运行未测得的值不参与计算（每个值都带有 `n` 和 `coverage`）；运行次数少于 `MIN_RUNS`（3）的区间标记为 `low_n`。参数无效时返回 400；响应带 `Cache-Control: no-store`。
-- **分析面板。** `/api/analytics/breakdown`（在所选区间内按 `group=relay|model|relay_model|all` 给出最多 8 个 `metrics`）、`/api/analytics/errors`（目标端补全调用按结果类别 `success|client_4xx|rate_limited|server_5xx|timeout|network|other` 统计，按 `group=relay|model` 和 `bucket` 划分，由 `history.analytics_request_classes()` 在 SQL 中计数，不加载请求行；调用时间为所属检测的开始时间加上偏移，精确到分钟；`covered` 为有请求记录的检测次数）以及 `/api/analytics/integrity`（每个「中转站 × 模型」的身份、能力、图像理解、流式、协议、完整性、注入提示词与连通性检测器的通过 / 警告 / 失败次数，模型不符占比，以及实测 / 声明上下文窗口的中位数比例）。`/api/analytics/series` 也接受 `group=all`。筛选与错误处理同上。
+- **分析面板。** `/api/analytics/breakdown`（在所选区间内按 `group=relay|model|relay_model|all` 给出最多 8 个 `metrics`）、`/api/analytics/errors`（目标端补全调用按结果类别 `success|client_4xx|rate_limited|server_5xx|timeout|network|other` 统计，按 `group=relay|model` 和 `bucket` 划分，由 `history.analytics_request_classes()` 在 SQL 中计数，不加载请求行；调用时间为所属检测的开始时间加上偏移，精确到分钟；`covered` 为有请求记录的检测次数）以及 `/api/analytics/integrity`（每个“中转站 × 模型”的身份、能力、图像理解、流式、协议、完整性、注入提示词与连通性检测器的通过 / 警告 / 失败次数，模型不符占比，以及实测 / 声明上下文窗口的中位数比例）。`/api/analytics/series` 也接受 `group=all`。筛选与错误处理同上。
 - **后台检测。** `jobs.py` 把每次检测作为服务器拥有的任务运行。`POST /api/jobs` 排入一个任务，
   `GET /api/jobs` 列出排队中、运行中和刚结束的任务（以及运行中的监控）及其进度，
   `GET /api/jobs/{id}/events` 先回放任务的事件日志，再通过 SSE 实时跟随，
@@ -327,15 +327,15 @@ HTTP API 的公开部分位于 `/api/v1/` 之下，遵循[稳定性政策](docs/
 `perf.css`）。共用脚本从根路径提供：`lang.js`（语言切换）、`locales.js`（翻译数据）、
 `i18n.js`（发现的翻译）、`icons.js`（包括 ekte 标志）、`secretfield.js` 和 `perf.js`（性能图表）。
 
-除无障碍页面外，每个 v2 页面在 hero 正下方都有一条**页面提示**（`<div class="znote" id="note">`，由 `v2/notice.js` 绘制，样式为 `ekte.css` 中的 `.znote`）：`EkteNotice.show(el, {level, title, detail, items, actions})`；级别 `info`、`success`、`warning` 或 `critical` 决定底色、边框和图标（critical 为 `role="alert"`，其余为 `role="status"`；再次显示相同提示不会有任何变化）。页面选出最重要的消息，其余列在 `items` 里。检测：服务无法连接 / 有检测在运行 / 最新保存的运行 / 本地运行；检测历史：无法读取历史 / 监控运行已暂停（主密钥已锁定）或较早的运行仍在处理 / 运行次数；分析：无法读取数据 / 运行尚未计入图表或开始时间为估算 / 数据依据；知识库：加载失败 / 条目被跳过或被忽略 / 已停用的条目 / 完整。监控页面保留它的主密钥栏（`masterkey.js`），外观和位置相同。整个历史的数字来自 `GET /api/history/status`（`history.status()`：运行次数、最早和最新的运行、分析回填尚未处理的行、开始时间为估算的运行）。
+除无障碍页面外，每个 v2 页面在标题区正下方都有一条**页面提示**（`<div class="znote" id="note">`，由 `v2/notice.js` 绘制，样式为 `ekte.css` 中的 `.znote`）：`EkteNotice.show(el, {level, title, detail, items, actions})`；级别 `info`、`success`、`warning` 或 `critical` 决定底色、边框和图标（critical 为 `role="alert"`，其余为 `role="status"`；再次显示相同提示不会有任何变化）。页面选出最重要的消息，其余列在 `items` 里。检测：服务无法连接 / 有检测在运行 / 最新保存的运行 / 本地运行；检测历史：无法读取历史 / 监控运行已暂停（主密钥已锁定）或较早的运行仍在处理 / 运行次数；分析：无法读取数据 / 运行尚未计入图表或开始时间为估算 / 数据依据；知识库：加载失败 / 条目被跳过或被忽略 / 已停用的条目 / 完整。监控页面保留它的主密钥栏（`masterkey.js`），外观和位置相同。整个历史的数字来自 `GET /api/history/status`（`history.status()`：运行次数、最早和最新的运行、分析回填尚未处理的行、开始时间为估算的运行）。
 
 v2 的**检测**页面用 `v2/relaycfg.js` 配置中转站：选择中转站/厂商 → 基础地址 → 中转站的模型
 （`/api/models`，在改变时获取，按地址/密钥/协议缓存）→ 从知识库选择声称的模型（`/api/kb/resolve`
-预选）→ 推导出声明的厂商，另有**保存到知识库**（`POST /api/kb/relays`）。其纯函数在 node 下测试。
+预选）→ 推导出声称的厂商，另有**保存到知识库**（`POST /api/kb/relays`）。其纯函数在 node 下测试。
 
-v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`options` 还列出「中转站 × 模型」组合 `relay_models`，供数据系列选择使用）。页面在同一个筛选栏下每个面板一个 `<section class="card panel">`，便于加入新面板；筛选与视图保存在网址片段（`#range=30&metric=score&…`）和 `localStorage` 中。图表来自 `v2/charts.js`（`EkteCharts.timeChart`：手绘内联 SVG，含中位数折线、p25–p75 色带、空时间段留空、`low_n` 时间段的淡化标记、标注线和悬停提示；`fmt` / `fmtDelta` 按单位格式化数值）和 `v2/charts.css`（每个主题四种经过校验的系列颜色，并以标记形状区分）。每张图表也都以数据表呈现。
+v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`options` 还列出“中转站 × 模型”组合 `relay_models`，供数据系列选择使用）。页面在同一个筛选栏下每个面板一个 `<section class="card panel">`，便于加入新面板；筛选与视图保存在网址片段（`#range=30&metric=score&…`）和 `localStorage` 中。图表来自 `v2/charts.js`（`EkteCharts.timeChart`：手绘内联 SVG，含中位数折线、p25–p75 色带、空时间段留空、`low_n` 时间段的淡化标记、标注线和悬停提示；`fmt` / `fmtDelta` 按单位格式化数值）和 `v2/charts.css`（每个主题四种经过校验的系列颜色，并以标记形状区分）。每张图表也都以数据表呈现。
 
-每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`EkteCharts.heatmap` 绘制「星期几 × 小时」网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`EkteCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。`EkteCharts.donut`（由一个整体的各部分组成的圆环，中间是 HTML 数字）和 `EkteCharts.meter`（由各部分组成的细条）绘制无障碍报告的「覆盖范围」卡片；它们的 `k-*` 颜色（谁判定一个步骤：蓝色为测试套件，紫色为人）来自 `tokens.css`。`v2/chartmotion.js`（`EkteMotion.enter`）与其他图表一样，仅在有新数据时按顺时针绘制圆环、让细条从左侧伸展，在减少动态效果或页眉「关闭动画」时从不播放。
+每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`EkteCharts.heatmap` 绘制“星期几 × 小时”网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`EkteCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。`EkteCharts.donut`（由一个整体的各部分组成的圆环，中间是 HTML 数字）和 `EkteCharts.meter`（由各部分组成的细条）绘制无障碍报告的“覆盖范围”卡片；它们的 `k-*` 颜色（谁判定一个步骤：蓝色为测试套件，紫色为人）来自 `tokens.css`。`v2/chartmotion.js`（`EkteMotion.enter`）与其他图表一样，仅在有新数据时按顺时针绘制圆环、让细条从左侧伸展，在减少动态效果或页眉“关闭动画”时从不播放。
 
 页面标题和筛选面板位于五个页内标签页之上（`v2/tabs.js`，与知识库页面相同）：每个 `PANELS` 条目注明所属的 `tab`，只加载当前显示的标签页的面板；筛选变化时重新加载该标签页，其他标签页标记为过期（`activate()` 在显示时加载）。这里给 `tabs.js` 传入 `writeHash: false`，因为页面自己把整个视图写进网址片段——`#tab=trends&range=30&suite=…&metric=…`（`stateQuery()`），**复制此视图的链接**复制的就是它（剪贴板 API 不存在或被拒绝时，改为显示并选中一个只读文本框）；不含 `tab` 的片段打开概览，粘贴进来的链接（`hashchange`）会重新读取视图。可折叠的筛选面板是 `v2/filterpanel.js` + `v2/filterpanel.css`，与检测历史、监控和知识库共用：`EkteFilterPanel.create(section, {label, title, storeKey, open, onReset})` 返回 `render({body, foot, count, summary})`、`sync({count, summary})`、`setOpen()` 和 `focusStart()`；页面负责自己的筛选条件和字段，面板负责带生效筛选计数的切换按钮、收起时显示的一行摘要、记住的展开状态以及**重置筛选**。
 
@@ -407,7 +407,7 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 4. 实现 `async def run(self, ctx) -> DetectorResult`，从
    `self.new_result(scoring=SCALE.scoring())` 开始。通过 `ctx.client` 发送请求，每条提示词都从
    `ekte/prompts/en.json` 读取。
-5. 使用 `tests/conftest.py` 中的模拟中转站，为「命中」和「正常」两条路径都编写行为测试。
+5. 使用 `tests/conftest.py` 中的模拟中转站，为“命中”和“正常”两条路径都编写行为测试。
 6. 翻译新的发现标题和摘要（见[翻译](#翻译)），并在每一份[方法论](docs/METHODOLOGY.zh-CN.md)
    文件中记录该检测器及其计分标准。
 
@@ -430,8 +430,8 @@ Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `finge
 
 ### 保持知识库最新
 
-提供商和模型的数据过时很快，而每个结论都依赖这些数据，因此 ekte 会如实说明数据的新旧。
-每个内置的提供商配置都带有 `last_verified`，即其数据最近一次对照提供商文档核实的日期。
+厂商和模型的数据过时很快，而每个结论都依赖这些数据，因此 ekte 会如实说明数据的新旧。
+每个内置的厂商画像都带有 `last_verified`，即其数据最近一次对照厂商文档核实的日期。
 其中最早的日期就是**知识库日期**：它保存在每份报告中（`knowledge.kb_date`），由 `ekte kb`
 以及 Markdown、HTML、PDF 报告显示，并由 `ekte kb --json` 输出。若它早于
 `STALE_AFTER_DAYS`（180 天，位于 `ekte/knowledge/freshness.py`），报告会带上一条警告，
@@ -439,14 +439,14 @@ Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `finge
 
 更新流程：
 
-- **来源。** 只使用提供商的官方页面：模型列表与模型卡、价格与限制页面、弃用与下线公告、
-  发布说明。请在拉取请求中附上链接。
-- **负责人。** 维护者。任何人都可以通过议题表单“Knowledge base update”（提供商、模型 ID、
-  变更内容、来源链接及其日期）或拉取请求提出修改。
+- **来源。** 只使用厂商的官方页面：模型列表与模型卡、价格与限制页面、弃用与下线公告、
+  发布说明。请在 Pull Request 中附上链接。
+- **负责人。** 维护者。任何人都可以通过议题表单“Knowledge base update”（厂商、模型 ID、
+  变更内容、来源链接及其日期）或 Pull Request 提出修改。
 - **频率。** 至少在每个次版本发布前更新一次；出现重大模型变化（旗舰模型发布、模型下线、
   模型 ID 改名）时，另发补丁版本。发布检查清单包含这一步。
-- **评审。** 修改 `ekte/knowledge/data/*.yaml` 的拉取请求，每个改动的值都要有引用的来源并经过
-  第二人复核，且 `ekte kb-import --check` 必须通过。只有核对完某个提供商的整个文件之后，
+- **审查。** 修改 `ekte/knowledge/data/*.yaml` 的 Pull Request，每个改动的值都要有引用的来源并经过
+  第二人复核，且 `ekte kb-import --check` 必须通过。只有核对完某个厂商的整个文件之后，
   才可更新它的 `last_verified`，而不是只核对改动的那几行。
 - **更新日志。** 内置数据的每次改动都要写入 `CHANGELOG.md`，因为它可能改变结论。
 
@@ -518,7 +518,7 @@ ekte 创建的每个 SQLite 数据库（`history.db`、`watches.db`、`kb.db`）
 
 英文文件为基准。修改其中一份时，请在同一个 Pull Request 中同步修改其他语言，并在每种语言中使用
 界面的用词（在 `ekte/i18n/locales/` 中查找对应术语）。METHODOLOGY 文件中的计分标准措辞与界面
-「**计分标准**」中显示的一致。
+“**计分标准**”中显示的一致。
 
 ## 测试
 
