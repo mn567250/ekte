@@ -433,6 +433,16 @@ half-migrated data. Skipping versions within a major version is supported.
 Upgrading across a major version is covered by the migration notes in the
 changelog.
 
+**How it is tested.** `tests/fixtures/upgrade/` holds one data directory per
+released minor version (from 0.30.0), written by that release itself with
+invented content: audit history, monitors with a stored and with an unstored
+API key, and the user's own knowledge-base entries. `tests/test_upgrade_fixtures.py`
+opens each one with the current code in CI and checks that the migration
+succeeds and is backed up, that every record is still there and readable, and
+that the web and command-line read paths work. Each minor release adds a fixture
+with `scripts/make_upgrade_fixture.py` (see the
+[release checklist](RELEASE_CHECKLIST.md)).
+
 <a id="downgrade"></a>
 ## Downgrades
 
