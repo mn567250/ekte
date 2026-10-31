@@ -36,17 +36,17 @@
 - main:
   - heading "A base de conhecimento usada pelo ekte" [level=1]
   - paragraph:
-    - text: "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, provedor e relay que o ekte conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adicionar os seus. As suas alterações são guardadas em kb.db nesta máquina e usadas tanto pela interface web como pelo"
+    - text: "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, fornecedor e relay que o ekte conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adicionar os seus. As suas alterações são guardadas em kb.db nesta máquina e usadas tanto pela interface web como pelo"
     - code: ekte check
     - text: .
-  - status: Base de conhecimento completa 130 modelos · 7 provedores · 1 relay, todos ativados
+  - status: Base de conhecimento completa 130 modelos · 7 fornecedores · 1 relay, todos ativados
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: ID do modelo
     - combobox "ID do modelo":
       - option "Todos" [selected]
-    - text: Provedor
-    - combobox "Provedor":
+    - text: Fornecedor
+    - combobox "Fornecedor":
       - option "Todos" [selected]
       - option "Anthropic (Claude)"
       - option "DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)"
@@ -63,42 +63,42 @@
     - combobox "Origem":
       - option "Todos" [selected]
       - option "Incluído"
-      - option "Seu"
-    - status: A mostrar 130 de 130 modelos · 7 de 7 provedores · 1 de 1 relays
+      - option "O seu"
+    - status: A mostrar 130 de 130 modelos · 7 de 7 fornecedores · 1 de 1 relays
   - link "Exportar as suas entradas como YAML":
     - /url: /api/kb/export
   - tablist "Secções da base de conhecimento":
     - tab "Modelos" [selected]
-    - tab "Provedores"
+    - tab "Fornecedores"
     - tab "Relays"
   - tabpanel "Modelos":
     - heading "Todos os modelos 130 modelos" [level=2]
     - paragraph: "Os perfis de modelo com que as auditorias comparam. Um modelo desativado deixa de ser resolvido: as suas auditorias correm sem perfil."
     - group:
       - text: Adicionar um modelo
-      - paragraph: Deixe um assistente de IA pesquisar o modelo e verifique a resposta aqui antes de salvá-la.
+      - paragraph: Deixe um assistente de IA pesquisar o modelo e verifique a resposta aqui antes de guardá-la.
       - heading "1 Copiar o prompt de pesquisa" [level=3]
       - text: ID do modelo id
       - textbox "ID do modelo id":
         - /placeholder: "ex.: example-large-2"
-      - text: Provedor Opcional
-      - textbox "Provedor Opcional":
+      - text: Fornecedor Opcional
+      - textbox "Fornecedor Opcional":
         - /placeholder: p. ex. openai / deepseek
       - button "Copiar prompt"
       - status
       - group:
         - text: Mostrar o prompt
         - textbox "Prompt"
-      - paragraph: Cole-o no assistente de IA de sua escolha. Ele responde com um documento YAML.
+      - paragraph: Cole-o no assistente de IA à sua escolha. Responde com um documento YAML.
       - heading "2 Enviar ou colar o YAML" [level=3]
       - text: YAML do perfil
       - textbox "YAML do perfil":
         - /placeholder: "provider: …\nmodels:\n- id: …"
-      - text: Escolher um arquivo .yaml
-      - heading "3 Verificar e salvar" [level=3]
-      - paragraph: A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o ekte enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é salvo até você salvar.
+      - text: Escolher um ficheiro .yaml
+      - heading "3 Verificar e guardar" [level=3]
+      - paragraph: A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o ekte enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é guardado até guardar.
       - button "Verificação"
-      - button "Salvar na base" [disabled]
+      - button "Guardar na base" [disabled]
     - group:
       - text: Anthropic (Claude)
       - code: anthropic

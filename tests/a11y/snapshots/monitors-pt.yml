@@ -36,10 +36,10 @@
 - main:
   - heading "Coloque uma sentinela agendada no seu intermediário" [level=1]
   - paragraph:
-    - text: Cada monitor executa novamente, na sua máquina, uma auditoria que você já rodou, no intervalo definido. Para adicionar um, abra uma execução no
+    - text: Cada monitor executa novamente, na sua máquina, uma auditoria que já executou, no intervalo definido. Para adicionar um, abra uma execução no
     - link "Histórico":
       - /url: /history
-    - text: e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa seu limite ou piora em relação à última vez, o ekte alerta seus webhooks (Slack / Feishu / DingTalk / JSON genérico).
+    - text: e escolha Agendar como monitor; depois defina aqui o intervalo e ative-o. Quando o risco ultrapassa o seu limite ou piora em relação à última vez, o ekte alerta os seus webhooks (Slack / Feishu / DingTalk / JSON genérico).
   - status:
     - text: As chaves de API não são guardadas As chaves que introduz ficam apenas na memória do ekte serve e nunca são escritas no disco; introduza-as novamente após um reinício. As referências env:VAR continuam a funcionar.
     - button "Alterar"
@@ -66,8 +66,8 @@
     - combobox "Tipo de endpoint":
       - option "Todos" [selected]
       - option "Chat"
-    - text: Relay / provedor
-    - combobox "Relay / provedor":
+    - text: Relay / fornecedor
+    - combobox "Relay / fornecedor":
       - option "Todos" [selected]
       - option "127.0.0.1:9099"
     - text: Suite
@@ -77,7 +77,7 @@
     - text: A mostrar 1 de 1 monitores
   - tablist "Vistas de monitores":
     - tab "Configurar" [selected]
-    - tab "Em andamento"
+    - tab "Em curso"
   - tabpanel "Configurar":
     - heading "Monitores configurados 1 monitor" [level=2]
     - article "gpt-4o":
@@ -99,8 +99,8 @@
       - term: Protocolo
       - definition:
         - code: openai
-        - text: · detectado automaticamente
-      - term: Requisições da sonda de desempenho
+        - text: · detetado automaticamente
+      - term: Pedidos da sonda de desempenho
       - definition: Streaming
       - term: Intervalo de verificação
       - definition: Não definido
@@ -137,7 +137,7 @@
         - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Conclua a configuração para ativá-lo":
         - heading "Conclua a configuração para ativá-lo" [level=4]
-        - paragraph: A configuração vem da execução no Histórico. Defina com que frequência ele roda e ative-o.
+        - paragraph: A configuração vem da execução no Histórico. Defina com que frequência é executado e ative-o.
         - text: Intervalo de verificação
         - combobox "Intervalo de verificação":
           - option "Escolher…" [selected]
