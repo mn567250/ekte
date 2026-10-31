@@ -18,7 +18,10 @@ Before the first release, register a *pending publisher* so PyPI trusts this rep
    - **Environment name:** `pypi`
 3. (Recommended) In the GitHub repo, create an **Environment** named `pypi`
    (Settings → Environments) and optionally add required reviewers so a human
-   approves each publish.
+   approves each publish. Also restrict the environment's deployment branches
+   and tags to `v*`, and set the same environment name on the PyPI publisher.
+   Only the `publish` job requests an OIDC token (`id-token: write`); every other
+   job has read-only (or, for the GitHub Release, `contents: write`) permissions.
 
 After the first successful publish, `ekte` becomes a normal Trusted Publisher
 and the pending entry is consumed.

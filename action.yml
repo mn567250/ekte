@@ -63,15 +63,17 @@ runs:
   using: "composite"
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: ${{ inputs.python-version }}
 
     - name: Install ekte
       shell: bash
+      env:
+        EKTE_VERSION_SPEC: ${{ inputs.version }}
       run: |
         python -m pip install --upgrade pip
-        pip install "${{ inputs.version }}"
+        pip install "$EKTE_VERSION_SPEC"
 
     - name: Run ekte audit
       id: audit
@@ -80,24 +82,33 @@ runs:
       # line and never echoed). `ekte check --api-key env:VAR` resolves it.
       env:
         EKTE_RELAY_API_KEY: ${{ inputs.api-key }}
+        # Inputs reach the script through the environment, never by splicing
+        # the expression into it (script injection).
+        IN_BASE_URL: ${{ inputs.base-url }}
+        IN_MODEL: ${{ inputs.model }}
+        IN_API: ${{ inputs.api }}
+        IN_SUITE: ${{ inputs.suite }}
+        IN_FAIL_ON_RISK: ${{ inputs.fail-on-risk }}
+        IN_CLAIMED_MODEL: ${{ inputs.claimed-model }}
+        IN_DECLARED_PROVIDER: ${{ inputs.declared-provider }}
       run: |
         set -o pipefail
 
         args=(
           check
-          --base-url "${{ inputs.base-url }}"
+          --base-url "$IN_BASE_URL"
           --api-key "env:EKTE_RELAY_API_KEY"
-          --model "${{ inputs.model }}"
-          --api "${{ inputs.api }}"
-          --suite "${{ inputs.suite }}"
-          --fail-on-risk "${{ inputs.fail-on-risk }}"
+          --model "$IN_MODEL"
+          --api "$IN_API"
+          --suite "$IN_SUITE"
+          --fail-on-risk "$IN_FAIL_ON_RISK"
           --compact
         )
-        if [ -n "${{ inputs.claimed-model }}" ]; then
-          args+=(--claimed-model "${{ inputs.claimed-model }}")
+        if [ -n "$IN_CLAIMED_MODEL" ]; then
+          args+=(--claimed-model "$IN_CLAIMED_MODEL")
         fi
-        if [ -n "${{ inputs.declared-provider }}" ]; then
-          args+=(--declared-provider "${{ inputs.declared-provider }}")
+        if [ -n "$IN_DECLARED_PROVIDER" ]; then
+          args+=(--declared-provider "$IN_DECLARED_PROVIDER")
         fi
 
         # Capture the compact JSON verdict. ekte exits non-zero when the gate
@@ -131,7 +142,7 @@ runs:
         PY
 
         # Concise human summary on the run's Summary tab.
-        python - "${RUNNER_TEMP:-/tmp}/ekte-report.json" "${{ inputs.fail-on-risk }}" "$code" <<'PY' >>"$GITHUB_STEP_SUMMARY"
+        python - "${RUNNER_TEMP:-/tmp}/ekte-report.json" "$IN_FAIL_ON_RISK" "$code" <<'PY' >>"$GITHUB_STEP_SUMMARY"
         import json, sys
 
         with open(sys.argv[1], encoding="utf-8") as fh:
