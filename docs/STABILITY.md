@@ -49,7 +49,8 @@ it may change in any release without notice.
 | Webhook payloads (`ekte watch`, monitors) | Public | [Webhooks](#surface-webhooks) |
 | GitHub Action inputs and outputs (`action.yml`) | Public | [GitHub Action](#surface-action) |
 | Data directory and its databases | Public as an upgrade guarantee only | [Data directory](#surface-data) |
-| HTTP API under `/api/` | Internal until decided by #22 | [HTTP API](#surface-http-api) |
+| HTTP API under `/api/v1/` (jobs, history) | Public | [HTTP API](#surface-http-api) |
+| Every other path under `/api/` | Internal | [HTTP API](#surface-http-api) |
 | Web UI addresses (URLs) | Internal until decided by #28 | [Web UI addresses](#surface-web-addresses) |
 | Python modules (`import ekte...`) | Internal | [Python modules](#surface-python) |
 | Console text, Markdown/HTML/PDF report layout, web UI look and wording | Internal | [Breaking](#breaking) |
@@ -71,6 +72,7 @@ anything. For each public surface:
 | Report JSON | Adding an optional field; adding a value to a field documented as open-ended; reordering keys | Removing or renaming a field; changing a field's type or meaning; making an optional field required |
 | Webhook payloads | Adding a field | Removing or renaming a field; changing a field's type or meaning; removing a supported platform format |
 | GitHub Action | Adding an optional input or an output | Removing or renaming an input or output; changing a default so results change; changing an output's value format |
+| HTTP API (`/api/v1/`) | Adding an endpoint, an optional request field or parameter, a response field, an SSE event type or a status code for a new error case | Removing or renaming an endpoint, field or parameter; changing a field's type or meaning; changing the error format; removing an event type or a documented status code |
 | Data directory | Adding files, tables or columns through a migration | Any change that loses data, or that an upgrade within the major version cannot migrate automatically (see [Upgrade guarantee](#upgrade)) |
 
 Not covered by the version number, because they are results and presentation and
@@ -234,8 +236,37 @@ elsewhere.
 <a id="surface-http-api"></a>
 ## HTTP API under `/api/`
 
-To be decided by #22 (public contract or internal to the web UI). **Internal
-until then**: it may change in any release.
+The public part of the HTTP API is versioned in the path: `/api/v1/`. It is
+small on purpose:
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/v1/jobs` | queue an audit; answers with the job |
+| `GET /api/v1/jobs/{id}` | the job's state and progress |
+| `GET /api/v1/jobs/{id}/events` | the job's events as Server-Sent Events |
+| `GET /api/v1/history` | the saved runs, newest first |
+| `GET /api/v1/history/{id}` | one saved report |
+
+Request and response shapes, the error format (`{"error": "..."}`) and the
+status codes are in the [developer guide](../DEVELOPER_GUIDE.md#http-api-v1) and
+pinned by contract tests (`tests/test_web_api_v1.py`). Adding fields, optional
+parameters, endpoints and event types is not breaking, so clients must ignore
+what they do not know. An incompatible change needs `/api/v2/`; `/api/v1/` then
+stays for a deprecation period.
+
+**Every other path under `/api/`** (the paths the web UI calls for monitors, the
+knowledge base, analytics, reports, the master key and so on, and the
+unversioned copies of the v1 paths) is **internal**: it may change in any
+release, and its responses carry the header `X-Ekte-API: internal`. Public
+responses carry `X-Ekte-API: v1`.
+
+The local-only protections (loopback binding by default, Host check, refusal of
+cross-site requests and non-JSON bodies) apply to every path, `/api/v1/`
+included. The API has no authentication: do not expose it beyond the machine.
+
+Removed in the release after 0.30.0: `POST /api/audit/stream`, `POST /api/embed`,
+`POST /api/rerank` and `GET /api/history/trend`. Queue an audit with
+`POST /api/v1/jobs` and follow it with `GET /api/v1/jobs/{id}/events`.
 
 <a id="surface-web-addresses"></a>
 ## Web UI addresses

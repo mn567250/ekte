@@ -26,6 +26,7 @@ bewertet wird, in der [Methodik](docs/METHODOLOGY.de.md).
   - [Endpunkttypen (Surfaces)](#endpunkttypen-surfaces)
   - [Eigenständige Prüfer](#eigenständige-prüfer)
   - [Webserver](#webserver)
+  - [HTTP API v1](#http-api-v1)
   - [Web-Frontend](#web-frontend)
   - [Lokale Daten](#lokale-daten)
 - [Mitwirken](#mitwirken)
@@ -304,7 +305,7 @@ zweite Achse neben der Suite, getragen von `AuditOptions.surface`,
   `op="rerank"` (`ekte.config.SURFACE_OPS`); die Funktionen in `perf/summary.py`
   nehmen einen Parameter `op` (Standard `complete`).
 - `embed_audit.run_embedding_audit()` und `run_rerank_audit()` (genutzt von
-  `ekte embed` / `ekte rerank` und `/api/embed` / `/api/rerank`) starten den Runner
+  `ekte embed` / `ekte rerank`) starten den Runner
   mit `surface="embedding"` bzw. `"rerank"`, übergeben den vorigen gespeicherten
   Lauf derselben Surface als `previous_report` (Drift) und speichern den Bericht,
   sofern nicht abgeschaltet (`--no-save`).
@@ -344,10 +345,7 @@ nutzt nur die Standardbibliothek.
 - **API.** `/api/jobs…` führt Prüfungen aus (siehe unten); `/api/models` listet
   die Modelle eines Relays; `/api/report/export` rendert einen Bericht;
   `/api/history…`, `/api/watches…`, `/api/kb…` und `/api/analytics…` bedienen
-  die übrigen Seiten. `/api/audit/stream` (eine Prüfung, per SSE gestreamt),
-  `/api/embed` und `/api/rerank` (je eine synchrone Embedding- / Rerank-Prüfung)
-  nutzt die Weboberfläche nicht mehr; ihre Zukunft wird in den Issues #3 und #4
-  verfolgt.
+  die übrigen Seiten. Alle sind intern; die öffentliche Teilmenge ist [HTTP API v1](#http-api-v1).
 - **Relays.** `POST /api/kb/relays` speichert ein Relay `{name, base_url}` (400
   bei ungültiger Eingabe, 409, wenn Name oder URL schon bekannt sind).
 - **Analysen.** `GET /api/analytics/options` (Relays, Modelle, Suites,
@@ -386,9 +384,7 @@ nutzt nur die Standardbibliothek.
   Überwachungen) mit Fortschritt, `GET /api/jobs/{id}/events` spielt das
   Ereignisprotokoll ab und folgt ihm dann live per SSE, `POST
   /api/jobs/{id}/cancel` bricht ab. Die Weboberfläche nutzt diese Endpunkte,
-  daher überdauert eine Prüfung die Seite; `/api/audit/stream` verwendet
-  denselben Auftrag und bricht ihn ab, wenn der Strom
-  endet. Eine Relay-Sperre lässt je Relay nur eine Prüfung (oder einen
+  daher überdauert eine Prüfung die Seite. Eine Relay-Sperre lässt je Relay nur eine Prüfung (oder einen
   Überwachungslauf) zu, nach Hostname, alle Loopback-Adressen als ein Host;
   höchstens `EKTE_MAX_PARALLEL_AUDITS` (Standard 4) laufen gleichzeitig,
   Wartende in Ankunftsreihenfolge.
@@ -422,6 +418,28 @@ nutzt nur die Standardbibliothek.
   Origin und `Sec-Fetch-Site` gegen CSRF, nur JSON als Anfragekörper sowie
   Header gegen Framing, MIME-Sniffing und Referrer. Die Oberfläche hat bewusst
   keine Anmeldung.
+
+### HTTP API v1
+
+Der öffentliche Teil der HTTP-API liegt unter `/api/v1/` und folgt der [Stabilitätsrichtlinie](docs/STABILITY.md#surface-http-api): Er ändert sich nur in einem Major-Release inkompatibel, nach einer Übergangsfrist. Jeder andere Pfad unter `/api/` ist intern und kann sich in jedem Release ändern. Interne Antworten tragen `X-Ekte-API: internal`, v1-Antworten `X-Ekte-API: v1`. Die Weboberfläche nutzt die internen Pfade.
+
+| Endpunkt | Anfrage | Antwort |
+|---|---|---|
+| `POST /api/v1/jobs` | JSON-Body mit `base_url`, `model` und optional `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 und der Auftrag; 400 bei ungültiger Eingabe |
+| `GET /api/v1/jobs/{id}` | keine | 200 und der Auftrag; 404 bei unbekannter ID |
+| `GET /api/v1/jobs/{id}/events` | keine | 200 und `text/event-stream`: die bisherigen Ereignisse des Auftrags, dann live, am Ende `done`; 404 bei unbekannter ID |
+| `GET /api/v1/history` | optional `limit` (1–500, Standard 50) und `perf` | 200 und ein JSON-Array mit Lauf-Zusammenfassungen, neueste zuerst |
+| `GET /api/v1/history/{id}` | keine | 200 und der gespeicherte Bericht unverändert; 404 bei unbekannter ID |
+
+Ein Auftrag hat `id`, `status` (`queued`, `running`, `done`, `error` oder `cancelled`), Fortschrittsfelder, `report_id`, sobald der Bericht gespeichert ist, und `error`; der API-Schlüssel wird nie zurückgegeben. Jedes Ereignis ist eine SSE-Zeile `data: {JSON}` mit einem `type`; das Ereignis `report` trägt den Bericht und seine `report_id`, und `done` ist immer das letzte Ereignis. Clients ignorieren Ereignistypen und Felder, die sie nicht kennen.
+
+Jeder Fehler ist JSON mit einem einzigen Feld `error` und einer lesbaren Meldung, mit einem dieser Statuscodes: 400 (ungültige Anfrage), 404 (nicht gefunden), 403 (Cross-Site- oder Cross-Origin-Anfrage abgelehnt), 415 (Body ist kein JSON), 421 (unbekannter Host).
+
+```json
+{"error": "not found"}
+```
+
+- **Nur lokal.** Die Schutzmaßnahmen des Webservers gelten für `/api/v1/` wie für jeden Pfad: Bindung an Loopback als Standard, die Host-Prüfung, die Ablehnung von Cross-Site-Schreibzugriffen und reine JSON-Bodys. Sie antworten im selben Fehlerformat.
 
 ### Web-Frontend
 

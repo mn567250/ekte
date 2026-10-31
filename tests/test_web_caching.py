@@ -129,11 +129,11 @@ def _big(_request) -> PlainTextResponse:
 def test_sse_paths_are_never_compressed():
     app = Starlette(routes=[
         Route("/api/jobs/{job_id}/events", lambda _r: _events()),
-        Route("/api/audit/stream", lambda _r: _events(), methods=["POST"]),
+        Route("/api/v1/jobs/{job_id}/events", lambda _r: _events()),
         Route("/api/other", _big),
     ])
     c = TestClient(caching.CompressionMiddleware(app))
-    for method, path in (("GET", "/api/jobs/abc/events"), ("POST", "/api/audit/stream")):
+    for method, path in (("GET", "/api/jobs/abc/events"), ("GET", "/api/v1/jobs/abc/events")):
         r = c.request(method, path)
         assert "content-encoding" not in r.headers, path
         assert r.text.count("data: ") == 3

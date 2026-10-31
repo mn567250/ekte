@@ -53,23 +53,6 @@ def test_spa_fallback_for_deep_link(client):
     assert "<!doctype html>" in r.text.lower()
 
 
-def test_audit_stream_bad_input_is_clean_error(client):
-    # No base_url/model → a clean SSE error event, not a 500.
-    r = client.post("/api/audit/stream", json={"model": "", "base_url": ""})
-    assert r.status_code == 200
-    assert "text/event-stream" in r.headers["content-type"]
-    assert '"type": "error"' in r.text
-    assert '"type": "done"' in r.text
-
-
-def test_audit_stream_unknown_suite_errors(client):
-    r = client.post(
-        "/api/audit/stream",
-        json={"base_url": "https://x.example/v1", "model": "gpt-4o", "suite": "bogus"},
-    )
-    assert '"type": "error"' in r.text
-
-
 def test_serves_console_and_history_and_i18n(client):
     for path in ("/console", "/history"):
         r = client.get(path)
@@ -172,8 +155,6 @@ def test_history_module_roundtrip(tmp_path, monkeypatch):
     assert len(rows) == 1 and rows[0]["risk_level"] == "high" and rows[0]["score"] == 21.0
     full = history.get(rid)
     assert full["verdict"]["rating"] == "F" and full["target"]["model"] == "doubao-x"
-    trend = history.trend("https://relay.test/v1", "deepseek-v4-pro")
-    assert len(trend) == 1 and trend[0]["score"] == 21.0
     history.delete(rid)
     assert history.recent() == []
 
@@ -193,19 +174,6 @@ def test_history_endpoints(tmp_path, monkeypatch, client):
     assert client.get("/api/history/999999").status_code == 404
 
 
-def test_audit_stream_invalid_baseline_errors(client):
-    # A compare request with a malformed baseline base_url is a clean error event.
-    r = client.post(
-        "/api/audit/stream",
-        json={
-            "base_url": "https://x.example/v1",
-            "model": "gpt-4o",
-            "baseline": {"base_url": "ftp://nope", "model": "gpt-4o"},
-        },
-    )
-    assert '"type": "error"' in r.text
-
-
 def test_serves_perf_js_and_pages_load_it(client):
     js = client.get("/perf.js")
     assert js.status_code == 200
@@ -215,55 +183,28 @@ def test_serves_perf_js_and_pages_load_it(client):
         assert '<script src="/perf.js"></script>' in _unversioned(client.get(path).text)
 
 
-def test_audit_stream_batches_request_records(tmp_path, monkeypatch, client):
+async def test_job_events_batch_request_records():
     import asyncio
     import json
 
-    from ekte.models import AuditReport, RedactedTarget, Verdict
+    from ekte.web import jobs
 
-    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
-
-    async def fake_run_audit(target, options, *, on_event=None, **_):
-        on_event({"type": "start", "total": 1, "probe_requests": 0})
-        for seq in range(3):  # a burst: batched into one event
-            on_event({"type": "request_done", "record": {"seq": seq}})
-        await asyncio.sleep(0.35)  # past the batch window: flushed on its own
-        on_event({"type": "request_done", "record": {"seq": 3}})
-        on_event({"type": "detector_done", "id": "x"})
-        return AuditReport(
-            tool_version="0", mode="check", suite="standard",
-            target=RedactedTarget(name="t", kind="target", base_url=target.base_url, model="m"),
-            verdict=Verdict(),
-        )
-
-    monkeypatch.setattr("ekte.web.server.run_audit", fake_run_audit)
-    r = client.post("/api/audit/stream", json={"base_url": "https://x.example/v1", "model": "m"})
-    events = [
-        json.loads(line[5:]) for line in r.text.splitlines() if line.startswith("data:")
-    ]
+    job = jobs.Job({}, frozenset())
+    job.emit({"type": "start", "total": 1, "probe_requests": 0})
+    for seq in range(3):  # a burst: batched into one event
+        job.emit({"type": "request_done", "record": {"seq": seq}})
+    job.emit({"type": "detector_done", "id": "x"})
+    job.emit({"type": "request_done", "record": {"seq": 3}})
+    job.emit({"type": "done"})
+    chunks = [c async for c in jobs.stream(job, 0.05)]
+    events = [json.loads(c[5:]) for c in chunks]
     types = [e["type"] for e in events]
-    assert "request_done" not in types
+    assert "request_done" not in types and types[-1] == "done"
     batches = [[rec["seq"] for rec in e["records"]] for e in events if e["type"] == "requests"]
     assert batches == [[0, 1, 2], [3]]
     # a pending batch is flushed before the next non-request event
-    assert types.index("requests") < types.index("detector_done") < types.index("report")
-    assert types[-1] == "done"
-
-
-def test_history_trend_carries_performance_headline(tmp_path, monkeypatch):
-    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
-    from ekte.web import history
-
-    base = {"target": {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"},
-            "verdict": {"overall_score": 90.0}}
-    history.save(base)
-    history.save({**base, "performance": {"target": {
-        "latency_ms": {"p50": 812.5}, "ttft_ms": {"p50": 240.0},
-        "decode_tps_local": {"p50": None}, "decode_tps_reported": {"p50": 55.0}}}})
-    old, new = history.trend("https://x/v1", "m")
-    assert old["latency_p50_ms"] is None and old["score"] == 90.0
-    assert new["latency_p50_ms"] == 812.5 and new["ttft_p50_ms"] == 240.0
-    assert new["decode_tps_p50"] == 55.0
+    assert types.index("requests") < types.index("detector_done")
+    await asyncio.sleep(0)
 
 
 def test_history_list_carries_performance_headline_on_request(tmp_path, monkeypatch, client):

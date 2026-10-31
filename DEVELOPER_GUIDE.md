@@ -26,6 +26,7 @@ Docker and released. What ekte does and how to use it is in the
   - [Surfaces](#surfaces)
   - [Standalone auditors](#standalone-auditors)
   - [Web server](#web-server)
+  - [HTTP API v1](#http-api-v1)
   - [Web front end](#web-front-end)
   - [Local data](#local-data)
 - [Contributing](#contributing)
@@ -289,7 +290,7 @@ missing JSON field mean `chat`; no migration).
   `op="rerank"` (`ekte.config.SURFACE_OPS`); `perf/summary.py` functions take
   an `op` parameter (default `complete`).
 - `embed_audit.run_embedding_audit()` and `run_rerank_audit()` (used by
-  `ekte embed` / `ekte rerank` and `/api/embed` / `/api/rerank`) run the runner
+  `ekte embed` / `ekte rerank`) run the runner
   with `surface="embedding"` or `"rerank"`, pass the previous saved run of the
   same surface as `previous_report` (drift) and save the report unless told
   not to (`--no-save`).
@@ -327,10 +328,7 @@ All decoding (image headers, WAV) is standard library only.
   `/console`) redirect (308) to their v2 pages, keeping the query string.
 - **API.** `/api/jobs…` runs audits (below); `/api/models` lists a relay's
   models; `/api/report/export` renders a report; `/api/history…`,
-  `/api/watches…`, `/api/kb…` and `/api/analytics…` back the other pages.
-  `/api/audit/stream` (one audit streamed over SSE), `/api/embed` and
-  `/api/rerank` (one synchronous embedding / rerank audit) are no longer used by
-  the web UI; their future is tracked in issues #3 and #4.
+  `/api/watches…`, `/api/kb…` and `/api/analytics…` back the other pages. All of these are internal; the public subset is [HTTP API v1](#http-api-v1).
 - **Relays.** `POST /api/kb/relays` saves a relay `{name, base_url}` (400 for bad
   input, 409 when the name or URL is already known).
 - **Analytics.** `GET /api/analytics/options` (relays, models, suites, stream
@@ -367,8 +365,7 @@ All decoding (image headers, WAV) is standard library only.
   recently finished jobs (plus running monitors) with progress,
   `GET /api/jobs/{id}/events` replays the job's event log and then follows it
   live over SSE, and `POST /api/jobs/{id}/cancel` stops it. The web UI uses
-  these, so an audit outlives the page; `/api/audit/stream` wraps
-  the same job and cancels it when the stream closes. A relay gate lets one
+  these, so an audit outlives the page. A relay gate lets one
   audit (or monitor run) at a time use a relay, keyed by host name with every
   loopback address as one host, and at most `EKTE_MAX_PARALLEL_AUDITS`
   (default 4) run at once; waiters are served in arrival order.
@@ -397,6 +394,28 @@ All decoding (image headers, WAV) is standard library only.
   `LocalOnlyMiddleware`: a Host allowlist against DNS rebinding, Origin and
   `Sec-Fetch-Site` checks against CSRF, JSON-only request bodies, and
   anti-framing / no-sniff / no-referrer headers. The UI has no login by design.
+
+### HTTP API v1
+
+The public part of the HTTP API lives under `/api/v1/` and follows the [stability policy](docs/STABILITY.md#surface-http-api): it changes incompatibly only in a major release, after a deprecation period. Every other path under `/api/` is internal and may change in any release. Internal responses carry `X-Ekte-API: internal`, v1 responses `X-Ekte-API: v1`. The web UI uses the internal paths.
+
+| Endpoint | Request | Response |
+|---|---|---|
+| `POST /api/v1/jobs` | JSON body with `base_url`, `model` and optionally `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 and the job; 400 for bad input |
+| `GET /api/v1/jobs/{id}` | none | 200 and the job; 404 for an unknown id |
+| `GET /api/v1/jobs/{id}/events` | none | 200 and `text/event-stream`: the job's events so far, then live, ending with `done`; 404 for an unknown id |
+| `GET /api/v1/history` | optional `limit` (1–500, default 50) and `perf` | 200 and a JSON array of run summaries, newest first |
+| `GET /api/v1/history/{id}` | none | 200 and the saved report as stored; 404 for an unknown id |
+
+A job has `id`, `status` (`queued`, `running`, `done`, `error` or `cancelled`), progress fields, `report_id` once the report is saved, and `error`; the API key is never returned. Each event is an SSE line `data: {JSON}` with a `type`; the `report` event carries the report and its `report_id`, and `done` is always the last event. Clients ignore event types and fields they do not know.
+
+Every error is JSON with one field, `error`, with a human-readable message, and one of these status codes: 400 (bad request), 404 (not found), 403 (cross-site or cross-origin request refused), 415 (body is not JSON), 421 (unknown Host).
+
+```json
+{"error": "not found"}
+```
+
+- **Local only.** The protections of the web server apply to `/api/v1/` like to every path: loopback binding by default, the Host check, the refusal of cross-site writes and JSON-only bodies. They answer in the same error format.
 
 ### Web front end
 

@@ -26,6 +26,7 @@ funziona e come viene valutato ogni controllo, nella
   - [Superfici](#superfici)
   - [Verificatori autonomi](#verificatori-autonomi)
   - [Server web](#server-web)
+  - [HTTP API v1](#http-api-v1)
   - [Frontend web](#frontend-web)
   - [Dati locali](#dati-locali)
 - [Contribuire](#contribuire)
@@ -306,7 +307,7 @@ secondo asse accanto alla suite, portato da `AuditOptions.surface`,
   rerank con `op="rerank"` (`ekte.config.SURFACE_OPS`); le funzioni di
   `perf/summary.py` accettano un parametro `op` (predefinito `complete`).
 - `embed_audit.run_embedding_audit()` e `run_rerank_audit()` (usate da
-  `ekte embed` / `ekte rerank` e `/api/embed` / `/api/rerank`) eseguono il runner
+  `ekte embed` / `ekte rerank`) eseguono il runner
   con `surface="embedding"` o `"rerank"`, passano l'esecuzione salvata precedente
   della stessa superficie come `previous_report` (deriva) e salvano il rapporto
   salvo indicazione contraria (`--no-save`).
@@ -348,9 +349,7 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
 - **API.** `/api/jobs…` esegue le verifiche (vedi sotto); `/api/models` elenca i
   modelli di un relay; `/api/report/export` renderizza un rapporto;
   `/api/history…`, `/api/watches…`, `/api/kb…` e `/api/analytics…` servono le
-  altre pagine. `/api/audit/stream` (una verifica trasmessa via SSE), `/api/embed`
-  e `/api/rerank` (una verifica sincrona di embedding / rerank) non sono più usati
-  dall'interfaccia web; il loro futuro è seguito nelle issue #3 e #4.
+  altre pagine. Tutti sono interni; il sottoinsieme pubblico è [HTTP API v1](#http-api-v1).
 - **Relay.** `POST /api/kb/relays` salva un relay `{name, base_url}` (400 per un
   input non valido, 409 se il nome o l'URL sono già noti).
 - **Analisi.** `GET /api/analytics/options` (relay, modelli, suite, modalità di
@@ -389,9 +388,7 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
   in corso e appena conclusi (e i monitor in esecuzione) con l'avanzamento,
   `GET /api/jobs/{id}/events` riproduce il registro degli eventi e poi lo segue
   dal vivo via SSE, e `POST /api/jobs/{id}/cancel` lo ferma. L'interfaccia web
-  li usa, quindi una verifica sopravvive alla pagina; `/api/audit/stream`
-  avvolge lo stesso job e lo annulla
-  alla chiusura del flusso. Un blocco per relay lascia usare un relay a una sola
+  li usa, quindi una verifica sopravvive alla pagina. Un blocco per relay lascia usare un relay a una sola
   verifica (o esecuzione di monitor) alla volta, per nome host, con tutti gli
   indirizzi loopback come un solo host; al massimo `EKTE_MAX_PARALLEL_AUDITS`
   (predefinito 4) insieme, in ordine di arrivo.
@@ -424,6 +421,28 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
   controlli di `Origin` e `Sec-Fetch-Site` contro il CSRF, corpi di richiesta solo
   JSON e intestazioni anti-frame / no-sniff / no-referrer. L'interfaccia non ha
   login per scelta.
+
+### HTTP API v1
+
+La parte pubblica dell'API HTTP si trova sotto `/api/v1/` e segue la [politica di stabilità](docs/STABILITY.md#surface-http-api): cambia in modo incompatibile solo in una versione maggiore, dopo un periodo di deprecazione. Ogni altro percorso sotto `/api/` è interno e può cambiare in qualsiasi versione. Le risposte interne portano `X-Ekte-API: internal`, quelle di v1 `X-Ekte-API: v1`. L'interfaccia web usa i percorsi interni.
+
+| Endpoint | Richiesta | Risposta |
+|---|---|---|
+| `POST /api/v1/jobs` | corpo JSON con `base_url`, `model` e, facoltativamente, `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 e il job; 400 per input non valido |
+| `GET /api/v1/jobs/{id}` | nessuna | 200 e il job; 404 per un id sconosciuto |
+| `GET /api/v1/jobs/{id}/events` | nessuna | 200 e `text/event-stream`: gli eventi del job finora, poi dal vivo, fino a `done`; 404 per un id sconosciuto |
+| `GET /api/v1/history` | `limit` (1–500, predefinito 50) e `perf`, facoltativi | 200 e un array JSON di riepiloghi delle esecuzioni, le più recenti per prime |
+| `GET /api/v1/history/{id}` | nessuna | 200 e il rapporto salvato così com'è; 404 per un id sconosciuto |
+
+Un job ha `id`, `status` (`queued`, `running`, `done`, `error` o `cancelled`), campi di avanzamento, `report_id` quando il rapporto è salvato, e `error`; la chiave API non viene mai restituita. Ogni evento è una riga SSE `data: {JSON}` con un `type`; l'evento `report` porta il rapporto e il suo `report_id`, e `done` è sempre l'ultimo. I client ignorano i tipi di evento e i campi che non conoscono.
+
+Ogni errore è JSON con un solo campo, `error`, con un messaggio leggibile, e uno di questi codici di stato: 400 (richiesta non valida), 404 (non trovato), 403 (richiesta cross-site o cross-origin rifiutata), 415 (il corpo non è JSON), 421 (host sconosciuto).
+
+```json
+{"error": "not found"}
+```
+
+- **Solo locale.** Le protezioni del server web valgono per `/api/v1/` come per ogni percorso: binding su loopback per impostazione predefinita, controllo dell'Host, rifiuto delle scritture cross-site e corpi solo JSON. Rispondono con lo stesso formato di errore.
 
 ### Frontend web
 

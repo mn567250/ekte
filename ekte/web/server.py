@@ -18,12 +18,8 @@ Endpoints:
   POST /api/kb/import        check + store profile YAML in kb.db
   GET  /api/kb/export        your kb.db entries as YAML
   POST /api/models           list a relay's /models (connection check + model ids)
-  POST /api/audit/stream     run an audit; stream detector progress, batched
-                             per-request timing records and the final report
-                             as Server-Sent Events (text/event-stream)
   POST /api/jobs             queue an audit (any surface: chat, embedding, rerank)
-                             as a background job (same body as
-                             /api/audit/stream); it runs on whatever page is open
+                             as a background job; it runs on whatever page is open
   GET  /api/jobs             queued and running audits (and running monitors),
                              recently finished ones too, with progress
   GET  /api/jobs/{id}/events the job's events as SSE: the log so far, then live
@@ -52,6 +48,11 @@ Endpoints:
                              (held in memory until a restart) or store them
                              encrypted; moves the keys along
 
+Public API (docs/STABILITY.md#surface-http-api): the same handlers also answer
+under /api/v1/ (POST /jobs, GET /jobs/{id}, GET /jobs/{id}/events, GET /history,
+GET /history/{id}); responses there carry `X-Ekte-API: v1`. Every other /api/
+response carries `X-Ekte-API: internal`.
+
 The audit runs in-process with the same `run_audit` the CLI uses; a progress
 callback pushes per-detector events into a queue the SSE generator drains. The
 final report is the model's own redacted `model_dump` (API key fingerprinted,
@@ -59,8 +60,7 @@ relay text scrubbed), so nothing secret crosses to the browser.
 
 Every audit runs as a job (ekte/web/jobs.py): audits of the same relay are
 queued one after another so they never skew each other's measurements;
-different relays run in parallel. /api/audit/stream ties its job to the
-stream (closing the page stops it); /api/jobs detaches it from the page.
+different relays run in parallel. A job is detached from the page that queued it.
 """
 
 from __future__ import annotations
@@ -1132,14 +1132,10 @@ def create_app() -> FastAPI:
         urls = [target.base_url, baseline.base_url if baseline is not None else None]
         return jobs.manager.submit(summary, urls, run)
 
-    def _job_stream(job: jobs.Job, cancel_on_disconnect: bool = False) -> StreamingResponse:
+    def _job_stream(job: jobs.Job) -> StreamingResponse:
         async def gen() -> AsyncIterator[str]:
-            try:
-                async for chunk in jobs.stream(job, _REQUEST_BATCH_SEC):
-                    yield chunk
-            finally:
-                if cancel_on_disconnect:
-                    jobs.manager.cancel(job.id)
+            async for chunk in jobs.stream(job, _REQUEST_BATCH_SEC):
+                yield chunk
 
         return StreamingResponse(
             gen(),
@@ -1147,24 +1143,8 @@ def create_app() -> FastAPI:
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
-    @app.post("/api/audit/stream")
-    async def audit_stream(request: Request) -> Any:
-        # An audit as one request: a job that lives as long as this stream does
-        # (closing the connection stops it), queued behind audits of the same
-        # relay. The web UI uses /api/jobs instead, so an audit outlives the page.
-        try:
-            job = _audit_job(await request.json())
-        except ConfigError as exc:
-            msg = str(exc)  # bind now: `exc` is cleared when the except block exits
-
-            async def err_stream() -> AsyncIterator[str]:
-                yield jobs.sse({"type": "error", "message": msg})
-                yield jobs.sse({"type": "done"})
-
-            return StreamingResponse(err_stream(), media_type="text/event-stream")
-        return _job_stream(job, cancel_on_disconnect=True)
-
     # ----- Background audits (v2): run on, whatever page is open ----------- #
+    @app.post("/api/v1/jobs")
     @app.post("/api/jobs")
     async def jobs_create(request: Request) -> Any:
         try:
@@ -1202,6 +1182,7 @@ def create_app() -> FastAPI:
             })
         return JSONResponse({"jobs": out, "max_parallel": jobs.gate.limit})
 
+    @app.get("/api/v1/jobs/{job_id}")
     @app.get("/api/jobs/{job_id}")
     async def jobs_get(job_id: str) -> Any:
         job = _find_job(job_id)
@@ -1209,6 +1190,7 @@ def create_app() -> FastAPI:
             return JSONResponse({"error": "not found"}, status_code=404)
         return JSONResponse(job.info())
 
+    @app.get("/api/v1/jobs/{job_id}/events")
     @app.get("/api/jobs/{job_id}/events")
     async def jobs_events(job_id: str) -> Any:
         # Replays the job's whole log, then follows it live. Disconnecting
@@ -1279,17 +1261,22 @@ def create_app() -> FastAPI:
     async def history_page(request: Request) -> Any:
         return _classic_redirect(request, "/history")
 
+    @app.get("/api/v1/history")
     @app.get("/api/history")
     def history_list(limit: int = 50, perf: bool = False) -> Any:
         from ekte.web import history
 
         return JSONResponse(history.recent(limit, perf=perf))
 
-    @app.get("/api/history/trend")
-    def history_trend(base_url: str, claimed_model: str, limit: int = 30) -> Any:
+    @app.get("/api/v1/history/{rid}")
+    def history_get_v1(rid: int) -> Any:
+        """The public form of ``GET /api/history/{rid}``: a saved report as stored."""
         from ekte.web import history
 
-        return JSONResponse(history.trend(base_url, claimed_model, limit))
+        report = history.get(rid)
+        if report is None:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        return JSONResponse(report)
 
     @app.get("/api/history/status")
     def history_status() -> Any:
@@ -1855,68 +1842,9 @@ def create_app() -> FastAPI:
 
         return await asyncio.to_thread(switch)
 
-    # ----- Tools: embedding & rerank auditors (non-chat surface) ---------- #
     @app.get("/tools")
     async def tools_page(request: Request) -> Any:
         return _classic_redirect(request, "/tools")
-
-    @app.post("/api/embed")
-    async def embed_audit(request: Request) -> Any:
-        # Lazy import: the embed auditor pulls in the client stack only on demand.
-        from ekte.embed_audit import run_embedding_audit, tool_verdict
-
-        body = await request.json()
-        try:
-            target = build_target(
-                kind="target",
-                name=body.get("name") or "embed",
-                base_url=body.get("base_url"),
-                api_key=body.get("api_key"),
-                model=body.get("model"),
-                claimed_model=body.get("claimed_model") or None,
-                declared_provider=body.get("declared_provider") or None,
-                api=validate_api(body.get("api")),
-            )
-            suite = validate_suite(str(body.get("suite") or "standard"))
-        except ConfigError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=400)
-
-        # An explicit claimed dimension wins; otherwise (0) the runner takes the
-        # claimed (or requested) model's from the KB, and records the observed
-        # dimension when the KB does not know it.
-        claimed_dimensions = _coerce_int(body.get("claimed_dimensions"))
-        # Runs the embedding surface through the runner and saves it to history;
-        # the verdict is redacted (api_key is fingerprinted in `target`).
-        report, report_id = await run_embedding_audit(
-            target, claimed_dimensions=max(0, claimed_dimensions), suite=suite
-        )
-        return JSONResponse(tool_verdict(report, report_id))
-
-    @app.post("/api/rerank")
-    async def rerank_audit(request: Request) -> Any:
-        from ekte.embed_audit import run_rerank_audit, tool_verdict
-
-        body = await request.json()
-        try:
-            target = build_target(
-                kind="target",
-                name=body.get("name") or "rerank",
-                base_url=body.get("base_url"),
-                api_key=body.get("api_key"),
-                model=body.get("model"),
-                claimed_model=body.get("claimed_model") or None,
-                declared_provider=body.get("declared_provider") or None,
-                api=validate_api(body.get("api")),
-            )
-            suite = validate_suite(str(body.get("suite") or "standard"))
-        except ConfigError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=400)
-
-        # Runs the rerank surface through the runner and saves it to history;
-        # the verdict keeps the old shape (risk_level, score, findings, redacted
-        # target) plus report_id, surface, suite, rating and headline.
-        report, report_id = await run_rerank_audit(target, suite=suite)
-        return JSONResponse(tool_verdict(report, report_id))
 
     # Static assets (e.g. future JS/CSS split-outs) under /assets.
     assets = _STATIC / "assets"

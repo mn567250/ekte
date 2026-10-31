@@ -26,6 +26,7 @@ Docker og utgis. Hva ekte gjør og hvordan den brukes, står i
   - [Overflater](#overflater)
   - [Frittstående revisorer](#frittstående-revisorer)
   - [Nettserver](#nettserver)
+  - [HTTP API v1](#http-api-v1)
   - [Nettgrensesnittets frontend](#nettgrensesnittets-frontend)
   - [Lokale data](#lokale-data)
 - [Bidra](#bidra)
@@ -297,7 +298,7 @@ akse nummer to ved siden av testsettet, båret av `AuditOptions.surface`,
   `op="rerank"` (`ekte.config.SURFACE_OPS`); funksjonene i `perf/summary.py` tar
   en `op`-parameter (standard `complete`).
 - `embed_audit.run_embedding_audit()` og `run_rerank_audit()` (brukt av
-  `ekte embed` / `ekte rerank` og `/api/embed` / `/api/rerank`) kjører kjøreren
+  `ekte embed` / `ekte rerank`) kjører kjøreren
   med `surface="embedding"` eller `"rerank"`, sender forrige lagrede kjøring av
   samme overflate som `previous_report` (drift) og lagrer rapporten med mindre de
   blir bedt om å la være (`--no-save`).
@@ -337,10 +338,7 @@ standardbiblioteket.
   videresender (308) til v2-sidene sine og beholder spørrestrengen.
 - **API.** `/api/jobs…` kjører revisjoner (nedenfor); `/api/models` viser et
   relés modeller; `/api/report/export` gjengir en rapport; `/api/history…`,
-  `/api/watches…`, `/api/kb…` og `/api/analytics…` står bak de andre sidene.
-  `/api/audit/stream` (én revisjon strømmet over SSE), `/api/embed` og
-  `/api/rerank` (én synkron revisjon av embedding / rerank) brukes ikke lenger av
-  nettgrensesnittet; framtiden deres følges i sakene #3 og #4.
+  `/api/watches…`, `/api/kb…` og `/api/analytics…` står bak de andre sidene. Alle er interne; den offentlige delmengden er [HTTP API v1](#http-api-v1).
 - **Releer.** `POST /api/kb/relays` lagrer et relé `{name, base_url}` (400 for
   ugyldig inndata, 409 når navnet eller URL-en allerede er kjent).
 - **Analyse.** `GET /api/analytics/options` (releer, modeller, testsett,
@@ -377,9 +375,7 @@ standardbiblioteket.
   kjøring og nylig ferdige (pluss overvåkinger som kjører) med fremdrift,
   `GET /api/jobs/{id}/events` spiller av jobbens hendelseslogg og følger den så i
   sanntid over SSE, og `POST /api/jobs/{id}/cancel` stopper den.
-  Nettgrensesnittet bruker disse, så en revisjon overlever siden;
-  `/api/audit/stream` pakker inn den samme jobben og avbryter den når strømmen
-  lukkes. En reléport lar én revisjon (eller overvåkingskjøring) om gangen bruke
+  Nettgrensesnittet bruker disse, så en revisjon overlever siden. En reléport lar én revisjon (eller overvåkingskjøring) om gangen bruke
   et relé, med vertsnavnet som nøkkel og alle loopback-adresser som én vert, og
   høyst `EKTE_MAX_PARALLEL_AUDITS` (standard 4) kjører samtidig; de som venter,
   betjenes i den rekkefølgen de kom.
@@ -410,6 +406,28 @@ standardbiblioteket.
   Origin- og `Sec-Fetch-Site`-kontroller mot CSRF, bare JSON i
   forespørselsbodyer, og hoder mot innramming / sniffing / referrer.
   Grensesnittet har ingen innlogging, med vilje.
+
+### HTTP API v1
+
+Den offentlige delen av HTTP-API-et ligger under `/api/v1/` og følger [stabilitetspolicyen](docs/STABILITY.md#surface-http-api): Den endres bare ukompatibelt i en hovedversjon, etter en utfasingsperiode. Alle andre stier under `/api/` er interne og kan endres i hvilken som helst utgivelse. Interne svar har `X-Ekte-API: internal`, v1-svar `X-Ekte-API: v1`. Nettgrensesnittet bruker de interne stiene.
+
+| Endepunkt | Forespørsel | Svar |
+|---|---|---|
+| `POST /api/v1/jobs` | JSON-kropp med `base_url`, `model` og eventuelt `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 og jobben; 400 ved ugyldig inndata |
+| `GET /api/v1/jobs/{id}` | ingen | 200 og jobben; 404 for ukjent id |
+| `GET /api/v1/jobs/{id}/events` | ingen | 200 og `text/event-stream`: jobbens hendelser så langt, så direkte, til og med `done`; 404 for ukjent id |
+| `GET /api/v1/history` | valgfritt `limit` (1–500, standard 50) og `perf` | 200 og en JSON-liste med sammendrag av kjøringer, nyeste først |
+| `GET /api/v1/history/{id}` | ingen | 200 og den lagrede rapporten som den er; 404 for ukjent id |
+
+En jobb har `id`, `status` (`queued`, `running`, `done`, `error` eller `cancelled`), fremdriftsfelt, `report_id` når rapporten er lagret, og `error`; API-nøkkelen returneres aldri. Hver hendelse er en SSE-linje `data: {JSON}` med en `type`; hendelsen `report` bærer rapporten og dens `report_id`, og `done` er alltid den siste. Klienter ignorerer hendelsestyper og felt de ikke kjenner.
+
+Hver feil er JSON med ett enkelt felt, `error`, med en lesbar melding, og én av disse statuskodene: 400 (ugyldig forespørsel), 404 (ikke funnet), 403 (forespørsel på tvers av nettsteder eller opprinnelser avvist), 415 (kroppen er ikke JSON), 421 (ukjent vert).
+
+```json
+{"error": "not found"}
+```
+
+- **Bare lokalt.** Nettserverens beskyttelser gjelder for `/api/v1/` som for alle stier: binding til loopback som standard, vertskontrollen, avvisning av skriving på tvers av nettsteder og kun JSON i kroppen. De svarer i samme feilformat.
 
 ### Nettgrensesnittets frontend
 
