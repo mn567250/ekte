@@ -225,9 +225,9 @@ ekte serve                        # apre http://localhost:8000
 
 Il modulo guida la configurazione:
 
-1. Scegli il **Relay / provider**: un provider della base di conoscenza o un
+1. Scegli il **Relay / provider**: un fornitore della base di conoscenza o un
    relay che hai salvato. Il suo URL di base viene compilato (gli altri URL noti
-   del provider sono offerti come suggerimenti). Per qualsiasi altro relay
+   del fornitore sono offerti come suggerimenti). Per qualsiasi altro relay
    scegli **Altro (inserisci l'URL)** e inserisci l'**URL dell'intermediario**.
 2. Aggiungi la **Chiave API** se il relay ne richiede una.
 3. ekte elenca da solo i modelli del relay (alla scelta di un relay e ogni volta
@@ -267,7 +267,7 @@ L'interfaccia web è servita alla radice dell'indirizzo che `ekte serve` apre, c
 | **Monitor** | `/watches` | Verifiche ripetute pianificate con avvisi via webhook |
 | **Cronologia** | `/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
 | **Analisi** | `/analytics` | Relay e modelli confrontati nel tempo: indicatori, grafici con tabelle di dati, classifiche |
-| **Conoscenza** | `/kb` | La base di conoscenza in tre schede — modelli, provider, relay: sfogliare, attivare/disattivare, aggiungere i propri |
+| **Conoscenza** | `/kb` | La base di conoscenza in tre schede — modelli, fornitori, relay: sfogliare, attivare/disattivare, aggiungere i propri |
 
 Inoltre, nelle pagine: filtri e tendenze configurabili (punteggio, voto,
 latenza p50, token/s) nella **Cronologia**; **Pianifica come monitor** e **Riesegui audit** su ogni
@@ -275,7 +275,7 @@ esecuzione della Cronologia; **Scarica il rapporto** in tutti i formati; e un
 selettore del tema (Automatico / Chiaro / Scuro).
 Ogni pagina tranne Accessibilità ha un avviso subito sotto l'introduzione,
 colorato secondo l'importanza (informazione, successo, avviso, critico): ad es.
-l'ultimo audit concluso in **Verifica**, la chiave master in **Monitor**, le
+l'ultimo audit concluso in **Verifica**, la chiave principale in **Monitor**, le
 esecuzioni ancora in elaborazione in **Cronologia** e **Analisi**, le voci
 saltate in **Conoscenza**.
 
@@ -299,7 +299,7 @@ pari durata; un grafico di qualsiasi metrica per relay, modello o relay ×
 modello, per ora, giorno o settimana (linea mediana con la fascia p25–p75, fino
 a quattro serie, ogni grafico anche come tabella di dati); e una classifica dei
 relay per un modello o dei modelli di un relay. I relay sono raggruppati per
-voce della knowledge base (relay salvati e provider), quindi rinominare un relay
+voce della base di conoscenza (relay salvati e fornitori), quindi rinominare un relay
 ne raggruppa di nuovo la cronologia. Gli intervalli con meno di 3 esecuzioni
 sono attenuati — un singolo audit può essere un valore anomalo; un monitor
 fornisce misurazioni regolari. Le esecuzioni più vecchie mostrano ciò che hanno
@@ -389,7 +389,7 @@ dell'interfaccia web e dei rapporti.
 | **Connettività** | `connectivity` | 7 | Raggiungibilità dell'endpoint e l'elenco `/v1/models` pubblicizzato |
 | **Autenticità dello streaming** | `streaming` | 6 | Streaming finto (buffer e poi spezzettamento), dal numero dei frammenti e dalla loro spaziatura |
 | **Affidabilità in concorrenza** | `reliability` | 6 | Tasso di successo e latenza sotto carico concorrente (la limitazione HTTP 429 è contata a parte) |
-| **Sicurezza del trasporto** | `security` | 6 | HTTPS, igiene delle intestazioni, eco dei segreti; un prompt di sistema iniettato nascosto; manomissione in transito di risposte e chiamate di strumenti (canarini a risposta nota); cache del prefisso del prompt (tempi) |
+| **Sicurezza del trasporto** | `security` | 6 | HTTPS, igiene delle intestazioni, eco dei segreti; un prompt di sistema iniettato nascosto; manomissione in transito di risposte e chiamate di strumenti (canary a risposta nota); cache del prefisso del prompt (tempi) |
 | **Prestazioni** | `performance` | 6 | Quanto sono *costanti* latenza, tempo al primo token e throughput, il tasso di errore e il rallentamento sotto carico; la velocità solo rispetto a un riferimento (vedi [Prestazioni](#prestazioni)) |
 
 La [Metodologia](docs/METHODOLOGY.it.md) descrive ogni sonda, il trucco del relay a
@@ -560,7 +560,7 @@ ekte check --base-url ... --model gpt-4o --suite deep --judge \
 La **modalità di confronto** (`ekte compare`, o **Confronta con un riferimento
 affidabile** nell'interfaccia web) esegue le stesse sonde, nello stesso momento,
 contro un riferimento affidabile del modello dichiarato. È la via di conferma più
-forte: risposte d'identità, parametri di richiesta rifiutati, canarini di
+forte: risposte d'identità, parametri di richiesta rifiutati, canary di
 manomissione e prestazioni vengono giudicati fianco a fianco, e solo un
 riferimento permette all'affidabilità del verdetto di essere *alta*. Senza
 `--judge-base-url`, la modalità di confronto usa il riferimento come giudice.
@@ -671,8 +671,8 @@ classifica e i punteggi di una sonda di rerank). La dimensione dichiarata di un
 monitor di embedding si modifica sulla sua scheda (vuota o 0: dalla base di
 conoscenza). Le sonde di velocità (embedding: latenza, avvio a freddo, input/s,
 scalabilità a lotti; rerank: latenza, avvio a freddo, documenti/s, 4 contro 32
-documenti) girano solo nelle suite deep, full o custom, o in standard con una
-baseline.
+documenti) girano solo nelle suite deep, full o custom, o in standard con un
+riferimento.
 
 ### Embedding e rerank
 
@@ -793,7 +793,7 @@ coprono OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM e Moonshot
      filtro, un interruttore per elemento e un modulo **Aggiungi …**: **Aggiungi un
      modello** → **Copia il prompt di ricerca** nell'assistente IA che preferisci,
      carica o incolla lo YAML con cui risponde, poi **Verifica e salva**;
-     **Aggiungi un provider** accetta YAML di provider allo stesso modo; **Aggiungi
+     **Aggiungi un provider** accetta YAML di fornitore allo stesso modo; **Aggiungi
      un relay** chiede un nome e un URL di base. **Quale profilo usa un ID di
      modello?** mostra come si risolve un id; le tue voci si possono esportare in
      YAML;
@@ -809,13 +809,13 @@ altro profilo. Un tuo modello con l'id di uno integrato lo sostituisce (segnalat
 come *oscuramento*), ma non modifica mai le impostazioni proprie di un fornitore
 integrato; le impronte vengono unite per id. Disattivare un modello, provider o
 relay incluso nella pagina **Conoscenza** viene salvato anch'esso in `kb.db`: un id
-di modello disattivato non viene più risolto, un provider disattivato porta con sé
+di modello disattivato non viene più risolto, un fornitore disattivato porta con sé
 i suoi modelli e URL di base. `ekte check` e `ekte serve` usano esattamente gli
 stessi profili; `--no-user-kb` (o `EKTE_NO_USER_KB=1`) esclude le tue voci e i tuoi
 interruttori.
 
 Un modello con `identity_keywords` vuoto non viene salvato così: ekte completa
-le sue parole di marchio a partire dai nomi del provider e del modello (per
+le sue parole di marchio a partire dai nomi del fornitore e del modello (per
 esempio `glm` e `z.ai`) e mostra un avviso
 per controllarle, perché senza di esse il controllo d'identità potrebbe
 scambiare il produttore del modello per un marchio rivale. Il prompt di ricerca
@@ -925,13 +925,13 @@ con un nome nuovo. Cosa cambia per un'installazione esistente:
   quel momento lavora solo con `~/.ekte`. `~/.zing` resta com'è, per zing se è
   ancora in uso; eliminalo tu quando non ti serve più. Una directory impostata
   con `EKTE_DATA_DIR`, `ZING_DATA_DIR` o `--data-dir` viene usata così com'è.
-- **Interfaccia web.** Lingua, tema e filtri e una chiave master salvata nel
+- **Interfaccia web.** Lingua, tema e filtri e una chiave principale salvata nel
   gestore di password del browser vengono mantenuti. L'interfaccia classica di
   zing non esiste più: i suoi indirizzi (`/tools`, `/console`) aprono la pagina di verifica (`/`).
-- **Report e sonde.** Report, webhook e nomi dei file riportano `ekte` (ad es.
+- **Rapporti e sonde.** Rapporti, webhook e nomi dei file riportano `ekte` (ad es.
   `"tool": "ekte"`, `ekte-report.json`), così come le sonde inviate ai relay. Gli
   script che vi cercano `zing` vanno aggiornati.
-- **Calendario.** L'intero livello di compatibilità (la lettura di `ZING_*`, la copia di `~/.zing`, il trasferimento di impostazioni del browser, cookie e chiave master salvata, e gli indirizzi dell'interfaccia classica) è obsoleto e viene rimosso in ekte **1.0.0** (1.0.0rc1 è la prima versione senza di esso). Fino ad allora ogni parte continua a funzionare e il suo avviso indica questa versione; anche i vecchi indirizzi di pagina `/v2/…` rimandano fino alla 1.0.0. ekte non cancella mai un vecchio `~/.zing`, nemmeno quando la copia viene rimossa.
+- **Calendario.** L'intero livello di compatibilità (la lettura di `ZING_*`, la copia di `~/.zing`, il trasferimento di impostazioni del browser, cookie e chiave principale salvata, e gli indirizzi dell'interfaccia classica) è obsoleto e viene rimosso in ekte **1.0.0** (1.0.0rc1 è la prima versione senza di esso). Fino ad allora ogni parte continua a funzionare e il suo avviso indica questa versione; anche i vecchi indirizzi di pagina `/v2/…` rimandano fino alla 1.0.0. ekte non cancella mai un vecchio `~/.zing`, nemmeno quando la copia viene rimossa.
 
 ## Licenza
 
