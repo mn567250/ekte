@@ -110,6 +110,14 @@ continuam a elevar o risco.
 | `low` | Globalmente fiável | Qualquer outra constatação MÉDIA |
 | `clean` | Coerente (provavelmente autêntico) | Nenhum dos casos acima |
 
+O veredito regista as dimensões cujos achados definem o risco
+(`verdict.drivers`) e as dimensões que produziram um resultado utilizável
+(`verdict.checked`). O título segue-as: fala do modelo declarado apenas quando a
+identidade do modelo está entre os fatores determinantes e, caso contrário, nomeia
+os fatores («Forte evidência de que o relay não entrega o que anuncia: Janela de
+contexto.»). Um veredito limpo ou baixo sem resultado utilizável de identidade do
+modelo diz que a identidade do modelo não foi verificada.
+
 ### Confiança do veredito
 
 - **Baixa** — o modelo declarado não está na base de conhecimento, só

@@ -368,6 +368,11 @@ connaissances dont la langue *est* la mesure — par exemple les sondes de
 fluidité en chinois, de tokenizer et d'auto-identification des modèles chinois.
 Chaque rapport consigne les langues de sonde réellement utilisées
 (`prompt_languages`, p. ex. `["en", "zh"]`).
+Chaque rapport consigne aussi la manière dont l'endpoint a été interrogé : le
+protocole (`target.api` : `openai`, `anthropic` ou `responses`), si `--api auto`
+l'a détecté (`target.api_auto`) et le mode de requête de la sonde de performance
+(`stream_mode` : `stream`, `non_stream` ou `both` pour la suite complète). La page
+d'historique de l'interface web peut filtrer sur les trois.
 `started_at` consigne le début de l'audit (UTC) ; le `start_ms` de chaque
 enregistrement de requête compte à partir de ce moment.
 

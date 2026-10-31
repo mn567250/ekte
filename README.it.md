@@ -362,6 +362,11 @@ eccezioni sono le impronte della base di conoscenza la cui lingua *è* la misura
 per esempio le sonde di scioltezza in cinese, di tokenizer e di
 autoidentificazione dei modelli cinesi. Ogni rapporto registra le lingue di sonda
 effettivamente usate (`prompt_languages`, per es. `["en", "zh"]`).
+Ogni rapporto registra anche come è stato interrogato l'endpoint: il protocollo
+(`target.api`: `openai`, `anthropic` o `responses`), se `--api auto` lo ha
+rilevato (`target.api_auto`) e la modalità di richiesta della sonda delle
+prestazioni (`stream_mode`: `stream`, `non_stream` o `both` per la suite completa).
+La pagina della cronologia dell'interfaccia web può filtrare su tutti e tre.
 `started_at` registra quando è iniziata la verifica (UTC); lo `start_ms` di ogni
 record di richiesta conta da quel momento.
 

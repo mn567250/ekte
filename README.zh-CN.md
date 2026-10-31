@@ -281,6 +281,9 @@ Markdown/HTML/PDF 文件的章节标题为英文。命令行自身的 `--format 
 校准过）。唯一的例外是那些「语言本身就是测量对象」的知识库指纹——例如中国原生模型的
 中文流畅度、分词器和自我身份识别探测。每份报告都会记录实际使用的探测语言
 （`prompt_languages`，例如 `["en", "zh"]`）。
+每份报告还会记录与端点通信的方式：线路协议（`target.api`：`openai`、`anthropic` 或 `responses`）、
+`--api auto` 是否自动检测出了该协议（`target.api_auto`），以及性能探测的请求模式（`stream_mode`：
+`stream`、`non_stream`，完整套件为 `both`）。网页界面的历史页面可以按这三项筛选。
 `started_at` 记录检测开始的时间（UTC），每条请求记录的 `start_ms` 都从这一刻算起。
 
 ## 检测了什么

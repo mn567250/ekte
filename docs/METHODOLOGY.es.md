@@ -110,6 +110,14 @@ devuelta siguen elevando el riesgo.
 | `low` | Mayormente fiable | Cualquier otro hallazgo MEDIO |
 | `clean` | Coherente (probablemente auténtico) | Ninguno de los anteriores |
 
+El veredicto registra las dimensiones cuyos hallazgos fijan el riesgo
+(`verdict.drivers`) y las dimensiones que dieron un resultado utilizable
+(`verdict.checked`). El titular las sigue: habla del modelo declarado solo cuando
+la identidad del modelo está entre los determinantes y, si no, nombra los
+determinantes («Fuerte evidencia de que el relay no entrega lo que anuncia:
+Ventana de contexto.»). Un veredicto limpio o bajo sin un resultado utilizable de
+identidad del modelo indica que la identidad del modelo no se verificó.
+
 ### Confianza del veredicto
 
 - **Baja** — el modelo declarado no está en la base de conocimiento, solo

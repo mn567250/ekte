@@ -368,6 +368,11 @@ Die einzigen Ausnahmen sind Fingerabdrücke der Wissensbasis, deren Sprache
 *selbst* die Messgröße ist — z. B. die Tests zu chinesischer Sprachgewandtheit,
 Tokenizer und Selbstidentifikation chinesischer Modelle. Jeder Bericht vermerkt
 die tatsächlich verwendeten Testsprachen (`prompt_languages`, z. B. `["en", "zh"]`).
+Jeder Bericht vermerkt außerdem, wie mit dem Endpunkt gesprochen wurde: das Protokoll
+(`target.api`: `openai`, `anthropic` oder `responses`), ob `--api auto` es erkannt
+hat (`target.api_auto`) und den Anfragemodus der Leistungsprobe (`stream_mode`:
+`stream`, `non_stream` oder `both` für die vollständige Suite). Die Verlaufsseite
+der Weboberfläche kann nach allen dreien filtern.
 `started_at` vermerkt, wann die Prüfung begann (UTC); `start_ms` jedes
 Anfrage-Datensatzes zählt ab diesem Zeitpunkt.
 

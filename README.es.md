@@ -364,6 +364,11 @@ conocimiento cuyo idioma *es* la medida — por ejemplo, las sondas de fluidez e
 chino, de tokenizer y de autoidentificación de los modelos chinos. Cada informe
 registra los idiomas de sonda realmente usados (`prompt_languages`, p. ej.
 `["en", "zh"]`).
+Cada informe también registra cómo se habló con el endpoint: el protocolo
+(`target.api`: `openai`, `anthropic` o `responses`), si `--api auto` lo detectó
+(`target.api_auto`) y el modo de petición de la sonda de rendimiento
+(`stream_mode`: `stream`, `non_stream` o `both` para la suite completa). La página
+de historial de la interfaz web puede filtrar por los tres.
 `started_at` registra cuándo empezó la auditoría (UTC); el `start_ms` de cada
 registro de petición cuenta desde ese momento.
 
