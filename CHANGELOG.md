@@ -36,6 +36,16 @@ ekte has three eras:
   flags / endpoints / field names, placeholders or version numbers. Adding a
   language is one entry in `LANGUAGES`; a translation can be marked pending with
   `<!-- translation-pending: reason -->`. `CONTRIBUTING.md` documents both.
+- **Release automation and checklist.** `release.yml` now verifies before publishing
+  that the tag equals the package version, `CHANGELOG.md` has a section for it and CI
+  is green for the tagged commit (`scripts/release_check.py`, with tests), and stops
+  without publishing otherwise. It publishes to PyPI with provenance attestations and
+  creates a GitHub Release with the changelog section as notes; release candidates
+  (`vX.Y.ZrcN`) are PEP 440 pre-releases on PyPI and marked "Pre-release" on GitHub.
+  New [release checklist](docs/RELEASE_CHECKLIST.md); the developer guide (all
+  languages) and `docs/PUBLISHING.md` describe the process, including what to do if a
+  publish fails halfway.
+
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
   language dropdown of every page (code `nb`, `lang="nb"`, dates and numbers
   formatted for `nb-NO`): every UI string, finding title and summary,

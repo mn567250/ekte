@@ -1,7 +1,14 @@
 name: Release to PyPI
 
-# Publishes ekte to PyPI on a version tag (v*), using PyPI Trusted
-# Publishing (OIDC) — no API token is stored as a secret.
+# Publishes ekte on a version tag (v*): PyPI via Trusted Publishing (OIDC, no API
+# token stored) with provenance attestations, then a GitHub Release whose notes are
+# the matching CHANGELOG section. Release candidates (vX.Y.ZrcN) are published as
+# PEP 440 pre-releases on PyPI and marked "pre-release" on GitHub.
+#
+# Before anything is built or published, the `verify` job checks (scripts/release_check.py)
+# that the tag equals the package version, CHANGELOG.md has a section for it and CI is
+# green for the tagged commit. If any check fails the workflow stops; nothing is published.
+# Process and recovery: DEVELOPER_GUIDE.md "Releases" and docs/PUBLISHING.md.
 #
 # ONE-TIME SETUP on PyPI (https://pypi.org/manage/account/publishing/):
 #   Add a "pending publisher" for project `ekte` with:
@@ -19,8 +26,54 @@ permissions:
   contents: read
 
 jobs:
+  verify:
+    name: Verify release
+    # Only this repository releases; a fork or mirror that pushes a v* tag never does.
+    if: github.repository == 'mn567250/ekte'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tag matches the package version
+        id: meta
+        run: |
+          set -euo pipefail
+          echo "version=$(python scripts/release_check.py version "$GITHUB_REF_NAME")" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$(python scripts/release_check.py prerelease "$GITHUB_REF_NAME")" >> "$GITHUB_OUTPUT"
+      - name: CHANGELOG has a section for this version
+        run: python scripts/release_check.py notes "$GITHUB_REF_NAME" --output release-notes.md
+      - name: CI is green for the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # CI normally already ran on the commit; if it is still running, wait for it
+          # (up to ~40 minutes). A failed check stops the release immediately.
+          for attempt in $(seq 1 80); do
+            gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?per_page=100" > check-runs.json
+            status=0
+            python scripts/release_check.py ci check-runs.json || status=$?
+            if [ "$status" -eq 0 ]; then exit 0; fi
+            if [ "$status" -ne 2 ]; then exit "$status"; fi
+            sleep 30
+          done
+          echo "CI did not finish in time; nothing was published." >&2
+          exit 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+
   build:
     name: Build distribution
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,15 +91,13 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    needs: build
-    # Only this repository publishes; a fork or mirror that pushes a v* tag never does.
-    if: github.repository == 'mn567250/ekte'
+    needs: [verify, build]
     runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/p/ekte
     permissions:
-      id-token: write          # required for Trusted Publishing (OIDC)
+      id-token: write          # required for Trusted Publishing (OIDC) and attestations
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -54,3 +105,38 @@ jobs:
           path: dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true   # PEP 740 provenance attestations
+          skip-existing: true  # makes a re-run after a partial upload safe
+
+  github-release:
+    name: GitHub Release
+    needs: [verify, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # create the release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+      - name: Create or update the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          flags=()
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            # re-run after a partial failure: refresh notes and assets
+            gh release edit "$GITHUB_REF_NAME" --title "ekte $GITHUB_REF_NAME" --notes-file release-notes.md "${flags[@]}"
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --verify-tag \
+              --title "ekte $GITHUB_REF_NAME" --notes-file release-notes.md "${flags[@]}"
+          fi

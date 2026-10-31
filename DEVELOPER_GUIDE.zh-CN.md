@@ -520,11 +520,51 @@ docker run --rm -p 127.0.0.1:8000:8000 -v ekte-data:/data ekte
 
 ## 发布
 
-1. 把 `CHANGELOG.md` 中的 `[Unreleased]` 改为新版本号，并提升 `pyproject.toml` 中的 `version`。
-2. 提交，打上 `vX.Y.Z` 标签并推送该标签；`release.yml` 会发布到 PyPI。
-3. 用 CHANGELOG 中的说明创建 GitHub Release，并更新各 README 和 `docs/CI.md` 中固定的 Action 版本。
+一次发布就是一个版本标签；其余一切均已自动化并带有检查。检查清单见
+[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)，一次性的 PyPI 设置和手动
+备用方案见 [docs/PUBLISHING.md](docs/PUBLISHING.md)。
 
-PyPI 的一次性配置和手动发布流程见 [docs/PUBLISHING.md](docs/PUBLISHING.md)。
+### 创建发布
+
+1. 逐项完成[发布检查清单](docs/RELEASE_CHECKLIST.md)：版本与变更日志、支持的
+   Python 版本与系统、知识库是否新鲜、升级 fixture、UI 变更的无障碍审查、
+   所有语言的文档、安全公告。
+2. 在 `pyproject.toml` 中设置 `version`，并把 `CHANGELOG.md` 中的 `[Unreleased]`
+   重命名为 `[X.Y.Z] - YYYY-MM-DD`。本地用
+   `python scripts/release_check.py version vX.Y.Z` 和 `... notes vX.Y.Z` 检查。
+3. 合并后给该提交打标签并推送：
+   `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`，`git push origin vX.Y.Z`。
+4. `release.yml` 先用 `scripts/release_check.py` 检查：标签与包版本一致、
+   `CHANGELOG.md` 有对应章节、带标签提交的 CI 为绿色（CI 仍在运行时会等待）。
+   任何检查失败，工作流即停止，不会发布任何内容。随后构建，通过 Trusted
+   Publishing 发布到 PyPI 并附带来源证明（provenance attestations），再以变更
+   日志章节作为说明创建 GitHub Release。
+
+### 候选版本（Release Candidate）
+
+打标签 `vX.Y.ZrcN`（`pyproject.toml` 中 `version = "X.Y.ZrcN"`）。PyPI 将其视为
+PEP 440 预发布版本：`pip install ekte` 会忽略它，`pip install --pre ekte` 可以找到；
+GitHub 会把该发布标记为“Pre-release”。变更日志中使用 `[X.Y.ZrcN]`、`[X.Y.Z]` 或
+`[Unreleased]` 章节均可。
+
+### 发布中途失败时
+
+PyPI 从不接受同一文件两次，版本号也不能复用；关键看运行进行到了哪一步
+（Actions，“Release to PyPI”）：
+
+- **某项检查失败（verify 作业）。** 未发布任何内容。修复原因（版本、变更日志、
+  CI），在本地和 origin 删除标签（`git push origin :refs/tags/vX.Y.Z`），然后给
+  修复后的提交重新打标签。
+- **在 PyPI 收到文件之前，构建或上传失败。** 重新运行失败的作业；没有消耗版本号。
+  若带标签的提交本身需要修改，则删除标签后重新创建。
+- **PyPI 已有部分文件**（见 <https://pypi.org/project/ekte/#files>）。重新运行失败
+  的作业：上传会跳过已存在的文件。若这些文件与要发布的内容不符，不要重试：在
+  PyPI 上 yank 该版本，并发布下一个版本（`X.Y.Z+1` 或 `rcN+1`）。
+- **PyPI 已完整但 GitHub Release 失败。** 重新运行 `GitHub Release` 作业；它会
+  幂等地创建或更新发布。或手动执行：
+  `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`。
+- **有缺陷的版本已上线。** 在 PyPI 上 yank（之后只能通过精确版本号安装），
+  用新版本向前修复，并在其变更日志中注明。
 
 ## 安全
 

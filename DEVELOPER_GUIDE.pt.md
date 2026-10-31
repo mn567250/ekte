@@ -782,14 +782,56 @@ A action composta é `action.yml`, documentada em [docs/CI.md](docs/CI.md).
 
 ## Publicação de versões
 
-1. Mude `[Unreleased]` em `CHANGELOG.md` para a nova versão e aumente `version`
-   em `pyproject.toml`.
-2. Faça commit, crie a tag `vX.Y.Z` e envie-a; `release.yml` publica no PyPI.
-3. Crie a release no GitHub com as notas do CHANGELOG e atualize a versão fixada
-   da action nos README e em `docs/CI.md`.
-
-A configuração inicial do PyPI e o procedimento manual estão em
+Uma versão é uma tag de versão; tudo o resto é automatizado e verificado. A lista
+de verificação está em [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md); a
+configuração única do PyPI e o procedimento manual, em
 [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+### Publicar uma versão
+
+1. Percorrer a [lista de verificação](docs/RELEASE_CHECKLIST.md): versão e
+   changelog, versões de Python e sistemas suportados, atualidade da base de
+   conhecimento, fixture de atualização, revisão de acessibilidade em mudanças de
+   UI, documentação em todos os idiomas, avisos de segurança.
+2. Definir `version` em `pyproject.toml` e renomear `[Unreleased]` em `CHANGELOG.md`
+   para `[X.Y.Z] - AAAA-MM-DD`. Verificar localmente com
+   `python scripts/release_check.py version vX.Y.Z` e `... notes vX.Y.Z`.
+3. Fazer o merge, etiquetar o commit e enviar a tag:
+   `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`, `git push origin vX.Y.Z`.
+4. O `release.yml` verifica primeiro, com `scripts/release_check.py`, que a tag
+   corresponde à versão do pacote, que o `CHANGELOG.md` tem uma seção para ela e que
+   a CI está verde para o commit etiquetado (espera por uma CI em execução). Se uma
+   verificação falhar, o workflow para e nada é publicado. Depois compila, publica no
+   PyPI por Trusted Publishing com atestações de proveniência e cria a GitHub
+   Release com a seção do changelog como notas.
+
+### Release candidates
+
+Etiquetar `vX.Y.ZrcN` (com `version = "X.Y.ZrcN"` em `pyproject.toml`). O PyPI trata-a
+como pré-lançamento PEP 440: `pip install ekte` ignora-a e `pip install --pre ekte`
+encontra-a; o GitHub marca a release como «Pre-release». No changelog serve a seção
+`[X.Y.ZrcN]`, `[X.Y.Z]` ou `[Unreleased]`.
+
+### Se uma publicação falhar a meio
+
+O PyPI nunca aceita o mesmo arquivo duas vezes e uma versão não pode ser reutilizada;
+o que importa é até onde a execução chegou (Actions, «Release to PyPI»):
+
+- **Uma verificação falhou (job verify).** Nada foi publicado. Corrigir a causa
+  (versão, changelog, CI), apagar a tag localmente e no origin
+  (`git push origin :refs/tags/vX.Y.Z`) e etiquetar de novo o commit corrigido.
+- **Build ou upload falharam antes de o PyPI ter arquivos.** Reexecutar os jobs que
+  falharam; nenhuma versão foi consumida. Se o próprio commit etiquetado tiver de
+  mudar, apagar a tag e criá-la de novo.
+- **O PyPI tem parte dos arquivos** (ver <https://pypi.org/project/ekte/#files>).
+  Reexecutar os jobs que falharam: o upload ignora arquivos já existentes. Se os
+  arquivos diferem do que se quer publicar, não repetir: fazer «yank» da versão no
+  PyPI e publicar a seguinte (`X.Y.Z+1` ou `rcN+1`).
+- **O PyPI está completo mas a GitHub Release falhou.** Reexecutar o job
+  `GitHub Release`; ele cria ou atualiza a release de forma idempotente. Ou à mão:
+  `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`.
+- **Uma versão defeituosa já está no ar.** Fazer «yank» no PyPI (só se instala com
+  versão exata), corrigir em frente com uma nova versão e registrá-lo no changelog.
 
 ## Segurança
 
