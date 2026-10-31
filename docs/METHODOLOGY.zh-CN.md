@@ -60,7 +60,7 @@ ekte 对十个维度评分。维度得分为其**各检测器得分的平均值�
 | 上下文窗口 | `context_window` | 19 | 核心 |
 | 能力声明 | `capability` | 13 | 核心 |
 | 协议兼容 | `protocol` | 8 |  |
-| 计费用量 | `billing` | 8 |  |
+| 计费用量 | `billing` | 8 | 核心 |
 | 连通性 | `connectivity` | 7 |  |
 | 流式真实 | `streaming` | 6 |  |
 | 并发可靠 | `reliability` | 6 |  |

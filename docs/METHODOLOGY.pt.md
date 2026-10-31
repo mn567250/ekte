@@ -79,7 +79,7 @@ A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) ou F.
 | Janela de contexto | `context_window` | 19 | núcleo |
 | Capacidades declaradas | `capability` | 13 | núcleo |
 | Conformidade do protocolo | `protocol` | 8 |  |
-| Faturação e utilização | `billing` | 8 |  |
+| Faturação e utilização | `billing` | 8 | núcleo |
 | Conectividade | `connectivity` | 7 |  |
 | Autenticidade do streaming | `streaming` | 6 |  |
 | Fiabilidade em concorrência | `reliability` | 6 |  |

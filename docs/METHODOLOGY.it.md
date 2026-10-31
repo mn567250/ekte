@@ -80,7 +80,7 @@ rinormalizzati. Il voto è A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) o F.
 | Finestra di contesto | `context_window` | 19 | centrale |
 | Capacità dichiarate | `capability` | 13 | centrale |
 | Conformità del protocollo | `protocol` | 8 |  |
-| Fatturazione e consumo | `billing` | 8 |  |
+| Fatturazione e consumo | `billing` | 8 | centrale |
 | Connettività | `connectivity` | 7 |  |
 | Autenticità dello streaming | `streaming` | 6 |  |
 | Affidabilità in concorrenza | `reliability` | 6 |  |

@@ -79,7 +79,7 @@ nota es A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) o F.
 | Ventana de contexto | `context_window` | 19 | núcleo |
 | Capacidades declaradas | `capability` | 13 | núcleo |
 | Conformidad del protocolo | `protocol` | 8 |  |
-| Facturación y uso | `billing` | 8 |  |
+| Facturación y uso | `billing` | 8 | núcleo |
 | Conectividad | `connectivity` | 7 |  |
 | Autenticidad del streaming | `streaming` | 6 |  |
 | Fiabilidad en concurrencia | `reliability` | 6 |  |

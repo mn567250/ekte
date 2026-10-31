@@ -78,7 +78,7 @@ B (≥ 80), C (≥ 70), D (≥ 60) eller F.
 | Kontekstvindu | `context_window` | 19 | kjerne |
 | Påståtte egenskaper | `capability` | 13 | kjerne |
 | Protokollsamsvar | `protocol` | 8 |  |
-| Fakturering og forbruk | `billing` | 8 |  |
+| Fakturering og forbruk | `billing` | 8 | kjerne |
 | Tilkobling | `connectivity` | 7 |  |
 | Ekte strømming | `streaming` | 6 |  |
 | Pålitelighet ved samtidighet | `reliability` | 6 |  |

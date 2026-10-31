@@ -136,6 +136,15 @@ ekte has three eras:
 
 ### Changed
 
+- **Documentation reviewed in all eight languages (#34).** Every README,
+  developer guide and methodology was read in full as a native speaker would:
+  grammar, idiom, register (one form of address per language), one term per
+  concept (matching the web UI's wording), typography (French non-breaking
+  spaces, Chinese “” quotes and full-width punctuation), European Portuguese
+  throughout, American English spelling in the English source. Content that had
+  drifted from the English was restored (the core-dimension rules in the de, fr,
+  it, es and pt methodology; the colour-token paragraph in six developer guides).
+
 - **Documentation review (#34).** The stability policy is linked from the first
   screen of every README; the README and developer guide document lists name
   `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md` and the other reference
@@ -233,6 +242,10 @@ ekte has three eras:
   [#5](https://github.com/mn567250/ekte/issues/5)).
 
 ### Fixed
+
+- **Methodology: billing & usage is a core dimension.** The dimension table in
+  every language left its role empty, while the text and the scoring code count
+  it as core.
 
 - **Windows: analytics time zones.** Windows ships no IANA time zone
   database, so the analytics views failed with "unknown time zone". ekte now

@@ -81,7 +81,7 @@ neu normiert. Die Note ist A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) oder F
 | Kontextfenster | `context_window` | 19 | Kern |
 | Angegebene Fähigkeiten | `capability` | 13 | Kern |
 | Protokollkonformität | `protocol` | 8 |  |
-| Abrechnung & Verbrauch | `billing` | 8 |  |
+| Abrechnung & Verbrauch | `billing` | 8 | Kern |
 | Konnektivität | `connectivity` | 7 |  |
 | Echtheit des Streamings | `streaming` | 6 |  |
 | Zuverlässigkeit unter Parallellast | `reliability` | 6 |  |

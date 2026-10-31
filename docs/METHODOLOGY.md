@@ -75,7 +75,7 @@ C (≥ 70), D (≥ 60) or F.
 | Context window | `context_window` | 19 | core |
 | Capability claims | `capability` | 13 | core |
 | Protocol compliance | `protocol` | 8 |  |
-| Billing & usage | `billing` | 8 |  |
+| Billing & usage | `billing` | 8 | core |
 | Connectivity | `connectivity` | 7 |  |
 | Streaming authenticity | `streaming` | 6 |  |
 | Concurrency reliability | `reliability` | 6 |  |
