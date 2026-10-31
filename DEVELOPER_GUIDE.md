@@ -743,7 +743,7 @@ French, Spanish, Portuguese, Italian, German and Norwegian (Bokmål, `nb`):
 | `README.md`, `README.<lang>.md` | Users: what ekte does, installing, using the CLI and the web UI |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Contributors: architecture, setup, contributing, Docker, releases |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Everyone: every check, its scoring scale and caveats |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Reference pages (English) |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Reference pages (English) |
 
 The English files are the reference. When you change one, change the others in
 the same pull request, and use the UI's own wording in each language (look the
@@ -825,7 +825,7 @@ the UI.
 
 | Workflow | Runs | Does |
 |---|---|---|
-| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `a11y/integration`, `perf/integration`); nightly and manual (accessibility only) | `ruff`, `mypy` and `pytest` on Python 3.11–3.14 with the `dev` and `web` extras; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the accessibility suite (informational, never fails the run) and uploads its findings: every page on pushes, the nightly and manual runs (with the BITV conformance report), on pull requests only the pages the change affects (none for docs-only changes) — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
+| `.github/workflows/ci.yml` | push and pull request to `main` (and the integration branches `*/integration`); nightly and manual (accessibility only) | `ruff`, `mypy` and `pytest` on Python 3.11–3.14 (Linux; on macOS and Windows 3.11 and 3.14) with the `dev` and `web` extras; builds the wheel and sdist and checks that the wheel installs and loads the knowledge base; runs the accessibility suite (informational, never fails the run) and uploads its findings: every page on pushes, the nightly and manual runs (with the BITV conformance report), on pull requests only the pages the change affects (none for docs-only changes) — except on pull requests into `perf/integration`, where the slow browser suite is skipped (it runs on that branch's pushes and on its pull request into `main`) |
 | `.github/workflows/release.yml` | a `v*` tag | builds, runs `twine check` and publishes to PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | daily schedule, manual | example of a scheduled relay audit with the action |
 

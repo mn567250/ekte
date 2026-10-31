@@ -130,6 +130,13 @@ ekte has three eras:
 
 ### Changed
 
+- **Documentation review (#34).** The stability policy is linked from the first
+  screen of every README; the README and developer guide document lists name
+  `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md` and the other reference
+  pages; the CI row of the developer guide names the integration-branch pattern and
+  the macOS and Windows test runs; `docs/ACCESSIBILITY.md` lists all eight UI
+  languages and explains that a complete accessibility run executes 1,277 tests
+  (a narrowed run, such as the recorded 258, executes fewer).
 - **Exit codes 3 and 4.** `ekte models` exits 3 (was 1) when the endpoint is
   unreachable or answers with an error, so it can be told apart from a failed gate;
   an unexpected internal error exits 4 (was 1 with a traceback). Scripts that

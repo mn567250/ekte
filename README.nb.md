@@ -27,6 +27,8 @@ Denne README-en er for dem som **bruker** ekte. Hvordan ekte bygges, testes og
 utgis, står i [Utviklerveiledningen](DEVELOPER_GUIDE.nb.md); hvordan hver
 kontroll fungerer og gis score, står i [Metodikken](docs/METHODOLOGY.nb.md).
 
+Hva som er stabilt i ekte, hva som regnes som en brytende endring og hvordan funksjoner fases ut: [Retningslinjer for stabilitet og kompatibilitet](docs/STABILITY.md) (på engelsk).
+
 ---
 
 ## Innhold
@@ -883,6 +885,8 @@ referanse før du trekker sterke konklusjoner.
 | [docs/CI.md](docs/CI.md) | GitHub Action: inndata, utdata, eksempler (på engelsk) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Kjøre nettgrensesnittet i en container (på engelsk) |
 | [Stabilitet og kompatibilitet](docs/STABILITY.md) | Hva semver beskytter, utfasing, støttede Python-versjoner og systemer, oppgraderinger og nedgraderinger (på engelsk) |
+| [docs/CLI.md](docs/CLI.md) | Alle kommandoer og alternativer, og avslutningskodene (engelsk) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | JSON-formatene for rapport og webhook og deres `schema_version` (engelsk) |
 | [CHANGELOG.md](CHANGELOG.md) | Hva som er endret i hver utgivelse (på engelsk) |
 | [SECURITY.md](SECURITY.md) | Rapportere en sårbarhet (på engelsk) |
 

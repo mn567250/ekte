@@ -798,7 +798,7 @@ espagnol, portugais, italien, allemand et norvégien (bokmål, `nb`) :
 | `README.md`, `README.<lang>.md` | Utilisateurs : ce que fait ekte, installation, utilisation de la CLI et de l'interface web |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Contributeurs : architecture, installation, contribution, Docker, versions |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Tout le monde : chaque vérification, son barème et ses réserves |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Pages de référence (en anglais) |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Pages de référence (en anglais) |
 
 Les fichiers anglais font référence. Lorsque vous en modifiez un, modifiez les
 autres dans la même pull request, et utilisez dans chaque langue le vocabulaire de
@@ -885,7 +885,7 @@ ce qui protège l'interface.
 
 | Workflow | Déclenché par | Rôle |
 |---|---|---|
-| `.github/workflows/ci.yml` | push et pull request vers `main` (et les branches d'intégration `a11y/integration`, `perf/integration`) ; chaque nuit et manuel (accessibilité seulement) | `ruff`, `mypy` et `pytest` sous Python 3.11–3.14 avec les extras `dev` et `web` ; construit la wheel et la sdist et vérifie que la wheel s'installe et charge la base de connaissances ; exécute la suite d'accessibilité (à titre informatif, elle ne fait jamais échouer l'exécution) et téléverse ses constats : toutes les pages sur les push et les exécutions nocturnes et manuelles (avec le rapport de conformité BITV), sur les pull requests seulement les pages touchées par la modification (aucune si seule la documentation change) — sauf sur les pull requests vers `perf/integration`, où la lente suite navigateur est ignorée (elle s'exécute sur les push de cette branche et sur sa pull request vers `main`) |
+| `.github/workflows/ci.yml` | push et pull request vers `main` (et les branches d'intégration `*/integration`) ; chaque nuit et manuel (accessibilité seulement) | `ruff`, `mypy` et `pytest` sous Python 3.11–3.14 (Linux ; sous macOS et Windows 3.11 et 3.14) avec les extras `dev` et `web` ; construit la wheel et la sdist et vérifie que la wheel s'installe et charge la base de connaissances ; exécute la suite d'accessibilité (à titre informatif, elle ne fait jamais échouer l'exécution) et téléverse ses constats : toutes les pages sur les push et les exécutions nocturnes et manuelles (avec le rapport de conformité BITV), sur les pull requests seulement les pages touchées par la modification (aucune si seule la documentation change) — sauf sur les pull requests vers `perf/integration`, où la lente suite navigateur est ignorée (elle s'exécute sur les push de cette branche et sur sa pull request vers `main`) |
 | `.github/workflows/release.yml` | un tag `v*` | construit, exécute `twine check` et publie sur PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | planification quotidienne, manuel | exemple d'audit de relais planifié avec l'action |
 

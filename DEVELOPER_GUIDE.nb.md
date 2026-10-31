@@ -761,7 +761,7 @@ spansk, portugisisk, italiensk, tysk og norsk (bokmål, `nb`):
 | `README.md`, `README.<lang>.md` | Brukere: hva ekte gjør, installasjon, bruk av kommandolinjen og nettgrensesnittet |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Bidragsytere: arkitektur, oppsett, bidrag, Docker, utgivelser |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Alle: hver kontroll, scoreskalaen og forbeholdene |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Referansesider (engelsk) |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Referansesider (engelsk) |
 
 De engelske filene er referansen. Når du endrer en, endrer du de andre i samme
 pull request, og bruker grensesnittets egne ord på hvert språk (slå opp begrepet
@@ -844,7 +844,7 @@ beskytter grensesnittet.
 
 | Arbeidsflyt | Kjører | Gjør |
 |---|---|---|
-| `.github/workflows/ci.yml` | push og pull request til `main` (og integrasjonsgrenene `a11y/integration`, `perf/integration`); hver natt og manuelt (bare tilgjengelighet) | `ruff`, `mypy` og `pytest` på Python 3.11–3.14 med tilleggene `dev` og `web`; bygger wheel og sdist og kontrollerer at wheelen installeres og laster kunnskapsbasen; kjører tilgjengelighetstestene (til informasjon, får aldri kjøringen til å feile) og laster opp funnene: hver side ved push, nattlige og manuelle kjøringer (med BITV-samsvarsrapporten), ved pull requests bare sidene endringen berører (ingen ved rene dokumentasjonsendringer) — unntatt pull requests inn i `perf/integration`, der de trege nettlesertestene hoppes over (de kjører ved push til den grenen og ved dens pull request inn i `main`) |
+| `.github/workflows/ci.yml` | push og pull request til `main` (og integrasjonsgrenene `*/integration`); hver natt og manuelt (bare tilgjengelighet) | `ruff`, `mypy` og `pytest` på Python 3.11–3.14 (Linux; på macOS og Windows 3.11 og 3.14) med tilleggene `dev` og `web`; bygger wheel og sdist og kontrollerer at wheelen installeres og laster kunnskapsbasen; kjører tilgjengelighetstestene (til informasjon, får aldri kjøringen til å feile) og laster opp funnene: hver side ved push, nattlige og manuelle kjøringer (med BITV-samsvarsrapporten), ved pull requests bare sidene endringen berører (ingen ved rene dokumentasjonsendringer) — unntatt pull requests inn i `perf/integration`, der de trege nettlesertestene hoppes over (de kjører ved push til den grenen og ved dens pull request inn i `main`) |
 | `.github/workflows/release.yml` | en `v*`-tagg | bygger, kjører `twine check` og publiserer til PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | daglig tidsplan, manuelt | eksempel på en planlagt relérevisjon med handlingen |
 

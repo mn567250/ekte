@@ -27,6 +27,8 @@ Este README é para quem **utiliza** o ekte. A forma como o ekte é construído,
 testado e publicado está no [Guia do programador](DEVELOPER_GUIDE.pt.md); como
 cada verificação funciona e é pontuada, na [Metodologia](docs/METHODOLOGY.pt.md).
 
+Que partes do ekte são estáveis, o que conta como alteração incompatível e como as funcionalidades são descontinuadas: [Política de estabilidade e compatibilidade](docs/STABILITY.md) (em inglês).
+
 ---
 
 ## Índice
@@ -898,6 +900,8 @@ de confiança antes de tirar conclusões fortes.
 | [docs/CI.md](docs/CI.md) | A GitHub Action: entradas, saídas, exemplos (em inglês) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Executar a interface web num contentor (em inglês) |
 | [Estabilidade e compatibilidade](docs/STABILITY.md) | O que o semver protege, descontinuação, versões de Python e sistemas suportados, atualizações e downgrades (em inglês) |
+| [docs/CLI.md](docs/CLI.md) | Todos os comandos e opções, e os códigos de saída (em inglês) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | Os formatos JSON do relatório e do webhook e a sua `schema_version` (em inglês) |
 | [CHANGELOG.md](CHANGELOG.md) | O que mudou em cada versão (em inglês) |
 | [SECURITY.md](SECURITY.md) | Reportar uma vulnerabilidade (em inglês) |
 

@@ -788,7 +788,7 @@ Französisch, Spanisch, Portugiesisch, Italienisch, Deutsch und Norwegisch (Bokm
 | `README.md`, `README.<lang>.md` | Nutzer: was ekte tut, Installation, Nutzung von CLI und Weboberfläche |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Mitwirkende: Architektur, Einrichtung, Mitwirken, Docker, Releases |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Alle: jede Prüfung, ihre Bewertungsskala und ihre Einschränkungen |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Referenzseiten (englisch) |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Referenzseiten (englisch) |
 
 Die englischen Dateien sind die Referenz. Wenn Sie eine ändern, ändern Sie die
 anderen im selben Pull Request und verwenden Sie in jeder Sprache die Wortwahl der
@@ -875,7 +875,7 @@ einschließlich der Schutzmaßnahmen der Oberfläche.
 
 | Workflow | Läuft bei | Tut |
 |---|---|---|
-| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `a11y/integration`, `perf/integration`); nächtlich und manuell (nur Barrierefreiheit) | `ruff`, `mypy` und `pytest` unter Python 3.11–3.14 mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch: alle Seiten bei Pushes, nächtlichen und manuellen Läufen (mit dem BITV-Konformitätsbericht), bei Pull Requests nur die Seiten, die die Änderung betrifft (keine bei reinen Doku-Änderungen) — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
+| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `*/integration`); nächtlich und manuell (nur Barrierefreiheit) | `ruff`, `mypy` und `pytest` unter Python 3.11–3.14 (Linux; unter macOS und Windows 3.11 und 3.14) mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch: alle Seiten bei Pushes, nächtlichen und manuellen Läufen (mit dem BITV-Konformitätsbericht), bei Pull Requests nur die Seiten, die die Änderung betrifft (keine bei reinen Doku-Änderungen) — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
 | `.github/workflows/release.yml` | einem Tag `v*` | baut, führt `twine check` aus und veröffentlicht auf PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | täglich, manuell | Beispiel einer geplanten Relay-Prüfung mit der Action |
 

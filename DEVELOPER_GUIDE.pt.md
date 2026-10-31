@@ -780,7 +780,7 @@ espanhol, português, italiano, alemão e norueguês (bokmål, `nb`):
 | `README.md`, `README.<lang>.md` | Utilizadores: o que o ekte faz, instalação, utilização da CLI e da interface web |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Contribuidores: arquitetura, ambiente, contribuições, Docker, versões |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Todos: cada verificação, a sua escala de pontuação e as suas ressalvas |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Páginas de referência (em inglês) |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Páginas de referência (em inglês) |
 
 Os ficheiros em inglês são a referência. Quando alterar um, altere os outros no
 mesmo pull request e use em cada idioma a terminologia da interface (procure o
@@ -865,7 +865,7 @@ que protege a interface.
 
 | Workflow | Corre em | Faz |
 |---|---|---|
-| `.github/workflows/ci.yml` | push e pull request para `main` (e os branches de integração `a11y/integration`, `perf/integration`); todas as noites e manual (só acessibilidade) | `ruff`, `mypy` e `pytest` com Python 3.11–3.14 e os extras `dev` e `web`; constrói a wheel e a sdist e verifica que a wheel se instala e carrega a base de conhecimento; executa a suite de acessibilidade (informativa, nunca faz falhar a execução) e carrega os seus resultados: todas as páginas nos pushes e nas execuções noturnas e manuais (com o relatório de conformidade BITV), nos pull requests só as páginas afetadas pela alteração (nenhuma se só muda documentação) — exceto em pull requests para `perf/integration`, onde a lenta suite no navegador é ignorada (corre nos pushes desse branch e no seu pull request para `main`) |
+| `.github/workflows/ci.yml` | push e pull request para `main` (e os branches de integração `*/integration`); todas as noites e manual (só acessibilidade) | `ruff`, `mypy` e `pytest` com Python 3.11–3.14 (Linux; em macOS e Windows 3.11 e 3.14) e os extras `dev` e `web`; constrói a wheel e a sdist e verifica que a wheel se instala e carrega a base de conhecimento; executa a suite de acessibilidade (informativa, nunca faz falhar a execução) e carrega os seus resultados: todas as páginas nos pushes e nas execuções noturnas e manuais (com o relatório de conformidade BITV), nos pull requests só as páginas afetadas pela alteração (nenhuma se só muda documentação) — exceto em pull requests para `perf/integration`, onde a lenta suite no navegador é ignorada (corre nos pushes desse branch e no seu pull request para `main`) |
 | `.github/workflows/release.yml` | uma tag `v*` | constrói, executa `twine check` e publica no PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | agendamento diário, manual | exemplo de auditoria agendada de um relay com a action |
 
