@@ -136,7 +136,7 @@ ekte supports **every CPython version that is not end-of-life**, as listed on
 is **3.11, 3.12, 3.13 and 3.14**.
 
 - A new CPython version is added to the supported set, and to the CI test matrix,
-  in the first minor release after its final release in which the test suite passes.
+  in the first minor release after its final release for which the test suite passes.
 - A version is **dropped in the first minor release after its end of life**.
   Python 3.10 reaches end of life in October 2026 and is dropped in 0.31.
 - Dropping a Python version is announced in the changelog and is not a breaking

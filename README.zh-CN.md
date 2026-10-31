@@ -363,7 +363,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `--dimension/-D` 可重复或用逗号分隔，并隐含 `--suite custom`；配置文件中使用
 `run.dimensions: [protocol, performance]`。可选维度为 `connectivity`、`protocol`、
 `context_window`、`model_identity`、`capability`、`streaming`、`billing`、`reliability`、
-`security` 和 `performance`。Web 界面中，`custom` 套件按钮会在检测页、控制台和监控中打开
+`security` 和 `performance`。Web 界面中，`custom` 套件按钮会在检测页和监控中打开
 同样的选择（**检测维度**）。
 
 **综合分只按所选维度加权平均**；未选的维度标为「未选择」。风险结论同样只基于所选维度：

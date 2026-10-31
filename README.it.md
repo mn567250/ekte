@@ -465,7 +465,7 @@ in un file di configurazione usa `run.dimensions: [protocol, performance]`. Le
 dimensioni sono `connectivity`, `protocol`, `context_window`, `model_identity`,
 `capability`, `streaming`, `billing`, `reliability`, `security` e
 `performance`. Nell'interfaccia web il pulsante di suite `custom` apre la stessa
-scelta (**Dimensioni da eseguire**) nella pagina di verifica, nella console e nei
+scelta (**Dimensioni da eseguire**) nella pagina di verifica e nei
 monitor.
 
 Il **punteggio complessivo è la media ponderata delle sole dimensioni scelte**;

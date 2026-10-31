@@ -279,7 +279,7 @@ translated to the UI language.
 ### Surfaces
 
 The **surface** is the kind of endpoint audited: `chat` (default),
-`embedding` or `rerank` (`ekte.config.SURFACES`; later image, TTS). It is a second
+`embedding` or `rerank` (`ekte.config.SURFACES`; image and TTS are planned). It is a second
 axis next to the suite, carried by `AuditOptions.surface`, `AuditReport.surface`
 and a nullable `surface` column in `history.db` and `watches.db` (`NULL` and a
 missing JSON field mean `chat`; no migration).
@@ -312,9 +312,9 @@ missing JSON field mean `chat`; no migration).
 
 ### Standalone auditors
 
-Image/audio (`media_audit.py`) are not surfaces yet, so they have their own
-small auditors with their own verdict
-dict instead of the detector pipeline. They share the clients' HTTP settings, the
+Image and audio auditing (`media_audit.py`) is not a surface yet, so it has its
+own small auditors, each with its own verdict dict, instead of the detector
+pipeline. They share the clients' HTTP settings, the
 knowledge base (native dimensions, image sizes, voices) and the prompt library.
 All decoding (image headers, WAV) is standard library only.
 
@@ -381,7 +381,7 @@ All decoding (image headers, WAV) is standard library only.
   its relay). Each run is stored in the history; the regression check compares
   it with the most recent saved run of the same target and model
   (`history.latest_for()`, one indexed lookup) and sends the webhook alerts
-  (`ekte/notify.py`) concurrently on a threshold cross or a regression.
+  (`ekte/notify.py`) concurrently when a threshold is crossed or a regression is found.
   `POST /api/watches/{id}/run` answers 409 while the scheduler has just started
   that monitor; a master-key reset cancels scheduled runs that have not started
   yet, and shutdown cancels the runs in flight.
@@ -419,7 +419,7 @@ Every error is JSON with one field, `error`, with a human-readable message, and 
 {"error": "not found"}
 ```
 
-- **Local only.** The protections of the web server apply to `/api/v1/` like to every path: loopback binding by default, the Host check, the refusal of cross-site writes and JSON-only bodies. They answer in the same error format.
+- **Local only.** The protections of the web server apply to `/api/v1/` as to every path: loopback binding by default, the Host check, the refusal of cross-site writes and JSON-only bodies. They answer in the same error format.
 
 ### Web front end
 

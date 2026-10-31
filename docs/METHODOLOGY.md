@@ -328,7 +328,7 @@ protocol rejects it too. Tools and JSON mode stay with `capability`, `stop` with
 ### `determinism` — Determinism & cache-correctness
 
 **How it works.** Four identical creative prompts at `temperature=1.0` (no
-seed): a genuine model varies, byte-identical output across all samples points
+seed): a genuine model varies; byte-identical output across all samples points
 to a response cache that ignores sampling. At least three of the four samples
 must be usable (and all usable ones identical) for the caching call; with fewer
 the check is inconclusive. The verdict is suppressed for
@@ -1019,7 +1019,7 @@ baseline of the **exact claimed snapshot** — it is the strongest way to separa
 model behavior from relay behavior and the only way to reach high confidence.
 
 **Responsible disclosure.** Do **not** publicly accuse a vendor on the basis of
-a ekte report. Before acting, re-run with more samples and at other times,
+an ekte report. Before acting, re-run with more samples and at other times,
 confirm with compare mode, and rule out drift, network and load explanations.
 If a serious concern remains, raise it privately with the vendor first, as
 questions about observed behavior rather than allegations.

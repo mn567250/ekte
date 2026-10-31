@@ -466,7 +466,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
 `billing`, `reliability`, `security` e `performance`. Na interface web, o botão
 de suite `custom` abre a mesma escolha (**Dimensões a executar**) na página de
-auditoria, na consola e nos monitores.
+auditoria e nos monitores.
 
 A **pontuação global é a média ponderada apenas das dimensões escolhidas**; as
 que ficam de fora aparecem como «não selecionadas». O veredito de risco também

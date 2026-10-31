@@ -293,7 +293,7 @@ Modelle auf Ihrem eigenen Rechner); Audits verschiedener Relays laufen parallel,
 höchstens vier gleichzeitig (`EKTE_MAX_PARALLEL_AUDITS`). Überwachungen warten
 ebenso auf ihr Relay.
 
-**Analyse (neue UI).** `/analytics` macht aus dem lokalen Verlauf
+**Analyse.** `/analytics` macht aus dem lokalen Verlauf
 Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
 hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,
 Abrechnungsverhältnisse) mit der Änderung gegenüber dem gleich langen Zeitraum
@@ -475,8 +475,8 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 Die Dimensionen sind `connectivity`, `protocol`, `context_window`,
 `model_identity`, `capability`, `streaming`, `billing`, `reliability`, `security`
 und `performance`. In der Weboberfläche öffnet die Suite-Schaltfläche `custom`
-dieselbe Auswahl (**Auszuführende Dimensionen**) auf der Prüfseite, in der
-Konsole und bei den Überwachungen.
+dieselbe Auswahl (**Auszuführende Dimensionen**) auf der Prüfseite
+und bei den Überwachungen.
 
 Die **Gesamtbewertung ist der gewichtete Mittelwert allein der gewählten
 Dimensionen**; ausgelassene Dimensionen werden als „nicht ausgewählt“
