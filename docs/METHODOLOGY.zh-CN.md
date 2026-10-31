@@ -1,6 +1,6 @@
 # ekte — 方法论
 
-> [🇬🇧 English](METHODOLOGY.md) · **🇨🇳 中文** · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · [🇩🇪 Deutsch](METHODOLOGY.de.md)
+> [🇬🇧 English](METHODOLOGY.md) · **🇨🇳 中文** · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · [🇩🇪 Deutsch](METHODOLOGY.de.md) · [🇳🇴 Norsk](METHODOLOGY.nb.md)
 
 本文说明 **ekte** 如何得出结论：每个检测器发送哪些黑盒探测，探测结果如何换算成分数，
 分数如何汇总为维度得分和综合健康分，以及风险结论如何判定。本文描述的是当前实现；

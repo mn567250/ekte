@@ -1,0 +1,11 @@
+{
+ "strings": {
+  "(unknown)": "(ukjent)",
+  "auto-detected": "oppdaget automatisk",
+  "set manually": "satt manuelt",
+  "Streaming + non-streaming": "Med + uten strømming",
+  "Protocol detection": "Protokollgjenkjenning",
+  "Relay, model, suite, protocol…": "Relé, modell, testsett, protokoll …",
+  "Probe requests": "Probeforespørsler"
+ }
+}

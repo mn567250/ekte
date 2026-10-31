@@ -1,0 +1,14 @@
+{
+ "strings": {
+  "Model to request": "Modell som forespørres",
+  "Version": "Versjon",
+  "Other": "Annet",
+  "Not scored": "Gir ikke score",
+  "Severity: {s}.": "Alvorlighet: {s}.",
+  "{n} finding": "{n} funn",
+  "{n} findings": "{n} funn",
+  "{n} dimension": "{n} dimensjon",
+  "{n} dimensions": "{n} dimensjoner",
+  "Rating {r}": "Vurdering {r}"
+ }
+}

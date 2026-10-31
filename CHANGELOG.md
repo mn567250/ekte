@@ -18,6 +18,21 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Added
+
+- **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
+  language dropdown of every page (code `nb`, `lang="nb"`, dates and numbers
+  formatted for `nb-NO`): every UI string, finding title and summary,
+  scoring-scale label and backend sentence is translated
+  (`ekte/i18n/locales/nb.json` and one `nb.json` per fragment). Reports
+  downloaded from the UI in Norwegian are named `ekte-report.nb.json` (…`.md`,
+  `.html`, `.pdf`), and monitors and `ekte watch --alert-lang nb` send their
+  webhook alerts in Norwegian.
+- **Norwegian documentation.** `README.nb.md`, `DEVELOPER_GUIDE.nb.md` and
+  `docs/METHODOLOGY.nb.md`, linked from the language switcher of every
+  README, developer guide and methodology; the scoring tables of the
+  methodology use the wording the UI shows under **Scoreskala**.
+
 ## [0.30.0] — ekte: renamed from zing, own logo, only the v2 web UI
 
 zing is now **ekte** (Norwegian for "genuine"). The first release under the new

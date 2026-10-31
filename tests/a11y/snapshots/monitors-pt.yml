@@ -19,6 +19,7 @@
     - option "Português" [selected]
     - option "Italiano"
     - option "Deutsch"
+    - option "Norsk"
   - link "Acessibilidade":
     - /url: /v2/accessibility
   - navigation "Navegação principal":
@@ -127,6 +128,7 @@
           - option "Português"
           - option "Italiano"
           - option "Deutsch"
+          - option "Norsk"
       - term: Perfil de conhecimento
       - definition:
         - code: openai/gpt-4o

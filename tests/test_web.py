@@ -96,7 +96,7 @@ def test_serves_lang_js_and_pages_load_it(client):
     assert re.search(r"<select class=\"lang-sel\"[^>]*></select>", nav)
     # the language list and translations come from ekte/i18n/locales/*.json
     assert loc.text.startswith("window.EKTE_I18N_DATA = {")
-    for code in ("en", "zh", "fr", "es", "pt", "it", "de"):
+    for code in ("en", "zh", "fr", "es", "pt", "it", "de", "nb"):
         assert f'"code":"{code}"' in loc.text
 
 

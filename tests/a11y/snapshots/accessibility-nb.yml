@@ -1,0 +1,172 @@
+- banner:
+  - link "Hopp til hovedinnholdet":
+    - /url: "#main"
+  - link "ekte":
+    - /url: /v2/
+    - text: ekte.
+  - combobox "Tema":
+    - option "Automatisk tema"
+    - option "Lyst" [selected]
+    - option "Mørkt"
+  - combobox "Bevegelse":
+    - option "Bevegelse på" [selected]
+    - option "Bevegelse av"
+  - combobox "Språk":
+    - option "English"
+    - option "中文"
+    - option "Français"
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+    - option "Norsk" [selected]
+  - link "Tilgjengelighet":
+    - /url: /v2/accessibility
+  - navigation "Hovednavigasjon":
+    - link "Revisjon":
+      - /url: /v2/
+    - link "Overvåking":
+      - /url: /v2/watches
+    - link "Historikk":
+      - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
+    - link "Kunnskap":
+      - /url: /v2/kb
+- main:
+  - heading "Samsvarsrapport for tilgjengelighet" [level=1]
+  - paragraph: "Hvert testtrinn i BITV 2.0 og EN 301549 (kapittel 9, det samme som WCAG 2.1 nivå A og AA): hvordan det testes, og siste resultat fra de automatiserte tilgjengelighetstestene."
+  - region "Status":
+    - heading "Status" [level=2]
+    - paragraph: Delvis i samsvar
+    - paragraph: Av 44 aktuelle trinn er 33 bestått, 0 ikke bestått, 11 venter på manuell gjennomgang og 0 er ikke testet ennå.
+    - term: Generert
+    - definition: <report date>
+    - term: Commit
+    - definition:
+      - code: <id>
+    - term: ekte-versjon
+    - definition: 0.30.0
+    - term: axe-core-versjon
+    - definition: 4.13.0
+    - term: Tester
+    - definition: 1156 kjørt, 1156 bestått, 0 ikke bestått, 0 hoppet over
+    - term: Språk
+    - definition: English, Deutsch, Español, Français, Italiano, Português, 中文
+    - term: Temaer
+    - definition: Lyst, Mørkt
+    - term: Sider
+    - definition:
+      - code: /v2/
+      - code: /v2/history
+      - code: /v2/watches
+      - code: /v2/kb
+      - code: /v2/analytics
+      - code: /v2/accessibility
+  - region "Dekning":
+    - heading "Dekning" [level=2]
+    - heading "Samlet resultat" [level=3]
+    - paragraph: 75 % Bestått av 44
+    - list:
+      - listitem: Ikke aktuelt 6 av 50 · 12 %
+      - listitem: Bestått 33 av 44 · 75 %
+      - listitem: Ikke bestått 0 av 44 · 0 %
+      - listitem: Manuell gjennomgang gjenstår 11 av 44 · 25 %
+      - listitem: Ikke testet 0 av 44 · 0 %
+    - heading "Maskin Bare testsett" [level=3]
+    - list:
+      - listitem: Automatisk 27 av 44 · 61,4 %
+    - heading "Menneske Bare person" [level=3]
+    - list:
+      - listitem: Manuelt 0 av 44 · 0 %
+    - heading "Maskin Menneske Først testsett, så en person" [level=3]
+    - list:
+      - listitem: Delvis automatisk 17 av 44 · 38,6 %
+      - listitem: Gjennomgått 6 av 17 Manuell gjennomgang gjenstår 11 av 17
+    - paragraph: Ringen viser alle 50 trinn. Trinn om lyd og video gjelder ikke fordi grensesnittet ikke har noe slikt; alle andre tall gjelder de 44 aktuelle trinnene.
+    - paragraph: "Også kontrollert utover WCAG: Brukerinnstillinger: modus for tvungne farger (EN 301549 punkt 11.7) — Bestått"
+  - region "Testtrinn":
+    - heading "Testtrinn" [level=2]
+    - text: Søk
+    - searchbox "Søk"
+    - text: Nivå
+    - combobox "Nivå":
+      - option "Alle" [selected]
+      - option "A"
+      - option "AA"
+    - text: Automatisering
+    - combobox "Automatisering":
+      - option "Alle" [selected]
+      - option "Automatisk"
+      - option "Delvis automatisk"
+      - option "Manuelt"
+      - option "Ikke aktuelt"
+    - text: Status
+    - combobox "Status":
+      - option "Alle" [selected]
+      - option "Bestått"
+      - option "Ikke bestått"
+      - option "Manuell gjennomgang gjenstår"
+      - option "Ikke testet"
+      - option "Ikke aktuelt"
+    - status: Viser 50 av 50 trinn
+    - region "Testtrinn i BITV / EN 301549 med automatiseringsnivå og resultat":
+      - table "Testtrinn i BITV / EN 301549 med automatiseringsnivå og resultat":
+        - caption: Testtrinn i BITV / EN 301549 med automatiseringsnivå og resultat
+        - rowgroup:
+          - row "Trinn Tittel Nivå Automatisering Status":
+            - columnheader "Trinn"
+            - columnheader "Tittel"
+            - columnheader "Nivå"
+            - columnheader "Automatisering"
+            - columnheader "Status"
+        - rowgroup:
+          - row "9.1.1.1 A Delvis automatisk Bestått":
+            - rowheader "9.1.1.1"
+            - cell:
+              - group:
+                - text: Ikke-tekstlig innhold
+                - paragraph: "Slik testes det: Bilder, ikoner, SVG-er og kontroller har et tekstalternativ. Om hvert alternativ er meningsfylt, vurderes av en person."
+                - paragraph: "Automatiserte tester: 30 kjørt, 30 bestått, 0 ikke bestått, 156 hoppet over"
+                - paragraph:
+                  - code: test_audit_surface_states
+                  - code: test_wcag_rules_as_loaded
+                  - code: test_wcag_rules_every_tab_panel
+                  - code: test_wcag_rules_expanded
+                - paragraph: "Gjennomgang av claude-opus-5-5: ok"
+            - cell "A"
+            - cell "Delvis automatisk"
+            - cell "Bestått"
+          # … more rows of the same shape
+  - region "Tilgjengelighetserklæring":
+    - heading "Tilgjengelighetserklæring" [level=2]
+    - heading "Samsvarsstatus" [level=3]
+    - paragraph: Nettgrensesnitt v2 i ekte er delvis i samsvar med BITV 2.0, EN 301549 og WCAG 2.1 nivå AA.
+    - heading "Kjente begrensninger" [level=3]
+    - paragraph: "Den automatiserte delen av disse trinnene er bestått; resten trenger fortsatt manuell gjennomgang:"
+    - list:
+      - listitem: 9.1.3.1 Informasjon og relasjoner
+      - listitem: 9.1.3.2 Meningsfylt rekkefølge
+      - listitem: 9.1.4.1 Bruk av farge
+      - listitem: 9.1.4.11 Kontrast for ikke-tekstlig innhold
+      - listitem: 9.1.4.13 Innhold ved pekerfokus eller tastaturfokus
+      - listitem: 9.2.2.2 Pause, stopp, skjul
+      - listitem: 9.2.4.3 Fokusrekkefølge
+      - listitem: 9.2.5.1 Pekerbevegelser
+      - listitem: 9.3.2.2 Inndata
+      - listitem: 9.3.3.1 Identifikasjon av feil
+      - listitem: 9.4.1.3 Statusbeskjeder
+    - heading "Slik ble det vurdert" [level=3]
+    - paragraph:
+      - text: "Egenvurdering: ved hver endring sjekker det automatiserte testsettet i"
+      - code: tests/a11y
+      - text: hver side i nettgrensesnitt v2 i en ekte nettleser (Chromium, med axe-core og egne kontroller) på hvert grensesnittspråk og i lyst og mørkt tema. Hver test oppgir hvilke testtrinn den avgjør.
+    - paragraph: "Siste testkjøring: <report date>. En gjennomgang av tekstene utført av claude-opus-5-5 er registrert som manuell gjennomgang av trinnene den dekker."
+    - heading "Tilbakemelding" [level=3]
+    - paragraph:
+      - text: "Har du funnet en barriere, eller er noe vanskelig å bruke med hjelpemiddelteknologi? Si fra til oss:"
+      - link "meld et tilgjengelighetsproblem på GitHub":
+        - /url: https://github.com/mn567250/ekte/issues
+- contentinfo:
+  - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
+  - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

@@ -78,7 +78,7 @@ def test_every_scale_label_is_translated():
     for where, scale in _scales().items():
         texts = [o.label for o in scale.outcomes] + list(scale.titles.values())
         assert all(texts), where
-        for code in ("zh", "de", "fr", "es", "pt", "it"):
+        for code in ("zh", "de", "fr", "es", "pt", "it", "nb"):
             strings = langs[code]["strings"]
             assert [t for t in texts if t not in strings] == [], (where, code)
 

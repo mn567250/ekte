@@ -1,6 +1,6 @@
 # ekte — Methodik
 
-> [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · **🇩🇪 Deutsch**
+> [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · **🇩🇪 Deutsch** · [🇳🇴 Norsk](METHODOLOGY.nb.md)
 
 Dieses Dokument erklärt, wie **ekte** zu seinem Urteil kommt: welche
 Black-Box-Tests jeder Detektor sendet, wie aus ihren Ergebnissen Punkte werden,

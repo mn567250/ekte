@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Performance measurements": "Ytelsesmålinger",
+  "Not selected": "Ikke valgt",
+  "No detector of this dimension ran in this audit.": "Ingen detektor i denne dimensjonen ble kjørt i denne revisjonen.",
+  "{n} of {total} dimensions run": "{n} av {total} dimensjoner kjørt"
+ }
+}

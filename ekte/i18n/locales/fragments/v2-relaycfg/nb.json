@@ -1,0 +1,32 @@
+{
+ "strings": {
+  "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Velg reléet, velg modellen som skal revideres og, hvis den selges under et annet navn, modellen den utgir seg for å være. ekte kjører et fullstendig black box-testsett på maskinen din og lager en lesbar verifiseringsrapport underbygd med bevis.",
+  "← Pick from the list": "← Velg fra listen",
+  "Enter manually": "Skriv inn manuelt",
+  "Select a relay or provider…": "Velg et relé eller en leverandør …",
+  "Providers": "Leverandører",
+  "Your relays": "Dine releer",
+  "Other (enter the URL)": "Annet (oppgi URL-en)",
+  "Select a model…": "Velg en modell …",
+  "(not listed by the relay)": "(ikke oppført av reléet)",
+  "Refresh models": "Oppdater modeller",
+  "Listing the relay's models…": "Henter reléets modeller …",
+  "Models listed by the relay: {n}": "Modeller oppført av reléet: {n}",
+  "The relay lists no models — enter the model manually.": "Reléet oppfører ingen modeller — oppgi modellen manuelt.",
+  "Enter the API key to list the models (HTTP {code}).": "Oppgi API-nøkkelen for å hente modellene (HTTP {code}).",
+  "Could not list the models: ": "Kunne ikke hente modellene: ",
+  "Select a relay or enter its URL, and ekte lists its models.": "Velg et relé eller oppgi URL-en, så henter ekte modellene.",
+  "Same as the model to request": "Samme som modellen som forespørres",
+  "(not in the knowledge base)": "(ikke i kunnskapsbasen)",
+  "Model profile: {p}": "Modellprofil: {p}",
+  "Closest profile: {p} — select it above if it is right.": "Nærmeste profil: {p} — velg den over hvis den stemmer.",
+  "This model is not in the knowledge base: the audit runs without a model profile.": "Denne modellen finnes ikke i kunnskapsbasen: revisjonen kjøres uten modellprofil.",
+  "Selecting one fills in its URL; for any other relay choose “Other” and enter the URL.": "Velger du en, fylles URL-en ut; for andre releer velger du «Annet» og oppgir URL-en.",
+  "Name of the relay": "Navn på reléet",
+  "Enter a name for the relay.": "Oppgi et navn på reléet.",
+  "Could not save: ": "Kunne ikke lagre: ",
+  "Saved “{name}” to the knowledge base.": "Lagret «{name}» i kunnskapsbasen.",
+  "Relay": "Relé",
+  "Saved relay: the base URL is filled in on the Audit and Tools pages.": "Lagret relé: basis-URL-en fylles ut på Revisjon- og Verktøy-sidene."
+ }
+}

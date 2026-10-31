@@ -1,0 +1,20 @@
+{
+ "strings": {
+  "▲ {n} above {value}": "▲ {n} over {value}",
+  "band: p25–p75 of the same 5 requests": "bånd: p25–p75 av de samme 5 forespørslene",
+  "y-axis focused on the probe: 0 to {max}, {n} requests above it (triangles at the top)": "y-aksen fokusert på proben: 0 til {max}, {n} forespørsler over (trekanter øverst)",
+  "audit request (ringed)": "revisjonsforespørsel (med ring)",
+  "probe request (small, lighter)": "probeforespørsel (liten, lysere)",
+  "running median (last 5) with p25–p75": "løpende median (siste 5) med p25–p75",
+  "above the range (value in the tooltip)": "over området (verdien i verktøytipset)",
+  "Probe focus": "Fokus på proben",
+  "Full range": "Hele området",
+  "set by you": "satt av deg",
+  "automatic": "automatisk",
+  "provisional until {n} probe requests ({k}/{n})": "foreløpig inntil {n} probeforespørsler ({k}/{n})",
+  "range from the first {n} probe requests": "område fra de første {n} probeforespørslene",
+  "Y-axis range": "Område for y-aksen",
+  "Back to automatic": "Tilbake til automatisk",
+  "Y-axis switched to {range} automatically": "Y-aksen byttet automatisk til {range}"
+ }
+}

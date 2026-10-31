@@ -1,0 +1,125 @@
+- banner:
+  - link "Hopp til hovedinnholdet":
+    - /url: "#main"
+  - link "ekte":
+    - /url: /v2/
+    - text: ekte.
+  - combobox "Tema":
+    - option "Automatisk tema"
+    - option "Lyst" [selected]
+    - option "Mørkt"
+  - combobox "Bevegelse":
+    - option "Bevegelse på" [selected]
+    - option "Bevegelse av"
+  - combobox "Språk":
+    - option "English"
+    - option "中文"
+    - option "Français"
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+    - option "Norsk" [selected]
+  - link "Tilgjengelighet":
+    - /url: /v2/accessibility
+  - navigation "Hovednavigasjon":
+    - link "Revisjon":
+      - /url: /v2/
+    - link "Overvåking":
+      - /url: /v2/watches
+    - link "Historikk":
+      - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
+    - link "Kunnskap":
+      - /url: /v2/kb
+- main:
+  - heading "Kunnskapsbasen ekte reviderer mot" [level=1]
+  - paragraph:
+    - text: "Hver revisjon sammenligner et relé med profilen til modellen det oppgir: kontekstvindu, utdatagrense, egenskaper, identitet og atferdsfingeravtrykk. Her finner du alle modeller, leverandører og releer ekte kjenner — medfølgende og dine — og kan slå hver av dem av eller på eller legge til dine egne. Endringene dine lagres i kb.db på denne maskinen og brukes både av nettgrensesnittet og"
+    - code: ekte check
+    - text: .
+  - status: Kunnskapsbasen er komplett 130 modeller · 7 leverandører · 1 relé, alle slått på
+  - region "Filtre":
+    - button "Filtre" [expanded]
+    - text: Modell-ID
+    - combobox "Modell-ID":
+      - option "Alle" [selected]
+    - text: Leverandør
+    - combobox "Leverandør":
+      - option "Alle" [selected]
+      - option "Anthropic (Claude)"
+      - option "DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)"
+      - option "Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)"
+      - option "Zhipu AI (智谱 / Z.ai) — BigModel open platform"
+      - option "Moonshot AI (月之暗面 / Kimi)"
+      - option "OpenAI"
+      - option "Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)"
+    - text: Relé
+    - combobox "Relé":
+      - option "Alle" [selected]
+      - option "Example Relay"
+    - text: Kilde
+    - combobox "Kilde":
+      - option "Alle" [selected]
+      - option "Medfølgende"
+      - option "Dine"
+    - status: Viser 130 av 130 modeller · 7 av 7 leverandører · 1 av 1 releer
+  - link "Eksporter oppføringene dine som YAML":
+    - /url: /api/kb/export
+  - tablist "Deler av kunnskapsbasen":
+    - tab "Modeller" [selected]
+    - tab "Leverandører"
+    - tab "Releer"
+  - tabpanel "Modeller":
+    - heading "Alle modeller 130 modeller" [level=2]
+    - paragraph: "Modellprofilene revisjoner sammenligner med. En modell som er slått av, slås ikke lenger opp: revisjoner av den kjøres uten profil."
+    - group:
+      - text: Legg til en modell
+      - paragraph: La en KI-assistent undersøke modellen, og kontroller svaret her før det lagres.
+      - heading "1 Kopier undersøkelsesprompten" [level=3]
+      - text: Modell-ID id
+      - textbox "Modell-ID id":
+        - /placeholder: f.eks. example-large-2
+      - text: Leverandør Valgfritt
+      - textbox "Leverandør Valgfritt":
+        - /placeholder: f.eks. openai / deepseek
+      - button "Kopier prompt"
+      - status
+      - group:
+        - text: Vis prompten
+        - textbox "Prompt"
+      - paragraph: Lim den inn i KI-assistenten du foretrekker. Den svarer med ett YAML-dokument.
+      - heading "2 Last opp eller lim inn YAML-en" [level=3]
+      - text: Profil-YAML
+      - textbox "Profil-YAML":
+        - /placeholder: "provider: …\nmodels:\n- id: …"
+      - text: Velg en .yaml-fil
+      - heading "3 Kontroller og lagre" [level=3]
+      - paragraph: Kontrollen validerer skjemaet og grensene, flagger utrygge regulære uttrykk, viser hver prompt ekte ville sendt til releer, og viser hvilke modell-ID-er som ville blitt slått opp annerledes. Ingenting lagres før du lagrer.
+      - button "Kontroll"
+      - button "Lagre i kunnskapsbasen" [disabled]
+    - group:
+      - text: Anthropic (Claude)
+      - code: anthropic
+      - text: 23 modeller
+      - list:
+        - listitem:
+          - code: claude-fable-5-1
+          - text: Medfølgende Kontekst 1000000 Maks utdata 128000 Aliaser
+          - code: claude-fable-5-1
+          - text: ","
+          - code: fable
+          - text: ","
+          - code: fable 5.1
+          - text: ","
+          - code: claude fable 5.1
+          - text: ","
+          - code: most powerful
+          - switch "claude-fable-5-1 Aktivert" [checked]
+          - emphasis: Aktivert
+        # … more items of the same shape
+    # … more items of the same shape
+- contentinfo:
+  - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
+  - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

@@ -1,0 +1,21 @@
+{
+ "strings": {
+  "Continue in background": "Fortsett i bakgrunnen",
+  "The audit keeps running; follow it in History": "Revisjonen fortsetter; følg den i Historikk",
+  "Follow it in History": "Følg den i Historikk",
+  "The audit keeps running in the background.": "Revisjonen fortsetter i bakgrunnen.",
+  "Queued: another audit is using {h}…": "I kø: en annen revisjon bruker {h} …",
+  "Queued: waiting for a free audit slot…": "I kø: venter på en ledig revisjonsplass …",
+  "Audit cancelled.": "Revisjonen er avbrutt.",
+  "That audit is no longer running — its report is in History.": "Den revisjonen kjører ikke lenger — rapporten ligger i Historikk.",
+  "Open History": "Åpne Historikk",
+  "In progress": "Pågår",
+  "Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.": "Revisjoner fortsetter når du forlater revisjonssiden. Revisjoner av samme relé kjøres etter hverandre, så de aldri forstyrrer hverandres resultater.",
+  "Queued: another audit is using {h}": "I kø: en annen revisjon bruker {h}",
+  "Queued: waiting for a free audit slot": "I kø: venter på en ledig revisjonsplass",
+  "Watch live": "Følg i sanntid",
+  "Open monitor": "Åpne overvåking",
+  "Monitor": "Overvåking",
+  "Queued: waiting for another audit of this relay to finish": "I kø: venter på at en annen revisjon av dette reléet blir ferdig"
+ }
+}

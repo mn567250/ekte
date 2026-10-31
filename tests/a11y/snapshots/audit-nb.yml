@@ -1,0 +1,126 @@
+- banner:
+  - link "Hopp til hovedinnholdet":
+    - /url: "#main"
+  - link "ekte":
+    - /url: /v2/
+    - text: ekte.
+  - combobox "Tema":
+    - option "Automatisk tema"
+    - option "Lyst" [selected]
+    - option "Mørkt"
+  - combobox "Bevegelse":
+    - option "Bevegelse på" [selected]
+    - option "Bevegelse av"
+  - combobox "Språk":
+    - option "English"
+    - option "中文"
+    - option "Français"
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+    - option "Norsk" [selected]
+  - link "Tilgjengelighet":
+    - /url: /v2/accessibility
+  - navigation "Hovednavigasjon":
+    - link "Revisjon":
+      - /url: /v2/
+    - link "Overvåking":
+      - /url: /v2/watches
+    - link "Historikk":
+      - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
+    - link "Kunnskap":
+      - /url: /v2/kb
+- main:
+  - heading "Leverer dette reléet den ekte varen?" [level=1]
+  - paragraph: Velg reléet, velg modellen som skal revideres og, hvis den selges under et annet navn, modellen den utgir seg for å være. ekte kjører et fullstendig black box-testsett på maskinen din og lager en lesbar verifiseringsrapport underbygd med bevis.
+  - status:
+    - text: Siste revisjon ferdig gateway.a-very-long-relay-hostname.example.org · model-b · score 72/100 · 27. sep. 2026, 10:02
+    - button "Åpne rapport"
+  - tablist "Revisjoner":
+    - tab "Ny revisjon" [selected]
+    - tab "Kjører"
+  - tabpanel "Ny revisjon":
+    - list "Revisjonsfremdrift":
+      - listitem: Konfigurer
+      - listitem: Skann
+      - listitem: Rapport
+    - region "Konfigurer":
+      - heading "Konfigurer" [level=2]
+      - group "Type endepunkt surface":
+        - text: Type endepunkt surface
+        - radio "Chat" [checked]
+        - text: Chat
+        - radio "Embeddinger"
+        - text: Embeddinger
+        - radio "Rerank"
+        - text: Rerank
+      - text: Relé / leverandør Valgfritt
+      - combobox "Relé / leverandør Valgfritt":
+        - option "Velg et relé eller en leverandør …" [selected]
+        - option "Annet (oppgi URL-en)"
+      - text: Velger du en, fylles URL-en ut; for andre releer velger du «Annet» og oppgir URL-en. Relé-URL base_url
+      - combobox "Relé-URL base_url"
+      - text: API-nøkkel Støtter env:VAR / file:/sti
+      - textbox "API-nøkkel":
+        - /placeholder: sk-... eller env:EKTE_API_KEY
+      - button "Vis nøkkel"
+      - text: Modell som forespørres model
+      - textbox "Modell som forespørres model":
+        - /placeholder: deepseek-chat
+      - button "Oppdater modeller" [disabled]
+      - status: Velg et relé eller oppgi URL-en, så henter ekte modellene.
+      - text: Oppgitt modell claimed_model Valgfritt
+      - combobox "Oppgitt modell claimed_model Valgfritt":
+        - option "Samme som modellen som forespørres" [selected]
+      - button "Skriv inn manuelt"
+      - text: Bare hvis reléet selger den under et annet navn — ekte kontrollerer svarene mot denne modellen. Protokoll
+      - group "Protokoll":
+        - button "Auto" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - text: Testsett
+      - group "Testsett":
+        - button "smoke"
+        - button "standard" [pressed]
+        - button "deep"
+        - button "full"
+        - button "egendefinert"
+      - text: Forespørsler fra ytelsesproben
+      - group "Forespørsler fra ytelsesproben":
+        - button "Strømming" [pressed]
+        - button "Uten strømming"
+      - text: På standard kjører proben bare med en referanse; ellers brukes revisjonens egne forespørsler.
+      - button "Sammenlign med en pålitelig referanse compare" [expanded]
+      - paragraph: Oppgi et endepunkt for samme modell som du stoler på (f.eks. det offisielle API-et). ekte bruker det til å bekrefte målets atferd, slik at konklusjoner om bytte eller nedgradering blir mer pålitelige — kvalitetsdommeren og manipulasjonsdeteksjonen når bare sitt høyeste nivå med en referanse.
+      - text: Referanserelé / -leverandør Valgfritt
+      - combobox "Referanserelé / -leverandør Valgfritt":
+        - option "Velg et relé eller en leverandør …" [selected]
+        - option "Annet (oppgi URL-en)"
+      - text: Velger du en, fylles URL-en ut; for andre releer velger du «Annet» og oppgir URL-en. Referanse-URL base_url
+      - combobox "Referanse-URL base_url"
+      - text: Referansens API-nøkkel
+      - textbox "Referansens API-nøkkel":
+        - /placeholder: sk-... eller env:OPENAI_API_KEY
+      - button "Vis nøkkel"
+      - text: Referansemodell model
+      - textbox "Referansemodell model":
+        - /placeholder: Offisiell ID for samme modell
+      - button "Oppdater modeller" [disabled]
+      - status: Velg et relé eller oppgi URL-en, så henter ekte modellene.
+      - text: Referanseprotokoll
+      - group "Referanseprotokoll":
+        - button "Auto" [pressed]
+        - button "OpenAI"
+        - button "Anthropic"
+        - button "Responses"
+      - button "Start revisjon"
+      - text: Testene sendes fra din lokale ekte-server; nøkkelen brukes bare til å koble til målreléet og lastes aldri opp til noen tredjepart.
+      - alert
+      - status
+- contentinfo:
+  - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
+  - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

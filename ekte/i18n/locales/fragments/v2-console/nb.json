@@ -1,0 +1,21 @@
+{
+ "strings": {
+  "// waiting to start — fill in the form and start an audit<br>// detector lines stream here; lines with findings expand to show the evidence": "// venter på start — fyll ut skjemaet og start en revisjon<br>// detektorlinjene strømmer inn her; linjer med funn foldes ut for å vise bevisene",
+  "API key": "API-nøkkel",
+  "Baseline API key": "Referansens API-nøkkel",
+  "Baseline relay URL": "Referansereléets URL",
+  "Declared provider": "Oppgitt leverandør",
+  "Empty = same as the model to request": "Tom = samme som modellen som forespørres",
+  "Hide full report": "Skjul hele rapporten",
+  "Key findings": "Viktigste funn",
+  "Model to request": "Modell som forespørres",
+  "Please enter the relay URL and the model to request.": "Oppgi relé-URL-en og modellen som skal forespørres.",
+  "Point it at a relay's <span class='key'>base_url</span> and the model it claims. ekte runs a full suite of black-box probes, compares the results with built-in native model profiles and gives an evidence-backed verdict. The live detector log shows every probe as it runs.": "Pek den mot et relés <span class='key'>base_url</span> og modellen det oppgir. ekte kjører et fullt sett med black box-prober, sammenligner resultatene med innebygde profiler av de ekte modellene og gir en konklusjon underbygd med bevis. Sanntidsloggen fra detektorene viser hver probe mens den kjører.",
+  "Relay URL": "Relé-URL",
+  "Show full report": "Vis hele rapporten",
+  "The key itself, or a reference: <span class='key'>env:VAR</span> · <span class='key'>file:/path</span>": "Selve nøkkelen, eller en referanse: <span class='key'>env:VAR</span> · <span class='key'>file:/sti</span>",
+  "The model id sent in every request.": "Modell-ID-en som sendes i hver forespørsel.",
+  "e.g. gpt-4o-mini": "f.eks. gpt-4o-mini",
+  "stream ended": "strømmen ble avsluttet"
+ }
+}

@@ -23,18 +23,18 @@ id is a usage error. A test runs when it is tied to a selected page:
   and identification, page titles, reachability; the self-checks) always runs.
 
 It combines with `EKTE_A11Y_SHARD=k/n`, which then splits the selection.
-Collected with `EKTE_A11Y_PAGES=<page>` (1,138 tests in all; 33 of them, 4 %
+Collected with `EKTE_A11Y_PAGES=<page>` (1,277 tests in all; 37 of them, 4 %
 of the test time, run with any selection), and each page's share of a full
 run's test time (`WEIGHTS` in `pages.py`):
 
 | Page | Tests | Share of the run time |
 |---|---:|---:|
-| audit | 229 | 20 % |
-| history | 236 | 24 % |
-| monitors | 221 | 9 % |
-| kb | 207 | 23 % |
-| analytics | 214 | 10 % |
-| accessibility | 205 | 10 % |
+| audit | 276 | 20 % |
+| history | 260 | 24 % |
+| monitors | 244 | 9 % |
+| kb | 229 | 23 % |
+| analytics | 236 | 10 % |
+| accessibility | 227 | 10 % |
 
 ## Which pages a change affects
 

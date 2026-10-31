@@ -1,0 +1,308 @@
+- banner:
+  - link "Hopp til hovedinnholdet":
+    - /url: "#main"
+  - link "ekte":
+    - /url: /v2/
+    - text: ekte.
+  - combobox "Tema":
+    - option "Automatisk tema"
+    - option "Lyst" [selected]
+    - option "Mørkt"
+  - combobox "Bevegelse":
+    - option "Bevegelse på" [selected]
+    - option "Bevegelse av"
+  - combobox "Språk":
+    - option "English"
+    - option "中文"
+    - option "Français"
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+    - option "Norsk" [selected]
+  - link "Tilgjengelighet":
+    - /url: /v2/accessibility
+  - navigation "Hovednavigasjon":
+    - link "Revisjon":
+      - /url: /v2/
+    - link "Overvåking":
+      - /url: /v2/watches
+    - link "Historikk":
+      - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
+    - link "Kunnskap":
+      - /url: /v2/kb
+- main:
+  - heading "Revisjonshistorikk og trender" [level=1]
+  - paragraph: Alle verifiseringer du har kjørt på denne maskinen. Gruppert etter «relé + oppgitt modell», med en trendlinje for helsescoren; klikk på en rad for å folde ut rapporten.
+  - status: 15 kjøringer på denne maskinen Lagret siden 26. sep. 2026 · API-nøkler lagres aldri
+  - region "Filtre":
+    - button "Filtre" [expanded]
+    - text: Søk
+    - searchbox "Søk"
+    - text: Type endepunkt
+    - combobox "Type endepunkt":
+      - option "Alle" [selected]
+      - option "Chat"
+    - text: Relé / leverandør
+    - combobox "Relé / leverandør":
+      - option "Alle" [selected]
+      - option "127.0.0.1:9099"
+      - option "gateway.a-very-long-relay-hostname.example.org"
+      - option "relay.example.com"
+    - text: Oppgitt modell
+    - combobox "Oppgitt modell":
+      - option "Alle" [selected]
+      - option "gpt-4o"
+      - option "model-a"
+      - option "model-b"
+    - text: Testsett
+    - combobox "Testsett":
+      - option "Alle" [selected]
+      - option "standard"
+    - text: Modus
+    - combobox "Modus":
+      - option "Alle" [selected]
+      - option "check"
+    - text: Protokoll
+    - combobox "Protokoll":
+      - option "Alle" [selected]
+      - option "openai"
+      - option "(ukjent)"
+    - text: Protokollgjenkjenning
+    - combobox "Protokollgjenkjenning":
+      - option "Alle" [selected]
+      - option "(ukjent)"
+    - text: Probeforespørsler
+    - combobox "Probeforespørsler":
+      - option "Alle" [selected]
+      - option "Strømming"
+      - option "(ukjent)"
+    - text: Risiko
+    - combobox "Risiko":
+      - option "Alle" [selected]
+      - option "Konsistent (trolig ekte)"
+      - option "Stort sett pålitelig"
+      - option "Falsk vare"
+    - text: Min. score
+    - spinbutton "Min. score"
+    - text: Periode
+    - combobox "Periode":
+      - option "Alle" [selected]
+      - option "Siste 7 dager"
+      - option "Siste 30 dager"
+      - option "Siste 90 dager"
+    - text: Kjøring
+    - combobox "Kjøring":
+      - option "Alle" [selected]
+      - option "Ad hoc"
+      - option "Overvåking"
+    - group "Trender":
+      - text: Trender
+      - button "Score" [pressed]
+      - button "Karakter"
+      - button "Forsinkelse p50" [pressed]
+      - button "Tokens/s"
+    - text: Viser 15 av 15 revisjoner
+  - group "Sorter revisjoner":
+    - button "Tid, sortert synkende": Tid
+    - button "Sorter etter Risiko": Risiko
+    - button "Sorter etter Score": Score
+    - button "Sorter etter Karakter": Karakter
+  - button "Fold sammen alle"
+  - region "model-a https://relay.example.com/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
+    - code: base_url
+    - text: https://relay.example.com/v1 Score
+    - 'img "Trend for helsescore over 7 revisjoner: fra 70 til 82, stigende."'
+    - text: 82 Forsinkelse p50
+    - 'img "Trend for Forsinkelse p50 over 7 revisjoner: fra <duration> til <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "30. sep. 2026, 11:02 Konsistent (trolig ekte) Score 82 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+      - listitem:
+        - button "30. sep. 2026, 10:02 Konsistent (trolig ekte) Score 85 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+      - listitem:
+        - button "30. sep. 2026, 09:02 Konsistent (trolig ekte) Score 88 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+      - listitem:
+        - button "28. sep. 2026, 10:02 Stort sett pålitelig Score 78 Karakter D check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+      - listitem:
+        - button "28. sep. 2026, 09:02 Konsistent (trolig ekte) Score 80 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+      - listitem:
+        - button "28. sep. 2026, 07:02 Konsistent (trolig ekte) Score 84 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+      - listitem:
+        - button "26. sep. 2026, 08:02 Stort sett pålitelig Score 70 Karakter D check Overvåking · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Denne kjøringen ble laget av en overvåking" [disabled]
+        - button "Slett oppføring"
+  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-a" [level=2]:
+      - button "model-a" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score
+    - 'img "Trend for helsescore over 4 revisjoner: fra 58 til 64, stigende."'
+    - text: 64 Forsinkelse p50
+    - 'img "Trend for Forsinkelse p50 over 4 revisjoner: fra <duration> til <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "30. sep. 2026, 08:02 Falsk vare Score 64 Karakter D check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+      - listitem:
+        - button "29. sep. 2026, 11:02 Falsk vare Score 60 Karakter D check Overvåking · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Denne kjøringen ble laget av en overvåking" [disabled]
+        - button "Slett oppføring"
+      - listitem:
+        - button "29. sep. 2026, 10:02 Stort sett pålitelig Score 66 Karakter D check Overvåking · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Denne kjøringen ble laget av en overvåking" [disabled]
+        - button "Slett oppføring"
+      - listitem:
+        - button "29. sep. 2026, 09:02 Falsk vare Score 58 Karakter D check Overvåking · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Denne kjøringen ble laget av en overvåking" [disabled]
+        - button "Slett oppføring"
+  - region "model-b https://relay.example.com/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://relay.example.com/v1 Score
+    - 'img "Trend for helsescore over 2 revisjoner: fra 89 til 91, stigende."'
+    - text: 91 Forsinkelse p50
+    - 'img "Trend for Forsinkelse p50 over 2 revisjoner: fra <duration> til <duration>."'
+    - text: <duration>
+    - list:
+      - listitem:
+        - button "29. sep. 2026, 07:02 Konsistent (trolig ekte) Score 91 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+      - listitem:
+        - button "29. sep. 2026, 06:02 Konsistent (trolig ekte) Score 89 Karakter B check · standard openai · Strømming p50 <duration>"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+    - heading "model-b" [level=2]:
+      - button "model-b" [expanded]
+    - code: base_url
+    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score 72 Forsinkelse p50 <duration>
+    - list:
+      - listitem:
+        - button "27. sep. 2026, 10:02 Stort sett pålitelig Score 72 Karakter D check · standard openai · Strømming p50 <duration>" [expanded]
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring"
+        - region "27. sep. 2026, 10:02 Stort sett pålitelig Score 72 Karakter D check · standard openai · Strømming p50 <duration>":
+          - article "Stort sett konsistent, med noen få små avvik":
+            - text: Stort sett pålitelig
+            - heading "Stort sett konsistent, med noen få små avvik" [level=2]
+            - text: Samlet helsescore 72/100 (Vurdering D) Sikkerhet i konklusjonen —
+            - term: Mål
+            - definition:
+              - code: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1
+            - term: Oppgitt modell
+            - definition:
+              - code: model-b
+            - term: Protokoll
+            - definition:
+              - code: openai
+            - term: Modus
+            - definition:
+              - code: check
+            - term: Testsett
+            - definition:
+              - code: standard
+            - term: Forespørsler fra ytelsesproben
+            - definition: Strømming
+            - term: Kunnskapsprofil
+            - definition: Ingen profil passer
+            - term: Tid
+            - definition: 27. sep. 2026, 10:02
+            - term: Versjon
+            - definition:
+              - code: ekte v<version>
+            - heading "Kontroller per dimensjon 1 av 10 dimensjoner kjørt" [level=3]
+            - button "Protokollsamsvar"
+            - text: Følger API-et spesifikasjonen?
+            - meter "Protokollsamsvar Følger API-et spesifikasjonen?"
+            - button "Tilkobling"
+            - text: Pålitelig tilgjengelig? Ikke kjørt
+            - button "Kontekstvindu"
+            - text: Husker den virkelig lange inndata? Ikke kjørt
+            - button "Modellidentitet"
+            - text: Er det modellen den utgir seg for å være? Ikke kjørt
+            - button "Påståtte egenskaper"
+            - text: Støttes verktøy/JSON virkelig? Ikke kjørt
+            - button "Ekte strømming"
+            - text: Ekte strømming eller forfalsket? Ikke kjørt
+            - button "Fakturering og forbruk"
+            - text: Er tokenforbruket blåst opp? Ikke kjørt
+            - button "Pålitelighet ved samtidighet"
+            - text: Stabil under last? Ikke kjørt
+            - button "Transportsikkerhet"
+            - text: Håndteres nøkler trygt? Ikke kjørt
+            - button "Ytelse"
+            - text: Er hastigheten jevn? Ikke kjørt
+            - heading "Funn" [level=3]
+            - paragraph: Ingen advarsler eller feil — alle dimensjoner stemmer med den oppgitte modellen.
+            - heading "Kjøringslogg 6 kontroller · <duration> totalt" [level=3]
+            - paragraph: Kontrollene kjøres etter hverandre; den tregeste var context_window (<duration>).
+            - button "Vis alle 6"
+            - paragraph:
+              - text: ekte gir
+              - strong: reproduserbare bevis på avvikende atferd og risiko
+              - text: ", ikke juridiske eller kryptografiske bevis på svindel. Releer kan rute tilfeldig; vurder selv utvalgsstørrelse, faktureringsinnstillinger og lokal lovgivning, og anklag aldri en leverandør offentlig på grunnlag av én enkelt kjøring."
+            - button "Planlegg som overvåking"
+            - button "Kjør revisjonen på nytt"
+            - group "Last ned rapport":
+              - text: Last ned rapport
+              - button "JSON"
+              - button "Markdown"
+              - button "HTML"
+              - button "PDF"
+  - region "gpt-4o http://127.0.0.1:9099/v1":
+    - heading "gpt-4o" [level=2]:
+      - button "gpt-4o" [expanded]
+    - code: base_url
+    - text: http://127.0.0.1:9099/v1 Score 53
+    - list:
+      - listitem:
+        - button "27. sep. 2026, 07:47 Falsk vare Score 53 Karakter F check · standard"
+        - button "Kjør revisjonen på nytt"
+        - button "Planlegg som overvåking"
+        - button "Slett oppføring" [expanded]
+        - group "Slette denne historikkoppføringen?":
+          - text: Slette denne historikkoppføringen?
+          - button "Slett"
+          - button "Avbryt"
+  - text: "Lagrede revisjoner: 15"
+  - button "Tøm historikken"
+  - status
+- contentinfo:
+  - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
+  - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

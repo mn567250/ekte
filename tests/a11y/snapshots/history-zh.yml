@@ -19,6 +19,7 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+    - option "Norsk"
   - link "无障碍":
     - /url: /v2/accessibility
   - navigation "主导航":

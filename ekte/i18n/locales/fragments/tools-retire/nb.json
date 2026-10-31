@@ -1,0 +1,6 @@
+{
+ "strings": {
+  "Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.": "Endepunkter uten egne modeller, f.eks. releer du har lagret på Revisjon-siden. De tilbys i relélisten der; et relé som er slått av, gjør ikke det.",
+  "No relays yet. Add one here, or save one from the relay list on the Audit page.": "Ingen releer ennå. Legg til ett her, eller lagre ett fra relélisten på Revisjon-siden."
+ }
+}

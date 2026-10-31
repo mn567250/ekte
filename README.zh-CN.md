@@ -1,6 +1,6 @@
 # ekte — 大模型中转站「货不对板」检测工具
 
-> [🇬🇧 English](README.md) · **🇨🇳 中文** · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇵🇹 Português](README.pt.md) · [🇮🇹 Italiano](README.it.md) · [🇩🇪 Deutsch](README.de.md)
+> [🇬🇧 English](README.md) · **🇨🇳 中文** · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇵🇹 Português](README.pt.md) · [🇮🇹 Italiano](README.it.md) · [🇩🇪 Deutsch](README.de.md) · [🇳🇴 Norsk](README.nb.md)
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
@@ -266,7 +266,7 @@ Web 界面位于 `/v2/`，`ekte serve` 会打开它。早期经典界面的地�
 ### 语言
 
 每个页面顶部的语言下拉框可在 **🇬🇧 英语**（默认）、**🇨🇳 中文**（界面原始语言）、
-**🇫🇷 法语**、**🇪🇸 西班牙语**、**🇵🇹 葡萄牙语**、**🇮🇹 意大利语** 和 **🇩🇪 德语**
+**🇫🇷 法语**、**🇪🇸 西班牙语**、**🇵🇹 葡萄牙语**、**🇮🇹 意大利语**、**🇩🇪 德语** 和 **🇳🇴 挪威语**（书面挪威语）
 之间切换界面；选择按浏览器记住。
 
 从界面下载的报告（**下载报告**：JSON、Markdown、HTML 或 PDF）同样跟随所选语言：
@@ -441,7 +441,7 @@ ekte watch --base-url https://relay.example.com/v1 --api-key env:EKTE_API_KEY \
 ```
 
 告警会按 **Slack / 飞书 / 钉钉 / 通用 JSON** 格式化（根据 Webhook URL 自动识别），并使用
-告警语言撰写——默认英文；`--alert-lang en|zh|fr|es|pt|it|de`。通用 JSON 负载的键和机器值
+告警语言撰写——默认英文；`--alert-lang en|zh|fr|es|pt|it|de|nb`。通用 JSON 负载的键和机器值
 （`risk_level`、`score` 等）保持语言中立，面向人阅读的值（`text`、`headline`、`key_findings`）
 会被翻译，并注明 `language`。
 

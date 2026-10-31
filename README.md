@@ -1,6 +1,6 @@
 # ekte — LLM relay reality check
 
-> **🇬🇧 English** · [🇨🇳 中文](README.zh-CN.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇵🇹 Português](README.pt.md) · [🇮🇹 Italiano](README.it.md) · [🇩🇪 Deutsch](README.de.md)
+> **🇬🇧 English** · [🇨🇳 中文](README.zh-CN.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇵🇹 Português](README.pt.md) · [🇮🇹 Italiano](README.it.md) · [🇩🇪 Deutsch](README.de.md) · [🇳🇴 Norsk](README.nb.md)
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
@@ -323,7 +323,8 @@ standard · Streaming · Example Relay"), so a shared view says what it shows.
 
 A language dropdown in the header of every page switches the UI between
 **🇬🇧 English** (default), **🇨🇳 Chinese** (the original UI), **🇫🇷 French**,
-**🇪🇸 Spanish**, **🇵🇹 Portuguese**, **🇮🇹 Italian** and **🇩🇪 German**; the choice
+**🇪🇸 Spanish**, **🇵🇹 Portuguese**, **🇮🇹 Italian**, **🇩🇪 German** and
+**🇳🇴 Norwegian** (Bokmål); the choice
 is remembered per browser.
 
 Reports downloaded from the UI (**Download report**: JSON, Markdown, HTML or PDF)
@@ -549,7 +550,7 @@ ekte watch --base-url https://relay.example.com/v1 --api-key env:EKTE_API_KEY \
 
 Alerts are formatted for **Slack / Feishu / DingTalk / generic JSON**,
 auto-detected from the webhook URL, and written in the alert language — English
-by default; `--alert-lang en|zh|fr|es|pt|it|de`. The generic JSON payload keeps
+by default; `--alert-lang en|zh|fr|es|pt|it|de|nb`. The generic JSON payload keeps
 its keys and machine values (`risk_level`, `score`, …) language-neutral,
 translates the human-readable ones (`text`, `headline`, `key_findings`) and
 reports the `language`.

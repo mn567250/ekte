@@ -1,0 +1,28 @@
+{
+ "strings": {
+  "API key": "API-nøkkel",
+  "Audit progress": "Revisjonsfremdrift",
+  "Audits": "Revisjoner",
+  "Baseline API key": "Referansens API-nøkkel",
+  "Baseline URL": "Referanse-URL",
+  "Cancel": "Avbryt",
+  "Checks": "Kontroller",
+  "Compare against a trusted baseline": "Sammenlign med en pålitelig referanse",
+  "Configure": "Konfigurer",
+  "Empty = same as model to request": "Tom = samme som modellen som forespørres",
+  "Live evidence": "Bevis i sanntid",
+  "Model to request": "Modell som forespørres",
+  "New audit": "Ny revisjon",
+  "No audits are running": "Ingen revisjoner kjører",
+  "On": "På",
+  "Only if the relay sells it under another name — ekte checks the answers against this model.": "Bare hvis reléet selger den under et annet navn — ekte kontrollerer svarene mot denne modellen.",
+  "Please enter the relay URL and the model to request.": "Oppgi relé-URL-en og modellen som skal forespørres.",
+  "Relay URL": "Relé-URL",
+  "Report": "Rapport",
+  "Responses": "Responses",
+  "Running": "Kjører",
+  "To compare, enter both the baseline URL and the baseline model.": "For å sammenligne, oppgi både referanse-URL-en og referansemodellen.",
+  "{n} of {total} checks done": "{n} av {total} kontroller ferdige",
+  "Baseline relay / provider": "Referanserelé / -leverandør"
+ }
+}

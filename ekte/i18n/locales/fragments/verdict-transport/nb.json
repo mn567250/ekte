@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Plain HTTP to a local or private-network host; the API key does not cross the internet.": "Ren HTTP til en vert på lokalt eller privat nettverk; API-nøkkelen krysser ikke internett.",
+  "Use https:// if this endpoint is reachable from other machines.": "Bruk https:// hvis dette endepunktet kan nås fra andre maskiner.",
+  "The claimed model only fuzzily matched a knowledge-base profile, so confidence is capped at low — pass the exact model id or add a KB alias.": "Den oppgitte modellen passet bare omtrentlig med en profil i kunnskapsbasen, så sikkerheten er begrenset til lav — oppgi den nøyaktige modell-ID-en eller legg til et alias i kunnskapsbasen.",
+  "Transport and reliability findings (plain HTTP, failures or slowness under load) are advisories: they lower the score but not the substitution risk.": "Funn om transport og pålitelighet (ren HTTP, feil eller treghet under last) er råd: de senker scoren, men ikke risikoen for bytte."
+ }
+}

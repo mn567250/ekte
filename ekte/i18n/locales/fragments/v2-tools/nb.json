@@ -1,0 +1,31 @@
+{
+ "strings": {
+  "<b>Vector dimension</b> vs. the claimed model: the #1 bait-and-switch signal.": "<b>Vektordimensjon</b> mot den oppgitte modellen: det viktigste tegnet på falsk vare.",
+  "A <b>known-answer probe</b>: the obvious answer must rank first.": "En <b>probe med kjent svar</b>: det åpenbare svaret må rangeres først.",
+  "API key": "API-nøkkel",
+  "At least two lines, one document each": "Minst to linjer, ett dokument hver",
+  "Claimed dimension": "Oppgitt dimensjon",
+  "Declared provider": "Oppgitt leverandør",
+  "Determinism and distinctness re-tests back it up.": "Nye tester av determinisme og atskillelse underbygger det.",
+  "Embedding and rerank endpoints only speak the OpenAI-compatible API.": "Embedding- og rerank-endepunkter snakker bare det OpenAI-kompatible API-et.",
+  "Embedding and rerank endpoints return vectors or rankings, not chat, so they get dedicated probes instead of the chat audit.": "Embedding- og rerank-endepunkter returnerer vektorer eller rangeringer, ikke chat, så de får egne prober i stedet for chat-revisjonen.",
+  "Empty = built-in probe": "Tom = innebygd probe",
+  "Empty = first line (0)": "Tom = første linje (0)",
+  "Empty = same as model to request": "Tom = samme som modellen som forespørres",
+  "Key signal": "Hovedsignal",
+  "Model to request": "Modell som forespørres",
+  "OpenAI-compatible": "OpenAI-kompatibel",
+  "Please enter the relay URL and the model to request.": "Oppgi relé-URL-en og modellen som skal forespørres.",
+  "Relay URL": "Relé-URL",
+  "Rerank": "Rerank",
+  "Supporting": "Støttende",
+  "The custom probe needs a query and at least two documents.": "Den egne proben trenger en spørring og minst to dokumenter.",
+  "The expected line must be between 0 and {n}.": "Den forventede linjen må være mellom 0 og {n}.",
+  "Verification result": "Verifiseringsresultat",
+  "Verification type": "Verifiseringstype",
+  "e.g. bge-reranker-v2-m3": "f.eks. bge-reranker-v2-m3",
+  "e.g. https://relay.example.com/v1": "f.eks. https://relay.example.com/v1",
+  "e.g. text-embedding-3-large": "f.eks. text-embedding-3-large",
+  "optional": "valgfritt"
+ }
+}

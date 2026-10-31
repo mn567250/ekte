@@ -1,0 +1,21 @@
+{
+ "strings": {
+  "Chat": "Chat",
+  "Embeddings": "Embeddinger",
+  "Endpoint type": "Type endepunkt",
+  "Billing and token metrics apply to chat audits only.": "Fakturerings- og tokenmåltall gjelder bare chat-revisjoner.",
+  "Embedding connectivity": "Tilkobling for embeddinger",
+  "Embedding model identity": "Identitet for embedding-modellen",
+  "Vector determinism": "Vektordeterminisme",
+  "Vector distinctness": "Vektoratskillelse",
+  "Vector drift": "Vektordrift",
+  "Do the vectors come from the claimed model?": "Kommer vektorene fra den oppgitte modellen?",
+  "Do different inputs give different vectors?": "Gir ulike inndata ulike vektorer?",
+  "Does the same input give the same vector?": "Gir samme inndata samme vektor?",
+  "[vector sample of {n} numbers]": "[vektorutdrag med {n} tall]",
+  "{n} requests": "{n} forespørsler",
+  "{input} input tokens (usage)": "{input} inndatatokens (usage)",
+  "batch probe": "batchprobe",
+  "No audits of this endpoint type.": "Ingen revisjoner av denne typen endepunkt."
+ }
+}

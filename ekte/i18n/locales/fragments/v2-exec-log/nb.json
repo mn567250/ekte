@@ -1,0 +1,12 @@
+{
+ "strings": {
+  "Execution log": "Kjøringslogg",
+  "{n} check": "{n} kontroll",
+  "{n} checks": "{n} kontroller",
+  "{t} in total": "{t} totalt",
+  "Checks run one after another; the slowest was {name} ({t}).": "Kontrollene kjøres etter hverandre; den tregeste var {name} ({t}).",
+  "Error: ": "Feil: ",
+  "Helps ekte pick the right model profile when the model name alone is ambiguous. Choosing a model from the list fills it in.": "Hjelper ekte å velge riktig modellprofil når modellnavnet alene er tvetydig. Velger du en modell fra listen, fylles feltet ut.",
+  "Each check shows its score and how long it took; checks with findings expand to show the evidence.": "Hver kontroll viser scoren sin og hvor lang tid den tok; kontroller med funn foldes ut for å vise bevisene."
+ }
+}

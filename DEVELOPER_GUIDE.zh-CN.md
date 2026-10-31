@@ -1,6 +1,6 @@
 # ekte — 开发者指南
 
-> [🇬🇧 English](DEVELOPER_GUIDE.md) · **🇨🇳 中文** · [🇫🇷 Français](DEVELOPER_GUIDE.fr.md) · [🇪🇸 Español](DEVELOPER_GUIDE.es.md) · [🇵🇹 Português](DEVELOPER_GUIDE.pt.md) · [🇮🇹 Italiano](DEVELOPER_GUIDE.it.md) · [🇩🇪 Deutsch](DEVELOPER_GUIDE.de.md)
+> [🇬🇧 English](DEVELOPER_GUIDE.md) · **🇨🇳 中文** · [🇫🇷 Français](DEVELOPER_GUIDE.fr.md) · [🇪🇸 Español](DEVELOPER_GUIDE.es.md) · [🇵🇹 Português](DEVELOPER_GUIDE.pt.md) · [🇮🇹 Italiano](DEVELOPER_GUIDE.it.md) · [🇩🇪 Deutsch](DEVELOPER_GUIDE.de.md) · [🇳🇴 Norsk](DEVELOPER_GUIDE.nb.md)
 
 本指南面向修改 ekte 的人：它是如何构建的、如何搭建开发环境、如何参与贡献，以及如何打包、
 在 Docker 中运行和发布。ekte 能做什么、如何使用，见 [README](README.zh-CN.md)；
@@ -112,7 +112,7 @@ ekte/
     static/            所有页面共用的脚本（lang.js、i18n.js、icons.js 等）
     static/v2/         Web 界面的页面、样式和脚本
 tests/                 pytest 测试套件；conftest.py 中是模拟中转站
-docs/                  METHODOLOGY（7 种语言）、CI.md、DOCKER.md、PUBLISHING.md
+docs/                  METHODOLOGY（8 种语言）、CI.md、DOCKER.md、PUBLISHING.md
 examples/ekte.yaml     带注释的配置文件
 action.yml             GitHub 复合 Action
 Dockerfile             Web 界面镜像
@@ -437,7 +437,7 @@ Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `finge
 
 ### 文档
 
-文档提供七种语言——英文、中文（`zh-CN`）、法语、西班牙语、葡萄牙语、意大利语和德语：
+文档提供八种语言——英文、中文（`zh-CN`）、法语、西班牙语、葡萄牙语、意大利语、德语和挪威语（书面挪威语，`nb`）：
 
 | 文件 | 读者 |
 |---|---|
