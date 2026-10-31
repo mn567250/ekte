@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in ekte behaves wrongly or crashes
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. For security issues do not use this form; see SECURITY.md.
+        Remove API keys and other secrets from anything you paste.
+  - type: input
+    id: version
+    attributes:
+      label: ekte version
+      description: Output of `ekte --version`
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: e.g. Ubuntu 24.04, macOS 15, Windows 11
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: e.g. 3.12.4
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Install method
+      options: [pip, pipx, uv, Docker, GitHub Action, From source, Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Interface
+      options: [CLI, Web UI, Both, Python API]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Report excerpt (keys redacted)
+      description: Relevant part of the report or log. Replace every API key and secret with a placeholder.
+      render: text
+    validations:
+      required: false

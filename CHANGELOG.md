@@ -26,6 +26,9 @@ ekte has three eras:
   pip-audit on pull requests, pushes to `main` and nightly, and fails on known
   vulnerabilities; a reviewed advisory can be accepted with a reason and an
   expiry in `.github/vulnerability-ignores.yml` (see CONTRIBUTING.md).
+- Issue forms (bug report, feature request, knowledge base update), a pull request
+  template with a contribution checklist, and a Contributor Covenant 2.1 code of
+  conduct whose reports go privately to the maintainer (#20).
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
   language dropdown of every page (code `nb`, `lang="nb"`, dates and numbers
   formatted for `nb-NO`): every UI string, finding title and summary,

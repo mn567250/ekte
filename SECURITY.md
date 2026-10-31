@@ -7,7 +7,8 @@ vulnerability.
 
 - Preferred: use GitHub's **private vulnerability reporting** on this repository
   (the **Security** tab → *Report a vulnerability*), which opens a draft advisory
-  visible only to maintainers.
+  visible only to maintainers. Direct link:
+  <https://github.com/mn567250/ekte/security/advisories/new>.
 - We aim to acknowledge a report within a few days and to provide a remediation
   plan or fix timeline once triaged.
 
