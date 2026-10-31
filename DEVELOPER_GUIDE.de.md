@@ -67,7 +67,7 @@ Trick zu erwischen. Behalten Sie diesen Maßstab bei jeder Änderung im Blick.
 
 ## Entwicklungsumgebung
 
-Erfordert Python 3.11+. Node.js ist optional: die Tests des Browser-JavaScripts
+Erfordert Python 3.11+. Linux, macOS und Windows werden in der CI getestet; Tests, die nur unter POSIX sinnvoll sind, werden unter Windows mit ausdrücklichem Grund übersprungen (`skipif(sys.platform == "win32", reason=...)`). Verwende `pathlib`, gib bei Text-E/A `encoding="utf-8"` an und schreibe `/tmp` nie fest. Node.js ist optional: die Tests des Browser-JavaScripts
 laufen unter `node` und werden ohne es übersprungen.
 
 ```bash

@@ -67,7 +67,7 @@ O ekte transforma «há aqui algo que não bate certo» num relatório reproduz�
 
 ## Instalação
 
-Requer Python 3.11+. Qualquer uma das opções abaixo disponibiliza o comando `ekte`.
+Requer Python 3.11+. Funciona em Linux, macOS e Windows (a imagem Docker é Linux); no Windows os modos só para o proprietário do diretório de dados não têm efeito, veja [Sistemas operativos suportados](docs/STABILITY.md#os). Qualquer uma das opções abaixo disponibiliza o comando `ekte`.
 
 ### Com pip
 

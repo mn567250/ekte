@@ -65,7 +65,7 @@ ekte turns "this feels off" into a reproducible report.
 
 ## Install
 
-Requires Python 3.11+. Every option below provides the `ekte` command.
+Requires Python 3.11+. Runs on Linux, macOS and Windows (the Docker image is Linux); on Windows the owner-only data directory modes have no effect, see [Supported operating systems](docs/STABILITY.md#os). Every option below provides the `ekte` command.
 
 ### With pip
 

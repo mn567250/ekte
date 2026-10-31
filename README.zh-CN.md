@@ -61,7 +61,7 @@ ekte 把「感觉哪里不对」变成一份可复现的报告。
 
 ## 安装
 
-需要 Python 3.11+。以下任一方式都会提供 `ekte` 命令。
+需要 Python 3.11+。支持 Linux、macOS 和 Windows（Docker 镜像为 Linux）；在 Windows 上，数据目录的仅所有者权限模式不起作用，详见[支持的操作系统](docs/STABILITY.md#os)。以下任一方式都会提供 `ekte` 命令。
 
 ### 使用 pip
 

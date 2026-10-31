@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,7 @@ from ekte import datadir, legacy
 def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """A fresh home directory with no data directory set explicitly."""
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Path.home() on Windows
     monkeypatch.delenv("EKTE_DATA_DIR", raising=False)
     monkeypatch.delenv("ZING_DATA_DIR", raising=False)
     monkeypatch.setattr(datadir, "_migration_checked", set())
@@ -99,9 +101,10 @@ def test_zing_data_dir_is_copied_once_and_kept(home, capsys):
     rows = sqlite3.connect(new / "history.db").execute("SELECT id FROM runs ORDER BY id").fetchall()
     assert rows == [(1,), (2,)]  # ... their content is in the copy
     assert (new / "secret.key").read_text() == "legacy-key\n"
-    assert (new / "secret.key").stat().st_mode & 0o777 == 0o600
+    if sys.platform != "win32":  # POSIX file modes have no effect on Windows
+        assert (new / "secret.key").stat().st_mode & 0o777 == 0o600
+        assert new.stat().st_mode & 0o777 == 0o700
     assert (new / "kb" / "mine.yaml").read_text() == "models: []\n"
-    assert new.stat().st_mode & 0o777 == 0o700
     # ~/.zing is left exactly as it was, and zing keeps working on it
     assert sorted(p.relative_to(old) for p in old.rglob("*")) == before
     zing.execute("INSERT INTO runs VALUES (3)")

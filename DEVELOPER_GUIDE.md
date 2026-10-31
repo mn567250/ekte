@@ -64,7 +64,7 @@ for any change.
 
 ## Development setup
 
-Requires Python 3.11+. Node.js is optional: the tests of the browser JavaScript
+Requires Python 3.11+. Linux, macOS and Windows are tested in CI; tests that only make sense on POSIX are skipped on Windows with an explicit reason (`skipif(sys.platform == "win32", reason=...)`). Use `pathlib`, pass `encoding="utf-8"` to text I/O and never hard-code `/tmp`. Node.js is optional: the tests of the browser JavaScript
 run under `node` and are skipped without it.
 
 ```bash

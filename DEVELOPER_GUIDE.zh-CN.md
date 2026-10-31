@@ -57,7 +57,7 @@ ekte 是黑盒审计辅助工具：正确性以及**不冤枉诚实的中转站*
 
 ## 开发环境
 
-需要 Python 3.11+。Node.js 可选：浏览器 JavaScript 的测试在 `node` 下运行，没有 Node.js 时跳过。
+需要 Python 3.11+。CI 在 Linux、macOS 和 Windows 上测试；仅在 POSIX 上有意义的测试在 Windows 上带明确原因跳过（`skipif(sys.platform == "win32", reason=...)`）。请使用 `pathlib`，文本 I/O 指定 `encoding="utf-8"`，不要写死 `/tmp`。Node.js 可选：浏览器 JavaScript 的测试在 `node` 下运行，没有 Node.js 时跳过。
 
 ```bash
 git clone https://github.com/mn567250/ekte

@@ -18,6 +18,7 @@ from __future__ import annotations
 import contextlib
 import os
 import sqlite3
+import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -29,6 +30,12 @@ _FILE_MODE = 0o600
 
 
 _migration_checked: set[Path] = set()
+_warned_unprotected: set[Path] = set()
+
+
+def _modes_enforced() -> bool:
+    """True where file modes restrict access to the owner (Linux, macOS)."""
+    return os.name == "posix"
 
 
 def data_dir() -> Path:
@@ -55,10 +62,25 @@ def ensure_data_dir() -> Path:
         path.mkdir(parents=True, mode=_DIR_MODE, exist_ok=True)
         with contextlib.suppress(OSError):
             path.chmod(_DIR_MODE)
+        _warn_unprotected(path)
     elif not legacy.getenv("EKTE_DATA_DIR"):
         with contextlib.suppress(OSError):
             path.chmod(_DIR_MODE)
     return path
+
+
+def _warn_unprotected(path: Path) -> None:
+    """On Windows the 0700/0600 modes have no effect: say so once, when the
+    directory is created (see docs/STABILITY.md#os)."""
+    if _modes_enforced() or path in _warned_unprotected:
+        return
+    _warned_unprotected.add(path)
+    print(
+        f"ekte: created {path}. On this system the directory is not restricted to "
+        "your account by ekte (file modes have no effect on Windows); it inherits "
+        "the permissions of its parent folder. Keep it inside your user profile.",
+        file=sys.stderr,
+    )
 
 
 def _restrict(path: Path) -> None:

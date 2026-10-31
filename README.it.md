@@ -67,7 +67,7 @@ ekte trasforma un «qui qualcosa non torna» in un rapporto riproducibile.
 
 ## Installazione
 
-Richiede Python 3.11+. Ognuna delle opzioni seguenti fornisce il comando `ekte`.
+Richiede Python 3.11+. Funziona su Linux, macOS e Windows (l'immagine Docker è Linux); su Windows le modalità riservate al proprietario della directory dei dati non hanno effetto, vedi [Sistemi operativi supportati](docs/STABILITY.md#os). Ognuna delle opzioni seguenti fornisce il comando `ekte`.
 
 ### Con pip
 
