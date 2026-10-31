@@ -89,6 +89,10 @@ class ConfigFileError(Exception):
     """A problem with the configuration file (reported as ConfigError)."""
 
 
+# Unknown keys only warn until this version, which rejects them.
+UNKNOWN_KEYS_REJECTED_IN = "1.0.0"
+
+
 def _line_map(text: str) -> dict[str, int]:
     """1-based line of every key path ("run.suite") in ``text``."""
     lines: dict[str, int] = {}
@@ -160,6 +164,17 @@ def validate(data: dict[str, Any], text: str, source: str) -> dict[str, Any]:
     """
     lines = _line_map(text)
 
+    def ignore_unknown(path: str, problem: str) -> None:
+        # Deprecated leniency: older ekte ignored unknown keys silently. They are
+        # ignored with a warning until 1.0.0, which rejects them (docs/STABILITY.md).
+        line = lines.get(path)
+        where = f"{source}, line {line}" if line else source
+        print(
+            f"ekte: warning: {where}: {path}: {problem}. The key is ignored; "
+            f"ekte {UNKNOWN_KEYS_REJECTED_IN} will reject it.",
+            file=sys.stderr,
+        )
+
     def fail(path: str, problem: str) -> ConfigFileError:
         line = lines.get(path)
         where = f"{source}, line {line}" if line else source
@@ -187,8 +202,11 @@ def validate(data: dict[str, Any], text: str, source: str) -> dict[str, Any]:
             continue
         spec = SCHEMA.get(name)
         if not isinstance(spec, dict):
-            raise fail(name, _unknown(name, [k for k, v in SCHEMA.items() if isinstance(v, dict)]
-                                      + ["version"]))
+            ignore_unknown(
+                name,
+                _unknown(name, [k for k, v in SCHEMA.items() if isinstance(v, dict)] + ["version"]),
+            )
+            continue
         if value is None:
             continue
         if not isinstance(value, dict):
@@ -209,7 +227,8 @@ def validate(data: dict[str, Any], text: str, source: str) -> dict[str, Any]:
                 path = new
             key_spec = spec.get(key)
             if key_spec is None:
-                raise fail(path, _unknown(str(key), list(spec)))
+                ignore_unknown(path, _unknown(str(key), list(spec)))
+                continue
             if item is None:
                 continue
             problem = _typecheck(key_spec, item)

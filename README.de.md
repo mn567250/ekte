@@ -183,7 +183,7 @@ API-Schlüssel lassen sich direkt, als `env:VAR` oder als `file:/pfad` angeben;
 Berichte enthalten immer nur einen Fingerabdruck des Schlüssels. Eine vollständige
 Konfigurationsdatei finden Sie in [`examples/ekte.yaml`](examples/ekte.yaml).
 
-Die Datei hat eine Formatversion (`version: 1`; eine Datei ohne Version gilt als Format 1). Unbekannte Schlüssel, falsche Typen und ungültige Werte werden mit Datei, Zeile und Schlüssel abgelehnt. `ekte config migrate` aktualisiert eine ältere Datei. Das Schema ist [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+Die Datei hat eine Formatversion (`version: 1`; eine Datei ohne Version gilt als Format 1). Falsche Typen und ungültige Werte werden mit Datei, Zeile und Schlüssel abgelehnt; unbekannte Schlüssel werden bis ekte 1.0.0 mit einer Warnung ignoriert, ab dann abgelehnt. `ekte config migrate` aktualisiert eine ältere Datei. Das Schema ist [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
 
 ### Als Werkzeug für ein LLM / einen Agenten
 

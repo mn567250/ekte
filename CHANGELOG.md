@@ -67,12 +67,13 @@ ekte has three eras:
   fails when a schema changes without a version bump. Reports without the field
   read as 1.0. See docs/SCHEMAS.md and the stability policy (#23).
 - **Versioned, validated configuration file (#24).** `ekte.yaml` has a format
-  `version` (a file without one is format 1; `ekte init` writes it). Unknown
-  keys, wrong types and invalid values are rejected with the file, line and key;
+  `version` (a file without one is format 1; `ekte init` writes it). Wrong
+  types and invalid values are rejected with the file, line and key;
   deprecated keys warn and name the replacement. The schema is published as
   `docs/schemas/config.schema.json`. `ekte config migrate` rewrites an older
-  file to the current format. Files that used keys ekte silently ignored before
-  (for example a typo) now fail with a clear error.
+  file to the current format. Unknown keys (for example a typo), which ekte
+  silently ignored before, now print a warning with the file, line and a
+  "did you mean" hint; they are still ignored.
 
 - **Automated dependency updates and vulnerability checks.** Dependabot proposes
   weekly, grouped updates for the Python dependencies (`uv.lock`) and GitHub

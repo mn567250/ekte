@@ -181,7 +181,7 @@ API-nøkler kan oppgis direkte, som `env:VAR` eller som `file:/sti`; rapporter
 inneholder bare et fingeravtrykk av nøkkelen. En fullstendig konfigurasjonsfil
 ligger i [`examples/ekte.yaml`](examples/ekte.yaml).
 
-Filen har en formatversjon (`version: 1`; en fil uten versjon er format 1). Ukjente nøkler, feil typer og ugyldige verdier avvises med fil, linje og nøkkel. `ekte config migrate` oppdaterer en eldre fil. Skjemaet er [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+Filen har en formatversjon (`version: 1`; en fil uten versjon er format 1). Feil typer og ugyldige verdier avvises med fil, linje og nøkkel; ukjente nøkler ignoreres med en advarsel frem til ekte 1.0.0, som avviser dem. `ekte config migrate` oppdaterer en eldre fil. Skjemaet er [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
 
 ### Som verktøy for en LLM / agent
 

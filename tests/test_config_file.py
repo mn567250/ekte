@@ -41,17 +41,19 @@ def test_template_and_example_are_valid(tmp_path):
     assert load_config_file(ROOT / "examples" / "ekte.yaml")["version"] == 1
 
 
-def test_unknown_key_names_file_line_and_key(tmp_path):
+def test_unknown_key_names_file_line_and_key(tmp_path, capsys):
     p = _write(tmp_path, VALID + "  suit: deep\n")
-    with pytest.raises(ConfigError) as e:
-        load_config_file(p)
-    msg = str(e.value)
+    cfg = load_config_file(p)
+    msg = capsys.readouterr().err
     assert str(p) in msg and "line 9" in msg and "run.suit" in msg and "'suite'" in msg
+    assert "ignored" in msg and "1.0.0 will reject it" in msg
+    assert "suit" not in cfg["run"]
 
 
-def test_unknown_section(tmp_path):
-    with pytest.raises(ConfigError, match=r"line 1: runs: unknown key"):
-        load_config_file(_write(tmp_path, "runs:\n  suite: deep\n"))
+def test_unknown_section(tmp_path, capsys):
+    cfg = load_config_file(_write(tmp_path, "runs:\n  suite: deep\n"))
+    assert "line 1: runs: unknown key" in capsys.readouterr().err
+    assert "runs" not in cfg
 
 
 def test_wrong_type(tmp_path):
@@ -132,3 +134,14 @@ def test_schema_choices_match_code():
     assert set(configfile.DIMENSIONS) == {d.value for d in Dimension}
     assert configfile.SUITES == config.SUITES and configfile.APIS == config.APIS
     assert configfile.FORMATS == config.FORMATS
+
+
+def test_unknown_key_leniency_ends_at_1_0():
+    # Unknown keys only warn until 1.0.0 (docs/STABILITY.md#surface-config).
+    # When the package reaches 1.0, this fails until validate() rejects them.
+    import tomllib
+
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+    major = int(version.split(".")[0])
+    if major >= int(configfile.UNKNOWN_KEYS_REJECTED_IN.split(".")[0]):
+        pytest.fail("ekte reached 1.0: make unknown config keys an error (configfile.validate)")

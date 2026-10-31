@@ -181,7 +181,7 @@ As chaves de API podem ser dadas em claro, como `env:VAR` ou como
 `file:/caminho`; os relatórios contêm apenas uma impressão da chave. Um ficheiro
 de configuração completo está em [`examples/ekte.yaml`](examples/ekte.yaml).
 
-O arquivo tem uma versão de formato (`version: 1`; um arquivo sem versão é o formato 1). Chaves desconhecidas, tipos errados e valores inválidos são rejeitados indicando arquivo, linha e chave. `ekte config migrate` atualiza um arquivo antigo. O esquema é [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+O arquivo tem uma versão de formato (`version: 1`; um arquivo sem versão é o formato 1). Tipos errados e valores inválidos são rejeitados indicando arquivo, linha e chave; chaves desconhecidas são ignoradas com um aviso até o ekte 1.0.0, que as rejeita. `ekte config migrate` atualiza um arquivo antigo. O esquema é [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
 
 ### Como ferramenta para um LLM / agente
 

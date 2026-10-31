@@ -181,10 +181,10 @@ starter; `ekte check -c ekte.yaml` reads it).
   current one is **1**. A file without `version` is format 1. A file with a
   newer version than the installed ekte understands is refused with a message
   to upgrade ekte.
-- **Validation.** Unknown keys, wrong types and invalid values are rejected
-  (exit code 2) with a message naming the file, the line, the key and what is
-  expected. A key added in a newer release therefore does not load in an older
-  one.
+- **Validation.** Wrong types and invalid values are rejected (exit code 2)
+  with a message naming the file, the line, the key and what is expected.
+  Unknown keys are ignored with a warning until 1.0.0, which rejects them; from
+  then on a key added in a newer release does not load in an older one.
 - **Schema.** Every key, with its type, allowed values and default, is in
   [`schemas/config.schema.json`](schemas/config.schema.json) (JSON Schema,
   generated from `ekte/configfile.py`). Adding an optional key adds it to the

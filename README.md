@@ -178,7 +178,7 @@ API keys can be given literally, as `env:VAR` or as `file:/path`; reports only
 ever contain a fingerprint of the key. A full config file is in
 [`examples/ekte.yaml`](examples/ekte.yaml).
 
-The file has a format version (`version: 1`; a file without one is format 1). Unknown keys, wrong types and invalid values are rejected with the file, line and key. `ekte config migrate` updates an older file. The schema is [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+The file has a format version (`version: 1`; a file without one is format 1). Wrong types and invalid values are rejected with the file, line and key; unknown keys are ignored with a warning until ekte 1.0.0, which rejects them. `ekte config migrate` updates an older file. The schema is [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
 
 ### As a tool for an LLM / agent
 

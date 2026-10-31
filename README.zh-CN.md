@@ -170,7 +170,7 @@ ekte check -c ekte.yaml
 API 密钥可以直接填写，也可以写成 `env:VAR` 或 `file:/path`；报告里只会出现密钥的指纹。
 完整的配置文件示例见 [`examples/ekte.yaml`](examples/ekte.yaml)。
 
-配置文件带有格式版本（`version: 1`；没有版本的文件按格式 1 处理）。未知的键、错误的类型和无效的值会被拒绝，并指明文件、行号和键。`ekte config migrate` 可更新旧文件。模式见 [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json)。
+配置文件带有格式版本（`version: 1`；没有版本的文件按格式 1 处理）。错误的类型和无效的值会被拒绝，并指明文件、行号和键；未知的键会给出警告并被忽略，直到 ekte 1.0.0 起将其拒绝。`ekte config migrate` 可更新旧文件。模式见 [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json)。
 
 ### 作为给大模型 / Agent 使用的工具
 
