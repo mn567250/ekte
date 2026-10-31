@@ -29,6 +29,13 @@ ekte has three eras:
 - Issue forms (bug report, feature request, knowledge base update), a pull request
   template with a contribution checklist, and a Contributor Covenant 2.1 code of
   conduct whose reports go privately to the maintainer (#20).
+- **Translation consistency check.** `scripts/check_translations.py` (run in CI
+  by `.github/workflows/docs.yml` and by `tests/test_docs_translations.py`)
+  fails when a translation of the README, developer guide or methodology drifts
+  from the English source in headings, code blocks, links and anchors, CLI
+  flags / endpoints / field names, placeholders or version numbers. Adding a
+  language is one entry in `LANGUAGES`; a translation can be marked pending with
+  `<!-- translation-pending: reason -->`. `CONTRIBUTING.md` documents both.
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
   language dropdown of every page (code `nb`, `lang="nb"`, dates and numbers
   formatted for `nb-NO`): every UI string, finding title and summary,
@@ -41,6 +48,12 @@ ekte has three eras:
   `docs/METHODOLOGY.nb.md`, linked from the language switcher of every
   README, developer guide and methodology; the scoring tables of the
   methodology use the wording the UI shows under **Scoreskala**.
+
+### Fixed
+
+- The README (report protocol fields `target.api`, `target.api_auto`,
+  `stream_mode`) and methodology (`verdict.drivers`, `verdict.checked`) were
+  missing a paragraph in the de, es, fr, it, pt and zh-CN translations.
 
 ## [0.30.0] — ekte: renamed from zing, own logo, only the v2 web UI
 

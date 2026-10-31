@@ -113,6 +113,14 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipula
 | `low` | Weitgehend vertrauenswürdig | Jeder andere Befund MITTEL |
 | `clean` | Konsistent (wahrscheinlich echt) | Nichts davon |
 
+Das Urteil hält die Dimensionen fest, deren Befunde das Risiko bestimmen
+(`verdict.drivers`), und die Dimensionen, die ein verwertbares Ergebnis lieferten
+(`verdict.checked`). Die Überschrift folgt ihnen: Sie spricht vom angegebenen
+Modell nur, wenn die Modellidentität unter den Treibern ist, und nennt sonst die
+Treiber („Starke Hinweise, dass das Relay nicht liefert, was es verspricht:
+Kontextfenster.“). Ein sauberes oder niedriges Urteil ohne verwertbares
+Ergebnis zur Modellidentität sagt, dass die Modellidentität nicht geprüft wurde.
+
 ### Konfidenz des Urteils
 
 - **Niedrig** — das angegebene Modell steht nicht in der Wissensbasis, passt

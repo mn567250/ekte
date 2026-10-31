@@ -111,6 +111,14 @@ continuano ad alzare il rischio.
 | `low` | Per lo più affidabile | Qualsiasi altra rilevazione MEDIA |
 | `clean` | Coerente (probabilmente autentico) | Nessuno dei casi precedenti |
 
+Il verdetto registra le dimensioni i cui riscontri determinano il rischio
+(`verdict.drivers`) e le dimensioni che hanno prodotto un risultato utilizzabile
+(`verdict.checked`). Il titolo le segue: parla del modello dichiarato solo quando
+l'identità del modello è tra i fattori determinanti, altrimenti nomina i fattori
+(«Forte evidenza che il relay non fornisce ciò che dichiara: Finestra di
+contesto.»). Un verdetto pulito o basso senza un risultato utilizzabile
+sull'identità del modello dice che l'identità del modello non è stata verificata.
+
 ### Affidabilità del verdetto
 
 - **Bassa** — il modello dichiarato non è nella base di conoscenza, corrisponde

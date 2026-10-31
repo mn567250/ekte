@@ -110,6 +110,14 @@ clé API renvoyée font toujours monter le risque.
 | `low` | Globalement fiable | Tout autre constat MOYEN |
 | `clean` | Cohérent (probablement authentique) | Aucun des cas ci-dessus |
 
+Le verdict consigne les dimensions dont les constats fixent le risque
+(`verdict.drivers`) et celles qui ont produit un résultat exploitable
+(`verdict.checked`). Le titre les suit : il parle du modèle annoncé seulement si
+l'identité du modèle fait partie des facteurs, et nomme sinon les facteurs
+(« Forte preuve que le relay ne fournit pas ce qu'il annonce : Fenêtre de
+contexte. »). Un verdict propre ou faible sans résultat exploitable sur l'identité
+du modèle indique que l'identité du modèle n'a pas été vérifiée.
+
 ### Confiance du verdict
 
 - **Faible** — le modèle annoncé est absent de la base de connaissances, ne

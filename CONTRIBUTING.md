@@ -41,5 +41,38 @@ pytest && ruff check ekte tests && mypy ekte
   `expires` (`YYYY-MM-DD`). The check fails again after the expiry date, and
   entries missing a field are rejected. Prefer upgrading the lockfile.
 
+## Documentation in every language
+
+These documents exist in English and in every language listed in
+`LANGUAGES` in [`scripts/check_translations.py`](scripts/check_translations.py)
+(currently de, es, fr, it, nb, pt, zh-CN):
+
+- `README.md` (`README.<lang>.md`)
+- `DEVELOPER_GUIDE.md` (`DEVELOPER_GUIDE.<lang>.md`)
+- `docs/METHODOLOGY.md` (`docs/METHODOLOGY.<lang>.md`)
+
+When you change one of them, update every translation in the same pull
+request. CI runs `python scripts/check_translations.py` (also covered by
+`pytest tests/test_docs_translations.py`). It does not judge wording; it fails
+when a translation differs from the English source in heading levels and count,
+code blocks and commands, link targets, CLI flags / endpoints / field names in
+inline code, `{placeholders}` or version numbers, or when a relative link or an
+anchor does not resolve.
+
+If you cannot write a translation, update the English text, copy the changed
+structure (headings, code blocks, links) into the translation, and mark the
+file as pending by adding this line anywhere in it:
+
+```markdown
+<!-- translation-pending: short reason, e.g. "new section needs a translator" -->
+```
+
+A pending translation is skipped by the structure comparison, but its links
+must still resolve. Say in the pull request which translations are pending, and
+remove the marker once the text is translated.
+
+To add a language, create the three translated files and add its code to
+`LANGUAGES`; the check then covers it.
+
 By contributing you agree your contributions are licensed under the project's
 [Apache-2.0](LICENSE) license.

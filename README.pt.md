@@ -361,6 +361,11 @@ exatos). As únicas exceções são as impressões da base de conhecimento cujo 
 *é* a medida — por exemplo, as sondas de fluência em chinês, de tokenizer e de
 autoidentificação dos modelos chineses. Cada relatório regista os idiomas de
 sonda efetivamente usados (`prompt_languages`, p. ex. `["en", "zh"]`).
+Cada relatório regista também como o endpoint foi interrogado: o protocolo
+(`target.api`: `openai`, `anthropic` ou `responses`), se `--api auto` o detetou
+(`target.api_auto`) e o modo de pedido da sonda de desempenho (`stream_mode`:
+`stream`, `non_stream` ou `both` para a suíte completa). A página de histórico da
+interface web pode filtrar pelos três.
 `started_at` regista quando a auditoria começou (UTC); o `start_ms` de cada
 registo de pedido conta a partir desse momento.
 
