@@ -3,10 +3,10 @@
 > [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · **🇵🇹 Português** · [🇮🇹 Italiano](METHODOLOGY.it.md) · [🇩🇪 Deutsch](METHODOLOGY.de.md) · [🇳🇴 Norsk](METHODOLOGY.nb.md)
 
 Este documento explica como o **ekte** chega ao seu veredito: que sondas de
-caixa-preta cada detector envia, como os seus resultados se tornam pontos, como
+caixa-preta cada detetor envia, como os seus resultados se tornam pontos, como
 os pontos se tornam pontuações de dimensão e uma pontuação global, e como é
 decidido o veredito de risco. Descreve a implementação atual; cada tabela de
-pontuação abaixo é a escala publicada do detector (`SCALE` em
+pontuação abaixo é a escala publicada do detetor (`SCALE` em
 `ekte/detectors/*.py`), com a mesma redação que a interface web mostra em
 **Escala de pontuação**.
 
@@ -29,16 +29,16 @@ gravidade alta, e a confirmação mais forte é sempre o **modo de comparação*
 
 ## Como o ekte pontua
 
-### Pontuação do detector
+### Pontuação do detetor
 
-Cada detector publica a sua **escala de pontuação** (`DetectorResult.scoring`,
+Cada detetor publica a sua **escala de pontuação** (`DetectorResult.scoring`,
 construída com `ekte/detectors/scale.py`): cada resultado possível de cada uma
 das suas verificações, com estado, gravidade e efeito na pontuação. Cada
 constatação regista o `outcome` atingido, pelo que relatório e comportamento
 não podem divergir. Uma escala usa um de dois métodos:
 
 - **Média das verificações** (`Scale`, método `mean_of_checks`): cada
-  verificação dá pontos; a pontuação do detector é a média das verificações
+  verificação dá pontos; a pontuação do detetor é a média das verificações
   contabilizadas. Um resultado marcado **Não contabilizado** (tipicamente uma
   verificação inconclusiva) não sobe nem desce a pontuação.
 - **Deduções** (`DeductionScale`, método `deductions`): a pontuação começa em
@@ -53,16 +53,16 @@ sujeitos sob a sua verificação.
 ### Pontuação e estado de uma dimensão
 
 O ekte pontua dez dimensões. A pontuação de uma dimensão é a **média com peso
-igual das pontuações dos seus detectores**: um detector com muitas verificações
-não pesa mais do que um com poucas, e um detector sem pontuação numérica fica de
-fora. O seu estado é o pior estado concluído pelos seus detectores, exceto que
+igual das pontuações dos seus detectores**: um detetor com muitas verificações
+não pesa mais do que um com poucas, e um detetor sem pontuação numérica fica de
+fora. O seu estado é o pior estado concluído pelos seus detetores, exceto que
 uma constatação de gravidade ALTA/CRÍTICA impõe **Falha** e uma constatação de
 gravidade MÉDIA eleva **Aprovado** a **Aviso**, seja qual for a pontuação. Cada
 relatório regista este cálculo por dimensão (`DimensionScore.breakdown`: a
-pontuação de cada detector, se foi contabilizada, e qualquer alteração de estado
+pontuação de cada detetor, se foi contabilizada, e qualquer alteração de estado
 com as constatações que a causaram) e mostra-o em **Dimension details**
 (Markdown/HTML/PDF) e nas linhas expansíveis de **Verificações por dimensão**
-da interface web. Um detector que falha internamente aparece com o estado
+da interface web. Um detetor que falha internamente aparece com o estado
 **Erro** e nunca interrompe a auditoria.
 
 ### Pontuação global, nota e pesos
@@ -97,7 +97,7 @@ ou limitado não pôde ser avaliado, o que não prova que responda outro modelo.
 Também ficam de fora os **avisos de transporte** (`ADVISORY_CHECKS` em
 `ekte/scoring.py`: `security.tls`, `reliability.success_rate`, `reliability.latency`): HTTP sem criptografia, falhas ou
 lentidão sob carga dizem como se chega ao relay, não que modelo ele serve.
-Continuam a baixar a pontuação e o estado da sua dimensão, aparecem depois das
+Continuam a descarregar a pontuação e o estado da sua dimensão, aparecem depois das
 constatações de substituição entre as principais e o resumo indica-os como
 avisos (a partir da gravidade Média). A adulteração de respostas (integridade) e uma chave de API devolvida
 continuam a elevar o risco.
@@ -129,9 +129,9 @@ modelo diz que a identidade do modelo não foi verificada.
   um resultado utilizável, ou a confiança era média e o juiz LLM devolveu um
   veredito utilizável.
 
-## Suites, detectores e modos
+## Suites, detetores e modos
 
-| Detector | Id | Dimensão | A partir da suite |
+| Detetor | Id | Dimensão | A partir da suite |
 |---|---|---|---|
 | Conectividade e conclusão básica | `connectivity` | Conectividade | `smoke` |
 | Conformidade de compatibilidade com a OpenAI | `protocol` | Conformidade do protocolo | `standard` |
@@ -153,13 +153,13 @@ modelo diz que a identidade do modelo não foi verificada.
 | Sonda de desempenho | `performance` | Desempenho | `deep` (em `standard` só com uma referência, 5 pedidos) |
 
 - **smoke** executa conectividade e segurança; **standard** acrescenta os
-  detectores de protocolo, identidade, capacidades, streaming, faturação e
+  detetores de protocolo, identidade, capacidades, streaming, faturação e
   fiabilidade; **deep** acrescenta as sondas de contexto longo, determinismo,
   visão, prompt injetado, integridade, cache de prompt e desempenho (e o juiz
-  com `--judge`); **full** executa os mesmos detectores que deep e mede o
-  desempenho com e sem streaming; **custom** executa todos os detectores das
+  com `--judge`); **full** executa os mesmos detetores que deep e mede o
+  desempenho com e sem streaming; **custom** executa todos os detetores das
   dimensões selecionadas, com a profundidade de deep.
-- **Código puro (por omissão):** todos os detectores exceto `quality_judge`
+- **Código puro (por omissão):** todos os detetores exceto `quality_judge`
   decidem com código determinístico — verificações de texto e de expressões
   regulares, aritmética, estatística de tempos. Não é necessário um segundo
   modelo.
@@ -218,7 +218,7 @@ modelo diz que a identidade do modelo não foi verificada.
 ## `connectivity` — Conectividade
 
 **Deteta.** Nenhum truque diretamente: é a porta de que dependem todos os
-outros detectores. Separa uma chave morta ou mal configurada de um relay que
+outros detetores. Separa uma chave morta ou mal configurada de um relay que
 merece ser auditado.
 
 **Como funciona.** `GET /v1/models` (regista se o modelo declarado aparece) e
@@ -235,7 +235,7 @@ canário exato; regista a latência e o campo `model` devolvido.
 |  | Uma completion de chat devolveu conteúdo, mas não repetiu o canário. | Aprovado | 85 pts |
 |  | A completion de chat falhou ou não devolveu conteúdo. | Falha · Alta | 0 pts |
 
-O estado do detector é o pior das suas verificações: um `/v1/models`
+O estado do detetor é o pior das suas verificações: um `/v1/models`
 desativado dá um Aviso mesmo que o chat funcione.
 
 **Ressalvas.** A ausência de `/v1/models` é benigna; muitos relays
@@ -278,8 +278,8 @@ o teste de parada não é enviado e a verificação é registrada como não apli
 |  | Rejeitada com um 4xx, mas o corpo não segue o estilo OpenAI. | Aviso · Baixa | 80 pts |
 |  | Sem resposta HTTP; não foi possível confirmar o tratamento de erros do cliente. | Aviso · Baixa | 55 pts |
 |  | Outro estado HTTP; não foi possível confirmar o tratamento de erros do cliente. | Aviso · Baixa | 55 pts |
-|  | A solicitação inválida causou um erro de servidor (5xx). | Falha · Média | 35 pts |
-|  | A solicitação inválida foi aceita (2xx). | Falha · Média | 30 pts |
+|  | O pedido inválido causou um erro de servidor (5xx). | Falha · Média | 35 pts |
+|  | O pedido inválido foi aceite (2xx). | Falha · Média | 30 pts |
 
 ### `protocol_response` — Disponibilidade dos atributos de resposta
 
@@ -490,11 +490,11 @@ quando alteram o comportamento.
    aliases são tolerados; uma palavra de gama inferior (`mini`, `flash`,
    `lite`, `8b`, …) ou uma família diferente é assinalada.
 
-Sem perfil na base de conhecimento, o detector é inconclusivo.
+Sem perfil na base de conhecimento, o detetor é inconclusivo.
 Também é inconclusivo e sem pontuação (`model_identity.no_evidence`)
 quando nem a autoidentificação nem nenhuma impressão digital deram uma
 resposta utilizável e o campo `model` devolvido não diverge: um relay que
-rejeita ou esvazia cada requisição não fornece evidência de identidade, e o
+rejeita ou esvazia cada pedido não fornece evidência de identidade, e o
 eco do nome solicitado sozinho não prova nada. Evidência parcial pontua
 normalmente.
 
@@ -533,8 +533,8 @@ MÉDIA, tal como uma referência que falhou ou deixou sondas sem resposta.
 |---|---|---|---|
 | `quality_judge.verdict` (Veredito do juiz LLM) | O juiz considerou as respostas compatíveis com o modelo declarado. | Aprovado | 95 pts |
 |  | O juiz considerou as respostas diferentes do modelo declarado (confiança baixa, média ou não indicada). | Aviso · Média | 50 pts |
-|  | O juiz tem certeza de que as respostas diferem do modelo declarado (sem referência utilizável). | Aviso · Média | 25 pts |
-|  | O juiz tem certeza e uma referência confiável corroborou a diferença. | Falha · Alta | 25 pts |
+|  | O juiz tem a certeza de que as respostas diferem do modelo declarado (sem referência utilizável). | Aviso · Média | 25 pts |
+|  | O juiz tem a certeza e uma referência de confiança corroborou a diferença. | Falha · Alta | 25 pts |
 |  | O juiz não conseguiu chegar a um veredito. | Inconclusivo · Baixa | Não contabilizado |
 |  | Não há respostas do alvo para julgar. | Inconclusivo · Baixa | Não contabilizado |
 
@@ -598,7 +598,7 @@ mas não contabilizada: um modelo nunca perde pontos pelo que ninguém declara.
 |  | A resposta o seguiu embora o modelo declarado não tenha esquemas estritos. | Info | Não contabilizado |
 |  | O esquema estrito é declarado, mas a resposta não o seguiu. | Aviso · Baixa | 40 pts |
 |  | Nenhuma resposta utilizável para avaliar. | Inconclusivo · Baixa | Não contabilizado |
-| `capability.max_output` | A saída continuou até o limite de tokens pedido. | Aprovado | 100 pts |
+| `capability.max_output` | A saída continuou até ao limite de tokens pedido. | Aprovado | 100 pts |
 |  | A saída terminou antes do limite com um comprimento plausível. | Aprovado | 90 pts |
 |  | A saída terminou abaixo de um quarto do comprimento pedido. | Aviso · Baixa | 70 pts |
 |  | A saída terminou abaixo de um quarto do pedido apesar de um máximo declarado grande. | Aviso · Baixa | 60 pts |
@@ -658,7 +658,7 @@ Se o modelo transmitir o seu raciocínio (deltas de raciocínio, blocos de think
 | `streaming.uniform_gaps` | Sinal de buffer: o primeiro desconta 40 pontos, um segundo 20, os seguintes nada. | Aviso · Média | até −40 pts |
 | `streaming.no_usage` | Nenhum fragmento de uso no stream: desconta 15 pontos se nada estiver em buffer. | Aviso · Baixa | até −15 pts |
 | `streaming.no_content` | O stream teve sucesso, mas não entregou conteúdo para avaliar; sem pontuação. | Inconclusivo · Baixa | Não contabilizado |
-| `streaming.failed` | A requisição em streaming falhou. | Falha · Alta | teto 0 |
+| `streaming.failed` | O pedido em streaming falhou. | Falha · Alta | teto 0 |
 
 Ou seja: autêntico 100 · utilização em falta 85 · um sinal de buffer 60 · dois
 ou mais 40 · falha 0 · sem conteúdo: sem pontuação.
@@ -704,7 +704,7 @@ comprador).
 | `billing.partial-usage` | O uso informa um total sem a divisão prompt/completion. | Aviso · Média | teto 80 |
 | `billing.usage-consistent` | O uso declarado está dentro da tolerância da estimativa independente. | Aprovado | Sem dedução |
 
-Um pedido de sonda falhado deixa o detector sem pontuação.
+Um pedido de sonda falhado deixa o detetor sem pontuação.
 
 **Ressalvas.** Os modelos de chat e os tokens especiais acrescentam um pequeno
 desvio fixo; não se espera uma correspondência exata. Se o modelo servido
@@ -725,17 +725,17 @@ arrasta com um paralelismo moderado.
 (`--concurrency`, 3 por omissão). A taxa de sucesso é calculada sobre os pedidos
 realmente tentados: um HTTP 429 é uma limitação honesta e é contabilizado à
 parte. A pontuação desconta a parte falhada; uma latência p95 acima de 30 s
-mantém 85 % do resto. Uma requisição falhada (ou seja, um 5xx passageiro das 8
+mantém 85 % do resto. Um pedido falhado (ou seja, um 5xx passageiro das 8
 por omissão), ou no máximo 10% de uma rajada maior, é um Aviso desde que pelo
-menos 80% tenham sucesso; mais é Falha. O estado do detector é o pior das suas
+menos 80% tenham sucesso; mais é Falha. O estado do detetor é o pior das suas
 constatações. São avisos de transporte: nunca elevam o veredito de risco.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
-| `reliability.success_rate` | Todas as requisições tentadas na rajada tiveram sucesso. | Aprovado | Sem dedução |
-|  | Falhou uma requisição, ou no máximo 10% das tentadas (80%+ com sucesso); desconta a parcela falha. | Aviso · Baixa | até −20 pts |
-|  | Falharam mais requisições; desconta a parcela falha. | Falha · Média | até −100 pts |
-|  | Todas as requisições foram limitadas (HTTP 429): não pontua. | Inconclusivo · Baixa | Sem dedução |
+| `reliability.success_rate` | Todos os pedidos tentados na rajada tiveram sucesso. | Aprovado | Sem dedução |
+|  | Falhou um pedido, ou no máximo 10% dos tentados (80%+ com sucesso); desconta a parcela falha. | Aviso · Baixa | até −20 pts |
+|  | Falharam mais pedidos; desconta a parcela falha. | Falha · Média | até −100 pts |
+|  | Todos os pedidos foram limitados (HTTP 429): não pontua. | Inconclusivo · Baixa | Sem dedução |
 | `reliability.latency` | Latência p95 acima de 30 s sob carga; desconta 15% da pontuação restante. | Aviso · Baixa | até −15 pts |
 | `reliability.rate_limited` | Parte da rajada foi limitada: limitação legítima, não contabilizada. | Info | Sem dedução |
 | `reliability.skipped` | A sonda de confiabilidade estava desativada. | Info | Sem dedução |
@@ -767,7 +767,7 @@ upstream ou proxy (`server`, `via`, `x-powered-by`, `x-upstream-*`,
 `x-litellm-*`, …; informativo). Também lembra o limite: o registo de prompts e
 as chaves upstream partilhadas não podem ser provados de fora. HTTP sem
 criptografia para esta máquina ou uma rede privada (`localhost`, `127.x`,
-`192.168.x`, `*.local`, … — um modelo auto-hospedado) é só um Aviso sem teto,
+`192.168.x`, `*.local`, … — um modelo auto-alojado) é só um Aviso sem teto,
 pois a chave não atravessa a internet; para qualquer outro host continua Falha
 · Alta. Em ambos os casos `security.tls` é um aviso de transporte e nunca eleva
 o veredito de risco.
@@ -782,7 +782,7 @@ o veredito de risco.
 | `security.headers` | Nenhum cabeçalho de resposta revela o upstream (apenas informativo). | Aprovado | Sem dedução |
 |  | Cabeçalhos de resposta revelam o upstream ou o proxy (apenas informativo). | Info · Baixa | Sem dedução |
 |  | Não há cabeçalhos de resposta para inspecionar. | Inconclusivo | Sem dedução |
-| `security.note` | O registro de prompts e as chaves upstream compartilhadas não são comprováveis de fora. | Info | Sem dedução |
+| `security.note` | O registo de prompts e as chaves upstream partilhadas não são comprováveis de fora. | Info | Sem dedução |
 
 ### `injected_prompt` — Deteção de prompt de sistema injetado
 
@@ -820,7 +820,7 @@ Uma resposta cortada no limite de saída é inconclusiva, não uma substituiçã
 |---|---|---|---|
 | `integrity.verdict` (Integridade das respostas) | Os canários de resposta conhecida voltaram intactos. | Aprovado | 100 pts |
 |  | Um valor canário foi substituído (ainda não confirmado por uma referência). | Falha · Média | 45 pts |
-|  | Um valor canário foi substituído enquanto a referência confiável o manteve intacto. | Falha · Crítica | 10 pts |
+|  | Um valor canário foi substituído enquanto a referência de confiança o manteve intacto. | Falha · Crítica | 10 pts |
 |  | Nenhum canário foi repetido literalmente, então a adulteração não pôde ser avaliada. | Inconclusivo | Não contabilizado |
 
 ### `prompt_cache` — Cache de prefixo de prompt (tempos)
@@ -861,7 +861,7 @@ de aquecimento (reportado como arranque a frio), `--performance-requests`
 pedidos uniformes (100 por omissão) de `--performance-max-tokens` tokens de
 saída (128 por omissão) e, em deep/full, uma rajada a `--concurrency`. Cada
 pedido é não armazenável em cache: um identificador de pedido aleatório abre o
-prompt, os temas rodam e não são enviados parâmetros de cache nem de raciocínio;
+prompt, os temas alternam e não são enviados parâmetros de cache nem de raciocínio;
 uma resposta que mesmo assim venha de uma cache é assinalada e excluída das
 estatísticas. A sonda usa streaming por omissão (`--performance-non-streaming`
 para relays que não suportam streaming); full mede os dois modos, intercalados.
@@ -876,43 +876,43 @@ seu `start_ms` conta a partir do `started_at` do relatório (UTC), por isso a
 hora de cada chamada pode ser reconstruída.
 
 A constância usa rácios de cauda (p90 ÷ p50 para latência e TTFT, p50 ÷ p10 para
-a vazão), que um pedido atípico não desloca como desloca um desvio-padrão;
+o débito), que um pedido atípico não desloca como desloca um desvio-padrão;
 precisam de pelo menos 10 amostras limpas. A referência é a referência de
 confiança ou, na sua falta, o intervalo `performance.decode_tps` do perfil na
 base de conhecimento.
 
 | Verificação | Resultado | Estado | Efeito |
 |---|---|---|---|
-| `performance.summary` | Latência, TTFT e vazão foram medidos. | Info | Não contabilizado |
-|  | Nenhuma das requisições de sonda teve sucesso. | Inconclusivo | Não contabilizado |
+| `performance.summary` | Latência, TTFT e débito foram medidos. | Info | Não contabilizado |
+|  | Nenhum dos pedidos de sonda teve sucesso. | Inconclusivo | Não contabilizado |
 | `performance.latency_consistency` | A latência é constante (razão de cauda no máximo 1,3). | Aprovado | 100 pts |
 |  | A latência é estável (razão de cauda no máximo 1,75). | Aprovado | 85 pts |
 |  | A latência varia visivelmente (razão de cauda no máximo 2,5). | Aviso · Baixa | 65 pts |
 |  | A latência é errática (razão de cauda acima de 2,5). | Falha · Baixa | 40 pts |
 |  | Poucas amostras para avaliar a constância da latência. | Info | Não contabilizado |
-| `performance.ttft_consistency` | O tempo até o primeiro token é constante (razão de cauda no máximo 1,3). | Aprovado | 100 pts |
-|  | O tempo até o primeiro token é estável (razão de cauda no máximo 1,75). | Aprovado | 85 pts |
-|  | O tempo até o primeiro token varia visivelmente (razão de cauda no máximo 2,5). | Aviso · Baixa | 65 pts |
-|  | O tempo até o primeiro token é errático (razão de cauda acima de 2,5). | Falha · Baixa | 40 pts |
-|  | Poucas amostras para avaliar a constância do tempo até o primeiro token. | Info | Não contabilizado |
-| `performance.throughput_consistency` | A vazão é constante (razão de cauda no máximo 1,3). | Aprovado | 100 pts |
-|  | A vazão é estável (razão de cauda no máximo 1,75). | Aprovado | 85 pts |
-|  | A vazão varia visivelmente (razão de cauda no máximo 2,5). | Aviso · Baixa | 65 pts |
-|  | A vazão é errática (razão de cauda acima de 2,5). | Falha · Baixa | 40 pts |
-|  | Poucas amostras para avaliar a constância da vazão. | Info | Não contabilizado |
-| `performance.errors` | No máximo 2% das requisições da sonda falharam. | Aprovado | 100 pts |
-|  | Até 10% das requisições da sonda falharam ou esgotaram o tempo. | Aviso · Baixa | 80 pts |
-|  | Muitas requisições da sonda falharam ou esgotaram o tempo. | Falha · Baixa | 50 pts |
+| `performance.ttft_consistency` | O tempo até ao primeiro token é constante (razão de cauda no máximo 1,3). | Aprovado | 100 pts |
+|  | O tempo até ao primeiro token é estável (razão de cauda no máximo 1,75). | Aprovado | 85 pts |
+|  | O tempo até ao primeiro token varia visivelmente (razão de cauda no máximo 2,5). | Aviso · Baixa | 65 pts |
+|  | O tempo até ao primeiro token é errático (razão de cauda acima de 2,5). | Falha · Baixa | 40 pts |
+|  | Poucas amostras para avaliar a constância do tempo até ao primeiro token. | Info | Não contabilizado |
+| `performance.throughput_consistency` | O débito é constante (razão de cauda no máximo 1,3). | Aprovado | 100 pts |
+|  | O débito é estável (razão de cauda no máximo 1,75). | Aprovado | 85 pts |
+|  | O débito varia visivelmente (razão de cauda no máximo 2,5). | Aviso · Baixa | 65 pts |
+|  | O débito é errático (razão de cauda acima de 2,5). | Falha · Baixa | 40 pts |
+|  | Poucas amostras para avaliar a constância do débito. | Info | Não contabilizado |
+| `performance.errors` | No máximo 2% dos pedidos da sonda falharam. | Aprovado | 100 pts |
+|  | Até 10% dos pedidos da sonda falharam ou esgotaram o tempo. | Aviso · Baixa | 80 pts |
+|  | Muitos pedidos da sonda falharam ou esgotaram o tempo. | Falha · Baixa | 50 pts |
 | `performance.load_stability` | A latência se mantém sob carga concorrente (no máximo 1,5x). | Aprovado | 100 pts |
 |  | A latência aumenta sob carga concorrente (até 3x). | Aviso · Baixa | 80 pts |
 |  | A latência piora muito sob carga concorrente (acima de 3x). | Falha · Baixa | 55 pts |
 | `performance.cache_hit` | Prompts de sonda únicos voltaram de um cache (excluídos das estatísticas). | Aviso · Baixa | 60 pts |
 |  | A referência serviu prompts únicos a partir de um cache (não pontuado). | Info | Não contabilizado |
-| `performance.reference` | A vazão está de acordo com a referência deste modelo. | Aprovado | 100 pts |
+| `performance.reference` | O débito está de acordo com a referência deste modelo. | Aprovado | 100 pts |
 |  | Mais lento que a referência (ex.: local ou hardware menor); não é uma falha. | Info | Não contabilizado |
 |  | Muito mais rápido que a referência (compatível com um modelo menor). | Aviso · Baixa | 60 pts |
 | `performance.reasoning` | O modelo gasta tokens de raciocínio ocultos; o TTFT inclui o raciocínio. | Info | Não contabilizado |
-| `performance.relay_overhead` | Latência comparada com a referência confiável (apenas informativo). | Info | Não contabilizado |
+| `performance.relay_overhead` | Latência comparada com a referência de confiança (apenas informativo). | Info | Não contabilizado |
 | `performance.skipped` | A sonda de desempenho estava desativada. | Info | Não contabilizado |
 
 **Ressalvas.** A latência depende do caminho de rede e da carga do fornecedor
@@ -924,7 +924,7 @@ risco.
 
 ## Superfície de embeddings
 
-A **superfície** de uma auditoria (`chat` por predefinição, ou `embedding`)
+A **superfície** de uma auditoria (`chat` por omissão, ou `embedding`)
 escolhe os detetores; a suite continua a fixar a profundidade. Uma auditoria de
 embeddings só envia pedidos `POST /embeddings` e reutiliza as dimensões do chat e a
 pontuação comum 0–100 e nota A–F, com pesos por superfície. Uma dimensão que não
@@ -1004,11 +1004,11 @@ base de conhecimento; a velocidade bruta só conta face a uma referência.
 
 ---
 
-## Correspondência truque → detector
+## Correspondência truque → detetor
 
 Os 16 truques de relay da investigação distribuem-se assim no ekte.
 
-| # | Truque (id) | Gravidade | Detector(es) | Cobertura atual |
+| # | Truque (id) | Gravidade | Detetor(es) | Cobertura atual |
 |---|---|---|---|---|
 | 1 | `downgrade.silent-substitution` | critical | `model_identity`, `quality_judge` | autoidentificação, impressões, campo `model`; juiz; modo de comparação |
 | 2 | `downgrade.reasoning-collapse` | critical | `model_identity`, `quality_judge` | só impressões e juiz; ainda sem escada de dificuldade própria |
