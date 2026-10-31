@@ -255,7 +255,8 @@ def _fill_perf(conn: sqlite3.Connection, items: list[dict[str, Any]]) -> None:
 # older EXTRACT_VERSION. Both halves are index lookups, so a database with
 # nothing left to do costs next to nothing, however large its reports.
 _ANALYTICS_TODO = f"""SELECT id FROM history WHERE {_SPLIT} IS NULL
-   UNION SELECT history_id FROM history_metrics WHERE extract_version < ?"""
+   UNION SELECT history_id FROM history_metrics INDEXED BY idx_history_metrics_version
+   WHERE extract_version < ?"""
 
 
 def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ...] | None:
