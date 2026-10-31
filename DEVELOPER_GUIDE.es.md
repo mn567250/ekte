@@ -145,7 +145,7 @@ web y su planificador de monitores terminan todos en la misma función,
    opcionales) y `AuditOptions` (suite, dimensiones, tamaño de las sondas,
    salida). Aquí se resuelven las claves de API dadas como `env:VAR` o
    `file:/ruta`.
-   El formato se define en `ekte/configfile.py` (una tabla de claves, tipos y valores por defecto) y se publica como esquema JSON [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), que se regenera con `uv run python -m ekte.configfile` (una prueba falla si está desactualizado). `ekte/config.py` carga el archivo a través de él, así que todos los comandos lo validan. Un cambio de formato requiere un nuevo `CURRENT_VERSION`, los cambios de nombre en `RENAMES_FROM` (que usa `ekte config migrate`) y una entrada en el changelog; una clave obsoleta va a `DEPRECATED` con su sustituta. Véase la [política de estabilidad](docs/STABILITY.md#surface-config).
+   El formato se define en `ekte/configfile.py` (una tabla de claves, tipos y valores por defecto) y se publica como esquema JSON [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), que se regenera con `uv run python -m ekte.configfile` (una prueba falla si está desactualizado). `ekte/config.py` carga el archivo a través de él, así que todos los comandos lo validan. Un cambio de formato requiere un nuevo `CURRENT_VERSION`, los cambios de nombre en `RENAMES_FROM` (que usa `ekte config migrate`) y una entrada en el changelog; una clave obsoleta va a `DEPRECATED` con su sustituta. Consulta la [política de estabilidad](docs/STABILITY.md#surface-config).
 2. **Base de conocimiento.** `load_knowledge_base()` carga los perfiles
    integrados, `--kb-dir`/`EKTE_KB_DIR` y el `kb.db` del usuario, y resuelve el
    modelo **declarado** (por defecto, el solicitado) a un perfil. Un monitor pasa
@@ -183,11 +183,11 @@ partir de la URL base y el modelo. Los detectores solo hablan con esta interfaz
 (`RequestSpec` de entrada, `CompletionOutcome` de salida), así que son
 independientes del protocolo.
 
-Los clientes también adaptan las solicitudes a lo que el modelo acepta
+Los clientes también adaptan las peticiones a lo que el modelo acepta
 (`base.py`): el runner rellena `unsupported_params` desde el perfil, los
 parámetros de muestreo que figuran allí se omiten y, en Chat Completions, un
 `max_tokens` listado envía el límite como `max_completion_tokens`. Un 4xx que
-nombra uno de esos parámetros lo añade al conjunto y repite la solicitud una vez
+nombra uno de esos parámetros lo añade al conjunto y repite la petición una vez
 adaptada (el intento rechazado se registra con la fase `param_retry`). Una sonda
 que juzga el rechazo sin alterar establece `RequestSpec.exact_params`.
 
@@ -426,7 +426,7 @@ decodificación (cabeceras de imagen, WAV) usa solo la biblioteca estándar.
 
 ### HTTP API v1
 
-La parte pública de la API HTTP vive bajo `/api/v1/` y sigue la [política de estabilidad](docs/STABILITY.md#surface-http-api): solo cambia de forma incompatible en una versión mayor, tras un periodo de deprecación. Cualquier otra ruta bajo `/api/` es interna y puede cambiar en cualquier versión. Las respuestas internas llevan `X-Ekte-API: internal` y las de v1 `X-Ekte-API: v1`. La interfaz web usa las rutas internas.
+La parte pública de la API HTTP vive bajo `/api/v1/` y sigue la [política de estabilidad](docs/STABILITY.md#surface-http-api): solo cambia de forma incompatible en una versión mayor, tras un periodo de obsolescencia. Cualquier otra ruta bajo `/api/` es interna y puede cambiar en cualquier versión. Las respuestas internas llevan `X-Ekte-API: internal` y las de v1 `X-Ekte-API: v1`. La interfaz web usa las rutas internas.
 
 | Endpoint | Petición | Respuesta |
 |---|---|---|
@@ -561,7 +561,7 @@ tasas, percentiles de latencia/TTFT/decodificación, ratios de facturación,
 número de hallazgos y más; NULL donde la ejecución no midió un valor),
 `history_dimensions` (puntuaciones de dimensiones y detectores) y
 `history_requests` (los registros de peticiones de la ejecución, objetivo y
-baseline, en el orden de la lista). Los `performance.requests` de un informe se
+referencia, en el orden de la lista). Los `performance.requests` de un informe se
 guardan solo ahí: `save()` los saca de `report_json` (`requests_split` marca la
 fila) y `get()` / `latest_for()` los vuelven a poner, de modo que un informe se
 lee idéntico a como se guardó; lo que las columnas no pueden reproducir con
@@ -650,7 +650,7 @@ de corte del conocimiento, tokenizer, modalidades, capacidades, parámetros no
 admitidos, palabras clave de identidad y huellas (ver
 `ekte/knowledge/schema.py`). Cuando cambies un campo numérico, **cita una fuente
 autorizada** (la ficha oficial del modelo, precios o documentación del
-proveedor) en la pull request: un valor erróneo provoca falsos positivos contra
+proveedor) en el pull request: un valor erróneo provoca falsos positivos contra
 relays honestos. `ekte kb-import --check <archivo>` ejecuta las mismas
 comprobaciones que la importación del usuario (esquema, límites, expresiones
 regulares peligrosas, prompts, colisiones de ids).
@@ -687,7 +687,7 @@ El proceso de actualización:
 
 - **Fuentes.** Solo páginas oficiales del proveedor: la lista y las fichas de
   modelos, las páginas de precios y límites, los avisos de obsolescencia y
-  retirada y las notas de versión. Incluya el enlace en el pull request.
+  retirada y las notas de versión. Incluye el enlace en el pull request.
 - **Quién.** Los mantenedores. Cualquiera puede proponer un cambio con el
   formulario de issue «Knowledge base update» (proveedor, id del modelo, cambio,
   enlace a la fuente y su fecha) o con un pull request.
@@ -697,7 +697,7 @@ El proceso de actualización:
   lista de comprobación de versiones lo incluye.
 - **Revisión.** Un pull request que cambie `ekte/knowledge/data/*.yaml` necesita
   una fuente citada para cada valor cambiado y una segunda revisión, y
-  `ekte kb-import --check` debe pasar. Actualice `last_verified` de un proveedor
+  `ekte kb-import --check` debe pasar. Actualiza `last_verified` de un proveedor
   solo tras comprobar todo su archivo, no solo las líneas modificadas.
 - **Registro de cambios.** Todo cambio en los datos incluidos figura en
   `CHANGELOG.md`, porque puede cambiar veredictos.
@@ -720,25 +720,25 @@ comprueba en cada apertura.
 
 Para cambiar un esquema:
 
-1. Añada al almacén (`web/history.py`, `web/watches.py`,
+1. Añade al almacén (`web/history.py`, `web/watches.py`,
    `knowledge/store.py`) una función `_vN(conn)` que haga el cambio, y añada
-   `dbmigrate.Migration(N, _vN)` al final de su tupla `MIGRATIONS`. No edite ni
-   reordene nunca un paso existente: las bases en uso ya lo ejecutaron.
-2. Mantenga el paso idempotente (`CREATE ... IF NOT EXISTS` y
-   `kb_snapshot.add_link_columns()` para columnas) y no haga commit ni
+   `dbmigrate.Migration(N, _vN)` al final de su tupla `MIGRATIONS`. No edites ni
+   reordenes nunca un paso existente: las bases en uso ya lo ejecutaron.
+2. Mantén el paso idempotente (`CREATE ... IF NOT EXISTS` y
+   `kb_snapshot.add_link_columns()` para columnas) y no hagas commit ni
    rollback dentro. El mecanismo ejecuta cada paso en su propia transacción
    `BEGIN IMMEDIATE` junto con el aumento de versión, de modo que un paso
    interrumpido o fallido deja la base en la versión anterior.
 3. Una base nueva empieza en la versión 0 y ejecuta todos los pasos; una base
    anterior al versionado también tiene la versión 0, por eso el paso 1 de un
    almacén debe adoptar un esquema existente.
-4. Añada a `tests/test_dbmigrate.py` una prueba que construya el esquema en la
+4. Añade a `tests/test_dbmigrate.py` una prueba que construya el esquema en la
    versión N-1, lo abra y compruebe la nueva versión, el nuevo esquema y que
    los datos siguen intactos. Si hay que rellenar filas de datos existentes,
-   hágalo en el callback `on_migrated` del almacén (vea
+   hazlo en el callback `on_migrated` del almacén (mira
    `history._after_migration`), no en el paso.
 
-Lo que el mecanismo hace por usted: una base escrita por un ekte **más
+Lo que el mecanismo hace por ti: una base escrita por un ekte **más
 reciente** se rechaza con `DatabaseTooNewError` (nombra ambas versiones e
 indica qué hacer) antes de escribir nada; antes del primer paso de una
 ejecución, una base no vacía se copia a `<db>.v<versión>.<hora UTC>.bak` a su
@@ -792,7 +792,7 @@ español, portugués, italiano, alemán y noruego (bokmål, `nb`):
 | `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Páginas de referencia (en inglés) |
 
 Los archivos en inglés son la referencia. Cuando cambies uno, cambia los demás en
-la misma pull request y usa en cada idioma la terminología de la interfaz (busca
+el mismo pull request y usa en cada idioma la terminología de la interfaz (busca
 el término en `ekte/i18n/locales/`). Los archivos METHODOLOGY reproducen las
 escalas de puntuación con la redacción que la interfaz muestra en **Escala de
 puntuación**.
@@ -874,7 +874,7 @@ lo que protege la interfaz.
 
 | Workflow | Se ejecuta con | Hace |
 |---|---|---|
-| `.github/workflows/ci.yml` | push y pull request a `main` (y a las ramas de integración `*/integration`); cada noche y manual (solo accesibilidad) | `ruff`, `mypy` y `pytest` con Python 3.11–3.14 (Linux; en macOS y Windows 3.11 y 3.14) y los extras `dev` y `web`; construye la wheel y la sdist y comprueba que la wheel se instala y carga la base de conocimiento; ejecuta la suite de accesibilidad (informativa, nunca hace fallar la ejecución) y sube sus hallazgos: todas las páginas en los push y las ejecuciones nocturnas y manuales (con el informe de conformidad BITV), en las pull requests solo las páginas afectadas por el cambio (ninguna si solo cambia documentación) — salvo en las pull requests a `perf/integration`, donde se omite la lenta suite de navegador (se ejecuta en los push de esa rama y en su pull request a `main`) |
+| `.github/workflows/ci.yml` | push y pull request a `main` (y a las ramas de integración `*/integration`); cada noche y manual (solo accesibilidad) | `ruff`, `mypy` y `pytest` con Python 3.11–3.14 (Linux; en macOS y Windows 3.11 y 3.14) y los extras `dev` y `web`; construye el wheel y el sdist y comprueba que el wheel se instala y carga la base de conocimiento; ejecuta la suite de accesibilidad (informativa, nunca hace fallar la ejecución) y sube sus hallazgos: todas las páginas en los push y las ejecuciones nocturnas y manuales (con el informe de conformidad BITV), en los pull requests solo las páginas afectadas por el cambio (ninguna si solo cambia documentación) — salvo en los pull requests a `perf/integration`, donde se omite la lenta suite de navegador (se ejecuta en los push de esa rama y en su pull request a `main`) |
 | `.github/workflows/release.yml` | una etiqueta `v*` | construye, ejecuta `twine check` y publica en PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | programación diaria, manual | ejemplo de auditoría programada de un relay con la action |
 
@@ -884,8 +884,8 @@ La action compuesta es `action.yml`, documentada en [docs/CI.md](docs/CI.md).
 
 La distribución de código fuente contiene las pruebas, pero ningún archivo de terceros incluido. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) está solo en el repositorio git; se excluye del sdist (`exclude` en `[tool.hatch.build.targets.sdist]` de `pyproject.toml`) y nunca formó parte del wheel.
 
-- Las pruebas que necesitan un archivo excluido se omiten con un motivo claro cuando falta; ejecute la suite de accesibilidad desde un checkout de git.
-- `NOTICE` enumera cada archivo de terceros e indica si se distribuye. Añada un archivo nuevo a la lista `exclude` y a `NOTICE`, o, si debe distribuirse, indique en `NOTICE` que se distribuye.
+- Las pruebas que necesitan un archivo excluido se omiten con un motivo claro cuando falta; ejecuta la suite de accesibilidad desde un checkout de git.
+- `NOTICE` enumera cada archivo de terceros e indica si se distribuye. Añade un archivo nuevo a la lista `exclude` y a `NOTICE`, o, si debe distribuirse, indica en `NOTICE` que se distribuye.
 - `scripts/check_dist_contents.py` construye el wheel y el sdist (`uv build`) y falla si hay un archivo excluido, o uno que `NOTICE` indica como no distribuido. El workflow `.github/workflows/dist.yml` lo ejecuta en un job aparte.
 
 ## Publicación de versiones
