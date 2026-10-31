@@ -183,11 +183,11 @@ partir de la URL base y el modelo. Los detectores solo hablan con esta interfaz
 (`RequestSpec` de entrada, `CompletionOutcome` de salida), así que son
 independientes del protocolo.
 
-Los clientes también adaptan las solicitudes a lo que el modelo acepta
+Los clientes también adaptan las peticiones a lo que el modelo acepta
 (`base.py`): el runner rellena `unsupported_params` desde el perfil, los
 parámetros de muestreo que figuran allí se omiten y, en Chat Completions, un
 `max_tokens` listado envía el límite como `max_completion_tokens`. Un 4xx que
-nombra uno de esos parámetros lo añade al conjunto y repite la solicitud una vez
+nombra uno de esos parámetros lo añade al conjunto y repite la petición una vez
 adaptada (el intento rechazado se registra con la fase `param_retry`). Una sonda
 que juzga el rechazo sin alterar establece `RequestSpec.exact_params`.
 
@@ -694,7 +694,7 @@ El proceso de actualización:
   lista de comprobación de versiones lo incluye.
 - **Revisión.** Un pull request que cambie `ekte/knowledge/data/*.yaml` necesita
   una fuente citada para cada valor cambiado y una segunda revisión, y
-  `ekte kb-import --check` debe pasar. Actualice `last_verified` de un proveedor
+  `ekte kb-import --check` debe pasar. Actualiza `last_verified` de un proveedor
   solo tras comprobar todo su archivo, no solo las líneas modificadas.
 - **Registro de cambios.** Todo cambio en los datos incluidos figura en
   `CHANGELOG.md`, porque puede cambiar veredictos.
@@ -717,25 +717,25 @@ comprueba en cada apertura.
 
 Para cambiar un esquema:
 
-1. Añada al almacén (`web/history.py`, `web/watches.py`,
+1. Añade al almacén (`web/history.py`, `web/watches.py`,
    `knowledge/store.py`) una función `_vN(conn)` que haga el cambio, y añada
-   `dbmigrate.Migration(N, _vN)` al final de su tupla `MIGRATIONS`. No edite ni
-   reordene nunca un paso existente: las bases en uso ya lo ejecutaron.
-2. Mantenga el paso idempotente (`CREATE ... IF NOT EXISTS` y
-   `kb_snapshot.add_link_columns()` para columnas) y no haga commit ni
+   `dbmigrate.Migration(N, _vN)` al final de su tupla `MIGRATIONS`. No edites ni
+   reordenes nunca un paso existente: las bases en uso ya lo ejecutaron.
+2. Mantén el paso idempotente (`CREATE ... IF NOT EXISTS` y
+   `kb_snapshot.add_link_columns()` para columnas) y no hagas commit ni
    rollback dentro. El mecanismo ejecuta cada paso en su propia transacción
    `BEGIN IMMEDIATE` junto con el aumento de versión, de modo que un paso
    interrumpido o fallido deja la base en la versión anterior.
 3. Una base nueva empieza en la versión 0 y ejecuta todos los pasos; una base
    anterior al versionado también tiene la versión 0, por eso el paso 1 de un
    almacén debe adoptar un esquema existente.
-4. Añada a `tests/test_dbmigrate.py` una prueba que construya el esquema en la
+4. Añade a `tests/test_dbmigrate.py` una prueba que construya el esquema en la
    versión N-1, lo abra y compruebe la nueva versión, el nuevo esquema y que
    los datos siguen intactos. Si hay que rellenar filas de datos existentes,
-   hágalo en el callback `on_migrated` del almacén (vea
+   hazlo en el callback `on_migrated` del almacén (mira
    `history._after_migration`), no en el paso.
 
-Lo que el mecanismo hace por usted: una base escrita por un ekte **más
+Lo que el mecanismo hace por ti: una base escrita por un ekte **más
 reciente** se rechaza con `DatabaseTooNewError` (nombra ambas versiones e
 indica qué hacer) antes de escribir nada; antes del primer paso de una
 ejecución, una base no vacía se copia a `<db>.v<versión>.<hora UTC>.bak` a su
@@ -881,8 +881,8 @@ La action compuesta es `action.yml`, documentada en [docs/CI.md](docs/CI.md).
 
 La distribución de código fuente contiene las pruebas, pero ningún archivo de terceros incluido. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) está solo en el repositorio git; se excluye del sdist (`exclude` en `[tool.hatch.build.targets.sdist]` de `pyproject.toml`) y nunca formó parte del wheel.
 
-- Las pruebas que necesitan un archivo excluido se omiten con un motivo claro cuando falta; ejecute la suite de accesibilidad desde un checkout de git.
-- `NOTICE` enumera cada archivo de terceros e indica si se distribuye. Añada un archivo nuevo a la lista `exclude` y a `NOTICE`, o, si debe distribuirse, indique en `NOTICE` que se distribuye.
+- Las pruebas que necesitan un archivo excluido se omiten con un motivo claro cuando falta; ejecuta la suite de accesibilidad desde un checkout de git.
+- `NOTICE` enumera cada archivo de terceros e indica si se distribuye. Añade un archivo nuevo a la lista `exclude` y a `NOTICE`, o, si debe distribuirse, indica en `NOTICE` que se distribuye.
 - `scripts/check_dist_contents.py` construye el wheel y el sdist (`uv build`) y falla si hay un archivo excluido, o uno que `NOTICE` indica como no distribuido. El workflow `.github/workflows/dist.yml` lo ejecuta en un job aparte.
 
 ## Publicación de versiones

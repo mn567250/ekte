@@ -134,7 +134,7 @@ identidad del modelo indica que la identidad del modelo no se verificó.
 |---|---|---|---|
 | Conectividad y completado básico | `connectivity` | Conectividad | `smoke` |
 | Conformidad de compatibilidad con OpenAI | `protocol` | Conformidad del protocolo | `standard` |
-| Compatibilidad de atributos de solicitud | `protocol_request` | Conformidad del protocolo | `standard` |
+| Compatibilidad de atributos de petición | `protocol_request` | Conformidad del protocolo | `standard` |
 | Disponibilidad de atributos de respuesta | `protocol_response` | Conformidad del protocolo | `standard` |
 | Determinismo y corrección de caché | `determinism` | Conformidad del protocolo | `deep` |
 | Ventana de contexto real y truncado | `context_window` | Ventana de contexto | `deep` |
@@ -149,7 +149,7 @@ identidad del modelo indica que la identidad del modelo no se verificó.
 | Detección de prompt de sistema inyectado | `injected_prompt` | Seguridad del transporte | `deep` |
 | Integridad de respuestas / manipulación | `integrity` | Seguridad del transporte | `deep` |
 | Caché de prefijo de prompt (tiempos) | `prompt_cache` | Seguridad del transporte | `deep` |
-| Sonda de rendimiento | `performance` | Rendimiento | `deep` (en `standard` solo con una referencia, 5 solicitudes) |
+| Sonda de rendimiento | `performance` | Rendimiento | `deep` (en `standard` solo con una referencia, 5 peticiones) |
 
 - **smoke** ejecuta conectividad y seguridad; **standard** añade los detectores
   de protocolo, identidad, capacidades, streaming, facturación y fiabilidad;
@@ -198,17 +198,17 @@ identidad del modelo indica que la identidad del modelo no se verificó.
   límite de 4.096 tokens, para que un modelo que piensa antes de responder no se
   lea como fallo. Las sondas cuyo límite o tiempo es la medida (rendimiento,
   caché de prompts, fiabilidad, prompt inyectado, salida máxima, el atributo de
-  solicitud `max_tokens`) nunca se repiten. Una vez que se sabe que un endpoint
+  petición `max_tokens`) nunca se repiten. Una vez que se sabe que un endpoint
   razona (su perfil dice `reasoning: true`, o tras su primera repetición de este
   tipo), las sondas cortas se envían desde el principio con el límite de 4.096
   tokens en lugar de dos veces.
-- **Parámetros de la solicitud:** los modelos de razonamiento rechazan algunos
+- **Parámetros de la petición:** los modelos de razonamiento rechazan algunos
   parámetros: en Chat Completions `max_tokens` (usan `max_completion_tokens`) y,
   en cualquier protocolo, parámetros de muestreo como `temperature`. El cliente
   omite los parámetros que el perfil lista en `unsupported_params` y envía el
   límite de salida como `max_completion_tokens` cuando figura `max_tokens`. Un
   endpoint sin perfil que nombra uno de esos parámetros en un 4xx recibe la
-  solicitud una vez más, adaptada, y todas las siguientes salen adaptadas desde
+  petición una vez más, adaptada, y todas las siguientes salen adaptadas desde
   el principio; el intento rechazado no cuenta como error del relay. Las sondas
   de `protocol_request` se envían tal como se construyen, porque juzgan
   precisamente el rechazo sin alterar.
@@ -249,7 +249,7 @@ comprobación de chat: vuelve a ejecutar. La conectividad no prueba nada sobre
 
 **Detecta.** Relays cuyo middleware rompe el contrato del protocolo (turnos
 perdidos, secuencias de parada ignoradas, errores malformados, campos de
-respuesta ausentes o a cero, parámetros de solicitud eliminados) y, mediante el
+respuesta ausentes o a cero, parámetros de petición eliminados) y, mediante el
 determinismo, `cache.ignore-temperature`. Cubre en parte
 `capability.json-tool-fakery`.
 
@@ -257,7 +257,7 @@ determinismo, `cache.ignore-temperature`. Cubre en parte
 
 **Cómo funciona.** Tres sondas: una conversación multiturno que debe recordar
 un color de un turno anterior; una secuencia `stop` que debe cortar la salida;
-y una solicitud deliberadamente inválida (`messages` vacío) que debe
+y una petición deliberadamente inválida (`messages` vacío) que debe
 rechazarse con un 4xx, idealmente con un cuerpo de error al estilo OpenAI.
 
 La Responses API no tiene parámetro `stop`, así que contra un objetivo con
@@ -278,8 +278,8 @@ aplicable (no computa) en lugar de culpar al relay.
 |  | Rechazada con un 4xx, pero el cuerpo no sigue el estilo OpenAI. | Advertencia · Baja | 80 pts |
 |  | Sin respuesta HTTP; no se pudo confirmar el manejo de errores del cliente. | Advertencia · Baja | 55 pts |
 |  | Otro estado HTTP; no se pudo confirmar el manejo de errores del cliente. | Advertencia · Baja | 55 pts |
-|  | La solicitud no válida provocó un error del servidor (5xx). | Fallo · Media | 35 pts |
-|  | La solicitud no válida fue aceptada (2xx). | Fallo · Media | 30 pts |
+|  | La petición no válida provocó un error del servidor (5xx). | Fallo · Media | 35 pts |
+|  | La petición no válida fue aceptada (2xx). | Fallo · Media | 30 pts |
 
 ### `protocol_response` — Disponibilidad de atributos de respuesta
 
@@ -306,9 +306,9 @@ válido.
 |  | Ausente en la respuesta. | Advertencia · Baja | 60 pts |
 | `protocol_response.call` (Sondeo de atributos de respuesta) | La llamada de sondeo no devolvió un cuerpo de respuesta que evaluar. | No concluyente · Baja | No computa |
 
-### `protocol_request` — Compatibilidad de atributos de solicitud
+### `protocol_request` — Compatibilidad de atributos de petición
 
-**Cómo funciona.** Se envía cada parámetro de solicitud del protocolo (unas
+**Cómo funciona.** Se envía cada parámetro de petición del protocolo (unas
 cinco llamadas). Los parámetros con efecto observable tienen su propia llamada y
 deben mostrarlo: `system`/`instructions` seguido, el límite de salida termina en
 `finish_reason: length`, `n: 2` devuelve dos opciones, se devuelven
@@ -637,7 +637,7 @@ Una sola imagen es un indicio, no una prueba.
 respuesta del upstream y la reproduce en uno o pocos fragmentos, perdiendo la
 ventaja de latencia.
 
-**Cómo funciona.** Una solicitud en streaming (`max_tokens` 256,
+**Cómo funciona.** Una petición en streaming (`max_tokens` 256,
 `stream_options.include_usage`) de la que se registra la hora de llegada de cada
 fragmento. Tres señales de búfer: **pocos fragmentos** (dos o menos) y **primer
 token tardío** (TTFT por encima del 90 % de la duración total), evaluadas solo
@@ -662,7 +662,7 @@ Si el modelo transmite su razonamiento (deltas de razonamiento, bloques de think
 | `streaming.uniform_gaps` | Señal de búfer: la primera resta 40 puntos, una segunda 20, las siguientes nada. | Advertencia · Media | hasta −40 pts |
 | `streaming.no_usage` | No hay fragmento de uso en el stream: resta 15 puntos si nada está en búfer. | Advertencia · Baja | hasta −15 pts |
 | `streaming.no_content` | El stream tuvo éxito pero no entregó contenido para juzgar; sin puntuación. | No concluyente · Baja | No computa |
-| `streaming.failed` | La solicitud en streaming falló. | Fallo · Alta | tope 0 |
+| `streaming.failed` | La petición en streaming falló. | Fallo · Alta | tope 0 |
 
 Es decir: auténtico 100 · falta el uso 85 · una señal de búfer 60 · dos o más
 40 · fallo 0 · sin contenido: sin puntuación.
@@ -708,7 +708,7 @@ comprador).
 | `billing.partial-usage` | El uso indica un total sin el desglose prompt/completion. | Advertencia · Media | tope 80 |
 | `billing.usage-consistent` | El uso declarado está dentro de la tolerancia de la estimación independiente. | Correcto | Sin deducción |
 
-Una solicitud de sonda fallida deja el detector sin puntuación.
+Una petición de sonda fallida deja el detector sin puntuación.
 
 **Advertencias.** Las plantillas de chat y los tokens especiales añaden un
 pequeño desfase fijo; no se espera una coincidencia exacta. Si el modelo servido
@@ -724,12 +724,12 @@ modo comparación.
 **Detecta.** Parte de `throttle.rate-limit-quality`: un relay que falla o se
 arrastra con un paralelismo moderado.
 
-**Cómo funciona.** Una ráfaga de pequeñas solicitudes idénticas
+**Cómo funciona.** Una ráfaga de pequeñas peticiones idénticas
 (`--reliability-requests`, 8 por defecto) con concurrencia limitada
 (`--concurrency`, 3 por defecto). La tasa de éxito se calcula sobre las
-solicitudes realmente intentadas: un HTTP 429 es una limitación honesta y se
+peticiones realmente intentadas: un HTTP 429 es una limitación honesta y se
 contabiliza aparte. La puntuación resta la parte fallida; una latencia p95 por
-encima de 30 s conserva el 85 % del resto. Una solicitud fallida (es decir, un
+encima de 30 s conserva el 85 % del resto. Una petición fallida (es decir, un
 5xx pasajero de las 8 por defecto), o como mucho el 10 % de una ráfaga mayor, es
 una Advertencia mientras al menos el 80 % tenga éxito; más es un Fallo. El estado
 del detector es el peor de sus hallazgos. Son avisos de transporte: nunca
@@ -737,10 +737,10 @@ elevan el veredicto de riesgo.
 
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
-| `reliability.success_rate` | Todas las solicitudes intentadas de la ráfaga tuvieron éxito. | Correcto | Sin deducción |
-|  | Falló una solicitud, o como mucho el 10 % de las intentadas (80 %+ con éxito); resta la parte fallida. | Advertencia · Baja | hasta −20 pts |
-|  | Fallaron más solicitudes; resta la parte fallida. | Fallo · Media | hasta −100 pts |
-|  | Todas las solicitudes fueron limitadas (HTTP 429): no puntúa. | No concluyente · Baja | Sin deducción |
+| `reliability.success_rate` | Todas las peticiones intentadas de la ráfaga tuvieron éxito. | Correcto | Sin deducción |
+|  | Falló una petición, o como mucho el 10 % de las intentadas (80 %+ con éxito); resta la parte fallida. | Advertencia · Baja | hasta −20 pts |
+|  | Fallaron más peticiones; resta la parte fallida. | Fallo · Media | hasta −100 pts |
+|  | Todas las peticiones fueron limitadas (HTTP 429): no puntúa. | No concluyente · Baja | Sin deducción |
 | `reliability.latency` | Latencia p95 por encima de 30 s bajo carga; resta el 15 % de la puntuación restante. | Advertencia · Baja | hasta −15 pts |
 | `reliability.rate_limited` | Parte de la ráfaga fue limitada: limitación legítima, no computa. | Info | Sin deducción |
 | `reliability.skipped` | La sonda de fiabilidad estaba desactivada. | Info | Sin deducción |
@@ -754,7 +754,7 @@ bajo carga real. Una instantánea no capta el comportamiento según la hora;
 **No implementado.** La medición de calidad a lo largo del tiempo y con carga
 variable, y las señales de clave upstream compartida
 (`infra.shared-upstream-key`: cuota que baja en reposo, identificadores de
-solicitud upstream filtrados) están en la hoja de ruta.
+petición upstream filtrados) están en la hoja de ruta.
 
 ---
 
@@ -861,13 +861,13 @@ o autoalojado lento pero constante puntúa bien; la velocidad bruta solo cuenta
 frente a una referencia.
 
 **Cómo funciona.** La sonda dedicada se ejecuta en deep, full y custom, y en
-standard solo en modo comparación (5 solicitudes por lado, demasiado pocas para
+standard solo en modo comparación (5 peticiones por lado, demasiado pocas para
 las comprobaciones de constancia). Por endpoint: tres pings `GET /models`, una
-solicitud de calentamiento (informada como arranque en frío),
-`--performance-requests` solicitudes uniformes (100 por defecto) de
+petición de calentamiento (informada como arranque en frío),
+`--performance-requests` peticiones uniformes (100 por defecto) de
 `--performance-max-tokens` tokens de salida (128 por defecto) y, en deep/full,
-una ráfaga a `--concurrency`. Cada solicitud es no cacheable: un identificador
-de solicitud aleatorio abre el prompt, los temas rotan y no se envían parámetros
+una ráfaga a `--concurrency`. Cada petición es no cacheable: un identificador
+de petición aleatorio abre el prompt, los temas rotan y no se envían parámetros
 de caché ni de razonamiento; una respuesta que aun así viene de una caché se
 señala y se excluye de las estadísticas. La sonda usa streaming por defecto
 (`--performance-non-streaming` para relays que no saben hacer streaming); full
@@ -882,7 +882,7 @@ respuesta); su `start_ms` cuenta desde el `started_at` del informe (UTC), así
 que la hora de cada llamada se puede reconstruir.
 
 La constancia usa ratios de cola (p90 ÷ p50 para latencia y TTFT, p50 ÷ p10 para
-el rendimiento), que una solicitud atípica no mueve como mueve una desviación
+el rendimiento), que una petición atípica no mueve como mueve una desviación
 típica; necesitan al menos 10 muestras limpias. La referencia es la referencia
 de confianza o, si no hay, el rango `performance.decode_tps` del perfil en la
 base de conocimiento.
@@ -890,7 +890,7 @@ base de conocimiento.
 | Comprobación | Resultado | Estado | Efecto |
 |---|---|---|---|
 | `performance.summary` | Se midieron la latencia, el TTFT y el rendimiento. | Info | No computa |
-|  | Ninguna de las solicitudes de sondeo tuvo éxito. | No concluyente | No computa |
+|  | Ninguna de las peticiones de sondeo tuvo éxito. | No concluyente | No computa |
 | `performance.latency_consistency` | La latencia es constante (ratio de cola como máximo 1,3). | Correcto | 100 pts |
 |  | La latencia es estable (ratio de cola como máximo 1,75). | Correcto | 85 pts |
 |  | La latencia varía notablemente (ratio de cola como máximo 2,5). | Advertencia · Baja | 65 pts |
@@ -1024,14 +1024,14 @@ Los 16 trucos de relay de la investigación se reparten así en ekte.
 | 1 | `downgrade.silent-substitution` | critical | `model_identity`, `quality_judge` | autoidentificación, huellas, campo `model`; juez; modo comparación |
 | 2 | `downgrade.reasoning-collapse` | critical | `model_identity`, `quality_judge` | solo huellas y juez; aún sin escalera de dificultad propia |
 | 3 | `downgrade.quantized-distilled` | high | `quality_judge`, `model_identity` | juez con referencia; aún sin prueba de distribución |
-| 4 | `downgrade.partial-probabilistic-routing` | high | `model_identity` | solo si las solicitudes muestreadas dan con el sustituto; el muestreo masivo está en la hoja de ruta |
+| 4 | `downgrade.partial-probabilistic-routing` | high | `model_identity` | solo si las peticiones muestreadas dan con el sustituto; el muestreo masivo está en la hoja de ruta |
 | 5 | `context.window-truncation` | high | `context_window` | escalera con aguja en el borde + búsqueda binaria; medida vs declarada |
 | 6 | `context.lost-in-middle-rag` | high | `context_window` | profundidades 0,1/0,5/0,9 con un tamaño medio |
 | 7 | `stream.fake-streaming` | medium | `streaming` | número de fragmentos, momento del primer token, uniformidad de intervalos |
 | 8 | `billing.usage-inflation` | high | `billing` | estimación heurística independiente de tokens de una sonda conocida |
 | 9 | `billing.missing-usage` | medium | `billing`, `protocol_response`, `streaming` | presencia, desglose y aritmética del uso; fragmento de uso del flujo |
 | 10 | `privacy.prompt-logging-leakage` | high | `prompt_cache` | caché por prefijo mediante TTFT (informativo); compartir entre usuarios y el registro siguen sin poder probarse con una clave |
-| 11 | `infra.shared-upstream-key` | high | — | hoja de ruta (cuota que baja en reposo, identificadores de solicitud upstream filtrados) |
+| 11 | `infra.shared-upstream-key` | high | — | hoja de ruta (cuota que baja en reposo, identificadores de petición upstream filtrados) |
 | 12 | `cache.ignore-temperature` | medium | `determinism` | salida idéntica byte a byte a temperatura 1,0; suprimido para modelos de razonamiento |
 | 13 | `prompt.injected-system-prompt` | medium | `injected_prompt`, `billing` | sobrecoste fijo de tokens de entrada (dos tamaños) + sonda de filtración |
 | 14 | `throttle.rate-limit-quality` | medium | `reliability`, `performance` | tasa de éxito (429 aparte), latencia de cola, estabilidad bajo carga; la medición a lo largo del tiempo está en la hoja de ruta |
@@ -1057,7 +1057,7 @@ inconclusive), deja no concluyentes los resultados ambiguos y solo sube a
 - **Deriva benigna o sustitución:** las API oficiales actualizan sus snapshots
   en silencio.
 - **Enrutamiento constante:** un relay puede enrutar de forma probabilística, y
-  una auditoría solo ve las solicitudes que envió.
+  una auditoría solo ve las peticiones que envió.
 
 **Método.** Los hallazgos que dependen de una comparación exacta usan
 `temperature=0` y prompts acotados. Cada hallazgo lleva su evidencia (entradas,

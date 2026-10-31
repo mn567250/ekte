@@ -69,7 +69,7 @@ ekte convierte «aquí algo no cuadra» en un informe reproducible.
 
 ## Instalación
 
-Requiere Python 3.11+. Funciona en Linux, macOS y Windows (la imagen de Docker es Linux); en Windows los modos de solo propietario del directorio de datos no tienen efecto, véase [Sistemas operativos compatibles](docs/STABILITY.md#os). Cualquiera de las opciones siguientes proporciona el comando `ekte`.
+Requiere Python 3.11+. Funciona en Linux, macOS y Windows (la imagen de Docker es Linux); en Windows los modos de solo propietario del directorio de datos no tienen efecto, consulta [Sistemas operativos compatibles](docs/STABILITY.md#os). Cualquiera de las opciones siguientes proporciona el comando `ekte`.
 
 ### Con pip
 
@@ -662,9 +662,9 @@ puntuación (0–100, A–F), el historial, la analítica y los monitores que la
 chat; solo cambian los detectores. El historial y la analítica filtran por tipo de
 endpoint, y la analítica muestra solo las métricas que aplican.
 
-Para vigilar un endpoint de embeddings o rerank, audítelo en la página
-**Auditoría** (elija **Embeddings** o **Reordenación** en el selector de tipo de
-endpoint) y elija
+Para vigilar un endpoint de embeddings o rerank, audítalo en la página
+**Auditoría** (elige **Embeddings** o **Reordenación** en el selector de tipo de
+endpoint) y elige
 **Monitorizar**, o **Programar como monitor** en su fila
 del historial. El monitor repite la auditoría según su calendario, con la misma
 fijación de la base de conocimiento, el mismo umbral de alerta y las mismas
