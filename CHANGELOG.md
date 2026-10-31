@@ -70,6 +70,10 @@ ekte has three eras:
 
 ### Fixed
 
+- The analytics backfill's backlog query now always uses the
+  `idx_history_metrics_version` index. SQLite 3.53 planned a full scan of
+  `history_metrics` without it.
+
 - The README (report protocol fields `target.api`, `target.api_auto`,
   `stream_mode`) and methodology (`verdict.drivers`, `verdict.checked`) were
   missing a paragraph in the de, es, fr, it, pt and zh-CN translations.
