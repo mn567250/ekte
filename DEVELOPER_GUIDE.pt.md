@@ -143,17 +143,17 @@ e o seu agendador de monitores acabam todos na mesma função,
 
 1. **Configuração.** `ekte/config.py` junta a configuração YAML e as opções de
    linha de comandos em `TargetConfig` (alvo, referência e juiz opcionais) e
-   `AuditOptions` (suite, dimensões, dimensão das sondas, saída). As chaves de API
+   `AuditOptions` (suite, dimensões, tamanho das sondas, saída). As chaves de API
    dadas como `env:VAR` ou `file:/caminho` são resolvidas aqui.
    O formato é definido em `ekte/configfile.py` (uma tabela de chaves, tipos e valores por omissão) e publicado como esquema JSON [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), regenerado com `uv run python -m ekte.configfile` (um teste falha se estiver desatualizado). `ekte/config.py` carrega o ficheiro com ele, pelo que todos os comandos o validam. Uma alteração de formato exige um novo `CURRENT_VERSION`, as renomeações em `RENAMES_FROM` (usadas por `ekte config migrate`) e uma entrada no changelog; uma chave obsoleta passa para `DEPRECATED` com a sua substituta. Consulte a [política de estabilidade](docs/STABILITY.md#surface-config).
 2. **Base de conhecimento.** `load_knowledge_base()` carrega os perfis
    integrados, `--kb-dir`/`EKTE_KB_DIR` e o `kb.db` do utilizador, e resolve o
-   modelo **declarado** (por omissão, o pedido) para um perfil. Um monitor
+   modelo **declarado** (por omissão, o modelo pedido) para um perfil. Um monitor
    passa em vez disso o seu instantâneo fixado.
 3. **Clientes.** `make_client()` cria um cliente para o alvo (e a referência) no
    protocolo escolhido ou detetado automaticamente. Um `RequestRecorder` envolve
    cada chamada para a secção de desempenho.
-4. **Detectores.** `select_detectors()` escolhe os detetores registados para a
+4. **Detetores.** `select_detectors()` escolhe os detetores registados para a
    suite (ou as dimensões personalizadas), descartando os que precisam de um juiz
    ou de uma referência em falta. Correm **sequencialmente**, de propósito:
    pedidos concorrentes disparariam limites de taxa e distorceriam as medições de
@@ -280,7 +280,7 @@ respostas esperadas na base de conhecimento e declaram `prompt_lang` e um motivo
 agentes, Markdown e HTML; `dimensions.py` e `performance.py` renderizam os
 **Dimension details** e a secção de desempenho; `pdf.py` compõe o PDF com o
 ReportLab a partir dos mesmos dados e funções (Python puro; apenas os tipos de
-letra PDF predefinido, com o tipo de letra CID STSong-Light para o chinês, pelo que
+letra PDF predefinidos, com o tipo de letra CID STSong-Light para o chinês, pelo que
 nada é incorporado; sem nunca carregar recursos externos), partilhado pela CLI e
 pela interface web;
 `writer.py` escreve os ficheiros. Todo o texto controlado pelo relay é ocultado e
@@ -308,14 +308,14 @@ segundo eixo ao lado da suite, transportado por `AuditOptions.surface`,
 - `embed_audit.run_embedding_audit()` e `run_rerank_audit()` (usadas por
   `ekte embed` / `ekte rerank`) executam o runner
   com `surface="embedding"` ou `"rerank"`, passam a execução guardada anterior da
-  mesma superfície como `previous_report` (deriva) e guardam o relatório guardado
+  mesma superfície como `previous_report` (deriva) e guardam o relatório, salvo
   indicação em contrário (`--no-save`).
 - Detetores de rerank: `rerank.connectivity`, `rerank.known_answer`
   (CAPABILITY), `rerank.identity` e `rerank.drift` (MODEL_IDENTITY),
   `rerank.determinism` (RELIABILITY) e `performance.rerank`. Pesos:
   MODEL_IDENTITY 30, CAPABILITY 30, PERFORMANCE 20, RELIABILITY 10,
   CONNECTIVITY 10.
-- Monitores: a `surface` e `embedding_dimensions` (0 = da base de conhecimento) de
+- Monitores: a `surface` e a `embedding_dimensions` (0 = da base de conhecimento) de
   um monitor alimentam `AuditOptions` em `_run_one_watch_inner`; um monitor de
   embeddings ou rerank lê a sua referência de deriva com
   `history.latest_for(..., surface=...)` antes da auditoria e compara os alertas
@@ -342,7 +342,7 @@ descodificação (cabeçalhos de imagem, WAV) usa apenas a biblioteca padrão.
   estilos ficam em `/static/`. Não há página Ferramentas: as auditorias de embeddings e rerank
   começam na página de auditoria com o seletor de tipo de endpoint
   (`/?surface=embedding|rerank`). Até à 1.0.0 os endereços anteriores redirecionam (308) para a
-  página na raiz, com a query string: `/v2/…` (`/v2/tools` vai para
+  página na raiz, com a cadeia de consulta: `/v2/…` (`/v2/tools` vai para
   `/?surface=embedding`, e `#rerank` escolhe rerank) e `/tools` e `/console` da interface
   clássica removida. Estes redirecionamentos estão obsoletos e são removidos na 1.0.0.
 - **API.** `/api/jobs…` executa as auditorias (ver abaixo); `/api/models` lista
@@ -386,7 +386,8 @@ descodificação (cabeçalhos de imagem, WAV) usa apenas a biblioteca padrão.
   lista os trabalhos em fila, em curso e acabados há pouco (e os monitores em
   execução) com o progresso, `GET /api/jobs/{id}/events` reproduz o registo de
   eventos e depois segue-o em direto por SSE, e `POST /api/jobs/{id}/cancel`
-  pára-o. A interface web usa-os, por isso uma auditoria sobrevive à página. Um bloqueio por relay deixa uma só auditoria (ou
+  pára-o. A interface web usa-os, por isso uma auditoria sobrevive à página.
+  Um bloqueio por relay deixa uma só auditoria (ou
   execução de monitor) usar um relay de cada vez, por nome de host, com todos os
   endereços loopback como um host; no máximo `EKTE_MAX_PARALLEL_AUDITS`
   (4 por omissão) em simultâneo, por ordem de chegada.
@@ -418,11 +419,11 @@ descodificação (cabeçalhos de imagem, WAV) usa apenas a biblioteca padrão.
   `LocalOnlyMiddleware`: uma lista de anfitriões permitidos contra DNS rebinding,
   controlos de `Origin` e `Sec-Fetch-Site` contra CSRF, corpos de pedido apenas
   JSON e cabeçalhos anti-iframe / no-sniff / no-referrer. A interface não tem
-  início de sessão por design.
+  início de sessão por conceção.
 
 ### HTTP API v1
 
-A parte pública da API HTTP fica em `/api/v1/` e segue a [política de estabilidade](docs/STABILITY.md#surface-http-api): só muda de forma incompatível numa versão maior, após um período de descontinuação. Qualquer outro caminho em `/api/` é interno e pode mudar em qualquer versão. As respostas internas levam `X-Ekte-API: internal` e as de v1 `X-Ekte-API: v1`. A interface web usa os caminhos internos.
+A parte pública da API HTTP fica em `/api/v1/` e segue a [política de estabilidade](docs/STABILITY.md#surface-http-api): só muda de forma incompatível numa versão maior, após um período de obsolescência. Qualquer outro caminho em `/api/` é interno e pode mudar em qualquer versão. As respostas internas levam `X-Ekte-API: internal` e as de v1 `X-Ekte-API: v1`. A interface web usa os caminhos internos.
 
 | Endpoint | Pedido | Resposta |
 |---|---|---|
@@ -520,7 +521,7 @@ painel de filtros recolhível é `v2/filterpanel.js` + `v2/filterpanel.css`,
 partilhado com o Histórico, Monitores e Conhecimento: `EkteFilterPanel.create(section, {label, title,
 storeKey, open, onReset})` devolve `render({body, foot, count, summary})`,
 `sync({count, summary})`, `setOpen()` e `focusStart()`; a página tem os seus
-filtros e campos, o painel o botão com o distintivo de filtros ativos, o resumo
+filtros e campos, o painel o botão com o indicador de filtros ativos, o resumo
 de uma linha mostrado quando recolhido, o estado aberto memorizado e
 **Redefinir filtros**.
 
@@ -551,7 +552,7 @@ contém as tabelas de análise, definidas em `web/analytics_store.py`:
 início, taxas, percentis de latência/TTFT/descodificação, rácios de faturação,
 número de constatações e mais; NULL onde a execução não mediu um valor),
 `history_dimensions` (pontuações de dimensões e detetores) e `history_requests`
-(os registos de pedidos da execução, alvo e baseline, pela ordem da lista). Os
+(os registos de pedidos da execução, alvo e referência, pela ordem da lista). Os
 `performance.requests` de um relatório ficam só aí: `save()` retira-os de
 `report_json` (`requests_split` marca a linha) e `get()` / `latest_for()`
 repõem-nos, de modo que um relatório é lido de volta idêntico ao que foi
@@ -586,7 +587,7 @@ chave mestra nunca é guardada: `web/masterkey.py` (`Vault`, partilhado pelo
 servidor e pelo `ekte secret`) mantém-na na memória do servidor assim que chega
 de `EKTE_SECRET_KEY`, de um `secret.key` antigo ou do utilizador na página
 Monitores, e `watches.db` guarda apenas um valor de verificação (`secret_meta`)
-que rejeita uma chave errada. Uma chave nova volta a encriptar cada chave
+que rejeita uma chave errada. Uma chave nova volta a cifrar cada chave
 guardada e reescreve o valor de verificação numa única transação. A chave vive
 na memória de um só processo, por isso execute um servidor por diretório de
 dados.
@@ -677,10 +678,10 @@ O processo de atualização:
 
 - **Fontes.** Apenas páginas oficiais do fornecedor: lista e fichas de modelos,
   páginas de preços e limites, avisos de descontinuação e retirada e notas de
-  versão. Inclua o link no pull request.
+  versão. Inclua a ligação no pull request.
 - **Quem.** Os mantenedores. Qualquer pessoa pode propor uma alteração com o
   formulário de issue «Knowledge base update» (fornecedor, id do modelo,
-  alteração, link da fonte e a sua data) ou com um pull request.
+  alteração, ligação para a fonte e a sua data) ou com um pull request.
 - **Com que frequência.** Pelo menos antes de cada versão menor e, fora do
   calendário, numa versão de correção quando ocorre uma mudança importante de
   modelos (um lançamento principal, uma retirada, um id de modelo renomeado). A
@@ -705,13 +706,13 @@ idioma da interface.
 
 Cada base de dados SQLite criada pelo ekte (`history.db`, `watches.db`,
 `kb.db`) é versionada e migrada por um único mecanismo partilhado,
-`ekte/dbmigrate.py`; um armazém nunca se migra sozinho com `ALTER TABLE` ad
+`ekte/dbmigrate.py`; um armazenamento nunca se migra sozinho com `ALTER TABLE` ad
 hoc. A versão do esquema está em `PRAGMA user_version` e
 `datadir.connect(name, MIGRATIONS)` verifica-a em cada abertura.
 
 Para alterar um esquema:
 
-1. Adicione ao armazém (`web/history.py`, `web/watches.py`,
+1. Adicione ao armazenamento (`web/history.py`, `web/watches.py`,
    `knowledge/store.py`) uma função `_vN(conn)` que faça a alteração e
    acrescente `dbmigrate.Migration(N, _vN)` ao fim do seu tuplo `MIGRATIONS`.
    Nunca edite nem reordene um passo existente: as bases em uso já o
@@ -723,11 +724,11 @@ Para alterar um esquema:
    interrompido ou falhado deixa por isso a base na versão anterior.
 3. Uma base nova começa na versão 0 e executa todos os passos; uma base
    anterior ao versionamento também tem a versão 0, pelo que o passo 1 de um
-   armazém tem de adotar um esquema existente.
+   armazenamento tem de adotar um esquema existente.
 4. Adicione a `tests/test_dbmigrate.py` um teste que construa o esquema na
    versão N-1, o abra e verifique a nova versão, o novo esquema e a
    integridade dos dados. Se for preciso preencher linhas de dados existentes,
-   faça-o no callback `on_migrated` do armazém (consulte
+   faça-o no callback `on_migrated` do armazenamento (consulte
    `history._after_migration`), não no passo.
 
 O que o mecanismo faz por si: uma base escrita por um ekte **mais recente** é
@@ -755,7 +756,7 @@ As funcionalidades podem trazer os seus textos como fragmentos,
 fundidos no idioma ao carregar. `/locales.js` envia apenas o idioma escolhido
 (`?lang=<code>` ou o cookie `ekte_lang` definido por `lang.js`; sem nenhum dos
 dois, todos os idiomas), gerado e comprimido com gzip uma vez por variante e
-revalidado por `ETag`; uma troca de idioma carrega o novo sob demanda.
+revalidado por `ETag`; uma troca de idioma carrega o novo a pedido.
 
 - **Novo texto de interface:** escreva o chinês no HTML e o inglês em `data-en`
   (ou use `T(zh, en)`), depois acrescente a chave inglesa a `en.json` ou a um
@@ -847,7 +848,7 @@ contentor, o servidor tem de escutar em todas as interfaces; isso só é permiti
 se `EKTE_CONTAINER=1` estiver definido (a imagem define-o) *e* for detetado um
 ambiente de contentor.
 
-| Variável | Predefinição | Função |
+| Variável | Por omissão | Função |
 |---|---|---|
 | `EKTE_CONTAINER` | não definida (`1` na imagem) | Permite escutar fora de loopback dentro de um contentor detetado |
 | `EKTE_HOST` | `127.0.0.1` (`0.0.0.0` na imagem) | Endereço de escuta; `--host` prevalece |
@@ -871,13 +872,13 @@ que protege a interface.
 
 A action composta é `action.yml`, documentada em [docs/CI.md](docs/CI.md).
 
-### Arquivos de terceiros na distribuição
+### Ficheiros de terceiros na distribuição
 
 A distribuição de código-fonte contém os testes, mas nenhum ficheiro de terceiros incluído. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) está apenas no repositório git; é excluído do sdist (`exclude` em `[tool.hatch.build.targets.sdist]` do `pyproject.toml`) e nunca fez parte do wheel.
 
-- Os testes que precisam de um ficheiro excluído são ignorados com um motivo claro quando ele falta; execute a suíte de acessibilidade a partir de um checkout git.
+- Os testes que precisam de um ficheiro excluído são ignorados com um motivo claro quando ele falta; execute a suite de acessibilidade a partir de um checkout git.
 - `NOTICE` lista cada ficheiro de terceiros e diz se é distribuído. Adicione um novo ficheiro incluído à lista `exclude` e ao `NOTICE` ou, se precisar de ser distribuído, declare isso no `NOTICE`.
-- `scripts/check_dist_contents.py` constrói o wheel e o sdist (`uv build`) e falha se houver um ficheiro excluído ou um ficheiro que o `NOTICE` lista como não distribuído. O workflow `.github/workflows/dist.yml` o executa em um job separado.
+- `scripts/check_dist_contents.py` constrói o wheel e o sdist (`uv build`) e falha se houver um ficheiro excluído ou um ficheiro que o `NOTICE` lista como não distribuído. O workflow `.github/workflows/dist.yml` executa-o num job separado.
 
 ## Publicação de versões
 
@@ -898,17 +899,17 @@ configuração única do PyPI e o procedimento manual, em
 3. Fazer o merge, etiquetar o commit e enviar a tag:
    `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`, `git push origin vX.Y.Z`.
 4. O `release.yml` verifica primeiro, com `scripts/release_check.py`, que a tag
-   corresponde à versão do pacote, que o `CHANGELOG.md` tem uma seção para ela e que
+   corresponde à versão do pacote, que o `CHANGELOG.md` tem uma secção para ela e que
    a CI está verde para o commit etiquetado (espera por uma CI em execução). Se uma
    verificação falhar, o workflow para e nada é publicado. Depois compila, publica no
    PyPI por Trusted Publishing com atestações de proveniência e cria a GitHub
-   Release com a seção do changelog como notas.
+   Release com a secção do changelog como notas.
 
 ### Release candidates
 
 Etiquetar `vX.Y.ZrcN` (com `version = "X.Y.ZrcN"` em `pyproject.toml`). O PyPI trata-a
 como pré-lançamento PEP 440: `pip install ekte` ignora-a e `pip install --pre ekte`
-encontra-a; o GitHub marca a release como «Pre-release». No changelog serve a seção
+encontra-a; o GitHub marca a release como «Pre-release». No changelog serve a secção
 `[X.Y.ZrcN]`, `[X.Y.Z]` ou `[Unreleased]`.
 
 ### Se uma publicação falhar a meio
@@ -919,22 +920,22 @@ o que importa é até onde a execução chegou (Actions, «Release to PyPI»):
 - **Uma verificação falhou (job verify).** Nada foi publicado. Corrigir a causa
   (versão, changelog, CI), apagar a tag localmente e no origin
   (`git push origin :refs/tags/vX.Y.Z`) e etiquetar de novo o commit corrigido.
-- **Build ou upload falharam antes de o PyPI ter arquivos.** Reexecutar os jobs que
+- **Build ou upload falharam antes de o PyPI ter ficheiros.** Reexecutar os jobs que
   falharam; nenhuma versão foi consumida. Se o próprio commit etiquetado tiver de
   mudar, apagar a tag e criá-la de novo.
-- **O PyPI tem parte dos arquivos** (ver <https://pypi.org/project/ekte/#files>).
+- **O PyPI tem parte dos ficheiros** (ver <https://pypi.org/project/ekte/#files>).
   Reexecutar os jobs que falharam: o upload ignora ficheiros já existentes. Se os
   ficheiros diferem do que se quer publicar, não repetir: fazer «yank» da versão no
   PyPI e publicar a seguinte (`X.Y.Z+1` ou `rcN+1`).
 - **O PyPI está completo mas a GitHub Release falhou.** Reexecutar o job
-  `GitHub Release`; ele cria ou atualiza a release de forma idempotente. Ou à mão:
+  `GitHub Release`; cria ou atualiza a release de forma idempotente. Ou à mão:
   `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`.
 - **Uma versão defeituosa já está no ar.** Fazer «yank» no PyPI (só se instala com
-  versão exata), corrigir em frente com uma nova versão e registrá-lo no changelog.
+  versão exata), corrigir em frente com uma nova versão e registá-lo no changelog.
 
 ## Segurança
 
-Reporte vulnerabilidades em privado, como descrito em [SECURITY.md](SECURITY.md).
+Comunique as vulnerabilidades em privado, como descrito em [SECURITY.md](SECURITY.md).
 Estão no âmbito sobretudo: uma chave ou um segredo que chegue a um relatório,
 texto controlado pelo relay que injete marcação num relatório ou na interface,
 tráfego para algo que não os endpoints configurados, e formas de contornar as
