@@ -669,6 +669,7 @@ ekte 是黑盒审计辅助工具。它**无法证明**：
 | [开发者指南](DEVELOPER_GUIDE.zh-CN.md) | 架构、开发环境、贡献、翻译、Docker、发布 |
 | [docs/CI.md](docs/CI.md) | GitHub Action：输入、输出、示例（英文） |
 | [docs/DOCKER.md](docs/DOCKER.md) | 在容器中运行 Web 界面（英文） |
+| [稳定性与兼容性](docs/STABILITY.md) | semver 保护什么、弃用政策、支持的 Python 版本与系统、升级与降级（英文） |
 | [CHANGELOG.md](CHANGELOG.md) | 每个版本的变更（英文） |
 | [SECURITY.md](SECURITY.md) | 报告安全漏洞（英文） |
 

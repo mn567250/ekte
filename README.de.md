@@ -909,6 +909,7 @@ Schlüsse ziehen.
 | [Entwicklerhandbuch](DEVELOPER_GUIDE.de.md) | Architektur, Entwicklungsumgebung, Mitwirken, Übersetzungen, Docker, Releases |
 | [docs/CI.md](docs/CI.md) | Die GitHub Action: Ein- und Ausgaben, Beispiele (englisch) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Die Weboberfläche in einem Container betreiben (englisch) |
+| [Stabilität und Kompatibilität](docs/STABILITY.md) | Was SemVer schützt, Abkündigung, unterstützte Python-Versionen und Systeme, Upgrades und Downgrades (englisch) |
 | [CHANGELOG.md](CHANGELOG.md) | Was sich in jeder Version geändert hat (englisch) |
 | [SECURITY.md](SECURITY.md) | Eine Sicherheitslücke melden (englisch) |
 

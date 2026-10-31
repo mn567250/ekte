@@ -882,6 +882,7 @@ referanse før du trekker sterke konklusjoner.
 | [Utviklerveiledning](DEVELOPER_GUIDE.nb.md) | Arkitektur, utviklingsoppsett, bidrag, oversettelser, Docker, utgivelser |
 | [docs/CI.md](docs/CI.md) | GitHub Action: inndata, utdata, eksempler (på engelsk) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Kjøre nettgrensesnittet i en container (på engelsk) |
+| [Stabilitet og kompatibilitet](docs/STABILITY.md) | Hva semver beskytter, utfasing, støttede Python-versjoner og systemer, oppgraderinger og nedgraderinger (på engelsk) |
 | [CHANGELOG.md](CHANGELOG.md) | Hva som er endret i hver utgivelse (på engelsk) |
 | [SECURITY.md](SECURITY.md) | Rapportere en sårbarhet (på engelsk) |
 

@@ -842,6 +842,7 @@ on a single run without reviewing sample size, cost settings and local law. Run
 | [Developer guide](DEVELOPER_GUIDE.md) | Architecture, development setup, contributing, translations, Docker, releases |
 | [docs/CI.md](docs/CI.md) | The GitHub Action: inputs, outputs, examples |
 | [docs/DOCKER.md](docs/DOCKER.md) | Running the web UI in a container |
+| [Stability and compatibility](docs/STABILITY.md) | What semver protects, deprecation, supported Python and systems, upgrades and downgrades |
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each release |
 | [SECURITY.md](SECURITY.md) | Reporting a vulnerability |
 

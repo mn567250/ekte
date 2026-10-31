@@ -898,6 +898,7 @@ contro un riferimento affidabile prima di trarre conclusioni forti.
 | [Guida per sviluppatori](DEVELOPER_GUIDE.it.md) | Architettura, ambiente di sviluppo, contributi, traduzioni, Docker, rilasci |
 | [docs/CI.md](docs/CI.md) | La GitHub Action: input, output, esempi (in inglese) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Eseguire l'interfaccia web in un container (in inglese) |
+| [Stabilità e compatibilità](docs/STABILITY.md) | Cosa protegge semver, deprecazione, versioni di Python e sistemi supportati, aggiornamenti e downgrade (in inglese) |
 | [CHANGELOG.md](CHANGELOG.md) | Cosa è cambiato in ogni versione (in inglese) |
 | [SECURITY.md](SECURITY.md) | Segnalare una vulnerabilità (in inglese) |
 
