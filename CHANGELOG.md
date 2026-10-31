@@ -20,6 +20,12 @@ ekte has three eras:
 
 ### Added
 
+- **Automated dependency updates and vulnerability checks.** Dependabot proposes
+  weekly, grouped updates for the Python dependencies (`uv.lock`) and GitHub
+  Actions. The new `Security` workflow audits the locked dependencies with
+  pip-audit on pull requests, pushes to `main` and nightly, and fails on known
+  vulnerabilities; a reviewed advisory can be accepted with a reason and an
+  expiry in `.github/vulnerability-ignores.yml` (see CONTRIBUTING.md).
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
   language dropdown of every page (code `nb`, `lang="nb"`, dates and numbers
   formatted for `nb-NO`): every UI string, finding title and summary,
