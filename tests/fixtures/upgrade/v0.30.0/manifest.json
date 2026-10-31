@@ -1,0 +1,59 @@
+{
+  "version": "0.30.0",
+  "master_key": "Zml4dHVyZS1tYXN0ZXIta2V5LW5vdC1zZWNyZXQhISE=",
+  "api_key": "fixture-api-key-not-real",
+  "history": [
+    {
+      "id": 1,
+      "model": "gpt-4o-mini",
+      "score": 91.5,
+      "risk_level": "low",
+      "base_url": "https://relay1.example.com/v1"
+    },
+    {
+      "id": 2,
+      "model": "gpt-4o",
+      "score": 73.3,
+      "risk_level": "medium",
+      "base_url": "https://relay2.example.com/v1"
+    },
+    {
+      "id": 3,
+      "model": "claude-sonnet",
+      "score": 48.0,
+      "risk_level": "high",
+      "base_url": "https://relay3.example.com/v1"
+    }
+  ],
+  "watches": [
+    {
+      "id": 1,
+      "name": "stored key",
+      "key": "stored"
+    },
+    {
+      "id": 2,
+      "name": "unstored key",
+      "key": "unstored"
+    },
+    {
+      "id": 3,
+      "name": "key reference",
+      "key": "reference"
+    }
+  ],
+  "kb": [
+    {
+      "id": 1,
+      "kind": "provider",
+      "provider": "fixtureai",
+      "model_id": null
+    },
+    {
+      "id": 2,
+      "kind": "model",
+      "provider": "fixtureai",
+      "model_id": "fixture-large-1"
+    }
+  ]
+}

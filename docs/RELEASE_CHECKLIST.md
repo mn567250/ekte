@@ -41,9 +41,12 @@ fails; everything else depends on you. Process and recovery:
 
 ## Upgrade fixture
 
-- [ ] An upgrade fixture exists for the new version: a data directory (history,
-      settings, monitors) written by the previous release that the new version
-      opens and migrates without loss.
+- [ ] An upgrade fixture exists for the new version: run
+      `python scripts/make_upgrade_fixture.py <version>` after the release is on PyPI
+      (it runs that release and writes `tests/fixtures/upgrade/v<version>/`: history,
+      monitors with stored and unstored keys, your own knowledge-base entries), commit
+      the result, and `tests/test_upgrade_fixtures.py` opens it with the current code
+      without loss. Never put real keys or data in a fixture.
 - [ ] If the on-disk format changed, the migration and its test are in the changelog.
 
 ## Accessibility (UI changes)

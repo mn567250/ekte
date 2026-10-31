@@ -23,6 +23,12 @@ ekte has three eras:
 
 ### Added
 
+- **Upgrade tests with data from released versions.** The 0.30.0 fixture (a data
+  directory written by that release: history, monitors with stored and unstored
+  keys, your own knowledge-base entries) is opened with the current code in CI;
+  the test checks the migration, its backup and that nothing is lost.
+  `scripts/make_upgrade_fixture.py <version>` creates the fixture of a new
+  release, and the release checklist requires one per minor release.
 - **Accessibility manual review checklist.** `docs/ACCESSIBILITY.md` lists the
   eleven steps that still need a person, with exact screen-reader, zoom, greyscale
   and touch steps, a record table and the automated pre-checks (keyboard walk,
