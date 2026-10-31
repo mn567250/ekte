@@ -23,6 +23,12 @@ ekte has three eras:
 
 ### Added
 
+- **Accessibility manual review checklist.** `docs/ACCESSIBILITY.md` lists the
+  eleven steps that still need a person, with exact screen-reader, zoom, greyscale
+  and touch steps, a record table and the automated pre-checks (keyboard walk,
+  accessibility tree, 320 px reflow, reduced motion, contrast in both themes) that
+  found no issue. No step is recorded as manually reviewed yet. The release
+  checklist asks to repeat the review for UI changes.
 - **Knowledge-base freshness.** Every bundled provider profile now carries
   `last_verified` (the date its data was last checked). Reports carry the
   knowledge-base date (`knowledge.kb_date`, the oldest of those dates; report

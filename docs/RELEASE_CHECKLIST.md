@@ -53,6 +53,9 @@ fails; everything else depends on you. Process and recovery:
 - [ ] The conformance report and `a11y-llm-review.json` are current for the changed pages
       (the nightly and manual CI runs produce the conformance report).
 - [ ] Keyboard use and screen-reader labels of new or changed controls were checked by hand.
+- [ ] The steps in [ACCESSIBILITY.md, Manual review](ACCESSIBILITY.md#manual-review) that
+      the change touches were repeated by a person and recorded there. A step nobody
+      performed stays "manual review pending"; a script run does not tick this item.
 
 ## Documentation in all languages
 
