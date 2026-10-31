@@ -19,6 +19,7 @@ import contextlib
 import os
 import sqlite3
 import sys
+import time
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -94,6 +95,27 @@ def _restrict(path: Path) -> None:
                 p.chmod(_FILE_MODE)
 
 
+def _set_wal(conn: sqlite3.Connection, timeout: float = 5.0) -> None:
+    """Switch to WAL, waiting for other connections like ``busy_timeout`` does.
+
+    SQLite answers a journal-mode change with "database is locked" at once,
+    without calling the busy handler, while another connection holds a lock
+    (e.g. a concurrent opener migrating a fresh database), so retry until the
+    same deadline the busy timeout uses.
+    """
+    deadline = time.monotonic() + timeout
+    delay = 0.01
+    while True:
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as exc:
+            if "locked" not in str(exc) or time.monotonic() >= deadline:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.2)
+
+
 @contextmanager
 def connect(
     name: str,
@@ -121,7 +143,7 @@ def connect(
         # Refuse a newer database before any pragma can write to its file.
         if dbmigrate.user_version(conn) > dbmigrate.latest(migrations):
             dbmigrate.migrate(conn, path, migrations)  # raises
-        conn.execute("PRAGMA journal_mode=WAL")
+        _set_wal(conn)
         conn.execute("PRAGMA foreign_keys=ON")
         if dbmigrate.migrate(conn, path, migrations) and on_migrated:
             on_migrated(conn)

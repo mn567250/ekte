@@ -269,3 +269,25 @@ def test_concurrent_openers_run_each_step_once(data):
     assert not errors
     assert log == [1]
     assert _version(data / "t.db") == 1
+
+
+def test_connect_uses_wal(data):
+    with datadir.connect("t.db", [dbmigrate.Migration(1, lambda c: None)]) as conn:
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+
+
+def test_wal_switch_waits_for_a_held_lock(data, tmp_path):
+    # SQLite refuses a journal-mode change at once while another connection
+    # holds a lock; _set_wal retries until the lock is released.
+    path = tmp_path / "w.db"
+    holder = sqlite3.connect(str(path), isolation_level=None, check_same_thread=False)
+    holder.execute("CREATE TABLE t (x)")
+    holder.execute("BEGIN EXCLUSIVE")
+    threading.Timer(0.3, lambda: holder.execute("COMMIT")).start()
+    conn = sqlite3.connect(str(path), timeout=0.01, check_same_thread=False)
+    try:
+        datadir._set_wal(conn, timeout=5.0)
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+    finally:
+        conn.close()
+        holder.close()
