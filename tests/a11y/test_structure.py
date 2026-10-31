@@ -669,6 +669,13 @@ _SENSE: dict[str, tuple[str, str, str]] = {
         r"pulsante|pulsanti|bottone|icona|icone|link|campo|campi|casella|simbolo|freccia|punto|cerchio|menu|colonna|"
         r"angolo|lato|pannello|scheda|interruttore|barra",
     ),
+    "nb": (
+        r"klikk|klikker|trykk|trykker|tapp|velg|velger|bruk|bruker|åpne|åpner|skriv|oppgi|finn|se etter",
+        r"venstre|høyre|rød\w*|grønn\w*|blå\w*|gul\w*|oransje|grå\w*|rund\w*|firkantet\w*|kvadratisk\w*|"
+        r"trekantet\w*|stor\w*|liten|lite|små|pip\w*|lydsignal\w*",
+        r"knapp\w*|ikon\w*|lenke\w*|felt\w*|boks\w*|symbol\w*|pil\w*|prikk\w*|sirkel\w*|meny\w*|kolonne\w*|"
+        r"hjørne\w*|side|panel\w*|fane\w*|bryter\w*|linje\w*",
+    ),
     "zh": (
         r"点击|单击|点按|按下|轻触|选择|使用|打开|输入|查找",
         r"左侧|右侧|左边|右边|左上角|右上角|左下角|右下角|红色|绿色|蓝色|黄色|橙色|灰色|圆形|方形|三角形|大的|小的|"
@@ -709,6 +716,8 @@ SENSORY_SAMPLES = {
     "es": (["Haga clic en el botón verde de la derecha."], ["Use el formulario de arriba."]),
     "pt": (["Clique no botão vermelho à direita."], ["Clique no botão <b>Guardar</b>."]),
     "it": (["Clicca il pulsante rosso a destra."], ["Il modello è più piccolo."]),
+    "nb": (["Klikk på den grønne knappen til høyre.", "Velg det runde ikonet."],
+           ["Klikk på knappen «Lagre».", "Bruk skjemaet over for å legge til din første.", "Modellen er mindre."]),
     "zh": (["请点击右侧的绿色按钮。"], ["点击“保存”按钮。", "使用上面的表单添加第一个监控。"]),
 }  # fmt: skip
 

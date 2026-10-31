@@ -144,7 +144,7 @@ def test_perf_fragment_translates_every_key():
     base = Path(__file__).resolve().parent.parent / "ekte" / "i18n" / "locales" / "fragments" / "v2-perf"
     en = json.loads((base / "en.json").read_text(encoding="utf-8"))["strings"]
     assert all(k == v for k, v in en.items())
-    for code in ("fr", "es", "pt", "it", "de"):
+    for code in ("fr", "es", "pt", "it", "de", "nb"):
         tr = json.loads((base / f"{code}.json").read_text(encoding="utf-8"))["strings"]
         assert set(tr) == set(en), code
 

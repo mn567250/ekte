@@ -1,6 +1,6 @@
 # ekte — Metodología
 
-> [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · **🇪🇸 Español** · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · [🇩🇪 Deutsch](METHODOLOGY.de.md)
+> [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · **🇪🇸 Español** · [🇵🇹 Português](METHODOLOGY.pt.md) · [🇮🇹 Italiano](METHODOLOGY.it.md) · [🇩🇪 Deutsch](METHODOLOGY.de.md) · [🇳🇴 Norsk](METHODOLOGY.nb.md)
 
 Este documento explica cómo llega **ekte** a su veredicto: qué sondas de caja
 negra envía cada detector, cómo sus resultados se convierten en puntos, cómo

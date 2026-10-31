@@ -96,7 +96,7 @@ def test_report_severity_dots_meters_and_summary(tmp_path):
 
 
 @needs_node
-@pytest.mark.parametrize("lang", ["zh", "fr", "es", "pt", "it", "de"])
+@pytest.mark.parametrize("lang", ["zh", "fr", "es", "pt", "it", "de", "nb"])
 def test_report_is_translated(tmp_path, lang):
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     html = _render(tmp_path, lang, report)["html"]

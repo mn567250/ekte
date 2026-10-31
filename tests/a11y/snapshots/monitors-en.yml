@@ -19,6 +19,7 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+    - option "Norsk"
   - link "Accessibility":
     - /url: /v2/accessibility
   - navigation "Main navigation":
@@ -127,6 +128,7 @@
           - option "Português"
           - option "Italiano"
           - option "Deutsch"
+          - option "Norsk"
       - term: Knowledge profile
       - definition:
         - code: openai/gpt-4o

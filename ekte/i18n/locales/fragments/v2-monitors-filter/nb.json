@@ -1,0 +1,11 @@
+{
+ "strings": {
+  "Hide details": "Skjul detaljer",
+  "Last risk": "Siste risiko",
+  "Name, relay, model…": "Navn, relé, modell …",
+  "No monitor matches the filters.": "Ingen overvåking passer med filtrene.",
+  "No result yet": "Ikke noe resultat ennå",
+  "Show details": "Vis detaljer",
+  "Showing {n} of {total} monitors": "Viser {n} av {total} overvåkinger"
+ }
+}

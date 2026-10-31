@@ -1,0 +1,9 @@
+{
+ "strings": {
+  "From the knowledge base": "Fra kunnskapsbasen",
+  "Monitor this": "Overvåk dette",
+  "Open the saved report": "Åpne den lagrede rapporten",
+  "dimension": "dimensjon",
+  "The speed probe runs only on deep, full or custom suites, or on standard with a baseline.": "Hastighetsproben kjøres bare med testsettene deep, full eller egendefinert, eller med standard og en referanse."
+ }
+}

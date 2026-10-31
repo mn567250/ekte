@@ -1,5 +1,5 @@
 /* ekte web UI — language switch (English · 中文 · Français · Español ·
- * Português · Italiano · Deutsch; the list comes from ekte/i18n/locales/).
+ * Português · Italiano · Deutsch · Norsk; the list comes from ekte/i18n/locales/).
  *
  * Plain browser global, no modules. Load it in <head> after /locales.js and
  * before any page script, so the current language is known while the page

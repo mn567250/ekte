@@ -81,7 +81,7 @@ def test_every_ui_language_is_complete(tmp_path):
         capture_output=True, text=True, check=True,
     ).stdout
     result = json.loads(out)
-    assert {"fr", "es", "pt", "it", "de"} <= set(result["codes"])
+    assert {"fr", "es", "pt", "it", "de", "nb"} <= set(result["codes"])
     assert result["problems"] == []
 
 
@@ -111,7 +111,7 @@ const TEXT = /^(verdict\.(headline|summary|key_findings\.\d+)|dimensions\.\d+\.r
 const CJK = /[\u3400-\u9fff]/;
 const flat = (o, p, out) => { if (o && typeof o === "object") for (const k of Object.keys(o)) flat(o[k], p ? p + "." + k : k, out); else out[p] = o; return out; };
 const result = {};
-for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
+for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de", "nb"]) {
   for (const m of ["locales.js", "lang.js", "i18n.js"]) delete require.cache[require.resolve(path.join(dir, m))];
   global.window = {};
   global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", querySelectorAll: () => [], addEventListener() {} };
@@ -147,7 +147,7 @@ def test_downloaded_report_is_translated_with_english_keys(tmp_path):
         capture_output=True, text=True, check=True,
     ).stdout
     result = json.loads(out)
-    assert set(result) == {"en", "zh", "fr", "es", "pt", "it", "de"}
+    assert set(result) == {"en", "zh", "fr", "es", "pt", "it", "de", "nb"}
     for lang, res in result.items():
         assert res["problems"] == [], lang
         AuditReport.model_validate(res["report"])
@@ -270,7 +270,7 @@ def test_language_labels_are_endonyms():
     labels = {m["code"]: m["label"] for m in i18n.languages()}
     assert labels == {
         "en": "English", "zh": "中文", "fr": "Français", "es": "Español",
-        "pt": "Português", "it": "Italiano", "de": "Deutsch",
+        "pt": "Português", "it": "Italiano", "de": "Deutsch", "nb": "Norsk",
     }
     assert i18n.codes()[:2] == ["en", "zh"]
 
@@ -711,7 +711,7 @@ _FP_TITLES_JS = r"""
 const path = require("path");
 const dir = process.argv[1], signals = JSON.parse(process.argv[2]);
 const out = {};
-for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
+for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de", "nb"]) {
   for (const m of ["locales.js", "lang.js", "i18n.js"]) delete require.cache[require.resolve(path.join(dir, m))];
   global.window = {};
   global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", querySelectorAll: () => [], addEventListener() {} };
@@ -857,7 +857,7 @@ _PASS_FAIL_JS = r"""
 const path = require("path");
 const dir = process.argv[1], cases = JSON.parse(process.argv[2]);
 const out = {};
-for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de"]) {
+for (const lang of ["en", "zh", "fr", "es", "pt", "it", "de", "nb"]) {
   for (const m of ["locales.js", "lang.js", "i18n.js"]) delete require.cache[require.resolve(path.join(dir, m))];
   global.window = {};
   global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", querySelectorAll: () => [], addEventListener() {} };

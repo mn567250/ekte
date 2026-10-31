@@ -1,0 +1,24 @@
+{
+ "strings": {
+  "probe": "probe",
+  "audit": "revisjon",
+  "{metric} ({unit}) over time: {n} requests": "{metric} ({unit}) over tid: {n} forespørsler",
+  "target median {value}": "median for målet {value}",
+  "baseline median {value}": "median for referansen {value}",
+  "{n} failed": "{n} mislyktes",
+  "; ": "; ",
+  "Show data table": "Vis datatabell",
+  "Endpoint": "Endepunkt",
+  "Phase": "Fase",
+  "Start": "Start",
+  "Status": "Status",
+  "Performance metric": "Ytelsesmåltall",
+  "{n} × {max} tokens": "{n} × {max} tokens",
+  "{input} + {output} tokens (usage)": "{input} + {output} tokens (usage)",
+  "count": "antall",
+  "min": "min",
+  "mean": "gjennomsnitt",
+  "max": "maks",
+  "stdev": "standardavvik"
+ }
+}

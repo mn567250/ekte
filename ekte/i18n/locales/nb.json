@@ -1,0 +1,872 @@
+{
+ "meta": {
+  "code": "nb",
+  "label": "Norsk",
+  "html": "nb",
+  "locale": "nb-NO",
+  "order": 7
+ },
+ "strings": {
+  "Language": "Språk",
+  "Show key": "Vis nøkkel",
+  "Tools": "Verktøy",
+  "History": "Historikk",
+  "Monitors": "Overvåking",
+  "Runs locally · keys <b>never leave</b>": "Kjører lokalt · nøkler <b>forlater aldri maskinen</b>",
+  "Back to audit": "Tilbake til revisjonen",
+  "Relay address base_url": "Reléadresse base_url",
+  "Supports env:VAR / file:/path": "Støtter env:VAR / file:/sti",
+  "sk-... or env:EKTE_API_KEY": "sk-... eller env:EKTE_API_KEY",
+  "sk-... or env:OPENAI_API_KEY": "sk-... eller env:OPENAI_API_KEY",
+  "Protocol": "Protokoll",
+  "Auto": "Auto",
+  "Could not reach the local service: ": "Fikk ikke kontakt med den lokale tjenesten: ",
+  "Audit failed: ": "Revisjonen mislyktes: ",
+  "Evidence": "Bevis",
+  "Hide evidence": "Skjul bevis",
+  "Show evidence": "Vis bevis",
+  "Recommendation: ": "Anbefaling: ",
+  "Overall health score": "Samlet helsescore",
+  "Health score": "Helsescore",
+  "Verdict confidence": "Sikkerhet i konklusjonen",
+  "Confidence": "Sikkerhet",
+  "confidence": "sikkerhet",
+  "Risk level": "Risikonivå",
+  "Risk": "Risiko",
+  "Target": "Mål",
+  "Claimed": "Oppgitt",
+  "Tested id": "Testet ID",
+  "Baseline": "Referanse",
+  "Mode": "Modus",
+  "Suite": "Testsett",
+  "Per-dimension checks": "Kontroller per dimensjon",
+  "Findings": "Funn",
+  "High": "Høy",
+  "Medium": "Middels",
+  "Low": "Lav",
+  "yes": "ja",
+  "no": "nei",
+  "Check": "Kontroll",
+  "finding": "funn",
+  "Most likely genuine": "Mest sannsynlig ekte",
+  "Mostly trustworthy, minor issues": "Stort sett pålitelig, små avvik",
+  "Deviations, verify": "Avvik, bør kontrolleres",
+  "Bait-and-switch": "Falsk vare",
+  "Insufficient signal": "For lite grunnlag",
+  "Consistent (likely genuine)": "Konsistent (trolig ekte)",
+  "Mostly trustworthy": "Stort sett pålitelig",
+  "Deviations found": "Avvik funnet",
+  "Behavior is consistent with the claimed model": "Atferden stemmer med den oppgitte modellen",
+  "Mostly consistent, with a few minor issues": "Stort sett konsistent, med noen få små avvik",
+  "Some behavior does not match the claimed model — verify": "Noe av atferden stemmer ikke med den oppgitte modellen — kontroller",
+  "It is not serving the model it claims": "Den leverer ikke modellen den oppgir",
+  "Insufficient signal to decide (connectivity or coverage too low)": "For lite grunnlag til å avgjøre (for dårlig tilkobling eller dekning)",
+  "Pass": "Bestått",
+  "Warning": "Advarsel",
+  "Fail": "Ikke bestått",
+  "Info": "Info",
+  "Inconclusive": "Uavklart",
+  "Not run": "Ikke kjørt",
+  "Error": "Feil",
+  "Critical": "Kritisk",
+  "critical": "kritisk",
+  "high": "høy",
+  "medium": "middels",
+  "Model identity": "Modellidentitet",
+  "Is it the model it claims to be?": "Er det modellen den utgir seg for å være?",
+  "Context window": "Kontekstvindu",
+  "Does it really remember long input?": "Husker den virkelig lange inndata?",
+  "Capability claims": "Påståtte egenskaper",
+  "Are tools/JSON really supported?": "Støttes verktøy/JSON virkelig?",
+  "Billing & usage": "Fakturering og forbruk",
+  "Is token usage inflated?": "Er tokenforbruket blåst opp?",
+  "Protocol compliance": "Protokollsamsvar",
+  "Is the API spec-compliant?": "Følger API-et spesifikasjonen?",
+  "Connectivity": "Tilkobling",
+  "Reliably reachable?": "Pålitelig tilgjengelig?",
+  "Concurrency reliability": "Pålitelighet ved samtidighet",
+  "Stable under load?": "Stabil under last?",
+  "Streaming authenticity": "Ekte strømming",
+  "Real streaming or faked?": "Ekte strømming eller forfalsket?",
+  "Transport security": "Transportsikkerhet",
+  "Are keys handled safely?": "Håndteres nøkler trygt?",
+  "Is the endpoint reachable and does basic chat work?": "Kan endepunktet nås, og fungerer enkel chat?",
+  "Does it follow the OpenAI API spec?": "Følger det OpenAI API-spesifikasjonen?",
+  "Does it really remember long input, or truncate silently?": "Husker den virkelig lange inndata, eller kuttes de stille av?",
+  "Is it really the model it claims to be?": "Er det virkelig modellen den utgir seg for å være?",
+  "Are tool calling / JSON mode really supported?": "Støttes verktøykall / JSON-modus virkelig?",
+  "Real streaming, or buffered and faked?": "Ekte strømming, eller bufret og forfalsket?",
+  "Is token usage over-reported?": "Rapporteres tokenforbruket for høyt?",
+  "Success rate and latency under load": "Suksessrate og forsinkelse under last",
+  "Transport encryption and key handling": "Transportkryptering og nøkkelhåndtering",
+  "Capabilities": "Egenskaper",
+  "Billing": "Fakturering",
+  "Reliability": "Pålitelighet",
+  "Streaming": "Strømming",
+  "Security": "Sikkerhet",
+  "ekte — relay reality check": "ekte — realitetssjekk for releer",
+  "Is this relay serving the <span class='u'>real thing</span>?": "Leverer dette reléet <span class='u'>den ekte varen</span>?",
+  "Enter the relay's address and the model it claims to serve. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Oppgi reléets adresse og modellen det sier det leverer. ekte kjører et fullstendig black box-testsett på maskinen din og lager en lesbar verifiseringsrapport underbygd med bevis.",
+  "Claimed model": "Oppgitt modell",
+  "Actual request id": "Faktisk forespørsels-ID",
+  "Optional": "Valgfritt",
+  "Empty = same as above (enter the real id if you suspect a swap)": "Tom = samme som over (oppgi den ekte ID-en hvis du mistenker bytte)",
+  "Test suite": "Testsett",
+  "Compare against a trusted baseline (compare · stronger verdict)": "Sammenlign med en pålitelig referanse (compare · sterkere konklusjon)",
+  "Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.": "Oppgi et endepunkt for samme modell som du <b>stoler på</b> (f.eks. det offisielle API-et). ekte bruker det til å bekrefte målets atferd, slik at konklusjoner om bytte eller nedgradering blir mer pålitelige — kvalitetsdommeren og manipulasjonsdeteksjonen når bare sitt høyeste nivå med en referanse.",
+  "Baseline base_url": "Referanse-base_url",
+  "Baseline API Key": "Referansens API-nøkkel",
+  "Baseline model": "Referansemodell",
+  "Official id of the same model": "Offisiell ID for samme modell",
+  "Baseline protocol": "Referanseprotokoll",
+  "Start audit": "Start revisjon",
+  "Tests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.": "Testene sendes fra <b>din lokale ekte-server</b>; nøkkelen brukes bare til å koble til målreléet og <b>lastes aldri opp til noen tredjepart</b>.",
+  "ekte provides reproducible evidence of risk and deviation, not a legal verdict.": "ekte gir reproduserbare bevis på risiko og avvik, ikke en juridisk dom.",
+  "Running checks…": "Kjører kontroller …",
+  "Test another": "Test et annet",
+  "Download report (JSON)": "Last ned rapport (JSON)",
+  "Want the strongest verdict? Re-check against an official baseline with <code>ekte compare</code>.": "Vil du ha den sterkeste konklusjonen? Kontroller på nytt mot en offisiell referanse med <code>ekte compare</code>.",
+  "Connecting to endpoint…": "Kobler til endepunktet …",
+  "Please enter the relay address and the claimed model.": "Oppgi reléadressen og den oppgitte modellen.",
+  "Starting audit of ": "Starter revisjon av ",
+  "No warnings or failures — every dimension is consistent with the claimed model.": "Ingen advarsler eller feil — alle dimensjoner stemmer med den oppgitte modellen.",
+  "ekte provides <strong>reproducible evidence of behavioral deviation and risk</strong>, not legal or cryptographic proof of fraud. Relays may route probabilistically; weigh sample size, billing settings and local law yourself, and never publicly accuse a vendor based on a single run.": "ekte gir <strong>reproduserbare bevis på avvikende atferd og risiko</strong>, ikke juridiske eller kryptografiske bevis på svindel. Releer kan rute tilfeldig; vurder selv utvalgsstørrelse, faktureringsinnstillinger og lokal lovgivning, og anklag aldri en leverandør offentlig på grunnlag av én enkelt kjøring.",
+  "ekte — audit history": "ekte — revisjonshistorikk",
+  "Local history · stored in <b>~/.ekte</b>": "Lokal historikk · lagret i <b>~/.ekte</b>",
+  "Audit <span class='u'>history</span> & trends": "Revisjons<span class='u'>historikk</span> og trender",
+  "Every verification you have run on this machine. Grouped by \"relay + claimed model\", with a health-score trend line; click any row to expand that report.": "Alle verifiseringer du har kjørt på denne maskinen. Gruppert etter «relé + oppgitt modell», med en trendlinje for helsescoren; klikk på en rad for å folde ut rapporten.",
+  "Clear history": "Tøm historikken",
+  "Loading history…": "Laster historikk …",
+  "History lives only in your local SQLite file and is never uploaded to any third party.": "Historikken ligger bare i din lokale SQLite-fil og lastes aldri opp til noen tredjepart.",
+  "Could not read history: ": "Kunne ikke lese historikken: ",
+  "Make sure the local ekte service is running.": "Kontroller at den lokale ekte-tjenesten kjører.",
+  "No audits recorded yet.": "Ingen revisjoner registrert ennå.",
+  "Run your first audit": "Kjør din første revisjon",
+  "(no model declared)": "(ingen modell oppgitt)",
+  "Time": "Tid",
+  "Score": "Score",
+  "Grade": "Karakter",
+  "Mode / suite": "Modus / testsett",
+  "Loading report…": "Laster rapport …",
+  "Could not load this report: ": "Kunne ikke laste denne rapporten: ",
+  "Delete this history entry?": "Slette denne historikkoppføringen?",
+  "No dimension data.": "Ingen dimensjonsdata.",
+  "No warnings or failures.": "Ingen advarsler eller feil.",
+  "Download JSON": "Last ned JSON",
+  "Delete entry": "Slett oppføring",
+  "Clear the entire audit history? This cannot be undone.": "Tømme hele revisjonshistorikken? Dette kan ikke angres.",
+  "Scan": "Skann",
+  "Report view /": "Rapportvisning /",
+  "History /history": "Historikk /history",
+  "Relay <span class='hl'>bait-and-switch</span> test bench": "Testbenk for <span class='hl'>falsk vare</span> hos releer",
+  "Point it at a relay's <span class='kbd'>base_url</span> and the model it claims. ekte runs a full suite of black-box probes, compares the results with built-in native model profiles, and gives an evidence-backed verdict — not a gut feeling. Power-user console with a terminal-style live detector log.": "Pek den mot et relés <span class='kbd'>base_url</span> og modellen det oppgir. ekte kjører et fullt sett med black box-prober, sammenligner resultatene med innebygde profiler av de ekte modellene og gir en konklusjon underbygd med bevis — ikke magefølelse. Konsoll for viderekomne med en terminalaktig sanntidslogg fra detektorene.",
+  "target endpoint": "målendepunkt",
+  "claimed model (model)": "oppgitt modell (model)",
+  "empty = same as above": "tom = samme som over",
+  "declared_provider <span class='hint'>opt</span>": "declared_provider <span class='hint'>valgfri</span>",
+  "api": "api",
+  "suite": "testsett",
+  "+ baseline / compare (trusted baseline · stronger verdict)": "+ referanse / compare (pålitelig referanse · sterkere konklusjon)",
+  "Enter an endpoint for the same model that you trust (e.g. the official API). The quality judge and tamper detection only reach their highest level with a baseline.": "Oppgi et endepunkt for samme modell som du stoler på (f.eks. det offisielle API-et). Kvalitetsdommeren og manipulasjonsdeteksjonen når bare sitt høyeste nivå med en referanse.",
+  "official model id": "offisiell modell-ID",
+  "verdict": "konklusjon",
+  "9 dimension scores": "9 dimensjonsscorer",
+  "live detector log": "sanntidslogg fra detektorene",
+  "// waiting to start… fill in the form and click \"run audit\"<br>// detector lines stream here — click a line with findings to expand evidence": "// venter på start … fyll ut skjemaet og klikk «kjør revisjon»<br>// detektorlinjene strømmer inn her — klikk på en linje med funn for å folde ut bevisene",
+  "ekte reports reproducible evidence of behavioral deviation and risk, not cryptographic proof of fraud. · <a href='/'>switch to report view /</a> · a baseline comparison gives the strongest verdict.": "ekte rapporterer reproduserbare bevis på avvikende atferd og risiko, ikke kryptografiske bevis på svindel. · <a href='/'>bytt til rapportvisning /</a> · en sammenligning med referanse gir den sterkeste konklusjonen.",
+  "The verdict appears here after an audit ▌": "Konklusjonen vises her etter en revisjon ▌",
+  "run audit": "kjør revisjon",
+  "auditing…": "reviderer …",
+  "re-run": "kjør på nytt",
+  "Audit in progress… ▌": "Revisjon pågår … ▌",
+  "weight": "vekt",
+  "! Please enter base_url and model.": "! Oppgi base_url og modell.",
+  "! Could not reach the local service: ": "! Fikk ikke kontakt med den lokale tjenesten: ",
+  "! Audit failed: ": "! Revisjonen mislyktes: ",
+  "Connection failed": "Tilkoblingen mislyktes",
+  "Audit aborted": "Revisjonen ble avbrutt",
+  "No report received (stream ended)": "Ingen rapport mottatt (strømmen ble avsluttet)",
+  "ekte — Toolbox · embedding / rerank verification": "ekte — Verktøykasse · verifisering av embedding / rerank",
+  "Toolbox · <span class='u'>embedding / rerank</span> verification": "Verktøykasse · verifisering av <span class='u'>embedding / rerank</span>",
+  "Embedding and rerank endpoints return vectors or rankings, not chat, so the 9-dimension chat audit does not apply to them. Dedicated probes verify them here: for embeddings the key signal is whether the <b>vector dimension</b> matches the claimed model (the #1 bait-and-switch signal), plus re-tests of determinism and distinctness; for rerank, a known-answer probe checks whether the obvious answer is ranked first.": "Embedding- og rerank-endepunkter returnerer vektorer eller rangeringer, ikke chat, så chat-revisjonen med 9 dimensjoner gjelder ikke for dem. Egne prober verifiserer dem her: for embeddinger er hovedsignalet om <b>vektordimensjonen</b> stemmer med den oppgitte modellen (det viktigste tegnet på falsk vare), pluss nye tester av determinisme og atskillelse; for rerank sjekker en probe med kjent svar om det åpenbare svaret rangeres først.",
+  "Embedding audit": "Embedding-revisjon",
+  "Rerank audit": "Rerank-revisjon",
+  "Requested model id": "Forespurt modell-ID",
+  "Claimed model (optional)": "Oppgitt modell (valgfritt)",
+  "Empty = same as above": "Tom = samme som over",
+  "Claimed dimension (optional)": "Oppgitt dimensjon (valgfritt)",
+  "Empty = look up in knowledge base": "Tom = slå opp i kunnskapsbasen",
+  "Declared provider (optional)": "Oppgitt leverandør (valgfritt)",
+  "Verify embedding endpoint": "Verifiser embedding-endepunkt",
+  "Requests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.": "Forespørslene sendes fra <b>din lokale ekte-server</b>; nøkkelen brukes bare til å koble til målreléet og <b>lastes aldri opp til noen tredjepart</b>.",
+  "Rerank model id": "Rerank-modell-ID",
+  "Custom probe (defaults to the built-in known-answer probe)": "Egen probe (standard er den innebygde proben med kjent svar)",
+  "Leave empty to use ekte's built-in probe: a question plus several documents, where the <b>single obvious answer</b> should be ranked first. To customize, enter a query, one document per line, and the line number (0-based) of the document expected to rank first.": "La feltet stå tomt for å bruke ektes innebygde probe: et spørsmål pluss flere dokumenter, der det <b>ene åpenbare svaret</b> skal rangeres først. For å tilpasse, oppgi en spørring, ett dokument per linje og linjenummeret (fra 0) til dokumentet som forventes rangert først.",
+  "Query": "Spørring",
+  "Documents (one per line)": "Dokumenter (ett per linje)",
+  "Line expected to rank first": "Linjen som forventes rangert først",
+  "Verify rerank endpoint": "Verifiser rerank-endepunkt",
+  "Embedding/rerank checks are black-box, non-chat tests: a dimension mismatch is the strongest \"bait-and-switch\" signal; determinism and distinctness are supporting evidence.": "Embedding-/rerank-kontroller er black box-tester uten chat: et dimensjonsavvik er det sterkeste tegnet på «falsk vare»; determinisme og atskillelse er støttende bevis.",
+  "No checks.": "Ingen kontroller.",
+  "Please enter the relay address and the model id.": "Oppgi reléadressen og modell-ID-en.",
+  "ekte — monitors": "ekte — overvåking",
+  "Put a <span class='u'>scheduled sentinel</span> on your relay": "Sett en <span class='u'>planlagt vaktpost</span> på reléet ditt",
+  "Name": "Navn",
+  "e.g. production relay deepseek": "f.eks. produksjonsrelé deepseek",
+  "e.g. openai / deepseek": "f.eks. openai / deepseek",
+  "Requested model": "Forespurt modell",
+  "Defaults to model": "Standard er model",
+  "Protocol api": "Protokoll api",
+  "Alert threshold": "Varslingsterskel",
+  "low and above": "lav og høyere",
+  "medium and above": "middels og høyere",
+  "high only": "bare høy",
+  "Check interval (minutes)": "Kontrollintervall (minutter)",
+  "Enable right after creating": "Aktiver med en gang den er opprettet",
+  "Webhook URLs (one per line, optional)": "Webhook-URL-er (én per linje, valgfritt)",
+  "Add monitor": "Legg til overvåking",
+  "Configured monitors": "Konfigurerte overvåkinger",
+  "Loading…": "Laster …",
+  "ekte · relay reality check · monitors are scheduled in the background by the <code>ekte serve</code> process": "ekte · realitetssjekk for releer · overvåkinger planlegges i bakgrunnen av prosessen <code>ekte serve</code>",
+  "Not run yet": "Ikke kjørt ennå",
+  "Never run": "Aldri kjørt",
+  " h": " t",
+  " min": " min",
+  " s": " s",
+  "No monitors yet. Use the form above to add your first one.": "Ingen overvåkinger ennå. Bruk skjemaet over for å legge til din første.",
+  " · claimed ": " · oppgitt ",
+  " · score <b>": " · score <b>",
+  " webhook": " webhook",
+  " webhooks": " webhooker",
+  " item": " element",
+  " items": " elementer",
+  "No webhooks": "Ingen webhooker",
+  "Enabled": "Aktivert",
+  "Paused": "Satt på pause",
+  "Model": "Modell",
+  "Every ": "Hvert ",
+  "Threshold": "Terskel",
+  "Last run: ": "Siste kjøring: ",
+  "Run now": "Kjør nå",
+  "Delete": "Slett",
+  "Failed to load — please refresh and try again.": "Lasting mislyktes — oppdater siden og prøv igjen.",
+  "Failed to create monitor": "Kunne ikke opprette overvåkingen",
+  "Network error — failed to create monitor": "Nettverksfeil — kunne ikke opprette overvåkingen",
+  "Running…": "Kjører …",
+  "Run failed": "Kjøringen mislyktes",
+  "Delete this monitor?": "Slette denne overvåkingen?",
+  " provider": " leverandør",
+  " model": " modell",
+  "Select provider…": "Velg leverandør …",
+  "Select model…": "Velg modell …",
+  "← Pick a model": "← Velg en modell",
+  "Custom input": "Egen verdi",
+  "Custom (from relay)": "Egen (fra reléet)",
+  "Fetch models": "Hent modeller",
+  "Fetch models first…": "Hent modeller først …",
+  "Relay only (not in knowledge base)": "Bare reléet (ikke i kunnskapsbasen)",
+  "Fetching models…": "Henter modeller …",
+  "Enter the base_url first": "Oppgi base_url først",
+  "The relay returned no models": "Reléet returnerte ingen modeller",
+  "Models found:": "Modeller funnet:",
+  "Token/usage billing audit": "Revisjon av token-/forbruksfakturering",
+  "Capability-claim verification": "Verifisering av påståtte egenskaper",
+  "Connectivity & basic completion": "Tilkobling og enkel fullføring",
+  "Real context window & truncation": "Reelt kontekstvindu og avkorting",
+  "Determinism & cache-correctness": "Determinisme og korrekt hurtigbuffer",
+  "Injected system-prompt detection": "Påvisning av injisert systemprompt",
+  "Response integrity / tampering": "Svarintegritet / manipulering",
+  "Model identity & downgrade fingerprinting": "Modellidentitet og fingeravtrykk for nedgradering",
+  "Prompt prefix-cache (timing)": "Prefiks-hurtigbuffer for prompt (tidsmåling)",
+  "OpenAI-compatibility conformance": "Samsvar med OpenAI-kompatibilitet",
+  "LLM-judged quality / downgrade assessment": "Kvalitets-/nedgraderingsvurdering ved LLM-dommer",
+  "Concurrent reliability & latency": "Pålitelighet og forsinkelse ved samtidighet",
+  "Transport & secret-handling signals": "Signaler om transport og hemmelighetshåndtering",
+  "Multimodal (vision) capability verification": "Verifisering av multimodale (syn-)egenskaper",
+  "CLEAN": "REN",
+  "LOW": "LAV",
+  "MEDIUM": "MIDDELS",
+  "HIGH": "HØY",
+  "CRITICAL": "KRITISK",
+  "INCONCLUSIVE": "UAVKLART",
+  "PASS": "BESTÅTT",
+  "WARN": "ADVARSEL",
+  "FAIL": "IKKE BESTÅTT",
+  "INFO": "INFO",
+  "NOT_RUN": "IKKE KJØRT",
+  "ERROR": "FEIL",
+  "n/a": "i/r",
+  "CLEAN RISK": "REN RISIKO",
+  "LOW RISK": "LAV RISIKO",
+  "MEDIUM RISK": "MIDDELS RISIKO",
+  "HIGH RISK": "HØY RISIKO",
+  "INCONCLUSIVE RISK": "UAVKLART RISIKO",
+  "Clean": "Ren",
+  "Warn": "Advarsel",
+  "Compare prompt_tokens against a trusted baseline for the same input.": "Sammenlign prompt_tokens med en pålitelig referanse for samme inndata.",
+  "Verify the relay forwards the full messages array to the model.": "Kontroller at reléet videresender hele messages-listen til modellen.",
+  "A conformant relay should reject invalid input with a 4xx and an {'error': {...}} body.": "Et relé som følger standarden, skal avvise ugyldig inndata med en 4xx og en {'error': {...}}-body.",
+  "A proxy rewriting URLs/package names is a supply-chain risk — stop using it.": "En proxy som skriver om URL-er/pakkenavn, er en forsyningskjederisiko — slutt å bruke den.",
+  "Treat the advertised context window as unverified.": "Betrakt det annonserte kontekstvinduet som ikke verifisert.",
+  "Raise --timeout / --max-request-time, or lower --max-context-tokens, to measure the full window.": "Øk --timeout / --max-request-time, eller senk --max-context-tokens, for å måle hele vinduet.",
+  "Check the error (e.g. a request parameter this endpoint rejects) and re-run to measure the window.": "Sjekk feilen (f.eks. en forespørselsparameter dette endepunktet avviser), og kjør på nytt for å måle vinduet.",
+  "Raise --max-context-tokens to exercise the full declared window.": "Øk --max-context-tokens for å prøve hele det oppgitte vinduet.",
+  "Compare against a trusted baseline to confirm.": "Sammenlign med en pålitelig referanse for å bekrefte.",
+  "The relay likely truncates or summarizes long prompts.": "Reléet avkorter eller oppsummerer trolig lange prompter.",
+  "Real context window ~{effective_window} << declared {declared} (ratio {ratio}, silent truncation suspected). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Reelt kontekstvindu ~{effective_window} << oppgitt {declared} (forhold {ratio}, mistanke om stille avkorting). Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
+  "Real context window ~{effective_window} is below the declared {declared} (ratio {ratio}, recall degrades before the advertised limit). The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Reelt kontekstvindu ~{effective_window} er under oppgitte {declared} (forhold {ratio}, gjenkallingen svekkes før den annonserte grensen). Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
+  "Even a ~{smallest_probed}-token prompt failed recall; the usable window appears far below the declared {declared}. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Selv en prompt på ~{smallest_probed} tokens ga ikke gjenkalling; det brukbare vinduet ser ut til å være langt under oppgitte {declared}. Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
+  "No declared context window to compare against; measured effective window ~{effective_window} tokens. The start of a ~{front_truncated_at}-token prompt was dropped while its end was still recalled (front truncation).": "Ikke noe oppgitt kontekstvindu å sammenligne med; målt effektivt vindu ~{effective_window} tokens. Starten av en prompt på ~{front_truncated_at} tokens ble droppet mens slutten fortsatt ble husket (avkorting foran).",
+  "The server silently drops the start of long prompts; raise its context-length setting or treat the declared window as unverified.": "Serveren dropper stille starten av lange prompter; øk innstillingen for kontekstlengde, eller betrakt det oppgitte vinduet som ikke verifisert.",
+  "Re-run once the endpoint reliably returns completions.": "Kjør på nytt når endepunktet pålitelig returnerer fullføringer.",
+  "Treat as a divergence signal, not proof; corroborate with fingerprint and identity detectors before acting.": "Behandle dette som et tegn på avvik, ikke bevis; bekreft med fingeravtrykks- og identitetsdetektorene før du handler.",
+  "Verify the relay supports stream=true for this model.": "Kontroller at reléet støtter stream=true for denne modellen.",
+  "Verify the relay streams content deltas for this model.": "Kontroller at reléet strømmer innholdsdeltaer for denne modellen.",
+  "Run `ekte compare` against a trusted baseline to corroborate.": "Kjør `ekte compare` mot en pålitelig referanse for å bekrefte.",
+  "A response naming a different vendor strongly suggests model substitution.": "Et svar som nevner en annen leverandør, tyder sterkt på at modellen er byttet ut.",
+  "Run `ekte compare` against a trusted baseline to disambiguate.": "Kjør `ekte compare` mot en pålitelig referanse for å skille tilfellene.",
+  "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "En modell-ID fra et mindre nivå eller en annen familie i svaret tyder på ruting til en erstatning.",
+  "Lower --concurrency or --reliability-requests and re-run.": "Senk --concurrency eller --reliability-requests og kjør på nytt.",
+  "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Sjekk reléets tilkoblingspool og stabiliteten oppstrøms under parallell last (HTTP 429-struping er holdt utenfor denne raten).",
+  "Confirm with the provider how usage is metered if billing is per-token.": "Avklar med leverandøren hvordan forbruket måles hvis fakturering skjer per token.",
+  "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Kontroller faktureringen mot en prompt av kjent størrelse; mulig overfakturering per token.",
+  "Confirm with the provider how prompt/completion tokens are metered.": "Avklar med leverandøren hvordan prompt- og fullføringstokens måles.",
+  "Cross-check billing against output length; possible per-token overbilling.": "Kontroller faktureringen mot lengden på utdata; mulig overfakturering per token.",
+  "Compare token accounting against a trusted baseline of the same model.": "Sammenlign tokenregnskapet med en pålitelig referanse for samme modell.",
+  "Verify base_url, api_key, and that the model id is served.": "Kontroller base_url, api_key og at modell-ID-en leveres.",
+  "Use an https:// base_url so the bearer token is not exposed on the wire.": "Bruk en https://-base_url så bearer-tokenet ikke eksponeres på linjen.",
+  "Rotate the key and avoid this relay echoing credentials.": "Roter nøkkelen og unngå at dette reléet ekkoer legitimasjon.",
+  "Confirm the served engine accepts and reasons over image input; a text-only model behind a vision-claimed id is a bait-and-switch mismatch.": "Bekreft at motoren som leveres, tar imot og resonnerer over bildeinndata; en ren tekstmodell bak en ID som påstås å ha syn, er falsk vare.",
+  "Confirm with varied prompts; a cache that ignores sampling parameters can mask the served model's true behavior.": "Bekreft med varierte prompter; en hurtigbuffer som ignorerer samplingsparametere, kan skjule den leverte modellens reelle atferd.",
+  "Long-form generation may under-deliver relative to the claimed ceiling; confirm with a longer probe.": "Lange tekster kan bli kortere enn det oppgitte taket tilsier; bekreft med en lengre probe.",
+  "Confirm the served engine actually supports function calling.": "Bekreft at motoren som leveres, faktisk støtter funksjonskall.",
+  "Verify the served engine honors response_format=json_object.": "Kontroller at motoren som leveres, respekterer response_format=json_object.",
+  "Behavior is consistent with the claimed model.": "Atferden stemmer med den oppgitte modellen.",
+  "Mostly consistent with the claimed model; minor concerns.": "Stort sett i samsvar med den oppgitte modellen; små forbehold.",
+  "Some behavior diverges from the claimed model — investigate.": "Noe av atferden avviker fra den oppgitte modellen — undersøk.",
+  "Strong evidence the relay does not deliver the claimed model as advertised.": "Sterke bevis for at reléet ikke leverer den oppgitte modellen slik det annonseres.",
+  "Not enough signal to judge — connectivity or coverage was insufficient.": "For lite grunnlag til å vurdere — tilkoblingen eller dekningen var utilstrekkelig.",
+  "(confidence: {1})": "(sikkerhet: {1})",
+  "ekte performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.": "ekte utfører black box-revisjon: den samler reproduserbare bevis på avvikende atferd, ikke kryptografiske bevis på modellidentitet.",
+  "Use `ekte compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.": "Bruk `ekte compare` mot en pålitelig referanse for samme oppgitte modell for å få de sterkeste bevisene på nedgradering.",
+  "Do not publish a report that names a vendor without reviewing sample size, cost, and local law/policy.": "Ikke publiser en rapport som navngir en leverandør uten å ha vurdert utvalgsstørrelse, kostnad og lokal lov og praksis.",
+  "Not run in this suite.": "Ikke kjørt i dette testsettet.",
+  "Ran but produced no numeric score (see findings).": "Kjørt, men ga ingen numerisk score (se funnene).",
+  "All checks passed.": "Alle kontroller bestått.",
+  "usage only gives total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); the breakdown per-token billing relies on is missing and cannot be verified.": "usage oppgir bare total={reported_total} (prompt={reported_prompt}, completion={reported_completion}); fordelingen som fakturering per token bygger på, mangler og kan ikke verifiseres.",
+  "JSON mode honored; parsed keys: {parsed_keys|list}.": "JSON-modus respektert; tolkede nøkler: {parsed_keys|list}.",
+  "Tool call delivered ({tool_name}); arguments returned as {arguments_type}.": "Verktøykall levert ({tool_name}); argumenter returnert som {arguments_type}.",
+  "/v1/models is not available (HTTP {status_code}).": "/v1/models er ikke tilgjengelig (HTTP {status_code}).",
+  "At concurrency {concurrency}, all {requests} requests were rate-limited ({rate_limited} × HTTP 429).": "Ved samtidighet {concurrency} ble alle {requests} forespørsler strupet ({rate_limited} × HTTP 429).",
+  "Revealing response headers: {revealing_headers|list}. Informational — can corroborate the upstream identity, not a failure.": "Avslørende svarhoder: {revealing_headers|list}. Til informasjon — kan bekrefte identiteten oppstrøms, ikke en feil.",
+  "Inspected {header_count} response headers; none expose upstream identity.": "Undersøkte {header_count} svarhoder; ingen avslører identiteten oppstrøms.",
+  "Self-identifies as a rival brand ({forbidden_hits|list}) without naming the genuine brand.": "Identifiserer seg som et konkurrerende merke ({forbidden_hits|list}) uten å nevne det ekte merket.",
+  "Self-id names the genuine brand but also a rival ({forbidden_hits|list}); usually a benign contrast rather than a swap — corroborate before treating it as substitution.": "Selvidentifikasjonen nevner det ekte merket, men også et konkurrerende ({forbidden_hits|list}); vanligvis en harmløs sammenligning og ikke et bytte — bekreft før du behandler det som erstatning.",
+  "Self-id names neither the genuine brand nor a rival; treat as weak/evasive evidence.": "Selvidentifikasjonen nevner verken det ekte merket eller et konkurrerende; behandle det som svake/unnvikende bevis.",
+  "Self-id names the genuine brand.": "Selvidentifikasjonen nevner det ekte merket.",
+  "Returned {returned}-d vectors; no known dimension for the claimed model to compare against.": "Returnerte vektorer med {returned} dimensjoner; ingen kjent dimensjon for den oppgitte modellen å sammenligne med.",
+  "POST /embeddings failed (HTTP {status_code}).": "POST /embeddings mislyktes (HTTP {status_code}).",
+  "Expected 4 non-empty vectors, got {returned_vectors}.": "Forventet 4 ikke-tomme vektorer, fikk {returned_vectors}.",
+  "POST /rerank failed (HTTP {status_code}).": "POST /rerank mislyktes (HTTP {status_code}).",
+  "Invalid request got no HTTP response ({error_type}); could not confirm OpenAI-style client-error handling.": "Den ugyldige forespørselen fikk ikke noe HTTP-svar ({error_type}); kunne ikke bekrefte feilhåndtering for klientfeil i OpenAI-stil.",
+  "Request failed (HTTP {status_code}, type {error_type}).": "Forespørselen mislyktes (HTTP {status_code}, type {error_type}).",
+  "Request failed (HTTP {status_code}).": "Forespørselen mislyktes (HTTP {status_code}).",
+  "Request failed (type {error_type}).": "Forespørselen mislyktes (type {error_type}).",
+  "Overall health score {1}/100.": "Samlet helsescore {1}/100.",
+  "Findings: {1}.": "Funn: {1}.",
+  "No significant divergence findings.": "Ingen vesentlige funn av avvik.",
+  "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "Den oppgitte modellen ble ikke funnet i kunnskapsbasen, så identitets- og egenskapskontrollene er begrenset — oppgi --declared-provider eller legg til en profil i kunnskapsbasen.",
+  "Run `ekte compare` against a trusted baseline to strengthen the verdict.": "Kjør `ekte compare` mot en pålitelig referanse for å styrke konklusjonen.",
+  "ekte reports black-box evidence of divergence and risk, not proof of fraud.": "ekte rapporterer black box-bevis på avvik og risiko, ikke bevis på svindel.",
+  "ekte relay audit alert": "ekte-varsel fra relérevisjon",
+  "Risk: {1}": "Risiko: {1}",
+  "Score: {1}": "Score: {1}",
+  "(grade {1})": "(karakter {1})",
+  "Target: {1}": "Mål: {1}",
+  "Claimed model: {1}": "Oppgitt modell: {1}",
+  "Verdict: {1}": "Konklusjon: {1}",
+  "Key findings:": "Viktigste funn:",
+  "Since last run: risk unchanged ({1})": "Siden forrige kjøring: risiko uendret ({1})",
+  "Since last run: {1} → {2} ({3})": "Siden forrige kjøring: {1} → {2} ({3})",
+  "worse ⬆️": "verre ⬆️",
+  "better ⬇️": "bedre ⬇️",
+  "Consistent": "Konsistent",
+  "Low risk": "Lav risiko",
+  "Medium risk": "Middels risiko",
+  "High risk": "Høy risiko",
+  "Undetermined": "Ikke fastslått",
+  "{1} ({2})": "{1} ({2})",
+  "Alert language": "Varslingsspråk",
+  "Add a monitor: ekte re-runs the black-box audit on your machine at the interval you set. As soon as the risk crosses your threshold or gets worse than last time, it pushes an alert in the language you choose to the webhooks you configured (Slack / Feishu / DingTalk / generic JSON).": "Legg til en overvåking: ekte kjører black box-revisjonen på nytt på maskinen din med intervallet du angir. Så snart risikoen krysser terskelen din eller blir verre enn forrige gang, sender den et varsel på språket du velger til webhookene du har satt opp (Slack / Feishu / DingTalk / generisk JSON).",
+  "Probe languages": "Probespråk",
+  "No samples yet": "Ingen prøver ennå",
+  "baseline": "referanse",
+  "target": "mål",
+  "failed": "mislyktes",
+  "Latency": "Forsinkelse",
+  "cached (excluded)": "bufret (utelatt)",
+  "audit request (lighter)": "revisjonsforespørsel (lettere)",
+  "failed request": "mislykket forespørsel",
+  "Running median": "Løpende median",
+  "running median (last 5)": "løpende median (siste 5)",
+  "line: running median of each endpoint's last 5 successful requests": "linje: løpende median av hvert endepunkts siste 5 vellykkede forespørsler",
+  "No successful requests to summarize.": "Ingen vellykkede forespørsler å oppsummere.",
+  "Metric": "Måltall",
+  "Latency p50": "Forsinkelse p50",
+  "Decode speed p50": "Dekodehastighet p50",
+  "Error rate": "Feilrate",
+  "succeeded": "vellykket",
+  "timeouts": "tidsavbrudd",
+  "Cold start (first request)": "Kaldstart (første forespørsel)",
+  "Under load": "Under last",
+  "aggregate": "samlet",
+  "Prompt size": "Promptstørrelse",
+  "Source: dedicated probe": "Kilde: egen probe",
+  "Source: the audit's own requests": "Kilde: revisjonens egne forespørsler",
+  "Informational — not scored": "Til informasjon — gir ikke score",
+  "Target vs baseline": "Mål mot referanse",
+  "Ratio": "Forhold",
+  "Probe cost": "Kostnad for proben",
+  "Requests": "Forespørsler",
+  "Performance · live": "Ytelse · sanntid",
+  "Performance probe": "Ytelsesprobe",
+  "TTFT": "TTFT",
+  "Decode speed": "Dekodehastighet",
+  "Inter-chunk latency": "Forsinkelse mellom biter",
+  "Time to first token": "Tid til første token",
+  "Decode speed (usage)": "Dekodehastighet (usage)",
+  "Decode speed (local count)": "Dekodehastighet (lokal telling)",
+  "End-to-end speed (usage)": "Ende-til-ende-hastighet (usage)",
+  "End-to-end speed (local count)": "Ende-til-ende-hastighet (lokal telling)",
+  "Inter-chunk jitter": "Variasjon mellom biter",
+  "Server time (sent → first output)": "Servertid (sendt → første utdata)",
+  "Relay-reported processing": "Behandlingstid oppgitt av reléet",
+  "Network round trip (GET /models)": "Nettverkets tur-retur (GET /models)",
+  "TCP connect": "TCP-tilkobling",
+  "TLS handshake": "TLS-håndtrykk",
+  "Latency p90": "Forsinkelse p90",
+  "TTFT p50": "TTFT p50",
+  "TTFT p90": "TTFT p90",
+  "Decode speed p50 (usage)": "Dekodehastighet p50 (usage)",
+  "Decode speed p50 (local)": "Dekodehastighet p50 (lokal)",
+  "End-to-end speed p50 (local)": "Ende-til-ende-hastighet p50 (lokal)",
+  "Inter-chunk latency p50": "Forsinkelse mellom biter p50",
+  "Server time p50": "Servertid p50",
+  "Network round trip p50": "Nettverkets tur-retur p50",
+  "Performance": "Ytelse",
+  "Headline numbers come from the audit's own requests, which mix prompt and output sizes; the deep and full suites add a controlled, uncacheable probe.": "Hovedtallene kommer fra revisjonens egne forespørsler, som blander størrelser på prompt og utdata; testsettene deep og full legger til en kontrollert probe som ikke kan bufres.",
+  "Reasoning tokens detected: TTFT is the time to the first visible token and includes hidden thinking, and usage-based throughput counts thinking tokens. ekte does not set a reasoning effort (the modes a relay accepts are unknown), so the model thinks at its default effort.": "Resonneringstokens oppdaget: TTFT er tiden til første synlige token og inkluderer skjult tenking, og forbruksbasert gjennomstrømning teller tenketokens. ekte angir ikke resonneringsinnsats (hvilke moduser et relé godtar, er ukjent), så modellen tenker med sin standardinnsats.",
+  "Local token counts are estimates (about ±15-20%): no exact tokenizer is available for this model family.": "Lokale tokentellinger er anslag (omtrent ±15–20 %): ingen eksakt tokenizer er tilgjengelig for denne modellfamilien.",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.": "Lokale tokentellinger er anslag (omtrent ±15–20 %) fra en innebygd heuristikk; ekte laster aldri ned en tokenizer.",
+  "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests.": "Persentiler krever nok prøver: p75 fra 4, p90 fra 10, p95 fra 20, p99 fra 100 forespørsler.",
+  "Relay processing times come from the relay's own response headers and are unverified.": "Reléets behandlingstider kommer fra reléets egne svarhoder og er ikke verifisert.",
+  "Some requests were served fully or partly from a cache and are left out of the statistics.": "Noen forespørsler ble helt eller delvis levert fra en hurtigbuffer og er holdt utenfor statistikken.",
+  "A relay that caches unique prompts may be serving stored answers; compare with a trusted baseline.": "Et relé som bufrer unike prompter, kan levere lagrede svar; sammenlign med en pålitelig referanse.",
+  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "Vurder dette sammen med funnene om modellidentitet; hastighet alene er ikke bevis på bytte.",
+  "Performance probe requests": "Forespørsler fra ytelsesproben",
+  "Non-streaming": "Uten strømming",
+  "non-streaming": "uten strømming",
+  "The smoke suite runs no performance probe.": "Testsettet smoke kjører ingen ytelsesprobe.",
+  "The full suite measures both streaming and non-streaming.": "Testsettet full måler både med og uten strømming.",
+  "On standard the probe runs only with a baseline; otherwise the audit's own requests are used.": "På standard kjører proben bare med en referanse; ellers brukes revisjonens egne forespørsler.",
+  "Non-streaming measures relays that cannot stream.": "Uten strømming måles releer som ikke kan strømme.",
+  "non-streaming request (hollow)": "forespørsel uten strømming (hul)",
+  "End-to-end speed p50": "Ende-til-ende-hastighet p50",
+  "target better": "målet bedre",
+  "target worse": "målet dårligere",
+  "(within 2% counts as even)": "(innenfor 2 % regnes som likt)",
+  "Strong evidence the relay does not deliver what it advertises: {1}.": "Sterke bevis for at reléet ikke leverer det som annonseres: {1}.",
+  "Some checks diverge from what is advertised: {1} — investigate.": "Noen kontroller avviker fra det som annonseres: {1} — undersøk.",
+  "No problems found in the checked dimensions; model identity was not verified.": "Ingen problemer funnet i de kontrollerte dimensjonene; modellidentiteten ble ikke verifisert.",
+  "Minor concerns in the checked dimensions; model identity was not verified.": "Små forbehold i de kontrollerte dimensjonene; modellidentiteten ble ikke verifisert.",
+  "Model identity was not selected, so this verdict covers only the selected dimensions, not which model is served.": "Modellidentitet ble ikke valgt, så denne konklusjonen dekker bare de valgte dimensjonene, ikke hvilken modell som leveres.",
+  "It does not deliver what it advertises: {dims}": "Den leverer ikke det som annonseres: {dims}",
+  "Some checks do not match what is advertised: {dims} — verify": "Noen kontroller stemmer ikke med det som annonseres: {dims} — kontroller",
+  "No problems in the checked dimensions (model identity not verified)": "Ingen problemer i de kontrollerte dimensjonene (modellidentitet ikke verifisert)",
+  "A few minor issues in the checked dimensions (model identity not verified)": "Noen få små avvik i de kontrollerte dimensjonene (modellidentitet ikke verifisert)",
+  "It does not deliver what it advertises": "Den leverer ikke det som annonseres"
+ },
+ "findings": {
+  "connectivity.models": [
+   "/v1/models-liste",
+   "{model_count} modeller oppført; den oppgitte modellen er i listen: {claimed_listed}."
+  ],
+  "connectivity.chat": [
+   "Enkel chat-fullføring",
+   "Innhold returnert på {duration_ms} ms; returnert modell: {model_returned}."
+  ],
+  "protocol.multi_turn": [
+   "Hukommelse over flere turer",
+   "Kontroll av kontekst over flere turer; fargen som ble nevnt tidligere, ble husket: {recalled_blue}."
+  ],
+  "protocol.stop": [
+   "Håndtering av stoppsekvenser",
+   "Kontroll av stoppsekvens; finish_reason={finish_reason}."
+  ],
+  "protocol.stop_not_applicable": [
+   "Stoppsekvens-kontrollen er ikke aktuell",
+   "Responses API har ingen stop-parameter; stoppsekvensen ble ikke kontrollert og telles ikke."
+  ],
+  "protocol.shape": [
+   "Samsvar i svarstrukturen",
+   "finish_reason={finish_reason}; usage komplett: {has_usage}."
+  ],
+  "protocol.error_schema": [
+   "Struktur for feilsvar",
+   "En ugyldig forespørsel gir HTTP {status_code}; feilbody i OpenAI-stil: {conforming_error_body}."
+  ],
+  "protocol_response.core.*": [
+   "Svarattributt {attribute}",
+   "{attribute}: {availability}"
+  ],
+  "protocol_response.minor.*": [
+   "Svarattributt {attribute}",
+   "{attribute}: {availability}"
+  ],
+  "protocol_request.param.*": [
+   "Forespørselsparameter {attribute}",
+   "{attribute}: {availability}"
+  ],
+  "protocol_response.call": [
+   "Probe for svarattributter uten svarinnhold",
+   "HTTP {status_code}; ikke noe svarinnhold."
+  ],
+  "context_window.no_ladder": [
+   "Kontekstvindu-proben kunne ikke kjøres",
+   "Ingen brukbar probestørrelse mellom gulv og tak (oppgitt {declared}, tak {upper}, gulv {floor})."
+  ],
+  "context_window.lost_in_middle": [
+   "Nålen i midten ble ikke husket (lost-in-the-middle)",
+   "Ved en prompt på ~{mid_size} tokens huskes starten og slutten, men midten mangler (mistanke om billig RAG-/oppsummeringserstatning)."
+  ],
+  "context_window.rejected_below_claim": [
+   "Lang kontekst avvist under det oppgitte vinduet",
+   "En prompt på ~{rejected_at} tokens ble avvist som for lang kontekst, langt under det oppgitte vinduet på {declared} tokens."
+  ],
+  "context_window.no_recall": [
+   "Ingen størrelse fikk nålen husket",
+   "Selv en prompt på ~{smallest_probed} tokens blir ikke husket; det brukbare vinduet er langt under det probede vinduet på {upper} tokens (oppgitt {declared})."
+  ],
+  "context_window.truncation": [
+   "Reelt kontekstvindu langt mindre enn oppgitt",
+   "Reelt kontekstvindu ~{effective_window} << probet vindu på {upper} tokens (oppgitt {declared}; forhold {ratio}, mistanke om stille avkorting)."
+  ],
+  "context_window.short": [
+   "Reelt kontekstvindu mindre enn oppgitt",
+   "Reelt kontekstvindu ~{effective_window} under det probede vinduet på {upper} tokens (oppgitt {declared}; forhold {ratio}, gjenkallingen svekkes før grensen)."
+  ],
+  "context_window.consistent": [
+   "Målt kontekstvindu stemmer med påstanden",
+   "Nålen huskes fortsatt ved ~{effective_window} tokens, nær de oppgitte {declared} (forhold {ratio})."
+  ],
+  "context_window.measured": [
+   "Målt effektivt kontekstvindu",
+   "Ikke noe oppgitt vindu å sammenligne med; målt effektivt vindu ~{effective_window} tokens."
+  ],
+  "context_window.verified_to_cap": [
+   "Kontekstvinduet er verifisert opp til probens tak",
+   "Nålen huskes ved ~{effective_window} tokens, øverste trinn under probens tak på {probe_cap} tokens; det oppgitte vinduet på {declared} tokens over det ble ikke prøvd."
+  ],
+  "context_window.probe_error": [
+   "Kontekstvindu-proben fikk en feil som svar",
+   "En probe på ~{errored_at} tokens fikk en feil som svar ({error_status}); ikke bevis på avkorting."
+  ],
+  "model_identity.no_profile": [
+   "Oppgitt modell finnes ikke i kunnskapsbasen",
+   "Den oppgitte modellen ble ikke funnet i kunnskapsbasen (claimed={claimed_model}, requested={requested_model}); oppgi --declared-provider eller legg til en profil i kunnskapsbasen."
+  ],
+  "model_identity.self_id": [
+   "Selvidentifikasjon",
+   "Kontroll av selvidentifikasjon (claimed={claimed})."
+  ],
+  "model_identity.model_field": [
+   "Gjengitt model-felt",
+   "Svarets model-felt er {returned}; forespurt var {requested}."
+  ],
+  "model_identity.no_evidence": [
+   "Ingen brukbare identitetsbevis",
+   "Verken selvidentifikasjonen eller noen fingeravtrykksprobe ga et brukbart svar, og det gjengitte model-feltet avviker ikke ({checks} kontroller); identiteten kan ikke vurderes."
+  ],
+  "model_identity.fp_aggregate": [
+   "Flere atferdsfingeravtrykk avvek",
+   "{diverged} og flere rene kodefingeravtrykk avviker fra den egne atferden; sjekk om modellen er byttet ut."
+  ],
+  "capability.tools": [
+   "Verktøykall (function calling)",
+   "Probe for verktøykall; finish_reason={finish_reason}."
+  ],
+  "capability.tools.encoding": [
+   "Verktøyargumenter ikke kodet i OpenAI-stil",
+   "function.arguments kom tilbake som et strukturert objekt ({arguments_type}) i stedet for en JSON-streng; et ekte OpenAI-kompatibelt API returnerer en streng (mistanke om erstatningsmotor)."
+  ],
+  "capability.json_mode": [
+   "JSON-modus (json_object)",
+   "Probe for JSON-modus; objekt tolket: {parsed}, forespurt verdi truffet: {value_matched}."
+  ],
+  "capability.json_schema": [
+   "Strengt JSON-skjema",
+   "Probe for strengt JSON-skjema; følger skjemaet: {conforms}."
+  ],
+  "capability.max_output": [
+   "Maks utdatalengde",
+   "Probe for maks utdata: oppgitt max_output={declared_max_output}, {requested_max_tokens} tokens forespurt; ~{line_count} linjer generert, finish_reason={finish_reason}."
+  ],
+  "streaming.failed": [
+   "Strømmeforespørselen mislyktes",
+   "Strømmeforespørselen mislyktes (HTTP {status_code}, type {error_type}); kontroller om modellen støtter stream=true."
+  ],
+  "streaming.no_content": [
+   "Strømmen leverte ikke noe innhold",
+   "Strømmeforespørselen lyktes, men leverte ikke noe innhold ({chunk_count} biter); strømmingen kunne ikke vurderes."
+  ],
+  "streaming.few_chunks": [
+   "Svaret levert i ≤2 biter",
+   "{content_chars} tegn levert i bare {chunk_count} biter (først bufret, så delt opp – ikke ekte strømming token for token)."
+  ],
+  "streaming.late_ttft": [
+   "Første token først mot slutten av strømmen",
+   "Første token kom først ved ~{ttft_ratio} av den totale varigheten (ttft={ttft_ms} ms / duration={duration_ms} ms, mistanke om bufring)."
+  ],
+  "streaming.reasoning_ttft": [
+   "Sent første token fra en resonnerende modell",
+   "Første synlige token etter {ttft_ms} ms av {duration_ms} ms total varighet; modellen tenker før den svarer, så det telles ikke som bufring."
+  ],
+  "streaming.uniform_gaps": [
+   "Jevne opphold mellom bitene, nær null",
+   "{chunk_count} biter, gjennomsnittlig opphold ~{mean_delta_ms} ms, CV {delta_cv} — bitene ser ut til å være sluppet ut på én gang."
+  ],
+  "streaming.no_usage": [
+   "Ingen usage-bit i strømmen",
+   "stream_options.include_usage ga ingen usage-data i strømmen."
+  ],
+  "streaming.healthy": [
+   "Strømmingen er ekte",
+   "{chunk_count} biter på {duration_ms} ms, første token etter {ttft_ms} ms."
+  ],
+  "billing.request-failed": [
+   "Forespørselen fra faktureringsproben mislyktes",
+   "Forespørselen fra faktureringsproben mislyktes (HTTP {status_code}, type {error_type})."
+  ],
+  "billing.missing-usage": [
+   "Ikke noe forbruksregnskap returnert",
+   "Svaret inneholder ikke noe tokenforbruk; faktureringen kan ikke kontrolleres uavhengig (usage til stede: {usage_present})."
+  ],
+  "billing.usage-inflation": [
+   "Rapporterte prompttokens langt over anslaget",
+   "Rapporterte prompttokens ({reported_prompt}) langt over det uavhengige anslaget (~{estimated_prompt}, forhold {ratio}); mistanke om overfakturering per token."
+  ],
+  "billing.reasoning-tokens": [
+   "Fullføringstokens overstiger synlig tekst (resonnerende modell)",
+   "Rapporterte fullføringstokens ({reported_completion}) over anslaget for den synlige teksten (~{visible_estimate}, forhold {ratio}); resonnerende modeller har skjulte tenketokens, så dette er forventet og ikke overrapportering."
+  ],
+  "billing.usage-inflation-completion": [
+   "Rapporterte fullføringstokens langt over anslaget",
+   "Rapporterte fullføringstokens ({reported_completion}) langt over det uavhengige anslaget (~{estimated_completion}, forhold {ratio}); mistanke om overfakturering per token."
+  ],
+  "billing.usage-undercount-prompt": [
+   "Rapporterte prompttokens godt under anslaget",
+   "Rapporterte prompttokens ({reported_prompt}) langt under anslaget (~{estimated_prompt}); ikke til skade for kjøperen, men påfallende."
+  ],
+  "billing.usage-undercount-completion": [
+   "Rapporterte fullføringstokens godt under anslaget",
+   "Rapporterte fullføringstokens ({reported_completion}) langt under anslaget (~{estimated_completion}); ikke til skade for kjøperen, men påfallende."
+  ],
+  "billing.total-mismatch": [
+   "usage-total ≠ prompt + completion",
+   "Rapportert total ({total}) er ikke lik prompt ({prompt}) + completion ({completion})."
+  ],
+  "billing.partial-usage": [
+   "Ufullstendig fordeling i usage",
+   "usage oppgir bare total={total} (prompt={prompt}, completion={completion}); fordelingen som fakturering per token bygger på, mangler og kan ikke kontrolleres."
+  ],
+  "billing.usage-consistent": [
+   "Forbruket stemmer med uavhengig anslag",
+   "Rapportert forbruk innenfor toleransen til anslaget (forhold prompt {ratio_prompt}, completion {ratio_completion})."
+  ],
+  "reliability.skipped": [
+   "Pålitelighetsproben er slått av",
+   "reliability_requests <= 0 ({reliability_requests}); ingen parallell last generert."
+  ],
+  "reliability.success_rate": [
+   "Suksessrate for samtidige forespørsler",
+   "Ved samtidighet {concurrency} lyktes {successes} forespørsler (av {requests}, {rate_limited} strupet)."
+  ],
+  "reliability.rate_limited": [
+   "Noen samtidige forespørsler ble strupet",
+   "Ved samtidighet {concurrency} ga {rate_limited}/{requests} forespørsler HTTP 429; regnet som struping, ikke ustabilitet."
+  ],
+  "reliability.latency": [
+   "Høy haleforsinkelse under last",
+   "Ved samtidighet {concurrency} er haleforsinkelsen høy og over terskelen."
+  ],
+  "security.tls": [
+   "Transport over HTTPS?",
+   "Transportprotokoll: {scheme}."
+  ],
+  "security.headers": [
+   "Svarhoder fra oppstrøms/proxy",
+   "Kontroll av svarhodene (HTTP {status_code})."
+  ],
+  "security.key_echo": [
+   "Gjengir svaret API-nøkkelen?",
+   "Kontroll av om API-nøkkelen gjengis."
+  ],
+  "security.note": [
+   "Grenser for black box-deteksjon",
+   "Om prompter logges eller en delt nøkkel oppstrøms brukes, kan ikke bevises med black box-tester fra klientsiden; dimensjonene pålitelighet og strømmetiming fungerer som indirekte signaler."
+  ],
+  "injected_prompt.suspected": [
+   "Mistanke om injisert skjult systemprompt",
+   "De rapporterte prompttokens har en stor fast overhead som er uavhengig av meldingslengden, og modellen avslørte instruksjonsaktig innhold da den ble spurt; mistanke om en skjult systemprompt foran."
+  ],
+  "injected_prompt.overhead": [
+   "Påfallende fast overhead i inndatatokens",
+   "Prompttokens ligger over anslaget og holder seg konstante ved lengre meldinger — passer med en skjult prompt foran, men er bare ett enkelt signal og trenger bekreftelse."
+  ],
+  "injected_prompt.leak": [
+   "Modellen viste en instruksjonsaktig innledning (svakt signal)",
+   "Bedt om å gjenta tidligere instruksjoner returnerte modellen instruksjonsaktig tekst i stedet for NONE. Modeller kan dikte opp; alene er dette et svakt signal."
+  ],
+  "injected_prompt.inconclusive": [
+   "Overhead i inndatatokens kan ikke måles",
+   "Ingen brukbare prompt_tokens i svaret; kontrollen av overhead ble hoppet over."
+  ],
+  "injected_prompt.clean": [
+   "Ingen tegn på injisert systemprompt",
+   "Overheaden i inndatatokens er minimal (malnivå), og ingen innledning ble avslørt."
+  ],
+  "integrity.tampering": [
+   "Utbytting av verdier styrt av reléet oppdaget",
+   "Prober med kjent svar kom tilbake med intakt struktur, men utbyttede verdier (bekreftet av referanse: {baseline_corroborated}); en proxy som skriver om URL-er/pakkenavn, er en forsyningskjederisiko — slutt å bruke den."
+  ],
+  "integrity.intact": [
+   "Prober med kjent svar kom tilbake uendret",
+   "{verbatim} probeverdier gjengitt ordrett; ingen utbytting observert."
+  ],
+  "integrity.inconclusive": [
+   "Integritetsprobene er uavklart",
+   "Modellen gjengav ingen probe ordrett; manipulering kan ikke vurderes."
+  ],
+  "determinism.temp1_variability": [
+   "Variasjon i utdata ved temperature=1.0",
+   "{samples} prøver ved temperature=1.0; byte-identiske: {identical}."
+  ],
+  "determinism.temp0_stability": [
+   "Stabilitet i svar ved temperature=0",
+   "Samme faktaprompt gjentatt ved temperature=0; begge svarene identiske: {identical}."
+  ],
+  "prompt_cache.inconclusive": [
+   "Tidsmåling for prefiks-hurtigbuffer utilgjengelig",
+   "En eller flere strømmeprober ga ingen brukbar tidsmåling (cold={cold_ms} ms, warm={warm_ms} ms, control={control_ms} ms)."
+  ],
+  "prompt_cache.detected": [
+   "Reléet bufrer etter promptprefiks",
+   "Et gjentatt prefiks kommer tydelig raskere tilbake (warm ~{warm_ms} ms mot cold ~{cold_ms} ms, control ~{control_ms} ms) — en hurtigbuffer for promptprefiks finnes. Det er en legitim optimalisering; med bare én nøkkel kan ekte ikke bevise om hurtigbufferen deles mellom brukere."
+  ],
+  "prompt_cache.none": [
+   "Ingen tydelig bufring av promptprefiks",
+   "TTFT for det gjentatte prefikset (~{warm_ms} ms) er ikke tydelig raskere enn cold (~{cold_ms} ms) / control (~{control_ms} ms)."
+  ],
+  "vision.not_claimed": [
+   "Syn ikke påstått — hoppet over",
+   "Den oppslåtte profilen oppgir ingen syns-/bildemodalitet; ingen multimodal probe sendt (modalities={modalities})."
+  ],
+  "vision.color": [
+   "Verifisering av multimodale egenskaper (syn)",
+   "Synsevnen kontrollert med et ensfarget bilde med kjent svar (protokoll {protocol})."
+  ],
+  "quality_judge.unavailable": [
+   "Ingen svar fra målet å vurdere",
+   "Målet leverte ikke brukbart innhold for noen av de skillende probene ({probes} prober, {failed} mislyktes)."
+  ],
+  "quality_judge.suspicious": [
+   "LLM-dommer: atferden stemmer ikke med den oppgitte modellen (mistanke om nedgradering/bytte/kvantisering)",
+   "Dommeren (sikkerhet {judge_confidence}) mener svarene ikke kommer fra den oppgitte modellen; heller: {likely_actual_tier}. Bekreftet av referanse: {baseline_corroborated}."
+  ],
+  "quality_judge.consistent": [
+   "LLM-dommer: atferden stemmer med den oppgitte modellen",
+   "Dommeren (sikkerhet {judge_confidence}) mener svarene er i samsvar med den oppgitte modellen."
+  ],
+  "quality_judge.inconclusive": [
+   "LLM-dommer: vurderingen er uavklart",
+   "Dommeren kom ikke fram til et entydig resultat (sikkerhet {judge_confidence})."
+  ],
+  "embed.connectivity": [
+   "Tilkobling til embedding-endepunktet",
+   "{vectors} vektorer returnert, dimensjon {dimension}."
+  ],
+  "embed.dimension": [
+   "Stemmer vektordimensjonen med den oppgitte modellen?",
+   "Vektorer med dimensjon {returned} returnert; den oppgitte modellen skal gi {claimed}."
+  ],
+  "embed.determinism": [
+   "Er embeddingene reproduserbare?",
+   "Cosinuslikhet på {cosine} mellom to kjøringer av samme inndata (terskel {threshold})."
+  ],
+  "embed.distinctness": [
+   "Gir ulike inndata atskilte vektorer?",
+   "Cosinuslikhet på {cosine} mellom to urelaterte tekster (terskel {threshold})."
+  ],
+  "embed.model_field": [
+   "Gjengitt model-felt",
+   "Reléet oppgir modellen {model_returned}; forespurt: {model_requested}, oppgitt: {claimed_model}."
+  ],
+  "rerank.connectivity": [
+   "Tilkobling til rerank-endepunktet",
+   "{results} rangeringsresultater returnert."
+  ],
+  "rerank.known_answer": [
+   "Rangeres det åpenbare svaret først?",
+   "Rangert først: dokument {top_index}; forventet: dokument {expected} (rekkefølge {ranking})."
+  ],
+  "model_identity.fp.*": [
+   "Avvikende fingeravtrykk: {signal|server}",
+   "Ren kodekontroll av atferdsfingeravtrykket for {probe}.",
+   "Kontroll av atferdsfingeravtrykk"
+  ],
+  "performance.summary": [
+   "Resultater fra ytelsesproben",
+   "{successes}/{requests} probeforespørsler lyktes; forsinkelse p50 {latency_p50_ms} ms, TTFT p50 {ttft_p50_ms} ms, dekodehastighet p50 {decode_tps_p50} tok/s."
+  ],
+  "performance.errors": [
+   "Mislykkede probeforespørsler",
+   "{errors} feil og {timeouts} tidsavbrudd ved {requests} probeforespørsler til {endpoint} ({rate_limited} strupet)."
+  ],
+  "performance.cache_hit": [
+   "Unike probeprompter ble levert fra en hurtigbuffer",
+   "{cached} probeforespørsel(er) til {endpoint} kom fra hurtigbufferen, selv om hver prompt var unik; de er holdt utenfor statistikken."
+  ],
+  "performance.reasoning": [
+   "Resonneringstokens i proben",
+   "Modellen bruker skjulte resonneringstokens ({reasoning_tokens} rapportert): TTFT inkluderer tenkingen. ekte angir ikke resonneringsinnsats, så modellen tenker med standardinnsats."
+  ],
+  "performance.relay_overhead": [
+   "Forsinkelse sammenlignet med referansen",
+   "Målets forsinkelse p50 {target_latency_p50_ms} ms mot referansens {baseline_latency_p50_ms} ms (differanse {latency_p50_delta_ms} ms)."
+  ],
+  "performance.skipped": [
+   "Ytelsesproben er slått av",
+   "performance_requests = {performance_requests}; ingen probeforespørsler ble sendt."
+  ],
+  "performance.latency_consistency": [
+   "Jevnhet i forsinkelse",
+   "Forsinkelse p50 {p50} ms, p90 {p90} ms — haleforhold {tail_ratio} over {samples} forespørsler."
+  ],
+  "performance.ttft_consistency": [
+   "Jevnhet i tid til første token",
+   "TTFT p50 {p50} ms, p90 {p90} ms — haleforhold {tail_ratio} over {samples} forespørsler."
+  ],
+  "performance.throughput_consistency": [
+   "Jevnhet i gjennomstrømning",
+   "Gjennomstrømning p50 {p50} {unit}, p10 {p10} {unit} — haleforhold {tail_ratio} over {samples} forespørsler."
+  ],
+  "performance.load_stability": [
+   "Forsinkelse under samtidig last",
+   "Forsinkelse p50 {burst_latency_p50_ms} ms ved samtidighet {concurrency} mot {sequential_latency_p50_ms} ms enkeltvis ({ratio}x)."
+  ],
+  "performance.reference": [
+   "Gjennomstrømning sammenlignet med referansen",
+   "Målets gjennomstrømning {target_tps_p50} tok/s, referanse {reference_range} tok/s."
+  ]
+ }
+}

@@ -1,0 +1,9 @@
+{
+ "strings": {
+  "Reranking": "Rerank",
+  "Do the rankings come from the claimed model?": "Kommer rangeringene fra den oppgitte modellen?",
+  "Does the obvious answer rank first?": "Rangeres det åpenbare svaret først?",
+  "Does the same request give the same ranking?": "Gir samme forespørsel samme rangering?",
+  "The rerank audit uses built-in known-answer probes, so results stay comparable across runs and monitors.": "Rerank-revisjonen bruker innebygde prober med kjent svar, så resultatene kan sammenlignes på tvers av kjøringer og overvåkinger."
+ }
+}

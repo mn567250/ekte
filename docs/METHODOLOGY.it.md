@@ -1,6 +1,6 @@
 # ekte — Metodologia
 
-> [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · **🇮🇹 Italiano** · [🇩🇪 Deutsch](METHODOLOGY.de.md)
+> [🇬🇧 English](METHODOLOGY.md) · [🇨🇳 中文](METHODOLOGY.zh-CN.md) · [🇫🇷 Français](METHODOLOGY.fr.md) · [🇪🇸 Español](METHODOLOGY.es.md) · [🇵🇹 Português](METHODOLOGY.pt.md) · **🇮🇹 Italiano** · [🇩🇪 Deutsch](METHODOLOGY.de.md) · [🇳🇴 Norsk](METHODOLOGY.nb.md)
 
 Questo documento spiega come **ekte** arriva al suo verdetto: quali sonde
 black-box invia ogni rilevatore, come i loro esiti diventano punti, come i punti

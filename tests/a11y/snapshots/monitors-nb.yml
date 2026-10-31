@@ -1,0 +1,169 @@
+- banner:
+  - link "Hopp til hovedinnholdet":
+    - /url: "#main"
+  - link "ekte":
+    - /url: /v2/
+    - text: ekte.
+  - combobox "Tema":
+    - option "Automatisk tema"
+    - option "Lyst" [selected]
+    - option "Mørkt"
+  - combobox "Bevegelse":
+    - option "Bevegelse på" [selected]
+    - option "Bevegelse av"
+  - combobox "Språk":
+    - option "English"
+    - option "中文"
+    - option "Français"
+    - option "Español"
+    - option "Português"
+    - option "Italiano"
+    - option "Deutsch"
+    - option "Norsk" [selected]
+  - link "Tilgjengelighet":
+    - /url: /v2/accessibility
+  - navigation "Hovednavigasjon":
+    - link "Revisjon":
+      - /url: /v2/
+    - link "Overvåking":
+      - /url: /v2/watches
+    - link "Historikk":
+      - /url: /v2/history
+    - link "Analyse":
+      - /url: /v2/analytics
+    - link "Kunnskap":
+      - /url: /v2/kb
+- main:
+  - heading "Sett en planlagt vaktpost på reléet ditt" [level=1]
+  - paragraph:
+    - text: Hver overvåking kjører på nytt en revisjon du allerede har kjørt, på maskinen din, med intervallet du angir. For å legge til en, åpne en kjøring i
+    - link "Historikk":
+      - /url: /v2/history
+    - text: og velg Planlegg som overvåking — angi deretter intervallet her og slå den på. Når risikoen krysser terskelen din eller blir verre enn forrige gang, varsler ekte webhookene dine (Slack / Feishu / DingTalk / generisk JSON).
+  - status:
+    - text: API-nøkler lagres ikke Nøkler du oppgir, blir bare værende i minnet til ekte serve og skrives aldri til disk; oppgi dem igjen etter en omstart. env:VAR-referanser fortsetter å virke.
+    - button "Endre"
+  - group "Lagring av API-nøkler":
+    - text: Lagring av API-nøkler
+    - radio "Ikke lagre nøkler" [checked]
+    - text: Ikke lagre nøkler
+    - radio "Lagre kryptert på denne maskinen"
+    - text: Lagre kryptert på denne maskinen
+    - paragraph: API-nøkler blir værende i minnet til ekte serve og skrives aldri til disk; oppgi dem igjen etter hver omstart. Bruk env:VAR for overvåkinger som må kjøre uten tilsyn.
+  - region "Filtre":
+    - button "Filtre" [expanded]
+    - text: Søk
+    - searchbox "Søk"
+    - text: Status
+    - combobox "Status":
+      - option "Alle" [selected]
+      - option "Må settes opp"
+    - text: Siste risiko
+    - combobox "Siste risiko":
+      - option "Alle" [selected]
+      - option "Ikke noe resultat ennå"
+    - text: Type endepunkt
+    - combobox "Type endepunkt":
+      - option "Alle" [selected]
+      - option "Chat"
+    - text: Relé / leverandør
+    - combobox "Relé / leverandør":
+      - option "Alle" [selected]
+      - option "127.0.0.1:9099"
+    - text: Testsett
+    - combobox "Testsett":
+      - option "Alle" [selected]
+      - option "standard"
+    - text: Viser 1 av 1 overvåkinger
+  - tablist "Overvåkingsvisninger":
+    - tab "Konfigurer" [selected]
+    - tab "Kjører"
+  - tabpanel "Konfigurer":
+    - heading "Konfigurerte overvåkinger 1 overvåking" [level=2]
+    - article "gpt-4o":
+      - heading "gpt-4o" [level=3]:
+        - button "gpt-4o" [expanded]
+      - text: Må settes opp
+      - switch "Overvåking aktiv" [disabled]
+      - text: Overvåking aktiv
+      - emphasis: (Må settes opp)
+      - text: http://127.0.0.1:9099/v1
+      - term: Modell som forespørres
+      - definition:
+        - code: gpt-4o
+      - term: Type endepunkt
+      - definition: Chat
+      - term: Testsett
+      - definition:
+        - code: standard
+      - term: Protokoll
+      - definition:
+        - code: openai
+        - text: · oppdaget automatisk
+      - term: Forespørsler fra ytelsesproben
+      - definition: Strømming
+      - term: Kontrollintervall
+      - definition: Ikke satt
+      - term: API-nøkkel
+      - definition:
+        - text: Ingen
+        - button "Bytt ut"
+      - term: Varslingsterskel
+      - definition:
+        - combobox "Varslingsterskel — gpt-4o":
+          - option "Lav og høyere"
+          - option "Middels og høyere" [selected]
+          - option "Bare høy"
+      - term: Webhooker
+      - definition:
+        - text: Ingen webhooker
+        - button "Rediger"
+      - term: Varslingsspråk
+      - definition:
+        - combobox "Varslingsspråk — gpt-4o":
+          - option "English" [selected]
+          - option "中文"
+          - option "Français"
+          - option "Español"
+          - option "Português"
+          - option "Italiano"
+          - option "Deutsch"
+          - option "Norsk"
+      - term: Kunnskapsprofil
+      - definition:
+        - code: openai/gpt-4o
+        - text: festet 1. okt. 2026, 12:00
+      - 'link "Fra kjøring #1 →"':
+        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+      - form "Fullfør oppsettet for å slå den på":
+        - heading "Fullfør oppsettet for å slå den på" [level=4]
+        - paragraph: Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte den skal kjøre, og aktiver den.
+        - text: Kontrollintervall
+        - combobox "Kontrollintervall":
+          - option "Velg …" [selected]
+          - option "hvert 5. minutt"
+          - option "hvert 10. minutt"
+          - option "hvert 15. minutt"
+          - option "hvert 20. minutt"
+          - option "hvert 30. minutt"
+          - option "hver 1. time"
+          - option "hver 2. time"
+          - option "hver 3. time"
+          - option "hver 4. time"
+          - option "hver 6. time"
+          - option "hver 8. time"
+          - option "hver 12. time"
+          - option "hver 24. time"
+        - paragraph: Én full kjøring tok <duration>, så den kjører høyst hvert 5. minutt.
+        - text: API-nøkkel (valgfritt)
+        - textbox "API-nøkkel (valgfritt)":
+          - /placeholder: sk-... eller env:EKTE_API_KEY
+        - button "Vis nøkkel"
+        - paragraph: Historikken lagrer aldri nøkkelen. La feltet stå tomt for en lokal eller selvdriftet modell.
+        - button "Aktiver overvåking"
+      - button "Kjør nå"
+      - button "Slett"
+    - paragraph: "Alt kjører lokalt. API-nøkkelen lagres ikke: den blir bare værende i minnet til ekte serve og blir aldri skrevet til disk, vist i overvåkingslisten eller sendt til nettleseren. Oppgi den igjen når ekte serve har startet på nytt."
+- contentinfo:
+  - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
+  - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

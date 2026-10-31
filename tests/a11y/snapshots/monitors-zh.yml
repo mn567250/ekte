@@ -19,6 +19,7 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch"
+    - option "Norsk"
   - link "无障碍":
     - /url: /v2/accessibility
   - navigation "主导航":
@@ -127,6 +128,7 @@
           - option "Português"
           - option "Italiano"
           - option "Deutsch"
+          - option "Norsk"
       - term: 知识库资料
       - definition:
         - code: openai/gpt-4o

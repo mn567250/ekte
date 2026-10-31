@@ -1,6 +1,6 @@
 # ekte — Realitätscheck für LLM-Relays
 
-> [🇬🇧 English](README.md) · [🇨🇳 中文](README.zh-CN.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇵🇹 Português](README.pt.md) · [🇮🇹 Italiano](README.it.md) · **🇩🇪 Deutsch**
+> [🇬🇧 English](README.md) · [🇨🇳 中文](README.zh-CN.md) · [🇫🇷 Français](README.fr.md) · [🇪🇸 Español](README.es.md) · [🇵🇹 Português](README.pt.md) · [🇮🇹 Italiano](README.it.md) · **🇩🇪 Deutsch** · [🇳🇴 Norsk](README.nb.md)
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
@@ -346,8 +346,8 @@ was sie zeigt.
 
 Ein Sprachmenü in der Kopfzeile jeder Seite schaltet die Oberfläche zwischen
 **🇬🇧 Englisch** (Standard), **🇨🇳 Chinesisch** (die ursprüngliche Oberfläche),
-**🇫🇷 Französisch**, **🇪🇸 Spanisch**, **🇵🇹 Portugiesisch**, **🇮🇹 Italienisch** und
-**🇩🇪 Deutsch** um; die Wahl wird pro Browser gespeichert.
+**🇫🇷 Französisch**, **🇪🇸 Spanisch**, **🇵🇹 Portugiesisch**, **🇮🇹 Italienisch**,
+**🇩🇪 Deutsch** und **🇳🇴 Norwegisch** (Bokmål) um; die Wahl wird pro Browser gespeichert.
 
 Aus der Oberfläche heruntergeladene Berichte (**Bericht herunterladen**: JSON,
 Markdown, HTML oder PDF) folgen der gewählten Sprache: JSON-Schlüssel,
@@ -585,7 +585,7 @@ ekte watch --base-url https://relay.example.com/v1 --api-key env:EKTE_API_KEY \
 
 Warnungen werden für **Slack / Feishu / DingTalk / generisches JSON** formatiert,
 automatisch anhand der Webhook-URL erkannt, und in der Warnsprache verfasst —
-standardmäßig Englisch; `--alert-lang en|zh|fr|es|pt|it|de`. Die generische
+standardmäßig Englisch; `--alert-lang en|zh|fr|es|pt|it|de|nb`. Die generische
 JSON-Nutzlast hält ihre Schlüssel und Maschinenwerte (`risk_level`, `score`, …)
 sprachneutral, übersetzt die für Menschen lesbaren (`text`, `headline`,
 `key_findings`) und gibt die `language` an.

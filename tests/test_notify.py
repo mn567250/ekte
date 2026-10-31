@@ -91,7 +91,7 @@ def _real_report():
     return json.loads((Path(__file__).parent / "fixtures" / "web_report.json").read_text("utf-8"))
 
 
-@pytest.mark.parametrize("lang", ["en", "zh", "fr", "es", "pt", "it", "de"])
+@pytest.mark.parametrize("lang", ["en", "zh", "fr", "es", "pt", "it", "de", "nb"])
 def test_real_alert_is_fully_in_its_language(lang):
     from ekte import i18n
 

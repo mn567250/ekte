@@ -1,6 +1,6 @@
 # ekte — Guide du développeur
 
-> [🇬🇧 English](DEVELOPER_GUIDE.md) · [🇨🇳 中文](DEVELOPER_GUIDE.zh-CN.md) · **🇫🇷 Français** · [🇪🇸 Español](DEVELOPER_GUIDE.es.md) · [🇵🇹 Português](DEVELOPER_GUIDE.pt.md) · [🇮🇹 Italiano](DEVELOPER_GUIDE.it.md) · [🇩🇪 Deutsch](DEVELOPER_GUIDE.de.md)
+> [🇬🇧 English](DEVELOPER_GUIDE.md) · [🇨🇳 中文](DEVELOPER_GUIDE.zh-CN.md) · **🇫🇷 Français** · [🇪🇸 Español](DEVELOPER_GUIDE.es.md) · [🇵🇹 Português](DEVELOPER_GUIDE.pt.md) · [🇮🇹 Italiano](DEVELOPER_GUIDE.it.md) · [🇩🇪 Deutsch](DEVELOPER_GUIDE.de.md) · [🇳🇴 Norsk](DEVELOPER_GUIDE.nb.md)
 
 Ce guide s'adresse à celles et ceux qui modifient ekte : comment il est construit,
 comment préparer un environnement de développement, comment contribuer, et
@@ -126,7 +126,7 @@ ekte/
     static/            scripts partagés par toutes les pages (lang.js, i18n.js, icons.js, …)
     static/v2/         pages, styles et scripts de l'interface web
 tests/                 suite pytest ; conftest.py contient le relais simulé
-docs/                  METHODOLOGY (7 langues), CI.md, DOCKER.md, PUBLISHING.md
+docs/                  METHODOLOGY (8 langues), CI.md, DOCKER.md, PUBLISHING.md
 examples/ekte.yaml     fichier de configuration commenté
 action.yml             l'action composite GitHub
 Dockerfile             image de l'interface web
@@ -696,8 +696,8 @@ documentation.
 
 ### Documentation
 
-La documentation existe en sept langues — anglais, chinois (`zh-CN`), français,
-espagnol, portugais, italien et allemand :
+La documentation existe en huit langues — anglais, chinois (`zh-CN`), français,
+espagnol, portugais, italien, allemand et norvégien (bokmål, `nb`) :
 
 | Fichier | Public |
 |---|---|

@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Enter the relay URL, e.g. https://relay.example.com/v1.": "Oppgi relé-URL-en, f.eks. https://relay.example.com/v1.",
+  "Enter the model to request, e.g. deepseek-chat.": "Oppgi modellen som skal forespørres, f.eks. deepseek-chat.",
+  "Enter the baseline URL, or clear the baseline model.": "Oppgi referanse-URL-en, eller tøm referansemodellen.",
+  "Enter the baseline model, or clear the baseline URL.": "Oppgi referansemodellen, eller tøm referanse-URL-en."
+ }
+}

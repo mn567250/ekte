@@ -9,7 +9,8 @@ detector, editing the knowledge base, translations, tests and pull-request
 rules — is in the **[Developer guide](DEVELOPER_GUIDE.md)**
 ([中文](DEVELOPER_GUIDE.zh-CN.md) · [Français](DEVELOPER_GUIDE.fr.md) ·
 [Español](DEVELOPER_GUIDE.es.md) · [Português](DEVELOPER_GUIDE.pt.md) ·
-[Italiano](DEVELOPER_GUIDE.it.md) · [Deutsch](DEVELOPER_GUIDE.de.md)).
+[Italiano](DEVELOPER_GUIDE.it.md) · [Deutsch](DEVELOPER_GUIDE.de.md) ·
+[Norsk](DEVELOPER_GUIDE.nb.md)).
 
 In short:
 

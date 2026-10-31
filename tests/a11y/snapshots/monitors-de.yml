@@ -19,6 +19,7 @@
     - option "Português"
     - option "Italiano"
     - option "Deutsch" [selected]
+    - option "Norsk"
   - link "Barrierefreiheit":
     - /url: /v2/accessibility
   - navigation "Hauptnavigation":
@@ -127,6 +128,7 @@
           - option "Português"
           - option "Italiano"
           - option "Deutsch"
+          - option "Norsk"
       - term: Wissensprofil
       - definition:
         - code: openai/gpt-4o
