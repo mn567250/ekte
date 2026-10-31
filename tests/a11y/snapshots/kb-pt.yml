@@ -80,7 +80,7 @@
       - heading "1 Copiar o prompt de pesquisa" [level=3]
       - text: ID do modelo id
       - textbox "ID do modelo id":
-        - /placeholder: "ex.: example-large-2"
+        - /placeholder: p. ex. example-large-2
       - text: Fornecedor Opcional
       - textbox "Fornecedor Opcional":
         - /placeholder: p. ex. openai / deepseek
@@ -96,7 +96,7 @@
         - /placeholder: "provider: …\nmodels:\n- id: …"
       - text: Escolher um ficheiro .yaml
       - heading "3 Verificar e guardar" [level=3]
-      - paragraph: A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o ekte enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é guardado até guardar.
+      - paragraph: A verificação valida o esquema e os limites, sinaliza expressões regulares inseguras, lista cada prompt que o ekte enviaria aos relays e mostra quais IDs de modelo seriam resolvidos de outra forma. Nada é guardado enquanto não o fizer.
       - button "Verificação"
       - button "Guardar na base" [disabled]
     - group:

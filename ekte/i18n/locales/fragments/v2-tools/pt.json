@@ -23,9 +23,9 @@
   "The expected line must be between 0 and {n}.": "A linha esperada tem de estar entre 0 e {n}.",
   "Verification result": "Resultado da verificação",
   "Verification type": "Tipo de verificação",
-  "e.g. bge-reranker-v2-m3": "ex.: bge-reranker-v2-m3",
-  "e.g. https://relay.example.com/v1": "ex.: https://relay.example.com/v1",
-  "e.g. text-embedding-3-large": "ex.: text-embedding-3-large",
+  "e.g. bge-reranker-v2-m3": "p. ex. bge-reranker-v2-m3",
+  "e.g. https://relay.example.com/v1": "p. ex. https://relay.example.com/v1",
+  "e.g. text-embedding-3-large": "p. ex. text-embedding-3-large",
   "optional": "opcional"
  }
 }

@@ -26,7 +26,7 @@
   "Rankings are not deterministic": "As classificações não são determinísticas",
   "Rerank determinism": "Determinismo do rerank",
   "Rerank drift": "Deriva do rerank",
-  "Rerank drift baseline recorded": "Referência de deriva do rerank registrada",
+  "Rerank drift baseline recorded": "Referência de deriva do rerank registada",
   "Rerank drift not measured": "Deriva do rerank não medida",
   "Rerank endpoint connectivity": "Conectividade do endpoint de rerank",
   "Rerank known-answer probe": "Sonda de rerank de resposta conhecida",

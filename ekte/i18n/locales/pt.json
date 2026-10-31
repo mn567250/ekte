@@ -404,7 +404,7 @@
   "target": "alvo",
   "failed": "falhou",
   "Latency": "Latência",
-  "cached (excluded)": "do cache (excluído)",
+  "cached (excluded)": "da cache (excluído)",
   "audit request (lighter)": "pedido da auditoria (mais claro)",
   "failed request": "pedido com falha",
   "Running median": "Mediana móvel",
@@ -415,9 +415,9 @@
   "Latency p50": "Latência p50",
   "Decode speed p50": "Velocidade de descodificação p50",
   "Error rate": "Taxa de erros",
-  "succeeded": "bem-sucedidas",
+  "succeeded": "com sucesso",
   "timeouts": "tempos esgotados",
-  "Cold start (first request)": "Arranque a frio (primeira pedido)",
+  "Cold start (first request)": "Arranque a frio (primeiro pedido)",
   "Under load": "Sob carga",
   "aggregate": "total",
   "Prompt size": "Tamanho do prompt",
@@ -460,9 +460,9 @@
   "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.": "As contagens locais de tokens são estimativas (cerca de ±15-20%) de uma heurística incorporada; o ekte nunca transfere um tokenizador.",
   "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests.": "Os percentis exigem amostras suficientes: p75 a partir de 4, p90 a partir de 10, p95 a partir de 20, p99 a partir de 100 pedidos.",
   "Relay processing times come from the relay's own response headers and are unverified.": "Os tempos de processamento do relay vêm dos seus próprios cabeçalhos de resposta e não são verificados.",
-  "Some requests were served fully or partly from a cache and are left out of the statistics.": "Alguns pedidos foram atendidos total ou parcialmente por um cache e ficaram fora das estatísticas.",
-  "A relay that caches unique prompts may be serving stored answers; compare with a trusted baseline.": "Um relay que armazena em cache prompts únicos pode estar a servir respostas guardadas; compare com uma referência confiável.",
-  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "Avalie isso junto com as constatações de identidade do modelo; a velocidade sozinha não prova uma substituição.",
+  "Some requests were served fully or partly from a cache and are left out of the statistics.": "Alguns pedidos foram atendidos total ou parcialmente por uma cache e ficaram fora das estatísticas.",
+  "A relay that caches unique prompts may be serving stored answers; compare with a trusted baseline.": "Um relay que armazena em cache prompts únicos pode estar a servir respostas guardadas; compare com uma referência de confiança.",
+  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "Avalie-o em conjunto com as constatações de identidade do modelo; a velocidade, por si só, não prova uma substituição.",
   "Performance probe requests": "Pedidos da sonda de desempenho",
   "Non-streaming": "Sem streaming",
   "non-streaming": "sem streaming",
@@ -504,8 +504,8 @@
    "Verificação da sequência stop; finish_reason={finish_reason}."
   ],
   "protocol.stop_not_applicable": [
-   "Verificação da sequência de parada não aplicável",
-   "A Responses API não tem parâmetro stop; a sequência de parada não foi verificada nem contada."
+   "Verificação da sequência de paragem não aplicável",
+   "A Responses API não tem parâmetro stop; a sequência de paragem não foi verificada nem contada."
   ],
   "protocol.shape": [
    "Conformidade da estrutura da resposta",
@@ -833,8 +833,8 @@
    "{errors} erros e {timeouts} tempos esgotados em {requests} pedidos da sonda para {endpoint} ({rate_limited} limitadas)."
   ],
   "performance.cache_hit": [
-   "Prompts únicos da sonda vieram de um cache",
-   "{cached} pedido(s) da sonda para {endpoint} voltaram do cache embora cada prompt fosse único; ficaram fora das estatísticas."
+   "Prompts únicos da sonda vieram de uma cache",
+   "{cached} pedido(s) da sonda para {endpoint} voltaram da cache embora cada prompt fosse único; ficaram fora das estatísticas."
   ],
   "performance.reasoning": [
    "Tokens de raciocínio na sonda",

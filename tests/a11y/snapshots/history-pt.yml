@@ -70,8 +70,8 @@
       - option "Todos" [selected]
       - option "openai"
       - option "(desconhecido)"
-    - text: Detecção do protocolo
-    - combobox "Detecção do protocolo":
+    - text: Deteção do protocolo
+    - combobox "Deteção do protocolo":
       - option "Todos" [selected]
       - option "(desconhecido)"
     - text: Pedidos de sondagem

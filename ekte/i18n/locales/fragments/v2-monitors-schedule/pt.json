@@ -26,7 +26,7 @@
   "Webhook URLs (one per line)": "URLs de webhook (uma por linha)",
   "Webhooks saved.": "Webhooks guardados.",
   "(optional)": "(opcional)",
-  "History never stores the key. Leave it empty for a local or self-hosted model.": "O histórico nunca guarda a chave. Deixe vazio para um modelo local ou auto-hospedado.",
+  "History never stores the key. Leave it empty for a local or self-hosted model.": "O histórico nunca guarda a chave. Deixe vazio para um modelo local ou autoalojado.",
   "Running now": "Em execução",
   "Waiting for next scheduled run": "A aguardar a próxima execução agendada",
   "Cancel run": "Cancelar execução",

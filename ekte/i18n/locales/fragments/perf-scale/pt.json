@@ -1,7 +1,7 @@
 {
  "strings": {
   "▲ {n} above {value}": "▲ {n} acima de {value}",
-  "band: p25–p75 of the same 5 requests": "intervalo: p25–p75 das mesmos 5 pedidos",
+  "band: p25–p75 of the same 5 requests": "intervalo: p25–p75 dos mesmos 5 pedidos",
   "y-axis focused on the probe: 0 to {max}, {n} requests above it (triangles at the top)": "eixo y focado na sonda: de 0 a {max}, {n} pedidos acima (triângulos no topo)",
   "audit request (ringed)": "pedido da auditoria (com anel)",
   "probe request (small, lighter)": "pedido da sonda (pequeno, mais claro)",
@@ -12,9 +12,9 @@
   "set by you": "escolhido por si",
   "automatic": "automático",
   "provisional until {n} probe requests ({k}/{n})": "provisório até {n} pedidos da sonda ({k}/{n})",
-  "range from the first {n} probe requests": "intervalo das primeiros {n} pedidos da sonda",
+  "range from the first {n} probe requests": "intervalo dos primeiros {n} pedidos da sonda",
   "Y-axis range": "Intervalo do eixo y",
   "Back to automatic": "Voltar ao automático",
-  "Y-axis switched to {range} automatically": "Eixo y mudou automaticamente para: {range}"
+  "Y-axis switched to {range} automatically": "Eixo y alterado automaticamente para: {range}"
  }
 }
