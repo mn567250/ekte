@@ -58,8 +58,18 @@ jobs:
         run: mypy ekte
 
       - name: Test (pytest)
+        if: matrix.os != 'ubuntu-latest' || matrix.python-version != '3.12'
         # pytest-xdist (dev extra): one worker per CPU
         run: pytest -q -n auto
+
+      - name: Test with coverage (pytest-cov)
+        # One Linux run measures coverage: the whole package must stay above
+        # [tool.coverage.report] fail_under, and the command line, the judge
+        # and the media auditor above their floors (scripts/check_coverage.py).
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: |
+          pytest -q -n auto --cov=ekte --cov-report=term-missing:skip-covered --cov-report=json
+          python scripts/check_coverage.py coverage.json
 
   a11y-scope:
     # Which pages the a11y suite tests on this run (tests/a11y/pages.py):

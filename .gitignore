@@ -38,3 +38,5 @@ tmp/
 .idea/
 .vscode/
 a11y-report*.json
+.coverage.*
+coverage.json

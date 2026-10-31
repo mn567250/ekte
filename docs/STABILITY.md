@@ -156,6 +156,12 @@ is a bug, not a limitation. Dropping an operating system needs a major release.
   3.11 and 3.14): the Python versions behave the same across systems, so the
   extremes find the platform problems at a third of the cost. Tests that only
   make sense on POSIX are skipped on Windows with an explicit reason.
+- **Test coverage.** One Linux run (Python 3.12) measures coverage and fails
+  the build when the whole package falls below 93% or when the command line,
+  the LLM judge or the image and audio auditor fall below their floors (90%,
+  95% and 95%; `scripts/check_coverage.py`). The floors are set from the values
+  reached and only go up. Tests check behaviour (inputs, outputs, exit codes,
+  files written) and never reach the network.
 - **Owner-only data directory.** On Linux and macOS ekte creates the data
   directory with mode `0700` and the database files with `0600`. Windows ignores
   these modes: the directory inherits the permissions of its parent folder, which

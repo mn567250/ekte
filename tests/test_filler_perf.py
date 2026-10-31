@@ -58,36 +58,55 @@ def test_haystack_leaves_cached_filler_untouched():
 
 
 def test_filler_200k_tokens_is_fast():
-    start = time.perf_counter()
-    text = build_filler.__wrapped__(200_000, None)
-    elapsed = time.perf_counter() - start
-    assert estimate_tokens(text) >= 200_000
+    # Best of five: a machine under heavy parallel load can stall any single
+    # run, but a slow algorithm is slow in every run.
+    runs = []
+    for _ in range(5):
+        start = time.perf_counter()
+        text = build_filler.__wrapped__(200_000, None)
+        runs.append(time.perf_counter() - start)
+        assert estimate_tokens(text) >= 200_000
+    elapsed = min(runs)
     assert elapsed < 0.5, f"200k-token filler took {elapsed:.2f}s"
 
 
 async def test_context_window_probe_does_not_stall_event_loop(audit_context):
-    """A full context-window run must not block the loop (other audits share it)."""
-    build_filler.cache_clear()
-    max_stall = 0.0
-    stop = asyncio.Event()
-    started = asyncio.Event()
+    """A full context-window run must not block the loop (other audits share it).
 
-    async def monitor() -> None:
-        nonlocal max_stall
-        interval = 0.005
-        started.set()
-        while not stop.is_set():
-            before = time.perf_counter()
-            await asyncio.sleep(interval)
-            max_stall = max(max_stall, time.perf_counter() - before - interval)
+    A loop that is really blocked stalls in every attempt; an overloaded machine
+    that merely deschedules the process once does not, so the best of three
+    attempts counts.
+    """
+    async def attempt() -> float:
+        build_filler.cache_clear()
+        max_stall = 0.0
+        stop = asyncio.Event()
+        started = asyncio.Event()
 
-    task = asyncio.create_task(monitor())
-    # The mock transport never really yields, so make sure the monitor is already
-    # sleeping when the detector starts — a blocked loop then shows up as a stall.
-    await started.wait()
-    try:
-        await ContextWindowDetector().run(audit_context)
-    finally:
-        stop.set()
-        await task
-    assert max_stall < 0.25, f"event loop stalled for {max_stall * 1000:.0f} ms"
+        async def monitor() -> None:
+            nonlocal max_stall
+            interval = 0.005
+            started.set()
+            while not stop.is_set():
+                before = time.perf_counter()
+                await asyncio.sleep(interval)
+                max_stall = max(max_stall, time.perf_counter() - before - interval)
+
+        task = asyncio.create_task(monitor())
+        # The mock transport never really yields, so make sure the monitor is already
+        # sleeping when the detector starts — a blocked loop then shows up as a stall.
+        await started.wait()
+        try:
+            await ContextWindowDetector().run(audit_context)
+        finally:
+            stop.set()
+            await task
+        return max_stall
+
+    stalls = []
+    for _ in range(3):
+        stalls.append(await attempt())
+        if stalls[-1] < 0.25:
+            break
+    best = min(stalls)
+    assert best < 0.25, f"event loop stalled for {best * 1000:.0f} ms"

@@ -29,6 +29,13 @@ ekte has three eras:
   accessibility tree, 320 px reflow, reduced motion, contrast in both themes) that
   found no issue. No step is recorded as manually reviewed yet. The release
   checklist asks to repeat the review for UI changes.
+- **Coverage floors.** The tests now cover every command's success path, main
+  error paths, exit codes and machine-readable output, the judge's handling of
+  malformed and failed responses, and the image and audio auditor's verdicts.
+  CI measures coverage (pytest-cov, now in the `dev` extra) and fails when the
+  package drops below 93% or the command line, the judge or the media auditor
+  drop below 90%, 95% and 95% (`scripts/check_coverage.py`).
+
 - **Knowledge-base freshness.** Every bundled provider profile now carries
   `last_verified` (the date its data was last checked). Reports carry the
   knowledge-base date (`knowledge.kb_date`, the oldest of those dates; report
