@@ -766,14 +766,57 @@ Selve den sammensatte handlingen er `action.yml`, dokumentert i
 
 ## Utgivelser
 
-1. Flytt `[Unreleased]` i `CHANGELOG.md` til den nye versjonen og øk `version` i
-   `pyproject.toml`.
-2. Commit, tagg `vX.Y.Z` og push taggen; `release.yml` publiserer til PyPI.
-3. Lag GitHub-utgivelsen med notatene fra CHANGELOG og oppdater den festede
-   versjonen av handlingen i README-ene og `docs/CI.md`.
-
-Engangsoppsettet for PyPI og den manuelle reserveløsningen står i
+En utgivelse er en versjonstagg; alt annet er automatisert og kontrollert.
+Sjekklisten ligger i [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md), det
+engangs PyPI-oppsettet og den manuelle reserveløsningen i
 [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+### Lage en utgivelse
+
+1. Gå gjennom [sjekklisten for utgivelser](docs/RELEASE_CHECKLIST.md): versjon og
+   endringslogg, støttede Python-versjoner og systemer, ferskhet i kunnskapsbasen,
+   oppgraderingsfixture, tilgjengelighetsgjennomgang ved UI-endringer, dokumentasjon
+   på alle språk, sikkerhetsvarsler.
+2. Sett `version` i `pyproject.toml` og gi `[Unreleased]` i `CHANGELOG.md` nytt navn
+   `[X.Y.Z] - ÅÅÅÅ-MM-DD`. Sjekk lokalt med
+   `python scripts/release_check.py version vX.Y.Z` og `... notes vX.Y.Z`.
+3. Flett, tagg commiten og push taggen:
+   `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`, `git push origin vX.Y.Z`.
+4. `release.yml` kontrollerer først med `scripts/release_check.py` at taggen
+   samsvarer med pakkeversjonen, at `CHANGELOG.md` har en seksjon for den og at CI er
+   grønn for den taggede commiten (den venter på en CI som kjører). Feiler en
+   kontroll, stopper workflowen og ingenting publiseres. Deretter bygger den,
+   publiserer til PyPI via Trusted Publishing med proveniensattester og lager
+   GitHub-utgivelsen med endringslogg-seksjonen som notater.
+
+### Utgivelseskandidater
+
+Tagg `vX.Y.ZrcN` (med `version = "X.Y.ZrcN"` i `pyproject.toml`). PyPI behandler den
+som en PEP 440-forhåndsversjon: `pip install ekte` ignorerer den, `pip install --pre ekte`
+finner den; GitHub merker utgivelsen som «Pre-release». I endringsloggen holder
+seksjonen `[X.Y.ZrcN]`, `[X.Y.Z]` eller `[Unreleased]`.
+
+### Hvis en publisering feiler halvveis
+
+PyPI godtar aldri samme fil to ganger, og en versjon kan ikke gjenbrukes; det
+avgjørende er hvor langt kjøringen kom (Actions, «Release to PyPI»):
+
+- **En kontroll feilet (jobben verify).** Ingenting ble publisert. Rett årsaken
+  (versjon, endringslogg, CI), slett taggen lokalt og på origin
+  (`git push origin :refs/tags/vX.Y.Z`) og tagg den rettede commiten på nytt.
+- **Bygg eller opplasting feilet før PyPI hadde filer.** Kjør de feilede jobbene på
+  nytt; ingen versjon er brukt opp. Må selve den taggede commiten endres, slett
+  taggen og lag den på nytt.
+- **PyPI har noen av filene** (se <https://pypi.org/project/ekte/#files>). Kjør de
+  feilede jobbene på nytt: opplastingen hopper over filer som finnes. Avviker filene
+  fra det som skal ut, ikke prøv igjen: «yank» versjonen på PyPI og gi ut neste
+  (`X.Y.Z+1` eller `rcN+1`).
+- **PyPI er komplett, men GitHub-utgivelsen feilet.** Kjør jobben `GitHub Release`
+  på nytt; den oppretter eller oppdaterer utgivelsen idempotent. Eller for hånd:
+  `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`.
+- **En feilaktig versjon er allerede live.** «Yank» den på PyPI (den kan da bare
+  installeres med eksakt versjon), rett opp fremover med en ny versjon og noter det i
+  endringsloggen.
 
 ## Sikkerhet
 
