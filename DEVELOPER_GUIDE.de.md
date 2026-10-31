@@ -33,6 +33,7 @@ bewertet wird, in der [Methodik](docs/METHODOLOGY.de.md).
   - [Einen Detektor hinzufügen](#einen-detektor-hinzufügen)
   - [Die Wissensbasis bearbeiten](#die-wissensbasis-bearbeiten)
   - [Test-Prompts ändern](#test-prompts-ändern)
+  - [Ein Datenbankschema ändern](#ein-datenbankschema-ändern)
   - [Übersetzungen](#übersetzungen)
   - [Dokumentation](#dokumentation)
 - [Tests](#tests)
@@ -650,6 +651,44 @@ Testtexte sind Kalibrierdaten. Eine Änderung in `ekte/prompts/en.json` kann
 Antwortprüfungen, Token-Schätzungen und damit Urteile verändern; passen Sie den
 Detektor und seine Tests mit an und nennen Sie die Änderung im CHANGELOG. Lassen
 Sie einen Test nie der Sprache der Oberfläche folgen.
+
+### Ein Datenbankschema ändern
+
+Jede SQLite-Datenbank, die ekte anlegt (`history.db`, `watches.db`, `kb.db`),
+wird von einem gemeinsamen Mechanismus, `ekte/dbmigrate.py`, versioniert und
+migriert; ein Store migriert sich nie selbst mit ad-hoc-`ALTER TABLE`s. Die
+Schemaversion steht in `PRAGMA user_version`, und
+`datadir.connect(name, MIGRATIONS)` prüft sie bei jedem Öffnen.
+
+So ändern Sie ein Schema:
+
+1. Fügen Sie dem Store (`web/history.py`, `web/watches.py`,
+   `knowledge/store.py`) eine Funktion `_vN(conn)` hinzu, die die Änderung
+   vornimmt, und hängen Sie `dbmigrate.Migration(N, _vN)` an sein
+   `MIGRATIONS`-Tupel an. Ändern oder vertauschen Sie nie einen bestehenden
+   Schritt: Datenbanken im Feld haben ihn bereits ausgeführt.
+2. Halten Sie den Schritt idempotent (`CREATE ... IF NOT EXISTS` und
+   `kb_snapshot.add_link_columns()` für Spalten) und führen Sie darin weder
+   Commit noch Rollback aus. Der Mechanismus führt jeden Schritt in einer
+   eigenen `BEGIN IMMEDIATE`-Transaktion zusammen mit der Versionserhöhung aus;
+   ein unterbrochener oder fehlschlagender Schritt lässt die Datenbank also auf
+   der vorherigen Version.
+3. Eine neue Datenbank beginnt bei Version 0 und führt alle Schritte aus; eine
+   Datenbank aus der Zeit vor der Versionierung hat ebenfalls Version 0.
+   Deshalb muss Schritt 1 eines Stores ein vorhandenes Schema übernehmen.
+4. Ergänzen Sie in `tests/test_dbmigrate.py` einen Test, der das Schema in
+   Version N-1 aufbaut, es öffnet und die neue Version, das neue Schema und die
+   unversehrten Daten prüft. Müssen Zeilen für vorhandene Daten gefüllt werden,
+   geschieht das im `on_migrated`-Callback des Stores (siehe
+   `history._after_migration`), nicht im Schritt.
+
+Was der Mechanismus für Sie übernimmt: Eine Datenbank einer **neueren** ekte
+wird mit `DatabaseTooNewError` abgelehnt (beide Versionen genannt, mit
+Handlungshinweis), bevor etwas geschrieben wird; vor dem ersten Schritt eines
+Laufs wird eine nicht leere Datenbank nach `<db>.v<Version>.<UTC-Zeit>.bak`
+daneben kopiert, und je Datenbank bleiben nur die neuesten 3 Sicherungen
+erhalten (`dbmigrate.BACKUP_KEEP`); die Version wird unter der Schreibsperre
+erneut gelesen, sodass CLI und Server nie denselben Schritt zweimal ausführen.
 
 ### Übersetzungen
 

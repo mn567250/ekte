@@ -33,6 +33,7 @@ Docker og utgis. Hva ekte gjør og hvordan den brukes, står i
   - [Legge til en detektor](#legge-til-en-detektor)
   - [Redigere kunnskapsbasen](#redigere-kunnskapsbasen)
   - [Endre probeprompter](#endre-probeprompter)
+  - [Endre et databaseskjema](#endre-et-databaseskjema)
   - [Oversettelser](#oversettelser)
   - [Dokumentasjon](#dokumentasjon)
 - [Testing](#testing)
@@ -629,6 +630,42 @@ Probetekster er kalibreringsdata. Å endre en i `ekte/prompts/en.json` kan endre
 svarkontroller, tokenanslag og dermed konklusjoner, så juster detektoren og
 testene dens samtidig, og nevn endringen i CHANGELOG. La aldri en probe følge
 grensesnittspråket.
+
+### Endre et databaseskjema
+
+Hver SQLite-database ekte oppretter (`history.db`, `watches.db`, `kb.db`)
+versjoneres og migreres av én felles mekanisme, `ekte/dbmigrate.py`; et lager
+migrerer seg aldri selv med ad hoc-`ALTER TABLE`. Skjemaversjonen ligger i
+`PRAGMA user_version`, og `datadir.connect(name, MIGRATIONS)` sjekker den ved
+hver åpning.
+
+Slik endrer du et skjema:
+
+1. Legg til en funksjon `_vN(conn)` i lageret (`web/history.py`,
+   `web/watches.py`, `knowledge/store.py`) som gjør endringen, og legg
+   `dbmigrate.Migration(N, _vN)` til sist i `MIGRATIONS`-tuppelen. Rediger
+   eller omorganiser aldri et eksisterende trinn: databaser i drift har
+   allerede kjørt det.
+2. Hold trinnet idempotent (`CREATE ... IF NOT EXISTS` og
+   `kb_snapshot.add_link_columns()` for kolonner), og ikke gjør commit eller
+   rollback i det. Mekanismen kjører hvert trinn i en egen
+   `BEGIN IMMEDIATE`-transaksjon sammen med versjonsøkningen, så et avbrutt
+   eller mislykket trinn lar databasen stå på forrige versjon.
+3. En ny database starter på versjon 0 og kjører alle trinn; en database fra
+   før versjoneringen har også versjon 0, derfor må trinn 1 i et lager ta
+   over et eksisterende skjema.
+4. Legg til en test i `tests/test_dbmigrate.py` som bygger skjemaet på
+   versjon N-1, åpner det og sjekker ny versjon, nytt skjema og at dataene er
+   intakte. Må rader fylles for eksisterende data, gjør det i lagerets
+   `on_migrated`-callback (se `history._after_migration`), ikke i trinnet.
+
+Hva mekanismen gjør for deg: en database skrevet av en **nyere** ekte avvises
+med `DatabaseTooNewError` (begge versjoner nevnes, med hva man kan gjøre) før
+noe skrives; før det første trinnet i en kjøring kopieres en ikke-tom database
+til `<db>.v<versjon>.<UTC-tid>.bak` ved siden av, og bare de 3 nyeste
+sikkerhetskopiene per database beholdes (`dbmigrate.BACKUP_KEEP`); versjonen
+leses på nytt under skrivelåsen, slik at CLI og server aldri kjører samme
+trinn to ganger.
 
 ### Oversettelser
 

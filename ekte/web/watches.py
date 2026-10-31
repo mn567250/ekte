@@ -57,7 +57,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from ekte import datadir, i18n, secretbox
+from ekte import datadir, dbmigrate, i18n, secretbox
 from ekte.config import SURFACES
 from ekte.knowledge import snapshot as kb_snapshot
 
@@ -107,16 +107,8 @@ def _db_path() -> Path:
     return datadir.db_path(_DB_NAME)
 
 
-@contextmanager
-def _connect() -> Iterator[sqlite3.Connection]:
-    """Yield a fresh connection with rows as dicts; commit + close on exit."""
-    with datadir.connect(_DB_NAME) as conn:
-        _ensure_table(conn)
-        yield conn
-
-
-def _ensure_table(conn: sqlite3.Connection) -> None:
-    """Lazily create the watches table. Idempotent."""
+def _v1(conn: sqlite3.Connection) -> None:
+    """The watches table as of 0.30.0 (idempotent: also adopts unversioned databases)."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS watches (
@@ -142,37 +134,46 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
-    # Databases created before alerts were translatable lack `language`; add
-    # it (NULL = English, see ekte.i18n.normalize).
-    cols = {r[1] for r in conn.execute("PRAGMA table_info(watches)")}
-    if "language" not in cols:
-        conn.execute("ALTER TABLE watches ADD COLUMN language TEXT")
-    # The custom suite's dimensions (JSON list); NULL for the fixed suites.
-    if "dimensions" not in cols:
-        conn.execute("ALTER TABLE watches ADD COLUMN dimensions TEXT")
-    # The history run a watch was scheduled from (NULL for form-created ones).
-    if "source_report_id" not in cols:
-        conn.execute("ALTER TABLE watches ADD COLUMN source_report_id INTEGER")
-    # Seconds the last completed run took (from the history run for a draft);
-    # no monitor is scheduled more often than that.
-    if "run_duration_sec" not in cols:
-        conn.execute("ALTER TABLE watches ADD COLUMN run_duration_sec REAL")
-    # The performance probe's request mode: 0 non-streaming, 1 or NULL streaming
-    # (the full suite measures both either way).
-    if "performance_streaming" not in cols:
-        conn.execute("ALTER TABLE watches ADD COLUMN performance_streaming INTEGER")
-    # The audited surface ("chat", "embedding" or "rerank"); NULL reads as chat.
-    if "surface" not in cols:
-        conn.execute("ALTER TABLE watches ADD COLUMN surface TEXT")
-    # An embedding watch's claimed vector length; NULL or 0 takes the KB's.
-    if "embedding_dimensions" not in cols:
-        conn.execute("ALTER TABLE watches ADD COLUMN embedding_dimensions INTEGER")
+    # Columns older databases lack. language: alert language (NULL = English,
+    # see ekte.i18n.normalize); dimensions: the custom suite's dimensions (JSON
+    # list); source_report_id: the history run a watch was scheduled from;
+    # run_duration_sec: seconds the last run took (no monitor runs more often);
+    # performance_streaming: 0 non-streaming, 1 or NULL streaming; surface:
+    # "chat", "embedding" or "rerank" (NULL reads as chat); embedding_dimensions:
+    # an embedding watch's claimed vector length (NULL or 0 takes the KB's).
+    kb_snapshot.add_link_columns(
+        conn,
+        "watches",
+        {
+            "language": "TEXT",
+            "dimensions": "TEXT",
+            "source_report_id": "INTEGER",
+            "run_duration_sec": "REAL",
+            "performance_streaming": "INTEGER",
+            "surface": "TEXT",
+            "embedding_dimensions": "INTEGER",
+        },
+    )
     # The master key's check value (see ekte.secretbox.make_canary).
     conn.execute("CREATE TABLE IF NOT EXISTS secret_meta (name TEXT PRIMARY KEY, value TEXT)")
+
+
+def _v2(conn: sqlite3.Connection) -> None:
+    """Knowledge-base snapshots and the links from a watch to them."""
     kb_snapshot.ensure_table(conn)
     kb_snapshot.add_link_columns(
         conn, "watches", {"kb_snapshot_id": "INTEGER", "kb_usage": "TEXT", "kb_pinned_ts": "REAL"}
     )
+
+
+MIGRATIONS = (dbmigrate.Migration(1, _v1), dbmigrate.Migration(2, _v2))
+
+
+@contextmanager
+def _connect() -> Iterator[sqlite3.Connection]:
+    """Yield a fresh connection with rows as dicts; commit + close on exit."""
+    with datadir.connect(_DB_NAME, MIGRATIONS) as conn:
+        yield conn
 
 
 def init() -> None:
@@ -403,7 +404,7 @@ def forget_keys() -> int:
 
 def _scrub() -> None:
     """Overwrite freed pages and truncate the WAL so replaced keys don't linger."""
-    with datadir.connect(_DB_NAME) as conn:
+    with datadir.connect(_DB_NAME, MIGRATIONS) as conn:
         conn.execute("PRAGMA secure_delete=ON")
         conn.commit()
         conn.isolation_level = None  # VACUUM cannot run inside a transaction

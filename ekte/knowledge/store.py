@@ -38,42 +38,48 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 
-from ekte import datadir
+from ekte import datadir, dbmigrate
 
 DB_NAME = "kb.db"
 KINDS = ("provider", "model")
 
 
+def _v1(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS kb_entries (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            kind        TEXT NOT NULL CHECK (kind IN ('provider', 'model')),
+            provider    TEXT NOT NULL,
+            model_id    TEXT NOT NULL DEFAULT '',
+            body_json   TEXT NOT NULL,
+            enabled     INTEGER NOT NULL DEFAULT 1,
+            origin      TEXT,
+            created_ts  REAL,
+            updated_ts  REAL,
+            UNIQUE (kind, provider, model_id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS kb_disabled (
+            kind        TEXT NOT NULL CHECK (kind IN ('provider', 'model')),
+            provider    TEXT NOT NULL,
+            model_id    TEXT NOT NULL DEFAULT '',
+            ts          REAL,
+            PRIMARY KEY (kind, provider, model_id)
+        )
+        """
+    )
+
+
+MIGRATIONS = (dbmigrate.Migration(1, _v1),)
+
+
 @contextmanager
 def _connect() -> Iterator[sqlite3.Connection]:
-    with datadir.connect(DB_NAME) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS kb_entries (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                kind        TEXT NOT NULL CHECK (kind IN ('provider', 'model')),
-                provider    TEXT NOT NULL,
-                model_id    TEXT NOT NULL DEFAULT '',
-                body_json   TEXT NOT NULL,
-                enabled     INTEGER NOT NULL DEFAULT 1,
-                origin      TEXT,
-                created_ts  REAL,
-                updated_ts  REAL,
-                UNIQUE (kind, provider, model_id)
-            )
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS kb_disabled (
-                kind        TEXT NOT NULL CHECK (kind IN ('provider', 'model')),
-                provider    TEXT NOT NULL,
-                model_id    TEXT NOT NULL DEFAULT '',
-                ts          REAL,
-                PRIMARY KEY (kind, provider, model_id)
-            )
-            """
-        )
+    with datadir.connect(DB_NAME, MIGRATIONS) as conn:
         yield conn
 
 

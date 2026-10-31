@@ -39,7 +39,7 @@ def test_existing_folder_keeps_its_mode(monkeypatch, tmp_path):
     tmp_path.chmod(0o755)
     monkeypatch.setenv("EKTE_DATA_DIR", "/unused")
     CliRunner().invoke(app, ["--data-dir", str(tmp_path), "data-dir"])
-    with datadir.connect("history.db") as conn:
+    with datadir.connect("history.db", ()) as conn:
         conn.execute("CREATE TABLE t (x)")
     assert stat.S_IMODE(tmp_path.stat().st_mode) == 0o755
     db = tmp_path / "history.db"

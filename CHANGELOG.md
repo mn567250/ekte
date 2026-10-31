@@ -20,6 +20,17 @@ ekte has three eras:
 
 ### Added
 
+- **Versioned, safe migrations for every local database.** `history.db`,
+  `watches.db` and `kb.db` now share one mechanism (`ekte/dbmigrate.py`): the
+  schema version is recorded in `PRAGMA user_version` and checked on every open,
+  and ordered migrations each run in their own transaction, so an interrupted
+  one leaves the previous version. Before migrating, a non-empty database is
+  copied next to the original as `<db>.v<version>.<UTC time>.bak` (the newest 3
+  backups per database are kept). A database written by a newer ekte is not
+  modified; ekte stops with a message naming both versions and what to do.
+  Concurrent processes never run the same migration twice. Existing 0.30.0
+  data directories, including the unversioned `watches.db` and `kb.db`, migrate
+  without loss. The developer guide explains how to add a migration (#14).
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
   language dropdown of every page (code `nb`, `lang="nb"`, dates and numbers
   formatted for `nb-NO`): every UI string, finding title and summary,

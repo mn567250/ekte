@@ -137,7 +137,6 @@ def test_old_database_is_backfilled_once_with_identical_values(data, monkeypatch
 
     # Once migrated (rows without performance included), later connections do
     # not re-check the schema or re-scan report_json.
-    monkeypatch.setattr(history, "_migrate", _boom)
     monkeypatch.setattr(history, "_backfill_perf", _boom)
     monkeypatch.setattr(history, "_perf_headline", _boom)
     assert history.recent(500, perf=True) == expected_recent

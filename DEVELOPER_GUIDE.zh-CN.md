@@ -31,6 +31,7 @@
   - [新增检测器](#新增检测器)
   - [编辑知识库](#编辑知识库)
   - [修改探测提示词](#修改探测提示词)
+  - [修改数据库模式](#修改数据库模式)
   - [翻译](#翻译)
   - [文档](#文档)
 - [测试](#测试)
@@ -411,6 +412,33 @@ Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `finge
 
 探测文本是校准数据。修改 `ekte/prompts/en.json` 中的某条文本，可能改变答案校验、token 估算，
 进而改变结论；请同步调整检测器及其测试，并在 CHANGELOG 中说明。绝不要让探测跟随界面语言。
+
+### 修改数据库模式
+
+ekte 创建的每个 SQLite 数据库（`history.db`、`watches.db`、`kb.db`）都由同一个共享机制
+`ekte/dbmigrate.py` 管理版本和迁移；存储模块不得再用临时的 `ALTER TABLE` 自行迁移。
+模式版本保存在 `PRAGMA user_version` 中，`datadir.connect(name, MIGRATIONS)` 在每次
+打开时检查它。
+
+修改模式的步骤：
+
+1. 在存储模块（`web/history.py`、`web/watches.py`、`knowledge/store.py`）中添加一个
+   执行变更的函数 `_vN(conn)`，并把 `dbmigrate.Migration(N, _vN)` 追加到其
+   `MIGRATIONS` 元组末尾。切勿修改或重排已有步骤：线上的数据库已经执行过它们。
+2. 保持步骤幂等（`CREATE ... IF NOT EXISTS`，列用 `kb_snapshot.add_link_columns()`），
+   且不要在其中提交或回滚。该机制在各自独立的 `BEGIN IMMEDIATE` 事务中执行每个步骤，
+   并同时更新版本号；因此被中断或失败的步骤会让数据库保持在上一个版本。
+3. 新数据库从版本 0 开始并执行所有步骤；版本化之前的数据库同样是版本 0，所以存储模块的
+   第 1 步必须能接管已有的模式。
+4. 在 `tests/test_dbmigrate.py` 中添加测试：构建版本 N-1 的模式，打开它，并检查新版本、
+   新模式以及数据完好。如果需要为已有数据回填行，请在存储模块的 `on_migrated` 回调中
+   完成（见 `history._after_migration`），而不是在步骤里。
+
+该机制为你做的事：由**更新版本**的 ekte 写入的数据库会在写入任何内容之前被
+`DatabaseTooNewError` 拒绝（会指明两个版本以及该怎么做）；一次运行的第一个步骤之前，
+非空数据库会被复制到旁边的 `<db>.v<版本>.<UTC 时间>.bak`，每个数据库只保留最新的 3 份备份
+（`dbmigrate.BACKUP_KEEP`）；版本号在写锁下重新读取，所以 CLI 和服务器永远不会把同一个
+步骤执行两次。
 
 ### 翻译
 

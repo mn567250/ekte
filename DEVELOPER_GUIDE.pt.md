@@ -32,6 +32,7 @@ como cada verificação funciona e é pontuada, na [Metodologia](docs/METHODOLOG
   - [Adicionar um detector](#adicionar-um-detector)
   - [Editar a base de conhecimento](#editar-a-base-de-conhecimento)
   - [Alterar os prompts das sondas](#alterar-os-prompts-das-sondas)
+  - [Alterar o esquema de uma base de dados](#alterar-o-esquema-de-uma-base-de-dados)
   - [Traduções](#traduções)
   - [Documentação](#documentação)
 - [Testes](#testes)
@@ -646,6 +647,43 @@ Os textos das sondas são dados de calibração. Alterar um em
 tokens e, portanto, os vereditos; ajuste o detector e os seus testes em
 conformidade e mencione a alteração no CHANGELOG. Nunca faça uma sonda seguir o
 idioma da interface.
+
+### Alterar o esquema de uma base de dados
+
+Cada base de dados SQLite criada pelo ekte (`history.db`, `watches.db`,
+`kb.db`) é versionada e migrada por um único mecanismo partilhado,
+`ekte/dbmigrate.py`; um armazém nunca se migra sozinho com `ALTER TABLE` ad
+hoc. A versão do esquema está em `PRAGMA user_version` e
+`datadir.connect(name, MIGRATIONS)` verifica-a em cada abertura.
+
+Para alterar um esquema:
+
+1. Adicione ao armazém (`web/history.py`, `web/watches.py`,
+   `knowledge/store.py`) uma função `_vN(conn)` que faça a alteração e
+   acrescente `dbmigrate.Migration(N, _vN)` ao fim do seu tuplo `MIGRATIONS`.
+   Nunca edite nem reordene um passo existente: as bases em uso já o
+   executaram.
+2. Mantenha o passo idempotente (`CREATE ... IF NOT EXISTS` e
+   `kb_snapshot.add_link_columns()` para colunas) e não faça commit nem
+   rollback lá dentro. O mecanismo executa cada passo na sua própria transação
+   `BEGIN IMMEDIATE`, juntamente com o aumento da versão; um passo
+   interrompido ou falhado deixa por isso a base na versão anterior.
+3. Uma base nova começa na versão 0 e executa todos os passos; uma base
+   anterior ao versionamento também tem a versão 0, pelo que o passo 1 de um
+   armazém tem de adotar um esquema existente.
+4. Adicione a `tests/test_dbmigrate.py` um teste que construa o esquema na
+   versão N-1, o abra e verifique a nova versão, o novo esquema e a
+   integridade dos dados. Se for preciso preencher linhas de dados existentes,
+   faça-o no callback `on_migrated` do armazém (veja
+   `history._after_migration`), não no passo.
+
+O que o mecanismo faz por si: uma base escrita por um ekte **mais recente** é
+recusada com `DatabaseTooNewError` (nomeia as duas versões e diz o que fazer)
+antes de se escrever o que quer que seja; antes do primeiro passo de uma
+execução, uma base não vazia é copiada para `<db>.v<versão>.<hora UTC>.bak` ao
+lado dela, e só as 3 cópias mais recentes por base são mantidas
+(`dbmigrate.BACKUP_KEEP`); a versão é relida sob o bloqueio de escrita, pelo
+que a CLI e o servidor nunca executam o mesmo passo duas vezes.
 
 ### Traduções
 

@@ -18,11 +18,11 @@ from __future__ import annotations
 import contextlib
 import os
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 
-from ekte import legacy
+from ekte import dbmigrate, legacy
 
 _DIR_MODE = 0o700
 _FILE_MODE = 0o600
@@ -73,12 +73,21 @@ def _restrict(path: Path) -> None:
 
 
 @contextmanager
-def connect(name: str) -> Iterator[sqlite3.Connection]:
+def connect(
+    name: str,
+    migrations: Sequence[dbmigrate.Migration],
+    on_migrated: Callable[[sqlite3.Connection], None] | None = None,
+) -> Iterator[sqlite3.Connection]:
     """Yield a fresh connection to ``<data dir>/<name>``; commit + close on exit.
 
     Rows come back as :class:`sqlite3.Row`. A short busy timeout lets
     concurrent local writers (the CLI and the server) retry instead of raising
     ``database is locked``.
+
+    The schema is checked on every open and brought up to date with
+    ``migrations`` (see :mod:`ekte.dbmigrate`); ``on_migrated`` is called once
+    after a migration ran. A database from a newer ekte raises
+    :class:`ekte.dbmigrate.DatabaseTooNewError` before anything is written.
     """
     ensure_data_dir()
     path = db_path(name)
@@ -87,8 +96,13 @@ def connect(name: str) -> Iterator[sqlite3.Connection]:
     conn.row_factory = sqlite3.Row
     try:
         conn.execute("PRAGMA busy_timeout=5000")
+        # Refuse a newer database before any pragma can write to its file.
+        if dbmigrate.user_version(conn) > dbmigrate.latest(migrations):
+            dbmigrate.migrate(conn, path, migrations)  # raises
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA foreign_keys=ON")
+        if dbmigrate.migrate(conn, path, migrations) and on_migrated:
+            on_migrated(conn)
         yield conn
         conn.commit()
     finally:
