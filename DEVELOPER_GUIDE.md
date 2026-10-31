@@ -35,6 +35,7 @@ Docker and released. What ekte does and how to use it is in the
   - [Editing the knowledge base](#editing-the-knowledge-base)
   - [Keeping the knowledge base current](#keeping-the-knowledge-base-current)
   - [Changing probe prompts](#changing-probe-prompts)
+  - [Changing a database schema](#changing-a-database-schema)
   - [Translations](#translations)
   - [Documentation](#documentation)
 - [Testing](#testing)
@@ -663,6 +664,41 @@ Probe texts are calibration data. Changing one in `ekte/prompts/en.json` can
 change answer checks, token estimates and thus verdicts, so adjust the detector
 and its tests with it, and mention the change in the CHANGELOG. Never make a
 probe follow the UI language.
+
+### Changing a database schema
+
+Every SQLite database ekte creates (`history.db`, `watches.db`, `kb.db`) is
+versioned and migrated by one shared mechanism, `ekte/dbmigrate.py`; a store
+never migrates itself with ad-hoc `ALTER TABLE`s. The schema version lives in
+`PRAGMA user_version`, and `datadir.connect(name, MIGRATIONS)` checks it on
+every open.
+
+To change a schema:
+
+1. Add a function `_vN(conn)` to the store (`web/history.py`, `web/watches.py`,
+   `knowledge/store.py`) that makes the change, and append
+   `dbmigrate.Migration(N, _vN)` to its `MIGRATIONS` tuple. Never edit or
+   reorder an existing step: databases in the field have already run it.
+2. Keep the step idempotent (`CREATE ... IF NOT EXISTS`, and
+   `kb_snapshot.add_link_columns()` for columns) and do not commit or roll back
+   inside it. The mechanism runs each step in its own `BEGIN IMMEDIATE`
+   transaction together with the version bump, so an interrupted or failing
+   step leaves the database at the previous version.
+3. A new database starts at version 0 and runs every step; a database from
+   before versioning also has version 0, which is why step 1 of a store must
+   adopt an existing schema.
+4. Add a test to `tests/test_dbmigrate.py` that builds the schema at version
+   N-1, opens it and checks the new version, the new schema and that the data
+   is intact. If rows need filling for existing data, do that in the store's
+   `on_migrated` callback (see `history._after_migration`), not in the step.
+
+What the mechanism does for you: a database written by a **newer** ekte is
+refused with `DatabaseTooNewError` (both versions named, with what to do)
+before anything is written; before the first step of a run, a non-empty
+database is copied to `<db>.v<version>.<UTC time>.bak` next to it, and only the
+newest 3 backups per database are kept (`dbmigrate.BACKUP_KEEP`); the version
+is re-read under the write lock, so the CLI and the server never run the same
+step twice.
 
 ### Translations
 

@@ -35,6 +35,7 @@ la notation de chaque vérification dans la [Méthodologie](docs/METHODOLOGY.fr.
   - [Modifier la base de connaissances](#modifier-la-base-de-connaissances)
   - [Garder la base de connaissances à jour](#garder-la-base-de-connaissances-à-jour)
   - [Modifier les prompts des sondes](#modifier-les-prompts-des-sondes)
+  - [Modifier le schéma d'une base de données](#modifier-le-schéma-dune-base-de-données)
   - [Traductions](#traductions)
   - [Documentation](#documentation)
 - [Tests](#tests)
@@ -714,6 +715,44 @@ Les textes des sondes sont des données de calibrage. En modifier un dans
 estimations de tokens et donc les verdicts ; ajustez le détecteur et ses tests en
 conséquence et mentionnez le changement dans le CHANGELOG. Ne faites jamais
 suivre la langue de l'interface à une sonde.
+
+### Modifier le schéma d'une base de données
+
+Chaque base SQLite créée par ekte (`history.db`, `watches.db`, `kb.db`) est
+versionnée et migrée par un seul mécanisme partagé, `ekte/dbmigrate.py` ; un
+magasin ne se migre jamais lui-même avec des `ALTER TABLE` ad hoc. La version
+du schéma est dans `PRAGMA user_version`, et
+`datadir.connect(name, MIGRATIONS)` la vérifie à chaque ouverture.
+
+Pour modifier un schéma :
+
+1. Ajoutez au magasin (`web/history.py`, `web/watches.py`,
+   `knowledge/store.py`) une fonction `_vN(conn)` qui fait la modification, et
+   ajoutez `dbmigrate.Migration(N, _vN)` à la fin de son tuple `MIGRATIONS`.
+   Ne modifiez ni ne réordonnez jamais une étape existante : les bases en
+   service l'ont déjà exécutée.
+2. Gardez l'étape idempotente (`CREATE ... IF NOT EXISTS` et
+   `kb_snapshot.add_link_columns()` pour les colonnes) et ne faites ni commit
+   ni rollback à l'intérieur. Le mécanisme exécute chaque étape dans sa propre
+   transaction `BEGIN IMMEDIATE`, avec l'incrémentation de version ; une étape
+   interrompue ou en échec laisse donc la base à la version précédente.
+3. Une nouvelle base démarre à la version 0 et exécute toutes les étapes ; une
+   base antérieure au versionnage a aussi la version 0, c'est pourquoi l'étape
+   1 d'un magasin doit adopter un schéma existant.
+4. Ajoutez à `tests/test_dbmigrate.py` un test qui construit le schéma à la
+   version N-1, l'ouvre et vérifie la nouvelle version, le nouveau schéma et
+   l'intégrité des données. S'il faut remplir des lignes existantes, faites-le
+   dans le callback `on_migrated` du magasin (voir
+   `history._after_migration`), pas dans l'étape.
+
+Ce que le mécanisme fait pour vous : une base écrite par un ekte **plus
+récent** est refusée avec `DatabaseTooNewError` (les deux versions sont
+nommées, avec la marche à suivre) avant toute écriture ; avant la première
+étape d'une exécution, une base non vide est copiée dans
+`<db>.v<version>.<heure UTC>.bak` à côté d'elle, et seules les 3 sauvegardes
+les plus récentes par base sont conservées (`dbmigrate.BACKUP_KEEP`) ; la
+version est relue sous le verrou d'écriture, si bien que la CLI et le serveur
+n'exécutent jamais deux fois la même étape.
 
 ### Traductions
 
