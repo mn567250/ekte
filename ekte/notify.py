@@ -30,7 +30,7 @@ import httpx
 
 from ekte import i18n
 from ekte.clients.base import get_ssl_context
-from ekte.models import RiskLevel
+from ekte.models import WEBHOOK_SCHEMA_VERSION, RiskLevel
 
 # Ordering used to decide whether the current risk is *worse* than the previous
 # run. INCONCLUSIVE deliberately sits below LOW: an inconclusive result is not a
@@ -202,6 +202,7 @@ def format_generic(
     verdict = report.get("verdict") or {}
     target = report.get("target") or {}
     return {
+        "schema_version": WEBHOOK_SCHEMA_VERSION,
         "tool": "ekte",
         "event": "audit_alert",
         "language": lang,
