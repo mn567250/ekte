@@ -386,6 +386,10 @@ is the root. A page address does not change within a major version.
 | Knowledge base | `/kb` |
 | Accessibility conformance report | `/accessibility` |
 
+- The accessibility conformance report at `/accessibility` states what has and has not
+  been reviewed by a person; the manual review steps are in
+  [ACCESSIBILITY.md](ACCESSIBILITY.md#manual-review). The look and wording of the
+  pages stay internal; only their addresses are public.
 - A path that is no page and no API address opens the audit page.
 - The query parameters named above (`surface`, `rerun`, `job`) are public with the page.
 - **Assets** (scripts, stylesheets, icons under `/static/` and the top-level

@@ -164,14 +164,65 @@ report the steps of the others as not tested, so a partial run uploads its
 findings and names the pages it tested in the job summary. The copy
 committed in the repository is regenerated with the commands above.
 
-## Manual review still needed
+## Manual review
 
-Before claiming BITV conformance, have a person check the **manual** rows and
-the human part of the **partial** rows, ideally with a screen reader (NVDA +
-Firefox, VoiceOver + Safari):
+Eleven steps are **manual review pending**: the automated part passes and a person
+still has to judge the rest. **Nobody has done that review yet, and no step is
+recorded as manually reviewed.** The conformance report keeps them pending and the
+statement on `/accessibility` says that a review including screen readers has not
+been made. This section lists what was checked by machine ahead of the review,
+what only a person can decide, and the exact steps. When a step is done, record it
+in the table below and then regenerate the report (see "Recording a review").
 
-- meaningful alt texts and labels
-- logical reading and focus order
-- understandable error messages
-- announcements of status changes (an audit starting, finishing or failing)
-- the chart alternatives (data tables and summaries)
+### Automated pre-checks (not a manual review)
+
+Script-driven checks in Chromium (Playwright) on all six pages at the root
+(`/`, `/history`, `/watches`, `/analytics`, `/kb`, `/accessibility`), 31 Oct 2026,
+English, light and dark theme, plus `pytest -m a11y -n 8` (258 tests passed; every
+language the run selects). They reduce the work of the review; they do not replace it.
+
+| Check | Result |
+|---|---|
+| Keyboard only: Tab through each page (17 to 67 stops), every stop is visible, has a non-empty name and a focus indicator (outline or shadow), no trap | no issue found |
+| Accessibility tree (`aria_snapshot`): no button, link, field, checkbox or image without a name | no issue found |
+| 320 CSS px wide with reduced motion: no horizontal scrolling on any page; no infinitely running animation | no issue found |
+| Contrast, both themes, as loaded and expanded, all languages (axe `color-contrast` and the suite's non-text contrast tests) | no issue found |
+
+No UI change was needed. These checks were made by a script, not by a person using
+a keyboard, a screen reader or a zoomed browser.
+
+### What only a person can decide
+
+Set up once: `ekte serve`, open `http://127.0.0.1:8000/`, run one audit so that
+History, Analytics and a report exist, and add one monitor.
+
+| Step | Why a person | Exact steps |
+|---|---|---|
+| 9.1.3.1 Info and Relationships | A machine cannot tell whether headings, lists and tables match the visual meaning. | With NVDA + Firefox (Windows) and VoiceOver + Safari (macOS), on each page: open the headings list (NVDA `Insert+F7`; VoiceOver rotor `VO+U`) and check that the outline matches the visible sections; open the landmarks list and check main, nav, header and footer; step through each table (NVDA `Ctrl+Alt+arrows`) and check that header cells are announced with the data cells; check that grouped fields announce their group name. |
+| 9.1.3.2 Meaningful Sequence | The order was compared with the visual order, not judged for sense. | Read each page top to bottom with the screen reader's reading keys (NVDA `Down arrow` in browse mode; VoiceOver `VO+Right`). Check that the order makes sense and that content after "Show more", tabs and disclosures follows its trigger. Repeat at 320 px width. |
+| 9.1.4.1 Use of Color | Whether colour alone carries meaning elsewhere is a judgement. | In the browser, emulate greyscale (Chromium DevTools, Rendering, "Emulate vision deficiencies: Achromatopsia") and open the audit report, History, Monitors, Analytics charts and the knowledge base. Every status (pass, warning, fail, trend, chart series) must still be told apart by text, icon, pattern or position. |
+| 9.1.4.11 Non-text Contrast | Charts and icons are not measured. | In light and dark theme, on Analytics and the audit report, check that each chart series, bar, meter, marker and icon that carries information has 3:1 against its neighbours and background (colour picker in DevTools, or the Colour Contrast Analyser), and that a chart still reads with its data table. |
+| 9.1.4.13 Content on Hover or Focus | Whether revealed content is "additional content" is a judgement. | With the mouse and with Tab, trigger every tooltip, popup and menu. Check that Escape closes it, the pointer can move onto it without it vanishing, and it stays until dismissed. Repeat at 200 % zoom. |
+| 9.2.2.2 Pause, Stop, Hide | Whether an update is essential is a judgement. | Start an audit and let a monitor run. Check that nothing moves for more than five seconds without a control to pause it, and that turning on the OS setting "reduce motion" (Windows: Settings, Accessibility, Visual effects, Animation effects off; macOS: Reduce motion) removes animations. |
+| 9.2.4.3 Focus Order | Whether the order is logical is a judgement. | Put the mouse aside. Press Tab through each page and through each opened dialog, disclosure and tab panel. The focus must move in the reading order, land inside an opened dialog, and return to the trigger when it closes. Note any jump. |
+| 9.2.5.1 Pointer Gestures | Only a person can confirm there is no path-based gesture that needs an alternative. | On a touch screen (phone or tablet, with VoiceOver on iOS and TalkBack on Android), operate every control with single taps only; check that no function needs a swipe, pinch or drag (charts, tables, tabs, sort). |
+| 9.3.2.2 On Input | Whether a change was announced beforehand is a judgement. | Change every select, checkbox, switch and field (language, theme, filters, sort, page size) with the keyboard and the screen reader on. Check that the change is described before it is made and that nothing moves the focus or opens a window unexpectedly. |
+| 9.3.3.1 Error Identification | Whether a message is clear is a judgement. | Submit an empty audit, an invalid key, a bad endpoint and an empty knowledge-base entry. Check with the screen reader that the error is announced when it appears, names the field, says what is wrong in plain words, and that the focus or the error link leads to the field. Repeat in German and in Chinese. |
+| 9.4.1.3 Status Messages | Whether each change is announced is only heard. | With NVDA + Firefox and VoiceOver + Safari, start an audit, let it finish and fail one on purpose, use "Copy link", sort a table, filter History and Analytics, and press "Show more". Each result or progress change must be spoken without moving focus. |
+
+### Recording a review
+
+Add one row per step and run when it is done. Do not enter a step that was not
+performed; a step stays pending until its row is here.
+
+| Step | Result (pass, fail with issue link, n/a with reason) | Assistive technology and version | Browser and OS | Language | Theme | By | Date |
+|---|---|---|---|---|---|---|---|
+| (no manual review recorded yet) | | | | | | | |
+
+After a step passes, regenerate the report so the page shows it
+(`python -m tests.a11y.conformance --update ekte/web/static/v2/bitv-report.json
+--llm a11y-llm-review.json`) and update the accessibility statement on
+`/accessibility` and its translations. A failing step gets a follow-up issue and
+is listed in the statement as a known limitation with a plan. The review is
+repeated for every release that changes the web UI
+([release checklist](RELEASE_CHECKLIST.md)).
