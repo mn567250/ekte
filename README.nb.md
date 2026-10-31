@@ -464,7 +464,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
 `billing`, `reliability`, `security` og `performance`. I nettgrensesnittet åpner
 knappen for testsettet `custom` det samme valget (**Dimensjoner som skal
-kjøres**) på revisjonssiden, i konsollen og på overvåkingene.
+kjøres**) på revisjonssiden og på overvåkingene.
 
 Den **samlede scoren er det vektede gjennomsnittet av bare de valgte
 dimensjonene**; dimensjoner du utelot, rapporteres som «ikke valgt».

@@ -467,7 +467,7 @@ un archivo de configuración usa `run.dimensions: [protocol, performance]`. Las
 dimensiones son `connectivity`, `protocol`, `context_window`, `model_identity`,
 `capability`, `streaming`, `billing`, `reliability`, `security` y `performance`.
 En la interfaz web, el botón de suite `custom` abre la misma elección
-(**Dimensiones a ejecutar**) en la página de auditoría, la consola y los
+(**Dimensiones a ejecutar**) en la página de auditoría y los
 monitores.
 
 La **puntuación global es la media ponderada solo de las dimensiones elegidas**;

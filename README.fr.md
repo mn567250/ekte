@@ -470,7 +470,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
 `billing`, `reliability`, `security` et `performance`. Dans l'interface web, le
 bouton de suite `custom` ouvre le même choix (**Dimensions à exécuter**) sur la
-page d'audit, la console et les surveillances.
+page d'audit et les surveillances.
 
 Le **score global est la moyenne pondérée des seules dimensions choisies** ; les
 dimensions laissées de côté apparaissent comme « non sélectionnées ». Le verdict

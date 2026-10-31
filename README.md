@@ -264,7 +264,7 @@ The web UI is served at the root of the address `ekte serve` opens, with the aud
 Across the pages: filters and configurable trends (score, grade, latency p50,
 tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
 report** in every format; and a theme switch (Auto theme / Light / Dark). Every page but Accessibility has one notice right under its
-introduction, coloured by importance (information, success, warning,
+introduction, colored by importance (information, success, warning,
 critical): e.g. the last finished audit on **Audit**, the master key on
 **Monitors**, runs still being processed on **History** and **Analytics**,
 skipped entries on **Knowledge**.
@@ -447,7 +447,7 @@ in a config file use `run.dimensions: [protocol, performance]`. The dimensions
 are `connectivity`, `protocol`, `context_window`, `model_identity`, `capability`,
 `streaming`, `billing`, `reliability`, `security` and `performance`. In the web
 UI, the `custom` suite button opens the same choice (**Dimensions to run**) on
-the audit page, the console and the monitors.
+the audit page and the monitors.
 
 The **overall score is the weighted mean of the selected dimensions only**;
 dimensions you left out are reported as "not selected". The risk verdict is
@@ -464,7 +464,7 @@ p90 / p95 / p99 / max / stdev.
 
 When the dedicated probe runs, it scores the **Performance** dimension. The score
 is about **consistency**, not raw speed, so a slow but steady endpoint (a local
-or self-hosted model) is not marked down for not being a data centre:
+or self-hosted model) is not marked down for not being a data center:
 
 | Check | Scored on |
 |---|---|
@@ -873,7 +873,7 @@ ekte continues [zing](https://github.com/cenbonew/zing) (its last release was
 - **Reports and probes.** Reports, webhooks and file names say `ekte` (e.g.
   `"tool": "ekte"`, `ekte-report.json`), and so do the probes sent to relays.
   Scripts that look for `zing` in them need updating.
-- **Timeline.** The whole compatibility layer (the `ZING_*` fallback, the `~/.zing` copy, the carry-over of browser settings, cookies and the saved master key, and the classic UI addresses) is deprecated and removed in ekte **1.0.0** (1.0.0rc1 is the first release without it). Until then every part keeps working and its notice names this version; the old `/v2/…` page addresses redirect until 1.0.0 as well. ekte never deletes an old `~/.zing`, also not when the copy is removed.
+- **Timeline.** The whole compatibility layer (the `ZING_*` fallback, the `~/.zing` copy, the carry-over of browser settings, cookies and the saved master key, and the classic UI addresses) is deprecated and removed in ekte **1.0.0** (1.0.0rc1 is the first release without it). Until then every part keeps working and its notice names this version; the old `/v2/…` page addresses redirect until 1.0.0 as well. ekte never deletes an old `~/.zing`, even after the copy is removed.
 
 ## License
 

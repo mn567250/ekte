@@ -326,6 +326,7 @@ HTTP API 的公开部分位于 `/api/v1/` 之下，遵循[稳定性政策](docs/
 （`report.js`）、主题切换（`theme.js`）和样式（`tokens.css`、`ekte.css`、`fields.css`、`report.css`、
 `perf.css`）。共用脚本从根路径提供：`lang.js`（语言切换）、`locales.js`（翻译数据）、
 `i18n.js`（发现的翻译）、`icons.js`（包括 ekte 标志）、`secretfield.js` 和 `perf.js`（性能图表）。
+v2 界面的每一种颜色，在两个主题下，都是 `v2/tokens.css` 中的一个令牌（只写一次，形式为 `light-dark(<浅色>, <深色>)`）；v2 的其他样式、页面和脚本只使用 `var(--…)`，绝不使用字面颜色值。
 
 除无障碍页面外，每个 v2 页面在标题区正下方都有一条**页面提示**（`<div class="znote" id="note">`，由 `v2/notice.js` 绘制，样式为 `ekte.css` 中的 `.znote`）：`EkteNotice.show(el, {level, title, detail, items, actions})`；级别 `info`、`success`、`warning` 或 `critical` 决定底色、边框和图标（critical 为 `role="alert"`，其余为 `role="status"`；再次显示相同提示不会有任何变化）。页面选出最重要的消息，其余列在 `items` 里。检测：服务无法连接 / 有检测在运行 / 最新保存的运行 / 本地运行；检测历史：无法读取历史 / 监控运行已暂停（主密钥已锁定）或较早的运行仍在处理 / 运行次数；分析：无法读取数据 / 运行尚未计入图表或开始时间为估算 / 数据依据；知识库：加载失败 / 条目被跳过或被忽略 / 已停用的条目 / 完整。监控页面保留它的主密钥栏（`masterkey.js`），外观和位置相同。整个历史的数字来自 `GET /api/history/status`（`history.status()`：运行次数、最早和最新的运行、分析回填尚未处理的行、开始时间为估算的运行）。
 

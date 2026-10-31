@@ -279,7 +279,7 @@ translated to the UI language.
 ### Surfaces
 
 The **surface** is the kind of endpoint audited: `chat` (default),
-`embedding` or `rerank` (`ekte.config.SURFACES`; later image, TTS). It is a second
+`embedding` or `rerank` (`ekte.config.SURFACES`; image and TTS are planned). It is a second
 axis next to the suite, carried by `AuditOptions.surface`, `AuditReport.surface`
 and a nullable `surface` column in `history.db` and `watches.db` (`NULL` and a
 missing JSON field mean `chat`; no migration).
@@ -312,9 +312,9 @@ missing JSON field mean `chat`; no migration).
 
 ### Standalone auditors
 
-Image/audio (`media_audit.py`) are not surfaces yet, so they have their own
-small auditors with their own verdict
-dict instead of the detector pipeline. They share the clients' HTTP settings, the
+Image and audio auditing (`media_audit.py`) is not a surface yet, so it has its
+own small auditors, each with its own verdict dict, instead of the detector
+pipeline. They share the clients' HTTP settings, the
 knowledge base (native dimensions, image sizes, voices) and the prompt library.
 All decoding (image headers, WAV) is standard library only.
 
@@ -381,7 +381,7 @@ All decoding (image headers, WAV) is standard library only.
   its relay). Each run is stored in the history; the regression check compares
   it with the most recent saved run of the same target and model
   (`history.latest_for()`, one indexed lookup) and sends the webhook alerts
-  (`ekte/notify.py`) concurrently on a threshold cross or a regression.
+  (`ekte/notify.py`) concurrently when a threshold is crossed or a regression is found.
   `POST /api/watches/{id}/run` answers 409 while the scheduler has just started
   that monitor; a master-key reset cancels scheduled runs that have not started
   yet, and shutdown cancels the runs in flight.
@@ -419,7 +419,7 @@ Every error is JSON with one field, `error`, with a human-readable message, and 
 {"error": "not found"}
 ```
 
-- **Local only.** The protections of the web server apply to `/api/v1/` like to every path: loopback binding by default, the Host check, the refusal of cross-site writes and JSON-only bodies. They answer in the same error format.
+- **Local only.** The protections of the web server apply to `/api/v1/` as to every path: loopback binding by default, the Host check, the refusal of cross-site writes and JSON-only bodies. They answer in the same error format.
 
 ### Web front end
 
@@ -430,9 +430,9 @@ build step. The pages live in `ekte/web/static/v2/` and share one header (`nav.j
 `lang.js` (language switch), `locales.js` (translation data), `i18n.js` (finding
 translations), `icons.js` (including the ekte logo), `secretfield.js` and
 `perf.js` (performance charts).
-Every colour of the v2 UI, in both themes, is a token in `v2/tokens.css`
+Every color of the v2 UI, in both themes, is a token in `v2/tokens.css`
 (written once as `light-dark(<light>, <dark>)`); all other v2 styles, pages and
-scripts use `var(--…)` only, never a literal colour.
+scripts use `var(--…)` only, never a literal color.
 
 Every v2 page but Accessibility has one **page notice** right under its hero
 (`<div class="znote" id="note">`, drawn by `v2/notice.js`, styled by `.znote`
@@ -465,7 +465,7 @@ bar, so new panels slot in; filters and view live in the URL fragment
 `v2/charts.js` (`EkteCharts.timeChart`: hand-drawn inline SVG with median line,
 p25–p75 band, gaps for empty buckets, faded markers for `low_n` buckets,
 annotation lines and a hover tooltip; `fmt` / `fmtDelta` format values by unit)
-and `v2/charts.css` (four validated series colours per theme, told apart by
+and `v2/charts.css` (four validated series colors per theme, told apart by
 marker shape too). Every chart is also rendered as a data table.
 
 Each panel is self-contained: a `PANELS` registry in the page script lists its
@@ -477,7 +477,7 @@ for `low_n`, outlined empty cells), `EkteCharts.stackBars` the stacked error
 bars, and `timeChart` takes a `ref` line (100% billing ratio).
 `EkteCharts.donut` (a ring of parts of one whole with an HTML figure in the
 middle) and `EkteCharts.meter` (a thin bar of parts) draw the Coverage card of
-the accessibility report; their `k-*` colours (who decides a step: blue the
+the accessibility report; their `k-*` colors (who decides a step: blue the
 test suite, violet a person) come from `tokens.css`. `v2/chartmotion.js`
 (`EkteMotion.enter`) draws a donut clockwise and grows meters from the left,
 like every other chart, only when new data arrives and never under reduced

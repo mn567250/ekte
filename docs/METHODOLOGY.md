@@ -66,7 +66,7 @@ aborts the audit.
 The **overall health score** is the weighted mean over the dimensions that
 produced a score (`DIMENSION_WEIGHTS` in `ekte/scoring.py`). A dimension that
 did not run (not in the suite, or not selected in a `custom` run) drops out and
-the remaining weights are renormalised. The rating is A (≥ 90), B (≥ 80),
+the remaining weights are renormalized. The rating is A (≥ 90), B (≥ 80),
 C (≥ 70), D (≥ 60) or F.
 
 | Dimension | Id | Weight | Role |
@@ -328,7 +328,7 @@ protocol rejects it too. Tools and JSON mode stay with `capability`, `stop` with
 ### `determinism` — Determinism & cache-correctness
 
 **How it works.** Four identical creative prompts at `temperature=1.0` (no
-seed): a genuine model varies, byte-identical output across all samples points
+seed): a genuine model varies; byte-identical output across all samples points
 to a response cache that ignores sampling. At least three of the four samples
 must be usable (and all usable ones identical) for the caching call; with fewer
 the check is inconclusive. The verdict is suppressed for
@@ -904,7 +904,7 @@ vector of one fixed input. The next run of the same target and claimed model
 (`ekte embed`, an embedding audit started on the web UI's Audit page through
 the endpoint-type selector, or an embedding monitor) compares its vector
 with that sample: cosine **≥ 0.995** is stable (PASS), **0.95 to 0.995** has
-shifted (WARN, MEDIUM: a re-deployment or quantisation), below **0.95** or a
+shifted (WARN, MEDIUM: a re-deployment or quantization), below **0.95** or a
 different length means the model was swapped (FAIL, HIGH). The first run has
 nothing to compare with and records the baseline (INFO).
 
@@ -916,7 +916,7 @@ nonce; identical vectors for different inputs are flagged as cached and left
 out of the statistics. It reports latency p50/p95, cold start, inputs/s and
 input tokens/s, the latency/throughput consistency, errors and load stability.
 **Batch scaling** compares a batch's per-input latency with a single request's:
-at 0.6x or more the batch is split or serialised (linear, WARN LOW). There is
+at 0.6x or more the batch is split or serialized (linear, WARN LOW). There is
 no knowledge-base speed reference; raw speed only counts against a baseline.
 
 **Rerank performance probe** (`performance.rerank`, surface `rerank`). The
@@ -930,7 +930,7 @@ unscored counts as a failed request. It reports latency p50/p95, cold start,
 documents/s and input tokens/s, the latency/throughput consistency, errors and
 load stability. **Document-count scaling** compares the per-document latency
 of 32 documents with that of 4: at 0.6x or more the documents are split or
-serialised (linear, WARN LOW).
+serialized (linear, WARN LOW).
 
 ---
 
@@ -1019,7 +1019,7 @@ baseline of the **exact claimed snapshot** — it is the strongest way to separa
 model behavior from relay behavior and the only way to reach high confidence.
 
 **Responsible disclosure.** Do **not** publicly accuse a vendor on the basis of
-a ekte report. Before acting, re-run with more samples and at other times,
+an ekte report. Before acting, re-run with more samples and at other times,
 confirm with compare mode, and rule out drift, network and load explanations.
 If a serious concern remains, raise it privately with the vendor first, as
 questions about observed behavior rather than allegations.
