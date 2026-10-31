@@ -20,75 +20,6 @@ ekte has three eras:
 
 ## [Unreleased]
 
-### Removed
-
-- **Four internal HTTP endpoints**, which the web UI no longer used:
-  `POST /api/audit/stream` (queue an audit with `POST /api/v1/jobs` and follow
-  it with `GET /api/v1/jobs/{id}/events`), `POST /api/embed` and
-  `POST /api/rerank` (queue a job with `"surface": "embedding"` or `"rerank"`),
-  and `GET /api/history/trend` with `history.trend()` ([#3](https://github.com/mn567250/ekte/issues/3),
-  [#4](https://github.com/mn567250/ekte/issues/4),
-  [#5](https://github.com/mn567250/ekte/issues/5)).
-
-### Changed
-
-- **Exit codes 3 and 4.** `ekte models` exits 3 (was 1) when the endpoint is
-  unreachable or answers with an error, so it can be told apart from a failed gate;
-  an unexpected internal error exits 4 (was 1 with a traceback). Scripts that
-  treated every non-zero code of `ekte models` as "failed" are unaffected.
-- **`ekte audio --format` is now `--audio-format`**, so `--format` always means the
-  report file format; `ekte image --save` and `ekte audio --save` are now
-  `--save-to`, so `--save` only means "save to history" (`embed`, `rerank`). The
-  old spellings still work (see Deprecated).
-
-- **Supported operating systems: Linux, macOS and Windows.** The CI test job now
-  also runs on macOS and Windows (oldest and newest supported Python); the
-  Docker image stays Linux. `docs/STABILITY.md#os` lists the differences
-  (owner-only modes have no effect on Windows). On Windows, ekte now says so on
-  standard error when it creates the data directory. Tests that depend on POSIX
-  file modes are skipped on Windows with a reason, and the home-directory tests
-  also set `USERPROFILE`.
-- **Hardened CI and release workflows.** Every third-party action is pinned to a
-  full commit SHA with its version in a comment (Dependabot keeps the pins
-  current, with a 7-day cooldown), on versions that run on the supported Node.js
-  runtime. Workflows declare least-privilege `permissions` (only the PyPI publish
-  job gets `id-token: write`), checkouts no longer persist credentials, jobs have
-  timeouts, and CI/security/docs runs are grouped by concurrency (PR runs are
-  cancelled when superseded; releases never are). The release publish and GitHub
-  Release jobs are limited to this repository. CI now also runs on any
-  `*/integration` branch, not only a fixed list. `action.yml` and the example
-  workflow pass inputs and outputs through environment variables instead of
-  splicing them into shell scripts. A new `workflow lint (zizmor)` CI job checks
-  all workflows and `action.yml` for script injection and similar mistakes, and
-  `tests/test_workflow_hardening.py` enforces the pinning and permission rules
-  offline.
-- **A small public HTTP API under `/api/v1/`:** `POST /api/v1/jobs`,
-  `GET /api/v1/jobs/{id}`, `GET /api/v1/jobs/{id}/events` (SSE),
-  `GET /api/v1/history` and `GET /api/v1/history/{id}`. Shapes, errors and
-  status codes are in the developer guide and pinned by contract tests. Every
-  other `/api/` path is internal; responses carry `X-Ekte-API: internal` (public
-  ones `X-Ekte-API: v1`). The local-only protections apply to `/api/v1/` too
-  ([#22](https://github.com/mn567250/ekte/issues/22)).
-- **The web UI is served at the root, without the `/v2/` prefix.** The audit
-  page is `/`, the others are `/watches`, `/history`, `/analytics`, `/kb` and
-  `/accessibility`; scripts and stylesheets moved from `/v2/static/` to
-  `/static/`. Every link ekte generates (pages, alerts, reports, docs in all
-  languages) and the accessibility snapshots use the new addresses. The page
-  addresses are public from now on ([stability policy](docs/STABILITY.md#surface-web-addresses)).
-  Upgrade: update bookmarks and links; old `/v2/…` page addresses keep
-  redirecting until 1.0.0 (see Deprecated). Old `/v2/static/…` asset addresses
-  no longer work.
-- **No vendored third-party files in the source distribution.** The sdist still
-  contains `tests/`, but not `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0);
-  the accessibility tests that need it skip with a clear reason when it is
-  absent. `NOTICE` states what is and is not distributed, and
-  `scripts/check_dist_contents.py` (CI workflow `dist.yml`) fails if an excluded
-  file ships.
-- **Supported Python versions: 3.11 to 3.14.** Python 3.10 is dropped (end of
-  life in October 2026) and Python 3.14 is added: `requires-python` is now
-  `>=3.11`, the classifiers, the CI test matrix, the `ruff` and `mypy` targets
-  and the documentation name 3.11, 3.12, 3.13 and 3.14. A test keeps them in
-  agreement. See the stability policy (docs/STABILITY.md).
 
 ### Added
 
@@ -174,6 +105,66 @@ ekte has three eras:
   README, developer guide and methodology; the scoring tables of the
   methodology use the wording the UI shows under **Scoreskala**.
 
+### Changed
+
+- **Exit codes 3 and 4.** `ekte models` exits 3 (was 1) when the endpoint is
+  unreachable or answers with an error, so it can be told apart from a failed gate;
+  an unexpected internal error exits 4 (was 1 with a traceback). Scripts that
+  treated every non-zero code of `ekte models` as "failed" are unaffected.
+- **`ekte audio --format` is now `--audio-format`**, so `--format` always means the
+  report file format; `ekte image --save` and `ekte audio --save` are now
+  `--save-to`, so `--save` only means "save to history" (`embed`, `rerank`). The
+  old spellings still work (see Deprecated).
+
+- **Supported operating systems: Linux, macOS and Windows.** The CI test job now
+  also runs on macOS and Windows (oldest and newest supported Python); the
+  Docker image stays Linux. `docs/STABILITY.md#os` lists the differences
+  (owner-only modes have no effect on Windows). On Windows, ekte now says so on
+  standard error when it creates the data directory. Tests that depend on POSIX
+  file modes are skipped on Windows with a reason, and the home-directory tests
+  also set `USERPROFILE`.
+- **Hardened CI and release workflows.** Every third-party action is pinned to a
+  full commit SHA with its version in a comment (Dependabot keeps the pins
+  current, with a 7-day cooldown), on versions that run on the supported Node.js
+  runtime. Workflows declare least-privilege `permissions` (only the PyPI publish
+  job gets `id-token: write`), checkouts no longer persist credentials, jobs have
+  timeouts, and CI/security/docs runs are grouped by concurrency (PR runs are
+  cancelled when superseded; releases never are). The release publish and GitHub
+  Release jobs are limited to this repository. CI now also runs on any
+  `*/integration` branch, not only a fixed list. `action.yml` and the example
+  workflow pass inputs and outputs through environment variables instead of
+  splicing them into shell scripts. A new `workflow lint (zizmor)` CI job checks
+  all workflows and `action.yml` for script injection and similar mistakes, and
+  `tests/test_workflow_hardening.py` enforces the pinning and permission rules
+  offline.
+- **A small public HTTP API under `/api/v1/`:** `POST /api/v1/jobs`,
+  `GET /api/v1/jobs/{id}`, `GET /api/v1/jobs/{id}/events` (SSE),
+  `GET /api/v1/history` and `GET /api/v1/history/{id}`. Shapes, errors and
+  status codes are in the developer guide and pinned by contract tests. Every
+  other `/api/` path is internal; responses carry `X-Ekte-API: internal` (public
+  ones `X-Ekte-API: v1`). The local-only protections apply to `/api/v1/` too
+  ([#22](https://github.com/mn567250/ekte/issues/22)).
+- **The web UI is served at the root, without the `/v2/` prefix.** The audit
+  page is `/`, the others are `/watches`, `/history`, `/analytics`, `/kb` and
+  `/accessibility`; scripts and stylesheets moved from `/v2/static/` to
+  `/static/`. Every link ekte generates (pages, alerts, reports, docs in all
+  languages) and the accessibility snapshots use the new addresses. The page
+  addresses are public from now on ([stability policy](docs/STABILITY.md#surface-web-addresses)).
+  Upgrade: update bookmarks and links; old `/v2/…` page addresses keep
+  redirecting until 1.0.0 (see Deprecated). Old `/v2/static/…` asset addresses
+  no longer work.
+- **No vendored third-party files in the source distribution.** The sdist still
+  contains `tests/`, but not `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0);
+  the accessibility tests that need it skip with a clear reason when it is
+  absent. `NOTICE` states what is and is not distributed, and
+  `scripts/check_dist_contents.py` (CI workflow `dist.yml`) fails if an excluded
+  file ships.
+- **Supported Python versions: 3.11 to 3.14.** Python 3.10 is dropped (end of
+  life in October 2026) and Python 3.14 is added: `requires-python` is now
+  `>=3.11`, the classifiers, the CI test matrix, the `ruff` and `mypy` targets
+  and the documentation name 3.11, 3.12, 3.13 and 3.14. A test keeps them in
+  agreement. See the stability policy (docs/STABILITY.md).
+
 ### Deprecated
 
 - **The whole zing compatibility layer is removed in 1.0.0** (1.0.0rc1 is
@@ -191,6 +182,19 @@ ekte has three eras:
   removed (`/v2/tools` goes to `/?surface=embedding`; the classic UI addresses
   redirect straight to the new addresses, without a second hop). Update
   bookmarks, links and scripts.
+- `ekte audio --format`, and `--save` of `ekte image` and `ekte audio`: use
+  `--audio-format` and `--save-to`. The old options keep working, print a warning on
+  stderr that names the replacement, and are removed in 1.0.0.
+
+### Removed
+
+- **Four internal HTTP endpoints**, which the web UI no longer used:
+  `POST /api/audit/stream` (queue an audit with `POST /api/v1/jobs` and follow
+  it with `GET /api/v1/jobs/{id}/events`), `POST /api/embed` and
+  `POST /api/rerank` (queue a job with `"surface": "embedding"` or `"rerank"`),
+  and `GET /api/history/trend` with `history.trend()` ([#3](https://github.com/mn567250/ekte/issues/3),
+  [#4](https://github.com/mn567250/ekte/issues/4),
+  [#5](https://github.com/mn567250/ekte/issues/5)).
 
 ### Fixed
 
@@ -201,12 +205,6 @@ ekte has three eras:
 - The README (report protocol fields `target.api`, `target.api_auto`,
   `stream_mode`) and methodology (`verdict.drivers`, `verdict.checked`) were
   missing a paragraph in the de, es, fr, it, pt and zh-CN translations.
-
-### Deprecated
-
-- `ekte audio --format`, and `--save` of `ekte image` and `ekte audio`: use
-  `--audio-format` and `--save-to`. The old options keep working, print a warning on
-  stderr that names the replacement, and are removed in 1.0.0.
 
 ## [0.30.0] — ekte: renamed from zing, own logo, only the v2 web UI
 
