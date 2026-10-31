@@ -453,6 +453,9 @@ Bericht-Renderer (`report.js`), die Designauswahl (`theme.js`) und die Styles
 von der Wurzel ausgeliefert: `lang.js` (Sprachwahl), `locales.js`
 (Übersetzungsdaten), `i18n.js` (Übersetzung der Befunde), `icons.js` (samt
 ekte-Logo), `secretfield.js` und `perf.js` (Leistungsdiagramme).
+Jede Farbe der v2-Oberfläche ist in beiden Themes ein Token in `v2/tokens.css`
+(einmal als `light-dark(<hell>, <dunkel>)` geschrieben); alle übrigen v2-Styles,
+Seiten und Skripte verwenden ausschließlich `var(--…)`, nie eine Farbe als Literal.
 
 Jede v2-Seite außer Barrierefreiheit hat direkt unter ihrem Hero einen
 **Seitenhinweis** (`<div class="znote" id="note">`, gezeichnet von

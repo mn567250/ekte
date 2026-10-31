@@ -458,6 +458,10 @@ de rapport (`report.js`), le sélecteur de thème (`theme.js`) et les styles
 servis depuis la racine : `lang.js` (choix de la langue), `locales.js` (données
 de traduction), `i18n.js` (traduction des constats), `icons.js` (avec le logo
 d'ekte), `secretfield.js` et `perf.js` (graphiques de performance).
+Chaque couleur de l'interface v2, dans les deux thèmes, est un jeton dans
+`v2/tokens.css` (écrit une seule fois sous la forme `light-dark(<clair>, <sombre>)`) ;
+les autres styles, pages et scripts v2 n'utilisent que `var(--…)`, jamais une
+couleur littérale.
 
 Chaque page v2 sauf Accessibilité affiche un **avis de page** juste sous son
 hero (`<div class="znote" id="note">`, dessiné par `v2/notice.js`, stylé par

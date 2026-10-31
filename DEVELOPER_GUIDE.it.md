@@ -456,6 +456,9 @@ rapporto (`report.js`), il selettore del tema (`theme.js`) e gli stili
 serviti dalla radice: `lang.js` (cambio lingua), `locales.js` (dati di
 traduzione), `i18n.js` (traduzione delle rilevazioni), `icons.js` (con il logo di
 ekte), `secretfield.js` e `perf.js` (grafici delle prestazioni).
+Ogni colore dell'interfaccia v2, in entrambi i temi, è un token in `v2/tokens.css`
+(scritto una sola volta come `light-dark(<chiaro>, <scuro>)`); tutti gli altri
+stili, pagine e script v2 usano solo `var(--…)`, mai un colore letterale.
 
 Ogni pagina v2 tranne Accessibilità ha un **avviso di pagina** subito sotto
 l'hero (`<div class="znote" id="note">`, disegnato da `v2/notice.js`, con lo
