@@ -7,7 +7,7 @@ import json
 import math
 import sqlite3
 import typing
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -219,7 +219,7 @@ def test_save_never_raises(data, monkeypatch):
         {"detectors": "x", "dimensions": [None, {"dimension": 5}], "knowledge": "x"},
         {"detectors": [{"id": "billing", "evidence": "x", "findings": "x"}]},
         {"generated_at": 12, "started_at": ["x"], "target": {"base_url": 5}},
-        {"generated_at": datetime(2026, 1, 1, tzinfo=timezone.utc), "notes": {1, 2}},
+        {"generated_at": datetime(2026, 1, 1, tzinfo=UTC), "notes": {1, 2}},
     ]
     for report in weird:
         assert isinstance(history.save(report), int)  # type: ignore[arg-type]

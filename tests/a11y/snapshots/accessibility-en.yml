@@ -2,7 +2,7 @@
   - link "Skip to main content":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Theme":
     - option "Auto theme"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibility":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Main navigation":
     - link "Audit":
-      - /url: /v2/
+      - /url: /
     - link "Monitors":
-      - /url: /v2/watches
+      - /url: /watches
     - link "History":
-      - /url: /v2/history
+      - /url: /history
     - link "Analytics":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Knowledge":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Accessibility conformance report" [level=1]
   - paragraph: "Every test step of BITV 2.0 and EN 301549 (chapter 9, the same as WCAG 2.1 level A and AA): how it is tested and the latest result of the automated accessibility tests."
@@ -57,12 +57,12 @@
     - definition: Light, Dark
     - term: Pages
     - definition:
-      - code: /v2/
-      - code: /v2/history
-      - code: /v2/watches
-      - code: /v2/kb
-      - code: /v2/analytics
-      - code: /v2/accessibility
+      - code: /
+      - code: /history
+      - code: /watches
+      - code: /kb
+      - code: /analytics
+      - code: /accessibility
   - region "Coverage":
     - heading "Coverage" [level=2]
     - heading "Overall result" [level=3]

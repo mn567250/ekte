@@ -1,0 +1,28 @@
+version: 2
+updates:
+  # Python dependencies and uv.lock. pyproject.toml ranges stay open; the
+  # lockfile pins the tested set, so this only refreshes the lockfile.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    versioning-strategy: lockfile-only
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      python-dependencies:
+        patterns: ["*"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    # a new release waits a week before it is proposed (the pins are SHAs, so
+    # every update is a reviewed change)
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]

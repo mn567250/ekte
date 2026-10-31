@@ -35,9 +35,8 @@ one written by an older ekte). Such rows are processed by a batched backfill
 (:func:`backfill_analytics`), which also re-extracts rows whose
 ``extract_version`` is behind ``analytics_store.EXTRACT_VERSION``.
 
-``PRAGMA user_version`` records that the schema is current, so connections to
-a migrated database skip the schema check; a deleted or replaced database file
-starts again at 0.
+``PRAGMA user_version`` records the schema version; the numbered steps are in
+``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
 """
 
 from __future__ import annotations
@@ -45,13 +44,12 @@ from __future__ import annotations
 import contextlib
 import json
 import sqlite3
-import threading
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from ekte import datadir
+from ekte import datadir, dbmigrate
 from ekte.knowledge import snapshot as kb_snapshot
 from ekte.web import analytics_store
 
@@ -85,62 +83,18 @@ _SPLIT = "requests_split"
 
 _DB_NAME = "history.db"
 
-# ``PRAGMA user_version`` of a database whose schema is current. Every schema
-# change goes into _migrate() *and* bumps this number: databases already at this
-# version skip _migrate() entirely.
-_SCHEMA_VERSION = 4
 _BACKFILL_BATCH = 100
 # Rows per analytics backfill transaction: each one parses a whole report, so
 # fewer than the perf backfill, to keep the write lock short.
 _ANALYTICS_BATCH = 25
-# Serialises the one-time migration within this process.
-_ensure_lock = threading.Lock()
 
 
 def _db_path() -> Path:
     return datadir.db_path(_DB_NAME)
 
 
-def _user_version(conn: sqlite3.Connection) -> int:
-    return int(conn.execute("PRAGMA user_version").fetchone()[0])
-
-
-def _ensure(conn: sqlite3.Connection) -> None:
-    """Bring the schema up to date, once per database file.
-
-    A current database costs one ``PRAGMA user_version`` read per connection.
-    """
-    if _user_version(conn) >= _SCHEMA_VERSION:
-        return
-    with _ensure_lock:
-        # Take the write lock first so a second process (CLI next to the
-        # server) cannot race the ALTER TABLEs below.
-        conn.execute("BEGIN IMMEDIATE")
-        try:
-            if _user_version(conn) >= _SCHEMA_VERSION:
-                conn.commit()
-                return
-            _migrate(conn)
-            conn.execute(f"PRAGMA user_version = {_SCHEMA_VERSION}")
-            conn.commit()
-        except BaseException:
-            conn.rollback()
-            raise
-    # Outside the lock, so other threads are not held up: they already see the
-    # new schema and compute any row the backfill has not reached yet.
-    try:
-        _backfill_perf(conn)
-    except Exception:
-        # Best-effort: rows left unmarked are computed on read instead.
-        conn.rollback()
-    try:
-        _backfill_analytics(conn)
-    except Exception:
-        # Best-effort: rows left over are picked up by backfill_analytics().
-        conn.rollback()
-
-
-def _migrate(conn: sqlite3.Connection) -> None:
+def _v1(conn: sqlite3.Connection) -> None:
+    """The base schema (idempotent: also adopts databases from before versioning)."""
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS history (
@@ -158,7 +112,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
         )
         """
     )
-    # Speeds up trend() lookups for a given target+model.
+    # Speeds up lookups for a given target+model.
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_history_target "
         "ON history (base_url, claimed_model, id)"
@@ -177,23 +131,59 @@ def _migrate(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(
         conn, "history", {**dict.fromkeys(_PERF_COLS, "REAL"), _PERF_DONE: "INTEGER"}
     )
-    # Version 4: the audited surface ("chat", "embedding" or "rerank"); NULL (rows
-    # saved before surfaces existed) reads as chat.
-    kb_snapshot.add_link_columns(conn, "history", {"surface": "TEXT"})
-    # Version 2: where a row's request records are, and the analytics tables.
+    # Groups runs by model across relays.
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_history_model ON history (claimed_model)")
+
+
+def _v2(conn: sqlite3.Connection) -> None:
+    """Where a row's request records are, and the analytics tables."""
     kb_snapshot.add_link_columns(conn, "history", {_SPLIT: "INTEGER"})
     # The rows the analytics backfill has not processed yet.
     conn.execute(
         f"CREATE INDEX IF NOT EXISTS idx_history_pending ON history (id) WHERE {_SPLIT} IS NULL"
     )
     analytics_store.ensure_tables(conn)
-    # Version 3: decode speed p5 / p95 (filled by the analytics backfill, which
-    # re-extracts every row of an older EXTRACT_VERSION).
+
+
+def _v3(conn: sqlite3.Connection) -> None:
+    """Decode speed p5 / p95 (filled by the analytics backfill, which
+    re-extracts every row of an older EXTRACT_VERSION)."""
     kb_snapshot.add_link_columns(
         conn, "history_metrics", {"decode_tps_p5": "REAL", "decode_tps_p95": "REAL"}
     )
-    # Groups runs by model across relays.
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_history_model ON history (claimed_model)")
+
+
+def _v4(conn: sqlite3.Connection) -> None:
+    """The audited surface ("chat", "embedding" or "rerank"); NULL (rows saved
+    before surfaces existed) reads as chat."""
+    kb_snapshot.add_link_columns(conn, "history", {"surface": "TEXT"})
+
+
+MIGRATIONS = (
+    dbmigrate.Migration(1, _v1),
+    dbmigrate.Migration(2, _v2),
+    dbmigrate.Migration(3, _v3),
+    dbmigrate.Migration(4, _v4),
+)
+_SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
+
+
+def _after_migration(conn: sqlite3.Connection) -> None:
+    """Fill the columns new steps added for existing rows.
+
+    Runs after the schema transactions, so other threads already see the new
+    schema and compute any row the backfill has not reached yet.
+    """
+    try:
+        _backfill_perf(conn)
+    except Exception:
+        # Best-effort: rows left unmarked are computed on read instead.
+        conn.rollback()
+    try:
+        _backfill_analytics(conn)
+    except Exception:
+        # Best-effort: rows left over are picked up by backfill_analytics().
+        conn.rollback()
 
 
 _SET_PERF = (
@@ -255,7 +245,8 @@ def _fill_perf(conn: sqlite3.Connection, items: list[dict[str, Any]]) -> None:
 # older EXTRACT_VERSION. Both halves are index lookups, so a database with
 # nothing left to do costs next to nothing, however large its reports.
 _ANALYTICS_TODO = f"""SELECT id FROM history WHERE {_SPLIT} IS NULL
-   UNION SELECT history_id FROM history_metrics WHERE extract_version < ?"""
+   UNION SELECT history_id FROM history_metrics INDEXED BY idx_history_metrics_version
+   WHERE extract_version < ?"""
 
 
 def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ...] | None:
@@ -345,8 +336,7 @@ def backfill_analytics() -> None:
 @contextmanager
 def _connect() -> Iterator[sqlite3.Connection]:
     """Yield a fresh connection with rows as dicts; commit + close on exit."""
-    with datadir.connect(_DB_NAME) as conn:
-        _ensure(conn)
+    with datadir.connect(_DB_NAME, MIGRATIONS, _after_migration) as conn:
         yield conn
 
 
@@ -590,29 +580,6 @@ def _perf_headline(report_json: str | None) -> dict[str, float | None]:
     tps = p50("decode_tps_local")
     out["decode_tps_p50"] = tps if tps is not None else p50("decode_tps_reported")
     return out
-
-
-def trend(
-    base_url: str, claimed_model: str, limit: int = 30
-) -> list[dict[str, Any]]:
-    """Score and performance history for one target+model, oldest→newest, for a
-    sparkline."""
-    try:
-        limit = max(1, min(int(limit), 365))
-    except (TypeError, ValueError):
-        limit = 30
-    with _connect() as conn:
-        # Take the newest `limit`, then flip to chronological order.
-        rows = conn.execute(
-            f"""SELECT id, ts, score, risk_level, {", ".join(_PERF_COLS)}, {_PERF_DONE}
-               FROM history WHERE base_url = ? AND claimed_model = ?
-               ORDER BY id DESC LIMIT ?""",
-            (base_url, claimed_model, limit),
-        ).fetchall()
-        items = [dict(r) for r in reversed(rows)]
-        _fill_perf(conn, items)
-    keys = ("ts", "score", "risk_level", *_PERF_COLS)
-    return [{k: item[k] for k in keys} for item in items]
 
 
 # Bumped by every write, so cached analytics answers (server.py) are dropped.

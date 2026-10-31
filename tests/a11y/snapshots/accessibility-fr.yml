@@ -2,7 +2,7 @@
   - link "Aller au contenu principal":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Thème":
     - option "Automatique"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibilité":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navigation principale":
     - link "Audit":
-      - /url: /v2/
+      - /url: /
     - link "Surveillances":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Historique":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyses":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Connaissances":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Rapport de conformité d'accessibilité" [level=1]
   - paragraph: "Chaque étape de test du BITV 2.0 et de l'EN 301549 (chapitre 9, identique aux WCAG 2.1 niveaux A et AA) : comment elle est testée et le dernier résultat des tests d'accessibilité automatisés."
@@ -57,12 +57,12 @@
     - definition: Clair, Sombre
     - term: Pages
     - definition:
-      - code: /v2/
-      - code: /v2/history
-      - code: /v2/watches
-      - code: /v2/kb
-      - code: /v2/analytics
-      - code: /v2/accessibility
+      - code: /
+      - code: /history
+      - code: /watches
+      - code: /kb
+      - code: /analytics
+      - code: /accessibility
   - region "Couverture":
     - heading "Couverture" [level=2]
     - heading "Résultat global" [level=3]

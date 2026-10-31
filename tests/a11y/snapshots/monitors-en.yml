@@ -2,7 +2,7 @@
   - link "Skip to main content":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Theme":
     - option "Auto theme"
@@ -21,24 +21,24 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibility":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Main navigation":
     - link "Audit":
-      - /url: /v2/
+      - /url: /
     - link "Monitors":
-      - /url: /v2/watches
+      - /url: /watches
     - link "History":
-      - /url: /v2/history
+      - /url: /history
     - link "Analytics":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Knowledge":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Put a scheduled sentinel on your relay" [level=1]
   - paragraph:
     - text: Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in
     - link "History":
-      - /url: /v2/history
+      - /url: /history
     - text: and choose Schedule as monitor — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).
   - status:
     - text: API keys are not stored Keys you enter stay in the memory of ekte serve only and are never written to disk; enter them again after a restart. env:VAR references keep working.
@@ -134,7 +134,7 @@
         - code: openai/gpt-4o
         - text: pinned Oct 1, 2026, 12:00 PM
       - 'link "From run #1 →"':
-        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Finish setup to switch it on":
         - heading "Finish setup to switch it on" [level=4]
         - paragraph: The configuration comes from the run in History. Set how often it runs, then activate it.

@@ -2,7 +2,7 @@
   - link "Aller au contenu principal":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Thème":
     - option "Automatique"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibilité":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navigation principale":
     - link "Audit":
-      - /url: /v2/
+      - /url: /
     - link "Surveillances":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Historique":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyses":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Connaissances":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Historique et tendances des audits" [level=1]
   - paragraph: Toutes les vérifications lancées sur cette machine, regroupées par « relais + modèle annoncé », avec une courbe d'évolution du score de santé ; cliquez sur une ligne pour déplier le rapport.

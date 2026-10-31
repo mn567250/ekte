@@ -1,0 +1,2180 @@
+{
+  "$defs": {
+    "ConcurrencyPerformance": {
+      "description": "The probe's burst at the configured concurrency.",
+      "properties": {
+        "aggregate_tps_local": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Aggregate Tps Local"
+        },
+        "aggregate_tps_reported": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Aggregate Tps Reported"
+        },
+        "concurrency": {
+          "default": 0,
+          "title": "Concurrency",
+          "type": "integer"
+        },
+        "latency_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "requests": {
+          "default": 0,
+          "title": "Requests",
+          "type": "integer"
+        },
+        "successes": {
+          "default": 0,
+          "title": "Successes",
+          "type": "integer"
+        },
+        "ttft_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "wall_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Ms"
+        }
+      },
+      "title": "ConcurrencyPerformance",
+      "type": "object"
+    },
+    "DetectorResult": {
+      "description": "The result of running one detector.",
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/Finding"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "scoring": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DetectorScoring"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "default": "not_run"
+        },
+        "used_judge": {
+          "default": false,
+          "title": "Used Judge",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "dimension"
+      ],
+      "title": "DetectorResult",
+      "type": "object"
+    },
+    "DetectorScoring": {
+      "description": "How a detector turns its checks into its score, with the full scale of\npossible outcomes so a report shows what each check could have scored.",
+      "properties": {
+        "method": {
+          "default": "mean_of_checks",
+          "title": "Method",
+          "type": "string"
+        },
+        "outcomes": {
+          "items": {
+            "$ref": "#/$defs/ScoringOutcome"
+          },
+          "title": "Outcomes",
+          "type": "array"
+        },
+        "titles": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Titles",
+          "type": "object"
+        }
+      },
+      "title": "DetectorScoring",
+      "type": "object"
+    },
+    "Dimension": {
+      "description": "Scoring dimensions. Each detector contributes to exactly one.",
+      "enum": [
+        "connectivity",
+        "protocol",
+        "context_window",
+        "model_identity",
+        "capability",
+        "streaming",
+        "billing",
+        "reliability",
+        "security",
+        "performance"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "DimensionBreakdown": {
+      "description": "How a dimension's score and status were derived from its detectors.",
+      "properties": {
+        "detector_status": {
+          "$ref": "#/$defs/Status",
+          "default": "not_run"
+        },
+        "detectors": {
+          "items": {
+            "$ref": "#/$defs/DimensionContribution"
+          },
+          "title": "Detectors",
+          "type": "array"
+        },
+        "method": {
+          "default": "mean_of_detectors",
+          "title": "Method",
+          "type": "string"
+        },
+        "status_override": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StatusOverride"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "DimensionBreakdown",
+      "type": "object"
+    },
+    "DimensionContribution": {
+      "description": "One detector's share in a dimension score.",
+      "properties": {
+        "counted": {
+          "default": false,
+          "title": "Counted",
+          "type": "boolean"
+        },
+        "detector": {
+          "title": "Detector",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "default": "not_run"
+        }
+      },
+      "required": [
+        "detector"
+      ],
+      "title": "DimensionContribution",
+      "type": "object"
+    },
+    "DimensionScore": {
+      "properties": {
+        "breakdown": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DimensionBreakdown"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "default": "not_run"
+        },
+        "weight": {
+          "default": 0.0,
+          "title": "Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dimension"
+      ],
+      "title": "DimensionScore",
+      "type": "object"
+    },
+    "EndpointPerformance": {
+      "description": "Headline performance of one endpoint (target or baseline).",
+      "properties": {
+        "cached_excluded": {
+          "default": 0,
+          "title": "Cached Excluded",
+          "type": "integer"
+        },
+        "cold_start_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cold Start Ms"
+        },
+        "cold_start_ttft_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cold Start Ttft Ms"
+        },
+        "concurrency": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConcurrencyPerformance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "connect_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "decode_tps_local": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "decode_tps_reported": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "e2e_tps_local": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "e2e_tps_reported": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "endpoint": {
+          "default": "target",
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "error_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Rate"
+        },
+        "errors": {
+          "default": 0,
+          "title": "Errors",
+          "type": "integer"
+        },
+        "itl_jitter_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "itl_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "latency_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "network_rtt_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "rate_limited": {
+          "default": 0,
+          "title": "Rate Limited",
+          "type": "integer"
+        },
+        "rate_limited_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rate Limited Rate"
+        },
+        "reasoning_tokens_seen": {
+          "default": false,
+          "title": "Reasoning Tokens Seen",
+          "type": "boolean"
+        },
+        "relay_processing_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "requests": {
+          "default": 0,
+          "title": "Requests",
+          "type": "integer"
+        },
+        "server_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "source": {
+          "default": "passive",
+          "title": "Source",
+          "type": "string"
+        },
+        "successes": {
+          "default": 0,
+          "title": "Successes",
+          "type": "integer"
+        },
+        "timeout_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout Rate"
+        },
+        "timeouts": {
+          "default": 0,
+          "title": "Timeouts",
+          "type": "integer"
+        },
+        "tls_ms": {
+          "$ref": "#/$defs/PerfStats"
+        },
+        "ttft_by_input": {
+          "items": {
+            "$ref": "#/$defs/InputSizeBucket"
+          },
+          "title": "Ttft By Input",
+          "type": "array"
+        },
+        "ttft_ms": {
+          "$ref": "#/$defs/PerfStats"
+        }
+      },
+      "title": "EndpointPerformance",
+      "type": "object"
+    },
+    "Finding": {
+      "description": "A single evidence-bearing observation produced by a detector.",
+      "properties": {
+        "cap": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cap"
+        },
+        "check": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Check"
+        },
+        "deduction": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deduction"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outcome"
+        },
+        "recommendation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendation"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity",
+          "default": "info"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject"
+        },
+        "summary": {
+          "default": "",
+          "title": "Summary",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "status"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "InputSizeBucket": {
+      "description": "TTFT / latency for requests of a given prompt size (local token count).",
+      "properties": {
+        "count": {
+          "default": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "latency_p50_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latency P50 Ms"
+        },
+        "max_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "min_tokens": {
+          "title": "Min Tokens",
+          "type": "integer"
+        },
+        "ttft_p50_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ttft P50 Ms"
+        }
+      },
+      "required": [
+        "label",
+        "min_tokens"
+      ],
+      "title": "InputSizeBucket",
+      "type": "object"
+    },
+    "KnowledgeEntryRef": {
+      "description": "A user knowledge-base entry (kb.db) that shaped the audited profile.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "model_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Id"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Origin"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "updated_ts": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated Ts"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "provider"
+      ],
+      "title": "KnowledgeEntryRef",
+      "type": "object"
+    },
+    "KnowledgeUsage": {
+      "description": "Which knowledge-base profile a run audited against — and where it came from.\n\n``profile`` is the full resolved profile (provider-level fields plus the one\nmatched model) exactly as used, and ``profile_hash`` its content hash, so a\nreport stays verifiable after the knowledge base changes. How the requested\nid matched (``match_confidence``) is a result of the run, not part of the\nprofile.",
+      "properties": {
+        "kb_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kb Date"
+        },
+        "match_confidence": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Match Confidence"
+        },
+        "matched": {
+          "default": false,
+          "title": "Matched",
+          "type": "boolean"
+        },
+        "model_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Id"
+        },
+        "model_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Source"
+        },
+        "pinned": {
+          "default": false,
+          "title": "Pinned",
+          "type": "boolean"
+        },
+        "pinned_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pinned At"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile"
+        },
+        "profile_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile Hash"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        },
+        "provider_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Source"
+        },
+        "requested_model": {
+          "title": "Requested Model",
+          "type": "string"
+        },
+        "shadows": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shadows"
+        },
+        "user_entries": {
+          "items": {
+            "$ref": "#/$defs/KnowledgeEntryRef"
+          },
+          "title": "User Entries",
+          "type": "array"
+        },
+        "user_kb": {
+          "default": true,
+          "title": "User Kb",
+          "type": "boolean"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "requested_model"
+      ],
+      "title": "KnowledgeUsage",
+      "type": "object"
+    },
+    "PerfStats": {
+      "description": "Distribution of one metric. A percentile is None below its sample floor.",
+      "properties": {
+        "count": {
+          "default": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max"
+        },
+        "mean": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min"
+        },
+        "p50": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P50"
+        },
+        "p75": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P75"
+        },
+        "p90": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P90"
+        },
+        "p95": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P95"
+        },
+        "p99": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P99"
+        },
+        "stdev": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stdev"
+        }
+      },
+      "title": "PerfStats",
+      "type": "object"
+    },
+    "PerformanceComparison": {
+      "description": "One target-vs-baseline metric (compare mode).",
+      "properties": {
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseline"
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Delta"
+        },
+        "higher_is_better": {
+          "default": false,
+          "title": "Higher Is Better",
+          "type": "boolean"
+        },
+        "metric": {
+          "title": "Metric",
+          "type": "string"
+        },
+        "ratio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ratio"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "unit"
+      ],
+      "title": "PerformanceComparison",
+      "type": "object"
+    },
+    "PerformanceModeReport": {
+      "description": "Probe results for a second request mode (the full suite measures both\nstreaming and non-streaming).",
+      "properties": {
+        "baseline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EndpointPerformance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "comparison": {
+          "items": {
+            "$ref": "#/$defs/PerformanceComparison"
+          },
+          "title": "Comparison",
+          "type": "array"
+        },
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/EndpointPerformance"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "PerformanceModeReport",
+      "type": "object"
+    },
+    "PerformanceReport": {
+      "description": "Latency / TTFT / throughput of the audited endpoint(s). The performance\ndetector scores the probe's consistency in its own dimension; these stats\nthemselves never move the verdict's risk level.",
+      "properties": {
+        "baseline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EndpointPerformance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "comparison": {
+          "items": {
+            "$ref": "#/$defs/PerformanceComparison"
+          },
+          "title": "Comparison",
+          "type": "array"
+        },
+        "mode": {
+          "default": "mixed",
+          "title": "Mode",
+          "type": "string"
+        },
+        "modes": {
+          "items": {
+            "$ref": "#/$defs/PerformanceModeReport"
+          },
+          "title": "Modes",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "probe_cost": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProbeCost"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "probe_max_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Probe Max Tokens"
+        },
+        "probe_requests": {
+          "default": 0,
+          "title": "Probe Requests",
+          "type": "integer"
+        },
+        "requests": {
+          "items": {
+            "$ref": "#/$defs/RequestRecord"
+          },
+          "title": "Requests",
+          "type": "array"
+        },
+        "source": {
+          "default": "passive",
+          "title": "Source",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/EndpointPerformance"
+        },
+        "tokenizer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tokenizer"
+        },
+        "tokens_exact": {
+          "default": false,
+          "title": "Tokens Exact",
+          "type": "boolean"
+        }
+      },
+      "title": "PerformanceReport",
+      "type": "object"
+    },
+    "ProbeCost": {
+      "description": "What the dedicated performance probe cost (tokens summed over endpoints).",
+      "properties": {
+        "input_tokens_local": {
+          "default": 0,
+          "title": "Input Tokens Local",
+          "type": "integer"
+        },
+        "input_tokens_reported": {
+          "default": 0,
+          "title": "Input Tokens Reported",
+          "type": "integer"
+        },
+        "output_tokens_local": {
+          "default": 0,
+          "title": "Output Tokens Local",
+          "type": "integer"
+        },
+        "output_tokens_reported": {
+          "default": 0,
+          "title": "Output Tokens Reported",
+          "type": "integer"
+        },
+        "requests": {
+          "default": 0,
+          "title": "Requests",
+          "type": "integer"
+        }
+      },
+      "title": "ProbeCost",
+      "type": "object"
+    },
+    "RedactedTarget": {
+      "properties": {
+        "api": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api"
+        },
+        "api_auto": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Auto"
+        },
+        "api_key_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key Fingerprint"
+        },
+        "base_url": {
+          "title": "Base Url",
+          "type": "string"
+        },
+        "claimed_model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claimed Model"
+        },
+        "declared_provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Declared Provider"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "base_url",
+        "model"
+      ],
+      "title": "RedactedTarget",
+      "type": "object"
+    },
+    "ReliabilitySummary": {
+      "properties": {
+        "errors": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Errors",
+          "type": "object"
+        },
+        "latency_ms": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Latency Ms",
+          "type": "object"
+        },
+        "rate_limited": {
+          "default": 0,
+          "title": "Rate Limited",
+          "type": "integer"
+        },
+        "requests": {
+          "default": 0,
+          "title": "Requests",
+          "type": "integer"
+        },
+        "success_rate": {
+          "default": 0.0,
+          "title": "Success Rate",
+          "type": "number"
+        },
+        "successes": {
+          "default": 0,
+          "title": "Successes",
+          "type": "integer"
+        }
+      },
+      "title": "ReliabilitySummary",
+      "type": "object"
+    },
+    "RequestRecord": {
+      "description": "Timing and token evidence for one API call made during an audit.\n\nNumbers only — never prompt or response text. ``phase`` says why the call was\nmade: ``passive`` (an ordinary detector request), ``probe`` / ``probe_concurrent``\n(the dedicated performance probe), ``warmup`` (the probe's cold-start request,\nkept out of the stats) or ``ping`` (a ``GET /models`` round-trip measurement).",
+      "properties": {
+        "cached": {
+          "default": false,
+          "title": "Cached",
+          "type": "boolean"
+        },
+        "cached_input_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cached Input Tokens"
+        },
+        "chunk_count": {
+          "default": 0,
+          "title": "Chunk Count",
+          "type": "integer"
+        },
+        "connect_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Connect Ms"
+        },
+        "decode_tps_local": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decode Tps Local"
+        },
+        "decode_tps_reported": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decode Tps Reported"
+        },
+        "detector": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detector"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "e2e_tps_local": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "E2E Tps Local"
+        },
+        "e2e_tps_reported": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "E2E Tps Reported"
+        },
+        "endpoint": {
+          "default": "target",
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "error_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Type"
+        },
+        "headers_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Headers Ms"
+        },
+        "input_tokens_local": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens Local"
+        },
+        "input_tokens_reported": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens Reported"
+        },
+        "itl_jitter_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Itl Jitter Ms"
+        },
+        "itl_mean_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Itl Mean Ms"
+        },
+        "itl_p50_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Itl P50 Ms"
+        },
+        "itl_p95_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Itl P95 Ms"
+        },
+        "ok": {
+          "default": false,
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "op": {
+          "default": "complete",
+          "title": "Op",
+          "type": "string"
+        },
+        "output_tokens_local": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens Local"
+        },
+        "output_tokens_reported": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens Reported"
+        },
+        "phase": {
+          "default": "passive",
+          "title": "Phase",
+          "type": "string"
+        },
+        "rate_limited": {
+          "default": false,
+          "title": "Rate Limited",
+          "type": "boolean"
+        },
+        "reasoning_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Tokens"
+        },
+        "relay_processing_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relay Processing Ms"
+        },
+        "seq": {
+          "title": "Seq",
+          "type": "integer"
+        },
+        "server_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Server Ms"
+        },
+        "start_ms": {
+          "default": 0.0,
+          "title": "Start Ms",
+          "type": "number"
+        },
+        "status_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status Code"
+        },
+        "stream": {
+          "default": false,
+          "title": "Stream",
+          "type": "boolean"
+        },
+        "timeout": {
+          "default": false,
+          "title": "Timeout",
+          "type": "boolean"
+        },
+        "tls_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tls Ms"
+        },
+        "tokens_exact": {
+          "default": false,
+          "title": "Tokens Exact",
+          "type": "boolean"
+        },
+        "ttft_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ttft Ms"
+        }
+      },
+      "required": [
+        "seq"
+      ],
+      "title": "RequestRecord",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "description": "Headline 货不对板 risk classification.",
+      "enum": [
+        "clean",
+        "low",
+        "medium",
+        "high",
+        "inconclusive"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "ScoringOutcome": {
+      "description": "One row of a detector's scoring scale: a possible outcome of one check.",
+      "properties": {
+        "cap": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cap"
+        },
+        "check": {
+          "title": "Check",
+          "type": "string"
+        },
+        "deduction": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deduction"
+        },
+        "label": {
+          "default": "",
+          "title": "Label",
+          "type": "string"
+        },
+        "max_deduction": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Deduction"
+        },
+        "outcome": {
+          "title": "Outcome",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity",
+          "default": "info"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        }
+      },
+      "required": [
+        "check",
+        "outcome",
+        "status"
+      ],
+      "title": "ScoringOutcome",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "Status": {
+      "description": "Outcome of a check, finding, or dimension.",
+      "enum": [
+        "pass",
+        "warn",
+        "fail",
+        "inconclusive",
+        "not_run",
+        "info",
+        "error"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "StatusOverride": {
+      "description": "Why a dimension's status differs from what its detectors concluded.",
+      "properties": {
+        "findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "from_status": {
+          "$ref": "#/$defs/Status"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "to_status": {
+          "$ref": "#/$defs/Status"
+        }
+      },
+      "required": [
+        "from_status",
+        "to_status",
+        "severity"
+      ],
+      "title": "StatusOverride",
+      "type": "object"
+    },
+    "Verdict": {
+      "description": "The headline judgement a user reads first.",
+      "properties": {
+        "checked": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Checked",
+          "type": "array"
+        },
+        "confidence": {
+          "default": "low",
+          "title": "Confidence",
+          "type": "string"
+        },
+        "drivers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Drivers",
+          "type": "array"
+        },
+        "headline": {
+          "default": "",
+          "title": "Headline",
+          "type": "string"
+        },
+        "key_findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Key Findings",
+          "type": "array"
+        },
+        "overall_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overall Score"
+        },
+        "rating": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rating"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "inconclusive"
+        },
+        "summary": {
+          "default": "",
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "title": "Verdict",
+      "type": "object"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/mn567250/ekte/main/ekte/schemas/report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The serializable artifact ekte produces. JSON form is the LLM-facing API.",
+  "properties": {
+    "baseline": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RedactedTarget"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "baseline_detectors": {
+      "items": {
+        "$ref": "#/$defs/DetectorResult"
+      },
+      "title": "Baseline Detectors",
+      "type": "array"
+    },
+    "command": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Command"
+    },
+    "detectors": {
+      "items": {
+        "$ref": "#/$defs/DetectorResult"
+      },
+      "title": "Detectors",
+      "type": "array"
+    },
+    "dimensions": {
+      "items": {
+        "$ref": "#/$defs/DimensionScore"
+      },
+      "title": "Dimensions",
+      "type": "array"
+    },
+    "dimensions_selected": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dimensions Selected"
+    },
+    "embedding_dimensions": {
+      "default": 0,
+      "title": "Embedding Dimensions",
+      "type": "integer"
+    },
+    "generated_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Generated At"
+    },
+    "judge_model": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Judge Model"
+    },
+    "judge_used": {
+      "default": false,
+      "title": "Judge Used",
+      "type": "boolean"
+    },
+    "knowledge": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/KnowledgeUsage"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "mode": {
+      "title": "Mode",
+      "type": "string"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "performance": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PerformanceReport"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "prompt_languages": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Prompt Languages",
+      "type": "array"
+    },
+    "reliability": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReliabilitySummary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "default": "1.1",
+      "description": "Version of this schema (MAJOR.MINOR), independent of the ekte version; this schema describes version 1.1. Documents without the field were written before schemas were versioned and match version 1.0.",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "type": "string"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "stream_mode": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Stream Mode"
+    },
+    "suite": {
+      "title": "Suite",
+      "type": "string"
+    },
+    "surface": {
+      "default": "chat",
+      "title": "Surface",
+      "type": "string"
+    },
+    "target": {
+      "$ref": "#/$defs/RedactedTarget"
+    },
+    "tool_version": {
+      "title": "Tool Version",
+      "type": "string"
+    },
+    "verdict": {
+      "$ref": "#/$defs/Verdict"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "tool_version",
+    "mode",
+    "suite",
+    "target",
+    "verdict"
+  ],
+  "title": "ekte audit report",
+  "type": "object",
+  "x-schema-version": "1.1"
+}

@@ -2,7 +2,7 @@
   - link "跳到主要内容":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "主题":
     - option "跟随系统"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "无障碍":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "主导航":
     - link "检测":
-      - /url: /v2/
+      - /url: /
     - link "监控":
-      - /url: /v2/watches
+      - /url: /watches
     - link "检测历史":
-      - /url: /v2/history
+      - /url: /history
     - link "分析":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "知识库":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "无障碍符合性报告" [level=1]
   - paragraph: 这里列出 BITV 2.0 与 EN 301549（第 9 章，即 WCAG 2.1 A 级与 AA 级）的每个检查步骤：它是如何测试的，以及自动化无障碍测试的最新结果。
@@ -57,12 +57,12 @@
     - definition: 浅色, 深色
     - term: 页面
     - definition:
-      - code: /v2/
-      - code: /v2/history
-      - code: /v2/watches
-      - code: /v2/kb
-      - code: /v2/analytics
-      - code: /v2/accessibility
+      - code: /
+      - code: /history
+      - code: /watches
+      - code: /kb
+      - code: /analytics
+      - code: /accessibility
   - region "覆盖范围":
     - heading "覆盖范围" [level=2]
     - heading "总体结果" [level=3]

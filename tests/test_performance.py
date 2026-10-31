@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -342,9 +342,9 @@ async def test_audit_report_has_passive_performance(patched_make_client, target_
 
 
 def test_recorder_start_time_is_its_t0():
-    before = datetime.now(timezone.utc)
+    before = datetime.now(UTC)
     rec = RequestRecorder()
-    assert before <= rec.started_at <= datetime.now(timezone.utc)
+    assert before <= rec.started_at <= datetime.now(UTC)
 
 
 async def test_stream_server_time_runs_to_first_token():
@@ -363,3 +363,17 @@ async def test_stream_server_time_runs_to_first_token():
     assert r.server_ms == pytest.approx(300.0)
     plain = rec.record_completion("target", _spec(), outcome, started, net)
     assert plain.server_ms == pytest.approx(2.0)
+
+
+def test_recorder_now_never_runs_behind_its_records(monkeypatch):
+    # On Windows datetime.now() ticks about every 16 ms while record offsets use
+    # perf_counter; the report's generated_at comes from recorder.now(), on the
+    # records' own clock, so it can never precede the last request's end.
+    import time as _time
+
+    from ekte.perf.recorder import RequestRecorder
+
+    rec = RequestRecorder()
+    t = rec.t0
+    monkeypatch.setattr(_time, "perf_counter", lambda: t + 0.0223)
+    assert abs((rec.now() - rec.started_at) - timedelta(milliseconds=22.3)) < timedelta(microseconds=1)

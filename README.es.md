@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** es una herramienta local-first que audita si un relay de API
 (revendedor / proxy) sirve realmente el modelo que declara — o si lo sustituye en
@@ -26,6 +26,8 @@ una interfaz web local o en JSON para otra herramienta o LLM.
 Este README es para quienes **usan** ekte. Cómo se construye, se prueba y se
 publica ekte está en la [Guía para desarrolladores](DEVELOPER_GUIDE.es.md); cómo
 funciona y se puntúa cada comprobación, en la [Metodología](docs/METHODOLOGY.es.md).
+
+Qué partes de ekte son estables, qué cuenta como cambio incompatible y cómo se retiran las funciones: [Política de estabilidad y compatibilidad](docs/STABILITY.md) (en inglés).
 
 ---
 
@@ -67,7 +69,7 @@ ekte convierte «aquí algo no cuadra» en un informe reproducible.
 
 ## Instalación
 
-Requiere Python 3.10+. Cualquiera de las opciones siguientes proporciona el comando `ekte`.
+Requiere Python 3.11+. Funciona en Linux, macOS y Windows (la imagen de Docker es Linux); en Windows los modos de solo propietario del directorio de datos no tienen efecto, consulta [Sistemas operativos compatibles](docs/STABILITY.md#os). Cualquiera de las opciones siguientes proporciona el comando `ekte`.
 
 ### Con pip
 
@@ -181,6 +183,8 @@ Las claves de API pueden darse en claro, como `env:VAR` o como `file:/ruta`; los
 informes solo contienen una huella de la clave. Tienes un archivo de
 configuración completo en [`examples/ekte.yaml`](examples/ekte.yaml).
 
+El archivo tiene una versión de formato (`version: 1`; un archivo sin versión es el formato 1). Los tipos incorrectos y los valores no válidos se rechazan indicando archivo, línea y clave; las claves desconocidas se ignoran con una advertencia hasta ekte 1.0.0, que las rechaza. `ekte config migrate` actualiza un archivo antiguo. El esquema es [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+
 ### Como herramienta para un LLM / agente
 
 ekte está pensado para que lo controle otro programa o modelo. Todo sale por
@@ -255,17 +259,15 @@ servidor ekte local y al relay que auditas, nunca a terceros. Consulta
 
 ### Páginas
 
-La interfaz web está en `/v2/`, donde la abre `ekte serve`. Las direcciones de
-la antigua interfaz clásica (`/`, `/history`, `/watches`, `/tools`, `/console`)
-redirigen a la página correspondiente.
+La interfaz web se sirve en la raíz de la dirección que abre `ekte serve`, con la página de auditoría en `/`. Las direcciones usadas hasta ahora (`/v2/…`, p. ej. `/v2/history`) y las de la antigua interfaz clásica (`/tools`, `/console`) redirigen de forma permanente a la página correspondiente y conservan la cadena de consulta; estas redirecciones están obsoletas y se eliminan en 1.0.0.
 
 | Página | Dirección | Para qué sirve |
 |---|---|---|
-| **Auditoría** | `/v2/` | Auditar un relay (opcionalmente frente a una referencia) y leer el informe; las auditorías de embeddings y rerank también empiezan aquí, con el selector de tipo de endpoint |
-| **Monitores** | `/v2/watches` | Reauditorías programadas con alertas por webhook |
-| **Historial** | `/v2/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
-| **Analítica** | `/v2/analytics` | Relays y modelos comparados en el tiempo: indicadores, gráficos con tablas de datos, clasificaciones |
-| **Conocimiento** | `/v2/kb` | La base de conocimiento en tres pestañas — modelos, proveedores, relays: explorar, activar/desactivar, añadir lo tuyo |
+| **Auditoría** | `/` | Auditar un relay (opcionalmente frente a una referencia) y leer el informe; las auditorías de embeddings y rerank también empiezan aquí, con el selector de tipo de endpoint |
+| **Monitores** | `/watches` | Reauditorías programadas con alertas por webhook |
+| **Historial** | `/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
+| **Analítica** | `/analytics` | Relays y modelos comparados en el tiempo: indicadores, gráficos con tablas de datos, clasificaciones |
+| **Conocimiento** | `/kb` | La base de conocimiento en tres pestañas — modelos, proveedores, relays: explorar, activar/desactivar, añadir lo tuyo |
 
 Además, en las páginas: filtros y tendencias configurables (puntuación, nota,
 latencia p50, tokens/s) en el **Historial**; **Programar como monitor** y **Repetir auditoría** en cada
@@ -289,7 +291,7 @@ los modelos servidos desde tu propia máquina también esperan); las de relays
 distintos se ejecutan en paralelo, como máximo cuatro a la vez
 (`EKTE_MAX_PARALLEL_AUDITS`). Los monitores esperan a su relay del mismo modo.
 
-**Analítica.** `/v2/analytics` convierte el historial local
+**Analítica.** `/analytics` convierte el historial local
 en comparaciones: indicadores del periodo elegido (ejecuciones, puntuación
 mediana, proporción de riesgo alto, tasa de éxito, TTFT, velocidad de salida,
 ratios de facturación) con el cambio frente al periodo anterior de igual
@@ -364,6 +366,11 @@ conocimiento cuyo idioma *es* la medida — por ejemplo, las sondas de fluidez e
 chino, de tokenizer y de autoidentificación de los modelos chinos. Cada informe
 registra los idiomas de sonda realmente usados (`prompt_languages`, p. ej.
 `["en", "zh"]`).
+Cada informe también registra cómo se habló con el endpoint: el protocolo
+(`target.api`: `openai`, `anthropic` o `responses`), si `--api auto` lo detectó
+(`target.api_auto`) y el modo de petición de la sonda de rendimiento
+(`stream_mode`: `stream`, `non_stream` o `both` para la suite completa). La página
+de historial de la interfaz web puede filtrar por los tres.
 `started_at` registra cuándo empezó la auditoría (UTC); el `start_ms` de cada
 registro de petición cuenta desde ese momento.
 
@@ -460,7 +467,7 @@ un archivo de configuración usa `run.dimensions: [protocol, performance]`. Las
 dimensiones son `connectivity`, `protocol`, `context_window`, `model_identity`,
 `capability`, `streaming`, `billing`, `reliability`, `security` y `performance`.
 En la interfaz web, el botón de suite `custom` abre la misma elección
-(**Dimensiones a ejecutar**) en la página de auditoría, la consola y los
+(**Dimensiones a ejecutar**) en la página de auditoría y los
 monitores.
 
 La **puntuación global es la media ponderada solo de las dimensiones elegidas**;
@@ -655,9 +662,9 @@ puntuación (0–100, A–F), el historial, la analítica y los monitores que la
 chat; solo cambian los detectores. El historial y la analítica filtran por tipo de
 endpoint, y la analítica muestra solo las métricas que aplican.
 
-Para vigilar un endpoint de embeddings o rerank, audítelo en la página
-**Auditoría** (elija **Embeddings** o **Reordenación** en el selector de tipo de
-endpoint) y elija
+Para vigilar un endpoint de embeddings o rerank, audítalo en la página
+**Auditoría** (elige **Embeddings** o **Reordenación** en el selector de tipo de
+endpoint) y elige
 **Monitorizar**, o **Programar como monitor** en su fila
 del historial. El monitor repite la auditoría según su calendario, con la misma
 fijación de la base de conocimiento, el mismo umbral de alerta y las mismas
@@ -729,7 +736,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # ¿Un relay que declara tts-1-hd devuelve audio real cuya duración crece con la entrada
 # (no un marcador fijo, ni HTML/JSON disfrazado de audio)?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` comprueba la conectividad, un formato válido y decodificable, la
@@ -782,7 +789,7 @@ y Moonshot (`ekte kb` los lista). Hay tres capas; las posteriores prevalecen:
    (repetible) o `EKTE_KB_DIR`.
 3. **Tus entradas** (`kb.db` en el directorio de datos), añadidas sin archivos
    YAML ni instalación editable:
-   - en la página **Conocimiento** de la interfaz web (`/v2/kb`), con una pestaña
+   - en la página **Conocimiento** de la interfaz web (`/kb`), con una pestaña
      para **Modelos**, **Proveedores** y **Relays**. Cada pestaña lista el conjunto
      completo —incluidos, `EKTE_KB_DIR` y los tuyos (marcados **Tuyo**)— con un
      filtro, un interruptor por elemento y un formulario **Añadir …**: **Añadir un
@@ -896,6 +903,9 @@ una referencia de confianza antes de sacar conclusiones firmes.
 | [Guía para desarrolladores](DEVELOPER_GUIDE.es.md) | Arquitectura, entorno de desarrollo, contribuciones, traducciones, Docker, versiones |
 | [docs/CI.md](docs/CI.md) | La GitHub Action: entradas, salidas, ejemplos (en inglés) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Ejecutar la interfaz web en un contenedor (en inglés) |
+| [Estabilidad y compatibilidad](docs/STABILITY.md) | Qué protege semver, obsolescencia, versiones de Python y sistemas compatibles, actualizaciones y downgrades (en inglés) |
+| [docs/CLI.md](docs/CLI.md) | Todos los comandos y opciones, y los códigos de salida (en inglés) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | Los formatos JSON del informe y del webhook y su `schema_version` (en inglés) |
 | [CHANGELOG.md](CHANGELOG.md) | Qué cambió en cada versión (en inglés) |
 | [SECURITY.md](SECURITY.md) | Informar de una vulnerabilidad (en inglés) |
 
@@ -920,12 +930,12 @@ ekte continúa [zing](https://github.com/cenbonew/zing) (su última versión fue
   tal como está.
 - **Interfaz web.** Se conservan el idioma, el tema y los filtros, y una clave
   maestra guardada en el gestor de contraseñas del navegador. La interfaz clásica
-  de zing ya no existe: sus direcciones (`/`, `/history`, `/watches`, `/tools`,
-  `/console`) abren la página correspondiente en `/v2/`.
+  de zing ya no existe: sus direcciones (`/tools`, `/console`) abren la página de auditoría (`/`).
 - **Informes y sondeos.** Los informes, los webhooks y los nombres de archivo
   dicen `ekte` (p. ej. `"tool": "ekte"`, `ekte-report.json`), igual que los
   sondeos enviados a los relays. Los scripts que buscan `zing` en ellos deben
   actualizarse.
+- **Calendario.** Toda la capa de compatibilidad (la lectura de `ZING_*`, la copia de `~/.zing`, el traspaso de ajustes del navegador, cookies y la clave maestra guardada, y las direcciones de la interfaz clásica) está obsoleta y se elimina en ekte **1.0.0** (1.0.0rc1 es la primera versión sin ella). Hasta entonces cada parte sigue funcionando y su aviso nombra esta versión; las antiguas direcciones de página `/v2/…` también redirigen hasta 1.0.0. ekte nunca borra un `~/.zing` antiguo, tampoco cuando se elimina la copia.
 
 ## Licencia
 

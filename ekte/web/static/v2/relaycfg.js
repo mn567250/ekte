@@ -29,7 +29,7 @@
  *         relay select, default "Relay / provider", so a page with two flows
  *         can tell them apart)
  *
- * Styling: /v2/static/fields.css (.zmp, .zmp-sel, .zmp-fetch, .zmp-status,
+ * Styling: /static/fields.css (.zmp, .zmp-sel, .zmp-fetch, .zmp-status,
  * .zmp-custom from the model picker, plus .rc-*). Pure helpers are exposed as
  * EkteRelayConfig._ for the node tests (tests/test_web_relaycfg_js.py).
  */

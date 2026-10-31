@@ -1,17 +1,17 @@
 {
  "strings": {
-  "Rerank latency and throughput were measured.": "A latência e a vazão do reranking foram medidas.",
+  "Rerank latency and throughput were measured.": "A latência e o débito do reranking foram medidos.",
   "A query over 32 documents costs far less per document than one over 4.": "Uma consulta sobre 32 documentos custa muito menos por documento do que uma sobre 4.",
   "A query over 32 documents costs about as much per document as one over 4 (consistent with a relay that splits or serialises the documents).": "Uma consulta sobre 32 documentos custa por documento quase o mesmo que uma sobre 4 (compatível com um relay que divide ou serializa os documentos).",
   "Too few samples to judge how latency scales with the number of documents.": "Poucas amostras para avaliar como a latência cresce com o número de documentos.",
-  "Unique probe queries came back with repeated scores (left out of the statistics).": "Consultas de teste únicas retornaram pontuações repetidas (excluídas das estatísticas).",
-  "The baseline returned repeated scores for unique probe queries (not scored).": "A linha de base retornou pontuações repetidas para consultas de teste únicas (sem pontuação).",
+  "Unique probe queries came back with repeated scores (left out of the statistics).": "Consultas de teste únicas devolveram pontuações repetidas (excluídas das estatísticas).",
+  "The baseline returned repeated scores for unique probe queries (not scored).": "A referência devolveu pontuações repetidas para consultas de teste únicas (sem pontuação).",
   "Rerank probe results": "Resultados da medição de reranking",
-  "Rerank throughput consistency": "Regularidade da vazão do reranking",
+  "Rerank throughput consistency": "Regularidade do débito do reranking",
   "Document-count latency scaling": "Escala da latência com o número de documentos",
   "Rerank latency grows linearly with the number of documents": "A latência do reranking cresce linearmente com o número de documentos",
-  "Unique probe queries returned repeated scores": "Consultas de teste únicas retornaram pontuações repetidas",
-  "A relay that returns the same scores for different queries may be serving stored results; compare with a trusted baseline.": "Um relay que retorna as mesmas pontuações para consultas diferentes pode estar servindo resultados armazenados; compare com uma linha de base confiável.",
+  "Unique probe queries returned repeated scores": "Consultas de teste únicas devolveram pontuações repetidas",
+  "A relay that returns the same scores for different queries may be serving stored results; compare with a trusted baseline.": "Um relay que devolve as mesmas pontuações para consultas diferentes pode estar a servir resultados armazenados; compare com uma referência de confiança.",
   "Rerank performance probe": "Medição de desempenho de reranking",
   "document-count probe": "sonda por número de documentos"
  }

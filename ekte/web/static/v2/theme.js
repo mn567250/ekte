@@ -2,7 +2,7 @@
  *
  * Load in <head>, right after /lang.js, so the stored choice is applied before
  * the first paint (no flash):
- *   <script src="/v2/static/theme.js"></script>
+ *   <script src="/static/theme.js"></script>
  * tokens.css does the rest: data-theme="light" / "dark" on <html> forces a theme,
  * no attribute follows prefers-color-scheme. A page may ship its own default
  * (the console is <html data-theme="dark">); "system" keeps that default.

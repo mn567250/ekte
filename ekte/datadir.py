@@ -18,17 +18,25 @@ from __future__ import annotations
 import contextlib
 import os
 import sqlite3
-from collections.abc import Iterator
+import sys
+import time
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 
-from ekte import legacy
+from ekte import dbmigrate, legacy
 
 _DIR_MODE = 0o700
 _FILE_MODE = 0o600
 
 
 _migration_checked: set[Path] = set()
+_warned_unprotected: set[Path] = set()
+
+
+def _modes_enforced() -> bool:
+    """True where file modes restrict access to the owner (Linux, macOS)."""
+    return os.name == "posix"
 
 
 def data_dir() -> Path:
@@ -55,10 +63,25 @@ def ensure_data_dir() -> Path:
         path.mkdir(parents=True, mode=_DIR_MODE, exist_ok=True)
         with contextlib.suppress(OSError):
             path.chmod(_DIR_MODE)
+        _warn_unprotected(path)
     elif not legacy.getenv("EKTE_DATA_DIR"):
         with contextlib.suppress(OSError):
             path.chmod(_DIR_MODE)
     return path
+
+
+def _warn_unprotected(path: Path) -> None:
+    """On Windows the 0700/0600 modes have no effect: say so once, when the
+    directory is created (see docs/STABILITY.md#os)."""
+    if _modes_enforced() or path in _warned_unprotected:
+        return
+    _warned_unprotected.add(path)
+    print(
+        f"ekte: created {path}. On this system the directory is not restricted to "
+        "your account by ekte (file modes have no effect on Windows); it inherits "
+        "the permissions of its parent folder. Keep it inside your user profile.",
+        file=sys.stderr,
+    )
 
 
 def _restrict(path: Path) -> None:
@@ -72,13 +95,43 @@ def _restrict(path: Path) -> None:
                 p.chmod(_FILE_MODE)
 
 
+def _set_wal(conn: sqlite3.Connection, timeout: float = 5.0) -> None:
+    """Switch to WAL, waiting for other connections like ``busy_timeout`` does.
+
+    SQLite answers a journal-mode change with "database is locked" at once,
+    without calling the busy handler, while another connection holds a lock
+    (e.g. a concurrent opener migrating a fresh database), so retry until the
+    same deadline the busy timeout uses.
+    """
+    deadline = time.monotonic() + timeout
+    delay = 0.01
+    while True:
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as exc:
+            if "locked" not in str(exc) or time.monotonic() >= deadline:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.2)
+
+
 @contextmanager
-def connect(name: str) -> Iterator[sqlite3.Connection]:
+def connect(
+    name: str,
+    migrations: Sequence[dbmigrate.Migration],
+    on_migrated: Callable[[sqlite3.Connection], None] | None = None,
+) -> Iterator[sqlite3.Connection]:
     """Yield a fresh connection to ``<data dir>/<name>``; commit + close on exit.
 
     Rows come back as :class:`sqlite3.Row`. A short busy timeout lets
     concurrent local writers (the CLI and the server) retry instead of raising
     ``database is locked``.
+
+    The schema is checked on every open and brought up to date with
+    ``migrations`` (see :mod:`ekte.dbmigrate`); ``on_migrated`` is called once
+    after a migration ran. A database from a newer ekte raises
+    :class:`ekte.dbmigrate.DatabaseTooNewError` before anything is written.
     """
     ensure_data_dir()
     path = db_path(name)
@@ -87,8 +140,13 @@ def connect(name: str) -> Iterator[sqlite3.Connection]:
     conn.row_factory = sqlite3.Row
     try:
         conn.execute("PRAGMA busy_timeout=5000")
-        conn.execute("PRAGMA journal_mode=WAL")
+        # Refuse a newer database before any pragma can write to its file.
+        if dbmigrate.user_version(conn) > dbmigrate.latest(migrations):
+            dbmigrate.migrate(conn, path, migrations)  # raises
+        _set_wal(conn)
         conn.execute("PRAGMA foreign_keys=ON")
+        if dbmigrate.migrate(conn, path, migrations) and on_migrated:
+            on_migrated(conn)
         yield conn
         conn.commit()
     finally:

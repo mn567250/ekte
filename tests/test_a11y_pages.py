@@ -100,8 +100,10 @@ def _pages_named(node: ast.AST) -> set[str]:
             if isinstance(n.slice, ast.Constant) and n.slice.value in PAGES:
                 found.add(n.slice.value)
         elif isinstance(n, ast.Constant) and isinstance(n.value, str):
-            # "/v2/kb", or a URL glob such as "**/v2/watches*"
+            # "/kb", or a URL glob such as "**/watches*"
             path = n.value.removeprefix("**").removesuffix("*")
+            if n.value.startswith("**") and path == "/":
+                continue  # "**/*" matches any URL; it does not name the audit page
             if path in by_path:
                 found.add(by_path[path])
     return found
@@ -282,12 +284,12 @@ def test_every_existing_ui_file_has_a_rule():
 def _assets(html: str) -> set[str]:
     out = set()
     for ref in re.findall(r'(?:src|href)="(/[^"?#]+\.(?:js|css))', html):
-        if ref.startswith("/v2/static/"):
-            out.add("ekte/web/static/v2/" + ref.removeprefix("/v2/static/"))
+        if ref.startswith("/static/"):
+            out.add("ekte/web/static/v2/" + ref.removeprefix("/static/"))
         else:
             out.add("ekte/web/static" + ref)
-    for ref in re.findall(r'fetch\("(/v2/static/[^"?#]+)"', html):
-        out.add("ekte/web/static/v2/" + ref.removeprefix("/v2/static/"))
+    for ref in re.findall(r'fetch\("(/static/[^"?#]+)"', html):
+        out.add("ekte/web/static/v2/" + ref.removeprefix("/static/"))
     return out
 
 
@@ -384,12 +386,12 @@ def test_cli_github_output(capsys, tmp_path, monkeypatch):
     target = tmp_path / "out"
     monkeypatch.setenv("GITHUB_OUTPUT", str(target))
     affected_cli.main(["--files", "ekte/web/static/v2/history.html", "--github-output"])
-    lines = dict(line.split("=", 1) for line in target.read_text().splitlines())
+    lines = dict(line.split("=", 1) for line in target.read_text(encoding="utf-8").splitlines())
     assert lines["pages"] == "history" and lines["full"] == "false" and lines["run"] == "true"
     assert json.loads(lines["matrix"]) == {"include": matrix(scope("ekte/web/static/v2/history.html"))}
     target.unlink()
     affected_cli.main(["--files", "README.md", "--github-output"])
-    lines = dict(line.split("=", 1) for line in target.read_text().splitlines())
+    lines = dict(line.split("=", 1) for line in target.read_text(encoding="utf-8").splitlines())
     assert lines["run"] == "false" and lines["pages"] == "" and json.loads(lines["matrix"]) == {"include": []}
 
 
@@ -401,7 +403,7 @@ def _collect(**env: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-m", "pytest", "tests/a11y", "-m", "a11y", "--collect-only", "-q", "-p", "no:cacheprovider",
          "-p", "no:xdist"],
-        cwd=ROOT, capture_output=True, text=True, env={**os.environ, **env}, timeout=120,
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", env={**os.environ, **env}, timeout=120,
     )
 
 

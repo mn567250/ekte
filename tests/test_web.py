@@ -20,7 +20,7 @@ _VERSION = re.compile(r"\?v=[0-9a-f]+(?=[\"'])")
 
 
 # every page of the web UI
-_V2_URLS = ("/v2/", "/v2/history", "/v2/watches", "/v2/analytics", "/v2/kb", "/v2/accessibility")
+_V2_URLS = ("/", "/history", "/watches", "/analytics", "/kb", "/accessibility")
 
 
 def _unversioned(html: str) -> str:
@@ -53,23 +53,6 @@ def test_spa_fallback_for_deep_link(client):
     assert "<!doctype html>" in r.text.lower()
 
 
-def test_audit_stream_bad_input_is_clean_error(client):
-    # No base_url/model → a clean SSE error event, not a 500.
-    r = client.post("/api/audit/stream", json={"model": "", "base_url": ""})
-    assert r.status_code == 200
-    assert "text/event-stream" in r.headers["content-type"]
-    assert '"type": "error"' in r.text
-    assert '"type": "done"' in r.text
-
-
-def test_audit_stream_unknown_suite_errors(client):
-    r = client.post(
-        "/api/audit/stream",
-        json={"base_url": "https://x.example/v1", "model": "gpt-4o", "suite": "bogus"},
-    )
-    assert '"type": "error"' in r.text
-
-
 def test_serves_console_and_history_and_i18n(client):
     for path in ("/console", "/history"):
         r = client.get(path)
@@ -92,7 +75,7 @@ def test_serves_lang_js_and_pages_load_it(client):
         # locales must load before lang.js, which reads them at switch time
         assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
     # the dropdown comes from nav.js and is filled from LANG_LIST in lang.js, not per page
-    nav = client.get("/v2/static/nav.js").text
+    nav = client.get("/static/nav.js").text
     assert re.search(r"<select class=\"lang-sel\"[^>]*></select>", nav)
     # the language list and translations come from ekte/i18n/locales/*.json
     assert loc.text.startswith("window.EKTE_I18N_DATA = {")
@@ -172,8 +155,6 @@ def test_history_module_roundtrip(tmp_path, monkeypatch):
     assert len(rows) == 1 and rows[0]["risk_level"] == "high" and rows[0]["score"] == 21.0
     full = history.get(rid)
     assert full["verdict"]["rating"] == "F" and full["target"]["model"] == "doubao-x"
-    trend = history.trend("https://relay.test/v1", "deepseek-v4-pro")
-    assert len(trend) == 1 and trend[0]["score"] == 21.0
     history.delete(rid)
     assert history.recent() == []
 
@@ -193,19 +174,6 @@ def test_history_endpoints(tmp_path, monkeypatch, client):
     assert client.get("/api/history/999999").status_code == 404
 
 
-def test_audit_stream_invalid_baseline_errors(client):
-    # A compare request with a malformed baseline base_url is a clean error event.
-    r = client.post(
-        "/api/audit/stream",
-        json={
-            "base_url": "https://x.example/v1",
-            "model": "gpt-4o",
-            "baseline": {"base_url": "ftp://nope", "model": "gpt-4o"},
-        },
-    )
-    assert '"type": "error"' in r.text
-
-
 def test_serves_perf_js_and_pages_load_it(client):
     js = client.get("/perf.js")
     assert js.status_code == 200
@@ -215,55 +183,28 @@ def test_serves_perf_js_and_pages_load_it(client):
         assert '<script src="/perf.js"></script>' in _unversioned(client.get(path).text)
 
 
-def test_audit_stream_batches_request_records(tmp_path, monkeypatch, client):
+async def test_job_events_batch_request_records():
     import asyncio
     import json
 
-    from ekte.models import AuditReport, RedactedTarget, Verdict
+    from ekte.web import jobs
 
-    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
-
-    async def fake_run_audit(target, options, *, on_event=None, **_):
-        on_event({"type": "start", "total": 1, "probe_requests": 0})
-        for seq in range(3):  # a burst: batched into one event
-            on_event({"type": "request_done", "record": {"seq": seq}})
-        await asyncio.sleep(0.35)  # past the batch window: flushed on its own
-        on_event({"type": "request_done", "record": {"seq": 3}})
-        on_event({"type": "detector_done", "id": "x"})
-        return AuditReport(
-            tool_version="0", mode="check", suite="standard",
-            target=RedactedTarget(name="t", kind="target", base_url=target.base_url, model="m"),
-            verdict=Verdict(),
-        )
-
-    monkeypatch.setattr("ekte.web.server.run_audit", fake_run_audit)
-    r = client.post("/api/audit/stream", json={"base_url": "https://x.example/v1", "model": "m"})
-    events = [
-        json.loads(line[5:]) for line in r.text.splitlines() if line.startswith("data:")
-    ]
+    job = jobs.Job({}, frozenset())
+    job.emit({"type": "start", "total": 1, "probe_requests": 0})
+    for seq in range(3):  # a burst: batched into one event
+        job.emit({"type": "request_done", "record": {"seq": seq}})
+    job.emit({"type": "detector_done", "id": "x"})
+    job.emit({"type": "request_done", "record": {"seq": 3}})
+    job.emit({"type": "done"})
+    chunks = [c async for c in jobs.stream(job, 0.05)]
+    events = [json.loads(c[5:]) for c in chunks]
     types = [e["type"] for e in events]
-    assert "request_done" not in types
+    assert "request_done" not in types and types[-1] == "done"
     batches = [[rec["seq"] for rec in e["records"]] for e in events if e["type"] == "requests"]
     assert batches == [[0, 1, 2], [3]]
     # a pending batch is flushed before the next non-request event
-    assert types.index("requests") < types.index("detector_done") < types.index("report")
-    assert types[-1] == "done"
-
-
-def test_history_trend_carries_performance_headline(tmp_path, monkeypatch):
-    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
-    from ekte.web import history
-
-    base = {"target": {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"},
-            "verdict": {"overall_score": 90.0}}
-    history.save(base)
-    history.save({**base, "performance": {"target": {
-        "latency_ms": {"p50": 812.5}, "ttft_ms": {"p50": 240.0},
-        "decode_tps_local": {"p50": None}, "decode_tps_reported": {"p50": 55.0}}}})
-    old, new = history.trend("https://x/v1", "m")
-    assert old["latency_p50_ms"] is None and old["score"] == 90.0
-    assert new["latency_p50_ms"] == 812.5 and new["ttft_p50_ms"] == 240.0
-    assert new["decode_tps_p50"] == 55.0
+    assert types.index("requests") < types.index("detector_done")
+    await asyncio.sleep(0)
 
 
 def test_history_list_carries_performance_headline_on_request(tmp_path, monkeypatch, client):
@@ -286,7 +227,7 @@ def test_api_key_fields_are_masked_and_paired_with_their_url(client):
     assert js.status_code == 200
     assert "application/javascript" in js.headers["content-type"]
     assert "EkteSecret" in js.text
-    for path in ("/v2/",):  # the monitors' key fields are rendered by watches.html's script
+    for path in ("/",):  # the monitors' key fields are rendered by watches.html's script
         html = _unversioned(client.get(path).text)
         assert '<script src="/secretfield.js"></script>' in html
         keys = re.findall(r'<input[^>]*\bid="\w+-key"[^>]*>', html)
@@ -311,25 +252,24 @@ _V2_PAGES = {"/": "audit", "/history": "history", "/watches": "monitors"}
 
 def test_v2_pages_share_the_design_system(client):
     for path, page in _V2_PAGES.items():
-        r = client.get("/v2" + path if path != "/" else "/v2/")
+        r = client.get(path)
         assert r.status_code == 200 and "text/html" in r.headers["content-type"], path
         html = _unversioned(r.text)
         assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
-        assert '<link rel="stylesheet" href="/v2/static/ekte.css" />' in html
+        assert '<link rel="stylesheet" href="/static/ekte.css" />' in html
         assert f'<header class="znav" data-page="{page}"' in html
-        assert '<script src="/v2/static/nav.js"></script>' in html
+        assert '<script src="/static/nav.js"></script>' in html
     for asset, kind in (("ekte.css", "text/css"), ("nav.js", "javascript"), ("report.js", "javascript"), ("report.css", "text/css")):
-        r = client.get("/v2/static/" + asset)
+        r = client.get("/static/" + asset)
         assert r.status_code == 200 and kind in r.headers["content-type"], asset
-    assert client.get("/v2/static/missing.css").status_code == 404
-    assert client.get("/v2", follow_redirects=False).headers["location"] == "/v2/"
+    assert client.get("/static/missing.css").status_code == 404
 
 
 def test_v2_monitors_page_manages_the_master_key(client):
-    html = _unversioned(client.get("/v2/watches").text)
-    assert '<script src="/v2/static/masterkey.js"></script>' in html
+    html = _unversioned(client.get("/watches").text)
+    assert '<script src="/static/masterkey.js"></script>' in html
     assert 'id="mk-bar"' in html
-    r = client.get("/v2/static/masterkey.js")
+    r = client.get("/static/masterkey.js")
     assert r.status_code == 200 and "javascript" in r.headers["content-type"]
     # one vault entry: a fixed username, "new-password" to save, "current-password" to fill
     js = r.text
@@ -337,55 +277,80 @@ def test_v2_monitors_page_manages_the_master_key(client):
     assert "localStorage" not in js and "sessionStorage" not in js
 
 
-def test_classic_addresses_redirect_to_the_v2_pages(client):
-    # the classic UI is gone; bookmarks and old links land on its v2 pages
-    for old, new in (("/", "/v2/"), ("/history", "/v2/history"), ("/watches", "/v2/watches"),
-                     ("/tools", "/v2/?surface=embedding"), ("/console", "/v2/")):
+_PAGES = {
+    "/": "audit", "/history": "history", "/watches": "monitors", "/kb": "kb",
+    "/analytics": "analytics", "/accessibility": "a11y",
+}
+
+
+def test_every_page_is_served_at_the_root(client):
+    for path in _PAGES:
+        r = client.get(path, follow_redirects=False)
+        assert r.status_code == 200 and "text/html" in r.headers["content-type"], path
+        html = _unversioned(r.text)
+        assert "/v2" not in html, path
+        assert 'href="/static/ekte.css"' in html, path
+        assert 'href="/static/tokens.css"' in html, path
+        assert client.get("/static/nav.js").status_code == 200
+    # unknown paths still fall back to the audit page
+    assert 'data-page="audit"' in client.get("/no/such/page").text
+
+
+def test_old_v2_addresses_redirect_permanently_with_the_query_string(client):
+    old_new = {"/v2": "/", "/v2/": "/", "/v2/history": "/history", "/v2/watches": "/watches",
+               "/v2/kb": "/kb", "/v2/analytics": "/analytics", "/v2/accessibility": "/accessibility",
+               "/v2/tools": "/?surface=embedding"}
+    for old, new in old_new.items():
+        r = client.get(old, follow_redirects=False)
+        assert r.status_code in (301, 308) and r.headers["location"] == new, old
+        assert "1.0.0" in r.headers["warning"], old
+        sep = "&" if "?" in new else "?"
+        r = client.get(old + "?rerun=7&x=%C3%A4", follow_redirects=False)
+        assert r.status_code in (301, 308) and r.headers["location"] == f"{new}{sep}rerun=7&x=%C3%A4", old
+        followed = client.get(old + "?rerun=7")
+        assert followed.status_code == 200 and "text/html" in followed.headers["content-type"], old
+
+
+def test_classic_addresses_redirect_to_the_root_pages(client):
+    # the classic UI is gone; its removed addresses land on the page that took over
+    # (directly: no double redirect through /v2/)
+    for old, new in (("/tools", "/?surface=embedding"), ("/console", "/")):
         r = client.get(old, follow_redirects=False)
         assert r.status_code == 308 and r.headers["location"] == new, old
-    # the query string comes along (e.g. a re-run link)
-    assert client.get("/history?rerun=7", follow_redirects=False).headers["location"] == "/v2/history?rerun=7"
-    assert client.get("/tools?rerun=7", follow_redirects=False).headers["location"] == "/v2/?surface=embedding&rerun=7"
+        assert "1.0.0" in r.headers["warning"], old
+    assert client.get("/tools?rerun=7", follow_redirects=False).headers["location"] == "/?surface=embedding&rerun=7"
+    assert client.get("/console?a=1", follow_redirects=False).headers["location"] == "/?a=1"
     # no UI switch and no UI cookie any more, also not from before the rename
     client.cookies.set("zing_ui", "v1")
-    r = client.get("/v2/history?ui=v1", follow_redirects=False)
+    r = client.get("/history?ui=v1", follow_redirects=False)
     assert r.status_code == 200 and "set-cookie" not in r.headers
     client.cookies.clear()
     for path in ("/index.html", "/modelpicker.js"):
         assert "EkteModelPicker" not in client.get(path).text
 
 
-def test_v2_tools_forwards_to_the_audit_page_surface(client):
-    # /v2/tools was retired for the audit page's endpoint-type selector. The
-    # old page picked its rerank tab by the fragment (#rerank), which never
-    # reaches the server, so a tiny page forwards in the browser.
-    r = client.get("/v2/tools?rerun=3", follow_redirects=False)
-    assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
-    assert r.headers["cache-control"] == "no-store"
-    html = r.text
-    assert '<html lang="en">' in html and "<title>" in html and "<h1>" in html
-    assert 'location.hash === "#rerank" ? "rerank" : "embedding"' in html
-    assert '"/v2/?surface="' in html and 'get("rerun")' in html and '"&rerun=" + encodeURIComponent(rerun)' in html
-    assert "location.replace(to)" in html
-    # without JavaScript: a meta refresh to the embedding surface and links to both
-    assert '<meta http-equiv="refresh" content="0; url=/v2/?surface=embedding">' in html
-    noscript = html.split("<noscript>", 1)[1].split("</noscript>", 1)[0]
-    assert 'href="/v2/?surface=embedding"' in noscript and 'href="/v2/?surface=rerank"' in noscript
-    assert 'data-page="tools"' not in html
-    assert "/v2/tools" not in client.get("/v2/static/nav.js").text
+def test_old_asset_addresses_stop_working_and_new_ones_serve(client):
+    assert client.get("/v2/static/ekte.css").status_code == 404
+    r = client.get("/static/ekte.css")
+    assert r.status_code == 200 and "text/css" in r.headers["content-type"]
 
 
 def test_there_is_no_console_page(client):
-    # unknown /v2/ paths fall back to the v2 audit page, never a console page
+    # unknown paths fall back to the audit page, never a console page
     html = client.get("/v2/console").text
     assert 'data-page="audit"' in html and 'data-page="console"' not in html
-    assert "/v2/console" not in client.get("/v2/static/nav.js").text
+    assert "/console" not in client.get("/static/nav.js").text
+
+
+def test_audit_page_reads_the_rerank_fragment_of_the_retired_tools_page(client):
+    # /v2/tools#rerank -> /?surface=embedding#rerank (browsers keep the fragment)
+    assert 'location.hash === "#rerank"' in client.get("/").text
 
 
 def test_v2_audit_api_key_starts_empty_and_masked(client):
     # no shared env:EKTE_API_KEY default: each relay brings its own key, and
     # an empty field starts masked (only a reference value starts revealed)
-    html = client.get("/v2/").text
+    html = client.get("/").text
     tag = re.search(r'<input[^>]*\bid="i-key"[^>]*>', html).group(0)
     assert 'type="password"' in tag and 'data-secret="i-url"' in tag
     assert "value=" not in tag
@@ -394,67 +359,67 @@ def test_v2_audit_api_key_starts_empty_and_masked(client):
 def test_v2_audit_sends_the_declared_provider(client):
     # the declared provider is derived by the relay configuration (a hidden
     # field) and still sent with the audit
-    html = client.get("/v2/").text
+    html = client.get("/").text
     assert '<input type="hidden" id="i-prov">' in html
     assert 'declared_provider: $("#i-prov").value.trim()' in html
     assert 'claimed: "#i-claimed", provider: "#i-prov"' in html
-    assert "/v2/static/relaycfg.js" in html and "/modelpicker.js" not in html
+    assert "/static/relaycfg.js" in html and "/modelpicker.js" not in html
 
 
 def test_v2_accessibility_report_page(client):
     # BITV 2.0 / EN 301 549 conformance report: a v2 page in the design system
-    r = client.get("/v2/accessibility")
+    r = client.get("/accessibility")
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     html = _unversioned(r.text)
     assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
-    assert '<link rel="stylesheet" href="/v2/static/ekte.css" />' in html
+    assert '<link rel="stylesheet" href="/static/ekte.css" />' in html
     assert '<header class="znav" data-page="a11y"' in html
-    assert '<script src="/v2/static/nav.js"></script>' in html
+    assert '<script src="/static/nav.js"></script>' in html
     assert '<main id="main" tabindex="-1">' in html and "<footer>" not in html  # nav.js adds the shared one
-    assert "/v2/static/bitv-report.json" in html
+    assert "/static/bitv-report.json" in html
     assert "https://github.com/mn567250/ekte/issues" in html
 
 
 def test_v2_analytics_page(client):
     # charts over the run history: a v2 page in the design system, linked from
     # every page's main navigation
-    r = client.get("/v2/analytics")
+    r = client.get("/analytics")
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     html = _unversioned(r.text)
     assert '<script src="/locales.js"></script>\n<script src="/lang.js"></script>' in html
-    assert '<link rel="stylesheet" href="/v2/static/ekte.css" />' in html
-    assert '<link rel="stylesheet" href="/v2/static/charts.css" />' in html
+    assert '<link rel="stylesheet" href="/static/ekte.css" />' in html
+    assert '<link rel="stylesheet" href="/static/charts.css" />' in html
     assert '<header class="znav" data-page="analytics"' in html
     assert '<main id="main" tabindex="-1">' in html
-    assert '<script src="/v2/static/nav.js"></script>\n<script src="/v2/static/notice.js"></script>\n<script src="/v2/static/charts.js"></script>' in html
+    assert '<script src="/static/nav.js"></script>\n<script src="/static/notice.js"></script>\n<script src="/static/charts.js"></script>' in html
     for api in ("/api/analytics/options", "/api/analytics/summary", "/api/analytics/series", "/api/analytics/leaderboard"):
         assert api in html
     # no outgoing requests: every script and stylesheet is local
     assert not re.search(r'(?:src|href)="(?:https?:)?//', html)
-    js = client.get("/v2/static/nav.js").text
-    assert '["analytics", "/v2/analytics", "bars", "分析", "Analytics"]' in js
+    js = client.get("/static/nav.js").text
+    assert '["analytics", "/analytics", "bars", "分析", "Analytics"]' in js
     assert "bars:" in client.get("/icons.js").text
     # tabs and the filter panel History shares
-    assert '<script src="/v2/static/filterpanel.js"></script>\n<script src="/v2/static/tabs.js"></script>' in html
-    assert '<link rel="stylesheet" href="/v2/static/filterpanel.css" />' in html
+    assert '<script src="/static/filterpanel.js"></script>\n<script src="/static/tabs.js"></script>' in html
+    assert '<link rel="stylesheet" href="/static/filterpanel.css" />' in html
     assert 'role="tablist"' in html and 'id="tab-integrity"' in html
-    hist = _unversioned(client.get("/v2/history").text)
-    assert '<script src="/v2/static/filterpanel.js"></script>' in hist
-    assert '<link rel="stylesheet" href="/v2/static/filterpanel.css" />' in hist
+    hist = _unversioned(client.get("/history").text)
+    assert '<script src="/static/filterpanel.js"></script>' in hist
+    assert '<link rel="stylesheet" href="/static/filterpanel.css" />' in hist
     for asset, kind in (("charts.js", "javascript"), ("charts.css", "text/css"), ("filterpanel.js", "javascript"),
                         ("filterpanel.css", "text/css")):
-        r = client.get("/v2/static/" + asset)
+        r = client.get("/static/" + asset)
         assert r.status_code == 200 and kind in r.headers["content-type"], asset
 
 
 def test_v2_accessibility_report_data_is_served(client):
     import json
 
-    cat = client.get("/v2/static/bitv-catalogue.json")
+    cat = client.get("/static/bitv-catalogue.json")
     assert cat.status_code == 200
     steps = cat.json()["steps"]
     assert len(steps) == 50 and len({s["step"] for s in steps}) == 50
-    rep = client.get("/v2/static/bitv-report.json")
+    rep = client.get("/static/bitv-report.json")
     assert rep.status_code == 200 and "json" in rep.headers["content-type"]
     data = json.loads(rep.text)
     assert [s["step"] for s in data["steps"]] == [s["step"] for s in steps]
@@ -465,15 +430,15 @@ def test_v2_accessibility_report_data_is_served(client):
 def test_v2_header_links_the_accessibility_report(client):
     # nav.js adds an icon-only link next to the language switch of every v2
     # page's header (same place everywhere), named by aria-label
-    js = client.get("/v2/static/nav.js").text
-    assert '<a class="a11y" href="/v2/accessibility"' in js
+    js = client.get("/static/nav.js").text
+    assert '<a class="a11y" href="/accessibility"' in js
     assert 'data-en-aria-label="Accessibility"' in js and 'ico("a11y"' in js
     # the one shared page footer (all local / black box) comes from nav.js
     assert 'footer.className = "zdisc"' in js or 'f.className = "zdisc"' in js
     assert "data-trust" not in js.split("*/", 1)[1]
     assert "a11y:" in client.get("/icons.js").text
-    for path in ("/v2/", "/v2/history", "/v2/watches", "/v2/kb", "/v2/analytics", "/v2/accessibility"):
-        assert '<script src="/v2/static/nav.js"></script>' in _unversioned(client.get(path).text), path
+    for path in ("/", "/history", "/watches", "/kb", "/analytics", "/accessibility"):
+        assert '<script src="/static/nav.js"></script>' in _unversioned(client.get(path).text), path
 
 
 async def test_health_stays_responsive_while_history_loads(tmp_path, monkeypatch):
@@ -824,11 +789,11 @@ async def test_audit_knowledge_base_load_does_not_block_the_loop(monkeypatch):
 def test_every_v2_page_has_the_ekte_favicon(client):
     import xml.dom.minidom
 
-    r = client.get("/v2/static/favicon.svg")
+    r = client.get("/static/favicon.svg")
     assert r.status_code == 200 and r.headers["content-type"].startswith("image/svg+xml")
     xml.dom.minidom.parseString(r.content)  # a browser shows no icon for invalid XML
-    for page in ("/v2/", "/v2/history", "/v2/watches", "/v2/analytics", "/v2/kb", "/v2/accessibility"):
-        assert re.search(r'<link rel="icon" href="/v2/static/favicon\.svg[^"]*" type="image/svg\+xml"', client.get(page).text), page
+    for page in ("/", "/history", "/watches", "/analytics", "/kb", "/accessibility"):
+        assert re.search(r'<link rel="icon" href="/static/favicon\.svg[^"]*" type="image/svg\+xml"', client.get(page).text), page
 
 
 def test_the_nav_brand_is_the_ekte_logo():

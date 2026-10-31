@@ -2,7 +2,7 @@
   - link "Hopp til hovedinnholdet":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Tema":
     - option "Automatisk tema"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk" [selected]
   - link "Tilgjengelighet":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Hovednavigasjon":
     - link "Revisjon":
-      - /url: /v2/
+      - /url: /
     - link "Overvåking":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Historikk":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyse":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Kunnskap":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Revisjonshistorikk og trender" [level=1]
   - paragraph: Alle verifiseringer du har kjørt på denne maskinen. Gruppert etter «relé + oppgitt modell», med en trendlinje for helsescoren; klikk på en rad for å folde ut rapporten.

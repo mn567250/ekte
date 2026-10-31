@@ -10,11 +10,10 @@ import os
 from pathlib import Path
 from typing import Any
 
-import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from ekte import configfile
 from ekte.models import Dimension, TargetConfig
-from ekte.utils import yamlio
 
 # ``custom`` runs the dimensions the user picks (``AuditOptions.dimensions``) at
 # deep depth; the others are cumulative tiers.
@@ -97,21 +96,19 @@ def resolve_secret(value: str | None) -> str:
 
 
 def load_config_file(path: Path | None) -> dict[str, Any]:
+    """Read and validate the config file (see ``ekte.configfile``)."""
     if path is None:
         return {}
     if not path.exists():
         raise ConfigError(f"Config file not found: {path}")
     try:
         text = path.read_text(encoding="utf-8")
-        data = yamlio.safe_load(text)
-    except yaml.YAMLError as c_exc:
-        exc = yamlio.detailed_error(c_exc, lambda loader: yamlio.safe_load(text, loader))
-        raise ConfigError(f"Invalid YAML in {path}: {exc}") from exc
-    if data is None:
-        return {}
-    if not isinstance(data, dict):
-        raise ConfigError(f"Config file {path} must contain a mapping at the top level")
-    return data
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ConfigError(f"Could not read config file {path}: {exc}") from exc
+    try:
+        return configfile.load(text, str(path))
+    except configfile.ConfigFileError as exc:
+        raise ConfigError(str(exc)) from exc
 
 
 def section(cfg: dict[str, Any], name: str) -> dict[str, Any]:
@@ -247,6 +244,8 @@ TEMPLATE = """\
 # ekte configuration — LLM relay reality check
 # Run:  ekte check -c ekte.yaml
 # Docs: https://github.com/mn567250/ekte
+
+version: 1                         # format version of this file
 
 target:
   name: my-relay

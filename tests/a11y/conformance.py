@@ -7,7 +7,7 @@
 ``--results`` takes the per-step results the a11y suite writes with
 ``EKTE_A11Y_RESULTS=<path>`` (tests/a11y/results.py) and writes
 ``ekte/web/static/v2/bitv-report.json`` (``--out`` moves it), which the page
-``/v2/accessibility`` renders: per test step (the 50 WCAG 2.1 A/AA criteria,
+``/accessibility`` renders: per test step (the 50 WCAG 2.1 A/AA criteria,
 numbered as EN 301 549 / BITV 9.x.x.x) how it is tested and the latest result.
 ``--llm`` merges a review of the texts (default: ``./a11y-llm-review.json``
 when it exists, as tests/a11y/llm_review.py writes it). A completed LLM review
@@ -74,7 +74,7 @@ def _func(nodeid: str) -> str:
 def _git_commit() -> str | None:
     try:
         out = subprocess.run(
-            ["git", "rev-parse", "--short=12", "HEAD"], cwd=ROOT, capture_output=True, text=True, timeout=10, check=True
+            ["git", "rev-parse", "--short=12", "HEAD"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=10, check=True
         )
     except (OSError, subprocess.SubprocessError):
         return None
@@ -251,7 +251,7 @@ def build_report(
         for a in AUTOMATION
     }
     test_outcomes = [t.get("outcome") for t in (results.get("tests") or {}).values()]
-    now = now or _dt.datetime.now(_dt.timezone.utc)
+    now = now or _dt.datetime.now(_dt.UTC)
     report = {
         "schema": SCHEMA,
         "standards": cat["standards"],
@@ -529,7 +529,7 @@ def main(argv: list[str] | None = None) -> int:
         write_report(args.out or DEFAULT_OUT, report)
     if args.update:
         old = json.loads(args.update.read_text(encoding="utf-8"))
-        report = apply_review(old, load_review(llm_path), now=_dt.datetime.now(_dt.timezone.utc))
+        report = apply_review(old, load_review(llm_path), now=_dt.datetime.now(_dt.UTC))
         write_report(args.out or args.update, report)
     return 0
 

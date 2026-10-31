@@ -182,7 +182,7 @@ async def test_custom_audit_reports_its_selection(monkeypatch):
 # --------------------------------------------------------------------------- #
 # web + watches
 # --------------------------------------------------------------------------- #
-def test_audit_stream_custom_without_dimensions_errors():
+def test_job_custom_without_dimensions_errors():
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
@@ -190,10 +190,10 @@ def test_audit_stream_custom_without_dimensions_errors():
 
     client = TestClient(create_app(), base_url="http://localhost")
     r = client.post(
-        "/api/audit/stream",
+        "/api/jobs",
         json={"base_url": "https://x.example/v1", "model": "gpt-4o", "suite": "custom"},
     )
-    assert '"type": "error"' in r.text and "at least one dimension" in r.text
+    assert r.status_code == 400 and "at least one dimension" in r.json()["error"]
 
 
 def test_watch_stores_its_dimensions(tmp_path, monkeypatch):

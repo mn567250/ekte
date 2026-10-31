@@ -29,12 +29,12 @@ from dataclasses import dataclass
 from functools import cache
 
 PAGES: dict[str, str] = {
-    "audit": "/v2/",
-    "history": "/v2/history",
-    "monitors": "/v2/watches",
-    "kb": "/v2/kb",
-    "analytics": "/v2/analytics",
-    "accessibility": "/v2/accessibility",
+    "audit": "/",
+    "history": "/history",
+    "monitors": "/watches",
+    "kb": "/kb",
+    "analytics": "/analytics",
+    "accessibility": "/accessibility",
 }
 
 # pytest selection (tests/a11y/conftest.py)
@@ -177,12 +177,14 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ekte/runner.py", ("audit",)),
     ("ekte/scoring.py", ("audit",)),
     ("ekte/config.py", ("audit",)),
+    ("ekte/configfile.py", ("audit",)),
     ("ekte/context.py", ("audit",)),
     ("ekte/models.py", ("audit",)),
     ("ekte/embed_audit.py", ("audit",)),  # the embedding check (the audit page's surface selector)
     ("ekte/notify.py", ("monitors",)),  # monitor webhooks
     ("ekte/secretbox.py", ("monitors",)),  # the monitors' stored keys
     ("ekte/datadir.py", ("audit", "history", "monitors")),  # where history and monitors live
+    ("ekte/dbmigrate.py", ("audit", "history", "monitors")),  # schema versions of every database
     ("ekte/legacy.py", ("audit", "history", "monitors")),  # ZING_* settings, ~/.zing migration
     ("ekte/__init__.py", ALL),  # imported by the server (version)
     # -- UI strings: fragments are merged into one table per language and

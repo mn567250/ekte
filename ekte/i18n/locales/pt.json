@@ -106,7 +106,7 @@
   "Security": "Segurança",
   "ekte — relay reality check": "ekte — verificação de intermediários",
   "Is this relay serving the <span class='u'>real thing</span>?": "Este intermediário serve o <span class='u'>modelo verdadeiro</span>?",
-  "Enter the relay's address and the model it claims to serve. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Introduza o endereço do intermediário e o modelo que diz servir. O ekte executa no seu computador um conjunto completo de testes de caixa preta e produz um relatório de verificação legível e sustentado por evidências.",
+  "Enter the relay's address and the model it claims to serve. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "Introduza o endereço do intermediário e o modelo que diz servir. O ekte executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e sustentado por evidências.",
   "Claimed model": "Modelo declarado",
   "Actual request id": "id realmente pedido",
   "Optional": "Opcional",
@@ -159,7 +159,7 @@
   "Report view /": "Vista de relatório /",
   "History /history": "Histórico /history",
   "Relay <span class='hl'>bait-and-switch</span> test bench": "Bancada de testes de <span class='hl'>gato por lebre</span> em intermediários",
-  "Point it at a relay's <span class='kbd'>base_url</span> and the model it claims. ekte runs a full suite of black-box probes, compares the results with built-in native model profiles, and gives an evidence-backed verdict — not a gut feeling. Power-user console with a terminal-style live detector log.": "Aponte-o para o <span class='kbd'>base_url</span> de um intermediário e para o modelo que declara. O ekte executa um conjunto completo de sondas de caixa preta, compara os resultados com perfis nativos incorporados e emite um veredito sustentado por evidências — não um palpite. Consola avançada com registo de detetores em direto ao estilo terminal.",
+  "Point it at a relay's <span class='kbd'>base_url</span> and the model it claims. ekte runs a full suite of black-box probes, compares the results with built-in native model profiles, and gives an evidence-backed verdict — not a gut feeling. Power-user console with a terminal-style live detector log.": "Aponte-o para o <span class='kbd'>base_url</span> de um intermediário e para o modelo que declara. O ekte executa um conjunto completo de sondas de caixa-preta, compara os resultados com perfis nativos incorporados e emite um veredito sustentado por evidências — não um palpite. Consola avançada com registo de detetores em direto ao estilo terminal.",
   "target endpoint": "endpoint alvo",
   "claimed model (model)": "modelo declarado (model)",
   "empty = same as above": "vazio = igual ao anterior",
@@ -206,7 +206,7 @@
   "Documents (one per line)": "Documentos (um por linha)",
   "Line expected to rank first": "Linha que deve ficar em primeiro",
   "Verify rerank endpoint": "Verificar endpoint de rerank",
-  "Embedding/rerank checks are black-box, non-chat tests: a dimension mismatch is the strongest \"bait-and-switch\" signal; determinism and distinctness are supporting evidence.": "As verificações de embeddings/rerank são testes de caixa preta sem chat: uma dimensão errada é o sinal mais forte de «gato por lebre»; o determinismo e a distinção são evidências de apoio.",
+  "Embedding/rerank checks are black-box, non-chat tests: a dimension mismatch is the strongest \"bait-and-switch\" signal; determinism and distinctness are supporting evidence.": "As verificações de embeddings/rerank são testes de caixa-preta sem chat: uma dimensão errada é o sinal mais forte de «gato por lebre»; o determinismo e a distinção são evidências de apoio.",
   "No checks.": "Sem verificações.",
   "Please enter the relay address and the model id.": "Indique o endereço do intermediário e o id do modelo.",
   "ekte — monitors": "ekte — monitores",
@@ -265,7 +265,7 @@
   "Fetch models": "Obter modelos",
   "Fetch models first…": "Obtenha primeiro os modelos…",
   "Relay only (not in knowledge base)": "Só no relay (fora da base de conhecimento)",
-  "Fetching models…": "Obtendo modelos…",
+  "Fetching models…": "A obter modelos…",
   "Enter the base_url first": "Introduza primeiro a base_url",
   "The relay returned no models": "O relay não devolveu nenhum modelo",
   "Models found:": "Modelos encontrados:",
@@ -347,7 +347,7 @@
   "Strong evidence the relay does not deliver the claimed model as advertised.": "Evidências sólidas de que o intermediário não fornece o modelo declarado.",
   "Not enough signal to judge — connectivity or coverage was insufficient.": "Sinal insuficiente para avaliar — conectividade ou cobertura insuficientes.",
   "(confidence: {1})": "(confiança: {1})",
-  "ekte performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.": "O ekte faz auditorias de caixa preta: recolhe evidências reprodutíveis de desvio de comportamento, não uma prova criptográfica da identidade do modelo.",
+  "ekte performs black-box auditing: it gathers reproducible evidence of behavioral divergence, not cryptographic proof of model identity.": "O ekte faz auditorias de caixa-preta: recolhe evidências reprodutíveis de desvio de comportamento, não uma prova criptográfica da identidade do modelo.",
   "Use `ekte compare` against a trusted baseline of the same declared model for the strongest downgrade evidence.": "Use `ekte compare` contra uma referência de confiança do mesmo modelo declarado para obter a evidência de degradação mais sólida.",
   "Do not publish a report that names a vendor without reviewing sample size, cost, and local law/policy.": "Não publique um relatório que identifique um fornecedor sem rever o tamanho da amostra, o custo e a lei/política local.",
   "Not run in this suite.": "Não executado nesta suite.",
@@ -377,7 +377,7 @@
   "No significant divergence findings.": "Não foram encontrados desvios significativos.",
   "The claimed model was not found in the knowledge base, so identity/capability checks are limited — pass --declared-provider or add a KB profile.": "O modelo declarado não está na base de conhecimento, pelo que as verificações de identidade/capacidades são limitadas — use --declared-provider ou adicione um perfil à KB.",
   "Run `ekte compare` against a trusted baseline to strengthen the verdict.": "Execute `ekte compare` contra uma referência de confiança para reforçar o veredito.",
-  "ekte reports black-box evidence of divergence and risk, not proof of fraud.": "O ekte reporta evidências de caixa preta de desvio e risco, não uma prova de fraude.",
+  "ekte reports black-box evidence of divergence and risk, not proof of fraud.": "O ekte reporta evidências de caixa-preta de desvio e risco, não uma prova de fraude.",
   "ekte relay audit alert": "Alerta de auditoria de intermediário do ekte",
   "Risk: {1}": "Risco: {1}",
   "Score: {1}": "Pontuação: {1}",
@@ -397,80 +397,80 @@
   "Undetermined": "Indeterminado",
   "{1} ({2})": "{1} ({2})",
   "Alert language": "Idioma dos alertas",
-  "Add a monitor: ekte re-runs the black-box audit on your machine at the interval you set. As soon as the risk crosses your threshold or gets worse than last time, it pushes an alert in the language you choose to the webhooks you configured (Slack / Feishu / DingTalk / generic JSON).": "Adicione um monitor: o ekte volta a executar a auditoria de caixa preta no seu computador com o intervalo definido. Assim que o risco ultrapassa o seu limite ou piora em relação à vez anterior, envia um alerta, no idioma que escolher, para os webhooks configurados (Slack / Feishu / DingTalk / JSON genérico).",
+  "Add a monitor: ekte re-runs the black-box audit on your machine at the interval you set. As soon as the risk crosses your threshold or gets worse than last time, it pushes an alert in the language you choose to the webhooks you configured (Slack / Feishu / DingTalk / generic JSON).": "Adicione um monitor: o ekte volta a executar a auditoria de caixa-preta no seu computador com o intervalo definido. Assim que o risco ultrapassa o seu limite ou piora em relação à vez anterior, envia um alerta, no idioma que escolher, para os webhooks configurados (Slack / Feishu / DingTalk / JSON genérico).",
   "Probe languages": "Idiomas das sondas",
   "No samples yet": "Ainda sem amostras",
   "baseline": "referência",
   "target": "alvo",
   "failed": "falhou",
   "Latency": "Latência",
-  "cached (excluded)": "do cache (excluída)",
-  "audit request (lighter)": "requisição da auditoria (mais clara)",
-  "failed request": "requisição com falha",
+  "cached (excluded)": "da cache (excluído)",
+  "audit request (lighter)": "pedido da auditoria (mais claro)",
+  "failed request": "pedido com falha",
   "Running median": "Mediana móvel",
   "running median (last 5)": "mediana móvel (últimas 5)",
-  "line: running median of each endpoint's last 5 successful requests": "linha: mediana móvel das últimas 5 solicitações bem-sucedidas de cada endpoint",
-  "No successful requests to summarize.": "Nenhuma requisição bem-sucedida para resumir.",
+  "line: running median of each endpoint's last 5 successful requests": "linha: mediana móvel dos últimos 5 pedidos bem-sucedidos de cada endpoint",
+  "No successful requests to summarize.": "Nenhum pedido bem-sucedido para resumir.",
   "Metric": "Métrica",
   "Latency p50": "Latência p50",
-  "Decode speed p50": "Velocidade de decodificação p50",
+  "Decode speed p50": "Velocidade de descodificação p50",
   "Error rate": "Taxa de erros",
-  "succeeded": "bem-sucedidas",
+  "succeeded": "com sucesso",
   "timeouts": "tempos esgotados",
-  "Cold start (first request)": "Arranque a frio (primeira requisição)",
+  "Cold start (first request)": "Arranque a frio (primeiro pedido)",
   "Under load": "Sob carga",
   "aggregate": "total",
   "Prompt size": "Tamanho do prompt",
   "Source: dedicated probe": "Fonte: sonda dedicada",
-  "Source: the audit's own requests": "Fonte: as próprias requisições da auditoria",
+  "Source: the audit's own requests": "Fonte: os próprios pedidos da auditoria",
   "Informational — not scored": "Informativo — não pontua",
   "Target vs baseline": "Alvo vs referência",
   "Ratio": "Razão",
   "Probe cost": "Custo da sonda",
-  "Requests": "Requisições",
-  "Performance · live": "Desempenho · ao vivo",
+  "Requests": "Pedidos",
+  "Performance · live": "Desempenho · em direto",
   "Performance probe": "Sonda de desempenho",
   "TTFT": "TTFT",
-  "Decode speed": "Velocidade de decodificação",
+  "Decode speed": "Velocidade de descodificação",
   "Inter-chunk latency": "Latência entre fragmentos",
-  "Time to first token": "Tempo até o primeiro token",
-  "Decode speed (usage)": "Velocidade de decodificação (usage)",
-  "Decode speed (local count)": "Velocidade de decodificação (contagem local)",
+  "Time to first token": "Tempo até ao primeiro token",
+  "Decode speed (usage)": "Velocidade de descodificação (usage)",
+  "Decode speed (local count)": "Velocidade de descodificação (contagem local)",
   "End-to-end speed (usage)": "Velocidade de ponta a ponta (usage)",
   "End-to-end speed (local count)": "Velocidade de ponta a ponta (contagem local)",
   "Inter-chunk jitter": "Variação entre fragmentos",
   "Server time (sent → first output)": "Tempo do servidor (envio → primeira saída)",
   "Relay-reported processing": "Processamento declarado pelo relay",
   "Network round trip (GET /models)": "Ida e volta de rede (GET /models)",
-  "TCP connect": "Conexão TCP",
+  "TCP connect": "Ligação TCP",
   "TLS handshake": "Negociação TLS",
   "Latency p90": "Latência p90",
   "TTFT p50": "TTFT p50",
   "TTFT p90": "TTFT p90",
-  "Decode speed p50 (usage)": "Velocidade de decodificação p50 (usage)",
-  "Decode speed p50 (local)": "Velocidade de decodificação p50 (local)",
+  "Decode speed p50 (usage)": "Velocidade de descodificação p50 (usage)",
+  "Decode speed p50 (local)": "Velocidade de descodificação p50 (local)",
   "End-to-end speed p50 (local)": "Velocidade de ponta a ponta p50 (local)",
   "Inter-chunk latency p50": "Latência entre fragmentos p50",
   "Server time p50": "Tempo do servidor p50",
   "Network round trip p50": "Ida e volta de rede p50",
   "Performance": "Desempenho",
-  "Headline numbers come from the audit's own requests, which mix prompt and output sizes; the deep and full suites add a controlled, uncacheable probe.": "Os números principais vêm das próprias requisições da auditoria, com tamanhos de prompt e de saída variados; as suítes deep e full acrescentam uma sonda controlada e não armazenável em cache.",
-  "Reasoning tokens detected: TTFT is the time to the first visible token and includes hidden thinking, and usage-based throughput counts thinking tokens. ekte does not set a reasoning effort (the modes a relay accepts are unknown), so the model thinks at its default effort.": "Tokens de raciocínio detectados: o TTFT é o tempo até o primeiro token visível e inclui o raciocínio oculto, e a vazão baseada em usage conta os tokens de raciocínio. O ekte não define um esforço de raciocínio (os modos aceitos pelo relay são desconhecidos), então o modelo raciocina com o esforço padrão.",
+  "Headline numbers come from the audit's own requests, which mix prompt and output sizes; the deep and full suites add a controlled, uncacheable probe.": "Os números principais vêm dos próprios pedidos da auditoria, com tamanhos de prompt e de saída variados; as suítes deep e full acrescentam uma sonda controlada e não armazenável em cache.",
+  "Reasoning tokens detected: TTFT is the time to the first visible token and includes hidden thinking, and usage-based throughput counts thinking tokens. ekte does not set a reasoning effort (the modes a relay accepts are unknown), so the model thinks at its default effort.": "Tokens de raciocínio detetados: o TTFT é o tempo até ao primeiro token visível e inclui o raciocínio oculto, e o débito baseado em usage conta os tokens de raciocínio. O ekte não define um esforço de raciocínio (os modos aceitos pelo relay são desconhecidos), por isso o modelo raciocina com o esforço por omissão.",
   "Local token counts are estimates (about ±15-20%): no exact tokenizer is available for this model family.": "As contagens locais de tokens são estimativas (cerca de ±15-20%): não há tokenizador exato para esta família de modelos.",
-  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.": "As contagens locais de tokens são estimativas (cerca de ±15-20%) de uma heurística embutida; o ekte nunca baixa um tokenizador.",
-  "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests.": "Os percentis exigem amostras suficientes: p75 a partir de 4, p90 a partir de 10, p95 a partir de 20, p99 a partir de 100 requisições.",
+  "Local token counts are estimates (about ±15-20%) from a built-in heuristic; ekte never downloads a tokenizer.": "As contagens locais de tokens são estimativas (cerca de ±15-20%) de uma heurística incorporada; o ekte nunca transfere um tokenizador.",
+  "Percentiles need enough samples: p75 from 4, p90 from 10, p95 from 20, p99 from 100 requests.": "Os percentis exigem amostras suficientes: p75 a partir de 4, p90 a partir de 10, p95 a partir de 20, p99 a partir de 100 pedidos.",
   "Relay processing times come from the relay's own response headers and are unverified.": "Os tempos de processamento do relay vêm dos seus próprios cabeçalhos de resposta e não são verificados.",
-  "Some requests were served fully or partly from a cache and are left out of the statistics.": "Algumas requisições foram atendidas total ou parcialmente por um cache e ficaram fora das estatísticas.",
-  "A relay that caches unique prompts may be serving stored answers; compare with a trusted baseline.": "Um relay que armazena em cache prompts únicos pode estar servindo respostas guardadas; compare com uma referência confiável.",
-  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "Avalie isso junto com as constatações de identidade do modelo; a velocidade sozinha não prova uma substituição.",
-  "Performance probe requests": "Requisições da sonda de desempenho",
+  "Some requests were served fully or partly from a cache and are left out of the statistics.": "Alguns pedidos foram atendidos total ou parcialmente por uma cache e ficaram fora das estatísticas.",
+  "A relay that caches unique prompts may be serving stored answers; compare with a trusted baseline.": "Um relay que armazena em cache prompts únicos pode estar a servir respostas guardadas; compare com uma referência de confiança.",
+  "Weigh this together with the model-identity findings; speed alone is not proof of substitution.": "Avalie-o em conjunto com as constatações de identidade do modelo; a velocidade, por si só, não prova uma substituição.",
+  "Performance probe requests": "Pedidos da sonda de desempenho",
   "Non-streaming": "Sem streaming",
   "non-streaming": "sem streaming",
   "The smoke suite runs no performance probe.": "A suíte smoke não executa a sonda de desempenho.",
   "The full suite measures both streaming and non-streaming.": "A suíte full mede com e sem streaming.",
-  "On standard the probe runs only with a baseline; otherwise the audit's own requests are used.": "No standard a sonda só é executada com uma referência; caso contrário, usam-se as próprias requisições da auditoria.",
+  "On standard the probe runs only with a baseline; otherwise the audit's own requests are used.": "No standard a sonda só é executada com uma referência; caso contrário, usam-se os próprios pedidos da auditoria.",
   "Non-streaming measures relays that cannot stream.": "Sem streaming é possível medir relays que não suportam streaming.",
-  "non-streaming request (hollow)": "requisição sem streaming (vazada)",
+  "non-streaming request (hollow)": "pedido sem streaming (vazado)",
   "End-to-end speed p50": "Velocidade de ponta a ponta p50",
   "target better": "alvo melhor",
   "target worse": "alvo pior",
@@ -504,8 +504,8 @@
    "Verificação da sequência stop; finish_reason={finish_reason}."
   ],
   "protocol.stop_not_applicable": [
-   "Verificação da sequência de parada não aplicável",
-   "A Responses API não tem parâmetro stop; a sequência de parada não foi verificada nem contada."
+   "Verificação da sequência de paragem não aplicável",
+   "A Responses API não tem parâmetro stop; a sequência de paragem não foi verificada nem contada."
   ],
   "protocol.shape": [
    "Conformidade da estrutura da resposta",
@@ -622,7 +622,7 @@
   ],
   "streaming.no_content": [
    "O stream não entregou conteúdo",
-   "A requisição em streaming teve sucesso, mas não entregou conteúdo ({chunk_count} chunks); não foi possível avaliar o streaming."
+   "O pedido em streaming teve sucesso, mas não entregou conteúdo ({chunk_count} chunks); não foi possível avaliar o streaming."
   ],
   "streaming.few_chunks": [
    "Resposta entregue em ≤2 fragmentos",
@@ -634,7 +634,7 @@
   ],
   "streaming.reasoning_ttft": [
    "Primeiro token tardio de um modelo de raciocínio",
-   "O primeiro token visível chegou aos {ttft_ms} ms de {duration_ms} ms no total; o modelo raciocina antes de responder, então não conta como buffer."
+   "O primeiro token visível chegou aos {ttft_ms} ms de {duration_ms} ms no total; o modelo raciocina antes de responder, por isso não conta como buffer."
   ],
   "streaming.uniform_gaps": [
    "Intervalos entre fragmentos uniformes e quase nulos",
@@ -717,8 +717,8 @@
    "Verificação de eco da chave API."
   ],
   "security.note": [
-   "Limites da deteção de caixa preta",
-   "O registo de prompts ou a reutilização de uma chave upstream partilhada não podem ser provados em caixa preta do lado do cliente; as dimensões de fiabilidade e tempos de streaming servem como sinais indiretos."
+   "Limites da deteção de caixa-preta",
+   "O registo de prompts ou a reutilização de uma chave upstream partilhada não podem ser provados em caixa-preta do lado do cliente; as dimensões de fiabilidade e tempos de streaming servem como sinais indiretos."
   ],
   "injected_prompt.suspected": [
    "Suspeita de prompt de sistema oculto injetado",
@@ -826,19 +826,19 @@
   ],
   "performance.summary": [
    "Resultados da sonda de desempenho",
-   "{successes}/{requests} requisições da sonda bem-sucedidas; latência p50 {latency_p50_ms} ms, TTFT p50 {ttft_p50_ms} ms, decodificação p50 {decode_tps_p50} tok/s."
+   "{successes}/{requests} pedidos da sonda bem-sucedidos; latência p50 {latency_p50_ms} ms, TTFT p50 {ttft_p50_ms} ms, descodificação p50 {decode_tps_p50} tok/s."
   ],
   "performance.errors": [
-   "Falhas das requisições da sonda",
-   "{errors} erros e {timeouts} tempos esgotados em {requests} requisições da sonda para {endpoint} ({rate_limited} limitadas)."
+   "Falhas dos pedidos da sonda",
+   "{errors} erros e {timeouts} tempos esgotados em {requests} pedidos da sonda para {endpoint} ({rate_limited} limitadas)."
   ],
   "performance.cache_hit": [
-   "Prompts únicos da sonda vieram de um cache",
-   "{cached} requisição(ões) da sonda para {endpoint} voltaram do cache embora cada prompt fosse único; ficaram fora das estatísticas."
+   "Prompts únicos da sonda vieram de uma cache",
+   "{cached} pedido(s) da sonda para {endpoint} voltaram da cache embora cada prompt fosse único; ficaram fora das estatísticas."
   ],
   "performance.reasoning": [
    "Tokens de raciocínio na sonda",
-   "O modelo gasta tokens de raciocínio ocultos ({reasoning_tokens} declarados): o TTFT inclui o raciocínio. O ekte não define esforço de raciocínio; o modelo raciocina com o esforço padrão."
+   "O modelo gasta tokens de raciocínio ocultos ({reasoning_tokens} declarados): o TTFT inclui o raciocínio. O ekte não define esforço de raciocínio; o modelo raciocina com o esforço por omissão."
   ],
   "performance.relay_overhead": [
    "Latência em relação à referência",
@@ -846,27 +846,27 @@
   ],
   "performance.skipped": [
    "Sonda de desempenho desativada",
-   "performance_requests = {performance_requests}; nenhuma requisição da sonda foi enviada."
+   "performance_requests = {performance_requests}; nenhum pedido da sonda foi enviado."
   ],
   "performance.latency_consistency": [
    "Constância da latência",
-   "Latência p50 {p50} ms, p90 {p90} ms — razão de cauda {tail_ratio} em {samples} requisições."
+   "Latência p50 {p50} ms, p90 {p90} ms — razão de cauda {tail_ratio} em {samples} pedidos."
   ],
   "performance.ttft_consistency": [
-   "Constância do tempo até o primeiro token",
-   "TTFT p50 {p50} ms, p90 {p90} ms — razão de cauda {tail_ratio} em {samples} requisições."
+   "Constância do tempo até ao primeiro token",
+   "TTFT p50 {p50} ms, p90 {p90} ms — razão de cauda {tail_ratio} em {samples} pedidos."
   ],
   "performance.throughput_consistency": [
-   "Constância da vazão",
-   "Vazão p50 {p50} {unit}, p10 {p10} {unit} — razão de cauda {tail_ratio} em {samples} requisições."
+   "Constância do débito",
+   "Débito p50 {p50} {unit}, p10 {p10} {unit} — razão de cauda {tail_ratio} em {samples} pedidos."
   ],
   "performance.load_stability": [
    "Latência sob carga concorrente",
    "Latência p50 {burst_latency_p50_ms} ms com concorrência {concurrency} contra {sequential_latency_p50_ms} ms uma a uma ({ratio}x)."
   ],
   "performance.reference": [
-   "Vazão em relação à referência",
-   "Vazão do alvo {target_tps_p50} tok/s, referência {reference_range} tok/s."
+   "Débito em relação à referência",
+   "Débito do alvo {target_tps_p50} tok/s, referência {reference_range} tok/s."
   ]
  }
 }

@@ -43,7 +43,7 @@
   "Stored encrypted": "Stored encrypted",
   "That is not the master key.": "That is not the master key.",
   "The master key encrypts the relay API keys stored on this machine. ekte never writes it to disk: after every restart of ekte serve you enter it again before monitors run. Keep it in a password manager or another safe place — not in ekte's data folder. Losing it means re-entering every monitor's API key.": "The master key encrypts the relay API keys stored on this machine. ekte never writes it to disk: after every restart of ekte serve you enter it again before monitors run. Keep it in a password manager or another safe place — not in ekte's data folder. Losing it means re-entering every monitor's API key.",
-  "The master key is locked or not created yet: enter or create it on the new Monitors page (/v2/watches).": "The master key is locked or not created yet: enter or create it on the new Monitors page (/v2/watches).",
+  "The master key is locked or not created yet: enter or create it on the new Monitors page (/watches).": "The master key is locked or not created yet: enter or create it on the new Monitors page (/watches).",
   "The master key is locked — enter it first.": "The master key is locked — enter it first.",
   "The master key was lost or changed, so the stored key cannot be decrypted": "The master key was lost or changed, so the stored key cannot be decrypted",
   "The master key's state changed meanwhile — reload the page and try again.": "The master key's state changed meanwhile — reload the page and try again.",

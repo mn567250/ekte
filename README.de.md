@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** ist ein Local-first-Werkzeug, das prüft, ob ein API-Relay
 (Wiederverkäufer / Proxy) tatsächlich das Modell liefert, das es angibt — oder ob
@@ -28,6 +28,8 @@ Dieses README richtet sich an alle, die ekte **nutzen**. Wie ekte aufgebaut,
 getestet und veröffentlicht wird, steht im [Entwicklerhandbuch](DEVELOPER_GUIDE.de.md);
 wie jede Prüfung funktioniert und bewertet wird, in der
 [Methodik](docs/METHODOLOGY.de.md).
+
+Was in ekte stabil ist, was als inkompatible Änderung gilt und wie Funktionen auslaufen: [Stabilitäts- und Kompatibilitätsrichtlinie](docs/STABILITY.md) (auf Englisch).
 
 ---
 
@@ -69,7 +71,7 @@ ekte macht aus „da stimmt doch was nicht“ einen reproduzierbaren Bericht.
 
 ## Installation
 
-Erfordert Python 3.10+. Jede der folgenden Varianten stellt den Befehl `ekte` bereit.
+Erfordert Python 3.11+. Läuft unter Linux, macOS und Windows (das Docker-Image ist Linux); unter Windows haben die Nur-Besitzer-Modi des Datenverzeichnisses keine Wirkung, siehe [Unterstützte Betriebssysteme](docs/STABILITY.md#os). Jede der folgenden Varianten stellt den Befehl `ekte` bereit.
 
 ### Mit pip
 
@@ -183,6 +185,8 @@ API-Schlüssel lassen sich direkt, als `env:VAR` oder als `file:/pfad` angeben;
 Berichte enthalten immer nur einen Fingerabdruck des Schlüssels. Eine vollständige
 Konfigurationsdatei finden Sie in [`examples/ekte.yaml`](examples/ekte.yaml).
 
+Die Datei hat eine Formatversion (`version: 1`; eine Datei ohne Version gilt als Format 1). Falsche Typen und ungültige Werte werden mit Datei, Zeile und Schlüssel abgelehnt; unbekannte Schlüssel werden bis ekte 1.0.0 mit einer Warnung ignoriert, ab dann abgelehnt. `ekte config migrate` aktualisiert eine ältere Datei. Das Schema ist [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+
 ### Als Werkzeug für ein LLM / einen Agenten
 
 ekte ist dafür gebaut, von einem anderen Programm oder Modell gesteuert zu werden.
@@ -257,17 +261,15 @@ Ihren lokalen ekte-Server und das geprüfte Relay, niemals Dritte. Siehe
 
 ### Seiten
 
-Die Weboberfläche liegt unter `/v2/`, wo `ekte serve` sie öffnet. Die Adressen
-der früheren klassischen Oberfläche (`/`, `/history`, `/watches`, `/tools`,
-`/console`) leiten auf die passende Seite weiter.
+Die Weboberfläche wird an der Wurzel der Adresse ausgeliefert, die `ekte serve` öffnet; die Prüfseite liegt unter `/`. Die bisherigen Adressen (`/v2/…`, z. B. `/v2/history`) und die der früheren klassischen Oberfläche (`/tools`, `/console`) leiten dauerhaft auf die passende Seite weiter und behalten die Query-Zeichenfolge bei; diese Weiterleitungen sind veraltet und werden in 1.0.0 entfernt.
 
 | Seite | Adresse | Wofür |
 |---|---|---|
-| **Prüfung** | `/v2/` | Ein Relay prüfen (optional gegen eine Referenz) und den Bericht lesen; auch Embedding- und Rerank-Prüfungen starten hier, über die Auswahl des Endpunkttyps |
-| **Überwachung** | `/v2/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
-| **Verlauf** | `/v2/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
-| **Analyse** | `/v2/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
-| **Wissen** | `/v2/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
+| **Prüfung** | `/` | Ein Relay prüfen (optional gegen eine Referenz) und den Bericht lesen; auch Embedding- und Rerank-Prüfungen starten hier, über die Auswahl des Endpunkttyps |
+| **Überwachung** | `/watches` | Geplante Wiederholungsprüfungen mit Webhook-Warnungen |
+| **Verlauf** | `/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
+| **Analyse** | `/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
+| **Wissen** | `/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
 
 Auf den Seiten außerdem: Filter und konfigurierbare Trends
 (Bewertung, Note, Latenz p50, Token/s) im **Verlauf**; **Als Überwachung
@@ -279,7 +281,7 @@ z. B. die zuletzt abgeschlossene Prüfung auf **Prüfung**, der Hauptschlüssel 
 **Überwachung**, noch zu verarbeitende Läufe auf **Verlauf** und **Analyse**,
 übersprungene Einträge auf **Wissen**.
 
-**Audits im Hintergrund.** Ein auf der Seite **Audit**
+**Audits im Hintergrund.** Ein auf der Seite **Prüfung**
 gestartetes Audit läuft weiter, wenn Sie die Seite wechseln oder den Tab
 schließen; **Im Hintergrund fortsetzen** schickt es bewusst dorthin. Der
 **Verlauf** zeigt jedes wartende und laufende Audit (und jede laufende
@@ -291,7 +293,7 @@ Modelle auf Ihrem eigenen Rechner); Audits verschiedener Relays laufen parallel,
 höchstens vier gleichzeitig (`EKTE_MAX_PARALLEL_AUDITS`). Überwachungen warten
 ebenso auf ihr Relay.
 
-**Analyse (neue UI).** `/v2/analytics` macht aus dem lokalen Verlauf
+**Analyse.** `/analytics` macht aus dem lokalen Verlauf
 Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
 hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,
 Abrechnungsverhältnisse) mit der Änderung gegenüber dem gleich langen Zeitraum
@@ -368,6 +370,11 @@ Die einzigen Ausnahmen sind Fingerabdrücke der Wissensbasis, deren Sprache
 *selbst* die Messgröße ist — z. B. die Tests zu chinesischer Sprachgewandtheit,
 Tokenizer und Selbstidentifikation chinesischer Modelle. Jeder Bericht vermerkt
 die tatsächlich verwendeten Testsprachen (`prompt_languages`, z. B. `["en", "zh"]`).
+Jeder Bericht vermerkt außerdem, wie mit dem Endpunkt gesprochen wurde: das Protokoll
+(`target.api`: `openai`, `anthropic` oder `responses`), ob `--api auto` es erkannt
+hat (`target.api_auto`) und den Anfragemodus der Leistungsprobe (`stream_mode`:
+`stream`, `non_stream` oder `both` für die vollständige Suite). Die Verlaufsseite
+der Weboberfläche kann nach allen dreien filtern.
 `started_at` vermerkt, wann die Prüfung begann (UTC); `start_ms` jedes
 Anfrage-Datensatzes zählt ab diesem Zeitpunkt.
 
@@ -388,11 +395,11 @@ Weboberfläche und der Berichte.
 | **Konnektivität** | `connectivity` | 7 | Erreichbarkeit des Endpunkts und die beworbene `/v1/models`-Liste |
 | **Echtheit des Streamings** | `streaming` | 6 | Vorgetäuschtes Streaming (erst puffern, dann zerstückeln), erkannt an Anzahl und zeitlichem Abstand der Chunks |
 | **Zuverlässigkeit unter Parallellast** | `reliability` | 6 | Erfolgsquote und Latenz unter paralleler Last (HTTP-429-Drosselung wird gesondert gezählt) |
-| **Transportsicherheit** | `security` | 6 | HTTPS, Header-Hygiene, Echo von Geheimnissen; ein versteckt eingeschleuster System-Prompt; Manipulation von Antworten und Tool-Calls unterwegs (Kanarien mit bekannter Antwort); Prompt-Präfix-Caching (Timing) |
+| **Transportsicherheit** | `security` | 6 | HTTPS, Header-Hygiene, Echo von Geheimnissen; ein versteckt eingeschleuster System-Prompt; Manipulation von Antworten und Tool-Calls unterwegs (Canaries mit bekannter Antwort); Prompt-Präfix-Caching (Timing) |
 | **Leistung** | `performance` | 6 | Wie *gleichmäßig* Latenz, Zeit bis zum ersten Token und Durchsatz sind, Fehlerquote und Verlangsamung unter Last; das Tempo nur im Vergleich zu einer Referenz (siehe [Leistung](#leistung)) |
 
 Die [Methodik](docs/METHODOLOGY.de.md) beschreibt jeden Test, den Relay-Trick, dem
-er entspricht, seine Bewertungsskala und seine Einschränkungen bezüglich
+er entspricht, seine Bewertungsskala und seine Einschränkungen hinsichtlich
 Fehlalarmen.
 
 ## Wie das Urteil zustande kommt
@@ -468,8 +475,8 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 Die Dimensionen sind `connectivity`, `protocol`, `context_window`,
 `model_identity`, `capability`, `streaming`, `billing`, `reliability`, `security`
 und `performance`. In der Weboberfläche öffnet die Suite-Schaltfläche `custom`
-dieselbe Auswahl (**Auszuführende Dimensionen**) auf der Prüfseite, in der
-Konsole und bei den Überwachungen.
+dieselbe Auswahl (**Auszuführende Dimensionen**) auf der Prüfseite
+und bei den Überwachungen.
 
 Die **Gesamtbewertung ist der gewichtete Mittelwert allein der gewählten
 Dimensionen**; ausgelassene Dimensionen werden als „nicht ausgewählt“
@@ -564,7 +571,7 @@ Der **Vergleichsmodus** (`ekte compare` oder **Mit vertrauenswürdiger Referenz
 vergleichen** in der Weboberfläche) führt dieselben Tests gleichzeitig gegen eine
 vertrauenswürdige Referenz des angegebenen Modells aus. Er ist der stärkste Weg
 zur Bestätigung: Identitätsantworten, abgelehnte Anfrageparameter,
-Manipulations-Kanarien und Leistung werden Seite an Seite beurteilt, und nur eine
+Manipulations-Canaries und Leistung werden Seite an Seite beurteilt, und nur eine
 Referenz lässt die Konfidenz des Urteils *hoch* werden. Ohne `--judge-base-url`
 nutzt der Vergleichsmodus die Referenz als Richter.
 
@@ -623,11 +630,11 @@ verschlüsselt in Ihrem lokalen Datenverzeichnis gespeichert und nie an den Brow
 **Speicherung der API-Schlüssel.** Standardmäßig **speichert** ekte die
 API-Schlüssel der Überwachungen **nicht**: Ein eingegebener Schlüssel bleibt nur
 im Arbeitsspeicher von `ekte serve` und wird nie auf die Festplatte geschrieben.
-Nach einem Neustart nennt die Seite **Überwachungen** die Überwachungen, die
+Nach einem Neustart nennt die Seite **Überwachung** die Überwachungen, die
 ihren Schlüssel erneut brauchen; sie warten (kein Fehllauf, kein Alarm), bis Sie
 ihn eingeben. Überwachungen ohne Schlüssel und `env:`/`file:`-Verweise laufen
 weiter. Sollen Schlüssel Neustarts überstehen, wählen Sie auf der Seite
-**Überwachungen** unter **Speicherung der API-Schlüssel** die Option
+**Überwachung** unter **Speicherung der API-Schlüssel** die Option
 **Verschlüsselt auf diesem Rechner speichern**: Die Schlüssel liegen dann mit
 einem Hauptschlüssel verschlüsselt in `watches.db`. Zurückschalten verschiebt die
 gespeicherten Schlüssel in den Arbeitsspeicher und löscht sie aus `watches.db`.
@@ -675,7 +682,7 @@ eines Rerank-Tests). Die angegebene Dimension eines Embedding-Monitors lässt si
 auf seiner Karte ändern (leer oder 0: aus der Wissensbasis). Die
 Geschwindigkeitsmessungen (Embeddings: Latenz, Kaltstart, Eingaben/s,
 Batch-Skalierung; Rerank: Latenz, Kaltstart, Dokumente/s, 4 gegen 32 Dokumente)
-laufen nur in den Suiten deep, full oder custom oder in standard mit Baseline.
+laufen nur in den Suiten deep, full oder custom oder in standard mit Referenz.
 
 ### Embeddings und Rerank
 
@@ -735,7 +742,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # Liefert ein Relay, das tts-1-hd angibt, echtes Audio, dessen Länge mit der Eingabe
 # wächst (kein fester Platzhalter, kein als Audio getarntes HTML/JSON)?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` prüft Konnektivität, ein gültiges und dekodierbares Format,
@@ -790,10 +797,10 @@ ab (`ekte kb` listet sie). Es gibt drei Ebenen; spätere haben Vorrang:
    (wiederholbar) oder `EKTE_KB_DIR`.
 3. **Ihre Einträge** (`kb.db` im Datenverzeichnis), hinzugefügt ohne YAML-Dateien
    oder editierbare Installation:
-   - auf der Seite **Wissen** der Weboberfläche (`/v2/kb`), mit je einem Tab für
+   - auf der Seite **Wissen** der Weboberfläche (`/kb`), mit je einem Tab für
      **Modelle**, **Anbieter** und **Relays**. Jeder Tab listet den vollständigen
      Bestand — mitgeliefert, `EKTE_KB_DIR` und eigene (markiert mit **Eigener**) —
-     mit Filter, einem Ein/Aus-Schalter pro Element und einem Formular
+     mit Filter, einem Ein-/Aus-Schalter pro Element und einem Formular
      **… hinzufügen**: **Modell hinzufügen** → **Recherche-Prompt kopieren** und in
      den KI-Assistenten Ihrer Wahl einfügen, das YAML seiner Antwort hochladen oder
      einfügen, dann **Prüfen und speichern**; **Anbieter hinzufügen** nimmt
@@ -904,6 +911,9 @@ Schlüsse ziehen.
 | [Entwicklerhandbuch](DEVELOPER_GUIDE.de.md) | Architektur, Entwicklungsumgebung, Mitwirken, Übersetzungen, Docker, Releases |
 | [docs/CI.md](docs/CI.md) | Die GitHub Action: Ein- und Ausgaben, Beispiele (englisch) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Die Weboberfläche in einem Container betreiben (englisch) |
+| [Stabilität und Kompatibilität](docs/STABILITY.md) | Was SemVer schützt, Abkündigung, unterstützte Python-Versionen und Systeme, Upgrades und Downgrades (englisch) |
+| [docs/CLI.md](docs/CLI.md) | Alle Befehle und Optionen sowie die Exit-Codes (englisch) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | Die JSON-Formate von Bericht und Webhook und ihre `schema_version` (englisch) |
 | [CHANGELOG.md](CHANGELOG.md) | Was sich in jeder Version geändert hat (englisch) |
 | [SECURITY.md](SECURITY.md) | Eine Sicherheitslücke melden (englisch) |
 
@@ -920,18 +930,18 @@ unter neuem Namen fort. Was sich für eine bestehende Installation ändert:
   `EKTE_SECRET_KEY`, `EKTE_HOST`, …). Eine alte `ZING_*`-Variable wirkt weiter,
   solange ihr `EKTE_*`-Name nicht gesetzt ist; ekte nennt sie einmal auf stderr.
 - **Datenverzeichnis.** Beim ersten Start kopiert ekte `~/.zing` nach `~/.ekte`
-  (Verlauf, Monitore, Wissensbasis), falls `~/.ekte` noch nicht existiert, und
+  (Verlauf, Überwachungen, Wissensbasis), falls `~/.ekte` noch nicht existiert, und
   arbeitet ab dann nur noch mit `~/.ekte`. `~/.zing` bleibt unverändert, für
   zing, falls es noch läuft; löschen Sie es selbst, sobald Sie es nicht mehr
   brauchen. Ein mit `EKTE_DATA_DIR`, `ZING_DATA_DIR` oder `--data-dir`
   gesetztes Verzeichnis wird so verwendet, wie es ist.
-- **Web-Oberfläche.** Sprache, Design und Filter sowie ein im Passwortmanager
-  des Browsers gespeicherter Master-Schlüssel werden übernommen. Die klassische
-  Oberfläche von zing gibt es nicht mehr: Ihre Adressen (`/`, `/history`,
-  `/watches`, `/tools`, `/console`) öffnen die passende Seite unter `/v2/`.
+- **Weboberfläche.** Sprache, Design und Filter sowie ein im Passwortmanager
+  des Browsers gespeicherter Hauptschlüssel werden übernommen. Die klassische
+  Oberfläche von zing gibt es nicht mehr: Ihre Adressen (`/tools`, `/console`) öffnen die Prüfseite (`/`).
 - **Berichte und Prüfanfragen.** Berichte, Webhooks und Dateinamen heißen
   `ekte` (z. B. `"tool": "ekte"`, `ekte-report.json`), ebenso die Prüfanfragen
   an Relays. Skripte, die darin nach `zing` suchen, müssen angepasst werden.
+- **Zeitplan.** Die gesamte Kompatibilitätsschicht (der `ZING_*`-Fallback, die Kopie von `~/.zing`, die Übernahme von Browsereinstellungen, Cookies und dem gespeicherten Hauptschlüssel sowie die Adressen der klassischen Oberfläche) ist veraltet und wird in ekte **1.0.0** entfernt (1.0.0rc1 ist die erste Version ohne sie). Bis dahin funktioniert jeder Teil weiter, und sein Hinweis nennt diese Version; auch die alten Seitenadressen `/v2/…` leiten bis 1.0.0 weiter. ekte löscht ein altes `~/.zing` nie, auch nicht, wenn die Kopie entfernt ist.
 
 ## Lizenz
 

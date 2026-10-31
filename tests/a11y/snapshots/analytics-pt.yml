@@ -2,7 +2,7 @@
   - link "Saltar para o conteúdo principal":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Tema":
     - option "Automático"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Acessibilidade":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navegação principal":
     - link "Auditoria":
-      - /url: /v2/
+      - /url: /
     - link "Monitores":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Histórico":
-      - /url: /v2/history
+      - /url: /history
     - link "Análises":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conhecimento":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Análises das auditorias" [level=1]
   - paragraph: "Compare relays e modelos ao longo do tempo com o que o ekte mediu nesta máquina: pontuações, velocidade, taxas de sucesso e faturação."
@@ -54,8 +54,8 @@
     - combobox "Suite":
       - option "Todos"
       - option "standard" [selected]
-    - text: Requisições de sondagem
-    - combobox "Requisições de sondagem":
+    - text: Pedidos de sondagem
+    - combobox "Pedidos de sondagem":
       - option "Todos"
       - option "Streaming" [selected]
     - text: Protocolo
@@ -67,8 +67,8 @@
       - option "Todos" [selected]
       - option "Manual"
       - option "Monitor"
-    - text: Relay / provedor
-    - combobox "Relay / provedor":
+    - text: Relay / fornecedor
+    - combobox "Relay / fornecedor":
       - option "Todos" [selected]
       - option "Example Relay"
       - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
@@ -101,8 +101,8 @@
         - listitem: Pontuação mediana 79 Sem dados no período anterior
         - listitem: Proporção de risco alto 21,4% Sem dados no período anterior
         - listitem: Taxa de sucesso 100% Sem dados no período anterior
-        - listitem: Tempo até o primeiro token p50 <duration> Sem dados no período anterior
-        - listitem: Velocidade de decodificação 62,9 tok/s Sem dados no período anterior
+        - listitem: Tempo até ao primeiro token p50 <duration> Sem dados no período anterior
+        - listitem: Velocidade de descodificação 62,9 tok/s Sem dados no período anterior
         - listitem: Rácio de faturação (entrada) 103% Sem dados no período anterior Dados de 9 de 14 execuções
         - listitem: Rácio de faturação (saída) 102% Sem dados no período anterior Dados de 9 de 14 execuções
 - contentinfo:

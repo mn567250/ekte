@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, a11y/integration, perf/integration, analytics/integration]
+    branches: [main, "*/integration"]
   pull_request:
-    branches: [main, a11y/integration, perf/integration, analytics/integration]
+    branches: [main, "*/integration"]
   # nightly full accessibility run (the other jobs skip it)
   schedule:
     - cron: "17 3 * * *"
@@ -13,20 +13,38 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
-    name: test (py${{ matrix.python-version }})
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
     if: github.event_name != 'schedule'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        # Linux: every supported Python. macOS and Windows: the oldest and the
+        # newest supported Python (docs/STABILITY.md#os).
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        include:
+          - {os: macos-latest, python-version: "3.11"}
+          - {os: macos-latest, python-version: "3.14"}
+          - {os: windows-latest, python-version: "3.11"}
+          - {os: windows-latest, python-version: "3.14"}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -40,8 +58,18 @@ jobs:
         run: mypy ekte
 
       - name: Test (pytest)
+        if: matrix.os != 'ubuntu-latest' || matrix.python-version != '3.12'
         # pytest-xdist (dev extra): one worker per CPU
         run: pytest -q -n auto
+
+      - name: Test with coverage (pytest-cov)
+        # One Linux run measures coverage: the whole package must stay above
+        # [tool.coverage.report] fail_under, and the command line, the judge
+        # and the media auditor above their floors (scripts/check_coverage.py).
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: |
+          pytest -q -n auto --cov=ekte --cov-report=term-missing:skip-covered --cov-report=json
+          python scripts/check_coverage.py coverage.json
 
   a11y-scope:
     # Which pages the a11y suite tests on this run (tests/a11y/pages.py):
@@ -53,6 +81,7 @@ jobs:
     # not on PRs into the perf integration branch (see the a11y job)
     if: github.event_name != 'pull_request' || github.base_ref != 'perf/integration'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       run: ${{ steps.scope.outputs.run }}
       full: ${{ steps.scope.outputs.full }}
@@ -60,8 +89,9 @@ jobs:
       reason: ${{ steps.scope.outputs.reason }}
       matrix: ${{ steps.scope.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           # the whole history (commits and trees, no old file contents) for
           # the PR's merge base
           fetch-depth: 0
@@ -99,13 +129,16 @@ jobs:
     # change affects no page.
     if: needs.a11y-scope.outputs.run == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.a11y-scope.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
           cache: pip
@@ -117,7 +150,7 @@ jobs:
           pip install -e '.[dev,web,a11y]'
           echo "playwright=$(python -c 'import importlib.metadata as m; print(m.version("playwright"))')" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright's Chromium
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ runner.os }}-${{ steps.install.outputs.playwright }}
@@ -136,7 +169,7 @@ jobs:
         run: pytest tests/a11y -m a11y -n auto --dist worksteal -q -p no:cacheprovider
       - name: Upload shard results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: a11y-shard-${{ strategy.job-index }}
           path: |
@@ -154,6 +187,7 @@ jobs:
     # branch, nor for changes that affect no page)
     if: always() && needs.a11y-scope.outputs.run == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     continue-on-error: true
     env:
       # only whether the secret exists; the key itself is passed to one step
@@ -162,14 +196,16 @@ jobs:
       PAGES: ${{ needs.a11y-scope.outputs.pages }}
       REASON: ${{ needs.a11y-scope.outputs.reason }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Download shard results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: a11y-shard-*
           merge-multiple: true
@@ -194,7 +230,7 @@ jobs:
         run: python -m tests.a11y.llm_review --pages "$PAGES" --out a11y-llm-review.json
       - name: Upload LLM review
         if: always() && env.HAS_ANTHROPIC_API_KEY == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: a11y-llm-review
           path: a11y-llm-review.json
@@ -222,7 +258,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload findings
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: a11y-report
           path: |
@@ -235,9 +271,12 @@ jobs:
     name: build distribution
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
       - name: Build wheel + sdist
@@ -248,3 +287,21 @@ jobs:
           /tmp/verify/bin/pip install dist/*.whl
           /tmp/verify/bin/ekte --version
           /tmp/verify/bin/ekte kb >/dev/null
+
+  workflow-lint:
+    name: workflow lint (zizmor)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+      - name: Lint workflows and action.yml
+        # script injection, unpinned actions, excessive permissions, credential
+        # persistence, ... (config: .github/zizmor.yml). The pinned version
+        # keeps results reproducible; bump it deliberately.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: uvx zizmor==1.31.1 --no-progress .

@@ -81,15 +81,22 @@ neu normiert. Die Note ist A (≥ 90), B (≥ 80), C (≥ 70), D (≥ 60) oder F
 | Kontextfenster | `context_window` | 19 | Kern |
 | Angegebene Fähigkeiten | `capability` | 13 | Kern |
 | Protokollkonformität | `protocol` | 8 |  |
-| Abrechnung & Verbrauch | `billing` | 8 |  |
+| Abrechnung & Verbrauch | `billing` | 8 | Kern |
 | Konnektivität | `connectivity` | 7 |  |
 | Echtheit des Streamings | `streaming` | 6 |  |
 | Zuverlässigkeit unter Parallellast | `reliability` | 6 |  |
 | Transportsicherheit | `security` | 6 |  |
 | Leistung | `performance` | 6 |  |
 
-Die drei **Kerndimensionen** sind jene, deren Scheitern einen
-Etikettenschwindel am direktesten aufdeckt.
+Das Urteil wird über die Dimensionen gefällt, die **gelaufen** sind — ein
+`custom`-Lauf prüft nur seine Auswahl. Zwei Gruppen von Dimensionen zählen:
+
+- die **Profildimensionen** (Modellidentität, Kontextfenster, angegebene
+  Fähigkeiten) werden am Wissensbasis-Profil des angegebenen Modells gemessen;
+- die **Kerndimensionen** sind die Profildimensionen plus Abrechnung &
+  Verbrauch: Scheitern sie, liefert das Relay nicht, was es verspricht (ein
+  anderes Modell, ein kleineres Kontextfenster, fehlende Fähigkeiten, aufgeblähte
+  Abrechnung).
 
 ### Risikourteil
 
@@ -107,22 +114,32 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipula
 
 | Risiko | Bezeichnung in der UI | Wann |
 |---|---|---|
-| `inconclusive` | Unzureichendes Signal | Keine Kerndimension lieferte ein verwertbares Ergebnis (Bestanden, Warnung oder Fehlgeschlagen) — etwa weil das Relay nicht erreichbar ist, das Modell kein Profil hat oder ein `custom`-Lauf keine Kerndimension auswählte |
+| `inconclusive` | Unzureichendes Signal | Nichts Verwertbares zu beurteilen: Lief eine Profildimension, lieferte keine von ihnen ein verwertbares Ergebnis (Bestanden, Warnung oder Fehlgeschlagen) — das Relay ist nicht erreichbar oder das Modell hat kein Profil; andernfalls lieferte keine Dimension außer der Konnektivität eines |
 | `high` | Etikettenschwindel | Ein Befund KRITISCH, ein Befund HOCH/KRITISCH in einer Kerndimension oder zwei oder mehr Befunde HOCH |
 | `medium` | Abweichungen gefunden | Genau ein Befund HOCH außerhalb der Kerndimensionen oder ein Befund MITTEL in einer Kerndimension |
 | `low` | Weitgehend vertrauenswürdig | Jeder andere Befund MITTEL |
 | `clean` | Konsistent (wahrscheinlich echt) | Nichts davon |
 
+Das Urteil hält die Dimensionen fest, deren Befunde das Risiko bestimmen
+(`verdict.drivers`), und die Dimensionen, die ein verwertbares Ergebnis lieferten
+(`verdict.checked`). Die Überschrift folgt ihnen: Sie spricht vom angegebenen
+Modell nur, wenn die Modellidentität unter den Treibern ist, und nennt sonst die
+Treiber („Starke Hinweise, dass das Relay nicht liefert, was es verspricht:
+Kontextfenster.“). Ein sauberes oder niedriges Urteil ohne verwertbares
+Ergebnis zur Modellidentität sagt, dass die Modellidentität nicht geprüft wurde.
+
 ### Konfidenz des Urteils
 
-- **Niedrig** — das angegebene Modell steht nicht in der Wissensbasis, passt
-  nur unscharf zu einem Profil (`match_confidence` `fuzzy`; die
-  Zusammenfassung sagt es), oder weniger als zwei Kerndimensionen lieferten ein verwertbares Ergebnis;
+- **Niedrig** — eine Profildimension lief, und das angegebene Modell steht nicht
+  in der Wissensbasis oder passt nur unscharf zu einem Profil
+  (`match_confidence` `fuzzy`; die Zusammenfassung sagt es), oder zu wenige
+  Dimensionen lieferten ein verwertbares Ergebnis;
 - **Mittel** — mindestens zwei Kerndimensionen lieferten ein verwertbares
-  Ergebnis;
-- **Hoch** — eine Referenz wurde genutzt *und* alle drei Kerndimensionen
-  lieferten ein verwertbares Ergebnis, oder die Konfidenz war mittel und der
-  LLM-Judge gab ein verwertbares Urteil ab.
+  Ergebnis (oder, in einem Lauf ohne Kerndimensionen, mindestens zwei
+  Dimensionen);
+- **Hoch** — eine Referenz wurde genutzt *und* jede gelaufene Kerndimension
+  lieferte ein verwertbares Ergebnis, oder die Konfidenz war mittel und der
+  LLM-Richter gab ein verwertbares Urteil ab.
 
 ## Suiten, Detektoren und Modi
 
@@ -187,7 +204,7 @@ und die Zusammenfassung nennt sie als Hinweise (ab Schweregrad Mittel). Manipula
 - **Prompt-Sprache:** jeder Testtext liegt in `ekte/prompts/en.json` und ist
   Englisch, unabhängig von der UI-Sprache; nur Fingerprints, deren Sprache
   selbst die Messung *ist*, deklarieren `prompt_lang` und `language_bound`.
-  Jeder Bericht listet die verwendeten Sprachen der Sonden
+  Jeder Bericht listet die verwendeten Sprachen der Proben
   (`prompt_languages`).
 - **Reasoning-Modelle:** Eine kurze Probe, die an ihrem Ausgabelimit endet und
   deren Antwort fehlt oder abgeschnitten wurde, nachdem das Nachdenken
@@ -326,7 +343,7 @@ ebenfalls ablehnt. Tools und JSON-Modus bleiben bei `capability`, `stop` bei
 |  | Akzeptiert (die Wirkung ist an einer Antwort nicht beobachtbar). | Bestanden | 100 Pkt. |
 |  | Akzeptiert, aber die Wirkung fehlt in der Antwort. | Warnung · Niedrig | 50 Pkt. |
 |  | Mit 4xx abgelehnt (möglicherweise eine Grenze des Modells selbst). | Warnung · Niedrig | 40 Pkt. |
-|  | Mit 4xx abgelehnt, während die Baseline ihn akzeptiert. | Fehlgeschlagen · Mittel | 15 Pkt. |
+|  | Mit 4xx abgelehnt, während die Referenz ihn akzeptiert. | Fehlgeschlagen · Mittel | 15 Pkt. |
 |  | Abgelehnt, aber das Modell selbst unterstützt ihn nicht; nicht gewertet. | Info | Nicht gewertet |
 |  | Serverfehler oder keine Antwort; nicht gewertet. | Nicht eindeutig · Niedrig | Nicht gewertet |
 
@@ -339,7 +356,7 @@ Reasoning-Modelle, die die Temperatur legitim ignorieren, wird das Urteil
 unterdrückt. Zwei identische Faktenfragen mit `temperature=0` dienen nur zur
 Information.
 
-Für den Caching-Befund müssen mindestens drei der vier Samples verwertbar (und
+Für den Caching-Befund müssen mindestens drei der vier Proben verwertbar (und
 alle verwertbaren identisch) sein; mit weniger ist die Prüfung nicht eindeutig.
 
 | Prüfung | Ergebnis | Status | Wirkung |
@@ -529,18 +546,18 @@ Vergleichsmodus an die Referenz; ein separater, vertrauenswürdiger Richter sieh
 nur die Antworten und gibt ein Urteil samt Konfidenz ab. Der Richter erfährt das angegebene Modell (`claimed_model`, falls gesetzt,
 sonst die angefragte ID). Ein Richterurteil ist nur HOCH, wenn der Richter
 **hohe** Konfidenz angab und eine verwertbare Referenz den Unterschied
-bestätigt hat — eine, die auf jede vom Ziel beantwortete Sonde eine nicht
+bestätigt hat — eine, die auf jede vom Ziel beantwortete Probe eine nicht
 leere Antwort lieferte. Niedrige, mittlere, fehlende oder unbekannte
 Konfidenz bleibt MITTEL, ebenso eine Referenz, die Fehler lieferte oder
-Sonden unbeantwortet ließ.
+Proben unbeantwortet ließ.
 
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
-| `quality_judge.verdict` (Urteil des LLM-Judge) | Der Judge fand die Antworten passend zum angegebenen Modell. | Bestanden | 95 Pkt. |
-|  | Der Judge fand die Antworten dem angegebenen Modell unähnlich (niedrige, mittlere oder keine angegebene Sicherheit). | Warnung · Mittel | 50 Pkt. |
-|  | Der Judge ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine verwertbare Baseline). | Warnung · Mittel | 25 Pkt. |
-|  | Der Judge ist sicher, und eine vertrauenswürdige Baseline bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 25 Pkt. |
-|  | Der Judge kam zu keinem Urteil. | Nicht eindeutig · Niedrig | Nicht gewertet |
+| `quality_judge.verdict` (Urteil des LLM-Judge) | Der Richter fand die Antworten passend zum angegebenen Modell. | Bestanden | 95 Pkt. |
+|  | Der Richter fand die Antworten dem angegebenen Modell unähnlich (niedrige, mittlere oder keine angegebene Sicherheit). | Warnung · Mittel | 50 Pkt. |
+|  | Der Richter ist sicher, dass die Antworten dem angegebenen Modell unähnlich sind (keine verwertbare Referenz). | Warnung · Mittel | 25 Pkt. |
+|  | Der Richter ist sicher, und eine vertrauenswürdige Referenz bestätigte den Unterschied. | Fehlgeschlagen · Hoch | 25 Pkt. |
+|  | Der Richter kam zu keinem Urteil. | Nicht eindeutig · Niedrig | Nicht gewertet |
 |  | Keine Antworten des Ziels zum Beurteilen. | Nicht eindeutig · Niedrig | Nicht gewertet |
 
 **Einschränkungen.** Offizielle APIs aktualisieren Snapshots stillschweigend;
@@ -580,9 +597,9 @@ des Profils gemessen:
   maximale Ausgabe, 2048) Token; das Erreichen der Grenze oder eine plausible
   Länge besteht, ein Abbruch unter einem Viertel davon wird markiert.
 
-Eine Beobachtung ohne zu prüfende Angabe – kein Tool-Aufruf oder JSON-Objekt,
+Eine Beobachtung ohne zu prüfende Angabe — kein Tool-Aufruf oder JSON-Objekt,
 wenn die Funktion nicht angegeben ist, oder jedes Ergebnis zum strikten Schema,
-wenn das Profil dem Modell strikte Schemas abspricht – wird vermerkt, aber nicht
+wenn das Profil dem Modell strikte Schemas abspricht — wird vermerkt, aber nicht
 gewertet: Für etwas, das niemand angibt, verliert ein Modell keine Punkte.
 
 | Prüfung | Ergebnis | Status | Wirkung |
@@ -823,8 +840,8 @@ Eine am Ausgabelimit abgeschnittene Antwort ist nicht eindeutig, kein Austausch.
 | Prüfung | Ergebnis | Status | Wirkung |
 |---|---|---|---|
 | `integrity.verdict` (Antwortintegrität) | Die Canaries mit bekannter Antwort kamen unverändert zurück. | Bestanden | 100 Pkt. |
-|  | Ein Canary-Wert wurde ersetzt (noch nicht durch eine Baseline bestätigt). | Fehlgeschlagen · Mittel | 45 Pkt. |
-|  | Ein Canary-Wert wurde ersetzt, während die vertrauenswürdige Baseline ihn unverändert ließ. | Fehlgeschlagen · Kritisch | 10 Pkt. |
+|  | Ein Canary-Wert wurde ersetzt (noch nicht durch eine Referenz bestätigt). | Fehlgeschlagen · Mittel | 45 Pkt. |
+|  | Ein Canary-Wert wurde ersetzt, während die vertrauenswürdige Referenz ihn unverändert ließ. | Fehlgeschlagen · Kritisch | 10 Pkt. |
 |  | Kein Canary wurde wörtlich zurückgegeben, daher ließ sich Manipulation nicht beurteilen. | Nicht eindeutig | Nicht gewertet |
 
 ### `prompt_cache` — Prompt-Präfix-Cache (Timing)
@@ -916,7 +933,7 @@ Stichproben. Referenz ist die vertrauenswürdige Referenz, sonst der Bereich
 |  | Langsamer als die Referenz (z. B. lokal oder kleinere Hardware); kein Fehler. | Info | Nicht gewertet |
 |  | Viel schneller als die Referenz (passt zu einem kleineren Modell). | Warnung · Niedrig | 60 Pkt. |
 | `performance.reasoning` | Das Modell verbraucht versteckte Reasoning-Tokens; die TTFT enthält das Nachdenken. | Info | Nicht gewertet |
-| `performance.relay_overhead` | Latenz mit der vertrauenswürdigen Baseline verglichen (nur zur Information). | Info | Nicht gewertet |
+| `performance.relay_overhead` | Latenz mit der vertrauenswürdigen Referenz verglichen (nur zur Information). | Info | Nicht gewertet |
 | `performance.skipped` | Die Performance-Probe war deaktiviert. | Info | Nicht gewertet |
 
 **Einschränkungen.** Die Latenz hängt vom Netzwerkpfad und der momentanen Last
@@ -955,8 +972,8 @@ Bereitstellung oder Quantisierung), unter **0,95** oder eine andere Länge bedeu
 dass das Modell ausgetauscht wurde (FAIL, HOCH). Der erste Lauf hat keinen
 Vergleich und hält die Referenz fest (INFO).
 
-**Leistungsmessung.** Freigegeben wie die Chat-Messung: sie läuft in deep, full und
-custom und in standard nur mit Baseline. Nach einem Ping und einer
+**Leistungsmessung.** Freischaltung wie bei der Chat-Messung: sie läuft in deep, full und
+custom und in standard nur mit Referenz. Nach einem Ping und einer
 Aufwärmanfrage (Kaltstart) sendet sie gleichförmige Anfragen mit einer Eingabe,
 Batches mit 16 Eingaben und in deep/full einen nebenläufigen Burst. Jede Eingabe
 trägt eine zufällige Nonce; identische Vektoren für verschiedene Eingaben werden
@@ -966,7 +983,7 @@ und Durchsatz, Fehler und Stabilität unter Last. Die **Batch-Skalierung**
 vergleicht die Latenz je Eingabe eines Batches mit der einer Einzelanfrage: ab
 0,6x wird der Batch aufgeteilt oder nacheinander verarbeitet (linear, WARN
 NIEDRIG). Es gibt keine Geschwindigkeitsreferenz in der Wissensbasis; die reine
-Geschwindigkeit zählt nur gegenüber einer Baseline.
+Geschwindigkeit zählt nur gegenüber einer Referenz.
 
 ---
 
@@ -974,8 +991,8 @@ Geschwindigkeit zählt nur gegenüber einer Baseline.
 
 Eine Rerank-Prüfung (`surface` `rerank`) sendet nur Anfragen an `POST /rerank` und
 wird auf der gemeinsamen Skala 0–100 und Note A–F mit eigenen Gewichten bewertet:
-Modellidentität 30, Fähigkeitsangaben 30, Leistung 20, Zuverlässigkeit bei
-Nebenläufigkeit 10, Konnektivität 10. Eine verfehlte Rangfolge beim Test mit
+Modellidentität 30, Fähigkeitsangaben 30, Leistung 20, Zuverlässigkeit unter
+Parallellast 10, Konnektivität 10. Eine verfehlte Rangfolge beim Test mit
 bekannter Antwort (Fähigkeitsangaben, HOCH) oder ein ausgetauschtes Modell
 (Modellidentität, HOCH) macht das Risiko HOCH.
 
@@ -996,8 +1013,8 @@ andere Rangfolge oder eine Änderung um mehr als **0,1** bedeutet, dass das Mode
 ausgetauscht wurde (FAIL, HOCH). Der erste Lauf hält die Referenz fest (INFO); ein
 geänderter Test wird nie für Drift gehalten.
 
-**Leistungsmessung.** Freigegeben wie die Chat-Messung (deep, full und custom; in
-standard nur mit Baseline). Jede Runde sendet eine eindeutige Anfrage über
+**Leistungsmessung.** Freischaltung wie bei der Chat-Messung (deep, full und custom; in
+standard nur mit Referenz). Jede Runde sendet eine eindeutige Anfrage über
 **4 Dokumente** und eine über **32**; in deep/full folgt ein nebenläufiger Burst.
 Antworten, deren feinkörnige Scores die einer anderen Anfrage wiederholen, werden
 als zwischengespeichert markiert und aus der Statistik genommen; eine Antwort, die
@@ -1007,7 +1024,7 @@ Stabilität unter Last. **Skalierung mit der Dokumentenzahl**: kostet eine Anfra
 mit 32 Dokumenten je Dokument 0,6x oder mehr einer mit 4 Dokumenten, teilt das
 Relay die Dokumente auf oder verarbeitet sie nacheinander (linear, WARN NIEDRIG).
 Es gibt keine Geschwindigkeitsreferenz in der Wissensbasis; die reine
-Geschwindigkeit zählt nur gegenüber einer Baseline.
+Geschwindigkeit zählt nur gegenüber einer Referenz.
 
 ---
 

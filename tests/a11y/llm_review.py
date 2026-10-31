@@ -24,7 +24,7 @@ MODEL. Anthropic Messages and OpenAI-compatible chat-completions endpoints
 (ekte.clients.detect_api). A local endpoint needs no key. ``--dry-run``
 collects the page data and builds the requests without calling the API.
 ``--update-report`` then applies the review to the conformance report shown
-at /v2/accessibility (ekte/web/static/v2/bitv-report.json, see
+at /accessibility (ekte/web/static/v2/bitv-report.json, see
 tests/a11y/conformance.py), in the same command.
 
 A report is ALWAYS written to ``--out``, so a broken run can be told apart
@@ -1590,7 +1590,7 @@ def collect(pages: dict[str, str], langs: list[str], log: Callable[[str], None] 
 # --------------------------------------------------------------------------- #
 def _base_report(model: str, endpoint: Endpoint | None = None) -> dict[str, Any]:
     out: dict[str, Any] = {
-        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
         "model": model,
         "advisory": True,
         "note": (
@@ -1721,7 +1721,7 @@ def main(argv: list[str] | None = None) -> int:
     rep = ap.add_argument_group("accessibility report (python -m tests.a11y.conformance)")
     rep.add_argument(
         "--update-report", nargs="?", const="", metavar="REPORT",
-        help="after the review, apply it to the conformance report shown at /v2/accessibility"
+        help="after the review, apply it to the conformance report shown at /accessibility"
         " (default: ekte/web/static/v2/bitv-report.json); an earlier review in it is replaced",
     )
     rep.add_argument(
@@ -1817,7 +1817,7 @@ def update_report(review_report: dict[str, Any], path: str | None = None, result
             new = conformance.build_report(loaded, review_report, commit=conformance._git_commit())
         else:
             old = json.loads(target.read_text(encoding="utf-8"))
-            new = conformance.apply_review(old, review_report, now=_dt.datetime.now(_dt.timezone.utc))
+            new = conformance.apply_review(old, review_report, now=_dt.datetime.now(_dt.UTC))
         conformance.write_report(target, new)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"llm_review: could not update {target}: {type(exc).__name__}: {exc}")

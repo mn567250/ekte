@@ -5,7 +5,7 @@ Every a11y test names the BITV 2.0 / EN 301 549 steps it decides with
 ``EKTE_A11Y_RESULTS=<path>`` set, this plugin writes, after the session, for
 each step the tests that ran for it with their outcome and a short failure
 summary. ``python -m tests.a11y.conformance --results <path>`` turns that into
-the conformance report shown at ``/v2/accessibility``.
+the conformance report shown at ``/accessibility``.
 
 New test files need nothing beyond the marker: the plugin reads it from every
 collected item, so tests added later are picked up automatically.
@@ -254,7 +254,7 @@ def build_results(tests: dict[str, dict[str, Any]], meta: dict[str, Any]) -> dic
                 g["counts"][k] = g["counts"].get(k, 0) + v
     return {
         "schema": SCHEMA,
-        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
         **meta,
         "tests": {nodeid: {"outcome": rec["outcome"] or "skipped", "steps": rec["steps"]} for nodeid, rec in sorted(tests.items())},
         "steps": dict(sorted(steps.items(), key=lambda kv: [int(x) for x in kv[0].split(".")])),

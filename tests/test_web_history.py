@@ -57,23 +57,6 @@ def _old_recent(db, limit=500):
     return out
 
 
-def _old_trend(db, base_url, claimed_model, limit=30):
-    conn = sqlite3.connect(db)
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT ts, score, risk_level, report_json FROM history WHERE base_url = ? AND"
-        " claimed_model = ? ORDER BY id DESC LIMIT ?",
-        (base_url, claimed_model, limit),
-    ).fetchall()
-    conn.close()
-    out = []
-    for r in reversed(rows):
-        item = {"ts": r["ts"], "score": r["score"], "risk_level": r["risk_level"]}
-        item.update(history._perf_headline(r["report_json"]))
-        out.append(item)
-    return out
-
-
 def _user_version(db) -> int:
     conn = sqlite3.connect(db)
     try:
@@ -116,7 +99,6 @@ def test_saved_rows_read_like_the_old_report_json_path(data):
     new = history.recent(500, perf=True)
     assert new == _old_recent(db)
     assert [list(r) for r in new] == [list(r) for r in _old_recent(db)]  # same key order
-    assert history.trend("https://x/v1", "m", 365) == _old_trend(db, "https://x/v1", "m", 365)
     by_ts = {r["ts"]: r for r in new}
     assert (by_ts["t1"]["latency_p50_ms"], by_ts["t1"]["ttft_p50_ms"],
             by_ts["t1"]["decode_tps_p50"]) == (900.5, 310.0, 60.25)
@@ -129,19 +111,15 @@ def test_old_database_is_backfilled_once_with_identical_values(data, monkeypatch
     db = data / "history.db"
     _seed_old_db(db)
     expected_recent = _old_recent(db)
-    expected_trend = _old_trend(db, "https://x/v1", "m", 365)
 
     assert history.recent(500, perf=True) == expected_recent
-    assert history.trend("https://x/v1", "m", 365) == expected_trend
     assert _user_version(db) == history._SCHEMA_VERSION
 
     # Once migrated (rows without performance included), later connections do
     # not re-check the schema or re-scan report_json.
-    monkeypatch.setattr(history, "_migrate", _boom)
     monkeypatch.setattr(history, "_backfill_perf", _boom)
     monkeypatch.setattr(history, "_perf_headline", _boom)
     assert history.recent(500, perf=True) == expected_recent
-    assert history.trend("https://x/v1", "m", 365) == expected_trend
 
 
 def _boom(*_a, **_k):
@@ -161,7 +139,6 @@ def test_failed_backfill_is_computed_on_read_and_stored(data, monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(history, "_backfill_perf", fail)
         assert history.recent(500, perf=True) == expected
-        assert history.trend("https://x/v1", "m", 365) == _old_trend(db, "https://x/v1", "m", 365)
         assert history.recent(3, perf=True) == expected[:3]
     assert len(calls) == 1  # the schema check ran once
     assert _user_version(db) == history._SCHEMA_VERSION
@@ -184,7 +161,7 @@ def test_rows_written_by_an_older_ekte_are_computed_on_read(data, monkeypatch):
     conn.commit()
     conn.close()
     expected = _old_recent(db)
-    assert history.trend("https://x/v1", "m") == _old_trend(db, "https://x/v1", "m")
+    assert history.recent(perf=True) == expected  # computed on this read, then stored
     monkeypatch.setattr(history, "_perf_headline", _boom)
     assert history.recent(perf=True) == expected
     assert expected[1]["ts"] == "old2" and expected[1]["decode_tps_p50"] == 42.5

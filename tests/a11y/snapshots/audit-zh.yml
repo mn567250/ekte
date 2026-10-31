@@ -2,7 +2,7 @@
   - link "跳到主要内容":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "主题":
     - option "跟随系统"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "无障碍":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "主导航":
     - link "检测":
-      - /url: /v2/
+      - /url: /
     - link "监控":
-      - /url: /v2/watches
+      - /url: /watches
     - link "检测历史":
-      - /url: /v2/history
+      - /url: /history
     - link "分析":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "知识库":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "这家中转站，给的是真货吗？" [level=1]
   - paragraph: 选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。

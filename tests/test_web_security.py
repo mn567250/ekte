@@ -134,7 +134,7 @@ def test_non_json_bodies_are_refused(client):
 
 
 def test_security_headers_on_every_response(client):
-    for path in ("/", "/v2/", "/api/health", "/v2/static/ekte.css"):
+    for path in ("/", "/", "/api/health", "/static/ekte.css"):
         h = client.get(path).headers
         assert h["x-frame-options"] == "DENY", path
         assert h["x-content-type-options"] == "nosniff", path
@@ -143,9 +143,9 @@ def test_security_headers_on_every_response(client):
     assert "access-control-allow-origin" not in client.get("/api/health").headers
 
 
-def test_streaming_audit_passes_through_the_middleware(client):
-    r = client.post("/api/audit/stream", json={"model": "", "base_url": ""})
-    assert r.status_code == 200 and '"type": "done"' in r.text
+def test_streaming_events_pass_through_the_middleware(client):
+    r = client.post("/api/jobs", json={"model": "", "base_url": ""})
+    assert r.status_code == 400
     assert r.headers["x-frame-options"] == "DENY"
 
 

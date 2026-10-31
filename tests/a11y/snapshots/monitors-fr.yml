@@ -2,7 +2,7 @@
   - link "Aller au contenu principal":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Thème":
     - option "Automatique"
@@ -21,24 +21,24 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibilité":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navigation principale":
     - link "Audit":
-      - /url: /v2/
+      - /url: /
     - link "Surveillances":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Historique":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyses":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Connaissances":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Placez une sentinelle planifiée sur votre relais" [level=1]
   - paragraph:
     - text: Chaque surveillance relance un audit que vous avez déjà exécuté, sur votre machine, à l’intervalle choisi. Pour en ajouter une, ouvrez une exécution dans l’
     - link "Historique":
-      - /url: /v2/history
+      - /url: /history
     - text: et choisissez Planifier comme surveillance, puis définissez ici son intervalle et activez-la. Dès que le risque franchit votre seuil ou s’aggrave par rapport à la dernière fois, ekte alerte vos webhooks (Slack / Feishu / DingTalk / JSON générique).
   - status:
     - text: Les clés API ne sont pas enregistrées Les clés saisies restent uniquement dans la mémoire de ekte serve et ne sont jamais écrites sur le disque ; saisissez-les à nouveau après un redémarrage. Les références env:VAR continuent de fonctionner.
@@ -134,7 +134,7 @@
         - code: openai/gpt-4o
         - text: figé 1 oct. 2026, 12:00
       - 'link "Depuis l’exécution #1 →"':
-        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Terminez la configuration pour l’activer":
         - heading "Terminez la configuration pour l’activer" [level=4]
         - paragraph: La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la.

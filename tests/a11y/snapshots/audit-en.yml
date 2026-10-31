@@ -2,7 +2,7 @@
   - link "Skip to main content":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Theme":
     - option "Auto theme"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibility":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Main navigation":
     - link "Audit":
-      - /url: /v2/
+      - /url: /
     - link "Monitors":
-      - /url: /v2/watches
+      - /url: /watches
     - link "History":
-      - /url: /v2/history
+      - /url: /history
     - link "Analytics":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Knowledge":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Is this relay serving the real thing?" [level=1]
   - paragraph: Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.

@@ -2,7 +2,7 @@
   - link "Saltar al contenido principal":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Tema":
     - option "Automático"
@@ -21,24 +21,24 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accesibilidad":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navegación principal":
     - link "Auditoría":
-      - /url: /v2/
+      - /url: /
     - link "Monitores":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Historial":
-      - /url: /v2/history
+      - /url: /history
     - link "Analítica":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conocimiento":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Ponga un centinela programado en su intermediario" [level=1]
   - paragraph:
     - text: Cada monitor vuelve a ejecutar una auditoría que ya realizaste, en tu equipo, con el intervalo que definas. Para añadir uno, abre una ejecución en el
     - link "Historial":
-      - /url: /v2/history
+      - /url: /history
     - text: y elige Programar como monitor; luego define aquí su intervalo y actívalo. Cuando el riesgo supera tu umbral o empeora respecto a la última vez, ekte avisa a tus webhooks (Slack / Feishu / DingTalk / JSON genérico).
   - status:
     - text: Las claves API no se guardan Las claves que introduces solo permanecen en la memoria de ekte serve y nunca se escriben en el disco; vuelve a introducirlas tras un reinicio. Las referencias env:VAR siguen funcionando.
@@ -134,7 +134,7 @@
         - code: openai/gpt-4o
         - text: fijado 1 oct 2026, 12:00
       - 'link "De la ejecución #1 →"':
-        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Completa la configuración para activarlo":
         - heading "Completa la configuración para activarlo" [level=4]
         - paragraph: La configuración proviene de la ejecución del Historial. Define cada cuánto se ejecuta y actívalo.

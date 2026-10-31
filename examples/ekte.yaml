@@ -2,6 +2,8 @@
 #   ekte check -c ekte.yaml
 #   ekte compare -c ekte.yaml --suite deep
 
+version: 1                         # format version of this file
+
 target:
   name: my-relay
   base_url: https://relay.example.com/v1

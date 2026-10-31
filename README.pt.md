@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 O **ekte** é uma ferramenta local-first que audita se um relay de API
 (revendedor / proxy) serve realmente o modelo que declara — ou se o substitui
@@ -26,6 +26,8 @@ interface web local ou em JSON para outra ferramenta ou LLM.
 Este README é para quem **utiliza** o ekte. A forma como o ekte é construído,
 testado e publicado está no [Guia do programador](DEVELOPER_GUIDE.pt.md); como
 cada verificação funciona e é pontuada, na [Metodologia](docs/METHODOLOGY.pt.md).
+
+Que partes do ekte são estáveis, o que conta como alteração incompatível e como as funcionalidades são descontinuadas: [Política de estabilidade e compatibilidade](docs/STABILITY.md) (em inglês).
 
 ---
 
@@ -67,7 +69,7 @@ O ekte transforma «há aqui algo que não bate certo» num relatório reproduz�
 
 ## Instalação
 
-Requer Python 3.10+. Qualquer uma das opções abaixo disponibiliza o comando `ekte`.
+Requer Python 3.11+. Funciona em Linux, macOS e Windows (a imagem Docker é Linux); no Windows os modos só para o proprietário do diretório de dados não têm efeito, consulte [Sistemas operativos suportados](docs/STABILITY.md#os). Qualquer uma das opções abaixo disponibiliza o comando `ekte`.
 
 ### Com pip
 
@@ -181,6 +183,8 @@ As chaves de API podem ser dadas em claro, como `env:VAR` ou como
 `file:/caminho`; os relatórios contêm apenas uma impressão da chave. Um ficheiro
 de configuração completo está em [`examples/ekte.yaml`](examples/ekte.yaml).
 
+O ficheiro tem uma versão de formato (`version: 1`; um ficheiro sem versão é o formato 1). Tipos errados e valores inválidos são rejeitados indicando ficheiro, linha e chave; chaves desconhecidas são ignoradas com um aviso até ao ekte 1.0.0, que as rejeita. `ekte config migrate` atualiza um ficheiro antigo. O esquema é [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+
 ### Como ferramenta para um LLM / agente
 
 O ekte foi feito para ser controlado por outro programa ou modelo. Tudo sai para
@@ -221,9 +225,9 @@ ekte serve                        # abre http://localhost:8000
 
 O formulário guia a configuração:
 
-1. Escolha o **Relay / provedor**: um provedor da base de conhecimento ou um
+1. Escolha o **Relay / provedor**: um fornecedor da base de conhecimento ou um
    relay que guardou. O seu URL base é preenchido (os outros URL conhecidos do
-   provedor são oferecidos como sugestões). Para qualquer outro relay escolha
+   fornecedor são oferecidos como sugestões). Para qualquer outro relay escolha
    **Outro (introduzir o URL)** e introduza o **URL do intermediário**.
 2. Acrescente a **Chave de API** se o relay precisar de uma.
 3. O ekte lista sozinho os modelos do relay (ao escolher um relay e sempre que
@@ -233,10 +237,10 @@ O formulário guia a configuração:
 4. Opcionalmente escolha o **Modelo declarado** entre os modelos da base de
    conhecimento: o modelo que o relay diz servir. Se o modelo pedido estiver na
    base de conhecimento, fica pré-selecionado; mude-o apenas se o relay vender o
-   modelo com outro nome. Dele resulta o perfil do provedor usado na auditoria.
+   modelo com outro nome. Dele resulta o perfil do fornecedor usado na auditoria.
 
-Um relay que ainda não está na lista pode ser mantido com **Salvar na base** com
-o nome que lhe der; da próxima vez basta escolhê-lo. A referência confiável
+Um relay que ainda não está na lista pode ser mantido com **Guardar na base** com
+o nome que lhe der; da próxima vez basta escolhê-lo. A referência de confiança
 (**Comparar com uma referência confiável**) e as auditorias de embeddings e rerank
 são configuradas da mesma forma.
 
@@ -245,8 +249,8 @@ as verificações **ao vivo**: cada verificação mostra a sua pontuação e qua
 tempo levou, e uma verificação com constatações expande-se para mostrar as
 evidências. O resultado é um relatório de veredito que pode partilhar: nota,
 **Verificações por dimensão** com as suas escalas de pontuação, constatações em
-linguagem clara, a secção de desempenho e um **Registro de execução** de cada
-detector.
+linguagem clara, a secção de desempenho e um **Registo de execução** de cada
+detetor.
 
 Tudo corre na sua máquina: uma chave escrita no navegador só chega ao seu
 servidor ekte local e ao relay que audita, nunca a terceiros. Consulte
@@ -254,17 +258,15 @@ servidor ekte local e ao relay que audita, nunca a terceiros. Consulte
 
 ### Páginas
 
-A interface web está em `/v2/`, onde o `ekte serve` a abre. Os endereços da
-antiga interface clássica (`/`, `/history`, `/watches`, `/tools`, `/console`)
-redirecionam para a página correspondente.
+A interface web é servida na raiz do endereço que o `ekte serve` abre, com a página de auditoria em `/`. Os endereços usados até agora (`/v2/…`, p. ex. `/v2/history`) e os da antiga interface clássica (`/tools`, `/console`) redirecionam de forma permanente para a página correspondente, mantendo a cadeia de consulta; estes redirecionamentos estão obsoletos e são removidos na 1.0.0.
 
 | Página | Endereço | Para que serve |
 |---|---|---|
-| **Auditoria** | `/v2/` | Auditar um relay (opcionalmente face a uma referência) e ler o relatório; as auditorias de embeddings e rerank também começam aqui, com o seletor de tipo de endpoint |
-| **Monitores** | `/v2/watches` | Reauditorias agendadas com alertas por webhook |
-| **Histórico** | `/v2/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
-| **Análises** | `/v2/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
-| **Conhecimento** | `/v2/kb` | A base de conhecimento em três separadores — modelos, provedores, relays: explorar, ativar/desativar, adicionar os seus |
+| **Auditoria** | `/` | Auditar um relay (opcionalmente face a uma referência) e ler o relatório; as auditorias de embeddings e rerank também começam aqui, com o seletor de tipo de endpoint |
+| **Monitores** | `/watches` | Reauditorias agendadas com alertas por webhook |
+| **Histórico** | `/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
+| **Análises** | `/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
+| **Conhecimento** | `/kb` | A base de conhecimento em três separadores — modelos, fornecedores, relays: explorar, ativar/desativar, adicionar os seus |
 
 Nas páginas há ainda: filtros e tendências configuráveis (pontuação, nota,
 latência p50, tokens/s) no **Histórico**; **Agendar como monitor** e **Executar auditoria novamente** em cada
@@ -280,7 +282,7 @@ em processamento em **Histórico** e **Análises**, as entradas ignoradas em
 página **Auditoria** continua quando muda de página ou fecha o separador;
 **Continuar em segundo plano** envia-a para lá de propósito. O **Histórico**
 lista cada auditoria em fila e em curso (e cada monitor em execução) com o seu
-progresso; **Ver em direto** reabre a vista ao vivo, que recupera tudo o que já
+progresso; **Ver em direto** reabre a vista em direto, que recupera tudo o que já
 aconteceu. Auditorias do mesmo relay correm uma após a outra, para nunca
 distorcerem os resultados de latência ou fiabilidade umas das outras (todos os
 endereços loopback contam como um só host, por isso modelos servidos pela sua
@@ -288,7 +290,7 @@ própria máquina também esperam); auditorias de relays diferentes correm em
 paralelo, no máximo quatro de cada vez (`EKTE_MAX_PARALLEL_AUDITS`). Os
 monitores esperam pelo seu relay da mesma forma.
 
-**Análises.** `/v2/analytics` transforma o histórico local em
+**Análises.** `/analytics` transforma o histórico local em
 comparações: indicadores do período escolhido (execuções, pontuação mediana,
 proporção de risco alto, taxa de sucesso, TTFT, velocidade de saída, rácios de
 faturação) com a variação face ao período anterior de igual duração; um gráfico
@@ -296,7 +298,7 @@ de qualquer métrica por relay, modelo ou relay × modelo, por hora, dia ou
 semana (linha mediana com a faixa p25–p75, até quatro séries, cada gráfico
 também como tabela de dados); e uma classificação dos relays de um modelo ou
 dos modelos de um relay. Os relays são agrupados pela sua entrada na base de
-conhecimento (relays guardados e provedores), por isso renomear um relay
+conhecimento (relays guardados e fornecedores), por isso renomear um relay
 reagrupa o seu histórico. Intervalos com menos de 3 execuções aparecem
 esbatidos — uma única auditoria pode ser um valor atípico; um monitor dá
 medições regulares. Execuções mais antigas mostram o que mediram: a página diz
@@ -306,7 +308,7 @@ filtros e vista ficam no URL, por isso uma vista pode ser guardada nos
 favoritos ou partilhada. Nada sai da máquina.
 
 Outros painéis respondem a perguntas mais concretas: **horas de ponta** (um
-mapa de calor dia da semana × hora do TTFT, da latência e da velocidade de decodificação (mediana e caudas p95 /
+mapa de calor dia da semana × hora do TTFT, da latência e da velocidade de descodificação (mediana e caudas p95 /
 p5), da variação entre tokens, dos tempos de rede e do relay ou da taxa de sucesso ou
 de erro no seu fuso horário — um relay fica mais lento ou falha mais nas horas
 de maior carga? Por dia da semana ou, com 90 dias de execuções, num ciclo de
@@ -338,7 +340,7 @@ Relay»), assim uma vista partilhada diz o que mostra.
 ### Idiomas
 
 Um menu de idioma no cabeçalho de cada página muda a interface entre
-**🇬🇧 inglês** (predefinição), **🇨🇳 chinês** (a interface original),
+**🇬🇧 inglês** (por omissão), **🇨🇳 chinês** (a interface original),
 **🇫🇷 francês**, **🇪🇸 espanhol**, **🇵🇹 português**, **🇮🇹 italiano**,
 **🇩🇪 alemão** e **🇳🇴 norueguês** (bokmål); a escolha é memorizada por navegador.
 
@@ -347,7 +349,7 @@ Markdown, HTML ou PDF) seguem o idioma escolhido: as chaves JSON, os valores
 enumerados (`risk_level`, `status`, `severity`, …), os ids e as evidências ficam
 exatamente como no relatório da CLI (o JSON continua a ser um relatório ekte
 válido), enquanto os valores legíveis (título e resumo do veredito, títulos e
-resumos das constatações, recomendações, nomes dos detectores, notas) são
+resumos das constatações, recomendações, nomes dos detetores, notas) são
 traduzidos, e o nome do ficheiro leva o idioma (`ekte-report.pt.json`,
 `ekte-report.pt.pdf`). Os títulos de secção dos ficheiros Markdown/HTML/PDF
 ficam em inglês. Os relatórios da CLI com `--format json|md|html|pdf` ficam em
@@ -361,6 +363,11 @@ exatos). As únicas exceções são as impressões da base de conhecimento cujo 
 *é* a medida — por exemplo, as sondas de fluência em chinês, de tokenizer e de
 autoidentificação dos modelos chineses. Cada relatório regista os idiomas de
 sonda efetivamente usados (`prompt_languages`, p. ex. `["en", "zh"]`).
+Cada relatório regista também como o endpoint foi interrogado: o protocolo
+(`target.api`: `openai`, `anthropic` ou `responses`), se `--api auto` o detetou
+(`target.api_auto`) e o modo de pedido da sonda de desempenho (`stream_mode`:
+`stream`, `non_stream` ou `both` para a suíte completa). A página de histórico da
+interface web pode filtrar pelos três.
 `started_at` regista quando a auditoria começou (UTC); o `start_ms` de cada
 registo de pedido conta a partir desse momento.
 
@@ -382,7 +389,7 @@ relatórios.
 | **Autenticidade do streaming** | `streaming` | 6 | Streaming falso (buffer e depois partição), a partir do número de fragmentos e do seu espaçamento |
 | **Fiabilidade em concorrência** | `reliability` | 6 | Taxa de sucesso e latência sob carga concorrente (a limitação HTTP 429 é contada à parte) |
 | **Segurança do transporte** | `security` | 6 | HTTPS, higiene dos cabeçalhos, eco de segredos; um prompt de sistema injetado oculto; adulteração em trânsito de respostas e chamadas de ferramentas (canários de resposta conhecida); cache de prefixo de prompt (tempos) |
-| **Desempenho** | `performance` | 6 | Quão *constantes* são a latência, o tempo até ao primeiro token e a vazão, a taxa de falhas e o abrandamento sob carga; a velocidade só face a uma referência (ver [Desempenho](#desempenho)) |
+| **Desempenho** | `performance` | 6 | Quão *constantes* são a latência, o tempo até ao primeiro token e o débito, a taxa de falhas e o abrandamento sob carga; a velocidade só face a uma referência (ver [Desempenho](#desempenho)) |
 
 A [Metodologia](docs/METHODOLOGY.pt.md) descreve cada sonda, o truque de relay a
 que responde, a sua escala de pontuação e as suas ressalvas quanto a falsos
@@ -392,11 +399,11 @@ positivos.
 
 Em resumo (os detalhes estão na [Metodologia](docs/METHODOLOGY.pt.md#como-o-ekte-pontua)):
 
-- Cada detector publica a sua **escala de pontuação** — cada resultado possível
+- Cada detetor publica a sua **escala de pontuação** — cada resultado possível
   de cada verificação com os seus pontos —, e a interface web mostra-a em
   **Escala de pontuação**.
 - A **pontuação de uma dimensão** é a média com peso igual das pontuações dos
-  seus detectores. Uma constatação ALTA/CRÍTICA impõe **Falha** e uma
+  seus detetores. Uma constatação ALTA/CRÍTICA impõe **Falha** e uma
   constatação MÉDIA eleva **Aprovado** a **Aviso**, seja qual for a pontuação.
   Os relatórios explicam-no por dimensão em **Dimension details**; na interface
   web, cada linha das **Verificações por dimensão** expande-se com os mesmos
@@ -430,23 +437,23 @@ utilizável é inconclusivo, nunca uma aprovação.
 
 ## Suites
 
-| Suite | Detectores | Custo |
+| Suite | Detetores | Custo |
 |---|---|---|
 | `smoke` | connectivity, security | muito baixo |
 | `standard` | + protocol, protocol_request, protocol_response, model_identity, capability, streaming, billing, reliability | baixo–médio |
 | `deep` | + context_window, determinism, vision, injected_prompt, integrity, prompt_cache, performance, quality_judge (com `--judge`) | mais alto (as sondas de contexto longo e de tempos custam tokens) |
-| `full` | os detectores de `deep`, com o desempenho medido com e sem streaming | o mais alto |
+| `full` | os detetores de `deep`, com o desempenho medido com e sem streaming | o mais alto |
 | `custom` | apenas as dimensões que escolher, com a profundidade de `deep` | conforme a seleção |
 
 A sonda da janela de contexto é limitada por `--max-context-tokens` (200K por
-predefinição), para que auditar um modelo de 1M de tokens continue acessível.
-`--only` / `--skip` executam ou excluem detectores individuais pelo seu id.
+omissão), para que auditar um modelo de 1M de tokens continue acessível.
+`--only` / `--skip` executam ou excluem detetores individuais pelo seu id.
 Uma janela maior do que o limite de `--max-context-tokens` é reportada como *verificada até ao limite*, nunca como truncada.
 
 ### Suite personalizada
 
 Execute apenas as dimensões que lhe interessam, poupando tempo e tokens. Cada
-detector de cada dimensão escolhida é executado, como em `deep`:
+detetor de cada dimensão escolhida é executado, como em `deep`:
 
 ```bash
 ekte check --base-url ... --model gpt-4o -D protocol -D performance
@@ -459,7 +466,7 @@ ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,stre
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
 `billing`, `reliability`, `security` e `performance`. Na interface web, o botão
 de suite `custom` abre a mesma escolha (**Dimensões a executar**) na página de
-auditoria, na consola e nos monitores.
+auditoria e nos monitores.
 
 A **pontuação global é a média ponderada apenas das dimensões escolhidas**; as
 que ficam de fora aparecem como «não selecionadas». O veredito de risco também
@@ -483,7 +490,7 @@ centro de dados:
 | Verificação | Pontuada segundo |
 |---|---|
 | constância da latência / do TTFT | razão de cauda p90 ÷ p50 (≤ 1,3 constante 100 · ≤ 1,75 estável 85 · ≤ 2,5 variável 65 · acima: errática 40); precisa de ≥ 10 amostras |
-| constância da vazão | razão de cauda p50 ÷ p10 dos tokens/s, mesmos escalões |
+| constância do débito | razão de cauda p50 ÷ p10 dos tokens/s, mesmos escalões |
 | erros | pedidos de sonda falhados: ≤ 2 % 100 · ≤ 10 % 80 · acima: 50 (os 429 não contam) |
 | estabilidade sob carga | latência p50 em rajada ÷ p50 sequencial: ≤ 1,5x 100 · ≤ 3x 80 · acima: 55 |
 | acerto de cache | prompts únicos respondidos a partir de uma cache: 60 |
@@ -499,7 +506,7 @@ pontuação, nunca no veredito de risco. Sem a sonda (`standard` sem referência
   prompt; não são enviados parâmetros de cache nem de raciocínio) mais uma rajada
   com `--concurrency`. Ajuste-a com `--performance-requests` (0 desativa-a) e
   `--performance-max-tokens`.
-- A sonda usa streaming por predefinição; `--performance-non-streaming` (ou o
+- A sonda usa streaming por omissão; `--performance-non-streaming` (ou o
   seletor **Streaming / Sem streaming** da interface web) mede relays que não
   suportam streaming. **full** mede os dois modos, intercalados, e mostra-os lado
   a lado.
@@ -509,7 +516,7 @@ pontuação, nunca no veredito de risco. Sem a sonda (`standard` sem referência
   quando o alvo é melhor e a vermelho ✗ quando é pior.
 
 Os tokens são contados duas vezes — a partir do `usage` do relay e localmente —,
-pelo que a vazão pode ser medida mesmo sem `usage`. A contagem local é uma
+pelo que o débito pode ser medido mesmo sem `usage`. A contagem local é uma
 estimativa feita com uma heurística integrada (cerca de ±15-20%; nenhum tokenizer
 é usado ou descarregado), e a secção indica-o sempre. Um percentil só é mostrado
 com amostras suficientes (p90 a partir de 10, p95 a partir de 20, p99 a partir de
@@ -523,12 +530,12 @@ exige muito CPU, como construir os prompts longos da janela de contexto, corre
 fora do event loop do servidor.
 
 **Tempos limite.** `timeout_sec` (`--timeout`, 60 s por omissão) é a base; cada
-requisição recebe mais tempo conforme o tamanho do prompt e o orçamento de
-saída, para que uma sonda longa de janela de contexto ou um modelo auto-hospedado
+pedido recebe mais tempo conforme o tamanho do prompt e o orçamento de
+saída, para que uma sonda longa de janela de contexto ou um modelo auto-alojado
 lento não seja interrompido ao fim de um minuto. Hosts locais e privados
 (`localhost`, `127.x`, `192.168.x`, `host.docker.internal`, …) recebem pelo menos
 300 s. `max_request_sec` (`--max-request-time`, 900 s por omissão) é o teto
-absoluto de cada requisição, streams incluídos, para que nenhuma fique pendurada
+absoluto de cada pedido, streams incluídos, para que nenhum fique pendurado
 para sempre. Uma sonda de janela de contexto que ainda assim esgota o tempo é
 reportada como inconclusiva, não como truncamento.
 
@@ -536,7 +543,7 @@ reportada como inconclusiva, não como truncamento.
 
 O ekte tem dois modos de deteção:
 
-- **Código puro (predefinição):** todos os detectores exceto `quality_judge`
+- **Código puro (por omissão):** todos os detetores exceto `quality_judge`
   decidem com código determinista — impressões, varrimento de contexto,
   aritmética de faturação, tempos do streaming. Não é preciso um segundo modelo;
   os resultados são reproduzíveis.
@@ -544,7 +551,7 @@ O ekte tem dois modos de deteção:
   confiança* (configurado à parte, nunca o alvo) se as respostas do alvo se
   parecem com o modelo declarado — sinais difusos como a qualidade e a
   profundidade de raciocínio que o código sozinho não consegue decidir. É o
-  detector `quality_judge`.
+  detetor `quality_judge`.
 
 ```bash
 ekte check --base-url ... --model gpt-4o --suite deep --judge \
@@ -575,7 +582,7 @@ ekte watch --base-url https://relay.example.com/v1 --api-key env:EKTE_API_KEY \
 
 Os alertas são formatados para **Slack / Feishu / DingTalk / JSON genérico**,
 detetados automaticamente a partir do URL do webhook, e redigidos no idioma dos
-alertas — inglês por predefinição; `--alert-lang en|zh|fr|es|pt|it|de|nb`. O payload
+alertas — inglês por omissão; `--alert-lang en|zh|fr|es|pt|it|de|nb`. O payload
 JSON genérico mantém neutras as suas chaves e valores de máquina (`risk_level`,
 `score`, …), traduz os legíveis (`text`, `headline`, `key_findings`) e indica o
 `language`.
@@ -593,9 +600,9 @@ clique no nome recolhe o cartão para nome, estado e última execução
 navegador), e o painel de filtros (pesquisa, estado, último risco, tipo de
 endpoint, relay, suite) restringe uma lista longa como no **Histórico**.
 
-Cada monitor tem o seu próprio idioma de alertas (por predefinição, o da
+Cada monitor tem o seu próprio idioma de alertas (por omissão, o da
 interface), pode ser executado agora, pausado ou eliminado, e fica fixado ao
-perfil da base de conhecimento com que foi criado até o voltar a fixar.
+perfil da base de conhecimento com que foi criado até que volte a fixá-lo.
 
 Os monitores cuja hora chegou correm ao mesmo tempo, cada um como uma auditoria
 própria, mas nunca mais de uma auditoria de cada vez por host de relay e no
@@ -606,14 +613,14 @@ auditoria começa, depois de qualquer espera. A verificação de regressão comp
 com a execução guardada mais recente do mesmo relay e modelo, por muitas outras
 execuções que tenham sido guardadas entretanto. Os webhooks de alerta de uma
 execução são enviados ao mesmo tempo, para que um lento ou inacessível não
-atrase os outros. As chaves são guardadas encriptadas no seu diretório de dados
+atrase os outros. As chaves são guardadas cifradas no seu diretório de dados
 local e nunca são devolvidas ao navegador.
 
 **Armazenamento das chaves de API.** Por omissão, o ekte **não guarda** as
 chaves de API dos monitores: uma chave introduzida fica apenas na memória do
 `ekte serve` e nunca é escrita no disco. Após um reinício, a página
 **Monitores** indica os monitores que precisam novamente da chave; aguardam (sem
-execução falhada nem alerta) até a introduzir. Os monitores sem chave e as
+execução falhada nem alerta) até que a introduza. Os monitores sem chave e as
 referências `env:`/`file:` continuam a funcionar. Para que as chaves sobrevivam
 a reinícios, escolha **Guardar cifradas neste computador** em **Armazenamento
 das chaves de API** na página **Monitores**: as chaves passam a ser guardadas
@@ -624,7 +631,7 @@ instalação que já
 guardava chaves cifradas, ou que define `EKTE_SECRET_KEY`, continua a guardá-las
 até mudar.
 
-**Chave mestra.** As chaves API dos monitores são encriptadas com uma chave
+**Chave mestra.** As chaves API dos monitores são cifradas com uma chave
 mestra que o ekte nunca escreve no disco. Da primeira vez que guarda uma chave
 API, a página **Monitores** cria-a e mostra-a uma única vez: copie-a ou
 transfira-a, guarde-a num gestor de palavras-passe (o seu navegador pode
@@ -633,7 +640,7 @@ página volta a pedi-la (o navegador pode preenchê-la); até lá, os monitores 
 precisam dela esperam, enquanto os monitores sem chave ou com chaves
 `env:`/`file:` continuam a ser executados. A barra de estado da página oferece
 também **Bloquear**, **Rodar** e **Esqueceu a chave?** (descarta as chaves API
-encriptadas para que as possa introduzir de novo). Para uso sem supervisão ou em
+cifradas para que as possa introduzir de novo). Para uso sem supervisão ou em
 Docker, passe a chave em `EKTE_SECRET_KEY` (consulte
 [docs/DOCKER.md](docs/DOCKER.md)); `ekte secret status | export | rotate`
 gerem-na na linha de comandos.
@@ -647,7 +654,7 @@ imprime um veredito e suporta `--json` e `--fail-on-risk`.
 ### Tipo de endpoint (superfície), monitores de embeddings e rerank
 
 Cada auditoria, linha do histórico e monitor tem um **tipo de endpoint**
-(`surface`): `chat` (predefinição), `embedding` ou `rerank`. É independente da
+(`surface`): `chat` (por omissão), `embedding` ou `rerank`. É independente da
 suite. As auditorias de embeddings e rerank passam pelo mesmo runner, a mesma
 pontuação (0–100, A–F), o histórico, a análise e os monitores das auditorias de
 chat; só os detetores mudam. O histórico e a análise filtram por tipo de endpoint,
@@ -692,7 +699,7 @@ obviamente relevante tem de ficar em primeiro), o campo `model` devolvido, o
 determinismo (a mesma consulta duas vezes dá a mesma classificação e as mesmas
 pontuações) e a **deriva da classificação** face à execução guardada anterior.
 `ekte embed` e `ekte rerank` aceitam `--suite`, `--save/--no-save` (guardado por
-predefinição, para que a execução seguinte tenha uma referência de deriva) e
+omissão, para que a execução seguinte tenha uma referência de deriva) e
 `--dry-run`.
 
 `embed` verifica a conectividade, a **correspondência de dimensão** (comprimento
@@ -726,7 +733,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # Um relay que declara tts-1-hd devolve áudio real cuja duração cresce com a entrada
 # (não um marcador fixo, nem HTML/JSON disfarçado de áudio)?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` verifica a conectividade, um formato válido e descodificável, a
@@ -779,18 +786,18 @@ Moonshot (`ekte kb` lista-os). Há três camadas; as posteriores prevalecem:
    (repetível) ou `EKTE_KB_DIR`.
 3. **As suas entradas** (`kb.db` no diretório de dados), adicionadas sem ficheiros
    YAML nem instalação editável:
-   - na página **Conhecimento** da interface web (`/v2/kb`), com um separador
-     para **Modelos**, **Provedores** e **Relays**. Cada separador lista o conjunto
-     completo — incluídos, `EKTE_KB_DIR` e os seus (marcados **Seu**) — com um
+   - na página **Conhecimento** da interface web (`/kb`), com um separador
+     para **Modelos**, **Fornecedores** e **Relays**. Cada separador lista o conjunto
+     completo — incluídos, `EKTE_KB_DIR` e os seus (marcados **O seu**) — com um
      filtro, um interruptor por item e um formulário **Adicionar …**: **Adicionar
      um modelo** → **Copiar o prompt de pesquisa** para o assistente de IA da sua
      escolha, carregar ou colar o YAML com que ele responde e depois **Verificar e
-     salvar**; **Adicionar um provedor** aceita YAML de provedor da mesma forma;
+     guardar**; **Adicionar um fornecedor** aceita YAML de fornecedor da mesma forma;
      **Adicionar um relay** pede um nome e um URL base. **Qual perfil um ID de
      modelo usa?** mostra como um id é resolvido; as suas entradas podem ser
      exportadas como YAML;
-   - na página **Auditoria** da interface web: **Salvar na
-     base** mantém o nome e o URL base de um relay (uma entrada de provedor sem
+   - na página **Auditoria** da interface web: **Guardar na
+     base** mantém o nome e o URL base de um relay (uma entrada de fornecedor sem
      modelos), listado em **Conhecimento → Relays**;
    - na linha de comandos: `ekte kb-prompt <model>`, `ekte kb-import <file>`
      (acrescente `--check` para apenas verificar) e `ekte kb-export`.
@@ -800,8 +807,8 @@ regulares perigosas, cada prompt que enviaria e ids de modelo que seriam
 resolvidos para outro perfil. Um modelo seu com o id de um integrado substitui-o
 (assinalado como *sombreando-o*), mas nunca altera as definições próprias de um
 fornecedor integrado; as impressões são fundidas por id. Desativar um modelo,
-provedor ou relay incluído na página **Conhecimento** também fica guardado em
-`kb.db`: um id de modelo desativado deixa de ser resolvido e um provedor
+fornecedor ou relay incluído na página **Conhecimento** também fica guardado em
+`kb.db`: um id de modelo desativado deixa de ser resolvido e um fornecedor
 desativado leva consigo os seus modelos e URLs base. `ekte check` e `ekte serve`
 usam exatamente os mesmos perfis; `--no-user-kb` (ou `EKTE_NO_USER_KB=1`) deixa de
 fora as suas entradas e interruptores.
@@ -821,8 +828,8 @@ conhecimento mudar.
 ## Relatórios
 
 `ekte check` e `ekte compare` imprimem um veredito e escrevem o relatório em
-`reports/` (`--out-dir`) como JSON, Markdown, HTML e PDF (`--format all`, a
-predefinição); `--format json|md|html|pdf` escreve um único formato. `--json` e
+`reports/` (`--out-dir`) como JSON, Markdown, HTML e PDF (`--format all`, o valor
+por omissão); `--format json|md|html|pdf` escreve um único formato. `--json` e
 `--compact` imprimem antes em stdout.
 
 ```text
@@ -840,7 +847,7 @@ predefinição); `--format json|md|html|pdf` escreve um único formato. `--json`
 
 Um relatório contém o veredito (risco, confiança, pontuação, nota), as
 constatações principais com recomendações, as pontuações por dimensão e os
-**Dimension details**, as constatações de cada detector com as suas evidências, a
+**Dimension details**, as constatações de cada detetor com as suas evidências, a
 secção de desempenho, o perfil da base de conhecimento usado e os idiomas de
 sonda. O texto controlado pelo relay é ocultado e escapado antes de ser escrito.
 
@@ -853,14 +860,14 @@ sonda. O texto controlado pelo relay é ocultado e escapado antes de ser escrito
   juiz, webhooks); não descarrega nada em tempo de execução, nem sequer
   ficheiros de tokenizer.
 - **Chaves.** Os relatórios e o histórico guardam apenas uma impressão de uma
-  chave API. As chaves dos monitores são guardadas encriptadas em `watches.db`;
-  a chave mestra que as desencripta nunca é escrita no diretório de dados
-  (guarda-a você, consulte **Monitorização** acima), por isso uma cópia do
+  chave API. As chaves dos monitores são guardadas cifradas em `watches.db`;
+  a chave mestra que as decifra nunca é escrita no diretório de dados
+  (guarde-a, consulte **Monitorização** acima), por isso uma cópia do
   diretório não revela nenhuma chave API. Mesmo assim, só o seu utilizador tem
   acesso ao diretório.
 - **Diretório de dados.** `~/.ekte` (ou `EKTE_DATA_DIR`), criado com `0700` e
   ficheiros com `0600`: `history.db` (histórico de auditorias), `watches.db`
-  (monitores, com as suas chaves encriptadas) e `kb.db` (as suas entradas da
+  (monitores, com as suas chaves cifradas) e `kb.db` (as suas entradas da
   base de conhecimento). Apague o diretório para remover tudo.
   `ekte data-dir` mostra onde está; `--data-dir CAMINHO` escolhe outro para uma
   execução, p. ex. `ekte serve --data-dir .` guarda as bases de dados na pasta
@@ -892,6 +899,9 @@ de confiança antes de tirar conclusões fortes.
 | [Guia do programador](DEVELOPER_GUIDE.pt.md) | Arquitetura, ambiente de desenvolvimento, contribuições, traduções, Docker, versões |
 | [docs/CI.md](docs/CI.md) | A GitHub Action: entradas, saídas, exemplos (em inglês) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Executar a interface web num contentor (em inglês) |
+| [Estabilidade e compatibilidade](docs/STABILITY.md) | O que o semver protege, descontinuação, versões de Python e sistemas suportados, atualizações e downgrades (em inglês) |
+| [docs/CLI.md](docs/CLI.md) | Todos os comandos e opções, e os códigos de saída (em inglês) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | Os formatos JSON do relatório e do webhook e a sua `schema_version` (em inglês) |
 | [CHANGELOG.md](CHANGELOG.md) | O que mudou em cada versão (em inglês) |
 | [SECURITY.md](SECURITY.md) | Reportar uma vulnerabilidade (em inglês) |
 
@@ -916,12 +926,12 @@ a 0.11.0) com um novo nome. O que muda numa instalação existente:
   usado tal como está.
 - **Interface web.** O idioma, o tema e os filtros e uma chave mestra guardada no
   gestor de palavras-passe do navegador mantêm-se. A interface clássica do zing
-  deixou de existir: os seus endereços (`/`, `/history`, `/watches`, `/tools`,
-  `/console`) abrem a página correspondente em `/v2/`.
+  deixou de existir: os seus endereços (`/tools`, `/console`) abrem a página de auditoria (`/`).
 - **Relatórios e sondas.** Os relatórios, os webhooks e os nomes de ficheiros
   indicam `ekte` (p. ex. `"tool": "ekte"`, `ekte-report.json`), tal como as
   sondas enviadas aos relays. Os scripts que procuram `zing` neles têm de ser
   atualizados.
+- **Calendário.** Toda a camada de compatibilidade (a leitura de `ZING_*`, a cópia de `~/.zing`, a transferência de definições do navegador, cookies e da chave mestra guardada, e os endereços da interface clássica) está obsoleta e é removida no ekte **1.0.0** (1.0.0rc1 é a primeira versão sem ela). Até lá cada parte continua a funcionar e o seu aviso indica esta versão; os antigos endereços de página `/v2/…` também redirecionam até à 1.0.0. O ekte nunca apaga um `~/.zing` antigo, nem quando a cópia é removida.
 
 ## Licença
 

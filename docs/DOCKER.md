@@ -34,7 +34,8 @@ still reads a `ZING_*` variable whose `EKTE_*` name is unset, but the image sets
 `ZING_HOST`, `ZING_PORT` or `ZING_DATA_DIR` has no effect in the container. The
 data volume stays at `/data` and the unprivileged user keeps uid 10001, so an
 existing `zing-data` volume can be mounted as it is
-(`-v zing-data:/data`).
+(`-v zing-data:/data`). The `ZING_*` fallback is deprecated and removed in ekte
+1.0.0 (see [STABILITY.md](STABILITY.md#deprecation-zing)).
 
 ## What protects the UI
 

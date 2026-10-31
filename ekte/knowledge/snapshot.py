@@ -113,8 +113,11 @@ def knowledge_usage(
     kb: KnowledgeBase, resolved: ResolvedProfile | None, requested_model: str
 ) -> KnowledgeUsage:
     """Describe what a run audits against: match, sources, user entries, snapshot."""
+    from ekte.knowledge.freshness import bundled_date
+
     usage = KnowledgeUsage(
         requested_model=requested_model,
+        kb_date=bundled_date(),
         user_kb=kb.user_kb,
         warnings=list(kb.warnings),
     )

@@ -267,13 +267,13 @@ async def test_a_monitor_waits_for_an_audit_of_its_relay(tmp_path, monkeypatch):
 
 def test_v2_pages_use_background_jobs():
     client = TestClient(create_app(), base_url="http://localhost")
-    audit = client.get("/v2/").text
+    audit = client.get("/").text
     assert 'fetch("/api/jobs"' in audit and "/events" in audit and 'id="bg"' in audit
     assert "/api/audit/stream" not in audit  # the v2 audit outlives the page
     # the Running tab lists background audits (v2/jobs.js) and links back here
-    assert 'id="tab-running"' in audit and 'class="jlist" id="jobs"' in audit and "/v2/static/jobs.js" in audit
-    shared = client.get("/v2/static/jobs.js").text
-    assert 'fetch("/api/jobs")' in shared and "/v2/?job=" in shared
+    assert 'id="tab-running"' in audit and 'class="jlist" id="jobs"' in audit and "/static/jobs.js" in audit
+    shared = client.get("/static/jobs.js").text
+    assert 'fetch("/api/jobs")' in shared and "/?job=" in shared
 
 
 async def test_shutdown_stops_every_job():

@@ -2,7 +2,7 @@
   - link "Aller au contenu principal":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Thème":
     - option "Automatique"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibilité":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navigation principale":
     - link "Audit":
-      - /url: /v2/
+      - /url: /
     - link "Surveillances":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Historique":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyses":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Connaissances":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Analyses des audits" [level=1]
   - paragraph: "Comparez relais et modèles dans le temps avec ce que ekte a mesuré sur cette machine : scores, vitesse, taux de réussite et facturation."

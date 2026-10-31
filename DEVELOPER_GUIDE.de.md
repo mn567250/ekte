@@ -26,13 +26,16 @@ bewertet wird, in der [Methodik](docs/METHODOLOGY.de.md).
   - [Endpunkttypen (Surfaces)](#endpunkttypen-surfaces)
   - [Eigenständige Prüfer](#eigenständige-prüfer)
   - [Webserver](#webserver)
+  - [HTTP API v1](#http-api-v1)
   - [Web-Frontend](#web-frontend)
   - [Lokale Daten](#lokale-daten)
 - [Mitwirken](#mitwirken)
   - [Pull Requests](#pull-requests)
   - [Einen Detektor hinzufügen](#einen-detektor-hinzufügen)
   - [Die Wissensbasis bearbeiten](#die-wissensbasis-bearbeiten)
+  - [Die Wissensbasis aktuell halten](#die-wissensbasis-aktuell-halten)
   - [Test-Prompts ändern](#test-prompts-ändern)
+  - [Ein Datenbankschema ändern](#ein-datenbankschema-ändern)
   - [Übersetzungen](#übersetzungen)
   - [Dokumentation](#dokumentation)
 - [Tests](#tests)
@@ -67,7 +70,7 @@ Trick zu erwischen. Behalten Sie diesen Maßstab bei jeder Änderung im Blick.
 
 ## Entwicklungsumgebung
 
-Erfordert Python 3.10+. Node.js ist optional: die Tests des Browser-JavaScripts
+Erfordert Python 3.11+. Linux, macOS und Windows werden in der CI getestet; Tests, die nur unter POSIX sinnvoll sind, werden unter Windows mit ausdrücklichem Grund übersprungen (`skipif(sys.platform == "win32", reason=...)`). Verwenden Sie `pathlib`, geben Sie bei Text-E/A `encoding="utf-8"` an und schreiben Sie `/tmp` nie fest. Node.js ist optional: die Tests des Browser-JavaScripts
 laufen unter `node` und werden ohne es übersprungen.
 
 ```bash
@@ -143,6 +146,7 @@ ihr Überwachungs-Scheduler münden alle in dieselbe Funktion,
    Kommandozeilenoptionen zu `TargetConfig` (Ziel, optional Referenz und Richter)
    und `AuditOptions` (Suite, Dimensionen, Umfang der Tests, Ausgabe) zusammen.
    Als `env:VAR` oder `file:/pfad` angegebene API-Schlüssel werden hier aufgelöst.
+   Das Format ist in `ekte/configfile.py` definiert (eine Tabelle mit Schlüsseln, Typen und Standardwerten) und als JSON-Schema [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json) veröffentlicht; es wird mit `uv run python -m ekte.configfile` neu erzeugt (ein Test schlägt fehl, wenn es veraltet ist). `ekte/config.py` lädt die Datei darüber, sodass jeder Befehl sie prüft. Eine Formatänderung braucht eine neue `CURRENT_VERSION`, die Umbenennungen in `RENAMES_FROM` (für `ekte config migrate`) und einen Changelog-Eintrag; ein veralteter Schlüssel kommt mit seinem Ersatz in `DEPRECATED`. Siehe die [Stabilitätsrichtlinie](docs/STABILITY.md#surface-config).
 2. **Wissensbasis.** `load_knowledge_base()` lädt die mitgelieferten Profile,
    `--kb-dir`/`EKTE_KB_DIR` und die `kb.db` des Nutzers und löst das
    **angegebene** Modell (standardmäßig das angefragte) zu einem Profil auf. Eine
@@ -304,7 +308,7 @@ zweite Achse neben der Suite, getragen von `AuditOptions.surface`,
   `op="rerank"` (`ekte.config.SURFACE_OPS`); die Funktionen in `perf/summary.py`
   nehmen einen Parameter `op` (Standard `complete`).
 - `embed_audit.run_embedding_audit()` und `run_rerank_audit()` (genutzt von
-  `ekte embed` / `ekte rerank` und `/api/embed` / `/api/rerank`) starten den Runner
+  `ekte embed` / `ekte rerank`) starten den Runner
   mit `surface="embedding"` bzw. `"rerank"`, übergeben den vorigen gespeicherten
   Lauf derselben Surface als `previous_report` (Drift) und speichern den Bericht,
   sofern nicht abgeschaltet (`--no-save`).
@@ -333,25 +337,22 @@ nutzt nur die Standardbibliothek.
 
 `ekte/web/server.py` ist eine FastAPI-App, erzeugt von `create_app()`:
 
-- **Seiten.** Die Weboberfläche (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) besteht aus statischem HTML.
-  Es gibt keine Werkzeuge-Seite: Embedding- und Rerank-Prüfungen starten auf der
-  Prüfseite über die Auswahl des Endpunkttyps (`/v2/?surface=embedding|rerank`),
-  und `/v2/tools` liefert eine kleine Seite, die alte Links dorthin weiterleitet
-  (`#rerank` wählt Rerank, `?rerun=` wird weitergegeben). Die Adressen der
-  entfernten klassischen Oberfläche (`/`, `/history`, `/watches`, `/tools`,
-  `/console`) leiten (308) auf ihre v2-Seiten um, mit dem Query-String.
+- **Seiten.** Die Weboberfläche (`/`, `/history`, `/watches`,
+  `/analytics`, `/kb`, `/accessibility`) besteht aus statischem HTML, an der Wurzel ausgeliefert;
+  Skripte und Styles liegen unter `/static/`. Es gibt keine Werkzeuge-Seite:
+  Embedding- und Rerank-Prüfungen starten auf der Prüfseite über die Auswahl des
+  Endpunkttyps (`/?surface=embedding|rerank`). Bis 1.0.0 leiten die früheren Adressen (308) auf die
+  Seite an der Wurzel um und behalten den Query-String bei: `/v2/…` (`/v2/tools` führt auf
+  `/?surface=embedding`, `#rerank` wählt Rerank) sowie `/tools` und `/console` der entfernten
+  klassischen Oberfläche. Diese Weiterleitungen sind veraltet und werden in 1.0.0 entfernt.
 - **API.** `/api/jobs…` führt Prüfungen aus (siehe unten); `/api/models` listet
   die Modelle eines Relays; `/api/report/export` rendert einen Bericht;
   `/api/history…`, `/api/watches…`, `/api/kb…` und `/api/analytics…` bedienen
-  die übrigen Seiten. `/api/audit/stream` (eine Prüfung, per SSE gestreamt),
-  `/api/embed` und `/api/rerank` (je eine synchrone Embedding- / Rerank-Prüfung)
-  nutzt die Weboberfläche nicht mehr; ihre Zukunft wird in den Issues #3 und #4
-  verfolgt.
+  die übrigen Seiten. Alle sind intern; die öffentliche Teilmenge ist [HTTP API v1](#http-api-v1).
 - **Relays.** `POST /api/kb/relays` speichert ein Relay `{name, base_url}` (400
   bei ungültiger Eingabe, 409, wenn Name oder URL schon bekannt sind).
 - **Analysen.** `GET /api/analytics/options` (Relays, Modelle, Suites,
-  Stream-Modi, APIs und der Zeitraum der Historie), `/api/analytics/summary`
+  Stream-Modi, APIs und der Zeitraum des Verlaufs), `/api/analytics/summary`
   (Kennzahlen von `from`–`to` gegenüber dem gleich langen Zeitraum davor),
   `/api/analytics/series` (`metric` je `group=relay|model|relay_model`, bis zu
   4 `keys`, in `bucket=hour|day|week|dow_hour`-Intervallen in der Zeitzone des
@@ -386,9 +387,7 @@ nutzt nur die Standardbibliothek.
   Überwachungen) mit Fortschritt, `GET /api/jobs/{id}/events` spielt das
   Ereignisprotokoll ab und folgt ihm dann live per SSE, `POST
   /api/jobs/{id}/cancel` bricht ab. Die Weboberfläche nutzt diese Endpunkte,
-  daher überdauert eine Prüfung die Seite; `/api/audit/stream` verwendet
-  denselben Auftrag und bricht ihn ab, wenn der Strom
-  endet. Eine Relay-Sperre lässt je Relay nur eine Prüfung (oder einen
+  daher überdauert eine Prüfung die Seite. Eine Relay-Sperre lässt je Relay nur eine Prüfung (oder einen
   Überwachungslauf) zu, nach Hostname, alle Loopback-Adressen als ein Host;
   höchstens `EKTE_MAX_PARALLEL_AUDITS` (Standard 4) laufen gleichzeitig,
   Wartende in Ankunftsreihenfolge.
@@ -423,6 +422,28 @@ nutzt nur die Standardbibliothek.
   Header gegen Framing, MIME-Sniffing und Referrer. Die Oberfläche hat bewusst
   keine Anmeldung.
 
+### HTTP API v1
+
+Der öffentliche Teil der HTTP-API liegt unter `/api/v1/` und folgt der [Stabilitätsrichtlinie](docs/STABILITY.md#surface-http-api): Er ändert sich nur in einem Major-Release inkompatibel, nach einer Übergangsfrist. Jeder andere Pfad unter `/api/` ist intern und kann sich in jedem Release ändern. Interne Antworten tragen `X-Ekte-API: internal`, v1-Antworten `X-Ekte-API: v1`. Die Weboberfläche nutzt die internen Pfade.
+
+| Endpunkt | Anfrage | Antwort |
+|---|---|---|
+| `POST /api/v1/jobs` | JSON-Body mit `base_url`, `model` und optional `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 und der Auftrag; 400 bei ungültiger Eingabe |
+| `GET /api/v1/jobs/{id}` | keine | 200 und der Auftrag; 404 bei unbekannter ID |
+| `GET /api/v1/jobs/{id}/events` | keine | 200 und `text/event-stream`: die bisherigen Ereignisse des Auftrags, dann live, am Ende `done`; 404 bei unbekannter ID |
+| `GET /api/v1/history` | optional `limit` (1–500, Standard 50) und `perf` | 200 und ein JSON-Array mit Lauf-Zusammenfassungen, neueste zuerst |
+| `GET /api/v1/history/{id}` | keine | 200 und der gespeicherte Bericht unverändert; 404 bei unbekannter ID |
+
+Ein Auftrag hat `id`, `status` (`queued`, `running`, `done`, `error` oder `cancelled`), Fortschrittsfelder, `report_id`, sobald der Bericht gespeichert ist, und `error`; der API-Schlüssel wird nie zurückgegeben. Jedes Ereignis ist eine SSE-Zeile `data: {JSON}` mit einem `type`; das Ereignis `report` trägt den Bericht und seine `report_id`, und `done` ist immer das letzte Ereignis. Clients ignorieren Ereignistypen und Felder, die sie nicht kennen.
+
+Jeder Fehler ist JSON mit einem einzigen Feld `error` und einer lesbaren Meldung, mit einem dieser Statuscodes: 400 (ungültige Anfrage), 404 (nicht gefunden), 403 (Cross-Site- oder Cross-Origin-Anfrage abgelehnt), 415 (Body ist kein JSON), 421 (unbekannter Host).
+
+```json
+{"error": "not found"}
+```
+
+- **Nur lokal.** Die Schutzmaßnahmen des Webservers gelten für `/api/v1/` wie für jeden Pfad: Bindung an Loopback als Standard, die Host-Prüfung, die Ablehnung von Cross-Site-Schreibzugriffen und reine JSON-Bodys. Sie antworten im selben Fehlerformat.
+
 ### Web-Frontend
 
 Das Frontend ist reines HTML, CSS und Browser-JavaScript ohne Module und ohne
@@ -432,6 +453,9 @@ Bericht-Renderer (`report.js`), die Designauswahl (`theme.js`) und die Styles
 von der Wurzel ausgeliefert: `lang.js` (Sprachwahl), `locales.js`
 (Übersetzungsdaten), `i18n.js` (Übersetzung der Befunde), `icons.js` (samt
 ekte-Logo), `secretfield.js` und `perf.js` (Leistungsdiagramme).
+Jede Farbe der v2-Oberfläche ist in beiden Themes ein Token in `v2/tokens.css`
+(einmal als `light-dark(<hell>, <dunkel>)` geschrieben); alle übrigen v2-Styles,
+Seiten und Skripte verwenden ausschließlich `var(--…)`, nie eine Farbe als Literal.
 
 Jede v2-Seite außer Barrierefreiheit hat direkt unter ihrem Hero einen
 **Seitenhinweis** (`<div class="znote" id="note">`, gezeichnet von
@@ -532,7 +556,7 @@ Zeile extrahierter Kennzahlen pro Lauf: Startzeit, Raten, Perzentile von
 Latenz/TTFT/Dekodierung, Abrechnungsverhältnisse, Anzahl der Befunde und mehr;
 NULL, wo der Lauf einen Wert nicht gemessen hat), `history_dimensions` (Werte
 der Dimensionen und Detektoren) und `history_requests` (die Anfrage-Datensätze
-des Laufs, Ziel und Baseline, in Listenreihenfolge). Die `performance.requests`
+des Laufs, Ziel und Referenz, in Listenreihenfolge). Die `performance.requests`
 eines Berichts liegen nur dort: `save()` nimmt sie aus `report_json` heraus
 (`requests_split` markiert die Zeile), `get()` / `latest_for()` setzen sie
 wieder ein, sodass ein Bericht genau so zurückgelesen wird, wie er gespeichert
@@ -567,7 +591,7 @@ gespeichert als `enc:v1:…`; `env:`/`file:`-Verweise bleiben unverändert). Der
 Hauptschlüssel selbst wird nie gespeichert: `web/masterkey.py` (`Vault`,
 gemeinsam genutzt von Server und `ekte secret`) hält ihn im Speicher des
 Servers, sobald er aus `EKTE_SECRET_KEY`, einer alten `secret.key` oder vom
-Benutzer auf der Seite Überwachung kommt; `watches.db` enthält nur einen
+Nutzer auf der Seite Überwachung kommt; `watches.db` enthält nur einen
 Prüfwert (`secret_meta`), der einen falschen Schlüssel abweist. Ein neuer
 Schlüssel verschlüsselt jeden gespeicherten Schlüssel neu und schreibt den
 Prüfwert in einer einzigen Transaktion. Der Schlüssel liegt im Speicher eines
@@ -581,14 +605,14 @@ alte Verzeichnis existiert (SQLite-Dateien über die Backup-API, in ein
 temporäres Nachbarverzeichnis, das anschließend umbenannt wird). `~/.zing` wird
 nie geändert oder gelöscht. `lang.js` kopiert die `zing.*`-Einstellungen des
 Browsers ebenso nach `ekte.*`, und der Server liest die Cookies `zing_lang` /
-`zing_ui`, solange die `ekte_*`-Cookies fehlen.
+`zing_ui`, solange die `ekte_*`-Cookies fehlen. Alles davon ist veraltet und wird in 1.0.0 entfernt (die Hinweise nennen diese Version); ekte löscht ein altes `~/.zing` nie.
 
 ## Mitwirken
 
 ### Pull Requests
 
 - Halten Sie `pytest`, `ruff check ekte tests` und `mypy ekte` grün (CI führt alle
-  drei unter Python 3.10–3.13 aus).
+  drei unter Python 3.11–3.14 aus).
 - Beschreiben Sie den Relay-Trick oder den Fehlalarm, den eine Änderung behebt.
 - Aktualisieren Sie `CHANGELOG.md` unter `[Unreleased]`.
 - Aktualisieren Sie die betroffene Dokumentation — README, dieses Handbuch, die
@@ -644,12 +668,83 @@ zugleich die Liste konkurrierender Marken des Detektors); der Import ergänzt
 leere Schlüsselwörter aus diesen Namen mit einer Warnung. Die Markenwörter eines
 neuen Herstellers gehören dort als eine Gruppe hinein.
 
+### Die Wissensbasis aktuell halten
+
+Anbieter- und Modelldaten veralten schnell, und jedes Urteil hängt von ihnen ab;
+deshalb sagt ekte offen, wie alt sie sind. Jedes mitgelieferte Anbieterprofil
+trägt `last_verified`, das Datum, an dem seine Daten zuletzt mit der
+Dokumentation des Anbieters abgeglichen wurden. Das älteste dieser Daten ist das
+**Datum der Wissensbasis**: Es steht in jedem Bericht (`knowledge.kb_date`), wird
+von `ekte kb` sowie in den Markdown-, HTML- und PDF-Berichten angezeigt und von
+`ekte kb --json` ausgegeben. Ist es älter als `STALE_AFTER_DAYS` (180 Tage, in
+`ekte/knowledge/freshness.py`), erhält der Bericht eine Warnung, die auf ein
+Update von ekte oder auf eigene Einträge hinweist. Die Warnung ändert nie das
+Urteil.
+
+Der Aktualisierungsprozess:
+
+- **Quellen.** Nur offizielle Seiten des Anbieters: Modellliste und Modellkarten,
+  Preis- und Limitseiten, Hinweise zu Einstellung und Abkündigung sowie
+  Release Notes. Der Link gehört in den Pull Request.
+- **Wer.** Die Maintainer. Jeder kann eine Änderung über das Issue-Formular
+  „Knowledge base update“ (Anbieter, Modell-ID, Änderung, Quelllink und dessen
+  Datum) oder per Pull Request vorschlagen.
+- **Wie oft.** Mindestens vor jedem Minor-Release und in einem zusätzlichen
+  Patch-Release, wenn sich bei den Modellen Wesentliches ändert (ein neues
+  Flaggschiff, eine Abkündigung, eine umbenannte Modell-ID). Die
+  Release-Checkliste enthält diesen Schritt.
+- **Prüfung.** Ein Pull Request, der `ekte/knowledge/data/*.yaml` ändert,
+  braucht für jeden geänderten Wert eine genannte Quelle und eine zweite
+  Durchsicht; `ekte kb-import --check` muss bestehen. Setzen Sie `last_verified`
+  eines Anbieters erst, nachdem Sie die ganze Anbieterdatei geprüft haben, nicht
+  nur die geänderten Zeilen.
+- **Changelog.** Jede Änderung an den mitgelieferten Daten steht in
+  `CHANGELOG.md`, weil sie Urteile ändern kann.
+
 ### Test-Prompts ändern
 
 Testtexte sind Kalibrierdaten. Eine Änderung in `ekte/prompts/en.json` kann
 Antwortprüfungen, Token-Schätzungen und damit Urteile verändern; passen Sie den
 Detektor und seine Tests mit an und nennen Sie die Änderung im CHANGELOG. Lassen
 Sie einen Test nie der Sprache der Oberfläche folgen.
+
+### Ein Datenbankschema ändern
+
+Jede SQLite-Datenbank, die ekte anlegt (`history.db`, `watches.db`, `kb.db`),
+wird von einem gemeinsamen Mechanismus, `ekte/dbmigrate.py`, versioniert und
+migriert; ein Store migriert sich nie selbst mit ad-hoc-`ALTER TABLE`s. Die
+Schemaversion steht in `PRAGMA user_version`, und
+`datadir.connect(name, MIGRATIONS)` prüft sie bei jedem Öffnen.
+
+So ändern Sie ein Schema:
+
+1. Fügen Sie dem Store (`web/history.py`, `web/watches.py`,
+   `knowledge/store.py`) eine Funktion `_vN(conn)` hinzu, die die Änderung
+   vornimmt, und hängen Sie `dbmigrate.Migration(N, _vN)` an sein
+   `MIGRATIONS`-Tupel an. Ändern oder vertauschen Sie nie einen bestehenden
+   Schritt: Datenbanken im Feld haben ihn bereits ausgeführt.
+2. Halten Sie den Schritt idempotent (`CREATE ... IF NOT EXISTS` und
+   `kb_snapshot.add_link_columns()` für Spalten) und führen Sie darin weder
+   Commit noch Rollback aus. Der Mechanismus führt jeden Schritt in einer
+   eigenen `BEGIN IMMEDIATE`-Transaktion zusammen mit der Versionserhöhung aus;
+   ein unterbrochener oder fehlschlagender Schritt lässt die Datenbank also auf
+   der vorherigen Version.
+3. Eine neue Datenbank beginnt bei Version 0 und führt alle Schritte aus; eine
+   Datenbank aus der Zeit vor der Versionierung hat ebenfalls Version 0.
+   Deshalb muss Schritt 1 eines Stores ein vorhandenes Schema übernehmen.
+4. Ergänzen Sie in `tests/test_dbmigrate.py` einen Test, der das Schema in
+   Version N-1 aufbaut, es öffnet und die neue Version, das neue Schema und die
+   unversehrten Daten prüft. Müssen Zeilen für vorhandene Daten gefüllt werden,
+   geschieht das im `on_migrated`-Callback des Stores (siehe
+   `history._after_migration`), nicht im Schritt.
+
+Was der Mechanismus für Sie übernimmt: Eine Datenbank einer **neueren** ekte
+wird mit `DatabaseTooNewError` abgelehnt (beide Versionen genannt, mit
+Handlungshinweis), bevor etwas geschrieben wird; vor dem ersten Schritt eines
+Laufs wird eine nicht leere Datenbank nach `<db>.v<Version>.<UTC-Zeit>.bak`
+daneben kopiert, und je Datenbank bleiben nur die neuesten 3 Sicherungen
+erhalten (`dbmigrate.BACKUP_KEEP`); die Version wird unter der Schreibsperre
+erneut gelesen, sodass CLI und Server nie denselben Schritt zweimal ausführen.
 
 ### Übersetzungen
 
@@ -696,7 +791,7 @@ Französisch, Spanisch, Portugiesisch, Italienisch, Deutsch und Norwegisch (Bokm
 | `README.md`, `README.<lang>.md` | Nutzer: was ekte tut, Installation, Nutzung von CLI und Weboberfläche |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Mitwirkende: Architektur, Einrichtung, Mitwirken, Docker, Releases |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Alle: jede Prüfung, ihre Bewertungsskala und ihre Einschränkungen |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Referenzseiten (englisch) |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Referenzseiten (englisch) |
 
 Die englischen Dateien sind die Referenz. Wenn Sie eine ändern, ändern Sie die
 anderen im selben Pull Request und verwenden Sie in jeder Sprache die Wortwahl der
@@ -783,24 +878,75 @@ einschließlich der Schutzmaßnahmen der Oberfläche.
 
 | Workflow | Läuft bei | Tut |
 |---|---|---|
-| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `a11y/integration`, `perf/integration`); nächtlich und manuell (nur Barrierefreiheit) | `ruff`, `mypy` und `pytest` unter Python 3.10–3.13 mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch: alle Seiten bei Pushes, nächtlichen und manuellen Läufen (mit dem BITV-Konformitätsbericht), bei Pull Requests nur die Seiten, die die Änderung betrifft (keine bei reinen Doku-Änderungen) — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
+| `.github/workflows/ci.yml` | Push und Pull Request auf `main` (und die Integrationszweige `*/integration`); nächtlich und manuell (nur Barrierefreiheit) | `ruff`, `mypy` und `pytest` unter Python 3.11–3.14 (Linux; unter macOS und Windows 3.11 und 3.14) mit den Extras `dev` und `web`; baut Wheel und sdist und prüft, dass sich das Wheel installieren lässt und die Wissensbasis lädt; führt die Barrierefreiheits-Suite aus (nur informativ, lässt den Lauf nie fehlschlagen) und lädt ihre Befunde hoch: alle Seiten bei Pushes, nächtlichen und manuellen Läufen (mit dem BITV-Konformitätsbericht), bei Pull Requests nur die Seiten, die die Änderung betrifft (keine bei reinen Doku-Änderungen) — außer bei Pull Requests in `perf/integration`, wo die langsame Browser-Suite übersprungen wird (sie läuft bei Pushes auf diesen Zweig und bei seinem Pull Request in `main`) |
 | `.github/workflows/release.yml` | einem Tag `v*` | baut, führt `twine check` aus und veröffentlicht auf PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | täglich, manuell | Beispiel einer geplanten Relay-Prüfung mit der Action |
 
 Die Composite Action selbst ist `action.yml`, dokumentiert in
 [docs/CI.md](docs/CI.md).
 
+### Dateien Dritter in der Distribution
+
+Die Source Distribution enthält die Tests, aber keine mitgelieferten Dateien Dritter. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) liegt nur im Git-Repository; sie ist aus dem sdist ausgeschlossen (`exclude` unter `[tool.hatch.build.targets.sdist]` in `pyproject.toml`) und war nie Teil des Wheels.
+
+- Tests, die eine ausgeschlossene Datei brauchen, werden mit klarer Begründung übersprungen, wenn sie fehlt; die Barrierefreiheits-Suite läuft in einem Git-Checkout.
+- `NOTICE` listet jede Datei Dritter auf und sagt, ob sie ausgeliefert wird. Eine neue mitgelieferte Datei gehört in die `exclude`-Liste und in `NOTICE`; muss sie ausgeliefert werden, steht in `NOTICE`, dass sie es wird.
+- `scripts/check_dist_contents.py` baut Wheel und sdist (`uv build`) und schlägt fehl, wenn eine ausgeschlossene Datei oder eine Datei, die `NOTICE` als nicht ausgeliefert aufführt, enthalten ist. Der Workflow `.github/workflows/dist.yml` führt es in einem eigenen Job aus.
+
 ## Releases
 
-1. `[Unreleased]` in `CHANGELOG.md` auf die neue Version umstellen und `version`
-   in `pyproject.toml` erhöhen.
-2. Committen, `vX.Y.Z` taggen und das Tag pushen; `release.yml` veröffentlicht auf
-   PyPI.
-3. Das GitHub-Release mit den Notizen aus dem CHANGELOG anlegen und die
-   festgelegte Version der Action in den READMEs und `docs/CI.md` aktualisieren.
-
-Die einmalige Einrichtung bei PyPI und der manuelle Weg stehen in
+Ein Release ist ein Versions-Tag; alles Weitere ist automatisiert und geprüft. Die
+Checkliste steht in [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md), die
+einmalige PyPI-Einrichtung und der manuelle Ausweg in
 [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+### Ein Release erstellen
+
+1. Die [Release-Checkliste](docs/RELEASE_CHECKLIST.md) abarbeiten: Version und
+   Changelog, unterstützte Python-Versionen und Systeme, Aktualität der
+   Wissensbasis, Upgrade-Fixture, Barrierefreiheitsprüfung bei UI-Änderungen,
+   Dokumentation in allen Sprachen, Sicherheitshinweise.
+2. `version` in `pyproject.toml` setzen und `[Unreleased]` in `CHANGELOG.md` in
+   `[X.Y.Z] - JJJJ-MM-TT` umbenennen. Lokal prüfen mit
+   `python scripts/release_check.py version vX.Y.Z` und `... notes vX.Y.Z`.
+3. Mergen, dann den Commit taggen und den Tag pushen:
+   `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`, `git push origin vX.Y.Z`.
+4. `release.yml` prüft zuerst mit `scripts/release_check.py`, ob der Tag der
+   Paketversion entspricht, `CHANGELOG.md` einen Abschnitt dafür hat und die CI für
+   den getaggten Commit grün ist (eine laufende CI wird abgewartet). Schlägt eine
+   Prüfung fehl, stoppt der Workflow, und nichts wird veröffentlicht. Danach baut er,
+   veröffentlicht per Trusted Publishing mit Provenance-Attestierungen auf PyPI und
+   erstellt das GitHub-Release mit dem Changelog-Abschnitt als Beschreibung.
+
+### Release Candidates
+
+`vX.Y.ZrcN` taggen (mit `version = "X.Y.ZrcN"` in `pyproject.toml`). PyPI behandelt
+sie als PEP-440-Vorabversion: `pip install ekte` ignoriert sie, `pip install --pre ekte`
+findet sie; GitHub markiert das Release als „Pre-release“. Im Changelog genügt der
+Abschnitt `[X.Y.ZrcN]`, `[X.Y.Z]` oder `[Unreleased]`.
+
+### Wenn eine Veröffentlichung auf halbem Weg scheitert
+
+PyPI nimmt dieselbe Datei nie zweimal an, und eine Version lässt sich nicht
+wiederverwenden. Entscheidend ist, wie weit der Lauf kam (Actions, „Release to PyPI“):
+
+- **Eine Prüfung ist fehlgeschlagen (Job verify).** Nichts wurde veröffentlicht.
+  Ursache beheben (Version, Changelog, CI), den Tag lokal und auf origin löschen
+  (`git push origin :refs/tags/vX.Y.Z`) und den korrigierten Commit neu taggen.
+- **Build oder Upload scheiterte, bevor PyPI Dateien hatte.** Die fehlgeschlagenen
+  Jobs erneut ausführen; keine Version wurde verbraucht. Muss der getaggte Commit
+  selbst geändert werden, den Tag löschen und neu setzen.
+- **PyPI hat einen Teil der Dateien** (siehe <https://pypi.org/project/ekte/#files>).
+  Die fehlgeschlagenen Jobs erneut ausführen: Der Upload überspringt vorhandene
+  Dateien. Weichen die Dateien von dem ab, was erscheinen soll, nicht wiederholen,
+  sondern die Version auf PyPI „yanken“ und die nächste veröffentlichen
+  (`X.Y.Z+1` oder `rcN+1`).
+- **PyPI ist vollständig, aber das GitHub-Release fehlt.** Den Job `GitHub Release`
+  erneut ausführen; er legt das Release idempotent an oder aktualisiert es. Oder von
+  Hand: `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`.
+- **Eine fehlerhafte Version ist bereits live.** Auf PyPI yanken (nur noch per exakter
+  Version installierbar), mit einer neuen Version nach vorn korrigieren und das im
+  Changelog vermerken.
 
 ## Sicherheit
 

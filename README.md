@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** is a local-first tool that audits whether an API relay (reseller /
 proxy) actually serves the model it claims to — or quietly substitutes a cheaper
@@ -25,6 +25,8 @@ LLM.
 This README is for people who **use** ekte. How ekte is built, tested and
 released is in the [Developer guide](DEVELOPER_GUIDE.md); how every check works
 and is scored is in the [Methodology](docs/METHODOLOGY.md).
+
+Which parts of ekte are stable, what counts as a breaking change and how features are deprecated: [Stability and compatibility policy](docs/STABILITY.md) (English).
 
 ---
 
@@ -65,7 +67,7 @@ ekte turns "this feels off" into a reproducible report.
 
 ## Install
 
-Requires Python 3.10+. Every option below provides the `ekte` command.
+Requires Python 3.11+. Runs on Linux, macOS and Windows (the Docker image is Linux); on Windows the owner-only data directory modes have no effect, see [Supported operating systems](docs/STABILITY.md#os). Every option below provides the `ekte` command.
 
 ### With pip
 
@@ -178,6 +180,8 @@ API keys can be given literally, as `env:VAR` or as `file:/path`; reports only
 ever contain a fingerprint of the key. A full config file is in
 [`examples/ekte.yaml`](examples/ekte.yaml).
 
+The file has a format version (`version: 1`; a file without one is format 1). Wrong types and invalid values are rejected with the file, line and key; unknown keys are ignored with a warning until ekte 1.0.0, which rejects them. `ekte config migrate` updates an older file. The schema is [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+
 ### As a tool for an LLM / agent
 
 ekte is built to be driven by another program or model. Everything goes to stdout
@@ -247,22 +251,20 @@ local ekte server and the relay you audit, never a third party. See
 
 ### Pages
 
-The web UI lives under `/v2/`, where `ekte serve` opens it. The addresses of
-the earlier classic UI (`/`, `/history`, `/watches`, `/tools`, `/console`)
-redirect to the matching page.
+The web UI is served at the root of the address `ekte serve` opens, with the audit page at `/`. The addresses it used before (`/v2/…`, e.g. `/v2/history`) and those of the earlier classic UI (`/tools`, `/console`) redirect permanently to the matching page, keeping the query string; these redirects are deprecated and removed in 1.0.0.
 
 | Page | Address | What it is for |
 |---|---|---|
-| **Audit** | `/v2/` | Audit a relay (optionally against a baseline) and read the report; embedding and rerank audits start here too, through the endpoint-type selector |
-| **Monitors** | `/v2/watches` | Scheduled re-audits with webhook alerts |
-| **History** | `/v2/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
-| **Analytics** | `/v2/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
-| **Knowledge** | `/v2/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
+| **Audit** | `/` | Audit a relay (optionally against a baseline) and read the report; embedding and rerank audits start here too, through the endpoint-type selector |
+| **Monitors** | `/watches` | Scheduled re-audits with webhook alerts |
+| **History** | `/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
+| **Analytics** | `/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
+| **Knowledge** | `/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
 
 Across the pages: filters and configurable trends (score, grade, latency p50,
 tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
 report** in every format; and a theme switch (Auto theme / Light / Dark). Every page but Accessibility has one notice right under its
-introduction, coloured by importance (information, success, warning,
+introduction, colored by importance (information, success, warning,
 critical): e.g. the last finished audit on **Audit**, the master key on
 **Monitors**, runs still being processed on **History** and **Analytics**,
 skipped entries on **Knowledge**.
@@ -277,7 +279,7 @@ after another, so they never skew each other's latency or reliability results
 machine queue too); audits of different relays run in parallel, at most four at
 once (`EKTE_MAX_PARALLEL_AUDITS`). Monitors wait for their relay the same way.
 
-**Analytics.** `/v2/analytics` turns the local history into
+**Analytics.** `/analytics` turns the local history into
 comparisons: KPI tiles for the chosen period (runs, median score, high-risk
 share, success rate, TTFT, decode speed, billing ratios) with the change
 against the period of the same length before; a chart of any metric per relay,
@@ -445,7 +447,7 @@ in a config file use `run.dimensions: [protocol, performance]`. The dimensions
 are `connectivity`, `protocol`, `context_window`, `model_identity`, `capability`,
 `streaming`, `billing`, `reliability`, `security` and `performance`. In the web
 UI, the `custom` suite button opens the same choice (**Dimensions to run**) on
-the audit page, the console and the monitors.
+the audit page and the monitors.
 
 The **overall score is the weighted mean of the selected dimensions only**;
 dimensions you left out are reported as "not selected". The risk verdict is
@@ -462,7 +464,7 @@ p90 / p95 / p99 / max / stdev.
 
 When the dedicated probe runs, it scores the **Performance** dimension. The score
 is about **consistency**, not raw speed, so a slow but steady endpoint (a local
-or self-hosted model) is not marked down for not being a data centre:
+or self-hosted model) is not marked down for not being a data center:
 
 | Check | Scored on |
 |---|---|
@@ -685,7 +687,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # Does a relay claiming tts-1-hd return real audio whose length scales with the
 # input (not a fixed placeholder, not HTML/JSON masquerading as audio)?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` checks connectivity, a valid and decodable format, **size match**
@@ -736,7 +738,7 @@ OpenAI, Anthropic, Google Gemini, DeepSeek, Qwen, GLM and Moonshot
    or `EKTE_KB_DIR`.
 3. **Your entries** (`kb.db` in the data directory), added without YAML files
    or an editable install:
-   - in the web UI's **Knowledge** page (`/v2/kb`), with one tab each for
+   - in the web UI's **Knowledge** page (`/kb`), with one tab each for
      **Models**, **Providers** and **Relays**. Every tab lists the complete set —
      packaged, `EKTE_KB_DIR` and yours (marked **Yours**) — with a filter, an
      on/off switch per item and an **Add …** form: **Add a model** → **Copy the
@@ -842,6 +844,9 @@ on a single run without reviewing sample size, cost settings and local law. Run
 | [Developer guide](DEVELOPER_GUIDE.md) | Architecture, development setup, contributing, translations, Docker, releases |
 | [docs/CI.md](docs/CI.md) | The GitHub Action: inputs, outputs, examples |
 | [docs/DOCKER.md](docs/DOCKER.md) | Running the web UI in a container |
+| [Stability and compatibility](docs/STABILITY.md) | What semver protects, deprecation, supported Python and systems, upgrades and downgrades |
+| [docs/CLI.md](docs/CLI.md) | Every command and option, and the exit codes (English) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | The report and webhook JSON formats and their `schema_version` (English) |
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each release |
 | [SECURITY.md](SECURITY.md) | Reporting a vulnerability |
 
@@ -864,11 +869,11 @@ ekte continues [zing](https://github.com/cenbonew/zing) (its last release was
   with `EKTE_DATA_DIR`, `ZING_DATA_DIR` or `--data-dir` is used as it is.
 - **Web UI.** Language, theme and filter settings and a master key saved in the
   browser's password manager carry over. zing's classic UI is gone: its
-  addresses (`/`, `/history`, `/watches`, `/tools`, `/console`) open the
-  matching page under `/v2/`.
+  addresses (`/tools`, `/console`) open the audit page (`/`).
 - **Reports and probes.** Reports, webhooks and file names say `ekte` (e.g.
   `"tool": "ekte"`, `ekte-report.json`), and so do the probes sent to relays.
   Scripts that look for `zing` in them need updating.
+- **Timeline.** The whole compatibility layer (the `ZING_*` fallback, the `~/.zing` copy, the carry-over of browser settings, cookies and the saved master key, and the classic UI addresses) is deprecated and removed in ekte **1.0.0** (1.0.0rc1 is the first release without it). Until then every part keeps working and its notice names this version; the old `/v2/…` page addresses redirect until 1.0.0 as well. ekte never deletes an old `~/.zing`, even after the copy is removed.
 
 ## License
 

@@ -1,0 +1,6 @@
+# zizmor (workflow linter) configuration; run in CI by the "workflow lint" job.
+rules:
+  # example-audit.yml is a copy-paste template that runs this repository's own
+  # action; "./" is the documented, stable spelling.
+  self-repository:
+    disable: true

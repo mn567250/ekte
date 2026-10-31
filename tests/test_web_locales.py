@@ -78,7 +78,7 @@ def test_every_ui_language_is_complete(tmp_path):
     # keeping placeholders and inline markup intact.
     out = subprocess.run(
         ["node", "-e", _LOCALE_CHECK_JS, str(_ui_js(tmp_path))],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
     result = json.loads(out)
     assert {"fr", "es", "pt", "it", "de", "nb"} <= set(result["codes"])
@@ -144,7 +144,7 @@ def test_downloaded_report_is_translated_with_english_keys(tmp_path):
     here = Path(__file__).resolve().parent
     out = subprocess.run(
         ["node", "-e", _EXPORT_JS, str(_ui_js(tmp_path)), str(here / "fixtures" / "web_report.json")],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
     result = json.loads(out)
     assert set(result) == {"en", "zh", "fr", "es", "pt", "it", "de", "nb"}
@@ -253,7 +253,7 @@ def test_server_text_is_chinese_in_zh(tmp_path):
     extra = _backend_sentences()
     out = subprocess.run(
         ["node", "-e", _SERVER_ZH_JS, str(_ui_js(tmp_path)), str(fixture), json.dumps(extra)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
     pairs = json.loads(out)
     cjk = re.compile(r"[㐀-鿿]")
@@ -320,7 +320,7 @@ def test_hidden_page_is_revealed_if_boot_never_runs(tmp_path):
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     shutil.copy(static / "lang.js", tmp_path / "lang.js")
     out = subprocess.run(
-        ["node", "-e", _VISIBILITY_JS, str(tmp_path)], capture_output=True, text=True, check=True,
+        ["node", "-e", _VISIBILITY_JS, str(tmp_path)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
     r = json.loads(out)
     for case in ("cap", "parsed", "error-loading", "error-parsed"):
@@ -535,7 +535,7 @@ def test_lang_js_loads_the_missing_language_bundle(tmp_path):
     for code in i18n.codes():
         (tmp_path / f"locales-{code}.js").write_text(i18n.locales_script(code), encoding="utf-8")
     r = json.loads(subprocess.run(
-        ["node", "-e", _SWITCH_JS, str(tmp_path)], capture_output=True, text=True, check=True,
+        ["node", "-e", _SWITCH_JS, str(tmp_path)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     de_history = i18n.ui("de", "History")
     fr_history = i18n.ui("fr", "History")
@@ -644,7 +644,7 @@ def test_shared_intl_formatters_are_cached_per_locale(tmp_path):
     (tmp_path / "locales.js").write_text(locales_script(), encoding="utf-8")
     shutil.copy(_STATIC / "lang.js", tmp_path / "lang.js")
     res = json.loads(subprocess.run(
-        ["node", "-e", _INTL_JS, str(tmp_path)], capture_output=True, text=True, check=True,
+        ["node", "-e", _INTL_JS, str(tmp_path)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     out = res["out"]
     # same text as toLocaleString, in the language shown (also after set())
@@ -741,7 +741,7 @@ def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
     signals = sorted(_kb_signals())
     out = json.loads(subprocess.run(
         ["node", "-e", _FP_TITLES_JS, str(_ui_js(tmp_path)), json.dumps(signals)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     assert out["en"]["titles"] == ["Fingerprint divergence: " + s for s in signals]
     for lang, r in out.items():
@@ -885,7 +885,7 @@ def test_pass_and_fail_of_one_check_get_different_localized_titles(tmp_path):
 
     out = json.loads(subprocess.run(
         ["node", "-e", _PASS_FAIL_JS, str(_ui_js(tmp_path)), json.dumps(_PASS_FAIL)],
-        capture_output=True, text=True, check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     english = [t for _id, p, f, _ev in _PASS_FAIL for t in (p, f)]
     assert out["en"]["ui"] == out["en"]["exported"] == english

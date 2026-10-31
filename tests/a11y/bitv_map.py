@@ -16,7 +16,7 @@ from typing import Any
 # The single source of truth for the 50 WCAG 2.1 A/AA criteria (= EN 301 549
 # 9.x.x.x / BITV steps): number, level, title, how far the tests decide it and
 # how. The conformance report (tests/a11y/conformance.py) and the report page
-# in web UI v2 (/v2/accessibility) read the same file.
+# in web UI v2 (/accessibility) read the same file.
 CATALOGUE_FILE = Path(__file__).resolve().parents[2] / "ekte" / "web" / "static" / "v2" / "bitv-catalogue.json"
 
 

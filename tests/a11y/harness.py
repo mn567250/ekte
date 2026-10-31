@@ -21,7 +21,7 @@ import threading
 import time
 import weakref
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -96,8 +96,8 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     # one monitor, so the monitors page has a populated list
     with httpx.Client(base_url=url, headers={"Origin": url}, timeout=10) as c:
         wid = c.post(f"/api/watches/from-history/{rid}", json={}).json().get("id")
-    # a week of runs over two relays and models, so /v2/analytics draws charts
-    seed_analytics(datetime.now(timezone.utc), wid)
+    # a week of runs over two relays and models, so /analytics draws charts
+    seed_analytics(datetime.now(UTC), wid)
 
     yield url
 
@@ -348,6 +348,8 @@ async opts => {
 def run_axe(page: Page, tags: list[str] | None = None, rules: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Run axe-core on the page; returns the violations (rule, impact, nodes)."""
     if not page.evaluate("() => !!window.axe"):
+        if not AXE.is_file():
+            pytest.skip(f"axe-core not found at {AXE} (not in the source distribution; use a git checkout)")
         page.add_script_tag(path=str(AXE))
     opts: dict[str, Any] = {"resultTypes": ["violations"]}
     if tags:

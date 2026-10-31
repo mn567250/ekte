@@ -155,7 +155,7 @@ the key) and the pages and languages it reviewed.
 a completed review as the manual part of the steps it covers: a step whose
 automated part passed becomes **pass** when the review found nothing and
 **fail** when it found an issue; the report records a manual review and
-`/v2/accessibility` names the model. A review that was skipped, failed, a dry
+`/accessibility` names the model. A review that was skipped, failed, a dry
 run, or covered fewer pages or languages than were tested changes nothing, and
 without the file the report is built as before. The script itself never
 asserts and always exits 0; without a key for a remote endpoint it prints a

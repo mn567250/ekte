@@ -2,7 +2,7 @@
 
 > [🇬🇧 English](DEVELOPER_GUIDE.md) · [🇨🇳 中文](DEVELOPER_GUIDE.zh-CN.md) · **🇫🇷 Français** · [🇪🇸 Español](DEVELOPER_GUIDE.es.md) · [🇵🇹 Português](DEVELOPER_GUIDE.pt.md) · [🇮🇹 Italiano](DEVELOPER_GUIDE.it.md) · [🇩🇪 Deutsch](DEVELOPER_GUIDE.de.md) · [🇳🇴 Norsk](DEVELOPER_GUIDE.nb.md)
 
-Ce guide s'adresse à celles et ceux qui modifient ekte : comment il est construit,
+Ce guide s'adresse à celles et ceux qui modifient ekte : comment il est construit,
 comment préparer un environnement de développement, comment contribuer, et
 comment il est empaqueté, exécuté dans Docker et publié. Ce que fait ekte et
 comment l'utiliser se trouve dans le [README](README.fr.md) ; le fonctionnement et
@@ -26,13 +26,16 @@ la notation de chaque vérification dans la [Méthodologie](docs/METHODOLOGY.fr.
   - [Surfaces](#surfaces)
   - [Auditeurs autonomes](#auditeurs-autonomes)
   - [Serveur web](#serveur-web)
+  - [HTTP API v1](#http-api-v1)
   - [Interface web côté navigateur](#interface-web-côté-navigateur)
   - [Données locales](#données-locales)
 - [Contribuer](#contribuer)
   - [Pull requests](#pull-requests)
   - [Ajouter un détecteur](#ajouter-un-détecteur)
   - [Modifier la base de connaissances](#modifier-la-base-de-connaissances)
+  - [Garder la base de connaissances à jour](#garder-la-base-de-connaissances-à-jour)
   - [Modifier les prompts des sondes](#modifier-les-prompts-des-sondes)
+  - [Modifier le schéma d'une base de données](#modifier-le-schéma-dune-base-de-données)
   - [Traductions](#traductions)
   - [Documentation](#documentation)
 - [Tests](#tests)
@@ -44,12 +47,12 @@ la notation de chaque vérification dans la [Méthodologie](docs/METHODOLOGY.fr.
 
 ## Principes
 
-ekte est une aide à l'audit en boîte noire : l'exactitude et le fait de **ne pas
+ekte est une aide à l'audit en boîte noire : l'exactitude et le fait de **ne pas
 accuser à tort des relais honnêtes** comptent davantage que d'attraper chaque
 astuce possible. Gardez cette exigence en tête pour chaque modification.
 
 - **Des preuves, pas des accusations.** Les constats signalent *écarts et
-  risques*, jamais une « fraude ». Préférez *non concluant* à une supposition. Un
+  risques*, jamais une « fraude ». Préférez *non concluant* à une supposition. Un
   nouveau chemin de gravité ÉLEVÉE exige des preuves solides et reproductibles,
   et doit être difficile à déclencher sur un endpoint honnête.
 - **Pas de réseau dans les tests.** Les tests des détecteurs s'exécutent contre
@@ -68,7 +71,7 @@ astuce possible. Gardez cette exigence en tête pour chaque modification.
 
 ## Environnement de développement
 
-Nécessite Python 3.10+. Node.js est facultatif : les tests du JavaScript du
+Nécessite Python 3.11+. Linux, macOS et Windows sont testés en CI ; les tests qui n'ont de sens que sous POSIX sont ignorés sous Windows avec une raison explicite (`skipif(sys.platform == "win32", reason=...)`). Utilisez `pathlib`, passez `encoding="utf-8"` aux E/S texte et n'écrivez jamais `/tmp` en dur. Node.js est facultatif : les tests du JavaScript du
 navigateur s'exécutent sous `node` et sont ignorés sans lui.
 
 ```bash
@@ -80,12 +83,12 @@ ruff check ekte tests         # lint
 mypy ekte                     # vérification de types
 ```
 
-Avec uv : `uv venv && uv pip install -e '.[dev,web]'`. Aucune
+Avec uv : `uv venv && uv pip install -e '.[dev,web]'`. Aucune
 bibliothèque système n'est nécessaire, rapports PDF compris.
 
 Lancez depuis les sources avec `ekte …` ou `python -m ekte …`. `ekte serve` sert
 l'interface web directement depuis `ekte/web/static/`, donc un rechargement du
-navigateur prend en compte les modifications ; il n'y a pas d'étape de build.
+navigateur prend en compte les modifications ; il n'y a pas d'étape de build.
 
 ## Organisation du dépôt
 
@@ -144,6 +147,7 @@ son planificateur de surveillances aboutissent tous à la même fonction,
    options de ligne de commande en `TargetConfig` (cible, référence et juge
    facultatifs) et `AuditOptions` (suite, dimensions, taille des sondes, sortie).
    Les clés d'API données en `env:VAR` ou `file:/chemin` sont résolues ici.
+   Le format est défini dans `ekte/configfile.py` (un tableau de clés, de types et de valeurs par défaut) et publié sous forme de schéma JSON [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), régénéré avec `uv run python -m ekte.configfile` (un test échoue s'il est périmé). `ekte/config.py` charge le fichier par ce biais, donc chaque commande le valide. Un changement de format exige un nouveau `CURRENT_VERSION`, les renommages dans `RENAMES_FROM` (utilisés par `ekte config migrate`) et une entrée de changelog ; une clé obsolète va dans `DEPRECATED` avec son remplaçant. Voir la [politique de stabilité](docs/STABILITY.md#surface-config).
 2. **Base de connaissances.** `load_knowledge_base()` charge les profils intégrés,
    `--kb-dir`/`EKTE_KB_DIR` et le `kb.db` de l'utilisateur, puis résout le modèle
    **annoncé** (par défaut le modèle demandé) vers un profil. Une surveillance
@@ -153,7 +157,7 @@ son planificateur de surveillances aboutissent tous à la même fonction,
    enveloppe chaque appel pour la section performance.
 4. **Détecteurs.** `select_detectors()` retient les détecteurs enregistrés pour
    la suite (ou les dimensions personnalisées), en écartant ceux qui exigent un
-   juge ou une référence absents. Ils s'exécutent **séquentiellement**, à dessein :
+   juge ou une référence absents. Ils s'exécutent **séquentiellement**, à dessein :
    des requêtes concurrentes déclencheraient des limites de débit et fausseraient
    les mesures de temps (les sondes de fiabilité et de performance gèrent
    elles-mêmes une concurrence bornée). `run_detector()` chronomètre chacun et
@@ -164,7 +168,7 @@ son planificateur de surveillances aboutissent tous à la même fonction,
    verdict de risque et confiance.
 6. **Rapport.** Tout aboutit dans un `AuditReport` (`ekte/models.py`) avec la
    cible expurgée, l'instantané du profil de la base de connaissances, la section
-   performance et les langues des sondes. La CLI le rend et l'écrit ; l'interface
+   performance et les langues des sondes. La CLI le rend et l'écrit ; l'interface
    web le diffuse.
 
 `run_audit()` accepte un rappel `on_event` ; le serveur web transforme ses
@@ -181,7 +185,7 @@ détecte à partir de l'URL de base et du modèle. Les détecteurs ne parlent qu
 cette interface (`RequestSpec` en entrée, `CompletionOutcome` en sortie) et sont
 donc indépendants du protocole.
 
-Les clients adaptent aussi les requêtes à ce que le modèle accepte (`base.py`) :
+Les clients adaptent aussi les requêtes à ce que le modèle accepte (`base.py`) :
 le runner initialise `unsupported_params` depuis le profil, les paramètres
 d'échantillonnage qui y figurent sont omis et, sur Chat Completions, un
 `max_tokens` listé envoie la limite en `max_completion_tokens`. Une 4xx qui nomme
@@ -195,26 +199,26 @@ Un détecteur est un fichier autonome dans `ekte/detectors/` : une sous-classe d
 `Detector` (`base.py`) avec un `id`, un `name`, une `dimension`, la première
 suite où il s'exécute (`min_suite`), un `cost_hint` approximatif pour
 `--dry-run`, et `async def run(self, ctx) -> DetectorResult`. `@register`
-l'ajoute au registre ; `ekte/detectors/__init__.py` importe chaque module pour
+l'ajoute au registre ; `ekte/detectors/__init__.py` importe chaque module pour
 que le registre soit complet.
 
-Chaque détecteur publie son **barème** (`SCALE`, construit avec `scale.py`) :
+Chaque détecteur publie son **barème** (`SCALE`, construit avec `scale.py`) :
 chaque résultat possible de chaque vérification avec ses points, son statut et sa
 gravité. Les constats sont créés à partir du barème
 (`SCALE.finding(check, outcome, …)`), de sorte que rapport et comportement ne
-peuvent diverger. `Scale` note par la moyenne de ses vérifications ;
+peuvent diverger. `Scale` note par la moyenne de ses vérifications ;
 `DeductionScale` part de 100 et retranche ou plafonne. L'interface web affiche le
-barème sous **Barème** ; la [Méthodologie](docs/METHODOLOGY.fr.md) reproduit
+barème sous **Barème** ; la [Méthodologie](docs/METHODOLOGY.fr.md) reproduit
 chaque barème. `connectivity.py` est l'exemple canonique et le plus court.
 
 Les détecteurs partagent une même boucle d'événements avec tous les autres
 audits de `ekte serve` ; le travail gourmand en CPU ne doit donc pas s'y
-exécuter : une boucle bloquée retarde les requêtes des autres audits et gonfle
+exécuter : une boucle bloquée retarde les requêtes des autres audits et gonfle
 les latences qu'ils mesurent. `helpers.build_filler()` construit le texte de
 remplissage en temps linéaire et mémorise les quelques dernières tailles, et les
 détecteurs de fenêtre de contexte et de cache de prompt l'appellent (ainsi que
 `build_haystack()`) via `asyncio.to_thread`. Les comptes de tokens viennent de
-`ekte/utils/tokenize.py`, une heuristique en bibliothèque standard : ekte
+`ekte/utils/tokenize.py`, une heuristique en bibliothèque standard : ekte
 n'importe aucune bibliothèque de tokenizer et ne télécharge rien à l'exécution,
 si bien qu'il fonctionne dans des environnements restreints. L'argument
 `tokenizer` d'`estimate_tokens()` est accepté mais ne change pas le compte, et
@@ -223,7 +227,7 @@ compatibilité et toujours à false.
 
 ### Notation et verdict
 
-`ekte/scoring.py` contient `DIMENSION_WEIGHTS` et les règles du verdict : le score
+`ekte/scoring.py` contient `DIMENSION_WEIGHTS` et les règles du verdict : le score
 d'une dimension est la moyenne à poids égal de ses détecteurs, le score global la
 moyenne pondérée des dimensions exécutées, et le niveau de risque suit l'échelle
 de gravité décrite dans
@@ -244,7 +248,7 @@ une exécution (`snapshot.py`). Les identifiants de modèle se résolvent exacte
 les alias ou par nom normalisé, restreints par le fournisseur déclaré. Le repli
 approximatif prend le plus long nom de la KB contenu dans l'identifiant annoncé
 (un id de snapshot ou décoré), sauf si le reste de l'identifiant nomme un autre
-niveau ou une autre variante (`-mini`, `-lite`, `-image`, …) ; un identifiant
+niveau ou une autre variante (`-mini`, `-lite`, `-image`, …) ; un identifiant
 tronqué n'est résolu que si le nom d'un seul modèle commence par lui, si bien
 qu'un id ambigu comme `gpt-4` n'obtient aucun profil plutôt qu'un niveau
 deviné. Chaque rapport consigne comment l'id a été résolu.
@@ -255,15 +259,15 @@ ne font que la lire (listes et catalogue de l'interface web, résolution d'un
 modèle) passent `copy=False` et obtiennent l'instance partagée en cache, qu'ils
 ne doivent pas modifier.
 
-Les relais sont aussi des points d'accès : `relays.py` transforme les
+Les relais sont aussi des points d'accès : `relays.py` transforme les
 `base_url_hints` d'un fournisseur en URL de base utilisables (`GET /api/kb` →
 `base_urls`) et enregistre un relais depuis l'interface web comme entrée de
 fournisseur dans `kb.db` (`origin = relay` : un `display_name` et une URL de base,
-sans modèles ; aucun changement de schéma).
+sans modèles ; aucun changement de schéma).
 
 ### Bibliothèque de prompts
 
-Tout texte que ekte envoie à une API de LLM — sondes de chat, prompt du juge,
+Tout texte qu'ekte envoie à une API de LLM — sondes de chat, prompt du juge,
 schémas d'outils, entrées d'embedding / rerank / image / audio — se trouve dans
 `ekte/prompts/en.json` et se lit avec `ekte.prompts.text()` / `get()`.
 `{{name}}` marque une valeur insérée à l'exécution. La langue des sondes est
@@ -278,19 +282,19 @@ motif `language_bound`. Le runner consigne les langues utilisées dans
 ### Rapports
 
 `ekte/report/render.py` rend un `AuditReport` en JSON, en JSON compact pour
-agents, en Markdown et en HTML ; `dimensions.py` et `performance.py` rendent les
-**Dimension details** et la section performance ; `pdf.py` compose le PDF avec
-ReportLab à partir des mêmes données et fonctions (pur Python ; uniquement les
+agents, en Markdown et en HTML ; `dimensions.py` et `performance.py` rendent les
+**Dimension details** et la section performance ; `pdf.py` compose le PDF avec
+ReportLab à partir des mêmes données et fonctions (pur Python ; uniquement les
 polices PDF standard, avec la police CID STSong-Light pour le chinois, donc rien
-d'incorporé ; sans jamais charger de ressource externe), partagé par la CLI et
-l'interface web ; `writer.py` écrit les fichiers. Tout texte contrôlé par le relais est
+d'incorporé ; sans jamais charger de ressource externe), partagé par la CLI et
+l'interface web ; `writer.py` écrit les fichiers. Tout texte contrôlé par le relais est
 expurgé et échappé (HTML / Markdown) avant la sortie. `POST /api/report/export`
 de l'interface web réutilise ces rendus pour la rangée **Télécharger le rapport**,
 avec les textes lisibles traduits dans la langue de l'interface.
 
 ### Surfaces
 
-La **surface** est le type d'endpoint audité : `chat` (par défaut), `embedding` ou
+La **surface** est le type d'endpoint audité : `chat` (par défaut), `embedding` ou
 `rerank` (`ekte.config.SURFACES` ; plus tard image, TTS). C'est un second axe à
 côté de la suite, porté par `AuditOptions.surface`, `AuditReport.surface` et une
 colonne `surface` nullable dans `history.db` et `watches.db` (`NULL` et un champ
@@ -300,34 +304,34 @@ JSON absent valent `chat` ; pas de migration).
   dessus avant le niveau de suite. Les détecteurs d'embedding et de rerank
   réutilisent les dimensions existantes.
 - Les poids de score et les ensembles de dimensions profil / cœur /
-  infrastructure sont par surface (`scoring.SURFACE_WEIGHTS`) ; le chat garde ses
+  infrastructure sont par surface (`scoring.SURFACE_WEIGHTS`) ; le chat garde ses
   valeurs.
 - L'enregistreur marque les appels d'embedding `op="embed"` et ceux de rerank
-  `op="rerank"` (`ekte.config.SURFACE_OPS`) ; les fonctions de `perf/summary.py`
+  `op="rerank"` (`ekte.config.SURFACE_OPS`) ; les fonctions de `perf/summary.py`
   prennent un paramètre `op` (par défaut `complete`).
 - `embed_audit.run_embedding_audit()` et `run_rerank_audit()` (utilisées par
-  `ekte embed` / `ekte rerank` et `/api/embed` / `/api/rerank`) lancent le runner
+  `ekte embed` / `ekte rerank`) lancent le runner
   avec `surface="embedding"` ou `"rerank"`, passent l'exécution enregistrée
   précédente de la même surface comme `previous_report` (dérive) et enregistrent
   le rapport sauf indication contraire (`--no-save`).
-- Détecteurs de rerank : `rerank.connectivity`, `rerank.known_answer`
+- Détecteurs de rerank : `rerank.connectivity`, `rerank.known_answer`
   (CAPABILITY), `rerank.identity` et `rerank.drift` (MODEL_IDENTITY),
-  `rerank.determinism` (RELIABILITY) et `performance.rerank`. Poids :
+  `rerank.determinism` (RELIABILITY) et `performance.rerank`. Poids :
   MODEL_IDENTITY 30, CAPABILITY 30, PERFORMANCE 20, RELIABILITY 10,
   CONNECTIVITY 10.
-- Surveillances : la `surface` et `embedding_dimensions` (0 = depuis la base de
+- Surveillances : la `surface` et `embedding_dimensions` (0 = depuis la base de
   connaissances) d'une surveillance alimentent `AuditOptions` dans
   `_run_one_watch_inner` ; une surveillance d'embedding ou de rerank lit sa
   référence de dérive avec `history.latest_for(..., surface=...)` avant l'audit et
   ne compare les alertes qu'avec des exécutions de la même surface. La surface est
   fixée à la création (`POST /api/watches`, `/api/watches/from-history/{id}`, qui
-  prend aussi `embedding_dimensions`) et `PATCH` ne la change pas ; `PATCH` change
+  prend aussi `embedding_dimensions`) et `PATCH` ne la change pas ; `PATCH` change
   `embedding_dimensions` d'une surveillance d'embedding (la carte des
   surveillances v2 la modifie en ligne).
 
 ### Auditeurs autonomes
 
-Image/audio (`media_audit.py`) ne sont pas encore des surfaces ; ils ont donc
+Image/audio (`media_audit.py`) ne sont pas encore des surfaces ; ils ont donc
 leurs propres petits auditeurs avec leur propre verdict au lieu du pipeline de
 détecteurs. Ils partagent les réglages HTTP des clients, la base de connaissances
 (dimensions natives, tailles d'image, voix) et la bibliothèque de prompts. Tout le
@@ -337,20 +341,18 @@ décodage (en-têtes d'image, WAV) n'utilise que la bibliothèque standard.
 
 `ekte/web/server.py` est une application FastAPI créée par `create_app()` :
 
-- **Pages.** L'interface web (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) est en HTML statique. Il n'y a
-  pas de page Outils : les audits d'embedding et de rerank démarrent sur la page d'audit
-  via le sélecteur de type de point d'accès (`/v2/?surface=embedding|rerank`), et
-  `/v2/tools` sert une petite page qui y redirige les anciens liens (`#rerank`
-  choisit le rerank, `?rerun=` est transmis). Les adresses de l'interface
-  classique supprimée (`/`, `/history`, `/watches`, `/tools`, `/console`)
-  redirigent (308) vers leurs pages v2, avec la chaîne de requête.
-- **API.** `/api/jobs…` exécute les audits (voir plus bas) ; `/api/models` liste
-  les modèles d'un relais ; `/api/report/export` rend un rapport ;
+- **Pages.** L'interface web (`/`, `/history`, `/watches`,
+  `/analytics`, `/kb`, `/accessibility`) est en HTML statique servi à la racine ; ses scripts et
+  styles sont sous `/static/`. Il n'y a pas de page Outils : les audits d'embedding et de rerank
+  démarrent sur la page d'audit via le sélecteur de type d'endpoint
+  (`/?surface=embedding|rerank`). Jusqu'à 1.0.0, les anciennes adresses redirigent (308) vers la
+  page à la racine, avec la chaîne de requête : `/v2/…` (`/v2/tools` mène à
+  `/?surface=embedding`, et `#rerank` choisit le rerank) ainsi que `/tools` et `/console` de l'interface
+  classique supprimée. Ces redirections sont obsolètes et supprimées en 1.0.0.
+- **API.** `/api/jobs…` exécute les audits (voir plus bas) ; `/api/models` liste
+  les modèles d'un relais ; `/api/report/export` rend un rapport ;
   `/api/history…`, `/api/watches…`, `/api/kb…` et `/api/analytics…` servent les
-  autres pages. `/api/audit/stream` (un audit diffusé en SSE), `/api/embed` et
-  `/api/rerank` (un audit d'embedding / de rerank synchrone) ne sont plus utilisés
-  par l'interface web ; leur avenir est suivi dans les issues #3 et #4.
+  autres pages. Tous sont internes ; le sous-ensemble public est [HTTP API v1](#http-api-v1).
 - **Relais.** `POST /api/kb/relays` enregistre un relais `{name, base_url}` (400
   pour une saisie invalide, 409 si le nom ou l'URL est déjà connu).
 - **Analyses.** `GET /api/analytics/options` (relais, modèles, suites, modes de
@@ -370,14 +372,14 @@ décodage (en-têtes d'image, WAV) n'utilise que la bibliothèque standard.
   connaissances au moment de la requête, une valeur qu'une exécution n'a pas
   mesurée est laissée de côté (chaque valeur porte son `n` et sa `coverage`), et
   les intervalles de moins de `MIN_RUNS` (3) exécutions sont marqués `low_n`. Un
-  paramètre invalide répond 400 ; les réponses sont en `Cache-Control: no-store`.
+  paramètre invalide répond 400 ; les réponses sont en `Cache-Control: no-store`.
 - **Panneaux d'analyse.** `/api/analytics/breakdown` (jusqu'à 8 `metrics` par
   `group=relay|model|relay_model|all` sur la période), `/api/analytics/errors`
   (les appels de complétion de la cible par classe de résultat
   `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, par
   `group=relay|model` et par `bucket`, comptés en SQL par
-  `history.analytics_request_classes()` sans charger les lignes de requêtes ;
-  l'heure d'un appel est le début de son audit plus son décalage, à la minute ;
+  `history.analytics_request_classes()` sans charger les lignes de requêtes ;
+  l'heure d'un appel est le début de son audit plus son décalage, à la minute ;
   `covered` = audits qui ont des enregistrements de requêtes) et
   `/api/analytics/integrity` (nombres de réussites / avertissements / échecs des
   détecteurs d'identité, de capacités, de vision, de streaming, de protocole,
@@ -390,25 +392,23 @@ décodage (en-têtes d'image, WAV) n'utilise que la bibliothèque standard.
   tâches en attente, en cours et récemment terminées (et les surveillances en
   cours) avec leur progression, `GET /api/jobs/{id}/events` rejoue le journal
   d'événements puis le suit en direct en SSE, et `POST /api/jobs/{id}/cancel`
-  l'arrête. L'interface web les utilise, un audit survit donc à la page ;
-  `/api/audit/stream` enveloppe la même tâche et l'annule
-  à la fermeture du flux. Un verrou par relais ne laisse qu'un audit (ou une
+  l'arrête. L'interface web les utilise, un audit survit donc à la page. Un verrou par relais ne laisse qu'un audit (ou une
   exécution de surveillance) à la fois utiliser un relais, par nom d'hôte, toutes
-  les adresses loopback comptant pour un hôte ; au plus
+  les adresses loopback comptant pour un hôte ; au plus
   `EKTE_MAX_PARALLEL_AUDITS` (4 par défaut) en même temps, par ordre d'arrivée.
 - **Planificateur des surveillances.** Le lifespan de l'application lance une
   boucle d'arrière-plan qui démarre chaque surveillance due comme sa propre
   tâche, si bien que les surveillances de relais différents auditent en même
-  temps ; le verrou par relais s'applique toujours, donc les surveillances
+  temps ; le verrou par relais s'applique toujours, donc les surveillances
   peuvent occuper les créneaux `EKTE_MAX_PARALLEL_AUDITS` et un audit manuel peut
   attendre derrière elles. Le `last_run_ts` d'une exécution est le moment où son
   audit démarre (après l'attente de son relais). Chaque exécution est enregistrée
-  dans l'historique ; la détection de régression la compare avec la plus récente
+  dans l'historique ; la détection de régression la compare avec la plus récente
   exécution enregistrée de la même cible et du même modèle
   (`history.latest_for()`, une seule recherche indexée) et envoie les alertes
   webhook (`ekte/notify.py`) en parallèle en cas de franchissement de seuil ou de
   régression. `POST /api/watches/{id}/run` répond 409 lorsque le planificateur
-  vient de démarrer cette surveillance ; une réinitialisation de la clé
+  vient de démarrer cette surveillance ; une réinitialisation de la clé
   maîtresse annule les exécutions planifiées qui n'ont pas encore démarré, et
   l'arrêt du serveur annule les exécutions en cours.
 - **Compression et cache.** `caching.py` compresse en gzip les réponses de
@@ -427,29 +427,55 @@ décodage (en-têtes d'image, WAV) n'utilise que la bibliothèque standard.
   requête JSON uniquement, et des en-têtes anti-cadre / no-sniff / no-referrer.
   L'interface n'a volontairement pas de connexion.
 
+### HTTP API v1
+
+La partie publique de l'API HTTP se trouve sous `/api/v1/` et suit la [politique de stabilité](docs/STABILITY.md#surface-http-api) : elle ne change de façon incompatible que dans une version majeure, après une période de dépréciation. Tout autre chemin sous `/api/` est interne et peut changer à chaque version. Les réponses internes portent `X-Ekte-API: internal`, celles de v1 `X-Ekte-API: v1`. L'interface web utilise les chemins internes.
+
+| Endpoint | Requête | Réponse |
+|---|---|---|
+| `POST /api/v1/jobs` | corps JSON avec `base_url`, `model` et, en option, `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 et la tâche ; 400 si l'entrée est invalide |
+| `GET /api/v1/jobs/{id}` | aucune | 200 et la tâche ; 404 si l'id est inconnu |
+| `GET /api/v1/jobs/{id}/events` | aucune | 200 et `text/event-stream` : les événements de la tâche jusqu'ici, puis en direct, jusqu'à `done` ; 404 si l'id est inconnu |
+| `GET /api/v1/history` | `limit` (1–500, 50 par défaut) et `perf`, facultatifs | 200 et un tableau JSON de résumés d'exécutions, les plus récentes d'abord |
+| `GET /api/v1/history/{id}` | aucune | 200 et le rapport enregistré tel quel ; 404 si l'id est inconnu |
+
+Une tâche a `id`, `status` (`queued`, `running`, `done`, `error` ou `cancelled`), des champs de progression, `report_id` une fois le rapport enregistré, et `error` ; la clé d'API n'est jamais renvoyée. Chaque événement est une ligne SSE `data: {JSON}` avec un `type` ; l'événement `report` porte le rapport et son `report_id`, et `done` est toujours le dernier. Les clients ignorent les types d'événements et les champs qu'ils ne connaissent pas.
+
+Toute erreur est du JSON avec un seul champ, `error`, contenant un message lisible, et l'un de ces codes de statut : 400 (requête invalide), 404 (introuvable), 403 (requête inter-sites ou inter-origines refusée), 415 (le corps n'est pas du JSON), 421 (hôte inconnu).
+
+```json
+{"error": "not found"}
+```
+
+- **Local uniquement.** Les protections du serveur web s'appliquent à `/api/v1/` comme à tout chemin : liaison à loopback par défaut, contrôle du Host, refus des écritures inter-sites et corps uniquement JSON. Elles répondent dans le même format d'erreur.
+
 ### Interface web côté navigateur
 
 L'interface est en HTML, CSS et JavaScript de navigateur simples, sans modules ni
 étape de build. Les pages sont dans `ekte/web/static/v2/` et partagent un en-tête (`nav.js`), le rendu
 de rapport (`report.js`), le sélecteur de thème (`theme.js`) et les styles
 (`tokens.css`, `ekte.css`, `fields.css`, `report.css`, `perf.css`). Les scripts partagés sont
-servis depuis la racine : `lang.js` (choix de la langue), `locales.js` (données
+servis depuis la racine : `lang.js` (choix de la langue), `locales.js` (données
 de traduction), `i18n.js` (traduction des constats), `icons.js` (avec le logo
 d'ekte), `secretfield.js` et `perf.js` (graphiques de performance).
+Chaque couleur de l'interface v2, dans les deux thèmes, est un jeton dans
+`v2/tokens.css` (écrit une seule fois sous la forme `light-dark(<clair>, <sombre>)`) ;
+les autres styles, pages et scripts v2 n'utilisent que `var(--…)`, jamais une
+couleur littérale.
 
 Chaque page v2 sauf Accessibilité affiche un **avis de page** juste sous son
 hero (`<div class="znote" id="note">`, dessiné par `v2/notice.js`, stylé par
-`.znote` dans `ekte.css`) : `EkteNotice.show(el, {level, title, detail, items,
+`.znote` dans `ekte.css`) : `EkteNotice.show(el, {level, title, detail, items,
 actions})` ; le niveau `info`, `success`, `warning` ou `critical` fixe la teinte,
 la bordure et l'icône (critical est `role="alert"`, les autres `role="status"` ;
 afficher le même avis à nouveau ne change rien). La page choisit le message le
-plus important et liste les autres dans `items`. Audit : serveur injoignable /
-audits en cours / la dernière exécution enregistrée / s'exécute localement ;
-Historique : historique illisible / exécutions des surveillances en pause (clé
+plus important et liste les autres dans `items`. Audit : serveur injoignable /
+audits en cours / la dernière exécution enregistrée / s'exécute localement ;
+Historique : historique illisible / exécutions des surveillances en pause (clé
 maîtresse verrouillée) ou anciennes exécutions encore en traitement / nombre
-d'exécutions ; Analyses : données illisibles / exécutions pas encore dans les
-graphiques ou avec une heure de début estimée / sur quoi elles reposent ;
-Connaissances : échec du chargement / entrées ignorées / éléments désactivés /
+d'exécutions ; Analyses : données illisibles / exécutions pas encore dans les
+graphiques ou avec une heure de début estimée / sur quoi elles reposent ;
+Connaissances : échec du chargement / entrées ignorées / éléments désactivés /
 complète. Surveillances garde sa barre de clé maîtresse (`masterkey.js`), au même
 aspect et au même endroit. Les chiffres de tout l'historique viennent de
 `GET /api/history/status` (`history.status()` : nombre d'exécutions, la plus
@@ -466,17 +492,17 @@ fonctions pures sont testées sous node.
 La page v2 **Analyses** (`v2/analytics.html`) ne lit que `/api/analytics/*`
 (`options` liste aussi les paires relais × modèle, `relay_models`, pour le choix
 des séries). Elle a une `<section class="card panel">` par panneau sous une
-seule barre de filtres, de nouveaux panneaux s'y ajoutent donc ; filtres et vue
+seule barre de filtres, de nouveaux panneaux s'y ajoutent donc ; filtres et vue
 sont dans le fragment de l'URL (`#range=30&metric=score&…`) et dans
 `localStorage`. Les graphiques viennent de `v2/charts.js`
 (`EkteCharts.timeChart` : SVG en ligne dessiné à la main avec ligne médiane,
 bande p25–p75, trous pour les intervalles vides, marqueurs atténués pour les
-intervalles `low_n`, lignes d'annotation et infobulle au survol ; `fmt` /
+intervalles `low_n`, lignes d'annotation et infobulle au survol ; `fmt` /
 `fmtDelta` formatent les valeurs selon l'unité) et de `v2/charts.css` (quatre
 couleurs de série validées par thème, distinguées aussi par la forme des
 marqueurs). Chaque graphique existe aussi en tableau de données.
 
-Chaque panneau est autonome : un registre `PANELS` dans le script de la page
+Chaque panneau est autonome : un registre `PANELS` dans le script de la page
 indique l'id de sa section, `load()` (récupérer avec les filtres et la vue
 actuels, puis dessiner) et `render()` (redessiner à partir des données chargées,
 p. ex. au changement de langue), si bien que les panneaux peuvent être
@@ -486,25 +512,25 @@ cases hachurées pour `low_n`, cases vides en contour), `EkteCharts.stackBars`
 les barres d'erreurs empilées, et `timeChart` accepte une ligne `ref` (ratio de
 facturation de 100 %). `EkteCharts.donut` (un anneau des parties d'un tout avec
 un chiffre HTML au centre) et `EkteCharts.meter` (une barre fine de parties)
-dessinent la carte Couverture du rapport d'accessibilité ; leurs couleurs `k-*`
-(qui tranche une étape : bleu la suite de tests, violet une personne) viennent
+dessinent la carte Couverture du rapport d'accessibilité ; leurs couleurs `k-*`
+(qui tranche une étape : bleu la suite de tests, violet une personne) viennent
 de `tokens.css`. `v2/chartmotion.js` (`EkteMotion.enter`) trace un anneau dans
 le sens des aiguilles d'une montre et fait grandir les barres depuis la gauche,
 comme pour les autres graphiques, seulement à l'arrivée de nouvelles données et
 jamais avec le mouvement réduit ou l'animation coupée dans l'en-tête.
 
 L'en-tête de la page et le panneau de filtres sont au-dessus de cinq onglets
-internes (`v2/tabs.js`, comme sur Connaissances) : chaque
+internes (`v2/tabs.js`, comme sur Connaissances) : chaque
 entrée de `PANELS` nomme son `tab`, et seuls les panneaux de l'onglet affiché se
-chargent ; un changement de filtre recharge cet onglet et marque les autres
+chargent ; un changement de filtre recharge cet onglet et marque les autres
 comme périmés (`activate()` les charge à l'affichage). `tabs.js` reçoit ici
 `writeHash: false`, car la page écrit elle-même toute la vue dans le fragment —
 `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`), que **Copier le lien
 vers cette vue** copie (un champ en lecture seule sélectionné si l'API du
-presse-papiers manque ou refuse) ; un fragment sans `tab` ouvre la vue
+presse-papiers manque ou refuse) ; un fragment sans `tab` ouvre la vue
 d'ensemble, et un lien collé (`hashchange`) relit la vue. Le panneau de filtres
 repliable est `v2/filterpanel.js` + `v2/filterpanel.css`, partagé avec
-l'Historique, Surveillances et Connaissances : `EkteFilterPanel.create(section, {label, title, storeKey, open,
+l'Historique, Surveillances et Connaissances : `EkteFilterPanel.create(section, {label, title, storeKey, open,
 onReset})` renvoie `render({body, foot, count, summary})`,
 `sync({count, summary})`, `setOpen()` et `focusStart()` ; la page possède ses
 filtres et ses champs, le panneau le bouton avec le badge des filtres actifs, le
@@ -512,7 +538,7 @@ résumé d'une ligne affiché une fois replié, l'état ouvert mémorisé et
 **Réinitialiser les filtres**.
 
 **Convention de traduction.** Le texte chinois écrit dans le HTML est l'original
-et reste intact ; chaque élément porte son texte anglais dans `data-en` (et
+et reste intact ; chaque élément porte son texte anglais dans `data-en` (et
 `data-en-placeholder`, `data-en-title`, `data-en-aria-label`). Le texte anglais
 sert de clé de recherche pour toutes les autres langues. Les scripts utilisent
 `T(zh, en)` pour le texte dynamique et `EKTE_LANG.server(text)` pour le texte
@@ -524,78 +550,78 @@ venant du backend (noms des détecteurs, recommandations, phrases du verdict).
 avec des fichiers SQLite en `0600` : `history.db` (`web/history.py`),
 `watches.db` (`web/watches.py`, qui contient, chiffrées, les clés API des
 surveillances) et `kb.db` (`knowledge/store.py`). Chaque appel ouvre une
-connexion de courte durée ; les stockages sont donc sûrs dans le pool de threads
+connexion de courte durée ; les stockages sont donc sûrs dans le pool de threads
 de FastAPI. L'option globale `--data-dir` (aussi sur `ekte serve`) se contente de
 définir `EKTE_DATA_DIR` avec le chemin absolu, et `ekte data-dir` affiche le
-répertoire résolu. Un répertoire qui existe déjà garde ses droits ; seul le
+répertoire résolu. Un répertoire qui existe déjà garde ses droits ; seul le
 `~/.ekte` par défaut est restreint à `0700`. Les lignes de l'historique sont
 indexées par cible et par modèle (`idx_history_target`), index qu'utilise
 `history.latest_for()` pour trouver l'exécution précédente d'une surveillance.
 
 Depuis la version 2 du schéma (`PRAGMA user_version`), `history.db` contient
 aussi les tables d'analyse, définies dans `web/analytics_store.py` :
-`history_metrics` (une ligne de métriques extraites par exécution : heure de
+`history_metrics` (une ligne de métriques extraites par exécution : heure de
 début, taux, percentiles de latence/TTFT/décodage, ratios de facturation, nombre
-de constats et plus ; NULL là où l'exécution n'a pas mesuré une valeur),
+de constats et plus ; NULL là où l'exécution n'a pas mesuré une valeur),
 `history_dimensions` (scores des dimensions et des détecteurs) et
 `history_requests` (les enregistrements de requêtes de l'exécution, cible et
 baseline, dans l'ordre de la liste). Les `performance.requests` d'un rapport ne
-sont stockés que là : `save()` les retire de `report_json` (`requests_split`
+sont stockés que là : `save()` les retire de `report_json` (`requests_split`
 marque la ligne) et `get()` / `latest_for()` les remettent en place, si bien
-qu'un rapport se relit identique à celui enregistré ; ce que les colonnes ne
+qu'un rapport se relit identique à celui enregistré ; ce que les colonnes ne
 peuvent pas reproduire exactement va dans la colonne JSON `extra`.
 `extract_metrics()` est pure et versionnée (`EXTRACT_VERSION`). Après la
 migration, un backfill par lots (une transaction courte par lot, idempotent)
 déplace les enregistrements des lignes plus anciennes, extrait leurs métriques
-et ré-extrait les lignes écrites par une `EXTRACT_VERSION` antérieure ;
+et ré-extrait les lignes écrites par une `EXTRACT_VERSION` antérieure ;
 `history.backfill_analytics()` le relance à la demande. L'heure de début d'une
-exécution est le `started_at` du rapport ; les rapports antérieurs à ce champ
+exécution est le `started_at` du rapport ; les rapports antérieurs à ce champ
 reçoivent `generated_at` moins la durée couverte par leurs enregistrements de
 requêtes (`started_at_estimated` = 1).
 
 L'endroit où sont conservées les clés API des surveillances est le choix de
-l'utilisateur (`watches.get_key_storage()`, une ligne de `secret_meta`) :
+l'utilisateur (`watches.get_key_storage()`, une ligne de `secret_meta`) :
 `memory`, par défaut, n'en enregistre aucune — la colonne `api_key` ne contient
 que le marqueur `mem:` et la clé vit dans `watches._memory_keys` jusqu'à l'arrêt
 du processus (après un redémarrage la ligne est `key_missing`, que le
-planificateur traite comme une clé verrouillée : l'exécution attend, sans
-alerte) ; `encrypted` les enregistre comme décrit ci-dessous. Sans ligne, un
+planificateur traite comme une clé verrouillée : l'exécution attend, sans
+alerte) ; `encrypted` les enregistre comme décrit ci-dessous. Sans ligne, un
 stockage qui a déjà des clés chiffrées ou une valeur de contrôle, ou avec
 `EKTE_SECRET_KEY` / un ancien `secret.key`, démarre en `encrypted` ; le choix est
 enregistré au démarrage. `Vault.set_storage()` (`POST /api/secret/storage`)
 bascule et déplace les clés en une transaction (`keys_to_memory()` efface les
-clés chiffrées et la valeur de contrôle et nettoie le fichier ; `keys_to_store()`
+clés chiffrées et la valeur de contrôle et nettoie le fichier ; `keys_to_store()`
 scelle celles en mémoire). Une requête peut passer `key_storage: "memory"` pour
-garder sa clé hors de la base quel que soit le réglage ; rien ne peut forcer
+garder sa clé hors de la base quel que soit le réglage ; rien ne peut forcer
 l'enregistrement.
 
 Les clés API enregistrées sont chiffrées par `ekte/secretbox.py` (Fernet,
 stockées sous la forme `enc:v1:…` ; les références `env:`/`file:` restent telles
-quelles). La clé maîtresse elle-même n'est jamais stockée : `web/masterkey.py`
+quelles). La clé maîtresse elle-même n'est jamais stockée : `web/masterkey.py`
 (`Vault`, partagé par le serveur et `ekte secret`) la garde dans la mémoire du
 serveur dès qu'elle vient de `EKTE_SECRET_KEY`, d'un ancien `secret.key` ou de
 l'utilisateur sur la page Surveillances, et `watches.db` ne conserve qu'une
 valeur de contrôle (`secret_meta`) qui refuse une mauvaise clé. Une nouvelle clé
 rechiffre chaque clé stockée et réécrit la valeur de contrôle en une seule
-transaction. La clé vit dans la mémoire d'un seul processus : faites tourner un
+transaction. La clé vit dans la mémoire d'un seul processus : faites tourner un
 serveur par répertoire de données.
 
 `ekte/legacy.py` maintient en état de marche les installations d'avant le
-changement de nom : chaque réglage `EKTE_*` est lu par `legacy.getenv`, qui se
+changement de nom : chaque réglage `EKTE_*` est lu par `legacy.getenv`, qui se
 rabat sur l'ancien nom `ZING_*` (signalé une fois sur stderr), et
 `datadir.data_dir()` copie une seule fois `~/.zing` vers `~/.ekte` quand seul
 l'ancien répertoire existe (fichiers SQLite via l'API de sauvegarde, dans un
 répertoire temporaire voisin renommé ensuite). `~/.zing` n'est jamais modifié ni
 supprimé. `lang.js` copie de même les réglages `zing.*` du navigateur vers
 `ekte.*`, et le serveur lit encore les cookies `zing_lang` / `zing_ui` tant que
-les cookies `ekte_*` n'existent pas.
+les cookies `ekte_*` n'existent pas. Tout cela est obsolète et supprimé en 1.0.0 (les avis nomment cette version) ; ekte ne supprime jamais un ancien `~/.zing`.
 
 ## Contribuer
 
 ### Pull requests
 
 - Gardez `pytest`, `ruff check ekte tests` et `mypy ekte` au vert (la CI exécute
-  les trois sous Python 3.10–3.13).
+  les trois sous Python 3.11–3.14).
 - Décrivez l'astuce de relais ou le faux positif que la modification traite.
 - Mettez à jour `CHANGELOG.md` sous `[Unreleased]`.
 - Mettez à jour la documentation concernée — README, ce guide, la Méthodologie —
@@ -631,7 +657,7 @@ maximale, sa date de coupure des connaissances, son tokenizer, ses modalités, s
 capacités, ses paramètres non pris en charge, ses mots-clés d'identité et ses
 empreintes (voir `ekte/knowledge/schema.py`). Lorsque vous modifiez un champ
 numérique, **citez une source faisant autorité** (fiche officielle du modèle,
-tarifs ou documentation du fournisseur) dans la pull request : une valeur erronée
+tarifs ou documentation du fournisseur) dans la pull request : une valeur erronée
 provoque des faux positifs contre des relais honnêtes.
 `ekte kb-import --check <fichier>` effectue les mêmes vérifications que l'import
 utilisateur (schéma, limites, expressions régulières dangereuses, prompts,
@@ -648,17 +674,89 @@ famille par lesquels le modèle se désigne. Le contrôle d'identité compte aus
 la clé du fournisseur, le nom affiché et l'id du modèle comme vraie marque,
 élargis aux autres noms du fabricant dans `VENDOR_BRANDS`
 (`ekte/knowledge/identity.py`, qui est aussi la liste de marques concurrentes du
-détecteur) ; l'import complète les mots-clés vides à partir de ces noms avec un
+détecteur) ; l'import complète les mots-clés vides à partir de ces noms avec un
 avertissement. Les mots de marque d'un nouveau fabricant s'y ajoutent en un
 groupe.
+
+### Garder la base de connaissances à jour
+
+Les données des fournisseurs et des modèles vieillissent vite et chaque verdict
+en dépend ; ekte indique donc franchement leur ancienneté. Chaque profil de
+fournisseur livré porte `last_verified`, la date à laquelle ses données ont été
+vérifiées pour la dernière fois dans la documentation du fournisseur. La plus
+ancienne de ces dates est la **date de la base de connaissances** : elle est
+enregistrée dans chaque rapport (`knowledge.kb_date`), affichée par `ekte kb` et
+dans les rapports Markdown, HTML et PDF, et exposée par `ekte kb --json`. Si elle
+est plus ancienne que `STALE_AFTER_DAYS` (180 jours, dans
+`ekte/knowledge/freshness.py`), le rapport reçoit un avertissement qui invite à
+mettre ekte à jour ou à ajouter vos propres entrées. L'avertissement ne change
+jamais le verdict.
+
+Le processus de mise à jour :
+
+- **Sources.** Uniquement les pages officielles du fournisseur : liste et fiches
+  des modèles, pages de tarifs et de limites, avis de dépréciation et de retrait,
+  notes de version. Indiquez le lien dans la pull request.
+- **Qui.** Les mainteneurs. Chacun peut proposer une modification avec le
+  formulaire d'issue « Knowledge base update » (fournisseur, id du modèle,
+  changement, lien de la source et sa date) ou par une pull request.
+- **À quelle fréquence.** Au moins avant chaque version mineure, et dans une
+  version correctrice hors calendrier lorsqu'un changement majeur de modèle
+  survient (un lancement phare, un retrait, un id de modèle renommé). La liste de
+  contrôle des versions l'inclut.
+- **Relecture.** Une pull request qui modifie `ekte/knowledge/data/*.yaml` exige
+  une source citée pour chaque valeur modifiée et une seconde relecture, et
+  `ekte kb-import --check` doit réussir. Ne mettez `last_verified` à jour pour un
+  fournisseur qu'après avoir vérifié tout son fichier, pas seulement les lignes
+  modifiées.
+- **Journal des modifications.** Toute modification des données livrées figure
+  dans `CHANGELOG.md`, car elle peut changer des verdicts.
 
 ### Modifier les prompts des sondes
 
 Les textes des sondes sont des données de calibrage. En modifier un dans
 `ekte/prompts/en.json` peut changer les vérifications de réponses, les
-estimations de tokens et donc les verdicts ; ajustez le détecteur et ses tests en
+estimations de tokens et donc les verdicts ; ajustez le détecteur et ses tests en
 conséquence et mentionnez le changement dans le CHANGELOG. Ne faites jamais
 suivre la langue de l'interface à une sonde.
+
+### Modifier le schéma d'une base de données
+
+Chaque base SQLite créée par ekte (`history.db`, `watches.db`, `kb.db`) est
+versionnée et migrée par un seul mécanisme partagé, `ekte/dbmigrate.py` ; un
+magasin ne se migre jamais lui-même avec des `ALTER TABLE` ad hoc. La version
+du schéma est dans `PRAGMA user_version`, et
+`datadir.connect(name, MIGRATIONS)` la vérifie à chaque ouverture.
+
+Pour modifier un schéma :
+
+1. Ajoutez au magasin (`web/history.py`, `web/watches.py`,
+   `knowledge/store.py`) une fonction `_vN(conn)` qui fait la modification, et
+   ajoutez `dbmigrate.Migration(N, _vN)` à la fin de son tuple `MIGRATIONS`.
+   Ne modifiez ni ne réordonnez jamais une étape existante : les bases en
+   service l'ont déjà exécutée.
+2. Gardez l'étape idempotente (`CREATE ... IF NOT EXISTS` et
+   `kb_snapshot.add_link_columns()` pour les colonnes) et ne faites ni commit
+   ni rollback à l'intérieur. Le mécanisme exécute chaque étape dans sa propre
+   transaction `BEGIN IMMEDIATE`, avec l'incrémentation de version ; une étape
+   interrompue ou en échec laisse donc la base à la version précédente.
+3. Une nouvelle base démarre à la version 0 et exécute toutes les étapes ; une
+   base antérieure au versionnage a aussi la version 0, c'est pourquoi l'étape
+   1 d'un magasin doit adopter un schéma existant.
+4. Ajoutez à `tests/test_dbmigrate.py` un test qui construit le schéma à la
+   version N-1, l'ouvre et vérifie la nouvelle version, le nouveau schéma et
+   l'intégrité des données. S'il faut remplir des lignes existantes, faites-le
+   dans le callback `on_migrated` du magasin (voir
+   `history._after_migration`), pas dans l'étape.
+
+Ce que le mécanisme fait pour vous : une base écrite par un ekte **plus
+récent** est refusée avec `DatabaseTooNewError` (les deux versions sont
+nommées, avec la marche à suivre) avant toute écriture ; avant la première
+étape d'une exécution, une base non vide est copiée dans
+`<db>.v<version>.<heure UTC>.bak` à côté d'elle, et seules les 3 sauvegardes
+les plus récentes par base sont conservées (`dbmigrate.BACKUP_KEEP`) ; la
+version est relue sous le verrou d'écriture, si bien que la CLI et le serveur
+n'exécutent jamais deux fois la même étape.
 
 ### Traductions
 
@@ -666,9 +764,9 @@ L'interface et les alertes webhook partagent un même jeu de traductions dans
 `ekte/i18n/locales/<code>.json` :
 
 - `meta` — code, nom de la langue dans sa propre langue pour le menu, langue
-  `html`, locale des dates et ordre dans le menu ;
+  `html`, locale des dates et ordre dans le menu ;
 - `strings` — texte anglais → traduction (`en.json` est l'application identité et
-  la liste de référence des textes traduisibles) ;
+  la liste de référence des textes traduisibles) ;
 - `findings` — id du constat → `[titre, modèle de résumé]` (`zh.json` contient le
   catalogue chinois d'origine).
 
@@ -680,11 +778,11 @@ n'envoie que la langue choisie (`?lang=<code>` ou le cookie `ekte_lang` posé pa
 en gzip une seule fois par variante et revalidé par `ETag` ; un changement de
 langue charge la nouvelle à la demande.
 
-- **Nouveau texte d'interface :** écrivez le chinois dans le HTML et l'anglais
+- **Nouveau texte d'interface :** écrivez le chinois dans le HTML et l'anglais
   dans `data-en` (ou utilisez `T(zh, en)`), puis ajoutez la clé anglaise à
   `en.json` ou à un fragment et sa traduction dans chaque autre langue.
-- **Nouvelle langue :** ajoutez `ekte/i18n/locales/<code>.json` (copiez
-  `de.json`) et un fichier par fragment ; le menu, les pages, les alertes et
+- **Nouvelle langue :** ajoutez `ekte/i18n/locales/<code>.json` (copiez
+  `de.json`) et un fichier par fragment ; le menu, les pages, les alertes et
   `--alert-lang` la prennent en compte.
 - `tests/test_web_locales.py` échoue tant que chaque texte d'interface et chaque
   constat n'est pas traduit avec ses espaces réservés et son balisage intacts.
@@ -697,14 +795,14 @@ documentation.
 ### Documentation
 
 La documentation existe en huit langues — anglais, chinois (`zh-CN`), français,
-espagnol, portugais, italien, allemand et norvégien (bokmål, `nb`) :
+espagnol, portugais, italien, allemand et norvégien (bokmål, `nb`) :
 
 | Fichier | Public |
 |---|---|
-| `README.md`, `README.<lang>.md` | Utilisateurs : ce que fait ekte, installation, utilisation de la CLI et de l'interface web |
-| `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Contributeurs : architecture, installation, contribution, Docker, versions |
-| `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Tout le monde : chaque vérification, son barème et ses réserves |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Pages de référence (en anglais) |
+| `README.md`, `README.<lang>.md` | Utilisateurs : ce que fait ekte, installation, utilisation de la CLI et de l'interface web |
+| `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Contributeurs : architecture, installation, contribution, Docker, versions |
+| `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Tout le monde : chaque vérification, son barème et ses réserves |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Pages de référence (en anglais) |
 
 Les fichiers anglais font référence. Lorsque vous en modifiez un, modifiez les
 autres dans la même pull request, et utilisez dans chaque langue le vocabulaire de
@@ -722,12 +820,12 @@ pytest -n auto               # en parallèle, un worker par CPU (pytest-xdist)
 ```
 
 - `tests/conftest.py` fournit `MockServer`, un endpoint compatible OpenAI sur
-  `httpx.MockTransport` avec des réglages pour chaque écart que ekte traque
+  `httpx.MockTransport` avec des réglages pour chaque écart qu'ekte traque
   (modèle servi, auto-identification, troncature du contexte, faux streaming,
   usage absent ou gonflé, appels d'outils, mode JSON, …). Chaque réglage est par
   défaut celui d'un relais honnête.
 - Les clients Anthropic et Responses ont leurs propres tests
-  (`test_anthropic.py`, `test_responses.py`) ; le serveur web est testé via le
+  (`test_anthropic.py`, `test_responses.py`) ; le serveur web est testé via le
   client de test de FastAPI (`test_web*.py`), y compris les protections
   locales (`test_web_security.py`).
 - Les scripts du navigateur (`lang.js`, `v2/relaycfg.js`, `perf.js`,
@@ -735,7 +833,7 @@ pytest -n auto               # en parallèle, un worker par CPU (pytest-xdist)
   dans `test_web_*_js.py` et `test_web_locales.py` ; ils sont ignorés sans
   Node.js.
 - Aucun test ne doit accéder au réseau.
-- `test_cli_startup.py` garde un démarrage rapide de la CLI : importer
+- `test_cli_startup.py` garde un démarrage rapide de la CLI : importer
   `ekte.cli` ne doit charger ni les clients HTTP, ni le runner, ni le chargeur
   de la base de connaissances, ni les rendus de rapport (ReportLab), ni le
   serveur web. Importez-les dans la commande qui en a besoin.
@@ -743,12 +841,12 @@ pytest -n auto               # en parallèle, un worker par CPU (pytest-xdist)
   lorsque la sonde de fenêtre de contexte bloque la boucle d'événements.
 - `tests/a11y/` vérifie l'interface web (v2) selon BITV 2.0 / EN 301 549 /
   WCAG 2.1 AA dans un vrai navigateur (Playwright + axe-core), dans chaque langue
-  de l'interface et les deux thèmes : `pip install -e '.[web,a11y]' && playwright
+  de l'interface et les deux thèmes : `pip install -e '.[web,a11y]' && playwright
   install chromium`, puis `pytest -m a11y`. Sans Playwright, le répertoire est
   ignoré. Ce qui est automatisé et ce qui demande encore une revue BITV manuelle
   est décrit dans [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
 - `EKTE_A11Y_PAGES=history,kb` n'exécute que les tests a11y de ces pages (et
-  les vérifications qui couvrent toutes les pages) ; `python -m
+  les vérifications qui couvrent toutes les pages) ; `python -m
   tests.a11y.affected --base origin/main --head HEAD` affiche les pages
   touchées par une modification. Les deux utilisent une seule correspondance,
   `tests/a11y/pages.py` : une nouvelle page s'ajoute à ses `PAGES` et `RULES`
@@ -769,17 +867,17 @@ docker run --rm -p 127.0.0.1:8000:8000 -v ekte-data:/data ekte
 
 **Publiez toujours sur `127.0.0.1`.** Un simple `-p 8000:8000` publie l'interface —
 et chaque clé API qui y est saisie ou stockée dans une surveillance — sur votre
-réseau. Dans le conteneur, le serveur doit écouter sur toutes les interfaces ;
+réseau. Dans le conteneur, le serveur doit écouter sur toutes les interfaces ;
 ce n'est autorisé que si `EKTE_CONTAINER=1` est défini (l'image le fait) *et*
 qu'un environnement de conteneur est détecté.
 
 | Variable | Défaut | Rôle |
 |---|---|---|
 | `EKTE_CONTAINER` | non défini (`1` dans l'image) | Autorise une écoute hors boucle locale dans un conteneur détecté |
-| `EKTE_HOST` | `127.0.0.1` (`0.0.0.0` dans l'image) | Adresse d'écoute ; `--host` l'emporte |
-| `EKTE_PORT` | `8000` | Port ; `--port` l'emporte |
-| `EKTE_DATA_DIR` | `~/.ekte` (`/data` dans l'image) | Historique, surveillances (leurs clés chiffrées) et vos entrées de la base de connaissances ; montez-y un volume. `--data-dir` l'emporte |
-| `EKTE_SECRET_KEY` | non défini | Clé maîtresse des clés API enregistrées des surveillances (une clé, ou `file:/run/secrets/…` / `env:VAR`) ; non définie, la page Surveillances la demande après chaque démarrage. Jamais stockée dans `EKTE_DATA_DIR` |
+| `EKTE_HOST` | `127.0.0.1` (`0.0.0.0` dans l'image) | Adresse d'écoute ; `--host` l'emporte |
+| `EKTE_PORT` | `8000` | Port ; `--port` l'emporte |
+| `EKTE_DATA_DIR` | `~/.ekte` (`/data` dans l'image) | Historique, surveillances (leurs clés chiffrées) et vos entrées de la base de connaissances ; montez-y un volume. `--data-dir` l'emporte |
+| `EKTE_SECRET_KEY` | non défini | Clé maîtresse des clés API enregistrées des surveillances (une clé, ou `file:/run/secrets/…` / `env:VAR`) ; non définie, la page Surveillances la demande après chaque démarrage. Jamais stockée dans `EKTE_DATA_DIR` |
 | `EKTE_KB_DIR` | non défini | Répertoire YAML supplémentaire pour la base de connaissances, p. ex. `-v ./profiles:/kb:ro -e EKTE_KB_DIR=/kb` |
 | `EKTE_NO_USER_KB` | non défini | `1` ignore vos propres entrées de la base de connaissances (`kb.db`) |
 | `EKTE_ALLOWED_HOSTS` | non défini | Noms d'hôte supplémentaires auxquels l'interface répond, séparés par des virgules |
@@ -791,28 +889,79 @@ ce qui protège l'interface.
 
 | Workflow | Déclenché par | Rôle |
 |---|---|---|
-| `.github/workflows/ci.yml` | push et pull request vers `main` (et les branches d'intégration `a11y/integration`, `perf/integration`) ; chaque nuit et manuel (accessibilité seulement) | `ruff`, `mypy` et `pytest` sous Python 3.10–3.13 avec les extras `dev` et `web` ; construit la wheel et la sdist et vérifie que la wheel s'installe et charge la base de connaissances ; exécute la suite d'accessibilité (à titre informatif, elle ne fait jamais échouer l'exécution) et téléverse ses constats : toutes les pages sur les push et les exécutions nocturnes et manuelles (avec le rapport de conformité BITV), sur les pull requests seulement les pages touchées par la modification (aucune si seule la documentation change) — sauf sur les pull requests vers `perf/integration`, où la lente suite navigateur est ignorée (elle s'exécute sur les push de cette branche et sur sa pull request vers `main`) |
+| `.github/workflows/ci.yml` | push et pull request vers `main` (et les branches d'intégration `*/integration`) ; chaque nuit et manuel (accessibilité seulement) | `ruff`, `mypy` et `pytest` sous Python 3.11–3.14 (Linux ; sous macOS et Windows 3.11 et 3.14) avec les extras `dev` et `web` ; construit la wheel et la sdist et vérifie que la wheel s'installe et charge la base de connaissances ; exécute la suite d'accessibilité (à titre informatif, elle ne fait jamais échouer l'exécution) et téléverse ses constats : toutes les pages sur les push et les exécutions nocturnes et manuelles (avec le rapport de conformité BITV), sur les pull requests seulement les pages touchées par la modification (aucune si seule la documentation change) — sauf sur les pull requests vers `perf/integration`, où la lente suite navigateur est ignorée (elle s'exécute sur les push de cette branche et sur sa pull request vers `main`) |
 | `.github/workflows/release.yml` | un tag `v*` | construit, exécute `twine check` et publie sur PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | planification quotidienne, manuel | exemple d'audit de relais planifié avec l'action |
 
 L'action composite elle-même est `action.yml`, documentée dans
 [docs/CI.md](docs/CI.md).
 
+### Fichiers tiers dans la distribution
+
+La distribution source contient les tests, mais aucun fichier tiers embarqué. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) n'est que dans le dépôt git ; il est exclu du sdist (`exclude` sous `[tool.hatch.build.targets.sdist]` dans `pyproject.toml`) et n'a jamais fait partie du wheel.
+
+- Les tests qui ont besoin d'un fichier exclu sont ignorés avec un motif clair quand il est absent ; lancez la suite d'accessibilité depuis un checkout git.
+- `NOTICE` liste chaque fichier tiers et indique s'il est distribué. Ajoutez un nouveau fichier embarqué à la liste `exclude` et à `NOTICE`, ou, s'il doit être livré, indiquez-le dans `NOTICE`.
+- `scripts/check_dist_contents.py` construit le wheel et le sdist (`uv build`) et échoue si un fichier exclu, ou un fichier que `NOTICE` donne pour non distribué, est présent. Le workflow `.github/workflows/dist.yml` l'exécute dans un job séparé.
+
 ## Publication des versions
 
-1. Renommez `[Unreleased]` dans `CHANGELOG.md` en la nouvelle version et
-   incrémentez `version` dans `pyproject.toml`.
-2. Committez, créez le tag `vX.Y.Z` et poussez-le ; `release.yml` publie sur PyPI.
-3. Créez la release GitHub avec les notes du CHANGELOG et mettez à jour la
-   version épinglée de l'action dans les README et `docs/CI.md`.
-
-La configuration initiale de PyPI et la procédure manuelle se trouvent dans
+Une version est une étiquette de version ; tout le reste est automatisé et vérifié.
+La liste de contrôle est dans [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md),
+la configuration unique de PyPI et la procédure manuelle dans
 [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+### Publier une version
+
+1. Parcourir la [liste de contrôle](docs/RELEASE_CHECKLIST.md) : version et
+   changelog, versions de Python et systèmes pris en charge, fraîcheur de la base de
+   connaissances, fixture de mise à jour, revue d'accessibilité en cas de changement
+   de l'UI, documentation dans toutes les langues, avis de sécurité.
+2. Définir `version` dans `pyproject.toml` et renommer `[Unreleased]` dans
+   `CHANGELOG.md` en `[X.Y.Z] - AAAA-MM-JJ`. Vérifier en local avec
+   `python scripts/release_check.py version vX.Y.Z` et `... notes vX.Y.Z`.
+3. Fusionner, étiqueter le commit et pousser l'étiquette :
+   `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`, `git push origin vX.Y.Z`.
+4. `release.yml` vérifie d'abord, avec `scripts/release_check.py`, que l'étiquette
+   correspond à la version du paquet, que `CHANGELOG.md` contient une section pour
+   elle et que la CI est verte pour le commit étiqueté (il attend une CI en cours).
+   Si une vérification échoue, le workflow s'arrête et rien n'est publié. Il
+   construit ensuite, publie sur PyPI via Trusted Publishing avec des attestations
+   de provenance et crée la GitHub Release avec la section du changelog comme notes.
+
+### Release candidates
+
+Étiqueter `vX.Y.ZrcN` (avec `version = "X.Y.ZrcN"` dans `pyproject.toml`). PyPI la
+traite comme une préversion PEP 440 : `pip install ekte` l'ignore, `pip install --pre ekte`
+la trouve ; GitHub marque la release « Pre-release ». Dans le changelog, la section
+`[X.Y.ZrcN]`, `[X.Y.Z]` ou `[Unreleased]` convient.
+
+### Si une publication échoue à mi-chemin
+
+PyPI n'accepte jamais deux fois le même fichier et une version ne se réutilise pas ;
+tout dépend de l'avancement de l'exécution (Actions, « Release to PyPI ») :
+
+- **Une vérification a échoué (job verify).** Rien n'a été publié. Corriger la cause
+  (version, changelog, CI), supprimer l'étiquette en local et sur origin
+  (`git push origin :refs/tags/vX.Y.Z`) et étiqueter à nouveau le commit corrigé.
+- **La construction ou l'envoi a échoué avant que PyPI ait des fichiers.** Relancer
+  les jobs en échec ; aucune version n'est consommée. Si le commit étiqueté doit
+  lui-même changer, supprimer l'étiquette et la recréer.
+- **PyPI a une partie des fichiers** (voir <https://pypi.org/project/ekte/#files>).
+  Relancer les jobs en échec : l'envoi ignore les fichiers déjà présents. Si les
+  fichiers diffèrent de ce qui doit sortir, ne pas réessayer : « yank » de la version
+  sur PyPI et publier la suivante (`X.Y.Z+1` ou `rcN+1`).
+- **PyPI est complet mais la GitHub Release a échoué.** Relancer le job
+  `GitHub Release` ; il crée ou met à jour la release de façon idempotente. Ou à la
+  main : `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`.
+- **Une version défectueuse est déjà en ligne.** La « yank » sur PyPI (elle ne
+  s'installe plus qu'avec une version exacte), corriger en avant avec une nouvelle
+  version et le consigner dans son changelog.
 
 ## Sécurité
 
 Signalez les vulnérabilités en privé, comme décrit dans [SECURITY.md](SECURITY.md).
-Sont notamment concernés : une clé ou un secret qui atteint un rapport, du texte
+Sont notamment concernés : une clé ou un secret qui atteint un rapport, du texte
 contrôlé par le relais qui injecte du balisage dans un rapport ou dans
 l'interface, un trafic vers autre chose que les endpoints configurés, et tout
 contournement des protections locales de l'interface web.

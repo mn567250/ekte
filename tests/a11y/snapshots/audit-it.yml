@@ -2,7 +2,7 @@
   - link "Vai al contenuto principale":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Tema":
     - option "Automatico"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Accessibilità":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navigazione principale":
     - link "Verifica":
-      - /url: /v2/
+      - /url: /
     - link "Monitor":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Cronologia":
-      - /url: /v2/history
+      - /url: /history
     - link "Analisi":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conoscenza":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Questo intermediario serve il modello vero?" [level=1]
   - paragraph: Scegli il relay, il modello da verificare e, se viene venduto con un altro nome, il modello che dichiara di essere. ekte esegue sul tuo computer una suite completa di test black-box e produce un report di verifica leggibile e basato su prove.

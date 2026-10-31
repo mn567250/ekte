@@ -126,7 +126,7 @@ def test_code_sends_no_hard_coded_non_english_text():
                 and id(node) not in allowed
                 and id(node) not in docstrings
             ):
-                offenders.append(f"{path.relative_to(ROOT)}:{node.lineno}: {node.value[:60]!r}")
+                offenders.append(f"{path.relative_to(ROOT).as_posix()}:{node.lineno}: {node.value[:60]!r}")
     # Remaining CJK literals are user-facing wording handled elsewhere (the
     # i18n glossary, CLI help text, finding summaries) — none is sent to an API.
     allowed_non_api = {"ekte/i18n/__init__.py", "ekte/cli.py", "ekte/embed_audit.py", "ekte/media_audit.py",

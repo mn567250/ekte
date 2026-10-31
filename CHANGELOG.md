@@ -2,7 +2,9 @@
 
 All notable changes to **ekte** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
-to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+to [Semantic Versioning](https://semver.org/spec/v2.0.0.html); which surfaces
+the version number protects, what counts as breaking and how features are
+deprecated is defined in the [stability and compatibility policy](docs/STABILITY.md).
 
 ekte has three eras:
 
@@ -18,8 +20,107 @@ ekte has three eras:
 
 ## [Unreleased]
 
+
 ### Added
 
+- **Upgrade tests with data from released versions.** The 0.30.0 fixture (a data
+  directory written by that release: history, monitors with stored and unstored
+  keys, your own knowledge-base entries) is opened with the current code in CI;
+  the test checks the migration, its backup and that nothing is lost.
+  `scripts/make_upgrade_fixture.py <version>` creates the fixture of a new
+  release, and the release checklist requires one per minor release.
+- **Accessibility manual review checklist.** `docs/ACCESSIBILITY.md` lists the
+  eleven steps that still need a person, with exact screen-reader, zoom, greyscale
+  and touch steps, a record table and the automated pre-checks (keyboard walk,
+  accessibility tree, 320 px reflow, reduced motion, contrast in both themes) that
+  found no issue. No step is recorded as manually reviewed yet. The release
+  checklist asks to repeat the review for UI changes.
+- **Coverage floors.** The tests now cover every command's success path, main
+  error paths, exit codes and machine-readable output, the judge's handling of
+  malformed and failed responses, and the image and audio auditor's verdicts.
+  CI measures coverage (pytest-cov, now in the `dev` extra) and fails when the
+  package drops below 93% or the command line, the judge or the media auditor
+  drop below 90%, 95% and 95% (`scripts/check_coverage.py`).
+
+- **Knowledge-base freshness.** Every bundled provider profile now carries
+  `last_verified` (the date its data was last checked). Reports carry the
+  knowledge-base date (`knowledge.kb_date`, the oldest of those dates; report
+  schema 1.1) and show it in the Markdown, HTML and PDF reports, the compact
+  JSON and `ekte kb` / `ekte kb --json`. When the bundled data is more than 180
+  days old, the report gets a warning that points to updating ekte or adding
+  your own entries; the verdict does not change. The update process (sources,
+  who, how often, review) is documented in the developer guide, and changes to
+  the bundled data are listed in the changelog.
+- **Command line review (#25).** `docs/CLI.md` is the command reference, generated
+  from the `--help` declarations (`scripts/generate_cli_docs.py`; a test fails when it
+  is stale), with the one exit-code table every command follows: 0 success, 1 gate or
+  check failed, 2 usage or configuration error, 3 endpoint failure, 4 internal error.
+  `--json` is now available on `data-dir`, `config migrate`, `secret status` and
+  `watch` (one JSON object per cycle), so every command that reports a result can
+  print JSON; with `--json` stdout carries only JSON. Tests run every command's
+  `--help`, pin each exit code and check that JSON mode writes only JSON.
+
+- **Versioned schema for the report JSON and webhook payloads.** Every report
+  (`--json`, `--format json`, history, `--compact`) and every generic webhook
+  payload now carries `schema_version` (`MAJOR.MINOR`, independent of the ekte
+  version; both are 1.0). JSON Schemas are generated from the code and published as
+  `ekte/schemas/report.schema.json` and `ekte/schemas/webhook.schema.json` (they
+  ship in the wheel); `scripts/generate_schemas.py` regenerates them and a test
+  fails when a schema changes without a version bump. Reports without the field
+  read as 1.0. See docs/SCHEMAS.md and the stability policy (#23).
+- **Versioned, validated configuration file (#24).** `ekte.yaml` has a format
+  `version` (a file without one is format 1; `ekte init` writes it). Wrong
+  types and invalid values are rejected with the file, line and key;
+  deprecated keys warn and name the replacement. The schema is published as
+  `docs/schemas/config.schema.json`. `ekte config migrate` rewrites an older
+  file to the current format. Unknown keys (for example a typo), which ekte
+  silently ignored before, now print a warning with the file, line and a
+  "did you mean" hint; they are still ignored.
+
+- **Automated dependency updates and vulnerability checks.** Dependabot proposes
+  weekly, grouped updates for the Python dependencies (`uv.lock`) and GitHub
+  Actions. The new `Security` workflow audits the locked dependencies with
+  pip-audit on pull requests, pushes to `main` and nightly, and fails on known
+  vulnerabilities; a reviewed advisory can be accepted with a reason and an
+  expiry in `.github/vulnerability-ignores.yml` (see CONTRIBUTING.md).
+- Issue forms (bug report, feature request, knowledge base update), a pull request
+  template with a contribution checklist, and a Contributor Covenant 2.1 code of
+  conduct whose reports go privately to the maintainer (#20).
+- **Translation consistency check.** `scripts/check_translations.py` (run in CI
+  by `.github/workflows/docs.yml` and by `tests/test_docs_translations.py`)
+  fails when a translation of the README, developer guide or methodology drifts
+  from the English source in headings, code blocks, links and anchors, CLI
+  flags / endpoints / field names, placeholders or version numbers. Adding a
+  language is one entry in `LANGUAGES`; a translation can be marked pending with
+  `<!-- translation-pending: reason -->`. `CONTRIBUTING.md` documents both.
+- **Release automation and checklist.** `release.yml` now verifies before publishing
+  that the tag equals the package version, `CHANGELOG.md` has a section for it and CI
+  is green for the tagged commit (`scripts/release_check.py`, with tests), and stops
+  without publishing otherwise. It publishes to PyPI with provenance attestations and
+  creates a GitHub Release with the changelog section as notes; release candidates
+  (`vX.Y.ZrcN`) are PEP 440 pre-releases on PyPI and marked "Pre-release" on GitHub.
+  New [release checklist](docs/RELEASE_CHECKLIST.md); the developer guide (all
+  languages) and `docs/PUBLISHING.md` describe the process, including what to do if a
+  publish fails halfway.
+- **Stability and compatibility policy.** [docs/STABILITY.md](docs/STABILITY.md)
+  lists every surface as public or internal, defines what counts as breaking,
+  the deprecation policy (a deprecated feature keeps working with a warning for
+  at least one minor release; removal only in a major release), the supported
+  Python versions (every CPython version that is not end-of-life; 3.10 is
+  dropped in 0.31) and operating systems (Linux, macOS, Windows; the Docker
+  image is Linux), the upgrade guarantee for the data directory and that
+  downgrades are unsupported. It is linked from every README.
+- **Versioned, safe migrations for every local database.** `history.db`,
+  `watches.db` and `kb.db` now share one mechanism (`ekte/dbmigrate.py`): the
+  schema version is recorded in `PRAGMA user_version` and checked on every open,
+  and ordered migrations each run in their own transaction, so an interrupted
+  one leaves the previous version. Before migrating, a non-empty database is
+  copied next to the original as `<db>.v<version>.<UTC time>.bak` (the newest 3
+  backups per database are kept). A database written by a newer ekte is not
+  modified; ekte stops with a message naming both versions and what to do.
+  Concurrent processes never run the same migration twice. Existing 0.30.0
+  data directories, including the unversioned `watches.db` and `kb.db`, migrate
+  without loss. The developer guide explains how to add a migration (#14).
 - **Norwegian (Bokmål) in web UI v2.** **Norsk** is the eighth language in the
   language dropdown of every page (code `nb`, `lang="nb"`, dates and numbers
   formatted for `nb-NO`): every UI string, finding title and summary,
@@ -32,6 +133,139 @@ ekte has three eras:
   `docs/METHODOLOGY.nb.md`, linked from the language switcher of every
   README, developer guide and methodology; the scoring tables of the
   methodology use the wording the UI shows under **Scoreskala**.
+
+### Changed
+
+- **Portuguese web UI in European Portuguese.** The Portuguese interface now uses
+  European Portuguese (ficheiro, guardar, registo, fornecedor, pedido, detetor, …),
+  like the documentation; the bold UI labels quoted in the Portuguese docs follow.
+
+- **Documentation reviewed in all eight languages (#34).** Every README,
+  developer guide and methodology was read in full as a native speaker would:
+  grammar, idiom, register (one form of address per language), one term per
+  concept (matching the web UI's wording), typography (French non-breaking
+  spaces, Chinese “” quotes and full-width punctuation), European Portuguese
+  throughout, American English spelling in the English source. Content that had
+  drifted from the English was restored (the core-dimension rules in the de, fr,
+  it, es and pt methodology; the colour-token paragraph in six developer guides).
+
+- **Documentation review (#34).** The stability policy is linked from the first
+  screen of every README; the README and developer guide document lists name
+  `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md` and the other reference
+  pages; the CI row of the developer guide names the integration-branch pattern and
+  the macOS and Windows test runs; `docs/ACCESSIBILITY.md` lists all eight UI
+  languages and explains that a complete accessibility run executes 1,277 tests
+  (a narrowed run, such as the recorded 258, executes fewer).
+- **Exit codes 3 and 4.** `ekte models` exits 3 (was 1) when the endpoint is
+  unreachable or answers with an error, so it can be told apart from a failed gate;
+  an unexpected internal error exits 4 (was 1 with a traceback). Scripts that
+  treated every non-zero code of `ekte models` as "failed" are unaffected.
+- **`ekte audio --format` is now `--audio-format`**, so `--format` always means the
+  report file format; `ekte image --save` and `ekte audio --save` are now
+  `--save-to`, so `--save` only means "save to history" (`embed`, `rerank`). The
+  old spellings still work (see Deprecated).
+
+- **Supported operating systems: Linux, macOS and Windows.** The CI test job now
+  also runs on macOS and Windows (oldest and newest supported Python); the
+  Docker image stays Linux. `docs/STABILITY.md#os` lists the differences
+  (owner-only modes have no effect on Windows). On Windows, ekte now says so on
+  standard error when it creates the data directory. Tests that depend on POSIX
+  file modes are skipped on Windows with a reason, and the home-directory tests
+  also set `USERPROFILE`.
+- **Hardened CI and release workflows.** Every third-party action is pinned to a
+  full commit SHA with its version in a comment (Dependabot keeps the pins
+  current, with a 7-day cooldown), on versions that run on the supported Node.js
+  runtime. Workflows declare least-privilege `permissions` (only the PyPI publish
+  job gets `id-token: write`), checkouts no longer persist credentials, jobs have
+  timeouts, and CI/security/docs runs are grouped by concurrency (PR runs are
+  cancelled when superseded; releases never are). The release publish and GitHub
+  Release jobs are limited to this repository. CI now also runs on any
+  `*/integration` branch, not only a fixed list. `action.yml` and the example
+  workflow pass inputs and outputs through environment variables instead of
+  splicing them into shell scripts. A new `workflow lint (zizmor)` CI job checks
+  all workflows and `action.yml` for script injection and similar mistakes, and
+  `tests/test_workflow_hardening.py` enforces the pinning and permission rules
+  offline.
+- **A small public HTTP API under `/api/v1/`:** `POST /api/v1/jobs`,
+  `GET /api/v1/jobs/{id}`, `GET /api/v1/jobs/{id}/events` (SSE),
+  `GET /api/v1/history` and `GET /api/v1/history/{id}`. Shapes, errors and
+  status codes are in the developer guide and pinned by contract tests. Every
+  other `/api/` path is internal; responses carry `X-Ekte-API: internal` (public
+  ones `X-Ekte-API: v1`). The local-only protections apply to `/api/v1/` too
+  ([#22](https://github.com/mn567250/ekte/issues/22)).
+- **The web UI is served at the root, without the `/v2/` prefix.** The audit
+  page is `/`, the others are `/watches`, `/history`, `/analytics`, `/kb` and
+  `/accessibility`; scripts and stylesheets moved from `/v2/static/` to
+  `/static/`. Every link ekte generates (pages, alerts, reports, docs in all
+  languages) and the accessibility snapshots use the new addresses. The page
+  addresses are public from now on ([stability policy](docs/STABILITY.md#surface-web-addresses)).
+  Upgrade: update bookmarks and links; old `/v2/…` page addresses keep
+  redirecting until 1.0.0 (see Deprecated). Old `/v2/static/…` asset addresses
+  no longer work.
+- **No vendored third-party files in the source distribution.** The sdist still
+  contains `tests/`, but not `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0);
+  the accessibility tests that need it skip with a clear reason when it is
+  absent. `NOTICE` states what is and is not distributed, and
+  `scripts/check_dist_contents.py` (CI workflow `dist.yml`) fails if an excluded
+  file ships.
+- **Supported Python versions: 3.11 to 3.14.** Python 3.10 is dropped (end of
+  life in October 2026) and Python 3.14 is added: `requires-python` is now
+  `>=3.11`, the classifiers, the CI test matrix, the `ruff` and `mypy` targets
+  and the documentation name 3.11, 3.12, 3.13 and 3.14. A test keeps them in
+  agreement. See the stability policy (docs/STABILITY.md).
+
+### Deprecated
+
+- **The whole zing compatibility layer is removed in 1.0.0** (1.0.0rc1 is
+  already without it): the `ZING_*` environment-variable fallback, the copy of
+  an old `~/.zing` data directory, the carry-over of browser settings, cookies
+  and the saved master key from their zing names, and the classic UI address
+  redirects (`/tools`, `/console`). Until then every part keeps working, and its
+  deprecation message (stderr, the browser console, a `Warning` header on the
+  redirects) now names the removal version 1.0.0. ekte never deletes an old
+  `~/.zing`, also not when the copy is removed. The timeline is in the
+  [stability policy](docs/STABILITY.md#deprecation-zing) and under **Coming
+  from zing** in the README (all languages).
+- **`/v2/…` page addresses.** They redirect permanently (308) to the page at
+  the root, keeping the query string, until 1.0.0, where the redirects are
+  removed (`/v2/tools` goes to `/?surface=embedding`; the classic UI addresses
+  redirect straight to the new addresses, without a second hop). Update
+  bookmarks, links and scripts.
+- `ekte audio --format`, and `--save` of `ekte image` and `ekte audio`: use
+  `--audio-format` and `--save-to`. The old options keep working, print a warning on
+  stderr that names the replacement, and are removed in 1.0.0.
+
+### Removed
+
+- **Four internal HTTP endpoints**, which the web UI no longer used:
+  `POST /api/audit/stream` (queue an audit with `POST /api/v1/jobs` and follow
+  it with `GET /api/v1/jobs/{id}/events`), `POST /api/embed` and
+  `POST /api/rerank` (queue a job with `"surface": "embedding"` or `"rerank"`),
+  and `GET /api/history/trend` with `history.trend()` ([#3](https://github.com/mn567250/ekte/issues/3),
+  [#4](https://github.com/mn567250/ekte/issues/4),
+  [#5](https://github.com/mn567250/ekte/issues/5)).
+
+### Fixed
+
+- **Report timestamps on Windows.** `generated_at` now comes from the same
+  monotonic clock as the request offsets, so a report never ends before its
+  last request (Windows' wall clock ticks only every ~16 ms).
+
+- **Methodology: billing & usage is a core dimension.** The dimension table in
+  every language left its role empty, while the text and the scoring code count
+  it as core.
+
+- **Windows: analytics time zones.** Windows ships no IANA time zone
+  database, so the analytics views failed with "unknown time zone". ekte now
+  depends on `tzdata` on Windows.
+
+- The analytics backfill's backlog query now always uses the
+  `idx_history_metrics_version` index. SQLite 3.53 planned a full scan of
+  `history_metrics` without it.
+
+- The README (report protocol fields `target.api`, `target.api_auto`,
+  `stream_mode`) and methodology (`verdict.drivers`, `verdict.checked`) were
+  missing a paragraph in the de, es, fr, it, pt and zh-CN translations.
 
 ## [0.30.0] — ekte: renamed from zing, own logo, only the v2 web UI
 

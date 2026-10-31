@@ -26,13 +26,16 @@ Docker og utgis. Hva ekte gjør og hvordan den brukes, står i
   - [Overflater](#overflater)
   - [Frittstående revisorer](#frittstående-revisorer)
   - [Nettserver](#nettserver)
+  - [HTTP API v1](#http-api-v1)
   - [Nettgrensesnittets frontend](#nettgrensesnittets-frontend)
   - [Lokale data](#lokale-data)
 - [Bidra](#bidra)
   - [Pull requests](#pull-requests)
   - [Legge til en detektor](#legge-til-en-detektor)
   - [Redigere kunnskapsbasen](#redigere-kunnskapsbasen)
+  - [Holde kunnskapsbasen oppdatert](#holde-kunnskapsbasen-oppdatert)
   - [Endre probeprompter](#endre-probeprompter)
+  - [Endre et databaseskjema](#endre-et-databaseskjema)
   - [Oversettelser](#oversettelser)
   - [Dokumentasjon](#dokumentasjon)
 - [Testing](#testing)
@@ -66,7 +69,7 @@ standarden i tankene ved enhver endring.
 
 ## Utviklingsoppsett
 
-Krever Python 3.10+. Node.js er valgfritt: testene av nettleser-JavaScript kjører
+Krever Python 3.11+. Linux, macOS og Windows testes i CI; tester som bare gir mening på POSIX hoppes over på Windows med en uttrykkelig grunn (`skipif(sys.platform == "win32", reason=...)`). Bruk `pathlib`, oppgi `encoding="utf-8"` for tekst-I/O og skriv aldri `/tmp` fast. Node.js er valgfritt: testene av nettleser-JavaScript kjører
 under `node` og hoppes over uten det.
 
 ```bash
@@ -142,6 +145,7 @@ planleggeren for overvåkinger ender alle i samme funksjon,
    kommandolinjevalgene til `TargetConfig` (mål, valgfri referanse og dommer) og
    `AuditOptions` (testsett, dimensjoner, probestørrelser, utdata). API-nøkler
    oppgitt som `env:VAR` eller `file:/sti` løses opp her.
+   Formatet er definert i `ekte/configfile.py` (én tabell med nøkler, typer og standardverdier) og publisert som JSON-skjemaet [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), som genereres på nytt med `uv run python -m ekte.configfile` (en test feiler hvis det er utdatert). `ekte/config.py` laster filen gjennom det, slik at alle kommandoer validerer den. En formatendring krever en ny `CURRENT_VERSION`, omdøpingene i `RENAMES_FROM` (brukt av `ekte config migrate`) og en endringslogg-oppføring; en utdatert nøkkel legges i `DEPRECATED` med erstatningen. Se [stabilitetspolicyen](docs/STABILITY.md#surface-config).
 2. **Kunnskapsbase.** `load_knowledge_base()` laster de medfølgende profilene,
    `--kb-dir`/`EKTE_KB_DIR` og brukerens `kb.db`, og slår opp den **oppgitte**
    modellen (standard er den forespurte) til en profil. En overvåking sender i
@@ -150,7 +154,7 @@ planleggeren for overvåkinger ender alle i samme funksjon,
    den valgte eller automatisk gjenkjente protokollen. En `RequestRecorder` pakker
    inn hvert kall for ytelsesdelen.
 4. **Detektorer.** `select_detectors()` velger de registrerte detektorene for
-   testsettet (eller de egendefinerte dimensjonene) og dropper dem som trenger en
+   testsettet (eller de egendefinerte dimensjonene) og utelater dem som trenger en
    dommer eller en referanse som mangler. De kjøres **etter hverandre**, med
    vilje: samtidige forespørsler ville utløst strupinger og forstyrret
    tidsmålingene (pålitelighets- og ytelsesprobene styrer sin egen avgrensede
@@ -297,7 +301,7 @@ akse nummer to ved siden av testsettet, båret av `AuditOptions.surface`,
   `op="rerank"` (`ekte.config.SURFACE_OPS`); funksjonene i `perf/summary.py` tar
   en `op`-parameter (standard `complete`).
 - `embed_audit.run_embedding_audit()` og `run_rerank_audit()` (brukt av
-  `ekte embed` / `ekte rerank` og `/api/embed` / `/api/rerank`) kjører kjøreren
+  `ekte embed` / `ekte rerank`) kjører kjøreren
   med `surface="embedding"` eller `"rerank"`, sender forrige lagrede kjøring av
   samme overflate som `previous_report` (drift) og lagrer rapporten med mindre de
   blir bedt om å la være (`--no-save`).
@@ -327,20 +331,17 @@ standardbiblioteket.
 
 `ekte/web/server.py` er en FastAPI-app som lages av `create_app()`:
 
-- **Sider.** Nettgrensesnittet (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) er statisk HTML. Det finnes
-  ingen Verktøy-side: revisjoner av embedding og rerank starter på
-  revisjonssiden via velgeren for type endepunkt (`/v2/?surface=embedding|rerank`),
-  og `/v2/tools` leverer en liten side som sender gamle lenker videre dit
-  (`#rerank` velger rerank, `?rerun=` sendes videre). Adressene til det fjernede
-  klassiske grensesnittet (`/`, `/history`, `/watches`, `/tools`, `/console`)
-  videresender (308) til v2-sidene sine og beholder spørrestrengen.
+- **Sider.** Nettgrensesnittet (`/`, `/history`, `/watches`,
+  `/analytics`, `/kb`, `/accessibility`) er statisk HTML levert fra roten; skript og
+  stiler ligger under `/static/`. Det finnes ingen Verktøy-side: revisjoner av embedding og rerank
+  starter på revisjonssiden via velgeren for type endepunkt
+  (`/?surface=embedding|rerank`). Fram til 1.0.0 videresender de tidligere adressene (308) til
+  siden i roten og beholder spørrestrengen: `/v2/…` (`/v2/tools` går til
+  `/?surface=embedding`, og `#rerank` velger rerank) samt `/tools` og `/console` fra det fjernede
+  klassiske grensesnittet. Disse videresendingene er foreldet og fjernes i 1.0.0.
 - **API.** `/api/jobs…` kjører revisjoner (nedenfor); `/api/models` viser et
   relés modeller; `/api/report/export` gjengir en rapport; `/api/history…`,
-  `/api/watches…`, `/api/kb…` og `/api/analytics…` står bak de andre sidene.
-  `/api/audit/stream` (én revisjon strømmet over SSE), `/api/embed` og
-  `/api/rerank` (én synkron revisjon av embedding / rerank) brukes ikke lenger av
-  nettgrensesnittet; framtiden deres følges i sakene #3 og #4.
+  `/api/watches…`, `/api/kb…` og `/api/analytics…` står bak de andre sidene. Alle er interne; den offentlige delmengden er [HTTP API v1](#http-api-v1).
 - **Releer.** `POST /api/kb/relays` lagrer et relé `{name, base_url}` (400 for
   ugyldig inndata, 409 når navnet eller URL-en allerede er kjent).
 - **Analyse.** `GET /api/analytics/options` (releer, modeller, testsett,
@@ -377,9 +378,7 @@ standardbiblioteket.
   kjøring og nylig ferdige (pluss overvåkinger som kjører) med fremdrift,
   `GET /api/jobs/{id}/events` spiller av jobbens hendelseslogg og følger den så i
   sanntid over SSE, og `POST /api/jobs/{id}/cancel` stopper den.
-  Nettgrensesnittet bruker disse, så en revisjon overlever siden;
-  `/api/audit/stream` pakker inn den samme jobben og avbryter den når strømmen
-  lukkes. En reléport lar én revisjon (eller overvåkingskjøring) om gangen bruke
+  Nettgrensesnittet bruker disse, så en revisjon overlever siden. En reléport lar én revisjon (eller overvåkingskjøring) om gangen bruke
   et relé, med vertsnavnet som nøkkel og alle loopback-adresser som én vert, og
   høyst `EKTE_MAX_PARALLEL_AUDITS` (standard 4) kjører samtidig; de som venter,
   betjenes i den rekkefølgen de kom.
@@ -408,8 +407,30 @@ standardbiblioteket.
   i en gjenkjent container med `EKTE_CONTAINER=1`) og installerer
   `LocalOnlyMiddleware`: en tillatelsesliste for Host mot DNS-rebinding,
   Origin- og `Sec-Fetch-Site`-kontroller mot CSRF, bare JSON i
-  forespørselsbodyer, og hoder mot innramming / sniffing / referrer.
+  forespørselskropper, og hoder mot innramming / sniffing / referrer.
   Grensesnittet har ingen innlogging, med vilje.
+
+### HTTP API v1
+
+Den offentlige delen av HTTP-API-et ligger under `/api/v1/` og følger [stabilitetspolicyen](docs/STABILITY.md#surface-http-api): Den endres bare ukompatibelt i en hovedversjon, etter en utfasingsperiode. Alle andre stier under `/api/` er interne og kan endres i hvilken som helst utgivelse. Interne svar har `X-Ekte-API: internal`, v1-svar `X-Ekte-API: v1`. Nettgrensesnittet bruker de interne stiene.
+
+| Endepunkt | Forespørsel | Svar |
+|---|---|---|
+| `POST /api/v1/jobs` | JSON-kropp med `base_url`, `model` og eventuelt `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 og jobben; 400 ved ugyldig inndata |
+| `GET /api/v1/jobs/{id}` | ingen | 200 og jobben; 404 for ukjent id |
+| `GET /api/v1/jobs/{id}/events` | ingen | 200 og `text/event-stream`: jobbens hendelser så langt, så direkte, til og med `done`; 404 for ukjent id |
+| `GET /api/v1/history` | valgfritt `limit` (1–500, standard 50) og `perf` | 200 og en JSON-liste med sammendrag av kjøringer, nyeste først |
+| `GET /api/v1/history/{id}` | ingen | 200 og den lagrede rapporten som den er; 404 for ukjent id |
+
+En jobb har `id`, `status` (`queued`, `running`, `done`, `error` eller `cancelled`), fremdriftsfelt, `report_id` når rapporten er lagret, og `error`; API-nøkkelen returneres aldri. Hver hendelse er en SSE-linje `data: {JSON}` med en `type`; hendelsen `report` bærer rapporten og dens `report_id`, og `done` er alltid den siste. Klienter ignorerer hendelsestyper og felt de ikke kjenner.
+
+Hver feil er JSON med ett enkelt felt, `error`, med en lesbar melding, og én av disse statuskodene: 400 (ugyldig forespørsel), 404 (ikke funnet), 403 (forespørsel på tvers av nettsteder eller opprinnelser avvist), 415 (kroppen er ikke JSON), 421 (ukjent vert).
+
+```json
+{"error": "not found"}
+```
+
+- **Bare lokalt.** Nettserverens beskyttelser gjelder for `/api/v1/` som for alle stier: binding til loopback som standard, vertskontrollen, avvisning av skriving på tvers av nettsteder og kun JSON i kroppen. De svarer i samme feilformat.
 
 ### Nettgrensesnittets frontend
 
@@ -562,14 +583,14 @@ så kjør én server per datamappe.
 backup-API-et, til en midlertidig søskenmappe som gis nytt navn på plass).
 `~/.zing` endres eller slettes aldri. `lang.js` kopierer nettleserens
 `zing.*`-innstillinger til `ekte.*` på samme måte, og serveren leser fortsatt
-informasjonskapslene `zing_lang` / `zing_ui` til `ekte_*`-kapslene finnes.
+informasjonskapslene `zing_lang` / `zing_ui` til `ekte_*`-kapslene finnes. Alt dette er foreldet og fjernes i 1.0.0 (varslene nevner den versjonen); ekte sletter aldri en gammel `~/.zing`.
 
 ## Bidra
 
 ### Pull requests
 
 - Hold `pytest`, `ruff check ekte tests` og `mypy ekte` grønne (CI kjører alle tre
-  på Python 3.10–3.13).
+  på Python 3.11–3.14).
 - Beskriv relétrikset eller den falske positiven en endring tar for seg.
 - Oppdater `CHANGELOG.md` under `[Unreleased]`.
 - Oppdater dokumentasjonen endringen berører — README, denne veiledningen,
@@ -623,12 +644,78 @@ detektorens liste over konkurrerende merker); importen fyller tomme nøkkelord f
 disse navnene med en advarsel. Legg til merkeordene til en ny leverandør der som
 én gruppe.
 
+### Holde kunnskapsbasen oppdatert
+
+Data om leverandører og modeller blir fort utdatert, og hver konklusjon avhenger
+av dem, så ekte sier åpent hvor gamle de er. Hver medfølgende leverandørprofil
+har `last_verified`, datoen da dataene sist ble sjekket mot leverandørens
+dokumentasjon. Den eldste av disse datoene er **kunnskapsbasens dato**: den
+lagres i hver rapport (`knowledge.kb_date`), vises av `ekte kb` og i
+Markdown-, HTML- og PDF-rapportene, og gis ut av `ekte kb --json`. Er den eldre
+enn `STALE_AFTER_DAYS` (180 dager, i `ekte/knowledge/freshness.py`), får
+rapporten en advarsel som viser til å oppdatere ekte eller legge til egne
+oppføringer. Advarselen endrer aldri konklusjonen.
+
+Oppdateringsprosessen:
+
+- **Kilder.** Bare leverandørens offisielle sider: modelliste og modellkort,
+  sider om priser og grenser, varsler om utfasing og avvikling og
+  utgivelsesnotater. Ta med lenken i pull requesten.
+- **Hvem.** Vedlikeholderne. Alle kan foreslå en endring med
+  issue-skjemaet «Knowledge base update» (leverandør, modell-ID, endring,
+  kildelenke og dens dato) eller med en pull request.
+- **Hvor ofte.** Minst før hver minor-utgivelse, og i en ekstra patch-utgivelse
+  når det skjer en stor modellendring (en ny flaggskipmodell, en avvikling, en
+  omdøpt modell-ID). Utgivelsessjekklisten inneholder dette.
+- **Gjennomgang.** En pull request som endrer `ekte/knowledge/data/*.yaml`
+  trenger oppgitt kilde for hver endrede verdi og en ekstra gjennomgang, og
+  `ekte kb-import --check` må bestå. Sett `last_verified` for en leverandør først
+  etter at du har sjekket hele leverandørfilen, ikke bare de endrede linjene.
+- **Endringslogg.** Hver endring i de medfølgende dataene står i `CHANGELOG.md`,
+  fordi den kan endre konklusjoner.
+
 ### Endre probeprompter
 
 Probetekster er kalibreringsdata. Å endre en i `ekte/prompts/en.json` kan endre
 svarkontroller, tokenanslag og dermed konklusjoner, så juster detektoren og
 testene dens samtidig, og nevn endringen i CHANGELOG. La aldri en probe følge
 grensesnittspråket.
+
+### Endre et databaseskjema
+
+Hver SQLite-database ekte oppretter (`history.db`, `watches.db`, `kb.db`)
+versjoneres og migreres av én felles mekanisme, `ekte/dbmigrate.py`; et lager
+migrerer seg aldri selv med ad hoc-`ALTER TABLE`. Skjemaversjonen ligger i
+`PRAGMA user_version`, og `datadir.connect(name, MIGRATIONS)` sjekker den ved
+hver åpning.
+
+Slik endrer du et skjema:
+
+1. Legg til en funksjon `_vN(conn)` i lageret (`web/history.py`,
+   `web/watches.py`, `knowledge/store.py`) som gjør endringen, og legg
+   `dbmigrate.Migration(N, _vN)` til sist i `MIGRATIONS`-tuppelen. Rediger
+   eller omorganiser aldri et eksisterende trinn: databaser i drift har
+   allerede kjørt det.
+2. Hold trinnet idempotent (`CREATE ... IF NOT EXISTS` og
+   `kb_snapshot.add_link_columns()` for kolonner), og ikke gjør commit eller
+   rollback i det. Mekanismen kjører hvert trinn i en egen
+   `BEGIN IMMEDIATE`-transaksjon sammen med versjonsøkningen, så et avbrutt
+   eller mislykket trinn lar databasen stå på forrige versjon.
+3. En ny database starter på versjon 0 og kjører alle trinn; en database fra
+   før versjoneringen har også versjon 0, derfor må trinn 1 i et lager ta
+   over et eksisterende skjema.
+4. Legg til en test i `tests/test_dbmigrate.py` som bygger skjemaet på
+   versjon N-1, åpner det og sjekker ny versjon, nytt skjema og at dataene er
+   intakte. Må rader fylles for eksisterende data, gjør det i lagerets
+   `on_migrated`-callback (se `history._after_migration`), ikke i trinnet.
+
+Hva mekanismen gjør for deg: en database skrevet av en **nyere** ekte avvises
+med `DatabaseTooNewError` (begge versjoner nevnes, med hva man kan gjøre) før
+noe skrives; før det første trinnet i en kjøring kopieres en ikke-tom database
+til `<db>.v<versjon>.<UTC-tid>.bak` ved siden av, og bare de 3 nyeste
+sikkerhetskopiene per database beholdes (`dbmigrate.BACKUP_KEEP`); versjonen
+leses på nytt under skrivelåsen, slik at CLI og server aldri kjører samme
+trinn to ganger.
 
 ### Oversettelser
 
@@ -674,7 +761,7 @@ spansk, portugisisk, italiensk, tysk og norsk (bokmål, `nb`):
 | `README.md`, `README.<lang>.md` | Brukere: hva ekte gjør, installasjon, bruk av kommandolinjen og nettgrensesnittet |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Bidragsytere: arkitektur, oppsett, bidrag, Docker, utgivelser |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Alle: hver kontroll, scoreskalaen og forbeholdene |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Referansesider (engelsk) |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Referansesider (engelsk) |
 
 De engelske filene er referansen. Når du endrer en, endrer du de andre i samme
 pull request, og bruker grensesnittets egne ord på hvert språk (slå opp begrepet
@@ -757,23 +844,74 @@ beskytter grensesnittet.
 
 | Arbeidsflyt | Kjører | Gjør |
 |---|---|---|
-| `.github/workflows/ci.yml` | push og pull request til `main` (og integrasjonsgrenene `a11y/integration`, `perf/integration`); hver natt og manuelt (bare tilgjengelighet) | `ruff`, `mypy` og `pytest` på Python 3.10–3.13 med tilleggene `dev` og `web`; bygger wheel og sdist og kontrollerer at wheelen installeres og laster kunnskapsbasen; kjører tilgjengelighetstestene (til informasjon, får aldri kjøringen til å feile) og laster opp funnene: hver side ved push, nattlige og manuelle kjøringer (med BITV-samsvarsrapporten), ved pull requests bare sidene endringen berører (ingen ved rene dokumentasjonsendringer) — unntatt pull requests inn i `perf/integration`, der de trege nettlesertestene hoppes over (de kjører ved push til den grenen og ved dens pull request inn i `main`) |
+| `.github/workflows/ci.yml` | push og pull request til `main` (og integrasjonsgrenene `*/integration`); hver natt og manuelt (bare tilgjengelighet) | `ruff`, `mypy` og `pytest` på Python 3.11–3.14 (Linux; på macOS og Windows 3.11 og 3.14) med tilleggene `dev` og `web`; bygger wheel og sdist og kontrollerer at wheelen installeres og laster kunnskapsbasen; kjører tilgjengelighetstestene (til informasjon, får aldri kjøringen til å feile) og laster opp funnene: hver side ved push, nattlige og manuelle kjøringer (med BITV-samsvarsrapporten), ved pull requests bare sidene endringen berører (ingen ved rene dokumentasjonsendringer) — unntatt pull requests inn i `perf/integration`, der de trege nettlesertestene hoppes over (de kjører ved push til den grenen og ved dens pull request inn i `main`) |
 | `.github/workflows/release.yml` | en `v*`-tagg | bygger, kjører `twine check` og publiserer til PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | daglig tidsplan, manuelt | eksempel på en planlagt relérevisjon med handlingen |
 
 Selve den sammensatte handlingen er `action.yml`, dokumentert i
 [docs/CI.md](docs/CI.md).
 
+### Tredjepartsfiler i distribusjonen
+
+Kildedistribusjonen inneholder testene, men ingen medfølgende tredjepartsfiler. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) ligger bare i git-repoet; den er utelatt fra sdist (`exclude` under `[tool.hatch.build.targets.sdist]` i `pyproject.toml`) og har aldri vært en del av wheel.
+
+- Tester som trenger en utelatt fil, hoppes over med en tydelig begrunnelse når den mangler; kjør tilgjengelighetssuiten fra en git-utsjekk.
+- `NOTICE` lister hver tredjepartsfil og sier om den distribueres. Legg en ny medfølgende fil i `exclude`-listen og i `NOTICE`, eller, hvis den må følge med, skriv i `NOTICE` at den gjør det.
+- `scripts/check_dist_contents.py` bygger wheel og sdist (`uv build`) og feiler hvis en utelatt fil, eller en fil som `NOTICE` oppgir som ikke distribuert, er med. Arbeidsflyten `.github/workflows/dist.yml` kjører det i en egen jobb.
+
 ## Utgivelser
 
-1. Flytt `[Unreleased]` i `CHANGELOG.md` til den nye versjonen og øk `version` i
-   `pyproject.toml`.
-2. Commit, tagg `vX.Y.Z` og push taggen; `release.yml` publiserer til PyPI.
-3. Lag GitHub-utgivelsen med notatene fra CHANGELOG og oppdater den festede
-   versjonen av handlingen i README-ene og `docs/CI.md`.
-
-Engangsoppsettet for PyPI og den manuelle reserveløsningen står i
+En utgivelse er en versjonstagg; alt annet er automatisert og kontrollert.
+Sjekklisten ligger i [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md), det
+engangsoppsettet for PyPI og den manuelle reserveløsningen i
 [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+### Lage en utgivelse
+
+1. Gå gjennom [sjekklisten for utgivelser](docs/RELEASE_CHECKLIST.md): versjon og
+   endringslogg, støttede Python-versjoner og systemer, ferskhet i kunnskapsbasen,
+   oppgraderingsfixture, tilgjengelighetsgjennomgang ved UI-endringer, dokumentasjon
+   på alle språk, sikkerhetsvarsler.
+2. Sett `version` i `pyproject.toml` og gi `[Unreleased]` i `CHANGELOG.md` nytt navn
+   `[X.Y.Z] - ÅÅÅÅ-MM-DD`. Sjekk lokalt med
+   `python scripts/release_check.py version vX.Y.Z` og `... notes vX.Y.Z`.
+3. Slå sammen, tagg commiten og push taggen:
+   `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`, `git push origin vX.Y.Z`.
+4. `release.yml` kontrollerer først med `scripts/release_check.py` at taggen
+   samsvarer med pakkeversjonen, at `CHANGELOG.md` har en seksjon for den og at CI er
+   grønn for den taggede commiten (den venter på en CI som kjører). Feiler en
+   kontroll, stopper workflowen og ingenting publiseres. Deretter bygger den,
+   publiserer til PyPI via Trusted Publishing med proveniensattester og lager
+   GitHub-utgivelsen med endringslogg-seksjonen som notater.
+
+### Utgivelseskandidater
+
+Tagg `vX.Y.ZrcN` (med `version = "X.Y.ZrcN"` i `pyproject.toml`). PyPI behandler den
+som en PEP 440-forhåndsversjon: `pip install ekte` ignorerer den, `pip install --pre ekte`
+finner den; GitHub merker utgivelsen som «Pre-release». I endringsloggen holder
+seksjonen `[X.Y.ZrcN]`, `[X.Y.Z]` eller `[Unreleased]`.
+
+### Hvis en publisering feiler halvveis
+
+PyPI godtar aldri samme fil to ganger, og en versjon kan ikke gjenbrukes; det
+avgjørende er hvor langt kjøringen kom (Actions, «Release to PyPI»):
+
+- **En kontroll feilet (jobben verify).** Ingenting ble publisert. Rett årsaken
+  (versjon, endringslogg, CI), slett taggen lokalt og på origin
+  (`git push origin :refs/tags/vX.Y.Z`) og tagg den rettede commiten på nytt.
+- **Bygg eller opplasting feilet før PyPI hadde filer.** Kjør de feilede jobbene på
+  nytt; ingen versjon er brukt opp. Må selve den taggede commiten endres, slett
+  taggen og lag den på nytt.
+- **PyPI har noen av filene** (se <https://pypi.org/project/ekte/#files>). Kjør de
+  feilede jobbene på nytt: opplastingen hopper over filer som finnes. Avviker filene
+  fra det som skal ut, ikke prøv igjen: «yank» versjonen på PyPI og gi ut neste
+  (`X.Y.Z+1` eller `rcN+1`).
+- **PyPI er komplett, men GitHub-utgivelsen feilet.** Kjør jobben `GitHub Release`
+  på nytt; den oppretter eller oppdaterer utgivelsen idempotent. Eller for hånd:
+  `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`.
+- **En feilaktig versjon er allerede live.** «Yank» den på PyPI (den kan da bare
+  installeres med eksakt versjon), rett opp fremover med en ny versjon og noter det i
+  endringsloggen.
 
 ## Sikkerhet
 

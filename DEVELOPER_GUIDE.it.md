@@ -26,13 +26,16 @@ funziona e come viene valutato ogni controllo, nella
   - [Superfici](#superfici)
   - [Verificatori autonomi](#verificatori-autonomi)
   - [Server web](#server-web)
+  - [HTTP API v1](#http-api-v1)
   - [Frontend web](#frontend-web)
   - [Dati locali](#dati-locali)
 - [Contribuire](#contribuire)
   - [Pull request](#pull-request)
   - [Aggiungere un rilevatore](#aggiungere-un-rilevatore)
   - [Modificare la base di conoscenza](#modificare-la-base-di-conoscenza)
+  - [Mantenere aggiornata la base di conoscenza](#mantenere-aggiornata-la-base-di-conoscenza)
   - [Modificare i prompt delle sonde](#modificare-i-prompt-delle-sonde)
+  - [Modificare lo schema di un database](#modificare-lo-schema-di-un-database)
   - [Traduzioni](#traduzioni)
   - [Documentazione](#documentazione)
 - [Test](#test)
@@ -67,7 +70,7 @@ quest'asticella in ogni modifica.
 
 ## Ambiente di sviluppo
 
-Richiede Python 3.10+. Node.js è facoltativo: i test del JavaScript del browser
+Richiede Python 3.11+. Linux, macOS e Windows sono testati in CI; i test sensati solo su POSIX vengono saltati su Windows con un motivo esplicito (`skipif(sys.platform == "win32", reason=...)`). Usa `pathlib`, passa `encoding="utf-8"` all'I/O di testo e non scrivere mai `/tmp` fisso. Node.js è facoltativo: i test del JavaScript del browser
 girano con `node` e vengono saltati senza.
 
 ```bash
@@ -144,6 +147,7 @@ funzione, `ekte.runner.run_audit()`:
    facoltativi) e `AuditOptions` (suite, dimensioni, dimensione delle sonde,
    output). Le chiavi API indicate come `env:VAR` o `file:/percorso` vengono
    risolte qui.
+   Il formato è definito in `ekte/configfile.py` (una tabella di chiavi, tipi e valori predefiniti) e pubblicato come schema JSON [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json), rigenerato con `uv run python -m ekte.configfile` (un test fallisce se è obsoleto). `ekte/config.py` carica il file attraverso di esso, quindi ogni comando lo convalida. Una modifica del formato richiede un nuovo `CURRENT_VERSION`, le rinominazioni in `RENAMES_FROM` (usate da `ekte config migrate`) e una voce nel changelog; una chiave deprecata va in `DEPRECATED` con la sua sostituta. Vedi la [politica di stabilità](docs/STABILITY.md#surface-config).
 2. **Base di conoscenza.** `load_knowledge_base()` carica i profili integrati,
    `--kb-dir`/`EKTE_KB_DIR` e il `kb.db` dell'utente, e risolve il modello
    **dichiarato** (per impostazione predefinita quello richiesto) in un profilo.
@@ -258,7 +262,7 @@ modificare.
 
 Anche i relay sono endpoint: `relays.py` trasforma i `base_url_hints` di un
 provider in URL di base utilizzabili (`GET /api/kb` → `base_urls`) e salva un
-relay dall'interfaccia web come voce di provider in `kb.db` (`origin = relay`: un
+relay dall'interfaccia web come voce di fornitore in `kb.db` (`origin = relay`: un
 `display_name` e un URL di base, nessun modello; nessuna modifica allo schema).
 
 ### Libreria dei prompt
@@ -306,7 +310,7 @@ secondo asse accanto alla suite, portato da `AuditOptions.surface`,
   rerank con `op="rerank"` (`ekte.config.SURFACE_OPS`); le funzioni di
   `perf/summary.py` accettano un parametro `op` (predefinito `complete`).
 - `embed_audit.run_embedding_audit()` e `run_rerank_audit()` (usate da
-  `ekte embed` / `ekte rerank` e `/api/embed` / `/api/rerank`) eseguono il runner
+  `ekte embed` / `ekte rerank`) eseguono il runner
   con `surface="embedding"` o `"rerank"`, passano l'esecuzione salvata precedente
   della stessa superficie come `previous_report` (deriva) e salvano il rapporto
   salvo indicazione contraria (`--no-save`).
@@ -337,20 +341,18 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
 
 `ekte/web/server.py` è un'app FastAPI creata da `create_app()`:
 
-- **Pagine.** L'interfaccia web (`/v2/`, `/v2/history`, `/v2/watches`,
-  `/v2/analytics`, `/v2/kb`, `/v2/accessibility`) è HTML statico. Non c'è una
-  pagina Strumenti: le verifiche di embedding e rerank partono dalla pagina di verifica
-  con il selettore del tipo di endpoint (`/v2/?surface=embedding|rerank`), e
-  `/v2/tools` serve una piccola pagina che vi rimanda i vecchi link (`#rerank`
-  sceglie il rerank, `?rerun=` viene passato). Gli indirizzi dell'interfaccia
-  classica rimossa (`/`, `/history`, `/watches`, `/tools`, `/console`)
-  reindirizzano (308) alle loro pagine v2, con la query string.
+- **Pagine.** L'interfaccia web (`/`, `/history`, `/watches`,
+  `/analytics`, `/kb`, `/accessibility`) è HTML statico servito alla radice; script e
+  stili stanno sotto `/static/`. Non c'è una pagina Strumenti: le verifiche di embedding e rerank
+  partono dalla pagina di verifica con il selettore del tipo di endpoint
+  (`/?surface=embedding|rerank`). Fino alla 1.0.0 i vecchi indirizzi reindirizzano (308) alla
+  pagina alla radice, con la query string: `/v2/…` (`/v2/tools` porta a
+  `/?surface=embedding`, e `#rerank` sceglie il rerank) e `/tools` e `/console` dell'interfaccia
+  classica rimossa. Questi reindirizzamenti sono obsoleti e vengono rimossi in 1.0.0.
 - **API.** `/api/jobs…` esegue le verifiche (vedi sotto); `/api/models` elenca i
   modelli di un relay; `/api/report/export` renderizza un rapporto;
   `/api/history…`, `/api/watches…`, `/api/kb…` e `/api/analytics…` servono le
-  altre pagine. `/api/audit/stream` (una verifica trasmessa via SSE), `/api/embed`
-  e `/api/rerank` (una verifica sincrona di embedding / rerank) non sono più usati
-  dall'interfaccia web; il loro futuro è seguito nelle issue #3 e #4.
+  altre pagine. Tutti sono interni; il sottoinsieme pubblico è [HTTP API v1](#http-api-v1).
 - **Relay.** `POST /api/kb/relays` salva un relay `{name, base_url}` (400 per un
   input non valido, 409 se il nome o l'URL sono già noti).
 - **Analisi.** `GET /api/analytics/options` (relay, modelli, suite, modalità di
@@ -372,12 +374,12 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
   risposte sono `Cache-Control: no-store`.
 - **Pannelli di analisi.** `/api/analytics/breakdown` (fino a 8 `metrics` per
   `group=relay|model|relay_model|all` nel periodo), `/api/analytics/errors` (le
-  chiamate di completamento al target per classe di esito
+  chiamate di completamento all'obiettivo per classe di esito
   `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, per
   `group=relay|model` e per `bucket`, contate in SQL da
   `history.analytics_request_classes()` senza caricare le righe delle
-  richieste; l'ora di una chiamata è l'inizio del suo audit più il suo offset,
-  al minuto; `covered` = audit con registri delle richieste) e
+  richieste; l'ora di una chiamata è l'inizio della sua verifica più il suo offset,
+  al minuto; `covered` = verifiche con registri delle richieste) e
   `/api/analytics/integrity` (conteggi di superati / avvisi / falliti dei
   rilevatori di identità, capacità, visione, streaming, protocollo, integrità,
   prompt iniettato e connettività per relay × modello, la quota di modelli
@@ -389,9 +391,7 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
   in corso e appena conclusi (e i monitor in esecuzione) con l'avanzamento,
   `GET /api/jobs/{id}/events` riproduce il registro degli eventi e poi lo segue
   dal vivo via SSE, e `POST /api/jobs/{id}/cancel` lo ferma. L'interfaccia web
-  li usa, quindi una verifica sopravvive alla pagina; `/api/audit/stream`
-  avvolge lo stesso job e lo annulla
-  alla chiusura del flusso. Un blocco per relay lascia usare un relay a una sola
+  li usa, quindi una verifica sopravvive alla pagina. Un blocco per relay lascia usare un relay a una sola
   verifica (o esecuzione di monitor) alla volta, per nome host, con tutti gli
   indirizzi loopback come un solo host; al massimo `EKTE_MAX_PARALLEL_AUDITS`
   (predefinito 4) insieme, in ordine di arrivo.
@@ -425,6 +425,28 @@ decodifica (intestazioni delle immagini, WAV) usa solo la libreria standard.
   JSON e intestazioni anti-frame / no-sniff / no-referrer. L'interfaccia non ha
   login per scelta.
 
+### HTTP API v1
+
+La parte pubblica dell'API HTTP si trova sotto `/api/v1/` e segue la [politica di stabilità](docs/STABILITY.md#surface-http-api): cambia in modo incompatibile solo in una versione maggiore, dopo un periodo di deprecazione. Ogni altro percorso sotto `/api/` è interno e può cambiare in qualsiasi versione. Le risposte interne portano `X-Ekte-API: internal`, quelle di v1 `X-Ekte-API: v1`. L'interfaccia web usa i percorsi interni.
+
+| Endpoint | Richiesta | Risposta |
+|---|---|---|
+| `POST /api/v1/jobs` | corpo JSON con `base_url`, `model` e, facoltativamente, `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 e il job; 400 per input non valido |
+| `GET /api/v1/jobs/{id}` | nessuna | 200 e il job; 404 per un id sconosciuto |
+| `GET /api/v1/jobs/{id}/events` | nessuna | 200 e `text/event-stream`: gli eventi del job finora, poi dal vivo, fino a `done`; 404 per un id sconosciuto |
+| `GET /api/v1/history` | `limit` (1–500, predefinito 50) e `perf`, facoltativi | 200 e un array JSON di riepiloghi delle esecuzioni, le più recenti per prime |
+| `GET /api/v1/history/{id}` | nessuna | 200 e il rapporto salvato così com'è; 404 per un id sconosciuto |
+
+Un job ha `id`, `status` (`queued`, `running`, `done`, `error` o `cancelled`), campi di avanzamento, `report_id` quando il rapporto è salvato, e `error`; la chiave API non viene mai restituita. Ogni evento è una riga SSE `data: {JSON}` con un `type`; l'evento `report` porta il rapporto e il suo `report_id`, e `done` è sempre l'ultimo. I client ignorano i tipi di evento e i campi che non conoscono.
+
+Ogni errore è JSON con un solo campo, `error`, con un messaggio leggibile, e uno di questi codici di stato: 400 (richiesta non valida), 404 (non trovato), 403 (richiesta cross-site o cross-origin rifiutata), 415 (il corpo non è JSON), 421 (host sconosciuto).
+
+```json
+{"error": "not found"}
+```
+
+- **Solo locale.** Le protezioni del server web valgono per `/api/v1/` come per ogni percorso: binding su loopback per impostazione predefinita, controllo dell'Host, rifiuto delle scritture cross-site e corpi solo JSON. Rispondono con lo stesso formato di errore.
+
 ### Frontend web
 
 Il frontend è HTML, CSS e JavaScript da browser semplici, senza moduli né fase di
@@ -434,6 +456,9 @@ rapporto (`report.js`), il selettore del tema (`theme.js`) e gli stili
 serviti dalla radice: `lang.js` (cambio lingua), `locales.js` (dati di
 traduzione), `i18n.js` (traduzione delle rilevazioni), `icons.js` (con il logo di
 ekte), `secretfield.js` e `perf.js` (grafici delle prestazioni).
+Ogni colore dell'interfaccia v2, in entrambi i temi, è un token in `v2/tokens.css`
+(scritto una sola volta come `light-dark(<chiaro>, <scuro>)`); tutti gli altri
+stili, pagine e script v2 usano solo `var(--…)`, mai un colore letterale.
 
 Ogni pagina v2 tranne Accessibilità ha un **avviso di pagina** subito sotto
 l'hero (`<div class="znote" id="note">`, disegnato da `v2/notice.js`, con lo
@@ -444,18 +469,18 @@ mostrare di nuovo lo stesso avviso non cambia nulla). La pagina sceglie il
 messaggio più importante ed elenca gli altri in `items`. Verifica: server non
 raggiungibile / audit in corso / l'esecuzione salvata più recente / eseguito in
 locale; Cronologia: cronologia illeggibile / esecuzioni dei monitor in pausa
-(chiave master bloccata) o esecuzioni precedenti ancora in elaborazione / numero
+(chiave principale bloccata) o esecuzioni precedenti ancora in elaborazione / numero
 di esecuzioni; Analisi: dati illeggibili / esecuzioni non ancora nei grafici o
 con orario di inizio stimato / su cosa si basa; Conoscenza: errore di
 caricamento / voci saltate o ignorate / elementi disattivati / completa. Monitor
-mantiene la sua barra della chiave master (`masterkey.js`), con lo stesso aspetto
+mantiene la sua barra della chiave principale (`masterkey.js`), con lo stesso aspetto
 e posto. I numeri dell'intera cronologia vengono da `GET /api/history/status`
 (`history.status()`: numero di esecuzioni, la più vecchia e la più recente,
 righe non ancora elaborate dal backfill delle analisi, esecuzioni con orario di
 inizio stimato).
 
 La pagina v2 **Verifica** configura i relay con
-`v2/relaycfg.js`: scelta relay/provider → URL di base → i modelli del relay
+`v2/relaycfg.js`: scelta relay/fornitore → URL di base → i modelli del relay
 (`/api/models`, al cambiamento, in cache per URL/chiave/protocollo) → modello
 dichiarato dalla base di conoscenza (`/api/kb/resolve` lo preseleziona) →
 provider derivato, più **Salva nella base** (`POST /api/kb/relays`). Le sue
@@ -536,7 +561,7 @@ anche le tabelle di analisi, definite in `web/analytics_store.py`:
 tassi, percentili di latenza/TTFT/decodifica, rapporti di fatturazione, numero di
 rilevazioni e altro; NULL dove l'esecuzione non ha misurato un valore),
 `history_dimensions` (punteggi di dimensioni e rilevatori) e `history_requests` (i
-record delle richieste dell'esecuzione, obiettivo e baseline, nell'ordine della
+record delle richieste dell'esecuzione, obiettivo e riferimento, nell'ordine della
 lista). I `performance.requests` di un rapporto stanno solo lì: `save()` li toglie
 da `report_json` (`requests_split` marca la riga) e `get()` / `latest_for()` li
 rimettono al loro posto, così un rapporto si rilegge identico a come è stato
@@ -583,14 +608,14 @@ solo la vecchia directory (i file SQLite tramite l'API di backup, in una
 directory temporanea accanto poi rinominata). `~/.zing` non viene mai modificata
 né eliminata. `lang.js` copia allo stesso modo le impostazioni `zing.*` del
 browser in `ekte.*`, e il server legge ancora i cookie `zing_lang` / `zing_ui`
-finché non esistono quelli `ekte_*`.
+finché non esistono quelli `ekte_*`. Tutto ciò è obsoleto e viene rimosso in 1.0.0 (gli avvisi indicano quella versione); ekte non cancella mai un vecchio `~/.zing`.
 
 ## Contribuire
 
 ### Pull request
 
 - Mantieni verdi `pytest`, `ruff check ekte tests` e `mypy ekte` (la CI li esegue
-  tutti e tre con Python 3.10–3.13).
+  tutti e tre con Python 3.11–3.14).
 - Descrivi il trucco del relay o il falso positivo che la modifica affronta.
 - Aggiorna `CHANGELOG.md` sotto `[Unreleased]`.
 - Aggiorna la documentazione interessata — README, questa guida, la Metodologia —
@@ -637,12 +662,45 @@ modello conta come divergenza.
 
 Compila sempre `identity_keywords` con le parole del produttore e della
 famiglia con cui il modello si identifica. Il controllo d'identità conta anche
-la chiave del provider, il nome visualizzato e l'id del modello come marchio
+la chiave del fornitore, il nome visualizzato e l'id del modello come marchio
 autentico, estesi agli altri nomi del produttore in `VENDOR_BRANDS`
 (`ekte/knowledge/identity.py`, che è anche l'elenco dei marchi rivali del
-detector); l'importazione completa le parole chiave vuote a partire da questi
+rilevatore); l'importazione completa le parole chiave vuote a partire da questi
 nomi con un avviso. Le parole di marchio di un nuovo produttore vanno aggiunte
 lì come un gruppo.
+
+### Mantenere aggiornata la base di conoscenza
+
+I dati su fornitori e modelli invecchiano in fretta e ogni verdetto dipende da
+essi, quindi ekte dichiara apertamente quanto sono vecchi. Ogni profilo di
+fornitore incluso riporta `last_verified`, la data in cui i suoi dati sono stati
+verificati l'ultima volta sulla documentazione del fornitore. La più vecchia di
+queste date è la **data della base di conoscenza**: è salvata in ogni rapporto
+(`knowledge.kb_date`), mostrata da `ekte kb` e nei rapporti Markdown, HTML e PDF,
+ed esposta da `ekte kb --json`. Se è più vecchia di `STALE_AFTER_DAYS` (180
+giorni, in `ekte/knowledge/freshness.py`), il rapporto riceve un avviso che
+rimanda all'aggiornamento di ekte o all'aggiunta di voci proprie. L'avviso non
+cambia mai il verdetto.
+
+Il processo di aggiornamento:
+
+- **Fonti.** Solo pagine ufficiali del fornitore: elenco e schede dei modelli,
+  pagine di prezzi e limiti, avvisi di deprecazione e ritiro, note di rilascio.
+  Indicare il link nella pull request.
+- **Chi.** I maintainer. Chiunque può proporre una modifica con il modulo di
+  issue «Knowledge base update» (fornitore, id del modello, modifica, link alla
+  fonte e relativa data) o con una pull request.
+- **Con che frequenza.** Almeno prima di ogni versione minore e, fuori calendario,
+  in una versione di patch quando avviene un cambiamento importante dei modelli
+  (un lancio di punta, un ritiro, un id di modello rinominato). La checklist di
+  rilascio lo include.
+- **Revisione.** Una pull request che modifica `ekte/knowledge/data/*.yaml`
+  richiede una fonte citata per ogni valore modificato e una seconda revisione, e
+  `ekte kb-import --check` deve passare. Aggiornare `last_verified` di un
+  fornitore solo dopo aver controllato l'intero file, non solo le righe
+  modificate.
+- **Changelog.** Ogni modifica ai dati inclusi è elencata in `CHANGELOG.md`,
+  perché può cambiare i verdetti.
 
 ### Modificare i prompt delle sonde
 
@@ -650,6 +708,44 @@ I testi delle sonde sono dati di calibrazione. Modificarne uno in
 `ekte/prompts/en.json` può cambiare i controlli delle risposte, le stime dei
 token e quindi i verdetti; adegua il rilevatore e i suoi test e cita la modifica
 nel CHANGELOG. Non far mai seguire a una sonda la lingua dell'interfaccia.
+
+### Modificare lo schema di un database
+
+Ogni database SQLite creato da ekte (`history.db`, `watches.db`, `kb.db`) è
+versionato e migrato da un unico meccanismo condiviso, `ekte/dbmigrate.py`; uno
+store non si migra mai da solo con `ALTER TABLE` ad hoc. La versione dello
+schema è in `PRAGMA user_version` e `datadir.connect(name, MIGRATIONS)` la
+controlla a ogni apertura.
+
+Per modificare uno schema:
+
+1. Aggiungi allo store (`web/history.py`, `web/watches.py`,
+   `knowledge/store.py`) una funzione `_vN(conn)` che esegue la modifica e
+   accoda `dbmigrate.Migration(N, _vN)` alla sua tupla `MIGRATIONS`. Non
+   modificare né riordinare mai un passo esistente: i database in uso lo hanno
+   già eseguito.
+2. Mantieni il passo idempotente (`CREATE ... IF NOT EXISTS` e
+   `kb_snapshot.add_link_columns()` per le colonne) e non fare commit né
+   rollback al suo interno. Il meccanismo esegue ogni passo in una propria
+   transazione `BEGIN IMMEDIATE` insieme all'aumento di versione; un passo
+   interrotto o fallito lascia quindi il database alla versione precedente.
+3. Un database nuovo parte dalla versione 0 ed esegue tutti i passi; anche un
+   database precedente al versionamento ha la versione 0, perciò il passo 1 di
+   uno store deve adottare uno schema esistente.
+4. Aggiungi a `tests/test_dbmigrate.py` un test che costruisce lo schema alla
+   versione N-1, lo apre e verifica la nuova versione, il nuovo schema e
+   l'integrità dei dati. Se vanno riempite righe di dati esistenti, fallo nel
+   callback `on_migrated` dello store (vedi `history._after_migration`), non
+   nel passo.
+
+Cosa fa il meccanismo per te: un database scritto da un ekte **più recente**
+viene rifiutato con `DatabaseTooNewError` (nomina entrambe le versioni e dice
+cosa fare) prima di scrivere qualsiasi cosa; prima del primo passo di
+un'esecuzione, un database non vuoto viene copiato in
+`<db>.v<versione>.<ora UTC>.bak` accanto ad esso, e per ogni database restano
+solo le 3 copie più recenti (`dbmigrate.BACKUP_KEEP`); la versione viene riletta
+sotto il blocco di scrittura, così CLI e server non eseguono mai due volte lo
+stesso passo.
 
 ### Traduzioni
 
@@ -694,7 +790,7 @@ spagnolo, portoghese, italiano, tedesco e norvegese (bokmål, `nb`):
 | `README.md`, `README.<lang>.md` | Utenti: cosa fa ekte, installazione, uso della CLI e dell'interfaccia web |
 | `DEVELOPER_GUIDE.md`, `DEVELOPER_GUIDE.<lang>.md` | Contributori: architettura, ambiente, contributi, Docker, rilasci |
 | `docs/METHODOLOGY.md`, `docs/METHODOLOGY.<lang>.md` | Tutti: ogni controllo, la sua scala dei punteggi e le sue avvertenze |
-| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md` | Pagine di riferimento (in inglese) |
+| `docs/CI.md`, `docs/DOCKER.md`, `docs/PUBLISHING.md`, `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md`, `docs/ACCESSIBILITY.md`, `docs/RELEASE_CHECKLIST.md` | Pagine di riferimento (in inglese) |
 
 I file inglesi sono il riferimento. Quando ne modifichi uno, modifica gli altri
 nella stessa pull request e usa in ogni lingua la terminologia dell'interfaccia
@@ -712,10 +808,10 @@ pytest -n auto               # in parallelo, un worker per CPU (pytest-xdist)
 ```
 
 - `tests/conftest.py` fornisce `MockServer`, un endpoint compatibile OpenAI su
-  `httpx.MockTransport` con manopole per ogni scostamento che ekte cerca (modello
+  `httpx.MockTransport` con impostazioni per ogni scostamento che ekte cerca (modello
   servito, autoidentificazione, troncamento del contesto, streaming finto,
   consumo assente o gonfiato, chiamate di strumenti, modalità JSON, …). Ogni
-  manopola ha per impostazione predefinita il comportamento di un relay onesto.
+  impostazione ha come valore predefinito il comportamento di un relay onesto.
 - I client Anthropic e Responses hanno test propri (`test_anthropic.py`,
   `test_responses.py`); il server web è testato con il client di test di FastAPI
   (`test_web*.py`), comprese le protezioni per l'uso locale
@@ -780,23 +876,73 @@ le protezioni dell'interfaccia.
 
 | Workflow | Si avvia con | Cosa fa |
 |---|---|---|
-| `.github/workflows/ci.yml` | push e pull request verso `main` (e i branch di integrazione `a11y/integration`, `perf/integration`); ogni notte e manuale (solo accessibilità) | `ruff`, `mypy` e `pytest` con Python 3.10–3.13 e gli extra `dev` e `web`; costruisce wheel e sdist e verifica che la wheel si installi e carichi la base di conoscenza; esegue la suite di accessibilità (informativa, non fa mai fallire l'esecuzione) e ne carica i risultati: tutte le pagine sui push e nelle esecuzioni notturne e manuali (con il rapporto di conformità BITV), nelle pull request solo le pagine toccate dalla modifica (nessuna se cambia solo la documentazione) — tranne nelle pull request verso `perf/integration`, dove la lenta suite nel browser viene saltata (gira sui push di quel branch e sulla sua pull request verso `main`) |
+| `.github/workflows/ci.yml` | push e pull request verso `main` (e i branch di integrazione `*/integration`); ogni notte e manuale (solo accessibilità) | `ruff`, `mypy` e `pytest` con Python 3.11–3.14 (Linux; su macOS e Windows 3.11 e 3.14) e gli extra `dev` e `web`; costruisce wheel e sdist e verifica che la wheel si installi e carichi la base di conoscenza; esegue la suite di accessibilità (informativa, non fa mai fallire l'esecuzione) e ne carica i risultati: tutte le pagine sui push e nelle esecuzioni notturne e manuali (con il rapporto di conformità BITV), nelle pull request solo le pagine toccate dalla modifica (nessuna se cambia solo la documentazione) — tranne nelle pull request verso `perf/integration`, dove la lenta suite nel browser viene saltata (gira sui push di quel branch e sulla sua pull request verso `main`) |
 | `.github/workflows/release.yml` | un tag `v*` | costruisce, esegue `twine check` e pubblica su PyPI (Trusted Publishing) |
 | `.github/workflows/example-audit.yml` | pianificazione giornaliera, manuale | esempio di verifica pianificata di un relay con l'action |
 
 L'action composita è `action.yml`, documentata in [docs/CI.md](docs/CI.md).
 
+### File di terze parti nella distribuzione
+
+La distribuzione dei sorgenti contiene i test, ma nessun file di terze parti incluso. `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0) è solo nel repository git; è escluso dallo sdist (`exclude` in `[tool.hatch.build.targets.sdist]` di `pyproject.toml`) e non è mai stato parte del wheel.
+
+- I test che richiedono un file escluso vengono saltati con un motivo chiaro se manca; esegui la suite di accessibilità da un checkout git.
+- `NOTICE` elenca ogni file di terze parti e dice se è distribuito. Aggiungi un nuovo file incluso alla lista `exclude` e a `NOTICE`, oppure, se deve essere distribuito, dichiaralo in `NOTICE`.
+- `scripts/check_dist_contents.py` costruisce wheel e sdist (`uv build`) e fallisce se è presente un file escluso o un file che `NOTICE` indica come non distribuito. Il workflow `.github/workflows/dist.yml` lo esegue in un job separato.
+
 ## Rilasci
 
-1. Rinomina `[Unreleased]` in `CHANGELOG.md` con la nuova versione e incrementa
-   `version` in `pyproject.toml`.
-2. Esegui il commit, crea il tag `vX.Y.Z` e fanne il push; `release.yml` pubblica
-   su PyPI.
-3. Crea la release su GitHub con le note del CHANGELOG e aggiorna la versione
-   fissata dell'action nei README e in `docs/CI.md`.
-
-La configurazione iniziale di PyPI e la procedura manuale sono in
+Un rilascio è un tag di versione; tutto il resto è automatizzato e verificato. La
+checklist è in [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md), la
+configurazione una tantum di PyPI e la procedura manuale in
 [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+### Creare un rilascio
+
+1. Percorrere la [checklist di rilascio](docs/RELEASE_CHECKLIST.md): versione e
+   changelog, versioni di Python e sistemi supportati, aggiornamento della base di
+   conoscenza, fixture di aggiornamento, revisione di accessibilità per le modifiche
+   alla UI, documentazione in tutte le lingue, avvisi di sicurezza.
+2. Impostare `version` in `pyproject.toml` e rinominare `[Unreleased]` in
+   `CHANGELOG.md` in `[X.Y.Z] - AAAA-MM-GG`. Verificare in locale con
+   `python scripts/release_check.py version vX.Y.Z` e `... notes vX.Y.Z`.
+3. Fare il merge, taggare il commit e inviare il tag:
+   `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`, `git push origin vX.Y.Z`.
+4. `release.yml` verifica prima, con `scripts/release_check.py`, che il tag
+   corrisponda alla versione del pacchetto, che `CHANGELOG.md` abbia una sezione per
+   essa e che la CI sia verde per il commit taggato (attende una CI in corso). Se un
+   controllo fallisce, il workflow si ferma e non viene pubblicato nulla. Poi
+   compila, pubblica su PyPI tramite Trusted Publishing con attestazioni di
+   provenienza e crea la GitHub Release con la sezione del changelog come note.
+
+### Release candidate
+
+Taggare `vX.Y.ZrcN` (con `version = "X.Y.ZrcN"` in `pyproject.toml`). PyPI la tratta
+come pre-release PEP 440: `pip install ekte` la ignora, `pip install --pre ekte` la
+trova; GitHub contrassegna la release come «Pre-release». Nel changelog basta la
+sezione `[X.Y.ZrcN]`, `[X.Y.Z]` o `[Unreleased]`.
+
+### Se una pubblicazione fallisce a metà
+
+PyPI non accetta mai due volte lo stesso file e una versione non si può riutilizzare;
+conta quanto è andata avanti l'esecuzione (Actions, «Release to PyPI»):
+
+- **Un controllo è fallito (job verify).** Non è stato pubblicato nulla. Correggere
+  la causa (versione, changelog, CI), eliminare il tag in locale e su origin
+  (`git push origin :refs/tags/vX.Y.Z`) e taggare di nuovo il commit corretto.
+- **Build o upload falliti prima che PyPI avesse file.** Rieseguire i job falliti;
+  nessuna versione è stata consumata. Se il commit taggato deve cambiare, eliminare
+  il tag e ricrearlo.
+- **PyPI ha una parte dei file** (vedi <https://pypi.org/project/ekte/#files>).
+  Rieseguire i job falliti: l'upload salta i file già presenti. Se i file differiscono
+  da quanto si vuole rilasciare, non riprovare: fare «yank» della versione su PyPI e
+  rilasciare la successiva (`X.Y.Z+1` o `rcN+1`).
+- **PyPI è completo ma la GitHub Release è fallita.** Rieseguire il job
+  `GitHub Release`; crea o aggiorna la release in modo idempotente. Oppure a mano:
+  `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`.
+- **Una versione difettosa è già online.** Fare «yank» su PyPI (resta installabile
+  solo con versione esatta), correggere in avanti con una nuova versione e annotarlo
+  nel suo changelog.
 
 ## Sicurezza
 

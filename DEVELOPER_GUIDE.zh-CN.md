@@ -24,13 +24,16 @@
   - [接口类型（surface）](#接口类型surface)
   - [独立审计器](#独立审计器)
   - [Web 服务](#web-服务)
+  - [HTTP API v1](#http-api-v1)
   - [Web 前端](#web-前端)
   - [本地数据](#本地数据)
 - [参与贡献](#参与贡献)
   - [Pull Request](#pull-request)
   - [新增检测器](#新增检测器)
   - [编辑知识库](#编辑知识库)
+  - [保持知识库最新](#保持知识库最新)
   - [修改探测提示词](#修改探测提示词)
+  - [修改数据库模式](#修改数据库模式)
   - [翻译](#翻译)
   - [文档](#文档)
 - [测试](#测试)
@@ -45,8 +48,8 @@
 ekte 是黑盒审计辅助工具：正确性以及**不冤枉诚实的中转站**，比抓住每一种可能的作弊手法更重要。
 任何改动都请牢记这条标准。
 
-- **证据优先，不做指控。** 发现只报告*偏离与风险*，从不说「欺诈」。宁可*不确定*，也不要猜测。
-  新增的「高」严重度路径需要确凿、可复现的证据，并且很难在诚实端点上被触发。
+- **证据优先，不做指控。** 发现只报告*偏离与风险*，从不说“欺诈”。宁可*不确定*，也不要猜测。
+  新增的“高”严重度路径需要确凿、可复现的证据，并且很难在诚实端点上被触发。
 - **测试不联网。** 检测器测试针对 `tests/conftest.py` 中的进程内模拟服务
   （httpx `MockTransport`）运行，绝不访问真实 API。
 - **密钥不外泄。** API 密钥只保留指纹，绝不写入报告。任何新的输出路径都必须让中转站控制的文本
@@ -57,7 +60,7 @@ ekte 是黑盒审计辅助工具：正确性以及**不冤枉诚实的中转站*
 
 ## 开发环境
 
-需要 Python 3.10+。Node.js 可选：浏览器 JavaScript 的测试在 `node` 下运行，没有 Node.js 时跳过。
+需要 Python 3.11+。CI 在 Linux、macOS 和 Windows 上测试；仅在 POSIX 上有意义的测试在 Windows 上带明确原因跳过（`skipif(sys.platform == "win32", reason=...)`）。请使用 `pathlib`，文本 I/O 指定 `encoding="utf-8"`，不要写死 `/tmp`。Node.js 可选：浏览器 JavaScript 的测试在 `node` 下运行，没有 Node.js 时跳过。
 
 ```bash
 git clone https://github.com/mn567250/ekte
@@ -128,6 +131,7 @@ Dockerfile             Web 界面镜像
 1. **配置。** `ekte/config.py` 把 YAML 配置与命令行选项合并为 `TargetConfig`（目标，
    以及可选的基线和裁判）和 `AuditOptions`（套件、维度、探测规模、输出）。以 `env:VAR`
    或 `file:/path` 给出的 API 密钥在这里解析。
+   格式定义在 `ekte/configfile.py` 中（一张包含键、类型和默认值的表），并发布为 JSON 模式 [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json)，用 `uv run python -m ekte.configfile` 重新生成（模式过期时测试会失败）。`ekte/config.py` 通过它加载文件，因此每个命令都会校验。格式变更需要新的 `CURRENT_VERSION`、`RENAMES_FROM` 中的重命名（供 `ekte config migrate` 使用）和更新日志条目；已弃用的键连同其替代键放入 `DEPRECATED`。参见[稳定性策略](docs/STABILITY.md#surface-config)。
 2. **知识库。** `load_knowledge_base()` 加载内置画像、`--kb-dir`/`EKTE_KB_DIR` 和用户的
    `kb.db`，并把**声称的**模型（默认即请求的模型）解析为一个画像。监控则改为传入它固定的快照。
 3. **客户端。** `make_client()` 按所选或自动识别的协议为目标（及基线）创建客户端。
@@ -168,7 +172,7 @@ Dockerfile             Web 界面镜像
 每个检测器都公开自己的**计分标准**（`SCALE`，由 `scale.py` 构建）：每个检查项所有可能的结果，
 及其分数、状态和严重程度。发现都由计分标准生成（`SCALE.finding(check, outcome, …)`），
 因此报告与实际行为不可能不一致。`Scale` 取各检查项的平均分；`DeductionScale` 从 100 开始扣分
-或设上限。Web 界面在「**计分标准**」中展示它；[方法论](docs/METHODOLOGY.zh-CN.md)收录了
+或设上限。Web 界面在“**计分标准**”中展示它；[方法论](docs/METHODOLOGY.zh-CN.md)收录了
 每一份计分标准。`connectivity.py` 是最短、最标准的示例。
 
 在 `ekte serve` 中，检测器与其他所有检测共用一个事件循环，因此 CPU 密集的工作不能在其上运行：
@@ -185,7 +189,7 @@ Dockerfile             Web 界面镜像
 平均值（权重相同），综合健康分是已运行维度的加权平均，风险等级遵循
 [方法论 → ekte 如何计分](docs/METHODOLOGY.zh-CN.md#ekte-如何计分)中描述的严重程度阶梯。
 每个维度都在 `DimensionScore.breakdown` 中记录计算过程，报告中的 **Dimension details**
-和 Web 界面「**逐项体检**」的可展开行都由它生成。
+和 Web 界面“**逐项体检**”的可展开行都由它生成。
 
 ### 知识库
 
@@ -193,7 +197,7 @@ Dockerfile             Web 界面镜像
 `FingerprintProbe`），加载并合并各层（`loader.py`：内置 YAML → `EKTE_KB_DIR`/`--kb-dir`
 → 用户的 `kb.db`），保存用户条目（`store.py`），检查并导入 YAML（`importer.py`），
 生成供外部助手使用的调研提示词（`research.py`），并为一次运行所用的画像拍快照（`snapshot.py`）。
-模型 id 依次按精确 id、别名或规范化名称解析，并由声明的厂商缩小范围。模糊匹配取所声称 id
+模型 id 依次按精确 id、别名或规范化名称解析，并由声称的厂商缩小范围。模糊匹配取所声称 id
 中包含的最长知识库名称（快照或带修饰的 id），除非其余部分指向另一个档位或变体（`-mini`、
 `-lite`、`-image` 等）；截断形式的 id 只有在恰好一个模型的名称以它开头时才会解析，因此像
 `gpt-4` 这样有歧义的 id 不会匹配任何画像，而不是被猜成某个档位。每份报告都会记录 id 是如何
@@ -237,8 +241,7 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 - 评分权重以及画像 / 核心 / 基础设施维度集合按 surface 区分（`scoring.SURFACE_WEIGHTS`）；对话保持原值。
 - 记录器把嵌入调用标为 `op="embed"`，重排调用标为 `op="rerank"`（`ekte.config.SURFACE_OPS`）；
   `perf/summary.py` 中的函数接受 `op` 参数（默认 `complete`）。
-- `embed_audit.run_embedding_audit()` 和 `run_rerank_audit()`（供 `ekte embed` / `ekte rerank` 和
-  `/api/embed` / `/api/rerank` 使用）以 `surface="embedding"` 或 `"rerank"` 运行 runner，把同一 surface
+- `embed_audit.run_embedding_audit()` 和 `run_rerank_audit()`（供 `ekte embed` / `ekte rerank` 使用）以 `surface="embedding"` 或 `"rerank"` 运行 runner，把同一 surface
   上一次已保存的运行作为 `previous_report`（漂移）传入，并保存报告（`--no-save` 时不保存）。
 - 重排检测器：`rerank.connectivity`、`rerank.known_answer`（CAPABILITY）、`rerank.identity` 和
   `rerank.drift`（MODEL_IDENTITY）、`rerank.determinism`（RELIABILITY）以及 `performance.rerank`。
@@ -259,25 +262,21 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 
 `ekte/web/server.py` 是由 `create_app()` 创建的 FastAPI 应用：
 
-- **页面。** Web 界面（`/v2/`、`/v2/history`、`/v2/watches`、`/v2/analytics`、`/v2/kb`、
-  `/v2/accessibility`）是静态 HTML。没有工具页面：嵌入和
-  重排检测从检测页面的接口类型选择器开始（`/v2/?surface=embedding|rerank`），`/v2/tools` 提供一个小页面，
-  把旧链接转到那里（`#rerank` 选择重排，`?rerun=` 会一并传递）。
-  已移除的经典界面的地址（`/`、`/history`、`/watches`、`/tools`、`/console`）会连同查询字符串
-  重定向（308）到对应的 v2 页面。
+- **页面。** Web 界面（`/`、`/history`、`/watches`、`/analytics`、`/kb`、
+  `/accessibility`）是在根路径提供的静态 HTML，脚本和样式位于 `/static/`。没有工具页面：嵌入和
+  重排检测从检测页面的接口类型选择器开始（`/?surface=embedding|rerank`）。在 1.0.0 之前，以前的地址会连同查询字符串
+  重定向（308）到根路径下的页面：`/v2/…`（`/v2/tools` 转到 `/?surface=embedding`，`#rerank` 选择重排）
+  以及已移除的经典界面的 `/tools` 和 `/console`。这些重定向已弃用，将在 1.0.0 中移除。
 - **API。** `/api/jobs…` 运行检测（见下文）；`/api/models` 列出中转站的模型；
   `/api/report/export` 渲染报告；`/api/history…`、`/api/watches…`、`/api/kb…` 和
-  `/api/analytics…` 为其他页面提供服务。`/api/audit/stream`（通过 SSE 推送的一次检测）、
-  `/api/embed` 和 `/api/rerank`（一次同步的嵌入 / 重排检测）已不再被 Web 界面使用；
-  它们的去留在 issue #3 和 #4 中跟进。
+  `/api/analytics…` 为其他页面提供服务。它们均为内部接口；公开子集见 [HTTP API v1](#http-api-v1)。
 - **中转站。** `POST /api/kb/relays` 保存中转站 `{name, base_url}`（输入无效时返回 400，名称或地址已存在时返回 409）。
 - **分析。** `GET /api/analytics/options`（历史中出现的中转站、模型、套件、流式模式、API 及日期范围）、`/api/analytics/summary`（`from`–`to` 区间的关键指标，并与之前等长区间对比）、`/api/analytics/series`（按 `group=relay|model|relay_model` 给出 `metric`，最多 4 个 `keys`，按查看者时区 `tz` 或 `tz_offset` 划分为 `bucket=hour|day|week|dow_hour` 区间；`dow_hour` 还接受 `block`（每行小时数）和 `fold=week|4weeks|month_week`，在检测覆盖 90 天或 180 天之前回退为 `week`）以及 `/api/analytics/leaderboard`（`model=` 列出其各中转站，或 `relay=` 列出其各模型）。所有端点都接受筛选参数 `from`、`to`、`suite`、`stream_mode`、`api`、`source=all|manual|monitor`、`relay` 和 `model`。`ekte/web/analytics.py` 基于 `history.analytics_runs()` 在 Python 中完成全部计算：指标 id 来自固定白名单；中转站在查询时按知识库条目分组；某次运行未测得的值不参与计算（每个值都带有 `n` 和 `coverage`）；运行次数少于 `MIN_RUNS`（3）的区间标记为 `low_n`。参数无效时返回 400；响应带 `Cache-Control: no-store`。
-- **分析面板。** `/api/analytics/breakdown`（在所选区间内按 `group=relay|model|relay_model|all` 给出最多 8 个 `metrics`）、`/api/analytics/errors`（目标端补全调用按结果类别 `success|client_4xx|rate_limited|server_5xx|timeout|network|other` 统计，按 `group=relay|model` 和 `bucket` 划分，由 `history.analytics_request_classes()` 在 SQL 中计数，不加载请求行；调用时间为所属检测的开始时间加上偏移，精确到分钟；`covered` 为有请求记录的检测次数）以及 `/api/analytics/integrity`（每个「中转站 × 模型」的身份、能力、图像理解、流式、协议、完整性、注入提示词与连通性检测器的通过 / 警告 / 失败次数，模型不符占比，以及实测 / 声明上下文窗口的中位数比例）。`/api/analytics/series` 也接受 `group=all`。筛选与错误处理同上。
+- **分析面板。** `/api/analytics/breakdown`（在所选区间内按 `group=relay|model|relay_model|all` 给出最多 8 个 `metrics`）、`/api/analytics/errors`（目标端补全调用按结果类别 `success|client_4xx|rate_limited|server_5xx|timeout|network|other` 统计，按 `group=relay|model` 和 `bucket` 划分，由 `history.analytics_request_classes()` 在 SQL 中计数，不加载请求行；调用时间为所属检测的开始时间加上偏移，精确到分钟；`covered` 为有请求记录的检测次数）以及 `/api/analytics/integrity`（每个“中转站 × 模型”的身份、能力、图像理解、流式、协议、完整性、注入提示词与连通性检测器的通过 / 警告 / 失败次数，模型不符占比，以及实测 / 声明上下文窗口的中位数比例）。`/api/analytics/series` 也接受 `group=all`。筛选与错误处理同上。
 - **后台检测。** `jobs.py` 把每次检测作为服务器拥有的任务运行。`POST /api/jobs` 排入一个任务，
   `GET /api/jobs` 列出排队中、运行中和刚结束的任务（以及运行中的监控）及其进度，
   `GET /api/jobs/{id}/events` 先回放任务的事件日志，再通过 SSE 实时跟随，
-  `POST /api/jobs/{id}/cancel` 停止任务。Web 界面使用这些接口，因此检测不随页面结束；
-  `/api/audit/stream` 包装同一种任务，并在数据流关闭时取消它。
+  `POST /api/jobs/{id}/cancel` 停止任务。Web 界面使用这些接口，因此检测不随页面结束。
   中转站互斥让同一中转站同一时间只运行一项检测（或一次监控运行），按主机名区分，所有回环地址视为同一主机；
   同时最多运行 `EKTE_MAX_PARALLEL_AUDITS`（默认 4）项，等待者按到达顺序执行。
 - **监控调度器。** 应用的 lifespan 启动一个后台循环，把每个到期的监控作为独立任务启动，
@@ -298,6 +297,28 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
   防 CSRF 的 `Origin` 与 `Sec-Fetch-Site` 校验、只接受 JSON 请求体，以及防嵌入 / 禁止
   MIME 嗅探 / 不发送 Referrer 的响应头。界面有意不设登录。
 
+### HTTP API v1
+
+HTTP API 的公开部分位于 `/api/v1/` 之下，遵循[稳定性政策](docs/STABILITY.md#surface-http-api)：只有在大版本中、经过弃用期后才会发生不兼容的变更。`/api/` 下的其他路径均为内部接口，任何版本都可能变更。内部响应带有 `X-Ekte-API: internal`，v1 响应带有 `X-Ekte-API: v1`。Web 界面使用内部路径。
+
+| 端点 | 请求 | 响应 |
+|---|---|---|
+| `POST /api/v1/jobs` | JSON 请求体，含 `base_url`, `model`，可选 `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 及该任务；输入无效时返回 400 |
+| `GET /api/v1/jobs/{id}` | 无 | 200 及该任务；id 未知时返回 404 |
+| `GET /api/v1/jobs/{id}/events` | 无 | 200 及 `text/event-stream`：该任务迄今的事件，随后实时推送，以 `done` 结束；id 未知时返回 404 |
+| `GET /api/v1/history` | 可选 `limit`（1–500，默认 50）和 `perf` | 200 及运行摘要的 JSON 数组，最新的在前 |
+| `GET /api/v1/history/{id}` | 无 | 200 及原样保存的报告；id 未知时返回 404 |
+
+任务包含 `id`、`status`（`queued`、`running`、`done`、`error` 或 `cancelled`）、进度字段、报告保存后的 `report_id` 以及 `error`；API 密钥从不返回。每个事件是一行 SSE `data: {JSON}`，带有 `type`；`report` 事件携带报告及其 `report_id`，`done` 始终是最后一个事件。客户端应忽略不认识的事件类型和字段。
+
+每个错误都是只有一个字段 `error` 的 JSON，内容为可读的消息，状态码为以下之一：400（请求无效）、404（未找到）、403（拒绝跨站或跨源请求）、415（请求体不是 JSON）、421（未知主机）。
+
+```json
+{"error": "not found"}
+```
+
+- **仅限本地。** Web 服务的保护措施同样适用于 `/api/v1/`，与其他所有路径一样：默认绑定回环地址、Host 检查、拒绝跨站写入、请求体仅限 JSON。它们以相同的错误格式响应。
+
 ### Web 前端
 
 前端是纯 HTML、CSS 和浏览器 JavaScript，不使用模块，也没有构建步骤。页面位于
@@ -305,16 +326,17 @@ STSong-Light，因此不嵌入任何字体；绝不加载外部资源），命�
 （`report.js`）、主题切换（`theme.js`）和样式（`tokens.css`、`ekte.css`、`fields.css`、`report.css`、
 `perf.css`）。共用脚本从根路径提供：`lang.js`（语言切换）、`locales.js`（翻译数据）、
 `i18n.js`（发现的翻译）、`icons.js`（包括 ekte 标志）、`secretfield.js` 和 `perf.js`（性能图表）。
+v2 界面的每一种颜色，在两个主题下，都是 `v2/tokens.css` 中的一个令牌（只写一次，形式为 `light-dark(<浅色>, <深色>)`）；v2 的其他样式、页面和脚本只使用 `var(--…)`，绝不使用字面颜色值。
 
-除无障碍页面外，每个 v2 页面在 hero 正下方都有一条**页面提示**（`<div class="znote" id="note">`，由 `v2/notice.js` 绘制，样式为 `ekte.css` 中的 `.znote`）：`EkteNotice.show(el, {level, title, detail, items, actions})`；级别 `info`、`success`、`warning` 或 `critical` 决定底色、边框和图标（critical 为 `role="alert"`，其余为 `role="status"`；再次显示相同提示不会有任何变化）。页面选出最重要的消息，其余列在 `items` 里。检测：服务无法连接 / 有检测在运行 / 最新保存的运行 / 本地运行；检测历史：无法读取历史 / 监控运行已暂停（主密钥已锁定）或较早的运行仍在处理 / 运行次数；分析：无法读取数据 / 运行尚未计入图表或开始时间为估算 / 数据依据；知识库：加载失败 / 条目被跳过或被忽略 / 已停用的条目 / 完整。监控页面保留它的主密钥栏（`masterkey.js`），外观和位置相同。整个历史的数字来自 `GET /api/history/status`（`history.status()`：运行次数、最早和最新的运行、分析回填尚未处理的行、开始时间为估算的运行）。
+除无障碍页面外，每个 v2 页面在标题区正下方都有一条**页面提示**（`<div class="znote" id="note">`，由 `v2/notice.js` 绘制，样式为 `ekte.css` 中的 `.znote`）：`EkteNotice.show(el, {level, title, detail, items, actions})`；级别 `info`、`success`、`warning` 或 `critical` 决定底色、边框和图标（critical 为 `role="alert"`，其余为 `role="status"`；再次显示相同提示不会有任何变化）。页面选出最重要的消息，其余列在 `items` 里。检测：服务无法连接 / 有检测在运行 / 最新保存的运行 / 本地运行；检测历史：无法读取历史 / 监控运行已暂停（主密钥已锁定）或较早的运行仍在处理 / 运行次数；分析：无法读取数据 / 运行尚未计入图表或开始时间为估算 / 数据依据；知识库：加载失败 / 条目被跳过或被忽略 / 已停用的条目 / 完整。监控页面保留它的主密钥栏（`masterkey.js`），外观和位置相同。整个历史的数字来自 `GET /api/history/status`（`history.status()`：运行次数、最早和最新的运行、分析回填尚未处理的行、开始时间为估算的运行）。
 
 v2 的**检测**页面用 `v2/relaycfg.js` 配置中转站：选择中转站/厂商 → 基础地址 → 中转站的模型
 （`/api/models`，在改变时获取，按地址/密钥/协议缓存）→ 从知识库选择声称的模型（`/api/kb/resolve`
-预选）→ 推导出声明的厂商，另有**保存到知识库**（`POST /api/kb/relays`）。其纯函数在 node 下测试。
+预选）→ 推导出声称的厂商，另有**保存到知识库**（`POST /api/kb/relays`）。其纯函数在 node 下测试。
 
-v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`options` 还列出「中转站 × 模型」组合 `relay_models`，供数据系列选择使用）。页面在同一个筛选栏下每个面板一个 `<section class="card panel">`，便于加入新面板；筛选与视图保存在网址片段（`#range=30&metric=score&…`）和 `localStorage` 中。图表来自 `v2/charts.js`（`EkteCharts.timeChart`：手绘内联 SVG，含中位数折线、p25–p75 色带、空时间段留空、`low_n` 时间段的淡化标记、标注线和悬停提示；`fmt` / `fmtDelta` 按单位格式化数值）和 `v2/charts.css`（每个主题四种经过校验的系列颜色，并以标记形状区分）。每张图表也都以数据表呈现。
+v2 的**分析**页面（`v2/analytics.html`）只读取 `/api/analytics/*`（`options` 还列出“中转站 × 模型”组合 `relay_models`，供数据系列选择使用）。页面在同一个筛选栏下每个面板一个 `<section class="card panel">`，便于加入新面板；筛选与视图保存在网址片段（`#range=30&metric=score&…`）和 `localStorage` 中。图表来自 `v2/charts.js`（`EkteCharts.timeChart`：手绘内联 SVG，含中位数折线、p25–p75 色带、空时间段留空、`low_n` 时间段的淡化标记、标注线和悬停提示；`fmt` / `fmtDelta` 按单位格式化数值）和 `v2/charts.css`（每个主题四种经过校验的系列颜色，并以标记形状区分）。每张图表也都以数据表呈现。
 
-每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`EkteCharts.heatmap` 绘制「星期几 × 小时」网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`EkteCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。`EkteCharts.donut`（由一个整体的各部分组成的圆环，中间是 HTML 数字）和 `EkteCharts.meter`（由各部分组成的细条）绘制无障碍报告的「覆盖范围」卡片；它们的 `k-*` 颜色（谁判定一个步骤：蓝色为测试套件，紫色为人）来自 `tokens.css`。`v2/chartmotion.js`（`EkteMotion.enter`）与其他图表一样，仅在有新数据时按顺时针绘制圆环、让细条从左侧伸展，在减少动态效果或页眉「关闭动画」时从不播放。
+每个面板都是独立的：页面脚本中的 `PANELS` 注册表列出其 section id、`load()`（用当前筛选与视图获取数据后绘制）和 `render()`（用已加载的数据重绘，例如切换语言时），因此面板可以重新排列而互不影响。`EkteCharts.heatmap` 绘制“星期几 × 小时”网格（每个主题一套五级单色顺序色阶，`low_n` 格子加斜线，空格子只画轮廓），`EkteCharts.stackBars` 绘制堆叠的错误柱状图，`timeChart` 支持 `ref` 参考线（100% 计费比）。`EkteCharts.donut`（由一个整体的各部分组成的圆环，中间是 HTML 数字）和 `EkteCharts.meter`（由各部分组成的细条）绘制无障碍报告的“覆盖范围”卡片；它们的 `k-*` 颜色（谁判定一个步骤：蓝色为测试套件，紫色为人）来自 `tokens.css`。`v2/chartmotion.js`（`EkteMotion.enter`）与其他图表一样，仅在有新数据时按顺时针绘制圆环、让细条从左侧伸展，在减少动态效果或页眉“关闭动画”时从不播放。
 
 页面标题和筛选面板位于五个页内标签页之上（`v2/tabs.js`，与知识库页面相同）：每个 `PANELS` 条目注明所属的 `tab`，只加载当前显示的标签页的面板；筛选变化时重新加载该标签页，其他标签页标记为过期（`activate()` 在显示时加载）。这里给 `tabs.js` 传入 `writeHash: false`，因为页面自己把整个视图写进网址片段——`#tab=trends&range=30&suite=…&metric=…`（`stateQuery()`），**复制此视图的链接**复制的就是它（剪贴板 API 不存在或被拒绝时，改为显示并选中一个只读文本框）；不含 `tab` 的片段打开概览，粘贴进来的链接（`hashchange`）会重新读取视图。可折叠的筛选面板是 `v2/filterpanel.js` + `v2/filterpanel.css`，与检测历史、监控和知识库共用：`EkteFilterPanel.create(section, {label, title, storeKey, open, onReset})` 返回 `render({body, foot, count, summary})`、`sync({count, summary})`、`setOpen()` 和 `focusStart()`；页面负责自己的筛选条件和字段，面板负责带生效筛选计数的切换按钮、收起时显示的一行摘要、记住的展开状态以及**重置筛选**。
 
@@ -361,13 +383,13 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 只保存一个校验值（`secret_meta`），用来拒绝错误的密钥。更换密钥时，所有已保存的密钥会在同一个事务中
 重新加密并改写校验值。主密钥只存在于一个进程的内存中，因此每个数据目录只运行一个服务器。
 
-`ekte/legacy.py` 让改名前的安装继续可用：每个 `EKTE_*` 设置都通过 `legacy.getenv` 读取，未设置时回退到旧的 `ZING_*` 名称（在 stderr 上提示一次）；当只有旧目录存在时，`datadir.data_dir()` 会把 `~/.zing` 一次性复制到 `~/.ekte`（SQLite 文件通过备份 API 复制，先写入同级临时目录再重命名）。`~/.zing` 永远不会被修改或删除。`lang.js` 以同样方式把浏览器中的 `zing.*` 设置复制为 `ekte.*`，服务器在 `ekte_*` cookie 出现之前仍会读取 `zing_lang` / `zing_ui`。
+`ekte/legacy.py` 让改名前的安装继续可用：每个 `EKTE_*` 设置都通过 `legacy.getenv` 读取，未设置时回退到旧的 `ZING_*` 名称（在 stderr 上提示一次）；当只有旧目录存在时，`datadir.data_dir()` 会把 `~/.zing` 一次性复制到 `~/.ekte`（SQLite 文件通过备份 API 复制，先写入同级临时目录再重命名）。`~/.zing` 永远不会被修改或删除。`lang.js` 以同样方式把浏览器中的 `zing.*` 设置复制为 `ekte.*`，服务器在 `ekte_*` cookie 出现之前仍会读取 `zing_lang` / `zing_ui`。以上全部已弃用，将在 1.0.0 中移除（提示中会写明该版本）；ekte 绝不会删除旧的 `~/.zing`。
 
 ## 参与贡献
 
 ### Pull Request
 
-- 保持 `pytest`、`ruff check ekte tests` 和 `mypy ekte` 全部通过（CI 在 Python 3.10–3.13
+- 保持 `pytest`、`ruff check ekte tests` 和 `mypy ekte` 全部通过（CI 在 Python 3.11–3.14
   上运行这三项）。
 - 说明改动针对的是哪种中转站作弊手法或哪种误报。
 - 在 `CHANGELOG.md` 的 `[Unreleased]` 下更新记录。
@@ -386,7 +408,7 @@ API 密钥）和 `kb.db`（`knowledge/store.py`）。每次调用都打开一个
 4. 实现 `async def run(self, ctx) -> DetectorResult`，从
    `self.new_result(scoring=SCALE.scoring())` 开始。通过 `ctx.client` 发送请求，每条提示词都从
    `ekte/prompts/en.json` 读取。
-5. 使用 `tests/conftest.py` 中的模拟中转站，为「命中」和「正常」两条路径都编写行为测试。
+5. 使用 `tests/conftest.py` 中的模拟中转站，为“命中”和“正常”两条路径都编写行为测试。
 6. 翻译新的发现标题和摘要（见[翻译](#翻译)），并在每一份[方法论](docs/METHODOLOGY.zh-CN.md)
    文件中记录该检测器及其计分标准。
 
@@ -407,10 +429,59 @@ Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `finge
 的竞品品牌列表）中同一厂商的其他名称；导入时若关键词为空，会据这些名称补上并给出警告。新厂商的
 品牌词作为一组加到那里。
 
+### 保持知识库最新
+
+厂商和模型的数据过时很快，而每个结论都依赖这些数据，因此 ekte 会如实说明数据的新旧。
+每个内置的厂商画像都带有 `last_verified`，即其数据最近一次对照厂商文档核实的日期。
+其中最早的日期就是**知识库日期**：它保存在每份报告中（`knowledge.kb_date`），由 `ekte kb`
+以及 Markdown、HTML、PDF 报告显示，并由 `ekte kb --json` 输出。若它早于
+`STALE_AFTER_DAYS`（180 天，位于 `ekte/knowledge/freshness.py`），报告会带上一条警告，
+提示更新 ekte 或添加自己的条目。该警告不会改变结论。
+
+更新流程：
+
+- **来源。** 只使用厂商的官方页面：模型列表与模型卡、价格与限制页面、弃用与下线公告、
+  发布说明。请在 Pull Request 中附上链接。
+- **负责人。** 维护者。任何人都可以通过议题表单“Knowledge base update”（厂商、模型 ID、
+  变更内容、来源链接及其日期）或 Pull Request 提出修改。
+- **频率。** 至少在每个次版本发布前更新一次；出现重大模型变化（旗舰模型发布、模型下线、
+  模型 ID 改名）时，另发补丁版本。发布检查清单包含这一步。
+- **审查。** 修改 `ekte/knowledge/data/*.yaml` 的 Pull Request，每个改动的值都要有引用的来源并经过
+  第二人复核，且 `ekte kb-import --check` 必须通过。只有核对完某个厂商的整个文件之后，
+  才可更新它的 `last_verified`，而不是只核对改动的那几行。
+- **更新日志。** 内置数据的每次改动都要写入 `CHANGELOG.md`，因为它可能改变结论。
+
 ### 修改探测提示词
 
 探测文本是校准数据。修改 `ekte/prompts/en.json` 中的某条文本，可能改变答案校验、token 估算，
 进而改变结论；请同步调整检测器及其测试，并在 CHANGELOG 中说明。绝不要让探测跟随界面语言。
+
+### 修改数据库模式
+
+ekte 创建的每个 SQLite 数据库（`history.db`、`watches.db`、`kb.db`）都由同一个共享机制
+`ekte/dbmigrate.py` 管理版本和迁移；存储模块不得再用临时的 `ALTER TABLE` 自行迁移。
+模式版本保存在 `PRAGMA user_version` 中，`datadir.connect(name, MIGRATIONS)` 在每次
+打开时检查它。
+
+修改模式的步骤：
+
+1. 在存储模块（`web/history.py`、`web/watches.py`、`knowledge/store.py`）中添加一个
+   执行变更的函数 `_vN(conn)`，并把 `dbmigrate.Migration(N, _vN)` 追加到其
+   `MIGRATIONS` 元组末尾。切勿修改或重排已有步骤：线上的数据库已经执行过它们。
+2. 保持步骤幂等（`CREATE ... IF NOT EXISTS`，列用 `kb_snapshot.add_link_columns()`），
+   且不要在其中提交或回滚。该机制在各自独立的 `BEGIN IMMEDIATE` 事务中执行每个步骤，
+   并同时更新版本号；因此被中断或失败的步骤会让数据库保持在上一个版本。
+3. 新数据库从版本 0 开始并执行所有步骤；版本化之前的数据库同样是版本 0，所以存储模块的
+   第 1 步必须能接管已有的模式。
+4. 在 `tests/test_dbmigrate.py` 中添加测试：构建版本 N-1 的模式，打开它，并检查新版本、
+   新模式以及数据完好。如果需要为已有数据回填行，请在存储模块的 `on_migrated` 回调中
+   完成（见 `history._after_migration`），而不是在步骤里。
+
+该机制为你做的事：由**更新版本**的 ekte 写入的数据库会在写入任何内容之前被
+`DatabaseTooNewError` 拒绝（会指明两个版本以及该怎么做）；一次运行的第一个步骤之前，
+非空数据库会被复制到旁边的 `<db>.v<版本>.<UTC 时间>.bak`，每个数据库只保留最新的 3 份备份
+（`dbmigrate.BACKUP_KEEP`）；版本号在写锁下重新读取，所以 CLI 和服务器永远不会把同一个
+步骤执行两次。
 
 ### 翻译
 
@@ -444,11 +515,11 @@ Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `finge
 | `README.md`、`README.<lang>.md` | 使用者：ekte 能做什么、安装、命令行与 Web 界面的使用 |
 | `DEVELOPER_GUIDE.md`、`DEVELOPER_GUIDE.<lang>.md` | 贡献者：架构、环境搭建、参与贡献、Docker、发布 |
 | `docs/METHODOLOGY.md`、`docs/METHODOLOGY.<lang>.md` | 所有人：每项检测、它的计分标准和注意事项 |
-| `docs/CI.md`、`docs/DOCKER.md`、`docs/PUBLISHING.md` | 参考页面（英文） |
+| `docs/CI.md`、`docs/DOCKER.md`、`docs/PUBLISHING.md`、`docs/CLI.md`、`docs/SCHEMAS.md`、`docs/STABILITY.md`、`docs/ACCESSIBILITY.md`、`docs/RELEASE_CHECKLIST.md` | 参考页面（英文） |
 
 英文文件为基准。修改其中一份时，请在同一个 Pull Request 中同步修改其他语言，并在每种语言中使用
 界面的用词（在 `ekte/i18n/locales/` 中查找对应术语）。METHODOLOGY 文件中的计分标准措辞与界面
-「**计分标准**」中显示的一致。
+“**计分标准**”中显示的一致。
 
 ## 测试
 
@@ -512,19 +583,67 @@ docker run --rm -p 127.0.0.1:8000:8000 -v ekte-data:/data ekte
 
 | 工作流 | 触发条件 | 作用 |
 |---|---|---|
-| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `a11y/integration`、`perf/integration`）；每晚定时及手动（仅无障碍测试） | 在 Python 3.10–3.13 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果：推送、每晚及手动运行测试所有页面（并生成 BITV 符合性报告），Pull Request 只测试改动影响的页面（仅改文档时不运行）——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
+| `.github/workflows/ci.yml` | 推送到 `main` 及针对 `main` 的 Pull Request（以及集成分支 `*/integration`）；每晚定时及手动（仅无障碍测试） | 在 Python 3.11–3.14（Linux；macOS 和 Windows 上为 3.11 和 3.14） 上带 `dev` 和 `web` 附加项运行 `ruff`、`mypy` 和 `pytest`；构建 wheel 和 sdist，并验证 wheel 能安装并加载知识库；运行无障碍测试套件（仅供参考，从不导致运行失败）并上传其结果：推送、每晚及手动运行测试所有页面（并生成 BITV 符合性报告），Pull Request 只测试改动影响的页面（仅改文档时不运行）——但针对 `perf/integration` 的 Pull Request 除外，此时跳过较慢的浏览器测试套件（它在该分支的推送及其针对 `main` 的 Pull Request 上运行） |
 | `.github/workflows/release.yml` | `v*` 标签 | 构建、运行 `twine check` 并发布到 PyPI（Trusted Publishing） |
 | `.github/workflows/example-audit.yml` | 每日定时、手动 | 使用该 Action 定时审计中转站的示例 |
 
 复合 Action 本身是 `action.yml`，文档见 [docs/CI.md](docs/CI.md)。
 
+### 发行包中的第三方文件
+
+源码发行包（sdist）包含测试，但不包含随附的第三方文件。`tests/a11y/vendor/axe.min.js`（axe-core，MPL-2.0）只在 git 仓库中；它被排除在 sdist 之外（`pyproject.toml` 中 `[tool.hatch.build.targets.sdist]` 下的 `exclude`），也从未属于 wheel。
+
+- 需要被排除文件的测试在文件缺失时会跳过并给出明确原因；请在 git 检出中运行无障碍测试套件。
+- `NOTICE` 列出每个第三方文件并说明是否分发。新增随附文件时，请加入 `exclude` 列表和 `NOTICE`；若必须随包分发，则在 `NOTICE` 中说明。
+- `scripts/check_dist_contents.py` 构建 wheel 和 sdist（`uv build`），若包含被排除的文件或 `NOTICE` 标明不分发的文件则失败。`.github/workflows/dist.yml` 工作流在单独的 job 中运行它。
+
 ## 发布
 
-1. 把 `CHANGELOG.md` 中的 `[Unreleased]` 改为新版本号，并提升 `pyproject.toml` 中的 `version`。
-2. 提交，打上 `vX.Y.Z` 标签并推送该标签；`release.yml` 会发布到 PyPI。
-3. 用 CHANGELOG 中的说明创建 GitHub Release，并更新各 README 和 `docs/CI.md` 中固定的 Action 版本。
+一次发布就是一个版本标签；其余一切均已自动化并带有检查。检查清单见
+[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)，一次性的 PyPI 设置和手动
+备用方案见 [docs/PUBLISHING.md](docs/PUBLISHING.md)。
 
-PyPI 的一次性配置和手动发布流程见 [docs/PUBLISHING.md](docs/PUBLISHING.md)。
+### 创建发布
+
+1. 逐项完成[发布检查清单](docs/RELEASE_CHECKLIST.md)：版本与变更日志、支持的
+   Python 版本与系统、知识库是否新鲜、升级 fixture、UI 变更的无障碍审查、
+   所有语言的文档、安全公告。
+2. 在 `pyproject.toml` 中设置 `version`，并把 `CHANGELOG.md` 中的 `[Unreleased]`
+   重命名为 `[X.Y.Z] - YYYY-MM-DD`。本地用
+   `python scripts/release_check.py version vX.Y.Z` 和 `... notes vX.Y.Z` 检查。
+3. 合并后给该提交打标签并推送：
+   `git tag -a vX.Y.Z -m "ekte vX.Y.Z"`，`git push origin vX.Y.Z`。
+4. `release.yml` 先用 `scripts/release_check.py` 检查：标签与包版本一致、
+   `CHANGELOG.md` 有对应章节、带标签提交的 CI 为绿色（CI 仍在运行时会等待）。
+   任何检查失败，工作流即停止，不会发布任何内容。随后构建，通过 Trusted
+   Publishing 发布到 PyPI 并附带来源证明（provenance attestations），再以变更
+   日志章节作为说明创建 GitHub Release。
+
+### 候选版本（Release Candidate）
+
+打标签 `vX.Y.ZrcN`（`pyproject.toml` 中 `version = "X.Y.ZrcN"`）。PyPI 将其视为
+PEP 440 预发布版本：`pip install ekte` 会忽略它，`pip install --pre ekte` 可以找到；
+GitHub 会把该发布标记为“Pre-release”。变更日志中使用 `[X.Y.ZrcN]`、`[X.Y.Z]` 或
+`[Unreleased]` 章节均可。
+
+### 发布中途失败时
+
+PyPI 从不接受同一文件两次，版本号也不能复用；关键看运行进行到了哪一步
+（Actions，“Release to PyPI”）：
+
+- **某项检查失败（verify 作业）。** 未发布任何内容。修复原因（版本、变更日志、
+  CI），在本地和 origin 删除标签（`git push origin :refs/tags/vX.Y.Z`），然后给
+  修复后的提交重新打标签。
+- **在 PyPI 收到文件之前，构建或上传失败。** 重新运行失败的作业；没有消耗版本号。
+  若带标签的提交本身需要修改，则删除标签后重新创建。
+- **PyPI 已有部分文件**（见 <https://pypi.org/project/ekte/#files>）。重新运行失败
+  的作业：上传会跳过已存在的文件。若这些文件与要发布的内容不符，不要重试：在
+  PyPI 上 yank 该版本，并发布下一个版本（`X.Y.Z+1` 或 `rcN+1`）。
+- **PyPI 已完整但 GitHub Release 失败。** 重新运行 `GitHub Release` 作业；它会
+  幂等地创建或更新发布。或手动执行：
+  `gh release create vX.Y.Z --notes-file <(python scripts/release_check.py notes vX.Y.Z)`。
+- **有缺陷的版本已上线。** 在 PyPI 上 yank（之后只能通过精确版本号安装），
+  用新版本向前修复，并在其变更日志中注明。
 
 ## 安全
 

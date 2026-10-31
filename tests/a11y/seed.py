@@ -1,4 +1,4 @@
-"""Run history for the Analytics page (/v2/analytics) in the a11y servers.
+"""Run history for the Analytics page (/analytics) in the a11y servers.
 
 :func:`seed_analytics` saves a relay in the knowledge base and a dozen runs
 over the last week before ``end``: two relays (the saved one and a long URL

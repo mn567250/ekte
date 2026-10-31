@@ -63,7 +63,7 @@ import json
 import math
 import sqlite3
 from collections.abc import Iterable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ekte.knowledge.relays import normalize_url
@@ -406,16 +406,16 @@ def parse_ts(value: Any) -> datetime | None:
     except ValueError:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     try:
-        return dt.astimezone(timezone.utc)
+        return dt.astimezone(UTC)
     except (OverflowError, ValueError):
         return None
 
 
 def format_ts(dt: datetime) -> str:
     """The fixed-width UTC form ``started_at`` is stored in."""
-    utc = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    utc = dt.astimezone(UTC).replace(tzinfo=None)
     return utc.isoformat(timespec="microseconds") + "+00:00"
 
 

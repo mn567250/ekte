@@ -2,7 +2,7 @@
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Design":
     - option "Automatisch"
@@ -21,18 +21,18 @@
     - option "Deutsch" [selected]
     - option "Norsk"
   - link "Barrierefreiheit":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Hauptnavigation":
     - link "Prüfung":
-      - /url: /v2/
+      - /url: /
     - link "Überwachung":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Verlauf":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyse":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Wissen":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Liefert dieses Relay das echte Modell?" [level=1]
   - paragraph: Wähle das Relay, dann das zu prüfende Modell und – falls es unter einem anderen Namen verkauft wird – das Modell, das es zu sein behauptet. ekte führt auf deinem Rechner eine vollständige Black-Box-Testreihe aus und erstellt einen verständlichen, belegten Prüfbericht.

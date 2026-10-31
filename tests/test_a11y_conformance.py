@@ -83,13 +83,13 @@ def _results():
                                                           "message": "page scrolls horizontally", "axe": None},
         "tests/a11y/test_visual.py::test_forced[kb]": {"steps": ["11.7"], "outcome": "passed", "axe": None},
     }
-    meta = {"langs": ["en", "de"], "themes": ["light"], "pages": {"kb": "/v2/kb"}, "axe_version": "4.13.0"}
+    meta = {"langs": ["en", "de"], "themes": ["light"], "pages": {"kb": "/kb"}, "axe_version": "4.13.0"}
     return results.build_results(tests, meta)
 
 
 def test_report_statuses_totals_and_review_notes():
     llm = {"model": "x", "steps": {"1.1.1": {"verdict": "ok", "notes": ["alt texts fit"]}}}
-    rep = conformance.build_report(_results(), llm, now=dt.datetime(2026, 10, 4, tzinfo=dt.timezone.utc), commit="abc")
+    rep = conformance.build_report(_results(), llm, now=dt.datetime(2026, 10, 4, tzinfo=dt.UTC), commit="abc")
     by = {s["step"]: s for s in rep["steps"]}
     assert by["9.1.4.3"]["status"] == "pass"                      # auto, passed
     assert by["9.1.1.1"]["status"] == "manual review pending"     # partial, automated part passed
@@ -140,7 +140,7 @@ def test_shard_results_merge_into_the_results_of_one_run(tmp_path, monkeypatch):
                                                           "message": "page scrolls horizontally", "axe": None},
         "tests/a11y/test_visual.py::test_forced[kb]": {"steps": ["11.7", "9.1.4.3"], "outcome": "passed", "axe": None},
     }
-    meta = {"langs": ["en", "de"], "themes": ["light"], "pages": {"kb": "/v2/kb"}, "axe_version": "4.13.0"}
+    meta = {"langs": ["en", "de"], "themes": ["light"], "pages": {"kb": "/kb"}, "axe_version": "4.13.0"}
     names = sorted(tests)
     # dealt like the conftest does: shard k of n takes every n-th test
     parts = [results.build_results({t: tests[t] for t in names[k::2]}, meta) for k in range(2)]
@@ -228,10 +228,10 @@ def test_incomplete_llm_review_changes_no_status():
 
 
 def test_skipped_or_failed_llm_review_is_ignored():
-    plain = conformance.build_report(_results(), None, commit="c", now=dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc))
+    plain = conformance.build_report(_results(), None, commit="c", now=dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
     for status in ("skipped: no API key", "error", "dry-run", "skipped: browser harness unavailable"):
         rep = conformance.build_report(_results(), _llm_review(status=status), commit="c",
-                                       now=dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc))
+                                       now=dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
         assert rep == plain, status
 
 
@@ -251,7 +251,7 @@ def test_cli_picks_up_the_llm_review_in_the_working_directory(tmp_path, monkeypa
 
 
 def test_a_review_applied_to_a_built_report_equals_building_with_it():
-    now = dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc)
+    now = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
     llm = _llm_review(verdicts={"9.2.4.4": "issues"})
     built = conformance.build_report(_results(), llm, now=now, commit="c")
     applied = conformance.apply_review(conformance.build_report(_results(), None, now=now, commit="c"), llm)

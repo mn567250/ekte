@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mn567250/ekte/main/docs/schemas/config.schema.json",
+  "title": "ekte configuration file, format 1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "Format version of this file",
+      "minimum": 1,
+      "default": 1
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Label shown in reports"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "Endpoint URL, http:// or https://"
+        },
+        "api_key": {
+          "type": "string",
+          "description": "API key: env:VAR, file:/path or a literal"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model id sent to the endpoint"
+        },
+        "api": {
+          "type": "string",
+          "description": "Wire protocol",
+          "enum": [
+            "auto",
+            "openai",
+            "anthropic",
+            "responses"
+          ],
+          "default": "auto"
+        },
+        "declared_provider": {
+          "type": "string",
+          "description": "Provider the relay claims; inferred from the model id"
+        },
+        "claimed_model": {
+          "type": "string",
+          "description": "Model the relay claims to serve; defaults to model"
+        },
+        "timeout_sec": {
+          "type": "number",
+          "description": "Base HTTP timeout in seconds",
+          "minimum": 0,
+          "default": 60
+        },
+        "max_request_sec": {
+          "type": "number",
+          "description": "Hard cap per request in seconds",
+          "minimum": 0,
+          "default": 900
+        },
+        "headers": {
+          "type": "object",
+          "description": "Extra HTTP headers",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "default": {}
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Label shown in reports"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "Endpoint URL, http:// or https://"
+        },
+        "api_key": {
+          "type": "string",
+          "description": "API key: env:VAR, file:/path or a literal"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model id sent to the endpoint"
+        },
+        "api": {
+          "type": "string",
+          "description": "Wire protocol",
+          "enum": [
+            "auto",
+            "openai",
+            "anthropic",
+            "responses"
+          ],
+          "default": "auto"
+        },
+        "declared_provider": {
+          "type": "string",
+          "description": "Provider the relay claims; inferred from the model id"
+        },
+        "claimed_model": {
+          "type": "string",
+          "description": "Model the relay claims to serve; defaults to model"
+        },
+        "timeout_sec": {
+          "type": "number",
+          "description": "Base HTTP timeout in seconds",
+          "minimum": 0,
+          "default": 60
+        },
+        "max_request_sec": {
+          "type": "number",
+          "description": "Hard cap per request in seconds",
+          "minimum": 0,
+          "default": 900
+        },
+        "headers": {
+          "type": "object",
+          "description": "Extra HTTP headers",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "default": {}
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "suite": {
+          "type": "string",
+          "description": "Audit depth",
+          "enum": [
+            "smoke",
+            "standard",
+            "deep",
+            "full",
+            "custom"
+          ],
+          "default": "standard"
+        },
+        "dimensions": {
+          "type": "array",
+          "description": "Dimensions of the custom suite",
+          "items": {
+            "type": "string",
+            "enum": [
+              "connectivity",
+              "protocol",
+              "context_window",
+              "model_identity",
+              "capability",
+              "streaming",
+              "billing",
+              "reliability",
+              "security",
+              "performance"
+            ]
+          },
+          "default": []
+        },
+        "judge": {
+          "type": "boolean",
+          "description": "Enable code+LLM hybrid judging",
+          "default": false
+        },
+        "output_dir": {
+          "type": "string",
+          "description": "Directory for report files",
+          "default": "reports"
+        },
+        "format": {
+          "type": "string",
+          "description": "Report format",
+          "enum": [
+            "json",
+            "md",
+            "html",
+            "pdf",
+            "all"
+          ],
+          "default": "all"
+        },
+        "reliability_requests": {
+          "type": "integer",
+          "description": "Reliability probe requests",
+          "minimum": 0,
+          "default": 8
+        },
+        "concurrency": {
+          "type": "integer",
+          "description": "Reliability probe concurrency",
+          "minimum": 1,
+          "default": 3
+        },
+        "max_context_probe_tokens": {
+          "type": "integer",
+          "description": "Cap for the context-window probe",
+          "minimum": 0,
+          "default": 200000
+        },
+        "performance_requests": {
+          "type": "integer",
+          "description": "Performance probe requests per endpoint (0 disables)",
+          "minimum": 0,
+          "default": 100
+        },
+        "performance_max_tokens": {
+          "type": "integer",
+          "description": "Output tokens per performance request",
+          "minimum": 1,
+          "default": 128
+        },
+        "performance_streaming": {
+          "type": "boolean",
+          "description": "Probe with streaming requests",
+          "default": true
+        }
+      }
+    },
+    "judge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "description": "Judge endpoint URL"
+        },
+        "api_key": {
+          "type": "string",
+          "description": "API key: env:VAR, file:/path or a literal"
+        },
+        "model": {
+          "type": "string",
+          "description": "Judge model id"
+        }
+      }
+    }
+  }
+}

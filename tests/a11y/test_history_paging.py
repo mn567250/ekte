@@ -31,7 +31,7 @@ PAGE_SIZE = 20
 
 
 def _paged_history(open_page: Any, theme: str = "light", viewport: dict[str, int] | None = None) -> Page:
-    """/v2/history with ROWS runs of one relay + model (newest first)."""
+    """/history with ROWS runs of one relay + model (newest first)."""
     import httpx
 
     base = open_page.base_url
@@ -54,7 +54,7 @@ def _paged_history(open_page: Any, theme: str = "light", viewport: dict[str, int
         lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(rows)),
     )
     page = ctx.new_page()
-    page.goto(base + "/v2/history", wait_until="networkidle")
+    page.goto(base + "/history", wait_until="networkidle")
     settle(page)
     return page
 

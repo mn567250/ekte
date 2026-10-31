@@ -2,7 +2,7 @@
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Design":
     - option "Automatisch"
@@ -21,24 +21,24 @@
     - option "Deutsch" [selected]
     - option "Norsk"
   - link "Barrierefreiheit":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Hauptnavigation":
     - link "Prüfung":
-      - /url: /v2/
+      - /url: /
     - link "Überwachung":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Verlauf":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyse":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Wissen":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Stellen Sie Ihrem Relay einen zeitgesteuerten Wächter zur Seite" [level=1]
   - paragraph:
     - text: Jede Überwachung wiederholt ein bereits ausgeführtes Audit auf Ihrem Rechner im festgelegten Intervall. Zum Hinzufügen öffnen Sie einen Lauf im
     - link "Verlauf":
-      - /url: /v2/history
+      - /url: /history
     - text: und wählen Als Überwachung einplanen — legen Sie dann hier das Intervall fest und schalten Sie sie ein. Überschreitet das Risiko Ihre Schwelle oder wird es schlechter als beim letzten Mal, alarmiert ekte Ihre Webhooks (Slack / Feishu / DingTalk / generisches JSON).
   - status:
     - text: API-Schlüssel werden nicht gespeichert Eingegebene Schlüssel bleiben nur im Arbeitsspeicher von ekte serve und werden nie auf die Festplatte geschrieben; geben Sie sie nach einem Neustart erneut ein. env:VAR-Verweise funktionieren weiterhin.
@@ -134,7 +134,7 @@
         - code: openai/gpt-4o
         - text: festgelegt 01.10.2026, 12:00
       - 'link "Aus Lauf #1 →"':
-        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Einrichtung abschließen, um sie einzuschalten":
         - heading "Einrichtung abschließen, um sie einzuschalten" [level=4]
         - paragraph: Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft sie läuft, und aktivieren Sie sie.

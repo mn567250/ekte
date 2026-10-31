@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/mn567250/ekte/actions/workflows/ci.yml/badge.svg)](https://github.com/mn567250/ekte/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 
 **ekte** er et verktøy som kjører lokalt og reviderer om et API-relé
 (forhandler / proxy) faktisk leverer modellen det sier det leverer — eller i det
@@ -26,6 +26,8 @@ eller som JSON for et annet verktøy eller en LLM.
 Denne README-en er for dem som **bruker** ekte. Hvordan ekte bygges, testes og
 utgis, står i [Utviklerveiledningen](DEVELOPER_GUIDE.nb.md); hvordan hver
 kontroll fungerer og gis score, står i [Metodikken](docs/METHODOLOGY.nb.md).
+
+Hva som er stabilt i ekte, hva som regnes som en brytende endring og hvordan funksjoner fases ut: [Retningslinjer for stabilitet og kompatibilitet](docs/STABILITY.md) (på engelsk).
 
 ---
 
@@ -67,7 +69,7 @@ ekte gjør «dette føles feil» om til en reproduserbar rapport.
 
 ## Installasjon
 
-Krever Python 3.10+. Alle alternativene nedenfor gir deg kommandoen `ekte`.
+Krever Python 3.11+. Kjører på Linux, macOS og Windows (Docker-bildet er Linux); på Windows har eier-modusene til datamappen ingen virkning, se [Støttede operativsystemer](docs/STABILITY.md#os). Alle alternativene nedenfor gir deg kommandoen `ekte`.
 
 ### Med pip
 
@@ -181,6 +183,8 @@ API-nøkler kan oppgis direkte, som `env:VAR` eller som `file:/sti`; rapporter
 inneholder bare et fingeravtrykk av nøkkelen. En fullstendig konfigurasjonsfil
 ligger i [`examples/ekte.yaml`](examples/ekte.yaml).
 
+Filen har en formatversjon (`version: 1`; en fil uten versjon er format 1). Feil typer og ugyldige verdier avvises med fil, linje og nøkkel; ukjente nøkler ignoreres med en advarsel frem til ekte 1.0.0, som avviser dem. `ekte config migrate` oppdaterer en eldre fil. Skjemaet er [`docs/schemas/config.schema.json`](docs/schemas/config.schema.json).
+
 ### Som verktøy for en LLM / agent
 
 ekte er laget for å styres av et annet program eller en annen modell. Alt går til
@@ -251,17 +255,15 @@ lokale ekte-server og reléet du reviderer, aldri en tredjepart. Se
 
 ### Sider
 
-Nettgrensesnittet ligger under `/v2/`, der `ekte serve` åpner det. Adressene til
-det tidligere klassiske grensesnittet (`/`, `/history`, `/watches`, `/tools`,
-`/console`) videresender til tilsvarende side.
+Nettgrensesnittet leveres fra roten av adressen `ekte serve` åpner, med revisjonssiden på `/`. Adressene som ble brukt til nå (`/v2/…`, f.eks. `/v2/history`) og adressene til det tidligere klassiske grensesnittet (`/tools`, `/console`) videresendes permanent til tilsvarende side og beholder spørrestrengen; disse videresendingene er foreldet og fjernes i 1.0.0.
 
 | Side | Adresse | Hva den er til |
 |---|---|---|
-| **Revisjon** | `/v2/` | Revider et relé (eventuelt mot en referanse) og les rapporten; revisjoner av embedding og rerank starter også her, via velgeren for type endepunkt |
-| **Overvåking** | `/v2/watches` | Planlagte nye revisjoner med webhook-varsler |
-| **Historikk** | `/v2/history` | Hver revisjon kjørt på denne maskinen, gruppert etter relé + oppgitt modell, med trender |
-| **Analyse** | `/v2/analytics` | Releer og modeller sammenlignet over tid: nøkkeltall, diagrammer med datatabeller, rangeringslister |
-| **Kunnskap** | `/v2/kb` | Kunnskapsbasen i tre faner — modeller, leverandører, releer: bla gjennom, slå av/på, legg til dine egne |
+| **Revisjon** | `/` | Revider et relé (eventuelt mot en referanse) og les rapporten; revisjoner av embedding og rerank starter også her, via velgeren for type endepunkt |
+| **Overvåking** | `/watches` | Planlagte nye revisjoner med webhook-varsler |
+| **Historikk** | `/history` | Hver revisjon kjørt på denne maskinen, gruppert etter relé + oppgitt modell, med trender |
+| **Analyse** | `/analytics` | Releer og modeller sammenlignet over tid: nøkkeltall, diagrammer med datatabeller, rangeringslister |
+| **Kunnskap** | `/kb` | Kunnskapsbasen i tre faner — modeller, leverandører, releer: bla gjennom, slå av/på, legg til dine egne |
 
 På tvers av sidene: filtre og konfigurerbare trender (score, karakter,
 forsinkelse p50, tokens/s) på **Historikk**; **Planlegg som overvåking** og
@@ -284,7 +286,7 @@ fra din egen maskin, settes også i kø); revisjoner av ulike releer kjøres
 parallelt, høyst fire om gangen (`EKTE_MAX_PARALLEL_AUDITS`). Overvåkinger venter
 på reléet sitt på samme måte.
 
-**Analyse.** `/v2/analytics` gjør den lokale historikken om til sammenligninger:
+**Analyse.** `/analytics` gjør den lokale historikken om til sammenligninger:
 nøkkeltall for valgt periode (kjøringer, medianscore, andel høy risiko,
 suksessrate, TTFT, dekodehastighet, faktureringsforhold) med endringen mot like
 lang periode før; et diagram over et hvilket som helst måltall per relé, modell
@@ -456,13 +458,13 @@ ekte check --base-url ... --model gpt-4o -D protocol -D performance
 ekte check --base-url ... --model gpt-4o --suite custom --dimension billing,streaming
 ```
 
-`--dimension/-D` kan gjentas eller kommaseparereres og innebærer
+`--dimension/-D` kan gjentas eller kommasepareres og innebærer
 `--suite custom`; i en konfigurasjonsfil bruker du
 `run.dimensions: [protocol, performance]`. Dimensjonene er `connectivity`,
 `protocol`, `context_window`, `model_identity`, `capability`, `streaming`,
 `billing`, `reliability`, `security` og `performance`. I nettgrensesnittet åpner
 knappen for testsettet `custom` det samme valget (**Dimensjoner som skal
-kjøres**) på revisjonssiden, i konsollen og på overvåkingene.
+kjøres**) på revisjonssiden og på overvåkingene.
 
 Den **samlede scoren er det vektede gjennomsnittet av bare de valgte
 dimensjonene**; dimensjoner du utelot, rapporteres som «ikke valgt».
@@ -718,7 +720,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # Returnerer et relé som påstår tts-1-hd, ekte lyd der lengden skalerer med
 # inndataen (ikke en fast plassholder, ikke HTML/JSON forkledd som lyd)?
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` kontrollerer tilkobling, et gyldig format som kan dekodes, **samsvar i
@@ -771,7 +773,7 @@ dem). Det finnes tre lag, der de senere vinner:
    eller `EKTE_KB_DIR`.
 3. **Dine oppføringer** (`kb.db` i datamappen), lagt til uten YAML-filer eller
    redigerbar installasjon:
-   - på nettgrensesnittets **Kunnskap**-side (`/v2/kb`), med én fane hver for
+   - på nettgrensesnittets **Kunnskap**-side (`/kb`), med én fane hver for
      **Modeller**, **Leverandører** og **Releer**. Hver fane viser hele settet —
      medfølgende, `EKTE_KB_DIR` og dine (merket **Dine**) — med et filter, en
      av/på-bryter per element og et **Legg til …**-skjema: **Legg til en modell**
@@ -789,7 +791,7 @@ dem). Det finnes tre lag, der de senere vinner:
 
 Før en oppføring lagres, kontrollerer ekte den: skjema og grenser, utrygge
 regulære uttrykk, hver prompt den ville sende, og modell-ID-er som ville blitt
-slått opp til en annen profil. En modell av deg med en medfølgende ID erstatter den
+slått opp til en annen profil. En modell du har lagt til med en medfølgende ID erstatter den
 (rapportert som at den *skygger* for den), men endrer aldri en medfølgende
 leverandørs egne innstillinger; fingeravtrykk slås sammen etter ID. Å slå av en
 medfølgende modell, leverandør eller et relé på **Kunnskap**-siden lagres også i
@@ -798,7 +800,7 @@ er slått av, tar modellene og basis-URL-ene sine med seg. `ekte check` og
 `ekte serve` bruker nøyaktig de samme profilene; `--no-user-kb` (eller
 `EKTE_NO_USER_KB=1`) holder oppføringene og bryterne dine utenfor.
 
-En modell med tomme `identity_keywords` lagres ikke slik: ekte fyller inn dens
+En modell med tomme `identity_keywords` lagres ikke slik: ekte fyller inn modellens
 egne merkeord fra leverandør- og modellnavnene (for eksempel `glm` og `z.ai`) og
 viser en advarsel om å kontrollere dem, siden identitetskontrollen uten dem kunne
 tatt modellen som nevner sin egen leverandør, for et konkurrerende merke.
@@ -882,6 +884,9 @@ referanse før du trekker sterke konklusjoner.
 | [Utviklerveiledning](DEVELOPER_GUIDE.nb.md) | Arkitektur, utviklingsoppsett, bidrag, oversettelser, Docker, utgivelser |
 | [docs/CI.md](docs/CI.md) | GitHub Action: inndata, utdata, eksempler (på engelsk) |
 | [docs/DOCKER.md](docs/DOCKER.md) | Kjøre nettgrensesnittet i en container (på engelsk) |
+| [Stabilitet og kompatibilitet](docs/STABILITY.md) | Hva semver beskytter, utfasing, støttede Python-versjoner og systemer, oppgraderinger og nedgraderinger (på engelsk) |
+| [docs/CLI.md](docs/CLI.md) | Alle kommandoer og alternativer, og avslutningskodene (engelsk) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | JSON-formatene for rapport og webhook og deres `schema_version` (engelsk) |
 | [CHANGELOG.md](CHANGELOG.md) | Hva som er endret i hver utgivelse (på engelsk) |
 | [SECURITY.md](SECURITY.md) | Rapportere en sårbarhet (på engelsk) |
 
@@ -905,11 +910,11 @@ ekte viderefører [zing](https://github.com/cenbonew/zing) (siste utgivelse var
   er.
 - **Nettgrensesnitt.** Innstillinger for språk, tema og filtre og en hovednøkkel
   lagret i nettleserens passordbehandler følger med over. zings klassiske
-  grensesnitt er borte: adressene (`/`, `/history`, `/watches`, `/tools`,
-  `/console`) åpner tilsvarende side under `/v2/`.
+  grensesnitt er borte: adressene (`/tools`, `/console`) åpner revisjonssiden (`/`).
 - **Rapporter og prober.** Rapporter, webhooker og filnavn sier `ekte` (f.eks.
   `"tool": "ekte"`, `ekte-report.json`), og det gjør også probene som sendes til
   releer. Skript som ser etter `zing` i dem, må oppdateres.
+- **Tidsplan.** Hele kompatibilitetslaget (`ZING_*`-reserveløsningen, kopien av `~/.zing`, overføringen av nettleserinnstillinger, informasjonskapsler og den lagrede hovednøkkelen, og adressene til det klassiske grensesnittet) er foreldet og fjernes i ekte **1.0.0** (1.0.0rc1 er første utgivelse uten det). Fram til da fungerer hver del som før, og varselet nevner denne versjonen; de gamle sideadressene `/v2/…` videresendes også til 1.0.0. ekte sletter aldri en gammel `~/.zing`, heller ikke når kopien er fjernet.
 
 ## Lisens
 

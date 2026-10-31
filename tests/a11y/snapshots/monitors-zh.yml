@@ -2,7 +2,7 @@
   - link "跳到主要内容":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "主题":
     - option "跟随系统"
@@ -21,24 +21,24 @@
     - option "Deutsch"
     - option "Norsk"
   - link "无障碍":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "主导航":
     - link "检测":
-      - /url: /v2/
+      - /url: /
     - link "监控":
-      - /url: /v2/watches
+      - /url: /watches
     - link "检测历史":
-      - /url: /v2/history
+      - /url: /history
     - link "分析":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "知识库":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "给中转站设个定时哨兵" [level=1]
   - paragraph:
     - text: 每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在
     - link "检测历史":
-      - /url: /v2/history
+      - /url: /history
     - text: 中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。
   - status:
     - text: "API 密钥不会被保存 你输入的密钥只留在 ekte serve 的内存中，从不写入磁盘；重启后需重新输入。env: 变量引用照常工作。"
@@ -134,7 +134,7 @@
         - code: openai/gpt-4o
         - text: 固定于 2026年10月1日 12:00
       - 'link "来自运行 #1 →"':
-        - /url: /v2/history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "设置后即可启用":
         - heading "设置后即可启用" [level=4]
         - paragraph: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。

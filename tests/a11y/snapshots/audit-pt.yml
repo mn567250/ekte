@@ -2,7 +2,7 @@
   - link "Saltar para o conteúdo principal":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Tema":
     - option "Automático"
@@ -21,18 +21,18 @@
     - option "Deutsch"
     - option "Norsk"
   - link "Acessibilidade":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Navegação principal":
     - link "Auditoria":
-      - /url: /v2/
+      - /url: /
     - link "Monitores":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Histórico":
-      - /url: /v2/history
+      - /url: /history
     - link "Análises":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Conhecimento":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Este intermediário serve o modelo verdadeiro?" [level=1]
   - paragraph: Escolha o relay, o modelo a auditar e, se for vendido com outro nome, o modelo que ele afirma ser. O ekte executa no seu computador um conjunto completo de testes de caixa-preta e produz um relatório de verificação legível e fundamentado em evidências.
@@ -41,7 +41,7 @@
     - button "Abrir relatório"
   - tablist "Auditorias":
     - tab "Nova auditoria" [selected]
-    - tab "Em andamento"
+    - tab "Em curso"
   - tabpanel "Nova auditoria":
     - list "Progresso da auditoria":
       - listitem: Configurar
@@ -57,9 +57,9 @@
         - text: Embeddings
         - radio "Reordenação"
         - text: Reordenação
-      - text: Relay / provedor Opcional
-      - combobox "Relay / provedor Opcional":
-        - option "Selecione um relay ou provedor…" [selected]
+      - text: Relay / fornecedor Opcional
+      - combobox "Relay / fornecedor Opcional":
+        - option "Selecione um relay ou fornecedor…" [selected]
         - option "Outro (introduzir o URL)"
       - text: Ao selecionar um, o URL é preenchido; para qualquer outro relay escolha «Outro» e introduza o URL. URL do intermediário base_url
       - combobox "URL do intermediário base_url"
@@ -89,16 +89,16 @@
         - button "deep"
         - button "full"
         - button "personalizado"
-      - text: Requisições da sonda de desempenho
-      - group "Requisições da sonda de desempenho":
+      - text: Pedidos da sonda de desempenho
+      - group "Pedidos da sonda de desempenho":
         - button "Streaming" [pressed]
         - button "Sem streaming"
-      - text: No standard a sonda só é executada com uma referência; caso contrário, usam-se as próprias requisições da auditoria.
-      - button "Comparar com uma referência confiável compare" [expanded]
+      - text: No standard a sonda só é executada com uma referência; caso contrário, usam-se os próprios pedidos da auditoria.
+      - button "Comparar com uma referência de confiança compare" [expanded]
       - paragraph: Indique um endpoint do mesmo modelo em que confie (p. ex. a API oficial). O ekte usa-o para corroborar o comportamento do alvo, tornando mais fiáveis os veredictos de substituição/degradação — a avaliação de qualidade e a deteção de adulteração só atingem o nível máximo com uma referência.
-      - text: Relay / provedor de referência Opcional
-      - combobox "Relay / provedor de referência Opcional":
-        - option "Selecione um relay ou provedor…" [selected]
+      - text: Relay / fornecedor de referência Opcional
+      - combobox "Relay / fornecedor de referência Opcional":
+        - option "Selecione um relay ou fornecedor…" [selected]
         - option "Outro (introduzir o URL)"
       - text: Ao selecionar um, o URL é preenchido; para qualquer outro relay escolha «Outro» e introduza o URL. URL de referência base_url
       - combobox "URL de referência base_url"

@@ -2,7 +2,7 @@
   - link "Zum Hauptinhalt springen":
     - /url: "#main"
   - link "ekte":
-    - /url: /v2/
+    - /url: /
     - text: ekte.
   - combobox "Design":
     - option "Automatisch"
@@ -21,18 +21,18 @@
     - option "Deutsch" [selected]
     - option "Norsk"
   - link "Barrierefreiheit":
-    - /url: /v2/accessibility
+    - /url: /accessibility
   - navigation "Hauptnavigation":
     - link "Prüfung":
-      - /url: /v2/
+      - /url: /
     - link "Überwachung":
-      - /url: /v2/watches
+      - /url: /watches
     - link "Verlauf":
-      - /url: /v2/history
+      - /url: /history
     - link "Analyse":
-      - /url: /v2/analytics
+      - /url: /analytics
     - link "Wissen":
-      - /url: /v2/kb
+      - /url: /kb
 - main:
   - heading "Prüfverlauf & Trends" [level=1]
   - paragraph: Jede Prüfung, die Sie auf diesem Rechner ausgeführt haben, gruppiert nach „Relay + angegebenes Modell“, mit einer Trendlinie des Health-Scores; klicken Sie auf eine Zeile, um den Bericht aufzuklappen.

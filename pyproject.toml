@@ -8,7 +8,7 @@ version = "0.30.0"
 description = "LLM relay reality check — a CLI that audits whether an API relay actually serves the model it claims (货不对板检测)."
 readme = "README.md"
 license = "Apache-2.0"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{ name = "ekte contributors" }]
 keywords = [
     "llm",
@@ -26,10 +26,10 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
@@ -40,6 +40,9 @@ dependencies = [
     "pyyaml>=6.0",
     # PDF reports: pure Python, BSD-licensed, no system libraries.
     "reportlab>=4.0",
+    # Windows ships no IANA time zone database; zoneinfo needs it for the
+    # analytics time zones.
+    "tzdata>=2024.1; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
@@ -65,12 +68,16 @@ dev = [
     "pytest-asyncio>=0.23",
     # parallel runs: pytest -n auto (the a11y suite keeps one report per worker)
     "pytest-xdist>=3.5",
+    # coverage floor in CI (tool.coverage in this file)
+    "pytest-cov>=5.0",
     "httpx>=0.27",
     "ruff>=0.5",
     "mypy>=1.10",
     "types-PyYAML>=6.0",
     # reads exported PDFs back in the tests
     "pypdf>=4.0",
+    # validates real outputs against the published JSON Schemas
+    "jsonschema>=4.20",
 ]
 
 [project.urls]
@@ -79,7 +86,7 @@ Repository = "https://github.com/mn567250/ekte"
 Issues = "https://github.com/mn567250/ekte/issues"
 
 [project.scripts]
-ekte = "ekte.cli:app"
+ekte = "ekte.cli:run"
 
 [tool.hatch.build.targets.wheel]
 # packages=["ekte"] already bundles ekte/knowledge/data/*.yaml (data/ is a real
@@ -117,10 +124,13 @@ include = [
     "/CHANGELOG.md",
     "/pyproject.toml",
 ]
+# Third-party test files are not redistributed (NOTICE; scripts/check_dist_contents.py):
+# axe-core is MPL-2.0; the a11y tests skip when it is absent.
+exclude = ["/tests/a11y/vendor/*.js"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
@@ -134,7 +144,16 @@ markers = [
     "bitv(*steps): the BITV 2.0 / EN 301 549 test steps (\"9.1.4.3\", …) an a11y test decides (axe=True: only through axe rule results); feeds the conformance report (tests/a11y/results.py)",
 ]
 
+[tool.coverage.run]
+source = ["ekte"]
+
+[tool.coverage.report]
+# whole-package floor; the floors for the command line, the judge and the media
+# auditor are in scripts/check_coverage.py (docs/STABILITY.md#os)
+fail_under = 93
+skip_empty = true
+
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_unused_ignores = true
 ignore_missing_imports = true

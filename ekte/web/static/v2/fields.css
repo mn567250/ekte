@@ -1,7 +1,7 @@
 /* ekte web UI v2 — form field components: model picker + secret key field.
  *
  * Link after ekte.css on pages that use them:
- *   <link rel="stylesheet" href="/v2/static/fields.css" />
+ *   <link rel="stylesheet" href="/static/fields.css" />
  * The model picker is built by relaycfg.js with the .zmp classes below.
  * Colours only through the ekte.css tokens, so light and dark both work.
  */
@@ -69,7 +69,7 @@
 .zsf .zsf-toggle svg,
 .zsf .zsf-toggle .zicon { width: 18px; height: 18px; }
 
-/* ---------- monitors' master key (/v2/static/masterkey.js) ---------- */
+/* ---------- monitors' master key (/static/masterkey.js) ---------- */
 .zmk-bar {
   margin: 18px 0 0; padding: 12px 14px; border-radius: 14px;
   background: var(--sunken); border: 1px solid var(--line);
@@ -125,7 +125,7 @@
 .ferr { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; color: var(--danger); line-height: 1.45; }
 .ferr[hidden] { display: none; }
 
-/* ---------- relay configuration (/v2/static/relaycfg.js) ---------- */
+/* ---------- relay configuration (/static/relaycfg.js) ---------- */
 /* the select / text input pairs reuse the model picker's .zmp styles */
 .rc-choice [hidden], .rc-save [hidden], .rc-save[hidden] { display: none; }
 .rc-match { margin: 6px 0 0; overflow-wrap: anywhere; }

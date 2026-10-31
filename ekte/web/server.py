@@ -1,12 +1,14 @@
 """FastAPI app for `ekte serve` — serves the SPA and streams live audits over SSE.
 
 Endpoints:
-  GET  /v2/…                 the web UI (audit, monitors, history, analytics,
-                             knowledge base, accessibility report)
-  GET  /, /history, /watches, /tools, /console
-                             addresses of the removed classic UI: redirect (308)
-                             to their v2 pages, keeping the query string
-  GET  /v2/analytics         charts and leaderboards over the run history
+  GET  /, /history, /watches, /analytics, /kb, /accessibility
+                             the web UI pages (audit page at /); assets under /static/
+  GET  /tools, /console      addresses of the removed classic UI: redirect (308)
+                             to the audit page, keeping the query string
+                             (deprecated, removed in 1.0.0)
+  GET  /v2, /v2/…            the former page addresses: redirect (308) to the
+                             page at the root, keeping the query string
+                             (deprecated, removed in 1.0.0)
   GET  /api/health          {ok, version}
   GET  /api/kb               providers (base URLs, saved relays) and their models
   POST /api/kb/relays        save a relay {name, base_url} in kb.db
@@ -18,12 +20,8 @@ Endpoints:
   POST /api/kb/import        check + store profile YAML in kb.db
   GET  /api/kb/export        your kb.db entries as YAML
   POST /api/models           list a relay's /models (connection check + model ids)
-  POST /api/audit/stream     run an audit; stream detector progress, batched
-                             per-request timing records and the final report
-                             as Server-Sent Events (text/event-stream)
   POST /api/jobs             queue an audit (any surface: chat, embedding, rerank)
-                             as a background job (same body as
-                             /api/audit/stream); it runs on whatever page is open
+                             as a background job; it runs on whatever page is open
   GET  /api/jobs             queued and running audits (and running monitors),
                              recently finished ones too, with progress
   GET  /api/jobs/{id}/events the job's events as SSE: the log so far, then live
@@ -52,6 +50,11 @@ Endpoints:
                              (held in memory until a restart) or store them
                              encrypted; moves the keys along
 
+Public API (docs/STABILITY.md#surface-http-api): the same handlers also answer
+under /api/v1/ (POST /jobs, GET /jobs/{id}, GET /jobs/{id}/events, GET /history,
+GET /history/{id}); responses there carry `X-Ekte-API: v1`. Every other /api/
+response carries `X-Ekte-API: internal`.
+
 The audit runs in-process with the same `run_audit` the CLI uses; a progress
 callback pushes per-detector events into a queue the SSE generator drains. The
 final report is the model's own redacted `model_dump` (API key fingerprinted,
@@ -59,8 +62,7 @@ relay text scrubbed), so nothing secret crosses to the browser.
 
 Every audit runs as a job (ekte/web/jobs.py): audits of the same relay are
 queued one after another so they never skew each other's measurements;
-different relays run in parallel. /api/audit/stream ties its job to the
-stream (closing the page stops it); /api/jobs detaches it from the page.
+different relays run in parallel. A job is detached from the page that queued it.
 """
 
 from __future__ import annotations
@@ -80,7 +82,6 @@ from typing import Any
 # (CLI `serve`) or by the web tests, both of which handle a missing dependency.
 from fastapi import FastAPI, Request
 from fastapi.responses import (
-    HTMLResponse,
     JSONResponse,
     RedirectResponse,
     Response,
@@ -115,53 +116,47 @@ from ekte.web.caching import (
 from ekte.web.security import LocalOnlyMiddleware
 
 _STATIC = Path(__file__).parent / "static"
-_V2 = _STATIC / "v2"
+_STATIC_UI = _STATIC / "v2"  # the pages and their assets, served at / and /static/
+
+# Removal version of the compatibility redirects below (docs/STABILITY.md).
+_REMOVED_IN = "1.0.0"
+_DEPRECATION_WARNING = (
+    '299 ekte "this address is deprecated and will stop redirecting in ekte ' + _REMOVED_IN + '"'
+)
 
 # The classic UI was removed: its addresses (bookmarks, old links) redirect to
-# their v2 pages, keeping the query string (e.g. ?rerun=<id>). The console had
-# no v2 counterpart; the audit page took over its advanced options.
+# the matching page, keeping the query string (e.g. ?rerun=<id>). The console
+# had no counterpart; the audit page took over its advanced options. (/, /history
+# and /watches are pages again, at the same addresses.) Deprecated: removed in
+# 1.0.0 (#26).
 _CLASSIC_REDIRECTS: dict[str, str] = {
-    "/": "/v2/",
-    "/history": "/v2/history",
-    "/watches": "/v2/watches",
-    # v2 has no Tools page: embedding and rerank audits start on the audit page
-    # through its endpoint-type selector.
-    "/tools": "/v2/?surface=embedding",
-    "/console": "/v2/",
+    # there is no Tools page: embedding and rerank audits start on the audit
+    # page through its endpoint-type selector.
+    "/tools": "/?surface=embedding",
+    "/console": "/",
 }
-_V2_FILES: dict[str, str] = {"/": "index.html", "/history": "history.html", "/watches": "watches.html"}
 
-# /v2/tools was retired for the audit page's endpoint-type selector. Old links
-# and bookmarks keep working: the old page picked its rerank tab by the URL
-# fragment (#rerank), which never reaches the server, so this tiny page reads
-# location.hash and forwards to /v2/?surface=..., passing any ?rerun=<id> on.
-# Without JavaScript the meta refresh goes to the embedding surface.
-_V2_TOOLS_REDIRECT = """<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="0; url=/v2/?surface=embedding">
-<title>ekte: embedding and rerank audits moved to the audit page</title>
-<script>
-(function () {
-  var rerun = new URLSearchParams(location.search).get("rerun");
-  var to = "/v2/?surface=" + (location.hash === "#rerank" ? "rerank" : "embedding");
-  if (rerun) to += "&rerun=" + encodeURIComponent(rerun);
-  location.replace(to);
-})();
-</script>
-</head>
-<body>
-<main>
-<h1>Embedding and rerank audits moved</h1>
-<p>They now start on the audit page, through its endpoint-type selector.</p>
-<noscript><p><a href="/v2/?surface=embedding">Embedding audit</a> ·
-<a href="/v2/?surface=rerank">Rerank audit</a></p></noscript>
-</main>
-</body>
-</html>
-"""
+# The pages, served at the root, and the file each one is.
+_PAGE_FILES: dict[str, str] = {
+    "/": "index.html",
+    "/history": "history.html",
+    "/watches": "watches.html",
+    "/kb": "kb.html",
+    "/analytics": "analytics.html",
+    "/accessibility": "accessibility.html",
+}
+
+# Until 1.0.0 (#28) the pages were served under /v2/. Those addresses redirect
+# permanently to the page at the root, keeping the query string. /v2/tools was
+# retired earlier for the audit page's endpoint-type selector; the old page
+# picked its rerank tab by the URL fragment (#rerank), which the browser keeps
+# across the redirect and the audit page reads.
+_V2_REDIRECTS: dict[str, str] = {
+    "/v2": "/",
+    "/v2/": "/",
+    **{"/v2" + path: path for path in _PAGE_FILES if path != "/"},
+    "/v2/tools": "/?surface=embedding",
+}
 
 # How often the watch scheduler wakes to look for due re-audits. The interval an
 # individual watch runs on is its own (much larger) interval_sec; this is just
@@ -172,17 +167,17 @@ _SCHEDULER_TICK_SEC = 30.0
 _REQUEST_BATCH_SEC = 0.25
 
 
-def _classic_redirect(request: Request, path: str) -> Response:
-    """The v2 page that replaced a classic one, with the request's query string."""
-    to = _CLASSIC_REDIRECTS[path]
+def _deprecated_redirect(request: Request, target: str) -> Response:
+    """A permanent redirect to ``target`` for an address that is deprecated,
+    with the request's query string."""
     query = request.url.query
     if query:
-        to += ("&" if "?" in to else "?") + query
-    return RedirectResponse(to, status_code=308)
+        target += ("&" if "?" in target else "?") + query
+    return RedirectResponse(target, status_code=308, headers={"Warning": _DEPRECATION_WARNING})
 
 
-def _v2_page(request: Request, path: str) -> Response:
-    return html_page(_V2 / _V2_FILES[path], request.scope)
+def _page(request: Request, path: str) -> Response:
+    return html_page(_STATIC_UI / _PAGE_FILES[path], request.scope)
 
 
 def check_surface_dimensions(surface: str, dimensions: list[str]) -> None:
@@ -700,7 +695,7 @@ def _log_secret_key(status: dict[str, Any]) -> None:
             status.get("source"), status.get("fingerprint"),
         )
     elif state == "locked":
-        _log.warning("master key locked: monitors are paused until it is entered at /v2/watches")
+        _log.warning("master key locked: monitors are paused until it is entered at /watches")
     elif state == "env_mismatch":
         _log.error("master key: %s", status.get("error"))
     if "legacy_key_file" in status.get("warnings", []):
@@ -758,54 +753,29 @@ def create_app() -> FastAPI:
     async def health() -> Any:
         return {"ok": True, "version": __version__, "name": "ekte"}
 
-    @app.get("/")
-    async def index(request: Request) -> Any:
-        return _classic_redirect(request, "/")
-
-    @app.get("/console")
-    async def console(request: Request) -> Any:
-        return _classic_redirect(request, "/console")
-
     # ----- the web UI ---------------------------------------------------- #
-    @app.get("/v2")
-    async def v2_bare() -> Any:
-        return RedirectResponse("/v2/", status_code=307)
+    def _add_page(path: str) -> None:
+        async def page(request: Request) -> Any:
+            return _page(request, path)
 
-    @app.get("/v2/")
-    async def v2_index(request: Request) -> Any:
-        return _v2_page(request, "/")
+        app.get(path, name="page" + (path.replace("/", "-") or "-audit"))(page)
 
-    @app.get("/v2/history")
-    async def v2_history(request: Request) -> Any:
-        return _v2_page(request, "/history")
+    for _path in _PAGE_FILES:
+        _add_page(_path)
 
-    @app.get("/v2/watches")
-    async def v2_watches(request: Request) -> Any:
-        return _v2_page(request, "/watches")
+    # Deprecated addresses, removed in 1.0.0: the classic UI's and the /v2/ ones.
+    def _add_redirect(path: str, target: str) -> None:
+        async def redirect(request: Request) -> Any:
+            return _deprecated_redirect(request, target)
 
-    @app.get("/v2/tools")
-    async def v2_tools() -> Any:
-        # Retired (see _V2_TOOLS_REDIRECT).
-        return HTMLResponse(_V2_TOOLS_REDIRECT, headers={"Cache-Control": "no-store"})
+        app.get(path, name="redirect" + path.replace("/", "-"))(redirect)
 
-    @app.get("/v2/kb")
-    async def v2_kb(request: Request) -> Any:
-        return html_page(_V2 / "kb.html", request.scope)
+    for _path, _target in {**_CLASSIC_REDIRECTS, **_V2_REDIRECTS}.items():
+        _add_redirect(_path, _target)
 
-    @app.get("/v2/analytics")
-    async def v2_analytics(request: Request) -> Any:
-        # Charts and leaderboards over the run history (/api/analytics/*).
-        return html_page(_V2 / "analytics.html", request.scope)
-
-    @app.get("/v2/accessibility")
-    async def v2_accessibility(request: Request) -> Any:
-        # BITV 2.0 / EN 301 549 conformance report (renders
-        # /v2/static/bitv-report.json, see docs/ACCESSIBILITY.md).
-        return html_page(_V2 / "accessibility.html", request.scope)
-
-    # v2 stylesheets / scripts, e.g. /v2/static/ekte.css
+    # stylesheets / scripts, e.g. /static/ekte.css
     # `?v=<hash>` URLs (written into pages by html_page) are cached immutably.
-    app.mount("/v2/static", CachedStaticFiles(directory=str(_V2)), name="v2-static")
+    app.mount("/static", CachedStaticFiles(directory=str(_STATIC_UI)), name="static")
     root_assets = CachedStaticFiles(directory=str(_STATIC))
 
     @app.get("/i18n.js")
@@ -1132,14 +1102,10 @@ def create_app() -> FastAPI:
         urls = [target.base_url, baseline.base_url if baseline is not None else None]
         return jobs.manager.submit(summary, urls, run)
 
-    def _job_stream(job: jobs.Job, cancel_on_disconnect: bool = False) -> StreamingResponse:
+    def _job_stream(job: jobs.Job) -> StreamingResponse:
         async def gen() -> AsyncIterator[str]:
-            try:
-                async for chunk in jobs.stream(job, _REQUEST_BATCH_SEC):
-                    yield chunk
-            finally:
-                if cancel_on_disconnect:
-                    jobs.manager.cancel(job.id)
+            async for chunk in jobs.stream(job, _REQUEST_BATCH_SEC):
+                yield chunk
 
         return StreamingResponse(
             gen(),
@@ -1147,24 +1113,8 @@ def create_app() -> FastAPI:
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
-    @app.post("/api/audit/stream")
-    async def audit_stream(request: Request) -> Any:
-        # An audit as one request: a job that lives as long as this stream does
-        # (closing the connection stops it), queued behind audits of the same
-        # relay. The web UI uses /api/jobs instead, so an audit outlives the page.
-        try:
-            job = _audit_job(await request.json())
-        except ConfigError as exc:
-            msg = str(exc)  # bind now: `exc` is cleared when the except block exits
-
-            async def err_stream() -> AsyncIterator[str]:
-                yield jobs.sse({"type": "error", "message": msg})
-                yield jobs.sse({"type": "done"})
-
-            return StreamingResponse(err_stream(), media_type="text/event-stream")
-        return _job_stream(job, cancel_on_disconnect=True)
-
     # ----- Background audits (v2): run on, whatever page is open ----------- #
+    @app.post("/api/v1/jobs")
     @app.post("/api/jobs")
     async def jobs_create(request: Request) -> Any:
         try:
@@ -1202,6 +1152,7 @@ def create_app() -> FastAPI:
             })
         return JSONResponse({"jobs": out, "max_parallel": jobs.gate.limit})
 
+    @app.get("/api/v1/jobs/{job_id}")
     @app.get("/api/jobs/{job_id}")
     async def jobs_get(job_id: str) -> Any:
         job = _find_job(job_id)
@@ -1209,6 +1160,7 @@ def create_app() -> FastAPI:
             return JSONResponse({"error": "not found"}, status_code=404)
         return JSONResponse(job.info())
 
+    @app.get("/api/v1/jobs/{job_id}/events")
     @app.get("/api/jobs/{job_id}/events")
     async def jobs_events(job_id: str) -> Any:
         # Replays the job's whole log, then follows it live. Disconnecting
@@ -1275,21 +1227,22 @@ def create_app() -> FastAPI:
         return Response(body, media_type=media[format],
                         headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
-    @app.get("/history")
-    async def history_page(request: Request) -> Any:
-        return _classic_redirect(request, "/history")
-
+    @app.get("/api/v1/history")
     @app.get("/api/history")
     def history_list(limit: int = 50, perf: bool = False) -> Any:
         from ekte.web import history
 
         return JSONResponse(history.recent(limit, perf=perf))
 
-    @app.get("/api/history/trend")
-    def history_trend(base_url: str, claimed_model: str, limit: int = 30) -> Any:
+    @app.get("/api/v1/history/{rid}")
+    def history_get_v1(rid: int) -> Any:
+        """The public form of ``GET /api/history/{rid}``: a saved report as stored."""
         from ekte.web import history
 
-        return JSONResponse(history.trend(base_url, claimed_model, limit))
+        report = history.get(rid)
+        if report is None:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        return JSONResponse(report)
 
     @app.get("/api/history/status")
     def history_status() -> Any:
@@ -1407,10 +1360,6 @@ def create_app() -> FastAPI:
         return _analytics(analytics.integrity, dict(request.query_params))
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
-    @app.get("/watches")
-    async def watches_page(request: Request) -> Any:
-        return _classic_redirect(request, "/watches")
-
     def _watch_rows() -> list[dict[str, Any]]:
         """The stored watches with their schedule floor, protocol and KB drift.
 
@@ -1855,68 +1804,6 @@ def create_app() -> FastAPI:
 
         return await asyncio.to_thread(switch)
 
-    # ----- Tools: embedding & rerank auditors (non-chat surface) ---------- #
-    @app.get("/tools")
-    async def tools_page(request: Request) -> Any:
-        return _classic_redirect(request, "/tools")
-
-    @app.post("/api/embed")
-    async def embed_audit(request: Request) -> Any:
-        # Lazy import: the embed auditor pulls in the client stack only on demand.
-        from ekte.embed_audit import run_embedding_audit, tool_verdict
-
-        body = await request.json()
-        try:
-            target = build_target(
-                kind="target",
-                name=body.get("name") or "embed",
-                base_url=body.get("base_url"),
-                api_key=body.get("api_key"),
-                model=body.get("model"),
-                claimed_model=body.get("claimed_model") or None,
-                declared_provider=body.get("declared_provider") or None,
-                api=validate_api(body.get("api")),
-            )
-            suite = validate_suite(str(body.get("suite") or "standard"))
-        except ConfigError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=400)
-
-        # An explicit claimed dimension wins; otherwise (0) the runner takes the
-        # claimed (or requested) model's from the KB, and records the observed
-        # dimension when the KB does not know it.
-        claimed_dimensions = _coerce_int(body.get("claimed_dimensions"))
-        # Runs the embedding surface through the runner and saves it to history;
-        # the verdict is redacted (api_key is fingerprinted in `target`).
-        report, report_id = await run_embedding_audit(
-            target, claimed_dimensions=max(0, claimed_dimensions), suite=suite
-        )
-        return JSONResponse(tool_verdict(report, report_id))
-
-    @app.post("/api/rerank")
-    async def rerank_audit(request: Request) -> Any:
-        from ekte.embed_audit import run_rerank_audit, tool_verdict
-
-        body = await request.json()
-        try:
-            target = build_target(
-                kind="target",
-                name=body.get("name") or "rerank",
-                base_url=body.get("base_url"),
-                api_key=body.get("api_key"),
-                model=body.get("model"),
-                claimed_model=body.get("claimed_model") or None,
-                declared_provider=body.get("declared_provider") or None,
-                api=validate_api(body.get("api")),
-            )
-            suite = validate_suite(str(body.get("suite") or "standard"))
-        except ConfigError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=400)
-
-        # Runs the rerank surface through the runner and saves it to history;
-        # the verdict keeps the old shape (risk_level, score, findings, redacted
-        # target) plus report_id, surface, suite, rating and headline.
-        report, report_id = await run_rerank_audit(target, suite=suite)
-        return JSONResponse(tool_verdict(report, report_id))
 
     # Static assets (e.g. future JS/CSS split-outs) under /assets.
     assets = _STATIC / "assets"
@@ -1928,8 +1815,8 @@ def create_app() -> FastAPI:
     async def spa_fallback(request: Request, exc: Any) -> Any:  # noqa: ARG001
         if request.url.path.startswith("/api/"):
             return JSONResponse({"error": "not found"}, status_code=404)
-        if request.url.path.startswith("/v2/static/"):
+        if request.url.path.startswith(("/static/", "/v2/static/")):
             return Response("not found", status_code=404, media_type="text/plain")
-        return html_page(_V2 / "index.html", request.scope)
+        return html_page(_STATIC_UI / "index.html", request.scope)
 
     return app
