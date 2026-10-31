@@ -197,7 +197,7 @@ Dockerfile             Web 界面镜像
 `FingerprintProbe`），加载并合并各层（`loader.py`：内置 YAML → `EKTE_KB_DIR`/`--kb-dir`
 → 用户的 `kb.db`），保存用户条目（`store.py`），检查并导入 YAML（`importer.py`），
 生成供外部助手使用的调研提示词（`research.py`），并为一次运行所用的画像拍快照（`snapshot.py`）。
-模型 id 依次按精确 id、别名或规范化名称解析，并由声明的厂商缩小范围。模糊匹配取所声称 id
+模型 id 依次按精确 id、别名或规范化名称解析，并由声称的厂商缩小范围。模糊匹配取所声称 id
 中包含的最长知识库名称（快照或带修饰的 id），除非其余部分指向另一个档位或变体（`-mini`、
 `-lite`、`-image` 等）；截断形式的 id 只有在恰好一个模型的名称以它开头时才会解析，因此像
 `gpt-4` 这样有歧义的 id 不会匹配任何画像，而不是被猜成某个档位。每份报告都会记录 id 是如何
@@ -430,8 +430,8 @@ Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `finge
 
 ### 保持知识库最新
 
-提供商和模型的数据过时很快，而每个结论都依赖这些数据，因此 ekte 会如实说明数据的新旧。
-每个内置的提供商配置都带有 `last_verified`，即其数据最近一次对照提供商文档核实的日期。
+厂商和模型的数据过时很快，而每个结论都依赖这些数据，因此 ekte 会如实说明数据的新旧。
+每个内置的厂商配置都带有 `last_verified`，即其数据最近一次对照厂商文档核实的日期。
 其中最早的日期就是**知识库日期**：它保存在每份报告中（`knowledge.kb_date`），由 `ekte kb`
 以及 Markdown、HTML、PDF 报告显示，并由 `ekte kb --json` 输出。若它早于
 `STALE_AFTER_DAYS`（180 天，位于 `ekte/knowledge/freshness.py`），报告会带上一条警告，
@@ -439,14 +439,14 @@ Pro 档位的知识检查、推理陷阱）应放在这些模型自己的 `finge
 
 更新流程：
 
-- **来源。** 只使用提供商的官方页面：模型列表与模型卡、价格与限制页面、弃用与下线公告、
-  发布说明。请在拉取请求中附上链接。
-- **负责人。** 维护者。任何人都可以通过议题表单“Knowledge base update”（提供商、模型 ID、
-  变更内容、来源链接及其日期）或拉取请求提出修改。
+- **来源。** 只使用厂商的官方页面：模型列表与模型卡、价格与限制页面、弃用与下线公告、
+  发布说明。请在Pull Request中附上链接。
+- **负责人。** 维护者。任何人都可以通过议题表单「Knowledge base update」（厂商、模型 ID、
+  变更内容、来源链接及其日期）或Pull Request提出修改。
 - **频率。** 至少在每个次版本发布前更新一次；出现重大模型变化（旗舰模型发布、模型下线、
   模型 ID 改名）时，另发补丁版本。发布检查清单包含这一步。
-- **评审。** 修改 `ekte/knowledge/data/*.yaml` 的拉取请求，每个改动的值都要有引用的来源并经过
-  第二人复核，且 `ekte kb-import --check` 必须通过。只有核对完某个提供商的整个文件之后，
+- **审查。** 修改 `ekte/knowledge/data/*.yaml` 的Pull Request，每个改动的值都要有引用的来源并经过
+  第二人复核，且 `ekte kb-import --check` 必须通过。只有核对完某个厂商的整个文件之后，
   才可更新它的 `last_verified`，而不是只核对改动的那几行。
 - **更新日志。** 内置数据的每次改动都要写入 `CHANGELOG.md`，因为它可能改变结论。
 
@@ -622,13 +622,13 @@ docker run --rm -p 127.0.0.1:8000:8000 -v ekte-data:/data ekte
 
 打标签 `vX.Y.ZrcN`（`pyproject.toml` 中 `version = "X.Y.ZrcN"`）。PyPI 将其视为
 PEP 440 预发布版本：`pip install ekte` 会忽略它，`pip install --pre ekte` 可以找到；
-GitHub 会把该发布标记为“Pre-release”。变更日志中使用 `[X.Y.ZrcN]`、`[X.Y.Z]` 或
+GitHub 会把该发布标记为「Pre-release」。变更日志中使用 `[X.Y.ZrcN]`、`[X.Y.Z]` 或
 `[Unreleased]` 章节均可。
 
 ### 发布中途失败时
 
 PyPI 从不接受同一文件两次，版本号也不能复用；关键看运行进行到了哪一步
-（Actions，“Release to PyPI”）：
+（Actions，「Release to PyPI」）：
 
 - **某项检查失败（verify 作业）。** 未发布任何内容。修复原因（版本、变更日志、
   CI），在本地和 origin 删除标签（`git push origin :refs/tags/vX.Y.Z`），然后给
