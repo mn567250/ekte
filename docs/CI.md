@@ -114,7 +114,9 @@ jobs:
 
 Pin the action to a **release tag** (`mn567250/ekte@vX.Y.Z`) rather than a moving
 branch. This keeps audits reproducible and protects you from unexpected changes
-to the action. For fully reproducible CLI behavior, also pin the `version` input
+to the action. A tag can be moved; for the strictest supply-chain protection pin the
+release's full commit SHA with the version in a comment
+(`mn567250/ekte@<full-commit-sha> # vX.Y.Z`) and let Dependabot keep it current. For fully reproducible CLI behavior, also pin the `version` input
 to an exact release, e.g. `version: ekte==X.Y.Z`.
 
 A ready-to-copy scheduled example lives at

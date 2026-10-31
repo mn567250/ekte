@@ -22,6 +22,21 @@ ekte has three eras:
 
 ### Changed
 
+- **Hardened CI and release workflows.** Every third-party action is pinned to a
+  full commit SHA with its version in a comment (Dependabot keeps the pins
+  current, with a 7-day cooldown), on versions that run on the supported Node.js
+  runtime. Workflows declare least-privilege `permissions` (only the PyPI publish
+  job gets `id-token: write`), checkouts no longer persist credentials, jobs have
+  timeouts, and CI/security/docs runs are grouped by concurrency (PR runs are
+  cancelled when superseded; releases never are). The release publish and GitHub
+  Release jobs are limited to this repository. CI now also runs on any
+  `*/integration` branch, not only a fixed list. `action.yml` and the example
+  workflow pass inputs and outputs through environment variables instead of
+  splicing them into shell scripts. A new `workflow lint (zizmor)` CI job checks
+  all workflows and `action.yml` for script injection and similar mistakes, and
+  `tests/test_workflow_hardening.py` enforces the pinning and permission rules
+  offline.
+
 - **No vendored third-party files in the source distribution.** The sdist still
   contains `tests/`, but not `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0);
   the accessibility tests that need it skip with a clear reason when it is

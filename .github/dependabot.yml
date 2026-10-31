@@ -9,6 +9,8 @@ updates:
       day: "monday"
     versioning-strategy: lockfile-only
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
     groups:
       python-dependencies:
         patterns: ["*"]
@@ -17,6 +19,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    # a new release waits a week before it is proposed (the pins are SHAs, so
+    # every update is a reviewed change)
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
         patterns: ["*"]

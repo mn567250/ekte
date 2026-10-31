@@ -219,7 +219,11 @@ Public. The inputs and outputs of [`action.yml`](../action.yml), documented in
 - Outputs: `risk`, `score`, `rating`.
 
 The action runs the ekte version selected by the `version` input; its behaviour
-follows this policy.
+follows this policy. The actions the composite action and the repository's
+workflows use internally are pinned to full commit SHAs and checked by a
+workflow linter in CI; that hardening is not part of the public surface and can
+change in any release. The inputs reach the action's shell scripts only through
+environment variables, so their values are never interpreted as shell code.
 
 <a id="surface-data"></a>
 ## Data directory and databases
