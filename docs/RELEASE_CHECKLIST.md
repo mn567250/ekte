@@ -26,8 +26,8 @@ fails; everything else depends on you. Process and recovery:
       checks the first three).
 - [ ] The documented supported systems (README, `docs/`) are still true; a new or
       dropped Python version or operating system is in the changelog.
-- [ ] CI is green on the commit you will tag (tests on every supported Python,
-      lint, type check, build).
+- [ ] CI is green on the commit you will tag (tests on every supported Python on Linux and on the oldest
+      and newest on macOS and Windows, lint, type check, build).
 
 ## Knowledge base
 

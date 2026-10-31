@@ -66,7 +66,7 @@ standarden i tankene ved enhver endring.
 
 ## Utviklingsoppsett
 
-Krever Python 3.11+. Node.js er valgfritt: testene av nettleser-JavaScript kjører
+Krever Python 3.11+. Linux, macOS og Windows testes i CI; tester som bare gir mening på POSIX hoppes over på Windows med en uttrykkelig grunn (`skipif(sys.platform == "win32", reason=...)`). Bruk `pathlib`, oppgi `encoding="utf-8"` for tekst-I/O og skriv aldri `/tmp` fast. Node.js er valgfritt: testene av nettleser-JavaScript kjører
 under `node` og hoppes over uten det.
 
 ```bash

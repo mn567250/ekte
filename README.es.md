@@ -67,7 +67,7 @@ ekte convierte «aquí algo no cuadra» en un informe reproducible.
 
 ## Instalación
 
-Requiere Python 3.11+. Cualquiera de las opciones siguientes proporciona el comando `ekte`.
+Requiere Python 3.11+. Funciona en Linux, macOS y Windows (la imagen de Docker es Linux); en Windows los modos de solo propietario del directorio de datos no tienen efecto, véase [Sistemas operativos compatibles](docs/STABILITY.md#os). Cualquiera de las opciones siguientes proporciona el comando `ekte`.
 
 ### Con pip
 

@@ -68,7 +68,7 @@ ekte transforme un « quelque chose cloche » en rapport reproductible.
 
 ## Installation
 
-Nécessite Python 3.11+. Chacune des options ci-dessous fournit la commande `ekte`.
+Nécessite Python 3.11+. Fonctionne sous Linux, macOS et Windows (l'image Docker est Linux) ; sous Windows, les modes réservés au propriétaire du répertoire de données n'ont aucun effet, voir [Systèmes d'exploitation pris en charge](docs/STABILITY.md#os). Chacune des options ci-dessous fournit la commande `ekte`.
 
 ### Avec pip
 

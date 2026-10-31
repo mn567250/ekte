@@ -22,6 +22,13 @@ ekte has three eras:
 
 ### Changed
 
+- **Supported operating systems: Linux, macOS and Windows.** The CI test job now
+  also runs on macOS and Windows (oldest and newest supported Python); the
+  Docker image stays Linux. `docs/STABILITY.md#os` lists the differences
+  (owner-only modes have no effect on Windows). On Windows, ekte now says so on
+  standard error when it creates the data directory. Tests that depend on POSIX
+  file modes are skipped on Windows with a reason, and the home-directory tests
+  also set `USERPROFILE`.
 - **No vendored third-party files in the source distribution.** The sdist still
   contains `tests/`, but not `tests/a11y/vendor/axe.min.js` (axe-core, MPL-2.0);
   the accessibility tests that need it skip with a clear reason when it is

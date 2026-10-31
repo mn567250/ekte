@@ -119,10 +119,29 @@ is **3.11, 3.12, 3.13 and 3.14**.
 ## Supported operating systems
 
 **Linux, macOS and Windows** are supported and tested in CI. The **Docker image
-is Linux** (see [DOCKER.md](DOCKER.md)). Known differences between the systems
-(file permissions, paths, PDF support) are documented by #29. A bug that occurs
-on one of these systems is a bug, not a limitation. Dropping an operating system
-needs a major release.
+is Linux** (see [DOCKER.md](DOCKER.md)). A bug that occurs on one of these systems
+is a bug, not a limitation. Dropping an operating system needs a major release.
+
+- **CI.** The full test suite runs on Linux on every supported Python version. On
+  macOS and Windows it runs on the oldest and the newest supported Python (today
+  3.11 and 3.14): the Python versions behave the same across systems, so the
+  extremes find the platform problems at a third of the cost. Tests that only
+  make sense on POSIX are skipped on Windows with an explicit reason.
+- **Owner-only data directory.** On Linux and macOS ekte creates the data
+  directory with mode `0700` and the database files with `0600`. Windows ignores
+  these modes: the directory inherits the permissions of its parent folder, which
+  for the default `%USERPROFILE%\.ekte` is your account, administrators and the
+  system. ekte says so on standard error when it creates the directory there. Put
+  `EKTE_DATA_DIR` inside your user profile and do not share it.
+- **Master key.** The master key is never stored in the data directory (see
+  `ekte secret`). It comes from `EKTE_SECRET_KEY` or is entered by the user, on
+  every system. A legacy `secret.key` file is protected only where file modes work.
+- **Local-only server.** `ekte serve` binds to loopback by default on every
+  system; this does not depend on the operating system.
+- **Paths and home directory.** The default data directory is `~/.ekte`
+  (`%USERPROFILE%\.ekte` on Windows). Text files are read and written as UTF-8.
+- **PDF reports.** They use a pure Python library and need no system libraries on
+  any of the three systems.
 
 <a id="surface-cli"></a>
 ## CLI commands, options and output formats

@@ -66,7 +66,7 @@ possíveis. Tenha essa fasquia presente em qualquer alteração.
 
 ## Ambiente de desenvolvimento
 
-Requer Python 3.11+. O Node.js é opcional: os testes do JavaScript do navegador
+Requer Python 3.11+. Linux, macOS e Windows são testados na CI; os testes que só fazem sentido em POSIX são ignorados no Windows com um motivo explícito (`skipif(sys.platform == "win32", reason=...)`). Use `pathlib`, passe `encoding="utf-8"` na E/S de texto e nunca escreva `/tmp` fixo. O Node.js é opcional: os testes do JavaScript do navegador
 correm com `node` e são ignorados sem ele.
 
 ```bash

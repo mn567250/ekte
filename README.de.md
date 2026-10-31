@@ -69,7 +69,7 @@ ekte macht aus „da stimmt doch was nicht“ einen reproduzierbaren Bericht.
 
 ## Installation
 
-Erfordert Python 3.11+. Jede der folgenden Varianten stellt den Befehl `ekte` bereit.
+Erfordert Python 3.11+. Läuft unter Linux, macOS und Windows (das Docker-Image ist Linux); unter Windows haben die Nur-Besitzer-Modi des Datenverzeichnisses keine Wirkung, siehe [Unterstützte Betriebssysteme](docs/STABILITY.md#os). Jede der folgenden Varianten stellt den Befehl `ekte` bereit.
 
 ### Mit pip
 

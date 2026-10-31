@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 import stat
+import sys
 
+import pytest
 from typer.testing import CliRunner
 
 from ekte import datadir
@@ -14,6 +16,7 @@ from ekte.cli import app
 def test_default_is_home_dot_ekte(monkeypatch, tmp_path):
     monkeypatch.delenv("EKTE_DATA_DIR", raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Path.home() on Windows
     result = CliRunner().invoke(app, ["data-dir"])
     assert result.exit_code == 0
     assert result.output.strip() == str(tmp_path / ".ekte")
@@ -35,6 +38,7 @@ def test_relative_path_is_made_absolute(monkeypatch, tmp_path):
     assert result.output.strip() == str(tmp_path.resolve())
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX file modes have no effect on Windows")
 def test_existing_folder_keeps_its_mode(monkeypatch, tmp_path):
     tmp_path.chmod(0o755)
     monkeypatch.setenv("EKTE_DATA_DIR", "/unused")
@@ -45,3 +49,20 @@ def test_existing_folder_keeps_its_mode(monkeypatch, tmp_path):
     db = tmp_path / "history.db"
     assert db.is_file()
     assert stat.S_IMODE(db.stat().st_mode) == 0o600
+
+
+def test_unprotected_systems_say_so_when_creating_the_directory(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path / "new"))
+    monkeypatch.setattr(datadir, "_modes_enforced", lambda: False)
+    monkeypatch.setattr(datadir, "_warned_unprotected", set())
+    datadir.ensure_data_dir()
+    datadir.ensure_data_dir()
+    assert capsys.readouterr().err.count("not restricted to your account") == 1
+
+
+def test_posix_systems_do_not_warn(monkeypatch, tmp_path, capsys):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path / "new"))
+    monkeypatch.setattr(datadir, "_modes_enforced", lambda: True)
+    monkeypatch.setattr(datadir, "_warned_unprotected", set())
+    datadir.ensure_data_dir()
+    assert capsys.readouterr().err == ""

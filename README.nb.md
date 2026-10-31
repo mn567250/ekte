@@ -67,7 +67,7 @@ ekte gjør «dette føles feil» om til en reproduserbar rapport.
 
 ## Installasjon
 
-Krever Python 3.11+. Alle alternativene nedenfor gir deg kommandoen `ekte`.
+Krever Python 3.11+. Kjører på Linux, macOS og Windows (Docker-bildet er Linux); på Windows har eier-modusene til datamappen ingen virkning, se [Støttede operativsystemer](docs/STABILITY.md#os). Alle alternativene nedenfor gir deg kommandoen `ekte`.
 
 ### Med pip
 
