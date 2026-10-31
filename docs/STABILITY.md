@@ -159,17 +159,33 @@ Public. The commands are `ekte init`, `check`, `compare`, `models`, `kb`,
 - Human-readable console output (tables, colours, wording) is internal and may
   change in any release. Scripts should read JSON and the exit code.
 - Short aliases (`-c`, `-p`, ...) are as stable as the long option.
-- Consistency changes from the command line review (#25) follow the deprecation
-  policy.
+- Consistency rules (command line review, #25): the same option means the same
+  thing in every command (`--json`, `--fail-on-risk`, `--claimed-model`, `--format`
+  = report file format), long options are lowercase words joined by hyphens, and
+  short options exist only for `-c`, `-H`, `-D` and `-p`. Every command and option
+  has a help text. The full reference is [CLI.md](CLI.md), generated from the
+  `--help` declarations; a test fails when it is out of date.
+- With `--json` (and `--compact`) stdout carries only JSON; messages, progress and
+  warnings go to stderr. `--json` is available on every command that reports a
+  result (`watch --json` prints one JSON object per cycle).
+- Renamed options keep working with a deprecation warning on stderr that names the
+  replacement and the removal version: `ekte audio --format` is now
+  `--audio-format`, and `ekte image|audio --save` is now `--save-to` (both removed
+  in 1.0.0).
 
 <a id="surface-exit-codes"></a>
 ## Exit codes
 
-Public. Today: **0** success (any gate passed); **1** a gate failed (the risk is
-at or above `--fail-on-risk`, or the score is below `--fail-under`); **2** a usage
-or configuration error (reported as JSON in `--json` and `--compact` mode).
-Unexpected crashes exit with Python's default non-zero code. The complete table
-per command is finalized by #25.
+Public. Every command follows this one table (also in [CLI.md](CLI.md)); a test
+pins each code.
+
+| Code | Meaning | When |
+|---|---|---|
+| 0 | success | The command succeeded; any gate passed. |
+| 1 | gate or check failed | The risk is at or above `--fail-on-risk`, the score is below `--fail-under`, `kb-import` rejected the file, or `config migrate --check` found an outdated file. |
+| 2 | usage or configuration error | Invalid option, value or configuration file, or a missing extra or master key. In `--json` and `--compact` mode an `{"error": {...}}` object is printed on stdout. |
+| 3 | endpoint failure | `ekte models` could not list the models: the endpoint is unreachable or answered with an error. (Before 0.32 it exited 1.) |
+| 4 | internal error | An unexpected error in ekte itself; the traceback is on stderr. (Before 0.32 an unexpected crash exited 1.) |
 
 <a id="surface-config"></a>
 ## Configuration file

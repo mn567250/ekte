@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ekte.cli import app
+from ekte.cli import run
 
 if __name__ == "__main__":
-    app()
+    run()

@@ -547,7 +547,7 @@ ekte image --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 # 声称是 tts-1-hd 的中转返回的是时长随输入增长的真实音频吗
 # （而不是固定的占位音频，也不是伪装成音频的 HTML/JSON）？
 ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
-  --model tts-1-hd --voice alloy --format wav --save clip.wav
+  --model tts-1-hd --voice alloy --audio-format wav --save-to clip.wav
 ```
 
 `image` 检查连通性、格式有效且可解码、**尺寸匹配**（解码出的宽 × 高 vs 请求尺寸和声称模型的

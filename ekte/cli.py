@@ -76,6 +76,47 @@ _NO_USER_KB_HELP = (
     "packaged profiles and EKTE_KB_DIR still apply. Env: EKTE_NO_USER_KB=1."
 )
 
+# Exit codes: the one table every command follows (docs/STABILITY.md#surface-exit-codes).
+EXIT_OK = 0
+EXIT_GATE = 1  # a gate or check failed (risk/score gate, kb-import, config migrate --check)
+EXIT_USAGE = 2  # usage or configuration error
+EXIT_ENDPOINT = 3  # the endpoint could not be reached or answered with an error
+EXIT_INTERNAL = 4  # unexpected internal error (a bug)
+EXIT_CODES: dict[int, tuple[str, str]] = {
+    EXIT_OK: ("success", "The command succeeded; any gate passed."),
+    EXIT_GATE: (
+        "gate or check failed",
+        "The risk is at or above `--fail-on-risk`, the score is below `--fail-under`, "
+        "`kb-import` rejected the file, or `config migrate --check` found an outdated file.",
+    ),
+    EXIT_USAGE: (
+        "usage or configuration error",
+        "Invalid option, value or configuration file, or a missing extra or master key. "
+        "In `--json` and `--compact` mode an `{\"error\": {...}}` object is printed on stdout.",
+    ),
+    EXIT_ENDPOINT: (
+        "endpoint failure",
+        "`ekte models` could not list the models: the endpoint is unreachable or "
+        "answered with an error.",
+    ),
+    EXIT_INTERNAL: (
+        "internal error",
+        "An unexpected error in ekte itself; the traceback is on stderr. Please report it.",
+    ),
+}
+
+_DEPRECATED_REMOVAL = "1.0.0"
+
+
+def _deprecated_option(old: str, new: str) -> None:
+    """Warn on stderr that option ``old`` is renamed to ``new`` (stability policy)."""
+    err_console.print(
+        f"[yellow]Deprecated:[/yellow] {old} is renamed to {new}; "
+        f"{old} keeps working and will be removed in ekte {_DEPRECATED_REMOVAL}.",
+        highlight=False,
+    )
+
+
 app = typer.Typer(
     name="ekte",
     help=(
@@ -88,6 +129,7 @@ app = typer.Typer(
     ),
     no_args_is_help=True,
     add_completion=False,
+    pretty_exceptions_enable=False,
 )
 console = Console()
 err_console = Console(stderr=True)
@@ -706,9 +748,9 @@ def models_command(
                     "ok": False, "base_url": base_url, "models": [],
                     "error": {"status_code": outcome.status_code, "message": outcome.error_message},
                 }, ensure_ascii=False, indent=2))
-                raise typer.Exit(code=1)
+                raise typer.Exit(code=EXIT_ENDPOINT)
             err_console.print(f"[red]Failed:[/red] {outcome.error_message or outcome.status_code}")
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=EXIT_ENDPOINT)
         if as_json:
             print(json.dumps({"ok": True, "base_url": base_url, "count": len(ids), "models": ids},
                              ensure_ascii=False, indent=2))
@@ -813,6 +855,8 @@ def kb_import_command(
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
+        if as_json:
+            _emit_machine_error(exc)
         err_console.print(f"[red]Cannot read {path}:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     ids: list[int] = []
@@ -937,6 +981,7 @@ def watch_command(
     alert_on: Annotated[str, typer.Option("--alert-on", help="Alert when risk >= this: low | medium | high.")] = "medium",
     alert_on_regression: Annotated[bool, typer.Option("--alert-on-regression/--no-alert-on-regression", help="Also alert when risk is worse than the previous saved run for this target+model.")] = True,
     alert_lang: Annotated[str, typer.Option("--alert-lang", help="Language of the webhook alerts: " + " | ".join(_ALERT_LANGS) + ".")] = "en",
+    as_json: Annotated[bool, typer.Option("--json", help="Print one JSON object per cycle (JSON Lines) on stdout; progress goes to stderr.")] = False,
 ) -> None:
     """Continuously re-audit a relay on a schedule and alert webhooks on risk.
 
@@ -948,6 +993,7 @@ def watch_command(
     """
     import asyncio
 
+    out = err_console if as_json else console  # stdout carries only JSON in --json mode
     from ekte import notify
     from ekte.runner import run_audit
 
@@ -971,6 +1017,8 @@ def watch_command(
             )
         alert_lang = i18n.normalize(alert_lang)
     except ConfigError as exc:
+        if as_json:
+            _emit_machine_error(exc)
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
@@ -1026,22 +1074,29 @@ def watch_command(
         score = "n/a" if v.overall_score is None else f"{v.overall_score}/100"
         from datetime import datetime
         stamp = datetime.now().strftime("%H:%M:%S")
-        console.print(
+        out.print(
             f"[dim]{stamp}[/] [{style}]{label}[/] · {score} · "
             f"{target.base_url} · {target.claimed_model or target.model}"
         )
 
-        if not _should_alert(report, previous):
+        alert = _should_alert(report, previous)
+        if as_json:
+            print(json.dumps({
+                "event": "cycle", "time": datetime.now().astimezone().isoformat(timespec="seconds"),
+                "base_url": target.base_url, "claimed_model": target.claimed_model or target.model,
+                "risk_level": v.risk_level.value, "score": v.overall_score, "alert": alert,
+            }, ensure_ascii=False), flush=True)
+        if not alert:
             return
         if not webhooks:
-            console.print("  [yellow]![/] alert condition met but no --webhook configured")
+            out.print("  [yellow]![/] alert condition met but no --webhook configured")
             return
         report_dict = json.loads(report.model_dump_json())
         for url in webhooks:
             ok = await notify.send(url, report_dict, kind=webhook_kind, previous=previous, lang=alert_lang)
             mark = "[green]✓[/]" if ok else "[red]✗[/]"
             host = url.split("/")[2] if "://" in url else url
-            console.print(f"  {mark} alert → {host}")
+            out.print(f"  {mark} alert → {host}")
 
     async def _loop() -> None:
         while True:
@@ -1053,7 +1108,7 @@ def watch_command(
                 return
             await asyncio.sleep(max(1, interval))
 
-    console.print(
+    out.print(
         f"[green]ekte watch[/] · every [bold]{interval}s[/] · "
         f"alert ≥ [bold]{threshold.value}[/]"
         + ("" if not webhooks else f" · {len(webhooks)} webhook(s)")
@@ -1062,7 +1117,7 @@ def watch_command(
     try:
         asyncio.run(_loop())
     except KeyboardInterrupt:
-        console.print("\n[dim]watch stopped.[/]")
+        out.print("\n[dim]watch stopped.[/]")
         raise typer.Exit(code=0) from None
 
 
@@ -1250,6 +1305,12 @@ def _embed_exit_code(verdict: dict, fail_on_risk: str | None) -> int:
     return 0
 
 
+def _resolve_save_to(save_to: Path | None, legacy: Path | None) -> Path | None:
+    if legacy is not None:
+        _deprecated_option("--save", "--save-to")
+    return save_to if save_to is not None else legacy
+
+
 @app.command("image")
 def image_command(
     base_url: Annotated[str | None, typer.Option("--base-url", help="Image endpoint base URL, e.g. https://relay.example.com/v1.")] = None,
@@ -1258,7 +1319,8 @@ def image_command(
     claimed_model: Annotated[str | None, typer.Option("--claimed-model", help="Model the relay claims to serve, if different from --model (resolves the native sizes from the KB).")] = None,
     declared_provider: Annotated[str | None, typer.Option("--declared-provider", help="Provider hint for KB lookup (openai, qwen, ...).")] = None,
     size: Annotated[str, typer.Option("--size", help="Requested image size as WxH.")] = "1024x1024",
-    save: Annotated[Path | None, typer.Option("--save", help="Write the first generated image to this path for inspection.")] = None,
+    save_to: Annotated[Path | None, typer.Option("--save-to", help="Write the first generated image to this path for inspection.")] = None,
+    save_legacy: Annotated[Path | None, typer.Option("--save", hidden=True, help="Deprecated: use --save-to.")] = None,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
@@ -1270,6 +1332,7 @@ def image_command(
     claimed model's native sizes from the KB — the headline 货不对板 signal), the
     image count, and distinctness across two different prompts.
     """
+    save = _resolve_save_to(save_to, save_legacy)
     try:
         target = build_target(
             kind="target", name=None, base_url=base_url, api_key=api_key, model=model,
@@ -1293,7 +1356,7 @@ def image_command(
     from ekte.media_audit import audit_image
 
     async def _go() -> tuple[dict, bytes | None]:
-        # Optionally fetch one image for --save using the same client/decoding path.
+        # Optionally fetch one image for --save-to using the same client/decoding path.
         sample: bytes | None = None
         verdict = await audit_image(target, size=size, claimed_sizes=claimed_sizes)
         if save is not None:
@@ -1327,9 +1390,11 @@ def audio_command(
     claimed_model: Annotated[str | None, typer.Option("--claimed-model", help="Model the relay claims to serve, if different from --model.")] = None,
     declared_provider: Annotated[str | None, typer.Option("--declared-provider", help="Provider hint for KB lookup (openai, qwen, ...).")] = None,
     voice: Annotated[str, typer.Option("--voice", help="Voice id to request.")] = "alloy",
-    fmt: Annotated[str, typer.Option("--format", help="Requested audio format (wav|mp3|opus|flac).")] = "wav",
+    audio_format: Annotated[str | None, typer.Option("--audio-format", help="Requested audio format (wav|mp3|opus|flac; default wav).")] = None,
+    format_legacy: Annotated[str | None, typer.Option("--format", hidden=True, help="Deprecated: use --audio-format.")] = None,
     text: Annotated[str, typer.Option("--text", help="Probe sentence to synthesize.")] = "The quick brown fox jumps over the lazy dog.",
-    save: Annotated[Path | None, typer.Option("--save", help="Write a synthesized clip to this path for inspection.")] = None,
+    save_to: Annotated[Path | None, typer.Option("--save-to", help="Write a synthesized clip to this path for inspection.")] = None,
+    save_legacy: Annotated[Path | None, typer.Option("--save", hidden=True, help="Deprecated: use --save-to.")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
 ) -> None:
@@ -1340,6 +1405,10 @@ def audio_command(
     that the clip is non-trivial and its length scales with the input (WAV duration
     is decoded with the stdlib wave module), and distinctness across inputs.
     """
+    save = _resolve_save_to(save_to, save_legacy)
+    fmt = audio_format or format_legacy or "wav"
+    if format_legacy is not None:
+        _deprecated_option("--format", "--audio-format")
     try:
         target = build_target(
             kind="target", name=None, base_url=base_url, api_key=api_key, model=model,
@@ -1396,11 +1465,17 @@ def main(
 
 
 @app.command("data-dir")
-def data_dir_command() -> None:
+def data_dir_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Print the result as JSON.")] = False,
+) -> None:
     """Print the data directory: history.db, watches.db and kb.db (plain SQLite)."""
     from ekte import datadir
 
-    print(datadir.data_dir().expanduser())
+    path = datadir.data_dir().expanduser()
+    if as_json:
+        print(json.dumps({"data_dir": str(path)}, ensure_ascii=False))
+        return
+    print(path)
 
 
 config_app = typer.Typer(help="Work with the configuration file.", no_args_is_help=True)
@@ -1411,6 +1486,7 @@ app.add_typer(config_app, name="config")
 def config_migrate(
     path: Annotated[Path, typer.Argument(help="The config file to update.")] = Path("ekte.yaml"),
     check: Annotated[bool, typer.Option("--check", help="Only report; exit 1 if the file is outdated.")] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Print the result as JSON.")] = False,
 ) -> None:
     """Rewrite a config file to the current format (comments are kept)."""
     from ekte import configfile
@@ -1419,17 +1495,36 @@ def config_migrate(
         old = path.read_text(encoding="utf-8")
         new, changes = configfile.migrate_text(old, str(path))
     except (OSError, configfile.ConfigFileError) as exc:
+        if as_json:
+            _emit_machine_error(exc)
         err_console.print(f"[red]Config error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+
+    def _result(status: str, backup: str | None = None) -> None:
+        print(json.dumps({
+            "path": str(path), "status": status, "format": configfile.CURRENT_VERSION,
+            "changes": changes, "backup": backup,
+        }, ensure_ascii=False, indent=2))
+
     if not changes:
-        console.print(f"{path} is already in format {configfile.CURRENT_VERSION}.")
+        if as_json:
+            _result("current")
+        else:
+            console.print(f"{path} is already in format {configfile.CURRENT_VERSION}.")
         return
     if check:
-        console.print(f"{path} is outdated: " + "; ".join(changes))
+        if as_json:
+            _result("outdated")
+        else:
+            console.print(f"{path} is outdated: " + "; ".join(changes))
         raise typer.Exit(code=1)
-    path.with_name(path.name + ".bak").write_text(old, encoding="utf-8")
+    backup = path.with_name(path.name + ".bak")
+    backup.write_text(old, encoding="utf-8")
     path.write_text(new, encoding="utf-8")
-    console.print(f"Updated {path} (backup: {path.name}.bak): " + "; ".join(changes))
+    if as_json:
+        _result("updated", str(backup))
+    else:
+        console.print(f"Updated {path} (backup: {path.name}.bak): " + "; ".join(changes))
 
 
 secret_app = typer.Typer(
@@ -1465,11 +1560,21 @@ def _secret_box(*, prompt: bool = True) -> SecretBox:
 
 
 @secret_app.command("status")
-def secret_status() -> None:
+def secret_status(
+    as_json: Annotated[bool, typer.Option("--json", help="Print the status as JSON.")] = False,
+) -> None:
     """Whether the master key is set up and where it comes from, and the stored keys' state."""
     from ekte.web.masterkey import vault
 
     st = vault.startup()
+    if as_json:
+        print(json.dumps({
+            "state": st["state"], "source": st["source"],
+            "fingerprint": st.get("fingerprint"), "storage": st.get("storage"),
+            "counts": dict(st["counts"]), "warnings": list(st["warnings"]),
+            "error": st.get("error"),
+        }, ensure_ascii=False, indent=2))
+        return
     line = f"master key: [bold]{st['state']}[/bold]"
     if st["source"]:
         line += f"  from {st['source']} (fingerprint {st['fingerprint']})"
@@ -1579,5 +1684,17 @@ def secret_rotate() -> None:
     typer.echo(key)
 
 
+def run() -> None:
+    """Console entry point: ``app()`` plus exit code 4 for an unexpected error."""
+    try:
+        app()
+    except Exception:  # noqa: BLE001 - last resort: a bug must not look like a failed gate
+        import traceback
+
+        traceback.print_exc()
+        err_console.print("[red]Internal error.[/red] This is a bug in ekte; please report it.")
+        sys.exit(EXIT_INTERNAL)
+
+
 if __name__ == "__main__":
-    app()
+    run()
