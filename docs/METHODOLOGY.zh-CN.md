@@ -109,7 +109,7 @@ ekte 对十个维度评分。维度得分为其**各检测器得分的平均值�
 | 确定性与缓存正确性 | `determinism` | 协议兼容 | `deep` |
 | 真实上下文窗口与截断 | `context_window` | 上下文窗口 | `deep` |
 | 模型身份与降级指纹 | `model_identity` | 模型身份 | `standard` |
-| LLM 评委质量 / 降级评估 | `quality_judge` | 模型身份 | `deep`（仅在加 `--judge` 时） |
+| LLM 裁判质量 / 降级评估 | `quality_judge` | 模型身份 | `deep`（仅在加 `--judge` 时） |
 | 能力声明核验 | `capability` | 能力声明 | `standard` |
 | 多模态（视觉）能力核验 | `vision` | 能力声明 | `deep` |
 | 流式真实性 | `streaming` | 流式真实 | `standard` |
@@ -402,7 +402,7 @@ prompt）以及 `context.lost-in-middle-rag`（廉价的 RAG/摘要垫片只转�
 |  | 响应中没有可用的 model 字段。 | 不确定 | 不扣分 |
 | `model_identity.no_evidence` | 自我身份识别和行为指纹均没有可用的回答，且 model 字段没有偏离：不计分。 | 不确定 | 不扣分 |
 
-### `quality_judge` — LLM 评委质量 / 降级评估
+### `quality_judge` — LLM 裁判质量 / 降级评估
 
 **做法。** 仅在加 `--judge` 时运行（deep 及以上）。一小组能区分档位的提示词（多步推理、
 精确的编码任务、细致的指令遵循）发给目标，对比模式下也发给基线；一个独立的可信裁判
