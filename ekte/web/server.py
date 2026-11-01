@@ -735,6 +735,20 @@ def _locked_response(_exc: Exception | None = None) -> JSONResponse:
     )
 
 
+def _kb_error_response(exc: Exception) -> JSONResponse:
+    """400: the knowledge base could not be read (e.g. a broken EKTE_KB_DIR file).
+
+    The traceback goes to the server log only: the loader's exception text can
+    carry internal details, so the client gets just its type.
+    """
+    _log.exception("knowledge base could not be loaded")
+    return JSONResponse(
+        {"error": f"knowledge base could not be loaded ({type(exc).__name__}); "
+                  "see the ekte serve log for details."},
+        status_code=400,
+    )
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="ekte",
@@ -1441,7 +1455,7 @@ def create_app() -> FastAPI:
         try:
             knowledge = await asyncio.to_thread(_watch_knowledge, cfg)
         except Exception as exc:  # e.g. a broken EKTE_KB_DIR file
-            return JSONResponse({"error": f"knowledge base: {exc}"}, status_code=400)
+            return _kb_error_response(exc)
         from ekte.secretbox import SecretLocked
 
         try:
@@ -1527,7 +1541,7 @@ def create_app() -> FastAPI:
         try:
             knowledge = await asyncio.to_thread(_watch_knowledge, cfg)
         except Exception as exc:  # e.g. a broken EKTE_KB_DIR file
-            return JSONResponse({"error": f"knowledge base: {exc}"}, status_code=400)
+            return _kb_error_response(exc)
         wid = await asyncio.to_thread(watches.create, cfg, knowledge=knowledge, draft=True)
         return JSONResponse({"ok": True, "id": wid}, status_code=201)
 
