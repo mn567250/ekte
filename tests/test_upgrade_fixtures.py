@@ -6,7 +6,7 @@ unstored keys, the user's own knowledge-base entries) and a manifest of what it
 contains. Every fixture is opened with the current code; the migration must
 succeed, keep every record readable and keep the main read paths of the web UI
 and the command line working. A new minor release adds a fixture (see
-docs/RELEASE_CHECKLIST.md).
+docs/dev/release-checklist.md).
 """
 
 from __future__ import annotations

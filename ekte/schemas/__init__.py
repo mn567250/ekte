@@ -9,7 +9,7 @@ rewrites them and ``--check`` fails when they are stale.
 Schema versions are ``MAJOR.MINOR`` strings, independent of the ekte version:
 
 * a **compatible** change (a new optional field) raises MINOR;
-* a **breaking** change (see docs/STABILITY.md) raises MAJOR, and only in a major
+* a **breaking** change (see docs/reference/stability.md) raises MAJOR, and only in a major
   ekte release.
 
 ``history.json`` records the SHA-256 of every released schema version. A test

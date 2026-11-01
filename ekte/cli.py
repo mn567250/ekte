@@ -76,7 +76,7 @@ _NO_USER_KB_HELP = (
     "packaged profiles and EKTE_KB_DIR still apply. Env: EKTE_NO_USER_KB=1."
 )
 
-# Exit codes: the one table every command follows (docs/STABILITY.md#surface-exit-codes).
+# Exit codes: the one table every command follows (docs/reference/stability.md#surface-exit-codes).
 EXIT_OK = 0
 EXIT_GATE = 1  # a gate or check failed (risk/score gate, kb-import, config migrate --check)
 EXIT_USAGE = 2  # usage or configuration error

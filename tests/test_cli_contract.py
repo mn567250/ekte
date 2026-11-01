@@ -1,7 +1,7 @@
-"""The command line contract (docs/STABILITY.md#surface-cli, #surface-exit-codes).
+"""The command line contract (docs/reference/stability.md#surface-cli, #surface-exit-codes).
 
 Pins the documented exit codes, runs every command's --help, checks that every
-option has a help text, that docs/CLI.md matches the code, that --json writes only
+option has a help text, that docs/reference/cli.md matches the code, that --json writes only
 JSON to stdout, and that renamed options keep working with a deprecation warning.
 """
 
@@ -65,9 +65,9 @@ def test_option_names_are_lowercase_hyphenated_and_short_options_are_established
 
 
 def test_cli_reference_is_current():
-    doc = ROOT / "docs" / "CLI.md"
+    doc = ROOT / "docs" / "reference" / "cli.md"
     assert doc.read_text("utf-8") == clidocs.render(), (
-        "docs/CLI.md is stale: run `uv run python scripts/generate_cli_docs.py`"
+        "docs/reference/cli.md is stale: run `uv run python scripts/generate_cli_docs.py`"
     )
 
 
@@ -88,12 +88,12 @@ def test_same_option_means_the_same_everywhere():
 
 # --------------------------------------------------------------------------- exit codes
 def test_exit_code_table_is_documented():
-    text = (ROOT / "docs" / "STABILITY.md").read_text("utf-8")
+    text = (ROOT / "docs" / "reference" / "stability.md").read_text("utf-8")
     section = text[text.index('id="surface-exit-codes"'):text.index('id="surface-config"')]
     assert set(cli.EXIT_CODES) == {0, 1, 2, 3, 4}
     for code in cli.EXIT_CODES:
-        assert re.search(rf"\|\s*{code}\s*\|", section), f"exit code {code} missing from STABILITY.md"
-    assert "CLI.md" in section
+        assert re.search(rf"\|\s*{code}\s*\|", section), f"exit code {code} missing from stability.md"
+    assert "cli.md" in section
 
 
 def test_exit_0_success():

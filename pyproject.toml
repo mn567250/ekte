@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "ekte"
 version = "0.30.0"
 description = "LLM relay reality check — a CLI that audits whether an API relay actually serves the model it claims (货不对板检测)."
-readme = "README.md"
+dynamic = ["readme"]  # README.md with absolute links: scripts/hatch_readme.py
 license = "Apache-2.0"
 requires-python = ">=3.11"
 authors = [{ name = "ekte contributors" }]
@@ -94,6 +94,9 @@ ekte = "ekte.cli:run"
 # archive path and aborts the wheel build.
 packages = ["ekte"]
 
+[tool.hatch.metadata.hooks.custom]
+path = "scripts/hatch_readme.py"
+
 [tool.hatch.build.targets.sdist]
 # Ship the source the package needs; keep scratch/reference material out of the
 # sdist (there is no .git here, so hatchling can't infer it from VCS).
@@ -102,23 +105,8 @@ include = [
     "/tests",
     "/docs",
     "/examples",
+    "/scripts/hatch_readme.py",
     "/README.md",
-    "/README.zh-CN.md",
-    "/README.fr.md",
-    "/README.es.md",
-    "/README.pt.md",
-    "/README.it.md",
-    "/README.de.md",
-    "/README.nb.md",
-    "/DEVELOPER_GUIDE.md",
-    "/DEVELOPER_GUIDE.zh-CN.md",
-    "/DEVELOPER_GUIDE.fr.md",
-    "/DEVELOPER_GUIDE.es.md",
-    "/DEVELOPER_GUIDE.pt.md",
-    "/DEVELOPER_GUIDE.it.md",
-    "/DEVELOPER_GUIDE.de.md",
-    "/DEVELOPER_GUIDE.nb.md",
-    "/CONTRIBUTING.md",
     "/LICENSE",
     "/NOTICE",
     "/CHANGELOG.md",
@@ -149,7 +137,7 @@ source = ["ekte"]
 
 [tool.coverage.report]
 # whole-package floor; the floors for the command line, the judge and the media
-# auditor are in scripts/check_coverage.py (docs/STABILITY.md#os)
+# auditor are in scripts/check_coverage.py (docs/reference/stability.md#os)
 fail_under = 93
 skip_empty = true
 

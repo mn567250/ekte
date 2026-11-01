@@ -72,7 +72,7 @@ def ensure_data_dir() -> Path:
 
 def _warn_unprotected(path: Path) -> None:
     """On Windows the 0700/0600 modes have no effect: say so once, when the
-    directory is created (see docs/STABILITY.md#os)."""
+    directory is created (see docs/reference/stability.md#os)."""
     if _modes_enforced() or path in _warned_unprotected:
         return
     _warned_unprotected.add(path)

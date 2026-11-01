@@ -4,7 +4,8 @@
 Usage: python scripts/check_dist_contents.py [DIST_DIR]   (default: build with `uv build`)
 
 Fails when an archive contains a file matching EXCLUDED, or a file that NOTICE
-lists as not distributed.
+lists as not distributed, or when the wheel's long description (README.md, the
+PyPI page) still has a link PyPI cannot resolve (scripts/hatch_readme.py).
 """
 from __future__ import annotations
 
@@ -47,6 +48,24 @@ def violations(members: list[str], notice: str) -> list[str]:
     return sorted({m for m in members if any(fnmatch(m, p) for p in patterns)})
 
 
+def wheel_description(path: Path) -> str:
+    """The long description (the body of METADATA) of a wheel."""
+    with zipfile.ZipFile(path) as z:
+        name = next(n for n in z.namelist() if n.endswith(".dist-info/METADATA"))
+        text = z.read(name).decode("utf-8")
+    return text.split("\n\n", 1)[1] if "\n\n" in text else ""
+
+
+def unresolvable_links(description: str) -> list[str]:
+    """Relative links and in-page anchors in the PyPI description."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        from hatch_readme import relative_links
+    finally:
+        sys.path.pop(0)
+    return relative_links(description)
+
+
 def main(argv: list[str]) -> int:
     notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
     with tempfile.TemporaryDirectory() as tmp:
@@ -62,7 +81,11 @@ def main(argv: list[str]) -> int:
             for m in violations(archive_members(a), notice):
                 print(f"{a.name}: must not contain {m}", file=sys.stderr)
                 bad += 1
-    print("dist contents OK" if not bad else f"{bad} forbidden file(s)")
+            if a.suffix == ".whl":
+                for link in unresolvable_links(wheel_description(a)):
+                    print(f"{a.name}: description link {link} does not work on PyPI", file=sys.stderr)
+                    bad += 1
+    print("dist contents OK" if not bad else f"{bad} problem(s)")
     return 1 if bad else 0
 
 

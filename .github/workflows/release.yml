@@ -8,7 +8,7 @@ name: Release to PyPI
 # Before anything is built or published, the `verify` job checks (scripts/release_check.py)
 # that the tag equals the package version, CHANGELOG.md has a section for it and CI is
 # green for the tagged commit. If any check fails the workflow stops; nothing is published.
-# Process and recovery: DEVELOPER_GUIDE.md "Releases" and docs/PUBLISHING.md.
+# Process and recovery: docs/dev/releasing.md and docs/dev/publishing.md.
 #
 # ONE-TIME SETUP on PyPI (https://pypi.org/manage/account/publishing/):
 #   Add a "pending publisher" for project `ekte` with:
@@ -112,7 +112,7 @@ jobs:
     timeout-minutes: 10
     # Protect the `pypi` environment in the repository settings (required
     # reviewers, tag-only deployment branches) and restrict the PyPI trusted
-    # publisher to it; see docs/PUBLISHING.md.
+    # publisher to it; see docs/dev/publishing.md.
     environment:
       name: pypi
       url: https://pypi.org/p/ekte

@@ -14,7 +14,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
-# the rules for bumping it are in ekte/schemas/__init__.py and docs/STABILITY.md.
+# the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
 REPORT_SCHEMA_VERSION = "1.1"
 WEBHOOK_SCHEMA_VERSION = "1.0"
 

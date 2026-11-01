@@ -1,7 +1,7 @@
 """Compatibility with installs from before ekte was renamed from zing.
 
 The whole compatibility layer is deprecated and removed in ekte 1.0.0
-(docs/STABILITY.md, #26); every notice below names that version. ekte never
+(docs/reference/stability.md, #26); every notice below names that version. ekte never
 deletes an old ``~/.zing``, also not when the copy is removed.
 
 * **Environment variables.** Every setting is read from ``EKTE_<NAME>``; when

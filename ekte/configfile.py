@@ -3,7 +3,7 @@
 The file carries a format version (``version:``). A file without one is format
 1. Every key is described once, in ``SCHEMA``; validation and the published JSON
 schema (``docs/schemas/config.schema.json``) derive from it. See
-docs/STABILITY.md#surface-config.
+docs/reference/stability.md#surface-config.
 """
 
 from __future__ import annotations
@@ -79,7 +79,7 @@ SCHEMA: dict[str, Any] = {
 
 # DEPRECATED keys ("section.key" -> "section.new_key") are still part of the
 # current format: they load, with a warning naming the replacement, for the
-# period docs/STABILITY.md#deprecation defines. RENAMES_FROM[n] lists the
+# period docs/reference/stability.md#deprecation defines. RENAMES_FROM[n] lists the
 # renames that bring a file of format n to format n+1.
 DEPRECATED: dict[str, str] = {}
 RENAMES_FROM: dict[int, dict[str, str]] = {}
@@ -166,7 +166,7 @@ def validate(data: dict[str, Any], text: str, source: str) -> dict[str, Any]:
 
     def ignore_unknown(path: str, problem: str) -> None:
         # Deprecated leniency: older ekte ignored unknown keys silently. They are
-        # ignored with a warning until 1.0.0, which rejects them (docs/STABILITY.md).
+        # ignored with a warning until 1.0.0, which rejects them (docs/reference/stability.md).
         line = lines.get(path)
         where = f"{source}, line {line}" if line else source
         print(

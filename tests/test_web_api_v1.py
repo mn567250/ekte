@@ -1,4 +1,4 @@
-"""Contract tests for the public HTTP API under /api/v1/ (docs/STABILITY.md#surface-http-api).
+"""Contract tests for the public HTTP API under /api/v1/ (docs/reference/stability.md#surface-http-api).
 
 They pin paths, status codes, the error format, the response fields and the
 ``X-Ekte-API`` header, plus the local-only protections on the public paths.
