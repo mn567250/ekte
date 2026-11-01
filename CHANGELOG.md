@@ -151,6 +151,12 @@ ekte has three eras:
 
 ### Changed
 
+- **Failed background audits no longer show the exception text.** When an
+  audit started from the web UI or `/api/jobs` fails unexpectedly, the job's
+  `error` (and its live `error` event) reads `Audit failed (<ExceptionType>); see
+  the ekte serve log for details.`, and the full traceback is written to the
+  `ekte serve` log, where it was not recorded before (CodeQL
+  `py/stack-trace-exposure`).
 - **A failed PDF export no longer shows the renderer's exception text.**
   `POST /api/report/export?format=pdf` answers a rendering failure with
   `PDF rendering failed (<ExceptionType>); see the ekte serve log for details.`
