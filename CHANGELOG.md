@@ -20,6 +20,11 @@ ekte has three eras:
 
 ## [Unreleased]
 
+## [0.33.1] - 2026-11-01
+
+A patch release with two fixes: exporting reports with performance data (#79)
+and `ekte kb-import --check` on the packaged knowledge base (#69).
+
 ### Added
 
 - **Upgrade fixture for 0.33.0.** `tests/fixtures/upgrade/v0.33.0/` is a data
@@ -2367,7 +2372,9 @@ streaming, or inflates token billing (货不对板检测).
   text is redacted before it reaches any report (JSON/Markdown/HTML).
 - `--fail-under` / `--fail-on-risk` exit-code gates for CI use.
 
-[Unreleased]: https://github.com/mn567250/ekte/compare/v0.30.0...HEAD
+[Unreleased]: https://github.com/mn567250/ekte/compare/v0.33.1...HEAD
+[0.33.1]: https://github.com/mn567250/ekte/compare/v0.33.0...v0.33.1
+[0.33.0]: https://github.com/mn567250/ekte/compare/v0.30.0...v0.33.0
 [0.30.0]: https://github.com/mn567250/ekte/compare/v0.21.0...v0.30.0
 [0.21.0]: https://github.com/mn567250/ekte/compare/v0.11.0...v0.21.0
 [0.11.0]: https://github.com/cenbonew/zing/compare/v0.10.0...v0.11.0
