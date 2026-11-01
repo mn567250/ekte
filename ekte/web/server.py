@@ -1233,7 +1233,14 @@ def create_app() -> FastAPI:
                 # CPU-bound typesetting: keep the event loop (and live audits) responsive.
                 body = await asyncio.to_thread(render_pdf, report)
             except Exception as exc:  # a layout failure must still reach the UI as JSON
-                return JSONResponse({"error": f"PDF rendering failed: {exc}"[:500]}, status_code=500)
+                # The traceback goes to the server log only: the renderer's
+                # exception text can carry internal details, so the client
+                # gets just its type.
+                _log.exception("PDF rendering failed")
+                return JSONResponse(
+                    {"error": f"PDF rendering failed ({type(exc).__name__}); see the ekte serve log for details."},
+                    status_code=500,
+                )
         else:
             render = {"json": render_json, "md": render_markdown, "html": render_html}[format]
             body = await asyncio.to_thread(render, report)

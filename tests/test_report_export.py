@@ -144,13 +144,20 @@ def test_export_pdf_is_the_cli_pdf(client, report_dict, report):
     assert _text(r.content) == _text(render_pdf(report))
 
 
-def test_export_pdf_failure_is_json(client, report_dict, monkeypatch):
+def test_export_pdf_failure_is_json(client, report_dict, monkeypatch, caplog):
     def broken(_report):
-        raise ValueError("boom")
+        raise ValueError("boom: internal detail")
 
     monkeypatch.setattr("ekte.report.render_pdf", broken)
-    r = client.post("/api/report/export?format=pdf", json=report_dict)
-    assert r.status_code == 500 and r.json()["error"] == "PDF rendering failed: boom"
+    with caplog.at_level("ERROR", logger="ekte.web"):
+        r = client.post("/api/report/export?format=pdf", json=report_dict)
+    # the client gets the exception type only, never its text
+    assert r.status_code == 500
+    assert r.json()["error"] == "PDF rendering failed (ValueError); see the ekte serve log for details."
+    assert "internal detail" not in r.text
+    # the server log keeps the full traceback
+    rec = next(r for r in caplog.records if r.getMessage() == "PDF rendering failed")
+    assert rec.exc_info and "internal detail" in str(rec.exc_info[1])
 
 
 def test_export_rejects_bad_input(client, report_dict):
