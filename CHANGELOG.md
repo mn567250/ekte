@@ -298,6 +298,9 @@ ekte has three eras:
 
 ### Fixed
 
+- **No SHA-256 over stored API keys.** The monitors page's cache of whether a
+  stored key can be decrypted is keyed by the encrypted value itself instead of
+  its SHA-256 hash (CodeQL `py/weak-sensitive-data-hashing`).
 - **Documentation checked against the code.** The README names the 130
   packaged model profiles (it said 98); the web UI guide lists the
   Accessibility page; the endpoint guide names the Gemini embedding and
