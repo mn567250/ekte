@@ -7,6 +7,8 @@ p75 of that same window (the band drawn around the line). Failed and cached requ
 get one, so a failure never pulls the line down. The live stream tags each
 record as it is emitted (:class:`RunningMedian`); a finished or stored report
 gets the same values from :func:`attach_trends`, so the browser only draws.
+They are display data only, never part of a report: :func:`strip_trends`
+removes them again before a report the browser sends back is validated.
 """
 
 from __future__ import annotations
@@ -18,6 +20,9 @@ from statistics import median, quantiles
 from typing import Any
 
 TREND_WINDOW = 5
+
+# the keys RunningMedian.tag adds to a record (not fields of RequestRecord)
+TREND_KEYS = ("trend", "trend_band")
 
 # the calls the chart plots (perf.js isCall): completions, and a non-chat
 # audit's embedding/rerank calls (ekte/config.py SURFACE_OPS)
@@ -87,3 +92,15 @@ def attach_trends(records: Iterable[dict[str, Any]]) -> None:
     for rec in records:
         if isinstance(rec, dict):
             tagger.tag(rec)
+
+
+def strip_trends(report: Any) -> Any:
+    """Remove :data:`TREND_KEYS` from a report dict's performance requests
+    (in place) and return it: the inverse of :func:`attach_trends`."""
+    perf = report.get("performance") if isinstance(report, dict) else None
+    if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
+        for rec in perf["requests"]:
+            if isinstance(rec, dict):
+                for key in TREND_KEYS:
+                    rec.pop(key, None)
+    return report

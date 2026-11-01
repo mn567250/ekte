@@ -618,3 +618,59 @@ def test_report_evidence_durations_are_readable(tmp_path):
     html = _render(tmp_path, "en", report)["html"]
     assert "ttft_ms: 5 s 457 ms" in html and "duration_ms: 6 s 97 ms" in html
     assert "slow_ms: 1 min 5 s" in html and "short_duration_s: 850 µs" in html
+
+
+_JS_DOWNLOAD = r"""
+const path = require("path");
+const [dir, lang, reportJson] = process.argv.slice(1);
+global.window = { addEventListener() {} };
+global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete",
+                    querySelectorAll: () => [], addEventListener() {},
+                    createElement: () => ({ click() {}, remove() {} }),
+                    body: { appendChild() {} } };
+global.localStorage = { getItem: () => lang, setItem() {} };
+global.URL = { createObjectURL: () => "blob:x", revokeObjectURL() {} };
+const blobs = [];
+global.Blob = function (parts) { blobs.push(parts.join("")); };
+const posted = [];
+global.fetch = (url, init) => {
+  posted.push(init.body);
+  return Promise.resolve({ ok: true, blob: () => Promise.resolve({}) });
+};
+require(path.join(dir, "locales.js"));
+require(path.join(dir, "lang.js"));
+require(path.join(dir, "i18n.js"));
+require(path.join(dir, "icons.js"));
+require(path.join(dir, "v2", "report.js"));
+const report = JSON.parse(reportJson);
+Promise.all(["json", "md"].map(f => window.EkteReport.download(report, f, "r"))).then(() => {
+  console.log(JSON.stringify({ json: blobs[0], md: posted[0], original: report }));
+});
+"""
+
+
+@needs_node
+def test_download_drops_the_chart_trend_lines(tmp_path):
+    # the chart's running medians (issue #79) are display data: neither the
+    # JSON file nor the body POSTed for md/html/pdf may carry them, and the
+    # report the page shows keeps them
+    from ekte.i18n import locales_script
+    from ekte.perf.trend import attach_trends
+    from tests.test_performance_render import _report as perf_report
+
+    (tmp_path / "locales.js").write_text(locales_script(), encoding="utf-8")
+    for name in ("lang.js", "i18n.js", "icons.js"):
+        shutil.copy(_STATIC / name, tmp_path / name)
+    (tmp_path / "v2").mkdir()
+    shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
+    report = perf_report().model_dump(mode="json")
+    attach_trends(report["performance"]["requests"])
+    out = json.loads(subprocess.run(
+        ["node", "-e", _JS_DOWNLOAD, str(tmp_path), "en", json.dumps(report)],
+        capture_output=True, text=True, encoding="utf-8", check=True,
+    ).stdout)
+    for body in (out["json"], out["md"]):
+        sent = json.loads(body)["performance"]["requests"]
+        assert len(sent) == len(report["performance"]["requests"])
+        assert not any("trend" in r or "trend_band" in r for r in sent)
+    assert any("trend" in r for r in out["original"]["performance"]["requests"])

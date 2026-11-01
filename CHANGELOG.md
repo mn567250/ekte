@@ -29,6 +29,12 @@ ekte has three eras:
 
 ### Fixed
 
+- **Exporting a report with performance data as Markdown, HTML or PDF works
+  again** ([#79](https://github.com/mn567250/ekte/issues/79)). The report view
+  sent the performance chart's running medians (`trend`, `trend_band`) back with
+  the report, and `POST /api/report/export` rejected them as unknown fields
+  ("not a ekte report: … extra_forbidden"). The export now drops them before
+  validating, and downloads (JSON included) no longer contain them.
 - **`ekte kb-import --check` accepts the packaged knowledge base**
   ([#69](https://github.com/mn567250/ekte/issues/69)). The import check rejected
   5 of the 7 files in `ekte/knowledge/data/`. Fingerprint `max_tokens` may now be

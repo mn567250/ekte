@@ -102,7 +102,7 @@ from ekte.config import (
 )
 from ekte.detectors.performance import stream_mode
 from ekte.models import KnowledgeUsage, TargetConfig
-from ekte.perf.trend import attach_trends
+from ekte.perf.trend import attach_trends, strip_trends
 from ekte.runner import run_audit
 from ekte.scoring import weights_for
 from ekte.web import jobs
@@ -1230,8 +1230,10 @@ def create_app() -> FastAPI:
         raw = await request.body()
         try:
             # Decoding and validating a large report is CPU work: off the loop.
+            # The browser's copy may carry the chart's trend lines (display
+            # data added by attach_trends, not report fields): drop them first.
             report = await asyncio.to_thread(
-                lambda: AuditReport.model_validate(json.loads(raw))
+                lambda: AuditReport.model_validate(strip_trends(json.loads(raw)))
             )
         except (ValueError, ValidationError) as exc:
             return JSONResponse({"error": f"not a ekte report: {exc}"[:500]}, status_code=400)
