@@ -1,5 +1,5 @@
 name: "ekte relay audit"
-description: "Audit whether an LLM relay serves its claimed model (货不对板检测); fail CI when risk meets your threshold."
+description: "Audit whether an LLM relay serves the model it claims; fail CI when the risk meets your threshold."
 author: "ekte contributors"
 branding:
   icon: "shield"
