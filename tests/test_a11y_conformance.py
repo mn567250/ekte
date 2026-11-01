@@ -5,6 +5,7 @@ Pure Python (no browser): tests/a11y/results.py and tests/a11y/conformance.py.
 
 from __future__ import annotations
 
+import copy
 import datetime as dt
 import json
 
@@ -203,7 +204,8 @@ def test_llm_review_counts_as_the_manual_part():
     assert by["9.2.4.4"]["review"]["notes"] == 'kb [de] link "Mehr": unclear → Name it'
     assert by["9.3.3.3"]["status"] == "not tested"               # no automated test ran: review alone decides nothing
     assert by["9.1.4.10"]["status"] == "fail" and "review" not in by["9.1.4.10"]
-    assert rep["conformance"]["manual_review"] is True
+    # the LLM review counts for its steps but is not a manual review by a person
+    assert rep["conformance"]["llm_review"] is True and rep["conformance"]["manual_review"] is False
     assert rep["review"]["method"] == "llm" and rep["review"]["model"] == "claude-opus-5-5" and rep["review"]["counted"]
     assert rep["review"]["translation"]["verdict"] == "issues"
     assert "localhost" not in json.dumps(rep)                    # the endpoint stays out of the published report
@@ -224,13 +226,14 @@ def test_incomplete_llm_review_changes_no_status():
     # a review of fewer languages than were tested
     rep = conformance.build_report(_results(), _llm_review(langs=("en",)))
     assert _by(rep)["9.1.1.1"]["status"] == "manual review pending"
-    assert rep["review"]["counted"] is False and rep["conformance"]["manual_review"] is False
+    assert rep["review"]["counted"] is False and rep["conformance"]["llm_review"] is False
 
 
 def test_skipped_or_failed_llm_review_is_ignored():
-    plain = conformance.build_report(_results(), None, commit="c", now=dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
+    res = _results()  # once: its generated_at is the clock time, which may tick between two calls
+    plain = conformance.build_report(res, None, commit="c", now=dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
     for status in ("skipped: no API key", "error", "dry-run", "skipped: browser harness unavailable"):
-        rep = conformance.build_report(_results(), _llm_review(status=status), commit="c",
+        rep = conformance.build_report(copy.deepcopy(res), _llm_review(status=status), commit="c",
                                        now=dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
         assert rep == plain, status
 
@@ -245,7 +248,7 @@ def test_cli_picks_up_the_llm_review_in_the_working_directory(tmp_path, monkeypa
     (tmp_path / "a11y-llm-review.json").write_text(json.dumps(_llm_review()), encoding="utf-8")
     assert conformance.main(["--results", str(res), "--out", str(out)]) == 0
     rep = json.loads(out.read_text(encoding="utf-8"))
-    assert _by(rep)["9.1.1.1"]["status"] == "pass" and rep["conformance"]["manual_review"] is True
+    assert _by(rep)["9.1.1.1"]["status"] == "pass" and rep["conformance"]["llm_review"] is True
     assert conformance.main(["--results", str(res), "--out", str(out), "--no-llm"]) == 0
     assert json.loads(out.read_text(encoding="utf-8"))["review"] is None
 
@@ -253,8 +256,9 @@ def test_cli_picks_up_the_llm_review_in_the_working_directory(tmp_path, monkeypa
 def test_a_review_applied_to_a_built_report_equals_building_with_it():
     now = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
     llm = _llm_review(verdicts={"9.2.4.4": "issues"})
-    built = conformance.build_report(_results(), llm, now=now, commit="c")
-    applied = conformance.apply_review(conformance.build_report(_results(), None, now=now, commit="c"), llm)
+    res = _results()  # once: its generated_at is the clock time, which may tick between two calls
+    built = conformance.build_report(res, llm, now=now, commit="c")
+    applied = conformance.apply_review(conformance.build_report(copy.deepcopy(res), None, now=now, commit="c"), llm)
     assert applied == built
 
 

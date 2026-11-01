@@ -95,6 +95,22 @@
   "Name, Role, Value": "名称、角色、值",
   "Every control has a name, a valid role and the states it needs.": "每个控件都有名称、有效的角色以及所需的状态。",
   "Status Messages": "状态消息",
-  "Status areas are live regions. Whether each status change is announced is judged by a person.": "状态区域是实时区域。每次状态变化是否会被播报由人工判断。"
+  "Status areas are live regions. Whether each status change is announced is judged by a person.": "状态区域是实时区域。每次状态变化是否会被播报由人工判断。",
+  "Conformance level reached: {level}.": "已达到的符合级别：{level}。",
+  "No conformance level is claimed until a manual review by a person is recorded.": "在记录人工审核之前，不声明任何符合级别。",
+  "No conformance level is reached yet: not every applicable step passes.": "尚未达到任何符合级别：并非所有适用步骤都已通过。",
+  "These steps fail a review:": "以下步骤未通过审核：",
+  "No manual review by a person, including with screen readers, has been made yet; this release does not include one. Until one is recorded, the steps that await a manual review stay pending and the conformance status stays partial.": "目前尚未由人进行人工审核（包括使用屏幕阅读器的审核），本版本也不包含人工审核。在记录人工审核之前，待人工审核的步骤保持待定，符合状态保持为部分符合。",
+  "Manual reviews are welcome:": "欢迎提交人工审核：",
+  "how to contribute a manual review": "如何提交人工审核",
+  "Last test run: {date}.": "最近一次测试：{date}。",
+  "Last test run: {date}. A review of the texts by {model} is recorded for the steps it covers.": "最近一次测试：{date}。已记录 {model} 对其所涵盖步骤的文本审核。",
+  "A manual review by {by} ({dates}) is recorded: {done} of {total} checks, with {setups}.": "已记录 {by}（{dates}）的人工审核：{total} 项检查中完成 {done} 项，使用 {setups}。",
+  "A manual review by a person, including screen readers, has not been made yet.": "尚未进行由人完成的人工审核（包括屏幕阅读器）。",
+  "Manual review:": "人工审核：",
+  "{done} of {total} checks done: {pass} hold, {fail} fail, {na} do not apply.": "{total} 项检查中已完成 {done} 项：{pass} 项符合，{fail} 项不符合，{na} 项不适用。",
+  "Follow-up issues:": "后续问题：",
+  "Does not apply:": "不适用：",
+  "Sessions:": "审核环境："
  }
 }

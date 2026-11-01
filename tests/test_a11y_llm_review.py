@@ -973,7 +973,7 @@ def test_main_update_report_applies_the_review(monkeypatch: pytest.MonkeyPatch, 
     after = json.loads(bitv.read_text(encoding="utf-8"))
     steps = {s["step"]: s for s in after["steps"]}
     assert steps["9.2.4.4"]["review"]["by"] == "qwen3" and steps["9.2.4.4"]["review"]["counted"] is True
-    assert after["review"]["method"] == "llm" and after["conformance"]["manual_review"] is True
+    assert after["review"]["method"] == "llm" and after["conformance"]["llm_review"] is True
     assert after["tested"] == before["tested"]
     assert {s["status_tests"] for s in after["steps"]} == {s["status"] for s in before["steps"]}
 

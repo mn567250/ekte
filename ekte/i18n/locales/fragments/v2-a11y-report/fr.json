@@ -68,9 +68,6 @@
   "These steps are not tested yet:": "Ces étapes ne sont pas encore testées :",
   "The automated part of these steps passes; the rest still needs a manual review:": "La partie automatisée de ces étapes est réussie ; le reste nécessite encore une revue manuelle :",
   "There are no known limitations.": "Aucune limite n'est connue.",
-  "Last test run: {date}. A manual review is recorded.": "Dernière exécution des tests : {date}. Une revue manuelle est enregistrée.",
-  "Last test run: {date}. A review of the texts by {model} is recorded as the manual review of the steps it covers.": "Dernière exécution des tests : {date}. Une revue des textes par {model} est enregistrée comme revue manuelle des étapes qu’elle couvre.",
-  "Last test run: {date}. A manual review, including screen readers, has not been made yet.": "Dernière exécution des tests : {date}. Aucune revue manuelle, y compris avec des lecteurs d'écran, n'a encore été faite.",
   "Could not load the accessibility report (bitv-report.json).": "Impossible de charger le rapport d'accessibilité (bitv-report.json).",
   "Accessibility": "Accessibilité",
   "Non-text Content": "Contenu non textuel",
@@ -168,6 +165,22 @@
   "Name, Role, Value": "Nom, rôle et valeur",
   "Every control has a name, a valid role and the states it needs.": "Chaque contrôle a un nom, un rôle valide et les états nécessaires.",
   "Status Messages": "Messages d'état",
-  "Status areas are live regions. Whether each status change is announced is judged by a person.": "Les zones d'état sont des régions actives. L'annonce de chaque changement d'état est jugée par une personne."
+  "Status areas are live regions. Whether each status change is announced is judged by a person.": "Les zones d'état sont des régions actives. L'annonce de chaque changement d'état est jugée par une personne.",
+  "Conformance level reached: {level}.": "Niveau de conformité atteint : {level}.",
+  "No conformance level is claimed until a manual review by a person is recorded.": "Aucun niveau de conformité n'est revendiqué tant qu'aucune revue manuelle par une personne n'est enregistrée.",
+  "No conformance level is reached yet: not every applicable step passes.": "Aucun niveau de conformité n'est encore atteint : toutes les étapes applicables ne sont pas réussies.",
+  "These steps fail a review:": "Ces étapes échouent à une revue :",
+  "No manual review by a person, including with screen readers, has been made yet; this release does not include one. Until one is recorded, the steps that await a manual review stay pending and the conformance status stays partial.": "Aucune revue manuelle par une personne, y compris avec des lecteurs d'écran, n'a encore été faite ; cette version n'en comprend pas. Tant qu'aucune n'est enregistrée, les étapes qui attendent une revue manuelle restent en attente et le statut de conformité reste partiel.",
+  "Manual reviews are welcome:": "Les revues manuelles sont les bienvenues :",
+  "how to contribute a manual review": "comment proposer une revue manuelle",
+  "Last test run: {date}.": "Dernière exécution des tests : {date}.",
+  "Last test run: {date}. A review of the texts by {model} is recorded for the steps it covers.": "Dernière exécution des tests : {date}. Une revue des textes par {model} est enregistrée pour les étapes qu’elle couvre.",
+  "A manual review by {by} ({dates}) is recorded: {done} of {total} checks, with {setups}.": "Une revue manuelle par {by} ({dates}) est enregistrée : {done} vérifications sur {total}, avec {setups}.",
+  "A manual review by a person, including screen readers, has not been made yet.": "Aucune revue manuelle par une personne, y compris avec des lecteurs d'écran, n'a encore été faite.",
+  "Manual review:": "Revue manuelle :",
+  "{done} of {total} checks done: {pass} hold, {fail} fail, {na} do not apply.": "{done} vérifications faites sur {total} : {pass} respectées, {fail} non respectées, {na} non applicables.",
+  "Follow-up issues:": "Tickets de suivi :",
+  "Does not apply:": "Non applicable :",
+  "Sessions:": "Sessions :"
  }
 }

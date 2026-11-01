@@ -68,9 +68,6 @@
   "These steps are not tested yet:": "Disse trinnene er ikke testet ennå:",
   "The automated part of these steps passes; the rest still needs a manual review:": "Den automatiserte delen av disse trinnene er bestått; resten trenger fortsatt manuell gjennomgang:",
   "There are no known limitations.": "Det finnes ingen kjente begrensninger.",
-  "Last test run: {date}. A manual review is recorded.": "Siste testkjøring: {date}. En manuell gjennomgang er registrert.",
-  "Last test run: {date}. A review of the texts by {model} is recorded as the manual review of the steps it covers.": "Siste testkjøring: {date}. En gjennomgang av tekstene utført av {model} er registrert som manuell gjennomgang av trinnene den dekker.",
-  "Last test run: {date}. A manual review, including screen readers, has not been made yet.": "Siste testkjøring: {date}. En manuell gjennomgang, også med skjermlesere, er ikke gjort ennå.",
   "Could not load the accessibility report (bitv-report.json).": "Kunne ikke laste tilgjengelighetsrapporten (bitv-report.json).",
   "Accessibility": "Tilgjengelighet",
   "Non-text Content": "Ikke-tekstlig innhold",
@@ -168,6 +165,22 @@
   "Name, Role, Value": "Navn, rolle, verdi",
   "Every control has a name, a valid role and the states it needs.": "Hver kontroll har et navn, en gyldig rolle og tilstandene den trenger.",
   "Status Messages": "Statusbeskjeder",
-  "Status areas are live regions. Whether each status change is announced is judged by a person.": "Statusområder er live-regioner. Om hver statusendring blir lest opp, vurderes av en person."
+  "Status areas are live regions. Whether each status change is announced is judged by a person.": "Statusområder er live-regioner. Om hver statusendring blir lest opp, vurderes av en person.",
+  "Conformance level reached: {level}.": "Oppnådd samsvarsnivå: {level}.",
+  "No conformance level is claimed until a manual review by a person is recorded.": "Det hevdes ikke noe samsvarsnivå før en manuell gjennomgang utført av et menneske er registrert.",
+  "No conformance level is reached yet: not every applicable step passes.": "Ingen samsvarsnivå er oppnådd ennå: ikke alle aktuelle trinn er bestått.",
+  "These steps fail a review:": "Disse trinnene feiler i en gjennomgang:",
+  "No manual review by a person, including with screen readers, has been made yet; this release does not include one. Until one is recorded, the steps that await a manual review stay pending and the conformance status stays partial.": "Ingen manuell gjennomgang utført av et menneske, heller ikke med skjermlesere, er gjort ennå; denne versjonen har ingen. Til en er registrert, gjenstår trinnene som venter på manuell gjennomgang, og samsvarsstatusen forblir delvis.",
+  "Manual reviews are welcome:": "Manuelle gjennomganger er velkomne:",
+  "how to contribute a manual review": "slik bidrar du med en manuell gjennomgang",
+  "Last test run: {date}.": "Siste testkjøring: {date}.",
+  "Last test run: {date}. A review of the texts by {model} is recorded for the steps it covers.": "Siste testkjøring: {date}. En gjennomgang av tekstene utført av {model} er registrert for trinnene den dekker.",
+  "A manual review by {by} ({dates}) is recorded: {done} of {total} checks, with {setups}.": "En manuell gjennomgang utført av {by} ({dates}) er registrert: {done} av {total} kontroller, med {setups}.",
+  "A manual review by a person, including screen readers, has not been made yet.": "En manuell gjennomgang utført av et menneske, også med skjermlesere, er ikke gjort ennå.",
+  "Manual review:": "Manuell gjennomgang:",
+  "{done} of {total} checks done: {pass} hold, {fail} fail, {na} do not apply.": "{done} av {total} kontroller utført: {pass} oppfylt, {fail} ikke oppfylt, {na} ikke aktuelle.",
+  "Follow-up issues:": "Oppfølgingssaker:",
+  "Does not apply:": "Ikke aktuelt:",
+  "Sessions:": "Økter:"
  }
 }

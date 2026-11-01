@@ -142,6 +142,7 @@
     - heading "Declaração de acessibilidade" [level=2]
     - heading "Estado de conformidade" [level=3]
     - paragraph: A interface web v2 do ekte é parcialmente conforme com a BITV 2.0, a EN 301549 e as WCAG 2.1 nível AA.
+    - paragraph: Não é declarado nenhum nível de conformidade até estar registada uma revisão manual feita por uma pessoa.
     - heading "Limitações conhecidas" [level=3]
     - paragraph: "A parte automatizada destes passos é aprovada; o resto ainda precisa de uma revisão manual:"
     - list:
@@ -156,12 +157,16 @@
       - listitem: 9.3.2.2 Na introdução de dados
       - listitem: 9.3.3.1 Identificação de erros
       - listitem: 9.4.1.3 Mensagens de estado
+    - paragraph:
+      - text: "Ainda não foi feita uma revisão manual por uma pessoa, incluindo leitores de ecrã; esta versão não inclui nenhuma. Até estar registada uma, os passos que aguardam uma revisão manual continuam pendentes e o estado de conformidade continua parcial. As revisões manuais são bem-vindas:"
+      - link "como contribuir com uma revisão manual":
+        - /url: https://github.com/mn567250/ekte/blob/main/docs/dev/accessibility.md#manual-review
     - heading "Como foi avaliado" [level=3]
     - paragraph:
       - text: "Autoavaliação: a cada alteração, o conjunto de testes automatizados em"
       - code: tests/a11y
       - text: verifica cada página da interface web v2 num navegador real (Chromium, com axe-core e verificações próprias) em todos os idiomas da interface e nos temas claro e escuro. Cada teste indica os passos de teste que decide.
-    - paragraph: "Última execução dos testes: <report date>. Está registada uma revisão dos textos por claude-opus-5-5 como revisão manual dos passos que abrange."
+    - paragraph: "Última execução dos testes: <report date>. Está registada uma revisão dos textos por claude-opus-5-5 para os passos que abrange. Ainda não foi feita uma revisão manual por uma pessoa, incluindo leitores de ecrã."
     - heading "Comentários" [level=3]
     - paragraph:
       - text: "Encontrou uma barreira ou algo é difícil de usar com tecnologias de apoio? Diga-nos:"

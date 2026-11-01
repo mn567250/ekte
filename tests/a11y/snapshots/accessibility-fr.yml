@@ -142,6 +142,7 @@
     - heading "Déclaration d'accessibilité" [level=2]
     - heading "État de conformité" [level=3]
     - paragraph: L'interface web v2 de ekte est partiellement conforme au BITV 2.0, à l'EN 301549 et aux WCAG 2.1 niveau AA.
+    - paragraph: Aucun niveau de conformité n'est revendiqué tant qu'aucune revue manuelle par une personne n'est enregistrée.
     - heading "Limites connues" [level=3]
     - paragraph: "La partie automatisée de ces étapes est réussie ; le reste nécessite encore une revue manuelle :"
     - list:
@@ -156,12 +157,16 @@
       - listitem: 9.3.2.2 À la saisie
       - listitem: 9.3.3.1 Identification des erreurs
       - listitem: 9.4.1.3 Messages d'état
+    - paragraph:
+      - text: "Aucune revue manuelle par une personne, y compris avec des lecteurs d'écran, n'a encore été faite ; cette version n'en comprend pas. Tant qu'aucune n'est enregistrée, les étapes qui attendent une revue manuelle restent en attente et le statut de conformité reste partiel. Les revues manuelles sont les bienvenues :"
+      - link "comment proposer une revue manuelle":
+        - /url: https://github.com/mn567250/ekte/blob/main/docs/dev/accessibility.md#manual-review
     - heading "Méthode d'évaluation" [level=3]
     - paragraph:
       - text: "Auto-évaluation : à chaque modification, la suite de tests automatisés de"
       - code: tests/a11y
       - text: vérifie chaque page de l'interface web v2 dans un vrai navigateur (Chromium, avec axe-core et des vérifications propres) dans chaque langue de l'interface et dans les thèmes clair et sombre. Chaque test indique les étapes de test qu'il tranche.
-    - paragraph: "Dernière exécution des tests : <report date>. Une revue des textes par claude-opus-5-5 est enregistrée comme revue manuelle des étapes qu’elle couvre."
+    - paragraph: "Dernière exécution des tests : <report date>. Une revue des textes par claude-opus-5-5 est enregistrée pour les étapes qu’elle couvre. Aucune revue manuelle par une personne, y compris avec des lecteurs d'écran, n'a encore été faite."
     - heading "Retour" [level=3]
     - paragraph:
       - text: "Vous avez trouvé un obstacle, ou quelque chose est difficile à utiliser avec une technologie d'assistance ? Dites-le-nous :"

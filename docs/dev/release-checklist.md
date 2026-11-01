@@ -58,9 +58,15 @@ fails; everything else depends on you. Process and recovery:
 - [ ] The conformance report and `a11y-llm-review.json` are current for the changed pages
       (the nightly and manual CI runs produce the conformance report).
 - [ ] Keyboard use and screen-reader labels of new or changed controls were checked by hand.
-- [ ] The steps in [ACCESSIBILITY.md, Manual review](accessibility.md#manual-review) that
-      the change touches were repeated by a person and recorded there. A step nobody
-      performed stays "manual review pending"; a script run does not tick this item.
+- [ ] The manual review worksheet is current: `python -m tests.a11y.manual_review --prepare --merge`
+      changes nothing, and `python -m tests.a11y.manual_review --check` passes
+      (`tests/test_a11y_manual_review.py` checks both for the committed files).
+- [ ] Recorded manual reviews ([Manual review](accessibility.md#manual-review)): the checks of
+      the pages the change touches were repeated by a person and recorded in
+      `a11y-manual-review.json`, or their answers were reset by `--prepare --merge`. A check
+      nobody performed stays empty; a script run does not tick this item. Without any
+      recorded review (as for 1.0.0), the known limitation in the accessibility
+      statement stands and nothing more is needed for the release.
 
 ## Documentation in all languages
 

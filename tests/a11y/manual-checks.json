@@ -1,0 +1,359 @@
+{
+ "about": "What a person checks for each partly automatic BITV / EN 301 549 step of web UI v2. python -m tests.a11y.manual_review --prepare turns the steps the report still marks 'manual review pending' into a worksheet (a11y-manual-review.json): one check per question, page and session. Edit this file to change a question; the worksheet and the docs are generated from it.",
+ "setup": "Run ekte serve and open http://127.0.0.1:8000/. Run one audit so that History, Analytics and a report exist, and add one monitor. Use the UI language and theme the session names unless a check names another.",
+ "sessions": {
+  "desktop-browser": {
+   "label": "Desktop browser, keyboard and mouse, no screen reader",
+   "assistive_technology": null,
+   "browser": "Chrome or another Chromium browser (for the DevTools rendering emulations)",
+   "os": "Windows, macOS or Linux",
+   "input": "keyboard and mouse",
+   "language": "en",
+   "theme": "light"
+  },
+  "nvda-firefox": {
+   "label": "NVDA with Firefox on Windows",
+   "assistive_technology": "NVDA",
+   "browser": "Firefox",
+   "os": "Windows",
+   "input": "keyboard",
+   "language": "en",
+   "theme": "light"
+  },
+  "voiceover-safari": {
+   "label": "VoiceOver with Safari on macOS",
+   "assistive_technology": "VoiceOver (macOS)",
+   "browser": "Safari",
+   "os": "macOS",
+   "input": "keyboard",
+   "language": "en",
+   "theme": "light"
+  },
+  "touch": {
+   "label": "Phone or tablet with a touch screen",
+   "assistive_technology": "VoiceOver (iOS) or TalkBack (Android)",
+   "browser": "Safari (iOS) or Chrome (Android)",
+   "os": "iOS or Android",
+   "input": "touch",
+   "language": "en",
+   "theme": "light"
+  }
+ },
+ "steps": {
+  "9.1.1.1": {
+   "why": "A machine finds missing text alternatives, not whether an alternative is meaningful.",
+   "checks": [
+    {
+     "id": "alternatives-meaningful",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["NVDA: G / Shift+G (graphics), B / Shift+B (buttons)"],
+     "do": "Move through the graphics and the icon-only buttons and listen to each name.",
+     "expect": "Each name says what the image or icon means or does; purely decorative images are not announced."
+    }
+   ]
+  },
+  "9.1.3.1": {
+   "why": "A machine cannot tell whether headings, lists and tables match the visual meaning.",
+   "checks": [
+    {
+     "id": "headings-landmarks",
+     "sessions": ["nvda-firefox", "voiceover-safari"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["NVDA: Insert+F7 (elements list: headings, landmarks)", "VoiceOver: rotor VO+U (headings, landmarks)"],
+     "do": "Open the list of headings, then the list of landmarks.",
+     "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed."
+    },
+    {
+     "id": "table-headers",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit", "analytics", "accessibility"],
+     "tools": ["NVDA: T (next table), Ctrl+Alt+arrow keys (move by cell)"],
+     "do": "Move into each data table (the audit report, the Analytics tables, the test steps) and step through its cells.",
+     "expect": "Moving to a cell announces its row and column header together with the data."
+    },
+    {
+     "id": "field-groups",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics"],
+     "tools": ["NVDA: F (next form field), Tab"],
+     "do": "Move through the fields and filters that are visually grouped (radio buttons, filter panels, advanced options).",
+     "expect": "Entering a group announces the group name; each field is announced with its own label."
+    }
+   ]
+  },
+  "9.1.3.2": {
+   "why": "The tests compare the reading order with the visual order; whether the order makes sense is a judgement.",
+   "checks": [
+    {
+     "id": "reading-order",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["NVDA: Down arrow in browse mode, or Insert+Down arrow (say all)"],
+     "do": "Read the page from top to bottom, then open each disclosure, tab and \"Show more\" and read on.",
+     "expect": "The order makes sense, and content revealed by a disclosure, tab or \"Show more\" is read right after its control."
+    },
+    {
+     "id": "reading-order-narrow",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit", "history", "analytics"],
+     "width": "320 CSS px (browser window narrowed, or 400 % zoom)",
+     "tools": ["NVDA: Down arrow in browse mode"],
+     "do": "At 320 CSS px width, read the page from top to bottom.",
+     "expect": "The order still makes sense where the layout stacks columns."
+    }
+   ]
+  },
+  "9.1.3.3": {
+   "why": "A heuristic finds wording that may rely on shape, position or colour; a person judges the hits and the rest.",
+   "checks": [
+    {
+     "id": "instructions-not-sensory",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["reading the page"],
+     "do": "Read every instruction, hint and help text.",
+     "expect": "No instruction relies only on shape, size, position, colour or sound (such as \"the green button\" or \"on the right\")."
+    }
+   ]
+  },
+  "9.1.4.1": {
+   "why": "The tests check links and the known status displays; whether colour alone carries meaning elsewhere is a judgement.",
+   "checks": [
+    {
+     "id": "greyscale",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["Chromium DevTools: Rendering, Emulate vision deficiencies: Achromatopsia"],
+     "do": "Emulate greyscale and look at every status, badge, trend, chart series and highlighted item.",
+     "expect": "Each state is still told apart by text, icon, pattern or position."
+    }
+   ]
+  },
+  "9.1.4.11": {
+   "why": "Form controls and focus indicators are measured; charts and icons are not.",
+   "checks": [
+    {
+     "id": "graphics-contrast-light",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "analytics", "accessibility"],
+     "theme": "light",
+     "tools": ["DevTools colour picker or the Colour Contrast Analyser"],
+     "do": "Measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+     "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table."
+    },
+    {
+     "id": "graphics-contrast-dark",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "analytics", "accessibility"],
+     "theme": "dark",
+     "tools": ["DevTools colour picker or the Colour Contrast Analyser"],
+     "do": "In the dark theme, measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+     "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table."
+    }
+   ]
+  },
+  "9.1.4.13": {
+   "why": "The tests hover and focus every element; whether revealed content is additional content is a judgement.",
+   "checks": [
+    {
+     "id": "hover-focus-content",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["mouse", "Tab", "Escape"],
+     "do": "Show every tooltip, popup and menu with the mouse and with Tab.",
+     "expect": "Escape closes it without moving focus; the pointer can move onto it without it closing; it stays until dismissed or no longer relevant."
+    },
+    {
+     "id": "hover-focus-content-zoom",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "monitors", "analytics"],
+     "zoom": "200 %",
+     "tools": ["browser zoom", "mouse", "Tab", "Escape"],
+     "do": "At 200 % zoom, show every tooltip, popup and menu again.",
+     "expect": "It is fully visible, does not hide the control that opened it, and behaves as at 100 %."
+    }
+   ]
+  },
+  "9.2.2.2": {
+   "why": "The tests find motion and auto-updates at rest; whether an update is essential is a judgement.",
+   "checks": [
+    {
+     "id": "moving-content-pausable",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "monitors"],
+     "tools": ["a running audit or monitor"],
+     "do": "Start an audit, and let a monitor run.",
+     "expect": "Nothing moves, blinks or updates for more than five seconds unless it is essential or there is a control to pause, stop or hide it."
+    },
+    {
+     "id": "reduced-motion",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "monitors", "analytics", "accessibility"],
+     "tools": ["OS setting: Windows Settings, Accessibility, Visual effects, Animation effects off; macOS Reduce motion"],
+     "do": "Turn on reduce motion in the operating system and reload the page.",
+     "expect": "Animations (charts, counters, transitions) do not run."
+    }
+   ]
+  },
+  "9.2.4.3": {
+   "why": "The tests check that nothing hidden takes focus; whether the order is logical is a judgement.",
+   "checks": [
+    {
+     "id": "tab-order",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["Tab", "Shift+Tab"],
+     "do": "Without the mouse, press Tab through the page, then through each opened disclosure and tab panel.",
+     "expect": "The focus follows the reading order with no unexpected jump, and returns to the control that opened a disclosure when it closes."
+    },
+    {
+     "id": "dialog-focus",
+     "sessions": ["desktop-browser"],
+     "pages": ["monitors"],
+     "tools": ["Tab", "Escape"],
+     "do": "Open the key-storage (master key) dialog, press Tab through it and close it.",
+     "expect": "The focus moves into the dialog when it opens, stays in it while it is open, and returns to the control that opened it."
+    }
+   ]
+  },
+  "9.2.4.4": {
+   "why": "Every link has a name; whether the name describes the target is a judgement.",
+   "checks": [
+    {
+     "id": "link-names",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["NVDA: Insert+F7 (elements list: links)"],
+     "do": "Open the list of links.",
+     "expect": "Each link name, alone or with its sentence, list item or table cell, says where the link goes."
+    }
+   ]
+  },
+  "9.2.4.6": {
+   "why": "Headings and labels exist and are not empty; whether they are descriptive is a judgement.",
+   "checks": [
+    {
+     "id": "headings-labels-descriptive",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["NVDA: Insert+F7 (elements list: headings, form fields)"],
+     "do": "Open the list of headings, then the list of form fields.",
+     "expect": "Each heading says what its section is about, and each label says what the field is for."
+    }
+   ]
+  },
+  "9.2.5.1": {
+   "why": "No gesture handlers are found; only a person confirms that every function works with single taps.",
+   "checks": [
+    {
+     "id": "single-pointer",
+     "sessions": ["touch"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics", "accessibility"],
+     "tools": ["touch screen, single taps only"],
+     "do": "Operate every control with single taps only: charts, tables, tabs, sort, filters and disclosures.",
+     "expect": "No function needs a swipe, pinch, drag or multi-finger gesture."
+    }
+   ]
+  },
+  "9.3.2.2": {
+   "why": "The tests change every control and watch for a change of context; whether a change was announced beforehand is a judgement.",
+   "checks": [
+    {
+     "id": "header-switches",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit"],
+     "tools": ["NVDA", "keyboard"],
+     "do": "Change the language and the theme with the keyboard (the switches in the header, the same on every page).",
+     "expect": "The control says what it changes before it is used; afterwards the focus stays on it and no window opens."
+    },
+    {
+     "id": "page-controls",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics"],
+     "tools": ["NVDA", "keyboard"],
+     "do": "Change every select, checkbox, switch and field of the page (filters, sort, page size, options) with the keyboard.",
+     "expect": "Each change is described before it is made, and none moves the focus, opens a window or replaces the content unexpectedly."
+    }
+   ]
+  },
+  "9.3.3.1": {
+   "why": "The tests check that errors are marked and linked; whether a message is clear is a judgement.",
+   "checks": [
+    {
+     "id": "audit-errors",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit"],
+     "tools": ["NVDA"],
+     "do": "Submit an empty audit form, then an invalid key, then an endpoint that cannot be reached.",
+     "expect": "Each error is announced when it appears, names the field, says in plain words what is wrong, and the focus or the error link leads to the field."
+    },
+    {
+     "id": "audit-errors-de",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit"],
+     "lang": "de",
+     "tools": ["NVDA"],
+     "do": "In German, submit an empty audit form and an invalid key.",
+     "expect": "The errors are announced in German, name the field and say what is wrong."
+    },
+    {
+     "id": "audit-errors-zh",
+     "sessions": ["nvda-firefox"],
+     "pages": ["audit"],
+     "lang": "zh",
+     "tools": ["NVDA"],
+     "do": "In Chinese, submit an empty audit form and an invalid key.",
+     "expect": "The errors are announced in Chinese, name the field and say what is wrong."
+    },
+    {
+     "id": "form-errors",
+     "sessions": ["nvda-firefox"],
+     "pages": ["monitors", "kb"],
+     "tools": ["NVDA"],
+     "do": "Save the page's form empty or with an invalid value (a monitor; a knowledge-base entry).",
+     "expect": "Each error is announced when it appears, names the field, says in plain words what is wrong, and leads to the field."
+    }
+   ]
+  },
+  "9.3.3.2": {
+   "why": "Every field has a label; whether the instructions are sufficient is a judgement.",
+   "checks": [
+    {
+     "id": "instructions-sufficient",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics"],
+     "tools": ["reading the page"],
+     "do": "Fill in each form and filter of the page using only the labels and hints shown.",
+     "expect": "The required fields, the expected format and the effect of each option are clear before submitting."
+    }
+   ]
+  },
+  "9.3.3.3": {
+   "why": "Error messages exist and are translated; whether they suggest a fix is a judgement.",
+   "checks": [
+    {
+     "id": "errors-suggest-fix",
+     "sessions": ["desktop-browser"],
+     "pages": ["audit", "monitors", "kb"],
+     "tools": ["reading the messages"],
+     "do": "Cause each error of the page's form (empty field, invalid value).",
+     "expect": "Where a fix is known, the message says how to correct the input."
+    }
+   ]
+  },
+  "9.4.1.3": {
+   "why": "Status areas are live regions; whether each change is actually announced is only heard.",
+   "checks": [
+    {
+     "id": "status-announced",
+     "sessions": ["nvda-firefox", "voiceover-safari"],
+     "pages": ["audit", "history", "monitors", "kb", "analytics"],
+     "tools": ["screen reader with speech on"],
+     "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+     "expect": "Each result or progress change is spoken, once, without the focus moving."
+    }
+   ]
+  }
+ }
+}

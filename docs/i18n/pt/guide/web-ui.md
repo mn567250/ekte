@@ -54,7 +54,7 @@ A interface web é servida na raiz do endereço que o `ekte serve` abre, com a p
 | **Histórico** | `/history` | Cada auditoria executada nesta máquina, agrupada por relay + modelo declarado, com tendências |
 | **Análises** | `/analytics` | Relays e modelos comparados ao longo do tempo: indicadores, gráficos com tabelas de dados, classificações |
 | **Conhecimento** | `/kb` | A base de conhecimento em três separadores — modelos, fornecedores, relays: explorar, ativar/desativar, adicionar os seus |
-| **Acessibilidade** | `/accessibility` | O relatório de conformidade e a declaração de acessibilidade (o ícone junto ao seletor de idioma) |
+| **Acessibilidade** | `/accessibility` | O relatório de conformidade e a declaração de acessibilidade (o ícone junto ao seletor de idioma); ainda sem revisão manual por uma pessoa (limitação conhecida) |
 
 Nas páginas há ainda: filtros e tendências configuráveis (pontuação, nota,
 latência p50, tokens/s) no **Histórico**; **Agendar como monitor** e **Executar auditoria novamente** em cada

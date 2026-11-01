@@ -142,6 +142,7 @@
     - heading "Erklärung zur Barrierefreiheit" [level=2]
     - heading "Stand der Vereinbarkeit" [level=3]
     - paragraph: Die Web-Oberfläche v2 von ekte ist mit BITV 2.0, EN 301549 und WCAG 2.1 Stufe AA teilweise vereinbar.
+    - paragraph: Eine Konformitätsstufe wird erst beansprucht, wenn eine manuelle Prüfung durch einen Menschen dokumentiert ist.
     - heading "Bekannte Einschränkungen" [level=3]
     - paragraph: "Der automatisierte Teil dieser Schritte ist bestanden; der Rest braucht noch eine manuelle Prüfung:"
     - list:
@@ -156,12 +157,16 @@
       - listitem: 9.3.2.2 Bei Eingabe
       - listitem: 9.3.3.1 Fehlererkennung
       - listitem: 9.4.1.3 Statusmeldungen
+    - paragraph:
+      - text: "Eine manuelle Prüfung durch einen Menschen, auch mit Screenreadern, wurde noch nicht durchgeführt; diese Version enthält keine. Bis eine dokumentiert ist, bleiben die Schritte mit ausstehender manueller Prüfung offen, und der Konformitätsstatus bleibt teilweise. Manuelle Prüfungen sind willkommen:"
+      - link "so tragen Sie eine manuelle Prüfung bei":
+        - /url: https://github.com/mn567250/ekte/blob/main/docs/dev/accessibility.md#manual-review
     - heading "Wie bewertet wurde" [level=3]
     - paragraph:
       - text: "Selbstbewertung: Bei jeder Änderung prüft die automatisierte Testsuite in"
       - code: tests/a11y
       - text: jede Seite der Web-Oberfläche v2 in einem echten Browser (Chromium, mit axe-core und eigenen Prüfungen) in jeder Sprache der Oberfläche sowie im hellen und im dunklen Design. Jeder Test nennt die Prüfschritte, die er entscheidet.
-    - paragraph: "Letzter Testlauf: <report date>. Eine Prüfung der Texte durch claude-opus-5-5 ist als manuelle Prüfung der abgedeckten Schritte dokumentiert."
+    - paragraph: "Letzter Testlauf: <report date>. Eine Prüfung der Texte durch claude-opus-5-5 ist für die abgedeckten Schritte dokumentiert. Eine manuelle Prüfung durch einen Menschen, auch mit Screenreadern, wurde noch nicht durchgeführt."
     - heading "Rückmeldung" [level=3]
     - paragraph:
       - text: "Sind Sie auf eine Barriere gestoßen oder ist etwas mit assistiven Technologien schwer zu bedienen? Bitte sagen Sie es uns:"

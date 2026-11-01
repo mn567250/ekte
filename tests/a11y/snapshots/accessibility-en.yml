@@ -142,6 +142,7 @@
     - heading "Accessibility statement" [level=2]
     - heading "Conformance status" [level=3]
     - paragraph: Web UI v2 of ekte is partially conformant with BITV 2.0, EN 301549 and WCAG 2.1 level AA.
+    - paragraph: No conformance level is claimed until a manual review by a person is recorded.
     - heading "Known limitations" [level=3]
     - paragraph: "The automated part of these steps passes; the rest still needs a manual review:"
     - list:
@@ -156,12 +157,16 @@
       - listitem: 9.3.2.2 On Input
       - listitem: 9.3.3.1 Error Identification
       - listitem: 9.4.1.3 Status Messages
+    - paragraph:
+      - text: "No manual review by a person, including with screen readers, has been made yet; this release does not include one. Until one is recorded, the steps that await a manual review stay pending and the conformance status stays partial. Manual reviews are welcome:"
+      - link "how to contribute a manual review":
+        - /url: https://github.com/mn567250/ekte/blob/main/docs/dev/accessibility.md#manual-review
     - heading "How it was assessed" [level=3]
     - paragraph:
       - text: "Self-assessment: on every change, the automated test suite in"
       - code: tests/a11y
       - text: checks every page of web UI v2 in a real browser (Chromium, with axe-core and checks of its own) in every UI language and in the light and the dark theme. Each test names the test steps it decides.
-    - paragraph: "Last test run: <report date>. A review of the texts by claude-opus-5-5 is recorded as the manual review of the steps it covers."
+    - paragraph: "Last test run: <report date>. A review of the texts by claude-opus-5-5 is recorded for the steps it covers. A manual review by a person, including screen readers, has not been made yet."
     - heading "Feedback" [level=3]
     - paragraph:
       - text: "Did you find a barrier, or is something hard to use with assistive technology? Please tell us:"

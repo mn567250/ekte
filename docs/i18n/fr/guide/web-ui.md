@@ -55,7 +55,7 @@ L'interface web est servie à la racine de l'adresse qu'ouvre `ekte serve`, la p
 | **Historique** | `/history` | Chaque audit exécuté sur cette machine, groupé par relais + modèle annoncé, avec tendances |
 | **Analyses** | `/analytics` | Relais et modèles comparés dans le temps : indicateurs, graphiques avec tableaux de données, classements |
 | **Connaissances** | `/kb` | La base de connaissances en trois onglets — modèles, fournisseurs, relais : parcourir, activer/désactiver, ajouter les vôtres |
-| **Accessibilité** | `/accessibility` | Le rapport de conformité et la déclaration d'accessibilité (l'icône à côté du sélecteur de langue) |
+| **Accessibilité** | `/accessibility` | Le rapport de conformité et la déclaration d'accessibilité (l'icône à côté du sélecteur de langue) ; pas encore de revue manuelle par une personne (limite connue) |
 
 Sur les pages, en outre : des filtres et des tendances configurables (score,
 note, latence p50, tokens/s) dans l'**Historique** ; **Planifier comme

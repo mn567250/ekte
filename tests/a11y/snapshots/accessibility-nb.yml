@@ -142,6 +142,7 @@
     - heading "Tilgjengelighetserklæring" [level=2]
     - heading "Samsvarsstatus" [level=3]
     - paragraph: Nettgrensesnitt v2 i ekte er delvis i samsvar med BITV 2.0, EN 301549 og WCAG 2.1 nivå AA.
+    - paragraph: Det hevdes ikke noe samsvarsnivå før en manuell gjennomgang utført av et menneske er registrert.
     - heading "Kjente begrensninger" [level=3]
     - paragraph: "Den automatiserte delen av disse trinnene er bestått; resten trenger fortsatt manuell gjennomgang:"
     - list:
@@ -156,12 +157,16 @@
       - listitem: 9.3.2.2 Inndata
       - listitem: 9.3.3.1 Identifikasjon av feil
       - listitem: 9.4.1.3 Statusbeskjeder
+    - paragraph:
+      - text: "Ingen manuell gjennomgang utført av et menneske, heller ikke med skjermlesere, er gjort ennå; denne versjonen har ingen. Til en er registrert, gjenstår trinnene som venter på manuell gjennomgang, og samsvarsstatusen forblir delvis. Manuelle gjennomganger er velkomne:"
+      - link "slik bidrar du med en manuell gjennomgang":
+        - /url: https://github.com/mn567250/ekte/blob/main/docs/dev/accessibility.md#manual-review
     - heading "Slik ble det vurdert" [level=3]
     - paragraph:
       - text: "Egenvurdering: ved hver endring sjekker det automatiserte testsettet i"
       - code: tests/a11y
       - text: hver side i nettgrensesnitt v2 i en ekte nettleser (Chromium, med axe-core og egne kontroller) på hvert grensesnittspråk og i lyst og mørkt tema. Hver test oppgir hvilke testtrinn den avgjør.
-    - paragraph: "Siste testkjøring: <report date>. En gjennomgang av tekstene utført av claude-opus-5-5 er registrert som manuell gjennomgang av trinnene den dekker."
+    - paragraph: "Siste testkjøring: <report date>. En gjennomgang av tekstene utført av claude-opus-5-5 er registrert for trinnene den dekker. En manuell gjennomgang utført av et menneske, også med skjermlesere, er ikke gjort ennå."
     - heading "Tilbakemelding" [level=3]
     - paragraph:
       - text: "Har du funnet en barriere, eller er noe vanskelig å bruke med hjelpemiddelteknologi? Si fra til oss:"

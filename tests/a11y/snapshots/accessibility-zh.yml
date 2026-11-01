@@ -142,6 +142,7 @@
     - heading "无障碍声明" [level=2]
     - heading "符合状态" [level=3]
     - paragraph: ekte 网页界面 v2 与 BITV 2.0、EN 301549 和 WCAG 2.1 AA 级部分符合。
+    - paragraph: 在记录人工审核之前，不声明任何符合级别。
     - heading "已知限制" [level=3]
     - paragraph: 以下步骤的自动化部分已通过，其余部分仍需人工审核：
     - list:
@@ -156,12 +157,16 @@
       - listitem: 9.3.2.2 输入时
       - listitem: 9.3.3.1 错误识别
       - listitem: 9.4.1.3 状态消息
+    - paragraph:
+      - text: 目前尚未由人进行人工审核（包括使用屏幕阅读器的审核），本版本也不包含人工审核。在记录人工审核之前，待人工审核的步骤保持待定，符合状态保持为部分符合。 欢迎提交人工审核：
+      - link "如何提交人工审核":
+        - /url: https://github.com/mn567250/ekte/blob/main/docs/dev/accessibility.md#manual-review
     - heading "评估方式" [level=3]
     - paragraph:
       - text: 自我评估：每次变更时，
       - code: tests/a11y
       - text: 中的自动化测试套件都会在真实浏览器（Chromium，使用 axe-core 和自有检查）中，以每种界面语言、浅色与深色主题检查网页界面 v2 的每个页面。每个测试都标明它所判定的检查步骤。
-    - paragraph: 最近一次测试：<report date>。claude-opus-5-5 对文本的审核已记录为其所涵盖步骤的人工审核。
+    - paragraph: 最近一次测试：<report date>。已记录 claude-opus-5-5 对其所涵盖步骤的文本审核。 尚未进行由人完成的人工审核（包括屏幕阅读器）。
     - heading "反馈" [level=3]
     - paragraph:
       - text: 发现了障碍，或者某些功能难以通过辅助技术使用？请告诉我们：

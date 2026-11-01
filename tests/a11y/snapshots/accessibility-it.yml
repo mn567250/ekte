@@ -142,6 +142,7 @@
     - heading "Dichiarazione di accessibilità" [level=2]
     - heading "Stato di conformità" [level=3]
     - paragraph: L'interfaccia web v2 di ekte è parzialmente conforme a BITV 2.0, EN 301549 e WCAG 2.1 livello AA.
+    - paragraph: Nessun livello di conformità è dichiarato finché non è registrata una revisione manuale fatta da una persona.
     - heading "Limitazioni note" [level=3]
     - paragraph: "La parte automatica di questi passi è superata; il resto richiede ancora una revisione manuale:"
     - list:
@@ -156,12 +157,16 @@
       - listitem: 9.3.2.2 All'input
       - listitem: 9.3.3.1 Identificazione di errori
       - listitem: 9.4.1.3 Messaggi di stato
+    - paragraph:
+      - text: "Non è ancora stata fatta una revisione manuale da una persona, anche con lettori di schermo; questa versione non ne include una. Finché non ne viene registrata una, i passi in attesa di revisione manuale restano in sospeso e lo stato di conformità resta parziale. Le revisioni manuali sono benvenute:"
+      - link "come contribuire con una revisione manuale":
+        - /url: https://github.com/mn567250/ekte/blob/main/docs/dev/accessibility.md#manual-review
     - heading "Come è stata valutata" [level=3]
     - paragraph:
       - text: "Autovalutazione: a ogni modifica, la suite di test automatici in"
       - code: tests/a11y
       - text: controlla ogni pagina dell'interfaccia web v2 in un browser reale (Chromium, con axe-core e controlli propri) in ogni lingua dell'interfaccia e nel tema chiaro e scuro. Ogni test indica i passi di verifica che decide.
-    - paragraph: "Ultima esecuzione dei test: <report date>. Una revisione dei testi di claude-opus-5-5 è registrata come revisione manuale dei passi che copre."
+    - paragraph: "Ultima esecuzione dei test: <report date>. È registrata una revisione dei testi di claude-opus-5-5 per i passi che copre. Non è ancora stata fatta una revisione manuale da una persona, anche con lettori di schermo."
     - heading "Segnalazioni" [level=3]
     - paragraph:
       - text: "Hai trovato una barriera o qualcosa è difficile da usare con le tecnologie assistive? Segnalacelo:"
