@@ -46,15 +46,29 @@ _SECRET_PATTERNS = [
 ]
 
 
+# scrypt parameters for :func:`fingerprint_secret`. The salt is fixed (not per
+# call) so the same key always gets the same fingerprint, on every machine; it
+# still rules out precomputed tables. n=2**14, r=8 costs ~16 MiB and tens of
+# milliseconds — once per audit run, but per guess for anyone trying to recover
+# a short or guessable key from a published report.
+_FP_SALT = b"ekte/api-key-fingerprint/v1"
+_FP_N, _FP_R, _FP_P = 2**14, 8, 1
+
+
 def fingerprint_secret(secret: str | None) -> str | None:
     """Return a short, non-reversible fingerprint of a secret for correlation.
 
     Lets a report say "same key as run X" without ever storing the key itself.
+    Derived with scrypt, a deliberately slow password hash, rather than a fast
+    digest, so a fingerprint in a shared report can't be brute-forced back to a
+    weak key.
     """
     if not secret:
         return None
-    digest = hashlib.sha256(secret.encode("utf-8")).hexdigest()
-    return f"sha256:{digest[:12]}"
+    digest = hashlib.scrypt(
+        secret.encode("utf-8"), salt=_FP_SALT, n=_FP_N, r=_FP_R, p=_FP_P, dklen=16
+    ).hex()
+    return f"scrypt:{digest[:12]}"
 
 
 def mask_secret(secret: str | None) -> str:
