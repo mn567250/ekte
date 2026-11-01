@@ -27,6 +27,18 @@ ekte has three eras:
   stored and unstored keys, your own knowledge-base entries); the upgrade tests
   open it with the current code and check that nothing is lost.
 
+### Fixed
+
+- **`ekte kb-import --check` accepts the packaged knowledge base**
+  ([#69](https://github.com/mn567250/ekte/issues/69)). The import check rejected
+  5 of the 7 files in `ekte/knowledge/data/`. Fingerprint `max_tokens` may now be
+  up to 2,097,152, twice the largest max output any model offers (Kimi K3,
+  1,048,576), so the max-output probes (40,000–65,536 tokens) pass. `base_url_hints`
+  may now hold bare hosts (`api.openai.com`), paths (`/v1/chat/completions`) and
+  `{placeholder}` templates, not only full `https://` URLs; other schemes,
+  whitespace and hints over 500 characters are still refused. A new test checks
+  every packaged file, so the data and the validator cannot drift apart again.
+
 ## [0.33.0] - 2026-11-01
 
 The last release before 1.0.0, covering the roadmap milestones 0.31

@@ -14,6 +14,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel
 
+from ekte.knowledge.importer import MAX_TOKENS
 from ekte.knowledge.schema import FingerprintProbe, KnowledgeBase, ModelProfile, ProviderProfile
 
 # What each field means — the schema itself carries only names, types, defaults.
@@ -62,7 +63,7 @@ _HELP: dict[str, str] = {
     "expect_contains_any": "at least one of these must appear",
     "expect_not_contains": "none of these may appear",
     "expect_regex": "a short regular expression the answer must match (no nested quantifiers)",
-    "max_tokens": "output tokens for this probe (1-32768); the identity check skips a "
+    "max_tokens": f"output tokens for this probe (1-{MAX_TOKENS}); the identity check skips a "
     "pure_code_checkable probe above 512",
     "temperature": "sampling temperature (0-2)",
     "weight": "relative weight of this probe (0-10)",
