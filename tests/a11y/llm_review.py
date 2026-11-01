@@ -1818,6 +1818,8 @@ def update_report(review_report: dict[str, Any], path: str | None = None, result
         else:
             old = json.loads(target.read_text(encoding="utf-8"))
             new = conformance.apply_review(old, review_report, now=_dt.datetime.now(_dt.UTC))
+        # keep the manual review (./a11y-manual-review.json) of a person
+        new = conformance.with_default_manual(new, review_report)
         conformance.write_report(target, new)
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"llm_review: could not update {target}: {type(exc).__name__}: {exc}")

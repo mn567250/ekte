@@ -203,7 +203,8 @@ def test_llm_review_counts_as_the_manual_part():
     assert by["9.2.4.4"]["review"]["notes"] == 'kb [de] link "Mehr": unclear → Name it'
     assert by["9.3.3.3"]["status"] == "not tested"               # no automated test ran: review alone decides nothing
     assert by["9.1.4.10"]["status"] == "fail" and "review" not in by["9.1.4.10"]
-    assert rep["conformance"]["manual_review"] is True
+    # the LLM review counts for its steps but is not a manual review by a person
+    assert rep["conformance"]["llm_review"] is True and rep["conformance"]["manual_review"] is False
     assert rep["review"]["method"] == "llm" and rep["review"]["model"] == "claude-opus-5-5" and rep["review"]["counted"]
     assert rep["review"]["translation"]["verdict"] == "issues"
     assert "localhost" not in json.dumps(rep)                    # the endpoint stays out of the published report
@@ -224,7 +225,7 @@ def test_incomplete_llm_review_changes_no_status():
     # a review of fewer languages than were tested
     rep = conformance.build_report(_results(), _llm_review(langs=("en",)))
     assert _by(rep)["9.1.1.1"]["status"] == "manual review pending"
-    assert rep["review"]["counted"] is False and rep["conformance"]["manual_review"] is False
+    assert rep["review"]["counted"] is False and rep["conformance"]["llm_review"] is False
 
 
 def test_skipped_or_failed_llm_review_is_ignored():
@@ -245,7 +246,7 @@ def test_cli_picks_up_the_llm_review_in_the_working_directory(tmp_path, monkeypa
     (tmp_path / "a11y-llm-review.json").write_text(json.dumps(_llm_review()), encoding="utf-8")
     assert conformance.main(["--results", str(res), "--out", str(out)]) == 0
     rep = json.loads(out.read_text(encoding="utf-8"))
-    assert _by(rep)["9.1.1.1"]["status"] == "pass" and rep["conformance"]["manual_review"] is True
+    assert _by(rep)["9.1.1.1"]["status"] == "pass" and rep["conformance"]["llm_review"] is True
     assert conformance.main(["--results", str(res), "--out", str(out), "--no-llm"]) == 0
     assert json.loads(out.read_text(encoding="utf-8"))["review"] is None
 

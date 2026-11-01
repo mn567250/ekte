@@ -68,9 +68,6 @@
   "These steps are not tested yet:": "Questi passi non sono ancora verificati:",
   "The automated part of these steps passes; the rest still needs a manual review:": "La parte automatica di questi passi è superata; il resto richiede ancora una revisione manuale:",
   "There are no known limitations.": "Non ci sono limitazioni note.",
-  "Last test run: {date}. A manual review is recorded.": "Ultima esecuzione dei test: {date}. È registrata una revisione manuale.",
-  "Last test run: {date}. A review of the texts by {model} is recorded as the manual review of the steps it covers.": "Ultima esecuzione dei test: {date}. Una revisione dei testi di {model} è registrata come revisione manuale dei passi che copre.",
-  "Last test run: {date}. A manual review, including screen readers, has not been made yet.": "Ultima esecuzione dei test: {date}. Non è ancora stata fatta una revisione manuale, anche con lettori di schermo.",
   "Could not load the accessibility report (bitv-report.json).": "Impossibile caricare il rapporto di accessibilità (bitv-report.json).",
   "Accessibility": "Accessibilità",
   "Non-text Content": "Contenuti non testuali",
@@ -168,6 +165,22 @@
   "Name, Role, Value": "Nome, ruolo, valore",
   "Every control has a name, a valid role and the states it needs.": "Ogni controllo ha un nome, un ruolo valido e gli stati necessari.",
   "Status Messages": "Messaggi di stato",
-  "Status areas are live regions. Whether each status change is announced is judged by a person.": "Le aree di stato sono regioni live. Se ogni cambio di stato viene annunciato lo giudica una persona."
+  "Status areas are live regions. Whether each status change is announced is judged by a person.": "Le aree di stato sono regioni live. Se ogni cambio di stato viene annunciato lo giudica una persona.",
+  "Conformance level reached: {level}.": "Livello di conformità raggiunto: {level}.",
+  "No conformance level is claimed until a manual review by a person is recorded.": "Nessun livello di conformità è dichiarato finché non è registrata una revisione manuale fatta da una persona.",
+  "No conformance level is reached yet: not every applicable step passes.": "Non è ancora raggiunto alcun livello di conformità: non tutti i passi applicabili sono superati.",
+  "These steps fail a review:": "Questi passi non superano una revisione:",
+  "No manual review by a person, including with screen readers, has been made yet; this release does not include one. Until one is recorded, the steps that await a manual review stay pending and the conformance status stays partial.": "Non è ancora stata fatta una revisione manuale da una persona, anche con lettori di schermo; questa versione non ne include una. Finché non ne viene registrata una, i passi in attesa di revisione manuale restano in sospeso e lo stato di conformità resta parziale.",
+  "Manual reviews are welcome:": "Le revisioni manuali sono benvenute:",
+  "how to contribute a manual review": "come contribuire con una revisione manuale",
+  "Last test run: {date}.": "Ultima esecuzione dei test: {date}.",
+  "Last test run: {date}. A review of the texts by {model} is recorded for the steps it covers.": "Ultima esecuzione dei test: {date}. È registrata una revisione dei testi di {model} per i passi che copre.",
+  "A manual review by {by} ({dates}) is recorded: {done} of {total} checks, with {setups}.": "È registrata una revisione manuale di {by} ({dates}): {done} controlli su {total}, con {setups}.",
+  "A manual review by a person, including screen readers, has not been made yet.": "Non è ancora stata fatta una revisione manuale da una persona, anche con lettori di schermo.",
+  "Manual review:": "Revisione manuale:",
+  "{done} of {total} checks done: {pass} hold, {fail} fail, {na} do not apply.": "{done} controlli fatti su {total}: {pass} soddisfatti, {fail} non soddisfatti, {na} non applicabili.",
+  "Follow-up issues:": "Issue di follow-up:",
+  "Does not apply:": "Non applicabile:",
+  "Sessions:": "Sessioni:"
  }
 }

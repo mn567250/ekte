@@ -29,12 +29,27 @@ ekte has three eras:
   the test checks the migration, its backup and that nothing is lost.
   `scripts/make_upgrade_fixture.py <version>` creates the fixture of a new
   release, and the release checklist requires one per minor release.
-- **Accessibility manual review checklist.** `docs/ACCESSIBILITY.md` lists the
+- **Accessibility manual review checklist.** `docs/dev/accessibility.md` lists the
   eleven steps that still need a person, with exact screen-reader, zoom, greyscale
   and touch steps, a record table and the automated pre-checks (keyboard walk,
   accessibility tree, 320 px reflow, reduced motion, contrast in both themes) that
   found no issue. No step is recorded as manually reviewed yet. The release
   checklist asks to repeat the review for UI changes.
+- **Machine-readable manual accessibility review (#30).** The questions a person
+  answers for each partly automatic BITV / EN 301 549 step are data
+  (`tests/a11y/manual-checks.json`: sessions, pages, tools, what to do and what
+  to expect, only for the pages a question applies to).
+  `python -m tests.a11y.manual_review --prepare` writes a worksheet,
+  `a11y-manual-review.json`, for the steps the automated suite and the LLM
+  review leave pending (94 checks for the eleven pending steps); the reviewer
+  fills in `true`, `false` with a follow-up issue, or `null` with a reason.
+  `--check` validates it against its JSON Schema
+  (`tests/a11y/manual-review.schema.json`) and the questions, so an edited
+  question is an error; `--prepare --merge` keeps answers when the questions or
+  the report change. `python -m tests.a11y.conformance` applies the worksheet
+  (`--manual`, `--no-manual`), the report keeps the result, checks, issues and
+  sessions per step, and `docs/dev/accessibility.md` generates its tables from
+  the questions and the worksheet.
 - **Coverage floors.** The tests now cover every command's success path, main
   error paths, exit codes and machine-readable output, the judge's handling of
   malformed and failed responses, and the image and audio auditor's verdicts.
@@ -136,6 +151,15 @@ ekte has three eras:
 
 ### Changed
 
+- **Accessibility: no manual review in 1.0.0, stated as a known limitation
+  (#30).** Nobody has made the manual review yet; ekte 1.0.0 is released without
+  it, and reviews are welcome. The accessibility statement on `/accessibility`
+  says so in every UI language, links how to contribute a review, and names the
+  conformance level reached (none until a person's review is recorded). The
+  report's `conformance.manual_review` now means a review by a person; a
+  counted LLM review of the texts is `conformance.llm_review` and no longer
+  makes the report "fully conformant" on its own. A step that fails a person's
+  review is listed with its follow-up issues.
 - **Documentation restructured (#64).** The README is a short landing page and
   also the PyPI description; everything else lives in `docs/`, one page per
   topic and a subfolder per audience:

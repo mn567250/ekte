@@ -1,7 +1,8 @@
 """BITV 2.0 / EN 301 549 conformance report of web UI v2.
 
     python -m tests.a11y.conformance --results a11y-results.json [--llm a11y-llm-review.json | --no-llm]
-    python -m tests.a11y.conformance --update ekte/web/static/v2/bitv-report.json [--llm …]
+                                     [--manual a11y-manual-review.json | --no-manual]
+    python -m tests.a11y.conformance --update ekte/web/static/v2/bitv-report.json [--llm …] [--manual …]
     python -m tests.a11y.conformance --docs
 
 ``--results`` takes the per-step results the a11y suite writes with
@@ -12,17 +13,23 @@ numbered as EN 301 549 / BITV 9.x.x.x) how it is tested and the latest result.
 ``--llm`` merges a review of the texts (default: ``./a11y-llm-review.json``
 when it exists, as tests/a11y/llm_review.py writes it). A completed LLM review
 counts as the manual part of the steps it covers (see apply_review); without
-one the report is built from the tests alone. ``--update`` re-applies a review
-to an existing report (no results files needed): each step keeps its status
-from the tests alone (``status_tests``), so an older review is replaced, not
-stacked. ``python -m tests.a11y.llm_review --update-report`` does the same
-right after a review.
+one the report is built from the tests alone. ``--manual`` applies the
+worksheet of the manual review by a person (default:
+``./a11y-manual-review.json`` when it exists, see tests/a11y/manual_review.py):
+it decides the steps that the tests and the LLM review leave pending.
+``--update`` re-applies the reviews to an existing report (no results files
+needed): each step keeps its status from the tests alone (``status_tests``),
+so an older review is replaced, not stacked.
+``python -m tests.a11y.llm_review --update-report`` does the same right after
+a review.
 
-``--docs`` rewrites the coverage table in docs/dev/accessibility.md from the
-catalogue (ekte/web/static/v2/bitv-catalogue.json, the single source of truth)
-and the ``@pytest.mark.bitv`` markers of the tests.
+``--docs`` rewrites the generated tables in docs/dev/accessibility.md: the
+coverage table from the catalogue (ekte/web/static/v2/bitv-catalogue.json, the
+single source of truth) and the ``@pytest.mark.bitv`` markers of the tests, and
+the manual review tables from tests/a11y/manual-checks.json and the worksheet.
 
-Standard library only; it does not need Playwright or a browser.
+Standard library only; it does not need Playwright or a browser (a worksheet
+is checked against its JSON Schema only by ``manual_review --check``).
 """
 
 from __future__ import annotations
@@ -38,6 +45,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from tests.a11y import manual_review
 from tests.a11y.bitv_map import catalogue
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -50,10 +58,12 @@ SCHEMA = "ekte-bitv-report/1"
 
 AUTOMATION = ("auto", "partial", "manual", "n/a")
 STATUSES = ("pass", "fail", "not tested", "manual review pending", "n/a")
+PENDING = "manual review pending"
 MAX_FAILURES = 5
 MAX_MESSAGE = 600
 MAX_NOTES = 4000
 DEFAULT_LLM = Path("a11y-llm-review.json")
+DEFAULT_MANUAL = manual_review.DEFAULT_WORKSHEET
 # llm_review.py report statuses whose verdicts can be used
 REVIEW_USABLE = ("ok", "partial")
 
@@ -219,9 +229,11 @@ def build_report(
     cat: dict[str, Any] | None = None,
     now: _dt.datetime | None = None,
     commit: str | None = None,
+    manual: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The report from the suite's results, with a review of the texts (or
-    hand-written notes) applied by apply_review."""
+    hand-written notes) and the manual review worksheet applied by
+    apply_review."""
     cat = cat or catalogue()
     results = results or {}
     by_step: dict[str, list[dict[str, Any]]] = results.get("steps") or {}
@@ -281,8 +293,24 @@ def build_report(
         "steps": steps,
         "beyond": beyond,
         "review": None,
+        "manual_review": None,
     }
-    return apply_review(report, llm)
+    return apply_review(report, llm, manual=manual)
+
+
+def _level_reached(steps: list[dict[str, Any]], manual_review: bool) -> str | None:
+    """The WCAG level whose applicable steps all pass (or do not apply), once
+    a person's review is recorded: "AA" (A + AA), "A" or None."""
+    if not manual_review:
+        return None
+    ok = lambda e: e["status"] in ("pass", "n/a")  # noqa: E731
+    applicable = [e for e in steps if e["automation"] != "n/a"]
+    if applicable and all(ok(e) for e in applicable):
+        return "AA"
+    level_a = [e for e in applicable if e.get("level") == "A"]
+    if level_a and all(ok(e) for e in level_a):
+        return "A"
+    return None
 
 
 def _refresh_status(report: dict[str, Any]) -> None:
@@ -295,26 +323,51 @@ def _refresh_status(report: dict[str, Any]) -> None:
              "percent": _pct(sum(1 for e in applicable if e["status"] == st), n_app) if st != "n/a" else None}
         for st in STATUSES
     }
-    # a completed LLM review of the texts counts as the recorded manual review
-    # (the report names its model); otherwise none is recorded yet
-    manual_review = any((e.get("review") or {}).get("counted") for e in steps)
-    all_pass = n_app > 0 and all(e["status"] == "pass" for e in applicable)
+    # manual_review: a person's review (the worksheet) decided at least one
+    # step; llm_review: a completed LLM review of the texts counted. The
+    # headline needs a person's review: the LLM review alone never makes the
+    # report fully conformant.
+    manual = any((e.get("manual") or {}).get("counted") for e in steps)
+    llm = any((e.get("review") or {}).get("counted") for e in steps)
+    level = _level_reached(steps, manual)
     report["conformance"] = {
-        "status": "fully conformant" if all_pass and manual_review else "partially conformant",
-        "manual_review": manual_review,
+        "status": "fully conformant" if level == "AA" else "partially conformant",
+        "level": level,
+        "manual_review": manual,
+        "llm_review": llm,
     }
 
 
+def _manual_status(status: str, manual: dict[str, Any]) -> str:
+    """The step status with a person's result as its manual part: a failed
+    check fails the step (unless it does not apply); a pending step passes
+    when every check holds or does not apply, and does not apply when no
+    check does. A failing or untested automated part keeps its status."""
+    if status == "n/a" or not manual.get("counted"):
+        return status
+    if manual["status"] == "fail":
+        return "fail"
+    if status == PENDING and manual["status"] in ("pass", "n/a"):
+        return str(manual["status"])
+    return status
+
+
 def apply_review(
-    report: dict[str, Any], llm: dict[str, Any] | None, now: _dt.datetime | None = None
+    report: dict[str, Any],
+    llm: dict[str, Any] | None,
+    now: _dt.datetime | None = None,
+    manual: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """``report`` (a built report, e.g. the committed bitv-report.json) with
-    ``llm`` applied in place of any earlier review: every step starts again
-    from its status from the tests alone (``status_tests``), so applying a
-    newer review never stacks on an older one. A review that is not usable
-    (skipped, failed, dry run) or None leaves the tests-only statuses.
-    Coverage is checked against the report's tested pages and languages.
-    ``now`` (when given) re-stamps generated_at. Returns a new report."""
+    ``llm`` and the manual review worksheet ``manual`` applied in place of any
+    earlier review: every step starts again from its status from the tests
+    alone (``status_tests``), so applying a newer review never stacks on an
+    older one. The LLM review comes first (``status_machine``: tests + LLM),
+    then the person's results decide what is still pending. A review that is
+    not usable (skipped, failed, dry run) or None leaves the tests-only
+    statuses. Coverage is checked against the report's tested pages and
+    languages. ``now`` (when given) re-stamps generated_at. Returns a new
+    report."""
     rep = copy.deepcopy(report)
     llm_run = is_llm_review(llm)
     if llm_run and not usable_review(llm)[0]:
@@ -336,18 +389,36 @@ def apply_review(
                 "verdict": tr.get("verdict"),
                 "notes": "\n".join(_note_line(n) for n in tr.get("findings") or [])[:4000],
             }
+    by_step = manual_review.summarize(manual)
     for entry in rep["steps"]:
         entry["status"] = entry.setdefault("status_tests", entry["status"])
         entry.pop("review", None)
-        if entry["step"] not in review:
-            continue
-        entry["review"] = review[entry["step"]]
-        if llm_run:
-            verdict = review[entry["step"]]["verdict"]
-            counted = covered and verdict in ("ok", "issues") and entry["automation"] != "n/a"
-            entry["review"].update(by=(llm or {}).get("model") or "LLM", counted=counted)
-            entry["status"] = _reviewed_status(entry, verdict, counted)
+        entry.pop("manual", None)
+        if entry["step"] in review:
+            entry["review"] = review[entry["step"]]
+            if llm_run:
+                verdict = review[entry["step"]]["verdict"]
+                counted = covered and verdict in ("ok", "issues") and entry["automation"] != "n/a"
+                entry["review"].update(by=(llm or {}).get("model") or "LLM", counted=counted)
+                entry["status"] = _reviewed_status(entry, verdict, counted)
+        # tests + LLM review: what is left to a person (manual_review --prepare)
+        entry["status_machine"] = entry["status"]
+        m = by_step.get(entry["step"])
+        if m and entry["automation"] != "n/a":
+            entry["manual"] = m
+            entry["status"] = _manual_status(entry["status"], m)
     rep["review"] = review_meta if review else None
+    sessions = manual_review.session_records(manual)
+    rep["manual_review"] = {
+        "method": "human",
+        "generated_from": manual.get("generated_from"),
+        "checks": {
+            "total": sum(m["checks"]["total"] for m in by_step.values()),
+            "done": sum(m["checks"]["total"] - m["checks"]["open"] for m in by_step.values()),
+        },
+        "steps_decided": sorted((k for k, m in by_step.items() if m["counted"]), key=_step_key),
+        "sessions": sessions,
+    } if manual else None
     _refresh_status(rep)
     if now is not None:
         rep["generated_at"] = now.isoformat(timespec="seconds")
@@ -413,13 +484,33 @@ def docs_table(cat: dict[str, Any] | None = None, tests: dict[str, list[str]] | 
     return "\n".join(lines)
 
 
-def update_docs(path: Path = DOCS) -> bool:
+MANUAL_CHECKS_START = "<!-- manual-checks:start (generated by python -m tests.a11y.conformance --docs) -->"
+MANUAL_CHECKS_END = "<!-- manual-checks:end -->"
+MANUAL_RESULTS_START = "<!-- manual-results:start (generated by python -m tests.a11y.conformance --docs) -->"
+MANUAL_RESULTS_END = "<!-- manual-results:end -->"
+
+
+def _replace_block(text: str, start: str, end: str, body: str, path: Path) -> str:
+    if start not in text or end not in text:
+        raise SystemExit(f"{path}: markers {start!r} … {end!r} not found")
+    head, rest = text.split(start, 1)
+    _, tail = rest.split(end, 1)
+    return f"{head}{start}\n{body}\n{end}{tail}"
+
+
+def update_docs(path: Path = DOCS, report: Path = DEFAULT_OUT, worksheet: Path | None = None) -> bool:
+    """Rewrite the generated tables of docs/dev/accessibility.md: coverage,
+    the manual checks (with what the committed report leaves pending) and the
+    recorded manual results (the committed worksheet)."""
     text = path.read_text(encoding="utf-8")
-    if DOCS_START not in text or DOCS_END not in text:
-        raise SystemExit(f"{path}: coverage table markers not found")
-    head, rest = text.split(DOCS_START, 1)
-    _, tail = rest.split(DOCS_END, 1)
-    new = f"{head}{DOCS_START}\n{docs_table()}\n{DOCS_END}{tail}"
+    rep = json.loads(report.read_text(encoding="utf-8")) if report.exists() else {"steps": []}
+    worksheet = worksheet or ROOT / DEFAULT_MANUAL
+    ws = manual_review.load(worksheet) if worksheet.exists() else None
+    titles = {c["step"]: c["title"] for c in catalogue()["steps"]}
+    new = _replace_block(text, DOCS_START, DOCS_END, docs_table(), path)
+    new = _replace_block(new, MANUAL_CHECKS_START, MANUAL_CHECKS_END,
+                         manual_review.docs_checks_table(pending=manual_review.pending_steps(rep), titles=titles), path)
+    new = _replace_block(new, MANUAL_RESULTS_START, MANUAL_RESULTS_END, manual_review.docs_results_table(ws), path)
     if new != text:
         path.write_text(new, encoding="utf-8")
         return True
@@ -493,6 +584,46 @@ def load_review(path: Path | None) -> dict[str, Any] | None:
     return llm
 
 
+def load_manual(path: Path | None) -> dict[str, Any] | None:
+    """The manual review worksheet, or None."""
+    if path is None:
+        return None
+    if not path.exists():
+        print(f"warning: {path} not found, no manual review applied", file=sys.stderr)
+        return None
+    return manual_review.load(path)
+
+
+def check_manual(report: dict[str, Any], ws: dict[str, Any] | None, path: Path | None) -> bool:
+    """Whether ``ws`` may be applied to ``report`` (built without it): the
+    questions are unchanged and the answers follow the rules. Problems go to
+    stderr; the JSON Schema itself is checked by manual_review --check."""
+    if ws is None:
+        return True
+    errors, warnings = manual_review.validate(ws, pending=manual_review.pending_steps(report), schema=False)
+    for w in warnings:
+        print(f"warning: {path}: {w}", file=sys.stderr)
+    for e in errors:
+        print(f"error: {path}: {e}", file=sys.stderr)
+    if not errors:
+        done = sum(1 for c in ws.get("checks") or [] if c.get("result") is not None or c.get("reason"))
+        print(f"using {path}: {done} of {len(ws.get('checks') or [])} manual checks done", file=sys.stderr)
+    return not errors
+
+
+def with_default_manual(report: dict[str, Any], llm: dict[str, Any] | None) -> dict[str, Any]:
+    """``report`` with ./a11y-manual-review.json applied when it exists and
+    may be applied (for tools that update the report, such as
+    ``llm_review --update-report``); otherwise ``report`` unchanged."""
+    if not DEFAULT_MANUAL.is_file():
+        return report
+    ws = load_manual(DEFAULT_MANUAL)
+    if not check_manual(report, ws, DEFAULT_MANUAL):
+        print(f"warning: {DEFAULT_MANUAL} not applied", file=sys.stderr)
+        return report
+    return apply_review(report, llm, manual=ws)
+
+
 def write_report(path: Path, report: dict[str, Any]) -> None:
     path.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"wrote {path}: {summary_line(report)}")
@@ -513,9 +644,14 @@ def main(argv: list[str] | None = None) -> int:
         "--llm", type=Path,
         help=f"review of the texts (tests/a11y/llm_review.py) or notes per step (default: ./{DEFAULT_LLM} if present)",
     )
-    ap.add_argument("--no-llm", action="store_true", help="build the report from the tests alone")
+    ap.add_argument("--no-llm", action="store_true", help="leave out the LLM review")
+    ap.add_argument(
+        "--manual", type=Path,
+        help=f"manual review worksheet (tests/a11y/manual_review.py; default: ./{DEFAULT_MANUAL} if present)",
+    )
+    ap.add_argument("--no-manual", action="store_true", help="leave out the manual review")
     ap.add_argument("--out", type=Path, help=f"report to write (default: {DEFAULT_OUT.relative_to(ROOT)})")
-    ap.add_argument("--docs", action="store_true", help="rewrite the coverage table in docs/dev/accessibility.md")
+    ap.add_argument("--docs", action="store_true", help="rewrite the generated tables in docs/dev/accessibility.md")
     args = ap.parse_args(argv)
     if not args.results and not args.docs and not args.update:
         ap.error("give --results, --update and/or --docs")
@@ -524,13 +660,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.docs:
         print(("updated " if update_docs() else "unchanged ") + str(DOCS.relative_to(ROOT)))
     llm_path = None if args.no_llm else (args.llm or (DEFAULT_LLM if DEFAULT_LLM.is_file() else None))
-    if args.results:
-        report = build_report(load_results(args.results), load_review(llm_path), commit=_git_commit())
-        write_report(args.out or DEFAULT_OUT, report)
-    if args.update:
-        old = json.loads(args.update.read_text(encoding="utf-8"))
-        report = apply_review(old, load_review(llm_path), now=_dt.datetime.now(_dt.UTC))
-        write_report(args.out or args.update, report)
+    manual_path = None if args.no_manual else (args.manual or (DEFAULT_MANUAL if DEFAULT_MANUAL.is_file() else None))
+    if args.results or args.update:
+        llm = load_review(llm_path)
+        manual = load_manual(manual_path)
+        if args.results:
+            base = build_report(load_results(args.results), llm, commit=_git_commit())
+        else:
+            base = apply_review(json.loads(args.update.read_text(encoding="utf-8")), llm,
+                                now=_dt.datetime.now(_dt.UTC))
+        if not check_manual(base, manual, manual_path):
+            print("the manual review worksheet was not applied; fix it (python -m tests.a11y.manual_review --check)",
+                  file=sys.stderr)
+            return 1
+        report = apply_review(base, llm, manual=manual)
+        write_report(args.out or (args.update if args.update else DEFAULT_OUT), report)
     return 0
 
 

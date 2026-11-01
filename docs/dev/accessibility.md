@@ -117,7 +117,8 @@ run of the suite:
 
 ```bash
 EKTE_A11Y_RESULTS=a11y-results.json pytest tests/a11y -m a11y -n auto
-python -m tests.a11y.conformance --results a11y-results.json [--llm a11y-llm-review.json | --no-llm]
+python -m tests.a11y.conformance --results a11y-results.json [--llm a11y-llm-review.json | --no-llm] \
+    [--manual a11y-manual-review.json | --no-manual]
 ```
 
 `EKTE_A11Y_RESULTS` makes the plugin `tests/a11y/results.py` write, for every
@@ -131,7 +132,11 @@ Per step the report says **pass** (auto step, every test passed), **fail**
 (a test failed), **manual review pending** (partial or manual step: the
 automated part passed, a person still has to judge the rest), **not tested**
 (no test ran yet) or **n/a**. The headline stays "partially conformant" until
-every applicable step passes *and* a manual review is recorded.
+every applicable step passes (or does not apply) *and* a manual review by a
+person is recorded (see [Manual review](#manual-review)); the LLM review alone
+never makes it "fully conformant". The report also names the WCAG level
+reached (`conformance.level`: `AA`, `A` or none), which needs a person's
+review too.
 
 **LLM review of the texts.** When `a11y-llm-review.json` (written by
 `python -m tests.a11y.llm_review`, see
@@ -140,7 +145,8 @@ given with `--llm`, a completed review counts as the manual part of the steps
 it covers (9.1.1.1, 9.1.3.3, 9.2.4.4, 9.2.4.6, 9.3.3.2, 9.3.3.3): a step whose
 automated part passed **passes** when the review found nothing and **fails**
 when it found an issue, with the findings shown under the step. The report
-then records a manual review, and the page names the model that made it. A
+then records an LLM review (`conformance.llm_review`), and the page names the
+model that made it. A
 failing automated part still fails the step, an untested one stays not tested,
 and a review that was skipped, failed, a dry run or did not cover every tested
 page and language changes nothing. Without the file (or with `--no-llm`) the
@@ -166,13 +172,25 @@ committed in the repository is regenerated with the commands above.
 
 ## Manual review
 
-Eleven steps are **manual review pending**: the automated part passes and a person
-still has to judge the rest. **Nobody has done that review yet, and no step is
-recorded as manually reviewed.** The conformance report keeps them pending and the
-statement on `/accessibility` says that a review including screen readers has not
-been made. This section lists what was checked by machine ahead of the review,
-what only a person can decide, and the exact steps. When a step is done, record it
-in the table below and then regenerate the report (see "Recording a review").
+**Known limitation: there is no manual review yet, and ekte 1.0.0 is released
+without one.** Eleven of the 17 partly automatic steps are **manual review
+pending**: their automated part passes, and a person still has to judge the
+rest, partly with screen readers. Nobody has done that, so no step is decided
+by a person, the report stays "partially conformant" and no WCAG conformance
+level is claimed. The accessibility statement on `/accessibility` says so in
+every UI language.
+
+The project takes accessibility seriously, and this is not a waiver: every
+change runs the automated suite on every page, in every UI language and both
+themes (1,277 tests; 27 of the 44 applicable steps are decided by the tests
+alone, and the automated part of the other 17 passes), and an LLM review of the
+texts decides six of those 17. What is missing is the judgement of
+a person, which the project cannot provide for 1.0.0.
+
+**Reviews are welcome.** A review of a single session (for example NVDA with
+Firefox, or only the checks in a desktop browser) is useful on its own; see
+[Contributing a review](#contributing-a-review). Barriers found in use are
+welcome as [issues](https://github.com/mn567250/ekte/issues) at any time.
 
 ### Automated pre-checks (not a manual review)
 
@@ -199,38 +217,144 @@ its count is smaller. A default local run is the complete one.
 No UI change was needed. These checks were made by a script, not by a person using
 a keyboard, a screen reader or a zoomed browser.
 
-### What only a person can decide
+### What a person checks
 
-Set up once: `ekte serve`, open `http://127.0.0.1:8000/`, run one audit so that
-History, Analytics and a report exist, and add one monitor.
+The questions are kept in `tests/a11y/manual-checks.json`: per partly automatic
+step, why it needs a person and one or more checks, each with the sessions
+(assistive technology, browser, operating system) it is done in, the pages it
+applies to, the tools, what to do and what to expect. A check that only applies
+to some pages lists only those. "Now" says whether the committed report leaves
+the step to a person ("pending") or decides it already (the six steps the LLM
+review covers). Set up once: run `ekte serve`, open `http://127.0.0.1:8000/`,
+run one audit so that History, Analytics and a report exist, and add one
+monitor.
 
-| Step | Why a person | Exact steps |
-|---|---|---|
-| 9.1.3.1 Info and Relationships | A machine cannot tell whether headings, lists and tables match the visual meaning. | With NVDA + Firefox (Windows) and VoiceOver + Safari (macOS), on each page: open the headings list (NVDA `Insert+F7`; VoiceOver rotor `VO+U`) and check that the outline matches the visible sections; open the landmarks list and check main, nav, header and footer; step through each table (NVDA `Ctrl+Alt+arrows`) and check that header cells are announced with the data cells; check that grouped fields announce their group name. |
-| 9.1.3.2 Meaningful Sequence | The order was compared with the visual order, not judged for sense. | Read each page top to bottom with the screen reader's reading keys (NVDA `Down arrow` in browse mode; VoiceOver `VO+Right`). Check that the order makes sense and that content after "Show more", tabs and disclosures follows its trigger. Repeat at 320 px width. |
-| 9.1.4.1 Use of Color | Whether colour alone carries meaning elsewhere is a judgement. | In the browser, emulate greyscale (Chromium DevTools, Rendering, "Emulate vision deficiencies: Achromatopsia") and open the audit report, History, Monitors, Analytics charts and the knowledge base. Every status (pass, warning, fail, trend, chart series) must still be told apart by text, icon, pattern or position. |
-| 9.1.4.11 Non-text Contrast | Charts and icons are not measured. | In light and dark theme, on Analytics and the audit report, check that each chart series, bar, meter, marker and icon that carries information has 3:1 against its neighbours and background (colour picker in DevTools, or the Colour Contrast Analyser), and that a chart still reads with its data table. |
-| 9.1.4.13 Content on Hover or Focus | Whether revealed content is "additional content" is a judgement. | With the mouse and with Tab, trigger every tooltip, popup and menu. Check that Escape closes it, the pointer can move onto it without it vanishing, and it stays until dismissed. Repeat at 200 % zoom. |
-| 9.2.2.2 Pause, Stop, Hide | Whether an update is essential is a judgement. | Start an audit and let a monitor run. Check that nothing moves for more than five seconds without a control to pause it, and that turning on the OS setting "reduce motion" (Windows: Settings, Accessibility, Visual effects, Animation effects off; macOS: Reduce motion) removes animations. |
-| 9.2.4.3 Focus Order | Whether the order is logical is a judgement. | Put the mouse aside. Press Tab through each page and through each opened dialog, disclosure and tab panel. The focus must move in the reading order, land inside an opened dialog, and return to the trigger when it closes. Note any jump. |
-| 9.2.5.1 Pointer Gestures | Only a person can confirm there is no path-based gesture that needs an alternative. | On a touch screen (phone or tablet, with VoiceOver on iOS and TalkBack on Android), operate every control with single taps only; check that no function needs a swipe, pinch or drag (charts, tables, tabs, sort). |
-| 9.3.2.2 On Input | Whether a change was announced beforehand is a judgement. | Change every select, checkbox, switch and field (language, theme, filters, sort, page size) with the keyboard and the screen reader on. Check that the change is described before it is made and that nothing moves the focus or opens a window unexpectedly. |
-| 9.3.3.1 Error Identification | Whether a message is clear is a judgement. | Submit an empty audit, an invalid key, a bad endpoint and an empty knowledge-base entry. Check with the screen reader that the error is announced when it appears, names the field, says what is wrong in plain words, and that the focus or the error link leads to the field. Repeat in German and in Chinese. |
-| 9.4.1.3 Status Messages | Whether each change is announced is only heard. | With NVDA + Firefox and VoiceOver + Safari, start an audit, let it finish and fail one on purpose, use "Copy link", sort a table, filter History and Analytics, and press "Show more". Each result or progress change must be spoken without moving focus. |
-
-### Recording a review
-
-Add one row per step and run when it is done. Do not enter a step that was not
-performed; a step stays pending until its row is here.
-
-| Step | Result (pass, fail with issue link, n/a with reason) | Assistive technology and version | Browser and OS | Language | Theme | By | Date |
+<!-- manual-checks:start (generated by python -m tests.a11y.conformance --docs) -->
+| Step | Now | Why a person | Check | Sessions | Pages | Do | Expect |
 |---|---|---|---|---|---|---|---|
-| (no manual review recorded yet) | | | | | | | |
+| 9.1.1.1 Non-text Content | decided without a person | A machine finds missing text alternatives, not whether an alternative is meaningful. | `alternatives-meaningful` | nvda-firefox | audit, history, monitors, kb, analytics, accessibility | Move through the graphics and the icon-only buttons and listen to each name. Tools: NVDA: G / Shift+G (graphics), B / Shift+B (buttons). | Each name says what the image or icon means or does; purely decorative images are not announced. |
+| 9.1.3.1 Info and Relationships | pending | A machine cannot tell whether headings, lists and tables match the visual meaning. | `headings-landmarks` | nvda-firefox, voiceover-safari | audit, history, monitors, kb, analytics, accessibility | Open the list of headings, then the list of landmarks. Tools: NVDA: Insert+F7 (elements list: headings, landmarks); VoiceOver: rotor VO+U (headings, landmarks). | The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed. |
+|  |  |  | `table-headers` | nvda-firefox | audit, analytics, accessibility | Move into each data table (the audit report, the Analytics tables, the test steps) and step through its cells. Tools: NVDA: T (next table), Ctrl+Alt+arrow keys (move by cell). | Moving to a cell announces its row and column header together with the data. |
+|  |  |  | `field-groups` | nvda-firefox | audit, history, monitors, kb, analytics | Move through the fields and filters that are visually grouped (radio buttons, filter panels, advanced options). Tools: NVDA: F (next form field), Tab. | Entering a group announces the group name; each field is announced with its own label. |
+| 9.1.3.2 Meaningful Sequence | pending | The tests compare the reading order with the visual order; whether the order makes sense is a judgement. | `reading-order` | nvda-firefox | audit, history, monitors, kb, analytics, accessibility | Read the page from top to bottom, then open each disclosure, tab and "Show more" and read on. Tools: NVDA: Down arrow in browse mode, or Insert+Down arrow (say all). | The order makes sense, and content revealed by a disclosure, tab or "Show more" is read right after its control. |
+|  |  |  | `reading-order-narrow` (width 320 CSS px (browser window narrowed, or 400 % zoom)) | nvda-firefox | audit, history, analytics | At 320 CSS px width, read the page from top to bottom. Tools: NVDA: Down arrow in browse mode. | The order still makes sense where the layout stacks columns. |
+| 9.1.3.3 Sensory Characteristics | decided without a person | A heuristic finds wording that may rely on shape, position or colour; a person judges the hits and the rest. | `instructions-not-sensory` | desktop-browser | audit, history, monitors, kb, analytics, accessibility | Read every instruction, hint and help text. Tools: reading the page. | No instruction relies only on shape, size, position, colour or sound (such as "the green button" or "on the right"). |
+| 9.1.4.1 Use of Color | pending | The tests check links and the known status displays; whether colour alone carries meaning elsewhere is a judgement. | `greyscale` | desktop-browser | audit, history, monitors, kb, analytics, accessibility | Emulate greyscale and look at every status, badge, trend, chart series and highlighted item. Tools: Chromium DevTools: Rendering, Emulate vision deficiencies: Achromatopsia. | Each state is still told apart by text, icon, pattern or position. |
+| 9.1.4.11 Non-text Contrast | pending | Form controls and focus indicators are measured; charts and icons are not. | `graphics-contrast-light` (theme light) | desktop-browser | audit, history, analytics, accessibility | Measure each chart series, bar, meter, marker and informative icon against its neighbours and the background. Tools: DevTools colour picker or the Colour Contrast Analyser. | Each reaches 3:1, or the same information is in adjacent text or a data table. |
+|  |  |  | `graphics-contrast-dark` (theme dark) | desktop-browser | audit, history, analytics, accessibility | In the dark theme, measure each chart series, bar, meter, marker and informative icon against its neighbours and the background. Tools: DevTools colour picker or the Colour Contrast Analyser. | Each reaches 3:1, or the same information is in adjacent text or a data table. |
+| 9.1.4.13 Content on Hover or Focus | pending | The tests hover and focus every element; whether revealed content is additional content is a judgement. | `hover-focus-content` | desktop-browser | audit, history, monitors, kb, analytics, accessibility | Show every tooltip, popup and menu with the mouse and with Tab. Tools: mouse; Tab; Escape. | Escape closes it without moving focus; the pointer can move onto it without it closing; it stays until dismissed or no longer relevant. |
+|  |  |  | `hover-focus-content-zoom` (zoom 200 %) | desktop-browser | audit, history, monitors, analytics | At 200 % zoom, show every tooltip, popup and menu again. Tools: browser zoom; mouse; Tab; Escape. | It is fully visible, does not hide the control that opened it, and behaves as at 100 %. |
+| 9.2.2.2 Pause, Stop, Hide | pending | The tests find motion and auto-updates at rest; whether an update is essential is a judgement. | `moving-content-pausable` | desktop-browser | audit, monitors | Start an audit, and let a monitor run. Tools: a running audit or monitor. | Nothing moves, blinks or updates for more than five seconds unless it is essential or there is a control to pause, stop or hide it. |
+|  |  |  | `reduced-motion` | desktop-browser | audit, history, monitors, analytics, accessibility | Turn on reduce motion in the operating system and reload the page. Tools: OS setting: Windows Settings, Accessibility, Visual effects, Animation effects off; macOS Reduce motion. | Animations (charts, counters, transitions) do not run. |
+| 9.2.4.3 Focus Order | pending | The tests check that nothing hidden takes focus; whether the order is logical is a judgement. | `tab-order` | desktop-browser | audit, history, monitors, kb, analytics, accessibility | Without the mouse, press Tab through the page, then through each opened disclosure and tab panel. Tools: Tab; Shift+Tab. | The focus follows the reading order with no unexpected jump, and returns to the control that opened a disclosure when it closes. |
+|  |  |  | `dialog-focus` | desktop-browser | monitors | Open the key-storage (master key) dialog, press Tab through it and close it. Tools: Tab; Escape. | The focus moves into the dialog when it opens, stays in it while it is open, and returns to the control that opened it. |
+| 9.2.4.4 Link Purpose (In Context) | decided without a person | Every link has a name; whether the name describes the target is a judgement. | `link-names` | nvda-firefox | audit, history, monitors, kb, analytics, accessibility | Open the list of links. Tools: NVDA: Insert+F7 (elements list: links). | Each link name, alone or with its sentence, list item or table cell, says where the link goes. |
+| 9.2.4.6 Headings and Labels | decided without a person | Headings and labels exist and are not empty; whether they are descriptive is a judgement. | `headings-labels-descriptive` | nvda-firefox | audit, history, monitors, kb, analytics, accessibility | Open the list of headings, then the list of form fields. Tools: NVDA: Insert+F7 (elements list: headings, form fields). | Each heading says what its section is about, and each label says what the field is for. |
+| 9.2.5.1 Pointer Gestures | pending | No gesture handlers are found; only a person confirms that every function works with single taps. | `single-pointer` | touch | audit, history, monitors, kb, analytics, accessibility | Operate every control with single taps only: charts, tables, tabs, sort, filters and disclosures. Tools: touch screen, single taps only. | No function needs a swipe, pinch, drag or multi-finger gesture. |
+| 9.3.2.2 On Input | pending | The tests change every control and watch for a change of context; whether a change was announced beforehand is a judgement. | `header-switches` | nvda-firefox | audit | Change the language and the theme with the keyboard (the switches in the header, the same on every page). Tools: NVDA; keyboard. | The control says what it changes before it is used; afterwards the focus stays on it and no window opens. |
+|  |  |  | `page-controls` | nvda-firefox | audit, history, monitors, kb, analytics | Change every select, checkbox, switch and field of the page (filters, sort, page size, options) with the keyboard. Tools: NVDA; keyboard. | Each change is described before it is made, and none moves the focus, opens a window or replaces the content unexpectedly. |
+| 9.3.3.1 Error Identification | pending | The tests check that errors are marked and linked; whether a message is clear is a judgement. | `audit-errors` | nvda-firefox | audit | Submit an empty audit form, then an invalid key, then an endpoint that cannot be reached. Tools: NVDA. | Each error is announced when it appears, names the field, says in plain words what is wrong, and the focus or the error link leads to the field. |
+|  |  |  | `audit-errors-de` (lang de) | nvda-firefox | audit | In German, submit an empty audit form and an invalid key. Tools: NVDA. | The errors are announced in German, name the field and say what is wrong. |
+|  |  |  | `audit-errors-zh` (lang zh) | nvda-firefox | audit | In Chinese, submit an empty audit form and an invalid key. Tools: NVDA. | The errors are announced in Chinese, name the field and say what is wrong. |
+|  |  |  | `form-errors` | nvda-firefox | monitors, kb | Save the page's form empty or with an invalid value (a monitor; a knowledge-base entry). Tools: NVDA. | Each error is announced when it appears, names the field, says in plain words what is wrong, and leads to the field. |
+| 9.3.3.2 Labels or Instructions | decided without a person | Every field has a label; whether the instructions are sufficient is a judgement. | `instructions-sufficient` | desktop-browser | audit, history, monitors, kb, analytics | Fill in each form and filter of the page using only the labels and hints shown. Tools: reading the page. | The required fields, the expected format and the effect of each option are clear before submitting. |
+| 9.3.3.3 Error Suggestion | decided without a person | Error messages exist and are translated; whether they suggest a fix is a judgement. | `errors-suggest-fix` | desktop-browser | audit, monitors, kb | Cause each error of the page's form (empty field, invalid value). Tools: reading the messages. | Where a fix is known, the message says how to correct the input. |
+| 9.4.1.3 Status Messages | pending | Status areas are live regions; whether each change is actually announced is only heard. | `status-announced` | nvda-firefox, voiceover-safari | audit, history, monitors, kb, analytics | Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and "Show more"; saving and running a monitor; saving a knowledge-base entry. Tools: screen reader with speech on. | Each result or progress change is spoken, once, without the focus moving. |
+<!-- manual-checks:end -->
 
-After a step passes, regenerate the report so the page shows it
-(`python -m tests.a11y.conformance --update ekte/web/static/v2/bitv-report.json
---llm a11y-llm-review.json`) and update the accessibility statement on
-`/accessibility` and its translations. A failing step gets a follow-up issue and
-is listed in the statement as a known limitation with a plan. The review is
-repeated for every release that changes the web UI
-([release checklist](release-checklist.md)).
+Sessions: `desktop-browser` (Chrome or another Chromium browser, keyboard and
+mouse, no screen reader), `nvda-firefox` (NVDA with Firefox on Windows),
+`voiceover-safari` (VoiceOver with Safari on macOS) and `touch` (a phone or
+tablet, with VoiceOver on iOS or TalkBack on Android). A check names its UI
+language, theme, width or zoom when it differs from the session's (English,
+light theme).
+
+### The worksheet
+
+`python -m tests.a11y.manual_review --prepare` turns the steps the report
+leaves pending into a worksheet, `a11y-manual-review.json` in the repository
+root: one check per step, question, page and session, with empty results. The
+committed copy is current for the committed report (a test makes sure), so a
+reviewer starts from it. The worksheet names its JSON Schema
+(`tests/a11y/manual-review.schema.json`, draft 2020-12), so an editor checks it
+and suggests values while typing.
+
+Per session, the person fills in `fill_in` before answering its checks: `by`
+(name or GitHub handle), `date` (YYYY-MM-DD), `ekte_version` (`ekte
+--version`), `at_version` (the screen reader's version; null for a session
+without one), `browser_version` and `os_version`. Per check:
+
+| Answer | Means |
+|---|---|
+| `"result": true` | the expectation holds |
+| `"result": false` and `"issue": "<URL>"` | it does not; `issue` links the follow-up issue, `notes` may say more |
+| `"result": null` and `"reason": "…"` | the check does not apply to this page (the reason says why) |
+| `"result": null`, no reason | not done yet (a half-filled worksheet is valid) |
+
+The other fields are generated and must not be changed.
+`python -m tests.a11y.manual_review --check` validates the worksheet: the JSON
+Schema, that every question, page and session is the one in
+`manual-checks.json` (a changed, removed or added question is an error, so a
+step cannot pass on a weakened question), that a failed check links an issue,
+and that a session is filled in before its checks are answered. `--strict` also
+requires every pending check to be answered.
+
+**From checks to step status.** `python -m tests.a11y.conformance` applies the
+worksheet (`--manual`, default `./a11y-manual-review.json` when it exists;
+`--no-manual` leaves it out) after the LLM review, and only to what is still
+pending:
+
+- a failing automated part, or a finding of the LLM review, still fails the step;
+- any failed check fails the step, with its issues listed as a known limitation;
+- any check not done yet keeps the step **manual review pending**;
+- when every check is answered, the step **passes** if at least one check holds,
+  and does **not apply** if none does.
+
+A check counts only when its session's `fill_in` is complete. The report keeps,
+per step, the number of checks that passed, failed, did not apply or are open,
+the issues and reasons, and the sessions (who, when, assistive technology,
+browser, operating system, versions), and `/accessibility` shows them. Once a
+person's review decides a step, the report records a manual review
+(`conformance.manual_review`); "fully conformant" and a conformance level need
+that.
+
+### Contributing a review
+
+1. Start from the committed `a11y-manual-review.json`. If the report changed
+   since, run `python -m tests.a11y.manual_review --prepare --merge` first: it
+   regenerates the worksheet for the current report and keeps every answer
+   whose question did not change (it lists the answers it reset or dropped).
+2. Pick one or more sessions, fill in their `fill_in`, and answer their checks.
+   Leave checks you did not do as they are.
+3. Open an issue for every failed check and put its URL in `issue`.
+4. Run `python -m tests.a11y.manual_review --check`, then apply the worksheet
+   and regenerate the docs:
+   `python -m tests.a11y.conformance --update ekte/web/static/v2/bitv-report.json --llm a11y-llm-review.json`
+   and `python -m tests.a11y.conformance --docs`.
+5. Open a pull request with the worksheet, the report and this file. The pull
+   request and its review are the record of the manual review: `by` is only
+   what the file says.
+
+A failed step is listed on `/accessibility` as a known limitation with its
+issue; fixing it is a normal change, after which the affected checks are
+repeated.
+
+### Recorded results
+
+Generated from the committed worksheet; a step is listed once at least one of
+its checks is answered.
+
+<!-- manual-results:start (generated by python -m tests.a11y.conformance --docs) -->
+| Step | Result | Checks done | Sessions | By | Date |
+|---|---|---|---|---|---|
+| (no manual review recorded yet) | | | | | |
+<!-- manual-results:end -->
+
+### When the UI changes
+
+Answers are kept by check id (`<step>/<page>/<session>/<question>`).
+`--prepare --merge` drops the answer of a check whose question, tools or
+conditions changed, and drops the checks of steps that are no longer pending.
+`--check` warns about sessions that tested another ekte version than the
+installed one: for a release that changes the web UI, the checks of the
+changed pages are repeated ([release checklist](release-checklist.md)).

@@ -191,6 +191,7 @@
       <h2 class="form-title" id="stmt-title" data-en="Accessibility statement">无障碍声明</h2>
       <h3 data-en="Conformance status">符合状态</h3>
       <p id="stmt-status"></p>
+      <p id="stmt-level"></p>
       <h3 data-en="Known limitations">已知限制</h3>
       <div id="stmt-limits"></div>
       <h3 data-en="How it was assessed">评估方式</h3>
@@ -401,7 +402,35 @@
       out += '<p><span class="k">' + esc(by) + '</span> <span lang="en" class="pre">' +
         esc([s.review.verdict, s.review.notes].filter(Boolean).join(" — ")) + "</span></p>";
     }
+    if (s.manual) out += manualDetails(s.manual);
     return out + "</div>";
+  }
+  // the manual review of a person (a11y-manual-review.json): checks done,
+  // follow-up issues, why checks do not apply, and the sessions
+  function manualDetails(m) {
+    var c = m.checks || {}, out = "";
+    out += '<p><span class="k">' + esc(T("人工审核：", "Manual review:")) + "</span> " + esc(Tf(
+      "{total} 项检查中已完成 {done} 项：{pass} 项符合，{fail} 项不符合，{na} 项不适用。",
+      "{done} of {total} checks done: {pass} hold, {fail} fail, {na} do not apply.",
+      { done: num((c.total || 0) - (c.open || 0)), total: num(c.total || 0), pass: num(c.pass || 0), fail: num(c.fail || 0), na: num(c["n/a"] || 0) })) + "</p>";
+    if ((m.issues || []).length)
+      out += '<p><span class="k">' + esc(T("后续问题：", "Follow-up issues:")) + "</span> " +
+        m.issues.map(function (u) { return '<a href="' + esc(u) + '">' + esc(u.replace(/^https?:\/\/(www\.)?github\.com\//, "")) + "</a>"; }).join(", ") + "</p>";
+    if ((m.reasons || []).length)
+      out += '<p class="k">' + esc(T("不适用：", "Does not apply:")) + '</p><ul lang="en">' +
+        m.reasons.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ul>";
+    var sessions = ((report.manual_review || {}).sessions) || {};
+    var used = (m.sessions || []).filter(function (k) { return sessions[k]; });
+    if (used.length)
+      out += '<p><span class="k">' + esc(T("审核环境：", "Sessions:")) + '</span> <span lang="en">' +
+        esc(used.map(function (k) { return sessionText(sessions[k]); }).join("; ")) + "</span></p>";
+    return out;
+  }
+  // "NVDA 2026.3, Firefox 140, Windows 11 — by alex, 2026-11-05" (English, as recorded)
+  function sessionText(x) {
+    var at = x.assistive_technology ? x.assistive_technology + (x.at_version ? " " + x.at_version : "") : "";
+    var br = String(x.browser || "").split(" (")[0] + (x.browser_version ? " " + x.browser_version : "");
+    return [at, br, x.os_version || x.os].filter(Boolean).join(", ") + " — " + [x.by, x.date].filter(Boolean).join(", ");
   }
   function matches(s) {
     var fs = $("f-status").value, fa = $("f-auto").value, fl = $("f-level").value, q = $("f-q").value.trim().toLowerCase();
@@ -436,15 +465,24 @@
   $("f-q").addEventListener("input", paintTable);
 
   // ---- accessibility statement --------------------------------------------- //
-  function stepList(status) {
-    var steps = report.steps.filter(function (s) { return s.status === status; });
+  function stepList(test) {
+    var steps = report.steps.filter(test);
     return steps.length
-      ? "<ul>" + steps.map(function (s) { return "<li>" + esc(s.step) + " " + cat(s.title) + "</li>"; }).join("") + "</ul>"
+      ? "<ul>" + steps.map(function (s) { return "<li>" + esc(s.step) + " " + cat(s.title) + issueLinks(s) + "</li>"; }).join("") + "</ul>"
       : "";
   }
+  // a step failed by a person's review links its follow-up issues (the plan)
+  function issueLinks(s) {
+    var issues = (s.manual || {}).issues || [];
+    return issues.length
+      ? " (" + issues.map(function (u) { return '<a href="' + esc(u) + '">' + esc(u.replace(/^https?:\/\/(www\.)?github\.com\//, "")) + "</a>"; }).join(", ") + ")"
+      : "";
+  }
+  var REVIEW_DOCS = "https://github.com/mn567250/ekte/blob/main/docs/dev/accessibility.md#manual-review";
   function paintStatement() {
     if (!report) {
       $("stmt-status").textContent = loadErr ? T("暂无报告。", "No report available.") : T("加载中…", "Loading…");
+      $("stmt-level").textContent = "";
       $("stmt-limits").innerHTML = "";
       $("stmt-manual").textContent = "";
       return;
@@ -454,24 +492,47 @@
       "ekte 网页界面 v2 与 BITV 2.0、EN 301 549 和 WCAG 2.1 AA 级{status}。",
       "Web UI v2 of ekte is {status} with BITV 2.0, EN 301 549 and WCAG 2.1 level AA.",
       { status: c.status === "fully conformant" ? T("完全符合", "fully conformant") : T("部分符合", "partially conformant") });
+    $("stmt-level").textContent = c.level
+      ? Tf("已达到的符合级别：{level}。", "Conformance level reached: {level}.", { level: c.level })
+      : !c.manual_review
+      ? T("在记录人工审核之前，不声明任何符合级别。", "No conformance level is claimed until a manual review by a person is recorded.")
+      : T("尚未达到任何符合级别：并非所有适用步骤都已通过。", "No conformance level is reached yet: not every applicable step passes.");
+    var auto = function (s) { return s.status === "fail" && (s.status_tests || s.status) === "fail"; };
+    var reviewed = function (s) { return s.status === "fail" && (s.status_tests || s.status) !== "fail"; };
     var parts = [
-      ["fail", T("以下步骤未通过自动化测试：", "These steps fail the automated tests:")],
-      ["not tested", T("以下步骤尚未测试：", "These steps are not tested yet:")],
-      ["manual review pending", T("以下步骤的自动化部分已通过，其余部分仍需人工审核：", "The automated part of these steps passes; the rest still needs a manual review:")],
+      [auto, T("以下步骤未通过自动化测试：", "These steps fail the automated tests:")],
+      [reviewed, T("以下步骤未通过审核：", "These steps fail a review:")],
+      [function (s) { return s.status === "not tested"; }, T("以下步骤尚未测试：", "These steps are not tested yet:")],
+      [function (s) { return s.status === "manual review pending"; }, T("以下步骤的自动化部分已通过，其余部分仍需人工审核：", "The automated part of these steps passes; the rest still needs a manual review:")],
     ];
     var html = parts.map(function (p) {
       var list = stepList(p[0]);
       return list ? "<p>" + esc(p[1]) + "</p>" + list : "";
     }).join("");
+    if (!c.manual_review)
+      html += "<p>" + esc(T(
+        "目前尚未由人进行人工审核（包括使用屏幕阅读器的审核），本版本也不包含人工审核。在记录人工审核之前，待人工审核的步骤保持待定，符合状态保持为部分符合。",
+        "No manual review by a person, including with screen readers, has been made yet; this release does not include one. Until one is recorded, the steps that await a manual review stay pending and the conformance status stays partial.")) +
+        " " + esc(T("欢迎提交人工审核：", "Manual reviews are welcome:")) + ' <a href="' + REVIEW_DOCS + '">' +
+        esc(T("如何提交人工审核", "how to contribute a manual review")) + "</a></p>";
     $("stmt-limits").innerHTML = html || "<p>" + esc(T("目前没有已知限制。", "There are no known limitations.")) + "</p>";
-    var rv = report.review || {};
-    $("stmt-manual").textContent = c.manual_review && rv.method === "llm"
-      ? Tf("最近一次测试：{date}。{model} 对文本的审核已记录为其所涵盖步骤的人工审核。",
-          "Last test run: {date}. A review of the texts by {model} is recorded as the manual review of the steps it covers.",
+    var rv = report.review || {}, mr = report.manual_review || {};
+    var first = c.llm_review && rv.method === "llm"
+      ? Tf("最近一次测试：{date}。已记录 {model} 对其所涵盖步骤的文本审核。",
+          "Last test run: {date}. A review of the texts by {model} is recorded for the steps it covers.",
           { date: fmtTime(report.generated_at), model: rv.model || "LLM" })
-      : c.manual_review
-      ? Tf("最近一次测试：{date}。已记录人工审核。", "Last test run: {date}. A manual review is recorded.", { date: fmtTime(report.generated_at) })
-      : Tf("最近一次测试：{date}。尚未进行包括屏幕阅读器在内的人工审核。", "Last test run: {date}. A manual review, including screen readers, has not been made yet.", { date: fmtTime(report.generated_at) });
+      : Tf("最近一次测试：{date}。", "Last test run: {date}.", { date: fmtTime(report.generated_at) });
+    var ss = mr.sessions || {}, keys = Object.keys(ss);
+    var uniq = function (f) {
+      return keys.map(function (k) { return ss[k][f]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(", ");
+    };
+    var second = c.manual_review
+      ? Tf("已记录 {by}（{dates}）的人工审核：{total} 项检查中完成 {done} 项，使用 {setups}。",
+          "A manual review by {by} ({dates}) is recorded: {done} of {total} checks, with {setups}.",
+          { by: uniq("by"), dates: uniq("date"), done: num((mr.checks || {}).done || 0), total: num((mr.checks || {}).total || 0),
+            setups: keys.map(function (k) { return sessionText(ss[k]).split(" — ")[0]; }).join("; ") })
+      : T("尚未进行由人完成的人工审核（包括屏幕阅读器）。", "A manual review by a person, including screen readers, has not been made yet.");
+    $("stmt-manual").textContent = first + " " + second;
   }
 
   function paintErr() {

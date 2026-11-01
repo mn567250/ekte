@@ -154,7 +154,8 @@ the key) and the pages and languages it reviewed.
 `./a11y-llm-review.json` (or `--llm <file>`; `--no-llm` ignores it) and counts
 a completed review as the manual part of the steps it covers: a step whose
 automated part passed becomes **pass** when the review found nothing and
-**fail** when it found an issue; the report records a manual review and
+**fail** when it found an issue; the report records an LLM review
+(`conformance.llm_review`, not a manual review by a person) and
 `/accessibility` names the model. A review that was skipped, failed, a dry
 run, or covered fewer pages or languages than were tested changes nothing, and
 without the file the report is built as before. The script itself never
@@ -197,3 +198,25 @@ Notes:
 - In CI the accessibility report job runs it only when the
   `ANTHROPIC_API_KEY` secret is set, before building the conformance report,
   and uploads `a11y-llm-review.json`.
+
+## Manual review worksheet
+
+The steps the suite and the LLM review leave **manual review pending** are
+decided by a person with a worksheet; what it contains, the rules and how to
+contribute a review are in
+[docs/dev/accessibility.md](../../docs/dev/accessibility.md#manual-review).
+
+```sh
+python -m tests.a11y.manual_review --prepare --merge   # a11y-manual-review.json for the current report
+python -m tests.a11y.manual_review --check [--strict]  # JSON Schema + unchanged questions (+ all answered)
+python -m tests.a11y.conformance --update ekte/web/static/v2/bitv-report.json --llm a11y-llm-review.json
+python -m tests.a11y.conformance --docs                # tables in docs/dev/accessibility.md
+```
+
+- `manual-checks.json`: the questions per step (sessions, pages, tools, what
+  to do, what to expect). Changing a question resets its answers on the next
+  `--prepare --merge`.
+- `manual-review.schema.json`: the JSON Schema of the worksheet.
+- `manual_review.py`: prepare, merge, check and summarise; tested offline in
+  `tests/test_a11y_manual_review.py`, which also keeps the committed
+  worksheet, report and docs tables in step.

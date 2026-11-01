@@ -1,0 +1,1755 @@
+{
+ "$schema": "./tests/a11y/manual-review.schema.json",
+ "schema_version": "1.0",
+ "about": "Manual review of web UI v2 (docs/dev/accessibility.md, Manual review). Fill in fill_in per session and result per check: true = holds, false = fails (give issue), null + reason = not applicable, null without reason = not done yet. Do not change the other fields.",
+ "generated_from": {
+  "commit": "5885ea322d17",
+  "ekte_version": "0.30.0",
+  "tests_run_at": "2026-10-31T00:04:43+00:00"
+ },
+ "setup": "Run ekte serve and open http://127.0.0.1:8000/. Run one audit so that History, Analytics and a report exist, and add one monitor. Use the UI language and theme the session names unless a check names another.",
+ "sessions": {
+  "desktop-browser": {
+   "setup": {
+    "label": "Desktop browser, keyboard and mouse, no screen reader",
+    "assistive_technology": null,
+    "browser": "Chrome or another Chromium browser (for the DevTools rendering emulations)",
+    "os": "Windows, macOS or Linux",
+    "input": "keyboard and mouse",
+    "language": "en",
+    "theme": "light"
+   },
+   "fill_in": {
+    "by": null,
+    "date": null,
+    "ekte_version": null,
+    "at_version": null,
+    "browser_version": null,
+    "os_version": null
+   }
+  },
+  "nvda-firefox": {
+   "setup": {
+    "label": "NVDA with Firefox on Windows",
+    "assistive_technology": "NVDA",
+    "browser": "Firefox",
+    "os": "Windows",
+    "input": "keyboard",
+    "language": "en",
+    "theme": "light"
+   },
+   "fill_in": {
+    "by": null,
+    "date": null,
+    "ekte_version": null,
+    "at_version": null,
+    "browser_version": null,
+    "os_version": null
+   }
+  },
+  "voiceover-safari": {
+   "setup": {
+    "label": "VoiceOver with Safari on macOS",
+    "assistive_technology": "VoiceOver (macOS)",
+    "browser": "Safari",
+    "os": "macOS",
+    "input": "keyboard",
+    "language": "en",
+    "theme": "light"
+   },
+   "fill_in": {
+    "by": null,
+    "date": null,
+    "ekte_version": null,
+    "at_version": null,
+    "browser_version": null,
+    "os_version": null
+   }
+  },
+  "touch": {
+   "setup": {
+    "label": "Phone or tablet with a touch screen",
+    "assistive_technology": "VoiceOver (iOS) or TalkBack (Android)",
+    "browser": "Safari (iOS) or Chrome (Android)",
+    "os": "iOS or Android",
+    "input": "touch",
+    "language": "en",
+    "theme": "light"
+   },
+   "fill_in": {
+    "by": null,
+    "date": null,
+    "ekte_version": null,
+    "at_version": null,
+    "browser_version": null,
+    "os_version": null
+   }
+  }
+ },
+ "checks": [
+  {
+   "id": "9.1.4.1/audit/desktop-browser/greyscale",
+   "step": "9.1.4.1",
+   "title": "Use of Color",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "desktop-browser",
+   "tools": [
+    "Chromium DevTools: Rendering, Emulate vision deficiencies: Achromatopsia"
+   ],
+   "do": "Emulate greyscale and look at every status, badge, trend, chart series and highlighted item.",
+   "expect": "Each state is still told apart by text, icon, pattern or position.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.1/history/desktop-browser/greyscale",
+   "step": "9.1.4.1",
+   "title": "Use of Color",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "desktop-browser",
+   "tools": [
+    "Chromium DevTools: Rendering, Emulate vision deficiencies: Achromatopsia"
+   ],
+   "do": "Emulate greyscale and look at every status, badge, trend, chart series and highlighted item.",
+   "expect": "Each state is still told apart by text, icon, pattern or position.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.1/monitors/desktop-browser/greyscale",
+   "step": "9.1.4.1",
+   "title": "Use of Color",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "desktop-browser",
+   "tools": [
+    "Chromium DevTools: Rendering, Emulate vision deficiencies: Achromatopsia"
+   ],
+   "do": "Emulate greyscale and look at every status, badge, trend, chart series and highlighted item.",
+   "expect": "Each state is still told apart by text, icon, pattern or position.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.1/kb/desktop-browser/greyscale",
+   "step": "9.1.4.1",
+   "title": "Use of Color",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "desktop-browser",
+   "tools": [
+    "Chromium DevTools: Rendering, Emulate vision deficiencies: Achromatopsia"
+   ],
+   "do": "Emulate greyscale and look at every status, badge, trend, chart series and highlighted item.",
+   "expect": "Each state is still told apart by text, icon, pattern or position.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.1/analytics/desktop-browser/greyscale",
+   "step": "9.1.4.1",
+   "title": "Use of Color",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "desktop-browser",
+   "tools": [
+    "Chromium DevTools: Rendering, Emulate vision deficiencies: Achromatopsia"
+   ],
+   "do": "Emulate greyscale and look at every status, badge, trend, chart series and highlighted item.",
+   "expect": "Each state is still told apart by text, icon, pattern or position.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.1/accessibility/desktop-browser/greyscale",
+   "step": "9.1.4.1",
+   "title": "Use of Color",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "desktop-browser",
+   "tools": [
+    "Chromium DevTools: Rendering, Emulate vision deficiencies: Achromatopsia"
+   ],
+   "do": "Emulate greyscale and look at every status, badge, trend, chart series and highlighted item.",
+   "expect": "Each state is still told apart by text, icon, pattern or position.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.11/audit/desktop-browser/graphics-contrast-light",
+   "step": "9.1.4.11",
+   "title": "Non-text Contrast",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "desktop-browser",
+   "theme": "light",
+   "tools": [
+    "DevTools colour picker or the Colour Contrast Analyser"
+   ],
+   "do": "Measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+   "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.11/history/desktop-browser/graphics-contrast-light",
+   "step": "9.1.4.11",
+   "title": "Non-text Contrast",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "desktop-browser",
+   "theme": "light",
+   "tools": [
+    "DevTools colour picker or the Colour Contrast Analyser"
+   ],
+   "do": "Measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+   "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.11/analytics/desktop-browser/graphics-contrast-light",
+   "step": "9.1.4.11",
+   "title": "Non-text Contrast",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "desktop-browser",
+   "theme": "light",
+   "tools": [
+    "DevTools colour picker or the Colour Contrast Analyser"
+   ],
+   "do": "Measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+   "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.11/accessibility/desktop-browser/graphics-contrast-light",
+   "step": "9.1.4.11",
+   "title": "Non-text Contrast",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "desktop-browser",
+   "theme": "light",
+   "tools": [
+    "DevTools colour picker or the Colour Contrast Analyser"
+   ],
+   "do": "Measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+   "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.11/audit/desktop-browser/graphics-contrast-dark",
+   "step": "9.1.4.11",
+   "title": "Non-text Contrast",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "desktop-browser",
+   "theme": "dark",
+   "tools": [
+    "DevTools colour picker or the Colour Contrast Analyser"
+   ],
+   "do": "In the dark theme, measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+   "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.11/history/desktop-browser/graphics-contrast-dark",
+   "step": "9.1.4.11",
+   "title": "Non-text Contrast",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "desktop-browser",
+   "theme": "dark",
+   "tools": [
+    "DevTools colour picker or the Colour Contrast Analyser"
+   ],
+   "do": "In the dark theme, measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+   "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.11/analytics/desktop-browser/graphics-contrast-dark",
+   "step": "9.1.4.11",
+   "title": "Non-text Contrast",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "desktop-browser",
+   "theme": "dark",
+   "tools": [
+    "DevTools colour picker or the Colour Contrast Analyser"
+   ],
+   "do": "In the dark theme, measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+   "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.11/accessibility/desktop-browser/graphics-contrast-dark",
+   "step": "9.1.4.11",
+   "title": "Non-text Contrast",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "desktop-browser",
+   "theme": "dark",
+   "tools": [
+    "DevTools colour picker or the Colour Contrast Analyser"
+   ],
+   "do": "In the dark theme, measure each chart series, bar, meter, marker and informative icon against its neighbours and the background.",
+   "expect": "Each reaches 3:1, or the same information is in adjacent text or a data table.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/audit/desktop-browser/hover-focus-content",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "desktop-browser",
+   "tools": [
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "Show every tooltip, popup and menu with the mouse and with Tab.",
+   "expect": "Escape closes it without moving focus; the pointer can move onto it without it closing; it stays until dismissed or no longer relevant.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/history/desktop-browser/hover-focus-content",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "desktop-browser",
+   "tools": [
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "Show every tooltip, popup and menu with the mouse and with Tab.",
+   "expect": "Escape closes it without moving focus; the pointer can move onto it without it closing; it stays until dismissed or no longer relevant.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/monitors/desktop-browser/hover-focus-content",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "desktop-browser",
+   "tools": [
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "Show every tooltip, popup and menu with the mouse and with Tab.",
+   "expect": "Escape closes it without moving focus; the pointer can move onto it without it closing; it stays until dismissed or no longer relevant.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/kb/desktop-browser/hover-focus-content",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "desktop-browser",
+   "tools": [
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "Show every tooltip, popup and menu with the mouse and with Tab.",
+   "expect": "Escape closes it without moving focus; the pointer can move onto it without it closing; it stays until dismissed or no longer relevant.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/analytics/desktop-browser/hover-focus-content",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "desktop-browser",
+   "tools": [
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "Show every tooltip, popup and menu with the mouse and with Tab.",
+   "expect": "Escape closes it without moving focus; the pointer can move onto it without it closing; it stays until dismissed or no longer relevant.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/accessibility/desktop-browser/hover-focus-content",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "desktop-browser",
+   "tools": [
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "Show every tooltip, popup and menu with the mouse and with Tab.",
+   "expect": "Escape closes it without moving focus; the pointer can move onto it without it closing; it stays until dismissed or no longer relevant.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/audit/desktop-browser/hover-focus-content-zoom",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "desktop-browser",
+   "zoom": "200 %",
+   "tools": [
+    "browser zoom",
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "At 200 % zoom, show every tooltip, popup and menu again.",
+   "expect": "It is fully visible, does not hide the control that opened it, and behaves as at 100 %.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/history/desktop-browser/hover-focus-content-zoom",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "desktop-browser",
+   "zoom": "200 %",
+   "tools": [
+    "browser zoom",
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "At 200 % zoom, show every tooltip, popup and menu again.",
+   "expect": "It is fully visible, does not hide the control that opened it, and behaves as at 100 %.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/monitors/desktop-browser/hover-focus-content-zoom",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "desktop-browser",
+   "zoom": "200 %",
+   "tools": [
+    "browser zoom",
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "At 200 % zoom, show every tooltip, popup and menu again.",
+   "expect": "It is fully visible, does not hide the control that opened it, and behaves as at 100 %.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.4.13/analytics/desktop-browser/hover-focus-content-zoom",
+   "step": "9.1.4.13",
+   "title": "Content on Hover or Focus",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "desktop-browser",
+   "zoom": "200 %",
+   "tools": [
+    "browser zoom",
+    "mouse",
+    "Tab",
+    "Escape"
+   ],
+   "do": "At 200 % zoom, show every tooltip, popup and menu again.",
+   "expect": "It is fully visible, does not hide the control that opened it, and behaves as at 100 %.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.2.2/audit/desktop-browser/moving-content-pausable",
+   "step": "9.2.2.2",
+   "title": "Pause, Stop, Hide",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "desktop-browser",
+   "tools": [
+    "a running audit or monitor"
+   ],
+   "do": "Start an audit, and let a monitor run.",
+   "expect": "Nothing moves, blinks or updates for more than five seconds unless it is essential or there is a control to pause, stop or hide it.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.2.2/monitors/desktop-browser/moving-content-pausable",
+   "step": "9.2.2.2",
+   "title": "Pause, Stop, Hide",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "desktop-browser",
+   "tools": [
+    "a running audit or monitor"
+   ],
+   "do": "Start an audit, and let a monitor run.",
+   "expect": "Nothing moves, blinks or updates for more than five seconds unless it is essential or there is a control to pause, stop or hide it.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.2.2/audit/desktop-browser/reduced-motion",
+   "step": "9.2.2.2",
+   "title": "Pause, Stop, Hide",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "desktop-browser",
+   "tools": [
+    "OS setting: Windows Settings, Accessibility, Visual effects, Animation effects off; macOS Reduce motion"
+   ],
+   "do": "Turn on reduce motion in the operating system and reload the page.",
+   "expect": "Animations (charts, counters, transitions) do not run.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.2.2/history/desktop-browser/reduced-motion",
+   "step": "9.2.2.2",
+   "title": "Pause, Stop, Hide",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "desktop-browser",
+   "tools": [
+    "OS setting: Windows Settings, Accessibility, Visual effects, Animation effects off; macOS Reduce motion"
+   ],
+   "do": "Turn on reduce motion in the operating system and reload the page.",
+   "expect": "Animations (charts, counters, transitions) do not run.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.2.2/monitors/desktop-browser/reduced-motion",
+   "step": "9.2.2.2",
+   "title": "Pause, Stop, Hide",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "desktop-browser",
+   "tools": [
+    "OS setting: Windows Settings, Accessibility, Visual effects, Animation effects off; macOS Reduce motion"
+   ],
+   "do": "Turn on reduce motion in the operating system and reload the page.",
+   "expect": "Animations (charts, counters, transitions) do not run.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.2.2/analytics/desktop-browser/reduced-motion",
+   "step": "9.2.2.2",
+   "title": "Pause, Stop, Hide",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "desktop-browser",
+   "tools": [
+    "OS setting: Windows Settings, Accessibility, Visual effects, Animation effects off; macOS Reduce motion"
+   ],
+   "do": "Turn on reduce motion in the operating system and reload the page.",
+   "expect": "Animations (charts, counters, transitions) do not run.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.2.2/accessibility/desktop-browser/reduced-motion",
+   "step": "9.2.2.2",
+   "title": "Pause, Stop, Hide",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "desktop-browser",
+   "tools": [
+    "OS setting: Windows Settings, Accessibility, Visual effects, Animation effects off; macOS Reduce motion"
+   ],
+   "do": "Turn on reduce motion in the operating system and reload the page.",
+   "expect": "Animations (charts, counters, transitions) do not run.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.4.3/audit/desktop-browser/tab-order",
+   "step": "9.2.4.3",
+   "title": "Focus Order",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "desktop-browser",
+   "tools": [
+    "Tab",
+    "Shift+Tab"
+   ],
+   "do": "Without the mouse, press Tab through the page, then through each opened disclosure and tab panel.",
+   "expect": "The focus follows the reading order with no unexpected jump, and returns to the control that opened a disclosure when it closes.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.4.3/history/desktop-browser/tab-order",
+   "step": "9.2.4.3",
+   "title": "Focus Order",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "desktop-browser",
+   "tools": [
+    "Tab",
+    "Shift+Tab"
+   ],
+   "do": "Without the mouse, press Tab through the page, then through each opened disclosure and tab panel.",
+   "expect": "The focus follows the reading order with no unexpected jump, and returns to the control that opened a disclosure when it closes.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.4.3/monitors/desktop-browser/tab-order",
+   "step": "9.2.4.3",
+   "title": "Focus Order",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "desktop-browser",
+   "tools": [
+    "Tab",
+    "Shift+Tab"
+   ],
+   "do": "Without the mouse, press Tab through the page, then through each opened disclosure and tab panel.",
+   "expect": "The focus follows the reading order with no unexpected jump, and returns to the control that opened a disclosure when it closes.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.4.3/kb/desktop-browser/tab-order",
+   "step": "9.2.4.3",
+   "title": "Focus Order",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "desktop-browser",
+   "tools": [
+    "Tab",
+    "Shift+Tab"
+   ],
+   "do": "Without the mouse, press Tab through the page, then through each opened disclosure and tab panel.",
+   "expect": "The focus follows the reading order with no unexpected jump, and returns to the control that opened a disclosure when it closes.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.4.3/analytics/desktop-browser/tab-order",
+   "step": "9.2.4.3",
+   "title": "Focus Order",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "desktop-browser",
+   "tools": [
+    "Tab",
+    "Shift+Tab"
+   ],
+   "do": "Without the mouse, press Tab through the page, then through each opened disclosure and tab panel.",
+   "expect": "The focus follows the reading order with no unexpected jump, and returns to the control that opened a disclosure when it closes.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.4.3/accessibility/desktop-browser/tab-order",
+   "step": "9.2.4.3",
+   "title": "Focus Order",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "desktop-browser",
+   "tools": [
+    "Tab",
+    "Shift+Tab"
+   ],
+   "do": "Without the mouse, press Tab through the page, then through each opened disclosure and tab panel.",
+   "expect": "The focus follows the reading order with no unexpected jump, and returns to the control that opened a disclosure when it closes.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.4.3/monitors/desktop-browser/dialog-focus",
+   "step": "9.2.4.3",
+   "title": "Focus Order",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "desktop-browser",
+   "tools": [
+    "Tab",
+    "Escape"
+   ],
+   "do": "Open the key-storage (master key) dialog, press Tab through it and close it.",
+   "expect": "The focus moves into the dialog when it opens, stays in it while it is open, and returns to the control that opened it.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/audit/nvda-firefox/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/history/nvda-firefox/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/monitors/nvda-firefox/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/kb/nvda-firefox/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/analytics/nvda-firefox/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/accessibility/nvda-firefox/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/audit/nvda-firefox/table-headers",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: T (next table), Ctrl+Alt+arrow keys (move by cell)"
+   ],
+   "do": "Move into each data table (the audit report, the Analytics tables, the test steps) and step through its cells.",
+   "expect": "Moving to a cell announces its row and column header together with the data.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/analytics/nvda-firefox/table-headers",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: T (next table), Ctrl+Alt+arrow keys (move by cell)"
+   ],
+   "do": "Move into each data table (the audit report, the Analytics tables, the test steps) and step through its cells.",
+   "expect": "Moving to a cell announces its row and column header together with the data.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/accessibility/nvda-firefox/table-headers",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: T (next table), Ctrl+Alt+arrow keys (move by cell)"
+   ],
+   "do": "Move into each data table (the audit report, the Analytics tables, the test steps) and step through its cells.",
+   "expect": "Moving to a cell announces its row and column header together with the data.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/audit/nvda-firefox/field-groups",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: F (next form field), Tab"
+   ],
+   "do": "Move through the fields and filters that are visually grouped (radio buttons, filter panels, advanced options).",
+   "expect": "Entering a group announces the group name; each field is announced with its own label.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/history/nvda-firefox/field-groups",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: F (next form field), Tab"
+   ],
+   "do": "Move through the fields and filters that are visually grouped (radio buttons, filter panels, advanced options).",
+   "expect": "Entering a group announces the group name; each field is announced with its own label.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/monitors/nvda-firefox/field-groups",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: F (next form field), Tab"
+   ],
+   "do": "Move through the fields and filters that are visually grouped (radio buttons, filter panels, advanced options).",
+   "expect": "Entering a group announces the group name; each field is announced with its own label.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/kb/nvda-firefox/field-groups",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: F (next form field), Tab"
+   ],
+   "do": "Move through the fields and filters that are visually grouped (radio buttons, filter panels, advanced options).",
+   "expect": "Entering a group announces the group name; each field is announced with its own label.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/analytics/nvda-firefox/field-groups",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: F (next form field), Tab"
+   ],
+   "do": "Move through the fields and filters that are visually grouped (radio buttons, filter panels, advanced options).",
+   "expect": "Entering a group announces the group name; each field is announced with its own label.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/audit/nvda-firefox/reading-order",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Down arrow in browse mode, or Insert+Down arrow (say all)"
+   ],
+   "do": "Read the page from top to bottom, then open each disclosure, tab and \"Show more\" and read on.",
+   "expect": "The order makes sense, and content revealed by a disclosure, tab or \"Show more\" is read right after its control.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/history/nvda-firefox/reading-order",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Down arrow in browse mode, or Insert+Down arrow (say all)"
+   ],
+   "do": "Read the page from top to bottom, then open each disclosure, tab and \"Show more\" and read on.",
+   "expect": "The order makes sense, and content revealed by a disclosure, tab or \"Show more\" is read right after its control.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/monitors/nvda-firefox/reading-order",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Down arrow in browse mode, or Insert+Down arrow (say all)"
+   ],
+   "do": "Read the page from top to bottom, then open each disclosure, tab and \"Show more\" and read on.",
+   "expect": "The order makes sense, and content revealed by a disclosure, tab or \"Show more\" is read right after its control.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/kb/nvda-firefox/reading-order",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Down arrow in browse mode, or Insert+Down arrow (say all)"
+   ],
+   "do": "Read the page from top to bottom, then open each disclosure, tab and \"Show more\" and read on.",
+   "expect": "The order makes sense, and content revealed by a disclosure, tab or \"Show more\" is read right after its control.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/analytics/nvda-firefox/reading-order",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Down arrow in browse mode, or Insert+Down arrow (say all)"
+   ],
+   "do": "Read the page from top to bottom, then open each disclosure, tab and \"Show more\" and read on.",
+   "expect": "The order makes sense, and content revealed by a disclosure, tab or \"Show more\" is read right after its control.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/accessibility/nvda-firefox/reading-order",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA: Down arrow in browse mode, or Insert+Down arrow (say all)"
+   ],
+   "do": "Read the page from top to bottom, then open each disclosure, tab and \"Show more\" and read on.",
+   "expect": "The order makes sense, and content revealed by a disclosure, tab or \"Show more\" is read right after its control.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/audit/nvda-firefox/reading-order-narrow",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "width": "320 CSS px (browser window narrowed, or 400 % zoom)",
+   "tools": [
+    "NVDA: Down arrow in browse mode"
+   ],
+   "do": "At 320 CSS px width, read the page from top to bottom.",
+   "expect": "The order still makes sense where the layout stacks columns.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/history/nvda-firefox/reading-order-narrow",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "nvda-firefox",
+   "width": "320 CSS px (browser window narrowed, or 400 % zoom)",
+   "tools": [
+    "NVDA: Down arrow in browse mode"
+   ],
+   "do": "At 320 CSS px width, read the page from top to bottom.",
+   "expect": "The order still makes sense where the layout stacks columns.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.2/analytics/nvda-firefox/reading-order-narrow",
+   "step": "9.1.3.2",
+   "title": "Meaningful Sequence",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "nvda-firefox",
+   "width": "320 CSS px (browser window narrowed, or 400 % zoom)",
+   "tools": [
+    "NVDA: Down arrow in browse mode"
+   ],
+   "do": "At 320 CSS px width, read the page from top to bottom.",
+   "expect": "The order still makes sense where the layout stacks columns.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.2.2/audit/nvda-firefox/header-switches",
+   "step": "9.3.2.2",
+   "title": "On Input",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA",
+    "keyboard"
+   ],
+   "do": "Change the language and the theme with the keyboard (the switches in the header, the same on every page).",
+   "expect": "The control says what it changes before it is used; afterwards the focus stays on it and no window opens.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.2.2/audit/nvda-firefox/page-controls",
+   "step": "9.3.2.2",
+   "title": "On Input",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA",
+    "keyboard"
+   ],
+   "do": "Change every select, checkbox, switch and field of the page (filters, sort, page size, options) with the keyboard.",
+   "expect": "Each change is described before it is made, and none moves the focus, opens a window or replaces the content unexpectedly.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.2.2/history/nvda-firefox/page-controls",
+   "step": "9.3.2.2",
+   "title": "On Input",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA",
+    "keyboard"
+   ],
+   "do": "Change every select, checkbox, switch and field of the page (filters, sort, page size, options) with the keyboard.",
+   "expect": "Each change is described before it is made, and none moves the focus, opens a window or replaces the content unexpectedly.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.2.2/monitors/nvda-firefox/page-controls",
+   "step": "9.3.2.2",
+   "title": "On Input",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA",
+    "keyboard"
+   ],
+   "do": "Change every select, checkbox, switch and field of the page (filters, sort, page size, options) with the keyboard.",
+   "expect": "Each change is described before it is made, and none moves the focus, opens a window or replaces the content unexpectedly.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.2.2/kb/nvda-firefox/page-controls",
+   "step": "9.3.2.2",
+   "title": "On Input",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA",
+    "keyboard"
+   ],
+   "do": "Change every select, checkbox, switch and field of the page (filters, sort, page size, options) with the keyboard.",
+   "expect": "Each change is described before it is made, and none moves the focus, opens a window or replaces the content unexpectedly.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.2.2/analytics/nvda-firefox/page-controls",
+   "step": "9.3.2.2",
+   "title": "On Input",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA",
+    "keyboard"
+   ],
+   "do": "Change every select, checkbox, switch and field of the page (filters, sort, page size, options) with the keyboard.",
+   "expect": "Each change is described before it is made, and none moves the focus, opens a window or replaces the content unexpectedly.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.3.1/audit/nvda-firefox/audit-errors",
+   "step": "9.3.3.1",
+   "title": "Error Identification",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA"
+   ],
+   "do": "Submit an empty audit form, then an invalid key, then an endpoint that cannot be reached.",
+   "expect": "Each error is announced when it appears, names the field, says in plain words what is wrong, and the focus or the error link leads to the field.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.3.1/audit/nvda-firefox/audit-errors-de",
+   "step": "9.3.3.1",
+   "title": "Error Identification",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "lang": "de",
+   "tools": [
+    "NVDA"
+   ],
+   "do": "In German, submit an empty audit form and an invalid key.",
+   "expect": "The errors are announced in German, name the field and say what is wrong.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.3.1/audit/nvda-firefox/audit-errors-zh",
+   "step": "9.3.3.1",
+   "title": "Error Identification",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "lang": "zh",
+   "tools": [
+    "NVDA"
+   ],
+   "do": "In Chinese, submit an empty audit form and an invalid key.",
+   "expect": "The errors are announced in Chinese, name the field and say what is wrong.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.3.1/monitors/nvda-firefox/form-errors",
+   "step": "9.3.3.1",
+   "title": "Error Identification",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA"
+   ],
+   "do": "Save the page's form empty or with an invalid value (a monitor; a knowledge-base entry).",
+   "expect": "Each error is announced when it appears, names the field, says in plain words what is wrong, and leads to the field.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.3.3.1/kb/nvda-firefox/form-errors",
+   "step": "9.3.3.1",
+   "title": "Error Identification",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "nvda-firefox",
+   "tools": [
+    "NVDA"
+   ],
+   "do": "Save the page's form empty or with an invalid value (a monitor; a knowledge-base entry).",
+   "expect": "Each error is announced when it appears, names the field, says in plain words what is wrong, and leads to the field.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/audit/nvda-firefox/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "nvda-firefox",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/history/nvda-firefox/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "nvda-firefox",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/monitors/nvda-firefox/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "nvda-firefox",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/kb/nvda-firefox/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "nvda-firefox",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/analytics/nvda-firefox/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "nvda-firefox",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/audit/voiceover-safari/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "voiceover-safari",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/history/voiceover-safari/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "voiceover-safari",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/monitors/voiceover-safari/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "voiceover-safari",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/kb/voiceover-safari/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "voiceover-safari",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/analytics/voiceover-safari/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "voiceover-safari",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.1.3.1/accessibility/voiceover-safari/headings-landmarks",
+   "step": "9.1.3.1",
+   "title": "Info and Relationships",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "voiceover-safari",
+   "tools": [
+    "NVDA: Insert+F7 (elements list: headings, landmarks)",
+    "VoiceOver: rotor VO+U (headings, landmarks)"
+   ],
+   "do": "Open the list of headings, then the list of landmarks.",
+   "expect": "The heading outline matches the visible sections in order and level; main, navigation, banner (header) and content info (footer) are listed.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/audit/voiceover-safari/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "voiceover-safari",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/history/voiceover-safari/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "voiceover-safari",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/monitors/voiceover-safari/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "voiceover-safari",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/kb/voiceover-safari/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "voiceover-safari",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.4.1.3/analytics/voiceover-safari/status-announced",
+   "step": "9.4.1.3",
+   "title": "Status Messages",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "voiceover-safari",
+   "tools": [
+    "screen reader with speech on"
+   ],
+   "do": "Cause each status change of the page without moving the focus: audit progress, finish and failure; Copy link, sort, filter and \"Show more\"; saving and running a monitor; saving a knowledge-base entry.",
+   "expect": "Each result or progress change is spoken, once, without the focus moving.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.5.1/audit/touch/single-pointer",
+   "step": "9.2.5.1",
+   "title": "Pointer Gestures",
+   "page": "audit",
+   "url": "http://127.0.0.1:8000/",
+   "session": "touch",
+   "tools": [
+    "touch screen, single taps only"
+   ],
+   "do": "Operate every control with single taps only: charts, tables, tabs, sort, filters and disclosures.",
+   "expect": "No function needs a swipe, pinch, drag or multi-finger gesture.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.5.1/history/touch/single-pointer",
+   "step": "9.2.5.1",
+   "title": "Pointer Gestures",
+   "page": "history",
+   "url": "http://127.0.0.1:8000/history",
+   "session": "touch",
+   "tools": [
+    "touch screen, single taps only"
+   ],
+   "do": "Operate every control with single taps only: charts, tables, tabs, sort, filters and disclosures.",
+   "expect": "No function needs a swipe, pinch, drag or multi-finger gesture.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.5.1/monitors/touch/single-pointer",
+   "step": "9.2.5.1",
+   "title": "Pointer Gestures",
+   "page": "monitors",
+   "url": "http://127.0.0.1:8000/watches",
+   "session": "touch",
+   "tools": [
+    "touch screen, single taps only"
+   ],
+   "do": "Operate every control with single taps only: charts, tables, tabs, sort, filters and disclosures.",
+   "expect": "No function needs a swipe, pinch, drag or multi-finger gesture.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.5.1/kb/touch/single-pointer",
+   "step": "9.2.5.1",
+   "title": "Pointer Gestures",
+   "page": "kb",
+   "url": "http://127.0.0.1:8000/kb",
+   "session": "touch",
+   "tools": [
+    "touch screen, single taps only"
+   ],
+   "do": "Operate every control with single taps only: charts, tables, tabs, sort, filters and disclosures.",
+   "expect": "No function needs a swipe, pinch, drag or multi-finger gesture.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.5.1/analytics/touch/single-pointer",
+   "step": "9.2.5.1",
+   "title": "Pointer Gestures",
+   "page": "analytics",
+   "url": "http://127.0.0.1:8000/analytics",
+   "session": "touch",
+   "tools": [
+    "touch screen, single taps only"
+   ],
+   "do": "Operate every control with single taps only: charts, tables, tabs, sort, filters and disclosures.",
+   "expect": "No function needs a swipe, pinch, drag or multi-finger gesture.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  },
+  {
+   "id": "9.2.5.1/accessibility/touch/single-pointer",
+   "step": "9.2.5.1",
+   "title": "Pointer Gestures",
+   "page": "accessibility",
+   "url": "http://127.0.0.1:8000/accessibility",
+   "session": "touch",
+   "tools": [
+    "touch screen, single taps only"
+   ],
+   "do": "Operate every control with single taps only: charts, tables, tabs, sort, filters and disclosures.",
+   "expect": "No function needs a swipe, pinch, drag or multi-finger gesture.",
+   "result": null,
+   "reason": null,
+   "issue": null,
+   "notes": null
+  }
+ ]
+}

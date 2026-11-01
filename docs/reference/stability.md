@@ -394,8 +394,9 @@ is the root. A page address does not change within a major version.
 
 - The accessibility conformance report at `/accessibility` states what has and has not
   been reviewed by a person; the manual review steps are in
-  [ACCESSIBILITY.md](../dev/accessibility.md#manual-review). The look and wording of the
-  pages stay internal; only their addresses are public.
+  [ACCESSIBILITY.md](../dev/accessibility.md#manual-review). No manual review has been
+  made for 1.0.0; this is a known limitation, not a stability promise. The look and
+  wording of the pages stay internal; only their addresses are public.
 - A path that is no page and no API address opens the audit page.
 - The query parameters named above (`surface`, `rerun`, `job`) are public with the page.
 - **Assets** (scripts, stylesheets, icons under `/static/` and the top-level
