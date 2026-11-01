@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 
 import pytest
 
+import ekte.knowledge as knowledge_pkg
 from ekte.knowledge import load_knowledge_base, store
 from ekte.knowledge.importer import export_yaml, import_yaml, scan
 from ekte.knowledge.research import research_prompt
@@ -340,10 +342,14 @@ BAD_YAML = [
         ("provider: x\nbase: &a {k: 1}\nmodels:\n- id: m\n  extra: *a", "anchors"),
         ("provider: x\nmodels:\n- id: m\n  fingerprints:\n  - {id: f, signal: s, prompt: p, expect_regex: '(a+)+$'}", "nested quantifiers"),
         ("provider: x\nmodels:\n- id: m\n  fingerprints:\n  - {id: f, signal: s, prompt: p, expect_regex: '(['}", "invalid regular expression"),
-        ("provider: x\nmodels:\n- id: m\n  fingerprints:\n  - {id: f, signal: s, prompt: p, max_tokens: 999999}", "max_tokens"),
+        ("provider: x\nmodels:\n- id: m\n  fingerprints:\n  - {id: f, signal: s, prompt: p, max_tokens: 2097153}", "max_tokens"),
         ("provider: x\nmodels:\n- id: m\n  fingerprints:\n  - {id: f, signal: s, prompt: p, prompt_lang: zh}", "language_bound"),
         ("provider: x\nmodels:\n- id: m\n- id: m", "duplicate model"),
         ("provider: x\nbase_url_hints: [ftp://nope]\nmodels:\n- id: m", "http"),
+        ("provider: x\nbase_url_hints: ['has space']\nmodels:\n- id: m", "base_url_hints[0]"),
+        ("provider: x\nbase_url_hints: ['']\nmodels:\n- id: m", "base_url_hints[0]"),
+        ("provider: x\nbase_url_hints: [nodot]\nmodels:\n- id: m", "base_url_hints[0]"),
+        ("provider: x\nbase_url_hints: ['https://a.example/" + "x" * 500 + "']\nmodels:\n- id: m", "longer than"),
         ("provider: x\nmodels: [{id: [not, a, string]}]", "id"),
         ("key: [unclosed", "not valid YAML"),
         ("provider: x\n\tmodels: []", "not valid YAML"),
@@ -379,6 +385,35 @@ def test_scan_rejects_bad_yaml(data_dir, text, needle):
     assert any(needle.lower() in (e["message"] + " " + e["path"]).lower() for e in result.errors), result.errors
     assert not (data_dir / "kb.db").exists() or store.list_entries() == []
 
+
+
+PACKAGED_DATA = sorted((Path(knowledge_pkg.__file__).parent / "data").glob("*.yaml"))
+
+
+@pytest.mark.parametrize("path", PACKAGED_DATA, ids=lambda p: p.name)
+def test_packaged_data_passes_the_import_check(data_dir, path):
+    # `ekte kb-import --check` on a shipped file: the data and the validator must agree,
+    # so a packaged profile can be exported, edited and imported again (#69).
+    result = scan(path.read_text(encoding="utf-8"))
+    assert result.ok, result.errors
+
+
+@pytest.mark.parametrize("hint", [
+    "https://api.example.com/v1",
+    "api.example.com",
+    "api.example.com:8443/v1",
+    "/v1/chat/completions",
+    "REGION-ai.example.com/v1/projects/{project}/models/",
+])
+def test_scan_accepts_hosts_and_paths_as_base_url_hints(data_dir, hint):
+    result = scan(f"provider: x\nbase_url_hints: ['{hint}']\nmodels:\n- id: m\n")
+    assert result.ok, result.errors
+
+
+def test_scan_accepts_max_tokens_up_to_twice_the_largest_model_output(data_dir):
+    fp = "{id: f, signal: s, prompt: p, max_tokens: 2097152}"
+    result = scan(f"provider: x\nmodels:\n- id: m\n  fingerprints:\n  - {fp}\n")
+    assert result.ok, result.errors
 
 @pytest.mark.parametrize("text", [NEW_PROVIDER_YAML, *(t for t, _ in BAD_YAML)], ids=_short_id)
 def test_scan_is_the_same_with_the_c_and_pure_python_yaml_loaders(data_dir, monkeypatch, text):

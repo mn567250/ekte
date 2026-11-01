@@ -56,7 +56,12 @@ MAX_MODELS = 200
 MAX_FINGERPRINTS = 100
 MAX_PROMPT_CHARS = 20_000
 MAX_REGEX_CHARS = 500
-MAX_TOKENS = 32_768
+# Twice the largest max output any model offers (Moonshot's Kimi K3: 1,048,576
+# tokens, as of 2026-11): a probe may ask for any real model's full output, and
+# untrusted YAML still cannot request an unbounded amount. Provider-level probes
+# have no single model, so the bound is fixed rather than per model.
+MAX_TOKENS = 2_097_152
+MAX_HINT_CHARS = 500
 # Valid profiles nest about six levels deep. The limit keeps the loaders off
 # deeply nested input: libyaml's composer recurses in C once per level (tens
 # of thousands of levels overflow the C stack), the Python code past it hits
@@ -68,6 +73,11 @@ _MODEL_ID_RE = re.compile(r"^[^\s\x00-\x1f\x7f]{1,200}$")
 # A group that itself contains a quantifier, followed by another quantifier:
 # (a+)+, (\w*)*, (x|y+){2,} — the classic catastrophic-backtracking shapes.
 _NESTED_QUANTIFIER = re.compile(r"\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d*,)")
+# base_url_hints are matched against relay URLs and read by people: a full
+# http(s) URL, a bare host (optionally with a path or {placeholders}) or a path.
+_HINT_URL_RE = re.compile(r"^https?://\S+$", re.IGNORECASE)
+_HINT_PATH_RE = re.compile(r"^/\S*$")
+_HINT_HOST_RE = re.compile(r"^[A-Za-z0-9{][A-Za-z0-9.{}_-]*\.[A-Za-z0-9.{}_-]*(?::\d+)?(?:/\S*)?$")
 _PROVIDER_LISTS = ("fingerprints", "base_url_hints", "relay_red_flags")
 
 
@@ -200,6 +210,17 @@ def _check_fingerprints(
                               "prompt_lang": fp.prompt_lang})
 
 
+def _hint_problem(hint: str) -> str | None:
+    """Why ``hint`` is not a usable ``base_url_hints`` entry, or None."""
+    if len(hint) > MAX_HINT_CHARS:
+        return f"longer than {MAX_HINT_CHARS} characters"
+    if "://" not in hint and (_HINT_PATH_RE.match(hint) or _HINT_HOST_RE.match(hint)):
+        return None
+    if _HINT_URL_RE.match(hint):
+        return None
+    return "must be an http:// or https:// URL, a host (api.example.com) or a path (/v1/chat/completions)"
+
+
 def _resolution_map(kb: KnowledgeBase, names: list[str]) -> dict[str, str | None]:
     out: dict[str, str | None] = {}
     for n in names:
@@ -272,8 +293,9 @@ def scan(text: str, *, base: KnowledgeBase | None = None) -> ScanResult:
 
         _check_fingerprints(result, _loc(prefix, ("fingerprints",)), profile.fingerprints, f"provider {name}")
         for h_index, hint in enumerate(profile.base_url_hints):
-            if not re.match(r"^https?://", hint):
-                result.error(_loc(prefix, ("base_url_hints", h_index)), "must start with http:// or https://")
+            problem = _hint_problem(hint)
+            if problem is not None:
+                result.error(_loc(prefix, ("base_url_hints", h_index)), problem)
 
         # Provider-level entry.
         existing = underlying.providers.get(name)
