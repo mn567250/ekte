@@ -432,15 +432,14 @@ def key_counts(box: secretbox.SecretBox | None = None) -> dict[str, int]:
 
 # Whether a box opens a sealed value, memoized: the monitors page polls the
 # listing every few seconds and each check is a decryption. Keyed by the
-# ciphertext's hash and the box's key list, so a new key never sees old answers.
+# ciphertext itself (not secret, and already held in memory by the caller) and
+# the box's key list, so a new key never sees old answers.
 _status_cache: dict[tuple[str, str], bool] = {}
 _STATUS_CACHE_MAX = 2048
 
 
 def _can_open(box: secretbox.SecretBox, stored: str) -> bool:
-    import hashlib
-
-    key = (hashlib.sha256(stored.encode("utf-8")).hexdigest(), box.cache_id())
+    key = (stored, box.cache_id())
     ok = _status_cache.get(key)
     if ok is None:
         if len(_status_cache) >= _STATUS_CACHE_MAX:
