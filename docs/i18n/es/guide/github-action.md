@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@vX.Y.Z   # fija una etiqueta — consulta «Fijar la versión» más abajo
+        uses: mn567250/ekte@v0.33.0   # fija una etiqueta — consulta «Fijar la versión» más abajo
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -63,7 +63,7 @@ jobs:
 | `suite`             | no          | `standard`  | Suite de detectores: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | no          | `high`      | Hace fallar el job cuando el riesgo es `>=` este nivel: `low` \| `medium` \| `high`. |
 | `python-version`    | no          | `3.12`      | Versión de Python usada para instalar y ejecutar `ekte`. |
-| `version`           | no          | `ekte`      | Especificación de pip install. Fíjala para ejecuciones reproducibles, p. ej. `ekte==X.Y.Z`. |
+| `version`           | no          | `ekte`      | Especificación de pip install. Fíjala para ejecuciones reproducibles, p. ej. `ekte==0.33.0`. |
 
 ## Salidas
 
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@vX.Y.Z
+        uses: mn567250/ekte@v0.33.0
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -116,14 +116,14 @@ jobs:
 
 ## Fijar la versión
 
-Fija la acción a una **etiqueta de versión** (`mn567250/ekte@vX.Y.Z`) en lugar de
+Fija la acción a una **etiqueta de versión** (`mn567250/ekte@v0.33.0`) en lugar de
 a una rama que se mueve. Así las auditorías son reproducibles y te proteges de
 cambios inesperados en la acción. Una etiqueta puede moverse; para la protección
 más estricta de la cadena de suministro, fija el SHA completo del commit de la
 versión con la versión en un comentario
-(`mn567250/ekte@<full-commit-sha> # vX.Y.Z`) y deja que Dependabot lo mantenga al
+(`mn567250/ekte@<full-commit-sha> # v0.33.0`) y deja que Dependabot lo mantenga al
 día. Para un comportamiento de la CLI totalmente reproducible, fija también la
-entrada `version` a una versión exacta, p. ej. `version: ekte==X.Y.Z`.
+entrada `version` a una versión exacta, p. ej. `version: ekte==0.33.0`.
 
 Tienes un ejemplo programado listo para copiar en
 [`.github/workflows/example-audit.yml`](../../../../.github/workflows/example-audit.yml).

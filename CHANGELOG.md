@@ -20,6 +20,20 @@ ekte has three eras:
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-11-01
+
+The last release before 1.0.0, covering the roadmap milestones 0.31
+(foundations), 0.32 (contracts) and 0.33 (UI and platforms). It introduces the
+[stability and compatibility policy](https://github.com/mn567250/ekte/blob/main/docs/reference/stability.md) that 1.0.0
+will promise, and it is the release that warns about everything 1.0.0 removes:
+the zing compatibility layer, the `/v2/…` and classic UI addresses, unknown keys
+in the configuration file and the renamed CLI options. Each of them still works
+here and names 1.0.0 in its warning (see **Deprecated** and **Changed** below), so update
+scripts, bookmarks and configuration files before upgrading to 1.0.0.
+
+Python 3.11 or newer is now required (3.10 reached end of life); Linux, macOS
+and Windows are supported and tested.
+
 
 ### Added
 
