@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@vX.Y.Z   # fest til en tag — se «Festing» nedenfor
+        uses: mn567250/ekte@v0.33.0   # fest til en tag — se «Festing» nedenfor
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -62,7 +62,7 @@ jobs:
 | `suite`             | nei      | `standard`    | Testsett: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | nei      | `high`        | La jobben feile når risikoen er `>=` dette nivået: `low` \| `medium` \| `high`. |
 | `python-version`    | nei      | `3.12`        | Python-versjonen som brukes til å installere og kjøre `ekte`. |
-| `version`           | nei      | `ekte`  | pip-installasjonsspesifikasjon. Fest den for reproduserbare kjøringer, f.eks. `ekte==X.Y.Z`. |
+| `version`           | nei      | `ekte`  | pip-installasjonsspesifikasjon. Fest den for reproduserbare kjøringer, f.eks. `ekte==0.33.0`. |
 
 ## Utdata
 
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@vX.Y.Z
+        uses: mn567250/ekte@v0.33.0
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -115,14 +115,14 @@ jobs:
 
 ## Festing
 
-Fest handlingen til en **utgivelsestag** (`mn567250/ekte@vX.Y.Z`) i stedet for
+Fest handlingen til en **utgivelsestag** (`mn567250/ekte@v0.33.0`) i stedet for
 en gren som flytter seg. Det holder revisjonene reproduserbare og beskytter deg
 mot uventede endringer i handlingen. En tag kan flyttes; for den strengeste
 beskyttelsen av forsyningskjeden fester du utgivelsens fullstendige commit-SHA
-med versjonen i en kommentar (`mn567250/ekte@<full-commit-sha> # vX.Y.Z`) og lar
+med versjonen i en kommentar (`mn567250/ekte@<full-commit-sha> # v0.33.0`) og lar
 Dependabot holde den oppdatert. For fullt reproduserbar oppførsel i CLI-et fester
 du også inndataene `version` til en eksakt utgivelse, f.eks.
-`version: ekte==X.Y.Z`.
+`version: ekte==0.33.0`.
 
 Et planlagt eksempel klart til å kopieres ligger i
 [`.github/workflows/example-audit.yml`](../../../../.github/workflows/example-audit.yml).

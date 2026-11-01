@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@vX.Y.Z   # 固定到一个标签——见下文“版本固定”
+        uses: mn567250/ekte@v0.33.0   # 固定到一个标签——见下文“版本固定”
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -59,7 +59,7 @@ jobs:
 | `suite`             | 否   | `standard`    | 检测套件：`smoke` \| `standard` \| `deep` \| `full`。 |
 | `fail-on-risk`      | 否   | `high`        | 风险 `>=` 该级别时让作业失败：`low` \| `medium` \| `high`。 |
 | `python-version`    | 否   | `3.12`        | 用于安装和运行 `ekte` 的 Python 版本。 |
-| `version`           | 否   | `ekte`  | pip 安装规格。若要可复现的运行请固定版本，例如 `ekte==X.Y.Z`。 |
+| `version`           | 否   | `ekte`  | pip 安装规格。若要可复现的运行请固定版本，例如 `ekte==0.33.0`。 |
 
 ## 输出
 
@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@vX.Y.Z
+        uses: mn567250/ekte@v0.33.0
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -111,11 +111,11 @@ jobs:
 
 ## 版本固定
 
-请把 action 固定到一个**发布标签**（`mn567250/ekte@vX.Y.Z`），而不是会变动的分支。这能让检测
+请把 action 固定到一个**发布标签**（`mn567250/ekte@v0.33.0`），而不是会变动的分支。这能让检测
 可复现，并避免 action 发生意外变化。标签可以被移动；若要最严格的供应链保护，请固定到该发布的
-完整提交 SHA，并在注释中写明版本（`mn567250/ekte@<full-commit-sha> # vX.Y.Z`），再让 Dependabot
+完整提交 SHA，并在注释中写明版本（`mn567250/ekte@<full-commit-sha> # v0.33.0`），再让 Dependabot
 保持更新。若要完全可复现的 CLI 行为，还应把 `version` 输入固定到一个确切的发布版本，例如
-`version: ekte==X.Y.Z`。
+`version: ekte==0.33.0`。
 
 可直接复制的定时运行示例见
 [`.github/workflows/example-audit.yml`](../../../../.github/workflows/example-audit.yml)。

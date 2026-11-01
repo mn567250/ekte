@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ekte"
-version = "0.30.0"
-description = "LLM relay reality check — a CLI that audits whether an API relay actually serves the model it claims (货不对板检测)."
+version = "0.33.0"
+description = "LLM relay reality check: audit whether an API relay actually serves the model it claims, from the command line, a local web UI, an HTTP API or CI."
 dynamic = ["readme"]  # README.md with absolute links: scripts/hatch_readme.py
 license = "Apache-2.0"
 requires-python = ">=3.11"
