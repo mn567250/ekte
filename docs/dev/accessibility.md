@@ -189,7 +189,8 @@ a person, which the project cannot provide for 1.0.0.
 
 **Reviews are welcome.** A review of a single session (for example NVDA with
 Firefox, or only the checks in a desktop browser) is useful on its own; see
-[Contributing a review](#contributing-a-review). Barriers found in use are
+[Contributing a review](#contributing-a-review), and say in
+[#67](https://github.com/mn567250/ekte/issues/67) which session you take. Barriers found in use are
 welcome as [issues](https://github.com/mn567250/ekte/issues) at any time.
 
 ### Automated pre-checks (not a manual review)

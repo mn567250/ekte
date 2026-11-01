@@ -25,7 +25,7 @@ pytest && ruff check ekte tests && mypy ekte
 - No coding needed to help with accessibility: a manual review of the web UI,
   with or without a screen reader, is welcome. ekte 1.0.0 has none yet; the
   [worksheet and how to fill it in](dev/accessibility.md#contributing-a-review)
-  are ready.
+  are ready; coordinate in [#67](https://github.com/mn567250/ekte/issues/67).
 - Report security issues privately — see the [Security policy](SECURITY.md).
 - Be kind: this project follows the [Code of Conduct](CODE_OF_CONDUCT.md).
   Conduct reports go privately to the maintainer, the same way as security
