@@ -355,11 +355,20 @@ async def _run_one_watch(row: dict[str, Any]) -> None:
                 raise WatchCancelled(wid) from None
             raise
         except Exception as exc:
-            outcome, error = "error", f"{type(exc).__name__}: {exc}"
+            # The traceback goes to the server log only (scheduled runs are
+            # otherwise dropped silently): an unexpected exception's text can
+            # carry internal details, so the live job shows just its type.
+            _log.exception("monitor %s run failed", wid)
+            outcome, error = "error", _monitor_failed_message(exc)
             raise
     finally:
         job.close(outcome, error)
         _running_watches.pop(wid, None)
+
+
+def _monitor_failed_message(exc: BaseException) -> str:
+    """What the client sees of a monitor run that raised: the type, not the text."""
+    return f"Monitor run failed ({type(exc).__name__}); see the ekte serve log for details."
 
 
 def _find_job(job_id: str) -> jobs.Job | None:
@@ -732,6 +741,20 @@ def _locked_response(_exc: Exception | None = None) -> JSONResponse:
         {"error": "the master key is locked: enter it first" if st["state"] != "uninitialized"
          else "create a master key first", "locked": True, "state": st["state"]},
         status_code=423,
+    )
+
+
+def _kb_error_response(exc: Exception) -> JSONResponse:
+    """400: the knowledge base could not be read (e.g. a broken EKTE_KB_DIR file).
+
+    The traceback goes to the server log only: the loader's exception text can
+    carry internal details, so the client gets just its type.
+    """
+    _log.exception("knowledge base could not be loaded")
+    return JSONResponse(
+        {"error": f"knowledge base could not be loaded ({type(exc).__name__}); "
+                  "see the ekte serve log for details."},
+        status_code=400,
     )
 
 
@@ -1219,7 +1242,14 @@ def create_app() -> FastAPI:
                 # CPU-bound typesetting: keep the event loop (and live audits) responsive.
                 body = await asyncio.to_thread(render_pdf, report)
             except Exception as exc:  # a layout failure must still reach the UI as JSON
-                return JSONResponse({"error": f"PDF rendering failed: {exc}"[:500]}, status_code=500)
+                # The traceback goes to the server log only: the renderer's
+                # exception text can carry internal details, so the client
+                # gets just its type.
+                _log.exception("PDF rendering failed")
+                return JSONResponse(
+                    {"error": f"PDF rendering failed ({type(exc).__name__}); see the ekte serve log for details."},
+                    status_code=500,
+                )
         else:
             render = {"json": render_json, "md": render_markdown, "html": render_html}[format]
             body = await asyncio.to_thread(render, report)
@@ -1441,7 +1471,7 @@ def create_app() -> FastAPI:
         try:
             knowledge = await asyncio.to_thread(_watch_knowledge, cfg)
         except Exception as exc:  # e.g. a broken EKTE_KB_DIR file
-            return JSONResponse({"error": f"knowledge base: {exc}"}, status_code=400)
+            return _kb_error_response(exc)
         from ekte.secretbox import SecretLocked
 
         try:
@@ -1527,7 +1557,7 @@ def create_app() -> FastAPI:
         try:
             knowledge = await asyncio.to_thread(_watch_knowledge, cfg)
         except Exception as exc:  # e.g. a broken EKTE_KB_DIR file
-            return JSONResponse({"error": f"knowledge base: {exc}"}, status_code=400)
+            return _kb_error_response(exc)
         wid = await asyncio.to_thread(watches.create, cfg, knowledge=knowledge, draft=True)
         return JSONResponse({"ok": True, "id": wid}, status_code=201)
 
@@ -1631,8 +1661,8 @@ def create_app() -> FastAPI:
                 # Re-pin to the profile the knowledge base resolves to now.
                 try:
                     watches.pin(wid, _watch_knowledge(row))
-                except Exception as exc:
-                    return JSONResponse({"error": f"knowledge base: {exc}"}, status_code=400)
+                except Exception as exc:  # e.g. a broken EKTE_KB_DIR file
+                    return _kb_error_response(exc)
             return JSONResponse({"ok": True})
 
         return await asyncio.to_thread(store)
@@ -1664,10 +1694,8 @@ def create_app() -> FastAPI:
                           "changed); enter the key again", "key_error": True},
                 status_code=409,
             )
-        except Exception as exc:  # surface a clean error, not a 500 stack
-            return JSONResponse(
-                {"error": f"{type(exc).__name__}: {exc}"}, status_code=500
-            )
+        except Exception as exc:  # a clean error, not a 500 stack; the run logged it
+            return JSONResponse({"error": _monitor_failed_message(exc)}, status_code=500)
         # Return the freshly saved report so the UI can show the result.
         from ekte.web import history
 

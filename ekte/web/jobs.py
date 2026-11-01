@@ -28,6 +28,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import logging
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
@@ -36,6 +37,8 @@ from typing import Any, TypeVar
 from ekte import legacy
 from ekte.perf.trend import attach_trends
 from ekte.utils.net import is_loopback_host, url_host
+
+_log = logging.getLogger("ekte.web")
 
 _T = TypeVar("_T")
 
@@ -330,9 +333,13 @@ class JobManager:
                 job.emit({"type": "cancelled"})
             if not job.cancel_requested:
                 raise  # server shutdown: let it propagate
-        except Exception as exc:  # surface any audit failure to the client
+        except Exception as exc:
+            # The traceback goes to the server log only: an unexpected
+            # exception's text can carry internal details (paths, queries,
+            # library state), so the client gets just its type.
+            _log.exception("audit job %s failed", job.id)
             job.status = "error"
-            job.error = f"{type(exc).__name__}: {exc}"
+            job.error = f"Audit failed ({type(exc).__name__}); see the ekte serve log for details."
             job.emit({"type": "error", "message": job.error})
         finally:
             job.finished = time.time()

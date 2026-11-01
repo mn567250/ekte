@@ -165,6 +165,36 @@ and Windows are supported and tested.
 
 ### Changed
 
+- **A knowledge base that fails to load no longer shows the exception text.**
+  Creating a monitor (`POST /api/watches`), scheduling a history run
+  (`POST /api/watches/from-history/{id}`) or re-pinning a monitor's profile
+  (`PATCH /api/watches/{id}` with `repin`) while the knowledge base can't be read
+  answers `knowledge base could not be loaded (<ExceptionType>); see the ekte
+  serve log for details.`, and the full traceback is written to the `ekte serve`
+  log (CodeQL `py/stack-trace-exposure`).
+- **A failed monitor run no longer shows the exception text.** "Run now"
+  (`POST /api/watches/{id}/run`) and the run's live job answer an unexpected
+  failure with `Monitor run failed (<ExceptionType>); see the ekte serve log for
+  details.`, and the full traceback is written to the `ekte serve` log, also for
+  scheduled runs, whose failures were not recorded before (CodeQL
+  `py/stack-trace-exposure`).
+- **Failed background audits no longer show the exception text.** When an
+  audit started from the web UI or `/api/jobs` fails unexpectedly, the job's
+  `error` (and its live `error` event) reads `Audit failed (<ExceptionType>); see
+  the ekte serve log for details.`, and the full traceback is written to the
+  `ekte serve` log, where it was not recorded before (CodeQL
+  `py/stack-trace-exposure`).
+- **A failed PDF export no longer shows the renderer's exception text.**
+  `POST /api/report/export?format=pdf` answers a rendering failure with
+  `PDF rendering failed (<ExceptionType>); see the ekte serve log for details.`
+  and writes the full traceback to the `ekte serve` log (CodeQL
+  `py/stack-trace-exposure`).
+- **API key fingerprints use scrypt.** `api_key_fingerprint` in reports is now
+  derived with scrypt (a slow password hash, fixed salt) instead of a plain
+  SHA-256 prefix, so a fingerprint in a shared report can't be brute-forced back
+  to a short or guessable key. The value starts with `scrypt:` instead of
+  `sha256:`; a run made with this version and one made before it show different
+  fingerprints for the same key (CodeQL `py/weak-sensitive-data-hashing`).
 - **Accessibility: no manual review in 1.0.0, stated as a known limitation
   (#30).** Nobody has made the manual review yet; ekte 1.0.0 is released without
   it, and reviews are welcome. The accessibility statement on `/accessibility`
@@ -312,6 +342,13 @@ and Windows are supported and tested.
 
 ### Fixed
 
+- **Slack webhooks detected by exact domain.** Auto-detection picks the Slack
+  payload only for `slack.com` and its subdomains; hosts like
+  `hooks.slack.com.example.net` or `evilslack.com` now get the generic payload
+  (CodeQL `py/incomplete-url-substring-sanitization`).
+- **No SHA-256 over stored API keys.** The monitors page's cache of whether a
+  stored key can be decrypted is keyed by the encrypted value itself instead of
+  its SHA-256 hash (CodeQL `py/weak-sensitive-data-hashing`).
 - **Documentation checked against the code.** The README names the 130
   packaged model profiles (it said 98); the web UI guide lists the
   Accessibility page; the endpoint guide names the Gemini embedding and

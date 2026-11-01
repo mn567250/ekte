@@ -736,3 +736,31 @@ async def test_run_now_refuses_a_watch_the_scheduler_just_started(tmp_path, monk
         await asyncio.wait_for(task, 5)
     assert audits.calls == ["m"]
     assert watches.get(wid)["last_report_id"] is not None
+
+
+def test_a_failed_run_logs_the_traceback_and_hides_the_exception_text(tmp_path, monkeypatch, client, caplog):
+    from ekte.web import server, watches
+
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    seen: list[str | None] = []
+    close = server.jobs.Job.close
+
+    def spy_close(self, status, error=None):
+        seen.append(error)
+        close(self, status, error)
+
+    async def broken_audit(*_a, **_k):
+        raise RuntimeError("internal detail /srv/ekte/db.sqlite")
+
+    monkeypatch.setattr(server.jobs.Job, "close", spy_close)
+    monkeypatch.setattr(server, "run_audit", broken_audit)
+    wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "gpt-4o"})
+    with caplog.at_level("ERROR", logger="ekte.web"):
+        r = client.post(f"/api/watches/{wid}/run")
+    message = "Monitor run failed (RuntimeError); see the ekte serve log for details."
+    # the client and the run's live job see the type only, never the text
+    assert r.status_code == 500 and r.json() == {"error": message}
+    assert seen == [message]
+    # the server log keeps the full traceback
+    rec = next(x for x in caplog.records if x.getMessage() == f"monitor {wid} run failed")
+    assert rec.exc_info and "internal detail" in str(rec.exc_info[1])
