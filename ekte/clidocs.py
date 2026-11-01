@@ -1,4 +1,4 @@
-"""Render the command-line reference (docs/CLI.md) from the live Typer/Click app.
+"""Render the command-line reference (docs/reference/cli.md) from the live Typer/Click app.
 
 The reference is generated from the same option declarations ``--help`` shows, so
 the two cannot drift: ``scripts/generate_cli_docs.py`` writes it, a test checks it.
@@ -54,7 +54,7 @@ def render() -> str:
         "<!-- Generated from `ekte --help` by scripts/generate_cli_docs.py; do not edit. -->",
         "",
         "The commands, options and exit codes below are public: see the",
-        "[stability policy](STABILITY.md#surface-cli). This page is generated from the",
+        "[stability policy](stability.md#surface-cli). This page is generated from the",
         "option declarations that `ekte <command> --help` prints, and a test fails when it",
         "is out of date. The English text is canonical.",
         "",
@@ -64,7 +64,7 @@ def render() -> str:
         "  `ekte --data-dir DIR check ...` (`serve` also accepts it after the command).",
         "- `--json` prints machine-readable JSON on stdout and nothing else; messages,",
         "  progress and warnings go to stderr. Where the result is a report it follows the",
-        "  [report schema](SCHEMAS.md). `--compact` (audit commands) prints the lean verdict.",
+        "  [report schema](schemas.md). `--compact` (audit commands) prints the lean verdict.",
         "- `--format` always means the report file format (`json|md|html|pdf|all`).",
         "- `--fail-on-risk` and `--fail-under` gate the exit code (1).",
         "- A renamed option keeps working with a deprecation warning on stderr that names",

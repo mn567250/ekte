@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         # Linux: every supported Python. macOS and Windows: the oldest and the
-        # newest supported Python (docs/STABILITY.md#os).
+        # newest supported Python (docs/reference/stability.md#os).
         os: [ubuntu-latest]
         python-version: ["3.11", "3.12", "3.13", "3.14"]
         include:
@@ -114,7 +114,7 @@ jobs:
 
   a11y:
     # Browser accessibility tests of web UI v2 (BITV 2.0 / EN 301 549 /
-    # WCAG 2.1 AA), see docs/ACCESSIBILITY.md. Informational for now:
+    # WCAG 2.1 AA), see docs/dev/accessibility.md. Informational for now:
     # continue-on-error keeps known violations from failing the run. Drop it
     # (and make the check required) once the suite is green.
     # Parallel jobs from a11y-scope's matrix: a full run is 4 round-robin

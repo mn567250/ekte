@@ -7,7 +7,7 @@
 # is meant for this machine only. Inside the container it has to listen on all
 # of the container's interfaces for the published port to reach it; that is
 # what EKTE_CONTAINER=1 allows (ekte refuses a non-loopback bind otherwise).
-# See docs/DOCKER.md.
+# See docs/guide/docker.md.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -20,6 +20,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /src
 COPY pyproject.toml README.md LICENSE NOTICE ./
+COPY scripts/hatch_readme.py ./scripts/
 COPY ekte ./ekte
 RUN pip install '.[web]' && rm -rf /src
 

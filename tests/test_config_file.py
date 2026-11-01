@@ -1,4 +1,4 @@
-"""The versioned, validated configuration file (docs/STABILITY.md#surface-config)."""
+"""The versioned, validated configuration file (docs/reference/stability.md#surface-config)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -137,7 +137,7 @@ def test_schema_choices_match_code():
 
 
 def test_unknown_key_leniency_ends_at_1_0():
-    # Unknown keys only warn until 1.0.0 (docs/STABILITY.md#surface-config).
+    # Unknown keys only warn until 1.0.0 (docs/reference/stability.md#surface-config).
     # When the package reaches 1.0, this fails until validate() rejects them.
     import tomllib
 

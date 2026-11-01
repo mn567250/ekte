@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
 """Check that translated documentation has not drifted structurally.
 
-Compares every translation of README, the developer guide and the methodology
-against the English source: heading levels, code blocks, link targets, inline
+Compares every translation of the README and of the user guide (docs/guide/,
+methodology included) against the English source: heading levels, code blocks, link targets, inline
 code, placeholders and version numbers. It never judges wording. It also checks
 that relative links and in-document anchors resolve (no network access).
+
+Translations live in ``docs/i18n/<lang>/``, mirroring the English files:
+``README.md`` -> ``docs/i18n/<lang>/README.md``, ``docs/guide/x.md`` ->
+``docs/i18n/<lang>/guide/x.md``. Developer and reference docs are English only.
 
 Adding a language: add its code to ``LANGUAGES``.
 Marking a translation as pending: put ``<!-- translation-pending: reason -->``
 anywhere in the file; its structure is then not compared (links must still
-resolve). See CONTRIBUTING.md.
+resolve). See docs/dev/translations.md.
 
-Usage: python scripts/check_translations.py [--root DIR]
+Usage: python scripts/check_translations.py [--root DIR] [--lang CODE ...]
 """
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from collections import Counter
@@ -24,8 +29,9 @@ from pathlib import Path
 # The one list to edit when a language is added.
 LANGUAGES = ["de", "es", "fr", "it", "nb", "pt", "zh-CN"]
 
-# English source documents, relative to the repository root.
-DOCUMENTS = ["README.md", "DEVELOPER_GUIDE.md", "docs/METHODOLOGY.md"]
+# English source documents (globs), relative to the repository root.
+DOCUMENTS = ["README.md", "docs/guide/*.md"]
+I18N_DIR = "docs/i18n"
 
 # Fenced blocks that may contain localized wording; only their length is compared.
 FREE_TEXT_BLOCKS = {"", "text", "txt", "plain", "console-output", "output"}
@@ -44,9 +50,28 @@ PLACEHOLDER_RE = re.compile(
 VERSION_RE = re.compile(r"(?<![\w.])v?\d+\.\d+(?:\.\d+)*\+?(?![\w])")
 
 
+def documents(root: Path, patterns=None) -> list[str]:
+    """The English source documents: DOCUMENTS expanded against ``root``."""
+    out: list[str] = []
+    for pat in DOCUMENTS if patterns is None else patterns:
+        hits = sorted(p.relative_to(root).as_posix() for p in root.glob(pat))
+        out += hits or ([pat] if not any(c in pat for c in "*?[") else [])
+    return out
+
+
 def doc_path(source: str, lang: str) -> str:
-    stem, ext = source.rsplit(".", 1)
-    return f"{stem}.{lang}.{ext}"
+    """English source -> its translation: a root file, or a file under docs/."""
+    rest = source[len("docs/"):] if source.startswith("docs/") else source
+    return f"{I18N_DIR}/{lang}/{rest}"
+
+
+def source_path(rel: str) -> str:
+    """Inverse of doc_path for any repository path (unchanged if not a translation)."""
+    m = re.match(rf"^{re.escape(I18N_DIR)}/([^/]+)/(.+)$", rel)
+    if not m or m.group(1) not in LANGUAGES:
+        return rel
+    rest = m.group(2)
+    return rest if "/" not in rest else f"docs/{rest}"
 
 
 def slugify(text: str) -> str:
@@ -117,23 +142,20 @@ def load(path: Path) -> Doc:
     return Doc(path, path.read_text(encoding="utf-8"))
 
 
-def _strip_lang(target: str) -> str:
-    """Map translated file names back to the English source name."""
-    pat = "|".join(re.escape(lang) for lang in LANGUAGES)
-    return re.sub(rf"\.(?:{pat})\.md\b", ".md", target)
-
-
 def _is_external(target: str) -> bool:
     return bool(re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target)) or target.startswith("//")
 
 
-def _norm_link(target: str) -> str:
+def _norm_link(target: str, doc: Path, root: Path) -> str:
+    """A link as the repository path of its English target (+ '#' if it has an anchor)."""
     if _is_external(target):
         return target
     path, _, frag = target.partition("#")
     if not path:  # in-document anchor: wording-dependent, checked for resolution only
         return "#"
-    return _strip_lang(path) + ("#" if frag else "")
+    dest = os.path.normpath(os.path.join(os.path.dirname(doc), path.split("?")[0]))
+    rel = Path(os.path.relpath(dest, root)).as_posix()
+    return source_path(rel) + ("#" if frag else "")
 
 
 def check_links(doc: Doc, cache: dict[Path, Doc]) -> list[str]:
@@ -193,7 +215,7 @@ def _inline_keys(spans):
     return keys
 
 
-def compare(src: Doc, tr: Doc) -> list[str]:
+def compare(src: Doc, tr: Doc, root: Path) -> list[str]:
     errs = []
     sl = [lv for lv, _ in src.headings]
     tl = [lv for lv, _ in tr.headings]
@@ -221,8 +243,8 @@ def compare(src: Doc, tr: Doc) -> list[str]:
                     errs.append(f"code block #{i + 1} ({a[0] or 'text'}) line count differs")
             elif _code_norm(a[1]) != _code_norm(b[1]):
                 errs.append(f"code block #{i + 1} ({a[0] or 'text'}) content differs")
-    sn = Counter(_norm_link(t) for t in src.links)
-    tn = Counter(_norm_link(t) for t in tr.links)
+    sn = Counter(_norm_link(t, src.path, root) for t in src.links)
+    tn = Counter(_norm_link(t, tr.path, root) for t in tr.links)
     if sn != tn:
         errs.append(
             "links differ: missing " + str(_short((sn - tn).elements()))
@@ -252,7 +274,8 @@ def compare(src: Doc, tr: Doc) -> list[str]:
 
 def check(root: Path, languages=None, documents=None) -> list[str]:
     languages = LANGUAGES if languages is None else languages
-    documents = DOCUMENTS if documents is None else documents
+    root = root.resolve()
+    documents = globals()["documents"](root, documents)
     errors: list[str] = []
     cache: dict[Path, Doc] = {}
 
@@ -279,19 +302,22 @@ def check(root: Path, languages=None, documents=None) -> list[str]:
             errors += [f"{rel}: {e}" for e in check_links(tr, cache)]
             if tr.pending:
                 continue
-            errors += [f"{rel}: {e}" for e in compare(src, tr)]
+            errors += [f"{rel}: {e}" for e in compare(src, tr, root)]
     return errors
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Check translated docs for structural drift.")
     ap.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
+    ap.add_argument(
+        "--lang", action="append", choices=LANGUAGES, help="check only this language (repeatable)"
+    )
     args = ap.parse_args(argv)
-    errors = check(args.root)
+    errors = check(args.root, languages=args.lang)
     for e in errors:
         print(e)
     if errors:
-        print(f"\n{len(errors)} translation problem(s). See CONTRIBUTING.md.")
+        print(f"\n{len(errors)} translation problem(s). See docs/dev/translations.md.")
         return 1
     print("translations consistent")
     return 0

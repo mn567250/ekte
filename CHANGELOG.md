@@ -4,7 +4,7 @@ All notable changes to **ekte** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html); which surfaces
 the version number protects, what counts as breaking and how features are
-deprecated is defined in the [stability and compatibility policy](docs/STABILITY.md).
+deprecated is defined in the [stability and compatibility policy](docs/reference/stability.md).
 
 ekte has three eras:
 
@@ -99,10 +99,10 @@ ekte has three eras:
   without publishing otherwise. It publishes to PyPI with provenance attestations and
   creates a GitHub Release with the changelog section as notes; release candidates
   (`vX.Y.ZrcN`) are PEP 440 pre-releases on PyPI and marked "Pre-release" on GitHub.
-  New [release checklist](docs/RELEASE_CHECKLIST.md); the developer guide (all
+  New [release checklist](docs/dev/release-checklist.md); the developer guide (all
   languages) and `docs/PUBLISHING.md` describe the process, including what to do if a
   publish fails halfway.
-- **Stability and compatibility policy.** [docs/STABILITY.md](docs/STABILITY.md)
+- **Stability and compatibility policy.** [docs/STABILITY.md](docs/reference/stability.md)
   lists every surface as public or internal, defines what counts as breaking,
   the deprecation policy (a deprecated feature keeps working with a warning for
   at least one minor release; removal only in a major release), the supported
@@ -135,6 +135,33 @@ ekte has three eras:
   methodology use the wording the UI shows under **Scoreskala**.
 
 ### Changed
+
+- **Documentation restructured (#64).** The README is a short landing page and
+  also the PyPI description; everything else lives in `docs/`, one page per
+  topic and a subfolder per audience:
+  - `docs/guide/` — the user guide (install, quick start, web UI, suites and
+    compare mode, performance, monitoring, other endpoints, knowledge base,
+    reports, privacy, GitHub Action, Docker, coming from zing) and the
+    methodology. With the README it is translated into every language, under
+    `docs/i18n/<lang>/` (was `README.<lang>.md` and `docs/METHODOLOGY.<lang>.md`).
+  - `docs/reference/` — command line, schemas, stability policy (English).
+  - `docs/dev/` — developer guide, architecture, web server and HTTP API, web
+    front end, accessibility, knowledge-base maintenance, translations, CI,
+    releases (English). The translated developer guides are removed.
+  - `docs/CONTRIBUTING.md`, `docs/SECURITY.md`, `docs/CODE_OF_CONDUCT.md` moved
+    from the repository root; GitHub still finds them there.
+  - Moved: `DEVELOPER_GUIDE.md` → `docs/dev/developer-guide.md`,
+    `docs/METHODOLOGY.md` → `docs/guide/methodology.md`, `docs/CI.md` →
+    `docs/guide/github-action.md`, `docs/DOCKER.md` → `docs/guide/docker.md`,
+    `docs/CLI.md`, `docs/SCHEMAS.md`, `docs/STABILITY.md` → `docs/reference/`,
+    `docs/ACCESSIBILITY.md`, `docs/PUBLISHING.md`, `docs/RELEASE_CHECKLIST.md`
+    → `docs/dev/`. Links to the old paths no longer resolve.
+- **PyPI description links work.** The build (`scripts/hatch_readme.py`)
+  rewrites the README's relative links to GitHub links for the release tag;
+  the `Distribution contents` workflow fails on a link PyPI cannot resolve and
+  runs `twine check --strict`.
+- `scripts/check_translations.py` covers the new layout (the README and every
+  `docs/guide/` page) and takes `--lang` to check one language.
 
 - **Portuguese web UI in European Portuguese.** The Portuguese interface now uses
   European Portuguese (ficheiro, guardar, registo, fornecedor, pedido, detetor, …),
@@ -198,7 +225,7 @@ ekte has three eras:
   `/accessibility`; scripts and stylesheets moved from `/v2/static/` to
   `/static/`. Every link ekte generates (pages, alerts, reports, docs in all
   languages) and the accessibility snapshots use the new addresses. The page
-  addresses are public from now on ([stability policy](docs/STABILITY.md#surface-web-addresses)).
+  addresses are public from now on ([stability policy](docs/reference/stability.md#surface-web-addresses)).
   Upgrade: update bookmarks and links; old `/v2/…` page addresses keep
   redirecting until 1.0.0 (see Deprecated). Old `/v2/static/…` asset addresses
   no longer work.
@@ -224,7 +251,7 @@ ekte has three eras:
   deprecation message (stderr, the browser console, a `Warning` header on the
   redirects) now names the removal version 1.0.0. ekte never deletes an old
   `~/.zing`, also not when the copy is removed. The timeline is in the
-  [stability policy](docs/STABILITY.md#deprecation-zing) and under **Coming
+  [stability policy](docs/reference/stability.md#deprecation-zing) and under **Coming
   from zing** in the README (all languages).
 - **`/v2/…` page addresses.** They redirect permanently (308) to the page at
   the root, keeping the query string, until 1.0.0, where the redirects are
@@ -246,6 +273,13 @@ ekte has three eras:
   [#5](https://github.com/mn567250/ekte/issues/5)).
 
 ### Fixed
+
+- **Documentation checked against the code.** The README names the 130
+  packaged model profiles (it said 98); the web UI guide lists the
+  Accessibility page; the endpoint guide names the Gemini embedding and
+  `gpt-image-2` profiles; the developer docs cover the modules, front-end
+  scripts, internal API groups and CI jobs they had left out. `--format` no
+  longer claims PDF needs the `[pdf]` extra (PDF is built in).
 
 - **Report timestamps on Windows.** `generated_at` now comes from the same
   monotonic clock as the request offsets, so a report never ends before its
@@ -1778,7 +1812,7 @@ from new install commands.
 
 #### Added
 
-- **Docker image for the web UI** (`Dockerfile`, [docs/DOCKER.md](docs/DOCKER.md)).
+- **Docker image for the web UI** (`Dockerfile`, [docs/DOCKER.md](docs/guide/docker.md)).
   Inside a container the server may listen on the container's interfaces when
   `ZING_CONTAINER=1` is set *and* a container runtime is detected; publish it
   to the host's loopback (`-p 127.0.0.1:8000:8000`). `zing serve` also reads

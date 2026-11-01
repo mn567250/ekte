@@ -2,7 +2,7 @@
 
 The browser suite in this directory (`pytest tests/a11y -m a11y`) checks web UI
 v2 against BITV 2.0 / EN 301 549 / WCAG 2.1 A+AA. What it covers and how is
-described in [docs/ACCESSIBILITY.md](../../docs/ACCESSIBILITY.md).
+described in [docs/dev/accessibility.md](../../docs/dev/accessibility.md).
 
 ## Testing some pages
 

@@ -3,7 +3,7 @@
 Every packaged provider profile carries ``last_verified`` (an ISO date). The
 knowledge-base date of a run is the *oldest* of them: the date up to which all
 bundled data was checked. A stale date never changes a verdict; it only adds a
-warning (see docs/STABILITY.md and the developer guide, "Keeping the knowledge
+warning (see docs/reference/stability.md and the developer guide, "Keeping the knowledge
 base current").
 """
 

@@ -76,7 +76,7 @@ _NO_USER_KB_HELP = (
     "packaged profiles and EKTE_KB_DIR still apply. Env: EKTE_NO_USER_KB=1."
 )
 
-# Exit codes: the one table every command follows (docs/STABILITY.md#surface-exit-codes).
+# Exit codes: the one table every command follows (docs/reference/stability.md#surface-exit-codes).
 EXIT_OK = 0
 EXIT_GATE = 1  # a gate or check failed (risk/score gate, kb-import, config migrate --check)
 EXIT_USAGE = 2  # usage or configuration error
@@ -586,7 +586,7 @@ def check_command(
     only: Annotated[list[str] | None, typer.Option("--only", help="Run only these detector ids (repeatable).")] = None,
     skip: Annotated[list[str] | None, typer.Option("--skip", help="Skip these detector ids (repeatable).")] = None,
     out_dir: Annotated[Path | None, typer.Option("--out-dir", help="Report output directory.")] = None,
-    fmt: Annotated[str | None, typer.Option("--format", help="json | md | html | pdf | all (pdf needs the [pdf] extra).")] = None,
+    fmt: Annotated[str | None, typer.Option("--format", help="json | md | html | pdf | all.")] = None,
     timeout: Annotated[float | None, typer.Option("--timeout", help="Base HTTP timeout (seconds); grows with prompt and output size.")] = None,
     max_request_time: Annotated[float | None, typer.Option("--max-request-time", help="Hard cap for one request (seconds, default 900).")] = None,
     reliability_requests: Annotated[int | None, typer.Option("--reliability-requests", help="Reliability probe request count (0 disables).")] = None,
@@ -661,7 +661,7 @@ def compare_command(
     judge: Annotated[bool | None, typer.Option("--judge/--no-judge", help="Enable code+LLM hybrid judging.")] = None,
     judge_model: Annotated[str | None, typer.Option("--judge-model", help="Judge model id (defaults to baseline).")] = None,
     out_dir: Annotated[Path | None, typer.Option("--out-dir", help="Report output directory.")] = None,
-    fmt: Annotated[str | None, typer.Option("--format", help="json | md | html | pdf | all (pdf needs the [pdf] extra).")] = None,
+    fmt: Annotated[str | None, typer.Option("--format", help="json | md | html | pdf | all.")] = None,
     timeout: Annotated[float | None, typer.Option("--timeout", help="Base HTTP timeout (seconds); grows with prompt and output size.")] = None,
     max_request_time: Annotated[float | None, typer.Option("--max-request-time", help="Hard cap for one request (seconds, default 900).")] = None,
     max_context_tokens: Annotated[int | None, typer.Option("--max-context-tokens", help="Cap for the context-window probe.")] = None,

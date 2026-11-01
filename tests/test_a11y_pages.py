@@ -198,7 +198,7 @@ def test_fail_safe_is_reached_only_by_unmatched_files():
 
 
 @pytest.mark.parametrize("paths", [
-    ["README.md", "README.de.md", "docs/METHODOLOGY.md", "docs/ACCESSIBILITY.md", "CHANGELOG.md"],
+    ["README.md", "docs/i18n/de/README.md", "docs/guide/methodology.md", "docs/dev/accessibility.md", "CHANGELOG.md"],
     ["tests/test_model_identity.py", "ekte/cli.py", "ekte/__main__.py", "ekte/media_audit.py"],
     ["tests/a11y/README.md", "tests/a11y/llm_review.py", "tests/test_a11y_llm_review.py"],
     [],
@@ -215,7 +215,7 @@ def test_audit_pipeline_runs_the_audit_page():
                  "ekte/scoring.py", "ekte/utils/sse.py", "ekte/prompts/en.json"):
         assert scope(path).pages == ("audit",), path
     assert scope("ekte/report/render.py").pages == ("audit", "history")
-    s = scope("ekte/detectors/context_window.py", "docs/METHODOLOGY.md", "tests/test_context_window.py")
+    s = scope("ekte/detectors/context_window.py", "docs/guide/methodology.md", "tests/test_context_window.py")
     assert s.pages == ("audit",) and matrix(s) == [{"shard": "1/1", "pages": "audit"}]
 
 
@@ -362,7 +362,7 @@ def test_cli_files_and_full(capsys):
 def test_cli_stdin(capsys, monkeypatch):
     import io
 
-    monkeypatch.setattr(sys, "stdin", io.StringIO("docs/CI.md\nekte/web/static/v2/watches.html\n"))
+    monkeypatch.setattr(sys, "stdin", io.StringIO("docs/guide/github-action.md\nekte/web/static/v2/watches.html\n"))
     affected_cli.main(["--files", "-"])
     assert json.loads(capsys.readouterr().out)["pages"] == ["monitors"]
 

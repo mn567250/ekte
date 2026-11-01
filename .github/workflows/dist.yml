@@ -21,5 +21,9 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
-      - name: Build and check wheel and sdist
-        run: uv run --no-project python scripts/check_dist_contents.py
+      - name: Build wheel and sdist
+        run: uv build --out-dir dist
+      - name: Check wheel and sdist contents and the PyPI description links
+        run: uv run --no-project python scripts/check_dist_contents.py dist
+      - name: Check that PyPI can render the description
+        run: uvx --from 'twine==7.0.0' twine check --strict dist/*

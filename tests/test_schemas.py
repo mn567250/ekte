@@ -33,7 +33,7 @@ def test_schema_change_requires_version_bump(filename):
     recorded = HISTORY[NAMES[filename]].get(version)
     assert recorded == schemas.fingerprint(schema), (
         f"{filename} changed without bumping its schema version ({version}); bump it and run "
-        "`python scripts/generate_schemas.py --record` (see docs/STABILITY.md)"
+        "`python scripts/generate_schemas.py --record` (see docs/reference/stability.md)"
     )
 
 

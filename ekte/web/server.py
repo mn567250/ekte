@@ -50,7 +50,7 @@ Endpoints:
                              (held in memory until a restart) or store them
                              encrypted; moves the keys along
 
-Public API (docs/STABILITY.md#surface-http-api): the same handlers also answer
+Public API (docs/reference/stability.md#surface-http-api): the same handlers also answer
 under /api/v1/ (POST /jobs, GET /jobs/{id}, GET /jobs/{id}/events, GET /history,
 GET /history/{id}); responses there carry `X-Ekte-API: v1`. Every other /api/
 response carries `X-Ekte-API: internal`.
@@ -118,7 +118,7 @@ from ekte.web.security import LocalOnlyMiddleware
 _STATIC = Path(__file__).parent / "static"
 _STATIC_UI = _STATIC / "v2"  # the pages and their assets, served at / and /static/
 
-# Removal version of the compatibility redirects below (docs/STABILITY.md).
+# Removal version of the compatibility redirects below (docs/reference/stability.md).
 _REMOVED_IN = "1.0.0"
 _DEPRECATION_WARNING = (
     '299 ekte "this address is deprecated and will stop redirecting in ekte ' + _REMOVED_IN + '"'

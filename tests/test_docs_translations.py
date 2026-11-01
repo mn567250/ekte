@@ -30,11 +30,15 @@ Set `{name}` carefully.
 """
 
 
+DE = Path("docs") / "i18n" / "de"
+
+
 def _tree(tmp_path: Path, translation: str) -> Path:
+    (tmp_path / DE).mkdir(parents=True, exist_ok=True)
     (tmp_path / "DOC.md").write_text(SOURCE, encoding="utf-8")
     (tmp_path / "GUIDE.md").write_text("# Guide\n", encoding="utf-8")
-    (tmp_path / "GUIDE.de.md").write_text("# Anleitung\n", encoding="utf-8")
-    (tmp_path / "DOC.de.md").write_text(translation, encoding="utf-8")
+    (tmp_path / DE / "GUIDE.md").write_text("# Anleitung\n", encoding="utf-8")
+    (tmp_path / DE / "DOC.md").write_text(translation, encoding="utf-8")
     return tmp_path
 
 
@@ -44,7 +48,7 @@ def _run(root: Path) -> list[str]:
 
 GOOD = """# Titel
 
-Einleitung mit `--flag` und Version 1.2.3, siehe [Anleitung](GUIDE.de.md) und [unten](#verwendung).
+Einleitung mit `--flag` und Version 1.2.3, siehe [Anleitung](GUIDE.md) und [unten](#verwendung).
 
 ## Verwendung
 
@@ -63,7 +67,7 @@ def test_repository_docs_are_consistent():
 
 
 def test_every_language_in_the_list_has_all_documents():
-    for source in ct.DOCUMENTS:
+    for source in ct.documents(ROOT):
         for lang in ct.LANGUAGES:
             assert (ROOT / ct.doc_path(source, lang)).exists()
 
@@ -97,7 +101,7 @@ def test_comment_wording_in_code_is_ignored(tmp_path):
 
 
 def test_broken_relative_link_fails(tmp_path):
-    errors = _run(_tree(tmp_path, GOOD.replace("GUIDE.de.md", "NOPE.de.md")))
+    errors = _run(_tree(tmp_path, GOOD.replace("(GUIDE.md)", "(NOPE.md)")))
     assert any("does not exist" in e for e in errors)
 
 
@@ -118,7 +122,7 @@ def test_placeholder_drift_fails(tmp_path):
 
 def test_missing_translation_fails(tmp_path):
     root = _tree(tmp_path, GOOD)
-    (root / "DOC.de.md").unlink()
+    (root / DE / "DOC.md").unlink()
     assert any("translation missing" in e for e in _run(root))
 
 
@@ -135,4 +139,24 @@ def test_slugify_matches_github():
 
 @pytest.mark.parametrize("lang", ["de", "zh-CN"])
 def test_doc_path(lang):
-    assert ct.doc_path("docs/METHODOLOGY.md", lang) == f"docs/METHODOLOGY.{lang}.md"
+    assert ct.doc_path("README.md", lang) == f"docs/i18n/{lang}/README.md"
+    assert ct.doc_path("docs/guide/methodology.md", lang) == f"docs/i18n/{lang}/guide/methodology.md"
+    assert ct.source_path(f"docs/i18n/{lang}/guide/methodology.md") == "docs/guide/methodology.md"
+    assert ct.source_path(f"docs/i18n/{lang}/README.md") == "README.md"
+    assert ct.source_path("docs/dev/ci.md") == "docs/dev/ci.md"
+
+
+def test_documents_cover_readme_and_every_guide_page():
+    docs = ct.documents(ROOT)
+    assert docs[0] == "README.md"
+    assert "docs/guide/methodology.md" in docs
+    assert not any(d.startswith(("docs/dev/", "docs/reference/")) for d in docs)
+
+
+def test_link_to_an_english_only_doc_matches_across_depths(tmp_path):
+    (tmp_path / "docs" / "dev").mkdir(parents=True)
+    (tmp_path / "docs" / "dev" / "x.md").write_text("# X\n", encoding="utf-8")
+    good = GOOD.replace("(GUIDE.md)", "(GUIDE.md) [dev](../../dev/x.md)")
+    root = _tree(tmp_path, good)
+    (root / "DOC.md").write_text(SOURCE.replace("(GUIDE.md)", "(GUIDE.md) [dev](docs/dev/x.md)"), encoding="utf-8")
+    assert _run(root) == []
