@@ -151,6 +151,12 @@ ekte has three eras:
 
 ### Changed
 
+- **Failed background audits no longer show the exception text.** When an
+  audit started from the web UI or `/api/jobs` fails unexpectedly, the job's
+  `error` (and its live `error` event) reads `Audit failed (<ExceptionType>); see
+  the ekte serve log for details.`, and the full traceback is written to the
+  `ekte serve` log, where it was not recorded before (CodeQL
+  `py/stack-trace-exposure`).
 - **API key fingerprints use scrypt.** `api_key_fingerprint` in reports is now
   derived with scrypt (a slow password hash, fixed salt) instead of a plain
   SHA-256 prefix, so a fingerprint in a shared report can't be brute-forced back
