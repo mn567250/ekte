@@ -298,6 +298,10 @@ ekte has three eras:
 
 ### Fixed
 
+- **Slack webhooks detected by exact domain.** Auto-detection picks the Slack
+  payload only for `slack.com` and its subdomains; hosts like
+  `hooks.slack.com.example.net` or `evilslack.com` now get the generic payload
+  (CodeQL `py/incomplete-url-substring-sanitization`).
 - **No SHA-256 over stored API keys.** The monitors page's cache of whether a
   stored key can be decrypted is keyed by the encrypted value itself instead of
   its SHA-256 hash (CodeQL `py/weak-sensitive-data-hashing`).
