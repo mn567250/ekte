@@ -5,6 +5,7 @@ Pure Python (no browser): tests/a11y/results.py and tests/a11y/conformance.py.
 
 from __future__ import annotations
 
+import copy
 import datetime as dt
 import json
 
@@ -229,9 +230,10 @@ def test_incomplete_llm_review_changes_no_status():
 
 
 def test_skipped_or_failed_llm_review_is_ignored():
-    plain = conformance.build_report(_results(), None, commit="c", now=dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
+    res = _results()  # once: its generated_at is the clock time, which may tick between two calls
+    plain = conformance.build_report(res, None, commit="c", now=dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
     for status in ("skipped: no API key", "error", "dry-run", "skipped: browser harness unavailable"):
-        rep = conformance.build_report(_results(), _llm_review(status=status), commit="c",
+        rep = conformance.build_report(copy.deepcopy(res), _llm_review(status=status), commit="c",
                                        now=dt.datetime(2026, 1, 1, tzinfo=dt.UTC))
         assert rep == plain, status
 
@@ -254,8 +256,9 @@ def test_cli_picks_up_the_llm_review_in_the_working_directory(tmp_path, monkeypa
 def test_a_review_applied_to_a_built_report_equals_building_with_it():
     now = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)
     llm = _llm_review(verdicts={"9.2.4.4": "issues"})
-    built = conformance.build_report(_results(), llm, now=now, commit="c")
-    applied = conformance.apply_review(conformance.build_report(_results(), None, now=now, commit="c"), llm)
+    res = _results()  # once: its generated_at is the clock time, which may tick between two calls
+    built = conformance.build_report(res, llm, now=now, commit="c")
+    applied = conformance.apply_review(conformance.build_report(copy.deepcopy(res), None, now=now, commit="c"), llm)
     assert applied == built
 
 
