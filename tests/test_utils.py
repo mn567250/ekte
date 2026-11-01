@@ -58,9 +58,18 @@ class TestRedact:
         fp1 = fingerprint_secret("sk-abc123")
         fp2 = fingerprint_secret("sk-abc123")
         assert fp1 == fp2
-        assert fp1 is not None and fp1.startswith("sha256:")
+        assert fp1 is not None and fp1.startswith("scrypt:")
+        assert len(fp1) == len("scrypt:") + 12
         assert "sk-abc123" not in fp1
         assert fingerprint_secret("sk-different") != fp1
+
+    def test_fingerprint_is_not_a_plain_sha256(self):
+        # a slow KDF, not the unsalted SHA-256 prefix earlier versions wrote
+        import hashlib
+
+        fp = fingerprint_secret("sk-abc123")
+        assert fp is not None
+        assert hashlib.sha256(b"sk-abc123").hexdigest()[:12] not in fp
 
     def test_fingerprint_none(self):
         assert fingerprint_secret(None) is None

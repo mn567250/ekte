@@ -151,6 +151,12 @@ ekte has three eras:
 
 ### Changed
 
+- **API key fingerprints use scrypt.** `api_key_fingerprint` in reports is now
+  derived with scrypt (a slow password hash, fixed salt) instead of a plain
+  SHA-256 prefix, so a fingerprint in a shared report can't be brute-forced back
+  to a short or guessable key. The value starts with `scrypt:` instead of
+  `sha256:`; a run made with this version and one made before it show different
+  fingerprints for the same key (CodeQL `py/weak-sensitive-data-hashing`).
 - **Accessibility: no manual review in 1.0.0, stated as a known limitation
   (#30).** Nobody has made the manual review yet; ekte 1.0.0 is released without
   it, and reviews are welcome. The accessibility statement on `/accessibility`
