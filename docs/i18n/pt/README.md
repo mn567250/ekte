@@ -16,7 +16,7 @@ com `--api openai|anthropic|responses`.
 
 Indica-lhe o endpoint de um relay e o modelo que ele diz servir; o ekte executa
 uma bateria de sondas de caixa-preta, compara o comportamento observado com uma
-base de conhecimento integrada de **98 perfis de modelos de 7 fornecedores** e
+base de conhecimento integrada de **130 perfis de modelos de 7 fornecedores** e
 dá um veredito claro, apoiado em evidências — na linha de comandos, numa
 interface web local ou em JSON para outra ferramenta ou LLM.
 

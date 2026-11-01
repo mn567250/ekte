@@ -55,6 +55,7 @@ Die Weboberfläche wird an der Wurzel der Adresse ausgeliefert, die `ekte serve`
 | **Verlauf** | `/history` | Jede Prüfung auf diesem Rechner, gruppiert nach Relay + angegebenem Modell, mit Trends |
 | **Analyse** | `/analytics` | Relays und Modelle im Zeitverlauf verglichen: Kennzahlen, Diagramme mit Datentabellen, Ranglisten |
 | **Wissen** | `/kb` | Die Wissensbasis in drei Tabs — Modelle, Anbieter, Relays: durchsuchen, ein-/ausschalten, Eigenes hinzufügen |
+| **Barrierefreiheit** | `/accessibility` | Der Konformitätsbericht und die Erklärung zur Barrierefreiheit (das Symbol neben der Sprachauswahl) |
 
 Auf den Seiten außerdem: Filter und konfigurierbare Trends
 (Bewertung, Note, Latenz p50, Token/s) im **Verlauf**; **Als Überwachung

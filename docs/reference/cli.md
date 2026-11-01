@@ -90,7 +90,7 @@ Audit one relay endpoint and write a report.
 | `--only` | str (repeatable) |  | Run only these detector ids (repeatable). |
 | `--skip` | str (repeatable) |  | Skip these detector ids (repeatable). |
 | `--out-dir` | path |  | Report output directory. |
-| `--format` | str |  | json \| md \| html \| pdf \| all (pdf needs the [pdf] extra). |
+| `--format` | str |  | json \| md \| html \| pdf \| all. |
 | `--timeout` | float |  | Base HTTP timeout (seconds); grows with prompt and output size. |
 | `--max-request-time` | float |  | Hard cap for one request (seconds, default 900). |
 | `--reliability-requests` | int |  | Reliability probe request count (0 disables). |
@@ -131,7 +131,7 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--judge`, `--no-judge` | flag |  | Enable code+LLM hybrid judging. |
 | `--judge-model` | str |  | Judge model id (defaults to baseline). |
 | `--out-dir` | path |  | Report output directory. |
-| `--format` | str |  | json \| md \| html \| pdf \| all (pdf needs the [pdf] extra). |
+| `--format` | str |  | json \| md \| html \| pdf \| all. |
 | `--timeout` | float |  | Base HTTP timeout (seconds); grows with prompt and output size. |
 | `--max-request-time` | float |  | Hard cap for one request (seconds, default 900). |
 | `--max-context-tokens` | int |  | Cap for the context-window probe. |

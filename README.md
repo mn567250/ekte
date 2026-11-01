@@ -15,7 +15,7 @@ API**, the **Anthropic Messages API** and the **OpenAI Responses API**
 
 You point it at a relay endpoint and the model it claims to serve; ekte runs a
 battery of black-box probes, compares what it observes with a bundled knowledge
-base of **98 model profiles from 7 providers**, and gives a clear, evidence-backed
+base of **130 model profiles from 7 providers**, and gives a clear, evidence-backed
 verdict — on the command line, in a local web UI, or as JSON for another tool or
 LLM.
 

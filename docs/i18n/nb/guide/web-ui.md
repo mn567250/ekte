@@ -51,6 +51,7 @@ Nettgrensesnittet leveres fra roten av adressen `ekte serve` åpner, med revisjo
 | **Historikk** | `/history` | Hver revisjon kjørt på denne maskinen, gruppert etter relé + oppgitt modell, med trender |
 | **Analyse** | `/analytics` | Releer og modeller sammenlignet over tid: nøkkeltall, diagrammer med datatabeller, rangeringslister |
 | **Kunnskap** | `/kb` | Kunnskapsbasen i tre faner — modeller, leverandører, releer: bla gjennom, slå av/på, legg til dine egne |
+| **Tilgjengelighet** | `/accessibility` | Samsvarsrapporten og tilgjengelighetserklæringen (ikonet ved siden av språkvelgeren) |
 
 På tvers av sidene: filtre og konfigurerbare trender (score, karakter,
 forsinkelse p50, tokens/s) på **Historikk**; **Planlegg som overvåking** og

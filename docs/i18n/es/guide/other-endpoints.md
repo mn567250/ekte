@@ -65,7 +65,8 @@ principal de «gato por liebre»: un relay que declara `text-embedding-3-large` 
 coseno ≈ 1), la distinción (entradas sin relación → coseno claramente inferior a
 1) y el campo `model` devuelto. Perfiles integrados: OpenAI
 `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
-`text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
+`text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024),
+Google `gemini-embedding-2` (3072).
 
 Ambos están también en la interfaz web: empiezan en la página **Auditoría** con
 el selector de tipo de endpoint (**Embeddings**, **Reordenación**). La auditoría de rerank usa
@@ -99,5 +100,5 @@ distinción (dos prompts → imágenes distintas, para descubrir un marcador fij
 el número y el campo `model`. `audio` comprueba la conectividad, la validez del
 contenedor/formato, que se respete el formato, una duración no trivial que crece
 con la entrada, la distinción y el campo `model`. La base de conocimiento incluye
-OpenAI DALL·E 2/3, gpt-image-1, tts-1/tts-1-hd/gpt-4o-mini-tts y perfiles de
+OpenAI DALL·E 2/3, gpt-image-1, gpt-image-2, tts-1/tts-1-hd/gpt-4o-mini-tts y perfiles de
 imagen/TTS de Qwen.

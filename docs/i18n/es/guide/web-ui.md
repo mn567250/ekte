@@ -55,6 +55,7 @@ La interfaz web se sirve en la raíz de la dirección que abre `ekte serve`, con
 | **Historial** | `/history` | Cada auditoría ejecutada en esta máquina, agrupada por relay + modelo declarado, con tendencias |
 | **Analítica** | `/analytics` | Relays y modelos comparados en el tiempo: indicadores, gráficos con tablas de datos, clasificaciones |
 | **Conocimiento** | `/kb` | La base de conocimiento en tres pestañas — modelos, proveedores, relays: explorar, activar/desactivar, añadir lo tuyo |
+| **Accesibilidad** | `/accessibility` | El informe de conformidad y la declaración de accesibilidad (el icono junto al selector de idioma) |
 
 Además, en las páginas: filtros y tendencias configurables (puntuación, nota,
 latencia p50, tokens/s) en el **Historial**; **Programar como monitor** y **Repetir auditoría** en cada

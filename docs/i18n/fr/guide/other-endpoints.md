@@ -65,7 +65,8 @@ tromperie sur la marchandise : un relais annonçant `text-embedding-3-large` en
 → cosinus ≈ 1), la distinction (entrées sans rapport → cosinus nettement
 inférieur à 1) et le champ `model` renvoyé. Profils intégrés : OpenAI
 `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
-`text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
+`text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024),
+Google `gemini-embedding-2` (3072).
 
 Les deux se trouvent aussi dans l'interface web : ils démarrent sur la page
 **Audit** via le sélecteur de type d'endpoint (**Embeddings**,
@@ -100,5 +101,5 @@ tailles natives du modèle annoncé — FAIL/HIGH en cas d'écart), la distincti
 nombre et le champ `model`. `audio` vérifie la connectivité, la validité du
 conteneur/format, le respect du format, une durée non triviale qui suit la
 longueur de l'entrée, la distinction et le champ `model`. La base de connaissances
-fournit OpenAI DALL·E 2/3, gpt-image-1, tts-1/tts-1-hd/gpt-4o-mini-tts ainsi que
+fournit OpenAI DALL·E 2/3, gpt-image-1, gpt-image-2, tts-1/tts-1-hd/gpt-4o-mini-tts ainsi que
 des profils image/TTS de Qwen.

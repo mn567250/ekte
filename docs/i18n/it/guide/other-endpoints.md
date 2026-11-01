@@ -65,7 +65,8 @@ dichiarato — il segnale principale di merce non conforme: un relay che dichiar
 determinismo (stesso input → coseno ≈ 1), la distinzione (input non correlati →
 coseno nettamente sotto 1) e il campo `model` restituito. Profili integrati:
 OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
-`text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
+`text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024),
+Google `gemini-embedding-2` (3072).
 
 Entrambi sono anche nell'interfaccia web: partono dalla pagina **Verifica** con il
 selettore del tipo di endpoint (**Embedding**, **Riordinamento**). La verifica rerank usa sempre le sonde
@@ -99,5 +100,5 @@ discrepanza), la distinzione (due prompt → immagini diverse, per smascherare u
 segnaposto fisso), il numero e il campo `model`. `audio` controlla la
 connettività, la validità del contenitore/formato, il rispetto del formato, una
 durata non banale che cresce con l'input, la distinzione e il campo `model`. La
-base di conoscenza include OpenAI DALL·E 2/3, gpt-image-1,
+base di conoscenza include OpenAI DALL·E 2/3, gpt-image-1, gpt-image-2,
 tts-1/tts-1-hd/gpt-4o-mini-tts e profili immagine/TTS di Qwen.

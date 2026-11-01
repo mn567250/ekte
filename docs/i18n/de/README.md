@@ -16,7 +16,7 @@ erkannt oder erzwungen mit `--api openai|anthropic|responses`.
 
 Sie geben ihm den Endpunkt eines Relays und das Modell, das es angeblich liefert;
 ekte führt eine Reihe von Black-Box-Tests aus, vergleicht das beobachtete
-Verhalten mit einer mitgelieferten Wissensbasis von **98 Modellprofilen von 7
+Verhalten mit einer mitgelieferten Wissensbasis von **130 Modellprofilen von 7
 Anbietern** und gibt ein klares, mit Belegen untermauertes Urteil aus — auf der
 Kommandozeile, in einer lokalen Weboberfläche oder als JSON für ein anderes
 Werkzeug oder LLM.

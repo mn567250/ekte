@@ -16,7 +16,7 @@ Responses** (`/v1/responses`) — rilevate automaticamente, o forzate con
 
 Gli indichi l'endpoint di un relay e il modello che dice di servire; ekte esegue
 una batteria di sonde black-box, confronta il comportamento osservato con una
-base di conoscenza integrata di **98 profili di modelli di 7 fornitori** e
+base di conoscenza integrata di **130 profili di modelli di 7 fornitori** e
 fornisce un verdetto chiaro, sostenuto da prove — da riga di comando, in
 un'interfaccia web locale o in JSON per un altro strumento o LLM.
 

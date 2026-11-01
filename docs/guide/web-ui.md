@@ -51,6 +51,7 @@ The web UI is served at the root of the address `ekte serve` opens, with the aud
 | **History** | `/history` | Every audit run on this machine, grouped by relay + claimed model, with trends |
 | **Analytics** | `/analytics` | Relays and models compared over time: KPIs, charts with data tables, leaderboards |
 | **Knowledge** | `/kb` | The knowledge base in three tabs — models, providers, relays: browse, switch on/off, add your own |
+| **Accessibility** | `/accessibility` | The accessibility conformance report and statement (the icon next to the language switch) |
 
 Across the pages: filters and configurable trends (score, grade, latency p50,
 tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download

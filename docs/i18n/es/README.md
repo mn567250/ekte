@@ -16,7 +16,7 @@ Responses** (`/v1/responses`) — con detección automática, o forzada con
 
 Le indicas el endpoint de un relay y el modelo que dice servir; ekte ejecuta una
 batería de sondas de caja negra, compara el comportamiento observado con una
-base de conocimiento integrada de **98 perfiles de modelos de 7 proveedores** y
+base de conocimiento integrada de **130 perfiles de modelos de 7 proveedores** y
 da un veredicto claro y respaldado por evidencia — en la línea de comandos, en
 una interfaz web local o en JSON para otra herramienta o LLM.
 

@@ -64,7 +64,7 @@ devolve 1024-d serve um substituto), o determinismo (mesma entrada → cosseno �
 1), a distinção (entradas sem relação → cosseno claramente abaixo de 1) e o campo
 `model` devolvido. Perfis integrados: OpenAI `text-embedding-3-small` (1536),
 `text-embedding-3-large` (3072), `text-embedding-ada-002` (1536), Qwen
-`text-embedding-v3`/`-v4` (1024).
+`text-embedding-v3`/`-v4` (1024), Google `gemini-embedding-2` (3072).
 
 Ambos estão também na interface web: começam na página **Auditoria** com o
 seletor de tipo de endpoint (**Embeddings**, **Reordenação**). A auditoria de rerank usa sempre as sondas
@@ -98,5 +98,5 @@ distinção (dois prompts → imagens diferentes, para desmascarar um marcador f
 o número e o campo `model`. `audio` verifica a conectividade, a validade do
 contentor/formato, que o formato é respeitado, uma duração não trivial que cresce
 com a entrada, a distinção e o campo `model`. A base de conhecimento inclui
-OpenAI DALL·E 2/3, gpt-image-1, tts-1/tts-1-hd/gpt-4o-mini-tts e perfis de
+OpenAI DALL·E 2/3, gpt-image-1, gpt-image-2, tts-1/tts-1-hd/gpt-4o-mini-tts e perfis de
 imagem/TTS da Qwen.

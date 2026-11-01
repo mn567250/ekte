@@ -44,7 +44,7 @@ ekte rerank --base-url ... --model my-rerank --dry-run
 “货不对板”信号：声称是 3072 维 `text-embedding-3-large`、却返回 1024 维的中转站，提供的是替代品）、
 确定性（相同输入 → 余弦 ≈ 1）、区分度（无关输入 → 余弦明显小于 1）以及回包中的 `model` 字段。
 内置画像：OpenAI `text-embedding-3-small`（1536）、`text-embedding-3-large`（3072）、
-`text-embedding-ada-002`（1536），Qwen `text-embedding-v3`/`-v4`（1024）。
+`text-embedding-ada-002`（1536），Qwen `text-embedding-v3`/`-v4`（1024），Google `gemini-embedding-2`（3072）。
 
 两者在 Web 界面中也可使用：从**检测**页面的接口类型选择器开始（**嵌入**、**重排**）。重排审计始终使用内置探测，
 这样每次运行在漂移检查和监控中都可以相互比较。
@@ -69,5 +69,5 @@ ekte audio --base-url https://relay.example.com/v1 --api-key env:RELAY_KEY \
 `image` 检查连通性、格式有效且可解码、**尺寸匹配**（解码出的宽 × 高 vs 请求尺寸和声称模型的
 原生尺寸——不匹配即 FAIL/HIGH）、区分度（两个提示词 → 不同的图像，识破固定占位图）、数量以及
 `model` 字段。`audio` 检查连通性、容器/格式有效性、格式是否被遵守、随输入增长的非平凡时长、
-区分度以及 `model` 字段。知识库包含 OpenAI DALL·E 2/3、gpt-image-1、
+区分度以及 `model` 字段。知识库包含 OpenAI DALL·E 2/3、gpt-image-1、gpt-image-2、
 tts-1/tts-1-hd/gpt-4o-mini-tts，以及 Qwen 的图像/TTS 画像。

@@ -55,6 +55,7 @@ L'interfaccia web è servita alla radice dell'indirizzo che `ekte serve` apre, c
 | **Cronologia** | `/history` | Ogni verifica eseguita su questa macchina, raggruppata per relay + modello dichiarato, con tendenze |
 | **Analisi** | `/analytics` | Relay e modelli confrontati nel tempo: indicatori, grafici con tabelle di dati, classifiche |
 | **Conoscenza** | `/kb` | La base di conoscenza in tre schede — modelli, fornitori, relay: sfogliare, attivare/disattivare, aggiungere i propri |
+| **Accessibilità** | `/accessibility` | Il rapporto di conformità e la dichiarazione di accessibilità (l'icona accanto al selettore della lingua) |
 
 Inoltre, nelle pagine: filtri e tendenze configurabili (punteggio, voto,
 latenza p50, token/s) nella **Cronologia**; **Pianifica come monitor** e **Riesegui audit** su ogni

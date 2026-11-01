@@ -12,7 +12,10 @@
   `/tools` and `/console`. These redirects are deprecated and removed in 1.0.0.
 - **API.** `/api/jobs…` runs audits (below); `/api/models` lists a relay's
   models; `/api/report/export` renders a report; `/api/history…`,
-  `/api/watches…`, `/api/kb…` and `/api/analytics…` back the other pages. All of these are internal; the public subset is [HTTP API v1](#http-api-v1).
+  `/api/watches…`, `/api/kb…` and `/api/analytics…` back the other pages,
+  `/api/secret…` the master key of the monitors' stored API keys (status, new,
+  unlock, lock, reset, storage mode) and `GET /api/health` answers a liveness
+  check. All of these are internal; the public subset is [HTTP API v1](#http-api-v1).
 - **Relays.** `POST /api/kb/relays` saves a relay `{name, base_url}` (400 for bad
   input, 409 when the name or URL is already known).
 - **Analytics.** `GET /api/analytics/options` (relays, models, suites, stream

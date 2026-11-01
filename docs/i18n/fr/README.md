@@ -16,7 +16,7 @@ imposées avec `--api openai|anthropic|responses`.
 
 Vous lui donnez l'endpoint d'un relais et le modèle qu'il prétend servir ; ekte
 exécute une batterie de sondes en boîte noire, compare le comportement observé à
-une base de connaissances intégrée de **98 profils de modèles de 7
+une base de connaissances intégrée de **130 profils de modèles de 7
 fournisseurs**, et rend un verdict clair, étayé par des preuves — en ligne de
 commande, dans une interface web locale ou en JSON pour un autre outil ou LLM.
 

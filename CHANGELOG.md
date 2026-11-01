@@ -274,6 +274,13 @@ ekte has three eras:
 
 ### Fixed
 
+- **Documentation checked against the code.** The README names the 130
+  packaged model profiles (it said 98); the web UI guide lists the
+  Accessibility page; the endpoint guide names the Gemini embedding and
+  `gpt-image-2` profiles; the developer docs cover the modules, front-end
+  scripts, internal API groups and CI jobs they had left out. `--format` no
+  longer claims PDF needs the `[pdf]` extra (PDF is built in).
+
 - **Report timestamps on Windows.** `generated_at` now comes from the same
   monotonic clock as the request offsets, so a report never ends before its
   last request (Windows' wall clock ticks only every ~16 ms).

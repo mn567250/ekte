@@ -63,8 +63,11 @@ changes; there is no build step.
 
 ```text
 ekte/
-  cli.py               Typer CLI: check, compare, models, kb*, serve, watch, embed, rerank, image, audio
+  cli.py               Typer CLI: check, compare, models, kb*, serve, watch, embed, rerank, image, audio,
+                       init, config, data-dir, secret
+  clidocs.py           renders docs/reference/cli.md from the CLI's own options
   config.py            YAML config, secret references (env:/file:), AuditOptions
+  configfile.py        config file format: schema, validation, migration, its JSON schema
   runner.py            run_audit(): wires everything up and runs the detectors
   context.py           AuditContext handed to every detector
   models.py            pydantic data contracts: TargetConfig, Finding, DetectorResult, AuditReport, …
@@ -81,6 +84,8 @@ ekte/
   media_audit.py       standalone image and audio (TTS) auditor
   notify.py            webhook alerts (Slack / Feishu / DingTalk / generic JSON)
   datadir.py           the local data directory and its SQLite files
+  dbmigrate.py         versioned schema migrations (with backups) of every SQLite database
+  schemas/             JSON schemas of the report and the webhook payload (generated)
   legacy.py            the ZING_* settings and the ~/.zing copy from before the rename
   secretbox.py         encryption of stored secrets; the master key held in memory
   i18n/                translations shared by the web UI and the alerts
@@ -88,6 +93,7 @@ ekte/
   utils/               redaction, SSE parsing, statistics, token estimation
   web/
     server.py          FastAPI app: pages, JSON API, SSE audit stream, monitor scheduler
+    caching.py         gzip compression and browser caching of pages and assets
     jobs.py            background audit jobs and the per-relay gate
     security.py        loopback bind, Host allowlist, Origin/JSON checks, headers
     history.py         audit history store (history.db)
@@ -98,6 +104,8 @@ ekte/
     static/            scripts shared by every page (lang.js, i18n.js, icons.js, …)
     static/v2/         the web UI's pages, styles and scripts
 tests/                 pytest suite; conftest.py holds the mock relay
+scripts/               checks and generators run by CI and releases (translations, coverage, CLI
+                       reference, schemas, dist contents, vulnerabilities, release checks)
 docs/                  guide/ (user guide), i18n/<lang>/ (its translations), reference/, dev/
 examples/ekte.yaml     annotated config file
 action.yml             the GitHub composite action

@@ -33,6 +33,11 @@ relay/provider select → base URL → the relay's models (`/api/models`, on cha
 cached per URL/key/protocol) → claimed model from the knowledge base
 (`/api/kb/resolve` preselects it) → derived declared provider, plus **Save to
 knowledge base** (`POST /api/kb/relays`). Its pure helpers are tested under node.
+The custom suite's **Dimensions to run** chips are `v2/dimpick.js`. The
+"Running" list of background audits and running monitors (`GET /api/jobs`) is
+`v2/jobs.js` with `v2/jobs.css`, shared by the Audit and Monitors pages. The
+Knowledge page draws each of its three tabs with one section component,
+`v2/kbsection.js`, on top of the DOM-free helpers in `v2/kbview.js`.
 
 The v2 **Analytics** page (`v2/analytics.html`) reads only `/api/analytics/*`
 (`options` also lists the relay × model pairs, `relay_models`, for its series
@@ -56,7 +61,7 @@ bars, and `timeChart` takes a `ref` line (100% billing ratio).
 middle) and `EkteCharts.meter` (a thin bar of parts) draw the Coverage card of
 the accessibility report; their `k-*` colors (who decides a step: blue the
 test suite, violet a person) come from `tokens.css`. `v2/chartmotion.js`
-(`EkteMotion.enter`) draws a donut clockwise and grows meters from the left,
+(`EkteMotion.enter`, styles in `v2/chartmotion.css`) draws a donut clockwise and grows meters from the left,
 like every other chart, only when new data arrives and never under reduced
 motion or the header's "Motion off".
 

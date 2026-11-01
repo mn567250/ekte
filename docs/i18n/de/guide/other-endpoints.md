@@ -63,7 +63,8 @@ Ersatzmodell), Determinismus (gleiche Eingabe → Kosinus ≈ 1),
 Unterscheidbarkeit (unzusammenhängende Eingaben → Kosinus deutlich unter 1) und
 das zurückgegebene `model`-Feld. Mitgelieferte Profile: OpenAI
 `text-embedding-3-small` (1536), `text-embedding-3-large` (3072),
-`text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
+`text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024),
+Google `gemini-embedding-2` (3072).
 
 Beide gibt es auch in der Weboberfläche: Sie starten auf der Seite **Prüfung**
 über die Auswahl des Endpunkttyps (**Embeddings**, **Reranking**). Die Rerank-Prüfung nutzt immer die
@@ -95,5 +96,5 @@ Unterscheidbarkeit (zwei Prompts → verschiedene Bilder, um einen festen
 Platzhalter zu entlarven), Anzahl und das `model`-Feld. `audio` prüft
 Konnektivität, Gültigkeit von Container/Format, Einhaltung des Formats, eine
 nicht triviale Dauer, die mit der Eingabe wächst, Unterscheidbarkeit und das
-`model`-Feld. Die Wissensbasis enthält OpenAI DALL·E 2/3, gpt-image-1,
+`model`-Feld. Die Wissensbasis enthält OpenAI DALL·E 2/3, gpt-image-1, gpt-image-2,
 tts-1/tts-1-hd/gpt-4o-mini-tts sowie Bild-/TTS-Profile von Qwen.

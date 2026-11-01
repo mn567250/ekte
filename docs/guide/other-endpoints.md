@@ -59,7 +59,8 @@ signal: a relay claiming 3072-d `text-embedding-3-large` but returning 1024-d
 serves a substitute), determinism (same input → cosine ≈ 1), distinctness
 (unrelated inputs → cosine well below 1) and the echoed `model` field. Bundled
 profiles: OpenAI `text-embedding-3-small` (1536), `text-embedding-3-large`
-(3072), `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024).
+(3072), `text-embedding-ada-002` (1536), Qwen `text-embedding-v3`/`-v4` (1024),
+Google `gemini-embedding-2` (3072).
 
 Both are also in the web UI: they start on the **Audit** page through the
 endpoint-type selector (**Embeddings**, **Reranking**). The rerank audit always uses the built-in probes, so every run stays
@@ -90,5 +91,5 @@ sizes — FAIL/HIGH on a mismatch), distinctness (two prompts → different imag
 catching a fixed placeholder), count and the `model` field. `audio` checks
 connectivity, container/format validity, that the format is honored, a
 non-trivial duration that scales with the input, distinctness and the `model`
-field. The knowledge base ships OpenAI DALL·E 2/3, gpt-image-1,
+field. The knowledge base ships OpenAI DALL·E 2/3, gpt-image-1, gpt-image-2,
 tts-1/tts-1-hd/gpt-4o-mini-tts and Qwen image/TTS profiles.

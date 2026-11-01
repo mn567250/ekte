@@ -62,7 +62,7 @@ leverer en erstatning), determinisme (samme inndata → cosinus ≈ 1), atskille
 (urelaterte inndata → cosinus godt under 1) og det gjengitte `model`-feltet.
 Medfølgende profiler: OpenAI `text-embedding-3-small` (1536),
 `text-embedding-3-large` (3072), `text-embedding-ada-002` (1536), Qwen
-`text-embedding-v3`/`-v4` (1024).
+`text-embedding-v3`/`-v4` (1024), Google `gemini-embedding-2` (3072).
 
 Begge finnes også i nettgrensesnittet: de starter på **Revisjon**-siden via
 velgeren for type endepunkt (**Embeddinger**, **Rerank**). Rerank-revisjonen
@@ -94,5 +94,5 @@ egne størrelser — FAIL/HIGH ved avvik), atskillelse (to prompter → ulike bi
 fanger en fast plassholder), antall og `model`-feltet. `audio` kontrollerer
 tilkobling, gyldig beholder/format, at formatet respekteres, en ikke-triviell
 varighet som skalerer med inndataen, atskillelse og `model`-feltet.
-Kunnskapsbasen har med profiler for OpenAI DALL·E 2/3, gpt-image-1,
+Kunnskapsbasen har med profiler for OpenAI DALL·E 2/3, gpt-image-1, gpt-image-2,
 tts-1/tts-1-hd/gpt-4o-mini-tts og Qwen bilde/TTS.
