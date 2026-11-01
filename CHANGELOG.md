@@ -152,8 +152,9 @@ ekte has three eras:
 ### Changed
 
 - **A knowledge base that fails to load no longer shows the exception text.**
-  Creating a monitor (`POST /api/watches`) or scheduling a history run
-  (`POST /api/watches/from-history/{id}`) while the knowledge base can't be read
+  Creating a monitor (`POST /api/watches`), scheduling a history run
+  (`POST /api/watches/from-history/{id}`) or re-pinning a monitor's profile
+  (`PATCH /api/watches/{id}` with `repin`) while the knowledge base can't be read
   answers `knowledge base could not be loaded (<ExceptionType>); see the ekte
   serve log for details.`, and the full traceback is written to the `ekte serve`
   log (CodeQL `py/stack-trace-exposure`).

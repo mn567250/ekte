@@ -1652,8 +1652,8 @@ def create_app() -> FastAPI:
                 # Re-pin to the profile the knowledge base resolves to now.
                 try:
                     watches.pin(wid, _watch_knowledge(row))
-                except Exception as exc:
-                    return JSONResponse({"error": f"knowledge base: {exc}"}, status_code=400)
+                except Exception as exc:  # e.g. a broken EKTE_KB_DIR file
+                    return _kb_error_response(exc)
             return JSONResponse({"ok": True})
 
         return await asyncio.to_thread(store)

@@ -49,3 +49,17 @@ def test_scheduling_a_history_run_with_a_broken_kb(broken_kb, caplog):
     with caplog.at_level("ERROR", logger="ekte.web"):
         r = broken_kb.post(f"/api/watches/from-history/{rid}", json={})
     _assert_generic(r, caplog)
+
+
+def test_repinning_a_watch_with_a_broken_kb(monkeypatch, tmp_path, caplog):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    client = TestClient(server.create_app(), base_url="http://localhost")
+    wid = client.post("/api/watches", json={"base_url": _URL, "model": "gpt-4o"}).json()["id"]
+
+    def broken(*_a, **_kw):
+        raise ValueError("internal detail /srv/kb/broken.yaml")
+
+    monkeypatch.setattr(server, "_watch_knowledge", broken)
+    with caplog.at_level("ERROR", logger="ekte.web"):
+        r = client.patch(f"/api/watches/{wid}", json={"repin": True})
+    _assert_generic(r, caplog)
