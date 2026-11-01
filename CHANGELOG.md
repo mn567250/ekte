@@ -157,6 +157,11 @@ ekte has three eras:
   the ekte serve log for details.`, and the full traceback is written to the
   `ekte serve` log, where it was not recorded before (CodeQL
   `py/stack-trace-exposure`).
+- **A failed PDF export no longer shows the renderer's exception text.**
+  `POST /api/report/export?format=pdf` answers a rendering failure with
+  `PDF rendering failed (<ExceptionType>); see the ekte serve log for details.`
+  and writes the full traceback to the `ekte serve` log (CodeQL
+  `py/stack-trace-exposure`).
 - **API key fingerprints use scrypt.** `api_key_fingerprint` in reports is now
   derived with scrypt (a slow password hash, fixed salt) instead of a plain
   SHA-256 prefix, so a fingerprint in a shared report can't be brute-forced back
