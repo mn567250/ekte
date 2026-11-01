@@ -176,6 +176,12 @@ def test_format_generic_no_previous():
         ("https://open.larksuite.com/open-apis/bot/v2/hook/abc", "feishu"),
         ("https://oapi.dingtalk.com/robot/send?access_token=x", "dingtalk"),
         ("https://example.com/my/webhook", "generic"),
+        ("https://slack.com/x", "slack"),
+        ("https://HOOKS.Slack.com/services/T/B/X", "slack"),
+        # Slack's domain only as a substring or suffix of another host
+        ("https://evilslack.com/x", "generic"),
+        ("https://hooks.slack.com.example.net/x", "generic"),
+        ("https://example.net/hooks.slack.com/x", "generic"),
         ("not a url", "generic"),
     ],
 )

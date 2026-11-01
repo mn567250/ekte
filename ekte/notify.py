@@ -251,14 +251,20 @@ _FORMATTERS = {
 # --------------------------------------------------------------------------- #
 # Platform detection + delivery
 # --------------------------------------------------------------------------- #
+def _host_in(host: str, domain: str) -> bool:
+    """``host`` is ``domain`` or one of its subdomains (``evilslack.com`` and
+    ``slack.com.example.net`` are not ``slack.com``)."""
+    return host == domain or host.endswith("." + domain)
+
+
 def detect_kind(webhook_url: str) -> str:
     """Guess the platform from the webhook host.
 
-    hooks.slack.com → slack; feishu / larksuite → feishu; dingtalk → dingtalk;
-    anything else → generic.
+    slack.com and its subdomains (hooks.slack.com) → slack; feishu / larksuite
+    → feishu; dingtalk → dingtalk; anything else → generic.
     """
     host = (urlparse(webhook_url).hostname or "").lower()
-    if "hooks.slack.com" in host or host.endswith("slack.com"):
+    if _host_in(host, "slack.com"):
         return "slack"
     if "feishu" in host or "larksuite" in host or "larkoffice" in host:
         return "feishu"

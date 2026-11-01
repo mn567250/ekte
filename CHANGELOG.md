@@ -298,6 +298,10 @@ ekte has three eras:
 
 ### Fixed
 
+- **Slack webhooks detected by exact domain.** Auto-detection picks the Slack
+  payload only for `slack.com` and its subdomains; hosts like
+  `hooks.slack.com.example.net` or `evilslack.com` now get the generic payload
+  (CodeQL `py/incomplete-url-substring-sanitization`).
 - **Documentation checked against the code.** The README names the 130
   packaged model profiles (it said 98); the web UI guide lists the
   Accessibility page; the endpoint guide names the Gemini embedding and
