@@ -355,11 +355,20 @@ async def _run_one_watch(row: dict[str, Any]) -> None:
                 raise WatchCancelled(wid) from None
             raise
         except Exception as exc:
-            outcome, error = "error", f"{type(exc).__name__}: {exc}"
+            # The traceback goes to the server log only (scheduled runs are
+            # otherwise dropped silently): an unexpected exception's text can
+            # carry internal details, so the live job shows just its type.
+            _log.exception("monitor %s run failed", wid)
+            outcome, error = "error", _monitor_failed_message(exc)
             raise
     finally:
         job.close(outcome, error)
         _running_watches.pop(wid, None)
+
+
+def _monitor_failed_message(exc: BaseException) -> str:
+    """What the client sees of a monitor run that raised: the type, not the text."""
+    return f"Monitor run failed ({type(exc).__name__}); see the ekte serve log for details."
 
 
 def _find_job(job_id: str) -> jobs.Job | None:
@@ -1685,10 +1694,8 @@ def create_app() -> FastAPI:
                           "changed); enter the key again", "key_error": True},
                 status_code=409,
             )
-        except Exception as exc:  # surface a clean error, not a 500 stack
-            return JSONResponse(
-                {"error": f"{type(exc).__name__}: {exc}"}, status_code=500
-            )
+        except Exception as exc:  # a clean error, not a 500 stack; the run logged it
+            return JSONResponse({"error": _monitor_failed_message(exc)}, status_code=500)
         # Return the freshly saved report so the UI can show the result.
         from ekte.web import history
 

@@ -158,6 +158,12 @@ ekte has three eras:
   answers `knowledge base could not be loaded (<ExceptionType>); see the ekte
   serve log for details.`, and the full traceback is written to the `ekte serve`
   log (CodeQL `py/stack-trace-exposure`).
+- **A failed monitor run no longer shows the exception text.** "Run now"
+  (`POST /api/watches/{id}/run`) and the run's live job answer an unexpected
+  failure with `Monitor run failed (<ExceptionType>); see the ekte serve log for
+  details.`, and the full traceback is written to the `ekte serve` log, also for
+  scheduled runs, whose failures were not recorded before (CodeQL
+  `py/stack-trace-exposure`).
 - **Failed background audits no longer show the exception text.** When an
   audit started from the web UI or `/api/jobs` fails unexpectedly, the job's
   `error` (and its live `error` event) reads `Audit failed (<ExceptionType>); see
