@@ -34,7 +34,7 @@ DBS = {"history.db": history.MIGRATIONS, "watches.db": watches.MIGRATIONS, "kb.d
 
 def test_a_fixture_exists_for_every_listed_release():
     names = {p.name for p in DIRS}
-    assert "v0.30.0" in names
+    assert {"v0.30.0", "v0.33.0"} <= names
 
 
 @pytest.fixture(params=DIRS, ids=lambda p: p.name)
