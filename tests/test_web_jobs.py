@@ -163,6 +163,24 @@ async def test_cancel_stops_queued_and_running_jobs():
     assert not mgr.gate.would_wait(["r.example"])
 
 
+async def test_a_failed_job_logs_the_traceback_and_hides_the_exception_text(caplog):
+    mgr = jobs.JobManager(jobs.RelayGate(limit=4))
+
+    async def run(emit):
+        raise RuntimeError("secret internal detail /srv/ekte/db.sqlite")
+
+    job = mgr.submit({}, ["https://r.example"], run)
+    with caplog.at_level("ERROR", logger="ekte.web"):
+        await _until(lambda: job.status == "error" and job.finished)
+    # the client sees only the exception type and where to look
+    assert job.error == "Audit failed (RuntimeError); see the ekte serve log for details."
+    assert "secret internal detail" not in json.dumps(job.info())
+    assert "secret internal detail" not in json.dumps(job.events)
+    # the server log keeps the full traceback
+    rec = next(r for r in caplog.records if r.name == "ekte.web" and job.id in r.getMessage())
+    assert rec.exc_info and "secret internal detail" in str(rec.exc_info[1])
+
+
 def _fake_report(target):
     from ekte.models import AuditReport, RedactedTarget, Verdict
 
