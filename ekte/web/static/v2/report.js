@@ -971,10 +971,28 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   }
 
+  // A copy of `report` without the chart's running medians (performance
+  // request "trend" / "trend_band", added by the server for display only and
+  // not part of a report: ekte/perf/trend.py), so a download is the report as stored.
+  function stripTrends(report) {
+    var perf = report && report.performance;
+    if (!perf || !Array.isArray(perf.requests)) return report;
+    var requests = perf.requests.map(function (rec) {
+      if (!rec || typeof rec !== "object" || !("trend" in rec || "trend_band" in rec)) return rec;
+      var out = {};
+      Object.keys(rec).forEach(function (k) {
+        if (k !== "trend" && k !== "trend_band") out[k] = rec[k];
+      });
+      return out;
+    });
+    var p = Object.assign({}, perf, { requests: requests });
+    return Object.assign({}, report, { performance: p });
+  }
+
   function download(report, fmt, name) {
     if (!report) return Promise.resolve();
     var I = window.EKTE_I18N, L = window.EKTE_LANG;
-    var rep = I && I.exportReport ? I.exportReport(report) : report;
+    var rep = stripTrends(I && I.exportReport ? I.exportReport(report) : report);
     var filename = (name || "ekte-report") + "." + (L ? L.get() : "en") + "." + fmt;
     if (fmt === "json") {
       save(new Blob([JSON.stringify(rep, null, 2)], { type: "application/json" }), filename);

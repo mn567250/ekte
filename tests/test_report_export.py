@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import io
 import json
 from pathlib import Path
@@ -158,6 +159,34 @@ def test_export_pdf_failure_is_json(client, report_dict, monkeypatch, caplog):
     # the server log keeps the full traceback
     rec = next(r for r in caplog.records if r.getMessage() == "PDF rendering failed")
     assert rec.exc_info and "internal detail" in str(rec.exc_info[1])
+
+
+@pytest.mark.parametrize("fmt", ["md", "html", "pdf"])
+def test_export_accepts_the_chart_trend_lines(client, fmt):
+    # the browser's copy of a report carries each request's running medians
+    # (attach_trends: chart display data, not RequestRecord fields); the
+    # export drops them instead of rejecting the report (issue #79)
+    from ekte.perf.trend import attach_trends, strip_trends
+    from tests.test_performance_render import _report as perf_report
+
+    shown = perf_report().model_dump(mode="json")
+    attach_trends(shown["performance"]["requests"])
+    assert any("trend" in r and "trend_band" in r for r in shown["performance"]["requests"])
+    r = client.post(f"/api/report/export?format={fmt}", json=shown)
+    assert r.status_code == 200, r.text
+    stored = AuditReport.model_validate(strip_trends(copy.deepcopy(shown)))
+    expected = render_pdf(stored) if fmt == "pdf" else None
+    if expected is not None:
+        assert _text(r.content) == _text(expected)
+
+
+def test_export_still_rejects_other_unknown_request_fields(client):
+    from tests.test_performance_render import _report as perf_report
+
+    shown = perf_report().model_dump(mode="json")
+    shown["performance"]["requests"][0]["bogus"] = 1
+    r = client.post("/api/report/export?format=md", json=shown)
+    assert r.status_code == 400 and "bogus" in r.json()["error"]
 
 
 def test_export_rejects_bad_input(client, report_dict):
