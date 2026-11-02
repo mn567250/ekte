@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@v0.33.0   # fissa un tag — vedi "Fissare la versione" sotto
+        uses: mn567250/ekte@v0.33.1   # fissa un tag — vedi "Fissare la versione" sotto
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -63,7 +63,7 @@ jobs:
 | `suite`             | no           | `standard`    | Suite di rilevatori: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | no           | `high`        | Fa fallire il job quando il rischio è `>=` questo livello: `low` \| `medium` \| `high`. |
 | `python-version`    | no           | `3.12`        | Versione di Python usata per installare ed eseguire `ekte`. |
-| `version`           | no           | `ekte`        | Specifica di installazione pip. Fissala per esecuzioni riproducibili, ad es. `ekte==0.33.0`. |
+| `version`           | no           | `ekte`        | Specifica di installazione pip. Fissala per esecuzioni riproducibili, ad es. `ekte==0.33.1`. |
 
 ## Output
 
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@v0.33.0
+        uses: mn567250/ekte@v0.33.1
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -116,14 +116,14 @@ jobs:
 
 ## Fissare la versione
 
-Fissa l'action a un **tag di rilascio** (`mn567250/ekte@v0.33.0`) invece che a un
+Fissa l'action a un **tag di rilascio** (`mn567250/ekte@v0.33.1`) invece che a un
 branch mobile. Così le verifiche restano riproducibili e sei protetto da
 modifiche inattese all'action. Un tag può essere spostato; per la protezione più
 rigorosa della catena di fornitura fissa lo SHA completo del commit del rilascio,
-con la versione in un commento (`mn567250/ekte@<full-commit-sha> # v0.33.0`), e
+con la versione in un commento (`mn567250/ekte@<full-commit-sha> # v0.33.1`), e
 lascia che Dependabot lo tenga aggiornato. Per un comportamento della CLI del
 tutto riproducibile, fissa anche l'input `version` a un rilascio esatto, ad es.
-`version: ekte==0.33.0`.
+`version: ekte==0.33.1`.
 
 Un esempio pianificato pronto da copiare si trova in
 [`.github/workflows/example-audit.yml`](../../../../.github/workflows/example-audit.yml).

@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@v0.33.0   # an einen Tag binden — siehe „Versionen festlegen“ unten
+        uses: mn567250/ekte@v0.33.1   # an einen Tag binden — siehe „Versionen festlegen“ unten
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -63,7 +63,7 @@ jobs:
 | `suite`             | nein     | `standard`    | Test-Suite: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | nein     | `high`        | Lässt den Job scheitern, wenn das Risiko `>=` dieser Stufe ist: `low` \| `medium` \| `high`. |
 | `python-version`    | nein     | `3.12`        | Python-Version, mit der `ekte` installiert und ausgeführt wird. |
-| `version`           | nein     | `ekte`  | pip-Installationsangabe. Für reproduzierbare Läufe festlegen, z. B. `ekte==0.33.0`. |
+| `version`           | nein     | `ekte`  | pip-Installationsangabe. Für reproduzierbare Läufe festlegen, z. B. `ekte==0.33.1`. |
 
 ## Ausgaben
 
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@v0.33.0
+        uses: mn567250/ekte@v0.33.1
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -116,14 +116,14 @@ jobs:
 
 ## Versionen festlegen
 
-Binden Sie die Action an einen **Release-Tag** (`mn567250/ekte@v0.33.0`) statt an
+Binden Sie die Action an einen **Release-Tag** (`mn567250/ekte@v0.33.1`) statt an
 einen beweglichen Branch. So bleiben Prüfungen reproduzierbar, und Sie sind vor
 unerwarteten Änderungen an der Action geschützt. Ein Tag lässt sich verschieben;
 für den strengsten Schutz der Lieferkette binden Sie die Action an den vollständigen
 Commit-SHA des Releases, mit der Version in einem Kommentar
-(`mn567250/ekte@<full-commit-sha> # v0.33.0`), und lassen Dependabot ihn aktuell
+(`mn567250/ekte@<full-commit-sha> # v0.33.1`), und lassen Dependabot ihn aktuell
 halten. Für vollständig reproduzierbares CLI-Verhalten legen Sie zusätzlich die
-Eingabe `version` auf ein genaues Release fest, z. B. `version: ekte==0.33.0`.
+Eingabe `version` auf ein genaues Release fest, z. B. `version: ekte==0.33.1`.
 
 Ein kopierfertiges geplantes Beispiel liegt unter
 [`.github/workflows/example-audit.yml`](../../../../.github/workflows/example-audit.yml).

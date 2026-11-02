@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@v0.33.0   # pin to a tag — see "Pinning" below
+        uses: mn567250/ekte@v0.33.1   # pin to a tag — see "Pinning" below
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -62,7 +62,7 @@ jobs:
 | `suite`             | no       | `standard`    | Detector suite: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | no       | `high`        | Fail the job when risk `>=` this level: `low` \| `medium` \| `high`. |
 | `python-version`    | no       | `3.12`        | Python version used to install and run `ekte`. |
-| `version`           | no       | `ekte`  | pip install spec. Pin for reproducible runs, e.g. `ekte==0.33.0`. |
+| `version`           | no       | `ekte`  | pip install spec. Pin for reproducible runs, e.g. `ekte==0.33.1`. |
 
 ## Outputs
 
@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@v0.33.0
+        uses: mn567250/ekte@v0.33.1
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -114,12 +114,12 @@ jobs:
 
 ## Pinning
 
-Pin the action to a **release tag** (`mn567250/ekte@v0.33.0`) rather than a moving
+Pin the action to a **release tag** (`mn567250/ekte@v0.33.1`) rather than a moving
 branch. This keeps audits reproducible and protects you from unexpected changes
 to the action. A tag can be moved; for the strictest supply-chain protection pin the
 release's full commit SHA with the version in a comment
-(`mn567250/ekte@<full-commit-sha> # v0.33.0`) and let Dependabot keep it current. For fully reproducible CLI behavior, also pin the `version` input
-to an exact release, e.g. `version: ekte==0.33.0`.
+(`mn567250/ekte@<full-commit-sha> # v0.33.1`) and let Dependabot keep it current. For fully reproducible CLI behavior, also pin the `version` input
+to an exact release, e.g. `version: ekte==0.33.1`.
 
 A ready-to-copy scheduled example lives at
 [`.github/workflows/example-audit.yml`](../../.github/workflows/example-audit.yml).
