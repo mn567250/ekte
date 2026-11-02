@@ -20,6 +20,13 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Added
+
+- **Upgrade fixture for 0.33.1.** `tests/fixtures/upgrade/v0.33.1/` is a data
+  directory written by the released 0.33.1 from PyPI (history, monitors with
+  stored and unstored keys, your own knowledge-base entries); the upgrade tests
+  open it with the current code and check that nothing is lost.
+
 ## [0.33.1] - 2026-11-01
 
 A patch release with two fixes: exporting reports with performance data (#79)
