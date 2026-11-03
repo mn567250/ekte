@@ -65,6 +65,21 @@ test suite, violet a person) come from `tokens.css`. `v2/chartmotion.js`
 like every other chart, only when new data arrives and never under reduced
 motion or the header's "Motion off".
 
+The **performance timeline** (`perf.js` `chartSvg`) is one chart for the live
+panel of a running audit and for the report view; the downloaded HTML and PDF
+reports draw the same plot from `ekte/report/performance.py` `Timeline` (inline
+SVG there, ReportLab in `ekte/report/pdf.py`), including each endpoint's running
+median and p25–p75 band (`ekte/perf/trend.py`). Its time axis ends where the
+last request ended (`timeAxis` / `time_axis`: no rounded-up end; ticks only
+where their label fits). It sweeps in like the other line charts (the band
+grows out of its line). While an audit runs, the live panel's time axis creeps
+on with the clock between requests (`Live.creep`: one animation frame at a
+time, positions only, never the accessible name); when an axis changes, the
+requests slide to their new place and the line and band morph
+(`EkteMotion.rescale`). With reduced motion or "Motion off" none of it runs:
+the axis ends at the last request and changes only when one lands.
+`Live.stop()` (the audit's end) brings it back to the last request.
+
 The page header and the filter panel sit above five in-page tabs
 (`v2/tabs.js`, as on Knowledge): each `PANELS` entry names its `tab`,
 and only the shown tab's panels load; a filter change reloads that tab and

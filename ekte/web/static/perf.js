@@ -6,10 +6,14 @@
  *                               .reset({probeTotal, hasBaseline})
  *                               .add(records)   RequestRecord dicts (numbers only)
  *                               .render()       re-draw (e.g. after a language switch)
+ *                               .stop()         the audit ended: the time axis
+ *                                               stops at the last request
  *   - section(performance)    HTML for a report's `performance` block ("" if none)
  *   - wireSection(root, perf) hook up its metric tabs + tooltips inside `root`
  *   - chart(records, metric[, opts])
- *                             the timeline SVG (x = seconds since audit start);
+ *                             the timeline SVG (x = seconds since audit start,
+ *                             up to where the last request ended: no rounded-up
+ *                             axis end, see timeAxis);
  *                             records with a server-computed `trend` (running
  *                             median of the endpoint's last 5 successful
  *                             requests, ekte/perf/trend.py) also get a thin
@@ -25,9 +29,14 @@
  * change until "Back to automatic".
  *
  * Motion (chartmotion.js, if loaded): the live chart sweeps in when it is
- * first drawn or shows another metric, then only new requests pop in; a
- * report's chart sweeps in when it is opened or switches metric. When the
- * y-range changes, the requests slide to their new height (EkteMotion.rescale).
+ * first drawn or shows another metric (as a report's chart does when it is
+ * opened or switches metric, and as every line chart of the UI does: the band
+ * grows out of its line), then only new requests pop in. While the audit
+ * runs, its time axis creeps on with the clock between requests (see creep()).
+ * When an axis changes, the requests slide to their new place and the lines
+ * and bands morph (EkteMotion.rescale). Nothing moves under reduced motion or
+ * with the header's motion switch off: the axis then ends at the last request
+ * and changes only when one lands.
  *
  * Colors follow the categorical order validated for the reports: target is
  * slot 1 (blue), baseline slot 2 (orange); a failed request is a red cross
@@ -201,6 +210,35 @@
     }
   }
 
+  // ---- x-axis: the audit's time ----------------------------------------- //
+  // The plot ends where the last request ended (a running live chart: now),
+  // not at a rounded-up maximum, so it grows by exactly the time each request
+  // adds. niceAxis only picks the tick step; a tick whose label would not fit
+  // before the right edge is left out. Same as time_axis / time_ticks in
+  // ekte/report/performance.py.
+  function timeAxis(end) {
+    var max = end > 0 ? end : 1;
+    return { max: max, step: niceAxis(max).step };
+  }
+  var TICK_HALF = 3.3; // half a tick label's width per character (11px tabular digits)
+  function timeTicks(xa, x, right) {
+    var out = [];
+    for (var j = 0; ; j++) {
+      var s = xa.step * j;
+      if (s > xa.max + 1e-9) break;
+      var label = num(s) + "s", px = x(s);
+      if (j && px + label.length * TICK_HALF > right) break;
+      out.push({ label: label, x: px, anchor: j ? "middle" : "start" });
+    }
+    return out;
+  }
+  function timeTicksHtml(ticks) {
+    return ticks.map(function (t) {
+      return '<text class="zp-tick" x="' + t.x.toFixed(1) + '" y="' + (H - MB + 16) + '" text-anchor="' + t.anchor + '">' +
+        t.label + "</text>";
+    }).join("");
+  }
+
   // ---- y-range: the full range, or focused on the performance probe ------ //
   // Probe focus has one fixed range per audit, from the first CALIB probe
   // requests (both endpoints, successful and uncached, in recorded order):
@@ -239,10 +277,13 @@
     return c.empty ? c.html : c.html + dataTable(c.calls, c.m, opts && opts.open);
   }
   // The SVG alone (or the "no samples" note): {html, empty, calls, m, over,
-  // top} (top: a focused range's maximum; over: how many requests sit above
-  // it, as triangles on the top edge). Its data table is
-  // dataTable(calls, m, open); the live panel keeps that one in place.
-  function chartSvg(records, metricId, scale) {
+  // top, xMax, yMax, last} (top: a focused range's maximum; over: how many
+  // requests sit above it, as triangles on the top edge; xMax / yMax: the
+  // axes' ends; last: where the last request ended, in seconds).
+  // Its data table is dataTable(calls, m, open); the live panel keeps that
+  // one in place. `now` (seconds since the audit started) extends the x-axis
+  // of a running audit past its last request.
+  function chartSvg(records, metricId, scale, now) {
     var m = metric(metricId);
     var calls = (records || []).filter(isCall);
     var pts = calls.filter(function (r) { return r.ok && m.get(r) != null; });
@@ -251,7 +292,9 @@
       return { html: '<div class="zp-empty">' + esc(T("暂无数据", "No samples yet")) + "</div>", empty: true, calls: calls, m: m, over: 0 };
     var end = 1;
     calls.forEach(function (r) { end = Math.max(end, (r.start_ms + (r.duration_ms || 0)) / 1000); });
-    var xa = niceAxis(end), xMax = xa.max;
+    var last = end; // where the last request ended
+    if (now > end) end = now;
+    var xa = timeAxis(end), xMax = xa.max;
     var range = scale === "probe" ? probeRange(records, m) : null, mt = range ? MT_FOCUS : MT;
     var ya = niceAxis(range ? range.top : Math.max.apply(null, pts.map(m.get).concat([1])) * 1.05), yMax = ya.max;
     var pw = W - ML - MR, ph = H - mt - MB;
@@ -266,11 +309,7 @@
       o.push('<line class="zp-grid" x1="' + ML + '" x2="' + (W - MR) + '" y1="' + yy + '" y2="' + yy + '"/>');
       o.push('<text class="zp-tick" x="' + (ML - 6) + '" y="' + (+yy + 4) + '" text-anchor="end">' + num(v) + "</text>");
     }
-    for (var j = 0; j <= xa.n; j++) {
-      var s = xa.step * j;
-      o.push('<text class="zp-tick" x="' + x(s).toFixed(1) + '" y="' + (H - MB + 16) +
-        '" text-anchor="' + (j === 0 ? "start" : j === xa.n ? "end" : "middle") + '">' + num(s) + "s</text>");
-    }
+    o.push('<g class="zp-xt">' + timeTicksHtml(timeTicks(xa, x, W - 2)) + "</g>");
     // band and line are cut at the top edge of a focused range
     o.push(bandPaths(pts, m, x, y, mt));
     o.push(trendPaths(pts, m, x, y, mt));
@@ -297,7 +336,7 @@
         '" data-tip="' + esc(tip(r, null)) + '"/>');
     });
     o.push("</svg>");
-    return { html: o.join(""), empty: false, calls: calls, m: m, over: over, top: range ? yMax : null };
+    return { html: o.join(""), empty: false, calls: calls, m: m, over: over, top: range ? yMax : null, xMax: xMax, yMax: yMax, last: last };
   }
   // The running-median line per endpoint, behind the dots: through each
   // successful request's `trend` value for this metric, in time order.
@@ -783,19 +822,33 @@
     if (fresh) M.pop(svg, fresh);
     else M.enter(svg);
   }
-  // the y-range changed: the requests slide from where `old` drew them
-  function rescale(old, svg) {
+  // an axis changed: the requests slide from where `old` drew them (and the
+  // `fresh` ones, new in this frame, pop in)
+  function rescale(old, svg, fresh) {
     var M = window.EkteMotion;
-    if (M && M.rescale && old && svg) M.rescale(old, svg);
+    if (M && M.rescale && old && svg) M.rescale(old, svg, fresh);
   }
-  // after a live render: a new chart (first draw, another metric) sweeps in,
-  // a redrawn one pops only the requests it did not show before
-  function liveMotion(self) {
+  // motion is allowed: chartmotion.js is loaded, the user does not ask for
+  // reduced motion and the header's motion switch is on
+  function moving() {
+    var M = window.EkteMotion;
+    return !!(M && M.moving && M.moving());
+  }
+  function changed(a, b) {
+    return Math.abs(a - b) > 1e-6 * Math.max(Math.abs(a), Math.abs(b), 1);
+  }
+  // after a live render: a new chart (first draw, another metric) sweeps in;
+  // when an axis changed (the y-range switch, a slower request, the x-axis of
+  // a finished audit) the requests slide to their new place; otherwise only
+  // the requests it did not show before pop in
+  function liveMotion(self, chart) {
     var svg = self.host && self.host.querySelector ? self.host.querySelector("svg.zp-chart") : null;
     if (!svg || svg === self.zmSvg) return;
-    var old = self.zmSvg, moved = !!old && !!self.zmScale && self.zmScale !== self.scaleEff;
+    var old = self.zmSvg, was = self.zmAxes;
+    var axes = { scale: self.scaleEff, x: chart.xMax, y: chart.yMax };
+    var moved = !!old && !!was && (was.scale !== axes.scale || changed(was.x, axes.x) || changed(was.y, axes.y));
     self.zmSvg = svg;
-    self.zmScale = self.scaleEff;
+    self.zmAxes = axes;
     var seen = {}, fresh = [], prev = self.zmSeen, first = !prev || self.zmMetric !== self.metric;
     Array.prototype.forEach.call(svg.querySelectorAll(".zp-pt, .zp-fail"), function (el) {
       var s = (/^#(\d+)\s/.exec(el.getAttribute("data-tip") || "") || [])[1];
@@ -805,10 +858,67 @@
     self.zmSeen = seen;
     self.zmMetric = self.metric;
     if (first) motion(svg);
-    else if (moved) rescale(old, svg); // (a request new in this frame simply shows)
+    else if (moved) rescale(old, svg, fresh);
     else if (fresh.length) motion(svg, fresh);
   }
 
+  // ---- live: the x-axis keeps time between requests ----------------------- //
+  // While an audit runs and motion is allowed, the plot's right edge is "now":
+  // between requests it creeps on, one animation frame at a time, so the chart
+  // grows with the audit instead of in steps. Only positions change (the dots,
+  // lines, band and time ticks of the drawn <svg>), never what the chart says:
+  // its accessible name and data table stay as the last render left them.
+  // The loop stops as soon as motion is switched off (or reduced motion is
+  // asked for), the audit ends, or the chart is hidden or replaced; the next
+  // render starts it again. Without motion the x-axis ends at the last
+  // request, as in a report.
+  function clockNow() {
+    return typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+  }
+  var PW = W - ML - MR;
+  function scaleX(v, k) { return ML + (v - ML) * k; }
+  // the absolute x of every "M x,y" / "L x,y" (relative moves keep their
+  // size); `off`: how far a mark's start lies left of its centre (a failure
+  // cross starts 4 px left of the request's x), so the mark keeps its centre
+  function scaleD(d, k, off) {
+    return d.replace(/([ML])(-?[\d.]+),/g, function (m, c, v) {
+      return c + (scaleX(parseFloat(v) + off, k) - off).toFixed(1) + ",";
+    });
+  }
+  // What the loop moves in a freshly drawn chart, at the x-axis it was drawn with.
+  function creepModel(svg, xMax) {
+    var circles = [], paths = [];
+    Array.prototype.forEach.call(svg.querySelectorAll("circle.zp-pt"), function (el) {
+      circles.push([el, parseFloat(el.getAttribute("cx")) || 0]);
+    });
+    Array.prototype.forEach.call(svg.querySelectorAll(".zp-trend path, .zp-band path, .zp-fail, .zp-off"), function (el) {
+      paths.push([el, el.getAttribute("d") || "", el.classList.contains("zp-fail") ? 4 : 0]);
+    });
+    return { svg: svg, xMax: xMax, shown: xMax, circles: circles, paths: paths, ticks: svg.querySelector(".zp-xt") };
+  }
+  function creepTo(g, max) {
+    var k = g.xMax / max;
+    g.circles.forEach(function (c) { c[0].setAttribute("cx", scaleX(c[1], k).toFixed(1)); });
+    g.paths.forEach(function (p) { p[0].setAttribute("d", scaleD(p[1], k, p[2])); });
+    if (g.ticks) {
+      var xa = timeAxis(max), ticks = timeTicks(xa, function (s) { return ML + (s / max) * PW; }, W - 2);
+      var labels = ticks.map(function (t) { return t.label; }).join("|");
+      var els = g.ticks.querySelectorAll("text");
+      var shown = Array.prototype.map.call(els, function (e) { return e.textContent; }).join("|");
+      if (labels !== shown) {
+        // a new tick came into view, or a new step: it fades in
+        var had = {};
+        Array.prototype.forEach.call(els, function (e) { had[e.textContent] = 1; });
+        g.ticks.innerHTML = timeTicksHtml(ticks);
+        Array.prototype.forEach.call(g.ticks.querySelectorAll("text"), function (e) {
+          if (!had[e.textContent] && typeof e.animate === "function") e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: "ease-out" });
+        });
+      } else {
+        ticks.forEach(function (t, i) { if (els[i]) els[i].setAttribute("x", t.x.toFixed(1)); });
+      }
+    }
+    g.shown = max;
+  }
   // ---- live panel -------------------------------------------------------- //
   function Live(host) {
     this.host = host;
@@ -825,13 +935,25 @@
     this.scale = null; // the y-range the user chose; null: automatic (a new audit starts automatic)
     this.scaleEff = null; // the y-range shown
     this.el = null; // the rendered panel's parts, patched in place by render()
-    this.zmSeen = this.zmSvg = this.zmScale = null; // what the chart showed (liveMotion)
+    this.zmSeen = this.zmSvg = this.zmAxes = null; // what the chart showed (liveMotion)
+    // the audit's clock: performance.now() when it started, estimated from the
+    // records as they arrive (null until one has); see creep()
+    this.running = true;
+    this.t0 = null;
+    this.halt();
     this.table = null; // what the data table currently shows (see fillTable)
     if (this.host) this.host.innerHTML = "";
   };
   Live.prototype.add = function (records) {
-    var self = this;
-    (records || []).forEach(function (r) { self.records.push(r); });
+    var self = this, at = clockNow();
+    (records || []).forEach(function (r) {
+      self.records.push(r);
+      // a request ends before it is reported: the earliest estimate of the
+      // start (a replayed log arrives all at once) is the closest one
+      if (!isCall(r) || typeof r.start_ms !== "number") return;
+      var t0 = at - (r.start_ms + (r.duration_ms || 0));
+      if (self.t0 === null || t0 < self.t0) self.t0 = t0;
+    });
     if (this.pending) return;
     this.pending = true;
     requestAnimationFrame(function () {
@@ -874,7 +996,7 @@
     var sc = scaleState(recs, this.metric, this.scale, running ? "probe" : "full");
     var said = !this.scale && this.scaleEff && sc.eff !== this.scaleEff ? scaleSaid(sc.eff) : "";
     this.scaleEff = sc.eff;
-    var chartV = chartSvg(recs, this.metric, sc.eff);
+    var chartV = chartSvg(recs, this.metric, sc.eff, this.clock());
     var v = {
       title: T("性能 · 实时", "Performance · live"),
       head: [
@@ -920,7 +1042,8 @@
     if (el && el.root.parentNode === this.host && !el.probe === !v.probe && !el.scale === !v.scale) this.patch(v);
     else this.build(v);
     if (said && this.el && this.el.say) this.el.say.textContent = said;
-    liveMotion(this);
+    liveMotion(this, chartV);
+    this.creep(chartV);
     box = this.host.querySelector(".zp-data-scroll");
     if (box && scrollTop && box.scrollTop !== scrollTop) box.scrollTop = scrollTop;
     // Only an element that was replaced is focused again (no focus() call,
@@ -929,6 +1052,43 @@
       var f = this.host.querySelector(refocus);
       if (f) f.focus();
     }
+  };
+  // Seconds since the audit started while it runs and motion is allowed
+  // (the creeping x-axis), else 0: the axis ends at the last request.
+  Live.prototype.clock = function () {
+    return this.running && this.t0 !== null && moving() ? (clockNow() - this.t0) / 1000 : 0;
+  };
+  Live.prototype.creep = function (chart) {
+    var self = this;
+    this.halt();
+    this.geo = null;
+    if (chart.empty || !this.clock() || typeof requestAnimationFrame !== "function") return;
+    var svg = this.host.querySelector("svg.zp-chart");
+    if (!svg) return;
+    var g = creepModel(svg, chart.xMax);
+    this.geo = g;
+    function step() {
+      self.raf = 0;
+      var now = self.clock();
+      if (!now || self.geo !== g || !svg.isConnected || !svg.getClientRects().length) return;
+      var max = Math.max(chart.last, now);
+      // half a pixel's worth or more at the right edge: move
+      if (Math.abs(max - g.shown) / max * PW >= 0.05) creepTo(g, max);
+      self.raf = requestAnimationFrame(step);
+    }
+    this.raf = requestAnimationFrame(step);
+  };
+  Live.prototype.halt = function () {
+    if (this.raf && typeof cancelAnimationFrame === "function") cancelAnimationFrame(this.raf);
+    this.raf = 0;
+  };
+  // The audit is over (its report arrived, it failed or was cancelled): the
+  // x-axis ends at the last request again (sliding back there with motion).
+  Live.prototype.stop = function () {
+    if (!this.running) return;
+    this.running = false;
+    this.halt();
+    if (this.el) this.render();
   };
   function tileHtml(x) {
     return '<div class="zp-tile"><div class="zp-tl">' + esc(x[0]) + '</div><div class="zp-tv">' + esc(x[1]) + "</div></div>";

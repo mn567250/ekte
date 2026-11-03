@@ -205,7 +205,9 @@ console.log(JSON.stringify({chart: window.EktePerf.chart(recs, "ttft"), axis: wi
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_perf_js_axes_fit_the_data():
     # An audit ending around 500 s with TTFT up to 350 ms: the live chart used
-    # to stretch to 1000 s and 500 ms, leaving much of the plot empty.
+    # to stretch to 1000 s and 500 ms, leaving much of the plot empty. The
+    # time axis now ends where the last request ended (not at a rounded-up
+    # 600 s): its last dot sits at the right edge.
     recs = [{"seq": i, "op": "complete", "endpoint": "target", "phase": "probe", "ok": True,
              "stream": True, "start_ms": i * 50_000.0, "duration_ms": 900.0, "ttft_ms": 300.0 + i * 5}
             for i in range(11)]
@@ -216,7 +218,12 @@ def test_perf_js_axes_fit_the_data():
     ).stdout)
     assert out["axis"] == {"max": 600, "step": 100, "n": 6}
     chart = out["chart"]
-    assert 'text-anchor="end">600s</text>' in chart and "1,000s" not in chart and "1000s" not in chart
+    ticks = re.findall(r'<text class="zp-tick" x="([\d.]+)" y="216" text-anchor="(\w+)">([^<]+)</text>', chart)
+    assert [t[2] for t in ticks] == ["0s", "100s", "200s", "300s", "400s"]  # 500s would not fit before the edge
+    assert ticks[0][1] == "start" and {t[1] for t in ticks[1:]} == {"middle"}
+    assert "600s" not in chart and "1,000s" not in chart
+    last = max(float(c) for c in re.findall(r'<circle class="zp-pt[^"]*" cx="([\d.]+)"', chart))
+    assert 720 - 12 - last < 2  # 500 s of 500.9 s: at the plot's right edge
     assert 'text-anchor="end">400</text>' in chart and ">500</text>" not in chart  # 350 x 1.05 -> 0..400
 
 
@@ -529,3 +536,167 @@ def test_live_focuses_on_the_probe_while_it_runs_unless_the_user_chose():
     assert "zp-scale" not in out["auditOnly"]  # no probe, no switch
     # a finished report starts on the full range
     assert pressed(out["report"], "full") and "zp-scale" in out["report"]
+
+
+_PARITY_JS = r"""
+const path = require("path");
+global.window = {};
+global.document = undefined;
+require(path.join(process.argv[1], "perf.js"));
+console.log(JSON.stringify({chart: window.EktePerf.chart(JSON.parse(process.argv[2]), "latency")}));
+"""
+
+
+def _points(d: str) -> list[tuple[float, float]]:
+    return [(float(a), float(b)) for a, b in re.findall(r"(-?[\d.]+),(-?[\d.]+)", d)]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_web_and_export_charts_draw_the_same_trend_and_axes():
+    # perf.js (live view and web report) and the exports (HTML here; the PDF
+    # draws the same Timeline) plot the same running median, p25–p75 band and
+    # time axis: compared in data units, as their canvases differ
+    from ekte.perf.trend import attach_trends
+    from ekte.report.performance import CHART_METRICS, Timeline, timeline_svg
+
+    recs = [RequestRecord(seq=i, endpoint="baseline" if i % 3 == 2 else "target", phase="probe", ok=i != 4,
+                          stream=True, status_code=200 if i != 4 else 502, start_ms=i * 700.0,
+                          duration_ms=600.0 + (i * 37) % 250) for i in range(14)]
+    dumped = [r.model_dump() for r in recs]
+    attach_trends(dumped)  # as the web UI gets them
+    web = json.loads(subprocess.run(
+        ["node", "-e", _PARITY_JS, str(_STATIC), json.dumps(dumped)],
+        capture_output=True, text=True, encoding="utf-8", check=True,
+    ).stdout)["chart"]
+    export = timeline_svg(recs, CHART_METRICS[0])
+    tl = Timeline(recs, CHART_METRICS[0])
+
+    def unit(svg_pts, w, ml, mr, mt, ph):
+        pw = w - ml - mr
+        return [round((x - ml) / pw * tl.x_max, 1) for x, _ in svg_pts], \
+            [round((mt + ph - y) / ph * tl.y_max, 0) for _, y in svg_pts]
+
+    for side, ep in (("t", "target"), ("b", "baseline")):
+        for g_web, g_exp in (("zp-trend", "trend"), ("zp-band", "band")):
+            d_web = re.search(rf'<g class="{g_web}">.*?<path class="{side}" d="([^"]+)"', web).group(1)
+            d_exp = re.search(rf'<g class="{g_exp}">.*?<path class="{ep}" d="([^"]+)"', export).group(1)
+            xs_w, ys_w = unit(_points(d_web), 720, 52, 12, 10, 230 - 10 - 30)
+            xs_e, ys_e = unit(_points(d_exp), 860, 56, 16, 12, 260 - 12 - 34)
+            assert len(xs_w) == len(xs_e) > 2, (side, g_web)
+            assert all(abs(a - b) <= 0.05 for a, b in zip(xs_w, xs_e, strict=True)), (side, g_web)
+            assert all(abs(a - b) <= 5 for a, b in zip(ys_w, ys_e, strict=True)), (side, g_web)
+    # the same time axis: both end at the last request, with the same ticks
+    def ticks(svg):
+        return [float(t.replace(",", "")) for t in re.findall(r">([\d.,]+)s</text>", svg)]
+
+    assert ticks(web) == ticks(export) == [0, 2, 4, 6, 8]
+
+
+_MOTION_REC_JS = """window.mk = (i, t) => ({seq: i, endpoint: 'target', phase: 'probe', op: 'complete', stream: true,
+  start_ms: t, ok: true, status_code: 200, duration_ms: 500 + (i % 4) * 60, ttft_ms: 200 + i,
+  trend: {latency: 560 + i}, trend_band: {latency: [520 + i, 600 + i]}});"""
+
+
+def test_live_chart_motion_in_a_browser():
+    sync_api = pytest.importorskip("playwright.sync_api")
+    with sync_api.sync_playwright() as pw:
+        try:
+            browser = pw.chromium.launch(executable_path=os.environ.get("EKTE_A11Y_CHROMIUM") or None)
+        except Exception as e:  # no browser installed
+            pytest.skip(f"no Chromium: {e}")
+        try:
+            _drive_live_motion(browser.new_page())
+            page = browser.new_page()
+            page.emulate_media(reduced_motion="reduce")
+            _drive_live_still(page, "reduced motion")
+            page = browser.new_page()
+            _drive_live_still(page, "motion switch")
+        finally:
+            browser.close()
+
+
+def _live_page(page, motion_off: bool = False) -> None:
+    page.set_content('<!doctype html><html lang="en"' + (' data-motion="off"' if motion_off else "") +
+                     '><head><title>t</title></head><body style="width:760px"><div id="host"></div></body></html>')
+    page.add_style_tag(content=(_STATIC / "v2" / "chartmotion.css").read_text(encoding="utf-8"))
+    page.add_script_tag(content=(_STATIC / "perf.js").read_text(encoding="utf-8"))
+    page.add_script_tag(content=(_STATIC / "v2" / "chartmotion.js").read_text(encoding="utf-8"))
+    page.add_script_tag(content=_MOTION_REC_JS)
+
+
+# the requests' x positions, the time ticks and the accessible name
+_GEOM = """() => { const s = document.querySelector('#host svg.zp-chart');
+  return {cx: [...s.querySelectorAll('circle.zp-pt')].map(c => +c.getAttribute('cx')),
+          ticks: [...s.querySelectorAll('.zp-xt text')].map(t => t.textContent),
+          line: s.querySelector('.zp-trend path').getAttribute('d'),
+          name: s.getAttribute('aria-label')}; }"""
+
+
+def _drive_live_motion(page) -> None:
+    errors: list[str] = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    _live_page(page)
+    # an audit 6 s in: six requests, the last one ending ~now
+    page.evaluate("""() => {
+      window.L = new EktePerf.Live(document.getElementById('host'));
+      L.reset({probeTotal: 50});
+      const t = performance.now(), recs = [];
+      for (let i = 0; i < 6; i++) recs.push(mk(i, i * 1000));
+      L.add(recs);
+    }""")
+    page.wait_for_function("() => !!document.querySelector('#host svg.zp-chart')")
+    # the first draw sweeps in like every line chart: the band grows out of
+    # its median line (SMIL), it does not just fade
+    sweep = page.evaluate("""() => { const b = document.querySelector('#host .zp-band path');
+      return {grow: !!b.querySelector('animate'), fade: b.classList.contains('zm-fd'),
+              svg: document.querySelector('#host svg.zp-chart').classList.contains('zm-in')}; }""")
+    assert sweep == {"grow": True, "fade": False, "svg": True}
+    page.wait_for_timeout(1300)  # the sweep is over: nothing of it is left in the DOM
+    assert page.evaluate("document.querySelectorAll('#host svg animate, #host svg .zm-fd, #host svg [style]').length") == 0
+    # between requests the time axis keeps up with the clock: the requests
+    # move left, the chart's accessible name does not change
+    a = page.evaluate(_GEOM)
+    page.wait_for_timeout(600)
+    b = page.evaluate(_GEOM)
+    assert all(x1 < x0 for x0, x1 in zip(a["cx"][1:], b["cx"][1:], strict=True)) and b["cx"][0] == a["cx"][0]
+    assert b["name"] == a["name"] and b["line"] != a["line"]
+    # a new request: the line morphs out of its old end (no fade), the new dot pops in
+    page.evaluate("() => L.add([mk(6, 6200)])")
+    page.wait_for_function("() => document.querySelectorAll('#host circle.zp-pt').length === 7")
+    st = page.evaluate("""() => { const s = document.querySelector('#host svg.zp-chart');
+      return {morph: !!s.querySelector('.zp-trend path animate'), fade: !!s.querySelector('.zp-trend .zm-fd'),
+              pop: s.querySelectorAll('.zm-fresh').length}; }""")
+    assert st == {"morph": True, "fade": False, "pop": 1}
+    # motion switched off mid-audit: nothing moves any more
+    page.evaluate("() => document.documentElement.setAttribute('data-motion', 'off')")
+    page.wait_for_timeout(100)
+    c = page.evaluate(_GEOM)
+    page.wait_for_timeout(500)
+    assert page.evaluate(_GEOM) == c
+    # the audit ends: the axis ends at the last request again (6.2 s + 0.62 s)
+    page.evaluate("() => { document.documentElement.removeAttribute('data-motion'); L.stop(); }")
+    page.wait_for_timeout(600)
+    end = page.evaluate("""() => { const s = document.querySelector('#host svg.zp-chart');
+      return [L.raf, Math.max(...[...s.querySelectorAll('circle.zp-pt')].map(c => +c.getAttribute('cx')))]; }""")
+    assert end[0] == 0
+    assert abs(end[1] - (52 + 6.2 / 6.82 * 656)) < 1
+    assert errors == []
+
+
+def _drive_live_still(page, how: str) -> None:
+    # reduced motion or the motion switch: no sweep, no creep; the time axis
+    # ends at the last request and changes only when one lands
+    _live_page(page, motion_off=how == "motion switch")
+    page.evaluate("""() => {
+      window.L = new EktePerf.Live(document.getElementById('host'));
+      L.reset({probeTotal: 50});
+      L.add([0, 1, 2, 3].map(i => mk(i, i * 1000)));
+    }""")
+    page.wait_for_function("() => !!document.querySelector('#host svg.zp-chart')")
+    a = page.evaluate(_GEOM)
+    page.wait_for_timeout(500)
+    assert page.evaluate(_GEOM) == a, how
+    assert page.evaluate("""() => [L.raf, document.querySelectorAll('#host animate, #host .zm-fd, #host .zm-mv').length,
+      document.querySelector('#host svg.zp-chart').getAttribute('class')]""") == [0, 0, "zp-chart"], how
+    # the last request (3 s + 0.68 s) at the right edge
+    assert abs(max(a["cx"]) - (52 + 3 / 3.68 * 656)) < 1, how

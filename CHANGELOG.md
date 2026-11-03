@@ -22,10 +22,30 @@ ekte has three eras:
 
 ### Added
 
+- **Running median and p25–p75 band in the HTML and PDF reports.** The
+  downloaded reports' performance timelines draw what the web UI's chart draws
+  behind the dots: per endpoint the running median of its last 5 successful
+  requests and their p25–p75, with a legend entry and (HTML) in the chart's
+  accessible name. They also plot a non-chat audit's embedding and rerank
+  calls, as the web UI does. ([#85](https://github.com/mn567250/ekte/issues/85))
+
 - **Upgrade fixture for 0.33.1.** `tests/fixtures/upgrade/v0.33.1/` is a data
   directory written by the released 0.33.1 from PyPI (history, monitors with
   stored and unstored keys, your own knowledge-base entries); the upgrade tests
   open it with the current code and check that nothing is lost.
+
+### Changed
+
+- **The performance timeline grows smoothly.** Its time axis ends where the
+  last request ended instead of at the next rounded-up step (which left up to a
+  quarter of the plot empty and grew in jumps), in the web UI and in the
+  exported reports. While an audit runs, the live chart's time axis keeps up
+  with the clock between requests; when an axis changes, the requests slide to
+  their new place and the median line and band morph instead of jumping. None
+  of this moves with reduced motion or the header's "Motion off".
+  ([#85](https://github.com/mn567250/ekte/issues/85))
+- **The performance chart sweeps in like the other line charts:** its p25–p75
+  band grows out of its median line instead of fading in.
 
 ## [0.33.1] - 2026-11-01
 

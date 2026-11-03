@@ -10,10 +10,17 @@
  *   - pop(svg, marks)      live updates: pop in exactly these marks (the
  *                          perf.js live chart: the new requests' dots and
  *                          failure crosses)
- *   - rescale(old, svg)    perf.js: the y-range changed (full range / probe
- *                          focus): each request slides from where the old
- *                          <svg> drew it to its new height; the axis and
- *                          the running-median lines and bands fade in
+ *   - rescale(old, svg[, fresh])
+ *                          perf.js: an axis changed (the y-range switch, a
+ *                          slower request, the time axis): each request
+ *                          slides from where the old <svg> drew it to its
+ *                          new place, a tick or grid line that stays slides
+ *                          with it, the running-median lines and bands morph
+ *                          into their new shape; new ticks fade in, `fresh`
+ *                          marks pop in
+ *   - moving()             false while nothing may move (reduced motion, the
+ *                          header's motion switch): for motion driven by a
+ *                          caller's own loop (perf.js's creeping time axis)
  *   - count(els, show)     KPI figures: each element counts up to its new
  *                          value; els is a list of {el, from, to, …}, show(v, it)
  *                          formats item it's value v on the way
@@ -48,13 +55,15 @@
   function pairs(d) {
     return d.replace(/[MZ]/g, "").split("L").filter(Boolean);
   }
-  // band path "M top… L bottom (reversed)… Z" -> collapsed onto the median line
-  function grow(band, at, anims) {
-    var line = band.nextElementSibling;
-    if (!line || !line.classList.contains("line")) return;
-    var b = pairs(band.getAttribute("d") || ""), l = pairs(line.getAttribute("d") || ""), n = l.length;
-    // no SMIL (never in current browsers): the band simply shows
-    if (b.length !== 2 * n || !n || typeof band.ownerSVGElement.animationsPaused !== "function") return;
+  // band path "M top… L bottom (reversed)… Z" -> collapsed onto its median
+  // line; false when the two do not pair up (a band or line cut at a focused
+  // range's top edge) or there is no SMIL (never in current browsers)
+  function grow(band, line, at, anims) {
+    if (!line) return false;
+    var ld = line.getAttribute("d") || "";
+    if (ld.indexOf("M", 1) >= 0) return false; // a line in pieces
+    var b = pairs(band.getAttribute("d") || ""), l = pairs(ld), n = l.length;
+    if (b.length !== 2 * n || !n || typeof band.ownerSVGElement.animationsPaused !== "function") return false;
     var flat = "M" + l.join("L") + "L" + l.slice().reverse().join("L") + "Z";
     var end = at(parseFloat(l[n - 1])), dur = end + 420;
     var a = document.createElementNS(NS, "animate");
@@ -68,6 +77,7 @@
     a.setAttribute("fill", "remove");
     band.appendChild(a);
     anims.push(a);
+    return true;
   }
 
   function px(el) {
@@ -78,17 +88,19 @@
   function cleanup(svg, ms, cls, els, anims) {
     clearTimeout(svg.zmT);
     svg.zmT = setTimeout(function () {
-      svg.classList.remove(cls);
+      cls.split(" ").forEach(function (c) { svg.classList.remove(c); });
       (anims || []).forEach(function (a) { if (a.parentNode) a.parentNode.removeChild(a); });
       els.forEach(function (el) {
         el.style.removeProperty("--zm-d");
         el.style.removeProperty("--zm-t");
+        el.style.removeProperty("--zm-dx");
         el.style.removeProperty("--zm-dy");
         el.style.removeProperty("--zm-len");
         if (!el.getAttribute("style")) el.removeAttribute("style");
         if (el.zmPL) { el.removeAttribute("pathLength"); el.zmPL = false; }
         el.classList.remove("zm-fresh");
         el.classList.remove("zm-mv");
+        el.classList.remove("zm-fd");
       });
     }, ms);
   }
@@ -126,7 +138,10 @@
       // current browser (CSS d animation does not in Safari); it is removed
       // again with the rest.
       var bands = svg.querySelectorAll(".ser .band");
-      for (i = 0; i < bands.length; i++) grow(bands[i], at, anims);
+      for (i = 0; i < bands.length; i++) {
+        var next = bands[i].nextElementSibling;
+        grow(bands[i], next && next.classList.contains("line") ? next : null, at, anims);
+      }
     } else if (svg.classList.contains("sbars")) {
       var bars = svg.querySelectorAll(".bar");
       for (i = 0; i < bars.length; i++) {
@@ -136,25 +151,40 @@
         for (var j = 0; j < segs.length; j++) { segs[j].style.setProperty("--zm-d", (b0 + j * SEG) + "ms"); touched.push(segs[j]); }
       }
     } else if (svg.classList.contains("zp-chart")) {
-      // perf.js request timeline: dots and failure crosses pop in as a sweep
-      // passes their x; a running-median line (if drawn) draws with it
-      var marks = svg.querySelectorAll(".zp-pt, .zp-fail"), mx = [], m0 = Infinity, m1 = -Infinity;
+      // perf.js request timeline: the same sweep as a line chart above. Dots
+      // and failure crosses pop in as it passes their x, each running-median
+      // line draws with it, and its p25–p75 band grows out of the line once
+      // the sweep has drawn it (a band cut at a focused range's top edge
+      // fades in instead).
+      var marks = svg.querySelectorAll(".zp-pt, .zp-fail"), tl = svg.querySelectorAll(".zp-trend path"), mx = [], te = [];
+      var m0 = Infinity, m1 = -Infinity;
       for (i = 0; i < marks.length; i++) {
         mx[i] = marks[i].tagName === "circle" ? parseFloat(marks[i].getAttribute("cx")) || 0 : px(marks[i]) + 4;
         m0 = Math.min(m0, mx[i]); m1 = Math.max(m1, mx[i]);
       }
+      for (i = 0; i < tl.length; i++) {
+        var lm = /(-?[\d.]+),-?[\d.]+\s*$/.exec(tl[i].getAttribute("d") || "");
+        te[i] = [px(tl[i]), lm ? parseFloat(lm[1]) : px(tl[i])];
+        m0 = Math.min(m0, te[i][0]); m1 = Math.max(m1, te[i][1]);
+      }
+      var zat = function (x) { return Math.round(((x - m0) / (m1 - m0 || 1)) * SWEEP); };
       for (i = 0; i < marks.length; i++) {
-        marks[i].style.setProperty("--zm-d", Math.round(((mx[i] - m0) / (m1 - m0 || 1)) * SWEEP) + "ms");
+        marks[i].style.setProperty("--zm-d", Math.max(0, zat(mx[i]) - 60) + "ms");
         touched.push(marks[i]);
       }
-      var tl = svg.querySelectorAll(".zp-trend path");
       for (i = 0; i < tl.length; i++) {
-        var a0 = px(tl[i]), lm = /(-?[\d.]+),-?[\d.]+\s*$/.exec(tl[i].getAttribute("d") || ""), a1 = lm ? parseFloat(lm[1]) : a0;
-        var at0 = Math.round(((a0 - m0) / (m1 - m0 || 1)) * SWEEP), at1 = Math.round(((a1 - m0) / (m1 - m0 || 1)) * SWEEP);
         tl[i].setAttribute("pathLength", "1"); tl[i].zmPL = true;
-        tl[i].style.setProperty("--zm-d", at0 + "ms");
-        tl[i].style.setProperty("--zm-t", Math.max(60, at1 - at0) + "ms");
+        tl[i].style.setProperty("--zm-d", zat(te[i][0]) + "ms");
+        tl[i].style.setProperty("--zm-t", Math.max(60, zat(te[i][1]) - zat(te[i][0])) + "ms");
         touched.push(tl[i]);
+      }
+      var zb = svg.querySelectorAll(".zp-band path");
+      for (i = 0; i < zb.length; i++) {
+        var side = zb[i].classList.contains("b") ? "b" : "t";
+        if (!grow(zb[i], svg.querySelector(".zp-trend path." + side), zat, anims)) {
+          zb[i].classList.add("zm-fd");
+          touched.push(zb[i]);
+        }
       }
     } else if (svg.classList.contains("hgrid")) {
       // The empty grid shows first (each cell as an empty tile), then every cell
@@ -238,33 +268,100 @@
     cleanup(svg, 450, "zm-new", touched);
   }
 
-  // perf.js y-range switch. Marks are matched by request number (the "#n"
-  // their tooltip starts with) and slide vertically by the difference: a
-  // translate, so a dot keeps its shape (scaling the plot would stretch it).
-  // A dot that becomes a triangle above a focused range slides up into it.
-  // The axis, the running-median lines and their bands fade in (cut at a
-  // focused range's top edge, their points differ: no morph).
+  // perf.js: an axis changed. Marks are matched by request number (the "#n"
+  // their tooltip starts with) and slide by the difference: a translate, so a
+  // dot keeps its shape (scaling the plot would stretch it). A dot that
+  // becomes a triangle above a focused range slides up into it. A tick (and
+  // its grid line) that is in both charts slides along with them; a new one
+  // fades in. A running-median line or band morphs from its old shape into
+  // the new one (SMIL on d, as grow() above); one that gained a request grows
+  // its new segment out of its old end. One whose points do not match (cut at
+  // a focused range's top edge, new) fades in. `fresh` marks pop in.
   var RESCALE = 420; // ms
-  function rescale(old, svg) {
-    if (!old || !svg || still()) return;
-    var key = function (el) { return (/^#(\d+)\s/.exec(el.getAttribute("data-tip") || "") || [])[1]; };
-    var py = function (el) {
-      if (el.tagName === "circle") return parseFloat(el.getAttribute("cy")) || 0;
-      var m = /^M\s*-?[\d.]+,(-?[\d.]+)/.exec(el.getAttribute("d") || "");
-      return m ? parseFloat(m[1]) : 0;
-    };
-    var was = {}, touched = [], i;
-    var before = old.querySelectorAll(".zp-pt, .zp-off"), after = svg.querySelectorAll(".zp-pt, .zp-off");
-    for (i = 0; i < before.length; i++) was[key(before[i])] = py(before[i]);
-    for (i = 0; i < after.length; i++) {
-      var k = key(after[i]), dy = k in was ? was[k] - py(after[i]) : 0;
-      if (Math.abs(dy) < 0.5) continue;
-      after[i].style.setProperty("--zm-dy", dy.toFixed(1) + "px");
-      after[i].classList.add("zm-mv");
-      touched.push(after[i]);
+  function at2(el) {
+    if (el.tagName === "circle") return [parseFloat(el.getAttribute("cx")) || 0, parseFloat(el.getAttribute("cy")) || 0];
+    if (el.tagName === "text") return [parseFloat(el.getAttribute("x")) || 0, parseFloat(el.getAttribute("y")) || 0];
+    if (el.tagName === "line") return [parseFloat(el.getAttribute("x1")) || 0, parseFloat(el.getAttribute("y1")) || 0];
+    var m = /^M\s*(-?[\d.]+),(-?[\d.]+)/.exec(el.getAttribute("d") || "");
+    return m ? [parseFloat(m[1]), parseFloat(m[2])] : [0, 0];
+  }
+  // the points of a one-piece path "M p L p …[Z]", or null
+  function onePiece(d) {
+    return /^M[^M]*$/.test(d) ? pairs(d) : null;
+  }
+  // the old path's shape with as many points as the new one, or null
+  function morphFrom(a, b, closed) {
+    var p = onePiece(a), q = onePiece(b);
+    if (!p || !q || p.length < 2) return null;
+    var join = function (ps) { return "M" + ps.join("L") + (closed ? "Z" : ""); };
+    if (p.length === q.length) return join(p);
+    // one request more: its point starts on the old end (on both edges of a band)
+    if (!closed && q.length === p.length + 1) return join(p.concat([p[p.length - 1]]));
+    if (closed && q.length === p.length + 2 && p.length % 2 === 0) {
+      var n = p.length / 2;
+      return join(p.slice(0, n).concat([p[n - 1], p[n]], p.slice(n)));
     }
-    svg.classList.add("zm-rs");
-    cleanup(svg, RESCALE + 60, "zm-rs", touched);
+    return null;
+  }
+  function morph(el, from, anims) {
+    var to = el.getAttribute("d") || "";
+    if (from === to) return true;
+    if (typeof el.ownerSVGElement.animationsPaused !== "function") return false;
+    var a = document.createElementNS(NS, "animate");
+    a.setAttribute("attributeName", "d");
+    a.setAttribute("values", from + ";" + to);
+    a.setAttribute("keyTimes", "0;1");
+    a.setAttribute("calcMode", "spline");
+    a.setAttribute("keySplines", "0.2 0.8 0.2 1");
+    a.setAttribute("dur", RESCALE + "ms");
+    a.setAttribute("begin", "indefinite");
+    a.setAttribute("fill", "remove");
+    el.appendChild(a);
+    anims.push(a);
+    return true;
+  }
+  function rescale(old, svg, fresh) {
+    if (!old || !svg || still()) return;
+    var touched = [], anims = [], i, cls = "zm-rs";
+    var mark = function (el) { return "#" + (/^#(\d+)\s/.exec(el.getAttribute("data-tip") || "") || [])[1]; };
+    // a tick by its axis and label; a grid line by its tick's label
+    var tick = function (el) { return (el.parentNode && el.parentNode.classList && el.parentNode.classList.contains("zp-xt") ? "x" : "y") + el.textContent; };
+    var grid = function (el) { var t = el.nextElementSibling; return "g" + (t ? t.textContent : ""); };
+    var groups = [[".zp-pt, .zp-off, .zp-fail", mark, false], [".zp-tick", tick, true], [".zp-grid", grid, true]];
+    groups.forEach(function (g) {
+      var was = {}, before = old.querySelectorAll(g[0]), after = svg.querySelectorAll(g[0]);
+      for (i = 0; i < before.length; i++) was[g[1](before[i])] = at2(before[i]);
+      for (i = 0; i < after.length; i++) {
+        var k = g[1](after[i]);
+        if (!(k in was)) {
+          if (g[2]) { after[i].classList.add("zm-fd"); touched.push(after[i]); }
+          continue;
+        }
+        var p = at2(after[i]), dx = was[k][0] - p[0], dy = was[k][1] - p[1];
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
+        after[i].style.setProperty("--zm-dx", dx.toFixed(1) + "px");
+        after[i].style.setProperty("--zm-dy", dy.toFixed(1) + "px");
+        after[i].classList.add("zm-mv");
+        touched.push(after[i]);
+      }
+    });
+    [[".zp-trend", false], [".zp-band", true]].forEach(function (g) {
+      ["t", "b"].forEach(function (side) {
+        var el = svg.querySelector(g[0] + " path." + side);
+        if (!el) return;
+        var prev = old.querySelector(g[0] + " path." + side);
+        var from = prev && morphFrom(prev.getAttribute("d") || "", el.getAttribute("d") || "", g[1]);
+        if (from && morph(el, from, anims)) return;
+        el.classList.add("zm-fd");
+        touched.push(el);
+      });
+    });
+    for (i = 0; fresh && i < fresh.length; i++) { fresh[i].classList.add("zm-fresh"); touched.push(fresh[i]); }
+    if (fresh && fresh.length) cls += " zm-new";
+    if (!touched.length && !anims.length) return;
+    cls.split(" ").forEach(function (c) { svg.classList.add(c); });
+    for (i = 0; i < anims.length; i++) anims[i].beginElement();
+    cleanup(svg, RESCALE + 60, cls, touched, anims);
   }
 
   var COUNT = 700; // ms for a KPI figure to count up
@@ -296,5 +393,7 @@
     window.requestAnimationFrame(step);
   }
 
-  window.EkteMotion = { enter: enter, fresh: fresh, pop: pop, rescale: rescale, count: count };
+  function moving() { return !still(); }
+
+  window.EkteMotion = { enter: enter, fresh: fresh, pop: pop, rescale: rescale, count: count, moving: moving };
 })();
