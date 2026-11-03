@@ -124,7 +124,11 @@ def test_timeline_axes_fit_the_data():
     recs = [RequestRecord(seq=i, endpoint="target", phase="probe", ok=True, stream=True,
                           start_ms=i * 50_000.0, duration_ms=420.0) for i in range(11)]  # ends ~500.4 s
     svg = timeline_svg(recs, ("latency", "Latency", "ms", lambda r: r.duration_ms))
-    assert ">600s</text>" in svg and "1,000s" not in svg
+    # the time axis ends where the last request ended (500.42 s), not at a
+    # rounded-up 600 s; ticks every 100 s as long as their label fits
+    assert ">500s</text>" in svg and "600s" not in svg and "1,000s" not in svg
+    last = max(float(c) for c in re.findall(r'<circle class="pt[^"]*" cx="([\d.]+)"', svg))
+    assert 860 - 16 - last < 2
     assert ">500</text>" in svg and ">1,000</text>" not in svg  # 420 ms x 1.05 -> 0..500
 
 
@@ -138,3 +142,45 @@ def test_every_dimension_is_listed_even_if_not_run():
     assert "- Not recorded in this report." in details
     page = render_html(_report())
     assert page.count('<details class="dim">') == 10
+
+
+def test_exports_draw_the_running_median_and_its_band():
+    # the HTML and PDF reports draw what the web UI's chart draws behind the
+    # dots: per endpoint the running median of its last 5 successful requests
+    # and their p25–p75 (ekte/perf/trend.py), with a legend entry and in the
+    # chart's accessible name
+    report = _report()
+    page = render_html(report)
+    svg = page[page.index('<svg class="perf-chart"'):]
+    svg = svg[:svg.index("</svg>")]
+    assert '<g class="band"><path class="target" d="M' in svg and '<path class="baseline" d="M' in svg
+    assert '<g class="trend"><path class="target" d="M' in svg
+    assert "line: running median of each endpoint&#x27;s last 5 successful requests" in svg
+    assert "band: p25–p75 of the same 5 requests" in svg
+    # behind the dots: band, then line, then the requests
+    assert svg.index('class="band"') < svg.index('class="trend"') < svg.index("<circle")
+    assert '<i class="key band"></i>running median (last 5) with p25–p75' in page
+    assert ".perf-chart .band path" in page  # styled
+
+    from pypdf import PdfReader
+
+    from ekte.report.pdf import render_pdf
+    text = "".join(p.extract_text() for p in PdfReader(io.BytesIO(render_pdf(report))).pages)
+    assert "running median (last 5) with p25–p75" in text
+
+
+def test_export_trend_matches_the_live_stream():
+    # the exports compute the same running medians the live stream tags
+    from ekte.perf.trend import attach_trends
+    from ekte.report.performance import CHART_METRICS, Timeline
+
+    report = _report()
+    recs = report.performance.requests
+    dumped = [r.model_dump() for r in recs]
+    attach_trends(dumped)
+    tl = Timeline(recs, CHART_METRICS[0])
+    want = [(d["start_ms"] / 1000, d["trend"]["latency"], tuple(d["trend_band"]["latency"]))
+            for d in dumped if d.get("trend") and d["endpoint"] == "target"]
+    assert tl.trends["target"] == want and len(want) == 6
+    # a lone request draws no line, failed requests feed none
+    assert Timeline(recs[:1], CHART_METRICS[0]).has_line is False

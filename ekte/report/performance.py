@@ -19,6 +19,7 @@ from ekte.models import (
     PerfStats,
     RequestRecord,
 )
+from ekte.perf.trend import CHART_OPS, RunningMedian
 
 # (label, unit, getter) — the stat table rows, in reading order.
 STAT_ROWS: tuple[tuple[str, str, Callable[[EndpointPerformance], PerfStats]], ...] = (
@@ -319,67 +320,197 @@ def nice_axis(value: float) -> tuple[float, float, int]:
     raise AssertionError("unreachable")
 
 
+def time_axis(end_s: float) -> tuple[float, float]:
+    """The time axis up to ``end_s``: ``(max, tick step)``.
+
+    The axis ends where the last request ended, not at a rounded-up maximum
+    (a live chart grows by exactly the time each request adds); ``nice_axis``
+    only picks the tick step. Same as timeAxis in ekte/web/static/perf.js.
+    """
+    x_max = end_s if end_s > 0 else 1.0
+    return x_max, nice_axis(x_max)[1]
+
+
+def time_ticks(
+    x_max: float, step: float, x: Callable[[float], float], right: float, half_char: float
+) -> list[tuple[float, str]]:
+    """``(position, label)`` of the time ticks that fit: one per ``step`` from
+    0, leaving out those whose label (``half_char`` per character either side
+    of its centre) would not fit before ``right``. As timeTicks in perf.js."""
+    out: list[tuple[float, str]] = []
+    j = 0
+    while (sec := step * j) <= x_max + 1e-9:
+        label = f"{fmt_num(sec)}s"
+        if j and x(sec) + len(label) * half_char > right:
+            break
+        out.append((x(sec), label))
+        j += 1
+    return out
+
+
+# A trend point: (start in s, running median, (p25, p75) or None).
+TrendPoint = tuple[float, float, "tuple[float, float] | None"]
+
+
+class Timeline:
+    """What a timeline chart of one metric plots, in data units: the
+    renderers (inline SVG here, ReportLab in ekte/report/pdf.py) only map it
+    to their canvas. The same as perf.js's chartSvg draws for the full range:
+    the calls (completions, or a non-chat audit's embedding / rerank calls),
+    the time axis up to the last request, the value axis, and per endpoint the
+    running median of its last 5 successful requests with their p25–p75
+    (ekte/perf/trend.py, as the web UI gets them from attach_trends)."""
+
+    def __init__(
+        self,
+        records: list[RequestRecord],
+        metric: tuple[str, str, str, Callable[[RequestRecord], float | None]],
+    ) -> None:
+        mid, _, _, get = metric
+        self.calls = [r for r in records if r.op in CHART_OPS]
+        self.plotted: list[tuple[RequestRecord, float]] = []
+        for r in self.calls:
+            value = get(r)
+            if r.ok and value is not None:
+                self.plotted.append((r, value))
+        self.failed = [r for r in self.calls if not r.ok]
+        end_s = max(
+            [1.0] + [(r.start_ms + (r.duration_ms or 0)) / 1000 for r in self.calls]
+        )
+        self.x_max, self.x_step = time_axis(end_s)
+        top = max([v for _, v in self.plotted] + [1.0]) * 1.05
+        self.y_max, self.y_step, self.y_n = nice_axis(top)
+        self.trends = _trend_series(self.calls, mid)
+
+    @property
+    def empty(self) -> bool:
+        return not self.plotted
+
+    @property
+    def has_line(self) -> bool:
+        return any(len(s) > 1 for s in self.trends.values())
+
+    @property
+    def has_band(self) -> bool:
+        return any(len(self.band(s)) > 1 for s in self.trends.values())
+
+    @staticmethod
+    def band(series: list[TrendPoint]) -> list[tuple[float, float, float]]:
+        """The band's points ``(start, p25, p75)`` of one endpoint's series."""
+        return [(t, b[0], b[1]) for t, _, b in series if b is not None]
+
+
+def _trend_series(calls: list[RequestRecord], metric_id: str) -> dict[str, list[TrendPoint]]:
+    """Per endpoint, in time order: each tagged request's running median and
+    p25–p75 of ``metric_id`` (the values the live stream sends)."""
+    tagger = RunningMedian()
+    out: dict[str, list[TrendPoint]] = {"target": [], "baseline": []}
+    for r in calls:
+        rec = tagger.tag(r.model_dump(include=_TREND_FIELDS))
+        mid = (rec.get("trend") or {}).get(metric_id)
+        if mid is None:
+            continue
+        band = (rec.get("trend_band") or {}).get(metric_id)
+        ep = "baseline" if r.endpoint == "baseline" else "target"
+        out[ep].append((r.start_ms / 1000, mid, (band[0], band[1]) if band else None))
+    for series in out.values():
+        series.sort(key=lambda p: p[0])
+    return out
+
+
+# the record fields RunningMedian reads
+_TREND_FIELDS = {
+    "op", "ok", "cached", "endpoint", "duration_ms", "ttft_ms",
+    "decode_tps_local", "decode_tps_reported", "itl_mean_ms",
+}
+
+def trend_kind(records: list[RequestRecord]) -> str | None:
+    """What the charts draw behind the dots, for the legend: "band" (a
+    running median with its p25–p75), "line" (the median alone) or None."""
+    tls = [Timeline(records, m) for m in CHART_METRICS]
+    if any(t.has_band for t in tls):
+        return "band"
+    return "line" if any(t.has_line for t in tls) else None
+
+
+TREND_TEXT = "line: running median of each endpoint's last 5 successful requests"
+BAND_TEXT = "band: p25–p75 of the same 5 requests"
+
+
 _W, _H = 860, 260
 _ML, _MR, _MT, _MB = 56, 16, 12, 34
+
+
+def surface_call(r: RequestRecord) -> bool:
+    """An embedding / rerank call: no tokens out, never streamed."""
+    return r.op in ("embed", "rerank")
 
 
 def timeline_svg(
     records: list[RequestRecord],
     metric: tuple[str, str, str, Callable[[RequestRecord], float | None]],
 ) -> str:
-    """Scatter of ``metric`` per request over the audit's timeline."""
-    _, label, unit, get = metric
-    calls = [r for r in records if r.op == "complete"]
-    plotted: list[tuple[RequestRecord, float]] = []
-    for r in calls:
-        value = get(r)
-        if r.ok and value is not None:
-            plotted.append((r, value))
-    failed = [r for r in calls if not r.ok]
-    if not plotted:
+    """Scatter of ``metric`` per request over the audit's timeline, with each
+    endpoint's running median and its p25–p75 band behind the dots."""
+    _, label, unit, _ = metric
+    tl = Timeline(records, metric)
+    if tl.empty:
         return f'<p class="muted">No {_esc(label)} samples.</p>'
-
-    end_s = max((r.start_ms + (r.duration_ms or 0)) / 1000 for r in calls) or 1.0
-    x_max, x_step, x_n = nice_axis(end_s)
-    y_max, y_step, y_n = nice_axis(max(v for _, v in plotted) * 1.05)
     pw, ph = _W - _ML - _MR, _H - _MT - _MB
 
     def x(sec: float) -> float:
-        return _ML + sec / x_max * pw
+        return _ML + sec / tl.x_max * pw
 
     def y(val: float) -> float:
-        return _MT + ph - val / y_max * ph
+        return _MT + ph - val / tl.y_max * ph
 
+    name = f"{label} per request over the audit"
+    if tl.has_line:
+        name += f"; {TREND_TEXT}"
+    if tl.has_band:
+        name += f"; {BAND_TEXT}"
     out = [
-        f'<svg class="perf-chart" viewBox="0 0 {_W} {_H}" role="img" '
-        f'aria-label="{_esc(label)} per request over the audit">'
+        f'<svg class="perf-chart" viewBox="0 0 {_W} {_H}" role="img" aria-label="{_esc(name)}">'
     ]
-    for i in range(y_n + 1):
-        v = y_step * i
+    for i in range(tl.y_n + 1):
+        v = tl.y_step * i
         yy = y(v)
         out.append(f'<line class="grid" x1="{_ML}" x2="{_W - _MR}" y1="{yy:.1f}" y2="{yy:.1f}"/>')
         out.append(
             f'<text class="tick" x="{_ML - 6}" y="{yy + 4:.1f}" text-anchor="end">{fmt_num(v)}</text>'
         )
-    for i in range(x_n + 1):
-        s = x_step * i
-        anchor = "start" if i == 0 else "end" if i == x_n else "middle"
+    for i, (px, tick) in enumerate(time_ticks(tl.x_max, tl.x_step, x, _W - 2, 3.3)):
+        anchor = "middle" if i else "start"
         out.append(
-            f'<text class="tick" x="{x(s):.1f}" y="{_H - _MB + 16}" text-anchor="{anchor}">{fmt_num(s)}s</text>'
+            f'<text class="tick" x="{px:.1f}" y="{_H - _MB + 16}" text-anchor="{anchor}">{tick}</text>'
         )
     out.append(
         f'<text class="tick" x="{_ML}" y="{_H - 2}">seconds since audit start · {_esc(unit)}</text>'
     )
-    for r, v in plotted:
+    bands, lines = [], []
+    for ep, series in tl.trends.items():
+        band = tl.band(series)
+        if len(band) > 1:
+            top = [f"{x(t):.1f},{y(hi):.1f}" for t, _, hi in band]
+            bottom = [f"{x(t):.1f},{y(lo):.1f}" for t, lo, _ in reversed(band)]
+            bands.append(f'<path class="{ep}" d="M{"L".join(top + bottom)}Z"/>')
+        if len(series) > 1:
+            pts = [f"{x(t):.1f},{y(v):.1f}" for t, v, _ in series]
+            lines.append(f'<path class="{ep}" d="M{"L".join(pts)}"/>')
+    if bands:
+        out.append(f'<g class="band">{"".join(bands)}</g>')
+    if lines:
+        out.append(f'<g class="trend">{"".join(lines)}</g>')
+    for r, v in tl.plotted:
         cls = (
             f"pt {r.endpoint}"
             + (" passive" if r.phase == "passive" else "")
-            + (" nonstream" if r.phase != "passive" and not r.stream else "")
+            + (" nonstream" if r.phase != "passive" and not r.stream and not surface_call(r) else "")
             + (" cached" if r.cached else "")
         )
         tip = (
             f"#{r.seq} {r.endpoint} · {r.detector or '—'} · {r.phase}"
-            f"{'' if r.stream else ' · non-streaming'}"
+            f"{'' if r.stream or surface_call(r) else ' · non-streaming'}"
             f"{' · cached (excluded)' if r.cached else ''}\n{label}: {fmt_num(v)} {unit}"
         )
         out.append(
@@ -387,7 +518,7 @@ def timeline_svg(
             f"<title>{_esc(tip)}</title></circle>"
         )
     base_y = _MT + ph
-    for r in failed:
+    for r in tl.failed:
         cx = x(r.start_ms / 1000)
         tip = f"#{r.seq} {r.endpoint} · {r.detector or '—'} · failed ({r.status_code or r.error_type})"
         out.append(
@@ -398,7 +529,10 @@ def timeline_svg(
     return "".join(out)
 
 
-def _legend(has_baseline: bool, has_passive: bool, has_nonstream: bool, has_failed: bool) -> str:
+def _legend(
+    has_baseline: bool, has_passive: bool, has_nonstream: bool, has_failed: bool,
+    trend: str | None = None,
+) -> str:
     items = ['<span><i class="key target"></i>target</span>']
     if has_baseline:
         items.append('<span><i class="key baseline"></i>baseline</span>')
@@ -408,6 +542,10 @@ def _legend(has_baseline: bool, has_passive: bool, has_nonstream: bool, has_fail
         items.append('<span><i class="key target hollow"></i>non-streaming request (hollow)</span>')
     if has_failed:
         items.append('<span><i class="key fail">×</i>failed request</span>')
+    if trend == "band":
+        items.append('<span><i class="key band"></i>running median (last 5) with p25–p75</span>')
+    elif trend == "line":
+        items.append('<span><i class="key line"></i>running median (last 5)</span>')
     return f'<div class="perf-legend">{"".join(items)}</div>'
 
 
@@ -511,13 +649,14 @@ def html_section(perf: PerformanceReport | None, *, nested: bool = False) -> str
         for m, svg in charts:
             out.append(f'<div class="perf-panel" id="panel-{m[0]}">{svg}</div>')
         out.append("</div>")
-        calls = [r for r in records if r.op == "complete"]
+        calls = [r for r in records if r.op in CHART_OPS]
         out.append(
             _legend(
                 perf.baseline is not None,
                 any(r.phase == "passive" for r in calls) and perf.source == "probe",
-                any(r.phase != "passive" and not r.stream for r in calls),
+                any(r.phase != "passive" and not r.stream and not surface_call(r) for r in calls),
                 any(not r.ok for r in calls),
+                trend_kind(records),
             )
         )
 
@@ -579,6 +718,17 @@ h3.perf-mode { margin-top: 1.5rem; border-top: 1px solid var(--line); padding-to
 .perf-legend .key.passive { opacity: .45; }
 .perf-legend .key.fail { color: var(--status-critical); width: auto; height: auto;
   font-weight: 700; border-radius: 0; }
+.perf-chart .trend path { fill: none; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.perf-chart .trend .target { stroke: var(--series-target); }
+.perf-chart .trend .baseline { stroke: var(--series-baseline); }
+.perf-chart .band path { stroke: none; fill-opacity: .14; }
+.perf-chart .band .target { fill: var(--series-target); }
+.perf-chart .band .baseline { fill: var(--series-baseline); }
+.perf-legend .key.line { width: 14px; height: 2px; border-radius: 1px; background: var(--ink-muted);
+  vertical-align: middle; }
+.perf-legend .key.band { width: 16px; height: 10px; border-radius: 2px; vertical-align: middle;
+  background: linear-gradient(var(--ink-muted), var(--ink-muted)) center / 100% 2px no-repeat,
+  color-mix(in srgb, var(--ink-muted) 22%, transparent); }
 .scroll { overflow-x: auto; }
 table.perf { font-size: .82rem; margin: .5rem 0 1rem; }
 table.perf td, table.perf th { padding: .3rem .45rem; white-space: nowrap; }

@@ -913,6 +913,7 @@
       setNow(function () { return T("连接端点…", "Connecting to endpoint…"); });
     } else if (ev.type === "cancelled") {
       state.finished = true;
+      if (live) live.stop();
       setJobParam(null);
       go(1);
       setFormNote(function () { return esc(T("检测已取消。", "Audit cancelled.")); });
@@ -945,9 +946,12 @@
       });
     } else if (ev.type === "report") {
       state.finished = true;
+      // the live chart's time axis stops at the last request
+      if (live) live.stop();
       showReport(ev.report);
     } else if (ev.type === "error") {
       state.finished = true;
+      if (live) live.stop();
       setJobParam(null);
       go(1);
       setFormErr(function () { return esc(T("检测失败：", "Audit failed: ")) + esc(srv(ev.message)); });

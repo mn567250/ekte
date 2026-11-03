@@ -25,7 +25,7 @@ from io import BytesIO
 from typing import Any
 from xml.sax.saxutils import escape
 
-from reportlab.graphics.shapes import Circle, Drawing, Line, String
+from reportlab.graphics.shapes import Circle, Drawing, Line, Polygon, PolyLine, String
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
@@ -533,7 +533,7 @@ def _performance(perf: PerformanceReport) -> list[Flowable]:
         *_head(_t("Performance measurements", bold=True), "h4"),
         _p(_t(f"{perf_render._source_line(perf)} {perf_render._scored_line(perf)}"), "muted"),
     ]
-    calls = [r for r in perf.requests if r.op == "complete"]
+    calls = [r for r in perf.requests if r.op in perf_render.CHART_OPS]
     charts = [(m, _timeline(perf, m)) for m in perf_render.CHART_METRICS]
     drawn = [(m, d) for m, d in charts if d is not None]
     cells = [[_p(_t(f"{m[1]} ({m[2]})", bold=True, size=8), "small"), drawing] for m, drawing in drawn]
@@ -553,10 +553,14 @@ def _performance(perf: PerformanceReport) -> list[Flowable]:
             legend.append(_t("●", color=_BASELINE) + _t(" baseline"))
         if perf.source == "probe" and any(r.phase == "passive" for r in calls):
             legend.append(_t("●", color=_TARGET_FADED) + _t(" audit request (lighter)"))
-        if any(r.phase != "passive" and not r.stream for r in calls):
+        if any(r.phase != "passive" and not r.stream and not perf_render.surface_call(r) for r in calls):
             legend.append(_t("○", color=_TARGET) + _t(" non-streaming request (hollow)"))
         if any(not r.ok for r in calls):
             legend.append(_t("×", bold=True, color=_CRITICAL) + _t(" failed request"))
+        trend = perf_render.trend_kind(perf.requests)
+        if trend:
+            legend.append(_t("—", bold=True, color=_MUTED) + _t(
+                " running median (last 5) with p25–p75 (band)" if trend == "band" else " running median (last 5)"))
         out.append(_p((" " * 4).join(legend), "meta"))
     for block in perf_render._blocks(perf):
         out += _perf_block(perf, block)
@@ -625,19 +629,18 @@ def _perf_block(perf: PerformanceReport, block: perf_render.Block) -> list[Flowa
 
 
 def _timeline(perf: PerformanceReport, metric: tuple[str, str, str, Callable[..., Any]]) -> Drawing | None:
-    """The HTML report's scatter of ``metric`` per request, as a vector drawing."""
-    _, _label, unit, get = metric
-    calls = [r for r in perf.requests if r.op == "complete"]
-    plotted = [(r, v) for r in calls if r.ok and (v := get(r)) is not None]
-    if not plotted:
+    """The HTML report's scatter of ``metric`` per request, as a vector
+    drawing: the same plot (perf_render.Timeline) with each endpoint's running
+    median and its p25–p75 band behind the dots."""
+    _, _label, unit, _ = metric
+    tl = perf_render.Timeline(perf.requests, metric)
+    if tl.empty:
         return None
-    failed = [r for r in calls if not r.ok]
+    plotted, failed = tl.plotted, tl.failed
     w, h = (_WIDTH - 10) / 2 - 8, 120.0
     ml, mr, mt, mb = 34.0, 6.0, 6.0, 24.0
     pw, ph = w - ml - mr, h - mt - mb
-    x_max, x_step, x_n = perf_render.nice_axis(
-        max((r.start_ms + (r.duration_ms or 0)) / 1000 for r in calls) or 1.0)
-    y_max, y_step, y_n = perf_render.nice_axis(max(v for _, v in plotted) * 1.05)
+    x_max, y_max = tl.x_max, tl.y_max
 
     def x(sec: float) -> float:
         return ml + sec / x_max * pw
@@ -647,16 +650,26 @@ def _timeline(perf: PerformanceReport, metric: tuple[str, str, str, Callable[...
 
     d = Drawing(w, h)
     grid, tick = colors.HexColor(_HAIR), colors.HexColor(_MUTED)
-    for i in range(y_n + 1):
-        v = y_step * i
+    for i in range(tl.y_n + 1):
+        v = tl.y_step * i
         d.add(Line(ml, y(v), w - mr, y(v), strokeColor=grid, strokeWidth=0.6))
         d.add(String(ml - 4, y(v) - 2.5, perf_render.fmt_num(v), fontName="Helvetica",
                      fontSize=6.5, fillColor=tick, textAnchor="end"))
-    for i in range(x_n + 1):
-        s = x_step * i
-        anchor = "start" if i == 0 else "end" if i == x_n else "middle"
-        d.add(String(x(s), mb - 10, f"{perf_render.fmt_num(s)}s", fontName="Helvetica",
-                     fontSize=6.5, fillColor=tick, textAnchor=anchor))
+    # 6.5 pt Helvetica digits: about 1.85 pt either side of a label's centre per character
+    for i, (px, label) in enumerate(perf_render.time_ticks(tl.x_max, tl.x_step, x, w - 1, 1.85)):
+        d.add(String(px, mb - 10, label, fontName="Helvetica",
+                     fontSize=6.5, fillColor=tick, textAnchor="middle" if i else "start"))
+    # the p25–p75 band (a wash, as on screen), then the running median
+    for ep, series in tl.trends.items():
+        series_color = colors.HexColor(_BASELINE if ep == "baseline" else _TARGET)
+        band = tl.band(series)
+        if len(band) > 1:
+            pts = [c for t, _, hi in band for c in (x(t), y(hi))]
+            pts += [c for t, lo, _ in reversed(band) for c in (x(t), y(lo))]
+            d.add(Polygon(pts, fillColor=series_color, fillOpacity=0.14, strokeColor=None, strokeWidth=0))
+        if len(series) > 1:
+            d.add(PolyLine([c for t, v, _ in series for c in (x(t), y(v))], strokeColor=series_color,
+                           strokeWidth=0.9, strokeLineJoin=1, strokeLineCap=1))
     d.add(String(ml, 2, f"seconds since audit start · {unit}", fontName="Helvetica",
                  fontSize=6.5, fillColor=tick))
     for r, v in plotted:
@@ -668,7 +681,7 @@ def _timeline(perf: PerformanceReport, metric: tuple[str, str, str, Callable[...
             opacity = 0.45
         if r.cached:
             fill, opacity = colors.HexColor(_CACHED), 0.6
-        elif r.phase != "passive" and not r.stream:
+        elif r.phase != "passive" and not r.stream and not perf_render.surface_call(r):
             fill, stroke = colors.HexColor(_C["surface"]), series
         d.add(Circle(x(r.start_ms / 1000), y(v), 2.6, fillColor=fill, strokeColor=stroke,
                      strokeWidth=0.8, fillOpacity=opacity))
