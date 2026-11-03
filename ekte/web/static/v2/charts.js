@@ -24,7 +24,9 @@
  *   unit            metric unit (fmt)
  *   bucketMs        bucket length; points further apart than 1.5 buckets are
  *                   not joined (an empty bucket is a gap, never a zero)
- *   domain          [t0, t1] in ms, or null for the data's extent
+ *   domain          [t0, t1] in ms, or null for the data's extent; widened
+ *                   to the buckets with data, so none is drawn outside the
+ *                   plot (stackBars likewise)
  *   xTick(t, step)  tick label; tipTime(t) the tooltip's heading
  *   series          [{ label, cls: "s0".."s3", shape, points: [{ t, v, lo, hi, n, runs, low }] }]
  *   marks           [{ t, kind: "tool_version" | "kb_profile", text }]
@@ -183,6 +185,19 @@
     return out;
   }
 
+  // The x range: the caller's domain, widened so every bucket [t, t +
+  // bucketMs) lies inside the plot. A page's domain starts at the filter's
+  // first day and ends at its last, but a bucket need not: a week starts on
+  // the Monday before, and the current week ends after today (#84)
+  function xDomain(cfg, ts) {
+    var b = cfg.bucketMs;
+    var lo = Math.min.apply(null, ts), hi = Math.max.apply(null, ts) + b;
+    var t0 = cfg.domain ? Math.min(cfg.domain[0], lo) : lo;
+    var t1 = cfg.domain ? Math.max(cfg.domain[1], hi) : hi;
+    if (!(t1 > t0)) t1 = t0 + b;
+    return [t0, t1];
+  }
+
   /* ---------------- the chart ---------------- */
   function timeChart(host, cfg) {
     var series = (cfg.series || []).filter(function (s) { return s.points && s.points.length; });
@@ -194,9 +209,7 @@
     var M = { l: 0, r: 14, t: 18, b: 30 };
     var half = cfg.bucketMs / 2;
     var ts = all.map(function (p) { return p.t; });
-    var t0 = cfg.domain ? cfg.domain[0] : Math.min.apply(null, ts);
-    var t1 = cfg.domain ? cfg.domain[1] : Math.max.apply(null, ts) + cfg.bucketMs;
-    if (!(t1 > t0)) t1 = t0 + cfg.bucketMs;
+    var d = xDomain(cfg, ts), t0 = d[0], t1 = d[1];
     var vals = [];
     all.forEach(function (p) { [p.v, p.lo, p.hi].forEach(function (v) { if (typeof v === "number") vals.push(v); }); });
     if (cfg.ref && typeof cfg.ref.v === "number") vals.push(cfg.ref.v);
@@ -241,6 +254,7 @@
     // 34 px share one label (both kinds listed) so their text never overlaps
     var xs = {};
     (cfg.marks || []).forEach(function (m) {
+      if (!(m.t >= t0 && m.t < t1)) return; // outside the plot
       var x = X(m.t + half), k = x.toFixed(1);
       (xs[k] = xs[k] || { x: x, kinds: {} }).kinds[m.kind] = 1;
     });
@@ -491,9 +505,7 @@
     var H = narrow ? 200 : 240;
     var M = { l: 0, r: 14, t: 14, b: 30 };
     var ts = bars.map(function (b) { return b.t; });
-    var t0 = cfg.domain ? cfg.domain[0] : Math.min.apply(null, ts);
-    var t1 = cfg.domain ? cfg.domain[1] : Math.max.apply(null, ts) + cfg.bucketMs;
-    if (!(t1 > t0)) t1 = t0 + cfg.bucketMs;
+    var d = xDomain(cfg, ts), t0 = d[0], t1 = d[1];
     var shareOf = function (b, id) { return (b.counts[id] || 0) / b.total; };
     var tops = bars.map(function (b) { return cfg.cats.reduce(function (a, c) { return a + shareOf(b, c.id); }, 0); });
     var hi = Math.max.apply(null, tops.concat([0.01]));

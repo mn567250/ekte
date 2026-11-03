@@ -47,6 +47,15 @@ ekte has three eras:
 - **The performance chart sweeps in like the other line charts:** its p25–p75
   band grows out of its median line instead of fading in.
 
+### Fixed
+
+- **Analytics charts stay inside their plot.** With weekly buckets, the first
+  week's bar or point (its week starts on the Monday before the selected
+  range) was drawn left of the y-axis, over its labels, and the current week's
+  past the right edge. The time axis of the Errors, Comparison and Billing
+  charts now spans every bucket with data; annotation lines outside it are
+  left out. ([#84](https://github.com/mn567250/ekte/issues/84))
+
 ## [0.33.1] - 2026-11-01
 
 A patch release with two fixes: exporting reports with performance data (#79)
