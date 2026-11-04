@@ -53,3 +53,18 @@ nach einer Minute abbricht. Lokale und private Hosts (`localhost`, `127.x`,
 jeder einzelnen Anfrage, Streams eingeschlossen, sodass keine Anfrage endlos
 hängen kann. Eine Kontextfenster-Probe, die trotzdem in ein Timeout läuft, gilt
 als nicht eindeutig, nicht als Kürzung.
+
+**Fehlgeschlagene Anfragen.** ekte unterscheidet, wo eine Anfrage scheiterte.
+Ein Fehler des **Relays** (ein HTTP-Fehlerstatus, eine Zeitüberschreitung beim
+Warten auf das Relay, eine abgebrochene oder fehlerhafte Antwort) zählt gegen
+das Relay und wird nie wiederholt. Ein **Netzwerk**fehler (der Proxy, über den
+ekte geht, DNS, Verbindungsaufbau oder TLS, bevor das Relay antworten konnte)
+und ein **lokaler** Fehler (in ekte selbst) gehen nicht auf das Relay zurück:
+Die Anfrage wird wiederholt, standardmäßig einmal (`EKTE_NON_RELAY_RETRIES`, 0
+bis 10), und scheitert sie weiter, wird sie gesondert gezählt (`network_errors`,
+`local_errors`) und bleibt aus den Fehlerquoten heraus. Eine Prüfung, deren
+Anfragen alle so scheiterten, gilt als nicht eindeutig statt bewertet zu werden,
+und der Bericht warnt, dass der Lauf beeinträchtigt war. Jeder Anfrage-Datensatz
+trägt seine Klasse (`error_class`) und ob er wiederholt wurde (`retried`); bei
+früher gespeicherten Läufen leitet die Weboberfläche die Klasse aus dem
+gespeicherten Fehler ab.

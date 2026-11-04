@@ -124,6 +124,30 @@ ekte has three eras:
 
 ### Fixed
 
+- **Only the relay's own failures count against it.** A failed request is now
+  classified by where it failed: `relay` (an HTTP error status, a timeout while
+  waiting for the relay, a broken or malformed answer), `network` (the proxy
+  ekte goes through, DNS, connect or TLS, before the relay could answer) or
+  `local` (a failure inside ekte, which is logged with its traceback and never
+  crashes the run). Network and local failures used to count as relay errors,
+  in the probe's error rate, the reliability burst and every check that saw no
+  answer; now they are repeated, once by default (new environment variable
+  `EKTE_NON_RELAY_RETRIES`, 0 to 10), and if they persist they are counted
+  apart and left out of the error rates. A check whose requests all failed
+  that way reads inconclusive instead of being scored, a reliability burst
+  that never reached the relay is not scored, and the report warns that the
+  run was impaired. Relay failures are still never repeated (apart from the
+  existing parameter and reasoning repeats). Request records gain
+  `error_class` and `retried`, the endpoint performance `network_errors`,
+  `local_errors` and `retried`, the reliability summary `impaired` (optional
+  fields of report schema 1.2); the data table and tooltips say
+  `failed (ProxyError · network)` or `repeated (…)`. Runs saved before get
+  their classes in the web UI from the stored error; `ekte rescore` replays a
+  recorded failure with its original error and repeats exactly the attempts
+  the recorded run repeated. `history.db` moves to schema version 6 (a backup
+  is made before the upgrade)
+  ([#94](https://github.com/mn567250/ekte/issues/94)).
+
 - **Analytics charts stay inside their plot.** With weekly buckets, the first
   week's bar or point (its week starts on the Monday before the selected
   range) was drawn left of the y-axis, over its labels, and the current week's

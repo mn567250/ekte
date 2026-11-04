@@ -147,6 +147,9 @@ def test_saved_report_reads_back_identical(data, shape):
 
 def test_records_are_stored_once_in_their_own_table(data):
     report = _fixture()
+    # records as this version writes them (the fixture's predate some fields)
+    perf = report["performance"]
+    perf["requests"] = [RequestRecord(**r).model_dump(mode="json") for r in perf["requests"]]
     rid = history.save(report)
     with _db(data) as conn:
         rows = conn.execute(

@@ -754,6 +754,7 @@ le verdict de risque.
 |  | Une requête, ou au plus 10 % des requêtes tentées, a échoué (80 %+ réussies) ; retire la part échouée. | Avertissement · Faible | jusqu'à −20 pts |
 |  | Davantage de requêtes ont échoué ; retire la part échouée. | Échec · Moyenne | jusqu'à −100 pts |
 |  | Toutes les requêtes ont été limitées (HTTP 429) : non noté. | Non concluant · Faible | Aucune déduction |
+|  | Aucune requête n’a atteint le relais (échec dans ekte ou sur le chemin réseau) : non noté. | Non concluant · Faible | Aucune déduction |
 | `reliability.latency` | Latence p95 au-delà de 30 s sous charge ; retire 15 % du score restant. | Avertissement · Faible | jusqu'à −15 pts |
 | `reliability.rate_limited` | Une partie de la rafale a été limitée : limitation honnête, non comptée. | Info | Aucune déduction |
 | `reliability.skipped` | La sonde de fiabilité était désactivée. | Info | Aucune déduction |

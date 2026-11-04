@@ -55,3 +55,16 @@ lento não seja interrompido ao fim de um minuto. Hosts locais e privados
 absoluto de cada pedido, streams incluídos, para que nenhum fique pendurado
 para sempre. Uma sonda de janela de contexto que ainda assim esgota o tempo é
 reportada como inconclusiva, não como truncamento.
+
+**Pedidos com falha.** O ekte distingue onde um pedido falhou. Uma falha do
+**relay** (um estado de erro HTTP, um tempo esgotado à espera do relay, uma
+resposta interrompida ou malformada) conta contra o relay e nunca é repetida.
+Uma falha de **rede** (o proxy por onde o ekte passa, DNS, ligação ou TLS, antes
+de o relay poder responder) e uma **local** (dentro do ekte) não são culpa do
+relay: o pedido é repetido, uma vez por omissão (`EKTE_NON_RELAY_RETRIES`, de 0
+a 10), e se continuar a falhar é contado à parte (`network_errors`,
+`local_errors`) e fica fora das taxas de erro. Uma verificação cujos pedidos
+falharam todos assim fica inconclusiva em vez de ser pontuada, e o relatório
+avisa que a execução foi prejudicada. Cada registo de pedido traz a sua classe
+(`error_class`) e se foi repetido (`retried`); nas execuções guardadas antes, a
+interface web deduz a classe a partir do erro guardado.

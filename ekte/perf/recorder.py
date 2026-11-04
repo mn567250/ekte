@@ -291,6 +291,8 @@ class RequestRecorder:
             ok=outcome.ok,
             status_code=outcome.status_code,
             error_type=error_type,
+            error_class=None if outcome.ok else outcome.error_class,
+            retried=outcome.retried,
             timeout=bool(error_type and "timeout" in error_type.lower()),
             rate_limited=outcome.status_code == 429,
             duration_ms=outcome.duration_ms,

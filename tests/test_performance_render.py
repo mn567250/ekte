@@ -186,3 +186,13 @@ def test_export_trend_matches_the_live_stream():
     assert tl.trends["target"] == want and len(want) == 6
     # a lone request draws no line, failed requests feed none
     assert Timeline(recs[:1], CHART_METRICS[0]).has_line is False
+
+
+def test_html_tooltip_names_where_a_request_failed():
+    from ekte.report.performance import fail_text
+
+    assert fail_text(_rec(1, "target", ok=False, status_code=502)) == "failed (502)"
+    assert fail_text(_rec(2, "target", ok=False, error_type="ProxyError")) == "failed (ProxyError · network)"
+    assert fail_text(_rec(3, "target", ok=False, error_type="ConnectError", error_class="network",
+                          retried=True)) == "repeated (ConnectError · network)"
+    assert fail_text(_rec(4, "target", ok=False, error_type="KeyError")) == "failed (KeyError · ekte)"

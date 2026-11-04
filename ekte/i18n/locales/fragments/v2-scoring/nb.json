@@ -128,6 +128,7 @@
   "One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share.": "Én forespørsel, eller høyst 10 % av de forsøkte, mislyktes (80 %+ lyktes); trekker fra den mislykkede andelen.",
   "More requests than that failed; deducts the failed share.": "Flere forespørsler enn det mislyktes; trekker fra den mislykkede andelen.",
   "Every request was rate-limited (HTTP 429): not scored.": "Alle forespørsler ble strupet (HTTP 429): gir ikke score.",
+  "No request reached the relay (failed in ekte or on the network path): not scored.": "Ingen forespørsel nådde reléet (feilet i ekte eller på nettverksveien): ikke vurdert.",
   "p95 latency above 30 s under load; deducts 15% of the remaining score.": "p95-forsinkelse over 30 s under last; trekker fra 15 % av gjenværende score.",
   "Part of the burst was rate-limited: honest throttling, not counted.": "Deler av støtet ble strupet: ærlig struping, telles ikke.",
   "The reliability probe was disabled.": "Pålitelighetsproben var slått av.",

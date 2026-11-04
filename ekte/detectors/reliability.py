@@ -22,6 +22,7 @@ from ekte import prompts
 from ekte.context import AuditContext
 from ekte.detectors.base import Detector, register
 from ekte.detectors.scale import DeductionScale, outcome
+from ekte.errorclass import LOCAL, NETWORK
 from ekte.models import (
     DetectorResult,
     Dimension,
@@ -51,6 +52,9 @@ SCALE = DeductionScale(
             label="More requests than that failed; deducts the failed share."),
     outcome("reliability.success_rate", "all_rate_limited", None, Status.INCONCLUSIVE,
             Severity.LOW, label="Every request was rate-limited (HTTP 429): not scored."),
+    outcome("reliability.success_rate", "not_reached", None, Status.INCONCLUSIVE,
+            Severity.LOW,
+            label="No request reached the relay (failed in ekte or on the network path): not scored."),
     outcome("reliability.latency", "slow", None, Status.WARN, Severity.LOW, max_deduction=15.0,
             label="p95 latency above 30 s under load; deducts 15% of the remaining score."),
     outcome("reliability.rate_limited", "throttled", None, Status.INFO,
@@ -58,6 +62,14 @@ SCALE = DeductionScale(
     outcome("reliability.skipped", "disabled", None, Status.INFO,
             label="The reliability probe was disabled."),
 )
+
+
+def _lost_note(lost: int) -> str:
+    """The requests left out because they failed in ekte or on the network path."""
+    if not lost:
+        return ""
+    return (f" {lost} more failed in ekte or on the network path to the relay and are not "
+            "counted against it.")
 
 
 def _rate_score(success_rate: float) -> float:
@@ -115,10 +127,11 @@ class ReliabilityDetector(Detector):
         # Fire n identical requests, capping in-flight calls with a semaphore.
         sem = asyncio.Semaphore(conc)
 
-        async def _one() -> tuple[bool, float | None, str | None, int | None]:
+        async def _one() -> tuple[bool, float | None, str | None, int | None, str | None]:
             async with sem:
                 outcome = await ctx.client.complete(spec)
-            return outcome.ok, outcome.duration_ms, outcome.error_type, outcome.status_code
+            return (outcome.ok, outcome.duration_ms, outcome.error_type, outcome.status_code,
+                    getattr(outcome, "error_class", None))
 
         results = await asyncio.gather(*(_one() for _ in range(n)))
 
@@ -126,8 +139,14 @@ class ReliabilityDetector(Detector):
         rate_limited = 0
         durations: list[float] = []
         errors: dict[str, int] = {}
-        for ok, duration_ms, error_type, status_code in results:
-            if ok:
+        # failed in ekte or on the network path (after the client's repeats):
+        # not the relay's doing, so neither a success nor a failure of it
+        impaired: dict[str, int] = {}
+        for ok, duration_ms, error_type, status_code, error_class in results:
+            if not ok and error_class in (LOCAL, NETWORK):
+                key = f"{error_class}:{error_type or 'unknown'}"
+                impaired[key] = impaired.get(key, 0) + 1
+            elif ok:
                 successes += 1
                 if duration_ms is not None:
                     durations.append(duration_ms)
@@ -139,8 +158,10 @@ class ReliabilityDetector(Detector):
                 key = error_type or "unknown"
                 errors[key] = errors.get(key, 0) + 1
 
-        # Success rate is over genuinely-attempted (non-throttled) requests.
-        effective = n - rate_limited
+        # Success rate is over the requests the relay really answered or
+        # failed: not the throttled ones, nor those ekte or the network lost.
+        lost = sum(impaired.values())
+        effective = n - rate_limited - lost
         success_rate = successes / effective if effective > 0 else 1.0
         latency = summarize(durations)
         summary = ReliabilitySummary(
@@ -150,6 +171,7 @@ class ReliabilityDetector(Detector):
             rate_limited=rate_limited,
             latency_ms=latency,
             errors=errors,
+            impaired=impaired,
         )
         result.evidence["reliability"] = summary.model_dump()
 
@@ -158,7 +180,23 @@ class ReliabilityDetector(Detector):
         failed = effective - successes
 
         # Headline finding: how the burst fared (over genuinely-attempted requests).
-        if effective == 0:
+        if effective == 0 and lost:
+            result.findings.append(
+                SCALE.finding(
+                    "reliability.success_rate",
+                    "not_reached",
+                    title="Concurrent requests did not reach the relay",
+                    summary=f"{lost} of {n} requests failed in ekte or on the network path to the "
+                    f"relay at concurrency {conc}"
+                    + (f" and {rate_limited} were rate-limited" if rate_limited else "")
+                    + "; reliability under load could not be assessed.",
+                    evidence={"requests": n, "impaired": impaired, "rate_limited": rate_limited,
+                              "concurrency": conc},
+                    recommendation="Check the network path from ekte to the relay (proxy, DNS, "
+                    "firewall) and re-run.",
+                )
+            )
+        elif effective == 0:
             result.findings.append(
                 SCALE.finding(
                     "reliability.success_rate",
@@ -178,7 +216,8 @@ class ReliabilityDetector(Detector):
                     title="All concurrent requests succeeded",
                     summary=f"{successes} of {effective} attempted requests succeeded at "
                     f"concurrency {conc}"
-                    + (f" ({rate_limited} rate-limited)." if rate_limited else "."),
+                    + (f" ({rate_limited} rate-limited)." if rate_limited else ".")
+                    + _lost_note(lost),
                     evidence={
                         "requests": n,
                         "successes": successes,
@@ -198,7 +237,8 @@ class ReliabilityDetector(Detector):
                     title="Some concurrent requests failed",
                     summary=f"{failed} of {effective} attempted requests failed at "
                     f"concurrency {conc}"
-                    + (f" ({rate_limited} rate-limited, excluded)." if rate_limited else "."),
+                    + (f" ({rate_limited} rate-limited, excluded)." if rate_limited else ".")
+                    + _lost_note(lost),
                     evidence={
                         "requests": n,
                         "successes": successes,

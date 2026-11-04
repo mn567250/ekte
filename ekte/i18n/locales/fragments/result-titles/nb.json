@@ -6,6 +6,7 @@
   "API key reflected in response": "API-nøkkelen gjengis i svaret",
   "All concurrent requests succeeded": "Alle samtidige forespørsler lyktes",
   "All concurrent requests were rate-limited": "Alle samtidige forespørsler ble strupet",
+  "Concurrent requests did not reach the relay": "Samtidige forespørsler nådde ikke reléet",
   "Answer drifts at temperature=0": "Svaret varierer ved temperature=0",
   "Audio clip has a positive duration": "Lydklippet har en positiv varighet",
   "Audio clip is non-empty": "Lydklippet er ikke tomt",

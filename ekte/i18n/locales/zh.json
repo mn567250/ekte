@@ -71,6 +71,7 @@
   "Run `ekte compare` against a trusted baseline to disambiguate.": "用 `ekte compare` 对照可信基线以消除歧义。",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "响应中出现更低档位或不同系列的模型 id，暗示请求被路由到替身。",
   "Lower --concurrency or --reliability-requests and re-run.": "调低 --concurrency 或 --reliability-requests 后重跑。",
+  "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "检查 ekte 到中转站的网络路径（代理、DNS、防火墙）后重跑。",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "检查中转站在并发压力下的连接池与上游稳定性（HTTP 429 限流不计入此成功率）。",
   "Confirm with the provider how usage is metered if billing is per-token.": "若按 token 计费，请向服务商确认用量如何计量。",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "用已知长度的提示词核对计费；可能存在按 token 多计费。",

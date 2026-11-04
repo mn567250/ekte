@@ -171,6 +171,12 @@ class CompletionOutcome(BaseModel):
     headers: dict[str, str] = Field(default_factory=dict)
     error_type: str | None = None
     error_message: str | None = None
+    # Where a failed call failed: "local" (ekte), "network" (the path to the
+    # relay) or "relay" (ekte.errorclass); None when it succeeded.
+    error_class: str | None = None
+    # A local or network failure the client repeats: this attempt is
+    # superseded by the next one and counts against nobody.
+    retried: bool = False
     raw_error: dict[str, Any] | None = None
     # The redacted raw JSON body of a successful non-stream call, only when the
     # request asked for it (RequestSpec.capture_raw).
@@ -347,7 +353,11 @@ class ReliabilitySummary(BaseModel):
     # behavior. Tracked apart from `errors` so it doesn't tank the success rate.
     rate_limited: int = 0
     latency_ms: dict[str, float | None] = Field(default_factory=dict)
+    # Relay failures by error type.
     errors: dict[str, int] = Field(default_factory=dict)
+    # Requests that failed in ekte or on the network path (after the client's
+    # repeats), by "<class>:<error type>"; excluded from success_rate.
+    impaired: dict[str, int] = Field(default_factory=dict)
 
 
 # --------------------------------------------------------------------------- #
@@ -375,6 +385,15 @@ class RequestRecord(BaseModel):
     ok: bool = False
     status_code: int | None = None
     error_type: str | None = None
+    # Where a failed request failed: "local" (ekte itself), "network" (a
+    # proxy, DNS, connect or TLS failure before the relay answered) or "relay".
+    # Only "relay" failures count against the relay. None when it succeeded,
+    # and in reports saved before the classification (see
+    # ekte.errorclass.record_class).
+    error_class: str | None = None
+    # A local or network failure that was repeated: the next record is its
+    # repeat, and this one is left out of every count.
+    retried: bool = False
     timeout: bool = False
     rate_limited: bool = False
 
@@ -469,10 +488,18 @@ class EndpointPerformance(BaseModel):
     source: str = "passive"  # "probe" | "passive" — where the headline stats come from
     requests: int = 0
     successes: int = 0
+    # Requests the relay failed (local and network failures are not its errors).
     errors: int = 0
     timeouts: int = 0
     rate_limited: int = 0
     cached_excluded: int = 0
+    # Requests that finally failed on ekte's side or on the network path to the
+    # relay (after their repeats); excluded from ``error_rate``.
+    network_errors: int = 0
+    local_errors: int = 0
+    # Attempts that failed locally or on the network and were repeated.
+    retried: int = 0
+    # errors / (requests - network_errors - local_errors)
     error_rate: float | None = None
     timeout_rate: float | None = None
     rate_limited_rate: float | None = None

@@ -722,3 +722,23 @@ def _drive_live_still(page, how: str) -> None:
       document.querySelector('#host svg.zp-chart').getAttribute('class')]""") == [0, 0, "zp-chart"], how
     # the last request (3 s + 0.68 s) at the right edge
     assert abs(max(a["cx"]) - (52 + 3 / 3.68 * 656)) < 1, how
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_perf_js_names_where_a_request_failed():
+    recs = [
+        RequestRecord(seq=0, endpoint="target", phase="probe", ok=True, stream=True,
+                      start_ms=0.0, duration_ms=900.0, ttft_ms=250.0, decode_tps_local=80.0),
+        RequestRecord(seq=1, endpoint="target", phase="probe", ok=False, error_type="ProxyError",
+                      error_class="network", retried=True, start_ms=1000.0, duration_ms=30.0),
+        RequestRecord(seq=2, endpoint="target", phase="probe", ok=False, error_type="TypeError",
+                      error_class="local", start_ms=1100.0, duration_ms=5.0),
+        RequestRecord(seq=3, endpoint="target", phase="probe", ok=False, status_code=502,
+                      error_type="http_error", error_class="relay", start_ms=1200.0, duration_ms=50.0),
+    ]
+    perf = build_performance(recs, has_baseline=False, probe_max_tokens=128)
+    assert perf is not None
+    table = _render(perf.model_dump_json())["section"].split('class="zp-data"')[1]
+    assert "<td>repeated (ProxyError · network)</td>" in table
+    assert "<td>failed (TypeError · ekte)</td>" in table
+    assert "<td>failed (502)</td>" in table  # the relay's own failure, as before

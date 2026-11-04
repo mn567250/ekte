@@ -746,6 +746,7 @@ constatações. Estas constatações são avisos de transporte: nunca elevam o v
 |  | Falhou um pedido, ou no máximo 10% dos tentados (80%+ com sucesso); desconta a parcela falhada. | Aviso · Baixa | até −20 pts |
 |  | Falharam mais pedidos; desconta a parcela falhada. | Falha · Média | até −100 pts |
 |  | Todos os pedidos foram limitados (HTTP 429): não pontua. | Inconclusivo · Baixa | Sem dedução |
+|  | Nenhum pedido chegou ao relay (falhou no ekte ou no caminho de rede): não pontuado. | Inconclusivo · Baixa | Sem dedução |
 | `reliability.latency` | Latência p95 acima de 30 s sob carga; desconta 15% da pontuação restante. | Aviso · Baixa | até −15 pts |
 | `reliability.rate_limited` | Parte da rajada foi limitada: limitação legítima, não contabilizada. | Info | Sem dedução |
 | `reliability.skipped` | A sonda de fiabilidade estava desativada. | Info | Sem dedução |

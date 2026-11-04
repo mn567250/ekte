@@ -30,6 +30,7 @@ import json
 import re
 import time
 from collections import Counter, deque
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -61,6 +62,20 @@ MISSING_ID = "replay.missing"
 
 class ReplayMiss(httpx.TransportError):
     """No recorded exchange answers this request."""
+
+
+def recorded_error(error: str | None, request: httpx.Request) -> Exception:
+    """The exception a recorded call without a response raised, again: an
+    evidence line keeps it as ``"<ExceptionName>: <message>"``. The same class
+    (an httpx transport error) keeps the request's error class (local,
+    network or relay, ekte.errorclass) as it was; an unknown name
+    replays as a ``ConnectError``, as every such call did before."""
+    text = str(error or "no response recorded")
+    name, _, message = text.partition(": ")
+    cls = getattr(httpx, name, None) if name.isidentifier() else None
+    if isinstance(cls, type) and issubclass(cls, httpx.TransportError):
+        return cls(message or text, request=request)
+    return httpx.ConnectError(text, request=request)
 
 
 def request_key(endpoint: str, method: str, url: str, body: str | None) -> tuple[str, str, str, str]:
@@ -107,8 +122,13 @@ class Replay:
         tool_version: str | None = None,
         generated_at: str | None = None,
         report_id: int | None = None,
+        retried: Iterable[int] = (),
     ) -> None:
         self.evidence = ref
+        # the seq of every recorded attempt that was repeated (a local or
+        # network failure): a replayed attempt is repeated exactly when its
+        # recorded one was, so each repeat takes the recorded repeat's answer
+        self._retried = frozenset(retried)
         self._tool_version, self._generated_at, self._report_id = tool_version, generated_at, report_id
         self._queues: dict[tuple[str, str, str, str], deque[dict[str, Any]]] = {}
         for line in lines:
@@ -139,6 +159,10 @@ class Replay:
 
     def transport(self, endpoint: str) -> ReplayTransport:
         return ReplayTransport(self, endpoint)
+
+    def was_retried(self, seq: int | None) -> bool:
+        """Whether the recorded attempt ``seq`` was repeated."""
+        return seq is not None and seq in self._retried
 
     # -- results -------------------------------------------------------------- #
     def after_detector(self, result: DetectorResult) -> DetectorResult:
@@ -195,7 +219,7 @@ class ReplayTransport(httpx.AsyncBaseTransport):
             net.replayed_seq = line.get("seq")
         resp = line.get("response")
         if resp is None:  # the recorded call got no response either
-            raise httpx.ConnectError(str(line.get("error") or "no response recorded"), request=request)
+            raise recorded_error(line.get("error"), request)
         body_rec = resp.get("body") or {}
         text = body_rec.get("text") or ""
         body = base64.b64decode(text) if body_rec.get("encoding") == "base64" else text.encode("utf-8")
@@ -309,8 +333,14 @@ async def rescore(
         if isinstance(knowledge, dict) and isinstance(knowledge.get("profile"), dict)
         else None
     )
+    perf = report.get("performance")
+    records = perf.get("requests") if isinstance(perf, dict) else None
     replay = Replay(
         [x for x in lines if x.get("type") == "exchange"],
+        retried=[
+            r["seq"] for r in records or []
+            if isinstance(r, dict) and r.get("retried") and isinstance(r.get("seq"), int)
+        ],
         ref=ref,
         tool_version=report.get("tool_version"),
         generated_at=report.get("generated_at"),

@@ -19,6 +19,8 @@
   "min": "min",
   "mean": "mean",
   "max": "max",
-  "stdev": "stdev"
+  "stdev": "stdev",
+  "network": "network",
+  "repeated": "repeated"
  }
 }

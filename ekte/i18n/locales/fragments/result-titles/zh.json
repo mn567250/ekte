@@ -6,6 +6,7 @@
     "API key reflected in response": "响应回显了 API key",
     "All concurrent requests succeeded": "所有并发请求均成功",
     "All concurrent requests were rate-limited": "所有并发请求均被限流",
+    "Concurrent requests did not reach the relay": "并发请求未到达中转站",
     "Answer drifts at temperature=0": "temperature=0 下答案不稳定",
     "Audio clip has a positive duration": "音频片段时长为正",
     "Audio clip is non-empty": "音频片段非空",

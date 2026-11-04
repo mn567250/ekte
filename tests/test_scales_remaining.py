@@ -469,3 +469,44 @@ async def test_judge_is_told_the_claimed_model():
     assert "claimed-id" in system and "claimed-id" in user
     assert "served-id" not in system and "served-id" not in user
     assert result.evidence["claimed_model"] == "claimed-id"
+
+
+async def _lossy_burst(n: int, lost: int, failures: int = 0):
+    """``lost`` requests fail on the network path, ``failures`` at the relay."""
+    calls = []
+
+    async def complete(spec):
+        calls.append(spec)
+        i = len(calls)
+        if i <= lost:
+            return SimpleNamespace(ok=False, duration_ms=None, error_type="ProxyError",
+                                   status_code=None, error_class="network")
+        if i <= lost + failures:
+            return SimpleNamespace(ok=False, duration_ms=None, error_type="http_error",
+                                   status_code=500, error_class="relay")
+        return SimpleNamespace(ok=True, duration_ms=120.0, error_type=None, status_code=200,
+                               error_class=None)
+
+    ctx = SimpleNamespace(client=SimpleNamespace(complete=complete),
+                          options=SimpleNamespace(reliability_requests=n, reliability_concurrency=4))
+    return await ReliabilityDetector().run(ctx)  # type: ignore[arg-type]
+
+
+async def test_reliability_leaves_out_requests_that_never_reached_the_relay():
+    result = await _lossy_burst(8, lost=2)
+    f = next(f for f in result.findings if f.id == "reliability.success_rate")
+    assert f.outcome == "all_succeeded" and result.score == 100.0
+    assert "2 more failed in ekte or on the network path" in f.summary
+    assert result.evidence["reliability"]["impaired"] == {"network:ProxyError": 2}
+    # a relay failure still counts, over the requests the relay saw
+    result = await _lossy_burst(8, lost=2, failures=1)
+    f = next(f for f in result.findings if f.id == "reliability.success_rate")
+    assert f.outcome == "some_failed" and result.score == round(100.0 * 5 / 6, 1)
+
+
+async def test_reliability_is_not_scored_when_nothing_reached_the_relay():
+    result = await _lossy_burst(8, lost=8)
+    _check(result, _scale_of("reliability"))
+    f = next(f for f in result.findings if f.id == "reliability.success_rate")
+    assert f.outcome == "not_reached" and f.status == Status.INCONCLUSIVE
+    assert result.score is None and result.status == Status.INCONCLUSIVE

@@ -171,6 +171,7 @@ class RerankPerformanceDetector(Detector):
         if record.ok and len({item.get("index") for item in ranked}) != size:
             record.ok = False
             record.error_type = "IncompleteRanking"
+            record.error_class = "relay"
         # The same fine-grained scores for other documents: a cache hit.
         if record.ok and any(_fine(item.get("relevance_score")) for item in ranked):
             scores = [(item.get("index"), item.get("relevance_score")) for item in ranked]

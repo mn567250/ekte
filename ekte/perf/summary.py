@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 
+from ekte.errorclass import LOCAL, NETWORK, is_relay_failure, record_class
 from ekte.models import (
     ConcurrencyPerformance,
     EndpointPerformance,
@@ -105,7 +106,8 @@ def hidden_reasoning(records: Sequence[RequestRecord]) -> bool:
 
 
 def _concurrency(records: Sequence[RequestRecord], level: int) -> ConcurrencyPerformance | None:
-    burst = [r for r in records if r.phase == "probe_concurrent"]
+    # a repeated attempt is superseded by its repeat
+    burst = [r for r in records if r.phase == "probe_concurrent" and not r.retried]
     if not burst:
         return None
     good = [r for r in burst if r.ok and not r.cached]
@@ -224,7 +226,7 @@ def failed_seqs(
     errors): the evidence of the probe's failure finding."""
     return [
         r.seq for r in _mode_completes(records, endpoint, stream, op)
-        if r.phase != "param_retry" and not r.ok and not r.rate_limited
+        if r.phase != "param_retry" and not r.rate_limited and is_relay_failure(r)
     ]
 
 
@@ -251,11 +253,18 @@ def summarize_endpoint(
     # not just the stats pool: a relay failing the audit's requests while the
     # probe succeeds must not show a 0% error rate. A call rejected for its
     # max_tokens parameter and retried ("param_retry") is ekte's, not the relay's.
-    calls = [r for r in completes if r.phase != "param_retry"]
+    # Only the relay's failures are its errors: a request that failed in ekte
+    # or on the network path (after its repeats) is counted apart and left out
+    # of the rates, and a repeated attempt is superseded by its repeat.
+    calls = [r for r in completes if r.phase != "param_retry" and not r.retried]
     n = len(calls)
-    errors = sum(1 for r in calls if not r.ok and not r.rate_limited)
-    timeouts = sum(1 for r in calls if r.timeout)
+    errors = sum(1 for r in calls if not r.rate_limited and is_relay_failure(r))
+    network = sum(1 for r in calls if record_class(r) == NETWORK)
+    local = sum(1 for r in calls if record_class(r) == LOCAL)
+    judged = n - network - local
+    timeouts = sum(1 for r in calls if r.timeout and is_relay_failure(r))
     limited = sum(1 for r in calls if r.rate_limited)
+    repeated = sum(1 for r in completes if r.retried)
 
     pings = [r for r in mine if r.op == "list_models" and r.phase == "ping" and r.ok]
     warmups = [r for r in completes if r.phase == "warmup"]
@@ -270,9 +279,12 @@ def summarize_endpoint(
         timeouts=timeouts,
         rate_limited=limited,
         cached_excluded=sum(1 for r in calls if r.ok and r.cached),
-        error_rate=errors / n if n else None,
-        timeout_rate=timeouts / n if n else None,
-        rate_limited_rate=limited / n if n else None,
+        network_errors=network,
+        local_errors=local,
+        retried=repeated,
+        error_rate=errors / judged if judged else None,
+        timeout_rate=timeouts / judged if judged else None,
+        rate_limited_rate=limited / judged if judged else None,
         latency_ms=_field(good, lambda r: r.duration_ms),
         ttft_ms=_field(streamed, lambda r: r.ttft_ms),
         decode_tps_reported=_field(streamed, lambda r: r.decode_tps_reported),

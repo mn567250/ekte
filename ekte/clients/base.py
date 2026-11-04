@@ -11,17 +11,20 @@ translation.
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 import ssl
 import threading
 import time
-from collections.abc import Iterator
+import traceback
+from collections.abc import Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any
 
 import httpx
 
+from ekte import errorclass
 from ekte.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
 from ekte.perf.recorder import (
     NetTrace,
@@ -36,6 +39,8 @@ from ekte.utils.redact import redact_json, redact_text
 
 if TYPE_CHECKING:
     from ekte.evidence import EvidenceWriter
+
+_log = logging.getLogger(__name__)
 
 # One TLS context for every relay client in the process. httpx builds a new
 # one per AsyncClient (and one more per proxy mount): loading the CA bundle
@@ -257,6 +262,13 @@ class BaseHTTPClient:
         self.transport = transport
         self.base_url = self._normalize_base_url(config.base_url)
         self._client: httpx.AsyncClient | None = None
+        # How often a local or network failure is repeated (relay failures
+        # never are).
+        self.non_relay_retries = errorclass.non_relay_retries()
+        # Set when replaying a recorded run (ekte.replay): whether the
+        # recorded attempt with this seq was repeated. It then decides alone,
+        # so every repeat meets the recorded repeat's answer.
+        self.replay_retried: Callable[[int | None], bool] | None = None
         # Set by the runner to log every call for the performance section;
         # ``endpoint`` says which side ("target" / "baseline") this client is.
         self.recorder: RequestRecorder | None = None
@@ -516,17 +528,53 @@ class BaseHTTPClient:
     async def _complete_recorded(
         self, spec: RequestSpec
     ) -> tuple[CompletionOutcome, RequestRecord | None]:
-        if self.recorder is None:
-            with self._unrecorded("complete"):
-                return await self._complete_bounded(spec), None
-        started = time.perf_counter()
-        with net_trace_scope(self._capturing()) as net:
-            outcome = await self._complete_bounded(spec)
-        record = self.recorder.record_completion(self.endpoint, spec, outcome, started, net)
-        seqs = _SEQS.get()
-        if seqs is not None:
-            seqs.append(record.seq)
-        return outcome, record
+        """One completion, repeated while it fails locally or on the network
+        (at most ``non_relay_retries`` times); every attempt is recorded."""
+        attempt = 0
+        while True:
+            record = None
+            if self.recorder is None:
+                with self._unrecorded("complete"):
+                    outcome = self._classified(await self._complete_bounded(spec))
+                retry = self._mark_retry(outcome, attempt)
+            else:
+                started = time.perf_counter()
+                with net_trace_scope(self._capturing()) as net:
+                    outcome = self._classified(await self._complete_bounded(spec))
+                # decided before recording, so the live stream sees it too
+                retry = self._mark_retry(outcome, attempt, net)
+                record = self.recorder.record_completion(self.endpoint, spec, outcome, started, net)
+                seqs = _SEQS.get()
+                if seqs is not None:
+                    seqs.append(record.seq)
+            if not retry:
+                return outcome, record
+            attempt += 1
+
+    def _classified(self, outcome: CompletionOutcome) -> CompletionOutcome:
+        """``outcome`` with its ``error_class`` set when it failed (a class the
+        call already set is kept)."""
+        if outcome.ok:
+            outcome.error_class = None
+        elif outcome.error_class is None:
+            outcome.error_class = errorclass.classify_name(outcome.error_type, outcome.status_code)
+        return outcome
+
+    def _mark_retry(
+        self, outcome: CompletionOutcome, attempt: int, net: NetTrace | None = None
+    ) -> bool:
+        """Whether attempt ``attempt`` (0 = the first) is repeated: a local or
+        network failure with repeats left (in a replay: one the recorded run
+        repeated). Sets ``outcome.retried``."""
+        if outcome.ok:
+            outcome.retried = False
+        elif self.replay_retried is not None:
+            outcome.retried = net is not None and self.replay_retried(net.replayed_seq)
+        else:
+            outcome.retried = attempt < self.non_relay_retries and errorclass.retryable(
+                outcome.error_class, outcome.error_type
+            )
+        return outcome.retried
 
     async def _complete_bounded(self, spec: RequestSpec) -> CompletionOutcome:
         """Run one completion under its timeout budget and hard deadline."""
@@ -540,6 +588,7 @@ class BaseHTTPClient:
                 ok=False,
                 duration_ms=(time.perf_counter() - started) * 1000,
                 error_type="DeadlineTimeout",
+                error_class=errorclass.RELAY,
                 error_message=f"Request exceeded its {deadline:.0f} s deadline.",
             )
         finally:
@@ -554,13 +603,25 @@ class BaseHTTPClient:
         redacted failure and the vector list is empty. With a recorder
         the call is recorded as an ``embed`` request.
         """
-        if self.recorder is None:
-            return await self._embeddings(inputs)
-        started = time.perf_counter()
-        with net_trace_scope(self._capturing()) as net:
-            outcome, vectors = await self._embeddings(inputs)
-        outcome.seqs = [self.recorder.record_embedding(self.endpoint, inputs, outcome, started, net).seq]
-        return outcome, vectors
+        seqs: list[int] = []
+        attempt = 0
+        while True:
+            if self.recorder is None:
+                outcome, vectors = await self._embeddings(inputs)
+                self._classified(outcome)
+                retry = self._mark_retry(outcome, attempt)
+            else:
+                started = time.perf_counter()
+                with net_trace_scope(self._capturing()) as net:
+                    outcome, vectors = await self._embeddings(inputs)
+                self._classified(outcome)
+                retry = self._mark_retry(outcome, attempt, net)
+                seqs.append(self.recorder.record_embedding(self.endpoint, inputs, outcome, started, net).seq)
+            if not retry:
+                if self.recorder is not None:
+                    outcome.seqs = seqs
+                return outcome, vectors
+            attempt += 1
 
     async def rerank(
         self, query: str, documents: list[str]
@@ -572,15 +633,27 @@ class BaseHTTPClient:
         redacted failure and the list is empty. With a recorder the call is
         recorded as a ``rerank`` request.
         """
-        if self.recorder is None:
-            return await self._rerank(query, documents)
-        started = time.perf_counter()
-        with net_trace_scope(self._capturing()) as net:
-            outcome, results = await self._rerank(query, documents)
-        outcome.seqs = [
-            self.recorder.record_rerank(self.endpoint, query, documents, outcome, started, net).seq
-        ]
-        return outcome, results
+        seqs: list[int] = []
+        attempt = 0
+        while True:
+            if self.recorder is None:
+                outcome, results = await self._rerank(query, documents)
+                self._classified(outcome)
+                retry = self._mark_retry(outcome, attempt)
+            else:
+                started = time.perf_counter()
+                with net_trace_scope(self._capturing()) as net:
+                    outcome, results = await self._rerank(query, documents)
+                self._classified(outcome)
+                retry = self._mark_retry(outcome, attempt, net)
+                seqs.append(
+                    self.recorder.record_rerank(self.endpoint, query, documents, outcome, started, net).seq
+                )
+            if not retry:
+                if self.recorder is not None:
+                    outcome.seqs = seqs
+                return outcome, results
+            attempt += 1
 
     async def list_models(
         self, *, no_cache: bool = False
@@ -588,13 +661,25 @@ class BaseHTTPClient:
         """GET /models. ``no_cache`` asks intermediaries for a fresh answer, for a
         round-trip measurement."""
         headers = {"Cache-Control": "no-cache"} if no_cache else None
-        if self.recorder is None:
-            return await self._list_models(headers)
-        started = time.perf_counter()
-        with net_trace_scope(self._capturing()) as net:
-            outcome, ids = await self._list_models(headers)
-        outcome.seqs = [self.recorder.record_models(self.endpoint, outcome, started, net).seq]
-        return outcome, ids
+        seqs: list[int] = []
+        attempt = 0
+        while True:
+            if self.recorder is None:
+                outcome, ids = await self._list_models(headers)
+                self._classified(outcome)
+                retry = self._mark_retry(outcome, attempt)
+            else:
+                started = time.perf_counter()
+                with net_trace_scope(self._capturing()) as net:
+                    outcome, ids = await self._list_models(headers)
+                self._classified(outcome)
+                retry = self._mark_retry(outcome, attempt, net)
+                seqs.append(self.recorder.record_models(self.endpoint, outcome, started, net).seq)
+            if not retry:
+                if self.recorder is not None:
+                    outcome.seqs = seqs
+                return outcome, ids
+            attempt += 1
 
     # -- error shaping (shared) -------------------------------------------- #
     def _error_from_response(
@@ -621,14 +706,25 @@ class BaseHTTPClient:
             headers=headers,
             error_type="http_error",
             error_message=redact_text(message, extra_secrets=secrets),
+            error_class=errorclass.RELAY,
             raw_error=raw_error,
         )
 
     def _exception_outcome(self, exc: Exception, started: float) -> CompletionOutcome:
+        """A failed call from the exception it raised. The call never crashes
+        the audit: a bug in ekte (class ``local``) is logged with its traceback
+        and recorded, like a failure of the network path or of the relay."""
         duration_ms = (time.perf_counter() - started) * 1000
+        error_class = errorclass.classify_exception(exc)
+        message = redact_text(str(exc)[:1000], extra_secrets=self._extra_secrets())
+        if error_class == errorclass.LOCAL:
+            # the traceback names ekte's code only; the message is redacted
+            _log.warning("ekte failed on a request (%s): %s\n%s", type(exc).__name__, message,
+                         "".join(traceback.format_tb(exc.__traceback__)))
         return CompletionOutcome(
             ok=False,
             duration_ms=duration_ms,
             error_type=type(exc).__name__,
-            error_message=redact_text(str(exc)[:1000], extra_secrets=self._extra_secrets()),
+            error_message=message,
+            error_class=error_class,
         )

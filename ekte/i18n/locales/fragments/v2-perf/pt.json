@@ -19,6 +19,8 @@
   "min": "mín",
   "mean": "média",
   "max": "máx",
-  "stdev": "desvio padrão"
+  "stdev": "desvio padrão",
+  "network": "rede",
+  "repeated": "repetido"
  }
 }

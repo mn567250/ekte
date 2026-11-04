@@ -54,3 +54,17 @@ self-hosted lento non viene interrotto dopo un minuto. Gli host locali e privati
 ogni singola richiesta, stream compresi, quindi nessuna richiesta può restare
 appesa all'infinito. Una sonda della finestra di contesto che va comunque in
 timeout è riportata come non conclusiva, non come troncamento.
+
+**Richieste fallite.** ekte distingue dove una richiesta è fallita. Un errore
+del **relay** (uno stato di errore HTTP, un timeout in attesa del relay, una
+risposta interrotta o malformata) conta contro il relay e non viene mai
+ripetuto. Un errore di **rete** (il proxy attraverso cui passa ekte, DNS,
+connessione o TLS, prima che il relay potesse rispondere) e uno **locale**
+(dentro ekte) non dipendono dal relay: la richiesta viene ripetuta, una volta
+per impostazione predefinita (`EKTE_NON_RELAY_RETRIES`, da 0 a 10), e se
+fallisce ancora viene contata a parte (`network_errors`, `local_errors`) ed
+esclusa dai tassi di errore. Un controllo le cui richieste sono fallite tutte
+così risulta non conclusivo invece di essere valutato, e il report avvisa che
+l’esecuzione è stata compromessa. Ogni record di richiesta porta la sua classe
+(`error_class`) e se è stato ripetuto (`retried`); per le esecuzioni salvate
+prima, l’interfaccia web ricava la classe dall’errore salvato.

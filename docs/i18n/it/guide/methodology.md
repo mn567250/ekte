@@ -752,6 +752,7 @@ verdetto di rischio.
 |  | È fallita una richiesta, o al massimo il 10% di quelle tentate (80%+ riuscite); toglie la quota fallita. | Avviso · Bassa | fino a −20 pt |
 |  | Sono fallite più richieste; toglie la quota fallita. | Fallito · Media | fino a −100 pt |
 |  | Tutte le richieste sono state limitate (HTTP 429): non conteggiato. | Non conclusivo · Bassa | Nessuna detrazione |
+|  | Nessuna richiesta ha raggiunto il relay (fallita in ekte o sul percorso di rete): non valutato. | Non conclusivo · Bassa | Nessuna detrazione |
 | `reliability.latency` | Latenza p95 oltre 30 s sotto carico; toglie il 15% del punteggio rimanente. | Avviso · Bassa | fino a −15 pt |
 | `reliability.rate_limited` | Parte della raffica è stata limitata: limitazione legittima, non conteggiata. | Info | Nessuna detrazione |
 | `reliability.skipped` | La sonda di affidabilità era disattivata. | Info | Nessuna detrazione |

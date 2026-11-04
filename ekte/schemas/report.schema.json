@@ -405,6 +405,16 @@
         "latency_ms": {
           "$ref": "#/$defs/PerfStats"
         },
+        "local_errors": {
+          "default": 0,
+          "title": "Local Errors",
+          "type": "integer"
+        },
+        "network_errors": {
+          "default": 0,
+          "title": "Network Errors",
+          "type": "integer"
+        },
         "network_rtt_ms": {
           "$ref": "#/$defs/PerfStats"
         },
@@ -436,6 +446,11 @@
         "requests": {
           "default": 0,
           "title": "Requests",
+          "type": "integer"
+        },
+        "retried": {
+          "default": 0,
+          "title": "Retried",
           "type": "integer"
         },
         "server_ms": {
@@ -1409,6 +1424,13 @@
           "title": "Errors",
           "type": "object"
         },
+        "impaired": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Impaired",
+          "type": "object"
+        },
         "latency_ms": {
           "additionalProperties": {
             "anyOf": [
@@ -1560,6 +1582,18 @@
           "default": "target",
           "title": "Endpoint",
           "type": "string"
+        },
+        "error_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Class"
         },
         "error_type": {
           "anyOf": [
@@ -1724,6 +1758,11 @@
           ],
           "default": null,
           "title": "Relay Processing Ms"
+        },
+        "retried": {
+          "default": false,
+          "title": "Retried",
+          "type": "boolean"
         },
         "seq": {
           "title": "Seq",

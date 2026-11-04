@@ -6,6 +6,7 @@
     "API key reflected in response": "API key reflected in response",
     "All concurrent requests succeeded": "All concurrent requests succeeded",
     "All concurrent requests were rate-limited": "All concurrent requests were rate-limited",
+    "Concurrent requests did not reach the relay": "Concurrent requests did not reach the relay",
     "Answer drifts at temperature=0": "Answer drifts at temperature=0",
     "Audio clip has a positive duration": "Audio clip has a positive duration",
     "Audio clip is non-empty": "Audio clip is non-empty",

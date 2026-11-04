@@ -454,9 +454,20 @@
       ' <span class="zp-unit">' + m.unit + '</span></th><th class="r">p25–p75 <span class="zp-unit">' + m.unit +
       "</span></th><th>" + esc(T("状态", "Status")) + "</th></tr></thead>";
   }
+  // A failed request's status: "failed (502)" at the relay; a failure on the
+  // network path or in ekte itself names that, as it does not count against
+  // the relay; an attempt that was repeated reads "repeated (…)". Records
+  // saved before the classification get theirs from the server
+  // (ekte.errorclass.record_class).
+  function failText(r) {
+    var what = String(r.status_code || r.error_type || "?");
+    if (r.error_class === "network") what += " · " + T("网络", "network");
+    else if (r.error_class === "local") what += " · ekte";
+    return (r.retried ? T("已重试", "repeated") : T("失败", "failed")) + " (" + what + ")";
+  }
   function dataRow(r, m) {
     var status = !r.ok
-      ? T("失败", "failed") + " (" + (r.status_code || r.error_type || "?") + ")"
+      ? failText(r)
       : r.cached ? T("缓存命中（不计入统计）", "cached (excluded)") : "OK";
     return '<tr><td class="r">' + esc(r.seq) + "</td><td>" + esc(endpointName(r)) + "</td><td>" +
       esc(phaseName(r.phase) + (unstreamed(r) ? " · " + T("非流式", "non-streaming") : "")) + '</td><td class="r">' +
@@ -478,7 +489,7 @@
   function tip(r, m) {
     var head = "#" + r.seq + " · " + endpointName(r) + " · " + (r.detector || "—") + " · " + phaseName(r.phase) +
       (unstreamed(r) ? " · " + T("非流式", "non-streaming") : "");
-    if (!m) return head + "\n" + T("失败", "failed") + " (" + (r.status_code || r.error_type || "?") + ")" +
+    if (!m) return head + "\n" + failText(r) +
       (r.duration_ms != null ? "\n" + T("延迟", "Latency") + ": " + num(r.duration_ms) + " ms" : "");
     var lines = [head, T(m.zh, m.en) + ": " + num(m.get(r)) + " " + m.unit];
     if (m.id !== "latency" && r.duration_ms != null) lines.push(T("延迟", "Latency") + ": " + num(r.duration_ms) + " ms");

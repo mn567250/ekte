@@ -53,3 +53,16 @@ minutt. Lokale og private verter (`localhost`, `127.x`, `192.168.x`,
 forespørsel, strømmer inkludert, så ingen forespørsel kan henge for alltid. En
 kontekstvindu-probe som likevel får tidsavbrudd, rapporteres som uavklart, ikke
 som avkorting.
+
+**Mislykkede forespørsler.** ekte skiller mellom hvor en forespørsel feilet. En
+feil hos **reléet** (en HTTP-feilstatus, et tidsavbrudd mens ekte venter på
+reléet, et avbrutt eller misformet svar) teller mot reléet og gjentas aldri. En
+**nettverks**feil (proxyen ekte går gjennom, DNS, tilkobling eller TLS, før
+reléet kunne svare) og en **lokal** feil (i ekte selv) skyldes ikke reléet:
+forespørselen gjentas, én gang som standard (`EKTE_NON_RELAY_RETRIES`, 0 til
+10), og feiler den fortsatt, telles den for seg (`network_errors`,
+`local_errors`) og holdes utenfor feilratene. En sjekk der alle forespørslene
+feilet slik, blir uavklart i stedet for å bli vurdert, og rapporten varsler at
+kjøringen var svekket. Hver forespørselspost har sin klasse (`error_class`) og
+om den ble gjentatt (`retried`); for kjøringer lagret tidligere utleder
+webgrensesnittet klassen fra den lagrede feilen.

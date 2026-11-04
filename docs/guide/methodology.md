@@ -704,6 +704,7 @@ never raise the risk verdict.
 |  | One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share. | Warning · Low | up to −20 pts |
 |  | More requests than that failed; deducts the failed share. | Fail · Medium | up to −100 pts |
 |  | Every request was rate-limited (HTTP 429): not scored. | Inconclusive · Low | No deduction |
+|  | No request reached the relay (failed in ekte or on the network path): not scored. | Inconclusive · Low | No deduction |
 | `reliability.latency` | p95 latency above 30 s under load; deducts 15% of the remaining score. | Warning · Low | up to −15 pts |
 | `reliability.rate_limited` | Part of the burst was rate-limited: honest throttling, not counted. | Info | No deduction |
 | `reliability.skipped` | The reliability probe was disabled. | Info | No deduction |

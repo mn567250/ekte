@@ -273,20 +273,30 @@ def error_finding(
     if target.error_rate is None:
         return
     rate = target.error_rate
+    impaired = target.network_errors + target.local_errors
+    judged = target.requests - impaired
     key = "ok" if rate <= _ERROR_RATE_OK else "some" if rate <= _ERROR_RATE_WARN else "failed"
     result.findings.append(
         scale.finding(
             "performance.errors",
             key,
             title="Probe request failures",
-            summary=f"{target.errors} of {target.requests} target probe requests failed "
-            f"({target.timeouts} timed out; {target.rate_limited} rate-limited, not counted).",
+            summary=f"{target.errors} of {judged} target probe requests failed at the relay "
+            f"({target.timeouts} timed out; {target.rate_limited} rate-limited, not counted)."
+            + (
+                f" {impaired} more failed in ekte or on the network path to the relay and are "
+                "not counted against it."
+                if impaired else ""
+            ),
             evidence={
                 "endpoint": "target",
                 "requests": target.requests,
                 "errors": target.errors,
                 "timeouts": target.timeouts,
                 "rate_limited": target.rate_limited,
+                "network_errors": target.network_errors,
+                "local_errors": target.local_errors,
+                "retried": target.retried,
                 "error_rate": round(rate, 3),
             },
             calls=failed,

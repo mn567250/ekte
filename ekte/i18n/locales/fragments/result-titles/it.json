@@ -6,6 +6,7 @@
     "API key reflected in response": "Chiave API riflessa nella risposta",
     "All concurrent requests succeeded": "Tutte le richieste concorrenti sono riuscite",
     "All concurrent requests were rate-limited": "Tutte le richieste concorrenti sono state limitate (rate limit)",
+    "Concurrent requests did not reach the relay": "Le richieste concorrenti non hanno raggiunto il relay",
     "Answer drifts at temperature=0": "La risposta varia a temperature=0",
     "Audio clip has a positive duration": "La clip audio ha una durata positiva",
     "Audio clip is non-empty": "La clip audio non è vuota",

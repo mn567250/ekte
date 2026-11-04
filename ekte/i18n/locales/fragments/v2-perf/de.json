@@ -19,6 +19,8 @@
   "min": "Min",
   "mean": "Mittel",
   "max": "Max",
-  "stdev": "Std.-Abw."
+  "stdev": "Std.-Abw.",
+  "network": "Netzwerk",
+  "repeated": "wiederholt"
  }
 }

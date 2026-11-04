@@ -56,3 +56,17 @@ lento no se corte al minuto. Los hosts locales y privados (`localhost`, `127.x`,
 streams incluidos, así que ninguna petición puede quedarse colgada para siempre.
 Una sonda de ventana de contexto que aun así agota el tiempo se informa como no
 concluyente, no como truncamiento.
+
+**Peticiones fallidas.** ekte distingue dónde falló una petición. Un fallo del
+**relay** (un estado de error HTTP, un tiempo de espera agotado esperando al
+relay, una respuesta cortada o malformada) cuenta contra el relay y nunca se
+repite. Un fallo de **red** (el proxy por el que pasa ekte, DNS, conexión o TLS,
+antes de que el relay pudiera responder) y uno **local** (dentro de ekte) no son
+culpa del relay: la petición se repite, una vez por defecto
+(`EKTE_NON_RELAY_RETRIES`, de 0 a 10), y si sigue fallando se cuenta aparte
+(`network_errors`, `local_errors`) y queda fuera de las tasas de error. Una
+comprobación cuyas peticiones fallaron todas así queda como no concluyente en
+vez de puntuarse, y el informe avisa de que la ejecución se vio afectada. Cada
+registro de petición lleva su clase (`error_class`) y si se repitió (`retried`);
+en las ejecuciones guardadas antes, la interfaz web deduce la clase del error
+guardado.

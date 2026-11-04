@@ -19,6 +19,8 @@
   "min": "min",
   "mean": "moyenne",
   "max": "max",
-  "stdev": "écart-type"
+  "stdev": "écart-type",
+  "network": "réseau",
+  "repeated": "répétée"
  }
 }
