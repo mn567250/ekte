@@ -14,7 +14,9 @@ import pytest
 
 _JS = r"""
 const path = require("path");
-const [dir, lang, reportJson, optsJson] = process.argv.slice(1);
+const [dir, lang, reportJson, optsFile] = process.argv.slice(1);
+// extra render options come in a file: a long body would overflow Windows' command line
+const opts = optsFile ? JSON.parse(require("fs").readFileSync(optsFile, "utf8")) : {};
 global.window = { addEventListener() {} };
 global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete",
                     querySelectorAll: () => [], addEventListener() {} };
@@ -29,8 +31,8 @@ let clicked = null;
 window.EkteReport.render(el, JSON.parse(reportJson), { actions: [
   { zh: "再测一个", en: "Test another" },
   { zh: "下载报告 (JSON)", en: "Download report (JSON)", primary: true, onClick: r => { clicked = r.mode; } },
-], download: { name: "ekte-report" }, ...(optsJson ? JSON.parse(optsJson) : {}) });
-const pair = optsJson && JSON.parse(optsJson).pair ? window.EkteReport.rawPair(JSON.parse(optsJson).pair) : null;
+], download: { name: "ekte-report" }, ...opts });
+const pair = opts.pair ? window.EkteReport.rawPair(opts.pair) : null;
 console.log(JSON.stringify({ html: el.innerHTML, globals: Object.keys(window), icons: window.EKTE_ICONS, pair }));
 """
 
@@ -46,8 +48,11 @@ def _render(tmp_path: Path, lang: str, report: dict, opts: dict | None = None) -
         shutil.copy(_STATIC / name, tmp_path / name)
     (tmp_path / "v2").mkdir(exist_ok=True)
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
+    opts_file = tmp_path / "opts.json"
+    if opts:
+        opts_file.write_text(json.dumps(opts), encoding="utf-8")
     out = subprocess.run(
-        ["node", "-e", _JS, str(tmp_path), lang, json.dumps(report), *([json.dumps(opts)] if opts else [])],
+        ["node", "-e", _JS, str(tmp_path), lang, json.dumps(report), *([str(opts_file)] if opts else [])],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
     return json.loads(out)
