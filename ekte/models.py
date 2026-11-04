@@ -682,6 +682,27 @@ class EvidenceRef(BaseModel):
     complete: bool = True
 
 
+class RescoreRef(BaseModel):
+    """What a re-scored report was replayed from (see :mod:`ekte.replay`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # The recorded run: its evidence file's run id and hash, and the ekte
+    # version and time of the original report.
+    run_id: str
+    evidence_sha256: str
+    tool_version: str | None = None
+    generated_at: str | None = None
+    # The original report's history id, when it was re-scored from history.
+    report_id: int | None = None
+    # Requests answered from the file, requests nothing in the file answered
+    # (per detector; such a detector reads inconclusive), recorded exchanges
+    # no request asked for.
+    replayed: int = 0
+    missing: dict[str, int] = Field(default_factory=dict)
+    unused: int = 0
+
+
 class AuditReport(BaseModel):
     """The serializable artifact ekte produces. JSON form is the LLM-facing API."""
 
@@ -738,3 +759,6 @@ class AuditReport(BaseModel):
     # The run's evidence file: every raw request/response pair (None when the
     # run kept none, and in reports from before schema 1.2).
     evidence: EvidenceRef | None = None
+    # Set when this report re-scores a recorded run with this ekte version,
+    # replaying its evidence instead of contacting the relay.
+    rescored_from: RescoreRef | None = None

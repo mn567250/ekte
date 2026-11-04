@@ -26,6 +26,10 @@
   "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.",
   "Saved: the next runs keep their raw requests and responses accordingly.": "Saved: the next runs keep their raw requests and responses accordingly.",
   "The {n} request/response pairs this finding rests on, in the order they finished.": "The {n} request/response pairs this finding rests on, in the order they finished.",
-  "Download this request: ": "Download this request: "
+  "Download this request: ": "Download this request: ",
+  "Re-score with this version": "Re-score with this version",
+  "Could not re-score: ": "Could not re-score: ",
+  "Re-scored": "Re-scored",
+  "Replayed the run recorded {date} (ekte v{v}): {n} requests replayed, {m} without a recorded answer": "Replayed the run recorded {date} (ekte v{v}): {n} requests replayed, {m} without a recorded answer"
  }
 }

@@ -26,6 +26,10 @@
   "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Conservé avec l'exécution enregistrée dans le répertoire de données, sans vos clés, pour que chaque constat puisse être vérifié par rapport à ce qui a été réellement envoyé et reçu.",
   "Saved: the next runs keep their raw requests and responses accordingly.": "Enregistré : les prochaines exécutions conserveront ou non leurs requêtes et réponses brutes selon ce choix.",
   "The {n} request/response pairs this finding rests on, in the order they finished.": "Les {n} paires requête/réponse sur lesquelles repose ce constat, dans l'ordre où elles se sont terminées.",
-  "Download this request: ": "Télécharger cette requête : "
+  "Download this request: ": "Télécharger cette requête : ",
+  "Re-score with this version": "Réévaluer avec cette version",
+  "Could not re-score: ": "Réévaluation impossible : ",
+  "Re-scored": "Réévalué",
+  "Replayed the run recorded {date} (ekte v{v}): {n} requests replayed, {m} without a recorded answer": "Rejeu de l'exécution enregistrée le {date} (ekte v{v}) : {n} requêtes rejouées, {m} sans réponse enregistrée"
  }
 }

@@ -93,6 +93,10 @@ Bajo un hallazgo, la lista contiene solo las peticiones en las que se basa.
 Cada par, y toda la ejecución, también se descarga como HAR o como un script
 curl que vuelve a enviar las peticiones (`EKTE_API_KEY` aporta la clave).
 
+**Volver a puntuar con esta versión** en una ejecución guardada con evidencia la
+reproduce del mismo modo y guarda el resultado como una ejecución nueva en el
+**Historial**; su informe indica qué ejecución reprodujo.
+
 **Analítica.** `/analytics` convierte el historial local
 en comparaciones: indicadores del periodo elegido (ejecuciones, puntuación
 mediana, proporción de riesgo alto, tasa de éxito, TTFT, velocidad de salida,

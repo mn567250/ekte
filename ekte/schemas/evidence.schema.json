@@ -150,9 +150,33 @@
           ],
           "default": null
         },
+        "judge": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RedactedTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "mode": {
           "title": "Mode",
           "type": "string"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
         },
         "run_id": {
           "title": "Run Id",

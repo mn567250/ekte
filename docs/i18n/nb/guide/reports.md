@@ -51,6 +51,16 @@ forespørslene på nytt (`--as curl`; sett `EKTE_API_KEY` først, filen
 inneholder aldri nøkkelen) eller ett JSON-dokument (`--as json`); `--seq`
 velger forespørsler.
 
+`ekte rescore` vurderer en registrert kjøring på nytt med den installerte
+ekte-versjonen: den kjører samme revisjon, men svarer på hver forespørsel med
+det registrerte svaret (i det registrerte tempoet) i stedet for å kontakte
+reléet, slik at forbedrede kontroller gjelder også for gamle kjøringer. Den tar
+id-en til en lagret kjøring (og lagrer resultatet som en ny kjøring, med mindre
+`--no-save`) eller en rapportfil med `--evidence PATH`. En kontroll som nå spør
+om noe den registrerte kjøringen aldri spurte om, blir uavklart i stedet for å
+få poeng på gjetning; rapportens `rescored_from` sier hvor mange forespørsler
+som ble spilt av og hvilke kontroller som ikke hadde noen.
+
 Nøkler og sensitive hoder fjernes før noe skrives (se [Personvern](privacy.md)).
 Hver linje følger `ekte/schemas/evidence.schema.json`
 ([Skjemaer](../../../reference/schemas.md)). I nettgrensesnittet lister **Vis

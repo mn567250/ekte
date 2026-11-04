@@ -173,6 +173,7 @@
     "Fingerprint inconclusive: {1}": "Fingerprint ohne klares Ergebnis: {1}",
     "Fingerprint skipped: {1}": "Fingerprint übersprungen: {1}",
     "Response attribute {1}": "Antwortattribut {1}",
-    "Request attribute {1}": "Anfrageattribut {1}"
+    "Request attribute {1}": "Anfrageattribut {1}",
+    "Not re-scored: the recorded run has no answer to some requests": "Nicht neu bewertet: Der aufgezeichnete Lauf hat auf manche Anfragen keine Antwort"
   }
 }

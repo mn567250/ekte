@@ -942,6 +942,81 @@ def kb_export_command(
     print(export_yaml(provider), end="")
 
 
+@app.command("rescore")
+def rescore_command(
+    source: Annotated[str, typer.Argument(help="The id of a saved run in the history, or a report JSON file (then also --evidence).")],
+    evidence_file: Annotated[Path | None, typer.Option("--evidence", help="The evidence file of a report JSON file given as SOURCE.")] = None,
+    save: Annotated[bool, typer.Option("--save/--no-save", help="Save the re-scored report to the history as a new run (a saved run only).")] = True,
+    as_json: Annotated[bool, typer.Option("--json", help="Print the re-scored report as JSON to stdout.")] = False,
+) -> None:
+    """Re-score a recorded run with this ekte version, from its evidence file.
+
+    Every request of the audit is answered with the recorded response (at the
+    recorded timing) instead of contacting the relay, so improved checks can
+    judge an old run again. A check that now asks something the recorded run
+    never asked reads inconclusive. Takes about as long as the original run's
+    requests did.
+    """
+    from ekte import replay
+
+    report: dict | None
+    report_id: int | None = None
+    if source.isdigit() and not Path(source).is_file():
+        from ekte.web import history
+
+        report_id = int(source)
+        report = history.get(report_id)
+        path = history.evidence_path(report_id) if report is not None else None
+        if report is None:
+            err_console.print(f"[red]No saved run {source}.[/red]")
+            raise typer.Exit(code=2)
+        if path is None:
+            err_console.print(f"[red]Saved run {source} kept no evidence: there is nothing to replay.[/red]")
+            raise typer.Exit(code=2)
+    else:
+        if evidence_file is None:
+            err_console.print("[red]A report JSON file needs its evidence file: --evidence PATH.[/red]")
+            raise typer.Exit(code=2)
+        try:
+            report = json.loads(Path(source).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            err_console.print(f"[red]Could not read the report {source}: {exc}[/red]")
+            raise typer.Exit(code=2) from exc
+        path = evidence_file
+        save = False
+    if not isinstance(report, dict) or not path.is_file():
+        err_console.print(f"[red]No such evidence file: {path}[/red]")
+        raise typer.Exit(code=2)
+    try:
+        new = _run_async(replay.rescore(report, path, report_id=report_id))
+    except ValueError as exc:
+        err_console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    new_id = None
+    if save:
+        from ekte.web import history
+
+        new_id = history.save(json.loads(new.model_dump_json()))
+    if as_json:
+        print(new.model_dump_json(indent=2))
+        return
+    _print_summary(new, [])
+    r = new.rescored_from
+    old = (report.get("verdict") or {})
+    if r is not None:
+        missing = sum(r.missing.values())
+        console.print(
+            f"Re-scored with ekte {new.tool_version} (recorded with {r.tool_version or '?'}): "
+            f"{r.replayed} requests replayed, {missing} without a recorded answer "
+            f"({', '.join(sorted(r.missing)) or 'none'}), {r.unused} recorded exchanges unused."
+        )
+    console.print(
+        f"Before: {old.get('risk_level', '?')} · {old.get('overall_score', '—')}   "
+        f"Now: {new.verdict.risk_level.value} · {new.verdict.overall_score if new.verdict.overall_score is not None else '—'}"
+        + (f"   (saved as run {new_id})" if new_id and new_id > 0 else "")
+    )
+
+
 @app.command("evidence-export")
 def evidence_export_command(
     source: Annotated[str, typer.Argument(help="An evidence file (.jsonl.zst), or the id of a saved run in the history.")],

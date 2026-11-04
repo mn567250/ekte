@@ -52,6 +52,17 @@ ein curl-Skript, das die Anfragen erneut sendet (`--as curl`; zuerst
 `EKTE_API_KEY` setzen, die Datei enthält den Schlüssel nie) oder ein
 JSON-Dokument (`--as json`); `--seq` wählt Anfragen aus.
 
+`ekte rescore` bewertet einen aufgezeichneten Lauf mit der installierten
+ekte-Version neu: Es führt dieselbe Prüfung aus, beantwortet aber jede Anfrage
+mit der aufgezeichneten Antwort (im aufgezeichneten Takt), statt das Relay zu
+kontaktieren, sodass verbesserte Prüfungen auch für alte Läufe gelten. Es nimmt
+die Id eines gespeicherten Laufs (und speichert das Ergebnis als neuen Lauf,
+außer mit `--no-save`) oder eine Berichtsdatei mit `--evidence PATH`. Eine
+Prüfung, die jetzt etwas fragt, das der aufgezeichnete Lauf nie gefragt hat,
+bleibt ohne klares Ergebnis, statt auf eine Vermutung hin bewertet zu werden;
+`rescored_from` im Bericht nennt, wie viele Anfragen wiedergegeben wurden und
+welche Prüfungen keine hatten.
+
 Schlüssel und sensible Header werden vor dem Schreiben entfernt (siehe
 [Datenschutz](privacy.md)). Jede Zeile entspricht
 `ekte/schemas/evidence.schema.json` ([Schemas](../../../reference/schemas.md)).

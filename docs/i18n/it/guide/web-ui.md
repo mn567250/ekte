@@ -93,6 +93,10 @@ Sotto un rilievo l'elenco contiene solo le richieste su cui si basa. Ogni
 coppia, e l'intera esecuzione, si scarica anche come HAR o come script curl
 che invia di nuovo le richieste (`EKTE_API_KEY` fornisce la chiave).
 
+**Rivaluta con questa versione** su un'esecuzione salvata con prove la
+riproduce allo stesso modo e salva il risultato come nuova esecuzione nella
+**Cronologia**; il suo rapporto indica quale esecuzione ha riprodotto.
+
 **Analisi.** `/analytics` trasforma la cronologia
 locale in confronti: indicatori per il periodo scelto (esecuzioni, punteggio
 mediano, quota ad alto rischio, tasso di successo, TTFT, velocità di output,

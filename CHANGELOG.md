@@ -63,6 +63,18 @@ ekte has three eras:
   for all requests or those of `--seq`; the report view offers the same
   downloads per run and per request. ([#88](https://github.com/mn567250/ekte/issues/88))
 
+- **Re-score a recorded run with a newer ekte.** `ekte rescore RUN_ID` (or a
+  report file with `--evidence PATH`), **Re-score with this version** on a
+  saved run in History, and `POST /api/v1/history/{id}/rescore` run the same
+  audit again with the installed version, answering every request with the
+  recorded response at the recorded timing instead of contacting the relay,
+  so improved checks judge old runs. A check that now asks something the
+  recorded run never asked reads inconclusive (`replay.missing`) instead of
+  being scored on a guess. The result is saved as a new run (`rescored_from`)
+  that shares the original's evidence file. Against the test relay, honest and
+  dishonest deep runs replay with identical verdicts.
+  ([#88](https://github.com/mn567250/ekte/issues/88))
+
 - **Running median and p25–p75 band in the HTML and PDF reports.** The
   downloaded reports' performance timelines draw what the web UI's chart draws
   behind the dots: per endpoint the running median of its last 5 successful

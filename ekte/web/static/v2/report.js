@@ -868,6 +868,21 @@
         meta.push(item(T("时间", "Time"), esc(intlFmt(Intl.DateTimeFormat, "d", locale(), { dateStyle: "medium", timeStyle: "short" }).format(dt))));
     }
     meta.push(item(T("版本", "Version"), code("ekte v" + (r.tool_version || "?"))));
+    // a re-score: the recorded run it replayed, and what had no recorded answer
+    var rs = r.rescored_from;
+    if (rs) {
+      var when = rs.generated_at ? new Date(rs.generated_at) : null;
+      var missed = Object.keys(rs.missing || {}).reduce(function (a, k) { return a + rs.missing[k]; }, 0);
+      meta.push(item(T("重新评分", "Re-scored"), esc(Tf(
+        "重放 {date} 的检测记录（ekte v{v}）：{n} 个请求已重放，{m} 个没有记录的应答",
+        "Replayed the run recorded {date} (ekte v{v}): {n} requests replayed, {m} without a recorded answer",
+        {
+          date: when && !isNaN(when) ? intlFmt(Intl.DateTimeFormat, "d", locale(), { dateStyle: "medium", timeStyle: "short" }).format(when) : "?",
+          v: rs.tool_version || "?",
+          n: num(rs.replayed || 0, 0),
+          m: num(missed, 0),
+        }))));
+    }
 
     var actions = (opts.actions || [])
       .map(function (a, i) {

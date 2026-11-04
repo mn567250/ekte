@@ -1804,6 +1804,78 @@
       "title": "RequestRecord",
       "type": "object"
     },
+    "RescoreRef": {
+      "description": "What a re-scored report was replayed from (see :mod:`ekte.replay`).",
+      "properties": {
+        "evidence_sha256": {
+          "title": "Evidence Sha256",
+          "type": "string"
+        },
+        "generated_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generated At"
+        },
+        "missing": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Missing",
+          "type": "object"
+        },
+        "replayed": {
+          "default": 0,
+          "title": "Replayed",
+          "type": "integer"
+        },
+        "report_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Report Id"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "tool_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Version"
+        },
+        "unused": {
+          "default": 0,
+          "title": "Unused",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "run_id",
+        "evidence_sha256"
+      ],
+      "title": "RescoreRef",
+      "type": "object"
+    },
     "RiskLevel": {
       "description": "Headline 货不对板 risk classification.",
       "enum": [
@@ -2173,6 +2245,17 @@
       "anyOf": [
         {
           "$ref": "#/$defs/ReliabilitySummary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "rescored_from": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RescoreRef"
         },
         {
           "type": "null"

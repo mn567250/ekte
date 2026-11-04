@@ -94,6 +94,7 @@ The public part of the HTTP API lives under `/api/v1/` and follows the [stabilit
 | `GET /api/v1/history` | optional `limit` (1–500, default 50) and `perf` | 200 and a JSON array of run summaries, newest first |
 | `GET /api/v1/history/{id}` | none | 200 and the saved report as stored; 404 for an unknown id |
 | `GET /api/v1/history/{id}/evidence` | none | 200 and the run's evidence file (`application/zstd`); 404 for an unknown id or a run that kept none |
+| `POST /api/v1/history/{id}/rescore` | none | 200 and a job (as `POST /api/v1/jobs`, with `rescore_of`) that re-scores the run from its evidence file with this ekte version and saves the result as a new run; 404 for an unknown id; 409 when the run kept no evidence or the file cannot be replayed |
 | `GET /api/v1/history/{id}/evidence/export` | optional `format` (`har` (default), `curl`, `json`) and `seq` (repeatable) | 200 and the exchanges as an attachment: HAR 1.2, a curl script that sends the requests again (the key from `$EKTE_API_KEY`) or one JSON document; 400 for an unknown format; 404 as above; 409 as below |
 | `GET /api/v1/history/{id}/evidence/exchanges` | optional `seq`, `id` or `detector` | 200 and `{"run_id", "file", "verified", "exchanges"}`: without `seq` / `id` a listing without bodies (`verified`: the file's SHA-256 is the one the report names), with `seq` the full pairs of that request record, with `id` one pair; 404 for an unknown run or exchange, or a run that kept none; 409 for a file of an unknown major schema version |
 

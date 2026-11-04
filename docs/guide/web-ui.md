@@ -83,6 +83,10 @@ Under a finding the list holds only the requests that finding rests on.
 Each pair, and the whole run, also downloads as HAR or as a curl script that
 sends the requests again (`EKTE_API_KEY` supplies the key).
 
+**Re-score with this version** on a saved run with evidence replays it the
+same way and saves the result as a new run in **History**; its report says
+which run it replayed.
+
 **Analytics.** `/analytics` turns the local history into
 comparisons: KPI tiles for the chosen period (runs, median score, high-risk
 share, success rate, TTFT, decode speed, billing ratios) with the change

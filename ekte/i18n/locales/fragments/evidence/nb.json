@@ -26,6 +26,10 @@
   "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Lagres sammen med kjøringen i datakatalogen, uten nøklene dine, slik at hvert funn kan kontrolleres mot nøyaktig det som ble sendt og mottatt.",
   "Saved: the next runs keep their raw requests and responses accordingly.": "Lagret: de neste kjøringene beholder de rå forespørslene og svarene i tråd med dette.",
   "The {n} request/response pairs this finding rests on, in the order they finished.": "De {n} forespørsel/svar-parene dette funnet bygger på, i rekkefølgen de ble fullført.",
-  "Download this request: ": "Last ned denne forespørselen: "
+  "Download this request: ": "Last ned denne forespørselen: ",
+  "Re-score with this version": "Vurder på nytt med denne versjonen",
+  "Could not re-score: ": "Kunne ikke vurdere på nytt: ",
+  "Re-scored": "Vurdert på nytt",
+  "Replayed the run recorded {date} (ekte v{v}): {n} requests replayed, {m} without a recorded answer": "Avspilling av kjøringen registrert {date} (ekte v{v}): {n} forespørsler spilt av, {m} uten registrert svar"
  }
 }

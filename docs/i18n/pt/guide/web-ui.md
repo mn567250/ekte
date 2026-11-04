@@ -92,6 +92,10 @@ Sob uma constatação, a lista contém apenas os pedidos em que ela se baseia.
 Cada par, e toda a execução, também pode ser transferido como HAR ou como um
 script curl que volta a enviar os pedidos (`EKTE_API_KEY` fornece a chave).
 
+**Reavaliar com esta versão** numa execução guardada com evidências
+reproduz-a da mesma forma e guarda o resultado como nova execução no
+**Histórico**; o seu relatório indica que execução foi reproduzida.
+
 **Análises.** `/analytics` transforma o histórico local em
 comparações: indicadores do período escolhido (execuções, pontuação mediana,
 proporção de risco alto, taxa de sucesso, TTFT, velocidade de saída, rácios de

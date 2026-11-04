@@ -173,6 +173,7 @@
   "Fingerprint inconclusive: {1}": "Impressão digital inconclusiva: {1}",
   "Fingerprint skipped: {1}": "Impressão digital ignorada: {1}",
   "Response attribute {1}": "Atributo de resposta {1}",
-  "Request attribute {1}": "Atributo de pedido {1}"
+  "Request attribute {1}": "Atributo de pedido {1}",
+  "Not re-scored: the recorded run has no answer to some requests": "Não reavaliado: a execução registada não tem resposta para alguns pedidos"
  }
 }

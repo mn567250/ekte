@@ -37,7 +37,7 @@ Every command follows this table.
 
 ## Commands
 
-[`ekte audio`](#audio), [`ekte check`](#check), [`ekte compare`](#compare), [`ekte config migrate`](#config-migrate), [`ekte data-dir`](#data-dir), [`ekte embed`](#embed), [`ekte evidence-export`](#evidence-export), [`ekte image`](#image), [`ekte init`](#init), [`ekte kb`](#kb), [`ekte kb-export`](#kb-export), [`ekte kb-import`](#kb-import), [`ekte kb-prompt`](#kb-prompt), [`ekte models`](#models), [`ekte rerank`](#rerank), [`ekte secret export`](#secret-export), [`ekte secret rotate`](#secret-rotate), [`ekte secret status`](#secret-status), [`ekte serve`](#serve), [`ekte watch`](#watch)
+[`ekte audio`](#audio), [`ekte check`](#check), [`ekte compare`](#compare), [`ekte config migrate`](#config-migrate), [`ekte data-dir`](#data-dir), [`ekte embed`](#embed), [`ekte evidence-export`](#evidence-export), [`ekte image`](#image), [`ekte init`](#init), [`ekte kb`](#kb), [`ekte kb-export`](#kb-export), [`ekte kb-import`](#kb-import), [`ekte kb-prompt`](#kb-prompt), [`ekte models`](#models), [`ekte rerank`](#rerank), [`ekte rescore`](#rescore), [`ekte secret export`](#secret-export), [`ekte secret rotate`](#secret-rotate), [`ekte secret status`](#secret-status), [`ekte serve`](#serve), [`ekte watch`](#watch)
 
 ### Global options
 
@@ -305,6 +305,18 @@ Audit a rerank endpoint (a non-chat surface).
 | `--json` | flag |  | Print the verdict as JSON to stdout. |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
 | `--dry-run` | flag |  | Show the detectors and estimated API calls without making requests. |
+
+<a id="rescore"></a>
+### `ekte rescore`
+
+Re-score a recorded run with this ekte version, from its evidence file.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `SOURCE` | argument | | The id of a saved run in the history, or a report JSON file (then also --evidence). |
+| `--evidence` | path |  | The evidence file of a report JSON file given as SOURCE. |
+| `--save`, `--no-save` | flag |  | Save the re-scored report to the history as a new run (a saved run only). |
+| `--json` | flag |  | Print the re-scored report as JSON to stdout. |
 
 <a id="secret-export"></a>
 ### `ekte secret export`

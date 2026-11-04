@@ -53,6 +53,17 @@ navigateur (`--as har`), en script curl qui renvoie les requêtes
 jamais la clé) ou en un seul document JSON (`--as json`) ; `--seq`
 choisit les requêtes.
 
+`ekte rescore` réévalue une exécution enregistrée avec la version d'ekte
+installée : il refait le même audit, mais répond à chaque requête par la
+réponse enregistrée (au rythme enregistré) au lieu de contacter le relais, de
+sorte que les contrôles améliorés s'appliquent aux anciennes exécutions. Il
+prend l'identifiant d'une exécution enregistrée (et enregistre le résultat
+comme nouvelle exécution, sauf avec `--no-save`) ou un fichier de rapport avec
+`--evidence PATH`. Un contrôle qui demande désormais quelque chose que
+l'exécution enregistrée n'a jamais demandé reste non concluant au lieu d'être
+noté sur une supposition ; le champ `rescored_from` du rapport indique combien
+de requêtes ont été rejouées et quels contrôles n'en avaient pas.
+
 Les clés et les en-têtes sensibles sont retirés avant toute écriture (voir
 [Confidentialité](privacy.md)). Chaque ligne respecte
 `ekte/schemas/evidence.schema.json` ([Schémas](../../../reference/schemas.md)).

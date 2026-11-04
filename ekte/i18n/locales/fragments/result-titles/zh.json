@@ -173,6 +173,7 @@
     "Fingerprint inconclusive: {1}": "行为指纹结果不确定：{1}",
     "Fingerprint skipped: {1}": "行为指纹已跳过：{1}",
     "Response attribute {1}": "响应属性 {1}",
-    "Request attribute {1}": "请求属性 {1}"
+    "Request attribute {1}": "请求属性 {1}",
+    "Not re-scored: the recorded run has no answer to some requests": "未重新评分：录制的检测缺少部分请求的应答"
   }
 }
