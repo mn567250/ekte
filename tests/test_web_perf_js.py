@@ -313,6 +313,28 @@ def test_live_builds_the_data_table_only_when_open():
     assert '<details class="zp-data"><summary>' in closed and "<table" not in closed
     assert '<details class="zp-data" open><summary>' in opened and opened.count("<tr>") == 5
     assert "failed (502)" in opened
+    # a failed row's latency is its time to failure; it has no running median or band
+    row = re.search(r'<tr><td class="r">2</td>.*?</tr>', opened)
+    assert row and '<td class="r">900</td><td class="r">—</td><td class="r">—</td>' in row.group(0)
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_perf_js_failed_request_shows_its_time_to_failure():
+    recs = [
+        RequestRecord(seq=0, endpoint="target", phase="probe", ok=True, stream=True,
+                      start_ms=0.0, duration_ms=900.0, ttft_ms=250.0, decode_tps_local=80.0),
+        RequestRecord(seq=1, endpoint="target", phase="probe", ok=False, error_type="ProxyError",
+                      start_ms=1000.0, duration_ms=60012.0),
+    ]
+    perf = build_performance(recs, has_baseline=False, probe_max_tokens=128)
+    assert perf is not None
+    out = _render(perf.model_dump_json())
+    section = out["section"]
+    # the x mark's tooltip
+    assert re.search(r'class="zp-fail"[^>]*data-tip="[^"]*failed \(ProxyError\)\nLatency: 60,012 ms"', section)
+    # the latency tab's table: the time to failure; the other metrics stay empty
+    table = section.split('class="zp-data"')[1]
+    assert re.search(r'<td class="r">60,012</td><td class="r">—</td><td class="r">—</td><td>failed \(ProxyError\)', table)
 
 
 

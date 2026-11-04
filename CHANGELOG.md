@@ -89,6 +89,13 @@ ekte has three eras:
 
 ### Changed
 
+- **A failed request shows how long it took to fail.** On the performance
+  chart's latency tab, the data table's latency cell of a failed request now
+  holds its time to failure (`duration_ms`) instead of `—`, and the failure's
+  tooltip shows it too, in the web UI and in the exported HTML report. The
+  running median and its p25–p75 band still skip failed requests
+  ([#93](https://github.com/mn567250/ekte/issues/93)).
+
 - **New dependency `zstandard`** (for the evidence files). With it installed,
   httpx also offers `zstd` in `Accept-Encoding`; responses are decoded as
   before. `history.db` moves to schema version 5 and `watches.db` to 3 (a

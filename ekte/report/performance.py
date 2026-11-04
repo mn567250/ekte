@@ -521,6 +521,8 @@ def timeline_svg(
     for r in tl.failed:
         cx = x(r.start_ms / 1000)
         tip = f"#{r.seq} {r.endpoint} · {r.detector or '—'} · failed ({r.status_code or r.error_type})"
+        if r.duration_ms is not None:  # the time it took to fail
+            tip += f"\nLatency: {fmt_num(r.duration_ms)} ms"
         out.append(
             f'<path class="fail-mark" d="M{cx - 4:.1f},{base_y - 4:.1f}l8,8m0,-8l-8,8">'
             f"<title>{_esc(tip)}</title></path>"
