@@ -54,7 +54,7 @@ def outcome(
 
 
 def evidence_seqs(calls: Iterable[Any] | None) -> list[int] | None:
-    """The request ``seq``\ s of ``calls``: outcomes (their ``seqs``), lists of
+    """The request ``seq`` numbers of ``calls``: outcomes (their ``seqs``), lists of
     outcomes, or ``seq`` numbers; sorted, without repeats. None for ``calls``
     None (the finding names no requests)."""
     if calls is None:
@@ -114,7 +114,7 @@ class Scale:
         id is ``<check>.<subject>`` and it records both. ``id`` gives a finding of
         the check an id of its own (e.g. one per knowledge-base probe) without
         grouping it. ``deduction`` sets the variable deduction of an outcome with
-        ``max_deduction``. ``calls`` are the outcomes (or request ``seq``\ s)
+        ``max_deduction``. ``calls`` are the outcomes (or request ``seq`` numbers)
         the finding rests on (see :func:`evidence_seqs`).
         """
         o = self.get(check, key)
