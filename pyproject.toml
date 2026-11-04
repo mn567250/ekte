@@ -133,16 +133,16 @@ ignore = ["E501"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 # pytest-timeout: no test (setup, call and teardown together) may take longer.
-# The slowest take about 5 s; a hung one fails after this long with its node id
-# and pytest-xdist replaces the worker. "thread" works on every OS (signal is
-# POSIX-only) and catches a test blocked in C code. Slow on purpose?
-# @pytest.mark.timeout(seconds) on that test.
+# The slowest unit tests take about 5 s; a hung one fails after this long with
+# its node id and pytest-xdist replaces the worker. "thread" works on every OS
+# (signal is POSIX-only) and catches a test blocked in C code. Slow on purpose?
+# @pytest.mark.timeout(seconds) on that test. The browser tests (tests/a11y)
+# get A11Y_TIMEOUT from tests/a11y/conftest.py instead.
+# Under pytest-xdist, pytest-timeout's stack dump goes to the worker's stderr
+# and is lost; CI passes -o faulthandler_timeout=<a little less>, whose dump
+# reaches the log (.github/workflows/ci.yml).
 timeout = 120
 timeout_method = "thread"
-# pytest's own faulthandler dumps every thread's stack shortly before that, so
-# the log shows where the test blocks: under pytest-xdist this dump reaches the
-# console, pytest-timeout's own goes to the worker's stderr and is lost.
-faulthandler_timeout = 110
 markers = [
     "a11y: browser accessibility tests of web UI v2 (BITV 2.0 / EN 301 549 / WCAG 2.1 AA); need the a11y extra",
     "bitv(*steps): the BITV 2.0 / EN 301 549 test steps (\"9.1.4.3\", …) an a11y test decides (axe=True: only through axe rule results); feeds the conformance report (tests/a11y/results.py)",

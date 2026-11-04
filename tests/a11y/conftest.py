@@ -20,6 +20,12 @@ _HERE = Path(__file__).resolve().parent
 # instead of leaving one worker busy with them after the others are done.
 SLOW_FIRST = ("test_content_on_hover_or_focus", "test_no_character_key_shortcuts", "test_pointer_cancellation")
 
+# pytest-timeout limit of a browser test, instead of the unit tests' 120 s
+# ([tool.pytest.ini_options] timeout): one that changes every field of the
+# knowledge-base page takes about 130 s (test_on_input_no_change_of_context
+# [kb-*]). A test's own @pytest.mark.timeout still wins.
+A11Y_TIMEOUT = 600
+
 
 # EKTE_A11Y_PAGES="history,kb" runs only the tests of those pages (ids of
 # tests/a11y/pages.py PAGES, or "all"); applied before the sharding below.
@@ -58,6 +64,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     for item in items:
         if _HERE in Path(str(item.fspath)).resolve().parents:
             item.add_marker(pytest.mark.a11y)
+            if item.get_closest_marker("timeout") is None:
+                item.add_marker(pytest.mark.timeout(A11Y_TIMEOUT))
     # stable: everything else keeps its order
     items.sort(key=lambda item: getattr(item, "originalname", "") not in SLOW_FIRST)
     a11y = [item for item in items if _HERE in Path(str(item.fspath)).resolve().parents]

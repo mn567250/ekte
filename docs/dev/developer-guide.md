@@ -210,8 +210,11 @@ pytest -n auto               # in parallel, one worker per CPU (pytest-xdist)
   `test_web_*_js.py` and `test_web_locales.py`; they are skipped without Node.js.
 - No test may reach the network.
 - No test may take longer than 120 s (`pytest-timeout`, `timeout` in
-  `[tool.pytest.ini_options]`); one that does fails with its name, and at
-  110 s every thread's stack is printed (`faulthandler_timeout`). A test that is slow on purpose says so with
+  `[tool.pytest.ini_options]`), a browser test in `tests/a11y` no longer than
+  600 s (`A11Y_TIMEOUT` in `tests/a11y/conftest.py`); one that does fails with
+  its name. CI also prints every thread's stack 10 s before
+  (`-o faulthandler_timeout=…`): under `-n auto` pytest-timeout's own dump is
+  lost, so add that option locally too when hunting a hang. A test that is slow on purpose says so with
   `@pytest.mark.timeout(seconds)`; `pytest --timeout=0` switches the limit off
   (e.g. in a debugger). Start child processes with
   `tests._helpers.run_subprocess` (like `subprocess.run`, with a 60 s timeout
