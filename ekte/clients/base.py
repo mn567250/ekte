@@ -15,21 +15,27 @@ import re
 import ssl
 import threading
 import time
-from contextlib import asynccontextmanager
+from collections.abc import Iterator
+from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
 from ekte.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
 from ekte.perf.recorder import (
+    NetTrace,
     RequestRecorder,
+    current_detector,
     current_net_trace,
     net_trace_scope,
     usage_tokens,
 )
 from ekte.utils.net import is_local_host
 from ekte.utils.redact import redact_json, redact_text
+
+if TYPE_CHECKING:
+    from ekte.evidence import EvidenceWriter
 
 # One TLS context for every relay client in the process. httpx builds a new
 # one per AsyncClient (and one more per proxy mount): loading the CA bundle
@@ -253,6 +259,10 @@ class BaseHTTPClient:
         # ``endpoint`` says which side ("target" / "baseline") this client is.
         self.recorder: RequestRecorder | None = None
         self.endpoint = config.kind
+        # Set for a client whose calls are not recorded (the LLM judge, the
+        # media auditor) when the run keeps evidence: their raw exchanges go
+        # there without a ``seq``. Recorded calls use ``recorder.evidence``.
+        self.evidence: EvidenceWriter | None = None
         self.local = is_local_host(self.base_url)
         # True once the endpoint is known to reason (its profile says so, or a
         # short probe already needed the reasoning repeat): short probes then go
@@ -274,7 +284,7 @@ class BaseHTTPClient:
             verify=await get_ssl_context(),
             headers=self._headers(),
             follow_redirects=False,
-            event_hooks={"request": [self._attach_trace]},
+            event_hooks={"request": [self._attach_trace], "response": [self._capture_response]},
         )
         return self
 
@@ -295,7 +305,7 @@ class BaseHTTPClient:
             verify=await get_ssl_context(),
             headers=self._headers(),
             follow_redirects=False,
-            event_hooks={"request": [self._attach_trace]},
+            event_hooks={"request": [self._attach_trace], "response": [self._capture_response]},
         )
         try:
             yield client
@@ -357,10 +367,45 @@ class BaseHTTPClient:
 
     @staticmethod
     async def _attach_trace(request: httpx.Request) -> None:
-        """Hand the in-flight call's transport events to its performance trace."""
+        """Hand the in-flight call's transport events to its performance trace
+        (and, when the run keeps evidence, start capturing the exchange)."""
         net = current_net_trace()
         if net is not None:
             request.extensions["trace"] = net.trace
+            if net.captures is not None:
+                from ekte.evidence import Capture
+
+                cap = Capture.of_request(request)
+                net.captures.append(cap)
+                request.extensions["ekte_capture"] = cap
+
+    @staticmethod
+    async def _capture_response(response: httpx.Response) -> None:
+        """Tee the response body of a captured exchange as it is read."""
+        cap = response.request.extensions.get("ekte_capture")
+        if cap is not None:
+            cap.on_response(response)
+
+    def _capturing(self) -> bool:
+        """True when this client's recorded calls keep their raw exchanges."""
+        return self.recorder is not None and self.recorder.evidence is not None
+
+    @contextmanager
+    def _unrecorded(self, op: str) -> Iterator[NetTrace | None]:
+        """Scope of a call no recorder logs: with ``self.evidence`` set, its
+        exchanges are captured and written without a ``seq`` on the way out."""
+        if self.evidence is None:
+            yield None
+            return
+        with net_trace_scope(capture=True) as net:
+            try:
+                yield net
+            finally:
+                if net.captures:
+                    self.evidence.add(
+                        net.captures, seq=None, endpoint=self.endpoint,
+                        detector=current_detector(), op=op,
+                    )
 
     # Subclasses provide protocol-specific auth headers and request handling.
     def _headers(self) -> dict[str, str]:
@@ -458,9 +503,10 @@ class BaseHTTPClient:
         self, spec: RequestSpec
     ) -> tuple[CompletionOutcome, RequestRecord | None]:
         if self.recorder is None:
-            return await self._complete_bounded(spec), None
+            with self._unrecorded("complete"):
+                return await self._complete_bounded(spec), None
         started = time.perf_counter()
-        with net_trace_scope() as net:
+        with net_trace_scope(self._capturing()) as net:
             outcome = await self._complete_bounded(spec)
         record = self.recorder.record_completion(self.endpoint, spec, outcome, started, net)
         return outcome, record
@@ -494,7 +540,7 @@ class BaseHTTPClient:
         if self.recorder is None:
             return await self._embeddings(inputs)
         started = time.perf_counter()
-        with net_trace_scope() as net:
+        with net_trace_scope(self._capturing()) as net:
             outcome, vectors = await self._embeddings(inputs)
         self.recorder.record_embedding(self.endpoint, inputs, outcome, started, net)
         return outcome, vectors
@@ -512,7 +558,7 @@ class BaseHTTPClient:
         if self.recorder is None:
             return await self._rerank(query, documents)
         started = time.perf_counter()
-        with net_trace_scope() as net:
+        with net_trace_scope(self._capturing()) as net:
             outcome, results = await self._rerank(query, documents)
         self.recorder.record_rerank(self.endpoint, query, documents, outcome, started, net)
         return outcome, results
@@ -526,7 +572,7 @@ class BaseHTTPClient:
         if self.recorder is None:
             return await self._list_models(headers)
         started = time.perf_counter()
-        with net_trace_scope() as net:
+        with net_trace_scope(self._capturing()) as net:
             outcome, ids = await self._list_models(headers)
         self.recorder.record_models(self.endpoint, outcome, started, net)
         return outcome, ids

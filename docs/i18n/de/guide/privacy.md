@@ -24,6 +24,19 @@
   `history_metrics` enthält eine Zeile Messwerte pro Lauf, `history_requests`
   jeden Anfrage-Datensatz (dort einmal gespeichert, nicht in jedem Bericht).
   Committen Sie `watches.db` nicht, falls der Ordner ein Repository ist.
+- **Belegdateien.** Ein im Verlauf gespeicherter Lauf (Web-UI, Überwachungen,
+  `ekte watch`, `ekte embed`, `ekte rerank`) behält zusätzlich jede rohe Anfrage
+  und Antwort, die er ausgetauscht hat, in `evidence/<run_id>.jsonl.zst` im
+  Datenverzeichnis, sodass sich jeder Befund mit genau dem abgleichen lässt, was
+  gesendet und empfangen wurde. Ihre API-Schlüssel, die Werte von `--header`,
+  `Authorization`, Cookies und die anderen sensiblen Header werden vor dem
+  Schreiben entfernt; Prompts und Antworten bleiben, wie sie waren. Wer einen
+  Lauf löscht, löscht seine Datei. Abschalten lässt es sich pro Lauf (die
+  Einstellung **Rohe Anfragen/Antworten** im Prüfformular oder
+  `"evidence": false` in `POST /api/v1/jobs`), pro Überwachung oder für den
+  ganzen Server (`ekte serve --no-evidence`, `EKTE_NO_EVIDENCE=1`).
+  `ekte check`, `compare`, `image` und `audio` behalten nichts, außer mit
+  `--evidence PATH` (siehe [Berichte](reports.md)).
 
 ## Verantwortungsvoller Einsatz
 

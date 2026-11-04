@@ -227,7 +227,7 @@ def test_watch_json_cycle_goes_to_stdout_and_progress_to_stderr(monkeypatch):
 
 # --------------------------------------------------------------------------- deprecations
 def test_deprecated_save_keeps_working_and_warns(monkeypatch, tmp_path):
-    async def fake_audit_image(target, *, size, claimed_sizes):
+    async def fake_audit_image(target, *, size, claimed_sizes, evidence=None):
         return {"risk_level": "clean"}
 
     monkeypatch.setattr("ekte.media_audit.audit_image", fake_audit_image)
@@ -243,7 +243,7 @@ def test_deprecated_save_keeps_working_and_warns(monkeypatch, tmp_path):
 def test_deprecated_audio_format_keeps_working_and_warns(monkeypatch):
     seen = {}
 
-    async def fake_audit_audio(target, *, voice, fmt):
+    async def fake_audit_audio(target, *, voice, fmt, evidence=None):
         seen["fmt"] = fmt
         return {"risk_level": "clean"}
 

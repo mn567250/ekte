@@ -15,8 +15,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
-REPORT_SCHEMA_VERSION = "1.1"
+REPORT_SCHEMA_VERSION = "1.2"
 WEBHOOK_SCHEMA_VERSION = "1.0"
+# Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
+EVIDENCE_SCHEMA_VERSION = "1.0"
 
 
 # --------------------------------------------------------------------------- #
@@ -652,6 +654,26 @@ class KnowledgeUsage(BaseModel):
 # --------------------------------------------------------------------------- #
 # Top-level report
 # --------------------------------------------------------------------------- #
+class EvidenceRef(BaseModel):
+    """The evidence file of a run (see :mod:`ekte.evidence`): where its raw
+    request/response pairs are and how to check the file is the one written."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str
+    # The file's name (``<run_id>.jsonl.zst`` in the data directory's
+    # ``evidence`` folder, or the name given to ``--evidence``).
+    file: str
+    sha256: str
+    # Exchange lines in the file (the header line not counted).
+    exchanges: int = 0
+    bytes: int = 0
+    schema_version: str = EVIDENCE_SCHEMA_VERSION
+    # False when writing failed part-way (e.g. the disk filled up): the file
+    # holds the exchanges up to the failure.
+    complete: bool = True
+
+
 class AuditReport(BaseModel):
     """The serializable artifact ekte produces. JSON form is the LLM-facing API."""
 
@@ -705,3 +727,6 @@ class AuditReport(BaseModel):
     # The knowledge-base profile the target was audited against, its sources
     # and a full snapshot of it (None in reports from before this existed).
     knowledge: KnowledgeUsage | None = None
+    # The run's evidence file: every raw request/response pair (None when the
+    # run kept none, and in reports from before schema 1.2).
+    evidence: EvidenceRef | None = None

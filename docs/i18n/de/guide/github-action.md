@@ -64,6 +64,7 @@ jobs:
 | `fail-on-risk`      | nein     | `high`        | Lässt den Job scheitern, wenn das Risiko `>=` dieser Stufe ist: `low` \| `medium` \| `high`. |
 | `python-version`    | nein     | `3.12`        | Python-Version, mit der `ekte` installiert und ausgeführt wird. |
 | `version`           | nein     | `ekte`  | pip-Installationsangabe. Für reproduzierbare Läufe festlegen, z. B. `ekte==0.33.1`. |
+| `evidence`          | nein     | `false`       | `true` behält jedes rohe Anfrage/Antwort-Paar der Prüfung (ohne Schlüssel) und lädt es als Workflow-Artefakt hoch, auch wenn das Gate fehlschlägt. |
 
 ## Ausgaben
 
@@ -72,6 +73,7 @@ jobs:
 | `risk`   | Risikostufe: `clean` \| `low` \| `medium` \| `high` \| `inconclusive`. |
 | `score`  | Gesamtbewertung `0`–`100` (leere Zeichenkette, wenn `ekte` das Relay nicht bewerten konnte). |
 | `rating` | Für Menschen lesbare Einstufung aus dem Urteil (kann leer sein). |
+| `evidence-file` | Pfad der Belegdatei auf dem Runner (leer, außer `evidence` ist `true`). |
 
 ## Ein Deployment an die Gesundheit des Relays koppeln
 

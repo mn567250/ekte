@@ -79,6 +79,16 @@ Modelle auf Ihrem eigenen Rechner); Audits verschiedener Relays laufen parallel,
 höchstens vier gleichzeitig (`EKTE_MAX_PARALLEL_AUDITS`). Überwachungen warten
 ebenso auf ihr Relay.
 
+**Rohe Anfragen und Antworten.** Ein im **Verlauf** gespeicherter Lauf behält
+jede rohe Anfrage und Antwort, die er ausgetauscht hat (siehe
+[Datenschutz](privacy.md)). In seinem Bericht listet **Belege anzeigen** unter
+einem Befund die Anfragen der zugehörigen Prüfung auf; jede öffnet die Anfrage,
+wie sie gesendet, und die Antwort, wie sie empfangen wurde, samt der Ankunft
+ihrer Teile, und **Rohdaten** → **Belegdatei** lädt alle herunter. Die
+Einstellung **Rohe Anfragen/Antworten** im Prüfformular (**Behalten** /
+**Nicht behalten**) entscheidet das pro Lauf; jede Überwachung hat dieselbe
+Einstellung unter **Überwachung**.
+
 **Analyse.** `/analytics` macht aus dem lokalen Verlauf
 Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
 hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,

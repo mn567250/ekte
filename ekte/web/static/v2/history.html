@@ -1071,6 +1071,8 @@
         { zh: "重新检测", en: "Re-run audit", onClick: function () { rerun(id); } },
       ]),
       download: { name: "ekte-report-" + panel.getAttribute("data-id") },
+      // the saved run: its raw request/response pairs open under each finding
+      historyId: id,
     });
   }
 

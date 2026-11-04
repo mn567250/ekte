@@ -38,6 +38,12 @@ Hver overvåking har sitt eget varslingsspråk (standard er grensesnittspråket)
 kan kjøres nå, settes på pause eller slettes, og fester profilen fra
 kunnskapsbasen den ble opprettet med, til du fester den på nytt.
 
+Hver overvåkingskjøring og hver syklus av `ekte watch` beholder de rå
+forespørslene og svarene sammen med den lagrede kjøringen (se
+[Personvern](privacy.md)); innstillingen **Rå forespørsler/svar** for en
+overvåking (**Behold** / **Ikke behold**) og `ekte watch --no-evidence` slår det
+av.
+
 Overvåkinger som forfaller, kjøres samtidig, hver som sin egen revisjon, men
 aldri mer enn én revisjon per relévert om gangen og høyst
 `EKTE_MAX_PARALLEL_AUDITS` totalt; en kjøring venter på en ledig plass (en

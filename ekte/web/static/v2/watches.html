@@ -634,6 +634,7 @@
         "<b>" + pct + "%</b></div>"
       : "";
     var langLabel = T("告警语言", "Alert language");
+    var evLabel = T("原始请求/响应", "Raw requests/responses");
     var thrLabel = T("告警阈值", "Alert threshold");
     var swText = draft ? T("待设置", "Needs setup") : w.enabled ? T("启用中", "Enabled") : T("已暂停", "Paused");
     // collapsed: name, status, URL, last run and progress stay; the settings,
@@ -669,6 +670,9 @@
             meta(T("Webhook", "Webhooks"), hooksCell(w, s)) +
             meta(langLabel, '<select class="in" data-act="lang" data-id="' + w.id + '" aria-label="' + esc(langLabel + " — " + name) + '">' + langOptions(w.language) + "</select>") +
             meta(T("知识库资料", "Knowledge profile"), kbCell(w)) +
+            meta(evLabel, '<select class="in" data-act="evidence" data-id="' + w.id + '" aria-label="' + esc(evLabel + " — " + name) + '">' +
+              '<option value="keep"' + (w.evidence !== false ? " selected" : "") + ">" + esc(T("保留", "Keep")) + "</option>" +
+              '<option value="drop"' + (w.evidence === false ? " selected" : "") + ">" + esc(T("不保留", "Don't keep")) + "</option></select>") +
           "</dl>" +
           (lastParts.length ? '<div class="mon-last">' + lastParts.join("") + "</div>" : "") +
         "</div>" +
@@ -1282,13 +1286,16 @@
         failMsg(id, e);
         render();
       });
-    } else if (act === "lang" || act === "alert") {
-      var body = act === "lang" ? { language: t.value } : { alert_on: t.value };
+    } else if (act === "lang" || act === "alert" || act === "evidence") {
+      var body = act === "lang" ? { language: t.value }
+        : act === "evidence" ? { evidence: t.value === "keep" } : { alert_on: t.value };
       patch(id, body).then(function () {
         s.msgKind = "ok";
         s.msg = act === "lang"
           ? function () { return T("告警语言已保存。", "Alert language saved."); }
-          : function () { return T("告警阈值已保存。", "Alert threshold saved."); };
+          : act === "evidence"
+            ? function () { return T("已保存：之后的运行将据此保留或不保留原始请求/响应。", "Saved: the next runs keep their raw requests and responses accordingly."); }
+            : function () { return T("告警阈值已保存。", "Alert threshold saved."); };
         return load();
       }, function (e) {
         failMsg(id, e);

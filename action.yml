@@ -47,6 +47,12 @@ inputs:
       Pin it for reproducible runs, e.g. `ekte==0.33.1`.
     required: false
     default: "ekte"
+  evidence:
+    description: >-
+      Keep every raw request/response pair of the audit (keys removed) and
+      upload it as a workflow artifact: true | false.
+    required: false
+    default: "false"
 
 outputs:
   risk:
@@ -58,6 +64,9 @@ outputs:
   rating:
     description: "Human-readable rating from the verdict (may be empty)."
     value: ${{ steps.audit.outputs.rating }}
+  evidence-file:
+    description: "Path of the evidence file on the runner (empty unless evidence is true)."
+    value: ${{ steps.audit.outputs.evidence-file }}
 
 runs:
   using: "composite"
@@ -91,6 +100,7 @@ runs:
         IN_FAIL_ON_RISK: ${{ inputs.fail-on-risk }}
         IN_CLAIMED_MODEL: ${{ inputs.claimed-model }}
         IN_DECLARED_PROVIDER: ${{ inputs.declared-provider }}
+        IN_EVIDENCE: ${{ inputs.evidence }}
       run: |
         set -o pipefail
 
@@ -109,6 +119,11 @@ runs:
         fi
         if [ -n "$IN_DECLARED_PROVIDER" ]; then
           args+=(--declared-provider "$IN_DECLARED_PROVIDER")
+        fi
+        evidence_dir=""
+        if [ "$IN_EVIDENCE" = "true" ]; then
+          evidence_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/ekte-evidence.XXXXXX")"
+          args+=(--evidence "$evidence_dir")
         fi
 
         # Capture the compact JSON verdict. ekte exits non-zero when the gate
@@ -141,6 +156,16 @@ runs:
         print(f"rating={rating}")
         PY
 
+        # The evidence file (one per run, named <run_id>.jsonl.zst).
+        if [ -n "$evidence_dir" ]; then
+          for f in "$evidence_dir"/*.jsonl.zst; do
+            if [ -f "$f" ]; then
+              echo "evidence-file=$f" >>"$GITHUB_OUTPUT"
+              echo "evidence-name=ekte-evidence-$(basename "$f" .jsonl.zst)" >>"$GITHUB_OUTPUT"
+            fi
+          done
+        fi
+
         # Concise human summary on the run's Summary tab.
         python - "${RUNNER_TEMP:-/tmp}/ekte-report.json" "$IN_FAIL_ON_RISK" "$code" <<'PY' >>"$GITHUB_STEP_SUMMARY"
         import json, sys
@@ -168,3 +193,12 @@ runs:
 
         # Re-raise ekte's own exit code so the gate (or config error) fails the job.
         exit "$code"
+
+    - name: Upload the evidence file
+      # Also when the gate failed: that is when the evidence matters most.
+      if: ${{ always() && inputs.evidence == 'true' && steps.audit.outputs.evidence-file != '' }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ steps.audit.outputs.evidence-name }}
+        path: ${{ steps.audit.outputs.evidence-file }}
+        if-no-files-found: ignore

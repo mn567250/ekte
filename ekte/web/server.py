@@ -82,6 +82,7 @@ from typing import Any
 # (CLI `serve`) or by the web tests, both of which handle a missing dependency.
 from fastapi import FastAPI, Request
 from fastapi.responses import (
+    FileResponse,
     JSONResponse,
     RedirectResponse,
     Response,
@@ -479,6 +480,11 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
                 job.waiting_for = []
                 job.emit({"type": "running", "job": job.id})
             started = time.perf_counter()
+            # The run's raw request/response pairs, unless the monitor (or
+            # the server) keeps none.
+            from ekte import evidence
+
+            keep = row.get("evidence") is not False and evidence.default_on()
             report = await run_audit(
                 target,
                 options,
@@ -487,6 +493,7 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
                 pinned=pinned,
                 on_event=on_event,
                 previous_report=drift_ref,
+                evidence=evidence.data_dir_path(evidence.new_run_id()) if keep else None,
             )
             duration = time.perf_counter() - started
         report_dict = json.loads(report.model_dump_json())
@@ -676,6 +683,11 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         vault.take_stored_keys()
     except Exception as exc:
         _log.warning("watch store: %s", exc)
+    # Evidence files of runs that were never saved (or died part-way).
+    with contextlib.suppress(Exception):
+        from ekte.web import history
+
+        await asyncio.to_thread(history.sweep_evidence)
     task = asyncio.create_task(_scheduler_loop())
     try:
         yield
@@ -1088,7 +1100,14 @@ def create_app() -> FastAPI:
             ),
         )
 
+        # The job is saved to history, so it keeps its raw request/response
+        # pairs, unless the request (or the server) says otherwise.
+        from ekte import evidence
+
+        keep = body.get("evidence") is not False and evidence.default_on()
+
         async def run(emit: jobs.Emit) -> dict[str, Any]:
+            path = evidence.data_dir_path(evidence.new_run_id()) if keep else None
             if surface != "chat":
                 # The Tools' run (the surface's previous saved run as the drift
                 # reference), unsaved: the job saves it like a chat audit.
@@ -1096,7 +1115,7 @@ def create_app() -> FastAPI:
 
                 report, _ = await _run_surface(
                     target, options, kb_dirs=None, command=None, save=False,
-                    baseline=baseline, on_event=emit,
+                    baseline=baseline, on_event=emit, evidence=path,
                 )
             else:
                 report = await run_audit(
@@ -1105,6 +1124,7 @@ def create_app() -> FastAPI:
                     baseline=baseline,
                     mode="compare" if baseline is not None else "check",
                     on_event=emit,
+                    evidence=path,
                 )
             return json.loads(report.model_dump_json())
 
@@ -1298,6 +1318,64 @@ def create_app() -> FastAPI:
             attach_trends(perf["requests"])
         return JSONResponse(report)
 
+    # ----- Evidence: a saved run's raw request/response pairs ------------- #
+    def _evidence_of(rid: int) -> tuple[Any, dict[str, Any] | None]:
+        from ekte.web import history
+
+        report = history.get(rid)
+        if report is None:
+            return None, None
+        return history.evidence_path(rid), report
+
+    @app.get("/api/v1/history/{rid}/evidence")
+    def history_evidence_file(rid: int) -> Any:
+        """The run's evidence file as written (zstd-compressed JSON Lines)."""
+        path, report = _evidence_of(rid)
+        if path is None:
+            return JSONResponse(
+                {"error": "not found" if report is None else "this run kept no evidence"},
+                status_code=404,
+            )
+        return FileResponse(
+            path, media_type="application/zstd", filename=path.name,
+            headers={"Cache-Control": "no-store"},
+        )
+
+    @app.get("/api/v1/history/{rid}/evidence/exchanges")
+    def history_evidence_exchanges(
+        rid: int, seq: int | None = None, id: int | None = None, detector: str | None = None
+    ) -> Any:
+        """The run's exchanges: a listing without bodies, or with ``seq`` the
+        full pairs of that request record, with ``id`` one full pair."""
+        from ekte import evidence
+
+        path, report = _evidence_of(rid)
+        if path is None:
+            return JSONResponse(
+                {"error": "not found" if report is None else "this run kept no evidence"},
+                status_code=404,
+            )
+        ref = (report or {}).get("evidence") or {}
+        try:
+            if seq is None and id is None:
+                rows = evidence.index(path)
+                if detector is not None:
+                    rows = [r for r in rows if r.get("detector") == detector]
+                return JSONResponse({
+                    "run_id": ref.get("run_id"),
+                    "file": path.name,
+                    # the file is the one the report names (its hash matches)
+                    "verified": evidence.sha256_of(path) == ref.get("sha256"),
+                    "exchanges": rows,
+                }, headers={"Cache-Control": "no-store"})
+            lines = evidence.exchanges(path, seq=seq, line_id=id)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=409)
+        if not lines:
+            return JSONResponse({"error": "no such exchange"}, status_code=404)
+        return JSONResponse({"run_id": ref.get("run_id"), "exchanges": lines},
+                            headers={"Cache-Control": "no-store"})
+
     @app.delete("/api/history/{rid}")
     def history_delete(rid: int) -> Any:
         from ekte.web import history
@@ -1469,6 +1547,8 @@ def create_app() -> FastAPI:
             # the streaming mode is a chat setting; non-chat requests never stream
             "performance_streaming": surface != "chat" or body.get("performance_streaming") is not False,
             "embedding_dimensions": _coerce_int(body.get("embedding_dimensions")) if embedding else 0,
+            # its runs keep their raw request/response pairs unless switched off
+            "evidence": body.get("evidence") is not False,
         }
         try:
             knowledge = await asyncio.to_thread(_watch_knowledge, cfg)
@@ -1631,6 +1711,9 @@ def create_app() -> FastAPI:
                 check_surface_dimensions(validate_surface(row.get("surface")), picked)
             except ConfigError as exc:
                 return JSONResponse({"error": str(exc)}, status_code=400)
+        keep_evidence = body.get("evidence")
+        if keep_evidence is not None and not isinstance(keep_evidence, bool):
+            return JSONResponse({"error": "evidence must be true or false"}, status_code=400)
         if body.get("surface") is not None and body.get("surface") != row.get("surface"):
             # What a monitor audits is fixed; create a new one for another surface.
             return JSONResponse({"error": "a monitor's surface cannot be changed"}, status_code=400)
@@ -1652,6 +1735,7 @@ def create_app() -> FastAPI:
                     webhooks=hooks,
                     embedding_dimensions=dims,
                     key_storage=_key_storage_override(body),
+                    evidence=keep_evidence,
                 )
             except SecretLocked as exc:
                 return _locked_response(exc)

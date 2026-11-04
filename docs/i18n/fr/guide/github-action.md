@@ -64,6 +64,7 @@ jobs:
 | `fail-on-risk`      | non      | `high`        | Fait échouer le job quand le risque est `>=` ce niveau : `low` \| `medium` \| `high`. |
 | `python-version`    | non      | `3.12`        | Version de Python utilisée pour installer et exécuter `ekte`. |
 | `version`           | non      | `ekte`  | Spécification pip install. Épinglez-la pour des exécutions reproductibles, p. ex. `ekte==0.33.1`. |
+| `evidence`          | non      | `false`       | `true` conserve chaque paire requête/réponse brute de l'audit (sans les clés) et la téléverse comme artefact du workflow, même quand la porte échoue. |
 
 ## Sorties
 
@@ -72,6 +73,7 @@ jobs:
 | `risk`   | Niveau de risque : `clean` \| `low` \| `medium` \| `high` \| `inconclusive`. |
 | `score`  | Score global `0`–`100` (chaîne vide si `ekte` n'a pas pu noter le relais). |
 | `rating` | Appréciation lisible tirée du verdict (peut être vide). |
+| `evidence-file` | Chemin du fichier de preuves sur le runner (vide sauf si `evidence` vaut `true`). |
 
 ## Conditionner un déploiement à la santé du relais
 

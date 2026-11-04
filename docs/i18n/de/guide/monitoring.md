@@ -41,6 +41,11 @@ Oberfläche), lässt sich sofort ausführen, pausieren oder löschen und bleibt 
 das Wissensbasis-Profil gebunden, mit dem sie angelegt wurde, bis Sie es neu
 binden.
 
+Jeder Überwachungslauf und jeder Zyklus von `ekte watch` behält seine rohen
+Anfragen und Antworten beim gespeicherten Lauf (siehe [Datenschutz](privacy.md));
+die Einstellung **Rohe Anfragen/Antworten** einer Überwachung (**Behalten** /
+**Nicht behalten**) und `ekte watch --no-evidence` schalten das ab.
+
 Fällige Überwachungen laufen gleichzeitig, jede als eigenes Audit, aber nie mehr
 als ein Audit pro Relay-Host auf einmal und insgesamt höchstens
 `EKTE_MAX_PARALLEL_AUDITS`; ein Lauf wartet auf einen freien Platz (auch ein von

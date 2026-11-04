@@ -24,6 +24,18 @@
   `history_requests` every request record (stored there once, not inside each
   saved report). Don't
   commit `watches.db` if that folder is a repository.
+- **Evidence files.** A run saved to history (web UI, monitors, `ekte watch`,
+  `ekte embed`, `ekte rerank`) also keeps every raw request and response it
+  exchanged, in `evidence/<run_id>.jsonl.zst` in the data directory, so each
+  finding can be checked against exactly what was sent and received. Your API
+  keys, `--header` values, `Authorization`, cookies and the other sensitive
+  headers are removed before anything is written; prompts and answers are kept
+  as they were. Deleting a run deletes its file. Switch it off per run (the
+  audit form's **Raw requests/responses** setting, or `"evidence": false` in
+  `POST /api/v1/jobs`), per monitor, or for the whole server
+  (`ekte serve --no-evidence`, `EKTE_NO_EVIDENCE=1`). `ekte check`, `compare`,
+  `image` and `audio` keep none unless asked with `--evidence PATH` (see
+  [Reports](reports.md)).
 
 ## Responsible use
 

@@ -79,6 +79,16 @@ propre machine attendent aussi) ; les audits de relais différents s'exécutent
 en parallèle, quatre au plus à la fois (`EKTE_MAX_PARALLEL_AUDITS`). Les
 surveillances attendent leur relais de la même façon.
 
+**Requêtes et réponses brutes.** Une exécution enregistrée dans
+l'**Historique** conserve chaque requête et réponse brute échangée (voir
+[Confidentialité](privacy.md)). Dans son rapport, **Afficher les preuves** sous
+un constat liste les requêtes du contrôle correspondant ; chacune ouvre la
+requête telle qu'envoyée et la réponse telle que reçue, avec l'arrivée de ses
+morceaux, et **Preuves brutes** → **Fichier de preuves** les télécharge toutes.
+Le réglage **Requêtes/réponses brutes** du formulaire d'audit (**Conserver** /
+**Ne pas conserver**) en décide par exécution ; chaque surveillance a le même
+réglage dans **Surveillances**.
+
 **Analyses.** `/analytics` transforme l'historique
 local en comparaisons : des indicateurs pour la période choisie (exécutions,
 score médian, part à risque élevé, taux de réussite, TTFT, vitesse de sortie,

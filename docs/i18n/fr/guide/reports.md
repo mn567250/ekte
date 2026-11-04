@@ -25,3 +25,28 @@ clés avec leurs recommandations, les scores par dimension et les **Dimension
 details**, les constats de chaque détecteur avec leurs preuves, la section
 performance, le profil de la base de connaissances utilisé et les langues de
 sonde. Le texte contrôlé par le relais est expurgé et échappé avant d'être écrit.
+
+## Fichiers de preuves
+
+Avec `--evidence PATH` (`check`, `compare`, `image`, `audio`), et par défaut
+pour chaque exécution enregistrée dans l'historique, ekte écrit aussi chaque
+requête et réponse HTTP brute de l'exécution dans un fichier : du JSON Lines
+dans un flux zstd, `<run_id>.jsonl.zst` (un répertoire donné comme `PATH`
+reçoit ce nom). La première ligne décrit l'exécution ; chaque ligne suivante est
+une requête avec sa réponse, y compris l'instant d'arrivée de chaque morceau de
+la réponse. Le `seq` d'une ligne est le `seq` de la requête dans
+`performance.requests` du rapport : chaque requête listée par le rapport peut
+ainsi être retrouvée. Le champ `evidence` du rapport nomme le fichier avec son
+SHA-256 et son nombre d'échanges.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Les clés et les en-têtes sensibles sont retirés avant toute écriture (voir
+[Confidentialité](privacy.md)). Chaque ligne respecte
+`ekte/schemas/evidence.schema.json` ([Schémas](../../../reference/schemas.md)).
+Dans l'interface web, **Afficher les preuves** sous un constat d'une exécution
+enregistrée liste les requêtes du contrôle correspondant et ouvre chaque
+requête et réponse brute.

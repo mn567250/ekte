@@ -25,3 +25,26 @@ findings with recommendations, the per-dimension scores and **Dimension
 details**, every detector's findings with evidence, the performance section, the
 knowledge-base profile used and the probe languages. Relay-controlled text is
 redacted and escaped before it is written.
+
+## Evidence files
+
+With `--evidence PATH` (`check`, `compare`, `image`, `audio`), and by default
+for every run saved to history, ekte also writes every raw HTTP request and
+response of the run to one file: JSON Lines in one zstd stream,
+`<run_id>.jsonl.zst` (a directory given as `PATH` gets that name). The first
+line describes the run; every further line is one request with its response,
+including when each chunk of the response arrived. A line's `seq` is the
+request's `seq` in the report's `performance.requests`, so every request the
+report lists can be looked up. The report's `evidence` names the file with its
+SHA-256 and its number of exchanges.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Keys and sensitive headers are removed before anything is written (see
+[Privacy](privacy.md)). Each line matches `ekte/schemas/evidence.schema.json`
+([Schemas](../reference/schemas.md)). In the web UI, **Show evidence** under a
+finding of a saved run lists the requests of the check behind it and opens
+each raw request and response.

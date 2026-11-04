@@ -7,12 +7,16 @@
  *   EkteReport.render(el, report, {
  *     actions: [{ zh: "再测一个", en: "Test another", primary: false, onClick: fn }, …],
  *     download: { name: "ekte-report" },   // optional: JSON / Markdown / HTML / PDF buttons
+ *     historyId: 42,   // optional: the saved run; with report.evidence its raw
+ *                      // request/response pairs open under each finding's evidence
  *   })
  *     renders `report` (the audit stream's "report" event, or a history row's
  *     report) into `el`, wires its interactions, and re-renders it in place when
  *     the UI language changes (expanded dimensions, evidence and keyboard focus
  *     are kept).
  *   EkteReport.wire(el)    (re)attach the interactions after external re-rendering.
+ *   EkteReport.rawPair(exchange) -> HTML of one evidence-file exchange line
+ *     (request and response, bodies shown up to RAW_SHOW characters).
  *   EkteReport.download(report, fmt, name) -> Promise
  *     saves `report` as <name>.<lang>.<ext>, fmt one of json | md | html | pdf.
  *     Text is exported in the UI language first (EKTE_I18N.exportReport); JSON is
@@ -539,11 +543,7 @@
       '<div class="fs">' + esc(L.summary) +
       (f.recommendation ? ' <span class="rec">· ' + esc(T("建议：", "Recommendation: ")) + esc(srv(f.recommendation)) + "</span>" : "") +
       "</div>" +
-      (ev
-        ? '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id +
-          '" aria-describedby="' + id + '-t">' + esc(showEvidence(false)) + "</button>" +
-          '<pre class="ev" id="' + id + '" hidden>' + escEv(ev) + "</pre>"
-        : "") +
+      evPanel(f, ev, id) +
       "</div></li>"
     );
   }
@@ -660,13 +660,23 @@
       '<div class="fs">' + esc(L.summary) +
       (f.recommendation ? ' <span class="rec">· ' + esc(T("建议：", "Recommendation: ")) + esc(srv(f.recommendation)) + "</span>" : "") +
       "</div>" +
-      (ev
-        ? '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id +
-          '" aria-describedby="' + id + '-t">' + esc(showEvidence(false)) + "</button>" +
-          '<pre class="ev" id="' + id + '" hidden>' + escEv(ev) + "</pre>"
-        : "") +
+      evPanel(f, ev, id) +
       "</div></li>"
     );
+  }
+
+  // The "Show evidence" disclosure of a finding: its evidence fields and,
+  // for a saved run that kept its evidence file, the raw request/response
+  // pairs of the check that produced it (loaded when opened).
+  function evPanel(f, ev, id) {
+    var det = RAW.base ? RAW.det.get(f) : null;
+    if (!ev && !det) return "";
+    var btn = '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id +
+      '" aria-describedby="' + id + '-t">' + esc(showEvidence(false)) + "</button>";
+    if (!det) return btn + '<pre class="ev" id="' + id + '" hidden>' + escEv(ev) + "</pre>";
+    return btn + '<div class="evw" id="' + id + '" hidden>' +
+      (ev ? '<pre class="ev">' + escEv(ev) + "</pre>" : "") +
+      '<div class="zr-raw" data-det="' + esc(det) + '" data-base="' + esc(RAW.base) + '"></div></div>';
   }
 
   // A detector's wall-clock time: "850 ms", "4.2 s", "73 s".
@@ -779,7 +789,20 @@
       (k.profile_hash ? ' <span class="sr-only">' + esc(k.profile_hash) + "</span>" : "");
   }
 
+  // Raw evidence of the report being rendered: the API path of its saved
+  // run's evidence (null: none) and each finding's detector id.
+  var RAW = { base: null, det: new Map() };
+
   function html(r, opts) {
+    RAW = { base: null, det: new Map() };
+    if (r.evidence && opts.historyId != null) {
+      RAW.base = "/api/v1/history/" + encodeURIComponent(opts.historyId) + "/evidence";
+      (r.detectors || []).forEach(function (det) {
+        (det.findings || []).forEach(function (f) {
+          RAW.det.set(f, det.id);
+        });
+      });
+    }
     var v = r.verdict || {};
     var risk = RISK[v.risk_level] || RISK.inconclusive;
     var riskKey = RISK[v.risk_level] ? v.risk_level : "inconclusive";
@@ -856,6 +879,11 @@
         }).join("") +
         '<p class="dl-msg" role="status"></p></div>'
       : "";
+    if (RAW.base)
+      dl += '<div class="zr-dl" role="group" aria-label="' + esc(T("原始证据", "Raw evidence")) + '">' +
+        '<span class="dl-l">' + ico("download") + " " + esc(T("原始证据", "Raw evidence")) + "</span>" +
+        '<a class="btn sm" href="' + esc(RAW.base) + '" download>' + esc(T("证据文件", "Evidence file")) + "</a>" +
+        '<span class="how">' + esc(Tf("{n} 组请求/响应 · zstd 压缩的 JSON Lines", "{n} request/response pairs · zstd-compressed JSON Lines", { n: num(r.evidence.exchanges || 0, 0) })) + "</span></div>";
 
     var rest = srv(summaryRest(v.summary));
     var hid = "zr-h-" + ++uid;
@@ -1021,6 +1049,134 @@
     btn.setAttribute("aria-expanded", String(open));
     if (btn.hasAttribute("data-l0")) btn.textContent = btn.getAttribute(open ? "data-l1" : "data-l0");
     else if (/\bmore\b/.test(btn.className)) btn.textContent = showEvidence(open);
+    var raw = open && panel.querySelector(".zr-raw");
+    if (raw && !raw.hasAttribute("data-state")) loadRaw(raw);
+  }
+
+  /* ---------------- raw request/response pairs ---------------- */
+  // Shown text per body, at most: the rest is in the evidence file.
+  var RAW_SHOW = 20000;
+  var rawIndex = {}; // evidence base path -> Promise of the run's exchange listing
+
+  function getJSON(url) {
+    return fetch(url, { headers: { Accept: "application/json" } }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+        return j;
+      });
+    });
+  }
+  function bytes(n) {
+    n = Number(n) || 0;
+    return n < 1024 ? Tf("{n} 字节", "{n} bytes", { n: num(n, 0) })
+      : n < 1048576 ? num(n / 1024, 1) + " KB" : num(n / 1048576, 1) + " MB";
+  }
+  function urlPath(u) {
+    var m = /^[a-z]+:\/\/[^/]+(\/[^?#]*)?/i.exec(String(u || ""));
+    return m ? m[1] || "/" : String(u || "");
+  }
+  // The exchanges of one check, each with a button that loads its pair.
+  function loadRaw(box) {
+    var base = box.getAttribute("data-base"), det = box.getAttribute("data-det");
+    box.setAttribute("data-state", "loading");
+    box.innerHTML = '<p class="how" role="status">' + esc(T("正在加载原始请求…", "Loading the raw requests…")) + "</p>";
+    var idx = rawIndex[base] || (rawIndex[base] = getJSON(base + "/exchanges"));
+    idx.then(function (j) {
+      var rows = (j.exchanges || []).filter(function (x) { return x.detector === det; });
+      box.setAttribute("data-state", "done");
+      var hid = "zr-rh-" + ++uid;
+      box.innerHTML =
+        '<h5 id="' + hid + '">' + esc(T("原始请求与响应", "Raw requests and responses")) + "</h5>" +
+        (j.verified === false
+          ? '<p class="how warn">' + esc(T("证据文件与报告记录的 SHA-256 不一致。", "The evidence file does not match the SHA-256 the report records.")) + "</p>"
+          : "") +
+        (rows.length
+          ? '<p class="how">' + esc(Tf("此项检测的 {n} 组请求/响应，按完成顺序。", "The {n} request/response pairs of this check, in the order they finished.", { n: num(rows.length, 0) })) + "</p>" +
+            '<ul class="zr-rawl" aria-labelledby="' + hid + '">' + rows.map(rawRow).join("") + "</ul>"
+          : '<p class="how">' + esc(T("此项检测没有发出请求。", "This check sent no requests.")) + "</p>");
+      var btns = box.querySelectorAll(".rawb");
+      for (var i = 0; i < btns.length; i++)
+        btns[i].onclick = function () {
+          openPair(this, base);
+        };
+    }).catch(function (e) {
+      box.removeAttribute("data-state");
+      box.innerHTML = '<p class="how warn" role="status">' + esc(T("无法加载原始证据：", "Could not load the raw evidence: ")) + esc(srv(String((e && e.message) || e))) + "</p>";
+    });
+  }
+  function rawRow(x) {
+    var id = "zr-rp-" + ++uid;
+    var who = x.endpoint === "baseline" ? " · " + T("对照基线", "Baseline")
+      : x.endpoint === "judge" ? " · " + T("评审模型", "Judge") : "";
+    var st = x.status != null ? "HTTP " + x.status : T("无响应", "no response");
+    return (
+      "<li><button type=\"button\" class=\"linkbtn rawb\" aria-expanded=\"false\" aria-controls=\"" + id + "\" data-id=\"" + esc(x.id) + "\">" +
+      esc((x.seq != null ? "#" + x.seq + " " : "") + (x.method || "") + " " + urlPath(x.url)) + "</button> " +
+      '<span class="how">→ ' + esc(st + who + " · " + bytes(x.request_bytes) + " / " + bytes(x.response_bytes)) + "</span>" +
+      '<div class="zr-pair" id="' + id + '" hidden></div></li>'
+    );
+  }
+  function openPair(btn, base) {
+    var panel = document.getElementById(btn.getAttribute("aria-controls"));
+    if (!panel) return;
+    var open = panel.hidden;
+    panel.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+    if (!open || panel.hasAttribute("data-state")) return;
+    panel.setAttribute("data-state", "loading");
+    panel.innerHTML = '<p class="how" role="status">' + esc(T("加载中…", "Loading…")) + "</p>";
+    getJSON(base + "/exchanges?id=" + encodeURIComponent(btn.getAttribute("data-id"))).then(function (j) {
+      panel.setAttribute("data-state", "done");
+      panel.innerHTML = pairHTML((j.exchanges || [])[0] || {});
+    }).catch(function (e) {
+      panel.removeAttribute("data-state");
+      panel.innerHTML = '<p class="how warn">' + esc(T("无法加载原始证据：", "Could not load the raw evidence: ")) + esc(srv(String((e && e.message) || e))) + "</p>";
+    });
+  }
+  function headLines(h) {
+    return Object.keys(h || {}).map(function (k) { return k + ": " + h[k]; }).join("\n");
+  }
+  function bodyText(b) {
+    b = b || {};
+    if (b.text == null) return { text: "", note: "" };
+    if (b.encoding === "base64")
+      return { text: "", note: Tf("二进制内容（{b}），见证据文件。", "Binary body ({b}), in the evidence file.", { b: bytes(b.bytes) }) };
+    var t = b.text;
+    if (/^\s*[{[]/.test(t))
+      try {
+        t = JSON.stringify(JSON.parse(t), null, 2);
+      } catch (e) { /* not JSON: as received */ }
+    var cut = t.length > RAW_SHOW;
+    var note = cut ? Tf("此处只显示前 {n} 个字符，完整内容见证据文件。", "Only the first {n} characters are shown here; the evidence file has all of it.", { n: num(RAW_SHOW, 0) }) : "";
+    if (b.truncated) note = (note ? note + " " : "") + T("记录时内容已被截断。", "The body was cut when it was recorded.");
+    return { text: cut ? t.slice(0, RAW_SHOW) + "\n…" : t, note: note };
+  }
+  // milliseconds: one decimal below 10 ms, so a fast local exchange is not "0 ms"
+  function msNum(ms) {
+    return num(ms, ms < 10 ? 1 : 0);
+  }
+  function pairHTML(x) {
+    var q = x.request || {}, p = x.response;
+    var qb = bodyText(q.body), parts = [];
+    parts.push(
+      "<h6>" + esc(T("请求", "Request")) + "</h6>" +
+      '<pre class="ev raw">' + escEv((q.method || "") + " " + (q.url || "") + "\n" + headLines(q.headers) + (qb.text ? "\n\n" + qb.text : "")) + "</pre>" +
+      (qb.note ? '<p class="how">' + esc(qb.note) + "</p>" : "")
+    );
+    if (p) {
+      var pb = bodyText(p.body);
+      var timing = (p.chunks || []).length > 1
+        ? Tf("分 {n} 块到达，历时 {ms} 毫秒。", "Arrived in {n} chunks over {ms} ms.", { n: num(p.chunks.length, 0), ms: msNum(p.done_ms || 0) })
+        : p.done_ms != null ? Tf("{ms} 毫秒后收完。", "Received in full after {ms} ms.", { ms: msNum(p.done_ms) }) : "";
+      parts.push(
+        "<h6>" + esc(T("响应", "Response")) + "</h6>" +
+        '<pre class="ev raw">' + escEv((p.http_version || "HTTP") + " " + p.status + "\n" + headLines(p.headers) + (pb.text ? "\n\n" + pb.text : "")) + "</pre>" +
+        (timing || pb.note ? '<p class="how">' + esc([timing, pb.note].filter(Boolean).join(" ")) + "</p>" : "")
+      );
+    } else {
+      parts.push('<p class="how">' + esc(T("没有收到响应。", "No response was received.")) + (x.error ? " " + esc(srv(x.error)) : "") + "</p>");
+    }
+    return parts.join("");
   }
 
   function mount(el, report, opts, still) {
@@ -1057,5 +1213,5 @@
     }
   });
 
-  window.EkteReport = { render: render, wire: wire, download: download, duration: duration, findingDetail: findingDetail };
+  window.EkteReport = { render: render, wire: wire, download: download, duration: duration, findingDetail: findingDetail, rawPair: pairHTML };
 })();

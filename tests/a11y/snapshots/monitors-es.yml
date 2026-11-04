@@ -133,6 +133,11 @@
       - definition:
         - code: openai/gpt-4o
         - text: fijado 1 oct 2026, 12:00
+      - term: Peticiones/respuestas originales
+      - definition:
+        - combobox "Peticiones/respuestas originales — gpt-4o":
+          - option "Conservar" [selected]
+          - option "No conservar"
       - 'link "De la ejecución #1 →"':
         - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Completa la configuración para activarlo":

@@ -35,6 +35,12 @@ one written by an older ekte). Such rows are processed by a batched backfill
 (:func:`backfill_analytics`), which also re-extracts rows whose
 ``extract_version`` is behind ``analytics_store.EXTRACT_VERSION``.
 
+Evidence (schema version 5): a run that kept its raw request/response pairs
+names its file (``report.evidence.file``, see :mod:`ekte.evidence`) in the
+``evidence_file`` column. The file lives in the data directory's ``evidence``
+folder; deleting the row deletes it, and :func:`sweep_evidence` removes files
+no row names.
+
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
 """
@@ -50,6 +56,7 @@ from pathlib import Path
 from typing import Any
 
 from ekte import datadir, dbmigrate
+from ekte import evidence as evidence_files
 from ekte.knowledge import snapshot as kb_snapshot
 from ekte.web import analytics_store
 
@@ -159,11 +166,18 @@ def _v4(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(conn, "history", {"surface": "TEXT"})
 
 
+def _v5(conn: sqlite3.Connection) -> None:
+    """The run's evidence file (its name in the data directory's ``evidence``
+    folder); NULL when the run kept none."""
+    kb_snapshot.add_link_columns(conn, "history", {"evidence_file": "TEXT"})
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
     dbmigrate.Migration(3, _v3),
     dbmigrate.Migration(4, _v4),
+    dbmigrate.Migration(5, _v5),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
@@ -393,8 +407,9 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                    (ts, base_url, claimed_model, model, mode, suite,
                     risk_level, score, rating, report_json, kb_snapshot_id, kb_match, watch_id,
                     api, api_auto, stream_mode, surface,
-                    latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done, requests_split)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)""",
+                    latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done, requests_split,
+                    evidence_file)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)""",
                 (
                     report.get("generated_at"),
                     target.get("base_url"),
@@ -417,6 +432,7 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                     report.get("surface") or "chat",
                     *(headline[c] for c in _PERF_COLS),
                     split,
+                    _evidence_name(report),
                 ),
             )
             rid = int(cur.lastrowid or -1)
@@ -597,22 +613,55 @@ def _wrote() -> None:
 
 
 def delete(rid: int) -> None:
-    """Remove one row by id, with its analytics rows (and a snapshot nothing
-    else uses). No-op if missing."""
+    """Remove one row by id, with its analytics rows, its evidence file (and a
+    snapshot nothing else uses). No-op if missing."""
     _wrote()
     with _connect() as conn:
+        row = conn.execute("SELECT evidence_file FROM history WHERE id = ?", (int(rid),)).fetchone()
         conn.execute("DELETE FROM history WHERE id = ?", (int(rid),))
         analytics_store.delete_for(conn, int(rid))
         kb_snapshot.prune(conn, "history")
+    if row is not None:
+        evidence_files.remove(row["evidence_file"])
 
 
 def clear() -> None:
-    """Wipe all history, analytics rows and snapshots included."""
+    """Wipe all history, analytics rows, snapshots and evidence files included."""
     _wrote()
     with _connect() as conn:
+        names = [r["evidence_file"] for r in conn.execute(
+            "SELECT evidence_file FROM history WHERE evidence_file IS NOT NULL")]
         conn.execute("DELETE FROM history")
         analytics_store.delete_for(conn)
         kb_snapshot.prune(conn, "history")
+    for name in names:
+        evidence_files.remove(name)
+
+
+# --------------------------------------------------------------------------- #
+# Evidence files
+# --------------------------------------------------------------------------- #
+def _evidence_name(report: dict[str, Any]) -> str | None:
+    """The data-directory evidence file a report names, if it is there."""
+    ref = report.get("evidence")
+    name = ref.get("file") if isinstance(ref, dict) else None
+    return name if evidence_files.stored_file(name) is not None else None
+
+
+def evidence_path(rid: int) -> Path | None:
+    """The evidence file of a saved run (None: it kept none, or it is gone)."""
+    with _connect() as conn:
+        row = conn.execute("SELECT evidence_file FROM history WHERE id = ?", (int(rid),)).fetchone()
+    return evidence_files.stored_file(row["evidence_file"]) if row is not None else None
+
+
+def sweep_evidence() -> int:
+    """Remove evidence files no row names (and partial files of runs that
+    died), once they are older than a day; returns how many."""
+    with _connect() as conn:
+        keep = {r["evidence_file"] for r in conn.execute(
+            "SELECT evidence_file FROM history WHERE evidence_file IS NOT NULL")}
+    return evidence_files.sweep(keep)
 
 
 # --------------------------------------------------------------------------- #

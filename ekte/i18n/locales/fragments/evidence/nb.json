@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Raw evidence": "Rådata",
+  "Evidence file": "Bevisfil",
+  "{n} request/response pairs · zstd-compressed JSON Lines": "{n} forespørsel/svar-par · zstd-komprimert JSON Lines",
+  "Loading the raw requests…": "Laster de rå forespørslene …",
+  "Raw requests and responses": "Rå forespørsler og svar",
+  "The evidence file does not match the SHA-256 the report records.": "Bevisfilen samsvarer ikke med SHA-256-verdien rapporten oppgir.",
+  "The {n} request/response pairs of this check, in the order they finished.": "De {n} forespørsel/svar-parene i denne kontrollen, i rekkefølgen de ble fullført.",
+  "This check sent no requests.": "Denne kontrollen sendte ingen forespørsler.",
+  "Could not load the raw evidence: ": "Kunne ikke laste inn rådataene: ",
+  "Judge": "Vurderingsmodell",
+  "no response": "ikke noe svar",
+  "{n} bytes": "{n} byte",
+  "Request": "Forespørsel",
+  "Response": "Svar",
+  "Binary body ({b}), in the evidence file.": "Binært innhold ({b}), i bevisfilen.",
+  "Only the first {n} characters are shown here; the evidence file has all of it.": "Bare de første {n} tegnene vises her; bevisfilen har alt.",
+  "The body was cut when it was recorded.": "Innholdet ble kuttet da det ble lagret.",
+  "Arrived in {n} chunks over {ms} ms.": "Kom i {n} deler over {ms} ms.",
+  "Received in full after {ms} ms.": "Mottatt i sin helhet etter {ms} ms.",
+  "No response was received.": "Det kom ikke noe svar.",
+  "Raw requests/responses": "Rå forespørsler/svar",
+  "Keep": "Behold",
+  "Don't keep": "Ikke behold",
+  "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Lagres sammen med kjøringen i datakatalogen, uten nøklene dine, slik at hvert funn kan kontrolleres mot nøyaktig det som ble sendt og mottatt.",
+  "Saved: the next runs keep their raw requests and responses accordingly.": "Lagret: de neste kjøringene beholder de rå forespørslene og svarene i tråd med dette."
+ }
+}

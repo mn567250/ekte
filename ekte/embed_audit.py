@@ -156,6 +156,7 @@ async def run_embedding_audit(
     kb_dirs: list[Path] | None = None,
     command: str | None = None,
     save: bool = True,
+    evidence: Path | bool | None = None,
 ) -> tuple[AuditReport, int | None]:
     """Audit an embeddings endpoint with the runner (surface ``embedding``).
 
@@ -163,11 +164,16 @@ async def run_embedding_audit(
     the knowledge base). The previous saved run of the same target and claimed
     model is the reference for the vector-drift check; with ``save`` the report
     goes to history. Returns the report and its history id (None if not saved).
+    ``evidence`` is where the raw request/response pairs go (see
+    :func:`evidence_path`).
     """
     options = AuditOptions(
         suite=suite, surface="embedding", embedding_dimensions=max(0, claimed_dimensions)
     )
-    return await _run_surface(target, options, kb_dirs=kb_dirs, command=command, save=save)
+    return await _run_surface(
+        target, options, kb_dirs=kb_dirs, command=command, save=save,
+        evidence=evidence_path(evidence, save=save),
+    )
 
 
 async def run_rerank_audit(
@@ -177,15 +183,35 @@ async def run_rerank_audit(
     kb_dirs: list[Path] | None = None,
     command: str | None = None,
     save: bool = True,
+    evidence: Path | bool | None = None,
 ) -> tuple[AuditReport, int | None]:
     """Audit a rerank endpoint with the runner (surface ``rerank``).
 
     The previous saved run of the same target and claimed model is the
     reference for the ranking-drift check; with ``save`` the report goes to
     history. Returns the report and its history id (None if not saved).
+    ``evidence`` as for :func:`run_embedding_audit`.
     """
     options = AuditOptions(suite=suite, surface="rerank")
-    return await _run_surface(target, options, kb_dirs=kb_dirs, command=command, save=save)
+    return await _run_surface(
+        target, options, kb_dirs=kb_dirs, command=command, save=save,
+        evidence=evidence_path(evidence, save=save),
+    )
+
+
+def evidence_path(evidence: Path | bool | None, *, save: bool) -> Path | None:
+    """Where a run's evidence goes: the given path; for a run saved to history
+    (``evidence`` None or True) the data directory, unless switched off
+    (``False``, or ``EKTE_NO_EVIDENCE``); otherwise nowhere."""
+    from ekte import evidence as ev
+
+    if isinstance(evidence, Path):
+        return evidence
+    if evidence is False or not save:
+        return None
+    if evidence is None and not ev.default_on():
+        return None
+    return ev.data_dir_path(ev.new_run_id())
 
 
 async def _run_surface(
@@ -197,6 +223,7 @@ async def _run_surface(
     save: bool,
     baseline: TargetConfig | None = None,
     on_event: Callable[[dict[str, Any]], None] | None = None,
+    evidence: Path | None = None,
 ) -> tuple[AuditReport, int | None]:
     """One run of ``options.surface`` (check mode, or compare with a
     ``baseline``), with the previous saved run of that surface as the drift
@@ -215,6 +242,7 @@ async def _run_surface(
         kb_dirs=kb_dirs,
         previous_report=previous,
         on_event=on_event,
+        evidence=evidence,
     )
     report_id = await asyncio.to_thread(_save, report) if save else None
     return report, report_id
