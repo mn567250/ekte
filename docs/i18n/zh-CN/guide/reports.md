@@ -37,6 +37,11 @@ ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence rep
 zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
 ```
 
+每个发现都会给出它所依据的请求（`evidence_seqs`；不依据任何请求时为空，如 TLS 检查）。
+`ekte evidence-export` 接受证据文件（或已保存检测的 id），将其转换为 HAR，供 HAR 查看器或浏览器开发者工具使用（`--as har`），
+或转换为重新发送这些请求的 curl 脚本（`--as curl`；请先设置 `EKTE_API_KEY`，文件中从不包含密钥），
+或转换为单个 JSON 文档（`--as json`）；`--seq` 用于选择请求。
+
 密钥和敏感请求头在写入前即被去除（见[隐私](privacy.md)）。每一行都符合
 `ekte/schemas/evidence.schema.json`（[Schema](../../../reference/schemas.md)）。在 Web 界面中，
 已保存检测的某个发现下的 **查看证据** 会列出其背后检测项的请求，并可打开每个原始请求和响应。

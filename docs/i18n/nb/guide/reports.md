@@ -43,6 +43,14 @@ ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence rep
 zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
 ```
 
+Hvert funn oppgir forespørslene det bygger på (`evidence_seqs`; tom når det
+ikke bygger på noen, som TLS-kontrollen). `ekte evidence-export` tar filen
+(eller id-en til en lagret kjøring) og gjør den om til HAR for en HAR-viser
+eller nettleserens utviklerverktøy (`--as har`), et curl-skript som sender
+forespørslene på nytt (`--as curl`; sett `EKTE_API_KEY` først, filen
+inneholder aldri nøkkelen) eller ett JSON-dokument (`--as json`); `--seq`
+velger forespørsler.
+
 Nøkler og sensitive hoder fjernes før noe skrives (se [Personvern](privacy.md)).
 Hver linje følger `ekte/schemas/evidence.schema.json`
 ([Skjemaer](../../../reference/schemas.md)). I nettgrensesnittet lister **Vis

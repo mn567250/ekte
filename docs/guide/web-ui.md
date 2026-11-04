@@ -79,6 +79,10 @@ chunks arrived, and **Raw evidence** → **Evidence file** downloads them all.
 The audit form's **Raw requests/responses** setting (**Keep** / **Don't keep**)
 decides it per run; each monitor has the same setting on **Monitors**.
 
+Under a finding the list holds only the requests that finding rests on.
+Each pair, and the whole run, also downloads as HAR or as a curl script that
+sends the requests again (`EKTE_API_KEY` supplies the key).
+
 **Analytics.** `/analytics` turns the local history into
 comparisons: KPI tiles for the chosen period (runs, median score, high-risk
 share, success rate, TTFT, decode speed, billing ratios) with the change

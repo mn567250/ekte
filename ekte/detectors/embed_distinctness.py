@@ -39,6 +39,7 @@ class EmbedDistinctnessDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.distinctness", "no_vector",
+                    calls=[_res],
                     title="Distinctness not measured",
                     summary=f"No vectors to compare: {problem}.",
                 )
@@ -51,6 +52,7 @@ class EmbedDistinctnessDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.distinctness", "distinct",
+                    calls=[_res],
                     title="Different inputs produce distinct vectors",
                     summary=f"Unrelated texts gave cosine {cos:.4f} (< {DISTINCT_MAX_COSINE}).",
                     evidence=evidence,
@@ -60,6 +62,7 @@ class EmbedDistinctnessDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.distinctness", "collapsed",
+                    calls=[_res],
                     title="Different inputs produce near-identical vectors",
                     summary=f"Two unrelated texts gave cosine {cos:.4f} (>= {DISTINCT_MAX_COSINE}). "
                     "Vectors that barely vary across inputs indicate a degenerate or stub "

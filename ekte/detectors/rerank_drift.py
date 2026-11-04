@@ -78,6 +78,7 @@ class RerankDriftDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.drift", "no_ranking",
+                    calls=[_res],
                     title="Rerank drift not measured",
                     summary=f"No ranking for the pinned probe: {problem}.",
                 )
@@ -97,6 +98,7 @@ class RerankDriftDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.drift", "baseline",
+                    calls=[_res],
                     title="Rerank drift baseline recorded",
                     summary="No previous run of this target and model recorded a ranking for "
                     "the pinned probe; this run's ranking is the baseline for the next one.",
@@ -123,6 +125,7 @@ class RerankDriftDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.drift", key,
+                    calls=[_res],
                     title="Ranking unchanged since the previous run" if key == "stable"
                     else "Scores shifted since the previous run" if key == "shifted"
                     else "Ranking changed since the previous run",

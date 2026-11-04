@@ -44,6 +44,15 @@ ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence rep
 zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
 ```
 
+Chaque constat nomme les requêtes sur lesquelles il repose (`evidence_seqs` ;
+vide s'il ne repose sur aucune, comme le contrôle TLS). `ekte evidence-export`
+prend le fichier (ou l'identifiant d'une exécution enregistrée) et le
+transforme en HAR pour un visualiseur HAR ou les outils de développement du
+navigateur (`--as har`), en script curl qui renvoie les requêtes
+(`--as curl` ; définissez d'abord `EKTE_API_KEY`, le fichier ne contient
+jamais la clé) ou en un seul document JSON (`--as json`) ; `--seq`
+choisit les requêtes.
+
 Les clés et les en-têtes sensibles sont retirés avant toute écriture (voir
 [Confidentialité](privacy.md)). Chaque ligne respecte
 `ekte/schemas/evidence.schema.json` ([Schémas](../../../reference/schemas.md)).

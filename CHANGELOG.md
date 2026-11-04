@@ -52,6 +52,17 @@ ekte has three eras:
   of one `seq`, or one exchange), which also checks the file against the hash
   in the report. ([#88](https://github.com/mn567250/ekte/issues/88))
 
+- **Findings name the requests they rest on, and evidence exports.** Each
+  finding lists the `seq`s of the requests behind it (`evidence_seqs`; empty
+  when it rests on none, such as the TLS check; absent where a detector judges
+  all of its requests together), so **Show evidence** lists exactly those.
+  `ekte evidence-export FILE|RUN_ID` and
+  `GET /api/v1/history/{id}/evidence/export` turn the evidence into HAR (for a
+  HAR viewer or browser dev tools), a curl script that sends the requests again
+  (the key from `EKTE_API_KEY`; the file never holds it) or one JSON document,
+  for all requests or those of `--seq`; the report view offers the same
+  downloads per run and per request. ([#88](https://github.com/mn567250/ekte/issues/88))
+
 - **Running median and p25–p75 band in the HTML and PDF reports.** The
   downloaded reports' performance timelines draw what the web UI's chart draws
   behind the dots: per endpoint the running median of its last 5 successful
@@ -191,7 +202,7 @@ and Windows are supported and tested.
   `--help`, pin each exit code and check that JSON mode writes only JSON.
 
 - **Versioned schema for the report JSON and webhook payloads.** Every report
-  (`--json`, `--format json`, history, `--compact`) and every generic webhook
+  (`--json`, `--as json`, history, `--compact`) and every generic webhook
   payload now carries `schema_version` (`MAJOR.MINOR`, independent of the ekte
   version; both are 1.0). JSON Schemas are generated from the code and published as
   `ekte/schemas/report.schema.json` and `ekte/schemas/webhook.schema.json` (they

@@ -727,3 +727,17 @@ def test_a_raw_pair_renders_request_response_and_timing(tmp_path):
     assert "Binärer Inhalt" in _render(tmp_path, "de", report, {"pair": binary})["pair"]
     lost = dict(pair, response=None, error="ConnectError: refused")
     assert "ConnectError" in _render(tmp_path, "en", report, {"pair": lost})["pair"]
+
+
+@needs_node
+def test_a_finding_lists_only_the_requests_it_names(tmp_path):
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    report["evidence"] = _EVIDENCE
+    plain = _render(tmp_path, "en", report, {"historyId": 7})["html"]
+    findings = [f for d in report["detectors"] for f in d.get("findings", [])]
+    findings[0]["evidence_seqs"] = [3, 5]
+    findings[1]["evidence_seqs"] = []  # rests on no request (e.g. the configuration)
+    html = _render(tmp_path, "en", report, {"historyId": 7})["html"]
+    assert 'data-seqs="3,5"' in html and 'data-seqs="3,5"' not in plain
+    # the finding that names no request offers no raw pairs
+    assert html.count('class="zr-raw"') < plain.count('class="zr-raw"')

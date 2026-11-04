@@ -116,7 +116,12 @@ it is not UTF-8, `encoding` says which), its original `bytes` and `sha256`, and
 `truncated`. `chunks` are `[ms since the request started, bytes received so
 far]` pairs: how the response arrived. The report names its file in `evidence`
 (`run_id`, `file`, `sha256`, `exchanges`, `bytes`, `schema_version`,
-`complete`); a reader can check the file against that hash.
+`complete`); a reader can check the file against that hash. Each finding's
+`evidence_seqs` lists the `seq`s of the requests it rests on (`null`: the
+detector does not say, so all of its requests; `[]`: none, e.g. a check of the
+configuration). `ekte evidence-export` and `GET /api/v1/history/{id}/evidence/export`
+turn a file into HAR 1.2 (each entry carries ekte's own fields in `_ekte`), a
+curl script or one JSON document (`{"header": …, "exchanges": […]}`).
 
 ```json
 {"type": "exchange", "id": 13, "seq": 12, "endpoint": "target", "detector": "streaming", "op": "complete", "start_ms": 5120.4, "request": {"method": "POST", "url": "https://relay.example.com/v1/chat/completions", "headers": {"authorization": "«redacted»"}, "body": {"text": "{...}", "encoding": "utf-8", "bytes": 312, "sha256": "...", "truncated": false}}, "response": {"status": 200, "http_version": "HTTP/1.1", "headers": {}, "body": {"text": "data: {...}", "encoding": "utf-8", "bytes": 9123, "sha256": "...", "truncated": false}, "chunks": [[412.0, 180], [433.5, 361]], "done_ms": 1290.2, "read_to_end": false}, "error": null}

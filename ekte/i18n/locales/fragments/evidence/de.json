@@ -24,6 +24,8 @@
   "Keep": "Behalten",
   "Don't keep": "Nicht behalten",
   "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Wird mit dem gespeicherten Lauf im Datenverzeichnis abgelegt, ohne Ihre Schlüssel, damit sich jeder Befund mit genau dem abgleichen lässt, was gesendet und empfangen wurde.",
-  "Saved: the next runs keep their raw requests and responses accordingly.": "Gespeichert: Die nächsten Läufe behalten ihre rohen Anfragen und Antworten entsprechend."
+  "Saved: the next runs keep their raw requests and responses accordingly.": "Gespeichert: Die nächsten Läufe behalten ihre rohen Anfragen und Antworten entsprechend.",
+  "The {n} request/response pairs this finding rests on, in the order they finished.": "Die {n} Anfrage/Antwort-Paare, auf denen dieser Befund beruht, in der Reihenfolge ihres Abschlusses.",
+  "Download this request: ": "Diese Anfrage herunterladen: "
  }
 }

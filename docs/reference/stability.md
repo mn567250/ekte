@@ -370,6 +370,7 @@ small on purpose:
 | `GET /api/v1/history/{id}` | one saved report |
 | `GET /api/v1/history/{id}/evidence` | the run's evidence file |
 | `GET /api/v1/history/{id}/evidence/exchanges` | the run's exchanges, or the pairs of one request |
+| `GET /api/v1/history/{id}/evidence/export` | the exchanges as HAR, a curl script or one JSON document |
 
 Request and response shapes, the error format (`{"error": "..."}`) and the
 status codes are in the [developer guide](../dev/web-server.md#http-api-v1) and

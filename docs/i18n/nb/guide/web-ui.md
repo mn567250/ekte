@@ -83,6 +83,10 @@ og svaret slik det ble mottatt, med når delene kom, og **Rådata** →
 revisjonsskjemaet (**Behold** / **Ikke behold**) avgjør det per kjøring; hver
 overvåking har samme innstilling under **Overvåking**.
 
+Under et funn inneholder listen bare forespørslene funnet bygger på. Hvert
+par, og hele kjøringen, kan også lastes ned som HAR eller som et curl-skript
+som sender forespørslene på nytt (`EKTE_API_KEY` gir nøkkelen).
+
 **Analyse.** `/analytics` gjør den lokale historikken om til sammenligninger:
 nøkkeltall for valgt periode (kjøringer, medianscore, andel høy risiko,
 suksessrate, TTFT, dekodehastighet, faktureringsforhold) med endringen mot like

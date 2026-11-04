@@ -21,9 +21,17 @@ subjects there are, and reports can group the subjects under their check.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any
 
-from ekte.models import DetectorScoring, Finding, ScoringOutcome, Severity, Status
+from ekte.models import (
+    CompletionOutcome,
+    DetectorScoring,
+    Finding,
+    ScoringOutcome,
+    Severity,
+    Status,
+)
 
 
 def outcome(
@@ -43,6 +51,32 @@ def outcome(
         deduction=deduction, max_deduction=max_deduction, cap=cap,
     )
 
+
+
+def evidence_seqs(calls: Iterable[Any] | None) -> list[int] | None:
+    """The request ``seq``\ s of ``calls``: outcomes (their ``seqs``), lists of
+    outcomes, or ``seq`` numbers; sorted, without repeats. None for ``calls``
+    None (the finding names no requests)."""
+    if calls is None:
+        return None
+    out: set[int] = set()
+
+    def add(item: Any) -> None:
+        if item is None:
+            return
+        if isinstance(item, bool):
+            return
+        if isinstance(item, int):
+            out.add(item)
+        elif isinstance(item, CompletionOutcome):
+            out.update(item.seqs)
+        elif isinstance(item, (list, tuple, set)):
+            for x in item:
+                add(x)
+
+    for item in calls:
+        add(item)
+    return sorted(out)
 
 class Scale:
     """A detector's scoring scale: every (check, outcome) it can report."""
@@ -72,6 +106,7 @@ class Scale:
         subject: str | None = None,
         id: str | None = None,
         deduction: float | None = None,
+        calls: Iterable[Any] | None = None,
     ) -> Finding:
         """A finding whose status, severity and points come from the scale.
 
@@ -79,7 +114,8 @@ class Scale:
         id is ``<check>.<subject>`` and it records both. ``id`` gives a finding of
         the check an id of its own (e.g. one per knowledge-base probe) without
         grouping it. ``deduction`` sets the variable deduction of an outcome with
-        ``max_deduction``.
+        ``max_deduction``. ``calls`` are the outcomes (or request ``seq``\ s)
+        the finding rests on (see :func:`evidence_seqs`).
         """
         o = self.get(check, key)
         fid = id or (f"{check}.{subject}" if subject else check)
@@ -97,6 +133,7 @@ class Scale:
             score=o.score,
             deduction=o.deduction if deduction is None else deduction,
             cap=o.cap,
+            evidence_seqs=evidence_seqs(calls),
         )
 
     def keys(self, check: str) -> list[str]:

@@ -37,7 +37,7 @@ Every command follows this table.
 
 ## Commands
 
-[`ekte audio`](#audio), [`ekte check`](#check), [`ekte compare`](#compare), [`ekte config migrate`](#config-migrate), [`ekte data-dir`](#data-dir), [`ekte embed`](#embed), [`ekte image`](#image), [`ekte init`](#init), [`ekte kb`](#kb), [`ekte kb-export`](#kb-export), [`ekte kb-import`](#kb-import), [`ekte kb-prompt`](#kb-prompt), [`ekte models`](#models), [`ekte rerank`](#rerank), [`ekte secret export`](#secret-export), [`ekte secret rotate`](#secret-rotate), [`ekte secret status`](#secret-status), [`ekte serve`](#serve), [`ekte watch`](#watch)
+[`ekte audio`](#audio), [`ekte check`](#check), [`ekte compare`](#compare), [`ekte config migrate`](#config-migrate), [`ekte data-dir`](#data-dir), [`ekte embed`](#embed), [`ekte evidence-export`](#evidence-export), [`ekte image`](#image), [`ekte init`](#init), [`ekte kb`](#kb), [`ekte kb-export`](#kb-export), [`ekte kb-import`](#kb-import), [`ekte kb-prompt`](#kb-prompt), [`ekte models`](#models), [`ekte rerank`](#rerank), [`ekte secret export`](#secret-export), [`ekte secret rotate`](#secret-rotate), [`ekte secret status`](#secret-status), [`ekte serve`](#serve), [`ekte watch`](#watch)
 
 ### Global options
 
@@ -189,6 +189,18 @@ Audit an embeddings endpoint (a non-chat surface).
 | `--json` | flag |  | Print the verdict as JSON to stdout. |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
 | `--dry-run` | flag |  | Show the detectors and estimated API calls without making requests. |
+
+<a id="evidence-export"></a>
+### `ekte evidence-export`
+
+Turn a run's evidence file into HAR, a curl script or one JSON document.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `SOURCE` | argument | | An evidence file (.jsonl.zst), or the id of a saved run in the history. |
+| `--as` | str | `har` | har (HTTP Archive) \| curl (a shell script that sends the requests again) \| json (one document). |
+| `--seq` | int (repeatable) |  | Only the exchanges of this request seq (repeatable). |
+| `--out` | path |  | Write to this file instead of stdout. |
 
 <a id="image"></a>
 ### `ekte image`

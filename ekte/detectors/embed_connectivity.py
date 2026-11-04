@@ -33,6 +33,7 @@ class EmbedConnectivityDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.connectivity", "failed",
+                    calls=[res],
                     title="Embedding endpoint unreachable",
                     summary=f"POST /embeddings failed: {res.error_message or res.status_code}",
                     evidence={"status_code": res.status_code, "error": res.error_message},
@@ -43,6 +44,7 @@ class EmbedConnectivityDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.connectivity", "malformed",
+                    calls=[res],
                     title="Embedding response malformed",
                     summary=f"Expected {len(inputs)} non-empty vectors, got {len(vectors)}.",
                     evidence={"returned_vectors": len(vectors)},
@@ -52,6 +54,7 @@ class EmbedConnectivityDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.connectivity", "reachable",
+                    calls=[res],
                     title="Embedding endpoint reachable",
                     summary=f"Got {len(vectors)} vectors of dimension {len(vectors[0])} "
                     f"in {res.duration_ms:.0f} ms.",

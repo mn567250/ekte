@@ -93,6 +93,7 @@ class DeterminismDetector(Detector):
                     SCALE.finding(
                         "determinism.temp1_variability",
                         "identical",
+                        calls=outcomes,
                         title="Identical output at temperature=1.0 suggests response caching",
                         summary=(
                             f"{len(usable)} identical long creative prompts at "
@@ -118,6 +119,7 @@ class DeterminismDetector(Detector):
                     SCALE.finding(
                         "determinism.temp1_variability",
                         "identical_reasoning",
+                        calls=outcomes,
                         title="Identical output at temperature=1.0 (expected for a reasoning model)",
                         summary=(
                             f"{len(usable)} samples were byte-identical, but the claimed "
@@ -132,6 +134,7 @@ class DeterminismDetector(Detector):
                     SCALE.finding(
                         "determinism.temp1_variability",
                         "varies",
+                        calls=outcomes,
                         title="Output varies at temperature=1.0",
                         summary=(
                             f"{len(usable)} identical creative prompts at temperature=1.0 "
@@ -157,6 +160,7 @@ class DeterminismDetector(Detector):
                 SCALE.finding(
                     "determinism.temp1_variability",
                     "not_assessed",
+                    calls=outcomes,
                     title="Could not assess temperature=1.0 variability",
                     summary=(
                         f"Only {len(usable)} of {self.CACHING_SAMPLES} samples were usable "
@@ -190,6 +194,7 @@ class DeterminismDetector(Detector):
                 SCALE.finding(
                     "determinism.temp0_stability",
                     "stable" if stable else "drifts",
+                    calls=[third, fourth],
                     title=(
                         "Stable answer at temperature=0"
                         if stable
@@ -213,6 +218,7 @@ class DeterminismDetector(Detector):
                 SCALE.finding(
                     "determinism.temp0_stability",
                     "not_assessed",
+                    calls=[third, fourth],
                     title="Could not assess temperature=0 stability",
                     summary=failed.error_message or f"HTTP {failed.status_code}",
                     evidence={

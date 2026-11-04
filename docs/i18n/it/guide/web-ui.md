@@ -89,6 +89,10 @@ la risposta così come è stata ricevuta, con l'arrivo dei suoi blocchi, e
 conservare**) lo decide per esecuzione; ogni monitor ha la stessa opzione in
 **Monitor**.
 
+Sotto un rilievo l'elenco contiene solo le richieste su cui si basa. Ogni
+coppia, e l'intera esecuzione, si scarica anche come HAR o come script curl
+che invia di nuovo le richieste (`EKTE_API_KEY` fornisce la chiave).
+
 **Analisi.** `/analytics` trasforma la cronologia
 locale in confronti: indicatori per il periodo scelto (esecuzioni, punteggio
 mediano, quota ad alto rischio, tasso di successo, TTFT, velocità di output,
