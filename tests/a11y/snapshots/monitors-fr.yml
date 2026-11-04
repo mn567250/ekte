@@ -133,6 +133,11 @@
       - definition:
         - code: openai/gpt-4o
         - text: figé 1 oct. 2026, 12:00
+      - term: Requêtes/réponses brutes
+      - definition:
+        - combobox "Requêtes/réponses brutes — gpt-4o":
+          - option "Conserver" [selected]
+          - option "Ne pas conserver"
       - 'link "Depuis l’exécution #1 →"':
         - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Terminez la configuration pour l’activer":

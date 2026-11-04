@@ -133,6 +133,11 @@
       - definition:
         - code: openai/gpt-4o
         - text: festgelegt 01.10.2026, 12:00
+      - term: Rohe Anfragen/Antworten
+      - definition:
+        - combobox "Rohe Anfragen/Antworten — gpt-4o":
+          - option "Behalten" [selected]
+          - option "Nicht behalten"
       - 'link "Aus Lauf #1 →"':
         - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Einrichtung abschließen, um sie einzuschalten":

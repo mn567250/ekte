@@ -133,6 +133,11 @@
       - definition:
         - code: openai/gpt-4o
         - text: 固定于 2026年10月1日 12:00
+      - term: 原始请求/响应
+      - definition:
+        - combobox "原始请求/响应 — gpt-4o":
+          - option "保留" [selected]
+          - option "不保留"
       - 'link "来自运行 #1 →"':
         - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "设置后即可启用":
