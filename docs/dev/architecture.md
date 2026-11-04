@@ -64,6 +64,19 @@ compresses on its own thread (one zstd block flushed per line), so the event
 loop the audit times requests on never waits for it, and `close()` (called off
 the loop) renames the `.part` file and returns the report's `EvidenceRef`.
 
+Re-scoring (`ekte/replay.py`) runs `run_audit()` with a `Replay`: every
+client gets a `ReplayTransport` instead of the network, which answers each
+request with the recorded response to the same request (endpoint, method, URL
+path and body; JSON key order and the performance probes' random ids do not
+count; identical requests in recorded order), delivering the body at the
+recorded chunk times. The transport puts the answering exchange's `seq` on the
+call's `NetTrace`, and the recorder (`replay = True`) gives the record that
+`seq`, so the new report's findings point into the original file. After each
+detector the runner calls `Replay.after_detector()`, which marks a detector
+inconclusive when one of its requests had no recorded answer. The evidence
+header records the run's `AuditOptions` and judge for this; the knowledge-base
+profile is pinned from the original report.
+
 ## Detectors and scoring scales
 
 A detector is one self-contained file in `ekte/detectors/`: a subclass of

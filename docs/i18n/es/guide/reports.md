@@ -53,6 +53,17 @@ en un script curl que vuelve a enviar las peticiones (`--as curl`; defina
 antes `EKTE_API_KEY`, el archivo nunca contiene la clave) o en un único
 documento JSON (`--as json`); `--seq` elige peticiones.
 
+`ekte rescore` vuelve a evaluar una ejecución registrada con la versión de
+ekte instalada: repite la misma auditoría, pero responde a cada petición con la
+respuesta registrada (al ritmo registrado) en lugar de contactar con el
+intermediario, de modo que las comprobaciones mejoradas se aplican a
+ejecuciones antiguas. Admite el id de una ejecución guardada (y guarda el
+resultado como una ejecución nueva salvo con `--no-save`) o un archivo de
+informe con `--evidence PATH`. Una comprobación que ahora pregunta algo que la
+ejecución registrada nunca preguntó queda sin concluir en lugar de puntuarse
+con una suposición; el campo `rescored_from` del informe indica cuántas
+peticiones se reprodujeron y qué comprobaciones no tenían ninguna.
+
 Las claves y los encabezados sensibles se eliminan antes de escribir nada (vea
 [Privacidad](privacy.md)). Cada línea cumple
 `ekte/schemas/evidence.schema.json` ([Esquemas](../../../reference/schemas.md)).

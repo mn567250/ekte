@@ -38,8 +38,9 @@ one written by an older ekte). Such rows are processed by a batched backfill
 Evidence (schema version 5): a run that kept its raw request/response pairs
 names its file (``report.evidence.file``, see :mod:`ekte.evidence`) in the
 ``evidence_file`` column. The file lives in the data directory's ``evidence``
-folder; deleting the row deletes it, and :func:`sweep_evidence` removes files
-no row names.
+folder; deleting the last row that names it deletes it (a re-scored run,
+:mod:`ekte.replay`, names its original's file), and :func:`sweep_evidence`
+removes files no row names.
 
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
@@ -621,7 +622,11 @@ def delete(rid: int) -> None:
         conn.execute("DELETE FROM history WHERE id = ?", (int(rid),))
         analytics_store.delete_for(conn, int(rid))
         kb_snapshot.prune(conn, "history")
-    if row is not None:
+        # a re-scored run shares its original's file: keep it while a row names it
+        shared = row is not None and row["evidence_file"] is not None and conn.execute(
+            "SELECT 1 FROM history WHERE evidence_file = ? LIMIT 1", (row["evidence_file"],)
+        ).fetchone() is not None
+    if row is not None and not shared:
         evidence_files.remove(row["evidence_file"])
 
 

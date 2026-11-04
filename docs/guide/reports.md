@@ -50,6 +50,15 @@ id of a saved run) and turns it into HAR for a HAR viewer or browser dev tools
 (`--as curl`; set `EKTE_API_KEY` first, the file never holds the key) or
 one JSON document (`--as json`); `--seq` picks requests.
 
+`ekte rescore` judges a recorded run again with the installed ekte version:
+it runs the same audit, but answers every request with the recorded response
+(at the recorded timing) instead of contacting the relay, so improved checks
+apply to old runs. It takes a saved run's id (and saves the result as a new
+run unless `--no-save`), or a report file with `--evidence PATH`. A check that
+now asks something the recorded run never asked reads inconclusive instead of
+being scored on a guess; the report's `rescored_from` says how many requests
+were replayed and which checks had none.
+
 Keys and sensitive headers are removed before anything is written (see
 [Privacy](privacy.md)). Each line matches `ekte/schemas/evidence.schema.json`
 ([Schemas](../reference/schemas.md)). In the web UI, **Show evidence** under a

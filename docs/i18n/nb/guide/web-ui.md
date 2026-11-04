@@ -87,6 +87,10 @@ Under et funn inneholder listen bare forespørslene funnet bygger på. Hvert
 par, og hele kjøringen, kan også lastes ned som HAR eller som et curl-skript
 som sender forespørslene på nytt (`EKTE_API_KEY` gir nøkkelen).
 
+**Vurder på nytt med denne versjonen** på en lagret kjøring med bevis spiller
+den av på samme måte og lagrer resultatet som en ny kjøring i **Historikk**;
+rapporten sier hvilken kjøring som ble spilt av.
+
 **Analyse.** `/analytics` gjør den lokale historikken om til sammenligninger:
 nøkkeltall for valgt periode (kjøringer, medianscore, andel høy risiko,
 suksessrate, TTFT, dekodehastighet, faktureringsforhold) med endringen mot like

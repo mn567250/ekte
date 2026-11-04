@@ -32,6 +32,9 @@ _PHASE: ContextVar[str] = ContextVar("ekte_perf_phase", default="passive")
 _NET: ContextVar[NetTrace | None] = ContextVar("ekte_perf_net", default=None)
 _LAST: ContextVar[RequestRecord | None] = ContextVar("ekte_perf_last", default=None)
 
+# Records of a replay that no recorded exchange answered get a seq from here up.
+REPLAY_MISS_SEQ = 1_000_000
+
 # Headers in which relays / upstreams report their own processing time (ms).
 _PROCESSING_HEADERS = ("openai-processing-ms", "x-envoy-upstream-service-time")
 
@@ -84,6 +87,9 @@ class NetTrace:
         # The raw HTTP exchanges of the call, when the run keeps evidence
         # (filled by the client's httpx hooks, see ekte.evidence); else None.
         self.captures: list[Capture] | None = [] if capture else None
+        # In a replay (ekte.replay): the seq of the recorded exchange that
+        # answered the call, which its record then keeps.
+        self.replayed_seq: int | None = None
 
     async def trace(self, event_name: str, info: dict[str, Any]) -> None:
         self.marks[event_name] = time.perf_counter()
@@ -250,6 +256,10 @@ class RequestRecorder:
         # The run's evidence file: every recorded call's raw exchanges go
         # there under the record's ``seq`` (None: the run keeps no evidence).
         self.evidence = evidence
+        # A replay of a recorded run: a record keeps the seq of the recorded
+        # exchange that answered it, so the findings point into that run's
+        # evidence file; a call nothing answered gets a seq above REPLAY_MISS_SEQ.
+        self.replay = False
         # Wall-clock time of ``t0``: record ``start_ms`` offsets count from here.
         self.started_at = datetime.now(UTC)
         self.tokenizer = tokenizer
@@ -294,6 +304,9 @@ class RequestRecorder:
         started: float,
         outcome: CompletionOutcome | None = None,
     ) -> RequestRecord:
+        if self.replay:
+            answered = net.replayed_seq if net is not None else None
+            record.seq = answered if answered is not None else REPLAY_MISS_SEQ + len(self.records)
         if net is not None:
             for key, value in net.breakdown(started).items():
                 setattr(record, key, value)

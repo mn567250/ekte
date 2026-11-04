@@ -42,6 +42,12 @@ zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
 或转换为重新发送这些请求的 curl 脚本（`--as curl`；请先设置 `EKTE_API_KEY`，文件中从不包含密钥），
 或转换为单个 JSON 文档（`--as json`）；`--seq` 用于选择请求。
 
+`ekte rescore` 用当前安装的 ekte 版本重新评判一次录制的检测：它重新执行同样的检测，
+但每个请求都用录制的响应（按录制时的节奏）来应答，而不联系中转站，因此改进后的检测项也能用于旧的检测记录。
+它接受已保存检测的 id（并把结果保存为新的检测，除非使用 `--no-save`），或带 `--evidence PATH` 的报告文件。
+如果某个检测项现在会问录制时从未问过的内容，它会显示为无法判定，而不是凭猜测打分；
+报告的 `rescored_from` 说明重放了多少个请求，以及哪些检测项没有录制应答。
+
 密钥和敏感请求头在写入前即被去除（见[隐私](privacy.md)）。每一行都符合
 `ekte/schemas/evidence.schema.json`（[Schema](../../../reference/schemas.md)）。在 Web 界面中，
 已保存检测的某个发现下的 **查看证据** 会列出其背后检测项的请求，并可打开每个原始请求和响应。

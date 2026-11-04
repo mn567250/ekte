@@ -173,6 +173,7 @@
     "Fingerprint inconclusive: {1}": "Fingerprint inconclusive: {1}",
     "Fingerprint skipped: {1}": "Fingerprint skipped: {1}",
     "Response attribute {1}": "Response attribute {1}",
-    "Request attribute {1}": "Request attribute {1}"
+    "Request attribute {1}": "Request attribute {1}",
+    "Not re-scored: the recorded run has no answer to some requests": "Not re-scored: the recorded run has no answer to some requests"
   }
 }

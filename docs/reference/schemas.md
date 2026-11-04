@@ -102,7 +102,8 @@ raw HTTP request and response of one run, keys and sensitive headers removed
 `evidence.schema.json`, told apart by `type`:
 
 - `header` (the first line): `schema_version`, `tool_version`, `run_id`,
-  `started_at` (the report's), `mode`, `suite`, `surface`, `target`, `baseline`.
+  `started_at` (the report's), `mode`, `suite`, `surface`, `target`, `baseline`,
+  `judge` and `options` (the run's audit options, which a re-score repeats).
 - `exchange` (every further line): `id` (unique in the file, in the order the
   calls finished), `seq` (the request's `seq` in the report's
   `performance.requests`; `null` for calls without a record: the LLM judge,
@@ -122,6 +123,15 @@ detector does not say, so all of its requests; `[]`: none, e.g. a check of the
 configuration). `ekte evidence-export` and `GET /api/v1/history/{id}/evidence/export`
 turn a file into HAR 1.2 (each entry carries ekte's own fields in `_ekte`), a
 curl script or one JSON document (`{"header": …, "exchanges": […]}`).
+
+A report made by `ekte rescore` (a recorded run judged again by another ekte
+version, its requests answered from the evidence file) carries
+`rescored_from`: the recorded run's `run_id` and `evidence_sha256`, its
+`tool_version`, `generated_at` and `report_id`, and `replayed`, `missing` (per
+detector: requests nothing in the file answered; such a detector is
+inconclusive) and `unused`. Its `evidence` is the recorded run's file, and its
+request records keep that run's `seq`s (a request without a recorded answer
+gets a `seq` from 1000000 up).
 
 ```json
 {"type": "exchange", "id": 13, "seq": 12, "endpoint": "target", "detector": "streaming", "op": "complete", "start_ms": 5120.4, "request": {"method": "POST", "url": "https://relay.example.com/v1/chat/completions", "headers": {"authorization": "«redacted»"}, "body": {"text": "{...}", "encoding": "utf-8", "bytes": 312, "sha256": "...", "truncated": false}}, "response": {"status": 200, "http_version": "HTTP/1.1", "headers": {}, "body": {"text": "data: {...}", "encoding": "utf-8", "bytes": 9123, "sha256": "...", "truncated": false}, "chunks": [[412.0, 180], [433.5, 361]], "done_ms": 1290.2, "read_to_end": false}, "error": null}

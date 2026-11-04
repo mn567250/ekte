@@ -52,6 +52,17 @@ um visualizador HAR ou as ferramentas de programador do navegador
 chave) ou num único documento JSON (`--as json`); `--seq` escolhe
 pedidos.
 
+`ekte rescore` reavalia uma execução registada com a versão do ekte
+instalada: repete a mesma auditoria, mas responde a cada pedido com a resposta
+registada (ao ritmo registado) em vez de contactar o intermediário, para que as
+verificações melhoradas se apliquem a execuções antigas. Aceita o id de uma
+execução guardada (e guarda o resultado como nova execução, exceto com
+`--no-save`) ou um ficheiro de relatório com `--evidence PATH`. Uma
+verificação que agora pergunta algo que a execução registada nunca perguntou
+fica inconclusiva em vez de ser pontuada com base num palpite; o campo
+`rescored_from` do relatório indica quantos pedidos foram reproduzidos e que
+verificações não tinham nenhum.
+
 As chaves e os cabeçalhos sensíveis são removidos antes de qualquer escrita
 (ver [Privacidade](privacy.md)). Cada linha corresponde a
 `ekte/schemas/evidence.schema.json` ([Esquemas](../../../reference/schemas.md)).

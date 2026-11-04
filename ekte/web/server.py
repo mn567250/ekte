@@ -1376,6 +1376,45 @@ def create_app() -> FastAPI:
         return JSONResponse({"run_id": ref.get("run_id"), "exchanges": lines},
                             headers={"Cache-Control": "no-store"})
 
+    @app.post("/api/v1/history/{rid}/rescore")
+    @app.post("/api/history/{rid}/rescore")
+    async def history_rescore(rid: int) -> Any:
+        """Re-score a saved run with this ekte version from its evidence file
+        (ekte.replay): queued as a background job like an audit, saved to
+        History as a new run. The relay is never contacted."""
+        from ekte import replay
+
+        path, report = await asyncio.to_thread(_evidence_of, rid)
+        if report is None:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        if path is None:
+            return JSONResponse({"error": "this run kept no evidence: there is nothing to replay"}, status_code=409)
+        try:
+            await asyncio.to_thread(replay.check, report, path)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=409)
+        t = report.get("target") or {}
+
+        async def run(emit: jobs.Emit) -> dict[str, Any]:
+            out = await replay.rescore(report, path, report_id=rid, on_event=emit)
+            return json.loads(out.model_dump_json())
+
+        summary = {
+            "base_url": t.get("base_url"),
+            "model": t.get("model"),
+            "claimed_model": t.get("claimed_model") or t.get("model"),
+            "suite": report.get("suite"),
+            "surface": report.get("surface") or "chat",
+            "dimensions": list(report.get("dimensions_selected") or []),
+            "baseline_url": (report.get("baseline") or {}).get("base_url"),
+            "api": t.get("api"),
+            "api_auto": t.get("api_auto"),
+            "stream_mode": report.get("stream_mode"),
+            "rescore_of": rid,
+        }
+        # no relay is contacted: the job waits for no relay gate
+        return JSONResponse(jobs.manager.submit(summary, [], run).info())
+
     @app.get("/api/v1/history/{rid}/evidence/export")
     def history_evidence_export(
         rid: int, format: str = "har", seq: list[int] | None = Query(None)  # noqa: B008

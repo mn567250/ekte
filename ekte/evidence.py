@@ -87,6 +87,10 @@ class EvidenceHeader(BaseModel):
     surface: str | None = None
     target: RedactedTarget
     baseline: RedactedTarget | None = None
+    # The LLM judge's endpoint (None: no judge ran).
+    judge: RedactedTarget | None = None
+    # The run's AuditOptions, so a replay (ekte.replay) can run the same audit.
+    options: dict[str, Any] | None = None
 
 
 class EvidenceBody(BaseModel):

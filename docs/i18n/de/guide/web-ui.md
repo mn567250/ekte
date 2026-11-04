@@ -94,6 +94,10 @@ beruht. Jedes Paar und der ganze Lauf lassen sich auch als HAR oder als
 curl-Skript herunterladen, das die Anfragen erneut sendet (`EKTE_API_KEY`
 liefert den Schlüssel).
 
+**Mit dieser Version neu bewerten** bei einem gespeicherten Lauf mit Belegen
+gibt ihn auf dieselbe Weise wieder und speichert das Ergebnis als neuen Lauf
+im **Verlauf**; sein Bericht nennt den wiedergegebenen Lauf.
+
 **Analyse.** `/analytics` macht aus dem lokalen Verlauf
 Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
 hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,
