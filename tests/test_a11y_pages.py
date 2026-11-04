@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 
+from tests._helpers import run_subprocess
 from tests.a11y import affected as affected_cli
 from tests.a11y import pages
 from tests.a11y.pages import (
@@ -376,7 +377,7 @@ def test_cli_git_failure_runs_everything(capsys, tmp_path, monkeypatch):
 
 def test_cli_git_diff(capsys):
     # the merge base of HEAD with itself: no changes
-    if subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True).returncode:
+    if run_subprocess(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True).returncode:
         pytest.skip("not a git checkout")
     affected_cli.main(["--base", "HEAD", "--head", "HEAD"])
     assert json.loads(capsys.readouterr().out) == {"pages": [], "full": False, "reason": "no changed files"}
@@ -400,7 +401,7 @@ def test_cli_github_output(capsys, tmp_path, monkeypatch):
 # --------------------------------------------------------------------------- #
 def _collect(**env: str) -> subprocess.CompletedProcess[str]:
     pytest.importorskip("playwright.sync_api")
-    return subprocess.run(
+    return run_subprocess(
         [sys.executable, "-m", "pytest", "tests/a11y", "-m", "a11y", "--collect-only", "-q", "-p", "no:cacheprovider",
          "-p", "no:xdist"],
         cwd=ROOT, capture_output=True, text=True, encoding="utf-8", env={**os.environ, **env}, timeout=120,

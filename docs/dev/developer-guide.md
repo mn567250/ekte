@@ -209,6 +209,13 @@ pytest -n auto               # in parallel, one worker per CPU (pytest-xdist)
   `v2/report.js`, the locales) are evaluated under `node` in
   `test_web_*_js.py` and `test_web_locales.py`; they are skipped without Node.js.
 - No test may reach the network.
+- No test may take longer than 120 s (`pytest-timeout`, `timeout` in
+  `[tool.pytest.ini_options]`); one that does fails with its name, and at
+  110 s every thread's stack is printed (`faulthandler_timeout`). A test that is slow on purpose says so with
+  `@pytest.mark.timeout(seconds)`; `pytest --timeout=0` switches the limit off
+  (e.g. in a debugger). Start child processes with
+  `tests._helpers.run_subprocess` (like `subprocess.run`, with a 60 s timeout
+  unless the call passes its own), never a bare `subprocess.run`.
 - `test_cli_startup.py` keeps the CLI fast to start: importing `ekte.cli` must
   not load the HTTP clients, the runner, the knowledge loader, the report
   renderers (ReportLab) or the web server. Import those inside the command that

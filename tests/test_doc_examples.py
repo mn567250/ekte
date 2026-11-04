@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tests._helpers import run_subprocess
+
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "examples" / "ekte.yaml"
 
@@ -18,7 +20,7 @@ def _ekte(*args: str, cwd: Path, env_home: Path) -> subprocess.CompletedProcess[
     # page; make it write UTF-8, which is how the output is read here.
     env = dict(os.environ, EKTE_DATA_DIR=str(env_home / "data"), HOME=str(env_home),
                USERPROFILE=str(env_home), PYTHONIOENCODING="utf-8")
-    return subprocess.run([sys.executable, "-m", "ekte", *args], cwd=cwd, env=env,
+    return run_subprocess([sys.executable, "-m", "ekte", *args], cwd=cwd, env=env,
                           capture_output=True, text=True, encoding="utf-8", timeout=120)
 
 

@@ -57,18 +57,26 @@ jobs:
       - name: Type-check (mypy)
         run: mypy ekte
 
+      # A hung test fails after pytest-timeout's limit ([tool.pytest.ini_options]
+      # timeout) with its name, after every thread's stack is printed
+      # (faulthandler_timeout); the step limits are
+      # the backstop for a hang outside a test (collection, xdist teardown).
+      # The suite takes 1-2 minutes on every runner. --durations lists the
+      # slowest tests, to spot one creeping towards the limit.
       - name: Test (pytest)
         if: matrix.os != 'ubuntu-latest' || matrix.python-version != '3.12'
+        timeout-minutes: 10
         # pytest-xdist (dev extra): one worker per CPU
-        run: pytest -q -n auto
+        run: pytest -q -n auto --durations=20
 
       - name: Test with coverage (pytest-cov)
         # One Linux run measures coverage: the whole package must stay above
         # [tool.coverage.report] fail_under, and the command line, the judge
         # and the media auditor above their floors (scripts/check_coverage.py).
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        timeout-minutes: 10
         run: |
-          pytest -q -n auto --cov=ekte --cov-report=term-missing:skip-covered --cov-report=json
+          pytest -q -n auto --durations=20 --cov=ekte --cov-report=term-missing:skip-covered --cov-report=json
           python scripts/check_coverage.py coverage.json
 
   a11y-scope:

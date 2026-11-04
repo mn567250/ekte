@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 
 from typer.testing import CliRunner
 
 from ekte.cli import app
+from tests._helpers import run_subprocess
 
 _LAZY = (
     "httpx",
@@ -39,7 +39,7 @@ def test_import_cli_does_not_load_heavy_modules():
         "import ekte.cli\n"
         f"print(json.dumps({{m: m in sys.modules for m in {list(_LAZY)!r}}}))\n"
     )
-    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8")
+    proc = run_subprocess([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8")
     assert proc.returncode == 0, proc.stderr
     loaded = [m for m, present in json.loads(proc.stdout).items() if present]
     assert loaded == []

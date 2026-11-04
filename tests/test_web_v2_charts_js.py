@@ -7,10 +7,11 @@ from __future__ import annotations
 import json
 import re
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from tests._helpers import run_subprocess
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 
@@ -41,7 +42,7 @@ WED_OCT_29 = MON_SEP_29 + 30 * DAY  # a range ending mid-week
 
 
 def render(kind: str, cfg: dict) -> str:
-    return subprocess.run(
+    return run_subprocess(
         ["node", "-e", _JS, str(STATIC), json.dumps([kind, cfg])],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout

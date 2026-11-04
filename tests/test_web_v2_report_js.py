@@ -7,10 +7,11 @@ import html as htmllib
 import json
 import re
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from tests._helpers import run_subprocess
 
 _JS = r"""
 const path = require("path");
@@ -51,7 +52,7 @@ def _render(tmp_path: Path, lang: str, report: dict, opts: dict | None = None) -
     opts_file = tmp_path / "opts.json"
     if opts:
         opts_file.write_text(json.dumps(opts), encoding="utf-8")
-    out = subprocess.run(
+    out = run_subprocess(
         ["node", "-e", _JS, str(tmp_path), lang, json.dumps(report), *([str(opts_file)] if opts else [])],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
@@ -205,7 +206,7 @@ const rep = JSON.parse(reportJson), D = window.EkteReport.download;
 def test_download_saves_every_format_in_the_ui_language(tmp_path):
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     _render(tmp_path, "en", report)  # stage the scripts
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _DOWNLOAD_JS, str(tmp_path), json.dumps(report)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -488,7 +489,7 @@ def test_finding_detail_shows_all_evidence(tmp_path):
     finding = {"id": "x.y", "title": "Usage looks inflated", "status": "fail", "severity": "high",
                "summary": "Reported 900 prompt tokens.", "recommendation": "Check billing.",
                "evidence": {f"k{i}": i for i in range(15)}}
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _DETAIL_JS, str(tmp_path), json.dumps(finding)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -531,7 +532,7 @@ def test_performance_measurements_sit_in_the_performance_dimension(tmp_path):
                                        .model_dump_json())
     _render(tmp_path, "en", report)  # stage the scripts
     shutil.copy(_STATIC / "perf.js", tmp_path / "perf.js")
-    html = json.loads(subprocess.run(
+    html = json.loads(run_subprocess(
         ["node", "-e", _PERF_JS, str(tmp_path), json.dumps(report)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["html"]
@@ -595,7 +596,7 @@ def test_intl_formatters_are_cached_and_output_unchanged(tmp_path, lang):
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     report["prompt_languages"] = ["de", "en"]
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _JS_INTL, str(tmp_path), lang, json.dumps(report)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -671,7 +672,7 @@ def test_download_drops_the_chart_trend_lines(tmp_path):
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
     report = perf_report().model_dump(mode="json")
     attach_trends(report["performance"]["requests"])
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _JS_DOWNLOAD, str(tmp_path), "en", json.dumps(report)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)

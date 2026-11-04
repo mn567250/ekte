@@ -8,12 +8,30 @@ is collected (tests/a11y/conftest.py shadows tests/conftest.py).
 from __future__ import annotations
 
 import json
+import subprocess
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 import httpx
 
 BASE_URL = "http://relay.test/v1"
 DEFAULT_MODEL = "gpt-4o"
+
+# Seconds a child process of a test (node, git, python -m ekte, sh) may run.
+# Below the per-test timeout in pyproject.toml ([tool.pytest.ini_options]), so a
+# stalled child fails its test with subprocess.TimeoutExpired, naming the
+# command, before pytest-timeout has to step in.
+SUBPROCESS_TIMEOUT = 60.0
+
+
+def run_subprocess(
+    args: Sequence[str | Path], **kwargs: Any
+) -> subprocess.CompletedProcess[Any]:
+    """``subprocess.run`` with a default timeout: tests never wait forever on a child."""
+    kwargs.setdefault("timeout", SUBPROCESS_TIMEOUT)
+    return subprocess.run(args, **kwargs)
 
 
 @dataclass
