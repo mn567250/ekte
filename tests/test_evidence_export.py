@@ -190,3 +190,32 @@ def test_api_exports(tmp_path, monkeypatch):
         assert client.get(base, params={"format": "json"}).json()["exchanges"]
         assert client.get(base, params={"format": "xml"}).status_code == 400
         assert client.get("/api/v1/history/999/evidence/export").status_code == 404
+
+
+def test_the_probe_failure_finding_names_the_failed_requests(tmp_path, monkeypatch):
+    import itertools
+
+    from ekte.perf.recorder import current_detector
+
+    server, n = MockServer(), itertools.count()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if current_detector() == "performance" and next(n) % 5 == 2:
+            if next(n) % 2:
+                return httpx.Response(502, text="<html><h1>502 Bad Gateway</h1></html>")
+            raise httpx.ProxyError("502 Bad Gateway from the proxy", request=request)
+        return server.handler(request)
+
+    _patch_clients(monkeypatch, httpx.MockTransport(handler))
+    report = _audit(tmp_path / "e.jsonl.zst", suite="deep")
+    perf = next(d for d in report.detectors if d.id == "performance")
+    errors = next(f for f in perf.findings if f.id == "performance.errors")
+    records = {r.seq: r for r in report.performance.requests}
+    # exactly the failures the finding counts: failed probe completions (not
+    # the round-trip pings or the burst, which it does not count)
+    assert errors.evidence["errors"] == len(errors.evidence_seqs) > 0
+    for seq in errors.evidence_seqs:
+        rec = records[seq]
+        assert rec.detector == "performance" and rec.op == "complete" and not rec.ok
+    assert any(records[s].status_code == 502 for s in errors.evidence_seqs)
+    assert any(records[s].error_type == "ProxyError" for s in errors.evidence_seqs)

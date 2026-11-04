@@ -50,6 +50,7 @@ from ekte.models import (
 )
 from ekte.perf import phase_scope, summarize_endpoint
 from ekte.perf.recorder import last_record
+from ekte.perf.summary import failed_seqs
 from ekte.utils.stats import percentile
 
 OP = "embed"
@@ -259,7 +260,7 @@ class EmbedPerformanceDetector(Detector):
             [v for v in (_per_s(self._inputs.get(rec.seq, BATCH), rec.duration_ms) for rec in batch) if v],
             True,
         )
-        perf_probe.error_finding(SCALE, result, target)
+        perf_probe.error_finding(SCALE, result, target, failed_seqs(records, "target", op=OP))
         perf_probe.load_finding(SCALE, result, target)
         self._batch_finding(result, single, batch)
 
