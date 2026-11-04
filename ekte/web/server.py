@@ -80,7 +80,7 @@ from typing import Any
 
 # fastapi is the optional [web] extra. This module is only imported when serving
 # (CLI `serve`) or by the web tests, both of which handle a missing dependency.
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import (
     FileResponse,
     JSONResponse,
@@ -1375,6 +1375,42 @@ def create_app() -> FastAPI:
             return JSONResponse({"error": "no such exchange"}, status_code=404)
         return JSONResponse({"run_id": ref.get("run_id"), "exchanges": lines},
                             headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/v1/history/{rid}/evidence/export")
+    def history_evidence_export(
+        rid: int, format: str = "har", seq: list[int] | None = Query(None)  # noqa: B008
+    ) -> Any:
+        """The run's evidence (or the exchanges of some ``seq``\\ s) as HAR,
+        a curl script or one JSON document, as a download."""
+        from ekte import evidence
+
+        if format not in evidence.EXPORT_FORMATS:
+            return JSONResponse(
+                {"error": f"format must be one of: {', '.join(evidence.EXPORT_FORMATS)}"},
+                status_code=400,
+            )
+        path, report = _evidence_of(rid)
+        if path is None:
+            return JSONResponse(
+                {"error": "not found" if report is None else "this run kept no evidence"},
+                status_code=404,
+            )
+        try:
+            if format == "curl":
+                body: str = evidence.export_curl(path, seq)
+                media = "text/x-shellscript; charset=utf-8"
+                ext = "sh"
+            else:
+                doc = evidence.export_har(path, seq) if format == "har" else evidence.export_json(path, seq)
+                body = json.dumps(doc, ensure_ascii=False, indent=2)
+                media, ext = "application/json", format
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=409)
+        stem = f"ekte-evidence-{rid}" + (f"-seq{'-'.join(map(str, seq))}" if seq else "")
+        return Response(body, media_type=media, headers={
+            "Content-Disposition": f'attachment; filename="{stem}.{ext}"',
+            "Cache-Control": "no-store",
+        })
 
     @app.delete("/api/history/{rid}")
     def history_delete(rid: int) -> Any:

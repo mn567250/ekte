@@ -86,6 +86,7 @@ class ProtocolDetector(Detector):
                 SCALE.finding(
                     "protocol.multi_turn",
                     "no_content",
+                    calls=[outcome],
                     title="Multi-turn memory check did not return content",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}; no content.",
                     evidence={"status_code": outcome.status_code, "error_type": outcome.error_type},
@@ -98,6 +99,7 @@ class ProtocolDetector(Detector):
             SCALE.finding(
                 "protocol.multi_turn",
                 "recalled" if recalled else "forgotten",
+                calls=[outcome],
                 title="Multi-turn conversation memory",
                 summary=(
                     "Prior turns were honored; the recalled color was returned."
@@ -125,6 +127,7 @@ class ProtocolDetector(Detector):
                 SCALE.finding(
                     "protocol.stop",
                     "not_applicable",
+                    calls=[],
                     id="protocol.stop_not_applicable",
                     title="Stop-sequence check not applicable",
                     summary=(
@@ -147,6 +150,7 @@ class ProtocolDetector(Detector):
                 SCALE.finding(
                     "protocol.stop",
                     "no_content",
+                    calls=[outcome],
                     title="Stop-sequence check did not return content",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}; no content.",
                     evidence={"status_code": outcome.status_code, "error_type": outcome.error_type},
@@ -169,6 +173,7 @@ class ProtocolDetector(Detector):
             SCALE.finding(
                 "protocol.stop",
                 key,
+                calls=[outcome],
                 title="Stop-sequence handling",
                 summary=summary,
                 evidence={
@@ -227,6 +232,7 @@ class ProtocolDetector(Detector):
             SCALE.finding(
                 "protocol.error_schema",
                 key,
+                calls=[outcome],
                 title="Error response schema",
                 summary=summary,
                 evidence={

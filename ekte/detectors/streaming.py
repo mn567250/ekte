@@ -99,6 +99,7 @@ class StreamingDetector(Detector):
                 SCALE.finding(
                     "streaming.failed",
                     "failed",
+                    calls=[out],
                     title="Streaming request failed",
                     summary=out.error_message or f"HTTP {out.status_code}",
                     evidence={"status_code": out.status_code, "error_type": out.error_type},
@@ -115,6 +116,7 @@ class StreamingDetector(Detector):
                 SCALE.finding(
                     "streaming.no_content",
                     "no_content",
+                    calls=[out],
                     title="Stream delivered no content",
                     summary=(
                         f"The streaming request succeeded but delivered no content "
@@ -150,6 +152,7 @@ class StreamingDetector(Detector):
                 SCALE.finding(
                     "streaming.few_chunks",
                     "buffered",
+                    calls=[out],
                     deduction=_signal_deduction(buffered_signals),
                     title="Response delivered in <=2 chunks",
                     summary=(
@@ -175,6 +178,7 @@ class StreamingDetector(Detector):
                     SCALE.finding(
                         "streaming.reasoning_ttft",
                         "reasoning",
+                        calls=[out],
                         title="Late first token from a reasoning model",
                         summary=(
                             f"First visible token arrived at ~{pct}% of total time; the "
@@ -195,6 +199,7 @@ class StreamingDetector(Detector):
                     SCALE.finding(
                         "streaming.late_ttft",
                         "buffered",
+                        calls=[out],
                         deduction=_signal_deduction(buffered_signals),
                         title="First token arrived late in the stream",
                         summary=f"First token arrived at ~{pct}% of total time (buffered).",
@@ -221,6 +226,7 @@ class StreamingDetector(Detector):
                     SCALE.finding(
                         "streaming.uniform_gaps",
                         "buffered",
+                        calls=[out],
                         deduction=_signal_deduction(buffered_signals),
                         title="Inter-chunk gaps are uniform and near-zero",
                         summary=(
@@ -243,6 +249,7 @@ class StreamingDetector(Detector):
                 SCALE.finding(
                     "streaming.no_usage",
                     "missing",
+                    calls=[out],
                     deduction=0.0 if buffered_signals else _NO_USAGE_DEDUCTION,
                     title="No usage chunk in stream",
                     summary="stream_options.include_usage produced no usage data in the stream.",
@@ -256,6 +263,7 @@ class StreamingDetector(Detector):
                 SCALE.finding(
                     "streaming.healthy",
                     "authentic",
+                    calls=[out],
                     title="Streaming looks authentic",
                     summary=(
                         f"{out.chunk_count} chunks over {out.duration_ms:.0f} ms"

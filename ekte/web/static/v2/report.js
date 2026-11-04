@@ -670,13 +670,17 @@
   // pairs of the check that produced it (loaded when opened).
   function evPanel(f, ev, id) {
     var det = RAW.base ? RAW.det.get(f) : null;
+    // the requests the finding names (evidence_seqs); [] = it rests on none
+    var seqs = Array.isArray(f.evidence_seqs) ? f.evidence_seqs : null;
+    if (seqs && !seqs.length) det = null;
     if (!ev && !det) return "";
     var btn = '<button type="button" class="linkbtn more" aria-expanded="false" aria-controls="' + id +
       '" aria-describedby="' + id + '-t">' + esc(showEvidence(false)) + "</button>";
     if (!det) return btn + '<pre class="ev" id="' + id + '" hidden>' + escEv(ev) + "</pre>";
     return btn + '<div class="evw" id="' + id + '" hidden>' +
       (ev ? '<pre class="ev">' + escEv(ev) + "</pre>" : "") +
-      '<div class="zr-raw" data-det="' + esc(det) + '" data-base="' + esc(RAW.base) + '"></div></div>';
+      '<div class="zr-raw" data-det="' + esc(det) + '" data-base="' + esc(RAW.base) + '"' +
+      (seqs ? ' data-seqs="' + esc(seqs.join(",")) + '"' : "") + "></div></div>";
   }
 
   // A detector's wall-clock time: "850 ms", "4.2 s", "73 s".
@@ -883,6 +887,8 @@
       dl += '<div class="zr-dl" role="group" aria-label="' + esc(T("原始证据", "Raw evidence")) + '">' +
         '<span class="dl-l">' + ico("download") + " " + esc(T("原始证据", "Raw evidence")) + "</span>" +
         '<a class="btn sm" href="' + esc(RAW.base) + '" download>' + esc(T("证据文件", "Evidence file")) + "</a>" +
+        '<a class="btn sm" href="' + esc(RAW.base + "/export?format=har") + '" download>HAR</a>' +
+        '<a class="btn sm" href="' + esc(RAW.base + "/export?format=curl") + '" download>curl</a>' +
         '<span class="how">' + esc(Tf("{n} 组请求/响应 · zstd 压缩的 JSON Lines", "{n} request/response pairs · zstd-compressed JSON Lines", { n: num(r.evidence.exchanges || 0, 0) })) + "</span></div>";
 
     var rest = srv(summaryRest(v.summary));
@@ -1078,11 +1084,14 @@
   // The exchanges of one check, each with a button that loads its pair.
   function loadRaw(box) {
     var base = box.getAttribute("data-base"), det = box.getAttribute("data-det");
+    var only = box.hasAttribute("data-seqs") ? box.getAttribute("data-seqs").split(",").map(Number) : null;
     box.setAttribute("data-state", "loading");
     box.innerHTML = '<p class="how" role="status">' + esc(T("正在加载原始请求…", "Loading the raw requests…")) + "</p>";
     var idx = rawIndex[base] || (rawIndex[base] = getJSON(base + "/exchanges"));
     idx.then(function (j) {
-      var rows = (j.exchanges || []).filter(function (x) { return x.detector === det; });
+      var rows = (j.exchanges || []).filter(function (x) {
+        return only ? only.indexOf(x.seq) >= 0 : x.detector === det;
+      });
       box.setAttribute("data-state", "done");
       var hid = "zr-rh-" + ++uid;
       box.innerHTML =
@@ -1091,7 +1100,9 @@
           ? '<p class="how warn">' + esc(T("证据文件与报告记录的 SHA-256 不一致。", "The evidence file does not match the SHA-256 the report records.")) + "</p>"
           : "") +
         (rows.length
-          ? '<p class="how">' + esc(Tf("此项检测的 {n} 组请求/响应，按完成顺序。", "The {n} request/response pairs of this check, in the order they finished.", { n: num(rows.length, 0) })) + "</p>" +
+          ? '<p class="how">' + esc(only
+              ? Tf("此发现所依据的 {n} 组请求/响应，按完成顺序。", "The {n} request/response pairs this finding rests on, in the order they finished.", { n: num(rows.length, 0) })
+              : Tf("此项检测的 {n} 组请求/响应，按完成顺序。", "The {n} request/response pairs of this check, in the order they finished.", { n: num(rows.length, 0) })) + "</p>" +
             '<ul class="zr-rawl" aria-labelledby="' + hid + '">' + rows.map(rawRow).join("") + "</ul>"
           : '<p class="how">' + esc(T("此项检测没有发出请求。", "This check sent no requests.")) + "</p>");
       var btns = box.querySelectorAll(".rawb");
@@ -1116,6 +1127,13 @@
       '<div class="zr-pair" id="' + id + '" hidden></div></li>'
     );
   }
+  // download links of one exchange (by its request seq) in the export formats
+  function pairLinks(base, x) {
+    if (x.seq == null) return "";
+    var q = base + "/export?seq=" + encodeURIComponent(x.seq) + "&format=";
+    return '<p class="how">' + esc(T("下载此请求：", "Download this request: ")) +
+      '<a href="' + esc(q + "curl") + '" download>curl</a> · <a href="' + esc(q + "har") + '" download>HAR</a></p>';
+  }
   function openPair(btn, base) {
     var panel = document.getElementById(btn.getAttribute("aria-controls"));
     if (!panel) return;
@@ -1127,7 +1145,8 @@
     panel.innerHTML = '<p class="how" role="status">' + esc(T("加载中…", "Loading…")) + "</p>";
     getJSON(base + "/exchanges?id=" + encodeURIComponent(btn.getAttribute("data-id"))).then(function (j) {
       panel.setAttribute("data-state", "done");
-      panel.innerHTML = pairHTML((j.exchanges || [])[0] || {});
+      var x = (j.exchanges || [])[0] || {};
+      panel.innerHTML = pairHTML(x) + pairLinks(base, x);
     }).catch(function (e) {
       panel.removeAttribute("data-state");
       panel.innerHTML = '<p class="how warn">' + esc(T("无法加载原始证据：", "Could not load the raw evidence: ")) + esc(srv(String((e && e.message) || e))) + "</p>";

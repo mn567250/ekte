@@ -89,6 +89,10 @@ Le réglage **Requêtes/réponses brutes** du formulaire d'audit (**Conserver** 
 **Ne pas conserver**) en décide par exécution ; chaque surveillance a le même
 réglage dans **Surveillances**.
 
+Sous un constat, la liste ne contient que les requêtes sur lesquelles il
+repose. Chaque paire, et toute l'exécution, se télécharge aussi en HAR ou en
+script curl qui renvoie les requêtes (`EKTE_API_KEY` fournit la clé).
+
 **Analyses.** `/analytics` transforme l'historique
 local en comparaisons : des indicateurs pour la période choisie (exécutions,
 score médian, part à risque élevé, taux de réussite, TTFT, vitesse de sortie,

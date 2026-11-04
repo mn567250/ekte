@@ -24,6 +24,8 @@
   "Keep": "Keep",
   "Don't keep": "Don't keep",
   "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.",
-  "Saved: the next runs keep their raw requests and responses accordingly.": "Saved: the next runs keep their raw requests and responses accordingly."
+  "Saved: the next runs keep their raw requests and responses accordingly.": "Saved: the next runs keep their raw requests and responses accordingly.",
+  "The {n} request/response pairs this finding rests on, in the order they finished.": "The {n} request/response pairs this finding rests on, in the order they finished.",
+  "Download this request: ": "Download this request: "
  }
 }

@@ -175,6 +175,10 @@ class CompletionOutcome(BaseModel):
     # The redacted raw JSON body of a successful non-stream call, only when the
     # request asked for it (RequestSpec.capture_raw).
     raw_body: dict[str, Any] | None = None
+    # The ``seq`` of every request record this call produced (a parameter or
+    # reasoning repeat adds one), in order; empty when the client records none.
+    # Detectors hand it to their findings (Finding.evidence_seqs).
+    seqs: list[int] = Field(default_factory=list)
 
     def has_content(self) -> bool:
         return bool(self.content and self.content.strip())
@@ -210,6 +214,10 @@ class Finding(BaseModel):
     # scored against (None: the finding id itself); ``subject`` what was checked.
     check: str | None = None
     subject: str | None = None
+    # The requests this finding rests on: their ``seq`` in
+    # ``performance.requests`` (and in the run's evidence file). None when the
+    # detector does not say which (then: all of the detector's requests).
+    evidence_seqs: list[int] | None = None
 
     @property
     def scale_check(self) -> str:

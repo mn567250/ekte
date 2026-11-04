@@ -573,6 +573,21 @@
           "title": "Evidence",
           "type": "object"
         },
+        "evidence_seqs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Seqs"
+        },
         "id": {
           "title": "Id",
           "type": "string"

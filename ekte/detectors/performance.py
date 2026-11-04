@@ -73,7 +73,7 @@ from ekte.models import (
 )
 from ekte.perf import summarize_endpoint
 from ekte.perf.recorder import last_record
-from ekte.perf.summary import hidden_reasoning
+from ekte.perf.summary import failed_seqs, hidden_reasoning
 
 __all__ = [
     "PINGS",
@@ -318,7 +318,9 @@ class PerformanceDetector(Detector):
         )
 
         self._consistency_findings(result, records, stream=stream)
-        perf_probe.error_finding(SCALE, result, target)
+        perf_probe.error_finding(
+            SCALE, result, target, failed_seqs(records, "target", stream=stream)
+        )
         perf_probe.load_finding(SCALE, result, target)
 
         for label in summaries:

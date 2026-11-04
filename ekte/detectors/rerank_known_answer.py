@@ -40,6 +40,7 @@ class RerankKnownAnswerDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.known_answer", "no_ranking",
+                    calls=[_res],
                     title="Known-answer ranking not checked",
                     summary=f"No ranking to check: {problem}.",
                 )
@@ -55,6 +56,7 @@ class RerankKnownAnswerDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.known_answer", "first",
+                    calls=[_res],
                     title="Reranker ranks the obvious answer first",
                     summary=f"Document {KNOWN_ANSWER_TOP} (the clearly relevant one) ranked "
                     f"first with score {scores(results)[KNOWN_ANSWER_TOP]:.4f}.",
@@ -65,6 +67,7 @@ class RerankKnownAnswerDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.known_answer", "missed",
+                    calls=[_res],
                     title="Reranker does NOT rank the obvious answer first",
                     summary=f"Expected document {KNOWN_ANSWER_TOP} to rank first, but document "
                     f"{top['index']} did. A genuine relevance model ranks it first.",

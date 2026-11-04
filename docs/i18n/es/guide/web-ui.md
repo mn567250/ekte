@@ -89,6 +89,10 @@ todas. El ajuste **Peticiones/respuestas originales** del formulario de
 auditoría (**Conservar** / **No conservar**) lo decide por ejecución; cada
 monitor tiene el mismo ajuste en **Monitores**.
 
+Bajo un hallazgo, la lista contiene solo las peticiones en las que se basa.
+Cada par, y toda la ejecución, también se descarga como HAR o como un script
+curl que vuelve a enviar las peticiones (`EKTE_API_KEY` aporta la clave).
+
 **Analítica.** `/analytics` convierte el historial local
 en comparaciones: indicadores del periodo elegido (ejecuciones, puntuación
 mediana, proporción de riesgo alto, tasa de éxito, TTFT, velocidad de salida,

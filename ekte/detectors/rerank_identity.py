@@ -35,6 +35,7 @@ class RerankIdentityDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.model_field", "no_response",
+                    calls=[res],
                     title="Echoed model field not checked",
                     summary=f"POST /rerank failed: {res.error_message or res.status_code}.",
                     evidence={"status_code": res.status_code},
@@ -52,6 +53,7 @@ class RerankIdentityDetector(RerankDetector):
         result.findings.append(
             SCALE.finding(
                 "rerank.model_field", key,
+                calls=[res],
                 title="Echoed model field" if key != "differs"
                 else "Echoed model field differs from the request",
                 summary=f"Relay reported model: {echoed or '(none)'}.",

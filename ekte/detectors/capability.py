@@ -118,6 +118,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.tools",
                     "failed",
+                    calls=[outcome],
                     title="Tool-calling probe failed to complete",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",
                     evidence={"status_code": outcome.status_code, "error_type": outcome.error_type},
@@ -144,6 +145,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.tools",
                     "delivered",
+                    calls=[outcome],
                     title="Tool calling delivered",
                     summary=f"Returned a tool call to '{fn_name}'.",
                     evidence=evidence,
@@ -154,6 +156,7 @@ class CapabilityDetector(Detector):
                     SCALE.finding(
                         "capability.tools.encoding",
                         "non_openai",
+                        calls=[outcome],
                         title="Non-OpenAI tool arguments encoding",
                         summary=(
                             "function.arguments arrived as a structured object rather than a "
@@ -168,6 +171,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.tools",
                     "not_delivered",
+                    calls=[outcome],
                     title="Claimed tool-calling not delivered",
                     summary=(
                         "Profile claims tool-calling support but the relay returned no tool "
@@ -183,6 +187,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.tools",
                     "not_claimed",
+                    calls=[outcome],
                     title="No tool call returned",
                     summary="Relay returned no tool call; capability not claimed in any profile.",
                     evidence={"finish_reason": outcome.finish_reason},
@@ -210,6 +215,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.json_mode",
                     "failed",
+                    calls=[outcome],
                     title="JSON-mode probe failed to complete",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",
                     evidence={"status_code": outcome.status_code, "error_type": outcome.error_type},
@@ -225,6 +231,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.json_mode",
                     "delivered",
+                    calls=[outcome],
                     title="JSON mode delivered",
                     summary="response_format=json_object produced a parseable object with the requested value.",
                     evidence={"parsed_keys": sorted(parsed.keys())},
@@ -235,6 +242,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.json_mode",
                     "not_delivered",
+                    calls=[outcome],
                     title="Claimed JSON mode not delivered",
                     summary=(
                         "Profile claims JSON-mode support but the relay did not return a valid "
@@ -249,6 +257,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.json_mode",
                     "value_mismatch" if parsed is not None else "no_json",
+                    calls=[outcome],
                     title="JSON mode observed without strong claim",
                     summary=(
                         "Returned a JSON object but value mismatched."
@@ -289,6 +298,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.json_schema",
                     "failed",
+                    calls=[outcome],
                     title="JSON-schema probe failed to complete",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",
                     evidence={"status_code": outcome.status_code, "error_type": outcome.error_type},
@@ -305,6 +315,7 @@ class CapabilityDetector(Detector):
                     SCALE.finding(
                         "capability.json_schema",
                         "honored",
+                        calls=[outcome],
                         title="Strict JSON schema honored",
                         summary="Relay returned an object conforming to the strict schema, as claimed.",
                         evidence={"conforms": True},
@@ -315,6 +326,7 @@ class CapabilityDetector(Detector):
                     SCALE.finding(
                         "capability.json_schema",
                         "not_enforced",
+                        calls=[outcome],
                         title="Claimed strict JSON schema not enforced",
                         summary="Profile claims json_schema support but the response did not conform.",
                         evidence={"conforms": False, "parsed": parsed is not None},
@@ -330,6 +342,7 @@ class CapabilityDetector(Detector):
                     SCALE.finding(
                         "capability.json_schema",
                         "over_delivered",
+                        calls=[outcome],
                         title="Returned a schema-conforming object though claimed model lacks strict json_schema",
                         summary=(
                             "The response conformed to the requested schema even though the claimed "
@@ -345,6 +358,7 @@ class CapabilityDetector(Detector):
                     SCALE.finding(
                         "capability.json_schema",
                         "absent_as_claimed",
+                        calls=[outcome],
                         title="Strict JSON schema not enforced (consistent with claim)",
                         summary="Relay did not enforce strict json_schema, consistent with the claimed model.",
                         evidence={"conforms": False},
@@ -377,6 +391,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.max_output",
                     "failed",
+                    calls=[outcome],
                     title="Max-output probe failed to complete",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",
                     evidence={"status_code": outcome.status_code, "error_type": outcome.error_type},
@@ -404,6 +419,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.max_output",
                     "to_cap",
+                    calls=[outcome],
                     title="Sustained output to the request cap",
                     summary=f"Produced ~{line_count} lines and stopped at the {cap}-token cap (finish_reason=length).",
                     evidence=evidence,
@@ -423,6 +439,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.max_output",
                     "far_below",
+                    calls=[outcome],
                     title="Output stopped far below requested length",
                     summary=(
                         f"Model gave up early (finish_reason={finish}) at roughly "
@@ -438,6 +455,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.max_output",
                     "stopped_early",
+                    calls=[outcome],
                     title="Output stopped early",
                     summary=f"Model stopped early (finish_reason={finish}) at ~{produced_ratio*100:.0f}% of the request cap.",
                     evidence=evidence,
@@ -448,6 +466,7 @@ class CapabilityDetector(Detector):
                 SCALE.finding(
                     "capability.max_output",
                     "plausible",
+                    calls=[outcome],
                     title="Output length plausible",
                     summary=f"Produced ~{line_count} lines (finish_reason={finish}); no gross under-delivery.",
                     evidence=evidence,

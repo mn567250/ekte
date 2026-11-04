@@ -24,6 +24,8 @@
   "Keep": "Behold",
   "Don't keep": "Ikke behold",
   "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Lagres sammen med kjøringen i datakatalogen, uten nøklene dine, slik at hvert funn kan kontrolleres mot nøyaktig det som ble sendt og mottatt.",
-  "Saved: the next runs keep their raw requests and responses accordingly.": "Lagret: de neste kjøringene beholder de rå forespørslene og svarene i tråd med dette."
+  "Saved: the next runs keep their raw requests and responses accordingly.": "Lagret: de neste kjøringene beholder de rå forespørslene og svarene i tråd med dette.",
+  "The {n} request/response pairs this finding rests on, in the order they finished.": "De {n} forespørsel/svar-parene dette funnet bygger på, i rekkefølgen de ble fullført.",
+  "Download this request: ": "Last ned denne forespørselen: "
  }
 }

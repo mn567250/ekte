@@ -623,3 +623,162 @@ def remove(name: str | None) -> None:
     if path is not None:
         with contextlib.suppress(OSError):
             path.unlink()
+
+
+# --------------------------------------------------------------------------- #
+# Export: one JSON document, HAR, a curl script
+# --------------------------------------------------------------------------- #
+EXPORT_FORMATS = ("json", "har", "curl")
+# Headers curl sets itself, or that describe the original transfer only.
+_CURL_SKIP = {"host", "content-length", "accept-encoding", "connection", "user-agent"}
+# Masked auth headers come back as a reference to an environment variable.
+_AUTH_HEADERS = {"authorization", "x-api-key", "api-key", "x-goog-api-key", "proxy-authorization"}
+
+
+def _selected(path: Path, seqs: list[int] | None) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    head: dict[str, Any] = {}
+    lines: list[dict[str, Any]] = []
+    wanted = set(seqs) if seqs else None
+    for line in iter_lines(path):
+        if line.get("type") == "header":
+            head = line
+        elif line.get("type") == "exchange" and (wanted is None or line.get("seq") in wanted):
+            lines.append(line)
+    return head, lines
+
+
+def export_json(path: Path, seqs: list[int] | None = None) -> dict[str, Any]:
+    """The file (or the exchanges of ``seqs``) as one JSON document."""
+    head, lines = _selected(path, seqs)
+    return {"header": head, "exchanges": lines}
+
+
+def _har_headers(headers: dict[str, str] | None) -> list[dict[str, str]]:
+    return [{"name": k, "value": v} for k, v in (headers or {}).items()]
+
+
+def _har_content(body: dict[str, Any] | None, mime: str) -> dict[str, Any]:
+    body = body or {}
+    out: dict[str, Any] = {"size": body.get("bytes", 0), "mimeType": mime}
+    if body.get("text") is not None:
+        out["text"] = body["text"]
+        if body.get("encoding") == "base64":
+            out["encoding"] = "base64"
+    return out
+
+
+def export_har(path: Path, seqs: list[int] | None = None) -> dict[str, Any]:
+    """The exchanges as an HTTP Archive (HAR 1.2), for browser dev tools and
+    HAR viewers. Timings: ``wait`` is the time to the first byte of the body,
+    ``receive`` the rest; ekte's own fields go in ``_ekte``."""
+    from datetime import datetime, timedelta
+
+    from ekte import __version__
+
+    head, lines = _selected(path, seqs)
+    try:
+        t0 = datetime.fromisoformat(str(head.get("started_at")))
+    except ValueError:
+        t0 = None
+    entries = []
+    for x in lines:
+        req, resp = x.get("request") or {}, x.get("response")
+        started = (t0 + timedelta(milliseconds=x.get("start_ms") or 0)).isoformat() if t0 else ""
+        req_mime = (req.get("headers") or {}).get("content-type", "")
+        first = (resp or {}).get("chunks") or []
+        done = (resp or {}).get("done_ms")
+        wait = first[0][0] if first else (done or 0)
+        entry: dict[str, Any] = {
+            "startedDateTime": started,
+            "time": done if done is not None else -1,
+            "request": {
+                "method": req.get("method", ""),
+                "url": req.get("url", ""),
+                "httpVersion": (resp or {}).get("http_version") or "HTTP/1.1",
+                "cookies": [],
+                "headers": _har_headers(req.get("headers")),
+                "queryString": [],
+                "headersSize": -1,
+                "bodySize": (req.get("body") or {}).get("bytes", 0),
+            },
+            "response": {
+                "status": (resp or {}).get("status", 0),
+                "statusText": "",
+                "httpVersion": (resp or {}).get("http_version") or "HTTP/1.1",
+                "cookies": [],
+                "headers": _har_headers((resp or {}).get("headers")),
+                "content": _har_content(
+                    (resp or {}).get("body"), ((resp or {}).get("headers") or {}).get("content-type", "")
+                ),
+                "redirectURL": "",
+                "headersSize": -1,
+                "bodySize": ((resp or {}).get("body") or {}).get("bytes", 0) if resp else -1,
+            },
+            "cache": {},
+            "timings": {
+                "send": 0,
+                "wait": wait,
+                "receive": max(0.0, (done or wait) - wait),
+            },
+            "_ekte": {k: x.get(k) for k in ("id", "seq", "endpoint", "detector", "op", "error")},
+        }
+        if (req.get("body") or {}).get("text") is not None:
+            entry["request"]["postData"] = {"mimeType": req_mime, "text": req["body"]["text"]}
+        entries.append(entry)
+    return {
+        "log": {
+            "version": "1.2",
+            "creator": {"name": "ekte", "version": __version__},
+            "comment": f"ekte evidence, run {head.get('run_id', '?')} (keys removed)",
+            "entries": entries,
+        }
+    }
+
+
+def _sh(value: str) -> str:
+    """Single-quote ``value`` for a POSIX shell."""
+    return "'" + value.replace("'", "'\\''") + "'"
+
+
+def export_curl(path: Path, seqs: list[int] | None = None) -> str:
+    """A POSIX shell script that sends the exchanges' requests again with curl.
+
+    The relay's key is not in the file: masked auth headers read it from
+    ``$EKTE_API_KEY`` instead. Binary request bodies are left out.
+    """
+    head, lines = _selected(path, seqs)
+    out = [
+        "#!/bin/sh",
+        f"# ekte evidence, run {head.get('run_id', '?')}: the requests again, with curl.",
+        "# Set EKTE_API_KEY first; ekte never stores the key in the evidence file.",
+        "set -e",
+        "",
+    ]
+    for x in lines:
+        req = x.get("request") or {}
+        label = f"seq {x['seq']}" if x.get("seq") is not None else f"line {x.get('id')}"
+        out.append(f"# {label} · {x.get('endpoint')} · {x.get('detector') or '-'} · {x.get('op')}")
+        args = [f"curl -sS -X {_sh(str(req.get('method', 'GET')))} {_sh(str(req.get('url', '')))}"]
+        for k, v in (req.get("headers") or {}).items():
+            low = k.lower()
+            if low in _CURL_SKIP or low == "cookie":
+                continue
+            if low in _AUTH_HEADERS:
+                ref = "Bearer ${EKTE_API_KEY}" if low == "authorization" else "${EKTE_API_KEY}"
+                args.append(f'-H "{k}: {ref}"')
+            else:
+                args.append(f"-H {_sh(f'{k}: {v}')}")
+        body = req.get("body") or {}
+        has_body = body.get("text") is not None and body.get("encoding") != "base64"
+        delim = "EKTE_BODY"
+        while has_body and delim in body["text"]:
+            delim += "_"  # a body that contains the delimiter gets a longer one
+        if has_body:
+            args.append(f"--data-binary @- <<'{delim}'")
+        out.append(" \\\n  ".join(args))
+        if has_body:
+            out.append(body["text"])
+            out.append(delim)
+        out.append("echo")
+        out.append("")
+    return "\n".join(out)

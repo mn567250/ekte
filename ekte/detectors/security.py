@@ -95,6 +95,7 @@ class SecurityDetector(Detector):
                 SCALE.finding(
                     "security.tls",
                     "https",
+                    calls=[],
                     title="Endpoint uses HTTPS",
                     summary="Transport is encrypted; the API key is protected in transit.",
                     evidence={"scheme": "https"},
@@ -105,6 +106,7 @@ class SecurityDetector(Detector):
                 SCALE.finding(
                     "security.tls",
                     "plain_http_local",
+                    calls=[],
                     title="Endpoint is plain HTTP on a local/private host",
                     summary=(
                         "Endpoint is not HTTPS, but it is on this machine or a private network, "
@@ -122,6 +124,7 @@ class SecurityDetector(Detector):
                 SCALE.finding(
                     "security.tls",
                     "plain_http",
+                    calls=[],
                     title="Endpoint is not HTTPS",
                     summary="Endpoint is not HTTPS; the API key is sent in clear text.",
                     evidence={"scheme": scheme},
@@ -149,6 +152,7 @@ class SecurityDetector(Detector):
                     SCALE.finding(
                         "security.headers",
                         "revealing",
+                        calls=[chat],
                         title="Response leaks upstream/proxy headers",
                         summary=(
                             f"Found {len(revealing)} revealing header(s): "
@@ -163,6 +167,7 @@ class SecurityDetector(Detector):
                     SCALE.finding(
                         "security.headers",
                         "clean",
+                        calls=[chat],
                         title="No revealing upstream headers",
                         summary=f"Inspected {len(chat.headers)} response headers; none expose upstream identity.",
                         evidence={"header_count": len(chat.headers)},
@@ -173,6 +178,7 @@ class SecurityDetector(Detector):
                 SCALE.finding(
                     "security.headers",
                     "unavailable",
+                    calls=[chat],
                     title="No response headers to inspect",
                     summary=chat.error_message or "Call returned no headers; header hygiene not assessed.",
                     evidence={"status_code": chat.status_code, "error_type": chat.error_type},
@@ -196,6 +202,7 @@ class SecurityDetector(Detector):
                     SCALE.finding(
                         "security.key_echo",
                         "echoed",
+                        calls=[chat],
                         title="API key reflected in response",
                         summary="The API key appears verbatim in the relay's response; treat the key as exposed.",
                         evidence={"location": "content_or_error"},
@@ -207,6 +214,7 @@ class SecurityDetector(Detector):
                     SCALE.finding(
                         "security.key_echo",
                         "not_echoed",
+                        calls=[chat],
                         title="API key not reflected in response",
                         summary="The API key does not appear in the response content or error text.",
                         evidence={},
@@ -218,6 +226,7 @@ class SecurityDetector(Detector):
             SCALE.finding(
                 "security.note",
                 "limits",
+                calls=[],
                 title="Prompt logging & shared upstream keys are not black-box provable",
                 summary=(
                     "Whether a relay logs prompts or multiplexes a shared upstream key cannot be "

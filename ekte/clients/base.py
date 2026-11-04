@@ -94,6 +94,8 @@ _MAX_PARAM_RETRIES = 3
 _NOT_PARAM_STATUSES = frozenset({401, 403, 404, 408, 409, 413, 429})
 # The httpx timeout of the completion running in this task (see complete()).
 _CALL_TIMEOUT: ContextVar[httpx.Timeout | None] = ContextVar("ekte_call_timeout", default=None)
+# The request-record seqs of the completion running in this task (see complete()).
+_SEQS: ContextVar[list[int] | None] = ContextVar("ekte_call_seqs", default=None)
 
 
 def _prompt_tokens(messages: list[dict[str, Any]]) -> int:
@@ -471,6 +473,18 @@ class BaseHTTPClient:
 
     # -- public calls (recorded for the performance section) --------------- #
     async def complete(self, spec: RequestSpec) -> CompletionOutcome:
+        """One completion; its outcome lists the ``seq`` of every request
+        record it produced (``seqs``: repeats included)."""
+        seqs: list[int] = []
+        token = _SEQS.set(seqs)
+        try:
+            outcome = await self._complete_all(spec)
+        finally:
+            _SEQS.reset(token)
+        outcome.seqs = seqs
+        return outcome
+
+    async def _complete_all(self, spec: RequestSpec) -> CompletionOutcome:
         if self.reasoning_room:
             spec = reasoning_room_spec(spec)
         outcome = await self._complete_adapted(spec)
@@ -509,6 +523,9 @@ class BaseHTTPClient:
         with net_trace_scope(self._capturing()) as net:
             outcome = await self._complete_bounded(spec)
         record = self.recorder.record_completion(self.endpoint, spec, outcome, started, net)
+        seqs = _SEQS.get()
+        if seqs is not None:
+            seqs.append(record.seq)
         return outcome, record
 
     async def _complete_bounded(self, spec: RequestSpec) -> CompletionOutcome:
@@ -542,7 +559,7 @@ class BaseHTTPClient:
         started = time.perf_counter()
         with net_trace_scope(self._capturing()) as net:
             outcome, vectors = await self._embeddings(inputs)
-        self.recorder.record_embedding(self.endpoint, inputs, outcome, started, net)
+        outcome.seqs = [self.recorder.record_embedding(self.endpoint, inputs, outcome, started, net).seq]
         return outcome, vectors
 
     async def rerank(
@@ -560,7 +577,9 @@ class BaseHTTPClient:
         started = time.perf_counter()
         with net_trace_scope(self._capturing()) as net:
             outcome, results = await self._rerank(query, documents)
-        self.recorder.record_rerank(self.endpoint, query, documents, outcome, started, net)
+        outcome.seqs = [
+            self.recorder.record_rerank(self.endpoint, query, documents, outcome, started, net).seq
+        ]
         return outcome, results
 
     async def list_models(
@@ -574,7 +593,7 @@ class BaseHTTPClient:
         started = time.perf_counter()
         with net_trace_scope(self._capturing()) as net:
             outcome, ids = await self._list_models(headers)
-        self.recorder.record_models(self.endpoint, outcome, started, net)
+        outcome.seqs = [self.recorder.record_models(self.endpoint, outcome, started, net).seq]
         return outcome, ids
 
     # -- error shaping (shared) -------------------------------------------- #

@@ -89,6 +89,11 @@ Einstellung **Rohe Anfragen/Antworten** im Prüfformular (**Behalten** /
 **Nicht behalten**) entscheidet das pro Lauf; jede Überwachung hat dieselbe
 Einstellung unter **Überwachung**.
 
+Unter einem Befund enthält die Liste nur die Anfragen, auf denen dieser Befund
+beruht. Jedes Paar und der ganze Lauf lassen sich auch als HAR oder als
+curl-Skript herunterladen, das die Anfragen erneut sendet (`EKTE_API_KEY`
+liefert den Schlüssel).
+
 **Analyse.** `/analytics` macht aus dem lokalen Verlauf
 Vergleiche: Kennzahlen für den gewählten Zeitraum (Läufe, Median-Score, Anteil
 hohes Risiko, Erfolgsquote, TTFT, Ausgabegeschwindigkeit,

@@ -91,6 +91,7 @@ class BillingDetector(Detector):
                 SCALE.finding(
                     "billing.request-failed",
                     "no_response",
+                    calls=[outcome],
                     title="Billing probe request failed",
                     summary=outcome.error_message or f"HTTP {outcome.status_code}",
                     evidence={"status_code": outcome.status_code, "error_type": outcome.error_type},
@@ -131,6 +132,7 @@ class BillingDetector(Detector):
                 SCALE.finding(
                     "billing.missing-usage",
                     "missing",
+                    calls=[outcome],
                     title="No usage accounting returned",
                     summary="Response omitted token usage; billing is unverifiable.",
                     evidence={"usage_present": usage is not None},
@@ -156,6 +158,7 @@ class BillingDetector(Detector):
                 SCALE.finding(
                     "billing.usage-inflation",
                     "inflated",
+                    calls=[outcome],
                     title="Reported prompt tokens far exceed estimate",
                     summary=(
                         f"Reported prompt tokens ({prompt}) far exceed independent "
@@ -180,6 +183,7 @@ class BillingDetector(Detector):
                         SCALE.finding(
                             "billing.reasoning-tokens",
                             "hidden_reasoning",
+                            calls=[outcome],
                             title="Completion tokens exceed visible text (reasoning model)",
                             summary=(
                                 f"Reported completion tokens ({completion}) exceed the visible-text "
@@ -196,6 +200,7 @@ class BillingDetector(Detector):
                     SCALE.finding(
                         "billing.usage-inflation-completion",
                         "above_heuristic",
+                        calls=[outcome],
                         title="Reported completion tokens well above heuristic estimate",
                         summary=(
                             f"Reported completion tokens ({completion}) are far above the "
@@ -219,6 +224,7 @@ class BillingDetector(Detector):
                     SCALE.finding(
                         f"billing.usage-undercount-{label}",
                         "below_estimate",
+                        calls=[outcome],
                         title=_UNDERCOUNT_TITLE[label],
                         summary=(
                             f"Reported {label} tokens ({reported}) are far below the "
@@ -239,6 +245,7 @@ class BillingDetector(Detector):
                 SCALE.finding(
                     "billing.total-mismatch",
                     "mismatch",
+                    calls=[outcome],
                     title="Usage total != prompt + completion",
                     summary=(
                         f"Reported total ({total}) does not equal prompt "
@@ -260,6 +267,7 @@ class BillingDetector(Detector):
                     SCALE.finding(
                         "billing.partial-usage",
                         "partial",
+                        calls=[outcome],
                         title="Incomplete usage breakdown",
                         summary=(
                             f"Usage reports only total={total} (prompt={prompt}, "
@@ -276,6 +284,7 @@ class BillingDetector(Detector):
                     SCALE.finding(
                         "billing.usage-consistent",
                         "consistent",
+                        calls=[outcome],
                         title="Usage consistent with independent estimate",
                         summary=(
                             f"Reported prompt={prompt}, completion={completion} within "

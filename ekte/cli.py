@@ -14,6 +14,7 @@ Commands:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import sys
@@ -939,6 +940,56 @@ def kb_export_command(
     from ekte.knowledge.importer import export_yaml
 
     print(export_yaml(provider), end="")
+
+
+@app.command("evidence-export")
+def evidence_export_command(
+    source: Annotated[str, typer.Argument(help="An evidence file (.jsonl.zst), or the id of a saved run in the history.")],
+    fmt: Annotated[str, typer.Option("--as", help="har (HTTP Archive) | curl (a shell script that sends the requests again) | json (one document).")] = "har",
+    seq: Annotated[list[int] | None, typer.Option("--seq", help="Only the exchanges of this request seq (repeatable).")] = None,
+    out: Annotated[Path | None, typer.Option("--out", help="Write to this file instead of stdout.")] = None,
+) -> None:
+    """Turn a run's evidence file into HAR, a curl script or one JSON document.
+
+    The raw requests and responses can then be opened in a HAR viewer or
+    browser dev tools, or sent again with curl (set EKTE_API_KEY first: the
+    file never holds the key).
+    """
+    from ekte import evidence
+
+    if fmt not in evidence.EXPORT_FORMATS:
+        err_console.print(f"[red]--as must be one of: {', '.join(evidence.EXPORT_FORMATS)}[/red]")
+        raise typer.Exit(code=2)
+    path = Path(source).expanduser()
+    if not path.is_file() and source.isdigit():
+        from ekte.web import history
+
+        found = history.evidence_path(int(source))
+        if found is None:
+            err_console.print(f"[red]Saved run {source} has no evidence file.[/red]")
+            raise typer.Exit(code=2)
+        path = found
+    if not path.is_file():
+        err_console.print(f"[red]No such evidence file: {path}[/red]")
+        raise typer.Exit(code=2)
+    seqs = list(seq) if seq else None
+    try:
+        if fmt == "curl":
+            text = evidence.export_curl(path, seqs)
+        else:
+            doc = evidence.export_har(path, seqs) if fmt == "har" else evidence.export_json(path, seqs)
+            text = json.dumps(doc, ensure_ascii=False, indent=2)
+    except ValueError as exc:  # a file of an unknown major schema version
+        err_console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    if out is None:
+        print(text)
+    else:
+        out.write_text(text + "\n", encoding="utf-8")
+        if fmt == "curl":
+            with contextlib.suppress(OSError):
+                out.chmod(0o700)
+        console.print(f"[dim]Wrote {out}[/dim]")
 
 
 _DATA_DIR_HELP = (

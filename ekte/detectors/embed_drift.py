@@ -72,6 +72,7 @@ class EmbedDriftDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.drift", "no_vector",
+                    calls=[_res],
                     title="Vector drift not measured",
                     summary=f"No vector for the pinned input: {problem}.",
                 )
@@ -91,6 +92,7 @@ class EmbedDriftDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.drift", "baseline",
+                    calls=[_res],
                     title="Vector drift baseline recorded",
                     summary="No previous run of this target and model recorded a vector for "
                     "the pinned input; this run's vector is the baseline for the next one.",
@@ -111,6 +113,7 @@ class EmbedDriftDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.drift", key,
+                    calls=[_res],
                     title="Vector unchanged since the previous run" if key == "stable"
                     else "Vector shifted since the previous run" if key == "shifted"
                     else "Vector changed since the previous run",
