@@ -93,7 +93,11 @@
       - group "Forespørsler fra ytelsesproben":
         - button "Strømming" [pressed]
         - button "Uten strømming"
-      - text: På standard kjører proben bare med en referanse; ellers brukes revisjonens egne forespørsler.
+      - text: På standard kjører proben bare med en referanse; ellers brukes revisjonens egne forespørsler. Rå forespørsler/svar
+      - group "Rå forespørsler/svar":
+        - button "Behold" [pressed]
+        - button "Ikke behold"
+      - text: Lagres sammen med kjøringen i datakatalogen, uten nøklene dine, slik at hvert funn kan kontrolleres mot nøyaktig det som ble sendt og mottatt.
       - button "Sammenlign med en pålitelig referanse compare" [expanded]
       - paragraph: Oppgi et endepunkt for samme modell som du stoler på (f.eks. det offisielle API-et). ekte bruker det til å bekrefte målets atferd, slik at konklusjoner om bytte eller nedgradering blir mer pålitelige — kvalitetsdommeren og manipulasjonsdeteksjonen når bare sitt høyeste nivå med en referanse.
       - text: Referanserelé / -leverandør Valgfritt

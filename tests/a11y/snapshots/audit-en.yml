@@ -93,7 +93,11 @@
       - group "Performance probe requests":
         - button "Streaming" [pressed]
         - button "Non-streaming"
-      - text: On standard the probe runs only with a baseline; otherwise the audit's own requests are used.
+      - text: On standard the probe runs only with a baseline; otherwise the audit's own requests are used. Raw requests/responses
+      - group "Raw requests/responses":
+        - button "Keep" [pressed]
+        - button "Don't keep"
+      - text: Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.
       - button "Compare against a trusted baseline compare" [expanded]
       - paragraph: Enter an endpoint for the same model that you trust (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.
       - text: Baseline relay / provider Optional

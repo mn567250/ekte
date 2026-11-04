@@ -63,6 +63,7 @@ jobs:
 | `fail-on-risk`      | no       | `high`        | Fail the job when risk `>=` this level: `low` \| `medium` \| `high`. |
 | `python-version`    | no       | `3.12`        | Python version used to install and run `ekte`. |
 | `version`           | no       | `ekte`  | pip install spec. Pin for reproducible runs, e.g. `ekte==0.33.1`. |
+| `evidence`          | no       | `false`       | `true` keeps every raw request/response pair of the audit (keys removed) and uploads it as a workflow artifact, also when the gate fails. |
 
 ## Outputs
 
@@ -71,6 +72,7 @@ jobs:
 | `risk`   | Risk level: `clean` \| `low` \| `medium` \| `high` \| `inconclusive`. |
 | `score`  | Overall score `0`–`100` (empty string if `ekte` could not score the relay). |
 | `rating` | Human-readable rating from the verdict (may be empty). |
+| `evidence-file` | Path of the evidence file on the runner (empty unless `evidence` is `true`). |
 
 ## Gate a deploy on relay health
 

@@ -96,6 +96,7 @@ class ReliabilityDetector(Detector):
                 SCALE.finding(
                     "reliability.skipped",
                     "disabled",
+                    calls=[],
                     title="Reliability probe disabled",
                     summary="reliability_requests <= 0; no concurrent load was issued.",
                     evidence={"reliability_requests": n},

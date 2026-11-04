@@ -133,6 +133,11 @@
       - definition:
         - code: openai/gpt-4o
         - text: pinned Oct 1, 2026, 12:00 PM
+      - term: Raw requests/responses
+      - definition:
+        - combobox "Raw requests/responses — gpt-4o":
+          - option "Keep" [selected]
+          - option "Don't keep"
       - 'link "From run #1 →"':
         - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Finish setup to switch it on":

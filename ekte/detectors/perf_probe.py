@@ -262,7 +262,14 @@ def consistency_finding(
     )
 
 
-def error_finding(scale: Scale, result: DetectorResult, target: EndpointPerformance) -> None:
+def error_finding(
+    scale: Scale,
+    result: DetectorResult,
+    target: EndpointPerformance,
+    failed: list[int] | None = None,
+) -> None:
+    """The probe's failure finding; ``failed`` are the ``seq`` numbers of the failed
+    requests it counts (see :func:`ekte.perf.summary.failed_seqs`)."""
     if target.error_rate is None:
         return
     rate = target.error_rate
@@ -282,6 +289,7 @@ def error_finding(scale: Scale, result: DetectorResult, target: EndpointPerforma
                 "rate_limited": target.rate_limited,
                 "error_rate": round(rate, 3),
             },
+            calls=failed,
         )
     )
 

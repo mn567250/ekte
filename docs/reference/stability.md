@@ -46,6 +46,7 @@ it may change in any release without notice.
 | Configuration file (`ekte.yaml`) | Public | [Config file](#surface-config) |
 | Environment variables (the documented ones) | Public | [Environment variables](#surface-env) |
 | Report JSON (`--format json`, `--json`, `--compact`) | Public | [Report JSON](#surface-report) |
+| Evidence files (`--evidence`, the data directory's `evidence/`) | Public (the line format) | [Report JSON](#surface-report) |
 | Webhook payloads (`ekte watch`, monitors) | Public | [Webhooks](#surface-webhooks) |
 | GitHub Action inputs and outputs (`action.yml`) | Public | [GitHub Action](#surface-action) |
 | Data directory and its databases | Public as an upgrade guarantee only | [Data directory](#surface-data) |
@@ -264,6 +265,7 @@ Public (all `EKTE_`-prefixed variables below):
 | `EKTE_ALLOWED_HOSTS` | Extra accepted `Host` values for `ekte serve` |
 | `EKTE_CONTAINER` | Allow a non-loopback bind inside a container |
 | `EKTE_MAX_PARALLEL_AUDITS` | Concurrent audits in the web UI |
+| `EKTE_NO_EVIDENCE` | Keep no raw request/response pairs for runs saved to history |
 
 Also public: any variable you name yourself and pass as `--api-key env:NAME` or
 `api_key: env:NAME`. The `ZING_*` equivalents are deprecated (see
@@ -296,6 +298,15 @@ in the wheel and the sdist) and is generated from the `AuditReport` model. See
   (written before 0.32) is schema version 1.0, and history, re-run and
   re-export read it unchanged.
 
+An evidence file (`--evidence`, or the data directory's
+`evidence/<run_id>.jsonl.zst` for runs saved to history; see
+[Reports](../guide/reports.md)) is public in the same way: every line matches
+[`ekte/schemas/evidence.schema.json`](../../ekte/schemas/evidence.schema.json),
+versioned independently by the header line's `schema_version`, with the same
+rules. A reader refuses a file of a major version it does not know. That the
+file is zstd-compressed JSON Lines, one header line and then one line per
+exchange, is part of the format.
+
 <a id="surface-webhooks"></a>
 ## Webhook payloads
 
@@ -322,8 +333,9 @@ Public. The inputs and outputs of [`action.yml`](../../action.yml), documented i
 [CI.md](../guide/github-action.md):
 
 - Inputs: `base-url`, `api-key`, `model`, `claimed-model`, `api`,
-  `declared-provider`, `suite`, `fail-on-risk`, `python-version`, `version`.
-- Outputs: `risk`, `score`, `rating`.
+  `declared-provider`, `suite`, `fail-on-risk`, `python-version`, `version`,
+  `evidence`.
+- Outputs: `risk`, `score`, `rating`, `evidence-file`.
 
 The action runs the ekte version selected by the `version` input; its behavior
 follows this policy. The actions the composite action and the repository's
@@ -336,7 +348,8 @@ environment variables, so their values are never interpreted as shell code.
 ## Data directory and databases
 
 The location (`~/.ekte`, or `EKTE_DATA_DIR` / `--data-dir`) is public. The files
-inside (`history.db`, `watches.db`, `kb.db`, `secret.key`) and their schemas are
+inside (`history.db`, `watches.db`, `kb.db`, `secret.key`, the `evidence/` folder's
+file names) and the databases' schemas are
 **internal**: do not read or write them with other tools. What is public is the
 [upgrade guarantee](#upgrade) and the [downgrade behavior](#downgrade). Use
 reports, `ekte kb-export` and `ekte secret export` for data you want to take
@@ -355,6 +368,10 @@ small on purpose:
 | `GET /api/v1/jobs/{id}/events` | the job's events as Server-Sent Events |
 | `GET /api/v1/history` | the saved runs, newest first |
 | `GET /api/v1/history/{id}` | one saved report |
+| `GET /api/v1/history/{id}/evidence` | the run's evidence file |
+| `GET /api/v1/history/{id}/evidence/exchanges` | the run's exchanges, or the pairs of one request |
+| `GET /api/v1/history/{id}/evidence/export` | the exchanges as HAR, a curl script or one JSON document |
+| `POST /api/v1/history/{id}/rescore` | re-score a saved run from its evidence; answers with the job |
 
 Request and response shapes, the error format (`{"error": "..."}`) and the
 status codes are in the [developer guide](../dev/web-server.md#http-api-v1) and

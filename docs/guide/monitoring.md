@@ -36,6 +36,11 @@ Each monitor has its own alert language (defaulting to the UI language), can be
 run now, paused or deleted, and pins the knowledge-base profile it was created
 with until you re-pin it.
 
+Every monitor run and every `ekte watch` cycle keeps its raw requests and
+responses with the saved run (see [Privacy](privacy.md)); a monitor's **Raw
+requests/responses** setting (**Keep** / **Don't keep**) and
+`ekte watch --no-evidence` turn that off.
+
 Monitors that come due run at the same time, each as its own audit, but never
 more than one audit per relay host at once and at most `EKTE_MAX_PARALLEL_AUDITS`
 in total; a run waits for a free slot (an audit you start by hand may queue

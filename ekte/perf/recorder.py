@@ -18,9 +18,12 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ekte.models import CompletionOutcome, RequestRecord, RequestSpec
+
+if TYPE_CHECKING:
+    from ekte.evidence import Capture, EvidenceWriter
 from ekte.utils.stats import mean, percentile, stdev
 from ekte.utils.tokenize import estimate_messages_tokens, estimate_tokens
 
@@ -28,6 +31,9 @@ _DETECTOR: ContextVar[str | None] = ContextVar("ekte_perf_detector", default=Non
 _PHASE: ContextVar[str] = ContextVar("ekte_perf_phase", default="passive")
 _NET: ContextVar[NetTrace | None] = ContextVar("ekte_perf_net", default=None)
 _LAST: ContextVar[RequestRecord | None] = ContextVar("ekte_perf_last", default=None)
+
+# Records of a replay that no recorded exchange answered get a seq from here up.
+REPLAY_MISS_SEQ = 1_000_000
 
 # Headers in which relays / upstreams report their own processing time (ms).
 _PROCESSING_HEADERS = ("openai-processing-ms", "x-envoy-upstream-service-time")
@@ -53,6 +59,11 @@ def phase_scope(phase: str) -> Iterator[None]:
         _PHASE.reset(token)
 
 
+def current_detector() -> str | None:
+    """The detector the current task's calls are attributed to."""
+    return _DETECTOR.get()
+
+
 def last_record() -> RequestRecord | None:
     """The record of the most recent call made by the current task."""
     return _LAST.get()
@@ -71,8 +82,14 @@ class NetTrace:
     tunnel's own request is superseded by the real one.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, capture: bool = False) -> None:
         self.marks: dict[str, float] = {}
+        # The raw HTTP exchanges of the call, when the run keeps evidence
+        # (filled by the client's httpx hooks, see ekte.evidence); else None.
+        self.captures: list[Capture] | None = [] if capture else None
+        # In a replay (ekte.replay): the seq of the recorded exchange that
+        # answered the call, which its record then keeps.
+        self.replayed_seq: int | None = None
 
     async def trace(self, event_name: str, info: dict[str, Any]) -> None:
         self.marks[event_name] = time.perf_counter()
@@ -117,9 +134,10 @@ class NetTrace:
 
 
 @contextmanager
-def net_trace_scope() -> Iterator[NetTrace]:
-    """Collect transport events for the calls made inside the block."""
-    net = NetTrace()
+def net_trace_scope(capture: bool = False) -> Iterator[NetTrace]:
+    """Collect transport events for the calls made inside the block (and,
+    with ``capture``, their raw exchanges for the evidence file)."""
+    net = NetTrace(capture)
     token = _NET.set(net)
     try:
         yield net
@@ -217,6 +235,13 @@ def _output_text(outcome: CompletionOutcome) -> str:
     return "".join(parts)
 
 
+def _error_text(outcome: CompletionOutcome | None) -> str | None:
+    """The (already redacted) error of a failed call, for its evidence line."""
+    if outcome is None or outcome.ok or not (outcome.error_type or outcome.error_message):
+        return None
+    return ": ".join(p for p in (outcome.error_type, outcome.error_message) if p)
+
+
 class RequestRecorder:
     """Accumulates :class:`RequestRecord` rows for one audit."""
 
@@ -225,8 +250,16 @@ class RequestRecorder:
         tokenizer: str | None = None,
         *,
         on_record: Callable[[RequestRecord], None] | None = None,
+        evidence: EvidenceWriter | None = None,
     ) -> None:
         self.t0 = time.perf_counter()
+        # The run's evidence file: every recorded call's raw exchanges go
+        # there under the record's ``seq`` (None: the run keeps no evidence).
+        self.evidence = evidence
+        # A replay of a recorded run: a record keeps the seq of the recorded
+        # exchange that answered it, so the findings point into that run's
+        # evidence file; a call nothing answered gets a seq above REPLAY_MISS_SEQ.
+        self.replay = False
         # Wall-clock time of ``t0``: record ``start_ms`` offsets count from here.
         self.started_at = datetime.now(UTC)
         self.tokenizer = tokenizer
@@ -264,7 +297,16 @@ class RequestRecorder:
             relay_processing_ms=_relay_processing_ms(outcome.headers),
         )
 
-    def _add(self, record: RequestRecord, net: NetTrace | None, started: float) -> RequestRecord:
+    def _add(
+        self,
+        record: RequestRecord,
+        net: NetTrace | None,
+        started: float,
+        outcome: CompletionOutcome | None = None,
+    ) -> RequestRecord:
+        if self.replay:
+            answered = net.replayed_seq if net is not None else None
+            record.seq = answered if answered is not None else REPLAY_MISS_SEQ + len(self.records)
         if net is not None:
             for key, value in net.breakdown(started).items():
                 setattr(record, key, value)
@@ -279,6 +321,12 @@ class RequestRecorder:
                 )
         self.records.append(record)
         _LAST.set(record)
+        if self.evidence is not None and net is not None and net.captures:
+            self.evidence.add(
+                net.captures, seq=record.seq, endpoint=record.endpoint,
+                detector=record.detector, op=record.op,
+                error=_error_text(outcome),
+            )
         if self.on_record is not None:
             with suppress(Exception):  # a progress sink must never break the audit
                 self.on_record(record)
@@ -325,7 +373,7 @@ class RequestRecorder:
             rec.decode_tps_local = _decode_tps(rec.output_tokens_local, dur, ttft)
             rec.e2e_tps_reported = _e2e_tps(rec.output_tokens_reported, dur)
             rec.e2e_tps_local = _e2e_tps(rec.output_tokens_local, dur)
-        return self._add(rec, net, started)
+        return self._add(rec, net, started, outcome)
 
     def record_embedding(
         self,
@@ -343,7 +391,7 @@ class RequestRecorder:
             rec.input_tokens_local = sum(estimate_tokens(text, self.tokenizer) for text in inputs)
         except Exception:
             rec.input_tokens_local = None
-        return self._add(rec, net, started)
+        return self._add(rec, net, started, outcome)
 
     def record_rerank(
         self,
@@ -363,7 +411,7 @@ class RequestRecorder:
                 estimate_tokens(text, self.tokenizer) for text in (query, *documents))
         except Exception:
             rec.input_tokens_local = None
-        return self._add(rec, net, started)
+        return self._add(rec, net, started, outcome)
 
     def record_models(
         self,
@@ -373,4 +421,4 @@ class RequestRecorder:
         net: NetTrace | None = None,
     ) -> RequestRecord:
         rec = self._base(endpoint, "list_models", False, started, outcome)
-        return self._add(rec, net, started)
+        return self._add(rec, net, started, outcome)

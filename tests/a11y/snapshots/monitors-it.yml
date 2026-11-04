@@ -133,6 +133,11 @@
       - definition:
         - code: openai/gpt-4o
         - text: fissato 1 ott 2026, 12:00
+      - term: Richieste/risposte grezze
+      - definition:
+        - combobox "Richieste/risposte grezze — gpt-4o":
+          - option "Conserva" [selected]
+          - option "Non conservare"
       - 'link "Dall’esecuzione #1 →"':
         - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
       - form "Completa la configurazione per attivarlo":

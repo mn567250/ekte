@@ -12,7 +12,7 @@ import asyncio
 from collections.abc import Callable
 from contextlib import AsyncExitStack, suppress
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import ekte.detectors  # noqa: F401  -- populates the detector REGISTRY
 from ekte import __version__, prompts
@@ -21,6 +21,7 @@ from ekte.config import SURFACE_OPS, AuditOptions
 from ekte.context import AuditContext
 from ekte.detectors.base import run_detector, select_detectors
 from ekte.detectors.performance import planned_probe_requests, probe_modes, stream_mode
+from ekte.evidence import EvidenceHeader, EvidenceWriter, new_run_id
 from ekte.judge import Judge
 from ekte.knowledge import ResolvedProfile, load_knowledge_base
 from ekte.knowledge.freshness import bundled_date, stale_warning
@@ -39,6 +40,9 @@ from ekte.perf.trend import RunningMedian
 from ekte.scoring import build_dimensions, build_verdict
 from ekte.utils.redact import fingerprint_secret
 
+if TYPE_CHECKING:
+    from ekte.replay import Replay
+
 
 def _redact(config: TargetConfig) -> RedactedTarget:
     return RedactedTarget(
@@ -52,6 +56,56 @@ def _redact(config: TargetConfig) -> RedactedTarget:
         api=detect_api(config),
         api_auto=(config.api or "auto").lower() == "auto",
     )
+
+
+def run_secrets(*configs: TargetConfig | None) -> list[str | None]:
+    """Every secret a run's configs carry (API keys, custom header values),
+    to be scrubbed from anything relay-controlled the run stores."""
+    out: list[str | None] = []
+    for config in configs:
+        if config is None:
+            continue
+        out.append(config.api_key)
+        out.extend(v for v in (config.headers or {}).values() if isinstance(v, str))
+    return out
+
+
+def _open_evidence(
+    path: Path,
+    recorder: RequestRecorder,
+    *,
+    mode: str,
+    options: AuditOptions,
+    target: RedactedTarget,
+    baseline: RedactedTarget | None,
+    judge: RedactedTarget | None,
+    secrets: list[str | None],
+) -> EvidenceWriter:
+    """Start the run's evidence file (blocking: called off the loop)."""
+    head = EvidenceHeader(
+        tool_version=__version__,
+        run_id=_run_id_of(path),
+        started_at=recorder.started_at.isoformat(),
+        mode=mode,
+        suite=options.suite,
+        surface=options.surface,
+        target=target,
+        baseline=baseline,
+        judge=judge,
+        options=options.model_dump(mode="json"),
+    )
+    return EvidenceWriter(path, head, t0=recorder.t0, secrets=secrets)
+
+
+def _run_id_of(path: Path) -> str:
+    """The run id an evidence path names (``<run_id>.jsonl.zst``), else a new one."""
+    from ekte.evidence import SUFFIX
+
+    name = path.name
+    stem = name[: -len(SUFFIX)] if name.endswith(SUFFIX) else ""
+    if len(stem) == 32 and all(c in "0123456789abcdef" for c in stem):
+        return stem
+    return new_run_id()
 
 
 def _event_findings(result: DetectorResult) -> list[dict[str, Any]]:
@@ -121,8 +175,17 @@ async def run_audit(
     pinned: KnowledgeUsage | None = None,
     previous_report: dict[str, Any] | None = None,
     on_event: Callable[[dict[str, Any]], None] | None = None,
+    evidence: Path | None = None,
+    replay: Replay | None = None,
 ) -> AuditReport:
     """Run one audit.
+
+    ``replay`` answers every request from a recorded run's evidence instead of
+    the network (see :mod:`ekte.replay`): a re-score with this ekte version.
+
+    ``evidence`` is the path of the evidence file to write: every raw
+    request/response pair of the run (see :mod:`ekte.evidence`); the report's
+    ``evidence`` then names the file and its hash. None keeps no evidence.
 
     ``use_user_kb`` includes/excludes the user's kb.db entries (default: unless
     ``EKTE_NO_USER_KB``). ``pinned`` audits against a fixed profile snapshot
@@ -167,18 +230,74 @@ async def run_audit(
         profile.model.tokenizer if profile and profile.model.tokenizer else None,
         on_record=lambda rec: _emit({"type": "request_done", "record": trend.tag(rec.model_dump())}),
     )
+    redacted_target = await asyncio.to_thread(_redact, target)
+    redacted_baseline = await asyncio.to_thread(_redact, baseline) if baseline else None
+    writer: EvidenceWriter | None = None
+    if evidence is not None:
+        jt = (judge_target or baseline) if options.judge else None
+        writer = await asyncio.to_thread(
+            _open_evidence, Path(evidence), recorder, mode=mode, options=options,
+            target=redacted_target, baseline=redacted_baseline,
+            judge=await asyncio.to_thread(_redact, jt) if jt is not None else None,
+            secrets=run_secrets(target, baseline, judge_target if options.judge else None),
+        )
+        recorder.evidence = writer
+    if replay is not None:
+        recorder.replay = True
 
+    try:
+        results, judge = await _run_detectors(
+            target, options, baseline=baseline, judge_target=judge_target, mode=mode,
+            kb=kb, profile=profile, recorder=recorder, writer=writer,
+            previous_report=previous_report, emit=_emit, replay=replay,
+        )
+    except BaseException:
+        if writer is not None:
+            await asyncio.to_thread(writer.abort)
+        raise
+    evidence_ref = await asyncio.to_thread(writer.close) if writer is not None else None
+    return _assemble(
+        target, options, results, judge, baseline=baseline, judge_target=judge_target,
+        mode=mode, command=command, profile=profile, knowledge=knowledge, recorder=recorder,
+        redacted_target=redacted_target, redacted_baseline=redacted_baseline,
+        evidence=replay.evidence if replay is not None else evidence_ref,
+        rescored_from=replay.summary() if replay is not None else None,
+    )
+
+
+async def _run_detectors(
+    target: TargetConfig,
+    options: AuditOptions,
+    *,
+    baseline: TargetConfig | None,
+    judge_target: TargetConfig | None,
+    mode: str,
+    kb: Any,
+    profile: ResolvedProfile | None,
+    recorder: RequestRecorder,
+    writer: EvidenceWriter | None,
+    previous_report: dict[str, Any] | None,
+    emit: Callable[[dict[str, Any]], None],
+    replay: Replay | None = None,
+) -> tuple[list[DetectorResult], Judge | None]:
+    """Open the clients and run the selected detectors one after another."""
+
+    def connect(config: TargetConfig, endpoint: str) -> Client:
+        if replay is None:
+            return make_client(config)
+        return make_client(config, transport=replay.transport(endpoint))
+
+    _emit = emit
     # Only chat completions stream; the other surfaces' requests do not.
     request_mode = "non_stream" if options.surface != "chat" else stream_mode(options)
-
     async with AsyncExitStack() as stack:
-        client = await stack.enter_async_context(make_client(target))
+        client = await stack.enter_async_context(connect(target, "target"))
         client.recorder, client.endpoint = recorder, "target"
         _fit_client(client, profile)
 
         baseline_client = None
         if baseline is not None:
-            baseline_client = await stack.enter_async_context(make_client(baseline))
+            baseline_client = await stack.enter_async_context(connect(baseline, "baseline"))
             baseline_client.recorder, baseline_client.endpoint = recorder, "baseline"
             # The baseline may be another model (--baseline-model): its own profile.
             if baseline.claimed == target.claimed:
@@ -193,7 +312,9 @@ async def run_audit(
         if options.judge:
             jt = judge_target or baseline
             if jt is not None:
-                judge_client = await stack.enter_async_context(make_client(jt))
+                judge_client = await stack.enter_async_context(connect(jt, "judge"))
+                # The judge's calls are not recorded; with evidence they are kept.
+                judge_client.endpoint, judge_client.evidence = "judge", writer
                 _fit_client(judge_client, kb.resolve(jt.claimed, jt.declared_provider))
                 judge = Judge(judge_client, jt.model)
 
@@ -241,12 +362,36 @@ async def run_audit(
                    "id": detector.id, "name": detector.name, "dimension": detector.dimension.value})
             with detector_scope(detector.id):
                 res = await run_detector(detector, ctx)
+            if replay is not None:
+                res = replay.after_detector(res)
             results.append(res)
             _emit({"type": "detector_done", "index": i, "total": total,
                    "id": res.id, "name": res.name, "dimension": res.dimension.value,
                    "status": res.status.value, "score": res.score,
                    "duration_ms": res.duration_ms, "findings": _event_findings(res)})
+    return results, judge
 
+
+def _assemble(
+    target: TargetConfig,
+    options: AuditOptions,
+    results: list[DetectorResult],
+    judge: Judge | None,
+    *,
+    baseline: TargetConfig | None,
+    judge_target: TargetConfig | None,
+    mode: str,
+    command: str | None,
+    profile: ResolvedProfile | None,
+    knowledge: KnowledgeUsage,
+    recorder: RequestRecorder,
+    redacted_target: RedactedTarget,
+    redacted_baseline: RedactedTarget | None,
+    evidence: Any,
+    rescored_from: Any = None,
+) -> AuditReport:
+    """The report of a finished run."""
+    request_mode = "non_stream" if options.surface != "chat" else stream_mode(options)
     reliability = _extract_reliability(results)
     performance = build_performance(
         recorder.records,
@@ -264,7 +409,7 @@ async def run_audit(
         dimensions,
         profile_matched=profile is not None,
         used_judge=judge is not None,
-        used_baseline=baseline_client is not None,
+        used_baseline=baseline is not None,
         selected=selected,
         match_confidence=profile.match_confidence if profile is not None else None,
         surface=options.surface,
@@ -298,8 +443,8 @@ async def run_audit(
         ),
         dimensions_selected=selected,
         stream_mode=request_mode,
-        target=_redact(target),
-        baseline=_redact(baseline) if baseline else None,
+        target=redacted_target,
+        baseline=redacted_baseline,
         verdict=verdict,
         dimensions=dimensions,
         detectors=results,
@@ -311,4 +456,6 @@ async def run_audit(
         warnings=warnings,
         prompt_languages=_prompt_languages(results),
         knowledge=knowledge,
+        evidence=evidence,
+        rescored_from=rescored_from,
     )

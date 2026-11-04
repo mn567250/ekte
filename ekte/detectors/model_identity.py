@@ -21,9 +21,17 @@ from ekte import prompts
 from ekte.context import AuditContext
 from ekte.detectors.base import Detector, register
 from ekte.detectors.helpers import contains_all, contains_any, contains_word, contains_word_any
-from ekte.detectors.scale import DeductionScale, outcome
+from ekte.detectors.scale import DeductionScale, evidence_seqs, outcome
 from ekte.knowledge.identity import AMBIGUOUS_BRAND_WORDS, VENDOR_BRANDS, own_brand_words
-from ekte.models import DetectorResult, Dimension, Finding, RequestSpec, Severity, Status
+from ekte.models import (
+    CompletionOutcome,
+    DetectorResult,
+    Dimension,
+    Finding,
+    RequestSpec,
+    Severity,
+    Status,
+)
 
 # Substrings that name a cheaper/smaller tier of a family. If the returned model
 # field carries one of these and the requested id does not, that is a downgrade.
@@ -151,6 +159,7 @@ class ModelIdentityDetector(Detector):
         if ctx.profile is None:
             result.findings.append(
                 Finding(
+                    evidence_seqs=evidence_seqs([]),
                     id="model_identity.no_profile",
                     title="Claimed model not in knowledge base",
                     status=Status.INCONCLUSIVE,
@@ -190,6 +199,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.fp",
                     "skipped_output_cap",
+                    calls=[],
                     id=f"model_identity.fp.{fp.id}",
                     title=f"Fingerprint skipped: {fp.signal}",
                     summary=(
@@ -209,6 +219,7 @@ class ModelIdentityDetector(Detector):
         # so a single one stays LOW and does not escalate overall risk; two or more
         # together raise a MEDIUM aggregate.
         soft_violations: list[str] = []
+        diverged_calls: list[CompletionOutcome] = []
         for fp in probes:
             outcome = await ctx.client.complete(
                 RequestSpec(
@@ -224,6 +235,7 @@ class ModelIdentityDetector(Detector):
                     SCALE.finding(
                         "model_identity.fp",
                         "inconclusive",
+                        calls=[outcome],
                         id=f"model_identity.fp.{fp.id}",
                         title=f"Fingerprint inconclusive: {fp.signal}",
                         summary=outcome.error_message or f"No usable response (HTTP {outcome.status_code}).",
@@ -264,6 +276,7 @@ class ModelIdentityDetector(Detector):
                     key = "rival_brand"
                 else:
                     soft_violations.append(fp.signal)
+                    diverged_calls.append(outcome)
                     summary = (
                         f"Probe '{fp.signal}' diverged from native behavior. "
                         f"Expected: {fp.native_expected or self._expectation_text(fp)}."
@@ -273,6 +286,7 @@ class ModelIdentityDetector(Detector):
                     SCALE.finding(
                         "model_identity.fp",
                         key,
+                        calls=[outcome],
                         id=f"model_identity.fp.{fp.id}",
                         deduction=deduction,
                         title=f"Fingerprint divergence: {fp.signal}",
@@ -292,6 +306,7 @@ class ModelIdentityDetector(Detector):
                     SCALE.finding(
                         "model_identity.fp",
                         "consistent",
+                        calls=[outcome],
                         id=f"model_identity.fp.{fp.id}",
                         title=f"Fingerprint consistent: {fp.signal}",
                         summary=f"Behavior consistent with {model.id}.",
@@ -306,6 +321,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.fp_aggregate",
                     "diverged",
+                    calls=diverged_calls,
                     title="Multiple behavioral fingerprints diverged",
                     summary=(
                         f"{len(soft_violations)} pure-code fingerprints diverged from native "
@@ -381,6 +397,7 @@ class ModelIdentityDetector(Detector):
             )
         )
         evidence: dict = {"prompt": "self-id"}
+        calls = [outcome]
 
         # Optional baseline corroboration (informational only).
         if ctx.has_baseline and ctx.baseline_client is not None:
@@ -391,6 +408,7 @@ class ModelIdentityDetector(Detector):
                     max_tokens=64,
                 )
             )
+            calls.append(base)
             evidence["baseline_answer"] = (
                 base.content[:300] if (base.ok and base.has_content()) else None
             )
@@ -400,6 +418,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.self_id",
                     "unavailable",
+                    calls=calls,
                     title="Self-identification unavailable",
                     summary=outcome.error_message or f"No usable response (HTTP {outcome.status_code}).",
                     evidence={**evidence, "status_code": outcome.status_code},
@@ -427,6 +446,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.self_id",
                     "rival_brand",
+                    calls=calls,
                     title="Self-identifies as a rival brand",
                     summary=(
                         f"Self-identifies as a rival brand ({hit}) under the claimed "
@@ -443,6 +463,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.self_id",
                     "both_brands",
+                    calls=calls,
                     title="Self-id names both the genuine and a rival brand",
                     summary=(
                         f"Self-id mentions genuine brand words for {model.id} but also a rival "
@@ -460,6 +481,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.self_id",
                     "evasive",
+                    calls=calls,
                     title="Evasive self-identification",
                     summary=(
                         "Self-id response names neither the genuine brand nor a rival; "
@@ -474,6 +496,7 @@ class ModelIdentityDetector(Detector):
             SCALE.finding(
                 "model_identity.self_id",
                 "consistent",
+                calls=calls,
                 title="Self-identification consistent",
                 summary=f"Self-id mentions genuine brand words for {model.id}.",
                 evidence=evidence,
@@ -498,6 +521,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.model_field",
                     "unavailable",
+                    calls=[outcome],
                     title="No usable echoed model field",
                     summary=(
                         outcome.error_message
@@ -513,6 +537,7 @@ class ModelIdentityDetector(Detector):
                 SCALE.finding(
                     "model_identity.model_field",
                     "diverges",
+                    calls=[outcome],
                     title="Echoed model field differs from requested",
                     summary=(
                         f"Response 'model' field ({returned}) differs from requested "
@@ -528,6 +553,7 @@ class ModelIdentityDetector(Detector):
             SCALE.finding(
                 "model_identity.model_field",
                 "consistent",
+                calls=[outcome],
                 title="Echoed model field consistent",
                 summary=f"Response 'model' field ({returned}) matches requested.",
                 evidence={"requested": requested, "returned": returned},

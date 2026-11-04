@@ -118,8 +118,8 @@ def test_watches_unversioned_030_shape_upgrades_without_loss(data):
         c.executescript(_WATCHES_030)
     assert _version(db) == 0
     watches.init()
-    assert _version(db) == 2
-    assert {"language", "surface", "embedding_dimensions", "kb_snapshot_id"} <= _cols(db, "watches")
+    assert _version(db) == dbmigrate.latest(watches.MIGRATIONS)
+    assert {"language", "surface", "embedding_dimensions", "kb_snapshot_id", "evidence"} <= _cols(db, "watches")
     assert "secret_meta" in _tables(db)
     with sqlite3.connect(db) as c:
         assert c.execute("SELECT name, interval_sec FROM watches").fetchall() == [("w", 60)]
@@ -131,9 +131,37 @@ def test_watches_step_two_only(data):
         watches.MIGRATIONS[0].apply(c)
         c.execute("PRAGMA user_version = 1")
     watches.init()
-    assert _version(db) == 2
+    assert _version(db) == dbmigrate.latest(watches.MIGRATIONS)
     assert "kb_snapshots" in _tables(db)
     assert len(dbmigrate.backups(db)) == 1
+
+
+def test_watches_step_three_adds_the_evidence_setting(data):
+    # A monitor from before the setting keeps evidence (NULL reads as on).
+    db = data / "watches.db"
+    with sqlite3.connect(db) as c:
+        for m in watches.MIGRATIONS[:2]:
+            m.apply(c)
+        c.execute("INSERT INTO watches (name, base_url, interval_sec) VALUES ('w', 'https://x', 60)")
+        c.execute("PRAGMA user_version = 2")
+    watches.init()
+    assert _version(db) == 3
+    assert "evidence" in _cols(db, "watches")
+    assert [w["evidence"] for w in watches.list_all()] == [True]
+
+
+def test_history_step_five_adds_the_evidence_file(data):
+    db = data / "history.db"
+    with sqlite3.connect(db) as c:
+        for m in history.MIGRATIONS[:4]:
+            m.apply(c)
+        c.execute("INSERT INTO history (ts, base_url, report_json) VALUES ('t', 'https://x', '{}')")
+        c.execute("PRAGMA user_version = 4")
+    history.init()
+    assert _version(db) == 5
+    assert "evidence_file" in _cols(db, "history")
+    with sqlite3.connect(db) as c:
+        assert c.execute("SELECT count(*), max(evidence_file) FROM history").fetchone() == (1, None)
 
 
 def test_kb_unversioned_database_is_adopted(data):

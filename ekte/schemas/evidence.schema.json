@@ -1,0 +1,448 @@
+{
+  "$defs": {
+    "EvidenceBody": {
+      "description": "A request or response body as it was sent or received.",
+      "properties": {
+        "bytes": {
+          "default": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "encoding": {
+          "default": "utf-8",
+          "enum": [
+            "utf-8",
+            "base64"
+          ],
+          "title": "Encoding",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "truncated": {
+          "default": false,
+          "title": "Truncated",
+          "type": "boolean"
+        }
+      },
+      "title": "EvidenceBody",
+      "type": "object"
+    },
+    "EvidenceExchange": {
+      "description": "One HTTP request and its response (None when none arrived).",
+      "properties": {
+        "detector": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detector"
+        },
+        "endpoint": {
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "op": {
+          "default": "complete",
+          "title": "Op",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/EvidenceRequest"
+        },
+        "response": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceResponse"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "seq": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seq"
+        },
+        "start_ms": {
+          "title": "Start Ms",
+          "type": "number"
+        },
+        "type": {
+          "const": "exchange",
+          "default": "exchange",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "endpoint",
+        "start_ms",
+        "request"
+      ],
+      "title": "EvidenceExchange",
+      "type": "object"
+    },
+    "EvidenceHeader": {
+      "description": "The first line of an evidence file: what run the pairs belong to.",
+      "properties": {
+        "baseline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RedactedTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "judge": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RedactedTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "title": "Started At",
+          "type": "string"
+        },
+        "suite": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suite"
+        },
+        "surface": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Surface"
+        },
+        "target": {
+          "$ref": "#/$defs/RedactedTarget"
+        },
+        "tool_version": {
+          "title": "Tool Version",
+          "type": "string"
+        },
+        "type": {
+          "const": "header",
+          "default": "header",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_version",
+        "run_id",
+        "started_at",
+        "mode",
+        "target"
+      ],
+      "title": "EvidenceHeader",
+      "type": "object"
+    },
+    "EvidenceRequest": {
+      "properties": {
+        "body": {
+          "$ref": "#/$defs/EvidenceBody"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "url"
+      ],
+      "title": "EvidenceRequest",
+      "type": "object"
+    },
+    "EvidenceResponse": {
+      "properties": {
+        "body": {
+          "$ref": "#/$defs/EvidenceBody"
+        },
+        "chunks": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Chunks",
+          "type": "array"
+        },
+        "done_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Done Ms"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "http_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Http Version"
+        },
+        "read_to_end": {
+          "default": true,
+          "title": "Read To End",
+          "type": "boolean"
+        },
+        "status": {
+          "title": "Status",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "EvidenceResponse",
+      "type": "object"
+    },
+    "RedactedTarget": {
+      "properties": {
+        "api": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api"
+        },
+        "api_auto": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Auto"
+        },
+        "api_key_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key Fingerprint"
+        },
+        "base_url": {
+          "title": "Base Url",
+          "type": "string"
+        },
+        "claimed_model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claimed Model"
+        },
+        "declared_provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Declared Provider"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "base_url",
+        "model"
+      ],
+      "title": "RedactedTarget",
+      "type": "object"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/mn567250/ekte/main/ekte/schemas/evidence.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Each line of an ekte evidence file (<run_id>.jsonl.zst: JSON Lines in one zstd stream) is one JSON document matching this schema: the first line is a header (type \"header\"), every further line one HTTP request/response pair (type \"exchange\"). The header's schema_version is the version of this schema.",
+  "discriminator": {
+    "mapping": {
+      "exchange": "#/$defs/EvidenceExchange",
+      "header": "#/$defs/EvidenceHeader"
+    },
+    "propertyName": "type"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/EvidenceHeader"
+    },
+    {
+      "$ref": "#/$defs/EvidenceExchange"
+    }
+  ],
+  "title": "ekte evidence file line",
+  "x-schema-version": "1.0"
+}

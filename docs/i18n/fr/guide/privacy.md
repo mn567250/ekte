@@ -27,6 +27,19 @@
   `history_metrics` contient une ligne de valeurs mesurées par exécution et
   `history_requests` chaque enregistrement de requête (stocké là une seule fois,
   pas dans chaque rapport).
+- **Fichiers de preuves.** Une exécution enregistrée dans l'historique
+  (interface web, surveillances, `ekte watch`, `ekte embed`, `ekte rerank`)
+  conserve aussi chaque requête et réponse brute échangée, dans
+  `evidence/<run_id>.jsonl.zst` du répertoire de données, afin que chaque
+  constat puisse être vérifié par rapport à ce qui a réellement été envoyé et
+  reçu. Vos clés d'API, les valeurs de `--header`, `Authorization`, les cookies
+  et les autres en-têtes sensibles sont retirés avant toute écriture ; prompts
+  et réponses sont conservés tels quels. Supprimer une exécution supprime son
+  fichier. Désactivez-le par exécution (le réglage **Requêtes/réponses brutes**
+  du formulaire d'audit, ou `"evidence": false` dans `POST /api/v1/jobs`), par
+  surveillance, ou pour tout le serveur (`ekte serve --no-evidence`,
+  `EKTE_NO_EVIDENCE=1`). `ekte check`, `compare`, `image` et `audio` n'en
+  conservent pas, sauf avec `--evidence PATH` (voir [Rapports](reports.md)).
 
 ## Utilisation responsable
 

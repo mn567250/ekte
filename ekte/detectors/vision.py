@@ -147,6 +147,7 @@ class VisionDetector(Detector):
                 SCALE.finding(
                     "vision.not_claimed",
                     "skipped",
+                    calls=[],
                     title="Vision not claimed — skipped",
                     summary=(
                         "The resolved profile does not claim a vision/image modality; "
@@ -179,6 +180,7 @@ class VisionDetector(Detector):
                 SCALE.finding(
                     "vision.color",
                     "inconclusive",
+                    calls=[outcome],
                     title="Vision probe inconclusive",
                     summary=(
                         outcome.error_message
@@ -208,6 +210,7 @@ class VisionDetector(Detector):
                 SCALE.finding(
                     "vision.color",
                     "delivered",
+                    calls=[outcome],
                     title="Vision delivered",
                     summary=(
                         "Model correctly identified the known image color "
@@ -237,6 +240,7 @@ class VisionDetector(Detector):
             SCALE.finding(
                 "vision.color",
                 "not_delivered",
+                calls=[outcome],
                 title="Claimed vision not delivered",
                 summary=summary,
                 evidence=evidence,

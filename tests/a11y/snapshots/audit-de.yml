@@ -93,7 +93,11 @@
       - group "Anfragen der Leistungsmessung":
         - button "Streaming" [pressed]
         - button "Ohne Streaming"
-      - text: Bei standard läuft die Messung nur mit einer Referenz; sonst werden die Anfragen der Prüfung selbst verwendet.
+      - text: Bei standard läuft die Messung nur mit einer Referenz; sonst werden die Anfragen der Prüfung selbst verwendet. Rohe Anfragen/Antworten
+      - group "Rohe Anfragen/Antworten":
+        - button "Behalten" [pressed]
+        - button "Nicht behalten"
+      - text: Wird mit dem gespeicherten Lauf im Datenverzeichnis abgelegt, ohne Ihre Schlüssel, damit sich jeder Befund mit genau dem abgleichen lässt, was gesendet und empfangen wurde.
       - button "Mit vertrauenswürdiger Referenz vergleichen compare" [expanded]
       - paragraph: Geben Sie einen Endpunkt desselben Modells an, dem Sie vertrauen (z. B. die offizielle API). ekte nutzt ihn, um das Verhalten des Ziels zu bestätigen, und macht Urteile über Austausch/Herabstufung zuverlässiger — Qualitätsbewertung und Manipulationserkennung erreichen ihre höchste Stufe nur mit einer Referenz.
       - text: Relay / Anbieter der Referenz Optional

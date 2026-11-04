@@ -16,6 +16,15 @@
   （ekte 运行时最好只读打开）。如果该文件夹是代码仓库，请勿提交 `watches.db`。
   `history_metrics` 每次运行存一行测量值，`history_requests` 存每条请求记录（只在那里存一份，
   不再放进每份报告）。
+- **证据文件。** 保存到历史记录的检测（Web 界面、监控、`ekte watch`、
+  `ekte embed`、`ekte rerank`）还会保留它收发的每一个原始请求和响应，存放在数据目录的
+  `evidence/<run_id>.jsonl.zst` 中，这样每个发现都能对照实际发送和收到的内容核验。
+  你的 API 密钥、`--header` 的值、`Authorization`、Cookie 及其他敏感请求头会在写入前去除；
+  提示词和回答原样保留。删除一次检测会同时删除其文件。可以按次关闭（检测表单中的
+  **原始请求/响应** 设置，或 `POST /api/v1/jobs` 中的 `"evidence": false`）、按监控关闭，
+  或对整个服务器关闭（`ekte serve --no-evidence`、`EKTE_NO_EVIDENCE=1`）。
+  `ekte check`、`compare`、`image` 和 `audio` 默认不保留，除非使用 `--evidence PATH`
+  （见[报告](reports.md)）。
 
 ## 负责任使用
 

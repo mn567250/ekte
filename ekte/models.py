@@ -15,8 +15,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
-REPORT_SCHEMA_VERSION = "1.1"
+REPORT_SCHEMA_VERSION = "1.2"
 WEBHOOK_SCHEMA_VERSION = "1.0"
+# Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
+EVIDENCE_SCHEMA_VERSION = "1.0"
 
 
 # --------------------------------------------------------------------------- #
@@ -173,6 +175,10 @@ class CompletionOutcome(BaseModel):
     # The redacted raw JSON body of a successful non-stream call, only when the
     # request asked for it (RequestSpec.capture_raw).
     raw_body: dict[str, Any] | None = None
+    # The ``seq`` of every request record this call produced (a parameter or
+    # reasoning repeat adds one), in order; empty when the client records none.
+    # Detectors hand it to their findings (Finding.evidence_seqs).
+    seqs: list[int] = Field(default_factory=list)
 
     def has_content(self) -> bool:
         return bool(self.content and self.content.strip())
@@ -208,6 +214,10 @@ class Finding(BaseModel):
     # scored against (None: the finding id itself); ``subject`` what was checked.
     check: str | None = None
     subject: str | None = None
+    # The requests this finding rests on: their ``seq`` in
+    # ``performance.requests`` (and in the run's evidence file). None when the
+    # detector does not say which (then: all of the detector's requests).
+    evidence_seqs: list[int] | None = None
 
     @property
     def scale_check(self) -> str:
@@ -652,6 +662,47 @@ class KnowledgeUsage(BaseModel):
 # --------------------------------------------------------------------------- #
 # Top-level report
 # --------------------------------------------------------------------------- #
+class EvidenceRef(BaseModel):
+    """The evidence file of a run (see :mod:`ekte.evidence`): where its raw
+    request/response pairs are and how to check the file is the one written."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str
+    # The file's name (``<run_id>.jsonl.zst`` in the data directory's
+    # ``evidence`` folder, or the name given to ``--evidence``).
+    file: str
+    sha256: str
+    # Exchange lines in the file (the header line not counted).
+    exchanges: int = 0
+    bytes: int = 0
+    schema_version: str = EVIDENCE_SCHEMA_VERSION
+    # False when writing failed part-way (e.g. the disk filled up): the file
+    # holds the exchanges up to the failure.
+    complete: bool = True
+
+
+class RescoreRef(BaseModel):
+    """What a re-scored report was replayed from (see :mod:`ekte.replay`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # The recorded run: its evidence file's run id and hash, and the ekte
+    # version and time of the original report.
+    run_id: str
+    evidence_sha256: str
+    tool_version: str | None = None
+    generated_at: str | None = None
+    # The original report's history id, when it was re-scored from history.
+    report_id: int | None = None
+    # Requests answered from the file, requests nothing in the file answered
+    # (per detector; such a detector reads inconclusive), recorded exchanges
+    # no request asked for.
+    replayed: int = 0
+    missing: dict[str, int] = Field(default_factory=dict)
+    unused: int = 0
+
+
 class AuditReport(BaseModel):
     """The serializable artifact ekte produces. JSON form is the LLM-facing API."""
 
@@ -705,3 +756,9 @@ class AuditReport(BaseModel):
     # The knowledge-base profile the target was audited against, its sources
     # and a full snapshot of it (None in reports from before this existed).
     knowledge: KnowledgeUsage | None = None
+    # The run's evidence file: every raw request/response pair (None when the
+    # run kept none, and in reports from before schema 1.2).
+    evidence: EvidenceRef | None = None
+    # Set when this report re-scores a recorded run with this ekte version,
+    # replaying its evidence instead of contacting the relay.
+    rescored_from: RescoreRef | None = None

@@ -88,15 +88,19 @@ The public part of the HTTP API lives under `/api/v1/` and follows the [stabilit
 
 | Endpoint | Request | Response |
 |---|---|---|
-| `POST /api/v1/jobs` | JSON body with `base_url`, `model` and optionally `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline` | 200 and the job; 400 for bad input |
+| `POST /api/v1/jobs` | JSON body with `base_url`, `model` and optionally `api_key`, `claimed_model`, `suite`, `surface`, `dimensions`, `baseline`, `evidence` (`false`: keep no raw request/response pairs) | 200 and the job; 400 for bad input |
 | `GET /api/v1/jobs/{id}` | none | 200 and the job; 404 for an unknown id |
 | `GET /api/v1/jobs/{id}/events` | none | 200 and `text/event-stream`: the job's events so far, then live, ending with `done`; 404 for an unknown id |
 | `GET /api/v1/history` | optional `limit` (1–500, default 50) and `perf` | 200 and a JSON array of run summaries, newest first |
 | `GET /api/v1/history/{id}` | none | 200 and the saved report as stored; 404 for an unknown id |
+| `GET /api/v1/history/{id}/evidence` | none | 200 and the run's evidence file (`application/zstd`); 404 for an unknown id or a run that kept none |
+| `POST /api/v1/history/{id}/rescore` | none | 200 and a job (as `POST /api/v1/jobs`, with `rescore_of`) that re-scores the run from its evidence file with this ekte version and saves the result as a new run; 404 for an unknown id; 409 when the run kept no evidence or the file cannot be replayed |
+| `GET /api/v1/history/{id}/evidence/export` | optional `format` (`har` (default), `curl`, `json`) and `seq` (repeatable) | 200 and the exchanges as an attachment: HAR 1.2, a curl script that sends the requests again (the key from `$EKTE_API_KEY`) or one JSON document; 400 for an unknown format; 404 as above; 409 as below |
+| `GET /api/v1/history/{id}/evidence/exchanges` | optional `seq`, `id` or `detector` | 200 and `{"run_id", "file", "verified", "exchanges"}`: without `seq` / `id` a listing without bodies (`verified`: the file's SHA-256 is the one the report names), with `seq` the full pairs of that request record, with `id` one pair; 404 for an unknown run or exchange, or a run that kept none; 409 for a file of an unknown major schema version |
 
 A job has `id`, `status` (`queued`, `running`, `done`, `error` or `cancelled`), progress fields, `report_id` once the report is saved, and `error`; the API key is never returned. Each event is an SSE line `data: {JSON}` with a `type`; the `report` event carries the report and its `report_id`, and `done` is always the last event. Clients ignore event types and fields they do not know.
 
-Every error is JSON with one field, `error`, with a human-readable message, and one of these status codes: 400 (bad request), 404 (not found), 403 (cross-site or cross-origin request refused), 415 (body is not JSON), 421 (unknown Host).
+Every error is JSON with one field, `error`, with a human-readable message, and one of these status codes: 400 (bad request), 404 (not found), 409 (evidence file of an unknown schema version), 403 (cross-site or cross-origin request refused), 415 (body is not JSON), 421 (unknown Host).
 
 ```json
 {"error": "not found"}

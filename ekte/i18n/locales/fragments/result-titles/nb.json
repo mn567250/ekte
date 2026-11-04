@@ -173,6 +173,7 @@
   "Fingerprint inconclusive: {1}": "Uavklart fingeravtrykk: {1}",
   "Fingerprint skipped: {1}": "Fingeravtrykk hoppet over: {1}",
   "Response attribute {1}": "Svarattributt {1}",
-  "Request attribute {1}": "Forespørselsattributt {1}"
+  "Request attribute {1}": "Forespørselsattributt {1}",
+  "Not re-scored: the recorded run has no answer to some requests": "Ikke vurdert på nytt: den registrerte kjøringen har ikke svar på enkelte forespørsler"
  }
 }

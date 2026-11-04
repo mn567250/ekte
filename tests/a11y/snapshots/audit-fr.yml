@@ -93,7 +93,11 @@
       - group "Requêtes de la sonde de performance":
         - button "Streaming" [pressed]
         - button "Sans streaming"
-      - text: En standard, la sonde ne s'exécute qu'avec une référence ; sinon, les requêtes de l'audit lui-même sont utilisées.
+      - text: En standard, la sonde ne s'exécute qu'avec une référence ; sinon, les requêtes de l'audit lui-même sont utilisées. Requêtes/réponses brutes
+      - group "Requêtes/réponses brutes":
+        - button "Conserver" [pressed]
+        - button "Ne pas conserver"
+      - text: Conservé avec l'exécution enregistrée dans le répertoire de données, sans vos clés, pour que chaque constat puisse être vérifié par rapport à ce qui a été réellement envoyé et reçu.
       - button "Comparer à une référence de confiance compare" [expanded]
       - paragraph: Indiquez un point d'accès du même modèle en qui vous avez confiance (p. ex. l'API officielle). ekte s'en sert pour corroborer le comportement de la cible et fiabiliser les verdicts de substitution/déclassement — l'évaluation de qualité et la détection de falsification n'atteignent leur niveau maximal qu'avec une référence.
       - text: Relais / fournisseur de référence Facultatif

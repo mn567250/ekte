@@ -1,9 +1,11 @@
-"""Versioned JSON Schemas for the report JSON and the generic webhook payload.
+"""Versioned JSON Schemas for the report JSON, the generic webhook payload and
+the lines of an evidence file.
 
 The schemas are generated from the code that produces the documents
-(:class:`ekte.models.AuditReport` and :class:`WebhookPayload`), so the two cannot
-drift. The generated files live next to this module (``report.schema.json``,
-``webhook.schema.json``) and ship in the wheel; ``python scripts/generate_schemas.py``
+(:class:`ekte.models.AuditReport`, :class:`WebhookPayload` and
+:class:`ekte.evidence.EvidenceLine`), so they cannot drift. The generated files
+live next to this module (``report.schema.json``, ``webhook.schema.json``,
+``evidence.schema.json``) and ship in the wheel; ``python scripts/generate_schemas.py``
 rewrites them and ``--check`` fails when they are stale.
 
 Schema versions are ``MAJOR.MINOR`` strings, independent of the ekte version:
@@ -26,17 +28,24 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from ekte.models import REPORT_SCHEMA_VERSION, WEBHOOK_SCHEMA_VERSION, AuditReport
+from ekte.models import (
+    EVIDENCE_SCHEMA_VERSION,
+    REPORT_SCHEMA_VERSION,
+    WEBHOOK_SCHEMA_VERSION,
+    AuditReport,
+)
 
 SCHEMA_DIR = Path(__file__).parent
 _ID_BASE = "https://raw.githubusercontent.com/mn567250/ekte/main/ekte/schemas/"
 
 __all__ = [
+    "EVIDENCE_SCHEMA_VERSION",
     "REPORT_SCHEMA_VERSION",
     "WEBHOOK_SCHEMA_VERSION",
     "WebhookPayload",
     "report_schema",
     "webhook_schema",
+    "evidence_schema",
     "generated",
     "load",
     "fingerprint",
@@ -108,6 +117,28 @@ def webhook_schema() -> dict[str, Any]:
     return _build(WebhookPayload, "webhook", WEBHOOK_SCHEMA_VERSION, "ekte webhook payload (generic)")
 
 
+def evidence_schema() -> dict[str, Any]:
+    """One line of an evidence file: the header (first line) or an exchange."""
+    from ekte.evidence import EvidenceLine
+
+    schema = EvidenceLine.model_json_schema(mode="serialization")
+    _relax(schema)
+    schema["title"] = "ekte evidence file line"
+    schema["description"] = (
+        "Each line of an ekte evidence file (<run_id>.jsonl.zst: JSON Lines in one zstd "
+        "stream) is one JSON document matching this schema: the first line is a header "
+        "(type \"header\"), every further line one HTTP request/response pair "
+        "(type \"exchange\"). The header's schema_version is the version of this schema."
+    )
+    ordered: dict[str, Any] = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": f"{_ID_BASE}evidence.schema.json",
+        "x-schema-version": EVIDENCE_SCHEMA_VERSION,
+    }
+    ordered.update(schema)
+    return ordered
+
+
 def dumps(schema: dict[str, Any]) -> str:
     return json.dumps(schema, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
@@ -118,10 +149,14 @@ def fingerprint(schema: dict[str, Any]) -> str:
 
 def generated() -> dict[str, dict[str, Any]]:
     """Schema file name -> generated schema."""
-    return {"report.schema.json": report_schema(), "webhook.schema.json": webhook_schema()}
+    return {
+        "report.schema.json": report_schema(),
+        "webhook.schema.json": webhook_schema(),
+        "evidence.schema.json": evidence_schema(),
+    }
 
 
 def load(name: str) -> dict[str, Any]:
-    """The published schema (``"report"`` or ``"webhook"``) as a dict."""
+    """The published schema (``"report"``, ``"webhook"`` or ``"evidence"``) as a dict."""
     data: dict[str, Any] = json.loads((SCHEMA_DIR / f"{name}.schema.json").read_text("utf-8"))
     return data

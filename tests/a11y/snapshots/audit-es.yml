@@ -93,7 +93,11 @@
       - group "Peticiones de la sonda de rendimiento":
         - button "Streaming" [pressed]
         - button "Sin streaming"
-      - text: En standard la sonda solo se ejecuta con una referencia; si no, se usan las propias peticiones de la auditoría.
+      - text: En standard la sonda solo se ejecuta con una referencia; si no, se usan las propias peticiones de la auditoría. Peticiones/respuestas originales
+      - group "Peticiones/respuestas originales":
+        - button "Conservar" [pressed]
+        - button "No conservar"
+      - text: Se guarda con la ejecución en el directorio de datos, sin sus claves, para que cada hallazgo pueda contrastarse con exactamente lo que se envió y recibió.
       - button "Comparar con una referencia de confianza compare" [expanded]
       - paragraph: Indique un endpoint del mismo modelo en el que confíe (p. ej. la API oficial). ekte lo usa para corroborar el comportamiento del objetivo y hacer más fiables los veredictos de sustitución/degradación — la evaluación de calidad y la detección de manipulación solo alcanzan su nivel máximo con una referencia.
       - text: Relay / proveedor de referencia Opcional

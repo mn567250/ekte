@@ -84,6 +84,7 @@ class ProtocolResponseDetector(Detector):
                 RESPONSE_SCALE.finding(
                     CALL,
                     "no_response",
+                    calls=[out],
                     title="Response-attribute probe returned no body",
                     summary=out.error_message or f"HTTP {out.status_code}; no response body.",
                     evidence={"status_code": out.status_code, "error_type": out.error_type},
@@ -99,6 +100,7 @@ class ProtocolResponseDetector(Detector):
                 RESPONSE_SCALE.finding(
                     r.attr.check,
                     r.key,
+                    calls=[out],
                     subject=r.attr.path,
                     title=f"Response attribute {r.attr.path}",
                     summary=f"{r.attr.path}: {label}",
@@ -219,6 +221,7 @@ class ProtocolRequestDetector(Detector):
         return REQUEST_SCALE.finding(
             PARAM,
             key,
+            calls=[out],
             subject=p.name,
             title=f"Request attribute {p.name}",
             summary=f"{p.name}: {label}",

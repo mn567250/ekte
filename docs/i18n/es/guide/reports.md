@@ -26,3 +26,47 @@ hallazgos clave con recomendaciones, las puntuaciones por dimensión y los
 sección de rendimiento, el perfil de la base de conocimiento usado y los idiomas
 de sonda. El texto controlado por el relay se censura y se escapa antes de
 escribirse.
+
+## Archivos de evidencia
+
+Con `--evidence PATH` (`check`, `compare`, `image`, `audio`), y por defecto
+para cada ejecución guardada en el historial, ekte escribe además cada petición
+y respuesta HTTP original de la ejecución en un archivo: JSON Lines en un flujo
+zstd, `<run_id>.jsonl.zst` (un directorio indicado como `PATH` recibe ese
+nombre). La primera línea describe la ejecución; cada línea siguiente es una
+petición con su respuesta, incluido el momento en que llegó cada fragmento de la
+respuesta. El `seq` de una línea es el `seq` de la petición en
+`performance.requests` del informe, así que cada petición que lista el informe
+puede consultarse. El campo `evidence` del informe nombra el archivo con su
+SHA-256 y su número de intercambios.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Cada hallazgo nombra las peticiones en las que se basa (`evidence_seqs`; vacío
+cuando no se basa en ninguna, como la comprobación TLS). `ekte evidence-export`
+toma el archivo (o el id de una ejecución guardada) y lo convierte en HAR para
+un visor HAR o las herramientas de desarrollo del navegador (`--as har`),
+en un script curl que vuelve a enviar las peticiones (`--as curl`; defina
+antes `EKTE_API_KEY`, el archivo nunca contiene la clave) o en un único
+documento JSON (`--as json`); `--seq` elige peticiones.
+
+`ekte rescore` vuelve a evaluar una ejecución registrada con la versión de
+ekte instalada: repite la misma auditoría, pero responde a cada petición con la
+respuesta registrada (al ritmo registrado) en lugar de contactar con el
+intermediario, de modo que las comprobaciones mejoradas se aplican a
+ejecuciones antiguas. Admite el id de una ejecución guardada (y guarda el
+resultado como una ejecución nueva salvo con `--no-save`) o un archivo de
+informe con `--evidence PATH`. Una comprobación que ahora pregunta algo que la
+ejecución registrada nunca preguntó queda sin concluir en lugar de puntuarse
+con una suposición; el campo `rescored_from` del informe indica cuántas
+peticiones se reprodujeron y qué comprobaciones no tenían ninguna.
+
+Las claves y los encabezados sensibles se eliminan antes de escribir nada (vea
+[Privacidad](privacy.md)). Cada línea cumple
+`ekte/schemas/evidence.schema.json` ([Esquemas](../../../reference/schemas.md)).
+En la interfaz web, **Ver evidencia** bajo un hallazgo de una ejecución guardada
+lista las peticiones de la comprobación correspondiente y abre cada petición y
+respuesta original.

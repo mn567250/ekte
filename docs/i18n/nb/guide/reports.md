@@ -25,3 +25,44 @@ viktigste funnene med anbefalinger, scorene per dimensjon og **Dimension
 details**, funnene fra hver detektor med bevis, ytelsesdelen, profilen fra
 kunnskapsbasen som ble brukt, og probespråkene. Tekst som reléet styrer, sladdes
 og escapes før den skrives.
+
+## Bevisfiler
+
+Med `--evidence PATH` (`check`, `compare`, `image`, `audio`), og som standard
+for hver kjøring som lagres i historikken, skriver ekte også hver rå
+HTTP-forespørsel og hvert svar fra kjøringen til én fil: JSON Lines i én
+zstd-strøm, `<run_id>.jsonl.zst` (en katalog oppgitt som `PATH` får dette
+navnet). Første linje beskriver kjøringen; hver videre linje er én forespørsel
+med svaret, inkludert når hver del av svaret kom. `seq` på en linje er
+forespørselens `seq` i rapportens `performance.requests`, så hver forespørsel
+rapporten lister kan slås opp. Rapportens `evidence` navngir filen med SHA-256
+og antall utvekslinger.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Hvert funn oppgir forespørslene det bygger på (`evidence_seqs`; tom når det
+ikke bygger på noen, som TLS-kontrollen). `ekte evidence-export` tar filen
+(eller id-en til en lagret kjøring) og gjør den om til HAR for en HAR-viser
+eller nettleserens utviklerverktøy (`--as har`), et curl-skript som sender
+forespørslene på nytt (`--as curl`; sett `EKTE_API_KEY` først, filen
+inneholder aldri nøkkelen) eller ett JSON-dokument (`--as json`); `--seq`
+velger forespørsler.
+
+`ekte rescore` vurderer en registrert kjøring på nytt med den installerte
+ekte-versjonen: den kjører samme revisjon, men svarer på hver forespørsel med
+det registrerte svaret (i det registrerte tempoet) i stedet for å kontakte
+reléet, slik at forbedrede kontroller gjelder også for gamle kjøringer. Den tar
+id-en til en lagret kjøring (og lagrer resultatet som en ny kjøring, med mindre
+`--no-save`) eller en rapportfil med `--evidence PATH`. En kontroll som nå spør
+om noe den registrerte kjøringen aldri spurte om, blir uavklart i stedet for å
+få poeng på gjetning; rapportens `rescored_from` sier hvor mange forespørsler
+som ble spilt av og hvilke kontroller som ikke hadde noen.
+
+Nøkler og sensitive hoder fjernes før noe skrives (se [Personvern](privacy.md)).
+Hver linje følger `ekte/schemas/evidence.schema.json`
+([Skjemaer](../../../reference/schemas.md)). I nettgrensesnittet lister **Vis
+bevis** under et funn i en lagret kjøring forespørslene i kontrollen bak det og
+åpner hver rå forespørsel og hvert svar.

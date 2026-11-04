@@ -14,7 +14,9 @@ import pytest
 
 _JS = r"""
 const path = require("path");
-const [dir, lang, reportJson] = process.argv.slice(1);
+const [dir, lang, reportJson, optsFile] = process.argv.slice(1);
+// extra render options come in a file: a long body would overflow Windows' command line
+const opts = optsFile ? JSON.parse(require("fs").readFileSync(optsFile, "utf8")) : {};
 global.window = { addEventListener() {} };
 global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete",
                     querySelectorAll: () => [], addEventListener() {} };
@@ -29,15 +31,16 @@ let clicked = null;
 window.EkteReport.render(el, JSON.parse(reportJson), { actions: [
   { zh: "再测一个", en: "Test another" },
   { zh: "下载报告 (JSON)", en: "Download report (JSON)", primary: true, onClick: r => { clicked = r.mode; } },
-], download: { name: "ekte-report" } });
-console.log(JSON.stringify({ html: el.innerHTML, globals: Object.keys(window), icons: window.EKTE_ICONS }));
+], download: { name: "ekte-report" }, ...opts });
+const pair = opts.pair ? window.EkteReport.rawPair(opts.pair) : null;
+console.log(JSON.stringify({ html: el.innerHTML, globals: Object.keys(window), icons: window.EKTE_ICONS, pair }));
 """
 
 _STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
 _FIXTURE = Path(__file__).resolve().parent / "fixtures" / "web_report.json"
 
 
-def _render(tmp_path: Path, lang: str, report: dict) -> dict:
+def _render(tmp_path: Path, lang: str, report: dict, opts: dict | None = None) -> dict:
     from ekte.i18n import locales_script
 
     (tmp_path / "locales.js").write_text(locales_script(), encoding="utf-8")
@@ -45,8 +48,11 @@ def _render(tmp_path: Path, lang: str, report: dict) -> dict:
         shutil.copy(_STATIC / name, tmp_path / name)
     (tmp_path / "v2").mkdir(exist_ok=True)
     shutil.copy(_STATIC / "v2" / "report.js", tmp_path / "v2" / "report.js")
+    opts_file = tmp_path / "opts.json"
+    if opts:
+        opts_file.write_text(json.dumps(opts), encoding="utf-8")
     out = subprocess.run(
-        ["node", "-e", _JS, str(tmp_path), lang, json.dumps(report)],
+        ["node", "-e", _JS, str(tmp_path), lang, json.dumps(report), *([str(opts_file)] if opts else [])],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
     return json.loads(out)
@@ -674,3 +680,69 @@ def test_download_drops_the_chart_trend_lines(tmp_path):
         assert len(sent) == len(report["performance"]["requests"])
         assert not any("trend" in r or "trend_band" in r for r in sent)
     assert any("trend" in r for r in out["original"]["performance"]["requests"])
+
+
+_EVIDENCE = {"run_id": "a" * 32, "file": "a" * 32 + ".jsonl.zst", "sha256": "0" * 64, "exchanges": 3}
+
+
+@needs_node
+def test_saved_run_offers_its_raw_pairs_under_the_evidence(tmp_path):
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    report["evidence"] = _EVIDENCE
+    html = _render(tmp_path, "en", report, {"historyId": 7})["html"]
+    # every finding's evidence panel gets the pairs of the detector behind it
+    boxes = re.findall(r'<div class="zr-raw" data-det="([^"]+)" data-base="([^"]+)">', html)
+    dets = {d["id"] for d in report["detectors"] if d.get("findings")}
+    assert boxes and {d for d, _ in boxes} <= dets
+    assert {b for _, b in boxes} == {"/api/v1/history/7/evidence"}
+    assert 'href="/api/v1/history/7/evidence" download' in html and "3 request/response pairs" in html
+    # the panel is still one disclosure, its button pointing at it
+    for pid in re.findall(r'<div class="evw" id="([^"]+)" hidden>', html):
+        assert f'aria-controls="{pid}"' in html
+
+
+@needs_node
+def test_unsaved_or_evidence_free_runs_show_no_raw_pairs(tmp_path):
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    assert "zr-raw" not in _render(tmp_path, "en", report, {"historyId": 7})["html"]
+    report["evidence"] = _EVIDENCE
+    html = _render(tmp_path, "en", report)["html"]
+    assert "zr-raw" not in html and "/evidence" not in html
+
+
+@needs_node
+def test_a_raw_pair_renders_request_response_and_timing(tmp_path):
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    pair = {
+        "id": 1, "seq": 4, "endpoint": "target",
+        "request": {"method": "POST", "url": "https://r.example/v1/chat/completions",
+                    "headers": {"authorization": "«redacted»"},
+                    "body": {"text": '{"model":"m","messages":[]}', "bytes": 27}},
+        "response": {"status": 200, "http_version": "HTTP/1.1", "headers": {"content-type": "text/event-stream"},
+                     "body": {"text": "data: <b>x</b>\n\n" + "y" * 30000, "bytes": 30020},
+                     "chunks": [[1.0, 10], [5.0, 30020]], "done_ms": 6.0},
+    }
+    out = _render(tmp_path, "de", report, {"pair": pair})["pair"]
+    assert "POST https://r.example/v1/chat/completions" in out and "authorization: «redacted»" in out
+    assert "&quot;model&quot;: &quot;m&quot;" in out  # JSON bodies pretty-printed (escaped)
+    assert "&lt;b&gt;x&lt;/b&gt;" in out and "<b>x</b>" not in out  # relay text is escaped
+    assert "HTTP/1.1 200" in out and "Anfrage" in out and "Antwort" in out
+    assert "2 Teilen" in out and "20.000" in out  # timing and the shown-length note, translated
+    binary = dict(pair, response=dict(pair["response"], body={"text": "AAAA", "encoding": "base64", "bytes": 3}))
+    assert "Binärer Inhalt" in _render(tmp_path, "de", report, {"pair": binary})["pair"]
+    lost = dict(pair, response=None, error="ConnectError: refused")
+    assert "ConnectError" in _render(tmp_path, "en", report, {"pair": lost})["pair"]
+
+
+@needs_node
+def test_a_finding_lists_only_the_requests_it_names(tmp_path):
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    report["evidence"] = _EVIDENCE
+    plain = _render(tmp_path, "en", report, {"historyId": 7})["html"]
+    findings = [f for d in report["detectors"] for f in d.get("findings", [])]
+    findings[0]["evidence_seqs"] = [3, 5]
+    findings[1]["evidence_seqs"] = []  # rests on no request (e.g. the configuration)
+    html = _render(tmp_path, "en", report, {"historyId": 7})["html"]
+    assert 'data-seqs="3,5"' in html and 'data-seqs="3,5"' not in plain
+    # the finding that names no request offers no raw pairs
+    assert html.count('class="zr-raw"') < plain.count('class="zr-raw"')

@@ -25,3 +25,47 @@ wichtigsten Befunde mit Empfehlungen, die Bewertungen je Dimension und
 **Dimension details**, die Befunde jedes Detektors mit Belegen, den
 Leistungsabschnitt, das verwendete Wissensbasis-Profil und die Testsprachen. Vom
 Relay kontrollierter Text wird vor dem Schreiben geschwärzt und maskiert.
+
+## Belegdateien
+
+Mit `--evidence PATH` (`check`, `compare`, `image`, `audio`) und standardmäßig
+für jeden im Verlauf gespeicherten Lauf schreibt ekte zusätzlich jede rohe
+HTTP-Anfrage und -Antwort des Laufs in eine Datei: JSON Lines in einem
+zstd-Strom, `<run_id>.jsonl.zst` (ein als `PATH` angegebenes Verzeichnis erhält
+diesen Namen). Die erste Zeile beschreibt den Lauf; jede weitere Zeile ist eine
+Anfrage mit ihrer Antwort, einschließlich des Zeitpunkts, zu dem jeder Teil der
+Antwort eintraf. Das `seq` einer Zeile ist das `seq` der Anfrage in
+`performance.requests` des Berichts, sodass sich jede Anfrage nachschlagen
+lässt, die der Bericht aufführt. `evidence` im Bericht nennt die Datei mit
+ihrem SHA-256 und der Zahl ihrer Austausche.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Jeder Befund nennt die Anfragen, auf denen er beruht (`evidence_seqs`; leer,
+wenn er auf keiner beruht, wie die TLS-Prüfung). `ekte evidence-export` nimmt
+die Datei (oder die Id eines gespeicherten Laufs) und macht daraus HAR für
+einen HAR-Viewer oder die Entwicklerwerkzeuge des Browsers (`--as har`),
+ein curl-Skript, das die Anfragen erneut sendet (`--as curl`; zuerst
+`EKTE_API_KEY` setzen, die Datei enthält den Schlüssel nie) oder ein
+JSON-Dokument (`--as json`); `--seq` wählt Anfragen aus.
+
+`ekte rescore` bewertet einen aufgezeichneten Lauf mit der installierten
+ekte-Version neu: Es führt dieselbe Prüfung aus, beantwortet aber jede Anfrage
+mit der aufgezeichneten Antwort (im aufgezeichneten Takt), statt das Relay zu
+kontaktieren, sodass verbesserte Prüfungen auch für alte Läufe gelten. Es nimmt
+die Id eines gespeicherten Laufs (und speichert das Ergebnis als neuen Lauf,
+außer mit `--no-save`) oder eine Berichtsdatei mit `--evidence PATH`. Eine
+Prüfung, die jetzt etwas fragt, das der aufgezeichnete Lauf nie gefragt hat,
+bleibt ohne klares Ergebnis, statt auf eine Vermutung hin bewertet zu werden;
+`rescored_from` im Bericht nennt, wie viele Anfragen wiedergegeben wurden und
+welche Prüfungen keine hatten.
+
+Schlüssel und sensible Header werden vor dem Schreiben entfernt (siehe
+[Datenschutz](privacy.md)). Jede Zeile entspricht
+`ekte/schemas/evidence.schema.json` ([Schemas](../../../reference/schemas.md)).
+In der Web-UI listet **Belege anzeigen** unter einem Befund eines gespeicherten
+Laufs die Anfragen der zugehörigen Prüfung auf und öffnet jede rohe Anfrage und
+Antwort.

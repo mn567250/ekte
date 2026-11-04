@@ -25,3 +25,42 @@ findings with recommendations, the per-dimension scores and **Dimension
 details**, every detector's findings with evidence, the performance section, the
 knowledge-base profile used and the probe languages. Relay-controlled text is
 redacted and escaped before it is written.
+
+## Evidence files
+
+With `--evidence PATH` (`check`, `compare`, `image`, `audio`), and by default
+for every run saved to history, ekte also writes every raw HTTP request and
+response of the run to one file: JSON Lines in one zstd stream,
+`<run_id>.jsonl.zst` (a directory given as `PATH` gets that name). The first
+line describes the run; every further line is one request with its response,
+including when each chunk of the response arrived. A line's `seq` is the
+request's `seq` in the report's `performance.requests`, so every request the
+report lists can be looked up. The report's `evidence` names the file with its
+SHA-256 and its number of exchanges.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Each finding names the requests it rests on (`evidence_seqs`; empty when it
+rests on none, as the TLS check). `ekte evidence-export` takes the file (or the
+id of a saved run) and turns it into HAR for a HAR viewer or browser dev tools
+(`--as har`), a curl script that sends the requests again
+(`--as curl`; set `EKTE_API_KEY` first, the file never holds the key) or
+one JSON document (`--as json`); `--seq` picks requests.
+
+`ekte rescore` judges a recorded run again with the installed ekte version:
+it runs the same audit, but answers every request with the recorded response
+(at the recorded timing) instead of contacting the relay, so improved checks
+apply to old runs. It takes a saved run's id (and saves the result as a new
+run unless `--no-save`), or a report file with `--evidence PATH`. A check that
+now asks something the recorded run never asked reads inconclusive instead of
+being scored on a guess; the report's `rescored_from` says how many requests
+were replayed and which checks had none.
+
+Keys and sensitive headers are removed before anything is written (see
+[Privacy](privacy.md)). Each line matches `ekte/schemas/evidence.schema.json`
+([Schemas](../reference/schemas.md)). In the web UI, **Show evidence** under a
+finding of a saved run lists the requests of the check behind it and opens
+each raw request and response.

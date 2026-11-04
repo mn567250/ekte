@@ -57,6 +57,7 @@ class EmbedIdentityDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.dimension", "no_vector",
+                    calls=[res],
                     title="Vector dimension not measured",
                     summary=f"No vector to measure: {problem}.",
                     evidence={"claimed": claimed},
@@ -71,6 +72,7 @@ class EmbedIdentityDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.dimension", "unknown",
+                    calls=[res],
                     title="Claimed dimension unknown — recording observed dimension",
                     summary=f"No KB dimension for the claimed model; observed {returned}-d.",
                     evidence=evidence,
@@ -80,6 +82,7 @@ class EmbedIdentityDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.dimension", "match",
+                    calls=[res],
                     title="Vector dimension matches the claimed model",
                     summary=f"Returned {returned}-d vectors, as expected for the claim.",
                     evidence=evidence,
@@ -89,6 +92,7 @@ class EmbedIdentityDetector(EmbeddingDetector):
             result.findings.append(
                 SCALE.finding(
                     "embed.dimension", "mismatch",
+                    calls=[res],
                     title="Vector dimension does NOT match the claimed model",
                     summary=f"Returned {returned}-d vectors but the claimed model produces "
                     f"{claimed}-d. Strong evidence of a substituted embedding model.",
@@ -107,6 +111,7 @@ class EmbedIdentityDetector(EmbeddingDetector):
         result.findings.append(
             SCALE.finding(
                 "embed.model_field", key,
+                calls=[res],
                 title="Echoed model field" if key != "differs"
                 else "Echoed model field differs from the request",
                 summary=f"Relay reported model: {echoed or '(none)'}.",

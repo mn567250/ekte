@@ -60,6 +60,7 @@ jobs:
 | `fail-on-risk`      | 否   | `high`        | 风险 `>=` 该级别时让作业失败：`low` \| `medium` \| `high`。 |
 | `python-version`    | 否   | `3.12`        | 用于安装和运行 `ekte` 的 Python 版本。 |
 | `version`           | 否   | `ekte`  | pip 安装规格。若要可复现的运行请固定版本，例如 `ekte==0.33.1`。 |
+| `evidence`          | 否       | `false`       | `true` 时保留检测的每一对原始请求/响应（已去除密钥），并作为 workflow 产物上传，门禁失败时也会上传。 |
 
 ## 输出
 
@@ -68,6 +69,7 @@ jobs:
 | `risk`   | 风险级别：`clean` \| `low` \| `medium` \| `high` \| `inconclusive`。 |
 | `score`  | 综合分 `0`–`100`（如果 `ekte` 无法为中转站评分，则为空字符串）。 |
 | `rating` | 结论中的可读评级（可能为空）。 |
+| `evidence-file` | 证据文件在 runner 上的路径（除非 `evidence` 为 `true`，否则为空）。 |
 
 ## 以中转站健康状况为部署把关
 

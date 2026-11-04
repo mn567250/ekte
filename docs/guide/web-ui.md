@@ -71,6 +71,22 @@ after another, so they never skew each other's latency or reliability results
 machine queue too); audits of different relays run in parallel, at most four at
 once (`EKTE_MAX_PARALLEL_AUDITS`). Monitors wait for their relay the same way.
 
+**Raw requests and responses.** A run saved to **History** keeps every raw
+request and response it exchanged (see [Privacy](privacy.md)). In its report,
+**Show evidence** under a finding lists the requests of the check behind it;
+each opens the request as sent and the response as received, with how its
+chunks arrived, and **Raw evidence** → **Evidence file** downloads them all.
+The audit form's **Raw requests/responses** setting (**Keep** / **Don't keep**)
+decides it per run; each monitor has the same setting on **Monitors**.
+
+Under a finding the list holds only the requests that finding rests on.
+Each pair, and the whole run, also downloads as HAR or as a curl script that
+sends the requests again (`EKTE_API_KEY` supplies the key).
+
+**Re-score with this version** on a saved run with evidence replays it the
+same way and saves the result as a new run in **History**; its report says
+which run it replayed.
+
 **Analytics.** `/analytics` turns the local history into
 comparisons: KPI tiles for the chosen period (runs, median score, high-risk
 share, success rate, TTFT, decode speed, billing ratios) with the change

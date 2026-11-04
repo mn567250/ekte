@@ -1042,6 +1042,25 @@
     location.href = RERUN_SURFACES.hasOwnProperty(s) ? "/?surface=" + s + "&" + q : "/?" + q;
   }
 
+  // Re-score a saved run from its evidence file: a background job, followed
+  // on the audit page like any audit.
+  function rescore(id) {
+    fetch("/api/history/" + encodeURIComponent(id) + "/rescore", { method: "POST" })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+          return j;
+        });
+      })
+      .then(function (job) {
+        location.href = "/?job=" + encodeURIComponent(job.id);
+      })
+      .catch(function (e) {
+        var msg = document.getElementById("m-" + id);
+        if (msg) msg.textContent = T("无法重新评分：", "Could not re-score: ") + EKTE_LANG.server(String((e && e.message) || e));
+      });
+  }
+
   function rerunBtnHTML(r) {
     var label = T("重新检测", "Re-run audit");
     return '<button type="button" class="rrerun" data-rerun="' + esc(String(r.id)) + '" aria-label="' + esc(label) + '" title="' + esc(label) + '">' + ico("refresh") + "</button>";
@@ -1069,8 +1088,13 @@
         { zh: "设为监控", en: "Schedule as monitor", primary: true, onClick: function () { schedule(id); } },
       ]).concat([
         { zh: "重新检测", en: "Re-run audit", onClick: function () { rerun(id); } },
-      ]),
+      ]).concat(report && report.evidence ? [
+        // replays the run's recorded requests and responses: no relay contacted
+        { zh: "用当前版本重新评分", en: "Re-score with this version", onClick: function () { rescore(id); } },
+      ] : []),
       download: { name: "ekte-report-" + panel.getAttribute("data-id") },
+      // the saved run: its raw request/response pairs open under each finding
+      historyId: id,
     });
   }
 

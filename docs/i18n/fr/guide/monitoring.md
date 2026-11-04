@@ -40,6 +40,12 @@ l'interface), peut être exécutée maintenant, mise en pause ou supprimée, et
 reste liée au profil de la base de connaissances avec lequel elle a été créée
 jusqu'à ce que vous la reliiez à nouveau.
 
+Chaque exécution de surveillance et chaque cycle de `ekte watch` conserve ses
+requêtes et réponses brutes avec l'exécution enregistrée (voir
+[Confidentialité](privacy.md)) ; le réglage **Requêtes/réponses brutes** d'une
+surveillance (**Conserver** / **Ne pas conserver**) et
+`ekte watch --no-evidence` le désactivent.
+
 Les surveillances arrivées à échéance s'exécutent en même temps, chacune comme
 son propre audit, mais jamais plus d'un audit à la fois par hôte de relais et au
 plus `EKTE_MAX_PARALLEL_AUDITS` au total ; une exécution attend qu'un créneau se

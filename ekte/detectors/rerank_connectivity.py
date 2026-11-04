@@ -32,6 +32,7 @@ class RerankConnectivityDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.connectivity", "failed",
+                    calls=[res],
                     title="Rerank endpoint unreachable",
                     summary=f"POST /rerank failed: {res.error_message or res.status_code}",
                     evidence={"status_code": res.status_code, "error": res.error_message},
@@ -42,6 +43,7 @@ class RerankConnectivityDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.connectivity", "malformed",
+                    calls=[res],
                     title="Rerank response malformed",
                     summary=f"The rerank response is unusable: {problem}.",
                     evidence={"documents": len(documents)},
@@ -51,6 +53,7 @@ class RerankConnectivityDetector(RerankDetector):
             result.findings.append(
                 SCALE.finding(
                     "rerank.connectivity", "reachable",
+                    calls=[res],
                     title="Rerank endpoint reachable",
                     summary=f"Got {len(results)} ranked results in {res.duration_ms:.0f} ms.",
                     evidence={"results": len(results), "duration_ms": res.duration_ms},

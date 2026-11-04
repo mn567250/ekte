@@ -37,7 +37,7 @@ Every command follows this table.
 
 ## Commands
 
-[`ekte audio`](#audio), [`ekte check`](#check), [`ekte compare`](#compare), [`ekte config migrate`](#config-migrate), [`ekte data-dir`](#data-dir), [`ekte embed`](#embed), [`ekte image`](#image), [`ekte init`](#init), [`ekte kb`](#kb), [`ekte kb-export`](#kb-export), [`ekte kb-import`](#kb-import), [`ekte kb-prompt`](#kb-prompt), [`ekte models`](#models), [`ekte rerank`](#rerank), [`ekte secret export`](#secret-export), [`ekte secret rotate`](#secret-rotate), [`ekte secret status`](#secret-status), [`ekte serve`](#serve), [`ekte watch`](#watch)
+[`ekte audio`](#audio), [`ekte check`](#check), [`ekte compare`](#compare), [`ekte config migrate`](#config-migrate), [`ekte data-dir`](#data-dir), [`ekte embed`](#embed), [`ekte evidence-export`](#evidence-export), [`ekte image`](#image), [`ekte init`](#init), [`ekte kb`](#kb), [`ekte kb-export`](#kb-export), [`ekte kb-import`](#kb-import), [`ekte kb-prompt`](#kb-prompt), [`ekte models`](#models), [`ekte rerank`](#rerank), [`ekte rescore`](#rescore), [`ekte secret export`](#secret-export), [`ekte secret rotate`](#secret-rotate), [`ekte secret status`](#secret-status), [`ekte serve`](#serve), [`ekte watch`](#watch)
 
 ### Global options
 
@@ -62,6 +62,7 @@ Audit an audio/TTS endpoint (POST /v1/audio/speech, a non-chat surface).
 | `--audio-format` | str |  | Requested audio format (wav\|mp3\|opus\|flac; default wav). |
 | `--text` | str | `The quick brown fox jumps over the lazy dog.` | Probe sentence to synthesize. |
 | `--save-to` | path |  | Write a synthesized clip to this path for inspection. |
+| `--evidence` | path |  | Write every raw request/response pair of the run to this file (a zstd-compressed JSON Lines file; a directory gets <run_id>.jsonl.zst). The report names it with its SHA-256. |
 | `--json` | flag |  | Print the verdict as JSON to stdout. |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
 
@@ -105,6 +106,7 @@ Audit one relay endpoint and write a report.
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
 | `--json` | flag |  | Print the full JSON report to stdout instead of writing files. |
 | `--compact` | flag |  | Print a lean agent/LLM-facing JSON verdict to stdout (much smaller than --json). |
+| `--evidence` | path |  | Write every raw request/response pair of the run to this file (a zstd-compressed JSON Lines file; a directory gets <run_id>.jsonl.zst). The report names it with its SHA-256. |
 | `--dry-run` | flag |  | Show which detectors would run and the estimated API-call count, without making any requests. |
 
 <a id="compare"></a>
@@ -144,6 +146,7 @@ Audit a relay against a trusted baseline of the same declared model.
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this. |
 | `--json` | flag |  | Print the full JSON report to stdout. |
 | `--compact` | flag |  | Print a lean agent/LLM-facing JSON verdict to stdout. |
+| `--evidence` | path |  | Write every raw request/response pair of the run to this file (a zstd-compressed JSON Lines file; a directory gets <run_id>.jsonl.zst). The report names it with its SHA-256. |
 | `--dry-run` | flag |  | Show the detectors and estimated API calls without making requests. |
 
 <a id="config-migrate"></a>
@@ -181,10 +184,23 @@ Audit an embeddings endpoint (a non-chat surface).
 | `--claimed-dimensions` | int |  | Override the expected vector dimension instead of resolving it from the KB (0 = unknown). |
 | `--suite` | str | `standard` | smoke \| standard \| deep \| full (deep/full add the performance probe). |
 | `--save`, `--no-save` | flag |  | Save the report to the local history (the next run's vector-drift reference). |
+| `--no-evidence` | flag |  | Keep no raw request/response pairs for runs saved to history (kept by default, see the privacy guide). Env: EKTE_NO_EVIDENCE=1. |
 | `--kb-dir` | path (repeatable) |  | Extra knowledge-base directory (repeatable). |
 | `--json` | flag |  | Print the verdict as JSON to stdout. |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
 | `--dry-run` | flag |  | Show the detectors and estimated API calls without making requests. |
+
+<a id="evidence-export"></a>
+### `ekte evidence-export`
+
+Turn a run's evidence file into HAR, a curl script or one JSON document.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `SOURCE` | argument | | An evidence file (.jsonl.zst), or the id of a saved run in the history. |
+| `--as` | str | `har` | har (HTTP Archive) \| curl (a shell script that sends the requests again) \| json (one document). |
+| `--seq` | int (repeatable) |  | Only the exchanges of this request seq (repeatable). |
+| `--out` | path |  | Write to this file instead of stdout. |
 
 <a id="image"></a>
 ### `ekte image`
@@ -200,6 +216,7 @@ Audit an image-generation endpoint (POST /v1/images/generations, a non-chat surf
 | `--declared-provider` | str |  | Provider hint for KB lookup (openai, qwen, ...). |
 | `--size` | str | `1024x1024` | Requested image size as WxH. |
 | `--save-to` | path |  | Write the first generated image to this path for inspection. |
+| `--evidence` | path |  | Write every raw request/response pair of the run to this file (a zstd-compressed JSON Lines file; a directory gets <run_id>.jsonl.zst). The report names it with its SHA-256. |
 | `--kb-dir` | path (repeatable) |  | Extra knowledge-base directory (repeatable). |
 | `--json` | flag |  | Print the verdict as JSON to stdout. |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
@@ -283,10 +300,23 @@ Audit a rerank endpoint (a non-chat surface).
 | `--declared-provider` | str |  | Provider hint for KB lookup (cohere, jina, ...). |
 | `--suite` | str | `standard` | smoke \| standard \| deep \| full (deep/full add the performance probe). |
 | `--save`, `--no-save` | flag |  | Save the report to the local history (the next run's ranking-drift reference). |
+| `--no-evidence` | flag |  | Keep no raw request/response pairs for runs saved to history (kept by default, see the privacy guide). Env: EKTE_NO_EVIDENCE=1. |
 | `--kb-dir` | path (repeatable) |  | Extra knowledge-base directory (repeatable). |
 | `--json` | flag |  | Print the verdict as JSON to stdout. |
 | `--fail-on-risk` | str |  | Exit 1 if risk >= this (low\|medium\|high). |
 | `--dry-run` | flag |  | Show the detectors and estimated API calls without making requests. |
+
+<a id="rescore"></a>
+### `ekte rescore`
+
+Re-score a recorded run with this ekte version, from its evidence file.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `SOURCE` | argument | | The id of a saved run in the history, or a report JSON file (then also --evidence). |
+| `--evidence` | path |  | The evidence file of a report JSON file given as SOURCE. |
+| `--save`, `--no-save` | flag |  | Save the re-scored report to the history as a new run (a saved run only). |
+| `--json` | flag |  | Print the re-scored report as JSON to stdout. |
 
 <a id="secret-export"></a>
 ### `ekte secret export`
@@ -318,6 +348,7 @@ Serve the local web UI — a point-and-click front end for `ekte check`.
 | `--port`, `-p` | int |  | Port to serve on (default 8000). Env: EKTE_PORT. |
 | `--open`, `--no-open` | flag |  | Open the UI in a browser (default: yes, except in a container). |
 | `--data-dir` | path |  | Where ekte keeps history.db, watches.db and kb.db (default ~/.ekte). Env: EKTE_DATA_DIR. |
+| `--no-evidence` | flag |  | Keep no raw request/response pairs for runs saved to history (kept by default, see the privacy guide). Env: EKTE_NO_EVIDENCE=1. |
 
 <a id="watch"></a>
 ### `ekte watch`
@@ -345,6 +376,7 @@ Continuously re-audit a relay on a schedule and alert webhooks on risk.
 | `--alert-on-regression`, `--no-alert-on-regression` | flag |  | Also alert when risk is worse than the previous saved run for this target+model. |
 | `--alert-lang` | str | `en` | Language of the webhook alerts: en \| zh \| fr \| es \| pt \| it \| de \| nb. |
 | `--json` | flag |  | Print one JSON object per cycle (JSON Lines) on stdout; progress goes to stderr. |
+| `--no-evidence` | flag |  | Keep no raw request/response pairs for runs saved to history (kept by default, see the privacy guide). Env: EKTE_NO_EVIDENCE=1. |
 
 ## Deprecated options
 

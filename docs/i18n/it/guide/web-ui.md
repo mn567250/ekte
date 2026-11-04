@@ -79,6 +79,24 @@ attendono); gli audit di relay diversi vengono eseguiti in parallelo, al massimo
 quattro alla volta (`EKTE_MAX_PARALLEL_AUDITS`). I monitor attendono il loro
 relay allo stesso modo.
 
+**Richieste e risposte grezze.** Un'esecuzione salvata nella **Cronologia**
+conserva ogni richiesta e risposta grezza scambiata (vedi [Privacy](privacy.md)).
+Nel suo rapporto, **Mostra prove** sotto un rilievo elenca le richieste del
+controllo corrispondente; ognuna apre la richiesta così come è stata inviata e
+la risposta così come è stata ricevuta, con l'arrivo dei suoi blocchi, e
+**Prove grezze** → **File delle prove** le scarica tutte. L'opzione
+**Richieste/risposte grezze** del modulo di verifica (**Conserva** / **Non
+conservare**) lo decide per esecuzione; ogni monitor ha la stessa opzione in
+**Monitor**.
+
+Sotto un rilievo l'elenco contiene solo le richieste su cui si basa. Ogni
+coppia, e l'intera esecuzione, si scarica anche come HAR o come script curl
+che invia di nuovo le richieste (`EKTE_API_KEY` fornisce la chiave).
+
+**Rivaluta con questa versione** su un'esecuzione salvata con prove la
+riproduce allo stesso modo e salva il risultato come nuova esecuzione nella
+**Cronologia**; il suo rapporto indica quale esecuzione ha riprodotto.
+
 **Analisi.** `/analytics` trasforma la cronologia
 locale in confronti: indicatori per il periodo scelto (esecuzioni, punteggio
 mediano, quota ad alto rischio, tasso di successo, TTFT, velocità di output,

@@ -25,3 +25,48 @@ clés avec leurs recommandations, les scores par dimension et les **Dimension
 details**, les constats de chaque détecteur avec leurs preuves, la section
 performance, le profil de la base de connaissances utilisé et les langues de
 sonde. Le texte contrôlé par le relais est expurgé et échappé avant d'être écrit.
+
+## Fichiers de preuves
+
+Avec `--evidence PATH` (`check`, `compare`, `image`, `audio`), et par défaut
+pour chaque exécution enregistrée dans l'historique, ekte écrit aussi chaque
+requête et réponse HTTP brute de l'exécution dans un fichier : du JSON Lines
+dans un flux zstd, `<run_id>.jsonl.zst` (un répertoire donné comme `PATH`
+reçoit ce nom). La première ligne décrit l'exécution ; chaque ligne suivante est
+une requête avec sa réponse, y compris l'instant d'arrivée de chaque morceau de
+la réponse. Le `seq` d'une ligne est le `seq` de la requête dans
+`performance.requests` du rapport : chaque requête listée par le rapport peut
+ainsi être retrouvée. Le champ `evidence` du rapport nomme le fichier avec son
+SHA-256 et son nombre d'échanges.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Chaque constat nomme les requêtes sur lesquelles il repose (`evidence_seqs` ;
+vide s'il ne repose sur aucune, comme le contrôle TLS). `ekte evidence-export`
+prend le fichier (ou l'identifiant d'une exécution enregistrée) et le
+transforme en HAR pour un visualiseur HAR ou les outils de développement du
+navigateur (`--as har`), en script curl qui renvoie les requêtes
+(`--as curl` ; définissez d'abord `EKTE_API_KEY`, le fichier ne contient
+jamais la clé) ou en un seul document JSON (`--as json`) ; `--seq`
+choisit les requêtes.
+
+`ekte rescore` réévalue une exécution enregistrée avec la version d'ekte
+installée : il refait le même audit, mais répond à chaque requête par la
+réponse enregistrée (au rythme enregistré) au lieu de contacter le relais, de
+sorte que les contrôles améliorés s'appliquent aux anciennes exécutions. Il
+prend l'identifiant d'une exécution enregistrée (et enregistre le résultat
+comme nouvelle exécution, sauf avec `--no-save`) ou un fichier de rapport avec
+`--evidence PATH`. Un contrôle qui demande désormais quelque chose que
+l'exécution enregistrée n'a jamais demandé reste non concluant au lieu d'être
+noté sur une supposition ; le champ `rescored_from` du rapport indique combien
+de requêtes ont été rejouées et quels contrôles n'en avaient pas.
+
+Les clés et les en-têtes sensibles sont retirés avant toute écriture (voir
+[Confidentialité](privacy.md)). Chaque ligne respecte
+`ekte/schemas/evidence.schema.json` ([Schémas](../../../reference/schemas.md)).
+Dans l'interface web, **Afficher les preuves** sous un constat d'une exécution
+enregistrée liste les requêtes du contrôle correspondant et ouvre chaque
+requête et réponse brute.

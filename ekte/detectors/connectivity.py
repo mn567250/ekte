@@ -48,6 +48,7 @@ class ConnectivityDetector(Detector):
                 SCALE.finding(
                     "connectivity.models",
                     "listed",
+                    calls=[models_outcome],
                     title="/v1/models reachable",
                     summary=(
                         f"Listed {len(model_ids)} models; claimed model "
@@ -61,6 +62,7 @@ class ConnectivityDetector(Detector):
                 SCALE.finding(
                     "connectivity.models",
                     "unavailable",
+                    calls=[models_outcome],
                     title="/v1/models not reachable",
                     summary=models_outcome.error_message or f"HTTP {models_outcome.status_code}",
                     evidence={"status_code": models_outcome.status_code},
@@ -83,6 +85,7 @@ class ConnectivityDetector(Detector):
                 SCALE.finding(
                     "connectivity.chat",
                     "canary_echoed" if recalled else "canary_missing",
+                    calls=[chat],
                     title="Basic chat completion works",
                     summary=f"Returned content in {chat.duration_ms:.0f} ms; canary {'echoed' if recalled else 'not echoed'}.",
                     evidence={
@@ -97,6 +100,7 @@ class ConnectivityDetector(Detector):
                 SCALE.finding(
                     "connectivity.chat",
                     "failed",
+                    calls=[chat],
                     title="Basic chat completion failed",
                     summary=chat.error_message or f"HTTP {chat.status_code}",
                     evidence={"status_code": chat.status_code, "error_type": chat.error_type},

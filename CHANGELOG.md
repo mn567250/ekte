@@ -22,6 +22,59 @@ ekte has three eras:
 
 ### Added
 
+- **Every raw request and response of a run is kept as evidence.** A run saved
+  to history (web UI, monitors, `ekte watch`, `ekte embed`, `ekte rerank`) also
+  writes every HTTP request it sent and every response it received to one file,
+  `evidence/<run_id>.jsonl.zst` in the data directory: JSON Lines in one zstd
+  stream, with when each chunk of a response arrived. Each line names the
+  request's `seq` in `performance.requests`, so every request a report lists
+  can be looked up; the report names the file with its SHA-256 (`evidence`,
+  report schema 1.2), and the lines have a versioned schema of their own,
+  `ekte/schemas/evidence.schema.json` (1.0). API keys, `--header` values,
+  `Authorization`, cookies and the other sensitive headers are removed before
+  anything is written. Measured on the test relay with full-length
+  answers, a deep run's file is about 120–220 KB, less than its report. Switch it off per run (the audit
+  form's **Raw requests/responses** setting, `"evidence": false` in
+  `POST /api/v1/jobs`), per monitor (its **Raw requests/responses** setting),
+  for `ekte watch` / `embed` / `rerank` (`--no-evidence`) or for the whole
+  server (`ekte serve --no-evidence`, `EKTE_NO_EVIDENCE=1`). `ekte check`,
+  `compare`, `image` and `audio` write it with `--evidence PATH`; the GitHub
+  Action's `evidence: true` uploads it as a workflow artifact, also when the
+  gate fails. Deleting a run deletes its file; files of runs that were never
+  saved are removed after a day. ([#88](https://github.com/mn567250/ekte/issues/88))
+
+- **The report shows the raw pairs behind a finding.** In the report of a saved
+  run, **Show evidence** under a finding lists the requests of the check that
+  produced it and opens each request as sent and response as received (with
+  its chunk timing); **Raw evidence** → **Evidence file** downloads the whole
+  file. The public API serves both: `GET /api/v1/history/{id}/evidence` (the
+  file) and `GET /api/v1/history/{id}/evidence/exchanges` (a listing, the pairs
+  of one `seq`, or one exchange), which also checks the file against the hash
+  in the report. ([#88](https://github.com/mn567250/ekte/issues/88))
+
+- **Findings name the requests they rest on, and evidence exports.** Each
+  finding lists the `seq`s of the requests behind it (`evidence_seqs`; empty
+  when it rests on none, such as the TLS check; absent where a detector judges
+  all of its requests together), so **Show evidence** lists exactly those.
+  `ekte evidence-export FILE|RUN_ID` and
+  `GET /api/v1/history/{id}/evidence/export` turn the evidence into HAR (for a
+  HAR viewer or browser dev tools), a curl script that sends the requests again
+  (the key from `EKTE_API_KEY`; the file never holds it) or one JSON document,
+  for all requests or those of `--seq`; the report view offers the same
+  downloads per run and per request. ([#88](https://github.com/mn567250/ekte/issues/88))
+
+- **Re-score a recorded run with a newer ekte.** `ekte rescore RUN_ID` (or a
+  report file with `--evidence PATH`), **Re-score with this version** on a
+  saved run in History, and `POST /api/v1/history/{id}/rescore` run the same
+  audit again with the installed version, answering every request with the
+  recorded response at the recorded timing instead of contacting the relay,
+  so improved checks judge old runs. A check that now asks something the
+  recorded run never asked reads inconclusive (`replay.missing`) instead of
+  being scored on a guess. The result is saved as a new run (`rescored_from`)
+  that shares the original's evidence file. Against the test relay, honest and
+  dishonest deep runs replay with identical verdicts.
+  ([#88](https://github.com/mn567250/ekte/issues/88))
+
 - **Running median and p25–p75 band in the HTML and PDF reports.** The
   downloaded reports' performance timelines draw what the web UI's chart draws
   behind the dots: per endpoint the running median of its last 5 successful
@@ -35,6 +88,11 @@ ekte has three eras:
   open it with the current code and check that nothing is lost.
 
 ### Changed
+
+- **New dependency `zstandard`** (for the evidence files). With it installed,
+  httpx also offers `zstd` in `Accept-Encoding`; responses are decoded as
+  before. `history.db` moves to schema version 5 and `watches.db` to 3 (a
+  backup is made before the upgrade, as for every migration).
 
 - **The performance timeline grows smoothly.** Its time axis ends where the
   last request ended instead of at the next rounded-up step (which left up to a
@@ -156,7 +214,7 @@ and Windows are supported and tested.
   `--help`, pin each exit code and check that JSON mode writes only JSON.
 
 - **Versioned schema for the report JSON and webhook payloads.** Every report
-  (`--json`, `--format json`, history, `--compact`) and every generic webhook
+  (`--json`, `--as json`, history, `--compact`) and every generic webhook
   payload now carries `schema_version` (`MAJOR.MINOR`, independent of the ekte
   version; both are 1.0). JSON Schemas are generated from the code and published as
   `ekte/schemas/report.schema.json` and `ekte/schemas/webhook.schema.json` (they

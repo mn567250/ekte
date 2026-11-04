@@ -92,6 +92,7 @@ _ALL_COLS = (
     "performance_streaming",
     "surface",
     "embedding_dimensions",
+    "evidence",
 )
 
 # Columns safe to return to the browser — everything except the API key.
@@ -166,7 +167,17 @@ def _v2(conn: sqlite3.Connection) -> None:
     )
 
 
-MIGRATIONS = (dbmigrate.Migration(1, _v1), dbmigrate.Migration(2, _v2))
+def _v3(conn: sqlite3.Connection) -> None:
+    """Whether the monitor's runs keep their raw request/response pairs
+    (0 no; 1 or NULL yes, see ekte.evidence)."""
+    kb_snapshot.add_link_columns(conn, "watches", {"evidence": "INTEGER"})
+
+
+MIGRATIONS = (
+    dbmigrate.Migration(1, _v1),
+    dbmigrate.Migration(2, _v2),
+    dbmigrate.Migration(3, _v3),
+)
 
 
 @contextmanager
@@ -535,6 +546,8 @@ def _row_to_dict(row: sqlite3.Row, *, include_key: bool) -> dict[str, Any]:
     d["enabled"] = bool(d.get("enabled"))
     # NULL (watches from before the setting existed) probes with streaming.
     d["performance_streaming"] = d.get("performance_streaming") != 0
+    # NULL (monitors from before the setting existed) keeps evidence.
+    d["evidence"] = d.get("evidence") != 0
     # NULL (watches from before surfaces existed) audits a chat endpoint.
     d["surface"] = d.get("surface") or "chat"
     d["embedding_dimensions"] = _dims(d.get("embedding_dimensions"))
@@ -633,7 +646,8 @@ def create(
     English), performance_streaming (False: the probe sends non-streaming
     requests), surface ("chat", "embedding" or "rerank"; missing or unknown -> chat),
     embedding_dimensions (an embedding watch's claimed vector length; 0 or
-    missing -> the knowledge base's). Unknown keys are ignored;
+    missing -> the knowledge base's), evidence (False: its runs keep no raw
+    request/response pairs). Unknown keys are ignored;
     missing keys fall back to sensible defaults. ``knowledge`` (a
     KnowledgeUsage dict with its profile) pins the watch's profile.
 
@@ -678,6 +692,7 @@ def create(
         surface,
         # a claimed vector length means something only to an embedding watch
         (_dims(cfg.get("embedding_dimensions")) or None) if surface == "embedding" else None,
+        0 if cfg.get("evidence") is False else 1,
     )
     with _connect() as conn:
         cur = conn.execute(
@@ -686,8 +701,8 @@ def create(
                 declared_provider, suite, interval_sec, alert_on, webhooks,
                 enabled, created_ts, language, dimensions, source_report_id,
                 run_duration_sec, performance_streaming, surface,
-                embedding_dimensions)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                embedding_dimensions, evidence)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             row,
         )
         wid = int(cur.lastrowid or -1)
@@ -760,8 +775,10 @@ def update(
     webhooks: list[str] | None = None,
     embedding_dimensions: int | None = None,
     key_storage: str | None = None,
+    evidence: bool | None = None,
 ) -> None:
-    """Change a watch's schedule, key or alert settings; ``None`` leaves a field as is.
+    """Change a watch's schedule, key, alert or evidence settings; ``None``
+    leaves a field as is.
 
     Callers validate the values (see the PATCH endpoint); this only stores them.
     ``key_storage`` overrides where a new key is kept (see :func:`_store_key`).
@@ -785,6 +802,9 @@ def update(
     if embedding_dimensions is not None:
         sets.append("embedding_dimensions = ?")
         vals.append(_dims(embedding_dimensions) or None)
+    if evidence is not None:
+        sets.append("evidence = ?")
+        vals.append(1 if evidence else 0)
     if not sets:
         return
     with _connect() as conn:
