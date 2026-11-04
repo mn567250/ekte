@@ -460,10 +460,16 @@
       : r.cached ? T("缓存命中（不计入统计）", "cached (excluded)") : "OK";
     return '<tr><td class="r">' + esc(r.seq) + "</td><td>" + esc(endpointName(r)) + "</td><td>" +
       esc(phaseName(r.phase) + (unstreamed(r) ? " · " + T("非流式", "non-streaming") : "")) + '</td><td class="r">' +
-      num((r.start_ms || 0) / 1000) + '</td><td class="r">' + (r.ok ? num(m.get(r)) : "—") + '</td><td class="r">' +
+      num((r.start_ms || 0) / 1000) + '</td><td class="r">' + cellValue(r, m) + '</td><td class="r">' +
       (trendOf(r, m) != null ? num(trendOf(r, m)) : "—") + '</td><td class="r">' +
       (bandOf(r, m) ? num(bandOf(r, m)[0]) + "–" + num(bandOf(r, m)[1]) : "—") + "</td><td>" +
       esc(status) + "</td></tr>";
+  }
+  // A failed request has no TTFT, speed or ITL, but its latency is the time
+  // it took to fail (duration_ms), shown on the latency tab.
+  function cellValue(r, m) {
+    if (r.ok) return num(m.get(r));
+    return m.id === "latency" && r.duration_ms != null ? num(r.duration_ms) : "—";
   }
   function dataTableHtml(rows, m) {
     return '<table class="zp-table zp-small">' + dataHead(m) + "<tbody>" +
@@ -472,7 +478,8 @@
   function tip(r, m) {
     var head = "#" + r.seq + " · " + endpointName(r) + " · " + (r.detector || "—") + " · " + phaseName(r.phase) +
       (unstreamed(r) ? " · " + T("非流式", "non-streaming") : "");
-    if (!m) return head + "\n" + T("失败", "failed") + " (" + (r.status_code || r.error_type || "?") + ")";
+    if (!m) return head + "\n" + T("失败", "failed") + " (" + (r.status_code || r.error_type || "?") + ")" +
+      (r.duration_ms != null ? "\n" + T("延迟", "Latency") + ": " + num(r.duration_ms) + " ms" : "");
     var lines = [head, T(m.zh, m.en) + ": " + num(m.get(r)) + " " + m.unit];
     if (m.id !== "latency" && r.duration_ms != null) lines.push(T("延迟", "Latency") + ": " + num(r.duration_ms) + " ms");
     if (m.id !== "ttft" && r.ttft_ms != null) lines.push("TTFT: " + num(r.ttft_ms) + " ms");

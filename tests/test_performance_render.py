@@ -71,6 +71,8 @@ def test_html_draws_inline_svg_without_scripts():
     section = dim[dim.index("<h4>Performance measurements</h4>"):]
     assert "<svg" in section and 'class="pt target"' in section and 'class="pt baseline"' in section
     assert 'class="fail-mark"' in section  # the failed request is marked
+    # ... with the time it took to fail in its tooltip
+    assert re.search(r'class="fail-mark"[^>]*><title>[^<]*failed \(502\)\nLatency: 1,206 ms</title>', section)
     assert "<script" not in page  # self-contained, no JS
     assert "&lt;script&gt;" in section  # tooltips are escaped
     assert 'id="perf-latency"' in section and 'id="panel-ttft"' in section
