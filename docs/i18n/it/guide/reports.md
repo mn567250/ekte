@@ -25,3 +25,28 @@ rilevazioni principali con le raccomandazioni, i punteggi per dimensione e i
 **Dimension details**, le rilevazioni di ogni rilevatore con le prove, la sezione
 prestazioni, il profilo della base di conoscenza usato e le lingue di sonda. Il
 testo controllato dal relay viene oscurato ed escapato prima di essere scritto.
+
+## File delle prove
+
+Con `--evidence PATH` (`check`, `compare`, `image`, `audio`), e per
+impostazione predefinita per ogni esecuzione salvata nella cronologia, ekte
+scrive anche ogni richiesta e risposta HTTP grezza dell'esecuzione in un file:
+JSON Lines in un flusso zstd, `<run_id>.jsonl.zst` (una directory indicata come
+`PATH` riceve questo nome). La prima riga descrive l'esecuzione; ogni riga
+successiva è una richiesta con la sua risposta, compreso il momento in cui è
+arrivato ogni blocco della risposta. Il `seq` di una riga è il `seq` della
+richiesta in `performance.requests` del rapporto, quindi ogni richiesta
+elencata dal rapporto può essere ritrovata. Il campo `evidence` del rapporto
+indica il file con il suo SHA-256 e il numero di scambi.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Le chiavi e le intestazioni sensibili vengono rimosse prima di scrivere
+qualsiasi cosa (vedi [Privacy](privacy.md)). Ogni riga rispetta
+`ekte/schemas/evidence.schema.json` ([Schemi](../../../reference/schemas.md)).
+Nell'interfaccia web, **Mostra prove** sotto un rilievo di un'esecuzione
+salvata elenca le richieste del controllo corrispondente e apre ogni richiesta
+e risposta grezza.

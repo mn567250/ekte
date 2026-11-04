@@ -26,6 +26,19 @@
   `history_metrics` guarda uma linha de valores medidos por execução e
   `history_requests` cada registo de pedido (guardado aí uma só vez, não dentro
   de cada relatório).
+- **Ficheiros de evidências.** Uma execução guardada no histórico (interface
+  web, monitores, `ekte watch`, `ekte embed`, `ekte rerank`) mantém também cada
+  pedido e resposta bruta que trocou, em `evidence/<run_id>.jsonl.zst` no
+  diretório de dados, para que cada constatação possa ser verificada face ao
+  que foi realmente enviado e recebido. As suas chaves de API, os valores de
+  `--header`, `Authorization`, os cookies e os outros cabeçalhos sensíveis são
+  removidos antes de qualquer escrita; prompts e respostas ficam como estavam.
+  Apagar uma execução apaga o seu ficheiro. Desative-o por execução (a opção
+  **Pedidos/respostas brutos** do formulário de auditoria, ou
+  `"evidence": false` em `POST /api/v1/jobs`), por monitor, ou para todo o
+  servidor (`ekte serve --no-evidence`, `EKTE_NO_EVIDENCE=1`). `ekte check`,
+  `compare`, `image` e `audio` não mantêm nenhuma, exceto com
+  `--evidence PATH` (ver [Relatórios](reports.md)).
 
 ## Utilização responsável
 

@@ -63,6 +63,7 @@ jobs:
 | `fail-on-risk`      | não         | `high`        | Faz falhar o job quando o risco é `>=` este nível: `low` \| `medium` \| `high`. |
 | `python-version`    | não         | `3.12`        | Versão de Python usada para instalar e executar o `ekte`. |
 | `version`           | não         | `ekte`        | Especificação de instalação pip. Fixe-a para execuções reproduzíveis, p. ex. `ekte==0.33.1`. |
+| `evidence`          | não      | `false`       | `true` mantém cada par pedido/resposta bruto da auditoria (sem chaves) e envia-o como artefacto do workflow, também quando o bloqueio falha. |
 
 ## Saídas
 
@@ -71,6 +72,7 @@ jobs:
 | `risk`   | Nível de risco: `clean` \| `low` \| `medium` \| `high` \| `inconclusive`. |
 | `score`  | Pontuação global `0`–`100` (cadeia vazia se o `ekte` não conseguiu pontuar o relay). |
 | `rating` | Classificação legível do veredito (pode estar vazia). |
+| `evidence-file` | Caminho do ficheiro de evidências no runner (vazio exceto se `evidence` for `true`). |
 
 ## Condicionar um deploy à saúde do relay
 

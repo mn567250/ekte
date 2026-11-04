@@ -139,6 +139,18 @@
   max-height: 320px; overflow-y: auto;
 }
 .zr-find .ev[hidden] { display: none; }
+/* the raw request/response pairs under a finding's evidence (saved runs) */
+.zr-find .evw[hidden], .zr-pair[hidden] { display: none; }
+.zr-raw { margin-top: 8px; }
+.zr-raw h5 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+.zr-raw h6 { margin: 8px 0 0; font-size: 12.5px; font-weight: 600; }
+.zr-raw .how { font-size: 12.5px; color: var(--ink-muted); margin: 2px 0; }
+.zr-raw .how.warn { color: var(--warning); }
+.zr-rawl { list-style: none; margin: 4px 0 0; padding: 0; font-size: 12.5px; }
+.zr-rawl li { padding: 3px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.zr-rawl li:first-child { border-top: 0; }
+.zr-rawl .rawb { font-family: var(--mono); font-size: 12px; text-align: left; }
+.zr-find .ev.raw { max-height: 420px; overflow-x: auto; }
 
 /* a parametrized check: its subjects (e.g. response attributes) under one row */
 .zr-find .dot.sm { display: inline-grid; width: 16px; height: 16px; flex: none; vertical-align: -3px; margin-right: 6px; }

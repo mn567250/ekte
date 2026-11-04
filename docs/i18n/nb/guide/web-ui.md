@@ -74,6 +74,15 @@ fra din egen maskin, settes også i kø); revisjoner av ulike releer kjøres
 parallelt, høyst fire om gangen (`EKTE_MAX_PARALLEL_AUDITS`). Overvåkinger venter
 på reléet sitt på samme måte.
 
+**Rå forespørsler og svar.** En kjøring som er lagret i **Historikk**,
+beholder hver rå forespørsel og hvert svar den utvekslet (se
+[Personvern](privacy.md)). I rapporten lister **Vis bevis** under et funn
+forespørslene i kontrollen bak det; hver åpner forespørselen slik den ble sendt
+og svaret slik det ble mottatt, med når delene kom, og **Rådata** →
+**Bevisfil** laster ned alt. Innstillingen **Rå forespørsler/svar** i
+revisjonsskjemaet (**Behold** / **Ikke behold**) avgjør det per kjøring; hver
+overvåking har samme innstilling under **Overvåking**.
+
 **Analyse.** `/analytics` gjør den lokale historikken om til sammenligninger:
 nøkkeltall for valgt periode (kjøringer, medianscore, andel høy risiko,
 suksessrate, TTFT, dekodehastighet, faktureringsforhold) med endringen mot like

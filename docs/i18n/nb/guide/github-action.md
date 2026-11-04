@@ -63,6 +63,7 @@ jobs:
 | `fail-on-risk`      | nei      | `high`        | La jobben feile når risikoen er `>=` dette nivået: `low` \| `medium` \| `high`. |
 | `python-version`    | nei      | `3.12`        | Python-versjonen som brukes til å installere og kjøre `ekte`. |
 | `version`           | nei      | `ekte`  | pip-installasjonsspesifikasjon. Fest den for reproduserbare kjøringer, f.eks. `ekte==0.33.1`. |
+| `evidence`          | nei      | `false`       | `true` beholder hvert rå forespørsel/svar-par fra revisjonen (uten nøkler) og laster det opp som et workflow-artefakt, også når porten feiler. |
 
 ## Utdata
 
@@ -71,6 +72,7 @@ jobs:
 | `risk`   | Risikonivå: `clean` \| `low` \| `medium` \| `high` \| `inconclusive`. |
 | `score`  | Samlet score `0`–`100` (tom streng hvis `ekte` ikke kunne gi reléet score). |
 | `rating` | Lesbar karakter fra konklusjonen (kan være tom). |
+| `evidence-file` | Stien til bevisfilen på runneren (tom med mindre `evidence` er `true`). |
 
 ## Gjør en utrulling avhengig av reléets helse
 

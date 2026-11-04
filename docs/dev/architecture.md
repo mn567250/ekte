@@ -52,6 +52,18 @@ the set and repeats the request once adapted (the rejected attempt is recorded
 with phase `param_retry`). A probe that judges the raw rejection sets
 `RequestSpec.exact_params`.
 
+Evidence capture (`ekte/evidence.py`) also lives in `base.py`, as two httpx
+event hooks: the request hook copies each request into a `Capture` on the
+call's `NetTrace` (the same per-call context variable the performance timings
+use), the response hook replaces `response.stream` with a tee that keeps the
+body and each chunk's arrival time. Nothing is captured unless the run keeps
+evidence (`recorder.evidence`, or `client.evidence` for the unrecorded judge and
+media calls). The recorder hands a finished call's captures to the run's
+`EvidenceWriter` with the record's `seq`; the writer redacts, serialises and
+compresses on its own thread (one zstd block flushed per line), so the event
+loop the audit times requests on never waits for it, and `close()` (called off
+the loop) renames the `.part` file and returns the report's `EvidenceRef`.
+
 ## Detectors and scoring scales
 
 A detector is one self-contained file in `ekte/detectors/`: a subclass of
@@ -197,6 +209,14 @@ are safe on FastAPI's thread pool. The global `--data-dir` option (also on
 keeps its mode; only the default `~/.ekte` is tightened to `0700`. History rows
 are indexed by target and model (`idx_history_target`), which
 `history.latest_for()` uses to find a monitor's previous run.
+
+Evidence files live in the data directory's `evidence/` folder
+(`<run_id>.jsonl.zst`, `0600`). Since schema version 5 a history row names its
+file in `evidence_file` (only a bare name of a file that is in that folder);
+`history.delete()` / `clear()` remove the files, and `history.sweep_evidence()`
+(at `ekte serve` startup) removes files no row names and `.part` files of runs
+that died, once they are a day old. `watches.db` (schema version 3) stores each
+monitor's `evidence` setting (NULL reads as on).
 
 Since schema version 2 (`PRAGMA user_version`) `history.db` also holds the
 analytics tables, defined in `web/analytics_store.py`: `history_metrics` (one

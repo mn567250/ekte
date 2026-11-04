@@ -78,6 +78,16 @@ própria máquina também esperam); auditorias de relays diferentes correm em
 paralelo, no máximo quatro de cada vez (`EKTE_MAX_PARALLEL_AUDITS`). Os
 monitores esperam pelo seu relay da mesma forma.
 
+**Pedidos e respostas brutos.** Uma execução guardada no **Histórico** mantém
+cada pedido e resposta bruta que trocou (ver [Privacidade](privacy.md)). No seu
+relatório, **Ver evidências** sob uma constatação lista os pedidos da
+verificação correspondente; cada um abre o pedido tal como foi enviado e a
+resposta tal como foi recebida, com a chegada das suas partes, e **Evidência
+bruta** → **Ficheiro de evidências** transfere-os todos. A opção
+**Pedidos/respostas brutos** do formulário de auditoria (**Manter** / **Não
+manter**) decide-o por execução; cada monitor tem a mesma opção em
+**Monitores**.
+
 **Análises.** `/analytics` transforma o histórico local em
 comparações: indicadores do período escolhido (execuções, pontuação mediana,
 proporção de risco alto, taxa de sucesso, TTFT, velocidade de saída, rácios de

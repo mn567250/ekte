@@ -39,6 +39,12 @@ Cada monitor tiene su propio idioma de alertas (por defecto, el de la interfaz),
 puede ejecutarse ahora, pausarse o eliminarse, y queda anclado al perfil de la
 base de conocimiento con el que se creó hasta que lo vuelvas a anclar.
 
+Cada ejecución de un monitor y cada ciclo de `ekte watch` conserva sus
+peticiones y respuestas originales con la ejecución guardada (vea
+[Privacidad](privacy.md)); el ajuste **Peticiones/respuestas originales** de un
+monitor (**Conservar** / **No conservar**) y `ekte watch --no-evidence` lo
+desactivan.
+
 Los monitores a los que les toca ejecutarse lo hacen a la vez, cada uno como su
 propia auditoría, pero nunca más de una auditoría a la vez por host de relay y
 como máximo `EKTE_MAX_PARALLEL_AUDITS` en total; una ejecución espera a que haya

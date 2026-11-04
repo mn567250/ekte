@@ -298,6 +298,13 @@
             </div>
             <div class="hint" id="pmode-hint"></div>
           </div>
+          <div class="grp" id="evkeep-grp">
+            <span class="lab" id="lab-evkeep" data-en="Raw requests/responses">原始请求/响应</span>
+            <div class="seg" id="evkeep" role="group" aria-labelledby="lab-evkeep" aria-describedby="evkeep-hint">
+              <button type="button" aria-pressed="true" data-v="keep" data-en="Keep">保留</button><button type="button" aria-pressed="false" data-v="drop" data-en="Don't keep">不保留</button>
+            </div>
+            <div class="hint" id="evkeep-hint" data-en="Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.">随保存的检测结果存放在数据目录中（已去除你的密钥），每个发现都可以对照实际发送和收到的内容核验。</div>
+          </div>
 
           <div class="disclosure-box cmp" id="cmp">
             <button type="button" class="disclosure" id="cmp-t" aria-expanded="false" aria-controls="cmp-body">
@@ -773,6 +780,8 @@
       suite: segVal("suite"),
       surface: surfaceVal(),
       performance_streaming: segVal("pmode") === "stream",
+      // the run's raw request/response pairs go with the saved report
+      evidence: segVal("evkeep") !== "drop",
     };
     if (payload.surface !== "chat") {
       // the protocol and the probe request mode are chat settings
@@ -948,7 +957,7 @@
       state.finished = true;
       // the live chart's time axis stops at the last request
       if (live) live.stop();
-      showReport(ev.report);
+      showReport(ev.report, ev.report_id);
     } else if (ev.type === "error") {
       state.finished = true;
       if (live) live.stop();
@@ -1044,7 +1053,7 @@
   }
 
   // ---------- step 3: report ----------
-  function showReport(report) {
+  function showReport(report, reportId) {
     lastReport = report;
     $("#radar").classList.add("done");
     $("#bg").hidden = true;
@@ -1054,6 +1063,8 @@
         { zh: "再测一个", en: "Test another", onClick: function () { setJobParam(null); go(1); } },
       ],
       download: { name: "ekte-report" },
+      // the saved run (when it was saved): its raw request/response pairs
+      historyId: reportId != null ? reportId : null,
     });
     $("#cmp-tip").hidden = !!report.baseline;
     go(3);

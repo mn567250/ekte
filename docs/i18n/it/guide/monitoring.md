@@ -40,6 +40,11 @@ quella dell'interfaccia), si può eseguire subito, mettere in pausa o eliminare,
 e resta legato al profilo della base di conoscenza con cui è stato creato finché
 non lo ricolleghi.
 
+Ogni esecuzione di un monitor e ogni ciclo di `ekte watch` conserva le sue
+richieste e risposte grezze con l'esecuzione salvata (vedi [Privacy](privacy.md));
+l'opzione **Richieste/risposte grezze** di un monitor (**Conserva** / **Non
+conservare**) e `ekte watch --no-evidence` lo disattivano.
+
 I monitor in scadenza vengono eseguiti contemporaneamente, ciascuno come audit a
 sé, ma mai più di un audit alla volta per host di relay e al massimo
 `EKTE_MAX_PARALLEL_AUDITS` in totale; un'esecuzione attende che si liberi un posto

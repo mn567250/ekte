@@ -22,3 +22,21 @@
 报告包含结论（风险、置信度、分数、评级）、带建议的关键发现、各维度得分与 **Dimension details**、
 每个检测器的发现及证据、性能部分、所用的知识库画像以及探测语言。由中转站控制的文本在写出前都会
 经过脱敏和转义。
+
+## 证据文件
+
+使用 `--evidence PATH`（`check`、`compare`、`image`、`audio`）时，以及每次保存到历史记录的检测默认情况下，
+ekte 还会把这次检测的每一个原始 HTTP 请求和响应写入一个文件：一条 zstd 流中的 JSON Lines，
+`<run_id>.jsonl.zst`（作为 `PATH` 给出的目录会得到这个文件名）。第一行描述这次检测；
+之后每一行是一个请求及其响应，包括响应每一块到达的时间。某行的 `seq` 就是该请求在报告
+`performance.requests` 中的 `seq`，因此报告列出的每个请求都能查到。报告的 `evidence`
+给出文件名、其 SHA-256 和交换次数。
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+密钥和敏感请求头在写入前即被去除（见[隐私](privacy.md)）。每一行都符合
+`ekte/schemas/evidence.schema.json`（[Schema](../../../reference/schemas.md)）。在 Web 界面中，
+已保存检测的某个发现下的 **查看证据** 会列出其背后检测项的请求，并可打开每个原始请求和响应。

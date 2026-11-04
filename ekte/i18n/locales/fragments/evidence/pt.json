@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Raw evidence": "Evidência bruta",
+  "Evidence file": "Ficheiro de evidências",
+  "{n} request/response pairs · zstd-compressed JSON Lines": "{n} pares de pedido/resposta · JSON Lines comprimido com zstd",
+  "Loading the raw requests…": "A carregar os pedidos brutos…",
+  "Raw requests and responses": "Pedidos e respostas brutos",
+  "The evidence file does not match the SHA-256 the report records.": "O ficheiro de evidências não corresponde ao SHA-256 registado no relatório.",
+  "The {n} request/response pairs of this check, in the order they finished.": "Os {n} pares de pedido/resposta desta verificação, pela ordem em que terminaram.",
+  "This check sent no requests.": "Esta verificação não enviou pedidos.",
+  "Could not load the raw evidence: ": "Não foi possível carregar a evidência bruta: ",
+  "Judge": "Modelo avaliador",
+  "no response": "sem resposta",
+  "{n} bytes": "{n} bytes",
+  "Request": "Pedido",
+  "Response": "Resposta",
+  "Binary body ({b}), in the evidence file.": "Conteúdo binário ({b}), no ficheiro de evidências.",
+  "Only the first {n} characters are shown here; the evidence file has all of it.": "Aqui só são mostrados os primeiros {n} caracteres; o ficheiro de evidências tem tudo.",
+  "The body was cut when it was recorded.": "O conteúdo foi cortado ao ser registado.",
+  "Arrived in {n} chunks over {ms} ms.": "Chegou em {n} partes ao longo de {ms} ms.",
+  "Received in full after {ms} ms.": "Recebido por completo após {ms} ms.",
+  "No response was received.": "Não foi recebida nenhuma resposta.",
+  "Raw requests/responses": "Pedidos/respostas brutos",
+  "Keep": "Manter",
+  "Don't keep": "Não manter",
+  "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Guardado com a execução no diretório de dados, sem as suas chaves, para que cada constatação possa ser verificada face ao que foi realmente enviado e recebido.",
+  "Saved: the next runs keep their raw requests and responses accordingly.": "Guardado: as próximas execuções mantêm ou não os pedidos e respostas brutos conforme esta opção."
+ }
+}

@@ -25,6 +25,18 @@
   per kjøring og `history_requests` hver forespørselspost (lagret der én gang,
   ikke inne i hver lagrede rapport). Ikke legg `watches.db` inn i
   versjonskontroll hvis den mappen er et repo.
+- **Bevisfiler.** En kjøring som lagres i historikken (nettgrensesnittet,
+  overvåking, `ekte watch`, `ekte embed`, `ekte rerank`) beholder også hver rå
+  forespørsel og hvert svar den utvekslet, i `evidence/<run_id>.jsonl.zst` i
+  datakatalogen, slik at hvert funn kan kontrolleres mot nøyaktig det som ble
+  sendt og mottatt. API-nøklene dine, verdiene til `--header`, `Authorization`,
+  informasjonskapsler og de andre sensitive hodene fjernes før noe skrives;
+  prompter og svar beholdes som de var. Sletter du en kjøring, slettes filen.
+  Slå det av per kjøring (innstillingen **Rå forespørsler/svar** i
+  revisjonsskjemaet, eller `"evidence": false` i `POST /api/v1/jobs`), per
+  overvåking eller for hele serveren (`ekte serve --no-evidence`,
+  `EKTE_NO_EVIDENCE=1`). `ekte check`, `compare`, `image` og `audio` beholder
+  ingenting uten `--evidence PATH` (se [Rapporter](reports.md)).
 
 ## Ansvarlig bruk
 

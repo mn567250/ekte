@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Raw evidence": "Raw evidence",
+  "Evidence file": "Evidence file",
+  "{n} request/response pairs · zstd-compressed JSON Lines": "{n} request/response pairs · zstd-compressed JSON Lines",
+  "Loading the raw requests…": "Loading the raw requests…",
+  "Raw requests and responses": "Raw requests and responses",
+  "The evidence file does not match the SHA-256 the report records.": "The evidence file does not match the SHA-256 the report records.",
+  "The {n} request/response pairs of this check, in the order they finished.": "The {n} request/response pairs of this check, in the order they finished.",
+  "This check sent no requests.": "This check sent no requests.",
+  "Could not load the raw evidence: ": "Could not load the raw evidence: ",
+  "Judge": "Judge",
+  "no response": "no response",
+  "{n} bytes": "{n} bytes",
+  "Request": "Request",
+  "Response": "Response",
+  "Binary body ({b}), in the evidence file.": "Binary body ({b}), in the evidence file.",
+  "Only the first {n} characters are shown here; the evidence file has all of it.": "Only the first {n} characters are shown here; the evidence file has all of it.",
+  "The body was cut when it was recorded.": "The body was cut when it was recorded.",
+  "Arrived in {n} chunks over {ms} ms.": "Arrived in {n} chunks over {ms} ms.",
+  "Received in full after {ms} ms.": "Received in full after {ms} ms.",
+  "No response was received.": "No response was received.",
+  "Raw requests/responses": "Raw requests/responses",
+  "Keep": "Keep",
+  "Don't keep": "Don't keep",
+  "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.",
+  "Saved: the next runs keep their raw requests and responses accordingly.": "Saved: the next runs keep their raw requests and responses accordingly."
+ }
+}

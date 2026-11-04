@@ -1,6 +1,6 @@
-# Report and webhook schemas
+# Report, webhook and evidence schemas
 
-The report JSON and the generic webhook payload each carry a `schema_version`
+The report JSON, the generic webhook payload and the lines of an evidence file each carry a `schema_version`
 and have a published [JSON Schema](https://json-schema.org/) (draft 2020-12).
 The compatibility rules are in the
 [stability policy](stability.md#surface-report); this page describes the formats.
@@ -8,8 +8,9 @@ The English text is canonical; this document is not translated.
 
 | Document | Schema file | Version field | Current |
 |---|---|---|---|
-| Report (`ekte check --json`, `--format json`, history) | [`ekte/schemas/report.schema.json`](../../ekte/schemas/report.schema.json) | `schema_version` | 1.1 |
+| Report (`ekte check --json`, `--format json`, history) | [`ekte/schemas/report.schema.json`](../../ekte/schemas/report.schema.json) | `schema_version` | 1.2 |
 | Generic webhook payload (`ekte watch`, monitors) | [`ekte/schemas/webhook.schema.json`](../../ekte/schemas/webhook.schema.json) | `schema_version` | 1.0 |
+| Evidence file line (`--evidence`, history runs) | [`ekte/schemas/evidence.schema.json`](../../ekte/schemas/evidence.schema.json) | `schema_version` of the header line | 1.0 |
 
 The files are generated from the code that produces the documents (the
 `AuditReport` model and the `WebhookPayload` model in `ekte/schemas/`), ship in
@@ -92,3 +93,31 @@ After changing `AuditReport` or the webhook payload:
 
 `tests/test_schemas.py` fails if the files are stale, or if a schema changed
 without a version bump, and validates real outputs against the schemas.
+
+## Evidence files
+
+An evidence file is JSON Lines in one zstd stream (`<run_id>.jsonl.zst`): every
+raw HTTP request and response of one run, keys and sensitive headers removed
+(see [Reports](../guide/reports.md)). Each line is one JSON document matching
+`evidence.schema.json`, told apart by `type`:
+
+- `header` (the first line): `schema_version`, `tool_version`, `run_id`,
+  `started_at` (the report's), `mode`, `suite`, `surface`, `target`, `baseline`.
+- `exchange` (every further line): `id` (unique in the file, in the order the
+  calls finished), `seq` (the request's `seq` in the report's
+  `performance.requests`; `null` for calls without a record: the LLM judge,
+  image and audio audits), `endpoint`, `detector`, `op`, `start_ms` (since the
+  run started), `request` (`method`, `url`, `headers`, `body`), `response`
+  (`status`, `http_version`, `headers`, `body`, `chunks`, `done_ms`,
+  `read_to_end`; `null` when none arrived) and `error`.
+
+A `body` holds `text` (the body with any `Content-Encoding` undone; base64 when
+it is not UTF-8, `encoding` says which), its original `bytes` and `sha256`, and
+`truncated`. `chunks` are `[ms since the request started, bytes received so
+far]` pairs: how the response arrived. The report names its file in `evidence`
+(`run_id`, `file`, `sha256`, `exchanges`, `bytes`, `schema_version`,
+`complete`); a reader can check the file against that hash.
+
+```json
+{"type": "exchange", "id": 13, "seq": 12, "endpoint": "target", "detector": "streaming", "op": "complete", "start_ms": 5120.4, "request": {"method": "POST", "url": "https://relay.example.com/v1/chat/completions", "headers": {"authorization": "«redacted»"}, "body": {"text": "{...}", "encoding": "utf-8", "bytes": 312, "sha256": "...", "truncated": false}}, "response": {"status": 200, "http_version": "HTTP/1.1", "headers": {}, "body": {"text": "data: {...}", "encoding": "utf-8", "bytes": 9123, "sha256": "...", "truncated": false}, "chunks": [[412.0, 180], [433.5, 361]], "done_ms": 1290.2, "read_to_end": false}, "error": null}
+```

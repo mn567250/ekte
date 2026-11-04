@@ -79,6 +79,16 @@ los modelos servidos desde tu propia máquina también esperan); las de relays
 distintos se ejecutan en paralelo, como máximo cuatro a la vez
 (`EKTE_MAX_PARALLEL_AUDITS`). Los monitores esperan a su relay del mismo modo.
 
+**Peticiones y respuestas originales.** Una ejecución guardada en el
+**Historial** conserva cada petición y respuesta original que intercambió (vea
+[Privacidad](privacy.md)). En su informe, **Ver evidencia** bajo un hallazgo
+lista las peticiones de la comprobación correspondiente; cada una abre la
+petición tal como se envió y la respuesta tal como se recibió, con la llegada de
+sus fragmentos, y **Evidencia original** → **Archivo de evidencia** las descarga
+todas. El ajuste **Peticiones/respuestas originales** del formulario de
+auditoría (**Conservar** / **No conservar**) lo decide por ejecución; cada
+monitor tiene el mismo ajuste en **Monitores**.
+
 **Analítica.** `/analytics` convierte el historial local
 en comparaciones: indicadores del periodo elegido (ejecuciones, puntuación
 mediana, proporción de riesgo alto, tasa de éxito, TTFT, velocidad de salida,

@@ -74,3 +74,16 @@ def test_api_key_never_echoed() -> None:
     )
     # The key only ever flows through the env var, not `inputs.api-key` directly.
     assert "inputs.api-key" not in audit["run"]
+
+
+def test_evidence_is_opt_in_and_uploaded_even_when_the_gate_fails() -> None:
+    action = _load()
+    assert action["inputs"]["evidence"]["default"] == "false"
+    assert "steps.audit.outputs.evidence-file" in action["outputs"]["evidence-file"]["value"]
+    steps = action["runs"]["steps"]
+    audit = next(s for s in steps if s.get("id") == "audit")
+    assert "--evidence" in audit["run"] and "IN_EVIDENCE" in audit["env"]
+    assert "inputs.evidence" not in audit["run"]  # through the environment only
+    upload = next(s for s in steps if str(s.get("uses", "")).startswith("actions/upload-artifact@"))
+    assert upload["if"].startswith("${{ always() && inputs.evidence == 'true'")
+    assert upload["with"]["path"] == "${{ steps.audit.outputs.evidence-file }}"

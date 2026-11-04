@@ -25,3 +25,26 @@ viktigste funnene med anbefalinger, scorene per dimensjon og **Dimension
 details**, funnene fra hver detektor med bevis, ytelsesdelen, profilen fra
 kunnskapsbasen som ble brukt, og probespråkene. Tekst som reléet styrer, sladdes
 og escapes før den skrives.
+
+## Bevisfiler
+
+Med `--evidence PATH` (`check`, `compare`, `image`, `audio`), og som standard
+for hver kjøring som lagres i historikken, skriver ekte også hver rå
+HTTP-forespørsel og hvert svar fra kjøringen til én fil: JSON Lines i én
+zstd-strøm, `<run_id>.jsonl.zst` (en katalog oppgitt som `PATH` får dette
+navnet). Første linje beskriver kjøringen; hver videre linje er én forespørsel
+med svaret, inkludert når hver del av svaret kom. `seq` på en linje er
+forespørselens `seq` i rapportens `performance.requests`, så hver forespørsel
+rapporten lister kan slås opp. Rapportens `evidence` navngir filen med SHA-256
+og antall utvekslinger.
+
+```bash
+ekte check --base-url https://relay.example.com/v1 --model gpt-4o --evidence reports/
+zstd -dc reports/<run_id>.jsonl.zst | jq -c 'select(.seq == 12)'
+```
+
+Nøkler og sensitive hoder fjernes før noe skrives (se [Personvern](privacy.md)).
+Hver linje følger `ekte/schemas/evidence.schema.json`
+([Skjemaer](../../../reference/schemas.md)). I nettgrensesnittet lister **Vis
+bevis** under et funn i en lagret kjøring forespørslene i kontrollen bak det og
+åpner hver rå forespørsel og hvert svar.
