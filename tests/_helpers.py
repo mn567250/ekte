@@ -34,6 +34,16 @@ def run_subprocess(
     return subprocess.run(args, **kwargs)
 
 
+def unwrapped(text: str) -> str:
+    """``text`` with every run of whitespace, line breaks included, as one space.
+
+    For phrases in CLI output: Rich wraps a long line at the console width (80
+    columns under CliRunner), so where a phrase is split depends on what comes
+    before it, such as a temporary path whose length differs per xdist worker.
+    """
+    return " ".join(text.split())
+
+
 @dataclass
 class MockServer:
     """A configurable OpenAI-compatible endpoint backed by ``httpx.MockTransport``.
