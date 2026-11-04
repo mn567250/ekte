@@ -1151,6 +1151,10 @@
     if (b.truncated) note = (note ? note + " " : "") + T("记录时内容已被截断。", "The body was cut when it was recorded.");
     return { text: cut ? t.slice(0, RAW_SHOW) + "\n…" : t, note: note };
   }
+  // milliseconds: one decimal below 10 ms, so a fast local exchange is not "0 ms"
+  function msNum(ms) {
+    return num(ms, ms < 10 ? 1 : 0);
+  }
   function pairHTML(x) {
     var q = x.request || {}, p = x.response;
     var qb = bodyText(q.body), parts = [];
@@ -1162,8 +1166,8 @@
     if (p) {
       var pb = bodyText(p.body);
       var timing = (p.chunks || []).length > 1
-        ? Tf("分 {n} 块到达，历时 {ms} 毫秒。", "Arrived in {n} chunks over {ms} ms.", { n: num(p.chunks.length, 0), ms: num(p.done_ms || 0, 0) })
-        : p.done_ms != null ? Tf("{ms} 毫秒后收完。", "Received in full after {ms} ms.", { ms: num(p.done_ms, 0) }) : "";
+        ? Tf("分 {n} 块到达，历时 {ms} 毫秒。", "Arrived in {n} chunks over {ms} ms.", { n: num(p.chunks.length, 0), ms: msNum(p.done_ms || 0) })
+        : p.done_ms != null ? Tf("{ms} 毫秒后收完。", "Received in full after {ms} ms.", { ms: msNum(p.done_ms) }) : "";
       parts.push(
         "<h6>" + esc(T("响应", "Response")) + "</h6>" +
         '<pre class="ev raw">' + escEv((p.http_version || "HTTP") + " " + p.status + "\n" + headLines(p.headers) + (pb.text ? "\n\n" + pb.text : "")) + "</pre>" +
