@@ -503,11 +503,20 @@ class EvidenceWriter:
 # --------------------------------------------------------------------------- #
 # Reading
 # --------------------------------------------------------------------------- #
+class EvidenceVersionError(ValueError):
+    """An evidence file of a major schema version this ekte does not read."""
+
+    # What a client is told (the exception text names the versions; it goes
+    # to the log, not to an HTTP response).
+    PUBLIC = "this evidence file has a schema version this ekte cannot read; update ekte"
+
+
 def iter_lines(path: Path) -> Iterator[dict[str, Any]]:
     """Every line of an evidence file as a dict, validated against the models.
 
     A ``.part`` file (or one cut short) yields its complete lines and stops.
-    Raises ``ValueError`` for a file of a newer major schema version.
+    Raises :class:`EvidenceVersionError` for a file of another major schema
+    version, ``ValueError`` for a line that is not JSON.
     """
     import zstandard
 
@@ -525,7 +534,7 @@ def iter_lines(path: Path) -> Iterator[dict[str, Any]]:
                     version = str(data.get("schema_version") or "1.0")
                     major = version.split(".", 1)[0]
                     if major != EVIDENCE_SCHEMA_VERSION.split(".", 1)[0]:
-                        raise ValueError(
+                        raise EvidenceVersionError(
                             f"evidence file schema {version} is not supported by this ekte "
                             f"(reads {EVIDENCE_SCHEMA_VERSION.split('.', 1)[0]}.x)"
                         )

@@ -242,22 +242,42 @@ def _config(t: dict[str, Any] | None, kind: str) -> TargetConfig | None:
     )
 
 
+# Why a file cannot be replayed for a report: fixed texts, safe to show a client.
+NO_EVIDENCE = "this report kept no evidence: there is nothing to replay"
+HASH_DIFFERS = "the evidence file is not the one the report names (its SHA-256 differs)"
+NO_OPTIONS = "this evidence file does not record the run's options; it cannot be replayed"
+NO_TARGET = "this evidence file names no target"
+UNREADABLE = "the evidence file cannot be read"
+
+
+def refusal(report: dict[str, Any], path: Path) -> str | None:
+    """Why ``path`` cannot be replayed for ``report`` (one of the fixed texts
+    above), or None when it can. Blocking: reads and hashes the file."""
+    ref_raw = report.get("evidence")
+    if not isinstance(ref_raw, dict):
+        return NO_EVIDENCE
+    if evidence.sha256_of(path) != EvidenceRef(**ref_raw).sha256:
+        return HASH_DIFFERS
+    try:
+        head = evidence.header(path) or {}
+    except evidence.EvidenceVersionError:
+        return evidence.EvidenceVersionError.PUBLIC
+    except ValueError:
+        return UNREADABLE
+    if not head.get("options"):
+        return NO_OPTIONS
+    if not head.get("target"):
+        return NO_TARGET
+    return None
+
+
 def check(report: dict[str, Any], path: Path) -> tuple[EvidenceRef, list[dict[str, Any]]]:
     """The report's evidence reference and the file's lines, if ``path`` can
     be replayed for ``report`` (blocking); else ``ValueError`` saying why."""
-    ref_raw = report.get("evidence")
-    if not isinstance(ref_raw, dict):
-        raise ValueError("this report kept no evidence: there is nothing to replay")
-    ref = EvidenceRef(**ref_raw)
-    if evidence.sha256_of(path) != ref.sha256:
-        raise ValueError("the evidence file is not the one the report names (its SHA-256 differs)")
-    lines = list(evidence.iter_lines(path))
-    head = lines[0] if lines and lines[0].get("type") == "header" else {}
-    if not head.get("options"):
-        raise ValueError("this evidence file does not record the run's options; it cannot be replayed")
-    if not head.get("target"):
-        raise ValueError("this evidence file names no target")
-    return ref, lines
+    reason = refusal(report, path)
+    if reason is not None:
+        raise ValueError(reason)
+    return EvidenceRef(**report["evidence"]), list(evidence.iter_lines(path))
 
 
 async def rescore(

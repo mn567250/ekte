@@ -1369,8 +1369,12 @@ def create_app() -> FastAPI:
                     "exchanges": rows,
                 }, headers={"Cache-Control": "no-store"})
             lines = evidence.exchanges(path, seq=seq, line_id=id)
-        except ValueError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=409)
+        except evidence.EvidenceVersionError:
+            _log.warning("evidence file of run %s: unsupported schema version", rid, exc_info=True)
+            return JSONResponse({"error": evidence.EvidenceVersionError.PUBLIC}, status_code=409)
+        except ValueError:
+            _log.warning("evidence file of run %s cannot be read", rid, exc_info=True)
+            return JSONResponse({"error": "the evidence file cannot be read"}, status_code=409)
         if not lines:
             return JSONResponse({"error": "no such exchange"}, status_code=404)
         return JSONResponse({"run_id": ref.get("run_id"), "exchanges": lines},
@@ -1389,10 +1393,9 @@ def create_app() -> FastAPI:
             return JSONResponse({"error": "not found"}, status_code=404)
         if path is None:
             return JSONResponse({"error": "this run kept no evidence: there is nothing to replay"}, status_code=409)
-        try:
-            await asyncio.to_thread(replay.check, report, path)
-        except ValueError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=409)
+        reason = await asyncio.to_thread(replay.refusal, report, path)
+        if reason is not None:
+            return JSONResponse({"error": reason}, status_code=409)
         t = report.get("target") or {}
 
         async def run(emit: jobs.Emit) -> dict[str, Any]:
@@ -1443,8 +1446,12 @@ def create_app() -> FastAPI:
                 doc = evidence.export_har(path, seq) if format == "har" else evidence.export_json(path, seq)
                 body = json.dumps(doc, ensure_ascii=False, indent=2)
                 media, ext = "application/json", format
-        except ValueError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=409)
+        except evidence.EvidenceVersionError:
+            _log.warning("evidence file of run %s: unsupported schema version", rid, exc_info=True)
+            return JSONResponse({"error": evidence.EvidenceVersionError.PUBLIC}, status_code=409)
+        except ValueError:
+            _log.warning("evidence file of run %s cannot be read", rid, exc_info=True)
+            return JSONResponse({"error": "the evidence file cannot be read"}, status_code=409)
         stem = f"ekte-evidence-{rid}" + (f"-seq{'-'.join(map(str, seq))}" if seq else "")
         return Response(body, media_type=media, headers={
             "Content-Disposition": f'attachment; filename="{stem}.{ext}"',

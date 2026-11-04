@@ -220,3 +220,28 @@ def test_cli_rescores_a_saved_run_or_a_report_file(saved, tmp_path):
 
     assert CliRunner().invoke(app, ["rescore", str(report_file)]).exit_code == 2  # no --evidence
     assert CliRunner().invoke(app, ["rescore", "4242"]).exit_code == 2
+
+
+def test_api_errors_carry_fixed_texts_only(saved):
+    # CodeQL py/stack-trace-exposure: no exception text in a response
+    import zstandard
+
+    from ekte.web import history
+    from ekte.web.server import create_app
+
+    rid, path = saved
+    with TestClient(create_app(), base_url="http://localhost") as client:
+        # a replay refused for a fixed reason (the file was changed)
+        path.write_bytes(path.read_bytes() + zstandard.ZstdCompressor().compress(b""))
+        r = client.post(f"/api/v1/history/{rid}/rescore")
+        assert r.status_code == 409 and r.json() == {"error": replay.HASH_DIFFERS}
+        # a file of a newer major schema version
+        with open(path, "wb") as fh, zstandard.ZstdCompressor().stream_writer(fh) as z:
+            z.write(b'{"type": "header", "schema_version": "9.0"}\n')
+        for url in (f"/api/v1/history/{rid}/evidence/exchanges",
+                    f"/api/v1/history/{rid}/evidence/export"):
+            r = client.get(url)
+            assert r.status_code == 409
+            assert r.json() == {"error": evidence.EvidenceVersionError.PUBLIC}
+            assert "9.0" not in r.text
+        assert history.get(rid) is not None
