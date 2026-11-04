@@ -22,7 +22,7 @@ from ekte.config import AuditOptions
 from ekte.evidence import EvidenceHeader, EvidenceLine, EvidenceWriter
 from ekte.models import RedactedTarget, RequestSpec, TargetConfig
 from ekte.utils.redact import REDACTED, REDACTED_KEY
-from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
+from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer, unwrapped
 
 KEY = "sk-test-secret-key-do-not-leak"
 HEADER_SECRET = "hdr-secret-value-123456"
@@ -520,7 +520,8 @@ def test_cli_refuses_an_evidence_path_in_a_missing_directory(data, tmp_path):
         "check", "--base-url", BASE_URL, "--model", DEFAULT_MODEL, "--suite", "smoke",
         "--evidence", str(tmp_path / "nope" / "e.jsonl.zst"),
     ])
-    assert res.exit_code == 2 and "does not" in res.output and "--evidence" in res.output
+    # the message holds tmp_path, so where Rich wraps it varies (#96)
+    assert res.exit_code == 2 and "does not exist" in unwrapped(res.output) and "--evidence" in res.output
 
 
 @pytest.mark.parametrize("flag", [[], ["--no-evidence"]])

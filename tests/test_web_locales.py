@@ -12,10 +12,11 @@ import ast
 import json
 import re
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from tests._helpers import run_subprocess
 
 _LOCALE_CHECK_JS = r"""
 const path = require("path");
@@ -76,7 +77,7 @@ def test_every_ui_language_is_complete(tmp_path):
     # Every language in lang.js's LANG_LIST (besides EN, the key language, and
     # CN, the original markup) must translate every UI string and finding,
     # keeping placeholders and inline markup intact.
-    out = subprocess.run(
+    out = run_subprocess(
         ["node", "-e", _LOCALE_CHECK_JS, str(_ui_js(tmp_path))],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
@@ -142,7 +143,7 @@ def test_downloaded_report_is_translated_with_english_keys(tmp_path):
     from ekte.models import AuditReport
 
     here = Path(__file__).resolve().parent
-    out = subprocess.run(
+    out = run_subprocess(
         ["node", "-e", _EXPORT_JS, str(_ui_js(tmp_path)), str(here / "fixtures" / "web_report.json")],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
@@ -251,7 +252,7 @@ def test_server_text_is_chinese_in_zh(tmp_path):
     here = Path(__file__).resolve().parent
     fixture = here / "fixtures" / "web_report.json"
     extra = _backend_sentences()
-    out = subprocess.run(
+    out = run_subprocess(
         ["node", "-e", _SERVER_ZH_JS, str(_ui_js(tmp_path)), str(fixture), json.dumps(extra)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
@@ -319,7 +320,7 @@ def test_hidden_page_is_revealed_if_boot_never_runs(tmp_path):
     # runs (e.g. a later script throws), a timer or the first error reveals it.
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
     shutil.copy(static / "lang.js", tmp_path / "lang.js")
-    out = subprocess.run(
+    out = run_subprocess(
         ["node", "-e", _VISIBILITY_JS, str(tmp_path)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout
     r = json.loads(out)
@@ -534,7 +535,7 @@ def test_lang_js_loads_the_missing_language_bundle(tmp_path):
     _ui_js(tmp_path)
     for code in i18n.codes():
         (tmp_path / f"locales-{code}.js").write_text(i18n.locales_script(code), encoding="utf-8")
-    r = json.loads(subprocess.run(
+    r = json.loads(run_subprocess(
         ["node", "-e", _SWITCH_JS, str(tmp_path)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     de_history = i18n.ui("de", "History")
@@ -643,7 +644,7 @@ def test_shared_intl_formatters_are_cached_per_locale(tmp_path):
 
     (tmp_path / "locales.js").write_text(locales_script(), encoding="utf-8")
     shutil.copy(_STATIC / "lang.js", tmp_path / "lang.js")
-    res = json.loads(subprocess.run(
+    res = json.loads(run_subprocess(
         ["node", "-e", _INTL_JS, str(tmp_path)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     out = res["out"]
@@ -739,7 +740,7 @@ def test_fingerprint_findings_get_distinct_localized_titles(tmp_path):
     from ekte import i18n
 
     signals = sorted(_kb_signals())
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _FP_TITLES_JS, str(_ui_js(tmp_path)), json.dumps(signals)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -883,7 +884,7 @@ console.log(JSON.stringify(out));
 def test_pass_and_fail_of_one_check_get_different_localized_titles(tmp_path):
     from ekte import i18n
 
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _PASS_FAIL_JS, str(_ui_js(tmp_path)), json.dumps(_PASS_FAIL)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)

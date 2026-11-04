@@ -6,13 +6,13 @@ import json
 import os
 import re
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
 
 from ekte.models import RequestRecord
 from ekte.perf import build_performance
+from tests._helpers import run_subprocess
 
 _JS = r"""
 const path = require("path");
@@ -42,7 +42,7 @@ def test_perf_js_renders_section_and_chart():
     perf = build_performance(recs, has_baseline=True, probe_max_tokens=128)
     assert perf is not None
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _JS, str(static), perf.model_dump_json()],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -72,7 +72,7 @@ def test_perf_js_colors_deltas_and_shows_both_modes():
     perf = build_performance(recs, has_baseline=True)
     assert perf is not None and [m.mode for m in perf.modes] == ["non_stream"]
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
-    section = json.loads(subprocess.run(
+    section = json.loads(run_subprocess(
         ["node", "-e", _JS, str(static), perf.model_dump_json()],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["section"]
@@ -89,7 +89,7 @@ _STATIC = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
 
 def _render(perf_json: str) -> dict:
     js = _JS.replace("tps: P.chart(perf.requests, \"tps\"),", "tps: P.chart(perf.requests, \"tps\"), css: P.CSS,")
-    return json.loads(subprocess.run(
+    return json.loads(run_subprocess(
         ["node", "-e", js, str(_STATIC), perf_json], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
 
@@ -165,7 +165,7 @@ console.log(JSON.stringify({ html: host.innerHTML }));
 
 def _live(recs: list[RequestRecord]) -> str:
     payload = json.dumps([r.model_dump() for r in recs])
-    return json.loads(subprocess.run(
+    return json.loads(run_subprocess(
         ["node", "-e", _LIVE_JS, str(_STATIC), payload], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["html"]
 
@@ -212,7 +212,7 @@ def test_perf_js_axes_fit_the_data():
              "stream": True, "start_ms": i * 50_000.0, "duration_ms": 900.0, "ttft_ms": 300.0 + i * 5}
             for i in range(11)]
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _AXIS_JS, str(static), json.dumps(recs)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -263,7 +263,7 @@ def test_perf_js_number_formatters_are_cached_with_the_same_output():
              "stream": True, "start_ms": i * 1000.0, "duration_ms": 1234.5, "ttft_ms": 12.25,
              "decode_tps_local": 0.5}
             for i in range(40)]
-    res = json.loads(subprocess.run(
+    res = json.loads(run_subprocess(
         ["node", "-e", _FMT_JS, str(_STATIC), json.dumps(recs)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     for locale, o in res["out"].items():
@@ -298,7 +298,7 @@ def test_live_builds_the_data_table_only_when_open():
     recs = [RequestRecord(seq=i, endpoint="target", phase="probe", op="complete", ok=i != 2, stream=True,
                           status_code=200 if i != 2 else 502, start_ms=i * 100.0, duration_ms=900.0)
             for i in range(4)]
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _LIVE_OPEN_JS, str(_STATIC), json.dumps([r.model_dump() for r in recs])],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -348,7 +348,7 @@ def test_live_embedding_audit_offers_latency_only_with_its_trend():
                           status_code=200, start_ms=i * 100.0, duration_ms=10.0 + i).model_dump()
             for i in range(6)]
     attach_trends(recs)
-    html = json.loads(subprocess.run(
+    html = json.loads(run_subprocess(
         ["node", "-e", _LIVE_OPEN_JS, str(_STATIC), json.dumps(recs)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["false"]
@@ -521,7 +521,7 @@ def _scale_records() -> list[dict]:
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_probe_focus_fixes_the_range_from_the_first_probe_requests():
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _SCALE_JS, str(_STATIC), json.dumps(_scale_records())],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -543,7 +543,7 @@ def test_probe_focus_fixes_the_range_from_the_first_probe_requests():
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_live_focuses_on_the_probe_while_it_runs_unless_the_user_chose():
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _SCALE_JS, str(_STATIC), json.dumps(_scale_records())],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
@@ -586,7 +586,7 @@ def test_web_and_export_charts_draw_the_same_trend_and_axes():
                           duration_ms=600.0 + (i * 37) % 250) for i in range(14)]
     dumped = [r.model_dump() for r in recs]
     attach_trends(dumped)  # as the web UI gets them
-    web = json.loads(subprocess.run(
+    web = json.loads(run_subprocess(
         ["node", "-e", _PARITY_JS, str(_STATIC), json.dumps(dumped)],
         capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)["chart"]

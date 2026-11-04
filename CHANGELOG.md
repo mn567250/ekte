@@ -111,6 +111,16 @@ ekte has three eras:
   ([#85](https://github.com/mn567250/ekte/issues/85))
 - **The performance chart sweeps in like the other line charts:** its p25–p75
   band grows out of its median line instead of fading in.
+- **A hung test fails within minutes and names itself.** `pytest-timeout` is
+  part of the `dev` extra and no test may take longer than 120 s
+  (`[tool.pytest.ini_options] timeout`), a browser accessibility test no
+  longer than 600 s; a test that does fails with its name, and in CI after a
+  dump of every thread's stack (`faulthandler_timeout`). Before, a test that hung now and then
+  kept a CI job silent until the job's 30-minute limit cancelled it, without
+  saying which test it was. The CI test steps stop after 10 minutes, list
+  the 20 slowest tests, and every child process a test starts (`node`, `git`,
+  `python -m ekte`, `sh`) times out after 60 s (`tests._helpers.run_subprocess`)
+  ([#97](https://github.com/mn567250/ekte/issues/97)).
 
 ### Fixed
 

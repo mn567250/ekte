@@ -15,7 +15,7 @@ from ekte.clients import make_client as real_make_client
 from ekte.config import AuditOptions
 from ekte.models import EvidenceRef, Status
 from ekte.perf.recorder import REPLAY_MISS_SEQ
-from tests._helpers import BASE_URL, MockServer
+from tests._helpers import BASE_URL, MockServer, unwrapped
 from tests.test_evidence import _chunked, _target
 
 DISHONEST = {
@@ -209,7 +209,8 @@ def test_cli_rescores_a_saved_run_or_a_report_file(saved, tmp_path):
     rid, path = saved
     res = CliRunner().invoke(app, ["rescore", str(rid)])
     assert res.exit_code == 0, res.output
-    assert "requests replayed" in res.output and "saved as run" in res.output
+    out = unwrapped(res.output)  # one long line, wrapped by Rich
+    assert "requests replayed" in out and "saved as run" in out
     assert history.recent(1)[0]["id"] != rid
 
     report_file = tmp_path / "report.json"

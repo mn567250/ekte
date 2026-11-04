@@ -57,18 +57,27 @@ jobs:
       - name: Type-check (mypy)
         run: mypy ekte
 
+      # A hung test fails after pytest-timeout's 120 s ([tool.pytest.ini_options]
+      # timeout) with its name; faulthandler_timeout prints every thread's
+      # stack 10 s before (pytest-timeout's own dump is lost under xdist). The
+      # step limits are the backstop for a hang outside a test (collection,
+      # xdist teardown); the suite takes 1-2 minutes on every runner.
+      # --durations lists the slowest tests, to spot one creeping towards the
+      # limit.
       - name: Test (pytest)
         if: matrix.os != 'ubuntu-latest' || matrix.python-version != '3.12'
+        timeout-minutes: 10
         # pytest-xdist (dev extra): one worker per CPU
-        run: pytest -q -n auto
+        run: pytest -q -n auto --durations=20 -o faulthandler_timeout=110
 
       - name: Test with coverage (pytest-cov)
         # One Linux run measures coverage: the whole package must stay above
         # [tool.coverage.report] fail_under, and the command line, the judge
         # and the media auditor above their floors (scripts/check_coverage.py).
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        timeout-minutes: 10
         run: |
-          pytest -q -n auto --cov=ekte --cov-report=term-missing:skip-covered --cov-report=json
+          pytest -q -n auto --durations=20 -o faulthandler_timeout=110 --cov=ekte --cov-report=term-missing:skip-covered --cov-report=json
           python scripts/check_coverage.py coverage.json
 
   a11y-scope:
@@ -166,7 +175,9 @@ jobs:
           EKTE_A11Y_RESULTS: a11y-results-${{ strategy.job-index }}.json
           # findings, one file per xdist worker (tests/a11y/harness.py)
           EKTE_A11Y_REPORT: a11y-report-${{ strategy.job-index }}.json
-        run: pytest tests/a11y -m a11y -n auto --dist worksteal -q -p no:cacheprovider
+        # each browser test may take 600 s (A11Y_TIMEOUT, tests/a11y/conftest.py);
+        # every thread's stack is printed 10 s before a hung one fails
+        run: pytest tests/a11y -m a11y -n auto --dist worksteal -q -p no:cacheprovider -o faulthandler_timeout=590
       - name: Upload shard results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

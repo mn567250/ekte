@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import shutil
-import subprocess
 
 import httpx
 import pytest
@@ -14,7 +13,7 @@ from fastapi.testclient import TestClient
 from ekte import evidence
 from ekte.clients import OpenAICompatibleClient
 from ekte.models import RequestSpec, TargetConfig
-from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer
+from tests._helpers import BASE_URL, DEFAULT_MODEL, MockServer, run_subprocess
 from tests.test_evidence import KEY, _audit, _chunked, _patch_clients
 
 
@@ -121,7 +120,7 @@ def test_curl_script_resends_without_the_key(run):
     assert script.count("curl -sS -X") == len(evidence.exchanges(path))
     assert "content-length" not in script and "--data-binary @- <<'EKTE_BODY'" in script
     if shutil.which("sh"):
-        subprocess.run(["sh", "-n"], input=script, text=True, check=True)
+        run_subprocess(["sh", "-n"], input=script, text=True, check=True)
 
 
 def test_curl_picks_a_delimiter_the_body_does_not_contain(tmp_path):

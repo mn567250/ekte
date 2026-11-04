@@ -6,10 +6,11 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from tests._helpers import run_subprocess
 
 _JS = r"""
 global.window = {};
@@ -44,7 +45,7 @@ console.log(JSON.stringify({
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_relaycfg_helpers():
     src = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static" / "v2" / "relaycfg.js"
-    out = json.loads(subprocess.run(["node", "-e", _JS, str(src)], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    out = json.loads(run_subprocess(["node", "-e", _JS, str(src)], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert out["norm"] == ["https://api.anthropic.com/v1", "http://h:1/v1", "", "https://x.example/v1"]
     # providers with base URLs, then the user's relays; one without a URL is left out
     assert out["groups"] == {"providers": ["openai", "deepseek"], "relays": ["my-relay"]}

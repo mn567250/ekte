@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -17,6 +16,7 @@ import pytest
 from typer.testing import CliRunner
 
 from ekte import cli, clidocs
+from tests._helpers import run_subprocess
 
 runner = CliRunner()
 ROOT = Path(__file__).resolve().parent.parent
@@ -157,7 +157,7 @@ def test_exit_4_unexpected_error(monkeypatch, capsys):
 
 
 def test_python_dash_m_ekte_runs():
-    res = subprocess.run([sys.executable, "-m", "ekte", "data-dir"], capture_output=True, text=True, encoding="utf-8")
+    res = run_subprocess([sys.executable, "-m", "ekte", "data-dir"], capture_output=True, text=True, encoding="utf-8")
     assert res.returncode == 0 and res.stdout.strip()
 
 

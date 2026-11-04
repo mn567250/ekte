@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
+
+from tests._helpers import run_subprocess
 
 _JS = r"""
 const path = require("path");
@@ -37,7 +38,7 @@ setTimeout(() => console.log(JSON.stringify({
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
 def test_secretfield_references_and_vault_storage():
     static = Path(__file__).resolve().parent.parent / "ekte" / "web" / "static"
-    out = json.loads(subprocess.run(
+    out = json.loads(run_subprocess(
         ["node", "-e", _JS, str(static)], capture_output=True, text=True, encoding="utf-8", check=True,
     ).stdout)
     # env:/file: references aren't secrets; everything else is.
