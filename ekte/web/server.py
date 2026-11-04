@@ -479,6 +479,11 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
                 job.waiting_for = []
                 job.emit({"type": "running", "job": job.id})
             started = time.perf_counter()
+            # The run's raw request/response pairs, unless the monitor (or
+            # the server) keeps none.
+            from ekte import evidence
+
+            keep = row.get("evidence") is not False and evidence.default_on()
             report = await run_audit(
                 target,
                 options,
@@ -487,6 +492,7 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
                 pinned=pinned,
                 on_event=on_event,
                 previous_report=drift_ref,
+                evidence=evidence.data_dir_path(evidence.new_run_id()) if keep else None,
             )
             duration = time.perf_counter() - started
         report_dict = json.loads(report.model_dump_json())
@@ -1088,7 +1094,14 @@ def create_app() -> FastAPI:
             ),
         )
 
+        # The job is saved to history, so it keeps its raw request/response
+        # pairs, unless the request (or the server) says otherwise.
+        from ekte import evidence
+
+        keep = body.get("evidence") is not False and evidence.default_on()
+
         async def run(emit: jobs.Emit) -> dict[str, Any]:
+            path = evidence.data_dir_path(evidence.new_run_id()) if keep else None
             if surface != "chat":
                 # The Tools' run (the surface's previous saved run as the drift
                 # reference), unsaved: the job saves it like a chat audit.
@@ -1096,7 +1109,7 @@ def create_app() -> FastAPI:
 
                 report, _ = await _run_surface(
                     target, options, kb_dirs=None, command=None, save=False,
-                    baseline=baseline, on_event=emit,
+                    baseline=baseline, on_event=emit, evidence=path,
                 )
             else:
                 report = await run_audit(
@@ -1105,6 +1118,7 @@ def create_app() -> FastAPI:
                     baseline=baseline,
                     mode="compare" if baseline is not None else "check",
                     on_event=emit,
+                    evidence=path,
                 )
             return json.loads(report.model_dump_json())
 

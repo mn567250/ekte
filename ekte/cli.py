@@ -161,6 +161,39 @@ _RISK_ORDER = [
 # --------------------------------------------------------------------------- #
 # Rendering
 # --------------------------------------------------------------------------- #
+_EVIDENCE_HELP = (
+    "Write every raw request/response pair of the run to this file (a zstd-compressed JSON "
+    "Lines file; a directory gets <run_id>.jsonl.zst). The report names it with its SHA-256."
+)
+_NO_EVIDENCE_HELP = (
+    "Keep no raw request/response pairs for runs saved to history "
+    "(kept by default, see the privacy guide). Env: EKTE_NO_EVIDENCE=1."
+)
+
+
+def _evidence_file(path: Path | None) -> Path | None:
+    """Where ``--evidence`` writes: the file, or ``<run_id>.jsonl.zst`` in a directory."""
+    if path is None:
+        return None
+    from ekte import evidence
+
+    path = path.expanduser()
+    if path.is_dir():
+        return path / f"{evidence.new_run_id()}{evidence.SUFFIX}"
+    if not path.parent.is_dir():
+        raise ConfigError(f"--evidence: directory {path.parent} does not exist")
+    return path
+
+
+def _print_evidence(report: AuditReport, path: Path | None) -> None:
+    ref = report.evidence
+    if ref is None or path is None:
+        return
+    console.print(
+        f"[dim]Evidence: {path} · {ref.exchanges} exchanges · sha256 {ref.sha256[:16]}…[/dim]"
+    )
+
+
 def _print_summary(report: AuditReport, written: list[Path]) -> None:
     from ekte.report.performance import fmt_num
 
@@ -515,6 +548,7 @@ def _run_and_report(
     as_compact,
     kb_dirs,
     use_user_kb=None,
+    evidence=None,
 ) -> None:
     from ekte.report import render_compact, write_reports
     from ekte.runner import run_audit
@@ -534,6 +568,7 @@ def _run_and_report(
             command=command,
             kb_dirs=kb_dirs,
             use_user_kb=use_user_kb,
+            evidence=evidence,
         )
     )
 
@@ -546,6 +581,7 @@ def _run_and_report(
     else:
         written = write_reports(report, out_dir=out_dir, fmt=fmt)
         _print_summary(report, written)
+        _print_evidence(report, evidence)
 
     raise typer.Exit(code=_exit_code(report, fail_under, fail_on_risk))
 
@@ -601,6 +637,7 @@ def check_command(
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the full JSON report to stdout instead of writing files.")] = False,
     compact: Annotated[bool, typer.Option("--compact", help="Print a lean agent/LLM-facing JSON verdict to stdout (much smaller than --json).")] = False,
+    evidence: Annotated[Path | None, typer.Option("--evidence", help=_EVIDENCE_HELP)] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show which detectors would run and the estimated API-call count, without making any requests.")] = False,
 ) -> None:
     """Audit one relay endpoint and write a report."""
@@ -634,6 +671,7 @@ def check_command(
             fail_under=fail_under, fail_on_risk=fail_on_risk, as_json=as_json, as_compact=compact,
             kb_dirs=list(kb_dir) if kb_dir else None,
             use_user_kb=False if no_user_kb else None,
+            evidence=_evidence_file(evidence),
         )
     except ConfigError as exc:
         if _machine_mode(as_json, compact):
@@ -674,6 +712,7 @@ def compare_command(
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this.")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the full JSON report to stdout.")] = False,
     compact: Annotated[bool, typer.Option("--compact", help="Print a lean agent/LLM-facing JSON verdict to stdout.")] = False,
+    evidence: Annotated[Path | None, typer.Option("--evidence", help=_EVIDENCE_HELP)] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show the detectors and estimated API calls without making requests.")] = False,
 ) -> None:
     """Audit a relay against a trusted baseline of the same declared model."""
@@ -710,6 +749,7 @@ def compare_command(
             fail_under=fail_under, fail_on_risk=fail_on_risk, as_json=as_json, as_compact=compact,
             kb_dirs=list(kb_dir) if kb_dir else None,
             use_user_kb=False if no_user_kb else None,
+            evidence=_evidence_file(evidence),
         )
     except ConfigError as exc:
         if _machine_mode(as_json, compact):
@@ -919,6 +959,7 @@ def serve_command(
     port: Annotated[int | None, typer.Option("--port", "-p", help="Port to serve on (default 8000). Env: EKTE_PORT.")] = None,
     open_browser: Annotated[bool | None, typer.Option("--open/--no-open", help="Open the UI in a browser (default: yes, except in a container).")] = None,
     data_dir: Annotated[Path | None, typer.Option("--data-dir", help=_DATA_DIR_HELP)] = None,
+    no_evidence: Annotated[bool, typer.Option("--no-evidence", help=_NO_EVIDENCE_HELP)] = False,
 ) -> None:
     """Serve the local web UI — a point-and-click front end for `ekte check`.
 
@@ -941,6 +982,10 @@ def serve_command(
         raise typer.Exit(code=2) from exc
 
     _apply_data_dir(data_dir)
+    if no_evidence:
+        from ekte import evidence
+
+        os.environ[evidence.ENV_OFF] = "1"
     try:
         host, port = resolve_bind(host, port)
     except BindError as exc:
@@ -989,6 +1034,7 @@ def watch_command(
     alert_on_regression: Annotated[bool, typer.Option("--alert-on-regression/--no-alert-on-regression", help="Also alert when risk is worse than the previous saved run for this target+model.")] = True,
     alert_lang: Annotated[str, typer.Option("--alert-lang", help="Language of the webhook alerts: " + " | ".join(_ALERT_LANGS) + ".")] = "en",
     as_json: Annotated[bool, typer.Option("--json", help="Print one JSON object per cycle (JSON Lines) on stdout; progress goes to stderr.")] = False,
+    no_evidence: Annotated[bool, typer.Option("--no-evidence", help=_NO_EVIDENCE_HELP)] = False,
 ) -> None:
     """Continuously re-audit a relay on a schedule and alert webhooks on risk.
 
@@ -1065,8 +1111,12 @@ def watch_command(
     async def _cycle() -> None:
         previous = _previous_run(target)
         command = "ekte " + " ".join(sys.argv[1:])
+        from ekte import evidence
+
+        keep = not no_evidence and evidence.default_on()
         report = await run_audit(
-            target, options, mode="check", command=command, kb_dirs=kb_dirs
+            target, options, mode="check", command=command, kb_dirs=kb_dirs,
+            evidence=evidence.data_dir_path(evidence.new_run_id()) if keep else None,
         )
 
         # Persist (best-effort): a history failure must never break the watch loop.
@@ -1168,6 +1218,7 @@ def embed_command(
     claimed_dimensions: Annotated[int | None, typer.Option("--claimed-dimensions", help="Override the expected vector dimension instead of resolving it from the KB (0 = unknown).")] = None,
     suite: Annotated[str, typer.Option("--suite", help="smoke | standard | deep | full (deep/full add the performance probe).")] = "standard",
     save: Annotated[bool, typer.Option("--save/--no-save", help="Save the report to the local history (the next run's vector-drift reference).")] = True,
+    no_evidence: Annotated[bool, typer.Option("--no-evidence", help=_NO_EVIDENCE_HELP)] = False,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
@@ -1220,6 +1271,7 @@ def embed_command(
             kb_dirs=list(kb_dir) if kb_dir else None,
             command="ekte embed",
             save=save,
+            evidence=False if no_evidence else None,
         )
     )
     verdict = tool_verdict(report, report_id)
@@ -1241,6 +1293,7 @@ def rerank_command(
     declared_provider: Annotated[str | None, typer.Option("--declared-provider", help="Provider hint for KB lookup (cohere, jina, ...).")] = None,
     suite: Annotated[str, typer.Option("--suite", help="smoke | standard | deep | full (deep/full add the performance probe).")] = "standard",
     save: Annotated[bool, typer.Option("--save/--no-save", help="Save the report to the local history (the next run's ranking-drift reference).")] = True,
+    no_evidence: Annotated[bool, typer.Option("--no-evidence", help=_NO_EVIDENCE_HELP)] = False,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
@@ -1282,6 +1335,7 @@ def rerank_command(
             kb_dirs=list(kb_dir) if kb_dir else None,
             command="ekte rerank",
             save=save,
+            evidence=False if no_evidence else None,
         )
     )
     verdict = tool_verdict(report, report_id)
@@ -1328,6 +1382,7 @@ def image_command(
     size: Annotated[str, typer.Option("--size", help="Requested image size as WxH.")] = "1024x1024",
     save_to: Annotated[Path | None, typer.Option("--save-to", help="Write the first generated image to this path for inspection.")] = None,
     save_legacy: Annotated[Path | None, typer.Option("--save", hidden=True, help="Deprecated: use --save-to.")] = None,
+    evidence: Annotated[Path | None, typer.Option("--evidence", help=_EVIDENCE_HELP)] = None,
     kb_dir: Annotated[list[Path] | None, typer.Option("--kb-dir", help="Extra knowledge-base directory (repeatable).")] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
@@ -1346,6 +1401,7 @@ def image_command(
             declared_provider=declared_provider, claimed_model=claimed_model,
         )
         fail_on_risk = validate_risk(fail_on_risk)
+        evidence_path = _evidence_file(evidence)
     except ConfigError as exc:
         if as_json:
             _emit_machine_error(exc)
@@ -1365,7 +1421,9 @@ def image_command(
     async def _go() -> tuple[dict, bytes | None]:
         # Optionally fetch one image for --save-to using the same client/decoding path.
         sample: bytes | None = None
-        verdict = await audit_image(target, size=size, claimed_sizes=claimed_sizes)
+        verdict = await audit_image(
+            target, size=size, claimed_sizes=claimed_sizes, evidence=evidence_path
+        )
         if save is not None:
             async with make_client(target) as client:
                 _outcome, images = await client.images_generate(
@@ -1402,6 +1460,7 @@ def audio_command(
     text: Annotated[str, typer.Option("--text", help="Probe sentence to synthesize.")] = "The quick brown fox jumps over the lazy dog.",
     save_to: Annotated[Path | None, typer.Option("--save-to", help="Write a synthesized clip to this path for inspection.")] = None,
     save_legacy: Annotated[Path | None, typer.Option("--save", hidden=True, help="Deprecated: use --save-to.")] = None,
+    evidence: Annotated[Path | None, typer.Option("--evidence", help=_EVIDENCE_HELP)] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Print the verdict as JSON to stdout.")] = False,
     fail_on_risk: Annotated[str | None, typer.Option("--fail-on-risk", help="Exit 1 if risk >= this (low|medium|high).")] = None,
 ) -> None:
@@ -1422,6 +1481,7 @@ def audio_command(
             declared_provider=declared_provider, claimed_model=claimed_model,
         )
         fail_on_risk = validate_risk(fail_on_risk)
+        evidence_path = _evidence_file(evidence)
     except ConfigError as exc:
         if as_json:
             _emit_machine_error(exc)
@@ -1433,7 +1493,7 @@ def audio_command(
 
     async def _go() -> tuple[dict, bytes | None]:
         sample: bytes | None = None
-        verdict = await audit_audio(target, voice=voice, fmt=fmt)
+        verdict = await audit_audio(target, voice=voice, fmt=fmt, evidence=evidence_path)
         if save is not None:
             async with make_client(target) as client:
                 _outcome, audio = await client.audio_speech(text, voice, fmt)

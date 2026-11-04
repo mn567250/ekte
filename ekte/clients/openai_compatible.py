@@ -241,6 +241,18 @@ class OpenAICompatibleClient(BaseHTTPClient):
         n: int = 1,
         response_format: str = "b64_json",
     ) -> tuple[CompletionOutcome, list[bytes]]:
+        """POST /images/generations (see :meth:`_images_generate`); with
+        ``self.evidence`` set its exchanges go to the evidence file."""
+        with self._unrecorded("image"):
+            return await self._images_generate(prompt, size, n, response_format)
+
+    async def _images_generate(
+        self,
+        prompt: str,
+        size: str,
+        n: int = 1,
+        response_format: str = "b64_json",
+    ) -> tuple[CompletionOutcome, list[bytes]]:
         """POST /images/generations. Returns (outcome, list-of-image-bytes).
 
         Decodes each ``data[i].b64_json`` to raw bytes; if a row carries only a
@@ -294,6 +306,14 @@ class OpenAICompatibleClient(BaseHTTPClient):
             return self._exception_outcome(exc, started), []
 
     async def audio_speech(
+        self, text: str, voice: str, response_format: str = "wav"
+    ) -> tuple[CompletionOutcome, bytes]:
+        """POST /audio/speech (see :meth:`_audio_speech`); with
+        ``self.evidence`` set its exchange goes to the evidence file."""
+        with self._unrecorded("audio"):
+            return await self._audio_speech(text, voice, response_format)
+
+    async def _audio_speech(
         self, text: str, voice: str, response_format: str = "wav"
     ) -> tuple[CompletionOutcome, bytes]:
         """POST /audio/speech. Returns (outcome, raw-audio-bytes).

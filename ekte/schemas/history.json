@@ -1,7 +1,11 @@
 {
+  "evidence": {
+    "1.0": "ab411857cafbb676a2b07a2e1c1bf55daeabc3565cf616f37887dbb216289319"
+  },
   "report": {
     "1.0": "927227dd1a0851da625b9bac2f72615d303108f9d295e1f049d594a5ce5995fa",
-    "1.1": "915a36602f25bed31dd7ecedaa85bc5069dd946feefb0608cce8e91df5356cca"
+    "1.1": "915a36602f25bed31dd7ecedaa85bc5069dd946feefb0608cce8e91df5356cca",
+    "1.2": "2f910d89db238b593d3851cb10775769cf2d1347369b6c5bcd15edb7c339a768"
   },
   "webhook": {
     "1.0": "9beaf600b3592b88e7ca15ef2fcb3dc5e8ec8ffb6c2693deb7a72a4113e1dbeb"

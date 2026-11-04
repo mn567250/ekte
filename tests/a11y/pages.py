@@ -181,6 +181,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ekte/context.py", ("audit",)),
     ("ekte/models.py", ("audit",)),
     ("ekte/embed_audit.py", ("audit",)),  # the embedding check (the audit page's surface selector)
+    ("ekte/evidence.py", ("audit", "history")),  # raw request/response pairs in the report view
     ("ekte/notify.py", ("monitors",)),  # monitor webhooks
     ("ekte/secretbox.py", ("monitors",)),  # the monitors' stored keys
     ("ekte/datadir.py", ("audit", "history", "monitors")),  # where history and monitors live

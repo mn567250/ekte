@@ -23,12 +23,58 @@ import hashlib
 import io
 import struct
 import wave
-from typing import Any
+from contextvars import ContextVar
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from ekte import prompts
 from ekte.clients import make_client
 from ekte.embed_audit import _finding, _verdict
 from ekte.models import Severity, Status, TargetConfig
+
+if TYPE_CHECKING:
+    from ekte.evidence import EvidenceWriter
+
+# The evidence file of the media audit in progress (see :func:`_with_evidence`).
+_EVIDENCE: ContextVar[EvidenceWriter | None] = ContextVar("ekte_media_evidence", default=None)
+
+
+async def _with_evidence(
+    mode: str, target: TargetConfig, evidence: Path | None, run: Any
+) -> dict[str, Any]:
+    """Run ``run()`` (an image or audio audit) keeping its raw exchanges in the
+    evidence file ``evidence``; the verdict then names the file (``evidence``)."""
+    if evidence is None:
+        verdict: dict[str, Any] = await run()
+        return verdict
+    import asyncio
+    import time
+    from datetime import UTC, datetime
+
+    from ekte import __version__
+    from ekte.evidence import EvidenceHeader, EvidenceWriter
+    from ekte.runner import _redact, _run_id_of, run_secrets
+
+    t0, started = time.perf_counter(), datetime.now(UTC)
+    redacted = await asyncio.to_thread(_redact, target)
+    head = EvidenceHeader(
+        tool_version=__version__, run_id=_run_id_of(evidence), started_at=started.isoformat(),
+        mode=mode, target=redacted,
+    )
+    writer = await asyncio.to_thread(
+        EvidenceWriter, evidence, head, t0=t0, secrets=run_secrets(target)
+    )
+    token = _EVIDENCE.set(writer)
+    try:
+        verdict = await run()
+    except BaseException:
+        await asyncio.to_thread(writer.abort)
+        raise
+    finally:
+        _EVIDENCE.reset(token)
+    ref = await asyncio.to_thread(writer.close)
+    verdict["evidence"] = ref.model_dump(mode="json")
+    return verdict
 
 # Two clearly-different prompts for the image distinctness probe
 # (ekte/prompts/en.json).
@@ -191,6 +237,20 @@ def _format_matches(detected: str | None, requested: str) -> bool:
 # Image audit
 # --------------------------------------------------------------------------- #
 async def audit_image(
+    target: TargetConfig,
+    *,
+    size: str,
+    claimed_sizes: list[str],
+    evidence: Path | None = None,
+) -> dict[str, Any]:
+    """:func:`_audit_image`, keeping its raw exchanges in ``evidence`` (a path) if given."""
+    return await _with_evidence(
+        "image", target, evidence,
+        lambda: _audit_image(target, size=size, claimed_sizes=claimed_sizes),
+    )
+
+
+async def _audit_image(
     target: TargetConfig, *, size: str, claimed_sizes: list[str]
 ) -> dict[str, Any]:
     """Run image-generation checks against ``target``.
@@ -203,6 +263,7 @@ async def audit_image(
     findings: list[dict[str, Any]] = []
 
     async with make_client(target) as client:
+        client.evidence = _EVIDENCE.get()
         outcome_a, images_a = await client.images_generate(_IMG_PROMPT_A, size, n=1)
         outcome_b, images_b = await client.images_generate(_IMG_PROMPT_B, size, n=1)
 
@@ -437,6 +498,15 @@ async def audit_image(
 # Audio / TTS audit
 # --------------------------------------------------------------------------- #
 async def audit_audio(
+    target: TargetConfig, *, voice: str, fmt: str, evidence: Path | None = None
+) -> dict[str, Any]:
+    """:func:`_audit_audio`, keeping its raw exchanges in ``evidence`` (a path) if given."""
+    return await _with_evidence(
+        "audio", target, evidence, lambda: _audit_audio(target, voice=voice, fmt=fmt)
+    )
+
+
+async def _audit_audio(
     target: TargetConfig, *, voice: str, fmt: str
 ) -> dict[str, Any]:
     """Run audio/TTS checks against ``target``.
@@ -448,6 +518,7 @@ async def audit_audio(
     findings: list[dict[str, Any]] = []
 
     async with make_client(target) as client:
+        client.evidence = _EVIDENCE.get()
         outcome_s, audio_s = await client.audio_speech(_AUD_SHORT, voice, fmt)
         outcome_l, audio_l = await client.audio_speech(_AUD_LONG, voice, fmt)
 
