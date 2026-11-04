@@ -58,6 +58,7 @@ from ekte.models import (
 )
 from ekte.perf import phase_scope, summarize_endpoint
 from ekte.perf.recorder import last_record
+from ekte.perf.summary import failed_seqs
 from ekte.utils.stats import percentile
 
 OP = "rerank"
@@ -299,7 +300,7 @@ class RerankPerformanceDetector(Detector):
             SCALE, result, "performance.throughput_consistency", "Rerank throughput", "documents/s",
             self._docs_per_s(many), True,
         )
-        perf_probe.error_finding(SCALE, result, target)
+        perf_probe.error_finding(SCALE, result, target, failed_seqs(records, "target", op=OP))
         perf_probe.load_finding(SCALE, result, target)
         self._scaling_finding(result, few, many)
 

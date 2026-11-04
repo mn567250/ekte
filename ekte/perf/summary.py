@@ -212,6 +212,22 @@ def decode_tps_tails(records: Sequence[RequestRecord]) -> tuple[float | None, fl
     return percentile(values, 5), percentile(values, 95)
 
 
+def failed_seqs(
+    records: Sequence[RequestRecord],
+    endpoint: str = "target",
+    *,
+    stream: bool | None = None,
+    op: str = "complete",
+) -> list[int]:
+    """The ``seq`` of every request :func:`summarize_endpoint` counts in its
+    ``errors`` (same selection; rate-limited and parameter-retry calls are not
+    errors): the evidence of the probe's failure finding."""
+    return [
+        r.seq for r in _mode_completes(records, endpoint, stream, op)
+        if r.phase != "param_retry" and not r.ok and not r.rate_limited
+    ]
+
+
 def summarize_endpoint(
     records: Sequence[RequestRecord],
     endpoint: str = "target",
