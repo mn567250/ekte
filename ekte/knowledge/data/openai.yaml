@@ -1158,6 +1158,139 @@ models:
   - deepseek
   - mistral
   notes: SHUT DOWN 2026-10-23 together with o1-pro (replacements gpt-5.6-sol / gpt-5.6-sol pro mode). Was the first-gen reasoning model, 200K/100K, developer role, $15/$60 per MTok. Any relay still answering as o1 is not OpenAI.
+- id: gpt-oss-120b
+  aliases:
+  - openai/gpt-oss-120b
+  - openai.gpt-oss-120b
+  family: gpt-oss
+  context_window_tokens: 131072
+  max_output_tokens: 131072
+  knowledge_cutoff: '2024-06-01'
+  tokenizer: o200k_harmony
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - openai
+  - gpt
+  - gpt-oss
+  identity_forbidden:
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  notes: 'Open-weight reasoning model, released 2025-08-05 under Apache-2.0 (model card; GitHub README). Mixture of experts: 117B total / 5.1B active parameters. MoE weights post-trained in MXFP4, fits one 80GB GPU. Harmony response format (o200k_harmony tokenizer, open-sourced by OpenAI). Reasoning effort low|medium|high only (no none/minimal/max in the sources). 128K context (131072, dense layers extended with YaRN per the model card). Max output 131072 per the OpenAI model page (a HF discussion reports the model sometimes refuses very long single outputs, unverified as a hard limit). Knowledge cutoff 2024-06-01 per the OpenAI model page and model card. Vendor API status is conflicting: the OpenAI model page lists Chat Completions and Responses endpoints, while the OpenAI help centre says the models are not served through the OpenAI API; the id is the plain name (openai/gpt-oss-120b, the Hugging Face repo, is an alias) until that is settled. Served by OpenRouter (23 providers), AWS Bedrock (openai.gpt-oss-120b), Vercel and Ollama. A relay answering gpt-oss-120b with a 4o-style 16K output cap or a non-harmony tokenizer is suspect.'
+- id: gpt-oss-20b
+  aliases:
+  - openai/gpt-oss-20b
+  - openai.gpt-oss-20b
+  family: gpt-oss
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: '2024-06-01'
+  tokenizer: o200k_harmony
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - openai
+  - gpt
+  - gpt-oss
+  identity_forbidden:
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  notes: 'Smaller open-weight sibling of gpt-oss-120b, released 2025-08-05 under Apache-2.0. Mixture of experts: 21B total / 3.6B active parameters. Runs within 16GB of memory (MXFP4 MoE weights). Harmony response format, o200k_harmony tokenizer. Reasoning effort low|medium|high. 128K context (131072) per the OpenAI model page. Max output not confirmed for this size (-1, unverified; OpenRouter''s 32768 is a host figure). Knowledge cutoff 2024-06-01 per the OpenAI model page. Id is the plain name (the Hugging Face repo name is an alias); vendor-hosted API status not settled (see gpt-oss-120b). A claimed gpt-oss-20b that answers at 120b depth or with 120b-level speed mismatch is a size-substitution tell.'
+- id: gpt-oss-safeguard-20b
+  aliases:
+  - openai/gpt-oss-safeguard-20b
+  family: gpt-oss-safeguard
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - openai
+  - gpt
+  - gpt-oss
+  - safeguard
+  identity_forbidden:
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  notes: 'Safety-reasoning classifier fine-tuned from gpt-oss-20b (21B total / 3.6B active). Takes a developer-written policy in the prompt and returns a decision with reasoning. Apache-2.0; released 2025-10-29 as a research preview. Context, tokenizer and tool support not stated by the vendor page checked, so left unknown (-1/null/false); OpenRouter lists 131072 context and tool calling, but host catalogs are not used for limits. A relay serving this id as a general chat model, or a plain gpt-oss-20b answering as a safety classifier, is a mismatch to check.'
+- id: gpt-oss-safeguard-120b
+  aliases:
+  - openai/gpt-oss-safeguard-120b
+  - openai.gpt-oss-safeguard-120b
+  family: gpt-oss-safeguard
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - openai
+  - gpt
+  - gpt-oss
+  - safeguard
+  identity_forbidden:
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  notes: 'Larger safety-reasoning variant fine-tuned from gpt-oss-120b (117B total / 5.1B active, fits one 80GB GPU). Policy-driven content classification with reasoning; Apache-2.0; released 2025-10-29 as a research preview. Context, tokenizer and tool support not confirmed from the vendor page, so left unknown. Hosted by AWS Bedrock (openai.gpt-oss-safeguard-120b, Chat Completions, Converse and Invoke) and other third parties; OpenAI does not host it on its own API per the sources. Bedrock pricing ~$0.15/$0.60 per MTok (not used).'
 fingerprints:
 - id: self-id
   signal: self-identification style
@@ -1250,3 +1383,14 @@ sources:
 - https://developers.openai.com/api/docs/changelog
 - https://simonwillison.net/2026/Jul/9/gpt-5-6/
 - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json
+- https://github.com/openai/gpt-oss
+- https://github.com/openai/gpt-oss-safeguard
+- https://huggingface.co/openai/gpt-oss-120b
+- https://huggingface.co/openai/gpt-oss-safeguard-120b
+- https://cdn.openai.com/pdf/419b6906-9da6-406c-a19d-1bb078ac7637/oai_gpt-oss_model_card.pdf
+- https://developers.openai.com/api/docs/models/gpt-oss-120b
+- https://developers.openai.com/api/docs/models/gpt-oss-20b
+- https://help.openai.com/en/articles/11870455-openai-open-weight-models-gpt-oss
+- https://openrouter.ai/openai/gpt-oss-120b
+- https://openrouter.ai/openai/gpt-oss-safeguard-20b
+- https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-oss-safeguard-120b.html
