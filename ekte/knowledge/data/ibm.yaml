@@ -1,0 +1,210 @@
+# ekte knowledge base — IBM — Granite
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: ibm
+last_verified: '2026-11-05'
+display_name: IBM — Granite
+openai_compatible: false
+base_url_hints:
+- https://us-south.ml.cloud.ibm.com
+default_tool_format: openai_function
+models:
+- id: ibm-granite/granite-4.0-h-small
+  aliases:
+  - granite-4.0-h-small
+  - granite-4-h-small
+  - ibm/granite-4-h-small
+  family: granite-4.0
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - granite
+  - ibm
+  - ibm granite
+  - granite-4.0
+  - granite-4-h-small
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Granite 4.0 H-Small, released 2025-10-02 (HF card). Hybrid mixture-of-experts: the HF card lists GQA, Mamba2 layers, MoE with shared experts, SwiGLU, RMSNorm. Official size 32B total (9B active per IBM docs summary). A secondary AMD derivative card gives 40 layers, 4 attention and 36 Mamba-2 (unverified against the IBM card). Context: 128K sequence length per the IBM card, stored as 131072. Apache-2.0 (HF card). Max output not published (-1). The watsonx.ai id ibm/granite-4-h-small is an alias from IBM docs summaries (not re-checked on an official watsonx page in this session). Tool calling reported by third-party sources; not on the card.'
+- id: ibm-granite/granite-4.1-8b
+  aliases:
+  - granite-4.1-8b
+  - granite-4.1-8b-instruct
+  family: granite-4.1
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - granite
+  - ibm
+  - ibm granite
+  - granite-4.1
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Granite 4.1 8B instruct, dense decoder-only transformer, released 2026-04-29 (HF card). Apache-2.0 (HF card). Sequence length 131072 (128K) per the instruct card table. The IBM HF blog and IBM research pages describe a long-context extension to 512K, which the instruct card does not state, so it is not used here (unverified for the instruct model). The HF Hub lists 9B parameters; the model summary says 8B. Max output not published (-1). Reasoning toggle not documented for 4.1 (unverified).'
+- id: ibm-granite/granite-4.2-8b
+  aliases:
+  - granite-4.2-8b
+  family: granite-4.2
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - granite
+  - ibm
+  - ibm granite
+  - granite-4.2
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Granite 4.2 8B, released 2026-08-25 (HF card). Dense decoder-only reasoning model with built-in chain-of-thought in think tags; modes are thinking (default), non-thinking and low-effort, chosen per query. Apache-2.0 (HF card; community derivatives may carry other licences). Native context 128K per the card, stored as 131072; the card also advertises a 512K long-context extension (not used). Max output not published (-1).'
+- id: ibm-granite/granite-embedding-small-english-r2
+  aliases:
+  - granite-embedding-small-english-r2
+  family: granite-embedding-r2
+  context_window_tokens: 8192
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  embedding_dimensions: 384
+  tool_format: null
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: false
+  identity_keywords:
+  - granite
+  - ibm
+  - ibm granite
+  - granite-embedding
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Granite Embedding small English R2, 47M-parameter dense bi-encoder, 384-dimensional output (HF card, pooling config and arXiv 2508.21085 agree), 8192-token context per the HF card, English only, Apache-2.0. Served on Replicate (third-party host). Embeddings take no chat stream, so usage_in_stream false is a choice, not a documented fact.'
+fingerprints:
+- id: self-id
+  signal: self-identification (vendor/model family)
+  prompt: What model are you and which company built you? Answer in one short sentence.
+  native_expected: Identifies as IBM Granite (e.g. 'I am Granite, developed by IBM'). Should mention IBM or Granite, not OpenAI, Anthropic, Google, Alibaba/Qwen, Meta/Llama, DeepSeek or Mistral.
+  downgrade_signal: Names a different vendor (ChatGPT/OpenAI, Claude/Anthropic, Gemini/Google, Qwen/Alibaba, Llama/Meta, DeepSeek, Mistral). Generic 'I am an AI assistant' with no Granite or IBM mention is also suspect.
+  pure_code_checkable: true
+  expect_contains_any:
+  - granite
+  - ibm
+  expect_not_contains:
+  - openai
+  - chatgpt
+  - gpt-4
+  - anthropic
+  - claude
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  max_tokens: 128
+  temperature: 0
+  weight: 1
+relay_red_flags:
+- Model self-identifies as ChatGPT/GPT, Claude, Gemini, Qwen, Llama or DeepSeek instead of Granite/IBM when asked which model it is.
+- A reply to the native watsonx chat call that is OpenAI-shaped (chatcmpl ids, 'model' field) rather than watsonx's own schema. The native API is not OpenAI-compatible, so an OpenAI-shaped native reply is a tell (unverified against IBM's API reference).
+- A claimed granite-4.2-8b (reasoning) returns no reasoning channel when thinking is enabled, or returns chain-of-thought inline in content with no separate thinking output.
+- Context-length errors well below 128K on a claimed granite-4.0-h-small, granite-4.1-8b or granite-4.2-8b, or output truncation far below the window (e.g. capped near 4K-8K).
+- A claimed granite-embedding-small-english-r2 returns vectors whose length is not 384, or a 768-dim vector labelled as this 384-dim model.
+sources:
+- https://huggingface.co/ibm-granite/granite-4.0-h-small
+- https://huggingface.co/ibm-granite/granite-4.1-8b
+- https://huggingface.co/blog/ibm-granite/granite-4-1
+- https://huggingface.co/ibm-granite/granite-4.2-8b
+- https://huggingface.co/blog/ibm-granite/granite-4-2
+- https://huggingface.co/ibm-granite/granite-embedding-small-english-r2
+- https://www.ibm.com/new/announcements/ibm-granite-4-0-hyper-efficient-high-performance-hybrid-models
+- https://www.ibm.com/granite/docs/models/granite4-1
+- https://www.ibm.com/granite/docs/models/granite4-2
+- https://www.ibm.com/products/watsonx-ai/pricing
+- https://replicate.com/ibm-granite/granite-embedding-small-english-r2
+- https://arxiv.org/pdf/2508.21085
+- https://docs.quarkiverse.io/quarkus-langchain4j/dev/watsonx-chat-model.html
