@@ -36,13 +36,29 @@ VENDOR_BRANDS: tuple[tuple[str, ...], ...] = (
     ("ernie", "文心", "文心一言", "baidu", "百度"),
     ("hunyuan", "混元", "tencent", "腾讯"),
     ("llama", "meta"),
-    ("mistral", "mixtral"),
+    ("mistral", "mixtral", "mistralai", "ministral", "magistral", "codestral", "devstral", "pixtral"),
     ("grok", "xai"),
     ("cohere", "command"),
     ("minimax", "abab"),
     ("讯飞", "星火", "spark"),
     ("零一万物", "yi"),
     ("阶跃", "step"),
+    ("nvidia", "nemotron"),
+    ("microsoft", "phi"),
+    ("ibm", "granite"),
+    ("ai2", "allenai", "allen institute", "olmo", "olmoe", "molmo", "tulu", "tülu"),
+    ("nous research", "nousresearch", "nous", "hermes"),
+    ("arcee", "trinity"),
+    ("deep cogito", "deepcogito", "cogito"),
+    ("liquid ai", "liquidai", "lfm"),
+    ("jina", "jina ai"),
+    ("voyage ai", "voyageai", "voyage"),
+    ("black forest labs", "flux"),
+    ("stability ai", "stable diffusion"),
+    ("aleph alpha", "alephalpha", "pharia", "luminous"),
+    ("eurollm", "openeurollm"),
+    ("teuken", "opengpt-x"),
+    ("almawave", "velvet"),
 )
 
 # Brand words that are also everyday English ("step by step", "a meta question",
@@ -52,6 +68,8 @@ VENDOR_BRANDS: tuple[tuple[str, ...], ...] = (
 # honest model narrating "let me think step by step" is not a StepFun swap.
 AMBIGUOUS_BRAND_WORDS: frozenset[str] = frozenset({
     "step", "command", "seed", "spark", "meta", "yi", "grok",
+    "phi", "granite", "nous", "hermes", "trinity", "cogito", "voyage", "flux",
+    "luminous", "velvet",
 })
 
 # Words that occur in vendor and model names without naming a brand.

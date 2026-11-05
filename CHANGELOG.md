@@ -86,6 +86,25 @@ ekte has three eras:
   directory written by the released 0.33.1 from PyPI (history, monitors with
   stored and unstored keys, your own knowledge-base entries); the upgrade tests
   open it with the current code and check that nothing is lost.
+- **The knowledge base covers 23 providers and 241 models (was 7 and 130),
+  with a focus on open-weight models that relays resell or swap in (#104).**
+  New provider profiles: Mistral, Meta Llama, NVIDIA Nemotron, Cohere,
+  Microsoft Phi, IBM Granite, xAI Grok, Ai2 (OLMo, Molmo), Nous Research
+  (Hermes), Arcee, Deep Cogito and Liquid AI; the embedding providers Jina AI
+  and Voyage AI; and the image providers Black Forest Labs (FLUX) and Stability
+  AI. OpenAI gains its open-weight gpt-oss models, Google its Gemma models.
+  Vendors without a public API of their own (Meta, Microsoft, Ai2, Deep Cogito,
+  Liquid AI) are profiled because hosts serve their models; their profiles have
+  no base URL. Values that no official page confirmed are left unknown (-1).
+  This can change verdicts: a relay serving one of these models under another
+  model's name is now recognised by name.
+- **The identity check knows the brand words of these vendors and of Aleph
+  Alpha, EuroLLM, OpenEuroLLM, Teuken and Velvet**, so a model naming one of
+  them in place of the claimed model counts as a rival brand. Brand words that
+  are also ordinary words ("phi", "granite", "hermes", "flux", "voyage" and
+  others) count only when written as a name in the self-description. Fine-tunes
+  of another vendor's model (Llama-Nemotron, Hermes, Molmo, Cogito) list the
+  base model's brand as their own, so an honest answer naming it is no rival.
 
 ### Changed
 
