@@ -327,6 +327,7 @@
   "Run `ekte compare` against a trusted baseline to disambiguate.": "Run `ekte compare` against a trusted baseline to disambiguate.",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "A smaller-tier or different-family model id in the response suggests routing to a substitute.",
   "Lower --concurrency or --reliability-requests and re-run.": "Lower --concurrency or --reliability-requests and re-run.",
+  "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Confirm with the provider how usage is metered if billing is per-token.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Cross-check billing against a known-size prompt; possible per-token overbilling.",

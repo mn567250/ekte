@@ -158,7 +158,7 @@ def test_history_step_five_adds_the_evidence_file(data):
         c.execute("INSERT INTO history (ts, base_url, report_json) VALUES ('t', 'https://x', '{}')")
         c.execute("PRAGMA user_version = 4")
     history.init()
-    assert _version(db) == 5
+    assert _version(db) == history._SCHEMA_VERSION
     assert "evidence_file" in _cols(db, "history")
     with sqlite3.connect(db) as c:
         assert c.execute("SELECT count(*), max(evidence_file) FROM history").fetchone() == (1, None)
@@ -319,3 +319,31 @@ def test_wal_switch_waits_for_a_held_lock(data, tmp_path):
     finally:
         conn.close()
         holder.close()
+
+
+def test_history_step_six_adds_the_failure_class_and_keeps_old_records(data):
+    from ekte.web import analytics_store
+
+    db = data / "history.db"
+    old_fields = {k: v for k, v in analytics_store.REQUEST_FIELDS.items()
+                  if k not in ("error_class", "retried")}
+    with sqlite3.connect(db) as c:
+        for m in history.MIGRATIONS[:5]:
+            m.apply(c)
+        # the request table as step five left it
+        c.execute("DROP TABLE history_requests")
+        cols = ", ".join(f"{n} {analytics_store._SQL_TYPE[k]}" for n, k in old_fields.items())
+        c.execute(f"CREATE TABLE history_requests (history_id INTEGER NOT NULL, ord INTEGER NOT NULL, "
+                  f"{cols}, extra TEXT, PRIMARY KEY (history_id, ord))")
+        c.execute("INSERT INTO history_requests (history_id, ord, seq, ok, error_type, extra) "
+                  "VALUES (1, 0, 0, 0, 'ProxyError', NULL), "
+                  "(1, 1, 1, 1, NULL, '{\"absent\": [\"ttft_ms\"]}')")
+        c.execute("PRAGMA user_version = 5")
+    history.init()
+    assert _version(db) == 6
+    assert {"error_class", "retried"} <= _cols(db, "history_requests")
+    with sqlite3.connect(db) as c:
+        recs = analytics_store.get_requests(c, 1)
+    # read back as saved: without the fields they predate
+    assert all("error_class" not in r and "retried" not in r for r in recs)
+    assert "ttft_ms" not in recs[1] and recs[0]["error_type"] == "ProxyError"

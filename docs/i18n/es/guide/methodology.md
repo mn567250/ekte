@@ -750,6 +750,7 @@ elevan el veredicto de riesgo.
 |  | Falló una petición, o como mucho el 10 % de las intentadas (80 %+ con éxito); resta la parte fallida. | Advertencia · Baja | hasta −20 pts |
 |  | Fallaron más peticiones; resta la parte fallida. | Fallo · Media | hasta −100 pts |
 |  | Todas las peticiones fueron limitadas (HTTP 429): no puntúa. | No concluyente · Baja | Sin deducción |
+|  | Ninguna petición llegó al relay (falló en ekte o en la ruta de red): sin puntuar. | No concluyente · Baja | Sin deducción |
 | `reliability.latency` | Latencia p95 por encima de 30 s bajo carga; resta el 15 % de la puntuación restante. | Advertencia · Baja | hasta −15 pts |
 | `reliability.rate_limited` | Parte de la ráfaga fue limitada: limitación legítima, no computa. | Info | Sin deducción |
 | `reliability.skipped` | La sonda de fiabilidad estaba desactivada. | Info | Sin deducción |

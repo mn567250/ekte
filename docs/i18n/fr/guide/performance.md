@@ -54,3 +54,17 @@ lent ne soit pas coupé au bout d'une minute. Les hôtes locaux et privés
 de chaque requête, flux compris, si bien qu'aucune requête ne peut rester bloquée
 indéfiniment. Une sonde de fenêtre de contexte qui dépasse malgré tout son délai
 est signalée comme non concluante, pas comme une troncature.
+
+**Requêtes en échec.** ekte distingue où une requête a échoué. Un échec du
+**relais** (un statut d’erreur HTTP, un délai dépassé en attendant le relais,
+une réponse interrompue ou mal formée) compte contre le relais et n’est jamais
+répété. Un échec **réseau** (le proxy par lequel passe ekte, DNS, connexion ou
+TLS, avant que le relais ait pu répondre) et un échec **local** (dans ekte même)
+ne sont pas le fait du relais : la requête est répétée, une fois par défaut
+(`EKTE_NON_RELAY_RETRIES`, de 0 à 10), et si elle échoue encore elle est comptée
+à part (`network_errors`, `local_errors`) et exclue des taux d’erreur. Une
+vérification dont toutes les requêtes ont échoué ainsi est non concluante au
+lieu d’être notée, et le rapport signale que l’exécution a été perturbée. Chaque
+enregistrement de requête porte sa classe (`error_class`) et s’il a été répété
+(`retried`) ; pour les exécutions enregistrées avant, l’interface web déduit la
+classe de l’erreur enregistrée.

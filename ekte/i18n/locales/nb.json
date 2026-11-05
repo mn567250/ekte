@@ -327,6 +327,7 @@
   "Run `ekte compare` against a trusted baseline to disambiguate.": "Kjør `ekte compare` mot en pålitelig referanse for å skille tilfellene.",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "En modell-ID fra et mindre nivå eller en annen familie i svaret tyder på ruting til en erstatning.",
   "Lower --concurrency or --reliability-requests and re-run.": "Senk --concurrency eller --reliability-requests og kjør på nytt.",
+  "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "Sjekk nettverksveien fra ekte til reléet (proxy, DNS, brannmur) og kjør på nytt.",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Sjekk reléets tilkoblingspool og stabiliteten oppstrøms under parallell last (HTTP 429-struping er holdt utenfor denne raten).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Avklar med leverandøren hvordan forbruket måles hvis fakturering skjer per token.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Kontroller faktureringen mot en prompt av kjent størrelse; mulig overfakturering per token.",

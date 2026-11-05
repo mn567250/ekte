@@ -217,4 +217,8 @@ def test_the_probe_failure_finding_names_the_failed_requests(tmp_path, monkeypat
         rec = records[seq]
         assert rec.detector == "performance" and rec.op == "complete" and not rec.ok
     assert any(records[s].status_code == 502 for s in errors.evidence_seqs)
-    assert any(records[s].error_type == "ProxyError" for s in errors.evidence_seqs)
+    # a refused proxy tunnel never reached the relay: repeated, then (if it
+    # failed again) counted apart, never as the relay's error
+    proxy = [r for r in records.values() if r.error_type == "ProxyError"]
+    assert proxy and all(r.error_class == "network" for r in proxy)
+    assert not any(records[s].error_type == "ProxyError" for s in errors.evidence_seqs)

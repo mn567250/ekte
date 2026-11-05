@@ -90,7 +90,7 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from ekte import __version__
+from ekte import __version__, errorclass
 from ekte.clients import detect_api
 from ekte.config import (
     AuditOptions,
@@ -1307,7 +1307,8 @@ def create_app() -> FastAPI:
     def history_get(rid: int, trend: int = 0) -> Any:
         """A saved report as stored; ``trend=1`` (the pages that show it) adds
         each request's running medians and their p25–p75 bands for the
-        performance chart."""
+        performance chart, and the failure class of each failed request of a
+        run saved before classes were recorded."""
         from ekte.web import history
 
         report = history.get(rid)
@@ -1316,6 +1317,8 @@ def create_app() -> FastAPI:
         perf = report.get("performance") if trend else None
         if isinstance(perf, dict) and isinstance(perf.get("requests"), list):
             attach_trends(perf["requests"])
+            # failure classes of a run saved before they were recorded
+            errorclass.attach_classes(perf["requests"])
         return JSONResponse(report)
 
     # ----- Evidence: a saved run's raw request/response pairs ------------- #

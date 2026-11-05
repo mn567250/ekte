@@ -327,6 +327,7 @@
   "Run `ekte compare` against a trusted baseline to disambiguate.": "Esegui `ekte compare` rispetto a un riferimento affidabile per chiarire.",
   "A smaller-tier or different-family model id in the response suggests routing to a substitute.": "Un id di modello di fascia inferiore o di un'altra famiglia nella risposta suggerisce l'instradamento verso un sostituto.",
   "Lower --concurrency or --reliability-requests and re-run.": "Riduci --concurrency o --reliability-requests e riesegui.",
+  "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run.": "Controlla il percorso di rete da ekte al relay (proxy, DNS, firewall) e riesegui.",
   "Check the relay's connection pool and upstream stability under parallel load (HTTP 429 throttling is excluded from this rate).": "Controlla il pool di connessioni dell'intermediario e la stabilità upstream sotto carico parallelo (la limitazione HTTP 429 è esclusa da questo tasso).",
   "Confirm with the provider how usage is metered if billing is per-token.": "Se la fatturazione è per token, chiedi al fornitore come viene misurato il consumo.",
   "Cross-check billing against a known-size prompt; possible per-token overbilling.": "Verifica la fatturazione con un prompt di dimensione nota; possibile sovrafatturazione per token.",

@@ -128,6 +128,7 @@
   "One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share.": "È fallita una richiesta, o al massimo il 10% di quelle tentate (80%+ riuscite); toglie la quota fallita.",
   "More requests than that failed; deducts the failed share.": "Sono fallite più richieste; toglie la quota fallita.",
   "Every request was rate-limited (HTTP 429): not scored.": "Tutte le richieste sono state limitate (HTTP 429): non conteggiato.",
+  "No request reached the relay (failed in ekte or on the network path): not scored.": "Nessuna richiesta ha raggiunto il relay (fallita in ekte o sul percorso di rete): non valutato.",
   "p95 latency above 30 s under load; deducts 15% of the remaining score.": "Latenza p95 oltre 30 s sotto carico; toglie il 15% del punteggio rimanente.",
   "Part of the burst was rate-limited: honest throttling, not counted.": "Parte della raffica è stata limitata: limitazione legittima, non conteggiata.",
   "The reliability probe was disabled.": "La sonda di affidabilità era disattivata.",

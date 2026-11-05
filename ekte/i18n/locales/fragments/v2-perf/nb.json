@@ -19,6 +19,8 @@
   "min": "min",
   "mean": "gjennomsnitt",
   "max": "maks",
-  "stdev": "standardavvik"
+  "stdev": "standardavvik",
+  "network": "nettverk",
+  "repeated": "gjentatt"
  }
 }

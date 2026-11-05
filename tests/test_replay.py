@@ -246,3 +246,58 @@ def test_api_errors_carry_fixed_texts_only(saved):
             assert r.json() == {"error": evidence.EvidenceVersionError.PUBLIC}
             assert "9.0" not in r.text
         assert history.get(rid) is not None
+
+
+class _FlakyProxy(MockServer):
+    """The mock relay behind a proxy that refuses every ``every``-th tunnel."""
+
+    def __init__(self, every: int = 7) -> None:
+        super().__init__()
+        self.every, self.n = every, 0
+
+    def handler(self, request: httpx.Request) -> httpx.Response:
+        self.n += 1
+        if self.n % self.every == 0:
+            raise httpx.ProxyError("502 Bad Gateway from the proxy", request=request)
+        return super().handler(request)
+
+
+def test_a_repeated_network_failure_replays_with_its_repeat(tmp_path, monkeypatch):
+    # the recorded run repeated each refused tunnel; the replay repeats exactly
+    # those, so every repeat meets the recorded repeat's answer
+    monkeypatch.delenv("EKTE_NON_RELAY_RETRIES", raising=False)
+    path = tmp_path / "e.jsonl.zst"
+    before = _record(monkeypatch, path, suite="deep", server=_FlakyProxy())
+    recs = before["performance"]["requests"]
+    lost = [r for r in recs if r["error_type"] == "ProxyError"]
+    assert lost and all(r["error_class"] == "network" and r["retried"] for r in lost)
+    assert before["performance"]["target"]["errors"] == 0
+    after = json.loads(asyncio.run(replay.rescore(before, path)).model_dump_json())
+    assert _scores(after) == _scores(before)
+    r = after["rescored_from"]
+    assert r["missing"] == {} and r["unused"] == 0
+    assert [x["error_type"] for x in after["performance"]["requests"] if not x["ok"]] == [
+        x["error_type"] for x in recs if not x["ok"]]
+
+
+def test_a_recorded_failure_keeps_its_class():
+    for error, exc, cls in [("ProxyError: refused tunnel", httpx.ProxyError, "network"),
+                            ("ReadTimeout: slow", httpx.ReadTimeout, "relay"),
+                            ("no response", httpx.ConnectError, "network")]:
+        err = replay.recorded_error(error, httpx.Request("GET", f"{BASE_URL}/models"))
+        assert type(err) is exc
+        from ekte.errorclass import classify_exception
+
+        assert classify_exception(err) == cls
+
+
+def test_an_unrepeated_recorded_failure_is_not_repeated_in_the_replay(tmp_path, monkeypatch):
+    # a run recorded before repeats existed (or with them off): the replay must
+    # not ask again, or it would find no recorded answer
+    monkeypatch.setenv("EKTE_NON_RELAY_RETRIES", "0")
+    path = tmp_path / "e.jsonl.zst"
+    before = _record(monkeypatch, path, suite="standard", server=_FlakyProxy(every=5))
+    assert not any(r["retried"] for r in before["performance"]["requests"])
+    monkeypatch.setenv("EKTE_NON_RELAY_RETRIES", "3")
+    after = json.loads(asyncio.run(replay.rescore(before, path)).model_dump_json())
+    assert after["rescored_from"]["missing"] == {} and _scores(after) == _scores(before)

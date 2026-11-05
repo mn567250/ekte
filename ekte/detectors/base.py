@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 from typing import ClassVar
 
 from ekte.context import AuditContext
+from ekte.detectors.impaired import neutralize
 from ekte.models import DetectorResult, Dimension, Status
 
 # Suite tiers, cheapest to most thorough. A detector with ``min_suite="standard"``
@@ -131,4 +132,7 @@ async def run_detector(detector: Detector, ctx: AuditContext) -> DetectorResult:
         )
     if result.duration_ms is None:
         result.duration_ms = (time.perf_counter() - started) * 1000
+    if ctx.recorder is not None:
+        # a check the relay never got to answer is not a verdict on it
+        neutralize(result, ctx.recorder.records)
     return result

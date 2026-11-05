@@ -109,6 +109,7 @@
   "One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share.": "仅 1 个请求或不超过 10% 的尝试请求失败（成功率不低于 80%）；按失败比例扣分。",
   "More requests than that failed; deducts the failed share.": "失败的请求多于上述范围；按失败比例扣分。",
   "Every request was rate-limited (HTTP 429): not scored.": "所有请求都被限流（HTTP 429）：不计分。",
+  "No request reached the relay (failed in ekte or on the network path): not scored.": "没有请求到达中转站（在 ekte 内或网络路径上失败）：不计分。",
   "p95 latency above 30 s under load; deducts 15% of the remaining score.": "负载下 p95 延迟超过 30 秒；扣除剩余分数的 15%。",
   "Part of the burst was rate-limited: honest throttling, not counted.": "部分请求被限流：属于正常限流，不计入。",
   "The reliability probe was disabled.": "可靠性探测已关闭。",

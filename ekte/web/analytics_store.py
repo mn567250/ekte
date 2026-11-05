@@ -128,6 +128,8 @@ REQUEST_FIELDS: dict[str, str] = {
     "ok": "bool",
     "status_code": "int",
     "error_type": "str",
+    "error_class": "str",
+    "retried": "bool",
     "timeout": "bool",
     "rate_limited": "bool",
     "duration_ms": "float",
@@ -205,6 +207,42 @@ def ensure_tables(conn: sqlite3.Connection) -> None:
             extra      TEXT,
             PRIMARY KEY (history_id, ord)
         )"""
+    )
+
+
+def add_request_columns(conn: sqlite3.Connection, fields: dict[str, str]) -> None:
+    """Add RequestRecord ``fields`` (name -> kind) to ``history_requests``, and
+    note them as absent in every stored record, which predates them: a record
+    reads back exactly as it was saved (see :func:`encode_request`)."""
+    have = {r[1] for r in conn.execute("PRAGMA table_info(history_requests)")}
+    new = {name: kind for name, kind in fields.items() if name not in have}
+    if not new:
+        return
+    for name, kind in new.items():
+        conn.execute(f"ALTER TABLE history_requests ADD COLUMN {name} {_SQL_TYPE[kind]}")
+    names = list(new)
+    conn.execute(
+        "UPDATE history_requests SET extra = ? WHERE extra IS NULL",
+        (json.dumps({"absent": names}),),
+    )
+    rows = conn.execute(
+        "SELECT history_id, ord, extra FROM history_requests WHERE extra IS NOT NULL"
+    ).fetchall()
+    updates = []
+    for hid, ord_, raw in rows:
+        try:
+            extra = json.loads(raw)
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(extra, dict):
+            continue
+        absent = [a for a in extra.get("absent") or [] if a not in names]
+        if absent + names == list(extra.get("absent") or []):
+            continue  # this record already lists them (written just now)
+        extra["absent"] = absent + names
+        updates.append((json.dumps(extra, ensure_ascii=False), hid, ord_))
+    conn.executemany(
+        "UPDATE history_requests SET extra = ? WHERE history_id = ? AND ord = ?", updates
     )
 
 

@@ -128,6 +128,7 @@
   "One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share.": "One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share.",
   "More requests than that failed; deducts the failed share.": "More requests than that failed; deducts the failed share.",
   "Every request was rate-limited (HTTP 429): not scored.": "Every request was rate-limited (HTTP 429): not scored.",
+  "No request reached the relay (failed in ekte or on the network path): not scored.": "No request reached the relay (failed in ekte or on the network path): not scored.",
   "p95 latency above 30 s under load; deducts 15% of the remaining score.": "p95 latency above 30 s under load; deducts 15% of the remaining score.",
   "Part of the burst was rate-limited: honest throttling, not counted.": "Part of the burst was rate-limited: honest throttling, not counted.",
   "The reliability probe was disabled.": "The reliability probe was disabled.",

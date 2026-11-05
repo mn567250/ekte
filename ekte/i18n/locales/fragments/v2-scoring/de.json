@@ -128,6 +128,7 @@
   "One request, or at most 10% of the attempted ones, failed (80%+ succeeded); deducts the failed share.": "Eine Anfrage oder höchstens 10 % der versuchten schlugen fehl (mindestens 80 % erfolgreich); zieht den fehlgeschlagenen Anteil ab.",
   "More requests than that failed; deducts the failed share.": "Mehr Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab.",
   "Every request was rate-limited (HTTP 429): not scored.": "Jede Anfrage wurde gedrosselt (HTTP 429): nicht gewertet.",
+  "No request reached the relay (failed in ekte or on the network path): not scored.": "Keine Anfrage erreichte das Relay (in ekte oder auf dem Netzwerkweg gescheitert): nicht gewertet.",
   "p95 latency above 30 s under load; deducts 15% of the remaining score.": "p95-Latenz über 30 s unter Last; zieht 15 % der verbleibenden Bewertung ab.",
   "Part of the burst was rate-limited: honest throttling, not counted.": "Ein Teil des Bursts wurde gedrosselt: ehrliches Throttling, nicht gewertet.",
   "The reliability probe was disabled.": "Die Zuverlässigkeits-Probe war deaktiviert.",

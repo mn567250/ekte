@@ -757,6 +757,7 @@ heben das Risikourteil nie an.
 |  | Eine Anfrage oder höchstens 10 % der versuchten schlugen fehl (mindestens 80 % erfolgreich); zieht den fehlgeschlagenen Anteil ab. | Warnung · Niedrig | bis zu −20 Pkt. |
 |  | Mehr Anfragen schlugen fehl; zieht den fehlgeschlagenen Anteil ab. | Fehlgeschlagen · Mittel | bis zu −100 Pkt. |
 |  | Jede Anfrage wurde gedrosselt (HTTP 429): nicht gewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
+|  | Keine Anfrage erreichte das Relay (in ekte oder auf dem Netzwerkweg gescheitert): nicht gewertet. | Nicht eindeutig · Niedrig | Kein Abzug |
 | `reliability.latency` | p95-Latenz über 30 s unter Last; zieht 15 % der verbleibenden Bewertung ab. | Warnung · Niedrig | bis zu −15 Pkt. |
 | `reliability.rate_limited` | Ein Teil des Bursts wurde gedrosselt: ehrliches Throttling, nicht gewertet. | Info | Kein Abzug |
 | `reliability.skipped` | Die Zuverlässigkeits-Probe war deaktiviert. | Info | Kein Abzug |

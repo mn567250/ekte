@@ -174,6 +174,28 @@ def test_history_endpoints(tmp_path, monkeypatch, client):
     assert client.get("/api/history/999999").status_code == 404
 
 
+def test_a_saved_run_from_before_failure_classes_gets_them_when_shown(tmp_path, monkeypatch, client):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import history
+
+    old = [  # records as ekte saved them before error_class existed
+        {"seq": 0, "endpoint": "target", "phase": "probe", "ok": False, "error_type": "ProxyError"},
+        {"seq": 1, "endpoint": "target", "phase": "probe", "ok": False, "status_code": 502,
+         "error_type": "http_error"},
+        {"seq": 2, "endpoint": "target", "phase": "probe", "ok": True, "duration_ms": 900.0},
+    ]
+    rid = history.save({
+        "generated_at": "t", "target": {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"},
+        "mode": "check", "suite": "smoke", "verdict": {"risk_level": "clean", "overall_score": 95.0},
+        "performance": {"requests": old},
+    })
+    shown = client.get(f"/api/history/{rid}?trend=1").json()["performance"]["requests"]
+    assert [r.get("error_class") for r in shown] == ["network", "relay", None]
+    # stored as it was saved
+    stored = client.get(f"/api/history/{rid}").json()["performance"]["requests"]
+    assert all("error_class" not in r for r in stored)
+
+
 def test_serves_perf_js_and_pages_load_it(client):
     js = client.get("/perf.js")
     assert js.status_code == 200

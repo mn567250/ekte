@@ -12,6 +12,7 @@ import html
 import math
 from collections.abc import Callable
 
+from ekte.errorclass import LOCAL, NETWORK, record_class
 from ekte.models import (
     EndpointPerformance,
     PerformanceComparison,
@@ -142,7 +143,23 @@ def _reliability_line(e: EndpointPerformance) -> str:
         f"{e.successes}/{e.requests} succeeded · errors {fmt_num(e.error_rate, 'ratio')} · "
         f"timeouts {fmt_num(e.timeout_rate, 'ratio')} · 429 {fmt_num(e.rate_limited_rate, 'ratio')}"
         + (f" · {e.cached_excluded} cached (excluded)" if e.cached_excluded else "")
+        + (f" · {e.network_errors} network failures (not the relay's)" if e.network_errors else "")
+        + (f" · {e.local_errors} ekte failures (not the relay's)" if e.local_errors else "")
     )
+
+
+def fail_text(r: RequestRecord) -> str:
+    """A failed request's status, as the web UI's data table shows it:
+    ``failed (502)`` at the relay, ``failed (ProxyError · network)`` on the
+    network path, ``failed (TypeError · ekte)`` in ekte, ``repeated (…)`` for
+    an attempt that was repeated."""
+    what = str(r.status_code or r.error_type or "?")
+    cls = record_class(r)
+    if cls == NETWORK:
+        what += " · network"
+    elif cls == LOCAL:
+        what += " · ekte"
+    return f"{'repeated' if r.retried else 'failed'} ({what})"
 
 
 def _extras(e: EndpointPerformance) -> list[str]:
@@ -520,7 +537,7 @@ def timeline_svg(
     base_y = _MT + ph
     for r in tl.failed:
         cx = x(r.start_ms / 1000)
-        tip = f"#{r.seq} {r.endpoint} · {r.detector or '—'} · failed ({r.status_code or r.error_type})"
+        tip = f"#{r.seq} {r.endpoint} · {r.detector or '—'} · {fail_text(r)}"
         if r.duration_ms is not None:  # the time it took to fail
             tip += f"\nLatency: {fmt_num(r.duration_ms)} ms"
         out.append(

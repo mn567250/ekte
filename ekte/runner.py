@@ -21,6 +21,7 @@ from ekte.config import SURFACE_OPS, AuditOptions
 from ekte.context import AuditContext
 from ekte.detectors.base import run_detector, select_detectors
 from ekte.detectors.performance import planned_probe_requests, probe_modes, stream_mode
+from ekte.errorclass import NETWORK, is_impaired, record_class
 from ekte.evidence import EvidenceHeader, EvidenceWriter, new_run_id
 from ekte.judge import Judge
 from ekte.knowledge import ResolvedProfile, load_knowledge_base
@@ -285,7 +286,10 @@ async def _run_detectors(
     def connect(config: TargetConfig, endpoint: str) -> Client:
         if replay is None:
             return make_client(config)
-        return make_client(config, transport=replay.transport(endpoint))
+        client = make_client(config, transport=replay.transport(endpoint))
+        # repeat a failed attempt exactly when the recorded run did
+        client.replay_retried = replay.was_retried
+        return client
 
     _emit = emit
     # Only chat completions stream; the other surfaces' requests do not.
@@ -372,6 +376,28 @@ async def _run_detectors(
     return results, judge
 
 
+def impaired_warning(records: list[Any], results: list[DetectorResult]) -> str | None:
+    """The report's warning when requests failed in ekte or on the network path
+    to the relay (after their repeats), or None when none did."""
+    lost = [r for r in records if is_impaired(r)]
+    if not lost:
+        return None
+    network = sum(1 for r in lost if record_class(r) == NETWORK)
+    local = len(lost) - network
+    repeats = sum(1 for r in records if r.retried)
+    unjudged = sum(1 for d in results for f in d.findings if "impaired_requests" in f.evidence)
+    parts = []
+    if network:
+        parts.append(f"{network} on the network path to the relay (proxy, DNS, connect or TLS)")
+    if local:
+        parts.append(f"{local} in ekte itself")
+    return (
+        f"The run was impaired: {len(lost)} request(s) failed before the relay could answer them "
+        f"({' and '.join(parts)}), after {repeats} repeat(s). They are not counted against the "
+        f"relay; {unjudged} check(s) that rest only on them read inconclusive."
+    )
+
+
 def _assemble(
     target: TargetConfig,
     options: AuditOptions,
@@ -418,6 +444,8 @@ def _assemble(
     warnings = [
         f"{d.id}: {d.error}" for d in results if d.error
     ]
+    if (impaired := impaired_warning(recorder.records, results)) is not None:
+        warnings.append(impaired)
     if (stale := stale_warning(knowledge.kb_date)) is not None:
         warnings.append(stale)
     notes = [

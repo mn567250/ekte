@@ -173,12 +173,21 @@ def _v5(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(conn, "history", {"evidence_file": "TEXT"})
 
 
+def _v6(conn: sqlite3.Connection) -> None:
+    """Where a failed request failed (``error_class``) and whether it was
+    repeated (``retried``); records saved before read back without them."""
+    analytics_store.add_request_columns(
+        conn, {"error_class": "str", "retried": "bool"}
+    )
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
     dbmigrate.Migration(3, _v3),
     dbmigrate.Migration(4, _v4),
     dbmigrate.Migration(5, _v5),
+    dbmigrate.Migration(6, _v6),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 

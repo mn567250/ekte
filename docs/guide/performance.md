@@ -49,3 +49,16 @@ Local and private hosts (`localhost`, `127.x`, `192.168.x`, `host.docker.interna
 the hard cap for any single request, streams included, so no request can hang
 forever. A context-window probe that still times out is reported as
 inconclusive, not as truncation.
+
+**Failed requests.** ekte tells where a failed request failed. A **relay**
+failure (an HTTP error status, a timeout while waiting for the relay, a broken
+or malformed answer) counts against the relay and is never repeated. A
+**network** failure (the proxy ekte goes through, DNS, connect or TLS, before
+the relay could answer) and a **local** one (a failure inside ekte) are not the
+relay's doing: the request is repeated, once by default
+(`EKTE_NON_RELAY_RETRIES`, 0 to 10), and if it still fails it is counted apart
+(`network_errors`, `local_errors`) and left out of the error rates. A check
+whose requests all failed that way reads inconclusive instead of being scored,
+and the report warns that the run was impaired. Every request record carries its
+class (`error_class`) and whether it was repeated (`retried`); for runs saved
+before, the web UI derives the class from the stored error.
