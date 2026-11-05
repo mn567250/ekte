@@ -1,0 +1,262 @@
+# ekte knowledge base — Black Forest Labs
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: bfl
+last_verified: '2026-11-05'
+display_name: Black Forest Labs
+openai_compatible: false
+base_url_hints:
+- https://api.bfl.ai/v1
+- api.bfl.ai
+- /v1/flux-pro-1.1
+- /v1/flux-kontext-max
+default_tool_format: openai_function
+models:
+- id: flux-2-flex
+  aliases: []
+  family: flux-2
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - black forest labs
+  - flux
+  - bfl
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - stability
+  - stable diffusion
+  - midjourney
+  - qwen
+  - gemini
+  notes: "FLUX.2 [flex] hosted image model, endpoint POST /v1/flux-2-flex (official help center). FLUX.2 family released 2025-11-25 per press coverage. Sizing by exact width and height, not aspect_ratio. Official help center: minimum 64x64, maximum 4 megapixels, width and height multiples of 16, no aspect-ratio restriction; the help center recommends staying at or below 2 MP for quality and speed. image_sizes left empty because any multiple of 16 in range is valid, so a fixed list would be wrong."
+- id: flux-pro-1.1
+  aliases: []
+  family: flux-1.1
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - black forest labs
+  - flux
+  - bfl
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - stability
+  - stable diffusion
+  - midjourney
+  - qwen
+  - gemini
+  notes: "FLUX1.1 [pro] text-to-image, hosted only (POST /v1/flux-pro-1.1). Asynchronous; the POST returns a polling_url, poll it until status Ready (other statuses Pending, Error). Result URLs are temporary (reported ~10 minutes). Sizes unverified, image_sizes left empty. Official integration guide lists this as a legacy endpoint that may be superseded by FLUX.2."
+- id: flux-pro-1.1-ultra
+  aliases: []
+  family: flux-1.1
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - black forest labs
+  - flux
+  - bfl
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - stability
+  - stable diffusion
+  - midjourney
+  - qwen
+  - gemini
+  notes: "FLUX1.1 [pro] Ultra (endpoint flux-pro-1.1-ultra, POST /v1/flux-pro-1.1-ultra). Official FLUX1.1 Ultra doc and resolution help: generates up to 4 MP, sized by aspect_ratio rather than width and height. Exact ratio list unverified (a third-party list gives 1:1, 16:9, 9:16, 3:2, 2:3, 4:5, 5:4, 4:3), so image_sizes is left empty. Asynchronous polling as for flux-pro-1.1."
+- id: flux-3-image-klein
+  aliases:
+  - flux-3-klein
+  family: flux-3
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - black forest labs
+  - flux
+  - klein
+  - bfl
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - stability
+  - stable diffusion
+  - midjourney
+  - qwen
+  - gemini
+  notes: "FLUX 3 Klein (endpoint /v1/flux-3-image-klein), listed in the official API reference (docs.bfl.ai, found by search; page itself not read). Width and height each 64 to 6256 px with a combined cap of 16.8 MP; when width and height are set they override size tier and aspect ratio. Without them: aspect ratios 21:9, 2:1, 16:9, 3:2, 7:5, 4:3 and size tiers 768sq up to 4k. Release date and open-weight status unverified. image_sizes left empty. Recent model; an older claim that Klein was only upcoming is superseded."
+- id: flux-kontext-pro
+  aliases: []
+  family: flux-kontext
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - black forest labs
+  - flux
+  - kontext
+  - bfl
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - stability
+  - stable diffusion
+  - midjourney
+  - qwen
+  - gemini
+  notes: "FLUX.1 Kontext [pro] image generation and editing (POST /v1/flux-kontext-pro, asynchronous polling; official image editing doc). Official resolution help: outputs about 1 MP, aspect ratios from 3:7 to 7:3, dimensions snap to multiples of 32. Exact pixel list unverified, so image_sizes is left empty."
+- id: flux-kontext-max
+  aliases: []
+  family: flux-kontext
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - black forest labs
+  - flux
+  - kontext
+  - bfl
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - stability
+  - stable diffusion
+  - midjourney
+  - qwen
+  - gemini
+  notes: "FLUX.1 Kontext [max] (POST /v1/flux-kontext-max). Official integration guide caps concurrency for this endpoint at 6 requests (most endpoints 24). Price about USD 0.08 per image in third-party listings only (unverified). Size rules as for Kontext [pro] (about 1 MP, multiples of 32), image_sizes left empty."
+- id: black-forest-labs/FLUX.1-dev
+  aliases:
+  - flux-dev
+  - flux.1-dev
+  family: flux-1
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - black forest labs
+  - flux
+  - bfl
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - stability
+  - stable diffusion
+  - midjourney
+  - qwen
+  - gemini
+  notes: "FLUX.1 [dev] open-weight; search snippets say commercial use needs a licence from Black Forest Labs. Parameter count and licence text NOT verified on the model card (huggingface.co unreachable from this session). Hugging Face repo id, so a relay serving it is a host, not BFL. image_sizes left empty."
+- id: black-forest-labs/FLUX.1-schnell
+  aliases:
+  - flux-schnell
+  - flux.1-schnell
+  family: flux-1
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - black forest labs
+  - flux
+  - bfl
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - stability
+  - stable diffusion
+  - midjourney
+  - qwen
+  - gemini
+  notes: "FLUX.1 [schnell] open-weight distilled few-step model. Licence and step count NOT verified this session (huggingface.co unreachable). Hugging Face repo id; image_sizes left empty."
+relay_red_flags:
+- Claims a flux-* id but returns OpenAI-style data with a b64_json body from a single synchronous call; BFL's API is asynchronous (POST then poll polling_url until Ready).
+- Claims flux-pro-1.1 or flux-kontext-* but returns width/height-shaped output for an aspect_ratio model (flux-pro-1.1-ultra) or refuses aspect_ratio; the native API's sizing differs per endpoint.
+- Image dimensions returned for a flux-2 or flux-pro request that exceed the 4 MP ceiling reported for FLUX.2, or square-only output for a request asking for landscape.
+- Identifies as OpenAI, Stability, Midjourney or Qwen when asked to describe its model family (BFL image models do not self-identify in text).
+- Result URLs that never expire or are cached indefinitely, or that vary between identical polls of the same id, are inconsistent with BFL's temporary result links.
+sources:
+- https://docs.bfl.ai/integration_guidelines
+- https://help.bfl.ai/articles/8916739058-what-aspect-ratios-and-output-dimensions-are-supported
+- https://help.bfl.ai/articles/8531149640-what-are-the-resolution-limits
+- https://help.bfl.ai/articles/6944273991-what-are-the-flux-2-technical-specifications
+- https://docs.bfl.ai/flux_models/flux_1_1_pro_ultra_raw
+- https://docs.bfl.ai/kontext/kontext_image_editing
+- https://docs.bfl.ai/api-reference/utility/generate-an-image-with-flux-3-klein
+- https://bfl.ai/blog/flux-2
+- https://help.bfl.ai/articles/9364115800-flux-models-overview
+- https://www.finanzen.net/nachricht/aktien/black-forest-labs-launches-flux-2-ai-image-models-to-challenge-nano-banana-pro-and-midjourney-15313639
+- https://alternativeto.net/news/2025/11/black-forest-labs-releases-flux-2-image-models-with-open-weights-and-high-res-features
+- https://www.cometapi.com/vi/models/replicate/black-forest-labs-flux-2-flex/
+- https://moda.app/resources/models/flux
+- https://www.promptzone.com/cillian_hassan/resolution-flux-boosts-ai-image-generation-18pi
+- https://coinis.com/models/black-forest-labs/flux
+- https://learn.microsoft.com/en-ie/Azure/foundry/foundry-models/how-to/use-foundry-models-flux
+- https://huggingface.co/black-forest-labs/FLUX.1-dev
+- https://huggingface.co/black-forest-labs/FLUX.1-schnell

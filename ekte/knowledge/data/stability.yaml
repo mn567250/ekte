@@ -1,0 +1,176 @@
+# ekte knowledge base — Stability AI
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: stability
+last_verified: '2026-11-05'
+display_name: Stability AI
+openai_compatible: false
+base_url_hints:
+- https://api.stability.ai
+- api.stability.ai
+- /v2beta/stable-image/generate/ultra
+- /v2beta/stable-image/generate/core
+- /v2beta/stable-image/generate/sd3
+default_tool_format: openai_function
+models:
+- id: stable-image-ultra
+  aliases: []
+  family: stable-image
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - stability
+  - stability ai
+  - stable image
+  - stable diffusion
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - midjourney
+  - black forest labs
+  - flux
+  - qwen
+  - gemini
+  notes: "Stable Image Ultra, Stability's top text-to-image service (POST /v2beta/stable-image/generate/ultra). Default output 1024x1024. Takes aspect_ratio. Official release notes say Ultra now runs on Stable Diffusion 3.5 Large (platform.stability.ai, page date unverified). Official aspect-ratio knowledge-base table: 1:1 1024x1024, 16:9 1344x768, 21:9 1536x640, 2:3 832x1216, 9:16 768x1344 (nine ratios in total; which endpoints accept them is not confirmed in the snippet). Also accepts image-to-image input. Sizes NOT pinned down, so image_sizes is empty."
+- id: stable-image-core
+  aliases: []
+  family: stable-image
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - stability
+  - stability ai
+  - stable image
+  - stable diffusion
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - midjourney
+  - black forest labs
+  - flux
+  - qwen
+  - gemini
+  notes: "Stable Image Core (POST /v2beta/stable-image/generate/core). Only prompt is required; optional aspect_ratio, negative_prompt, seed, style_preset, output_format. A third-party wrapper lists nine ratios (1:1, 16:9, 21:9, 2:3, 3:2, 4:5, 5:4, 9:16, 9:21) for Core, not confirmed on the official reference. image_sizes left empty."
+- id: sd3.5-large
+  aliases:
+  - stabilityai/stable-diffusion-3.5-large
+  - stable-diffusion-3.5-large
+  family: sd3.5
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - stability
+  - stability ai
+  - stable diffusion
+  - sd3.5
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - midjourney
+  - black forest labs
+  - flux
+  - qwen
+  - gemini
+  notes: "Stable Diffusion 3.5 Large, served by the v2beta sd3 endpoint (v2beta sd3 endpoint, request shape unverified). Open weights on Hugging Face under the Stability AI Community License (per press coverage; licence text not read this session). Search snippets describe about 1 megapixel native generation at 1024x1024 with other aspect ratios via size conditioning. image_sizes left empty."
+- id: sd3.5-medium
+  aliases:
+  - stabilityai/stable-diffusion-3.5-medium
+  - stable-diffusion-3.5-medium
+  family: sd3.5
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - stability
+  - stability ai
+  - stable diffusion
+  - sd3.5
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - midjourney
+  - black forest labs
+  - flux
+  - qwen
+  - gemini
+  notes: "Stable Diffusion 3.5 Medium, served by the v2beta sd3 endpoint (request shape unverified). Named in LiteLLM provider examples (stability/sd3.5-medium). Licence and sizes not verified this session; image_sizes left empty."
+- id: sd3.5-large-turbo
+  aliases:
+  - stabilityai/stable-diffusion-3.5-large-turbo
+  - stable-diffusion-3.5-large-turbo
+  family: sd3.5
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - stability
+  - stability ai
+  - stable diffusion
+  - sd3.5
+  identity_forbidden:
+  - openai
+  - gpt
+  - dall-e
+  - dalle
+  - midjourney
+  - black forest labs
+  - flux
+  - qwen
+  - gemini
+  notes: "Stable Diffusion 3.5 Large Turbo, a faster distilled variant of Large with few sampling steps (listed on Hugging Face per search snippets). Served by the v2beta sd3 endpoint (request shape not read this session). Step count and sizes NOT verified this session; image_sizes left empty."
+relay_red_flags:
+- Claims a stable-image-* id but returns output in a different size class than Ultra/Core defaults (1024x1024 native) with no aspect_ratio honored, or serves a DALL-E-style fixed size set.
+- Claims an sd3.5-* id but the body or headers lack the v2beta response shape (base64 image in JSON with finish_reason and seed), or the endpoint answers only under an OpenAI /images/generations path.
+- Image output for a stable-image or sd3.5 request carries a Flux- or DALL-E-style fingerprint (a different default size or dimensions off the aspect ratio grid).
+- Identifies as OpenAI, Black Forest Labs/FLUX, Midjourney or Qwen when asked to describe its model family (Stability image models do not self-identify in text).
+sources:
+- https://platform.stability.ai/docs/api-reference
+- https://kb.stability.ai/knowledge-base/understanding-aspect-ratios-in-our-apis
+- https://platform.stability.ai/docs/release-notes
+- https://platform.stability.ai/docs/features/api-parameters
+- https://docs.litellm.ai/docs/providers/stability
+- https://docs.comfy.org/built-in-nodes/StabilityStableImageUltraNode.md
+- https://docs.superblocks.com/integrations/integrations-library/stabilityai
+- https://docs.haimaker.ai/docs/providers/stability
+- https://alternativeto.net/news/2024/10/stability-ai-releases-stable-diffusion-3-5-with-enhanced-speed-quality-and-efficiency
+- https://huggingface.co/stabilityai/stable-diffusion-3.5-large
