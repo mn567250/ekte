@@ -137,11 +137,11 @@ def _typecheck(key: Key, value: Any) -> str | None:
         for item in value:
             if not isinstance(item, str) or (key.choices and item not in key.choices):
                 return "a list of " + (", ".join(key.choices) if key.choices else "strings")
-    elif k == "map":
-        if not isinstance(value, dict) or not all(
-            isinstance(a, str) and isinstance(b, str | int | float) for a, b in value.items()
-        ):
-            return "a mapping of header names to values"
+    elif k == "map" and (
+        not isinstance(value, dict)
+        or not all(isinstance(a, str) and isinstance(b, str | int | float) for a, b in value.items())
+    ):
+        return "a mapping of header names to values"
     return None
 
 
