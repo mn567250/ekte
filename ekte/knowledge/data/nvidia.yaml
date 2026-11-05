@@ -12,7 +12,8 @@ base_url_hints:
 default_tool_format: openai_function
 models:
 - id: nvidia/nemotron-3-nano-30b-a3b
-  aliases: []
+  aliases:
+  - nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16
   family: nemotron-3-nano
   context_window_tokens: 262144
   max_output_tokens: -1
@@ -44,7 +45,7 @@ models:
   - deepseek
   - mistral
   fingerprints: []
-  notes: 'NVIDIA-built hybrid Mamba-2/Transformer MoE, about 30B total / 3.5B active (NVIDIA model card; active-parameter count per secondary listings). API id nvidia/nemotron-3-nano-30b-a3b confirmed on docs.api.nvidia.com. Context: 256K (262144) is the Hugging Face config default; the card advertises up to 1M (research page), and one catalogue shows 131072 (unverified, judged less reliable). Max output unverified (-1). Reasoning toggle: on/off via the chat template; a thinking budget is configurable (HF blog). Licence: the HF blog says nvidia-open-model-license, the Super cards say the NVIDIA Nemotron Open Model License; check the card. Released 2025-12.'
+  notes: 'NVIDIA-built hybrid Mamba-2/Transformer MoE, about 30B total / 3.5B active (NVIDIA model card; active-parameter count per secondary listings). API id nvidia/nemotron-3-nano-30b-a3b confirmed on docs.api.nvidia.com. Context: 262144 is the default in the Hugging Face config; the model card (nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16, checked 2026-11-05) says the model supports up to 1M, so a relay may honestly serve more. Max output unverified (-1). Reasoning toggle: on/off via the chat template; a thinking budget is configurable (HF blog). Licence: the HF blog says nvidia-open-model-license, the Super cards say the NVIDIA Nemotron Open Model License; check the card. Released 2025-12.'
 - id: nvidia/nemotron-3-super-120b-a12b
   aliases:
   - nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16

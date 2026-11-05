@@ -122,7 +122,7 @@
       - list:
         - listitem:
           - code: allenai/Olmo-3-7B-Instruct
-          - text: Fourni Contexte — Sortie max. — Alias
+          - text: Fourni Contexte 65536 Sortie max. — Alias
           - code: allenai/olmo-3-7b-instruct
           - text: ","
           - code: Olmo-3-7B-Instruct

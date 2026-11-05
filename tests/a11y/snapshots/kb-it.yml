@@ -122,7 +122,7 @@
       - list:
         - listitem:
           - code: allenai/Olmo-3-7B-Instruct
-          - text: Incluso Contesto — Output max. — Alias
+          - text: Incluso Contesto 65536 Output max. — Alias
           - code: allenai/olmo-3-7b-instruct
           - text: ","
           - code: Olmo-3-7B-Instruct

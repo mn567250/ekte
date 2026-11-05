@@ -1228,7 +1228,7 @@ models:
   aliases:
   - openai/gpt-oss-safeguard-20b
   family: gpt-oss-safeguard
-  context_window_tokens: -1
+  context_window_tokens: 131072
   max_output_tokens: -1
   knowledge_cutoff: null
   tokenizer: null
@@ -1256,13 +1256,13 @@ models:
   - meta
   - deepseek
   - mistral
-  notes: 'Safety-reasoning classifier fine-tuned from gpt-oss-20b (21B total / 3.6B active). Takes a developer-written policy in the prompt and returns a decision with reasoning. Apache-2.0; released 2025-10-29 as a research preview. Context, tokenizer and tool support not stated by the vendor page checked, so left unknown (-1/null/false); OpenRouter lists 131072 context and tool calling, but host catalogs are not used for limits. A relay serving this id as a general chat model, or a plain gpt-oss-20b answering as a safety classifier, is a mismatch to check.'
+  notes: 'Safety-reasoning classifier fine-tuned from gpt-oss-20b (21B total / 3.6B active). Takes a developer-written policy in the prompt and returns a decision with reasoning. Apache-2.0; released 2025-10-29 as a research preview. Context, tokenizer and tool support not stated by the vendor page checked, so left unknown (-1/null/false); OpenRouter lists 131072 context and tool calling, but host catalogs are not used for limits. A relay serving this id as a general chat model, or a plain gpt-oss-20b answering as a safety classifier, is a mismatch to check. Context 131072 from max_position_embeddings in the vendor''s Hugging Face config.json (openai/gpt-oss-safeguard-20b), checked 2026-11-05.'
 - id: gpt-oss-safeguard-120b
   aliases:
   - openai/gpt-oss-safeguard-120b
   - openai.gpt-oss-safeguard-120b
   family: gpt-oss-safeguard
-  context_window_tokens: -1
+  context_window_tokens: 131072
   max_output_tokens: -1
   knowledge_cutoff: null
   tokenizer: null
@@ -1290,7 +1290,7 @@ models:
   - meta
   - deepseek
   - mistral
-  notes: 'Larger safety-reasoning variant fine-tuned from gpt-oss-120b (117B total / 5.1B active, fits one 80GB GPU). Policy-driven content classification with reasoning; Apache-2.0; released 2025-10-29 as a research preview. Context, tokenizer and tool support not confirmed from the vendor page, so left unknown. Hosted by AWS Bedrock (openai.gpt-oss-safeguard-120b, Chat Completions, Converse and Invoke) and other third parties; OpenAI does not host it on its own API per the sources. Bedrock pricing ~$0.15/$0.60 per MTok (not used).'
+  notes: 'Larger safety-reasoning variant fine-tuned from gpt-oss-120b (117B total / 5.1B active, fits one 80GB GPU). Policy-driven content classification with reasoning; Apache-2.0; released 2025-10-29 as a research preview. Context, tokenizer and tool support not confirmed from the vendor page, so left unknown. Hosted by AWS Bedrock (openai.gpt-oss-safeguard-120b, Chat Completions, Converse and Invoke) and other third parties; OpenAI does not host it on its own API per the sources. Bedrock pricing ~$0.15/$0.60 per MTok (not used). Context 131072 from max_position_embeddings in the vendor''s Hugging Face config.json (openai/gpt-oss-safeguard-120b), checked 2026-11-05.'
 fingerprints:
 - id: self-id
   signal: self-identification style

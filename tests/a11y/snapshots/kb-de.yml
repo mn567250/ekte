@@ -122,7 +122,7 @@
       - list:
         - listitem:
           - code: allenai/Olmo-3-7B-Instruct
-          - text: Mitgeliefert Kontext — Max. Ausgabe — Aliasse
+          - text: Mitgeliefert Kontext 65536 Max. Ausgabe — Aliasse
           - code: allenai/olmo-3-7b-instruct
           - text: ","
           - code: Olmo-3-7B-Instruct
