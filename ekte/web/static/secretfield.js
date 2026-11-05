@@ -77,8 +77,8 @@
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "secret-eye zsf-toggle";
-      btn.setAttribute("aria-label", "显示密钥");
-      btn.setAttribute("title", "显示密钥");
+      btn.setAttribute("aria-label", "Show key");
+      btn.setAttribute("title", "Show key");
       btn.setAttribute("data-en-aria-label", "Show key");
       btn.setAttribute("data-en-title", "Show key");
       if (input.id) {

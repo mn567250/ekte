@@ -36,8 +36,8 @@
 - main:
   - heading "无障碍符合性报告" [level=1]
   - paragraph: 这里列出 BITV 2.0 与 EN 301549（第 9 章，即 WCAG 2.1 A 级与 AA 级）的每个检查步骤：它是如何测试的，以及自动化无障碍测试的最新结果。
-  - region "结论":
-    - heading "结论" [level=2]
+  - region "状态":
+    - heading "状态" [level=2]
     - paragraph: 部分符合
     - paragraph: 适用的 44 个步骤中：33 个通过，0 个未通过，11 个待人工审核，0 个尚未测试。
     - term: 生成时间

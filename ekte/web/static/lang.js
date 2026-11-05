@@ -7,14 +7,16 @@
  *   - get()            -> a code from LANGS below ("en", "zh", "fr", …)
  *   - langs()          the registry: [{ code, label, html, locale }] in menu order
  *                      (label is the language's own name: "English", "中文", …)
- *   - isZh()           true when the original Chinese UI is shown
+ *   - isZh()           true when the UI is shown in Chinese
  *   - set(lang)        persist + re-translate static markup + fire "ekte:lang";
  *                      when lang's data isn't loaded yet it first loads
  *                      /locales.js?lang=<code> (asynchronously: get() changes
  *                      once it is in); if that fails the language stays as it
  *                      was and the switchers show it again
  *   - t(zh, en)        CN -> zh; otherwise the English text translated via tr()
- *   - tr(en)           English string -> current language (from EKTE_LOCALES)
+ *                      (for call sites that carry their Chinese inline)
+ *   - tr(en)           English string -> current language (from EKTE_LOCALES;
+ *                      CN included), falling back to the English
  *   - trFor(lang, en)  English string -> the given language
  *   - locale()         BCP 47 locale for dates/numbers ("fr-FR", …)
  *   - intl(Ctor, opts[, locale])
@@ -38,12 +40,14 @@
  *   - apply(root)      (re)translate static markup under root
  * and a global shorthand T(zh, en).
  *
- * The Chinese text in the HTML is the original and stays untouched: elements
- * carry their English text in data attributes (the English doubles as the
- * lookup key for the other languages) and the Chinese is remembered on first
- * switch, so CN always shows exactly what shipped.
- *   data-en="…"              innerHTML outside CN (only text/inline markup inside!)
+ * The pages ship in English; Chinese is a translation like every other
+ * language. Elements carry their English text again in data attributes, the
+ * lookup key into EKTE_LOCALES (en is the key language, so it needs no data):
+ *   data-en="…"              innerHTML (only text/inline markup inside!)
  *   data-en-placeholder="…"  / data-en-title / data-en-aria-label  attributes
+ * A string a language doesn't translate stays English. The server also puts
+ * the chosen language into <html lang> and <title> (see ekte/web/caching.py),
+ * so the browser tab shows the right title from the first byte.
  * A <select class="lang-sel"> anywhere on the page becomes the switcher; its
  * options are generated from LANGS, the single list of supported languages.
  *
@@ -64,7 +68,7 @@
  * reload doesn't come before the reveal timers below, the page
  * shows in English and switches once /locales.js?lang=<code> has loaded.
  *
- * Outside CN the page is hidden (html visibility) until the static markup is
+ * Outside EN the page is hidden (html visibility) until the static markup is
  * translated. So a failure never leaves it blank, it is shown anyway ~1.5 s
  * after DOMContentLoaded (8 s at most after this script ran) or on a window
  * "error" once the HTML is parsed (e.g. a later script throws, or boot never
@@ -101,14 +105,10 @@
   var RELOAD = "ekte.lang.reload"; // sessionStorage: language reloaded for
   var DEFAULT = "en";
   // The supported languages in dropdown order, from ekte/i18n/locales/*.json
-  // (via /locales.js). EN and CN are always available: English is the key
-  // language and CN the original markup.
+  // (via /locales.js). EN is always available: it is the key language and
+  // the markup the pages ship in.
   var LANG_LIST = ((window.EKTE_LOCALES || {}).languages || []).slice();
-  if (!LANG_LIST.length)
-    LANG_LIST = [
-      { code: "en", label: "English", html: "en", locale: "en-US" },
-      { code: "zh", label: "中文", html: "zh-CN", locale: "zh-CN" },
-    ];
+  if (!LANG_LIST.length) LANG_LIST = [{ code: "en", label: "English", html: "en", locale: "en-US" }];
   var LANGS = {};
   LANG_LIST.forEach(function (l) {
     LANGS[l.code] = l;
@@ -220,16 +220,15 @@
   }
 
   function tr(en) {
-    if (en == null || lang === "en" || lang === "zh") return en;
+    if (en == null || lang === "en") return en;
     var d = (locales().strings || {})[lang] || {};
     return Object.prototype.hasOwnProperty.call(d, en) ? d[en] : en;
   }
 
-  // Uppercase enum codes shown as-is in CN/EN (e.g. "HIGH", "FAIL");
-  // other languages look up the uppercase code itself.
+  // Uppercase enum codes (e.g. "HIGH", "FAIL"): every language looks up the
+  // uppercase code itself; one it doesn't translate (CN) shows it as-is.
   function code(v) {
-    var c = String(v == null ? "" : v).toUpperCase();
-    return lang === "en" || lang === "zh" ? c : tr(c);
+    return tr(String(v == null ? "" : v).toUpperCase());
   }
 
   function t(zh, en) {
@@ -268,8 +267,7 @@
     return out + escHTML(s.slice(last));
   }
 
-  // English string -> language `l` (no current-language shortcut; "zh"
-  // only knows the backend strings registered for exports).
+  // English string -> language `l` (no current-language shortcut).
   function trIn(l, en) {
     if (en == null || l === "en") return en;
     var d = (locales().strings || {})[l] || {};
@@ -319,21 +317,33 @@
     return backendIn(lang, text);
   }
 
+  // The markup of the current language for an element whose English markup
+  // is `en` and lookup key `key`: a translation from EKTE_LOCALES, else `en`.
+  function markupFor(key, en) {
+    if (lang === "en") return en;
+    var d = (locales().strings || {})[lang] || {};
+    return Object.prototype.hasOwnProperty.call(d, key) ? d[key] : en;
+  }
+
   function applyEl(el) {
     if (el.hasAttribute("data-en")) {
-      if (el.__ekteZh == null) el.__ekteZh = el.innerHTML;
-      var html = lang === "zh" ? el.__ekteZh : tr(el.getAttribute("data-en"));
-      if (el.tagName === "TITLE") el.textContent = html;
-      else if (el.innerHTML !== html) el.innerHTML = html;
+      if (el.tagName === "TITLE") {
+        // text only (the server may already have put it in the language)
+        var text = tr(el.getAttribute("data-en"));
+        if (el.textContent !== text) el.textContent = text;
+      } else {
+        // The English is the element's own markup, as shipped: remembered on
+        // first use, so English never has to be rebuilt from an attribute.
+        if (el.__ekteEn == null) el.__ekteEn = el.innerHTML;
+        var html = markupFor(el.getAttribute("data-en"), el.__ekteEn);
+        if (el.innerHTML !== html) el.innerHTML = html;
+      }
     }
     ATTRS.forEach(function (a) {
       var enA = "data-en-" + a;
       if (!el.hasAttribute(enA)) return;
-      el.__ekteZhAttr = el.__ekteZhAttr || {};
-      if (!(a in el.__ekteZhAttr)) el.__ekteZhAttr[a] = el.getAttribute(a);
-      var v = lang === "zh" ? el.__ekteZhAttr[a] : tr(el.getAttribute(enA));
-      if (v == null) el.removeAttribute(a);
-      else el.setAttribute(a, v);
+      var v = tr(el.getAttribute(enA));
+      if (el.getAttribute(a) !== v) el.setAttribute(a, v);
     });
   }
 
@@ -430,10 +440,10 @@
   }
 
   // Keep the page hidden until the static markup is in the chosen language,
-  // so a non-CN user never sees a flash of the Chinese original.
+  // so a non-English user never sees a flash of the English markup.
   // Never leave it blank, though: if boot doesn't run or a script fails,
-  // show the page anyway. The 1.5 s grace starts once the HTML is parsed (a
-  // slow download must not flash the Chinese original); a script error after
+  // show the page anyway (in English at worst). The 1.5 s grace starts once
+  // the HTML is parsed (a slow download must not flash the untranslated page); a script error after
   // that reveals at once, and a cap covers a DOMContentLoaded that never comes.
   var timers = [];
   function reveal() {
@@ -458,7 +468,7 @@
   function arm() {
     timers.push(setTimeout(reveal, 1500));
   }
-  if (lang !== "zh") {
+  if (lang !== "en" || reloading) {
     document.documentElement.style.visibility = "hidden";
     try {
       window.addEventListener("error", onError);

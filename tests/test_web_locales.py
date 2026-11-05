@@ -310,6 +310,7 @@ const run = (lang, fire) => {
 const r = {};
 for (const f of ["cap", "parsed", "error-loading", "error-parsed"]) r[f] = run("fr", f);
 r.zh = run("zh", "none");
+r.en = run("en", "none");
 console.log(JSON.stringify(r));
 """
 
@@ -332,10 +333,11 @@ def test_hidden_page_is_revealed_if_boot_never_runs(tmp_path):
     assert r["parsed"]["mid"] == "hidden" and r["parsed"]["after"] == ""
     assert 1000 <= min(r["parsed"]["delays"]) <= 2000
     # A script error reveals it at once, but not while the HTML is still
-    # loading (boot is still to come; revealing would flash the Chinese).
+    # loading (boot is still to come; revealing would flash the English).
     assert r["error-loading"]["after"] == "hidden"
     assert r["error-parsed"]["after"] == ""
-    assert r["zh"]["before"] == "" and r["zh"]["delays"] == []  # CN is the markup itself
+    assert r["zh"]["before"] == "hidden"  # CN is a translation like the others
+    assert r["en"]["before"] == "" and r["en"]["delays"] == []  # EN is the markup itself
 
 
 # --------------------------------------------------------------------------- #
@@ -904,3 +906,167 @@ def test_pass_and_fail_of_one_check_get_different_localized_titles(tmp_path):
         check_title = i18n._load()[lang]["findings"]["security.tls"][0]
         assert r["unknown"] == check_title, lang
         assert i18n.finding_title(lang, "security.tls", "Some retired title") == check_title, lang
+
+
+# --------------------------------------------------------------------------- #
+# The pages ship in English; Chinese is a translation like the others
+# --------------------------------------------------------------------------- #
+_PAGES = sorted((_STATIC / "v2").glob("*.html"))
+# JS that builds data-en markup (translated by EKTE_LANG.apply like the pages)
+_MARKUP_JS = ["v2/nav.js", "v2/kbsection.js", "secretfield.js", "v2/kb.html"]
+_CJK = re.compile("[\u2e80-\u2fff\u3000-\u303f\u3040-\u30ff\u3100-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]")
+
+
+def _markup_text(src: str) -> list[str]:
+    """The text and attribute values of an HTML page outside <script> and
+    <style> (parsed, so no tag-matching regex)."""
+    from html.parser import HTMLParser
+
+    out: list[str] = []
+
+    class P(HTMLParser):
+        skip = 0
+
+        def handle_starttag(self, tag, attrs):
+            if tag in ("script", "style"):
+                self.skip += 1
+            elif not self.skip:
+                out.extend(v for _k, v in attrs if v)
+
+        def handle_endtag(self, tag):
+            if tag in ("script", "style") and self.skip:
+                self.skip -= 1
+
+        def handle_data(self, data):
+            if not self.skip and data.strip():
+                out.append(data.strip())
+
+    P(convert_charrefs=True).feed(src)
+    return out
+
+
+@pytest.mark.parametrize("page", _PAGES, ids=lambda p: p.name)
+def test_pages_ship_in_english(page):
+    # No Chinese in the markup (only in scripts, as T(zh, en) call sites), so
+    # a page that is shown before lang.js has translated it, or the tab
+    # title, is never in a language the user didn't pick.
+    import html
+
+    src = page.read_text(encoding="utf-8")
+    assert '<html lang="en">' in src
+    left = [t for t in _markup_text(src) if _CJK.search(t)]
+    assert not left, f"{page.name}: Chinese in the markup: {left[:5]}"
+    title = re.search(r'<title data-en="([^"]*)">([^<]*)</title>', src)
+    assert title and html.unescape(title[1]) == html.unescape(title[2])
+
+
+@pytest.mark.parametrize("path", _MARKUP_JS)
+def test_markup_built_by_scripts_is_english(path):
+    src = (_STATIC / path).read_text(encoding="utf-8")
+    left = [line.strip() for line in src.splitlines() if "data-en" in line and _CJK.search(line)]
+    assert not left, f"{path}: Chinese next to data-en: {left[:5]}"
+    assert not _CJK.search(re.search(r"var LINKS = \[.*?\];", src, re.S)[0]) if path == "v2/nav.js" else True
+
+
+def test_zh_translates_the_page_markup():
+    # Every data-en / data-en-<attr> text (pages and the markup scripts build)
+    # has a Chinese translation in ekte/i18n/locales (zh.json or a fragment).
+    import html
+
+    from ekte import i18n
+
+    zh = i18n._load()["zh"]["strings"]
+    keys = set()
+    for path in [*_PAGES, *(_STATIC / p for p in _MARKUP_JS)]:
+        keys |= {html.unescape(en) for en in _DATA_EN.findall(path.read_text(encoding="utf-8"))
+                 if not en.startswith("' +")}  # skip data-en="' + esc(…) + '" in scripts
+    # nav.js's links and footer, put into data-en by variable
+    nav = (_STATIC / "v2" / "nav.js").read_text(encoding="utf-8")
+    keys |= set(re.findall(r'\["\w+", "/[\w/]*", "\w+", "([^"]+)"\]', nav))
+    keys |= set(re.findall(r"var DISC_\w+ = '([^']+)';", nav))
+    assert len(keys) > 150
+    missing = sorted(k for k in keys if k not in zh)
+    assert not missing, f"add to the zh locale files: {missing}"
+
+
+_APPLY_JS = r"""
+const path = require("path");
+const dir = process.argv[1];
+const el = (tag, attrs, html) => ({
+  tagName: tag, innerHTML: html, textContent: html, attrs: Object.assign({}, attrs), nodeType: 1,
+  hasAttribute(a) { return a in this.attrs; }, getAttribute(a) { return a in this.attrs ? this.attrs[a] : null; },
+  setAttribute(a, v) { this.attrs[a] = String(v); }, removeAttribute(a) { delete this.attrs[a]; },
+});
+const els = [
+  el("TITLE", { "data-en": "ekte — knowledge base" }, "ekte — knowledge base"),
+  el("SPAN", { "data-en": "Save relay" }, "Save relay"),
+  el("NAV", { "aria-label": "Main navigation", "data-en-aria-label": "Main navigation" }, ""),
+  el("SPAN", { "data-en": "Not a known string" }, "Not a known string"),
+];
+global.window = { addEventListener() {}, removeEventListener() {}, dispatchEvent() {} };
+global.CustomEvent = function () {};
+global.document = { documentElement: { style: {}, lang: "" }, readyState: "complete", cookie: "",
+                    querySelectorAll: s => (s.indexOf("data-en") >= 0 ? els : []), addEventListener() {} };
+global.localStorage = { getItem: () => null, setItem() {} };
+require(path.join(dir, "locales.js"));
+require(path.join(dir, "lang.js"));
+const snap = () => ({ lang: document.documentElement.lang, title: els[0].textContent, save: els[1].innerHTML,
+                      nav: els[2].attrs["aria-label"], unknown: els[3].innerHTML });
+const out = { en: snap() };
+window.EKTE_LANG.set("zh"); out.zh = snap();
+window.EKTE_LANG.set("de"); out.de = snap();
+window.EKTE_LANG.set("en"); out.back = snap();
+console.log(JSON.stringify(out));
+"""
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_markup_is_translated_into_chinese_like_any_language(tmp_path):
+    from ekte import i18n
+
+    out = json.loads(run_subprocess(
+        ["node", "-e", _APPLY_JS, str(_ui_js(tmp_path))], capture_output=True, text=True, encoding="utf-8", check=True,
+    ).stdout)
+    english = {"lang": "en", "title": "ekte — knowledge base", "save": "Save relay",
+               "nav": "Main navigation", "unknown": "Not a known string"}
+    assert out["en"] == english and out["back"] == english
+    for lang, html_lang in (("zh", "zh-CN"), ("de", "de")):
+        r = out[lang]
+        assert r["lang"] == html_lang
+        assert r["title"] == i18n.ui(lang, "ekte — knowledge base") != english["title"]
+        assert r["save"] == i18n.ui(lang, "Save relay") != "Save relay"
+        assert r["nav"] == i18n.ui(lang, "Main navigation") != "Main navigation"
+        assert r["unknown"] == "Not a known string"  # untranslated: stays English
+    assert _CJK.search(out["zh"]["save"])
+
+
+@pytest.mark.parametrize("path", ["/", "/kb", "/history", "/watches", "/analytics", "/accessibility", "/no/such/page"])
+def test_pages_are_served_with_the_cookie_language_in_lang_and_title(path):
+    # The tab title is right from the first byte, before any script runs.
+    import html
+
+    from fastapi.testclient import TestClient
+
+    from ekte import i18n
+    from ekte.web.server import create_app
+
+    client = TestClient(create_app(), base_url="http://localhost")
+    page = {}
+    for lang in ("en", "zh", "de", "xx", None):
+        client.cookies.clear()
+        if lang:
+            client.cookies.set("ekte_lang", lang)
+        r = client.get(path)
+        assert "cookie" in r.headers["vary"].lower()
+        m = re.search(r'<html lang="([^"]*)">', r.text)
+        t = re.search(r'<title data-en="([^"]*)">([^<]*)</title>', r.text)
+        page[lang] = (m[1], html.unescape(t[2]), r.headers["etag"])
+        code = i18n.normalize(lang)
+        assert page[lang][1] == i18n.ui(code, html.unescape(t[1]))
+    assert page["en"] == page[None] == page["xx"] and page["en"][0] == "en"
+    assert page["zh"][0] == "zh-CN" and _CJK.search(page["zh"][1])
+    assert page["de"][0] == "de" and page["de"][1] != page["en"][1]
+    assert len({page[k][2] for k in ("en", "zh", "de")}) == 3  # one ETag per language
+    client.cookies.clear()
+    client.cookies.set("zing_lang", "zh")  # an install from before the rename
+    assert '<html lang="zh-CN">' in client.get(path).text

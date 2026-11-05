@@ -1,0 +1,7 @@
+{
+ "strings": {
+  "Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.": "选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。",
+  "Providers": "厂商",
+  "Name of the relay": "中转站名称"
+ }
+}

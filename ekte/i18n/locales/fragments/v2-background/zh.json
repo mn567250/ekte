@@ -1,0 +1,7 @@
+{
+ "strings": {
+  "Continue in background": "转到后台运行",
+  "The audit keeps running; follow it in History": "检测会继续运行；可在检测历史中查看进度",
+  "Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.": "离开检测页后检测仍会继续运行。同一中转站的检测会依次排队运行，互不干扰检测结果。"
+ }
+}

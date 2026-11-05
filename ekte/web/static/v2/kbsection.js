@@ -28,7 +28,7 @@
  * Returns { render(), rendered(), filter() → { n, total }, openAdd(focus) };
  * filter() re-applies page.filters() after they change.
  *
- * Add forms (EkteKbSection.wizard / relayForm) carry Chinese text with data-en
+ * Add forms (EkteKbSection.wizard / relayForm) carry English text with data-en
  * like the static markup and are translated with EKTE_LANG.apply(), so a
  * language switch keeps what the user typed.
  */
@@ -256,32 +256,32 @@
     var html = "";
     if (opts.prompt) {
       html +=
-        '<div class="step"><h3><span class="n">' + (++n) + '</span><span data-en="Copy the research prompt">复制调研提示词</span></h3>' +
+        '<div class="step"><h3><span class="n">' + (++n) + '</span><span data-en="Copy the research prompt">Copy the research prompt</span></h3>' +
         '<div class="two"><div class="grp">' +
-        '<label class="lab" for="' + id("model") + '"><span data-en="Model id">模型 ID</span> <span class="key">id</span></label>' +
-        '<input class="in mono" id="' + id("model") + '" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="例如 example-large-2" data-en-placeholder="e.g. example-large-2">' +
+        '<label class="lab" for="' + id("model") + '"><span data-en="Model id">Model id</span> <span class="key">id</span></label>' +
+        '<input class="in mono" id="' + id("model") + '" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="e.g. example-large-2" data-en-placeholder="e.g. example-large-2">' +
         '</div><div class="grp">' +
-        '<label class="lab" for="' + id("prov") + '"><span data-en="Provider">厂商</span> <span class="opt" data-en="Optional">可选</span></label>' +
-        '<input class="in" id="' + id("prov") + '" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="例如 openai / deepseek" data-en-placeholder="e.g. openai / deepseek">' +
+        '<label class="lab" for="' + id("prov") + '"><span data-en="Provider">Provider</span> <span class="opt" data-en="Optional">Optional</span></label>' +
+        '<input class="in" id="' + id("prov") + '" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="e.g. openai / deepseek" data-en-placeholder="e.g. openai / deepseek">' +
         "</div></div>" +
-        '<div class="row"><button class="btn pri" type="button" id="' + id("copy") + '">' + icon("arrowRight") + ' <span data-en="Copy prompt">复制提示词</span></button>' +
+        '<div class="row"><button class="btn pri" type="button" id="' + id("copy") + '">' + icon("arrowRight") + ' <span data-en="Copy prompt">Copy prompt</span></button>' +
         '<span class="hint" id="' + id("copy-msg") + '" role="status"></span></div>' +
-        '<details class="inline"><summary data-en="Show the prompt">查看提示词</summary>' +
-        '<textarea class="in prompt" id="' + id("prompt") + '" readonly aria-label="提示词" data-en-aria-label="Prompt"></textarea></details>' +
-        '<p class="hint" data-en="Paste it into the AI assistant of your choice. It answers with one YAML document.">把它粘贴到你选择的 AI 助手中，它会返回一份 YAML 文档。</p></div>';
+        '<details class="inline"><summary data-en="Show the prompt">Show the prompt</summary>' +
+        '<textarea class="in prompt" id="' + id("prompt") + '" readonly aria-label="Prompt" data-en-aria-label="Prompt"></textarea></details>' +
+        '<p class="hint" data-en="Paste it into the AI assistant of your choice. It answers with one YAML document.">Paste it into the AI assistant of your choice. It answers with one YAML document.</p></div>';
     }
     html +=
-      '<div class="step"><h3><span class="n">' + (++n) + '</span><span data-en="Upload or paste the YAML">上传或粘贴 YAML</span></h3>' +
+      '<div class="step"><h3><span class="n">' + (++n) + '</span><span data-en="Upload or paste the YAML">Upload or paste the YAML</span></h3>' +
       (opts.hint || "") +
-      '<div class="grp"><label class="lab" for="' + id("yaml") + '" data-en="Profile YAML">资料 YAML</label>' +
+      '<div class="grp"><label class="lab" for="' + id("yaml") + '" data-en="Profile YAML">Profile YAML</label>' +
       '<textarea class="in yaml" id="' + id("yaml") + '" spellcheck="false" autocapitalize="off" placeholder="' + esc(opts.placeholder) + '"></textarea></div>' +
-      '<div class="row"><label class="btn" for="' + id("file") + '">' + icon("folder") + ' <span data-en="Choose a .yaml file">选择 .yaml 文件</span></label>' +
+      '<div class="row"><label class="btn" for="' + id("file") + '">' + icon("folder") + ' <span data-en="Choose a .yaml file">Choose a .yaml file</span></label>' +
       '<input type="file" id="' + id("file") + '" accept=".yaml,.yml,text/yaml,application/yaml,text/plain" hidden>' +
       '<span class="hint mono" id="' + id("file-name") + '"></span></div></div>' +
-      '<div class="step"><h3><span class="n">' + (++n) + '</span><span data-en="Check and save">检查并保存</span></h3>' +
-      '<p class="hint" data-en="The check validates the schema and limits, flags unsafe regular expressions, lists every prompt ekte would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.">检查会校验结构与上限、标记不安全的正则表达式、列出 ekte 将发送给中转站的所有提示词，并显示哪些模型 ID 的匹配结果会改变。保存之前不会写入任何内容。</p>' +
-      '<div class="row"><button class="btn" type="button" id="' + id("check") + '">' + icon("search") + ' <span data-en="Check">检查</span></button>' +
-      '<button class="btn pri" type="button" id="' + id("save") + '" disabled>' + icon("check") + ' <span data-en="Save to knowledge base">保存到知识库</span></button></div>' +
+      '<div class="step"><h3><span class="n">' + (++n) + '</span><span data-en="Check and save">Check and save</span></h3>' +
+      '<p class="hint" data-en="The check validates the schema and limits, flags unsafe regular expressions, lists every prompt ekte would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.">The check validates the schema and limits, flags unsafe regular expressions, lists every prompt ekte would send to relays, and shows which model ids would resolve differently. Nothing is stored until you save.</p>' +
+      '<div class="row"><button class="btn" type="button" id="' + id("check") + '">' + icon("search") + ' <span data-en="Check">Check</span></button>' +
+      '<button class="btn pri" type="button" id="' + id("save") + '" disabled>' + icon("check") + ' <span data-en="Save to knowledge base">Save to knowledge base</span></button></div>' +
       '<div aria-live="polite"><div class="scan" id="' + id("scan") + '" hidden></div>' +
       '<div class="errbox" id="' + id("err") + '" role="alert" hidden></div>' +
       '<div class="okbox" id="' + id("ok") + '" hidden></div></div></div>';
@@ -456,13 +456,13 @@
     var id = function (k) { return p + "-" + k; };
     el.innerHTML =
       '<form id="' + id("form") + '" novalidate><div class="two"><div class="grp">' +
-      '<label class="lab" for="' + id("name") + '" data-en="Name of the relay">中转站名称</label>' +
+      '<label class="lab" for="' + id("name") + '" data-en="Name of the relay">Name of the relay</label>' +
       '<input class="in" id="' + id("name") + '" maxlength="64" autocomplete="off" spellcheck="false" aria-describedby="' + id("err") + '">' +
       '</div><div class="grp">' +
-      '<label class="lab" for="' + id("url") + '"><span data-en="Relay URL">中转站地址</span> <span class="key">base_url</span></label>' +
+      '<label class="lab" for="' + id("url") + '"><span data-en="Relay URL">Relay URL</span> <span class="key">base_url</span></label>' +
       '<input class="in" id="' + id("url") + '" type="text" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="off" maxlength="500" placeholder="https://relay.example.com/v1" aria-describedby="' + id("err") + '">' +
       "</div></div>" +
-      '<div class="row"><button class="btn pri" type="submit" id="' + id("save") + '">' + icon("plus") + ' <span data-en="Save relay">保存中转站</span></button></div>' +
+      '<div class="row"><button class="btn pri" type="submit" id="' + id("save") + '">' + icon("plus") + ' <span data-en="Save relay">Save relay</span></button></div>' +
       '<div aria-live="polite"><div class="errbox" id="' + id("err") + '" role="alert" hidden></div>' +
       '<div class="okbox" id="' + id("ok") + '" hidden></div></div></form>';
     translate(el);

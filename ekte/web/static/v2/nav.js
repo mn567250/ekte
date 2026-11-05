@@ -10,8 +10,9 @@
  * The header starts with a skip link to the page's <main id="main"
  * tabindex="-1"> (BITV 9.2.4.1 bypass blocks), visible only on focus.
  *
- * The markup follows the i18n convention of the whole UI (Chinese inline,
- * English in data-en), so lang.js translates it at boot and on every switch;
+ * The markup follows the i18n convention of the whole UI (English inline,
+ * the same English in data-en as the lookup key), so lang.js translates it at
+ * boot and on every switch;
  * the language <select class="lang-sel"> is filled by lang.js too. The theme
  * <select class="theme-sel"> is driven by theme.js (loaded in <head>).
  *
@@ -24,17 +25,17 @@
   "use strict";
 
   var LINKS = [
-    // [page id, href, icon, zh, en]
-    ["audit", "/", "bolt", "检测", "Audit"],
-    ["monitors", "/watches", "bell", "监控", "Monitors"],
-    ["history", "/history", "chart", "检测历史", "History"],
-    ["analytics", "/analytics", "bars", "分析", "Analytics"],
-    ["kb", "/kb", "book", "知识库", "Knowledge"],
+    // [page id, href, icon, label (English; the key into the locale strings)]
+    ["audit", "/", "bolt", "Audit"],
+    ["monitors", "/watches", "bell", "Monitors"],
+    ["history", "/history", "chart", "History"],
+    ["analytics", "/analytics", "bars", "Analytics"],
+    ["kb", "/kb", "book", "Knowledge"],
   ];
 
-  // [zh, en]
-  var DISC_LOCAL = ["全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。", 'All local: audits run from your own machine, and your API keys never leave it.'];
-  var DISC_BOX = ["黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。", 'A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.'];
+  // English; the key into the locale strings
+  var DISC_LOCAL = 'All local: audits run from your own machine, and your API keys never leave it.';
+  var DISC_BOX = 'A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run.';
 
   function ico(name, opts) {
     return window.ekteIcon ? window.ekteIcon(name, opts || {}) : "";
@@ -52,27 +53,27 @@
       var cur = l[0] === page ? ' aria-current="page"' : "";
       return (
         '<a href="' + l[1] + '"' + cur + ">" + ico(l[2]) +
-        '<span data-en="' + esc(l[4]) + '">' + l[3] + "</span></a>"
+        '<span data-en="' + esc(l[3]) + '">' + esc(l[3]) + "</span></a>"
       );
     }).join("");
     header.innerHTML =
-      '<a class="skip-link" href="#main" data-en="Skip to main content">跳到主要内容</a>' +
+      '<a class="skip-link" href="#main" data-en="Skip to main content">Skip to main content</a>' +
       '<a class="logo" href="/" aria-label="ekte"><span class="b">' + ico("logo", { size: 18 }) +
       "</span><span>ekte<b>.</b></span></a>" +
       '<div class="tail">' +
-      '<select class="theme-sel" aria-label="主题" title="主题" data-en-aria-label="Theme" data-en-title="Theme">' +
-      '<option value="system" data-en="Auto theme">跟随系统</option>' +
-      '<option value="light" data-en="Light">浅色</option>' +
-      '<option value="dark" data-en="Dark">深色</option></select>' +
-      '<select class="motion-sel" aria-label="动画" title="动画" data-en-aria-label="Motion" data-en-title="Motion">' +
-      '<option value="on" data-en="Motion on">动画开</option>' +
-      '<option value="off" data-en="Motion off">动画关</option></select>' +
-      '<select class="lang-sel" aria-label="语言" title="语言" data-en-aria-label="Language" data-en-title="Language"></select>' +
+      '<select class="theme-sel" aria-label="Theme" title="Theme" data-en-aria-label="Theme" data-en-title="Theme">' +
+      '<option value="system" data-en="Auto theme">Auto theme</option>' +
+      '<option value="light" data-en="Light">Light</option>' +
+      '<option value="dark" data-en="Dark">Dark</option></select>' +
+      '<select class="motion-sel" aria-label="Motion" title="Motion" data-en-aria-label="Motion" data-en-title="Motion">' +
+      '<option value="on" data-en="Motion on">Motion on</option>' +
+      '<option value="off" data-en="Motion off">Motion off</option></select>' +
+      '<select class="lang-sel" aria-label="Language" title="Language" data-en-aria-label="Language" data-en-title="Language"></select>' +
       '<a class="a11y" href="/accessibility"' + (page === "a11y" ? ' aria-current="page"' : "") +
-      ' aria-label="无障碍" title="无障碍" data-en-aria-label="Accessibility" data-en-title="Accessibility">' +
+      ' aria-label="Accessibility" title="Accessibility" data-en-aria-label="Accessibility" data-en-title="Accessibility">' +
       ico("a11y", { size: 16 }) + "</a>" +
       "</div>" +
-      '<nav class="links" aria-label="主导航" data-en-aria-label="Main navigation">' + links + "</nav>";
+      '<nav class="links" aria-label="Main navigation" data-en-aria-label="Main navigation">' + links + "</nav>";
     var ts = header.querySelector("select.theme-sel");
     if (window.EKTE_THEME) {
       ts.value = window.EKTE_THEME.get();
@@ -121,8 +122,8 @@
     var f = document.createElement("footer");
     f.className = "zdisc";
     f.innerHTML =
-      '<p data-en="' + esc(DISC_LOCAL[1]) + '">' + DISC_LOCAL[0] + "</p>" +
-      '<p data-en="' + esc(DISC_BOX[1]) + '">' + DISC_BOX[0] + "</p>";
+      '<p data-en="' + esc(DISC_LOCAL) + '">' + esc(DISC_LOCAL) + "</p>" +
+      '<p data-en="' + esc(DISC_BOX) + '">' + esc(DISC_BOX) + "</p>";
     wrap.appendChild(f);
   }
 

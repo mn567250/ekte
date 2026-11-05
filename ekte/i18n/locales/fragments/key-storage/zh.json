@@ -1,0 +1,7 @@
+{
+ "strings": {
+  "API key storage": "API 密钥保存方式",
+  "Don't store keys": "不保存密钥",
+  "Store encrypted on this machine": "加密保存在本机"
+ }
+}

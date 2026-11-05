@@ -1,0 +1,5 @@
+{
+ "strings": {
+  "Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).": "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在<a href=\"/history\">检测历史</a>中打开一次运行，选择<b>设为监控</b>，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。"
+ }
+}
