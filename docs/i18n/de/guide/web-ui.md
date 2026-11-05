@@ -58,7 +58,7 @@ Die Weboberfläche wird an der Wurzel der Adresse ausgeliefert, die `ekte serve`
 | **Barrierefreiheit** | `/accessibility` | Der Konformitätsbericht und die Erklärung zur Barrierefreiheit (das Symbol neben der Sprachauswahl); noch ohne manuelle Prüfung durch einen Menschen (bekannte Einschränkung) |
 
 Auf den Seiten außerdem: Filter und konfigurierbare Trends
-(Bewertung, Note, Latenz p50, Token/s) im **Verlauf**; **Als Überwachung
+(Bewertung, Note, Latenz p50, Dekodiertempo p50) im **Verlauf**; **Als Überwachung
 einplanen** und **Audit erneut ausführen** bei jedem Lauf im Verlauf; **Bericht herunterladen** in jedem Format;
 und eine Designauswahl (Automatisch / Hell / Dunkel).
 Jede Seite außer Barrierefreiheit hat direkt unter ihrer Einleitung einen

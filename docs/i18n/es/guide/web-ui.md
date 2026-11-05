@@ -58,7 +58,7 @@ La interfaz web se sirve en la raíz de la dirección que abre `ekte serve`, con
 | **Accesibilidad** | `/accessibility` | El informe de conformidad y la declaración de accesibilidad (el icono junto al selector de idioma); aún sin revisión manual por una persona (limitación conocida) |
 
 Además, en las páginas: filtros y tendencias configurables (puntuación, nota,
-latencia p50, tokens/s) en el **Historial**; **Programar como monitor** y **Repetir auditoría** en cada
+latencia p50, velocidad de decodificación p50) en el **Historial**; **Programar como monitor** y **Repetir auditoría** en cada
 ejecución del Historial; **Descargar informe** en todos los formatos; y un selector
 de tema (Automático / Claro / Oscuro). Cada página
 salvo Accesibilidad tiene un aviso justo bajo su introducción, coloreado según
