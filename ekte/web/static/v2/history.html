@@ -85,17 +85,35 @@
   .gtitle { flex: 1 1 220px; min-width: 0; }
   .gtitle h2 { font-family: var(--disp); font-weight: 600; font-size: 17px; letter-spacing: -0.3px; margin: 0; overflow-wrap: anywhere; }
   .gtitle .gu { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; }
-  .gtitle .gu span { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); overflow-wrap: anywhere; min-width: 0; }
-  .gtitle .key { flex: none; }
-  /* group trends: score + latency p50, each "caption / sparkline + value" */
-  .trend { display: flex; align-items: stretch; gap: 16px; flex: 0 0 auto; margin-left: auto; }
-  .tr { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-  .tr + .tr { padding-left: 16px; border-left: 1px solid var(--line); }
-  .tr .tl { font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
-  .tr .tv { display: flex; align-items: center; gap: 9px; }
-  .tr .tv b { color: inherit; font-family: var(--disp); font-weight: 700; font-size: 17px; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gtitle .gu .gk { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); }
+  .gtitle .gu .gn { font-size: 13px; font-weight: 600; color: var(--ink-muted); overflow-wrap: anywhere; min-width: 0; }
+  /* group trends (score, grade, latency p50, decode speed p50). Every tile has
+     a fixed size that depends only on its metric, never on its values or on
+     which other trends are shown, so the trends line up across groups:
+       [ sparkline (--sw, both rows) | caption over latest value (--vw) ]
+     A selected trend always renders its tile: a group with one run reserves
+     the sparkline's space, a metric without data shows a dash. Every tile
+     carries the divider space; the first one hides its line. Too many tiles
+     for the header wrap onto a second line (the same in every group). */
+  .hist { --sw: 96px; --sh: 36px; }
+  .trend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 16px; flex: 0 1 auto; min-width: 0; margin-left: auto; }
+  .tr {
+    display: grid; grid-template-columns: var(--sw) minmax(var(--vw), max-content); grid-template-rows: auto auto; column-gap: 9px; row-gap: 2px; align-items: end;
+    flex: none; font-size: 17px; padding-left: 16px; border-left: 1px solid var(--line);
+  }
+  .tr:first-child { border-left-color: transparent; }
+  /* --vw (in the value's 17px) fits the widest value; the column grows to a
+     longer caption (it depends on the language only), never to a value */
+  .tr[data-m="score"] { --vw: 2.6em; } .tr[data-m="grade"] { --vw: 2.8em; }
+  .tr[data-m="lat"] { --vw: 4.8em; } .tr[data-m="tps"] { --vw: 6.4em; }
+  .tr .tl { grid-column: 2; grid-row: 1; text-align: right; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
+  .tr .tv { display: contents; }
+  .tr .tv svg, .tr .tv .nospark { grid-column: 1; grid-row: 1 / 3; align-self: center; }
+  .tr .tv .nospark { height: var(--sh); }
+  .tr .tv b { grid-column: 2; grid-row: 2; contain: inline-size; text-align: right; line-height: 1.1; color: inherit; font-family: var(--disp); font-weight: 700; font-size: 1em; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tr .tv b.none { color: var(--ink-muted); font-weight: 600; }
   .tr .tv b small { font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0; margin-left: 2px; }
-  .trend svg { display: block; overflow: visible; }
+  .trend svg { display: block; overflow: visible; width: var(--sw); height: var(--sh); }
   .trend .area { fill: currentColor; opacity: 0.14; }
   .trend .line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .trend .base { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
@@ -230,12 +248,13 @@
     .c-mode .perf::before, .c-mode .proto::before { content: " · "; }
     .rline { align-items: start; }
     .rdel, .rsched, .rrerun { margin-top: 4px; }
-    .grp-h { flex-wrap: nowrap; align-items: flex-start; }
-    .gtitle { flex: 1 1 auto; }
-    .trend { flex-direction: column; align-items: flex-end; gap: 8px; }
-    .tr { align-items: flex-end; }
-    .tr + .tr { padding-left: 0; border-left: 0; }
-    .trend svg { width: 84px; height: 26px; }
+    /* the title keeps the full width; the fixed-size trend tiles stack below it */
+    .grp-h { align-items: flex-start; gap: 10px 14px; }
+    .gtitle { flex: 1 1 100%; }
+    /* stacked tiles of one shared width */
+    .hist { --sw: 84px; }
+    .trend { flex: none; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .tr, .tr[data-m] { --vw: 6.4em; padding-left: 0; border-left: 0; }
     .fgrid { grid-template-columns: 1fr 1fr; }
   }
 </style>
@@ -403,7 +422,7 @@
         var t = Date.parse(r.ts);
         if (isNaN(t) || t < since) return false;
       }
-      if (q && [r.base_url, r.claimed_model, r.model, r.suite, modeOf(r), apiOf(r), surfaceLabel(surfaceOf(r)),
+      if (q && [r.base_url, relayName(relayOf(r)), r.claimed_model, r.model, r.suite, modeOf(r), apiOf(r), surfaceLabel(surfaceOf(r)),
         execOf(r) === "monitor" ? T("监控", "Monitor") : "",
         detectOf(r) && detectLabel(detectOf(r)), streamOf(r) && streamLabel(streamOf(r))].join(" ").toLowerCase().indexOf(q) < 0) return false;
       return true;
@@ -639,15 +658,30 @@
     syncGroupAll();
   }
 
+  // the relay a run belongs to, as the server resolves it (relay=1): a saved
+  // relay or knowledge-base provider, else (kind "url") the run's own base URL
+  function relayOf(r) {
+    return r.relay || { key: r.base_url || "", label: r.base_url || "", kind: "url" };
+  }
+  // what a group's header names its relay by: the entry's name, or for an
+  // unsaved URL its host (with port)
+  function relayName(rel) {
+    return rel.kind === "url" ? (rel.key ? hostOf(rel.key) : "—") : rel.label;
+  }
+
+  // one group per claimed model on one relay: runs against several base URLs
+  // of the same saved relay share a group
   function groupsOf(rows) {
     var groups = [], idx = {};
     rows.forEach(function (r) {
-      var key = (r.base_url || "") + "\n" + (r.claimed_model || "");
+      var rel = relayOf(r), key = rel.key + "\n" + (r.claimed_model || "");
       if (idx[key] == null) {
         idx[key] = groups.length;
-        groups.push({ key: key, base_url: r.base_url, claimed_model: r.claimed_model, rows: [] });
+        groups.push({ key: key, relay: rel, urls: [], claimed_model: r.claimed_model, rows: [] });
       }
-      groups[idx[key]].rows.push(r);
+      var g = groups[idx[key]];
+      if (r.base_url && g.urls.indexOf(r.base_url) < 0) g.urls.push(r.base_url);
+      g.rows.push(r);
     });
     return groups;
   }
@@ -656,8 +690,9 @@
   function load() {
     host.setAttribute("aria-busy", "true");
     // perf=1: every row carries its p50 latency / decode speed, so the group
-    // trends are drawn from the (filtered) rows without one request per group.
-    return fetch("/api/history?limit=500&perf=1")
+    // trends are drawn from the (filtered) rows without one request per group;
+    // relay=1: and the relay its base URL belongs to (groups and their names).
+    return fetch("/api/history?limit=500&perf=1&relay=1")
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
@@ -842,12 +877,14 @@
     var gh = shut ? 100 : 100 + 58 * g.limit + (g.limit < g.rows.length ? 50 : 0);
     // the heading's text is the collapse toggle: heading navigation still
     // lands on it, and the button says whether the group's rows are shown
-    // named by model AND base URL: one model on two relays gives two groups
+    // named by model AND relay: one model on two relays gives two groups; the
+    // tooltip lists the base URLs the group's runs used
     return '<section class="group' + (shut ? " shut" : "") + '" aria-labelledby="' + hid + " " + hid + 'u" style="--gh:' + gh + 'px"><div class="grp-h"><div class="gtitle">' +
       '<h2 id="' + hid + '"><button type="button" class="gtog" data-gkey="' + esc(g.key) + '" aria-expanded="' + !shut + '" aria-controls="gb' + gi + '" title="' +
       esc(T("声称模型", "Claimed model")) + '">' + ico("chevronDown") + '<span class="t">' +
       esc(g.claimed_model || T("(未声明模型)", "(no model declared)")) + "</span></button></h2>" +
-      '<div class="gu"><code class="key">base_url</code><span id="' + hid + 'u" title="' + esc(g.base_url || "") + '">' + esc(g.base_url || "—") + "</span></div></div>" +
+      '<div class="gu"><span class="gk">' + esc(g.relay.kind === "provider" ? T("厂商", "Provider") : T("中转站", "Relay")) + "</span>" +
+      '<span class="gn" id="' + hid + 'u" title="' + esc(g.urls.join("\n")) + '">' + esc(relayName(g.relay)) + "</span></div></div>" +
       trendHTML(g.rows) + "</div>" +
       '<div class="gbody" id="gb' + gi + '"' + (shut ? " hidden" : "") + '><ul class="rows">' + g.rows.slice(0, g.limit).map(rowHTML).join("") + "</ul>" +
       moreHTML(g, gi) + "</div></section>";
@@ -883,14 +920,14 @@
     }
     var live = document.getElementById("hmore");
     if (live) live.textContent = Tf("{group}：显示 {shown} / {total} 条记录", "{group}: showing {shown} of {total} audits",
-      { group: (g.claimed_model || T("(未声明模型)", "(no model declared)")) + " · " + hostOf(g.base_url), shown: to, total: g.rows.length });
+      { group: (g.claimed_model || T("(未声明模型)", "(no model declared)")) + " · " + relayName(g.relay), shown: to, total: g.rows.length });
   }
 
   // small sparkline of vals (oldest -> newest) scaled to [lo, hi]; area fill
   // optional. Stroke/fill use currentColor, so the tile's colour family (on
   // .tr) colours the line and the KPI number alike.
-  function sparkSVG(vals, lo, hi, label, area, W) {
-    var H = 30, P = 3, rg = hi - lo || 1;
+  function sparkSVG(vals, lo, hi, label, area, W, H) {
+    var P = 3, rg = hi - lo || 1;
     var xs = vals.map(function (_, i) { return P + (i * (W - 2 * P)) / (vals.length - 1); });
     var ys = vals.map(function (v) { return H - P - ((Math.max(lo, Math.min(hi, v)) - lo) / rg) * (H - 2 * P); });
     var d = xs.map(function (x, i) { return (i ? "L" : "M") + x.toFixed(1) + "," + ys[i].toFixed(1); }).join(" ");
@@ -921,7 +958,7 @@
       get: function (r) { return typeof r.latency_p50_ms === "number" ? r.latency_p50_ms : null; },
       fam: function () { return "lat"; },
       kpi: function (v) { return String(Math.round(v)); } },
-    { id: "tps", zh: "输出速度", en: "Tokens/s", unit: "tok/s", area: true,
+    { id: "tps", zh: "解码速度 p50", en: "Decode speed p50", unit: "tok/s", area: true,
       get: function (r) { return typeof r.decode_tps_p50 === "number" ? r.decode_tps_p50 : null; },
       fam: function () { return "tps"; },
       kpi: function (v) { return String(Math.round(v)); } },
@@ -964,14 +1001,21 @@
   }
 
   // group trends from the group's (filtered) rows, oldest to newest whatever
-  // the list's sort
+  // the list's sort. Every selected trend gets its tile, in METRICS order and
+  // of a fixed size (CSS .tr), so the trends line up across groups: with one
+  // value the sparkline's space stays empty, without any the tile shows a dash.
+  var SPARK_W = 96, SPARK_H = 36; // drawing size; CSS --sw / --sh scale it
   function trendHTML(rows) {
     var pts = rows.slice().sort(byKey(tsOf, "asc"));
-    var W = state.trends.length > 2 ? 72 : 96;
+    var gap = '<span class="nospark" aria-hidden="true"></span>';
     var tiles = METRICS.filter(function (m) { return state.trends.indexOf(m.id) >= 0; }).map(function (m) {
       var vals = pts.map(m.get).filter(function (v) { return v != null; });
-      if (!vals.length) return "";
-      var name = T(m.zh, m.en), last = vals[vals.length - 1];
+      var name = T(m.zh, m.en);
+      if (!vals.length) {
+        return '<div class="tr f-grey" data-m="' + m.id + '"><span class="tl">' + esc(name) + '</span><div class="tv">' + gap +
+          '<b class="none"><span aria-hidden="true">—</span><span class="sr-only">' + esc(T("无数据", "no data")) + "</span></b></div></div>";
+      }
+      var last = vals[vals.length - 1];
       var lo = m.lo != null ? m.lo : Math.min.apply(null, vals), hi = m.hi != null ? m.hi : Math.max.apply(null, vals);
       var label;
       if (m.id === "score") {
@@ -985,8 +1029,8 @@
           "{metric} trend across {n} audits: from {first} to {last}.",
           { metric: name, n: vals.length, first: m.kpi(vals[0]) + u, last: m.kpi(last) + u });
       }
-      return '<div class="tr f-' + m.fam(last) + '"><span class="tl">' + esc(name) + '</span><div class="tv">' +
-        (vals.length >= 2 ? sparkSVG(vals, lo, hi, label, !!m.area, W) : "") +
+      return '<div class="tr f-' + m.fam(last) + '" data-m="' + m.id + '"><span class="tl">' + esc(name) + '</span><div class="tv">' +
+        (vals.length >= 2 ? sparkSVG(vals, lo, hi, label, !!m.area, SPARK_W, SPARK_H) : gap) +
         "<b>" + esc(m.kpi(last)) + (m.unit ? "<small>" + esc(m.unit) + "</small>" : "") + "</b></div></div>";
     }).join("");
     return '<div class="trend">' + tiles + "</div>";

@@ -103,7 +103,7 @@
       - button "Pontuação" [pressed]
       - button "Nota"
       - button "Latência p50" [pressed]
-      - button "Tokens/s"
+      - button "Velocidade de descodificação p50"
     - text: A mostrar 15 de 15 auditorias
   - group "Ordenar auditorias":
     - button "Data, ordem decrescente": Data
@@ -111,11 +111,10 @@
     - button "Ordenar por Pontuação": Pontuação
     - button "Ordenar por Nota": Nota
   - button "Recolher tudo"
-  - region "model-a https://relay.example.com/v1":
+  - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Pontuação
+    - text: Relay Example Relay Pontuação
     - 'img "Evolução da pontuação de saúde em 7 auditorias: de 70 para 82, em subida."'
     - text: 82 Latência p50
     - 'img "Tendência de Latência p50 em 7 auditorias: de <duration> a <duration>."'
@@ -156,11 +155,10 @@
         - button "Executar auditoria novamente"
         - button "Esta execução foi gerada por um monitor" [disabled]
         - button "Eliminar entrada"
-  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Pontuação
+    - text: Relay gateway.a-very-long-relay-hostname.example.org Pontuação
     - 'img "Evolução da pontuação de saúde em 4 auditorias: de 58 para 64, em subida."'
     - text: 64 Latência p50
     - 'img "Tendência de Latência p50 em 4 auditorias: de <duration> a <duration>."'
@@ -186,11 +184,10 @@
         - button "Executar auditoria novamente"
         - button "Esta execução foi gerada por um monitor" [disabled]
         - button "Eliminar entrada"
-  - region "model-b https://relay.example.com/v1":
+  - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Pontuação
+    - text: Relay Example Relay Pontuação
     - 'img "Evolução da pontuação de saúde em 2 auditorias: de 89 para 91, em subida."'
     - text: 91 Latência p50
     - 'img "Tendência de Latência p50 em 2 auditorias: de <duration> a <duration>."'
@@ -206,11 +203,10 @@
         - button "Executar auditoria novamente"
         - button "Agendar como monitor"
         - button "Eliminar entrada"
-  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Pontuação 72 Latência p50 <duration>
+    - text: Relay gateway.a-very-long-relay-hostname.example.org Pontuação 72 Latência p50 <duration>
     - list:
       - listitem:
         - button "27/09/2026, 10:02 Globalmente fiável Pontuação 72 Nota D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -285,11 +281,10 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - region "gpt-4o http://127.0.0.1:9099/v1":
+  - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - code: base_url
-    - text: http://127.0.0.1:9099/v1 Pontuação 53
+    - text: Relay 127.0.0.1:9099 Pontuação 53 Latência p50 sem dados
     - list:
       - listitem:
         - button "27/09/2026, 07:47 Gato por lebre Pontuação 53 Nota F check · standard"

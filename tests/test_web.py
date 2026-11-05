@@ -243,6 +243,25 @@ def test_history_list_carries_performance_headline_on_request(tmp_path, monkeypa
     assert row["ttft_p50_ms"] is None and row["score"] == 90.0
     assert "report_json" not in row
 
+
+def test_history_list_names_each_run_by_its_relay_on_request(tmp_path, monkeypatch, client):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.knowledge.relays import add_relay
+    from ekte.web import history
+
+    def save(url):
+        history.save({"target": {"base_url": url, "claimed_model": "m", "model": "m"},
+                      "verdict": {"overall_score": 80.0}})
+
+    add_relay("Local Ollama", "http://127.0.0.1:11434/v1")
+    save("http://127.0.0.1:11434/v1/")  # trailing slash: same relay after normalising
+    save("https://unsaved.example/v1")
+    assert "relay" not in client.get("/api/history").json()[0]
+    unsaved, saved = client.get("/api/history?relay=1").json()  # newest first
+    assert saved["relay"] == {"key": "local-ollama", "label": "Local Ollama", "in_kb": True, "kind": "relay"}
+    assert unsaved["relay"] == {"key": "https://unsaved.example/v1", "label": "https://unsaved.example/v1",
+                                "in_kb": False, "kind": "url"}
+
 def test_api_key_fields_are_masked_and_paired_with_their_url(client):
 
     js = client.get("/secretfield.js")

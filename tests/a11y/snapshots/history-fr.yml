@@ -103,7 +103,7 @@
       - button "Score" [pressed]
       - button "Note"
       - button "Latence p50" [pressed]
-      - button "Tokens/s"
+      - button "Vitesse de décodage p50"
     - text: 15 audits affichés sur 15
   - group "Trier les audits":
     - button "Date, tri décroissant": Date
@@ -111,11 +111,10 @@
     - button "Trier par Score": Score
     - button "Trier par Note": Note
   - button "Tout replier"
-  - region "model-a https://relay.example.com/v1":
+  - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Score
+    - text: Relais Example Relay Score
     - 'img "Évolution du score de santé sur 7 audits : de 70 à 82, en hausse."'
     - text: 82 Latence p50
     - 'img "Tendance Latence p50 sur 7 audits : de <duration> à <duration>."'
@@ -156,11 +155,10 @@
         - button "Relancer l’audit"
         - button "Cette exécution provient d’une surveillance" [disabled]
         - button "Supprimer l'entrée"
-  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score
+    - text: Relais gateway.a-very-long-relay-hostname.example.org Score
     - 'img "Évolution du score de santé sur 4 audits : de 58 à 64, en hausse."'
     - text: 64 Latence p50
     - 'img "Tendance Latence p50 sur 4 audits : de <duration> à <duration>."'
@@ -186,11 +184,10 @@
         - button "Relancer l’audit"
         - button "Cette exécution provient d’une surveillance" [disabled]
         - button "Supprimer l'entrée"
-  - region "model-b https://relay.example.com/v1":
+  - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Score
+    - text: Relais Example Relay Score
     - 'img "Évolution du score de santé sur 2 audits : de 89 à 91, en hausse."'
     - text: 91 Latence p50
     - 'img "Tendance Latence p50 sur 2 audits : de <duration> à <duration>."'
@@ -206,11 +203,10 @@
         - button "Relancer l’audit"
         - button "Planifier comme surveillance"
         - button "Supprimer l'entrée"
-  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score 72 Latence p50 <duration>
+    - text: Relais gateway.a-very-long-relay-hostname.example.org Score 72 Latence p50 <duration>
     - list:
       - listitem:
         - button "27 sept. 2026, 10:02 Globalement fiable Score 72 Note D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -285,11 +281,10 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - region "gpt-4o http://127.0.0.1:9099/v1":
+  - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - code: base_url
-    - text: http://127.0.0.1:9099/v1 Score 53
+    - text: Relais 127.0.0.1:9099 Score 53 Latence p50 aucune donnée
     - list:
       - listitem:
         - button "27 sept. 2026, 07:47 Tromperie sur la marchandise Score 53 Note F check · standard"

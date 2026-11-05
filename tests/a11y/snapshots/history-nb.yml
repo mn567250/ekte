@@ -103,7 +103,7 @@
       - button "Score" [pressed]
       - button "Karakter"
       - button "Forsinkelse p50" [pressed]
-      - button "Tokens/s"
+      - button "Dekodehastighet p50"
     - text: Viser 15 av 15 revisjoner
   - group "Sorter revisjoner":
     - button "Tid, sortert synkende": Tid
@@ -111,11 +111,10 @@
     - button "Sorter etter Score": Score
     - button "Sorter etter Karakter": Karakter
   - button "Fold sammen alle"
-  - region "model-a https://relay.example.com/v1":
+  - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Score
+    - text: Relé Example Relay Score
     - 'img "Trend for helsescore over 7 revisjoner: fra 70 til 82, stigende."'
     - text: 82 Forsinkelse p50
     - 'img "Trend for Forsinkelse p50 over 7 revisjoner: fra <duration> til <duration>."'
@@ -156,11 +155,10 @@
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
-  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score
+    - text: Relé gateway.a-very-long-relay-hostname.example.org Score
     - 'img "Trend for helsescore over 4 revisjoner: fra 58 til 64, stigende."'
     - text: 64 Forsinkelse p50
     - 'img "Trend for Forsinkelse p50 over 4 revisjoner: fra <duration> til <duration>."'
@@ -186,11 +184,10 @@
         - button "Kjør revisjonen på nytt"
         - button "Denne kjøringen ble laget av en overvåking" [disabled]
         - button "Slett oppføring"
-  - region "model-b https://relay.example.com/v1":
+  - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Score
+    - text: Relé Example Relay Score
     - 'img "Trend for helsescore over 2 revisjoner: fra 89 til 91, stigende."'
     - text: 91 Forsinkelse p50
     - 'img "Trend for Forsinkelse p50 over 2 revisjoner: fra <duration> til <duration>."'
@@ -206,11 +203,10 @@
         - button "Kjør revisjonen på nytt"
         - button "Planlegg som overvåking"
         - button "Slett oppføring"
-  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score 72 Forsinkelse p50 <duration>
+    - text: Relé gateway.a-very-long-relay-hostname.example.org Score 72 Forsinkelse p50 <duration>
     - list:
       - listitem:
         - button "27. sep. 2026, 10:02 Stort sett pålitelig Score 72 Karakter D check · standard openai · Strømming p50 <duration>" [expanded]
@@ -285,11 +281,10 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - region "gpt-4o http://127.0.0.1:9099/v1":
+  - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - code: base_url
-    - text: http://127.0.0.1:9099/v1 Score 53
+    - text: Relé 127.0.0.1:9099 Score 53 Forsinkelse p50 ingen data
     - list:
       - listitem:
         - button "27. sep. 2026, 07:47 Falsk vare Score 53 Karakter F check · standard"
