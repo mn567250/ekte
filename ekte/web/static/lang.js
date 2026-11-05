@@ -317,12 +317,27 @@
     return backendIn(lang, text);
   }
 
+  // The markup of the current language for an element whose English markup
+  // is `en` and lookup key `key`: a translation from EKTE_LOCALES, else `en`.
+  function markupFor(key, en) {
+    if (lang === "en") return en;
+    var d = (locales().strings || {})[lang] || {};
+    return Object.prototype.hasOwnProperty.call(d, key) ? d[key] : en;
+  }
+
   function applyEl(el) {
     if (el.hasAttribute("data-en")) {
-      var html = tr(el.getAttribute("data-en"));
       if (el.tagName === "TITLE") {
-        if (el.textContent !== html) el.textContent = html;
-      } else if (el.innerHTML !== html) el.innerHTML = html;
+        // text only (the server may already have put it in the language)
+        var text = tr(el.getAttribute("data-en"));
+        if (el.textContent !== text) el.textContent = text;
+      } else {
+        // The English is the element's own markup, as shipped: remembered on
+        // first use, so English never has to be rebuilt from an attribute.
+        if (el.__ekteEn == null) el.__ekteEn = el.innerHTML;
+        var html = markupFor(el.getAttribute("data-en"), el.__ekteEn);
+        if (el.innerHTML !== html) el.innerHTML = html;
+      }
     }
     ATTRS.forEach(function (a) {
       var enA = "data-en-" + a;

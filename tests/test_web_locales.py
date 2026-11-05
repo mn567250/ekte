@@ -915,7 +915,34 @@ _PAGES = sorted((_STATIC / "v2").glob("*.html"))
 # JS that builds data-en markup (translated by EKTE_LANG.apply like the pages)
 _MARKUP_JS = ["v2/nav.js", "v2/kbsection.js", "secretfield.js", "v2/kb.html"]
 _CJK = re.compile(r"[⺀-⿿　-〿぀-ヿ㄀-ㇿ㐀-䶿一-鿿豈-﫿＀-￯]")
-_SCRIPT_OR_STYLE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.S)
+
+
+def _markup_text(src: str) -> list[str]:
+    """The text and attribute values of an HTML page outside <script> and
+    <style> (parsed, so no tag-matching regex)."""
+    from html.parser import HTMLParser
+
+    out: list[str] = []
+
+    class P(HTMLParser):
+        skip = 0
+
+        def handle_starttag(self, tag, attrs):
+            if tag in ("script", "style"):
+                self.skip += 1
+            elif not self.skip:
+                out.extend(v for _k, v in attrs if v)
+
+        def handle_endtag(self, tag):
+            if tag in ("script", "style") and self.skip:
+                self.skip -= 1
+
+        def handle_data(self, data):
+            if not self.skip and data.strip():
+                out.append(data.strip())
+
+    P(convert_charrefs=True).feed(src)
+    return out
 
 
 @pytest.mark.parametrize("page", _PAGES, ids=lambda p: p.name)
@@ -927,8 +954,7 @@ def test_pages_ship_in_english(page):
 
     src = page.read_text(encoding="utf-8")
     assert '<html lang="en">' in src
-    markup = _SCRIPT_OR_STYLE.sub("", src)
-    left = [line.strip() for line in markup.splitlines() if _CJK.search(line)]
+    left = [t for t in _markup_text(src) if _CJK.search(t)]
     assert not left, f"{page.name}: Chinese in the markup: {left[:5]}"
     title = re.search(r'<title data-en="([^"]*)">([^<]*)</title>', src)
     assert title and html.unescape(title[1]) == html.unescape(title[2])
