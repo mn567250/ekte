@@ -1,0 +1,288 @@
+# ekte knowledge base — Voyage AI (US, San Francisco; part of MongoDB)
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: voyage
+last_verified: '2026-11-05'
+display_name: Voyage AI (US, San Francisco; part of MongoDB)
+openai_compatible: false
+base_url_hints:
+- https://api.voyageai.com/v1
+default_tool_format: openai_function
+models:
+- id: voyage-4-large
+  aliases: []
+  family: voyage-4
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Embedding model (POST /v1/embeddings, not a chat model). Voyage 4 family, announced 2026-01-15 with a shared embedding space across voyage-4-large, voyage-4, voyage-4-lite (and open-weight voyage-4-nano). Default 1024-dim output; Matryoshka sizes 256, 512, 1024, 2048 (docs.voyageai.com). 32K-token context (LiteLLM docs). Proprietary, served via Voyage API and MongoDB Atlas. Sources are secondary (LiteLLM, Developers Digest, AWS Marketplace), not docs.voyageai.com, which was not fetchable.
+- id: voyage-4
+  aliases: []
+  family: voyage-4
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Embedding model in the Voyage 4 family (announced 2026-01-15), shares its embedding space with voyage-4-large and voyage-4-lite. Default 1024-dim output; Matryoshka sizes 256, 512, 1024, 2048 (docs.voyageai.com). 32K-token context. Proprietary API model. Secondary sources only.
+- id: voyage-4-lite
+  aliases: []
+  family: voyage-4
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Lowest-cost Voyage 4 family embedding model (announced 2026-01-15), shares its embedding space with voyage-4 and voyage-4-large. Default 1024-dim output and 32K-token context per docs.voyageai.com (Text Embeddings page, search snippet); Matryoshka 256, 512, 2048. Batch cap 1M total tokens per request (docs). Pricing reported at $0.02 per 1M tokens (aggregator, unverified).
+- id: voyage-3.5
+  aliases: []
+  family: voyage-3.5
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Embedding model (POST /v1/embeddings). Default 1024-dim output with flexible sizes (2048, 1024, 512, 256 per one listing). 32K-token context per aggregator listings. An aggregator listing says Voyage now recommends the Voyage 4 series; still served. Secondary sources only; not verified against docs.voyageai.com.
+- id: voyage-3.5-lite
+  aliases: []
+  family: voyage-3.5
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Embedding model, lite tier of voyage-3.5. Default 1024-dim output and 32K-token context per docs.voyageai.com (Text Embeddings page, search snippet); flexible sizes 256, 512, 2048. Batch cap 1M total tokens per request (docs). An Unstructured docs table listing 512 dims conflicts with the official page and is treated as wrong. Pricing reported at $0.02 per 1M tokens (aggregator, unverified).
+- id: voyage-3-large
+  aliases: []
+  family: voyage-3
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: General-purpose embedding model (POST /v1/embeddings), Voyage 3 generation. Default 1024-dim output (aggregator listings), with Matryoshka options. 32K-token context per aggregator listings. Priced at about $0.18 per 1M tokens per one listing. Secondary sources only.
+- id: voyage-code-3
+  aliases: []
+  family: voyage-code
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  - voyage-code
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Code-retrieval embedding model. Default 1024-dim output per aggregator listings (Matryoshka options exist). 32K-token context per aggregator listings. Priced about $0.18 per 1M tokens per one listing. Secondary sources only.
+- id: voyage-multimodal-3
+  aliases: []
+  family: voyage-multimodal
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  - image
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Multimodal embedding model (interleaved text and images, one vector space). Default 1024-dim output in all sources. Other sizes (256, 512, 2048) appear in one MongoDB-hosted listing but not in Anthropic's docs page, so only 1024 is pinned here. 32K-token context per MongoDB and aggregator listings.
+- id: voyage-finance-2
+  aliases: []
+  family: voyage-domain
+  context_window_tokens: 32000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Domain embedding model tuned for finance retrieval and RAG. 1024-dim output and 32K-token context per Anthropic and MongoDB docs listings (search snippets).
+- id: voyage-law-2
+  aliases: []
+  family: voyage-domain
+  context_window_tokens: 16000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Domain embedding model tuned for legal retrieval and long-context RAG. 1024-dim output and 16K-token context per Voyage listings (search snippets).
+- id: voyage-code-2
+  aliases: []
+  family: voyage-code
+  context_window_tokens: 16000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1536
+  identity_keywords:
+  - voyage
+  - voyage ai
+  - voyageai
+  - voyage-code
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - jina
+  - gemini
+  - google
+  - qwen
+  notes: Previous-generation code embedding model (superseded by voyage-code-3). 1536-dim output and 16K-token context per Voyage/Anthropic docs listings. Kept as a legacy model still served by some relays.

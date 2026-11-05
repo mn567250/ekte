@@ -1,0 +1,126 @@
+# ekte knowledge base — Jina AI (Berlin, Germany; part of Elastic)
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: jina
+last_verified: '2026-11-05'
+display_name: Jina AI (Berlin, Germany; part of Elastic)
+openai_compatible: false
+base_url_hints:
+- https://api.jina.ai/v1
+default_tool_format: openai_function
+models:
+- id: jina-embeddings-v5-text-small
+  aliases: []
+  family: jina-embeddings-v5
+  context_window_tokens: 32768
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1024
+  identity_keywords:
+  - jina
+  - jina ai
+  - jina-embeddings
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - gemini
+  - google
+  notes: Embedding model (POST /v1/embeddings, not a chat model). Default 1024-dim output with Matryoshka truncation (Jina page lists 32 to 1024). 32768-token input context. 677M parameters, multilingual. Released with the jina-embeddings-v5-text family (Elastic blog). Licence - the Jina model page shows CC BY-NC 4.0 for the nano sibling; the small model's licence was not confirmed on a page read, so treat CC BY-NC 4.0 as likely but unverified. Dimension and context from Elastic search-labs blog and Jina model page (search snippets; jina.ai was not directly fetchable).
+- id: jina-embeddings-v5-text-nano
+  aliases: []
+  family: jina-embeddings-v5
+  context_window_tokens: 8192
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 768
+  identity_keywords:
+  - jina
+  - jina ai
+  - jina-embeddings
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - gemini
+  - google
+  notes: Embedding model (POST /v1/embeddings). Default 768-dim output with Matryoshka truncation (down to 32). 239M parameters, built on the EuroBERT-210M backbone, multilingual. Context conflict - Elastic blog and Jina model page say 8192 tokens; the Hugging Face card (search snippet) says up to 32K. 8192 is used here; a relay returning a longer-than-8K input accepted or a 32K limit would not by itself be a tell. Licence - Jina page shows CC BY-NC 4.0 (from an Italian-locale page); HF licence line was cut off in search, so unconfirmed.
+- id: jina-embeddings-v4
+  aliases: []
+  family: jina-embeddings-v4
+  context_window_tokens: 32768
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  - image
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 2048
+  identity_keywords:
+  - jina
+  - jina ai
+  - jina-embeddings
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - gemini
+  - google
+  notes: Multimodal and multilingual embedding model (text and visual documents, single vector space). Default 2048-dim output; Matryoshka truncation to 128, 256, 512, 1024 or 2048 (Jina model page; Qdrant docs say 256 to 2048 is recommended). 32K-token input context (Jina model page). Licence - Qwen Research License, non-commercial without a commercial licence (per Jina page and search snippet). Built on a Qwen2.5-VL backbone, so the model may not name Qwen as an identity forbidden word. Release date not confirmed.
+- id: jina-code-embeddings-0.5b
+  aliases: []
+  family: jina-code-embeddings
+  context_window_tokens: 32768
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 896
+  identity_keywords:
+  - jina
+  - jina ai
+  - jina-code-embeddings
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - gemini
+  - google
+  notes: Code retrieval embedding model, 0.5B parameters, released 2025-09-01 (Jina model page). Default 896-dim output (Matryoshka 64, 128, 256, 512, 896) and 32K-token context per the Hugging Face card and Jina news post. Built on Qwen2.5-Coder-0.5B. Licence CC BY-NC 4.0 (Hugging Face and Jina llms.txt). Caveat - llama.cpp GGUF builds return 896-dim vectors regardless of requested size.
+- id: jina-code-embeddings-1.5b
+  aliases: []
+  family: jina-code-embeddings
+  context_window_tokens: 32768
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  embedding_dimensions: 1536
+  identity_keywords:
+  - jina
+  - jina ai
+  - jina-code-embeddings
+  identity_forbidden:
+  - openai
+  - gpt
+  - cohere
+  - gemini
+  - google
+  notes: Code retrieval embedding model, 1.5B parameters. Default 1536-dim output with Matryoshka truncation to 128, 256, 512, 1024, 1536 (Hugging Face card). 32K-token context. Built on Qwen2.5-Coder-1.5B. Licence CC BY-NC 4.0 (Jina model page and llms.txt). Released alongside the 0.5B model. Caveat - GGUF builds return 896-dim vectors from llama.cpp (slice client-side), not the native 1536.
