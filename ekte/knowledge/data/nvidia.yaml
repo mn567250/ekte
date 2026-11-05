@@ -1,0 +1,135 @@
+# ekte knowledge base — NVIDIA (Nemotron open models, NIM / build.nvidia.com)
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+# Values come from NVIDIA's own docs (docs.api.nvidia.com, build.nvidia.com) and the
+# nvidia Hugging Face model cards, read through search summaries. Anything not stated
+# there is -1/null and marked "unverified" in the notes.
+provider: nvidia
+last_verified: '2026-11-05'
+display_name: NVIDIA (Nemotron open models, NIM)
+openai_compatible: true
+base_url_hints:
+- https://integrate.api.nvidia.com/v1
+default_tool_format: openai_function
+models:
+- id: nvidia/nemotron-3-nano-30b-a3b
+  aliases: []
+  family: nemotron-3-nano
+  context_window_tokens: 262144
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: nemotron-3
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - nemotron
+  - nvidia
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'NVIDIA-built hybrid Mamba-2/Transformer MoE, about 30B total / 3.5B active (NVIDIA model card; active-parameter count per secondary listings). API id nvidia/nemotron-3-nano-30b-a3b confirmed on docs.api.nvidia.com. Context: 256K (262144) is the Hugging Face config default; the card advertises up to 1M (research page), and one catalogue shows 131072 (unverified, judged less reliable). Max output unverified (-1). Reasoning toggle: on/off via the chat template; a thinking budget is configurable (HF blog). Licence: the HF blog says nvidia-open-model-license, the Super cards say the NVIDIA Nemotron Open Model License; check the card. Released 2025-12.'
+- id: nvidia/nemotron-3-super-120b-a12b
+  aliases:
+  - nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16
+  family: nemotron-3-super
+  context_window_tokens: 1000000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: nemotron-3
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - nemotron
+  - nvidia
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Nemotron 3 Super: about 120B total / 12B active hybrid Mamba-2 / MoE / attention with multi-token prediction (model card; HF metadata shows about 124B, unexplained). API id nvidia/nemotron-3-super-120b-a12b confirmed on docs.api.nvidia.com. Released 2026-03-11. Context up to 1M tokens per the FP8/NVFP4/BF16 cards. Max output unverified (-1). Reasoning toggle: enable_thinking=True/False in the chat template. Licence: NVIDIA Nemotron Open Model License. Minimum 8x H100-80GB for BF16.'
+- id: nvidia/llama-3.3-nemotron-super-49b-v1.5
+  aliases:
+  - nvidia/Llama-3_3-Nemotron-Super-49B-v1_5
+  family: llama-nemotron-super
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: llama-3.3
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - nemotron
+  - nvidia
+  - llama
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Llama-Nemotron Super v1.5: NVIDIA post-training of a Llama-3.3-70B-Instruct base, pruned to 49B. API id nvidia/llama-3.3-nemotron-super-49b-v1.5 confirmed on build.nvidia.com and docs.api.nvidia.com. Context 131,072 tokens (input and output share the window, per the model card). Max output unverified (-1); the HF example uses max_tokens=32768 but that is not a limit. Reasoning toggle: system prompt "detailed thinking on" or "detailed thinking off" (the NIM example uses off; the v1.5 card does not spell out "on" explicitly, unverified). Licence: NVIDIA Open Model License Agreement (Llama 3.3 community licence for the base). Llama base words are kept in identity_keywords, not identity_forbidden, since the base is honest to name.'
+relay_red_flags:
+- Model claims to be Nemotron/NVIDIA but self-identifies as GPT, Claude, Gemini, Qwen or DeepSeek.
+- Model claimed as the Llama-Nemotron 49B checkpoint answers as a plain Llama without the NVIDIA fine-tune, or as Qwen.
+- Nemotron 3 Super claimed at a 1M-token context fails at 128K+ long-context retrieval; Nano claimed at 256K fails well before that.
+- Model claimed as nemotron-3-* is served by a different architecture with a visibly different speed profile (a MoE with about 3B to 12B active parameters should be fast per token).
+- Relay returns an NVIDIA id under an OpenAI path only, with no NIM-style /v1/chat/completions response shape from integrate.api.nvidia.com.
+sources:
+- https://docs.api.nvidia.com/nim/reference/nvidia-nemotron-3-nano-30b-a3b
+- https://docs.api.nvidia.com/nim/reference/nvidia-nemotron-3-super-120b-a12b
+- https://docs.api.nvidia.com/nim/reference/nvidia-llama-3_3-nemotron-super-49b-v1_5
+- https://docs.api.nvidia.com/nim/reference/llm-apis
+- https://build.nvidia.com/nvidia/llama-3_3-nemotron-super-49b-v1_5
+- https://build.nvidia.com/nvidia/llama-3_3-nemotron-super-49b-v1_5/modelcard
+- https://huggingface.co/nvidia/Llama-3_3-Nemotron-Super-49B-v1_5
+- https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16
+- https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8
+- https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4
+- https://huggingface.co/blog/nvidia/nemotron-3-nano-efficient-open-intelligent-models
+- https://research.nvidia.com/labs/nemotron/Nemotron-3/
