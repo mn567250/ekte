@@ -1,0 +1,347 @@
+# ekte knowledge base — xAI — Grok
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: xai
+last_verified: '2026-11-05'
+display_name: xAI — Grok
+openai_compatible: true
+base_url_hints:
+- https://api.x.ai/v1
+- https://api.x.ai
+default_tool_format: openai_function
+models:
+- id: grok-4.7
+  aliases:
+  - x-ai/grok-4.7
+  family: grok-4.7
+  context_window_tokens: 500000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: grok
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  unsupported_params:
+  - presence_penalty
+  - frequency_penalty
+  - stop
+  identity_keywords:
+  - grok
+  - xai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  fingerprints: []
+  notes: 'Current flagship per the xAI developer guide (docs.x.ai/developers/grok-4-7): model name grok-4.7, 500,000-token context window. Released 2026-09-21 at $2 input / $6 output per MTok (under 200K input tokens; $4/$12 above 200K). Reasoning model; reasoning_effort is supported. xAI reasoning guide: presence/frequency penalties and stop are rejected by reasoning models. The developer guide says there is no text output limit, but gives no numeric cap, so max output is -1 (unknown). Input modalities unverified (text only here). Grok 4.7 Fast is not on the public API.'
+- id: grok-4.6
+  aliases: []
+  family: grok-4.6
+  context_window_tokens: 500000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: grok
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  unsupported_params:
+  - presence_penalty
+  - frequency_penalty
+  - stop
+  identity_keywords:
+  - grok
+  - xai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  fingerprints: []
+  notes: 'Released between grok-4.5 and grok-4.7 (exact date not verified). API model id grok-4.6 (the docs URL uses grok-4-6, the API does not). 500,000-token context per xAI documentation as summarised in search results; max output unverified (one third-party page says 450K, not confirmed, so -1). Reasoning with reasoning_effort, same price tier as grok-4.7 ($2/$6 per MTok). Also served on Amazon Bedrock.'
+- id: grok-4.5
+  aliases:
+  - grok-4.5-latest
+  family: grok-4.5
+  context_window_tokens: 500000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: grok
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: true
+  usage_in_stream: true
+  unsupported_params:
+  - presence_penalty
+  - frequency_penalty
+  - stop
+  identity_keywords:
+  - grok
+  - xai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  fingerprints: []
+  notes: 'Released 2026-07-08 per a secondary source (docs.x.ai/developers/models/grok-4.5 lists it). Alias grok-4.5-latest per xAI docs as summarised. 500K context; text and image input, reasoning, function calling and structured outputs per a secondary summary. Max output unverified, so -1. Long-context (over 200K input) pricing applies. Served on OpenRouter as x-ai/grok-4.5 (catalog evidence only).'
+- id: grok-4.3
+  aliases: []
+  family: grok-4.3
+  context_window_tokens: 1000000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: grok
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  unsupported_params:
+  - presence_penalty
+  - frequency_penalty
+  - stop
+  identity_keywords:
+  - grok
+  - xai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  fingerprints: []
+  notes: 'Launched around May 2026 (secondary sources). API id grok-4.3 (confirmed by several pricing pages; gateways prefix it). 1,000,000-token context per the docs.x.ai model page as summarised. Max output and reasoning_effort values conflict between sources (none, low/medium/high; 30K to 1M listed), so max output is -1 and reasoning is treated as on. Price $1.25 input / $2.50 output per MTok per xAI retirement page. Retirement redirect target: legacy ids grok-3, grok-3-mini family, grok-4-0709 and grok-4-fast/grok-4.1-fast ids all route here since 2026-05-15 (third-party and docs.x.ai retirement page, not fully confirmed). A relay answering legacy ids as the old model is suspect.'
+- id: grok-code-fast-1
+  aliases:
+  - x-ai/grok-code-fast-1
+  family: grok-code
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: grok
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - grok
+  - xai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  fingerprints: []
+  notes: 'Agentic coding model (first released around August 2025). Context (about 256K) and a 10K max output appear only on OpenRouter and aggregators, which are not limit sources, so both are -1 here. Pricing about $0.20 input / $1.50 output per MTok per aggregators. Reasoning flag not verified (set false); tool calling is the model''s main use. Served by xAI API and OpenRouter.'
+- id: grok-imagine-image
+  aliases:
+  - x-ai/grok-imagine-image
+  family: grok-imagine
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - image
+  reasoning: false
+  supports_tools: false
+  image_sizes: []
+  identity_keywords:
+  - grok
+  - xai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  fingerprints: []
+  notes: 'Current xAI image-generation model. xAI deprecation notice (reposted, effective 2026-02-28) retired grok-2-image-1212 and named grok-imagine-image as its replacement. Size is set with aspect_ratio plus resolution tiers (1k default, 2k), not a pixel size; the aspect-ratio list and pixel dimensions per tier were not confirmed, so image_sizes is left empty (unknown). Not profiled here: grok-imagine-image-2.0 (xAI docs example, adds 1.5k tier) and grok-imagine-image-quality (a separate id on some hosts), since their size tables were not verified. The video model grok-imagine-video is out of scope. Image models are not run through chat fingerprints.'
+- id: grok-4.1-fast-reasoning
+  aliases: []
+  family: grok-4.1-fast
+  context_window_tokens: 2000000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: grok
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  unsupported_params:
+  - presence_penalty
+  - frequency_penalty
+  - stop
+  identity_keywords:
+  - grok
+  - xai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  fingerprints: []
+  notes: 'DECOY, retired from the xAI API on 2026-05-15 (third-party report of the retirement; requests reportedly redirect to grok-4.3 at grok-4.3 rates). 2,000,000-token context per the xAI Grok 4.1 Fast launch post (x.ai/news/grok-4-1-fast). Max output not confirmed (-1). OpenRouter lists one x-ai/grok-4.1-fast slug for both modes, so it is not used as an alias here. A relay answering this id with a 2M window and normal reasoning output may be serving the redirect target.'
+- id: grok-4.1-fast-non-reasoning
+  aliases: []
+  family: grok-4.1-fast
+  context_window_tokens: 2000000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: grok
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - grok
+  - xai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  fingerprints: []
+  notes: 'DECOY, retired from the xAI API on 2026-05-15 (third-party report; reportedly redirects to grok-4.3 with reasoning disabled). 2,000,000-token context per the xAI Grok 4.1 Fast launch post. Non-reasoning variant, so the penalty and stop parameters are not listed as unsupported (not verified either way). Max output unconfirmed (-1). Same OpenRouter slug caveat as grok-4.1-fast-reasoning.'
+fingerprints:
+- id: self-id
+  signal: self-identification style
+  prompt: What model are you, and which company built you? Answer in one short sentence.
+  native_expected: Genuine xAI Grok models identify as Grok, built by xAI. They do NOT claim to be ChatGPT/GPT, Claude, Gemini, Llama, Qwen or DeepSeek.
+  downgrade_signal: A substituted backend self-identifies as OpenAI/GPT, Anthropic/Claude, Google/Gemini, Meta/Llama, Alibaba/Qwen or DeepSeek. Keyword check for foreign-vendor names; the bare word grok alone also counts as genuine.
+  pure_code_checkable: true
+  expect_contains_any:
+  - grok
+  - xai
+  expect_not_contains:
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - deepseek
+  temperature: 0
+  weight: 0.5
+relay_red_flags:
+- Model self-identifies as ChatGPT/GPT, Claude, Gemini, Llama, Qwen or DeepSeek when asked which company built it, while claiming a grok-4.x id.
+- Accepts presence_penalty, frequency_penalty or stop without error on a grok-4.x reasoning id (grok-4.3, 4.5, 4.6, 4.7) where xAI documents these as rejected for reasoning models; a loose gateway or a non-xAI backend is more likely than the genuine API.
+- An Anthropic-style /v1/messages route that answers as a native xAI backend. xAI's Anthropic-compatible route is reported as deprecated; the documented path is https://api.x.ai/v1 (OpenAI SDK or Responses API).
+- Legacy ids (grok-3, grok-4-0709, grok-4-1-fast-reasoning, grok-4-1-fast-non-reasoning, grok-4-fast-*) answered as the old model rather than redirected to grok-4.3; those ids were retired on 2026-05-15 (third-party report of the retirement).
+- Context-length errors far below the claimed window (grok-4.3 1M, grok-4.5/4.6/4.7 500K), or a grok-code-fast-1 or grok-4.1-fast answer that cannot take a 2M/256K prompt that the model should accept.
+sources:
+- https://docs.x.ai/developers/models
+- https://docs.x.ai/developers/grok-4-7
+- https://docs.x.ai/developers/models/grok-4.7
+- https://docs.x.ai/developers/models/grok-4.3
+- https://docs.x.ai/developers/pricing
+- https://docs.x.ai/developers/release-notes
+- https://docs.x.ai/developers/models/grok-4.5
+- https://docs.x.ai/developers/migration/may-15-retirement
+- https://docs.x.ai/developers/model-capabilities/text/reasoning
+- https://docs.x.ai/developers/model-capabilities/images/generation
+- https://docs.x.ai/developers/api-reference
+- https://x.ai/api
+- https://x.ai/news/grok-4-1-fast
+- https://openrouter.ai/x-ai
+- https://openrouter.ai/x-ai/grok-code-fast-1
+- https://openrouter.ai/x-ai/grok-4.1-fast
+- https://openrouter.ai/x-ai/grok-4.5
+- https://fal.ai/models/xai/grok-imagine-image/api
+- https://techcrunch.com/2025/08/24/elon-musk-says-xai-has-open-sourced-grok-2-5/
+- https://www.promptfoo.dev/docs/providers/xai/
+- https://www.requesty.ai/models/xai/grok-4-3
+- https://gate.ai/blog/grok-4-5-xai-specs-pricing-api-use-cases
