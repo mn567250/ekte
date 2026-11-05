@@ -139,7 +139,7 @@
           - option "保留" [selected]
           - option "不保留"
       - 'link "来自运行 #1 →"':
-        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?base_url=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
       - form "设置后即可启用":
         - heading "设置后即可启用" [level=4]
         - paragraph: 配置取自检测历史中的那次运行。设置运行间隔后启用即可。

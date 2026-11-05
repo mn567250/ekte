@@ -58,7 +58,7 @@ L'interfaccia web è servita alla radice dell'indirizzo che `ekte serve` apre, c
 | **Accessibilità** | `/accessibility` | Il rapporto di conformità e la dichiarazione di accessibilità (l'icona accanto al selettore della lingua); ancora senza revisione manuale da una persona (limitazione nota) |
 
 Inoltre, nelle pagine: filtri e tendenze configurabili (punteggio, voto,
-latenza p50, token/s) nella **Cronologia**; **Pianifica come monitor** e **Riesegui audit** su ogni
+latenza p50, velocità di decodifica p50) nella **Cronologia**; **Pianifica come monitor** e **Riesegui audit** su ogni
 esecuzione della Cronologia; **Scarica il rapporto** in tutti i formati; e un
 selettore del tema (Automatico / Chiaro / Scuro).
 Ogni pagina tranne Accessibilità ha un avviso subito sotto l'introduzione,

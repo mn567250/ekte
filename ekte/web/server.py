@@ -1281,10 +1281,20 @@ def create_app() -> FastAPI:
 
     @app.get("/api/v1/history")
     @app.get("/api/history")
-    def history_list(limit: int = 50, perf: bool = False) -> Any:
+    def history_list(limit: int = 50, perf: bool = False, relay: bool = False) -> Any:
         from ekte.web import history
 
-        return JSONResponse(history.recent(limit, perf=perf))
+        rows = history.recent(limit, perf=perf)
+        if relay:
+            # the knowledge-base entry each run's base URL belongs to, resolved
+            # as Analytics does (a saved relay or provider; else the URL itself),
+            # so History groups and names runs by relay
+            from ekte.web.analytics import RelayResolver
+
+            resolver = RelayResolver()
+            for row in rows:
+                row["relay"] = resolver.resolve(row).public()
+        return JSONResponse(rows)
 
     @app.get("/api/v1/history/{rid}")
     def history_get_v1(rid: int) -> Any:

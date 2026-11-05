@@ -57,7 +57,7 @@ A interface web é servida na raiz do endereço que o `ekte serve` abre, com a p
 | **Acessibilidade** | `/accessibility` | O relatório de conformidade e a declaração de acessibilidade (o ícone junto ao seletor de idioma); ainda sem revisão manual por uma pessoa (limitação conhecida) |
 
 Nas páginas há ainda: filtros e tendências configuráveis (pontuação, nota,
-latência p50, tokens/s) no **Histórico**; **Agendar como monitor** e **Executar auditoria novamente** em cada
+latência p50, velocidade de descodificação p50) no **Histórico**; **Agendar como monitor** e **Executar auditoria novamente** em cada
 execução do Histórico; **Transferir relatório** em todos os formatos; e um seletor
 de tema (Automático / Claro / Escuro). Cada página
 exceto Acessibilidade tem um aviso logo abaixo da introdução, colorido segundo a

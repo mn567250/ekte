@@ -89,6 +89,27 @@ ekte has three eras:
 
 ### Changed
 
+- **History: trends line up across groups, and groups are named by relay.**
+  Every trend tile in a group header now has a fixed size that depends only on
+  its metric (and the language of its caption): the sparkline (96 × 36 px,
+  also with more than two trends) spans both rows on the left, the caption
+  sits above the latest value on the right. Every selected trend always gets
+  its tile: a group with one run keeps the sparkline's space empty, a metric
+  without data shows a dash. Too many tiles for the header wrap the same way in
+  every group; on phones the tiles stack below the title. The "Tokens/s" trend
+  is now "Decode speed p50", as in the performance report and Analytics.
+  Groups are one claimed model on one relay as Analytics resolves it (a saved
+  relay or provider, else the run's URL, shown as host and port), so runs
+  against two base URLs of one saved relay share a group; the tooltip lists
+  the URLs. Ports always tell relays apart: LM Studio and Ollama on one host
+  are two relays, saved or not, and two unsaved URLs on one host and port
+  are named by their paths. The **Relay / provider** filter lists these
+  relays by name; a monitor's "Open in history" link passes its exact base
+  URL (`base_url=`), and older `host=` links still select the relay when
+  only one has that host and port. `GET /api/history?relay=1` adds each
+  run's `relay` (`key`, `label`, `in_kb`, `kind`)
+  ([#102](https://github.com/mn567250/ekte/issues/102)).
+
 - **A failed request shows how long it took to fail.** On the performance
   chart's latency tab, the data table's latency cell of a failed request now
   holds its time to failure (`duration_ms`) instead of `—`, and the failure's

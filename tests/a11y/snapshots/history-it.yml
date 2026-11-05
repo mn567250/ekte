@@ -49,8 +49,8 @@
     - combobox "Relay / provider":
       - option "Tutti" [selected]
       - option "127.0.0.1:9099"
+      - option "Example Relay"
       - option "gateway.a-very-long-relay-hostname.example.org"
-      - option "relay.example.com"
     - text: Modello dichiarato
     - combobox "Modello dichiarato":
       - option "Tutti" [selected]
@@ -103,7 +103,7 @@
       - button "Punteggio" [pressed]
       - button "Voto"
       - button "Latenza p50" [pressed]
-      - button "Tokens/s"
+      - button "Velocità di decodifica p50"
     - text: 15 di 15 audit mostrati
   - group "Ordina gli audit":
     - button "Data, ordine decrescente": Data
@@ -111,11 +111,10 @@
     - button "Ordina per Punteggio": Punteggio
     - button "Ordina per Voto": Voto
   - button "Comprimi tutto"
-  - region "model-a https://relay.example.com/v1":
+  - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Punteggio
+    - text: Relay Example Relay Punteggio
     - 'img "Andamento del punteggio di salute in 7 audit: da 70 a 82, in crescita."'
     - text: 82 Latenza p50
     - 'img "Andamento di Latenza p50 su 7 audit: da <duration> a <duration>."'
@@ -156,11 +155,10 @@
         - button "Riesegui audit"
         - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
         - button "Elimina voce"
-  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Punteggio
+    - text: Relay gateway.a-very-long-relay-hostname.example.org Punteggio
     - 'img "Andamento del punteggio di salute in 4 audit: da 58 a 64, in crescita."'
     - text: 64 Latenza p50
     - 'img "Andamento di Latenza p50 su 4 audit: da <duration> a <duration>."'
@@ -186,11 +184,10 @@
         - button "Riesegui audit"
         - button "Questa esecuzione è stata prodotta da un monitor" [disabled]
         - button "Elimina voce"
-  - region "model-b https://relay.example.com/v1":
+  - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Punteggio
+    - text: Relay Example Relay Punteggio
     - 'img "Andamento del punteggio di salute in 2 audit: da 89 a 91, in crescita."'
     - text: 91 Latenza p50
     - 'img "Andamento di Latenza p50 su 2 audit: da <duration> a <duration>."'
@@ -206,11 +203,10 @@
         - button "Riesegui audit"
         - button "Pianifica come monitor"
         - button "Elimina voce"
-  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Punteggio 72 Latenza p50 <duration>
+    - text: Relay gateway.a-very-long-relay-hostname.example.org Punteggio 72 Latenza p50 <duration>
     - list:
       - listitem:
         - button "27 set 2026, 10:02 Per lo più affidabile Punteggio 72 Voto D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -285,11 +281,10 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - region "gpt-4o http://127.0.0.1:9099/v1":
+  - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - code: base_url
-    - text: http://127.0.0.1:9099/v1 Punteggio 53
+    - text: Relay 127.0.0.1:9099 Punteggio 53 Latenza p50 nessun dato
     - list:
       - listitem:
         - button "27 set 2026, 07:47 Merce non conforme Punteggio 53 Voto F check · standard"

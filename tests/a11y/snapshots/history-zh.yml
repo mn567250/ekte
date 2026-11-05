@@ -49,8 +49,8 @@
     - combobox "中转站 / 厂商":
       - option "全部" [selected]
       - option "127.0.0.1:9099"
+      - option "Example Relay"
       - option "gateway.a-very-long-relay-hostname.example.org"
-      - option "relay.example.com"
     - text: 声称模型
     - combobox "声称模型":
       - option "全部" [selected]
@@ -103,7 +103,7 @@
       - button "健康分" [pressed]
       - button "评级"
       - button "延迟 p50" [pressed]
-      - button "输出速度"
+      - button "解码速度 p50"
     - text: 显示 15 / 15 条记录
   - group "排序":
     - button "时间，降序排列": 时间
@@ -111,11 +111,10 @@
     - button "按健康分排序": 健康分
     - button "按评级排序": 评级
   - button "全部折叠"
-  - region "model-a https://relay.example.com/v1":
+  - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 健康分
+    - text: 中转站 Example Relay 健康分
     - img "健康分趋势（7 次检测）：从 70 到 82，上升。"
     - text: 82 延迟 p50
     - img "延迟 p50趋势（7 次检测）：从 <duration> 到 <duration>。"
@@ -156,11 +155,10 @@
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
-  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 健康分
+    - text: 中转站 gateway.a-very-long-relay-hostname.example.org 健康分
     - img "健康分趋势（4 次检测）：从 58 到 64，上升。"
     - text: 64 延迟 p50
     - img "延迟 p50趋势（4 次检测）：从 <duration> 到 <duration>。"
@@ -186,11 +184,10 @@
         - button "重新检测"
         - button "此记录由监控运行产生" [disabled]
         - button "删除此记录"
-  - region "model-b https://relay.example.com/v1":
+  - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 健康分
+    - text: 中转站 Example Relay 健康分
     - img "健康分趋势（2 次检测）：从 89 到 91，上升。"
     - text: 91 延迟 p50
     - img "延迟 p50趋势（2 次检测）：从 <duration> 到 <duration>。"
@@ -206,11 +203,10 @@
         - button "重新检测"
         - button "设为监控"
         - button "删除此记录"
-  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 健康分 72 延迟 p50 <duration>
+    - text: 中转站 gateway.a-very-long-relay-hostname.example.org 健康分 72 延迟 p50 <duration>
     - list:
       - listitem:
         - button "2026年9月27日 10:02 基本可信 健康分 72 评级 D check · standard openai · 流式 p50 <duration>" [expanded]
@@ -285,11 +281,10 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - region "gpt-4o http://127.0.0.1:9099/v1":
+  - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - code: base_url
-    - text: http://127.0.0.1:9099/v1 健康分 53
+    - text: 中转站 127.0.0.1:9099 健康分 53 延迟 p50 无数据
     - list:
       - listitem:
         - button "2026年9月27日 07:47 货不对板 健康分 53 评级 F check · standard"

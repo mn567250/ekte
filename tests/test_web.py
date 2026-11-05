@@ -243,6 +243,47 @@ def test_history_list_carries_performance_headline_on_request(tmp_path, monkeypa
     assert row["ttft_p50_ms"] is None and row["score"] == 90.0
     assert "report_json" not in row
 
+
+def test_history_list_names_each_run_by_its_relay_on_request(tmp_path, monkeypatch, client):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.knowledge.relays import add_relay
+    from ekte.web import history
+
+    def save(url):
+        history.save({"target": {"base_url": url, "claimed_model": "m", "model": "m"},
+                      "verdict": {"overall_score": 80.0}})
+
+    add_relay("Local Ollama", "http://127.0.0.1:11434/v1")
+    save("http://127.0.0.1:11434/v1/")  # trailing slash: same relay after normalising
+    save("https://unsaved.example/v1")
+    assert "relay" not in client.get("/api/history").json()[0]
+    unsaved, saved = client.get("/api/history?relay=1").json()  # newest first
+    assert saved["relay"] == {"key": "local-ollama", "label": "Local Ollama", "in_kb": True, "kind": "relay"}
+    assert unsaved["relay"] == {"key": "https://unsaved.example/v1", "label": "https://unsaved.example/v1",
+                                "in_kb": False, "kind": "url"}
+
+
+def test_history_relay_tells_ports_on_one_host_apart(tmp_path, monkeypatch, client):
+    # LM Studio and Ollama both serve on 127.0.0.1, on different ports: two
+    # relays, saved or not, never one
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.knowledge.relays import add_relay
+    from ekte.web import history
+
+    def save(url):
+        history.save({"target": {"base_url": url, "claimed_model": "m", "model": "m"},
+                      "verdict": {"overall_score": 80.0}})
+
+    add_relay("LM Studio", "http://127.0.0.1:1234/v1")
+    add_relay("Ollama", "http://127.0.0.1:11434/v1")
+    for url in ("http://127.0.0.1:1234/v1", "http://127.0.0.1:11434/v1",
+                "http://192.168.1.20:8080/v1", "http://192.168.1.20:8081/v1"):
+        save(url)
+    rows = client.get("/api/history?relay=1").json()[::-1]  # oldest first
+    assert [r["relay"]["label"] for r in rows[:2]] == ["LM Studio", "Ollama"]
+    assert [r["relay"]["key"] for r in rows[2:]] == ["http://192.168.1.20:8080/v1", "http://192.168.1.20:8081/v1"]
+    assert len({r["relay"]["key"] for r in rows}) == 4
+
 def test_api_key_fields_are_masked_and_paired_with_their_url(client):
 
     js = client.get("/secretfield.js")

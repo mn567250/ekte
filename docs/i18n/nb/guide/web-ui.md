@@ -54,7 +54,7 @@ Nettgrensesnittet leveres fra roten av adressen `ekte serve` åpner, med revisjo
 | **Tilgjengelighet** | `/accessibility` | Samsvarsrapporten og tilgjengelighetserklæringen (ikonet ved siden av språkvelgeren); ennå uten manuell gjennomgang utført av et menneske (kjent begrensning) |
 
 På tvers av sidene: filtre og konfigurerbare trender (score, karakter,
-forsinkelse p50, tokens/s) på **Historikk**; **Planlegg som overvåking** og
+forsinkelse p50, dekodehastighet p50) på **Historikk**; **Planlegg som overvåking** og
 **Kjør revisjonen på nytt** på hver kjøring i Historikk; **Last ned rapport** i
 alle formater; og en temabryter (Automatisk tema / Lyst / Mørkt). Alle sider
 unntatt Tilgjengelighet har én melding rett under innledningen, farget etter

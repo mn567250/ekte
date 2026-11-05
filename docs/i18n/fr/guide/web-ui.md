@@ -58,7 +58,7 @@ L'interface web est servie à la racine de l'adresse qu'ouvre `ekte serve`, la p
 | **Accessibilité** | `/accessibility` | Le rapport de conformité et la déclaration d'accessibilité (l'icône à côté du sélecteur de langue) ; pas encore de revue manuelle par une personne (limite connue) |
 
 Sur les pages, en outre : des filtres et des tendances configurables (score,
-note, latence p50, tokens/s) dans l'**Historique** ; **Planifier comme
+note, latence p50, vitesse de décodage p50) dans l'**Historique** ; **Planifier comme
 surveillance** et **Relancer l'audit** sur chaque exécution de l'Historique ; **Télécharger le rapport**
 dans tous les formats ; et un sélecteur de thème (Automatique / Clair / Sombre).
 Chaque page sauf Accessibilité affiche un avis juste

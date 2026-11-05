@@ -49,8 +49,8 @@
     - combobox "Relay / provider":
       - option "All" [selected]
       - option "127.0.0.1:9099"
+      - option "Example Relay"
       - option "gateway.a-very-long-relay-hostname.example.org"
-      - option "relay.example.com"
     - text: Claimed model
     - combobox "Claimed model":
       - option "All" [selected]
@@ -103,7 +103,7 @@
       - button "Score" [pressed]
       - button "Grade"
       - button "Latency p50" [pressed]
-      - button "Tokens/s"
+      - button "Decode speed p50"
     - text: Showing 15 of 15 audits
   - group "Sort audits":
     - button "Time, sorted descending": Time
@@ -111,11 +111,10 @@
     - button "Sort by Score": Score
     - button "Sort by Grade": Grade
   - button "Collapse all"
-  - region "model-a https://relay.example.com/v1":
+  - region "model-a Example Relay":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Score
+    - text: Relay Example Relay Score
     - 'img "Health score trend across 7 audits: from 70 to 82, rising."'
     - text: 82 Latency p50
     - 'img "Latency p50 trend across 7 audits: from <duration> to <duration>."'
@@ -156,11 +155,10 @@
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
-  - region "model-a https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-a gateway.a-very-long-relay-hostname.example.org":
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score
+    - text: Relay gateway.a-very-long-relay-hostname.example.org Score
     - 'img "Health score trend across 4 audits: from 58 to 64, rising."'
     - text: 64 Latency p50
     - 'img "Latency p50 trend across 4 audits: from <duration> to <duration>."'
@@ -186,11 +184,10 @@
         - button "Re-run audit"
         - button "This run was produced by a monitor" [disabled]
         - button "Delete entry"
-  - region "model-b https://relay.example.com/v1":
+  - region "model-b Example Relay":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://relay.example.com/v1 Score
+    - text: Relay Example Relay Score
     - 'img "Health score trend across 2 audits: from 89 to 91, rising."'
     - text: 91 Latency p50
     - 'img "Latency p50 trend across 2 audits: from <duration> to <duration>."'
@@ -206,11 +203,10 @@
         - button "Re-run audit"
         - button "Schedule as monitor"
         - button "Delete entry"
-  - region "model-b https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1":
+  - region "model-b gateway.a-very-long-relay-hostname.example.org":
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
-    - code: base_url
-    - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 Score 72 Latency p50 <duration>
+    - text: Relay gateway.a-very-long-relay-hostname.example.org Score 72 Latency p50 <duration>
     - list:
       - listitem:
         - button "Sep 27, 2026, 10:02 AM Mostly trustworthy Score 72 Grade D check · standard openai · Streaming p50 <duration>" [expanded]
@@ -285,11 +281,10 @@
               - button "Markdown"
               - button "HTML"
               - button "PDF"
-  - region "gpt-4o http://127.0.0.1:9099/v1":
+  - region "gpt-4o 127.0.0.1:9099":
     - heading "gpt-4o" [level=2]:
       - button "gpt-4o" [expanded]
-    - code: base_url
-    - text: http://127.0.0.1:9099/v1 Score 53
+    - text: Relay 127.0.0.1:9099 Score 53 Latency p50 no data
     - list:
       - listitem:
         - button "Sep 27, 2026, 7:47 AM Bait-and-switch Score 53 Grade F check · standard"

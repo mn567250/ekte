@@ -54,7 +54,7 @@ The web UI is served at the root of the address `ekte serve` opens, with the aud
 | **Accessibility** | `/accessibility` | The accessibility conformance report and statement (the icon next to the language switch); no manual review by a person yet (a known limitation) |
 
 Across the pages: filters and configurable trends (score, grade, latency p50,
-tokens/s) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
+decode speed p50) on **History**; **Schedule as monitor** and **Re-run audit** on every History run; **Download
 report** in every format; and a theme switch (Auto theme / Light / Dark). Every page but Accessibility has one notice right under its
 introduction, colored by importance (information, success, warning,
 critical): e.g. the last finished audit on **Audit**, the master key on

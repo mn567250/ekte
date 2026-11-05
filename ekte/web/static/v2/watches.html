@@ -521,12 +521,12 @@
     return out;
   }
 
-  // History link that pre-fills the relay / model / suite filters for this monitor.
+  // History link that pre-fills the relay / model / suite filters for this
+  // monitor. It passes the exact base URL (History finds its relay, so two
+  // servers on one host, different ports, stay apart).
   function historyHref(w, reportId) {
-    var host = "";
-    try { host = new URL(w.base_url).host; } catch (e) { host = w.base_url || ""; }
     var q = [["surface", w.surface && w.surface !== "chat" ? w.surface : ""],
-      ["host", host], ["model", w.claimed_model || w.model || ""], ["suite", w.suite || ""]]
+      ["base_url", w.base_url || ""], ["model", w.claimed_model || w.model || ""], ["suite", w.suite || ""]]
       .filter(function (p) { return p[1]; })
       .map(function (p) { return p[0] + "=" + encodeURIComponent(p[1]); }).join("&");
     return "/history" + (q ? "?" + q : "") + "#r-" + reportId;
