@@ -39,7 +39,7 @@
     - text: "Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay ekte knows — packaged ones and yours — and can switch each of them on or off or add your own. Your changes are stored in kb.db on this machine and used by the web UI and"
     - code: ekte check
     - text: alike.
-  - status: Knowledge base complete 130 models · 7 providers · 1 relay, all switched on
+  - status: Knowledge base complete 241 models · 23 providers · 1 relay, all switched on
   - region "Filters":
     - button "Filters" [expanded]
     - text: Model id
@@ -48,13 +48,29 @@
     - text: Provider
     - combobox "Provider":
       - option "All" [selected]
+      - option "Ai2 (Allen Institute for AI)"
       - option "Anthropic (Claude)"
+      - option "Arcee AI"
+      - option "Black Forest Labs"
+      - option "Cohere (Toronto, Canada)"
+      - option "Deep Cogito"
       - option "DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)"
       - option "Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)"
       - option "Zhipu AI (智谱 / Z.ai) — BigModel open platform"
+      - option "IBM — Granite"
+      - option "Jina AI (Berlin, Germany; part of Elastic)"
+      - option "Liquid AI"
+      - option "Meta (Llama open-weight models)"
+      - option "Microsoft — Phi"
+      - option "Mistral AI (Paris)"
       - option "Moonshot AI (月之暗面 / Kimi)"
+      - option "Nous Research"
+      - option "NVIDIA (Nemotron open models, NIM)"
       - option "OpenAI"
       - option "Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)"
+      - option "Stability AI"
+      - option "Voyage AI (US, San Francisco; part of MongoDB)"
+      - option "xAI — Grok"
     - text: Relay
     - combobox "Relay":
       - option "All" [selected]
@@ -64,7 +80,7 @@
       - option "All" [selected]
       - option "Packaged"
       - option "Yours"
-    - status: Showing 130 of 130 models · 7 of 7 providers · 1 of 1 relays
+    - status: Showing 241 of 241 models · 23 of 23 providers · 1 of 1 relays
   - link "Export your entries as YAML":
     - /url: /api/kb/export
   - tablist "Knowledge base sections":
@@ -72,7 +88,7 @@
     - tab "Providers"
     - tab "Relays"
   - tabpanel "Models":
-    - heading "All models 130 models" [level=2]
+    - heading "All models 241 models" [level=2]
     - paragraph: "The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile."
     - group:
       - text: Add a model
@@ -100,23 +116,17 @@
       - button "Check"
       - button "Save to knowledge base" [disabled]
     - group:
-      - text: Anthropic (Claude)
-      - code: anthropic
-      - text: 23 models
+      - text: Ai2 (Allen Institute for AI)
+      - code: ai2
+      - text: 6 models
       - list:
         - listitem:
-          - code: claude-fable-5-1
-          - text: Packaged Context 1000000 Max output 128000 Aliases
-          - code: claude-fable-5-1
+          - code: allenai/Olmo-3-7B-Instruct
+          - text: Packaged Context — Max output — Aliases
+          - code: allenai/olmo-3-7b-instruct
           - text: ","
-          - code: fable
-          - text: ","
-          - code: fable 5.1
-          - text: ","
-          - code: claude fable 5.1
-          - text: ","
-          - code: most powerful
-          - switch "claude-fable-5-1 Enabled" [checked]
+          - code: Olmo-3-7B-Instruct
+          - switch "allenai/Olmo-3-7B-Instruct Enabled" [checked]
           - emphasis: Enabled
         # … more items of the same shape
     # … more items of the same shape

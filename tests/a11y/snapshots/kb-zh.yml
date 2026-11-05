@@ -39,7 +39,7 @@
     - text: 每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 ekte 已知的全部模型、厂商与中转站——内置的和你的——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 kb.db 中，网页界面和
     - code: ekte check
     - text: 都会使用。
-  - status: 知识库完整 130 个模型 · 7 个厂商 · 1 个中转站，全部已启用
+  - status: 知识库完整 241 个模型 · 23 个厂商 · 1 个中转站，全部已启用
   - region "筛选":
     - button "筛选" [expanded]
     - text: 模型 ID
@@ -48,13 +48,29 @@
     - text: 厂商
     - combobox "厂商":
       - option "全部" [selected]
+      - option "Ai2 (Allen Institute for AI)"
       - option "Anthropic (Claude)"
+      - option "Arcee AI"
+      - option "Black Forest Labs"
+      - option "Cohere (Toronto, Canada)"
+      - option "Deep Cogito"
       - option "DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)"
       - option "Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)"
       - option "Zhipu AI (智谱 / Z.ai) — BigModel open platform"
+      - option "IBM — Granite"
+      - option "Jina AI (Berlin, Germany; part of Elastic)"
+      - option "Liquid AI"
+      - option "Meta (Llama open-weight models)"
+      - option "Microsoft — Phi"
+      - option "Mistral AI (Paris)"
       - option "Moonshot AI (月之暗面 / Kimi)"
+      - option "Nous Research"
+      - option "NVIDIA (Nemotron open models, NIM)"
       - option "OpenAI"
       - option "Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)"
+      - option "Stability AI"
+      - option "Voyage AI (US, San Francisco; part of MongoDB)"
+      - option "xAI — Grok"
     - text: 中转站
     - combobox "中转站":
       - option "全部" [selected]
@@ -64,7 +80,7 @@
       - option "全部" [selected]
       - option "内置"
       - option "你的"
-    - status: 显示 130/130 个模型 · 7/7 个厂商 · 1/1 个中转站
+    - status: 显示 241/241 个模型 · 23/23 个厂商 · 1/1 个中转站
   - link "将你的条目导出为 YAML":
     - /url: /api/kb/export
   - tablist "知识库分类":
@@ -72,7 +88,7 @@
     - tab "厂商"
     - tab "中转站"
   - tabpanel "模型":
-    - heading "全部模型 130 个模型" [level=2]
+    - heading "全部模型 241 个模型" [level=2]
     - paragraph: 检测时用来比对的模型资料。停用的模型不再参与匹配：检测它时将没有资料可比对。
     - group:
       - text: 添加模型
@@ -100,23 +116,17 @@
       - button "检查"
       - button "保存到知识库" [disabled]
     - group:
-      - text: Anthropic (Claude)
-      - code: anthropic
-      - text: 23 个模型
+      - text: Ai2 (Allen Institute for AI)
+      - code: ai2
+      - text: 6 个模型
       - list:
         - listitem:
-          - code: claude-fable-5-1
-          - text: 内置 上下文 1000000 最大输出 128000 别名
-          - code: claude-fable-5-1
+          - code: allenai/Olmo-3-7B-Instruct
+          - text: 内置 上下文 — 最大输出 — 别名
+          - code: allenai/olmo-3-7b-instruct
           - text: ","
-          - code: fable
-          - text: ","
-          - code: fable 5.1
-          - text: ","
-          - code: claude fable 5.1
-          - text: ","
-          - code: most powerful
-          - switch "claude-fable-5-1 启用中" [checked]
+          - code: Olmo-3-7B-Instruct
+          - switch "allenai/Olmo-3-7B-Instruct 启用中" [checked]
           - emphasis: 启用中
         # … more items of the same shape
     # … more items of the same shape
