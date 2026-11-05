@@ -167,6 +167,15 @@ ekte has three eras:
 
 ### Fixed
 
+- **An honest older OpenAI model no longer fails the knowledge-cutoff probe.**
+  The probe asks who won the November 2024 US election and was inaugurated in
+  January 2025, but it ran on every OpenAI model, including GPT-4o and o1
+  (cutoff 2023-10), GPT-4.1, o3 and gpt-oss (2024-06) and GPT-5 and 5.1
+  (2024-09-30), which cannot know the answer; a genuine model counted as
+  diverging. It now runs only on the models whose published cutoff is 2025 or
+  later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol), as the Gemini and
+  Moonshot cutoff probes already do. This can change verdicts for the older
+  models.
 - **No Chinese in the web UI while another language is selected.** The pages
   were written in Chinese and translated by script once loaded, so the browser
   tab showed the Chinese title while a page loaded, and a page shown before its

@@ -332,6 +332,19 @@ def test_moonshot_cutoff_probe_skips_legacy_v1_models(knowledge_base):
     assert "knowledge-cutoff" in {fp.id for fp in k2.all_fingerprints()}
 
 
+def test_openai_cutoff_probe_runs_only_on_models_trained_after_the_2024_election(knowledge_base):
+    # The probe asks for the November 2024 election and the January 2025
+    # inauguration; a genuine model with an earlier cutoff cannot answer it.
+    for model_id in ["gpt-5.2", "gpt-5.5", "gpt-5.6-sol", "gpt-6-astra"]:
+        r = knowledge_base.resolve(model_id)
+        assert r is not None
+        assert "knowledge-cutoff" in {fp.id for fp in r.all_fingerprints()}, model_id
+    for model_id in ["gpt-5.1", "gpt-5", "gpt-4.1", "o3", "gpt-4o", "o1", "gpt-oss-120b"]:
+        r = knowledge_base.resolve(model_id)
+        assert r is not None
+        assert "knowledge-cutoff" not in {fp.id for fp in r.all_fingerprints()}, model_id
+
+
 def test_performance_reference_ranges():
     import pytest
     from pydantic import ValidationError

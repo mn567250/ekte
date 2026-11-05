@@ -300,6 +300,18 @@ models:
   - mistral
   unsupported_params:
   - max_tokens
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: 'Flagship as of 2026-10 (announced/limited preview 2026-09-03, GA 2026-09-04). 1,050,000 context (922K input + 128K output), 128K max output; requests above 272K input tokens are billed at a higher rate. Reasoning model: reasoning.effort low|medium|high|xhigh|max — ''none'' is NOT supported (low is the floor). Knowledge cutoff 2026-04-30. Pricing $10/$50 per MTok, $1 cached input, $12.50 cache writes. Text+image in, text out; Responses and Chat Completions. Tokenizer not published for GPT-6 (o200k_base used here as an estimate).'
 - id: gpt-6.1-sol
   aliases: []
@@ -335,6 +347,18 @@ models:
   - mistral
   unsupported_params:
   - max_tokens
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: 'Released 2026-09-29: complex coding and professional work at a lower cost than GPT-6 Astra. 1.05M context, 128K max output. reasoning.effort low|medium (default)|high|xhigh|max — ''none''/''minimal'' NOT supported (unlike GPT-6 Sol). Knowledge cutoff reported 2026-04-30. Pricing $2/$10 per MTok. Tokenizer unpublished (o200k_base as estimate).'
 - id: gpt-6-sol
   aliases: []
@@ -441,6 +465,18 @@ models:
   - mistral
   unsupported_params:
   - max_tokens
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: GPT-5.6 family top tier (limited preview 2026-06-26, GA 2026-07-09); alias gpt-5.6. 1.05M context, 128K max output. reasoning.effort none|low|medium|high|xhigh|max — 'max' (and an 'ultra' mode) exclusive to Sol. Knowledge cutoff 2026-02-16. Pricing reported $4/$20 per MTok (some sources $5/$30). Named replacement for the retired o1 / o3-mini.
 - id: gpt-5.6-terra
   aliases: []
@@ -476,6 +512,18 @@ models:
   - mistral
   unsupported_params:
   - max_tokens
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: GPT-5.6 mid tier (GA 2026-07-09). 1.05M context, 128K max output. reasoning.effort none..xhigh (no 'max'). Knowledge cutoff 2026-02-16. Pricing ~$2/$12 per MTok (some sources $2.50/$15). Named replacement for the retired o4-mini.
 - id: gpt-5.6-luna
   aliases: []
@@ -511,6 +559,18 @@ models:
   - mistral
   unsupported_params:
   - max_tokens
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: GPT-5.6 cheap tier (GA 2026-07-09). 1.05M context, 128K max output. reasoning.effort none..xhigh, default medium. Knowledge cutoff 2026-02-16. ~$0.20/$1.20 per MTok. Named replacement for the retired gpt-4.1-nano.
 - id: gpt-5.5
   aliases:
@@ -547,6 +607,18 @@ models:
   - meta
   - deepseek
   - mistral
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: 'Previous flagship (released 2026-04-23), still available. $5/$30 per MTok, $0.50 cached input. Reasoning effort levels: none, low, medium, high, xhigh. Verbosity param low/medium/high. Supports Chat Completions and Responses API, function calling, structured outputs, web/file search, code interpreter, computer use, MCP. 1.05M context advertised; some downstream tools observe a ~272K input cap with 128K reserved for output.'
 - id: gpt-5.5-pro
   aliases: []
@@ -580,6 +652,18 @@ models:
   - meta
   - deepseek
   - mistral
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: Highest-precision variant, ~ $30/$180 per MTok. Heavy reasoning, slow, expensive. Responses API recommended.
 - id: gpt-5.4
   aliases: []
@@ -615,6 +699,18 @@ models:
   - meta
   - deepseek
   - mistral
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: Older generation, still available on the API (retired from Codex for ChatGPT-signed-in users 2026-08-31). Strong general-purpose frontier, $2.50/$15 per MTok. Reasoning effort none/low/medium/high/xhigh.
 - id: gpt-5.4-pro
   aliases: []
@@ -648,6 +744,18 @@ models:
   - meta
   - deepseek
   - mistral
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: High-precision Responses-API reasoning variant of the 5.4 tier, ~$30/$180 per MTok. 1.05M context, 128K max output. Served on the Responses API. Source developers.openai.com/api/docs/models/gpt-5.4-pro.
 - id: gpt-5.4-mini
   aliases: []
@@ -683,6 +791,18 @@ models:
   - meta
   - deepseek
   - mistral
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: $0.75/$4.50 per MTok. Note smaller 400K context vs full GPT-5.4's 1M — a common downgrade target.
 - id: gpt-5.4-nano
   aliases: []
@@ -718,6 +838,18 @@ models:
   - meta
   - deepseek
   - mistral
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: Shutdown scheduled 2027-04-01. ~ $0.20/$1.25 per MTok. Cheapest GPT-5.4 tier.
 - id: gpt-5.3-codex
   aliases: []
@@ -754,6 +886,18 @@ models:
   - meta
   - deepseek
   - mistral
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: Shutdown scheduled 2027-04-01. Agentic coding model for Codex. Reasoning effort low/medium/high/xhigh. Function calling + structured outputs. Optimized for tool-heavy coding loops.
 - id: gpt-5.2
   aliases:
@@ -791,6 +935,18 @@ models:
   - meta
   - deepseek
   - mistral
+  fingerprints:
+  - id: knowledge-cutoff
+    signal: knowledge-cutoff capability (factual, not self-report)
+    prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
+    native_expected: Knows the November 2024 US election result and the January 2025 inauguration and names Donald Trump. Applied only to models whose published knowledge cutoff is 2025 or later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol); GPT-5 and 5.1 (cutoff 2024-09-30), GPT-4.1, o3, o4-mini and gpt-oss (2024-06) and GPT-4o and o1 (2023-10) predate the election and are not asked.
+    downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
+    pure_code_checkable: false
+    expect_contains_any:
+    - trump
+    max_tokens: 128
+    temperature: 0
+    weight: 1
   notes: gpt-5.2-chat-latest was shut down 2026-08-10; the reasoning gpt-5.2 remains. Prior frontier gen. Chat variant (gpt-5.2-chat-latest) is 128K context / 16384 max output, non-reasoning-optimized. Pro variant is high-effort reasoning.
 - id: gpt-5.1
   aliases:
@@ -1315,17 +1471,6 @@ fingerprints:
   - mistral
   - cohere
   max_tokens: 64
-  temperature: 0
-  weight: 1
-- id: knowledge-cutoff
-  signal: knowledge-cutoff capability (factual, not self-report)
-  prompt: 'Without any web access, state plainly: who won the 2024 US presidential election, and who was inaugurated US president in January 2025? Answer in one sentence.'
-  native_expected: Models with cutoffs at/after late 2024 (GPT-5.x cutoffs Sep-2024 through Feb-2026; GPT-6 Astra Apr-2026; GPT-4.1/o3 cutoff Jun-2024) — the Jun-2024-cutoff ones may hedge, but Sep-2024+ models (GPT-5/5.1) and later know the Nov-2024 result. GPT-5.5 / 5.6 / 6 confidently state the Jan-2025 inauguration.
-  downgrade_signal: 'A substitute with an older cutoff (e.g. a 2023 model standing in for GPT-5.5) cannot name the Jan-2025 inauguration or gets the 2024 election wrong. NOTE: self-reported cutoff is unreliable — OpenAI models frequently MISstate their own cutoff (GPT-5.5 has been observed claiming ''June 2024''), so probe with a dated FACT, not ''what is your cutoff''. Needs LLM/keyword judge.'
-  pure_code_checkable: false
-  expect_contains_any:
-  - trump
-  max_tokens: 128
   temperature: 0
   weight: 1
 - id: max-output-truncation
