@@ -101,8 +101,13 @@ ekte has three eras:
   Groups are one claimed model on one relay as Analytics resolves it (a saved
   relay or provider, else the run's URL, shown as host and port), so runs
   against two base URLs of one saved relay share a group; the tooltip lists
-  the URLs. `GET /api/history?relay=1` adds each run's `relay` (`key`,
-  `label`, `in_kb`, `kind`)
+  the URLs. Ports always tell relays apart: LM Studio and Ollama on one host
+  are two relays, saved or not, and two unsaved URLs on one host and port
+  are named by their paths. The **Relay / provider** filter lists these
+  relays by name; a monitor's "Open in history" link passes its exact base
+  URL (`base_url=`), and older `host=` links still select the relay when
+  only one has that host and port. `GET /api/history?relay=1` adds each
+  run's `relay` (`key`, `label`, `in_kb`, `kind`)
   ([#102](https://github.com/mn567250/ekte/issues/102)).
 
 - **A failed request shows how long it took to fail.** On the performance

@@ -49,8 +49,8 @@
     - combobox "Relay / provider":
       - option "All" [selected]
       - option "127.0.0.1:9099"
+      - option "Example Relay"
       - option "gateway.a-very-long-relay-hostname.example.org"
-      - option "relay.example.com"
     - text: Claimed model
     - combobox "Claimed model":
       - option "All" [selected]

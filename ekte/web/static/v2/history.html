@@ -314,7 +314,10 @@
   var host = $("#hist"), fbar = $("#filters");
   var FKEY = "ekte.v2.history.filters", NONE = "__none__";
   var fromQuery; // set by loadFilters() when the URL carries filters
-  var FDEF = { surface: "", host: "", model: "", suite: "", mode: "", api: "", detect: "", stream: "", risk: "", min: "", days: "", exec: "", q: "" };
+  // a link's base_url= / host= (older links): which relay they mean is known
+  // only once the runs are loaded (pickLinkedRelay)
+  var linkRelay = null;
+  var FDEF = { surface: "", relay: "", model: "", suite: "", mode: "", api: "", detect: "", stream: "", risk: "", min: "", days: "", exec: "", q: "" };
   var state = { rows: null, error: null, reports: {}, open: null, confirm: null, filters: loadFilters() };
   // Rows are rendered PAGE at a time per group ("Show more" appends the next
   // page); state.shown remembers how far each group (by key) was expanded
@@ -362,10 +365,11 @@
     // string; these win over the remembered ones
     try {
       var qs = new URLSearchParams(location.search);
-      var QK = ["surface", "host", "model", "suite", "api", "stream"];
-      if (QK.some(function (k) { return qs.has(k); })) {
+      var QK = ["surface", "relay", "model", "suite", "api", "stream"], LK = ["base_url", "host"];
+      if (QK.concat(LK).some(function (k) { return qs.has(k); })) {
         f = Object.assign({}, FDEF); // drop stale filters that could hide the monitor's runs
         QK.forEach(function (k) { if (qs.has(k)) f[k] = qs.get(k); });
+        if (!f.relay && (qs.get("base_url") || qs.get("host"))) linkRelay = { base_url: qs.get("base_url") || "", host: qs.get("host") || "" };
         fromQuery = true; // show what the link filtered by
         localStorage.setItem(FKEY, JSON.stringify(f));
       }
@@ -410,7 +414,7 @@
     var q = f.q.trim().toLowerCase();
     return rows.filter(function (r) {
       if (f.surface && surfaceOf(r) !== f.surface) return false;
-      if (f.host && hostOf(r.base_url) !== f.host) return false;
+      if (f.relay && relayOf(r).key !== f.relay) return false;
       if (f.model && (r.claimed_model || "") !== f.model) return false;
       if (f.suite && (f.suite === NONE ? !!r.suite : r.suite !== f.suite)) return false;
       if (f.mode && modeOf(r) !== f.mode) return false;
@@ -480,7 +484,7 @@
       '<label class="fq"><span>' + esc(T("搜索", "Search")) + '</span><input class="in" type="search" data-f="q" value="' + esc(f.q) +
       '" placeholder="' + esc(T("中转站、模型、套件、协议…", "Relay, model, suite, protocol…")) + '" autocomplete="off" /></label>' +
       selectHTML("surface", T("接口类型", "Endpoint type"), surfaces) +
-      selectHTML("host", T("中转站 / 厂商", "Relay / provider"), asOpts(distinct(function (r) { return hostOf(r.base_url); }, f.host))) +
+      selectHTML("relay", T("中转站 / 厂商", "Relay / provider"), relayOpts(f.relay)) +
       selectHTML("model", T("声称模型", "Claimed model"), asOpts(distinct(function (r) { return r.claimed_model || ""; }, f.model))) +
       selectHTML("suite", T("套件", "Suite"), suites) +
       selectHTML("mode", T("模式", "Mode"), asOpts(distinct(modeOf, f.mode))) +
@@ -510,7 +514,7 @@
     if (f.q.trim()) out.push(lab(T("搜索", "Search"), f.q.trim()));
     if (f.days) out.push(daysLabel(f.days));
     if (f.surface) out.push(surfaceLabel(f.surface));
-    if (f.host) out.push(f.host);
+    if (f.relay) out.push(relayKeyName(f.relay));
     if (f.model) out.push(f.model);
     if (f.suite) out.push(f.suite === NONE ? T("（无套件）", "(no suite)") : f.suite);
     if (f.mode) out.push(lab(T("模式", "Mode"), f.mode));
@@ -663,10 +667,60 @@
   function relayOf(r) {
     return r.relay || { key: r.base_url || "", label: r.base_url || "", kind: "url" };
   }
-  // what a group's header names its relay by: the entry's name, or for an
-  // unsaved URL its host (with port)
-  function relayName(rel) {
-    return rel.kind === "url" ? (rel.key ? hostOf(rel.key) : "—") : rel.label;
+  // what a relay is called: the entry's name, or for an unsaved URL its host
+  // with port (so two servers on one host stay apart); when two unsaved URLs
+  // share host and port, their paths tell them apart. Worked out once per
+  // loaded list of runs.
+  var names = { rows: null, byKey: {} };
+  function relayNames() {
+    if (names.rows === state.rows) return names.byKey;
+    var byKey = {}, urlKeys = {}, hostCount = {};
+    (state.rows || []).forEach(function (r) {
+      var rel = relayOf(r);
+      if (byKey[rel.key] != null) return;
+      byKey[rel.key] = rel.kind === "url" ? "" : rel.label;
+      if (rel.kind === "url" && rel.key) {
+        var h = hostOf(rel.key);
+        urlKeys[rel.key] = h;
+        hostCount[h] = (hostCount[h] || 0) + 1;
+      }
+    });
+    Object.keys(urlKeys).forEach(function (k) {
+      var h = urlKeys[k];
+      byKey[k] = hostCount[h] > 1 ? urlPlace(k) : h;
+    });
+    names = { rows: state.rows, byKey: byKey };
+    return byKey;
+  }
+  // host, port and path of a URL (no scheme, no trailing slash)
+  function urlPlace(u) {
+    try { var x = new URL(u); return (x.host + x.pathname).replace(/\/+$/, ""); } catch (e) { return String(u || ""); }
+  }
+  function relayKeyName(key) {
+    var n = relayNames()[key];
+    return n || (key ? hostOf(key) : "—");
+  }
+  function relayName(rel) { return relayKeyName(rel.key); }
+  // the relay filter's options: every relay of the loaded runs, by name
+  function relayOpts(cur) {
+    var byKey = relayNames(), keys = Object.keys(byKey).filter(Boolean);
+    if (cur && byKey[cur] == null) keys.push(cur);
+    return keys.map(function (k) { return { v: k, t: relayKeyName(k) }; })
+      .sort(function (a, b) { return a.t.localeCompare(b.t); });
+  }
+  // a link's base_url= (exact URL, trailing slashes aside) or host= (host with
+  // port, older links) becomes the relay its runs belong to; a host shared by
+  // several relays selects none of them rather than the wrong one
+  function pickLinkedRelay() {
+    if (!linkRelay || !state.rows.length) return;
+    var trim = function (u) { return String(u || "").trim().replace(/\/+$/, ""); };
+    var want = trim(linkRelay.base_url), keys = {};
+    state.rows.forEach(function (r) {
+      if (want ? trim(r.base_url) === want : hostOf(r.base_url) === linkRelay.host) keys[relayOf(r).key] = 1;
+    });
+    var found = Object.keys(keys);
+    if (found.length === 1) { state.filters.relay = found[0]; saveFilters(); }
+    linkRelay = null;
   }
 
   // one group per claimed model on one relay: runs against several base URLs
@@ -700,6 +754,7 @@
       .then(function (rows) {
         state.rows = Array.isArray(rows) ? rows : [];
         state.error = null;
+        pickLinkedRelay();
         renderFilters();
         render();
       })

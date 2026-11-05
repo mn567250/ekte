@@ -49,8 +49,8 @@
     - combobox "中转站 / 厂商":
       - option "全部" [selected]
       - option "127.0.0.1:9099"
+      - option "Example Relay"
       - option "gateway.a-very-long-relay-hostname.example.org"
-      - option "relay.example.com"
     - text: 声称模型
     - combobox "声称模型":
       - option "全部" [selected]

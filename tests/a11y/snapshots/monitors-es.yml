@@ -139,7 +139,7 @@
           - option "Conservar" [selected]
           - option "No conservar"
       - 'link "De la ejecución #1 →"':
-        - /url: /history?host=127.0.0.1%3A9099&model=gpt-4o&suite=standard#r-1
+        - /url: /history?base_url=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
       - form "Completa la configuración para activarlo":
         - heading "Completa la configuración para activarlo" [level=4]
         - paragraph: La configuración proviene de la ejecución del Historial. Define cada cuánto se ejecuta y actívalo.
