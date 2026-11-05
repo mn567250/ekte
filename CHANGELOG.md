@@ -124,6 +124,14 @@ ekte has three eras:
 
 ### Fixed
 
+- **No Chinese in the web UI while another language is selected.** The pages
+  were written in Chinese and translated by script once loaded, so the browser
+  tab showed the Chinese title while a page loaded, and a page shown before its
+  translation (a slow load, a script error) appeared in Chinese. The pages now
+  ship in English and Chinese is a translation like the others, from
+  `ekte/i18n/locales/`; the server also puts the language chosen in the UI into
+  `<html lang>` and the page title, so the tab is right from the start
+  ([#100](https://github.com/mn567250/ekte/issues/100)).
 - **Only the relay's own failures count against it.** A failed request is now
   classified by where it failed: `relay` (an HTTP error status, a timeout while
   waiting for the relay, a broken or malformed answer), `network` (the proxy

@@ -1,0 +1,27 @@
+{
+ "strings": {
+  "Analytics": "分析",
+  "Analytics views": "分析视图",
+  "Audit <span class='u'>analytics</span>": "检测<span class='u'>分析</span>",
+  "Billing and tokens": "计费与 token",
+  "Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.": "计费比 = 中转站报告的 token ÷ ekte 统计的 token。高于 100%：中转站报告的 token 多于 ekte 统计的（可能多计费）。ekte 的统计是估算，小幅偏差属正常。",
+  "Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing.": "用 ekte 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。",
+  "Comparison over time": "随时间对比",
+  "Copy link to this view": "复制此视图的链接",
+  "Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).": "这个中转站在高峰时段会变慢或更容易出错吗？每个格子是你所在时区某个星期几的某个小时，颜色表示该时段开始的检测的中位数（色阶见网格下方）。",
+  "Errors and reliability": "错误与可靠性",
+  "Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls.": "按原因统计对中转站的失败调用：限流（HTTP 429）、服务器错误（5xx）、超时及其他，占全部调用的比例。",
+  "Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.": "它是不是自称的那个模型，是否完整、功能齐全？按中转站与模型列出身份、上下文窗口与能力检查的结果。",
+  "Leaderboard": "排行榜",
+  "Link to this view": "此视图的链接",
+  "Medians over the selected range; n is the number of runs that measured a value.": "所选时间范围内的中位数；n 为测得该值的检测次数。",
+  "Model integrity": "模型真实性",
+  "Overview": "概览",
+  "Peak hours": "高峰时段",
+  "Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.": "中转站在自己的响应头里报告的处理耗时，与到它的网络往返时间并列（中位数）。中转站的数据是自报的，未经核实。",
+  "Relay overhead": "中转开销",
+  "The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.": "折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。",
+  "ekte — analytics": "ekte — 分析",
+  "Key figures": "关键指标"
+ }
+}

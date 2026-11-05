@@ -96,9 +96,14 @@ returns `render({body, foot, count, summary})`, `sync({count, summary})`,
 the toggle with its active-filter badge, the one-line summary shown while
 closed, the remembered open state and **Reset filters**.
 
-**Translation convention.** The Chinese text written in the HTML is the
-original and stays untouched; every element carries its English text in
-`data-en` (and `data-en-placeholder`, `data-en-title`, `data-en-aria-label`).
-The English text is the lookup key for every other language. Scripts use
+**Translation convention.** The pages are written in English
+(`<html lang="en">`); every translatable element carries the same English
+again in `data-en` (and `data-en-placeholder`, `data-en-title`,
+`data-en-aria-label`). That English is the lookup key for every other
+language, Chinese included: `lang.js` replaces the markup with the chosen
+language's string from `ekte/i18n/locales/`, and a missing one stays English.
+The server puts the language of the `ekte_lang` cookie into `<html lang>` and
+the `<title>` (`ekte/web/caching.py`), so the browser tab never shows another
+language while the page loads. Scripts use
 `T(zh, en)` for dynamic text and `EKTE_LANG.server(text)` for text coming from
 the backend (detector names, recommendations, verdict sentences).

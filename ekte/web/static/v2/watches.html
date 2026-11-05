@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="ekte — monitors">ekte — 监控</title>
+<title data-en="ekte — monitors">ekte — monitors</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/static/theme.js"></script>
@@ -183,8 +183,8 @@
   <header class="znav" data-page="monitors"></header>
   <main id="main" tabindex="-1">
     <div class="hero">
-      <h1 data-en="Put a <span class='u'>scheduled sentinel</span> on your relay">给中转站设个<span class="u">定时哨兵</span></h1>
-      <p data-en="Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).">每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在<a href="/history">检测历史</a>中打开一次运行，选择<b>设为监控</b>，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。</p>
+      <h1 data-en="Put a <span class='u'>scheduled sentinel</span> on your relay">Put a <span class='u'>scheduled sentinel</span> on your relay</h1>
+      <p data-en="Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).">Every monitor re-runs an audit you already ran, on your machine, at the interval you set. To add one, open a run in <a href='/history'>History</a> and choose <b>Schedule as monitor</b> — then set its interval here and switch it on. When the risk crosses your threshold or gets worse than last time, ekte alerts your webhooks (Slack / Feishu / DingTalk / generic JSON).</p>
     </div>
 
     <!-- the page notice (notice.js) -->
@@ -193,9 +193,9 @@
     <!-- where the monitors' API keys are kept: the user's choice -->
     <section class="card card-pad keystore">
       <fieldset id="keystore">
-        <legend class="lab" data-en="API key storage">API 密钥保存方式</legend>
+        <legend class="lab" data-en="API key storage">API key storage</legend>
         <div class="seg radio">
-          <span><input type="radio" name="keystore" id="ks-memory" value="memory" aria-describedby="ks-hint" disabled><label for="ks-memory" data-en="Don't store keys">不保存密钥</label></span><span><input type="radio" name="keystore" id="ks-encrypted" value="encrypted" aria-describedby="ks-hint" disabled><label for="ks-encrypted" data-en="Store encrypted on this machine">加密保存在本机</label></span>
+          <span><input type="radio" name="keystore" id="ks-memory" value="memory" aria-describedby="ks-hint" disabled><label for="ks-memory" data-en="Don't store keys">Don't store keys</label></span><span><input type="radio" name="keystore" id="ks-encrypted" value="encrypted" aria-describedby="ks-hint" disabled><label for="ks-encrypted" data-en="Store encrypted on this machine">Store encrypted on this machine</label></span>
         </div>
         <p class="hint" id="ks-hint"></p>
       </fieldset>
@@ -208,22 +208,22 @@
     <section class="card filters" id="filters" hidden></section>
 
     <div class="card card-pad tab-card">
-      <div class="tabs" role="tablist" aria-label="监控视图" data-en-aria-label="Monitor views">
-        <button type="button" role="tab" id="tab-configure" aria-selected="true" aria-controls="panel-configure" tabindex="0"><span class="pico" data-icon="bell"></span><span data-en="Configure">配置</span></button>
-        <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">运行中</span> <span class="count" id="run-count"></span></button>
+      <div class="tabs" role="tablist" aria-label="Monitor views" data-en-aria-label="Monitor views">
+        <button type="button" role="tab" id="tab-configure" aria-selected="true" aria-controls="panel-configure" tabindex="0"><span class="pico" data-icon="bell"></span><span data-en="Configure">Configure</span></button>
+        <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">Running</span> <span class="count" id="run-count"></span></button>
       </div>
 
       <section role="tabpanel" id="panel-configure" aria-labelledby="tab-configure" tabindex="0">
         <!-- list -->
-        <h2 class="section-title" id="list-title" tabindex="-1"><span data-en="Configured monitors">已配置的监控</span> <span class="count" id="count"></span></h2>
+        <h2 class="section-title" id="list-title" tabindex="-1"><span data-en="Configured monitors">Configured monitors</span> <span class="count" id="count"></span></h2>
         <div class="mon-tools" id="mon-tools" hidden><button type="button" class="linkbtn" id="mall"></button></div>
-        <div class="mons" id="list" aria-live="polite"><p class="empty" data-en="Loading…">加载中…</p></div>
+        <div class="mons" id="list" aria-live="polite"><p class="empty" data-en="Loading…">Loading…</p></div>
         <p class="reassure"><span class="pico" id="lock-icon"></span> <span id="reassure-text"></span></p>
       </section>
 
       <section role="tabpanel" id="panel-running" aria-labelledby="tab-running" tabindex="0" hidden>
-        <p class="jh" data-en="Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.">正在进行的监控运行。同一中转站的运行会等它的其他检测结束后再开始，结果不会互相干扰。</p>
-        <p class="jempty" id="jobs-empty" data-en="No monitors are running">当前没有运行中的监控</p>
+        <p class="jh" data-en="Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.">Monitor runs in progress. A run of the same relay waits for any other audit of it to finish, so results are never skewed.</p>
+        <p class="jempty" id="jobs-empty" data-en="No monitors are running">No monitors are running</p>
         <ul class="jlist" id="jobs"></ul>
       </section>
     </div>

@@ -2,7 +2,7 @@
  *
  * Markup (translated by lang.js like any other control):
  *   <div class="chips" id="dims" role="group">
- *     <button type="button" aria-pressed="true" data-v="protocol" data-en="Protocol compliance">协议兼容</button>…
+ *     <button type="button" aria-pressed="true" data-v="protocol" data-en="Protocol compliance">Protocol compliance</button>…
  *   </div>
  *
  * window.EKTE_DIMPICK.bind(el, onChange) makes the buttons independent

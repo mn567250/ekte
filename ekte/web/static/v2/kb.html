@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="ekte — knowledge base">ekte — 知识库</title>
+<title data-en="ekte — knowledge base">ekte — knowledge base</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/static/theme.js"></script>
@@ -95,8 +95,8 @@
   <header class="znav" data-page="kb"></header>
   <main id="main" tabindex="-1">
     <div class="hero">
-      <h1 data-en="The <span class='u'>knowledge base</span> ekte audits against">ekte 用来比对的<span class="u">知识库</span></h1>
-      <p data-en="Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay ekte knows — packaged ones and <b>yours</b> — and can switch each of them on or off or add your own. Your changes are stored in <b>kb.db</b> on this machine and used by the web UI and <code>ekte check</code> alike.">每次检测都会把中转站与其声称模型的资料比对：上下文窗口、输出上限、能力、身份与行为指纹。这里列出 ekte 已知的全部模型、厂商与中转站——内置的和<b>你的</b>——你可以逐项启用或停用，也可以添加自己的条目。你的更改保存在本机的 <b>kb.db</b> 中，网页界面和 <code>ekte check</code> 都会使用。</p>
+      <h1 data-en="The <span class='u'>knowledge base</span> ekte audits against">The <span class='u'>knowledge base</span> ekte audits against</h1>
+      <p data-en="Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay ekte knows — packaged ones and <b>yours</b> — and can switch each of them on or off or add your own. Your changes are stored in <b>kb.db</b> on this machine and used by the web UI and <code>ekte check</code> alike.">Every audit compares a relay with the profile of the model it claims: context window, output limit, capabilities, identity and behavioral fingerprints. Here you find every model, provider and relay ekte knows — packaged ones and <b>yours</b> — and can switch each of them on or off or add your own. Your changes are stored in <b>kb.db</b> on this machine and used by the web UI and <code>ekte check</code> alike.</p>
     </div>
 
     <!-- the page notice (notice.js) -->
@@ -106,50 +106,50 @@
     <section class="card filters" id="filters" hidden></section>
 
     <div class="kb-tools">
-      <a class="btn sm" id="export" href="/api/kb/export" download hidden><span id="export-icon"></span> <span data-en="Export your entries as YAML">将你的条目导出为 YAML</span></a>
+      <a class="btn sm" id="export" href="/api/kb/export" download hidden><span id="export-icon"></span> <span data-en="Export your entries as YAML">Export your entries as YAML</span></a>
     </div>
 
     <div class="card card-pad kb-card">
-      <div class="tabs" role="tablist" aria-label="知识库分类" data-en-aria-label="Knowledge base sections">
-        <button type="button" role="tab" id="tab-models" aria-selected="true" aria-controls="panel-models" tabindex="0"><span class="pico" data-icon="book"></span><span data-en="Models">模型</span></button>
-        <button type="button" role="tab" id="tab-providers" aria-selected="false" aria-controls="panel-providers" tabindex="-1"><span class="pico" data-icon="toolbox"></span><span data-en="Providers">厂商</span></button>
-        <button type="button" role="tab" id="tab-relays" aria-selected="false" aria-controls="panel-relays" tabindex="-1"><span class="pico" data-icon="bolt"></span><span data-en="Relays">中转站</span></button>
+      <div class="tabs" role="tablist" aria-label="Knowledge base sections" data-en-aria-label="Knowledge base sections">
+        <button type="button" role="tab" id="tab-models" aria-selected="true" aria-controls="panel-models" tabindex="0"><span class="pico" data-icon="book"></span><span data-en="Models">Models</span></button>
+        <button type="button" role="tab" id="tab-providers" aria-selected="false" aria-controls="panel-providers" tabindex="-1"><span class="pico" data-icon="toolbox"></span><span data-en="Providers">Providers</span></button>
+        <button type="button" role="tab" id="tab-relays" aria-selected="false" aria-controls="panel-relays" tabindex="-1"><span class="pico" data-icon="bolt"></span><span data-en="Relays">Relays</span></button>
       </div>
 
       <!-- MODELS -->
       <section role="tabpanel" id="panel-models" aria-labelledby="tab-models" tabindex="0">
-        <h2 class="form-title" data-kb="title" id="models-title" tabindex="-1"><span data-en="All models">全部模型</span> <span class="count" data-kb="count"></span></h2>
-        <p class="hint" data-en="The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.">检测时用来比对的模型资料。停用的模型不再参与匹配：检测它时将没有资料可比对。</p>
+        <h2 class="form-title" data-kb="title" id="models-title" tabindex="-1"><span data-en="All models">All models</span> <span class="count" data-kb="count"></span></h2>
+        <p class="hint" data-en="The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.">The model profiles audits compare against. A model that is switched off no longer resolves: audits of it run without a profile.</p>
         <details class="add" data-kb="add" id="add-models">
-          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a model">添加模型</span></summary>
+          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a model">Add a model</span></summary>
           <div class="add-body">
-            <p class="hint" data-en="Let an AI assistant research the model, then check its answer here before it is stored.">让 AI 助手调研该模型，然后在这里检查它的回答，再保存。</p>
+            <p class="hint" data-en="Let an AI assistant research the model, then check its answer here before it is stored.">Let an AI assistant research the model, then check its answer here before it is stored.</p>
             <div data-kb="add-body"></div>
           </div>
         </details>
-        <div data-kb="list" id="models-list"><p class="empty" data-en="Loading…">加载中…</p></div>
+        <div data-kb="list" id="models-list"><p class="empty" data-en="Loading…">Loading…</p></div>
       </section>
 
       <!-- PROVIDERS -->
       <section role="tabpanel" id="panel-providers" aria-labelledby="tab-providers" tabindex="0" hidden>
-        <h2 class="form-title" data-kb="title" id="providers-title" tabindex="-1"><span data-en="All providers">全部厂商</span> <span class="count" data-kb="count"></span></h2>
-        <p class="hint" data-en="The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.">模型的发布方：其基础地址、身份与指纹。停用某个厂商也会停用它的全部模型。</p>
+        <h2 class="form-title" data-kb="title" id="providers-title" tabindex="-1"><span data-en="All providers">All providers</span> <span class="count" data-kb="count"></span></h2>
+        <p class="hint" data-en="The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.">The publishers of the models: their base URLs, identity and fingerprints. Switching a provider off switches off all of its models too.</p>
         <details class="add" data-kb="add" id="add-providers">
-          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a provider">添加厂商</span></summary>
+          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a provider">Add a provider</span></summary>
           <div class="add-body"><div data-kb="add-body"></div></div>
         </details>
-        <div data-kb="list" id="providers-list"><p class="empty" data-en="Loading…">加载中…</p></div>
+        <div data-kb="list" id="providers-list"><p class="empty" data-en="Loading…">Loading…</p></div>
       </section>
 
       <!-- RELAYS -->
       <section role="tabpanel" id="panel-relays" aria-labelledby="tab-relays" tabindex="0" hidden>
-        <h2 class="form-title" data-kb="title" id="relays-title" tabindex="-1"><span data-en="All relays">全部中转站</span> <span class="count" data-kb="count"></span></h2>
-        <p class="hint" data-en="Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.">没有自有模型的端点，例如你在检测页面保存的中转站。它们会出现在那里的中转站列表中；停用的则不会。</p>
+        <h2 class="form-title" data-kb="title" id="relays-title" tabindex="-1"><span data-en="All relays">All relays</span> <span class="count" data-kb="count"></span></h2>
+        <p class="hint" data-en="Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.">Endpoints without models of their own, e.g. relays you saved on the Audit page. They are offered in the relay list there; a switched-off relay is not.</p>
         <details class="add" data-kb="add" id="add-relays">
-          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a relay">添加中转站</span></summary>
+          <summary><span class="pico" data-icon="plus"></span><span data-en="Add a relay">Add a relay</span></summary>
           <div class="add-body"><div data-kb="add-body"></div></div>
         </details>
-        <div data-kb="list" id="relays-list"><p class="empty" data-en="Loading…">加载中…</p></div>
+        <div data-kb="list" id="relays-list"><p class="empty" data-en="Loading…">Loading…</p></div>
       </section>
     </div>
   </main>
@@ -243,7 +243,7 @@
         S.wizard(el, page, {
           prefix: "p", prompt: false, placeholder: "provider: …\ndisplay_name: …\nbase_url_hints: [https://…]\nmodels: []",
           hint: '<p class="hint" data-en="A provider YAML has <code>provider</code>, <code>display_name</code>, <code>base_url_hints</code> and <code>models</code>. For a provider that already exists only its models, fingerprints, base URLs and relay red flags are added.">' +
-            "一份厂商 YAML 包含 <code>provider</code>、<code>display_name</code>、<code>base_url_hints</code> 和 <code>models</code>。对已有厂商只会补充其模型、指纹、基础地址和中转站警示。</p>",
+            "A provider YAML has <code>provider</code>, <code>display_name</code>, <code>base_url_hints</code> and <code>models</code>. For a provider that already exists only its models, fingerprints, base URLs and relay red flags are added.</p>",
         });
       },
     },

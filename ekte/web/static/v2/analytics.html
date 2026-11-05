@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="ekte — analytics">ekte — 分析</title>
+<title data-en="ekte — analytics">ekte — analytics</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/static/theme.js"></script>
@@ -208,8 +208,8 @@
   <header class="znav" data-page="analytics"></header>
   <main id="main" tabindex="-1">
     <div class="hero">
-      <h1 data-en="Audit <span class='u'>analytics</span>">检测<span class='u'>分析</span></h1>
-      <p data-en="Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing.">用 ekte 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。</p>
+      <h1 data-en="Audit <span class='u'>analytics</span>">Audit <span class='u'>analytics</span></h1>
+      <p data-en="Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing.">Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing.</p>
     </div>
     <!-- the page notice (notice.js) -->
     <div class="znote" id="note" hidden></div>
@@ -222,36 +222,36 @@
     <div class="views" id="views" hidden>
       <div class="share">
         <span class="sharest" id="sharest" role="status"></span>
-        <button type="button" class="btn sm" id="sharebtn"><span class="pico" id="shareIcon"></span><span data-en="Copy link to this view">复制此视图的链接</span></button>
+        <button type="button" class="btn sm" id="sharebtn"><span class="pico" id="shareIcon"></span><span data-en="Copy link to this view">Copy link to this view</span></button>
       </div>
       <div class="sharefb" id="sharefb" hidden>
-        <label><span data-en="Link to this view">此视图的链接</span><input class="in" type="text" id="shareurl" readonly /></label>
+        <label><span data-en="Link to this view">Link to this view</span><input class="in" type="text" id="shareurl" readonly /></label>
       </div>
 
-      <div class="tabs atabs" role="tablist" id="atabs" aria-label="分析视图" data-en-aria-label="Analytics views">
-        <button type="button" role="tab" id="tab-overview" aria-selected="true" aria-controls="panel-overview" tabindex="0"><span data-en="Overview">概览</span></button>
-        <button type="button" role="tab" id="tab-trends" aria-selected="false" aria-controls="panel-trends" tabindex="-1"><span data-en="Trends">趋势</span></button>
-        <button type="button" role="tab" id="tab-reliability" aria-selected="false" aria-controls="panel-reliability" tabindex="-1"><span data-en="Reliability">可靠性</span></button>
-        <button type="button" role="tab" id="tab-integrity" aria-selected="false" aria-controls="panel-integrity" tabindex="-1"><span data-en="Model integrity">模型真实性</span></button>
-        <button type="button" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1"><span data-en="Billing">计费</span></button>
+      <div class="tabs atabs" role="tablist" id="atabs" aria-label="Analytics views" data-en-aria-label="Analytics views">
+        <button type="button" role="tab" id="tab-overview" aria-selected="true" aria-controls="panel-overview" tabindex="0"><span data-en="Overview">Overview</span></button>
+        <button type="button" role="tab" id="tab-trends" aria-selected="false" aria-controls="panel-trends" tabindex="-1"><span data-en="Trends">Trends</span></button>
+        <button type="button" role="tab" id="tab-reliability" aria-selected="false" aria-controls="panel-reliability" tabindex="-1"><span data-en="Reliability">Reliability</span></button>
+        <button type="button" role="tab" id="tab-integrity" aria-selected="false" aria-controls="panel-integrity" tabindex="-1"><span data-en="Model integrity">Model integrity</span></button>
+        <button type="button" role="tab" id="tab-billing" aria-selected="false" aria-controls="panel-billing" tabindex="-1"><span data-en="Billing">Billing</span></button>
       </div>
 
       <section class="card card-pad tab-card" role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="0">
         <div class="tabs subtabs" role="tablist" id="stabs-overview" aria-labelledby="tab-overview">
-          <button type="button" role="tab" id="tab-kpi" aria-selected="true" aria-controls="panel-kpi" tabindex="0"><span data-en="Key figures">关键指标</span></button>
-          <button type="button" role="tab" id="tab-lb" aria-selected="false" aria-controls="panel-lb" tabindex="-1"><span data-en="Leaderboard">排行榜</span></button>
+          <button type="button" role="tab" id="tab-kpi" aria-selected="true" aria-controls="panel-kpi" tabindex="0"><span data-en="Key figures">Key figures</span></button>
+          <button type="button" role="tab" id="tab-lb" aria-selected="false" aria-controls="panel-lb" tabindex="-1"><span data-en="Leaderboard">Leaderboard</span></button>
         </div>
         <section class="panel" role="tabpanel" id="panel-kpi" aria-labelledby="tab-kpi" tabindex="0" aria-busy="true">
-          <h2 id="kpi-h" data-en="Key figures">关键指标</h2>
+          <h2 id="kpi-h" data-en="Key figures">Key figures</h2>
           <p class="psub" id="kpi-sub"></p>
-          <div class="pbody" id="kpi-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+          <div class="pbody" id="kpi-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
         </section>
         <section class="panel" role="tabpanel" id="panel-lb" aria-labelledby="tab-lb" tabindex="0" hidden>
-          <h2 id="lb-h" data-en="Leaderboard">排行榜</h2>
-          <p class="psub" data-en="Medians over the selected range; n is the number of runs that measured a value.">所选时间范围内的中位数；n 为测得该值的检测次数。</p>
+          <h2 id="lb-h" data-en="Leaderboard">Leaderboard</h2>
+          <p class="psub" data-en="Medians over the selected range; n is the number of runs that measured a value.">Medians over the selected range; n is the number of runs that measured a value.</p>
           <div class="pbody">
             <div id="lb-ctl"></div>
-            <div id="lb-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+            <div id="lb-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
           <p class="sr-only" id="lbst" role="status"></p>
         </section>
@@ -259,62 +259,62 @@
 
       <section class="card card-pad tab-card" role="tabpanel" id="panel-trends" aria-labelledby="tab-trends" tabindex="0" hidden>
         <div class="tabs subtabs" role="tablist" id="stabs-trends" aria-labelledby="tab-trends">
-          <button type="button" role="tab" id="tab-cmp" aria-selected="true" aria-controls="panel-cmp" tabindex="0"><span data-en="Comparison over time">随时间对比</span></button>
-          <button type="button" role="tab" id="tab-heat" aria-selected="false" aria-controls="panel-heat" tabindex="-1"><span data-en="Peak hours">高峰时段</span></button>
+          <button type="button" role="tab" id="tab-cmp" aria-selected="true" aria-controls="panel-cmp" tabindex="0"><span data-en="Comparison over time">Comparison over time</span></button>
+          <button type="button" role="tab" id="tab-heat" aria-selected="false" aria-controls="panel-heat" tabindex="-1"><span data-en="Peak hours">Peak hours</span></button>
         </div>
         <section class="panel" role="tabpanel" id="panel-cmp" aria-labelledby="tab-cmp" tabindex="0" aria-busy="true">
-          <h2 id="cmp-h" data-en="Comparison over time">随时间对比</h2>
-          <p class="psub" data-en="The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.">折线是每个时间段的中位数，色带是中间一半检测（第 25 至第 75 百分位）。没有数据的时间段留空。</p>
+          <h2 id="cmp-h" data-en="Comparison over time">Comparison over time</h2>
+          <p class="psub" data-en="The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.">The line is the median of each time bucket, the band the middle half of the runs (25th to 75th percentile). Empty buckets leave a gap.</p>
           <div class="pbody">
             <div id="cmp-ctl"></div>
-            <div id="cmp-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+            <div id="cmp-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
         </section>
         <section class="panel" role="tabpanel" id="panel-heat" aria-labelledby="tab-heat" tabindex="0" hidden>
-          <h2 id="heat-h" data-en="Peak hours">高峰时段</h2>
-          <p class="psub" data-en="Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).">这个中转站在高峰时段会变慢或更容易出错吗？每个格子是你所在时区某个星期几的某个小时，颜色表示该时段开始的检测的中位数（色阶见网格下方）。</p>
+          <h2 id="heat-h" data-en="Peak hours">Peak hours</h2>
+          <p class="psub" data-en="Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).">Does this relay get slower or fail more at peak hours? Each cell is one hour of one weekday in your time zone, coloured by the median of the runs that started then (scale below the grid).</p>
           <div class="pbody">
             <div id="heat-ctl"></div>
-            <div id="heat-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+            <div id="heat-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
         </section>
       </section>
 
       <section class="card card-pad tab-card" role="tabpanel" id="panel-reliability" aria-labelledby="tab-reliability" tabindex="0" hidden>
         <div class="tabs subtabs" role="tablist" id="stabs-reliability" aria-labelledby="tab-reliability">
-          <button type="button" role="tab" id="tab-err" aria-selected="true" aria-controls="panel-err" tabindex="0"><span data-en="Errors and reliability">错误与可靠性</span></button>
-          <button type="button" role="tab" id="tab-ovh" aria-selected="false" aria-controls="panel-ovh" tabindex="-1"><span data-en="Relay overhead">中转开销</span></button>
+          <button type="button" role="tab" id="tab-err" aria-selected="true" aria-controls="panel-err" tabindex="0"><span data-en="Errors and reliability">Errors and reliability</span></button>
+          <button type="button" role="tab" id="tab-ovh" aria-selected="false" aria-controls="panel-ovh" tabindex="-1"><span data-en="Relay overhead">Relay overhead</span></button>
         </div>
         <section class="panel" role="tabpanel" id="panel-err" aria-labelledby="tab-err" tabindex="0" aria-busy="true">
-          <h2 id="err-h" data-en="Errors and reliability">错误与可靠性</h2>
-          <p class="psub" data-en="Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls.">按原因统计对中转站的失败调用：限流（HTTP 429）、服务器错误（5xx）、超时及其他，占全部调用的比例。</p>
+          <h2 id="err-h" data-en="Errors and reliability">Errors and reliability</h2>
+          <p class="psub" data-en="Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls.">Failed calls to the relay by cause: rate limits (HTTP 429), server errors (5xx), timeouts and others, as a share of all calls.</p>
           <div class="pbody">
             <div id="err-ctl"></div>
-            <div id="err-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+            <div id="err-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
         </section>
         <section class="panel" role="tabpanel" id="panel-ovh" aria-labelledby="tab-ovh" tabindex="0" hidden>
-          <h2 id="ovh-h" data-en="Relay overhead">中转开销</h2>
-          <p class="psub" data-en="Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.">中转站在自己的响应头里报告的处理耗时，与到它的网络往返时间并列（中位数）。中转站的数据是自报的，未经核实。</p>
-          <div class="pbody" id="ovh-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+          <h2 id="ovh-h" data-en="Relay overhead">Relay overhead</h2>
+          <p class="psub" data-en="Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.">Processing time the relay reports in its own response headers, next to the network round trip to it (medians). The relay's figure is self-reported and not verified.</p>
+          <div class="pbody" id="ovh-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
         </section>
       </section>
 
       <section class="card card-pad tab-card" role="tabpanel" id="panel-integrity" aria-labelledby="tab-integrity" tabindex="0" hidden>
         <section class="panel" id="panel-int" aria-labelledby="int-h" aria-busy="true">
-          <h2 id="int-h" data-en="Model integrity">模型真实性</h2>
-          <p class="psub" data-en="Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.">它是不是自称的那个模型，是否完整、功能齐全？按中转站与模型列出身份、上下文窗口与能力检查的结果。</p>
-          <div class="pbody" id="int-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+          <h2 id="int-h" data-en="Model integrity">Model integrity</h2>
+          <p class="psub" data-en="Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.">Is it the model it claims to be, whole and with its features? Results of the identity, context-window and capability checks per relay and model.</p>
+          <div class="pbody" id="int-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
         </section>
       </section>
 
       <section class="card card-pad tab-card" role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" tabindex="0" hidden>
         <section class="panel" id="panel-bill" aria-labelledby="bill-h" aria-busy="true">
-          <h2 id="bill-h" data-en="Billing and tokens">计费与 token</h2>
-          <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.">计费比 = 中转站报告的 token ÷ ekte 统计的 token。高于 100%：中转站报告的 token 多于 ekte 统计的（可能多计费）。ekte 的统计是估算，小幅偏差属正常。</p>
+          <h2 id="bill-h" data-en="Billing and tokens">Billing and tokens</h2>
+          <p class="psub" data-en="Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.">Billing ratio = tokens the relay reports ÷ tokens ekte counted. Above 100%: the relay reports more tokens than ekte counted (you may be billed for more). ekte's counts are estimates, so small deviations are normal.</p>
           <div class="pbody">
             <div id="bill-ctl"></div>
-            <div id="bill-body"><div class="state loading" data-en="Loading…">加载中…</div></div>
+            <div id="bill-body"><div class="state loading" data-en="Loading…">Loading…</div></div>
           </div>
         </section>
       </section>

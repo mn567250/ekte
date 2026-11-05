@@ -1,0 +1,13 @@
+{
+ "strings": {
+  "Audit": "检测",
+  "Main navigation": "主导航",
+  "Theme": "主题",
+  "Auto theme": "跟随系统",
+  "Light": "浅色",
+  "Dark": "深色",
+  "Motion": "动画",
+  "Motion on": "动画开",
+  "Motion off": "动画关"
+ }
+}

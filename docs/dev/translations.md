@@ -18,9 +18,11 @@ cookie `lang.js` sets; every language without either), built and gzipped once
 per variant and revalidated by `ETag`; switching loads the new language on
 demand.
 
-- **UI text:** write the Chinese in the HTML and the English in `data-en`
-  (or use `T(zh, en)`), then add the English key to `en.json` or a fragment and
-  its translation to every other language.
+- **UI text:** write the English in the HTML and again in `data-en` (or
+  `data-en-placeholder` / `-title` / `-aria-label`), then add the English key
+  to `en.json` or a fragment and its translation to every other language,
+  Chinese included (`zh.json` or the fragment's `zh.json`). Scripts may also
+  use `T(zh, en)`, which carries the Chinese inline.
 - **New language:** add `ekte/i18n/locales/<code>.json` (copy `de.json`) and a
   file per fragment; the dropdown, the pages, the alerts and `--alert-lang` pick
   it up.

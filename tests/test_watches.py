@@ -142,7 +142,7 @@ def test_watches_page_and_nav_link(client):
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     assert '<header class="znav" data-page="monitors"' in r.text
     # every page's nav links to the monitors page
-    assert '["monitors", "/watches", "bell", "监控", "Monitors"]' in client.get("/static/nav.js").text
+    assert '["monitors", "/watches", "bell", "Monitors"]' in client.get("/static/nav.js").text
 
 
 def test_patch_and_run_missing_watch_404(tmp_path, monkeypatch, client):

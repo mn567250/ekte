@@ -199,7 +199,8 @@ def test_precompressed_bodies_decompress_to_the_identity_bytes(client, path):
     # one ETag per encoding; both responses vary on Accept-Encoding
     assert zipped.headers["etag"] == plain.headers["etag"][:-1] + '-gz"'
     assert "accept-encoding" in _vary(plain) and "accept-encoding" in _vary(zipped)
-    assert (path == "/locales.js") == ("cookie" in _vary(zipped))
+    # /locales.js and the pages depend on the ekte_lang cookie
+    assert (path != "/locales.js?lang=de") == ("cookie" in _vary(zipped))
     # 304 with either ETag for a gzip client, echoing the one that matched; a
     # client refusing gzip must not be told to reuse the gzipped bytes
     cases = [

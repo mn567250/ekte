@@ -10,6 +10,10 @@
   local script / stylesheet references rewritten to ``…?v=<content hash>``.
   Hashes and rewritten pages are cached, keyed on file mtime and size, so an
   edited file shows up on the next page load without a restart.
+* **Page language** (:func:`html_page`): the pages ship in English; for the
+  language in the ``ekte_lang`` cookie (written by lang.js) the server puts
+  that language into ``<html lang>`` and the ``<title>``, so the browser tab
+  is right from the first byte. lang.js translates the rest of the markup.
 * **Cache-Control** (:class:`CachedStaticFiles`): an asset requested with its
   current ``?v=`` hash is ``immutable`` for a year (a new version gets a new
   URL); without it (or with a stale one) it is ``no-cache``, i.e. revalidated
@@ -20,6 +24,7 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+import html as _html
 import os
 import re
 from pathlib import Path
@@ -27,6 +32,7 @@ from typing import Any
 
 from starlette.datastructures import Headers, QueryParams
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.requests import HTTPConnection
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -187,9 +193,14 @@ def asset_file(url_path: str) -> Path | None:
 # src="/…" / href="/…" with no query or fragment yet.
 _REF = re.compile(r"""(?P<pre>\b(?:src|href)=)(?P<q>["'])(?P<url>/[^"'?#\s<>]+)(?P=q)""")
 
-# page -> (stamps of page + referenced assets, referenced asset paths, body, etag, gzipped body)
+# The page's <html lang="en"> and its <title data-en="…">…</title>.
+_HTML_LANG = re.compile(r'<html lang="en">')
+_TITLE = re.compile(r'<title data-en="(?P<en>[^"]*)">[^<]*</title>')
+
+# (page, language) -> (stamps of page + referenced assets, referenced asset
+# paths, body, etag, gzipped body)
 _Page = tuple[tuple[_Stamp, ...], tuple[Path, ...], bytes, str, bytes | None]
-_pages: dict[Path, _Page] = {}
+_pages: dict[tuple[Path, str], _Page] = {}
 
 
 def _stamps(paths: tuple[Path, ...]) -> tuple[_Stamp, ...] | None:
@@ -199,9 +210,39 @@ def _stamps(paths: tuple[Path, ...]) -> tuple[_Stamp, ...] | None:
         return None
 
 
-def _render(page: Path) -> _Page:
+def page_language(scope: Scope | None) -> str:
+    """The UI language a page request asks for: the ``ekte_lang`` cookie (or
+    the ``zing_lang`` one of an install from before the rename), else English."""
+    from ekte import i18n
+
+    if scope is None or scope.get("type") not in ("http", "websocket"):
+        return i18n.DEFAULT
+    cookies = HTTPConnection(scope).cookies
+    return i18n.normalize(cookies.get("ekte_lang") or cookies.get("zing_lang"))
+
+
+def localize(html: str, lang: str) -> str:
+    """``html`` (an English page) with ``<html lang>`` and ``<title>`` in
+    ``lang``; the rest of the markup is lang.js's to translate."""
+    from ekte import i18n
+
+    if lang == i18n.DEFAULT:
+        return html
+    meta = next((m for m in i18n.languages() if m["code"] == lang), None)
+    if meta is None:
+        return html
+    html = _HTML_LANG.sub(lambda m: f'<html lang="{_html.escape(meta["html"], quote=True)}">', html, count=1)
+
+    def title(m: re.Match[str]) -> str:
+        text = i18n.ui(lang, _html.unescape(m["en"]))
+        return f'<title data-en="{m["en"]}">{_html.escape(text, quote=False)}</title>'
+
+    return _TITLE.sub(title, html, count=1)
+
+
+def _render(page: Path, lang: str) -> _Page:
     st = page.stat()
-    html = page.read_text(encoding="utf-8")
+    html = localize(page.read_text(encoding="utf-8"), lang)
     deps: list[Path] = []
     stamps: list[_Stamp] = [_stamp(st)]
 
@@ -229,15 +270,19 @@ def _etag_matches(request_headers: Headers, etag: str) -> bool:
 
 
 def html_page(page: Path, scope: Scope | None = None, status_code: int = 200) -> Response:
-    """An HTML page with versioned asset URLs; ``no-cache`` with an ETag."""
-    cached = _pages.get(page)
+    """An HTML page with versioned asset URLs, its ``<html lang>`` and
+    ``<title>`` in the language of the request's cookie (see
+    :func:`page_language`); ``no-cache`` with an ETag, varying by cookie."""
+    lang = page_language(scope)
+    key = (page, lang)
+    cached = _pages.get(key)
     if cached is None or _stamps((page, *cached[1])) != cached[0]:
-        cached = _render(page)
-        _pages[page] = cached
+        cached = _render(page, lang)
+        _pages[key] = cached
     _, _, body, etag, gz = cached
     return encoded_response(
         scope, body, etag, gz, media_type="text/html", status_code=status_code,
-        headers={"Cache-Control": NO_CACHE},
+        headers={"Cache-Control": NO_CACHE, "Vary": "Cookie"},
     )
 
 

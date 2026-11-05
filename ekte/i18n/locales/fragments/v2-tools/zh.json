@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "API key": "API 密钥",
+  "Empty = same as model to request": "留空 = 同请求的模型",
+  "Model to request": "请求的模型",
+  "Relay URL": "中转站地址"
+ }
+}

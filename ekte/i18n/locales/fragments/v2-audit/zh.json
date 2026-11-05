@@ -1,0 +1,18 @@
+{
+ "strings": {
+  "Audit progress": "检测进度",
+  "Audits": "检测",
+  "Baseline URL": "基线地址",
+  "Checks": "检测项",
+  "Compare against a trusted baseline": "对照可信基线",
+  "Configure": "配置",
+  "Live evidence": "实时证据",
+  "New audit": "新检测",
+  "No audits are running": "当前没有正在运行的检测",
+  "On": "已启用",
+  "Only if the relay sells it under another name — ekte checks the answers against this model.": "仅当中转站以另一个名字售卖时填写 —— ekte 会按这个模型核对回答。",
+  "Report": "报告",
+  "Responses": "Responses",
+  "Running": "运行中"
+ }
+}

@@ -1,0 +1,8 @@
+{
+ "strings": {
+  "Raw requests/responses": "原始请求/响应",
+  "Keep": "保留",
+  "Don't keep": "不保留",
+  "Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.": "随保存的检测结果存放在数据目录中（已去除你的密钥），每个发现都可以对照实际发送和收到的内容核验。"
+ }
+}

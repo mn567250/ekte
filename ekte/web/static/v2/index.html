@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-en="ekte — relay reality check">ekte — 中转站验真</title>
+<title data-en="ekte — relay reality check">ekte — relay reality check</title>
 <script src="/locales.js"></script>
 <script src="/lang.js"></script>
 <script src="/static/theme.js"></script>
@@ -211,131 +211,131 @@
 
   <main id="main" tabindex="-1">
     <div class="hero">
-      <h1 id="h-form" tabindex="-1" data-en="Is this relay serving the <span class='u'>real thing</span>?">这家中转站，给的是<span class="u">真货</span>吗？</h1>
-      <p data-en="Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">选择中转站，挑选要检测的模型；若它以另一个名字售卖，再选它声称的模型。ekte 在你本地跑一整套黑盒检测，出一份能看懂、有依据的验真报告。</p>
+      <h1 id="h-form" tabindex="-1" data-en="Is this relay serving the <span class='u'>real thing</span>?">Is this relay serving the <span class='u'>real thing</span>?</h1>
+      <p data-en="Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.">Choose the relay, pick the model to audit and, if it is sold under another name, the model it claims to be. ekte runs a full black-box test suite on your machine and produces a readable, evidence-backed verification report.</p>
     </div>
     <!-- the page notice (notice.js) -->
     <div class="znote" id="note" hidden></div>
 
     <div class="card card-pad tab-card">
-    <div class="tabs" role="tablist" aria-label="检测" data-en-aria-label="Audits">
-      <button type="button" role="tab" id="tab-new" aria-selected="true" aria-controls="panel-new" tabindex="0"><span class="pico" data-icon="search"></span><span data-en="New audit">新检测</span></button>
-      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">运行中</span><span class="tcount" id="running-count" hidden></span></button>
+    <div class="tabs" role="tablist" aria-label="Audits" data-en-aria-label="Audits">
+      <button type="button" role="tab" id="tab-new" aria-selected="true" aria-controls="panel-new" tabindex="0"><span class="pico" data-icon="search"></span><span data-en="New audit">New audit</span></button>
+      <button type="button" role="tab" id="tab-running" aria-selected="false" aria-controls="panel-running" tabindex="-1"><span class="pico" data-icon="play"></span><span data-en="Running">Running</span><span class="tcount" id="running-count" hidden></span></button>
     </div>
 
     <section role="tabpanel" id="panel-new" aria-labelledby="tab-new" tabindex="0">
-    <ol class="steps" aria-label="检测进度" data-en-aria-label="Audit progress">
-      <li id="st-1" aria-current="step"><span class="n" aria-hidden="true">1</span><span data-en="Configure">配置</span></li>
-      <li id="st-2"><span class="n" aria-hidden="true">2</span><span data-en="Scan">检测</span></li>
-      <li id="st-3"><span class="n" aria-hidden="true">3</span><span data-en="Report">报告</span></li>
+    <ol class="steps" aria-label="Audit progress" data-en-aria-label="Audit progress">
+      <li id="st-1" aria-current="step"><span class="n" aria-hidden="true">1</span><span data-en="Configure">Configure</span></li>
+      <li id="st-2"><span class="n" aria-hidden="true">2</span><span data-en="Scan">Scan</span></li>
+      <li id="st-3"><span class="n" aria-hidden="true">3</span><span data-en="Report">Report</span></li>
     </ol>
 
     <!-- STEP 1: form -->
     <section class="view show" id="v1" aria-labelledby="h-config">
-      <h2 class="sr-only" id="h-config" tabindex="-1" data-en="Configure">配置</h2>
+      <h2 class="sr-only" id="h-config" tabindex="-1" data-en="Configure">Configure</h2>
       <div class="form-card">
         <form id="form" novalidate>
           <!-- What is audited (?surface=embedding|rerank preselects): the
                chat-only fields below are hidden on the other surfaces -->
           <fieldset class="grp">
-            <legend class="lab"><span data-en="Endpoint type">接口类型</span> <span class="key">surface</span></legend>
+            <legend class="lab"><span data-en="Endpoint type">Endpoint type</span> <span class="key">surface</span></legend>
             <div class="seg radio" id="surface">
-              <span><input type="radio" name="surface" id="sf-chat" value="chat" checked><label for="sf-chat" data-en="Chat">对话</label></span><span><input type="radio" name="surface" id="sf-embedding" value="embedding"><label for="sf-embedding" data-en="Embeddings">嵌入</label></span><span><input type="radio" name="surface" id="sf-rerank" value="rerank"><label for="sf-rerank" data-en="Reranking">重排</label></span>
+              <span><input type="radio" name="surface" id="sf-chat" value="chat" checked><label for="sf-chat" data-en="Chat">Chat</label></span><span><input type="radio" name="surface" id="sf-embedding" value="embedding"><label for="sf-embedding" data-en="Embeddings">Embeddings</label></span><span><input type="radio" name="surface" id="sf-rerank" value="rerank"><label for="sf-rerank" data-en="Reranking">Reranking</label></span>
             </div>
           </fieldset>
           <div class="grp">
-            <label class="lab" for="i-url"><span data-en="Relay URL">中转站地址</span> <span class="key">base_url</span></label>
+            <label class="lab" for="i-url"><span data-en="Relay URL">Relay URL</span> <span class="key">base_url</span></label>
             <input class="in" id="i-url" type="text" inputmode="url" autocomplete="username" spellcheck="false" autocapitalize="off" placeholder="https://relay.example.com/v1">
           </div>
           <div class="grp">
             <div class="lab-row">
-              <label class="lab" for="i-key" data-en="API key">API 密钥</label>
-              <span class="aside" id="i-key-aside" data-en="Supports env:VAR / file:/path">支持 env:VAR / file:/path</span>
+              <label class="lab" for="i-key" data-en="API key">API key</label>
+              <span class="aside" id="i-key-aside" data-en="Supports env:VAR / file:/path">Supports env:VAR / file:/path</span>
             </div>
-            <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="i-key-aside" placeholder="sk-... 或 env:EKTE_API_KEY" data-en-placeholder="sk-... or env:EKTE_API_KEY">
+            <input class="in" id="i-key" type="password" data-secret="i-url" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="i-key-aside" placeholder="sk-... or env:EKTE_API_KEY" data-en-placeholder="sk-... or env:EKTE_API_KEY">
           </div>
           <div class="two">
             <div class="grp">
-              <label class="lab" for="i-model"><span data-en="Model to request">请求的模型</span> <span class="key">model</span></label>
+              <label class="lab" for="i-model"><span data-en="Model to request">Model to request</span> <span class="key">model</span></label>
               <input class="in" id="i-model" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="deepseek-chat">
             </div>
             <div class="grp">
-              <label class="lab" for="i-claimed"><span data-en="Claimed model">声称的模型</span> <span class="key">claimed_model</span> <span class="opt" data-en="Optional">可选</span></label>
-              <input class="in" id="i-claimed" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="i-claimed-hint" placeholder="留空 = 同请求的模型" data-en-placeholder="Empty = same as model to request">
-              <div class="hint" id="i-claimed-hint" data-en="Only if the relay sells it under another name — ekte checks the answers against this model.">仅当中转站以另一个名字售卖时填写 —— ekte 会按这个模型核对回答。</div>
+              <label class="lab" for="i-claimed"><span data-en="Claimed model">Claimed model</span> <span class="key">claimed_model</span> <span class="opt" data-en="Optional">Optional</span></label>
+              <input class="in" id="i-claimed" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="i-claimed-hint" placeholder="Empty = same as model to request" data-en-placeholder="Empty = same as model to request">
+              <div class="hint" id="i-claimed-hint" data-en="Only if the relay sells it under another name — ekte checks the answers against this model.">Only if the relay sells it under another name — ekte checks the answers against this model.</div>
             </div>
           </div>
           <div class="grp" id="edims-grp" hidden>
-            <label class="lab" for="i-edims"><span data-en="Claimed dimension">声称维度</span> <span class="key">embedding_dimensions</span> <span class="opt" data-en="Optional">可选</span></label>
-            <input class="in" id="i-edims" type="number" min="0" step="1" inputmode="numeric" aria-describedby="i-edims-hint" placeholder="留空 = 取自知识库" data-en-placeholder="Empty = from the knowledge base">
-            <div class="hint" id="i-edims-hint" data-en="The vector length the claimed model returns. Empty or 0: taken from the knowledge base.">声称的模型返回的向量长度。留空或 0：取自知识库。</div>
+            <label class="lab" for="i-edims"><span data-en="Claimed dimension">Claimed dimension</span> <span class="key">embedding_dimensions</span> <span class="opt" data-en="Optional">Optional</span></label>
+            <input class="in" id="i-edims" type="number" min="0" step="1" inputmode="numeric" aria-describedby="i-edims-hint" placeholder="Empty = from the knowledge base" data-en-placeholder="Empty = from the knowledge base">
+            <div class="hint" id="i-edims-hint" data-en="The vector length the claimed model returns. Empty or 0: taken from the knowledge base.">The vector length the claimed model returns. Empty or 0: taken from the knowledge base.</div>
           </div>
           <!-- declared_provider: derived from the claimed model's profile (relaycfg.js) -->
           <input type="hidden" id="i-prov">
           <div class="grp" id="api-grp">
-            <span class="lab" id="lab-api" data-en="Protocol">协议</span>
+            <span class="lab" id="lab-api" data-en="Protocol">Protocol</span>
             <div class="seg q" id="api" role="group" aria-labelledby="lab-api">
-              <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">自动</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>
+              <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">Auto</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>
             </div>
           </div>
           <div class="grp">
-            <span class="lab" id="lab-suite" data-en="Test suite">检测套件</span>
+            <span class="lab" id="lab-suite" data-en="Test suite">Test suite</span>
             <div class="seg q" id="suite" role="group" aria-labelledby="lab-suite">
-              <button type="button" aria-pressed="false" data-v="smoke">smoke</button><button type="button" aria-pressed="true" data-v="standard">standard</button><button type="button" aria-pressed="false" data-v="deep">deep</button><button type="button" aria-pressed="false" data-v="full">full</button><button type="button" aria-pressed="false" data-v="custom" data-en="custom">自定义</button>
+              <button type="button" aria-pressed="false" data-v="smoke">smoke</button><button type="button" aria-pressed="true" data-v="standard">standard</button><button type="button" aria-pressed="false" data-v="deep">deep</button><button type="button" aria-pressed="false" data-v="full">full</button><button type="button" aria-pressed="false" data-v="custom" data-en="custom">custom</button>
             </div>
           </div>
           <div class="grp" id="dims-grp" hidden>
-            <span class="lab" id="lab-dims" data-en="Dimensions to run">检测维度</span>
+            <span class="lab" id="lab-dims" data-en="Dimensions to run">Dimensions to run</span>
             <div class="chips" id="dims" role="group" aria-labelledby="lab-dims" aria-describedby="dims-hint">
-              <button type="button" aria-pressed="true" data-v="model_identity" data-en="Model identity">模型身份</button><button type="button" aria-pressed="true" data-v="context_window" data-en="Context window">上下文窗口</button><button type="button" aria-pressed="true" data-v="capability" data-en="Capability claims">能力声明</button><button type="button" aria-pressed="true" data-v="protocol" data-en="Protocol compliance">协议兼容</button><button type="button" aria-pressed="true" data-v="connectivity" data-en="Connectivity">连通性</button><button type="button" aria-pressed="true" data-v="streaming" data-en="Streaming authenticity">流式真实</button><button type="button" aria-pressed="true" data-v="billing" data-en="Billing &amp; usage">计费用量</button><button type="button" aria-pressed="true" data-v="reliability" data-en="Concurrency reliability">并发可靠</button><button type="button" aria-pressed="true" data-v="performance" data-en="Performance">性能表现</button><button type="button" aria-pressed="true" data-v="security" data-en="Transport security">传输安全</button>
+              <button type="button" aria-pressed="true" data-v="model_identity" data-en="Model identity">Model identity</button><button type="button" aria-pressed="true" data-v="context_window" data-en="Context window">Context window</button><button type="button" aria-pressed="true" data-v="capability" data-en="Capability claims">Capability claims</button><button type="button" aria-pressed="true" data-v="protocol" data-en="Protocol compliance">Protocol compliance</button><button type="button" aria-pressed="true" data-v="connectivity" data-en="Connectivity">Connectivity</button><button type="button" aria-pressed="true" data-v="streaming" data-en="Streaming authenticity">Streaming authenticity</button><button type="button" aria-pressed="true" data-v="billing" data-en="Billing &amp; usage">Billing & usage</button><button type="button" aria-pressed="true" data-v="reliability" data-en="Concurrency reliability">Concurrency reliability</button><button type="button" aria-pressed="true" data-v="performance" data-en="Performance">Performance</button><button type="button" aria-pressed="true" data-v="security" data-en="Transport security">Transport security</button>
             </div>
-            <div class="hint" id="dims-hint" data-en="Only the selected dimensions run, at deep depth; the overall score is computed from them alone.">只运行所选维度（按 deep 深度）；综合得分只按这些维度计算。</div>
+            <div class="hint" id="dims-hint" data-en="Only the selected dimensions run, at deep depth; the overall score is computed from them alone.">Only the selected dimensions run, at deep depth; the overall score is computed from them alone.</div>
           </div>
           <div class="grp" id="pmode-grp">
-            <span class="lab" id="lab-pmode" data-en="Performance probe requests">性能探测请求</span>
+            <span class="lab" id="lab-pmode" data-en="Performance probe requests">Performance probe requests</span>
             <div class="seg" id="pmode" role="group" aria-labelledby="lab-pmode" aria-describedby="pmode-hint">
-              <button type="button" aria-pressed="true" data-v="stream" data-en="Streaming">流式</button><button type="button" aria-pressed="false" data-v="non_stream" data-en="Non-streaming">非流式</button>
+              <button type="button" aria-pressed="true" data-v="stream" data-en="Streaming">Streaming</button><button type="button" aria-pressed="false" data-v="non_stream" data-en="Non-streaming">Non-streaming</button>
             </div>
             <div class="hint" id="pmode-hint"></div>
           </div>
           <div class="grp" id="evkeep-grp">
-            <span class="lab" id="lab-evkeep" data-en="Raw requests/responses">原始请求/响应</span>
+            <span class="lab" id="lab-evkeep" data-en="Raw requests/responses">Raw requests/responses</span>
             <div class="seg" id="evkeep" role="group" aria-labelledby="lab-evkeep" aria-describedby="evkeep-hint">
-              <button type="button" aria-pressed="true" data-v="keep" data-en="Keep">保留</button><button type="button" aria-pressed="false" data-v="drop" data-en="Don't keep">不保留</button>
+              <button type="button" aria-pressed="true" data-v="keep" data-en="Keep">Keep</button><button type="button" aria-pressed="false" data-v="drop" data-en="Don't keep">Don't keep</button>
             </div>
-            <div class="hint" id="evkeep-hint" data-en="Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.">随保存的检测结果存放在数据目录中（已去除你的密钥），每个发现都可以对照实际发送和收到的内容核验。</div>
+            <div class="hint" id="evkeep-hint" data-en="Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.">Kept with the saved run in the data directory, with your keys removed, so each finding can be checked against exactly what was sent and received.</div>
           </div>
 
           <div class="disclosure-box cmp" id="cmp">
             <button type="button" class="disclosure" id="cmp-t" aria-expanded="false" aria-controls="cmp-body">
-              <span class="pico" data-icon="plus"></span><span class="t"><span data-en="Compare against a trusted baseline">对照可信基线</span> <span class="key">compare</span> <span class="badge good on-badge" id="cmp-on" hidden data-en="On">已启用</span></span>
+              <span class="pico" data-icon="plus"></span><span class="t"><span data-en="Compare against a trusted baseline">Compare against a trusted baseline</span> <span class="key">compare</span> <span class="badge good on-badge" id="cmp-on" hidden data-en="On">On</span></span>
               <span class="cv" data-icon="chevronDown"></span>
             </button>
             <div class="disclosure-body" id="cmp-body" hidden>
-              <p class="cmp-hint" data-en="Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.">填一个你<b>信任的同款模型端点</b>（如官方 API）。ekte 会用它佐证目标的表现，让替换/降级判定更可靠——质量评审与篡改检测在有基线时才会升到最高级别。</p>
+              <p class="cmp-hint" data-en="Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.">Enter an endpoint for the same model that you <b>trust</b> (e.g. the official API). ekte uses it to corroborate the target's behavior, making substitution/downgrade verdicts more reliable — the quality judge and tamper detection only reach their highest level with a baseline.</p>
               <div class="grp">
-                <label class="lab" for="b-url"><span data-en="Baseline URL">基线地址</span> <span class="key">base_url</span></label>
+                <label class="lab" for="b-url"><span data-en="Baseline URL">Baseline URL</span> <span class="key">base_url</span></label>
                 <input class="in" id="b-url" type="text" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="https://api.openai.com/v1">
               </div>
               <div class="grp">
-                <label class="lab" for="b-key" data-en="Baseline API key">基线 API 密钥</label>
-                <input class="in" id="b-key" type="password" data-secret="b-url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="sk-... 或 env:OPENAI_API_KEY" data-en-placeholder="sk-... or env:OPENAI_API_KEY">
+                <label class="lab" for="b-key" data-en="Baseline API key">Baseline API key</label>
+                <input class="in" id="b-key" type="password" data-secret="b-url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="sk-... or env:OPENAI_API_KEY" data-en-placeholder="sk-... or env:OPENAI_API_KEY">
               </div>
               <div class="grp">
-                <label class="lab" for="b-model"><span data-en="Baseline model">基线模型</span> <span class="key">model</span></label>
-                <input class="in" id="b-model" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="同款官方模型 id" data-en-placeholder="Official id of the same model">
+                <label class="lab" for="b-model"><span data-en="Baseline model">Baseline model</span> <span class="key">model</span></label>
+                <input class="in" id="b-model" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Official id of the same model" data-en-placeholder="Official id of the same model">
               </div>
               <div class="grp" id="bapi-grp" style="margin-bottom:0">
-                <span class="lab" id="lab-bapi" data-en="Baseline protocol">基线协议</span>
+                <span class="lab" id="lab-bapi" data-en="Baseline protocol">Baseline protocol</span>
                 <div class="seg q" id="b-api" role="group" aria-labelledby="lab-bapi">
-                  <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">自动</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>
+                  <button type="button" aria-pressed="true" data-v="auto" data-en="Auto">Auto</button><button type="button" aria-pressed="false" data-v="openai">OpenAI</button><button type="button" aria-pressed="false" data-v="anthropic">Anthropic</button><button type="button" aria-pressed="false" data-v="responses" data-en="Responses">Responses</button>
                 </div>
               </div>
             </div>
           </div>
 
-          <button type="submit" class="cta" id="go"><span data-en="Start audit">开始检测</span> <span class="pico" data-icon="arrowRight"></span></button>
-          <div class="reassure" data-en="Tests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.">检测在 <b>你本地的 ekte 服务</b> 发起，密钥只用于连接目标中转站，<b>不上传任何第三方</b>。</div>
+          <button type="submit" class="cta" id="go"><span data-en="Start audit">Start audit</span> <span class="pico" data-icon="arrowRight"></span></button>
+          <div class="reassure" data-en="Tests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.">Tests are sent from <b>your local ekte server</b>; the key is only used to connect to the target relay and is <b>never uploaded to any third party</b>.</div>
           <div id="formerr" role="alert"></div>
           <div id="formnote" role="status"></div>
         </form>
@@ -346,7 +346,7 @@
     <section class="view" id="v2" aria-labelledby="h-scan">
       <div class="scan">
         <div class="radar" id="radar" aria-hidden="true"><div class="ring"></div><div class="ring r2"></div><div class="sweep"></div><div class="ripple"></div><div class="ripple"></div><div class="ripple"></div><div class="core" data-icon="bolt"></div></div>
-        <h2 id="h-scan" tabindex="-1" data-en="Running checks…">正在体检…</h2>
+        <h2 id="h-scan" tabindex="-1" data-en="Running checks…">Running checks…</h2>
         <div class="target" id="scan-target"></div>
         <div class="now" id="now" aria-live="polite"></div>
         <div class="prog">
@@ -354,16 +354,16 @@
           <div class="cnt" id="cnt"></div>
         </div>
         <div class="scan-actions">
-          <button type="button" class="btn sm" id="bg" title="检测会继续运行；可在检测历史中查看进度" data-en-title="The audit keeps running; follow it in History"><span class="pico" data-icon="cornerDownRight"></span><span data-en="Continue in background">转到后台运行</span></button>
-          <button type="button" class="btn sm" id="cancel"><span class="pico" data-icon="x"></span><span data-en="Cancel">取消</span></button>
+          <button type="button" class="btn sm" id="bg" title="The audit keeps running; follow it in History" data-en-title="The audit keeps running; follow it in History"><span class="pico" data-icon="cornerDownRight"></span><span data-en="Continue in background">Continue in background</span></button>
+          <button type="button" class="btn sm" id="cancel"><span class="pico" data-icon="x"></span><span data-en="Cancel">Cancel</span></button>
         </div>
         <div class="blk" id="dets-blk" hidden>
-          <h3 data-en="Checks">检测项</h3>
-          <p class="bh" data-en="Each check shows its score and how long it took; checks with findings expand to show the evidence.">每项检测显示得分与耗时；有发现的检测项可展开查看证据。</p>
+          <h3 data-en="Checks">Checks</h3>
+          <p class="bh" data-en="Each check shows its score and how long it took; checks with findings expand to show the evidence.">Each check shows its score and how long it took; checks with findings expand to show the evidence.</p>
           <ul class="dets" id="dets"></ul>
         </div>
         <div class="blk" id="feed-blk" hidden>
-          <h3 data-en="Live evidence">实时证据</h3>
+          <h3 data-en="Live evidence">Live evidence</h3>
           <ol class="feed" id="feed"></ol>
         </div>
         <div id="perf-live"></div>
@@ -371,15 +371,15 @@
     </section>
 
     <!-- STEP 3: report -->
-    <section class="view" id="v3" aria-label="报告" data-en-aria-label="Report">
+    <section class="view" id="v3" aria-label="Report" data-en-aria-label="Report">
       <div id="report" tabindex="-1"></div>
-      <div class="foot" id="cmp-tip" data-en="Want the strongest verdict? Re-check against an official baseline with <code>ekte compare</code>.">想要最强结论？用 <code>ekte compare</code> 对照官方基线复检。</div>
+      <div class="foot" id="cmp-tip" data-en="Want the strongest verdict? Re-check against an official baseline with <code>ekte compare</code>.">Want the strongest verdict? Re-check against an official baseline with <code>ekte compare</code>.</div>
     </section>
     </section>
 
     <section role="tabpanel" id="panel-running" aria-labelledby="tab-running" tabindex="0" hidden>
-      <p class="jh" data-en="Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.">离开检测页后检测仍会继续运行。同一中转站的检测会依次排队运行，互不干扰检测结果。</p>
-      <p class="jempty" id="jobs-empty" data-en="No audits are running">当前没有正在运行的检测</p>
+      <p class="jh" data-en="Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.">Audits keep running when you leave the audit page. Audits of the same relay run one after another, so they never skew each other's results.</p>
+      <p class="jempty" id="jobs-empty" data-en="No audits are running">No audits are running</p>
       <ul class="jlist" id="jobs"></ul>
     </section>
     </div>
