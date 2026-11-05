@@ -914,7 +914,7 @@ def test_pass_and_fail_of_one_check_get_different_localized_titles(tmp_path):
 _PAGES = sorted((_STATIC / "v2").glob("*.html"))
 # JS that builds data-en markup (translated by EKTE_LANG.apply like the pages)
 _MARKUP_JS = ["v2/nav.js", "v2/kbsection.js", "secretfield.js", "v2/kb.html"]
-_CJK = re.compile(r"[⺀-⿿　-〿぀-ヿ㄀-ㇿ㐀-䶿一-鿿豈-﫿＀-￯]")
+_CJK = re.compile("[\u2e80-\u2fff\u3000-\u303f\u3040-\u30ff\u3100-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]")
 
 
 def _markup_text(src: str) -> list[str]:
