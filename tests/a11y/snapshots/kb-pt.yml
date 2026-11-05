@@ -39,7 +39,7 @@
     - text: "Cada auditoria compara um relay com o perfil do modelo que ele declara: janela de contexto, limite de saída, capacidades, identidade e impressões comportamentais. Aqui encontra cada modelo, fornecedor e relay que o ekte conhece — os incluídos e os seus — e pode ativar ou desativar cada um ou adicionar os seus. As suas alterações são guardadas em kb.db nesta máquina e usadas tanto pela interface web como pelo"
     - code: ekte check
     - text: .
-  - status: Base de conhecimento completa 241 modelos · 23 fornecedores · 1 relay, todos ativados
+  - status: Base de conhecimento completa 244 modelos · 23 fornecedores · 1 relay, todos ativados
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: ID do modelo
@@ -80,7 +80,7 @@
       - option "Todos" [selected]
       - option "Incluído"
       - option "O seu"
-    - status: A mostrar 241 de 241 modelos · 23 de 23 fornecedores · 1 de 1 relays
+    - status: A mostrar 244 de 244 modelos · 23 de 23 fornecedores · 1 de 1 relays
   - link "Exportar as suas entradas como YAML":
     - /url: /api/kb/export
   - tablist "Secções da base de conhecimento":
@@ -88,7 +88,7 @@
     - tab "Fornecedores"
     - tab "Relays"
   - tabpanel "Modelos":
-    - heading "Todos os modelos 241 modelos" [level=2]
+    - heading "Todos os modelos 244 modelos" [level=2]
     - paragraph: "Os perfis de modelo com que as auditorias comparam. Um modelo desativado deixa de ser resolvido: as suas auditorias correm sem perfil."
     - group:
       - text: Adicionar um modelo

@@ -39,7 +39,7 @@
     - text: "Chaque audit compare un relais au profil du modèle qu'il annonce : fenêtre de contexte, limite de sortie, capacités, identité et empreintes comportementales. Vous trouvez ici chaque modèle, fournisseur et relais que ekte connaît — ceux fournis et les vôtres — et pouvez activer ou désactiver chacun d'eux ou ajouter les vôtres. Vos modifications sont enregistrées dans kb.db sur cette machine et utilisées par l'interface web comme par"
     - code: ekte check
     - text: .
-  - status: Base de connaissances complète 241 modèles · 23 fournisseurs · 1 relais, tous activés
+  - status: Base de connaissances complète 244 modèles · 23 fournisseurs · 1 relais, tous activés
   - region "Filtres":
     - button "Filtres" [expanded]
     - text: Identifiant du modèle
@@ -80,7 +80,7 @@
       - option "Tous" [selected]
       - option "Fourni"
       - option "Les vôtres"
-    - status: Affichage de 241 modèles sur 241 · 23 fournisseurs sur 23 · 1 relais sur 1
+    - status: Affichage de 244 modèles sur 244 · 23 fournisseurs sur 23 · 1 relais sur 1
   - link "Exporter vos entrées en YAML":
     - /url: /api/kb/export
   - tablist "Sections de la base de connaissances":
@@ -88,7 +88,7 @@
     - tab "Fournisseurs"
     - tab "Relais"
   - tabpanel "Modèles":
-    - heading "Tous les modèles 241 modèles" [level=2]
+    - heading "Tous les modèles 244 modèles" [level=2]
     - paragraph: "Les profils de modèle auxquels les audits se comparent. Un modèle désactivé n'est plus résolu : ses audits s'exécutent sans profil."
     - group:
       - text: Ajouter un modèle

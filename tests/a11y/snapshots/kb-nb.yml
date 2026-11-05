@@ -39,7 +39,7 @@
     - text: "Hver revisjon sammenligner et relé med profilen til modellen det oppgir: kontekstvindu, utdatagrense, egenskaper, identitet og atferdsfingeravtrykk. Her finner du alle modeller, leverandører og releer ekte kjenner — medfølgende og dine — og kan slå hver av dem av eller på eller legge til dine egne. Endringene dine lagres i kb.db på denne maskinen og brukes både av nettgrensesnittet og"
     - code: ekte check
     - text: .
-  - status: Kunnskapsbasen er komplett 241 modeller · 23 leverandører · 1 relé, alle slått på
+  - status: Kunnskapsbasen er komplett 244 modeller · 23 leverandører · 1 relé, alle slått på
   - region "Filtre":
     - button "Filtre" [expanded]
     - text: Modell-ID
@@ -80,7 +80,7 @@
       - option "Alle" [selected]
       - option "Medfølgende"
       - option "Dine"
-    - status: Viser 241 av 241 modeller · 23 av 23 leverandører · 1 av 1 releer
+    - status: Viser 244 av 244 modeller · 23 av 23 leverandører · 1 av 1 releer
   - link "Eksporter oppføringene dine som YAML":
     - /url: /api/kb/export
   - tablist "Deler av kunnskapsbasen":
@@ -88,7 +88,7 @@
     - tab "Leverandører"
     - tab "Releer"
   - tabpanel "Modeller":
-    - heading "Alle modeller 241 modeller" [level=2]
+    - heading "Alle modeller 244 modeller" [level=2]
     - paragraph: "Modellprofilene revisjoner sammenligner med. En modell som er slått av, slås ikke lenger opp: revisjoner av den kjøres uten profil."
     - group:
       - text: Legg til en modell

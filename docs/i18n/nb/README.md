@@ -16,7 +16,7 @@ med `--api openai|anthropic|responses`.
 
 Du peker den mot et reléendepunkt og modellen det sier det leverer; ekte kjører
 et sett med black box-prober, sammenligner det den observerer med en medfølgende
-kunnskapsbase med **241 modellprofiler fra 23 leverandører**, og gir en tydelig
+kunnskapsbase med **244 modellprofiler fra 23 leverandører**, og gir en tydelig
 konklusjon underbygd med bevis — på kommandolinjen, i et lokalt nettgrensesnitt
 eller som JSON for et annet verktøy eller en LLM.
 

@@ -39,7 +39,7 @@
     - text: "Jede Prüfung vergleicht ein Relay mit dem Profil des Modells, das es angibt: Kontextfenster, Ausgabelimit, Fähigkeiten, Identität und Verhaltens-Fingerabdrücke. Hier findest du jedes Modell, jeden Anbieter und jedes Relay, das ekte kennt — mitgelieferte und eigene — und kannst jedes davon ein- oder ausschalten oder eigene hinzufügen. Deine Änderungen werden in kb.db auf diesem Rechner gespeichert und von der Web-Oberfläche wie von"
     - code: ekte check
     - text: verwendet.
-  - status: Wissensbasis vollständig 241 Modelle · 23 Anbieter · 1 Relay, alle eingeschaltet
+  - status: Wissensbasis vollständig 244 Modelle · 23 Anbieter · 1 Relay, alle eingeschaltet
   - region "Filter":
     - button "Filter" [expanded]
     - text: Modell-ID
@@ -80,7 +80,7 @@
       - option "Alle" [selected]
       - option "Mitgeliefert"
       - option "Eigener"
-    - status: "Angezeigt: 241 von 241 Modellen · 23 von 23 Anbietern · 1 von 1 Relays"
+    - status: "Angezeigt: 244 von 244 Modellen · 23 von 23 Anbietern · 1 von 1 Relays"
   - link "Deine Einträge als YAML exportieren":
     - /url: /api/kb/export
   - tablist "Bereiche der Wissensbasis":
@@ -88,7 +88,7 @@
     - tab "Anbieter"
     - tab "Relays"
   - tabpanel "Modelle":
-    - heading "Alle Modelle 241 Modelle" [level=2]
+    - heading "Alle Modelle 244 Modelle" [level=2]
     - paragraph: "Die Modellprofile, mit denen Prüfungen vergleichen. Ein ausgeschaltetes Modell wird nicht mehr zugeordnet: Prüfungen dafür laufen ohne Profil."
     - group:
       - text: Modell hinzufügen
