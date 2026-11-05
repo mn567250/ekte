@@ -49,7 +49,7 @@ models:
   - ernie
   - 文心
   - baidu
-  notes: 'Flagship as of 2026-10: launched 2026-08-14 (API live 2026-08-18). Post-training upgrade on the GLM-5.2 base (~753B MoE). 1M-token context, 128K max output, text-only input. Hybrid thinking (thinking={type:enabled/disabled}). ~$1.40/$4.40 per MTok. Open-weight status reported inconsistently.'
+  notes: 'Flagship as of 2026-10: launched 2026-08-14 (API live 2026-08-18). Post-training upgrade on the GLM-5.2 base (~753B MoE). 1M-token context, 128K max output, text-only input. Hybrid thinking (thinking={type:enabled/disabled}). ~$1.40/$4.40 per MTok. Open weights on Hugging Face as zai-org/GLM-5.3 (custom licence, tagged "other"; config.json max_position_embeddings 1048576), checked 2026-11-05.'
 - id: glm-5.3-flash
   aliases: []
   family: glm-5
