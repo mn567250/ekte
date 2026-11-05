@@ -124,3 +124,9 @@ models:
   - gemini
   - google
   notes: Code retrieval embedding model, 1.5B parameters. Default 1536-dim output with Matryoshka truncation to 128, 256, 512, 1024, 1536 (Hugging Face card). 32K-token context. Built on Qwen2.5-Coder-1.5B. Licence CC BY-NC 4.0 (Jina model page and llms.txt). Released alongside the 0.5B model. Caveat - GGUF builds return 896-dim vectors from llama.cpp (slice client-side), not the native 1536.
+sources:
+- https://jina.ai/embeddings/
+- https://jina.ai/models/jina-embeddings-v5-text-small/
+- https://jina.ai/models/jina-embeddings-v5-text-nano/
+- https://jina.ai/news/jina-embeddings-v5-text-distilling-4b-quality-into-sub-1b-multilingual-embeddings/
+- https://jina.ai/models/llms.txt

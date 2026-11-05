@@ -34,7 +34,9 @@ def test_packaged_providers_have_usable_base_urls():
     kb = load_knowledge_base(include_user=False)
     for prov in kb.providers.values():
         urls = base_urls(prov)
-        assert urls, prov.provider
+        # A vendor without a public API (open weights served only by hosts,
+        # e.g. Meta Llama, Ai2) has no base URL; every hint written must be usable.
+        assert urls or not prov.base_url_hints, prov.provider
         assert all(u.startswith(("http://", "https://")) and not u.endswith("/") for u in urls)
         assert len(urls) == len(set(urls))
     assert base_urls(kb.providers["openai"]) == ["https://api.openai.com/v1"]

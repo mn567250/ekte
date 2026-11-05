@@ -286,3 +286,9 @@ models:
   - google
   - qwen
   notes: Previous-generation code embedding model (superseded by voyage-code-3). 1536-dim output and 16K-token context per Voyage/Anthropic docs listings. Kept as a legacy model still served by some relays.
+sources:
+- https://docs.voyageai.com/docs/embeddings
+- https://docs.voyageai.com/reference/embeddings-api
+- https://docs.voyageai.com/docs/flexible-dimensions-and-quantization
+- https://docs.voyageai.com/docs/multimodal-embeddings
+- https://docs.voyageai.com/docs/faq
