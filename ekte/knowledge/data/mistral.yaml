@@ -1,0 +1,503 @@
+# ekte knowledge base — Mistral AI (Paris)
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: mistral
+last_verified: '2026-11-05'
+display_name: Mistral AI (Paris)
+openai_compatible: true
+base_url_hints:
+- https://api.mistral.ai/v1
+- /v1/chat/completions
+default_tool_format: openai_function
+models:
+- id: mistral-large-4
+  aliases:
+  - mistral-large-4-0
+  family: mistral-large-4
+  context_window_tokens: 1000000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Public Preview since 2026-10-06 (model card version 26.10). Open weights under the Mistral Ecosystem Open Weight License. 1.05T total / 52B active MoE, 1.6B vision encoder, text and image input. Reasoning with three effort levels. API price $0.70 input / $2.10 output per MTok (docs.mistral.ai pricing). Max output not stated in the sources (-1). Knowledge cutoff and tokenizer not found in the sources (null). The alias mistral-large-latest is NOT assigned here: docs.mistral.ai function-calling and Vibe configuration pages still map it to mistral-large-2512 (unverified whether it has moved).'
+- id: mistral-small-2603
+  aliases:
+  - mistral-small-latest
+  family: mistral-small-4
+  context_window_tokens: 256000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - mistral small
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Released 2026-03-16. Hybrid model unifying instruct, reasoning and coding in one multimodal model. 119B total / 6.5B active parameters (model card). 256K context (model card and known-limitations table). Reasoning controlled per request by reasoning_effort ("high" or "none"). License Apache 2.0 per the model selection guide and card header. mistral-small-latest maps to this model per the Vibe configuration page. Max output and knowledge cutoff not stated (-1 / null).'
+- id: mistral-medium-3-5
+  aliases:
+  - mistral-medium-latest
+  family: mistral-medium-3
+  context_window_tokens: 256000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - mistral medium
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Model card release date 2026-04-28; the changelog lists it under 2026-04-26 (conflict unresolved). Open weights under a Modified MIT license, 128B parameters (model selection guide). 256K context (model card and known-limitations table). Model card marks it DEPRECATED with deprecation date 2026-10-31; replacement Mistral Large 4. Already past that date at 2026-11-05 but still resold, so it is a decoy candidate. Reasoning and vision support NOT verified (reasoning false and modalities text are defaults, not checked). mistral-medium-latest maps to this model per the Vibe configuration page, which may have moved.'
+- id: mistral-large-2512
+  aliases: []
+  family: mistral-large-3
+  context_window_tokens: 256000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - mistral large
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Released 2025-12-02. Open weights, licence Apache 2.0 (v25.12 model page). Granular MoE, 675B total / 41B active parameters. 256K context (model page and known-limitations table). Model page marks it DEPRECATED; the overview lists retirement 2026-10-31 (and a further date 2027-04-30, meaning unresolved). Replacement Mistral Large 4. Past 2026-10-31 at 2026-11-05, so it is a decoy candidate. Vision support NOT verified (modalities set to text).'
+- id: ministral-14b-2512
+  aliases:
+  - ministral-14b-latest
+  family: ministral-3
+  context_window_tokens: 256000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - ministral
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Released 2025-12-02 with Ministral 3 3B and 8B. Largest of the Ministral 3 family, described as comparable to Mistral Small 3.2 24B. 256K context (model card and known-limitations table). Image input supported per the Vision guide. Licence and parameter count NOT verified (not in the fetched results).'
+- id: ministral-8b-2512
+  aliases:
+  - ministral-8b-latest
+  family: ministral-3
+  context_window_tokens: 256000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - ministral
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Released 2025-12-02. 256K context (model card and known-limitations table). Image input supported per the Vision guide. Licence and parameter count NOT verified. ministral-8b-latest is listed as an alias on the docs.mistral.ai models overview snippet; the older ministral-8b-24-1 card is deprecated (2025-12-02) and is not profiled here.'
+- id: ministral-3b-2512
+  aliases:
+  - ministral-3b-latest
+  family: ministral-3
+  context_window_tokens: 256000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - ministral
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Released 2025-12-02. Smallest of the Ministral 3 family, aimed at edge deployment. 256K context (model card and known-limitations table). Image input supported per the Vision guide. Licence and parameter count NOT verified.'
+- id: codestral-2508
+  aliases:
+  - codestral-latest
+  family: codestral
+  context_window_tokens: 128000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - codestral
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Codestral 25.08 (GA). 128K context (model card and known-limitations table). Served by the FIM and chat endpoints. Licence and whether weights are published NOT verified. codestral-latest maps to this id per the Vibe configuration page. Earlier codestral-2501 is not profiled here.'
+- id: devstral-2512
+  aliases: []
+  family: devstral-2
+  context_window_tokens: 256000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - devstral
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Devstral 2, released 2025-12-09. Modified MIT licence (v25.12 model page). 256K context (model card and known-limitations table). Model card deprecation date 2026-05-22; overview lists retirement 2026-07-31, so it should already be retired at 2026-11-05 yet may still be resold: decoy candidate. Parameter count (123B in an earlier search summary) NOT verified and left out. The devstral-latest alias is NOT assigned: it appeared only in third-party snippets, not docs.mistral.ai.'
+- id: magistral-small-2509
+  aliases: []
+  family: magistral
+  context_window_tokens: 128000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - magistral
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Magistral Small 1.2 (released 2025-09-25 with the 1.2 update). 128K context (model card). Model card marks it DEPRECATED; replacement Mistral Small 4 for new integrations. Retirement date NOT verified (an unverified third-party snippet gave 2026-07-31). Decoy candidate. Modalities text, reasoning per the Magistral name and reasoning docs (not checked against this card).'
+- id: magistral-medium-2509
+  aliases: []
+  family: magistral
+  context_window_tokens: 128000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - magistral
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Magistral Medium 1.2 (released 2025-09-25). 128K context (model card and known-limitations table). Model card marks it DEPRECATED with deprecation date 2026-05-22; overview retirement 2026-07-31 (not fully confirmed). Replacement Mistral Medium 3.5. Decoy candidate.'
+- id: mistral-embed
+  aliases: []
+  family: mistral-embed
+  context_window_tokens: 8000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  embedding_dimensions: 1024
+  tool_format: openai_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: false
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - mistral-embed
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Embedding model. 1024-dimensional vectors (Mistral cookbook and Search Toolkit embedding-model page). 8K context (model card). Licence and release date not in the fetched results. The model card text reads like a code-model description, a copy-paste issue on the docs side, so the card alone is not a reliable identity signal.'
+- id: codestral-embed
+  aliases:
+  aliases: []
+  family: codestral-embed
+  context_window_tokens: 8000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  embedding_dimensions: 1536
+  tool_format: openai_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: false
+  identity_keywords:
+  - mistral
+  - mistral ai
+  - mistralai
+  - codestral
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  notes: 'Embedding model, release v25.05. Default output_dimension is 1536, selectable up to 3072 (Codestral Embed docs); embedding_dimensions records the default, not a confirmed native size. The docs usage example shows 1553 dimensions, which conflicts with the stated default and is treated as a docs typo. 8K context (model card). The dated id codestral-embed-2505 is NOT assigned as an alias: no snapshot page confirmed it.'
+relay_red_flags:
+- Claimed mistral-large-4 or mistral-small-2603 answers with a 1M or 256K context boundary that is far smaller (a Large 4 claim that errors below ~256K, or a Small 4 claim capped near 32K-128K), which points to an older Large 3 or a smaller Mistral model behind the name.
+- A relay bills mistral-large-2512, mistral-medium-3-5, devstral-2512 or magistral-medium-2509 after their documented retirement dates (2026-10-31 for Large 3 and Medium 3.5; 2026-05-22 and 2026-07-31 for Devstral 2 and Magistral Medium 1.2). Retired ids should return an error, so answering them is a sign of a substitute.
+- Self-identification as a non-Mistral family (GPT, Claude, Gemini, Qwen, Llama, DeepSeek) when asked which company built the model.
+- Embedding claim mistral-embed returning a vector length other than 1024, or codestral-embed returning a length outside the documented 1536 default to 3072 range.
+- Reasoning claimed on mistral-small-2603 but reasoning_effort is not accepted (the documented values are none and high), or Magistral claimed to be reasoning with no thinking chunk.
+- Vision request accepted on a text-only claim (mistral-large-2512, mistral-medium-3-5, codestral-2508, devstral-2512) or refused on a claim that is vision-capable (mistral-large-4, mistral-small-2603, ministral 3 family).
+sources:
+- https://docs.mistral.ai/models/mistral-large-4
+- https://docs.mistral.ai/models/mistral-large-4-0.md
+- https://docs.mistral.ai/models/model-cards/mistral-medium-3-5-26-04
+- https://docs.mistral.ai/models/mistral-large-3-25-12
+- https://docs.mistral.ai/models/model-cards/mistral-small-4-0-26-03
+- https://docs.mistral.ai/models/ministral-3-3b-25-12
+- https://docs.mistral.ai/models/ministral-3-14b-25-12
+- https://docs.mistral.ai/models/model-cards/ministral-3-8b-25-12
+- https://docs.mistral.ai/models/model-cards/codestral-25-08
+- https://docs.mistral.ai/models/codestral-25-08
+- https://docs.mistral.ai/models/codestral-embed-25-05
+- https://docs.mistral.ai/models/model-cards/mistral-embed-23-12
+- https://docs.mistral.ai/models/model-cards/devstral-2-25-12
+- https://docs.mistral.ai/models/devstral-2-25-12
+- https://docs.mistral.ai/models/model-cards/devstral-small-2-25-12
+- https://docs.mistral.ai/models/magistral-medium-1-2-25-09
+- https://docs.mistral.ai/models/model-cards/magistral-medium-1-2-25-09
+- https://docs.mistral.ai/models/magistral-small-1-2-25-09
+- https://docs.mistral.ai/resources/known-limitations
+- https://docs.mistral.ai/resources/changelogs
+- https://docs.mistral.ai/models/overview
+- https://docs.mistral.ai/models/model-selection-guide?models=mistral-large-3-25-12
+- https://docs.mistral.ai/vibe/code/cli/configuration
+- https://docs.mistral.ai/studio/conversations/function-calling
+- https://docs.mistral.ai/studio/search/search-toolkit/concepts/embedding-model
+- https://docs.mistral.ai/resources/cookbooks/mistral-embeddings-embeddings
+- https://docs.mistral.ai/inference/pricing
+- https://docs.mistral.ai/inference/model-lifecycle
