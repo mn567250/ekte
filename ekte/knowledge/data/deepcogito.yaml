@@ -1,0 +1,62 @@
+# ekte knowledge base — Deep Cogito
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: deepcogito
+last_verified: '2026-11-05'
+display_name: Deep Cogito
+openai_compatible: true
+base_url_hints: []
+default_tool_format: openai_function
+models:
+- id: deepcogito/cogito-671b-v2.1
+  aliases:
+  - deepcogito/cogito-v2.1-671b
+  - cogito-v2.1-671b
+  - cogito-671b-v2.1
+  family: cogito-v2.1
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cogito
+  - deep cogito
+  - deepcogito
+  - deepseek
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - mistral
+  fingerprints: []
+  notes: 'Cogito v2.1 671B, a hybrid reasoning model (answers directly or self-reflects first). 671B total parameters, 37B activated (MoE), 128k context (131,072 tokens), trained in 30+ languages. Base model: a fork of the DeepSeek-V3 lineage (DeepSeek-V3-Base per the Hugging Face model tree; Deep Cogito''s own announcement says it forks an open-licensed DeepSeek base from November 2024). Served on OpenRouter (deepcogito/cogito-v2.1-671b, listed release 2025-11-13 per search snippet) and TogetherAI, per Deep Cogito''s GitHub. Open weights in BF16 and FP8-Dynamic on Hugging Face; the HF id is deepcogito/cogito-671b-v2.1 and no first-party API was found, so the HF repo name is the id. max_output_tokens unverified (-1). Knowledge cutoff not published (null). Predecessor: Cogito v2 Preview 671B MoE (July 2025), id deepcogito/cogito-v2-preview-deepseek-671B-MoE. Note: a Decoder article disputes the base-model attribution (its own inference).'
+relay_red_flags:
+- Asked who built it, the model names a rival lab (OpenAI, Anthropic, Google, Qwen, Meta/Llama) instead of Deep Cogito or Cogito; a DeepSeek self-description is expected because the base is DeepSeek-derived.
+- A claimed cogito-671b-v2.1 answers with a context-length error below 128K, or with the output of a much smaller model on reasoning prompts.
+- Reasoning is requested and no reasoning output appears from a model billed as a hybrid reasoning Cogito; or the reasoning is stripped while the model still claims the reasoning variant.
+- Asked about its own base model, the claimed cogito-671b-v2.1 names Llama or Qwen as its base rather than the DeepSeek-V3 lineage the developer describes.
+sources:
+- https://www.deepcogito.com/research/cogito-v2-1
+- https://www.deepcogito.com/research/cogito-v2-preview
+- https://github.com/DeepCogito/cogito-v2
+- https://huggingface.co/deepcogito
+- https://huggingface.co/deepcogito/cogito-671b-v2.1
+- https://huggingface.co/deepcogito/cogito-v2-preview-deepseek-671B-MoE
+- https://openrouter.ai/deepcogito
+- https://openrouter.ai/deepcogito/cogito-v2.1-671b
+- https://the-decoder.com/the-best-open-weight-llm-from-a-us-company-is-a-finetuned-deepseek-model/
