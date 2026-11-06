@@ -167,6 +167,18 @@ ekte has three eras:
 
 ### Fixed
 
+- **Texts flagged by the LLM accessibility review** ([#106](https://github.com/mn567250/ekte/issues/106)).
+  - The two pencil buttons on a monitor card are now named "Change check
+    interval" and "Edit webhooks" in every language. In French and Italian
+    they had both been called "Modifier" / "Modifica" (WCAG 2.4.6).
+  - The German knowledge-base button "Check" is now "Prüfen", not "Prüfung",
+    which is also the name of the Audit page.
+  - The Italian knowledge-base hints name the "Verifica" page, as the
+    navigation does.
+  - The Chinese key-storage texts keep `env:VAR` untranslated.
+
+  The review (`a11y-llm-review.json`, now including Norwegian) and
+  `bitv-report.json` are updated; the six steps it covers pass.
 - **An honest older OpenAI model no longer fails the knowledge-cutoff probe.**
   The probe asks who won the November 2024 US election and was inaugurated in
   January 2025, but it ran on every OpenAI model, including GPT-4o and o1

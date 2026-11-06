@@ -117,7 +117,7 @@
       - term: Webhooks
       - definition:
         - text: No webhooks
-        - button "Edit"
+        - button "Edit webhooks"
       - term: Alert language
       - definition:
         - combobox "Alert language — gpt-4o":

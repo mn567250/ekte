@@ -113,7 +113,7 @@
       - text: .yaml-Datei wählen
       - heading "3 Prüfen und speichern" [level=3]
       - paragraph: Die Prüfung validiert Schema und Grenzwerte, markiert unsichere reguläre Ausdrücke, listet jeden Prompt auf, den ekte an Relays senden würde, und zeigt, welche Modell-IDs anders aufgelöst würden. Gespeichert wird erst, wenn du speicherst.
-      - button "Prüfung"
+      - button "Prüfen"
       - button "In der Wissensbasis speichern" [disabled]
     - group:
       - text: Ai2 (Allen Institute for AI)

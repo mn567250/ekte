@@ -117,7 +117,7 @@
       - term: Webhooker
       - definition:
         - text: Ingen webhooker
-        - button "Rediger"
+        - button "Rediger webhooker"
       - term: Varslingsspråk
       - definition:
         - combobox "Varslingsspråk — gpt-4o":
