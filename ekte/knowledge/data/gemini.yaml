@@ -838,6 +838,253 @@ models:
   - mistral
   - cohere
   notes: SHUT DOWN 2026-06-01 (along with gemini-2.0-flash-lite). A relay that still serves gemini-2.0-flash after that date, or that maps it to something live, is a strong货不对板 signal. Listed only for detection; not a current model.
+- id: gemma-4-31b-it
+  aliases:
+  - google/gemma-4-31B-it
+  - Gemma 4 31B
+  family: gemma-4
+  context_window_tokens: 262144
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: gemma
+  modalities:
+  - text
+  - image
+  reasoning: false
+  tool_format: gemini_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - gemma
+  - google
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  - cohere
+  notes: Gemma 4 dense 31B instruction-tuned open-weight model, released 2026-04-02. Context 256K (262,144) and text+image input per the Google Gemma 4 model card (ai.google.dev/gemma/docs/core/model_card_4). Licence Apache 2.0 per the model cards. Max output not stated on the card, so -1. Knowledge cutoff not stated, so null. Served on OpenRouter as google/gemma-4-31b-it (catalog). Tool and JSON-schema support from the OpenRouter listing, not checked against the official card. reasoning set to false - no toggle verified.
+- id: gemma-4-26b-a4b-it
+  aliases:
+  - google/gemma-4-26B-A4B-it
+  - Gemma 4 26B A4B
+  family: gemma-4
+  context_window_tokens: 262144
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: gemma
+  modalities:
+  - text
+  - image
+  reasoning: false
+  tool_format: gemini_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - gemma
+  - google
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  - cohere
+  notes: Gemma 4 mixture-of-experts model, about 4B active of 26B total parameters, released 2026-04-02. Context 256K and text+image input per the Google Gemma 4 model card. Licence Apache 2.0 per the model cards. Max output and knowledge cutoff not stated, so -1 and null. Served on OpenRouter as google/gemma-4-26b-a4b-it (catalog). Tool and JSON-schema support from the OpenRouter/Vercel listing, not checked against the official card.
+- id: gemma-4-e4b-it
+  aliases:
+  - google/gemma-4-E4B-it
+  - Gemma 4 E4B
+  family: gemma-4
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: gemma
+  modalities:
+  - text
+  - image
+  - audio
+  reasoning: false
+  tool_format: gemini_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - gemma
+  - google
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  - cohere
+  notes: Gemma 4 edge model, about 4.5B effective parameters (8B with embeddings), released 2026-04-02. Context 128K and audio input per the Google Gemma 4 model card. Licence Apache 2.0 per the model cards. Hosted on DeepInfra as google/gemma-4-E4B-it (host catalog). The official HF repo google/gemma-4-E4B is confirmed; the -it id is taken from the host listing (unverified on HF). Max output and knowledge cutoff not stated, so -1 and null. Tool and JSON-schema support copied from the Gemma 4 family, not verified for this size.
+- id: gemma-3-27b-it
+  aliases:
+  - google/gemma-3-27b-it
+  - Gemma 3 27B
+  family: gemma-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: 2024-08
+  tokenizer: gemma
+  modalities:
+  - text
+  - image
+  reasoning: false
+  tool_format: gemini_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - gemma
+  - google
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  - cohere
+  notes: Gemma 3 27B instruction-tuned, text and image input, 128K input context and knowledge cutoff August 2024 per the Google Gemma 3 model card (ai.google.dev/gemma/docs/core/model_card_3). Max output conflicts (Google card - up to 128K per request; HF card - 8,192), so -1. Listed in Google's Gemma-on-Gemini-API docs (sample code uses gemma-3-27b-it) and on OpenRouter as google/gemma-3-27b-it (catalog, 131,072 context). Licence - Gemma Terms of Use (source-available, not Apache). Tool and JSON support not verified for Gemma 3, so false.
+- id: gemma-3n-e4b-it
+  aliases:
+  - google/gemma-3n-E4B-it
+  - Gemma 3n E4B
+  family: gemma-3n
+  context_window_tokens: 32768
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: gemma
+  modalities:
+  - text
+  - image
+  - audio
+  reasoning: false
+  tool_format: gemini_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - gemma
+  - google
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  - cohere
+  notes: Gemma 3n E4B, gated Hugging Face repo google/gemma-3n-E4B under Google's usage licence (Gemma Terms of Use). Total input context 32K, output up to 32K minus input, per the Google Gemma 3n model card. Modalities - text, image, audio per the model card; video input is also named in the HF launch blog, which was not reconciled. OpenRouter lists google/gemma-3n-e4b-it at 32,768 (catalog). Knowledge cutoff and max output not verified, so null and -1. Tool support not verified, so false.
+- id: gemma-3-4b-it
+  aliases:
+  - google/gemma-3-4b-it
+  - Gemma 3 4B
+  family: gemma-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: 2024-08
+  tokenizer: gemma
+  modalities:
+  - text
+  - image
+  reasoning: false
+  tool_format: gemini_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - gemma
+  - google
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  - cohere
+  notes: Gemma 3 4B instruction-tuned, text and image input, 128K input context and knowledge cutoff August 2024 per the Google Gemma 3 model card. Max output conflicts across sources, so -1. Listed on OpenRouter as google/gemma-3-4b-it (catalog). Licence - Gemma Terms of Use. Tool support not verified, so false.
+- id: gemma-3-1b-it
+  aliases:
+  - google/gemma-3-1b-it
+  - Gemma 3 1B
+  family: gemma-3
+  context_window_tokens: 32768
+  max_output_tokens: -1
+  knowledge_cutoff: 2024-08
+  tokenizer: gemma
+  modalities:
+  - text
+  reasoning: false
+  tool_format: gemini_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - gemma
+  - google
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  - cohere
+  notes: Gemma 3 1B instruction-tuned, text only, 32K input context and knowledge cutoff August 2024 per the Google Gemma 3 model card. Max output conflicts across sources (32K per request on Google's card, 8,192 on the HF card), so -1. Listed in third-party catalogs (llmgateway, LangDB) only; not confirmed on a first-party API. Licence - Gemma Terms of Use. Tool support not verified, so false.
+
 fingerprints:
 - id: self-id
   signal: self-identification
@@ -912,3 +1159,19 @@ sources:
 - https://ai.google.dev/gemini-api/docs/deprecations
 - https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions
 - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json
+- https://huggingface.co/google/gemma-3-27b-it
+- https://huggingface.co/google/gemma-3n-E4B
+- https://huggingface.co/google/gemma-4-E4B-it
+- https://openrouter.ai/google/gemma-3-27b-it
+- https://openrouter.ai/google/gemma-3-4b-it
+- https://openrouter.ai/google/gemma-3n-e4b-it
+- https://openrouter.ai/google/gemma-4-31b-it
+- https://vercel.com/ai-gateway/models/gemma-4-31b-it.md
+- https://vercel.com/ai-gateway/models/gemma-4-26b-a4b-it.md
+- https://ai.google.dev/gemma/docs/core/model_card_4
+- https://ai.google.dev/gemma/docs/core/model_card_3
+- https://ai.google.dev/gemma/docs/gemma-3n
+- https://huggingface.co/google/gemma-4-26B-A4B-it
+- https://huggingface.co/google/gemma-4-E4B
+- https://en.wikipedia.org/wiki/Gemma_(language_model)
+- https://ai.google.dev/gemma/docs/core/gemma_on_gemini_api

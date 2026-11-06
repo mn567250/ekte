@@ -11,6 +11,46 @@ base_url_hints:
 - https://api.moonshot.cn/v1/chat/completions
 default_tool_format: openai_function
 models:
+- id: kimi-k3.1-pro
+  aliases:
+  - moonshotai/Kimi-K3.1-Pro
+  - Kimi-K3.1-Pro
+  - moonshotai/kimi-k3.1-pro
+  family: kimi-k3
+  context_window_tokens: 1048576
+  max_output_tokens: 1048576
+  knowledge_cutoff: undisclosed
+  tokenizer: moonshot-bpe
+  modalities:
+  - text
+  - vision
+  - image
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - kimi
+  - moonshot
+  - 月之暗面
+  - k3
+  - k3.1
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - llama
+  - meta
+  notes: 'Flagship as of 2026-11: open weights published 2026-11-02 as moonshotai/Kimi-K3.1-Pro (Hugging Face card: 2.8T-parameter MoE, 104B activated, 1048576-token context, text and image input; Kimi K3.1 Pro License, tagged "other"). Post-trained from Kimi K3; full-attention Gated MLA layers replaced by Gated DeepSeek Sparse Attention. API id kimi-k3.1-pro on https://api.moonshot.ai/v1 (OpenAI-compatible; Anthropic-compatible at /anthropic). max_completion_tokens defaults to 131072 and can be set up to 1048576 (max_tokens is deprecated); input plus output may not exceed the context. Thinking effort via top-level reasoning_effort low|high|max (default max); multi-turn and tool use need the full assistant message passed back, including reasoning_content. Sources: Hugging Face card and the Kimi API quickstart, checked 2026-11-05.'
 - id: kimi-k3
   aliases:
   - moonshotai/Kimi-K3

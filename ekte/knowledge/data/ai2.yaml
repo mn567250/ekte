@@ -1,0 +1,243 @@
+# ekte knowledge base — Ai2 (Allen Institute for AI)
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: ai2
+last_verified: '2026-11-05'
+display_name: Ai2 (Allen Institute for AI)
+openai_compatible: true
+# Ai2 has no first-party commercial inference API; the models are reached through
+# hosts (e.g. OpenRouter) or self-hosted from the Hugging Face weights.
+base_url_hints: []
+default_tool_format: openai_function
+models:
+- id: allenai/Olmo-3-7B-Instruct
+  aliases:
+  - allenai/olmo-3-7b-instruct
+  - Olmo-3-7B-Instruct
+  family: olmo-3
+  context_window_tokens: 65536
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - ai2
+  - allen institute
+  - allenai
+  - olmo
+  - olmo 3
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - mistral
+  fingerprints: []
+  notes: 'Olmo 3 7B, final RL stage of the Olmo-3-7B pipeline (SFT, DPO, RL). Apache-2.0, olmo3 architecture, English, conversational. Official Hugging Face model card read (via search result). Served on OpenRouter as "Olmo 3 7B Instruct" (Ai2 listing seen in search). Context window, max output and tool support were not read from a source and are left unknown (-1 / false); host catalogue limits were not used. A later Olmo 3.1 family exists (3.1 32B Instruct confirmed; no 3.1 7B Instruct card seen). Context 65536 from max_position_embeddings in the vendor''s Hugging Face config.json (allenai/Olmo-3-7B-Instruct), checked 2026-11-05.'
+- id: allenai/Olmo-3-7B-Think
+  aliases:
+  - allenai/olmo-3-7b-think
+  - Olmo-3-7B-Think
+  family: olmo-3
+  context_window_tokens: 65536
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: true
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - ai2
+  - allen institute
+  - allenai
+  - olmo
+  - olmo 3
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - mistral
+  fingerprints: []
+  notes: 'Olmo 3 7B Think (reasoning variant of the Olmo 3 7B family). Listed on OpenRouter as "Olmo 3 7B Think" (Ai2 listing seen in search). The Hugging Face repo name follows the Olmo-3-7B-Instruct card pattern; that repo card was not opened directly. Limits left unknown (-1); tool support not verified. Context 65536 from max_position_embeddings in the vendor''s Hugging Face config.json (allenai/Olmo-3-7B-Think), checked 2026-11-05.'
+- id: allenai/Olmo-3-32B-Think
+  aliases:
+  - allenai/olmo-3-32b-think
+  - Olmo-3-32B-Think
+  family: olmo-3
+  context_window_tokens: 65536
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: true
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - ai2
+  - allen institute
+  - allenai
+  - olmo
+  - olmo 3
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - mistral
+  fingerprints: []
+  notes: 'Olmo 3 32B Think, reasoning variant. Listed on OpenRouter as "Olmo 3 32B Think" (Ai2 listing seen in search). Hugging Face repo name inferred from the family naming; the repo card was not opened. Limits left unknown (-1). Context 65536 from max_position_embeddings in the vendor''s Hugging Face config.json (allenai/Olmo-3-32B-Think), checked 2026-11-05.'
+- id: allenai/Olmo-3.1-32B-Instruct
+  aliases:
+  - allenai/olmo-3.1-32b-instruct
+  - Olmo-3.1-32B-Instruct
+  family: olmo-3.1
+  context_window_tokens: 65536
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - ai2
+  - allen institute
+  - allenai
+  - olmo
+  - olmo 3.1
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - mistral
+  fingerprints: []
+  notes: 'Olmo 3.1 32B Instruct, 32B dense transformer. Hugging Face card at allenai/Olmo-3.1-32B-Instruct appeared in search; the license Apache-2.0 is reported by an Unsloth re-upload of that card and a packaging page, not by the official card text read directly. Served on OpenRouter (listing seen via a third-party price page). Context reported around 65K by third parties (YaRN scaling), not from the official card, so it is left unknown (-1). Release date not confirmed. Context 65536 from max_position_embeddings in the vendor''s Hugging Face config.json (allenai/Olmo-3.1-32B-Instruct), checked 2026-11-05.'
+- id: allenai/Olmo-3.1-32B-Think
+  aliases:
+  - allenai/olmo-3.1-32b-think
+  - Olmo-3.1-32B-Think
+  family: olmo-3.1
+  context_window_tokens: 65536
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: true
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - ai2
+  - allen institute
+  - allenai
+  - olmo
+  - olmo 3.1
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - mistral
+  fingerprints: []
+  notes: 'Olmo 3.1 32B Think. OpenRouter listing (slug allenai/olmo-3.1-32b-think, seen in search) describes it as released 2025-12-16 with a 65,536-token window; the window is a host figure and is not used here (-1). Hugging Face repo name inferred from the OpenRouter slug; the repo card was not opened directly. Apache-2.0 per the OpenRouter listing. Context 65536 from max_position_embeddings in the vendor''s Hugging Face config.json (allenai/Olmo-3.1-32B-Think), checked 2026-11-05.'
+- id: allenai/Molmo-7B-D-0924
+  aliases:
+  - allenai/molmo-7b-d
+  - Molmo-7B-D-0924
+  family: molmo
+  context_window_tokens: 4096
+  max_output_tokens: -1
+  modalities:
+  - text
+  - image
+  reasoning: false
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - ai2
+  - allen institute
+  - allenai
+  - molmo
+  - qwen
+  identity_forbidden:
+  - gpt
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - llama
+  - meta
+  - mistral
+  fingerprints: []
+  notes: 'Molmo 7B-D (vision-language model, Ai2). Based on Qwen2-7B with an OpenAI CLIP vision backbone (official HF README read via search: base_model Qwen2-7B, Apache-2.0, preview checkpoint), so qwen is in identity_keywords as its base brand and qwen/openai are deliberately NOT in identity_forbidden. Served on OpenRouter as allenai/molmo-7b-d (a free variant allenai/molmo-7b-d:free is listed; its 4,096-token window is a host figure and is not used). Native context and max output not read from the official card: -1. Context 4096 from max_position_embeddings in the vendor''s Hugging Face config.json (allenai/Molmo-7B-D-0924), checked 2026-11-05.'
+relay_red_flags:
+- A claimed olmo-3 / olmo-3.1 model answers as ChatGPT, Claude, Gemini, Qwen, DeepSeek or Llama, or names another lab as its developer instead of Ai2 / Allen Institute.
+- A claimed allenai/Molmo-7B-D-0924 (molmo-7b-d) answers that it is GPT, Claude or Gemini, or refuses all image input although the model is a vision-language model.
+- An Olmo 3 Think or Olmo 3.1 Think model returns no reasoning trace at all where the reasoning variants normally think before answering.
+- A relay that bills an Ai2 model at the price of a frontier closed model, or advertises a 'native Ai2 API' (Ai2 has no first-party commercial API; the models are served via hosts or self-hosting).
+- Tool calls succeed on a model claimed to be Olmo, although tool support is not confirmed for these checkpoints (a tool-capable answer is not evidence of the claimed model).
+sources:
+- https://huggingface.co/allenai/Olmo-3-7B-Instruct
+- https://huggingface.co/allenai/Olmo-3.1-32B-Instruct
+- https://huggingface.co/allenai/Molmo-7B-D-0924
+- https://openrouter.ai/allenai/olmo-3.1-32b-think
+- https://openrouter.ai/allenai/molmo-7b-d
+- https://openrouter.ai/allenai/molmo-7b-d:free
+- https://openrouter.ai/allenai
+- https://cloudprice.net/models/allenai/Olmo-3.1-32B-Instruct
+- https://docs.vultr.com/models/allen-ai-olmo-31/olmo-3.1-32b-instruct/nvidia
+- https://www.typingmind.com/guide/openrouter/molmo-7b-d
+- https://www.typingmind.com/guide/openrouter/olmo-3.1-32b-think

@@ -125,6 +125,9 @@ models:
 - id: deepseek-v4-flash
   aliases:
   - DeepSeek-V4-Flash
+  - DeepSeek-V4-Flash-0731
+  - deepseek-ai/DeepSeek-V4-Flash-0731
+  - deepseek/deepseek-v4-flash-0731
   family: deepseek-v4
   context_window_tokens: 1000000
   max_output_tokens: 393216
@@ -160,10 +163,13 @@ models:
     decode_tps: [50, 125]
     source: https://benchlm.ai/llm-speed (Artificial Analysis output-speed medians)
     measured: 2026-09
-  notes: RETIRED as a model (V4-Flash, released 2026-04-24); the id is temporarily routed to DeepSeek-V4.1-Flash (deepseek-flash), so answers under this name now come from V4.1 Flash. 284B total / 13B activated MoE, open weights (MIT). 1M token context, unified 384K (393216) max output across thinking and non-thinking. Thinking mode toggled via extra_body {"thinking":{"type":"enabled"}} plus reasoning_effort high/max. Supports tool calls in BOTH thinking and non-thinking modes, JSON object output, chat-prefix (beta); FIM only in non-thinking mode. Does NOT support strict json_schema.
+  notes: RETIRED as a model (V4-Flash, released 2026-04-24); the id is temporarily routed to DeepSeek-V4.1-Flash (deepseek-flash), so answers under this name now come from V4.1 Flash. 284B total / 13B activated MoE, open weights (MIT). 1M token context, unified 384K (393216) max output across thinking and non-thinking. Thinking mode toggled via extra_body {"thinking":{"type":"enabled"}} plus reasoning_effort high/max. Supports tool calls in BOTH thinking and non-thinking modes, JSON object output, chat-prefix (beta); FIM only in non-thinking mode. Does NOT support strict json_schema. Its GA release DeepSeek-V4-Flash-0731 was published as open weights on 2026-07-31 (deepseek-ai/DeepSeek-V4-Flash-0731, MIT); relays serving those weights may use that name. Checked 2026-11-05.
 - id: deepseek-v4-pro
   aliases:
   - DeepSeek-V4-Pro
+  - DeepSeek-V4-Pro-0813
+  - deepseek-ai/DeepSeek-V4-Pro-0813
+  - deepseek/deepseek-v4-pro-0813
   family: deepseek-v4
   context_window_tokens: 1000000
   max_output_tokens: 393216
@@ -199,7 +205,7 @@ models:
     decode_tps: [20, 60]
     source: https://benchlm.ai/llm-speed (Artificial Analysis output-speed medians)
     measured: 2026-09
-  notes: Still served (the planned 2026-09-14 shutdown was reversed; billing unchanged). Current high-end reasoning/coding/agentic model, released 2026-04-24. 1.6T total / 49B activated MoE, open weights (MIT). 1M context, 384K max output. Thinking mode supports tool calls. Supports json_object mode, not strict json_schema. Pricing approx $0.003625 cache-hit / $0.435 cache-miss input, $0.87 output per 1M. Lower concurrency limit (500) than flash (2500).
+  notes: Still served (the planned 2026-09-14 shutdown was reversed; billing unchanged). Current high-end reasoning/coding/agentic model, released 2026-04-24. 1.6T total / 49B activated MoE, open weights (MIT). 1M context, 384K max output. Thinking mode supports tool calls. Supports json_object mode, not strict json_schema. Pricing approx $0.003625 cache-hit / $0.435 cache-miss input, $0.87 output per 1M. Lower concurrency limit (500) than flash (2500). Since 2026-08-13 the id serves the GA release DeepSeek-V4-Pro-0813 (api-docs news260813; open weights deepseek-ai/DeepSeek-V4-Pro-0813, MIT, with a DSpark speculative-decoding module); reasoning_effort low|high|max. Checked 2026-11-05.
 fingerprints:
 - id: tokenizer-special-char
   signal: tokenizer artifact — distinctive special-token delimiters

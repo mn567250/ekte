@@ -1,0 +1,372 @@
+# ekte knowledge base — Cohere (Toronto, Canada)
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: cohere
+last_verified: '2026-11-05'
+display_name: Cohere (Toronto, Canada)
+openai_compatible: true
+base_url_hints:
+- https://api.cohere.com/v2
+- https://api.cohere.ai/compatibility/v1
+default_tool_format: openai_function
+models:
+- id: command-a-plus-05-2026
+  aliases:
+  - command-a-plus
+  family: command-a
+  context_window_tokens: 128000
+  max_output_tokens: 64000
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  - vision
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cohere
+  - command a
+  - command-a
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Newest Command model (docs.cohere.com/v1/docs/command-a-plus): 218B total / 25B active mixture-of-experts, 128K context, 64K max output. Vision input and reasoning per secondary sources (unverified on the official page). Licence NOT verified: one secondary source says Apache 2.0, which would make it the only open-weight Command model that is not CC-BY-NC; check before relying on it. Release date 2026-05 (secondary sources). Pricing not verified.'
+- id: command-a-03-2025
+  aliases:
+  - c4ai-command-a-03-2025
+  - CohereLabs/c4ai-command-a-03-2025
+  - command-a
+  family: command-a
+  context_window_tokens: 256000
+  max_output_tokens: 8000
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cohere
+  - command a
+  - command-a
+  - c4ai
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Command A (docs.cohere.com/docs/command-a): 111B parameters, 256K context, 8K max output. Dated id command-a-03-2025. Open weights on Hugging Face (CohereLabs/c4ai-command-a-03-2025) under CC-BY-NC with the Cohere acceptable-use policy; commercial use needs a Cohere agreement (HF model card). The HF card notes the config is set to 128K although the model supports 256K. Knowledge cutoff not verified. Bare alias command-a is a host-style name; treat it as this model only if the relay names it that way.'
+- id: command-a-reasoning-08-2025
+  aliases:
+  - command-a-reasoning
+  family: command-a
+  context_window_tokens: 256000
+  max_output_tokens: 32000
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cohere
+  - command a
+  - command-a
+  - reasoning
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Hybrid reasoning model, released 2025-08-21 (docs.cohere.com/changelog/2025-08-21-command-a-reasoning). 256K context and 32K max output (docs.cohere.com/docs/command-a-reasoning). Open weights on Hugging Face (CohereLabs/command-a-reasoning-08-2025) under CC-BY-NC, per the HF model card. Reasoning toggle details not verified.'
+- id: command-a-translate-08-2025
+  aliases:
+  - command-a-translate
+  family: command-a
+  context_window_tokens: 16000
+  max_output_tokens: 8000
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cohere
+  - command a
+  - command-a
+  - translate
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Translation model (docs.cohere.com/docs/command-a-translate): 111B, 16K total context split as 8K input and 8K output. Open weights on Hugging Face (CohereLabs/command-a-translate-08-2025) under CC-BY-NC, per the HF model card. Tool use not stated by the official page, so set false here; unverified. The 23-language claim comes from the Cohere changelog summary.'
+- id: command-a-vision-07-2025
+  aliases:
+  - command-a-vision
+  family: command-a
+  context_window_tokens: 128000
+  max_output_tokens: 8000
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  - image
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cohere
+  - command a
+  - command-a
+  - vision
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Vision model, announced 2025-07-31 (docs.cohere.com/changelog/2025-07-31-command-a-vision; docs.cohere.com/docs/command-a-vision): 128K context, 8K max output, up to 20 images per request. Tool support not verified on the official page. Open weights on Hugging Face (CohereLabs/command-a-vision-07-2025) under CC-BY-NC per the HF card; licence wording not checked.'
+- id: command-r7b-12-2024
+  aliases:
+  - command-r7b
+  family: command-r
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cohere
+  - command r7b
+  - command-r7b
+  - command r
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Compact 7B model dated 2024-12 (HF CohereLabs/c4ai-command-r7b-12-2024, CC-BY-NC). Cohere lists it as a replacement for deprecated command models, so treated as served. Context and max output NOT verified on an official page (-1); third-party sites say 128K, unconfirmed. Tool support not verified.'
+- id: command-r-plus-08-2024
+  aliases: []
+  family: command-r
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cohere
+  - command r
+  - command-r
+  - command r+
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Command R+ 2024-08 update (docs.cohere.com/docs/command-r-plus). Cohere deprecations (2025-09-15 changelog) retire command-r-plus-04-2024 and name command-r-plus-08-2024 as its replacement, so this id is treated as served. Context and max output NOT verified (-1); third-party sources give 128K context and 4K output, unconfirmed. Open weights CC-BY-NC per secondary sources. The bare names command-r-plus and command-r are NOT aliases of this model: they point at the deprecated 04-2024 and 03-2024 snapshots, which are not profiled, so a relay answering them is outside this entry.'
+- id: command-r-08-2024
+  aliases: []
+  family: command-r
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - cohere
+  - command r
+  - command-r
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Command R 2024-08 update. Cohere deprecations (2025-09-15) retire command-r-03-2024 and name command-r-08-2024 as the replacement, so this id is treated as served. Context and max output NOT verified (-1). The bare name command-r is NOT an alias of this model (it is the deprecated 03-2024 snapshot), so a relay answering it is outside this entry.'
+- id: embed-v4.0
+  aliases:
+  - embed-v4
+  family: embed
+  context_window_tokens: 128000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: cohere
+  modalities:
+  - text
+  reasoning: false
+  embedding_dimensions: 1536
+  tool_format: openai_function
+  supports_tools: false
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: false
+  identity_keywords:
+  - cohere
+  - embed
+  - embed-v4.0
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - llama
+  - meta
+  - mistral
+  - deepseek
+  - qwen
+  - alibaba
+  fingerprints: []
+  notes: 'Current Cohere embedding model. Default output 1536 dimensions; output_dimension accepts 256, 512, 1024, 1536 (docs.cohere.com/docs/cohere-embed, also the Embed API reference docs.cohere.com/reference/embed). 128K max input tokens per the Cohere embed models page. Text modality recorded; the vision input path is not verified here. Not an open-weight model. Default max_tokens for the API was not stated in the sources read.'
+relay_red_flags:
+- Asked for its model or vendor under a command-a or command-r id, it names OpenAI, Anthropic, Google, Meta or DeepSeek instead of Cohere
+- An embed-v4.0 response whose vector length is not 1536 (or not one of 256/512/1024/1536 when an output dimension was requested) indicates a different embedding model behind the id
+- A relay serving a retired Cohere id (command-r, command-r-plus, command-r-03-2024, command-r-plus-04-2024, Embed v2.0, Aya Expanse 8B, Aya Vision 8B) as if current; the Cohere deprecation changelog is the reference
+- Command A Translate or embed ids reliably performing tool calls, which the native models do not support, suggests a different backend
+- Context-length errors well below 256K on command-a / command-a-reasoning or below 128K on command-a-vision / command-a-plus, or output caps far below the official max output, indicate a smaller model or a relay-imposed cap
+- Command A Translate accepting more than 16K total tokens per request (8K in and 8K out per the official page) points to a different model or a relay that ignores the limit
+sources:
+- https://docs.cohere.com/docs/models
+- https://docs.cohere.com/docs/compatibility-api
+- https://docs.cohere.com/docs/command-a
+- https://docs.cohere.com/docs/command-a-reasoning
+- https://docs.cohere.com/docs/command-a-translate
+- https://docs.cohere.com/docs/command-a-vision
+- https://docs.cohere.com/v1/docs/command-a-plus
+- https://docs.cohere.com/docs/command-r-plus
+- https://docs.cohere.com/docs/cohere-embed
+- https://docs.cohere.com/reference/embed
+- https://docs.cohere.com/docs/deprecations
+- https://docs.cohere.com/changelog/2025-07-31-command-a-vision
+- https://docs.cohere.com/changelog/2025-08-21-command-a-reasoning
+- https://docs.cohere.com/changelog/2025-09-15-major-command-deprecations
+- https://docs.cohere.com/changelog/2026-04-04-embed-v2-aya-8b-retirement
+- https://huggingface.co/CohereLabs/c4ai-command-a-03-2025
+- https://huggingface.co/CohereLabs/command-a-reasoning-08-2025
+- https://huggingface.co/CohereLabs/command-a-translate-08-2025
+- https://huggingface.co/CohereLabs/command-a-vision-07-2025
+- https://huggingface.co/CohereLabs/c4ai-command-r7b-12-2024

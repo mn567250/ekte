@@ -86,6 +86,28 @@ ekte has three eras:
   directory written by the released 0.33.1 from PyPI (history, monitors with
   stored and unstored keys, your own knowledge-base entries); the upgrade tests
   open it with the current code and check that nothing is lost.
+- **The knowledge base covers 23 providers and 244 models (was 7 and 130),
+  with a focus on open-weight models that relays resell or swap in (#104).**
+  New provider profiles: Mistral, Meta Llama, NVIDIA Nemotron, Cohere,
+  Microsoft Phi, IBM Granite, xAI Grok, Ai2 (OLMo, Molmo), Nous Research
+  (Hermes), Arcee, Deep Cogito and Liquid AI; the embedding providers Jina AI
+  and Voyage AI; and the image providers Black Forest Labs (FLUX) and Stability
+  AI. OpenAI gains its open-weight gpt-oss models, Google its Gemma models,
+  Moonshot Kimi K3.1 Pro, and Qwen the open-weight Qwen3.8-27B and
+  Qwen3.8-Flash-Next; DeepSeek V4 Pro and Flash know their GA release names
+  (0813, 0731).
+  Vendors without a public API of their own (Meta, Microsoft, Ai2, Deep Cogito,
+  Liquid AI) are profiled because hosts serve their models; their profiles have
+  no base URL. Values that no official page confirmed are left unknown (-1).
+  This can change verdicts: a relay serving one of these models under another
+  model's name is now recognised by name.
+- **The identity check knows the brand words of these vendors and of Aleph
+  Alpha, EuroLLM, OpenEuroLLM, Teuken and Velvet**, so a model naming one of
+  them in place of the claimed model counts as a rival brand. Brand words that
+  are also ordinary words ("phi", "granite", "hermes", "flux", "voyage" and
+  others) count only when written as a name in the self-description. Fine-tunes
+  of another vendor's model (Llama-Nemotron, Hermes, Molmo, Cogito) list the
+  base model's brand as their own, so an honest answer naming it is no rival.
 
 ### Changed
 
@@ -145,6 +167,15 @@ ekte has three eras:
 
 ### Fixed
 
+- **An honest older OpenAI model no longer fails the knowledge-cutoff probe.**
+  The probe asks who won the November 2024 US election and was inaugurated in
+  January 2025, but it ran on every OpenAI model, including GPT-4o and o1
+  (cutoff 2023-10), GPT-4.1, o3 and gpt-oss (2024-06) and GPT-5 and 5.1
+  (2024-09-30), which cannot know the answer; a genuine model counted as
+  diverging. It now runs only on the models whose published cutoff is 2025 or
+  later (GPT-5.2 through 5.6, GPT-6 Astra, GPT-6.1 Sol), as the Gemini and
+  Moonshot cutoff probes already do. This can change verdicts for the older
+  models.
 - **No Chinese in the web UI while another language is selected.** The pages
   were written in Chinese and translated by script once loaded, so the browser
   tab showed the Chinese title while a page loaded, and a page shown before its

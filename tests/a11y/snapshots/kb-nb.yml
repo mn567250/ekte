@@ -39,7 +39,7 @@
     - text: "Hver revisjon sammenligner et relé med profilen til modellen det oppgir: kontekstvindu, utdatagrense, egenskaper, identitet og atferdsfingeravtrykk. Her finner du alle modeller, leverandører og releer ekte kjenner — medfølgende og dine — og kan slå hver av dem av eller på eller legge til dine egne. Endringene dine lagres i kb.db på denne maskinen og brukes både av nettgrensesnittet og"
     - code: ekte check
     - text: .
-  - status: Kunnskapsbasen er komplett 130 modeller · 7 leverandører · 1 relé, alle slått på
+  - status: Kunnskapsbasen er komplett 244 modeller · 23 leverandører · 1 relé, alle slått på
   - region "Filtre":
     - button "Filtre" [expanded]
     - text: Modell-ID
@@ -48,13 +48,29 @@
     - text: Leverandør
     - combobox "Leverandør":
       - option "Alle" [selected]
+      - option "Ai2 (Allen Institute for AI)"
       - option "Anthropic (Claude)"
+      - option "Arcee AI"
+      - option "Black Forest Labs"
+      - option "Cohere (Toronto, Canada)"
+      - option "Deep Cogito"
       - option "DeepSeek (DeepSeek-AI / Hangzhou DeepSeek)"
       - option "Google (Gemini API / Google AI for Developers; also Vertex AI / Gemini Enterprise Agent Platform)"
       - option "Zhipu AI (智谱 / Z.ai) — BigModel open platform"
+      - option "IBM — Granite"
+      - option "Jina AI (Berlin, Germany; part of Elastic)"
+      - option "Liquid AI"
+      - option "Meta (Llama open-weight models)"
+      - option "Microsoft — Phi"
+      - option "Mistral AI (Paris)"
       - option "Moonshot AI (月之暗面 / Kimi)"
+      - option "Nous Research"
+      - option "NVIDIA (Nemotron open models, NIM)"
       - option "OpenAI"
       - option "Alibaba Cloud — Qwen / 通义千问 (Tongyi Qianwen), served via DashScope / Model Studio (Bailian 百炼)"
+      - option "Stability AI"
+      - option "Voyage AI (US, San Francisco; part of MongoDB)"
+      - option "xAI — Grok"
     - text: Relé
     - combobox "Relé":
       - option "Alle" [selected]
@@ -64,7 +80,7 @@
       - option "Alle" [selected]
       - option "Medfølgende"
       - option "Dine"
-    - status: Viser 130 av 130 modeller · 7 av 7 leverandører · 1 av 1 releer
+    - status: Viser 244 av 244 modeller · 23 av 23 leverandører · 1 av 1 releer
   - link "Eksporter oppføringene dine som YAML":
     - /url: /api/kb/export
   - tablist "Deler av kunnskapsbasen":
@@ -72,7 +88,7 @@
     - tab "Leverandører"
     - tab "Releer"
   - tabpanel "Modeller":
-    - heading "Alle modeller 130 modeller" [level=2]
+    - heading "Alle modeller 244 modeller" [level=2]
     - paragraph: "Modellprofilene revisjoner sammenligner med. En modell som er slått av, slås ikke lenger opp: revisjoner av den kjøres uten profil."
     - group:
       - text: Legg til en modell
@@ -100,23 +116,17 @@
       - button "Kontroll"
       - button "Lagre i kunnskapsbasen" [disabled]
     - group:
-      - text: Anthropic (Claude)
-      - code: anthropic
-      - text: 23 modeller
+      - text: Ai2 (Allen Institute for AI)
+      - code: ai2
+      - text: 6 modeller
       - list:
         - listitem:
-          - code: claude-fable-5-1
-          - text: Medfølgende Kontekst 1000000 Maks utdata 128000 Aliaser
-          - code: claude-fable-5-1
+          - code: allenai/Olmo-3-7B-Instruct
+          - text: Medfølgende Kontekst 65536 Maks utdata — Aliaser
+          - code: allenai/olmo-3-7b-instruct
           - text: ","
-          - code: fable
-          - text: ","
-          - code: fable 5.1
-          - text: ","
-          - code: claude fable 5.1
-          - text: ","
-          - code: most powerful
-          - switch "claude-fable-5-1 Aktivert" [checked]
+          - code: Olmo-3-7B-Instruct
+          - switch "allenai/Olmo-3-7B-Instruct Aktivert" [checked]
           - emphasis: Aktivert
         # … more items of the same shape
     # … more items of the same shape

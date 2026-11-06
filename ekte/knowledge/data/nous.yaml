@@ -1,0 +1,176 @@
+# ekte knowledge base — Nous Research
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: nous
+last_verified: '2026-11-05'
+display_name: Nous Research
+openai_compatible: true
+# Nous Portal inference API (OpenAI-compatible). The Portal docs page lists
+# inference.nousresearch.com; other integration docs use inference-api.nousresearch.com.
+# Both are kept as hints until one is confirmed as the canonical host.
+base_url_hints:
+- https://inference-api.nousresearch.com/v1
+- https://inference.nousresearch.com/v1
+default_tool_format: openai_function
+models:
+- id: NousResearch/Hermes-4-70B
+  aliases:
+  - nousresearch/hermes-4-70b
+  - Hermes-4-70B
+  - hermes-4-70b
+  family: hermes-4
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: true
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - nous research
+  - nous
+  - nousresearch
+  - hermes
+  - hermes 4
+  - llama
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - mistral
+  fingerprints: []
+  notes: 'Hermes 4 70B (repo NousResearch/Hermes-4-70B on the NousResearch HF org page, ~71B params, updated 2025-09-02; technical report arXiv 2508.18255 dated 2025-08-25, both via search). Hybrid reasoning (answers directly or emits an explicit reasoning trace; toggled by the reasoning-enabled boolean on OpenRouter). Fine-tune of Meta-Llama-3.1-70B, so llama and meta are deliberately NOT in identity_forbidden. Served on OpenRouter as nousresearch/hermes-4-70b (released 2025-08-26 per the OpenRouter listing) and listed as the default model on the Nous Portal API (Langertha integration page). Context window (listed as 131K by OpenRouter, a host figure) is not used: -1. Tool support is mixed across sources (one OpenRouter endpoint rejects tools), so supports_tools is left true as a Hermes trait; verify before relying on it. Hugging Face repo name NousResearch/Hermes-4-70B was not opened directly. Context 131072 from max_position_embeddings in the vendor''s Hugging Face config.json (NousResearch/Hermes-4-70B), checked 2026-11-05.'
+- id: NousResearch/Hermes-4-405B
+  aliases:
+  - nousresearch/hermes-4-405b
+  - Hermes-4-405B
+  - hermes-4-405b
+  family: hermes-4
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: true
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - nous research
+  - nous
+  - nousresearch
+  - hermes
+  - hermes 4
+  - llama
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - mistral
+  fingerprints: []
+  notes: 'Hermes 4 405B, large reasoning model; fine-tune of Meta-Llama-3.1-405B, so llama is its base brand (in identity_keywords) and llama/meta are NOT forbidden. Hugging Face repo NousResearch/Hermes-4-405B not confirmed in this session (unverified; search budget ran out). Served on OpenRouter as nousresearch/hermes-4-405b (listing seen via a mirror of the OpenRouter page; pricing and context not confirmed) and listed on the Nous Portal API (Langertha integration page). Limits unknown (-1). Hugging Face repo name NousResearch/Hermes-4-405B not opened directly. Context 131072 from max_position_embeddings in the vendor''s Hugging Face config.json (NousResearch/Hermes-4-405B), checked 2026-11-05.'
+- id: NousResearch/Hermes-4.3-36B
+  aliases:
+  - Hermes-4.3-36B
+  - hermes-4.3-36b
+  family: hermes-4.3
+  context_window_tokens: 524288
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: true
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - nous research
+  - nous
+  - nousresearch
+  - hermes
+  - hermes 4.3
+  - bytedance
+  - seed
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - mistral
+  fingerprints: []
+  notes: 'Hermes 4.3 36B, hybrid-mode reasoning model built on the ByteDance Seed 36B base (official card at NousResearch/Hermes-4.3-36B, read via search). Base is Seed, not Llama, so bytedance / seed are NOT forbidden either. Card states it is not deployed by any Hugging Face Inference Provider; it is listed as available on the Nous Portal API (Langertha integration page). Release reported as December 2025 by secondary sources. Context is reported inconsistently (512K vs 524K) by secondary sources, so left unknown (-1). Benchmark numbers from secondary reproductions are not used. Context 524288 from max_position_embeddings in the vendor''s Hugging Face config.json (NousResearch/Hermes-4.3-36B), checked 2026-11-05.'
+- id: NousResearch/Hermes-3-Llama-3.1-405B
+  aliases:
+  - nousresearch/hermes-3-llama-3.1-405b
+  - Hermes-3-Llama-3.1-405B
+  - hermes-3-llama-3.1-405b
+  family: hermes-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  modalities:
+  - text
+  reasoning: false
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - nous research
+  - nous
+  - nousresearch
+  - hermes
+  - hermes 3
+  - llama
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - qwen
+  - alibaba
+  - mistral
+  fingerprints: []
+  notes: 'Hermes 3 (Llama 3.1 base, 405B). Fine-tune of Meta-Llama-3.1-405B, so llama and meta are NOT forbidden. Served on OpenRouter as nousresearch/hermes-3-llama-3.1-405b (OpenRouter release date 2024-08-16 per search results; the 131K window is a host figure and is not used). Non-reasoning chat model. Pricing varies across aggregators and is not recorded here. Context 131072 from max_position_embeddings in the vendor''s Hugging Face config.json (NousResearch/Hermes-3-Llama-3.1-405B), checked 2026-11-05.'
+relay_red_flags:
+- A claimed Hermes model answers as ChatGPT, GPT, Claude, Gemini, Qwen or DeepSeek, or names another lab as its developer instead of Nous Research (Hermes 4 70B/405B and Hermes 3 405B are Llama-based and may say Llama; Hermes 4.3 36B is Seed-based).
+- A claimed Hermes 4 / 4.3 model never produces a reasoning trace where the hybrid reasoning toggle is enabled, or emits its reasoning as literal text inside the answer.
+- A claimed Hermes-4-405B or Hermes-3-Llama-3.1-405B answer comes back far too quickly and too cheaply for a 405B dense model, or with a context-length rejection far below the advertised window.
+- The relay serves the Hermes name under a host-style id that is not one of the Nous / OpenRouter slugs (nousresearch/hermes-4-70b, nousresearch/hermes-4-405b, nousresearch/hermes-3-llama-3.1-405b), or claims Hermes 4 14B, which no source found was served.
+- Tool calls on a claimed Hermes model fail with a schema error that the Nous Portal API would not return, or the relay claims a Nous Portal base URL but routes the request to another vendor's endpoint.
+sources:
+- https://openrouter.ai/nousresearch/hermes-4-70b
+- https://openrouter.ai/models/nousresearch/hermes-4-70b
+- https://openrouter.ai/nousresearch
+- https://runtimewire.com/models/nousresearch/hermes-4-405b
+- https://huggingface.co/NousResearch/Hermes-4.3-36B
+- https://hermes-agent.nousresearch.com/docs/integrations/nous-portal
+- https://metacpan.org/pod/Langertha::Engine::NousResearch
+- https://gitea.varghacsongor.hu/GithubMirror/continue/commit/1ba9a669d6f9c432a3f17e2f6aa045442458df90
+- https://cloudprice.net/models/nousresearch/hermes-3-llama-3.1-405b
+- https://www.getmaxim.ai/bifrost/model-library/compare/openrouter/hermes-3-llama-3.1-405b
+- https://portal.nousresearch.com/api-docs

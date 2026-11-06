@@ -1,0 +1,333 @@
+# ekte knowledge base — Meta (Llama open-weight models)
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: meta
+last_verified: '2026-11-05'
+display_name: Meta (Llama open-weight models)
+openai_compatible: true
+base_url_hints: []
+default_tool_format: openai_function
+models:
+- id: meta-llama/Llama-4-Scout-17B-16E-Instruct
+  aliases: []
+  family: llama-4
+  context_window_tokens: 10485760
+  max_output_tokens: -1
+  knowledge_cutoff: '2024-08'
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - llama
+  - meta
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+  notes: 'Released 2025-04-05. Open weights under the Llama 4 Community License (700M monthly-active-user clause). 17B active parameters, 16 experts, about 109B total (MoE). Native 10M-token context per Meta launch coverage; hosts commonly serve a much shorter window, so a short context is not by itself a swap signal. Text and image input, text output. Max output not verified (-1). Tool and JSON support not checked against a primary source. Hugging Face repo name and specs taken from secondary coverage; huggingface.co was unreachable from this session.'
+- id: meta-llama/Llama-4-Maverick-17B-128E-Instruct
+  aliases:
+  - meta-llama/llama-4-maverick
+  family: llama-4
+  context_window_tokens: 1048576
+  max_output_tokens: -1
+  knowledge_cutoff: '2024-08'
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - llama
+  - meta
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+  notes: 'Released 2025-04-05 under the Llama 4 Community License. 17B active parameters, 128 experts, about 400B total (MoE); a 1M-token context. Text and image input, text output. Knowledge cutoff August 2024 per the Hugging Face model card (a single aggregator gave 2024-08-31, unverified). OpenRouter lists a meta-llama/llama-4-maverick:free variant; it is the same model and is not listed as an alias. Max output not verified (-1).'
+- id: meta-llama/Llama-3.3-70B-Instruct
+  aliases:
+  - meta-llama/llama-3.3-70b-instruct
+  family: llama-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: '2023-12'
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - llama
+  - meta
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+  notes: 'Dense 70B text model, 128K context (131,072 tokens per OpenRouter). Llama Community License. Release date not verified in this session. OpenRouter max-output figures conflict (4K in one aggregator, 128K in another), so max output is left at -1.'
+- id: meta-llama/Meta-Llama-3.1-405B-Instruct
+  aliases:
+  - meta-llama/llama-3.1-405b-instruct
+  family: llama-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: '2023-12'
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - llama
+  - meta
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+  notes: 'Dense 405B text model, 128K context, released with the Llama 3.1 family (2024-07-23 per OpenRouter). Llama 3.1 Community License. A third-party changelog marks it legacy and superseded by Llama 4; that label is unconfirmed, and OpenRouter still lists it with 131K context. Kept as a resold model, not as a decoy.'
+- id: meta-llama/Meta-Llama-3.1-70B-Instruct
+  aliases: []
+  family: llama-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: '2023-12'
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - llama
+  - meta
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+  notes: 'Dense 70B text model, 128K context, released 2024-07-23 with the Llama 3.1 family. Llama 3.1 Community License. Host-style slug not verified in this session, so no alias is listed. HF repo name follows the Meta-Llama-3.1 naming used in the Hugging Face launch post.'
+- id: meta-llama/Meta-Llama-3.1-8B-Instruct
+  aliases:
+  - meta-llama/llama-3.1-8b-instruct
+  family: llama-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: '2023-12'
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - llama
+  - meta
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+  notes: 'Dense 8B text model, 128K context, released 2024-07-23. Llama 3.1 Community License. One aggregator lists a 200K context for this model; it conflicts with Meta and OpenRouter figures (128K), so 128K is recorded. Relays that claim 8B but serve a much larger model will show a mismatch in speed or capability, not in context.'
+- id: meta-llama/Llama-3.2-90B-Vision-Instruct
+  aliases:
+  - meta-llama/llama-3.2-90b-vision-instruct
+  family: llama-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: '2023-12'
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - llama
+  - meta
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+  notes: 'Vision-language model, 90B, 128K context (131,072 tokens per OpenRouter), released 2024-09-25. Llama 3.2 Community License. Served by hosts on OpenRouter. HF repo name confirmed on the Meta model card (huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct): 128k context, December 2023 cutoff, text and image input.'
+- id: meta-llama/Llama-3.2-11B-Vision-Instruct
+  aliases:
+  - meta-llama/llama-3.2-11b-vision-instruct
+  family: llama-3
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: '2023-12'
+  tokenizer: null
+  modalities:
+  - text
+  - vision
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - llama
+  - meta
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+  notes: 'Vision-language model, 11B, 128K context (131,072 tokens per OpenRouter), released 2024-09-25. Llama 3.2 Community License. Served by hosts on OpenRouter. HF repo name confirmed on the Meta model card (huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct): 128k context, December 2023 cutoff, text and image input.'
+fingerprints:
+- id: self-id
+  signal: self-identification (vendor/model family)
+  prompt: What model are you, and which company built you? Answer in one short sentence.
+  native_expected: Genuine Llama models identify as a Llama model built by Meta (Meta AI). They do NOT claim to be GPT/ChatGPT, Claude, Gemini, Qwen, DeepSeek or Mistral.
+  downgrade_signal: A substituted backend self-identifies as OpenAI/ChatGPT, Anthropic/Claude, Google/Gemini, Alibaba/Qwen, DeepSeek, Mistral or Zhipu/GLM instead of Llama/Meta. Generic 'I am an AI assistant' with no Llama or Meta mention is also suspect.
+  pure_code_checkable: true
+  expect_contains_any:
+  - llama
+  - meta
+  expect_not_contains:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - deepseek
+  - mistral
+  - glm
+  - zhipu
+relay_red_flags:
+- Claimed Llama 4 Scout or Maverick that answers with a 128K or smaller context limit, or rejects requests above 128K, while the claim is Llama 4 (Scout 10M, Maverick 1M native). Hosts often cap context, so treat this as a signal to check, not proof.
+- Model self-identifies as GPT/ChatGPT, Claude, Gemini, Qwen, DeepSeek, Mistral or GLM when asked, instead of Llama/Meta.
+- A claimed Llama 3.1 8B that runs at 70B-class quality or throughput, or a claimed Llama 3.1 405B that answers as a small model; check speed and reasoning depth against the claimed size.
+- A claimed meta-llama/Llama-3.2-*-Vision model that accepts images but returns text unrelated to the image, or that refuses image input entirely.
+- Requests to the Meta Llama API base URL (api.llama.com / llama.developer.meta.com) that succeed as a first-party Llama API. The Llama API preview was reported retired on 2026-07-06 (secondary source). Meta's current hosted service is the Muse model family at api.meta.ai, which is not Llama.
+sources:
+- https://llama.developer.meta.com/docs/overview/
+- https://llama.developer.meta.com/docs
+- https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E
+- https://huggingface.co/blog/llama4-release
+- https://openrouter.ai/meta-llama/llama-3.3-70b-instruct
+- https://openrouter.ai/meta-llama/llama-4-maverick
+- https://openrouter.ai/models/meta-llama/llama-3.1-405b-instruct
+- https://openrouter.ai/models/meta-llama/llama-3.2-11b-vision-instruct
+- https://openrouter.ai/meta-llama/llama-3.2-90b-vision-instruct
+- https://huggingface.co/blog/llama31
+- https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct
+- https://huggingface.co/meta-llama/Llama-3.2-90B-Vision-Instruct
+- https://huggingface.co/blog/llama4-release
+- https://huggingface.co/Mozilla/Meta-Llama-3.1-405B-llamafile
+- https://changelogs-info.pages.dev/models/meta/
+- https://aiwiki.ai/wiki/meta_model_api
+- https://www.pulse.bot/ai/news/meta-ai-what-is-muse-spark-and-what-happened-to-llama-97897524-447f-4f54-8722-8efb62094b43/
+- https://www.khaleejtimes.com/business/tech/meta-releases-first-new-ai-model-since-shaking-up-team-2
+- https://www.promptfoo.dev/docs/providers/meta/

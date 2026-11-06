@@ -1,0 +1,194 @@
+# ekte knowledge base — Liquid AI
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: liquid
+last_verified: '2026-11-05'
+display_name: Liquid AI
+openai_compatible: true
+base_url_hints: []
+default_tool_format: openai_function
+models:
+- id: LiquidAI/LFM2.5-24B-A2B
+  aliases:
+  - liquid/lfm-2.5-24b-a2b
+  - lfm-2.5-24b-a2b
+  family: lfm2.5
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - liquid
+  - liquid ai
+  - liquidai
+  - lfm
+  - lfm2
+  - lfm2.5
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'LFM2.5-24B-A2B, a 24B-total MoE with about 2.3-2.45B active parameters (figures differ by source), hybrid architecture: 40 layers (30 gated short convolution, 10 GQA), 64 experts per MoE block, top-4 routing. Continued from LFM2-24B-A2B with an expanded vocabulary, so it is Liquid''s own lineage (not a fine-tune of a third-party base). Context 131,072 tokens per Liquid''s docs (docs.liquid.ai) and the Hugging Face card; OpenRouter lists 128,000 with 8,192 completion tokens (max output not from an official source, so -1). Open weights on Hugging Face. Release date not confirmed (search snippets conflict: February 2026 for the LFM2 line, one snippet dates LFM2.5-24B-A2B to October 2026). Reasoning per OpenRouter''s description (it reasons before answering); the official reasoning toggle was not checked, so treat as unverified.'
+- id: LiquidAI/LFM2-24B-A2B
+  aliases:
+  - liquid/lfm-2-24b-a2b
+  - lfm-2-24b-a2b
+  family: lfm2
+  context_window_tokens: 32768
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - liquid
+  - liquid ai
+  - liquidai
+  - lfm
+  - lfm2
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'DEPRECATED legacy decoy: Liquid''s docs (docs.liquid.ai) mark LFM2-24B-A2B as deprecated, superseded by LFM2.5-24B-A2B. Official context 32,768 tokens (Liquid docs); the OpenRouter listing (liquid/lfm-2-24b-a2b) says 128K, so relays may show either. Release blog dated 2026-02-24 (search snippet). 24B total, about 2-2.3B active per token (sources differ). Hybrid LFM2 architecture, own lineage. A relay still answering this id after deprecation may be serving a different model.'
+- id: LiquidAI/LFM2.5-2.6B
+  aliases:
+  - liquid/lfm-2.5-2.6b
+  - liquid/lfm-2.5-2.6b:free
+  - lfm-2.5-2.6b
+  family: lfm2.5
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - liquid
+  - liquid ai
+  - liquidai
+  - lfm
+  - lfm2
+  - lfm2.5
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'LFM2.5-2.6B, compact reasoning model for on-device use; about 2.6B parameters, pre-trained on about 34T tokens with a mid-training phase extending context to 128K. Context 131,072 tokens per the Hugging Face card (search summary). OpenRouter''s free endpoint (liquid/lfm-2.5-2.6b:free) lists 65,536 tokens, a host-side limit; the model''s native value is the 131,072. Liquid advises against agentic coding or knowledge-heavy use. Open weights. Reasoning flag per model description, unverified in the card. Release date not confirmed.'
+- id: LiquidAI/LFM2.5-1.2B-Thinking
+  aliases:
+  - liquid/lfm-2.5-1.2b-thinking
+  - liquid/lfm-2.5-1.2b-thinking:free
+  - lfm-2.5-1.2b-thinking
+  family: lfm2.5
+  context_window_tokens: 32768
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - liquid
+  - liquid ai
+  - liquidai
+  - lfm
+  - lfm2
+  - lfm2.5
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'LFM2.5-1.2B-Thinking, a small reasoning model for agentic tasks, data extraction and RAG. Context 32,768 tokens per its Hugging Face card (search summary) and OpenRouter. Released around 2026-01-20 per an OpenRouter-based summary (not an official source). Open weights. Max output unverified (-1). The Instruct sibling (liquid/lfm-2.5-1.2b-instruct) is served on OpenRouter but its Hugging Face repo id was not confirmed, so it is left out.'
+relay_red_flags:
+- Asked who built it, the model names a rival lab (OpenAI, Anthropic, Google, Qwen, DeepSeek, Meta) instead of Liquid AI or LFM.
+- A claimed LFM2.5 or LFM2 model replies with context-length errors near 32K when the model is LFM2.5-24B-A2B or LFM2.5-2.6B (131K native), or accepts 131K where a claimed LFM2 or LFM2.5-1.2B-Thinking should cap at 32K.
+- A model billed as LFM2.5-1.2B-Thinking or LFM2.5-2.6B returns no reasoning trace at all, or reasoning in a plain <think> block where the family expects a thinking output.
+- Relays keep answering as LiquidAI/LFM2-24B-A2B after its deprecation; the answers may come from a different model.
+- Claims of tool calls or long agentic coding from LFM2.5-2.6B, which Liquid says it is not built for, may indicate a larger model behind the name.
+sources:
+- https://docs.liquid.ai/lfm/models/lfm25-24b-a2b
+- https://docs.liquid.ai/lfm/models/lfm2-24b-a2b
+- https://docs.liquid.ai/lfm/models/text-models
+- https://docs.liquid.ai/lfm/models/complete-library
+- https://docs.liquid.ai/lfm/help/faqs
+- https://www.liquid.ai/blog/lfm2-5-24b-a2b
+- https://www.liquid.ai/blog/lfm2-24b-a2b
+- https://huggingface.co/LiquidAI/LFM2.5-24B-A2B
+- https://huggingface.co/LiquidAI/LFM2.5-2.6B
+- https://huggingface.co/LiquidAI/LFM2-24B-A2B
+- https://huggingface.co/LiquidAI/LFM2.5-1.2B-Thinking
+- https://arxiv.org/html/2511.23404v1
+- https://openrouter.ai/liquid
+- https://openrouter.ai/liquid/lfm-2.5-24b-a2b
+- https://openrouter.ai/liquid/lfm-2-24b-a2b
+- https://openrouter.ai/liquid/lfm-2.5-2.6b:free
+- https://openrouter.ai/liquid/lfm-2.5-1.2b-thinking

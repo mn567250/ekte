@@ -206,6 +206,86 @@ models:
   - meta
   - mistral
   notes: Released ~2026-08-26. Fast/cheap Qwen3.8 tier, 1M context (~991,808 input), 131,072 max output, thinking-capable, structured output. ~$0.15/$0.47 per MTok. qwen3.8-omni-flash is the omni-modal sibling at the same price.
+- id: qwen3.8-27b
+  aliases:
+  - Qwen/Qwen3.8-27B
+  - qwen/qwen3.8-27b
+  family: qwen3.8
+  context_window_tokens: 262144
+  max_output_tokens: -1
+  knowledge_cutoff: ~2025-2026 (undisclosed)
+  tokenizer: qwen (tiktoken-based BPE)
+  modalities:
+  - text
+  - vision
+  - image
+  - video
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - qwen
+  - tongyi
+  - 通义千问
+  - 通义
+  - alibaba
+  - 阿里云
+  - 阿里巴巴
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - llama
+  - meta
+  - mistral
+  notes: 'Open-weight dense 27B vision-language model, published 2026-08-05 as Qwen/Qwen3.8-27B (Apache-2.0). Hugging Face card: 64 layers, context 262,144 natively and extensible up to 1,000,000 tokens (config.json max_position_embeddings 262144); thinking on by default, can be disabled per request, depth via reasoning_effort. Hosts serve it (OpenRouter qwen/qwen3.8-27b, about 1M context with YaRN); the hosted Qwen Cloud version (1M by default) was announced as coming soon, so a DashScope id is not confirmed. Context here is the native 262,144: a relay serving more is not at fault. Max output unverified (-1). Checked 2026-11-05.'
+- id: Qwen/Qwen3.8-Flash-Next
+  aliases:
+  - qwen3.8-flash-next
+  family: qwen3.8
+  context_window_tokens: 262144
+  max_output_tokens: -1
+  knowledge_cutoff: ~2025-2026 (undisclosed)
+  tokenizer: qwen (tiktoken-based BPE)
+  modalities:
+  - text
+  - vision
+  - image
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: true
+  supports_json_schema: true
+  usage_in_stream: true
+  identity_keywords:
+  - qwen
+  - tongyi
+  - 通义千问
+  - 通义
+  - alibaba
+  - 阿里云
+  - 阿里巴巴
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - deepseek
+  - llama
+  - meta
+  - mistral
+  notes: 'Open-weight preview of the architecture planned for Qwen4, published 2026-08-24 (Qwen Community License 1.0, tagged "other"). Hugging Face card: MoE with 125B parameters, 6B activated (plus 51B n-gram embedding and 4B MTP), Gated DeltaNet with Qwen Sparse Attention, context 262,144 natively and extensible up to 1,000,000 (config.json 262144). The hosted qwen3.8-flash (1M context) is built on it, so a relay may serve these weights under that name; their native context is smaller. Max output unverified (-1). Checked 2026-11-05.'
 - id: qwen3.7-plus
   aliases: []
   family: qwen3.7

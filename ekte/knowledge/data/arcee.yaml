@@ -1,0 +1,158 @@
+# ekte knowledge base — Arcee AI
+# Auto-generated from web-verified research (2026-11-05). Edit freely.
+provider: arcee
+last_verified: '2026-11-05'
+display_name: Arcee AI
+openai_compatible: true
+base_url_hints:
+- https://api.arcee.ai
+default_tool_format: openai_function
+models:
+- id: trinity-large-thinking
+  aliases:
+  - arcee-ai/trinity-large-thinking
+  - arcee-ai/Trinity-Large-Thinking
+  family: trinity-large
+  context_window_tokens: -1
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: true
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - arcee
+  - arcee ai
+  - trinity
+  - trinity-large
+  - trinity-large-thinking
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Flagship of the Trinity family, released 2026-04-01 (OpenRouter listing; Hugging Face card arcee-ai/Trinity-Large-Thinking). Sparse MoE, 398B total parameters with about 13B active per token, Apache-2.0 weights (per a secondary listing). Context is UNVERIFIED (-1): the OpenRouter listing says 262,144 tokens with 80,000 max output, but Arcee''s docs say the model was trained at 256K and hosted at 128k, and a second docs page gives a conflicting pretraining length; one aggregator says 512K. Max output unknown (-1). Reasoning model (thinking before answering) with tool calling. Arcee describes it as post-trained for multi-turn tool use and long agent runs. Its first-party API name is trinity-large-thinking (Arcee docs, via search snippet). A free promotional OpenRouter tier ran through 2026-05-23; current price on OpenRouter about $0.25 in / $0.80 out per MTok per a snippet. Knowledge cutoff not published (null).'
+- id: trinity-large-preview
+  aliases:
+  - arcee-ai/trinity-large-preview
+  - arcee-ai/Trinity-Large-Preview
+  - arcee-ai/trinity-large-preview:free
+  family: trinity-large
+  context_window_tokens: 131000
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - arcee
+  - arcee ai
+  - trinity
+  - trinity-large
+  - trinity-large-preview
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Trinity Large Preview, 400B sparse MoE with 13B active (4 of 256 experts), released around late January 2026 (OpenRouter announcement; exact date not verified). OpenRouter lists 131,000 tokens of context; Arcee states the native window is 512K but that the preview API serves 128K with 8-bit quantization, so a relay may legitimately show 128K. Max output not published (-1). A search snippet suggests both a free and a paid OpenRouter endpoint exist; not confirmed on the live page. Non-thinking preview; the thinking variant above supersedes it. Deprecation date not found.'
+- id: trinity-mini
+  aliases:
+  - arcee-ai/trinity-mini
+  - arcee-ai/Trinity-Mini
+  - arcee-ai/trinity-mini:free
+  family: trinity-mini
+  context_window_tokens: 131072
+  max_output_tokens: -1
+  knowledge_cutoff: null
+  tokenizer: null
+  modalities:
+  - text
+  reasoning: false
+  tool_format: openai_function
+  supports_tools: true
+  supports_json_mode: false
+  supports_json_schema: false
+  usage_in_stream: true
+  identity_keywords:
+  - arcee
+  - arcee ai
+  - trinity
+  - trinity-mini
+  identity_forbidden:
+  - gpt
+  - openai
+  - chatgpt
+  - claude
+  - anthropic
+  - gemini
+  - google
+  - qwen
+  - alibaba
+  - llama
+  - meta
+  - deepseek
+  - mistral
+  fingerprints: []
+  notes: 'Trinity Mini, 26B total with about 3B active (3.5B in Arcee docs, a discrepancy between sources), 128 experts with 8 active plus 1 shared; release date not verified (an aggregator lists a dated id arcee-ai/trinity-mini-20251201, which suggests 2025-12-01). Hugging Face card arcee-ai/Trinity-Mini lists 128K context and OpenMDW-1.1 licence; an Arcee docs page says Apache 2.0 (licences conflict across cards). Context 131,072 per OpenRouter and aggregator listings. The first-party API id is not confirmed: trinity-mini is the most common chat-completions id on hosts, and arcee-ai/trinity-mini is OpenRouter style; verify against api.arcee.ai model list. Reasoning flag left false: not verified.'
+relay_red_flags:
+- Asked who made it, the model names a rival lab (OpenAI/GPT, Anthropic/Claude, Google/Gemini, Qwen, DeepSeek, Llama) instead of Arcee AI or Trinity.
+- A model billed as trinity-large-thinking shows a context-length error well below the 128K Arcee's docs say it is hosted at, or a max-output cap far below what the hosting listings advertise.
+- trinity-large-thinking answers without reasoning when reasoning is requested, or no reasoning channel appears for the thinking model.
+- Trinity-Mini or Trinity-Large-Preview answers with a 512K-class window or a context of more than 131K; the preview API is served at 128K, so a value above that suggests a different model.
+- Requests for Virtuoso, Maestro, Blitz or Coder-branded ids (retired fine-tunes) still answering as Trinity models, pointing to a relay that swaps names.
+sources:
+- https://openrouter.ai/arcee-ai
+- https://openrouter.ai/arcee-ai/trinity-large-thinking
+- https://openrouter.ai/arcee-ai/trinity-large-preview:free
+- https://openrouter.ai/arcee-ai/trinity-mini
+- https://docs.arcee.ai/get-started/arcee-models-overview
+- https://docs.arcee.ai/language-models/trinity-large-400b
+- https://docs.arcee.ai/language-models/trinity-large-thinking
+- https://docs.arcee.ai/language-models/trinity-large-preview
+- https://docs.arcee.ai/arcee-language-models/arcee-model-overview
+- https://arxiv.org/pdf/2602.17004
+- https://docs.arcee.ai/arcee-language-models/trinity-mini-26b
+- https://docs.arcee.ai/arcee-conductor/arcee-small-language-models
+- https://docs.arcee.ai/get-started/integration-list/openrouter
+- https://www.arcee.ai/blog/trinity-large
+- https://www.arcee.ai/trinity
+- https://huggingface.co/arcee-ai/Trinity-Mini
+- https://huggingface.co/arcee-ai/Trinity-Nano-Preview
+- https://huggingface.co/arcee-ai/Trinity-Large-Preview
+- https://huggingface.co/papers/2602.17004
+- https://arxiv.org/abs/2602.17004
+- https://venturebeat.com/technology/arcee-aims-to-reboot-u-s-open-source-ai-with-new-trinity-models-released
+- https://venturebeat.com/technology/arcees-new-open-source-trinity-large-thinking-is-the-rare-powerful-u-s-made
+- https://pricepertoken.com/pricing-page/provider/arcee-ai
