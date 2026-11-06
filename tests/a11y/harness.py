@@ -123,6 +123,30 @@ def browser() -> Iterator[Browser]:
         b.close()
 
 
+# The report page shows when the conformance report was generated, formatted
+# with Intl. The wording differs between ICU versions (Chromium builds: "4 de
+# octubre de 2026, 19:42" vs "… a las 19:42"), so the date is replaced by a
+# placeholder, formatted here exactly as the page formats it. Used by the
+# snapshots (test_flows.py) and by the LLM review (llm_review.py), so that
+# neither changes when only the report was regenerated.
+MASK_REPORT_DATE_JS = """
+async () => {
+  let rep;
+  try { rep = await (await fetch('/static/bitv-report.json')).json(); } catch (e) { return 0; }
+  if (!rep || !rep.generated_at || !window.EKTE_LANG) return 0;
+  const d = new Date(rep.generated_at);
+  const forms = new Set();
+  try { forms.add(d.toLocaleString(EKTE_LANG.locale(), { dateStyle: 'long', timeStyle: 'short' })); } catch (e) {}
+  forms.add(d.toLocaleString());
+  let n = 0;
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let t = walk.nextNode(); t; t = walk.nextNode())
+    for (const f of forms) if (f && t.nodeValue.includes(f)) { t.nodeValue = t.nodeValue.split(f).join('<report date>'); n++; }
+  return n;
+}
+"""
+
+
 class Opener:
     """Opens v2 pages in a fresh browser context with language/theme preset."""
 

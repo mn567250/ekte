@@ -30,7 +30,10 @@ ekte has three eras:
     page.
   - `--from-answers DIR [--update-report]` builds the same report as an API
     run and can apply it to the conformance report.
-  - Exporting again keeps the answers of unchanged requests.
+  - Exporting again keeps the answers of unchanged requests. The collected
+    data does not depend on the time of the run: the seeded monitor is pinned
+    at a fixed time and the report date is masked, as in the snapshots
+    ([#112](https://github.com/mn567250/ekte/issues/112)).
 
   Developer tooling only.
 - **Every raw request and response of a run is kept as evidence.** A run saved
