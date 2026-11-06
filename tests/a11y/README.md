@@ -216,9 +216,10 @@ answer is an `error` entry and makes the review `partial`, which changes
 nothing in the conformance report. After a fix, export again into the same
 directory: every request whose text is unchanged keeps its answer, a changed
 one has its old answer moved to `answers/<name>.json.stale`, and the command
-lists the requests to answer. The monitors page shows when its seeded monitor
-was pinned, and the accessibility page the date of the report it renders, so
-those two pages are listed again on every export.
+lists the requests to answer. The collected data does not depend on the time
+of the run: the seeded monitor is pinned at the suite's fixed time and the
+conformance report's date is masked as `<report date>`, as in the snapshots,
+so only a real change of a page's texts asks for a new answer.
 
 Notes:
 

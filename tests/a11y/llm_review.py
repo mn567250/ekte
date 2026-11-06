@@ -1441,13 +1441,14 @@ def _app() -> Iterator[str]:
     """Start the app like tests/a11y/harness.py's base_url fixture does."""
     import uvicorn
 
+    from tests.a11y.ekte_proc import FIXED_TS
     from tests.a11y.harness import REPORT_FIXTURE, _free_port
 
     with tempfile.TemporaryDirectory(prefix="ekte-llm-review-") as data:
         old = os.environ.get("EKTE_DATA_DIR")
         os.environ["EKTE_DATA_DIR"] = data
         try:
-            from ekte.web import history
+            from ekte.web import history, watches
             from ekte.web.server import create_app
 
             history.init()
@@ -1465,7 +1466,13 @@ def _app() -> Iterator[str]:
             else:
                 raise RuntimeError("ekte web server did not start")
             with httpx.Client(base_url=url, headers={"Origin": url}, timeout=10) as c:
-                c.post(f"/api/watches/from-history/{rid}", json={})
+                wid = c.post(f"/api/watches/from-history/{rid}", json={}).json()["id"]
+            # pinned at the suite's fixed time (tests/a11y/ekte_proc.py), not now: the
+            # monitors page shows it, and the request must not change from run to run
+            with watches._connect() as conn:
+                conn.execute(
+                    "UPDATE watches SET created_ts = ?, kb_pinned_ts = ? WHERE id = ?", (FIXED_TS, FIXED_TS, wid)
+                )
             try:
                 yield url
             finally:
@@ -1539,7 +1546,7 @@ def collect(pages: dict[str, str], langs: list[str], log: Callable[[str], None] 
     with tabs are extracted once per tab panel and merged."""
     from playwright.sync_api import sync_playwright
 
-    from tests.a11y.harness import Opener, settle, show_tab, tab_states
+    from tests.a11y.harness import MASK_REPORT_DATE_JS, Opener, settle, show_tab, tab_states
 
     out: dict[str, dict[str, Any]] = {}
     with _app() as base_url, sync_playwright() as pw:
@@ -1561,6 +1568,9 @@ def collect(pages: dict[str, str], langs: list[str], log: Callable[[str], None] 
                                 show_tab(page, tab)
                                 settle(page)
                             skipped = max(skipped, _expand_safe(page, settle))
+                            # the conformance report's date, as the snapshots mask it: a regenerated
+                            # report does not change the request (see export_requests)
+                            page.evaluate(MASK_REPORT_DATE_JS)
                             parts.append(_extract(page))
                             before = {json.dumps(m, sort_keys=True) for m in page.evaluate(MESSAGES_JS)}
                             for i in range(int(page.evaluate(FORMS_JS))):
