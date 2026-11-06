@@ -167,6 +167,14 @@ ekte has three eras:
 
 ### Fixed
 
+- **A monitor no longer runs twice in a row.**
+  ([#108](https://github.com/mn567250/ekte/issues/108))
+  - **Cause:** the scheduler reads the due monitors in a background thread.
+    When a run finished while that read was in flight, the scheduler started
+    the monitor again from the stale row, so the same relay was audited twice
+    and a webhook alert could be sent twice.
+  - **Fix:** the scheduler now skips a row that was read before that
+    monitor's last run ended.
 - **Texts flagged by the LLM accessibility review** ([#106](https://github.com/mn567250/ekte/issues/106)).
   - The two pencil buttons on a monitor card are now named "Change check
     interval" and "Edit webhooks" in every language. In French and Italian
