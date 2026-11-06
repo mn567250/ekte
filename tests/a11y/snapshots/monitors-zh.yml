@@ -49,7 +49,7 @@
     - text: 不保存密钥
     - radio "加密保存在本机"
     - text: 加密保存在本机
-    - paragraph: API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。
+    - paragraph: API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。
   - region "筛选":
     - button "筛选" [expanded]
     - text: 搜索
@@ -117,7 +117,7 @@
       - term: Webhook
       - definition:
         - text: 无 Webhook
-        - button "编辑"
+        - button "编辑 Webhook"
       - term: 告警语言
       - definition:
         - combobox "告警语言 — gpt-4o":

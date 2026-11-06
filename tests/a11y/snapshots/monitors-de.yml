@@ -117,7 +117,7 @@
       - term: Webhooks
       - definition:
         - text: Keine Webhooks
-        - button "Bearbeiten"
+        - button "Webhooks bearbeiten"
       - term: Sprache der Warnungen
       - definition:
         - combobox "Sprache der Warnungen — gpt-4o":

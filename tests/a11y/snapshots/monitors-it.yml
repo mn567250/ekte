@@ -117,7 +117,7 @@
       - term: Webhook
       - definition:
         - text: Nessun webhook
-        - button "Modifica"
+        - button "Modifica webhook"
       - term: Lingua degli avvisi
       - definition:
         - combobox "Lingua degli avvisi — gpt-4o":
