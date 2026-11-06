@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-06T13:00:39+00:00",
+ "generated_at": "2026-11-06T14:01:07+00:00",
  "model": "claude-opus-5-5",
  "advisory": true,
  "note": "LLM review of the texts. The conformance report (python -m tests.a11y.conformance) counts it as the manual part of the steps it covers and names the model.",
@@ -22635,7 +22635,7 @@
    "page": "kb",
    "path": "/kb",
    "lang": "de",
-   "request_chars": 8645,
+   "request_chars": 8644,
    "collection": {
     "states": 3,
     "names": "accessibility-tree"
@@ -22785,7 +22785,7 @@
      },
      {
       "role": "button",
-      "name": "Prüfung",
+      "name": "Prüfen",
       "count": 2
      },
      {
@@ -24255,7 +24255,7 @@
    "page": "kb",
    "path": "/kb",
    "lang": "it",
-   "request_chars": 8638,
+   "request_chars": 8644,
    "collection": {
     "states": 3,
     "names": "accessibility-tree"
@@ -24770,8 +24770,8 @@
      "Una scatola nera: ekte fornisce prove riproducibili di scostamenti, non una prova di frode. Non incolpare un fornitore per una singola esecuzione.",
      "Gli editori dei modelli: URL di base, identità e impronte. Disattivare un provider disattiva anche tutti i suoi modelli.",
      "Uno YAML di provider contiene provider, display_name, base_url_hints e models. Per un provider già esistente vengono aggiunti solo modelli, impronte, URL di base e segnali d'allarme dei relay.",
-     "Endpoint senza modelli propri, ad es. i relay salvati nella pagina Audit. Lì sono proposti nell'elenco dei relay; uno disattivato no.",
-     "Ancora nessun relay. Aggiungine uno qui o salvane uno dall'elenco dei relay nella pagina Audit."
+     "Endpoint senza modelli propri, ad es. i relay salvati nella pagina Verifica. Lì sono proposti nell'elenco dei relay; uno disattivato no.",
+     "Ancora nessun relay. Aggiungine uno qui o salvane uno dall'elenco dei relay nella pagina Verifica."
     ],
     "messages": [
      {
@@ -26415,9 +26415,9 @@
    "page": "kb",
    "path": "/kb",
    "lang": "all",
-   "request_chars": 112608,
+   "request_chars": 112613,
    "status": "reviewed",
-   "findings": 3,
+   "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
     "langs": [
@@ -26786,7 +26786,7 @@
      {
       "kind": "control",
       "en": "Check",
-      "de": "Prüfung",
+      "de": "Prüfen",
       "es": "Comprobación",
       "fr": "Contrôle",
       "it": "Controllo",
@@ -30342,7 +30342,7 @@
       "de": "Endpunkte ohne eigene Modelle, z. B. Relays, die du auf der Prüfseite gespeichert hast. Sie stehen dort in der Relay-Liste; ein ausgeschaltetes Relay nicht.",
       "es": "Endpoints sin modelos propios, p. ej. relays que guardaste en la página de Auditoría. Se ofrecen allí en la lista de relays; uno desactivado no.",
       "fr": "Points de terminaison sans modèles propres, p. ex. les relais enregistrés sur la page Audit. Ils y sont proposés dans la liste des relais ; un relais désactivé ne l'est pas.",
-      "it": "Endpoint senza modelli propri, ad es. i relay salvati nella pagina Audit. Lì sono proposti nell'elenco dei relay; uno disattivato no.",
+      "it": "Endpoint senza modelli propri, ad es. i relay salvati nella pagina Verifica. Lì sono proposti nell'elenco dei relay; uno disattivato no.",
       "nb": "Endepunkter uten egne modeller, f.eks. releer du har lagret på Revisjon-siden. De tilbys i relélisten der; et relé som er slått av, gjør ikke det.",
       "pt": "Endpoints sem modelos próprios, p. ex. relays guardados na página Auditoria. São oferecidos lá na lista de relays; um desativado não.",
       "zh": "没有自有模型的端点，例如你在检测页面保存的中转站。它们会出现在那里的中转站列表中；停用的则不会。"
@@ -30353,7 +30353,7 @@
       "de": "Noch keine Relays. Füge hier eines hinzu oder speichere eines aus der Relay-Liste auf der Prüfseite.",
       "es": "Aún no hay relays. Añade uno aquí o guárdalo desde la lista de relays de la página de Auditoría.",
       "fr": "Pas encore de relais. Ajoutez-en un ici ou enregistrez-en un depuis la liste des relais de la page Audit.",
-      "it": "Ancora nessun relay. Aggiungine uno qui o salvane uno dall'elenco dei relay nella pagina Audit.",
+      "it": "Ancora nessun relay. Aggiungine uno qui o salvane uno dall'elenco dei relay nella pagina Verifica.",
       "nb": "Ingen releer ennå. Legg til ett her, eller lagre ett fra relélisten på Revisjon-siden.",
       "pt": "Ainda não há relays. Adicione um aqui ou guarde um a partir da lista de relays na página Auditoria.",
       "zh": "还没有中转站。在下方添加，或在检测页面的中转站列表中保存。"
@@ -30388,7 +30388,7 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "en",
-   "request_chars": 5674,
+   "request_chars": 5690,
    "collection": {
     "states": 2,
     "names": "accessibility-tree"
@@ -30547,7 +30547,7 @@
      },
      {
       "role": "button",
-      "name": "Edit"
+      "name": "Edit webhooks"
      },
      {
       "role": "select",
@@ -30673,9 +30673,9 @@
      "API keys stay in the memory of ekte serve and are never written to disk; enter them again after each restart. Use env:VAR for monitors that must run unattended.",
      "openai · auto-detected",
      "None Replace",
-     "No webhooks Edit",
-     "openai/gpt-4o pinned Nov 6, 2026, 12:55 PM",
-     "pinned Nov 6, 2026, 12:55 PM",
+     "No webhooks Edit webhooks",
+     "openai/gpt-4o pinned Nov 6, 2026, 1:47 PM",
+     "pinned Nov 6, 2026, 1:47 PM",
      "The configuration comes from the run in History. Set how often it runs, then activate it.",
      "One full run took 1 s, so it runs at most every 5 min.",
      "History never stores the key. Leave it empty for a local or self-hosted model.",
@@ -30699,7 +30699,7 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "de",
-   "request_chars": 6365,
+   "request_chars": 6383,
    "collection": {
     "states": 2,
     "names": "accessibility-tree"
@@ -30858,7 +30858,7 @@
      },
      {
       "role": "button",
-      "name": "Bearbeiten"
+      "name": "Webhooks bearbeiten"
      },
      {
       "role": "select",
@@ -30985,9 +30985,9 @@
      "openai · automatisch erkannt",
      "Nicht festgelegt",
      "Keiner Ersetzen",
-     "Keine Webhooks Bearbeiten",
-     "openai/gpt-4o festgelegt 06.11.2026, 12:55",
-     "festgelegt 06.11.2026, 12:55",
+     "Keine Webhooks Webhooks bearbeiten",
+     "openai/gpt-4o festgelegt 06.11.2026, 13:47",
+     "festgelegt 06.11.2026, 13:47",
      "Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft sie läuft, und aktivieren Sie sie.",
      "Ein vollständiger Lauf dauerte 1 s, daher läuft sie höchstens alle 5 Min..",
      "Der Verlauf speichert den Schlüssel nie. Für lokale oder selbst gehostete Modelle leer lassen.",
@@ -31011,7 +31011,7 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "es",
-   "request_chars": 6236,
+   "request_chars": 6254,
    "collection": {
     "states": 2,
     "names": "accessibility-tree"
@@ -31170,7 +31170,7 @@
      },
      {
       "role": "button",
-      "name": "Editar"
+      "name": "Editar webhooks"
      },
      {
       "role": "select",
@@ -31296,9 +31296,9 @@
      "Las claves API permanecen en la memoria de ekte serve y nunca se escriben en el disco; vuelve a introducirlas tras cada reinicio. Usa env:VAR para monitores que deban funcionar sin supervisión.",
      "openai · detectado automáticamente",
      "Ninguna Reemplazar",
-     "Sin webhooks Editar",
-     "openai/gpt-4o fijado 6 nov 2026, 12:55",
-     "fijado 6 nov 2026, 12:55",
+     "Sin webhooks Editar webhooks",
+     "openai/gpt-4o fijado 6 nov 2026, 13:47",
+     "fijado 6 nov 2026, 13:47",
      "La configuración proviene de la ejecución del Historial. Define cada cuánto se ejecuta y actívalo.",
      "Una ejecución completa tardó 1 s, así que se ejecuta como máximo cada 5 min.",
      "El historial nunca guarda la clave. Déjala vacía para un modelo local o autoalojado.",
@@ -31322,13 +31322,13 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "fr",
-   "request_chars": 6396,
+   "request_chars": 6448,
    "collection": {
     "states": 2,
     "names": "accessibility-tree"
    },
    "status": "reviewed",
-   "findings": 1,
+   "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
     "title": "ekte — surveillances",
@@ -31409,8 +31409,7 @@
      },
      {
       "role": "button",
-      "name": "Modifier",
-      "count": 2
+      "name": "Modifier"
      },
      {
       "role": "radio",
@@ -31479,6 +31478,10 @@
      {
       "role": "select",
       "name": "Seuil d'alerte — gpt-4o"
+     },
+     {
+      "role": "button",
+      "name": "Modifier les webhooks"
      },
      {
       "role": "select",
@@ -31604,9 +31607,9 @@
      "Les clés API restent dans la mémoire de ekte serve et ne sont jamais écrites sur le disque ; saisissez-les à nouveau après chaque redémarrage. Utilisez env:VAR pour les surveillances qui doivent tourner sans intervention.",
      "openai · détecté automatiquement",
      "Aucune Remplacer",
-     "Aucun webhook Modifier",
-     "openai/gpt-4o figé 6 nov. 2026, 12:55",
-     "figé 6 nov. 2026, 12:55",
+     "Aucun webhook Modifier les webhooks",
+     "openai/gpt-4o figé 6 nov. 2026, 13:47",
+     "figé 6 nov. 2026, 13:47",
      "La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la.",
      "Une exécution complète a pris 1 s, elle s’exécute donc au plus toutes les 5 min.",
      "L’historique ne conserve jamais la clé. Laissez vide pour un modèle local ou auto-hébergé.",
@@ -31630,13 +31633,13 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "it",
-   "request_chars": 6214,
+   "request_chars": 6256,
    "collection": {
     "states": 2,
     "names": "accessibility-tree"
    },
    "status": "reviewed",
-   "findings": 1,
+   "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
     "title": "ekte — monitor",
@@ -31717,8 +31720,7 @@
      },
      {
       "role": "button",
-      "name": "Modifica",
-      "count": 2
+      "name": "Modifica"
      },
      {
       "role": "radio",
@@ -31787,6 +31789,10 @@
      {
       "role": "select",
       "name": "Soglia di avviso — gpt-4o"
+     },
+     {
+      "role": "button",
+      "name": "Modifica webhook"
      },
      {
       "role": "select",
@@ -31913,9 +31919,9 @@
      "openai · rilevato automaticamente",
      "Non impostato",
      "Nessuna Sostituisci",
-     "Nessun webhook Modifica",
-     "openai/gpt-4o fissato 6 nov 2026, 12:55",
-     "fissato 6 nov 2026, 12:55",
+     "Nessun webhook Modifica webhook",
+     "openai/gpt-4o fissato 6 nov 2026, 13:47",
+     "fissato 6 nov 2026, 13:47",
      "La configurazione proviene dall’esecuzione nella Cronologia. Imposta ogni quanto viene eseguito, poi attivalo.",
      "Un’esecuzione completa ha richiesto 1 s, quindi viene eseguito al massimo ogni 5 min.",
      "La cronologia non salva mai la chiave. Lasciala vuota per un modello locale o self-hosted.",
@@ -31939,7 +31945,7 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "nb",
-   "request_chars": 5910,
+   "request_chars": 5930,
    "collection": {
     "states": 2,
     "names": "accessibility-tree"
@@ -32098,7 +32104,7 @@
      },
      {
       "role": "button",
-      "name": "Rediger"
+      "name": "Rediger webhooker"
      },
      {
       "role": "select",
@@ -32224,9 +32230,9 @@
      "API-nøkler blir værende i minnet til ekte serve og skrives aldri til disk; oppgi dem igjen etter hver omstart. Bruk env:VAR for overvåkinger som må kjøre uten tilsyn.",
      "openai · oppdaget automatisk",
      "Ingen Bytt ut",
-     "Ingen webhooker Rediger",
-     "openai/gpt-4o festet 6. nov. 2026, 12:55",
-     "festet 6. nov. 2026, 12:55",
+     "Ingen webhooker Rediger webhooker",
+     "openai/gpt-4o festet 6. nov. 2026, 13:47",
+     "festet 6. nov. 2026, 13:47",
      "Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte den skal kjøre, og aktiver den.",
      "Én full kjøring tok 1 s, så den kjører høyst hvert 5. minutt.",
      "Historikken lagrer aldri nøkkelen. La feltet stå tomt for en lokal eller selvdriftet modell.",
@@ -32250,7 +32256,7 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "pt",
-   "request_chars": 6186,
+   "request_chars": 6204,
    "collection": {
     "states": 2,
     "names": "accessibility-tree"
@@ -32409,7 +32415,7 @@
      },
      {
       "role": "button",
-      "name": "Editar"
+      "name": "Editar webhooks"
      },
      {
       "role": "select",
@@ -32536,9 +32542,9 @@
      "openai · detetado automaticamente",
      "Não definido",
      "Nenhuma Substituir",
-     "Sem webhooks Editar",
-     "openai/gpt-4o fixado 06/11/2026, 12:55",
-     "fixado 06/11/2026, 12:55",
+     "Sem webhooks Editar webhooks",
+     "openai/gpt-4o fixado 06/11/2026, 13:47",
+     "fixado 06/11/2026, 13:47",
      "A configuração vem da execução no Histórico. Defina com que frequência é executado e ative-o.",
      "Uma execução completa demorou 1 s, por isso é executada no máximo a cada 5 min.",
      "O histórico nunca guarda a chave. Deixe vazio para um modelo local ou autoalojado.",
@@ -32562,7 +32568,7 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "zh",
-   "request_chars": 4016,
+   "request_chars": 4032,
    "collection": {
     "states": 2,
     "names": "accessibility-tree"
@@ -32654,12 +32660,12 @@
      {
       "role": "radio",
       "name": "不保存密钥",
-      "description": "API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。"
+      "description": "API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。"
      },
      {
       "role": "radio",
       "name": "加密保存在本机",
-      "description": "API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。"
+      "description": "API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。"
      },
      {
       "role": "button",
@@ -32721,7 +32727,7 @@
      },
      {
       "role": "button",
-      "name": "编辑"
+      "name": "编辑 Webhook"
      },
      {
       "role": "select",
@@ -32844,11 +32850,11 @@
     "instructions": [
      "每个监控都会在你本地、按设定的间隔重跑一次你已经跑过的检测。添加方式：在检测历史中打开一次运行，选择设为监控，然后在这里设置间隔并启用。一旦风险越线或较上次恶化，ekte 就向你配置的 Webhook（Slack / 飞书 / 钉钉 / 通用 JSON）推送告警。",
      "API 密钥保存方式",
-     "API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。",
+     "API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。",
      "openai · 自动识别",
-     "无 Webhook 编辑",
-     "openai/gpt-4o 固定于 2026年11月6日 12:55",
-     "固定于 2026年11月6日 12:55",
+     "无 Webhook 编辑 Webhook",
+     "openai/gpt-4o 固定于 2026年11月6日 13:47",
+     "固定于 2026年11月6日 13:47",
      "配置取自检测历史中的那次运行。设置运行间隔后启用即可。",
      "上次完整运行耗时 1 秒，因此最短间隔为每 5 分钟。",
      "检测历史不保存密钥。本地或自托管模型可留空。",
@@ -32872,9 +32878,9 @@
    "page": "monitors",
    "path": "/watches",
    "lang": "all",
-   "request_chars": 25851,
+   "request_chars": 26011,
    "status": "reviewed",
-   "findings": 1,
+   "findings": 0,
    "served_by": "claude-opus-5-5",
    "data": {
     "langs": [
@@ -33253,14 +33259,14 @@
      },
      {
       "kind": "control",
-      "en": "Edit",
-      "de": "Bearbeiten",
-      "es": "Editar",
-      "fr": null,
-      "it": null,
-      "nb": "Rediger",
-      "pt": "Editar",
-      "zh": "编辑"
+      "en": "Edit webhooks",
+      "de": "Webhooks bearbeiten",
+      "es": "Editar webhooks",
+      "fr": "Modifier les webhooks",
+      "it": "Modifica webhook",
+      "nb": "Rediger webhooker",
+      "pt": "Editar webhooks",
+      "zh": "编辑 Webhook"
      },
      {
       "kind": "control",
@@ -33557,7 +33563,7 @@
       "it": "Le chiavi API restano nella memoria di ekte serve e non vengono mai scritte su disco; reinseriscile dopo ogni riavvio. Usa env:VAR per i monitor che devono funzionare senza supervisione.",
       "nb": "API-nøkler blir værende i minnet til ekte serve og skrives aldri til disk; oppgi dem igjen etter hver omstart. Bruk env:VAR for overvåkinger som må kjøre uten tilsyn.",
       "pt": "As chaves de API ficam na memória do ekte serve e nunca são escritas no disco; introduza-as novamente após cada reinício. Use env:VAR para monitores que tenham de funcionar sem supervisão.",
-      "zh": "API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。"
+      "zh": "API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。"
      },
      {
       "kind": "instruction",
@@ -33594,36 +33600,36 @@
      },
      {
       "kind": "instruction",
-      "en": "No webhooks Edit",
-      "de": "Keine Webhooks Bearbeiten",
-      "es": "Sin webhooks Editar",
-      "fr": "Aucun webhook Modifier",
-      "it": "Nessun webhook Modifica",
-      "nb": "Ingen webhooker Rediger",
-      "pt": "Sem webhooks Editar",
-      "zh": "无 Webhook 编辑"
+      "en": "No webhooks Edit webhooks",
+      "de": "Keine Webhooks Webhooks bearbeiten",
+      "es": "Sin webhooks Editar webhooks",
+      "fr": "Aucun webhook Modifier les webhooks",
+      "it": "Nessun webhook Modifica webhook",
+      "nb": "Ingen webhooker Rediger webhooker",
+      "pt": "Sem webhooks Editar webhooks",
+      "zh": "无 Webhook 编辑 Webhook"
      },
      {
       "kind": "instruction",
-      "en": "openai/gpt-4o pinned Nov 6, 2026, 12:55 PM",
-      "de": "openai/gpt-4o festgelegt 06.11.2026, 12:55",
-      "es": "openai/gpt-4o fijado 6 nov 2026, 12:55",
-      "fr": "openai/gpt-4o figé 6 nov. 2026, 12:55",
-      "it": "openai/gpt-4o fissato 6 nov 2026, 12:55",
-      "nb": "openai/gpt-4o festet 6. nov. 2026, 12:55",
-      "pt": "openai/gpt-4o fixado 06/11/2026, 12:55",
-      "zh": "openai/gpt-4o 固定于 2026年11月6日 12:55"
+      "en": "openai/gpt-4o pinned Nov 6, 2026, 1:47 PM",
+      "de": "openai/gpt-4o festgelegt 06.11.2026, 13:47",
+      "es": "openai/gpt-4o fijado 6 nov 2026, 13:47",
+      "fr": "openai/gpt-4o figé 6 nov. 2026, 13:47",
+      "it": "openai/gpt-4o fissato 6 nov 2026, 13:47",
+      "nb": "openai/gpt-4o festet 6. nov. 2026, 13:47",
+      "pt": "openai/gpt-4o fixado 06/11/2026, 13:47",
+      "zh": "openai/gpt-4o 固定于 2026年11月6日 13:47"
      },
      {
       "kind": "instruction",
-      "en": "pinned Nov 6, 2026, 12:55 PM",
-      "de": "festgelegt 06.11.2026, 12:55",
-      "es": "fijado 6 nov 2026, 12:55",
-      "fr": "figé 6 nov. 2026, 12:55",
-      "it": "fissato 6 nov 2026, 12:55",
-      "nb": "festet 6. nov. 2026, 12:55",
-      "pt": "fixado 06/11/2026, 12:55",
-      "zh": "固定于 2026年11月6日 12:55"
+      "en": "pinned Nov 6, 2026, 1:47 PM",
+      "de": "festgelegt 06.11.2026, 13:47",
+      "es": "fijado 6 nov 2026, 13:47",
+      "fr": "figé 6 nov. 2026, 13:47",
+      "it": "fissato 6 nov 2026, 13:47",
+      "nb": "festet 6. nov. 2026, 13:47",
+      "pt": "fixado 06/11/2026, 13:47",
+      "zh": "固定于 2026年11月6日 13:47"
      },
      {
       "kind": "instruction",
@@ -33754,23 +33760,8 @@
    "title": "Headings and labels describe topic or purpose",
    "reviewed": 48,
    "planned": 48,
-   "verdict": "issues",
-   "findings": [
-    {
-     "page": "monitors",
-     "lang": "fr",
-     "element": "button \"Modifier\"",
-     "problem": "Two buttons share the name \"Modifier\" (count 2) although they act on different settings (the English page distinguishes them as \"Change\" and \"Edit\", the latter for the webhooks), and neither name nor description tells them apart.",
-     "suggestion": "Give each button a distinct name, e.g. \"Modifier les webhooks\" for the webhook button and a name stating the setting for the other, e.g. \"Modifier le stockage des clés\" (Edit webhooks / Change key storage), or add an aria-describedby pointing to the setting each one changes."
-    },
-    {
-     "page": "monitors",
-     "lang": "it",
-     "element": "button \"Modifica\"",
-     "problem": "Two buttons share the name \"Modifica\" (count 2) although they act on different settings (the English page distinguishes them as \"Change\" and \"Edit\", the latter for the webhooks), and neither name nor description tells them apart.",
-     "suggestion": "Give each button a distinct name, e.g. \"Modifica webhook\" for the webhook button and a name stating the setting for the other, e.g. \"Cambia archiviazione chiavi\" (Edit webhooks / Change key storage), or add an aria-describedby pointing to the setting each one changes."
-    }
-   ]
+   "verdict": "ok",
+   "findings": []
   },
   "9.3.3.2": {
    "title": "Labels or instructions are sufficient",
@@ -33790,37 +33781,8 @@
    "title": "Translation changes or loses meaning between UI languages",
    "reviewed": 6,
    "planned": 6,
-   "verdict": "issues",
-   "findings": [
-    {
-     "page": "kb",
-     "lang": "de",
-     "element": "control \"Prüfung\"",
-     "problem": "The English button \"Check\" (validate the pasted YAML) is translated as \"Prüfung\", which is the German term this UI uses for \"Audit\" (navigation link \"Prüfung\", \"Jede Prüfung vergleicht ein Relay\"), so the button reads as starting an audit instead of checking the YAML.",
-     "suggestion": "Prüfen (Check), matching the step heading \"Prüfen und speichern\"."
-    },
-    {
-     "page": "kb",
-     "lang": "it",
-     "element": "instruction \"Ancora nessun relay. Aggiungine uno qui o salvane uno dall'elenco dei relay nella pagina Audit.\"",
-     "problem": "The instruction names the \"Audit\" page, but the Italian navigation link for that page is \"Verifica\", so the user is sent to a page name that does not exist in this language.",
-     "suggestion": "Ancora nessun relay. Aggiungine uno qui o salvane uno dall'elenco dei relay nella pagina Verifica. (No relays yet. Add one here or save one from the relay list on the Verifica page.)"
-    },
-    {
-     "page": "kb",
-     "lang": "it",
-     "element": "instruction \"Endpoint senza modelli propri, ad es. i relay salvati nella pagina Audit. Lì sono proposti nell'elenco dei relay; uno disattivato no.\"",
-     "problem": "The instruction refers to the \"Audit\" page, but in Italian that page is named \"Verifica\" in the navigation, so the reference points to a page name the user cannot find.",
-     "suggestion": "Endpoint senza modelli propri, ad es. i relay salvati nella pagina Verifica. Lì sono proposti nell'elenco dei relay; uno disattivato no. (Endpoints without models of their own, e.g. relays saved on the Verifica page. They are offered in the relay list there; a switched-off one is not.)"
-    },
-    {
-     "page": "monitors",
-     "lang": "zh",
-     "element": "instruction \"API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。\"",
-     "problem": "The protocol syntax env:VAR, which must stay untranslated, was changed to \"env:变量名\", so the format example differs from English and from the field placeholder \"env:EKTE_API_KEY\".",
-     "suggestion": "需要无人值守运行的监控可使用 env:VAR（例如 env:EKTE_API_KEY）。 (Monitors that must run unattended can use env:VAR, e.g. env:EKTE_API_KEY.)"
-    }
-   ]
+   "verdict": "ok",
+   "findings": []
   }
  }
 }

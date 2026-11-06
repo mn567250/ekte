@@ -355,7 +355,7 @@
   function checkKey(raw) {
     return String(raw == null ? "" : raw).trim()
       ? null
-      : function () { return T("请填写 API 密钥（或 env:变量名）。", "Enter the API key (or env:VAR)."); };
+      : function () { return T("请填写 API 密钥（或 env:VAR）。", "Enter the API key (or env:VAR)."); };
   }
   // An embedding monitor's claimed vector length: 0 (or empty) takes it from the knowledge base.
   function dimsOf(raw) {
@@ -470,7 +470,7 @@
   function intervalCell(w, s) {
     if (needsInterval(w)) return esc(T("未设置", "Not set"));
     if (s.edit === "interval") return '<form class="edit" data-id="' + w.id + '" novalidate>' + intervalInput(w, s, true) + saveCancel("interval", w.id) + "</form>";
-    return esc(fmtEvery(w.interval_sec)) + linkBtn("edit-interval", w.id, T("修改", "Change"));
+    return esc(fmtEvery(w.interval_sec)) + linkBtn("edit-interval", w.id, T("修改检测间隔", "Change check interval"));
   }
   function keyCell(w, s) {
     if (s.edit === "key") return '<form class="edit" data-id="' + w.id + '" novalidate>' + keyInput(w, s, true) + saveCancel("key", w.id) + "</form>";
@@ -502,7 +502,7 @@
         ' aria-label="' + esc(T("Webhook 地址（每行一个）", "Webhook URLs (one per line)")) + '" aria-describedby="hke-' + w.id + '"' + invalid(s.errs.hooks) + ">" +
         esc(v) + "</textarea>" + err("hke-" + w.id, s.errs.hooks) + saveCancel("hooks", w.id) + "</form>";
     }
-    return esc(hooksText((w.webhooks || []).length)) + linkBtn("edit-hooks", w.id, T("编辑", "Edit"));
+    return esc(hooksText((w.webhooks || []).length)) + linkBtn("edit-hooks", w.id, T("编辑 Webhook", "Edit webhooks"));
   }
   // The profile pinned when the monitor was created: every run audits against
   // this fixed snapshot until the user re-pins it.
@@ -1343,7 +1343,7 @@
     });
     // the hint explains the option that is checked (in effect, or about to be)
     $("ks-hint").textContent = !mode ? "" : mode === "memory"
-      ? T("API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:变量名。",
+      ? T("API 密钥只保存在 ekte serve 的内存中，从不写入磁盘；每次重启后需重新输入。需要无人值守运行的监控可使用 env:VAR。",
         "API keys stay in the memory of ekte serve and are never written to disk; enter them again after each restart. Use env:VAR for monitors that must run unattended.")
       : T("API 密钥加密保存在本机 ~/.ekte/watches.db 中；用于解密的主密钥从不写入磁盘，每次重启后需输入。",
         "API keys are stored encrypted in ~/.ekte/watches.db on this machine; the master key that decrypts them is never written to disk — enter it after each restart.");
