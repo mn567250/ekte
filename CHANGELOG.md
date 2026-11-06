@@ -22,6 +22,17 @@ ekte has three eras:
 
 ### Added
 
+- **The accessibility LLM review can be answered without an API**
+  ([#109](https://github.com/mn567250/ekte/issues/109)).
+  - `python -m tests.a11y.llm_review --export-requests DIR` writes the
+    rubric, every request and a manifest.
+  - Answers go in `DIR/answers/`, for example from one Claude Code subagent per
+    page.
+  - `--from-answers DIR [--update-report]` builds the same report as an API
+    run and can apply it to the conformance report.
+  - Exporting again keeps the answers of unchanged requests.
+
+  Developer tooling only.
 - **Every raw request and response of a run is kept as evidence.** A run saved
   to history (web UI, monitors, `ekte watch`, `ekte embed`, `ekte rerank`) also
   writes every HTTP request it sent and every response it received to one file,

@@ -27,6 +27,12 @@ collects the page data and builds the requests without calling the API.
 at /accessibility (ekte/web/static/v2/bitv-report.json, see
 tests/a11y/conformance.py), in the same command.
 
+Without an API, the review can be answered elsewhere, e.g. by Claude Code
+subagents: ``--export-requests DIR`` writes the system prompt, every user turn
+and a manifest; once ``DIR/answers/<name>.json`` hold the answers,
+``--from-answers DIR`` builds the same report as an API run (see
+export_requests and review_from_answers, and tests/a11y/README.md).
+
 A report is ALWAYS written to ``--out``, so a broken run can be told apart
 from a run that did not happen. Its top-level ``status`` is one of:
 ``ok`` (every planned request answered), ``partial`` (some requests failed or
@@ -1603,14 +1609,35 @@ def _base_report(model: str, endpoint: Endpoint | None = None) -> dict[str, Any]
     return out
 
 
+def build_jobs(records: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """The requests of a review, in the order they are sent: every page in
+    every language (English first), then one translation comparison per page
+    with more than one language. Each job holds its ``task``, ``page``,
+    ``lang`` ("" for a translation), the ``payload`` sent and the collection
+    ``meta`` recorded with a page request."""
+    jobs: list[dict[str, Any]] = []
+    for pid in sorted(records):
+        for lang in sorted(records[pid], key=lambda c: (c != "en", c)):
+            meta = {k: records[pid][lang][k] for k in _META if records[pid][lang].get(k)}
+            jobs.append(
+                {"task": "page", "page": pid, "lang": lang, "payload": page_payload(records[pid][lang]), "meta": meta}
+            )
+        if len(records[pid]) > 1:
+            jobs.append(
+                {"task": "translation", "page": pid, "lang": "", "payload": translation_view(records[pid]), "meta": {}}
+            )
+    return jobs
+
+
 def review(
-    records: dict[str, dict[str, Any]],
-    client: Client | None,
+    records: dict[str, dict[str, Any]] | None,
+    client: Any | None,
     *,
     model: str | None = None,
     effort: str = "high",
     pages: dict[str, str] | None = None,
     endpoint: Endpoint | None = None,
+    jobs: list[dict[str, Any]] | None = None,
     log: Callable[[str], None] = print,
 ) -> dict[str, Any]:
     """Send every page+language (and one translation comparison per page) to
@@ -1618,19 +1645,18 @@ def review(
     sizes are recorded. Every entry keeps the exact data that was (or would
     have been) sent, so findings can be audited. The endpoint is the
     client's, else ``endpoint``, else the Anthropic API (``model`` overrides
-    its model)."""
+    its model). ``jobs`` (see build_jobs) replaces ``records``, e.g. when the
+    answers come from files (review_from_answers). A client whose
+    ``metered`` is false adds no request count, usage or cost."""
     ep = client.endpoint if client is not None else (endpoint or Endpoint())
     if model:
         ep = Endpoint(ep.base_url, ep.api_key, model, ep.api, ep.source)
     entries: list[dict[str, Any]] = []
     findings: list[dict[str, str]] = []
-    jobs: list[tuple[str, str, str, dict[str, Any]]] = []
-    for pid in sorted(records):
-        for lang in sorted(records[pid], key=lambda c: (c != "en", c)):
-            jobs.append(("page", pid, lang, page_payload(records[pid][lang])))
-        if len(records[pid]) > 1:
-            jobs.append(("translation", pid, "", translation_view(records[pid])))
-    for task, pid, lang, payload in jobs:
+    if jobs is None:
+        jobs = build_jobs(records or {})
+    for job in jobs:
+        task, pid, lang, payload = job["task"], job["page"], job["lang"], job["payload"]
         body = (
             client.request(task, pid, payload, lang=lang, effort=effort)
             if client is not None and ep is client.endpoint
@@ -1643,10 +1669,8 @@ def review(
             "lang": lang or "all",
             "request_chars": len(body["messages"][-1]["content"]),
         }
-        if task == "page":
-            meta = {k: records[pid][lang][k] for k in _META if records[pid][lang].get(k)}
-            if meta:
-                entry["collection"] = meta
+        if task == "page" and job.get("meta"):
+            entry["collection"] = job["meta"]
         if client is None:
             entry["status"] = "dry-run"
         else:
@@ -1663,8 +1687,8 @@ def review(
         entry["data"] = payload
         entries.append(entry)
     report = _base_report(ep.model, ep)
-    report["pages_reviewed"] = sorted(records)
-    report["langs"] = sorted({lg for recs in records.values() for lg in recs}, key=lambda c: (c != "en", c))
+    report["pages_reviewed"] = sorted({j["page"] for j in jobs})
+    report["langs"] = sorted({j["lang"] for j in jobs if j["task"] == "page"}, key=lambda c: (c != "en", c))
     if client is None:
         report["status"] = "dry-run"
     else:
@@ -1678,7 +1702,7 @@ def review(
     ]
     if failures:
         report["failures"] = failures
-    if client is not None:
+    if client is not None and getattr(client, "metered", True):
         report["requests"] = client.requests
         report["usage"] = client.usage
         report["cost_usd_estimate"] = round(client.cost, 4)
@@ -1691,6 +1715,119 @@ def _write(path: str, report: dict[str, Any]) -> None:
         Path(path).write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     except OSError as exc:
         print(f"llm_review: could not write {path}: {exc}")
+
+
+# --------------------------------------------------------------------------- #
+# review without an API: export the requests, answer them elsewhere (e.g. one
+# Claude Code subagent per page), import the answers
+# --------------------------------------------------------------------------- #
+ANSWERED_BY = "Claude Code subagent"
+MANIFEST = "manifest.json"
+RUBRIC_FILE = "rubric.txt"
+
+
+def request_name(task: str, page: str, lang: str = "") -> str:
+    """File stem of one request and its answer: ``<task>-<page>-<lang>``,
+    ``all`` for a translation comparison."""
+    return f"{task}-{page}-{lang or 'all'}"
+
+
+def _jobs_from_manifest(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    jobs = []
+    for e in manifest.get("pages") or []:
+        lang = "" if e.get("lang") in ("", "all", None) else str(e["lang"])
+        jobs.append(
+            {"task": e["task"], "page": e["page"], "lang": lang, "payload": e["data"], "meta": e.get("collection") or {}}
+        )
+    return jobs
+
+
+def export_requests(dry_report: dict[str, Any], out_dir: str | Path) -> dict[str, list[str]]:
+    """Write a dry run's requests for answering without an API.
+
+    ``rubric.txt`` is the system prompt with the JSON schema of the answer,
+    ``requests/<name>.txt`` each user turn exactly as it would be sent, and
+    ``manifest.json`` the dry-run report (the payloads), from which
+    review_from_answers builds the report. An answer goes to
+    ``answers/<name>.json``. Exporting again into the same directory keeps
+    the answer of every request whose text is unchanged; the answer of a
+    changed request is moved aside to ``answers/<name>.json.stale``. Returns
+    the request names by state: ``new``, ``changed``, ``unchanged``,
+    ``removed`` (no longer requested; its request file is deleted)."""
+    out = Path(out_dir)
+    req_dir, ans_dir = out / "requests", out / "answers"
+    req_dir.mkdir(parents=True, exist_ok=True)
+    ans_dir.mkdir(exist_ok=True)
+    (out / RUBRIC_FILE).write_text(OPENAI_SYSTEM, encoding="utf-8")
+    state: dict[str, list[str]] = {"new": [], "changed": [], "unchanged": [], "removed": []}
+    wanted = set()
+    for job in _jobs_from_manifest(dry_report):
+        name = request_name(job["task"], job["page"], job["lang"])
+        wanted.add(name)
+        text = _user_turn(job["task"], job["page"], job["payload"], job["lang"])
+        f = req_dir / f"{name}.txt"
+        old = f.read_text(encoding="utf-8") if f.exists() else None
+        if old == text:
+            state["unchanged"].append(name)
+            continue
+        state["new" if old is None else "changed"].append(name)
+        f.write_text(text, encoding="utf-8")
+        answer = ans_dir / f"{name}.json"
+        if answer.exists():
+            answer.replace(ans_dir / f"{name}.json.stale")
+    for f in sorted(req_dir.glob("*.txt")):
+        if f.stem not in wanted:
+            state["removed"].append(f.stem)
+            f.unlink()
+    (out / MANIFEST).write_text(json.dumps(dry_report, ensure_ascii=False, indent=1), encoding="utf-8")
+    return state
+
+
+class AnswersClient:
+    """Stands in for Client: each request is answered by the file
+    ``answers/<name>.json`` (the JSON object the model would have returned).
+    Unmetered: no usage or cost is reported."""
+
+    metered = False
+
+    def __init__(self, endpoint: Endpoint, answers_dir: str | Path) -> None:
+        self.endpoint = endpoint
+        self.answers_dir = Path(answers_dir)
+        self.requests = 0
+        self._name = ""
+
+    def request(self, task: str, page: str, payload: dict[str, Any], *, lang: str = "", effort: str = "high") -> dict:
+        self._name = request_name(task, page, lang)
+        return make_request(self.endpoint, task, page, payload, lang=lang, effort=effort)
+
+    def send(self, body: dict[str, Any]) -> dict[str, Any]:
+        f = self.answers_dir / f"{self._name}.json"
+        try:
+            text = f.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise ReviewError(f"no answer for {self._name} ({f.name}: {exc.strerror or exc})") from exc
+        self.requests += 1
+        return {"model": self.endpoint.model, "stop_reason": "end_turn", "content": [{"type": "text", "text": text}]}
+
+
+def review_from_answers(
+    export_dir: str | Path,
+    *,
+    model: str = MODEL,
+    answered_by: str = ANSWERED_BY,
+    log: Callable[[str], None] = print,
+) -> dict[str, Any]:
+    """The review report from an export_requests directory whose
+    ``answers/`` were filled in, built like an API run (parse_response,
+    aggregate): a missing or malformed answer is an ``error`` entry and the
+    status ``partial``. ``model`` names the model that answered; the
+    endpoint's ``source`` says the answers came without an API call."""
+    out = Path(export_dir)
+    manifest = json.loads((out / MANIFEST).read_text(encoding="utf-8"))
+    jobs = _jobs_from_manifest(manifest)
+    ep = Endpoint(base_url="", model=model, source=f"{answered_by} (no API call)")
+    pages = {e["page"]: e.get("path", "") for e in manifest.get("pages") or []}
+    return review(None, AnswersClient(ep, out / "answers"), pages=pages, jobs=jobs, log=log)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1718,6 +1855,23 @@ def main(argv: list[str] | None = None) -> int:
         " (a local endpoint costs nothing)",
     )
     ap.add_argument("--dry-run", action="store_true", help="collect and build requests, do not call the API")
+    nx = ap.add_argument_group(
+        "review without an API (e.g. by Claude Code subagents; see tests/a11y/README.md)"
+    ).add_mutually_exclusive_group()
+    nx.add_argument(
+        "--export-requests", metavar="DIR",
+        help="collect the pages, then write DIR/rubric.txt, DIR/requests/<name>.txt and DIR/manifest.json"
+        " instead of calling an API (no key needed; --out is not written). Unchanged requests keep their answers.",
+    )
+    nx.add_argument(
+        "--from-answers", metavar="DIR",
+        help="build the report from DIR/manifest.json and the answers in DIR/answers/<name>.json"
+        " (no browser, no API); --model names the model that answered",
+    )
+    ap.add_argument(
+        "--answered-by", default=ANSWERED_BY, metavar="WHO",
+        help=f"with --from-answers: who answered, recorded as the endpoint source (default: {ANSWERED_BY})",
+    )
     rep = ap.add_argument_group("accessibility report (python -m tests.a11y.conformance)")
     rep.add_argument(
         "--update-report", nargs="?", const="", metavar="REPORT",
@@ -1732,6 +1886,18 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     if args.results and args.update_report is None:
         ap.error("--results needs --update-report")
+    if args.export_requests and args.update_report is not None:
+        ap.error("--export-requests writes no review; apply it with --from-answers DIR --update-report")
+
+    if args.from_answers:
+        try:
+            report = review_from_answers(args.from_answers, model=args.model or MODEL, answered_by=args.answered_by)
+        except (OSError, ValueError, KeyError) as exc:
+            summary = f"{type(exc).__name__}: {exc}"
+            print(f"llm_review: cannot read the answers in {args.from_answers}: {summary}")
+            _write(args.out, {**_base_report(args.model or MODEL), "status": "error", "error": summary[:2000]})
+            return 0
+        return _finish(report, args)
 
     try:
         endpoint = resolve_endpoint(
@@ -1743,7 +1909,7 @@ def main(argv: list[str] | None = None) -> int:
         _write(args.out, {**_base_report(args.model or ""), "status": "error", "error": summary[:2000]})
         return 0
     print(f"llm_review: {endpoint.model} via {endpoint.url} ({endpoint.api}, from {endpoint.source})")
-    if not endpoint.api_key and not endpoint.local and not args.dry_run:
+    if not endpoint.api_key and not endpoint.local and not (args.dry_run or args.export_requests):
         print(
             f"llm_review: no API key for {endpoint.base_url} (--api-key, {DEFAULT_CONFIG} or ANTHROPIC_API_KEY"
             " is not set); skipping the advisory LLM review."
@@ -1769,6 +1935,18 @@ def main(argv: list[str] | None = None) -> int:
     try:
         print(f"llm_review: collecting {len(pages)} page(s) x {len(langs)} language(s)")
         records = collect(pages, langs)
+        if args.export_requests:
+            dry = review(records, None, effort=args.effort, pages=pages, endpoint=endpoint, log=lambda _: None)
+            state = export_requests(dry, args.export_requests)
+            todo = state["new"] + state["changed"]
+            print(
+                f"llm_review: {sum(len(v) for k, v in state.items() if k != 'removed')} request(s) in"
+                f" {args.export_requests}/requests; {len(todo)} to answer, {len(state['unchanged'])} unchanged"
+                f" (their answers are kept), {len(state['removed'])} removed"
+            )
+            for name in todo:
+                print(f"  to answer: {name}")
+            return 0
         if not args.dry_run:
             client = Client(endpoint=endpoint, max_requests=args.max_requests, max_cost=args.max_cost)
         report = review(records, client, effort=args.effort, pages=pages, endpoint=endpoint)
@@ -1788,11 +1966,19 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         if client is not None:
             client.close()
+    return _finish(report, args)
+
+
+def _finish(report: dict[str, Any], args: argparse.Namespace) -> int:
+    """Write the report, print its summary and apply it to the conformance report if asked."""
     _write(args.out, report)
     n = sum(len(s["findings"]) for s in report["steps"].values())
     print(f"llm_review: status {report['status']}; {n} advisory finding(s) written to {args.out}")
     for step, s in report["steps"].items():
         print(f"  {step:12} {s['verdict']:12} {len(s['findings'])}")
+    for f in report.get("failures") or []:
+        print(f"  {f['status']}: {request_name(f['task'], f['page'], '' if f['lang'] == 'all' else f['lang'])}"
+              f" {f.get('error', '')}")
     if args.update_report is not None:
         update_report(report, args.update_report or None, args.results)
     return 0
