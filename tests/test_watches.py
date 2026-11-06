@@ -544,6 +544,52 @@ async def test_due_watches_on_different_relays_run_at_the_same_time(tmp_path, mo
     assert sorted(audits.calls) == ["a", "b"]  # recorded, so not due again
 
 
+async def test_a_run_that_finishes_during_the_due_read_is_not_started_again(tmp_path, monkeypatch):
+    """#108: the scheduler reads the due watches off the loop. A run that ends
+    while that read is in flight has left _running_watches by the time the
+    (stale) row comes back; the watch must not be started a second time."""
+    import asyncio
+    import threading
+
+    from ekte.web import server, watches
+
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    audits = _GatedAudits()
+    monkeypatch.setattr(server, "run_audit", audits)
+    wid = watches.create({"base_url": "https://relay-a.test/v1", "api_key": "sk-x",
+                          "model": "a", "interval_sec": 3600})
+    real_due = watches.due
+    hold = threading.Event()      # the next read holds its (stale) result
+    holding = threading.Event()   # a held read has its result
+    finished = threading.Event()  # the run has ended: let the held read return
+
+    def due(now_ts: float):
+        rows = real_due(now_ts)
+        if hold.is_set():
+            hold.clear()
+            holding.set()
+            finished.wait(5)
+        return rows
+
+    monkeypatch.setattr(watches, "due", due)
+    loop_task = await _scheduler(monkeypatch)
+    try:
+        await _until(lambda: "a" in audits.started)
+        hold.set()
+        await _until(holding.is_set)  # a read is in flight, the row shows "a" as due
+        audits.event("a").set()
+        await _until(lambda: watches.get(wid)["last_report_id"] is not None)
+        await _until(lambda: not server._running_watches and not server._scheduled_watch_tasks)
+        finished.set()  # the stale row reaches the loop now
+        await asyncio.sleep(0.1)  # many more ticks
+    finally:
+        finished.set()
+        for ev in audits.release.values():
+            ev.set()
+        await _stop(loop_task)
+    assert audits.calls == ["a"]
+
+
 async def test_due_watches_on_the_same_relay_run_one_after_another(tmp_path, monkeypatch):
     import asyncio
     import time

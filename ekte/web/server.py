@@ -245,6 +245,15 @@ def _watch_knowledge(row: dict[str, Any], kb: Any = None) -> dict[str, Any]:
 # its asyncio task plus the progress counters fed by run_audit's events.
 _running_watches: dict[int, dict[str, Any]] = {}
 
+# When each watch's latest run finished, as a value of _run_finish_seq (a
+# counter, not a clock, so two events are never "at the same time"). The
+# scheduler reads the due watches off the loop; a run that finishes while that
+# read is in flight leaves _running_watches before the scheduler looks at the
+# (now stale) row, so the scheduler skips a row read before the watch's last
+# finish instead of starting it again. Loop-owned.
+_run_finish_seq = 0
+_watch_finished_at: dict[int, int] = {}
+
 # Intervals (minutes) a monitor can be scheduled at: never more often than one
 # run takes, rounded up to one of these, and at most once every 24 h.
 _INTERVAL_STEPS_MIN = (5, 10, 15, 20, 30, 60, 120, 180, 240, 360, 480, 720, 1440)
@@ -365,6 +374,14 @@ async def _run_one_watch(row: dict[str, Any]) -> None:
     finally:
         job.close(outcome, error)
         _running_watches.pop(wid, None)
+        _note_watch_finished(wid)
+
+
+def _note_watch_finished(wid: int) -> None:
+    """Record that a run of ``wid`` just ended (see _watch_finished_at)."""
+    global _run_finish_seq
+    _run_finish_seq += 1
+    _watch_finished_at[wid] = _run_finish_seq
 
 
 def _monitor_failed_message(exc: BaseException) -> str:
@@ -663,13 +680,21 @@ async def _scheduler_loop() -> None:
         return watches.due(time.time())
 
     while True:
+        read_at = _run_finish_seq
         try:
             # SQLite reads (and the key check): off the loop.
             due = await asyncio.to_thread(due_now)
         except Exception:
             due = []
         for row in due:
+            # A run that finished during the read is recorded in the database
+            # but not in this row: it is not due again yet.
+            if _watch_finished_at.get(int(row["id"]), 0) > read_at:
+                continue
             _start_scheduled_watch(row)
+        # Finishes up to read_at are visible to every later read.
+        for wid in [w for w, seq in _watch_finished_at.items() if seq <= read_at]:
+            del _watch_finished_at[wid]
         await asyncio.sleep(_SCHEDULER_TICK_SEC)
 
 
