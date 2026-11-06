@@ -1076,3 +1076,113 @@ def test_expand_safe_leaves_destructive_disclosures_closed(chromium: Any) -> Non
         assert page.get_attribute(".rdel", "aria-expanded") == "false"
     finally:
         page.close()
+
+
+# --------------------------------------------------------------------------- #
+# #109: review without an API (export the requests, import the answers)
+# --------------------------------------------------------------------------- #
+def _export_records() -> dict[str, dict[str, Any]]:
+    return {
+        "audit": {"en": lr.compact_page(RAW), "de": lr.compact_page(RAW)},
+        "kb": {"en": lr.compact_page(dict(RAW, states=2))},
+    }
+
+
+def _answer_all(out: Any, findings_for: Any = lambda name: []) -> None:
+    for f in (out / "requests").glob("*.txt"):
+        (out / "answers" / f"{f.stem}.json").write_text(json.dumps({"findings": findings_for(f.stem)}), encoding="utf-8")
+
+
+def test_export_writes_the_rubric_and_the_exact_user_turns(tmp_path: Any) -> None:
+    records = _export_records()
+    dry = lr.review(records, None, pages={"audit": "/", "kb": "/kb"}, log=lambda s: None)
+    state = lr.export_requests(dry, tmp_path)
+    names = ["page-audit-en", "page-audit-de", "translation-audit-all", "page-kb-en"]
+    assert state == {"new": names, "changed": [], "unchanged": [], "removed": []}
+    assert (tmp_path / "rubric.txt").read_text(encoding="utf-8") == lr.OPENAI_SYSTEM
+    for job in lr.build_jobs(records):
+        name = lr.request_name(job["task"], job["page"], job["lang"])
+        sent = lr.build_request(job["task"], job["page"], job["payload"], lang=job["lang"])["messages"][0]["content"]
+        assert (tmp_path / "requests" / f"{name}.txt").read_text(encoding="utf-8") == sent
+    assert json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))["status"] == "dry-run"
+
+
+def test_answers_give_the_same_report_as_an_api_run(tmp_path: Any) -> None:
+    records = _export_records()
+    pages = {"audit": "/", "kb": "/kb"}
+    lr.export_requests(lr.review(records, None, pages=pages, log=lambda s: None), tmp_path)
+    _answer_all(tmp_path, lambda name: [F_LINK] if name == "page-audit-en" else [])
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        head = json.loads(json.loads(req.content)["messages"][0]["content"].split("\n")[1])
+        return httpx.Response(200, json=_answer([F_LINK] if (head["page"], head.get("lang")) == ("audit", "en") else []))
+
+    c, _ = _client(handler)
+    api = lr.review(records, c, pages=pages, log=lambda s: None)
+    files = lr.review_from_answers(tmp_path, model="claude-x", log=lambda s: None)
+    assert files["status"] == api["status"] == "ok"
+    assert files["steps"] == api["steps"] and files["steps"]["9.2.4.4"]["verdict"] == "issues"
+    keep = ("task", "page", "path", "lang", "request_chars", "collection", "status", "findings", "data")
+    assert [{k: e.get(k) for k in keep} for e in files["pages"]] == [{k: e.get(k) for k in keep} for e in api["pages"]]
+    assert files["pages_reviewed"] == api["pages_reviewed"] and files["langs"] == api["langs"]
+    assert files["model"] == "claude-x" and files["pages"][0]["served_by"] == "claude-x"
+    assert files["endpoint"] == {"base_url": "", "api": "anthropic", "source": "Claude Code subagent (no API call)"}
+    assert not {"requests", "usage", "cost_usd_estimate", "cost_usd_by_model"} & set(files)
+
+
+def test_a_missing_or_malformed_answer_makes_the_review_partial(tmp_path: Any) -> None:
+    lr.export_requests(lr.review(_export_records(), None, log=lambda s: None), tmp_path)
+    _answer_all(tmp_path)
+    (tmp_path / "answers" / "page-kb-en.json").unlink()
+    (tmp_path / "answers" / "page-audit-de.json").write_text("not json", encoding="utf-8")
+    rep = lr.review_from_answers(tmp_path, log=lambda s: None)
+    assert rep["status"] == "partial"
+    assert {(f["page"], f["lang"]) for f in rep["failures"]} == {("kb", "en"), ("audit", "de")}
+    assert "no answer for page-kb-en" in next(f["error"] for f in rep["failures"] if f["page"] == "kb")
+    assert rep["steps"]["9.1.1.1"]["verdict"] == "partial"
+
+
+def test_a_new_export_keeps_the_answers_of_unchanged_requests(tmp_path: Any) -> None:
+    records = _export_records()
+    lr.export_requests(lr.review(records, None, log=lambda s: None), tmp_path)
+    _answer_all(tmp_path)
+    changed = dict(RAW, headings=[[1, "Knowledge base"]])
+    records["kb"] = {"en": lr.compact_page(changed)}
+    del records["audit"]["de"]  # audit now has one language: no translation request
+    state = lr.export_requests(lr.review(records, None, log=lambda s: None), tmp_path)
+    assert state == {
+        "new": [],
+        "changed": ["page-kb-en"],
+        "unchanged": ["page-audit-en"],
+        "removed": ["page-audit-de", "translation-audit-all"],
+    }
+    answers = tmp_path / "answers"
+    assert (answers / "page-audit-en.json").exists() and not (answers / "page-kb-en.json").exists()
+    assert (answers / "page-kb-en.json.stale").exists()
+    assert sorted(p.stem for p in (tmp_path / "requests").glob("*.txt")) == ["page-audit-en", "page-kb-en"]
+    rep = lr.review_from_answers(tmp_path, log=lambda s: None)
+    assert [(e["page"], e["lang"], e["status"]) for e in rep["pages"]] == [("audit", "en", "reviewed"), ("kb", "en", "error")]
+
+
+def test_main_from_answers_writes_and_applies_the_report(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    lr.export_requests(lr.review(_export_records(), None, log=lambda s: None), tmp_path)
+    _answer_all(tmp_path)
+    applied: list[dict[str, Any]] = []
+    monkeypatch.setattr(lr, "update_report", lambda rep, path=None, results=None: applied.append(rep) or True)
+    out = tmp_path / "review.json"
+    args = ["--from-answers", str(tmp_path), "--out", str(out), "--model", "m", "--answered-by", "a person"]
+    assert lr.main([*args, "--update-report"]) == 0
+    rep = json.loads(out.read_text(encoding="utf-8"))
+    assert rep["status"] == "ok" and rep["model"] == "m" and rep["endpoint"]["source"] == "a person (no API call)"
+    assert applied and applied[0]["status"] == "ok"
+
+
+def test_main_from_answers_without_a_manifest_writes_an_error_report(tmp_path: Any) -> None:
+    out = tmp_path / "review.json"
+    assert lr.main(["--from-answers", str(tmp_path / "missing"), "--out", str(out)]) == 0
+    assert json.loads(out.read_text(encoding="utf-8"))["status"] == "error"
+
+
+def test_export_requests_rejects_update_report() -> None:
+    with pytest.raises(SystemExit):
+        lr.main(["--export-requests", "x", "--update-report"])

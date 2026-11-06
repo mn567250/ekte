@@ -161,6 +161,13 @@ reviews and updates the report in one command, and
 the suite or the review again. Each step keeps its status from the tests
 alone (`status_tests`), so a newer review replaces the older one.
 
+Without an API key, the review can be run by Claude Code subagents:
+`python -m tests.a11y.llm_review --export-requests DIR` writes the rubric and
+every request, the subagents write one JSON answer per request into
+`DIR/answers/`, and `python -m tests.a11y.llm_review --from-answers DIR
+--update-report` builds the review and applies it (see
+[tests/a11y/README.md](../../tests/a11y/README.md)).
+
 CI runs the suite with `EKTE_A11Y_RESULTS`, one results file per shard. The
 `accessibility report` job merges them (`--results` takes several files),
 generates the report even when tests fail and uploads `bitv-report.json` with

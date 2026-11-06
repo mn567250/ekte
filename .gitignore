@@ -38,5 +38,7 @@ tmp/
 .idea/
 .vscode/
 a11y-report*.json
+# Export directory of python -m tests.a11y.llm_review --export-requests (see tests/a11y/README.md)
+a11y-review/
 .coverage.*
 coverage.json
