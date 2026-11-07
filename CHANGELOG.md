@@ -20,6 +20,17 @@ ekte has three eras:
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-11-07
+
+Every saved run now keeps the raw requests and responses it rests on as
+evidence (report schema 1.2, evidence schema 1.0). A finding shows the requests
+behind it, evidence exports as HAR, a curl script or JSON, and `ekte rescore`
+judges a recorded run again with a newer ekte without contacting the relay. The
+knowledge base grows from 7 to 23 providers and from 130 to 244 models, with a
+focus on open-weight models. Among the fixes: a monitor no longer runs twice in
+a row (#108), and only the relay's own failures count against it. The new
+dependency `zstandard` is installed with ekte.
+
 ### Added
 
 - **The accessibility LLM review can be answered without an API**

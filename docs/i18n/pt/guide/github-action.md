@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@v0.33.1   # fixe numa tag — ver «Fixar a versão» abaixo
+        uses: mn567250/ekte@v0.34.0   # fixe numa tag — ver «Fixar a versão» abaixo
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -62,7 +62,7 @@ jobs:
 | `suite`             | não         | `standard`    | Suite de detetores: `smoke` \| `standard` \| `deep` \| `full`. |
 | `fail-on-risk`      | não         | `high`        | Faz falhar o job quando o risco é `>=` este nível: `low` \| `medium` \| `high`. |
 | `python-version`    | não         | `3.12`        | Versão de Python usada para instalar e executar o `ekte`. |
-| `version`           | não         | `ekte`        | Especificação de instalação pip. Fixe-a para execuções reproduzíveis, p. ex. `ekte==0.33.1`. |
+| `version`           | não         | `ekte`        | Especificação de instalação pip. Fixe-a para execuções reproduzíveis, p. ex. `ekte==0.34.0`. |
 | `evidence`          | não      | `false`       | `true` mantém cada par pedido/resposta bruto da auditoria (sem chaves) e envia-o como artefacto do workflow, também quando o bloqueio falha. |
 
 ## Saídas
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: ekte
-        uses: mn567250/ekte@v0.33.1
+        uses: mn567250/ekte@v0.34.0
         with:
           base-url: https://relay.example.com/v1
           api-key: ${{ secrets.RELAY_API_KEY }}
@@ -117,13 +117,13 @@ jobs:
 
 ## Fixar a versão
 
-Fixe a action numa **tag de versão** (`mn567250/ekte@v0.33.1`) em vez de num ramo
+Fixe a action numa **tag de versão** (`mn567250/ekte@v0.34.0`) em vez de num ramo
 que muda. Isto mantém as auditorias reproduzíveis e protege-o de alterações
 inesperadas à action. Uma tag pode ser movida; para a proteção mais estrita da
 cadeia de fornecimento, fixe o SHA completo do commit da versão, com a versão num
-comentário (`mn567250/ekte@<full-commit-sha> # v0.33.1`), e deixe o Dependabot
+comentário (`mn567250/ekte@<full-commit-sha> # v0.34.0`), e deixe o Dependabot
 mantê-lo atualizado. Para um comportamento da CLI totalmente reproduzível, fixe
-também a entrada `version` numa versão exata, p. ex. `version: ekte==0.33.1`.
+também a entrada `version` numa versão exata, p. ex. `version: ekte==0.34.0`.
 
 Um exemplo agendado pronto a copiar encontra-se em
 [`.github/workflows/example-audit.yml`](../../../../.github/workflows/example-audit.yml).
