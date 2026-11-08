@@ -329,6 +329,21 @@ def take_reactions(page: Page) -> list[dict[str, str]]:
     return list(page.evaluate("() => window.__a11y.reactions.splice(0)"))
 
 
+def _left_page(page: Page, url: str) -> bool:
+    """Whether the page left ``url``: another path, or a new document (the
+    helpers INPUTS_JS installed are gone). A page that keeps its view in the
+    query string (filters.js: ``history.replaceState``) stays the same
+    document; that is no change of context."""
+    if page.url.split("?")[0].split("#")[0] != url.split("?")[0].split("#")[0]:
+        return True
+    if page.url.split("#")[0] == url.split("#")[0]:
+        return False
+    try:
+        return not page.evaluate("() => !!window.__a11y")
+    except PlaywrightError:
+        return True
+
+
 def _reopen(page: Page, url: str) -> None:
     """Back to the page under test after a navigation, in the same state."""
     page.goto(url, wait_until="load")
@@ -949,7 +964,7 @@ def on_input_issues(page: Page) -> list[str]:
         settle(page)
         quiet(page)
         found: list[str] = []
-        if page.url.split("#")[0] != url.split("#")[0]:
+        if _left_page(page, url):
             issues.append(f"changing {f['desc']}: navigated to {page.url} (change of context on input)")
             _reopen(page, url)
             page.evaluate(INPUTS_JS)  # markers for the remaining fields
@@ -962,7 +977,7 @@ def on_input_issues(page: Page) -> list[str]:
         quiet(page)
         if not found and not page.evaluate(NO_FOCUS_JS):
             found.append(f"leaving the field moved focus to {page.evaluate('() => window.__a11y.desc(document.activeElement)')}")
-        if page.url.split("#")[0] != url.split("#")[0]:
+        if _left_page(page, url):
             found.append(f"leaving the field navigated to {page.url}")
         if len(page.context.pages) > n_pages:
             found.append("opened a new window")
@@ -971,7 +986,7 @@ def on_input_issues(page: Page) -> list[str]:
         if dialogs:
             found.append(f"opened a browser dialog {dialogs[-1]!r}")
             dialogs.clear()
-        if page.url.split("#")[0] != url.split("#")[0]:
+        if _left_page(page, url):
             _reopen(page, url)
             page.evaluate(INPUTS_JS)
         else:

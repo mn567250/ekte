@@ -6,10 +6,10 @@
   "Cancel": "Cancelar",
   "Collapse all": "Recolher tudo",
   "Could not delete: ": "Não foi possível eliminar: ",
+  "Could not load more: ": "Não foi possível carregar mais: ",
   "Execution": "Execução",
   "Expand all": "Expandir tudo",
   "Filters": "Filtros",
-  "Health score trend across {n} audits: from {first} to {last}, {dir}.": "Evolução da pontuação de saúde em {n} auditorias: de {first} para {last}, {dir}.",
   "History lives only in a local SQLite file under <code>~/.ekte</code> — nothing is uploaded.": "O histórico fica apenas num ficheiro SQLite local em <code>~/.ekte</code> — nada é enviado.",
   "Last 30 days": "Últimos 30 dias",
   "Last 7 days": "Últimos 7 dias",
@@ -25,7 +25,9 @@
   "Saved audits: {n}": "Auditorias guardadas: {n}",
   "Search": "Pesquisar",
   "Show more ({k} remaining)": "Mostrar mais ({k} restantes)",
+  "Show more groups ({k} remaining)": "Mostrar mais grupos (restam {k})",
   "Showing {shown} of {n} audits": "A mostrar {shown} de {n} auditorias",
+  "Showing {shown} of {total} groups": "Mostrando {shown} de {total} grupos",
   "Sort": "Ordenar",
   "Sort audits": "Ordenar auditorias",
   "Sort by {key}": "Ordenar por {key}",
@@ -42,7 +44,8 @@
   "{group}: showing {shown} of {total} audits": "{group}: a mostrar {shown} de {total} auditorias",
   "{key}, {dir}": "{key}, {dir}",
   "{label}: {value}": "{label}: {value}",
-  "{metric} trend across {n} audits: from {first} to {last}.": "Tendência de {metric} em {n} auditorias: de {first} a {last}.",
-  "{n} active": "{n} ativos"
+  "{metric} trend across {n} audits: from {first} to {last}, {dir}.": "Tendência de {metric} em {n} auditorias: de {first} a {last}, {dir}.",
+  "{n} active": "{n} ativos",
+  "{n} of at most {max} selected": "{n} de no máximo {max} selecionados"
  }
 }
