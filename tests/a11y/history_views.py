@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 from playwright.sync_api import Page
 
-from tests.a11y.harness import DESKTOP, settle
+from tests.a11y.harness import DESKTOP, settle, track_network
 
 
 @pytest.fixture(scope="session")
@@ -31,6 +31,7 @@ def open_history(open_page: Any, base: str, query: str = "", theme: str = "light
     empty storage; ``storage``: more init script run once)."""
     ctx = open_page.browser.new_context(viewport=viewport or DESKTOP, color_scheme="dark" if theme == "dark" else "light")
     open_page.contexts.append(ctx)
+    track_network(ctx)  # settle() then waits for the widget requests
     ctx.add_init_script(
         "try { if (!sessionStorage.getItem('a11y.init')) { sessionStorage.setItem('a11y.init', '1');"
         " localStorage.clear(); localStorage.setItem('ekte.lang', 'en');"
