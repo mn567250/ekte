@@ -474,15 +474,17 @@ def test_v2_analytics_page(client):
     assert '<header class="znav" data-page="analytics"' in html
     assert '<main id="main" tabindex="-1">' in html
     assert '<script src="/static/nav.js"></script>\n<script src="/static/notice.js"></script>\n<script src="/static/charts.js"></script>' in html
-    for api in ("/api/analytics/options", "/api/analytics/summary", "/api/analytics/series", "/api/analytics/leaderboard"):
+    for api in ("/api/filters/options", "/api/analytics/summary", "/api/analytics/series", "/api/analytics/heatmap",
+                "/api/analytics/leaderboard", "/api/analytics/errors", "/api/analytics/integrity", "/api/metrics"):
         assert api in html
+    assert "/api/analytics/options" not in html
     # no outgoing requests: every script and stylesheet is local
     assert not re.search(r'(?:src|href)="(?:https?:)?//', html)
     js = client.get("/static/nav.js").text
     assert '["analytics", "/analytics", "bars", "Analytics"]' in js
     assert "bars:" in client.get("/icons.js").text
     # tabs and the filter panel History shares
-    assert '<script src="/static/filterpanel.js"></script>\n<script src="/static/tabs.js"></script>' in html
+    assert '<script src="/static/filterpanel.js"></script>\n<script src="/static/filters.js"></script>\n<script src="/static/tabs.js"></script>' in html
     assert '<link rel="stylesheet" href="/static/filterpanel.css" />' in html
     assert 'role="tablist"' in html and 'id="tab-integrity"' in html
     hist = _unversioned(client.get("/history").text)
