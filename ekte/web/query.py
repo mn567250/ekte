@@ -1069,13 +1069,15 @@ _CHANGES = (("tool_version", "NULLIF(m.tool_version, '')"),
 _CHANGE_X = 2 * len(_MIXED)
 # more time ranges than this are read as one
 _MAX_RANGES = 64
+# a series key's runs as disjoint blocks: (t_min, t_max, [(smallest, largest value) per _CHANGES])
+_Blocks = list[tuple[str, str, list[tuple[Any, Any]]]]
 
 
-def _blocks(rows: list[dict[str, Any]]) -> list[tuple[str, str, list[tuple[Any, Any]]]]:
+def _blocks(rows: list[dict[str, Any]]) -> _Blocks:
     """A series' bucket rows as disjoint blocks in time order: ``(t_min,
     t_max, [(smallest, largest value) per _CHANGES])``, buckets merged where
     their run times overlap (a time zone's clock turned back across midnight)."""
-    out: list[tuple[str, str, list[tuple[Any, Any]]]] = []
+    out: _Blocks = []
     for r in sorted(rows, key=lambda r: r["t_min"]):
         span = [(r[f"x{_CHANGE_X + 2 * i}"], r[f"x{_CHANGE_X + 2 * i + 1}"])
                 for i in range(len(_CHANGES))]
@@ -1090,7 +1092,7 @@ def _blocks(rows: list[dict[str, Any]]) -> list[tuple[str, str, list[tuple[Any, 
     return out
 
 
-def _to_read(blocks: list[tuple[str, str, list[tuple[Any, Any]]]], i: int) -> set[int]:
+def _to_read(blocks: _Blocks, i: int) -> set[int]:
     """The blocks whose runs must be read to find the changes of value ``i``:
     those holding several values, or another value than the block with
     values before them (or after one that holds several)."""
@@ -1115,53 +1117,93 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str,
     The series' bucket rows (``by_key``) carry each bucket's smallest and
     largest value, so a value can only change in a block (:func:`_blocks`)
     that holds several values or another value than the block before it
-    (:func:`_to_read`): only those blocks' runs are read, in one query in
-    time order. The result equals comparing every run with the previous run
-    that has a value."""
-    blocks = {key: _blocks(rows) for key, rows in by_key.items()}
-    need = {key: [_to_read(b, i) for i in range(len(_CHANGES))] for key, b in blocks.items()}
-    ranges = sorted((blocks[key][j][0], blocks[key][j][1])
-                    for key, per in need.items() for js in per for j in js)
-    if not ranges:
-        return {}
-    spans: list[list[str]] = []
-    for a, b in ranges:
-        if spans and a <= spans[-1][1]:
-            spans[-1][1] = max(spans[-1][1], b)
-        else:
-            spans.append([a, b])
-    if len(spans) > _MAX_RANGES:
-        spans = [[spans[0][0], max(s[1] for s in spans)]]
-    within = " OR ".join(["m.started_at BETWEEN ? AND ?"] * len(spans))
-    sel = sel.and_where(*_keys_sql(conn, group, list(by_key))).and_where(
-        f"({within})", *(t for s in spans for t in s))
+    (:func:`_to_read`). Those blocks are split into UTC minutes the same way
+    (one grouped query), and only the runs of the minutes where a value can
+    change are read (one query, in time order). The result equals comparing
+    every run with the previous run that has a value."""
+    ident = {"relay": [RELAY_ID_SQL], "relay_model": [RELAY_ID_SQL, GROUP_KEY_SQL["model"]],
+             "model": [GROUP_KEY_SQL["model"]], "all": []}[group]
     relays = {r["gid"]: r["rk"] for rows in by_key.values() for r in rows if "gid" in r}
-    sql = (f"SELECT {RELAY_ID_SQL}, {GROUP_KEY_SQL['model']}, m.history_id, m.started_at,"
-           f" {', '.join(v for _, v in _CHANGES)} {sel.sql} ORDER BY m.started_at, m.history_id")
-    runs: dict[str, list[tuple[Any, ...]]] = {}
-    for gid, model, rid, t, *values in conn.execute(sql, sel.args):
+
+    def key_of(parts: Sequence[Any]) -> str | None:
         if group == "relay":
-            key = relays.get(gid)
-        elif group == "relay_model":
-            key = f"{relays.get(gid)}|{model}"
-        else:
-            key = model if group == "model" else ALL_KEY
-        if key in need:
-            runs.setdefault(key, []).append((t, rid, values))
+            return relays.get(parts[0])
+        if group == "relay_model":
+            return f"{relays.get(parts[0])}|{parts[1]}"
+        return str(parts[0]) if group == "model" else ALL_KEY
+
+    keyed = sel.and_where(*_keys_sql(conn, group, list(by_key)))
+
+    def within(blocks: Mapping[str, _Blocks], need: Mapping[str, set[int]]) -> RunSelection | None:
+        """``keyed`` limited to the time ranges of the blocks in ``need``."""
+        ranges = sorted(blocks[k][j][:2] for k, js in need.items() for j in js)
+        if not ranges:
+            return None
+        spans: list[list[str]] = []
+        for a, b in ranges:
+            if spans and a <= spans[-1][1]:
+                spans[-1][1] = max(spans[-1][1], b)
+            else:
+                spans.append([a, b])
+        if len(spans) > _MAX_RANGES:
+            spans = [[spans[0][0], max(s[1] for s in spans)]]
+        cond = " OR ".join(["m.started_at BETWEEN ? AND ?"] * len(spans))
+        return keyed.and_where(f"({cond})", *(t for s in spans for t in s))
+
+    def needed(blocks: Mapping[str, _Blocks]) -> dict[str, set[int]]:
+        return {k: set().union(*(_to_read(b, i) for i in range(len(_CHANGES))))
+                for k, b in blocks.items()}
+
+    blocks = {key: _blocks(rows) for key, rows in by_key.items()}
+    finer = within(blocks, needed(blocks))
+    if finer is None:
+        return {}
+    # the blocks to read, split into minutes (a block covers all of its key's runs in its time)
+    minute = "substr(m.started_at, 1, 16)"
+    cols = [*ident, minute, "MIN(m.started_at)", "MAX(m.started_at)",
+            *(f"{f}({v})" for _, v in _CHANGES for f in ("MIN", "MAX"))]
+    parts: dict[str, list[dict[str, Any]]] = {}
+    n = len(ident)
+    group_by = ", ".join(str(i + 1) for i in range(n + 1))
+    spans = {k: sorted(blocks[k][j][:2] for j in js) for k, js in needed(blocks).items()}
+    for row in conn.execute(f"SELECT {', '.join(cols)} {finer.sql} GROUP BY {group_by}",
+                            finer.args):
+        key, t = key_of(row[:n]), row[n + 1]
+        own = spans.get(key) if key is not None else None
+        i = bisect_right(own, (t, "\uffff")) - 1 if own else -1
+        if key is not None and own and i >= 0 and t <= own[i][1]:  # in a block of its key to split
+            parts.setdefault(key, []).append({
+                "t_min": row[n + 1], "t_max": row[n + 2],
+                **{f"x{_CHANGE_X + i}": v for i, v in enumerate(row[n + 3:])}})
+    for key, mine in parts.items():
+        old, need = blocks[key], needed({key: blocks[key]})[key]
+        split = [b for j, b in enumerate(old) if j not in need]
+        blocks[key] = sorted([*split, *_blocks(mine)], key=lambda b: b[0])
+    # the runs of the minutes where a value can change, in time order
+    need_by_kind = {k: [_to_read(b, i) for i in range(len(_CHANGES))] for k, b in blocks.items()}
+    reads = within(blocks, needed(blocks))
+    runs: dict[str, list[tuple[Any, ...]]] = {}
+    if reads is not None:
+        cols = [*ident, "m.history_id", "m.started_at", *(v for _, v in _CHANGES)]
+        sql = f"SELECT {', '.join(cols)} {reads.sql} ORDER BY m.started_at, m.history_id"
+        for row in conn.execute(sql, reads.args):
+            key = key_of(row[:n])
+            if key in blocks:
+                runs.setdefault(key, []).append((row[n + 1], row[n], row[n + 2:]))
 
     out: dict[str, list[dict[str, Any]]] = {}
     for key, merged in blocks.items():
-        mine = runs.get(key, [])
-        times = [r[0] for r in mine]
+        mine_runs = runs.get(key, [])
+        times = [r[0] for r in mine_runs]
         for i, (kind, _) in enumerate(_CHANGES):
             prev = None
             for j, (t0, t1, span) in enumerate(merged):
                 if span[i][0] is None:
                     continue
-                if j not in need[key][i]:
+                if j not in need_by_kind[key][i]:
                     prev = span[i][0]  # its one value, the value before it (or the first)
                     continue
-                for t, rid, values in mine[bisect_left(times, t0):bisect_right(times, t1)]:
+                for t, rid, values in mine_runs[bisect_left(times, t0):bisect_right(times, t1)]:
                     if values[i] is None:
                         continue
                     if prev is not None and values[i] != prev:
