@@ -279,6 +279,16 @@ over many runs pool counts instead of taking a median of rates. Older reports
 are counted from their stored request records. The reliability check keeps its
 own success rate for scoring ("Reliability check success rate").
 
+Since schema version 12 two kinds of per-run columns, kept by triggers and
+filled in for older runs by the migration, spare the widgets a second table
+or a sort per filter key: `history_metrics.outcome_<outcome>` (one per
+`errorclass.OUTCOMES`, `analytics_store.OUTCOME_COLS`) holds the run's
+`history_outcomes` counts summed over its ops (all NULL without outcome
+rows), and `history_metrics.facet_id` names the run's combination of
+few-valued filter values (surface, suite, mode, API, stream, detection, risk,
+execution, spelled as the URL takes them) in `facet_combo`
+(`web/facets.py`).
+
 Since schema version 10 `history.db` has `idx_history_query`, a covering index
 over the `history` columns the query core filters, groups and sorts by
 (`history.QUERY_INDEX_COLS`): a run's row holds its report (tens of kB, in
