@@ -96,11 +96,35 @@ returns `render({body, foot, count, summary})`, `sync({count, summary})`,
 the toggle with its active-filter badge, the one-line summary shown while
 closed, the remembered open state and **Reset filters**.
 
+The v2 **History** page (`v2/history.html`, #127) only draws: groups, their
+trend tiles and rows come from `GET /api/history/groups` and
+`GET /api/history/runs` (`docs/dev/web-server.md`, "History API"), with the
+server's order, grades, colour families (`family`) and trend text keys
+(`trend_key`); the page keeps layout, sparkline scaling (0–100 for scores, the
+grade scale, else the points' range), number and date formatting and the
+collapsed groups (localStorage). The first page of groups (20) loads with the
+first page of rows of every open group; "Show more" under a group appends its
+next page by cursor (`runs.after`), "Show more groups" the next groups
+(`groups.after`); focus stays on the button while more remain, then moves to
+the first added row or group toggle, and `#hmore` announces the count. The URL
+holds the filters (`EkteFilters`), the sort (`groups.sort`, also sent as
+`runs.sort`), the trends (`trend.metrics`, default `score,latency_p50`) and the
+focused run (`runs.focus`: the open report or the last row "Show more"
+revealed; a `#r-<id>` link sets it), sent as `groups.focus` / `runs.focus` so
+a copied link shows that run again. The trend picker (in the filter panel,
+`EkteFilters` `extra`) lists `history_trends` of `GET /api/metrics` by
+`label_key`; `v2/trendpick.js` (`EkteTrendPick.clean / toggle / buttons`,
+tested under node) keeps one or two on: with two on the others are `disabled`
+and `aria-disabled`, with one on that one is, and a "2 / 2" hint next to the
+label (the group's description, in words for screen readers) counts them.
+
 **Shared filters and URL state** (`v2/filters.js`, `window.EkteFilters`, #125;
-History and Analytics move onto it in #127 / #126, Monitors and Knowledge keep
+History uses it (#127), Analytics moves onto it in #126, Monitors and Knowledge keep
 their own fields). One module owns the filter fields, the view state and widget
 fetching, inside the `filterpanel.js` frame; it holds no metric logic.
-`EkteFilters.create({section, fields, defaults, page, onChange, optionsUrl, foot, live})`:
+`EkteFilters.create({section, fields, defaults, page, onChange, optionsUrl, foot, extra, live})`
+(`foot`: HTML or a function returning it, `extra()`: the page's own controls
+after the fields, both called on every render):
 `fields` are keys of the Query core URL schema (`docs/dev/web-server.md`) the
 page shows (`range` brings `from` / `to`); their types, labels, fixed values,
 "(unknown)" (`-`) and the option lists of `GET /api/filters/options` (read as

@@ -148,3 +148,62 @@ def seed_analytics(end: datetime, watch_id: int | None) -> None:
         saved = relay == "saved"
         report = _report(started, SAVED_RELAY[1] if saved else URL_RELAY, model, score, saved, newer=days <= 2)
         history.save(report, watch_id=watch_id if by_monitor else None)
+
+
+# --------------------------------------------------------------------------- #
+# History's own tests (test_history_controls.py, test_history_paging.py)
+# --------------------------------------------------------------------------- #
+HISTORY_RELAY = "https://history.example.com/v1"
+# (model, minutes before end, score, grade, risk): two groups of three runs
+HISTORY_CONTROLS = [
+    ("model-a", 10, 70.0, "C", "medium"),
+    ("model-b", 20, 95.0, "A", "clean"),
+    ("model-a", 30, 40.0, "F", "high"),
+    ("model-b", 40, 85.0, "B", "low"),
+    ("model-a", 50, 90.0, "A", "clean"),
+    ("model-b", 60, 60.0, "D", "medium"),
+]
+# one group of 45 runs (pages of 20, 20 and 5), newest first: scores 90, 89, …
+HISTORY_PAGED = ("model-p", 45)
+# the bulk: 2,000 runs over 4 relays and 8 models (32 groups: 2 pages of groups)
+HISTORY_BULK = {"runs": 2000, "relays": 4, "requests": 10, "report_bytes": 64}
+
+
+def _history_report(started: datetime, model: str, score: float, grade: str, risk: str) -> dict[str, Any]:
+    return {
+        "mode": "check", "suite": "standard", "stream_mode": "stream",
+        "started_at": started.isoformat(), "generated_at": (started + timedelta(minutes=1)).isoformat(),
+        "target": {"base_url": HISTORY_RELAY, "model": model, "claimed_model": model, "api": "openai"},
+        "verdict": {"overall_score": score, "risk_level": risk, "rating": grade},
+        "performance": {
+            "target": {"requests": 4, "successes": 4 if score >= 80 else 3, "latency_ms": {"p50": 900.0 + (100 - score) * 10},
+                       "decode_tps_local": {"p50": 40.0 + score / 10}},
+            # four calls; a run below 80 has one server error (its error rate: 25 %)
+            "requests": [{
+                "seq": seq, "endpoint": "target", "phase": "passive", "op": "complete", "stream": True,
+                "start_ms": seq * 1000.0, "ok": not (score < 80 and seq == 3),
+                "status_code": 502 if score < 80 and seq == 3 else 200, "duration_ms": 800.0,
+            } for seq in range(4)],
+        },
+    }
+
+
+def seed_history_views(end: datetime) -> None:
+    """The runs History's view tests filter for (by model), plus the bulk of
+    scripts/bench_fixture.py to page through 2,000 runs."""
+    import importlib.util
+    from pathlib import Path
+
+    from ekte.web import history
+
+    for model, ago, score, grade, risk in HISTORY_CONTROLS:
+        history.save(_history_report(end - timedelta(minutes=ago), model, score, grade, risk))
+    model, n = HISTORY_PAGED
+    for i in reversed(range(n)):  # oldest first: run i is the i-th newest
+        history.save(_history_report(end - timedelta(hours=2, minutes=i), model, 90.0 - i, "B", "clean"))
+    path = Path(__file__).resolve().parents[2] / "scripts" / "bench_fixture.py"
+    spec = importlib.util.spec_from_file_location("bench_fixture", path)
+    assert spec and spec.loader
+    bench = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bench)
+    bench.build(**HISTORY_BULK)

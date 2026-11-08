@@ -31,7 +31,11 @@
  *                    key) and the panel's remembered open state
  *   opts.onChange(state, changed)  after every change (changed: the keys)
  *   opts.optionsUrl  option lists, default "/api/filters/options"; false: none
- *   opts.foot        HTML at the start of the panel's foot ("Showing 3 of 9")
+ *   opts.foot        HTML at the start of the panel's foot ("Showing 3 of 9"),
+ *                    or a function returning it (called on every render)
+ *   opts.extra()     HTML after the fields in the panel's body (a page's own
+ *                    controls, e.g. History's trend picker; called on every
+ *                    render, the page handles its events)
  *   opts.live        the page's live region (default #live, else one of ours)
  * instance:
  *   state()          { key: value } every declared, widget and view key with
@@ -485,7 +489,8 @@
     }
 
     function footHTML() {
-      return '<span class="ekf-foot">' + (o.foot || "") + "</span>" +
+      var foot = typeof o.foot === "function" ? o.foot() : o.foot;
+      return '<span class="ekf-foot">' + (foot || "") + "</span>" +
         '<span class="ekf-share"><span class="ekf-sharest" id="fsharest" role="status"></span>' +
         '<button type="button" class="linkbtn" id="fshare">' + esc(tr(["复制此视图的链接", "Copy link to this view"])) + "</button></span>" +
         '<div class="ekf-sharefb" id="fsharefb" hidden><label><span>' + esc(tr(["此视图的链接", "Link to this view"])) +
@@ -496,7 +501,7 @@
       // an open "copy the link" fallback stays open (with the current link)
       var fb = section.querySelector("#fsharefb"), fbOpen = !!(fb && !fb.hidden);
       panel.render({
-        body: '<div class="ekf-grid">' + fields.map(fieldHTML).join("") + "</div>",
+        body: '<div class="ekf-grid">' + fields.map(fieldHTML).join("") + "</div>" + (o.extra ? o.extra() : ""),
         foot: footHTML(), count: activeCount(), summary: summary(),
       });
       if (fbOpen) {

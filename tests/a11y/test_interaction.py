@@ -329,6 +329,21 @@ def take_reactions(page: Page) -> list[dict[str, str]]:
     return list(page.evaluate("() => window.__a11y.reactions.splice(0)"))
 
 
+def _left_page(page: Page, url: str) -> bool:
+    """Whether the page left ``url``: another path, or a new document (the
+    helpers INPUTS_JS installed are gone). A page that keeps its view in the
+    query string (filters.js: ``history.replaceState``) stays the same
+    document; that is no change of context."""
+    if page.url.split("?")[0].split("#")[0] != url.split("?")[0].split("#")[0]:
+        return True
+    if page.url.split("#")[0] == url.split("#")[0]:
+        return False
+    try:
+        return not page.evaluate("() => !!window.__a11y")
+    except PlaywrightError:
+        return True
+
+
 def _reopen(page: Page, url: str) -> None:
     """Back to the page under test after a navigation, in the same state."""
     page.goto(url, wait_until="load")
@@ -928,18 +943,6 @@ def _restore(page: Page, f: dict[str, Any], token: str) -> None:
     quiet(page)
 
 
-def _left_page(page: Page, url: str) -> bool:
-    """Whether the page left its document or its path: a view that only
-    writes its state into the query string (history.replaceState, filters.js)
-    stays on the page."""
-    if page.url.split("?")[0].split("#")[0] != url.split("?")[0].split("#")[0]:
-        return True
-    try:
-        return not page.evaluate("() => window.__a11yStay === true")
-    except PlaywrightError:
-        return True
-
-
 def on_input_issues(page: Page) -> list[str]:
     issues: list[str] = []
     dialogs: list[str] = []
@@ -956,7 +959,6 @@ def on_input_issues(page: Page) -> list[str]:
             continue  # re-rendered away by an earlier change
         quiet(page)
         url, n_pages = page.url, len(page.context.pages)
-        page.evaluate("() => { window.__a11yStay = true; }")
         before = page.evaluate(CONTEXT_JS)
         token = _change(page, f)
         settle(page)

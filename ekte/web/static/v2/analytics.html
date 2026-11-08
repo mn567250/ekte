@@ -510,10 +510,15 @@
       paintNote();
     }, function (e) { if (!isAbort(e)) paintFoot(); });
   }
-  function paintFoot() {
-    var el = $("#fcount"), o = state.opts;
-    if (el) el.textContent = o ? (o.runs === 1 ? T("1 次检测符合筛选条件。", "1 run matches these filters.")
+  // the panel foot's count (also drawn by every re-render of the panel)
+  function footText() {
+    var o = state.opts;
+    return o ? (o.runs === 1 ? T("1 次检测符合筛选条件。", "1 run matches these filters.")
       : Tf("{n} 次检测符合筛选条件。", "{n} runs match these filters.", { n: o.runs })) : "";
+  }
+  function paintFoot() {
+    var el = $("#fcount");
+    if (el) el.textContent = footText();
   }
   function relayName(key) {
     var x = ((state.opts && state.opts.relay) || []).filter(function (r) { return r.value === key; })[0];
@@ -1560,7 +1565,7 @@
   F = window.EkteFilters.create({
     section: $("#filters"), page: "analytics", fields: FIELDS, defaults: DEFAULTS, optionsUrl: false,
     viewKeys: ["tab", "os", "ts", "rs"], live: live,
-    foot: '<span id="fcount"></span>', onChange: onChange,
+    foot: function () { return '<span id="fcount">' + esc(footText()) + "</span>"; }, onChange: onChange,
   });
   $("#filters").hidden = false;
   var resizeT = null;

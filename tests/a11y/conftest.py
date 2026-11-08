@@ -10,6 +10,7 @@ import pytest
 pytest.importorskip("playwright.sync_api", reason="a11y tests need playwright (pip install -e '.[a11y]')")
 
 from tests.a11y.harness import _fresh_results, base_url, browser, open_page  # noqa: E402,F401
+from tests.a11y.history_views import history_server  # noqa: E402,F401
 from tests.a11y.pages import PAGES_ENV, pages_of_test, parse_pages, selected  # noqa: E402
 
 _HERE = Path(__file__).resolve().parent
