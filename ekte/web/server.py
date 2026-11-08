@@ -78,7 +78,6 @@ import json
 import logging
 import time
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
