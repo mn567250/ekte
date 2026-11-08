@@ -1171,10 +1171,10 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: 
             "run_id": rid, "started_at": t,
         })
 
-    for key, per in clusters.items():
+    for key, by_kind in clusters.items():
         mine = runs.get(key, [])
         times = [r[0] for r in mine]
-        for i, cs in enumerate(per):
+        for i, cs in enumerate(by_kind):
             kind, prev = _CHANGES[i][0], None
             for t0, t1, vals in cs:
                 if len(vals) == 1:
