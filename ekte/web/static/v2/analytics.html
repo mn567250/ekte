@@ -82,11 +82,13 @@
   .khint:hover { color: var(--ink); background: var(--surface); }
   .khint .zicon { width: 14px; height: 14px; }
   .ktip {
-    position: absolute; z-index: 5; top: calc(100% + 4px); right: -6px; width: max-content; max-width: min(260px, 70vw);
+    position: absolute; z-index: 5; top: calc(100% + 2px); right: -6px; width: max-content; max-width: min(260px, 70vw);
     padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-pop);
     font-size: 12px; line-height: 1.45; color: var(--ink); text-transform: none; letter-spacing: 0; font-weight: 400;
     visibility: hidden; opacity: 0;
   }
+  /* no gap between the button and its tip: the pointer can move onto it */
+  .ktip::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; height: 6px; }
   .kh:hover .ktip, .khint:focus-visible + .ktip { visibility: visible; opacity: 1; }
   .kh.off .ktip { visibility: hidden; opacity: 0; }
 
@@ -732,10 +734,13 @@
       F.panel.focusStart();
     }
   });
-  // a toggletip stays until the pointer or focus leaves it, Escape hides it
-  $("#kpi-body").addEventListener("keydown", function (ev) {
-    var k = ev.target.closest && ev.target.closest(".kh");
-    if (k && ev.key === "Escape") k.classList.add("off");
+  // a tip stays while the pointer or focus is on it; Escape hides every
+  // shown one (also one shown by hover only) until it is left
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape") return;
+    Array.prototype.forEach.call(document.querySelectorAll("#kpi-body .kh"), function (k) {
+      if (k.matches(":hover") || k.contains(document.activeElement)) k.classList.add("off");
+    });
   });
   ["mouseout", "focusout"].forEach(function (t) {
     $("#kpi-body").addEventListener(t, function (ev) {
