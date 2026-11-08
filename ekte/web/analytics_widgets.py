@@ -42,7 +42,7 @@ from ekte.web.analytics import (
     _most_common,
     metric,
 )
-from ekte.web.relay_map import GROUP_KEY_SQL
+from ekte.web.relay_map import GROUP_KEY_SQL, RELAY_ID_SQL
 
 # Metrics of each leaderboard row (the median score ranks them).
 BOARD_METRICS = (
@@ -120,12 +120,14 @@ def _str_choice(w: Mapping[str, Any], name: str, key: str, allowed: tuple[str, .
     return str(value)
 
 
-def _judged(m: Metric, cell: Mapping[str, Any]) -> dict[str, Any]:
-    """A cell (``Cell.public()`` or a point) with the judgement of its value:
-    ``family`` and ``grade``, as :func:`ekte.web.metrics.present` gives them
-    (its other fields are not needed: thousands of cells per board)."""
+def _judged(m: Metric, cell: dict[str, Any]) -> dict[str, Any]:
+    """A fresh cell dict (``Cell.public()`` or a point), given the judgement
+    of its value in place: ``family`` and ``grade``, as
+    :func:`ekte.web.metrics.present` gives them (its other fields are not
+    needed: thousands of cells per board)."""
     v = _metrics._number(cell.get("value"))
-    return {**cell, "family": _metrics.family(m, v), "grade": _metrics._grade(m, v)}
+    cell["family"], cell["grade"] = _metrics.family(m, v), _metrics._grade(m, v)
+    return cell
 
 
 def resolve_params(params: Any, *, now: datetime | None = None) -> list[tuple[str, str]]:
@@ -455,25 +457,31 @@ def widget_integrity(params: Any) -> dict[str, Any]:
     conn, q = _setup(params)
     chat = METRICS["context_claimed"].applies(str(q.surface))
     wanted = ["model_mismatch_rate", *(("context_claimed", "context_effective") if chat else ())]
-    groups = query.aggregate(conn, q, wanted, "relay_model")
-    gk = GROUP_KEY_SQL["relay_model"]
-    sel = query.select_runs(q).with_relay()
-    checks: dict[str, dict[str, dict[str, int]]] = {}
-    for g, key, status, n in conn.execute(
-        f"SELECT {gk}, d.key, CASE WHEN d.status IN {_sql_list(JUDGED)} THEN d.status ELSE 'other' END,"
-        f" COUNT(*) {sel.from_sql} JOIN history_dimensions d ON d.history_id = h.id"
-        f" AND d.kind = 'detector' AND d.key IN {_sql_list(INTEGRITY_CHECKS)}{sel.where_sql}"
-        " GROUP BY 1, 2, 3", sel.args):
-        cell = checks.setdefault(str(g), {}).setdefault(str(key), {"pass": 0, "warn": 0, "fail": 0, "other": 0})
-        cell[str(status)] += int(n)
-    ratios: dict[str, tuple[Any, ...]] = {}
+    sel = query.select_runs(q)
+    # the context ratio's quartiles in the same pass as the metrics
+    extra: tuple[str, ...] = ()
     if chat:
         med, pct = query.sql_functions(conn)
         v = ("CASE WHEN m.context_claimed_tokens > 0 AND m.context_effective_tokens IS NOT NULL"
              " THEN CAST(m.context_effective_tokens AS REAL) / m.context_claimed_tokens END")
-        ratios = {str(r[0]): tuple(r[1:]) for r in conn.execute(
-            f"SELECT {gk}, {med}({v}), {pct}({v}, 25), {pct}({v}, 75), COUNT({v}) {sel.sql} GROUP BY 1",
-            sel.args)}
+        extra = (f"{med}({v})", f"{pct}({v}, 25)", f"{pct}({v}, 75)", f"COUNT({v})")
+    specs, found = query._grouped(conn, sel, "relay_model", query._metrics(wanted, q.surface), extra=extra)
+    groups = sorted((query._result("relay_model", r, query._cells(specs, r)) for r in found),
+                    key=query._rank)
+    ratios = {str(r["g"]): tuple(r[f"x{i}"] for i in range(4)) for r in found} if chat else {}
+    # check statuses per relay id and model (an integer and a run value: the
+    # few groups are named afterwards)
+    model = GROUP_KEY_SQL["model"]
+    checks: dict[str, dict[str, dict[str, int]]] = {}
+    for g, key, status, n in conn.execute(
+        "SELECT rg.relay_key || '|' || s.mk, s.k, s.st, s.n FROM ("
+        f"SELECT {RELAY_ID_SQL} AS gid, {model} AS mk, d.key AS k,"
+        f" CASE WHEN d.status IN {_sql_list(JUDGED)} THEN d.status ELSE 'other' END AS st, COUNT(*) AS n"
+        f" {sel.from_sql} JOIN history_dimensions d ON d.history_id = h.id"
+        f" AND d.kind = 'detector' AND d.key IN {_sql_list(INTEGRITY_CHECKS)}{sel.where_sql}"
+        " GROUP BY 1, 2, 3, 4) s JOIN relay_group rg ON rg.id = s.gid", sel.args):
+        cell = checks.setdefault(str(g), {}).setdefault(str(key), {"pass": 0, "warn": 0, "fail": 0, "other": 0})
+        cell[str(status)] += int(n)
     present = {k for per in checks.values() for k in per}
     shown = [c for c in INTEGRITY_CHECKS if c in present]
     rows = []
