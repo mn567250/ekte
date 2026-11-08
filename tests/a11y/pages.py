@@ -159,7 +159,9 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
         "ekte/web/history.py",
         ("audit", "history", "monitors", "analytics"),
     ),  # report view, history list, monitor from history, the analytics queries
-    ("ekte/web/analytics.py", ("analytics",)),  # the /api/analytics/* endpoints
+    ("ekte/web/analytics.py", ("analytics",)),  # the former analytics queries
+    # the /api/analytics/* endpoints and /api/filters/options (both pages)
+    ("ekte/web/analytics_widgets.py", ("analytics", "history")),
     ("ekte/web/analytics_store.py", ("analytics",)),
     ("ekte/web/jobs.py", ("audit", "monitors")),  # running audits (the Running tabs)
     ("ekte/web/watches.py", ("history", "monitors")),  # "schedule as monitor" on History
