@@ -164,7 +164,7 @@ def test_group_collapse(open_page, history_server) -> None:
     assert_no_issues(issues, "history [en]", "group-collapse")
 
 
-def _trend_buttons(page: Page) -> dict[str, tuple[str, bool, str | None]]:
+def _trend_buttons(page: Page) -> dict[str, list[Any]]:
     return dict(page.evaluate(
         "() => [...document.querySelectorAll('[data-trend]')].map(b =>"
         " [b.dataset.trend, [b.getAttribute('aria-pressed'), b.disabled, b.getAttribute('aria-disabled')]])"
@@ -209,7 +209,7 @@ def test_trend_picker(open_page, history_server) -> None:
     page.keyboard.press("Enter")  # off: one left
     settle(page)
     btns = _trend_buttons(page)
-    if btns["score"][:2] != ("true", True) or any(d for k, (_, d, _) in btns.items() if k != "score"):
+    if list(btns["score"][:2]) != ["true", True] or any(d for k, (_, d, _) in btns.items() if k != "score"):
         issues.append(f"with one on, only that one should be disabled: {btns}")
     if "1 / 2" not in hint.inner_text():
         issues.append(f"hint after turning one off: {hint.inner_text()!r}")
