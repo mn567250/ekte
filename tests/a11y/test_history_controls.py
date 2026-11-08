@@ -232,8 +232,8 @@ def test_trend_picker(open_page, history_server) -> None:
         issues.append(f"focus moved to {_active(page)!r}")
     if not _trend_buttons(page)["grade"][1]:
         issues.append("a third trend is not disabled")
-    label = page.locator("#hist .group .tr[data-m=error_rate] svg").get_attribute("aria-label") or ""
-    if "Error rate trend across 3 audits" not in label:
+    label = page.locator("#hist .group .tr[data-m=error_rate] svg").first.get_attribute("aria-label") or ""
+    if label != "Error rate trend across 3 audits: from 0% to 25%, rising.":
         issues.append(f"error rate sparkline has no description: {label!r}")
     assert_no_issues(issues, "history [en]", "trend-picker")
 
