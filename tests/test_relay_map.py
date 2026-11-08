@@ -194,3 +194,71 @@ def test_step_seven_adds_the_map_to_an_existing_database(data):
         assert c.execute("PRAGMA user_version").fetchone()[0] == dbmigrate.latest(history.MIGRATIONS)
         assert c.execute("SELECT COUNT(*) FROM relay_map").fetchone()[0] == 0  # filled on first use
     assert _sql_groups()[1]["relay_key"] == RELAY
+
+
+def _relay_ids() -> dict[int, str | None]:
+    """Each run's relay key through its stored relay id (None: no id)."""
+    with datadir.connect("history.db", history.MIGRATIONS) as conn:
+        rows = conn.execute(
+            "SELECT m.history_id, rg.relay_key FROM history_metrics m"
+            " LEFT JOIN relay_group rg ON rg.id = m.relay_id").fetchall()
+    return {int(r[0]): r[1] for r in rows}
+
+
+def _assert_ids_match_the_map() -> None:
+    expected = {rid: row["relay_key"] for rid, row in _sql_groups().items()}  # ensures the map
+    assert _relay_ids() == expected
+    with datadir.connect("history.db", history.MIGRATIONS) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM relay_map WHERE relay_id IS NULL").fetchone()[0] == 0
+        # one group per key of the map
+        keys = [k[0] for k in conn.execute("SELECT relay_key FROM relay_group ORDER BY 1")]
+        mapped = [k[0] for k in conn.execute("SELECT DISTINCT relay_key FROM relay_map ORDER BY 1")]
+    assert keys == mapped and set(expected.values()) <= set(keys)
+
+
+def test_runs_carry_their_relay_id(data):
+    _save(0, RELAY)
+    _save(1, OTHER)
+    _assert_ids_match_the_map()
+    # a run with a known URL gets its id when saved; one with a new URL once the map catches up
+    known = _save(2, OTHER + "/")
+    assert _relay_ids()[known] == OTHER
+    new = _save(3, "https://new.example/v1")
+    assert _relay_ids()[new] is None
+    _assert_ids_match_the_map()
+    with datadir.connect("history.db", history.MIGRATIONS) as conn:
+        old_id = conn.execute("SELECT id FROM relay_group WHERE relay_key = ?", (OTHER,)).fetchone()[0]
+    # the knowledge base changes: runs move to their new relay, kept keys keep their id
+    add_relay("Cheap GPT", RELAY)
+    _assert_ids_match_the_map()
+    assert _relay_ids()[1] == "cheap-gpt"
+    with datadir.connect("history.db", history.MIGRATIONS) as conn:
+        assert conn.execute("SELECT id FROM relay_group WHERE relay_key = ?",
+                            (OTHER,)).fetchone()[0] == old_id
+        # a run's normalised URL rewritten: its id follows at once
+        conn.execute("UPDATE history_metrics SET base_url_norm = ? WHERE history_id = ?", (RELAY, known))
+        conn.commit()
+    assert _relay_ids()[known] == "cheap-gpt"
+    _assert_ids_match_the_map()
+
+
+def test_step_eleven_gives_existing_runs_their_relay_ids(data):
+    _save(0, RELAY)
+    _save(1, None)
+    _sql_groups()  # the map is current
+    db = datadir.db_path("history.db")
+    with sqlite3.connect(db) as c:
+        for name in ("relay_id_insert", "relay_id_update"):
+            c.execute(f"DROP TRIGGER {name}")
+        c.execute("DROP INDEX idx_history_metrics_no_relay")
+        c.execute("DROP TABLE relay_group")
+        c.execute("ALTER TABLE history_metrics DROP COLUMN relay_id")
+        c.execute("ALTER TABLE relay_map DROP COLUMN relay_id")
+        c.execute("PRAGMA user_version = 10")
+    history.init()
+    with sqlite3.connect(db) as c:
+        assert c.execute("PRAGMA user_version").fetchone()[0] == dbmigrate.latest(history.MIGRATIONS)
+        assert c.execute("SELECT stale FROM relay_map_meta").fetchone()[0] == 1
+    assert set(_relay_ids().values()) == {None}
+    _assert_ids_match_the_map()
+    assert _relay_ids() == {1: RELAY, 2: analytics.UNKNOWN_RELAY}

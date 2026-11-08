@@ -36,6 +36,17 @@ Grouping keys for SQL, with ``history h``, ``history_metrics m`` and
 * ``all`` = the constant ``ALL_KEY``
 
 These are the keys :func:`ekte.web.analytics._group_of` produces in Python.
+
+Relay ids (schema version 11): every distinct ``relay_key`` also has a row in
+``relay_group(id INTEGER PRIMARY KEY, relay_key UNIQUE, label, kind, in_kb)``,
+``relay_map.relay_id`` names it, and ``history_metrics.relay_id`` holds it
+for each run, so SQL groups and filters runs on an integer the run's row
+already carries instead of looking each run's URL up in ``relay_map``
+(:data:`RELAY_ID_SQL`, :data:`GROUP_JOIN_SQL`). A trigger sets a new run's
+id from ``relay_map``; a run whose URL the map lacks keeps a NULL id (and the
+map is marked stale) until :func:`ensure_relay_map` adds the URL and fills
+it, and a rebuild re-assigns the runs whose relay changed. A key keeps its id
+while any URL maps to it. Once the map is current, every run has an id.
 """
 
 from __future__ import annotations
@@ -75,6 +86,17 @@ GROUP_KEY_SQL: dict[str, str] = {
 }
 """The SQL expression of each grouping's series key (see the module docstring)."""
 
+RELAY_ID_SQL = "m.relay_id"
+"""A run's ``relay_group.id`` (needs ``history_metrics m``; set for every
+run once :func:`ensure_relay_map` ran)."""
+
+GROUP_JOIN_SQL = "JOIN relay_group rm ON rm.id = m.relay_id"
+"""Joins each run to its relay as ``rm`` through its relay id: one integer
+primary-key lookup, where :data:`JOIN_SQL` looks the run's URL up. ``rm`` has
+the ``relay_key``, ``label``, ``kind`` and ``in_kb`` columns of
+:data:`JOIN_SQL`'s (not ``base_url_norm``), and an inner join keeps every run
+once :func:`ensure_relay_map` ran."""
+
 _RUNS_SQL = "FROM history h JOIN history_metrics m ON m.history_id = h.id"
 _NEW_URL_SQL = _url_sql("NEW.base_url_norm", "(SELECT base_url FROM history WHERE id = NEW.history_id)")
 
@@ -108,6 +130,65 @@ def ensure_tables(conn: sqlite3.Connection) -> None:
         )
 
 
+def _id_of(url: str) -> str:
+    """The relay id ``relay_map`` gives the run URL ``url`` (SQL; NULL when missing)."""
+    return f"(SELECT relay_id FROM relay_map WHERE base_url_norm = {url})"
+
+
+def ensure_relay_ids(conn: sqlite3.Connection) -> None:
+    """Add the relay ids: ``relay_group``, ``relay_map.relay_id``,
+    ``history_metrics.relay_id`` and the triggers that set a new run's id
+    (idempotent; a migration step). Marks the map stale, so the next
+    :func:`ensure_relay_map` fills in the ids of the runs already saved."""
+    from ekte.knowledge.snapshot import add_link_columns
+
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS relay_group (
+            id        INTEGER PRIMARY KEY,
+            relay_key TEXT NOT NULL UNIQUE,
+            label     TEXT NOT NULL,
+            kind      TEXT NOT NULL,
+            in_kb     INTEGER NOT NULL
+        )"""
+    )
+    add_link_columns(conn, "relay_map", {"relay_id": "INTEGER"})
+    add_link_columns(conn, "history_metrics", {"relay_id": "INTEGER"})
+    # the runs still to be given an id (none once the map is current)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_history_metrics_no_relay"
+                 " ON history_metrics (history_id) WHERE relay_id IS NULL")
+    set_id = (f"UPDATE history_metrics SET relay_id = {_id_of(_NEW_URL_SQL)}"
+              " WHERE history_id = NEW.history_id;")
+    # (INSERT OR REPLACE, how runs are extracted, fires the insert trigger)
+    conn.execute("CREATE TRIGGER IF NOT EXISTS relay_id_insert AFTER INSERT ON history_metrics"
+                 f" WHEN NEW.relay_id IS NULL BEGIN {set_id} END")
+    conn.execute("CREATE TRIGGER IF NOT EXISTS relay_id_update"
+                 f" AFTER UPDATE OF base_url_norm ON history_metrics BEGIN {set_id} END")
+    conn.execute("UPDATE relay_map_meta SET stale = 1 WHERE stale = 0")
+
+
+def _group_ids(conn: sqlite3.Connection, groups: dict[str, tuple[str, str, int]]) -> dict[str, int]:
+    """Upsert the ``relay_group`` rows of ``groups`` (key -> label, kind,
+    in_kb); returns key -> id."""
+    conn.executemany(
+        "INSERT INTO relay_group (relay_key, label, kind, in_kb) VALUES (?, ?, ?, ?)"
+        " ON CONFLICT (relay_key) DO UPDATE SET label = excluded.label, kind = excluded.kind,"
+        " in_kb = excluded.in_kb",
+        [(k, *v) for k, v in groups.items()],
+    )
+    ids: dict[str, int] = {}
+    keys = list(groups)
+    for i in range(0, len(keys), 500):
+        part = keys[i:i + 500]
+        ids.update((str(k), int(v)) for k, v in conn.execute(
+            f"SELECT relay_key, id FROM relay_group WHERE relay_key IN ({', '.join('?' * len(part))})",
+            part))
+    return ids
+
+
+# the relay_map key of history_metrics row t (as RUN_URL_SQL)
+_URL_OF_T_SQL = _url_sql("t.base_url_norm", "(SELECT base_url FROM history WHERE id = t.history_id)")
+
+
 def _state(conn: sqlite3.Connection) -> tuple[str | None, bool]:
     row = conn.execute("SELECT kb_version, stale FROM relay_map_meta WHERE id = 1").fetchone()
     return (None, True) if row is None else (str(row[0]), bool(row[1]))
@@ -125,9 +206,11 @@ def ensure_relay_map(conn: sqlite3.Connection) -> str:
     version the map now reflects.
 
     Rebuilds the whole map when :func:`~ekte.knowledge.relays.kb_version`
-    differs from the stored one, else adds the run URLs it lacks when it is
-    marked stale. Either is one Python pass over the URLs and one transaction
-    (the caller's, when one is open; else its own, committed here).
+    differs from the stored one (and re-assigns the relay id of every run
+    whose relay changed), else adds the run URLs it lacks when it is marked
+    stale (and fills in the ids of the runs without one). Either is one
+    Python pass over the URLs and one transaction (the caller's, when one is
+    open; else its own, committed here).
     """
     knowledge = load_for_grouping()
     version = kb_version(knowledge)
@@ -138,19 +221,38 @@ def ensure_relay_map(conn: sqlite3.Connection) -> str:
         conn.execute("BEGIN IMMEDIATE")  # no run is saved until the map is consistent
     try:
         stored, _ = _state(conn)
-        if stored == version:
-            urls = [str(r[0]) for r in conn.execute(
-                f"SELECT DISTINCT {RUN_URL_SQL} AS u {_RUNS_SQL}"
-                " WHERE NOT EXISTS (SELECT 1 FROM relay_map r WHERE r.base_url_norm = u)")]
-        else:
+        rebuild = stored != version
+        if rebuild:
             urls = [str(r[0]) for r in conn.execute(f"SELECT DISTINCT {RUN_URL_SQL} {_RUNS_SQL}")]
             conn.execute("DELETE FROM relay_map")
+        else:
+            # the URLs the map lacks, and those without an id (mapped before step 11)
+            urls = [str(r[0]) for r in conn.execute(
+                f"SELECT DISTINCT {RUN_URL_SQL} AS u {_RUNS_SQL}"
+                " WHERE NOT EXISTS (SELECT 1 FROM relay_map r WHERE r.base_url_norm = u)"
+                " UNION SELECT base_url_norm FROM relay_map WHERE relay_id IS NULL")]
         resolver = RelayResolver(knowledge)
-        rows = []
-        for url in {*urls, ""}:  # the no-URL row is always there
-            g = resolver.resolve({"base_url_norm": url or None})
-            rows.append((url, g.key, g.label, g.kind, int(g.in_kb)))
-        conn.executemany("INSERT OR REPLACE INTO relay_map VALUES (?, ?, ?, ?, ?)", rows)
+        resolved = {url: resolver.resolve({"base_url_norm": url or None})
+                    for url in {*urls, ""}}  # the no-URL row is always there
+        groups: dict[str, tuple[str, str, int]] = {}
+        for g in resolved.values():
+            # one description per key (they agree; else the largest, as MAX() in SQL)
+            groups[g.key] = max(groups.get(g.key, ("", "", 0)), (g.label, g.kind, int(g.in_kb)))
+        ids = _group_ids(conn, groups)
+        conn.executemany(
+            "INSERT OR REPLACE INTO relay_map (base_url_norm, relay_key, label, kind, in_kb,"
+            " relay_id) VALUES (?, ?, ?, ?, ?, ?)",
+            [(url, g.key, g.label, g.kind, int(g.in_kb), ids[g.key]) for url, g in resolved.items()])
+        if rebuild:
+            # the runs whose relay changed, then the groups no URL maps to any more
+            conn.execute(
+                "UPDATE history_metrics AS t SET relay_id = x.rid FROM"
+                f" (SELECT m.history_id AS hid, rm.relay_id AS rid {_RUNS_SQL} {JOIN_SQL}) AS x"
+                " WHERE t.history_id = x.hid AND t.relay_id IS NOT x.rid")
+            conn.execute("DELETE FROM relay_group WHERE id NOT IN (SELECT relay_id FROM relay_map)")
+        else:
+            conn.execute(f"UPDATE history_metrics AS t SET relay_id = {_id_of(_URL_OF_T_SQL)}"
+                         " WHERE t.relay_id IS NULL")
         conn.execute(
             "INSERT INTO relay_map_meta (id, kb_version, stale) VALUES (1, ?, 0)"
             " ON CONFLICT (id) DO UPDATE SET kb_version = excluded.kb_version, stale = 0",

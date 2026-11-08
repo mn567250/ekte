@@ -141,7 +141,10 @@ the save time (`ts`) to the run's start (`started_at`).
 **Selection.** `select_runs(q) -> RunSelection` (`.sql` = `FROM … WHERE …`,
 `.args`, `.and_where()`) over `history h` (through `idx_history_query`, so
 only `history.QUERY_INDEX_COLS` may be used), `history_metrics m` and, only
-when needed, `relay_map rm`. `count_runs`, `default_surface` (the most common
+when needed (text search), the run's relay `rm` (`relay_group`, joined on the
+run's `m.relay_id`). Relay filters and grouping use `m.relay_id` itself:
+runs are grouped by integer relay id (and model), and only the resulting
+groups are joined to their relay. `count_runs`, `default_surface` (the most common
 surface of a selection, for endpoints that need one).
 
 **Aggregation.** `aggregate(conn, q, metrics, group=None, *, quantiles=False)
@@ -162,10 +165,13 @@ registered (`sql_functions`).
 **Series.** `series(conn, q, metric, group=None, bucket="day", tz=UTC, *, keys=(),
 block=1, fold="week", max_keys=4, quantiles=False) -> SeriesResult` buckets in
 SQL: the zone's UTC offset is a `CASE` over its transitions in the data's span
-(`offset_sql`), so hour / day / week / `dow_hour` (with `block` and `fold`)
-buckets and their values match `analytics.series`, annotations (ekte version
-and knowledge-base profile changes) come from a SQL window, and only bucket
-rows reach Python.
+(`offset_sql`), and buckets are integer arithmetic on the run's local time in
+seconds, so hour / day / week / `dow_hour` (with `block` and `fold`) buckets
+and their values match `analytics.series`. Annotations (ekte version and
+knowledge-base profile changes) come from each value's first and last run per
+series: a value that follows another changes at its first run, and only the
+runs where values overlap in time (a rollback) are read one by one. Only
+bucket rows (and those runs) reach Python.
 
 **Paging.** `page_runs(conn, q, sort="-time", after=None, limit=20) -> Page`:
 `sort` is `time`, `score`, `risk` or `grade`, `-` for descending, ties by id;
@@ -175,7 +181,9 @@ pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
 
 **Benchmark.** `scripts/bench_fixture.py --data-dir DIR --bench` writes a
 synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
-reports) and prints p50 / p95 of `aggregate`, `series` and `page_runs`;
+reports, an ekte release every 3 weeks with an occasional one-day rollback,
+a profile change every 45 days) and prints p50 / p95 (nearest rank, 40 calls) of
+`aggregate`, `series` and `page_runs`;
 `EKTE_BENCH=1 pytest -m slow tests/test_query.py` checks the 50 ms p95 budget
 (`EKTE_BENCH_BUDGET_MS`).
 
@@ -215,6 +223,130 @@ change or a metric without a better side, `none` without a delta or when
 `previous_n` < `MIN_RUNS`; counts are always judged), `trend_key`
 (`trend.rising` / `trend.falling` / `trend.unchanged`), `low_n` and `applies`
 (False when the metric is not measured on `surface`: the "n/a" tiles).
+
+## History API
+
+`ekte/web/history_api.py` computes the History page's widgets on the server,
+on top of the [query core](#query-core) and the [metric registry](#metric-registry),
+so the page only draws. Both endpoints are cached (`cached_endpoint`, ETag /
+304; `range` is resolved first), take every key of the query core's URL
+schema with `group=relay_model` as the default (also `relay`, `model`,
+`all`), ignore the dotted keys of other widgets and answer 400
+`{"error": "..."}` for an invalid value or an unknown key of their own
+namespaces. No endpoint loads the runs into Python: groups are one aggregate
+pass per group and base URL, rows are keyset pages.
+
+**Order** (`groups.sort`, `runs.sort`): `time`, `risk`, `score` or `grade`,
+descending with a leading `-` (default `-time`). The value is the run's start
+time (`history_metrics.started_at`), its risk (clean < inconclusive < low <
+medium < high; no risk level is inconclusive), its score, or its grade
+(F < E < D < C < B < A). Runs without a value come last in either direction;
+ties go to the most recently saved run (higher id). Rows are in that order in
+their group, and groups are ordered by their first run under it, as the page
+always sorted. Cursors (`after`) are opaque and belong to one sort.
+
+**Relay labels.** A saved relay or provider is called by its name; an unsaved
+URL by its host with port, or, when several unsaved URLs share host and port,
+by host, port and path (no scheme, no trailing slash). Computed once per
+`relay_map` content over every URL in it (`relay_labels(conn)`,
+`url_labels(urls)`, `host_of(url)`, `url_place(url)`).
+
+### `GET /api/history/groups`
+
+| Key | Values |
+|---|---|
+| `trend.metrics` | required: 1 or 2 ids of `HISTORY_TRENDS` (`score`, `grade`, `latency_p50`, `ttft_p50`, `decode_tps`, `error_rate`), comma-separated or repeated; 0, 3, a duplicate or another id is a 400. Answered in `HISTORY_TRENDS` order |
+| `groups.sort` | see **Order** |
+| `groups.limit` | 1–200, default 20 |
+| `groups.after` | the previous page's `after` |
+| `groups.focus` | a run id: the page grows (whole pages) until it holds that run's group |
+
+```json
+{
+  "group": "relay_model", "sort": "-time", "limit": 20,
+  "trend_metrics": ["score", "latency_p50"], "points_max": 50, "min_runs": 3,
+  "total_groups": 37, "total_runs": 1204,
+  "after": "<cursor or null>",
+  "focus": {"id": 812, "key": "https://relay.example/v1|gpt-4o"},
+  "groups": [{
+    "key": "https://relay.example/v1|gpt-4o",
+    "kind": "relay_model",
+    "label": "relay.example · gpt-4o",
+    "relay": {"key": "https://relay.example/v1", "label": "relay.example", "kind": "url", "in_kb": false},
+    "claimed_model": "gpt-4o",
+    "base_urls": ["https://relay.example/v1"],
+    "runs": 42, "low_n": false,
+    "latest": {"<run row, as in /api/history/runs>": "..."},
+    "trends": {
+      "score": {
+        "metric": "score", "points": [81.5, 84.0, 79.0], "first": 81.5, "n": 3,
+        "last": {"value": 79.0, "family": "sky", "grade": "C", "delta": -2.5,
+                 "direction": "worse", "trend_key": "trend.falling", "low_n": false, "applies": true}
+      }
+    }
+  }]
+}
+```
+
+`focus` is null without `groups.focus` or when the run is not among the
+filtered runs. `relay` is null for `group=model|all`, `claimed_model` null for
+`relay|all` (and for runs without a claimed model). `label` is the relay label
+(`relay`), the model (`model`), `(all)` (`all`) or `<relay label> · <model>`,
+with `(unknown)` for a missing part. `base_urls` lists the group's URLs, the
+most recently used first. `latest` is the group's newest run (start time,
+then id). Trend `points` are the stored per-run values (`score`, the grade on
+the 1..6 scale, `latency_p50_ms`, `ttft_p50_ms`, `decode_tps_p50`, the run's
+#118 `error_rate`; a run with no judged request has none) of the group's
+newest 50 runs, oldest to newest, runs without a value left out; `first` /
+`last.value` / `n` are what the accessible description reads, and `last` is
+`present(metric, last, first, n=n, surface=<surface filter>)`.
+
+### `GET /api/history/runs`
+
+| Key | Values |
+|---|---|
+| `group.key` | required: a group's `key` (under the same `group` and filters) |
+| `runs.sort` | see **Order** |
+| `runs.limit` | 1–200, default 20 |
+| `runs.after` | the previous page's `after` |
+| `runs.focus` | a run id: when it is in this group after the cursor, the page grows (whole pages of `runs.limit`) until it holds it |
+
+```json
+{
+  "group": "relay_model", "key": "https://relay.example/v1|gpt-4o", "sort": "-time",
+  "limit": 20, "total": 42, "after": "<cursor or null>",
+  "focus": {"id": 812, "found": true},
+  "rows": [{
+    "id": 812, "ts": "2026-11-01T09:12:40+00:00",
+    "started_at": "2026-11-01T09:10:02.000000+00:00", "started_at_estimated": false,
+    "base_url": "https://relay.example/v1", "relay_key": "https://relay.example/v1",
+    "claimed_model": "gpt-4o", "model": "gpt-4o", "mode": "check", "suite": "standard",
+    "surface": "chat", "api": "openai", "api_auto": true, "detect": "auto", "stream_mode": "stream",
+    "risk_level": "clean", "score": 84.0, "grade": "B", "kb_match": "match",
+    "family": {"risk": "good", "score": "good", "grade": "good"},
+    "watch_id": null, "exec": "manual",
+    "latency_p50_ms": 812.4, "ttft_p50_ms": 301.0, "decode_tps_p50": 61.2, "error_rate": 0.02
+  }]
+}
+```
+
+`limit` is the page size actually used (larger than asked when `runs.focus`
+grew it); `total` counts the group's runs under the filters; `focus` is null
+without `runs.focus`. `risk_level` is `inconclusive` for a run without one,
+`mode` `check` for one without, `detect` `auto` / `manual` / null and `exec`
+`manual` / `monitor`; `family` holds the colour families of the risk badge,
+score and grade (`metrics.family`).
+
+### `GET /api/history/{rid}?trend=1`
+
+Besides the running request medians, the report gains `history_trends`:
+`{metric id: present(...)}` for every `HISTORY_TRENDS` metric, from the same
+per-run SQL as the group trends, so a group of that run alone shows exactly
+these values (and `query.aggregate` over that run gives the same, n = 1).
+
+`GET /api/history` (the newest ≤ 500 runs, `limit` / `perf` / `relay`) stays
+until the History page moves to these endpoints (#127); `GET /api/v1/history`
+is part of the public API and is unchanged.
 
 ## HTTP API v1
 
