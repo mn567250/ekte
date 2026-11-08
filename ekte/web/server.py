@@ -68,13 +68,12 @@ different relays run in parallel. A job is detached from the page that queued it
 from __future__ import annotations
 
 import asyncio
-import collections
 import contextlib
 import json
 import logging
-import threading
 import time
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -1513,81 +1512,70 @@ def create_app() -> FastAPI:
     # ----- Analytics (ekte/web/analytics.py) ------------------------------ #
     # Plain `def` handlers (SQLite + the knowledge base load run in the thread
     # pool). Every parameter is validated there: a bad one answers 400.
-    # Analytics answers are cached briefly: a filter, tab or block change
-    # often asks the same question again. The key holds the call and its
-    # parameters, the history database and its write count (any saved,
-    # deleted or cleared run drops them) and a 30-second time slot (relative
-    # ranges such as "last 7 days" move, relay names can change).
-    analytics_cache: collections.OrderedDict[str, Any] = collections.OrderedDict()
-    analytics_lock = threading.Lock()
+    # Answers go through the response cache (ekte/web/cache.py): keyed on the
+    # endpoint, its canonical parameters and the database's data version (any
+    # saved, deleted or cleared run, from any process, drops them), with an
+    # ETag the browser revalidates.
+    from ekte.web.analytics import AnalyticsError
+    from ekte.web.cache import cached_endpoint
 
-    def _analytics(call: Any, *args: Any) -> Any:
-        from ekte.web import history
-        from ekte.web.analytics import AnalyticsError
+    def _until_now(params: Any) -> Any:
+        """``from`` without ``to`` runs up to now: make that bound explicit
+        before keying, so the answer is cached under its absolute range."""
+        if params.get("from") and not params.get("to"):
+            from ekte.web import analytics_store
 
-        key = json.dumps([call.__name__, args, history.write_mark(), int(time.time() // 30)],
-                         sort_keys=True, default=str)
-        with analytics_lock:
-            body = analytics_cache.get(key)
-            if body is not None:
-                analytics_cache.move_to_end(key)
-        status = 200
-        if body is None:
-            try:
-                body = call(*args)
-            except AnalyticsError as exc:
-                body, status = {"error": str(exc)}, 400
-            else:
-                with analytics_lock:
-                    analytics_cache[key] = body
-                    while len(analytics_cache) > 64:
-                        analytics_cache.popitem(last=False)
-        # Fresh numbers on every load: the history changes with each run.
-        return JSONResponse(body, status_code=status, headers={"Cache-Control": "no-store"})
+            return [*params.multi_items(), ("to", analytics_store.format_ts(datetime.now(UTC)))]
+        return params
 
     @app.get("/api/analytics/options")
-    def analytics_options(request: Request) -> Any:
+    @cached_endpoint("analytics.options", errors=(AnalyticsError,))
+    def analytics_options(params: Any) -> Any:
         from ekte.web import analytics
 
-        return _analytics(analytics.options, dict(request.query_params))
+        return analytics.options(dict(params))
 
     @app.get("/api/analytics/summary")
-    def analytics_summary(request: Request) -> Any:
+    @cached_endpoint("analytics.summary", errors=(AnalyticsError,), prepare=_until_now)
+    def analytics_summary(params: Any) -> Any:
         from ekte.web import analytics
 
-        return _analytics(analytics.summary, dict(request.query_params))
+        return analytics.summary(dict(params))
 
     @app.get("/api/analytics/series")
-    def analytics_series(request: Request) -> Any:
+    @cached_endpoint("analytics.series", errors=(AnalyticsError,))
+    def analytics_series(params: Any) -> Any:
         from ekte.web import analytics
 
-        params = request.query_params
-        return _analytics(analytics.series, dict(params), params.getlist("keys"))
+        return analytics.series(dict(params), params.getlist("keys"))
 
     @app.get("/api/analytics/leaderboard")
-    def analytics_leaderboard(request: Request) -> Any:
+    @cached_endpoint("analytics.leaderboard", errors=(AnalyticsError,))
+    def analytics_leaderboard(params: Any) -> Any:
         from ekte.web import analytics
 
-        return _analytics(analytics.leaderboard, dict(request.query_params))
+        return analytics.leaderboard(dict(params))
 
     @app.get("/api/analytics/breakdown")
-    def analytics_breakdown(request: Request) -> Any:
+    @cached_endpoint("analytics.breakdown", errors=(AnalyticsError,))
+    def analytics_breakdown(params: Any) -> Any:
         from ekte.web import analytics
 
-        params = request.query_params
-        return _analytics(analytics.breakdown, dict(params), params.getlist("metrics"))
+        return analytics.breakdown(dict(params), params.getlist("metrics"))
 
     @app.get("/api/analytics/errors")
-    def analytics_errors(request: Request) -> Any:
+    @cached_endpoint("analytics.errors", errors=(AnalyticsError,))
+    def analytics_errors(params: Any) -> Any:
         from ekte.web import analytics
 
-        return _analytics(analytics.errors, dict(request.query_params))
+        return analytics.errors(dict(params))
 
     @app.get("/api/analytics/integrity")
-    def analytics_integrity(request: Request) -> Any:
+    @cached_endpoint("analytics.integrity", errors=(AnalyticsError,))
+    def analytics_integrity(params: Any) -> Any:
         from ekte.web import analytics
 
-        return _analytics(analytics.integrity, dict(request.query_params))
+        return analytics.integrity(dict(params))
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
     def _watch_rows() -> list[dict[str, Any]]:

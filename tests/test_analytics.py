@@ -467,7 +467,7 @@ def client(seeded):
 def test_http_endpoints(client):
     r = client.get("/api/analytics/options")
     assert r.status_code == 200 and r.json()["runs"] == 17
-    assert r.headers["cache-control"] == "no-store"
+    assert r.headers["cache-control"] == "no-cache" and r.headers["etag"]
     r = client.get("/api/analytics/summary",
                    params={"from": "2026-03-03T12:00:00+00:00", "to": "2026-03-04T12:00:00+00:00"})
     assert r.status_code == 200 and r.json()["runs"] == 5
@@ -668,7 +668,7 @@ def test_series_group_all(seeded):
 
 def test_http_phase4_endpoints(client):
     r = client.get("/api/analytics/breakdown", params=[("metrics", "relay_overhead"), ("metrics", "network_rtt")])
-    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-cache" and r.headers["etag"]
     assert [m["id"] for m in r.json()["metrics"]] == ["relay_overhead", "network_rtt"]
     r = client.get("/api/analytics/errors", params={"group": "model", "bucket": "dow_hour", "tz": "UTC"})
     assert r.status_code == 200 and r.json()["covered"] == 0 and r.json()["runs"] == 17
