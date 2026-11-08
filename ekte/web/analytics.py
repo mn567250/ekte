@@ -58,6 +58,7 @@ from datetime import UTC, date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from ekte import errorclass
 from ekte.config import SURFACE_OPS, SURFACES
 from ekte.knowledge.relays import normalize_url
 from ekte.web import analytics_store, history
@@ -99,14 +100,26 @@ class AnalyticsError(ValueError):
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
 class Metric:
-    """A public metric id and where its per-run value comes from."""
+    """A public metric id and where its per-run value comes from.
+
+    ``agg`` says how runs combine (:mod:`ekte.web.query`): ``median`` of the
+    per-run values, ``share`` of the runs with "yes", or ``pooled``: the
+    outcome counts ``outcomes`` (``history_outcomes``) summed over the runs,
+    divided by the summed base ``base`` (a ``history_metrics`` column,
+    ``requests_judged`` or ``requests_total``); the per-run ``column`` is
+    then that run's own ratio. The per-run Python path of this module
+    (:func:`aggregate`) still takes the median of a pooled metric's per-run
+    values.
+    """
 
     id: str
     column: str  # history / history_metrics column ("" for derived values)
     unit: str  # score | ratio | ms | tok/s | tokens | count | s
     higher_is_better: bool | None  # None: neither (e.g. billing ratio, ideal 1.0)
-    agg: str = "median"  # median | share
+    agg: str = "median"  # median | share | pooled
     surfaces: frozenset[str] = ALL_SURFACES  # the surfaces it is measured on
+    outcomes: tuple[str, ...] = ()  # pooled: the outcomes counted (numerator)
+    base: str = ""  # pooled: the history_metrics column of the denominator
 
     def public(self) -> dict[str, Any]:
         return {"id": self.id, "unit": self.unit, "higher_is_better": self.higher_is_better, "agg": self.agg,
@@ -121,14 +134,20 @@ def _m(mid: str, column: str, unit: str, better: bool | None, agg: str = "median
     return Metric(mid, column, unit, better, agg, surfaces)
 
 
+def _pooled(mid: str, better: bool, outcomes: tuple[str, ...], base: str = "requests_judged") -> Metric:
+    """An outcome rate (:mod:`ekte.perf.outcomes`): Σ outcome counts ÷ Σ base."""
+    return Metric(mid, mid, "ratio", better, "pooled", ALL_SURFACES, outcomes, base)
+
+
 # The whitelist: public id -> column. Rates and shares are 0..1 ("ratio").
 METRICS: dict[str, Metric] = {m.id: m for m in (
     _m("score", "score", "score", True),
     _m("risk_high_share", "risk_level", "ratio", False, "share"),
-    _m("success_rate", "success_rate", "ratio", True),
-    _m("error_rate", "error_rate", "ratio", False),
-    _m("timeout_rate", "timeout_rate", "ratio", False),
-    _m("rate_limited_rate", "rate_limited_rate", "ratio", False),
+    _pooled("success_rate", True, (errorclass.SUCCESS,)),
+    _pooled("error_rate", False, errorclass.RELAY_ERRORS),
+    _pooled("timeout_rate", False, (errorclass.RELAY_TIMEOUT,)),
+    _pooled("rate_limited_rate", False, (errorclass.RATE_LIMITED,)),
+    _pooled("impaired_rate", False, errorclass.IMPAIRED, "requests_total"),
     _m("latency_p50", "latency_p50_ms", "ms", False),
     _m("latency_p95", "latency_p95_ms", "ms", False),
     _m("ttft_p50", "ttft_p50_ms", "ms", False, surfaces=CHAT_ONLY),
