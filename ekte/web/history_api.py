@@ -79,15 +79,14 @@ WIDGET_KEYS: dict[str, dict[str, tuple[str, ...]]] = {
 _RISK_VALUE = ("CASE COALESCE(NULLIF(h.risk_level, ''), 'inconclusive') WHEN 'clean' THEN 0"
                " WHEN 'inconclusive' THEN 1 WHEN 'low' THEN 2 WHEN 'medium' THEN 3"
                " WHEN 'high' THEN 4 END")
-_TIME_VALUE = "julianday(m.started_at)"
 _SORT_VALUE = {
-    "time": _TIME_VALUE,
+    "time": "m.started_at",  # fixed-width ISO text: sorts as time
     "risk": _RISK_VALUE,
     # a score is a number or NULL (written from floats)
     "score": "h.score",
     "grade": metrics.grade_value_sql("h.rating"),
 }
-_ORDER = "k0, k1, k2, k3, k4"
+_KEYS = ("k0", "k1", "k2", "k3", "k4")
 _NEWEST = "m.started_at IS NULL, m.started_at DESC, m.history_id DESC"
 
 
@@ -196,9 +195,9 @@ def _uncursor(after: str, kind: str, sort: str, key: str) -> tuple[Any, ...]:
         k, s, keys = json.loads(raw)
     except (ValueError, TypeError, binascii.Error):
         raise QueryError(f"{key} is not a valid cursor") from None
-    if (k, s) != (kind, sort) or not isinstance(keys, list) or len(keys) != 5 or any(
-            isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v)
-            for v in keys):
+    if (k, s) != (kind, sort) or not isinstance(keys, list) or len(keys) != len(_KEYS) or any(
+            isinstance(v, bool) or not isinstance(v, (int, float, str))
+            or (isinstance(v, float) and not math.isfinite(v)) for v in keys):
         raise QueryError(f"{key} is not a cursor of this sort")
     return tuple(keys)
 
@@ -206,14 +205,46 @@ def _uncursor(after: str, kind: str, sort: str, key: str) -> tuple[Any, ...]:
 # --------------------------------------------------------------------------- #
 # SQL pieces
 # --------------------------------------------------------------------------- #
-def _keys_sql(name: str, desc: bool) -> str:
-    """The sort as five ascending keys ``k0`` … ``k4`` (see the module
-    docstring): no value last, the value, then newest first."""
-    v = _SORT_VALUE[name]
-    sign = "-" if desc else ""
-    return (f"({v}) IS NULL AS k0, {sign}COALESCE({v}, 0) AS k1,"
-            f" {_TIME_VALUE} IS NULL AS k2, -COALESCE({_TIME_VALUE}, 0) AS k3,"
-            " -m.history_id AS k4")
+@dataclass(frozen=True)
+class _Order:
+    """A sort (see the module docstring) as five keys ``k0`` … ``k4``: no
+    value last, the value, then the newest run first (no start time last,
+    start time, id)."""
+
+    name: str
+    desc: bool
+
+    @property
+    def dirs(self) -> tuple[bool, ...]:  # True: descending
+        return (False, self.desc, False, True, True)
+
+    def columns(self) -> str:
+        v = _SORT_VALUE[self.name]
+        zero = "''" if self.name == "time" else "0"
+        return (f"({v}) IS NULL AS k0, COALESCE({v}, {zero}) AS k1,"
+                " m.started_at IS NULL AS k2, COALESCE(m.started_at, '') AS k3,"
+                " m.history_id AS k4")
+
+    @property
+    def by(self) -> str:
+        return ", ".join(f"{k} DESC" if d else k for k, d in zip(_KEYS, self.dirs, strict=True))
+
+    def beyond(self, values: Sequence[Any], before: bool = False) -> tuple[str, tuple[Any, ...]]:
+        """SQL for "after ``values`` in this order" (``before``: before them)."""
+        terms, args = [], []
+        for i, (k, d) in enumerate(zip(_KEYS, self.dirs, strict=True)):
+            op = "<" if d != before else ">"
+            terms.append("(" + " AND ".join([*(f"{_KEYS[j]} = ?" for j in range(i)), f"{k} {op} ?"])
+                         + ")")
+            args += [*values[:i], values[i]]
+        return "(" + " OR ".join(terms) + ")", tuple(args)
+
+    def after(self, a: Sequence[Any], b: Sequence[Any]) -> bool:
+        """Whether keys ``a`` come after keys ``b`` in this order."""
+        for x, y, d in zip(a, b, self.dirs, strict=True):
+            if x != y:
+                return (x < y) if d else (x > y)
+        return False
 
 
 def _selection(q: Query) -> tuple[RunSelection, str]:
@@ -238,7 +269,7 @@ ROW_COLUMNS: tuple[str, ...] = (
         "id", "ts", "base_url", "claimed_model", "model", "mode", "suite", "risk_level", "score",
         "rating", "kb_match", "watch_id", "api", "api_auto", "stream_mode")),
     "COALESCE(h.surface, 'chat') AS surface", "m.started_at", "m.started_at_estimated",
-    "rm.relay_key", "m.latency_p50_ms", "m.ttft_p50_ms", "m.decode_tps_p50", "m.error_rate",
+    "rm.relay_key", "rm.kind AS relay_kind", "rm.in_kb AS relay_in_kb", "m.latency_p50_ms", "m.ttft_p50_ms", "m.decode_tps_p50", "m.error_rate",
 )
 
 
@@ -252,6 +283,7 @@ def _row(d: Mapping[str, Any]) -> dict[str, Any]:
         "id": int(d["id"]), "ts": d["ts"], "started_at": d["started_at"],
         "started_at_estimated": bool(d["started_at_estimated"]),
         "base_url": d["base_url"], "relay_key": d["relay_key"],
+        "_relay": (d["relay_key"], d["relay_kind"], d["relay_in_kb"]),
         "claimed_model": d["claimed_model"] or None, "model": d["model"] or None,
         "mode": d["mode"] or "check", "suite": d["suite"] or None, "surface": d["surface"],
         "api": d["api"] or None, "api_auto": None if auto is None else bool(auto),
@@ -269,8 +301,10 @@ def _row(d: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _rows(conn: sqlite3.Connection, ids: Sequence[int]) -> dict[int, dict[str, Any]]:
-    """The summary rows of some runs, by id."""
+def _rows(conn: sqlite3.Connection, ids: Sequence[int],
+          keep_relay: bool = False) -> dict[int, dict[str, Any]]:
+    """The summary rows of some runs, by id (``keep_relay``: with
+    ``_relay``, the relay's key, kind and in_kb)."""
     if not ids:
         return {}
     cur = conn.execute(
@@ -278,7 +312,11 @@ def _rows(conn: sqlite3.Connection, ids: Sequence[int]) -> dict[int, dict[str, A
         f" JOIN history_metrics m ON m.history_id = h.id {JOIN_SQL}"
         f" WHERE h.id IN ({', '.join('?' * len(ids))})", tuple(ids))
     names = [c[0] for c in cur.description]
-    return {int(r[0]): _row(dict(zip(names, r, strict=True))) for r in cur.fetchall()}
+    out = {int(r[0]): _row(dict(zip(names, r, strict=True))) for r in cur.fetchall()}
+    if not keep_relay:
+        for row in out.values():
+            del row["_relay"]
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -416,15 +454,14 @@ class _Head:
     keys: tuple[Any, ...]
 
 
-def _heads(conn: sqlite3.Connection, sel: RunSelection, gk: str, name: str,
-           desc: bool) -> list[_Head]:
+def _heads(conn: sqlite3.Connection, sel: RunSelection, gk: str, order: _Order) -> list[_Head]:
     """Each group's first run under the sort, the groups in that order."""
+    keys = ", ".join(_KEYS)
     cur = conn.execute(
-        f"WITH r AS MATERIALIZED (SELECT {gk} AS g, m.history_id AS id, {_keys_sql(name, desc)}"
-        f" {sel.sql}),"
-        f" b AS (SELECT g, id, {_ORDER}, ROW_NUMBER() OVER w AS rn, COUNT(*) OVER (PARTITION BY g)"
-        f" AS runs FROM r WINDOW w AS (PARTITION BY g ORDER BY {_ORDER}))"
-        f" SELECT g, id, runs, {_ORDER} FROM b WHERE rn = 1 ORDER BY {_ORDER}", sel.args)
+        f"WITH r AS MATERIALIZED (SELECT {gk} AS g, {order.columns()} {sel.sql}),"
+        f" b AS (SELECT g, {keys}, ROW_NUMBER() OVER w AS rn, COUNT(*) OVER (PARTITION BY g)"
+        f" AS runs FROM r WINDOW w AS (PARTITION BY g ORDER BY {order.by}))"
+        f" SELECT g, k4, runs, {keys} FROM b WHERE rn = 1 ORDER BY {order.by}", sel.args)
     return [_Head(str(r[0]), int(r[1]), int(r[2]), tuple(r[3:])) for r in cur.fetchall()]
 
 
@@ -438,12 +475,13 @@ def groups(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
     after = _one(widget, "groups.after")
     wanted = trend_metrics(widget.get("trend.metrics"))
     sel, gk = _selection(q)
-    heads = _heads(conn, sel, gk, name, desc)
+    order = _Order(name, desc)
+    heads = _heads(conn, sel, gk, order)
 
     start = 0
     if after:
         cut = _uncursor(after, "groups", sort, "groups.after")
-        start = next((i for i, h in enumerate(heads) if h.keys > cut), len(heads))
+        start = next((i for i, h in enumerate(heads) if order.after(h.keys, cut)), len(heads))
     end = min(len(heads), start + limit)
     focus_out = None
     if focus is not None:
@@ -492,18 +530,14 @@ def _describe(conn: sqlite3.Connection, q: Query, sel: RunSelection, gk: str,
             f"SELECT {gk} AS g, h.base_url {usel.sql}"
             " GROUP BY g, h.base_url ORDER BY g, MAX(m.started_at) DESC, h.base_url", usel.args):
         urls[str(g)].append(str(url))
-    rows = _rows(conn, list(latest.values()))
-    labels = relay_labels(conn) if q.group in ("relay", "relay_model") else {}
-    rm = {}
-    if labels:
-        rm = {int(r[0]): r[1:] for r in conn.execute(
-            f"SELECT h.id, rm.relay_key, rm.kind, rm.in_kb FROM history h"
-            f" JOIN history_metrics m ON m.history_id = h.id {JOIN_SQL}"
-            f" WHERE h.id IN ({', '.join('?' * len(latest))})", tuple(latest.values()))}
+    rows = _rows(conn, list(latest.values()), keep_relay=True)
+    by_relay = q.group in ("relay", "relay_model")
+    labels = relay_labels(conn) if by_relay else {}
     out = []
     for h in page:
         row = rows.get(latest.get(h.key, -1))
-        relay = _relay(*rm[row["id"]], labels) if row and row["id"] in rm else None
+        rel = row.pop("_relay") if row else None
+        relay = _relay(*rel, labels) if rel and by_relay else None
         model = row["claimed_model"] if row and q.group in ("model", "relay_model") else None
         out.append({
             "key": h.key, "kind": q.group, "relay": relay, "claimed_model": model,
@@ -534,31 +568,30 @@ def runs(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
     after = _one(widget, "runs.after")
     sel, gk = _selection(q)
     sel = sel.and_where(f"{gk} = ?", gkey)
-    base = f"SELECT m.history_id AS id, {_keys_sql(name, desc)} {sel.sql}"
+    order = _Order(name, desc)
+    base = f"SELECT {order.columns()} {sel.sql}"
     cut = _uncursor(after, "runs", sort, "runs.after") if after else None
-    later = f" WHERE ({_ORDER}) > (?, ?, ?, ?, ?)" if cut else ""
-    cut_args = tuple(cut or ())
+    later, cut_args = order.beyond(cut) if cut else ("1", ())
+    keys = ", ".join(_KEYS)
     total = int(conn.execute(f"SELECT COUNT(*) {sel.sql}", sel.args).fetchone()[0])
 
     focus_out = None
     if focus is not None:
-        fk = conn.execute(f"SELECT {_ORDER} FROM ({base}) WHERE id = ?",
+        fk = conn.execute(f"SELECT {keys} FROM ({base}) WHERE k4 = ?",
                           (*sel.args, focus)).fetchone()
-        if fk is not None:
-            fk = tuple(fk)
-            if cut is None or fk > cut:
-                before = int(conn.execute(
-                    f"SELECT COUNT(*) FROM ({base}){later or ' WHERE 1'} AND ({_ORDER}) < (?, ?, ?, ?, ?)",
-                    (*sel.args, *cut_args, *fk)).fetchone()[0])
-                limit = max(limit, math.ceil((before + 1) / limit) * limit)
-                focus_out = {"id": focus, "found": True}
-        if focus_out is None:
-            focus_out = {"id": focus, "found": False}
+        hit = fk is not None and (cut is None or order.after(tuple(fk), cut))
+        if hit:
+            ahead, ahead_args = order.beyond(tuple(fk), before=True)
+            before = int(conn.execute(
+                f"SELECT COUNT(*) FROM ({base}) WHERE {later} AND {ahead}",
+                (*sel.args, *cut_args, *ahead_args)).fetchone()[0])
+            limit = max(limit, math.ceil((before + 1) / limit) * limit)
+        focus_out = {"id": focus, "found": hit}
 
-    found = conn.execute(f"SELECT id, {_ORDER} FROM ({base}){later} ORDER BY {_ORDER} LIMIT ?",
+    found = conn.execute(f"SELECT {keys} FROM ({base}) WHERE {later} ORDER BY {order.by} LIMIT ?",
                          (*sel.args, *cut_args, limit + 1)).fetchall()
-    nxt = _cursor("runs", sort, tuple(found[limit - 1][1:])) if len(found) > limit else None
-    ids = [int(r[0]) for r in found[:limit]]
+    nxt = _cursor("runs", sort, tuple(found[limit - 1])) if len(found) > limit else None
+    ids = [int(r[4]) for r in found[:limit]]
     rows = _rows(conn, ids)
     return {"group": q.group, "key": gkey, "sort": sort, "limit": limit, "total": total,
             "rows": [rows[i] for i in ids if i in rows], "after": nxt, "focus": focus_out}
