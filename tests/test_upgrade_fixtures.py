@@ -109,7 +109,7 @@ def test_history_is_complete_and_readable(upgraded):
 def test_web_read_paths(upgraded):
     _data, manifest, _src = upgraded
     client = TestClient(create_app(), base_url="http://localhost")
-    listed = client.get("/api/history").json()
+    listed = client.get("/api/v1/history").json()
     assert {r["id"] for r in listed} == {r["id"] for r in manifest["history"]}
     for run in manifest["history"]:
         for path in (f"/api/history/{run['id']}", f"/api/v1/history/{run['id']}"):
