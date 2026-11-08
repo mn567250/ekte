@@ -45,66 +45,77 @@
     - combobox "Type endepunkt":
       - option "Alle" [selected]
       - option "Chat"
-    - text: Relé / leverandør
-    - combobox "Relé / leverandør":
-      - option "Alle" [selected]
-      - option "127.0.0.1:9099"
-      - option "Example Relay"
-      - option "gateway.a-very-long-relay-hostname.example.org"
-    - text: Oppgitt modell
-    - combobox "Oppgitt modell":
-      - option "Alle" [selected]
-      - option "gpt-4o"
-      - option "model-a"
-      - option "model-b"
+      - option "Embeddinger"
+      - option "Rerank"
+    - group "Relé / leverandør":
+      - text: Relé / leverandør
+      - checkbox "(ukjent)"
+      - text: (ukjent)
+    - group "Oppgitt modell":
+      - text: Oppgitt modell
+      - checkbox "(ukjent)"
+      - text: (ukjent)
     - text: Testsett
     - combobox "Testsett":
       - option "Alle" [selected]
-      - option "standard"
+      - option "(ukjent)"
     - text: Modus
     - combobox "Modus":
       - option "Alle" [selected]
-      - option "check"
+      - option "(ukjent)"
     - text: Protokoll
     - combobox "Protokoll":
       - option "Alle" [selected]
-      - option "openai"
       - option "(ukjent)"
     - text: Protokollgjenkjenning
     - combobox "Protokollgjenkjenning":
       - option "Alle" [selected]
+      - option "oppdaget automatisk"
+      - option "satt manuelt"
       - option "(ukjent)"
     - text: Probeforespørsler
     - combobox "Probeforespørsler":
       - option "Alle" [selected]
       - option "Strømming"
+      - option "Uten strømming"
+      - option "Med + uten strømming"
       - option "(ukjent)"
     - text: Risiko
     - combobox "Risiko":
       - option "Alle" [selected]
       - option "Konsistent (trolig ekte)"
       - option "Stort sett pålitelig"
+      - option "Avvik funnet"
       - option "Falsk vare"
+      - option "For lite grunnlag"
     - text: Min. score
     - spinbutton "Min. score"
     - text: Periode
     - combobox "Periode":
-      - option "Alle" [selected]
+      - option "Hele perioden" [selected]
+      - option "Siste 24 timer"
       - option "Siste 7 dager"
       - option "Siste 30 dager"
       - option "Siste 90 dager"
+      - option "Siste 365 dager"
+      - option "Egendefinert periode"
     - text: Kjøring
     - combobox "Kjøring":
       - option "Alle" [selected]
-      - option "Ad hoc"
+      - option "Manuelt"
       - option "Overvåking"
     - group "Trender":
-      - text: Trender
+      - text: Trender 2 av maks 2 valgt
       - button "Score" [pressed]
-      - button "Karakter"
+      - button "Karakter" [disabled]
       - button "Forsinkelse p50" [pressed]
-      - button "Dekodehastighet p50"
+      - button "Tid til første token p50" [disabled]
+      - button "Dekodehastighet p50" [disabled]
+      - button "Feilrate" [disabled]
     - text: Viser 15 av 15 revisjoner
+    - status
+    - button "Kopier lenke til denne visningen"
+  - status
   - group "Sorter revisjoner":
     - button "Tid, sortert synkende": Tid
     - button "Sorter etter Risiko": Risiko
@@ -115,9 +126,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relé Example Relay Score
-    - 'img "Trend for helsescore over 7 revisjoner: fra 70 til 82, stigende."'
+    - 'img "Score-trend over 7 revisjoner: fra 70 til 82, stigende."'
     - text: 82 Forsinkelse p50
-    - 'img "Trend for Forsinkelse p50 over 7 revisjoner: fra <duration> til <duration>."'
+    - 'img "Forsinkelse p50-trend over 7 revisjoner: fra <duration> til <duration>, fallende."'
     - text: <duration>
     - list:
       - listitem:
@@ -159,9 +170,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relé gateway.a-very-long-relay-hostname.example.org Score
-    - 'img "Trend for helsescore over 4 revisjoner: fra 58 til 64, stigende."'
+    - 'img "Score-trend over 4 revisjoner: fra 58 til 64, stigende."'
     - text: 64 Forsinkelse p50
-    - 'img "Trend for Forsinkelse p50 over 4 revisjoner: fra <duration> til <duration>."'
+    - 'img "Forsinkelse p50-trend over 4 revisjoner: fra <duration> til <duration>, fallende."'
     - text: <duration>
     - list:
       - listitem:
@@ -188,9 +199,9 @@
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - text: Relé Example Relay Score
-    - 'img "Trend for helsescore over 2 revisjoner: fra 89 til 91, stigende."'
+    - 'img "Score-trend over 2 revisjoner: fra 89 til 91, stigende."'
     - text: 91 Forsinkelse p50
-    - 'img "Trend for Forsinkelse p50 over 2 revisjoner: fra <duration> til <duration>."'
+    - 'img "Forsinkelse p50-trend over 2 revisjoner: fra <duration> til <duration>, fallende."'
     - text: <duration>
     - list:
       - listitem:

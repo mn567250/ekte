@@ -45,66 +45,77 @@
     - combobox "Endpoint type":
       - option "All" [selected]
       - option "Chat"
-    - text: Relay / provider
-    - combobox "Relay / provider":
-      - option "All" [selected]
-      - option "127.0.0.1:9099"
-      - option "Example Relay"
-      - option "gateway.a-very-long-relay-hostname.example.org"
-    - text: Claimed model
-    - combobox "Claimed model":
-      - option "All" [selected]
-      - option "gpt-4o"
-      - option "model-a"
-      - option "model-b"
+      - option "Embeddings"
+      - option "Reranking"
+    - group "Relay / provider":
+      - text: Relay / provider
+      - checkbox "(unknown)"
+      - text: (unknown)
+    - group "Claimed model":
+      - text: Claimed model
+      - checkbox "(unknown)"
+      - text: (unknown)
     - text: Suite
     - combobox "Suite":
       - option "All" [selected]
-      - option "standard"
+      - option "(unknown)"
     - text: Mode
     - combobox "Mode":
       - option "All" [selected]
-      - option "check"
+      - option "(unknown)"
     - text: Protocol
     - combobox "Protocol":
       - option "All" [selected]
-      - option "openai"
       - option "(unknown)"
     - text: Protocol detection
     - combobox "Protocol detection":
       - option "All" [selected]
+      - option "auto-detected"
+      - option "set manually"
       - option "(unknown)"
     - text: Probe requests
     - combobox "Probe requests":
       - option "All" [selected]
       - option "Streaming"
+      - option "Non-streaming"
+      - option "Streaming + non-streaming"
       - option "(unknown)"
     - text: Risk
     - combobox "Risk":
       - option "All" [selected]
       - option "Consistent (likely genuine)"
       - option "Mostly trustworthy"
+      - option "Deviations found"
       - option "Bait-and-switch"
+      - option "Insufficient signal"
     - text: Min. score
     - spinbutton "Min. score"
     - text: Period
     - combobox "Period":
-      - option "All" [selected]
+      - option "All time" [selected]
+      - option "Last 24 hours"
       - option "Last 7 days"
       - option "Last 30 days"
       - option "Last 90 days"
+      - option "Last 365 days"
+      - option "Custom range"
     - text: Execution
     - combobox "Execution":
       - option "All" [selected]
-      - option "Ad-hoc"
+      - option "Manual"
       - option "Monitor"
     - group "Trends":
-      - text: Trends
+      - text: Trends 2 of at most 2 selected
       - button "Score" [pressed]
-      - button "Grade"
+      - button "Grade" [disabled]
       - button "Latency p50" [pressed]
-      - button "Decode speed p50"
+      - button "Time to first token p50" [disabled]
+      - button "Decode speed p50" [disabled]
+      - button "Error rate" [disabled]
     - text: Showing 15 of 15 audits
+    - status
+    - button "Copy link to this view"
+  - status
   - group "Sort audits":
     - button "Time, sorted descending": Time
     - button "Sort by Risk": Risk
@@ -115,9 +126,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relay Example Relay Score
-    - 'img "Health score trend across 7 audits: from 70 to 82, rising."'
+    - 'img "Score trend across 7 audits: from 70 to 82, rising."'
     - text: 82 Latency p50
-    - 'img "Latency p50 trend across 7 audits: from <duration> to <duration>."'
+    - 'img "Latency p50 trend across 7 audits: from <duration> to <duration>, falling."'
     - text: <duration>
     - list:
       - listitem:
@@ -159,9 +170,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relay gateway.a-very-long-relay-hostname.example.org Score
-    - 'img "Health score trend across 4 audits: from 58 to 64, rising."'
+    - 'img "Score trend across 4 audits: from 58 to 64, rising."'
     - text: 64 Latency p50
-    - 'img "Latency p50 trend across 4 audits: from <duration> to <duration>."'
+    - 'img "Latency p50 trend across 4 audits: from <duration> to <duration>, falling."'
     - text: <duration>
     - list:
       - listitem:
@@ -188,9 +199,9 @@
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - text: Relay Example Relay Score
-    - 'img "Health score trend across 2 audits: from 89 to 91, rising."'
+    - 'img "Score trend across 2 audits: from 89 to 91, rising."'
     - text: 91 Latency p50
-    - 'img "Latency p50 trend across 2 audits: from <duration> to <duration>."'
+    - 'img "Latency p50 trend across 2 audits: from <duration> to <duration>, falling."'
     - text: <duration>
     - list:
       - listitem:

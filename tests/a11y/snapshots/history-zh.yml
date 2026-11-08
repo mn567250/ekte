@@ -45,66 +45,77 @@
     - combobox "接口类型":
       - option "全部" [selected]
       - option "对话"
-    - text: 中转站 / 厂商
-    - combobox "中转站 / 厂商":
-      - option "全部" [selected]
-      - option "127.0.0.1:9099"
-      - option "Example Relay"
-      - option "gateway.a-very-long-relay-hostname.example.org"
-    - text: 声称模型
-    - combobox "声称模型":
-      - option "全部" [selected]
-      - option "gpt-4o"
-      - option "model-a"
-      - option "model-b"
+      - option "嵌入"
+      - option "重排"
+    - group "中转站 / 厂商":
+      - text: 中转站 / 厂商
+      - checkbox "（未知）"
+      - text: （未知）
+    - group "声称模型":
+      - text: 声称模型
+      - checkbox "（未知）"
+      - text: （未知）
     - text: 套件
     - combobox "套件":
       - option "全部" [selected]
-      - option "standard"
+      - option "（未知）"
     - text: 模式
     - combobox "模式":
       - option "全部" [selected]
-      - option "check"
+      - option "（未知）"
     - text: 协议
     - combobox "协议":
       - option "全部" [selected]
-      - option "openai"
       - option "（未知）"
     - text: 协议识别
     - combobox "协议识别":
       - option "全部" [selected]
+      - option "自动识别"
+      - option "手动指定"
       - option "（未知）"
     - text: 探测请求
     - combobox "探测请求":
       - option "全部" [selected]
       - option "流式"
+      - option "非流式"
+      - option "流式 + 非流式"
       - option "（未知）"
     - text: 风险
     - combobox "风险":
       - option "全部" [selected]
       - option "一致（疑似真货）"
       - option "基本可信"
+      - option "存在偏离"
       - option "货不对板"
+      - option "信号不足"
     - text: 最低健康分
     - spinbutton "最低健康分"
     - text: 时间范围
     - combobox "时间范围":
-      - option "全部" [selected]
+      - option "全部时间" [selected]
+      - option "最近 24 小时"
       - option "最近 7 天"
       - option "最近 30 天"
       - option "最近 90 天"
+      - option "最近 365 天"
+      - option "自定义"
     - text: 执行方式
     - combobox "执行方式":
       - option "全部" [selected]
       - option "手动"
       - option "监控"
     - group "趋势图":
-      - text: 趋势图
+      - text: 趋势图 已选 2 个，最多 2 个
       - button "健康分" [pressed]
-      - button "评级"
+      - button "评级" [disabled]
       - button "延迟 p50" [pressed]
-      - button "解码速度 p50"
+      - button "首字延迟 p50" [disabled]
+      - button "输出速度 p50" [disabled]
+      - button "错误率" [disabled]
     - text: 显示 15 / 15 条记录
+    - status
+    - button "复制此视图的链接"
+  - status
   - group "排序":
     - button "时间，降序排列": 时间
     - button "按风险排序": 风险
@@ -117,7 +128,7 @@
     - text: 中转站 Example Relay 健康分
     - img "健康分趋势（7 次检测）：从 70 到 82，上升。"
     - text: 82 延迟 p50
-    - img "延迟 p50趋势（7 次检测）：从 <duration> 到 <duration>。"
+    - img "延迟 p50趋势（7 次检测）：从 <duration> 到 <duration>，下降。"
     - text: <duration>
     - list:
       - listitem:
@@ -161,7 +172,7 @@
     - text: 中转站 gateway.a-very-long-relay-hostname.example.org 健康分
     - img "健康分趋势（4 次检测）：从 58 到 64，上升。"
     - text: 64 延迟 p50
-    - img "延迟 p50趋势（4 次检测）：从 <duration> 到 <duration>。"
+    - img "延迟 p50趋势（4 次检测）：从 <duration> 到 <duration>，下降。"
     - text: <duration>
     - list:
       - listitem:
@@ -190,7 +201,7 @@
     - text: 中转站 Example Relay 健康分
     - img "健康分趋势（2 次检测）：从 89 到 91，上升。"
     - text: 91 延迟 p50
-    - img "延迟 p50趋势（2 次检测）：从 <duration> 到 <duration>。"
+    - img "延迟 p50趋势（2 次检测）：从 <duration> 到 <duration>，下降。"
     - text: <duration>
     - list:
       - listitem:

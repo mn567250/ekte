@@ -45,66 +45,77 @@
     - combobox "Tipo di endpoint":
       - option "Tutti" [selected]
       - option "Chat"
-    - text: Relay / provider
-    - combobox "Relay / provider":
-      - option "Tutti" [selected]
-      - option "127.0.0.1:9099"
-      - option "Example Relay"
-      - option "gateway.a-very-long-relay-hostname.example.org"
-    - text: Modello dichiarato
-    - combobox "Modello dichiarato":
-      - option "Tutti" [selected]
-      - option "gpt-4o"
-      - option "model-a"
-      - option "model-b"
+      - option "Embedding"
+      - option "Riordinamento"
+    - group "Relay / provider":
+      - text: Relay / provider
+      - checkbox "(sconosciuto)"
+      - text: (sconosciuto)
+    - group "Modello dichiarato":
+      - text: Modello dichiarato
+      - checkbox "(sconosciuto)"
+      - text: (sconosciuto)
     - text: Suite
     - combobox "Suite":
       - option "Tutti" [selected]
-      - option "standard"
+      - option "(sconosciuto)"
     - text: Modalità
     - combobox "Modalità":
       - option "Tutti" [selected]
-      - option "check"
+      - option "(sconosciuto)"
     - text: Protocollo
     - combobox "Protocollo":
       - option "Tutti" [selected]
-      - option "openai"
       - option "(sconosciuto)"
     - text: Rilevamento del protocollo
     - combobox "Rilevamento del protocollo":
       - option "Tutti" [selected]
+      - option "rilevato automaticamente"
+      - option "impostato manualmente"
       - option "(sconosciuto)"
     - text: Richieste di sonda
     - combobox "Richieste di sonda":
       - option "Tutti" [selected]
       - option "Streaming"
+      - option "Senza streaming"
+      - option "Streaming + senza streaming"
       - option "(sconosciuto)"
     - text: Rischio
     - combobox "Rischio":
       - option "Tutti" [selected]
       - option "Coerente (probabilmente autentico)"
       - option "Per lo più affidabile"
+      - option "Scostamenti rilevati"
       - option "Merce non conforme"
+      - option "Segnale insufficiente"
     - text: Punteggio min.
     - spinbutton "Punteggio min."
     - text: Periodo
     - combobox "Periodo":
-      - option "Tutti" [selected]
+      - option "Tutto il periodo" [selected]
+      - option "Ultime 24 ore"
       - option "Ultimi 7 giorni"
       - option "Ultimi 30 giorni"
       - option "Ultimi 90 giorni"
+      - option "Ultimi 365 giorni"
+      - option "Periodo personalizzato"
     - text: Esecuzione
     - combobox "Esecuzione":
       - option "Tutti" [selected]
       - option "Manuale"
       - option "Monitor"
     - group "Andamenti":
-      - text: Andamenti
+      - text: Andamenti 2 selezionati su un massimo di 2
       - button "Punteggio" [pressed]
-      - button "Voto"
+      - button "Voto" [disabled]
       - button "Latenza p50" [pressed]
-      - button "Velocità di decodifica p50"
+      - button "Tempo al primo token p50" [disabled]
+      - button "Velocità di decodifica p50" [disabled]
+      - button "Tasso di errore" [disabled]
     - text: 15 di 15 audit mostrati
+    - status
+    - button "Copia il link a questa vista"
+  - status
   - group "Ordina gli audit":
     - button "Data, ordine decrescente": Data
     - button "Ordina per Rischio": Rischio
@@ -115,9 +126,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relay Example Relay Punteggio
-    - 'img "Andamento del punteggio di salute in 7 audit: da 70 a 82, in crescita."'
+    - 'img "Andamento di Punteggio su 7 audit: da 70 a 82, in crescita."'
     - text: 82 Latenza p50
-    - 'img "Andamento di Latenza p50 su 7 audit: da <duration> a <duration>."'
+    - 'img "Andamento di Latenza p50 su 7 audit: da <duration> a <duration>, in calo."'
     - text: <duration>
     - list:
       - listitem:
@@ -159,9 +170,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relay gateway.a-very-long-relay-hostname.example.org Punteggio
-    - 'img "Andamento del punteggio di salute in 4 audit: da 58 a 64, in crescita."'
+    - 'img "Andamento di Punteggio su 4 audit: da 58 a 64, in crescita."'
     - text: 64 Latenza p50
-    - 'img "Andamento di Latenza p50 su 4 audit: da <duration> a <duration>."'
+    - 'img "Andamento di Latenza p50 su 4 audit: da <duration> a <duration>, in calo."'
     - text: <duration>
     - list:
       - listitem:
@@ -188,9 +199,9 @@
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - text: Relay Example Relay Punteggio
-    - 'img "Andamento del punteggio di salute in 2 audit: da 89 a 91, in crescita."'
+    - 'img "Andamento di Punteggio su 2 audit: da 89 a 91, in crescita."'
     - text: 91 Latenza p50
-    - 'img "Andamento di Latenza p50 su 2 audit: da <duration> a <duration>."'
+    - 'img "Andamento di Latenza p50 su 2 audit: da <duration> a <duration>, in calo."'
     - text: <duration>
     - list:
       - listitem:
