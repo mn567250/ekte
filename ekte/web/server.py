@@ -28,6 +28,10 @@ Endpoints:
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
                              (?format=json|md|html|pdf)
+  GET  /api/history/groups   History's groups (relay x model, ...), sorted and
+                             keyset-paged, with relay labels and trends
+  GET  /api/history/runs     one History group's runs, keyset-paged
+                             (parameters: ekte/web/history_api.py)
   GET  /api/metrics          the metric registry: ids, units, formats, label
                              keys, directions, the KPI grid and the History
                              trend options (ekte/web/metrics.py)
@@ -1333,6 +1337,31 @@ def create_app() -> FastAPI:
             return JSONResponse({"error": "not found"}, status_code=404)
         return JSONResponse(report)
 
+    # History widgets (ekte/web/history_api.py): the groups of the list with
+    # their trends, and one group's runs; cached like the Analytics widgets.
+    # Registered before /api/history/{rid}.
+    from ekte.web.cache import cached_endpoint as _cached
+    from ekte.web.query import QueryError as _QueryError
+
+    def _history_params(params: Any) -> Any:
+        from ekte.web import history_api
+
+        return history_api.resolve_params(params)
+
+    @app.get("/api/history/groups")
+    @_cached("history.groups", errors=(_QueryError,), prepare=_history_params)
+    def history_groups(params: Any) -> Any:
+        from ekte.web import history, history_api
+
+        return history_api.groups(history.query_connection(), params)
+
+    @app.get("/api/history/runs")
+    @_cached("history.runs", errors=(_QueryError,), prepare=_history_params)
+    def history_runs(params: Any) -> Any:
+        from ekte.web import history, history_api
+
+        return history_api.runs(history.query_connection(), params)
+
     @app.get("/api/history/status")
     def history_status() -> Any:
         """The history as a whole, for the pages' notices (history.status)."""
@@ -1356,6 +1385,12 @@ def create_app() -> FastAPI:
             attach_trends(perf["requests"])
             # failure classes of a run saved before they were recorded
             errorclass.attach_classes(perf["requests"])
+        if trend:
+            # the run's History trend values, from the same per-run SQL as the
+            # groups' trends (a group of this run alone shows exactly these)
+            from ekte.web import history_api
+
+            report["history_trends"] = history_api.run_trends(history.query_connection(), rid)
         return JSONResponse(report)
 
     # ----- Evidence: a saved run's raw request/response pairs ------------- #
@@ -1596,9 +1631,15 @@ def create_app() -> FastAPI:
         """
         from ekte.knowledge import load_knowledge_base
         from ekte.web import watches
+        from ekte.web.analytics import RelayResolver
 
         # list_all() never returns api_key, so this is safe to send to the browser.
         rows = watches.list_all()
+        # the relay its runs are grouped under: the `relay=` key of the
+        # monitor's "Open in history" link (the shared URL schema)
+        resolver = RelayResolver() if rows else None
+        for row in rows:
+            row["relay_key"] = resolver.resolve(row).key if resolver else None
         # Flag pinned profiles that differ from what the knowledge base resolves now.
         try:
             kb = load_knowledge_base(copy=False) if rows else None  # read-only
