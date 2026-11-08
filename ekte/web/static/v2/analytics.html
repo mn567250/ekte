@@ -87,8 +87,9 @@
     font-size: 12px; line-height: 1.45; color: var(--ink); text-transform: none; letter-spacing: 0; font-weight: 400;
     visibility: hidden; opacity: 0;
   }
-  /* no gap between the button and its tip: the pointer can move onto it */
-  .ktip::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; height: 6px; }
+  /* the shown tip reaches up to the button's row, so the pointer can move
+     onto it on any path (WCAG 1.4.13 hoverable) */
+  .ktip::before { content: ""; position: absolute; left: 0; right: 0; top: -28px; height: 28px; }
   .kh:hover .ktip, .khint:focus-visible + .ktip { visibility: visible; opacity: 1; }
   .kh.off .ktip { visibility: hidden; opacity: 0; }
 

@@ -928,7 +928,7 @@ def _restore(page: Page, f: dict[str, Any], token: str) -> None:
     quiet(page)
 
 
-def _navigated(page: Page, url: str) -> bool:
+def _left_page(page: Page, url: str) -> bool:
     """Whether the page left its document or its path: a view that only
     writes its state into the query string (history.replaceState, filters.js)
     stays on the page."""
@@ -962,7 +962,7 @@ def on_input_issues(page: Page) -> list[str]:
         settle(page)
         quiet(page)
         found: list[str] = []
-        if _navigated(page, url):
+        if _left_page(page, url):
             issues.append(f"changing {f['desc']}: navigated to {page.url} (change of context on input)")
             _reopen(page, url)
             page.evaluate(INPUTS_JS)  # markers for the remaining fields
@@ -975,7 +975,7 @@ def on_input_issues(page: Page) -> list[str]:
         quiet(page)
         if not found and not page.evaluate(NO_FOCUS_JS):
             found.append(f"leaving the field moved focus to {page.evaluate('() => window.__a11y.desc(document.activeElement)')}")
-        if _navigated(page, url):
+        if _left_page(page, url):
             found.append(f"leaving the field navigated to {page.url}")
         if len(page.context.pages) > n_pages:
             found.append("opened a new window")
@@ -984,7 +984,7 @@ def on_input_issues(page: Page) -> list[str]:
         if dialogs:
             found.append(f"opened a browser dialog {dialogs[-1]!r}")
             dialogs.clear()
-        if _navigated(page, url):
+        if _left_page(page, url):
             _reopen(page, url)
             page.evaluate(INPUTS_JS)
         else:
