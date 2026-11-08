@@ -257,6 +257,12 @@ derived data: `relay_map.ensure_relay_map(conn)` rebuilds it when
 relay flag and base URLs, computed from the knowledge base itself, so edits
 from any process count) differs from the version stored in `relay_map_meta`,
 and adds missing URLs when a trigger on `history_metrics` has marked it stale.
+Since schema version 11 each run also carries its relay as an integer,
+`history_metrics.relay_id` (a `relay_group` row per relay key, which keeps its
+id while any URL maps to it): a trigger sets it when the run's metrics are
+saved, `ensure_relay_map` fills it for runs whose URL was new and re-assigns
+the runs whose relay changed on a rebuild, so the query core groups and
+filters by relay without a per-run lookup.
 
 Since schema version 9 `history.db` holds `history_outcomes` (`history_id`,
 `op`, `outcome`, `n`): how many of the run's target request records had each

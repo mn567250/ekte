@@ -57,6 +57,11 @@ Query index (schema version 10): ``idx_history_query`` covers the columns
 :mod:`ekte.web.query` reads from ``history``, so filtering and grouping never
 read a run's report.
 
+Relay ids (schema version 11): ``history_metrics.relay_id`` holds each run's
+``relay_group`` id, kept current by triggers and the relay map, so grouping
+and filtering by relay use an integer of the run's row (see
+:mod:`ekte.web.relay_map`).
+
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
 """
@@ -242,6 +247,15 @@ def _v10(conn: sqlite3.Connection) -> None:
     )
 
 
+def _v11(conn: sqlite3.Connection) -> None:
+    """Each run's relay id (``history_metrics.relay_id``, ``relay_group``;
+    :func:`ekte.web.relay_map.ensure_relay_ids`); filled in for the runs
+    already saved by the next ``relay_map.ensure_relay_map``."""
+    from ekte.web import relay_map
+
+    relay_map.ensure_relay_ids(conn)
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -253,6 +267,7 @@ MIGRATIONS = (
     dbmigrate.Migration(8, _v8),
     dbmigrate.Migration(9, _v9),
     dbmigrate.Migration(10, _v10),
+    dbmigrate.Migration(11, _v11),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
