@@ -1537,10 +1537,13 @@ def create_app() -> FastAPI:
         return metrics.catalogue()
 
     def _widget_route(path: str, name: str) -> None:
-        from ekte.web import analytics_widgets
+        def answer(params: Any) -> Any:
+            from ekte.web import analytics_widgets
 
-        fn = getattr(analytics_widgets, name)
-        handler = cached_endpoint(path, errors=(AnalyticsError,), prepare=_widget_params)(fn)
+            return getattr(analytics_widgets, name)(params)  # looked up per call
+
+        answer.__name__ = answer.__qualname__ = name
+        handler = cached_endpoint(path, errors=(AnalyticsError,), prepare=_widget_params)(answer)
         app.add_api_route(path, handler, methods=["GET"], name=name)
 
     for _path, _name in (

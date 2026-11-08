@@ -130,12 +130,14 @@ def _judged(m: Metric, cell: Mapping[str, Any]) -> dict[str, Any]:
 
 def resolve_params(params: Any, *, now: datetime | None = None) -> list[tuple[str, str]]:
     """The ``prepare`` of the widget endpoints: :func:`ekte.web.query.resolve_params`
-    (``range`` resolved), and ``from`` without ``to`` bounded at now, so every
+    (``range`` resolved), and ``from`` without ``to`` bounded at now (the next
+    whole minute), so every
     answer is cached under an absolute range."""
     pairs = query.resolve_params(params, now=now)
     keys = {k for k, _ in pairs}
     if "from" in keys and "to" not in keys and "range" not in keys:
-        pairs.append(("to", analytics_store.format_ts(now or datetime.now(UTC))))
+        # rounded up to the next whole minute, as range=: a minute's requests share an answer
+        pairs.append(("to", analytics_store.format_ts(query._ceil_minute((now or datetime.now(UTC)).astimezone(UTC)))))
     return pairs
 
 
