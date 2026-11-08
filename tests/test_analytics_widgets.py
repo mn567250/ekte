@@ -468,6 +468,19 @@ def test_filter_options_count_every_key_under_the_other_filters(seeded, client):
     assert empty["runs"] == 0 and empty["model"] == [] and empty["span"] == {"first": None, "last": None}
 
 
+def test_filter_options_name_relays_as_history_does(data, client):  # noqa: F811
+    from ekte.web import history_api
+
+    add_relay("Cheap GPT", RELAY)
+    for url in (RELAY, "https://x.example/a", "https://x.example/b", "https://y.example:8443/v1"):
+        _save(T0, base_url=url)
+    out = _get(client, "/api/filters/options")
+    labels = {o["value"]: o["label"] for o in out["relay"]}
+    assert sorted(labels.values()) == ["Cheap GPT", "x.example/a", "x.example/b", "y.example:8443"]
+    groups = history_api.groups(history.query_connection(), {"group": "relay", "trend.metrics": "score"})
+    assert labels == {g["key"]: g["relay"]["label"] for g in groups["groups"]}
+
+
 def test_filter_options_surfaces(data, client):  # noqa: F811
     history.save(_embed_report(T0))
     _save(T0, base_url=OPENAI)

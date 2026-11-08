@@ -25,7 +25,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ekte import errorclass
-from ekte.web import analytics_store, facets, history, query
+from ekte.web import analytics_store, facets, history, history_api, query
 from ekte.web import metrics as _metrics
 from ekte.web.analytics import (
     BLOCKS,
@@ -525,8 +525,9 @@ def filter_options(params: Any) -> dict[str, Any]:
     of the URL schema (:data:`OPTION_KEYS`) as ``{"<key>": [{value, runs,
     label?}]}``, most runs first, each counted under the current filters
     except the key itself (a selected value and its siblings never
-    disappear). ``relay`` values carry their relay-map ``label``, ``kind``
-    and ``in_kb``; ``span`` is the first and last run time under every filter
+    disappear). ``relay`` values carry their ``label`` (as History names
+    the relay, :func:`ekte.web.history_api.relay_labels`: a relay of no
+    knowledge-base entry by its host), ``kind`` and ``in_kb``; ``span`` is the first and last run time under every filter
     but ``from`` / ``to``; ``dimensions`` the dimension keys of the selected
     runs (for ``dim:<key>`` metrics). Unlike the widgets no surface is
     defaulted: ``surface_default`` names the one they would use.
@@ -609,6 +610,8 @@ def filter_options(params: Any) -> dict[str, Any]:
            " WHERE kind = 'dimension') k WHERE EXISTS (SELECT 1 FROM r CROSS JOIN history_dimensions d"
            " ON d.history_id = r.id AND d.kind = 'dimension' AND d.key = k.key{w})", on_r)
     rows = conn.execute(ctes + " UNION ALL ".join(branches), args).fetchall()
+    # what History calls each relay (a relay of no knowledge-base entry: its host)
+    labels = history_api.relay_labels(conn)
 
     out: dict[str, Any] = {"filters": q.canonical(), "keys": list(OPTION_KEYS)}
     lists: dict[str, list[dict[str, Any]]] = {k: [] for k in OPTION_KEYS}
@@ -621,7 +624,8 @@ def filter_options(params: Any) -> dict[str, Any]:
         elif key == ":dim":
             dims.append(str(value))
         elif key == "relay":
-            lists[key].append({"value": str(value), "label": str(a), "kind": str(b), "in_kb": bool(c),
+            label = labels.get(str(value)) or history_api.host_of(str(value))
+            lists[key].append({"value": str(value), "label": label, "kind": str(b), "in_kb": bool(c),
                                "runs": int(n)})
         else:
             lists[key].append({"value": str(value), "runs": int(n)})
