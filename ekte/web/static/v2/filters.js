@@ -57,7 +57,7 @@
  * Pure helpers (tested under node): parse, serialise, params, initial,
  *   loader, FIELDS.
  *
- * /api/filters/options (#123) is read as { "<key>": [{ value, label?, runs? }] }
+ * /api/filters/options (issue 123) is read as { "<key>": [{ value, label?, runs? }] }
  * for the keys of FIELDS ("-" is "(unknown)"), requested with the shared
  * filters; a key it does not list keeps its fixed options.
  */
