@@ -469,7 +469,8 @@ def client(seeded):
 
 
 def test_http_endpoints(client):
-    r = client.get("/api/analytics/options")
+    # the widget endpoints on the query core (#123; tests/test_analytics_widgets.py)
+    r = client.get("/api/filters/options")
     assert r.status_code == 200 and r.json()["runs"] == 17
     assert r.headers["cache-control"] == "no-cache" and r.headers["etag"]
     r = client.get("/api/analytics/summary",
@@ -480,32 +481,34 @@ def test_http_endpoints(client):
     r = client.get("/api/analytics/summary", params={"from": "2026-03-03T12:00:00Z"})
     assert r.status_code == 200 and r.json()["to"] is not None and r.json()["runs"] == 13
     r = client.get("/api/analytics/series", params=[
-        ("metric", "ttft_p50"), ("bucket", "day"), ("tz", "Europe/Berlin"),
-        ("keys", "cheap-gpt"), ("keys", OTHER),
+        ("trend.metric", "ttft_p50"), ("trend.bucket", "day"), ("trend.tz", "Europe/Berlin"),
+        ("trend.key", "cheap-gpt"), ("trend.key", OTHER),
     ])
     body = r.json()
     assert r.status_code == 200 and [s["key"] for s in body["series"]] == ["cheap-gpt", OTHER]
     assert body["series"][0]["points"][0]["bucket"] == "2026-03-02T00:00:00+01:00"
     r = client.get("/api/analytics/leaderboard", params={"model": "model-a"})
     assert r.status_code == 200 and r.json()["rows"][0]["key"] == "cheap-gpt"
+    for old in ("/api/analytics/options",):
+        assert client.get(old).status_code == 404  # replaced by /api/filters/options
 
 
 @pytest.mark.parametrize(
     ("path", "params", "message"),
     [
-        ("/api/analytics/series", {"metric": "x'; DROP TABLE history; --"}, "unknown metric"),
-        ("/api/analytics/series", {"bucket": "year"}, "bucket must be one of"),
+        ("/api/analytics/series", {"trend.metric": "x'; DROP TABLE history; --"}, "unknown metric"),
+        ("/api/analytics/series", {"trend.bucket": "year"}, "bucket must be one of"),
         ("/api/analytics/summary", {"from": "2026-13-01"}, "ISO 8601"),
-        ("/api/analytics/options", {"from": "x"}, "ISO 8601"),
-        ("/api/analytics/leaderboard", {}, "either model or relay"),
-        ("/api/analytics/series", [("keys", k) for k in "abcde"], "at most 4 keys"),
+        ("/api/filters/options", {"from": "x"}, "ISO 8601"),
+        ("/api/analytics/leaderboard", {"board.by": "all"}, "board.by must be one of"),
+        ("/api/analytics/series", [("trend.key", k) for k in "abcde"], "at most 4 keys"),
     ],
 )
 def test_http_bad_parameters(client, path, params, message):
     r = client.get(path, params=params)
     assert r.status_code == 400 and message in r.json()["error"]
     assert r.headers["cache-control"] == "no-store"
-    assert client.get("/api/analytics/options").json()["runs"] == 17  # nothing dropped
+    assert client.get("/api/filters/options").json()["runs"] == 17  # nothing dropped
 
 
 # --------------------------------------------------------------------------- #
@@ -671,18 +674,21 @@ def test_series_group_all(seeded):
 
 
 def test_http_phase4_endpoints(client):
-    r = client.get("/api/analytics/breakdown", params=[("metrics", "relay_overhead"), ("metrics", "network_rtt")])
+    r = client.get("/api/analytics/breakdown", params=[("breakdown.metric", "relay_overhead"),
+                                                       ("breakdown.metric", "network_rtt")])
     assert r.status_code == 200 and r.headers["cache-control"] == "no-cache" and r.headers["etag"]
     assert [m["id"] for m in r.json()["metrics"]] == ["relay_overhead", "network_rtt"]
-    r = client.get("/api/analytics/errors", params={"group": "model", "bucket": "dow_hour", "tz": "UTC"})
-    assert r.status_code == 200 and r.json()["covered"] == 0 and r.json()["runs"] == 17
+    r = client.get("/api/analytics/errors", params={"group": "model", "errors.bucket": "dow_hour",
+                                                    "errors.tz": "UTC"})
+    # runs with outcome counts (history_outcomes): every run but the two old-shaped ones
+    assert r.status_code == 200 and r.json()["covered"] == 15 and r.json()["runs"] == 17
     r = client.get("/api/analytics/integrity", params={"model": "model-a"})
     assert r.status_code == 200 and all(row["model"] == "model-a" for row in r.json()["rows"])
     for path, params, message in [
-        ("/api/analytics/breakdown", {}, "at least one metric"),
-        ("/api/analytics/breakdown", {"metrics": "x'; DROP TABLE history; --"}, "unknown metric"),
-        ("/api/analytics/errors", {"group": "relay_model"}, "group must be one of"),
-        ("/api/analytics/integrity", {"source": "cron"}, "source must be one of"),
+        ("/api/analytics/breakdown", {}, "at least one breakdown.metric"),
+        ("/api/analytics/breakdown", {"breakdown.metric": "x'; DROP TABLE history; --"}, "unknown metric"),
+        ("/api/analytics/errors", {"group": "relays"}, "group must be one of"),
+        ("/api/analytics/integrity", {"exec": "cron"}, "exec must be one of"),
     ]:
         r = client.get(path, params=params)
         assert r.status_code == 400 and message in r.json()["error"], path
@@ -690,7 +696,7 @@ def test_http_phase4_endpoints(client):
 
 def test_http_answers_are_cached_until_the_history_changes(client):
     def runs() -> int:
-        return client.get("/api/analytics/summary", params={"range": "all"}).json()["runs"]
+        return client.get("/api/analytics/summary").json()["runs"]
 
     before = runs()
     assert runs() == before  # served from the cache
