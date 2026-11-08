@@ -456,14 +456,28 @@ class _Head:
     key: str
     runs: int
     sort_key: Any
+    urls: tuple[str, ...]
 
 
 def _heads(conn: sqlite3.Connection, sel: RunSelection, gk: str, order: _Order) -> list[_Head]:
-    """Each group's first run under the sort (its key), the groups in that
-    order: one aggregate pass."""
-    cur = conn.execute(f"SELECT {gk} AS g, COUNT(*), {order.agg}({order.key()}) AS k {sel.sql}"
-                       f" GROUP BY g ORDER BY {order.by}", sel.args)
-    return [_Head(str(r[0]), int(r[1]), r[2]) for r in cur.fetchall()]
+    """Each group's first run under the sort (its key) and its base URLs
+    (the most recently used first), the groups in that order: one aggregate
+    pass, per group and URL."""
+    pick = max if order.desc else min
+    acc: dict[str, list[Any]] = {}
+    for g, url, n, k, last in conn.execute(
+            f"SELECT {gk} AS g, h.base_url, COUNT(*), {order.agg}({order.key()}),"
+            f" MAX(COALESCE(m.started_at, '')) {sel.sql} GROUP BY g, h.base_url", sel.args):
+        a = acc.setdefault(str(g), [0, k, []])
+        a[0] += int(n)
+        a[1] = pick(a[1], k)
+        if url:
+            a[2].append((last, str(url)))
+    heads = [_Head(g, n, k, tuple(dict.fromkeys(
+        u for _, u in sorted(urls, key=lambda x: (x[0], x[1]), reverse=True))))
+        for g, (n, k, urls) in acc.items()]
+    heads.sort(key=lambda h: h.sort_key, reverse=order.desc)
+    return heads
 
 
 def groups(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
@@ -525,12 +539,6 @@ def _describe(conn: sqlite3.Connection, q: Query, sel: RunSelection, gk: str,
         for i, v in enumerate(values):
             if v is not None:
                 points[g][i].append(float(v))
-    urls: dict[str, list[str]] = {k: [] for k in keys}
-    usel = sel.and_where("NULLIF(h.base_url, '') IS NOT NULL")
-    for g, url in conn.execute(
-            f"SELECT {gk} AS g, h.base_url {usel.sql}"
-            " GROUP BY g, h.base_url ORDER BY g, MAX(m.started_at) DESC, h.base_url", usel.args):
-        urls[str(g)].append(str(url))
     rows = _rows(conn, list(latest.values()), keep_relay=True)
     by_relay = q.group in ("relay", "relay_model")
     labels = relay_labels(conn) if by_relay else {}
@@ -545,7 +553,7 @@ def _describe(conn: sqlite3.Connection, q: Query, sel: RunSelection, gk: str,
             "label": (relay["label"] if relay else None) if q.group == "relay"
             else (model or UNKNOWN_RELAY) if q.group == "model" else ALL_KEY if q.group == "all"
             else f"{relay['label'] if relay else UNKNOWN_RELAY} · {model or UNKNOWN_RELAY}",
-            "base_urls": urls[h.key], "runs": h.runs, "low_n": h.runs < MIN_RUNS,
+            "base_urls": list(h.urls), "runs": h.runs, "low_n": h.runs < MIN_RUNS,
             "latest": row,
             "trends": {m.id: _trend(m, points[h.key][i], q.surface)
                        for i, m in enumerate(wanted)},
