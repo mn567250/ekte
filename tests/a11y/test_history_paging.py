@@ -34,7 +34,12 @@ PAGED = "model=model-p"
 
 
 def _paged_history(open_page: Any, base: str, theme: str = "light", viewport: dict[str, int] | None = None) -> Page:
-    return open_history(open_page, base, PAGED, theme, viewport)
+    page = open_history(open_page, base, PAGED, theme, viewport)
+    # a link with filters opens the filter panel; closed, the group is in view
+    if page.locator("#ftog").get_attribute("aria-expanded") == "true":
+        page.locator("#ftog").click()
+        settle(page)
+    return page
 
 
 def _rows(page: Page) -> int:
