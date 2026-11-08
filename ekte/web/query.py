@@ -89,6 +89,7 @@ import binascii
 import json
 import math
 import sqlite3
+from bisect import bisect_left, bisect_right
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta, timezone, tzinfo
@@ -1045,38 +1046,118 @@ def series(
     return SeriesResult(m, group, bucket, block, used_fold, fold, span_days, zone_name, out)
 
 
-def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: list[str],
-                 zone: tzinfo, size: str) -> dict[str, list[dict[str, Any]]]:
+# The run values whose changes are annotated: (kind, SQL over m).
+_CHANGES = (("tool_version", "NULLIF(m.tool_version, '')"),
+            ("kb_profile", "NULLIF(m.kb_profile_hash, '')"))
+# their MIN / MAX in a series bucket row: x<_CHANGE_X + 2i>, x<_CHANGE_X + 2i + 1>
+_CHANGE_X = 2 * len(_MIXED)
+# more time ranges than this are read as one
+_MAX_RANGES = 64
+
+
+def _blocks(rows: list[dict[str, Any]]) -> list[tuple[str, str, list[tuple[Any, Any]]]]:
+    """A series' bucket rows as disjoint blocks in time order: ``(t_min,
+    t_max, [(smallest, largest value) per _CHANGES])``, buckets merged where
+    their run times overlap (a time zone's clock turned back across midnight)."""
+    out: list[tuple[str, str, list[tuple[Any, Any]]]] = []
+    for r in sorted(rows, key=lambda r: r["t_min"]):
+        span = [(r[f"x{_CHANGE_X + 2 * i}"], r[f"x{_CHANGE_X + 2 * i + 1}"])
+                for i in range(len(_CHANGES))]
+        if out and r["t_min"] <= out[-1][1]:
+            t0, t1, last = out.pop()
+            span = [(min((v for v in (a[0], b[0]) if v is not None), default=None),
+                     max((v for v in (a[1], b[1]) if v is not None), default=None))
+                    for a, b in zip(last, span, strict=True)]
+            out.append((t0, max(t1, r["t_max"]), span))
+        else:
+            out.append((r["t_min"], r["t_max"], span))
+    return out
+
+
+def _to_read(blocks: list[tuple[str, str, list[tuple[Any, Any]]]], i: int) -> set[int]:
+    """The blocks whose runs must be read to find the changes of value ``i``:
+    those holding several values, or another value than the block with
+    values before them (or after one that holds several)."""
+    out: set[int] = set()
+    before: tuple[Any, Any] | None = None
+    for j, (_, _, span) in enumerate(blocks):
+        lo, hi = span[i]
+        if lo is None:
+            continue
+        if lo != hi or (before is not None and (before[0] != before[1] or before[0] != lo)):
+            out.add(j)
+        before = (lo, hi)
+    return out
+
+
+def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str,
+                 by_key: Mapping[str, list[dict[str, Any]]], zone: tzinfo,
+                 size: str) -> dict[str, list[dict[str, Any]]]:
     """Per series key: where the ekte version or knowledge-base profile
-    changes from one run to the next (unknown values skipped), from one SQL
-    pass with a window per value (partitioned by whether it is known, so its
-    previous row is the previous known value); only the changes are loaded."""
-    gk = GROUP_KEY_SQL[group]
-    sel = sel.and_where(f"{gk} IN ({', '.join('?' * len(keys))})", *keys,
-                        relay=group in ("relay", "relay_model"))
-    tv, kb = "NULLIF(m.tool_version, '')", "NULLIF(m.kb_profile_hash, '')"
-    # the runs first (one scan), then the windows over just them
-    sql = (
-        f"WITH r AS MATERIALIZED (SELECT {gk} AS g, h.id AS id, m.started_at AS t,"
-        f" {tv} AS tv, {kb} AS kb {sel.sql})"
-        " SELECT g, id, t, tv, ptv, kb, pkb FROM (SELECT g, id, t, tv, kb,"
-        " LAG(tv) OVER (PARTITION BY g, tv IS NULL ORDER BY t, id) AS ptv,"
-        " LAG(kb) OVER (PARTITION BY g, kb IS NULL ORDER BY t, id) AS pkb FROM r)"
-        " WHERE ptv != tv OR pkb != kb ORDER BY t, id"
-    )
+    changes from one run to the next in time order (unknown values skipped).
+
+    The series' bucket rows (``by_key``) carry each bucket's smallest and
+    largest value, so a value can only change in a block (:func:`_blocks`)
+    that holds several values or another value than the block before it
+    (:func:`_to_read`): only those blocks' runs are read, in one query in
+    time order. The result equals comparing every run with the previous run
+    that has a value."""
+    blocks = {key: _blocks(rows) for key, rows in by_key.items()}
+    need = {key: [_to_read(b, i) for i in range(len(_CHANGES))] for key, b in blocks.items()}
+    ranges = sorted((blocks[key][j][0], blocks[key][j][1])
+                    for key, per in need.items() for js in per for j in js)
+    if not ranges:
+        return {}
+    spans: list[list[str]] = []
+    for a, b in ranges:
+        if spans and a <= spans[-1][1]:
+            spans[-1][1] = max(spans[-1][1], b)
+        else:
+            spans.append([a, b])
+    if len(spans) > _MAX_RANGES:
+        spans = [[spans[0][0], max(s[1] for s in spans)]]
+    within = " OR ".join(["m.started_at BETWEEN ? AND ?"] * len(spans))
+    sel = sel.and_where(*_keys_sql(conn, group, list(by_key))).and_where(
+        f"({within})", *(t for s in spans for t in s))
+    relays = {r["gid"]: r["rk"] for rows in by_key.values() for r in rows if "gid" in r}
+    sql = (f"SELECT {RELAY_ID_SQL}, {GROUP_KEY_SQL['model']}, m.history_id, m.started_at,"
+           f" {', '.join(v for _, v in _CHANGES)} {sel.sql} ORDER BY m.started_at, m.history_id")
+    runs: dict[str, list[tuple[Any, ...]]] = {}
+    for gid, model, rid, t, *values in conn.execute(sql, sel.args):
+        if group == "relay":
+            key = relays.get(gid)
+        elif group == "relay_model":
+            key = f"{relays.get(gid)}|{model}"
+        else:
+            key = model if group == "model" else ALL_KEY
+        if key in need:
+            runs.setdefault(key, []).append((t, rid, values))
+
     out: dict[str, list[dict[str, Any]]] = {}
-    for g, rid, t, val, prev, kval, kprev in conn.execute(sql, sel.args).fetchall():
-        dt = analytics_store.parse_ts(t)
-        assert dt is not None
-        bkey = analytics._bucket(dt, zone, size)[1]
-        for kind, a, b in (("tool_version", prev, val), ("kb_profile", kprev, kval)):
-            if a is not None and b is not None and a != b:
-                out.setdefault(str(g), []).append({
-                    "bucket": bkey, "kind": kind, "from": a, "to": b, "run_id": int(rid),
-                    "started_at": t,
-                })
+    for key, merged in blocks.items():
+        mine = runs.get(key, [])
+        times = [r[0] for r in mine]
+        for i, (kind, _) in enumerate(_CHANGES):
+            prev = None
+            for j, (t0, t1, span) in enumerate(merged):
+                if span[i][0] is None:
+                    continue
+                if j not in need[key][i]:
+                    prev = span[i][0]  # its one value, the value before it (or the first)
+                    continue
+                for t, rid, values in mine[bisect_left(times, t0):bisect_right(times, t1)]:
+                    if values[i] is None:
+                        continue
+                    if prev is not None and values[i] != prev:
+                        dt = analytics_store.parse_ts(t)
+                        assert dt is not None
+                        out.setdefault(key, []).append({
+                            "bucket": analytics._bucket(dt, zone, size)[1], "kind": kind,
+                            "from": prev, "to": values[i], "run_id": int(rid), "started_at": t,
+                        })
+                    prev = values[i]
     for items in out.values():
-        items.sort(key=lambda a: (a["started_at"], a["kind"]))
+        items.sort(key=lambda a: (a["started_at"], a["kind"], a["run_id"]))
     return out
 
 
