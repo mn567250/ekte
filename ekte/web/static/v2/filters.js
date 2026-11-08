@@ -493,10 +493,16 @@
     }
 
     function render() {
+      // an open "copy the link" fallback stays open (with the current link)
+      var fb = section.querySelector("#fsharefb"), fbOpen = !!(fb && !fb.hidden);
       panel.render({
         body: '<div class="ekf-grid">' + fields.map(fieldHTML).join("") + "</div>",
         foot: footHTML(), count: activeCount(), summary: summary(),
       });
+      if (fbOpen) {
+        section.querySelector("#fsharefb").hidden = false;
+        section.querySelector("#fshareurl").value = url();
+      }
     }
     function sync() { panel.sync({ count: activeCount(), summary: summary() }); }
 
