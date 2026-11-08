@@ -3,7 +3,8 @@
  *
  * Closed by default: the toggle counts the active filters and a line under it
  * names them; the page's note and "Reset filters" below stay visible either
- * way. The fields inside #fbody are the page's own. */
+ * way. The fields inside #fbody are the page's own, or those of filters.js
+ * (the .ekf-* rules below). */
 .filters { margin-top: 22px; padding: 6px 18px 12px; min-width: 0; }
 .filters[hidden] { display: none; }
 .ftop { display: flex; align-items: center; gap: 10px; }
@@ -20,6 +21,28 @@
 .ffoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: var(--ink-muted); }
 .ffoot .linkbtn { font-size: 12.5px; font-weight: 600; }
 .ffoot .linkbtn[hidden] { display: none; }
+
+/* the shared fields (filters.js): labelled inputs in a grid; relay / model
+   are checkbox groups (several values), scrolling inside when long */
+.ekf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px 12px; align-items: start; }
+.ekf-grid label, .ekf-sharefb label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.ekf-grid label > span, .ekf-multi legend, .ekf-sharefb label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
+.ekf-grid .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
+.ekf-grid select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
+.ekf-grid .ekf-q { grid-column: 1 / -1; }
+.ekf-multi { grid-column: span 2; min-width: 0; margin: 0; padding: 0; border: 0; }
+.ekf-multi legend { padding: 0; margin-bottom: 5px; }
+.ekf-opts { display: flex; flex-direction: column; gap: 2px; max-height: 11.5em; overflow-y: auto; padding: 4px 8px; border: 1px solid var(--line); border-radius: 10px; }
+.ekf-grid .ekf-opt { flex-direction: row; align-items: center; gap: 8px; min-height: 28px; font-size: 13.5px; color: var(--ink); cursor: pointer; }
+.ekf-grid .ekf-opt > span { font-size: inherit; font-weight: 400; letter-spacing: 0; text-transform: none; color: inherit; }
+.ekf-opt input { flex: none; margin: 0; width: 16px; height: 16px; }
+.ekf-n { color: var(--ink-muted); }
+.ekf-share { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+.ekf-sharefb { flex: 1 0 100%; }
+.ekf-sharefb[hidden] { display: none; }
+.ekf-sharefb .in { font-family: var(--mono); font-size: 12.5px; padding: 8px 11px; border-radius: 10px; }
+@media (min-width: 700px) { .ekf-grid .ekf-q { grid-column: auto; } }
+@media (max-width: 600px) { .ekf-grid { grid-template-columns: 1fr 1fr; } .ekf-multi, .ekf-grid .ekf-q { grid-column: 1 / -1; } }
 
 @media (max-width: 600px) {
   .filters { padding: 12px 14px 14px; }
