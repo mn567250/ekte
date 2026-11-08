@@ -1014,21 +1014,19 @@ def series(
             used_fold = fold
 
     bounds = _data_bounds(conn) if wanted else None
-    annotate = bucket != "dow_hour"
     rows: list[dict[str, Any]] = []
     specs: list[_Spec] = []
     if bounds is not None:
         off = offset_sql(zone, _offset_points(conn, sel, *bounds))
         extra = [f"{f}(NULLIF(h.{c}, ''))" for c in _MIXED for f in ("MIN", "MAX")]
-        if annotate:  # the values each bucket holds, for _annotations
-            extra += [f"{f}({v})" for _, v in _CHANGES for f in ("MIN", "MAX")]
         specs, rows = _grouped(conn, sel, group, [m], keys=wanted, quantiles=quantiles,
                                extra=extra, buckets=_bucket_sql(bucket, off, block, used_fold))
     by_key: dict[str, list[dict[str, Any]]] = {}
     for r in rows:
         by_key.setdefault(str(r["g"]), []).append(r)
-    annotations = (_annotations(conn, sel, group, by_key, zone, bucket)
-                   if annotate and by_key else {})
+    relays = {r["gid"]: r["rk"] for rs in by_key.values() for r in rs if "gid" in r}
+    annotations = ({} if bucket == "dow_hour" or not by_key
+                   else _annotations(conn, sel, group, list(by_key), relays, zone, bucket))
 
     out = []
     for key in wanted:
@@ -1065,65 +1063,41 @@ def series(
 # The run values whose changes are annotated: (kind, SQL over m).
 _CHANGES = (("tool_version", "NULLIF(m.tool_version, '')"),
             ("kb_profile", "NULLIF(m.kb_profile_hash, '')"))
-# their MIN / MAX in a series bucket row: x<_CHANGE_X + 2i>, x<_CHANGE_X + 2i + 1>
-_CHANGE_X = 2 * len(_MIXED)
-# more time ranges than this are read as one
+# at most this many time ranges in one query (more are read as one), and
+# start times in one IN list
 _MAX_RANGES = 64
-# a series key's runs as disjoint blocks: (t_min, t_max, [(smallest, largest value) per _CHANGES])
-_Blocks = list[tuple[str, str, list[tuple[Any, Any]]]]
+_MAX_TIMES = 500
 
 
-def _blocks(rows: list[dict[str, Any]]) -> _Blocks:
-    """A series' bucket rows as disjoint blocks in time order: ``(t_min,
-    t_max, [(smallest, largest value) per _CHANGES])``, buckets merged where
-    their run times overlap (a time zone's clock turned back across midnight)."""
-    out: _Blocks = []
-    for r in sorted(rows, key=lambda r: r["t_min"]):
-        span = [(r[f"x{_CHANGE_X + 2 * i}"], r[f"x{_CHANGE_X + 2 * i + 1}"])
-                for i in range(len(_CHANGES))]
-        if out and r["t_min"] <= out[-1][1]:
-            t0, t1, last = out.pop()
-            span = [(min((v for v in (a[0], b[0]) if v is not None), default=None),
-                     max((v for v in (a[1], b[1]) if v is not None), default=None))
-                    for a, b in zip(last, span, strict=True)]
-            out.append((t0, max(t1, r["t_max"]), span))
+def _clusters(spans: Mapping[Any, list[str]]) -> list[tuple[str, str, list[Any]]]:
+    """Each value's ``[first, last]`` run time as disjoint clusters in time
+    order: ``(start, end, values)``, values whose times overlap (or touch)
+    in one cluster. A cluster of one value holds only runs of that value."""
+    out: list[tuple[str, str, list[Any]]] = []
+    for value, (first, last) in sorted(spans.items(), key=lambda kv: kv[1]):
+        if out and first <= out[-1][1]:
+            t0, t1, values = out.pop()
+            out.append((t0, max(t1, last), [*values, value]))
         else:
-            out.append((r["t_min"], r["t_max"], span))
+            out.append((first, last, [value]))
     return out
 
 
-def _to_read(blocks: _Blocks, i: int) -> set[int]:
-    """The blocks whose runs must be read to find the changes of value ``i``:
-    those holding several values, or another value than the block with
-    values before them (or after one that holds several)."""
-    out: set[int] = set()
-    before: tuple[Any, Any] | None = None
-    for j, (_, _, span) in enumerate(blocks):
-        lo, hi = span[i]
-        if lo is None:
-            continue
-        if lo != hi or (before is not None and (before[0] != before[1] or before[0] != lo)):
-            out.add(j)
-        before = (lo, hi)
-    return out
-
-
-def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str,
-                 by_key: Mapping[str, list[dict[str, Any]]], zone: tzinfo,
+def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: list[str],
+                 relays: Mapping[Any, str], zone: tzinfo,
                  size: str) -> dict[str, list[dict[str, Any]]]:
     """Per series key: where the ekte version or knowledge-base profile
     changes from one run to the next in time order (unknown values skipped).
 
-    The series' bucket rows (``by_key``) carry each bucket's smallest and
-    largest value, so a value can only change in a block (:func:`_blocks`)
-    that holds several values or another value than the block before it
-    (:func:`_to_read`). Those blocks are split into UTC minutes the same way
-    (one grouped query), and only the runs of the minutes where a value can
-    change are read (one query, in time order). The result equals comparing
-    every run with the previous run that has a value."""
+    One grouped query gives each value's first and last run time per key
+    (:func:`_clusters`): where values follow each other, a value changes at
+    the first run of the next one, found by its time; only the runs where
+    values overlap in time (a rollback, two versions in use) are read and
+    compared one by one. Equal to comparing every run with the previous run
+    that has a value. ``relays``: relay id -> key of the series' relays."""
     ident = {"relay": [RELAY_ID_SQL], "relay_model": [RELAY_ID_SQL, GROUP_KEY_SQL["model"]],
              "model": [GROUP_KEY_SQL["model"]], "all": []}[group]
-    relays = {r["gid"]: r["rk"] for rows in by_key.values() for r in rows if "gid" in r}
+    n = len(ident)
 
     def key_of(parts: Sequence[Any]) -> str | None:
         if group == "relay":
@@ -1132,88 +1106,89 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str,
             return f"{relays.get(parts[0])}|{parts[1]}"
         return str(parts[0]) if group == "model" else ALL_KEY
 
-    keyed = sel.and_where(*_keys_sql(conn, group, list(by_key)))
+    keyed = sel.and_where(*_keys_sql(conn, group, keys))
+    values = [v for _, v in _CHANGES]
+    # key -> per kind: value -> [first, last] run time
+    spans: dict[str, list[dict[Any, list[str]]]] = {}
+    for row in conn.execute(
+            f"SELECT {', '.join([*ident, *values])}, MIN(m.started_at), MAX(m.started_at)"
+            f" {keyed.sql} GROUP BY {', '.join(str(i + 1) for i in range(n + len(values)))}",
+            keyed.args):
+        key = key_of(row[:n])
+        if key is None:
+            continue
+        per = spans.setdefault(key, [{} for _ in _CHANGES])
+        first, last = row[-2], row[-1]
+        for i, value in enumerate(row[n:n + len(values)]):
+            if value is not None:
+                s = per[i].setdefault(value, [first, last])
+                s[0], s[1] = min(s[0], first), max(s[1], last)
+    clusters = {key: [_clusters(s) for s in per] for key, per in spans.items()}
+    starts = sorted({c[0] for per in clusters.values() for cs in per for c in cs if len(c[2]) == 1})
+    mixed = sorted((c[0], c[1]) for per in clusters.values() for cs in per for c in cs
+                   if len(c[2]) > 1)
 
-    def within(blocks: Mapping[str, _Blocks], need: Mapping[str, set[int]]) -> RunSelection | None:
-        """``keyed`` limited to the time ranges of the blocks in ``need``."""
-        ranges = sorted(blocks[k][j][:2] for k, js in need.items() for j in js)
-        if not ranges:
-            return None
-        spans: list[list[str]] = []
-        for a, b in ranges:
-            if spans and a <= spans[-1][1]:
-                spans[-1][1] = max(spans[-1][1], b)
+    cols = ", ".join([*ident, "m.history_id", "m.started_at", *values])
+    # the first run of each one-value cluster: the smallest id at its start time
+    firsts: dict[tuple[str, int, str, Any], int] = {}
+    for i in range(0, len(starts), _MAX_TIMES):
+        part = starts[i:i + _MAX_TIMES]
+        at = keyed.and_where(f"m.started_at IN ({', '.join('?' * len(part))})", *part)
+        for row in conn.execute(f"SELECT {cols} {at.sql}", at.args):
+            key, rid, t = key_of(row[:n]), int(row[n]), row[n + 1]
+            if key is None:
+                continue
+            for k, value in enumerate(row[n + 2:]):
+                if value is not None:
+                    f = (key, k, t, value)
+                    firsts[f] = min(firsts.get(f, rid), rid)
+    # the runs where values overlap, in time order
+    runs: dict[str, list[tuple[str, int, Sequence[Any]]]] = {}
+    if mixed:
+        merged: list[list[str]] = []
+        for a, b in mixed:
+            if merged and a <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], b)
             else:
-                spans.append([a, b])
-        if len(spans) > _MAX_RANGES:
-            spans = [[spans[0][0], max(s[1] for s in spans)]]
-        cond = " OR ".join(["m.started_at BETWEEN ? AND ?"] * len(spans))
-        return keyed.and_where(f"({cond})", *(t for s in spans for t in s))
-
-    def needed(blocks: Mapping[str, _Blocks]) -> dict[str, set[int]]:
-        return {k: set().union(*(_to_read(b, i) for i in range(len(_CHANGES))))
-                for k, b in blocks.items()}
-
-    blocks = {key: _blocks(rows) for key, rows in by_key.items()}
-    finer = within(blocks, needed(blocks))
-    if finer is None:
-        return {}
-    # the blocks to read, split into minutes (a block covers all of its key's runs in its time)
-    minute = "substr(m.started_at, 1, 16)"
-    cols = [*ident, minute, "MIN(m.started_at)", "MAX(m.started_at)",
-            *(f"{f}({v})" for _, v in _CHANGES for f in ("MIN", "MAX"))]
-    parts: dict[str, list[dict[str, Any]]] = {}
-    n = len(ident)
-    group_by = ", ".join(str(i + 1) for i in range(n + 1))
-    spans = {k: sorted(blocks[k][j][:2] for j in js) for k, js in needed(blocks).items()}
-    for row in conn.execute(f"SELECT {', '.join(cols)} {finer.sql} GROUP BY {group_by}",
-                            finer.args):
-        key, t = key_of(row[:n]), row[n + 1]
-        own = spans.get(key) if key is not None else None
-        i = bisect_right(own, (t, "\uffff")) - 1 if own else -1
-        if key is not None and own and i >= 0 and t <= own[i][1]:  # in a block of its key to split
-            parts.setdefault(key, []).append({
-                "t_min": row[n + 1], "t_max": row[n + 2],
-                **{f"x{_CHANGE_X + i}": v for i, v in enumerate(row[n + 3:])}})
-    for key, mine in parts.items():
-        old, need = blocks[key], needed({key: blocks[key]})[key]
-        split = [b for j, b in enumerate(old) if j not in need]
-        blocks[key] = sorted([*split, *_blocks(mine)], key=lambda b: b[0])
-    # the runs of the minutes where a value can change, in time order
-    need_by_kind = {k: [_to_read(b, i) for i in range(len(_CHANGES))] for k, b in blocks.items()}
-    reads = within(blocks, needed(blocks))
-    runs: dict[str, list[tuple[Any, ...]]] = {}
-    if reads is not None:
-        cols = [*ident, "m.history_id", "m.started_at", *(v for _, v in _CHANGES)]
-        sql = f"SELECT {', '.join(cols)} {reads.sql} ORDER BY m.started_at, m.history_id"
-        for row in conn.execute(sql, reads.args):
+                merged.append([a, b])
+        if len(merged) > _MAX_RANGES:
+            merged = [[merged[0][0], max(s[1] for s in merged)]]
+        cond = " OR ".join(["m.started_at BETWEEN ? AND ?"] * len(merged))
+        part_sel = keyed.and_where(f"({cond})", *(t for s in merged for t in s))
+        for row in conn.execute(f"SELECT {cols} {part_sel.sql} ORDER BY m.started_at,"
+                                " m.history_id", part_sel.args):
             key = key_of(row[:n])
-            if key in blocks:
-                runs.setdefault(key, []).append((row[n + 1], row[n], row[n + 2:]))
+            if key is not None:
+                runs.setdefault(key, []).append((row[n + 1], int(row[n]), row[n + 2:]))
 
     out: dict[str, list[dict[str, Any]]] = {}
-    for key, merged in blocks.items():
-        mine_runs = runs.get(key, [])
-        times = [r[0] for r in mine_runs]
-        for i, (kind, _) in enumerate(_CHANGES):
-            prev = None
-            for j, (t0, t1, span) in enumerate(merged):
-                if span[i][0] is None:
+
+    def change(key: str, kind: str, a: Any, b: Any, rid: int, t: str) -> None:
+        dt = analytics_store.parse_ts(t)
+        assert dt is not None
+        out.setdefault(key, []).append({
+            "bucket": analytics._bucket(dt, zone, size)[1], "kind": kind, "from": a, "to": b,
+            "run_id": rid, "started_at": t,
+        })
+
+    for key, per in clusters.items():
+        mine = runs.get(key, [])
+        times = [r[0] for r in mine]
+        for i, cs in enumerate(per):
+            kind, prev = _CHANGES[i][0], None
+            for t0, t1, vals in cs:
+                if len(vals) == 1:
+                    if prev is not None and vals[0] != prev:
+                        change(key, kind, prev, vals[0], firsts[(key, i, t0, vals[0])], t0)
+                    prev = vals[0]
                     continue
-                if j not in need_by_kind[key][i]:
-                    prev = span[i][0]  # its one value, the value before it (or the first)
-                    continue
-                for t, rid, values in mine_runs[bisect_left(times, t0):bisect_right(times, t1)]:
-                    if values[i] is None:
+                for t, rid, row_values in mine[bisect_left(times, t0):bisect_right(times, t1)]:
+                    value = row_values[i]
+                    if value is None:
                         continue
-                    if prev is not None and values[i] != prev:
-                        dt = analytics_store.parse_ts(t)
-                        assert dt is not None
-                        out.setdefault(key, []).append({
-                            "bucket": analytics._bucket(dt, zone, size)[1], "kind": kind,
-                            "from": prev, "to": values[i], "run_id": int(rid), "started_at": t,
-                        })
-                    prev = values[i]
+                    if prev is not None and value != prev:
+                        change(key, kind, prev, value, rid, t)
+                    prev = value
     for items in out.values():
         items.sort(key=lambda a: (a["started_at"], a["kind"], a["run_id"]))
     return out
