@@ -288,6 +288,18 @@ def test_a_newer_load_aborts_the_one_in_flight_and_errors_stay_per_widget():
     assert sorted(got["log"]) == [["done", "kpi", "/api/kpi?range=30d"], ["fail", "bad", 500, "boom"]]
 
 
+def test_keyed_labels_fall_back_to_the_servers_english_text():
+    got = run("""
+      const labels = { "metric.score": "Score" };
+      const out = [F.keyed("metric.score", labels), F.keyed("metric.x", labels), F.keyed("metric.score")];
+      // a language whose bundle translates the key
+      window.EKTE_LANG = { tr: (k) => (k === "metric.score" ? "Punktzahl" : k) };
+      out.push(F.keyed("metric.score", labels), F.keyed("metric.grade", { "metric.grade": "Grade" }));
+      return out;
+    """)
+    assert got == ["Score", "metric.x", "metric.score", "Punktzahl", "Grade"]
+
+
 def test_no_metric_logic_in_the_module():
     # values are passed through: nothing is computed, graded or classified
     import re

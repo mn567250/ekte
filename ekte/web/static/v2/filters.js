@@ -52,6 +52,8 @@
  *   If-None-Match with the ETag last seen for that URL (kept in memory) and
  *   answers a 304 from that copy; an error status rejects with an Error that
  *   has .status and the server's message.
+ * EkteFilters.keyed(key, labels): the text of an i18n key ("metric.score"),
+ *   falling back to labels[key] (GET /api/metrics `labels`), then the key.
  * Pure helpers (tested under node): parse, serialise, params, initial,
  *   loader, FIELDS.
  *
@@ -336,6 +338,16 @@
         }));
       },
     };
+  }
+
+  /* The text of an i18n key such as "metric.latency_p50" (ekte/web/metrics.py):
+   * the current language's translation, else `labels[key]` (GET /api/metrics
+   * sends every key's English text there; the English bundle has no keyed
+   * strings), else the key itself. */
+  function keyed(key, labels) {
+    var Lg = window.EKTE_LANG, v = Lg && Lg.tr ? Lg.tr(key) : key;
+    if (v != null && v !== key) return v;
+    return (labels && labels[key]) || key;
   }
 
   /* ---------------- the component ---------------- */
@@ -655,7 +667,7 @@
     create: create,
     state: function () { return current ? current.state() : {}; },
     widgetParams: function (ns) { return current ? current.widgetParams(ns) : ""; },
-    fetchWidget: fetchWidget,
+    fetchWidget: fetchWidget, keyed: keyed,
     parse: parse, serialise: serialise, params: params, initial: initial, loader: loader,
     FIELDS: FIELDS, UNKNOWN: UNKNOWN,
   };
