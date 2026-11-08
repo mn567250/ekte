@@ -44,49 +44,58 @@
     - text: Tipo de endpoint
     - combobox "Tipo de endpoint":
       - option "Todos" [selected]
-      - option "Chat"
+      - option "Chat (15)"
       - option "Embeddings"
       - option "Reordenación"
     - group "Relay / proveedor":
       - text: Relay / proveedor
-      - checkbox "(desconocido)"
-      - text: (desconocido)
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
+      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
+      - checkbox "http://127.0.0.1:9099/v1 (1)"
+      - text: http://127.0.0.1:9099/v1 (1)
     - group "Modelo declarado":
       - text: Modelo declarado
-      - checkbox "(desconocido)"
-      - text: (desconocido)
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Todos" [selected]
-      - option "(desconocido)"
+      - option "standard (15)"
     - text: Modo
     - combobox "Modo":
       - option "Todos" [selected]
-      - option "(desconocido)"
+      - option "check (15)"
     - text: Protocolo
     - combobox "Protocolo":
       - option "Todos" [selected]
-      - option "(desconocido)"
+      - option "openai (14)"
+      - option "(desconocido) (1)"
     - text: Detección del protocolo
     - combobox "Detección del protocolo":
       - option "Todos" [selected]
       - option "detectado automáticamente"
       - option "fijado manualmente"
-      - option "(desconocido)"
+      - option "(desconocido) (15)"
     - text: Solicitudes de sondeo
     - combobox "Solicitudes de sondeo":
       - option "Todos" [selected]
-      - option "Streaming"
+      - option "Streaming (14)"
       - option "Sin streaming"
       - option "Streaming + sin streaming"
-      - option "(desconocido)"
+      - option "(desconocido) (1)"
     - text: Riesgo
     - combobox "Riesgo":
       - option "Todos" [selected]
-      - option "Coherente (probablemente auténtico)"
-      - option "Mayormente fiable"
+      - option "Coherente (probablemente auténtico) (7)"
+      - option "Mayormente fiable (4)"
       - option "Desviaciones detectadas"
-      - option "Gato por liebre"
+      - option "Gato por liebre (4)"
       - option "Señal insuficiente"
     - text: Puntuación mín.
     - spinbutton "Puntuación mín."
@@ -102,8 +111,8 @@
     - text: Ejecución
     - combobox "Ejecución":
       - option "Todos" [selected]
-      - option "Manual"
-      - option "Monitor"
+      - option "Manual (11)"
+      - option "Monitor (4)"
     - group "Tendencias":
       - text: Tendencias 2 de un máximo de 2 seleccionados
       - button "Puntuación" [pressed]

@@ -44,49 +44,58 @@
     - text: Type endepunkt
     - combobox "Type endepunkt":
       - option "Alle" [selected]
-      - option "Chat"
+      - option "Chat (15)"
       - option "Embeddinger"
       - option "Rerank"
     - group "Relé / leverandør":
       - text: Relé / leverandør
-      - checkbox "(ukjent)"
-      - text: (ukjent)
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
+      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
+      - checkbox "http://127.0.0.1:9099/v1 (1)"
+      - text: http://127.0.0.1:9099/v1 (1)
     - group "Oppgitt modell":
       - text: Oppgitt modell
-      - checkbox "(ukjent)"
-      - text: (ukjent)
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Testsett
     - combobox "Testsett":
       - option "Alle" [selected]
-      - option "(ukjent)"
+      - option "standard (15)"
     - text: Modus
     - combobox "Modus":
       - option "Alle" [selected]
-      - option "(ukjent)"
+      - option "check (15)"
     - text: Protokoll
     - combobox "Protokoll":
       - option "Alle" [selected]
-      - option "(ukjent)"
+      - option "openai (14)"
+      - option "(ukjent) (1)"
     - text: Protokollgjenkjenning
     - combobox "Protokollgjenkjenning":
       - option "Alle" [selected]
       - option "oppdaget automatisk"
       - option "satt manuelt"
-      - option "(ukjent)"
+      - option "(ukjent) (15)"
     - text: Probeforespørsler
     - combobox "Probeforespørsler":
       - option "Alle" [selected]
-      - option "Strømming"
+      - option "Strømming (14)"
       - option "Uten strømming"
       - option "Med + uten strømming"
-      - option "(ukjent)"
+      - option "(ukjent) (1)"
     - text: Risiko
     - combobox "Risiko":
       - option "Alle" [selected]
-      - option "Konsistent (trolig ekte)"
-      - option "Stort sett pålitelig"
+      - option "Konsistent (trolig ekte) (7)"
+      - option "Stort sett pålitelig (4)"
       - option "Avvik funnet"
-      - option "Falsk vare"
+      - option "Falsk vare (4)"
       - option "For lite grunnlag"
     - text: Min. score
     - spinbutton "Min. score"
@@ -102,8 +111,8 @@
     - text: Kjøring
     - combobox "Kjøring":
       - option "Alle" [selected]
-      - option "Manuelt"
-      - option "Overvåking"
+      - option "Manuelt (11)"
+      - option "Overvåking (4)"
     - group "Trender":
       - text: Trender 2 av maks 2 valgt
       - button "Score" [pressed]

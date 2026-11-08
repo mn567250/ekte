@@ -44,49 +44,58 @@
     - text: Endpunkttyp
     - combobox "Endpunkttyp":
       - option "Alle" [selected]
-      - option "Chat"
+      - option "Chat (15)"
       - option "Embeddings"
       - option "Reranking"
     - group "Relay / Anbieter":
       - text: Relay / Anbieter
-      - checkbox "(unbekannt)"
-      - text: (unbekannt)
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
+      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
+      - checkbox "http://127.0.0.1:9099/v1 (1)"
+      - text: http://127.0.0.1:9099/v1 (1)
     - group "Angegebenes Modell":
       - text: Angegebenes Modell
-      - checkbox "(unbekannt)"
-      - text: (unbekannt)
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Alle" [selected]
-      - option "(unbekannt)"
+      - option "standard (15)"
     - text: Modus
     - combobox "Modus":
       - option "Alle" [selected]
-      - option "(unbekannt)"
+      - option "check (15)"
     - text: Protokoll
     - combobox "Protokoll":
       - option "Alle" [selected]
-      - option "(unbekannt)"
+      - option "openai (14)"
+      - option "(unbekannt) (1)"
     - text: Protokollerkennung
     - combobox "Protokollerkennung":
       - option "Alle" [selected]
       - option "automatisch erkannt"
       - option "manuell festgelegt"
-      - option "(unbekannt)"
+      - option "(unbekannt) (15)"
     - text: Messanfragen
     - combobox "Messanfragen":
       - option "Alle" [selected]
-      - option "Streaming"
+      - option "Streaming (14)"
       - option "Ohne Streaming"
       - option "Streaming + ohne Streaming"
-      - option "(unbekannt)"
+      - option "(unbekannt) (1)"
     - text: Risiko
     - combobox "Risiko":
       - option "Alle" [selected]
-      - option "Konsistent (wahrscheinlich echt)"
-      - option "Weitgehend vertrauenswürdig"
+      - option "Konsistent (wahrscheinlich echt) (7)"
+      - option "Weitgehend vertrauenswürdig (4)"
       - option "Abweichungen gefunden"
-      - option "Etikettenschwindel"
+      - option "Etikettenschwindel (4)"
       - option "Unzureichendes Signal"
     - text: Min. Score
     - spinbutton "Min. Score"
@@ -102,8 +111,8 @@
     - text: Ausführung
     - combobox "Ausführung":
       - option "Alle" [selected]
-      - option "Manuell"
-      - option "Überwachung"
+      - option "Manuell (11)"
+      - option "Überwachung (4)"
     - group "Trends":
       - text: Trends 2 von höchstens 2 ausgewählt
       - button "Score" [pressed]

@@ -44,49 +44,58 @@
     - text: Tipo di endpoint
     - combobox "Tipo di endpoint":
       - option "Tutti" [selected]
-      - option "Chat"
+      - option "Chat (15)"
       - option "Embedding"
       - option "Riordinamento"
     - group "Relay / provider":
       - text: Relay / provider
-      - checkbox "(sconosciuto)"
-      - text: (sconosciuto)
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
+      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
+      - checkbox "http://127.0.0.1:9099/v1 (1)"
+      - text: http://127.0.0.1:9099/v1 (1)
     - group "Modello dichiarato":
       - text: Modello dichiarato
-      - checkbox "(sconosciuto)"
-      - text: (sconosciuto)
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Tutti" [selected]
-      - option "(sconosciuto)"
+      - option "standard (15)"
     - text: Modalità
     - combobox "Modalità":
       - option "Tutti" [selected]
-      - option "(sconosciuto)"
+      - option "check (15)"
     - text: Protocollo
     - combobox "Protocollo":
       - option "Tutti" [selected]
-      - option "(sconosciuto)"
+      - option "openai (14)"
+      - option "(sconosciuto) (1)"
     - text: Rilevamento del protocollo
     - combobox "Rilevamento del protocollo":
       - option "Tutti" [selected]
       - option "rilevato automaticamente"
       - option "impostato manualmente"
-      - option "(sconosciuto)"
+      - option "(sconosciuto) (15)"
     - text: Richieste di sonda
     - combobox "Richieste di sonda":
       - option "Tutti" [selected]
-      - option "Streaming"
+      - option "Streaming (14)"
       - option "Senza streaming"
       - option "Streaming + senza streaming"
-      - option "(sconosciuto)"
+      - option "(sconosciuto) (1)"
     - text: Rischio
     - combobox "Rischio":
       - option "Tutti" [selected]
-      - option "Coerente (probabilmente autentico)"
-      - option "Per lo più affidabile"
+      - option "Coerente (probabilmente autentico) (7)"
+      - option "Per lo più affidabile (4)"
       - option "Scostamenti rilevati"
-      - option "Merce non conforme"
+      - option "Merce non conforme (4)"
       - option "Segnale insufficiente"
     - text: Punteggio min.
     - spinbutton "Punteggio min."
@@ -102,8 +111,8 @@
     - text: Esecuzione
     - combobox "Esecuzione":
       - option "Tutti" [selected]
-      - option "Manuale"
-      - option "Monitor"
+      - option "Manuale (11)"
+      - option "Monitor (4)"
     - group "Andamenti":
       - text: Andamenti 2 selezionati su un massimo di 2
       - button "Punteggio" [pressed]

@@ -44,49 +44,58 @@
     - text: Endpoint type
     - combobox "Endpoint type":
       - option "All" [selected]
-      - option "Chat"
+      - option "Chat (15)"
       - option "Embeddings"
       - option "Reranking"
     - group "Relay / provider":
       - text: Relay / provider
-      - checkbox "(unknown)"
-      - text: (unknown)
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
+      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
+      - checkbox "http://127.0.0.1:9099/v1 (1)"
+      - text: http://127.0.0.1:9099/v1 (1)
     - group "Claimed model":
       - text: Claimed model
-      - checkbox "(unknown)"
-      - text: (unknown)
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "All" [selected]
-      - option "(unknown)"
+      - option "standard (15)"
     - text: Mode
     - combobox "Mode":
       - option "All" [selected]
-      - option "(unknown)"
+      - option "check (15)"
     - text: Protocol
     - combobox "Protocol":
       - option "All" [selected]
-      - option "(unknown)"
+      - option "openai (14)"
+      - option "(unknown) (1)"
     - text: Protocol detection
     - combobox "Protocol detection":
       - option "All" [selected]
       - option "auto-detected"
       - option "set manually"
-      - option "(unknown)"
+      - option "(unknown) (15)"
     - text: Probe requests
     - combobox "Probe requests":
       - option "All" [selected]
-      - option "Streaming"
+      - option "Streaming (14)"
       - option "Non-streaming"
       - option "Streaming + non-streaming"
-      - option "(unknown)"
+      - option "(unknown) (1)"
     - text: Risk
     - combobox "Risk":
       - option "All" [selected]
-      - option "Consistent (likely genuine)"
-      - option "Mostly trustworthy"
+      - option "Consistent (likely genuine) (7)"
+      - option "Mostly trustworthy (4)"
       - option "Deviations found"
-      - option "Bait-and-switch"
+      - option "Bait-and-switch (4)"
       - option "Insufficient signal"
     - text: Min. score
     - spinbutton "Min. score"
@@ -102,8 +111,8 @@
     - text: Execution
     - combobox "Execution":
       - option "All" [selected]
-      - option "Manual"
-      - option "Monitor"
+      - option "Manual (11)"
+      - option "Monitor (4)"
     - group "Trends":
       - text: Trends 2 of at most 2 selected
       - button "Score" [pressed]

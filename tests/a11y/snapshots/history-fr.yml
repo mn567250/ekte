@@ -44,49 +44,58 @@
     - text: Type de point d'accès
     - combobox "Type de point d'accès":
       - option "Tous" [selected]
-      - option "Chat"
+      - option "Chat (15)"
       - option "Embeddings"
       - option "Reclassement"
     - group "Relais / fournisseur":
       - text: Relais / fournisseur
-      - checkbox "(inconnu)"
-      - text: (inconnu)
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
+      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
+      - checkbox "http://127.0.0.1:9099/v1 (1)"
+      - text: http://127.0.0.1:9099/v1 (1)
     - group "Modèle annoncé":
       - text: Modèle annoncé
-      - checkbox "(inconnu)"
-      - text: (inconnu)
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Tous" [selected]
-      - option "(inconnu)"
+      - option "standard (15)"
     - text: Mode
     - combobox "Mode":
       - option "Tous" [selected]
-      - option "(inconnu)"
+      - option "check (15)"
     - text: Protocole
     - combobox "Protocole":
       - option "Tous" [selected]
-      - option "(inconnu)"
+      - option "openai (14)"
+      - option "(inconnu) (1)"
     - text: Détection du protocole
     - combobox "Détection du protocole":
       - option "Tous" [selected]
       - option "détecté automatiquement"
       - option "défini manuellement"
-      - option "(inconnu)"
+      - option "(inconnu) (15)"
     - text: Requêtes de sonde
     - combobox "Requêtes de sonde":
       - option "Tous" [selected]
-      - option "Streaming"
+      - option "Streaming (14)"
       - option "Sans streaming"
       - option "Streaming + sans streaming"
-      - option "(inconnu)"
+      - option "(inconnu) (1)"
     - text: Risque
     - combobox "Risque":
       - option "Tous" [selected]
-      - option "Cohérent (probablement authentique)"
-      - option "Globalement fiable"
+      - option "Cohérent (probablement authentique) (7)"
+      - option "Globalement fiable (4)"
       - option "Écarts détectés"
-      - option "Tromperie sur la marchandise"
+      - option "Tromperie sur la marchandise (4)"
       - option "Signal insuffisant"
     - text: Score min.
     - spinbutton "Score min."
@@ -102,8 +111,8 @@
     - text: Exécution
     - combobox "Exécution":
       - option "Tous" [selected]
-      - option "Manuel"
-      - option "Surveillance"
+      - option "Manuel (11)"
+      - option "Surveillance (4)"
     - group "Tendances":
       - text: Tendances 2 sélectionné(s) sur 2 au maximum
       - button "Score" [pressed]
