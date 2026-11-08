@@ -248,12 +248,16 @@ The values present for each filter key, counted under the current filters
 ```
 
 `value` is spelled as the URL takes it (`-` = none; relays and models use
-`(unknown)`, their group key); lists are ordered by runs, then label / value.
+`(unknown)`, their group key); a relay's `label` is what History calls it
+(`history_api.relay_labels`: its knowledge-base name, else the host of its
+URL); lists are ordered by runs, then label / value.
 `runs` counts the full selection; `span` is the first and last run under
 every filter except `from` / `to`; `dimensions` lists the `dim:<key>` keys of
 the selection. The surface is not defaulted here: `surface_default` names the
 one the widgets would use. One statement: the runs matching `min_score` / `q`
-are read once and each list is a `GROUP BY` over them.
+are read once; `relay` (by relay id) and `model` are a `GROUP BY` over them,
+and the other lists, `span` and `runs` are folded from one `GROUP BY` of each
+run's facet combination (`history_metrics.facet_id`, `ekte/web/facets.py`).
 
 ### `GET /api/analytics/summary` (`kpi.*`: none)
 
@@ -313,7 +317,8 @@ quartiles. Answer: `group`, `metrics`, `runs`, `rows` (as the leaderboard).
 
 ### `GET /api/analytics/errors`
 
-The selected runs' target requests by outcome (`history_outcomes`, all ops;
+The selected runs' target requests by outcome (`history_outcomes`, all ops,
+read from each run's row: `history_metrics.outcome_<class>`;
 classes `success`, `rate_limited`, `relay_timeout`, `relay_5xx`, `relay_4xx`,
 `relay_other`, `network`, `local`), per group (`group`), in total and per
 time bucket of the run's start: `errors.bucket` `hour|day|week|dow_hour`

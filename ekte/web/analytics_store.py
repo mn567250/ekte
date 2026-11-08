@@ -74,6 +74,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from ekte import errorclass
 from ekte.knowledge.relays import normalize_url
 from ekte.models import RequestRecord, RunOutcomes
 from ekte.perf.outcomes import from_counts, run_outcomes
@@ -279,6 +280,45 @@ def delete_for(conn: sqlite3.Connection, rid: int | None = None) -> None:
             conn.execute(f"DELETE FROM {table}")
         else:
             conn.execute(f"DELETE FROM {table} WHERE history_id = ?", (int(rid),))
+
+
+# --------------------------------------------------------------------------- #
+# Outcome columns: history_outcomes pivoted onto the run's row
+# --------------------------------------------------------------------------- #
+OUTCOME_COLS: dict[str, str] = {o: f"outcome_{o}" for o in errorclass.OUTCOMES}
+"""Outcome -> the ``history_metrics`` column with the run's count of it over
+all ops: the run's ``history_outcomes`` rows pivoted (0 for an outcome that
+did not occur; every column NULL for a run without outcome rows). Kept equal
+to ``history_outcomes`` by triggers (:func:`ensure_outcome_columns`), so
+pooled outcome counts are a pass over the runs' own rows."""
+
+
+def _outcome_set_sql(rid: str, where: str | None = None) -> str:
+    """UPDATE that recomputes the outcome columns of run ``rid`` (SQL), on
+    the run ``rid`` or the rows ``where`` selects."""
+    sums = ", ".join(f"SUM(CASE WHEN outcome = '{o}' THEN n ELSE 0 END)" for o in OUTCOME_COLS)
+    return (f"UPDATE history_metrics SET ({', '.join(OUTCOME_COLS.values())}) ="
+            f" (SELECT {sums} FROM history_outcomes WHERE history_id = {rid})"
+            f" WHERE {where or f'history_id = {rid}'};")
+
+
+def ensure_outcome_columns(conn: sqlite3.Connection) -> None:
+    """Add :data:`OUTCOME_COLS` and the triggers that keep them equal to
+    ``history_outcomes``, whichever of the two tables is written first, and
+    fill them for the runs already saved (idempotent; a migration step)."""
+    from ekte.knowledge.snapshot import add_link_columns
+
+    add_link_columns(conn, "history_metrics", dict.fromkeys(OUTCOME_COLS.values(), "INTEGER"))
+    for name, event, rid in (("outcome_cols_insert", "INSERT ON history_outcomes", "NEW.history_id"),
+                             ("outcome_cols_delete", "DELETE ON history_outcomes", "OLD.history_id"),
+                             ("outcome_cols_metrics", "INSERT ON history_metrics", "NEW.history_id")):
+        conn.execute(f"CREATE TRIGGER IF NOT EXISTS {name} AFTER {event}"
+                     f" BEGIN {_outcome_set_sql(rid)} END")
+    conn.execute("CREATE TRIGGER IF NOT EXISTS outcome_cols_update AFTER UPDATE ON history_outcomes"
+                 f" BEGIN {_outcome_set_sql('OLD.history_id')} {_outcome_set_sql('NEW.history_id')} END")
+    # the runs saved before (a correlated lookup per run: no UPDATE ... FROM before SQLite 3.33)
+    conn.execute(_outcome_set_sql("history_metrics.history_id",
+                                  "history_id IN (SELECT history_id FROM history_outcomes)"))
 
 
 # --------------------------------------------------------------------------- #

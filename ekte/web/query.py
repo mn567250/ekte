@@ -489,6 +489,11 @@ def default_surface(conn: sqlite3.Connection, q: Query | None = None) -> str:
     (the whole history without ``q``); ties in :data:`ekte.config.SURFACES`
     order, chat when there are none. For endpoints that need one surface."""
     sel = select_runs((q or Query()).replace(surface=None))
+    # the known surfaces counted in one pass (no GROUP BY: no sort of the runs)
+    known = ", ".join(f"COALESCE(SUM(COALESCE(h.surface, 'chat') = {_quote(s)}), 0)" for s in SURFACES)
+    total, *counts = conn.execute(f"SELECT COUNT(*), {known} {sel.sql}", sel.args).fetchone()
+    if int(total) == sum(int(c) for c in counts):
+        return analytics._most_common(dict(zip(SURFACES, (int(c) for c in counts), strict=True)))
     rows = conn.execute(
         f"SELECT COALESCE(h.surface, 'chat'), COUNT(*) {sel.sql} GROUP BY 1", sel.args
     ).fetchall()

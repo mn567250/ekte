@@ -21,15 +21,13 @@ mix; the answer names it (``surface``).
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from datetime import UTC, datetime, timedelta, tzinfo
+from datetime import UTC, datetime
 from typing import Any
 
 from ekte import errorclass
-from ekte.web import analytics_store, history, query
+from ekte.web import analytics_store, facets, history, history_api, query
 from ekte.web import metrics as _metrics
 from ekte.web.analytics import (
-    _T_MAX,
-    _T_MIN,
     BLOCKS,
     BUCKETS,
     FOLDS,
@@ -44,7 +42,7 @@ from ekte.web.analytics import (
     _most_common,
     metric,
 )
-from ekte.web.relay_map import GROUP_KEY_SQL
+from ekte.web.relay_map import GROUP_KEY_SQL, RELAY_ID_SQL
 
 # Metrics of each leaderboard row (the median score ranks them).
 BOARD_METRICS = (
@@ -122,11 +120,14 @@ def _str_choice(w: Mapping[str, Any], name: str, key: str, allowed: tuple[str, .
     return str(value)
 
 
-def _judged(m: Metric, cell: Mapping[str, Any]) -> dict[str, Any]:
-    """A cell (``Cell.public()`` or a point) with the judgement of its value:
-    ``family`` and ``grade`` (:func:`ekte.web.metrics.present`)."""
-    shown = _metrics.present(m, cell.get("value"))
-    return {**cell, "family": shown["family"], "grade": shown["grade"]}
+def _judged(m: Metric, cell: dict[str, Any]) -> dict[str, Any]:
+    """A fresh cell dict (``Cell.public()`` or a point), given the judgement
+    of its value in place: ``family`` and ``grade``, as
+    :func:`ekte.web.metrics.present` gives them (its other fields are not
+    needed: thousands of cells per board)."""
+    v = _metrics._number(cell.get("value"))
+    cell["family"], cell["grade"] = _metrics.family(m, v), _metrics._grade(m, v)
+    return cell
 
 
 def resolve_params(params: Any, *, now: datetime | None = None) -> list[tuple[str, str]]:
@@ -149,16 +150,17 @@ def _kpi_cells(conn: Any, q: query.Query) -> dict[str, query.Cell]:
     """The KPI grid's cells over ``q``'s runs: the counts and every grid metric
     that applies to ``q.surface``."""
     wanted = [mid for mid in _metrics.KPI_GRID if mid in METRICS and METRICS[mid].applies(str(q.surface))]
-    groups = query.aggregate(conn, q, wanted, "all")
-    sel = query.select_runs(q).with_relay()
-    runs, relays, models = conn.execute(
-        "SELECT COUNT(*), COUNT(DISTINCT rm.relay_key), COUNT(DISTINCT NULLIF(h.claimed_model, ''))"
-        f" {sel.sql}", sel.args).fetchone()
+    # one pass: the metrics and the distinct relays (their ids) and models
+    specs, rows = query._grouped(
+        conn, query.select_runs(q), "all", query._metrics(wanted, q.surface),
+        extra=("COUNT(DISTINCT m.relay_id)", "COUNT(DISTINCT NULLIF(h.claimed_model, ''))"))
+    row = rows[0] if rows else {"runs": 0, "x0": 0, "x1": 0}
+    runs, relays, models = int(row["runs"]), int(row["x0"]), int(row["x1"])
+    found = query._cells(specs, row) if rows else {}
     full = 1.0 if runs else None
     cells = {"runs": query.Cell(float(runs), int(runs), full, False),
              "relays": query.Cell(float(relays), int(runs), full, False),
              "models": query.Cell(float(models), int(runs), full, False)}
-    found = groups[0].metrics if groups else {}
     for mid in wanted:
         cells[mid] = found.get(mid) or query.Cell(None, 0, None, True)
     return cells
@@ -324,11 +326,6 @@ OUTCOME_SQL = (
 (NULL: a record that never counts). Tested equal to the Python rules."""
 
 
-def _counts_sql(alias: str = "o") -> list[str]:
-    """``SUM(n)`` of each outcome class over joined ``history_outcomes`` rows."""
-    return [f"SUM(CASE WHEN {alias}.outcome = '{c}' THEN {alias}.n ELSE 0 END)" for c in ERROR_CLASSES]
-
-
 def outcome_shares(counts: Mapping[str, Any]) -> dict[str, Any]:
     """Pooled counts and rates of some requests: ``requests`` (all),
     ``judged`` (all − network − local), ``shares`` (each relay outcome over
@@ -355,88 +352,25 @@ def outcome_shares(counts: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-_DATED_SQL = (f"(m.started_at >= '{analytics_store.format_ts(_T_MIN)}'"
-              f" AND m.started_at < '{analytics_store.format_ts(_T_MAX)}')")
+# Per group or bucket: the runs with outcome counts and the sum of each
+# outcome (the run's pivoted history_outcomes, analytics_store.OUTCOME_COLS).
+_OUTCOME_AGGS = (f"COUNT(m.{analytics_store.OUTCOME_COLS[ERROR_CLASSES[0]]})",
+                 *(f"SUM(m.{analytics_store.OUTCOME_COLS[c]})" for c in ERROR_CLASSES))
 
 
-def _local_buckets(size: str, local: str, offset: str, block: int) -> list[str]:
-    """SQL partitioning runs by the buckets of :func:`_bucket` (``local``: the
-    run's local wall time; ``offset``: its UTC offset, which parts a DST fold)."""
-    if size == "hour":
-        return [f"strftime('%Y-%m-%dT%H', {local})", offset]
-    if size == "day":
-        return [f"date({local})"]
-    if size == "week":
-        return [f"date({local}, '-6 days', 'weekday 1')"]
-    return [f"strftime('%w', {local})", f"CAST(strftime('%H', {local}) AS INTEGER) / {block}"]
-
-
-def _offset(conn: Any, zone: tzinfo) -> str:
-    """SQL for ``zone``'s UTC offset at ``m.started_at``, exact across the
-    whole history's dated runs (:func:`ekte.web.query.offset_sql`; the bounds
-    are two index lookups)."""
-    lo, hi = conn.execute(f"SELECT MIN(started_at), MAX(started_at) FROM history_metrics m"
-                          f" WHERE {_DATED_SQL}").fetchone()
-    first, last = analytics_store.parse_ts(lo), analytics_store.parse_ts(hi)
-    if first is None or last is None:
-        return "0"
-    points: list[datetime] = []
-    p = first.replace(microsecond=0)
-    while p <= last:
-        points.append(p)
-        p += timedelta(days=7)
-    return query.offset_sql(zone, [*points, last + timedelta(seconds=1)])
-
-
-def _describe(group: str, key: str, rk: Any, rl: Any, rkind: Any, rin: Any, mk: Any,
-              mkb: Any) -> dict[str, Any]:
-    """A group's public description, as :meth:`ekte.web.query.GroupResult.describe`."""
-    if group == "relay":
-        return {"key": key, "label": str(rl), "in_kb": bool(rin), "kind": str(rkind)}
-    if group == "model":
-        return {"key": key, "label": key, "in_kb": bool(mkb), "kind": "model"}
-    if group == "relay_model":
-        return {"key": key, "label": f"{rl} · {mk}", "in_kb": bool(rin), "kind": "relay_model",
-                "relay": str(rk), "model": str(mk)}
-    return {"key": key, "label": key, "in_kb": False, "kind": "all"}
-
-
-def _errors_sql(q: query.Query, offset: str, size: str, block: int) -> tuple[str, tuple[Any, ...]]:
-    """One statement for the errors widget: the selected runs once (``r``,
-    with their group, description and time bucket), their outcome counts once
-    (``c``, one ordered pass over ``history_outcomes``), then a row per group
-    (``kind`` 0) and a row per time bucket of the dated runs (``kind`` 1):
-    ``kind, key, rk, rl, rkind, rin, mk, mkb, b0, b1, t, runs, covered,
-    <one count per ERROR_CLASSES>``."""
-    relay = q.group in ("relay", "relay_model")
-    sel = query.select_runs(q)
-    if relay:
-        sel = sel.with_relay()
-    local = f"datetime(m.started_at, {offset} || ' seconds')"
-    buckets = [*_local_buckets(size, local, offset, block), "NULL"][:2]
-    desc = (["rm.relay_key", "rm.label", "rm.kind", "rm.in_kb"] if relay else ["NULL"] * 4) + [
-        GROUP_KEY_SQL["model"], "m.kb_model_id IS NOT NULL"]
-    cols = ", ".join([
-        "h.id AS id", f"{GROUP_KEY_SQL[q.group]} AS g",
-        *(f"{d} AS d{i}" for i, d in enumerate(desc)),
-        "m.started_at AS t", f"{_DATED_SQL} AS dated",
-        *(f"CASE WHEN {_DATED_SQL} THEN {b} END AS b{i}" for i, b in enumerate(buckets)),
-    ])
-    pivot = ", ".join(f"SUM(CASE WHEN outcome = '{c}' THEN n ELSE 0 END) AS c{i}"
-                      for i, c in enumerate(ERROR_CLASSES))
-    sums = ", ".join(f"SUM(c.c{i})" for i in range(len(ERROR_CLASSES)))
-    sql = (
-        f"WITH r AS MATERIALIZED (SELECT {cols} {sel.sql}),"
-        f" c AS MATERIALIZED (SELECT history_id AS id, {pivot} FROM history_outcomes"
-        " WHERE history_id IN (SELECT id FROM r) GROUP BY history_id)"
-        f" SELECT 0, r.g, {', '.join(f'MAX(r.d{i})' for i in range(6))}, NULL, NULL, NULL,"
-        f" COUNT(*), COUNT(c.id), {sums} FROM r LEFT JOIN c ON c.id = r.id GROUP BY r.g"
-        " UNION ALL"
-        f" SELECT 1, NULL, {', '.join(['NULL'] * 6)}, r.b0, r.b1, MIN(r.t),"
-        f" COUNT(*), COUNT(c.id), {sums} FROM r LEFT JOIN c ON c.id = r.id WHERE r.dated"
-        " GROUP BY r.b0, r.b1"
-    )
-    return sql, sel.args
+def _outcome_rows(conn: Any, sel: query.RunSelection, group: str,
+                  buckets: list[str] | None = None) -> list[dict[str, Any]]:
+    """The errors widget's rows (:func:`ekte.web.query._grouped`: one pass
+    over the selected runs' own rows, grouped by the relay id / model on
+    them): per group, or per time bucket of the dated runs (``buckets``),
+    ``runs``, ``covered`` (runs with outcome counts) and each outcome's sum."""
+    if buckets is not None:
+        sel = sel.and_where(query._DATED_SQL)
+    _, rows = query._grouped(conn, sel, group, [], buckets=buckets or (), extra=_OUTCOME_AGGS)
+    for r in rows:
+        r["covered"] = int(r["x0"] or 0)
+        r["counts"] = {c: int(r[f"x{i + 1}"] or 0) for i, c in enumerate(ERROR_CLASSES)}
+    return rows
 
 
 def run_timeline(conn: Any, rid: int) -> list[dict[str, Any]]:
@@ -472,24 +406,29 @@ def widget_errors(params: Any) -> dict[str, Any]:
             raise query.QueryError("errors.run must be a run id")
         rid = int(w["run"])
 
-    sql, args = _errors_sql(q, _offset(conn, zone), size, block)
+    sel = query.select_runs(q)
     totals = dict.fromkeys(ERROR_CLASSES, 0)
     groups, buckets = [], []
-    for row in conn.execute(sql, args):
-        kind, key, desc, t = row[0], row[1], row[2:8], row[10]
-        runs, covered = int(row[11]), int(row[12])
-        counts = dict(zip(ERROR_CLASSES, row[13:], strict=True))
-        cell = {"runs": runs, "covered": covered, "low_n": covered < MIN_RUNS, **outcome_shares(counts)}
-        if kind == 0:
-            for k, v in counts.items():
-                totals[k] += int(v or 0)
-            groups.append({**_describe(q.group, str(key), *desc), **cell,
-                           "coverage": covered / runs if runs else None})
-        else:
-            start = analytics_store.parse_ts(t)
+
+    def cell(r: Mapping[str, Any]) -> dict[str, Any]:
+        runs, covered = int(r["runs"]), r["covered"]
+        return {"runs": runs, "covered": covered, "low_n": covered < MIN_RUNS,
+                **outcome_shares(r["counts"])}
+
+    for r in _outcome_rows(conn, sel, q.group):
+        for k, v in r["counts"].items():
+            totals[k] += v
+        c = cell(r)
+        groups.append({**query._result(q.group, r, {}).describe(), **c,
+                       "coverage": c["covered"] / c["runs"] if c["runs"] else None})
+    bounds = query._data_bounds(conn)
+    if bounds is not None:
+        offset = query.offset_sql(zone, query._offset_points(conn, sel, *bounds))
+        for r in _outcome_rows(conn, sel, "all", query._bucket_sql(size, offset, block, "week")):
+            start = analytics_store.parse_ts(r["t_min"])
             assert start is not None
             pos, bkey, extra = _bucket(start, zone, size, block)
-            buckets.append((pos, {"bucket": bkey, **extra, **cell}))
+            buckets.append((pos, {"bucket": bkey, **extra, **cell(r)}))
     groups.sort(key=lambda g: (-g["requests"], -g["runs"], g["label"].lower(), g["key"]))
     runs = sum(g["runs"] for g in groups)
     covered = sum(g["covered"] for g in groups)
@@ -518,25 +457,31 @@ def widget_integrity(params: Any) -> dict[str, Any]:
     conn, q = _setup(params)
     chat = METRICS["context_claimed"].applies(str(q.surface))
     wanted = ["model_mismatch_rate", *(("context_claimed", "context_effective") if chat else ())]
-    groups = query.aggregate(conn, q, wanted, "relay_model")
-    gk = GROUP_KEY_SQL["relay_model"]
-    sel = query.select_runs(q).with_relay()
-    checks: dict[str, dict[str, dict[str, int]]] = {}
-    for g, key, status, n in conn.execute(
-        f"SELECT {gk}, d.key, CASE WHEN d.status IN {_sql_list(JUDGED)} THEN d.status ELSE 'other' END,"
-        f" COUNT(*) {sel.from_sql} JOIN history_dimensions d ON d.history_id = h.id"
-        f" AND d.kind = 'detector' AND d.key IN {_sql_list(INTEGRITY_CHECKS)}{sel.where_sql}"
-        " GROUP BY 1, 2, 3", sel.args):
-        cell = checks.setdefault(str(g), {}).setdefault(str(key), {"pass": 0, "warn": 0, "fail": 0, "other": 0})
-        cell[str(status)] += int(n)
-    ratios: dict[str, tuple[Any, ...]] = {}
+    sel = query.select_runs(q)
+    # the context ratio's quartiles in the same pass as the metrics
+    extra: tuple[str, ...] = ()
     if chat:
         med, pct = query.sql_functions(conn)
         v = ("CASE WHEN m.context_claimed_tokens > 0 AND m.context_effective_tokens IS NOT NULL"
              " THEN CAST(m.context_effective_tokens AS REAL) / m.context_claimed_tokens END")
-        ratios = {str(r[0]): tuple(r[1:]) for r in conn.execute(
-            f"SELECT {gk}, {med}({v}), {pct}({v}, 25), {pct}({v}, 75), COUNT({v}) {sel.sql} GROUP BY 1",
-            sel.args)}
+        extra = (f"{med}({v})", f"{pct}({v}, 25)", f"{pct}({v}, 75)", f"COUNT({v})")
+    specs, found = query._grouped(conn, sel, "relay_model", query._metrics(wanted, q.surface), extra=extra)
+    groups = sorted((query._result("relay_model", r, query._cells(specs, r)) for r in found),
+                    key=query._rank)
+    ratios = {str(r["g"]): tuple(r[f"x{i}"] for i in range(4)) for r in found} if chat else {}
+    # check statuses per relay id and model (an integer and a run value: the
+    # few groups are named afterwards)
+    model = GROUP_KEY_SQL["model"]
+    checks: dict[str, dict[str, dict[str, int]]] = {}
+    for g, key, status, n in conn.execute(
+        "SELECT rg.relay_key || '|' || s.mk, s.k, s.st, s.n FROM ("
+        f"SELECT {RELAY_ID_SQL} AS gid, {model} AS mk, d.key AS k,"
+        f" CASE WHEN d.status IN {_sql_list(JUDGED)} THEN d.status ELSE 'other' END AS st, COUNT(*) AS n"
+        f" {sel.from_sql} JOIN history_dimensions d ON d.history_id = h.id"
+        f" AND d.kind = 'detector' AND d.key IN {_sql_list(INTEGRITY_CHECKS)}{sel.where_sql}"
+        " GROUP BY 1, 2, 3, 4) s JOIN relay_group rg ON rg.id = s.gid", sel.args):
+        cell = checks.setdefault(str(g), {}).setdefault(str(key), {"pass": 0, "warn": 0, "fail": 0, "other": 0})
+        cell[str(status)] += int(n)
     present = {k for per in checks.values() for k in per}
     shown = [c for c in INTEGRITY_CHECKS if c in present]
     rows = []
@@ -567,16 +512,10 @@ def widget_integrity(params: Any) -> dict[str, Any]:
 # run's value as the URL spells it (so "the key is set" is "the value is one
 # of the given ones"), and the Query field the key sets.
 _FACETS: dict[str, tuple[str, str]] = {
-    "surface": ("COALESCE(h.surface, 'chat')", "surface"),
+    "surface": (facets.FACETS["surface"], "surface"),
     "relay": ("rm.relay_key", "relays"),
     "model": (GROUP_KEY_SQL["model"], "models"),
-    "suite": ("COALESCE(NULLIF(h.suite, ''), '-')", "suite"),
-    "mode": ("COALESCE(NULLIF(h.mode, ''), '-')", "mode"),
-    "api": ("COALESCE(NULLIF(h.api, ''), '-')", "api"),
-    "stream": ("COALESCE(NULLIF(h.stream_mode, ''), '-')", "stream"),
-    "detect": ("CASE h.api_auto WHEN 1 THEN 'auto' WHEN 0 THEN 'manual' ELSE '-' END", "detect"),
-    "risk": ("COALESCE(NULLIF(h.risk_level, ''), 'inconclusive')", "risk"),
-    "exec": ("CASE WHEN h.watch_id IS NULL THEN 'manual' ELSE 'monitor' END", "exec"),
+    **{k: (facets.FACETS[k], k) for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec")},
 }
 OPTION_KEYS = tuple(_FACETS)
 
@@ -586,56 +525,93 @@ def filter_options(params: Any) -> dict[str, Any]:
     of the URL schema (:data:`OPTION_KEYS`) as ``{"<key>": [{value, runs,
     label?}]}``, most runs first, each counted under the current filters
     except the key itself (a selected value and its siblings never
-    disappear). ``relay`` values carry their relay-map ``label``, ``kind``
-    and ``in_kb``; ``span`` is the first and last run time under every filter
+    disappear). ``relay`` values carry their ``label`` (as History names
+    the relay, :func:`ekte.web.history_api.relay_labels`: a relay of no
+    knowledge-base entry by its host), ``kind`` and ``in_kb``; ``span`` is the first and last run time under every filter
     but ``from`` / ``to``; ``dimensions`` the dimension keys of the selected
     runs (for ``dim:<key>`` metrics). Unlike the widgets no surface is
     defaulted: ``surface_default`` names the one they would use.
 
-    One statement: the runs matching the filters without a value list
-    (``min_score``, ``q``) are read once with each key's value (``r``), and
-    every list is a ``GROUP BY`` over just them."""
+    One statement, three sorts of the selected runs, each by an integer or
+    one value of their own rows: the runs matching the filters without a
+    value list (``min_score``, ``q``) are read once (``r``); the ``relay``
+    list groups them by relay id, the ``model`` list by model, and every
+    other list, the span and the run count are folded from one grouping by
+    the run's combination of few-valued keys (``c``, by
+    ``history_metrics.facet_id``, see :mod:`ekte.web.facets`, and by whether
+    the relay, model and time filters hold), so each list still counts
+    under every filter but its own."""
     q = query.parse_query(params)
     conn = history.query_connection()
     base = query.select_runs(q.replace(
         start=None, end=None, **{f: () if f in ("relays", "models") else None for _, f in _FACETS.values()}))
-    cols = ", ".join(["h.id AS id", "m.started_at AS t", "rm.label AS label", "rm.kind AS kind",
-                      "rm.in_kb AS in_kb", *(f"{expr} AS f_{k}" for k, (expr, _) in _FACETS.items())])
+    base = base.and_where("m.relay_id IS NOT NULL")  # the runs with a relay, as the join to it
+    cols = ", ".join(["h.id AS id", "m.started_at AS t", "m.relay_id AS rid", "m.facet_id AS fid",
+                      f"{_FACETS['model'][0]} AS f_model"])
 
-    conds: dict[str, tuple[str, tuple[Any, ...]]] = {}
-    for key, (_, field_name) in _FACETS.items():
-        value = getattr(q, field_name)
-        values = tuple(value) if isinstance(value, tuple) else () if value is None else (value,)
-        if values:
-            conds[key] = (f"f_{key} IN ({', '.join('?' * len(values))})", values)
+    def values(key: str) -> tuple[Any, ...]:
+        value = getattr(q, _FACETS[key][1])
+        return tuple(value) if isinstance(value, tuple) else () if value is None else (value,)
+
+    def marks(n: int) -> str:
+        return ", ".join("?" * n)
+
+    # each filter on r, and on c: a facet_combo column, or a 0/1 column k<i> of c
+    on_r: dict[str, tuple[str, tuple[Any, ...]]] = {}
+    on_c: dict[str, tuple[str, tuple[Any, ...]]] = {}
+    for key in _FACETS:
+        if not (vs := values(key)):
+            continue
+        if key == "relay":
+            on_r[key] = (f"rid IN (SELECT id FROM relay_group WHERE relay_key IN ({marks(len(vs))}))", vs)
+        elif key == "model":
+            on_r[key] = (f"f_model IN ({marks(len(vs))})", vs)
+        else:
+            column = facets.COLUMNS[key]
+            on_r[key] = (f"fid IN (SELECT id FROM facet_combo WHERE {column} IN ({marks(len(vs))}))", vs)
+            on_c[key] = (f"{column} IN ({marks(len(vs))})", vs)
     times = [(c, (analytics_store.format_ts(v),)) for c, v in (("t >= ?", q.start), ("t < ?", q.end))
              if v is not None]
+    if times:
+        on_r[":time"] = (" AND ".join(c for c, _ in times), tuple(a for _, args in times for a in args))
+    flags = [k for k in on_r if k not in on_c]  # relay, model, time
+    on_c.update({k: (f"k{i}", ()) for i, k in enumerate(flags)})
 
-    def where(skip: str | None = None, with_time: bool = True) -> tuple[str, tuple[Any, ...]]:
-        parts = [c for k, c in conds.items() if k != skip] + (times if with_time else [])
-        sql = " WHERE " + " AND ".join(p for p, _ in parts) if parts else ""
-        return sql, tuple(a for _, args in parts for a in args)
+    def where(conds: Mapping[str, tuple[str, tuple[Any, ...]]], *skip: str) -> tuple[str, list[Any]]:
+        parts = [c for k, c in conds.items() if k not in skip]
+        sql = " WHERE " + " AND ".join(f"({p})" for p, _ in parts) if parts else ""
+        return sql, [a for _, args in parts for a in args]
 
-    branches: list[str] = []
     args: list[Any] = list(base.args)
-    for key in _FACETS:
-        w_sql, w_args = where(key)
-        extra = "MAX(label), MAX(kind), MAX(in_kb)" if key == "relay" else "NULL, NULL, NULL"
-        branches.append(f"SELECT '{key}', f_{key}, {extra}, COUNT(*) FROM r{w_sql} GROUP BY 2")
-        args += w_args
-    w_sql, w_args = where(with_time=False)
-    branches.append(f"SELECT ':span', MIN(t), MAX(t), NULL, NULL, COUNT(*) FROM r{w_sql}")
-    args += w_args
-    w_sql, w_args = where()
-    branches.append(f"SELECT ':runs', NULL, NULL, NULL, NULL, COUNT(*) FROM r{w_sql}")
-    args += w_args
-    branches.append(
-        "SELECT ':dim', d.key, NULL, NULL, NULL, COUNT(*) FROM history_dimensions d"
-        f" WHERE d.kind = 'dimension' AND d.history_id IN (SELECT id FROM r{w_sql}) GROUP BY 2")
-    args += w_args
-    rows = conn.execute(
-        f"WITH r AS MATERIALIZED (SELECT {cols} {base.with_relay().sql}) "
-        + " UNION ALL ".join(branches), args).fetchall()
+    keys = ["fid", *(f"({on_r[k][0]}) AS k{i}" for i, k in enumerate(flags))]
+    for k in flags:
+        args += on_r[k][1]
+    ctes = (f"WITH r AS MATERIALIZED (SELECT {cols} {base.sql}),"
+            f" c AS MATERIALIZED (SELECT fc.*, s.* FROM (SELECT {', '.join(keys)}, COUNT(*) AS n,"
+            f" MIN(t) AS t0, MAX(t) AS t1 FROM r GROUP BY {', '.join(str(i + 1) for i in range(len(keys)))})"
+            " s JOIN facet_combo fc ON fc.id = s.fid) ")
+    branches: list[str] = []
+
+    def branch(sql: str, conds: Mapping[str, tuple[str, tuple[Any, ...]]], *skip: str) -> None:
+        w_sql, w_args = where(conds, *skip)
+        branches.append(sql.format(w=w_sql))
+        args.extend(w_args)
+
+    for key, column in facets.COLUMNS.items():
+        branch(f"SELECT '{key}', {column}, NULL, NULL, NULL, SUM(n) FROM c{{w}} GROUP BY 2", on_c, key)
+    branch("SELECT 'relay', g.relay_key, g.label, g.kind, g.in_kb, s.n"
+           " FROM (SELECT rid, COUNT(*) AS n FROM r{w} GROUP BY rid) s JOIN relay_group g ON g.id = s.rid",
+           on_r, "relay")
+    branch("SELECT 'model', f_model, NULL, NULL, NULL, COUNT(*) FROM r{w} GROUP BY 2", on_r, "model")
+    branch("SELECT ':span', MIN(t0), MAX(t1), NULL, NULL, 0 FROM c{w}", on_c, ":time")
+    branch("SELECT ':runs', NULL, NULL, NULL, NULL, COALESCE(SUM(n), 0) FROM c{w}", on_c)
+    # a dimension key is listed once one selected run has it (in run order: usually the first)
+    branch("SELECT ':dim', k.key, NULL, NULL, NULL, 0 FROM (SELECT DISTINCT key FROM history_dimensions"
+           " WHERE kind = 'dimension') k WHERE EXISTS (SELECT 1 FROM r CROSS JOIN history_dimensions d"
+           " ON d.history_id = r.id AND d.kind = 'dimension' AND d.key = k.key{w})", on_r)
+    rows = conn.execute(ctes + " UNION ALL ".join(branches), args).fetchall()
+    # what History calls each relay (a relay of no knowledge-base entry: its host)
+    labels = history_api.relay_labels(conn)
 
     out: dict[str, Any] = {"filters": q.canonical(), "keys": list(OPTION_KEYS)}
     lists: dict[str, list[dict[str, Any]]] = {k: [] for k in OPTION_KEYS}
@@ -648,7 +624,8 @@ def filter_options(params: Any) -> dict[str, Any]:
         elif key == ":dim":
             dims.append(str(value))
         elif key == "relay":
-            lists[key].append({"value": str(value), "label": str(a), "kind": str(b), "in_kb": bool(c),
+            label = labels.get(str(value)) or history_api.host_of(str(value))
+            lists[key].append({"value": str(value), "label": label, "kind": str(b), "in_kb": bool(c),
                                "runs": int(n)})
         else:
             lists[key].append({"value": str(value), "runs": int(n)})
