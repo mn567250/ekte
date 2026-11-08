@@ -180,8 +180,8 @@ pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
 
 **Benchmark.** `scripts/bench_fixture.py --data-dir DIR --bench` writes a
 synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
-reports, an ekte release every 3 weeks rolled out over 2 days, a profile
-change every 45 days) and prints p50 / p95 (nearest rank, 40 calls) of
+reports, an ekte release every 3 weeks with an occasional one-day rollback,
+a profile change every 45 days) and prints p50 / p95 (nearest rank, 40 calls) of
 `aggregate`, `series` and `page_runs`;
 `EKTE_BENCH=1 pytest -m slow tests/test_query.py` checks the 50 ms p95 budget
 (`EKTE_BENCH_BUDGET_MS`).
