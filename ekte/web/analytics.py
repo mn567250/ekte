@@ -50,7 +50,6 @@ request row is loaded.
 from __future__ import annotations
 
 import math
-import re
 from collections import Counter
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
@@ -58,13 +57,15 @@ from datetime import UTC, date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from ekte import errorclass
 from ekte.config import SURFACE_OPS, SURFACES
 from ekte.knowledge.relays import normalize_url
 from ekte.web import analytics_store, history
+from ekte.web.metrics import DIM_KEY, grade_value
+from ekte.web.metrics import DIM_PREFIX as DIM_PREFIX
+from ekte.web.metrics import METRICS as METRICS
+from ekte.web.metrics import MIN_RUNS as MIN_RUNS
+from ekte.web.metrics import Metric as Metric
 
-# A bucket (or leaderboard cell) with fewer runs than this is flagged low_n.
-MIN_RUNS = 3
 # Series per chart.
 MAX_KEYS = 4
 # Longest accepted filter value (relay keys are URLs).
@@ -86,9 +87,6 @@ SOURCES = ("all", "manual", "monitor")
 UNKNOWN_RELAY = "(unknown)"
 # The one series key of group=all (every run that matches the filters).
 ALL_KEY = "(all)"
-# Every surface, and the chat surface alone (metrics of chat completions only).
-ALL_SURFACES = frozenset(SURFACES)
-CHAT_ONLY = frozenset({"chat"})
 
 
 class AnalyticsError(ValueError):
@@ -96,86 +94,8 @@ class AnalyticsError(ValueError):
 
 
 # --------------------------------------------------------------------------- #
-# Metrics
+# Metrics: the registry is ekte/web/metrics.py
 # --------------------------------------------------------------------------- #
-@dataclass(frozen=True)
-class Metric:
-    """A public metric id and where its per-run value comes from.
-
-    ``agg`` says how runs combine (:mod:`ekte.web.query`): ``median`` of the
-    per-run values, ``share`` of the runs with "yes", or ``pooled``: the
-    outcome counts ``outcomes`` (``history_outcomes``) summed over the runs,
-    divided by the summed base ``base`` (a ``history_metrics`` column,
-    ``requests_judged`` or ``requests_total``); the per-run ``column`` is
-    then that run's own ratio. The per-run Python path of this module
-    (:func:`aggregate`) still takes the median of a pooled metric's per-run
-    values.
-    """
-
-    id: str
-    column: str  # history / history_metrics column ("" for derived values)
-    unit: str  # score | ratio | ms | tok/s | tokens | count | s
-    higher_is_better: bool | None  # None: neither (e.g. billing ratio, ideal 1.0)
-    agg: str = "median"  # median | share | pooled
-    surfaces: frozenset[str] = ALL_SURFACES  # the surfaces it is measured on
-    outcomes: tuple[str, ...] = ()  # pooled: the outcomes counted (numerator)
-    base: str = ""  # pooled: the history_metrics column of the denominator
-
-    def public(self) -> dict[str, Any]:
-        return {"id": self.id, "unit": self.unit, "higher_is_better": self.higher_is_better, "agg": self.agg,
-                "surfaces": [s for s in SURFACES if s in self.surfaces]}
-
-    def applies(self, surface: str) -> bool:
-        return surface in self.surfaces
-
-
-def _m(mid: str, column: str, unit: str, better: bool | None, agg: str = "median",
-       surfaces: frozenset[str] = ALL_SURFACES) -> Metric:
-    return Metric(mid, column, unit, better, agg, surfaces)
-
-
-def _pooled(mid: str, better: bool, outcomes: tuple[str, ...], base: str = "requests_judged") -> Metric:
-    """An outcome rate (:mod:`ekte.perf.outcomes`): Σ outcome counts ÷ Σ base."""
-    return Metric(mid, mid, "ratio", better, "pooled", ALL_SURFACES, outcomes, base)
-
-
-# The whitelist: public id -> column. Rates and shares are 0..1 ("ratio").
-METRICS: dict[str, Metric] = {m.id: m for m in (
-    _m("score", "score", "score", True),
-    _m("risk_high_share", "risk_level", "ratio", False, "share"),
-    _pooled("success_rate", True, (errorclass.SUCCESS,)),
-    _pooled("error_rate", False, errorclass.RELAY_ERRORS),
-    _pooled("timeout_rate", False, (errorclass.RELAY_TIMEOUT,)),
-    _pooled("rate_limited_rate", False, (errorclass.RATE_LIMITED,)),
-    _pooled("impaired_rate", False, errorclass.IMPAIRED, "requests_total"),
-    _m("latency_p50", "latency_p50_ms", "ms", False),
-    _m("latency_p95", "latency_p95_ms", "ms", False),
-    _m("ttft_p50", "ttft_p50_ms", "ms", False, surfaces=CHAT_ONLY),
-    _m("ttft_p95", "ttft_p95_ms", "ms", False, surfaces=CHAT_ONLY),
-    _m("decode_tps", "decode_tps_p50", "tok/s", True, surfaces=CHAT_ONLY),
-    _m("decode_tps_p5", "decode_tps_p5", "tok/s", True, surfaces=CHAT_ONLY),
-    _m("decode_tps_p95", "decode_tps_p95", "tok/s", True, surfaces=CHAT_ONLY),
-    _m("itl_jitter", "itl_jitter_p50_ms", "ms", False, surfaces=CHAT_ONLY),
-    _m("relay_overhead", "relay_processing_p50_ms", "ms", False),
-    _m("network_rtt", "network_rtt_p50_ms", "ms", False),
-    _m("cold_start", "cold_start_ms", "ms", False),
-    _m("concurrency_tps", "concurrency_tps", "tok/s", True, surfaces=CHAT_ONLY),
-    _m("billing_ratio_prompt", "billing_ratio_prompt", "ratio", None, surfaces=CHAT_ONLY),
-    _m("billing_ratio_completion", "billing_ratio_completion", "ratio", None, surfaces=CHAT_ONLY),
-    _m("reasoning_share", "reasoning_share", "ratio", None, surfaces=CHAT_ONLY),
-    _m("cached_input_share", "cached_input_share", "ratio", None, surfaces=CHAT_ONLY),
-    _m("model_mismatch_rate", "model_mismatch", "ratio", False, "share"),
-    _m("context_claimed", "context_claimed_tokens", "tokens", None, surfaces=CHAT_ONLY),
-    _m("context_effective", "context_effective_tokens", "tokens", True, surfaces=CHAT_ONLY),
-    _m("findings_high", "findings_high", "count", False),
-    _m("findings_medium", "findings_medium", "count", False),
-    _m("findings_low", "findings_low", "count", False),
-    _m("duration", "duration_sec", "s", None),
-)}
-# Per-dimension scores: ``dim:<dimension>`` (history_dimensions, kind 'dimension').
-DIM_PREFIX = "dim:"
-_DIM_KEY = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
-
 # The headline KPIs of /summary (besides the counts runs / relays / models).
 SUMMARY_KPIS = (
     "score", "risk_high_share", "success_rate", "ttft_p50", "decode_tps",
@@ -197,7 +117,7 @@ def metric(mid: str, surface: str | None = None) -> Metric:
         if surface is not None and not m.applies(surface):
             raise AnalyticsError(f"metric {mid!r} does not apply to the {surface} surface")
         return m
-    if mid.startswith(DIM_PREFIX) and _DIM_KEY.match(mid[len(DIM_PREFIX):]):
+    if mid.startswith(DIM_PREFIX) and DIM_KEY.match(mid[len(DIM_PREFIX):]):
         return Metric(mid, "", "score", True)
     raise AnalyticsError(f"unknown metric {mid[:80]!r}; one of {', '.join(METRICS)} or dim:<dimension>")
 
@@ -221,6 +141,8 @@ def run_value(m: Metric, run: Mapping[str, Any]) -> float | None:
     if m.id == "risk_high_share":
         level = run.get("risk_level")
         return None if not level else 1.0 if level == "high" else 0.0
+    if m.id == "grade":
+        return grade_value(run.get(m.column))
     value = _number(run.get(m.column))
     if m.agg == "share" and value is not None:
         return 1.0 if value else 0.0

@@ -28,6 +28,9 @@ Endpoints:
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
                              (?format=json|md|html|pdf)
+  GET  /api/metrics          the metric registry: ids, units, formats, label
+                             keys, directions, the KPI grid and the History
+                             trend options (ekte/web/metrics.py)
   GET  /api/analytics/options      filter values in the run history (relays,
                                    models, suites, stream modes, APIs, dates)
   GET  /api/analytics/summary      KPIs of a range vs. the previous range
@@ -1527,6 +1530,13 @@ def create_app() -> FastAPI:
 
             return [*params.multi_items(), ("to", analytics_store.format_ts(datetime.now(UTC)))]
         return params
+
+    @app.get("/api/metrics")
+    @cached_endpoint("metrics")
+    def metrics_catalogue(params: Any) -> Any:
+        from ekte.web import metrics
+
+        return metrics.catalogue()
 
     @app.get("/api/analytics/options")
     @cached_endpoint("analytics.options", errors=(AnalyticsError,))

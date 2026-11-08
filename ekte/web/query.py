@@ -99,6 +99,7 @@ from ekte.config import SURFACES
 from ekte.models import RiskLevel
 from ekte.web import analytics, analytics_store
 from ekte.web.analytics import ALL_KEY, GROUPS, MIN_RUNS, AnalyticsError, Metric
+from ekte.web.metrics import grade_value_sql
 from ekte.web.relay_map import GROUP_KEY_SQL, JOIN_SQL
 
 __all__ = [
@@ -586,6 +587,8 @@ def _spec(m: Metric, i: int, med: str, pct: str, quantiles: bool) -> _Spec:
     elif m.id == "risk_high_share":
         v = ("CASE WHEN NULLIF(h.risk_level, '') IS NULL THEN NULL"
              " WHEN h.risk_level = 'high' THEN 1.0 ELSE 0.0 END")
+    elif m.id == "grade":
+        v = grade_value_sql(f"h.{m.column}")
     elif m.agg == "share":
         col = _column(m.column)
         v = f"CASE WHEN {col} IS NULL THEN NULL WHEN {col} != 0 THEN 1.0 ELSE 0.0 END"
