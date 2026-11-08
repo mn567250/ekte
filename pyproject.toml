@@ -144,6 +144,7 @@ testpaths = ["tests"]
 timeout = 120
 timeout_method = "thread"
 markers = [
+    "slow: long-running benchmarks, skipped unless asked for (tests/test_query.py: EKTE_BENCH=1)",
     "a11y: browser accessibility tests of web UI v2 (BITV 2.0 / EN 301 549 / WCAG 2.1 AA); need the a11y extra",
     "bitv(*steps): the BITV 2.0 / EN 301 549 test steps (\"9.1.4.3\", …) an a11y test decides (axe=True: only through axe rule results); feeds the conformance report (tests/a11y/results.py)",
 ]

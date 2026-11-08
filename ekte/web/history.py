@@ -53,6 +53,10 @@ Relay map (schema version 7): ``relay_map`` maps each distinct run URL to
 its knowledge-base relay so SQL can group and filter runs by relay; it is
 rebuilt from the knowledge base on demand (see :mod:`ekte.web.relay_map`).
 
+Query index (schema version 10): ``idx_history_query`` covers the columns
+:mod:`ekte.web.query` reads from ``history``, so filtering and grouping never
+read a run's report.
+
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
 """
@@ -221,6 +225,23 @@ def _v9(conn: sqlite3.Connection) -> None:
     )
 
 
+# The history columns the query core (ekte/web/query.py) filters, groups and
+# sorts by, in a covering index: a run's row holds its report_json (tens of
+# kB, in overflow pages) before most of them, so reading them from the table
+# would read the whole report of every run.
+QUERY_INDEX_COLS = (
+    "id", "surface", "watch_id", "base_url", "claimed_model", "model", "mode", "suite",
+    "risk_level", "score", "rating", "api", "api_auto", "stream_mode",
+)
+
+
+def _v10(conn: sqlite3.Connection) -> None:
+    """The covering index of the query core (:data:`QUERY_INDEX_COLS`)."""
+    conn.execute(
+        f"CREATE INDEX IF NOT EXISTS idx_history_query ON history ({', '.join(QUERY_INDEX_COLS)})"
+    )
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -231,6 +252,7 @@ MIGRATIONS = (
     dbmigrate.Migration(7, _v7),
     dbmigrate.Migration(8, _v8),
     dbmigrate.Migration(9, _v9),
+    dbmigrate.Migration(10, _v10),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
@@ -773,12 +795,33 @@ def analytics_runs(start: str | None = None, end: str | None = None) -> list[dic
         + " ORDER BY m.started_at, h.id"
     )
     conn = _read()
+    _ensure_extracted(conn)
+    return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
+
+
+def _ensure_extracted(conn: sqlite3.Connection) -> None:
+    """Run the analytics backfill when a row still needs it (one indexed
+    ``EXISTS`` when none does)."""
     if conn.execute(
         f"SELECT EXISTS ({_ANALYTICS_TODO})", (analytics_store.EXTRACT_VERSION,)
     ).fetchone()[0]:
         with contextlib.suppress(sqlite3.Error):
             backfill_analytics()  # best-effort; a locked database can wait
-    return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
+
+
+def query_connection() -> sqlite3.Connection:
+    """This thread's read-only connection, ready for :mod:`ekte.web.query`:
+    the analytics tables are backfilled and ``relay_map`` reflects the current
+    knowledge base (rebuilt through a short write connection only when it is
+    out of date). Never close it."""
+    from ekte.web import relay_map
+
+    conn = _read()
+    _ensure_extracted(conn)
+    if not relay_map.is_current(conn):
+        with _connect() as writer:
+            relay_map.ensure_relay_map(writer)
+    return conn
 
 
 def surface_counts() -> dict[str, int]:

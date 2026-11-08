@@ -113,6 +113,12 @@ def _state(conn: sqlite3.Connection) -> tuple[str | None, bool]:
     return (None, True) if row is None else (str(row[0]), bool(row[1]))
 
 
+def is_current(conn: sqlite3.Connection) -> bool:
+    """Whether ``relay_map`` is up to date (any connection, read-only ones
+    included): built from the current knowledge base and not marked stale."""
+    return _state(conn) == (kb_version(load_for_grouping()), False)
+
+
 def ensure_relay_map(conn: sqlite3.Connection) -> str:
     """Bring ``relay_map`` up to date with the knowledge base and the runs of
     ``conn`` (a writable ``history.db`` connection); returns the knowledge-base

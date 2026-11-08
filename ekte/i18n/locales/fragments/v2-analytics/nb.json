@@ -108,6 +108,7 @@
   "Rank": "Plass",
   "Rate limited (429)": "Strupet (429)",
   "Rate-limited share": "Andel strupet",
+  "Impaired request share": "Andel svekkede forespørsler",
   "Reasoning token share": "Andel resonneringstokens",
   "Relay overhead": "Reléoverhead",
   "Relay processing time": "Reléets behandlingstid",

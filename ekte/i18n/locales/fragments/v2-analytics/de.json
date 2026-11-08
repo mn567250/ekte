@@ -108,6 +108,7 @@
   "Rank": "Rangfolge",
   "Rate limited (429)": "Ratenbegrenzt (429)",
   "Rate-limited share": "Anteil Ratenbegrenzung",
+  "Impaired request share": "Anteil beeinträchtigter Anfragen",
   "Reasoning token share": "Anteil Reasoning-Tokens",
   "Relay overhead": "Relay-Overhead",
   "Relay processing time": "Verarbeitungszeit des Relays",

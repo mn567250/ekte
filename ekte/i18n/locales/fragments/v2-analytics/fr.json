@@ -108,6 +108,7 @@
   "Rank": "Classer",
   "Rate limited (429)": "Débit limité (429)",
   "Rate-limited share": "Part limitée en débit",
+  "Impaired request share": "Part de requêtes perturbées",
   "Reasoning token share": "Part de jetons de raisonnement",
   "Relay overhead": "Surcharge du relais",
   "Relay processing time": "Temps de traitement du relais",

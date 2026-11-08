@@ -101,6 +101,84 @@
   `Sec-Fetch-Site` checks against CSRF, JSON-only request bodies, and
   anti-framing / no-sniff / no-referrer headers. The UI has no login by design.
 
+## Query core
+
+`ekte/web/query.py` is the one server-side path from URL parameters to
+values: parameters → runs (SQL `WHERE`) → groups → aggregated values → page.
+History and Analytics endpoints build on it; Python never filters runs and
+never loads one row per run to aggregate. Every function takes a connection
+from `history.query_connection()` (this thread's read connection, analytics
+tables backfilled, `relay_map` current).
+
+**URL schema.** Every key is optional. A key given twice is a 400 error, except
+`relay` and `model`, which repeat (any value matches). Empty values count as
+not given; `-` means "(unknown)", i.e. the run has no value.
+
+| Key | Values | Replaces |
+|---|---|---|
+| `from`, `to` | ISO 8601 (naive = UTC) against the run's `started_at`; `to` exclusive | Analytics `from` / `to` |
+| `range` | `24h`, `7d`, `30d`, `90d`, `365d`: `to` = now rounded up to the next minute, `from` = `to` − range; not with `from` / `to` | History `days`, Analytics range presets |
+| `surface` | `chat`, `embedding`, `rerank` (NULL reads as chat); empty: all surfaces | both |
+| `relay` | a relay key (`relay_map.relay_key`, `(unknown)` without URL), repeatable | both |
+| `model` | a claimed model (`(unknown)` without one), repeatable | both |
+| `suite`, `mode`, `api`, `stream` | the exact value (`stream` is the stored `stream_mode`), or `-` | History `suite/mode/api/stream`, Analytics `stream_mode` |
+| `detect` | `auto`, `manual`, `-` | History `detect` |
+| `risk` | `clean`, `low`, `medium`, `high`, `inconclusive` (no risk level is inconclusive) | History `risk` |
+| `min_score` | 0–100 (runs without a score are left out) | History `min` |
+| `exec` | `manual`, `monitor` | History `exec` (`adhoc`), Analytics `source` |
+| `q` | substring, case-insensitive for ASCII (SQL `LIKE`, `%` `_` `\` literal) of base URL, relay label, claimed model, model, suite, mode, api | History `q` |
+| `group` | `relay` (default), `model`, `relay_model`, `all` | both |
+
+Keys with a dot belong to one widget (`trend.metric`, `runs.sort`,
+`runs.after`) and are ignored by the shared parser; any other unknown key is a
+400 error naming it. `parse_query(params, now=None) -> Query` validates
+(`QueryError`, an `AnalyticsError`, so the existing 400 handling catches it);
+`Query.canonical()` is the sorted, resolved form and `Query.params()` its URL
+pairs. `resolve_params` is the `prepare=` of `cached_endpoint`, so a relative
+range is cached under its absolute bounds. History's time filter moves from
+the save time (`ts`) to the run's start (`started_at`).
+
+**Selection.** `select_runs(q) -> RunSelection` (`.sql` = `FROM … WHERE …`,
+`.args`, `.and_where()`) over `history h` (through `idx_history_query`, so
+only `history.QUERY_INDEX_COLS` may be used), `history_metrics m` and, only
+when needed, `relay_map rm`. `count_runs`, `default_surface` (the most common
+surface of a selection, for endpoints that need one).
+
+**Aggregation.** `aggregate(conn, q, metrics, group=None, *, quantiles=False)
+-> list[GroupResult]` (busiest first): per group `key`, `label`, `kind`,
+`in_kb` (and `relay` / `model` for `relay_model`), `runs`, `first_run` /
+`last_run`, and per metric a `Cell`: `value`, `n`, `coverage`, `low_n`
+(`n` < `MIN_RUNS`), `median` / `p25` / `p75` (median metrics; quartiles with
+`quantiles=True`) and `numerator` / `denominator` (pooled). The kind is the
+registry's `Metric.agg`: `median` (SQLite `median()` / `percentile()`, type 7),
+`pooled` for `success_rate`, `error_rate`, `rate_limited_rate`,
+`timeout_rate`, `impaired_rate` (Σ count ÷ Σ `requests_judged`, or
+`requests_total` for impaired; the run's count is its stored rate × base,
+which is exactly its `history_outcomes` count), `share` (high risk, model
+mismatch). One run returns exactly its stored value for every metric. Without
+`median()` in the SQLite build, Python aggregates with the same results are
+registered (`sql_functions`).
+
+**Series.** `series(conn, q, metric, group=None, bucket="day", tz=UTC, *, keys=(),
+block=1, fold="week", max_keys=4, quantiles=False) -> SeriesResult` buckets in
+SQL: the zone's UTC offset is a `CASE` over its transitions in the data's span
+(`offset_sql`), so hour / day / week / `dow_hour` (with `block` and `fold`)
+buckets and their values match `analytics.series`, annotations (ekte version
+and knowledge-base profile changes) come from a SQL window, and only bucket
+rows reach Python.
+
+**Paging.** `page_runs(conn, q, sort="-time", after=None, limit=20) -> Page`:
+`sort` is `time`, `score`, `risk` or `grade`, `-` for descending, ties by id;
+`after` is the opaque cursor of the previous page (`Page.after`, None on the
+last); `limit` 1–200. Keyset paging, so a run saved meanwhile never shifts
+pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
+
+**Benchmark.** `scripts/bench_fixture.py --data-dir DIR --bench` writes a
+synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
+reports) and prints p50 / p95 of `aggregate`, `series` and `page_runs`;
+`EKTE_BENCH=1 pytest -m slow tests/test_query.py` checks the 50 ms p95 budget
+(`EKTE_BENCH_BUDGET_MS`).
+
 ## HTTP API v1
 
 The public part of the HTTP API lives under `/api/v1/` and follows the [stability policy](../reference/stability.md#surface-http-api): it changes incompatibly only in a major release, after a deprecation period. Every other path under `/api/` is internal and may change in any release. Internal responses carry `X-Ekte-API: internal`, v1 responses `X-Ekte-API: v1`. The web UI uses the internal paths.

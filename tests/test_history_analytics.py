@@ -645,6 +645,7 @@ def test_a_v2_database_gets_the_decode_tails_of_its_older_runs(data):
 def test_a_v3_database_gets_the_surface_column(data):
     rid = history.save(_fixture())
     with _db(data) as conn:  # as ekte with schema 3 left it, before surfaces
+        conn.execute("DROP INDEX idx_history_query")  # schema 10, it covers surface
         conn.execute("ALTER TABLE history DROP COLUMN surface")
         conn.execute("PRAGMA user_version = 3")
     history.init()

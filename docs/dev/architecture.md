@@ -273,6 +273,15 @@ over many runs pool counts instead of taking a median of rates. Older reports
 are counted from their stored request records. The reliability check keeps its
 own success rate for scoring ("Reliability check success rate").
 
+Since schema version 10 `history.db` has `idx_history_query`, a covering index
+over the `history` columns the query core filters, groups and sorts by
+(`history.QUERY_INDEX_COLS`): a run's row holds its report (tens of kB, in
+overflow pages) before most of them, so reading them from the table would
+read every report. `web/query.py` is that query core: one URL schema and
+parser (`parse_query`), one SQL `WHERE` for every filter (`select_runs`), and
+`aggregate`, `series` and `page_runs` on top of it, all computed in SQLite
+(see [web server](web-server.md#query-core)).
+
 Where the monitors' API keys are kept is the user's choice
 (`watches.get_key_storage()`, a `secret_meta` row): `memory`, the default, stores
 none — the `api_key` column holds the marker `mem:` and the key lives in

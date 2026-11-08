@@ -177,6 +177,11 @@ def _file_id(path: Path) -> tuple[int, int] | None:
     return st.st_dev, st.st_ino
 
 
+# How much of a database a read connection maps into memory (address space,
+# not memory: pages are shared with the OS page cache).
+READ_MMAP_BYTES = 1 << 30
+
+
 def read_connection(
     name: str,
     migrations: Sequence[dbmigrate.Migration] = (),
@@ -223,6 +228,10 @@ def read_connection(
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         conn.execute("PRAGMA query_only=ON")
+        # Reused for every request: read through memory-mapped I/O, which all
+        # connections share via the OS page cache, so aggregating every run
+        # does not copy pages into each connection's own (2 MiB) cache.
+        conn.execute(f"PRAGMA mmap_size={READ_MMAP_BYTES}")
     except BaseException:
         conn.close()
         raise
