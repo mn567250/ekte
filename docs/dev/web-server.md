@@ -179,6 +179,43 @@ reports) and prints p50 / p95 of `aggregate`, `series` and `page_runs`;
 `EKTE_BENCH=1 pytest -m slow tests/test_query.py` checks the 50 ms p95 budget
 (`EKTE_BENCH_BUDGET_MS`).
 
+## Metric registry
+
+`ekte/web/metrics.py` is the only metric catalogue (`ekte.web.analytics`
+re-exports `METRICS`, `Metric`, `MIN_RUNS`). Each `Metric` has `id`, `unit`,
+`format` (`score`, `grade`, `percent`, `ms`, `tok_s`, `ratio_percent`,
+`tokens`, `count`, `seconds`), `agg` (`median`, `pooled`, `share`; `count` for
+the `COUNTS` runs / relays / models), `surfaces`, `higher_is_better`
+(`True` / `False` / `None`) and i18n keys: `label_key` (`metric.<id>`),
+`short_label_key` (`metric.<id>.short`, for narrow tiles), `kpi_label_key`
+(`metric.<id>.kpi`, the label of the aggregate, e.g. "Median score") and
+`agg_hint_key` (`metric.<id>.agg_hint`, how runs combine). A metric without a
+short or KPI label of its own names its plain `label_key` there. The keys are
+translated in the browser; their texts are in
+`ekte/i18n/locales/fragments/metrics/<code>.json` (`ekte.i18n.keyed(key, lang)`
+reads them in Python). `grade` is a metric: the run's grade letter on the 1..6
+scale (F = 1 … A = 6, `scoring.GRADE_SCALE`), aggregated as a median.
+
+`KPI_GRID` (the 12 Analytics tiles, 4 × 3 in reading order) and
+`HISTORY_TRENDS` (`score`, `grade`, `latency_p50`, `ttft_p50`, `decode_tps`,
+`error_rate`) are named lists here, not in the pages. `GET /api/metrics`
+(cached, ETag) answers `catalogue()`: `metrics` (every metric's public
+fields), `kpi_grid`, `history_trends`, `max_trends`, `min_runs`, `grades`,
+`families`, `directions`, `trend_keys` and `labels` (every key's English
+text, for English, the key language whose bundle carries no keyed strings).
+
+**Display semantics.** `present(metric, value, previous=None, n=None,
+previous_n=None, *, surface=None) -> dict` decides on the server what the
+page shows: `family` (`good`, `sky`, `warn`, `bad`, `grey`, or the neutral
+series families `lat` for milliseconds and `tps` for token speeds; a score or
+dimension score by its grade letter from `scoring.GRADE_THRESHOLDS`, read at
+call time, a grade by its letter), `grade` (letter for scores and grades),
+`delta` (value − previous), `direction` (`better`, `worse`, `neutral` for no
+change or a metric without a better side, `none` without a delta or when
+`previous_n` < `MIN_RUNS`; counts are always judged), `trend_key`
+(`trend.rising` / `trend.falling` / `trend.unchanged`), `low_n` and `applies`
+(False when the metric is not measured on `surface`: the "n/a" tiles).
+
 ## HTTP API v1
 
 The public part of the HTTP API lives under `/api/v1/` and follows the [stability policy](../reference/stability.md#surface-http-api): it changes incompatibly only in a major release, after a deprecation period. Every other path under `/api/` is internal and may change in any release. Internal responses carry `X-Ekte-API: internal`, v1 responses `X-Ekte-API: v1`. The web UI uses the internal paths.
