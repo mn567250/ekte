@@ -31,17 +31,19 @@ Endpoints:
   GET  /api/metrics          the metric registry: ids, units, formats, label
                              keys, directions, the KPI grid and the History
                              trend options (ekte/web/metrics.py)
-  GET  /api/analytics/options      filter values in the run history (relays,
-                                   models, suites, stream modes, APIs, dates)
-  GET  /api/analytics/summary      KPIs of a range vs. the previous range
-  GET  /api/analytics/series       one metric per relay / model over time buckets
-  GET  /api/analytics/leaderboard  relays of a model, or models of a relay
-  GET  /api/analytics/breakdown    some metrics per relay / model over the range
-  GET  /api/analytics/errors       request outcomes (429, 5xx, timeouts, …) per
-                                   relay / model and over time buckets
+  GET  /api/filters/options        the values of every filter key (History and
+                                   Analytics) with run counts, under the other
+                                   filters
+  GET  /api/analytics/summary      the 12 KPI tiles, range vs. the previous range
+  GET  /api/analytics/series       one metric per group over time buckets
+  GET  /api/analytics/heatmap      one metric on the weekday x time-of-day grid
+  GET  /api/analytics/leaderboard  groups ranked by median score
+  GET  /api/analytics/breakdown    some metrics per group over the range
+  GET  /api/analytics/errors       request outcomes per group and time bucket
   GET  /api/analytics/integrity    identity, context window and capability
                                    checks per relay x model
-                                   (parameters: ekte/web/analytics.py)
+                                   (parameters: ekte/web/analytics_widgets.py,
+                                   docs/dev/web-server.md)
   GET  /api/secret           the monitors' master key: state, fingerprint,
                              allowed actions (never the key)
   POST /api/secret/new       a new master key, shown once …
@@ -1512,24 +1514,21 @@ def create_app() -> FastAPI:
         history.clear()
         return JSONResponse({"ok": True})
 
-    # ----- Analytics (ekte/web/analytics.py) ------------------------------ #
-    # Plain `def` handlers (SQLite + the knowledge base load run in the thread
-    # pool). Every parameter is validated there: a bad one answers 400.
-    # Answers go through the response cache (ekte/web/cache.py): keyed on the
-    # endpoint, its canonical parameters and the database's data version (any
-    # saved, deleted or cleared run, from any process, drops them), with an
-    # ETag the browser revalidates.
+    # ----- Analytics (ekte/web/analytics_widgets.py) ---------------------- #
+    # One GET per widget, on the query core (ekte/web/query.py): the shared
+    # URL schema plus the widget's namespaced keys; a bad parameter answers
+    # 400. Plain `def` handlers (SQLite runs in the thread pool). Answers go
+    # through the response cache (ekte/web/cache.py): keyed on the endpoint,
+    # its canonical parameters (relative ranges resolved first) and the
+    # database's data version (any saved, deleted or cleared run, from any
+    # process, drops them), with an ETag the browser revalidates.
     from ekte.web.analytics import AnalyticsError
     from ekte.web.cache import cached_endpoint
 
-    def _until_now(params: Any) -> Any:
-        """``from`` without ``to`` runs up to now: make that bound explicit
-        before keying, so the answer is cached under its absolute range."""
-        if params.get("from") and not params.get("to"):
-            from ekte.web import analytics_store
+    def _widget_params(params: Any) -> Any:
+        from ekte.web import analytics_widgets
 
-            return [*params.multi_items(), ("to", analytics_store.format_ts(datetime.now(UTC)))]
-        return params
+        return analytics_widgets.resolve_params(params)
 
     @app.get("/api/metrics")
     @cached_endpoint("metrics")
@@ -1538,54 +1537,24 @@ def create_app() -> FastAPI:
 
         return metrics.catalogue()
 
-    @app.get("/api/analytics/options")
-    @cached_endpoint("analytics.options", errors=(AnalyticsError,))
-    def analytics_options(params: Any) -> Any:
-        from ekte.web import analytics
+    def _widget_route(path: str, name: str) -> None:
+        from ekte.web import analytics_widgets
 
-        return analytics.options(dict(params))
+        fn = getattr(analytics_widgets, name)
+        handler = cached_endpoint(path, errors=(AnalyticsError,), prepare=_widget_params)(fn)
+        app.add_api_route(path, handler, methods=["GET"], name=name)
 
-    @app.get("/api/analytics/summary")
-    @cached_endpoint("analytics.summary", errors=(AnalyticsError,), prepare=_until_now)
-    def analytics_summary(params: Any) -> Any:
-        from ekte.web import analytics
-
-        return analytics.summary(dict(params))
-
-    @app.get("/api/analytics/series")
-    @cached_endpoint("analytics.series", errors=(AnalyticsError,))
-    def analytics_series(params: Any) -> Any:
-        from ekte.web import analytics
-
-        return analytics.series(dict(params), params.getlist("keys"))
-
-    @app.get("/api/analytics/leaderboard")
-    @cached_endpoint("analytics.leaderboard", errors=(AnalyticsError,))
-    def analytics_leaderboard(params: Any) -> Any:
-        from ekte.web import analytics
-
-        return analytics.leaderboard(dict(params))
-
-    @app.get("/api/analytics/breakdown")
-    @cached_endpoint("analytics.breakdown", errors=(AnalyticsError,))
-    def analytics_breakdown(params: Any) -> Any:
-        from ekte.web import analytics
-
-        return analytics.breakdown(dict(params), params.getlist("metrics"))
-
-    @app.get("/api/analytics/errors")
-    @cached_endpoint("analytics.errors", errors=(AnalyticsError,))
-    def analytics_errors(params: Any) -> Any:
-        from ekte.web import analytics
-
-        return analytics.errors(dict(params))
-
-    @app.get("/api/analytics/integrity")
-    @cached_endpoint("analytics.integrity", errors=(AnalyticsError,))
-    def analytics_integrity(params: Any) -> Any:
-        from ekte.web import analytics
-
-        return analytics.integrity(dict(params))
+    for _path, _name in (
+        ("/api/filters/options", "filter_options"),
+        ("/api/analytics/summary", "widget_summary"),
+        ("/api/analytics/series", "widget_series"),
+        ("/api/analytics/heatmap", "widget_heatmap"),
+        ("/api/analytics/leaderboard", "widget_leaderboard"),
+        ("/api/analytics/breakdown", "widget_breakdown"),
+        ("/api/analytics/errors", "widget_errors"),
+        ("/api/analytics/integrity", "widget_integrity"),
+    ):
+        _widget_route(_path, _name)
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
     def _watch_rows() -> list[dict[str, Any]]:
