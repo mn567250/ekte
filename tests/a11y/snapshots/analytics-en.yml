@@ -37,50 +37,70 @@
   - heading "Audit analytics" [level=1]
   - paragraph: "Compare relays and models over time with what ekte measured on this machine: scores, speed, success rates and billing."
   - status: 1 older run has an estimated start time Time-of-day charts place them approximately.
-  - status: "Updated: 14 runs in this range."
+  - status: "Updated: 15 runs in this range."
   - region "Filters":
     - button "Filters" [expanded]
     - text: Period
-    - group "Period":
-      - button "Last 7 days"
-      - button "Last 30 days" [pressed]
-      - button "Last 90 days"
-      - button "All time"
-      - button "Custom range"
+    - combobox "Period":
+      - option "All time"
+      - option "Last 24 hours"
+      - option "Last 7 days"
+      - option "Last 30 days" [selected]
+      - option "Last 90 days"
+      - option "Last 365 days"
+      - option "Custom range"
     - text: Endpoint type
     - combobox "Endpoint type":
-      - option "Chat" [selected]
+      - option "All" [selected]
+      - option "Chat (15)"
+      - option "Embeddings"
+      - option "Reranking"
+    - group "Relay / provider":
+      - text: Relay / provider
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
+      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
+      - checkbox "http://127.0.0.1:9099/v1 (1)"
+      - text: http://127.0.0.1:9099/v1 (1)
+    - group "Claimed model":
+      - text: Claimed model
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
-      - option "All"
-      - option "standard" [selected]
-    - text: Probe requests
-    - combobox "Probe requests":
-      - option "All"
-      - option "Streaming" [selected]
+      - option "All" [selected]
+      - option "standard (15)"
     - text: Protocol
     - combobox "Protocol":
       - option "All" [selected]
-      - option "openai"
-    - text: Source
-    - combobox "Source":
+      - option "openai (14)"
+      - option "(unknown) (1)"
+    - text: Probe requests
+    - combobox "Probe requests":
       - option "All" [selected]
-      - option "Manual"
-      - option "Monitor"
-    - text: Relay / provider
-    - combobox "Relay / provider":
+      - option "Streaming (14)"
+      - option "Non-streaming"
+      - option "Streaming + non-streaming"
+      - option "(unknown) (1)"
+    - text: Execution
+    - combobox "Execution":
       - option "All" [selected]
-      - option "Example Relay"
-      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
-      - option "http://127.0.0.1:9099/v1"
-    - text: Claimed model
-    - combobox "Claimed model":
-      - option "All" [selected]
-      - option "model-a"
-      - option "model-b"
-      - option "gpt-4o"
-    - text: 15 runs in the history (4 by monitors).
-  - button "Copy link to this view"
+      - option "Manual (11)"
+      - option "Monitor (4)"
+    - text: Group by
+    - combobox "Group by":
+      - option "Relay" [selected]
+      - option "Model"
+      - option "Relay × model"
+      - option "All"
+    - text: 15 runs match these filters.
+    - status
+    - button "Copy link to this view"
   - tablist "Analytics views":
     - tab "Overview" [selected]
     - tab "Trends"
@@ -93,18 +113,26 @@
       - tab "Leaderboard"
     - tabpanel "Key figures":
       - heading "Key figures" [level=2]
-      - paragraph: Sep 2 – Oct 1, 2026, compared with the period of the same length before (Aug 3 – Sep 1, 2026).
-      - list:
-        - listitem: Runs 14 +14
-        - listitem: Relays 2 +2
-        - listitem: Models 2 +2
-        - listitem: Median score 79 No data in the previous period
-        - listitem: High-risk share 21.4% No data in the previous period
-        - listitem: Success rate 90% No data in the previous period
-        - listitem: Time to first token p50 <duration> No data in the previous period
-        - listitem: Decode speed 62.9 tok/s No data in the previous period
-        - listitem: Billing ratio (prompt) 103% No data in the previous period Data from 9 of 14 runs
-        - listitem: Billing ratio (completion) 102% No data in the previous period Data from 9 of 14 runs
+      - paragraph: Sep 1 – Oct 1, 2026, compared with the period of the same length before (Aug 2 – Sep 1, 2026).
+      - list "Key figures":
+        - listitem: Runs 15 rising +15
+        - listitem: Relays 3 rising +3
+        - listitem: Models 3 rising +3
+        - listitem: Median score 78 No data in the previous period
+        - listitem: High-risk share 26.7% No data in the previous period
+        - listitem:
+          - text: Success rate
+          - 'button "About: Success rate"'
+          - text: 87% No data in the previous period Data from 14 of 15 runs
+        - listitem:
+          - text: Error rate
+          - 'button "About: Error rate"'
+          - text: 7.2% No data in the previous period Data from 14 of 15 runs
+        - listitem: Latency p50 <duration> No data in the previous period Data from 14 of 15 runs
+        - listitem: Time to first token p50 <duration> No data in the previous period Data from 14 of 15 runs
+        - listitem: Decode speed p50 62.9 tok/s No data in the previous period Data from 14 of 15 runs
+        - listitem: Billing ratio (prompt) 103.5% No data in the previous period Data from 10 of 15 runs
+        - listitem: Billing ratio (completion) 102% No data in the previous period Data from 10 of 15 runs
 - contentinfo:
   - paragraph: "All local: audits run from your own machine, and your API keys never leave it."
   - paragraph: "A black box: ekte reports reproducible evidence of deviation, not proof of fraud. Do not blame a vendor for a single run."
