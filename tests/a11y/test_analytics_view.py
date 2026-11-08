@@ -318,7 +318,7 @@ def test_errors_tab_keeps_ekte_and_network_failures_apart(open_page) -> None:
     page, _ = _open(open_page, "?tab=reliability")
     issues: list[str] = []
     table = page.locator("#err-body table:has(#eg-cap)")
-    head = [t.strip() for t in table.locator("thead th").all_inner_texts()]
+    head = [(t or "").strip() for t in table.locator("thead th").all_text_contents()]
     want = ["Success", "Rate limited (429)", "Relay timeout", "Relay server error (5xx)", "Relay client error (4xx)",
             "Other relay failure", "Network", "ekte"]
     got = [h for h in head if h in want]
@@ -329,7 +329,7 @@ def test_errors_tab_keeps_ekte_and_network_failures_apart(open_page) -> None:
         if "imp" not in cls.split():
             issues.append(f"the {name} column is not greyed out apart")
     row = table.locator("tbody tr", has_text="Example Relay")
-    cells = row.locator("td").all_inner_texts()
+    cells = [(t or "").strip() for t in row.locator("td").all_text_contents()]
     cols = head[1:]
     values = dict(zip(cols, cells, strict=False))
     if values.get("ekte") != "1" or values.get("Network") != "1":
@@ -337,7 +337,7 @@ def test_errors_tab_keeps_ekte_and_network_failures_apart(open_page) -> None:
     rates = page.locator("#err-body .rates").inner_text()
     if "Error rate" not in rates or "Impaired" not in rates:
         issues.append(f"the relay error rate and the impaired share are not shown apart: {rates!r}")
-    legend = page.locator("#err-body .legend .imp").all_inner_texts()
+    legend = page.locator("#err-body .legend .imp").all_text_contents()
     if [t.strip() for t in legend] != ["Network", "ekte"]:
         issues.append(f"the legend does not set network and ekte apart: {legend}")
     if "not its fault" not in page.locator("#err-body .notes").inner_text():
@@ -364,6 +364,8 @@ def test_view_controls_reflow_at_320_css_px(open_page) -> None:
     relay = "https%3A%2F%2Fgateway.a-very-long-relay-hostname.example.org%2Fopenai%2Fcompatible%2Fv1"
     page, _ = _open(open_page, f"?range=90d&exec=monitor&relay={relay}&model=model-a", viewport={"width": 320, "height": 640})
     issues: list[str] = []
+    if page.locator("#ftog").get_attribute("aria-expanded") == "true":
+        page.locator("#ftog").click()  # a link with filters opens the panel
     for tab in ("overview", "trends", "reliability", "integrity", "billing"):
         page.locator(f"#tab-{tab}").click()
         settle(page)
@@ -437,7 +439,7 @@ def test_changing_a_panel_option_keeps_the_scroll_position(open_page) -> None:
         " C.heatmap = function (host, cfg) { window.__at.push(scrollY); return draw(host, cfg); }; }"
     )
     issues: list[str] = []
-    for metric in ("latency_p50", "decode_tps"):
+    for metric in ("ttft_p50", "decode_tps"):
         page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
         settle(page)
         page.evaluate("window.__at = []")
