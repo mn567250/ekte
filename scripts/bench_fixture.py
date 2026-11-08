@@ -21,9 +21,9 @@ checks the 50 ms p95 budget)::
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import random
-import math
 import statistics
 import sys
 import time
