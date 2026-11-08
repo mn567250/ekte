@@ -34,6 +34,16 @@ def mock_server() -> MockServer:
     return MockServer()
 
 
+@pytest.fixture(autouse=True)
+def _close_read_connections():
+    """Close the reused read-only SQLite connections (ekte.datadir) after each
+    test: tests switch data directories, and each would keep its files open."""
+    yield
+    from ekte import datadir
+
+    datadir.close_read_connections()
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _isolated_data_dir(tmp_path_factory):
     """Keep every test away from the developer's real ~/.ekte (history,

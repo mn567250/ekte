@@ -258,7 +258,7 @@ relay flag and base URLs, computed from the knowledge base itself, so edits
 from any process count) differs from the version stored in `relay_map_meta`,
 and adds missing URLs when a trigger on `history_metrics` has marked it stale.
 
-Since schema version 8 `history.db` holds `history_outcomes` (`history_id`,
+Since schema version 9 `history.db` holds `history_outcomes` (`history_id`,
 `op`, `outcome`, `n`): how many of the run's target request records had each
 outcome. One definition of a request's outcome, `errorclass.outcome()`, gives
 every record exactly one of `success`, `rate_limited`, `relay_timeout`,

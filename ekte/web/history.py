@@ -25,7 +25,7 @@ failed backfill, or a row written by an older ekte) is computed when it is
 first read and written back.
 
 Analytics (schema version 2): every saved run also gets a row of extracted
-metrics plus its dimension and detector scores (and, from schema version 8, its
+metrics plus its dimension and detector scores (and, from schema version 9, its
 outcome counts per op in ``history_outcomes``), and its ``performance.requests``
 records move out of ``report_json`` into ``history_requests``, stored once and
 put back by :func:`get` / :func:`latest_for`, so a report reads back identical
@@ -42,6 +42,12 @@ names its file (``report.evidence.file``, see :mod:`ekte.evidence`) in the
 folder; deleting the last row that names it deletes it (a re-scored run,
 :mod:`ekte.replay`, names its original's file), and :func:`sweep_evidence`
 removes files no row names.
+
+Data version (schema version 8): ``meta`` holds ``data_version``, a counter
+bumped in the same transaction as every write that changes what the web
+endpoints return (:func:`save`, :func:`delete`, :func:`clear`, the analytics
+and perf backfills), from whichever process writes. :func:`data_version`
+reads it; the web response cache (:mod:`ekte.web.cache`) keys on it.
 
 Relay map (schema version 7): ``relay_map`` maps each distinct run URL to
 its knowledge-base relay so SQL can group and filter runs by relay; it is
@@ -195,6 +201,15 @@ def _v7(conn: sqlite3.Connection) -> None:
 
 
 def _v8(conn: sqlite3.Connection) -> None:
+    """The ``meta`` key/value table and its ``data_version`` counter.
+
+    Idempotent (another step may have created ``meta`` already); values are
+    read with a CAST, so either column affinity works."""
+    conn.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value)")
+    conn.execute("INSERT OR IGNORE INTO meta (key, value) VALUES ('data_version', 0)")
+
+
+def _v9(conn: sqlite3.Connection) -> None:
     """Outcome counts per run and op (``history_outcomes``) and the outcome
     rates' bases (filled by the analytics backfill, which re-extracts every
     row of an older EXTRACT_VERSION)."""
@@ -215,6 +230,7 @@ MIGRATIONS = (
     dbmigrate.Migration(6, _v6),
     dbmigrate.Migration(7, _v7),
     dbmigrate.Migration(8, _v8),
+    dbmigrate.Migration(9, _v9),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
@@ -262,6 +278,7 @@ def _backfill_perf(conn: sqlite3.Connection) -> None:
             _SET_PERF,
             [(*_perf_headline(r["report_json"]).values(), r["id"]) for r in rows],
         )
+        _bump(conn)
         conn.commit()
         last = int(rows[-1]["id"])
 
@@ -286,6 +303,7 @@ def _fill_perf(conn: sqlite3.Connection, items: list[dict[str, Any]]) -> None:
             updates.append((*headline.values(), r["id"]))
     try:
         conn.executemany(_SET_PERF, updates)
+        _bump(conn)
         conn.commit()
     except sqlite3.Error:
         conn.rollback()
@@ -368,6 +386,7 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
                             (rid,),
                         )
                 analytics_store.put_metrics(conn, rid, *extracted)
+            _bump(conn)
             conn.commit()
         except BaseException:
             conn.rollback()
@@ -392,6 +411,32 @@ def _connect() -> Iterator[sqlite3.Connection]:
         yield conn
 
 
+def _read() -> sqlite3.Connection:
+    """This thread's reused read-only connection (see :func:`ekte.datadir.read_connection`)."""
+    return datadir.read_connection(_DB_NAME, MIGRATIONS, _after_migration)
+
+
+_BUMP_SQL = (
+    "INSERT INTO meta (key, value) VALUES ('data_version', 1)"
+    " ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + 1"
+)
+
+
+def _bump(conn: sqlite3.Connection) -> None:
+    """Increment ``data_version``; call inside the write's own transaction."""
+    conn.execute(_BUMP_SQL)
+
+
+def data_version() -> int:
+    """The database's write counter: changes with every committed write that
+    changes what the web endpoints return, from any process. One primary-key
+    lookup on this thread's read connection."""
+    row = _read().execute(
+        "SELECT CAST(value AS INTEGER) FROM meta WHERE key = 'data_version'"
+    ).fetchone()
+    return int(row[0]) if row and row[0] is not None else 0
+
+
 def init() -> None:
     """Create the tables if they don't exist. Idempotent; safe to call often."""
     with _connect():
@@ -407,7 +452,6 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
     Best-effort by contract: this is called from inside the SSE stream, so any
     extraction or DB error is swallowed rather than allowed to abort the audit.
     """
-    _wrote()
     try:
         # As plain JSON (what reading it back gives), so the request records
         # and metrics below see exactly what is stored.
@@ -479,6 +523,7 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                 analytics_store.put_requests(conn, rid, records)
             if metrics is not None:
                 analytics_store.put_metrics(conn, rid, *metrics)
+            _bump(conn)
             return rid
     except Exception:
         return -1
@@ -636,29 +681,16 @@ def _perf_headline(report_json: str | None) -> dict[str, float | None]:
     return out
 
 
-# Bumped by every write, so cached analytics answers (server.py) are dropped.
-_writes = 0
-
-
-def write_mark() -> tuple[str, int]:
-    """Which history database, and how often it was written since start."""
-    return str(_db_path()), _writes
-
-
-def _wrote() -> None:
-    global _writes
-    _writes += 1
-
-
 def delete(rid: int) -> None:
     """Remove one row by id, with its analytics rows, its evidence file (and a
     snapshot nothing else uses). No-op if missing."""
-    _wrote()
     with _connect() as conn:
         row = conn.execute("SELECT evidence_file FROM history WHERE id = ?", (int(rid),)).fetchone()
         conn.execute("DELETE FROM history WHERE id = ?", (int(rid),))
         analytics_store.delete_for(conn, int(rid))
         kb_snapshot.prune(conn, "history")
+        if row is not None:
+            _bump(conn)
         # a re-scored run shares its original's file: keep it while a row names it
         shared = row is not None and row["evidence_file"] is not None and conn.execute(
             "SELECT 1 FROM history WHERE evidence_file = ? LIMIT 1", (row["evidence_file"],)
@@ -669,13 +701,13 @@ def delete(rid: int) -> None:
 
 def clear() -> None:
     """Wipe all history, analytics rows, snapshots and evidence files included."""
-    _wrote()
     with _connect() as conn:
         names = [r["evidence_file"] for r in conn.execute(
             "SELECT evidence_file FROM history WHERE evidence_file IS NOT NULL")]
         conn.execute("DELETE FROM history")
         analytics_store.delete_for(conn)
         kb_snapshot.prune(conn, "history")
+        _bump(conn)
     for name in names:
         evidence_files.remove(name)
 
@@ -740,18 +772,20 @@ def analytics_runs(start: str | None = None, end: str | None = None) -> list[dic
         + (" WHERE " + " AND ".join(where) if where else "")
         + " ORDER BY m.started_at, h.id"
     )
-    with _connect() as conn:
+    conn = _read()
+    if conn.execute(
+        f"SELECT EXISTS ({_ANALYTICS_TODO})", (analytics_store.EXTRACT_VERSION,)
+    ).fetchone()[0]:
         with contextlib.suppress(sqlite3.Error):
-            _backfill_analytics(conn)  # best-effort; a locked database can wait
-        return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
+            backfill_analytics()  # best-effort; a locked database can wait
+    return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
 
 
 def surface_counts() -> dict[str, int]:
     """Runs per surface over the whole history (NULL reads as chat)."""
-    with _connect() as conn:
-        rows = conn.execute(
-            "SELECT COALESCE(surface, 'chat') AS s, COUNT(*) AS n FROM history GROUP BY s"
-        ).fetchall()
+    rows = _read().execute(
+        "SELECT COALESCE(surface, 'chat') AS s, COUNT(*) AS n FROM history GROUP BY s"
+    ).fetchall()
     return {str(r[0]): int(r[1]) for r in rows}
 
 
@@ -766,17 +800,17 @@ def analytics_dimensions(ids: Iterable[int], kind: str | None = None) -> list[di
     ``status``, ``weight``) of the given runs, optionally of one ``kind``
     (``dimension`` / ``detector``)."""
     out: list[dict[str, Any]] = []
-    with _connect() as conn:
-        for chunk in _chunks(ids):
-            sql = (
-                "SELECT history_id, kind, key, score, status, weight FROM history_dimensions"
-                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-            )
-            args: list[Any] = list(chunk)
-            if kind is not None:
-                sql += " AND kind = ?"
-                args.append(kind)
-            out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, kind, key", args))
+    conn = _read()
+    for chunk in _chunks(ids):
+        sql = (
+            "SELECT history_id, kind, key, score, status, weight FROM history_dimensions"
+            f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
+        )
+        args: list[Any] = list(chunk)
+        if kind is not None:
+            sql += " AND kind = ?"
+            args.append(kind)
+        out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, kind, key", args))
     return out
 
 
@@ -792,17 +826,17 @@ def analytics_requests(
     """
     cols = ", ".join(("history_id", "ord", *analytics_store.REQUEST_FIELDS))
     out: list[dict[str, Any]] = []
-    with _connect() as conn:
-        for chunk in _chunks(ids):
-            sql = (
-                f"SELECT {cols} FROM history_requests"
-                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-            )
-            args: list[Any] = list(chunk)
-            if endpoint is not None:
-                sql += " AND endpoint = ?"
-                args.append(endpoint)
-            out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, ord", args))
+    conn = _read()
+    for chunk in _chunks(ids):
+        sql = (
+            f"SELECT {cols} FROM history_requests"
+            f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
+        )
+        args: list[Any] = list(chunk)
+        if endpoint is not None:
+            sql += " AND endpoint = ?"
+            args.append(endpoint)
+        out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, ord", args))
     return out
 
 
@@ -832,14 +866,14 @@ def analytics_request_classes(
     ``minute``, ``cls``, ``n``. Never loads the records themselves; a run
     without stored records has no rows."""
     out: list[dict[str, Any]] = []
-    with _connect() as conn:
-        for chunk in _chunks(ids):
-            sql = (
-                "SELECT history_id, CAST(COALESCE(start_ms, 0) / 60000 AS INTEGER) AS minute,"
-                f" {_CLASS_SQL} AS cls, COUNT(*) AS n FROM history_requests"
-                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-                " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = ?"
-                " GROUP BY history_id, minute, cls ORDER BY history_id, minute, cls"
-            )
-            out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint, op]))
+    conn = _read()
+    for chunk in _chunks(ids):
+        sql = (
+            "SELECT history_id, CAST(COALESCE(start_ms, 0) / 60000 AS INTEGER) AS minute,"
+            f" {_CLASS_SQL} AS cls, COUNT(*) AS n FROM history_requests"
+            f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
+            " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = ?"
+            " GROUP BY history_id, minute, cls ORDER BY history_id, minute, cls"
+        )
+        out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint, op]))
     return out

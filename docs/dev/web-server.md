@@ -33,7 +33,26 @@
   grouped by knowledge-base entry when the query runs, a value a run did not
   measure is left out (each value has its `n` and `coverage`), and buckets with
   fewer than `MIN_RUNS` (3) runs are flagged `low_n`. A bad parameter answers
-  400; responses are `Cache-Control: no-store`.
+  400 (never cached).
+- **Response cache** (`ekte/web/cache.py`). Widget endpoints are plain `def`
+  handlers wrapped in `@cached_endpoint("<name>")`: the handler gets its query
+  parameters in canonical form (keys sorted, values stripped, empty ones
+  dropped) and returns JSON. The key is `json([endpoint, params,
+  data_version, kb_version, EXTRACT_VERSION, database])`, with no time slot:
+  `history.data_version()` is a counter in `history.db`'s `meta` table bumped
+  in the same transaction as every write (`save`, `delete`, `clear`, the
+  analytics and perf backfills), from any process, so a CLI audit drops the
+  cache too; `kb_version` is `ekte.knowledge.relays.kb_version()`. A handler
+  whose answer depends on the clock resolves it first (`prepare=`; e.g. the
+  summary's `from` without `to` gets `to=now`). The LRU (`ResponseCache`,
+  256 entries by default) is thread-safe and single-flight: concurrent misses
+  on one key wait for one computation; errors are not cached. Answers carry
+  `ETag` (a hash of the key and the ekte version) and `Cache-Control: no-cache`;
+  a matching `If-None-Match` gets `304 Not Modified` without computing.
+  Reads use `datadir.read_connection(name)`: one reused read-only connection
+  per thread (`mode=ro`, WAL, `query_only`), schema-checked only on the first
+  open in the process (again if the file was replaced); writes keep using
+  `datadir.connect`.
 - **Analytics panels.** `/api/analytics/breakdown` (up to 8 `metrics` per
   `group=relay|model|relay_model|all` over the range), `/api/analytics/errors`
   (the target's completion calls by outcome class
