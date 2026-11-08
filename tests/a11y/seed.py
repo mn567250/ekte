@@ -170,8 +170,16 @@ def _history_report(started: datetime, model: str, score: float, grade: str, ris
         "started_at": started.isoformat(), "generated_at": (started + timedelta(minutes=1)).isoformat(),
         "target": {"base_url": HISTORY_RELAY, "model": model, "claimed_model": model, "api": "openai"},
         "verdict": {"overall_score": score, "risk_level": risk, "rating": grade},
-        "performance": {"target": {"requests": 4, "successes": 4, "latency_ms": {"p50": 900.0 + (100 - score) * 10},
-                                   "decode_tps_local": {"p50": 40.0 + score / 10}}},
+        "performance": {
+            "target": {"requests": 4, "successes": 4 if score >= 80 else 3, "latency_ms": {"p50": 900.0 + (100 - score) * 10},
+                       "decode_tps_local": {"p50": 40.0 + score / 10}},
+            # four calls; a run below 80 has one server error (its error rate: 25 %)
+            "requests": [{
+                "seq": seq, "endpoint": "target", "phase": "passive", "op": "complete", "stream": True,
+                "start_ms": seq * 1000.0, "ok": not (score < 80 and seq == 3),
+                "status_code": 502 if score < 80 and seq == 3 else 200, "duration_ms": 800.0,
+            } for seq in range(4)],
+        },
     }
 
 
