@@ -62,6 +62,11 @@ Relay ids (schema version 11): ``history_metrics.relay_id`` holds each run's
 and filtering by relay use an integer of the run's row (see
 :mod:`ekte.web.relay_map`).
 
+Outcome columns (schema version 12): ``history_metrics.outcome_<outcome>``
+holds the run's ``history_outcomes`` counts summed over its ops, kept equal
+by triggers, so pooling outcomes over many runs reads no second table (see
+:data:`ekte.web.analytics_store.OUTCOME_COLS`).
+
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
 """
@@ -256,6 +261,13 @@ def _v11(conn: sqlite3.Connection) -> None:
     relay_map.ensure_relay_ids(conn)
 
 
+def _v12(conn: sqlite3.Connection) -> None:
+    """Each run's outcome counts on its own row
+    (:data:`ekte.web.analytics_store.OUTCOME_COLS`, kept by triggers), filled
+    from ``history_outcomes`` for the runs already saved."""
+    analytics_store.ensure_outcome_columns(conn)
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -268,6 +280,7 @@ MIGRATIONS = (
     dbmigrate.Migration(9, _v9),
     dbmigrate.Migration(10, _v10),
     dbmigrate.Migration(11, _v11),
+    dbmigrate.Migration(12, _v12),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 

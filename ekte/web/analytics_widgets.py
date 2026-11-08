@@ -21,15 +21,13 @@ mix; the answer names it (``surface``).
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from datetime import UTC, datetime, timedelta, tzinfo
+from datetime import UTC, datetime
 from typing import Any
 
 from ekte import errorclass
 from ekte.web import analytics_store, history, query
 from ekte.web import metrics as _metrics
 from ekte.web.analytics import (
-    _T_MAX,
-    _T_MIN,
     BLOCKS,
     BUCKETS,
     FOLDS,
@@ -324,11 +322,6 @@ OUTCOME_SQL = (
 (NULL: a record that never counts). Tested equal to the Python rules."""
 
 
-def _counts_sql(alias: str = "o") -> list[str]:
-    """``SUM(n)`` of each outcome class over joined ``history_outcomes`` rows."""
-    return [f"SUM(CASE WHEN {alias}.outcome = '{c}' THEN {alias}.n ELSE 0 END)" for c in ERROR_CLASSES]
-
-
 def outcome_shares(counts: Mapping[str, Any]) -> dict[str, Any]:
     """Pooled counts and rates of some requests: ``requests`` (all),
     ``judged`` (all − network − local), ``shares`` (each relay outcome over
@@ -355,88 +348,25 @@ def outcome_shares(counts: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-_DATED_SQL = (f"(m.started_at >= '{analytics_store.format_ts(_T_MIN)}'"
-              f" AND m.started_at < '{analytics_store.format_ts(_T_MAX)}')")
+# Per group or bucket: the runs with outcome counts and the sum of each
+# outcome (the run's pivoted history_outcomes, analytics_store.OUTCOME_COLS).
+_OUTCOME_AGGS = (f"COUNT(m.{analytics_store.OUTCOME_COLS[ERROR_CLASSES[0]]})",
+                 *(f"SUM(m.{analytics_store.OUTCOME_COLS[c]})" for c in ERROR_CLASSES))
 
 
-def _local_buckets(size: str, local: str, offset: str, block: int) -> list[str]:
-    """SQL partitioning runs by the buckets of :func:`_bucket` (``local``: the
-    run's local wall time; ``offset``: its UTC offset, which parts a DST fold)."""
-    if size == "hour":
-        return [f"strftime('%Y-%m-%dT%H', {local})", offset]
-    if size == "day":
-        return [f"date({local})"]
-    if size == "week":
-        return [f"date({local}, '-6 days', 'weekday 1')"]
-    return [f"strftime('%w', {local})", f"CAST(strftime('%H', {local}) AS INTEGER) / {block}"]
-
-
-def _offset(conn: Any, zone: tzinfo) -> str:
-    """SQL for ``zone``'s UTC offset at ``m.started_at``, exact across the
-    whole history's dated runs (:func:`ekte.web.query.offset_sql`; the bounds
-    are two index lookups)."""
-    lo, hi = conn.execute(f"SELECT MIN(started_at), MAX(started_at) FROM history_metrics m"
-                          f" WHERE {_DATED_SQL}").fetchone()
-    first, last = analytics_store.parse_ts(lo), analytics_store.parse_ts(hi)
-    if first is None or last is None:
-        return "0"
-    points: list[datetime] = []
-    p = first.replace(microsecond=0)
-    while p <= last:
-        points.append(p)
-        p += timedelta(days=7)
-    return query.offset_sql(zone, [*points, last + timedelta(seconds=1)])
-
-
-def _describe(group: str, key: str, rk: Any, rl: Any, rkind: Any, rin: Any, mk: Any,
-              mkb: Any) -> dict[str, Any]:
-    """A group's public description, as :meth:`ekte.web.query.GroupResult.describe`."""
-    if group == "relay":
-        return {"key": key, "label": str(rl), "in_kb": bool(rin), "kind": str(rkind)}
-    if group == "model":
-        return {"key": key, "label": key, "in_kb": bool(mkb), "kind": "model"}
-    if group == "relay_model":
-        return {"key": key, "label": f"{rl} · {mk}", "in_kb": bool(rin), "kind": "relay_model",
-                "relay": str(rk), "model": str(mk)}
-    return {"key": key, "label": key, "in_kb": False, "kind": "all"}
-
-
-def _errors_sql(q: query.Query, offset: str, size: str, block: int) -> tuple[str, tuple[Any, ...]]:
-    """One statement for the errors widget: the selected runs once (``r``,
-    with their group, description and time bucket), their outcome counts once
-    (``c``, one ordered pass over ``history_outcomes``), then a row per group
-    (``kind`` 0) and a row per time bucket of the dated runs (``kind`` 1):
-    ``kind, key, rk, rl, rkind, rin, mk, mkb, b0, b1, t, runs, covered,
-    <one count per ERROR_CLASSES>``."""
-    relay = q.group in ("relay", "relay_model")
-    sel = query.select_runs(q)
-    if relay:
-        sel = sel.with_relay()
-    local = f"datetime(m.started_at, {offset} || ' seconds')"
-    buckets = [*_local_buckets(size, local, offset, block), "NULL"][:2]
-    desc = (["rm.relay_key", "rm.label", "rm.kind", "rm.in_kb"] if relay else ["NULL"] * 4) + [
-        GROUP_KEY_SQL["model"], "m.kb_model_id IS NOT NULL"]
-    cols = ", ".join([
-        "h.id AS id", f"{GROUP_KEY_SQL[q.group]} AS g",
-        *(f"{d} AS d{i}" for i, d in enumerate(desc)),
-        "m.started_at AS t", f"{_DATED_SQL} AS dated",
-        *(f"CASE WHEN {_DATED_SQL} THEN {b} END AS b{i}" for i, b in enumerate(buckets)),
-    ])
-    pivot = ", ".join(f"SUM(CASE WHEN outcome = '{c}' THEN n ELSE 0 END) AS c{i}"
-                      for i, c in enumerate(ERROR_CLASSES))
-    sums = ", ".join(f"SUM(c.c{i})" for i in range(len(ERROR_CLASSES)))
-    sql = (
-        f"WITH r AS MATERIALIZED (SELECT {cols} {sel.sql}),"
-        f" c AS MATERIALIZED (SELECT history_id AS id, {pivot} FROM history_outcomes"
-        " WHERE history_id IN (SELECT id FROM r) GROUP BY history_id)"
-        f" SELECT 0, r.g, {', '.join(f'MAX(r.d{i})' for i in range(6))}, NULL, NULL, NULL,"
-        f" COUNT(*), COUNT(c.id), {sums} FROM r LEFT JOIN c ON c.id = r.id GROUP BY r.g"
-        " UNION ALL"
-        f" SELECT 1, NULL, {', '.join(['NULL'] * 6)}, r.b0, r.b1, MIN(r.t),"
-        f" COUNT(*), COUNT(c.id), {sums} FROM r LEFT JOIN c ON c.id = r.id WHERE r.dated"
-        " GROUP BY r.b0, r.b1"
-    )
-    return sql, sel.args
+def _outcome_rows(conn: Any, sel: query.RunSelection, group: str,
+                  buckets: list[str] | None = None) -> list[dict[str, Any]]:
+    """The errors widget's rows (:func:`ekte.web.query._grouped`: one pass
+    over the selected runs' own rows, grouped by the relay id / model on
+    them): per group, or per time bucket of the dated runs (``buckets``),
+    ``runs``, ``covered`` (runs with outcome counts) and each outcome's sum."""
+    if buckets is not None:
+        sel = sel.and_where(query._DATED_SQL)
+    _, rows = query._grouped(conn, sel, group, [], buckets=buckets or (), extra=_OUTCOME_AGGS)
+    for r in rows:
+        r["covered"] = int(r["x0"] or 0)
+        r["counts"] = {c: int(r[f"x{i + 1}"] or 0) for i, c in enumerate(ERROR_CLASSES)}
+    return rows
 
 
 def run_timeline(conn: Any, rid: int) -> list[dict[str, Any]]:
@@ -472,24 +402,29 @@ def widget_errors(params: Any) -> dict[str, Any]:
             raise query.QueryError("errors.run must be a run id")
         rid = int(w["run"])
 
-    sql, args = _errors_sql(q, _offset(conn, zone), size, block)
+    sel = query.select_runs(q)
     totals = dict.fromkeys(ERROR_CLASSES, 0)
     groups, buckets = [], []
-    for row in conn.execute(sql, args):
-        kind, key, desc, t = row[0], row[1], row[2:8], row[10]
-        runs, covered = int(row[11]), int(row[12])
-        counts = dict(zip(ERROR_CLASSES, row[13:], strict=True))
-        cell = {"runs": runs, "covered": covered, "low_n": covered < MIN_RUNS, **outcome_shares(counts)}
-        if kind == 0:
-            for k, v in counts.items():
-                totals[k] += int(v or 0)
-            groups.append({**_describe(q.group, str(key), *desc), **cell,
-                           "coverage": covered / runs if runs else None})
-        else:
-            start = analytics_store.parse_ts(t)
+
+    def cell(r: Mapping[str, Any]) -> dict[str, Any]:
+        runs, covered = int(r["runs"]), r["covered"]
+        return {"runs": runs, "covered": covered, "low_n": covered < MIN_RUNS,
+                **outcome_shares(r["counts"])}
+
+    for r in _outcome_rows(conn, sel, q.group):
+        for k, v in r["counts"].items():
+            totals[k] += v
+        c = cell(r)
+        groups.append({**query._result(q.group, r, {}).describe(), **c,
+                       "coverage": c["covered"] / c["runs"] if c["runs"] else None})
+    bounds = query._data_bounds(conn)
+    if bounds is not None:
+        offset = query.offset_sql(zone, query._offset_points(conn, sel, *bounds))
+        for r in _outcome_rows(conn, sel, "all", query._bucket_sql(size, offset, block, "week")):
+            start = analytics_store.parse_ts(r["t_min"])
             assert start is not None
             pos, bkey, extra = _bucket(start, zone, size, block)
-            buckets.append((pos, {"bucket": bkey, **extra, **cell}))
+            buckets.append((pos, {"bucket": bkey, **extra, **cell(r)}))
     groups.sort(key=lambda g: (-g["requests"], -g["runs"], g["label"].lower(), g["key"]))
     runs = sum(g["runs"] for g in groups)
     covered = sum(g["covered"] for g in groups)
