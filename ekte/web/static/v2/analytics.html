@@ -76,7 +76,7 @@
      dismissed with Escape (WCAG 1.4.13), read as the button's description */
   .kh { position: relative; flex: none; }
   .khint {
-    display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin: -5px -6px 0 0; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin: -6px -7px -8px 0; padding: 0;
     border: 0; border-radius: 999px; background: none; color: var(--ink-muted); cursor: help;
   }
   .khint:hover { color: var(--ink); background: var(--surface); }
@@ -1000,7 +1000,7 @@
     };
     body.innerHTML = (b.rows.some(function (r) { return r.low_n; }) ? fewNote(fewRows()) : "") +
       '<div class="tscroll lbtab" tabindex="0" role="region" aria-labelledby="lbcap"><table class="dt"><caption id="lbcap">' +
-      esc(Tf("按{group}排行（{period}）", "Ranked by {group} ({period})", { group: groupName(by), period: periodOf(b) })) +
+      esc(Tf("排行：{group}（{period}）", "Ranking: {group} ({period})", { group: groupName(by), period: periodOf(b) })) +
       "</caption><thead><tr>" + head("label", groupName(by), false) +
       cols.map(function (k) { return head(k, colName(k), k !== "last_run"); }).join("") + "</tr></thead><tbody>" +
       sortedRows(b.rows, sort).map(function (r) {
