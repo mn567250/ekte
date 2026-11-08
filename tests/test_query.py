@@ -614,6 +614,45 @@ def test_bench_fixture_builds_a_consistent_history(data):
     assert math.isfinite(bench.bench(repeat=1)["page_runs -time"][1])
 
 
+def test_bench_queries_group_on_the_run_row(data):
+    """What keeps the 20k-run budget, checked on a small fixture: no
+    benchmarked query looks a run up in relay_map (runs carry their relay id),
+    and the annotations, read from the series buckets, still equal the Python
+    path's on runs whose versions change and roll out (several per bucket)."""
+    bench = _bench_module()
+    bench.build(runs=600, relays=5, requests=10, report_bytes=100)
+    c = _conn()
+    assert c.execute("SELECT COUNT(*) FROM history_metrics WHERE relay_id IS NULL").fetchone()[0] == 0
+    sqls: list[str] = []
+    c.set_trace_callback(sqls.append)
+    try:
+        for fn in bench.cases(c).values():
+            fn(c)
+    finally:
+        c.set_trace_callback(None)
+    selects = [s for s in sqls if s.lstrip().upper().startswith(("SELECT", "WITH"))]
+    assert len(selects) > 10
+    for sql in selects:
+        plan = " ".join(r[3] for r in c.execute("EXPLAIN QUERY PLAN " + sql))
+        assert "relay_map" not in plan, sql
+    for group in ("relay", "model", "relay_model", "all"):
+        for bucket in ("day", "week", "hour"):
+            _compare_series({"metric": "score", "group": group, "bucket": bucket,
+                             "tz": "America/New_York"}, tz="America/New_York")
+    s = query.series(c, Query(surface="chat"), "score", "relay", "week")
+    kinds = {a["kind"] for x in s.series for a in x.annotations}
+    assert kinds == {"tool_version", "kb_profile"}
+
+
+def test_buckets_without_unixepoch(seeded, monkeypatch):
+    """SQLite before 3.38 (no unixepoch()) buckets alike."""
+    monkeypatch.setattr(query.sqlite3, "sqlite_version_info", (3, 37, 2))
+    assert "unixepoch" not in query._epoch_sql("t")
+    for bucket in analytics.BUCKETS:
+        _compare_series({"metric": "score", "group": "relay", "bucket": bucket,
+                         "tz": "Europe/Berlin"}, tz="Europe/Berlin")
+
+
 @pytest.mark.slow
 @pytest.mark.timeout(600)
 def test_benchmark_20k_runs_under_budget(data):
@@ -627,6 +666,6 @@ def test_benchmark_20k_runs_under_budget(data):
     budget = float(os.environ.get("EKTE_BENCH_BUDGET_MS", "50"))
     bench = _bench_module()
     bench.build()
-    results = bench.bench(repeat=20)
+    results = bench.bench()
     slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
     assert not slow, f"p95 over {budget} ms: {slow}"

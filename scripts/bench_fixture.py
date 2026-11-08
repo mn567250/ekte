@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import os
 import random
+import math
 import statistics
 import sys
 import time
@@ -162,7 +163,8 @@ def _time(fn: Callable[[], Any], repeat: int) -> tuple[float, float]:
         fn()
         times.append((time.perf_counter() - t0) * 1000)
     times.sort()
-    return statistics.median(times), times[min(len(times) - 1, int(len(times) * 0.95))]
+    # nearest rank: the smallest time at least 95 % of the calls took no longer than
+    return statistics.median(times), times[math.ceil(len(times) * 0.95) - 1]
 
 
 def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
@@ -205,7 +207,7 @@ def _after(conn: Any, q: Any, sort: str, pages: int) -> str | None:
     return after
 
 
-def bench(repeat: int = 20) -> dict[str, tuple[float, float]]:
+def bench(repeat: int = 40) -> dict[str, tuple[float, float]]:
     """``{case: (p50 ms, p95 ms)}`` over the database of ``$EKTE_DATA_DIR``."""
     from ekte.web import history
 
