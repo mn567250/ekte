@@ -321,7 +321,7 @@ def test_backfill_of_a_v0_34_0_database_matches_a_fresh_save(data, monkeypatch):
     history.init()  # migrates and backfills
     history.backfill_analytics()
     with sqlite3.connect(db) as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 7
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == history._SCHEMA_VERSION
         versions = {r[0] for r in conn.execute("SELECT extract_version FROM history_metrics")}
     assert versions == {analytics_store.EXTRACT_VERSION}
 

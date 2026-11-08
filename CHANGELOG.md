@@ -22,6 +22,8 @@ ekte has three eras:
 
 ### Added
 
+- **Outcome model** (#118): every request gets exactly one outcome (`ekte.errorclass.outcome()`, `OUTCOMES`), and `ekte.perf.outcomes.run_outcomes()` counts them over all target requests of a run; reports carry a new `outcomes` section (report schema 1.3), `history.db` schema version 8 adds `history_outcomes` (counts per run, op and outcome) plus `impaired_rate`, `requests_total` and `requests_judged` in `history_metrics`, and old runs are re-extracted (`EXTRACT_VERSION` 4). **Breaking:** the stored `success_rate`, `error_rate`, `timeout_rate` and `rate_limited_rate` now use this definition (success + error + 429 rates add up to 100%, network and ekte failures are left out), and the reliability check's own rate is labelled "Reliability check success rate".
+- **Relay map** (#119): `history.db` schema version 7 adds `relay_map`, which maps every distinct run URL to its knowledge-base relay so SQL can group and filter runs by relay; `ekte.web.relay_map.ensure_relay_map()` keeps it in step with `ekte.knowledge.relays.kb_version()`.
 - **Upgrade fixture for 0.34.0.** `tests/fixtures/upgrade/v0.34.0/` is a data
   directory written by the released 0.34.0 from PyPI (history, monitors with
   stored and unstored keys, your own knowledge-base entries); the upgrade tests

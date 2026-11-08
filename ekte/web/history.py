@@ -25,7 +25,7 @@ failed backfill, or a row written by an older ekte) is computed when it is
 first read and written back.
 
 Analytics (schema version 2): every saved run also gets a row of extracted
-metrics plus its dimension and detector scores (and, from schema version 7, its
+metrics plus its dimension and detector scores (and, from schema version 8, its
 outcome counts per op in ``history_outcomes``), and its ``performance.requests``
 records move out of ``report_json`` into ``history_requests``, stored once and
 put back by :func:`get` / :func:`latest_for`, so a report reads back identical
@@ -42,6 +42,10 @@ names its file (``report.evidence.file``, see :mod:`ekte.evidence`) in the
 folder; deleting the last row that names it deletes it (a re-scored run,
 :mod:`ekte.replay`, names its original's file), and :func:`sweep_evidence`
 removes files no row names.
+
+Relay map (schema version 7): ``relay_map`` maps each distinct run URL to
+its knowledge-base relay so SQL can group and filter runs by relay; it is
+rebuilt from the knowledge base on demand (see :mod:`ekte.web.relay_map`).
 
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
@@ -183,6 +187,14 @@ def _v6(conn: sqlite3.Connection) -> None:
 
 
 def _v7(conn: sqlite3.Connection) -> None:
+    """The relay of each distinct run URL (:mod:`ekte.web.relay_map`); filled
+    on first use by ``relay_map.ensure_relay_map``."""
+    from ekte.web import relay_map  # it imports the analytics queries, which import this module
+
+    relay_map.ensure_tables(conn)
+
+
+def _v8(conn: sqlite3.Connection) -> None:
     """Outcome counts per run and op (``history_outcomes``) and the outcome
     rates' bases (filled by the analytics backfill, which re-extracts every
     row of an older EXTRACT_VERSION)."""
@@ -202,6 +214,7 @@ MIGRATIONS = (
     dbmigrate.Migration(5, _v5),
     dbmigrate.Migration(6, _v6),
     dbmigrate.Migration(7, _v7),
+    dbmigrate.Migration(8, _v8),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 

@@ -14,13 +14,14 @@ the ones a relay client can use as its ``base_url``.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import unicodedata
-from typing import Any
+from typing import Any, NamedTuple
 
 from ekte.knowledge import store
 from ekte.knowledge.loader import load_knowledge_base
-from ekte.knowledge.schema import ProviderProfile
+from ekte.knowledge.schema import KnowledgeBase, ProviderProfile
 
 RELAY_ORIGIN = "relay"
 MAX_NAME = 64
@@ -103,3 +104,68 @@ def add_relay(name: str, base_url: str) -> dict[str, Any]:
     body = {"display_name": name, "base_url_hints": [url]}
     entry_id = store.upsert("provider", key, body, origin=RELAY_ORIGIN)
     return {"provider": key, "display_name": name, "base_url": url, "entry_id": entry_id}
+
+
+class RelayEntry(NamedTuple):
+    """A knowledge-base provider as relay grouping sees it (see :func:`relay_entries`)."""
+
+    key: str
+    label: str
+    kind: str  # "relay" (saved by the user, or a provider without models) | "provider"
+    saved: bool  # a relay the user saved
+    urls: tuple[str, ...]  # its usable base URLs (:func:`base_urls`)
+
+
+def relay_entries(knowledge: KnowledgeBase | None) -> list[RelayEntry]:
+    """Every provider of ``knowledge`` in the order that claims a shared URL:
+    relays the user saved first, then by key. ``None`` (an unreadable
+    knowledge base) has none.
+
+    The single source of what relay grouping depends on: the web UI's
+    ``RelayResolver`` maps URLs from it and :func:`kb_version` hashes it.
+    """
+    if knowledge is None:
+        return []
+    out = []
+    for key, prov in knowledge.providers.items():
+        entry = knowledge.entries.get(f"provider:{key}")
+        saved = bool(entry and entry.get("origin") == RELAY_ORIGIN)
+        kind = "relay" if is_relay(prov, entry) else "provider"
+        out.append(RelayEntry(key, prov.display_name or key, kind, saved, tuple(base_urls(prov))))
+    out.sort(key=lambda e: (not e.saved, e.key))
+    return out
+
+
+def load_for_grouping() -> KnowledgeBase | None:
+    """The complete knowledge base (a switched-off entry still names its runs),
+    shared and read-only, or None when it cannot be read."""
+    try:
+        return load_knowledge_base(full=True, copy=False)
+    except Exception:
+        return None  # an unreadable knowledge base: URLs only
+
+
+_version_memo: tuple[KnowledgeBase | None, str] | None = None
+
+
+def kb_version(knowledge: KnowledgeBase | None = None) -> str:
+    """A hash over everything relay grouping depends on: each entry's key,
+    label and kind, whether the user saved it as a relay, and its base URLs.
+
+    ``knowledge`` defaults to :func:`load_for_grouping`, which reads kb.db and
+    hashes the ``--kb-dir`` / ``EKTE_KB_DIR`` files on every call (see
+    :mod:`ekte.knowledge.loader`), so an edit from the web UI, the CLI, an
+    import or a manual file edit, in any process, changes the version at once.
+    The hash of the loader's shared instance is remembered, so a warm call
+    costs what the (cached) load costs.
+    """
+    global _version_memo
+    if knowledge is None:
+        knowledge = load_for_grouping()
+    memo = _version_memo
+    if memo is not None and memo[0] is knowledge and knowledge is not None:
+        return memo[1]
+    payload = json.dumps([list(e) for e in relay_entries(knowledge)], ensure_ascii=False)
+    version = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
+    _version_memo = (knowledge, version)
+    return version
