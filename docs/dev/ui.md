@@ -96,6 +96,49 @@ returns `render({body, foot, count, summary})`, `sync({count, summary})`,
 the toggle with its active-filter badge, the one-line summary shown while
 closed, the remembered open state and **Reset filters**.
 
+**Shared filters and URL state** (`v2/filters.js`, `window.EkteFilters`, #125;
+History and Analytics move onto it in #127 / #126, Monitors and Knowledge keep
+their own fields). One module owns the filter fields, the view state and widget
+fetching, inside the `filterpanel.js` frame; it holds no metric logic.
+`EkteFilters.create({section, fields, defaults, page, onChange, optionsUrl, foot, live})`:
+`fields` are keys of the Query core URL schema (`docs/dev/web-server.md`) the
+page shows (`range` brings `from` / `to`); their types, labels, fixed values,
+"(unknown)" (`-`) and the option lists of `GET /api/filters/options` (read as
+`{"<key>": [{value, label?, runs?}]}`, asked with the shared filters) live in
+the module.
+
+- **The query string is the view.** It is read on load and every change is
+  written with `history.replaceState` (no history entry, no reload). Shared
+  filters are top-level keys, widget keys are namespaced with a dot
+  (`trend.metric`, `runs.after`), view keys (`tab`) are never sent to an
+  endpoint. Values equal to their default are left out (`key=` keeps an empty
+  value over a non-empty default); unknown keys, invalid values and keys of
+  fields the page does not show are dropped, so old links (`#hash`, `days`,
+  `min`, `stream_mode`, `exec=adhoc`) open the defaults.
+- `state()` is the parsed view; `widgetParams(ns)` the query string a widget
+  sends, unchanged: the shared filters with a value plus its `ns.*` keys
+  (`EkteFilters.state()` / `.widgetParams()` ask the page's instance).
+- **localStorage is only a fallback**: the page's last filters
+  (`ekte.v2.filters.<page>`) apply when the URL has no filter key, and are then
+  written into the URL; every access is wrapped in try/catch.
+- `load({ns: {url, done, fail}})` fetches every widget at once through
+  `EkteFilters.fetchWidget(url, {signal})`, which sends `If-None-Match` with the
+  ETag last seen for that URL (in memory) and answers a 304 from that copy. A
+  newer load or any filter change aborts the requests in flight
+  (`AbortController`); `fail` gets one widget's error, never an abort.
+- **Copy link to this view** sits in the panel's foot on every page using the
+  module (a selected read-only field where the clipboard refuses).
+- **Accessibility**: every field has a visible label (relay / model are
+  checkbox groups named by their legend), the frame keeps focus, badge,
+  summary and Reset, and each change is announced in the page's `#live`
+  region ("Filters updated: N active").
+- `EkteFilters.keyed(key, labels)` reads an i18n key such as `metric.score`,
+  falling back to `GET /api/metrics`' `labels` (English has no keyed strings).
+
+The monitors' **Open in history** links use the schema: `surface`, `relay`
+(the watch's `relay_key` from `/api/watches`, the relay its runs are grouped
+under), `model` and `suite`, plus `#r-<run>`.
+
 **Translation convention.** The pages are written in English
 (`<html lang="en">`); every translatable element carries the same English
 again in `data-en` (and `data-en-placeholder`, `data-en-title`,

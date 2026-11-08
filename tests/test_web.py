@@ -40,6 +40,23 @@ def test_health(client):
     assert body["ok"] is True and body["name"] == "ekte"
 
 
+def test_watches_carry_the_relay_key_of_their_runs(tmp_path, monkeypatch, client):
+    # the monitors' "Open in history" link filters by relay= (the shared URL
+    # schema, #125): the key History groups the monitor's runs under
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    import json
+    from pathlib import Path
+
+    from ekte.web import history
+
+    report = json.loads((Path(__file__).parent / "fixtures" / "web_report.json").read_text("utf-8"))
+    rid = history.save(report)
+    assert client.post(f"/api/watches/from-history/{rid}", json={}).status_code == 201
+    [watch] = client.get("/api/watches").json()
+    [run] = client.get("/api/history", params={"relay": 1}).json()
+    assert watch["relay_key"] == run["relay"]["key"] and watch["relay_key"]
+
+
 def test_serves_spa(client):
     r = client.get("/")
     assert r.status_code == 200
