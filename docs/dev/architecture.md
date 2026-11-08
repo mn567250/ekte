@@ -249,6 +249,15 @@ again on demand. A run's start time is the report's `started_at`; reports from
 before that field get `generated_at` minus the span of their request records
 (`started_at_estimated` = 1).
 
+Since schema version 7 `history.db` holds `relay_map` (`web/relay_map.py`):
+one row per distinct run URL with the relay group `analytics.RelayResolver`
+gives it, so SQL can group and filter runs by relay with one join. It is
+derived data: `relay_map.ensure_relay_map(conn)` rebuilds it when
+`knowledge.relays.kb_version()` (a hash over every entry's key, label, kind,
+relay flag and base URLs, computed from the knowledge base itself, so edits
+from any process count) differs from the version stored in `relay_map_meta`,
+and adds missing URLs when a trigger on `history_metrics` has marked it stale.
+
 Where the monitors' API keys are kept is the user's choice
 (`watches.get_key_storage()`, a `secret_meta` row): `memory`, the default, stores
 none — the `api_key` column holds the marker `mem:` and the key lives in
