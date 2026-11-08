@@ -85,16 +85,16 @@ def test_data_version_is_bumped_by_the_backfills(data):
 def test_meta_migration_adds_the_counter_to_an_older_database(data):
     db = data / "history.db"
     with sqlite3.connect(db) as c:
-        for m in history.MIGRATIONS[:6]:
+        for m in history.MIGRATIONS[:7]:
             m.apply(c)
-        c.execute("PRAGMA user_version = 6")
+        c.execute("PRAGMA user_version = 7")
     history.init()
     with sqlite3.connect(db) as c:
         assert c.execute("PRAGMA user_version").fetchone()[0] == history._SCHEMA_VERSION
     assert history.data_version() == 0
     # idempotent: a meta table made by another step (with typed values) is reused
     with sqlite3.connect(db) as c:
-        history._v7(c)
+        history._v8(c)
         c.execute(history._BUMP_SQL)
     assert history.data_version() == 1
 
@@ -385,3 +385,15 @@ def test_close_read_connections(data):
     with pytest.raises(sqlite3.ProgrammingError):
         conn.execute("SELECT 1")
     assert datadir.read_connection("history.db", history.MIGRATIONS).execute("SELECT 1")
+
+
+def test_a_knowledge_base_change_changes_the_key(data, monkeypatch):
+    from ekte.knowledge import relays
+
+    history.init()
+    assert cache.kb_version() == relays.kb_version()
+    key = cache.cache_key("e", [])
+    monkeypatch.setattr(relays, "kb_version", lambda: "other")
+    assert cache.cache_key("e", []) != key
+    monkeypatch.setattr(relays, "kb_version", lambda: 1 / 0)
+    assert cache.kb_version() == ""

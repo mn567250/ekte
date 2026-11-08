@@ -22,6 +22,8 @@ ekte has three eras:
 
 ### Added
 
+- **Data version and response cache** (#120): `history.db` schema version 8 adds a `meta` table whose `data_version` is bumped by every write from any process (a CLI audit included); the Analytics endpoints use the new `ekte.web.cache.cached_endpoint` (LRU with single-flight, no time slot) and answer with `ETag` / `Cache-Control: no-cache` and `304 Not Modified` instead of `no-store`; reads share one read-only connection per thread (`datadir.read_connection`). **Breaking** (Python API): `history.write_mark()` is removed, use `history.data_version()`.
+- **Relay map** (#119): `history.db` schema version 7 adds `relay_map`, which maps every distinct run URL to its knowledge-base relay so SQL can group and filter runs by relay; `ekte.web.relay_map.ensure_relay_map()` keeps it in step with `ekte.knowledge.relays.kb_version()`.
 - **Upgrade fixture for 0.34.0.** `tests/fixtures/upgrade/v0.34.0/` is a data
   directory written by the released 0.34.0 from PyPI (history, monitors with
   stored and unstored keys, your own knowledge-base entries); the upgrade tests

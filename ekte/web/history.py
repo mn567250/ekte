@@ -42,11 +42,15 @@ folder; deleting the last row that names it deletes it (a re-scored run,
 :mod:`ekte.replay`, names its original's file), and :func:`sweep_evidence`
 removes files no row names.
 
-Data version (schema version 7): ``meta`` holds ``data_version``, a counter
+Data version (schema version 8): ``meta`` holds ``data_version``, a counter
 bumped in the same transaction as every write that changes what the web
 endpoints return (:func:`save`, :func:`delete`, :func:`clear`, the analytics
 and perf backfills), from whichever process writes. :func:`data_version`
 reads it; the web response cache (:mod:`ekte.web.cache`) keys on it.
+
+Relay map (schema version 7): ``relay_map`` maps each distinct run URL to
+its knowledge-base relay so SQL can group and filter runs by relay; it is
+rebuilt from the knowledge base on demand (see :mod:`ekte.web.relay_map`).
 
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
@@ -188,6 +192,14 @@ def _v6(conn: sqlite3.Connection) -> None:
 
 
 def _v7(conn: sqlite3.Connection) -> None:
+    """The relay of each distinct run URL (:mod:`ekte.web.relay_map`); filled
+    on first use by ``relay_map.ensure_relay_map``."""
+    from ekte.web import relay_map  # it imports the analytics queries, which import this module
+
+    relay_map.ensure_tables(conn)
+
+
+def _v8(conn: sqlite3.Connection) -> None:
     """The ``meta`` key/value table and its ``data_version`` counter.
 
     Idempotent (another step may have created ``meta`` already); values are
@@ -204,6 +216,7 @@ MIGRATIONS = (
     dbmigrate.Migration(5, _v5),
     dbmigrate.Migration(6, _v6),
     dbmigrate.Migration(7, _v7),
+    dbmigrate.Migration(8, _v8),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 

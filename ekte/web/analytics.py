@@ -266,28 +266,15 @@ class RelayResolver:
     """
 
     def __init__(self, knowledge: Any | None = None) -> None:
-        from ekte.knowledge.relays import base_urls, is_relay
+        from ekte.knowledge.relays import load_for_grouping, relay_entries
 
         if knowledge is None:
-            try:
-                from ekte.knowledge import load_knowledge_base
-
-                knowledge = load_knowledge_base(full=True, copy=False)  # only read
-            except Exception:
-                knowledge = None  # an unreadable knowledge base: URLs only
+            knowledge = load_for_grouping()
         self._by_url: dict[str, Group] = {}
         self._cache: dict[str | None, Group] = {}
-        if knowledge is None:
-            return
-        ranked = []
-        for key, prov in knowledge.providers.items():
-            entry = knowledge.entries.get(f"provider:{key}")
-            saved = bool(entry and entry.get("origin") == "relay")
-            kind = "relay" if is_relay(prov, entry) else "provider"
-            group = Group(key, prov.display_name or key, True, kind)
-            ranked.append((not saved, key, prov, group))
-        for _, _, prov, group in sorted(ranked, key=lambda r: (r[0], r[1])):
-            for url in base_urls(prov):
+        for entry in relay_entries(knowledge):
+            group = Group(entry.key, entry.label, True, entry.kind)
+            for url in entry.urls:
                 self._by_url.setdefault(url, group)
 
     def resolve(self, run: Mapping[str, Any]) -> Group:

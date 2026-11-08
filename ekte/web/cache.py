@@ -38,11 +38,15 @@ NO_CACHE = "no-cache"
 
 
 def kb_version() -> str:
-    """The knowledge-base fingerprint answers depend on (relay grouping).
+    """The knowledge-base fingerprint answers depend on (relay grouping, see
+    :func:`ekte.knowledge.relays.kb_version`); ``""`` when the knowledge base
+    cannot be read (the answers then group by URL only)."""
+    from ekte.knowledge import relays
 
-    TODO(#119): return the relay map's knowledge-base version once it exists.
-    """
-    return ""
+    try:
+        return relays.kb_version()
+    except Exception:
+        return ""
 
 
 def canonical_params(params: QueryParams | Mapping[str, Any] | Iterable[tuple[str, Any]]) -> list[
