@@ -12,7 +12,7 @@ Deterministic for a ``--seed``.
 
 With ``--bench`` it then times :func:`ekte.web.query.aggregate`,
 :func:`~ekte.web.query.series` and :func:`~ekte.web.query.page_runs` and
-prints each one's p50 / p95 in milliseconds (``tests/test_query_bench.py``
+prints each one's p50 / p95 in milliseconds (``tests/test_query.py``
 checks the 50 ms p95 budget)::
 
     python scripts/bench_fixture.py --data-dir /tmp/bench --bench
@@ -52,6 +52,29 @@ def _outcomes(rng: random.Random, requests: int, flaky: float) -> dict[str, int]
     for o in rng.choices(list(MIX), weights=weights, k=requests):
         counts[o] += 1
     return counts
+
+
+# a new ekte version every RELEASE, rolled out over ROLLOUT (runs then use
+# the old or the new one); a knowledge-base profile change every KB_EVERY;
+# KB_UNKNOWN of the runs have no profile hash
+RELEASE = timedelta(days=21)
+ROLLOUT = timedelta(days=2)
+KB_EVERY = timedelta(days=45)
+KB_UNKNOWN = 0.02
+
+
+def _version(rng: random.Random, started: datetime) -> str:
+    """The ekte version of a run started at ``started`` (annotated changes)."""
+    n, into = divmod(started - (END - timedelta(days=365)), RELEASE)
+    if into < ROLLOUT and rng.random() < 0.5:
+        n -= 1
+    return f"0.{20 + n}.0"
+
+
+def _kb_hash(rng: random.Random, started: datetime) -> str | None:
+    if rng.random() < KB_UNKNOWN:
+        return None
+    return f"kb{(started - (END - timedelta(days=365))) // KB_EVERY}"
 
 
 def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int = 0,
@@ -99,7 +122,8 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
                 surface, latency, ttft, tps, 1, 0,
             ))
             m_rows.append((
-                rid, analytics_store.format_ts(started), 0, "0.34.0", "kb1", None, model,
+                rid, analytics_store.format_ts(started), 0, _version(rng, started),
+                _kb_hash(rng, started), None, model,
                 normalize_url(url), rng.uniform(60, 600), out.success_rate, out.error_rate,
                 out.timeout_rate, out.rate_limited_rate, out.impaired_rate, out.requests_total,
                 out.requests_judged, latency, latency * 1.8, ttft, ttft and ttft * 2.0, tps,
