@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from ekte.models import AuditReport, RequestRecord
+from ekte.perf.outcomes import run_outcomes
 from ekte.web import analytics_store, history
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -251,7 +252,7 @@ def test_save_never_raises(data, monkeypatch):
 # --------------------------------------------------------------------------- #
 def test_extract_metrics_of_a_current_report():
     report = _fixture()
-    metrics, dims = analytics_store.extract_metrics(report)
+    metrics, dims, _ = analytics_store.extract_metrics(report)
     assert set(metrics) == set(analytics_store.METRIC_COLS)
     start = datetime.fromisoformat(report["started_at"])
     assert metrics["started_at"] == start.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
@@ -266,8 +267,12 @@ def test_extract_metrics_of_a_current_report():
     assert metrics["billing_ratio_prompt"] == billing["ratio_prompt"]
     assert metrics["billing_ratio_completion"] == billing["ratio_completion"]
     side = report["performance"]["target"]
-    assert metrics["success_rate"] == side["successes"] / side["requests"]
-    assert metrics["error_rate"] == side["error_rate"]
+    # The rates are the run's outcomes over every target request record.
+    outcomes = run_outcomes(report["performance"]["requests"])
+    assert outcomes.requests_total == 8
+    for key in ("success_rate", "error_rate", "timeout_rate", "rate_limited_rate",
+                "impaired_rate", "requests_total", "requests_judged"):
+        assert metrics[key] == getattr(outcomes, key), key
     assert metrics["cold_start_ms"] == side["cold_start_ms"]
     assert metrics["network_rtt_p50_ms"] == side["network_rtt_ms"]["p50"]
     assert metrics["model_mismatch"] == 0
@@ -295,7 +300,7 @@ def test_extract_metrics_of_a_current_report():
 def test_extract_metrics_reads_the_performance_headline():
     stats = {
         "requests": 10, "successes": 7, "error_rate": 0.2, "timeout_rate": 0.1,
-        "rate_limited_rate": 0.1,
+        "rate_limited_rate": 0.1,  # ignored: the rates come from the request records
         "latency_ms": {"p50": 900.5, "p95": 1500}, "ttft_ms": {"p50": 300.0, "p95": None},
         "decode_tps_local": {"p50": None}, "decode_tps_reported": {"p50": 42.5},
         "itl_jitter_ms": {"p50": 3.5}, "relay_processing_ms": {"p50": 120},
@@ -312,11 +317,12 @@ def test_extract_metrics_reads_the_performance_headline():
         {"output_tokens_reported": 100, "reasoning_tokens": 20},  # endpoint defaults to target
     ]
     report = {"performance": {"target": stats, "requests": records}}
-    metrics, dims = analytics_store.extract_metrics(report)
+    metrics, dims, _ = analytics_store.extract_metrics(report)
     assert dims == []
-    assert metrics["success_rate"] == 0.7
-    assert (metrics["error_rate"], metrics["timeout_rate"], metrics["rate_limited_rate"]) == (
-        0.2, 0.1, 0.1)
+    # Three target records, none ok and without a status: relay failures.
+    assert (metrics["requests_total"], metrics["requests_judged"]) == (3, 3)
+    assert (metrics["success_rate"], metrics["error_rate"], metrics["timeout_rate"],
+            metrics["rate_limited_rate"], metrics["impaired_rate"]) == (0.0, 1.0, 0.0, 0.0, 0.0)
     assert (metrics["latency_p50_ms"], metrics["latency_p95_ms"]) == (900.5, 1500.0)
     assert (metrics["ttft_p50_ms"], metrics["ttft_p95_ms"]) == (300.0, None)
     assert metrics["decode_tps_p50"] == 42.5  # the reported count when no local one
@@ -333,7 +339,7 @@ def test_extract_metrics_reads_the_performance_headline():
 
 @pytest.mark.parametrize("report", [{}, None, "x", [], {"performance": None, "detectors": None}])
 def test_extract_metrics_of_nothing_is_all_null(report):
-    metrics, dims = analytics_store.extract_metrics(report)
+    metrics, dims, _ = analytics_store.extract_metrics(report)
     assert dims == []
     assert {k: v for k, v in metrics.items() if v is not None} == {
         "extract_version": analytics_store.EXTRACT_VERSION
@@ -347,12 +353,16 @@ def test_extract_metrics_of_an_old_shaped_report():
             f.pop("outcome", None)  # before scoring outcomes were recorded
     report["knowledge"] = None
     report["performance"]["target"] = {"latency_ms": {"p50": 800}}
-    metrics, _ = analytics_store.extract_metrics(report)
+    metrics, _, _ = analytics_store.extract_metrics(report)
     assert metrics["started_at_estimated"] == 1
     assert metrics["tool_version"] == "0.9.0"
     assert metrics["kb_profile_hash"] is None and metrics["kb_provider"] is None
     assert metrics["latency_p50_ms"] == 800.0
-    assert metrics["success_rate"] is None and metrics["error_rate"] is None
+    # No outcome counts in the report: counted from its request records.
+    outcomes = run_outcomes(report["performance"]["requests"])
+    assert outcomes.success_rate is not None and outcomes.error_rate is not None
+    assert (metrics["success_rate"], metrics["error_rate"]) == (
+        outcomes.success_rate, outcomes.error_rate)
     assert metrics["model_mismatch"] == 0  # from the finding's status
 
 
@@ -371,7 +381,7 @@ def test_model_mismatch(outcome, status, returned, expected):
     finding = {"id": "model_identity.model_field", "status": status, "outcome": outcome,
                "evidence": {"requested": "m", "returned": returned}}
     report = {"detectors": [{"id": "model_identity", "status": "warn", "findings": [finding]}]}
-    metrics, _ = analytics_store.extract_metrics(report)
+    metrics, _, _ = analytics_store.extract_metrics(report)
     assert metrics["model_mismatch"] == expected
     assert metrics["identity_status"] == "warn"
     assert analytics_store.extract_metrics({"detectors": []})[0]["model_mismatch"] is None
@@ -379,7 +389,7 @@ def test_model_mismatch(outcome, status, returned, expected):
 
 def test_extract_context_window():
     det = {"id": "context_window", "evidence": {"declared": 128000, "effective_window": 64000}}
-    metrics, _ = analytics_store.extract_metrics({"detectors": [det]})
+    metrics, _, _ = analytics_store.extract_metrics({"detectors": [det]})
     assert (metrics["context_claimed_tokens"], metrics["context_effective_tokens"]) == (
         128000, 64000)
 
@@ -493,11 +503,11 @@ def test_interrupted_backfill_resumes_without_damage(data, monkeypatch):
     calls = []
     real_put = analytics_store.put_metrics
 
-    def crash_in_second_batch(conn, rid, metrics, dims):
+    def crash_in_second_batch(conn, rid, *extracted):
         calls.append(rid)
         if len(calls) > history._ANALYTICS_BATCH:
             raise sqlite3.OperationalError("disk I/O error")
-        real_put(conn, rid, metrics, dims)
+        real_put(conn, rid, *extracted)
 
     with monkeypatch.context() as m:
         m.setattr(analytics_store, "put_metrics", crash_in_second_batch)
@@ -597,7 +607,7 @@ def _with_decode(report: dict, speeds: list[float | None], *, stream: bool = Tru
 
 def test_decode_speed_tails_come_from_the_requests_of_the_p50():
     speeds = [float(v) for v in range(10, 31)]  # 21 requests: 10 .. 30 tok/s
-    metrics, _ = analytics_store.extract_metrics(_with_decode(_fixture(), speeds))
+    metrics, _, _ = analytics_store.extract_metrics(_with_decode(_fixture(), speeds))
     assert metrics["decode_tps_p5"] == pytest.approx(11.0) and metrics["decode_tps_p95"] == pytest.approx(29.0)
     # a failed or cached request does not count, like for the p50
     report = _with_decode(_fixture(), speeds)
@@ -605,10 +615,10 @@ def test_decode_speed_tails_come_from_the_requests_of_the_p50():
     report["performance"]["requests"][-2].update(cached=True)
     assert analytics_store.extract_metrics(report)[0]["decode_tps_p5"] is None  # 19 < 20 requests
     # without local counts: the reported speed, as for the p50
-    metrics, _ = analytics_store.extract_metrics(_with_decode(_fixture(), [None] * 20))
+    metrics, _, _ = analytics_store.extract_metrics(_with_decode(_fixture(), [None] * 20))
     assert (metrics["decode_tps_p5"], metrics["decode_tps_p95"]) == (50.0, 50.0)
     # only non-streaming requests: no decode speed
-    metrics, _ = analytics_store.extract_metrics(_with_decode(_fixture(), speeds, stream=False))
+    metrics, _, _ = analytics_store.extract_metrics(_with_decode(_fixture(), speeds, stream=False))
     assert (metrics["decode_tps_p5"], metrics["decode_tps_p95"]) == (None, None)
     # fewer than 20 requests (the p95 floor), or records that do not parse
     assert analytics_store.extract_metrics(_fixture())[0]["decode_tps_p95"] is None

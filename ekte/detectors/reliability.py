@@ -64,6 +64,12 @@ SCALE = DeductionScale(
 )
 
 
+# The name reports give this check's rate, which only covers its own burst and
+# feeds the score: not the run's success rate over every request
+# (ekte.perf.outcomes), which History and Analytics show.
+SUCCESS_RATE_LABEL = "Reliability check success rate"
+
+
 def _lost_note(lost: int) -> str:
     """The requests left out because they failed in ekte or on the network path."""
     if not lost:

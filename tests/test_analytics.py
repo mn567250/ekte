@@ -8,6 +8,7 @@ import pytest
 
 from ekte.knowledge import store
 from ekte.knowledge.relays import add_relay
+from ekte.perf.outcomes import from_counts
 from ekte.web import analytics, history
 from ekte.web.analytics import AnalyticsError
 
@@ -68,6 +69,7 @@ def _report(
             },
             "requests": [],
         }
+        report["outcomes"] = from_counts({"complete": {"success": 9, "relay_5xx": 1}}).model_dump()
         if billing is not None:
             report["detectors"].append({
                 "id": "billing", "status": "pass", "findings": [], "duration_ms": 1000,

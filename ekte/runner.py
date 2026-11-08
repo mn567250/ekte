@@ -37,6 +37,7 @@ from ekte.models import (
     TargetConfig,
 )
 from ekte.perf import RequestRecorder, build_performance, detector_scope
+from ekte.perf.outcomes import run_outcomes
 from ekte.perf.trend import RunningMedian
 from ekte.scoring import build_dimensions, build_verdict
 from ekte.utils.redact import fingerprint_secret
@@ -478,6 +479,7 @@ def _assemble(
         detectors=results,
         reliability=reliability,
         performance=performance,
+        outcomes=run_outcomes(recorder.records),
         judge_used=judge is not None,
         judge_model=judge_endpoint.model if (options.judge and judge_endpoint is not None) else None,
         notes=notes,

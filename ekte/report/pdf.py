@@ -58,6 +58,7 @@ from ekte.report.render import (
     _fmt_score,
     _knowledge_lines,
     _run_config_meta,
+    reliability_lines,
 )
 
 # --------------------------------------------------------------------------- #
@@ -495,9 +496,7 @@ def _reliability(report: AuditReport) -> list[Flowable]:
     r = report.reliability
     if r is None:
         return []
-    items = [_t(f"Requests: {r.successes}/{r.requests} succeeded ({r.success_rate * 100:.0f}%)")]
-    if r.rate_limited:
-        items.append(_t(f"Rate-limited (429): {r.rate_limited} (excluded from success rate)"))
+    items = [_t(line) for line in reliability_lines(r)]
     parts = [f"{k} {_fmt_duration(v)}" for k, v in (r.latency_ms or {}).items() if v is not None]
     if parts:
         items.append(_t(f"Latency: {', '.join(parts)}"))

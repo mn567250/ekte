@@ -694,7 +694,7 @@
    "reliability_requests <= 0 ({reliability_requests}); nessun carico concorrente avviato."
   ],
   "reliability.success_rate": [
-   "Tasso di successo delle richieste concorrenti",
+   "Tasso di successo del controllo di affidabilità",
    "Con concorrenza {concurrency}, {successes} richieste riuscite (su {requests}, {rate_limited} limitate)."
   ],
   "reliability.rate_limited": [

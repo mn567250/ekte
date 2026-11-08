@@ -18,8 +18,11 @@ backfill use (the same split as :mod:`ekte.knowledge.snapshot`).
 * ``base_url_norm`` — the target base URL as
   :func:`ekte.knowledge.relays.normalize_url` gives it (relay grouping).
 * ``duration_sec`` — summed detector durations (as ``history.run_duration_sec``).
-* ``success_rate``, ``error_rate``, ``timeout_rate``, ``rate_limited_rate`` —
-  over every target completion call (``performance.target``).
+* ``success_rate``, ``error_rate``, ``timeout_rate``, ``rate_limited_rate``,
+  ``impaired_rate`` and their bases ``requests_total`` and ``requests_judged``
+  — the run's outcomes over every target request record
+  (:func:`ekte.perf.outcomes.run_outcomes`; ``report.outcomes`` when the
+  report has it).
 * ``latency_p50_ms``, ``latency_p95_ms``, ``ttft_p50_ms``, ``ttft_p95_ms``,
   ``decode_tps_p50`` (local count, else the reported one), ``decode_tps_p5``
   and ``decode_tps_p95`` (the slow and the fast end, from the same requests:
@@ -47,6 +50,11 @@ backfill use (the same split as :mod:`ekte.knowledge.snapshot`).
 weight of each dimension (``kind='dimension'``) and the score and status of each
 target detector (``kind='detector'``, weight NULL).
 
+``history_outcomes`` — ``(history_id, op, outcome)``: how many of the run's
+target request records of that op had that outcome (``n``, only outcomes that
+occurred), so rates over many runs pool counts with an index lookup instead of
+scanning request records. The rows of a run add up to its ``requests_total``.
+
 ``history_requests`` — the run's ``performance.requests`` (target and
 baseline records), one row per record in list order (``ord``), one column per
 :class:`~ekte.models.RequestRecord` field, and ``extra``: a JSON object, NULL
@@ -67,12 +75,15 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ekte.knowledge.relays import normalize_url
-from ekte.models import RequestRecord
+from ekte.models import RequestRecord, RunOutcomes
+from ekte.perf.outcomes import from_counts, run_outcomes
 from ekte.perf.summary import decode_tps_tails
 
 # Bump when extract_metrics() changes what it extracts: the backfill then
 # re-extracts every row written by an older version, without a schema change.
-EXTRACT_VERSION = 3  # 2: decode_tps_p5, decode_tps_p95; 3: model_mismatch of embedding runs
+# 2: decode_tps_p5, decode_tps_p95; 3: model_mismatch of embedding runs;
+# 4: outcome rates over every target request record, history_outcomes
+EXTRACT_VERSION = 4
 
 # Column name -> SQL type of history_metrics (after history_id), in order.
 METRIC_COLS: dict[str, str] = {
@@ -88,6 +99,9 @@ METRIC_COLS: dict[str, str] = {
     "error_rate": "REAL",
     "timeout_rate": "REAL",
     "rate_limited_rate": "REAL",
+    "impaired_rate": "REAL",
+    "requests_total": "INTEGER",
+    "requests_judged": "INTEGER",
     "latency_p50_ms": "REAL",
     "latency_p95_ms": "REAL",
     "ttft_p50_ms": "REAL",
@@ -198,6 +212,18 @@ def ensure_tables(conn: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_history_dimensions_key "
         "ON history_dimensions (kind, key)"
     )
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS history_outcomes (
+            history_id INTEGER NOT NULL,
+            op         TEXT NOT NULL,
+            outcome    TEXT NOT NULL,
+            n          INTEGER NOT NULL,
+            PRIMARY KEY (history_id, op, outcome)
+        )"""
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_history_outcomes_run ON history_outcomes (history_id)"
+    )
     request_cols = ",\n".join(f"{c} {_SQL_TYPE[k]}" for c, k in REQUEST_FIELDS.items())
     conn.execute(
         f"""CREATE TABLE IF NOT EXISTS history_requests (
@@ -248,7 +274,7 @@ def add_request_columns(conn: sqlite3.Connection, fields: dict[str, str]) -> Non
 
 def delete_for(conn: sqlite3.Connection, rid: int | None = None) -> None:
     """Delete the analytics rows of one run, or of every run (``rid`` None)."""
-    for table in ("history_metrics", "history_dimensions", "history_requests"):
+    for table in ("history_metrics", "history_dimensions", "history_outcomes", "history_requests"):
         if rid is None:
             conn.execute(f"DELETE FROM {table}")
         else:
@@ -492,11 +518,6 @@ def _p(stats: Any, key: str) -> float | None:
     return _num(_dict(stats).get(key))
 
 
-def _rate(part: Any, whole: Any) -> float | None:
-    n, total = _int(part), _int(whole)
-    return n / total if n is not None and total else None
-
-
 def _share(records: list[Any], part: str, whole: str) -> float | None:
     """Summed ``part`` / summed ``whole`` over the target records reporting both."""
     num = den = 0
@@ -568,9 +589,37 @@ def _decode_tails(records: list[Any]) -> tuple[float | None, float | None]:
         return None, None
 
 
-def extract_metrics(report: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """The ``history_metrics`` row (by column) and ``history_dimensions`` rows
-    of one report dict. Pure; any shape of input gives NULLs, never an error."""
+def _outcomes(report: dict[str, Any], records: list[Any]) -> RunOutcomes | None:
+    """The run's outcomes: ``report.outcomes`` when it has them, else counted
+    from its request records; None when it has neither."""
+    stored = report.get("outcomes")
+    if isinstance(stored, dict):
+        try:
+            return RunOutcomes.model_validate(stored)
+        except ValueError:
+            pass  # damaged: count the records instead
+    records = [r for r in records if isinstance(r, dict)]
+    return run_outcomes(records) if records else None
+
+
+def outcome_rows(outcomes: RunOutcomes | None) -> list[dict[str, Any]]:
+    """The ``history_outcomes`` rows (``op``, ``outcome``, ``n``) of a run."""
+    if outcomes is None:
+        return []
+    normal = from_counts(outcomes.by_op)  # drops zero counts and unknown outcomes
+    return [
+        {"op": op, "outcome": kind, "n": n}
+        for op, counts in normal.by_op.items()
+        for kind, n in counts.items()
+    ]
+
+
+def extract_metrics(
+    report: Any,
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    """The ``history_metrics`` row (by column), ``history_dimensions`` rows and
+    ``history_outcomes`` rows of one report dict. Pure; any shape of input
+    gives NULLs, never an error."""
     report = _dict(report)
     target = _dict(report.get("target"))
     knowledge = _dict(report.get("knowledge"))
@@ -588,6 +637,7 @@ def extract_metrics(report: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     decode_p5, decode_p95 = _decode_tails(records)
     burst = _dict(side.get("concurrency"))
     burst_tps = _num(burst.get("aggregate_tps_local"))
+    outcomes = _outcomes(report, records)
 
     counts = {"high": 0, "medium": 0, "low": 0}
     for det in detectors:
@@ -607,10 +657,13 @@ def extract_metrics(report: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         "kb_model_id": _str(knowledge.get("model_id")),
         "base_url_norm": normalize_url(base_url) if isinstance(base_url, str) else None,
         "duration_sec": _duration_sec(detectors),
-        "success_rate": _rate(side.get("successes"), side.get("requests")),
-        "error_rate": _num(side.get("error_rate")),
-        "timeout_rate": _num(side.get("timeout_rate")),
-        "rate_limited_rate": _num(side.get("rate_limited_rate")),
+        "success_rate": outcomes.success_rate if outcomes else None,
+        "error_rate": outcomes.error_rate if outcomes else None,
+        "timeout_rate": outcomes.timeout_rate if outcomes else None,
+        "rate_limited_rate": outcomes.rate_limited_rate if outcomes else None,
+        "impaired_rate": outcomes.impaired_rate if outcomes else None,
+        "requests_total": outcomes.requests_total if outcomes else None,
+        "requests_judged": outcomes.requests_judged if outcomes else None,
         "latency_p50_ms": _p(side.get("latency_ms"), "p50"),
         "latency_p95_ms": _p(side.get("latency_ms"), "p95"),
         "ttft_p50_ms": _p(side.get("ttft_ms"), "p50"),
@@ -657,13 +710,18 @@ def extract_metrics(report: Any) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     for det in detectors:
         det = _dict(det)
         add("detector", det.get("id"), det, None)
-    return metrics, dims
+    return metrics, dims, outcome_rows(outcomes)
 
 
 def put_metrics(
-    conn: sqlite3.Connection, rid: int, metrics: dict[str, Any], dims: Iterable[dict[str, Any]]
+    conn: sqlite3.Connection,
+    rid: int,
+    metrics: dict[str, Any],
+    dims: Iterable[dict[str, Any]],
+    outcomes: Iterable[dict[str, Any]] = (),
 ) -> None:
-    """Store (or replace) one run's extracted metrics — only while the run exists."""
+    """Store (or replace) one run's extracted metrics, dimension scores and
+    outcome counts — only while the run exists."""
     rid = int(rid)
     cols = ("history_id", *METRIC_COLS)
     conn.execute(
@@ -676,4 +734,10 @@ def put_metrics(
         "INSERT INTO history_dimensions (history_id, kind, key, score, status, weight) "
         "SELECT ?, ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM history WHERE id = ?)",
         [(rid, d["kind"], d["key"], d["score"], d["status"], d["weight"], rid) for d in dims],
+    )
+    conn.execute("DELETE FROM history_outcomes WHERE history_id = ?", (rid,))
+    conn.executemany(
+        "INSERT INTO history_outcomes (history_id, op, outcome, n) "
+        "SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM history WHERE id = ?)",
+        [(rid, o["op"], o["outcome"], o["n"], rid) for o in outcomes],
     )
