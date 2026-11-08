@@ -28,6 +28,10 @@ Endpoints:
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
                              (?format=json|md|html|pdf)
+  GET  /api/history/groups   History's groups (relay x model, ...), sorted and
+                             keyset-paged, with relay labels and trends
+  GET  /api/history/runs     one History group's runs, keyset-paged
+                             (parameters: ekte/web/history_api.py)
   GET  /api/metrics          the metric registry: ids, units, formats, label
                              keys, directions, the KPI grid and the History
                              trend options (ekte/web/metrics.py)
