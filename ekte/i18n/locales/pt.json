@@ -694,7 +694,7 @@
    "reliability_requests <= 0 ({reliability_requests}); não foi lançada carga concorrente."
   ],
   "reliability.success_rate": [
-   "Taxa de sucesso dos pedidos concorrentes",
+   "Taxa de sucesso da verificação de fiabilidade",
    "Com concorrência {concurrency}, {successes} pedidos com sucesso (de {requests}, {rate_limited} limitados por taxa)."
   ],
   "reliability.rate_limited": [

@@ -25,7 +25,8 @@ failed backfill, or a row written by an older ekte) is computed when it is
 first read and written back.
 
 Analytics (schema version 2): every saved run also gets a row of extracted
-metrics plus its dimension and detector scores, and its ``performance.requests``
+metrics plus its dimension and detector scores (and, from schema version 9, its
+outcome counts per op in ``history_outcomes``), and its ``performance.requests``
 records move out of ``report_json`` into ``history_requests``, stored once and
 put back by :func:`get` / :func:`latest_for`, so a report reads back identical
 to the one saved (the tables are described in :mod:`ekte.web.analytics_store`).
@@ -208,6 +209,18 @@ def _v8(conn: sqlite3.Connection) -> None:
     conn.execute("INSERT OR IGNORE INTO meta (key, value) VALUES ('data_version', 0)")
 
 
+def _v9(conn: sqlite3.Connection) -> None:
+    """Outcome counts per run and op (``history_outcomes``) and the outcome
+    rates' bases (filled by the analytics backfill, which re-extracts every
+    row of an older EXTRACT_VERSION)."""
+    analytics_store.ensure_tables(conn)
+    kb_snapshot.add_link_columns(
+        conn,
+        "history_metrics",
+        {"impaired_rate": "REAL", "requests_total": "INTEGER", "requests_judged": "INTEGER"},
+    )
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -217,6 +230,7 @@ MIGRATIONS = (
     dbmigrate.Migration(6, _v6),
     dbmigrate.Migration(7, _v7),
     dbmigrate.Migration(8, _v8),
+    dbmigrate.Migration(9, _v9),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
@@ -306,7 +320,8 @@ _ANALYTICS_TODO = f"""SELECT id FROM history WHERE {_SPLIT} IS NULL
 
 def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ...] | None:
     """What the backfill writes for one row: ``(id, new report_json or None,
-    encoded request records or None, metrics, dimensions)``; None to skip it."""
+    encoded request records or None, metrics, dimensions, outcomes)``; None to
+    skip it."""
     try:
         report = json.loads(row["report_json"]) if row["report_json"] is not None else None
     except (ValueError, TypeError):
@@ -320,10 +335,10 @@ def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ..
             stored, records = analytics_store.split_requests(report)
             if records is not None:
                 report_json = json.dumps(stored, ensure_ascii=False)
-        metrics, dims = analytics_store.extract_metrics(report)
+        extracted = analytics_store.extract_metrics(report)
     except Exception:
         return None
-    return row["id"], report_json, records, metrics, dims
+    return row["id"], report_json, records, *extracted
 
 
 def _backfill_analytics(conn: sqlite3.Connection) -> None:
@@ -355,7 +370,7 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
             for rid in ids:
                 if rid not in split:
                     analytics_store.delete_for(conn, rid)
-            for rid, report_json, records, metrics, dims in work:
+            for rid, report_json, records, *extracted in work:
                 if split[rid] is None:
                     if records is not None:
                         cur = conn.execute(
@@ -370,7 +385,7 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
                             f"UPDATE history SET {_SPLIT} = 0 WHERE id = ? AND {_SPLIT} IS NULL",
                             (rid,),
                         )
-                analytics_store.put_metrics(conn, rid, metrics, dims)
+                analytics_store.put_metrics(conn, rid, *extracted)
             _bump(conn)
             conn.commit()
         except BaseException:

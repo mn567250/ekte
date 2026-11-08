@@ -9,6 +9,10 @@ reported as an impaired run, never as relay errors.
 :func:`classify_exception` sorts a live exception; :func:`classify_name` sorts
 what an older record kept (its ``error_type``, the exception's class name), so
 runs saved before the classification existed get the same classes.
+
+:func:`outcome` gives every counted request record exactly one of
+:data:`OUTCOMES`, the single definition the per-run counts and rates
+(:mod:`ekte.perf.outcomes`) rest on.
 """
 
 from __future__ import annotations
@@ -105,6 +109,55 @@ def record_class(rec: object) -> str | None:
     if stored in ERROR_CLASSES:
         return str(stored)
     return classify_name(get("error_type", None), get("status_code", None))
+
+
+# --------------------------------------------------------------------------- #
+# Outcomes: what happened to one request, exactly one per counted record
+# --------------------------------------------------------------------------- #
+SUCCESS = "success"
+RATE_LIMITED = "rate_limited"
+RELAY_TIMEOUT = "relay_timeout"
+RELAY_5XX = "relay_5xx"
+RELAY_4XX = "relay_4xx"
+RELAY_OTHER = "relay_other"
+# The relay's own failures: the error rate's numerator.
+RELAY_ERRORS = (RELAY_TIMEOUT, RELAY_5XX, RELAY_4XX, RELAY_OTHER)
+# Failures before the relay could answer: left out of the judged base.
+IMPAIRED = (NETWORK, LOCAL)
+OUTCOMES = (SUCCESS, RATE_LIMITED, *RELAY_ERRORS, *IMPAIRED)
+
+# ekte's own repeat of a call with another max-tokens parameter: never counted.
+_UNCOUNTED_PHASES = frozenset({"param_retry"})
+
+
+def outcome(rec: object) -> str | None:
+    """The outcome of a request record (a RequestRecord or its dict), one of
+    :data:`OUTCOMES`; None for a record that never counts (a repeated
+    attempt, superseded by its repeat, or ekte's ``param_retry``).
+
+    Precedence: success, then a network or local failure, then the relay's
+    answer: rate-limited (flag or HTTP 429), timeout, 5xx, 4xx, anything else.
+    """
+    get = rec.get if isinstance(rec, dict) else lambda k, d=None: getattr(rec, k, d)
+    if get("retried", False) or get("phase", None) in _UNCOUNTED_PHASES:
+        return None
+    if get("ok", False):
+        return SUCCESS
+    cls = record_class(rec)
+    if cls in IMPAIRED:
+        return str(cls)
+    status = get("status_code", None)
+    if not isinstance(status, int) or isinstance(status, bool):
+        status = None
+    if get("rate_limited", False) or status == 429:
+        return RATE_LIMITED
+    if get("timeout", False):
+        return RELAY_TIMEOUT
+    if status is not None and 500 <= status <= 599:
+        return RELAY_5XX
+    if status is not None and 400 <= status <= 499:
+        return RELAY_4XX
+    return RELAY_OTHER
 
 
 def is_relay_failure(rec: object) -> bool:

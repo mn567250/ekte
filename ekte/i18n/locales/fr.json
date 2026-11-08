@@ -694,7 +694,7 @@
    "reliability_requests <= 0 ({reliability_requests}) ; aucune charge concurrente lancée."
   ],
   "reliability.success_rate": [
-   "Taux de réussite des requêtes concurrentes",
+   "Taux de réussite du contrôle de fiabilité",
    "Avec une concurrence de {concurrency}, {successes} requêtes réussies (sur {requests}, {rate_limited} limitées en débit)."
   ],
   "reliability.rate_limited": [

@@ -694,7 +694,7 @@
    "reliability_requests <= 0 ({reliability_requests}); keine parallele Last erzeugt."
   ],
   "reliability.success_rate": [
-   "Erfolgsquote paralleler Anfragen",
+   "Erfolgsquote der Zuverlässigkeitsprüfung",
    "Bei Parallelität {concurrency} waren {successes} Anfragen erfolgreich (von {requests}, {rate_limited} gedrosselt)."
   ],
   "reliability.rate_limited": [

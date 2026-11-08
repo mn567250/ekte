@@ -258,6 +258,21 @@ relay flag and base URLs, computed from the knowledge base itself, so edits
 from any process count) differs from the version stored in `relay_map_meta`,
 and adds missing URLs when a trigger on `history_metrics` has marked it stale.
 
+Since schema version 9 `history.db` holds `history_outcomes` (`history_id`,
+`op`, `outcome`, `n`): how many of the run's target request records had each
+outcome. One definition of a request's outcome, `errorclass.outcome()`, gives
+every record exactly one of `success`, `rate_limited`, `relay_timeout`,
+`relay_5xx`, `relay_4xx`, `relay_other`, `network` and `local` (repeated
+attempts and `param_retry` calls never count), and `perf.outcomes.run_outcomes()`
+turns a run's records into the counts and rates the report keeps as `outcomes`:
+`success_rate`, `error_rate` and `rate_limited_rate` over the judged requests
+(total minus network and local failures, so the three add up to 1),
+`timeout_rate`, and `impaired_rate` over all of them. `history_metrics` stores
+those rates with their bases `requests_total` and `requests_judged`, so rates
+over many runs pool counts instead of taking a median of rates. Older reports
+are counted from their stored request records. The reliability check keeps its
+own success rate for scoring ("Reliability check success rate").
+
 Where the monitors' API keys are kept is the user's choice
 (`watches.get_key_storage()`, a `secret_meta` row): `memory`, the default, stores
 none — the `api_key` column holds the marker `mem:` and the key lives in
