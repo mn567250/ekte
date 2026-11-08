@@ -391,11 +391,12 @@ _labels_memo: dict[tuple[Any, ...], dict[str, str]] = {}
 
 def relay_labels(conn: sqlite3.Connection) -> dict[str, str]:
     """Every relay key of ``relay_map`` and what it is called (see the
-    module docstring); computed once per map content (its knowledge-base
-    version and size)."""
-    sig = tuple(conn.execute(
+    module docstring); computed once per map content (its database,
+    knowledge-base version and size)."""
+    sig = (*conn.execute(
         "SELECT (SELECT kb_version FROM relay_map_meta WHERE id = 1),"
-        " (SELECT COUNT(*) FROM relay_map), (SELECT MAX(rowid) FROM relay_map)").fetchone())
+        " (SELECT COUNT(*) FROM relay_map), (SELECT MAX(rowid) FROM relay_map),"
+        " (SELECT file FROM pragma_database_list WHERE name = 'main')").fetchone(),)
     with _labels_lock:
         hit = _labels_memo.get(sig)
     if hit is not None:
