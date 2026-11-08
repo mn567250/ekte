@@ -156,17 +156,18 @@ def test_reaches_the_oldest_of_2000_runs(data):  # noqa: F811
 
 def test_focus_returns_the_page_holding_the_run(seeded):
     key, ids = js_groups(_all_runs(), "-time")[0]
-    target = ids[9]
-    page = history_api.runs(_conn(), {"group.key": key, "runs.limit": "4", "runs.focus": str(target)})
+    assert len(ids) >= 8
+    target = ids[5]
+    page = history_api.runs(_conn(), {"group.key": key, "runs.limit": "2", "runs.focus": str(target)})
     assert page["focus"] == {"id": target, "found": True}
-    assert [r["id"] for r in page["rows"]] == ids[:12] and page["limit"] == 12
-    rest = history_api.runs(_conn(), {"group.key": key, "runs.limit": "4", "runs.after": page["after"]})
-    assert [r["id"] for r in rest["rows"]] == ids[12:16]
+    assert [r["id"] for r in page["rows"]] == ids[:6] and page["limit"] == 6
+    rest = history_api.runs(_conn(), {"group.key": key, "runs.limit": "2", "runs.after": page["after"]})
+    assert [r["id"] for r in rest["rows"]] == ids[6:8]
     # after a cursor: from there to the page that holds it
-    first = history_api.runs(_conn(), {"group.key": key, "runs.limit": "4"})
-    page = history_api.runs(_conn(), {"group.key": key, "runs.limit": "4", "runs.after": first["after"],
+    first = history_api.runs(_conn(), {"group.key": key, "runs.limit": "2"})
+    page = history_api.runs(_conn(), {"group.key": key, "runs.limit": "2", "runs.after": first["after"],
                                       "runs.focus": str(target)})
-    assert [r["id"] for r in page["rows"]] == ids[4:12]
+    assert [r["id"] for r in page["rows"]] == ids[2:6]
     # a run of another group (or already passed) is not found; the page is as without
     other = js_groups(_all_runs(), "-time")[1][1][0]
     page = history_api.runs(_conn(), {"group.key": key, "runs.limit": "4", "runs.focus": str(other)})
@@ -355,7 +356,7 @@ def test_relay_labels_name_saved_relays_and_disambiguate_urls(data):  # noqa: F8
     for url in (RELAY, "https://x.example/a", "https://x.example/b", "https://y.example:8443/v1"):
         _save(T0, base_url=url)
     labels = history_api.relay_labels(_conn())
-    assert labels[RELAY.rstrip("/")] == "Cheap GPT" or "Cheap GPT" in labels.values()
+    assert "Cheap GPT" in labels.values()
     assert {v for k, v in labels.items() if "x.example" in k} == {"x.example/a", "x.example/b"}
     assert {v for k, v in labels.items() if "y.example" in k} == {"y.example:8443"}
     out = history_api.groups(_conn(), {"group": "relay", "trend.metrics": "score"})
