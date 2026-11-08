@@ -512,10 +512,9 @@ def widget_integrity(params: Any) -> dict[str, Any]:
     for g in groups:
         cells = {}
         for check in shown:
-            c = checks.get(g.key, {}).get(check)
-            if c is None:
-                continue  # no run of this row ran the check
-            n = c["pass"] + c["warn"] + c["fail"]
+            # all zero when no run of this row ran the check
+            c = checks.get(g.key, {}).get(check) or {"pass": 0, "warn": 0, "fail": 0, "other": 0}
+            n =c["pass"] + c["warn"] + c["fail"]
             cells[check] = {**c, "n": n, "pass_rate": c["pass"] / n if n else None, "low_n": n < MIN_RUNS}
         median, p25, p75, rn = ratios.get(g.key, (None, None, None, 0))
         rn = int(rn or 0)
