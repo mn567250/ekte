@@ -336,9 +336,10 @@ Besides the running request medians, the report gains `history_trends`:
 per-run SQL as the group trends, so a group of that run alone shows exactly
 these values (and `query.aggregate` over that run gives the same, n = 1).
 
-`GET /api/history` (the newest ≤ 500 runs, `limit` / `perf` / `relay`) stays
-until the History page moves to these endpoints (#127); `GET /api/v1/history`
-is part of the public API and is unchanged.
+The History page reads only these endpoints (#127); the old internal
+`GET /api/history` (the newest ≤ 500 runs, `limit` / `perf` / `relay`) is
+gone. `GET /api/v1/history` is part of the public API and is unchanged
+(`limit`, `perf`).
 
 ## HTTP API v1
 

@@ -20,10 +20,8 @@
    * Every group shares ONE column grid (--cols), so Risk / Score / Grade line
    * up across relays. Below 600px each row stacks instead (no h-scroll).
    *
-   * Grade letter colour (by grade, not by risk):
-   *   A, B -> good · C -> sky · D -> warn · E, F -> bad · none -> grey.
-   * Scores (row score, trend value, sparkline) use the same families through
-   * the grade thresholds of ekte/scoring.py (>=80 good, >=70 sky, >=60 warn). */
+   * Colour families (.f-good, .f-sky, …) come from the server (family of a
+   * row's risk, score and grade, of a trend's last value): no grading here. */
   /* Columns: time (with mode / suite under it) · risk · score · grade · chevron.
      Mode sits under the date instead of in its own column so the longest date
      ("Sep 29, 2026, 3:40 PM") and risk label (DE "Abweichungen gefunden", FR
@@ -87,7 +85,8 @@
   .gtitle .gu { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; }
   .gtitle .gu .gk { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); }
   .gtitle .gu .gn { font-size: 13px; font-weight: 600; color: var(--ink-muted); overflow-wrap: anywhere; min-width: 0; }
-  /* group trends (score, grade, latency p50, decode speed p50). Every tile has
+  /* group trends (one or two of score, grade, latency p50, TTFT p50, decode
+     speed p50, error rate: GET /api/metrics history_trends). Every tile has
      a fixed size that depends only on its metric, never on its values or on
      which other trends are shown, so the trends line up across groups:
        [ sparkline (--sw, both rows) | caption over latest value (--vw) ]
@@ -105,7 +104,8 @@
   /* --vw (in the value's 17px) fits the widest value; the column grows to a
      longer caption (it depends on the language only), never to a value */
   .tr[data-m="score"] { --vw: 2.6em; } .tr[data-m="grade"] { --vw: 2.8em; }
-  .tr[data-m="lat"] { --vw: 4.8em; } .tr[data-m="tps"] { --vw: 6.4em; }
+  .tr[data-m="latency_p50"], .tr[data-m="ttft_p50"] { --vw: 4.8em; } .tr[data-m="decode_tps"] { --vw: 6.4em; }
+  .tr[data-m="error_rate"] { --vw: 3.6em; }
   .tr .tl { grid-column: 2; grid-row: 1; text-align: right; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
   .tr .tv { display: contents; }
   .tr .tv svg, .tr .tv .nospark { grid-column: 1; grid-row: 1 / 3; align-self: center; }
@@ -119,16 +119,12 @@
   .trend .base { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
   .trend .dot { fill: currentColor; }
 
-  /* filter bar: the collapsible frame is filterpanel.css / filterpanel.js */
-  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; }
-  .fgrid .fq { grid-column: 1 / -1; }
-  @media (min-width: 700px) { .fgrid .fq { grid-column: auto; } }
-  .fgrid label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .fgrid label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
-  .fgrid .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
-  .fgrid select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
+  /* filter bar: the fields and frame are filters.js / filterpanel.js (+ .css);
+     the trend picker below sits in the panel's body */
   .tsel { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
   .tsel > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); margin-right: 4px; }
+  /* "1 / 2", "2 / 2": how many trends are on, of the maximum */
+  .tsel > .tcount { margin-left: -4px; text-transform: none; letter-spacing: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
   .tsel button {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 12.5px;
     color: var(--ink-muted); background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-pill); padding: 5px 11px;
@@ -255,7 +251,6 @@
     .hist { --sw: 84px; }
     .trend { flex: none; flex-direction: column; align-items: flex-end; gap: 8px; }
     .tr, .tr[data-m] { --vw: 6.4em; padding-left: 0; border-left: 0; }
-    .fgrid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
