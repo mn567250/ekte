@@ -139,7 +139,7 @@
           - option "Behalten" [selected]
           - option "Nicht behalten"
       - 'link "Aus Lauf #1 →"':
-        - /url: /history?base_url=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
       - form "Einrichtung abschließen, um sie einzuschalten":
         - heading "Einrichtung abschließen, um sie einzuschalten" [level=4]
         - paragraph: Die Konfiguration stammt aus dem Lauf im Verlauf. Legen Sie fest, wie oft sie läuft, und aktivieren Sie sie.

@@ -139,7 +139,7 @@
           - option "Conserver" [selected]
           - option "Ne pas conserver"
       - 'link "Depuis l’exécution #1 →"':
-        - /url: /history?base_url=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
       - form "Terminez la configuration pour l’activer":
         - heading "Terminez la configuration pour l’activer" [level=4]
         - paragraph: La configuration provient de l’exécution dans l’Historique. Définissez sa fréquence, puis activez-la.
