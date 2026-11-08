@@ -42,6 +42,10 @@ folder; deleting the last row that names it deletes it (a re-scored run,
 :mod:`ekte.replay`, names its original's file), and :func:`sweep_evidence`
 removes files no row names.
 
+Relay map (schema version 7): ``relay_map`` maps each distinct run URL to
+its knowledge-base relay so SQL can group and filter runs by relay; it is
+rebuilt from the knowledge base on demand (see :mod:`ekte.web.relay_map`).
+
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
 """
@@ -181,6 +185,14 @@ def _v6(conn: sqlite3.Connection) -> None:
     )
 
 
+def _v7(conn: sqlite3.Connection) -> None:
+    """The relay of each distinct run URL (:mod:`ekte.web.relay_map`); filled
+    on first use by ``relay_map.ensure_relay_map``."""
+    from ekte.web import relay_map  # it imports the analytics queries, which import this module
+
+    relay_map.ensure_tables(conn)
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -188,6 +200,7 @@ MIGRATIONS = (
     dbmigrate.Migration(4, _v4),
     dbmigrate.Migration(5, _v5),
     dbmigrate.Migration(6, _v6),
+    dbmigrate.Migration(7, _v7),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 

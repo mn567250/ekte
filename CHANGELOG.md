@@ -22,6 +22,7 @@ ekte has three eras:
 
 ### Added
 
+- **Relay map** (#119): `history.db` schema version 7 adds `relay_map`, which maps every distinct run URL to its knowledge-base relay so SQL can group and filter runs by relay; `ekte.web.relay_map.ensure_relay_map()` keeps it in step with `ekte.knowledge.relays.kb_version()`.
 - **Upgrade fixture for 0.34.0.** `tests/fixtures/upgrade/v0.34.0/` is a data
   directory written by the released 0.34.0 from PyPI (history, monitors with
   stored and unstored keys, your own knowledge-base entries); the upgrade tests

@@ -340,7 +340,7 @@ def test_history_step_six_adds_the_failure_class_and_keeps_old_records(data):
                   "(1, 1, 1, 1, NULL, '{\"absent\": [\"ttft_ms\"]}')")
         c.execute("PRAGMA user_version = 5")
     history.init()
-    assert _version(db) == 6
+    assert _version(db) == dbmigrate.latest(history.MIGRATIONS)
     assert {"error_class", "retried"} <= _cols(db, "history_requests")
     with sqlite3.connect(db) as c:
         recs = analytics_store.get_requests(c, 1)
