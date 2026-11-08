@@ -3,7 +3,8 @@
  *
  * Closed by default: the toggle counts the active filters and a line under it
  * names them; the page's note and "Reset filters" below stay visible either
- * way. The fields inside #fbody are the page's own. */
+ * way. The fields inside #fbody are the page's own, or those of filters.js
+ * (the .ekf-* rules below). */
 .filters { margin-top: 22px; padding: 6px 18px 12px; min-width: 0; }
 .filters[hidden] { display: none; }
 .ftop { display: flex; align-items: center; gap: 10px; }

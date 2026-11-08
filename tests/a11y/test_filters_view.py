@@ -20,7 +20,13 @@ from urllib.parse import parse_qsl, urlsplit
 import pytest
 from playwright.sync_api import BrowserContext, Page, Route
 
-from tests.a11y.harness import assert_no_issues, assert_no_violations, run_axe, settle, track_network
+from tests.a11y.harness import (
+    assert_no_issues,
+    assert_no_violations,
+    run_axe,
+    settle,
+    track_network,
+)
 
 FIXTURE_PATH = "/__filters-fixture"
 FIELDS = ["q", "range", "surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk",
