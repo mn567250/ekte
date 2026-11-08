@@ -653,12 +653,12 @@ def _group(group: str | None, q: Query) -> str:
 def _grouped(
     conn: sqlite3.Connection, sel: RunSelection, group: str, metrics: list[Metric], *,
     buckets: Sequence[str] = (), extra: Sequence[str] = (), keys: Sequence[str] | None = None,
-    quantiles: bool = False, split: Sequence[str] = (),
+    quantiles: bool = False,
 ) -> tuple[list[_Spec], list[dict[str, Any]]]:
     """One SQL query: per group key ``g`` (and bucket expressions ``b0, b1,
     ...``), ``runs``, ``t_min`` / ``t_max``, the description columns of the
     group kind, the ``extra`` aggregates (``x<i>``) and each metric's
-    aggregates (``a<i>``); ``split``: more expressions to group by (``c<i>``).
+    aggregates (``a<i>``).
 
     Runs are grouped by what identifies their group on their own rows (the
     relay id ``gid``, the model ``mk``), never by a value looked up per run:
@@ -670,9 +670,7 @@ def _grouped(
     ident = {"relay": {"gid": RELAY_ID_SQL},
              "relay_model": {"gid": RELAY_ID_SQL, "mk": GROUP_KEY_SQL["model"]},
              "model": {"g": GROUP_KEY_SQL["model"]}, "all": {}}[group]
-    ident = {**ident, **{f"c{i}": e for i, e in enumerate(split)}}
-    cols = [*([] if group != "all" else [f"{GROUP_KEY_SQL['all']} AS g"]),
-            *(f"{e} AS {n}" for n, e in ident.items()),
+    cols = [*(f"{e} AS {n}" for n, e in (ident or {"g": GROUP_KEY_SQL["all"]}).items()),
             *(f"{b} AS b{i}" for i, b in enumerate(buckets)),
             "COUNT(*) AS runs", "MIN(m.started_at) AS t_min", "MAX(m.started_at) AS t_max"]
     if group == "model":
@@ -1005,47 +1003,30 @@ def series(
         assert a is not None and b is not None
         return (b.astimezone(zone).date() - a.astimezone(zone).date()).days + 1
 
-    # One profile pass: per group (and, for the annotations, per ekte version
-    # and knowledge-base profile) runs, first / last run, description and the
-    # values that show whether suite, stream mode or API were mixed.
-    annotate = bucket != "dow_hour"
-    extra = [f"{f}(NULLIF(h.{c}, ''))" for c in _MIXED for f in ("MIN", "MAX")]
-    _, profile = _grouped(conn, sel, group, [], keys=wanted or None, extra=extra,
-                          split=[v for _, v in _CHANGES] if annotate else [])
-    whole: dict[str, dict[str, Any]] = {}
-    for r in profile:
-        w = whole.get(str(r["g"]))
-        if w is None:
-            whole[str(r["g"])] = dict(r)
-            continue
-        w["runs"] += r["runs"]
-        w["t_min"], w["t_max"] = min(w["t_min"], r["t_min"]), max(w["t_max"], r["t_max"])
-        if group == "model":  # in the knowledge base through any of its runs
-            w["mkb"] = max(w["mkb"], r["mkb"])
-        for i in range(0, 2 * len(_MIXED), 2):
-            lo, hi = (v for v in (w[f"x{i}"], r[f"x{i}"]) if v is not None), \
-                (v for v in (w[f"x{i + 1}"], r[f"x{i + 1}"]) if v is not None)
-            w[f"x{i}"], w[f"x{i + 1}"] = min(lo, default=None), max(hi, default=None)
-    if not wanted:
-        ranked = sorted((_result(group, r, {}) for r in whole.values()), key=_rank)
-        wanted = [g.key for g in ranked[:max_keys]]
     used_fold = "week"
-    if bucket == "dow_hour" and span(whole[k] for k in wanted if k in whole) >= \
-            analytics.FOLD_MIN_DAYS.get(fold, 0):
-        used_fold = fold
+    if not wanted or (bucket == "dow_hour" and fold != "week"):
+        _, counted = _grouped(conn, sel, group, [], keys=wanted or None)
+        if not wanted:
+            ranked = sorted((_result(group, r, {}) for r in counted), key=_rank)
+            wanted = [g.key for g in ranked[:max_keys]]
+        shown = [r for r in counted if str(r["g"]) in wanted]
+        if bucket == "dow_hour" and span(shown) >= analytics.FOLD_MIN_DAYS.get(fold, 0):
+            used_fold = fold
 
     bounds = _data_bounds(conn) if wanted else None
     rows: list[dict[str, Any]] = []
     specs: list[_Spec] = []
     if bounds is not None:
         off = offset_sql(zone, _offset_points(conn, sel, *bounds))
+        extra = [f"{f}(NULLIF(h.{c}, ''))" for c in _MIXED for f in ("MIN", "MAX")]
         specs, rows = _grouped(conn, sel, group, [m], keys=wanted, quantiles=quantiles,
-                               buckets=_bucket_sql(bucket, off, block, used_fold))
+                               extra=extra, buckets=_bucket_sql(bucket, off, block, used_fold))
     by_key: dict[str, list[dict[str, Any]]] = {}
     for r in rows:
         by_key.setdefault(str(r["g"]), []).append(r)
-    annotations = {} if not annotate or not by_key else _annotations(
-        conn, sel, group, [r for r in profile if str(r["g"]) in by_key], zone, bucket)
+    relays = {r["gid"]: r["rk"] for rs in by_key.values() for r in rs if "gid" in r}
+    annotations = ({} if bucket == "dow_hour" or not by_key
+                   else _annotations(conn, sel, group, list(by_key), relays, zone, bucket))
 
     out = []
     for key in wanted:
@@ -1063,11 +1044,17 @@ def series(
             n += cell.n
             if cell.n:
                 points.append(Point(bkey, pos, bextra, int(r["runs"]), cell))
-        # the profile covers the same runs as the buckets
-        w = whole[key]
-        mixed = {c: w[f"x{2 * i}"] is not None and w[f"x{2 * i}"] != w[f"x{2 * i + 1}"]
-                 for i, c in enumerate(_MIXED)}
-        out.append(Series(_result(group, w, {}), n, sorted(points, key=lambda p: p.pos),
+        whole = {**members[0], "runs": sum(int(r["runs"]) for r in members),
+                 "t_min": min(r["t_min"] for r in members),
+                 "t_max": max(r["t_max"] for r in members)}
+        if group == "model":  # in the knowledge base through any of its runs
+            whole["mkb"] = max(r["mkb"] for r in members)
+        mixed = {}
+        for i, c in enumerate(_MIXED):
+            lows = [r[f"x{2 * i}"] for r in members if r[f"x{2 * i}"] is not None]
+            highs = [r[f"x{2 * i + 1}"] for r in members if r[f"x{2 * i + 1}"] is not None]
+            mixed[c] = bool(lows) and min(lows) != max(highs)
+        out.append(Series(_result(group, whole, {}), n, sorted(points, key=lambda p: p.pos),
                           annotations.get(key, []), mixed))
     span_days = span({"t_min": s.group.first_run, "t_max": s.group.last_run} for s in out)
     return SeriesResult(m, group, bucket, block, used_fold, fold, span_days, zone_name, out)
@@ -1116,23 +1103,21 @@ def _segments(spans: Mapping[Any, list[str]]) -> list[tuple[str, str, Any]]:
     return out
 
 
-def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str,
-                 profile: Sequence[Mapping[str, Any]], zone: tzinfo,
+def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: list[str],
+                 relays: Mapping[Any, str], zone: tzinfo,
                  size: str) -> dict[str, list[dict[str, Any]]]:
     """Per series key: where the ekte version or knowledge-base profile
     changes from one run to the next in time order (unknown values skipped).
 
-    ``profile``: the series' rows of :func:`series`' profile pass, per key,
-    ekte version (``c0``) and profile (``c1``) the first and last run time.
-    From each value's first and last run per key (:func:`_segments`): where
-    values follow each other, a value changes at the first run of the next
-    one, found by its time; only the runs where values overlap in time (a
-    rollback, two versions in use) are read and compared one by one. Equal
-    to comparing every run with the previous run that has a value."""
+    One grouped query gives each value's first and last run time per key
+    (:func:`_segments`): where values follow each other, a value changes at
+    the first run of the next one, found by its time; only the runs where
+    values overlap in time (a rollback, two versions in use) are read and
+    compared one by one. Equal to comparing every run with the previous run
+    that has a value. ``relays``: relay id -> key of the series' relays."""
     ident = {"relay": [RELAY_ID_SQL], "relay_model": [RELAY_ID_SQL, GROUP_KEY_SQL["model"]],
              "model": [GROUP_KEY_SQL["model"]], "all": []}[group]
     n = len(ident)
-    relays = {r["gid"]: r["rk"] for r in profile if "gid" in r}
 
     def key_of(parts: Sequence[Any]) -> str | None:
         if group == "relay":
@@ -1141,18 +1126,23 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str,
             return f"{relays.get(parts[0])}|{parts[1]}"
         return str(parts[0]) if group == "model" else ALL_KEY
 
-    keyed = sel.and_where(*_keys_sql(conn, group, sorted({str(r["g"]) for r in profile})))
+    keyed = sel.and_where(*_keys_sql(conn, group, keys))
     values = [v for _, v in _CHANGES]
     # key -> per kind: value -> [first, last] run time
     spans: dict[str, list[dict[Any, list[str]]]] = {}
-    for row in profile:
-        per = spans.setdefault(str(row["g"]), [{} for _ in _CHANGES])
-        first, last = row["t_min"], row["t_max"]
-        for i in range(len(_CHANGES)):
-            value = row[f"c{i}"]
+    for row in conn.execute(
+            f"SELECT {', '.join([*ident, *values])}, MIN(m.started_at), MAX(m.started_at)"
+            f" {keyed.sql} GROUP BY {', '.join(str(i + 1) for i in range(n + len(values)))}",
+            keyed.args):
+        key = key_of(row[:n])
+        if key is None:
+            continue
+        per = spans.setdefault(key, [{} for _ in _CHANGES])
+        first, last = row[-2], row[-1]
+        for i, value in enumerate(row[n:n + len(values)]):
             if value is not None:
-                span = per[i].setdefault(value, [first, last])
-                span[0], span[1] = min(span[0], first), max(span[1], last)
+                s = per[i].setdefault(value, [first, last])
+                s[0], s[1] = min(s[0], first), max(s[1], last)
     segments = {key: [_segments(s) for s in per] for key, per in spans.items()}
     every = [seg for per in segments.values() for segs in per for seg in segs]
     starts = sorted({t for what, t, _ in every if what == "one"})
