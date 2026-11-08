@@ -168,8 +168,9 @@ SQL: the zone's UTC offset is a `CASE` over its transitions in the data's span
 (`offset_sql`), and buckets are integer arithmetic on the run's local time in
 seconds, so hour / day / week / `dow_hour` (with `block` and `fold`) buckets
 and their values match `analytics.series`. Annotations (ekte version and
-knowledge-base profile changes) come from each bucket's smallest and largest
-value: only the runs of buckets where a value can change are read. Only
+knowledge-base profile changes) come from each value's first and last run per
+series: a value that follows another changes at its first run, and only the
+runs where values overlap in time (a rollback) are read one by one. Only
 bucket rows (and those runs) reach Python.
 
 **Paging.** `page_runs(conn, q, sort="-time", after=None, limit=20) -> Page`:
