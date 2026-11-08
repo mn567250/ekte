@@ -263,8 +263,9 @@ def test_monitor_open_in_history_uses_the_shared_keys(open_page) -> None:
         run = urlsplit(hrefs[0]).fragment
         page.goto(open_page.base_url + hrefs[0], wait_until="load")
         settle(page)
-        if page.locator("[data-f=relay]").input_value() != query["relay"]:
-            issues.append(f"History's relay filter is {page.locator('[data-f=relay]').input_value()!r}")
+        checked = page.evaluate("() => [...document.querySelectorAll('input[data-m=relay]:checked')].map((b) => b.value)")
+        if checked != [query["relay"]]:
+            issues.append(f"History's relay filter is {checked!r}")
         if not page.locator("#" + run).count():
             issues.append(f"the monitor's run {run} is not in the filtered list")
     assert_no_issues(issues, "monitors -> history [en]", "monitor-link")

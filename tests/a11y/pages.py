@@ -125,8 +125,9 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "chartmotion.css", ("audit", "history", "analytics", "accessibility")),
     (_V2 + "filterpanel.js", ("history", "monitors", "analytics", "kb")),
     (_V2 + "filterpanel.css", ("history", "monitors", "analytics", "kb")),
-    # the shared fields and URL state; History and Analytics move onto it (#126, #127)
+    # the shared fields and URL state (History #127, Analytics #126)
     (_V2 + "filters.js", ("history", "analytics")),
+    (_V2 + "trendpick.js", ("history",)),
     (_V2 + "notice.js", ("audit", "history", "monitors", "analytics", "kb")),
     (_V2 + "accessibility.html", ("accessibility",)),
     # the page fetches bitv-report.json; the catalogue is what it is built from

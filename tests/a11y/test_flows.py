@@ -964,7 +964,7 @@ def pick_surface(page: Page, surface: str) -> None:
 
 LATEST_RUN_JS = """
 async () => {
-  const rows = await (await fetch('/api/history?limit=1')).json();
+  const rows = await (await fetch('/api/v1/history?limit=1')).json();
   return (Array.isArray(rows) ? rows : rows.items)[0].id;
 }
 """
