@@ -976,7 +976,8 @@ def series(
 
     SQLite buckets the runs (the zone's offset is a ``CASE`` over its
     transitions, :func:`offset_sql`) and Python only names the buckets: one
-    query for the buckets, one for the annotations, and one more for the
+    query for the buckets, one grouped query for the annotations (plus small
+    reads of the runs where values change, :func:`_annotations`), and one more for the
     run counts per group when the busiest groups must be found (no ``keys``)
     or a fold needs the span first."""
     group = _group(group, q)
