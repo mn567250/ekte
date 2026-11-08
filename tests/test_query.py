@@ -644,6 +644,24 @@ def test_bench_queries_group_on_the_run_row(data):
     assert kinds == {"tool_version", "kb_profile"}
 
 
+def test_annotations_of_interleaved_values_and_equal_times(data):
+    """Versions and profiles that alternate, repeat, go missing and change
+    between runs started at the same instant: the annotations still equal the
+    Python path's (one run compared with the previous one)."""
+    rng = random.Random(3)
+    for i in range(90):
+        started = T0 + timedelta(hours=(i // 3) * 7 + rng.randrange(3))  # equal times
+        _save(started, base_url=(RELAY, OTHER)[i % 2], model=("model-a", "model-b")[i % 3 == 0],
+              tool_version=rng.choice(("0.1.0", "0.2.0", "0.2.0", "0.3.0", None)),
+              kb_hash=rng.choice(("kb1", "kb1", "kb2", None)))
+    for group in ("relay", "model", "relay_model", "all"):
+        for bucket in ("hour", "day", "week"):
+            _compare_series({"metric": "score", "group": group, "bucket": bucket})
+    s = query.series(_conn(), Query(surface="chat"), "score", "all", "week")
+    kinds = [a["kind"] for a in s.series[0].annotations]
+    assert kinds.count("tool_version") > 20 and kinds.count("kb_profile") > 10
+
+
 def test_buckets_without_unixepoch(seeded, monkeypatch):
     """SQLite before 3.38 (no unixepoch()) buckets alike."""
     monkeypatch.setattr(query.sqlite3, "sqlite_version_info", (3, 37, 2))
