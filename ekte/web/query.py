@@ -92,7 +92,7 @@ import sqlite3
 from bisect import bisect_left, bisect_right
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime, timedelta, timezone, tzinfo
+from datetime import UTC, date, datetime, timedelta, timezone, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -905,23 +905,40 @@ def _offset_points(conn: sqlite3.Connection, sel: RunSelection, first: datetime,
     return out
 
 
-def _bucket_sql(size: str, local: str, offset: str, block: int, fold: str) -> list[str]:
+# Days added to a run's local time in _bucket_sql, so that its integer
+# divisions floor (SQLite's truncate toward zero) for any local time from
+# 1970 on: a multiple of 28, so weekdays and 4-week cycles keep their place.
+_SHIFT_DAYS = 28 * 10_000
+_CYCLE_DAY = (analytics.CYCLE_EPOCH - date(1970, 1, 1)).days
+
+
+def _epoch_sql(column: str) -> str:
+    """Whole seconds since 1970 of an ISO time (fractions dropped)."""
+    if sqlite3.sqlite_version_info >= (3, 38):
+        return f"unixepoch({column})"
+    return f"CAST(strftime('%s', {column}) AS INTEGER)"
+
+
+def _bucket_sql(size: str, offset: str, block: int, fold: str) -> list[str]:
     """SQL expressions that partition runs exactly as
-    :func:`ekte.web.analytics._bucket` (``local``: the local wall time)."""
+    :func:`ekte.web.analytics._bucket` (``offset``: the zone's UTC offset in
+    seconds at the run's time). Integer arithmetic on the run's local time in
+    seconds (parsed once): the values only tell buckets apart; Python names
+    them from a run in each."""
+    local = f"({_epoch_sql('m.started_at')} + {offset} + {_SHIFT_DAYS * 86400})"
+    day = f"({local} / 86400)"  # 1970-01-01 (+ the shift) is a Thursday
     if size == "hour":
-        return [f"strftime('%Y-%m-%dT%H', {local})", offset]  # the offset parts a DST fold
+        return [f"{local} / 3600", offset]  # the offset parts a DST fold
     if size == "day":
-        return [f"date({local})"]
+        return [day]
     if size == "week":
-        return [f"date({local}, '-6 days', 'weekday 1')"]
-    out = [f"strftime('%w', {local})", f"CAST(strftime('%H', {local}) AS INTEGER) / {block}"]
+        return [f"({day} + 3) / 7"]  # weeks start on Monday
+    out = [f"({day} + 4) % 7", f"{local} % 86400 / 3600 / {block}"]  # %w, hour block
     if fold == "4weeks":
-        epoch = analytics.CYCLE_EPOCH.isoformat()
-        # + 4000 cycles keeps the integer division flooring (dates before the epoch)
-        out.append(f"(CAST(julianday(date({local})) - julianday('{epoch}') AS INTEGER) + 112000)"
-                   " / 7 % 4")
+        out.append(f"({day} - {_CYCLE_DAY}) / 7 % 4")
     elif fold == "month_week":
-        out.append(f"MIN(4, (CAST(strftime('%d', {local}) AS INTEGER) - 1) / 7)")
+        out.append(f"MIN(4, (CAST(strftime('%d', {local} - {_SHIFT_DAYS * 86400}, 'unixepoch')"
+                   " AS INTEGER) - 1) / 7)")
     return out
 
 
@@ -1001,13 +1018,11 @@ def series(
     specs: list[_Spec] = []
     if bounds is not None:
         off = offset_sql(zone, _offset_points(conn, sel, *bounds))
-        local = f"datetime(m.started_at, {off} || ' seconds')"
         extra = [f"{f}(NULLIF(h.{c}, ''))" for c in _MIXED for f in ("MIN", "MAX")]
         if annotate:  # the values each bucket holds, for _annotations
             extra += [f"{f}({v})" for _, v in _CHANGES for f in ("MIN", "MAX")]
         specs, rows = _grouped(conn, sel, group, [m], keys=wanted, quantiles=quantiles,
-                               extra=extra, buckets=_bucket_sql(bucket, local, off, block,
-                                                                used_fold))
+                               extra=extra, buckets=_bucket_sql(bucket, off, block, used_fold))
     by_key: dict[str, list[dict[str, Any]]] = {}
     for r in rows:
         by_key.setdefault(str(r["g"]), []).append(r)
