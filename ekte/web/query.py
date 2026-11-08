@@ -2,7 +2,8 @@
 
 One filter parser and one URL schema for History, Analytics and every widget
 (:func:`parse_query`), one SQL ``WHERE`` over ``history`` (``h``),
-``history_metrics`` (``m``) and ``relay_map`` (``rm``) for every filter
+``history_metrics`` (``m``, with the run's relay id) and the run's relay
+(``rm``, ``relay_group``) for every filter
 (:func:`select_runs`), and the aggregations on top of it, computed in SQLite:
 per group (:func:`aggregate`), per group and time bucket (:func:`series`),
 and run rows a page at a time (:func:`page_runs`). Python never filters
@@ -438,7 +439,7 @@ class RunSelection:
 
 
 def select_runs(q: Query) -> RunSelection:
-    """One ``WHERE`` over ``history``, ``history_metrics`` and ``relay_map``
+    """One ``WHERE`` over ``history``, ``history_metrics`` and ``relay_group``
     covering every filter of ``q`` (``group`` is not a filter)."""
     where: list[str] = []
     args: list[Any] = []

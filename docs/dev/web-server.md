@@ -141,7 +141,10 @@ the save time (`ts`) to the run's start (`started_at`).
 **Selection.** `select_runs(q) -> RunSelection` (`.sql` = `FROM … WHERE …`,
 `.args`, `.and_where()`) over `history h` (through `idx_history_query`, so
 only `history.QUERY_INDEX_COLS` may be used), `history_metrics m` and, only
-when needed, `relay_map rm`. `count_runs`, `default_surface` (the most common
+when needed (text search), the run's relay `rm` (`relay_group`, joined on the
+run's `m.relay_id`). Relay filters and grouping use `m.relay_id` itself:
+runs are grouped by integer relay id (and model), and only the resulting
+groups are joined to their relay. `count_runs`, `default_surface` (the most common
 surface of a selection, for endpoints that need one).
 
 **Aggregation.** `aggregate(conn, q, metrics, group=None, *, quantiles=False)
@@ -162,10 +165,12 @@ registered (`sql_functions`).
 **Series.** `series(conn, q, metric, group=None, bucket="day", tz=UTC, *, keys=(),
 block=1, fold="week", max_keys=4, quantiles=False) -> SeriesResult` buckets in
 SQL: the zone's UTC offset is a `CASE` over its transitions in the data's span
-(`offset_sql`), so hour / day / week / `dow_hour` (with `block` and `fold`)
-buckets and their values match `analytics.series`, annotations (ekte version
-and knowledge-base profile changes) come from a SQL window, and only bucket
-rows reach Python.
+(`offset_sql`), and buckets are integer arithmetic on the run's local time in
+seconds, so hour / day / week / `dow_hour` (with `block` and `fold`) buckets
+and their values match `analytics.series`. Annotations (ekte version and
+knowledge-base profile changes) come from each bucket's smallest and largest
+value: only the runs of buckets where a value can change are read. Only
+bucket rows (and those runs) reach Python.
 
 **Paging.** `page_runs(conn, q, sort="-time", after=None, limit=20) -> Page`:
 `sort` is `time`, `score`, `risk` or `grade`, `-` for descending, ties by id;
@@ -175,7 +180,9 @@ pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
 
 **Benchmark.** `scripts/bench_fixture.py --data-dir DIR --bench` writes a
 synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
-reports) and prints p50 / p95 of `aggregate`, `series` and `page_runs`;
+reports, an ekte release every 3 weeks rolled out over 2 days, a profile
+change every 45 days) and prints p50 / p95 (nearest rank, 40 calls) of
+`aggregate`, `series` and `page_runs`;
 `EKTE_BENCH=1 pytest -m slow tests/test_query.py` checks the 50 ms p95 budget
 (`EKTE_BENCH_BUDGET_MS`).
 
