@@ -99,6 +99,7 @@ from ekte.config import SURFACES
 from ekte.models import RiskLevel
 from ekte.web import analytics, analytics_store
 from ekte.web.analytics import ALL_KEY, GROUPS, MIN_RUNS, AnalyticsError, Metric
+from ekte.web.metrics import grade_value_sql
 from ekte.web.relay_map import GROUP_JOIN_SQL, GROUP_KEY_SQL, RELAY_ID_SQL
 
 __all__ = [
@@ -591,6 +592,8 @@ def _spec(m: Metric, i: int, med: str, pct: str, quantiles: bool) -> _Spec:
     elif m.id == "risk_high_share":
         v = ("CASE WHEN NULLIF(h.risk_level, '') IS NULL THEN NULL"
              " WHEN h.risk_level = 'high' THEN 1.0 ELSE 0.0 END")
+    elif m.id == "grade":
+        v = grade_value_sql(f"h.{m.column}")
     elif m.agg == "share":
         col = _column(m.column)
         v = f"CASE WHEN {col} IS NULL THEN NULL WHEN {col} != 0 THEN 1.0 ELSE 0.0 END"
@@ -1181,7 +1184,7 @@ def page_runs(
         f"WITH p AS MATERIALIZED (SELECT m.history_id AS id, {expr} AS s {sel.sql}"
         f" {order.format(s=expr, i='m.history_id')} LIMIT ?)"
         f" SELECT {', '.join(PAGE_COLUMNS)}, p.s AS _sort FROM p"
-        f" JOIN history h ON h.id = p.id JOIN history_metrics m ON m.history_id = p.id {JOIN_SQL}"
+        f" JOIN history h ON h.id = p.id JOIN history_metrics m ON m.history_id = p.id {GROUP_JOIN_SQL}"
         f" {order.format(s='p.s', i='p.id')}", (*sel.args, limit + 1))
     names = [d[0] for d in cur.description]
     rows = [dict(zip(names, r, strict=True)) for r in cur.fetchall()]

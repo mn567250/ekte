@@ -270,18 +270,25 @@ def overall_score(dimensions: list[DimensionScore]) -> float | None:
     return round(weighted / total, 1) if total else None
 
 
-def _rating(score: float | None) -> str | None:
+# The grade of an overall (or dimension) score: the first ``(minimum, letter)``
+# the score reaches, else :data:`GRADE_FLOOR`. Read at call time, so the web
+# UI's colour families and grade letters (ekte/web/metrics.py) follow it.
+GRADE_THRESHOLDS: tuple[tuple[float, str], ...] = ((90, "A"), (80, "B"), (70, "C"), (60, "D"))
+GRADE_FLOOR = "F"
+# Every grade letter, lowest first: a grade's place on the 1..6 scale is its
+# index + 1 (F = 1 … A = 6). E is not given by :func:`rating`; older reports
+# may carry it.
+GRADE_SCALE: tuple[str, ...] = ("F", "E", "D", "C", "B", "A")
+
+
+def rating(score: float | None) -> str | None:
+    """The grade letter of a 0..100 score (:data:`GRADE_THRESHOLDS`)."""
     if score is None:
         return None
-    if score >= 90:
-        return "A"
-    if score >= 80:
-        return "B"
-    if score >= 70:
-        return "C"
-    if score >= 60:
-        return "D"
-    return "F"
+    for minimum, letter in GRADE_THRESHOLDS:
+        if score >= minimum:
+            return letter
+    return GRADE_FLOOR
 
 
 def build_verdict(
@@ -397,7 +404,7 @@ def build_verdict(
 
     return Verdict(
         overall_score=score,
-        rating=_rating(score),
+        rating=rating(score),
         risk_level=risk,
         headline=headline,
         confidence=confidence,

@@ -212,8 +212,10 @@ def test_filters(seeded):
 
 def test_series_daily_with_coverage_low_n_mixed_and_annotations(seeded):
     out = analytics.series({"metric": "ttft_p50", "group": "relay", "bucket": "day"})
-    assert out["metric"] == {"id": "ttft_p50", "unit": "ms", "higher_is_better": False, "agg": "median",
-                             "surfaces": ["chat"]}
+    assert out["metric"] == {"id": "ttft_p50", "unit": "ms", "format": "ms", "higher_is_better": False,
+                             "agg": "median", "surfaces": ["chat"], "label_key": "metric.ttft_p50",
+                             "short_label_key": "metric.ttft_p50.short", "kpi_label_key": "metric.ttft_p50",
+                             "agg_hint_key": "metric.ttft_p50.agg_hint"}
     assert out["tz"] == "UTC" and out["bucket"] == "day"
     keys = [s["key"] for s in out["series"]]
     assert keys == ["cheap-gpt", "openai", OTHER]  # by run count
