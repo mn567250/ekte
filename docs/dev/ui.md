@@ -39,11 +39,26 @@ The custom suite's **Dimensions to run** chips are `v2/dimpick.js`. The
 Knowledge page draws each of its three tabs with one section component,
 `v2/kbsection.js`, on top of the DOM-free helpers in `v2/kbview.js`.
 
-The v2 **Analytics** page (`v2/analytics.html`) reads only `/api/analytics/*`
-(`options` also lists the relay × model pairs, `relay_models`, for its series
-picker). It has one `<section class="card panel">` per panel under one filter
-bar, so new panels slot in; filters and view live in the URL fragment
-(`#range=30&metric=score&…`) and in `localStorage`. Its charts come from
+The v2 **Analytics** page (`v2/analytics.html`, #126) only draws: every
+number, grade, colour family, delta direction (`direction`, `trend_key`) and
+request outcome class comes from `/api/analytics/*`, `/api/filters/options`
+and `/api/metrics` (`docs/dev/web-server.md`, "Analytics API"); labels are the
+registry's i18n keys (`EkteFilters.keyed`), values are formatted by the
+metric's `format`. It has one `<section class="card panel">` per panel under
+the shared filter panel (`EkteFilters`: range, surface, relay, model, suite,
+protocol, probe requests, execution and the page-wide **Group by** `group`),
+so new panels slot in. The **KPI grid** is the summary's 12 `tiles` in
+`KPI_GRID` order, always 4 columns × 3 rows (2 columns below 600 px); a tile
+with `applies: false` keeps its slot and shows "n/a" ("Not measured on this
+surface"); the delta's colour and word follow `direction` (`none`: faded,
+with the "previous period has fewer than N runs" note); the count-up figure is
+`aria-hidden` beside a screen-reader value; pooled rates (`agg: "pooled"`)
+have a toggletip with the metric's `agg_hint` (hover and focus, hoverable,
+Escape hides it). The **errors** panel stacks the relay's outcome classes over
+the calls it answered (429, relay timeout, 5xx, 4xx and other) and keeps
+network and ekte failures apart, greyed out in legend and tables (they are not
+the relay's fault), with the relay error rate and the impaired share shown
+separately. Its charts come from
 `v2/charts.js` (`EkteCharts.timeChart`: hand-drawn inline SVG with median line,
 p25–p75 band, gaps for empty buckets, faded markers for `low_n` buckets,
 annotation lines and a hover tooltip; `fmt` / `fmtDelta` format values by unit)
@@ -81,14 +96,17 @@ the axis ends at the last request and changes only when one lands.
 `Live.stop()` (the audit's end) brings it back to the last request.
 
 The page header and the filter panel sit above five in-page tabs
-(`v2/tabs.js`, as on Knowledge): each `PANELS` entry names its `tab`,
-and only the shown tab's panels load; a filter change reloads that tab and
-marks the others stale (`activate()` loads them when shown). `tabs.js` takes
-`writeHash: false` here, because the page writes the whole view into the
-fragment itself — `#tab=trends&range=30&suite=…&metric=…` (`stateQuery()`),
-which **Copy link to this view** copies (a selected read-only field where the
-clipboard API is missing or refuses); a fragment without `tab` opens Overview,
-and a pasted link (`hashchange`) re-reads the view. The collapsible filter
+(`v2/tabs.js`, as on Knowledge): each `PANELS` entry names its `tab` (and
+sub-tab) and the URL namespaces it reads, and only the shown panels load, each
+with its own `AbortController` and all at once through
+`EkteFilters.fetchWidget`; a filter change reloads them and marks the others
+stale (`activate()` loads them when shown), a widget key (`trend.*`, `heat.*`,
+`board.*`, `errors.*`, `bill.*`) reloads its panel only. The whole view is the
+URL query string (`EkteFilters`): shared filters, widget keys sent to their
+endpoint, page-only keys no endpoint reads (`bill.metric`, `lb.sort`,
+`table.*` for open data tables) and the view keys `tab`, `os` / `ts` / `rs`
+(sub-tabs); **Copy link to this view** in the panel's foot copies it. Old
+`#tab=…` fragment links open the defaults. The collapsible filter
 panel is `v2/filterpanel.js` + `v2/filterpanel.css`, shared with History, Monitors and Knowledge:
 `EkteFilterPanel.create(section, {label, title, storeKey, open, onReset})`
 returns `render({body, foot, count, summary})`, `sync({count, summary})`,
@@ -119,7 +137,7 @@ and `aria-disabled`, with one on that one is, and a "2 / 2" hint next to the
 label (the group's description, in words for screen readers) counts them.
 
 **Shared filters and URL state** (`v2/filters.js`, `window.EkteFilters`, #125;
-History uses it (#127), Analytics moves onto it in #126, Monitors and Knowledge keep
+History (#127) and Analytics (#126) use it, Monitors and Knowledge keep
 their own fields). One module owns the filter fields, the view state and widget
 fetching, inside the `filterpanel.js` frame; it holds no metric logic.
 `EkteFilters.create({section, fields, defaults, page, onChange, optionsUrl, foot, extra, live})`

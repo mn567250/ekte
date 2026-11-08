@@ -80,7 +80,9 @@ def _report(started: datetime, base_url: str, model: str, score: float, saved: b
 
 def _requests(score: float, saved: bool) -> list[dict[str, Any]]:
     """Ten completion calls a few seconds apart: the URL relay hits rate
-    limits and server errors, the saved relay times out now and then."""
+    limits and server errors, the saved relay times out now and then; two
+    of its calls fail before reaching it (an ekte and a network failure,
+    no status code)."""
     out = []
     for seq in range(10):
         status: int | None = 200
@@ -91,6 +93,9 @@ def _requests(score: float, saved: bool) -> list[dict[str, Any]]:
             status, error_type = 502, "http_error"
         elif saved and seq == 9 and score < 85:
             status, error_type = None, "ReadTimeout"
+        elif saved and seq == 8 and score in (89.0, 91.0):
+            # never reached the relay: ekte's own pool, then the network
+            status, error_type = None, "PoolTimeout" if score == 91.0 else "ConnectError"
         out.append({
             "seq": seq, "endpoint": "target", "phase": "passive", "op": "complete", "stream": True,
             "start_ms": seq * 6000.0, "ok": status == 200, "status_code": status,

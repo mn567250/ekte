@@ -37,50 +37,70 @@
   - heading "Analítica de auditorías" [level=1]
   - paragraph: "Compare relays y modelos a lo largo del tiempo con lo que ekte midió en este equipo: puntuaciones, velocidad, tasas de éxito y facturación."
   - status: 1 ejecución anterior tiene una hora de inicio estimada Los gráficos por hora del día los sitúan de forma aproximada.
-  - status: "Actualizado: 14 ejecuciones en este periodo."
+  - status: "Actualizado: 15 ejecuciones en este periodo."
   - region "Filtros":
     - button "Filtros" [expanded]
     - text: Periodo
-    - group "Periodo":
-      - button "Últimos 7 días"
-      - button "Últimos 30 días" [pressed]
-      - button "Últimos 90 días"
-      - button "Todo el periodo"
-      - button "Periodo personalizado"
+    - combobox "Periodo":
+      - option "Todo el periodo"
+      - option "Últimas 24 horas"
+      - option "Últimos 7 días"
+      - option "Últimos 30 días" [selected]
+      - option "Últimos 90 días"
+      - option "Últimos 365 días"
+      - option "Periodo personalizado"
     - text: Tipo de endpoint
     - combobox "Tipo de endpoint":
-      - option "Chat" [selected]
+      - option "Todos" [selected]
+      - option "Chat (15)"
+      - option "Embeddings"
+      - option "Reordenación"
+    - group "Relay / proveedor":
+      - text: Relay / proveedor
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
+      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
+      - checkbox "http://127.0.0.1:9099/v1 (1)"
+      - text: http://127.0.0.1:9099/v1 (1)
+    - group "Modelo declarado":
+      - text: Modelo declarado
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
-      - option "Todos"
-      - option "standard" [selected]
-    - text: Solicitudes de sondeo
-    - combobox "Solicitudes de sondeo":
-      - option "Todos"
-      - option "Streaming" [selected]
+      - option "Todos" [selected]
+      - option "standard (15)"
     - text: Protocolo
     - combobox "Protocolo":
       - option "Todos" [selected]
-      - option "openai"
-    - text: Origen
-    - combobox "Origen":
+      - option "openai (14)"
+      - option "(desconocido) (1)"
+    - text: Solicitudes de sondeo
+    - combobox "Solicitudes de sondeo":
       - option "Todos" [selected]
-      - option "Manual"
-      - option "Monitor"
-    - text: Relay / proveedor
-    - combobox "Relay / proveedor":
+      - option "Streaming (14)"
+      - option "Sin streaming"
+      - option "Streaming + sin streaming"
+      - option "(desconocido) (1)"
+    - text: Ejecución
+    - combobox "Ejecución":
       - option "Todos" [selected]
-      - option "Example Relay"
-      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
-      - option "http://127.0.0.1:9099/v1"
-    - text: Modelo declarado
-    - combobox "Modelo declarado":
-      - option "Todos" [selected]
-      - option "model-a"
-      - option "model-b"
-      - option "gpt-4o"
-    - text: 15 ejecuciones en el historial (4 de monitores).
-  - button "Copiar el enlace a esta vista"
+      - option "Manual (11)"
+      - option "Monitor (4)"
+    - text: Agrupar por
+    - combobox "Agrupar por":
+      - option "Relay" [selected]
+      - option "Modelo"
+      - option "Relay × modelo"
+      - option "Todos"
+    - text: 15 ejecuciones coinciden con estos filtros.
+    - status
+    - button "Copiar el enlace a esta vista"
   - tablist "Vistas del análisis":
     - tab "Resumen" [selected]
     - tab "Tendencias"
@@ -93,18 +113,26 @@
       - tab "Clasificación"
     - tabpanel "Cifras clave":
       - heading "Cifras clave" [level=2]
-      - paragraph: 2 sept – 1 oct 2026, comparado con el periodo de igual duración anterior (3 ago – 1 sept 2026).
-      - list:
-        - listitem: Ejecuciones 14 +14
-        - listitem: Relays 2 +2
-        - listitem: Modelos 2 +2
-        - listitem: Puntuación mediana 79 Sin datos en el periodo anterior
-        - listitem: Proporción de riesgo alto 21,4 % Sin datos en el periodo anterior
-        - listitem: Tasa de éxito 90 % Sin datos en el periodo anterior
-        - listitem: Tiempo hasta el primer token p50 <duration> Sin datos en el periodo anterior
-        - listitem: Velocidad de decodificación 62,9 tok/s Sin datos en el periodo anterior
-        - listitem: Ratio de facturación (entrada) 103 % Sin datos en el periodo anterior Datos de 9 de 14 ejecuciones
-        - listitem: Ratio de facturación (salida) 102 % Sin datos en el periodo anterior Datos de 9 de 14 ejecuciones
+      - paragraph: 1 sept – 1 oct 2026, comparado con el periodo de igual duración anterior (2 ago – 1 sept 2026).
+      - list "Cifras clave":
+        - listitem: Ejecuciones 15 al alza +15
+        - listitem: Relays 3 al alza +3
+        - listitem: Modelos 3 al alza +3
+        - listitem: Puntuación mediana 78 Sin datos en el periodo anterior
+        - listitem: Proporción de riesgo alto 26,7 % Sin datos en el periodo anterior
+        - listitem:
+          - text: Tasa de éxito
+          - 'button "Acerca de: Tasa de éxito"'
+          - text: 87 % Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
+        - listitem:
+          - text: Tasa de errores
+          - 'button "Acerca de: Tasa de errores"'
+          - text: 7,2 % Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
+        - listitem: Latencia p50 <duration> Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
+        - listitem: Tiempo hasta el primer token p50 <duration> Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
+        - listitem: Velocidad de decodificación p50 62,9 tok/s Sin datos en el periodo anterior Datos de 14 de 15 ejecuciones
+        - listitem: Ratio de facturación (entrada) 103,5 % Sin datos en el periodo anterior Datos de 10 de 15 ejecuciones
+        - listitem: Ratio de facturación (salida) 102 % Sin datos en el periodo anterior Datos de 10 de 15 ejecuciones
 - contentinfo:
   - paragraph: "Todo local: las auditorías se ejecutan desde tu propio equipo y tus claves de API nunca salen de él."
   - paragraph: "Una caja negra: ekte aporta evidencia reproducible de desviaciones, no una prueba de fraude. No culpes a un proveedor por una sola ejecución."
