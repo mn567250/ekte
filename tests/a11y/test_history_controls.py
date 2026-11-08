@@ -47,6 +47,13 @@ def _scores(page: Page) -> list[list[str]]:
     )
 
 
+def _open_filters(page: Page) -> None:
+    """Open the filter panel (a link with filters opens it already)."""
+    if page.locator("#ftog").get_attribute("aria-expanded") != "true":
+        page.locator("#ftog").click()
+    settle(page)
+
+
 def _active(page: Page) -> str:
     return page.evaluate(
         "() => { const a = document.activeElement; return a ? (a.id || a.getAttribute('data-sort') || a.getAttribute('data-gkey')"
@@ -176,8 +183,7 @@ def test_trend_picker(open_page, history_server) -> None:
     cannot be turned off. The choice is in the URL, the tiles follow it and
     focus stays on the button."""
     page = _history(open_page, history_server)
-    page.locator("#ftog").click()
-    settle(page)
+    _open_filters(page)
     issues: list[str] = []
     order = ["score", "grade", "latency_p50", "ttft_p50", "decode_tps", "error_rate"]
     btns = _trend_buttons(page)
@@ -239,7 +245,7 @@ def test_copied_link_reproduces_the_view(open_page, history_server) -> None:
     page = _history(open_page, history_server)
     page.locator("[data-sort=score]").click()
     settle(page)
-    page.locator("#ftog").click()
+    _open_filters(page)
     page.locator("[data-trend=latency_p50]").click()
     page.locator("[data-trend=grade]").click()
     settle(page)
@@ -268,7 +274,7 @@ def test_controls_wcag_rules(open_page, history_server, theme: str) -> None:
     collapsed."""
     page = _history(open_page, history_server, theme)
     assert_no_violations(run_axe(page, WCAG_TAGS), f"history controls [en, {theme}]")
-    page.locator("#ftog").click()
+    _open_filters(page)
     page.locator("[data-sort=score]").click()
     settle(page)
     page.locator(".gtog").first.click()
@@ -281,8 +287,7 @@ def test_controls_reflow_at_320_css_px(open_page, history_server) -> None:
     """At 320 CSS px the sort buttons, group toggles, filter toggle and trend
     picker fit and nothing scrolls sideways."""
     page = _history(open_page, history_server, viewport={"width": 320, "height": 640})
-    page.locator("#ftog").click()
-    settle(page)
+    _open_filters(page)
     issues: list[str] = []
     over = page.evaluate("() => document.documentElement.scrollWidth - document.documentElement.clientWidth")
     if over > 0:
