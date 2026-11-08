@@ -330,8 +330,8 @@ def test_errors_tab_keeps_ekte_and_network_failures_apart(open_page) -> None:
             issues.append(f"the {name} column is not greyed out apart")
     row = table.locator("tbody tr", has_text="Example Relay")
     cells = row.locator("td").all_inner_texts()
-    cols = [h for h in head[1:]]
-    values = dict(zip(cols, cells))
+    cols = head[1:]
+    values = dict(zip(cols, cells, strict=False))
     if values.get("ekte") != "1" or values.get("Network") != "1":
         issues.append(f"Example Relay's ekte / network failures: {values}")
     rates = page.locator("#err-body .rates").inner_text()
