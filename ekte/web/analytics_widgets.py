@@ -25,7 +25,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ekte import errorclass
-from ekte.web import analytics_store, history, query
+from ekte.web import analytics_store, facets, history, query
 from ekte.web import metrics as _metrics
 from ekte.web.analytics import (
     BLOCKS,
@@ -504,21 +504,12 @@ def widget_integrity(params: Any) -> dict[str, Any]:
 # run's value as the URL spells it (so "the key is set" is "the value is one
 # of the given ones"), and the Query field the key sets.
 _FACETS: dict[str, tuple[str, str]] = {
-    "surface": ("COALESCE(h.surface, 'chat')", "surface"),
+    "surface": (facets.FACETS["surface"], "surface"),
     "relay": ("rm.relay_key", "relays"),
     "model": (GROUP_KEY_SQL["model"], "models"),
-    "suite": ("COALESCE(NULLIF(h.suite, ''), '-')", "suite"),
-    "mode": ("COALESCE(NULLIF(h.mode, ''), '-')", "mode"),
-    "api": ("COALESCE(NULLIF(h.api, ''), '-')", "api"),
-    "stream": ("COALESCE(NULLIF(h.stream_mode, ''), '-')", "stream"),
-    "detect": ("CASE h.api_auto WHEN 1 THEN 'auto' WHEN 0 THEN 'manual' ELSE '-' END", "detect"),
-    "risk": ("COALESCE(NULLIF(h.risk_level, ''), 'inconclusive')", "risk"),
-    "exec": ("CASE WHEN h.watch_id IS NULL THEN 'manual' ELSE 'monitor' END", "exec"),
+    **{k: (facets.FACETS[k], k) for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec")},
 }
 OPTION_KEYS = tuple(_FACETS)
-# the keys with many values (a list of their own over the runs; the others
-# are folded from one grouping of all of them)
-_MANY = ("relay", "model")
 
 
 def filter_options(params: Any) -> dict[str, Any]:
@@ -532,22 +523,22 @@ def filter_options(params: Any) -> dict[str, Any]:
     runs (for ``dim:<key>`` metrics). Unlike the widgets no surface is
     defaulted: ``surface_default`` names the one they would use.
 
-    One statement, three passes over the selected runs: the runs matching
-    the filters without a value list (``min_score``, ``q``) are read once
-    with each key's value (``r``); ``relay`` (by the integer relay id) and
-    ``model`` lists are a ``GROUP BY`` over them, and every other list, the
-    span and the run count are folded from one ``GROUP BY`` over all the
-    few-valued keys at once (``c``: a row per combination of their values
-    and of whether the relay, model and time filters hold), so each list
-    still counts under every filter but its own."""
+    One statement, three sorts of the selected runs, each by an integer or
+    one value of their own rows: the runs matching the filters without a
+    value list (``min_score``, ``q``) are read once (``r``); the ``relay``
+    list groups them by relay id, the ``model`` list by model, and every
+    other list, the span and the run count are folded from one grouping by
+    the run's combination of few-valued keys (``c``, by
+    ``history_metrics.facet_id``, see :mod:`ekte.web.facets`, and by whether
+    the relay, model and time filters hold), so each list still counts
+    under every filter but its own."""
     q = query.parse_query(params)
     conn = history.query_connection()
     base = query.select_runs(q.replace(
         start=None, end=None, **{f: () if f in ("relays", "models") else None for _, f in _FACETS.values()}))
     base = base.and_where("m.relay_id IS NOT NULL")  # the runs with a relay, as the join to it
-    few = [k for k in _FACETS if k not in _MANY]
-    cols = ", ".join(["h.id AS id", "m.started_at AS t", "m.relay_id AS rid",
-                      *(f"{expr} AS f_{k}" for k, (expr, _) in _FACETS.items() if k != "relay")])
+    cols = ", ".join(["h.id AS id", "m.started_at AS t", "m.relay_id AS rid", "m.facet_id AS fid",
+                      f"{_FACETS['model'][0]} AS f_model"])
 
     def values(key: str) -> tuple[Any, ...]:
         value = getattr(q, _FACETS[key][1])
@@ -556,18 +547,26 @@ def filter_options(params: Any) -> dict[str, Any]:
     def marks(n: int) -> str:
         return ", ".join("?" * n)
 
-    # each filter on r and, folded into c, its condition there
+    # each filter on r, and on c: a facet_combo column, or a 0/1 column k<i> of c
     on_r: dict[str, tuple[str, tuple[Any, ...]]] = {}
+    on_c: dict[str, tuple[str, tuple[Any, ...]]] = {}
     for key in _FACETS:
-        if vs := values(key):
-            on_r[key] = ((f"rid IN (SELECT id FROM relay_group WHERE relay_key IN ({marks(len(vs))}))"
-                          if key == "relay" else f"f_{key} IN ({marks(len(vs))})"), vs)
+        if not (vs := values(key)):
+            continue
+        if key == "relay":
+            on_r[key] = (f"rid IN (SELECT id FROM relay_group WHERE relay_key IN ({marks(len(vs))}))", vs)
+        elif key == "model":
+            on_r[key] = (f"f_model IN ({marks(len(vs))})", vs)
+        else:
+            column = facets.COLUMNS[key]
+            on_r[key] = (f"fid IN (SELECT id FROM facet_combo WHERE {column} IN ({marks(len(vs))}))", vs)
+            on_c[key] = (f"{column} IN ({marks(len(vs))})", vs)
     times = [(c, (analytics_store.format_ts(v),)) for c, v in (("t >= ?", q.start), ("t < ?", q.end))
              if v is not None]
     if times:
         on_r[":time"] = (" AND ".join(c for c, _ in times), tuple(a for _, args in times for a in args))
-    flags = [k for k in on_r if k not in few]  # relay, model, time: a 0/1 column of c each
-    on_c = {k: (f"k{flags.index(k)}", ()) if k in flags else c for k, c in on_r.items()}
+    flags = [k for k in on_r if k not in on_c]  # relay, model, time
+    on_c.update({k: (f"k{i}", ()) for i, k in enumerate(flags)})
 
     def where(conds: Mapping[str, tuple[str, tuple[Any, ...]]], *skip: str) -> tuple[str, list[Any]]:
         parts = [c for k, c in conds.items() if k not in skip]
@@ -575,30 +574,32 @@ def filter_options(params: Any) -> dict[str, Any]:
         return sql, [a for _, args in parts for a in args]
 
     args: list[Any] = list(base.args)
-    c_cols = [f"f_{k}" for k in few] + [f"({on_r[k][0]}) AS k{i}" for i, k in enumerate(flags)]
+    keys = ["fid", *(f"({on_r[k][0]}) AS k{i}" for i, k in enumerate(flags))]
     for k in flags:
         args += on_r[k][1]
     ctes = (f"WITH r AS MATERIALIZED (SELECT {cols} {base.sql}),"
-            f" c AS MATERIALIZED (SELECT {', '.join(c_cols)}, COUNT(*) AS n, MIN(t) AS t0, MAX(t) AS t1"
-            f" FROM r GROUP BY {', '.join(str(i + 1) for i in range(len(c_cols)))}) ")
+            f" c AS MATERIALIZED (SELECT fc.*, s.* FROM (SELECT {', '.join(keys)}, COUNT(*) AS n,"
+            f" MIN(t) AS t0, MAX(t) AS t1 FROM r GROUP BY {', '.join(str(i + 1) for i in range(len(keys)))})"
+            " s JOIN facet_combo fc ON fc.id = s.fid) ")
     branches: list[str] = []
 
-    def branch(sql: str, conds: Mapping[str, tuple[str, tuple[Any, ...]]], *skip: str,
-               tail: str = "") -> None:
+    def branch(sql: str, conds: Mapping[str, tuple[str, tuple[Any, ...]]], *skip: str) -> None:
         w_sql, w_args = where(conds, *skip)
-        branches.append(sql.format(w=w_sql) + tail)
+        branches.append(sql.format(w=w_sql))
         args.extend(w_args)
 
-    for key in few:
-        branch(f"SELECT '{key}', f_{key}, NULL, NULL, NULL, SUM(n) FROM c{{w}} GROUP BY 2", on_c, key)
+    for key, column in facets.COLUMNS.items():
+        branch(f"SELECT '{key}', {column}, NULL, NULL, NULL, SUM(n) FROM c{{w}} GROUP BY 2", on_c, key)
     branch("SELECT 'relay', g.relay_key, g.label, g.kind, g.in_kb, s.n"
            " FROM (SELECT rid, COUNT(*) AS n FROM r{w} GROUP BY rid) s JOIN relay_group g ON g.id = s.rid",
            on_r, "relay")
     branch("SELECT 'model', f_model, NULL, NULL, NULL, COUNT(*) FROM r{w} GROUP BY 2", on_r, "model")
     branch("SELECT ':span', MIN(t0), MAX(t1), NULL, NULL, 0 FROM c{w}", on_c, ":time")
     branch("SELECT ':runs', NULL, NULL, NULL, NULL, COALESCE(SUM(n), 0) FROM c{w}", on_c)
-    branch("SELECT ':dim', d.key, NULL, NULL, NULL, COUNT(*) FROM history_dimensions d"
-           " WHERE d.kind = 'dimension' AND d.history_id IN (SELECT id FROM r{w}) GROUP BY 2", on_r)
+    # a dimension key is listed once one selected run has it (in run order: usually the first)
+    branch("SELECT ':dim', k.key, NULL, NULL, NULL, 0 FROM (SELECT DISTINCT key FROM history_dimensions"
+           " WHERE kind = 'dimension') k WHERE EXISTS (SELECT 1 FROM r CROSS JOIN history_dimensions d"
+           " ON d.history_id = r.id AND d.kind = 'dimension' AND d.key = k.key{w})", on_r)
     rows = conn.execute(ctes + " UNION ALL ".join(branches), args).fetchall()
 
     out: dict[str, Any] = {"filters": q.canonical(), "keys": list(OPTION_KEYS)}

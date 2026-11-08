@@ -646,6 +646,8 @@ def test_a_v3_database_gets_the_surface_column(data):
     rid = history.save(_fixture())
     with _db(data) as conn:  # as ekte with schema 3 left it, before surfaces
         conn.execute("DROP INDEX idx_history_query")  # schema 10, it covers surface
+        for trigger in ("facet_id_insert", "facet_id_update"):  # schema 12, they read surface
+            conn.execute(f"DROP TRIGGER {trigger}")
         conn.execute("ALTER TABLE history DROP COLUMN surface")
         conn.execute("PRAGMA user_version = 3")
     history.init()

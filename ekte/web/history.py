@@ -65,7 +65,9 @@ and filtering by relay use an integer of the run's row (see
 Outcome columns (schema version 12): ``history_metrics.outcome_<outcome>``
 holds the run's ``history_outcomes`` counts summed over its ops, kept equal
 by triggers, so pooling outcomes over many runs reads no second table (see
-:data:`ekte.web.analytics_store.OUTCOME_COLS`).
+:data:`ekte.web.analytics_store.OUTCOME_COLS`); ``history_metrics.facet_id``
+the run's combination of few-valued filter values in ``facet_combo`` (see
+:mod:`ekte.web.facets`).
 
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
@@ -262,10 +264,14 @@ def _v11(conn: sqlite3.Connection) -> None:
 
 
 def _v12(conn: sqlite3.Connection) -> None:
-    """Each run's outcome counts on its own row
-    (:data:`ekte.web.analytics_store.OUTCOME_COLS`, kept by triggers), filled
-    from ``history_outcomes`` for the runs already saved."""
+    """Per-run columns kept by triggers, filled in for the runs already
+    saved: each run's outcome counts
+    (:data:`ekte.web.analytics_store.OUTCOME_COLS`) and its combination of
+    few-valued filter values (``facet_id``, :mod:`ekte.web.facets`)."""
+    from ekte.web import facets
+
     analytics_store.ensure_outcome_columns(conn)
+    facets.ensure_facet_ids(conn)
 
 
 MIGRATIONS = (
