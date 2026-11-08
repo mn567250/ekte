@@ -18,7 +18,7 @@ from starlette.datastructures import QueryParams
 from starlette.requests import Request
 
 from ekte import datadir, dbmigrate
-from ekte.web import analytics, analytics_store, cache, history
+from ekte.web import analytics_store, analytics_widgets, cache, history
 
 _ROOT = Path(__file__).resolve().parents[1]
 
@@ -279,19 +279,19 @@ def client(data):
 @pytest.fixture
 def counted(monkeypatch):
     calls: list[dict] = []
-    real = analytics.options
+    real = analytics_widgets.filter_options
 
-    def options(params=None):
-        calls.append(dict(params or {}))
+    def options(params):
+        calls.append(dict(params))
         return real(params)
 
-    monkeypatch.setattr(analytics, "options", options)
+    monkeypatch.setattr(analytics_widgets, "filter_options", options)
     return calls
 
 
 def test_a_write_by_another_connection_misses_the_cache(client, counted, data):
-    first = client.get("/api/analytics/options")
-    again = client.get("/api/analytics/options")
+    first = client.get("/api/filters/options")
+    again = client.get("/api/filters/options")
     assert first.status_code == again.status_code == 200 and len(counted) == 1
     assert first.json()["runs"] == 1
     # a run saved outside this process's history module
@@ -299,38 +299,38 @@ def test_a_write_by_another_connection_misses_the_cache(client, counted, data):
         c.execute("DELETE FROM history_metrics")
         c.execute("DELETE FROM history")
         c.execute(history._BUMP_SQL)
-    after = client.get("/api/analytics/options")
+    after = client.get("/api/filters/options")
     assert len(counted) == 2 and after.json()["runs"] == 0
     assert after.headers["etag"] != first.headers["etag"]
 
 
 def test_if_none_match_answers_304_until_a_write(client, counted):
-    r = client.get("/api/analytics/options")
+    r = client.get("/api/filters/options")
     etag = r.headers["etag"]
     assert r.headers["cache-control"] == "no-cache"
     counted.clear()
     cache.default_cache.clear()  # 304 must not even need the cached answer
-    r = client.get("/api/analytics/options", headers={"If-None-Match": etag})
+    r = client.get("/api/filters/options", headers={"If-None-Match": etag})
     assert r.status_code == 304 and r.headers["etag"] == etag and not r.content
     assert counted == []
     history.save(_report(1))
-    r = client.get("/api/analytics/options", headers={"If-None-Match": etag})
+    r = client.get("/api/filters/options", headers={"If-None-Match": etag})
     assert r.status_code == 200 and r.headers["etag"] != etag and r.json()["runs"] == 2
     assert len(counted) == 1
 
 
 def test_parameters_are_keyed_canonically(client, counted):
-    client.get("/api/analytics/options", params=[("surface", "chat"), ("from", "")])
-    client.get("/api/analytics/options", params=[("surface", " chat ")])
+    client.get("/api/filters/options", params=[("surface", "chat"), ("from", "")])
+    client.get("/api/filters/options", params=[("surface", " chat ")])
     assert len(counted) == 1
-    client.get("/api/analytics/options", params=[("surface", "embedding")])
+    client.get("/api/filters/options", params=[("surface", "embedding")])
     assert len(counted) == 2
 
 
 def test_summary_from_alone_is_resolved_to_an_absolute_range(client, monkeypatch):
     seen = []
-    real = analytics.summary
-    monkeypatch.setattr(analytics, "summary", lambda p: seen.append(dict(p)) or real(p))
+    real = analytics_widgets.widget_summary
+    monkeypatch.setattr(analytics_widgets, "widget_summary", lambda p: seen.append(dict(p)) or real(p))
     r = client.get("/api/analytics/summary", params={"from": "2026-01-01T00:00:00+00:00"})
     assert r.status_code == 200 and seen[0]["to"] == r.json()["to"]
     assert analytics_store.parse_ts(seen[0]["to"]) is not None
