@@ -100,7 +100,7 @@
         - listitem: 模型 2 +2
         - listitem: 健康分中位数 79 上一周期无数据
         - listitem: 高风险占比 21.4% 上一周期无数据
-        - listitem: 成功率 100% 上一周期无数据
+        - listitem: 成功率 90% 上一周期无数据
         - listitem: 首字延迟 p50 <duration> 上一周期无数据
         - listitem: 输出速度 62.9 tok/s 上一周期无数据
         - listitem: 计费比（输入） 103% 上一周期无数据 9 / 14 次检测有此数据

@@ -100,7 +100,7 @@
         - listitem: Models 2 +2
         - listitem: Median score 79 No data in the previous period
         - listitem: High-risk share 21.4% No data in the previous period
-        - listitem: Success rate 100% No data in the previous period
+        - listitem: Success rate 90% No data in the previous period
         - listitem: Time to first token p50 <duration> No data in the previous period
         - listitem: Decode speed 62.9 tok/s No data in the previous period
         - listitem: Billing ratio (prompt) 103% No data in the previous period Data from 9 of 14 runs

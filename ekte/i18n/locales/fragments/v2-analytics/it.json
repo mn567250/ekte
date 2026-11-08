@@ -108,6 +108,7 @@
   "Rank": "Classifica per",
   "Rate limited (429)": "Limitato (429)",
   "Rate-limited share": "Quota con limite di frequenza",
+  "Impaired request share": "Quota di richieste compromesse",
   "Reasoning token share": "Quota di token di ragionamento",
   "Relay overhead": "Sovraccarico del relay",
   "Relay processing time": "Tempo di elaborazione del relay",
