@@ -1596,9 +1596,15 @@ def create_app() -> FastAPI:
         """
         from ekte.knowledge import load_knowledge_base
         from ekte.web import watches
+        from ekte.web.analytics import RelayResolver
 
         # list_all() never returns api_key, so this is safe to send to the browser.
         rows = watches.list_all()
+        # the relay its runs are grouped under: the `relay=` key of the
+        # monitor's "Open in history" link (the shared URL schema)
+        resolver = RelayResolver() if rows else None
+        for row in rows:
+            row["relay_key"] = resolver.resolve(row).key if resolver else None
         # Flag pinned profiles that differ from what the knowledge base resolves now.
         try:
             kb = load_knowledge_base(copy=False) if rows else None  # read-only
