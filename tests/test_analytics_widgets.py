@@ -215,7 +215,8 @@ def test_heatmap(seeded, client):  # noqa: F811
     out = _get(client, "/api/analytics/heatmap", {"heat.block": "6", "heat.tz": "UTC"})
     assert out["bucket"] == "dow_hour" and out["group"] == "all" and len(out["series"]) == 1
     cells = out["series"][0]["points"]
-    assert sum(c["runs"] for c in cells) == 60 and all(c["hours"] == 6 and c["family"] for c in cells)
+    assert out["series"][0]["runs"] == 60 and all(c["hours"] == 6 and c["family"] for c in cells)
+    assert sum(c["n"] for c in cells) == out["series"][0]["n"] == 54  # runs with a score
     one = _get(client, "/api/analytics/heatmap", {"heat.key": "cheap-gpt", "heat.fold": "4weeks"})
     assert [s["key"] for s in one["series"]] == ["cheap-gpt"] and one["fold"] == "4weeks"
     assert "heat.block must be one of" in _get(client, "/api/analytics/heatmap", {"heat.block": "5"}, 400)["error"]
@@ -473,8 +474,7 @@ def test_filter_options_surfaces(data, client):  # noqa: F811
     _save(T0 + timedelta(hours=1), base_url=OPENAI)
     out = _get(client, "/api/filters/options", {"surface": "embedding"})
     assert out["surface"] == [{"value": "chat", "runs": 2}, {"value": "embedding", "runs": 1}]
-    assert out["runs"] == 1 and out["surface_default"] == "embedding"
-    assert _get(client, "/api/filters/options")["surface_default"] == "chat"
+    assert out["runs"] == 1 and out["surface_default"] == "chat"  # the most common, whatever is selected
 
 
 # --------------------------------------------------------------------------- #
