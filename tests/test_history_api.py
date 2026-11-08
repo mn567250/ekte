@@ -18,14 +18,17 @@ from ekte.web import history, history_api, metrics, query  # noqa: E402
 from ekte.web.query import QueryError  # noqa: E402
 from ekte.web.relay_map import JOIN_SQL  # noqa: E402
 from ekte.web.server import create_app  # noqa: E402
+from tests import test_query as tq  # noqa: E402
 from tests.test_analytics import RELAY  # noqa: E402
-from tests.test_query import _bench_module, _save, data, seeded  # noqa: E402,F401
+from tests.test_query import T0, _bench_module, _save  # noqa: E402
+
+data, seeded = tq.data, tq.seeded  # the query core's fixtures
 
 SORTS = [f"{d}{k}" for k in history_api.SORTS for d in ("", "-")]
 
 
 @pytest.fixture
-def client(data):  # noqa: F811
+def client(data):
     return TestClient(create_app(), base_url="http://localhost")
 
 
@@ -141,7 +144,7 @@ def test_filters_apply(seeded):
     assert [g["key"] for g in out["groups"]] == [k for k, _ in js_groups(want, "-time")]
 
 
-def test_reaches_the_oldest_of_2000_runs(data):  # noqa: F811
+def test_reaches_the_oldest_of_2000_runs(data):
     _bench_module().build(runs=2000, relays=4, requests=5)
     rows = [r for p in _pages(history_api.runs, "runs.after", "runs.limit", 200,
                               group="all", **{"group.key": "(all)"}) for r in p["rows"]]
@@ -202,9 +205,7 @@ def test_group_description(seeded):
     assert {g["relay"]["label"] for g in saved} >= {"Cheap GPT"}
 
 
-def test_summary_row_carries_the_display_decisions(data):  # noqa: F811
-    from tests.test_query import T0
-
+def test_summary_row_carries_the_display_decisions(data):
     rid = _save(T0, score=64.0, risk=None, api_auto=True, watch_id=3)
     row = history_api.runs(_conn(), {"group": "all", "group.key": "(all)"})["rows"][0]
     assert row["id"] == rid
@@ -240,9 +241,7 @@ def test_trend_points_are_the_stored_per_run_values(seeded, monkeypatch):
     assert 0 < rate < 1
 
 
-def test_one_run_trends_equal_the_group_and_the_aggregator(data, client):  # noqa: F811
-    from tests.test_query import T0
-
+def test_one_run_trends_equal_the_group_and_the_aggregator(data, client):
     rid = _save(T0, score=71.5, outcomes={"success": 7, "relay_5xx": 2, "rate_limited": 1})
     trends = client.get(f"/api/history/{rid}?trend=1").json()["history_trends"]
     assert list(trends) == list(metrics.HISTORY_TRENDS)
@@ -349,9 +348,7 @@ def test_url_labels(urls, names):
     assert history_api.url_labels(urls) == dict(zip(urls, names, strict=True))
 
 
-def test_relay_labels_name_saved_relays_and_disambiguate_urls(data):  # noqa: F811
-    from tests.test_query import T0
-
+def test_relay_labels_name_saved_relays_and_disambiguate_urls(data):
     add_relay("Cheap GPT", RELAY)
     for url in (RELAY, "https://x.example/a", "https://x.example/b", "https://y.example:8443/v1"):
         _save(T0, base_url=url)
@@ -370,7 +367,7 @@ def test_relay_labels_name_saved_relays_and_disambiguate_urls(data):  # noqa: F8
 # --------------------------------------------------------------------------- #
 @pytest.mark.slow
 @pytest.mark.timeout(600)
-def test_benchmark_20k_runs_under_budget(data):  # noqa: F811
+def test_benchmark_20k_runs_under_budget(data):
     """Each History widget answers within the budget (p95, cold cache: the
     functions are called directly) on the 20k-run fixture. Opt-in
     (EKTE_BENCH=1), as tests/test_query.py; EKTE_BENCH_BUDGET_MS overrides 50."""

@@ -547,7 +547,7 @@ def _describe(conn: sqlite3.Connection, q: Query, sel: RunSelection, gk: str,
     for h in page:
         row = rows.get(latest.get(h.key, -1))
         rel = row.pop("_relay") if row else None
-        relay = _relay(*rel, labels) if rel and by_relay else None
+        relay = _relay(rel[0], rel[1], rel[2], labels) if rel and by_relay else None
         model = row["claimed_model"] if row and q.group in ("model", "relay_model") else None
         out.append({
             "key": h.key, "kind": q.group, "relay": relay, "claimed_model": model,
