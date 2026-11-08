@@ -1069,17 +1069,37 @@ _MAX_RANGES = 64
 _MAX_TIMES = 500
 
 
-def _clusters(spans: Mapping[Any, list[str]]) -> list[tuple[str, str, list[Any]]]:
-    """Each value's ``[first, last]`` run time as disjoint clusters in time
-    order: ``(start, end, values)``, values whose times overlap (or touch)
-    in one cluster. A cluster of one value holds only runs of that value."""
-    out: list[tuple[str, str, list[Any]]] = []
+def _segments(spans: Mapping[Any, list[str]]) -> list[tuple[str, str, Any]]:
+    """A key's runs of one kind in time order, from each value's ``[first,
+    last]`` run time: ``("one", t, v)`` runs of value ``v`` alone, from its
+    first run at ``t``; ``("read", t0, t1)`` runs from ``t0`` to ``t1``
+    (inclusive) where values overlap, to compare one by one; ``("after", t,
+    v)`` runs of ``v`` alone after ``t``. Values whose times overlap (or
+    touch) form one cluster: before its second value starts only the first
+    one runs, after the second-to-last value ends only the last one."""
+    clusters: list[list[tuple[Any, str, str]]] = []
+    end = ""
     for value, (first, last) in sorted(spans.items(), key=lambda kv: kv[1]):
-        if out and first <= out[-1][1]:
-            t0, t1, values = out.pop()
-            out.append((t0, max(t1, last), [*values, value]))
+        if clusters and first <= end:
+            clusters[-1].append((value, first, last))
+            end = max(end, last)
         else:
-            out.append((first, last, [value]))
+            clusters.append([(value, first, last)])
+            end = last
+    out: list[tuple[str, str, Any]] = []
+    for c in clusters:
+        v1, t0, _ = c[0]
+        if len(c) == 1:
+            out.append(("one", t0, v1))
+            continue
+        start = min(first for _, first, _ in c[1:])
+        lasts = sorted(c, key=lambda x: x[2])
+        stop, (vmax, _, tmax) = lasts[-2][2], lasts[-1]
+        if t0 < start:
+            out.append(("one", t0, v1))
+        out.append(("read", start, stop))
+        if tmax > stop:
+            out.append(("after", stop, vmax))
     return out
 
 
@@ -1090,7 +1110,7 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: 
     changes from one run to the next in time order (unknown values skipped).
 
     One grouped query gives each value's first and last run time per key
-    (:func:`_clusters`): where values follow each other, a value changes at
+    (:func:`_segments`): where values follow each other, a value changes at
     the first run of the next one, found by its time; only the runs where
     values overlap in time (a rollback, two versions in use) are read and
     compared one by one. Equal to comparing every run with the previous run
@@ -1123,10 +1143,10 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: 
             if value is not None:
                 s = per[i].setdefault(value, [first, last])
                 s[0], s[1] = min(s[0], first), max(s[1], last)
-    clusters = {key: [_clusters(s) for s in per] for key, per in spans.items()}
-    starts = sorted({c[0] for per in clusters.values() for cs in per for c in cs if len(c[2]) == 1})
-    mixed = sorted((c[0], c[1]) for per in clusters.values() for cs in per for c in cs
-                   if len(c[2]) > 1)
+    segments = {key: [_segments(s) for s in per] for key, per in spans.items()}
+    every = [seg for per in segments.values() for segs in per for seg in segs]
+    starts = sorted({t for what, t, _ in every if what == "one"})
+    mixed = sorted((t0, t1) for what, t0, t1 in every if what == "read")
 
     cols = ", ".join([*ident, "m.history_id", "m.started_at", *values])
     # the first run of each one-value cluster: the smallest id at its start time
@@ -1171,24 +1191,34 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: 
             "run_id": rid, "started_at": t,
         })
 
-    for key, by_kind in clusters.items():
+    def first_after(key: str, i: int, t: str, value: Any) -> tuple[int, str]:
+        """The first run of ``key`` with ``value`` (kind ``i``) after ``t``."""
+        after = sel.and_where(*_keys_sql(conn, group, [key])).and_where(
+            f"m.started_at > ? AND {values[i]} = ?", t, value)
+        row = conn.execute(f"SELECT m.history_id, m.started_at {after.sql}"
+                           " ORDER BY m.started_at, m.history_id LIMIT 1", after.args).fetchone()
+        return int(row[0]), str(row[1])
+
+    for key, by_kind in segments.items():
         mine = runs.get(key, [])
         times = [r[0] for r in mine]
-        for i, cs in enumerate(by_kind):
+        for i, segs in enumerate(by_kind):
             kind, prev = _CHANGES[i][0], None
-            for t0, t1, vals in cs:
-                if len(vals) == 1:
-                    if prev is not None and vals[0] != prev:
-                        change(key, kind, prev, vals[0], firsts[(key, i, t0, vals[0])], t0)
-                    prev = vals[0]
+            for what, t, v in segs:
+                if what == "read":
+                    for rt, rid, row_values in mine[bisect_left(times, t):bisect_right(times, v)]:
+                        value = row_values[i]
+                        if value is None:
+                            continue
+                        if prev is not None and value != prev:
+                            change(key, kind, prev, value, rid, rt)
+                        prev = value
                     continue
-                for t, rid, row_values in mine[bisect_left(times, t0):bisect_right(times, t1)]:
-                    value = row_values[i]
-                    if value is None:
-                        continue
-                    if prev is not None and value != prev:
-                        change(key, kind, prev, value, rid, t)
-                    prev = value
+                if prev is not None and v != prev:
+                    rid, rt = ((firsts[(key, i, t, v)], t) if what == "one"
+                               else first_after(key, i, t, v))
+                    change(key, kind, prev, v, rid, rt)
+                prev = v
     for items in out.values():
         items.sort(key=lambda a: (a["started_at"], a["kind"], a["run_id"]))
     return out
