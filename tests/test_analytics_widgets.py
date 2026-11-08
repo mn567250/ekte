@@ -101,7 +101,7 @@ def test_every_endpoint_rejects_unknown_and_bad_keys(seeded, client, path):  # n
 
 def test_no_endpoint_uses_the_python_path(seeded, monkeypatch):  # noqa: F811
     for name in ("_load", "_load_all", "_matches", "_prepare"):
-        monkeypatch.setattr(analytics, name, lambda *a, **k: pytest.fail(f"called {name}"))
+        monkeypatch.setattr(analytics, name, lambda *a, _n=name, **k: pytest.fail(f"called {_n}"))
     monkeypatch.setattr(history, "analytics_runs", lambda *a, **k: pytest.fail("loaded runs"))
     monkeypatch.setattr(history, "analytics_requests", lambda *a, **k: pytest.fail("loaded requests"))
     for _, fn, params in WIDGET_CASES:
@@ -133,8 +133,10 @@ def test_summary_tiles_in_grid_order_against_the_previous_range(seeded, client):
     # pooled rates over the judged requests add up to 1
     rates = [tiles[k] for k in ("success_rate", "error_rate")]
     assert all(r["denominator"] == rates[0]["denominator"] > 0 for r in rates)
-    limited = analytics_widgets._kpi_cells(history.query_connection(), analytics_widgets.query.parse_query(
-        {**params, "surface": "chat"}))["rate_limited_rate"]
+    (whole,) = analytics_widgets.query.aggregate(
+        history.query_connection(), analytics_widgets.query.parse_query(params), ["rate_limited_rate"], "all")
+    limited = whole.metrics["rate_limited_rate"]
+    assert limited.denominator == rates[0]["denominator"]
     assert rates[0]["value"] + rates[1]["value"] + limited.value == pytest.approx(1)
     # the score tile is judged on the server
     score = tiles["score"]
