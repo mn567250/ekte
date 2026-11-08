@@ -247,7 +247,7 @@ def _stored(db: Path, rid: int) -> tuple[dict, dict]:
     with sqlite3.connect(db) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute("SELECT * FROM history_metrics WHERE history_id = ?", (rid,)).fetchone()
-        metrics = {k: row[k] for k in row.keys() if k != "history_id"} if row else {}
+        metrics = {k: v for k, v in dict(row).items() if k != "history_id"} if row else {}
         rows = conn.execute(
             "SELECT op, outcome, n FROM history_outcomes WHERE history_id = ?", (rid,)
         ).fetchall()
