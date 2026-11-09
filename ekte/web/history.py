@@ -15,15 +15,6 @@ Knowledge-base snapshots: the full profile a run was audited against
 report JSON carries only the hash, and :func:`get` puts the profile back.
 Snapshots no row points to any more are deleted with the rows.
 
-Performance headline: the target's p50 latency / TTFT / decode speed (see
-:func:`_perf_headline`) is stored in its own columns when a row is saved, so
-the list and trend views never parse ``report_json``. ``perf_done`` marks a
-row whose headline has been computed, which tells "no performance data" (all
-three NULL) apart from "not computed yet". Rows saved before those columns
-existed are backfilled once after the migration; any row still unmarked (a
-failed backfill, or a row written by an older ekte) is computed when it is
-first read and written back.
-
 Analytics (schema version 2): every saved run also gets a row of extracted
 metrics plus its dimension and detector scores (and, from schema version 9, its
 outcome counts per op in ``history_outcomes``), and its ``performance.requests``
@@ -46,7 +37,7 @@ removes files no row names.
 Data version (schema version 8): ``meta`` holds ``data_version``, a counter
 bumped in the same transaction as every write that changes what the web
 endpoints return (:func:`save`, :func:`delete`, :func:`clear`, the analytics
-and perf backfills), from whichever process writes. :func:`data_version`
+backfill), from whichever process writes. :func:`data_version`
 reads it; the web response cache (:mod:`ekte.web.cache`) keys on it.
 
 Relay map (schema version 7): ``relay_map`` maps each distinct run URL to
@@ -69,6 +60,11 @@ by triggers, so pooling outcomes over many runs reads no second table (see
 the run's combination of few-valued filter values in ``facet_combo`` (see
 :mod:`ekte.web.facets`).
 
+Performance headline (schema version 13): the list's p50 latency / TTFT /
+decode speed are read from ``history_metrics`` (one store per value); the
+duplicate ``history`` columns of earlier versions (``latency_p50_ms``,
+``ttft_p50_ms``, ``decode_tps_p50``, ``perf_done``) are dropped.
+
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
 """
@@ -78,7 +74,7 @@ from __future__ import annotations
 import contextlib
 import json
 import sqlite3
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -108,19 +104,14 @@ _SUMMARY_COLS = (
     "surface",
 )
 
-# Performance headline columns, in the order the API returns them.
-_PERF_COLS = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50")
-# Set to 1 once a row's headline has been computed (its values may all be NULL).
-_PERF_DONE = "perf_done"
 # 1: the row's request records are in history_requests; 0: inline (or none);
 # NULL: not looked at yet.
 _SPLIT = "requests_split"
 
 _DB_NAME = "history.db"
 
-_BACKFILL_BATCH = 100
 # Rows per analytics backfill transaction: each one parses a whole report, so
-# fewer than the perf backfill, to keep the write lock short.
+# few, to keep the write lock short.
 _ANALYTICS_BATCH = 25
 
 
@@ -161,10 +152,6 @@ def _v1(conn: sqlite3.Connection) -> None:
     # request mode; NULL for runs saved before these were recorded.
     kb_snapshot.add_link_columns(
         conn, "history", {"api": "TEXT", "api_auto": "INTEGER", "stream_mode": "TEXT"}
-    )
-    # The performance headline, so list and trend views need not parse report_json.
-    kb_snapshot.add_link_columns(
-        conn, "history", {**dict.fromkeys(_PERF_COLS, "REAL"), _PERF_DONE: "INTEGER"}
     )
     # Groups runs by model across relays.
     conn.execute("CREATE INDEX IF NOT EXISTS idx_history_model ON history (claimed_model)")
@@ -274,6 +261,24 @@ def _v12(conn: sqlite3.Connection) -> None:
     facets.ensure_facet_ids(conn)
 
 
+# The performance headline columns of ``history`` before version 13: the same
+# values as history_metrics' (two stores for one value), dropped.
+_DROPPED_PERF_COLS = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50", "perf_done")
+
+
+def _v13(conn: sqlite3.Connection) -> None:
+    """Drop the duplicate performance headline columns of ``history`` (the
+    list reads them from ``history_metrics``). ``ALTER TABLE ... DROP COLUMN``
+    needs SQLite 3.35; an older SQLite keeps the columns, which nothing reads
+    or writes any more."""
+    if sqlite3.sqlite_version_info < (3, 35):
+        return
+    present = {r[1] for r in conn.execute("PRAGMA table_info(history)")}
+    for col in _DROPPED_PERF_COLS:
+        if col in present:
+            conn.execute(f"ALTER TABLE history DROP COLUMN {col}")
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -287,6 +292,7 @@ MIGRATIONS = (
     dbmigrate.Migration(10, _v10),
     dbmigrate.Migration(11, _v11),
     dbmigrate.Migration(12, _v12),
+    dbmigrate.Migration(13, _v13),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
@@ -298,70 +304,9 @@ def _after_migration(conn: sqlite3.Connection) -> None:
     schema and compute any row the backfill has not reached yet.
     """
     try:
-        _backfill_perf(conn)
-    except Exception:
-        # Best-effort: rows left unmarked are computed on read instead.
-        conn.rollback()
-    try:
         _backfill_analytics(conn)
     except Exception:
         # Best-effort: rows left over are picked up by backfill_analytics().
-        conn.rollback()
-
-
-_SET_PERF = (
-    f"UPDATE history SET {', '.join(f'{c} = ?' for c in _PERF_COLS)}, {_PERF_DONE} = 1 "
-    "WHERE id = ?"
-)
-
-
-def _backfill_perf(conn: sqlite3.Connection) -> None:
-    """Compute the perf headline of every row not marked ``perf_done``.
-
-    Works in batches and commits after each one, so other writers are not
-    locked out for long. Idempotent: a row computed twice gets the same values.
-    """
-    last = 0
-    while True:
-        rows = conn.execute(
-            f"SELECT id, report_json FROM history WHERE id > ? AND {_PERF_DONE} IS NULL"
-            " ORDER BY id LIMIT ?",
-            (last, _BACKFILL_BATCH),
-        ).fetchall()
-        if not rows:
-            return
-        conn.executemany(
-            _SET_PERF,
-            [(*_perf_headline(r["report_json"]).values(), r["id"]) for r in rows],
-        )
-        _bump(conn)
-        conn.commit()
-        last = int(rows[-1]["id"])
-
-
-def _fill_perf(conn: sqlite3.Connection, items: list[dict[str, Any]]) -> None:
-    """Pop ``perf_done`` from each item; compute the headline of items not yet
-    marked from their report_json, and store it (best-effort)."""
-    todo = {int(item["id"]): item for item in items if not item.pop(_PERF_DONE, None)}
-    if not todo:
-        return
-    ids = list(todo)
-    updates = []
-    for start in range(0, len(ids), 500):
-        chunk = ids[start:start + 500]
-        rows = conn.execute(
-            f"SELECT id, report_json FROM history WHERE id IN ({', '.join('?' * len(chunk))})",
-            chunk,
-        ).fetchall()
-        for r in rows:
-            headline = _perf_headline(r["report_json"])
-            todo[int(r["id"])].update(headline)
-            updates.append((*headline.values(), r["id"]))
-    try:
-        conn.executemany(_SET_PERF, updates)
-        _bump(conn)
-        conn.commit()
-    except sqlite3.Error:
         conn.rollback()
 
 
@@ -535,19 +480,14 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
             # Left unmarked with its records inline: the backfill retries it.
             metrics, stored, records, split = None, report, None, None
         report_json = json.dumps(stored, ensure_ascii=False)
-        # Serialised the same way, so the stored headline is exactly what
-        # reading report_json back would give.
-        headline = _perf_headline(json.dumps({"performance": report.get("performance")}))
         with _connect() as conn:
             snapshot_id = kb_snapshot.put(conn, snap) if isinstance(snap, dict) else None
             cur = conn.execute(
                 """INSERT INTO history
                    (ts, base_url, claimed_model, model, mode, suite,
                     risk_level, score, rating, report_json, kb_snapshot_id, kb_match, watch_id,
-                    api, api_auto, stream_mode, surface,
-                    latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done, requests_split,
-                    evidence_file)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)""",
+                    api, api_auto, stream_mode, surface, requests_split, evidence_file)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     report.get("generated_at"),
                     target.get("base_url"),
@@ -568,7 +508,6 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                     int(api_auto) if isinstance(api_auto, bool) else None,
                     report.get("stream_mode"),
                     report.get("surface") or "chat",
-                    *(headline[c] for c in _PERF_COLS),
                     split,
                     _evidence_name(report),
                 ),
@@ -585,26 +524,33 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
         return -1
 
 
+# The performance headline of the list (GET /api/v1/history?perf=1), read
+# from the run's extracted metrics.
+PERF_HEADLINE = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50")
+
+
 def recent(limit: int = 50, perf: bool = False) -> list[dict[str, Any]]:
     """Most recent audits, newest first — summary columns only (no report).
 
-    With ``perf`` each row also carries the performance headline of its report
-    (``latency_p50_ms`` / ``ttft_p50_ms`` / ``decode_tps_p50``, see
-    :func:`_perf_headline`) so the UI can draw trends without one call per group.
+    With ``perf`` each row also carries the target's performance headline
+    (:data:`PERF_HEADLINE`, from ``history_metrics``; None where the run did
+    not measure it). The public ``GET /api/v1/history``; the History page
+    reads ``/api/history/groups`` and ``/api/history/runs`` instead.
     """
     try:
         limit = max(1, min(int(limit), 500))
     except (TypeError, ValueError):
         limit = 50
-    cols = ", ".join(_SUMMARY_COLS + ((*_PERF_COLS, _PERF_DONE) if perf else ()))
+    cols = ", ".join((*(f"h.{c}" for c in _SUMMARY_COLS),
+                      *((f"m.{c}" for c in PERF_HEADLINE) if perf else ())))
+    join = " LEFT JOIN history_metrics m ON m.history_id = h.id" if perf else ""
+    if perf:
+        _ensure_extracted(_read())
     with _connect() as conn:
         rows = conn.execute(
-            f"SELECT {cols} FROM history ORDER BY id DESC LIMIT ?", (limit,)
+            f"SELECT {cols} FROM history h{join} ORDER BY h.id DESC LIMIT ?", (limit,)
         ).fetchall()
-        out = [_with_surface(dict(r)) for r in rows]
-        if perf:
-            _fill_perf(conn, out)
-    return out
+    return [_with_surface(dict(r)) for r in rows]
 
 
 def status() -> dict[str, Any]:
@@ -717,26 +663,6 @@ def snapshot_for(rid: int) -> dict[str, Any] | None:
         return kb_snapshot.get(conn, row["kb_snapshot_id"]) if row else None
 
 
-def _perf_headline(report_json: str | None) -> dict[str, float | None]:
-    """Target p50 latency / TTFT / decode speed of a saved report (None if absent)."""
-    out: dict[str, float | None] = {"latency_p50_ms": None, "ttft_p50_ms": None, "decode_tps_p50": None}
-    try:
-        target = (json.loads(report_json or "{}").get("performance") or {}).get("target") or {}
-    except (ValueError, TypeError, AttributeError):
-        return out
-
-    def p50(key: str) -> float | None:
-        stats = target.get(key)
-        value = stats.get("p50") if isinstance(stats, dict) else None
-        return float(value) if isinstance(value, (int, float)) else None
-
-    out["latency_p50_ms"] = p50("latency_ms")
-    out["ttft_p50_ms"] = p50("ttft_ms")
-    tps = p50("decode_tps_local")
-    out["decode_tps_p50"] = tps if tps is not None else p50("decode_tps_reported")
-    return out
-
-
 def delete(rid: int) -> None:
     """Remove one row by id, with its analytics rows, its evidence file (and a
     snapshot nothing else uses). No-op if missing."""
@@ -795,44 +721,8 @@ def sweep_evidence() -> int:
 
 
 # --------------------------------------------------------------------------- #
-# Analytics reads (the query layer builds on these)
+# Reads of the query core (ekte/web/query.py)
 # --------------------------------------------------------------------------- #
-_RUN_COLS = (
-    *(f"h.{c}" for c in _SUMMARY_COLS),
-    *(f"m.{c}" for c in analytics_store.METRIC_COLS),
-)
-
-
-def analytics_runs(start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
-    """Every run with its extracted metrics, oldest first by ``started_at``.
-
-    Each row holds the list view's columns (``id``, ``base_url``,
-    ``claimed_model``, ``suite``, ``watch_id``, ...) and every
-    ``history_metrics`` column. ``start`` (inclusive) / ``end`` (exclusive) are
-    ISO timestamps compared with ``started_at``; runs without a known start
-    time are left out when either is given. Brings the analytics tables up to
-    date first (:func:`backfill_analytics`).
-    """
-    where, args = [], []
-    for op, value in ((">=", start), ("<", end)):
-        if value is None:
-            continue
-        dt = analytics_store.parse_ts(value)
-        if dt is None:
-            raise ValueError(f"not an ISO timestamp: {value!r}")
-        where.append(f"m.started_at {op} ?")
-        args.append(analytics_store.format_ts(dt))
-    sql = (
-        f"SELECT {', '.join(_RUN_COLS)} FROM history h"
-        " JOIN history_metrics m ON m.history_id = h.id"
-        + (" WHERE " + " AND ".join(where) if where else "")
-        + " ORDER BY m.started_at, h.id"
-    )
-    conn = _read()
-    _ensure_extracted(conn)
-    return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
-
-
 def _ensure_extracted(conn: sqlite3.Connection) -> None:
     """Run the analytics backfill when a row still needs it (one indexed
     ``EXISTS`` when none does)."""
@@ -856,101 +746,3 @@ def query_connection() -> sqlite3.Connection:
         with _connect() as writer:
             relay_map.ensure_relay_map(writer)
     return conn
-
-
-def surface_counts() -> dict[str, int]:
-    """Runs per surface over the whole history (NULL reads as chat)."""
-    rows = _read().execute(
-        "SELECT COALESCE(surface, 'chat') AS s, COUNT(*) AS n FROM history GROUP BY s"
-    ).fetchall()
-    return {str(r[0]): int(r[1]) for r in rows}
-
-
-def _chunks(ids: Iterable[int]) -> Iterator[list[int]]:
-    ids = [int(i) for i in ids]
-    for start in range(0, len(ids), 500):
-        yield ids[start:start + 500]
-
-
-def analytics_dimensions(ids: Iterable[int], kind: str | None = None) -> list[dict[str, Any]]:
-    """``history_dimensions`` rows (``history_id``, ``kind``, ``key``, ``score``,
-    ``status``, ``weight``) of the given runs, optionally of one ``kind``
-    (``dimension`` / ``detector``)."""
-    out: list[dict[str, Any]] = []
-    conn = _read()
-    for chunk in _chunks(ids):
-        sql = (
-            "SELECT history_id, kind, key, score, status, weight FROM history_dimensions"
-            f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-        )
-        args: list[Any] = list(chunk)
-        if kind is not None:
-            sql += " AND kind = ?"
-            args.append(kind)
-        out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, kind, key", args))
-    return out
-
-
-def analytics_requests(
-    ids: Iterable[int], endpoint: str | None = "target"
-) -> list[dict[str, Any]]:
-    """Request records of the given runs as stored columns (``history_id``,
-    ``ord`` and every RequestRecord field; booleans as 0/1, ``extra`` left out),
-    in run and list order. ``endpoint`` None returns baseline records too.
-
-    Rows whose records are still inline in ``report_json`` contribute nothing;
-    :func:`analytics_runs` moves them out first.
-    """
-    cols = ", ".join(("history_id", "ord", *analytics_store.REQUEST_FIELDS))
-    out: list[dict[str, Any]] = []
-    conn = _read()
-    for chunk in _chunks(ids):
-        sql = (
-            f"SELECT {cols} FROM history_requests"
-            f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-        )
-        args: list[Any] = list(chunk)
-        if endpoint is not None:
-            sql += " AND endpoint = ?"
-            args.append(endpoint)
-        out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, ord", args))
-    return out
-
-
-# The outcome class of one request record (errors view). First match wins:
-# a timeout is a timeout whatever its status code, a 429 is rate limiting.
-# ``network`` is an exception without an HTTP status (connection refused,
-# TLS, reset); ``other`` a failed call with a 1xx-3xx status or no detail.
-REQUEST_CLASSES = ("success", "client_4xx", "rate_limited", "server_5xx", "timeout", "network", "other")
-_CLASS_SQL = (
-    "CASE WHEN ok = 1 THEN 'success'"
-    " WHEN timeout = 1 THEN 'timeout'"
-    " WHEN rate_limited = 1 OR status_code = 429 THEN 'rate_limited'"
-    " WHEN status_code BETWEEN 500 AND 599 THEN 'server_5xx'"
-    " WHEN status_code BETWEEN 400 AND 499 THEN 'client_4xx'"
-    " WHEN status_code IS NULL AND error_type IS NOT NULL THEN 'network'"
-    " ELSE 'other' END"
-)
-
-
-def analytics_request_classes(
-    ids: Iterable[int], endpoint: str = "target", op: str = "complete"
-) -> list[dict[str, Any]]:
-    """Calls of the given runs (``op``: ``complete`` for completion calls,
-    ``embed`` for embedding calls, ``rerank`` for rerank calls) counted in SQL by run, minute after
-    the run's start (``minute``: whole minutes of ``start_ms``) and outcome
-    class (``cls``, one of :data:`REQUEST_CLASSES`): rows ``history_id``,
-    ``minute``, ``cls``, ``n``. Never loads the records themselves; a run
-    without stored records has no rows."""
-    out: list[dict[str, Any]] = []
-    conn = _read()
-    for chunk in _chunks(ids):
-        sql = (
-            "SELECT history_id, CAST(COALESCE(start_ms, 0) / 60000 AS INTEGER) AS minute,"
-            f" {_CLASS_SQL} AS cls, COUNT(*) AS n FROM history_requests"
-            f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-            " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = ?"
-            " GROUP BY history_id, minute, cls ORDER BY history_id, minute, cls"
-        )
-        out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint, op]))
-    return out

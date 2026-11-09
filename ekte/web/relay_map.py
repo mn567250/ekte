@@ -35,7 +35,7 @@ Grouping keys for SQL, with ``history h``, ``history_metrics m`` and
 * ``relay_model`` = ``relay || '|' || model``
 * ``all`` = the constant ``ALL_KEY``
 
-These are the keys :func:`ekte.web.analytics._group_of` produces in Python.
+Every run has exactly one key per grouping, so groups partition the runs.
 
 Relay ids (schema version 11): every distinct ``relay_key`` also has a row in
 ``relay_group(id INTEGER PRIMARY KEY, relay_key UNIQUE, label, kind, in_kb)``,

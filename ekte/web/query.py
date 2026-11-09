@@ -528,8 +528,8 @@ class Cell:
 @dataclass(frozen=True)
 class GroupResult:
     """A group (series key) and its metric cells. ``key`` / ``label`` /
-    ``kind`` / ``in_kb`` describe it as :func:`ekte.web.analytics._group_of`
-    does (``relay`` / ``model`` are set for ``relay_model``); ``first_run`` /
+    ``kind`` / ``in_kb`` describe it (:class:`ekte.web.analytics.Group` for a
+    relay; ``relay`` / ``model`` are set for ``relay_model``); ``first_run`` /
     ``last_run`` are the extreme ``started_at``."""
 
     key: str
@@ -973,7 +973,7 @@ def series(
 ) -> SeriesResult:
     """One metric per group over time, in the viewer's time zone ``tz``
     (``bucket``: hour, day, week or dow_hour with ``block`` hours per row and
-    ``fold`` week / 4weeks / month_week, as :func:`ekte.web.analytics.series`;
+    ``fold`` week / 4weeks / month_week, as :func:`ekte.web.analytics._bucket`;
     a fold needs :data:`ekte.web.analytics.FOLD_MIN_DAYS` calendar days of
     runs, else it falls back to ``week``). ``keys``: up to ``max_keys`` series
     keys, default the busiest groups. Undated runs are left out; ``quantiles``
