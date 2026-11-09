@@ -20,6 +20,10 @@ second waits (``busy_timeout``), sees the new version and skips.
 Backups are named ``<db>.v<from-version>.<UTC timestamp>.bak`` and the newest
 ``BACKUP_KEEP`` (3) per database are kept; older ones are deleted.
 
+Upgrading a database that holds data prints one line to stderr (never stdout,
+which ``--json`` keeps for JSON): the database, the schema versions, the ekte
+version and the backup (:func:`notice`).
+
 A database with no recorded version (``user_version`` 0) is either new or from
 before versioning; step 1 of every database must therefore be idempotent
 (``CREATE ... IF NOT EXISTS``, add a column only if missing).
@@ -30,6 +34,7 @@ from __future__ import annotations
 import contextlib
 import os
 import sqlite3
+import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -83,6 +88,7 @@ def migrate(conn: sqlite3.Connection, path: Path, migrations: Sequence[Migration
         raise _too_new(path, current, target)
     ran = False
     backed_up = False
+    backup: Path | None = None
     for step in migrations:
         if step.version <= current:
             continue
@@ -97,7 +103,7 @@ def migrate(conn: sqlite3.Connection, path: Path, migrations: Sequence[Migration
                 continue
             if not backed_up:
                 backed_up = True
-                _backup(path, now)
+                backup = _backup(path, now)
             step.apply(conn)
             conn.execute(f"PRAGMA user_version = {step.version}")
             conn.commit()
@@ -105,7 +111,17 @@ def migrate(conn: sqlite3.Connection, path: Path, migrations: Sequence[Migration
         except BaseException:
             conn.rollback()
             raise
+    if backup is not None:  # a database with data was upgraded (not a new one)
+        from ekte import __version__
+
+        notice(f"upgraded {path.name} from schema v{current} to v{target} (ekte {__version__});"
+               f" backup: {backup}")
     return ran
+
+
+def notice(message: str) -> None:
+    """Tell the person at the terminal about upgrade work (stderr, one line)."""
+    print(f"ekte: {message}", file=sys.stderr, flush=True)
 
 
 def _too_new(path: Path, found: int, supported: int) -> DatabaseTooNewError:

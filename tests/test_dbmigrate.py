@@ -347,3 +347,37 @@ def test_history_step_six_adds_the_failure_class_and_keeps_old_records(data):
     # read back as saved: without the fields they predate
     assert all("error_class" not in r and "retried" not in r for r in recs)
     assert "ttft_ms" not in recs[1] and recs[0]["error_type"] == "ProxyError"
+
+
+@pytest.mark.parametrize("name", list(ALL))
+def test_a_fresh_database_is_created_silently(data, name, capsys):
+    with datadir.connect(name, ALL[name]):
+        pass
+    assert capsys.readouterr() == ("", "")
+
+
+def test_an_upgrade_tells_the_terminal_its_versions_backup_and_backfill(data, capsys):
+    """The first run of a new version says on stderr (stdout stays clean for
+    --json) which schema it upgraded from and to, where the backup is, and
+    how many saved runs it re-extracts."""
+    db = data / "history.db"
+    start = 6
+    with sqlite3.connect(db) as c:
+        c.executescript(_HISTORY_V0.split("INSERT")[0])
+        for m in history.MIGRATIONS[:start]:
+            m.apply(c)
+        c.execute("INSERT INTO history (ts, base_url, claimed_model, report_json) "
+                  "VALUES ('t', 'https://x/v1', 'm', '{}')")
+        c.execute(f"PRAGMA user_version = {start}")
+    history.init()
+    out, err = capsys.readouterr()
+    assert out == ""
+    lines = err.splitlines()
+    (backup,) = dbmigrate.backups(db)
+    target = dbmigrate.latest(history.MIGRATIONS)
+    assert any(line.startswith(f"ekte: upgraded history.db from schema v{start} to v{target}")
+               and str(backup) in line for line in lines), err
+    assert "ekte: updating the metrics of 1 saved run(s) for this version..." in lines
+    assert any(line.startswith("ekte: metrics of 1 saved run(s) updated in") for line in lines)
+    history.init()  # current now: nothing more to say
+    assert capsys.readouterr() == ("", "")

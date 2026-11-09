@@ -34,6 +34,12 @@ the browser only draws, and answers are cached until any write — a CLI audit
 in another process included. Every widget answers in under 50 ms p95 on a
 20,000-run history.
 
+Saved runs are carried over: the schema migrations fill every new per-run
+column for the runs already saved, and the analytics backfill re-extracts
+older runs once. The first start of the new version says so on stderr —
+which database, from which schema version to which, where the backup is, and
+how many saved runs it re-extracts.
+
 #### Breaking changes
 
 - **Rate definitions** (#118): the stored `success_rate`, `error_rate`,

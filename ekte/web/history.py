@@ -80,6 +80,7 @@ from __future__ import annotations
 import contextlib
 import json
 import sqlite3
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -373,6 +374,10 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
     pending = sorted(
         int(r[0]) for r in conn.execute(_ANALYTICS_TODO, (analytics_store.EXTRACT_VERSION,))
     )
+    if not pending:
+        return
+    began = time.monotonic()
+    dbmigrate.notice(f"updating the metrics of {len(pending)} saved run(s) for this version...")
     for start in range(0, len(pending), _ANALYTICS_BATCH):
         ids = pending[start:start + _ANALYTICS_BATCH]
         rows = conn.execute(
@@ -410,6 +415,8 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
         except BaseException:
             conn.rollback()
             raise
+    dbmigrate.notice(f"metrics of {len(pending)} saved run(s) updated in"
+                     f" {time.monotonic() - began:.1f} s")
 
 
 def backfill_analytics() -> None:

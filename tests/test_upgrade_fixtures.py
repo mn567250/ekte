@@ -194,7 +194,7 @@ def test_cli_read_paths(upgraded):
     provider = manifest["kb"][0]["provider"]
     result = runner.invoke(cli_app, ["kb", provider, "--json"])
     assert result.exit_code == 0, result.output
-    data = json.loads(result.output)
+    data = json.loads(result.stdout)
     assert data["user_kb"] and not data["warnings"]
     shown = {m.get("id") or m.get("model") for m in data["models"]}
     assert {e["model_id"] for e in manifest["kb"] if e["kind"] == "model"} <= shown
