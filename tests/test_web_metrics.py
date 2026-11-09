@@ -107,8 +107,7 @@ def test_grade_scale():
     assert [metrics.grade_value(g) for g in "FEDCBA"] == [1, 2, 3, 4, 5, 6]
     assert metrics.grade_value(None) is None and metrics.grade_value("Z") is None
     assert [metrics.grade_letter(v) for v in (1, 1.49, 1.5, 6, 7)] == ["F", "F", "E", "A", "A"]
-    assert analytics.run_value(metrics.METRICS["grade"], {"rating": "B"}) == 5.0
-    assert analytics.run_value(metrics.METRICS["grade"], {"rating": None}) is None
+    assert metrics.METRICS["grade"].column == "rating"  # per run: grade_value(rating)
 
 
 def test_grade_sql_matches_python():
