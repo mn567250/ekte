@@ -159,9 +159,9 @@ in another process included. Every widget answers in under 50 ms p95 on a
 - **Within budget** (#117): schema version 11 gives every run an integer relay
   id (`history_metrics.relay_id`, `relay_group`), schema version 12 keeps its
   outcome counts (`history_metrics.outcome_<outcome>`) and its combination of
-  few-valued filter values (`facet_id`, `facet_combo`, `ekte/web/facets.py`)
-  on its metrics row, all kept by triggers; `filters/options` names a relay
-  as History does.
+  few-valued filter values (`facet_id`, `facet_combo`) on its metrics row,
+  all kept by triggers; `filters/options` names a relay as History does.
+- **Every widget under 50 ms p95** (#145): schema version 14 gives every run a numeric run row on `history_metrics` (`ekte/web/run_row.py`, which replaces `facets.py`: start time in exact Unix microseconds `started_us`, score, grade and risk as numbers, `model_group` and other lookup ids, one set of triggers, filled by the migration) and a covering index of it in relay × model order (`idx_run_row`), so no aggregation reads `history` (joined only for text search and page rows) and relay / relay × model groups need no sort; answers are byte-identical on the benchmark parameter sets. `RunSelection` reads `m` only (`.text` instead of `.relay` / `with_relay()`); `query.Cell` is a named tuple.
 - **End-to-end checks** (#128): `tests/test_metrics_e2e.py` checks that the
   rates agree between report, History and Analytics and add up to 100%, that
   one run's aggregates are its stored values, that a save from another

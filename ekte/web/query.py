@@ -1,9 +1,9 @@
 """The query core of the web UI: URL parameters → runs → groups → values → page.
 
 One filter parser and one URL schema for History, Analytics and every widget
-(:func:`parse_query`), one SQL ``WHERE`` over ``history`` (``h``),
-``history_metrics`` (``m``, with the run's relay id) and the run's relay
-(``rm``, ``relay_group``) for every filter
+(:func:`parse_query`), one SQL ``WHERE`` over the runs' numeric run rows
+(``history_metrics m``, :mod:`ekte.web.run_row`; ``history h`` and the
+run's relay ``rm`` are joined only for free-text search) for every filter
 (:func:`select_runs`), and the aggregations on top of it, computed in SQLite:
 per group (:func:`aggregate`), per group and time bucket (:func:`series`),
 and run rows a page at a time (:func:`page_runs`). Python never filters

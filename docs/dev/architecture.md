@@ -386,8 +386,21 @@ or a sort per filter key: `history_metrics.outcome_<outcome>` (one per
 `history_outcomes` counts summed over its ops (all NULL without outcome
 rows), and `history_metrics.facet_id` names the run's combination of
 few-valued filter values (surface, suite, mode, API, stream, detection, risk,
-execution, spelled as the URL takes them) in `facet_combo`
-(`web/facets.py`).
+execution, spelled as the URL takes them) in `facet_combo`.
+
+Since schema version 14 every value the query core selects, groups, sorts or
+aggregates runs by is a number on the run's `history_metrics` row, the *run
+row* (`web/run_row.py`, `RUN_COLUMNS`, the one definition of each): the start
+time in exact Unix microseconds (`started_us`, which orders and compares as
+`started_at`), score, grade and risk as numbers, and ids of small lookup
+tables for the model (`model_group`), raw URL, surface, suite, stream mode,
+API, ekte version, knowledge-base profile and the facet combination. One set
+of triggers keeps them current (the source columns that fire them are read
+off the SQL), and the migration fills them for older runs. So aggregation
+never reads `history`: it is joined only for free-text search and for the
+rows of a page (asserted on the query plans in `tests/test_query.py`).
+`idx_run_row` covers the run row's numbers in relay × model order: grouping
+by relay or relay × model reads index entries in order, with no sort.
 
 Since schema version 10 `history.db` has `idx_history_query`, a covering index
 over the `history` columns the query core filters, groups and sorts by
