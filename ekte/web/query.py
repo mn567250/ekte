@@ -714,11 +714,16 @@ def _grouped(
            + (f" GROUP BY {group_by}" if group_by else ""))
     cur = conn.execute(run_row.label_sql(group, sql), (*join_args, *sel.args))
     names = [d[0] for d in cur.description]
-    rows = [dict(zip(names, row, strict=True)) for row in cur.fetchall()]
-    for r in rows:  # the first and last run time as started_at spells them
-        r["t_min"], r["t_max"] = us_text(r["t_min"]), us_text(r["t_max"])
-    # without GROUP BY an empty selection still gives one row (of 0 runs)
-    return specs, [r for r in rows if r["runs"]]
+    first = len(names) - sum(len(s.aggs) for s in specs)  # the metrics' aggregates come last
+    rows = []
+    for row in map(tuple, cur.fetchall()):
+        r = dict(zip(names, row, strict=True))
+        if not r["runs"]:  # without GROUP BY an empty selection still gives one row
+            continue
+        # the first and last run time as started_at spells them
+        r["t_min"], r["t_max"], r["_aggs"] = us_text(r["t_min"]), us_text(r["t_max"]), row[first:]
+        rows.append(r)
+    return specs, rows
 
 
 def group_ids(conn: sqlite3.Connection, group: str, keys: Iterable[str]) -> list[int]:
@@ -766,9 +771,11 @@ def _keys_sql(conn: sqlite3.Connection, group: str, keys: Sequence[str]) -> tupl
 def _cells(specs: list[_Spec], row: Mapping[str, Any]) -> dict[str, Cell]:
     out, i = {}, 0
     runs = int(row["runs"])
+    aggs = row["_aggs"]  # the metrics' aggregates, in spec order (see _grouped)
     for s in specs:
-        out[s.metric.id] = _cell(s, [row[f"a{j}"] for j in range(i, i + len(s.aggs))], runs)
-        i += len(s.aggs)
+        k = len(s.aggs)
+        out[s.metric.id] = _cell(s, aggs[i:i + k], runs)
+        i += k
     return out
 
 

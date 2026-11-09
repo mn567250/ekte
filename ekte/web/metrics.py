@@ -265,12 +265,18 @@ def family(m: Metric, value: float | None) -> str:
     """The colour family of a value (:data:`FAMILIES`): a score or grade by its
     grade letter, latency / speed values their neutral series family, anything
     else (or no value) grey."""
+    return judge(m, value)[0]
+
+
+def judge(m: Metric, value: float | None) -> tuple[str, str | None]:
+    """A value's colour family (:func:`family`) and grade letter (or None),
+    worked out once."""
     if value is None:
-        return "grey"
+        return "grey", None
     letter = _grade(m, value)
     if letter is not None:
-        return GRADE_FAMILY.get(letter, "grey")
-    return _UNIT_FAMILY.get(m.unit, "grey")
+        return GRADE_FAMILY.get(letter, "grey"), letter
+    return _UNIT_FAMILY.get(m.unit, "grey"), None
 
 
 def direction(m: Metric, delta: float | None, previous_n: int | None = None) -> str:

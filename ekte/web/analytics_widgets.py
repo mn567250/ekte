@@ -125,8 +125,7 @@ def _judged(m: Metric, cell: dict[str, Any]) -> dict[str, Any]:
     of its value in place: ``family`` and ``grade``, as
     :func:`ekte.web.metrics.present` gives them (its other fields are not
     needed: thousands of cells per board)."""
-    v = _metrics._number(cell.get("value"))
-    cell["family"], cell["grade"] = _metrics.family(m, v), _metrics._grade(m, v)
+    cell["family"], cell["grade"] = _metrics.judge(m, _metrics._number(cell.get("value")))
     return cell
 
 
