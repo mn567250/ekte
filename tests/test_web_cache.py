@@ -365,6 +365,8 @@ def test_read_connection_checks_the_schema_once(data, monkeypatch):
     assert len(calls) == 1
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows cannot delete or replace a file that a "
+                    "connection holds open, so a replaced file cannot occur there")
 def test_read_connection_reopens_a_replaced_file(data):
     history.save(_report())
     conn = datadir.read_connection("history.db", history.MIGRATIONS)
