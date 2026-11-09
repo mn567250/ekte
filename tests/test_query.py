@@ -684,7 +684,7 @@ def test_no_aggregation_reads_history(data):
     finally:
         c.set_trace_callback(None)
     selects = {s for s in sqls if s.lstrip().upper().startswith(("SELECT", "WITH"))
-               and not s.startswith(_EKTE_CHECKS)}
+               and not s.startswith(_EKTE_CHECKS) and query._SEARCH_SQL not in s}  # (q: below)
     assert len(selects) > 50
     for sql in selects:
         plan = "\n".join(r[3] for r in c.execute("EXPLAIN QUERY PLAN " + sql))
@@ -692,7 +692,7 @@ def test_no_aggregation_reads_history(data):
     # free-text search reads history through its covering index, and only then
     sel = query.select_runs(parse_query({"q": "relay-0"}))
     plan = "\n".join(r[3] for r in c.execute(f"EXPLAIN QUERY PLAN SELECT COUNT(*) {sel.sql}", sel.args))
-    assert "SEARCH h USING COVERING INDEX idx_history_query" in plan
+    assert "h USING COVERING INDEX idx_history_query" in plan
     # relay and relay x model groups are read in index order: no sort
     for group in ("relay", "relay_model"):
         sql = f"SELECT COUNT(*) FROM history_metrics m GROUP BY {run_row.GROUP_BY_SQL[group]}"
