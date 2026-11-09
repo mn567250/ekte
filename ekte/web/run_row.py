@@ -6,8 +6,10 @@ group, sort or aggregate runs: everything it needs from ``history`` is
 copied onto the run's ``history_metrics`` row (``m``) as a number,
 :data:`RUN_COLUMNS`, the single definition of each value:
 
-* ``started_ts`` — ``started_at`` as whole Unix seconds (floored), for time
-  filters and buckets in integer arithmetic;
+* ``started_us`` — ``started_at`` in Unix microseconds: it orders and
+  compares exactly as ``started_at`` (:func:`ekte.web.query.time_sql`),
+  gives the first and last run time back without text
+  (:func:`ekte.web.query.us_text`), and buckets in integer arithmetic;
 * ``score`` — the run's score; ``grade_value`` — its grade on the 1..6
   scale (:func:`ekte.web.metrics.grade_value_sql`); ``risk_value`` — its
   risk level in History's order (:data:`RISK_ORDER`: clean 0,
@@ -114,7 +116,9 @@ _RISK_SQL = ("CASE WHEN NULLIF(h.risk_level, '') IS NULL THEN NULL ELSE CASE h.r
              + " ".join(f"WHEN '{r}' THEN {i}" for i, r in enumerate(RISK_ORDER)) + " ELSE -1 END END")
 
 RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
-    "started_ts": ("INTEGER", "CAST(strftime('%s', m.started_at) AS INTEGER)"),
+    # whole seconds (floored) and the microseconds of the fixed-width form
+    "started_us": ("INTEGER", "CAST(strftime('%s', m.started_at) AS INTEGER) * 1000000"
+                              " + CAST(substr(m.started_at, 21, 6) AS INTEGER)"),
     "score": ("REAL", "h.score"),
     "grade_value": ("INTEGER", grade_value_sql("h.rating")),
     "risk_value": ("INTEGER", _RISK_SQL),

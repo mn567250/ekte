@@ -391,29 +391,30 @@ _SEARCH_SQL = " || char(10) || ".join(
     ("h.base_url", "rm.label", "h.claimed_model", "h.model", "h.suite", "h.mode", "h.api")
 )
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
+_US = timedelta(microseconds=1)
 
 
-def _ts(dt: datetime) -> int:
-    """Whole Unix seconds of ``dt``, floored (as ``started_ts``)."""
-    return (dt - _EPOCH) // timedelta(seconds=1)
+def us_of(dt: datetime) -> int:
+    """``dt`` in Unix microseconds (as ``started_us`` holds a run's start)."""
+    return (dt - _EPOCH) // _US
+
+
+def us_text(us: Any) -> str | None:
+    """A ``started_us`` value (or an aggregate of them) as the ``started_at``
+    text it was made from (None stays None)."""
+    return None if us is None else analytics_store.format_ts(_EPOCH + int(us) * _US)
 
 
 def time_sql(op: str, dt: datetime, run: str = "m") -> str:
-    """``started_at {op} dt`` (``op``: ``>=`` or ``<``) as SQL on the integer
-    ``started_ts`` of the run row ``run``, exactly: for a ``dt`` with a
-    fraction of a second the runs of that second compare by ``started_at``."""
-    ts, col = _ts(dt), f"{run}.started_ts"
-    if not dt.microsecond:
-        return f"{col} {op} {ts}"
-    return (f"({col} {op.rstrip('=')} {ts} OR {col} = {ts}"
-            f" AND {run}.started_at {op} '{analytics_store.format_ts(dt)}')")
+    """``started_at {op} dt`` as SQL on the integer ``started_us`` of the run
+    row ``run`` (exactly: both have microseconds)."""
+    return f"{run}.started_us {op} {us_of(dt)}"
 
 
 # Run times that can be shifted into every time zone (others count as undated).
-# (Unary + keeps SQLite from walking a started_ts index for this nearly
+# (Unary + keeps SQLite from walking a started_us index for this nearly
 # unbounded range: a table scan is faster.)
-_DATED_SQL = (f"{time_sql('>=', analytics._T_MIN)} AND {time_sql('<', analytics._T_MAX)}"
-              .replace("m.started_ts", "+m.started_ts"))
+_DATED_SQL = f"+{time_sql('>=', analytics._T_MIN)} AND +{time_sql('<', analytics._T_MAX)}"
 
 
 def _like(text: str) -> str:
@@ -463,7 +464,7 @@ def _in_table(column: str, table: str, key: str, values: Sequence[Any]) -> tuple
 
 def select_runs(q: Query) -> RunSelection:
     """One ``WHERE`` over the runs' ``history_metrics`` rows covering every
-    filter of ``q`` (``group`` is not a filter): the time on ``started_ts``,
+    filter of ``q`` (``group`` is not a filter): the time on ``started_us``,
     relays and models by their ids, the few-valued keys by the run's facet
     combination (one lookup of the matching ``facet_combo`` ids), the score
     on ``m.score``; only ``q`` (text) reads ``history``."""
@@ -698,7 +699,7 @@ def _grouped(
     if keys is not None:
         sel = sel.and_where(*_keys_sql(conn, group, keys))
     cols = [f"{run_row.GROUP_ID_SQL[group]} AS gid", *(f"{b} AS b{i}" for i, b in enumerate(buckets)),
-            "COUNT(*) AS runs", "MIN(m.started_at) AS t_min", "MAX(m.started_at) AS t_max"]
+            "COUNT(*) AS runs", "MIN(m.started_us) AS t_min", "MAX(m.started_us) AS t_max"]
     if group == "model":
         cols.append("MAX(m.kb_model_id IS NOT NULL) AS mkb")
     cols += [f"{e} AS x{i}" for i, e in enumerate(extra)]
@@ -712,6 +713,8 @@ def _grouped(
     cur = conn.execute(run_row.label_sql(group, sql), (*join_args, *sel.args))
     names = [d[0] for d in cur.description]
     rows = [dict(zip(names, row, strict=True)) for row in cur.fetchall()]
+    for r in rows:  # the first and last run time as started_at spells them
+        r["t_min"], r["t_max"] = us_text(r["t_min"]), us_text(r["t_max"])
     # without GROUP BY an empty selection still gives one row (of 0 runs)
     return specs, [r for r in rows if r["runs"]]
 
@@ -891,7 +894,7 @@ _STEP_SPAN = timedelta(days=366 * 20)
 
 def offset_sql(zone: tzinfo, points: Iterable[datetime], run: str = "m") -> str:
     """SQL for the UTC offset (seconds) of ``zone`` at the start of the run
-    row ``run`` (its ``started_ts``, see :func:`time_sql`):
+    row ``run`` (its ``started_us``, see :func:`time_sql`):
     a constant, or a ``CASE`` over the zone's transitions. ``points`` are UTC
     instants, sorted, with at most one transition between two neighbours that
     are less than :data:`_STEP` apart; a transition between neighbours further
@@ -959,9 +962,9 @@ def _bucket_sql(size: str, offset: str, block: int, fold: str) -> list[str]:
     """SQL expressions that partition runs exactly as
     :func:`ekte.web.analytics._bucket` (``offset``: the zone's UTC offset in
     seconds at the run's time). Integer arithmetic on the run's local time in
-    seconds (``started_ts``): the values only tell buckets apart; Python
+    seconds (from ``started_us``): the values only tell buckets apart; Python
     names them from a run in each."""
-    local = f"(m.started_ts + {offset} + {_SHIFT_DAYS * 86400})"
+    local = f"(m.started_us / 1000000 + {offset} + {_SHIFT_DAYS * 86400})"
     day = f"({local} / 86400)"  # 1970-01-01 (+ the shift) is a Thursday
     if size == "hour":
         return [f"{local} / 3600", offset]  # the offset parts a DST fold

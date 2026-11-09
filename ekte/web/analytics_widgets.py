@@ -543,7 +543,7 @@ def filter_options(params: Any) -> dict[str, Any]:
     base = query.select_runs(q.replace(
         start=None, end=None, **{f: () if f in ("relays", "models") else None for f in _FIELDS.values()}))
     base = base.and_where("m.relay_id IS NOT NULL")  # the runs with a relay, as the join to it
-    cols = ", ".join(["m.history_id AS id", "m.started_at AS t", "m.relay_id AS rid", "m.facet_id AS fid",
+    cols = ", ".join(["m.history_id AS id", "m.started_us AS t", "m.relay_id AS rid", "m.facet_id AS fid",
                       "m.model_id AS mid"])
 
     def values(key: str) -> tuple[Any, ...]:
@@ -567,7 +567,7 @@ def filter_options(params: Any) -> dict[str, Any]:
             column = run_row.COLUMNS[key]
             on_r[key] = (f"fid IN (SELECT id FROM facet_combo WHERE {column} IN ({marks(len(vs))}))", vs)
             on_c[key] = (f"{column} IN ({marks(len(vs))})", vs)
-    times = [(c, (analytics_store.format_ts(v),)) for c, v in (("t >= ?", q.start), ("t < ?", q.end))
+    times = [(c, (query.us_of(v),)) for c, v in (("t >= ?", q.start), ("t < ?", q.end))
              if v is not None]
     if times:
         on_r[":time"] = (" AND ".join(c for c, _ in times), tuple(a for _, args in times for a in args))
@@ -617,7 +617,7 @@ def filter_options(params: Any) -> dict[str, Any]:
     dims: list[str] = []
     for key, value, a, b, c, n in rows:
         if key == ":span":
-            out["span"] = {"first": value, "last": a}
+            out["span"] = {"first": query.us_text(value), "last": query.us_text(a)}
         elif key == ":runs":
             out["runs"] = int(n)
         elif key == ":dim":
