@@ -15,7 +15,6 @@
   "[vector sample of {n} numbers]": "[vector sample of {n} numbers]",
   "{n} requests": "{n} requests",
   "{input} input tokens (usage)": "{input} input tokens (usage)",
-  "batch probe": "batch probe",
-  "No audits of this endpoint type.": "No audits of this endpoint type."
+  "batch probe": "batch probe"
  }
 }

@@ -65,9 +65,7 @@ class Metric:
     divided by the summed base ``base`` (a ``history_metrics`` column,
     ``requests_judged`` or ``requests_total``); the per-run ``column`` is
     then that run's own ratio. ``count`` (:data:`COUNTS` only) is counted over
-    the runs, not aggregated. The per-run Python path of
-    :mod:`ekte.web.analytics` (:func:`ekte.web.analytics.aggregate`) still takes
-    the median of a pooled metric's per-run values.
+    the runs, not aggregated.
 
     ``fmt`` overrides the display format of the unit (:data:`FORMATS`);
     ``short`` / ``kpi`` say the metric has a shorter label (narrow tiles) / a

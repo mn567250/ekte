@@ -12,6 +12,7 @@ from ekte import datadir, dbmigrate
 from ekte.knowledge import store
 from ekte.knowledge.relays import add_relay, kb_version
 from ekte.web import analytics, history, relay_map
+from tests import analytics_reference as reference
 
 OPENAI = "https://api.openai.com/v1"
 RELAY = "https://relay.example/v1"
@@ -59,7 +60,7 @@ def _sql_groups() -> dict[int, dict]:
 
 
 def _assert_matches_resolver() -> None:
-    runs = history.analytics_runs()
+    runs = reference.runs()
     sql = _sql_groups()
     assert set(sql) == {int(r["id"]) for r in runs}  # every run joins exactly once
     resolver = analytics.RelayResolver()
@@ -69,7 +70,7 @@ def _assert_matches_resolver() -> None:
             g.key, g.label, g.kind, g.in_kb), run["base_url"]
         run["_group"] = g
         for name in relay_map.GROUP_KEY_SQL:
-            assert row[f"g_{name}"] == analytics._group_of(name)(run)[0], (name, run["base_url"])
+            assert row[f"g_{name}"] == reference.group_of(name)(run)[0], (name, run["base_url"])
 
 
 def test_map_groups_runs_exactly_as_the_resolver(data):

@@ -1,12 +1,15 @@
-"""History store: perf headline columns, one-time schema check and backfill."""
+"""History store: the list's performance headline (from history_metrics), the
+duplicate headline columns dropped by step 13, one-time schema check and
+backfill."""
 
 from __future__ import annotations
 
+import json
 import sqlite3
 
 import pytest
 
-from ekte.web import history
+from ekte.web import analytics_store, history
 
 _TARGET = {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"}
 
@@ -30,6 +33,9 @@ _OLD_SCHEMA = (
     " rating TEXT, report_json TEXT, kb_snapshot_id INTEGER, kb_match TEXT, watch_id INTEGER,"
     " api TEXT, api_auto INTEGER, stream_mode TEXT)"
 )
+# The headline columns ekte 0.34 kept on history (dropped by step 13).
+_DROPPED = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50", "perf_done")
+_V12_SCHEMA = _OLD_SCHEMA[:-1] + ", latency_p50_ms REAL, ttft_p50_ms REAL, decode_tps_p50 REAL, perf_done INTEGER)"
 
 
 def _report(i: int, perf) -> dict:
@@ -40,9 +46,32 @@ def _report(i: int, perf) -> dict:
     return r
 
 
+def _headline(report_json: str | None) -> dict:
+    """The target's p50 latency / TTFT / decode speed of a saved report, as
+    ekte computed it from report_json before step 13 (the oracle)."""
+    out: dict = {"latency_p50_ms": None, "ttft_p50_ms": None, "decode_tps_p50": None}
+    try:
+        target = (json.loads(report_json or "{}").get("performance") or {}).get("target") or {}
+    except (ValueError, TypeError, AttributeError):
+        return out
+
+    def p50(key):
+        stats = target.get(key)
+        value = stats.get("p50") if isinstance(stats, dict) else None
+        # a boolean is no measurement (the old columns took True for 1.0)
+        ok = isinstance(value, (int, float)) and not isinstance(value, bool)
+        return float(value) if ok else None
+
+    out["latency_p50_ms"] = p50("latency_ms")
+    out["ttft_p50_ms"] = p50("ttft_ms")
+    tps = p50("decode_tps_local")
+    out["decode_tps_p50"] = tps if tps is not None else p50("decode_tps_reported")
+    return out
+
+
 def _old_recent(db, limit=500):
-    """recent(perf=True) as computed before the headline columns existed (a
-    row without a surface reads as chat)."""
+    """recent(perf=True) computed from report_json, as before step 13 (a row
+    without a surface reads as chat)."""
     conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row
     summary = tuple(c for c in history._SUMMARY_COLS if c != "surface")
@@ -53,7 +82,7 @@ def _old_recent(db, limit=500):
     for item in out:
         report_json = item.pop("report_json", None)
         item["surface"] = "chat"
-        item.update(history._perf_headline(report_json))
+        item.update(_headline(report_json))
     return out
 
 
@@ -65,6 +94,14 @@ def _user_version(db) -> int:
         conn.close()
 
 
+def _columns(db) -> set[str]:
+    conn = sqlite3.connect(db)
+    try:
+        return {r[1] for r in conn.execute("PRAGMA table_info(history)")}
+    finally:
+        conn.close()
+
+
 @pytest.fixture
 def data(tmp_path, monkeypatch):
     monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
@@ -72,9 +109,7 @@ def data(tmp_path, monkeypatch):
 
 
 def _seed_old_db(db, schema: str = _OLD_SCHEMA) -> None:
-    """A database written by a ekte from before the headline columns."""
-    import json
-
+    """A database written by an older ekte (no analytics tables)."""
     conn = sqlite3.connect(db)
     conn.execute(schema)
     for i, perf in enumerate(_PERFS * 30):  # > one backfill batch
@@ -91,11 +126,16 @@ def _seed_old_db(db, schema: str = _OLD_SCHEMA) -> None:
     conn.close()
 
 
+def _boom(*_a, **_k):
+    raise AssertionError("report_json parsed again")
+
+
 def test_saved_rows_read_like_the_old_report_json_path(data):
     for i, perf in enumerate(_PERFS):
         assert history.save(_report(i, perf)) > 0
     db = data / "history.db"
     assert _user_version(db) == history._SCHEMA_VERSION
+    assert not _columns(db) & set(_DROPPED)  # one store per value: history_metrics
     new = history.recent(500, perf=True)
     assert new == _old_recent(db)
     assert [list(r) for r in new] == [list(r) for r in _old_recent(db)]  # same key order
@@ -115,44 +155,40 @@ def test_old_database_is_backfilled_once_with_identical_values(data, monkeypatch
     assert history.recent(500, perf=True) == expected_recent
     assert _user_version(db) == history._SCHEMA_VERSION
 
-    # Once migrated (rows without performance included), later connections do
-    # not re-check the schema or re-scan report_json.
-    monkeypatch.setattr(history, "_backfill_perf", _boom)
-    monkeypatch.setattr(history, "_perf_headline", _boom)
+    # Once migrated and extracted, reads never parse report_json again.
+    monkeypatch.setattr(analytics_store, "extract_metrics", _boom)
     assert history.recent(500, perf=True) == expected_recent
 
 
-def _boom(*_a, **_k):
-    raise AssertionError("report_json parsed again")
-
-
-def test_failed_backfill_is_computed_on_read_and_stored(data, monkeypatch):
+def test_step_13_drops_the_duplicate_headline_columns(data):
+    """A 0.34-era database (headline columns on history, filled) loses them;
+    the list reads the same values from history_metrics."""
     db = data / "history.db"
-    _seed_old_db(db)
+    _seed_old_db(db, _V12_SCHEMA)
+    with sqlite3.connect(db) as conn:
+        conn.execute("UPDATE history SET latency_p50_ms = -1, perf_done = 1")  # never read
+    assert set(_DROPPED) <= _columns(db)
     expected = _old_recent(db)
-    calls = []
-
-    def fail(conn):
-        calls.append(1)
-        raise sqlite3.OperationalError("database is locked")
-
-    with monkeypatch.context() as m:
-        m.setattr(history, "_backfill_perf", fail)
-        assert history.recent(500, perf=True) == expected
-        assert history.recent(3, perf=True) == expected[:3]
-    assert len(calls) == 1  # the schema check ran once
-    assert _user_version(db) == history._SCHEMA_VERSION
-    # What reads computed was stored, so nothing is parsed again.
-    monkeypatch.setattr(history, "_perf_headline", _boom)
     assert history.recent(500, perf=True) == expected
+    assert _user_version(db) == history._SCHEMA_VERSION
+    if sqlite3.sqlite_version_info >= (3, 35):
+        assert not _columns(db) & set(_DROPPED)
+    assert history.save(_report(999, _PERFS[1])) > 0  # writes without them
 
 
-def test_rows_written_by_an_older_ekte_are_computed_on_read(data, monkeypatch):
-    import json
+def test_step_13_keeps_the_columns_on_an_old_sqlite(data, monkeypatch):
+    db = data / "history.db"
+    _seed_old_db(db, _V12_SCHEMA)
+    monkeypatch.setattr(history.sqlite3, "sqlite_version_info", (3, 34, 1))
+    assert history.recent(500, perf=True) == _old_recent(db)
+    assert set(_DROPPED) <= _columns(db)  # harmless: nothing reads or writes them
+    assert history.save(_report(999, _PERFS[1])) > 0
 
+
+def test_rows_written_by_an_older_ekte_are_extracted_on_read(data, monkeypatch):
     history.save(_report(0, _PERFS[1]))
     db = data / "history.db"
-    conn = sqlite3.connect(db)  # an older ekte does not know the new columns
+    conn = sqlite3.connect(db)  # an older ekte does not know the analytics tables
     for i, perf in enumerate(_PERFS[1:4], 1):
         conn.execute(
             "INSERT INTO history (ts, base_url, claimed_model, report_json) VALUES (?,?,?,?)",
@@ -161,8 +197,8 @@ def test_rows_written_by_an_older_ekte_are_computed_on_read(data, monkeypatch):
     conn.commit()
     conn.close()
     expected = _old_recent(db)
-    assert history.recent(perf=True) == expected  # computed on this read, then stored
-    monkeypatch.setattr(history, "_perf_headline", _boom)
+    assert history.recent(perf=True) == expected  # extracted on this read, then stored
+    monkeypatch.setattr(analytics_store, "extract_metrics", _boom)
     assert history.recent(perf=True) == expected
     assert expected[1]["ts"] == "old2" and expected[1]["decode_tps_p50"] == 42.5
 
@@ -172,6 +208,7 @@ def test_schema_is_rebuilt_for_a_new_or_deleted_database(data, monkeypatch, tmp_
     db = data / "history.db"
     for side in (db, db.with_name("history.db-wal"), db.with_name("history.db-shm")):
         side.unlink(missing_ok=True)
+    history.datadir.close_read_connections()
     assert history.recent(perf=True) == []
     assert history.save(_report(1, _PERFS[2])) > 0
 

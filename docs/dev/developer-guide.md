@@ -98,7 +98,13 @@ ekte/
     security.py        loopback bind, Host allowlist, Origin/JSON checks, headers
     history.py         audit history store (history.db)
     analytics_store.py its analytics tables: per-run metrics, request records
-    analytics.py       analytics queries: KPIs, time series, leaderboards
+    query.py           the query core: URL schema, SQL selection, aggregation, series, paging
+    metrics.py         the metric registry and its display semantics (present())
+    analytics_widgets.py  the Analytics widgets (/api/analytics/*, /api/filters/options)
+    history_api.py     the History widgets (/api/history/groups, /api/history/runs)
+    analytics.py       shared constants, metric ids, relay resolver, time buckets
+    relay_map.py       run URL -> knowledge-base relay, materialised for SQL
+    cache.py           the widget response cache (data version, ETag, single-flight)
     watches.py         monitor store (watches.db)
     masterkey.py       the master key's states and actions (server and `ekte secret`)
     static/            scripts shared by every page (lang.js, i18n.js, icons.js, …)

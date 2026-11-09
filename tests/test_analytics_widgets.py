@@ -99,13 +99,28 @@ def test_every_endpoint_rejects_unknown_and_bad_keys(seeded, client, path):  # n
         assert r.status_code == 200
 
 
-def test_no_endpoint_uses_the_python_path(seeded, monkeypatch):  # noqa: F811
-    for name in ("_load", "_load_all", "_matches", "_prepare"):
-        monkeypatch.setattr(analytics, name, lambda *a, _n=name, **k: pytest.fail(f"called {_n}"))
-    monkeypatch.setattr(history, "analytics_runs", lambda *a, **k: pytest.fail("loaded runs"))
-    monkeypatch.setattr(history, "analytics_requests", lambda *a, **k: pytest.fail("loaded requests"))
-    for _, fn, params in WIDGET_CASES:
-        fn(params)
+def test_no_endpoint_loads_request_records(seeded, monkeypatch):  # noqa: F811
+    """No widget reads raw request records (outcomes are counted per run at
+    save time) or parses a run's report."""
+    c = history.query_connection()
+    sqls: list[str] = []
+    c.set_trace_callback(sqls.append)
+    try:
+        for _, fn, params in WIDGET_CASES:
+            fn(params)
+    finally:
+        c.set_trace_callback(None)
+    assert sqls and not [s for s in sqls if "history_requests" in s or "report_json" in s]
+
+
+def test_the_python_path_is_gone():
+    for name in ("_load", "_load_all", "_matches", "_prepare", "_group_of", "summary", "series",
+                 "options", "leaderboard", "breakdown", "errors", "integrity", "parse_filters"):
+        assert not hasattr(analytics, name), name
+    for name in ("analytics_runs", "analytics_requests", "analytics_dimensions",
+                 "analytics_request_classes", "REQUEST_CLASSES", "_CLASS_SQL", "_perf_headline",
+                 "_fill_perf", "_PERF_COLS", "_PERF_DONE", "write_mark"):
+        assert not hasattr(history, name), name
 
 
 @pytest.mark.parametrize(("fn", "params"), [(fn, p) for _, fn, p in WIDGET_CASES])

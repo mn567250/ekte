@@ -59,10 +59,10 @@
       - text: Relé / leverandør
       - checkbox "Example Relay (9)"
       - text: Example Relay (9)
-      - checkbox "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)"
-      - text: https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1 (5)
-      - checkbox "http://127.0.0.1:9099/v1 (1)"
-      - text: http://127.0.0.1:9099/v1 (1)
+      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
+      - text: gateway.a-very-long-relay-hostname.example.org (5)
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
     - group "Oppgitt modell":
       - text: Oppgitt modell
       - checkbox "model-a (11)"

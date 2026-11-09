@@ -1,6 +1,6 @@
 """The query core (ekte/web/query.py): URL schema, SQL run selection,
-aggregation, time series and keyset paging, checked against the Python
-Analytics path (ekte/web/analytics.py) on the same database."""
+aggregation, time series and keyset paging, checked against a plain-Python
+reference (tests/analytics_reference.py) on the same database."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from ekte.perf.outcomes import from_counts
 from ekte.web import analytics, history, query
 from ekte.web.analytics import AnalyticsError
 from ekte.web.query import Query, QueryError, parse_query
+from tests import analytics_reference as reference
 from tests.test_analytics import OPENAI, OTHER, RELAY, T0, _report
 
 NOW = datetime(2026, 6, 1, 12, 0, 30, tzinfo=UTC)
@@ -167,7 +168,7 @@ def _ids(q: Query) -> set[int]:
 def _expected(pred) -> set[int]:
     """The runs a Python predicate over the analytics rows (plus relay key) keeps."""
     resolver = analytics.RelayResolver()
-    rows = history.analytics_runs()
+    rows = reference.runs()
     full = {int(r["id"]): dict(r) for r in _conn().execute("SELECT * FROM history")}
     return {int(r["id"]) for r in rows
             if pred({**full[int(r["id"])], **r, "relay_key": resolver.resolve(r).key})}
@@ -241,9 +242,9 @@ def _pooled_by_hand(group: str, metric: analytics.Metric) -> dict[str, float | N
         counts.setdefault(int(rid), {})[outcome] = counts.get(int(rid), {}).get(outcome, 0) + int(n)
     num: dict[str, int] = {}
     den: dict[str, int] = {}
-    for run in history.analytics_runs():
+    for run in reference.runs():
         run["_group"] = resolver.resolve(run)
-        key = analytics._group_of(group)(run)[0]
+        key = reference.group_of(group)(run)[0]
         c = counts.get(int(run["id"]), {})
         total = sum(c.values())
         base = total if metric.base == "requests_total" else total - sum(c.get(o, 0) for o in errorclass.IMPAIRED)
@@ -257,11 +258,7 @@ def _pooled_by_hand(group: str, metric: analytics.Metric) -> dict[str, float | N
 def test_aggregate_matches_the_python_path(seeded, group):
     mids = _chat_metrics()
     new = {g.key: g for g in query.aggregate(_conn(), Query(surface="chat"), mids, group, quantiles=True)}
-    old: dict[str, dict] = {}
-    for start in range(0, len(mids), analytics.MAX_METRICS):
-        out = analytics.breakdown({"surface": "chat", "group": group}, mids[start:start + analytics.MAX_METRICS])
-        for row in out["rows"]:
-            old.setdefault(row["key"], {**row, "metrics": {}})["metrics"].update(row["metrics"])
+    old = {row["key"]: row for row in reference.breakdown(mids, group)}
     assert list(new) == [r["key"] for r in sorted(old.values(), key=lambda r: (-r["runs"], r["label"].lower(), r["key"]))]
     changed = False
     for key, row in old.items():
@@ -340,7 +337,7 @@ def test_one_run_returns_its_stored_value_for_every_metric(data):
     _write("UPDATE history SET score = ? WHERE id = ?", (100 / 3, rid))
     _write("INSERT OR REPLACE INTO history_dimensions VALUES (?, 'dimension', 'odd', ?, 'pass', 1.0)",
            (rid, 0.1 + 0.2))
-    run = history.analytics_runs()[0]
+    run = reference.runs()[0]
     run["_dims"] = {"odd": 0.1 + 0.2}
     c = _conn()
     ids = [*analytics.METRICS, "dim:odd", "dim:missing"]
@@ -352,7 +349,7 @@ def test_one_run_returns_its_stored_value_for_every_metric(data):
                 assert g.runs == 1
                 for mid in ids:
                     m, cell = analytics.metric(mid), g.metrics[mid]
-                    want = analytics.run_value(m, run)
+                    want = reference.run_value(m, run)
                     assert cell.value == want, (mid, native, group)
                     assert cell.n == (want is not None) and cell.low_n
                     if m.agg == "median":
@@ -435,7 +432,10 @@ _POINT_KEYS = ("bucket", "dow", "hour", "hours", "week", "runs", "value", "media
 
 
 def _compare_series(params: dict, **kw) -> None:
-    old = analytics.series({"surface": "chat", **params})
+    tz = params.get("tz", "UTC")
+    old = reference.series(params.get("metric", "score"), params.get("group") or "relay",
+                           params.get("bucket", "day"), ZoneInfo(tz), tz,
+                           block=int(params.get("block", 1)), fold=params.get("fold", "week"))
     new = query.series(_conn(), Query(surface="chat"), params.get("metric", "score"), params.get("group"),
                        params.get("bucket", "day"), kw.pop("tz", "UTC"), quantiles=True, **kw).public()
     for k in ("bucket", "block", "fold", "fold_requested", "span_days", "tz", "group", "metric"):
@@ -463,9 +463,10 @@ def test_series_blocks_folds_keys_and_offsets(seeded):
                              "tz": "Europe/Berlin"}, tz="Europe/Berlin", block=block, fold=fold)
     # a fixed offset, and keys given (one without runs)
     keys = [OTHER, "cheap-gpt", "nope"]
-    old = analytics.series({"surface": "chat", "metric": "score", "tz_offset": "-330"}, keys)
-    new = query.series(_conn(), Query(surface="chat"), "score", "relay", "day",
-                       timezone(timedelta(minutes=-330)), keys=keys).public()
+    zone = timezone(timedelta(minutes=-330))
+    old = reference.series("score", "relay", "day", zone, str(zone), keys=keys)
+    new = query.series(_conn(), Query(surface="chat"), "score", "relay", "day", zone,
+                       keys=keys).public()
     assert new["tz"] == old["tz"] and [s["key"] for s in new["series"]] == keys
     for a, b in zip(new["series"], old["series"], strict=True):
         assert (a["runs"], a["n"], [p["bucket"] for p in a["points"]]) == (

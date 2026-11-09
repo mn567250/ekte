@@ -15,6 +15,7 @@ import pytest
 from ekte.models import AuditReport, RequestRecord
 from ekte.perf.outcomes import run_outcomes
 from ekte.web import analytics_store, history
+from tests import analytics_reference as reference
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -162,10 +163,13 @@ def test_records_are_stored_once_in_their_own_table(data):
     assert [r["endpoint"] for r in rows] == [r["endpoint"] for r in records]
     assert all(r["extra"] is None for r in rows)  # ordinary records need no extra
     assert size < len(json.dumps(report, ensure_ascii=False)) - len(json.dumps(records)) + 100
-    assert history.analytics_requests([rid])[0]["duration_ms"] == records[0]["duration_ms"]
-    assert len(history.analytics_requests([rid])) == 8
-    assert len(history.analytics_requests([rid], endpoint=None)) == 12
-    assert {r["endpoint"] for r in history.analytics_requests([rid], "baseline")} == {"baseline"}
+    with _db(data) as conn:
+        target = conn.execute("SELECT duration_ms FROM history_requests WHERE history_id = ?"
+                              " AND endpoint = 'target' ORDER BY ord", (rid,)).fetchall()
+        baseline = conn.execute("SELECT COUNT(*) FROM history_requests WHERE history_id = ?"
+                                " AND endpoint = 'baseline'", (rid,)).fetchone()[0]
+    assert target[0]["duration_ms"] == records[0]["duration_ms"]
+    assert len(target) == 8 and len(rows) == 12 and baseline == 4
 
 
 def test_unusual_records_read_back_exactly(data):
@@ -538,7 +542,7 @@ def test_rows_written_by_an_older_ekte_are_picked_up(data):
             ("t", "https://relay.example.com/v1", "gpt-4o-mini", json.dumps(old)),
         )
     _same_report(history.get(2), old)  # inline records still read
-    runs = history.analytics_runs()
+    runs = reference.runs()
     assert [r["id"] for r in runs] == [2, 1]  # oldest start first
     assert runs[0]["started_at_estimated"] == 1
     assert _count(data, "history_requests", 2) == 12
@@ -657,7 +661,7 @@ def test_a_v3_database_gets_the_surface_column(data):
     assert "surface" in cols
     # the list and analytics reads select the column; an old run reads as chat
     assert [r["surface"] for r in history.recent() if r["id"] == rid] == ["chat"]
-    assert [r["surface"] for r in history.analytics_runs() if r["id"] == rid] == ["chat"]
+    assert [r["surface"] for r in reference.runs() if r["id"] == rid] == ["chat"]
 
 
 # --------------------------------------------------------------------------- #
@@ -675,23 +679,21 @@ def test_delete_and_clear_remove_the_analytics_rows(data):
     assert history.get(ids[1]) is None
 
 
-def test_analytics_runs_filters_by_start_time(data):
+def test_started_at_is_stored_in_utc_and_filters_by_start_time(data):
+    from ekte.web import query
+
     for day in (1, 2, 3):
         report = _fixture()
         report["started_at"] = f"2026-05-0{day}T23:30:00-02:00"  # = next day 01:30 UTC
         history.save(report, watch_id=7 if day == 2 else None)
-    runs = history.analytics_runs()
+    runs = reference.runs()
     assert [r["started_at"][:10] for r in runs] == ["2026-05-02", "2026-05-03", "2026-05-04"]
     assert [r["watch_id"] for r in runs] == [None, 7, None]
-    assert set(analytics_store.METRIC_COLS) <= set(runs[0])
-    assert {"id", "base_url", "claimed_model", "suite", "stream_mode", "score"} <= set(runs[0])
-    got = history.analytics_runs("2026-05-03T00:00:00Z", "2026-05-04T01:30:00+00:00")
-    assert [r["started_at"][:10] for r in got] == ["2026-05-03"]
-    with pytest.raises(ValueError):
-        history.analytics_runs("yesterday")
-    dims = history.analytics_dimensions([runs[0]["id"]], "dimension")
-    assert {d["key"] for d in dims} == {d["dimension"] for d in _fixture()["dimensions"]}
-    assert history.analytics_dimensions([]) == []
+    q = query.parse_query({"from": "2026-05-03T00:00:00Z", "to": "2026-05-04T01:30:00+00:00"})
+    page = query.page_runs(history.query_connection(), q, "time")
+    assert [r["id"] for r in page.rows] == [runs[1]["id"]]
+    dims = reference.dimensions([runs[0]["id"]], "dimension")
+    assert set(dims[runs[0]["id"]]) == {d["dimension"] for d in _fixture()["dimensions"]}
 
 
 def test_nan_and_float_values_survive_in_metrics(data):

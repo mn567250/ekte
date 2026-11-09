@@ -310,7 +310,6 @@
   var FLD = ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec"];
   var DEF_TRENDS = "score,latency_p50", DEF_SORT = "-time", SORTS = ["time", "risk", "score", "grade"];
   var FOCUS = "runs.focus";
-  var PAGE = 20;
   var cat = null; // GET /api/metrics: { byId, order, max, grades, labels }
   var state = {
     groups: null, // the loaded groups (null until the first load)

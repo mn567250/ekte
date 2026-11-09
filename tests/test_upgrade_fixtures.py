@@ -117,6 +117,26 @@ def test_web_read_paths(upgraded):
             assert r.status_code == 200, path
             assert r.json()["verdict"]["overall_score"] == run["score"]
     assert client.get("/api/v1/history").status_code == 200
+    perf = client.get("/api/v1/history", params={"perf": 1}).json()
+    assert {r["id"] for r in perf} == {r["id"] for r in manifest["history"]}
+    assert all("latency_p50_ms" in r for r in perf)
+    # every page renders, and every widget it loads answers on the upgraded data
+    for page in ("/", "/history", "/analytics", "/watches", "/kb", "/accessibility"):
+        r = client.get(page)
+        assert r.status_code == 200 and "<html" in r.text.lower(), page
+    groups = client.get("/api/history/groups", params={"trend.metrics": "score,error_rate"})
+    assert groups.status_code == 200 and groups.json()["total_runs"] == len(manifest["history"])
+    key = groups.json()["groups"][0]["key"]
+    widgets = [("/api/history/runs", {"group.key": key}), ("/api/metrics", {}), ("/api/filters/options", {}),
+               ("/api/analytics/summary", {}), ("/api/analytics/series", {}), ("/api/analytics/heatmap", {}),
+               ("/api/analytics/breakdown", {"breakdown.metric": "score"}), ("/api/analytics/errors", {}),
+               ("/api/analytics/integrity", {}), ("/api/analytics/leaderboard", {"board.by": "relay"})]
+    for path, params in widgets:
+        assert client.get(path, params=params).status_code == 200, path
+    with sqlite3.connect(_data / "history.db") as c:
+        cols = {r[1] for r in c.execute("PRAGMA table_info(history)")}
+    if sqlite3.sqlite_version_info >= (3, 35):
+        assert not cols & {"latency_p50_ms", "ttft_p50_ms", "decode_tps_p50", "perf_done"}
     ws = client.get("/api/watches").json()
     assert {w["name"] for w in ws} == {w["name"] for w in manifest["watches"]}
     assert all("api_key" not in w for w in ws)
