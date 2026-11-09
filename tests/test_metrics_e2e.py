@@ -214,7 +214,7 @@ PAGES = ("history.html", "analytics.html", "filters.js", "trendpick.js", "charts
 def _script(name: str) -> str:
     text = (STATIC / name).read_text(encoding="utf-8")
     if name.endswith(".html"):
-        text = "\n".join(re.findall(r"<script>(.*?)</script>", text, flags=re.S))
+        text = "\n".join(re.findall(r"<script\b[^>]*>(.*?)</script\s*>", text, flags=re.S | re.I))
     # comments and string literals say nothing about what the code computes
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     text = re.sub(r"(?m)//.*$", "", text)
