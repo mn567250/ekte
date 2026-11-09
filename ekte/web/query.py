@@ -702,7 +702,7 @@ def _grouped(
     cols = [f"{run_row.GROUP_ID_SQL[group]} AS gid", *(f"{b} AS b{i}" for i, b in enumerate(buckets)),
             "COUNT(*) AS runs", "MIN(m.started_us) AS t_min", "MAX(m.started_us) AS t_max"]
     if group == "model":
-        cols.append("MAX(m.kb_model_id IS NOT NULL) AS mkb")
+        cols.append("MAX(m.model_in_kb) AS mkb")
     cols += [f"{e} AS x{i}" for i, e in enumerate(extra)]
     cols += [f"{a} AS a{i}" for i, a in enumerate(a for s in specs for a in s.aggs)]
     joins = "".join(s.join for s in specs)

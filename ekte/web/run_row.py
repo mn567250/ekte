@@ -49,6 +49,7 @@ import sqlite3
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from ekte.web import analytics_store
 from ekte.web.analytics import ALL_KEY
 from ekte.web.metrics import grade_value_sql
 from ekte.web.relay_map import GROUP_KEY_SQL
@@ -125,6 +126,7 @@ RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
     # whole seconds (floored) and the microseconds of the fixed-width form
     "started_us": ("INTEGER", "CAST(strftime('%s', m.started_at) AS INTEGER) * 1000000"
                               " + CAST(substr(m.started_at, 21, 6) AS INTEGER)"),
+    "model_in_kb": ("INTEGER", "m.kb_model_id IS NOT NULL"),
     "score": ("REAL", "h.score"),
     "grade_value": ("INTEGER", grade_value_sql("h.rating")),
     "risk_value": ("INTEGER", _RISK_SQL),
@@ -139,11 +141,20 @@ RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
 
 LOOKUPS: tuple[Lookup, ...] = tuple(d for _, d in RUN_COLUMNS.values() if isinstance(d, Lookup))
 
+NUMBERS: tuple[str, ...] = (
+    "relay_id", "model_id", *(c for c in RUN_COLUMNS if c != "model_id"),
+    *(c for c, t in analytics_store.METRIC_COLS.items()
+      if t != "TEXT" and c not in ("started_at_estimated", "extract_version")),
+    *analytics_store.OUTCOME_COLS.values(),
+)
+"""The narrow run row: every number of ``history_metrics`` aggregation reads
+(the run's relay and model ids first)."""
+
 INDEXES: dict[str, str] = {
-    # the narrow run row: the selection's integer columns, so counting and
-    # grouping passes (the default surface, the busiest groups, the filter
-    # options) read a small index instead of the wide rows
-    "idx_run_row": "surface_id, started_us, relay_id, model_id, facet_id",
+    # the narrow run row as a covering index: aggregations read its entries
+    # (a few hundred bytes) instead of the rows (text columns too), already
+    # in relay x model order, so grouping by relay or relay x model needs no sort
+    "idx_run_row": ", ".join(NUMBERS),
 }
 """Index name -> its ``history_metrics`` columns."""
 
