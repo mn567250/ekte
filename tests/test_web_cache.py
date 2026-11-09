@@ -62,24 +62,20 @@ def test_data_version_moves_with_every_write(data):
     assert history.data_version() > v3 > v2
 
 
-def test_data_version_is_bumped_by_the_backfills(data):
+def test_data_version_is_bumped_by_the_backfill(data):
     history.save(_report())
     db = data / "history.db"
     with sqlite3.connect(db) as c:  # as an older ekte would leave the row
-        c.execute("UPDATE history SET perf_done = NULL, requests_split = NULL")
+        c.execute("UPDATE history SET requests_split = NULL")
         c.execute("DELETE FROM history_metrics")
     v = history.data_version()
     history.backfill_analytics()
-    v_analytics = history.data_version()
-    assert v_analytics > v
-    history.recent(perf=True)  # computes and stores the unmarked perf headline
-    assert history.data_version() > v_analytics
-    with history._connect() as conn:
-        conn.execute("UPDATE history SET perf_done = NULL")
-        conn.commit()
-        before = history.data_version()
-        history._backfill_perf(conn)
-    assert history.data_version() > before
+    assert history.data_version() > v
+    # nothing left to do: no write, no bump
+    v = history.data_version()
+    history.backfill_analytics()
+    history.recent(perf=True)
+    assert history.data_version() == v
 
 
 def test_meta_migration_adds_the_counter_to_an_older_database(data):
