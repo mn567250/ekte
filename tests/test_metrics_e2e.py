@@ -18,6 +18,7 @@ import re
 import subprocess
 import sys
 from datetime import timedelta
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -211,10 +212,37 @@ def test_a_save_from_another_process_drops_the_cached_answers(runs, client, data
 PAGES = ("history.html", "analytics.html", "filters.js", "trendpick.js", "charts.js")
 
 
+class _ScriptText(HTMLParser):
+    """Collects the text of inline <script> elements (the parser handles tag case and attributes)."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=False)
+        self.parts: list[str] = []
+        self._inside = False
+
+    def handle_starttag(self, tag, attrs):
+        self._inside = tag == "script"
+
+    def handle_endtag(self, tag):
+        if tag == "script":
+            self._inside = False
+
+    def handle_data(self, data):
+        if self._inside:
+            self.parts.append(data)
+
+
+def _inline_scripts(html: str) -> str:
+    parser = _ScriptText()
+    parser.feed(html)
+    parser.close()
+    return "\n".join(parser.parts)
+
+
 def _script(name: str) -> str:
     text = (STATIC / name).read_text(encoding="utf-8")
     if name.endswith(".html"):
-        text = "\n".join(re.findall(r"<script\b[^>]*>(.*?)</script\s*>", text, flags=re.S | re.I))
+        text = _inline_scripts(text)
     # comments and string literals say nothing about what the code computes
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     text = re.sub(r"(?m)//.*$", "", text)
