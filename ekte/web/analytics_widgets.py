@@ -25,7 +25,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ekte import errorclass
-from ekte.web import analytics_store, facets, history, history_api, query
+from ekte.web import analytics_store, history, history_api, query, run_row
 from ekte.web import metrics as _metrics
 from ekte.web.analytics import (
     BLOCKS,
@@ -512,10 +512,10 @@ def widget_integrity(params: Any) -> dict[str, Any]:
 # run's value as the URL spells it (so "the key is set" is "the value is one
 # of the given ones"), and the Query field the key sets.
 _FACETS: dict[str, tuple[str, str]] = {
-    "surface": (facets.FACETS["surface"], "surface"),
+    "surface": (run_row.FACETS["surface"], "surface"),
     "relay": ("rm.relay_key", "relays"),
     "model": (GROUP_KEY_SQL["model"], "models"),
-    **{k: (facets.FACETS[k], k) for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec")},
+    **{k: (run_row.FACETS[k], k) for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec")},
 }
 OPTION_KEYS = tuple(_FACETS)
 
@@ -538,7 +538,7 @@ def filter_options(params: Any) -> dict[str, Any]:
     list groups them by relay id, the ``model`` list by model, and every
     other list, the span and the run count are folded from one grouping by
     the run's combination of few-valued keys (``c``, by
-    ``history_metrics.facet_id``, see :mod:`ekte.web.facets`, and by whether
+    ``history_metrics.facet_id``, see :mod:`ekte.web.run_row`, and by whether
     the relay, model and time filters hold), so each list still counts
     under every filter but its own."""
     q = query.parse_query(params)
@@ -567,7 +567,7 @@ def filter_options(params: Any) -> dict[str, Any]:
         elif key == "model":
             on_r[key] = (f"f_model IN ({marks(len(vs))})", vs)
         else:
-            column = facets.COLUMNS[key]
+            column = run_row.COLUMNS[key]
             on_r[key] = (f"fid IN (SELECT id FROM facet_combo WHERE {column} IN ({marks(len(vs))}))", vs)
             on_c[key] = (f"{column} IN ({marks(len(vs))})", vs)
     times = [(c, (analytics_store.format_ts(v),)) for c, v in (("t >= ?", q.start), ("t < ?", q.end))
@@ -597,7 +597,7 @@ def filter_options(params: Any) -> dict[str, Any]:
         branches.append(sql.format(w=w_sql))
         args.extend(w_args)
 
-    for key, column in facets.COLUMNS.items():
+    for key, column in run_row.COLUMNS.items():
         branch(f"SELECT '{key}', {column}, NULL, NULL, NULL, SUM(n) FROM c{{w}} GROUP BY 2", on_c, key)
     branch("SELECT 'relay', g.relay_key, g.label, g.kind, g.in_kb, s.n"
            " FROM (SELECT rid, COUNT(*) AS n FROM r{w} GROUP BY rid) s JOIN relay_group g ON g.id = s.rid",
