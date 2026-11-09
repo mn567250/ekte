@@ -693,8 +693,8 @@ def _grouped(
     """One SQL query: per group (key ``g``, id ``gid``) and bucket expressions
     ``b0, b1, ...``, ``runs``, ``t_min`` / ``t_max`` (Unix microseconds), the description columns
     of the group kind (:func:`ekte.web.run_row.label_sql`), the ``extra``
-    aggregates (``x<i>``) and each
-    metric's aggregates (``a<i>``).
+    aggregates (``x<i>``) and each metric's aggregates (``a<i>``, also as the
+    tuple ``_aggs``).
 
     Runs are grouped by the integer that identifies their group on their own
     rows (:data:`ekte.web.run_row.GROUP_ID_SQL`), never by a value looked up
