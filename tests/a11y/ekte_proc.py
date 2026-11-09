@@ -8,7 +8,10 @@ optionally, the monitor scheduled from it and a week of runs for the Analytics
 page (seed.py), with fixed timestamps so pages
 render the same on every run.
 
-``python -m tests.a11y.ekte_proc PORT DATA_DIR SEED_MONITOR`` is what the
+``seed`` names a function of seed.py (``"seed_history_views"``) that adds runs
+before the server starts (the History page's own tests).
+
+``python -m tests.a11y.ekte_proc PORT DATA_DIR SEED_MONITOR [SEED]`` is what the
 subprocess runs; :class:`EkteProc` starts and stops it.
 """
 
@@ -49,13 +52,14 @@ def _wait_health(url: str, proc: subprocess.Popen[Any] | None = None, timeout: f
 class EkteProc:
     """``with EkteProc(tmp_path) as z: z.url``: a fresh ekte server."""
 
-    def __init__(self, data_dir: Path, seed_monitor: bool = False) -> None:
+    def __init__(self, data_dir: Path, seed_monitor: bool = False, seed: str = "") -> None:
         from tests.a11y.harness import _free_port
 
         self.port = _free_port()
         self.url = f"http://127.0.0.1:{self.port}"
         self.data_dir = data_dir
         self.seed_monitor = seed_monitor
+        self.seed = seed
         self.proc: subprocess.Popen[bytes] | None = None
 
     def __enter__(self) -> EkteProc:
@@ -63,7 +67,7 @@ class EkteProc:
         for k in ("EKTE_KB_DIR", "EKTE_NO_USER_KB", "EKTE_SECRET_KEY"):
             env.pop(k, None)
         self.proc = subprocess.Popen(
-            [sys.executable, "-m", "tests.a11y.ekte_proc", str(self.port), str(self.data_dir), str(int(self.seed_monitor))],
+            [sys.executable, "-m", "tests.a11y.ekte_proc", str(self.port), str(self.data_dir), str(int(self.seed_monitor)), self.seed],
             cwd=str(ROOT),
             env=env,
             stdin=subprocess.DEVNULL,
@@ -91,16 +95,37 @@ class EkteProc:
                 self.proc.wait()
 
 
-def _main(port: int, data_dir: Path, seed_monitor: bool) -> None:
+def _fix_query_clock() -> None:
+    """The query core's "now" at FIXED_TS, as the snapshot browsers' clock: a
+    relative range (``range=30d``, the Analytics default) is resolved on the
+    server, so the seeded week stays inside it and the page reads the same on
+    every run."""
+    from ekte.web import analytics_widgets, query
+
+    class _Fixed(datetime):
+        @classmethod
+        def now(cls, tz: Any = None) -> datetime:  # type: ignore[override]
+            return datetime.fromtimestamp(FIXED_TS, tz or UTC)
+
+    query.datetime = _Fixed  # type: ignore[misc]
+    analytics_widgets.datetime = _Fixed  # type: ignore[misc]
+
+
+def _main(port: int, data_dir: Path, seed_monitor: bool, seed: str = "") -> None:
     import httpx
     import uvicorn
 
     from ekte.web import history, watches
     from ekte.web.server import create_app
+    from tests.a11y import seed as seeds
     from tests.a11y.seed import seed_analytics
 
     history.init()
     rid = history.save(json.loads(REPORT_FIXTURE.read_text(encoding="utf-8")))
+    if seed_monitor:
+        _fix_query_clock()
+    if seed:
+        getattr(seeds, seed)(datetime.fromtimestamp(FIXED_TS, UTC))
     server = uvicorn.Server(uvicorn.Config(create_app(), host="127.0.0.1", port=port, log_level="warning"))
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
@@ -118,4 +143,4 @@ def _main(port: int, data_dir: Path, seed_monitor: bool) -> None:
 
 
 if __name__ == "__main__":
-    _main(int(sys.argv[1]), Path(sys.argv[2]), sys.argv[3] == "1")
+    _main(int(sys.argv[1]), Path(sys.argv[2]), sys.argv[3] == "1", sys.argv[4] if len(sys.argv) > 4 else "")

@@ -44,67 +44,87 @@
     - text: Endpunkttyp
     - combobox "Endpunkttyp":
       - option "Alle" [selected]
-      - option "Chat"
-    - text: Relay / Anbieter
-    - combobox "Relay / Anbieter":
-      - option "Alle" [selected]
-      - option "127.0.0.1:9099"
-      - option "Example Relay"
-      - option "gateway.a-very-long-relay-hostname.example.org"
-    - text: Angegebenes Modell
-    - combobox "Angegebenes Modell":
-      - option "Alle" [selected]
-      - option "gpt-4o"
-      - option "model-a"
-      - option "model-b"
+      - option "Chat (15)"
+      - option "Embeddings"
+      - option "Reranking"
+    - group "Relay / Anbieter":
+      - text: Relay / Anbieter
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
+      - text: gateway.a-very-long-relay-hostname.example.org (5)
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Angegebenes Modell":
+      - text: Angegebenes Modell
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Alle" [selected]
-      - option "standard"
+      - option "standard (15)"
     - text: Modus
     - combobox "Modus":
       - option "Alle" [selected]
-      - option "check"
+      - option "check (15)"
     - text: Protokoll
     - combobox "Protokoll":
       - option "Alle" [selected]
-      - option "openai"
-      - option "(unbekannt)"
+      - option "openai (14)"
+      - option "(unbekannt) (1)"
     - text: Protokollerkennung
     - combobox "Protokollerkennung":
       - option "Alle" [selected]
-      - option "(unbekannt)"
+      - option "automatisch erkannt"
+      - option "manuell festgelegt"
+      - option "(unbekannt) (15)"
     - text: Messanfragen
     - combobox "Messanfragen":
       - option "Alle" [selected]
-      - option "Streaming"
-      - option "(unbekannt)"
+      - option "Streaming (14)"
+      - option "Ohne Streaming"
+      - option "Streaming + ohne Streaming"
+      - option "(unbekannt) (1)"
     - text: Risiko
     - combobox "Risiko":
       - option "Alle" [selected]
-      - option "Konsistent (wahrscheinlich echt)"
-      - option "Weitgehend vertrauenswürdig"
-      - option "Etikettenschwindel"
+      - option "Konsistent (wahrscheinlich echt) (7)"
+      - option "Weitgehend vertrauenswürdig (4)"
+      - option "Abweichungen gefunden"
+      - option "Etikettenschwindel (4)"
+      - option "Unzureichendes Signal"
     - text: Min. Score
     - spinbutton "Min. Score"
     - text: Zeitraum
     - combobox "Zeitraum":
-      - option "Alle" [selected]
+      - option "Gesamter Zeitraum" [selected]
+      - option "Letzte 24 Stunden"
       - option "Letzte 7 Tage"
       - option "Letzte 30 Tage"
       - option "Letzte 90 Tage"
+      - option "Letzte 365 Tage"
+      - option "Eigener Zeitraum"
     - text: Ausführung
     - combobox "Ausführung":
       - option "Alle" [selected]
-      - option "Manuell"
-      - option "Überwachung"
+      - option "Manuell (11)"
+      - option "Überwachung (4)"
     - group "Trends":
-      - text: Trends
+      - text: Trends 2 von höchstens 2 ausgewählt
       - button "Score" [pressed]
-      - button "Note"
+      - button "Note" [disabled]
       - button "Latenz p50" [pressed]
-      - button "Dekodiertempo p50"
+      - button "Zeit bis zum ersten Token p50" [disabled]
+      - button "Dekodiertempo p50" [disabled]
+      - button "Fehlerquote" [disabled]
     - text: 15 von 15 Prüfungen
+    - status
+    - button "Link zu dieser Ansicht kopieren"
+  - status
   - group "Prüfungen sortieren":
     - button "Zeit, absteigend sortiert": Zeit
     - button "Nach Risiko sortieren": Risiko
@@ -115,9 +135,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relay Example Relay Score
-    - 'img "Verlauf des Health-Scores über 7 Audits: von 70 auf 82, steigend."'
+    - 'img "Score-Verlauf über 7 Prüfungen: von 70 auf 82, steigend."'
     - text: 82 Latenz p50
-    - 'img "Latenz p50-Verlauf über 7 Prüfungen: von <duration> auf <duration>."'
+    - 'img "Latenz p50-Verlauf über 7 Prüfungen: von <duration> auf <duration>, fallend."'
     - text: <duration>
     - list:
       - listitem:
@@ -159,9 +179,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relay gateway.a-very-long-relay-hostname.example.org Score
-    - 'img "Verlauf des Health-Scores über 4 Audits: von 58 auf 64, steigend."'
+    - 'img "Score-Verlauf über 4 Prüfungen: von 58 auf 64, steigend."'
     - text: 64 Latenz p50
-    - 'img "Latenz p50-Verlauf über 4 Prüfungen: von <duration> auf <duration>."'
+    - 'img "Latenz p50-Verlauf über 4 Prüfungen: von <duration> auf <duration>, fallend."'
     - text: <duration>
     - list:
       - listitem:
@@ -188,9 +208,9 @@
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - text: Relay Example Relay Score
-    - 'img "Verlauf des Health-Scores über 2 Audits: von 89 auf 91, steigend."'
+    - 'img "Score-Verlauf über 2 Prüfungen: von 89 auf 91, steigend."'
     - text: 91 Latenz p50
-    - 'img "Latenz p50-Verlauf über 2 Prüfungen: von <duration> auf <duration>."'
+    - 'img "Latenz p50-Verlauf über 2 Prüfungen: von <duration> auf <duration>, fallend."'
     - text: <duration>
     - list:
       - listitem:

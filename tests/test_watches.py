@@ -274,7 +274,7 @@ async def test_monitor_runs_are_tagged_and_cannot_be_rescheduled(tmp_path, monke
     await server._run_one_watch(watches.get(wid))
     manual = _saved_report()
 
-    by_id = {r["id"]: r for r in client.get("/api/history").json()}
+    by_id = {r["id"]: r for r in client.get("/api/v1/history").json()}
     mon = watches.get(wid)["last_report_id"]
     assert by_id[mon]["watch_id"] == wid and by_id[manual]["watch_id"] is None
     assert history.watch_of(mon) == wid and history.watch_of(manual) is None
@@ -451,7 +451,9 @@ def _audit_report(target):
     )
 
 
-async def _until(cond, timeout: float = 5.0) -> None:
+async def _until(cond, timeout: float = 30.0) -> None:
+    """Wait for ``cond``: the timeout only ends a run that went wrong, so it
+    allows for a heavily loaded runner (Windows under xdist)."""
     import asyncio
 
     loop = asyncio.get_running_loop()

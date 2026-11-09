@@ -138,12 +138,14 @@ pestañas — **Resumen** (indicadores, clasificación), **Tendencias**
 del relay), **Integridad del modelo** y **Facturación** — bajo la cabecera de
 la página y un panel de filtros común; solo se carga la pestaña que está
 viendo. La URL guarda la pestaña, los filtros y cada opción de los gráficos
-(`#tab=reliability&range=30&relay=…&eb=dow_hour`), y **Copiar el enlace a esta
+(`?tab=reliability&range=30d&relay=…&errors.bucket=dow_hour`), y **Copiar el enlace a esta
 vista** la copia (o la muestra en un campo para copiarla si el navegador no lo
 permite): el enlace abre exactamente esa vista. El panel de filtros es el mismo
 en **Historial**, **Monitores** y **Analítica**: cerrado, indica cuántos filtros están activos
 y los nombra en una línea (p. ej. «Últimos 30 días · standard · Streaming ·
 Example Relay»), así una vista compartida dice lo que muestra.
+
+**Tasas de éxito, de error, de 429 y de peticiones afectadas.** Cada petición que ekte envía al relay durante una ejecución tiene exactamente un resultado: éxito, error del relay (un tiempo de espera agotado, una respuesta 5xx o 4xx u otra respuesta defectuosa), límite de tasa (HTTP 429) o un fallo que nunca llegó al relay (la red entre usted y el relay, o el propio ekte). Los reintentos cuentan una vez. El relay se juzga solo por las peticiones que le llegaron: la **tasa de éxito**, la **tasa de error** y la **tasa de 429** son los éxitos, los errores del relay y los límites de tasa divididos entre esas peticiones, y siempre suman el 100 %. La **proporción afectada** es la parte de todas las peticiones que falló antes de llegar al relay: indica cuánto se puede confiar en la propia ejecución, no lo bueno que es el relay; si es alta, repita la auditoría. Sobre varias ejecuciones las tasas se agregan (todas las peticiones juntas), de modo que una mala ejecución entre muchas buenas sigue viéndose (nueve ejecuciones al 0 % y una al 40 % dan alrededor del 4 %, no el 0 %); puntuaciones, latencias, velocidades y ratios de facturación son la mediana de las ejecuciones. Historial, Analítica y el informe muestran las mismas cifras para las mismas ejecuciones, y una sola ejecución muestra exactamente los valores de su informe. La comprobación de fiabilidad del informe tiene su propia tasa («Tasa de éxito de la comprobación de fiabilidad»), que solo cuenta para la puntuación.
 
 ## Idiomas
 

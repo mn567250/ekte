@@ -18,35 +18,28 @@
   check. All of these are internal; the public subset is [HTTP API v1](#http-api-v1).
 - **Relays.** `POST /api/kb/relays` saves a relay `{name, base_url}` (400 for bad
   input, 409 when the name or URL is already known).
-- **Analytics.** `GET /api/analytics/options` (relays, models, suites, stream
-  modes, APIs and the date range in the history), `/api/analytics/summary`
-  (KPIs of `from`–`to` against the previous range of the same length),
-  `/api/analytics/series` (`metric` per `group=relay|model|relay_model`, up to
-  4 `keys`, in `bucket=hour|day|week|dow_hour` buckets of the viewer's `tz` or
-  `tz_offset`; `dow_hour` also takes `block` (hours per row) and
-  `fold=week|4weeks|month_week`, which falls back to `week` until the runs cover
-  90 or 180 days) and `/api/analytics/leaderboard` (`model=` for its relays, or
-  `relay=` for its models). All take the filters `from`, `to`, `suite`,
-  `stream_mode`, `api`, `source=all|manual|monitor`, `relay` and `model`.
-  `ekte/web/analytics.py` computes everything in Python from
-  `history.analytics_runs()`: metric ids come from a fixed whitelist, relays are
-  grouped by knowledge-base entry when the query runs, a value a run did not
-  measure is left out (each value has its `n` and `coverage`), and buckets with
-  fewer than `MIN_RUNS` (3) runs are flagged `low_n`. A bad parameter answers
-  400; responses are `Cache-Control: no-store`.
-- **Analytics panels.** `/api/analytics/breakdown` (up to 8 `metrics` per
-  `group=relay|model|relay_model|all` over the range), `/api/analytics/errors`
-  (the target's completion calls by outcome class
-  `success|client_4xx|rate_limited|server_5xx|timeout|network|other`, per
-  `group=relay|model` and per `bucket`, counted in SQL by
-  `history.analytics_request_classes()` without loading request rows; a call's
-  time is its run's start plus its offset, to the minute; `covered` = runs that
-  have request records) and `/api/analytics/integrity` (pass / warn / fail
-  counts of the identity, capability, vision, streaming, protocol, integrity,
-  injected-prompt and connectivity detectors per relay × model, the
-  model-mismatch share and the median effective / declared context window).
-  `/api/analytics/series` also takes `group=all`. Same filters and errors as
-  above.
+- **Analytics.** `GET /api/filters/options` and `/api/analytics/summary`,
+  `series`, `heatmap`, `leaderboard`, `breakdown`, `errors` and `integrity`:
+  one endpoint per widget on the query core, see [Analytics API](#analytics-api).
+- **Response cache** (`ekte/web/cache.py`). Widget endpoints are plain `def`
+  handlers wrapped in `@cached_endpoint("<name>")`: the handler gets its query
+  parameters in canonical form (keys sorted, values stripped, empty ones
+  dropped) and returns JSON. The key is `json([endpoint, params,
+  data_version, kb_version, EXTRACT_VERSION, database])`, with no time slot:
+  `history.data_version()` is a counter in `history.db`'s `meta` table bumped
+  in the same transaction as every write (`save`, `delete`, `clear`, the
+  analytics backfill), from any process, so a CLI audit drops the
+  cache too; `kb_version` is `ekte.knowledge.relays.kb_version()`. A handler
+  whose answer depends on the clock resolves it first (`prepare=`; e.g. the
+  Analytics widgets' `from` without `to` gets `to` = now, rounded up to the minute). The LRU (`ResponseCache`,
+  256 entries by default) is thread-safe and single-flight: concurrent misses
+  on one key wait for one computation; errors are not cached. Answers carry
+  `ETag` (a hash of the key and the ekte version) and `Cache-Control: no-cache`;
+  a matching `If-None-Match` gets `304 Not Modified` without computing.
+  Reads use `datadir.read_connection(name)`: one reused read-only connection
+  per thread (`mode=ro`, WAL, `query_only`), schema-checked only on the first
+  open in the process (again if the file was replaced); writes keep using
+  `datadir.connect`.
 - **Background audits.** `jobs.py` runs every audit as a job owned by the
   server. `POST /api/jobs` queues one, `GET /api/jobs` lists queued, running and
   recently finished jobs (plus running monitors) with progress,
@@ -81,6 +74,446 @@
   `LocalOnlyMiddleware`: a Host allowlist against DNS rebinding, Origin and
   `Sec-Fetch-Site` checks against CSRF, JSON-only request bodies, and
   anti-framing / no-sniff / no-referrer headers. The UI has no login by design.
+
+## Endpoints
+
+The complete list, by page (the docstring of `ekte/web/server.py` has the
+same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
+
+| Endpoint | What it answers |
+|---|---|
+| `GET /`, `/history`, `/watches`, `/analytics`, `/kb`, `/accessibility` | the pages (`/v2/…`, `/tools`, `/console`: 308 redirects until 1.0.0) |
+| `GET /api/health` | `{ok, version}` |
+| `POST /api/jobs` (`/api/v1/jobs`), `GET /api/jobs`, `GET /api/jobs/{id}` (`/api/v1/…`), `GET /api/jobs/{id}/events` (`/api/v1/…`), `POST /api/jobs/{id}/cancel` | background audits |
+| `POST /api/models`, `POST /api/report/export` | a relay's models; a report rendered as JSON / Markdown / HTML / PDF |
+| `GET /api/kb`, `POST /api/kb/relays`, `GET /api/kb/profiles`, `PUT /api/kb/enabled`, `GET /api/kb/prompt`, `POST /api/kb/resolve`, `POST /api/kb/scan`, `POST /api/kb/import`, `GET /api/kb/export`, `PATCH` / `DELETE /api/kb/entries/{id}` | the knowledge base |
+| `GET /api/metrics` | the [metric registry](#metric-registry) |
+| `GET /api/filters/options` | every filter key's values with run counts ([Analytics API](#analytics-api); History uses it too) |
+| `GET /api/analytics/summary`, `series`, `heatmap`, `leaderboard`, `breakdown`, `errors`, `integrity` | the Analytics widgets ([Analytics API](#analytics-api)) |
+| `GET /api/history/groups`, `GET /api/history/runs` | the History widgets ([History API](#history-api)) |
+| `GET /api/history/status` | the history as a whole, for the page notices |
+| `GET /api/history/{id}` (`?trend=1`), `GET /api/v1/history/{id}` | one saved report |
+| `DELETE /api/history/{id}`, `DELETE /api/history` | delete one run, or all |
+| `GET /api/v1/history` | the newest runs (public; `limit`, `perf`) |
+| `GET /api/v1/history/{id}/evidence`, `…/evidence/exchanges`, `…/evidence/export`, `POST /api/history/{id}/rescore` (`/api/v1/…`) | a run's evidence; re-score it |
+| `GET /api/watches`, `POST /api/watches`, `POST /api/watches/from-history/{id}`, `PATCH` / `DELETE /api/watches/{id}`, `POST /api/watches/{id}/run`, `POST /api/watches/{id}/cancel` | monitors |
+| `GET /api/secret`, `POST /api/secret/new`, `…/new/confirm`, `…/unlock`, `…/lock`, `…/reset`, `…/storage` | the monitors' master key |
+
+Every widget endpoint (metrics, filter options, Analytics, History groups and
+runs) is a cached GET on the [query core](#query-core): the old Python
+Analytics path (`analytics.summary()` and friends, loading every run in
+range) and `/api/analytics/options` are gone (#123, #128).
+
+## Query core
+
+`ekte/web/query.py` is the one server-side path from URL parameters to
+values: parameters → runs (SQL `WHERE`) → groups → aggregated values → page.
+History and Analytics endpoints build on it; Python never filters runs and
+never loads one row per run to aggregate. Every function takes a connection
+from `history.query_connection()` (this thread's read connection, analytics
+tables backfilled, `relay_map` current).
+
+**URL schema.** Every key is optional. A key given twice is a 400 error, except
+`relay` and `model`, which repeat (any value matches). Empty values count as
+not given; `-` means "(unknown)", i.e. the run has no value.
+
+| Key | Values | Replaces |
+|---|---|---|
+| `from`, `to` | ISO 8601 (naive = UTC) against the run's `started_at`; `to` exclusive | Analytics `from` / `to` |
+| `range` | `24h`, `7d`, `30d`, `90d`, `365d`: `to` = now rounded up to the next minute, `from` = `to` − range; not with `from` / `to` | History `days`, Analytics range presets |
+| `surface` | `chat`, `embedding`, `rerank` (NULL reads as chat); empty: all surfaces | both |
+| `relay` | a relay key (`relay_map.relay_key`, `(unknown)` without URL), repeatable | both |
+| `model` | a claimed model (`(unknown)` without one), repeatable | both |
+| `suite`, `mode`, `api`, `stream` | the exact value (`stream` is the stored `stream_mode`), or `-` | History `suite/mode/api/stream`, Analytics `stream_mode` |
+| `detect` | `auto`, `manual`, `-` | History `detect` |
+| `risk` | `clean`, `low`, `medium`, `high`, `inconclusive` (no risk level is inconclusive) | History `risk` |
+| `min_score` | 0–100 (runs without a score are left out) | History `min` |
+| `exec` | `manual`, `monitor` | History `exec` (`adhoc`), Analytics `source` |
+| `q` | substring, case-insensitive for ASCII (SQL `LIKE`, `%` `_` `\` literal) of base URL, relay label, claimed model, model, suite, mode, api | History `q` |
+| `group` | `relay` (default), `model`, `relay_model`, `all` | both |
+
+Keys with a dot belong to one widget (`trend.metric`, `runs.sort`,
+`runs.after`) and are ignored by the shared parser; any other unknown key is a
+400 error naming it. `parse_query(params, now=None) -> Query` validates
+(`QueryError`, an `AnalyticsError`, so the existing 400 handling catches it);
+`Query.canonical()` is the sorted, resolved form and `Query.params()` its URL
+pairs. `resolve_params` is the `prepare=` of `cached_endpoint`, so a relative
+range is cached under its absolute bounds. History's time filter moves from
+the save time (`ts`) to the run's start (`started_at`).
+
+**Selection.** `select_runs(q) -> RunSelection` (`.sql` = `FROM … WHERE …`,
+`.args`, `.and_where()`) over the run rows `history_metrics m` only
+(`ekte/web/run_row.py`): the time on `m.started_us` (`time_sql`, exact to the
+microsecond), the surface on `m.surface_id`, the other few-valued keys as
+`m.facet_id IN (…)` (looked up once in `facet_combo`), relays and models by
+`m.relay_id` / `m.model_id`, `min_score` on `m.score`. Only text search
+(`q`) joins `history h` (through `idx_history_query`) and the run's relay
+`rm`. Runs are grouped by an integer of their row (`run_row.GROUP_ID_SQL`:
+relay id, model id, or both packed as `relay_id << 20 | model_id`), read in
+`idx_run_row` order for relay and relay × model groups, and only the
+resulting groups are named (`run_row.label_sql`). Group times come back as
+microseconds and are spelled as `started_at` once per group (`us_text`). `count_runs`, `default_surface` (the most common
+surface of a selection, for endpoints that need one).
+
+**Aggregation.** `aggregate(conn, q, metrics, group=None, *, quantiles=False)
+-> list[GroupResult]` (busiest first): per group `key`, `label`, `kind`,
+`in_kb` (and `relay` / `model` for `relay_model`), `runs`, `first_run` /
+`last_run`, and per metric a `Cell`: `value`, `n`, `coverage`, `low_n`
+(`n` < `MIN_RUNS`), `median` / `p25` / `p75` (median metrics; quartiles with
+`quantiles=True`) and `numerator` / `denominator` (pooled). The kind is the
+registry's `Metric.agg`: `median` (SQLite `median()` / `percentile()`, type 7),
+`pooled` for `success_rate`, `error_rate`, `rate_limited_rate`,
+`timeout_rate`, `impaired_rate` (Σ count ÷ Σ `requests_judged`, or
+`requests_total` for impaired; the run's count is its stored rate × base,
+which is exactly its `history_outcomes` count), `share` (high risk, model
+mismatch). One run returns exactly its stored value for every metric. Without
+`median()` in the SQLite build, Python aggregates with the same results are
+registered (`sql_functions`).
+
+**Series.** `series(conn, q, metric, group=None, bucket="day", tz=UTC, *, keys=(),
+block=1, fold="week", max_keys=4, quantiles=False) -> SeriesResult` buckets in
+SQL: the zone's UTC offset is a `CASE` over its transitions in the data's span
+(`offset_sql`), and buckets are integer arithmetic on the run's local time in
+seconds, so hour / day / week / `dow_hour` (with `block` and `fold`) buckets
+and their values match the plain-Python reference of the tests
+(`tests/analytics_reference.py`). Annotations (ekte version and
+knowledge-base profile changes) come from each value's first and last run per
+series: a value that follows another changes at its first run, and only the
+runs where values overlap in time (a rollback) are read one by one. Only
+bucket rows (and those runs) reach Python.
+
+**Paging.** `page_runs(conn, q, sort="-time", after=None, limit=20) -> Page`:
+`sort` is `time`, `score`, `risk` or `grade`, `-` for descending, ties by id;
+`after` is the opaque cursor of the previous page (`Page.after`, None on the
+last); `limit` 1–200. Keyset paging, so a run saved meanwhile never shifts
+pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
+
+**Benchmark.** `scripts/bench_fixture.py --data-dir DIR --bench` writes a
+synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
+reports, an ekte release every 3 weeks with an occasional one-day rollback,
+a profile change every 45 days) and prints p50 / p95 (nearest rank, 40 calls) of
+`aggregate`, `series` and `page_runs`;
+`EKTE_BENCH=1 pytest -m slow tests/test_query.py` checks the 50 ms p95 budget
+(`EKTE_BENCH_BUDGET_MS`).
+
+## Metric registry
+
+`ekte/web/metrics.py` is the only metric catalogue (`ekte.web.analytics`
+re-exports `METRICS`, `Metric`, `MIN_RUNS`). Each `Metric` has `id`, `unit`,
+`format` (`score`, `grade`, `percent`, `ms`, `tok_s`, `ratio_percent`,
+`tokens`, `count`, `seconds`), `agg` (`median`, `pooled`, `share`; `count` for
+the `COUNTS` runs / relays / models), `surfaces`, `higher_is_better`
+(`True` / `False` / `None`) and i18n keys: `label_key` (`metric.<id>`),
+`short_label_key` (`metric.<id>.short`, for narrow tiles), `kpi_label_key`
+(`metric.<id>.kpi`, the label of the aggregate, e.g. "Median score") and
+`agg_hint_key` (`metric.<id>.agg_hint`, how runs combine). A metric without a
+short or KPI label of its own names its plain `label_key` there. The keys are
+translated in the browser; their texts are in
+`ekte/i18n/locales/fragments/metrics/<code>.json` (`ekte.i18n.keyed(key, lang)`
+reads them in Python). `grade` is a metric: the run's grade letter on the 1..6
+scale (F = 1 … A = 6, `scoring.GRADE_SCALE`), aggregated as a median.
+
+`KPI_GRID` (the 12 Analytics tiles, 4 × 3 in reading order) and
+`HISTORY_TRENDS` (`score`, `grade`, `latency_p50`, `ttft_p50`, `decode_tps`,
+`error_rate`) are named lists here, not in the pages. `GET /api/metrics`
+(cached, ETag) answers `catalogue()`: `metrics` (every metric's public
+fields), `kpi_grid`, `history_trends`, `max_trends`, `min_runs`, `grades`,
+`families`, `directions`, `trend_keys` and `labels` (every key's English
+text, for English, the key language whose bundle carries no keyed strings).
+
+**Display semantics.** `present(metric, value, previous=None, n=None,
+previous_n=None, *, surface=None) -> dict` decides on the server what the
+page shows: `family` (`good`, `sky`, `warn`, `bad`, `grey`, or the neutral
+series families `lat` for milliseconds and `tps` for token speeds; a score or
+dimension score by its grade letter from `scoring.GRADE_THRESHOLDS`, read at
+call time, a grade by its letter), `grade` (letter for scores and grades),
+`delta` (value − previous), `direction` (`better`, `worse`, `neutral` for no
+change or a metric without a better side, `none` without a delta or when
+`previous_n` < `MIN_RUNS`; counts are always judged), `trend_key`
+(`trend.rising` / `trend.falling` / `trend.unchanged`), `low_n` and `applies`
+(False when the metric is not measured on `surface`: the "n/a" tiles).
+
+## Analytics API
+
+`ekte/web/analytics_widgets.py` answers the Analytics page's widgets (and the
+filter options of both pages), one GET per widget, on top of the
+[query core](#query-core) and the [metric registry](#metric-registry); the
+page only draws. Every endpoint:
+
+- takes every key of the query core's URL schema (`range`, `from`, `to`,
+  `surface`, `relay`, `model`, `suite`, `mode`, `api`, `stream`, `detect`,
+  `risk`, `min_score`, `exec`, `q`, `group`) plus its own namespaced keys
+  (below); other widgets' dotted keys are ignored. An unknown key (shared or
+  of its own namespace), a key given twice or an invalid value answers 400
+  `{"error": "..."}` (never cached);
+- is cached (`cached_endpoint`, ETag / `304`): `range` is resolved first, and
+  `from` without `to` gets `to` = now rounded up to the next minute;
+- uses one surface: without `surface`, the most common surface of the
+  selection (`query.default_surface`), named in the answer;
+- selects, groups and aggregates in SQLite (no endpoint loads runs or request
+  records into Python), and answers in a size that grows with groups and
+  buckets, never with runs.
+
+Every answer starts with `from`, `to` (canonical ISO, or null), `surface`,
+`filters` (`Query.canonical()`) and `min_runs` (3). A **cell** is
+`Cell.public()`: `value`, `n` (runs with a value), `coverage` (`n` ÷ runs),
+`low_n`, `median` / `p25` / `p75` (median metrics), `numerator` /
+`denominator` (pooled rates); judged cells add `family` (colour family) and
+`grade` (`present()`). A **group** is `key`, `label`, `kind`, `in_kb` (and
+`relay`, `model` for `relay_model`), `runs`, `low_n`, `first_run`,
+`last_run`. Rates are pooled (Σ outcome counts ÷ Σ judged requests), values
+per run are medians, so one run gives exactly its stored value.
+
+### `GET /api/filters/options`
+
+The values present for each filter key, counted under the current filters
+**except that key** (a selected value and its siblings stay listed):
+
+```json
+{"filters": {...}, "keys": ["surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk", "exec"],
+ "runs": 60, "surface_default": "chat",
+ "surface": [{"value": "chat", "runs": 60}],
+ "relay": [{"value": "cheap-gpt", "label": "Cheap GPT", "kind": "relay", "in_kb": true, "runs": 15}],
+ "model": [{"value": "model-a", "runs": 40}, {"value": "(unknown)", "runs": 2}],
+ "suite": [{"value": "standard", "runs": 31}, {"value": "-", "runs": 1}],
+ "mode": [...], "api": [...], "stream": [...],
+ "detect": [{"value": "auto", "runs": 20}, {"value": "manual", "runs": 20}, {"value": "-", "runs": 20}],
+ "risk": [{"value": "inconclusive", "runs": 5}, ...], "exec": [{"value": "manual", "runs": 48}, ...],
+ "span": {"first": "<iso>", "last": "<iso>"}, "dimensions": ["protocol", ...]}
+```
+
+`value` is spelled as the URL takes it (`-` = none; relays and models use
+`(unknown)`, their group key); a relay's `label` is what History calls it
+(`history_api.relay_labels`: its knowledge-base name, else the host of its
+URL); lists are ordered by runs, then label / value.
+`runs` counts the full selection; `span` is the first and last run under
+every filter except `from` / `to`; `dimensions` lists the `dim:<key>` keys of
+the selection. The surface is not defaulted here: `surface_default` names the
+one the widgets would use. One statement: the runs matching `min_score` / `q`
+are read once; `relay` (by relay id) and `model` are a `GROUP BY` over them,
+and the other lists, `span` and `runs` are folded from one `GROUP BY` of each
+run's facet combination (`history_metrics.facet_id`, `ekte/web/run_row.py`).
+
+### `GET /api/analytics/summary` (`kpi.*`: none)
+
+The 12 tiles of `KPI_GRID` in order (runs, relays, models, score,
+risk_high_share, success_rate, error_rate, latency_p50, ttft_p50,
+decode_tps, billing_ratio_prompt, billing_ratio_completion), for the range
+and the previous range of the same length (none without `from`):
+
+```json
+{..., "previous": {"from": "<iso>", "to": "<iso>"} | null, "runs": 30,
+ "tiles": [{"id": "error_rate", "value": 0.05, "n": 30, "coverage": 1.0, "applies": true,
+            "previous": 0.04, "previous_n": 30, "delta": 0.01, "direction": "worse",
+            "trend_key": "trend.rising", "family": "grey", "grade": null, "low_n": false,
+            "numerator": 30, "denominator": 600, "format": "percent", "label_key": "metric.error_rate"}]}
+```
+
+`applies: false` (a chat-only tile on another surface) has `value`, `n`,
+`coverage`, `previous`, `previous_n` null: the page shows "n/a" in its slot.
+`success_rate + error_rate + rate_limited_rate = 1` whenever there is a judged
+request (same denominator). The counts have `n` = runs and are always judged.
+
+### `GET /api/analytics/series`
+
+One metric per group (`group`) over time: `trend.metric` (default `score`;
+`dim:<key>` too), `trend.bucket` `hour|day|week` (default `day`), `trend.tz`
+(IANA, default UTC), `trend.key` (repeatable, up to 4 series keys; default the
+busiest groups). The answer is `SeriesResult.public()`: `metric`
+(`Metric.public()`), `group`, `bucket`, `tz`, `span_days`, `series` (a group
+plus `n`, `coverage`, `mixed` {suite, stream_mode, api}, `annotations`
+(ekte version / knowledge-base profile changes) and `points`: `bucket` (local
+ISO start), `runs` and a judged cell with quartiles).
+
+### `GET /api/analytics/heatmap`
+
+The weekday × time-of-day grid of one metric: `heat.metric`, `heat.block`
+(hours per row 1, 2, 3, 4, 6), `heat.fold` (`week`, `4weeks`, `month_week`;
+falls back to `week` until the runs cover 90 / 180 days: `fold` vs
+`fold_requested`), `heat.tz`, `heat.key` (one series key of `group`; default
+all selected runs as one series of group `all`). Same shape as `series` with
+`bucket: "dow_hour"`, `block`, `fold`; each point has `dow` (1 = Monday),
+`hour`, `hours` (block > 1) and `week` (folds).
+
+### `GET /api/analytics/leaderboard`
+
+`board.by` `relay|model|relay_model` (default `relay`): one row per group
+with the cells of `BOARD_METRICS` that apply to the surface (score,
+success_rate, error_rate, latency_p50, ttft_p50, decode_tps, billing ratios,
+model_mismatch_rate, risk_high_share), best median score first (no score
+last). Relays of one model: `model=<m>&board.by=relay`. Answer: `by`,
+`metrics` (`Metric.public()`), `rows` (group + `metrics` {id: judged cell}).
+
+### `GET /api/analytics/breakdown`
+
+`breakdown.metric` (repeatable, 1–8 ids, `dim:<key>` too) per group
+(`group`, `all` included) over the range, busiest group first, cells with
+quartiles. Answer: `group`, `metrics`, `runs`, `rows` (as the leaderboard).
+
+### `GET /api/analytics/errors`
+
+The selected runs' target requests by outcome (`history_outcomes`, all ops,
+read from each run's row: `history_metrics.outcome_<class>`;
+classes `success`, `rate_limited`, `relay_timeout`, `relay_5xx`, `relay_4xx`,
+`relay_other`, `network`, `local`), per group (`group`), in total and per
+time bucket of the run's start: `errors.bucket` `hour|day|week|dow_hour`
+(default `day`), `errors.block` (dow_hour), `errors.tz`; `errors.run=<id>`
+adds that run's per-minute timeline from its request records (`OUTCOME_SQL`:
+`errorclass.outcome()` in SQL over `error_class`, `error_type`, `status_code`,
+`retried`, `phase`; repeated attempts and `param_retry` never count).
+
+```json
+{..., "group": "relay", "bucket": "day", "block": 1, "tz": "UTC", "classes": [...8 classes],
+ "runs": 60, "covered": 58, "coverage": 0.97, "totals": <shares>,
+ "groups": [{<group>, "runs": 15, "covered": 15, "coverage": 1.0, "low_n": false, ...<shares>}],
+ "buckets": [{"bucket": "<local ISO>", "dow"?, "hour"?, "hours"?, "runs": 2, "covered": 2, "low_n": true, ...<shares>}],
+ "run": {"id": 7, "minutes": [{"minute": 0, ...<shares>}]}}
+```
+
+`<shares>` is `counts` {class: n}, `requests` (all), `judged` (all − network
+− local), `shares` {class: relay classes over judged, network / local over
+all}, `success_rate`, `rate_limited_rate`, `relay_error_rate`,
+`timeout_rate` (over judged; the first three add up to 1) and
+`impaired_rate` (network + local over all), so the page can grey out network
+and ekte failures. `covered` = runs with outcome counts. One statement for
+groups and buckets.
+
+### `GET /api/analytics/integrity` (`integrity.*`: none)
+
+One row per relay × model: `checks` {detector: `pass`, `warn`, `fail`,
+`other` (not judged), `n` (judged), `pass_rate`, `low_n`} for the
+`INTEGRITY_CHECKS` any selected run has, `model_mismatch` (a share cell) and
+`context` (median, p25, p75 of effective ÷ declared context window over the
+runs that measured both, `n`, `coverage`, `claimed`, `effective`; chat only).
+Answer: `runs`, `checks` (column order), `has_context`, `rows`.
+
+## History API
+
+`ekte/web/history_api.py` computes the History page's widgets on the server,
+on top of the [query core](#query-core) and the [metric registry](#metric-registry),
+so the page only draws. Both endpoints are cached (`cached_endpoint`, ETag /
+304; `range` is resolved first), take every key of the query core's URL
+schema with `group=relay_model` as the default (also `relay`, `model`,
+`all`), ignore the dotted keys of other widgets and answer 400
+`{"error": "..."}` for an invalid value or an unknown key of their own
+namespaces. No endpoint loads the runs into Python: groups are one aggregate
+pass per group and base URL, rows are keyset pages.
+
+**Order** (`groups.sort`, `runs.sort`): `time`, `risk`, `score` or `grade`,
+descending with a leading `-` (default `-time`). The value is the run's start
+time (`history_metrics.started_at`), its risk (clean < inconclusive < low <
+medium < high; no risk level is inconclusive), its score, or its grade
+(F < E < D < C < B < A). Runs without a value come last in either direction;
+ties go to the most recently saved run (higher id). Rows are in that order in
+their group, and groups are ordered by their first run under it, as the page
+always sorted. Cursors (`after`) are opaque and belong to one sort.
+
+**Relay labels.** A saved relay or provider is called by its name; an unsaved
+URL by its host with port, or, when several unsaved URLs share host and port,
+by host, port and path (no scheme, no trailing slash). Computed once per
+`relay_map` content over every URL in it (`relay_labels(conn)`,
+`url_labels(urls)`, `host_of(url)`, `url_place(url)`).
+
+### `GET /api/history/groups`
+
+| Key | Values |
+|---|---|
+| `trend.metrics` | required: 1 or 2 ids of `HISTORY_TRENDS` (`score`, `grade`, `latency_p50`, `ttft_p50`, `decode_tps`, `error_rate`), comma-separated or repeated; 0, 3, a duplicate or another id is a 400. Answered in `HISTORY_TRENDS` order |
+| `groups.sort` | see **Order** |
+| `groups.limit` | 1–200, default 20 |
+| `groups.after` | the previous page's `after` |
+| `groups.focus` | a run id: the page grows (whole pages) until it holds that run's group |
+
+```json
+{
+  "group": "relay_model", "sort": "-time", "limit": 20,
+  "trend_metrics": ["score", "latency_p50"], "points_max": 50, "min_runs": 3,
+  "total_groups": 37, "total_runs": 1204,
+  "after": "<cursor or null>",
+  "focus": {"id": 812, "key": "https://relay.example/v1|gpt-4o"},
+  "groups": [{
+    "key": "https://relay.example/v1|gpt-4o",
+    "kind": "relay_model",
+    "label": "relay.example · gpt-4o",
+    "relay": {"key": "https://relay.example/v1", "label": "relay.example", "kind": "url", "in_kb": false},
+    "claimed_model": "gpt-4o",
+    "base_urls": ["https://relay.example/v1"],
+    "runs": 42, "low_n": false,
+    "latest": {"<run row, as in /api/history/runs>": "..."},
+    "trends": {
+      "score": {
+        "metric": "score", "points": [81.5, 84.0, 79.0], "first": 81.5, "n": 3,
+        "last": {"value": 79.0, "family": "sky", "grade": "C", "delta": -2.5,
+                 "direction": "worse", "trend_key": "trend.falling", "low_n": false, "applies": true}
+      }
+    }
+  }]
+}
+```
+
+`focus` is null without `groups.focus` or when the run is not among the
+filtered runs. `relay` is null for `group=model|all`, `claimed_model` null for
+`relay|all` (and for runs without a claimed model). `label` is the relay label
+(`relay`), the model (`model`), `(all)` (`all`) or `<relay label> · <model>`,
+with `(unknown)` for a missing part. `base_urls` lists the group's URLs, the
+most recently used first. `latest` is the group's newest run (start time,
+then id). Trend `points` are the stored per-run values (`score`, the grade on
+the 1..6 scale, `latency_p50_ms`, `ttft_p50_ms`, `decode_tps_p50`, the run's
+#118 `error_rate`; a run with no judged request has none) of the group's
+newest 50 runs, oldest to newest, runs without a value left out; `first` /
+`last.value` / `n` are what the accessible description reads, and `last` is
+`present(metric, last, first, n=n, surface=<surface filter>)`.
+
+### `GET /api/history/runs`
+
+| Key | Values |
+|---|---|
+| `group.key` | required: a group's `key` (under the same `group` and filters) |
+| `runs.sort` | see **Order** |
+| `runs.limit` | 1–200, default 20 |
+| `runs.after` | the previous page's `after` |
+| `runs.focus` | a run id: when it is in this group after the cursor, the page grows (whole pages of `runs.limit`) until it holds it |
+
+```json
+{
+  "group": "relay_model", "key": "https://relay.example/v1|gpt-4o", "sort": "-time",
+  "limit": 20, "total": 42, "after": "<cursor or null>",
+  "focus": {"id": 812, "found": true},
+  "rows": [{
+    "id": 812, "ts": "2026-11-01T09:12:40+00:00",
+    "started_at": "2026-11-01T09:10:02.000000+00:00", "started_at_estimated": false,
+    "base_url": "https://relay.example/v1", "relay_key": "https://relay.example/v1",
+    "claimed_model": "gpt-4o", "model": "gpt-4o", "mode": "check", "suite": "standard",
+    "surface": "chat", "api": "openai", "api_auto": true, "detect": "auto", "stream_mode": "stream",
+    "risk_level": "clean", "score": 84.0, "grade": "B", "kb_match": "match",
+    "family": {"risk": "good", "score": "good", "grade": "good"},
+    "watch_id": null, "exec": "manual",
+    "latency_p50_ms": 812.4, "ttft_p50_ms": 301.0, "decode_tps_p50": 61.2, "error_rate": 0.02
+  }]
+}
+```
+
+`limit` is the page size actually used (larger than asked when `runs.focus`
+grew it); `total` counts the group's runs under the filters; `focus` is null
+without `runs.focus`. `risk_level` is `inconclusive` for a run without one,
+`mode` `check` for one without, `detect` `auto` / `manual` / null and `exec`
+`manual` / `monitor`; `family` holds the colour families of the risk badge,
+score and grade (`metrics.family`).
+
+### `GET /api/history/{rid}?trend=1`
+
+Besides the running request medians, the report gains `history_trends`:
+`{metric id: present(...)}` for every `HISTORY_TRENDS` metric, from the same
+per-run SQL as the group trends, so a group of that run alone shows exactly
+these values (and `query.aggregate` over that run gives the same, n = 1).
+
+The History page reads only these endpoints (#127); the old internal
+`GET /api/history` (the newest ≤ 500 runs, `limit` / `perf` / `relay`) is
+gone. `GET /api/v1/history` is part of the public API and keeps its shape
+(`limit`, `perf`); with `perf=1` the headline (`latency_p50_ms`,
+`ttft_p50_ms`, `decode_tps_p50`) comes from the run's `history_metrics` row,
+the one store of those values since schema version 13 dropped the copies on
+`history` (#128).
 
 ## HTTP API v1
 

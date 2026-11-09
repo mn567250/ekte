@@ -15,7 +15,6 @@
   "[vector sample of {n} numbers]": "[échantillon de vecteur de {n} nombres]",
   "{n} requests": "{n} requêtes",
   "{input} input tokens (usage)": "{input} tokens d'entrée (usage)",
-  "batch probe": "sonde par lot",
-  "No audits of this endpoint type.": "Aucun audit de ce type de point d'accès."
+  "batch probe": "sonde par lot"
  }
 }

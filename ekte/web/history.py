@@ -15,17 +15,9 @@ Knowledge-base snapshots: the full profile a run was audited against
 report JSON carries only the hash, and :func:`get` puts the profile back.
 Snapshots no row points to any more are deleted with the rows.
 
-Performance headline: the target's p50 latency / TTFT / decode speed (see
-:func:`_perf_headline`) is stored in its own columns when a row is saved, so
-the list and trend views never parse ``report_json``. ``perf_done`` marks a
-row whose headline has been computed, which tells "no performance data" (all
-three NULL) apart from "not computed yet". Rows saved before those columns
-existed are backfilled once after the migration; any row still unmarked (a
-failed backfill, or a row written by an older ekte) is computed when it is
-first read and written back.
-
 Analytics (schema version 2): every saved run also gets a row of extracted
-metrics plus its dimension and detector scores, and its ``performance.requests``
+metrics plus its dimension and detector scores (and, from schema version 9, its
+outcome counts per op in ``history_outcomes``), and its ``performance.requests``
 records move out of ``report_json`` into ``history_requests``, stored once and
 put back by :func:`get` / :func:`latest_for`, so a report reads back identical
 to the one saved (the tables are described in :mod:`ekte.web.analytics_store`).
@@ -42,6 +34,43 @@ folder; deleting the last row that names it deletes it (a re-scored run,
 :mod:`ekte.replay`, names its original's file), and :func:`sweep_evidence`
 removes files no row names.
 
+Data version (schema version 8): ``meta`` holds ``data_version``, a counter
+bumped in the same transaction as every write that changes what the web
+endpoints return (:func:`save`, :func:`delete`, :func:`clear`, the analytics
+backfill), from whichever process writes. :func:`data_version`
+reads it; the web response cache (:mod:`ekte.web.cache`) keys on it.
+
+Relay map (schema version 7): ``relay_map`` maps each distinct run URL to
+its knowledge-base relay so SQL can group and filter runs by relay; it is
+rebuilt from the knowledge base on demand (see :mod:`ekte.web.relay_map`).
+
+Query index (schema version 10): ``idx_history_query`` covers the columns
+:mod:`ekte.web.query` reads from ``history``, so filtering and grouping never
+read a run's report.
+
+Relay ids (schema version 11): ``history_metrics.relay_id`` holds each run's
+``relay_group`` id, kept current by triggers and the relay map, so grouping
+and filtering by relay use an integer of the run's row (see
+:mod:`ekte.web.relay_map`).
+
+Outcome columns (schema version 12): ``history_metrics.outcome_<outcome>``
+holds the run's ``history_outcomes`` counts summed over its ops, kept equal
+by triggers, so pooling outcomes over many runs reads no second table (see
+:data:`ekte.web.analytics_store.OUTCOME_COLS`); ``history_metrics.facet_id``
+the run's combination of few-valued filter values in ``facet_combo`` (see
+:mod:`ekte.web.run_row`).
+
+Performance headline (schema version 13): the list's p50 latency / TTFT /
+decode speed are read from ``history_metrics`` (one store per value); the
+duplicate ``history`` columns of earlier versions (``latency_p50_ms``,
+``ttft_p50_ms``, ``decode_tps_p50``, ``perf_done``) are dropped.
+
+Run row (schema version 14): every value the query core selects, groups or
+sorts runs by is a number on the run's ``history_metrics`` row (start time
+in Unix seconds, score, grade, risk, model / URL / facet ids; kept by
+triggers, see :mod:`ekte.web.run_row`), so aggregations never read
+``history``.
+
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
 """
@@ -51,7 +80,8 @@ from __future__ import annotations
 import contextlib
 import json
 import sqlite3
-from collections.abc import Iterable, Iterator
+import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -81,19 +111,14 @@ _SUMMARY_COLS = (
     "surface",
 )
 
-# Performance headline columns, in the order the API returns them.
-_PERF_COLS = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50")
-# Set to 1 once a row's headline has been computed (its values may all be NULL).
-_PERF_DONE = "perf_done"
 # 1: the row's request records are in history_requests; 0: inline (or none);
 # NULL: not looked at yet.
 _SPLIT = "requests_split"
 
 _DB_NAME = "history.db"
 
-_BACKFILL_BATCH = 100
 # Rows per analytics backfill transaction: each one parses a whole report, so
-# fewer than the perf backfill, to keep the write lock short.
+# few, to keep the write lock short.
 _ANALYTICS_BATCH = 25
 
 
@@ -134,10 +159,6 @@ def _v1(conn: sqlite3.Connection) -> None:
     # request mode; NULL for runs saved before these were recorded.
     kb_snapshot.add_link_columns(
         conn, "history", {"api": "TEXT", "api_auto": "INTEGER", "stream_mode": "TEXT"}
-    )
-    # The performance headline, so list and trend views need not parse report_json.
-    kb_snapshot.add_link_columns(
-        conn, "history", {**dict.fromkeys(_PERF_COLS, "REAL"), _PERF_DONE: "INTEGER"}
     )
     # Groups runs by model across relays.
     conn.execute("CREATE INDEX IF NOT EXISTS idx_history_model ON history (claimed_model)")
@@ -181,6 +202,101 @@ def _v6(conn: sqlite3.Connection) -> None:
     )
 
 
+def _v7(conn: sqlite3.Connection) -> None:
+    """The relay of each distinct run URL (:mod:`ekte.web.relay_map`); filled
+    on first use by ``relay_map.ensure_relay_map``."""
+    from ekte.web import relay_map  # it imports the analytics queries, which import this module
+
+    relay_map.ensure_tables(conn)
+
+
+def _v8(conn: sqlite3.Connection) -> None:
+    """The ``meta`` key/value table and its ``data_version`` counter.
+
+    Idempotent (another step may have created ``meta`` already); values are
+    read with a CAST, so either column affinity works."""
+    conn.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value)")
+    conn.execute("INSERT OR IGNORE INTO meta (key, value) VALUES ('data_version', 0)")
+
+
+def _v9(conn: sqlite3.Connection) -> None:
+    """Outcome counts per run and op (``history_outcomes``) and the outcome
+    rates' bases (filled by the analytics backfill, which re-extracts every
+    row of an older EXTRACT_VERSION)."""
+    analytics_store.ensure_tables(conn)
+    kb_snapshot.add_link_columns(
+        conn,
+        "history_metrics",
+        {"impaired_rate": "REAL", "requests_total": "INTEGER", "requests_judged": "INTEGER"},
+    )
+
+
+# The history columns the query core (ekte/web/query.py) filters, groups and
+# sorts by, in a covering index: a run's row holds its report_json (tens of
+# kB, in overflow pages) before most of them, so reading them from the table
+# would read the whole report of every run.
+QUERY_INDEX_COLS = (
+    "id", "surface", "watch_id", "base_url", "claimed_model", "model", "mode", "suite",
+    "risk_level", "score", "rating", "api", "api_auto", "stream_mode",
+)
+
+
+def _v10(conn: sqlite3.Connection) -> None:
+    """The covering index of the query core (:data:`QUERY_INDEX_COLS`)."""
+    conn.execute(
+        f"CREATE INDEX IF NOT EXISTS idx_history_query ON history ({', '.join(QUERY_INDEX_COLS)})"
+    )
+
+
+def _v11(conn: sqlite3.Connection) -> None:
+    """Each run's relay id (``history_metrics.relay_id``, ``relay_group``;
+    :func:`ekte.web.relay_map.ensure_relay_ids`); filled in for the runs
+    already saved by the next ``relay_map.ensure_relay_map``."""
+    from ekte.web import relay_map
+
+    relay_map.ensure_relay_ids(conn)
+
+
+def _v12(conn: sqlite3.Connection) -> None:
+    """Per-run columns kept by triggers, filled in for the runs already
+    saved: each run's outcome counts
+    (:data:`ekte.web.analytics_store.OUTCOME_COLS`) and its combination of
+    few-valued filter values (``facet_id``), with the other run-row columns
+    (:func:`ekte.web.run_row.ensure_run_columns`; step 14 finds them current)."""
+    from ekte.web import run_row
+
+    analytics_store.ensure_outcome_columns(conn)
+    run_row.ensure_run_columns(conn)
+
+
+# The performance headline columns of ``history`` before version 13: the same
+# values as history_metrics' (two stores for one value), dropped.
+_DROPPED_PERF_COLS = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50", "perf_done")
+
+
+def _v13(conn: sqlite3.Connection) -> None:
+    """Drop the duplicate performance headline columns of ``history`` (the
+    list reads them from ``history_metrics``). ``ALTER TABLE ... DROP COLUMN``
+    needs SQLite 3.35; an older SQLite keeps the columns, which nothing reads
+    or writes any more."""
+    if sqlite3.sqlite_version_info < (3, 35):
+        return
+    present = {r[1] for r in conn.execute("PRAGMA table_info(history)")}
+    for col in _DROPPED_PERF_COLS:
+        if col in present:
+            conn.execute(f"ALTER TABLE history DROP COLUMN {col}")
+
+
+def _v14(conn: sqlite3.Connection) -> None:
+    """Each run's numeric run row (:data:`ekte.web.run_row.RUN_COLUMNS`:
+    start time in Unix seconds, score, grade, risk, model, URL and facet ids,
+    kept by triggers), filled in for the runs already saved, and its
+    indexes."""
+    from ekte.web import run_row
+
+    run_row.ensure_run_columns(conn)
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -188,6 +304,14 @@ MIGRATIONS = (
     dbmigrate.Migration(4, _v4),
     dbmigrate.Migration(5, _v5),
     dbmigrate.Migration(6, _v6),
+    dbmigrate.Migration(7, _v7),
+    dbmigrate.Migration(8, _v8),
+    dbmigrate.Migration(9, _v9),
+    dbmigrate.Migration(10, _v10),
+    dbmigrate.Migration(11, _v11),
+    dbmigrate.Migration(12, _v12),
+    dbmigrate.Migration(13, _v13),
+    dbmigrate.Migration(14, _v14),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
@@ -199,68 +323,9 @@ def _after_migration(conn: sqlite3.Connection) -> None:
     schema and compute any row the backfill has not reached yet.
     """
     try:
-        _backfill_perf(conn)
-    except Exception:
-        # Best-effort: rows left unmarked are computed on read instead.
-        conn.rollback()
-    try:
         _backfill_analytics(conn)
     except Exception:
         # Best-effort: rows left over are picked up by backfill_analytics().
-        conn.rollback()
-
-
-_SET_PERF = (
-    f"UPDATE history SET {', '.join(f'{c} = ?' for c in _PERF_COLS)}, {_PERF_DONE} = 1 "
-    "WHERE id = ?"
-)
-
-
-def _backfill_perf(conn: sqlite3.Connection) -> None:
-    """Compute the perf headline of every row not marked ``perf_done``.
-
-    Works in batches and commits after each one, so other writers are not
-    locked out for long. Idempotent: a row computed twice gets the same values.
-    """
-    last = 0
-    while True:
-        rows = conn.execute(
-            f"SELECT id, report_json FROM history WHERE id > ? AND {_PERF_DONE} IS NULL"
-            " ORDER BY id LIMIT ?",
-            (last, _BACKFILL_BATCH),
-        ).fetchall()
-        if not rows:
-            return
-        conn.executemany(
-            _SET_PERF,
-            [(*_perf_headline(r["report_json"]).values(), r["id"]) for r in rows],
-        )
-        conn.commit()
-        last = int(rows[-1]["id"])
-
-
-def _fill_perf(conn: sqlite3.Connection, items: list[dict[str, Any]]) -> None:
-    """Pop ``perf_done`` from each item; compute the headline of items not yet
-    marked from their report_json, and store it (best-effort)."""
-    todo = {int(item["id"]): item for item in items if not item.pop(_PERF_DONE, None)}
-    if not todo:
-        return
-    ids = list(todo)
-    updates = []
-    for start in range(0, len(ids), 500):
-        chunk = ids[start:start + 500]
-        rows = conn.execute(
-            f"SELECT id, report_json FROM history WHERE id IN ({', '.join('?' * len(chunk))})",
-            chunk,
-        ).fetchall()
-        for r in rows:
-            headline = _perf_headline(r["report_json"])
-            todo[int(r["id"])].update(headline)
-            updates.append((*headline.values(), r["id"]))
-    try:
-        conn.executemany(_SET_PERF, updates)
-        conn.commit()
-    except sqlite3.Error:
         conn.rollback()
 
 
@@ -275,7 +340,8 @@ _ANALYTICS_TODO = f"""SELECT id FROM history WHERE {_SPLIT} IS NULL
 
 def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ...] | None:
     """What the backfill writes for one row: ``(id, new report_json or None,
-    encoded request records or None, metrics, dimensions)``; None to skip it."""
+    encoded request records or None, metrics, dimensions, outcomes)``; None to
+    skip it."""
     try:
         report = json.loads(row["report_json"]) if row["report_json"] is not None else None
     except (ValueError, TypeError):
@@ -289,10 +355,10 @@ def _analytics_work(conn: sqlite3.Connection, row: sqlite3.Row) -> tuple[Any, ..
             stored, records = analytics_store.split_requests(report)
             if records is not None:
                 report_json = json.dumps(stored, ensure_ascii=False)
-        metrics, dims = analytics_store.extract_metrics(report)
+        extracted = analytics_store.extract_metrics(report)
     except Exception:
         return None
-    return row["id"], report_json, records, metrics, dims
+    return row["id"], report_json, records, *extracted
 
 
 def _backfill_analytics(conn: sqlite3.Connection) -> None:
@@ -308,6 +374,10 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
     pending = sorted(
         int(r[0]) for r in conn.execute(_ANALYTICS_TODO, (analytics_store.EXTRACT_VERSION,))
     )
+    if not pending:
+        return
+    began = time.monotonic()
+    dbmigrate.notice(f"updating the metrics of {len(pending)} saved run(s) for this version...")
     for start in range(0, len(pending), _ANALYTICS_BATCH):
         ids = pending[start:start + _ANALYTICS_BATCH]
         rows = conn.execute(
@@ -324,7 +394,7 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
             for rid in ids:
                 if rid not in split:
                     analytics_store.delete_for(conn, rid)
-            for rid, report_json, records, metrics, dims in work:
+            for rid, report_json, records, *extracted in work:
                 if split[rid] is None:
                     if records is not None:
                         cur = conn.execute(
@@ -339,11 +409,14 @@ def _backfill_analytics(conn: sqlite3.Connection) -> None:
                             f"UPDATE history SET {_SPLIT} = 0 WHERE id = ? AND {_SPLIT} IS NULL",
                             (rid,),
                         )
-                analytics_store.put_metrics(conn, rid, metrics, dims)
+                analytics_store.put_metrics(conn, rid, *extracted)
+            _bump(conn)
             conn.commit()
         except BaseException:
             conn.rollback()
             raise
+    dbmigrate.notice(f"metrics of {len(pending)} saved run(s) updated in"
+                     f" {time.monotonic() - began:.1f} s")
 
 
 def backfill_analytics() -> None:
@@ -364,6 +437,32 @@ def _connect() -> Iterator[sqlite3.Connection]:
         yield conn
 
 
+def _read() -> sqlite3.Connection:
+    """This thread's reused read-only connection (see :func:`ekte.datadir.read_connection`)."""
+    return datadir.read_connection(_DB_NAME, MIGRATIONS, _after_migration)
+
+
+_BUMP_SQL = (
+    "INSERT INTO meta (key, value) VALUES ('data_version', 1)"
+    " ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + 1"
+)
+
+
+def _bump(conn: sqlite3.Connection) -> None:
+    """Increment ``data_version``; call inside the write's own transaction."""
+    conn.execute(_BUMP_SQL)
+
+
+def data_version() -> int:
+    """The database's write counter: changes with every committed write that
+    changes what the web endpoints return, from any process. One primary-key
+    lookup on this thread's read connection."""
+    row = _read().execute(
+        "SELECT CAST(value AS INTEGER) FROM meta WHERE key = 'data_version'"
+    ).fetchone()
+    return int(row[0]) if row and row[0] is not None else 0
+
+
 def init() -> None:
     """Create the tables if they don't exist. Idempotent; safe to call often."""
     with _connect():
@@ -379,7 +478,6 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
     Best-effort by contract: this is called from inside the SSE stream, so any
     extraction or DB error is swallowed rather than allowed to abort the audit.
     """
-    _wrote()
     try:
         # As plain JSON (what reading it back gives), so the request records
         # and metrics below see exactly what is stored.
@@ -407,19 +505,14 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
             # Left unmarked with its records inline: the backfill retries it.
             metrics, stored, records, split = None, report, None, None
         report_json = json.dumps(stored, ensure_ascii=False)
-        # Serialised the same way, so the stored headline is exactly what
-        # reading report_json back would give.
-        headline = _perf_headline(json.dumps({"performance": report.get("performance")}))
         with _connect() as conn:
             snapshot_id = kb_snapshot.put(conn, snap) if isinstance(snap, dict) else None
             cur = conn.execute(
                 """INSERT INTO history
                    (ts, base_url, claimed_model, model, mode, suite,
                     risk_level, score, rating, report_json, kb_snapshot_id, kb_match, watch_id,
-                    api, api_auto, stream_mode, surface,
-                    latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done, requests_split,
-                    evidence_file)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)""",
+                    api, api_auto, stream_mode, surface, requests_split, evidence_file)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     report.get("generated_at"),
                     target.get("base_url"),
@@ -440,7 +533,6 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                     int(api_auto) if isinstance(api_auto, bool) else None,
                     report.get("stream_mode"),
                     report.get("surface") or "chat",
-                    *(headline[c] for c in _PERF_COLS),
                     split,
                     _evidence_name(report),
                 ),
@@ -451,31 +543,39 @@ def save(report: dict[str, Any], watch_id: int | None = None) -> int:
                 analytics_store.put_requests(conn, rid, records)
             if metrics is not None:
                 analytics_store.put_metrics(conn, rid, *metrics)
+            _bump(conn)
             return rid
     except Exception:
         return -1
 
 
+# The performance headline of the list (GET /api/v1/history?perf=1), read
+# from the run's extracted metrics.
+PERF_HEADLINE = ("latency_p50_ms", "ttft_p50_ms", "decode_tps_p50")
+
+
 def recent(limit: int = 50, perf: bool = False) -> list[dict[str, Any]]:
     """Most recent audits, newest first — summary columns only (no report).
 
-    With ``perf`` each row also carries the performance headline of its report
-    (``latency_p50_ms`` / ``ttft_p50_ms`` / ``decode_tps_p50``, see
-    :func:`_perf_headline`) so the UI can draw trends without one call per group.
+    With ``perf`` each row also carries the target's performance headline
+    (:data:`PERF_HEADLINE`, from ``history_metrics``; None where the run did
+    not measure it). The public ``GET /api/v1/history``; the History page
+    reads ``/api/history/groups`` and ``/api/history/runs`` instead.
     """
     try:
         limit = max(1, min(int(limit), 500))
     except (TypeError, ValueError):
         limit = 50
-    cols = ", ".join(_SUMMARY_COLS + ((*_PERF_COLS, _PERF_DONE) if perf else ()))
+    cols = ", ".join((*(f"h.{c}" for c in _SUMMARY_COLS),
+                      *((f"m.{c}" for c in PERF_HEADLINE) if perf else ())))
+    join = " LEFT JOIN history_metrics m ON m.history_id = h.id" if perf else ""
+    if perf:
+        _ensure_extracted(_read())
     with _connect() as conn:
         rows = conn.execute(
-            f"SELECT {cols} FROM history ORDER BY id DESC LIMIT ?", (limit,)
+            f"SELECT {cols} FROM history h{join} ORDER BY h.id DESC LIMIT ?", (limit,)
         ).fetchall()
-        out = [_with_surface(dict(r)) for r in rows]
-        if perf:
-            _fill_perf(conn, out)
-    return out
+    return [_with_surface(dict(r)) for r in rows]
 
 
 def status() -> dict[str, Any]:
@@ -588,49 +688,16 @@ def snapshot_for(rid: int) -> dict[str, Any] | None:
         return kb_snapshot.get(conn, row["kb_snapshot_id"]) if row else None
 
 
-def _perf_headline(report_json: str | None) -> dict[str, float | None]:
-    """Target p50 latency / TTFT / decode speed of a saved report (None if absent)."""
-    out: dict[str, float | None] = {"latency_p50_ms": None, "ttft_p50_ms": None, "decode_tps_p50": None}
-    try:
-        target = (json.loads(report_json or "{}").get("performance") or {}).get("target") or {}
-    except (ValueError, TypeError, AttributeError):
-        return out
-
-    def p50(key: str) -> float | None:
-        stats = target.get(key)
-        value = stats.get("p50") if isinstance(stats, dict) else None
-        return float(value) if isinstance(value, (int, float)) else None
-
-    out["latency_p50_ms"] = p50("latency_ms")
-    out["ttft_p50_ms"] = p50("ttft_ms")
-    tps = p50("decode_tps_local")
-    out["decode_tps_p50"] = tps if tps is not None else p50("decode_tps_reported")
-    return out
-
-
-# Bumped by every write, so cached analytics answers (server.py) are dropped.
-_writes = 0
-
-
-def write_mark() -> tuple[str, int]:
-    """Which history database, and how often it was written since start."""
-    return str(_db_path()), _writes
-
-
-def _wrote() -> None:
-    global _writes
-    _writes += 1
-
-
 def delete(rid: int) -> None:
     """Remove one row by id, with its analytics rows, its evidence file (and a
     snapshot nothing else uses). No-op if missing."""
-    _wrote()
     with _connect() as conn:
         row = conn.execute("SELECT evidence_file FROM history WHERE id = ?", (int(rid),)).fetchone()
         conn.execute("DELETE FROM history WHERE id = ?", (int(rid),))
         analytics_store.delete_for(conn, int(rid))
         kb_snapshot.prune(conn, "history")
+        if row is not None:
+            _bump(conn)
         # a re-scored run shares its original's file: keep it while a row names it
         shared = row is not None and row["evidence_file"] is not None and conn.execute(
             "SELECT 1 FROM history WHERE evidence_file = ? LIMIT 1", (row["evidence_file"],)
@@ -641,13 +708,13 @@ def delete(rid: int) -> None:
 
 def clear() -> None:
     """Wipe all history, analytics rows, snapshots and evidence files included."""
-    _wrote()
     with _connect() as conn:
         names = [r["evidence_file"] for r in conn.execute(
             "SELECT evidence_file FROM history WHERE evidence_file IS NOT NULL")]
         conn.execute("DELETE FROM history")
         analytics_store.delete_for(conn)
         kb_snapshot.prune(conn, "history")
+        _bump(conn)
     for name in names:
         evidence_files.remove(name)
 
@@ -679,139 +746,28 @@ def sweep_evidence() -> int:
 
 
 # --------------------------------------------------------------------------- #
-# Analytics reads (the query layer builds on these)
+# Reads of the query core (ekte/web/query.py)
 # --------------------------------------------------------------------------- #
-_RUN_COLS = (
-    *(f"h.{c}" for c in _SUMMARY_COLS),
-    *(f"m.{c}" for c in analytics_store.METRIC_COLS),
-)
-
-
-def analytics_runs(start: str | None = None, end: str | None = None) -> list[dict[str, Any]]:
-    """Every run with its extracted metrics, oldest first by ``started_at``.
-
-    Each row holds the list view's columns (``id``, ``base_url``,
-    ``claimed_model``, ``suite``, ``watch_id``, ...) and every
-    ``history_metrics`` column. ``start`` (inclusive) / ``end`` (exclusive) are
-    ISO timestamps compared with ``started_at``; runs without a known start
-    time are left out when either is given. Brings the analytics tables up to
-    date first (:func:`backfill_analytics`).
-    """
-    where, args = [], []
-    for op, value in ((">=", start), ("<", end)):
-        if value is None:
-            continue
-        dt = analytics_store.parse_ts(value)
-        if dt is None:
-            raise ValueError(f"not an ISO timestamp: {value!r}")
-        where.append(f"m.started_at {op} ?")
-        args.append(analytics_store.format_ts(dt))
-    sql = (
-        f"SELECT {', '.join(_RUN_COLS)} FROM history h"
-        " JOIN history_metrics m ON m.history_id = h.id"
-        + (" WHERE " + " AND ".join(where) if where else "")
-        + " ORDER BY m.started_at, h.id"
-    )
-    with _connect() as conn:
+def _ensure_extracted(conn: sqlite3.Connection) -> None:
+    """Run the analytics backfill when a row still needs it (one indexed
+    ``EXISTS`` when none does)."""
+    if conn.execute(
+        f"SELECT EXISTS ({_ANALYTICS_TODO})", (analytics_store.EXTRACT_VERSION,)
+    ).fetchone()[0]:
         with contextlib.suppress(sqlite3.Error):
-            _backfill_analytics(conn)  # best-effort; a locked database can wait
-        return [_with_surface(dict(r)) for r in conn.execute(sql, args).fetchall()]
+            backfill_analytics()  # best-effort; a locked database can wait
 
 
-def surface_counts() -> dict[str, int]:
-    """Runs per surface over the whole history (NULL reads as chat)."""
-    with _connect() as conn:
-        rows = conn.execute(
-            "SELECT COALESCE(surface, 'chat') AS s, COUNT(*) AS n FROM history GROUP BY s"
-        ).fetchall()
-    return {str(r[0]): int(r[1]) for r in rows}
+def query_connection() -> sqlite3.Connection:
+    """This thread's read-only connection, ready for :mod:`ekte.web.query`:
+    the analytics tables are backfilled and ``relay_map`` reflects the current
+    knowledge base (rebuilt through a short write connection only when it is
+    out of date). Never close it."""
+    from ekte.web import relay_map
 
-
-def _chunks(ids: Iterable[int]) -> Iterator[list[int]]:
-    ids = [int(i) for i in ids]
-    for start in range(0, len(ids), 500):
-        yield ids[start:start + 500]
-
-
-def analytics_dimensions(ids: Iterable[int], kind: str | None = None) -> list[dict[str, Any]]:
-    """``history_dimensions`` rows (``history_id``, ``kind``, ``key``, ``score``,
-    ``status``, ``weight``) of the given runs, optionally of one ``kind``
-    (``dimension`` / ``detector``)."""
-    out: list[dict[str, Any]] = []
-    with _connect() as conn:
-        for chunk in _chunks(ids):
-            sql = (
-                "SELECT history_id, kind, key, score, status, weight FROM history_dimensions"
-                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-            )
-            args: list[Any] = list(chunk)
-            if kind is not None:
-                sql += " AND kind = ?"
-                args.append(kind)
-            out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, kind, key", args))
-    return out
-
-
-def analytics_requests(
-    ids: Iterable[int], endpoint: str | None = "target"
-) -> list[dict[str, Any]]:
-    """Request records of the given runs as stored columns (``history_id``,
-    ``ord`` and every RequestRecord field; booleans as 0/1, ``extra`` left out),
-    in run and list order. ``endpoint`` None returns baseline records too.
-
-    Rows whose records are still inline in ``report_json`` contribute nothing;
-    :func:`analytics_runs` moves them out first.
-    """
-    cols = ", ".join(("history_id", "ord", *analytics_store.REQUEST_FIELDS))
-    out: list[dict[str, Any]] = []
-    with _connect() as conn:
-        for chunk in _chunks(ids):
-            sql = (
-                f"SELECT {cols} FROM history_requests"
-                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-            )
-            args: list[Any] = list(chunk)
-            if endpoint is not None:
-                sql += " AND endpoint = ?"
-                args.append(endpoint)
-            out.extend(dict(r) for r in conn.execute(sql + " ORDER BY history_id, ord", args))
-    return out
-
-
-# The outcome class of one request record (errors view). First match wins:
-# a timeout is a timeout whatever its status code, a 429 is rate limiting.
-# ``network`` is an exception without an HTTP status (connection refused,
-# TLS, reset); ``other`` a failed call with a 1xx-3xx status or no detail.
-REQUEST_CLASSES = ("success", "client_4xx", "rate_limited", "server_5xx", "timeout", "network", "other")
-_CLASS_SQL = (
-    "CASE WHEN ok = 1 THEN 'success'"
-    " WHEN timeout = 1 THEN 'timeout'"
-    " WHEN rate_limited = 1 OR status_code = 429 THEN 'rate_limited'"
-    " WHEN status_code BETWEEN 500 AND 599 THEN 'server_5xx'"
-    " WHEN status_code BETWEEN 400 AND 499 THEN 'client_4xx'"
-    " WHEN status_code IS NULL AND error_type IS NOT NULL THEN 'network'"
-    " ELSE 'other' END"
-)
-
-
-def analytics_request_classes(
-    ids: Iterable[int], endpoint: str = "target", op: str = "complete"
-) -> list[dict[str, Any]]:
-    """Calls of the given runs (``op``: ``complete`` for completion calls,
-    ``embed`` for embedding calls, ``rerank`` for rerank calls) counted in SQL by run, minute after
-    the run's start (``minute``: whole minutes of ``start_ms``) and outcome
-    class (``cls``, one of :data:`REQUEST_CLASSES`): rows ``history_id``,
-    ``minute``, ``cls``, ``n``. Never loads the records themselves; a run
-    without stored records has no rows."""
-    out: list[dict[str, Any]] = []
-    with _connect() as conn:
-        for chunk in _chunks(ids):
-            sql = (
-                "SELECT history_id, CAST(COALESCE(start_ms, 0) / 60000 AS INTEGER) AS minute,"
-                f" {_CLASS_SQL} AS cls, COUNT(*) AS n FROM history_requests"
-                f" WHERE history_id IN ({', '.join('?' * len(chunk))})"
-                " AND COALESCE(endpoint, 'target') = ? AND COALESCE(op, 'complete') = ?"
-                " GROUP BY history_id, minute, cls ORDER BY history_id, minute, cls"
-            )
-            out.extend(dict(r) for r in conn.execute(sql, [*chunk, endpoint, op]))
-    return out
+    conn = _read()
+    _ensure_extracted(conn)
+    if not relay_map.is_current(conn):
+        with _connect() as writer:
+            relay_map.ensure_relay_map(writer)
+    return conn

@@ -694,7 +694,7 @@
    "reliability_requests <= 0 ({reliability_requests}); no se lanzó carga concurrente."
   ],
   "reliability.success_rate": [
-   "Tasa de éxito de las peticiones concurrentes",
+   "Tasa de éxito de la comprobación de fiabilidad",
    "Con concurrencia {concurrency}, {successes} peticiones correctas (de {requests}, {rate_limited} limitadas por tasa)."
   ],
   "reliability.rate_limited": [

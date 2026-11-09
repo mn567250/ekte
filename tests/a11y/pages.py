@@ -46,6 +46,8 @@ TEST_PAGES: dict[str, tuple[str, ...]] = {
     "test_history_controls.py": ("history",),
     "test_analytics_view.py": ("analytics",),
     "test_history_paging.py": ("history",),
+    # the component on its own test page, and the monitors' links into History
+    "test_filters_view.py": ("history", "monitors"),
     "test_flows.py::test_audit_flow": ("audit",),
     "test_flows.py::test_failing_audit_flow": ("audit",),
     "test_flows.py::test_monitor_flow": ("history", "monitors"),  # starts on History
@@ -123,6 +125,9 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (_V2 + "chartmotion.css", ("audit", "history", "analytics", "accessibility")),
     (_V2 + "filterpanel.js", ("history", "monitors", "analytics", "kb")),
     (_V2 + "filterpanel.css", ("history", "monitors", "analytics", "kb")),
+    # the shared fields and URL state (History #127, Analytics #126)
+    (_V2 + "filters.js", ("history", "analytics")),
+    (_V2 + "trendpick.js", ("history",)),
     (_V2 + "notice.js", ("audit", "history", "monitors", "analytics", "kb")),
     (_V2 + "accessibility.html", ("accessibility",)),
     # the page fetches bitv-report.json; the catalogue is what it is built from
@@ -154,7 +159,9 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
         "ekte/web/history.py",
         ("audit", "history", "monitors", "analytics"),
     ),  # report view, history list, monitor from history, the analytics queries
-    ("ekte/web/analytics.py", ("analytics",)),  # the /api/analytics/* endpoints
+    ("ekte/web/analytics.py", ("analytics",)),  # the former analytics queries
+    # the /api/analytics/* endpoints and /api/filters/options (both pages)
+    ("ekte/web/analytics_widgets.py", ("analytics", "history")),
     ("ekte/web/analytics_store.py", ("analytics",)),
     ("ekte/web/jobs.py", ("audit", "monitors")),  # running audits (the Running tabs)
     ("ekte/web/watches.py", ("history", "monitors")),  # "schedule as monitor" on History

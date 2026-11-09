@@ -366,7 +366,7 @@ def _source_strings(path: Path) -> set[str]:
 @pytest.mark.parametrize(
     "page",
     ["v2/masterkey.js", "v2/watches.html", "v2/relaycfg.js", "v2/index.html", "v2/kb.html",
-     "v2/kbsection.js", "v2/kbview.js", "v2/tabs.js", "v2/jobs.js", "v2/history.html", "v2/analytics.html", "v2/filterpanel.js",
+     "v2/kbsection.js", "v2/kbview.js", "v2/tabs.js", "v2/jobs.js", "v2/history.html", "v2/analytics.html", "v2/filterpanel.js", "v2/filters.js",
      "v2/charts.js", "v2/notice.js"],
 )
 def test_page_strings_are_translatable(page):
@@ -1070,3 +1070,25 @@ def test_pages_are_served_with_the_cookie_language_in_lang_and_title(path):
     client.cookies.clear()
     client.cookies.set("zing_lang", "zh")  # an install from before the rename
     assert '<html lang="zh-CN">' in client.get(path).text
+
+
+def test_every_metric_label_key_is_in_every_locale():
+    # The metric registry sends label keys (ekte/web/metrics.py); the pages
+    # translate them, so every language must carry every key, non-empty.
+    from ekte import i18n
+    from ekte.web import metrics
+
+    cat = metrics.catalogue()
+    keys = {m[k] for m in cat["metrics"]
+            for k in ("label_key", "short_label_key", "kpi_label_key", "agg_hint_key")}
+    keys |= set(cat["trend_keys"])
+    assert keys == set(cat["labels"])
+    data = i18n._load()
+    for code in i18n.codes():
+        strings = data[code]["strings"]
+        missing = sorted(k for k in keys if not strings.get(k))
+        assert not missing, f"{code}: add to ekte/i18n/locales/fragments/metrics/{code}.json: {missing}"
+    assert i18n.keyed("metric.decode_tps", "zh") == "输出速度 p50"
+    assert i18n.keyed("metric.decode_tps", "en") == "Decode speed p50"
+    assert i18n.keyed("metric.decode_tps", "xx") == "Decode speed p50"
+    assert i18n.keyed("no.such.key", "de") == "no.such.key"

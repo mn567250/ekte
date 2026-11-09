@@ -15,7 +15,6 @@
   "[vector sample of {n} numbers]": "[amostra de vetor de {n} números]",
   "{n} requests": "{n} pedidos",
   "{input} input tokens (usage)": "{input} tokens de entrada (usage)",
-  "batch probe": "sondagem em lote",
-  "No audits of this endpoint type.": "Não há auditorias deste tipo de endpoint."
+  "batch probe": "sondagem em lote"
  }
 }

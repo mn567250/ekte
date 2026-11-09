@@ -949,12 +949,14 @@ def test_report_states_not_by_colour_alone(open_page, lang: str) -> None:
     assert_no_issues(issues, f"report [{lang}]", "use-of-colour")
 
 
-def _mock_list(page: Page, path: str, rows: Any) -> None:
-    body = json.dumps(rows)
+def _mock_list(page: Page, path: str | dict[str, Any], rows: Any = None) -> None:
+    """Serve ``rows`` for GET ``path`` (or each body of a {path: body} dict)."""
+    bodies = {k: json.dumps(v) for k, v in (path.items() if isinstance(path, dict) else [(path, rows)])}
 
     def handle(route: Any) -> None:
-        if route.request.method == "GET" and urlparse(route.request.url).path == path:
-            route.fulfill(status=200, content_type="application/json", body=body)
+        got = urlparse(route.request.url).path
+        if route.request.method == "GET" and got in bodies:
+            route.fulfill(status=200, content_type="application/json", body=bodies[got])
         else:
             route.fallback()
 
@@ -972,11 +974,22 @@ def test_list_states_not_by_colour_alone(open_routed_page, base_url: str, lang: 
     import httpx
 
     issues: list[str] = []
-    # history: one row per risk level, everything else equal
-    first = httpx.get(base_url + "/api/history?limit=1&perf=1", timeout=10).json()[0]
-    rows = [dict(first, id=900001 + k, risk_level=v) for k, v in enumerate(RISKS)]
+    # history: one group, one row per risk level, everything else equal (the
+    # badge colour is the server's family.risk)
+    from ekte.web.history_api import RISK_FAMILY
+
+    groups = httpx.get(base_url + "/api/history/groups", params={"trend.metrics": "score"}, timeout=10).json()
+    group = groups["groups"][0]
+    runs = httpx.get(base_url + "/api/history/runs", params={"group.key": group["key"]}, timeout=10).json()
+    first = runs["rows"][0]
+    rows = [dict(first, id=900001 + k, risk_level=v, family=dict(first["family"], risk=RISK_FAMILY[v]))
+            for k, v in enumerate(RISKS)]
     page = open_routed_page(PAGES["history"], lang)
-    _mock_list(page, "/api/history", rows)
+    _mock_list(page, {
+        "/api/history/groups": dict(groups, groups=[dict(group, runs=len(rows))], total_groups=1,
+                                    total_runs=len(rows), after=None, focus=None),
+        "/api/history/runs": dict(runs, rows=rows, total=len(rows), after=None, focus=None),
+    })
     states = [(r["risk_level"], page.evaluate(SIGNATURE_JS, f'li.row[data-id="{r["id"]}"] .rmain')) for r in rows]
     issues += colour_only_pairs(states, "history row")
     # monitors: every badge state of a card

@@ -44,67 +44,87 @@
     - text: Tipo de endpoint
     - combobox "Tipo de endpoint":
       - option "Todos" [selected]
-      - option "Chat"
-    - text: Relay / fornecedor
-    - combobox "Relay / fornecedor":
-      - option "Todos" [selected]
-      - option "127.0.0.1:9099"
-      - option "Example Relay"
-      - option "gateway.a-very-long-relay-hostname.example.org"
-    - text: Modelo declarado
-    - combobox "Modelo declarado":
-      - option "Todos" [selected]
-      - option "gpt-4o"
-      - option "model-a"
-      - option "model-b"
+      - option "Chat (15)"
+      - option "Embeddings"
+      - option "Reordenação"
+    - group "Relay / fornecedor":
+      - text: Relay / fornecedor
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
+      - text: gateway.a-very-long-relay-hostname.example.org (5)
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Modelo declarado":
+      - text: Modelo declarado
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Todos" [selected]
-      - option "standard"
+      - option "standard (15)"
     - text: Modo
     - combobox "Modo":
       - option "Todos" [selected]
-      - option "check"
+      - option "check (15)"
     - text: Protocolo
     - combobox "Protocolo":
       - option "Todos" [selected]
-      - option "openai"
-      - option "(desconhecido)"
+      - option "openai (14)"
+      - option "(desconhecido) (1)"
     - text: Deteção do protocolo
     - combobox "Deteção do protocolo":
       - option "Todos" [selected]
-      - option "(desconhecido)"
+      - option "detetado automaticamente"
+      - option "definido manualmente"
+      - option "(desconhecido) (15)"
     - text: Pedidos de sondagem
     - combobox "Pedidos de sondagem":
       - option "Todos" [selected]
-      - option "Streaming"
-      - option "(desconhecido)"
+      - option "Streaming (14)"
+      - option "Sem streaming"
+      - option "Streaming + sem streaming"
+      - option "(desconhecido) (1)"
     - text: Risco
     - combobox "Risco":
       - option "Todos" [selected]
-      - option "Coerente (provavelmente autêntico)"
-      - option "Globalmente fiável"
-      - option "Gato por lebre"
+      - option "Coerente (provavelmente autêntico) (7)"
+      - option "Globalmente fiável (4)"
+      - option "Desvios detetados"
+      - option "Gato por lebre (4)"
+      - option "Sinal insuficiente"
     - text: Pontuação mín.
     - spinbutton "Pontuação mín."
     - text: Período
     - combobox "Período":
-      - option "Todos" [selected]
+      - option "Todo o período" [selected]
+      - option "Últimas 24 horas"
       - option "Últimos 7 dias"
       - option "Últimos 30 dias"
       - option "Últimos 90 dias"
+      - option "Últimos 365 dias"
+      - option "Período personalizado"
     - text: Execução
     - combobox "Execução":
       - option "Todos" [selected]
-      - option "Manual"
-      - option "Monitor"
+      - option "Manual (11)"
+      - option "Monitor (4)"
     - group "Tendências":
-      - text: Tendências
+      - text: Tendências 2 de no máximo 2 selecionados
       - button "Pontuação" [pressed]
-      - button "Nota"
+      - button "Nota" [disabled]
       - button "Latência p50" [pressed]
-      - button "Velocidade de descodificação p50"
+      - button "Tempo até ao primeiro token p50" [disabled]
+      - button "Velocidade de descodificação p50" [disabled]
+      - button "Taxa de erros" [disabled]
     - text: A mostrar 15 de 15 auditorias
+    - status
+    - button "Copiar a ligação para esta vista"
+  - status
   - group "Ordenar auditorias":
     - button "Data, ordem decrescente": Data
     - button "Ordenar por Risco": Risco
@@ -115,9 +135,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relay Example Relay Pontuação
-    - 'img "Evolução da pontuação de saúde em 7 auditorias: de 70 para 82, em subida."'
+    - 'img "Tendência de Pontuação em 7 auditorias: de 70 a 82, em subida."'
     - text: 82 Latência p50
-    - 'img "Tendência de Latência p50 em 7 auditorias: de <duration> a <duration>."'
+    - 'img "Tendência de Latência p50 em 7 auditorias: de <duration> a <duration>, em queda."'
     - text: <duration>
     - list:
       - listitem:
@@ -159,9 +179,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relay gateway.a-very-long-relay-hostname.example.org Pontuação
-    - 'img "Evolução da pontuação de saúde em 4 auditorias: de 58 para 64, em subida."'
+    - 'img "Tendência de Pontuação em 4 auditorias: de 58 a 64, em subida."'
     - text: 64 Latência p50
-    - 'img "Tendência de Latência p50 em 4 auditorias: de <duration> a <duration>."'
+    - 'img "Tendência de Latência p50 em 4 auditorias: de <duration> a <duration>, em queda."'
     - text: <duration>
     - list:
       - listitem:
@@ -188,9 +208,9 @@
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - text: Relay Example Relay Pontuação
-    - 'img "Evolução da pontuação de saúde em 2 auditorias: de 89 para 91, em subida."'
+    - 'img "Tendência de Pontuação em 2 auditorias: de 89 a 91, em subida."'
     - text: 91 Latência p50
-    - 'img "Tendência de Latência p50 em 2 auditorias: de <duration> a <duration>."'
+    - 'img "Tendência de Latência p50 em 2 auditorias: de <duration> a <duration>, em queda."'
     - text: <duration>
     - list:
       - listitem:

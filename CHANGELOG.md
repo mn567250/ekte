@@ -20,6 +20,173 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Metrics, filters and History/Analytics rework ([#117](https://github.com/mn567250/ekte/issues/117))
+
+History and Analytics now show the same numbers, computed once on the
+server. Every request of a run has exactly one outcome, so the success,
+error and rate-limited (429) rates add up to 100% and agree between the
+report, History and Analytics; over several runs they are pooled (Σ counts ÷
+Σ base), values per run (score, latencies, speeds, billing ratios) are
+medians, and a single run always shows its own stored value. Filtering,
+grouping, sorting, aggregation and paging run in SQLite behind one URL schema
+shared by both pages, History reaches every run instead of the newest 500,
+the browser only draws, and answers are cached until any write — a CLI audit
+in another process included. Every widget answers in under 50 ms p95 on a
+20,000-run history.
+
+Saved runs are carried over: the schema migrations fill every new per-run
+column for the runs already saved, and the analytics backfill re-extracts
+older runs once. The first start of the new version says so on stderr —
+which database, from which schema version to which, where the backup is, and
+how many saved runs it re-extracts.
+
+#### Breaking changes
+
+- **Rate definitions** (#118): the stored `success_rate`, `error_rate`,
+  `timeout_rate` and `rate_limited_rate` use the outcome model below: their
+  base is every target request of the run except repeated attempts and
+  network / ekte failures, so success + error + 429 rates add up to 100%. The
+  reliability check's own rate (used for scoring only) is labelled
+  "Reliability check success rate". Old runs are re-extracted
+  (`EXTRACT_VERSION` 4).
+- **HTTP API (internal `/api/`)**:
+  - `/api/analytics/options` is replaced by `GET /api/filters/options` (#123).
+  - Analytics parameters follow the query core: `stream`, `exec`,
+    `trend.metric`, `trend.key`, `trend.tz` instead of `stream_mode`,
+    `source`, `metric`, `keys`, `tz`; there is no `tz_offset`; the leaderboard
+    takes `board.by`, breakdown `breakdown.metric`; an unknown key is a 400
+    (#121, #123).
+  - `GET /api/analytics/summary` answers `tiles` (the 12 KPI tiles) instead of
+    `kpis` (#123).
+  - The error classes are `success`, `rate_limited`, `relay_timeout`,
+    `relay_5xx`, `relay_4xx`, `relay_other`, `network` and `local` (was
+    `client_4xx`, `server_5xx`, `timeout`, `other`), with `*_rate` keys
+    instead of `*_share` (#123).
+  - `GET /api/history` (the newest 500 runs, `limit` / `perf` / `relay`) is
+    removed: the History page reads `/api/history/groups` and
+    `/api/history/runs`; scripts use the public `GET /api/v1/history` (#127).
+  - History's time order and time filter use the run's start time instead of
+    its save time; ties go to the most recently saved run (#121, #124).
+- **URLs**:
+  - Both pages keep their whole view in the query string: Analytics moves from
+    the `#fragment` (`?tab=trends&range=30d&trend.metric=…`), History's sort
+    and trends move from localStorage (`groups.sort`, `trend.metrics`,
+    `runs.focus`); old fragment links open the defaults (#125, #126, #127).
+  - Filter keys are those of the query core: `stream_mode` → `stream`,
+    `source` → `exec`, History's `days` / `min` → `range` / `min_score`; old
+    `base_url=` / `host=` / `days=` / `min=` links open the defaults (#121,
+    #127).
+  - The monitors' "Open in history" links use `relay=` (the relay key)
+    instead of `base_url=` (#125).
+- **Python API**:
+  - `history.write_mark()` is removed; use `history.data_version()` (#120).
+  - The Python Analytics path is removed (#128): `ekte.web.analytics` keeps
+    only the shared constants, `AnalyticsError`, `metric()`,
+    `metrics_for()`, `percentile()`, `RelayResolver` and the bucket helpers;
+    `options`, `summary`, `series`, `leaderboard`, `breakdown`, `errors`,
+    `integrity`, `parse_filters`, `run_value`, `aggregate` and their helpers
+    are gone (use `ekte.web.query` and `ekte.web.analytics_widgets`), as are
+    `history.analytics_runs`, `analytics_dimensions`, `analytics_requests`,
+    `analytics_request_classes`, `REQUEST_CLASSES` and `surface_counts`.
+- **Database**: `history.db` schema version 13 drops the duplicate
+  `history` columns `latency_p50_ms`, `ttft_p50_ms`, `decode_tps_p50` and
+  `perf_done` (on SQLite 3.35 or newer; an older SQLite keeps them unused).
+  An older ekte cannot open a database after the upgrade (as with every
+  schema step) (#128).
+
+#### Added
+
+- **Outcome model** (#118): every request gets exactly one outcome
+  (`ekte.errorclass.outcome()`, `OUTCOMES`: success, network, local,
+  rate_limited, relay_timeout, relay_5xx, relay_4xx, relay_other; repeated
+  attempts excluded), and `ekte.perf.outcomes.run_outcomes()` counts them
+  over all target requests of a run. Reports carry a new `outcomes` section
+  (report schema 1.3); `history.db` schema version 9 adds `history_outcomes`
+  (counts per run, op and outcome) plus `impaired_rate`, `requests_total` and
+  `requests_judged` in `history_metrics`.
+- **Relay map** (#119): `history.db` schema version 7 adds `relay_map`, which
+  maps every distinct run URL to its knowledge-base relay so SQL can group and
+  filter runs by relay; `ekte.web.relay_map.ensure_relay_map()` keeps it in
+  step with `ekte.knowledge.relays.kb_version()`.
+- **Data version and response cache** (#120): `history.db` schema version 8
+  adds a `meta` table whose `data_version` is bumped by every write from any
+  process; widget endpoints use `ekte.web.cache.cached_endpoint` (LRU with
+  single-flight, no time slot) and answer with `ETag` /
+  `Cache-Control: no-cache` and `304 Not Modified` instead of `no-store`;
+  reads share one read-only connection per thread
+  (`datadir.read_connection`).
+- **Query core** (#121): `ekte.web.query` is one filter parser and URL schema
+  for History and Analytics (`parse_query`, `Query.canonical()`; widget keys
+  are namespaced with a dot), one SQL `WHERE` for every filter
+  (`select_runs`), and `aggregate` (median, pooled rates, shares), `series`
+  (time-zone buckets in SQL) and keyset `page_runs` computed in SQLite, with a
+  Python fallback for `median()` / `percentile()`. Schema version 10 adds the
+  covering index `idx_history_query`; `scripts/bench_fixture.py` builds the
+  20k-run benchmark history.
+- **Metric registry** (#122): `ekte/web/metrics.py` is the one metric
+  catalogue (ids, units, display `format`, `agg`, surfaces, direction, i18n
+  label keys `metric.<id>`, `.short`, `.kpi`, `.agg_hint` in every language),
+  with `grade` as a metric, the lists `KPI_GRID` (12 tiles) and
+  `HISTORY_TRENDS`, and `present()` computing colour family, grade, delta
+  direction and trend key on the server from `ekte.scoring`'s now public
+  `GRADE_THRESHOLDS` / `rating()`; `GET /api/metrics` serves the catalogue.
+- **Analytics API** (#123): one GET per widget, computed in SQLite by
+  `ekte/web/analytics_widgets.py` — `/api/analytics/summary` (the 12 tiles,
+  with Error rate and Latency p50 added; chat-only tiles `applies: false` on
+  other surfaces), `series`, `heatmap` (new), `leaderboard`, `breakdown`,
+  `errors` (outcome classes, `relay_error_rate`, `impaired_rate`, a
+  per-minute `errors.run` timeline) and `integrity`, plus
+  `GET /api/filters/options` (every filter key's values with run counts
+  under the other filters).
+- **History API** (#124): `GET /api/history/groups` (groups ordered and
+  keyset-paged on the server, with relay label, base URLs, run count, newest
+  run and one or two `trend.metrics`) and `GET /api/history/runs` (one
+  group's rows, keyset-paged; `runs.focus` returns the page holding a run) in
+  `ekte/web/history_api.py`; `GET /api/history/{id}?trend=1` adds
+  `history_trends`.
+- **Shared filter component** (#125): `ekte/web/static/v2/filters.js`
+  (`EkteFilters`) owns the filter fields of the URL schema, keeps the view in
+  the query string (localStorage only as a fallback), fetches widgets in
+  parallel with ETag / 304 reuse, aborts superseded requests and carries
+  "Copy link to this view"; `/api/watches` rows gain `relay_key`.
+- **Analytics page draws from the server** (#126): the KPI grid is the
+  server's 12 tiles in a fixed 4 × 3 grid (2 columns on phones), chat-only
+  tiles keep their slot as "n/a", deltas are coloured by the server's
+  direction, success and error rate explain their pooled base; the
+  Reliability tab shows the outcome classes and keeps network and ekte
+  failures apart, greyed out; filters are the shared fields with a page-wide
+  "Group by", and the leaderboard ranks relays, models or relay × model
+  pairs.
+- **History page draws from the server** (#127): groups, rows, order, grades,
+  colour families and trend text come from the server, so every run is
+  reachable through filters and "Show more" (rows and, new, groups); the trend
+  picker offers Score, Grade, Latency p50, TTFT p50, Decode speed p50 and
+  Error rate, one or two at once (the others disabled, with a "2 / 2" hint).
+- **Within budget** (#117): schema version 11 gives every run an integer relay
+  id (`history_metrics.relay_id`, `relay_group`), schema version 12 keeps its
+  outcome counts (`history_metrics.outcome_<outcome>`) and its combination of
+  few-valued filter values (`facet_id`, `facet_combo`) on its metrics row,
+  all kept by triggers; `filters/options` names a relay as History does.
+- **Every widget under 50 ms p95** (#145): schema version 14 gives every run a numeric run row on `history_metrics` (`ekte/web/run_row.py`, which replaces `facets.py`: start time in exact Unix microseconds `started_us`, score, grade and risk as numbers, `model_group` and other lookup ids, one set of triggers, filled by the migration) and a covering index of it in relay × model order (`idx_run_row`), so no aggregation reads `history` (joined only for text search and page rows) and relay / relay × model groups need no sort; answers are byte-identical on the benchmark parameter sets. `RunSelection` reads `m` only (`.text` instead of `.relay` / `with_relay()`); `query.Cell` is a named tuple.
+- **End-to-end checks** (#128): `tests/test_metrics_e2e.py` checks that the
+  rates agree between report, History and Analytics and add up to 100%, that
+  one run's aggregates are its stored values, that a save from another
+  process drops the cache, and that the pages hold no metric maths, grading
+  or classification; the upgrade tests open every page and widget on each
+  released fixture.
+
+#### Changed
+
+- `GET /api/v1/history?perf=1` reads the performance headline from the run's
+  extracted metrics (one store per value); a boolean in a report's p50 field
+  is no longer read as 1 (#128).
+- Locale strings only the old History and Analytics pages used are removed
+  from every language (#128).
+- Docs: `docs/dev/architecture.md` "Metrics and filters", the endpoint list in
+  `docs/dev/web-server.md` and `ekte/web/server.py`, the "no business logic in
+  pages" rule in `docs/dev/ui.md`, and the rates explained for users in
+  `docs/guide/web-ui.md` (#128).
+
 ### Added
 
 - **Upgrade fixture for 0.34.0.** `tests/fixtures/upgrade/v0.34.0/` is a data
