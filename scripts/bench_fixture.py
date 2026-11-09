@@ -121,7 +121,7 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
                 rid, (started + timedelta(minutes=3)).isoformat(), url, model, model, "check",
                 SUITES[rng.randrange(len(SUITES))], risk, score, rating, report, "match", watch, api,
                 None if api is None else int(rng.random() < 0.7), STREAMS[rng.randrange(3)],
-                surface, latency, ttft, tps, 1, 0,
+                surface, 0,
             ))
             m_rows.append((
                 rid, analytics_store.format_ts(started), 0, _version(started),
@@ -142,8 +142,8 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
             d_rows.append((rid, "dimension", "identity", round(rng.uniform(40, 100), 1), "pass", 10.0))
         h_cols = ("id, ts, base_url, claimed_model, model, mode, suite, risk_level, score, rating,"
                   " report_json, kb_match, watch_id, api, api_auto, stream_mode, surface,"
-                  " latency_p50_ms, ttft_p50_ms, decode_tps_p50, perf_done, requests_split")
-        conn.executemany(f"INSERT INTO history ({h_cols}) VALUES ({', '.join('?' * 22)})", h_rows)
+                  " requests_split")
+        conn.executemany(f"INSERT INTO history ({h_cols}) VALUES ({', '.join('?' * 18)})", h_rows)
         m_cols = ("history_id", *analytics_store.METRIC_COLS)
         assert len(m_cols) == len(m_rows[0]) if m_rows else True
         conn.executemany(
