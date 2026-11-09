@@ -683,12 +683,12 @@ def _group(group: str | None, q: Query) -> str:
 def _grouped(
     conn: sqlite3.Connection, sel: RunSelection, group: str, metrics: list[Metric], *,
     buckets: Sequence[str] = (), extra: Sequence[str] = (), keys: Sequence[str] | None = None,
-    quantiles: bool = False, join: str = "",
+    quantiles: bool = False,
 ) -> tuple[list[_Spec], list[dict[str, Any]]]:
     """One SQL query: per group (key ``g``, id ``gid``) and bucket expressions
     ``b0, b1, ...``, ``runs``, ``t_min`` / ``t_max``, the description columns
     of the group kind (:func:`ekte.web.run_row.label_sql`), the ``extra``
-    aggregates (``x<i>``, which may read the tables of ``join``) and each
+    aggregates (``x<i>``) and each
     metric's aggregates (``a<i>``).
 
     Runs are grouped by the integer that identifies their group on their own
@@ -704,7 +704,7 @@ def _grouped(
         cols.append("MAX(m.kb_model_id IS NOT NULL) AS mkb")
     cols += [f"{e} AS x{i}" for i, e in enumerate(extra)]
     cols += [f"{a} AS a{i}" for i, a in enumerate(a for s in specs for a in s.aggs)]
-    joins = "".join(s.join for s in specs) + join
+    joins = "".join(s.join for s in specs)
     join_args = tuple(a for s in specs for a in s.args)
     # group=all needs no GROUP BY (SQLite would sort every run by the constant)
     group_by = ", ".join([*(["gid"] if group != "all" else []), *(f"b{i}" for i in range(len(buckets)))])
@@ -986,10 +986,8 @@ def _check(name: str, value: Any, allowed: Sequence[Any]) -> None:
         raise QueryError(f"{name} must be one of {', '.join(str(a) for a in allowed)}")
 
 
-# Whether these vary in a series (Series.mixed): name -> the filter key of
-# the value in the run's facet combination ("-": none)
-_MIXED = {"suite": "suite", "stream_mode": "stream", "api": "api"}
-_FACET_JOIN = " LEFT JOIN facet_combo fc ON fc.id = m.facet_id"
+# Whether these vary in a series (Series.mixed), from their ids on the run row
+_MIXED = tuple(run_row.VARYING)
 
 
 def _data_bounds(conn: sqlite3.Connection) -> tuple[datetime, datetime] | None:
@@ -997,9 +995,11 @@ def _data_bounds(conn: sqlite3.Connection) -> tuple[datetime, datetime] | None:
     lookups in the started_at index)."""
     lo, hi = (analytics_store.format_ts(t) for t in (analytics._T_MIN, analytics._T_MAX))
     row = conn.execute(
-        "SELECT MIN(started_at), MAX(started_at) FROM history_metrics"
-        " WHERE started_at >= ? AND started_at < ?", (lo, hi)).fetchone()
-    first, last = (analytics_store.parse_ts(v) for v in row) if row else (None, None)
+        "SELECT (SELECT started_at FROM history_metrics WHERE started_at >= ?1 AND started_at < ?2"
+        " ORDER BY started_at LIMIT 1), (SELECT started_at FROM history_metrics"
+        " WHERE started_at >= ?1 AND started_at < ?2 ORDER BY started_at DESC LIMIT 1)",
+        (lo, hi)).fetchone()
+    first, last = (analytics_store.parse_ts(v) for v in row)
     return (first, last) if first is not None and last is not None else None
 
 
@@ -1061,11 +1061,9 @@ def series(
     specs: list[_Spec] = []
     if bounds is not None:
         off = offset_sql(zone, _offset_points(conn, sel, *bounds))
-        extra = [f"{f}(NULLIF(fc.{run_row.COLUMNS[k]}, '-'))" for k in _MIXED.values()
-                 for f in ("MIN", "MAX")]
+        extra = [f"{f}(m.{c}_id)" for c in _MIXED for f in ("MIN", "MAX")]
         specs, rows = _grouped(conn, sel, group, [m], keys=wanted, quantiles=quantiles,
-                               extra=extra, buckets=_bucket_sql(bucket, off, block, used_fold),
-                               join=_FACET_JOIN)
+                               extra=extra, buckets=_bucket_sql(bucket, off, block, used_fold))
     by_key: dict[str, list[dict[str, Any]]] = {}
     for r in rows:
         by_key.setdefault(str(r["g"]), []).append(r)

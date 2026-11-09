@@ -21,7 +21,10 @@ copied onto the run's ``history_metrics`` row (``m``) as a number,
   (:data:`FACETS`: surface, suite, mode, API, stream mode, detection, risk,
   execution, as the URL spells them) in ``facet_combo``; ``surface_id`` —
   its surface alone in ``run_surface`` (every widget filters by surface:
-  one integer comparison per run instead of a lookup of its combination).
+  one integer comparison per run instead of a lookup of its combination);
+  ``suite_id``, ``stream_mode_id``, ``api_id`` — those values (NULL for
+  none) in ``run_suite`` / ``run_stream_mode`` / ``run_api``, for whether
+  they vary in a series (:data:`VARYING`).
   These lookup tables (:class:`Lookup`) number each distinct value once;
   rows no run uses any more are harmless.
 
@@ -108,6 +111,9 @@ MODELS = Lookup("model_group", {"model_key": GROUP_KEY_SQL["model"]})
 URLS = Lookup("run_url", {"base_url": "h.base_url"})
 SURFACES = Lookup("run_surface", {"surface": FACETS["surface"]})
 FACET_COMBOS = Lookup("facet_combo", {COLUMNS[k]: sql for k, sql in FACETS.items()})
+# the values a series reports as varying (query.Series.mixed): none is NULL
+VARYING = {name: Lookup(f"run_{name}", {"value": f"NULLIF(h.{name}, '')"})
+           for name in ("suite", "stream_mode", "api")}
 
 RISK_ORDER = ("clean", "inconclusive", "low", "medium", "high")
 """Risk levels by ``risk_value`` (History's order; a run without one sorts
@@ -126,11 +132,20 @@ RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
     "url_id": ("INTEGER", URLS),
     "surface_id": ("INTEGER", SURFACES),
     "facet_id": ("INTEGER", FACET_COMBOS),
+    **{f"{name}_id": ("INTEGER", lookup) for name, lookup in VARYING.items()},
 }
 """``history_metrics`` column -> (SQL type, the run's value: SQL over
 ``history h`` and ``history_metrics m``, or the :class:`Lookup` that numbers it)."""
 
 LOOKUPS: tuple[Lookup, ...] = tuple(d for _, d in RUN_COLUMNS.values() if isinstance(d, Lookup))
+
+INDEXES: dict[str, str] = {
+    # the narrow run row: the selection's integer columns, so counting and
+    # grouping passes (the default surface, the busiest groups, the filter
+    # options) read a small index instead of the wide rows
+    "idx_run_row": "surface_id, started_us, relay_id, model_id, facet_id",
+}
+"""Index name -> its ``history_metrics`` columns."""
 
 MODEL_BITS = 20
 """``relay_model`` groups pack ``relay_id << MODEL_BITS | model_id`` (model
@@ -213,7 +228,8 @@ def ensure_run_columns(conn: sqlite3.Connection) -> None:
     """Add the lookup tables, :data:`RUN_COLUMNS` and the triggers that keep
     them current, and fill them for the runs already saved (a migration
     step). Idempotent and cheap once done: when every trigger is as defined
-    here, the columns are current and nothing is rewritten."""
+    here, the columns are current and nothing is rewritten. Creates
+    :data:`INDEXES`."""
     from ekte.knowledge.snapshot import add_link_columns
 
     triggers = _trigger_sql()
@@ -221,14 +237,15 @@ def ensure_run_columns(conn: sqlite3.Connection) -> None:
         "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND name IN"
         f" ({', '.join('?' * (len(triggers) + len(_OLD_TRIGGERS)))})",
         (*triggers, *_OLD_TRIGGERS)).fetchall())
-    if stored == triggers:
-        return
-    for name in (*triggers, *_OLD_TRIGGERS):
-        conn.execute(f"DROP TRIGGER IF EXISTS {name}")
-    for lookup in LOOKUPS:
-        conn.execute(lookup.create_sql())
-    add_link_columns(conn, "history_metrics", {c: t for c, (t, _) in RUN_COLUMNS.items()})
-    for sql in triggers.values():
-        conn.execute(sql)
-    for statement in _refresh_sql("history_metrics.history_id", "TRUE").rstrip(";").split("; "):
-        conn.execute(statement)
+    if stored != triggers:
+        for name in (*triggers, *_OLD_TRIGGERS):
+            conn.execute(f"DROP TRIGGER IF EXISTS {name}")
+        for lookup in LOOKUPS:
+            conn.execute(lookup.create_sql())
+        add_link_columns(conn, "history_metrics", {c: t for c, (t, _) in RUN_COLUMNS.items()})
+        for sql in triggers.values():
+            conn.execute(sql)
+        for statement in _refresh_sql("history_metrics.history_id", "TRUE").rstrip(";").split("; "):
+            conn.execute(statement)
+    for name, cols in INDEXES.items():
+        conn.execute(f"CREATE INDEX IF NOT EXISTS {name} ON history_metrics ({cols})")
