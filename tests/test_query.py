@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
 from datetime import UTC, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -646,6 +647,57 @@ def test_bench_queries_group_on_the_run_row(data):
     s = query.series(c, Query(surface="chat"), "score", "relay", "week")
     kinds = {a["kind"] for x in s.series for a in x.annotations}
     assert kinds == {"tool_version", "kb_profile"}
+
+
+_READS_HISTORY = re.compile(r"\b(?:SCAN|SEARCH) (?:h|history)\b(?! USING INTEGER PRIMARY KEY)")
+_EKTE_CHECKS = ("SELECT EXISTS (SELECT id FROM history WHERE requests_split IS NULL",)
+
+
+def test_no_aggregation_reads_history(data):
+    """Issue #145: every statement the benchmarked query core, Analytics and
+    History calls run reads the run rows (history_metrics) only; history is
+    read just for page rows, by id (one primary-key lookup per row shown),
+    and for free-text search (through its covering index)."""
+    from ekte.web import analytics_widgets, history_api
+    from tests.test_analytics_widgets import WIDGET_CASES
+
+    bench = _bench_module()
+    bench.build(runs=600, relays=5, requests=10, report_bytes=100)
+    c = _conn()
+    t = {"trend.metrics": "score,latency_p50"}
+    calls = [*((lambda fn=fn: fn(c)) for fn in bench.cases(c).values()),
+             *((lambda fn=fn, p=p: fn(p)) for _, fn, p in WIDGET_CASES)]
+    for group in ("relay", "model", "relay_model", "all"):
+        for sort in ("-time", "score", "-risk", "grade"):
+            calls.append(lambda g=group, s=sort: history_api.groups(
+                c, {**t, "group": g, "groups.sort": s, "groups.focus": "7"}))
+        key = history_api.groups(c, {**t, "group": group})["groups"][0]["key"]
+        calls.append(lambda g=group, k=key: history_api.runs(
+            c, {"group": g, "group.key": k, "runs.sort": "-grade", "runs.focus": "5"}))
+    calls.append(lambda: analytics_widgets.widget_heatmap({"heat.fold": "4weeks", "suite": "quick",
+                                                           "relay": "https://relay-01.example/v1"}))
+    sqls: list[str] = []
+    c.set_trace_callback(sqls.append)
+    try:
+        for call in calls:
+            call()
+    finally:
+        c.set_trace_callback(None)
+    selects = {s for s in sqls if s.lstrip().upper().startswith(("SELECT", "WITH"))
+               and not s.startswith(_EKTE_CHECKS)}
+    assert len(selects) > 50
+    for sql in selects:
+        plan = "\n".join(r[3] for r in c.execute("EXPLAIN QUERY PLAN " + sql))
+        assert not _READS_HISTORY.search(plan), (sql, plan)
+    # free-text search reads history through its covering index, and only then
+    sel = query.select_runs(parse_query({"q": "relay-0"}))
+    plan = "\n".join(r[3] for r in c.execute(f"EXPLAIN QUERY PLAN SELECT COUNT(*) {sel.sql}", sel.args))
+    assert "SEARCH h USING COVERING INDEX idx_history_query" in plan
+    # relay and relay x model groups are read in index order: no sort
+    for group in ("relay", "relay_model"):
+        sql = f"SELECT COUNT(*) FROM history_metrics m GROUP BY {run_row.GROUP_BY_SQL[group]}"
+        plan = "\n".join(r[3] for r in c.execute("EXPLAIN QUERY PLAN " + sql))
+        assert "COVERING INDEX idx_run_row" in plan and "TEMP B-TREE" not in plan, plan
 
 
 def test_annotations_of_interleaved_values_and_equal_times(data):
