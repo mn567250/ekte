@@ -252,6 +252,7 @@ def test_step_eleven_gives_existing_runs_their_relay_ids(data):
         for name in ("relay_id_insert", "relay_id_update"):
             c.execute(f"DROP TRIGGER {name}")
         c.execute("DROP INDEX idx_history_metrics_no_relay")
+        c.execute("DROP INDEX idx_run_row")  # schema 14, it covers relay_id
         c.execute("DROP TABLE relay_group")
         c.execute("ALTER TABLE history_metrics DROP COLUMN relay_id")
         c.execute("ALTER TABLE relay_map DROP COLUMN relay_id")

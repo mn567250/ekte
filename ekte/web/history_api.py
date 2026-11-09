@@ -48,12 +48,11 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlsplit
 
-from ekte.web import metrics, query
+from ekte.web import metrics, query, run_row
 from ekte.web.analytics import ALL_KEY, UNKNOWN_RELAY
-from ekte.web.analytics_store import METRIC_COLS
 from ekte.web.metrics import HISTORY_TRENDS, MAX_TRENDS, MIN_RUNS, Metric
 from ekte.web.query import Query, QueryError, RunSelection
-from ekte.web.relay_map import GROUP_KEY_SQL, JOIN_SQL
+from ekte.web.relay_map import JOIN_SQL
 
 __all__ = [
     "DEFAULT_GROUP", "POINTS", "RISK_FAMILY", "SORTS", "groups", "host_of", "parse_widget",
@@ -77,17 +76,19 @@ WIDGET_KEYS: dict[str, dict[str, tuple[str, ...]]] = {
     "runs": {"group": ("key",), "runs": ("sort", "after", "limit", "focus")},
 }
 
-_RISK_VALUE = ("CASE COALESCE(NULLIF(h.risk_level, ''), 'inconclusive') WHEN 'clean' THEN 0"
-               " WHEN 'inconclusive' THEN 1 WHEN 'low' THEN 2 WHEN 'medium' THEN 3"
-               " WHEN 'high' THEN 4 END")
+# risk_value is in this order already; no risk level sorts as inconclusive,
+# an unknown one has no value
+_RISK_VALUE = (f"CASE WHEN m.risk_value IS NULL THEN {run_row.RISK_ORDER.index('inconclusive')}"
+               " WHEN m.risk_value >= 0 THEN m.risk_value END")
 _SORT_VALUE = {
     "time": "m.started_at",  # fixed-width ISO text: sorts as time
     "risk": _RISK_VALUE,
     # a score is a number or NULL (written from floats)
-    "score": "h.score",
-    "grade": metrics.grade_value_sql("h.rating"),
+    "score": "m.score",
+    "grade": "m.grade_value",
 }
-_NEWEST = "m.started_at IS NULL, m.started_at DESC, m.history_id DESC"
+# newest first; a run without a start time last (NULL sorts first ascending)
+_NEWEST = "m.started_us DESC, m.history_id DESC"
 
 
 # --------------------------------------------------------------------------- #
@@ -252,21 +253,14 @@ class _Order:
         return bool(a < b if self.desc else a > b)
 
 
-def _selection(q: Query) -> tuple[RunSelection, str]:
-    sel = query.select_runs(q)
-    if q.group in ("relay", "relay_model"):
-        sel = sel.with_relay()
-    return sel, GROUP_KEY_SQL[q.group]
-
-
 def _run_value_sql(m: Metric) -> str:
     """A run's own stored value of a History trend metric (what one run
-    aggregates to: n = 1)."""
+    aggregates to: n = 1), from its run row ``m``."""
     if m.id == "grade":
-        return metrics.grade_value_sql(f"h.{m.column}")
+        return "m.grade_value"
     if m.agg == "pooled":
         return f"CASE WHEN m.{m.base} > 0 THEN m.{m.column} END"
-    return f"m.{m.column}" if m.column in METRIC_COLS else f"h.{m.column}"
+    return query._column(m.column)
 
 
 ROW_COLUMNS: tuple[str, ...] = (
@@ -455,28 +449,36 @@ def run_trends(conn: sqlite3.Connection, rid: int) -> dict[str, Any] | None:
 @dataclass(frozen=True)
 class _Head:
     key: str
+    gids: tuple[int, ...]  # its group ids (run_row.GROUP_ID_SQL)
     runs: int
     sort_key: Any
     urls: tuple[str, ...]
 
 
-def _heads(conn: sqlite3.Connection, sel: RunSelection, gk: str, order: _Order) -> list[_Head]:
+def _heads(conn: sqlite3.Connection, sel: RunSelection, group: str, order: _Order) -> list[_Head]:
     """Each group's first run under the sort (its key) and its base URLs
     (the most recently used first), the groups in that order: one aggregate
-    pass, per group and URL."""
+    pass over the run rows, per group id and URL id, then the few groups
+    and URLs named."""
     pick = max if order.desc else min
+    by = ", ".join(c for c in (run_row.GROUP_BY_SQL[group], "m.url_id") if c)
+    # (a URL's last use: a run without a start time counts as before every other)
+    inner = (f"SELECT {run_row.GROUP_ID_SQL[group]} AS gid, m.url_id AS u, COUNT(*) AS n,"
+             f" {order.agg}({order.key()}) AS k, COALESCE(MAX(m.started_us), {-2**63}) AS last"
+             f" {sel.sql} GROUP BY {by}")
     acc: dict[str, list[Any]] = {}
-    for g, url, n, k, last in conn.execute(
-            f"SELECT {gk} AS g, h.base_url, COUNT(*), {order.agg}({order.key()}),"
-            f" MAX(COALESCE(m.started_at, '')) {sel.sql} GROUP BY g, h.base_url", sel.args):
-        a = acc.setdefault(str(g), [0, k, []])
-        a[0] += int(n)
-        a[1] = pick(a[1], k)
+    for g, gid, url, n, k, last in conn.execute(
+            f"SELECT s.g, s.gid, ru.base_url, s.n, s.k, s.last FROM ({run_row.label_sql(group, inner)}) s"
+            " LEFT JOIN run_url ru ON ru.id = s.u", sel.args):
+        a = acc.setdefault(str(g), [set(), 0, k, []])
+        a[0].add(int(gid))
+        a[1] += int(n)
+        a[2] = pick(a[2], k)
         if url:
-            a[2].append((last, str(url)))
-    heads = [_Head(g, n, k, tuple(dict.fromkeys(
+            a[3].append((last, str(url)))
+    heads = [_Head(g, tuple(sorted(gids)), n, k, tuple(dict.fromkeys(
         u for _, u in sorted(urls, key=lambda x: (x[0], x[1]), reverse=True))))
-        for g, (n, k, urls) in acc.items()]
+        for g, (gids, n, k, urls) in acc.items()]
     heads.sort(key=lambda h: h.sort_key, reverse=order.desc)
     return heads
 
@@ -490,9 +492,9 @@ def groups(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
     focus = _focus(_one(widget, "groups.focus"), "groups.focus")
     after = _one(widget, "groups.after")
     wanted = trend_metrics(widget.get("trend.metrics"))
-    sel, gk = _selection(q)
+    sel = query.select_runs(q)
     order = _Order(name, desc)
-    heads = _heads(conn, sel, gk, order)
+    heads = _heads(conn, sel, q.group, order)
 
     start = 0
     if after:
@@ -502,13 +504,12 @@ def groups(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
     focus_out = None
     if focus is not None:
         fsel = sel.and_where("m.history_id = ?", focus)
-        row = conn.execute(f"SELECT {gk} {fsel.sql}", fsel.args).fetchone()
-        if row is not None:
-            fkey = str(row[0])
-            at = next(i for i, h in enumerate(heads) if h.key == fkey)
+        row = conn.execute(f"SELECT {run_row.GROUP_ID_SQL[q.group]} {fsel.sql}", fsel.args).fetchone()
+        at = next((i for i, h in enumerate(heads) if row is not None and row[0] in h.gids), None)
+        if at is not None:
             if at >= end:  # the page grows to the page that holds it
                 end = min(len(heads), start + math.ceil((at - start + 1) / limit) * limit)
-            focus_out = {"id": focus, "key": fkey}
+            focus_out = {"id": focus, "key": heads[at].key}
     page = heads[start:end]
     nxt = _cursor("groups", sort, page[-1].sort_key) if page and end < len(heads) else None
 
@@ -516,30 +517,32 @@ def groups(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
         "group": q.group, "sort": sort, "limit": limit,
         "trend_metrics": [m.id for m in wanted], "points_max": POINTS, "min_runs": MIN_RUNS,
         "total_groups": len(heads), "total_runs": sum(h.runs for h in heads),
-        "groups": _describe(conn, q, sel, gk, page, wanted), "after": nxt, "focus": focus_out,
+        "groups": _describe(conn, q, sel, page, wanted), "after": nxt, "focus": focus_out,
     }
 
 
-def _describe(conn: sqlite3.Connection, q: Query, sel: RunSelection, gk: str,
+def _describe(conn: sqlite3.Connection, q: Query, sel: RunSelection,
               page: list[_Head], wanted: list[Metric]) -> list[dict[str, Any]]:
     if not page:
         return []
-    keys = [h.key for h in page]
-    sel = sel.and_where(f"{gk} IN ({', '.join('?' * len(keys))})", *keys)
+    gid = run_row.GROUP_ID_SQL[q.group]
+    key_of = {g: h.key for h in page for g in h.gids}
+    if q.group != "all":
+        sel = sel.and_where(f"{gid} IN ({', '.join('?' * len(key_of))})", *key_of)
     vals = ", ".join(f"{_run_value_sql(m)} AS v{i}" for i, m in enumerate(wanted))
     cur = conn.execute(
         f"SELECT g, id, {', '.join(f'v{i}' for i in range(len(wanted)))} FROM ("
-        f"SELECT {gk} AS g, m.history_id AS id, {vals},"
-        f" ROW_NUMBER() OVER (PARTITION BY {gk} ORDER BY {_NEWEST}) AS rn {sel.sql})"
+        f"SELECT {gid} AS g, m.history_id AS id, {vals},"
+        f" ROW_NUMBER() OVER (PARTITION BY {gid} ORDER BY {_NEWEST}) AS rn {sel.sql})"
         f" WHERE rn <= {POINTS} ORDER BY g, rn DESC", sel.args)
-    points: dict[str, list[list[float]]] = {k: [[] for _ in wanted] for k in keys}
+    points: dict[str, list[list[float]]] = {h.key: [[] for _ in wanted] for h in page}
     latest: dict[str, int] = {}
     for g, rid, *values in cur.fetchall():
-        g = str(g)
-        latest[g] = int(rid)  # rn descending: the newest comes last
+        key = key_of[int(g)]
+        latest[key] = int(rid)  # rn descending: the newest comes last
         for i, v in enumerate(values):
             if v is not None:
-                points[g][i].append(float(v))
+                points[key][i].append(float(v))
     rows = _rows(conn, list(latest.values()), keep_relay=True)
     by_relay = q.group in ("relay", "relay_model")
     labels = relay_labels(conn) if by_relay else {}
@@ -576,8 +579,7 @@ def runs(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
     limit = _limit(_one(widget, "runs.limit"), "runs.limit")
     focus = _focus(_one(widget, "runs.focus"), "runs.focus")
     after = _one(widget, "runs.after")
-    sel, gk = _selection(q)
-    sel = sel.and_where(f"{gk} = ?", gkey)
+    sel = query.select_runs(q).and_where(*query._keys_sql(conn, q.group, [gkey]))
     order = _Order(name, desc)
     base = f"SELECT m.history_id AS id, {order.key()} AS k {sel.sql}"
     cut = _uncursor(after, "runs", sort, "runs.after") if after else None

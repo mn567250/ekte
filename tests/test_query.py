@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
 from datetime import UTC, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -15,7 +16,7 @@ import pytest
 from ekte import datadir, errorclass
 from ekte.knowledge.relays import add_relay
 from ekte.perf.outcomes import from_counts
-from ekte.web import analytics, history, query
+from ekte.web import analytics, history, query, run_row
 from ekte.web.analytics import AnalyticsError
 from ekte.web.query import Query, QueryError, parse_query
 from tests import analytics_reference as reference
@@ -162,7 +163,7 @@ def test_invalid_parameters(params, message):
 # --------------------------------------------------------------------------- #
 def _ids(q: Query) -> set[int]:
     sel = query.select_runs(q)
-    return {int(r[0]) for r in _conn().execute(f"SELECT h.id {sel.sql}", sel.args)}
+    return {int(r[0]) for r in _conn().execute(f"SELECT m.history_id {sel.sql}", sel.args)}
 
 
 def _expected(pred) -> set[int]:
@@ -499,12 +500,12 @@ def test_offset_sql_is_exact_across_transitions():
     for t in (datetime(2026, 3, 29, 0, 59, 59, tzinfo=UTC), datetime(2026, 3, 29, 1, tzinfo=UTC),
               datetime(2026, 10, 25, 0, 59, 59, tzinfo=UTC), datetime(2026, 10, 25, 1, tzinfo=UTC),
               datetime(2026, 7, 1, tzinfo=UTC)):
-        got = c.execute(f"SELECT {sql} FROM (SELECT ? AS t)", (history.analytics_store.format_ts(t),)).fetchone()[0]
+        got = c.execute(f"SELECT {sql} FROM (SELECT ? AS started_us) t", (query.us_of(t),)).fetchone()[0]
         assert got == t.astimezone(zone).utcoffset().total_seconds()
     assert query.offset_sql(UTC, points) == "0" and query.offset_sql(zone, []) == "0"
     # far apart points (days with runs only): the change goes to the later one
     sparse = [datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 7, 1, tzinfo=UTC)]
-    assert "2026-07-01T00:00:00" in query.offset_sql(zone, sparse)
+    assert f"m.started_us < {query.us_of(sparse[1])} " in query.offset_sql(zone, sparse)
 
 
 def test_series_with_a_damaged_far_future_run(seeded):
@@ -613,7 +614,7 @@ def test_bench_fixture_builds_a_consistent_history(data):
     # the selections read history through its covering index, never its rows
     sel = query.select_runs(parse_query({"surface": "chat", "q": "relay", "exec": "manual",
                                          "detect": "auto", "min_score": "50", "suite": "-"}))
-    plan = " ".join(r[3] for r in c.execute(f"EXPLAIN QUERY PLAN SELECT h.id {sel.sql}", sel.args))
+    plan = " ".join(r[3] for r in c.execute(f"EXPLAIN QUERY PLAN SELECT m.history_id {sel.sql}", sel.args))
     assert "COVERING INDEX idx_history_query" in plan
     assert math.isfinite(bench.bench(repeat=1)["page_runs -time"][1])
 
@@ -648,6 +649,57 @@ def test_bench_queries_group_on_the_run_row(data):
     assert kinds == {"tool_version", "kb_profile"}
 
 
+_READS_HISTORY = re.compile(r"\b(?:SCAN|SEARCH) (?:h|history)\b(?! USING INTEGER PRIMARY KEY)")
+_EKTE_CHECKS = ("SELECT EXISTS (SELECT id FROM history WHERE requests_split IS NULL",)
+
+
+def test_no_aggregation_reads_history(data):
+    """Issue #145: every statement the benchmarked query core, Analytics and
+    History calls run reads the run rows (history_metrics) only; history is
+    read just for page rows, by id (one primary-key lookup per row shown),
+    and for free-text search (through its covering index)."""
+    from ekte.web import analytics_widgets, history_api
+    from tests.test_analytics_widgets import WIDGET_CASES
+
+    bench = _bench_module()
+    bench.build(runs=600, relays=5, requests=10, report_bytes=100)
+    c = _conn()
+    t = {"trend.metrics": "score,latency_p50"}
+    calls = [*((lambda fn=fn: fn(c)) for fn in bench.cases(c).values()),
+             *((lambda fn=fn, p=p: fn(p)) for _, fn, p in WIDGET_CASES)]
+    for group in ("relay", "model", "relay_model", "all"):
+        for sort in ("-time", "score", "-risk", "grade"):
+            calls.append(lambda g=group, s=sort: history_api.groups(
+                c, {**t, "group": g, "groups.sort": s, "groups.focus": "7"}))
+        key = history_api.groups(c, {**t, "group": group})["groups"][0]["key"]
+        calls.append(lambda g=group, k=key: history_api.runs(
+            c, {"group": g, "group.key": k, "runs.sort": "-grade", "runs.focus": "5"}))
+    calls.append(lambda: analytics_widgets.widget_heatmap({"heat.fold": "4weeks", "suite": "quick",
+                                                           "relay": "https://relay-01.example/v1"}))
+    sqls: list[str] = []
+    c.set_trace_callback(sqls.append)
+    try:
+        for call in calls:
+            call()
+    finally:
+        c.set_trace_callback(None)
+    selects = {s for s in sqls if s.lstrip().upper().startswith(("SELECT", "WITH"))
+               and not s.startswith(_EKTE_CHECKS) and query._SEARCH_SQL not in s}  # (q: below)
+    assert len(selects) > 50
+    for sql in selects:
+        plan = "\n".join(r[3] for r in c.execute("EXPLAIN QUERY PLAN " + sql))
+        assert not _READS_HISTORY.search(plan), (sql, plan)
+    # free-text search reads history through its covering index, and only then
+    sel = query.select_runs(parse_query({"q": "relay-0"}))
+    plan = "\n".join(r[3] for r in c.execute(f"EXPLAIN QUERY PLAN SELECT COUNT(*) {sel.sql}", sel.args))
+    assert "h USING COVERING INDEX idx_history_query" in plan
+    # relay and relay x model groups are read in index order: no sort
+    for group in ("relay", "relay_model"):
+        sql = f"SELECT COUNT(*) FROM history_metrics m GROUP BY {run_row.GROUP_BY_SQL[group]}"
+        plan = "\n".join(r[3] for r in c.execute("EXPLAIN QUERY PLAN " + sql))
+        assert "COVERING INDEX idx_run_row" in plan and "TEMP B-TREE" not in plan, plan
+
+
 def test_annotations_of_interleaved_values_and_equal_times(data):
     """Versions and profiles that alternate, repeat, go missing and change
     between runs started at the same instant: the annotations still equal the
@@ -666,10 +718,12 @@ def test_annotations_of_interleaved_values_and_equal_times(data):
     assert kinds.count("tool_version") > 20 and kinds.count("kb_profile") > 10
 
 
-def test_buckets_without_unixepoch(seeded, monkeypatch):
-    """SQLite before 3.38 (no unixepoch()) buckets alike."""
-    monkeypatch.setattr(query.sqlite3, "sqlite_version_info", (3, 37, 2))
-    assert "unixepoch" not in query._epoch_sql("t")
+def test_buckets_without_unixepoch(seeded):
+    """SQLite before 3.38 (no unixepoch()) buckets alike: the run row's start
+    time is made with strftime(), and buckets are integer arithmetic on it."""
+    sql = " ".join([*(run_row._value_sql(d) for _, d in run_row.RUN_COLUMNS.values()),
+                    *(b for size in analytics.BUCKETS for b in query._bucket_sql(size, "0", 1, "4weeks"))])
+    assert "unixepoch(" not in sql  # (the 'unixepoch' modifier of strftime() is older)
     for bucket in analytics.BUCKETS:
         _compare_series({"metric": "score", "group": "relay", "bucket": bucket,
                          "tz": "Europe/Berlin"}, tz="Europe/Berlin")

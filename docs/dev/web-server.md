@@ -142,12 +142,17 @@ range is cached under its absolute bounds. History's time filter moves from
 the save time (`ts`) to the run's start (`started_at`).
 
 **Selection.** `select_runs(q) -> RunSelection` (`.sql` = `FROM … WHERE …`,
-`.args`, `.and_where()`) over `history h` (through `idx_history_query`, so
-only `history.QUERY_INDEX_COLS` may be used), `history_metrics m` and, only
-when needed (text search), the run's relay `rm` (`relay_group`, joined on the
-run's `m.relay_id`). Relay filters and grouping use `m.relay_id` itself:
-runs are grouped by integer relay id (and model), and only the resulting
-groups are joined to their relay. `count_runs`, `default_surface` (the most common
+`.args`, `.and_where()`) over the run rows `history_metrics m` only
+(`ekte/web/run_row.py`): the time on `m.started_us` (`time_sql`, exact to the
+microsecond), the surface on `m.surface_id`, the other few-valued keys as
+`m.facet_id IN (…)` (looked up once in `facet_combo`), relays and models by
+`m.relay_id` / `m.model_id`, `min_score` on `m.score`. Only text search
+(`q`) joins `history h` (through `idx_history_query`) and the run's relay
+`rm`. Runs are grouped by an integer of their row (`run_row.GROUP_ID_SQL`:
+relay id, model id, or both packed as `relay_id << 20 | model_id`), read in
+`idx_run_row` order for relay and relay × model groups, and only the
+resulting groups are named (`run_row.label_sql`). Group times come back as
+microseconds and are spelled as `started_at` once per group (`us_text`). `count_runs`, `default_surface` (the most common
 surface of a selection, for endpoints that need one).
 
 **Aggregation.** `aggregate(conn, q, metrics, group=None, *, quantiles=False)
@@ -287,7 +292,7 @@ the selection. The surface is not defaulted here: `surface_default` names the
 one the widgets would use. One statement: the runs matching `min_score` / `q`
 are read once; `relay` (by relay id) and `model` are a `GROUP BY` over them,
 and the other lists, `span` and `runs` are folded from one `GROUP BY` of each
-run's facet combination (`history_metrics.facet_id`, `ekte/web/facets.py`).
+run's facet combination (`history_metrics.facet_id`, `ekte/web/run_row.py`).
 
 ### `GET /api/analytics/summary` (`kpi.*`: none)
 

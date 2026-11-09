@@ -58,12 +58,18 @@ holds the run's ``history_outcomes`` counts summed over its ops, kept equal
 by triggers, so pooling outcomes over many runs reads no second table (see
 :data:`ekte.web.analytics_store.OUTCOME_COLS`); ``history_metrics.facet_id``
 the run's combination of few-valued filter values in ``facet_combo`` (see
-:mod:`ekte.web.facets`).
+:mod:`ekte.web.run_row`).
 
 Performance headline (schema version 13): the list's p50 latency / TTFT /
 decode speed are read from ``history_metrics`` (one store per value); the
 duplicate ``history`` columns of earlier versions (``latency_p50_ms``,
 ``ttft_p50_ms``, ``decode_tps_p50``, ``perf_done``) are dropped.
+
+Run row (schema version 14): every value the query core selects, groups or
+sorts runs by is a number on the run's ``history_metrics`` row (start time
+in Unix seconds, score, grade, risk, model / URL / facet ids; kept by
+triggers, see :mod:`ekte.web.run_row`), so aggregations never read
+``history``.
 
 ``PRAGMA user_version`` records the schema version; the numbered steps are in
 ``MIGRATIONS`` and are applied by :mod:`ekte.dbmigrate`.
@@ -254,11 +260,12 @@ def _v12(conn: sqlite3.Connection) -> None:
     """Per-run columns kept by triggers, filled in for the runs already
     saved: each run's outcome counts
     (:data:`ekte.web.analytics_store.OUTCOME_COLS`) and its combination of
-    few-valued filter values (``facet_id``, :mod:`ekte.web.facets`)."""
-    from ekte.web import facets
+    few-valued filter values (``facet_id``), with the other run-row columns
+    (:func:`ekte.web.run_row.ensure_run_columns`; step 14 finds them current)."""
+    from ekte.web import run_row
 
     analytics_store.ensure_outcome_columns(conn)
-    facets.ensure_facet_ids(conn)
+    run_row.ensure_run_columns(conn)
 
 
 # The performance headline columns of ``history`` before version 13: the same
@@ -279,6 +286,16 @@ def _v13(conn: sqlite3.Connection) -> None:
             conn.execute(f"ALTER TABLE history DROP COLUMN {col}")
 
 
+def _v14(conn: sqlite3.Connection) -> None:
+    """Each run's numeric run row (:data:`ekte.web.run_row.RUN_COLUMNS`:
+    start time in Unix seconds, score, grade, risk, model, URL and facet ids,
+    kept by triggers), filled in for the runs already saved, and its
+    indexes."""
+    from ekte.web import run_row
+
+    run_row.ensure_run_columns(conn)
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -293,6 +310,7 @@ MIGRATIONS = (
     dbmigrate.Migration(11, _v11),
     dbmigrate.Migration(12, _v12),
     dbmigrate.Migration(13, _v13),
+    dbmigrate.Migration(14, _v14),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
