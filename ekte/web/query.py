@@ -399,10 +399,15 @@ def us_of(dt: datetime) -> int:
     return (dt - _EPOCH) // _US
 
 
+def us_dt(us: Any) -> datetime:
+    """A ``started_us`` value (or an aggregate of them) as an aware UTC datetime."""
+    return _EPOCH + int(us) * _US
+
+
 def us_text(us: Any) -> str | None:
-    """A ``started_us`` value (or an aggregate of them) as the ``started_at``
-    text it was made from (None stays None)."""
-    return None if us is None else analytics_store.format_ts(_EPOCH + int(us) * _US)
+    """A ``started_us`` value as the ``started_at`` text it was made from
+    (None stays None)."""
+    return None if us is None else analytics_store.format_ts(us_dt(us))
 
 
 def time_sql(op: str, dt: datetime, run: str = "m") -> str:
@@ -686,7 +691,7 @@ def _grouped(
     quantiles: bool = False,
 ) -> tuple[list[_Spec], list[dict[str, Any]]]:
     """One SQL query: per group (key ``g``, id ``gid``) and bucket expressions
-    ``b0, b1, ...``, ``runs``, ``t_min`` / ``t_max``, the description columns
+    ``b0, b1, ...``, ``runs``, ``t_min`` / ``t_max`` (Unix microseconds), the description columns
     of the group kind (:func:`ekte.web.run_row.label_sql`), the ``extra``
     aggregates (``x<i>``) and each
     metric's aggregates (``a<i>``).
@@ -719,8 +724,7 @@ def _grouped(
         r = dict(zip(names, row, strict=True))
         if not r["runs"]:  # without GROUP BY an empty selection still gives one row
             continue
-        # the first and last run time as started_at spells them
-        r["t_min"], r["t_max"], r["_aggs"] = us_text(r["t_min"]), us_text(r["t_max"]), row[first:]
+        r["_aggs"] = row[first:]
         rows.append(r)
     return specs, rows
 
@@ -779,7 +783,7 @@ def _cells(specs: list[_Spec], row: Mapping[str, Any]) -> dict[str, Cell]:
 
 
 def _result(group: str, row: Mapping[str, Any], cells: dict[str, Cell]) -> GroupResult:
-    runs, first, last = int(row["runs"]), row["t_min"], row["t_max"]
+    runs, first, last = int(row["runs"]), us_text(row["t_min"]), us_text(row["t_max"])
     if group == "relay":
         return GroupResult(str(row["g"]), str(row["rl"]), str(row["rkind"]), bool(row["rin"]),
                            runs, cells, first, last)
@@ -1047,11 +1051,10 @@ def series(
     sel = select_runs(q).and_where(_DATED_SQL)
 
     def span(rows: Iterable[Mapping[str, Any]]) -> int:
-        times = sorted(t for r in rows for t in (r["t_min"], r["t_max"]) if t)
+        times = sorted(t for r in rows for t in (r["t_min"], r["t_max"]) if t is not None)
         if not times:
             return 0
-        a, b = (analytics_store.parse_ts(t) for t in (times[0], times[-1]))
-        assert a is not None and b is not None
+        a, b = us_dt(times[0]), us_dt(times[-1])
         return (b.astimezone(zone).date() - a.astimezone(zone).date()).days + 1
 
     used_fold = "week"
@@ -1088,8 +1091,7 @@ def series(
             continue
         points, n = [], 0
         for r in members:
-            t = analytics_store.parse_ts(r["t_min"])
-            assert t is not None
+            t = us_dt(r["t_min"])
             pos, bkey, bextra = analytics._bucket(t, zone, bucket, block, used_fold)
             cell = _cells(specs, r)[m.id]
             n += cell.n
@@ -1107,7 +1109,7 @@ def series(
             mixed[c] = bool(lows) and min(lows) != max(highs)
         out.append(Series(_result(group, whole, {}), n, sorted(points, key=lambda p: p.pos),
                           annotations.get(key, []), mixed))
-    span_days = span({"t_min": s.group.first_run, "t_max": s.group.last_run} for s in out)
+    span_days = span(r for key in wanted for r in by_key.get(key, []))
     return SeriesResult(m, group, bucket, block, used_fold, fold, span_days, zone_name, out)
 
 

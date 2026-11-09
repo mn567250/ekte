@@ -425,9 +425,7 @@ def widget_errors(params: Any) -> dict[str, Any]:
     if bounds is not None:
         offset = query.offset_sql(zone, query._offset_points(conn, sel, *bounds))
         for r in _outcome_rows(conn, sel, "all", query._bucket_sql(size, offset, block, "week")):
-            start = analytics_store.parse_ts(r["t_min"])
-            assert start is not None
-            pos, bkey, extra = _bucket(start, zone, size, block)
+            pos, bkey, extra = _bucket(query.us_dt(r["t_min"]), zone, size, block)
             buckets.append((pos, {"bucket": bkey, **extra, **cell(r)}))
     groups.sort(key=lambda g: (-g["requests"], -g["runs"], g["label"].lower(), g["key"]))
     runs = sum(g["runs"] for g in groups)
