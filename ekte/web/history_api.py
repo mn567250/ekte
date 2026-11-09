@@ -87,7 +87,8 @@ _SORT_VALUE = {
     "score": "m.score",
     "grade": "m.grade_value",
 }
-_NEWEST = "m.started_at IS NULL, m.started_at DESC, m.history_id DESC"
+# newest first; a run without a start time last (NULL sorts first ascending)
+_NEWEST = "m.started_us DESC, m.history_id DESC"
 
 
 # --------------------------------------------------------------------------- #
@@ -460,9 +461,11 @@ def _heads(conn: sqlite3.Connection, sel: RunSelection, group: str, order: _Orde
     pass over the run rows, per group id and URL id, then the few groups
     and URLs named."""
     pick = max if order.desc else min
+    by = ", ".join(c for c in (run_row.GROUP_BY_SQL[group], "m.url_id") if c)
+    # (a URL's last use: a run without a start time counts as before every other)
     inner = (f"SELECT {run_row.GROUP_ID_SQL[group]} AS gid, m.url_id AS u, COUNT(*) AS n,"
-             f" {order.agg}({order.key()}) AS k, MAX(COALESCE(m.started_at, '')) AS last {sel.sql}"
-             f" GROUP BY {'u' if group == 'all' else 'gid, u'}")
+             f" {order.agg}({order.key()}) AS k, COALESCE(MAX(m.started_us), {-2**63}) AS last"
+             f" {sel.sql} GROUP BY {by}")
     acc: dict[str, list[Any]] = {}
     for g, gid, url, n, k, last in conn.execute(
             f"SELECT s.g, s.gid, ru.base_url, s.n, s.k, s.last FROM ({run_row.label_sql(group, inner)}) s"

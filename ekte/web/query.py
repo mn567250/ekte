@@ -708,7 +708,8 @@ def _grouped(
     joins = "".join(s.join for s in specs)
     join_args = tuple(a for s in specs for a in s.args)
     # group=all needs no GROUP BY (SQLite would sort every run by the constant)
-    group_by = ", ".join([*(["gid"] if group != "all" else []), *(f"b{i}" for i in range(len(buckets)))])
+    group_by = ", ".join(p for p in (run_row.GROUP_BY_SQL[group],
+                                     *(f"b{i}" for i in range(len(buckets)))) if p)
     sql = (f"SELECT {', '.join(cols)} {sel.from_sql}{joins}{sel.where_sql}"
            + (f" GROUP BY {group_by}" if group_by else ""))
     cur = conn.execute(run_row.label_sql(group, sql), (*join_args, *sel.args))

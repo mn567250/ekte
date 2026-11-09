@@ -55,7 +55,7 @@ from ekte.web.metrics import grade_value_sql
 from ekte.web.relay_map import GROUP_KEY_SQL
 
 __all__ = [
-    "COLUMNS", "FACETS", "FACET_COMBOS", "GROUP_ID_SQL", "MODELS", "MODEL_BITS", "RISK_ORDER",
+    "COLUMNS", "FACETS", "FACET_COMBOS", "GROUP_BY_SQL", "GROUP_ID_SQL", "MODELS", "MODEL_BITS", "RISK_ORDER",
     "RUN_COLUMNS", "SURFACES", "URLS", "Lookup", "ensure_run_columns", "label_sql",
 ]
 
@@ -171,6 +171,13 @@ GROUP_ID_SQL: dict[str, str] = {
 }
 """Each grouping's integer group id on the run's row ``m`` (every run of a
 group has the one id; ``all``: the constant 0)."""
+
+GROUP_BY_SQL: dict[str, str] = {
+    "relay": "m.relay_id", "model": "m.model_id", "relay_model": "m.relay_id, m.model_id", "all": "",
+}
+"""What to ``GROUP BY`` for each grouping's id: the columns themselves, in
+``idx_run_row`` order, so relay and relay × model groups need no sort
+(``all``: nothing; SQLite would sort every run by a constant)."""
 
 
 def label_sql(group: str, inner: str) -> str:
