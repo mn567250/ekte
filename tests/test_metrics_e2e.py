@@ -95,7 +95,7 @@ def test_rates_agree_between_report_history_and_analytics_and_add_up(runs, clien
         # the report as stored and as History opens it
         report = client.get(f"/api/history/{rid}", params={"trend": 1}).json()
         assert {k: report["outcomes"][k] for k in RATES} == want
-        assert report["history_trends"]["error_rate"] == want["error_rate"]
+        assert report["history_trends"]["error_rate"]["value"] == want["error_rate"]
 
         # History: the group of this run alone, its trend and its row
         groups = client.get("/api/history/groups", params={
@@ -175,8 +175,9 @@ def test_every_aggregation_of_one_run_is_its_stored_value(runs, client):
     (g,) = client.get("/api/history/groups", params={
         "trend.metrics": "score,decode_tps", "group": "relay", "relay": report["target"]["base_url"],
     }).json()["groups"]
-    assert g["trends"]["score"]["points"] == [trends["score"]] == [report["verdict"]["overall_score"]]
-    assert g["trends"]["decode_tps"]["points"] == [trends["decode_tps"]]
+    assert g["trends"]["score"]["points"] == [trends["score"]["value"]] == [report["verdict"]["overall_score"]]
+    assert g["trends"]["decode_tps"]["points"] == [trends["decode_tps"]["value"]]
+    assert trends["score"]["grade"] == g["trends"]["score"]["last"]["grade"] == tiles["score"]["grade"]
 
 
 def test_a_save_from_another_process_drops_the_cached_answers(runs, client, data):
