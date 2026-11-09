@@ -24,7 +24,11 @@ copied onto the run's ``history_metrics`` row (``m``) as a number,
   one integer comparison per run instead of a lookup of its combination);
   ``suite_id``, ``stream_mode_id``, ``api_id`` — those values (NULL for
   none) in ``run_suite`` / ``run_stream_mode`` / ``run_api``, for whether
-  they vary in a series (:data:`VARYING`).
+  they vary in a series (:data:`VARYING`); ``version_id``,
+  ``kb_profile_id`` — the ekte version and knowledge-base profile (NULL for
+  none) in ``run_version`` / ``run_kb_profile``, for where they change in a
+  series (:data:`CHANGES`); ``model_in_kb`` — 1 when the run's model is in
+  the knowledge base.
   These lookup tables (:class:`Lookup`) number each distinct value once;
   rows no run uses any more are harmless.
 
@@ -115,6 +119,10 @@ FACET_COMBOS = Lookup("facet_combo", {COLUMNS[k]: sql for k, sql in FACETS.items
 # the values a series reports as varying (query.Series.mixed): none is NULL
 VARYING = {name: Lookup(f"run_{name}", {"value": f"NULLIF(h.{name}, '')"})
            for name in ("suite", "stream_mode", "api")}
+# the values whose changes a series annotates (annotation kind -> column, lookup): none is NULL
+CHANGES = {"tool_version": ("version_id", Lookup("run_version", {"value": "NULLIF(m.tool_version, '')"})),
+           "kb_profile": ("kb_profile_id",
+                          Lookup("run_kb_profile", {"value": "NULLIF(m.kb_profile_hash, '')"}))}
 
 RISK_ORDER = ("clean", "inconclusive", "low", "medium", "high")
 """Risk levels by ``risk_value`` (History's order; a run without one sorts
@@ -135,6 +143,7 @@ RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
     "surface_id": ("INTEGER", SURFACES),
     "facet_id": ("INTEGER", FACET_COMBOS),
     **{f"{name}_id": ("INTEGER", lookup) for name, lookup in VARYING.items()},
+    **{column: ("INTEGER", lookup) for column, lookup in CHANGES.values()},
 }
 """``history_metrics`` column -> (SQL type, the run's value: SQL over
 ``history h`` and ``history_metrics m``, or the :class:`Lookup` that numbers it)."""

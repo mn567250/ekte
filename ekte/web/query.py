@@ -94,7 +94,7 @@ from bisect import bisect_left, bisect_right
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta, timezone, tzinfo
-from typing import Any
+from typing import Any, NamedTuple
 from zoneinfo import ZoneInfo
 
 from ekte.config import SURFACES
@@ -526,11 +526,10 @@ def default_surface(conn: sqlite3.Connection, q: Query | None = None) -> str:
 # --------------------------------------------------------------------------- #
 # Aggregation
 # --------------------------------------------------------------------------- #
-@dataclass(frozen=True)
-class Cell:
+class Cell(NamedTuple):
     """One metric over a group of runs. ``median`` / ``p25`` / ``p75`` for
     ``median`` metrics, ``numerator`` / ``denominator`` for ``pooled`` ones
-    (None otherwise)."""
+    (None otherwise). Immutable; a named tuple, as a board holds thousands."""
 
     value: float | None
     n: int
@@ -1112,9 +1111,8 @@ def series(
     return SeriesResult(m, group, bucket, block, used_fold, fold, span_days, zone_name, out)
 
 
-# The run values whose changes are annotated: (kind, SQL over m).
-_CHANGES = (("tool_version", "NULLIF(m.tool_version, '')"),
-            ("kb_profile", "NULLIF(m.kb_profile_hash, '')"))
+# The run values whose changes are annotated: (kind, their id on the run row, lookup).
+_CHANGES = tuple((kind, f"m.{column}", lookup) for kind, (column, lookup) in run_row.CHANGES.items())
 # at most this many time ranges in one query (more are read as one), and
 # start times in one IN list
 _MAX_RANGES = 64
@@ -1177,19 +1175,31 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, ids: M
         return sel if group == "all" else sel.and_where(f"{gid} IN ({', '.join('?' * len(gids))})", *gids)
 
     keyed = of(ids)
-    values = [v for _, v in _CHANGES]
-    # key -> per kind: value -> [first, last] run time
-    spans: dict[str, list[dict[Any, list[str]]]] = {}
-    for row in conn.execute(
-            f"SELECT {', '.join([*ident, *values])}, MIN(m.started_at), MAX(m.started_at)"
-            f" {keyed.sql} GROUP BY {', '.join(str(i + 1) for i in range(n + len(values)))}",
-            keyed.args):
+    values = [v for _, v, _ in _CHANGES]
+    # the values (by their ids on the run row) as text, and back
+    names: list[dict[int, str]] = []
+    for _, _, lookup in _CHANGES:
+        names.append({int(i): str(v) for i, v in conn.execute(f"SELECT id, value FROM {lookup.table}")})
+    numbers = [{v: i for i, v in by_id.items()} for by_id in names]
+
+    def texts(row: Sequence[Any]) -> list[str | None]:
+        return [None if v is None else names[i][int(v)] for i, v in enumerate(row)]
+
+    # key -> per kind: value -> [first, last] run time (from the grouped run-row
+    # ids, in the order of the values' text)
+    grouped: list[tuple[Any, ...]] = []
+    by = ", ".join(c for c in (run_row.GROUP_BY_SQL[group], *values) if c)
+    for row in conn.execute(f"SELECT {', '.join([*ident, *values])}, MIN(m.started_us),"
+                            f" MAX(m.started_us) {keyed.sql} GROUP BY {by}", keyed.args):
         key = key_of(row[:n])
-        if key is None:
-            continue
+        if key is not None:
+            grouped.append((key, *texts(row[n:n + len(values)]), us_text(row[-2]), us_text(row[-1])))
+    grouped.sort(key=lambda r: tuple((v is not None, v) for v in r[:1 + len(values)]))
+    spans: dict[str, list[dict[Any, list[str]]]] = {}
+    for key, *row in grouped:
         per = spans.setdefault(key, [{} for _ in _CHANGES])
         first, last = row[-2], row[-1]
-        for i, value in enumerate(row[n:n + len(values)]):
+        for i, value in enumerate(row[:len(values)]):
             if value is not None:
                 s = per[i].setdefault(value, [first, last])
                 s[0], s[1] = min(s[0], first), max(s[1], last)
@@ -1208,7 +1218,7 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, ids: M
             key, rid, t = key_of(row[:n]), int(row[n]), row[n + 1]
             if key is None:
                 continue
-            for k, value in enumerate(row[n + 2:]):
+            for k, value in enumerate(texts(row[n + 2:])):
                 if value is not None:
                     f = (key, k, t, value)
                     firsts[f] = min(firsts.get(f, rid), rid)
@@ -1229,7 +1239,7 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, ids: M
                                 " m.history_id", part_sel.args):
             key = key_of(row[:n])
             if key is not None:
-                runs.setdefault(key, []).append((row[n + 1], int(row[n]), row[n + 2:]))
+                runs.setdefault(key, []).append((row[n + 1], int(row[n]), texts(row[n + 2:])))
 
     out: dict[str, list[dict[str, Any]]] = {}
 
@@ -1244,7 +1254,7 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, ids: M
     def first_after(key: str, i: int, t: str, value: Any) -> tuple[int, str]:
         """The first run of ``key`` with ``value`` (kind ``i``) after ``t``."""
         after = of(g for g, k in ids.items() if k == key).and_where(
-            f"m.started_at > ? AND {values[i]} = ?", t, value)
+            f"m.started_at > ? AND {values[i]} = ?", t, numbers[i][value])
         row = conn.execute(f"SELECT m.history_id, m.started_at {after.sql}"
                            " ORDER BY m.started_at, m.history_id LIMIT 1", after.args).fetchone()
         return int(row[0]), str(row[1])
