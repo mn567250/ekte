@@ -129,13 +129,15 @@ det).
 topptider), **Pålitelighet** (feil, reléoverhead), **Modellintegritet** og
 **Fakturering** — under sidehodet og ett filterpanel som deles av alle; bare
 fanen du ser på, lastes. URL-en tar vare på fanen, filtrene og hvert
-diagramvalg (`#tab=reliability&range=30&relay=…&eb=dow_hour`), og **Kopier lenke
+diagramvalg (`?tab=reliability&range=30d&relay=…&errors.bucket=dow_hour`), og **Kopier lenke
 til denne visningen** kopierer den (eller viser den i et felt du kan kopiere fra
 der nettleseren ikke tillater det): å åpne lenken viser akkurat den visningen.
 Filterpanelet er det samme på **Historikk**, **Overvåking** og **Analyse**:
 lukket viser det hvor mange filtre som er aktive, og navngir dem på én linje
 (f.eks. «Siste 30 dager · standard · Strømming · Example Relay»), så en delt
 visning sier hva den viser.
+
+**Suksess-, feil-, 429- og svekkelsesandel.** Hver forespørsel ekte sender til reléet i løpet av en kjøring, har nøyaktig ett utfall: suksess, reléfeil (tidsavbrudd mens den venter på reléet, et 5xx- eller 4xx-svar eller et annet ødelagt svar), ratebegrensning (HTTP 429) eller en feil som aldri nådde reléet (nettet mellom deg og reléet, eller ekte selv). Gjentatte forsøk teller én gang. Reléet vurderes bare på forespørslene som nådde det: **suksessandel**, **feilandel** og **429-andel** er suksesser, reléfeil og ratebegrensninger delt på disse forespørslene, og blir alltid 100 % til sammen. **Svekket andel** er delen av alle forespørsler som feilet før reléet: den sier hvor mye man kan stole på selve kjøringen, ikke hvor godt reléet er; er den høy, kjør revisjonen på nytt. Over flere kjøringer slås andelene sammen (alle forespørsler samlet), så én dårlig kjøring blant mange gode fortsatt synes (ni kjøringer på 0 % og én på 40 % gir rundt 4 %, ikke 0 %); poeng, ventetider, hastigheter og faktureringsforhold er medianen av kjøringene. Historikk, Analyse og rapporten viser de samme tallene for de samme kjøringene, og én enkelt kjøring viser nøyaktig verdiene i sin rapport. Pålitelighetssjekken i rapporten har en egen andel («Suksessandel for pålitelighetssjekken»), som bare teller i poengsummen.
 
 ## Språk
 
