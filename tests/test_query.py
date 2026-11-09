@@ -341,7 +341,8 @@ def test_one_run_returns_its_stored_value_for_every_metric(data):
     run["_dims"] = {"odd": 0.1 + 0.2}
     c = _conn()
     ids = [*analytics.METRICS, "dim:odd", "dim:missing"]
-    for native in (True, False):
+    # the native path only where this SQLite build has median()/percentile()
+    for native in ((True, False) if query._has_native() else (False,)):
         query._native = native
         try:
             for group in analytics.GROUPS:
@@ -368,8 +369,10 @@ def test_one_run_returns_its_stored_value_for_every_metric(data):
 # median / percentile fallback
 # --------------------------------------------------------------------------- #
 def test_fallback_aggregates_match_native(seeded):
+    if not query._has_native():
+        pytest.skip("this SQLite build has no native median()/percentile() to compare against")
     c = _conn()
-    assert query.sql_functions(c) == ("median", "percentile")  # this SQLite has them
+    assert query.sql_functions(c) == ("median", "percentile")
     mids = _chat_metrics()
 
     def run():
