@@ -99,10 +99,10 @@ from zoneinfo import ZoneInfo
 
 from ekte.config import SURFACES
 from ekte.models import RiskLevel
-from ekte.web import analytics, analytics_store
+from ekte.scoring import GRADE_SCALE
+from ekte.web import analytics, analytics_store, run_row
 from ekte.web.analytics import ALL_KEY, GROUPS, MIN_RUNS, AnalyticsError, Metric
-from ekte.web.metrics import grade_value_sql
-from ekte.web.relay_map import GROUP_JOIN_SQL, GROUP_KEY_SQL, RELAY_ID_SQL
+from ekte.web.relay_map import GROUP_JOIN_SQL
 
 __all__ = [
     "Cell", "GroupResult", "Page", "Point", "Query", "QueryError", "RunSelection",
@@ -376,28 +376,44 @@ def sql_functions(conn: sqlite3.Connection) -> tuple[str, str]:
 # --------------------------------------------------------------------------- #
 # SQL: run selection
 # --------------------------------------------------------------------------- #
-RUNS_SQL = ("FROM history h INDEXED BY idx_history_query"
-            " JOIN history_metrics m ON m.history_id = h.id")
-"""The run tables, as ``h`` and ``m``. ``h`` is read through its covering
-index (``history.QUERY_INDEX_COLS``, the only columns of ``h`` a selection may
-use), never through its rows, whose report_json would be read along."""
-FROM_SQL = f"{RUNS_SQL} {GROUP_JOIN_SQL}"
-"""The run tables and each run's relay, as ``h``, ``m`` and ``rm`` (joined
-through the run's relay id: ``rm.relay_key``, ``rm.label``, ``rm.kind``,
-``rm.in_kb``)."""
-# The runs of some relays: their ids, from a relay_group lookup per key (not per run).
-_RELAY_IN_SQL = f"{RELAY_ID_SQL} IN (SELECT id FROM relay_group WHERE relay_key IN ({{}}))"
+RUNS_SQL = "FROM history_metrics m"
+"""The runs, as ``m``: every value a selection, grouping or aggregate reads
+is on the run's own ``history_metrics`` row (:data:`ekte.web.run_row.RUN_COLUMNS`)."""
+TEXT_SQL = (f"{RUNS_SQL} JOIN history h INDEXED BY idx_history_query ON h.id = m.history_id"
+            f" {GROUP_JOIN_SQL}")
+"""The runs with their ``history`` row (``h``, read through its covering index
+``history.QUERY_INDEX_COLS``, never through the row, whose report_json would
+be read along) and relay (``rm``: ``rm.relay_key``, ``rm.label``, ``rm.kind``,
+``rm.in_kb``): what free-text search (``q``) needs, and only it."""
 
 _SEARCH_SQL = " || char(10) || ".join(
     f"COALESCE({c}, '')" for c in
     ("h.base_url", "rm.label", "h.claimed_model", "h.model", "h.suite", "h.mode", "h.api")
 )
+_EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
+
+
+def _ts(dt: datetime) -> int:
+    """Whole Unix seconds of ``dt``, floored (as ``started_ts``)."""
+    return (dt - _EPOCH) // timedelta(seconds=1)
+
+
+def time_sql(op: str, dt: datetime, run: str = "m") -> str:
+    """``started_at {op} dt`` (``op``: ``>=`` or ``<``) as SQL on the integer
+    ``started_ts`` of the run row ``run``, exactly: for a ``dt`` with a
+    fraction of a second the runs of that second compare by ``started_at``."""
+    ts, col = _ts(dt), f"{run}.started_ts"
+    if not dt.microsecond:
+        return f"{col} {op} {ts}"
+    return (f"({col} {op.rstrip('=')} {ts} OR {col} = {ts}"
+            f" AND {run}.started_at {op} '{analytics_store.format_ts(dt)}')")
+
+
 # Run times that can be shifted into every time zone (others count as undated).
-# (Unary + keeps SQLite from walking the started_at index for this nearly
+# (Unary + keeps SQLite from walking a started_ts index for this nearly
 # unbounded range: a table scan is faster.)
-_DATED = (f"m.started_at >= '{analytics_store.format_ts(analytics._T_MIN)}'"
-          f" AND m.started_at < '{analytics_store.format_ts(analytics._T_MAX)}'")
-_DATED_SQL = _DATED.replace("m.started_at", "+m.started_at")
+_DATED = f"m.started_ts >= {_ts(analytics._T_MIN)} AND m.started_ts < {_ts(analytics._T_MAX)}"
+_DATED_SQL = _DATED.replace("m.started_ts", "+m.started_ts")
 
 
 def _like(text: str) -> str:
@@ -407,18 +423,15 @@ def _like(text: str) -> str:
 @dataclass(frozen=True)
 class RunSelection:
     """The runs of a :class:`Query` as SQL: ``FROM`` + ``WHERE`` (``sql``)
-    with its ``?`` arguments (``args``): ``f"SELECT h.id {sel.sql}"``. Columns
-    of ``h`` and ``m`` can always be used; ``rm`` (the run's relay) is joined
-    only when ``relay`` is set (``q`` needs it, or :meth:`with_relay`), as
-    joining it costs a lookup per run and never changes which runs are
-    selected. :meth:`and_where` adds conditions."""
+    with its ``?`` arguments (``args``): ``f"SELECT m.history_id {sel.sql}"``.
+    Columns of ``m`` can always be used; ``h`` (the run's ``history`` row,
+    through its covering index) and ``rm`` (its relay) only when ``text`` is
+    set (``q`` needs them), as joining them costs two lookups per run and
+    never changes which runs are selected. :meth:`and_where` adds conditions."""
 
     where: tuple[str, ...]
     args: tuple[Any, ...]
-    relay: bool = False
-
-    def with_relay(self) -> RunSelection:
-        return replace(self, relay=True)
+    text: bool = False
 
     @property
     def where_sql(self) -> str:
@@ -427,20 +440,30 @@ class RunSelection:
 
     @property
     def from_sql(self) -> str:
-        return FROM_SQL if self.relay else RUNS_SQL
+        return TEXT_SQL if self.text else RUNS_SQL
 
     @property
     def sql(self) -> str:
         return self.from_sql + self.where_sql
 
-    def and_where(self, condition: str, *args: Any, relay: bool = False) -> RunSelection:
-        """Also require ``condition`` (``relay``: it uses ``rm``)."""
-        return RunSelection((*self.where, condition), (*self.args, *args), self.relay or relay)
+    def and_where(self, condition: str, *args: Any) -> RunSelection:
+        """Also require ``condition`` (over ``m``; ``h`` and ``rm`` only with ``text``)."""
+        return RunSelection((*self.where, condition), (*self.args, *args), self.text)
+
+
+def _in_table(column: str, table: str, key: str, values: Sequence[Any]) -> tuple[Any, ...]:
+    """The runs whose id ``column`` names one of ``values`` of ``key`` in the
+    small table ``table`` (its ids are looked up once, not per run)."""
+    return (f"{column} IN (SELECT id FROM {table} WHERE {key} IN ({', '.join('?' * len(values))}))",
+            *values)
 
 
 def select_runs(q: Query) -> RunSelection:
-    """One ``WHERE`` over ``history``, ``history_metrics`` and ``relay_group``
-    covering every filter of ``q`` (``group`` is not a filter)."""
+    """One ``WHERE`` over the runs' ``history_metrics`` rows covering every
+    filter of ``q`` (``group`` is not a filter): the time on ``started_ts``,
+    relays and models by their ids, the few-valued keys by the run's facet
+    combination (one lookup of the matching ``facet_combo`` ids), the score
+    on ``m.score``; only ``q`` (text) reads ``history``."""
     where: list[str] = []
     args: list[Any] = []
 
@@ -449,30 +472,21 @@ def select_runs(q: Query) -> RunSelection:
         args.extend(a)
 
     if q.start is not None:
-        add("m.started_at >= ?", analytics_store.format_ts(q.start))
+        add(time_sql(">=", q.start))
     if q.end is not None:
-        add("m.started_at < ?", analytics_store.format_ts(q.end))
-    if q.surface is not None:
-        add("COALESCE(h.surface, 'chat') = ?", q.surface)
+        add(time_sql("<", q.end))
+    facet = {k: v for k, v in (("surface", q.surface), ("suite", q.suite), ("mode", q.mode),
+                               ("api", q.api), ("stream", q.stream), ("detect", q.detect),
+                               ("risk", q.risk), ("exec", q.exec)) if v is not None}
+    if facet:
+        same = " AND ".join(f"{run_row.COLUMNS[k]} = ?" for k in facet)
+        add(f"m.facet_id IN (SELECT id FROM facet_combo WHERE {same})", *facet.values())
     if q.relays:
-        add(_RELAY_IN_SQL.format(", ".join("?" * len(q.relays))), *q.relays)
+        add(*_in_table("m.relay_id", "relay_group", "relay_key", q.relays))
     if q.models:
-        add(f"{GROUP_KEY_SQL['model']} IN ({', '.join('?' * len(q.models))})", *q.models)
-    for col, value in (("h.suite", q.suite), ("h.mode", q.mode), ("h.api", q.api),
-                       ("h.stream_mode", q.stream)):
-        if value == UNKNOWN:
-            add(f"NULLIF({col}, '') IS NULL")
-        elif value is not None:
-            add(f"{col} = ?", value)
-    if q.detect is not None:
-        add({"auto": "h.api_auto = 1", "manual": "h.api_auto = 0",
-             UNKNOWN: "h.api_auto IS NULL"}[q.detect])
-    if q.risk is not None:
-        add("COALESCE(NULLIF(h.risk_level, ''), 'inconclusive') = ?", q.risk)
+        add(*_in_table("m.model_id", "model_group", "model_key", q.models))
     if q.min_score is not None:
-        add("h.score >= ?", q.min_score)
-    if q.exec is not None:
-        add("h.watch_id IS NULL" if q.exec == "manual" else "h.watch_id IS NOT NULL")
+        add("m.score >= ?", q.min_score)
     if q.text is not None:
         add(f"({_SEARCH_SQL}) LIKE ? ESCAPE '\\'", _like(q.text))
     return RunSelection(tuple(where), tuple(args), q.text is not None)
@@ -490,12 +504,15 @@ def default_surface(conn: sqlite3.Connection, q: Query | None = None) -> str:
     order, chat when there are none. For endpoints that need one surface."""
     sel = select_runs((q or Query()).replace(surface=None))
     # the known surfaces counted in one pass (no GROUP BY: no sort of the runs)
-    known = ", ".join(f"COALESCE(SUM(COALESCE(h.surface, 'chat') = {_quote(s)}), 0)" for s in SURFACES)
+    surface = run_row.COLUMNS["surface"]
+    known = ", ".join(f"COALESCE(SUM(m.facet_id IN (SELECT id FROM facet_combo WHERE {surface} ="
+                      f" {_quote(s)})), 0)" for s in SURFACES)
     total, *counts = conn.execute(f"SELECT COUNT(*), {known} {sel.sql}", sel.args).fetchone()
     if int(total) == sum(int(c) for c in counts):
         return analytics._most_common(dict(zip(SURFACES, (int(c) for c in counts), strict=True)))
     rows = conn.execute(
-        f"SELECT COALESCE(h.surface, 'chat'), COUNT(*) {sel.sql} GROUP BY 1", sel.args
+        f"SELECT fc.{surface}, SUM(s.n) FROM (SELECT m.facet_id AS f, COUNT(*) AS n {sel.sql}"
+        " GROUP BY 1) s JOIN facet_combo fc ON fc.id = s.f GROUP BY 1", sel.args
     ).fetchall()
     return analytics._most_common({str(r[0]): int(r[1]) for r in rows})
 
@@ -576,7 +593,10 @@ def _quote(text: str) -> str:
 
 
 def _column(name: str) -> str:
-    return f"m.{name}" if name in analytics_store.METRIC_COLS else f"h.{name}"
+    """A metric's per-run column on the run's row ``m``."""
+    if name not in analytics_store.METRIC_COLS and name not in run_row.RUN_COLUMNS:
+        raise ValueError(f"no run column {name!r}")
+    return f"m.{name}"
 
 
 def _spec(m: Metric, i: int, med: str, pct: str, quantiles: bool) -> _Spec:
@@ -592,15 +612,15 @@ def _spec(m: Metric, i: int, med: str, pct: str, quantiles: bool) -> _Spec:
     join = ""
     args: tuple[Any, ...] = ()
     if m.id.startswith(analytics.DIM_PREFIX):
-        join = (f" LEFT JOIN history_dimensions dm{i} ON dm{i}.history_id = h.id"
+        join = (f" LEFT JOIN history_dimensions dm{i} ON dm{i}.history_id = m.history_id"
                 f" AND dm{i}.kind = 'dimension' AND dm{i}.key = ?")
         args = (m.id[len(analytics.DIM_PREFIX):],)
         v = f"dm{i}.score"
     elif m.id == "risk_high_share":
-        v = ("CASE WHEN NULLIF(h.risk_level, '') IS NULL THEN NULL"
-             " WHEN h.risk_level = 'high' THEN 1.0 ELSE 0.0 END")
+        high = run_row.RISK_ORDER.index("high")
+        v = f"CASE WHEN m.risk_value IS NULL THEN NULL WHEN m.risk_value = {high} THEN 1.0 ELSE 0.0 END"
     elif m.id == "grade":
-        v = grade_value_sql(f"h.{m.column}")
+        v = "m.grade_value"
     elif m.agg == "share":
         col = _column(m.column)
         v = f"CASE WHEN {col} IS NULL THEN NULL WHEN {col} != 0 THEN 1.0 ELSE 0.0 END"
@@ -658,68 +678,80 @@ def _group(group: str | None, q: Query) -> str:
 def _grouped(
     conn: sqlite3.Connection, sel: RunSelection, group: str, metrics: list[Metric], *,
     buckets: Sequence[str] = (), extra: Sequence[str] = (), keys: Sequence[str] | None = None,
-    quantiles: bool = False,
+    quantiles: bool = False, join: str = "",
 ) -> tuple[list[_Spec], list[dict[str, Any]]]:
-    """One SQL query: per group key ``g`` (and bucket expressions ``b0, b1,
-    ...``), ``runs``, ``t_min`` / ``t_max``, the description columns of the
-    group kind, the ``extra`` aggregates (``x<i>``) and each metric's
-    aggregates (``a<i>``).
+    """One SQL query: per group (key ``g``, id ``gid``) and bucket expressions
+    ``b0, b1, ...``, ``runs``, ``t_min`` / ``t_max``, the description columns
+    of the group kind (:func:`ekte.web.run_row.label_sql`), the ``extra``
+    aggregates (``x<i>``, which may read the tables of ``join``) and each
+    metric's aggregates (``a<i>``).
 
-    Runs are grouped by what identifies their group on their own rows (the
-    relay id ``gid``, the model ``mk``), never by a value looked up per run:
-    the few groups are joined to their relay afterwards."""
+    Runs are grouped by the integer that identifies their group on their own
+    rows (:data:`ekte.web.run_row.GROUP_ID_SQL`), never by a value looked up
+    per run: the few groups are named afterwards."""
     med, pct = sql_functions(conn)
     specs = [_spec(m, i, med, pct, quantiles) for i, m in enumerate(metrics)]
     if keys is not None:
         sel = sel.and_where(*_keys_sql(conn, group, keys))
-    ident = {"relay": {"gid": RELAY_ID_SQL},
-             "relay_model": {"gid": RELAY_ID_SQL, "mk": GROUP_KEY_SQL["model"]},
-             "model": {"g": GROUP_KEY_SQL["model"]}, "all": {}}[group]
-    cols = [*(f"{e} AS {n}" for n, e in (ident or {"g": GROUP_KEY_SQL["all"]}).items()),
-            *(f"{b} AS b{i}" for i, b in enumerate(buckets)),
+    cols = [f"{run_row.GROUP_ID_SQL[group]} AS gid", *(f"{b} AS b{i}" for i, b in enumerate(buckets)),
             "COUNT(*) AS runs", "MIN(m.started_at) AS t_min", "MAX(m.started_at) AS t_max"]
     if group == "model":
         cols.append("MAX(m.kb_model_id IS NOT NULL) AS mkb")
     cols += [f"{e} AS x{i}" for i, e in enumerate(extra)]
     cols += [f"{a} AS a{i}" for i, a in enumerate(a for s in specs for a in s.aggs)]
-    joins = "".join(s.join for s in specs)
+    joins = "".join(s.join for s in specs) + join
     join_args = tuple(a for s in specs for a in s.args)
     # group=all needs no GROUP BY (SQLite would sort every run by the constant)
-    group_by = ", ".join([*ident, *(f"b{i}" for i in range(len(buckets)))])
+    group_by = ", ".join([*(["gid"] if group != "all" else []), *(f"b{i}" for i in range(len(buckets)))])
     sql = (f"SELECT {', '.join(cols)} {sel.from_sql}{joins}{sel.where_sql}"
            + (f" GROUP BY {group_by}" if group_by else ""))
-    if group in _BY_RELAY:
-        key = "rg.relay_key" + (" || '|' || s.mk" if group == "relay_model" else "")
-        sql = (f"SELECT {key} AS g, rg.relay_key AS rk, rg.label AS rl, rg.kind AS rkind,"
-               f" rg.in_kb AS rin, s.* FROM ({sql}) s JOIN relay_group rg ON rg.id = s.gid")
-    cur = conn.execute(sql, (*join_args, *sel.args))
+    cur = conn.execute(run_row.label_sql(group, sql), (*join_args, *sel.args))
     names = [d[0] for d in cur.description]
     rows = [dict(zip(names, row, strict=True)) for row in cur.fetchall()]
     # without GROUP BY an empty selection still gives one row (of 0 runs)
     return specs, [r for r in rows if r["runs"]]
 
 
-_BY_RELAY = ("relay", "relay_model")
+def group_ids(conn: sqlite3.Connection, group: str, keys: Iterable[str]) -> list[int]:
+    """The group ids (:data:`ekte.web.run_row.GROUP_ID_SQL`) of the group keys
+    ``keys`` of ``group`` (keys no run has are left out): a lookup in the
+    small ``relay_group`` / ``model_group`` tables."""
+    keys = list(dict.fromkeys(keys))
+    if not keys:
+        return []
+    if group == "all":
+        return [0] if ALL_KEY in keys else []
+
+    def lookup(table: str, column: str, values: Sequence[str]) -> dict[str, int]:
+        out: dict[str, int] = {}
+        for i in range(0, len(values), 500):
+            part = values[i:i + 500]
+            out.update((str(k), int(v)) for k, v in conn.execute(
+                f"SELECT {column}, id FROM {table} WHERE {column} IN ({', '.join('?' * len(part))})",
+                part))
+        return out
+
+    if group == "relay":
+        return sorted(lookup("relay_group", "relay_key", keys).values())
+    if group == "model":
+        return sorted(lookup("model_group", "model_key", keys).values())
+    # key = relay_key || '|' || model: every (relay, model) split that spells a key
+    pairs: list[tuple[int, str]] = []
+    for rid, relay in conn.execute("SELECT id, relay_key FROM relay_group"):
+        pairs += [(int(rid), key[len(relay) + 1:]) for key in keys if key.startswith(f"{relay}|")]
+    models = lookup("model_group", "model_key", sorted({m for _, m in pairs}))
+    return sorted({rid << run_row.MODEL_BITS | models[m] for rid, m in pairs if m in models})
 
 
 def _keys_sql(conn: sqlite3.Connection, group: str, keys: Sequence[str]) -> tuple[Any, ...]:
-    """The condition (and its arguments) that selects the runs of the series
-    keys ``keys`` of ``group``, on the columns of ``h`` and ``m``."""
-    marks = ", ".join("?" * len(keys))
-    if group == "relay":
-        return (_RELAY_IN_SQL.format(marks), *keys)
-    if group == "relay_model":
-        # key = relay_key || '|' || model: the (relay id, model) pairs that spell a key
-        pairs: list[Any] = []
-        for rid, relay in conn.execute("SELECT id, relay_key FROM relay_group"):
-            for key in keys:
-                if key.startswith(relay + "|"):
-                    pairs += [int(rid), key[len(relay) + 1:]]
-        if not pairs:
-            return ("0",)
-        values = ", ".join(["(?, ?)"] * (len(pairs) // 2))
-        return (f"({RELAY_ID_SQL}, {GROUP_KEY_SQL['model']}) IN (VALUES {values})", *pairs)
-    return (f"{GROUP_KEY_SQL[group]} IN ({marks})", *keys)
+    """The condition (and its arguments) that selects the runs of the group
+    keys ``keys`` of ``group``, on their group ids."""
+    ids = group_ids(conn, group, keys)
+    if not ids:
+        return ("0",)
+    if group == "all":
+        return ("1",)
+    return (f"{run_row.GROUP_ID_SQL[group]} IN ({', '.join('?' * len(ids))})", *ids)
 
 
 def _cells(specs: list[_Spec], row: Mapping[str, Any]) -> dict[str, Cell]:
@@ -853,8 +885,9 @@ _STEP = timedelta(days=7)
 _STEP_SPAN = timedelta(days=366 * 20)
 
 
-def offset_sql(zone: tzinfo, points: Iterable[datetime], column: str = "m.started_at") -> str:
-    """SQL for the UTC offset (seconds) of ``zone`` at the run time ``column``:
+def offset_sql(zone: tzinfo, points: Iterable[datetime], run: str = "m") -> str:
+    """SQL for the UTC offset (seconds) of ``zone`` at the start of the run
+    row ``run`` (its ``started_ts``, see :func:`time_sql`):
     a constant, or a ``CASE`` over the zone's transitions. ``points`` are UTC
     instants, sorted, with at most one transition between two neighbours that
     are less than :data:`_STEP` apart; a transition between neighbours further
@@ -884,7 +917,7 @@ def offset_sql(zone: tzinfo, points: Iterable[datetime], column: str = "m.starte
         return "0"
     branches = []
     for at, off in steps:
-        branches.append(f"WHEN {column} < '{analytics_store.format_ts(at)}' THEN {base}")
+        branches.append(f"WHEN {time_sql('<', at, run)} THEN {base}")
         base = off
     return f"(CASE {' '.join(branches)} ELSE {base} END)" if branches else str(base)
 
@@ -918,20 +951,13 @@ _SHIFT_DAYS = 28 * 10_000
 _CYCLE_DAY = (analytics.CYCLE_EPOCH - date(1970, 1, 1)).days
 
 
-def _epoch_sql(column: str) -> str:
-    """Whole seconds since 1970 of an ISO time (fractions dropped)."""
-    if sqlite3.sqlite_version_info >= (3, 38):
-        return f"unixepoch({column})"
-    return f"CAST(strftime('%s', {column}) AS INTEGER)"
-
-
 def _bucket_sql(size: str, offset: str, block: int, fold: str) -> list[str]:
     """SQL expressions that partition runs exactly as
     :func:`ekte.web.analytics._bucket` (``offset``: the zone's UTC offset in
     seconds at the run's time). Integer arithmetic on the run's local time in
-    seconds (parsed once): the values only tell buckets apart; Python names
-    them from a run in each."""
-    local = f"({_epoch_sql('m.started_at')} + {offset} + {_SHIFT_DAYS * 86400})"
+    seconds (``started_ts``): the values only tell buckets apart; Python
+    names them from a run in each."""
+    local = f"(m.started_ts + {offset} + {_SHIFT_DAYS * 86400})"
     day = f"({local} / 86400)"  # 1970-01-01 (+ the shift) is a Thursday
     if size == "hour":
         return [f"{local} / 3600", offset]  # the offset parts a DST fold
@@ -953,7 +979,10 @@ def _check(name: str, value: Any, allowed: Sequence[Any]) -> None:
         raise QueryError(f"{name} must be one of {', '.join(str(a) for a in allowed)}")
 
 
-_MIXED = ("suite", "stream_mode", "api")
+# Whether these vary in a series (Series.mixed): name -> the filter key of
+# the value in the run's facet combination ("-": none)
+_MIXED = {"suite": "suite", "stream_mode": "stream", "api": "api"}
+_FACET_JOIN = " LEFT JOIN facet_combo fc ON fc.id = m.facet_id"
 
 
 def _data_bounds(conn: sqlite3.Connection) -> tuple[datetime, datetime] | None:
@@ -1024,15 +1053,17 @@ def series(
     specs: list[_Spec] = []
     if bounds is not None:
         off = offset_sql(zone, _offset_points(conn, sel, *bounds))
-        extra = [f"{f}(NULLIF(h.{c}, ''))" for c in _MIXED for f in ("MIN", "MAX")]
+        extra = [f"{f}(NULLIF(fc.{run_row.COLUMNS[k]}, '-'))" for k in _MIXED.values()
+                 for f in ("MIN", "MAX")]
         specs, rows = _grouped(conn, sel, group, [m], keys=wanted, quantiles=quantiles,
-                               extra=extra, buckets=_bucket_sql(bucket, off, block, used_fold))
+                               extra=extra, buckets=_bucket_sql(bucket, off, block, used_fold),
+                               join=_FACET_JOIN)
     by_key: dict[str, list[dict[str, Any]]] = {}
     for r in rows:
         by_key.setdefault(str(r["g"]), []).append(r)
-    relays = {r["gid"]: r["rk"] for rs in by_key.values() for r in rs if "gid" in r}
+    ids = {int(r["gid"]): str(r["g"]) for r in rows}
     annotations = ({} if bucket == "dow_hour" or not by_key
-                   else _annotations(conn, sel, group, list(by_key), relays, zone, bucket))
+                   else _annotations(conn, sel, group, ids, zone, bucket))
 
     out = []
     for key in wanted:
@@ -1109,9 +1140,8 @@ def _segments(spans: Mapping[Any, list[str]]) -> list[tuple[str, str, Any]]:
     return out
 
 
-def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: list[str],
-                 relays: Mapping[Any, str], zone: tzinfo,
-                 size: str) -> dict[str, list[dict[str, Any]]]:
+def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, ids: Mapping[int, str],
+                 zone: tzinfo, size: str) -> dict[str, list[dict[str, Any]]]:
     """Per series key: where the ekte version or knowledge-base profile
     changes from one run to the next in time order (unknown values skipped).
 
@@ -1120,19 +1150,18 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: 
     the first run of the next one, found by its time; only the runs where
     values overlap in time (a rollback, two versions in use) are read and
     compared one by one. Equal to comparing every run with the previous run
-    that has a value. ``relays``: relay id -> key of the series' relays."""
-    ident = {"relay": [RELAY_ID_SQL], "relay_model": [RELAY_ID_SQL, GROUP_KEY_SQL["model"]],
-             "model": [GROUP_KEY_SQL["model"]], "all": []}[group]
-    n = len(ident)
+    that has a value. ``ids``: group id -> key of the series."""
+    gid = run_row.GROUP_ID_SQL[group]
+    ident, n = [gid], 1
 
     def key_of(parts: Sequence[Any]) -> str | None:
-        if group == "relay":
-            return relays.get(parts[0])
-        if group == "relay_model":
-            return f"{relays.get(parts[0])}|{parts[1]}"
-        return str(parts[0]) if group == "model" else ALL_KEY
+        return ids.get(int(parts[0]))
 
-    keyed = sel.and_where(*_keys_sql(conn, group, keys))
+    def of(gids: Iterable[int]) -> RunSelection:
+        gids = sorted(gids)
+        return sel if group == "all" else sel.and_where(f"{gid} IN ({', '.join('?' * len(gids))})", *gids)
+
+    keyed = of(ids)
     values = [v for _, v in _CHANGES]
     # key -> per kind: value -> [first, last] run time
     spans: dict[str, list[dict[Any, list[str]]]] = {}
@@ -1199,7 +1228,7 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: 
 
     def first_after(key: str, i: int, t: str, value: Any) -> tuple[int, str]:
         """The first run of ``key`` with ``value`` (kind ``i``) after ``t``."""
-        after = sel.and_where(*_keys_sql(conn, group, [key])).and_where(
+        after = of(g for g, k in ids.items() if k == key).and_where(
             f"m.started_at > ? AND {values[i]} = ?", t, value)
         row = conn.execute(f"SELECT m.history_id, m.started_at {after.sql}"
                            " ORDER BY m.started_at, m.history_id LIMIT 1", after.args).fetchone()
@@ -1233,17 +1262,23 @@ def _annotations(conn: sqlite3.Connection, sel: RunSelection, group: str, keys: 
 # --------------------------------------------------------------------------- #
 # Keyset paging
 # --------------------------------------------------------------------------- #
-_RISK_ORDER = ("CASE h.risk_level WHEN 'high' THEN 4 WHEN 'medium' THEN 3 WHEN 'low' THEN 2"
-               " WHEN 'clean' THEN 1 ELSE 0 END")
-_GRADE_ORDER = ("CASE h.rating WHEN 'A' THEN 5 WHEN 'B' THEN 4 WHEN 'C' THEN 3 WHEN 'D' THEN 2"
-                " WHEN 'F' THEN 1 ELSE 0 END")
+def _rank_sql(column: str, codes: Mapping[Any, int]) -> str:
+    """A run-row code (``column``) as a rank: ``codes`` maps code -> rank, others 0."""
+    return f"CASE {column} {' '.join(f'WHEN {c} THEN {r}' for c, r in codes.items())} ELSE 0 END"
+
+
+# The page order's ranks, from the run row's risk_value / grade_value
+_RISK_RANK = _rank_sql("m.risk_value", {run_row.RISK_ORDER.index(r): i + 1 for i, r in
+                                        enumerate(("clean", "low", "medium", "high"))})
+_GRADE_RANK = _rank_sql("m.grade_value", {GRADE_SCALE.index(g) + 1: i + 1 for i, g in
+                                          enumerate(("F", "D", "C", "B", "A"))})
 # The sort value of each sort key. NULL (a run without a start time or a
 # score) sorts first ascending and last descending; ties go by id.
 SORT_SQL: dict[str, str] = {
     "time": "m.started_at",  # walks idx_history_metrics_started
-    "score": "h.score",
-    "risk": _RISK_ORDER,  # inconclusive / none < clean < low < medium < high
-    "grade": _GRADE_ORDER,  # none < F < D < C < B < A
+    "score": "m.score",
+    "risk": _RISK_RANK,  # inconclusive / none < clean < low < medium < high
+    "grade": _GRADE_RANK,  # none < F < D < C < B < A
 }
 PAGE_COLUMNS: tuple[str, ...] = (
     *(f"h.{c}" for c in (

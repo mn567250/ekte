@@ -37,12 +37,12 @@ from ekte.web.analytics import (
     MAX_PARAM,
     METRICS,
     MIN_RUNS,
+    UNKNOWN_RELAY,
     Metric,
     _bucket,
     _most_common,
     metric,
 )
-from ekte.web.relay_map import GROUP_KEY_SQL, RELAY_ID_SQL
 
 # Metrics of each leaderboard row (the median score ranks them).
 BOARD_METRICS = (
@@ -153,7 +153,8 @@ def _kpi_cells(conn: Any, q: query.Query) -> dict[str, query.Cell]:
     # one pass: the metrics and the distinct relays (their ids) and models
     specs, rows = query._grouped(
         conn, query.select_runs(q), "all", query._metrics(wanted, q.surface),
-        extra=("COUNT(DISTINCT m.relay_id)", "COUNT(DISTINCT NULLIF(h.claimed_model, ''))"))
+        extra=("COUNT(DISTINCT m.relay_id)", "COUNT(DISTINCT NULLIF(m.model_id, (SELECT id FROM"
+               f" model_group WHERE model_key = '{UNKNOWN_RELAY}')))"))
     row = rows[0] if rows else {"runs": 0, "x0": 0, "x1": 0}
     runs, relays, models = int(row["runs"]), int(row["x0"]), int(row["x1"])
     found = query._cells(specs, row) if rows else {}
@@ -469,17 +470,16 @@ def widget_integrity(params: Any) -> dict[str, Any]:
     groups = sorted((query._result("relay_model", r, query._cells(specs, r)) for r in found),
                     key=query._rank)
     ratios = {str(r["g"]): tuple(r[f"x{i}"] for i in range(4)) for r in found} if chat else {}
-    # check statuses per relay id and model (an integer and a run value: the
+    # check statuses per relay x model id (an integer of the run's row: the
     # few groups are named afterwards)
-    model = GROUP_KEY_SQL["model"]
     checks: dict[str, dict[str, dict[str, int]]] = {}
+    inner = (f"SELECT {run_row.GROUP_ID_SQL['relay_model']} AS gid, d.key AS k,"
+             f" CASE WHEN d.status IN {_sql_list(JUDGED)} THEN d.status ELSE 'other' END AS st,"
+             f" COUNT(*) AS n {sel.from_sql} JOIN history_dimensions d ON d.history_id = m.history_id"
+             f" AND d.kind = 'detector' AND d.key IN {_sql_list(INTEGRITY_CHECKS)}{sel.where_sql}"
+             " GROUP BY 1, 2, 3")
     for g, key, status, n in conn.execute(
-        "SELECT rg.relay_key || '|' || s.mk, s.k, s.st, s.n FROM ("
-        f"SELECT {RELAY_ID_SQL} AS gid, {model} AS mk, d.key AS k,"
-        f" CASE WHEN d.status IN {_sql_list(JUDGED)} THEN d.status ELSE 'other' END AS st, COUNT(*) AS n"
-        f" {sel.from_sql} JOIN history_dimensions d ON d.history_id = h.id"
-        f" AND d.kind = 'detector' AND d.key IN {_sql_list(INTEGRITY_CHECKS)}{sel.where_sql}"
-        " GROUP BY 1, 2, 3, 4) s JOIN relay_group rg ON rg.id = s.gid", sel.args):
+            f"SELECT g, k, st, n FROM ({run_row.label_sql('relay_model', inner)})", sel.args):
         cell = checks.setdefault(str(g), {}).setdefault(str(key), {"pass": 0, "warn": 0, "fail": 0, "other": 0})
         cell[str(status)] += int(n)
     present = {k for per in checks.values() for k in per}
@@ -508,16 +508,13 @@ def widget_integrity(params: Any) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 # Filter options (History and Analytics)
 # --------------------------------------------------------------------------- #
-# The filter keys of the URL schema with values to choose from: the SQL of a
-# run's value as the URL spells it (so "the key is set" is "the value is one
-# of the given ones"), and the Query field the key sets.
-_FACETS: dict[str, tuple[str, str]] = {
-    "surface": (run_row.FACETS["surface"], "surface"),
-    "relay": ("rm.relay_key", "relays"),
-    "model": (GROUP_KEY_SQL["model"], "models"),
-    **{k: (run_row.FACETS[k], k) for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec")},
+# The filter keys of the URL schema with values to choose from, and the Query
+# field each sets.
+_FIELDS: dict[str, str] = {
+    "surface": "surface", "relay": "relays", "model": "models",
+    **{k: k for k in ("suite", "mode", "api", "stream", "detect", "risk", "exec")},
 }
-OPTION_KEYS = tuple(_FACETS)
+OPTION_KEYS = tuple(_FIELDS)
 
 
 def filter_options(params: Any) -> dict[str, Any]:
@@ -544,13 +541,13 @@ def filter_options(params: Any) -> dict[str, Any]:
     q = query.parse_query(params)
     conn = history.query_connection()
     base = query.select_runs(q.replace(
-        start=None, end=None, **{f: () if f in ("relays", "models") else None for _, f in _FACETS.values()}))
+        start=None, end=None, **{f: () if f in ("relays", "models") else None for f in _FIELDS.values()}))
     base = base.and_where("m.relay_id IS NOT NULL")  # the runs with a relay, as the join to it
-    cols = ", ".join(["h.id AS id", "m.started_at AS t", "m.relay_id AS rid", "m.facet_id AS fid",
-                      f"{_FACETS['model'][0]} AS f_model"])
+    cols = ", ".join(["m.history_id AS id", "m.started_at AS t", "m.relay_id AS rid", "m.facet_id AS fid",
+                      "m.model_id AS mid"])
 
     def values(key: str) -> tuple[Any, ...]:
-        value = getattr(q, _FACETS[key][1])
+        value = getattr(q, _FIELDS[key])
         return tuple(value) if isinstance(value, tuple) else () if value is None else (value,)
 
     def marks(n: int) -> str:
@@ -559,13 +556,13 @@ def filter_options(params: Any) -> dict[str, Any]:
     # each filter on r, and on c: a facet_combo column, or a 0/1 column k<i> of c
     on_r: dict[str, tuple[str, tuple[Any, ...]]] = {}
     on_c: dict[str, tuple[str, tuple[Any, ...]]] = {}
-    for key in _FACETS:
+    for key in _FIELDS:
         if not (vs := values(key)):
             continue
         if key == "relay":
             on_r[key] = (f"rid IN (SELECT id FROM relay_group WHERE relay_key IN ({marks(len(vs))}))", vs)
         elif key == "model":
-            on_r[key] = (f"f_model IN ({marks(len(vs))})", vs)
+            on_r[key] = (f"mid IN (SELECT id FROM model_group WHERE model_key IN ({marks(len(vs))}))", vs)
         else:
             column = run_row.COLUMNS[key]
             on_r[key] = (f"fid IN (SELECT id FROM facet_combo WHERE {column} IN ({marks(len(vs))}))", vs)
@@ -602,7 +599,9 @@ def filter_options(params: Any) -> dict[str, Any]:
     branch("SELECT 'relay', g.relay_key, g.label, g.kind, g.in_kb, s.n"
            " FROM (SELECT rid, COUNT(*) AS n FROM r{w} GROUP BY rid) s JOIN relay_group g ON g.id = s.rid",
            on_r, "relay")
-    branch("SELECT 'model', f_model, NULL, NULL, NULL, COUNT(*) FROM r{w} GROUP BY 2", on_r, "model")
+    branch("SELECT 'model', g.model_key, NULL, NULL, NULL, s.n"
+           " FROM (SELECT mid, COUNT(*) AS n FROM r{w} GROUP BY mid) s JOIN model_group g ON g.id = s.mid",
+           on_r, "model")
     branch("SELECT ':span', MIN(t0), MAX(t1), NULL, NULL, 0 FROM c{w}", on_c, ":time")
     branch("SELECT ':runs', NULL, NULL, NULL, NULL, COALESCE(SUM(n), 0) FROM c{w}", on_c)
     # a dimension key is listed once one selected run has it (in run order: usually the first)
