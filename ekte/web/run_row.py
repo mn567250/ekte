@@ -131,8 +131,10 @@ _RISK_SQL = ("CASE WHEN NULLIF(h.risk_level, '') IS NULL THEN NULL ELSE CASE h.r
              + " ".join(f"WHEN '{r}' THEN {i}" for i, r in enumerate(RISK_ORDER)) + " ELSE -1 END END")
 
 RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
-    # whole seconds (floored) and the microseconds of the fixed-width form
-    "started_us": ("INTEGER", "CAST(strftime('%s', m.started_at) AS INTEGER) * 1000000"
+    # the whole UTC seconds of the fixed-width form (parsed without the fraction:
+    # older SQLite truncates a fractional time before 1970 towards zero, newer
+    # floors it) plus its microseconds
+    "started_us": ("INTEGER", "CAST(strftime('%s', substr(m.started_at, 1, 19)) AS INTEGER) * 1000000"
                               " + CAST(substr(m.started_at, 21, 6) AS INTEGER)"),
     "model_in_kb": ("INTEGER", "m.kb_model_id IS NOT NULL"),
     "score": ("REAL", "h.score"),
