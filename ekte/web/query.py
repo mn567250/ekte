@@ -480,7 +480,8 @@ def select_runs(q: Query) -> RunSelection:
     if q.end is not None:
         add(time_sql("<", q.end))
     if q.surface is not None:
-        add(f"m.surface_id = {_SURFACE_ID_SQL}", q.surface)
+        # (unary +: never a search of idx_run_row, which would read the rows in its order)
+        add(f"+m.surface_id = {_SURFACE_ID_SQL}", q.surface)
     facet = {k: v for k, v in (("suite", q.suite), ("mode", q.mode), ("api", q.api),
                                ("stream", q.stream), ("detect", q.detect), ("risk", q.risk),
                                ("exec", q.exec)) if v is not None}
