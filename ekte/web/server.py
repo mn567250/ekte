@@ -28,10 +28,22 @@ Endpoints:
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
                              (?format=json|md|html|pdf)
+  POST /api/kb/resolve       the knowledge-base profile of a relay + model
+  PATCH, DELETE /api/kb/entries/{id}  edit or delete one of your kb.db entries
   GET  /api/history/groups   History's groups (relay x model, ...), sorted and
                              keyset-paged, with relay labels and trends
   GET  /api/history/runs     one History group's runs, keyset-paged
                              (parameters: ekte/web/history_api.py)
+  GET  /api/history/status   the history as a whole (runs, oldest, newest,
+                             backfill pending), for the pages' notices
+  GET  /api/history/{id}     a saved report; ?trend=1 adds the request
+                             medians and the run's History trend values
+  DELETE /api/history/{id}, /api/history   delete one run, or all of them
+  POST /api/history/{id}/rescore   re-score a run from its evidence (a job)
+  GET  /api/v1/history/{id}/evidence[/exchanges|/export]   a run's evidence
+  GET, POST /api/watches; POST /api/watches/from-history/{id};
+  PATCH, DELETE /api/watches/{id}; POST /api/watches/{id}/run|cancel
+                             the monitors
   GET  /api/metrics          the metric registry: ids, units, formats, label
                              keys, directions, the KPI grid and the History
                              trend options (ekte/web/metrics.py)

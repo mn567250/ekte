@@ -28,7 +28,7 @@
   data_version, kb_version, EXTRACT_VERSION, database])`, with no time slot:
   `history.data_version()` is a counter in `history.db`'s `meta` table bumped
   in the same transaction as every write (`save`, `delete`, `clear`, the
-  analytics and perf backfills), from any process, so a CLI audit drops the
+  analytics backfill), from any process, so a CLI audit drops the
   cache too; `kb_version` is `ekte.knowledge.relays.kb_version()`. A handler
   whose answer depends on the clock resolves it first (`prepare=`; e.g. the
   Analytics widgets' `from` without `to` gets `to` = now, rounded up to the minute). The LRU (`ResponseCache`,
@@ -74,6 +74,35 @@
   `LocalOnlyMiddleware`: a Host allowlist against DNS rebinding, Origin and
   `Sec-Fetch-Site` checks against CSRF, JSON-only request bodies, and
   anti-framing / no-sniff / no-referrer headers. The UI has no login by design.
+
+## Endpoints
+
+The complete list, by page (the docstring of `ekte/web/server.py` has the
+same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
+
+| Endpoint | What it answers |
+|---|---|
+| `GET /`, `/history`, `/watches`, `/analytics`, `/kb`, `/accessibility` | the pages (`/v2/…`, `/tools`, `/console`: 308 redirects until 1.0.0) |
+| `GET /api/health` | `{ok, version}` |
+| `POST /api/jobs` (`/api/v1/jobs`), `GET /api/jobs`, `GET /api/jobs/{id}` (`/api/v1/…`), `GET /api/jobs/{id}/events` (`/api/v1/…`), `POST /api/jobs/{id}/cancel` | background audits |
+| `POST /api/models`, `POST /api/report/export` | a relay's models; a report rendered as JSON / Markdown / HTML / PDF |
+| `GET /api/kb`, `POST /api/kb/relays`, `GET /api/kb/profiles`, `PUT /api/kb/enabled`, `GET /api/kb/prompt`, `POST /api/kb/resolve`, `POST /api/kb/scan`, `POST /api/kb/import`, `GET /api/kb/export`, `PATCH` / `DELETE /api/kb/entries/{id}` | the knowledge base |
+| `GET /api/metrics` | the [metric registry](#metric-registry) |
+| `GET /api/filters/options` | every filter key's values with run counts ([Analytics API](#analytics-api); History uses it too) |
+| `GET /api/analytics/summary`, `series`, `heatmap`, `leaderboard`, `breakdown`, `errors`, `integrity` | the Analytics widgets ([Analytics API](#analytics-api)) |
+| `GET /api/history/groups`, `GET /api/history/runs` | the History widgets ([History API](#history-api)) |
+| `GET /api/history/status` | the history as a whole, for the page notices |
+| `GET /api/history/{id}` (`?trend=1`), `GET /api/v1/history/{id}` | one saved report |
+| `DELETE /api/history/{id}`, `DELETE /api/history` | delete one run, or all |
+| `GET /api/v1/history` | the newest runs (public; `limit`, `perf`) |
+| `GET /api/v1/history/{id}/evidence`, `…/evidence/exchanges`, `…/evidence/export`, `POST /api/history/{id}/rescore` (`/api/v1/…`) | a run's evidence; re-score it |
+| `GET /api/watches`, `POST /api/watches`, `POST /api/watches/from-history/{id}`, `PATCH` / `DELETE /api/watches/{id}`, `POST /api/watches/{id}/run`, `POST /api/watches/{id}/cancel` | monitors |
+| `GET /api/secret`, `POST /api/secret/new`, `…/new/confirm`, `…/unlock`, `…/lock`, `…/reset`, `…/storage` | the monitors' master key |
+
+Every widget endpoint (metrics, filter options, Analytics, History groups and
+runs) is a cached GET on the [query core](#query-core): the old Python
+Analytics path (`analytics.summary()` and friends, loading every run in
+range) and `/api/analytics/options` are gone (#123, #128).
 
 ## Query core
 
@@ -141,7 +170,8 @@ block=1, fold="week", max_keys=4, quantiles=False) -> SeriesResult` buckets in
 SQL: the zone's UTC offset is a `CASE` over its transitions in the data's span
 (`offset_sql`), and buckets are integer arithmetic on the run's local time in
 seconds, so hour / day / week / `dow_hour` (with `block` and `fold`) buckets
-and their values match `analytics.series`. Annotations (ekte version and
+and their values match the plain-Python reference of the tests
+(`tests/analytics_reference.py`). Annotations (ekte version and
 knowledge-base profile changes) come from each value's first and last run per
 series: a value that follows another changes at its first run, and only the
 runs where values overlap in time (a rollback) are read one by one. Only
@@ -474,8 +504,11 @@ these values (and `query.aggregate` over that run gives the same, n = 1).
 
 The History page reads only these endpoints (#127); the old internal
 `GET /api/history` (the newest ≤ 500 runs, `limit` / `perf` / `relay`) is
-gone. `GET /api/v1/history` is part of the public API and is unchanged
-(`limit`, `perf`).
+gone. `GET /api/v1/history` is part of the public API and keeps its shape
+(`limit`, `perf`); with `perf=1` the headline (`latency_p50_ms`,
+`ttft_p50_ms`, `decode_tps_p50`) comes from the run's `history_metrics` row,
+the one store of those values since schema version 13 dropped the copies on
+`history` (#128).
 
 ## HTTP API v1
 
