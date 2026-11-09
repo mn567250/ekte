@@ -634,6 +634,7 @@ def test_decode_speed_tails_come_from_the_requests_of_the_p50():
 def test_a_v2_database_gets_the_decode_tails_of_its_older_runs(data):
     rid = history.save(_with_decode(_fixture(), [float(v) for v in range(10, 31)]))
     with _db(data) as conn:  # as ekte with schema 2 left it
+        conn.execute("DROP INDEX idx_run_row")  # schema 14, it covers them
         conn.execute("ALTER TABLE history_metrics DROP COLUMN decode_tps_p5")
         conn.execute("ALTER TABLE history_metrics DROP COLUMN decode_tps_p95")
         conn.execute("UPDATE history_metrics SET extract_version = 1")
@@ -650,8 +651,8 @@ def test_a_v3_database_gets_the_surface_column(data):
     rid = history.save(_fixture())
     with _db(data) as conn:  # as ekte with schema 3 left it, before surfaces
         conn.execute("DROP INDEX idx_history_query")  # schema 10, it covers surface
-        for trigger in ("facet_id_insert", "facet_id_update"):  # schema 12, they read surface
-            conn.execute(f"DROP TRIGGER {trigger}")
+        for trigger in ("run_row_insert", "run_row_history", "run_row_metrics"):  # schema 12/14,
+            conn.execute(f"DROP TRIGGER {trigger}")  # they read surface
         conn.execute("ALTER TABLE history DROP COLUMN surface")
         conn.execute("PRAGMA user_version = 3")
     history.init()
