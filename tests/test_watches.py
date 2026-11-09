@@ -451,7 +451,9 @@ def _audit_report(target):
     )
 
 
-async def _until(cond, timeout: float = 5.0) -> None:
+async def _until(cond, timeout: float = 30.0) -> None:
+    """Wait for ``cond``: the timeout only ends a run that went wrong, so it
+    allows for a heavily loaded runner (Windows under xdist)."""
     import asyncio
 
     loop = asyncio.get_running_loop()
