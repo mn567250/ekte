@@ -73,7 +73,8 @@ Endpoints:
 
 Public API (docs/reference/stability.md#surface-http-api): the same handlers also answer
 under /api/v1/ (POST /jobs, GET /jobs/{id}, GET /jobs/{id}/events, GET /history,
-GET /history/{id}); responses there carry `X-Ekte-API: v1`. Every other /api/
+GET /history/{id}, its /evidence, /evidence/exchanges and /evidence/export, POST
+/history/{id}/rescore); responses there carry `X-Ekte-API: v1`. Every other /api/
 response carries `X-Ekte-API: internal`.
 
 The audit runs in-process with the same `run_audit` the CLI uses; a progress

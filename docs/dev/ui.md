@@ -177,6 +177,19 @@ the module.
 - `EkteFilters.keyed(key, labels)` reads an i18n key such as `metric.score`,
   falling back to `GET /api/metrics`' `labels` (English has no keyed strings).
 
+**No business logic in pages.** History and Analytics (and every page that
+shows metrics) draw what the server sends; they compute no metric, grade,
+colour family, delta direction, outcome class, filter, grouping or order of
+their own. The server sends values with their `grade`, `family`,
+`direction`, `trend_key`, units (`format`) and label keys
+(`docs/dev/web-server.md`, "Metric registry"); the page keeps only layout,
+sparkline and chart scaling, number and date formatting per language,
+animation and remembering the current view. A new rule (a threshold, a
+classification, a new aggregate) goes into `ekte/web/metrics.py`,
+`ekte/scoring.py` or `ekte/web/query.py`, never into a page;
+`tests/test_metrics_e2e.py` fails when a page compares a score with a grade
+threshold, an HTTP status with a code, or defines its own median.
+
 The monitors' **Open in history** links use the schema: `surface`, `relay`
 (the watch's `relay_key` from `/api/watches`, the relay its runs are grouped
 under), `model` and `suite`, plus `#r-<run>`.
