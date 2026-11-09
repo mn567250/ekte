@@ -1,7 +1,5 @@
 {
  "strings": {
-  "(no suite)": "(sem suíte)",
-  "Ad-hoc": "Manual",
   "All": "Todos",
   "Cancel": "Cancelar",
   "Collapse all": "Recolher tudo",
@@ -10,7 +8,6 @@
   "Execution": "Execução",
   "Expand all": "Expandir tudo",
   "Filters": "Filtros",
-  "History lives only in a local SQLite file under <code>~/.ekte</code> — nothing is uploaded.": "O histórico fica apenas num ficheiro SQLite local em <code>~/.ekte</code> — nada é enviado.",
   "Last 30 days": "Últimos 30 dias",
   "Last 7 days": "Últimos 7 dias",
   "Last 90 days": "Últimos 90 dias",
@@ -20,7 +17,6 @@
   "Period": "Período",
   "Re-run audit": "Executar auditoria novamente",
   "Relay / provider": "Relay / fornecedor",
-  "Relay, model, suite…": "Relay, modelo, suíte…",
   "Reset filters": "Redefinir filtros",
   "Saved audits: {n}": "Auditorias guardadas: {n}",
   "Search": "Pesquisar",

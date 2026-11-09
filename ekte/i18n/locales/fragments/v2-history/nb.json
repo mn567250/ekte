@@ -1,7 +1,5 @@
 {
  "strings": {
-  "(no suite)": "(intet testsett)",
-  "Ad-hoc": "Ad hoc",
   "All": "Alle",
   "Cancel": "Avbryt",
   "Collapse all": "Fold sammen alle",
@@ -10,7 +8,6 @@
   "Execution": "Kjøring",
   "Expand all": "Fold ut alle",
   "Filters": "Filtre",
-  "History lives only in a local SQLite file under <code>~/.ekte</code> — nothing is uploaded.": "Historikken ligger bare i en lokal SQLite-fil under <code>~/.ekte</code> — ingenting lastes opp.",
   "Last 30 days": "Siste 30 dager",
   "Last 7 days": "Siste 7 dager",
   "Last 90 days": "Siste 90 dager",
@@ -20,7 +17,6 @@
   "Period": "Periode",
   "Re-run audit": "Kjør revisjonen på nytt",
   "Relay / provider": "Relé / leverandør",
-  "Relay, model, suite…": "Relé, modell, testsett …",
   "Reset filters": "Nullstill filtre",
   "Saved audits: {n}": "Lagrede revisjoner: {n}",
   "Search": "Søk",

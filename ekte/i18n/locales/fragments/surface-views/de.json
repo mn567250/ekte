@@ -15,7 +15,6 @@
   "[vector sample of {n} numbers]": "[Vektorstichprobe aus {n} Zahlen]",
   "{n} requests": "{n} Anfragen",
   "{input} input tokens (usage)": "{input} Eingabe-Tokens (usage)",
-  "batch probe": "Batch-Messung",
-  "No audits of this endpoint type.": "Keine Prüfungen dieses Endpunkttyps."
+  "batch probe": "Batch-Messung"
  }
 }

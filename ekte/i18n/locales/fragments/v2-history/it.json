@@ -1,7 +1,5 @@
 {
  "strings": {
-  "(no suite)": "(nessuna suite)",
-  "Ad-hoc": "Manuale",
   "All": "Tutti",
   "Cancel": "Annulla",
   "Collapse all": "Comprimi tutto",
@@ -10,7 +8,6 @@
   "Execution": "Esecuzione",
   "Expand all": "Espandi tutto",
   "Filters": "Filtri",
-  "History lives only in a local SQLite file under <code>~/.ekte</code> — nothing is uploaded.": "La cronologia resta solo in un file SQLite locale in <code>~/.ekte</code> — non viene inviato nulla.",
   "Last 30 days": "Ultimi 30 giorni",
   "Last 7 days": "Ultimi 7 giorni",
   "Last 90 days": "Ultimi 90 giorni",
@@ -20,7 +17,6 @@
   "Period": "Periodo",
   "Re-run audit": "Riesegui audit",
   "Relay / provider": "Relay / provider",
-  "Relay, model, suite…": "Relay, modello, suite…",
   "Reset filters": "Reimposta filtri",
   "Saved audits: {n}": "Audit salvati: {n}",
   "Search": "Cerca",
