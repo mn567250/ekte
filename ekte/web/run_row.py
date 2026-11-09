@@ -17,9 +17,11 @@ copied onto the run's ``history_metrics`` row (``m``) as a number,
   spells it) in ``model_group``; ``url_id`` — its raw base URL in
   ``run_url``; ``facet_id`` — its combination of few-valued filter values
   (:data:`FACETS`: surface, suite, mode, API, stream mode, detection, risk,
-  execution, as the URL spells them) in ``facet_combo``. These lookup
-  tables (:class:`Lookup`) number each distinct value once; rows no run
-  uses any more are harmless.
+  execution, as the URL spells them) in ``facet_combo``; ``surface_id`` —
+  its surface alone in ``run_surface`` (every widget filters by surface:
+  one integer comparison per run instead of a lookup of its combination).
+  These lookup tables (:class:`Lookup`) number each distinct value once;
+  rows no run uses any more are harmless.
 
 The relay id (``history_metrics.relay_id``) depends on the knowledge base
 and is kept by :mod:`ekte.web.relay_map`; the outcome counts by
@@ -48,7 +50,7 @@ from ekte.web.relay_map import GROUP_KEY_SQL
 
 __all__ = [
     "COLUMNS", "FACETS", "FACET_COMBOS", "GROUP_ID_SQL", "MODELS", "MODEL_BITS", "RISK_ORDER",
-    "RUN_COLUMNS", "URLS", "Lookup", "ensure_run_columns", "label_sql",
+    "RUN_COLUMNS", "SURFACES", "URLS", "Lookup", "ensure_run_columns", "label_sql",
 ]
 
 FACETS: dict[str, str] = {
@@ -102,6 +104,7 @@ class Lookup:
 
 MODELS = Lookup("model_group", {"model_key": GROUP_KEY_SQL["model"]})
 URLS = Lookup("run_url", {"base_url": "h.base_url"})
+SURFACES = Lookup("run_surface", {"surface": FACETS["surface"]})
 FACET_COMBOS = Lookup("facet_combo", {COLUMNS[k]: sql for k, sql in FACETS.items()})
 
 RISK_ORDER = ("clean", "inconclusive", "low", "medium", "high")
@@ -117,6 +120,7 @@ RUN_COLUMNS: dict[str, tuple[str, str | Lookup]] = {
     "risk_value": ("INTEGER", _RISK_SQL),
     "model_id": ("INTEGER", MODELS),
     "url_id": ("INTEGER", URLS),
+    "surface_id": ("INTEGER", SURFACES),
     "facet_id": ("INTEGER", FACET_COMBOS),
 }
 """``history_metrics`` column -> (SQL type, the run's value: SQL over

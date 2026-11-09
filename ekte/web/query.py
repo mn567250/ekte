@@ -412,8 +412,8 @@ def time_sql(op: str, dt: datetime, run: str = "m") -> str:
 # Run times that can be shifted into every time zone (others count as undated).
 # (Unary + keeps SQLite from walking a started_ts index for this nearly
 # unbounded range: a table scan is faster.)
-_DATED = f"m.started_ts >= {_ts(analytics._T_MIN)} AND m.started_ts < {_ts(analytics._T_MAX)}"
-_DATED_SQL = _DATED.replace("m.started_ts", "+m.started_ts")
+_DATED_SQL = (f"{time_sql('>=', analytics._T_MIN)} AND {time_sql('<', analytics._T_MAX)}"
+              .replace("m.started_ts", "+m.started_ts"))
 
 
 def _like(text: str) -> str:
@@ -451,6 +451,9 @@ class RunSelection:
         return RunSelection((*self.where, condition), (*self.args, *args), self.text)
 
 
+_SURFACE_ID_SQL = "(SELECT id FROM run_surface WHERE surface = ?)"
+
+
 def _in_table(column: str, table: str, key: str, values: Sequence[Any]) -> tuple[Any, ...]:
     """The runs whose id ``column`` names one of ``values`` of ``key`` in the
     small table ``table`` (its ids are looked up once, not per run)."""
@@ -475,9 +478,11 @@ def select_runs(q: Query) -> RunSelection:
         add(time_sql(">=", q.start))
     if q.end is not None:
         add(time_sql("<", q.end))
-    facet = {k: v for k, v in (("surface", q.surface), ("suite", q.suite), ("mode", q.mode),
-                               ("api", q.api), ("stream", q.stream), ("detect", q.detect),
-                               ("risk", q.risk), ("exec", q.exec)) if v is not None}
+    if q.surface is not None:
+        add(f"m.surface_id = {_SURFACE_ID_SQL}", q.surface)
+    facet = {k: v for k, v in (("suite", q.suite), ("mode", q.mode), ("api", q.api),
+                               ("stream", q.stream), ("detect", q.detect), ("risk", q.risk),
+                               ("exec", q.exec)) if v is not None}
     if facet:
         same = " AND ".join(f"{run_row.COLUMNS[k]} = ?" for k in facet)
         add(f"m.facet_id IN (SELECT id FROM facet_combo WHERE {same})", *facet.values())
@@ -504,15 +509,14 @@ def default_surface(conn: sqlite3.Connection, q: Query | None = None) -> str:
     order, chat when there are none. For endpoints that need one surface."""
     sel = select_runs((q or Query()).replace(surface=None))
     # the known surfaces counted in one pass (no GROUP BY: no sort of the runs)
-    surface = run_row.COLUMNS["surface"]
-    known = ", ".join(f"COALESCE(SUM(m.facet_id IN (SELECT id FROM facet_combo WHERE {surface} ="
-                      f" {_quote(s)})), 0)" for s in SURFACES)
-    total, *counts = conn.execute(f"SELECT COUNT(*), {known} {sel.sql}", sel.args).fetchone()
+    known = ", ".join(f"COALESCE(SUM(m.surface_id = {_SURFACE_ID_SQL}), 0)" for _ in SURFACES)
+    total, *counts = conn.execute(f"SELECT COUNT(*), {known} {sel.sql}",
+                                  (*SURFACES, *sel.args)).fetchone()
     if int(total) == sum(int(c) for c in counts):
         return analytics._most_common(dict(zip(SURFACES, (int(c) for c in counts), strict=True)))
     rows = conn.execute(
-        f"SELECT fc.{surface}, SUM(s.n) FROM (SELECT m.facet_id AS f, COUNT(*) AS n {sel.sql}"
-        " GROUP BY 1) s JOIN facet_combo fc ON fc.id = s.f GROUP BY 1", sel.args
+        f"SELECT su.surface, s.n FROM (SELECT m.surface_id AS sid, COUNT(*) AS n {sel.sql}"
+        " GROUP BY 1) s JOIN run_surface su ON su.id = s.sid", sel.args
     ).fetchall()
     return analytics._most_common({str(r[0]): int(r[1]) for r in rows})
 
@@ -987,10 +991,11 @@ _FACET_JOIN = " LEFT JOIN facet_combo fc ON fc.id = m.facet_id"
 
 def _data_bounds(conn: sqlite3.Connection) -> tuple[datetime, datetime] | None:
     """The first and last dated run time of the whole history (two index
-    lookups)."""
+    lookups in the started_at index)."""
+    lo, hi = (analytics_store.format_ts(t) for t in (analytics._T_MIN, analytics._T_MAX))
     row = conn.execute(
-        f"SELECT MIN(started_at), MAX(started_at) FROM history_metrics m"
-        f" WHERE {_DATED}").fetchone()
+        "SELECT MIN(started_at), MAX(started_at) FROM history_metrics"
+        " WHERE started_at >= ? AND started_at < ?", (lo, hi)).fetchone()
     first, last = (analytics_store.parse_ts(v) for v in row) if row else (None, None)
     return (first, last) if first is not None and last is not None else None
 
