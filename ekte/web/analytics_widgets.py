@@ -451,10 +451,6 @@ def widget_integrity(params: Any) -> dict[str, Any]:
     ``other`` = not judged), the model-mismatch share, and the effective
     context window as a share of the declared one (median over the runs that
     measured both; chat only)."""
-    # TEMPORARY gate check (#162): slows one widget past the CI budget; reverted next commit
-    import time
-
-    time.sleep(0.3)
     _widget(params, "integrity")
     conn, q = _setup(params)
     chat = METRICS["context_claimed"].applies(str(q.surface))
