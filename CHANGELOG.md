@@ -194,6 +194,15 @@ how many saved runs it re-extracts.
   stored and unstored keys, your own knowledge-base entries); the upgrade tests
   open it with the current code and check that nothing is lost.
 
+### Fixed
+
+- **Typer 0.29.** The command line reference generator
+  (`scripts/generate_cli_docs.py`, checked by `test_cli_reference_is_current`)
+  crashed with `'TyperOption' object has no attribute 'type'`: Typer 0.29
+  vendors Click and keeps only the Python annotation of an option. The type name
+  now comes from that annotation, and `docs/reference/cli.md` is the same on
+  Typer 0.27 and 0.29.
+
 ## [0.34.0] - 2026-11-07
 
 Every saved run now keeps the raw requests and responses it rests on as
