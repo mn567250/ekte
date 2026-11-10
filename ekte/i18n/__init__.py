@@ -92,6 +92,18 @@ def ui(lang: str | None, en: str) -> str:
     return _load()[lang].get("strings", {}).get(en, en)
 
 
+def keyed(key: str, lang: str | None = None) -> str:
+    """The text of a keyed string (``metric.score``: a key that is not itself
+    the English text, as the fragments under ``locales/fragments/metrics/``
+    hold) in ``lang``, else in English, else the key."""
+    data = _load()
+    for code in (normalize(lang), DEFAULT):
+        text = data[code].get("strings", {}).get(key)
+        if text is not None:
+            return str(text)
+    return key
+
+
 _TITLE_FIELD = re.compile(r"\{(\w+)(?:\|(list|server))?\}")
 
 # Result titles a detector builds around a subject, as English templates whose

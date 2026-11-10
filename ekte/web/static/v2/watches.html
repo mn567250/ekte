@@ -521,15 +521,17 @@
     return out;
   }
 
-  // History link that pre-fills the relay / model / suite filters for this
-  // monitor. It passes the exact base URL (History finds its relay, so two
-  // servers on one host, different ports, stay apart).
+  // History link filtered to this monitor's runs, in the shared URL schema
+  // (filters.js; docs/dev/web-server.md "Query core"): its surface, its
+  // relay (the server's relay_key: the relay its runs are grouped under, so
+  // two servers on one host, different ports, stay apart), claimed model and
+  // suite. The fragment points at the run.
   function historyHref(w, reportId) {
-    var q = [["surface", w.surface && w.surface !== "chat" ? w.surface : ""],
-      ["base_url", w.base_url || ""], ["model", w.claimed_model || w.model || ""], ["suite", w.suite || ""]]
-      .filter(function (p) { return p[1]; })
-      .map(function (p) { return p[0] + "=" + encodeURIComponent(p[1]); }).join("&");
-    return "/history" + (q ? "?" + q : "") + "#r-" + reportId;
+    var q = new URLSearchParams();
+    [["surface", w.surface || "chat"], ["relay", w.relay_key || ""], ["model", w.claimed_model || w.model || ""],
+      ["suite", w.suite || ""]].forEach(function (p) { if (p[1]) q.append(p[0], p[1]); });
+    var qs = q.toString();
+    return "/history" + (qs ? "?" + qs : "") + "#r-" + reportId;
   }
 
   // Wire protocol: a forced one, or what "auto" detects for this endpoint.

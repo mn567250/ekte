@@ -139,13 +139,15 @@ onglets — **Vue d'ensemble** (indicateurs, classement), **Tendances**
 du relais), **Intégrité du modèle** et **Facturation** — sous l'en-tête de la
 page et un panneau de filtres commun ; seul l'onglet affiché est chargé. L'URL
 conserve l'onglet, les filtres et chaque option des graphiques
-(`#tab=reliability&range=30&relay=…&eb=dow_hour`), et **Copier le lien vers
+(`?tab=reliability&range=30d&relay=…&errors.bucket=dow_hour`), et **Copier le lien vers
 cette vue** la copie (ou l'affiche dans un champ à copier si le navigateur ne
 le permet pas) : le lien rouvre exactement cette vue. Le panneau de filtres est
 le même sur **Historique**, **Surveillances** et **Analyses** : fermé, il indique combien de
 filtres sont actifs et les nomme sur une ligne (p. ex. « 30 derniers jours ·
 standard · Streaming · Example Relay »), si bien qu'une vue partagée dit ce
 qu'elle montre.
+
+**Taux de succès, d’erreur, de 429 et de requêtes perturbées.** Chaque requête qu’ekte envoie au relais pendant une exécution a exactement un résultat : un succès, une erreur du relais (délai dépassé en attendant le relais, réponse 5xx ou 4xx, ou autre réponse défectueuse), une limitation de débit (HTTP 429) ou un échec qui n’a jamais atteint le relais (le réseau entre vous et le relais, ou ekte lui-même). Les tentatives répétées comptent une fois. Le relais n’est jugé que sur les requêtes qui l’ont atteint : le **taux de succès**, le **taux d’erreur** et le **taux de 429** sont les succès, les erreurs du relais et les limitations divisés par ces requêtes, et totalisent toujours 100 %. La **part perturbée** est la part de toutes les requêtes qui ont échoué avant le relais : elle dit à quel point on peut se fier à l’exécution elle-même, pas si le relais est bon ; si elle est élevée, relancez l’audit. Sur plusieurs exécutions, les taux sont cumulés (toutes les requêtes ensemble), si bien qu’une mauvaise exécution parmi de nombreuses bonnes reste visible (neuf exécutions à 0 % et une à 40 % donnent environ 4 %, pas 0 %) ; scores, latences, vitesses et ratios de facturation sont la médiane des exécutions. Historique, Analyses et le rapport affichent les mêmes chiffres pour les mêmes exécutions, et une seule exécution affiche exactement les valeurs de son rapport. Le contrôle de fiabilité du rapport a son propre taux (« Taux de succès du contrôle de fiabilité »), qui ne sert qu’au score.
 
 ## Langues
 

@@ -17,8 +17,8 @@ visit states only a running app reaches, all without network access:
   page polls every 2 s. (This list used to be History's "In progress".)
 * ``monitors-running``: Monitors with the monitor running (spinner, progress,
   polling every 2 s).
-* ``history-charts``: History with three runs of one relay (sparklines for all
-  four trend metrics) whose report carries a ``performance`` block built by
+* ``history-charts``: History with three runs of one relay (grade and decode speed
+  sparklines) whose report carries a ``performance`` block built by
   ``ekte.perf.build_performance`` (timeline chart, legend, meters); the seeded
   fixture report has no performance data.
 """
@@ -137,9 +137,11 @@ FAKE_JOB_INIT = (
 """
 )
 
-TRENDS_INIT = (
-    "try { localStorage.setItem('ekte.v2.history.trends', JSON.stringify(['score', 'grade', 'lat', 'tps'])); } catch (e) {}"
-)
+# History trends (at most two at once, URL state): grade and decode speed here,
+# score and latency p50 in the default view of every other History state
+TRENDS_QUERY = "?trend.metrics=grade,decode_tps"
+# three runs, oldest first: (score, grade, latency p50 ms, decode tok/s)
+CHART_RUNS = ((62.0, "D", 1240.0, 77.0), (71.0, "C", 1130.0, 81.0), (84.0, "B", 980.0, 92.0))
 
 
 def _fulfill_json(route: Route, data: Any) -> None:
@@ -161,18 +163,40 @@ def _route_history_charts(page: Page) -> None:
     """Three runs of one relay (trend sparklines) whose reports carry performance data."""
     report = _report_with_performance()
 
-    def history_list(route: Route) -> None:
-        rows = route.fetch().json()
-        if not rows:
-            return _fulfill_json(route, rows)
-        r0 = rows[0]
-        out = []
-        for k, (score, rating, lat, tps) in enumerate(((84, "B", 980.0, 92.0), (71, "C", 1130.0, 81.0), (62, "D", 1240.0, 77.0))):
-            out.append(dict(r0, id=r0["id"] if k == 0 else f"a11y-{k}", score=score, rating=rating,
-                            latency_p50_ms=lat, decode_tps_p50=tps, ts=r0.get("ts")))
-        _fulfill_json(route, out)
+    from ekte.web import metrics
 
-    page.route(re.compile(r"/api/history(\?.*)?$"), _quiet(history_list))
+    values = {  # per trend metric: the three runs' stored values, oldest first
+        "score": [r[0] for r in CHART_RUNS], "grade": [metrics.grade_value(r[1]) for r in CHART_RUNS],
+        "latency_p50": [r[2] for r in CHART_RUNS], "decode_tps": [r[3] for r in CHART_RUNS],
+    }
+
+    def groups(route: Route) -> None:
+        data = route.fetch().json()
+        if not data.get("groups"):
+            return _fulfill_json(route, data)
+        g = data["groups"][0]
+        trends = {}
+        for mid in data["trend_metrics"]:
+            pts = [float(v) for v in values.get(mid, [])]
+            trends[mid] = {"metric": mid, "points": pts, "first": pts[0] if pts else None, "n": len(pts),
+                           "last": metrics.present(mid, pts[-1] if pts else None, pts[0] if pts else None, n=len(pts))}
+        _fulfill_json(route, dict(data, groups=[dict(g, runs=3, trends=trends)], total_groups=1, total_runs=3, after=None))
+
+    def runs(route: Route) -> None:
+        data = route.fetch().json()
+        if not data.get("rows"):
+            return _fulfill_json(route, data)
+        r0 = data["rows"][0]
+        rows = []
+        for k, (score, grade, lat, tps) in enumerate(reversed(CHART_RUNS)):  # newest first
+            rows.append(dict(r0, id=r0["id"] if k == 0 else 990000 + k, score=score, grade=grade,
+                             latency_p50_ms=lat, decode_tps_p50=tps,
+                             family=dict(r0["family"], score=metrics.family(metrics.METRICS["score"], score),
+                                         grade=metrics.GRADE_FAMILY[grade])))
+        _fulfill_json(route, dict(data, rows=rows, total=3, after=None))
+
+    page.route(re.compile(r"/api/history/groups(\?.*)?$"), _quiet(groups))
+    page.route(re.compile(r"/api/history/runs(\?.*)?$"), _quiet(runs))
     page.route(re.compile(r"/api/history/[^/?]+$"), _quiet(lambda route: _fulfill_json(route, report)))
 
 
@@ -229,7 +253,7 @@ def open_state(
         _route_monitors_running(page)
         reload_needed = True
     elif page_id == "history-charts":
-        page.context.add_init_script(TRENDS_INIT)
+        path += TRENDS_QUERY
         _route_history_charts(page)
         reload_needed = True
     if reload_needed:

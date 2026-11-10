@@ -444,7 +444,19 @@ An **upgrade within a major version never loses or corrupts data** in the data
 directory (audit history, watches, your knowledge-base entries, stored API
 keys). When a release changes the format of a database, ekte migrates it
 automatically on first start, and it first writes a **backup next to the
-database** (the migration mechanism of #14). If a migration fails, the original
+database** (the migration mechanism of #14). The first run of the new version
+says so on stderr (stdout stays clean for `--json`): the database, the schema
+versions it moved between, the ekte version and the backup's path, then how
+many saved runs it is re-extracting for new metrics and when that is done; for
+example:
+
+```
+ekte: upgraded history.db from schema v4 to v14 (ekte 0.35.0); backup: ~/.ekte/history.db.v4.20261109T112053Z.bak
+ekte: updating the metrics of 1234 saved run(s) for this version...
+ekte: metrics of 1234 saved run(s) updated in 3.2 s
+```
+
+A new, empty database is created silently. If a migration fails, the original
 is untouched and ekte stops with a message instead of continuing with
 half-migrated data. Skipping versions within a major version is supported.
 

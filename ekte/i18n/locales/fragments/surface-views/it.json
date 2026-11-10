@@ -15,7 +15,6 @@
   "[vector sample of {n} numbers]": "[campione di vettore di {n} numeri]",
   "{n} requests": "{n} richieste",
   "{input} input tokens (usage)": "{input} token di input (usage)",
-  "batch probe": "sonda a lotti",
-  "No audits of this endpoint type.": "Nessun audit di questo tipo di endpoint."
+  "batch probe": "sonda a lotti"
  }
 }

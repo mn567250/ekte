@@ -92,7 +92,7 @@ def test_history_rows_carry_protocol_and_mode(tmp_path, monkeypatch, client):
     monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     new = history.save(_with_protocol())
     old = history.save(_fixture())
-    rows = {r["id"]: r for r in client.get("/api/history").json()}
+    rows = {r["id"]: r for r in client.get("/api/v1/history").json()}
     assert (rows[new]["api"], rows[new]["api_auto"], rows[new]["stream_mode"]) == ("anthropic", 0, "non_stream")
     assert (rows[old]["api"], rows[old]["api_auto"], rows[old]["stream_mode"]) == (None, None, None)
 

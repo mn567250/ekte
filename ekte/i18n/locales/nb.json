@@ -689,7 +689,7 @@
    "reliability_requests <= 0 ({reliability_requests}); ingen parallell last generert."
   ],
   "reliability.success_rate": [
-   "Suksessrate for samtidige forespørsler",
+   "Suksessrate for pålitelighetssjekken",
    "Ved samtidighet {concurrency} lyktes {successes} forespørsler (av {requests}, {rate_limited} strupet)."
   ],
   "reliability.rate_limited": [

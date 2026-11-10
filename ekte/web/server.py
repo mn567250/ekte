@@ -28,17 +28,38 @@ Endpoints:
   POST /api/jobs/{id}/cancel stop a queued or running job
   POST /api/report/export    a report (JSON body) rendered as a download
                              (?format=json|md|html|pdf)
-  GET  /api/analytics/options      filter values in the run history (relays,
-                                   models, suites, stream modes, APIs, dates)
-  GET  /api/analytics/summary      KPIs of a range vs. the previous range
-  GET  /api/analytics/series       one metric per relay / model over time buckets
-  GET  /api/analytics/leaderboard  relays of a model, or models of a relay
-  GET  /api/analytics/breakdown    some metrics per relay / model over the range
-  GET  /api/analytics/errors       request outcomes (429, 5xx, timeouts, …) per
-                                   relay / model and over time buckets
+  POST /api/kb/resolve       the knowledge-base profile of a relay + model
+  PATCH, DELETE /api/kb/entries/{id}  edit or delete one of your kb.db entries
+  GET  /api/history/groups   History's groups (relay x model, ...), sorted and
+                             keyset-paged, with relay labels and trends
+  GET  /api/history/runs     one History group's runs, keyset-paged
+                             (parameters: ekte/web/history_api.py)
+  GET  /api/history/status   the history as a whole (runs, oldest, newest,
+                             backfill pending), for the pages' notices
+  GET  /api/history/{id}     a saved report; ?trend=1 adds the request
+                             medians and the run's History trend values
+  DELETE /api/history/{id}, /api/history   delete one run, or all of them
+  POST /api/history/{id}/rescore   re-score a run from its evidence (a job)
+  GET  /api/v1/history/{id}/evidence[/exchanges|/export]   a run's evidence
+  GET, POST /api/watches; POST /api/watches/from-history/{id};
+  PATCH, DELETE /api/watches/{id}; POST /api/watches/{id}/run|cancel
+                             the monitors
+  GET  /api/metrics          the metric registry: ids, units, formats, label
+                             keys, directions, the KPI grid and the History
+                             trend options (ekte/web/metrics.py)
+  GET  /api/filters/options        the values of every filter key (History and
+                                   Analytics) with run counts, under the other
+                                   filters
+  GET  /api/analytics/summary      the 12 KPI tiles, range vs. the previous range
+  GET  /api/analytics/series       one metric per group over time buckets
+  GET  /api/analytics/heatmap      one metric on the weekday x time-of-day grid
+  GET  /api/analytics/leaderboard  groups ranked by median score
+  GET  /api/analytics/breakdown    some metrics per group over the range
+  GET  /api/analytics/errors       request outcomes per group and time bucket
   GET  /api/analytics/integrity    identity, context window and capability
                                    checks per relay x model
-                                   (parameters: ekte/web/analytics.py)
+                                   (parameters: ekte/web/analytics_widgets.py,
+                                   docs/dev/web-server.md)
   GET  /api/secret           the monitors' master key: state, fingerprint,
                              allowed actions (never the key)
   POST /api/secret/new       a new master key, shown once …
@@ -52,7 +73,8 @@ Endpoints:
 
 Public API (docs/reference/stability.md#surface-http-api): the same handlers also answer
 under /api/v1/ (POST /jobs, GET /jobs/{id}, GET /jobs/{id}/events, GET /history,
-GET /history/{id}); responses there carry `X-Ekte-API: v1`. Every other /api/
+GET /history/{id}, its /evidence, /evidence/exchanges and /evidence/export, POST
+/history/{id}/rescore); responses there carry `X-Ekte-API: v1`. Every other /api/
 response carries `X-Ekte-API: internal`.
 
 The audit runs in-process with the same `run_audit` the CLI uses; a progress
@@ -68,11 +90,9 @@ different relays run in parallel. A job is detached from the page that queued it
 from __future__ import annotations
 
 import asyncio
-import collections
 import contextlib
 import json
 import logging
-import threading
 import time
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -1305,21 +1325,12 @@ def create_app() -> FastAPI:
                         headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
     @app.get("/api/v1/history")
-    @app.get("/api/history")
-    def history_list(limit: int = 50, perf: bool = False, relay: bool = False) -> Any:
+    def history_list(limit: int = 50, perf: bool = False) -> Any:
+        """The newest runs (public API). The History page reads the widget
+        endpoints below instead."""
         from ekte.web import history
 
-        rows = history.recent(limit, perf=perf)
-        if relay:
-            # the knowledge-base entry each run's base URL belongs to, resolved
-            # as Analytics does (a saved relay or provider; else the URL itself),
-            # so History groups and names runs by relay
-            from ekte.web.analytics import RelayResolver
-
-            resolver = RelayResolver()
-            for row in rows:
-                row["relay"] = resolver.resolve(row).public()
-        return JSONResponse(rows)
+        return JSONResponse(history.recent(limit, perf=perf))
 
     @app.get("/api/v1/history/{rid}")
     def history_get_v1(rid: int) -> Any:
@@ -1330,6 +1341,31 @@ def create_app() -> FastAPI:
         if report is None:
             return JSONResponse({"error": "not found"}, status_code=404)
         return JSONResponse(report)
+
+    # History widgets (ekte/web/history_api.py): the groups of the list with
+    # their trends, and one group's runs; cached like the Analytics widgets.
+    # Registered before /api/history/{rid}.
+    from ekte.web.cache import cached_endpoint as _cached
+    from ekte.web.query import QueryError as _QueryError
+
+    def _history_params(params: Any) -> Any:
+        from ekte.web import history_api
+
+        return history_api.resolve_params(params)
+
+    @app.get("/api/history/groups")
+    @_cached("history.groups", errors=(_QueryError,), prepare=_history_params)
+    def history_groups(params: Any) -> Any:
+        from ekte.web import history, history_api
+
+        return history_api.groups(history.query_connection(), params)
+
+    @app.get("/api/history/runs")
+    @_cached("history.runs", errors=(_QueryError,), prepare=_history_params)
+    def history_runs(params: Any) -> Any:
+        from ekte.web import history, history_api
+
+        return history_api.runs(history.query_connection(), params)
 
     @app.get("/api/history/status")
     def history_status() -> Any:
@@ -1354,6 +1390,12 @@ def create_app() -> FastAPI:
             attach_trends(perf["requests"])
             # failure classes of a run saved before they were recorded
             errorclass.attach_classes(perf["requests"])
+        if trend:
+            # the run's History trend values, from the same per-run SQL as the
+            # groups' trends (a group of this run alone shows exactly these)
+            from ekte.web import history_api
+
+            report["history_trends"] = history_api.run_trends(history.query_connection(), rid)
         return JSONResponse(report)
 
     # ----- Evidence: a saved run's raw request/response pairs ------------- #
@@ -1510,84 +1552,50 @@ def create_app() -> FastAPI:
         history.clear()
         return JSONResponse({"ok": True})
 
-    # ----- Analytics (ekte/web/analytics.py) ------------------------------ #
-    # Plain `def` handlers (SQLite + the knowledge base load run in the thread
-    # pool). Every parameter is validated there: a bad one answers 400.
-    # Analytics answers are cached briefly: a filter, tab or block change
-    # often asks the same question again. The key holds the call and its
-    # parameters, the history database and its write count (any saved,
-    # deleted or cleared run drops them) and a 30-second time slot (relative
-    # ranges such as "last 7 days" move, relay names can change).
-    analytics_cache: collections.OrderedDict[str, Any] = collections.OrderedDict()
-    analytics_lock = threading.Lock()
+    # ----- Analytics (ekte/web/analytics_widgets.py) ---------------------- #
+    # One GET per widget, on the query core (ekte/web/query.py): the shared
+    # URL schema plus the widget's namespaced keys; a bad parameter answers
+    # 400. Plain `def` handlers (SQLite runs in the thread pool). Answers go
+    # through the response cache (ekte/web/cache.py): keyed on the endpoint,
+    # its canonical parameters (relative ranges resolved first) and the
+    # database's data version (any saved, deleted or cleared run, from any
+    # process, drops them), with an ETag the browser revalidates.
+    from ekte.web.analytics import AnalyticsError
+    from ekte.web.cache import cached_endpoint
 
-    def _analytics(call: Any, *args: Any) -> Any:
-        from ekte.web import history
-        from ekte.web.analytics import AnalyticsError
+    def _widget_params(params: Any) -> Any:
+        from ekte.web import analytics_widgets
 
-        key = json.dumps([call.__name__, args, history.write_mark(), int(time.time() // 30)],
-                         sort_keys=True, default=str)
-        with analytics_lock:
-            body = analytics_cache.get(key)
-            if body is not None:
-                analytics_cache.move_to_end(key)
-        status = 200
-        if body is None:
-            try:
-                body = call(*args)
-            except AnalyticsError as exc:
-                body, status = {"error": str(exc)}, 400
-            else:
-                with analytics_lock:
-                    analytics_cache[key] = body
-                    while len(analytics_cache) > 64:
-                        analytics_cache.popitem(last=False)
-        # Fresh numbers on every load: the history changes with each run.
-        return JSONResponse(body, status_code=status, headers={"Cache-Control": "no-store"})
+        return analytics_widgets.resolve_params(params)
 
-    @app.get("/api/analytics/options")
-    def analytics_options(request: Request) -> Any:
-        from ekte.web import analytics
+    @app.get("/api/metrics")
+    @cached_endpoint("metrics")
+    def metrics_catalogue(params: Any) -> Any:
+        from ekte.web import metrics
 
-        return _analytics(analytics.options, dict(request.query_params))
+        return metrics.catalogue()
 
-    @app.get("/api/analytics/summary")
-    def analytics_summary(request: Request) -> Any:
-        from ekte.web import analytics
+    def _widget_route(path: str, name: str) -> None:
+        def answer(params: Any) -> Any:
+            from ekte.web import analytics_widgets
 
-        return _analytics(analytics.summary, dict(request.query_params))
+            return getattr(analytics_widgets, name)(params)  # looked up per call
 
-    @app.get("/api/analytics/series")
-    def analytics_series(request: Request) -> Any:
-        from ekte.web import analytics
+        answer.__name__ = answer.__qualname__ = name
+        handler = cached_endpoint(path, errors=(AnalyticsError,), prepare=_widget_params)(answer)
+        app.add_api_route(path, handler, methods=["GET"], name=name)
 
-        params = request.query_params
-        return _analytics(analytics.series, dict(params), params.getlist("keys"))
-
-    @app.get("/api/analytics/leaderboard")
-    def analytics_leaderboard(request: Request) -> Any:
-        from ekte.web import analytics
-
-        return _analytics(analytics.leaderboard, dict(request.query_params))
-
-    @app.get("/api/analytics/breakdown")
-    def analytics_breakdown(request: Request) -> Any:
-        from ekte.web import analytics
-
-        params = request.query_params
-        return _analytics(analytics.breakdown, dict(params), params.getlist("metrics"))
-
-    @app.get("/api/analytics/errors")
-    def analytics_errors(request: Request) -> Any:
-        from ekte.web import analytics
-
-        return _analytics(analytics.errors, dict(request.query_params))
-
-    @app.get("/api/analytics/integrity")
-    def analytics_integrity(request: Request) -> Any:
-        from ekte.web import analytics
-
-        return _analytics(analytics.integrity, dict(request.query_params))
+    for _path, _name in (
+        ("/api/filters/options", "filter_options"),
+        ("/api/analytics/summary", "widget_summary"),
+        ("/api/analytics/series", "widget_series"),
+        ("/api/analytics/heatmap", "widget_heatmap"),
+        ("/api/analytics/leaderboard", "widget_leaderboard"),
+        ("/api/analytics/breakdown", "widget_breakdown"),
+        ("/api/analytics/errors", "widget_errors"),
+        ("/api/analytics/integrity", "widget_integrity"),
+    ):
+        _widget_route(_path, _name)
 
     # ----- Scheduled watches (monitoring) -------------------------------- #
     def _watch_rows() -> list[dict[str, Any]]:
@@ -1598,9 +1606,15 @@ def create_app() -> FastAPI:
         """
         from ekte.knowledge import load_knowledge_base
         from ekte.web import watches
+        from ekte.web.analytics import RelayResolver
 
         # list_all() never returns api_key, so this is safe to send to the browser.
         rows = watches.list_all()
+        # the relay its runs are grouped under: the `relay=` key of the
+        # monitor's "Open in history" link (the shared URL schema)
+        resolver = RelayResolver() if rows else None
+        for row in rows:
+            row["relay_key"] = resolver.resolve(row).key if resolver else None
         # Flag pinned profiles that differ from what the knowledge base resolves now.
         try:
             kb = load_knowledge_base(copy=False) if rows else None  # read-only

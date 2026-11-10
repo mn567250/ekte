@@ -19,10 +19,12 @@ import json
 from decimal import Decimal
 from typing import Any
 
+from ekte.detectors.reliability import SUCCESS_RATE_LABEL
 from ekte.models import (
     AuditReport,
     KnowledgeUsage,
     RedactedTarget,
+    ReliabilitySummary,
     RiskLevel,
     Severity,
     Status,
@@ -197,6 +199,20 @@ def _md(value: object) -> str:
     for ch in _MD_ESCAPE:
         text = text.replace(ch, "\\" + ch)
     return text
+
+
+def reliability_lines(r: ReliabilitySummary) -> list[str]:
+    """The reliability check's success rate (its own burst, used in the score)
+    and its rate-limited requests, as plain text lines."""
+    lines = [
+        f"{SUCCESS_RATE_LABEL}: {r.success_rate * 100:.0f}% "
+        f"({r.successes}/{r.requests} requests succeeded)"
+    ]
+    if r.rate_limited:
+        lines.append(
+            f"Rate-limited (429): {r.rate_limited} (excluded from the {SUCCESS_RATE_LABEL.lower()})"
+        )
+    return lines
 
 
 def render_json(report: AuditReport) -> str:
@@ -476,12 +492,7 @@ def render_markdown(report: AuditReport) -> str:
         r = report.reliability
         lines.append("## Reliability")
         lines.append("")
-        lines.append(
-            f"- Requests: {r.successes}/{r.requests} succeeded "
-            f"({r.success_rate * 100:.0f}%)"
-        )
-        if r.rate_limited:
-            lines.append(f"- Rate-limited (429): {r.rate_limited} (excluded from success rate)")
+        lines.extend(f"- {line}" for line in reliability_lines(r))
         if r.latency_ms:
             parts = [
                 f"{k} {_fmt_duration(v)}"
@@ -697,14 +708,7 @@ def render_html(report: AuditReport) -> str:
     if report.reliability:
         r = report.reliability
         out.append('<section class="card"><h2>Reliability</h2><ul>')
-        out.append(
-            f"<li>Requests: {r.successes}/{r.requests} succeeded "
-            f"({r.success_rate * 100:.0f}%)</li>"
-        )
-        if r.rate_limited:
-            out.append(
-                f"<li>Rate-limited (429): {r.rate_limited} (excluded from success rate)</li>"
-            )
+        out.extend(f"<li>{_esc(line)}</li>" for line in reliability_lines(r))
         if r.latency_ms:
             parts = [
                 f"{_esc(k)} {_esc(_fmt_duration(v))}"

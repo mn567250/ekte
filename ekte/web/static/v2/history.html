@@ -20,10 +20,8 @@
    * Every group shares ONE column grid (--cols), so Risk / Score / Grade line
    * up across relays. Below 600px each row stacks instead (no h-scroll).
    *
-   * Grade letter colour (by grade, not by risk):
-   *   A, B -> good · C -> sky · D -> warn · E, F -> bad · none -> grey.
-   * Scores (row score, trend value, sparkline) use the same families through
-   * the grade thresholds of ekte/scoring.py (>=80 good, >=70 sky, >=60 warn). */
+   * Colour families (.f-good, .f-sky, …) come from the server (family of a
+   * row's risk, score and grade, of a trend's last value): no grading here. */
   /* Columns: time (with mode / suite under it) · risk · score · grade · chevron.
      Mode sits under the date instead of in its own column so the longest date
      ("Sep 29, 2026, 3:40 PM") and risk label (DE "Abweichungen gefunden", FR
@@ -87,7 +85,8 @@
   .gtitle .gu { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; }
   .gtitle .gu .gk { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); }
   .gtitle .gu .gn { font-size: 13px; font-weight: 600; color: var(--ink-muted); overflow-wrap: anywhere; min-width: 0; }
-  /* group trends (score, grade, latency p50, decode speed p50). Every tile has
+  /* group trends (one or two of score, grade, latency p50, TTFT p50, decode
+     speed p50, error rate: GET /api/metrics history_trends). Every tile has
      a fixed size that depends only on its metric, never on its values or on
      which other trends are shown, so the trends line up across groups:
        [ sparkline (--sw, both rows) | caption over latest value (--vw) ]
@@ -105,7 +104,8 @@
   /* --vw (in the value's 17px) fits the widest value; the column grows to a
      longer caption (it depends on the language only), never to a value */
   .tr[data-m="score"] { --vw: 2.6em; } .tr[data-m="grade"] { --vw: 2.8em; }
-  .tr[data-m="lat"] { --vw: 4.8em; } .tr[data-m="tps"] { --vw: 6.4em; }
+  .tr[data-m="latency_p50"], .tr[data-m="ttft_p50"] { --vw: 4.8em; } .tr[data-m="decode_tps"] { --vw: 6.4em; }
+  .tr[data-m="error_rate"] { --vw: 3.6em; }
   .tr .tl { grid-column: 2; grid-row: 1; text-align: right; font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); white-space: nowrap; }
   .tr .tv { display: contents; }
   .tr .tv svg, .tr .tv .nospark { grid-column: 1; grid-row: 1 / 3; align-self: center; }
@@ -119,16 +119,12 @@
   .trend .base { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 3; }
   .trend .dot { fill: currentColor; }
 
-  /* filter bar: the collapsible frame is filterpanel.css / filterpanel.js */
-  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; align-items: end; }
-  .fgrid .fq { grid-column: 1 / -1; }
-  @media (min-width: 700px) { .fgrid .fq { grid-column: auto; } }
-  .fgrid label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .fgrid label > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); overflow-wrap: anywhere; }
-  .fgrid .in { font-size: 13.5px; padding: 8px 11px; border-radius: 10px; }
-  .fgrid select.in { padding-right: 30px; background-position: right 16px center, right 11px center; }
+  /* filter bar: the fields and frame are filters.js / filterpanel.js (+ .css);
+     the trend picker below sits in the panel's body */
   .tsel { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
   .tsel > span { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-muted); margin-right: 4px; }
+  /* "1 / 2", "2 / 2": how many trends are on, of the maximum */
+  .tsel > .tcount { margin-left: -4px; text-transform: none; letter-spacing: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
   .tsel button {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-family: var(--sans); font-weight: 600; font-size: 12.5px;
     color: var(--ink-muted); background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-pill); padding: 5px 11px;
@@ -255,7 +251,6 @@
     .hist { --sw: 84px; }
     .trend { flex: none; flex-direction: column; align-items: flex-end; gap: 8px; }
     .tr, .tr[data-m] { --vw: 6.4em; padding-left: 0; border-left: 0; }
-    .fgrid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
@@ -285,10 +280,16 @@
 <script src="/static/nav.js"></script>
 <script src="/static/notice.js"></script>
 <script src="/static/filterpanel.js"></script>
+<script src="/static/filters.js"></script>
+<script src="/static/trendpick.js"></script>
 <script src="/static/report.js"></script>
 <script>
 (function () {
   "use strict";
+  // Draws only: groups, rows and trend tiles come from GET /api/history/groups
+  // and /api/history/runs (ekte/web/history_api.py), filters and the view
+  // (sort, trends, focus run) live in the URL query string (filters.js). The
+  // server decides filtering, grouping, order, grades and colour families.
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var ico = function (n, o) { return window.ekteIcon ? window.ekteIcon(n, o || {}) : ""; };
   var esc = function (s) {
@@ -300,261 +301,96 @@
   var Tf = function (zh, en, vars) {
     return T(zh, en).replace(/\{(\w+)\}/g, function (m, k) { return vars && k in vars ? vars[k] : m; });
   };
-
-  var RISKC = { clean: "good", low: "sky", medium: "warn", high: "bad", inconclusive: "grey" };
-  var RISKI = { clean: "check", low: "warning", medium: "warning", high: "x", inconclusive: "info" };
-  var GRADEC = { A: "good", B: "good", C: "sky", D: "warn", E: "bad", F: "bad" };
-  // score -> same family as the grade it maps to (scoring.py: A>=90 B>=80 C>=70 D>=60)
-  var scoreC = function (s) {
-    return typeof s !== "number" ? "grey" : s >= 80 ? "good" : s >= 70 ? "sky" : s >= 60 ? "warn" : "bad";
-  };
-  var gradeC = function (g) { return GRADEC[String(g || "").toUpperCase()] || "grey"; };
   var num = function (s) { return typeof s === "number" ? String(Math.round(s)) : "—"; };
+  // risk badge icons (the badge colour is the server's family.risk)
+  var RISKI = { clean: "check", low: "warning", medium: "warning", high: "x", inconclusive: "info" };
 
   var host = $("#hist"), fbar = $("#filters");
-  var FKEY = "ekte.v2.history.filters", NONE = "__none__";
-  var fromQuery; // set by loadFilters() when the URL carries filters
-  // a link's base_url= / host= (older links): which relay they mean is known
-  // only once the runs are loaded (pickLinkedRelay)
-  var linkRelay = null;
-  var FDEF = { surface: "", relay: "", model: "", suite: "", mode: "", api: "", detect: "", stream: "", risk: "", min: "", days: "", exec: "", q: "" };
-  var state = { rows: null, error: null, reports: {}, open: null, confirm: null, filters: loadFilters() };
-  // Rows are rendered PAGE at a time per group ("Show more" appends the next
-  // page); state.shown remembers how far each group (by key) was expanded
-  // across re-renders, state.groups holds the groups of the last render.
-  var PAGE = 20;
-  state.shown = {};
-  state.groups = [];
-
-  // per-viewer view settings (storage may be missing or throw): row order,
-  // collapsed groups (by key) and whether the filter panel is open
-  function loadJSON(key, def) {
-    try { var v = JSON.parse(localStorage.getItem(key) || "null"); return v == null ? def : v; } catch (e) { return def; }
-  }
-  function saveJSON(key, v) {
-    try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* ignore */ }
-  }
-  var SKEY = "ekte.v2.history.sort", CKEY = "ekte.v2.history.collapsed", OKEY = "ekte.v2.history.filtersOpen";
-  var SORTS = ["time", "risk", "score", "grade"];
-  state.sort = (function () {
-    var s = loadJSON(SKEY, null);
-    return s && SORTS.indexOf(s.key) >= 0 && (s.dir === "asc" || s.dir === "desc") ? { key: s.key, dir: s.dir } : { key: "time", dir: "desc" };
-  })();
-  state.collapsed = (function () {
-    var c = loadJSON(CKEY, {}), out = {};
-    if (c && typeof c === "object") Object.keys(c).forEach(function (k) { if (c[k] === true) out[k] = true; });
-    return out;
-  })();
-  // the collapsible frame (filterpanel.js); a link that carried filters opens it
-  var panel = window.EkteFilterPanel.create(fbar, {
-    storeKey: OKEY,
-    open: !!fromQuery,
-    onReset: function () { resetFilters(); },
-  });
-
-
-  /* ---------------- filters ---------------- */
-  // per-viewer convenience only: storage may be missing or throw
-  function loadFilters() {
-    var f = Object.assign({}, FDEF);
-    try {
-      var saved = JSON.parse(localStorage.getItem(FKEY) || "{}");
-      Object.keys(FDEF).forEach(function (k) { if (typeof saved[k] === "string") f[k] = saved[k]; });
-    } catch (e) { /* ignore */ }
-    // links such as the monitors' "Open in history" pass filters in the query
-    // string; these win over the remembered ones
-    try {
-      var qs = new URLSearchParams(location.search);
-      var QK = ["surface", "relay", "model", "suite", "api", "stream"], LK = ["base_url", "host"];
-      if (QK.concat(LK).some(function (k) { return qs.has(k); })) {
-        f = Object.assign({}, FDEF); // drop stale filters that could hide the monitor's runs
-        QK.forEach(function (k) { if (qs.has(k)) f[k] = qs.get(k); });
-        if (!f.relay && (qs.get("base_url") || qs.get("host"))) linkRelay = { base_url: qs.get("base_url") || "", host: qs.get("host") || "" };
-        fromQuery = true; // show what the link filtered by
-        localStorage.setItem(FKEY, JSON.stringify(f));
-      }
-    } catch (e) { /* ignore */ }
-    return f;
-  }
-  function saveFilters() {
-    try { localStorage.setItem(FKEY, JSON.stringify(state.filters)); } catch (e) { /* ignore */ }
-  }
-  function isFiltered() {
-    return Object.keys(FDEF).some(function (k) { return state.filters[k] !== FDEF[k]; });
-  }
-  function hostOf(u) {
-    try { return new URL(u).host || String(u || ""); } catch (e) { return String(u || ""); }
-  }
-  function modeOf(r) { return r.mode || "check"; }
-  // protocol / detection / probe request mode; "" for runs saved before they were recorded
-  function apiOf(r) { return r.api || ""; }
-  function detectOf(r) { return r.api_auto == null ? "" : r.api_auto ? "auto" : "manual"; }
-  function streamOf(r) { return r.stream_mode || ""; }
-  // the audited surface; rows saved before surfaces existed are chat
-  function surfaceOf(r) { return r.surface || "chat"; }
-  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
-  var surfaceLabel = function (v) { return SURFACE[v] ? T(SURFACE[v][0], SURFACE[v][1]) : v; };
-  // who started the run: a monitor (it has a watch_id) or a person (ad-hoc)
-  function execOf(r) { return r.watch_id != null ? "monitor" : "adhoc"; }
-  var STREAM = {
-    stream: ["流式", "Streaming"],
-    non_stream: ["非流式", "Non-streaming"],
-    both: ["流式 + 非流式", "Streaming + non-streaming"],
+  // the shared filters this page shows (ekte/web/query.py schema)
+  var FLD = ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec"];
+  var DEF_TRENDS = "score,latency_p50", DEF_SORT = "-time", SORTS = ["time", "risk", "score", "grade"];
+  var FOCUS = "runs.focus";
+  var cat = null; // GET /api/metrics: { byId, order, max, grades, labels }
+  var state = {
+    groups: null, // the loaded groups (null until the first load)
+    totalGroups: 0, totalRuns: 0, after: null, error: null,
+    rows: {}, // run id -> its row (every loaded group)
+    reports: {}, open: null, confirm: null, nextIdx: 0,
   };
-  var streamLabel = function (v) { return STREAM[v] ? T(STREAM[v][0], STREAM[v][1]) : v; };
-  var detectLabel = function (v) { return v === "auto" ? T("自动识别", "auto-detected") : T("手动指定", "set manually"); };
-  // a filter value that matches the "(unknown)" option or one exact value
-  function fmatch(want, have) { return !want || (want === NONE ? !have : have === want); }
-  function riskOf(r) { return r.risk_level || "inconclusive"; }
 
-  function filtered(rows) {
-    var f = state.filters;
-    var min = f.min === "" ? null : Number(f.min);
-    var since = f.days ? Date.now() - Number(f.days) * 864e5 : null;
-    var q = f.q.trim().toLowerCase();
-    return rows.filter(function (r) {
-      if (f.surface && surfaceOf(r) !== f.surface) return false;
-      if (f.relay && relayOf(r).key !== f.relay) return false;
-      if (f.model && (r.claimed_model || "") !== f.model) return false;
-      if (f.suite && (f.suite === NONE ? !!r.suite : r.suite !== f.suite)) return false;
-      if (f.mode && modeOf(r) !== f.mode) return false;
-      if (!fmatch(f.api, apiOf(r)) || !fmatch(f.detect, detectOf(r)) || !fmatch(f.stream, streamOf(r))) return false;
-      if (f.risk && riskOf(r) !== f.risk) return false;
-      if (f.exec && execOf(r) !== f.exec) return false;
-      if (min != null && !isNaN(min) && !(typeof r.score === "number" && r.score >= min)) return false;
-      if (since != null) {
-        var t = Date.parse(r.ts);
-        if (isNaN(t) || t < since) return false;
-      }
-      if (q && [r.base_url, relayName(relayOf(r)), r.claimed_model, r.model, r.suite, modeOf(r), apiOf(r), surfaceLabel(surfaceOf(r)),
-        execOf(r) === "monitor" ? T("监控", "Monitor") : "",
-        detectOf(r) && detectLabel(detectOf(r)), streamOf(r) && streamLabel(streamOf(r))].join(" ").toLowerCase().indexOf(q) < 0) return false;
-      return true;
-    });
+  // per-viewer view setting (storage may be missing or throw): collapsed groups (by key)
+  var CKEY = "ekte.v2.history.collapsed";
+  state.collapsed = (function () {
+    try {
+      var c = JSON.parse(localStorage.getItem(CKEY) || "null"), out = {};
+      if (c && typeof c === "object") Object.keys(c).forEach(function (k) { if (c[k] === true) out[k] = true; });
+      return out;
+    } catch (e) { return {}; }
+  })();
+  function saveCollapsed() {
+    try { localStorage.setItem(CKEY, JSON.stringify(state.collapsed)); } catch (e) { /* ignore */ }
   }
 
-  // distinct values of fn(row), sorted; the current selection stays listed even when no row has it
-  function distinct(fn, current) {
-    var seen = {}, out = [];
-    (state.rows || []).forEach(function (r) {
-      var v = fn(r);
-      if (v !== "" && v != null && !seen[v]) { seen[v] = 1; out.push(v); }
-    });
-    if (current && current !== NONE && !seen[current]) out.push(current);
-    return out.sort(function (a, b) { return String(a).localeCompare(String(b)); });
-  }
-
-  function selectHTML(key, label, opts) {
-    var cur = state.filters[key];
-    return '<label><span>' + esc(label) + '</span><select class="in" data-f="' + key + '">' +
-      '<option value="">' + esc(T("全部", "All")) + "</option>" +
-      opts.map(function (o) {
-        return '<option value="' + esc(o.v) + '"' + (o.v === cur ? " selected" : "") + ">" + esc(o.t) + "</option>";
-      }).join("") + "</select></label>";
-  }
-  var DAYS_L = { "7": ["最近 7 天", "Last 7 days"], "30": ["最近 30 天", "Last 30 days"], "90": ["最近 90 天", "Last 90 days"] };
-  var daysLabel = function (v) { return DAYS_L[v] ? T(DAYS_L[v][0], DAYS_L[v][1]) : v; };
-  var asOpts = function (vals) { return vals.map(function (v) { return { v: v, t: v }; }); };
-
-  function renderFilters() {
-    if (state.error != null || !state.rows || !state.rows.length) {
-      fbar.hidden = true;
-      fbar.innerHTML = "";
-      return;
+  // a link to one run (#r-<id>: the audit page, older monitor links) focuses it
+  (function () {
+    var m = /^#r-(\d+)$/.exec(location.hash || "");
+    if (m && !/(^|[?&])runs\.focus=/.test(location.search)) {
+      var u = new URLSearchParams(location.search);
+      u.set(FOCUS, m[1]);
+      try { history.replaceState(history.state, "", location.pathname + "?" + u.toString() + location.hash); } catch (e) { /* ignore */ }
     }
-    var f = state.filters;
-    var suites = asOpts(distinct(function (r) { return r.suite || ""; }, f.suite));
-    if ((state.rows || []).some(function (r) { return !r.suite; }) || f.suite === NONE) suites.push({ v: NONE, t: T("（无套件）", "(no suite)") });
-    // options of a protocol / detection / mode filter, plus "(unknown)" when an
-    // older run lacks the value
-    var withNone = function (opts, fn, cur) {
-      if (state.rows.some(function (r) { return !fn(r); }) || cur === NONE) opts.push({ v: NONE, t: T("（未知）", "(unknown)") });
-      return opts;
-    };
-    var apis = withNone(asOpts(distinct(apiOf, f.api)), apiOf, f.api);
-    var detects = withNone(distinct(detectOf, f.detect).map(function (v) { return { v: v, t: detectLabel(v) }; }), detectOf, f.detect);
-    var streams = withNone(["stream", "non_stream", "both"].filter(function (v) {
-      return v === f.stream || state.rows.some(function (r) { return streamOf(r) === v; });
-    }).map(function (v) { return { v: v, t: streamLabel(v) }; }), streamOf, f.stream);
-    var risks = ["clean", "low", "medium", "high", "inconclusive"].filter(function (l) {
-      return l === f.risk || state.rows.some(function (r) { return riskOf(r) === l; });
-    });
-    var surfaces = distinct(surfaceOf, f.surface).map(function (v) { return { v: v, t: surfaceLabel(v) }; });
-    panel.render({ count: activeCount(), summary: filterSummary(), body: '<div class="fgrid">' +
-      '<label class="fq"><span>' + esc(T("搜索", "Search")) + '</span><input class="in" type="search" data-f="q" value="' + esc(f.q) +
-      '" placeholder="' + esc(T("中转站、模型、套件、协议…", "Relay, model, suite, protocol…")) + '" autocomplete="off" /></label>' +
-      selectHTML("surface", T("接口类型", "Endpoint type"), surfaces) +
-      selectHTML("relay", T("中转站 / 厂商", "Relay / provider"), relayOpts(f.relay)) +
-      selectHTML("model", T("声称模型", "Claimed model"), asOpts(distinct(function (r) { return r.claimed_model || ""; }, f.model))) +
-      selectHTML("suite", T("套件", "Suite"), suites) +
-      selectHTML("mode", T("模式", "Mode"), asOpts(distinct(modeOf, f.mode))) +
-      selectHTML("api", T("协议", "Protocol"), apis) +
-      selectHTML("detect", T("协议识别", "Protocol detection"), detects) +
-      selectHTML("stream", T("探测请求", "Probe requests"), streams) +
-      selectHTML("risk", T("风险", "Risk"), risks.map(function (l) { return { v: l, t: EKTE_I18N.label("RISK_LEVEL", l) }; })) +
-      '<label><span>' + esc(T("最低健康分", "Min. score")) + '</span><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-f="min" value="' +
-      esc(f.min) + '" placeholder="0" /></label>' +
-      selectHTML("days", T("时间范围", "Period"), ["7", "30", "90"].map(function (v) { return { v: v, t: daysLabel(v) }; })) +
-      selectHTML("exec", T("执行方式", "Execution"), [
-        { v: "adhoc", t: T("手动", "Ad-hoc") },
-        { v: "monitor", t: T("监控", "Monitor") },
-      ]) +
-      "</div>" + trendPickerHTML(), foot: '<span id="fcount" aria-live="polite"></span>' });
-  }
+  })();
 
-  // number of filters that differ from the defaults (shown on the panel toggle)
-  function activeCount() {
-    return Object.keys(FDEF).filter(function (k) { return state.filters[k] !== FDEF[k]; }).length;
-  }
-  // the active filters in words, for the line under the closed panel's toggle
-  function filterSummary() {
-    var f = state.filters, out = [];
-    var lab = function (label, v) { return Tf("{label}：{value}", "{label}: {value}", { label: label, value: v }); };
-    var unknown = T("（未知）", "(unknown)");
-    if (f.q.trim()) out.push(lab(T("搜索", "Search"), f.q.trim()));
-    if (f.days) out.push(daysLabel(f.days));
-    if (f.surface) out.push(surfaceLabel(f.surface));
-    if (f.relay) out.push(relayKeyName(f.relay));
-    if (f.model) out.push(f.model);
-    if (f.suite) out.push(f.suite === NONE ? T("（无套件）", "(no suite)") : f.suite);
-    if (f.mode) out.push(lab(T("模式", "Mode"), f.mode));
-    if (f.api) out.push(f.api === NONE ? lab(T("协议", "Protocol"), unknown) : f.api);
-    if (f.detect) out.push(lab(T("协议识别", "Protocol detection"), f.detect === NONE ? unknown : detectLabel(f.detect)));
-    if (f.stream) out.push(f.stream === NONE ? lab(T("探测请求", "Probe requests"), unknown) : streamLabel(f.stream));
-    if (f.risk) out.push(lab(T("风险", "Risk"), EKTE_I18N.label("RISK_LEVEL", f.risk)));
-    if (f.min !== "") out.push(lab(T("最低健康分", "Min. score"), f.min));
-    if (f.exec) out.push(f.exec === "monitor" ? T("监控", "Monitor") : T("手动", "Ad-hoc"));
-    return out;
-  }
-  function syncFilterChrome() {
-    panel.sync({ count: activeCount(), summary: filterSummary() });
-  }
-  // after a reset: back to the first field, or to the toggle while the panel is shut
-  function focusFilters() { panel.focusStart(); }
-
-  function resetFilters() {
-    state.filters = Object.assign({}, FDEF);
-    saveFilters();
-    renderFilters();
-    render();
-  }
-
-  function onFilter(ev) {
-    var k = ev.target.getAttribute("data-f");
-    // a text field fires "change" again on blur; re-rendering then would swap
-    // out the button being clicked, so only react to real changes
-    if (!k || state.filters[k] === String(ev.target.value)) return;
-    state.filters[k] = String(ev.target.value);
-    saveFilters();
-    syncFilterChrome();
-    render();
-  }
-  fbar.addEventListener("input", onFilter);
-  fbar.addEventListener("change", onFilter);
-  fbar.addEventListener("click", function (ev) {
-    var tb = ev.target.closest("[data-trend]");
-    if (tb) toggleTrend(tb.getAttribute("data-trend"));
+  var F = window.EkteFilters.create({
+    section: fbar,
+    fields: FLD,
+    page: "history",
+    defaults: { "trend.metrics": DEF_TRENDS, "groups.sort": DEF_SORT },
+    foot: function () { return '<span id="fcount" aria-live="polite">' + esc(countText()) + "</span>"; },
+    extra: function () { return trendPickerHTML(); },
+    onChange: onChange,
   });
+
+  function onChange(st, changed) {
+    var filters = changed.some(function (k) { return FLD.indexOf(k) >= 0 || k === "from" || k === "to"; });
+    if (filters && st[FOCUS]) F.set({ "runs.focus": null }); // a filtered list starts at its top
+    if (filters || changed.indexOf("groups.sort") >= 0) load();
+    else if (changed.indexOf("trend.metrics") >= 0) reloadTrends();
+  }
+
+  // any shared filter in the URL (the URL is the view)
+  function isFiltered() {
+    var parsed = window.EkteFilters.parse(location.search, FLD, []);
+    return Object.keys(parsed).some(function (k) { return k.indexOf(".") < 0; });
+  }
+  function focusRun() {
+    var v = F.state()[FOCUS];
+    return v != null && /^\d+$/.test(String(v)) ? String(v) : null;
+  }
+  function sortValue() {
+    var v = String(F.state()["groups.sort"] || DEF_SORT);
+    return SORTS.indexOf(v.replace(/^-/, "")) >= 0 ? v : DEF_SORT;
+  }
+  function sortState() {
+    var v = sortValue();
+    return { key: v.replace(/^-/, ""), dir: v.charAt(0) === "-" ? "desc" : "asc" };
+  }
+
+  /* ---------------- counts ---------------- */
+  function countText() {
+    if (!state.groups) return "";
+    var all = note.status && typeof note.status.runs === "number" ? Math.max(note.status.runs, state.totalRuns) : state.totalRuns;
+    return Tf("显示 {shown} / {n} 条记录", "Showing {shown} of {n} audits", { shown: state.totalRuns, n: all });
+  }
+  function footText() {
+    var all = note.status && typeof note.status.runs === "number" ? Math.max(note.status.runs, state.totalRuns) : state.totalRuns;
+    return isFiltered() ? countText() : Tf("共 {n} 条记录", "Saved audits: {n}", { n: all });
+  }
+  function syncCounts() {
+    var fc = $("#fcount"), hc = $("#hcount");
+    if (fc) fc.textContent = countText();
+    if (hc) hc.textContent = footText();
+  }
 
   function fmtTime(ts) {
     if (!ts) return "—";
@@ -567,60 +403,38 @@
     }
   }
 
-  /* ---------------- sorting ---------------- */
-  // Rows are sorted inside their group; groups follow their first row, so the
-  // group holding the best match of the sort comes first. Missing values sort
-  // last either way; ties keep newest first.
-  var RISKN = { clean: 0, inconclusive: 1, low: 2, medium: 3, high: 4 };
-  var tsOf = function (r) { var t = Date.parse(r.ts); return isNaN(t) ? null : t; };
-  var SORTV = {
-    time: tsOf,
-    risk: function (r) { return RISKN[riskOf(r)]; },
-    score: function (r) { return typeof r.score === "number" ? r.score : null; },
-    grade: function (r) { return GRADEN[String(r.rating || "").toUpperCase()] || null; },
-  };
+  /* ---------------- sorting (on the server) ---------------- */
   var SORTL = {
     time: ["时间", "Time"], risk: ["风险", "Risk"], score: ["健康分", "Score"], grade: ["评级", "Grade"],
   };
-  function byKey(fn, dir) {
-    return function (a, b) {
-      var x = fn(a), y = fn(b);
-      if (x == null || y == null) return x == null ? (y == null ? 0 : 1) : -1;
-      return dir === "asc" ? x - y : y - x;
-    };
-  }
-  function sortRows(rows) {
-    var main = byKey(SORTV[state.sort.key], state.sort.dir), newest = byKey(tsOf, "desc");
-    return rows.map(function (r, i) { return [r, i]; }).sort(function (a, b) {
-      return main(a[0], b[0]) || newest(a[0], b[0]) || a[1] - b[1];
-    }).map(function (p) { return p[0]; });
-  }
   function sortName(k) { return T(SORTL[k][0], SORTL[k][1]); }
   function sortStateText() {
+    var s = sortState();
     return Tf("已按{key}排序，{dir}", "Sorted by {key}, {dir}", {
-      key: sortName(state.sort.key),
-      dir: state.sort.dir === "asc" ? T("升序", "ascending") : T("降序", "descending"),
+      key: sortName(s.key),
+      dir: s.dir === "asc" ? T("升序", "ascending") : T("降序", "descending"),
     });
   }
   // a new column starts descending (newest, most severe, best first); the
   // active column flips direction
   function setSort(k) {
-    state.sort = state.sort.key === k ? { key: k, dir: state.sort.dir === "asc" ? "desc" : "asc" } : { key: k, dir: "desc" };
-    saveJSON(SKEY, state.sort);
-    render();
+    var s = sortState();
+    var dir = s.key === k ? (s.dir === "asc" ? "desc" : "asc") : "desc";
+    F.set({ "groups.sort": (dir === "desc" ? "-" : "") + k });
     var st = $("#sortst");
     if (st) st.textContent = sortStateText();
   }
 
   function sortHeadHTML() {
+    var s = sortState();
     var cell = function (k, cls) {
-      var on = state.sort.key === k;
+      var on = s.key === k;
       // the name carries the state: this is a list, not a table, so no aria-sort
       var name = on
         ? Tf("{key}，{dir}", "{key}, {dir}", {
-          key: sortName(k), dir: state.sort.dir === "asc" ? T("升序排列", "sorted ascending") : T("降序排列", "sorted descending") })
+          key: sortName(k), dir: s.dir === "asc" ? T("升序排列", "sorted ascending") : T("降序排列", "sorted descending") })
         : Tf("按{key}排序", "Sort by {key}", { key: sortName(k) });
-      return '<button type="button" class="sortb' + (cls ? " " + cls : "") + '" data-sort="' + k + '"' + (on ? ' data-dir="' + state.sort.dir + '"' : "") +
+      return '<button type="button" class="sortb' + (cls ? " " + cls : "") + '" data-sort="' + k + '"' + (on ? ' data-dir="' + s.dir + '"' : "") +
         ' aria-label="' + esc(name) + '" title="' + esc(name) + '"><span class="t">' + esc(sortName(k)) + "</span>" + ico("chevronDown") + "</button>";
     };
     var anyOpen = state.groups.some(function (g) { return !state.collapsed[g.key]; });
@@ -631,139 +445,108 @@
       esc(anyOpen ? T("全部折叠", "Collapse all") : T("全部展开", "Expand all")) + "</button>" + "</div>";
   }
 
-  /* ---------------- collapsible groups ---------------- */
-  function saveCollapsed() { saveJSON(CKEY, state.collapsed); }
-  // open/close one group in place; the open report inside it closes first
-  function setGroupOpen(sec, open) {
-    var b = sec.querySelector(".gtog"), body = sec.querySelector(".gbody"), key = b.getAttribute("data-gkey");
-    if (!open && state.open != null && body.querySelector('.row[data-id="' + CSS.escape(String(state.open)) + '"]')) toggle(String(state.open));
-    if (!open && state.confirm != null && state.confirm !== "all" && body.querySelector('.row[data-id="' + CSS.escape(String(state.confirm)) + '"]')) setConfirm(null);
-    if (open) delete state.collapsed[key];
-    else state.collapsed[key] = true;
-    b.setAttribute("aria-expanded", String(open));
-    body.hidden = !open;
-    sec.classList.toggle("shut", !open);
-  }
-  function syncGroupAll() {
-    var ga = $("#gall");
-    if (!ga) return;
-    var anyOpen = state.groups.some(function (g) { return !state.collapsed[g.key]; });
-    ga.setAttribute("data-all", anyOpen ? "collapse" : "expand");
-    ga.textContent = anyOpen ? T("全部折叠", "Collapse all") : T("全部展开", "Expand all");
-  }
-  function toggleGroup(b) {
-    setGroupOpen(b.closest(".group"), b.getAttribute("aria-expanded") !== "true");
-    saveCollapsed();
-    syncGroupAll();
-  }
-  function setAllGroups(open) {
-    Array.prototype.forEach.call(host.querySelectorAll(".group"), function (sec) { setGroupOpen(sec, open); });
-    saveCollapsed();
-    syncGroupAll();
-  }
-
-  // the relay a run belongs to, as the server resolves it (relay=1): a saved
-  // relay or knowledge-base provider, else (kind "url") the run's own base URL
-  function relayOf(r) {
-    return r.relay || { key: r.base_url || "", label: r.base_url || "", kind: "url" };
-  }
-  // what a relay is called: the entry's name, or for an unsaved URL its host
-  // with port (so two servers on one host stay apart); when two unsaved URLs
-  // share host and port, their paths tell them apart. Worked out once per
-  // loaded list of runs.
-  var names = { rows: null, byKey: {} };
-  function relayNames() {
-    if (names.rows === state.rows) return names.byKey;
-    var byKey = {}, urlKeys = {}, hostCount = {};
-    (state.rows || []).forEach(function (r) {
-      var rel = relayOf(r);
-      if (byKey[rel.key] != null) return;
-      byKey[rel.key] = rel.kind === "url" ? "" : rel.label;
-      if (rel.kind === "url" && rel.key) {
-        var h = hostOf(rel.key);
-        urlKeys[rel.key] = h;
-        hostCount[h] = (hostCount[h] || 0) + 1;
-      }
-    });
-    Object.keys(urlKeys).forEach(function (k) {
-      var h = urlKeys[k];
-      byKey[k] = hostCount[h] > 1 ? urlPlace(k) : h;
-    });
-    names = { rows: state.rows, byKey: byKey };
-    return byKey;
-  }
-  // host, port and path of a URL (no scheme, no trailing slash)
-  function urlPlace(u) {
-    try { var x = new URL(u); return (x.host + x.pathname).replace(/\/+$/, ""); } catch (e) { return String(u || ""); }
-  }
-  function relayKeyName(key) {
-    var n = relayNames()[key];
-    return n || (key ? hostOf(key) : "—");
-  }
-  function relayName(rel) { return relayKeyName(rel.key); }
-  // the relay filter's options: every relay of the loaded runs, by name
-  function relayOpts(cur) {
-    var byKey = relayNames(), keys = Object.keys(byKey).filter(Boolean);
-    if (cur && byKey[cur] == null) keys.push(cur);
-    return keys.map(function (k) { return { v: k, t: relayKeyName(k) }; })
-      .sort(function (a, b) { return a.t.localeCompare(b.t); });
-  }
-  // a link's base_url= (exact URL, trailing slashes aside) or host= (host with
-  // port, older links) becomes the relay its runs belong to; a host shared by
-  // several relays selects none of them rather than the wrong one
-  function pickLinkedRelay() {
-    if (!linkRelay || !state.rows.length) return;
-    var trim = function (u) { return String(u || "").trim().replace(/\/+$/, ""); };
-    var want = trim(linkRelay.base_url), keys = {};
-    state.rows.forEach(function (r) {
-      if (want ? trim(r.base_url) === want : hostOf(r.base_url) === linkRelay.host) keys[relayOf(r).key] = 1;
-    });
-    var found = Object.keys(keys);
-    if (found.length === 1) { state.filters.relay = found[0]; saveFilters(); }
-    linkRelay = null;
-  }
-
-  // one group per claimed model on one relay: runs against several base URLs
-  // of the same saved relay share a group
-  function groupsOf(rows) {
-    var groups = [], idx = {};
-    rows.forEach(function (r) {
-      var rel = relayOf(r), key = rel.key + "\n" + (r.claimed_model || "");
-      if (idx[key] == null) {
-        idx[key] = groups.length;
-        groups.push({ key: key, relay: rel, urls: [], claimed_model: r.claimed_model, rows: [] });
-      }
-      var g = groups[idx[key]];
-      if (r.base_url && g.urls.indexOf(r.base_url) < 0) g.urls.push(r.base_url);
-      g.rows.push(r);
-    });
-    return groups;
-  }
-
   /* ---------------- data ---------------- */
+  var ctl = null; // the current load: a newer one (or a filter change) aborts it
+  function fresh() {
+    if (ctl) ctl.abort();
+    ctl = new AbortController();
+    return ctl.signal;
+  }
+  function signal() { return (ctl || (ctl = new AbortController())).signal; }
+  function isAbort(e) { return e && (e.name === "AbortError" || e.code === 20); }
+  function get(url, sig) { return window.EkteFilters.fetchWidget(url, { signal: sig }); }
+  function qs() {
+    return Array.prototype.filter.call(arguments, Boolean).join("&");
+  }
+  function kv(k, v) { return encodeURIComponent(k) + "=" + encodeURIComponent(v); }
+
+  // a page of groups: the shared filters, sort and trends of the URL
+  function groupsUrl(o) {
+    o = o || {};
+    return "/api/history/groups?" + qs(F.widgetParams(["groups", "trend"]),
+      o.after ? kv("groups.after", o.after) : "", o.focus ? kv("groups.focus", o.focus) : "",
+      o.limit ? kv("groups.limit", o.limit) : "");
+  }
+  // the next page of one group's runs (runs.focus: grown until it holds that run)
+  function runsUrl(g, focus) {
+    return "/api/history/runs?" + qs(F.widgetParams(), kv("group.key", g.key), kv("runs.sort", sortValue()),
+      g.after ? kv("runs.after", g.after) : "", focus ? kv("runs.focus", focus) : "");
+  }
+  function fromServer(sg) {
+    return { key: sg.key, relay: sg.relay, claimed_model: sg.claimed_model, urls: sg.base_urls || [],
+      runs: sg.runs, trends: sg.trends || {}, rows: null, after: null, total: sg.runs, idx: state.nextIdx++ };
+  }
+  function fetchRows(g, sig, focus) {
+    return get(runsUrl(g, focus), sig).then(function (data) {
+      if (sig.aborted) return;
+      (data.rows || []).forEach(function (r) { state.rows[String(r.id)] = r; });
+      g.rows = (g.rows || []).concat(data.rows || []);
+      g.after = data.after || null;
+      g.total = data.total;
+    });
+  }
+  function groupOf(key) { return (state.groups || []).filter(function (g) { return g.key === key; })[0]; }
+
+  // the first page of groups and the first page of rows of each open group,
+  // drawn at once
   function load() {
+    var sig = fresh(), focus = focusRun();
     host.setAttribute("aria-busy", "true");
-    // perf=1: every row carries its p50 latency / decode speed, so the group
-    // trends are drawn from the (filtered) rows without one request per group;
-    // relay=1: and the relay its base URL belongs to (groups and their names).
-    return fetch("/api/history?limit=500&perf=1&relay=1")
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
-      .then(function (rows) {
-        state.rows = Array.isArray(rows) ? rows : [];
-        state.error = null;
-        pickLinkedRelay();
-        renderFilters();
-        render();
+    loadNote();
+    return get(groupsUrl({ focus: focus }), sig)
+      .then(function (data) {
+        var keep = state.nextIdx;
+        state.nextIdx = 0;
+        var groups = (data.groups || []).map(fromServer);
+        var fkey = data.focus && data.focus.key;
+        if (fkey && state.collapsed[fkey]) { delete state.collapsed[fkey]; saveCollapsed(); } // the linked run's group opens
+        return Promise.all(groups.map(function (g) {
+          return state.collapsed[g.key] ? null : fetchRows(g, sig, g.key === fkey ? focus : null);
+        })).then(function () {
+          if (sig.aborted) { state.nextIdx = keep; return; }
+          state.groups = groups;
+          state.totalGroups = data.total_groups || 0;
+          state.totalRuns = data.total_runs || 0;
+          state.after = data.after || null;
+          state.rows = {};
+          groups.forEach(function (g) { (g.rows || []).forEach(function (r) { state.rows[String(r.id)] = r; }); });
+          state.error = null;
+          render();
+          if (focus && data.focus) {
+            var row = document.getElementById("r-" + focus);
+            if (row && row.scrollIntoView) row.scrollIntoView({ block: "center" });
+          }
+        });
       })
       .catch(function (e) {
+        if (sig.aborted || isAbort(e)) return;
         state.error = String((e && e.message) || e);
-        renderFilters();
         render();
       })
-      .then(function () { host.setAttribute("aria-busy", "false"); loadNote(); });
+      .then(function () {
+        if (sig.aborted) return;
+        host.setAttribute("aria-busy", "false");
+        fbar.hidden = state.error != null || (!state.totalRuns && !isFiltered());
+      });
+  }
+
+  // a new trend selection: the trends of the groups already shown, in place
+  function reloadTrends() {
+    syncPicker();
+    if (!state.groups || !state.groups.length) return;
+    if (state.groups.length > 200) { load(); return; }
+    var sig = signal();
+    get(groupsUrl({ limit: state.groups.length }), sig).then(function (data) {
+      if (sig.aborted) return;
+      (data.groups || []).forEach(function (sg) {
+        var g = groupOf(sg.key);
+        if (g) g.trends = sg.trends || {};
+      });
+      state.groups.forEach(function (g) {
+        var sec = host.querySelector('.group[data-g="' + g.idx + '"] .trend');
+        if (sec) sec.outerHTML = trendHTML(g);
+      });
+    }, function (e) { if (!isAbort(e)) load(); });
   }
 
   /* ---------------- page notice (notice.js) ---------------- */
@@ -811,7 +594,7 @@
     return Promise.all([st, mk])
       .then(function (res) { note.status = res[0]; note.locked = !!(res[1] && res[1].state === "locked"); note.err = false; },
         function () { note.err = true; })
-      .then(paintNote);
+      .then(function () { paintNote(); syncCounts(); });
   }
   $("#note").addEventListener("click", function (e) {
     var b = e.target.closest("[data-note-act]");
@@ -830,60 +613,33 @@
       if (p.firstElementChild && p.firstElementChild.classList.contains("rep")) keep[p.getAttribute("data-id")] = p.firstElementChild;
     });
     var focusSel = focusKey(document.activeElement);
-    // rows that must stay rendered even beyond a group's page: the open
-    // report, an open delete confirmation and the row that has focus
-    var need = {};
-    if (state.open != null) need[String(state.open)] = 1;
-    if (state.confirm != null && state.confirm !== "all") need[String(state.confirm)] = 1;
-    var frow = document.activeElement && host.contains(document.activeElement) && document.activeElement.closest(".row");
-    if (frow) need[frow.getAttribute("data-id")] = 1;
+    syncCounts();
 
     if (state.error != null) {
       host.innerHTML = '<div class="errbox">' + esc(T("无法读取历史：", "Could not read history: ")) + esc(state.error) +
         "<br>" + esc(T("请确认本地 ekte 服务在运行。", "Make sure the local ekte service is running.")) + "</div>";
       return;
     }
-    if (!state.rows) return;
-    if (!state.rows.length) {
-      host.innerHTML = '<div class="empty-box"><div class="ic">' + ico("folder") + "</div><p>" +
-        esc(T("还没有检测记录。", "No audits recorded yet.")) + '</p><a class="btn pri" href="/">' +
-        esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a></div>";
+    if (!state.groups) return;
+    if (state.open != null && !state.rows[String(state.open)]) state.open = null;
+    if (state.confirm != null && state.confirm !== "all" && !state.rows[String(state.confirm)]) state.confirm = null;
+    if (!state.totalRuns) {
+      host.innerHTML = isFiltered()
+        ? '<div class="nomatch"><p>' + esc(T("没有符合筛选条件的检测记录。", "No audits match these filters.")) +
+          '</p><button type="button" class="btn sm" id="nmreset">' + esc(T("重置筛选", "Reset filters")) + "</button></div>"
+        : '<div class="empty-box"><div class="ic">' + ico("folder") + "</div><p>" +
+          esc(T("还没有检测记录。", "No audits recorded yet.")) + '</p><a class="btn pri" href="/">' +
+          esc(T("去跑第一次检测", "Run your first audit")) + " " + ico("arrowRight") + "</a></div>";
       return;
     }
 
-    var rows = filtered(state.rows);
-    var fc = $("#fcount");
-    if (fc) fc.textContent = Tf("显示 {shown} / {n} 条记录", "Showing {shown} of {n} audits", { shown: rows.length, n: state.rows.length });
-    if (state.open != null && !rows.some(function (r) { return String(r.id) === String(state.open); })) state.open = null;
-    if (state.confirm != null && state.confirm !== "all" && !rows.some(function (r) { return String(r.id) === state.confirm; })) state.confirm = null;
-    if (!rows.length) {
-      host.innerHTML = '<div class="nomatch"><p>' + esc(T("没有符合筛选条件的检测记录。", "No audits match these filters.")) +
-        '</p><button type="button" class="btn sm" id="nmreset">' + esc(T("重置筛选", "Reset filters")) + "</button></div>";
-      return;
-    }
-
-    var groups = groupsOf(sortRows(rows));
-    groups.forEach(function (g) {
-      // a row that must stay visible opens its group
-      if (state.collapsed[g.key] && g.rows.some(function (r) { return need[String(r.id)]; })) {
-        delete state.collapsed[g.key];
-        saveCollapsed();
-      }
-      var lim = Math.max(PAGE, state.shown[g.key] || 0);
-      g.rows.forEach(function (r, i) {
-        if (i >= lim && need[String(r.id)]) lim = Math.ceil((i + 1) / PAGE) * PAGE;
-      });
-      g.limit = Math.min(lim, g.rows.length);
-    });
-    state.groups = groups;
-    var more = groups.some(function (g) { return g.limit < g.rows.length; });
+    var more = state.after != null || state.groups.some(function (g) { return g.rows && g.after != null; });
     host.innerHTML =
       sortHeadHTML() +
-      groups.map(groupHTML).join("") +
+      state.groups.map(groupHTML).join("") +
+      groupsMoreHTML() +
       '<div class="lfoot">' +
-      '<span class="aside">' + esc(isFiltered()
-        ? Tf("显示 {shown} / {n} 条记录", "Showing {shown} of {n} audits", { shown: rows.length, n: state.rows.length })
-        : Tf("共 {n} 条记录", "Saved audits: {n}", { n: state.rows.length })) + "</span>" +
+      '<span class="aside" id="hcount">' + esc(footText()) + "</span>" +
       (more ? '<p class="sr-only" id="hmore" role="status"></p>' : "") +
       '<button type="button" class="linkbtn clr" id="clr" aria-expanded="' + (state.confirm === "all") + '" aria-controls="clrConfirm">' +
       ico("trash") + esc(T("清空历史", "Clear history")) + "</button>" +
@@ -914,6 +670,7 @@
     if (row && el.classList.contains("rrerun")) return '.row[data-id="' + row.getAttribute("data-id") + '"] .rrerun';
     if (row && el.classList.contains("rsched")) return '.row[data-id="' + row.getAttribute("data-id") + '"] .rsched';
     if (el.hasAttribute("data-more")) return '[data-more="' + CSS.escape(el.getAttribute("data-more")) + '"]';
+    if (el.hasAttribute("data-gmore")) return "[data-gmore]";
     if (el.hasAttribute("data-sort")) return '[data-sort="' + el.getAttribute("data-sort") + '"]';
     if (el.hasAttribute("data-gkey")) return '[data-gkey="' + CSS.escape(el.getAttribute("data-gkey")) + '"]';
     return null;
@@ -926,56 +683,166 @@
       '<button type="button" class="btn sm" data-no="' + what + '">' + esc(T("取消", "Cancel")) + "</button></span></div>";
   }
 
-  function groupHTML(g, gi) {
-    var hid = "g" + gi, shut = !!state.collapsed[g.key];
+  function groupName(g) { return g.claimed_model || T("(未声明模型)", "(no model declared)"); }
+  function relayName(g) { return g.relay ? g.relay.label : T("（未知）", "(unknown)"); }
+
+  function groupHTML(g) {
+    var gi = g.idx, hid = "g" + gi, shut = !!state.collapsed[g.key];
+    var shown = g.rows ? g.rows.length : 0;
     // rough height for content-visibility until the group is first laid out
-    var gh = shut ? 100 : 100 + 58 * g.limit + (g.limit < g.rows.length ? 50 : 0);
+    var gh = shut ? 100 : 100 + 58 * shown + (g.after ? 50 : 0);
     // the heading's text is the collapse toggle: heading navigation still
     // lands on it, and the button says whether the group's rows are shown
     // named by model AND relay: one model on two relays gives two groups; the
     // tooltip lists the base URLs the group's runs used
-    return '<section class="group' + (shut ? " shut" : "") + '" aria-labelledby="' + hid + " " + hid + 'u" style="--gh:' + gh + 'px"><div class="grp-h"><div class="gtitle">' +
+    return '<section class="group' + (shut ? " shut" : "") + '" data-g="' + gi + '" aria-labelledby="' + hid + " " + hid + 'u" style="--gh:' + gh + 'px"><div class="grp-h"><div class="gtitle">' +
       '<h2 id="' + hid + '"><button type="button" class="gtog" data-gkey="' + esc(g.key) + '" aria-expanded="' + !shut + '" aria-controls="gb' + gi + '" title="' +
-      esc(T("声称模型", "Claimed model")) + '">' + ico("chevronDown") + '<span class="t">' +
-      esc(g.claimed_model || T("(未声明模型)", "(no model declared)")) + "</span></button></h2>" +
-      '<div class="gu"><span class="gk">' + esc(g.relay.kind === "provider" ? T("厂商", "Provider") : T("中转站", "Relay")) + "</span>" +
-      '<span class="gn" id="' + hid + 'u" title="' + esc(g.urls.join("\n")) + '">' + esc(relayName(g.relay)) + "</span></div></div>" +
-      trendHTML(g.rows) + "</div>" +
-      '<div class="gbody" id="gb' + gi + '"' + (shut ? " hidden" : "") + '><ul class="rows">' + g.rows.slice(0, g.limit).map(rowHTML).join("") + "</ul>" +
-      moreHTML(g, gi) + "</div></section>";
+      esc(T("声称模型", "Claimed model")) + '">' + ico("chevronDown") + '<span class="t">' + esc(groupName(g)) + "</span></button></h2>" +
+      '<div class="gu"><span class="gk">' + esc(g.relay && g.relay.kind === "provider" ? T("厂商", "Provider") : T("中转站", "Relay")) + "</span>" +
+      '<span class="gn" id="' + hid + 'u" title="' + esc(g.urls.join("\n")) + '">' + esc(relayName(g)) + "</span></div></div>" +
+      trendHTML(g) + "</div>" +
+      '<div class="gbody" id="gb' + gi + '"' + (shut ? " hidden" : "") + ">" + gbodyHTML(g) + "</div></section>";
+  }
+  function gbodyHTML(g) {
+    return '<ul class="rows">' + (g.rows || []).map(rowHTML).join("") + "</ul>" + moreHTML(g);
   }
 
-  // "Show more" under a group whose rows are not all rendered yet; its
+  // "Show more" under a group whose rows are not all loaded yet; its
   // description is the group heading (several groups have such a button)
   function moreLabel(left) { return Tf("显示更多（还剩 {k} 条）", "Show more ({k} remaining)", { k: left }); }
-  function moreHTML(g, gi) {
-    var left = g.rows.length - g.limit;
-    if (left <= 0) return "";
-    return '<div class="gmore"><button type="button" class="btn sm" data-more="' + esc(g.key) + '" aria-describedby="g' + gi + '">' +
+  function moreHTML(g) {
+    var left = g.total - (g.rows ? g.rows.length : 0);
+    if (!g.rows || !g.after || left <= 0) return "";
+    return '<div class="gmore"><button type="button" class="btn sm" data-more="' + esc(g.key) + '" aria-describedby="g' + g.idx + '">' +
       esc(moreLabel(left)) + "</button></div>";
+  }
+  function groupsMoreLabel(left) { return Tf("显示更多分组（还剩 {k} 个）", "Show more groups ({k} remaining)", { k: left }); }
+  function groupsMoreHTML() {
+    var left = state.totalGroups - state.groups.length;
+    if (!state.after || left <= 0) return "";
+    return '<div class="gmore gsmore"><button type="button" class="btn sm" data-gmore="1">' + esc(groupsMoreLabel(left)) + "</button></div>";
+  }
+  function announce(msg) {
+    var live = document.getElementById("hmore");
+    if (live) live.textContent = msg;
   }
 
   // append the group's next page of rows without rebuilding the list; focus
   // stays on the button while rows remain, else moves to the first new row
   function showMore(btn) {
-    var key = btn.getAttribute("data-more"), g = state.groups.filter(function (x) { return x.key === key; })[0];
-    var sec = btn.closest(".group"), ul = sec && sec.querySelector(".rows");
-    if (!g || !ul) return;
-    var from = g.limit, to = Math.min(g.rows.length, from + PAGE);
-    ul.insertAdjacentHTML("beforeend", g.rows.slice(from, to).map(rowHTML).join(""));
-    g.limit = to;
-    state.shown[g.key] = Math.max(state.shown[g.key] || 0, to);
-    var left = g.rows.length - to;
-    if (left > 0) {
-      btn.textContent = moreLabel(left);
-    } else {
-      var first = ul.querySelector('.row[data-id="' + CSS.escape(String(g.rows[from].id)) + '"] .rmain');
-      if (first) first.focus();
-      btn.parentNode.remove();
+    var g = groupOf(btn.getAttribute("data-more")), sec = btn.closest(".group"), ul = sec && sec.querySelector(".rows");
+    if (!g || !ul || g.loading) return;
+    var from = g.rows.length, sig = signal();
+    g.loading = true;
+    ul.setAttribute("aria-busy", "true");
+    fetchRows(g, sig).then(function () {
+      g.loading = false;
+      ul.removeAttribute("aria-busy");
+      if (sig.aborted) return;
+      ul.insertAdjacentHTML("beforeend", g.rows.slice(from).map(rowHTML).join(""));
+      var left = g.total - g.rows.length;
+      if (g.after && left > 0) {
+        btn.textContent = moreLabel(left);
+      } else {
+        var first = g.rows[from] && document.getElementById("r-" + g.rows[from].id);
+        if (first) first.focus();
+        btn.parentNode.remove();
+      }
+      // the link to this view reaches the same row
+      if (g.rows.length > from) F.set({ "runs.focus": String(g.rows[g.rows.length - 1].id) });
+      announce(Tf("{group}：显示 {shown} / {total} 条记录", "{group}: showing {shown} of {total} audits",
+        { group: groupName(g) + " · " + relayName(g), shown: g.rows.length, total: g.total }));
+    }, function (e) {
+      g.loading = false;
+      ul.removeAttribute("aria-busy");
+      if (!isAbort(e)) announce(T("无法加载更多：", "Could not load more: ") + String((e && e.message) || e));
+    });
+  }
+
+  // append the next page of groups; focus stays on the button while groups
+  // remain, else moves to the first new group's toggle
+  function showMoreGroups(btn) {
+    if (state.loadingGroups || !state.after) return;
+    var sig = signal(), wrap = btn.parentNode;
+    state.loadingGroups = true;
+    host.setAttribute("aria-busy", "true");
+    get(groupsUrl({ after: state.after }), sig).then(function (data) {
+      var groups = (data.groups || []).map(fromServer);
+      return Promise.all(groups.map(function (g) { return state.collapsed[g.key] ? null : fetchRows(g, sig); })).then(function () {
+        if (sig.aborted) return;
+        state.groups = state.groups.concat(groups);
+        state.after = data.after || null;
+        state.totalGroups = data.total_groups || state.totalGroups;
+        wrap.insertAdjacentHTML("beforebegin", groups.map(groupHTML).join(""));
+        if (!$("#hmore")) $("#hcount").insertAdjacentHTML("afterend", '<p class="sr-only" id="hmore" role="status"></p>');
+        var left = state.totalGroups - state.groups.length;
+        if (state.after && left > 0) {
+          btn.textContent = groupsMoreLabel(left);
+        } else {
+          var tog = groups[0] && host.querySelector('.group[data-g="' + groups[0].idx + '"] .gtog');
+          if (tog) tog.focus();
+          wrap.remove();
+        }
+        syncGroupAll();
+        announce(Tf("显示 {shown} / {total} 个分组", "Showing {shown} of {total} groups", { shown: state.groups.length, total: state.totalGroups }));
+      });
+    }).catch(function (e) {
+      if (!isAbort(e)) announce(T("无法加载更多：", "Could not load more: ") + String((e && e.message) || e));
+    }).then(function () {
+      state.loadingGroups = false;
+      host.setAttribute("aria-busy", "false");
+    });
+  }
+
+  /* ---------------- collapsible groups ---------------- */
+  // open/close one group in place; the open report inside it closes first.
+  // A group first opened here loads its rows.
+  function setGroupOpen(sec, open) {
+    var b = sec.querySelector(".gtog"), body = sec.querySelector(".gbody"), key = b.getAttribute("data-gkey");
+    var g = groupOf(key);
+    if (!open && state.open != null && body.querySelector('.row[data-id="' + CSS.escape(String(state.open)) + '"]')) toggle(String(state.open));
+    if (!open && state.confirm != null && state.confirm !== "all" && body.querySelector('.row[data-id="' + CSS.escape(String(state.confirm)) + '"]')) setConfirm(null);
+    // a collapsed group is not where the view stands
+    var focus = focusRun();
+    if (!open && focus && body.querySelector('.row[data-id="' + CSS.escape(focus) + '"]')) F.set({ "runs.focus": null });
+    if (open) delete state.collapsed[key];
+    else state.collapsed[key] = true;
+    b.setAttribute("aria-expanded", String(open));
+    body.hidden = !open;
+    sec.classList.toggle("shut", !open);
+    if (open && g && !g.rows && !g.loading) {
+      var sig = signal();
+      g.loading = true;
+      body.setAttribute("aria-busy", "true");
+      fetchRows(g, sig).then(function () {
+        g.loading = false;
+        body.removeAttribute("aria-busy");
+        if (sig.aborted || !body.isConnected) return;
+        body.innerHTML = gbodyHTML(g);
+        if (g.after && !$("#hmore")) $("#hcount").insertAdjacentHTML("afterend", '<p class="sr-only" id="hmore" role="status"></p>');
+      }, function (e) {
+        g.loading = false;
+        body.removeAttribute("aria-busy");
+        if (!isAbort(e)) body.innerHTML = '<div class="errbox">' + esc(T("无法读取历史：", "Could not read history: ")) + esc(String((e && e.message) || e)) + "</div>";
+      });
     }
-    var live = document.getElementById("hmore");
-    if (live) live.textContent = Tf("{group}：显示 {shown} / {total} 条记录", "{group}: showing {shown} of {total} audits",
-      { group: (g.claimed_model || T("(未声明模型)", "(no model declared)")) + " · " + relayName(g.relay), shown: to, total: g.rows.length });
+  }
+  function syncGroupAll() {
+    var ga = $("#gall");
+    if (!ga) return;
+    var anyOpen = state.groups.some(function (g) { return !state.collapsed[g.key]; });
+    ga.setAttribute("data-all", anyOpen ? "collapse" : "expand");
+    ga.textContent = anyOpen ? T("全部折叠", "Collapse all") : T("全部展开", "Expand all");
+  }
+  function toggleGroup(b) {
+    setGroupOpen(b.closest(".group"), b.getAttribute("aria-expanded") !== "true");
+    saveCollapsed();
+    syncGroupAll();
+  }
+  function setAllGroups(open) {
+    Array.prototype.forEach.call(host.querySelectorAll(".group"), function (sec) { setGroupOpen(sec, open); });
+    saveCollapsed();
+    syncGroupAll();
   }
 
   // small sparkline of vals (oldest -> newest) scaled to [lo, hi]; area fill
@@ -994,123 +861,116 @@
       '<circle class="dot" cx="' + xs[xs.length - 1].toFixed(1) + '" cy="' + ys[ys.length - 1].toFixed(1) + '" r="2.5"/></svg>';
   }
 
-  /* ---------------- configurable trends ---------------- */
-  // Grade letters on a 1..6 scale for the grade sparkline (F lowest).
-  var GRADEN = { A: 6, B: 5, C: 4, D: 3, E: 2, F: 1 };
-  var GRADEL = ["", "F", "E", "D", "C", "B", "A"];
-  // Each metric: value per row (null = none), scale (fixed or the points'
-  // min..max), colour family of the latest value, KPI text.
-  var METRICS = [
-    { id: "score", zh: "健康分", en: "Score", area: true, lo: 0, hi: 100,
-      get: function (r) { return typeof r.score === "number" ? r.score : null; },
-      fam: function (v) { return scoreC(v); },
-      kpi: function (v) { return String(Math.round(v)); } },
-    { id: "grade", zh: "评级", en: "Grade", area: true, lo: 1, hi: 6,
-      get: function (r) { return GRADEN[String(r.rating || "").toUpperCase()] || null; },
-      fam: function (v) { return gradeC(GRADEL[v]); },
-      kpi: function (v) { return GRADEL[v]; } },
-    { id: "lat", zh: "延迟 p50", en: "Latency p50", unit: "ms", area: true,
-      get: function (r) { return typeof r.latency_p50_ms === "number" ? r.latency_p50_ms : null; },
-      fam: function () { return "lat"; },
-      kpi: function (v) { return String(Math.round(v)); } },
-    { id: "tps", zh: "解码速度 p50", en: "Decode speed p50", unit: "tok/s", area: true,
-      get: function (r) { return typeof r.decode_tps_p50 === "number" ? r.decode_tps_p50 : null; },
-      fam: function () { return "tps"; },
-      kpi: function (v) { return String(Math.round(v)); } },
-  ];
-  var TKEY = "ekte.v2.history.trends", TDEF = ["score", "lat"];
-  state.trends = (function () {
-    try {
-      var t = JSON.parse(localStorage.getItem(TKEY) || "null");
-      if (Array.isArray(t)) {
-        t = METRICS.map(function (m) { return m.id; }).filter(function (id) { return t.indexOf(id) >= 0; });
-        if (t.length) return t;
-      }
-    } catch (e) { /* ignore */ }
-    return TDEF.slice();
-  })();
+  /* ---------------- trends (options and values from the server) ---------------- */
+  function keyed(key) { return window.EkteFilters.keyed(key, cat && cat.labels); }
+  function trends() { return window.EkteTrendPick.clean(F.state()["trend.metrics"], cat.order, cat.max, DEF_TRENDS); }
 
+  // a value as text in the metric's display format, and its unit
+  var UNIT = { ms: "ms", tok_s: "tok/s" };
+  function fmtValue(m, v) {
+    if (v == null) return "—";
+    if (m.format === "grade") return cat.grades[Math.round(v) - 1] || "—"; // a point on the 1..6 scale: its letter
+    if (m.format === "percent" || m.format === "ratio_percent") {
+      try { return EKTE_LANG.numFmt({ style: "percent", maximumFractionDigits: 1 }).format(v); } catch (e) { return (v * 100).toFixed(1) + "%"; }
+    }
+    return String(Math.round(v));
+  }
+
+  function trendCount(n) {
+    return '<span aria-hidden="true">' + esc(n + " / " + cat.max) + '</span><span class="sr-only">' +
+      esc(Tf("已选 {n} 个，最多 {max} 个", "{n} of at most {max} selected", { n: n, max: cat.max })) + "</span>";
+  }
   function trendPickerHTML() {
-    var only = state.trends.length === 1;
-    return '<div class="tsel" role="group" aria-labelledby="tselL"><span id="tselL">' + esc(T("趋势图", "Trends")) + "</span>" +
-      METRICS.map(function (m) {
-        var on = state.trends.indexOf(m.id) >= 0;
-        return '<button type="button" data-trend="' + m.id + '" aria-pressed="' + on + '"' + (on && only ? " disabled" : "") + ">" +
-          esc(T(m.zh, m.en)) + "</button>";
+    if (!cat) return "";
+    var sel = trends();
+    return '<div class="tsel" role="group" aria-labelledby="tselL" aria-describedby="tselN"><span id="tselL">' + esc(T("趋势图", "Trends")) + "</span>" +
+      '<span class="tcount" id="tselN">' + trendCount(sel.length) + "</span>" +
+      window.EkteTrendPick.buttons(sel, cat.order, cat.max).map(function (b) {
+        return '<button type="button" data-trend="' + esc(b.id) + '" aria-pressed="' + b.pressed + '"' + (b.disabled ? ' disabled aria-disabled="true"' : "") + ">" +
+          esc(keyed(cat.byId[b.id].label_key)) + "</button>";
       }).join("") + "</div>";
   }
-
-  function toggleTrend(id) {
-    var on = state.trends.indexOf(id) >= 0;
-    if (on && state.trends.length === 1) return; // keep at least one
-    var next = on ? state.trends.filter(function (x) { return x !== id; }) : state.trends.concat([id]);
-    state.trends = METRICS.map(function (m) { return m.id; }).filter(function (x) { return next.indexOf(x) >= 0; });
-    try { localStorage.setItem(TKEY, JSON.stringify(state.trends)); } catch (e) { /* ignore */ }
-    var only = state.trends.length === 1;
-    Array.prototype.forEach.call(fbar.querySelectorAll("[data-trend]"), function (b) {
-      var sel = state.trends.indexOf(b.getAttribute("data-trend")) >= 0;
-      b.setAttribute("aria-pressed", String(sel));
-      b.disabled = sel && only;
+  // the picker after a change, in place (focus stays on the pressed button)
+  function syncPicker() {
+    if (!cat) return;
+    var sel = trends(), n = $("#tselN", fbar);
+    if (n) n.innerHTML = trendCount(sel.length);
+    window.EkteTrendPick.buttons(sel, cat.order, cat.max).forEach(function (b) {
+      var el = fbar.querySelector('[data-trend="' + CSS.escape(b.id) + '"]');
+      if (!el) return;
+      el.setAttribute("aria-pressed", String(b.pressed));
+      el.disabled = b.disabled;
+      if (b.disabled) el.setAttribute("aria-disabled", "true");
+      else el.removeAttribute("aria-disabled");
     });
-    render();
   }
+  fbar.addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-trend]");
+    if (!b || b.disabled || !cat) return;
+    var next = window.EkteTrendPick.toggle(trends(), b.getAttribute("data-trend"), cat.order, cat.max);
+    F.set({ "trend.metrics": next.join(",") });
+  });
 
-  // group trends from the group's (filtered) rows, oldest to newest whatever
-  // the list's sort. Every selected trend gets its tile, in METRICS order and
-  // of a fixed size (CSS .tr), so the trends line up across groups: with one
-  // value the sparkline's space stays empty, without any the tile shows a dash.
+  // Every selected trend gets its tile, in the server's order and of a fixed
+  // size (CSS .tr), so the trends line up across groups: with one value the
+  // sparkline's space stays empty, without any the tile shows a dash. Values,
+  // colour family and "rising / falling" are the server's.
   var SPARK_W = 96, SPARK_H = 36; // drawing size; CSS --sw / --sh scale it
-  function trendHTML(rows) {
-    var pts = rows.slice().sort(byKey(tsOf, "asc"));
+  function trendHTML(g) {
     var gap = '<span class="nospark" aria-hidden="true"></span>';
-    var tiles = METRICS.filter(function (m) { return state.trends.indexOf(m.id) >= 0; }).map(function (m) {
-      var vals = pts.map(m.get).filter(function (v) { return v != null; });
-      var name = T(m.zh, m.en);
-      if (!vals.length) {
-        return '<div class="tr f-grey" data-m="' + m.id + '"><span class="tl">' + esc(name) + '</span><div class="tv">' + gap +
+    var tiles = (cat ? trends() : []).map(function (id) {
+      var m = cat.byId[id], t = g.trends[id], name = keyed(m.short_label_key);
+      var last = t && t.last, pts = (t && t.points) || [];
+      if (!last || last.value == null || !pts.length) {
+        return '<div class="tr f-grey" data-m="' + esc(id) + '"><span class="tl">' + esc(name) + '</span><div class="tv">' + gap +
           '<b class="none"><span aria-hidden="true">—</span><span class="sr-only">' + esc(T("无数据", "no data")) + "</span></b></div></div>";
       }
-      var last = vals[vals.length - 1];
-      var lo = m.lo != null ? m.lo : Math.min.apply(null, vals), hi = m.hi != null ? m.hi : Math.max.apply(null, vals);
-      var label;
-      if (m.id === "score") {
-        var first = Math.round(vals[0]), lst = Math.round(last);
-        var dir = lst > first ? T("上升", "rising") : lst < first ? T("下降", "falling") : T("持平", "unchanged");
-        label = Tf("健康分趋势（{n} 次检测）：从 {first} 到 {last}，{dir}。",
-          "Health score trend across {n} audits: from {first} to {last}, {dir}.", { n: vals.length, first: first, last: lst, dir: dir });
-      } else {
-        var u = m.unit ? " " + m.unit : "";
-        label = Tf("{metric}趋势（{n} 次检测）：从 {first} 到 {last}。",
-          "{metric} trend across {n} audits: from {first} to {last}.",
-          { metric: name, n: vals.length, first: m.kpi(vals[0]) + u, last: m.kpi(last) + u });
-      }
-      return '<div class="tr f-' + m.fam(last) + '" data-m="' + m.id + '"><span class="tl">' + esc(name) + '</span><div class="tv">' +
-        (vals.length >= 2 ? sparkSVG(vals, lo, hi, label, !!m.area, SPARK_W, SPARK_H) : gap) +
-        "<b>" + esc(m.kpi(last)) + (m.unit ? "<small>" + esc(m.unit) + "</small>" : "") + "</b></div></div>";
+      var unit = UNIT[m.format] || "", u = unit ? " " + unit : "";
+      var shown = m.format === "grade" && last.grade ? last.grade : fmtValue(m, last.value);
+      var label = Tf("{metric}趋势（{n} 次检测）：从 {first} 到 {last}，{dir}。", "{metric} trend across {n} audits: from {first} to {last}, {dir}.", {
+        metric: keyed(m.label_key), n: t.n, first: fmtValue(m, t.first) + u, last: shown + u,
+        dir: last.trend_key ? keyed(last.trend_key) : keyed("trend.unchanged") });
+      // drawing scale: the score's and the grade's fixed ranges, else the points'
+      var lo = m.format === "score" ? 0 : m.format === "grade" ? 1 : Math.min.apply(null, pts);
+      var hi = m.format === "score" ? 100 : m.format === "grade" ? cat.grades.length : Math.max.apply(null, pts);
+      return '<div class="tr f-' + esc(last.family || "grey") + '" data-m="' + esc(id) + '"><span class="tl">' + esc(name) + '</span><div class="tv">' +
+        (pts.length >= 2 ? sparkSVG(pts, lo, hi, label, true, SPARK_W, SPARK_H) : gap) +
+        "<b>" + esc(shown) + (unit ? "<small>" + esc(unit) + "</small>" : "") + "</b></div></div>";
     }).join("");
     return '<div class="trend">' + tiles + "</div>";
   }
 
+  /* ---------------- rows ---------------- */
+  var SURFACE = { chat: ["对话", "Chat"], embedding: ["嵌入", "Embeddings"], rerank: ["重排", "Reranking"] };
+  var surfaceLabel = function (v) { return SURFACE[v] ? T(SURFACE[v][0], SURFACE[v][1]) : v; };
+  var STREAM = {
+    stream: ["流式", "Streaming"],
+    non_stream: ["非流式", "Non-streaming"],
+    both: ["流式 + 非流式", "Streaming + non-streaming"],
+  };
+  var streamLabel = function (v) { return STREAM[v] ? T(STREAM[v][0], STREAM[v][1]) : v; };
+  var detectLabel = function (v) { return v === "auto" ? T("自动识别", "auto-detected") : T("手动指定", "set manually"); };
+  function surfaceOf(r) { return (r && r.surface) || "chat"; }
   // a badge for every surface but chat (the default, most rows)
   function surfaceHTML(r) {
     var s = surfaceOf(r);
     return s === "chat" ? "" : ' <span class="badge machine-soft">' + esc(surfaceLabel(s)) + "</span>";
   }
+  function fam(r, k) { return (r.family && r.family[k]) || "grey"; }
 
   function rowHTML(r) {
     var id = String(r.id);
     var lvl = r.risk_level || "inconclusive";
-    var perf = typeof r.latency_p50_ms === "number" ? r : null;
     var open = String(state.open) === id;
     return '<li class="row" data-id="' + esc(id) + '"><div class="rline">' +
       '<button type="button" class="rmain" id="r-' + esc(id) + '" aria-expanded="' + open + '" aria-controls="p-' + esc(id) + '">' +
       '<span class="c-date">' + esc(fmtTime(r.ts)) + "</span>" +
-      '<span class="c-risk"><span class="badge ' + (RISKC[lvl] || "grey") + '">' + ico(RISKI[lvl] || "info") + " " +
+      '<span class="c-risk"><span class="badge ' + esc(fam(r, "risk")) + '">' + ico(RISKI[lvl] || "info") + " " +
       esc(EKTE_I18N.label("RISK_LEVEL", lvl)) + "</span></span>" +
-      '<span class="c-score f-' + scoreC(r.score) + '"><span class="sr-only">' + esc(T("健康分", "Score")) + " </span>" + num(r.score) + "</span>" +
-      '<span class="c-grade f-' + gradeC(r.rating) + '"><span class="sr-only">' + esc(T("评级", "Grade")) + " </span>" + esc(r.rating || "–") + "</span>" +
+      '<span class="c-score f-' + esc(fam(r, "score")) + '"><span class="sr-only">' + esc(T("健康分", "Score")) + " </span>" + num(r.score) + "</span>" +
+      '<span class="c-grade f-' + esc(fam(r, "grade")) + '"><span class="sr-only">' + esc(T("评级", "Grade")) + " </span>" + esc(r.grade || "–") + "</span>" +
       '<span class="c-mode"><b>' + esc(r.mode || "check") + "</b>" + surfaceHTML(r) + (byMonitor(r) ? ' <span class="badge sky">' + ico("bell") + " " + esc(T("监控", "Monitor")) + "</span>" : "") + (r.suite ? " · " + esc(r.suite) : "") + protoHTML(r) +
-      (perf ? '<span class="perf" title="' + esc(T("延迟 p50", "Latency p50")) + '">p50 ' + Math.round(perf.latency_p50_ms) + " ms</span>" : "") + "</span>" +
+      (typeof r.latency_p50_ms === "number" ? '<span class="perf" title="' + esc(T("延迟 p50", "Latency p50")) + '">p50 ' + Math.round(r.latency_p50_ms) + " ms</span>" : "") + "</span>" +
       '<span class="c-cv" aria-hidden="true">' + ico("chevronDown") + "</span></button>" +
       rerunBtnHTML(r) + schedBtnHTML(r) +
       '<button type="button" class="rdel" aria-label="' + esc(T("删除此记录", "Delete entry")) + '" title="' + esc(T("删除此记录", "Delete entry")) +
@@ -1123,8 +983,8 @@
   // protocol (auto-detected or set by hand) and the probe's request mode
   function protoHTML(r) {
     var bits = [];
-    if (apiOf(r)) bits.push(esc(apiOf(r)) + (detectOf(r) ? " (" + esc(detectLabel(detectOf(r))) + ")" : ""));
-    if (streamOf(r) && surfaceOf(r) === "chat") bits.push(esc(streamLabel(streamOf(r))));
+    if (r.api) bits.push(esc(r.api) + (r.detect ? " (" + esc(detectLabel(r.detect)) + ")" : ""));
+    if (r.stream_mode && surfaceOf(r) === "chat") bits.push(esc(streamLabel(r.stream_mode)));
     return bits.length ? '<span class="proto">' + bits.join(" · ") + "</span>" : "";
   }
 
@@ -1136,8 +996,7 @@
   // selector (?surface=embedding|rerank).
   var RERUN_SURFACES = { embedding: 1, rerank: 1 };
   function rerun(id) {
-    var row = (state.rows || []).filter(function (r) { return String(r.id) === String(id); })[0];
-    var s = row ? surfaceOf(row) : "chat", q = "rerun=" + encodeURIComponent(id);
+    var s = surfaceOf(state.rows[String(id)]), q = "rerun=" + encodeURIComponent(id);
     location.href = RERUN_SURFACES.hasOwnProperty(s) ? "/?surface=" + s + "&" + q : "/?" + q;
   }
 
@@ -1178,7 +1037,7 @@
   function mount(panel, report) {
     var el = document.createElement("div");
     var id = panel.getAttribute("data-id");
-    var row = (state.rows || []).filter(function (r) { return String(r.id) === id; })[0];
+    var row = state.rows[id];
     el.className = "rep";
     panel.innerHTML = "";
     panel.appendChild(el);
@@ -1250,6 +1109,8 @@
     var b = document.getElementById("r-" + id), p = document.getElementById("p-" + id);
     b.setAttribute("aria-expanded", "true");
     p.hidden = false;
+    // the link to this view reaches this run
+    F.set({ "runs.focus": id });
     if (state.reports[id]) mount(p, state.reports[id]);
     else fetchReport(p, id);
   }
@@ -1283,8 +1144,9 @@
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         state.confirm = null;
-        if (what === "all") { state.reports = {}; state.open = null; state.shown = {}; }
+        if (what === "all") { state.reports = {}; state.open = null; }
         else delete state.reports[what];
+        if (what === "all" || focusRun() === what) F.set({ "runs.focus": null });
         return load();
       })
       .then(function () {
@@ -1302,8 +1164,8 @@
     var t = ev.target.closest("button");
     if (!t || !host.contains(t)) return;
     if (t.id === "nmreset") {
-      resetFilters();
-      focusFilters();
+      F.reset();
+      F.panel.focusStart();
       return;
     }
     if (t.classList.contains("rmain")) return toggle(t.id.slice(2));
@@ -1311,6 +1173,7 @@
     if (t.hasAttribute("data-gkey")) return toggleGroup(t);
     if (t.id === "gall") return setAllGroups(t.getAttribute("data-all") === "expand");
     if (t.hasAttribute("data-more")) return showMore(t);
+    if (t.hasAttribute("data-gmore")) return showMoreGroups(t);
     if (t.hasAttribute("data-rerun")) return rerun(t.getAttribute("data-rerun"));
     if (t.hasAttribute("data-sched")) return schedule(t.getAttribute("data-sched"));
     if (t.classList.contains("rdel")) {
@@ -1335,11 +1198,35 @@
     if (back) back.focus();
   });
 
-  // live language switch: re-render from cached data (no refetch); the open
-  // report is re-rendered by report.js and carried over by render().
-  window.addEventListener("ekte:lang", function () { renderFilters(); render(); });
+  // live language switch: re-render from the loaded data (no refetch); the
+  // open report is re-rendered by report.js and carried over by render().
+  window.addEventListener("ekte:lang", function () { render(); });
 
-  load();
+  // the metric catalogue first (trend options, labels, grade scale), then the list
+  function start() {
+    host.setAttribute("aria-busy", "true");
+    get("/api/metrics", signal()).then(function (c) {
+      var byId = {};
+      (c.metrics || []).forEach(function (m) { byId[m.id] = m; });
+      cat = { byId: byId, order: (c.history_trends || []).filter(function (id) { return byId[id]; }),
+        max: c.max_trends || 2, grades: c.grades || [], labels: c.labels || {} };
+      var patch = {}, want = trends().join(",");
+      if (String(F.state()["trend.metrics"]) !== want) patch["trend.metrics"] = want;
+      if (String(F.state()["groups.sort"] || DEF_SORT) !== sortValue()) patch["groups.sort"] = null;
+      if (F.state()[FOCUS] != null && !focusRun()) patch[FOCUS] = null;
+      // the URL holds only valid view keys; no reload yet (state.groups is null)
+      if (Object.keys(patch).length) F.set(patch);
+      F.render();
+      return load();
+    }, function (e) {
+      if (isAbort(e)) return;
+      state.error = String((e && e.message) || e);
+      render();
+      host.setAttribute("aria-busy", "false");
+      loadNote();
+    });
+  }
+  start();
 })();
 </script>
 </body>

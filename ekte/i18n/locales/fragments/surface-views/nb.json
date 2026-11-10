@@ -15,7 +15,6 @@
   "[vector sample of {n} numbers]": "[vektorutdrag med {n} tall]",
   "{n} requests": "{n} forespørsler",
   "{input} input tokens (usage)": "{input} inndatatokens (usage)",
-  "batch probe": "batchprobe",
-  "No audits of this endpoint type.": "Ingen revisjoner av denne typen endepunkt."
+  "batch probe": "batchprobe"
  }
 }

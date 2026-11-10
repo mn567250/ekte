@@ -37,50 +37,70 @@
   - heading "Analyse av revisjoner" [level=1]
   - paragraph: "Sammenlign releer og modeller over tid med det ekte har målt på denne maskinen: scorer, hastighet, suksessrater og fakturering."
   - status: 1 eldre kjøring har et anslått starttidspunkt Diagrammer over tid på døgnet plasserer dem omtrentlig.
-  - status: "Oppdatert: 14 kjøringer i denne perioden."
+  - status: "Oppdatert: 15 kjøringer i denne perioden."
   - region "Filtre":
     - button "Filtre" [expanded]
     - text: Periode
-    - group "Periode":
-      - button "Siste 7 dager"
-      - button "Siste 30 dager" [pressed]
-      - button "Siste 90 dager"
-      - button "Hele perioden"
-      - button "Egendefinert periode"
+    - combobox "Periode":
+      - option "Hele perioden"
+      - option "Siste 24 timer"
+      - option "Siste 7 dager"
+      - option "Siste 30 dager" [selected]
+      - option "Siste 90 dager"
+      - option "Siste 365 dager"
+      - option "Egendefinert periode"
     - text: Type endepunkt
     - combobox "Type endepunkt":
-      - option "Chat" [selected]
+      - option "Alle" [selected]
+      - option "Chat (15)"
+      - option "Embeddinger"
+      - option "Rerank"
+    - group "Relé / leverandør":
+      - text: Relé / leverandør
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
+      - text: gateway.a-very-long-relay-hostname.example.org (5)
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Oppgitt modell":
+      - text: Oppgitt modell
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Testsett
     - combobox "Testsett":
-      - option "Alle"
-      - option "standard" [selected]
-    - text: Probeforespørsler
-    - combobox "Probeforespørsler":
-      - option "Alle"
-      - option "Strømming" [selected]
+      - option "Alle" [selected]
+      - option "standard (15)"
     - text: Protokoll
     - combobox "Protokoll":
       - option "Alle" [selected]
-      - option "openai"
-    - text: Kilde
-    - combobox "Kilde":
+      - option "openai (14)"
+      - option "(ukjent) (1)"
+    - text: Probeforespørsler
+    - combobox "Probeforespørsler":
       - option "Alle" [selected]
-      - option "Manuelt"
-      - option "Overvåking"
-    - text: Relé / leverandør
-    - combobox "Relé / leverandør":
+      - option "Strømming (14)"
+      - option "Uten strømming"
+      - option "Med + uten strømming"
+      - option "(ukjent) (1)"
+    - text: Kjøring
+    - combobox "Kjøring":
       - option "Alle" [selected]
-      - option "Example Relay"
-      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
-      - option "http://127.0.0.1:9099/v1"
-    - text: Oppgitt modell
-    - combobox "Oppgitt modell":
-      - option "Alle" [selected]
-      - option "model-a"
-      - option "model-b"
-      - option "gpt-4o"
-    - text: 15 kjøringer i historikken (4 av overvåkinger).
-  - button "Kopier lenke til denne visningen"
+      - option "Manuelt (11)"
+      - option "Overvåking (4)"
+    - text: Grupper etter
+    - combobox "Grupper etter":
+      - option "Relé" [selected]
+      - option "Modell"
+      - option "Relé × modell"
+      - option "Alle"
+    - text: 15 kjøringer samsvarer med disse filtrene.
+    - status
+    - button "Kopier lenke til denne visningen"
   - tablist "Analysevisninger":
     - tab "Oversikt" [selected]
     - tab "Trender"
@@ -93,18 +113,26 @@
       - tab "Rangeringsliste"
     - tabpanel "Nøkkeltall":
       - heading "Nøkkeltall" [level=2]
-      - paragraph: 2. sep.–1. okt. 2026, sammenlignet med like lang periode før (3. aug.–1. sep. 2026).
-      - list:
-        - listitem: Kjøringer 14 +14
-        - listitem: Releer 2 +2
-        - listitem: Modeller 2 +2
-        - listitem: Medianscore 79 Ingen data i forrige periode
-        - listitem: Andel høy risiko 21,4 % Ingen data i forrige periode
-        - listitem: Suksessrate 100 % Ingen data i forrige periode
-        - listitem: Tid til første token p50 <duration> Ingen data i forrige periode
-        - listitem: Dekodehastighet 62,9 tok/s Ingen data i forrige periode
-        - listitem: Faktureringsforhold (prompt) 103 % Ingen data i forrige periode Data fra 9 av 14 kjøringer
-        - listitem: Faktureringsforhold (fullføring) 102 % Ingen data i forrige periode Data fra 9 av 14 kjøringer
+      - paragraph: 1. sep.–1. okt. 2026, sammenlignet med like lang periode før (2. aug.–1. sep. 2026).
+      - list "Nøkkeltall":
+        - listitem: Kjøringer 15 stigende +15
+        - listitem: Releer 3 stigende +3
+        - listitem: Modeller 3 stigende +3
+        - listitem: Medianscore 78 Ingen data i forrige periode
+        - listitem: Andel høy risiko 26,7 % Ingen data i forrige periode
+        - listitem:
+          - text: Suksessrate
+          - 'button "Om: Suksessrate"'
+          - text: 87 % Ingen data i forrige periode Data fra 14 av 15 kjøringer
+        - listitem:
+          - text: Feilrate
+          - 'button "Om: Feilrate"'
+          - text: 7,2 % Ingen data i forrige periode Data fra 14 av 15 kjøringer
+        - listitem: Forsinkelse p50 1 <duration> Ingen data i forrige periode Data fra 14 av 15 kjøringer
+        - listitem: Tid til første token p50 <duration> Ingen data i forrige periode Data fra 14 av 15 kjøringer
+        - listitem: Dekodehastighet p50 62,9 tok/s Ingen data i forrige periode Data fra 14 av 15 kjøringer
+        - listitem: Faktureringsforhold (prompt) 103,5 % Ingen data i forrige periode Data fra 10 av 15 kjøringer
+        - listitem: Faktureringsforhold (fullføring) 102 % Ingen data i forrige periode Data fra 10 av 15 kjøringer
 - contentinfo:
   - paragraph: "Alt lokalt: revisjoner kjøres fra din egen maskin, og API-nøklene dine forlater den aldri."
   - paragraph: "En black box: ekte rapporterer reproduserbare bevis på avvik, ikke bevis på svindel. Ikke legg skylden på en leverandør etter én enkelt kjøring."

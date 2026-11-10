@@ -37,50 +37,70 @@
   - heading "Audit-Analyse" [level=1]
   - paragraph: "Vergleichen Sie Relays und Modelle im Zeitverlauf mit dem, was ekte auf diesem Rechner gemessen hat: Scores, Geschwindigkeit, Erfolgsquoten und Abrechnung."
   - status: 1 älterer Lauf hat eine geschätzte Startzeit Diagramme nach Tageszeit ordnen sie nur ungefähr ein.
-  - status: "Aktualisiert: 14 Läufe in diesem Zeitraum."
+  - status: "Aktualisiert: 15 Läufe in diesem Zeitraum."
   - region "Filter":
     - button "Filter" [expanded]
     - text: Zeitraum
-    - group "Zeitraum":
-      - button "Letzte 7 Tage"
-      - button "Letzte 30 Tage" [pressed]
-      - button "Letzte 90 Tage"
-      - button "Gesamter Zeitraum"
-      - button "Eigener Zeitraum"
+    - combobox "Zeitraum":
+      - option "Gesamter Zeitraum"
+      - option "Letzte 24 Stunden"
+      - option "Letzte 7 Tage"
+      - option "Letzte 30 Tage" [selected]
+      - option "Letzte 90 Tage"
+      - option "Letzte 365 Tage"
+      - option "Eigener Zeitraum"
     - text: Endpunkttyp
     - combobox "Endpunkttyp":
-      - option "Chat" [selected]
+      - option "Alle" [selected]
+      - option "Chat (15)"
+      - option "Embeddings"
+      - option "Reranking"
+    - group "Relay / Anbieter":
+      - text: Relay / Anbieter
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
+      - text: gateway.a-very-long-relay-hostname.example.org (5)
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Angegebenes Modell":
+      - text: Angegebenes Modell
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
-      - option "Alle"
-      - option "standard" [selected]
-    - text: Messanfragen
-    - combobox "Messanfragen":
-      - option "Alle"
-      - option "Streaming" [selected]
+      - option "Alle" [selected]
+      - option "standard (15)"
     - text: Protokoll
     - combobox "Protokoll":
       - option "Alle" [selected]
-      - option "openai"
-    - text: Quelle
-    - combobox "Quelle":
+      - option "openai (14)"
+      - option "(unbekannt) (1)"
+    - text: Messanfragen
+    - combobox "Messanfragen":
       - option "Alle" [selected]
-      - option "Manuell"
-      - option "Überwachung"
-    - text: Relay / Anbieter
-    - combobox "Relay / Anbieter":
+      - option "Streaming (14)"
+      - option "Ohne Streaming"
+      - option "Streaming + ohne Streaming"
+      - option "(unbekannt) (1)"
+    - text: Ausführung
+    - combobox "Ausführung":
       - option "Alle" [selected]
-      - option "Example Relay"
-      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
-      - option "http://127.0.0.1:9099/v1"
-    - text: Angegebenes Modell
-    - combobox "Angegebenes Modell":
-      - option "Alle" [selected]
-      - option "model-a"
-      - option "model-b"
-      - option "gpt-4o"
-    - text: 15 Läufe im Verlauf (4 von Überwachungen).
-  - button "Link zu dieser Ansicht kopieren"
+      - option "Manuell (11)"
+      - option "Überwachung (4)"
+    - text: Gruppieren nach
+    - combobox "Gruppieren nach":
+      - option "Relay" [selected]
+      - option "Modell"
+      - option "Relay × Modell"
+      - option "Alle"
+    - text: 15 Läufe entsprechen diesen Filtern.
+    - status
+    - button "Link zu dieser Ansicht kopieren"
   - tablist "Analyseansichten":
     - tab "Überblick" [selected]
     - tab "Trends"
@@ -93,18 +113,26 @@
       - tab "Rangliste"
     - tabpanel "Kennzahlen":
       - heading "Kennzahlen" [level=2]
-      - paragraph: 02.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (03.08. – 01.09.2026).
-      - list:
-        - listitem: Läufe 14 +14
-        - listitem: Relays 2 +2
-        - listitem: Modelle 2 +2
-        - listitem: Median-Score 79 Keine Daten im vorigen Zeitraum
-        - listitem: Anteil hohes Risiko 21,4 % Keine Daten im vorigen Zeitraum
-        - listitem: Erfolgsquote 100 % Keine Daten im vorigen Zeitraum
-        - listitem: Zeit bis zum ersten Token p50 <duration> Keine Daten im vorigen Zeitraum
-        - listitem: Dekodiertempo 62,9 tok/s Keine Daten im vorigen Zeitraum
-        - listitem: Abrechnungsverhältnis (Eingabe) 103 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
-        - listitem: Abrechnungsverhältnis (Ausgabe) 102 % Keine Daten im vorigen Zeitraum Daten aus 9 von 14 Läufen
+      - paragraph: 01.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (02.08. – 01.09.2026).
+      - list "Kennzahlen":
+        - listitem: Läufe 15 steigend +15
+        - listitem: Relays 3 steigend +3
+        - listitem: Modelle 3 steigend +3
+        - listitem: Median-Score 78 Keine Daten im vorigen Zeitraum
+        - listitem: Anteil hohes Risiko 26,7 % Keine Daten im vorigen Zeitraum
+        - listitem:
+          - text: Erfolgsquote
+          - 'button "Info: Erfolgsquote"'
+          - text: 87 % Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
+        - listitem:
+          - text: Fehlerquote
+          - 'button "Info: Fehlerquote"'
+          - text: 7,2 % Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
+        - listitem: Latenz p50 <duration> Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
+        - listitem: Zeit bis zum ersten Token p50 <duration> Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
+        - listitem: Dekodiertempo p50 62,9 tok/s Keine Daten im vorigen Zeitraum Daten aus 14 von 15 Läufen
+        - listitem: Abrechnungsverhältnis (Eingabe) 103,5 % Keine Daten im vorigen Zeitraum Daten aus 10 von 15 Läufen
+        - listitem: Abrechnungsverhältnis (Ausgabe) 102 % Keine Daten im vorigen Zeitraum Daten aus 10 von 15 Läufen
 - contentinfo:
   - paragraph: "Alles lokal: Audits laufen von Ihrem eigenen Rechner aus, und Ihre API-Schlüssel verlassen ihn nie."
   - paragraph: "Eine Blackbox: ekte liefert reproduzierbare Belege für Abweichungen, keinen Betrugsnachweis. Machen Sie einem Anbieter nicht wegen eines einzelnen Laufs Vorwürfe."

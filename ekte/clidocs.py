@@ -6,6 +6,8 @@ the two cannot drift: ``scripts/generate_cli_docs.py`` writes it, a test checks 
 
 from __future__ import annotations
 
+import typing
+from pathlib import PurePath
 from typing import Any
 
 import typer
@@ -35,12 +37,29 @@ def _cell(text: str) -> str:
     return text.replace("|", "\\|")
 
 
+def _type_name(p: Any) -> str:
+    """The value type's short name (``str``, ``int``, ``float``, ``path``).
+
+    Typer up to 0.28 builds Click parameters with a ``ParamType`` in ``p.type``;
+    0.29 vendors Click and keeps only the Python annotation in
+    ``p.type_descriptor``. Both spellings must give the same page.
+    """
+    if hasattr(p, "type"):
+        return str(p.type.name).lower()
+    annotation = p.type_descriptor.annotation
+    if typing.get_origin(annotation) in (list, tuple, set):
+        annotation = typing.get_args(annotation)[0]
+    if isinstance(annotation, type) and issubclass(annotation, PurePath):
+        return "path"
+    return str(getattr(annotation, "__name__", annotation)).lower()
+
+
 def _option_row(p: Any) -> str:
     if p.param_type_name == "argument":
         name = f"`{p.name.upper()}`" + ("" if p.required else " (optional)")
         return f"| {name} | argument | | {_cell(getattr(p, 'help', '') or '')} |"
     names = ", ".join(f"`{n}`" for n in [*p.opts, *p.secondary_opts])
-    kind = "flag" if p.is_flag else p.type.name.lower() + (" (repeatable)" if p.multiple else "")
+    kind = "flag" if p.is_flag else _type_name(p) + (" (repeatable)" if p.multiple else "")
     default = ""
     if p.default not in (None, False, "", ()) and not p.is_flag:
         default = f"`{p.default}`"

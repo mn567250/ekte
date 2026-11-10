@@ -390,7 +390,7 @@
    "reliability_requests <= 0（{reliability_requests}）；未发起任何并发压力。"
   ],
   "reliability.success_rate": [
-   "并发请求成功率",
+   "可靠性检查成功率",
    "并发 {concurrency} 下，{successes} 个请求成功（共 {requests} 个，{rate_limited} 个被限流）。"
   ],
   "reliability.rate_limited": [

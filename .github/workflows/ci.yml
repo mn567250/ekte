@@ -61,12 +61,14 @@ jobs:
       # timeout) with its name; faulthandler_timeout prints every thread's
       # stack 10 s before (pytest-timeout's own dump is lost under xdist). The
       # step limits are the backstop for a hang outside a test (collection,
-      # xdist teardown); the suite takes 1-2 minutes on every runner.
+      # xdist teardown). The suite takes 1-2 minutes on Linux and macOS but
+      # 7-10 on Windows, where every saved test run costs ~5 fsyncs and ~14
+      # file opens that are slow there; hence the longer Windows limit.
       # --durations lists the slowest tests, to spot one creeping towards the
       # limit.
       - name: Test (pytest)
         if: matrix.os != 'ubuntu-latest' || matrix.python-version != '3.12'
-        timeout-minutes: 10
+        timeout-minutes: ${{ matrix.os == 'windows-latest' && 20 || 10 }}
         # pytest-xdist (dev extra): one worker per CPU
         run: pytest -q -n auto --durations=20 -o faulthandler_timeout=110
 
@@ -308,7 +310,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Lint workflows and action.yml
         # script injection, unpinned actions, excessive permissions, credential
         # persistence, ... (config: .github/zizmor.yml). The pinned version

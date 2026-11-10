@@ -122,12 +122,35 @@ to the network round trip to it).
 hours), **Reliability** (errors, relay overhead), **Model integrity** and
 **Billing** — under the page header and one filter panel shared by all of
 them; only the tab you look at loads. The URL keeps the tab, the filters and
-every chart option (`#tab=reliability&range=30&relay=…&eb=dow_hour`), and
+every chart option (`?tab=reliability&range=30d&relay=…&errors.bucket=dow_hour`), and
 **Copy link to this view** copies it (or shows it in a field to copy where the
 browser does not allow that): opening the link shows exactly that view. The
 filter panel is the same on **History**, **Monitors** and **Analytics**: closed, it shows how
 many filters are active and names them in one line (e.g. "Last 30 days ·
 standard · Streaming · Example Relay"), so a shared view says what it shows.
+
+**Success, error, 429 and impaired rates.** Every request ekte sent to the
+relay during a run has exactly one outcome: a success, a relay error (a
+timeout while waiting for the relay, a 5xx or 4xx answer, or another broken
+answer), a rate limit (HTTP 429), or a failure that never reached the relay
+(the network between you and the relay, or ekte itself). Repeated attempts
+count once. The relay is judged only on the requests that reached it:
+
+- **Success rate** = successes ÷ requests that reached the relay;
+- **Error rate** = relay errors ÷ requests that reached the relay;
+- **Rate-limited (429) rate** = rate limits ÷ requests that reached the relay;
+
+so these three always add up to 100%. The **impaired share** is the part of
+all requests that failed before reaching the relay (network or ekte
+failures): it says how far the run itself can be trusted, not how good the
+relay is, and a high share means re-running the audit. Over several runs the
+rates are pooled — all requests of the runs counted together — so one bad run
+among many good ones still shows (nine runs at 0% and one at 40% give about
+4%, not 0%); scores, latencies, speeds and billing ratios are the median of
+the runs. History, Analytics and the report show the same numbers for the
+same runs, and a single run shows exactly the values of its report. The
+reliability check in the report has a rate of its own, labelled
+"Reliability check success rate", which feeds the score only.
 
 ## Languages
 

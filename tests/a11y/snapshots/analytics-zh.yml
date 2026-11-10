@@ -37,50 +37,70 @@
   - heading "检测分析" [level=1]
   - paragraph: 用 ekte 在本机测得的数据，按时间对比各中转站与模型：健康分、速度、成功率与计费。
   - status: 1 次较早的检测开始时间为估算 按时间段的图表只能大致放置它们。
-  - status: 已更新：此范围内 14 次检测。
+  - status: 已更新：此范围内 15 次检测。
   - region "筛选":
     - button "筛选" [expanded]
     - text: 时间范围
-    - group "时间范围":
-      - button "最近 7 天"
-      - button "最近 30 天" [pressed]
-      - button "最近 90 天"
-      - button "全部时间"
-      - button "自定义"
+    - combobox "时间范围":
+      - option "全部时间"
+      - option "最近 24 小时"
+      - option "最近 7 天"
+      - option "最近 30 天" [selected]
+      - option "最近 90 天"
+      - option "最近 365 天"
+      - option "自定义"
     - text: 接口类型
     - combobox "接口类型":
-      - option "对话" [selected]
+      - option "全部" [selected]
+      - option "对话 (15)"
+      - option "嵌入"
+      - option "重排"
+    - group "中转站 / 厂商":
+      - text: 中转站 / 厂商
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
+      - text: gateway.a-very-long-relay-hostname.example.org (5)
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "声称模型":
+      - text: 声称模型
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: 套件
     - combobox "套件":
-      - option "全部"
-      - option "standard" [selected]
-    - text: 探测请求
-    - combobox "探测请求":
-      - option "全部"
-      - option "流式" [selected]
+      - option "全部" [selected]
+      - option "standard (15)"
     - text: 协议
     - combobox "协议":
       - option "全部" [selected]
-      - option "openai"
-    - text: 来源
-    - combobox "来源":
+      - option "openai (14)"
+      - option "（未知） (1)"
+    - text: 探测请求
+    - combobox "探测请求":
       - option "全部" [selected]
-      - option "手动"
-      - option "监控"
-    - text: 中转站 / 厂商
-    - combobox "中转站 / 厂商":
+      - option "流式 (14)"
+      - option "非流式"
+      - option "流式 + 非流式"
+      - option "（未知） (1)"
+    - text: 执行方式
+    - combobox "执行方式":
       - option "全部" [selected]
-      - option "Example Relay"
-      - option "https://gateway.a-very-long-relay-hostname.example.org/openai/compatible/v1"
-      - option "http://127.0.0.1:9099/v1"
-    - text: 声称模型
-    - combobox "声称模型":
-      - option "全部" [selected]
-      - option "model-a"
-      - option "model-b"
-      - option "gpt-4o"
-    - text: 历史中共 15 次检测（4 次由监控产生）。
-  - button "复制此视图的链接"
+      - option "手动 (11)"
+      - option "监控 (4)"
+    - text: 分组
+    - combobox "分组":
+      - option "中转站" [selected]
+      - option "模型"
+      - option "中转站 × 模型"
+      - option "全部"
+    - text: 15 次检测符合筛选条件。
+    - status
+    - button "复制此视图的链接"
   - tablist "分析视图":
     - tab "概览" [selected]
     - tab "趋势"
@@ -93,18 +113,26 @@
       - tab "排行榜"
     - tabpanel "关键指标":
       - heading "关键指标" [level=2]
-      - paragraph: 2026/9/2 – 2026/10/1，与之前同样长度的一段时间（2026/8/3 – 2026/9/1）对比。
-      - list:
-        - listitem: 检测次数 14 +14
-        - listitem: 中转站 2 +2
-        - listitem: 模型 2 +2
-        - listitem: 健康分中位数 79 上一周期无数据
-        - listitem: 高风险占比 21.4% 上一周期无数据
-        - listitem: 成功率 100% 上一周期无数据
-        - listitem: 首字延迟 p50 <duration> 上一周期无数据
-        - listitem: 输出速度 62.9 tok/s 上一周期无数据
-        - listitem: 计费比（输入） 103% 上一周期无数据 9 / 14 次检测有此数据
-        - listitem: 计费比（输出） 102% 上一周期无数据 9 / 14 次检测有此数据
+      - paragraph: 2026/9/1 – 2026/10/1，与之前同样长度的一段时间（2026/8/2 – 2026/9/1）对比。
+      - list "关键指标":
+        - listitem: 检测次数 15 上升 +15
+        - listitem: 中转站 3 上升 +3
+        - listitem: 模型 3 上升 +3
+        - listitem: 健康分中位数 78 上一周期无数据
+        - listitem: 高风险占比 26.7% 上一周期无数据
+        - listitem:
+          - text: 成功率
+          - button "关于：成功率"
+          - text: 87% 上一周期无数据 14 / 15 次检测有此数据
+        - listitem:
+          - text: 错误率
+          - button "关于：错误率"
+          - text: 7.2% 上一周期无数据 14 / 15 次检测有此数据
+        - listitem: 延迟 p50 <duration> 上一周期无数据 14 / 15 次检测有此数据
+        - listitem: 首字延迟 p50 <duration> 上一周期无数据 14 / 15 次检测有此数据
+        - listitem: 输出速度 p50 62.9 tok/s 上一周期无数据 14 / 15 次检测有此数据
+        - listitem: 计费比（输入） 103.5% 上一周期无数据 10 / 15 次检测有此数据
+        - listitem: 计费比（输出） 102% 上一周期无数据 10 / 15 次检测有此数据
 - contentinfo:
   - paragraph: 全部在本地：检测从你自己的机器发起，API 密钥不会离开本机。
   - paragraph: 黑盒：ekte 给出的是可复现的偏离证据，不是欺诈证明。请勿仅凭单次结果指责厂商。

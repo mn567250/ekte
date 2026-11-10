@@ -11,6 +11,9 @@ owner-only (``0700``) and every database file (plus SQLite's
 
 :func:`connect` opens a fresh, short-lived connection per call, so callers are
 safe on FastAPI's threadpool without sharing a connection across threads.
+Writes go through it. Reads that run often (the web UI's widget endpoints)
+use :func:`read_connection` instead: one reused read-only connection per
+thread, with the schema checked only on the first open in the process.
 """
 
 from __future__ import annotations
@@ -19,6 +22,7 @@ import contextlib
 import os
 import sqlite3
 import sys
+import threading
 import time
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
@@ -31,6 +35,17 @@ _FILE_MODE = 0o600
 
 
 _migration_checked: set[Path] = set()
+# Database files whose schema read_connection() has checked in this process,
+# with the (device, inode) they had then.
+_schema_ready: dict[Path, tuple[int, int]] = {}
+_schema_lock = threading.Lock()
+# Per thread: path -> (connection, (device, inode) of the file it opened,
+# _reader_gen when it was opened).
+_readers = threading.local()
+# Bumped by close_read_connections(): older connections are closed.
+_reader_gen = 0
+# Every read connection, so close_read_connections() can close them all.
+_all_readers: list[sqlite3.Connection] = []
 _warned_unprotected: set[Path] = set()
 
 
@@ -152,3 +167,98 @@ def connect(
     finally:
         conn.close()
         _restrict(path)
+
+
+def _file_id(path: Path) -> tuple[int, int] | None:
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    return st.st_dev, st.st_ino
+
+
+# How much of a database a read connection maps into memory (address space,
+# not memory: pages are shared with the OS page cache).
+READ_MMAP_BYTES = 1 << 30
+
+
+def read_connection(
+    name: str,
+    migrations: Sequence[dbmigrate.Migration] = (),
+    on_migrated: Callable[[sqlite3.Connection], None] | None = None,
+) -> sqlite3.Connection:
+    """This thread's read-only connection to ``<data dir>/<name>``, reused
+    across calls (never close it; :func:`close_read_connections` does).
+
+    Opened with a ``mode=ro`` URI and ``PRAGMA query_only``, so it can never
+    write; rows come back as :class:`sqlite3.Row`. The database is in WAL mode
+    (set by :func:`connect`), so its reads run next to writers, and each
+    statement outside a transaction sees the latest committed data, whatever
+    process wrote it.
+
+    The first call in the process for a file brings its schema up to date
+    through :func:`connect` (``migrations`` / ``on_migrated`` as there); later
+    calls skip that check. A file that was replaced or deleted since (another
+    inode) is opened and checked afresh.
+    """
+    path = db_path(name)
+    cache: dict[Path, tuple[sqlite3.Connection, tuple[int, int], int]] = getattr(
+        _readers, "conns", None) or {}
+    _readers.conns = cache
+    fid = _file_id(path)
+    held = cache.get(path)
+    if held is not None and held[1] == fid and held[2] == _reader_gen:
+        return held[0]
+    if held is not None:
+        cache.pop(path)
+        _close(held[0])
+    if fid is None or _schema_ready.get(path) != fid:
+        with connect(name, migrations, on_migrated):
+            pass
+        fid = _file_id(path)
+        if fid is None:  # pragma: no cover - deleted while opening
+            raise sqlite3.OperationalError(f"cannot open {path}")
+        with _schema_lock:
+            _schema_ready[path] = fid
+    gen = _reader_gen
+    conn = sqlite3.connect(
+        path.absolute().as_uri() + "?mode=ro", uri=True, timeout=5.0, check_same_thread=False
+    )
+    try:
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout=5000")
+        conn.execute("PRAGMA query_only=ON")
+        # Reused for every request: read through memory-mapped I/O, which all
+        # connections share via the OS page cache, so aggregating every run
+        # does not copy pages into each connection's own (2 MiB) cache.
+        conn.execute(f"PRAGMA mmap_size={READ_MMAP_BYTES}")
+    except BaseException:
+        conn.close()
+        raise
+    _restrict(path)  # the -shm file a reader may have created
+    cache[path] = (conn, fid, gen)
+    with _schema_lock:
+        _all_readers.append(conn)
+    return conn
+
+
+def _close(conn: sqlite3.Connection) -> None:
+    with _schema_lock, contextlib.suppress(ValueError):
+        _all_readers.remove(conn)
+    with contextlib.suppress(sqlite3.Error):
+        conn.close()
+
+
+def close_read_connections() -> None:
+    """Close every thread's read connection and forget which schemas were
+    checked (for tests, and before a data directory goes away). A thread
+    whose connection was closed opens a new one on its next call."""
+    global _reader_gen
+    with _schema_lock:
+        _reader_gen += 1
+        conns = list(_all_readers)
+        _all_readers.clear()
+        _schema_ready.clear()
+    for conn in conns:
+        with contextlib.suppress(sqlite3.Error):
+            conn.close()

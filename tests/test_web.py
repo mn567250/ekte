@@ -40,6 +40,23 @@ def test_health(client):
     assert body["ok"] is True and body["name"] == "ekte"
 
 
+def test_watches_carry_the_relay_key_of_their_runs(tmp_path, monkeypatch, client):
+    # the monitors' "Open in history" link filters by relay= (the shared URL
+    # schema, #125): the key History groups the monitor's runs under
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    import json
+    from pathlib import Path
+
+    from ekte.web import history
+
+    report = json.loads((Path(__file__).parent / "fixtures" / "web_report.json").read_text("utf-8"))
+    rid = history.save(report)
+    assert client.post(f"/api/watches/from-history/{rid}", json={}).status_code == 201
+    [watch] = client.get("/api/watches").json()
+    [group] = client.get("/api/history/groups", params={"trend.metrics": "score"}).json()["groups"]
+    assert watch["relay_key"] == group["relay"]["key"] and watch["relay_key"]
+
+
 def test_serves_spa(client):
     r = client.get("/")
     assert r.status_code == 200
@@ -161,14 +178,16 @@ def test_history_module_roundtrip(tmp_path, monkeypatch):
 
 def test_history_endpoints(tmp_path, monkeypatch, client):
     monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
-    assert client.get("/api/history").json() == []
+    assert client.get("/api/v1/history").json() == []
+    # the History page's old list endpoint is gone (#127): only the public one stays
+    assert client.get("/api/history").status_code == 405
     from ekte.web import history
 
     rid = history.save({
         "generated_at": "t", "target": {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"},
         "mode": "check", "suite": "smoke", "verdict": {"risk_level": "clean", "overall_score": 95.0, "rating": "A"},
     })
-    listed = client.get("/api/history").json()
+    listed = client.get("/api/v1/history").json()
     assert len(listed) == 1 and listed[0]["id"] == rid
     assert client.get(f"/api/history/{rid}").json()["verdict"]["overall_score"] == 95.0
     assert client.get("/api/history/999999").status_code == 404
@@ -236,15 +255,15 @@ def test_history_list_carries_performance_headline_on_request(tmp_path, monkeypa
     history.save({"target": {"base_url": "https://x/v1", "claimed_model": "m", "model": "m"},
                   "verdict": {"overall_score": 90.0},
                   "performance": {"target": {"latency_ms": {"p50": 812.5}, "decode_tps_local": {"p50": 61.0}}}})
-    plain = client.get("/api/history").json()[0]
+    plain = client.get("/api/v1/history").json()[0]
     assert "latency_p50_ms" not in plain and "report_json" not in plain
-    row = client.get("/api/history?perf=1").json()[0]
+    row = client.get("/api/v1/history?perf=1").json()[0]
     assert row["latency_p50_ms"] == 812.5 and row["decode_tps_p50"] == 61.0
     assert row["ttft_p50_ms"] is None and row["score"] == 90.0
     assert "report_json" not in row
 
 
-def test_history_list_names_each_run_by_its_relay_on_request(tmp_path, monkeypatch, client):
+def test_history_groups_name_each_run_by_its_relay(tmp_path, monkeypatch, client):
     monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
     from ekte.knowledge.relays import add_relay
     from ekte.web import history
@@ -256,10 +275,9 @@ def test_history_list_names_each_run_by_its_relay_on_request(tmp_path, monkeypat
     add_relay("Local Ollama", "http://127.0.0.1:11434/v1")
     save("http://127.0.0.1:11434/v1/")  # trailing slash: same relay after normalising
     save("https://unsaved.example/v1")
-    assert "relay" not in client.get("/api/history").json()[0]
-    unsaved, saved = client.get("/api/history?relay=1").json()  # newest first
+    unsaved, saved = client.get("/api/history/groups", params={"trend.metrics": "score"}).json()["groups"]
     assert saved["relay"] == {"key": "local-ollama", "label": "Local Ollama", "in_kb": True, "kind": "relay"}
-    assert unsaved["relay"] == {"key": "https://unsaved.example/v1", "label": "https://unsaved.example/v1",
+    assert unsaved["relay"] == {"key": "https://unsaved.example/v1", "label": "unsaved.example",
                                 "in_kb": False, "kind": "url"}
 
 
@@ -279,9 +297,10 @@ def test_history_relay_tells_ports_on_one_host_apart(tmp_path, monkeypatch, clie
     for url in ("http://127.0.0.1:1234/v1", "http://127.0.0.1:11434/v1",
                 "http://192.168.1.20:8080/v1", "http://192.168.1.20:8081/v1"):
         save(url)
-    rows = client.get("/api/history?relay=1").json()[::-1]  # oldest first
+    rows = client.get("/api/history/groups", params={"trend.metrics": "score"}).json()["groups"][::-1]  # oldest first
     assert [r["relay"]["label"] for r in rows[:2]] == ["LM Studio", "Ollama"]
     assert [r["relay"]["key"] for r in rows[2:]] == ["http://192.168.1.20:8080/v1", "http://192.168.1.20:8081/v1"]
+    assert [r["relay"]["label"] for r in rows[2:]] == ["192.168.1.20:8080", "192.168.1.20:8081"]
     assert len({r["relay"]["key"] for r in rows}) == 4
 
 def test_api_key_fields_are_masked_and_paired_with_their_url(client):
@@ -455,15 +474,17 @@ def test_v2_analytics_page(client):
     assert '<header class="znav" data-page="analytics"' in html
     assert '<main id="main" tabindex="-1">' in html
     assert '<script src="/static/nav.js"></script>\n<script src="/static/notice.js"></script>\n<script src="/static/charts.js"></script>' in html
-    for api in ("/api/analytics/options", "/api/analytics/summary", "/api/analytics/series", "/api/analytics/leaderboard"):
+    for api in ("/api/filters/options", "/api/analytics/summary", "/api/analytics/series", "/api/analytics/heatmap",
+                "/api/analytics/leaderboard", "/api/analytics/errors", "/api/analytics/integrity", "/api/metrics"):
         assert api in html
+    assert "/api/analytics/options" not in html
     # no outgoing requests: every script and stylesheet is local
     assert not re.search(r'(?:src|href)="(?:https?:)?//', html)
     js = client.get("/static/nav.js").text
     assert '["analytics", "/analytics", "bars", "Analytics"]' in js
     assert "bars:" in client.get("/icons.js").text
     # tabs and the filter panel History shares
-    assert '<script src="/static/filterpanel.js"></script>\n<script src="/static/tabs.js"></script>' in html
+    assert '<script src="/static/filterpanel.js"></script>\n<script src="/static/filters.js"></script>\n<script src="/static/tabs.js"></script>' in html
     assert '<link rel="stylesheet" href="/static/filterpanel.css" />' in html
     assert 'role="tablist"' in html and 'id="tab-integrity"' in html
     hist = _unversioned(client.get("/history").text)
@@ -523,7 +544,7 @@ async def test_health_stays_responsive_while_history_loads(tmp_path, monkeypatch
     monkeypatch.setattr("ekte.web.history.recent", slow_recent)
     transport = httpx.ASGITransport(app=create_app())
     async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as ac:
-        slow = asyncio.create_task(ac.get("/api/history", params={"limit": 500}))
+        slow = asyncio.create_task(ac.get("/api/v1/history", params={"limit": 500}))
         try:
             assert await asyncio.to_thread(started.wait, 5)
             health = await asyncio.wait_for(ac.get("/api/health"), 2)

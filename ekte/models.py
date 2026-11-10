@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
-REPORT_SCHEMA_VERSION = "1.2"
+REPORT_SCHEMA_VERSION = "1.3"
 WEBHOOK_SCHEMA_VERSION = "1.0"
 # Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
 EVIDENCE_SCHEMA_VERSION = "1.0"
@@ -598,6 +598,35 @@ class PerformanceReport(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class RunOutcomes(BaseModel):
+    """What happened to the run's requests: every request record on the
+    ``target`` endpoint (all ops and phases), one outcome each
+    (:func:`ekte.errorclass.outcome`); repeated attempts and ekte's
+    ``param_retry`` calls are not counted. Built by
+    :func:`ekte.perf.outcomes.run_outcomes`.
+
+    ``requests_judged`` is ``requests_total`` minus the ``network`` and
+    ``local`` failures. ``success_rate``, ``error_rate`` (relay timeout, 5xx,
+    4xx and other failures), ``rate_limited_rate`` and ``timeout_rate`` are
+    over ``requests_judged``; ``impaired_rate`` (network + local) is over
+    ``requests_total``. A rate is None when its base is 0.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    requests_total: int = 0
+    requests_judged: int = 0
+    # Outcome -> count, every outcome listed (0 when none had it).
+    counts: dict[str, int] = Field(default_factory=dict)
+    # Op -> outcome -> count, only the outcomes that occurred.
+    by_op: dict[str, dict[str, int]] = Field(default_factory=dict)
+    success_rate: float | None = None
+    error_rate: float | None = None
+    rate_limited_rate: float | None = None
+    timeout_rate: float | None = None
+    impaired_rate: float | None = None
+
+
 class Verdict(BaseModel):
     """The headline judgement a user reads first."""
 
@@ -769,6 +798,9 @@ class AuditReport(BaseModel):
     baseline_detectors: list[DetectorResult] = Field(default_factory=list)
     reliability: ReliabilitySummary | None = None
     performance: PerformanceReport | None = None
+    # One outcome per request and the run's success, error and 429 rates
+    # (None in reports from before schema 1.3).
+    outcomes: RunOutcomes | None = None
 
     judge_used: bool = False
     judge_model: str | None = None

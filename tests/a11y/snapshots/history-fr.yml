@@ -44,67 +44,87 @@
     - text: Type de point d'accès
     - combobox "Type de point d'accès":
       - option "Tous" [selected]
-      - option "Chat"
-    - text: Relais / fournisseur
-    - combobox "Relais / fournisseur":
-      - option "Tous" [selected]
-      - option "127.0.0.1:9099"
-      - option "Example Relay"
-      - option "gateway.a-very-long-relay-hostname.example.org"
-    - text: Modèle annoncé
-    - combobox "Modèle annoncé":
-      - option "Tous" [selected]
-      - option "gpt-4o"
-      - option "model-a"
-      - option "model-b"
+      - option "Chat (15)"
+      - option "Embeddings"
+      - option "Reclassement"
+    - group "Relais / fournisseur":
+      - text: Relais / fournisseur
+      - checkbox "Example Relay (9)"
+      - text: Example Relay (9)
+      - checkbox "gateway.a-very-long-relay-hostname.example.org (5)"
+      - text: gateway.a-very-long-relay-hostname.example.org (5)
+      - checkbox "127.0.0.1:9099 (1)"
+      - text: 127.0.0.1:9099 (1)
+    - group "Modèle annoncé":
+      - text: Modèle annoncé
+      - checkbox "model-a (11)"
+      - text: model-a (11)
+      - checkbox "model-b (3)"
+      - text: model-b (3)
+      - checkbox "gpt-4o (1)"
+      - text: gpt-4o (1)
     - text: Suite
     - combobox "Suite":
       - option "Tous" [selected]
-      - option "standard"
+      - option "standard (15)"
     - text: Mode
     - combobox "Mode":
       - option "Tous" [selected]
-      - option "check"
+      - option "check (15)"
     - text: Protocole
     - combobox "Protocole":
       - option "Tous" [selected]
-      - option "openai"
-      - option "(inconnu)"
+      - option "openai (14)"
+      - option "(inconnu) (1)"
     - text: Détection du protocole
     - combobox "Détection du protocole":
       - option "Tous" [selected]
-      - option "(inconnu)"
+      - option "détecté automatiquement"
+      - option "défini manuellement"
+      - option "(inconnu) (15)"
     - text: Requêtes de sonde
     - combobox "Requêtes de sonde":
       - option "Tous" [selected]
-      - option "Streaming"
-      - option "(inconnu)"
+      - option "Streaming (14)"
+      - option "Sans streaming"
+      - option "Streaming + sans streaming"
+      - option "(inconnu) (1)"
     - text: Risque
     - combobox "Risque":
       - option "Tous" [selected]
-      - option "Cohérent (probablement authentique)"
-      - option "Globalement fiable"
-      - option "Tromperie sur la marchandise"
+      - option "Cohérent (probablement authentique) (7)"
+      - option "Globalement fiable (4)"
+      - option "Écarts détectés"
+      - option "Tromperie sur la marchandise (4)"
+      - option "Signal insuffisant"
     - text: Score min.
     - spinbutton "Score min."
     - text: Période
     - combobox "Période":
-      - option "Tous" [selected]
+      - option "Toute la période" [selected]
+      - option "Dernières 24 heures"
       - option "7 derniers jours"
       - option "30 derniers jours"
       - option "90 derniers jours"
+      - option "365 derniers jours"
+      - option "Période personnalisée"
     - text: Exécution
     - combobox "Exécution":
       - option "Tous" [selected]
-      - option "Manuelle"
-      - option "Surveillance"
+      - option "Manuel (11)"
+      - option "Surveillance (4)"
     - group "Tendances":
-      - text: Tendances
+      - text: Tendances 2 sélectionné(s) sur 2 au maximum
       - button "Score" [pressed]
-      - button "Note"
+      - button "Note" [disabled]
       - button "Latence p50" [pressed]
-      - button "Vitesse de décodage p50"
+      - button "Délai du premier jeton p50" [disabled]
+      - button "Vitesse de décodage p50" [disabled]
+      - button "Taux d'erreur" [disabled]
     - text: 15 audits affichés sur 15
+    - status
+    - button "Copier le lien vers cette vue"
+  - status
   - group "Trier les audits":
     - button "Date, tri décroissant": Date
     - button "Trier par Risque": Risque
@@ -115,9 +135,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relais Example Relay Score
-    - 'img "Évolution du score de santé sur 7 audits : de 70 à 82, en hausse."'
+    - 'img "Tendance Score sur 7 audits : de 70 à 82, en hausse."'
     - text: 82 Latence p50
-    - 'img "Tendance Latence p50 sur 7 audits : de <duration> à <duration>."'
+    - 'img "Tendance Latence p50 sur 7 audits : de <duration> à <duration>, en baisse."'
     - text: <duration>
     - list:
       - listitem:
@@ -159,9 +179,9 @@
     - heading "model-a" [level=2]:
       - button "model-a" [expanded]
     - text: Relais gateway.a-very-long-relay-hostname.example.org Score
-    - 'img "Évolution du score de santé sur 4 audits : de 58 à 64, en hausse."'
+    - 'img "Tendance Score sur 4 audits : de 58 à 64, en hausse."'
     - text: 64 Latence p50
-    - 'img "Tendance Latence p50 sur 4 audits : de <duration> à <duration>."'
+    - 'img "Tendance Latence p50 sur 4 audits : de <duration> à <duration>, en baisse."'
     - text: <duration>
     - list:
       - listitem:
@@ -188,9 +208,9 @@
     - heading "model-b" [level=2]:
       - button "model-b" [expanded]
     - text: Relais Example Relay Score
-    - 'img "Évolution du score de santé sur 2 audits : de 89 à 91, en hausse."'
+    - 'img "Tendance Score sur 2 audits : de 89 à 91, en hausse."'
     - text: 91 Latence p50
-    - 'img "Tendance Latence p50 sur 2 audits : de <duration> à <duration>."'
+    - 'img "Tendance Latence p50 sur 2 audits : de <duration> à <duration>, en baisse."'
     - text: <duration>
     - list:
       - listitem:

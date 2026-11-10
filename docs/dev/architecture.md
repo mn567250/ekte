@@ -210,6 +210,106 @@ pipeline. They share the clients' HTTP settings, the
 knowledge base (native dimensions, image sizes, voices) and the prompt library.
 All decoding (image headers, WAV) is standard library only.
 
+## Metrics and filters
+
+History and Analytics show the same metrics through one server-side path
+(#117). Per-run values are computed once, when a run is saved; values over
+many runs are computed in SQLite when a widget asks; the browser only draws.
+
+```mermaid
+flowchart LR
+  URL["URL query string<br/>(EkteFilters, filters.js)"] --> P["one filter parser<br/>query.parse_query"]
+  P --> S["SQL: run ids<br/>select_runs"]
+  S --> G["group<br/>relay · model · relay × model · all"]
+  G --> A["aggregate<br/>median · pooled · share"]
+  A --> PG["page<br/>keyset"]
+  PG --> J["small JSON<br/>+ present(): grade, family, direction"]
+  J --> D["page draws"]
+  C[("response cache<br/>key: endpoint + canonical params + data version")] -.-> J
+```
+
+**Two layers.**
+
+1. **Per run, at save time** (core code in `ekte/`, not `ekte/web/`): the
+   report carries its `outcomes` (`ekte.perf.outcomes.run_outcomes`), and
+   `analytics_store.extract_metrics()` writes one `history_metrics` row (start
+   time, rates and their bases, latency / TTFT / decode percentiles, billing
+   ratios, finding counts …), `history_dimensions` and `history_outcomes`,
+   stamped with `EXTRACT_VERSION`; older rows are re-extracted by the
+   backfill. Reading never recomputes a run from its request records, so a
+   code change cannot silently alter an old report's numbers.
+2. **Across runs, on the server**: `ekte/web/query.py` takes the parsed
+   filters, selects the runs in SQL (`WHERE` over `history`'s covering index
+   and `history_metrics`), groups them by an integer relay id and the claimed
+   model, aggregates in SQL and returns aggregated rows only. The widgets
+   (`ekte/web/analytics_widgets.py`, `ekte/web/history_api.py`) shape those
+   rows for one panel each; `ekte/web/metrics.py` adds the display decisions.
+
+**Outcome model** (`ekte.errorclass.outcome`). Every target request record has
+exactly one outcome, first match wins: `ok` → `success`; `error_class`
+`network` → `network`; `local` → `local`; 429 or the rate-limit flag →
+`rate_limited`; a relay timeout → `relay_timeout`; 5xx → `relay_5xx`; 4xx →
+`relay_4xx`; else `relay_other`. Repeated attempts (`retried`) and the
+baseline endpoint do not count; records saved before `error_class` existed
+are classified by `errorclass.record_class()`. With judged = total − network
+− local:
+
+| Rate | Formula |
+|---|---|
+| `success_rate` | success ÷ judged |
+| `error_rate` | (relay_timeout + relay_5xx + relay_4xx + relay_other) ÷ judged |
+| `rate_limited_rate` | rate_limited ÷ judged |
+| `timeout_rate` | relay_timeout ÷ judged |
+| `impaired_rate` | (network + local) ÷ total: the run's validity, not the relay's |
+
+`success_rate + error_rate + rate_limited_rate = 1` whenever judged > 0. The
+reliability check keeps its own rate for scoring only, labelled "Reliability
+check success rate".
+
+**Aggregation kinds** (`Metric.agg` of the registry):
+
+- `median`: values per run (score, grade on its 1..6 scale, latencies,
+  speeds, billing ratios, dimension scores) — SQLite `median()` /
+  `percentile()` (Hyndman & Fan type 7), with a Python `create_aggregate`
+  fallback where the build lacks them;
+- `pooled`: the outcome rates — Σ outcome counts ÷ Σ base over the runs,
+  never a median of per-run rates (nine runs at 0% and one at 40% pool to
+  about 4%, a median would say 0%);
+- `share`: yes/no per run (high risk, model mismatch) — the share of runs
+  with "yes";
+- `count`: runs, relays, models.
+
+**n = 1 invariant.** Every aggregation over a single run returns exactly that
+run's stored value (`tests/test_query.py`, `tests/test_metrics_e2e.py`).
+
+**URL schema.** One set of keys serves both pages and every widget (`range`,
+`from`, `to`, `surface`, `relay`, `model`, `suite`, `mode`, `api`, `stream`,
+`detect`, `risk`, `min_score`, `exec`, `q`, `group`; table in
+[Web server](web-server.md#query-core)). Keys with a dot belong to one widget
+(`trend.metric`, `runs.after`, `board.by`); view keys (`tab`) never reach an
+endpoint. Relative ranges are resolved to absolute bounds before caching.
+The pages keep the whole view in the query string (`EkteFilters`,
+[UI](ui.md)), so a copied link reproduces it. Paging is keyset
+(`(started_at, id)` or the sort value and id), never offsets, so History
+reaches every run.
+
+**Cache and data version.** `meta.data_version` in `history.db` is bumped in
+the same transaction as every write (save, delete, clear, backfill) from any
+process — a CLI audit included. The response cache (`ekte/web/cache.py`) keys
+on the endpoint, its canonical parameters, the data version, the
+knowledge-base version (`relays.kb_version()`) and `EXTRACT_VERSION`; there
+is no time slot. Identical requests in flight share one computation
+(single-flight), answers carry an `ETag` and revalidate with
+`304 Not Modified`, and each thread reuses one read-only connection
+(`datadir.read_connection`). SQLite runs in WAL mode and Python's `sqlite3`
+releases the GIL while SQLite works, so widgets fetched in parallel are
+computed in parallel.
+
+**Budget.** Every widget endpoint answers in under 50 ms p95 on the synthetic
+20,000-run history of `scripts/bench_fixture.py` (cold cache; opt-in with
+`EKTE_BENCH=1`: `tests/test_query.py`, `tests/test_analytics_widgets.py`,
+`tests/test_history_api.py`).
+
 ## Local data
 
 `ekte/datadir.py` owns `$EKTE_DATA_DIR` (default `~/.ekte`), created `0700`,
@@ -248,6 +348,68 @@ written by an older `EXTRACT_VERSION`; `history.backfill_analytics()` runs it
 again on demand. A run's start time is the report's `started_at`; reports from
 before that field get `generated_at` minus the span of their request records
 (`started_at_estimated` = 1).
+
+Since schema version 7 `history.db` holds `relay_map` (`web/relay_map.py`):
+one row per distinct run URL with the relay group `analytics.RelayResolver`
+gives it, so SQL can group and filter runs by relay with one join. It is
+derived data: `relay_map.ensure_relay_map(conn)` rebuilds it when
+`knowledge.relays.kb_version()` (a hash over every entry's key, label, kind,
+relay flag and base URLs, computed from the knowledge base itself, so edits
+from any process count) differs from the version stored in `relay_map_meta`,
+and adds missing URLs when a trigger on `history_metrics` has marked it stale.
+Since schema version 11 each run also carries its relay as an integer,
+`history_metrics.relay_id` (a `relay_group` row per relay key, which keeps its
+id while any URL maps to it): a trigger sets it when the run's metrics are
+saved, `ensure_relay_map` fills it for runs whose URL was new and re-assigns
+the runs whose relay changed on a rebuild, so the query core groups and
+filters by relay without a per-run lookup.
+
+Since schema version 9 `history.db` holds `history_outcomes` (`history_id`,
+`op`, `outcome`, `n`): how many of the run's target request records had each
+outcome. One definition of a request's outcome, `errorclass.outcome()`, gives
+every record exactly one of `success`, `rate_limited`, `relay_timeout`,
+`relay_5xx`, `relay_4xx`, `relay_other`, `network` and `local` (repeated
+attempts and `param_retry` calls never count), and `perf.outcomes.run_outcomes()`
+turns a run's records into the counts and rates the report keeps as `outcomes`:
+`success_rate`, `error_rate` and `rate_limited_rate` over the judged requests
+(total minus network and local failures, so the three add up to 1),
+`timeout_rate`, and `impaired_rate` over all of them. `history_metrics` stores
+those rates with their bases `requests_total` and `requests_judged`, so rates
+over many runs pool counts instead of taking a median of rates. Older reports
+are counted from their stored request records. The reliability check keeps its
+own success rate for scoring ("Reliability check success rate").
+
+Since schema version 12 two kinds of per-run columns, kept by triggers and
+filled in for older runs by the migration, spare the widgets a second table
+or a sort per filter key: `history_metrics.outcome_<outcome>` (one per
+`errorclass.OUTCOMES`, `analytics_store.OUTCOME_COLS`) holds the run's
+`history_outcomes` counts summed over its ops (all NULL without outcome
+rows), and `history_metrics.facet_id` names the run's combination of
+few-valued filter values (surface, suite, mode, API, stream, detection, risk,
+execution, spelled as the URL takes them) in `facet_combo`.
+
+Since schema version 14 every value the query core selects, groups, sorts or
+aggregates runs by is a number on the run's `history_metrics` row, the *run
+row* (`web/run_row.py`, `RUN_COLUMNS`, the one definition of each): the start
+time in exact Unix microseconds (`started_us`, which orders and compares as
+`started_at`), score, grade and risk as numbers, and ids of small lookup
+tables for the model (`model_group`), raw URL, surface, suite, stream mode,
+API, ekte version, knowledge-base profile and the facet combination. One set
+of triggers keeps them current (the source columns that fire them are read
+off the SQL), and the migration fills them for older runs. So aggregation
+never reads `history`: it is joined only for free-text search and for the
+rows of a page (asserted on the query plans in `tests/test_query.py`).
+`idx_run_row` covers the run row's numbers in relay × model order: grouping
+by relay or relay × model reads index entries in order, with no sort.
+
+Since schema version 10 `history.db` has `idx_history_query`, a covering index
+over the `history` columns the query core filters, groups and sorts by
+(`history.QUERY_INDEX_COLS`): a run's row holds its report (tens of kB, in
+overflow pages) before most of them, so reading them from the table would
+read every report. `web/query.py` is that query core: one URL schema and
+parser (`parse_query`), one SQL `WHERE` for every filter (`select_runs`), and
+`aggregate`, `series` and `page_runs` on top of it, all computed in SQLite
+(see [web server](web-server.md#query-core)).
 
 Where the monitors' API keys are kept is the user's choice
 (`watches.get_key_storage()`, a `secret_meta` row): `memory`, the default, stores
