@@ -201,7 +201,9 @@ how many saved runs it re-extracts.
   that change only documentation or locale fragments. The 20,000-run fixture is
   built once per run, every case's p50 / p95 goes to the job summary
   (`scripts/bench_report.py`), and the JSON goes to the `bench-report`
-  artifact. Budgets are calibrated for CI runners; the local 50 ms budget is
+  artifact. Every budget test times its cases the same way (40 calls
+  after a warm-up, the garbage collector frozen before each case, p95 by
+  nearest rank). Budgets are calibrated for CI runners; the local 50 ms budget is
   unchanged. With `EKTE_BENCH_REPORT=<path>` the tests also write that JSON
   locally (`tests/bench_report.py`).
 

@@ -16,8 +16,9 @@ from __future__ import annotations
 import json
 import os
 import statistics
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
+from typing import Any
 
 REPORT_ENV = "EKTE_BENCH_REPORT"
 # the local budgets (the reference machine of #117); CI sets its own
@@ -38,6 +39,18 @@ def budget(default_ms: float = DEFAULT_BUDGET_MS, env: str = "EKTE_BENCH_BUDGET_
 
 def p50(times: Iterable[float]) -> float:
     return statistics.median(times)
+
+
+def measure(fn: Callable[[], Any], repeat: int = 40) -> tuple[float, float]:
+    """p50 and p95 (ms, nearest rank) of ``repeat`` calls of ``fn`` after one
+    warm-up call, with the garbage collector prepared as
+    ``scripts/bench_fixture.py`` does (``times()``): every budget test measures
+    the same way."""
+    from tests.test_query import _bench_module
+
+    bench = _bench_module()
+    t = bench.times(fn, repeat)
+    return p50(t), bench.p95(t)
 
 
 def record(suite: str, results: Mapping[str, tuple[float, float]], budget_ms: float) -> None:

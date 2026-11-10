@@ -68,3 +68,22 @@ def test_render_without_results(tmp_path, capsys):
     assert script.load(tmp_path / "bad.json") == []
     assert "All 1 cases within budget" in script.render(
         [{"suite": "s", "case": "c", "p50_ms": 1, "p95_ms": 2, "budget_ms": 5, "ok": True}])
+
+
+def test_measure_times_every_call_and_unfreezes_the_collector():
+    import gc
+
+    calls = []
+    p50, p95 = bench_report.measure(lambda: calls.append(1), repeat=20)
+    assert len(calls) == 21  # one warm-up call
+    assert 0 <= p50 <= p95
+    assert gc.get_freeze_count() == 0 and gc.isenabled()
+
+
+def test_p95_is_the_nearest_rank():
+    from tests.test_query import _bench_module
+
+    bench = _bench_module()
+    assert bench.p95([float(i) for i in range(1, 41)]) == 38.0
+    assert bench.p95([float(i) for i in range(1, 21)]) == 19.0
+    assert bench.p95([5.0]) == 5.0

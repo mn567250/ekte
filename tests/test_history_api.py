@@ -5,8 +5,6 @@
 from __future__ import annotations
 
 import functools
-import statistics
-import time
 
 import pytest
 
@@ -392,18 +390,7 @@ def test_benchmark_20k_runs_under_budget(bench_data):
         "runs all, score": lambda: history_api.runs(conn, {"group": "all", "group.key": "(all)",
                                                            "runs.sort": "score"}),
     }
-    results = {}
-    slow = {}
-    for name, fn in cases.items():
-        fn()
-        times = []
-        for _ in range(20):
-            t0 = time.perf_counter()
-            fn()
-            times.append((time.perf_counter() - t0) * 1000)
-        p95 = statistics.quantiles(times, n=20)[-1]
-        results[name] = (bench_report.p50(times), p95)
-        if p95 >= budget:
-            slow[name] = round(p95, 1)
+    results = {name: bench_report.measure(fn) for name, fn in cases.items()}
+    slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
     bench_report.record("history_api", results, budget)
     assert not slow, f"p95 over {budget} ms: {slow}"

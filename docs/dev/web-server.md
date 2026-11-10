@@ -208,6 +208,15 @@ EKTE_BENCH=1 EKTE_BENCH_REPORT=bench.json pytest tests -m slow -p no:xdist
 python scripts/bench_report.py bench.json   # the Markdown table
 ```
 
+- **Measurement.** Every case is measured the same way
+  (`tests.bench_report.measure()`, which uses `times()` and `p95()` of
+  `scripts/bench_fixture.py`): one warm-up call, then 40 timed calls; p50 is
+  the median, p95 the nearest rank (the 38th of 40). Before a case the
+  garbage collector collects and freezes what is alive (`gc.freeze()`), so a
+  full collection during the calls does not scan the test session's heap; it
+  stays on for the objects the calls themselves create. A new budget test
+  times its cases with `measure()`.
+
 - **Budgets.** 50 ms p95 by default, the budget of the reference machine;
   `EKTE_BENCH_BUDGET_MS` overrides it. A case with a budget of its own has
   its own variable: `/api/version` (5 ms, the budget test comes with #150)
