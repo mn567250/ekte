@@ -128,20 +128,28 @@ jobs:
     #
     # CI budgets: shared runners are slower and noisier than the reference
     # machine of the local budgets (50 ms; 5 ms for /api/version), so the job
-    # sets its own. Rule: the smallest round value that the slowest case of 5
-    # calibration runs stays under by at least 30 % (slowest p95 <= 0.7 x budget).
-    # Provisional until the calibration runs of #162 are in.
-    name: performance budget (informational)
+    # sets its own. Rule: the smallest round value (a multiple of 10 ms) that
+    # the slowest case of 5 calibration runs stays under by at least 30 %
+    # (slowest p95 <= 0.7 x budget).
+    # Calibration (#162, 2026-11-10, 5 workflow_dispatch runs of this job,
+    # ubuntu-latest, Python 3.12): slowest case every time "leaderboard,
+    # relay x model" (tests/test_analytics_widgets.py), p95 130.9, 150.0,
+    # 170.3, 182.8 and 199.9 ms (p50 87-121 ms: a spiky tail); next slowest
+    # "aggregate kpis, by relay x model" (tests/test_query.py), at most
+    # 116.2 ms. 199.9 / 0.7 = 285.6 -> 290 ms.
+    # /api/version: no budget test yet (#150 adds it); 10 ms is a placeholder
+    # that the PR adding the test calibrates the same way.
+    # Recalibrate (5 manual runs, the rule above) when cases are added or
+    # the runner image changes the timings.
+    name: performance budget
     needs: benchmark-scope
     if: needs.benchmark-scope.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # informational until calibrated (#162)
-    continue-on-error: true
     env:
       EKTE_BENCH: "1"
       EKTE_BENCH_REPORT: bench-report.json
-      EKTE_BENCH_BUDGET_MS: "100"
+      EKTE_BENCH_BUDGET_MS: "290"
       EKTE_BENCH_VERSION_BUDGET_MS: "10"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
