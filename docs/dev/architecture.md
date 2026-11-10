@@ -308,7 +308,8 @@ computed in parallel.
 **Budget.** Every widget endpoint answers in under 50 ms p95 on the synthetic
 20,000-run history of `scripts/bench_fixture.py` (cold cache; opt-in with
 `EKTE_BENCH=1`: `tests/test_query.py`, `tests/test_analytics_widgets.py`,
-`tests/test_history_api.py`).
+`tests/test_history_api.py`; in CI the "performance budget" job, see
+[Benchmark](web-server.md#benchmark)).
 
 ## Local data
 

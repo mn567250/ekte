@@ -64,6 +64,27 @@ def _isolated_data_dir(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
+def _bench_history(tmp_path_factory):
+    """The 20k-run benchmark fixture, built once per session (tests/bench_report.py)."""
+    from tests import bench_report
+
+    return bench_report.build_fixture(tmp_path_factory.mktemp("bench"))
+
+
+@pytest.fixture
+def bench_data(request, monkeypatch):
+    """EKTE_DATA_DIR on the shared 20k-run fixture, for the budget tests
+    (@pytest.mark.slow). Skips unless EKTE_BENCH=1; the tests only read it."""
+    from tests import bench_report
+
+    if not bench_report.enabled():
+        pytest.skip("set EKTE_BENCH=1 to run the 20k-run benchmark")
+    path = request.getfixturevalue("_bench_history")
+    monkeypatch.setenv("EKTE_DATA_DIR", str(path))
+    return path
+
+
+@pytest.fixture(scope="session")
 def knowledge_base(_isolated_data_dir):
     """The packaged knowledge base (loaded once)."""
     return load_knowledge_base()

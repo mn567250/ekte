@@ -82,6 +82,94 @@ jobs:
           pytest -q -n auto --durations=20 -o faulthandler_timeout=110 --cov=ekte --cov-report=term-missing:skip-covered --cov-report=json
           python scripts/check_coverage.py coverage.json
 
+  benchmark-scope:
+    # Whether the performance budget job runs: not for a pull request that
+    # changes only documentation (docs/**, *.md) or locale fragments; always
+    # on pushes and manual runs. Same base...head comparison as a11y-scope.
+    name: performance budget scope
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.scope.outputs.run }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # the whole history (commits and trees, no old file contents) for
+          # the PR's merge base
+          fetch-depth: 0
+          filter: blob:none
+      - name: Code changed?
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          run=true
+          if [ "$EVENT" = pull_request ]; then
+            # a failed diff runs the benchmark
+            if files=$(git diff --name-only "$BASE_SHA...$HEAD_SHA"); then
+              code=$(printf '%s\n' "$files" | grep -Ev '^docs/|\.md$|^ekte/i18n/locales/fragments/|^$' || true)
+              if [ -z "$code" ]; then run=false; fi
+            fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "performance budget: run=$run ($EVENT)"
+
+  benchmark:
+    # The p95 budgets of the query core, the Analytics widgets and the History
+    # API (tests marked slow, EKTE_BENCH=1) on the 20k-run fixture of
+    # scripts/bench_fixture.py, built once per job. One serial run (no xdist)
+    # on one runner, so the timings are not shared with other tests. The job
+    # summary shows every case's p50 / p95 (scripts/bench_report.py); the
+    # JSON is the bench-report artifact. See docs/dev/web-server.md#benchmark.
+    #
+    # CI budgets: shared runners are slower and noisier than the reference
+    # machine of the local budgets (50 ms; 5 ms for /api/version), so the job
+    # sets its own. Rule: the smallest round value that the slowest case of 5
+    # calibration runs stays under by at least 30 % (slowest p95 <= 0.7 x budget).
+    # Provisional until the calibration runs of #162 are in.
+    name: performance budget (informational)
+    needs: benchmark-scope
+    if: needs.benchmark-scope.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # informational until calibrated (#162)
+    continue-on-error: true
+    env:
+      EKTE_BENCH: "1"
+      EKTE_BENCH_REPORT: bench-report.json
+      EKTE_BENCH_BUDGET_MS: "100"
+      EKTE_BENCH_VERSION_BUDGET_MS: "10"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install --upgrade pip && pip install -e '.[dev,web]'
+      - name: Budget tests (pytest -m slow, serial)
+        # every test marked slow, so new budget tests are picked up; their
+        # cases go to EKTE_BENCH_REPORT (tests/bench_report.py)
+        run: pytest tests -m slow -p no:xdist -q -p no:cacheprovider -rs --durations=0
+      - name: Summary
+        if: always()
+        run: |
+          python scripts/bench_report.py "$EKTE_BENCH_REPORT" --out "$GITHUB_STEP_SUMMARY" \
+            --note "CI budget: p95 below $EKTE_BENCH_BUDGET_MS ms ($EKTE_BENCH_VERSION_BUDGET_MS ms for /api/version); locally 50 ms (5 ms)."
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bench-report
+          path: bench-report.json
+          retention-days: 14
+          if-no-files-found: ignore
+
   a11y-scope:
     # Which pages the a11y suite tests on this run (tests/a11y/pages.py):
     # everything on pushes (main and the integration branches), the nightly
