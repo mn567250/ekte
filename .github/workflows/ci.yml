@@ -132,11 +132,16 @@ jobs:
     # the slowest case of 5 calibration runs stays under by at least 30 %
     # (slowest p95 <= 0.7 x budget).
     # Calibration (#162, 2026-11-10, 5 workflow_dispatch runs of this job,
-    # ubuntu-latest, Python 3.12): slowest case every time "leaderboard,
-    # relay x model" (tests/test_analytics_widgets.py), p95 130.9, 150.0,
-    # 170.3, 182.8 and 199.9 ms (p50 87-121 ms: a spiky tail); next slowest
-    # "aggregate kpis, by relay x model" (tests/test_query.py), at most
-    # 116.2 ms. 199.9 / 0.7 = 285.6 -> 290 ms.
+    # ubuntu-latest, Python 3.12, measurement of scripts/bench_fixture.py
+    # times(): 40 calls per case, collector frozen before each case): slowest
+    # case every time "leaderboard, relay x model"
+    # (tests/test_analytics_widgets.py), p95 121.9, 122.0, 77.0, 124.9 and
+    # 118.6 ms (p50 within 1-11 ms of it; run 3 got a faster runner); next
+    # slowest "summary, all" and "aggregate kpis, by relay x model", at most
+    # 113.2 ms. 124.9 / 0.7 = 178.4 -> 180 ms.
+    # Before (20 calls, collector not prepared): p95 130.9-199.9 ms for the
+    # same case, from single slow calls (garbage-collector pauses), which
+    # gave 290 ms.
     # /api/version: no budget test yet (#150 adds it); 10 ms is a placeholder
     # that the PR adding the test calibrates the same way.
     # Recalibrate (5 manual runs, the rule above) when cases are added or
@@ -149,7 +154,7 @@ jobs:
     env:
       EKTE_BENCH: "1"
       EKTE_BENCH_REPORT: bench-report.json
-      EKTE_BENCH_BUDGET_MS: "290"
+      EKTE_BENCH_BUDGET_MS: "180"
       EKTE_BENCH_VERSION_BUDGET_MS: "10"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
