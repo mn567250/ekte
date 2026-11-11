@@ -286,6 +286,9 @@
             - text: La velocità è costante? Non eseguito
             - heading "Rilevazioni" [level=3]
             - paragraph: Nessun avviso o errore — ogni dimensione è coerente con il modello dichiarato.
+            - heading "Avvisi 1 avviso" [level=3]
+            - list:
+              - listitem: "The bundled knowledge base was last verified on 2025-01-15 (365 days ago; older than 180 days). Model names, limits and deprecations may have changed: update ekte, or add your own entries with `ekte kb-import`. The verdict is not changed by this."
             - heading "Registro di esecuzione 6 controlli · <duration> in totale" [level=3]
             - paragraph: I controlli vengono eseguiti uno dopo l'altro; il più lento è stato context_window (<duration>).
             - button "Mostra tutti (6)"

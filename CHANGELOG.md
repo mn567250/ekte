@@ -209,6 +209,14 @@ how many saved runs it re-extracts.
 
 ### Fixed
 
+- **Report warnings and failure classes in the web report and `--compact`**
+  ([#166](https://github.com/mn567250/ekte/issues/166)). The web report view
+  now shows `report.warnings` (the "run was impaired" warning, knowledge-base
+  staleness, detector errors) in a Warnings section after the findings, as the
+  Markdown/HTML/PDF exports do. Its performance block adds the network and ekte
+  failure counts (not the relay's) and repeated attempts to each endpoint's
+  summary line. The compact JSON carries `network_errors`, `local_errors` and
+  `retried` per endpoint under `performance`, and `reliability.impaired`.
 - **Typer 0.29.** The command line reference generator
   (`scripts/generate_cli_docs.py`, checked by `test_cli_reference_is_current`)
   crashed with `'TyperOption' object has no attribute 'type'`: Typer 0.29

@@ -9,6 +9,8 @@
   "{n} findings": "{n} findings",
   "{n} dimension": "{n} dimension",
   "{n} dimensions": "{n} dimensions",
-  "Rating {r}": "Rating {r}"
+  "Rating {r}": "Rating {r}",
+  "{n} warning": "{n} warning",
+  "{n} warnings": "{n} warnings"
  }
 }

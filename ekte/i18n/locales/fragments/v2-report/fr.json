@@ -9,6 +9,8 @@
   "{n} findings": "{n} constats",
   "{n} dimension": "{n} dimension",
   "{n} dimensions": "{n} dimensions",
-  "Rating {r}": "Note {r}"
+  "Rating {r}": "Note {r}",
+  "{n} warning": "{n} avertissement",
+  "{n} warnings": "{n} avertissements"
  }
 }

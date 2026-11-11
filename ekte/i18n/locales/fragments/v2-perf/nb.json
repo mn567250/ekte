@@ -21,6 +21,8 @@
   "max": "maks",
   "stdev": "standardavvik",
   "network": "nettverk",
-  "repeated": "gjentatt"
+  "repeated": "gjentatt",
+  "network failures (not the relay's)": "nettverksfeil (ikke reléets)",
+  "ekte failures (not the relay's)": "ekte-feil (ikke reléets)"
  }
 }

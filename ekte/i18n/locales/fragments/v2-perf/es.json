@@ -21,6 +21,8 @@
   "max": "máx",
   "stdev": "desv. est.",
   "network": "red",
-  "repeated": "repetida"
+  "repeated": "repetida",
+  "network failures (not the relay's)": "fallos de red (no del relay)",
+  "ekte failures (not the relay's)": "fallos de ekte (no del relay)"
  }
 }

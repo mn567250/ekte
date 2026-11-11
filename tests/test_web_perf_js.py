@@ -742,3 +742,27 @@ def test_perf_js_names_where_a_request_failed():
     assert "<td>repeated (ProxyError · network)</td>" in table
     assert "<td>failed (TypeError · ekte)</td>" in table
     assert "<td>failed (502)</td>" in table  # the relay's own failure, as before
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_perf_js_endpoint_line_shows_network_and_ekte_failures():
+    # #166: as _reliability_line in ekte/report/performance.py
+    perf = _perf()
+    perf.target.network_errors = 2
+    perf.target.local_errors = 1
+    perf.target.retried = 3
+    section = _render(perf.model_dump_json())["section"]
+    line = re.search(r'<p class="zp-muted">([^<]*succeeded[^<]*)</p>', section).group(1)
+    assert "2 network failures (not the relay&#39;s)" in line or "2 network failures (not the relay's)" in line
+    assert "1 ekte failures (not the relay" in line and "3 repeated" in line
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_perf_js_endpoint_line_hides_zero_or_missing_failure_counts():
+    perf = _perf()
+    data = json.loads(perf.model_dump_json())
+    for key in ("network_errors", "local_errors", "retried"):
+        data["baseline"].pop(key, None)  # a report saved before #99
+    section = _render(json.dumps(data))["section"]
+    assert "network failures" not in section and "ekte failures" not in section
+    assert " repeated" not in re.sub(r"<table.*?</table>", "", section, flags=re.S)

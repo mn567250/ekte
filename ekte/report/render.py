@@ -269,6 +269,7 @@ def compact_dict(report: AuditReport) -> dict:
             "success_rate": round(r.success_rate, 4),
             "rate_limited": r.rate_limited,
             "latency_p95_ms": r.latency_ms.get("p95"),
+            "impaired": dict(r.impaired),
         }
 
     return {

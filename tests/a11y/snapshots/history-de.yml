@@ -286,6 +286,9 @@
             - text: Ist das Tempo gleichmäßig? Nicht ausgeführt
             - heading "Befunde" [level=3]
             - paragraph: Keine Warnungen oder Fehler — jede Dimension entspricht dem angegebenen Modell.
+            - heading "Warnungen 1 Warnung" [level=3]
+            - list:
+              - listitem: "The bundled knowledge base was last verified on 2025-01-15 (365 days ago; older than 180 days). Model names, limits and deprecations may have changed: update ekte, or add your own entries with `ekte kb-import`. The verdict is not changed by this."
             - heading "Ausführungsprotokoll 6 Prüfungen · <duration> insgesamt" [level=3]
             - paragraph: Die Prüfungen laufen nacheinander; am langsamsten war context_window (<duration>).
             - button "Alle 6 anzeigen"

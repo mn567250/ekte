@@ -21,6 +21,8 @@
   "max": "máx",
   "stdev": "desvio padrão",
   "network": "rede",
-  "repeated": "repetido"
+  "repeated": "repetido",
+  "network failures (not the relay's)": "falhas de rede (não do relay)",
+  "ekte failures (not the relay's)": "falhas do ekte (não do relay)"
  }
 }

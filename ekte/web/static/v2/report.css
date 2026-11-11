@@ -42,6 +42,9 @@
 .zr .sect { padding: 20px 26px; border-top: 1px solid var(--line); }
 .zr .sect h3 { font-family: var(--disp); font-weight: 600; font-size: 15px; margin: 0 0 10px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
 .zr .sect h3 .count { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+/* report.warnings: .znote.warning tiles (ekte.css), one per warning */
+.zr .zr-warns ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.zr .zr-warns .znote { margin: 0; }
 .zr .none { color: var(--ink-muted); font-size: 14px; margin: 0; }
 
 /* dimension meters */
