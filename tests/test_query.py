@@ -731,17 +731,15 @@ def test_buckets_without_unixepoch(seeded):
 
 @pytest.mark.slow
 @pytest.mark.timeout(600)
-def test_benchmark_20k_runs_under_budget(data):
+def test_benchmark_20k_runs_under_budget(bench_data):
     """aggregate, series and page_runs each answer within the budget (p95) on
     the 20k-run fixture. Opt-in (EKTE_BENCH=1): timings need a quiet machine;
-    EKTE_BENCH_BUDGET_MS overrides the 50 ms budget."""
-    import os
+    EKTE_BENCH_BUDGET_MS overrides the 50 ms budget, EKTE_BENCH_REPORT
+    collects the timings (tests/bench_report.py)."""
+    from tests import bench_report
 
-    if os.environ.get("EKTE_BENCH") != "1":
-        pytest.skip("set EKTE_BENCH=1 to run the 20k-run benchmark")
-    budget = float(os.environ.get("EKTE_BENCH_BUDGET_MS", "50"))
-    bench = _bench_module()
-    bench.build()
-    results = bench.bench()
+    budget = bench_report.budget()
+    results = _bench_module().bench()
+    bench_report.record("query", results, budget)
     slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
     assert not slow, f"p95 over {budget} ms: {slow}"

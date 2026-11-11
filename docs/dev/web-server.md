@@ -188,13 +188,64 @@ bucket rows (and those runs) reach Python.
 last); `limit` 1–200. Keyset paging, so a run saved meanwhile never shifts
 pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
 
-**Benchmark.** `scripts/bench_fixture.py --data-dir DIR --bench` writes a
+### Benchmark
+
+`scripts/bench_fixture.py --data-dir DIR --bench` writes a
 synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
 reports, an ekte release every 3 weeks with an occasional one-day rollback,
 a profile change every 45 days) and prints p50 / p95 (nearest rank, 40 calls) of
-`aggregate`, `series` and `page_runs`;
-`EKTE_BENCH=1 pytest -m slow tests/test_query.py` checks the 50 ms p95 budget
-(`EKTE_BENCH_BUDGET_MS`).
+`aggregate`, `series` and `page_runs`.
+
+The budget tests (marked `slow`) check that every case's p95 stays under the
+budget: `tests/test_query.py` (the query core), `tests/test_analytics_widgets.py`
+(the Analytics widgets) and `tests/test_history_api.py` (the History API). They
+are skipped unless `EKTE_BENCH=1`; run them serially, so the timings are not
+shared with other tests:
+
+```bash
+EKTE_BENCH=1 pytest tests -m slow -p no:xdist
+EKTE_BENCH=1 EKTE_BENCH_REPORT=bench.json pytest tests -m slow -p no:xdist
+python scripts/bench_report.py bench.json   # the Markdown table
+```
+
+- **Measurement.** Every case is measured the same way
+  (`tests.bench_report.measure()`, which uses `times()` and `p95()` of
+  `scripts/bench_fixture.py`): one warm-up call, then 40 timed calls; p50 is
+  the median, p95 the nearest rank (the 38th of 40). Before a case the
+  garbage collector collects and freezes what is alive (`gc.freeze()`), so a
+  full collection during the calls does not scan the test session's heap; it
+  stays on for the objects the calls themselves create. A new budget test
+  times its cases with `measure()`.
+
+- **Budgets.** 50 ms p95 by default, the budget of the reference machine;
+  `EKTE_BENCH_BUDGET_MS` overrides it. A case with a budget of its own has
+  its own variable: `/api/version` (5 ms, the budget test comes with #150)
+  reads `EKTE_BENCH_VERSION_BUDGET_MS`. A new budget test
+  reads its budget with `tests.bench_report.budget()` (a case with its own
+  budget passes its own variable) and takes the `bench_data` fixture
+  (`tests/conftest.py`): the 20k-run fixture, built once per pytest session
+  and shared, read only.
+- **Report.** With `EKTE_BENCH_REPORT=<path>` every budget test adds each
+  case's p50, p95 and budget to that JSON file (`tests.bench_report.record()`,
+  called before the test asserts, so failing cases are in it too);
+  `scripts/bench_report.py` renders it as a table (suite, case, p50, p95,
+  budget, ✅ / ❌). Without the variable nothing is written.
+- **CI.** The "performance budget" job of `.github/workflows/ci.yml` runs
+  the budget tests on every pull request into `main` and `*/integration`
+  (skipped when a pull request changes only `docs/**`, `*.md` or locale
+  fragments), on pushes to `*/integration` and on manual runs, on one
+  ubuntu runner with Python 3.12. Shared runners are slower and noisier than
+  the reference machine, so the job sets its own budgets through
+  `EKTE_BENCH_BUDGET_MS` and `EKTE_BENCH_VERSION_BUDGET_MS`: the smallest
+  round value that the slowest case of 5 calibration runs stays under by at
+  least 30 %; the values and their calibration are in the comment on the job.
+  The local defaults stay 50 ms and 5 ms.
+- **Reading the result.** The job's summary (the run's page on GitHub) shows
+  the table: ❌ marks a case whose p95 is not below the CI budget, and fails
+  the job. The JSON is the run's `bench-report` artifact (kept 14 days).
+  Timings on shared runners vary by some 10-20 % between runs; a case that
+  creeps towards the budget over several pull requests is worth a look before
+  it fails.
 
 ## Metric registry
 

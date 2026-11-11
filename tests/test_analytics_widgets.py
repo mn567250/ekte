@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import os
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -529,28 +528,17 @@ def test_a_saved_run_drops_the_cached_answers(seeded, client):  # noqa: F811
 
 @pytest.mark.slow
 @pytest.mark.timeout(900)
-def test_benchmark_20k_runs_under_budget(data):  # noqa: F811
+def test_benchmark_20k_runs_under_budget(bench_data):
     """Every widget answers within the budget (p95, cold cache: the functions
     are called directly) on the 20k-run fixture of #121. Opt-in
-    (EKTE_BENCH=1); EKTE_BENCH_BUDGET_MS overrides the 50 ms budget."""
-    if os.environ.get("EKTE_BENCH") != "1":
-        pytest.skip("set EKTE_BENCH=1 to run the 20k-run benchmark")
-    import time
+    (EKTE_BENCH=1); EKTE_BENCH_BUDGET_MS overrides the 50 ms budget,
+    EKTE_BENCH_REPORT collects the timings (tests/bench_report.py)."""
+    from tests import bench_report
 
-    from tests.test_query import _bench_module
-
-    budget = float(os.environ.get("EKTE_BENCH_BUDGET_MS", "50"))
-    _bench_module().build()
+    budget = bench_report.budget()
     history.query_connection()
-    slow = {}
-    for name, fn, params in WIDGET_CASES:
-        fn(params)
-        times = []
-        for _ in range(20):
-            t0 = time.perf_counter()
-            fn(params)
-            times.append((time.perf_counter() - t0) * 1000)
-        times.sort()
-        if times[18] >= budget:
-            slow[name] = round(times[18], 1)
+    results = {name: bench_report.measure(lambda fn=fn, params=params: fn(params))
+               for name, fn, params in WIDGET_CASES}
+    slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
+    bench_report.record("analytics_widgets", results, budget)
     assert not slow, f"p95 over {budget} ms: {slow}"

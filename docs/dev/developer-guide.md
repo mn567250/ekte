@@ -231,6 +231,14 @@ pytest -n auto               # in parallel, one worker per CPU (pytest-xdist)
   needs them.
 - `test_filler_perf.py` pins the filler text byte for byte and fails when the
   context-window probe stalls the event loop.
+- The performance budget tests (marked `slow`; the query core, the Analytics
+  widgets and the History API on a 20,000-run history) are skipped unless
+  `EKTE_BENCH=1`: `EKTE_BENCH=1 pytest tests -m slow -p no:xdist`.
+  `EKTE_BENCH_REPORT=bench.json` collects every case's p50 / p95, which
+  `python scripts/bench_report.py bench.json` prints as a table. CI runs them
+  in the "performance budget" job with its own, calibrated budgets and shows
+  the table in the job summary; see
+  [Web server: Benchmark](web-server.md#benchmark).
 - `tests/a11y/` checks web UI v2 against BITV 2.0 / EN 301 549 / WCAG 2.1 AA
   in a real browser (Playwright + axe-core), in every UI language and both
   themes: `pip install -e '.[web,a11y]' && playwright install chromium`, then

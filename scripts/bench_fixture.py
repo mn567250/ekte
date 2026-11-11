@@ -21,6 +21,7 @@ checks the 50 ms p95 budget)::
 from __future__ import annotations
 
 import argparse
+import gc
 import math
 import os
 import random
@@ -155,17 +156,37 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
     return runs
 
 
+def times(fn: Callable[[], Any], repeat: int = 40) -> list[float]:
+    """The times (ms, sorted) of ``repeat`` calls after one warm-up call.
+
+    Before the calls every object is collected and the survivors frozen
+    (``gc.freeze()``), so a full collection during the calls does not scan the
+    caller's long-lived objects (a test session's heap): its pause, not the
+    code, set the p95 of the slowest cases. The garbage collector stays on, so
+    collections of the call's own objects are still timed."""
+    gc.collect()
+    gc.freeze()
+    try:
+        fn()
+        out = []
+        for _ in range(repeat):
+            t0 = time.perf_counter()
+            fn()
+            out.append((time.perf_counter() - t0) * 1000)
+    finally:
+        gc.unfreeze()
+    return sorted(out)
+
+
+def p95(sorted_ms: list[float]) -> float:
+    """Nearest rank: the smallest time at least 95 % of the calls took no longer than."""
+    return sorted_ms[math.ceil(len(sorted_ms) * 0.95) - 1]
+
+
 def _time(fn: Callable[[], Any], repeat: int) -> tuple[float, float]:
     """p50 and p95 (ms) of ``repeat`` calls after one warm-up call."""
-    fn()
-    times = []
-    for _ in range(repeat):
-        t0 = time.perf_counter()
-        fn()
-        times.append((time.perf_counter() - t0) * 1000)
-    times.sort()
-    # nearest rank: the smallest time at least 95 % of the calls took no longer than
-    return statistics.median(times), times[math.ceil(len(times) * 0.95) - 1]
+    t = times(fn, repeat)
+    return statistics.median(t), p95(t)
 
 
 def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:

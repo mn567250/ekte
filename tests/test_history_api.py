@@ -5,8 +5,6 @@
 from __future__ import annotations
 
 import functools
-import statistics
-import time
 
 import pytest
 
@@ -367,16 +365,14 @@ def test_relay_labels_name_saved_relays_and_disambiguate_urls(data):
 # --------------------------------------------------------------------------- #
 @pytest.mark.slow
 @pytest.mark.timeout(600)
-def test_benchmark_20k_runs_under_budget(data):
+def test_benchmark_20k_runs_under_budget(bench_data):
     """Each History widget answers within the budget (p95, cold cache: the
     functions are called directly) on the 20k-run fixture. Opt-in
-    (EKTE_BENCH=1), as tests/test_query.py; EKTE_BENCH_BUDGET_MS overrides 50."""
-    import os
+    (EKTE_BENCH=1), as tests/test_query.py; EKTE_BENCH_BUDGET_MS overrides 50,
+    EKTE_BENCH_REPORT collects the timings (tests/bench_report.py)."""
+    from tests import bench_report
 
-    if os.environ.get("EKTE_BENCH") != "1":
-        pytest.skip("set EKTE_BENCH=1 to run the 20k-run benchmark")
-    budget = float(os.environ.get("EKTE_BENCH_BUDGET_MS", "50"))
-    _bench_module().build()
+    budget = bench_report.budget()
     conn = _conn()
     t = {"trend.metrics": "score,latency_p50"}
     first = history_api.groups(conn, t)
@@ -394,15 +390,7 @@ def test_benchmark_20k_runs_under_budget(data):
         "runs all, score": lambda: history_api.runs(conn, {"group": "all", "group.key": "(all)",
                                                            "runs.sort": "score"}),
     }
-    slow = {}
-    for name, fn in cases.items():
-        fn()
-        times = []
-        for _ in range(20):
-            t0 = time.perf_counter()
-            fn()
-            times.append((time.perf_counter() - t0) * 1000)
-        p95 = statistics.quantiles(times, n=20)[-1]
-        if p95 >= budget:
-            slow[name] = round(p95, 1)
+    results = {name: bench_report.measure(fn) for name, fn in cases.items()}
+    slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
+    bench_report.record("history_api", results, budget)
     assert not slow, f"p95 over {budget} ms: {slow}"
