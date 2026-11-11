@@ -216,7 +216,12 @@ how many saved runs it re-extracts.
   answers) instead of counting the surfaces in every call. The leaderboard and
   breakdown build their cells as dicts directly from the fetched rows
   (`query.aggregate_rows`), and each metric's judgement is prepared once
-  (`metrics.judge_of`), not per cell. Answers are byte-identical.
+  (`metrics.judge_of`), not per cell. Where SQLite has no `median()` /
+  `percentile()` (as on the CI runners), the Python median aggregate adds each
+  row through a bound `list.append` and filters once at the end, which makes the
+  median-heavy widgets about 20 % faster there. The pooled-rate and share
+  aggregates use shorter SQL that gives the same values. Answers are
+  byte-identical.
 
 ### Fixed
 

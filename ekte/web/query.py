@@ -322,26 +322,43 @@ def resolve_params(params: Params, *, now: datetime | None = None) -> list[tuple
 # --------------------------------------------------------------------------- #
 # SQL: median / percentile
 # --------------------------------------------------------------------------- #
+def _ordered(values: list[Any]) -> list[float]:
+    """The finite numbers of ``values``, as floats, sorted (what SQLite's own
+    median / percentile keep: NULLs and other values are ignored)."""
+    return sorted(float(v) for v in values if isinstance(v, (int, float)) and math.isfinite(v))
+
+
 class _Percentile:
-    """``percentile(Y, P)`` as SQLite's (P in 0..100; NULLs ignored)."""
+    """``percentile(Y, P)`` as SQLite's (P in 0..100; NULLs ignored). ``step``
+    only collects; the values are filtered once, in ``finalize``."""
+
+    __slots__ = ("values", "p")
 
     def __init__(self) -> None:
-        self.values: list[float] = []
-        self.p = 50.0
+        self.values: list[Any] = []
+        self.p: Any = 50.0
 
     def step(self, value: Any, p: Any = 50.0) -> None:
-        if isinstance(value, (int, float)) and math.isfinite(value):
-            self.values.append(float(value))
-            self.p = float(p)
+        self.values.append(value)
+        self.p = p
 
     def finalize(self) -> float | None:
-        self.values.sort()
-        return analytics.percentile(self.values, self.p / 100.0)
+        return analytics.percentile(_ordered(self.values), float(self.p) / 100.0)
 
 
-class _Median(_Percentile):
-    def step(self, value: Any, p: Any = 50.0) -> None:
-        super().step(value, 50.0)
+class _Median:
+    """``median(Y)`` as SQLite's. Its ``step`` is the bound ``list.append`` of
+    its values, so a row costs SQLite one C call into Python, not a Python
+    function (this aggregate runs once per run and median metric)."""
+
+    __slots__ = ("values", "step")
+
+    def __init__(self) -> None:
+        self.values: list[Any] = []
+        self.step = self.values.append
+
+    def finalize(self) -> float | None:
+        return analytics.percentile(_ordered(self.values), 0.5)
 
 
 _native: bool | None = None
@@ -614,11 +631,14 @@ def _spec(m: Metric, i: int, med: str, pct: str, quantiles: bool) -> _Spec:
         # The run's count of m.outcomes: its rate is that count ÷ base (both from
         # the run's history_outcomes rows), so rate × base gives the integer back
         # exactly, without reading history_outcomes (tested equal).
+        # The sums leave out the test for base > 0: a run with base 0 adds 0
+        # to both (and base is a count, never negative), a NULL rate or base
+        # adds nothing; the count of runs with base > 0 decides whether there
+        # is a value at all (_pooled_values), so the cells are the same.
         base, rate = f"m.{m.base}", f"m.{m.column}"
-        has = f"{base} > 0 AND {rate} IS NOT NULL"
-        return _Spec(m, (f"SUM(CASE WHEN {has} THEN ROUND({rate} * {base}) END)",
-                         f"SUM(CASE WHEN {has} THEN {base} END)",
-                         f"COUNT(CASE WHEN {has} THEN 1 END)"))
+        return _Spec(m, (f"SUM(ROUND({rate} * {base}))",
+                         f"SUM(CASE WHEN {rate} IS NOT NULL THEN {base} END)",
+                         f"COUNT(CASE WHEN {base} > 0 AND {rate} IS NOT NULL THEN 1 END)"))
     join = ""
     args: tuple[Any, ...] = ()
     if m.id.startswith(analytics.DIM_PREFIX):
@@ -628,12 +648,14 @@ def _spec(m: Metric, i: int, med: str, pct: str, quantiles: bool) -> _Spec:
         v = f"dm{i}.score"
     elif m.id == "risk_high_share":
         high = run_row.RISK_ORDER.index("high")
-        v = f"CASE WHEN m.risk_value IS NULL THEN NULL WHEN m.risk_value = {high} THEN 1.0 ELSE 0.0 END"
+        v = f"(m.risk_value = {high})"  # 1 / 0, NULL without a risk (as for share below)
     elif m.id == "grade":
         v = "m.grade_value"
     elif m.agg == "share":
         col = _column(m.column)
-        v = f"CASE WHEN {col} IS NULL THEN NULL WHEN {col} != 0 THEN 1.0 ELSE 0.0 END"
+        # 1 / 0 (NULL stays NULL): AVG of these integers is the same double as
+        # AVG of 1.0 / 0.0 (an exact sum over the count)
+        v = f"({col} != 0)"
     else:
         # the columns hold numbers or NULL (written from floats; median()
         # rejects text)

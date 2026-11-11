@@ -168,7 +168,9 @@ registry's `Metric.agg`: `median` (SQLite `median()` / `percentile()`, type 7),
 which is exactly its `history_outcomes` count), `share` (high risk, model
 mismatch). One run returns exactly its stored value for every metric. Without
 `median()` in the SQLite build, Python aggregates with the same results are
-registered (`sql_functions`). `aggregate_rows(...)` (same arguments, plus
+registered (`sql_functions`; the median's `step` is a bound `list.append`, so a
+row costs one C call, and the values are filtered and sorted once in
+`finalize`). `aggregate_rows(...)` (same arguments, plus
 `finish`: per metric id, a function that completes each cell dict in place)
 returns the same groups as `GroupResult.public()` dicts, built straight from
 the fetched rows without a `Cell` / `GroupResult` per cell: the leaderboard
