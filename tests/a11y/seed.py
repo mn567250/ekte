@@ -38,6 +38,19 @@ RUNS = [
     (2, 6, "saved", "model-b", False, 89.0),
     (4, 2, "url", "model-b", False, 72.0),
 ]
+# The run History expands by default (the only model-b run on the URL relay)
+# carries a report warning, so the snapshots cover the report's Warnings section.
+WARNED_RUN = ("model-b", 72.0)
+
+
+def _kb_stale_warning() -> str:
+    from datetime import date
+
+    from ekte.knowledge.freshness import stale_warning
+
+    w = stale_warning("2025-01-15", today=date(2026, 1, 15))
+    assert w is not None
+    return w
 
 
 def _report(started: datetime, base_url: str, model: str, score: float, saved: bool, newer: bool) -> dict[str, Any]:
@@ -147,6 +160,8 @@ def seed_analytics(end: datetime, watch_id: int | None) -> None:
         started = end - timedelta(days=days, hours=hours)
         saved = relay == "saved"
         report = _report(started, SAVED_RELAY[1] if saved else URL_RELAY, model, score, saved, newer=days <= 2)
+        if (model, score) == WARNED_RUN:
+            report["warnings"] = [_kb_stale_warning()]
         history.save(report, watch_id=watch_id if by_monitor else None)
 
 

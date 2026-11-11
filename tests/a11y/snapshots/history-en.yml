@@ -286,6 +286,9 @@
             - text: Is its speed consistent? Not run
             - heading "Findings" [level=3]
             - paragraph: No warnings or failures — every dimension is consistent with the claimed model.
+            - heading "Warnings 1 warning" [level=3]
+            - list:
+              - listitem: "The bundled knowledge base was last verified on 2025-01-15 (365 days ago; older than 180 days). Model names, limits and deprecations may have changed: update ekte, or add your own entries with `ekte kb-import`. The verdict is not changed by this."
             - heading "Execution log 6 checks · <duration> in total" [level=3]
             - paragraph: Checks run one after another; the slowest was context_window (<duration>).
             - button "Show all 6"

@@ -286,6 +286,9 @@
             - text: Sa vitesse est-elle régulière ? Non exécuté
             - heading "Constats" [level=3]
             - paragraph: Aucun avertissement ni échec — chaque dimension correspond au modèle annoncé.
+            - heading "Avertissements 1 avertissement" [level=3]
+            - list:
+              - listitem: "The bundled knowledge base was last verified on 2025-01-15 (365 days ago; older than 180 days). Model names, limits and deprecations may have changed: update ekte, or add your own entries with `ekte kb-import`. The verdict is not changed by this."
             - heading "Journal d'exécution 6 vérifications · <duration> au total" [level=3]
             - paragraph: Les vérifications s'exécutent l'une après l'autre ; la plus lente était context_window (<duration>).
             - button "Tout afficher (6)"

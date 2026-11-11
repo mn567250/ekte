@@ -286,6 +286,9 @@
             - text: 快慢是否稳定？ 未运行
             - heading "关注点" [level=3]
             - paragraph: 未发现警告或失败项 —— 各维度表现与所声称模型一致。
+            - heading "警告 1 条" [level=3]
+            - list:
+              - listitem: "The bundled knowledge base was last verified on 2025-01-15 (365 days ago; older than 180 days). Model names, limits and deprecations may have changed: update ekte, or add your own entries with `ekte kb-import`. The verdict is not changed by this."
             - heading "执行记录 6 项检测 · 共 <duration>" [level=3]
             - paragraph: 各项检测依次运行；最慢的是 context_window（<duration>）。
             - button "显示全部 6 项"

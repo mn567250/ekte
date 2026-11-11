@@ -286,6 +286,9 @@
             - text: Er hastigheten jevn? Ikke kjørt
             - heading "Funn" [level=3]
             - paragraph: Ingen advarsler eller feil — alle dimensjoner stemmer med den oppgitte modellen.
+            - heading "Advarsler 1 advarsel" [level=3]
+            - list:
+              - listitem: "The bundled knowledge base was last verified on 2025-01-15 (365 days ago; older than 180 days). Model names, limits and deprecations may have changed: update ekte, or add your own entries with `ekte kb-import`. The verdict is not changed by this."
             - heading "Kjøringslogg 6 kontroller · <duration> totalt" [level=3]
             - paragraph: Kontrollene kjøres etter hverandre; den tregeste var context_window (<duration>).
             - button "Vis alle 6"
