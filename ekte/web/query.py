@@ -91,7 +91,7 @@ import json
 import math
 import sqlite3
 from bisect import bisect_left, bisect_right
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta, timezone, tzinfo
 from typing import Any, NamedTuple
@@ -106,7 +106,7 @@ from ekte.web.relay_map import GROUP_JOIN_SQL
 
 __all__ = [
     "Cell", "GroupResult", "Page", "Point", "Query", "QueryError", "RunSelection",
-    "Series", "SeriesResult", "aggregate", "count_runs", "default_surface", "page_runs",
+    "Series", "SeriesResult", "aggregate", "aggregate_rows", "count_runs", "default_surface", "page_runs",
     "parse_query", "resolve_params", "select_runs", "series", "sql_functions",
 ]
 
@@ -644,21 +644,36 @@ def _spec(m: Metric, i: int, med: str, pct: str, quantiles: bool) -> _Spec:
     return _Spec(m, (f"{med}({v})", *quartiles, f"COUNT({v})"), join, args)
 
 
-def _cell(spec: _Spec, values: Sequence[Any], runs: int) -> Cell:
-    if spec.metric.agg == "pooled":
-        num, den, n = values
-        n = int(n or 0)
-        num = int(num) if n else None
-        den = int(den) if n else None
-        value = num / den if num is not None and den else None
-        return Cell(value, n, _ratio(n, runs), n < MIN_RUNS, numerator=num, denominator=den)
-    if spec.metric.agg == "share":
-        value, n = values
-        n = int(n or 0)
-        return Cell(_float(value), n, _ratio(n, runs), n < MIN_RUNS)
+def _pooled_values(values: Sequence[Any], runs: int) -> tuple[Any, ...]:
+    num, den, n = values
+    n = int(n or 0)
+    num = int(num) if n else None
+    den = int(den) if n else None
+    value = num / den if num is not None and den else None
+    return (value, n, _ratio(n, runs), n < MIN_RUNS, None, None, None, num, den)
+
+
+def _share_values(values: Sequence[Any], runs: int) -> tuple[Any, ...]:
+    value, n = values
+    n = int(n or 0)
+    return (_float(value), n, _ratio(n, runs), n < MIN_RUNS, None, None, None, None, None)
+
+
+def _median_values(values: Sequence[Any], runs: int) -> tuple[Any, ...]:
     med, p25, p75, n = values
     n = int(n or 0)
-    return Cell(_float(med), n, _ratio(n, runs), n < MIN_RUNS, _float(med), _float(p25), _float(p75))
+    med = _float(med)
+    return (med, n, _ratio(n, runs), n < MIN_RUNS, med, _float(p25), _float(p75), None, None)
+
+
+# A metric's cell fields (in Cell order) from its aggregates (_Spec.aggs) and
+# the group's runs, by Metric.agg (median otherwise).
+_CELL_VALUES = {"pooled": _pooled_values, "share": _share_values}
+_CELL_FIELDS = Cell._fields
+
+
+def _cell(spec: _Spec, values: Sequence[Any], runs: int) -> Cell:
+    return Cell(*_CELL_VALUES.get(spec.metric.agg, _median_values)(values, runs))
 
 
 def _float(value: Any) -> float | None:
@@ -782,19 +797,24 @@ def _cells(specs: list[_Spec], row: Mapping[str, Any]) -> dict[str, Cell]:
     return out
 
 
-def _result(group: str, row: Mapping[str, Any], cells: dict[str, Cell]) -> GroupResult:
-    runs, first, last = int(row["runs"]), us_text(row["t_min"]), us_text(row["t_max"])
+def _describe(group: str, row: Mapping[str, Any]) -> dict[str, Any]:
+    """:meth:`GroupResult.describe` of a fetched row of :func:`_grouped`."""
     if group == "relay":
-        return GroupResult(str(row["g"]), str(row["rl"]), str(row["rkind"]), bool(row["rin"]),
-                           runs, cells, first, last)
+        return {"key": str(row["g"]), "label": str(row["rl"]), "in_kb": bool(row["rin"]),
+                "kind": str(row["rkind"])}
     if group == "model":
-        return GroupResult(str(row["g"]), str(row["g"]), "model", bool(row["mkb"]), runs, cells,
-                           first, last)
+        return {"key": str(row["g"]), "label": str(row["g"]), "in_kb": bool(row["mkb"]),
+                "kind": "model"}
     if group == "relay_model":
-        return GroupResult(str(row["g"]), f"{row['rl']} · {row['mk']}", "relay_model",
-                           bool(row["rin"]), runs, cells, first, last, str(row["rk"]),
-                           str(row["mk"]))
-    return GroupResult(ALL_KEY, ALL_KEY, "all", False, runs, cells, first, last)
+        return {"key": str(row["g"]), "label": f"{row['rl']} · {row['mk']}", "in_kb": bool(row["rin"]),
+                "kind": "relay_model", "relay": str(row["rk"]), "model": str(row["mk"])}
+    return {"key": ALL_KEY, "label": ALL_KEY, "in_kb": False, "kind": "all"}
+
+
+def _result(group: str, row: Mapping[str, Any], cells: dict[str, Cell]) -> GroupResult:
+    d = _describe(group, row)
+    return GroupResult(d["key"], d["label"], d["kind"], d["in_kb"], int(row["runs"]), cells,
+                       us_text(row["t_min"]), us_text(row["t_max"]), d.get("relay"), d.get("model"))
 
 
 def _rank(g: GroupResult) -> tuple[Any, ...]:
@@ -815,6 +835,40 @@ def aggregate(
     wanted = _metrics(metrics, q.surface)
     specs, rows = _grouped(conn, select_runs(q), group, wanted, quantiles=quantiles)
     return sorted((_result(group, r, _cells(specs, r)) for r in rows), key=_rank)
+
+
+def aggregate_rows(
+    conn: sqlite3.Connection, q: Query, metrics: Iterable[str | Metric], group: str | None = None,
+    *, quantiles: bool = False,
+    finish: Mapping[str, Callable[[dict[str, Any]], None]] | None = None,
+) -> list[dict[str, Any]]:
+    """:func:`aggregate` as the groups' :meth:`GroupResult.public` dicts (the
+    same values, keys and order), built straight from the fetched rows: no
+    :class:`Cell` or :class:`GroupResult` per group and metric, as a board of
+    hundreds of groups holds thousands of cells. ``finish`` (per metric id)
+    is given each fresh cell dict of that metric to complete in place (e.g.
+    its judgement)."""
+    group = _group(group, q)
+    wanted = _metrics(metrics, q.surface)
+    specs, rows = _grouped(conn, select_runs(q), group, wanted, quantiles=quantiles)
+    finish = finish or {}
+    plan = [(s.metric.id, _CELL_VALUES.get(s.metric.agg, _median_values), len(s.aggs),
+             finish.get(s.metric.id)) for s in specs]
+    out = []
+    for r in rows:
+        runs, aggs, i = int(r["runs"]), r["_aggs"], 0  # aggregates in spec order (_grouped)
+        cells: dict[str, Any] = {}
+        for mid, values, k, done in plan:
+            cell = dict(zip(_CELL_FIELDS, values(aggs[i:i + k], runs), strict=True))
+            if done is not None:
+                done(cell)
+            cells[mid] = cell
+            i += k
+        out.append({**_describe(group, r), "runs": runs, "low_n": runs < MIN_RUNS,
+                    "first_run": us_text(r["t_min"]), "last_run": us_text(r["t_max"]),
+                    "metrics": cells})
+    out.sort(key=lambda g: (-g["runs"], g["label"].lower(), g["key"]))  # as _rank
+    return out
 
 
 # --------------------------------------------------------------------------- #

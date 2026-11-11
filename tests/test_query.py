@@ -318,6 +318,31 @@ def test_aggregate_edges(seeded):
     assert pub["kind"] == "model" and set(pub["metrics"]["score"]) >= {"value", "n", "coverage", "low_n"}
 
 
+@pytest.mark.parametrize("group", analytics.GROUPS)
+def test_aggregate_rows_are_the_public_groups(seeded, group):
+    """aggregate_rows (no Cell / GroupResult per cell, #164) gives what
+    aggregate's groups give as public(): the same keys, values and order."""
+    c = _conn()
+    mids = [*_chat_metrics(), "grade", "risk_high_share"]
+    for q, quantiles in ((Query(surface="chat"), True), (Query(surface="chat"), False),
+                         (Query(exec="manual"), True), (Query(relays=("nope",)), False)):
+        want = [g.public() for g in query.aggregate(c, q, mids, group, quantiles=quantiles)]
+        got = query.aggregate_rows(c, q, mids, group, quantiles=quantiles)
+        assert json.dumps(got) == json.dumps(want)
+    seen: list[dict] = []
+
+    def finish(cell):
+        cell["judged"] = True
+        seen.append(cell)
+
+    rows = query.aggregate_rows(c, Query(surface="chat"), ["score", "error_rate"], group,
+                                finish={"score": finish})
+    # each score cell, given once and completed in place; other metrics untouched
+    assert rows and sorted(map(id, seen)) == sorted(id(r["metrics"]["score"]) for r in rows)
+    assert all(r["metrics"]["score"]["judged"] and "judged" not in r["metrics"]["error_rate"]
+               for r in rows)
+
+
 # --------------------------------------------------------------------------- #
 # n = 1: every aggregation of one run returns exactly its stored value
 # --------------------------------------------------------------------------- #
