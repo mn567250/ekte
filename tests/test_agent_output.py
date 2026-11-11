@@ -99,3 +99,34 @@ def test_every_detector_has_a_cost_hint():
     for det_id, cls in REGISTRY.items():
         assert isinstance(cls.cost_hint, int), det_id
         assert cls.cost_hint >= 1, det_id
+
+
+def test_compact_carries_failure_classes():
+    # #166: network / ekte failure counts per endpoint and the impaired burst requests
+    from ekte.models import ReliabilitySummary, RequestRecord
+    from ekte.perf import build_performance
+
+    recs = [
+        RequestRecord(seq=i, endpoint="target", phase="probe", ok=True, stream=True,
+                      start_ms=i * 1000.0, duration_ms=900.0, ttft_ms=250.0, decode_tps_local=80.0)
+        for i in range(3)
+    ]
+    perf = build_performance(recs, has_baseline=False, probe_max_tokens=128)
+    assert perf is not None
+    perf.target.network_errors, perf.target.local_errors, perf.target.retried = 2, 1, 4
+    report = _report()
+    report.performance = perf
+    report.reliability = ReliabilitySummary(requests=10, successes=7, success_rate=1.0,
+                                            impaired={"network:ProxyError": 2, "local:TypeError": 1})
+    c = compact_dict(report)
+    t = c["performance"]["target"]
+    assert (t["network_errors"], t["local_errors"], t["retried"]) == (2, 1, 4)
+    keys = list(t)
+    assert keys.index("error_rate") < keys.index("network_errors")
+    assert keys[:3] == ["e2e_tps_p50", "requests", "error_rate"]
+    rel = c["reliability"]
+    assert rel["impaired"] == {"network:ProxyError": 2, "local:TypeError": 1}
+    assert list(rel)[:4] == ["requests", "successes", "success_rate", "rate_limited"]
+    # a report without classified failures carries zeros / an empty dict
+    report.reliability = ReliabilitySummary(requests=1, successes=1, success_rate=1.0)
+    assert compact_dict(report)["reliability"]["impaired"] == {}

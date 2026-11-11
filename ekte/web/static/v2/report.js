@@ -751,6 +751,24 @@
     );
   }
 
+  // report.warnings: fixed English backend sentences (run impaired, knowledge
+  // base stale, "<detector>: <error>"), shown like the HTML export does.
+  function warningsSection(r) {
+    var w = (r.warnings || []).filter(function (x) {
+      return x;
+    });
+    if (!w.length) return "";
+    return (
+      '<section class="sect zr-warns"><h3>' + esc(T("警告", "Warnings")) +
+      ' <span class="count">' + esc(count(w.length, ["{n} 条", "{n} warning"], ["{n} 条", "{n} warnings"])) + "</span></h3>" +
+      "<ul>" +
+      w.map(function (x) {
+        return '<li class="znote warning"><span class="ico" aria-hidden="true">' + ico("warning") + '</span><span class="txt">' +
+          esc(srv(String(x))) + "</span></li>";
+      }).join("") +
+      "</ul></section>"
+    );
+  }
   function findingGroups(findings) {
     var order = ["critical", "high", "medium", "low", "info"];
     var by = {};
@@ -938,6 +956,7 @@
           esc(T("未发现警告或失败项 —— 各维度表现与所声称模型一致。", "No warnings or failures — every dimension is consistent with the claimed model.")) +
           "</p>") +
       "</section>" +
+      warningsSection(r) +
       execSection(r) +
       '<footer class="zr-foot"><p class="disc">' +
       T(

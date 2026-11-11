@@ -21,6 +21,8 @@
   "max": "max",
   "stdev": "écart-type",
   "network": "réseau",
-  "repeated": "répétée"
+  "repeated": "répétée",
+  "network failures (not the relay's)": "échecs réseau (pas du relais)",
+  "ekte failures (not the relay's)": "échecs d'ekte (pas du relais)"
  }
 }

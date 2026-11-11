@@ -21,6 +21,8 @@
   "max": "Max",
   "stdev": "Std.-Abw.",
   "network": "Netzwerk",
-  "repeated": "wiederholt"
+  "repeated": "wiederholt",
+  "network failures (not the relay's)": "Netzwerkfehler (nicht durch das Relay)",
+  "ekte failures (not the relay's)": "ekte-Fehler (nicht durch das Relay)"
  }
 }

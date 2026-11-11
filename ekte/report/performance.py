@@ -197,6 +197,10 @@ def compact_performance(perf: PerformanceReport | None) -> dict | None:
             "e2e_tps_p50": r(e.e2e_tps_local.p50),
             "requests": e.requests,
             "error_rate": r(e.error_rate, 4),
+            # failures on the network path / inside ekte, not the relay's (#99)
+            "network_errors": e.network_errors,
+            "local_errors": e.local_errors,
+            "retried": e.retried,
             "latency_p50_ms": r(e.latency_ms.p50),
             "latency_p95_ms": r(e.latency_ms.p95),
             "ttft_p50_ms": r(e.ttft_ms.p50),

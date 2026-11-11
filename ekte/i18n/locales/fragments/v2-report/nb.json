@@ -9,6 +9,8 @@
   "{n} findings": "{n} funn",
   "{n} dimension": "{n} dimensjon",
   "{n} dimensions": "{n} dimensjoner",
-  "Rating {r}": "Vurdering {r}"
+  "Rating {r}": "Vurdering {r}",
+  "{n} warning": "{n} advarsel",
+  "{n} warnings": "{n} advarsler"
  }
 }

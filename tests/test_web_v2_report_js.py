@@ -747,3 +747,46 @@ def test_a_finding_lists_only_the_requests_it_names(tmp_path):
     assert 'data-seqs="3,5"' in html and 'data-seqs="3,5"' not in plain
     # the finding that names no request offers no raw pairs
     assert html.count('class="zr-raw"') < plain.count('class="zr-raw"')
+
+
+@needs_node
+def test_report_shows_warnings_section(tmp_path):
+    # #166: report.warnings (impaired run, stale knowledge base, detector errors)
+    # appear in the web report, escaped, under their own heading
+    from datetime import date
+
+    from ekte.knowledge.freshness import stale_warning
+
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    stale = stale_warning("2020-01-01", today=date(2026, 11, 11))
+    assert stale is not None
+    report["warnings"] = [
+        "The run was impaired: 3 request(s) failed before the relay could answer them "
+        "(3 on the network path to the relay (proxy, DNS, connect or TLS)), after 2 repeat(s). "
+        "They are not counted against the relay; 1 check(s) that rest only on them read inconclusive.",
+        stale,
+        "model_identity: boom <b>",
+    ]
+    html = _render(tmp_path, "en", report)["html"]
+    assert "<h3>Warnings" in html and "3 warnings" in html
+    sect = html[html.index('<section class="sect zr-warns">'):]
+    sect = sect[: sect.index("</section>")]
+    assert sect.count('<li class="znote warning">') == 3
+    text = htmllib.unescape(_text(sect))
+    assert "The run was impaired: 3 request(s)" in text
+    assert "The bundled knowledge base was last verified on 2020-01-01" in text
+    assert "model_identity: boom &lt;b&gt;" in sect and "boom <b>" not in sect
+    # placed after the findings, before the execution log / footer
+    assert html.index("<h3>Findings") < html.index("<h3>Warnings") < html.index('<footer class="zr-foot">')
+
+
+@needs_node
+def test_report_without_warnings_has_no_warnings_section(tmp_path):
+    report = json.loads(_FIXTURE.read_text(encoding="utf-8"))
+    for warnings in ([], None):
+        if warnings is None:
+            report.pop("warnings", None)
+        else:
+            report["warnings"] = warnings
+        html = _render(tmp_path, "en", report)["html"]
+        assert "zr-warns" not in html and "<h3>Warnings" not in html

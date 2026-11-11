@@ -21,6 +21,8 @@
   "max": "max",
   "stdev": "dev. std.",
   "network": "rete",
-  "repeated": "ripetuta"
+  "repeated": "ripetuta",
+  "network failures (not the relay's)": "errori di rete (non del relay)",
+  "ekte failures (not the relay's)": "errori di ekte (non del relay)"
  }
 }

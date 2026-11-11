@@ -669,6 +669,11 @@
     var line = int(ep.successes) + "/" + int(ep.requests) + " " + T("成功", "succeeded") + " · " +
       T("超时", "timeouts") + " " + num(ep.timeout_rate, "ratio") + " · 429 " + num(ep.rate_limited_rate, "ratio");
     if (ep.cached_excluded) line += " · " + int(ep.cached_excluded) + " " + T("缓存命中（不计入统计）", "cached (excluded)");
+    // failures on the network path / inside ekte (#99), as _reliability_line in
+    // ekte/report/performance.py; absent in reports saved before #99
+    if (ep.network_errors) line += " · " + int(ep.network_errors) + " " + T("网络失败（非中转站所致）", "network failures (not the relay's)");
+    if (ep.local_errors) line += " · " + int(ep.local_errors) + " " + T("ekte 内部失败（非中转站所致）", "ekte failures (not the relay's)");
+    if (ep.retried) line += " · " + int(ep.retried) + " " + T("次重试", "repeated");
     o.push('<p class="zp-muted">' + esc(line) + "</p>");
     var extra = [];
     if (ep.cold_start_ms != null)

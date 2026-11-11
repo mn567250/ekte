@@ -21,6 +21,8 @@
   "max": "max",
   "stdev": "stdev",
   "network": "network",
-  "repeated": "repeated"
+  "repeated": "repeated",
+  "network failures (not the relay's)": "network failures (not the relay's)",
+  "ekte failures (not the relay's)": "ekte failures (not the relay's)"
  }
 }

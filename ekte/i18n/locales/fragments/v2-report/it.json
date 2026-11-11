@@ -9,6 +9,8 @@
   "{n} findings": "{n} rilievi",
   "{n} dimension": "{n} dimensione",
   "{n} dimensions": "{n} dimensioni",
-  "Rating {r}": "Valutazione {r}"
+  "Rating {r}": "Valutazione {r}",
+  "{n} warning": "{n} avviso",
+  "{n} warnings": "{n} avvisi"
  }
 }
