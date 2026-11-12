@@ -145,7 +145,7 @@ def test_watches_step_three_adds_the_evidence_setting(data):
         c.execute("INSERT INTO watches (name, base_url, interval_sec) VALUES ('w', 'https://x', 60)")
         c.execute("PRAGMA user_version = 2")
     watches.init()
-    assert _version(db) == 3
+    assert _version(db) == len(watches.MIGRATIONS)
     assert "evidence" in _cols(db, "watches")
     assert [w["evidence"] for w in watches.list_all()] == [True]
 

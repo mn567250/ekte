@@ -181,6 +181,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ekte/perf/**", ("audit",)),
     ("ekte/prompts/**", ("audit",)),
     ("ekte/utils/**", ("audit",)),
+    ("ekte/runwindow.py", ("monitors",)),  # the monitors' run window
     ("ekte/runner.py", ("audit",)),
     ("ekte/scoring.py", ("audit",)),
     ("ekte/config.py", ("audit",)),
