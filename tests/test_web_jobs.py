@@ -143,6 +143,57 @@ async def test_jobs_queue_per_relay_and_replay_their_log(tmp_path, monkeypatch):
     assert [j.id for j in mgr.list()] == [a.id, b.id]
 
 
+async def _drain(job: jobs.Job, timeout: float = 2.0) -> list[str]:
+    """The event types of a stream of ``job``, to its end (fails if it never ends)."""
+
+    async def follow() -> list[str]:
+        return [json.loads(c[5:])["type"] async for c in jobs.stream(job, 0.01)]
+
+    return await asyncio.wait_for(follow(), timeout)
+
+
+async def test_a_subscriber_between_status_done_and_the_done_event_gets_done():
+    """#170: the status turns "done" before the "done" event is emitted; a
+    stream attaching in between must still end with it."""
+    job = jobs.Job({}, frozenset())
+    job.status = "running"
+    job.emit({"type": "running"})
+    job.status = "done"  # as JobManager._finish does, before _drive's finally
+    job.emit({"type": "report", "report": {}, "report_id": 1})
+    follower = asyncio.create_task(_drain(job))
+    await asyncio.sleep(0.01)  # the stream has replayed the log and waits
+    job.emit({"type": "done"})
+    job._subscribers.clear()
+    assert await follower == ["running", "report", "done"]
+    # after "done" a subscriber gets the whole log and is not kept
+    assert await _drain(job) == ["running", "report", "done"] and not job._subscribers
+
+
+async def test_a_stream_attached_while_a_finished_job_is_wrapping_up_ends(tmp_path, monkeypatch):
+    """#170 through JobManager: a stream attaching right after the save
+    (status "done", "report" emitted, "done" not yet) ends with "done"."""
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    followers: list[asyncio.Task[list[str]]] = []
+    finish = jobs.JobManager._finish
+
+    async def finish_then_attach(job, report):
+        await finish(job, report)
+        assert job.status == "done" and job.events[-1]["type"] == "report"
+        followers.append(asyncio.create_task(_drain(job)))
+        await asyncio.sleep(0)  # let it subscribe before _drive emits "done"
+
+    monkeypatch.setattr(jobs.JobManager, "_finish", staticmethod(finish_then_attach))
+    mgr = jobs.JobManager(jobs.RelayGate(limit=4))
+
+    async def run(emit):
+        emit({"type": "start", "total": 1, "probe_requests": 0})
+        return {"verdict": {}, "target": {"base_url": "https://r.example/v1"}}
+
+    job = mgr.submit({"base_url": "https://r.example/v1"}, ["https://r.example/v1"], run)
+    await _until(lambda: bool(followers) and not job.active and job.events[-1]["type"] == "done")
+    assert await followers[0] == ["running", "start", "report", "done"]
+
+
 async def test_cancel_stops_queued_and_running_jobs():
     mgr = jobs.JobManager(jobs.RelayGate(limit=4))
     forever = asyncio.Event()

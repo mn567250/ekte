@@ -247,7 +247,11 @@ class Job:
         q: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         for ev in self.events:
             q.put_nowait(ev)
-        if self.active:
+        # Follow it until "done" is in the log, not while the status is
+        # active: a finished audit's status turns "done" (JobManager._finish)
+        # a few loop turns before _drive emits "done", and a subscriber left
+        # out in between would wait for it forever (#170).
+        if not self.events or self.events[-1].get("type") != "done":
             self._subscribers.add(q)
         return q
 

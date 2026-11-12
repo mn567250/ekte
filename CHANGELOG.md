@@ -226,6 +226,11 @@ how many saved runs it re-extracts.
 
 ### Fixed
 
+- **A background audit's live view no longer hangs as the audit finishes**
+  ([#170](https://github.com/mn567250/ekte/issues/170)). A page that attached
+  to an audit's event stream (`/api/jobs/{id}/events`) in the moment between
+  the report being saved and the job's last event kept waiting forever,
+  showing the audit as running. It now ends with the report.
 - **Report warnings and failure classes in the web report and `--compact`**
   ([#166](https://github.com/mn567250/ekte/issues/166)). The web report view
   now shows `report.warnings` (the "run was impaired" warning, knowledge-base
