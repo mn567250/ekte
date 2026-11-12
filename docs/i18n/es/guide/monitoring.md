@@ -84,3 +84,14 @@ API cifradas para que puedas volver a introducirlas). Para uso desatendido o en
 Docker, pasa la clave como `EKTE_SECRET_KEY` (consulta
 [Docker](docker.md)); `ekte secret status | export | rotate` la
 gestionan desde la línea de comandos.
+
+### Ventana de ejecución
+
+Un monitor puede tener una **ventana de ejecución**: los días de la semana y las horas en que el planificador lo inicia, por ejemplo lun–vie, 07:00–19:00, Europe/Berlin. Se edita en la propia página Monitores (**Ventana de ejecución**, tras **Intervalo de comprobación**). Fuera de la ventana el monitor no se ejecuta; sin ventana funciona las 24 horas, como antes.
+
+- Solo horas enteras; `24:00` es el final del día. Un final igual o anterior al inicio es una ventana nocturna: termina a la mañana siguiente y pertenece al día en que empieza (una ventana de viernes 22:00–06:00 cubre el sábado de 00:00 a 06:00).
+- Se usa la zona horaria guardada con la ventana (nombre IANA), nunca la del servidor. Los cambios de horario de verano no afectan: ekte solo comprueba si *ahora* está dentro de la ventana.
+- Un monitor toca cuando ha pasado su intervalo **y** está dentro de la ventana. Tras un periodo cerrado se ejecuta una vez al abrirse la ventana, no una por cada hueco perdido. Una ejecución programada que esperó a su relay hasta después del cierre se omite y no registra nada.
+- **Ejecutar ahora** ignora la ventana. Pausar un monitor es independiente.
+- **Punto ciego:** las horas fuera de la ventana no se comprueban y un relay deshonesto puede aprender el patrón. El editor indica cuántas horas semanales no se comprueban.
+- `ekte watch` no tiene ventana de ejecución; use cron con `--once`.

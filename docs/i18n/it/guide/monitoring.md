@@ -83,3 +83,14 @@ continuano a girare. La barra di stato della pagina offre anche **Blocca**,
 reinserirle). Per un uso non presidiato o con Docker, passa la chiave come
 `EKTE_SECRET_KEY` (vedi [Docker](docker.md));
 `ekte secret status | export | rotate` la gestiscono da riga di comando.
+
+### Finestra di esecuzione
+
+Un monitor può avere una **finestra di esecuzione**: i giorni della settimana e le ore in cui lo scheduler lo avvia, ad esempio lun–ven, 07:00–19:00, Europe/Berlin. Si modifica direttamente nella pagina Monitor (**Finestra di esecuzione**, dopo **Intervallo di controllo**). Fuori dalla finestra il monitor non viene eseguito; senza finestra gira sempre, come prima.
+
+- Solo ore intere; `24:00` è la fine del giorno. Una fine uguale o precedente all’inizio è una finestra notturna: termina la mattina seguente e appartiene al giorno in cui inizia (una finestra del venerdì 22:00–06:00 copre il sabato dalle 00:00 alle 06:00).
+- Vale il fuso orario salvato con la finestra (nome IANA), mai quello del server. I cambi di ora legale non causano problemi: ekte verifica solo se *adesso* è nella finestra.
+- Un monitor è in scadenza quando il suo intervallo è trascorso **e** si trova nella finestra. Dopo un periodo chiuso viene eseguito una volta all’apertura, non una per ogni slot perso. Un’esecuzione pianificata che ha atteso il relay oltre la fine della finestra viene saltata e non registra nulla.
+- **Esegui ora** ignora la finestra. La messa in pausa di un monitor è indipendente.
+- **Punto cieco:** le ore fuori dalla finestra non vengono controllate e un relay disonesto può imparare lo schema. L’editor mostra quante ore a settimana non sono controllate.
+- `ekte watch` non ha una finestra di esecuzione; usa cron con `--once`.

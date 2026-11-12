@@ -20,6 +20,18 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Monitors: run window per monitor ([#165](https://github.com/mn567250/ekte/issues/165))
+
+A monitor can have a run window, for example Mon–Fri, 07:00–19:00,
+Europe/Berlin; outside it the scheduler does not start the monitor, which
+saves storage for evidence files. Set it on the Monitors page (**Run window**).
+The editor shows how many hours a week are no longer checked. **Run now**
+ignores the window; a scheduled run that waited past the end of the window is
+skipped. `GET /api/watches` adds `run_window`, `in_window` and
+`next_window_ts`; `POST` and `PATCH /api/watches` accept `run_window`
+(`null` clears it). `watches.db` gains a nullable `run_window` column
+(schema version 4). See the [monitoring guide](docs/guide/monitoring.md).
+
 ### Metrics, filters and History/Analytics rework ([#117](https://github.com/mn567250/ekte/issues/117))
 
 History and Analytics now show the same numbers, computed once on the

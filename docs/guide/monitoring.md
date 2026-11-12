@@ -73,3 +73,27 @@ keep running. The status bar on the **Monitors** page also offers **Lock**,
 enter them again). For unattended or Docker use, pass the key as
 `EKTE_SECRET_KEY` (see [Docker](docker.md));
 `ekte secret status | export | rotate` manage it on the command line.
+
+### Run window
+
+A monitor can have a **run window**: the days of the week and hours in which
+the scheduler starts it, for example Mon–Fri, 07:00–19:00, Europe/Berlin. Edit
+it in place on the Monitors page (**Run window**, after **Check interval**).
+Outside the window the monitor does not run. Without a window it runs around
+the clock, as before.
+
+- Whole hours only. `24:00` is the end of the day. An end at or before the
+  start is an overnight window: it ends the next morning and belongs to the
+  day it starts on (a Friday 22:00–06:00 window covers Saturday 00:00–06:00).
+- The window uses the time zone stored with it (an IANA name), never the
+  server's. Daylight saving changes are harmless: ekte only asks whether *now*
+  is inside the window.
+- A monitor is due when its interval has elapsed **and** it is inside the
+  window. After a closed period it runs once when the window opens, not once
+  per missed slot. A scheduled run that waited for its relay past the end of
+  the window is skipped and records nothing.
+- **Run now** ignores the window. Pausing a monitor is independent of it.
+- **Blind spot:** hours outside the window are not checked, and a dishonest
+  relay can learn the pattern. The editor shows how many hours a week are not
+  checked.
+- `ekte watch` has no run window; use cron with `--once`.

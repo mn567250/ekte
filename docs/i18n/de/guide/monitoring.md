@@ -86,3 +86,14 @@ verschlüsselten API-Schlüssel, damit Sie sie neu eingeben können). Für
 unbeaufsichtigten Betrieb oder Docker übergeben Sie den Schlüssel als
 `EKTE_SECRET_KEY` (siehe [Docker](docker.md));
 `ekte secret status | export | rotate` verwalten ihn auf der Kommandozeile.
+
+### Laufzeitfenster
+
+Ein Monitor kann ein **Laufzeitfenster** haben: die Wochentage und Stunden, in denen der Scheduler ihn startet, etwa Mo–Fr, 07:00–19:00, Europe/Berlin. Es wird direkt auf der Seite „Monitore“ bearbeitet (**Laufzeitfenster**, nach **Prüfintervall**). Außerhalb des Fensters läuft der Monitor nicht; ohne Fenster läuft er wie bisher rund um die Uhr.
+
+- Nur volle Stunden; `24:00` ist das Tagesende. Ein Ende vor oder gleich dem Start ergibt ein Nachtfenster: Es endet am nächsten Morgen und gehört zu dem Tag, an dem es beginnt (Freitag 22:00–06:00 umfasst Samstag 00:00–06:00).
+- Maßgeblich ist die mitgespeicherte Zeitzone (IANA-Name), nie die des Servers. Sommerzeitwechsel schaden nicht: ekte prüft nur, ob *jetzt* im Fenster liegt.
+- Ein Monitor ist fällig, wenn sein Intervall abgelaufen ist **und** er im Fenster liegt. Nach einer Sperrzeit läuft er beim Öffnen des Fensters einmal, nicht einmal pro verpasstem Slot. Ein geplanter Lauf, der auf sein Relay gewartet hat und dabei das Fensterende erreicht, wird übersprungen und nichts wird gespeichert.
+- **Jetzt ausführen** ignoriert das Fenster. Das Pausieren eines Monitors ist unabhängig davon.
+- **Blinder Fleck:** Stunden außerhalb des Fensters werden nicht geprüft, und ein unehrliches Relay kann das Muster lernen. Der Editor zeigt, wie viele Wochenstunden nicht geprüft werden.
+- `ekte watch` kennt kein Laufzeitfenster; nutzen Sie cron mit `--once`.
