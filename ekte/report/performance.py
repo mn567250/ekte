@@ -162,7 +162,7 @@ def fail_text(r: RequestRecord) -> str:
     return f"{'repeated' if r.retried else 'failed'} ({what})"
 
 
-# How the timeline charts mark a failed request (#172). Only the relay's own
+# How the timeline charts mark a failed request (issue 172). Only the relay's own
 # failures count against it (#94), so they keep the red cross; a failure on the
 # network path or inside ekte is a grey diamond; an attempt that never counts
 # (repeated, or ekte's param_retry) is a smaller, thinner grey mark of its

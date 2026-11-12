@@ -554,7 +554,7 @@ def _performance(perf: PerformanceReport) -> list[Flowable]:
             legend.append(_t("●", color=_TARGET_FADED) + _t(" audit request (lighter)"))
         if any(r.phase != "passive" and not r.stream and not perf_render.surface_call(r) for r in calls):
             legend.append(_t("○", color=_TARGET) + _t(" non-streaming request (hollow)"))
-        # the failure marks by class (#172), as perf_render._legend
+        # the failure marks by class (issue 172), as perf_render._legend
         failed = [perf_render.fail_kind(r) for r in calls if not r.ok]
         if any(counted and shape == perf_render.FAIL_RELAY for shape, counted in failed):
             legend.append(_t("×", bold=True, color=_CRITICAL) + _t(f" {perf_render.LEGEND_FAIL_RELAY}"))
@@ -698,7 +698,7 @@ def _timeline(perf: PerformanceReport, metric: tuple[str, str, str, Callable[...
             fill, stroke = colors.HexColor(_C["surface"]), series
         d.add(Circle(x(r.start_ms / 1000), y(v), 2.6, fillColor=fill, strokeColor=stroke,
                      strokeWidth=0.8, fillOpacity=opacity))
-    # by class (#172): the relay's failure a red cross, a network / ekte one a
+    # by class (issue 172): the relay's failure a red cross, a network / ekte one a
     # grey diamond, an attempt that never counts a smaller, thinner grey mark
     # of its class's shape
     red, grey = colors.HexColor(_CRITICAL), colors.HexColor(_MUTED)
