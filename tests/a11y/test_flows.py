@@ -562,6 +562,19 @@ def test_monitor_flow(browser, contexts, ekte, relay, lang: str) -> None:
         wait_text(page, ".mon-msg")
 
     flow.step("save the interval", save_interval)
+    flow.step("edit the run window", lambda: press(page, "[data-act=edit-window]"))
+
+    def save_window(preset: str | None) -> None:
+        if preset:
+            press(page, f"[data-act=win-preset][data-v={preset}]", " ")
+            page.wait_for_selector("[data-act=win-day]" if preset != "always" else "[data-act=win-preset]")
+        press(page, "[data-act=save-window]")
+        page.wait_for_selector("[data-act=edit-window]")
+        wait_text(page, ".mon-msg")
+
+    flow.step("choose weekdays 07-19 and save it", lambda: save_window("weekdays7"))
+    flow.step("edit it again and clear it", lambda: press(page, "[data-act=edit-window]"))
+    flow.step("choose always and save it", lambda: save_window("always"))
     flow.step("pause the monitor", lambda: (
         press(page, "input[data-act=enabled]", " "),
         page.wait_for_function("() => !document.querySelector('input[data-act=enabled]').checked")))
