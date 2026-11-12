@@ -453,6 +453,7 @@ async def _run_one_watch_inner(
     duration: float | None = None
     cancelled = False
     saved = False  # a run whose report is stored is recorded with it, even if cancelled
+    skipped = False  # a scheduled run that found its run window closed records nothing
     try:
         suite = validate_suite(str(row.get("suite") or "standard"))
         dimensions = validate_dimensions(suite, row.get("dimensions"))
@@ -512,6 +513,7 @@ async def _run_one_watch_inner(
             # window is skipped and records nothing: it is due again when the
             # next window opens. Run now ignores the window.
             if scheduled and not runwindow.in_window(runwindow.parse(row.get("run_window")), time.time()):
+                skipped = True
                 if state is not None:
                     state["waiting_for"] = []
                 return
@@ -618,6 +620,8 @@ async def _run_one_watch_inner(
         # cancelled before its report was stored keeps the previous result on
         # the card, only its time moves on.
         def mark() -> None:
+            if skipped:
+                return
             if cancelled and not saved:
                 watches.mark_attempt(wid, now)
             else:

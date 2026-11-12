@@ -812,3 +812,124 @@ def test_a_failed_run_logs_the_traceback_and_hides_the_exception_text(tmp_path, 
     # the server log keeps the full traceback
     rec = next(x for x in caplog.records if x.getMessage() == f"monitor {wid} run failed")
     assert rec.exc_info and "internal detail" in str(rec.exc_info[1])
+
+
+# ----- run window (issue #165) -------------------------------------------- #
+
+_WIN = {"tz": "UTC", "days": [0, 1, 2, 3, 4], "start": "07:00", "end": "19:00"}
+_BASE = {"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "gpt-4o"}
+
+
+def _utc(y, m, d, h):
+    from datetime import datetime, timezone
+
+    return datetime(y, m, d, h, tzinfo=timezone.utc).timestamp()
+
+
+def test_watch_db_v3_gains_a_run_window_column(tmp_path, monkeypatch):
+    import sqlite3
+
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import watches
+
+    watches.create(_BASE)
+    path = watches._db_path()
+    with sqlite3.connect(path) as conn:  # back to a v3 database
+        conn.execute("ALTER TABLE watches DROP COLUMN run_window")
+        conn.execute("PRAGMA user_version = 3")
+    [w] = watches.list_all()
+    assert w["run_window"] is None
+    with sqlite3.connect(path) as conn:
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
+
+
+def test_update_sets_clears_and_keeps_the_run_window(tmp_path, monkeypatch):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import watches
+
+    wid = watches.create({**_BASE, "run_window": _WIN})
+    assert watches.get(wid)["run_window"] == _WIN
+    watches.update(wid, interval_sec=600)  # left out: kept
+    assert watches.get(wid)["run_window"] == _WIN
+    watches.update(wid, run_window=None)  # None: cleared
+    assert watches.get(wid)["run_window"] is None
+    watches.update(wid, run_window=_WIN)
+    assert watches.get(wid)["run_window"] == _WIN
+    with pytest.raises(ValueError):
+        watches.update(wid, run_window={**_WIN, "days": []})
+
+
+def test_due_leaves_out_monitors_outside_their_window_without_decrypting(tmp_path, monkeypatch):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    from ekte.web import watches
+
+    free = watches.create({**_BASE, "name": "free"})
+    windowed = watches.create({**_BASE, "name": "windowed", "run_window": _WIN})
+    opened: list[int] = []
+    real = watches._open_key
+    monkeypatch.setattr(watches, "_open_key", lambda d: (opened.append(d["id"]), real(d))[1])
+    monday_noon, saturday_noon = _utc(2026, 11, 9, 12), _utc(2026, 11, 14, 12)
+    assert {w["id"] for w in watches.due(monday_noon)} == {free, windowed}
+    opened.clear()
+    assert [w["id"] for w in watches.due(saturday_noon)] == [free]
+    assert opened == [free]
+    # after a closed period it is due once, not once per missed slot
+    watches.mark_run(windowed, None, None, None, _utc(2026, 11, 6, 12))
+    assert windowed in {w["id"] for w in watches.due(_utc(2026, 11, 9, 7))}
+
+
+def test_run_window_api_roundtrip_and_errors(tmp_path, monkeypatch, client):
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    bad = client.post("/api/watches", json={**_BASE, "run_window": {**_WIN, "days": []}})
+    assert bad.status_code == 400 and bad.json()["error"] == "Choose at least one day."
+    wid = client.post("/api/watches", json={**_BASE, "run_window": _WIN}).json()["id"]
+    plain = client.post("/api/watches", json=_BASE).json()["id"]
+    rows = {w["id"]: w for w in client.get("/api/watches").json()}
+    assert rows[wid]["run_window"] == _WIN and isinstance(rows[wid]["in_window"], bool)
+    assert rows[plain]["run_window"] is None and rows[plain]["in_window"] is True
+    assert rows[plain]["next_window_ts"] is None and rows[wid]["next_window_ts"] is not None
+
+    assert client.patch(f"/api/watches/{wid}", json={"alert_on": "low"}).status_code == 200
+    assert client.get("/api/watches").json()[1]["run_window"] == _WIN  # untouched
+    r = client.patch(f"/api/watches/{wid}", json={"run_window": {**_WIN, "tz": "Nope/Zone"}})
+    assert r.status_code == 400
+    assert client.patch(f"/api/watches/{wid}", json={"run_window": None}).status_code == 200
+    assert {w["id"]: w for w in client.get("/api/watches").json()}[wid]["run_window"] is None
+
+
+async def _fake_run(monkeypatch, calls):
+    import json
+    from pathlib import Path
+
+    from ekte.models import AuditReport
+    from ekte.web import server
+
+    report = AuditReport.model_validate(
+        json.loads((Path(__file__).parent / "fixtures" / "web_report.json").read_text("utf-8"))
+    )
+
+    async def fake_run_audit(*_a, **_k):
+        calls.append(1)
+        return report
+
+    monkeypatch.setattr(server, "run_audit", fake_run_audit)
+
+
+async def test_run_now_ignores_the_window_but_a_scheduled_run_after_it_skips(tmp_path, monkeypatch):
+    from ekte.web import server, watches
+
+    monkeypatch.setenv("EKTE_DATA_DIR", str(tmp_path))
+    calls: list[int] = []
+    await _fake_run(monkeypatch, calls)
+    closed = {**_WIN, "days": [0, 1, 2, 3, 4, 5, 6], "start": "00:00", "end": "01:00"}
+    # a window that is closed at any time except 00:00-01:00 UTC
+    monkeypatch.setattr(server.time, "time", lambda: _utc(2026, 11, 9, 12))
+    wid = watches.create({**_BASE, "run_window": closed})
+
+    await server._run_one_watch(watches.get(wid), scheduled=True)  # window closed: skipped
+    w = watches.get(wid)
+    assert calls == [] and w["last_run_ts"] is None and w["last_report_id"] is None
+    assert wid in {d["id"] for d in watches.due(_utc(2026, 11, 10, 0))}
+
+    await server._run_one_watch(watches.get(wid))  # Run now
+    assert calls == [1] and watches.get(wid)["last_report_id"] is not None
