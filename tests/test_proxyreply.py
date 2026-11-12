@@ -309,3 +309,34 @@ def test_reliability_advice_by_proxy_answer():
     assert "could not reach the relay host" in _network_advice(3, 0)
     assert "refused the tunnel" in _network_advice(0, 2)
     assert _network_advice(0, 0) == _network_advice(1, 1)
+
+
+# -- a re-scored run keeps it ------------------------------------------------- #
+async def test_a_replayed_refusal_keeps_the_proxys_answer():
+    from ekte.models import EvidenceRef
+    from ekte.replay import Replay
+
+    client = _client(RequestRecorder())
+    body = client._build_body(_spec())
+    import json
+
+    line = {
+        "type": "exchange", "id": 1, "seq": 0, "endpoint": "target", "op": "complete",
+        "start_ms": 0.0,
+        "request": {"method": "POST", "url": "https://relay.example/v1/chat/completions",
+                    "headers": {}, "body": {"text": json.dumps(body)}},
+        "response": None,
+        "error": "ProxyError: 503 Service Unavailable",
+        "proxy": {"target": "relay.example:443", "status": 503, "reason": "Service Unavailable",
+                  "headers": {"server": "squid"}, "body": {"text": "<html/>", "bytes": 7},
+                  "read_to_end": True, "wait_ms": 60_000.0},
+    }
+    replay = Replay([line], ref=EvidenceRef(run_id="r", file="r.jsonl.zst", sha256="0" * 64))
+    rec = RequestRecorder()
+    replayed = OpenAICompatibleClient(client.config, transport=replay.transport("target"))
+    replayed.recorder = rec
+    replayed.replay_retried = replay.was_retried
+    out = await replayed.complete(_spec())
+    assert out.error_type == "ProxyError" and out.error_class == errorclass.NETWORK
+    assert out.proxy_status == 503 and out.proxy_wait_ms == pytest.approx(60_000, rel=1e-3)
+    assert rec.records[0].proxy_status == 503

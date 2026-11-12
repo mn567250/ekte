@@ -78,6 +78,36 @@ def recorded_error(error: str | None, request: httpx.Request) -> Exception:
     return httpx.ConnectError(text, request=request)
 
 
+def _replay_proxy_reply(net: Any, recorded: Any) -> None:
+    """Give the replayed call the proxy's recorded refusal of the tunnel
+    (evidence schema 1.1), so its record keeps ``proxy_status`` and
+    ``proxy_wait_ms`` as the recorded one did."""
+    if not isinstance(recorded, dict) or not isinstance(recorded.get("status"), int):
+        return
+    from ekte.proxyreply import ProxyReply
+
+    now = time.perf_counter()
+    wait = recorded.get("wait_ms")
+    reply = ProxyReply(
+        target=str(recorded.get("target") or "?"),
+        sent_at=now,
+        status=recorded["status"],
+        reason=recorded.get("reason"),
+        http_version=recorded.get("http_version"),
+        headers=dict(recorded.get("headers") or {}),
+        at=now + wait / 1000 if isinstance(wait, int | float) else None,
+    )
+    body = recorded.get("body") or {}
+    text = body.get("text")
+    if isinstance(text, str):
+        reply.body = base64.b64decode(text) if body.get("encoding") == "base64" else text.encode("utf-8")
+        reply.body_total = int(body.get("bytes") or len(reply.body))
+        reply.body_complete = bool(recorded.get("read_to_end"))
+    net.proxy_reply = reply
+    if net.captures:
+        net.captures[-1].proxy = reply
+
+
 def request_key(endpoint: str, method: str, url: str, body: str | None) -> tuple[str, str, str, str]:
     """What a request is matched on: endpoint, method, URL path and the body
     (JSON with sorted keys, performance-probe ids masked)."""
@@ -219,6 +249,8 @@ class ReplayTransport(httpx.AsyncBaseTransport):
             net.replayed_seq = line.get("seq")
         resp = line.get("response")
         if resp is None:  # the recorded call got no response either
+            if net is not None:
+                _replay_proxy_reply(net, line.get("proxy"))
             raise recorded_error(line.get("error"), request)
         body_rec = resp.get("body") or {}
         text = body_rec.get("text") or ""
