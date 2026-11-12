@@ -226,6 +226,24 @@ how many saved runs it re-extracts.
 
 ### Fixed
 
+- **A proxy that refuses the tunnel to the relay is kept as evidence and named
+  for what it says** ([#175](https://github.com/mn567250/ekte/issues/175)).
+  Behind an HTTPS proxy, a `CONNECT` the proxy answered with an error left only
+  `ProxyError` and its status text in the record: no headers, no body, and
+  wording that blamed the proxy even when it only reported that it could not
+  reach the relay host. ekte now keeps the proxy's answer — its status,
+  reason, headers, error page (up to 64 KiB, read for at most a second as the
+  connection closes) and how long it took to answer — under `proxy` in the
+  evidence exchange (evidence schema 1.1), and `proxy_status` /
+  `proxy_wait_ms` on the request record (report schema 1.4; history column
+  migration 15). The data table, the impaired-run warning and the reliability
+  advice say what the answer means: 502/503/504 "relay host unreachable via
+  the proxy" (check the host's reachability from the proxy: DNS and addresses,
+  IPv6, a firewall or WAF dropping the proxy's address, load-balancer nodes),
+  4xx "the proxy refused the tunnel" (its authentication or policy). Scoring
+  is unchanged: these stay network failures, repeated and not counted against
+  the relay. A re-scored run keeps the recorded answer. Runs saved before read
+  as they did.
 - **A background audit's live view no longer hangs as the audit finishes**
   ([#170](https://github.com/mn567250/ekte/issues/170)). A page that attached
   to an audit's event stream (`/api/jobs/{id}/events`) in the moment between

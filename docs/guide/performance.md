@@ -61,7 +61,21 @@ relay's doing: the request is repeated, once by default
 whose requests all failed that way reads inconclusive instead of being scored,
 and the report warns that the run was impaired. Every request record carries its
 class (`error_class`) and whether it was repeated (`retried`); for runs saved
-before, the web UI derives the class from the stored error. The timeline
+before, the web UI derives the class from the stored error.
+
+Behind an HTTPS proxy, a request the proxy would not open a tunnel for fails
+with `ProxyError`. ekte keeps the proxy's answer to the `CONNECT`: the record
+carries its status (`proxy_status`) and how long the proxy took to answer
+(`proxy_wait_ms`), and the evidence file keeps its headers and error page
+(under `proxy`; Squid's names the errno and the address it tried). The status
+says whose problem it is, and the data table, the impaired-run warning and
+the reliability advice say so: **502/503/504** — "relay host unreachable via
+the proxy", typically after the proxy's own connect timeout (often 60 s): the
+proxy could not reach the relay host, so check the host's reachability from
+the proxy (its DNS and addresses, IPv6, a firewall or WAF dropping the proxy's
+address, load-balancer nodes), not only the proxy; **4xx** (407, 403) — "the
+proxy refused the tunnel": its authentication or policy. Either way it stays a
+network failure, repeated and not counted against the relay. The timeline
 charts draw them apart: a relay failure is a red ×, a network or ekte failure a
 grey ◇, and an attempt that never counts (a repeated one) a smaller grey mark of
 the same shape; a note above the legend says how many requests failed on the
