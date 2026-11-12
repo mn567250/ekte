@@ -67,4 +67,8 @@ vérification dont toutes les requêtes ont échoué ainsi est non concluante au
 lieu d’être notée, et le rapport signale que l’exécution a été perturbée. Chaque
 enregistrement de requête porte sa classe (`error_class`) et s’il a été répété
 (`retried`) ; pour les exécutions enregistrées avant, l’interface web déduit la
-classe de l’erreur enregistrée.
+classe de l’erreur enregistrée. Les graphiques chronologiques les distinguent :
+un échec du relais est une × rouge, un échec réseau ou d’ekte un ◇ gris, et une
+tentative qui ne compte jamais (une tentative répétée) une marque grise plus
+petite de la même forme ; une note au-dessus de la légende indique combien de
+requêtes ont échoué sur le chemin réseau ou dans ekte.

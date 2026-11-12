@@ -70,9 +70,10 @@ def test_html_draws_inline_svg_without_scripts():
     dim = details[details.index("<strong>performance</strong>"):]
     section = dim[dim.index("<h4>Performance measurements</h4>"):]
     assert "<svg" in section and 'class="pt target"' in section and 'class="pt baseline"' in section
-    assert 'class="fail-mark"' in section  # the failed request is marked
+    assert 'class="fail-mark relay"' in section  # the relay's failure is marked
     # ... with the time it took to fail in its tooltip
-    assert re.search(r'class="fail-mark"[^>]*><title>[^<]*failed \(502\)\nLatency: 1,206 ms</title>', section)
+    assert re.search(r'class="fail-mark relay"[^>]*><title>[^<]*failed \(502\)\nLatency: 1,206 ms</title>', section)
+    assert "relay failure" in section and "perf-impaired" not in section
     assert "<script" not in page  # self-contained, no JS
     assert "&lt;script&gt;" in section  # tooltips are escaped
     assert 'id="perf-latency"' in section and 'id="panel-ttft"' in section
@@ -196,3 +197,89 @@ def test_html_tooltip_names_where_a_request_failed():
     assert fail_text(_rec(3, "target", ok=False, error_type="ConnectError", error_class="network",
                           retried=True)) == "repeated (ConnectError · network)"
     assert fail_text(_rec(4, "target", ok=False, error_type="KeyError")) == "failed (KeyError · ekte)"
+
+
+def _failures_report() -> AuditReport:
+    """A probe run with each kind of failure (#172): two relay failures (a 502
+    and a rejected param_retry attempt), a proxy failure repeated once and
+    then lost for good, and an ekte failure."""
+    recs = [_rec(i, "target") for i in range(4)]
+    recs += [
+        _rec(4, "target", ok=False, status_code=502, ttft_ms=None),
+        _rec(5, "target", ok=False, status_code=400, phase="param_retry", ttft_ms=None),
+        _rec(6, "target", ok=False, error_type="ProxyError", error_class="network", retried=True, ttft_ms=None),
+        _rec(7, "target", ok=False, error_type="ProxyError", error_class="network", ttft_ms=None),
+        _rec(8, "target", ok=False, error_type="KeyError", ttft_ms=None),  # classed from the name
+    ]
+    return AuditReport(
+        tool_version="0.0.0", mode="check", suite="deep",
+        target=RedactedTarget(name="t", kind="target", base_url="https://r/v1", model="m"),
+        verdict=Verdict(),
+        performance=build_performance(recs, has_baseline=False, probe_max_tokens=128),
+    )
+
+
+def test_fail_kind_follows_the_outcome_model():
+    from ekte.report.performance import fail_counts, fail_kind
+
+    recs = _failures_report().performance.requests
+    kinds = {r.seq: fail_kind(r) for r in recs if not r.ok}
+    assert kinds == {
+        4: ("relay", True),
+        5: ("relay", False),  # ekte's param_retry never counts
+        6: ("impaired", False),  # repeated
+        7: ("impaired", True),
+        8: ("impaired", True),  # a KeyError is ekte's own
+    }
+    assert fail_counts(recs) == {"relay": 1, "impaired": 2, "uncounted": 2}
+
+
+def test_html_chart_marks_failures_by_class():
+    from ekte.report.performance import CHART_METRICS
+
+    svg = timeline_svg(_failures_report().performance.requests, CHART_METRICS[0])
+    marks = re.findall(r'<path class="(fail-mark[^"]*)" d="([^"]*)"><title>#(\d+) ', svg)
+    by_seq = {int(seq): (cls, d) for cls, d, seq in marks}
+    assert {s: c for s, (c, _) in by_seq.items()} == {
+        4: "fail-mark relay",
+        5: "fail-mark relay uncounted",
+        6: "fail-mark impaired uncounted",
+        7: "fail-mark impaired",
+        8: "fail-mark impaired",
+    }
+    # a cross, a diamond; an uncounted attempt is the smaller mark of its shape
+    assert by_seq[4][1].endswith("l8,8m0,-8l-8,8")
+    assert by_seq[5][1].endswith("l6,6m0,-6l-6,6")
+    assert by_seq[7][1].endswith("l4,-4l4,4l-4,4z")
+    assert by_seq[6][1].endswith("l3,-3l3,3l-3,3z")
+    # the accessible name counts each kind apart
+    name = re.search(r'aria-label="([^"]*)"', svg).group(1)
+    assert "1 failed at the relay" in name
+    assert "2 failed on the network path or in ekte (not the relay&#x27;s)" in name
+    assert "2 repeated attempts (not counted)" in name
+
+
+def test_html_legend_and_note_name_the_failures_that_are_not_the_relays():
+    page = render_html(_failures_report())
+    section = page[page.index("<h4>Performance measurements</h4>"):]
+    legend = section[section.index('<div class="perf-legend">'):]
+    legend = legend[:legend.index("</div>")]
+    assert '<i class="key fail relay">×</i>relay failure' in legend
+    assert '<i class="key fail impaired">◇</i>network / ekte failure (not the relay&#x27;s)' in legend
+    assert ('<i class="key fail relay uncounted">×</i><i class="key fail impaired uncounted">◇</i>'
+            "repeated attempt (not counted)") in legend
+    # the note sits just above the legend, with the counted network / ekte failures
+    assert ('<p class="meta perf-impaired">2 requests failed on the network path or inside ekte, '
+            "not at the relay; they do not count against it.</p><div class=\"perf-legend\">") in section
+
+
+def test_pdf_legend_and_note_name_the_failures_that_are_not_the_relays():
+    pytest.importorskip("reportlab")
+    from ekte.report import pdf
+
+    flow = pdf._performance(_failures_report().performance)
+    text = " ".join(getattr(f, "text", "") for f in flow)
+    assert "relay failure" in text
+    assert "network / ekte failure (not the relay's)" in text.replace("&#x27;", "'").replace("&#39;", "'")
+    assert "repeated attempt (not counted)" in text
+    assert "2 requests failed on the network path or inside ekte" in text

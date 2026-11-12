@@ -23,6 +23,13 @@
   "network": "nettverk",
   "repeated": "gjentatt",
   "network failures (not the relay's)": "nettverksfeil (ikke reléets)",
-  "ekte failures (not the relay's)": "ekte-feil (ikke reléets)"
+  "ekte failures (not the relay's)": "ekte-feil (ikke reléets)",
+  "{n} failed at the relay": "{n} mislyktes hos reléet",
+  "{n} failed on the network path or in ekte (not the relay's)": "{n} mislyktes på nettverksveien eller i ekte (ikke reléets)",
+  "{n} repeated attempts (not counted)": "{n} gjentatte forsøk (telles ikke)",
+  "relay failure": "feil hos reléet",
+  "network / ekte failure (not the relay's)": "nettverks-/ekte-feil (ikke reléets)",
+  "repeated attempt (not counted)": "gjentatt forsøk (telles ikke)",
+  "{n} requests failed on the network path or inside ekte, not at the relay; they do not count against it.": "{n} forespørsler mislyktes på nettverksveien eller i ekte, ikke hos reléet; de telles ikke mot det."
  }
 }

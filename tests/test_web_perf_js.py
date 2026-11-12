@@ -50,7 +50,7 @@ def test_perf_js_renders_section_and_chart():
     assert out["empty"] == ""
     # probe requests: small, translucent dots (class "probe")
     assert "<svg" in section and 'class="zp-pt t probe"' in section and 'class="zp-pt b probe"' in section
-    assert 'class="zp-fail"' in section  # the failed request
+    assert 'class="zp-fail relay"' in section  # the failed request, the relay's own
     assert "Target vs baseline" in section and "Decode speed p50 (local)" in section
     assert "<img" not in section and "&lt;img" in section  # detector ids are escaped
     assert "zp-pt" in out["tps"]
@@ -134,7 +134,7 @@ def test_perf_js_tabs_and_chart_are_accessible():
     assert 'aria-controls="zp1-panel"' in section and 'role="tabpanel" id="zp1-panel"' in section
     assert 'aria-labelledby="zp1-tab-latency"' in section
     assert 'role="img" aria-label="Latency (ms) over time: 5 requests; target median 900 ms; ' \
-           'baseline median 900 ms; 1 failed"' in section
+           'baseline median 900 ms; 1 failed at the relay"' in section
     # the tooltip contents are also in a data table
     assert '<details class="zp-data">' in section and "Show data table" in section
     assert "failed (502)" in section.split('class="zp-data"')[1]
@@ -331,7 +331,7 @@ def test_perf_js_failed_request_shows_its_time_to_failure():
     out = _render(perf.model_dump_json())
     section = out["section"]
     # the x mark's tooltip
-    assert re.search(r'class="zp-fail"[^>]*data-tip="[^"]*failed \(ProxyError\)\nLatency: 60,012 ms"', section)
+    assert re.search(r'class="zp-fail relay"[^>]*data-tip="[^"]*failed \(ProxyError\)\nLatency: 60,012 ms"', section)
     # the latency tab's table: the time to failure; the other metrics stay empty
     table = section.split('class="zp-data"')[1]
     assert re.search(r'<td class="r">60,012</td><td class="r">—</td><td class="r">—</td><td>failed \(ProxyError\)', table)
@@ -766,3 +766,71 @@ def test_perf_js_endpoint_line_hides_zero_or_missing_failure_counts():
     section = _render(json.dumps(data))["section"]
     assert "network failures" not in section and "ekte failures" not in section
     assert " repeated" not in re.sub(r"<table.*?</table>", "", section, flags=re.S)
+
+
+def _failures_perf():
+    """Each kind of failure (#172), as the server sends them (error_class set):
+    a 502 and a rejected param_retry attempt at the relay, a proxy failure
+    repeated once and then lost for good, and an ekte failure."""
+    recs = [RequestRecord(seq=i, endpoint="target", phase="probe", ok=True, stream=True,
+                          start_ms=i * 1000.0, duration_ms=900.0, ttft_ms=250.0, decode_tps_local=80.0)
+            for i in range(4)]
+    fail = {"endpoint": "target", "phase": "probe", "ok": False, "duration_ms": 40.0}
+    recs += [
+        RequestRecord(seq=4, start_ms=4000.0, status_code=502, error_type="http_error", error_class="relay", **fail),
+        RequestRecord(seq=5, start_ms=4100.0, status_code=400, error_type="http_error", error_class="relay",
+                      **{**fail, "phase": "param_retry"}),
+        RequestRecord(seq=6, start_ms=4200.0, error_type="ProxyError", error_class="network", retried=True, **fail),
+        RequestRecord(seq=7, start_ms=4300.0, error_type="ProxyError", error_class="network", **fail),
+        RequestRecord(seq=8, start_ms=4400.0, error_type="TypeError", error_class="local", **fail),
+    ]
+    perf = build_performance(recs, has_baseline=False, probe_max_tokens=128)
+    assert perf is not None
+    return perf
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_perf_js_marks_failures_by_class():
+    section = _render(_failures_perf().model_dump_json())["section"]
+    marks = re.findall(r'<path class="(zp-fail[^"]*)" d="([^"]*)" data-tip="#(\d+) ', section)
+    by_seq = {int(seq): (cls, d) for cls, d, seq in marks}
+    assert {k: c for k, (c, _) in by_seq.items()} == {
+        4: "zp-fail relay",
+        5: "zp-fail relay uncounted",  # ekte's param_retry never counts
+        6: "zp-fail imp uncounted",  # repeated
+        7: "zp-fail imp",
+        8: "zp-fail imp",
+    }
+    assert by_seq[4][1].endswith("l8,8m0,-8l-8,8") and by_seq[5][1].endswith("l6,6m0,-6l-6,6")
+    assert by_seq[7][1].endswith("l4,-4l4,4l-4,4z") and by_seq[6][1].endswith("l3,-3l3,3l-3,3z")
+    name = re.search(r'role="img" aria-label="([^"]*)"', section).group(1)
+    assert name.endswith("1 failed at the relay; 2 failed on the network path or in ekte (not the relay's); "
+                         "2 repeated attempts (not counted)")
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_perf_js_legend_and_note_name_the_failures_that_are_not_the_relays():
+    section = _render(_failures_perf().model_dump_json())["section"]
+    legend = section[section.index('<div class="zp-legend">'):]
+    legend = legend[:legend.index("</div>")]
+    assert legend.startswith('<div class="zp-legend"><p class="zp-imp-note">2 requests failed on the network '
+                             "path or inside ekte, not at the relay; they do not count against it.</p>")
+    assert '<i class="zp-key x" aria-hidden="true">×</i>relay failure' in legend
+    assert '<i class="zp-key x imp" aria-hidden="true">◇</i>network / ekte failure (not the relay' in legend
+    assert ('<i class="zp-key x relay uncounted" aria-hidden="true">×</i>'
+            '<i class="zp-key x imp uncounted" aria-hidden="true">◇</i>repeated attempt (not counted)') in legend
+    # a run with only the relay's failures: no note, no other keys
+    plain = _render(_perf().model_dump_json())["section"]
+    assert "zp-imp-note" not in plain and "◇" not in plain and "not counted" not in plain
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="needs node to evaluate the UI's JS")
+def test_web_and_export_charts_draw_the_same_failure_marks():
+    from ekte.report.performance import CHART_METRICS, timeline_svg
+
+    perf = _failures_perf()
+    web = re.findall(r'<path class="zp-fail ([^"]*)" d="[^"]*?([lmz][^"]*)"', _render(perf.model_dump_json())["section"])
+    export = re.findall(r'<path class="fail-mark ([^"]*)" d="[^"]*?([lmz][^"]*)"',
+                        timeline_svg(perf.requests, CHART_METRICS[0]))
+    names = {"relay": "relay", "imp": "impaired"}
+    assert [(" ".join(names.get(w, w) for w in c.split()), d) for c, d in web] == export

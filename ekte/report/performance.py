@@ -12,7 +12,7 @@ import html
 import math
 from collections.abc import Callable
 
-from ekte.errorclass import LOCAL, NETWORK, record_class
+from ekte.errorclass import IMPAIRED, LOCAL, NETWORK, outcome, record_class
 from ekte.models import (
     EndpointPerformance,
     PerformanceComparison,
@@ -160,6 +160,66 @@ def fail_text(r: RequestRecord) -> str:
     elif cls == LOCAL:
         what += " · ekte"
     return f"{'repeated' if r.retried else 'failed'} ({what})"
+
+
+# How the timeline charts mark a failed request (issue 172). Only the relay's own
+# failures count against it (#94), so they keep the red cross; a failure on the
+# network path or inside ekte is a grey diamond; an attempt that never counts
+# (repeated, or ekte's param_retry) is a smaller, thinner grey mark of its
+# class's shape (full opacity, so it keeps 3:1 against the card, BITV
+# 9.1.4.11). perf.js (chartSvg, legend) and ekte/report/pdf.py draw the same.
+FAIL_RELAY = "relay"
+FAIL_IMPAIRED = "impaired"
+LEGEND_FAIL_RELAY = "relay failure"
+LEGEND_FAIL_IMPAIRED = "network / ekte failure (not the relay's)"
+LEGEND_FAIL_UNCOUNTED = "repeated attempt (not counted)"
+IMPAIRED_NOTE = (
+    "{n} requests failed on the network path or inside ekte, not at the relay; "
+    "they do not count against it."
+)
+
+
+def fail_kind(r: RequestRecord) -> tuple[str, bool]:
+    """A failed request's mark: its shape (:data:`FAIL_RELAY` or
+    :data:`FAIL_IMPAIRED`) and whether it counts (a repeated attempt and
+    ekte's ``param_retry`` never do: :func:`ekte.errorclass.outcome` is None)."""
+    shape = FAIL_IMPAIRED if record_class(r) in IMPAIRED else FAIL_RELAY
+    return shape, outcome(r) is not None
+
+
+def fail_counts(calls: list[RequestRecord]) -> dict[str, int]:
+    """The failed calls by mark: counted ``relay`` and ``impaired`` failures,
+    and the ``uncounted`` attempts."""
+    out = {FAIL_RELAY: 0, FAIL_IMPAIRED: 0, "uncounted": 0}
+    for r in calls:
+        if r.ok:
+            continue
+        shape, counted = fail_kind(r)
+        out[shape if counted else "uncounted"] += 1
+    return out
+
+
+def fail_summary(calls: list[RequestRecord]) -> list[str]:
+    """The failures' part of a chart's accessible name."""
+    c = fail_counts(calls)
+    parts = []
+    if c[FAIL_RELAY]:
+        parts.append(f"{c[FAIL_RELAY]} failed at the relay")
+    if c[FAIL_IMPAIRED]:
+        parts.append(f"{c[FAIL_IMPAIRED]} failed on the network path or in ekte (not the relay's)")
+    if c["uncounted"]:
+        parts.append(f"{c['uncounted']} repeated attempts (not counted)")
+    return parts
+
+
+def fail_path(cx: float, cy: float, shape: str, counted: bool = True) -> str:
+    """The mark's path, centred on (cx, cy) and starting its half-size left of
+    it (4 px, 3 for an uncounted attempt; the live chart's x-axis creep moves
+    it by that start): a cross or a diamond."""
+    h = 4 if counted else 3
+    if shape == FAIL_IMPAIRED:
+        return f"M{cx - h:.1f},{cy:.1f}l{h},-{h}l{h},{h}l-{h},{h}z"
+    return f"M{cx - h:.1f},{cy - h:.1f}l{2 * h},{2 * h}m0,-{2 * h}l-{2 * h},{2 * h}"
 
 
 def _extras(e: EndpointPerformance) -> list[str]:
@@ -490,6 +550,8 @@ def timeline_svg(
         name += f"; {TREND_TEXT}"
     if tl.has_band:
         name += f"; {BAND_TEXT}"
+    for part in fail_summary(tl.failed):
+        name += f"; {part}"
     out = [
         f'<svg class="perf-chart" viewBox="0 0 {_W} {_H}" role="img" aria-label="{_esc(name)}">'
     ]
@@ -544,8 +606,10 @@ def timeline_svg(
         tip = f"#{r.seq} {r.endpoint} · {r.detector or '—'} · {fail_text(r)}"
         if r.duration_ms is not None:  # the time it took to fail
             tip += f"\nLatency: {fmt_num(r.duration_ms)} ms"
+        shape, counted = fail_kind(r)
+        cls = f"fail-mark {shape}" + ("" if counted else " uncounted")
         out.append(
-            f'<path class="fail-mark" d="M{cx - 4:.1f},{base_y - 4:.1f}l8,8m0,-8l-8,8">'
+            f'<path class="{cls}" d="{fail_path(cx, base_y, shape, counted)}">'
             f"<title>{_esc(tip)}</title></path>"
         )
     out.append("</svg>")
@@ -553,7 +617,7 @@ def timeline_svg(
 
 
 def _legend(
-    has_baseline: bool, has_passive: bool, has_nonstream: bool, has_failed: bool,
+    has_baseline: bool, has_passive: bool, has_nonstream: bool, calls: list[RequestRecord],
     trend: str | None = None,
 ) -> str:
     items = ['<span><i class="key target"></i>target</span>']
@@ -563,13 +627,28 @@ def _legend(
         items.append('<span><i class="key target passive"></i>audit request (lighter)</span>')
     if has_nonstream:
         items.append('<span><i class="key target hollow"></i>non-streaming request (hollow)</span>')
-    if has_failed:
-        items.append('<span><i class="key fail">×</i>failed request</span>')
+    failed = [fail_kind(r) for r in calls if not r.ok]
+    if any(counted and shape == FAIL_RELAY for shape, counted in failed):
+        items.append(f'<span><i class="key fail relay">×</i>{LEGEND_FAIL_RELAY}</span>')
+    if any(counted and shape == FAIL_IMPAIRED for shape, counted in failed):
+        items.append(f'<span><i class="key fail impaired">◇</i>{_esc(LEGEND_FAIL_IMPAIRED)}</span>')
+    uncounted = {shape for shape, counted in failed if not counted}
+    if uncounted:
+        keys = "".join(
+            f'<i class="key fail {shape} uncounted">{"×" if shape == FAIL_RELAY else "◇"}</i>'
+            for shape in (FAIL_RELAY, FAIL_IMPAIRED) if shape in uncounted
+        )
+        items.append(f"<span>{keys}{LEGEND_FAIL_UNCOUNTED}</span>")
     if trend == "band":
         items.append('<span><i class="key band"></i>running median (last 5) with p25–p75</span>')
     elif trend == "line":
         items.append('<span><i class="key line"></i>running median (last 5)</span>')
-    return f'<div class="perf-legend">{"".join(items)}</div>'
+    impaired = fail_counts(calls)[FAIL_IMPAIRED]
+    note = (
+        f'<p class="meta perf-impaired">{_esc(IMPAIRED_NOTE.format(n=impaired))}</p>'
+        if impaired else ""
+    )
+    return f'{note}<div class="perf-legend">{"".join(items)}</div>'
 
 
 def _stat_table(visible, e: EndpointPerformance) -> str:
@@ -678,7 +757,7 @@ def html_section(perf: PerformanceReport | None, *, nested: bool = False) -> str
                 perf.baseline is not None,
                 any(r.phase == "passive" for r in calls) and perf.source == "probe",
                 any(r.phase != "passive" and not r.stream and not surface_call(r) for r in calls),
-                any(not r.ok for r in calls),
+                calls,
                 trend_kind(records),
             )
         )
@@ -732,6 +811,9 @@ PERF_CSS = """
 .perf-nested > h4 { margin: .25rem 0; }
 h3.perf-mode { margin-top: 1.5rem; border-top: 1px solid var(--line); padding-top: 1rem; }
 .perf-chart .fail-mark { stroke: var(--status-critical); stroke-width: 2; stroke-linecap: round; }
+.perf-chart .fail-mark.impaired { stroke: var(--ink-muted); fill: none; stroke-width: 1.75;
+  stroke-linejoin: round; }
+.perf-chart .fail-mark.uncounted { stroke: var(--ink-muted); stroke-width: 1.25; }
 .perf-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .8rem; color: var(--ink-muted);
   margin: .25rem 0 .75rem; }
 .perf-legend .key { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
@@ -741,6 +823,10 @@ h3.perf-mode { margin-top: 1.5rem; border-top: 1px solid var(--line); padding-to
 .perf-legend .key.passive { opacity: .45; }
 .perf-legend .key.fail { color: var(--status-critical); width: auto; height: auto;
   font-weight: 700; border-radius: 0; }
+.perf-legend .key.fail.impaired { color: var(--ink-muted); }
+.perf-legend .key.fail.uncounted { color: var(--ink-muted); font-size: .7rem; font-weight: 400;
+  margin-right: .2rem; }
+.perf-impaired { margin: .25rem 0 0; }
 .perf-chart .trend path { fill: none; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 .perf-chart .trend .target { stroke: var(--series-target); }
 .perf-chart .trend .baseline { stroke: var(--series-baseline); }

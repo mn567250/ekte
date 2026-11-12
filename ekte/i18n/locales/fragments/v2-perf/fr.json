@@ -23,6 +23,13 @@
   "network": "réseau",
   "repeated": "répétée",
   "network failures (not the relay's)": "échecs réseau (pas du relais)",
-  "ekte failures (not the relay's)": "échecs d'ekte (pas du relais)"
+  "ekte failures (not the relay's)": "échecs d'ekte (pas du relais)",
+  "{n} failed at the relay": "{n} en échec au relais",
+  "{n} failed on the network path or in ekte (not the relay's)": "{n} en échec sur le chemin réseau ou dans ekte (pas du relais)",
+  "{n} repeated attempts (not counted)": "{n} tentatives répétées (non comptées)",
+  "relay failure": "échec du relais",
+  "network / ekte failure (not the relay's)": "échec réseau / ekte (pas du relais)",
+  "repeated attempt (not counted)": "tentative répétée (non comptée)",
+  "{n} requests failed on the network path or inside ekte, not at the relay; they do not count against it.": "{n} requêtes ont échoué sur le chemin réseau ou dans ekte, pas au relais ; elles ne comptent pas contre lui."
  }
 }

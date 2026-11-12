@@ -86,7 +86,7 @@ def test_render_pdf_has_scales_groups_and_performance():
     assert "Core response attributes: all 8" in text and "7 of 8 OK" in text
     text = _text(render_pdf(perf_report()))
     assert "Performance measurements" in text and "Target vs baseline" in text
-    assert "Latency (ms)" in text and "failed request" in text
+    assert "Latency (ms)" in text and "relay failure" in text
 
 
 def test_write_reports_pdf_and_all(report, tmp_path):

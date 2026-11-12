@@ -23,6 +23,13 @@
   "network": "network",
   "repeated": "repeated",
   "network failures (not the relay's)": "network failures (not the relay's)",
-  "ekte failures (not the relay's)": "ekte failures (not the relay's)"
+  "ekte failures (not the relay's)": "ekte failures (not the relay's)",
+  "{n} failed at the relay": "{n} failed at the relay",
+  "{n} failed on the network path or in ekte (not the relay's)": "{n} failed on the network path or in ekte (not the relay's)",
+  "{n} repeated attempts (not counted)": "{n} repeated attempts (not counted)",
+  "relay failure": "relay failure",
+  "network / ekte failure (not the relay's)": "network / ekte failure (not the relay's)",
+  "repeated attempt (not counted)": "repeated attempt (not counted)",
+  "{n} requests failed on the network path or inside ekte, not at the relay; they do not count against it.": "{n} requests failed on the network path or inside ekte, not at the relay; they do not count against it."
  }
 }
