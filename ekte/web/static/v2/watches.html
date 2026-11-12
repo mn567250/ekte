@@ -117,8 +117,8 @@
   .rw-times > div { min-width: 0; flex: 1 1 120px; }
   .rw-times > div.tz { flex-basis: 220px; }
   .rw-times select.in { width: 100%; }
-  .rw-prev { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 1px; max-width: 360px; }
-  .rw-prev i { height: 7px; background: var(--sunken); outline: 1px solid var(--line); outline-offset: -1px; }
+  .rw-prev { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; width: 100%; }
+  .rw-prev i { aspect-ratio: 1; border-radius: 2px; background: var(--sunken); outline: 1px solid var(--line); outline-offset: -1px; }
   .rw-prev i.on { background: var(--primary); outline: 0; }
   @media (forced-colors: active) { .rw-prev { display: none; } }
   .rw-note { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; margin: 0; }
