@@ -109,6 +109,23 @@
      "Stored ✎" starts on the same line as the plain values beside it */
   .mon-meta dd .link.icon-only { padding: 6px; line-height: 0; vertical-align: middle; margin-block: -6px; }
   .mon-meta dd .link.icon-only .zicon { width: 16px; height: 16px; }
+  /* run window editor */
+  .mon-meta dd .edit.rw { max-width: 560px; }
+  .rw fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .rw legend, .rw .lab { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); padding: 0; margin-bottom: 4px; }
+  .rw-times { display: flex; flex-wrap: wrap; gap: 10px; }
+  .rw-times > div { min-width: 0; flex: 1 1 120px; }
+  .rw-times > div.tz { flex-basis: 220px; }
+  .rw-times select.in { width: 100%; }
+  .rw-prev { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 1px; max-width: 360px; }
+  .rw-prev i { height: 7px; background: var(--sunken); outline: 1px solid var(--line); outline-offset: -1px; }
+  .rw-prev i.on { background: var(--primary); outline: 0; }
+  @media (forced-colors: active) { .rw-prev { display: none; } }
+  .rw-note { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; margin: 0; }
+  .rw-note .zicon { flex: none; width: 16px; height: 16px; margin-top: 1px; }
+  .rw-note.warn { background: var(--warning-tint); color: var(--warning); }
+  .rw-note.info { background: var(--info-tint); color: var(--info); }
+  .mon-act-note { flex-basis: 100%; margin: 0; }
   /* draft: a watch scheduled from a history run that still needs its interval / key */
   .setup {
     margin-top: 14px; padding: 14px 16px; border-radius: 14px;
@@ -472,6 +489,146 @@
     if (s.edit === "interval") return '<form class="edit" data-id="' + w.id + '" novalidate>' + intervalInput(w, s, true) + saveCancel("interval", w.id) + "</form>";
     return esc(fmtEvery(w.interval_sec)) + linkBtn("edit-interval", w.id, T("修改检测间隔", "Change check interval"));
   }
+  // ---- run window ----------------------------------------------------- //
+  var WIN_ALL = [0, 1, 2, 3, 4, 5, 6];
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function dayName(d) {
+    try { return L.dateFmt({ weekday: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2026, 0, 5 + d))); }
+    catch (e) { return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][d]; }
+  }
+  function browserTz() {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (e) { return "UTC"; }
+  }
+  function tzList(current) {
+    var out = [];
+    try { out = Intl.supportedValuesOf("timeZone").slice(); } catch (e) { /* older browsers */ }
+    [current, browserTz(), "UTC"].forEach(function (z) { if (z && out.indexOf(z) < 0) out.push(z); });
+    return out.sort();
+  }
+  function daysText(days) {
+    var d = days.slice().sort(function (a, b) { return a - b; }), runs = [], i = 0;
+    while (i < d.length) {
+      var j = i;
+      while (j + 1 < d.length && d[j + 1] === d[j] + 1) j++;
+      runs.push(j - i >= 2 ? dayName(d[i]) + "–" + dayName(d[j]) : d.slice(i, j + 1).map(dayName).join(", "));
+      i = j + 1;
+    }
+    return runs.join(", ");
+  }
+  function winOn(win, day, hour) {
+    var over = win.end <= win.start;
+    var has = function (d) { return win.days.indexOf(d) >= 0; };
+    return over ? (has(day) && hour >= win.start) || (has((day + 6) % 7) && hour < win.end)
+      : has(day) && hour >= win.start && hour < win.end;
+  }
+  function winHours(win) {
+    var n = 0;
+    for (var d = 0; d < 7; d++) for (var h = 0; h < 24; h++) if (winOn(win, d, h)) n++;
+    return n;
+  }
+  // the longest stretch of consecutive open hours (the week wraps around)
+  function winLongest(win) {
+    var best = 0, run = 0;
+    for (var i = 0; i < 336; i++) {
+      run = winOn(win, Math.floor(i / 24) % 7, i % 24) ? run + 1 : 0;
+      if (run > best) best = run;
+    }
+    return Math.min(best, 168);
+  }
+  function winPreset(win) {
+    if (!win) return "always";
+    var wd = win.days.slice().sort().join() === "0,1,2,3,4";
+    if (wd && win.start === 0 && win.end === 24) return "weekdays";
+    if (wd && win.start === 7 && win.end === 19) return "weekdays7";
+    return "custom";
+  }
+  // the editor's working copy of a monitor's window
+  function winDraft(w) {
+    var r = w.run_window;
+    return r
+      ? { preset: winPreset({ days: r.days, start: parseInt(r.start, 10), end: parseInt(r.end, 10) }), days: r.days.slice(),
+          start: parseInt(r.start, 10), end: parseInt(r.end, 10), tz: r.tz }
+      : { preset: "always", days: [0, 1, 2, 3, 4], start: 7, end: 19, tz: browserTz() };
+  }
+  function winSummary(r) {
+    return daysText(r.days) + " · " + r.start + "–" + r.end;
+  }
+  function fmtWhen(ts, tz) {
+    try {
+      return L.dateFmt({ weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: tz }).format(new Date(ts * 1000));
+    } catch (e) { return fmtTime(ts); }
+  }
+  function outsideWindow(w) {
+    return !!w.run_window && w.in_window === false && w.enabled && !needsSetup(w);
+  }
+  function windowCell(w, s) {
+    if (s.edit === "window") return '<form class="edit rw" data-id="' + w.id + '" novalidate>' + windowInput(w, s) + saveCancel("window", w.id) + "</form>";
+    var r = w.run_window;
+    return (r ? esc(winSummary(r)) + '<span class="aside">' + esc(r.tz) + "</span>" : esc(T("始终", "Always"))) +
+      linkBtn("edit-window", w.id, T("修改运行时段", "Change run window"));
+  }
+  function windowInput(w, s) {
+    var v = s.vals.win || (s.vals.win = winDraft(w)), id = w.id;
+    var presets = [["always", T("始终", "Always")], ["weekdays", T("工作日", "Weekdays")],
+      ["weekdays7", T("工作日 07–19", "Weekdays 07–19")], ["custom", T("自定义", "Custom")]];
+    var html = '<div><span class="lab" id="rwpl-' + id + '">' + esc(T("预设", "Presets")) + '</span>' +
+      '<div class="seg" role="group" aria-labelledby="rwpl-' + id + '">' +
+      presets.map(function (p) {
+        return '<button type="button" data-act="win-preset" data-v="' + p[0] + '" data-id="' + id + '" aria-pressed="' + (v.preset === p[0]) + '"' +
+          (v.preset === p[0] ? ' data-wf="' + id + '"' : "") + ">" + esc(p[1]) + "</button>";
+      }).join("") + "</div></div>";
+    var errTxt = s.errs.window;
+    if (v.preset !== "always") {
+      html += '<fieldset' + (errTxt ? ' aria-invalid="true"' : "") + ' aria-describedby="rwe-' + id + '"><legend>' + esc(T("日期", "Days")) + '</legend><div class="chips">' +
+        WIN_ALL.map(function (d) {
+          return '<button type="button" data-act="win-day" data-v="' + d + '" data-id="' + id + '" aria-pressed="' + (v.days.indexOf(d) >= 0) + '"' +
+            (d === 0 ? ' data-we="' + id + '"' : "") + ">" + esc(dayName(d)) + "</button>";
+        }).join("") + "</div></fieldset>";
+      var hours = function (from, to, sel, act, label) {
+        var o = "";
+        for (var h = from; h <= to; h++) o += '<option value="' + h + '"' + (h === sel ? " selected" : "") + ">" + pad2(h) + ":00</option>";
+        return '<div><label class="lab" for="rw-' + act + "-" + id + '">' + esc(label) + '</label><select class="in" id="rw-' + act + "-" + id +
+          '" data-act="w-' + act + '" data-id="' + id + '">' + o + "</select></div>";
+      };
+      var browser = browserTz();
+      html += '<div class="rw-times">' + hours(0, 23, v.start, "start", T("从", "From")) + hours(1, 24, v.end, "end", T("到", "To")) +
+        '<div class="tz"><label class="lab" for="rw-tz-' + id + '">' + esc(T("时区", "Time zone")) + '</label><select class="in" id="rw-tz-' + id +
+        '" data-act="w-tz" data-id="' + id + '">' + tzList(v.tz).map(function (z) {
+          return '<option value="' + esc(z) + '"' + (z === v.tz ? " selected" : "") + ">" + esc(z) + (z === browser ? " " + T("（此浏览器）", "(this browser)") : "") + "</option>";
+        }).join("") + "</select></div></div>";
+      if (v.end <= v.start) {
+        html += '<p class="hint">' + esc(T("跨夜时段：于次日清晨结束，并归属于开始的那一天。", "Overnight window: it ends the next morning and belongs to the day it starts on.")) + "</p>";
+      }
+    }
+    html += err("rwe-" + id, errTxt ? function () { return errTxt(); } : null);
+    var hrs = v.preset === "always" ? 168 : winHours(v);
+    if (v.preset !== "always" && v.days.length) {
+      var cells = "";
+      for (var d = 0; d < 7; d++) for (var h = 0; h < 24; h++) cells += winOn(v, d, h) ? '<i class="on"></i>' : "<i></i>";
+      html += '<div class="rw-prev" aria-hidden="true">' + cells + "</div>";
+    }
+    html += '<p class="hint">' + esc(hrs >= 168
+      ? T("每周 168 小时全部检测。", "Checked all 168 hours a week.")
+      : Tf("每周检测 {h} / 168 小时 · 约 {h} 次运行和证据文件，而不是 168 次（−{pct} %）。",
+          "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).",
+          { h: hrs, pct: Math.round((168 - hrs) / 168 * 100) })) + "</p>";
+    if (hrs > 0 && hrs < 168) {
+      html += '<p class="rw-note warn">' + icon("warning") + "<span><b>" + esc(Tf("每周有 {n} 小时不检测。", "{n} h a week are not checked.", { n: 168 - hrs })) + "</b> " +
+        esc(T("中转站可能恰好在这些时段换用其他模型，且其规律可以被摸清。", "A relay could serve another model in exactly these hours, and its pattern can be learned.")) + "</span></p>";
+      if (w.interval_sec && w.interval_sec > winLongest(v) * 3600) {
+        html += '<p class="rw-note info">' + icon("info") + "<span>" +
+          esc(T("检测间隔长于运行时段：开始时间会顺延，错过时段的运行将等待下一个时段。",
+            "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.")) + "</span></p>";
+      }
+    }
+    return html;
+  }
+  function checkWindow(v) {
+    if (v.preset === "always") return null;
+    if (!v.days.length) return function () { return T("请至少选择一天。", "Choose at least one day."); };
+    if (v.start === v.end) return function () { return T("开始和结束时间必须不同。", "Start and end must be different."); };
+    return null;
+  }
   function keyCell(w, s) {
     if (s.edit === "key") return '<form class="edit" data-id="' + w.id + '" novalidate>' + keyInput(w, s, true) + saveCancel("key", w.id) + "</form>";
     if (w.key_status === "locked") {
@@ -621,7 +778,8 @@
           : '<button type="button" class="btn' + (draft ? "" : " pri") + '" data-act="run" data-id="' + w.id + '">' +
             icon("play") + esc(T("立即运行", "Run now")) + "</button>";
       actions = run +
-        '<button type="button" class="btn danger" data-act="del" data-id="' + w.id + '"' + (running ? " disabled" : "") + ">" + icon("trash") + esc(T("删除", "Delete")) + "</button>";
+        '<button type="button" class="btn danger" data-act="del" data-id="' + w.id + '"' + (running ? " disabled" : "") + ">" + icon("trash") + esc(T("删除", "Delete")) + "</button>" +
+        (outsideWindow(w) && !running ? '<p class="hint mon-act-note">' + esc(T("立即运行不受运行时段限制。", "Run now ignores the run window.")) + "</p>" : "");
     }
     var stateLine = running
       ? '<span>' + esc(T("状态", "Status")) + ': <b>' + esc(w.queued
@@ -629,6 +787,15 @@
           : T("正在运行", "Running now")) + "</b></span>"
       : waiting ? '<span>' + esc(T("状态", "Status")) + ': <b>' + esc(T("等待下次计划运行", "Waiting for next scheduled run")) + "</b></span>" : "";
     if (stateLine) lastParts.unshift(stateLine);
+    if (w.run_window && waiting && !draft) {
+      var nextTs = w.in_window === false ? w.next_window_ts
+        : Math.max(Date.now() / 1000, (w.last_run_ts || 0) + (w.interval_sec || 0));
+      if (nextTs) {
+        lastParts.push("<span>" + esc(w.in_window === false
+          ? Tf("下一个时段：{when}", "Next window: {when}", { when: fmtWhen(nextTs, w.run_window.tz) })
+          : Tf("下次运行：约 {when}", "Next run: about {when}", { when: fmtWhen(nextTs, w.run_window.tz) })) + "</span>");
+      }
+    }
     var pct = Math.max(0, Math.min(100, Number(w.progress) || 0));
     var progress = running
       ? '<div class="mon-prog"><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"' +
@@ -649,7 +816,8 @@
           // the name is the collapse toggle: heading navigation still lands on it
           '<div class="mon-title"><h3 class="mon-name" id="mn-' + w.id + '"><button type="button" class="mtog" data-act="fold" data-id="' + w.id + '"' +
             ' aria-expanded="' + !shut + '" aria-controls="' + controls + '" title="' + esc(shut ? T("显示详情", "Show details") : T("隐藏详情", "Hide details")) + '">' +
-            icon("chevronDown") + '<span class="t">' + esc(name) + "</span></button></h3>" + badge(w) + "</div>" +
+            icon("chevronDown") + '<span class="t">' + esc(name) + "</span></button></h3>" + badge(w) +
+            (outsideWindow(w) && !running ? ' <span class="badge grey">' + icon("clock") + " " + esc(T("不在运行时段", "Outside run window")) + "</span>" : "") + "</div>" +
           '<label class="switch"><input type="checkbox" role="switch" data-act="enabled" data-id="' + w.id + '"' + (w.enabled ? " checked" : "") +
             (draft ? " disabled" : "") + ' aria-labelledby="swl-' + w.id + '" aria-describedby="mn-' + w.id + " sws-" + w.id + '"><span></span> ' +
             '<span class="sw-l" id="swl-' + w.id + '">' + esc(T("监控生效", "Monitor active")) + "</span> " +
@@ -667,6 +835,7 @@
             (embed ? meta(T("声称维度", "Claimed dimension"), dimsCell(w, s))
               : tool ? "" : meta(T("性能探测请求", "Performance probe requests"), streamCell(w))) +
             meta(T("检测间隔", "Check interval"), intervalCell(w, s)) +
+            (draft ? "" : meta(T("运行时段", "Run window"), windowCell(w, s))) +
             meta(T("API 密钥", "API key"), keyCell(w, s)) +
             meta(thrLabel, '<select class="in" data-act="alert" data-id="' + w.id + '" aria-label="' + esc(thrLabel + " — " + name) + '">' + thresholdOptions(w.alert_on || "medium") + "</select>") +
             meta(T("Webhook", "Webhooks"), hooksCell(w, s)) +
@@ -996,7 +1165,9 @@
     return (watches || []).filter(function (w) { return String(w.id) === String(id); })[0];
   }
   function focusAct(act, id) {
-    var el = $("list").querySelector('[data-act="' + act + '"][data-id="' + id + '"]');
+    var el = act === "f-window"
+      ? $("list").querySelector(st(id).errs.window ? '[data-we="' + id + '"]' : '[data-wf="' + id + '"]')
+      : $("list").querySelector('[data-act="' + act + '"][data-id="' + id + '"]');
     if (el) el.focus();
     return !!el;
   }
@@ -1051,6 +1222,13 @@
     if (what === "interval") {
       s.errs.interval = checkInterval(s.vals.interval != null ? s.vals.interval : ($("iv-" + id) || {}).value);
       if (!s.errs.interval) body.interval_sec = minutesOf(s.vals.interval != null ? s.vals.interval : $("iv-" + id).value) * 60;
+    } else if (what === "window") {
+      var wv = s.vals.win;
+      s.errs.window = wv ? checkWindow(wv) : null;
+      if (!s.errs.window && wv) {
+        body.run_window = wv.preset === "always" ? null
+          : { tz: wv.tz, days: wv.days.slice().sort(), start: pad2(wv.start) + ":00", end: pad2(wv.end) + ":00" };
+      }
     } else if (what === "key") {
       s.errs.key = checkKey(s.vals.key);
       if (!s.errs.key) body.api_key = s.vals.key.trim();
@@ -1071,6 +1249,7 @@
     patch(id, body).then(function () {
       s.msgKind = "ok";
       s.msg = { interval: function () { return T("检测间隔已保存。", "Check interval saved."); },
+        window: function () { return T("运行时段已保存。", "Run window saved."); },
         key: function () { return T("API 密钥已更换。", "API key replaced."); },
         hooks: function () { return T("Webhook 已保存。", "Webhooks saved."); },
         dims: function () { return T("声称维度已保存。", "Claimed dimension saved."); } }[what];
@@ -1129,6 +1308,22 @@
     } else if (act === "activate") {
       ev.preventDefault();
       activate(id);
+    } else if (act === "win-preset" || act === "win-day") {
+      var wv = s.vals.win, val = t.getAttribute("data-v");
+      if (!wv) return;
+      s.errs.window = null;
+      if (act === "win-day") {
+        var di = parseInt(val, 10), at = wv.days.indexOf(di);
+        if (at >= 0) wv.days.splice(at, 1); else wv.days.push(di);
+        wv.preset = "custom";
+      } else if (val === "weekdays" || val === "weekdays7") {
+        wv.preset = val; wv.days = [0, 1, 2, 3, 4]; wv.start = val === "weekdays" ? 0 : 7; wv.end = val === "weekdays" ? 24 : 19;
+      } else {
+        wv.preset = val;
+      }
+      render();
+      var again = $("list").querySelector('[data-act="' + act + '"][data-v="' + val + '"][data-id="' + id + '"]');
+      if (again) again.focus();
     } else if (/^edit-/.test(act)) {
       s.edit = act.slice(5);
       s.vals = {};
@@ -1280,6 +1475,16 @@
     var t = ev.target, act = t.getAttribute("data-act"), id = t.getAttribute("data-id");
     if (!id) return;
     var s = st(id);
+    if (/^w-(start|end|tz)$/.test(act || "") && s.vals.win) {
+      // a changed time or zone makes the window custom; no change of context
+      if (act === "w-tz") s.vals.win.tz = t.value; else s.vals.win[act.slice(2)] = parseInt(t.value, 10);
+      s.vals.win.preset = "custom";
+      s.errs.window = null;
+      render();
+      var sel = $(act === "w-tz" ? "rw-tz-" + id : "rw-" + act.slice(2) + "-" + id);
+      if (sel) sel.focus();
+      return;
+    }
     s.msg = null;
     if (act === "enabled") {
       var on = t.checked;
