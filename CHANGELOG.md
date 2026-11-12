@@ -221,7 +221,8 @@ how many saved runs it re-extracts.
   row through a bound `list.append` and filters once at the end, which makes the
   median-heavy widgets about 20 % faster there. The pooled-rate and share
   aggregates use shorter SQL that gives the same values. Answers are
-  byte-identical.
+  byte-identical. The CI performance budget drops from 180 ms to 120 ms
+  (recalibrated with 5 runs: slowest p95 77.5 ms, before 124.9 ms).
 
 ### Fixed
 
