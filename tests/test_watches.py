@@ -11,6 +11,8 @@ from __future__ import annotations
 import pytest
 
 pytest.importorskip("fastapi")
+from datetime import UTC
+
 from fastapi.testclient import TestClient  # noqa: E402
 
 from ekte.web.server import create_app  # noqa: E402
@@ -821,9 +823,9 @@ _BASE = {"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "gpt-4
 
 
 def _utc(y, m, d, h):
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    return datetime(y, m, d, h, tzinfo=timezone.utc).timestamp()
+    return datetime(y, m, d, h, tzinfo=UTC).timestamp()
 
 
 def test_watch_db_v3_gains_a_run_window_column(tmp_path, monkeypatch):
