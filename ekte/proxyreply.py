@@ -37,6 +37,9 @@ import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+import httpcore
+import httpx
+
 if TYPE_CHECKING:
     from ekte.perf.recorder import NetTrace
 
@@ -240,7 +243,7 @@ def _apply_wire(net: NetTrace) -> None:
     reply.body, reply.body_total, reply.body_complete = body, total, complete
 
 
-class _TeeStream:
+class _TeeStream(httpcore.AsyncNetworkStream):
     """A network stream to a proxy that copies the reply to a CONNECT."""
 
     def __init__(self, inner: Any, net: NetTrace) -> None:
@@ -301,7 +304,7 @@ class _TeeStream:
         return self._inner.get_extra_info(info)
 
 
-class _TeeBackend:
+class _TeeBackend(httpcore.AsyncNetworkBackend):
     """A network backend whose connections to the proxy copy CONNECT replies."""
 
     def __init__(self, inner: Any) -> None:
@@ -332,11 +335,6 @@ def install(client: Any) -> int:
     """Tee the network backend of every HTTP(S)-proxy transport of an
     ``httpx.AsyncClient``; returns how many it tees (0 without a proxy, or
     when httpx/httpcore no longer have the attributes it uses)."""
-    try:
-        import httpcore
-        import httpx
-    except ImportError:  # pragma: no cover - httpx is a dependency
-        return 0
     mounts = getattr(client, "_mounts", None)
     if not isinstance(mounts, dict):
         return 0

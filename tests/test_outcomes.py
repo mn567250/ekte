@@ -308,10 +308,14 @@ def test_backfill_of_a_v0_34_0_database_matches_a_fresh_save(data, monkeypatch):
             ("t", "https://relay.example.com/v1", "gpt-4o-mini", json.dumps(stored)),
         )
         split_id = int(cur.lastrowid)
-        cols = ("history_id", "ord", *analytics_store.REQUEST_FIELDS, "extra")
+        # only the columns 0.34.0's table has (later ones are added by migrations)
+        have = {r[1] for r in conn.execute("PRAGMA table_info(history_requests)")}
+        all_cols = ("history_id", "ord", *analytics_store.REQUEST_FIELDS, "extra")
+        keep = [i for i, c in enumerate(all_cols) if c in have]
+        cols = tuple(all_cols[i] for i in keep)
         conn.executemany(
             f"INSERT INTO history_requests ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
-            [(split_id, i, *row) for i, row in enumerate(rows)],
+            [tuple((split_id, i, *row)[k] for k in keep) for i, row in enumerate(rows)],
         )
         conn.execute(
             "INSERT INTO history_metrics (history_id, extract_version) VALUES (?, 3)", (split_id,)
