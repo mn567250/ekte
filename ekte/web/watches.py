@@ -57,7 +57,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from ekte import datadir, dbmigrate, i18n, secretbox
+from ekte import datadir, dbmigrate, i18n, runwindow, secretbox
 from ekte.config import SURFACES
 from ekte.knowledge import snapshot as kb_snapshot
 
@@ -93,6 +93,7 @@ _ALL_COLS = (
     "surface",
     "embedding_dimensions",
     "evidence",
+    "run_window",
 )
 
 # Columns safe to return to the browser — everything except the API key.
@@ -173,10 +174,16 @@ def _v3(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(conn, "watches", {"evidence": "INTEGER"})
 
 
+def _v4(conn: sqlite3.Connection) -> None:
+    """The monitor's run window (JSON, see ekte.runwindow; NULL = always)."""
+    kb_snapshot.add_link_columns(conn, "watches", {"run_window": "TEXT"})
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
     dbmigrate.Migration(3, _v3),
+    dbmigrate.Migration(4, _v4),
 )
 
 
@@ -551,6 +558,9 @@ def _row_to_dict(row: sqlite3.Row, *, include_key: bool) -> dict[str, Any]:
     # NULL (watches from before surfaces existed) audits a chat endpoint.
     d["surface"] = d.get("surface") or "chat"
     d["embedding_dimensions"] = _dims(d.get("embedding_dimensions"))
+    # NULL (or a malformed value) runs around the clock.
+    win = runwindow.parse(d.get("run_window"))
+    d["run_window"] = win.to_dict() if win else None
     d["language"] = i18n.normalize(d.get("language"))
     raw_dims = d.get("dimensions")
     try:
@@ -631,6 +641,15 @@ def _dims(raw: Any) -> int:
         return 0
 
 
+_UNSET: Any = object()
+
+
+def _window_json(raw: Any) -> str | None:
+    """A run window as stored (validated JSON), ``None`` for always."""
+    win = runwindow.validate(raw)
+    return json.dumps(win) if win else None
+
+
 def create(
     cfg: dict[str, Any],
     knowledge: dict[str, Any] | None = None,
@@ -647,7 +666,7 @@ def create(
     requests), surface ("chat", "embedding" or "rerank"; missing or unknown -> chat),
     embedding_dimensions (an embedding watch's claimed vector length; 0 or
     missing -> the knowledge base's), evidence (False: its runs keep no raw
-    request/response pairs). Unknown keys are ignored;
+    request/response pairs), run_window (see ekte.runwindow; missing = always). Unknown keys are ignored;
     missing keys fall back to sensible defaults. ``knowledge`` (a
     KnowledgeUsage dict with its profile) pins the watch's profile.
 
@@ -693,6 +712,7 @@ def create(
         # a claimed vector length means something only to an embedding watch
         (_dims(cfg.get("embedding_dimensions")) or None) if surface == "embedding" else None,
         0 if cfg.get("evidence") is False else 1,
+        _window_json(cfg.get("run_window")),
     )
     with _connect() as conn:
         cur = conn.execute(
@@ -701,8 +721,8 @@ def create(
                 declared_provider, suite, interval_sec, alert_on, webhooks,
                 enabled, created_ts, language, dimensions, source_report_id,
                 run_duration_sec, performance_streaming, surface,
-                embedding_dimensions, evidence)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                embedding_dimensions, evidence, run_window)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             row,
         )
         wid = int(cur.lastrowid or -1)
@@ -776,6 +796,7 @@ def update(
     embedding_dimensions: int | None = None,
     key_storage: str | None = None,
     evidence: bool | None = None,
+    run_window: Any = _UNSET,
 ) -> None:
     """Change a watch's schedule, key, alert or evidence settings; ``None``
     leaves a field as is.
@@ -805,6 +826,9 @@ def update(
     if evidence is not None:
         sets.append("evidence = ?")
         vals.append(1 if evidence else 0)
+    if run_window is not _UNSET:  # None clears the window
+        sets.append("run_window = ?")
+        vals.append(_window_json(run_window))
     if not sets:
         return
     with _connect() as conn:
@@ -863,7 +887,9 @@ def due(now_ts: float) -> list[dict[str, Any]]:
 
     A watch is due when it has never run, or when ``now - last_run >= interval``.
     A draft (no interval yet) is never due. Used by the scheduler, so the
-    api_key is included to actually run the audit.
+    api_key is included to actually run the audit. A watch outside its run
+    window (:mod:`ekte.runwindow`) is not due; once the window opens it is due
+    once, however many intervals it missed.
     """
     with _connect() as conn:
         rows = conn.execute(
@@ -871,5 +897,9 @@ def due(now_ts: float) -> list[dict[str, Any]]:
             " AND (last_run_ts IS NULL OR ? - last_run_ts >= interval_sec)",
             (float(now_ts),),
         ).fetchall()
-    # Only the due rows are decrypted.
-    return [_row_to_dict(r, include_key=True) for r in rows]
+    # Only the rows inside their run window are decrypted.
+    return [
+        _row_to_dict(r, include_key=True)
+        for r in rows
+        if runwindow.in_window(runwindow.parse(r["run_window"]), now_ts)
+    ]

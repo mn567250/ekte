@@ -80,3 +80,14 @@ nøkkelen?** (forkaster de krypterte API-nøklene så du kan oppgi dem igjen). F
 bruk uten tilsyn eller i Docker sender du nøkkelen som `EKTE_SECRET_KEY` (se
 [Docker](docker.md)); `ekte secret status | export | rotate`
 håndterer den på kommandolinjen.
+
+### Kjøretidsvindu
+
+En monitor kan ha et **kjøretidsvindu**: ukedagene og timene planleggeren starter den, for eksempel man–fre, 07:00–19:00, Europe/Berlin. Det redigeres direkte på Monitorer-siden (**Kjøretidsvindu**, etter **Kontrollintervall**). Utenfor vinduet kjører ikke monitoren; uten vindu kjører den døgnet rundt, som før.
+
+- Kun hele timer; `24:00` er slutten av dagen. En slutt som er lik eller før starten gir et nattvindu: det slutter neste morgen og hører til dagen det starter (et vindu fredag 22:00–06:00 dekker lørdag 00:00–06:00).
+- Tidssonen som er lagret med vinduet (IANA-navn) gjelder, aldri serverens. Sommertidsskifter gjør ingenting: ekte sjekker bare om *nå* ligger i vinduet.
+- En monitor er forfalt når intervallet er gått **og** den er innenfor vinduet. Etter en stengt periode kjører den én gang når vinduet åpner, ikke én gang per tapt tidspunkt. En planlagt kjøring som ventet på reléet til etter at vinduet stengte, hoppes over og registrerer ingenting.
+- **Kjør nå** ignorerer vinduet. Å pause en monitor er uavhengig av det.
+- **Blindsone:** timer utenfor vinduet kontrolleres ikke, og et uærlig relé kan lære mønsteret. Editoren viser hvor mange timer i uken som ikke kontrolleres.
+- `ekte watch` har ikke kjøretidsvindu; bruk cron med `--once`.

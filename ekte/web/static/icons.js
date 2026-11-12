@@ -62,6 +62,8 @@
     warning:
       '<path d="M12 3.5L21.5 20H2.5L12 3.5z"/>' +
       '<path d="M12 10v4"/><path d="M12 17.5v.5"/>',
+    // clock — outside a run window
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     // check — pass
     check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
     // x — fail / close

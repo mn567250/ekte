@@ -110,7 +110,7 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from ekte import __version__, errorclass
+from ekte import __version__, errorclass, runwindow
 from ekte.clients import detect_api
 from ekte.config import (
     AuditOptions,
@@ -317,12 +317,13 @@ _watch_progress = jobs.progress_pct
 _track_progress = jobs.track_progress
 
 
-async def _run_one_watch(row: dict[str, Any]) -> None:
+async def _run_one_watch(row: dict[str, Any], *, scheduled: bool = False) -> None:
     """Run a watch once, refusing to overlap with a run already in flight.
 
     The run executes as its own task so Cancel can stop it; a cancelled run
     raises :class:`WatchCancelled` (an ordinary exception, so the scheduler
     loop carries on), while a server shutdown still propagates CancelledError.
+    ``scheduled`` marks a scheduler-started run (Run now ignores the run window).
     """
     wid = int(row["id"])
     if wid in _running_watches:
@@ -375,7 +376,7 @@ async def _run_one_watch(row: dict[str, Any]) -> None:
     _running_watches[wid] = state
     outcome, error = "done", None
     try:
-        task = asyncio.create_task(_run_one_watch_inner(row, state))
+        task = asyncio.create_task(_run_one_watch_inner(row, state, scheduled=scheduled))
         state["task"] = task
         try:
             await task
@@ -432,7 +433,9 @@ def _cancel_watch(wid: int) -> bool:
     return True
 
 
-async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None = None) -> None:
+async def _run_one_watch_inner(
+    row: dict[str, Any], state: dict[str, Any] | None = None, *, scheduled: bool = False
+) -> None:
     """Run a single due watch once: audit, persist, alert on regression/threshold.
 
     Always best-effort — any exception is swallowed by the caller so one bad
@@ -450,6 +453,7 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
     duration: float | None = None
     cancelled = False
     saved = False  # a run whose report is stored is recorded with it, even if cancelled
+    skipped = False  # a scheduled run that found its run window closed records nothing
     try:
         suite = validate_suite(str(row.get("suite") or "standard"))
         dimensions = validate_dimensions(suite, row.get("dimensions"))
@@ -505,6 +509,14 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
             job.waiting_for = list(state["waiting_for"])
             job.emit({"type": "queued", "job": job.id, "waiting_for": job.waiting_for})
         async with jobs.gate.hold(keys, label=f"monitor:{wid}"):
+            # A scheduled run that waited for its relay past the end of its run
+            # window is skipped and records nothing: it is due again when the
+            # next window opens. Run now ignores the window.
+            if scheduled and not runwindow.in_window(runwindow.parse(row.get("run_window")), time.time()):
+                skipped = True
+                if state is not None:
+                    state["waiting_for"] = []
+                return
             # The run's time is when its audit starts, not when it was due:
             # a monitor that waited for its relay must not come due again at once.
             now = time.time()
@@ -608,6 +620,8 @@ async def _run_one_watch_inner(row: dict[str, Any], state: dict[str, Any] | None
         # cancelled before its report was stored keeps the previous result on
         # the card, only its time moves on.
         def mark() -> None:
+            if skipped:
+                return
             if cancelled and not saved:
                 watches.mark_attempt(wid, now)
             else:
@@ -647,7 +661,7 @@ async def _scheduled_watch_run(row: dict[str, Any]) -> None:
     """One scheduler-started run: every failure is swallowed so it stays local
     to its watch; cancellation (server shutdown) propagates."""
     try:
-        await _run_one_watch(row)
+        await _run_one_watch(row, scheduled=True)
     except asyncio.CancelledError:
         raise
     except Exception:
@@ -1610,6 +1624,7 @@ def create_app() -> FastAPI:
 
         # list_all() never returns api_key, so this is safe to send to the browser.
         rows = watches.list_all()
+        now_ts = time.time()
         # the relay its runs are grouped under: the `relay=` key of the
         # monitor's "Open in history" link (the shared URL schema)
         resolver = RelayResolver() if rows else None
@@ -1622,6 +1637,9 @@ def create_app() -> FastAPI:
             kb = None
         for row in rows:
             row["min_interval_sec"] = _min_interval_sec(row.get("run_duration_sec"))
+            win = runwindow.parse(row.get("run_window"))
+            row["in_window"] = runwindow.in_window(win, now_ts)
+            row["next_window_ts"] = runwindow.next_window_start(win, now_ts)
             row.update(_watch_protocol(row))
             row["kb_current_hash"] = None
             row["kb_changed"] = False
@@ -1653,6 +1671,9 @@ def create_app() -> FastAPI:
         from ekte.web import watches
 
         body = await request.json()
+        bad_window = runwindow.problem(body.get("run_window"))
+        if bad_window:
+            return JSONResponse({"error": bad_window}, status_code=400)
         # Validate the target + suite up front so bad input is a clean 400.
         try:
             suite = validate_suite(str(body.get("suite") or "standard"))
@@ -1845,6 +1866,12 @@ def create_app() -> FastAPI:
                 check_surface_dimensions(validate_surface(row.get("surface")), picked)
             except ConfigError as exc:
                 return JSONResponse({"error": str(exc)}, status_code=400)
+        window: Any = watches._UNSET
+        if "run_window" in body:  # null clears the window
+            bad_window = runwindow.problem(body.get("run_window"))
+            if bad_window:
+                return JSONResponse({"error": bad_window}, status_code=400)
+            window = runwindow.validate(body.get("run_window"))
         keep_evidence = body.get("evidence")
         if keep_evidence is not None and not isinstance(keep_evidence, bool):
             return JSONResponse({"error": "evidence must be true or false"}, status_code=400)
@@ -1870,6 +1897,7 @@ def create_app() -> FastAPI:
                     embedding_dimensions=dims,
                     key_storage=_key_storage_override(body),
                     evidence=keep_evidence,
+                    run_window=window,
                 )
             except SecretLocked as exc:
                 return _locked_response(exc)

@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Run window": "Ventana de ejecución",
+  "Change run window": "Cambiar ventana de ejecución",
+  "Always": "Siempre",
+  "Weekdays": "Días laborables",
+  "Weekdays 07–19": "Días laborables 07–19",
+  "Custom": "Personalizado",
+  "Presets": "Preajustes",
+  "Days": "Días",
+  "From": "Desde",
+  "To": "Hasta",
+  "Time zone": "Zona horaria",
+  "(this browser)": "(este navegador)",
+  "Overnight window: it ends the next morning and belongs to the day it starts on.": "Ventana nocturna: termina a la mañana siguiente y pertenece al día en que empieza.",
+  "Checked all 168 hours a week.": "Se comprueban las 168 horas de la semana.",
+  "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).": "Se comprueban {h} de 168 horas a la semana · unas {h} ejecuciones y archivos de evidencia en lugar de 168 (−{pct} %).",
+  "{n} h a week are not checked.": "{n} h a la semana no se comprueban.",
+  "A relay could serve another model in exactly these hours, and its pattern can be learned.": "Un relay podría servir otro modelo justo en esas horas, y su patrón puede aprenderse.",
+  "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "El intervalo de comprobación es más largo que la ventana: las horas de inicio se desplazan y una ejecución que empezaría tras la ventana espera a la siguiente.",
+  "Choose at least one day.": "Elija al menos un día.",
+  "Start and end must be different.": "El inicio y el fin deben ser distintos.",
+  "Run window saved.": "Ventana de ejecución guardada.",
+  "Outside run window": "Fuera de la ventana de ejecución",
+  "Next window: {when}": "Próxima ventana: {when}",
+  "Next run: about {when}": "Próxima ejecución: hacia {when}",
+  "Run now ignores the run window.": "«Ejecutar ahora» ignora la ventana de ejecución."
+ }
+}

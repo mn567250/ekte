@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Run window": "Janela de execução",
+  "Change run window": "Alterar janela de execução",
+  "Always": "Sempre",
+  "Weekdays": "Dias úteis",
+  "Weekdays 07–19": "Dias úteis 07–19",
+  "Custom": "Personalizado",
+  "Presets": "Predefinições",
+  "Days": "Dias",
+  "From": "De",
+  "To": "Até",
+  "Time zone": "Fuso horário",
+  "(this browser)": "(este navegador)",
+  "Overnight window: it ends the next morning and belongs to the day it starts on.": "Janela noturna: termina na manhã seguinte e pertence ao dia em que começa.",
+  "Checked all 168 hours a week.": "Todas as 168 horas da semana são verificadas.",
+  "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).": "{h} de 168 horas por semana verificadas · cerca de {h} execuções e arquivos de evidência em vez de 168 (−{pct} %).",
+  "{n} h a week are not checked.": "{n} h por semana não são verificadas.",
+  "A relay could serve another model in exactly these hours, and its pattern can be learned.": "Um relay pode servir outro modelo exatamente nessas horas, e o seu padrão pode ser aprendido.",
+  "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "O intervalo de verificação é maior que a janela: os horários de início deslizam, e uma execução que começaria depois da janela espera pela próxima.",
+  "Choose at least one day.": "Escolha pelo menos um dia.",
+  "Start and end must be different.": "O início e o fim devem ser diferentes.",
+  "Run window saved.": "Janela de execução guardada.",
+  "Outside run window": "Fora da janela de execução",
+  "Next window: {when}": "Próxima janela: {when}",
+  "Next run: about {when}": "Próxima execução: cerca de {when}",
+  "Run now ignores the run window.": "«Executar agora» ignora a janela de execução."
+ }
+}
