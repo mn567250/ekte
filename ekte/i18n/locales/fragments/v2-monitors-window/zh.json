@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Run window": "运行时段",
+  "Change run window": "修改运行时段",
+  "Always": "始终",
+  "Weekdays": "工作日",
+  "Weekdays 07–19": "工作日 07–19",
+  "Custom": "自定义",
+  "Presets": "预设",
+  "Days": "日期",
+  "From": "从",
+  "To": "到",
+  "Time zone": "时区",
+  "(this browser)": "（此浏览器）",
+  "Overnight window: it ends the next morning and belongs to the day it starts on.": "跨夜时段：于次日清晨结束，并归属于开始的那一天。",
+  "Checked all 168 hours a week.": "每周 168 小时全部检测。",
+  "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).": "每周检测 {h} / 168 小时 · 约 {h} 次运行和证据文件，而不是 168 次（−{pct} %）。",
+  "{n} h a week are not checked.": "每周有 {n} 小时不检测。",
+  "A relay could serve another model in exactly these hours, and its pattern can be learned.": "中转站可能恰好在这些时段换用其他模型，且其规律可以被摸清。",
+  "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "检测间隔长于运行时段：开始时间会顺延，错过时段的运行将等待下一个时段。",
+  "Choose at least one day.": "请至少选择一天。",
+  "Start and end must be different.": "开始和结束时间必须不同。",
+  "Run window saved.": "运行时段已保存。",
+  "Outside run window": "不在运行时段",
+  "Next window: {when}": "下一个时段：{when}",
+  "Next run: about {when}": "下次运行：约 {when}",
+  "Run now ignores the run window.": "立即运行不受运行时段限制。"
+ }
+}

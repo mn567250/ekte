@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Run window": "Kjøretidsvindu",
+  "Change run window": "Endre kjøretidsvindu",
+  "Always": "Alltid",
+  "Weekdays": "Ukedager",
+  "Weekdays 07–19": "Ukedager 07–19",
+  "Custom": "Egendefinert",
+  "Presets": "Forhåndsvalg",
+  "Days": "Dager",
+  "From": "Fra",
+  "To": "Til",
+  "Time zone": "Tidssone",
+  "(this browser)": "(denne nettleseren)",
+  "Overnight window: it ends the next morning and belongs to the day it starts on.": "Nattvindu: Det slutter neste morgen og hører til dagen det starter.",
+  "Checked all 168 hours a week.": "Alle 168 timer i uken kontrolleres.",
+  "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).": "{h} av 168 timer i uken kontrolleres · omtrent {h} kjøringer og bevisfiler i stedet for 168 (−{pct} %).",
+  "{n} h a week are not checked.": "{n} t i uken kontrolleres ikke.",
+  "A relay could serve another model in exactly these hours, and its pattern can be learned.": "Et relé kan levere en annen modell akkurat i disse timene, og mønsteret kan læres.",
+  "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "Kontrollintervallet er lengre enn vinduet: starttidene forskyves, og en kjøring som ville startet etter vinduet venter på neste.",
+  "Choose at least one day.": "Velg minst én dag.",
+  "Start and end must be different.": "Start og slutt må være forskjellige.",
+  "Run window saved.": "Kjøretidsvindu lagret.",
+  "Outside run window": "Utenfor kjøretidsvinduet",
+  "Next window: {when}": "Neste vindu: {when}",
+  "Next run: about {when}": "Neste kjøring: omtrent {when}",
+  "Run now ignores the run window.": "«Kjør nå» ignorerer kjøretidsvinduet."
+ }
+}

@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Run window": "Fenêtre d’exécution",
+  "Change run window": "Modifier la fenêtre d’exécution",
+  "Always": "Toujours",
+  "Weekdays": "Jours ouvrés",
+  "Weekdays 07–19": "Jours ouvrés 07–19",
+  "Custom": "Personnalisé",
+  "Presets": "Préréglages",
+  "Days": "Jours",
+  "From": "De",
+  "To": "À",
+  "Time zone": "Fuseau horaire",
+  "(this browser)": "(ce navigateur)",
+  "Overnight window: it ends the next morning and belongs to the day it starts on.": "Fenêtre de nuit : elle se termine le lendemain matin et appartient au jour où elle commence.",
+  "Checked all 168 hours a week.": "Les 168 heures de la semaine sont contrôlées.",
+  "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).": "{h} heures sur 168 contrôlées par semaine · environ {h} exécutions et fichiers de preuves au lieu de 168 (−{pct} %).",
+  "{n} h a week are not checked.": "{n} h par semaine ne sont pas contrôlées.",
+  "A relay could serve another model in exactly these hours, and its pattern can be learned.": "Un relais pourrait servir un autre modèle précisément à ces heures, et son schéma peut être appris.",
+  "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "L’intervalle de contrôle est plus long que la fenêtre : les heures de départ glissent, et une exécution qui démarrerait après la fenêtre attend la suivante.",
+  "Choose at least one day.": "Choisissez au moins un jour.",
+  "Start and end must be different.": "Le début et la fin doivent être différents.",
+  "Run window saved.": "Fenêtre d’exécution enregistrée.",
+  "Outside run window": "Hors de la fenêtre d’exécution",
+  "Next window: {when}": "Prochaine fenêtre : {when}",
+  "Next run: about {when}": "Prochaine exécution : vers {when}",
+  "Run now ignores the run window.": "« Exécuter maintenant » ignore la fenêtre d’exécution."
+ }
+}

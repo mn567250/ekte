@@ -1,0 +1,29 @@
+{
+ "strings": {
+  "Run window": "Laufzeitfenster",
+  "Change run window": "Laufzeitfenster ändern",
+  "Always": "Immer",
+  "Weekdays": "Werktage",
+  "Weekdays 07–19": "Werktage 07–19",
+  "Custom": "Benutzerdefiniert",
+  "Presets": "Voreinstellungen",
+  "Days": "Tage",
+  "From": "Von",
+  "To": "Bis",
+  "Time zone": "Zeitzone",
+  "(this browser)": "(dieser Browser)",
+  "Overnight window: it ends the next morning and belongs to the day it starts on.": "Nachtfenster: Es endet am nächsten Morgen und gehört zu dem Tag, an dem es beginnt.",
+  "Checked all 168 hours a week.": "Alle 168 Stunden pro Woche werden geprüft.",
+  "Checked {h} of 168 hours a week · about {h} runs and evidence files instead of 168 (−{pct} %).": "{h} von 168 Wochenstunden werden geprüft · etwa {h} Läufe und Beweisdateien statt 168 (−{pct} %).",
+  "{n} h a week are not checked.": "{n} Std. pro Woche werden nicht geprüft.",
+  "A relay could serve another model in exactly these hours, and its pattern can be learned.": "Ein Relay könnte genau in diesen Stunden ein anderes Modell ausliefern, und sein Muster lässt sich erlernen.",
+  "The check interval is longer than the window: start times slide, and a run that would start after the window waits for the next one.": "Das Prüfintervall ist länger als das Fenster: Startzeiten verschieben sich, und ein Lauf, der nach dem Fenster starten würde, wartet auf das nächste.",
+  "Choose at least one day.": "Wählen Sie mindestens einen Tag.",
+  "Start and end must be different.": "Start und Ende müssen verschieden sein.",
+  "Run window saved.": "Laufzeitfenster gespeichert.",
+  "Outside run window": "Außerhalb des Laufzeitfensters",
+  "Next window: {when}": "Nächstes Fenster: {when}",
+  "Next run: about {when}": "Nächster Lauf: etwa {when}",
+  "Run now ignores the run window.": "„Jetzt ausführen“ ignoriert das Laufzeitfenster."
+ }
+}
