@@ -30,6 +30,11 @@
   :root:not([data-motion="off"]) .zm-in .marks, :root:not([data-motion="off"]) .zm-in .ref {
     animation: zm-fade 360ms ease-out 420ms backwards;
   }
+  /* a forecast fades in once the history has been drawn */
+  :root:not([data-motion="off"]) .zm-in .fcarea, :root:not([data-motion="off"]) .zm-in .ser .fband,
+  :root:not([data-motion="off"]) .zm-in .ser .fline {
+    animation: zm-fade 360ms ease-out 600ms backwards;
+  }
   /* stacked bars: per bar the bottom segment grows from the axis, then the
      middle one on top of it, then the top one; bars start left to right */
   :root:not([data-motion="off"]) .zm-in.sbars .seg {

@@ -162,6 +162,9 @@
   .dt td .cn { display: block; font-size: 11px; color: var(--ink-muted); }
   .dt tr.low > * { color: var(--ink-muted); }
   .dt tr.low td.nt { color: var(--warning); }
+  /* forecast rows: an estimate, not a measurement */
+  .dt tr.fcrow > * { color: var(--ink-muted); font-style: italic; }
+  .note .fcv.good { color: var(--success); font-weight: 600; } .note .fcv.bad { color: var(--danger); font-weight: 600; }
   .dt td.nt { min-width: 16em; }
   .dt .badge { margin-top: 3px; }
   .dt .u { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--ink-muted); overflow-wrap: anywhere; }
@@ -382,6 +385,20 @@
   var groupName = function (g) { return T((GROUP_L[g] || GROUP_L.relay)[0], (GROUP_L[g] || GROUP_L.relay)[1]); };
   var BUCKETS = ["hour", "day", "week"];
   var BUCKET_MS = { hour: 36e5, day: 864e5, week: 6048e5 };
+  // forecast horizons (buckets ahead) per bucket size, as the series endpoint allows
+  var AHEAD = { hour: [12, 24], day: [3, 7], week: [2, 4] };
+  function aheadName(b, n) {
+    if (!n) return T("关闭", "Off");
+    return b === "hour" ? Tf("未来 {n} 小时", "Next {n} hours", { n: n }) : b === "week" ? Tf("未来 {n} 周", "Next {n} weeks", { n: n }) :
+      Tf("未来 {n} 天", "Next {n} days", { n: n });
+  }
+  function aheadIn(b, n) {
+    return b === "hour" ? Tf("{n} 小时后", "in {n} hours", { n: n }) : b === "week" ? Tf("{n} 周后", "in {n} weeks", { n: n }) :
+      Tf("{n} 天后", "in {n} days", { n: n });
+  }
+  function perBucket(b) {
+    return b === "hour" ? T("每小时", "per hour") : b === "week" ? T("每周", "per week") : T("每天", "per day");
+  }
   var bucketName = function (b) {
     return b === "hour" ? T("按小时", "By hour") : b === "week" ? T("按周", "By week") :
       b === "dow_hour" ? T("按星期几和小时", "By weekday and hour") : T("按天", "By day");
@@ -420,7 +437,7 @@
   var BOARD_BY = ["relay", "model", "relay_model"];
   var DEFAULTS = {
     range: "30d", tab: "overview", os: "kpi", ts: "cmp", rs: "err",
-    "trend.metric": "score", "trend.bucket": "day", "trend.key": [],
+    "trend.metric": "score", "trend.bucket": "day", "trend.key": [], "trend.ahead": "0",
     "heat.metric": "latency_p50", "heat.block": "4", "heat.fold": "week", "heat.key": "",
     "board.by": "relay", "lb.sort": "", "errors.bucket": "day", "errors.block": "4",
     "bill.metric": "billing_ratio_prompt",
@@ -574,6 +591,8 @@
     var el = ev.target, k = el.getAttribute && el.getAttribute("data-v");
     if (!k || !$("#views").contains(el)) return;
     var p = {}; p[k] = String(el.value) === String(DEFAULTS[k]) ? null : String(el.value);
+    // another bucket size has its own forecast horizons: back to off
+    if (k === "trend.bucket") p["trend.ahead"] = null;
     F.set(p);
   });
 
@@ -757,7 +776,13 @@
 
   /* ---------------- comparison over time ---------------- */
   function loadSeries(p) {
-    return panelLoad(p, [wurl("/api/analytics/series", "trend", { "trend.tz": tzName() }), pairsUrl()]);
+    var b = one("trend.bucket", BUCKETS);
+    return panelLoad(p, [wurl("/api/analytics/series", "trend", { "trend.tz": tzName(), "trend.ahead": ahead(b) || null }), pairsUrl()]);
+  }
+  // the forecast horizon in buckets (0: off); a value the bucket size does not offer is off
+  function ahead(b) {
+    var v = Number(S("trend.ahead")) || 0;
+    return (AHEAD[b] || []).indexOf(v) >= 0 ? v : 0;
   }
   function shownKeys(d) {
     var keys = list("trend.key");
@@ -770,6 +795,9 @@
     ctlHTML(host, '<div class="ctl">' +
       selectCtl("trend.metric", T("指标", "Metric"), mlist.map(function (id) { return { v: id, t: metricName(id) }; }), metric) +
       selectCtl("trend.bucket", T("时间段", "Time buckets"), BUCKETS.map(function (b) { return { v: b, t: bucketName(b) }; }), one("trend.bucket", BUCKETS)) +
+      selectCtl("trend.ahead", T("预测", "Forecast"), [0].concat(AHEAD[one("trend.bucket", BUCKETS)]).map(function (n) {
+        return { v: String(n), t: aheadName(one("trend.bucket", BUCKETS), n) };
+      }), String(ahead(one("trend.bucket", BUCKETS)))) +
       "</div>" +
       (cands.length > 1 ? '<div class="pick"><span class="flab" id="pick-l">' + esc(Tf("对比的数据系列（最多 {n} 个，按{group}）", "Series to compare (up to {n}, by {group})", { n: 4, group: groupName(group()) })) + "</span>" +
         '<div class="chips" role="group" aria-labelledby="pick-l">' + cands.map(function (c) {
@@ -804,17 +832,72 @@
       ? Tf("ekte 版本 {from} → {to}", "ekte version {from} → {to}", { from: a.from, to: a.to })
       : T("知识库档案有变化（评分依据变了，不是中转站变了）", "Knowledge-base profile changed (the reference changed, not the relay)");
   }
-  // a series answer as chart series (quartile band for median metrics)
+  // a series answer as chart series (quartile band for median metrics; the
+  // forecast, if the answer has one, as fc)
   function chartSeries(s) {
     var share = s.metric.agg !== "median";
+    var ok = function (p) { return !isNaN(p.t) && typeof p.v === "number"; };
     return s.series.map(function (x, i) {
+      var f = x.forecast, fc = null;
+      if (f && f.status === "ok" && f.start) {
+        var pt = function (p) { return { t: Date.parse(p.bucket), v: p.value, lo: p.p25, hi: p.p75 }; };
+        fc = { from: pt(f.start), points: (f.points || []).map(pt).filter(ok) };
+        if (!ok(fc.from) || !fc.points.length) fc = null;
+      }
       return {
-        key: x.key, label: x.label || x.key, cls: "s" + (i % 4), shape: C.SHAPES[i % 4], raw: x,
+        key: x.key, label: x.label || x.key, cls: "s" + (i % 4), shape: C.SHAPES[i % 4], raw: x, fc: fc,
         points: x.points.map(function (p) {
           return { t: Date.parse(p.bucket), v: p.value, lo: share ? null : p.p25, hi: share ? null : p.p75, n: p.n, runs: p.runs, low: !!p.low_n };
-        }).filter(function (p) { return !isNaN(p.t) && typeof p.v === "number"; }),
+        }).filter(ok),
       };
     });
+  }
+  // a forecast slope as text: unsigned, a little more precise than a value
+  function slopeText(v, unit) {
+    var a = Math.abs(v);
+    if (unit === "ratio") return C.fmtDelta(a, unit).replace(/^\+/, "");
+    return fmt(a, unit, { digits: a < 1 ? 2 : a < 10 ? 1 : 0 });
+  }
+  // The forecast note: how it is made, then one line per series (HTML)
+  function forecastNote(s, series, m, bucket, n) {
+    if (s.metric.agg !== "median") {
+      return '<p class="note">' + ico("info") + "<span>" + esc(Tf("预测只针对中位数。“{metric}”是请求的汇总占比，没有可外推的 p25–p75 区间。",
+        "Forecasts are drawn for medians only. {metric} is a pooled share of requests, without a p25–p75 band to project.",
+        { metric: metricName(m.id) })) + "</span></p>";
+    }
+    var lines = series.map(function (x) {
+      var f = x.raw.forecast;
+      if (!f) return "";
+      var who = esc(x.label) + ": ";
+      if (f.status !== "ok") {
+        var few = { n: f.buckets_used, need: f.buckets_needed, min: minRuns() };
+        return "<li>" + who + esc((x.raw.annotations || []).length
+          ? Tf("没有预测——自上次标记以来，只有 {n} 个时间段达到 {min} 次或以上检测，至少需要 {need} 个。更多检测（设置监控）或换一种时间段会有帮助。",
+            "no forecast — {n} of the {need} buckets with {min} or more runs it needs since the last mark. More runs (a monitor) or a different bucket size help.", few)
+          : Tf("没有预测——只有 {n} 个时间段达到 {min} 次或以上检测，至少需要 {need} 个。更多检测（设置监控）或换一种时间段会有帮助。",
+            "no forecast — {n} of the {need} buckets with {min} or more runs it needs. More runs (a monitor) or a different bucket size help.", few)) + "</li>";
+      }
+      var last = f.points[f.points.length - 1];
+      var about = Tf("{ahead}约为 {value}（中间一半的检测 {lo} – {hi}）", "about {value} {ahead} (middle half of runs {lo} – {hi})", {
+        value: fmt(last.value, m.unit), ahead: aheadIn(bucket, n), lo: fmt(last.p25, m.unit), hi: fmt(last.p75, m.unit) });
+      var head;
+      if (f.clear) {
+        // the server judges the direction (better / worse / neutral)
+        var up = f.slope > 0;
+        var verdict = f.direction === "better" ? '<span class="fcv good">' + esc(T("在变好", "getting better")) + "</span>"
+          : f.direction === "worse" ? '<span class="fcv bad">' + esc(T("在变差", "getting worse")) + "</span>" : "";
+        var sv = { d: slopeText(f.slope, m.unit), per: perBucket(bucket) };
+        head = "<b>" + esc(up ? Tf("{per}上升 {d}", "rising {d} {per}", sv) : Tf("{per}下降 {d}", "falling {d} {per}", sv)) + "</b>" +
+          (verdict ? " (" + verdict + ")" : "");
+      } else head = esc(T("没有明显趋势", "no clear trend"));
+      var step = f.step ? esc(Tf("，自 {date} 数据中的一次跳变起拟合", ", fitted since a step in the data on {date}",
+        { date: bucketTime(Date.parse(f.step), bucket) })) : "";
+      return "<li>" + who + head + " — " + esc(about) + step + "</li>";
+    }).join("");
+    return '<div class="note">' + ico("info") + "<span>" +
+      esc(T("虚线延续每个数据系列：一条穿过自上次标记或跳变以来各时间段中位数的直线（按检测次数加权，离群的时间段不计），从最后一个时间段开始。它的区间是中间一半的检测，预测得越远越宽。这是估计，不是测量。",
+        "Dashed lines continue each series: a straight line through the bucket medians since the last mark or step (weighted by runs, odd buckets left out), starting at the last bucket. Its band is the middle half of the runs, widened the further ahead it reaches. An estimate, not a measurement.")) +
+      (lines ? "<ul>" + lines + "</ul>" : "") + "</span></div>";
   }
 
   function renderChart() {
@@ -826,13 +909,15 @@
       return;
     }
     if (!s) return;
-    var m = s.metric, name = metricName(m.id), bucket = s.bucket;
+    var m = s.metric, name = metricName(m.id), bucket = s.bucket, n = ahead(bucket);
     var series = chartSeries(s);
     var withData = series.filter(function (x) { return x.points.length; });
+    var anyFc = withData.some(function (x) { return x.fc; });
     var legend = '<ul class="legend" aria-label="' + esc(T("图例", "Legend")) + '">' + series.map(function (x) {
       return "<li>" + C.keySVG(x.cls, x.shape) + '<span class="nm">' + brk(x.label) + "</span>" +
         '<span class="sub">' + esc(x.points.length ? Tf("{n} 次检测", "{n} runs", { n: x.raw.n }) : T("无数据", "no data")) + "</span></li>";
-    }).join("") + "</ul>";
+    }).join("") + (anyFc ? "<li>" + C.dashKey("fc") + '<span class="nm">' + esc(T("预测", "Forecast")) + "</span>" +
+      '<span class="sub">' + esc(T("虚线，区间越往后越宽", "dashed, its band widening ahead")) + "</span></li>" : "") + "</ul>";
     if (!withData.length) {
       body.innerHTML = (series.length ? legend : "") + '<div class="empty-data">' +
         esc(Tf("此时间范围内没有“{metric}”的数据。", "No data for “{metric}” in this range.", { metric: name })) + "</div>";
@@ -856,7 +941,10 @@
           var a = x.points[0], b = x.points[x.points.length - 1];
           return Tf("{label} 从 {first} 到 {last}", "{label} from {first} to {last}", { label: x.label, first: fmt(a.v, m.unit), last: fmt(b.v, m.unit) });
         }).join("; "),
-      });
+      }) + withData.filter(function (x) { return x.fc; }).map(function (x) {
+        return " " + Tf("{label} 的预测：{ahead}约为 {value}。", "Forecast for {label}: about {value} {ahead}.", {
+          label: x.label, value: fmt(x.fc.points[x.fc.points.length - 1].v, m.unit), ahead: aheadIn(bucket, n) });
+      }).join("");
     var warn = [];
     series.forEach(function (x) {
       var mx = x.raw.mixed || {};
@@ -864,7 +952,7 @@
       if (mx.stream_mode) warn.push(Tf("“{series}”混合了流式与非流式检测——数值可能不可比。", "“{series}” mixes streaming and non-streaming runs — its values may not be comparable.", { series: x.label }));
       if (mx.api) warn.push(Tf("“{series}”混合了不同协议的检测——数值可能不可比。", "“{series}” mixes runs over different protocols — its values may not be comparable.", { series: x.label }));
     });
-    var notes = "";
+    var notes = n ? forecastNote(s, withData, m, bucket, n) : "";
     if (warn.length) {
       notes += '<p class="note warn">' + ico("warning") + "<span>" + warn.map(esc).join("<br>") + " " +
         esc(T("可用上方的筛选只对比同类检测。", "Narrow the filters above to compare like with like.")) + "</span></p>";
@@ -890,7 +978,7 @@
       // the range, from one bucket before the first data on (a long empty
       // lead-in would squeeze the data into a sliver)
       bucketMs: BUCKET_MS[bucket], domain: domainOf(s, first, BUCKET_MS[bucket]),
-      xTick: tick, tipTime: function (t) { return bucketTime(t, bucket); }, series: withData, marks: marks, lowHint: lowHint(),
+      xTick: tick, tipTime: function (t) { return bucketTime(t, bucket); }, series: withData, marks: marks, lowHint: lowHint(), now: Date.now(),
       yMin: m.unit === "score" ? 0 : null, yMax: m.unit === "score" ? 100 : null,
     };
     drawChart("cmp", "cmp-chart", C.timeChart, cfg);
@@ -912,6 +1000,8 @@
   function tableHTML(series, m, name, o) {
     var share = m.agg !== "median", rows = [];
     series.forEach(function (x) { x.points.forEach(function (p) { rows.push({ x: x, p: p }); }); });
+    // forecast buckets as rows of their own, marked as estimates
+    series.forEach(function (x) { if (x.fc) x.fc.points.forEach(function (p) { rows.push({ x: x, p: p, fc: true }); }); });
     rows.sort(function (a, b) { return a.p.t - b.p.t || series.indexOf(a.x) - series.indexOf(b.x); });
     var hint = lowHint();
     return discHTML(o.pfx, o.key, Tf("{metric}（{group}，{bucket}）", "{metric} ({group}, {bucket})", {
@@ -920,6 +1010,12 @@
       (share ? "" : '<th scope="col" class="n">p25–p75</th>') + th(T("检测次数", "Runs"), true) + th(T("说明", "Note")),
       rows.map(function (r) {
         var p = r.p;
+        if (r.fc) {
+          return '<tr class="fcrow"><td class="when">' + esc(bucketTime(p.t, o.bucket)) + '</td><td class="ser"><span class="lbl">' + brk(r.x.label) + "</span></td>" +
+            '<td class="n">≈ ' + esc(fmt(p.v, m.unit)) + "</td>" +
+            (share ? "" : '<td class="n">' + esc(fmt(p.lo, m.unit)) + " – " + esc(fmt(p.hi, m.unit)) + "</td>") +
+            '<td class="n">—</td><td class="nt">' + esc(T("预测（估计）", "Forecast (estimate)")) + "</td></tr>";
+        }
         return '<tr class="' + (p.low ? "low" : "") + '"><td class="when">' + esc(bucketTime(p.t, o.bucket)) + '</td><td class="ser"><span class="lbl">' + brk(r.x.label) + "</span></td>" +
           '<td class="n">' + esc(fmt(p.v, m.unit)) + "</td>" +
           (share ? "" : '<td class="n">' + esc(fmt(p.lo, m.unit)) + " – " + esc(fmt(p.hi, m.unit)) + "</td>") +

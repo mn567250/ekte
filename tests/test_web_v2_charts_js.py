@@ -112,3 +112,36 @@ def test_time_chart_points_and_marks_stay_inside_the_plot():
     marks = re.search(r'<g class="marks">(.*?)</g>', svg).group(1)
     mx = [float(x) for x in re.findall(r'<line x1="([\d.-]+)"', marks)]
     assert len(mx) == 1 and left <= mx[0] <= right
+
+
+def test_time_chart_draws_a_forecast_joined_to_the_history():
+    days = [MON_SEP_29 + i * DAY for i in range(6)]
+    points = [{"t": t, "v": 100 + 5 * i, "lo": 90 + 5 * i, "hi": 110 + 5 * i, "n": 5, "runs": 5, "low": False}
+              for i, t in enumerate(days)]
+    ahead = [{"t": days[-1] + (i + 1) * DAY, "v": 130 + 5 * i, "lo": 115 + 4 * i, "hi": 145 + 6 * i} for i in range(3)]
+    fc = {"from": {"t": days[-1], "v": 125, "lo": 115, "hi": 135}, "points": ahead}
+    cfg = {"id": "c", "title": "t", "desc": "d", "unit": "ms", "bucketMs": DAY, "domain": None, "lowHint": "",
+           "now": days[-1] + DAY // 2,
+           "series": [{"label": "a", "cls": "s0", "shape": "circle", "points": points, "fc": fc}]}
+    svg = render("timeChart", cfg)
+    left, right = plot_x(svg)
+    assert svg.count('class="fband"') == 1 and svg.count('class="fline"') == 1
+    assert '<g class="fcarea">' in svg and ">Forecast</text>" in svg
+    # the dashed line starts where the history line ends
+    line = re.search(r'<path class="line" d="M([^"]+)"', svg).group(1).split("L")
+    fline = re.search(r'<path class="fline" d="M([^"]+)"', svg).group(1).split("L")
+    assert fline[0] == line[-1] and len(fline) == 4
+    # the x range reaches the last forecast bucket; each one gets a hover column
+    assert all(left - 0.05 <= float(p.split(",")[0]) <= right + 0.05 for p in fline)
+    assert len(re.findall(r'<rect class="hit"', svg)) == 9
+    # the wash starts at now, inside the last history bucket
+    wash = float(re.search(r'<g class="fcarea"><rect x="([\d.]+)"', svg).group(1))
+    last_x = float(line[-1].split(",")[0])
+    assert last_x <= wash < float(fline[1].split(",")[0])
+
+
+def test_time_chart_without_a_forecast_draws_none():
+    points = [{"t": MON_SEP_29 + i * DAY, "v": 100, "lo": 90, "hi": 110, "n": 5, "runs": 5, "low": False} for i in range(3)]
+    svg = render("timeChart", {"id": "c", "title": "t", "desc": "d", "unit": "ms", "bucketMs": DAY, "domain": None,
+                               "lowHint": "", "series": [{"label": "a", "cls": "s0", "shape": "circle", "points": points}]})
+    assert "fband" not in svg and "fline" not in svg and "fcarea" not in svg

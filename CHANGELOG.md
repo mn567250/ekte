@@ -189,6 +189,20 @@ how many saved runs it re-extracts.
 
 ### Added
 
+- **Forecast in Analytics › Trends
+  ([#148](https://github.com/mn567250/ekte/issues/148)).** *Comparison over
+  time* has a **Forecast** select (off by default; the next 12 / 24 hours, 3 /
+  7 days or 2 / 4 weeks, by bucket size). Each median series then continues as
+  a dashed line with its p25–p75 band, widening the further ahead it reaches:
+  a straight line through the bucket medians, weighted by runs, fitted only
+  since the series' last ekte-version or knowledge-base mark and since a
+  detected step in the data (a backend or model change), with odd buckets left
+  out. A note says per series whether it is rising or falling and by how much,
+  or why there is no forecast (fewer than 6 buckets with 3 or more runs, or a
+  pooled rate without a band). The data table lists the forecast buckets as
+  estimates. The server computes it from the buckets it already returns
+  (`trend.ahead` on `GET /api/analytics/series`, the `forecast` object per
+  series; `ekte/web/forecast.py`), with no extra query.
 - **Upgrade fixture for 0.34.0.** `tests/fixtures/upgrade/v0.34.0/` is a data
   directory written by the released 0.34.0 from PyPI (history, monitors with
   stored and unstored keys, your own knowledge-base entries); the upgrade tests

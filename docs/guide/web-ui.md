@@ -92,7 +92,8 @@ comparisons: KPI tiles for the chosen period (runs, median score, high-risk
 share, success rate, TTFT, decode speed, billing ratios) with the change
 against the period of the same length before; a chart of any metric per relay,
 model or relay × model by hour, day or week (median line with the p25–p75 band,
-up to four series, every chart also as a data table); and a leaderboard of the
+up to four series, every chart also as a data table, and on request a
+forecast — see below); and a leaderboard of the
 relays for a model, or the models for a relay. Relays are grouped by their
 knowledge-base entry (saved relays and providers), so renaming a relay
 regroups its history. Buckets with fewer than 3 runs are drawn faded — a single
@@ -116,6 +117,24 @@ model differs and the measured share of the declared context window),
 it the relay reports more tokens than ekte counted — plus reasoning and cached
 input shares) and **relay overhead** (the processing time a relay reports next
 to the network round trip to it).
+
+**Forecast (Analytics › Trends).** *Comparison over time* has a **Forecast**
+select, off by default: the next 12 or 24 hours, 3 or 7 days, or 2 or 4 weeks,
+depending on the time buckets. Each series then goes on as a dashed line with
+a faint band, over a light area labelled "Forecast". The line is a straight
+line through the bucket medians (weighted by runs, odd buckets left out) and
+starts at the last bucket with 3 or more runs, so it joins the history; the
+band is the middle half of the runs (p25–p75), widened the further ahead it
+reaches. A note under the chart says per series whether it is rising or
+falling and by how much per bucket, whether that is better or worse, and
+where it should be at the end of the forecast. The fit starts again after an
+ekte-version or knowledge-base mark and after a step in the data (a jump such
+as a backend or model change), since earlier values are not comparable. There
+is no forecast for a series with fewer than 6 buckets of 3 or more runs since
+then (more runs — a monitor — or another bucket size help), nor for pooled
+rates such as the success rate, which have no p25–p75 band. The data table
+lists the forecast buckets as extra rows marked "Forecast (estimate)". A
+forecast is an estimate, not a measurement.
 
 **Tabs and share links (Analytics).** The panels sit in five tabs —
 **Overview** (KPIs, leaderboard), **Trends** (comparison over time, peak

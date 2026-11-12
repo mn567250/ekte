@@ -9,7 +9,9 @@ Each function takes the request parameters: the shared URL schema of
 :class:`~ekte.web.query.QueryError` (400). Runs are selected, grouped and
 aggregated in SQLite (:func:`ekte.web.query.aggregate_rows`,
 :func:`~ekte.web.query.series`, and a few grouped queries here); Python only
-shapes the answer and judges values with :func:`ekte.web.metrics.present`. No
+shapes the answer, judges values with :func:`ekte.web.metrics.present` and,
+for ``trend.ahead``, forecasts each trend series from its buckets
+(:mod:`ekte.web.forecast`). No
 function loads runs or request records into Python, and every answer's size
 depends on the number of groups and buckets, never on the number of runs.
 
@@ -26,7 +28,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ekte import errorclass
-from ekte.web import analytics_store, cache, history, history_api, query, run_row
+from ekte.web import analytics_store, cache, forecast, history, history_api, query, run_row
 from ekte.web import metrics as _metrics
 from ekte.web.analytics import (
     BLOCKS,
@@ -224,10 +226,18 @@ def widget_summary(params: Any) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 # Trend chart and heatmap
 # --------------------------------------------------------------------------- #
-def _series_public(result: query.SeriesResult) -> dict[str, Any]:
+def _series_public(result: query.SeriesResult, ahead: int | None = None) -> dict[str, Any]:
+    """The answer of a series result; with ``ahead`` (not None) each series
+    also gets ``forecast``: :func:`ekte.web.forecast.forecast` ``ahead``
+    buckets on, or None for 0."""
     out = result.public()
-    for s in out["series"]:
+    zone = query._zone(result.tz)[0] if ahead else None
+    for s, src in zip(out["series"], result.series, strict=True):
         s["points"] = [_judged(result.metric, p) for p in s["points"]]
+        if ahead is not None:
+            s["forecast"] = (forecast.forecast(src.points, src.annotations, result.bucket, zone,
+                                               ahead, result.metric)
+                             if zone is not None else None)
     return out
 
 
@@ -235,13 +245,17 @@ def widget_series(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/series``: one metric per group (``group``) over
     time buckets. ``trend.metric`` (default score), ``trend.bucket`` (hour,
     day, week), ``trend.tz`` (IANA, default UTC), ``trend.key`` (repeatable,
-    up to :data:`MAX_KEYS` series keys; default the busiest groups)."""
-    w = _widget(params, "trend", ("metric", "bucket", "tz"), ("key",))
+    up to :data:`MAX_KEYS` series keys; default the busiest groups),
+    ``trend.ahead`` (buckets to forecast: hour 12 / 24, day 3 / 7, week 2 / 4;
+    0 or absent for none): each series' ``forecast``
+    (:mod:`ekte.web.forecast`), or None."""
+    w = _widget(params, "trend", ("metric", "bucket", "tz", "ahead"), ("key",))
     conn, q = _setup(params)
     bucket = _str_choice(w, "bucket", "trend.bucket", TREND_BUCKETS, "day")
+    ahead = _int_choice(w, "ahead", "trend.ahead", (0, *forecast.AHEAD[bucket]), 0)
     result = query.series(conn, q, w.get("metric") or "score", None, bucket, w.get("tz") or "UTC",
                           keys=w["key"], quantiles=True)
-    return {**_head(q), **_series_public(result)}
+    return {**_head(q), **_series_public(result, ahead)}
 
 
 def widget_heatmap(params: Any) -> dict[str, Any]:

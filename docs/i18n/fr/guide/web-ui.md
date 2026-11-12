@@ -133,6 +133,27 @@ relais déclare plus de tokens qu'ekte n'en a comptés — ainsi que les parts d
 tokens de raisonnement et d'entrée en cache) et **surcharge du relais** (le
 temps de traitement déclaré par le relais à côté de l'aller-retour réseau).
 
+**Prévision (Analyses › Tendances).** *Comparaison dans le temps* propose un
+choix **Prévision**, désactivé par défaut : les 12 ou 24 prochaines heures, les
+3 ou 7 prochains jours, ou les 2 ou 4 prochaines semaines, selon la taille des
+intervalles. Chaque série se prolonge alors en pointillés avec une bande pâle,
+sur une zone claire intitulée « Prévision ». La ligne est une droite passant
+par les médianes des intervalles (pondérée par les exécutions, intervalles
+aberrants exclus) et part du dernier intervalle d'au moins 3 exécutions : elle
+rejoint donc l'historique ; la bande est la moitié centrale des exécutions
+(p25–p75), d'autant plus large qu'elle porte loin. Une note sous le graphique
+indique pour chaque série si elle monte ou descend et de combien par
+intervalle, si c'est mieux ou moins bien, et où elle devrait se trouver à la
+fin de la prévision. L'ajustement repart après une marque de version d'ekte ou
+de profil de la base de connaissances et après un saut dans les données (un
+changement de backend ou de modèle, par exemple), car les valeurs antérieures
+ne sont pas comparables. Pas de prévision pour une série de moins de 6
+intervalles d'au moins 3 exécutions depuis (plus d'exécutions — un moniteur —
+ou une autre taille d'intervalle aident), ni pour les taux agrégés comme le
+taux de succès, qui n'ont pas de bande p25–p75. Le tableau de données ajoute
+les intervalles prévus en lignes marquées « Prévision (estimation) ». Une
+prévision est une estimation, pas une mesure.
+
 **Onglets et liens de partage (Analyses).** Les panneaux sont répartis en cinq
 onglets — **Vue d'ensemble** (indicateurs, classement), **Tendances**
 (comparaison dans le temps, heures de pointe), **Fiabilité** (erreurs, surcoût

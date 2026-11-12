@@ -135,6 +135,26 @@ ekte gezählt hat — sowie Anteile von Reasoning- und gecachten Eingabe-Tokens)
 und **Relay-Overhead** (die vom Relay gemeldete Verarbeitungszeit neben der
 Netzwerk-Umlaufzeit dorthin).
 
+**Prognose (Analyse › Trends).** *Vergleich im Zeitverlauf* hat eine Auswahl
+**Prognose**, standardmäßig aus: die nächsten 12 oder 24 Stunden, 3 oder 7 Tage
+oder 2 oder 4 Wochen, je nach Zeitabschnitt. Jede Reihe geht dann als
+gestrichelte Linie mit einem blassen Band weiter, über einer hellen Fläche
+„Prognose“. Die Linie ist eine Gerade durch die Mediane der Zeitabschnitte
+(nach Läufen gewichtet, Ausreißer-Abschnitte ausgelassen) und beginnt beim
+letzten Abschnitt mit 3 oder mehr Läufen, schließt also an den Verlauf an; das
+Band ist die mittlere Hälfte der Läufe (p25–p75), umso breiter, je weiter es
+vorausreicht. Ein Hinweis unter dem Diagramm nennt je Reihe, ob sie steigt oder
+fällt und um wie viel pro Abschnitt, ob das besser oder schlechter ist und wo
+sie am Ende der Prognose liegen dürfte. Nach einer Markierung (ekte-Version,
+Wissensdatenbank-Profil) und nach einem Sprung in den Daten (etwa ein Wechsel
+von Backend oder Modell) beginnt die Anpassung neu, weil frühere Werte nicht
+vergleichbar sind. Keine Prognose gibt es für eine Reihe mit weniger als 6
+Abschnitten mit 3 oder mehr Läufen seitdem (mehr Läufe — ein Monitor — oder
+eine andere Abschnittsgröße helfen) und für zusammengefasste Raten wie die
+Erfolgsrate, die kein p25–p75-Band haben. Die Datentabelle führt die
+Prognose-Abschnitte als eigene Zeilen, markiert „Prognose (Schätzung)“. Eine
+Prognose ist eine Schätzung, keine Messung.
+
 **Tabs und Links zum Teilen (Analyse).** Die Panels liegen in fünf Tabs —
 **Überblick** (Kennzahlen, Rangliste), **Trends** (Vergleich im Zeitverlauf,
 Stoßzeiten), **Zuverlässigkeit** (Fehler, Relay-Overhead),

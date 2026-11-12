@@ -33,6 +33,7 @@ WIDGET_CASES = [
     ("summary, 30d", widget_summary, {"from": "2026-10-01T00:00:00Z", "to": "2026-10-31T00:00:00Z"}),
     ("summary, all", widget_summary, {}),
     ("series score, day", widget_series, {"trend.tz": "Europe/Berlin"}),
+    ("series score, day, forecast", widget_series, {"trend.tz": "Europe/Berlin", "trend.ahead": "7"}),
     ("series error_rate, week", widget_series, {"trend.metric": "error_rate", "trend.bucket": "week",
                                                 "group": "model"}),
     ("heatmap latency", widget_heatmap, {"heat.metric": "latency_p50", "heat.block": "2",
@@ -224,6 +225,42 @@ def test_series_on_a_non_chat_surface(data, client):  # noqa: F811
     assert "does not apply" in _get(client, "/api/analytics/series", {"trend.metric": "ttft_p50"}, 400)["error"]
     out = _get(client, "/api/analytics/series", {"trend.metric": "latency_p50"})
     assert out["surface"] == "embedding" and out["series"][0]["points"][0]["value"] == 40.0
+
+
+def test_series_forecast(data, client):  # noqa: F811
+    # one relay, eight runs a day for ten days, its latency rising 10 ms a day
+    for day in range(10):
+        for k in range(8):
+            _save(T0 + timedelta(days=day, hours=2 * k), base_url=RELAY,
+                  ttft=float(300 + 10 * day + (k - 4) * 5))
+    base = {"trend.metric": "ttft_p50", "trend.tz": "Europe/Berlin"}
+    without = _get(client, "/api/analytics/series", base)
+    assert without["series"] and all(s["forecast"] is None for s in without["series"])
+    assert all(s["forecast"] is None
+               for s in _get(client, "/api/analytics/series", {**base, "trend.ahead": "0"})["series"])
+    before = len(cache.default_cache)
+    out = _get(client, "/api/analytics/series", {**base, "trend.ahead": "7"})
+    fc = out["series"][0]["forecast"]
+    assert fc["status"] == "ok" and fc["ahead"] == 7 and fc["clear"] is True
+    assert fc["slope"] == pytest.approx(10, abs=1)
+    assert fc["buckets_used"] >= 8 and fc["buckets_needed"] == 6 and fc["step"] is None
+    # starts at the last bucket with enough runs
+    assert fc["start"]["bucket"] == [p for p in out["series"][0]["points"] if not p["low_n"]][-1]["bucket"]
+    assert len(fc["points"]) == 7 and set(fc["points"][0]) == {"bucket", "value", "p25", "p75"}
+    short = _get(client, "/api/analytics/series", {**base, "trend.ahead": "3"})
+    assert len(short["series"][0]["forecast"]["points"]) == 3
+    assert len(cache.default_cache) >= before + 2  # one entry per trend.ahead
+    # pooled metrics have no band to project
+    rate = _get(client, "/api/analytics/series", {"trend.metric": "success_rate", "trend.ahead": "7"})
+    assert rate["series"][0]["forecast"] == {"status": "not_median", "ahead": 7, "buckets_used": 0,
+                                             "buckets_needed": 6}
+    # hours and weeks have their own horizons
+    hours = _get(client, "/api/analytics/series", {**base, "trend.bucket": "hour", "trend.ahead": "24"})
+    assert hours["series"][0]["forecast"]["status"] == "few_buckets"
+    for params in ({"trend.ahead": "12"}, {"trend.ahead": "x"}, {"trend.bucket": "week", "trend.ahead": "7"}):
+        assert "trend.ahead must be one of" in _get(client, "/api/analytics/series", params, 400)["error"]
+    # the heatmap's series carry no forecast
+    assert "forecast" not in _get(client, "/api/analytics/heatmap", {})["series"][0]
 
 
 def test_heatmap(seeded, client):  # noqa: F811

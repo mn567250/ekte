@@ -385,6 +385,40 @@ plus `n`, `coverage`, `mixed` {suite, stream_mode, api}, `annotations`
 (ekte version / knowledge-base profile changes) and `points`: `bucket` (local
 ISO start), `runs` and a judged cell with quartiles).
 
+`trend.ahead` asks for a forecast that many buckets on: `12` or `24` for
+`hour`, `3` or `7` for `day`, `2` or `4` for `week`; `0` or absent for none.
+Another value is a 400 naming the key. Each series then carries `forecast`
+(`null` without `trend.ahead`), computed by `ekte/web/forecast.py` from the
+series' own buckets (no extra query; the module docstring has the method and
+its constants):
+
+```json
+{
+  "status": "ok",
+  "ahead": 7,
+  "buckets_used": 9, "buckets_needed": 6, "dropped": 0,
+  "since": "2026-11-01T00:00:00+01:00",
+  "step": "2026-11-01T00:00:00+01:00",
+  "slope": 8.1, "slope_se": 1.9, "clear": true, "direction": "worse",
+  "start": {"bucket": "…", "value": 0.0, "p25": 0.0, "p75": 0.0},
+  "points": [{"bucket": "…", "value": 0.0, "p25": 0.0, "p75": 0.0}]
+}
+```
+
+`status` is `ok`, `few_buckets` (fewer than `buckets_needed` buckets with 3 or
+more runs since the last annotation or detected step) or `not_median` (a
+`pooled` or `share` metric: no p25 / p75 to project); with any other status
+than `ok` only `status`, `ahead`, `buckets_used` and `buckets_needed` are set.
+`since` is the first fitted bucket, `step` the bucket a detected jump starts
+(or `null`), `dropped` the odd buckets left out, `slope` / `slope_se` the
+line's slope and its standard error in metric units per bucket, `clear`
+whether `|slope| > 1.28 × slope_se`, `direction` that trend judged as for a
+KPI change (`better`, `worse`, `neutral` for a metric without a better side,
+`none` without a clear trend). `start` is the last fitted bucket (its
+median and p25 / p75, so the forecast joins the history); `points` are the
+`ahead` buckets after the series' last bucket, keyed like `points[].bucket`
+(local calendar days and Mondays, DST-safe).
+
 ### `GET /api/analytics/heatmap`
 
 The weekday × time-of-day grid of one metric: `heat.metric`, `heat.block`

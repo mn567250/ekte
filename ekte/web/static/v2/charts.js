@@ -28,7 +28,14 @@
  *                   to the buckets with data, so none is drawn outside the
  *                   plot (stackBars likewise)
  *   xTick(t, step)  tick label; tipTime(t) the tooltip's heading
- *   series          [{ label, cls: "s0".."s3", shape, points: [{ t, v, lo, hi, n, runs, low }] }]
+ *   series          [{ label, cls: "s0".."s3", shape, points: [{ t, v, lo, hi, n, runs, low }],
+ *                   fc }]; fc, optional: a forecast { from: { t, v, lo, hi },
+ *                   points: [{ t, v, lo, hi }] } drawn as a dashed line from
+ *                   `from` (the last history bucket, so the two join) on, in
+ *                   the series colour, with its p25–p75 band (.fband) widening
+ *                   ahead; its buckets get hover columns and tooltip rows
+ *   now             ms: with a forecast, a light wash ("Forecast") from
+ *                   min(now, the first forecast bucket) to the plot's right edge
  *   marks           [{ t, kind: "tool_version" | "kb_profile", text }]
  *   lowHint         text shown in the tooltip for a bucket with few runs
  *   yMin, yMax      scale bounds, optional: fixed (0 / 100 for scores), or a
@@ -173,6 +180,11 @@
     return '<svg class="ckey ' + esc(cls) + '" width="22" height="12" viewBox="0 0 22 12" aria-hidden="true" focusable="false">' +
       '<line x1="1" x2="21" y1="6" y2="6"/><path d="' + shapePath(shape, 11, 6, 3.6) + '"/></svg>';
   }
+  // the key of a forecast: a dashed line, no marker
+  function dashKey(cls) {
+    return '<svg class="ckey dash ' + esc(cls) + '" width="22" height="12" viewBox="0 0 22 12" aria-hidden="true" focusable="false">' +
+      '<line x1="1" x2="21" y1="6" y2="6"/></svg>';
+  }
 
   // runs of consecutive buckets (a gap > 1.5 buckets starts a new run)
   function segments(points, bucketMs) {
@@ -208,10 +220,13 @@
     var H = narrow ? 220 : 270;
     var M = { l: 0, r: 14, t: 18, b: 30 };
     var half = cfg.bucketMs / 2;
-    var ts = all.map(function (p) { return p.t; });
+    // forecast buckets count for the ranges and the hover columns
+    var fcs = [];
+    series.forEach(function (s) { if (s.fc && s.fc.points && s.fc.points.length) s.fc.points.forEach(function (p) { fcs.push(p); }); });
+    var ts = all.concat(fcs).map(function (p) { return p.t; });
     var d = xDomain(cfg, ts), t0 = d[0], t1 = d[1];
     var vals = [];
-    all.forEach(function (p) { [p.v, p.lo, p.hi].forEach(function (v) { if (typeof v === "number") vals.push(v); }); });
+    all.concat(fcs).forEach(function (p) { [p.v, p.lo, p.hi].forEach(function (v) { if (typeof v === "number") vals.push(v); }); });
     if (cfg.ref && typeof cfg.ref.v === "number") vals.push(cfg.ref.v);
     var lo = Math.min.apply(null, vals.concat(cfg.yMin != null ? [cfg.yMin] : [0]));
     var hi = Math.max.apply(null, vals.concat(cfg.yMax != null ? [cfg.yMax] : []));
@@ -282,6 +297,16 @@
       out.push('<g class="ref"><line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + ry + '" y2="' + ry + '"/>' +
         '<text x="' + (M.l + 6) + '" y="' + ry + '" dy="-0.45em">' + esc(cfg.ref.text) + "</text></g>");
     }
+    // the forecast area: a wash from now (or the first forecast bucket, if
+    // earlier) to the right edge, a dotted line where it starts, its label
+    if (fcs.length) {
+      var fc0 = Math.min.apply(null, fcs.map(function (p) { return p.t; }));
+      var ft = typeof cfg.now === "number" ? Math.min(cfg.now, fc0) : fc0;
+      var fx = Math.max(M.l, Math.min(W - M.r, X(Math.max(t0, ft))));
+      out.push('<g class="fcarea"><rect x="' + f1(fx) + '" y="' + M.t + '" width="' + f1(Math.max(0, W - M.r - fx)) + '" height="' + ph + '"/>' +
+        '<line x1="' + f1(fx) + '" x2="' + f1(fx) + '" y1="' + M.t + '" y2="' + (M.t + ph) + '"/>' +
+        '<text x="' + f1(Math.min(fx + 6, W - M.r - 6)) + '" y="' + (M.t + 12) + '">' + esc(Tx("预测", "Forecast")) + "</text></g>");
+    }
     // series: band, line, markers
     series.forEach(function (s, si) {
       var shape = s.shape || SHAPES[si % SHAPES.length];
@@ -304,13 +329,22 @@
       s.points.forEach(function (p) {
         out.push('<path class="pt' + (p.low ? " low" : "") + '" d="' + shapePath(shape, X(p.t + half), Y(p.v), narrow ? 3.4 : 4) + '"/>');
       });
+      if (s.fc && s.fc.from && s.fc.points && s.fc.points.length) {
+        var fp = [s.fc.from].concat(s.fc.points);
+        var withBand = fp.filter(function (p) { return typeof p.lo === "number" && typeof p.hi === "number"; });
+        if (withBand.length === fp.length) {
+          out.push('<path class="fband" d="M' + fp.map(function (p) { return f1(X(p.t + half)) + "," + f1(Y(p.hi)); }).join("L") + "L" +
+            fp.slice().reverse().map(function (p) { return f1(X(p.t + half)) + "," + f1(Y(p.lo)); }).join("L") + 'Z"/>');
+        }
+        out.push('<path class="fline" d="M' + fp.map(function (p) { return f1(X(p.t + half)) + "," + f1(Y(p.v)); }).join("L") + '"/>');
+      }
       out.push("</g>");
     });
     out.push('<line class="cross" x1="0" x2="0" y1="' + M.t + '" y2="' + (M.t + ph) + '" visibility="hidden"/>');
     // hover targets: one column per bucket with data, reaching halfway to its
     // neighbours (the column under the pointer picks the bucket, no nearest-point search)
     var times = {};
-    all.forEach(function (p) { times[p.t] = 1; });
+    all.concat(fcs).forEach(function (p) { times[p.t] = 1; });
     var list = Object.keys(times).map(Number).sort(function (a, b) { return a - b; });
     list.forEach(function (t, i) {
       var x = X(t + half), a = i ? (X(list[i - 1] + half) + x) / 2 : M.l, b = i < list.length - 1 ? (X(list[i + 1] + half) + x) / 2 : W - M.r;
@@ -364,6 +398,12 @@
       cross.setAttribute("visibility", "visible");
       var rows = series.map(function (s, si) {
         var p = s.points.filter(function (q) { return q.t === t; })[0];
+        var f = !p && s.fc && s.fc.points ? s.fc.points.filter(function (q) { return q.t === t; })[0] : null;
+        if (f) {
+          return '<li class="fc">' + dashKey(s.cls) + "<span><b>≈ " + esc(fmt(f.v, cfg.unit)) + "</b> " + '<span class="nm">' + esc(s.label) + "</span>" +
+            '<span class="sub">' + esc(Tx("预测", "Forecast")) +
+            (typeof f.lo === "number" ? " · p25–p75 " + esc(fmt(f.lo, cfg.unit)) + " – " + esc(fmt(f.hi, cfg.unit)) : "") + "</span></span></li>";
+        }
         if (!p) return "";
         var spread = typeof p.lo === "number" ? '<span class="sub">p25–p75 ' + esc(fmt(p.lo, cfg.unit)) + " – " + esc(fmt(p.hi, cfg.unit)) + "</span>" : "";
         return '<li class="' + (p.low ? "low" : "") + '">' + keySVG(s.cls, s.shape || SHAPES[si % SHAPES.length]) +
@@ -595,6 +635,7 @@
     fmtDelta: fmtDelta,
     unitName: unitName,
     keySVG: keySVG,
+    dashKey: dashKey,
     SHAPES: SHAPES,
     timeChart: timeChart,
     heatmap: heatmap,

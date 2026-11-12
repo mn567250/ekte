@@ -124,6 +124,25 @@ andeler resonneringstokens og bufret inndata) og **reléoverhead**
 (behandlingstiden et relé rapporterer, ved siden av tur-retur i nettverket til
 det).
 
+**Prognose (Analyse › Trender).** *Sammenligning over tid* har et valg
+**Prognose**, av som standard: de neste 12 eller 24 timene, 3 eller 7 dagene,
+eller 2 eller 4 ukene, etter bolkstørrelsen. Hver serie fortsetter da som en
+stiplet linje med et blekt bånd, over et lyst felt merket «Prognose». Linjen
+er en rett linje gjennom medianene til bolkene (vektet etter kjøringer,
+avvikende bolker utelatt) og starter i den siste bolken med 3 eller flere
+kjøringer, så den henger sammen med historikken; båndet er den midterste
+halvdelen av kjøringene (p25–p75), bredere jo lenger fram det når. En merknad
+under diagrammet sier for hver serie om den stiger eller faller og hvor mye
+per bolk, om det er bedre eller verre, og hvor den bør ligge ved slutten av
+prognosen. Tilpasningen starter på nytt etter et merke for ekte-versjon eller
+kunnskapsbaseprofil og etter et sprang i dataene (for eksempel bytte av
+backend eller modell), fordi tidligere verdier ikke kan sammenlignes. Det er
+ingen prognose for en serie med færre enn 6 bolker med 3 eller flere
+kjøringer siden da (flere kjøringer — en overvåking — eller en annen
+bolkstørrelse hjelper), og heller ikke for samlede rater som suksessraten, som
+ikke har noe p25–p75-bånd. Datatabellen viser prognosebolkene som egne rader
+merket «Prognose (estimat)». En prognose er et estimat, ikke en måling.
+
 **Faner og delingslenker (Analyse).** Panelene ligger i fem faner —
 **Oversikt** (nøkkeltall, rangeringsliste), **Trender** (sammenligning over tid,
 topptider), **Pålitelighet** (feil, reléoverhead), **Modellintegritet** og

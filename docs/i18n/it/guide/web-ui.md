@@ -132,6 +132,26 @@ più token di quanti ne abbia contati ekte; più le quote di token di
 ragionamento e di input in cache) e **sovraccarico del relay** (il tempo di
 elaborazione dichiarato dal relay accanto al round trip di rete).
 
+**Previsione (Analisi › Tendenze).** *Confronto nel tempo* ha una scelta
+**Previsione**, disattivata per impostazione predefinita: le prossime 12 o 24
+ore, 3 o 7 giorni, o 2 o 4 settimane, a seconda degli intervalli. Ogni serie
+prosegue allora come linea tratteggiata con una banda tenue, su un'area chiara
+etichettata «Previsione». La linea è una retta attraverso le mediane degli
+intervalli (pesata per esecuzioni, intervalli anomali esclusi) e parte
+dall'ultimo intervallo con 3 o più esecuzioni, così si collega allo storico;
+la banda è la metà centrale delle esecuzioni (p25–p75), più larga quanto più
+avanti arriva. Una nota sotto il grafico dice per ogni serie se sale o scende
+e di quanto per intervallo, se è un miglioramento o un peggioramento e dove
+dovrebbe trovarsi alla fine della previsione. L'adattamento ricomincia dopo un
+segno di versione di ekte o di profilo della knowledge base e dopo un salto
+nei dati (come un cambio di backend o di modello), perché i valori precedenti
+non sono confrontabili. Nessuna previsione per una serie con meno di 6
+intervalli con 3 o più esecuzioni da allora (più esecuzioni — un monitor — o
+un'altra dimensione degli intervalli aiutano), né per tassi aggregati come il
+tasso di successo, che non hanno banda p25–p75. La tabella dei dati aggiunge
+gli intervalli previsti come righe segnate «Previsione (stima)». Una
+previsione è una stima, non una misura.
+
 **Schede e link da condividere (Analisi).** I pannelli sono in cinque schede —
 **Panoramica** (indicatori, classifica), **Andamenti** (confronto nel tempo, ore
 di punta), **Affidabilità** (errori, overhead del relay), **Integrità del
