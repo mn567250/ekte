@@ -882,9 +882,10 @@
         value: fmt(last.value, m.unit), ahead: aheadIn(bucket, n), lo: fmt(last.p25, m.unit), hi: fmt(last.p75, m.unit) });
       var head;
       if (f.clear) {
-        var up = f.slope > 0, hib = m.higher_is_better;
-        var verdict = hib == null ? "" : (up === hib ? '<span class="fcv good">' + esc(T("在变好", "getting better")) + "</span>"
-          : '<span class="fcv bad">' + esc(T("在变差", "getting worse")) + "</span>");
+        // the server judges the direction (better / worse / neutral)
+        var up = f.slope > 0;
+        var verdict = f.direction === "better" ? '<span class="fcv good">' + esc(T("在变好", "getting better")) + "</span>"
+          : f.direction === "worse" ? '<span class="fcv bad">' + esc(T("在变差", "getting worse")) + "</span>" : "";
         var sv = { d: slopeText(f.slope, m.unit), per: perBucket(bucket) };
         head = "<b>" + esc(up ? Tf("{per}上升 {d}", "rising {d} {per}", sv) : Tf("{per}下降 {d}", "falling {d} {per}", sv)) + "</b>" +
           (verdict ? " (" + verdict + ")" : "");

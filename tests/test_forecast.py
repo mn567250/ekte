@@ -38,7 +38,7 @@ def test_exact_line_gives_its_slope_and_a_clear_trend():
     fc = _fc(_series([100 + 5 * i for i in range(10)]))
     assert fc["status"] == "ok"
     assert fc["slope"] == pytest.approx(5)
-    assert fc["clear"] is True
+    assert fc["clear"] is True and fc["direction"] == "worse"  # latency rising
     assert fc["dropped"] == 0 and fc["step"] is None
     assert [p["value"] for p in fc["points"]] == pytest.approx([145 + 5 * d for d in range(1, 8)])
     assert len(fc["points"]) == 7
@@ -46,7 +46,7 @@ def test_exact_line_gives_its_slope_and_a_clear_trend():
 
 def test_constant_series_has_no_clear_trend():
     fc = _fc(_series([200.0] * 10))
-    assert fc["status"] == "ok" and fc["clear"] is False
+    assert fc["status"] == "ok" and fc["clear"] is False and fc["direction"] == "none"
     assert fc["slope"] == pytest.approx(0)
 
 
@@ -148,6 +148,7 @@ def test_thin_last_bucket_gets_a_quarter_of_the_median_width():
 def test_score_stays_within_0_to_100():
     fc = _fc(_series([60 + 5 * i for i in range(8)], spread=3), m=SCORE)
     assert all(p["p75"] <= 100 and p["value"] <= 100 for p in fc["points"])
+    assert fc["direction"] == "better"  # a rising score
 
 
 def test_latency_is_not_forecast_below_zero():

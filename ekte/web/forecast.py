@@ -27,7 +27,8 @@ The method, on the bucket medians of a ``median`` metric (``pooled`` and
    the line refitted (if enough remain).
 4. The slope's standard error ``se`` and the wander of bucket medians around
    the line ``s_b`` (robust σ); the trend is ``clear`` when
-   ``|slope| > Z · se``. The widths below and above the median (median − p25,
+   ``|slope| > Z · se``; a clear trend is judged ``better`` / ``worse``
+   (``direction``, :func:`ekte.web.metrics.direction`). The widths below and above the median (median − p25,
    p75 − median) get a slope each, from buckets with at least
    :data:`MIN_WIDTH_RUNS` runs (at least :data:`MIN_WIDTH_BUCKETS` of them;
    else 0).
@@ -50,7 +51,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from datetime import UTC, datetime, timedelta, tzinfo
 from typing import Any
 
-from ekte.web import analytics
+from ekte.web import analytics, metrics
 from ekte.web.analytics import Metric
 from ekte.web.query import Point
 
@@ -290,6 +291,8 @@ def forecast(points: Sequence[Point], annotations: Iterable[Mapping[str, Any]], 
         "status": "ok", "ahead": ahead, "buckets_used": kf, "buckets_needed": MIN_FIT_BUCKETS,
         "dropped": dropped, "since": bs[0].p.bucket, "step": step_key,
         "slope": slope, "slope_se": se, "clear": clear,
+        # better / worse / neutral (no better side) for a clear trend; none otherwise
+        "direction": metrics.direction(metric, slope) if clear else "none",
         "start": {"bucket": last.p.bucket, "value": y0, "p25": y0 - a_lo, "p75": y0 + a_hi},
         "points": out,
     }

@@ -399,7 +399,7 @@ its constants):
   "buckets_used": 9, "buckets_needed": 6, "dropped": 0,
   "since": "2026-11-01T00:00:00+01:00",
   "step": "2026-11-01T00:00:00+01:00",
-  "slope": 8.1, "slope_se": 1.9, "clear": true,
+  "slope": 8.1, "slope_se": 1.9, "clear": true, "direction": "worse",
   "start": {"bucket": "…", "value": 0.0, "p25": 0.0, "p75": 0.0},
   "points": [{"bucket": "…", "value": 0.0, "p25": 0.0, "p75": 0.0}]
 }
@@ -412,7 +412,9 @@ than `ok` only `status`, `ahead`, `buckets_used` and `buckets_needed` are set.
 `since` is the first fitted bucket, `step` the bucket a detected jump starts
 (or `null`), `dropped` the odd buckets left out, `slope` / `slope_se` the
 line's slope and its standard error in metric units per bucket, `clear`
-whether `|slope| > 1.28 × slope_se`. `start` is the last fitted bucket (its
+whether `|slope| > 1.28 × slope_se`, `direction` that trend judged as for a
+KPI change (`better`, `worse`, `neutral` for a metric without a better side,
+`none` without a clear trend). `start` is the last fitted bucket (its
 median and p25 / p75, so the forecast joins the history); `points` are the
 `ahead` buckets after the series' last bucket, keyed like `points[].bucket`
 (local calendar days and Mondays, DST-safe).
