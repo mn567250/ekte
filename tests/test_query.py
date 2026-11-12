@@ -318,6 +318,72 @@ def test_aggregate_edges(seeded):
     assert pub["kind"] == "model" and set(pub["metrics"]["score"]) >= {"value", "n", "coverage", "low_n"}
 
 
+@pytest.mark.parametrize("group", analytics.GROUPS)
+def test_aggregate_rows_are_the_public_groups(seeded, group):
+    """aggregate_rows (no Cell / GroupResult per cell, #164) gives what
+    aggregate's groups give as public(): the same keys, values and order."""
+    c = _conn()
+    mids = [*_chat_metrics(), "grade", "risk_high_share"]
+    for q, quantiles in ((Query(surface="chat"), True), (Query(surface="chat"), False),
+                         (Query(exec="manual"), True), (Query(relays=("nope",)), False)):
+        want = [g.public() for g in query.aggregate(c, q, mids, group, quantiles=quantiles)]
+        got = query.aggregate_rows(c, q, mids, group, quantiles=quantiles)
+        assert json.dumps(got) == json.dumps(want)
+    seen: list[dict] = []
+
+    def finish(cell):
+        cell["judged"] = True
+        seen.append(cell)
+
+    rows = query.aggregate_rows(c, Query(surface="chat"), ["score", "error_rate"], group,
+                                finish={"score": finish})
+    # each score cell, given once and completed in place; other metrics untouched
+    assert rows and sorted(map(id, seen)) == sorted(id(r["metrics"]["score"]) for r in rows)
+    assert all(r["metrics"]["score"]["judged"] and "judged" not in r["metrics"]["error_rate"]
+               for r in rows)
+
+
+def test_pooled_and_share_sql_match_the_explicit_cases(seeded):
+    """The shorter pooled / share aggregates of _spec (#164) give the values
+    of the explicit CASE forms they replace, also for runs with base 0, a
+    NULL rate, a NULL base or no value of a share."""
+    _write("UPDATE history_metrics SET requests_judged = 0 WHERE history_id % 4 = 0")
+    _write("UPDATE history_metrics SET requests_total = 0, requests_judged = 0 WHERE history_id % 9 = 0")
+    _write("UPDATE history_metrics SET success_rate = NULL, model_mismatch = NULL WHERE history_id % 5 = 0")
+    _write("UPDATE history_metrics SET requests_judged = NULL WHERE history_id % 7 = 0")
+    _write("UPDATE history_metrics SET risk_value = NULL WHERE history_id % 6 = 0")
+    c = _conn()
+    pooled = [m for m in analytics.METRICS.values() if m.agg == "pooled"]
+    shares = [analytics.METRICS["model_mismatch_rate"], analytics.METRICS["risk_high_share"]]
+    high = run_row.RISK_ORDER.index("high")
+    old = []
+    for m in pooled:
+        has = f"m.{m.base} > 0 AND m.{m.column} IS NOT NULL"
+        old += [f"SUM(CASE WHEN {has} THEN ROUND(m.{m.column} * m.{m.base}) END)",
+                f"SUM(CASE WHEN {has} THEN m.{m.base} END)", f"COUNT(CASE WHEN {has} THEN 1 END)"]
+    for v in ("CASE WHEN m.model_mismatch IS NULL THEN NULL WHEN m.model_mismatch != 0 THEN 1.0 ELSE 0.0 END",
+              f"CASE WHEN m.risk_value IS NULL THEN NULL WHEN m.risk_value = {high} THEN 1.0 ELSE 0.0 END"):
+        old += [f"AVG({v})", f"COUNT({v})"]
+    for group in analytics.GROUPS:
+        sql = (f"SELECT {run_row.GROUP_ID_SQL[group]}, COUNT(*), {', '.join(old)} FROM history_metrics m"
+               + (f" GROUP BY {run_row.GROUP_BY_SQL[group]}" if run_row.GROUP_BY_SQL[group] else ""))
+        want = {}
+        for gid, runs, *aggs in c.execute(sql):
+            cells, i = {}, 0
+            for m in [*pooled, *shares]:
+                k = 3 if m.agg == "pooled" else 2
+                values = query._CELL_VALUES[m.agg](aggs[i:i + k], runs)
+                cells[m.id] = dict(zip(query._CELL_FIELDS, values, strict=True))
+                i += k
+            want[gid] = cells
+        got = query.aggregate_rows(c, Query(), [*pooled, *shares], group)
+        ids = query.group_ids(c, group, [r["key"] for r in got])
+        assert len(got) == len(want) == len(ids)
+        for row in got:
+            (gid,) = query.group_ids(c, group, [row["key"]])
+            assert row["metrics"] == want[gid], (group, row["key"])
+
+
 # --------------------------------------------------------------------------- #
 # n = 1: every aggregation of one run returns exactly its stored value
 # --------------------------------------------------------------------------- #
@@ -426,6 +492,10 @@ def test_fallback_when_the_build_lacks_median(monkeypatch):
     assert c.execute("SELECT ekte_median(x), ekte_percentile(x, 25) FROM (SELECT 1 AS x UNION ALL"
                      " SELECT 2 UNION ALL SELECT NULL UNION ALL SELECT 4)").fetchone() == (2.0, 1.5)
     assert c.execute("SELECT ekte_median(x) FROM (SELECT NULL AS x)").fetchone() == (None,)
+    # text, infinities and NULLs are ignored, as by SQLite's own (only finite numbers count)
+    odd = ("SELECT 3 AS x UNION ALL SELECT 'text' UNION ALL SELECT 9e999 UNION ALL SELECT -9e999"
+           " UNION ALL SELECT NULL UNION ALL SELECT 1 UNION ALL SELECT x'00'")
+    assert c.execute(f"SELECT ekte_median(x), ekte_percentile(x, 100) FROM ({odd})").fetchone() == (2.0, 3.0)
 
 
 # --------------------------------------------------------------------------- #

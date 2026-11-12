@@ -182,3 +182,13 @@ def test_metrics_endpoint(tmp_path, monkeypatch):
     assert r.json() == metrics.catalogue()
     again = client.get("/api/metrics", headers={"If-None-Match": r.headers["etag"]})
     assert again.status_code == 304
+
+
+def test_judge_of_is_judge_of_the_number():
+    """judge_of(m)(v) == judge(m, _number(v)) for every metric (#164)."""
+    values = [None, 0, 0.0, 0.5, 1, 1.0, 42.0, 59.9, 60.0, 75.5, 89.99, 90.0, 100.0, -3.0, 1e9,
+              float("nan"), float("inf"), float("-inf"), True, "7"]
+    for m in [*metrics.METRICS.values(), analytics.metric("dim:reasoning")]:
+        judge = metrics.judge_of(m)
+        for v in values:
+            assert judge(v) == metrics.judge(m, metrics._number(v)), (m.id, v)

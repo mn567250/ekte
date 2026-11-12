@@ -7,15 +7,16 @@ Each function takes the request parameters: the shared URL schema of
 ``trend.*``, ``heat.*``, ``board.*``, ``breakdown.*``, ``errors.*``,
 ``integrity.*``); an unknown key, shared or of the widget, raises
 :class:`~ekte.web.query.QueryError` (400). Runs are selected, grouped and
-aggregated in SQLite (:func:`ekte.web.query.aggregate`,
+aggregated in SQLite (:func:`ekte.web.query.aggregate_rows`,
 :func:`~ekte.web.query.series`, and a few grouped queries here); Python only
 shapes the answer and judges values with :func:`ekte.web.metrics.present`. No
 function loads runs or request records into Python, and every answer's size
 depends on the number of groups and buckets, never on the number of runs.
 
 Without ``surface`` a widget uses the most common surface of the selection
-(:func:`ekte.web.query.default_surface`), so runs of different surfaces never
-mix; the answer names it (``surface``).
+(:func:`ekte.web.query.default_surface`, worked out once per selection and data
+version: :func:`default_surface`), so runs of different surfaces never mix;
+the answer names it (``surface``).
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ekte import errorclass
-from ekte.web import analytics_store, history, history_api, query, run_row
+from ekte.web import analytics_store, cache, history, history_api, query, run_row
 from ekte.web import metrics as _metrics
 from ekte.web.analytics import (
     BLOCKS,
@@ -81,13 +82,29 @@ def _widget(params: Any, ns: str, single: Iterable[str] = (),
     return out
 
 
+# The default surface of each selection (query.default_surface), shared by the
+# widgets: a dashboard asks every widget with the same filters, and each would
+# otherwise count the surfaces of the whole selection again. Keyed as the
+# answers are (cache.cache_key: the data and knowledge-base versions and the
+# database included), so a saved run or a knowledge-base edit is a new key.
+SURFACE_CACHE = cache.ResponseCache(64)
+
+
+def default_surface(conn: Any, q: query.Query) -> str:
+    """:func:`ekte.web.query.default_surface` of ``q``'s runs, computed once per
+    selection and data version (:data:`SURFACE_CACHE`). ``q.surface`` and
+    ``q.group`` do not select runs, so they are not part of the key."""
+    key = cache.cache_key("default_surface", q.replace(surface=None, group="relay").params())
+    return str(SURFACE_CACHE.get_or_compute(key, lambda: query.default_surface(conn, q)))
+
+
 def _setup(params: Any) -> tuple[Any, query.Query]:
     """This thread's query connection and the parsed shared filters, with the
-    surface defaulted."""
+    surface defaulted (:func:`default_surface`)."""
     q = query.parse_query(params)
     conn = history.query_connection()
     if q.surface is None:
-        q = q.replace(surface=query.default_surface(conn, q))
+        q = q.replace(surface=default_surface(conn, q))
     return conn, q
 
 
@@ -247,14 +264,26 @@ def widget_heatmap(params: Any) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 # Leaderboard and breakdown
 # --------------------------------------------------------------------------- #
-def _rows(groups: list[query.GroupResult], wanted: list[Metric]) -> list[dict[str, Any]]:
-    by_id = {m.id: m for m in wanted}
-    out = []
-    for g in groups:
-        row = g.public()
-        row["metrics"] = {mid: _judged(by_id[mid], c) for mid, c in row["metrics"].items()}
-        out.append(row)
-    return out
+def _judge_cells(wanted: list[Metric]) -> dict[str, Any]:
+    """Per metric id, what gives a cell dict its judgement in place, as
+    :func:`_judged` (the ``finish`` of :func:`ekte.web.query.aggregate_rows`:
+    the metric's checks made once, not per cell)."""
+    def judging(m: Metric) -> Any:
+        judge = _metrics.judge_of(m)
+
+        def finish(cell: dict[str, Any]) -> None:
+            cell["family"], cell["grade"] = judge(cell["value"])
+        return finish
+
+    return {m.id: judging(m) for m in wanted}
+
+
+def _rows(conn: Any, q: query.Query, wanted: list[Metric], group: str | None = None, *,
+          quantiles: bool = False) -> list[dict[str, Any]]:
+    """The groups of :func:`ekte.web.query.aggregate` as public dicts with
+    every cell judged (:func:`_judged`), busiest group first."""
+    return query.aggregate_rows(conn, q, wanted, group, quantiles=quantiles,
+                                finish=_judge_cells(wanted))
 
 
 def widget_leaderboard(params: Any) -> dict[str, Any]:
@@ -266,7 +295,7 @@ def widget_leaderboard(params: Any) -> dict[str, Any]:
     conn, q = _setup(params)
     by = _str_choice(w, "by", "board.by", BOARD_GROUPS, "relay")
     wanted = [METRICS[mid] for mid in BOARD_METRICS if METRICS[mid].applies(str(q.surface))]
-    rows = _rows(query.aggregate(conn, q, wanted, by), wanted)
+    rows = _rows(conn, q, wanted, by)
 
     def rank(row: dict[str, Any]) -> tuple[Any, ...]:
         score = row["metrics"]["score"]["value"]
@@ -291,9 +320,9 @@ def widget_breakdown(params: Any) -> dict[str, Any]:
         raise query.QueryError("give at least one breakdown.metric")
     if len(wanted) > MAX_METRICS:
         raise query.QueryError(f"at most {MAX_METRICS} breakdown.metric")
-    groups = query.aggregate(conn, q, wanted, quantiles=True)
+    rows = _rows(conn, q, wanted, quantiles=True)
     return {**_head(q), "group": q.group, "metrics": [m.public() for m in wanted],
-            "runs": sum(g.runs for g in groups), "rows": _rows(groups, wanted)}
+            "runs": sum(r["runs"] for r in rows), "rows": rows}
 
 
 # --------------------------------------------------------------------------- #

@@ -59,6 +59,7 @@ def client(data):  # noqa: F811
     from ekte.web.server import create_app
 
     cache.default_cache.clear()
+    analytics_widgets.SURFACE_CACHE.clear()
     return TestClient(create_app(), base_url="http://localhost")
 
 
@@ -524,6 +525,35 @@ def test_a_saved_run_drops_the_cached_answers(seeded, client):  # noqa: F811
     second = client.get("/api/analytics/summary")
     assert second.json()["runs"] == first.json()["runs"] + 1
     assert second.headers["etag"] != first.headers["etag"]
+
+
+def test_the_default_surface_is_counted_once_per_selection(seeded, monkeypatch):  # noqa: F811
+    """Widgets without ``surface`` share one default_surface() pass per
+    selection and data version (#164), not one per call."""
+    from ekte.web import query
+
+    calls: list[query.Query] = []
+    real = query.default_surface
+
+    def counted(conn, q=None):
+        calls.append(q)
+        return real(conn, q)
+
+    monkeypatch.setattr(query, "default_surface", counted)
+    analytics_widgets.SURFACE_CACHE.clear()
+    for name, fn, params in WIDGET_CASES:
+        if fn is not filter_options and not {"surface", "from"} & set(params):
+            assert fn(params)["surface"] == "chat", name
+    # each of them selects every run (group, bucket and widget keys select none)
+    assert len(calls) == 1
+    widget_leaderboard({"surface": "chat"})  # a named surface needs none
+    assert len(calls) == 1
+    widget_leaderboard({"exec": "manual"})
+    widget_summary({"exec": "manual", "group": "model"})
+    assert len(calls) == 2  # another selection: one more
+    _save(T0, base_url=RELAY, surface="embedding")
+    widget_leaderboard({})
+    assert len(calls) == 3  # a saved run: the data version changes the key
 
 
 @pytest.mark.slow

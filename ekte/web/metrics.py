@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -277,6 +278,17 @@ def judge(m: Metric, value: float | None) -> tuple[str, str | None]:
     if letter is not None:
         return GRADE_FAMILY.get(letter, "grey"), letter
     return _UNIT_FAMILY.get(m.unit, "grey"), None
+
+
+def judge_of(m: Metric) -> Callable[[Any], tuple[str, str | None]]:
+    """``judge(m, _number(value))`` as a function of the value, for the many
+    cells of one metric: what depends only on ``m`` is worked out once (a
+    metric of no grade has one family for every number)."""
+    if m.unit in ("score", "grade"):
+        return lambda value: judge(m, _number(value))
+    grey: tuple[str, str | None] = ("grey", None)
+    unit: tuple[str, str | None] = (_UNIT_FAMILY.get(m.unit, "grey"), None)
+    return lambda value: grey if value is None or _number(value) is None else unit
 
 
 def direction(m: Metric, delta: float | None, previous_n: int | None = None) -> str:

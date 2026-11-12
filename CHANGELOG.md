@@ -207,6 +207,23 @@ how many saved runs it re-extracts.
   unchanged. With `EKTE_BENCH_REPORT=<path>` the tests also write that JSON
   locally (`tests/bench_report.py`).
 
+### Changed
+
+- **Faster cold Analytics widgets (internal,
+  [#164](https://github.com/mn567250/ekte/issues/164)).** Widgets called
+  without `surface` share one count of the selection's surfaces per selection
+  and data version (`analytics_widgets.SURFACE_CACHE`, keyed like the cached
+  answers) instead of counting the surfaces in every call. The leaderboard and
+  breakdown build their cells as dicts directly from the fetched rows
+  (`query.aggregate_rows`), and each metric's judgement is prepared once
+  (`metrics.judge_of`), not per cell. Where SQLite has no `median()` /
+  `percentile()` (as on the CI runners), the Python median aggregate adds each
+  row through a bound `list.append` and filters once at the end, which makes the
+  median-heavy widgets about 20 % faster there. The pooled-rate and share
+  aggregates use shorter SQL that gives the same values. Answers are
+  byte-identical. The CI performance budget drops from 180 ms to 120 ms
+  (recalibrated with 5 runs: slowest p95 77.5 ms, before 124.9 ms).
+
 ### Fixed
 
 - **Report warnings and failure classes in the web report and `--compact`**
