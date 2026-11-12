@@ -251,3 +251,61 @@ def test_wire_parsing():
     ok = proxyreply._Wire()
     ok.feed(b"HTTP/1.1 200 Connection established\r\n\r\n")
     assert ok.status() == 200 and not ok.body_missing()
+
+
+# -- what the proxy's answer says, and how it reads ---------------------------- #
+@pytest.mark.parametrize("status, reason", [
+    (407, errorclass.PROXY_REFUSED), (403, errorclass.PROXY_REFUSED),
+    (502, errorclass.PROXY_UNREACHABLE), (503, errorclass.PROXY_UNREACHABLE),
+    (504, errorclass.PROXY_UNREACHABLE), (500, errorclass.PROXY_OTHER),
+    (None, None), (True, None),
+])
+def test_proxy_reason(status, reason):
+    assert errorclass.proxy_reason(status) == reason
+
+
+def test_a_proxy_failure_stays_a_network_failure():
+    rec = {"ok": False, "error_type": "ProxyError", "error_class": "network", "proxy_status": 503}
+    assert errorclass.record_class(rec) == errorclass.NETWORK
+    assert errorclass.outcome(rec) == errorclass.NETWORK
+    assert errorclass.is_impaired(rec) and not errorclass.is_relay_failure(rec)
+    assert errorclass.record_proxy_reason(rec) == errorclass.PROXY_UNREACHABLE
+    assert errorclass.record_proxy_reason({**rec, "ok": True}) is None
+
+
+def _rec(**kw):
+    from ekte.models import RequestRecord
+
+    base = {"seq": 0, "endpoint": "target", "ok": False, "error_type": "ProxyError",
+            "error_class": "network"}
+    return RequestRecord(**{**base, **kw})
+
+
+def test_fail_text_names_what_the_proxy_said():
+    from ekte.report.performance import fail_text
+
+    assert fail_text(_rec(retried=True, proxy_status=503)) == (
+        "repeated (ProxyError 503 · relay host unreachable via the proxy · network)")
+    assert fail_text(_rec(proxy_status=407)) == (
+        "failed (ProxyError 407 · the proxy refused the tunnel · network)")
+    # records saved before the proxy's answer was kept read as they did
+    assert fail_text(_rec()) == "failed (ProxyError · network)"
+
+
+def test_the_impaired_warning_points_past_the_proxy():
+    from ekte.runner import impaired_warning
+
+    recs = [_rec(seq=0, retried=True, proxy_status=503, proxy_wait_ms=60_100.0),
+            _rec(seq=1, proxy_status=503, proxy_wait_ms=59_900.0)]
+    text = impaired_warning(recs, []) or ""
+    assert "1 were answered by the proxy with 503 after up to 60 s" in text
+    assert "could not reach the relay host" in text and "evidence file" in text
+    assert "Of the network failures" not in (impaired_warning([_rec()], []) or "")
+
+
+def test_reliability_advice_by_proxy_answer():
+    from ekte.detectors.reliability import _network_advice
+
+    assert "could not reach the relay host" in _network_advice(3, 0)
+    assert "refused the tunnel" in _network_advice(0, 2)
+    assert _network_advice(0, 0) == _network_advice(1, 1)

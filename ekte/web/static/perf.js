@@ -497,6 +497,16 @@
   // (ekte.errorclass.record_class).
   function failText(r) {
     var what = String(r.status_code || r.error_type || "?");
+    // The HTTPS proxy's answer to CONNECT, when it refused the tunnel
+    // (ekte.errorclass.proxy_reason): 502/503/504 = it could not reach the
+    // relay host, 4xx = the proxy itself refused.
+    var ps = r.error_class === "network" ? r.proxy_status : null;
+    if (typeof ps === "number") {
+      what += " " + ps + " · " + (ps === 502 || ps === 503 || ps === 504
+        ? T("代理无法连接中转站主机", "relay host unreachable via the proxy")
+        : ps >= 400 && ps <= 499 ? T("代理拒绝建立隧道", "the proxy refused the tunnel")
+        : T("代理错误", "proxy error"));
+    }
     if (r.error_class === "network") what += " · " + T("网络", "network");
     else if (r.error_class === "local") what += " · ekte";
     return (r.retried ? T("已重试", "repeated") : T("失败", "failed")) + " (" + what + ")";

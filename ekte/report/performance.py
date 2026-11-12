@@ -12,7 +12,15 @@ import html
 import math
 from collections.abc import Callable
 
-from ekte.errorclass import IMPAIRED, LOCAL, NETWORK, outcome, record_class
+from ekte.errorclass import (
+    IMPAIRED,
+    LOCAL,
+    NETWORK,
+    PROXY_REASON_TEXT,
+    outcome,
+    proxy_reason,
+    record_class,
+)
 from ekte.models import (
     EndpointPerformance,
     PerformanceComparison,
@@ -151,10 +159,15 @@ def _reliability_line(e: EndpointPerformance) -> str:
 def fail_text(r: RequestRecord) -> str:
     """A failed request's status, as the web UI's data table shows it:
     ``failed (502)`` at the relay, ``failed (ProxyError · network)`` on the
-    network path, ``failed (TypeError · ekte)`` in ekte, ``repeated (…)`` for
+    network path (``ProxyError 503 · relay host unreachable via the proxy ·
+    network`` when the proxy's answer to CONNECT was kept), ``failed (TypeError · ekte)`` in ekte, ``repeated (…)`` for
     an attempt that was repeated."""
     what = str(r.status_code or r.error_type or "?")
     cls = record_class(r)
+    reason = proxy_reason(r.proxy_status) if cls == NETWORK else None
+    if reason is not None:
+        # ``ProxyError 503 · relay host unreachable via the proxy · network``
+        what += f" {r.proxy_status} · {PROXY_REASON_TEXT[reason]}"
     if cls == NETWORK:
         what += " · network"
     elif cls == LOCAL:
