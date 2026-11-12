@@ -26,6 +26,37 @@ from zoneinfo import ZoneInfo
 
 _log = logging.getLogger(__name__)
 
+class InvalidWindow(ValueError):
+    """An invalid rule; ``code`` indexes :data:`MESSAGES`."""
+
+    def __init__(self, code: int) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+# The fixed English messages of the API (never derived from exception text).
+MESSAGES = (
+    "Times must be given as HH:00.",
+    "Only whole hours are supported.",
+    "Time is out of range.",
+    "The run window must be an object.",
+    "The run window has unknown fields.",
+    "Time zone is not valid.",
+    "Choose at least one day.",
+    "Days must be numbers from 0 (Monday) to 6 (Sunday).",
+    "Start and end must differ; use 00:00 to 24:00 for all day.",
+)
+
+
+def problem(raw: Any) -> str | None:
+    """The fixed message for an invalid rule, ``None`` when it is valid."""
+    try:
+        validate(raw)
+    except InvalidWindow as exc:
+        return MESSAGES[exc.code]
+    return None
+
+
 _KEYS = frozenset({"tz", "days", "start", "end"})
 _TIME = re.compile(r"^(\d{2}):(\d{2})$")
 _SEARCH_HOURS = 8 * 24
@@ -54,36 +85,36 @@ class RunWindow:
 def _hour(value: Any, *, maximum: int) -> int:
     m = _TIME.match(value) if isinstance(value, str) else None
     if not m:
-        raise ValueError("Times must be given as HH:00.")
+        raise InvalidWindow(0)
     hour, minute = int(m.group(1)), int(m.group(2))
     if minute != 0:
-        raise ValueError("Only whole hours are supported.")
+        raise InvalidWindow(1)
     if hour > maximum:
-        raise ValueError("Time is out of range.")
+        raise InvalidWindow(2)
     return hour
 
 
 def _build(raw: Any) -> RunWindow:
     if not isinstance(raw, dict):
-        raise ValueError("The run window must be an object.")
+        raise InvalidWindow(3)
     if set(raw) - _KEYS:
-        raise ValueError("The run window has unknown fields.")
+        raise InvalidWindow(4)
     tz = raw.get("tz")
     if not isinstance(tz, str) or not tz.strip():
-        raise ValueError("Time zone is not valid.")
+        raise InvalidWindow(5)
     try:
         ZoneInfo(tz)
     except (KeyError, ValueError, OSError):
-        raise ValueError("Time zone is not valid.") from None
+        raise InvalidWindow(5) from None
     days = raw.get("days")
     if not isinstance(days, list) or not days:
-        raise ValueError("Choose at least one day.")
+        raise InvalidWindow(6)
     if any(isinstance(d, bool) or not isinstance(d, int) or not 0 <= d <= 6 for d in days):
-        raise ValueError("Days must be numbers from 0 (Monday) to 6 (Sunday).")
+        raise InvalidWindow(7)
     start = _hour(raw.get("start"), maximum=23)
     end = _hour(raw.get("end"), maximum=24)
     if start == end:
-        raise ValueError("Start and end must differ; use 00:00 to 24:00 for all day.")
+        raise InvalidWindow(8)
     return RunWindow(tz, frozenset(days), start, end)
 
 

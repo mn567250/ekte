@@ -1671,10 +1671,9 @@ def create_app() -> FastAPI:
         from ekte.web import watches
 
         body = await request.json()
-        try:
-            runwindow.validate(body.get("run_window"))
-        except ValueError as exc:
-            return JSONResponse({"error": str(exc)}, status_code=400)
+        bad_window = runwindow.problem(body.get("run_window"))
+        if bad_window:
+            return JSONResponse({"error": bad_window}, status_code=400)
         # Validate the target + suite up front so bad input is a clean 400.
         try:
             suite = validate_suite(str(body.get("suite") or "standard"))
@@ -1869,10 +1868,10 @@ def create_app() -> FastAPI:
                 return JSONResponse({"error": str(exc)}, status_code=400)
         window: Any = watches._UNSET
         if "run_window" in body:  # null clears the window
-            try:
-                window = runwindow.validate(body.get("run_window"))
-            except ValueError as exc:
-                return JSONResponse({"error": str(exc)}, status_code=400)
+            bad_window = runwindow.problem(body.get("run_window"))
+            if bad_window:
+                return JSONResponse({"error": bad_window}, status_code=400)
+            window = runwindow.validate(body.get("run_window"))
         keep_evidence = body.get("evidence")
         if keep_evidence is not None and not isinstance(keep_evidence, bool):
             return JSONResponse({"error": "evidence must be true or false"}, status_code=400)
