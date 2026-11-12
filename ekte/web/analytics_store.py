@@ -147,6 +147,8 @@ REQUEST_FIELDS: dict[str, str] = {
     "retried": "bool",
     "timeout": "bool",
     "rate_limited": "bool",
+    "proxy_status": "int",
+    "proxy_wait_ms": "float",
     "duration_ms": "float",
     "ttft_ms": "float",
     "chunk_count": "int",

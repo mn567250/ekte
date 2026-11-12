@@ -70,3 +70,17 @@ hver for seg: en feil hos reléet er et rødt ×, en nettverks- eller ekte-feil 
 grå ◇, og et forsøk som aldri telles (et gjentatt) et mindre grått merke med
 samme form; en merknad over forklaringen sier hvor mange forespørsler som
 mislyktes på nettverksveien eller i ekte.
+
+Bak en HTTPS-proxy feiler en forespørsel som proxyen ikke åpner en tunnel for,
+med `ProxyError`. ekte tar vare på proxyens svar på `CONNECT`: posten har
+statusen (`proxy_status`) og hvor lang tid proxyen brukte på å svare
+(`proxy_wait_ms`), og bevisfilen beholder overskriftene og feilsiden (under
+`proxy`; Squids feilside oppgir errno og adressen den prøvde). Statusen sier
+hvem sitt problem det er, og datatabellen, varselet om svekket kjøring og
+pålitelighetsrådet sier det samme: **502/503/504** — «relé-verten er utilgjengelig via
+proxyen», vanligvis etter proxyens egen tilkoblingstidsgrense (ofte 60 s):
+proxyen nådde ikke relé-verten, så sjekk om verten kan nås fra proxyen (DNS og
+adresser, IPv6, en brannmur eller WAF som forkaster proxyens adresse,
+lastbalanseringsnoder), ikke bare proxyen; **4xx** (407, 403) — «proxyen avviste
+tunnelen»: autentiseringen eller policyen dens. Uansett er det fortsatt en
+nettverksfeil som gjentas og ikke telles mot reléet.

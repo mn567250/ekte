@@ -22,7 +22,7 @@ from ekte import prompts
 from ekte.context import AuditContext
 from ekte.detectors.base import Detector, register
 from ekte.detectors.scale import DeductionScale, outcome
-from ekte.errorclass import LOCAL, NETWORK
+from ekte.errorclass import LOCAL, NETWORK, PROXY_REFUSED, PROXY_UNREACHABLE, proxy_reason
 from ekte.models import (
     DetectorResult,
     Dimension,
@@ -68,6 +68,20 @@ SCALE = DeductionScale(
 # feeds the score: not the run's success rate over every request
 # (ekte.perf.outcomes), which History and Analytics show.
 SUCCESS_RATE_LABEL = "Reliability check success rate"
+
+
+def _network_advice(unreachable: int, refused: int) -> str:
+    """What to check when the burst never reached the relay, by what the HTTPS
+    proxy answered (ekte.proxyreply)."""
+    if unreachable and not refused:
+        return ("The proxy answered that it could not reach the relay host (502/503/504): check the "
+                "host's reachability from the proxy (DNS and addresses, IPv6, a firewall or WAF "
+                "dropping the proxy's address, load-balancer nodes) and re-run. The proxy's full "
+                "answer is in the evidence file.")
+    if refused and not unreachable:
+        return ("The proxy refused the tunnel (4xx): check its authentication and policy for the "
+                "relay host and re-run. The proxy's full answer is in the evidence file.")
+    return "Check the network path from ekte to the relay (proxy, DNS, firewall) and re-run."
 
 
 def _lost_note(lost: int) -> str:
@@ -133,11 +147,11 @@ class ReliabilityDetector(Detector):
         # Fire n identical requests, capping in-flight calls with a semaphore.
         sem = asyncio.Semaphore(conc)
 
-        async def _one() -> tuple[bool, float | None, str | None, int | None, str | None]:
+        async def _one() -> tuple[bool, float | None, str | None, int | None, str | None, int | None]:
             async with sem:
                 outcome = await ctx.client.complete(spec)
             return (outcome.ok, outcome.duration_ms, outcome.error_type, outcome.status_code,
-                    getattr(outcome, "error_class", None))
+                    getattr(outcome, "error_class", None), getattr(outcome, "proxy_status", None))
 
         results = await asyncio.gather(*(_one() for _ in range(n)))
 
@@ -148,9 +162,16 @@ class ReliabilityDetector(Detector):
         # failed in ekte or on the network path (after the client's repeats):
         # not the relay's doing, so neither a success nor a failure of it
         impaired: dict[str, int] = {}
-        for ok, duration_ms, error_type, status_code, error_class in results:
+        unreachable = refused = 0
+        for ok, duration_ms, error_type, status_code, error_class, proxy_status in results:
             if not ok and error_class in (LOCAL, NETWORK):
                 key = f"{error_class}:{error_type or 'unknown'}"
+                reason = proxy_reason(proxy_status) if error_class == NETWORK else None
+                if reason is not None:
+                    # e.g. "network:ProxyError 503" (the proxy's answer to CONNECT)
+                    key += f" {proxy_status}"
+                    unreachable += reason == PROXY_UNREACHABLE
+                    refused += reason == PROXY_REFUSED
                 impaired[key] = impaired.get(key, 0) + 1
             elif ok:
                 successes += 1
@@ -198,8 +219,7 @@ class ReliabilityDetector(Detector):
                     + "; reliability under load could not be assessed.",
                     evidence={"requests": n, "impaired": impaired, "rate_limited": rate_limited,
                               "concurrency": conc},
-                    recommendation="Check the network path from ekte to the relay (proxy, DNS, "
-                    "firewall) and re-run.",
+                    recommendation=_network_advice(unreachable, refused),
                 )
             )
         elif effective == 0:

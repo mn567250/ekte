@@ -390,13 +390,52 @@ def impaired_warning(records: list[Any], results: list[DetectorResult]) -> str |
     parts = []
     if network:
         parts.append(f"{network} on the network path to the relay (proxy, DNS, connect or TLS)")
+    proxy = _proxy_note([r for r in lost if record_class(r) == NETWORK])
     if local:
         parts.append(f"{local} in ekte itself")
     return (
         f"The run was impaired: {len(lost)} request(s) failed before the relay could answer them "
         f"({' and '.join(parts)}), after {repeats} repeat(s). They are not counted against the "
         f"relay; {unjudged} check(s) that rest only on them read inconclusive."
+        + proxy
     )
+
+
+def _proxy_note(network: list[Any]) -> str:
+    """What the HTTPS proxy answered for the network failures that kept its
+    answer to CONNECT (ekte.proxyreply), or ``""``."""
+    from ekte import errorclass
+
+    seen: dict[str, list[Any]] = {}
+    for r in network:
+        reason = errorclass.record_proxy_reason(r)
+        if reason is not None:
+            seen.setdefault(reason, []).append(r)
+    notes = []
+    for reason in errorclass.PROXY_REASONS:
+        recs = seen.get(reason)
+        if not recs:
+            continue
+        statuses = ", ".join(str(s) for s in sorted({r.proxy_status for r in recs}))
+        waits = [r.proxy_wait_ms for r in recs if r.proxy_wait_ms is not None]
+        after = f" after up to {max(waits) / 1000:.0f} s" if waits else ""
+        if reason == errorclass.PROXY_UNREACHABLE:
+            notes.append(
+                f"{len(recs)} were answered by the proxy with {statuses}{after}: the proxy could not "
+                "reach the relay host. Check the host's reachability from the proxy (its DNS and "
+                "addresses, IPv6, a firewall or WAF dropping the proxy's address, load-balancer "
+                "nodes), not only the proxy"
+            )
+        elif reason == errorclass.PROXY_REFUSED:
+            notes.append(
+                f"{len(recs)} were refused by the proxy itself ({statuses}{after}): check the "
+                "proxy's authentication and policy for the relay host"
+            )
+        else:
+            notes.append(f"{len(recs)} got {statuses} from the proxy{after}")
+    if not notes:
+        return ""
+    return " Of the network failures, " + "; ".join(notes) + ". The proxy's full answer is in the evidence file."
 
 
 def _assemble(

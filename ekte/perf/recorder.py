@@ -20,7 +20,9 @@ from contextvars import ContextVar
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+from ekte import proxyreply
 from ekte.models import CompletionOutcome, RequestRecord, RequestSpec
+from ekte.proxyreply import ProxyReply
 
 if TYPE_CHECKING:
     from ekte.evidence import Capture, EvidenceWriter
@@ -90,9 +92,20 @@ class NetTrace:
         # In a replay (ekte.replay): the seq of the recorded exchange that
         # answered the call, which its record then keeps.
         self.replayed_seq: int | None = None
+        # Behind an HTTPS proxy: its answer to the call's last CONNECT, kept
+        # when it refused the tunnel (ekte.proxyreply); else None.
+        self.proxy_reply: ProxyReply | None = None
+        self.proxy_wire: Any = None  # the bytes of that answer (proxyreply tee)
+        self.awaiting_connect = False
 
     async def trace(self, event_name: str, info: dict[str, Any]) -> None:
         self.marks[event_name] = time.perf_counter()
+        proxyreply.observe(self, event_name, info)
+
+    def refused_tunnel(self) -> ProxyReply | None:
+        """The proxy's answer when it refused to open the tunnel, else None."""
+        reply = self.proxy_reply
+        return reply if reply is not None and reply.refused_tunnel else None
 
     def _mark(self, suffix: str) -> float | None:
         for prefix in ("http11.", "http2.", "connection."):
@@ -297,6 +310,8 @@ class RequestRecorder:
             rate_limited=outcome.status_code == 429,
             duration_ms=outcome.duration_ms,
             relay_processing_ms=_relay_processing_ms(outcome.headers),
+            proxy_status=None if outcome.ok else outcome.proxy_status,
+            proxy_wait_ms=None if outcome.ok else outcome.proxy_wait_ms,
         )
 
     def _add(

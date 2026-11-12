@@ -72,3 +72,18 @@ Fehler beim Relay ist ein rotes ×, ein Netzwerk- oder ekte-Fehler eine graue �
 und ein Versuch, der nie zählt (ein wiederholter), eine kleinere graue Marke
 derselben Form; ein Hinweis über der Legende nennt, wie viele Anfragen auf dem
 Netzwerkweg oder in ekte fehlgeschlagen sind.
+
+Hinter einem HTTPS-Proxy schlägt eine Anfrage, für die der Proxy keinen Tunnel
+öffnet, mit `ProxyError` fehl. ekte behält die Antwort des Proxys auf das
+`CONNECT`: Der Datensatz trägt ihren Status (`proxy_status`) und wie lange der
+Proxy für die Antwort brauchte (`proxy_wait_ms`); die Beweisdatei behält ihre
+Header und die Fehlerseite (unter `proxy`; die von Squid nennt den errno und die
+versuchte Adresse). Der Status sagt, wessen Problem es ist, und Datentabelle,
+Warnung zum beeinträchtigten Lauf und Zuverlässigkeitsempfehlung sagen es auch:
+**502/503/504** — „Relay-Host über den Proxy nicht erreichbar“, meist nach dem
+eigenen Verbindungs-Timeout des Proxys (oft 60 s): Der Proxy erreichte den
+Relay-Host nicht, prüfen Sie also dessen Erreichbarkeit vom Proxy aus (DNS und
+Adressen, IPv6, eine Firewall oder WAF, die die Adresse des Proxys verwirft,
+Load-Balancer-Knoten), nicht nur den Proxy; **4xx** (407, 403) — „der Proxy hat
+den Tunnel abgelehnt“: seine Authentifizierung oder Richtlinie. In beiden Fällen
+bleibt es ein Netzwerkfehler, wird wiederholt und nicht gegen das Relay gezählt.

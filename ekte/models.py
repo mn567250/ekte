@@ -15,10 +15,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Versions of the report JSON and webhook payload schemas (MAJOR.MINOR, independent of the ekte version);
 # the rules for bumping it are in ekte/schemas/__init__.py and docs/reference/stability.md.
-REPORT_SCHEMA_VERSION = "1.3"
+REPORT_SCHEMA_VERSION = "1.4"
 WEBHOOK_SCHEMA_VERSION = "1.0"
 # Version of the evidence file lines (ekte/schemas/evidence.schema.json, see ekte.evidence).
-EVIDENCE_SCHEMA_VERSION = "1.0"
+EVIDENCE_SCHEMA_VERSION = "1.1"
 
 
 # --------------------------------------------------------------------------- #
@@ -177,6 +177,11 @@ class CompletionOutcome(BaseModel):
     # A local or network failure the client repeats: this attempt is
     # superseded by the next one and counts against nobody.
     retried: bool = False
+    # Behind an HTTPS proxy that refused the tunnel to the relay (an
+    # ``httpx.ProxyError``): the status it answered the CONNECT with and how
+    # long it took (ekte.proxyreply); None otherwise.
+    proxy_status: int | None = None
+    proxy_wait_ms: float | None = None
     raw_error: dict[str, Any] | None = None
     # The redacted raw JSON body of a successful non-stream call, only when the
     # request asked for it (RequestSpec.capture_raw).
@@ -396,6 +401,12 @@ class RequestRecord(BaseModel):
     retried: bool = False
     timeout: bool = False
     rate_limited: bool = False
+    # A network failure at an HTTPS proxy: the status it answered the CONNECT
+    # with (4xx: the proxy refused; 502/503/504: it could not reach the relay
+    # host, ekte.errorclass.proxy_reason) and how long it took to answer.
+    # None otherwise, and in reports saved before they were recorded.
+    proxy_status: int | None = None
+    proxy_wait_ms: float | None = None
 
     duration_ms: float | None = None
     ttft_ms: float | None = None

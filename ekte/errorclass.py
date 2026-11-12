@@ -183,6 +183,52 @@ def attach_classes(records: object) -> None:
             rec["error_class"] = record_class(rec)
 
 
+# --------------------------------------------------------------------------- #
+# Proxy failures: who the HTTPS proxy's answer to CONNECT points at
+# --------------------------------------------------------------------------- #
+# The proxy itself refused the tunnel (407 authentication, 403 policy, ...):
+# the proxy or ekte's proxy settings are at fault.
+PROXY_REFUSED = "proxy_refused"
+# The proxy could not reach the relay host (502/503/504, typically after its
+# own connect timeout): the problem lies between the proxy and the relay host
+# (its DNS, firewall, load balancer or an address the proxy cannot route to);
+# the proxy only reports it.
+PROXY_UNREACHABLE = "proxy_upstream_unreachable"
+# Any other answer.
+PROXY_OTHER = "proxy_other"
+PROXY_REASONS = (PROXY_REFUSED, PROXY_UNREACHABLE, PROXY_OTHER)
+_UNREACHABLE_STATUSES = frozenset({502, 503, 504})
+
+# How each reason reads in the reports and the web UI.
+PROXY_REASON_TEXT = {
+    PROXY_REFUSED: "the proxy refused the tunnel",
+    PROXY_UNREACHABLE: "relay host unreachable via the proxy",
+    PROXY_OTHER: "proxy error",
+}
+
+
+def proxy_reason(status: int | None) -> str | None:
+    """What an HTTPS proxy's answer to CONNECT says (one of
+    :data:`PROXY_REASONS`), or None when no answer was kept."""
+    if not isinstance(status, int) or isinstance(status, bool):
+        return None
+    if status in _UNREACHABLE_STATUSES:
+        return PROXY_UNREACHABLE
+    if 400 <= status <= 499:
+        return PROXY_REFUSED
+    return PROXY_OTHER
+
+
+def record_proxy_reason(rec: object) -> str | None:
+    """The proxy reason of a failed request record (a RequestRecord or its
+    dict); None when it kept no proxy answer (also every record saved before
+    they were kept)."""
+    get = rec.get if isinstance(rec, dict) else lambda k, d=None: getattr(rec, k, d)
+    if get("ok", False):
+        return None
+    return proxy_reason(get("proxy_status", None))
+
+
 def retryable(error_class: str | None, error_type: str | None) -> bool:
     """Whether a failure of this class is repeated: local and network ones,
     except a call the client cannot make at all."""

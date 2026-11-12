@@ -189,6 +189,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ekte/models.py", ("audit",)),
     ("ekte/embed_audit.py", ("audit",)),  # the embedding check (the audit page's surface selector)
     ("ekte/errorclass.py", ("audit", "history")),  # failure classes in the perf table of both
+    ("ekte/proxyreply.py", ("audit", "history")),  # the proxy's answer in the perf table of both
     ("ekte/evidence.py", ("audit", "history")),  # raw request/response pairs in the report view
     ("ekte/replay.py", ("audit", "history")),  # re-scoring a History run (a job on the audit page)
     ("ekte/notify.py", ("monitors",)),  # monitor webhooks

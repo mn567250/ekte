@@ -8,9 +8,9 @@ The English text is canonical; this document is not translated.
 
 | Document | Schema file | Version field | Current |
 |---|---|---|---|
-| Report (`ekte check --json`, `--format json`, history) | [`ekte/schemas/report.schema.json`](../../ekte/schemas/report.schema.json) | `schema_version` | 1.3 |
+| Report (`ekte check --json`, `--format json`, history) | [`ekte/schemas/report.schema.json`](../../ekte/schemas/report.schema.json) | `schema_version` | 1.4 |
 | Generic webhook payload (`ekte watch`, monitors) | [`ekte/schemas/webhook.schema.json`](../../ekte/schemas/webhook.schema.json) | `schema_version` | 1.0 |
-| Evidence file line (`--evidence`, history runs) | [`ekte/schemas/evidence.schema.json`](../../ekte/schemas/evidence.schema.json) | `schema_version` of the header line | 1.0 |
+| Evidence file line (`--evidence`, history runs) | [`ekte/schemas/evidence.schema.json`](../../ekte/schemas/evidence.schema.json) | `schema_version` of the header line | 1.1 |
 
 The files are generated from the code that produces the documents (the
 `AuditReport` model and the `WebhookPayload` model in `ekte/schemas/`), ship in
@@ -110,7 +110,12 @@ raw HTTP request and response of one run, keys and sensitive headers removed
   image and audio audits), `endpoint`, `detector`, `op`, `start_ms` (since the
   run started), `request` (`method`, `url`, `headers`, `body`), `response`
   (`status`, `http_version`, `headers`, `body`, `chunks`, `done_ms`,
-  `read_to_end`; `null` when none arrived) and `error`.
+  `read_to_end`; `null` when none arrived), `error` and `proxy` (since 1.1;
+  `null` unless an HTTPS proxy refused the tunnel to the relay: its answer to
+  the `CONNECT` — `target` (`host:port`), `status`, `reason`, `http_version`,
+  `headers`, `body` (its error page, cut at 64 KiB), `read_to_end` and
+  `wait_ms`, how long the proxy took to answer; the request then has no
+  `response`).
 
 A `body` holds `text` (the body with any `Content-Encoding` undone; base64 when
 it is not UTF-8, `encoding` says which), its original `bytes` and `sha256`, and
