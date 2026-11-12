@@ -239,6 +239,20 @@ how many saved runs it re-extracts.
   failure counts (not the relay's) and repeated attempts to each endpoint's
   summary line. The compact JSON carries `network_errors`, `local_errors` and
   `retried` per endpoint under `performance`, and `reliability.impaired`.
+- **The performance charts no longer show failures that are not the relay's
+  as relay failures** ([#172](https://github.com/mn567250/ekte/issues/172)).
+  Since #94 only a relay failure counts against the relay, but the timeline
+  charts (web report, live panel, HTML and PDF reports) still drew every
+  failed request as the same red ×. A relay failure is still a red ×; a
+  failure on the network path or inside ekte is now a grey ◇; an attempt that
+  never counts (a repeated one, or ekte's `param_retry`) is a smaller, thinner
+  grey mark of the same shape. Each has its own legend entry, the charts'
+  accessible names count them apart ("1 failed at the relay; 2 failed on the
+  network path or in ekte (not the relay's); 2 repeated attempts (not
+  counted)"), and a note above the legend says how many requests failed on the
+  network path or inside ekte and do not count against the relay. The marks
+  keep at least 3:1 against the card (BITV 9.1.4.11). Translated into every
+  UI language.
 - **Typer 0.29.** The command line reference generator
   (`scripts/generate_cli_docs.py`, checked by `test_cli_reference_is_current`)
   crashed with `'TyperOption' object has no attribute 'type'`: Typer 0.29

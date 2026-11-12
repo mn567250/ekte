@@ -39,7 +39,10 @@
  * and changes only when one lands.
  *
  * Colors follow the categorical order validated for the reports: target is
- * slot 1 (blue), baseline slot 2 (orange); a failed request is a red cross
+ * slot 1 (blue), baseline slot 2 (orange); a failed request at the relay is a
+ * red cross, one on the network path or inside ekte (not the relay's, #94) a
+ * grey diamond, and an attempt that never counts (repeated, or ekte's
+ * param_retry) a smaller, thinner grey mark of its class's shape (#172), each
  * with its own legend entry, so identity is never carried by color alone.
  *
  * Theming: every colour in the injected CSS is a --zp-* custom property whose
@@ -331,12 +334,41 @@
     });
     var by = mt + ph;
     failed.forEach(function (r) {
-      var cx = x(r.start_ms / 1000);
-      o.push('<path class="zp-fail" d="M' + (cx - 4).toFixed(1) + "," + (by - 4) + "l8,8m0,-8l-8,8" +
-        '" data-tip="' + esc(tip(r, null)) + '"/>');
+      var k = failKind(r);
+      o.push('<path class="zp-fail ' + k.shape + (k.counted ? "" : " uncounted") + '" d="' +
+        failPath(x(r.start_ms / 1000), by, k) + '" data-tip="' + esc(tip(r, null)) + '"/>');
     });
     o.push("</svg>");
     return { html: o.join(""), empty: false, calls: calls, m: m, over: over, top: range ? yMax : null, xMax: xMax, yMax: yMax, last: last };
+  }
+  // How a failed request is marked (#172), as ekte/report/performance.py's
+  // fail_kind: its shape ("relay", the relay's own failure: a cross; "imp", on
+  // the network path or inside ekte: a diamond) and whether it counts (a
+  // repeated attempt and ekte's param_retry never do, ekte.errorclass.outcome).
+  // Records saved before the classification get error_class from the server.
+  function failKind(r) {
+    var imp = r.error_class === "network" || r.error_class === "local";
+    return { shape: imp ? "imp" : "relay", counted: !r.retried && r.phase !== "param_retry" };
+  }
+  // The failed calls by mark: counted relay and impaired ones, uncounted attempts.
+  function failCounts(calls) {
+    var c = { relay: 0, imp: 0, uncounted: 0, uncountedShapes: {} };
+    calls.forEach(function (r) {
+      if (r.ok) return;
+      var k = failKind(r);
+      if (k.counted) c[k.shape]++;
+      else { c.uncounted++; c.uncountedShapes[k.shape] = 1; }
+    });
+    return c;
+  }
+  // The mark centred on (cx, cy), starting its half-size left of it (4 px, 3
+  // for an uncounted attempt; creepModel moves it by that start).
+  function failHalf(k) { return k.counted ? 4 : 3; }
+  function failPath(cx, cy, k) {
+    var h = failHalf(k), d = 2 * h;
+    return k.shape === "imp"
+      ? "M" + (cx - h).toFixed(1) + "," + cy + "l" + h + ",-" + h + "l" + h + "," + h + "l-" + h + "," + h + "z"
+      : "M" + (cx - h).toFixed(1) + "," + (cy - h) + "l" + d + "," + d + "m0,-" + d + "l-" + d + "," + d;
   }
   // The running-median line per endpoint, behind the dots: through each
   // successful request's `trend` value for this metric, in time order.
@@ -420,7 +452,11 @@
       var vs = pts.filter(function (r) { return (r.endpoint === "baseline") === e[0] && !r.cached; }).map(m.get);
       if (vs.length) parts.push(fill(e[1], { value: num(p50(vs)) + " " + m.unit }));
     });
-    if (failed.length) parts.push(fill(T("{n} 个失败", "{n} failed"), { n: int(failed.length) }));
+    var fc = failCounts(failed);
+    if (fc.relay) parts.push(fill(T("{n} 个在中转站失败", "{n} failed at the relay"), { n: int(fc.relay) }));
+    if (fc.imp) parts.push(fill(T("{n} 个在网络路径或 ekte 内部失败（非中转站所致）",
+      "{n} failed on the network path or in ekte (not the relay's)"), { n: int(fc.imp) }));
+    if (fc.uncounted) parts.push(fill(T("{n} 次重复尝试（不计入）", "{n} repeated attempts (not counted)"), { n: int(fc.uncounted) }));
     if (pts.some(function (r) { return trendOf(r, m) != null; })) parts.push(trendText());
     if (pts.some(function (r) { return bandOf(r, m) != null; }))
       parts.push(T("带：同样 5 次请求的 p25–p75", "band: p25–p75 of the same 5 requests"));
@@ -510,8 +546,16 @@
       items.push('<span><i class="zp-key t probe"></i>' + esc(T("性能探测请求（小、浅色）", "probe request (small, lighter)")) + "</span>");
     if (calls.some(function (r) { return r.phase !== "passive" && unstreamed(r); }))
       items.push('<span><i class="zp-key t hollow"></i>' + esc(T("非流式请求（空心）", "non-streaming request (hollow)")) + "</span>");
-    if (calls.some(function (r) { return !r.ok; }))
-      items.push('<span><i class="zp-key x" aria-hidden="true">×</i>' + esc(T("失败请求", "failed request")) + "</span>");
+    var fc = failCounts(calls);
+    if (fc.relay)
+      items.push('<span><i class="zp-key x" aria-hidden="true">×</i>' + esc(T("中转站失败", "relay failure")) + "</span>");
+    if (fc.imp)
+      items.push('<span><i class="zp-key x imp" aria-hidden="true">◇</i>' +
+        esc(T("网络 / ekte 失败（非中转站所致）", "network / ekte failure (not the relay's)")) + "</span>");
+    if (fc.uncounted)
+      items.push("<span>" + ["relay", "imp"].filter(function (s) { return fc.uncountedShapes[s]; }).map(function (s) {
+        return '<i class="zp-key x ' + s + ' uncounted" aria-hidden="true">' + (s === "imp" ? "◇" : "×") + "</i>";
+      }).join("") + esc(T("重复尝试（不计入）", "repeated attempt (not counted)")) + "</span>");
     if (calls.some(function (r) { return r.trend_band; }))
       items.push('<span><i class="zp-key band" aria-hidden="true"></i>' +
         esc(T("滚动中位数（最近 5 次）及 p25–p75", "running median (last 5) with p25–p75")) + "</span>");
@@ -520,7 +564,13 @@
     if (over)
       items.push('<span><i class="zp-key tri" aria-hidden="true"></i>' +
         esc(T("高于范围（数值见提示）", "above the range (value in the tooltip)")) + "</span>");
-    return '<div class="zp-legend">' + items.join("") + "</div>";
+    // requests that failed before the relay could answer (#172): the note
+    // sits in the legend's element, which the live panel replaces as a whole
+    var note = fc.imp ? '<p class="zp-imp-note">' + esc(fill(T(
+      "{n} 个请求在网络路径或 ekte 内部失败，而非在中转站；它们不计入中转站的错误。",
+      "{n} requests failed on the network path or inside ekte, not at the relay; they do not count against it."),
+      { n: int(fc.imp) })) + "</p>" : "";
+    return '<div class="zp-legend">' + note + items.join("") + "</div>";
   }
 
   // Metric tabs and the plot they control; `pid` keeps the ids unique per panel.
@@ -915,7 +965,8 @@
       circles.push([el, parseFloat(el.getAttribute("cx")) || 0]);
     });
     Array.prototype.forEach.call(svg.querySelectorAll(".zp-trend path, .zp-band path, .zp-fail, .zp-off"), function (el) {
-      paths.push([el, el.getAttribute("d") || "", el.classList.contains("zp-fail") ? 4 : 0]);
+      var fail = el.classList.contains("zp-fail");
+      paths.push([el, el.getAttribute("d") || "", fail ? failHalf({ counted: !el.classList.contains("uncounted") }) : 0]);
     });
     return { svg: svg, xMax: xMax, shown: xMax, circles: circles, paths: paths, ticks: svg.querySelector(".zp-xt") };
   }
@@ -1337,6 +1388,9 @@
     ".zp-better{color:var(--zp-better);font-weight:700}.zp-worse{color:var(--zp-worse);font-weight:700}" +
     ".zp-mode{border-top:1px solid var(--zp-grid);padding-top:14px;margin-top:20px;font-size:14.5px}" +
     ".zp-fail{stroke:var(--zp-x);stroke-width:2;stroke-linecap:round}" +
+    // not the relay's failures (#172): grey, at full opacity (>= 3:1, BITV 9.1.4.11)
+    ".zp-fail.imp{stroke:var(--zp-ink2);fill:none;stroke-width:1.75;stroke-linejoin:round}" +
+    ".zp-fail.uncounted{stroke:var(--zp-ink2);stroke-width:1.25}" +
     // full opacity (>= 3:1 like the dots, BITV 9.1.4.11), thinner than a mark
     ".zp-trend path{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}" +
     ".zp-trend .t{stroke:var(--zp-t)}.zp-trend .b{stroke:var(--zp-b)}" +
@@ -1369,6 +1423,8 @@
     ".zp-key.t{background:var(--zp-t)}.zp-key.b{background:var(--zp-b)}" +
     ".zp-legend .zp-key.passive{background:color-mix(in srgb,var(--zp-t) 35%,transparent);border:2px solid var(--zp-t);box-sizing:border-box}" +
     ".zp-key.x{width:auto;height:auto;border-radius:0;color:var(--zp-x);font-weight:800}" +
+    ".zp-key.x.imp{color:var(--zp-ink2)}.zp-key.x.uncounted{color:var(--zp-ink2);font-size:9.5px;font-weight:400;margin-right:3px}" +
+    ".zp-imp-note{flex-basis:100%;margin:0;color:var(--zp-ink)}" +
     ".zp-empty{font-size:12.5px;color:var(--zp-faint);padding:18px 0;text-align:center}" +
     ".zp-muted{font-size:12.5px;color:var(--zp-ink2);margin:6px 0;line-height:1.5}" +
     ".zp-h{font-size:13.5px;margin:16px 0 6px;color:var(--zp-ink)}" +

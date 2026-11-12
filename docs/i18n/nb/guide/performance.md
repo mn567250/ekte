@@ -65,4 +65,8 @@ forespørselen gjentas, én gang som standard (`EKTE_NON_RELAY_RETRIES`, 0 til
 feilet slik, blir uavklart i stedet for å bli vurdert, og rapporten varsler at
 kjøringen var svekket. Hver forespørselspost har sin klasse (`error_class`) og
 om den ble gjentatt (`retried`); for kjøringer lagret tidligere utleder
-webgrensesnittet klassen fra den lagrede feilen.
+webgrensesnittet klassen fra den lagrede feilen. Tidslinjediagrammene tegner dem
+hver for seg: en feil hos reléet er et rødt ×, en nettverks- eller ekte-feil en
+grå ◇, og et forsøk som aldri telles (et gjentatt) et mindre grått merke med
+samme form; en merknad over forklaringen sier hvor mange forespørsler som
+mislyktes på nettverksveien eller i ekte.

@@ -61,4 +61,8 @@ relay's doing: the request is repeated, once by default
 whose requests all failed that way reads inconclusive instead of being scored,
 and the report warns that the run was impaired. Every request record carries its
 class (`error_class`) and whether it was repeated (`retried`); for runs saved
-before, the web UI derives the class from the stored error.
+before, the web UI derives the class from the stored error. The timeline
+charts draw them apart: a relay failure is a red ×, a network or ekte failure a
+grey ◇, and an attempt that never counts (a repeated one) a smaller grey mark of
+the same shape; a note above the legend says how many requests failed on the
+network path or inside ekte.

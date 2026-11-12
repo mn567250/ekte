@@ -23,6 +23,13 @@
   "network": "red",
   "repeated": "repetida",
   "network failures (not the relay's)": "fallos de red (no del relay)",
-  "ekte failures (not the relay's)": "fallos de ekte (no del relay)"
+  "ekte failures (not the relay's)": "fallos de ekte (no del relay)",
+  "{n} failed at the relay": "{n} fallidas en el relay",
+  "{n} failed on the network path or in ekte (not the relay's)": "{n} fallidas en la ruta de red o en ekte (no del relay)",
+  "{n} repeated attempts (not counted)": "{n} intentos repetidos (no contados)",
+  "relay failure": "fallo del relay",
+  "network / ekte failure (not the relay's)": "fallo de red / ekte (no del relay)",
+  "repeated attempt (not counted)": "intento repetido (no contado)",
+  "{n} requests failed on the network path or inside ekte, not at the relay; they do not count against it.": "{n} peticiones fallaron en la ruta de red o dentro de ekte, no en el relay; no cuentan en su contra."
  }
 }

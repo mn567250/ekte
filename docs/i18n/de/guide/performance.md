@@ -67,4 +67,8 @@ Anfragen alle so scheiterten, gilt als nicht eindeutig statt bewertet zu werden,
 und der Bericht warnt, dass der Lauf beeinträchtigt war. Jeder Anfrage-Datensatz
 trägt seine Klasse (`error_class`) und ob er wiederholt wurde (`retried`); bei
 früher gespeicherten Läufen leitet die Weboberfläche die Klasse aus dem
-gespeicherten Fehler ab.
+gespeicherten Fehler ab. Die Zeitverlaufsdiagramme zeichnen sie getrennt: ein
+Fehler beim Relay ist ein rotes ×, ein Netzwerk- oder ekte-Fehler eine graue ◇,
+und ein Versuch, der nie zählt (ein wiederholter), eine kleinere graue Marke
+derselben Form; ein Hinweis über der Legende nennt, wie viele Anfragen auf dem
+Netzwerkweg oder in ekte fehlgeschlagen sind.

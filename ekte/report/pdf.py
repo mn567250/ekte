@@ -554,12 +554,26 @@ def _performance(perf: PerformanceReport) -> list[Flowable]:
             legend.append(_t("●", color=_TARGET_FADED) + _t(" audit request (lighter)"))
         if any(r.phase != "passive" and not r.stream and not perf_render.surface_call(r) for r in calls):
             legend.append(_t("○", color=_TARGET) + _t(" non-streaming request (hollow)"))
-        if any(not r.ok for r in calls):
-            legend.append(_t("×", bold=True, color=_CRITICAL) + _t(" failed request"))
+        # the failure marks by class (#172), as perf_render._legend
+        failed = [perf_render.fail_kind(r) for r in calls if not r.ok]
+        if any(counted and shape == perf_render.FAIL_RELAY for shape, counted in failed):
+            legend.append(_t("×", bold=True, color=_CRITICAL) + _t(f" {perf_render.LEGEND_FAIL_RELAY}"))
+        if any(counted and shape == perf_render.FAIL_IMPAIRED for shape, counted in failed):
+            legend.append(_t("◇", bold=True, color=_MUTED) + _t(f" {perf_render.LEGEND_FAIL_IMPAIRED}"))
+        uncounted = {shape for shape, counted in failed if not counted}
+        if uncounted:
+            keys = "".join(
+                _t("×" if shape == perf_render.FAIL_RELAY else "◇", color=_MUTED, size=6.5)
+                for shape in (perf_render.FAIL_RELAY, perf_render.FAIL_IMPAIRED) if shape in uncounted
+            )
+            legend.append(keys + _t(f" {perf_render.LEGEND_FAIL_UNCOUNTED}"))
         trend = perf_render.trend_kind(perf.requests)
         if trend:
             legend.append(_t("—", bold=True, color=_MUTED) + _t(
                 " running median (last 5) with p25–p75 (band)" if trend == "band" else " running median (last 5)"))
+        impaired = perf_render.fail_counts(calls)[perf_render.FAIL_IMPAIRED]
+        if impaired:
+            out.append(_p(_t(perf_render.IMPAIRED_NOTE.format(n=impaired)), "meta"))
         out.append(_p((" " * 4).join(legend), "meta"))
     for block in perf_render._blocks(perf):
         out += _perf_block(perf, block)
@@ -684,11 +698,24 @@ def _timeline(perf: PerformanceReport, metric: tuple[str, str, str, Callable[...
             fill, stroke = colors.HexColor(_C["surface"]), series
         d.add(Circle(x(r.start_ms / 1000), y(v), 2.6, fillColor=fill, strokeColor=stroke,
                      strokeWidth=0.8, fillOpacity=opacity))
-    red = colors.HexColor(_CRITICAL)
+    # by class (#172): the relay's failure a red cross, a network / ekte one a
+    # grey diamond, an attempt that never counts a smaller, thinner grey mark
+    # of its class's shape
+    red, grey = colors.HexColor(_CRITICAL), colors.HexColor(_MUTED)
     for r in failed:
         cx, cy = x(r.start_ms / 1000), y(0)
-        d.add(Line(cx - 2.6, cy - 2.6, cx + 2.6, cy + 2.6, strokeColor=red, strokeWidth=1.2))
-        d.add(Line(cx - 2.6, cy + 2.6, cx + 2.6, cy - 2.6, strokeColor=red, strokeWidth=1.2))
+        shape, counted = perf_render.fail_kind(r)
+        if counted:
+            h, ink, width = 2.6, red if shape == perf_render.FAIL_RELAY else grey, 1.2
+        else:
+            h, ink, width = 1.9, grey, 0.8
+        if shape == perf_render.FAIL_IMPAIRED:
+            h += 0.2  # a diamond's corners reach as far as the cross's arms
+            d.add(Polygon([cx - h, cy, cx, cy + h, cx + h, cy, cx, cy - h],
+                          fillColor=None, strokeColor=ink, strokeWidth=width - 0.2))
+            continue
+        d.add(Line(cx - h, cy - h, cx + h, cy + h, strokeColor=ink, strokeWidth=width))
+        d.add(Line(cx - h, cy + h, cx + h, cy - h, strokeColor=ink, strokeWidth=width))
     return d
 
 

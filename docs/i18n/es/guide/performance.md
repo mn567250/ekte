@@ -69,4 +69,7 @@ comprobación cuyas peticiones fallaron todas así queda como no concluyente en
 vez de puntuarse, y el informe avisa de que la ejecución se vio afectada. Cada
 registro de petición lleva su clase (`error_class`) y si se repitió (`retried`);
 en las ejecuciones guardadas antes, la interfaz web deduce la clase del error
-guardado.
+guardado. Los gráficos de la línea temporal los distinguen: un fallo del relay es
+una × roja, un fallo de red o de ekte un ◇ gris, y un intento que nunca cuenta
+(uno repetido) una marca gris más pequeña de la misma forma; una nota sobre la
+leyenda indica cuántas peticiones fallaron en la ruta de red o dentro de ekte.

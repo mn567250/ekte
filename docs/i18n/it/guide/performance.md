@@ -68,3 +68,7 @@ così risulta non conclusivo invece di essere valutato, e il report avvisa che
 l’esecuzione è stata compromessa. Ogni record di richiesta porta la sua classe
 (`error_class`) e se è stato ripetuto (`retried`); per le esecuzioni salvate
 prima, l’interfaccia web ricava la classe dall’errore salvato.
+I grafici temporali li distinguono: un errore del relay è una × rossa, un errore
+di rete o di ekte un ◇ grigio, e un tentativo che non conta mai (uno ripetuto)
+un segno grigio più piccolo della stessa forma; una nota sopra la legenda indica
+quante richieste sono fallite sul percorso di rete o all’interno di ekte.

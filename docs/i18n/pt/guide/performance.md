@@ -68,3 +68,7 @@ falharam todos assim fica inconclusiva em vez de ser pontuada, e o relatório
 avisa que a execução foi prejudicada. Cada registo de pedido traz a sua classe
 (`error_class`) e se foi repetido (`retried`); nas execuções guardadas antes, a
 interface web deduz a classe a partir do erro guardado.
+Os gráficos da linha temporal distinguem-nos: uma falha do relay é um × vermelho,
+uma falha de rede ou do ekte um ◇ cinzento, e uma tentativa que nunca conta (uma
+repetida) uma marca cinzenta mais pequena da mesma forma; uma nota acima da
+legenda indica quantos pedidos falharam no caminho de rede ou dentro do ekte.
