@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any
 
 import httpx
 
-from ekte import errorclass
+from ekte import errorclass, proxyreply
 from ekte.models import CompletionOutcome, RequestRecord, RequestSpec, TargetConfig
 from ekte.perf.recorder import (
     NetTrace,
@@ -300,6 +300,7 @@ class BaseHTTPClient:
             follow_redirects=False,
             event_hooks={"request": [self._attach_trace], "response": [self._capture_response]},
         )
+        proxyreply.install(self._client)
         return self
 
     async def __aexit__(self, *exc: object) -> None:
@@ -321,6 +322,7 @@ class BaseHTTPClient:
             follow_redirects=False,
             event_hooks={"request": [self._attach_trace], "response": [self._capture_response]},
         )
+        proxyreply.install(client)
         try:
             yield client
         finally:
@@ -721,10 +723,21 @@ class BaseHTTPClient:
             # the traceback names ekte's code only; the message is redacted
             _log.warning("ekte failed on a request (%s): %s\n%s", type(exc).__name__, message,
                          "".join(traceback.format_tb(exc.__traceback__)))
+        proxy_status = proxy_wait_ms = None
+        if isinstance(exc, httpx.ProxyError):
+            net = current_net_trace()
+            reply = net.refused_tunnel() if net is not None else None
+            if reply is not None:
+                proxy_status, proxy_wait_ms = reply.status, reply.wait_ms
+                if reply.wait_ms is not None:
+                    message = (f"{message} (the proxy's answer to CONNECT {reply.target}, "
+                               f"after {reply.wait_ms / 1000:.1f} s)")
         return CompletionOutcome(
             ok=False,
             duration_ms=duration_ms,
             error_type=type(exc).__name__,
             error_message=message,
             error_class=error_class,
+            proxy_status=proxy_status,
+            proxy_wait_ms=proxy_wait_ms,
         )

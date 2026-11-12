@@ -47,6 +47,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 from ekte.models import EVIDENCE_SCHEMA_VERSION, EvidenceRef, RedactedTarget
+from ekte.proxyreply import ProxyReply
 from ekte.utils.redact import redact_headers, redact_text
 
 SUFFIX = ".jsonl.zst"
@@ -138,6 +139,28 @@ class EvidenceResponse(BaseModel):
     read_to_end: bool = True
 
 
+class EvidenceProxyReply(BaseModel):
+    """An HTTPS proxy's answer to the CONNECT of an exchange, when it refused
+    to open the tunnel to the relay (ekte.proxyreply): the request itself then
+    never reached the relay and has no ``response``."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # "host:port" the tunnel was asked for.
+    target: str
+    status: int | None = None
+    reason: str | None = None
+    http_version: str | None = None
+    headers: dict[str, str] = Field(default_factory=dict)
+    # The proxy's error page, as far as it arrived (cut at
+    # ekte.proxyreply.MAX_BODY_BYTES; ``bytes`` is its full size when known).
+    body: EvidenceBody = Field(default_factory=EvidenceBody)
+    # True when the whole body arrived.
+    read_to_end: bool = False
+    # How long the proxy took to answer the CONNECT, in ms.
+    wait_ms: float | None = None
+
+
 class EvidenceExchange(BaseModel):
     """One HTTP request and its response (None when none arrived)."""
 
@@ -158,6 +181,8 @@ class EvidenceExchange(BaseModel):
     response: EvidenceResponse | None = None
     # The error of a failed call (the client's redacted message), else None.
     error: str | None = None
+    # The proxy's answer when it refused the tunnel (schema 1.1), else None.
+    proxy: EvidenceProxyReply | None = None
 
 
 class EvidenceLine(RootModel[Annotated[EvidenceHeader | EvidenceExchange, Field(discriminator="type")]]):
@@ -186,6 +211,9 @@ class Capture:
     complete: bool = False
     # True when ``raw`` already holds the decoded body.
     decoded: bool = False
+    # Behind an HTTPS proxy that refused the tunnel: its answer to the CONNECT
+    # (ekte.proxyreply); the request then got no response of its own.
+    proxy: ProxyReply | None = None
 
     @classmethod
     def of_request(cls, request: httpx.Request) -> Capture:
@@ -364,6 +392,25 @@ def exchange_line(
         ),
         response=response,
         error=redact_text(error, extra_secrets=secrets) or None if error else None,
+        proxy=_proxy_line(cap.proxy, secrets) if cap.proxy is not None else None,
+    )
+
+
+def _proxy_line(reply: ProxyReply, secrets: list[str | None]) -> EvidenceProxyReply:
+    """The redacted line part for a proxy's refusal of a tunnel."""
+    body = _body(reply.body, secrets)
+    if reply.body is not None and reply.body_total > len(reply.body):
+        body.truncated, body.bytes, body.sha256 = True, reply.body_total, None
+    wait = reply.wait_ms
+    return EvidenceProxyReply(
+        target=redact_text(reply.target, extra_secrets=secrets),
+        status=reply.status,
+        reason=reply.reason,
+        http_version=reply.http_version,
+        headers=redact_headers(reply.headers, extra_secrets=secrets),
+        body=body,
+        read_to_end=reply.body_complete,
+        wait_ms=round(wait, 3) if wait is not None else None,
     )
 
 

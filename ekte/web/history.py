@@ -297,6 +297,15 @@ def _v14(conn: sqlite3.Connection) -> None:
     run_row.ensure_run_columns(conn)
 
 
+def _v15(conn: sqlite3.Connection) -> None:
+    """What an HTTPS proxy answered when it refused the tunnel to the relay
+    (``proxy_status``, ``proxy_wait_ms``, ekte.proxyreply); records saved
+    before read back without them."""
+    analytics_store.add_request_columns(
+        conn, {"proxy_status": "int", "proxy_wait_ms": "float"}
+    )
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -312,6 +321,7 @@ MIGRATIONS = (
     dbmigrate.Migration(12, _v12),
     dbmigrate.Migration(13, _v13),
     dbmigrate.Migration(14, _v14),
+    dbmigrate.Migration(15, _v15),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 
