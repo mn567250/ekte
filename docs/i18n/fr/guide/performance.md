@@ -72,3 +72,18 @@ un échec du relais est une × rouge, un échec réseau ou d’ekte un ◇ gris,
 tentative qui ne compte jamais (une tentative répétée) une marque grise plus
 petite de la même forme ; une note au-dessus de la légende indique combien de
 requêtes ont échoué sur le chemin réseau ou dans ekte.
+
+Derrière un proxy HTTPS, une requête pour laquelle le proxy n'ouvre pas de tunnel
+échoue avec `ProxyError`. ekte conserve la réponse du proxy au `CONNECT` :
+l'enregistrement porte son statut (`proxy_status`) et le temps que le proxy a mis
+à répondre (`proxy_wait_ms`), et le fichier de preuves garde ses en-têtes et sa
+page d'erreur (sous `proxy` ; celle de Squid indique l'errno et l'adresse
+essayée). Le statut dit à qui revient le problème, et le tableau de données,
+l'avertissement d'exécution perturbée et le conseil de fiabilité le disent :
+**502/503/504** — « hôte du relais injoignable via le proxy », en général après
+le propre délai de connexion du proxy (souvent 60 s) : le proxy n'a pas pu
+joindre l'hôte du relais, vérifiez donc son accessibilité depuis le proxy (son
+DNS et ses adresses, IPv6, un pare-feu ou WAF qui rejette l'adresse du proxy, les
+nœuds de répartition de charge), pas seulement le proxy ; **4xx** (407, 403) —
+« le proxy a refusé le tunnel » : son authentification ou sa politique. Dans les
+deux cas cela reste un échec réseau, répété et non compté contre le relais.

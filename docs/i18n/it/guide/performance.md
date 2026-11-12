@@ -72,3 +72,18 @@ I grafici temporali li distinguono: un errore del relay è una × rossa, un erro
 di rete o di ekte un ◇ grigio, e un tentativo che non conta mai (uno ripetuto)
 un segno grigio più piccolo della stessa forma; una nota sopra la legenda indica
 quante richieste sono fallite sul percorso di rete o all’interno di ekte.
+
+Dietro un proxy HTTPS, una richiesta per cui il proxy non apre un tunnel
+fallisce con `ProxyError`. ekte conserva la risposta del proxy al `CONNECT`: il
+record riporta il suo stato (`proxy_status`) e quanto ha impiegato il proxy a
+rispondere (`proxy_wait_ms`), e il file delle prove conserva intestazioni e
+pagina d'errore (sotto `proxy`; quella di Squid indica l'errno e l'indirizzo
+tentato). Lo stato dice di chi è il problema, e la tabella dei dati, l'avviso di
+esecuzione compromessa e il consiglio di affidabilità lo dicono: **502/503/504**
+— «host del relay irraggiungibile tramite il proxy», di solito dopo il timeout di
+connessione del proxy stesso (spesso 60 s): il proxy non è riuscito a
+raggiungere l'host del relay, quindi verificate la sua raggiungibilità dal proxy
+(DNS e indirizzi, IPv6, un firewall o WAF che scarta l'indirizzo del proxy, nodi
+del bilanciatore di carico), non solo il proxy; **4xx** (407, 403) — «il proxy ha
+rifiutato il tunnel»: la sua autenticazione o la sua policy. In entrambi i casi
+resta un errore di rete, ripetuto e non conteggiato contro il relay.
