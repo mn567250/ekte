@@ -130,6 +130,26 @@ relay informa mais tokens do que o ekte contou — e as proporções de tokens d
 raciocínio e de entrada em cache) e **sobrecarga do relay** (o tempo de
 processamento que o relay informa ao lado da ida e volta de rede).
 
+**Previsão (Análises › Tendências).** *Comparação ao longo do tempo* tem uma
+escolha **Previsão**, desligada por omissão: as próximas 12 ou 24 horas, 3 ou
+7 dias, ou 2 ou 4 semanas, conforme o tamanho dos intervalos. Cada série
+continua então como uma linha tracejada com uma faixa ténue, sobre uma área
+clara com o rótulo «Previsão». A linha é uma reta pelas medianas dos
+intervalos (ponderada por execuções, intervalos atípicos excluídos) e começa
+no último intervalo com 3 ou mais execuções, por isso liga-se ao histórico; a
+faixa é a metade central das execuções (p25–p75), mais larga quanto mais à
+frente chega. Uma nota por baixo do gráfico diz, por série, se está a subir
+ou a descer e quanto por intervalo, se isso é melhor ou pior e onde deverá
+estar no fim da previsão. O ajuste recomeça depois de uma marca de versão do
+ekte ou de perfil da base de conhecimento e depois de um salto nos dados
+(como uma mudança de backend ou de modelo), porque os valores anteriores não
+são comparáveis. Não há previsão para uma série com menos de 6 intervalos com
+3 ou mais execuções desde então (mais execuções — um monitor — ou outro
+tamanho de intervalo ajudam), nem para taxas agregadas como a taxa de
+sucesso, que não têm faixa p25–p75. A tabela de dados acrescenta os
+intervalos previstos como linhas marcadas «Previsão (estimativa)». Uma
+previsão é uma estimativa, não uma medição.
+
 **Separadores e ligações para partilhar (Análises).** Os painéis estão em cinco
 separadores — **Visão geral** (indicadores, classificação), **Tendências**
 (comparação ao longo do tempo, horas de ponta), **Fiabilidade** (erros,

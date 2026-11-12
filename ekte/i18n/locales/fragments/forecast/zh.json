@@ -1,0 +1,29 @@
+{
+ "strings": {
+  ", fitted since a step in the data on {date}": "，自 {date} 数据中的一次跳变起拟合",
+  "Dashed lines continue each series: a straight line through the bucket medians since the last mark or step (weighted by runs, odd buckets left out), starting at the last bucket. Its band is the middle half of the runs, widened the further ahead it reaches. An estimate, not a measurement.": "虚线延续每个数据系列：一条穿过自上次标记或跳变以来各时间段中位数的直线（按检测次数加权，离群的时间段不计），从最后一个时间段开始。它的区间是中间一半的检测，预测得越远越宽。这是估计，不是测量。",
+  "Forecast": "预测",
+  "Forecast (estimate)": "预测（估计）",
+  "Forecast for {label}: about {value} {ahead}.": "{label} 的预测：{ahead}约为 {value}。",
+  "Forecasts are drawn for medians only. {metric} is a pooled share of requests, without a p25–p75 band to project.": "预测只针对中位数。“{metric}”是请求的汇总占比，没有可外推的 p25–p75 区间。",
+  "Next {n} days": "未来 {n} 天",
+  "Next {n} hours": "未来 {n} 小时",
+  "Next {n} weeks": "未来 {n} 周",
+  "Off": "关闭",
+  "about {value} {ahead} (middle half of runs {lo} – {hi})": "{ahead}约为 {value}（中间一半的检测 {lo} – {hi}）",
+  "dashed, its band widening ahead": "虚线，区间越往后越宽",
+  "falling {d} {per}": "{per}下降 {d}",
+  "getting better": "在变好",
+  "getting worse": "在变差",
+  "in {n} days": "{n} 天后",
+  "in {n} hours": "{n} 小时后",
+  "in {n} weeks": "{n} 周后",
+  "no clear trend": "没有明显趋势",
+  "no forecast — {n} of the {need} buckets with {min} or more runs it needs since the last mark. More runs (a monitor) or a different bucket size help.": "没有预测——自上次标记以来，只有 {n} 个时间段达到 {min} 次或以上检测，至少需要 {need} 个。更多检测（设置监控）或换一种时间段会有帮助。",
+  "no forecast — {n} of the {need} buckets with {min} or more runs it needs. More runs (a monitor) or a different bucket size help.": "没有预测——只有 {n} 个时间段达到 {min} 次或以上检测，至少需要 {need} 个。更多检测（设置监控）或换一种时间段会有帮助。",
+  "per day": "每天",
+  "per hour": "每小时",
+  "per week": "每周",
+  "rising {d} {per}": "{per}上升 {d}"
+ }
+}

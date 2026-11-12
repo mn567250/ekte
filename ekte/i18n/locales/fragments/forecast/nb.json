@@ -1,0 +1,29 @@
+{
+ "strings": {
+  ", fitted since a step in the data on {date}": ", tilpasset siden et sprang i dataene {date}",
+  "Dashed lines continue each series: a straight line through the bucket medians since the last mark or step (weighted by runs, odd buckets left out), starting at the last bucket. Its band is the middle half of the runs, widened the further ahead it reaches. An estimate, not a measurement.": "Stiplede linjer fører hver serie videre: en rett linje gjennom medianene til tidsbolkene siden siste merke eller sprang (vektet etter kjøringer, avvikende bolker utelatt), fra den siste bolken. Båndet er den midterste halvdelen av kjøringene, bredere jo lenger fram det når. Et estimat, ikke en måling.",
+  "Forecast": "Prognose",
+  "Forecast (estimate)": "Prognose (estimat)",
+  "Forecast for {label}: about {value} {ahead}.": "Prognose for {label}: omtrent {value} {ahead}.",
+  "Forecasts are drawn for medians only. {metric} is a pooled share of requests, without a p25–p75 band to project.": "Prognoser lages bare for medianer. {metric} er en samlet andel av forespørslene, uten et p25–p75-bånd å framskrive.",
+  "Next {n} days": "Neste {n} dager",
+  "Next {n} hours": "Neste {n} timer",
+  "Next {n} weeks": "Neste {n} uker",
+  "Off": "Av",
+  "about {value} {ahead} (middle half of runs {lo} – {hi})": "omtrent {value} {ahead} (midterste halvdel av kjøringene {lo} – {hi})",
+  "dashed, its band widening ahead": "stiplet, båndet blir bredere framover",
+  "falling {d} {per}": "faller {d} {per}",
+  "getting better": "blir bedre",
+  "getting worse": "blir verre",
+  "in {n} days": "om {n} dager",
+  "in {n} hours": "om {n} timer",
+  "in {n} weeks": "om {n} uker",
+  "no clear trend": "ingen tydelig trend",
+  "no forecast — {n} of the {need} buckets with {min} or more runs it needs since the last mark. More runs (a monitor) or a different bucket size help.": "ingen prognose — {n} av de {need} bolkene med {min} eller flere kjøringer den trenger siden siste merke. Flere kjøringer (en overvåking) eller en annen bolkstørrelse hjelper.",
+  "no forecast — {n} of the {need} buckets with {min} or more runs it needs. More runs (a monitor) or a different bucket size help.": "ingen prognose — {n} av de {need} bolkene med {min} eller flere kjøringer den trenger. Flere kjøringer (en overvåking) eller en annen bolkstørrelse hjelper.",
+  "per day": "per dag",
+  "per hour": "per time",
+  "per week": "per uke",
+  "rising {d} {per}": "stiger {d} {per}"
+ }
+}

@@ -1,0 +1,29 @@
+{
+ "strings": {
+  ", fitted since a step in the data on {date}": ", adattata da un salto nei dati il {date}",
+  "Dashed lines continue each series: a straight line through the bucket medians since the last mark or step (weighted by runs, odd buckets left out), starting at the last bucket. Its band is the middle half of the runs, widened the further ahead it reaches. An estimate, not a measurement.": "Le linee tratteggiate proseguono ogni serie: una retta attraverso le mediane degli intervalli dall’ultimo segno o salto (pesata per esecuzioni, intervalli anomali esclusi), a partire dall’ultimo intervallo. La sua banda è la metà centrale delle esecuzioni, più larga quanto più avanti arriva. Una stima, non una misura.",
+  "Forecast": "Previsione",
+  "Forecast (estimate)": "Previsione (stima)",
+  "Forecast for {label}: about {value} {ahead}.": "Previsione per {label}: circa {value} {ahead}.",
+  "Forecasts are drawn for medians only. {metric} is a pooled share of requests, without a p25–p75 band to project.": "Le previsioni riguardano solo le mediane. {metric} è una quota aggregata delle richieste, senza una banda p25–p75 da proiettare.",
+  "Next {n} days": "Prossimi {n} giorni",
+  "Next {n} hours": "Prossime {n} ore",
+  "Next {n} weeks": "Prossime {n} settimane",
+  "Off": "Disattivata",
+  "about {value} {ahead} (middle half of runs {lo} – {hi})": "circa {value} {ahead} (metà centrale delle esecuzioni {lo} – {hi})",
+  "dashed, its band widening ahead": "tratteggiata, con la banda che si allarga in avanti",
+  "falling {d} {per}": "in calo di {d} {per}",
+  "getting better": "in miglioramento",
+  "getting worse": "in peggioramento",
+  "in {n} days": "tra {n} giorni",
+  "in {n} hours": "tra {n} ore",
+  "in {n} weeks": "tra {n} settimane",
+  "no clear trend": "nessuna tendenza chiara",
+  "no forecast — {n} of the {need} buckets with {min} or more runs it needs since the last mark. More runs (a monitor) or a different bucket size help.": "nessuna previsione — {n} dei {need} intervalli con {min} o più esecuzioni necessari dall’ultimo segno. Più esecuzioni (un monitor) o un’altra dimensione degli intervalli aiutano.",
+  "no forecast — {n} of the {need} buckets with {min} or more runs it needs. More runs (a monitor) or a different bucket size help.": "nessuna previsione — {n} dei {need} intervalli con {min} o più esecuzioni necessari. Più esecuzioni (un monitor) o un’altra dimensione degli intervalli aiutano.",
+  "per day": "al giorno",
+  "per hour": "all’ora",
+  "per week": "a settimana",
+  "rising {d} {per}": "in aumento di {d} {per}"
+ }
+}

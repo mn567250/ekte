@@ -22,6 +22,13 @@
 /* a bucket with fewer runs than the minimum: hollow and faded (the note,
    tooltip and table row say why) */
 .tchart .ser .pt.low { fill: var(--surface); stroke: var(--c); stroke-width: 1.8; opacity: 0.6; }
+/* a forecast (an estimate, not a measurement): a dashed continuation of the
+   series with a faint band, over a light wash that marks the area ahead */
+.tchart .ser .fband { fill: var(--c); opacity: 0.09; stroke: none; }
+.tchart .ser .fline { fill: none; stroke: var(--c); stroke-width: 2; stroke-dasharray: 6 4; stroke-linejoin: round; stroke-linecap: round; }
+.tchart .fcarea rect { fill: var(--sunken); opacity: 0.55; }
+.tchart .fcarea line { stroke: var(--border); stroke-width: 1; stroke-dasharray: 1 3; stroke-linecap: round; }
+.tchart .fcarea text { fill: var(--ink-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .tchart .cross { stroke: var(--ink-muted); stroke-width: 1; pointer-events: none; }
 .tchart .hit { fill: transparent; }
 
@@ -29,6 +36,9 @@
 .ckey { flex: none; overflow: visible; }
 .ckey line { stroke: var(--c); stroke-width: 2; }
 .ckey path { fill: var(--c); stroke: var(--surface); stroke-width: 1; }
+.ckey.dash line { stroke-dasharray: 4 3; }
+/* the legend's forecast item: not one series, so in ink */
+.ckey.fc { --c: var(--ink-muted); }
 
 .ctip {
   position: absolute; top: 8px; z-index: 5; width: max-content; max-width: min(300px, 90%);
@@ -112,4 +122,9 @@
   .tchart .ser .pt, .ckey path { fill: CanvasText; stroke: Canvas; }
   .tchart .ser .pt.low { fill: Canvas; stroke: CanvasText; }
   .tchart .ser .band { fill: GrayText; }
+  .tchart .ser .fline { stroke: CanvasText; }
+  .tchart .ser .fband { fill: GrayText; }
+  .tchart .fcarea rect { fill: Canvas; }
+  .tchart .fcarea line { stroke: GrayText; }
+  .tchart .fcarea text { fill: CanvasText; }
 }

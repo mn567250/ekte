@@ -132,6 +132,26 @@ tokens de los que contó ekte; además de las proporciones de tokens de
 razonamiento y de entrada en caché) y **sobrecarga del relay** (el tiempo de
 procesamiento que informa el relay junto al tiempo de ida y vuelta de red).
 
+**Previsión (Analítica › Tendencias).** *Comparación en el tiempo* tiene un
+selector **Previsión**, desactivado por defecto: las próximas 12 o 24 horas, 3
+o 7 días, o 2 o 4 semanas, según el tamaño de intervalo. Cada serie continúa
+entonces como una línea discontinua con una banda tenue, sobre una zona clara
+rotulada «Previsión». La línea es una recta a través de las medianas de los
+intervalos (ponderada por ejecuciones, sin los intervalos atípicos) y empieza
+en el último intervalo con 3 o más ejecuciones, de modo que enlaza con el
+historial; la banda es la mitad central de las ejecuciones (p25–p75), más
+ancha cuanto más lejos llega. Una nota bajo el gráfico indica por serie si
+sube o baja y cuánto por intervalo, si eso es mejor o peor y dónde debería
+estar al final de la previsión. El ajuste vuelve a empezar tras una marca de
+versión de ekte o de perfil de la base de conocimiento y tras un salto en los
+datos (como un cambio de backend o de modelo), porque los valores anteriores
+no son comparables. No hay previsión para una serie con menos de 6 intervalos
+de 3 o más ejecuciones desde entonces (más ejecuciones —un monitor— u otro
+tamaño de intervalo ayudan), ni para tasas agregadas como la tasa de éxito,
+que no tienen banda p25–p75. La tabla de datos añade los intervalos previstos
+como filas marcadas «Previsión (estimación)». Una previsión es una
+estimación, no una medición.
+
 **Pestañas y enlaces para compartir (Analítica).** Los paneles están en cinco
 pestañas — **Resumen** (indicadores, clasificación), **Tendencias**
 (comparación en el tiempo, horas punta), **Fiabilidad** (errores, sobrecarga

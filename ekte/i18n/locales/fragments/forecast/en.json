@@ -1,0 +1,29 @@
+{
+ "strings": {
+  ", fitted since a step in the data on {date}": ", fitted since a step in the data on {date}",
+  "Dashed lines continue each series: a straight line through the bucket medians since the last mark or step (weighted by runs, odd buckets left out), starting at the last bucket. Its band is the middle half of the runs, widened the further ahead it reaches. An estimate, not a measurement.": "Dashed lines continue each series: a straight line through the bucket medians since the last mark or step (weighted by runs, odd buckets left out), starting at the last bucket. Its band is the middle half of the runs, widened the further ahead it reaches. An estimate, not a measurement.",
+  "Forecast": "Forecast",
+  "Forecast (estimate)": "Forecast (estimate)",
+  "Forecast for {label}: about {value} {ahead}.": "Forecast for {label}: about {value} {ahead}.",
+  "Forecasts are drawn for medians only. {metric} is a pooled share of requests, without a p25–p75 band to project.": "Forecasts are drawn for medians only. {metric} is a pooled share of requests, without a p25–p75 band to project.",
+  "Next {n} days": "Next {n} days",
+  "Next {n} hours": "Next {n} hours",
+  "Next {n} weeks": "Next {n} weeks",
+  "Off": "Off",
+  "about {value} {ahead} (middle half of runs {lo} – {hi})": "about {value} {ahead} (middle half of runs {lo} – {hi})",
+  "dashed, its band widening ahead": "dashed, its band widening ahead",
+  "falling {d} {per}": "falling {d} {per}",
+  "getting better": "getting better",
+  "getting worse": "getting worse",
+  "in {n} days": "in {n} days",
+  "in {n} hours": "in {n} hours",
+  "in {n} weeks": "in {n} weeks",
+  "no clear trend": "no clear trend",
+  "no forecast — {n} of the {need} buckets with {min} or more runs it needs since the last mark. More runs (a monitor) or a different bucket size help.": "no forecast — {n} of the {need} buckets with {min} or more runs it needs since the last mark. More runs (a monitor) or a different bucket size help.",
+  "no forecast — {n} of the {need} buckets with {min} or more runs it needs. More runs (a monitor) or a different bucket size help.": "no forecast — {n} of the {need} buckets with {min} or more runs it needs. More runs (a monitor) or a different bucket size help.",
+  "per day": "per day",
+  "per hour": "per hour",
+  "per week": "per week",
+  "rising {d} {per}": "rising {d} {per}"
+ }
+}
