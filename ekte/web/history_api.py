@@ -45,6 +45,7 @@ import sqlite3
 import threading
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -94,14 +95,16 @@ _NEWEST = "m.started_us DESC, m.history_id DESC"
 # --------------------------------------------------------------------------- #
 # Parameters
 # --------------------------------------------------------------------------- #
-def resolve_params(params: Any) -> list[tuple[str, str]]:
+def resolve_params(params: Any, *, now: datetime | None = None) -> list[tuple[str, str]]:
     """The ``prepare`` of both endpoints: ``group`` defaults to
     :data:`DEFAULT_GROUP` (not the query core's ``relay``), then
-    :func:`ekte.web.query.resolve_params` (the range made absolute)."""
+    :func:`ekte.web.query.resolve_params` (the range made absolute: a day
+    range from its first local midnight in ``tz``, with no end, so the key
+    changes once a day; ``24h`` exact to the minute). ``now``: the clock."""
     pairs = query._pairs(params)
     if not any(k == "group" for k, _ in pairs):
         pairs.append(("group", DEFAULT_GROUP))
-    return query.resolve_params(pairs)
+    return query.resolve_params(pairs, now=now)
 
 
 def parse_widget(endpoint: str, params: Any) -> tuple[Query, dict[str, list[str]]]:

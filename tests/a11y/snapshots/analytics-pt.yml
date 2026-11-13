@@ -113,7 +113,7 @@
       - tab "Classificação"
     - tabpanel "Números-chave":
       - heading "Números-chave" [level=2]
-      - paragraph: 01/09/2026 – 01/10/2026, comparado com o período de igual duração anterior (02/08/2026 – 01/09/2026).
+      - paragraph: 02/09/2026 – 01/10/2026, comparado com o período de igual duração anterior (03/08/2026 – 01/09/2026).
       - list "Números-chave":
         - listitem: Execuções 15 em subida +15
         - listitem: Relays 3 em subida +3

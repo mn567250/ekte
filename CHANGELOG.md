@@ -20,6 +20,30 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Day ranges from local midnight, viewer time zone, one `30d` default ([#152](https://github.com/mn567250/ekte/issues/152))
+
+Part of [#150](https://github.com/mn567250/ekte/issues/150). Day ranges
+(`7d`, `30d`, `90d`, `365d`) are now today plus the previous N − 1 calendar
+days, from 00:00 in the viewer's time zone, with no end bound: `30d` on
+Nov 10 is Oct 12 00:00 → now, and Analytics labels it "Oct 12 – Nov 10".
+Their cache key and `ETag` change once a day instead of every minute, so a
+widget answer stays valid until the data changes or the day ends. `24h` stays
+an exact span (to the minute). A new shared URL key `tz` (IANA name, default
+`UTC`; an unknown zone is a 400) carries the viewer's zone: the pages add it
+to every widget request but never to their own URL, and `trend.tz`,
+`heat.tz` and `errors.tz` default to it (Analytics no longer sends them). The
+Analytics summary compares a day range with the N calendar days before it.
+The budget tests cover `range=30d&tz=Europe/Berlin`, `365d` and `24h`.
+
+#### Breaking changes
+
+- **History defaults to the last 30 days** (was: all time), as Analytics
+  does; the default is defined once in `filters.js`. "All time" writes
+  `range=` (empty) into the URL.
+- **`range=7d` / `30d` / `90d` / `365d` no longer end at now** in the API:
+  answers have `"to": null`, `from` is a local midnight in `tz`, and the
+  canonical `filters` of an answer hold `range` and `tz`.
+
 ### Monitors: run window per monitor ([#165](https://github.com/mn567250/ekte/issues/165))
 
 A monitor can have a run window, for example Mon–Fri, 07:00–19:00,

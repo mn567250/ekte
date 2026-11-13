@@ -120,7 +120,8 @@ not given; `-` means "(unknown)", i.e. the run has no value.
 | Key | Values | Replaces |
 |---|---|---|
 | `from`, `to` | ISO 8601 (naive = UTC) against the run's `started_at`; `to` exclusive | Analytics `from` / `to` |
-| `range` | `24h`, `7d`, `30d`, `90d`, `365d`: `to` = now rounded up to the next minute, `from` = `to` − range; not with `from` / `to` | History `days`, Analytics range presets |
+| `range` | `24h`, `7d`, `30d`, `90d`, `365d`. A **day range** (`7d` … `365d`, N days) is today plus the previous N − 1 calendar days in `tz`: `from` = 00:00 local of the first day (`zoneinfo` calendar days, so a range across a DST change is N days, not N × 24 h), no `to`. **`24h`** is exact: `to` = now rounded up to the next minute, `from` = `to` − 24 h. Not with `to`; a day range takes `from` only in its resolved form (a local midnight in `tz`, as `Query.canonical()` writes it). The pages default to `30d` (`filters.js` `FIELDS`); `range=` (empty) is all time | History `days`, Analytics range presets |
+| `tz` | the viewer's time zone, an IANA name (default `UTC`; unknown: 400). Selects no runs: it places day ranges and is the default zone of `trend.tz`, `heat.tz` and `errors.tz`. `EkteFilters.widgetParams()` sends the browser's zone with every widget request; the page URL never holds it, so a shared link resolves in each viewer's zone | the pages' `trend.tz` / `heat.tz` / `errors.tz` |
 | `surface` | `chat`, `embedding`, `rerank` (NULL reads as chat); empty: all surfaces | both |
 | `relay` | a relay key (`relay_map.relay_key`, `(unknown)` without URL), repeatable | both |
 | `model` | a claimed model (`(unknown)` without one), repeatable | both |
@@ -137,8 +138,12 @@ Keys with a dot belong to one widget (`trend.metric`, `runs.sort`,
 400 error naming it. `parse_query(params, now=None) -> Query` validates
 (`QueryError`, an `AnalyticsError`, so the existing 400 handling catches it);
 `Query.canonical()` is the sorted, resolved form and `Query.params()` its URL
-pairs. `resolve_params` is the `prepare=` of `cached_endpoint`, so a relative
-range is cached under its absolute bounds. History's time filter moves from
+pairs: `from` (plus `to` for `24h`), `range` for a day range (it names the day
+count) and `tz` unless UTC. `resolve_params` is the `prepare=` of
+`cached_endpoint`, so a relative range is cached under its absolute bounds: a
+day range's key and `ETag` stay the same all day and change at the viewer's
+next midnight (otherwise only the data version invalidates them); `24h`
+changes them every minute. History's time filter moves from
 the save time (`ts`) to the run's start (`started_at`).
 
 **Selection.** `select_runs(q) -> RunSelection` (`.sql` = `FROM … WHERE …`,
@@ -359,7 +364,10 @@ run's facet combination (`history_metrics.facet_id`, `ekte/web/run_row.py`).
 The 12 tiles of `KPI_GRID` in order (runs, relays, models, score,
 risk_high_share, success_rate, error_rate, latency_p50, ttft_p50,
 decode_tps, billing_ratio_prompt, billing_ratio_completion), for the range
-and the previous range of the same length (none without `from`):
+and the previous range (none without `from`): for a day range the N calendar
+days before it in `tz` (`[from − N days, from)`), otherwise the span of the
+same length before `from`. A day range's answer has `"to": null` (no end
+bound); the page labels it up to today ("Oct 12 – Nov 10"):
 
 ```json
 {..., "previous": {"from": "<iso>", "to": "<iso>"} | null, "runs": 30,
@@ -378,7 +386,7 @@ request (same denominator). The counts have `n` = runs and are always judged.
 
 One metric per group (`group`) over time: `trend.metric` (default `score`;
 `dim:<key>` too), `trend.bucket` `hour|day|week` (default `day`), `trend.tz`
-(IANA, default UTC), `trend.key` (repeatable, up to 4 series keys; default the
+(IANA, default the shared `tz`), `trend.key` (repeatable, up to 4 series keys; default the
 busiest groups). The answer is `SeriesResult.public()`: `metric`
 (`Metric.public()`), `group`, `bucket`, `tz`, `span_days`, `series` (a group
 plus `n`, `coverage`, `mixed` {suite, stream_mode, api}, `annotations`
@@ -424,7 +432,7 @@ median and p25 / p75, so the forecast joins the history); `points` are the
 The weekday × time-of-day grid of one metric: `heat.metric`, `heat.block`
 (hours per row 1, 2, 3, 4, 6), `heat.fold` (`week`, `4weeks`, `month_week`;
 falls back to `week` until the runs cover 90 / 180 days: `fold` vs
-`fold_requested`), `heat.tz`, `heat.key` (one series key of `group`; default
+`fold_requested`), `heat.tz` (default the shared `tz`), `heat.key` (one series key of `group`; default
 all selected runs as one series of group `all`). Same shape as `series` with
 `bucket: "dow_hour"`, `block`, `fold`; each point has `dow` (1 = Monday),
 `hour`, `hours` (block > 1) and `week` (folds).
@@ -451,7 +459,7 @@ read from each run's row: `history_metrics.outcome_<class>`;
 classes `success`, `rate_limited`, `relay_timeout`, `relay_5xx`, `relay_4xx`,
 `relay_other`, `network`, `local`), per group (`group`), in total and per
 time bucket of the run's start: `errors.bucket` `hour|day|week|dow_hour`
-(default `day`), `errors.block` (dow_hour), `errors.tz`; `errors.run=<id>`
+(default `day`), `errors.block` (dow_hour), `errors.tz` (default the shared `tz`); `errors.run=<id>`
 adds that run's per-minute timeline from its request records (`OUTCOME_SQL`:
 `errorclass.outcome()` in SQL over `error_class`, `error_type`, `status_code`,
 `retried`, `phase`; repeated attempts and `param_retry` never count).
