@@ -151,7 +151,8 @@ def test_oldest_of_2000_runs_is_reachable(open_page, history_server) -> None:
                        params={"group.key": g["key"], "runs.sort": "time", "runs.limit": 1}, timeout=10).json()["rows"][0]
     rid = str(oldest["id"])
     issues: list[str] = []
-    page = open_history(open_page, history_server, f"relay={g['relay']['key']}&model={g['claimed_model']}")
+    # all time (range=): the oldest run is older than the default range, the last 30 days (#152)
+    page = open_history(open_page, history_server, f"range=&relay={g['relay']['key']}&model={g['claimed_model']}")
     if page.locator("#hist .group").count() != 1:
         issues.append(f"the filters leave {page.locator('#hist .group').count()} groups")
     clicks = 0
@@ -163,7 +164,7 @@ def test_oldest_of_2000_runs_is_reachable(open_page, history_server) -> None:
         issues.append(f"paging never reached the oldest run {rid} ({_rows(page)} rows)")
     if _rows(page) != g["runs"]:
         issues.append(f"{_rows(page)} rows shown of the group's {g['runs']}")
-    linked = open_history(open_page, history_server, f"runs.focus={rid}")
+    linked = open_history(open_page, history_server, f"range=&runs.focus={rid}")
     if not linked.locator(f"#r-{rid}").is_visible():
         issues.append(f"a link to the oldest run {rid} does not show it")
     assert_no_issues(issues, "history [en]", "reach-oldest")

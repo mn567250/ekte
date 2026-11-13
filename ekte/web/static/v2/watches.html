@@ -684,11 +684,11 @@
   // two servers on one host, different ports, stay apart), claimed model and
   // suite. The fragment points at the run.
   function historyHref(w, reportId) {
-    var q = new URLSearchParams();
+    // range= (all time): the run may be older than History's default range
+    var q = new URLSearchParams([["range", ""]]);
     [["surface", w.surface || "chat"], ["relay", w.relay_key || ""], ["model", w.claimed_model || w.model || ""],
       ["suite", w.suite || ""]].forEach(function (p) { if (p[1]) q.append(p[0], p[1]); });
-    var qs = q.toString();
-    return "/history" + (qs ? "?" + qs : "") + "#r-" + reportId;
+    return "/history?" + q.toString() + "#r-" + reportId;
   }
 
   // Wire protocol: a forced one, or what "auto" detects for this endpoint.

@@ -255,6 +255,10 @@ def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
     deep = [_after(conn, query.Query(), "-time", 49)]
     every = query.Query()
     chat = query.Query(surface="chat")
+    # relative ranges resolve at the fixture's END, so the cases are deterministic
+    berlin30 = query.parse_query({"range": "30d", "tz": "Europe/Berlin", "surface": "chat"}, now=END)
+    year = query.parse_query({"range": "365d", "surface": "chat"}, now=END)
+    day = query.parse_query({"range": "24h", "surface": "chat"}, now=END)
     kpis = ("score", "risk_high_share", "success_rate", "error_rate", "rate_limited_rate",
             "latency_p50", "ttft_p50", "decode_tps", "billing_ratio_prompt",
             "billing_ratio_completion")
@@ -276,6 +280,14 @@ def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
         "page_runs score, filtered": lambda c: query.page_runs(
             c, query.parse_query({"surface": "chat", "risk": "clean"}), "score"),
         "page_runs -grade": lambda c: query.page_runs(c, every, "-grade"),
+        # relative ranges (#152): a day range from local midnight in tz, 365 days, an exact 24 h
+        "aggregate range 30d Berlin, by relay": lambda c: query.aggregate(c, berlin30, kpis, "relay"),
+        "series score, day, range 30d Berlin": lambda c: query.series(c, berlin30, "score", "relay",
+                                                                       "day", "Europe/Berlin"),
+        "aggregate range 365d, by relay x model": lambda c: query.aggregate(c, year, kpis, "relay_model"),
+        "page_runs -time, range 365d": lambda c: query.page_runs(c, year, "-time"),
+        "aggregate range 24h, by relay": lambda c: query.aggregate(c, day, kpis, "relay"),
+        "series score, hour, range 24h": lambda c: query.series(c, day, "score", "relay", "hour"),
     }
 
 

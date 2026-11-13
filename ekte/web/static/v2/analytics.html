@@ -436,7 +436,7 @@
   var BILL_METRICS = ["billing_ratio_prompt", "billing_ratio_completion", "reasoning_share", "cached_input_share"];
   var BOARD_BY = ["relay", "model", "relay_model"];
   var DEFAULTS = {
-    range: "30d", tab: "overview", os: "kpi", ts: "cmp", rs: "err",
+    tab: "overview", os: "kpi", ts: "cmp", rs: "err",
     "trend.metric": "score", "trend.bucket": "day", "trend.key": [], "trend.ahead": "0",
     "heat.metric": "latency_p50", "heat.block": "4", "heat.fold": "week", "heat.key": "",
     "board.by": "relay", "lb.sort": "", "errors.bucket": "day", "errors.block": "4",
@@ -465,13 +465,11 @@
     if (dims) ((state.opts && state.opts.dimensions) || []).forEach(function (d) { out.push(DIM + d); });
     return out;
   }
-  function tzName() {
-    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (e) { return "UTC"; }
-  }
 
   /* ---------------- data ---------------- */
   function getJSON(url, signal) { return window.EkteFilters.fetchWidget(url, { signal: signal }); }
-  // a widget's URL: the shared filters, its namespace(s), and extra keys (set, never repeated)
+  // a widget's URL: the shared filters (with the viewer's time zone, tz), its
+  // namespace(s), and extra keys (set, never repeated)
   function wurl(path, ns, extra) {
     var q = new URLSearchParams(F.widgetParams(ns));
     Object.keys(extra || {}).forEach(function (k) {
@@ -498,9 +496,10 @@
   function dfmt(opts, d) {
     try { return EKTE_LANG.dateFmt(opts).format(d); } catch (e) { return d.toLocaleString(); }
   }
-  // an answer's [from, to) as a day range ("Oct 2 – Nov 1, 2026")
+  // an answer's [from, to) as a day range ("Oct 2 – Nov 1, 2026"); without
+  // to (a day range: no end bound) it ends today ("Oct 12 – Nov 10")
   function dayRange(from, to) {
-    var a = new Date(from), b = new Date(new Date(to).getTime() - 1);
+    var a = new Date(from), b = to ? new Date(new Date(to).getTime() - 1) : new Date();
     try {
       var f = EKTE_LANG.dateFmt({ dateStyle: "medium" });
       if (f.formatRange) return f.formatRange(a, b);
@@ -510,7 +509,7 @@
   function periodOf(d) { return d && d.from ? dayRange(d.from, d.to) : T("全部时间", "All time"); }
   function domainOf(d, first, ms) {
     if (!d || !d.from || first == null) return null;
-    return [Math.max(Date.parse(d.from), first - ms), Date.parse(d.to)];
+    return [Math.max(Date.parse(d.from), first - ms), d.to ? Date.parse(d.to) : Date.now()];
   }
 
   // The filter options (/api/filters/options) under the current filters:
@@ -777,7 +776,7 @@
   /* ---------------- comparison over time ---------------- */
   function loadSeries(p) {
     var b = one("trend.bucket", BUCKETS);
-    return panelLoad(p, [wurl("/api/analytics/series", "trend", { "trend.tz": tzName(), "trend.ahead": ahead(b) || null }), pairsUrl()]);
+    return panelLoad(p, [wurl("/api/analytics/series", "trend", { "trend.ahead": ahead(b) || null }), pairsUrl()]);
   }
   // the forecast horizon in buckets (0: off); a value the bucket size does not offer is off
   function ahead(b) {
@@ -1189,7 +1188,7 @@
     return { few: Tf("少于 {min} 次检测（斜线）", "fewer than {min} runs (hatched)", { min: minRuns() }), none: T("没有检测", "no runs") };
   }
   function loadHeat(p) {
-    return panelLoad(p, [wurl("/api/analytics/heatmap", "heat", { "heat.tz": tzName() }), pairsUrl()]);
+    return panelLoad(p, [wurl("/api/analytics/heatmap", "heat"), pairsUrl()]);
   }
   function renderHeat() {
     var p = PANEL.heat, d = p.data && p.data[0], key = String(S("heat.key") || "");
@@ -1277,7 +1276,7 @@
       { id: "relay_4xx_other", ids: ["relay_4xx", "relay_other"], label: T("中转站 4xx 及其他失败", "Relay 4xx and other failures"), cls: "s3" },
     ];
   }
-  function loadErrors(p) { return panelLoad(p, [wurl("/api/analytics/errors", "errors", { "errors.tz": tzName() })]); }
+  function loadErrors(p) { return panelLoad(p, [wurl("/api/analytics/errors", "errors")]); }
   function renderErrors() {
     var p = PANEL.err, eb = one("errors.bucket", ERR_BUCKETS);
     ctlHTML($("#err-ctl"), '<div class="ctl">' +
@@ -1457,7 +1456,7 @@
     // the trend of one billing metric (the series endpoint, by day) and the
     // summary of all four per group (breakdown)
     return panelLoad(p, [
-      wurl("/api/analytics/series", null, { "trend.metric": billMetric(), "trend.bucket": "day", "trend.tz": tzName() }),
+      wurl("/api/analytics/series", null, { "trend.metric": billMetric(), "trend.bucket": "day" }),
       wurl("/api/analytics/breakdown", null, { "breakdown.metric": BILL_METRICS }),
     ]);
   }
