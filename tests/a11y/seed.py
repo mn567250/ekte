@@ -180,8 +180,12 @@ HISTORY_CONTROLS = [
 ]
 # one group of 45 runs (pages of 20, 20 and 5), newest first: scores 90, 89, …
 HISTORY_PAGED = ("model-p", 45)
-# the bulk: 2,000 runs over 4 relays and 8 models (32 groups: 2 pages of groups)
-HISTORY_BULK = {"runs": 2000, "relays": 4, "requests": 10, "report_bytes": 64}
+# the bulk: 2,000 runs over 4 relays and 8 models (32 groups: 2 pages of groups).
+# No monitors (watches=0): the History server runs its scheduler, and the
+# fixture's 200 enabled, overdue monitors would start at once and save a run
+# every few seconds (failed audits of relay-NN.example) while the tests read
+# the list, reordering the groups between two requests of one test.
+HISTORY_BULK = {"runs": 2000, "relays": 4, "requests": 10, "report_bytes": 64, "watches": 0}
 
 
 def _history_report(started: datetime, model: str, score: float, grade: str, risk: str) -> dict[str, Any]:
