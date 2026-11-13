@@ -14,7 +14,8 @@
   models; `/api/report/export` renders a report; `/api/history…`,
   `/api/watches…`, `/api/kb…` and `/api/analytics…` back the other pages,
   `/api/secret…` the master key of the monitors' stored API keys (status, new,
-  unlock, lock, reset, storage mode) and `GET /api/health` answers a liveness
+  unlock, lock, reset, storage mode), `GET /api/version` is the change signal
+  the pages poll (below) and `GET /api/health` answers a liveness
   check. All of these are internal; the public subset is [HTTP API v1](#http-api-v1).
 - **Relays.** `POST /api/kb/relays` saves a relay `{name, base_url}` (400 for bad
   input, 409 when the name or URL is already known).
@@ -40,6 +41,32 @@
   per thread (`mode=ro`, WAL, `query_only`), schema-checked only on the first
   open in the process (again if the file was replaced); writes keep using
   `datadir.connect`.
+- **Change signal** (`GET /api/version`, #151). Answers
+  `{"data": "<token>", "live": "<token>"}`: opaque strings that clients only
+  compare for equality (`server.version_tokens()`).
+  - `data` is a hash of exactly what keys the response cache above:
+    `history.data_version()`, `kb_version`, `EXTRACT_VERSION` and the
+    database (keep `version_tokens()` and `cache_key()` in step). It changes
+    with every history write from any process (a CLI audit included) and with
+    a knowledge-base change, and only then.
+  - `live` is a hash of this process's id (a restarted server never repeats
+    a token), the in-process counter `jobs.live_version()` and
+    `watches.data_version()`. The counter is bumped (`jobs.bump_live()`) when
+    a job is queued, waits for its relay, starts running or ends (done, error
+    or cancelled: every end emits `done`), when a monitor run starts and ends
+    (`_run_one_watch`), and when the master key is entered or locked (the
+    monitors' key status changes without a write). `watches.data_version()`
+    is a counter in `watches.db`'s `meta` table (schema version 5), bumped in
+    the same transaction as every write that changes what `/api/watches`
+    returns: `create`, `update`, `set_enabled`, `set_language`, `delete`,
+    `pin`, `mark_run`, `mark_attempt` and the key-storage changes
+    (`keys_to_memory`, `keys_to_store`, `migrate_keys`, `adopt_key`,
+    `forget_keys`), from any process.
+  - Cheap: two primary-key lookups on the reused read connections (no table
+    is scanned; `tests/test_web_version.py` checks the query plans) and the
+    cached knowledge-base fingerprint; budget 5 ms p95. The answer carries an
+    `ETag` (a hash of both tokens and the ekte version) and
+    `Cache-Control: no-cache`; a matching `If-None-Match` gets `304`.
 - **Background audits.** `jobs.py` runs every audit as a job owned by the
   server. `POST /api/jobs` queues one, `GET /api/jobs` lists queued, running and
   recently finished jobs (plus running monitors) with progress,
@@ -84,6 +111,7 @@ same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
 |---|---|
 | `GET /`, `/history`, `/watches`, `/analytics`, `/kb`, `/accessibility` | the pages (`/v2/…`, `/tools`, `/console`: 308 redirects until 1.0.0) |
 | `GET /api/health` | `{ok, version}` |
+| `GET /api/version` | the change signal `{data, live}` (ETag, 304; see **Change signal** above) |
 | `POST /api/jobs` (`/api/v1/jobs`), `GET /api/jobs`, `GET /api/jobs/{id}` (`/api/v1/…`), `GET /api/jobs/{id}/events` (`/api/v1/…`), `POST /api/jobs/{id}/cancel` | background audits |
 | `POST /api/models`, `POST /api/report/export` | a relay's models; a report rendered as JSON / Markdown / HTML / PDF |
 | `GET /api/kb`, `POST /api/kb/relays`, `GET /api/kb/profiles`, `PUT /api/kb/enabled`, `GET /api/kb/prompt`, `POST /api/kb/resolve`, `POST /api/kb/scan`, `POST /api/kb/import`, `GET /api/kb/export`, `PATCH` / `DELETE /api/kb/entries/{id}` | the knowledge base |
@@ -200,12 +228,14 @@ pages; rows are `PAGE_COLUMNS` (the list columns, the relay, headline values).
 `scripts/bench_fixture.py --data-dir DIR --bench` writes a
 synthetic history (20,000 runs, 50 relays, 100 requests per run, 16 kB
 reports, an ekte release every 3 weeks with an occasional one-day rollback,
-a profile change every 45 days) and prints p50 / p95 (nearest rank, 40 calls) of
+a profile change every 45 days) plus 200 monitors in `watches.db`
+(`--watches`), and prints p50 / p95 (nearest rank, 40 calls) of
 `aggregate`, `series` and `page_runs`.
 
 The budget tests (marked `slow`) check that every case's p95 stays under the
 budget: `tests/test_query.py` (the query core), `tests/test_analytics_widgets.py`
-(the Analytics widgets) and `tests/test_history_api.py` (the History API). They
+(the Analytics widgets), `tests/test_history_api.py` (the History API) and
+`tests/test_web_version.py` (`/api/version`, 5 ms). They
 are skipped unless `EKTE_BENCH=1`; run them serially, so the timings are not
 shared with other tests:
 
@@ -226,7 +256,7 @@ python scripts/bench_report.py bench.json   # the Markdown table
 
 - **Budgets.** 50 ms p95 by default, the budget of the reference machine;
   `EKTE_BENCH_BUDGET_MS` overrides it. A case with a budget of its own has
-  its own variable: `/api/version` (5 ms, the budget test comes with #150)
+  its own variable: `/api/version` (5 ms, `tests/test_web_version.py`)
   reads `EKTE_BENCH_VERSION_BUDGET_MS`. A new budget test
   reads its budget with `tests.bench_report.budget()` (a case with its own
   budget passes its own variable) and takes the `bench_data` fixture

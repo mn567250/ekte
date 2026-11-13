@@ -10,6 +10,9 @@ Endpoints:
                              page at the root, keeping the query string
                              (deprecated, removed in 1.0.0)
   GET  /api/health          {ok, version}
+  GET  /api/version         the change signal {data, live}: opaque tokens that
+                            change with the history-backed data, and with the
+                            jobs, monitor runs and monitor settings; ETag, 304
   GET  /api/kb               providers (base URLs, saved relays) and their models
   POST /api/kb/relays        save a relay {name, base_url} in kb.db
   GET  /api/kb/profiles      models, providers and relays (complete sets, sources,
@@ -91,8 +94,10 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import json
 import logging
+import secrets
 import time
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -274,6 +279,38 @@ _running_watches: dict[int, dict[str, Any]] = {}
 _run_finish_seq = 0
 _watch_finished_at: dict[int, int] = {}
 
+# This process in the `live` token of GET /api/version: a restarted server
+# counts its live changes from 0 again, and must never repeat a token of the
+# process before it.
+_BOOT_ID = secrets.token_hex(8)
+
+
+def _token(*parts: Any) -> str:
+    """An opaque token of ``parts`` (clients only compare tokens for equality)."""
+    raw = json.dumps(parts, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20]
+
+
+def version_tokens() -> tuple[str, str]:
+    """The ``data`` and ``live`` tokens of ``GET /api/version``.
+
+    ``data`` is derived from what keys the history-backed widget caches
+    (:func:`ekte.web.cache.cache_key`, keep the two in step): the history data
+    version, the knowledge-base fingerprint, ``EXTRACT_VERSION`` and the
+    database. ``live`` from the
+    in-process live counter (:func:`ekte.web.jobs.live_version`: a job or a
+    monitor run queued, started or ended; the master key unlocked or locked)
+    and the watches data version (:func:`ekte.web.watches.data_version`). Two
+    primary-key lookups; no table is scanned. Blocking (SQLite): call it off
+    the loop.
+    """
+    from ekte.web import analytics_store, cache, history, watches
+
+    data = _token(history.data_version(), cache.kb_version(), analytics_store.EXTRACT_VERSION,
+                  str(history._db_path()))
+    live = _token(_BOOT_ID, jobs.live_version(), watches.data_version())
+    return data, live
+
 # Intervals (minutes) a monitor can be scheduled at: never more often than one
 # run takes, rounded up to one of these, and at most once every 24 h.
 _INTERVAL_STEPS_MIN = (5, 10, 15, 20, 30, 60, 120, 180, 240, 360, 480, 720, 1440)
@@ -374,6 +411,7 @@ async def _run_one_watch(row: dict[str, Any], *, scheduled: bool = False) -> Non
     job.created = state["since"]
     state["job"] = job
     _running_watches[wid] = state
+    jobs.bump_live()  # the monitor shows as running (or waiting for its relay)
     outcome, error = "done", None
     try:
         task = asyncio.create_task(_run_one_watch_inner(row, state, scheduled=scheduled))
@@ -396,6 +434,7 @@ async def _run_one_watch(row: dict[str, Any], *, scheduled: bool = False) -> Non
         job.close(outcome, error)
         _running_watches.pop(wid, None)
         _note_watch_finished(wid)
+        jobs.bump_live()  # the monitor no longer shows as running
 
 
 def _note_watch_finished(wid: int) -> None:
@@ -846,6 +885,18 @@ def create_app() -> FastAPI:
     @app.get("/api/health")
     async def health() -> Any:
         return {"ok": True, "version": __version__, "name": "ekte"}
+
+    @app.get("/api/version")
+    def version(request: Request) -> Any:
+        """The change signal every open page polls (docs/dev/web-server.md)."""
+        from ekte.web import cache
+
+        data, live = version_tokens()
+        etag = cache.etag_of(f"{data}:{live}")
+        headers = {"ETag": etag, "Cache-Control": cache.NO_CACHE}
+        if cache.etag_matches(request.headers.get("if-none-match"), etag):
+            return Response(status_code=304, headers=headers)
+        return JSONResponse({"data": data, "live": live}, headers=headers)
 
     # ----- the web UI ---------------------------------------------------- #
     def _add_page(path: str) -> None:
@@ -1979,9 +2030,13 @@ def create_app() -> FastAPI:
         from ekte.web.masterkey import VaultError
 
         try:
-            return _secret_json(fn(*args))
+            payload = fn(*args)
         except VaultError as exc:
             return _secret_json({"error": str(exc)}, status_code=exc.status)
+        # entering or forgetting the master key changes the monitors' key
+        # status without writing watches.db: tell the pages (live token)
+        jobs.bump_live()
+        return _secret_json(payload)
 
     @app.get("/api/secret")
     def secret_status() -> Any:
