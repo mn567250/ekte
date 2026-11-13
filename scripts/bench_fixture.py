@@ -8,6 +8,9 @@ and a year of start times into the history database of ``--data-dir`` (or
 analytics extraction leaves them, so nothing needs backfilling. Every run has
 ``--requests`` target requests (default 100) with an outcome mix like real
 runs (mostly successes, a few 429s, relay errors and network failures).
+:data:`WATCH_SHARE` of the runs belong to :data:`WATCHES` monitors; the
+monitors' names go into ``watches.db``, all but the last
+:data:`DELETED_WATCHES` (deleted monitors, whose runs stay).
 Deterministic for a ``--seed``.
 
 With ``--bench`` it then times :func:`ekte.web.query.aggregate`,
@@ -40,6 +43,13 @@ MODELS = ("gpt-4o", "gpt-4o-mini", "claude-sonnet", "claude-haiku", "gemini-pro"
 SUITES = ("standard", "quick", "deep")
 APIS = ("openai", "anthropic", "responses")
 STREAMS = ("stream", "non_stream", "both")
+# the share of runs started by a monitor, the monitor ids (1..WATCHES), and how
+# many of the last ones no longer exist in watches.db
+WATCH_SHARE = 0.2
+WATCHES = 40
+DELETED_WATCHES = 4
+# the monitor the watch=<id> cases select
+WATCH = 7
 # bytes of each run's report_json
 REPORT_BYTES = 16_000
 # outcome -> weight per request (success dominates, as in real runs)
@@ -89,7 +99,7 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
     from ekte import datadir
     from ekte.knowledge.relays import normalize_url
     from ekte.perf.outcomes import from_counts
-    from ekte.web import analytics_store, history
+    from ekte.web import analytics_store, history, watches
 
     rng = random.Random(seed)
     urls = [f"https://relay-{i:02d}.example/v1" for i in range(relays)]
@@ -111,7 +121,7 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
                                (0.6, 0.2, 0.1, 0.05, 0.05))[0]
             rating = "A" if score >= 90 else "B" if score >= 80 else "C" if score >= 70 else \
                 "D" if score >= 60 else "F"
-            watch = rng.randrange(1, 6) if rng.random() < 0.3 else None
+            watch = rng.randrange(1, WATCHES + 1) if rng.random() < WATCH_SHARE else None
             chat = surface == "chat"
             latency = rng.lognormvariate(6.5, 0.4) * speed[r]
             ttft = rng.lognormvariate(5.8, 0.4) * speed[r] if chat else None
@@ -153,6 +163,11 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
         conn.executemany("INSERT INTO history_outcomes VALUES (?, ?, ?, ?)", o_rows)
         conn.executemany("INSERT INTO history_dimensions VALUES (?, ?, ?, ?, ?, ?)", d_rows)
         conn.execute(history._BUMP_SQL)
+    with datadir.connect("watches.db", watches.MIGRATIONS) as conn:
+        conn.executemany(
+            "INSERT OR IGNORE INTO watches (id, name, base_url, model, suite) VALUES (?, ?, ?, ?, ?)",
+            [(w, f"monitor-{w:02d}", urls[w % relays], MODELS[w % len(MODELS)], SUITES[w % 3])
+             for w in range(1, WATCHES - DELETED_WATCHES + 1)])
     return runs
 
 
@@ -196,6 +211,7 @@ def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
     deep = [_after(conn, query.Query(), "-time", 49)]
     every = query.Query()
     chat = query.Query(surface="chat")
+    watched = query.Query(surface="chat", watch=WATCH)
     kpis = ("score", "risk_high_share", "success_rate", "error_rate", "rate_limited_rate",
             "latency_p50", "ttft_p50", "decode_tps", "billing_ratio_prompt",
             "billing_ratio_completion")
@@ -217,6 +233,10 @@ def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
         "page_runs score, filtered": lambda c: query.page_runs(
             c, query.parse_query({"surface": "chat", "risk": "clean"}), "score"),
         "page_runs -grade": lambda c: query.page_runs(c, every, "-grade"),
+        "aggregate kpis, watch": lambda c: query.aggregate(c, watched, kpis, "all"),
+        "series score, day, watch": lambda c: query.series(c, watched, "score", "relay", "day",
+                                                           "Europe/Berlin"),
+        "page_runs -time, watch": lambda c: query.page_runs(c, watched.replace(surface=None), "-time"),
     }
 
 

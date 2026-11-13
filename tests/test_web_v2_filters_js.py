@@ -32,7 +32,7 @@ body(F).then((out) => console.log(JSON.stringify(out === undefined ? null : out)
 """
 
 ALL = ["q", "range", "surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk",
-       "min_score", "exec", "group"]
+       "min_score", "exec", "watch", "group"]
 
 
 def run(body: str) -> Any:
@@ -88,6 +88,13 @@ def parse(search: str, fields: list[str] | None = None) -> dict[str, Any]:
     ("min_score=abc", {}),
     ("exec=monitor", {"exec": "monitor"}),
     ("exec=adhoc", {}),  # the old value
+    ("watch=12", {"watch": "12"}),  # a monitor id
+    ("watch=0", {}),  # not one (the server would answer 400)
+    ("watch=-1", {}),
+    ("watch=-", {}),  # no "(unknown)": a run started by hand has exec=manual
+    ("watch=abc", {}),
+    ("watch=1.5", {}),
+    ("watch=3&watch=4", {"watch": "3"}),  # not repeatable: the first
     ("group=model", {"group": "model"}),
     ("group=relay_model", {"group": "relay_model"}),
     ("group=", {}),  # the default, never "none"
@@ -119,14 +126,16 @@ def test_parse_drops_keys_the_page_does_not_show():
 FULL = {
     "q": "relay x", "range": "", "from": "2026-01-01", "to": "2026-02-01", "surface": "rerank",
     "relay": ["a", "-"], "model": ["m1"], "suite": "-", "mode": "check", "api": "anthropic", "stream": "both",
-    "detect": "manual", "risk": "clean", "min_score": "55", "exec": "manual", "group": "all",
+    "detect": "manual", "risk": "clean", "min_score": "55", "exec": "manual", "watch": "12",
+    "group": "all",
 }
 
 
 def test_every_key_round_trips():
     qs = run(f"return F.serialise({js(FULL)}, {{}}, {js(ALL)});")
     assert qs == ("q=relay+x&from=2026-01-01&to=2026-02-01&surface=rerank&relay=a&relay=-&model=m1&suite=-"
-                  "&mode=check&api=anthropic&stream=both&detect=manual&risk=clean&min_score=55&exec=manual&group=all")
+                  "&mode=check&api=anthropic&stream=both&detect=manual&risk=clean&min_score=55&exec=manual&watch=12"
+                  "&group=all")
     back = parse(qs)
     assert back == {k: v for k, v in FULL.items() if k != "range"}
 

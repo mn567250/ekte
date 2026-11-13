@@ -63,7 +63,8 @@
  *
  * /api/filters/options (issue 123) is read as { "<key>": [{ value, label?, runs? }] }
  * for the keys of FIELDS ("-" is "(unknown)"), requested with the shared
- * filters; a key it does not list keeps its fixed options.
+ * filters; a key it does not list keeps its fixed options. A watch option
+ * with deleted: true is a monitor that no longer exists ("Deleted monitor #<id>").
  */
 (function () {
   "use strict";
@@ -80,7 +81,7 @@
     relay: ["中转站 / 厂商", "Relay / provider"], model: ["声称模型", "Claimed model"], suite: ["套件", "Suite"],
     mode: ["模式", "Mode"], api: ["协议", "Protocol"], stream: ["探测请求", "Probe requests"],
     detect: ["协议识别", "Protocol detection"], risk: ["风险", "Risk"], min_score: ["最低健康分", "Min. score"],
-    exec: ["执行方式", "Execution"], group: ["分组", "Group by"],
+    exec: ["执行方式", "Execution"], watch: ["监控", "Monitor"], group: ["分组", "Group by"],
     from: ["开始日期", "Start date"], to: ["结束日期", "End date"],
   };
   var V = {
@@ -97,7 +98,8 @@
   /* The URL schema of ekte/web/query.py, in the order fields are shown and
    * keys are written. kind: text | range | select | multi | number;
    * values: the fixed choices (null: free, listed by the options endpoint);
-   * unknown: "-" ("(unknown)") is a valid value; def: the schema default. */
+   * unknown: "-" ("(unknown)") is a valid value; pattern: what a free value
+   * must look like (watch: a monitor id); def: the schema default. */
   var FIELDS = {
     q: { kind: "text", def: "" },
     range: { kind: "range", def: "", values: RANGES },
@@ -112,6 +114,7 @@
     risk: { kind: "select", def: "", values: ["clean", "low", "medium", "high", "inconclusive"] },
     min_score: { kind: "number", def: "" },
     exec: { kind: "select", def: "", values: ["manual", "monitor"] },
+    watch: { kind: "select", def: "", values: null, pattern: /^[1-9]\d{0,17}$/ },
     group: { kind: "select", def: "relay", values: ["relay", "model", "relay_model", "all"], required: true },
   };
   var ORDER = Object.keys(FIELDS);
@@ -160,6 +163,7 @@
     }
     if (f.kind === "text" || f.kind === "multi") return v;
     if (v === UNKNOWN) return f.unknown ? v : undefined;
+    if (f.pattern && !f.pattern.test(v)) return undefined;
     return !f.values || f.values.indexOf(v) >= 0 ? v : undefined;
   }
 
@@ -362,7 +366,11 @@
     if (key === "risk") return window.EKTE_I18N && EKTE_I18N.label ? EKTE_I18N.label("RISK_LEVEL", v) : v;
     if (V[key] && V[key][v]) return tr(V[key][v]);
     var o = opts && opts[key];
-    if (o) for (var i = 0; i < o.length; i++) if (o[i].value === v && o[i].label) return o[i].label;
+    if (o) for (var i = 0; i < o.length; i++) if (o[i].value === v && o[i].label) {
+      // a monitor that no longer exists (watch): the server's English label, translated here
+      if (o[i].deleted) return Tf("已删除的监控 #{id}", "Deleted monitor #{id}", { id: v });
+      return o[i].label;
+    }
     return v;
   }
   function num(n) { return window.EKTE_LANG && EKTE_LANG.numFmt ? EKTE_LANG.numFmt().format(n) : String(n); }

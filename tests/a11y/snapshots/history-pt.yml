@@ -113,6 +113,10 @@
       - option "Todos" [selected]
       - option "Manual (11)"
       - option "Monitor (4)"
+    - text: Monitor
+    - combobox "Monitor":
+      - option "Todos" [selected]
+      - option "gpt-4o (4)"
     - group "Tendências":
       - text: Tendências 2 de no máximo 2 selecionados
       - button "Pontuação" [pressed]

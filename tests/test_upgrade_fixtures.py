@@ -24,7 +24,7 @@ from ekte import dbmigrate, secretbox
 from ekte.cli import app as cli_app
 from ekte.knowledge import load_knowledge_base
 from ekte.knowledge import store as kb_store
-from ekte.web import history, watches
+from ekte.web import history, query, watches
 from ekte.web.server import create_app
 
 FIXTURES = Path(__file__).parent / "fixtures" / "upgrade"
@@ -213,3 +213,19 @@ def test_fixtures_hold_no_real_secrets(src):
         for marker in (b"sk-", b"Bearer ", b"BEGIN PRIVATE KEY"):
             assert marker not in raw, (name, marker)
     assert manifest["api_key"] == "fixture-api-key-not-real"
+
+
+def test_monitor_runs_get_their_monitor_on_the_run_row(upgraded):
+    """Upgrading fills history_metrics.watch_id (schema 16) from history.watch_id,
+    so watch=<id> selects a monitor's older runs."""
+    data, manifest, _src = upgraded
+    rid, wid = manifest["history"][1]["id"], manifest["watches"][0]["id"]
+    with sqlite3.connect(data / "history.db") as c:  # a run of a monitor, as the old version saved it
+        c.execute("UPDATE history SET watch_id = ? WHERE id = ?", (wid, rid))
+    _open_all()
+    with sqlite3.connect(data / "history.db") as c:
+        got = dict(c.execute("SELECT history_id, watch_id FROM history_metrics").fetchall())
+    assert got == {r["id"]: wid if r["id"] == rid else None for r in manifest["history"]}
+    conn = history.query_connection()
+    sel = query.select_runs(query.parse_query({"watch": str(wid)}))
+    assert [r[0] for r in conn.execute(f"SELECT m.history_id {sel.sql}", sel.args)] == [rid]

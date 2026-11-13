@@ -30,9 +30,12 @@ pytest.importorskip("fastapi")
 WIDGET_CASES = [
     ("filters/options", filter_options, {"surface": "chat"}),
     ("filters/options, filtered", filter_options, {"exec": "manual", "risk": "clean"}),
+    ("filters/options, watch", filter_options, {"watch": "7"}),
     ("summary, 30d", widget_summary, {"from": "2026-10-01T00:00:00Z", "to": "2026-10-31T00:00:00Z"}),
     ("summary, all", widget_summary, {}),
+    ("summary, watch", widget_summary, {"watch": "7"}),
     ("series score, day", widget_series, {"trend.tz": "Europe/Berlin"}),
+    ("series score, day, watch", widget_series, {"trend.tz": "Europe/Berlin", "watch": "7"}),
     ("series score, day, forecast", widget_series, {"trend.tz": "Europe/Berlin", "trend.ahead": "7"}),
     ("series error_rate, week", widget_series, {"trend.metric": "error_rate", "trend.bucket": "week",
                                                 "group": "model"}),
@@ -496,8 +499,10 @@ def test_filter_options_count_every_key_under_the_other_filters(seeded, client):
     out = _get(client, "/api/filters/options")
     assert out["runs"] == 60 and out["surface_default"] == "chat" and out["keys"] == list(
         analytics_widgets.OPTION_KEYS)
+    monitor_runs = {o["value"]: o["runs"] for o in out["exec"]}["monitor"]
     for key in out["keys"]:
-        assert sum(o["runs"] for o in out[key]) == 60, key
+        # watch lists the monitors' runs only (a run started by hand has no monitor)
+        assert sum(o["runs"] for o in out[key]) == (monitor_runs if key == "watch" else 60), key
     relays = {o["value"]: o for o in out["relay"]}
     assert relays["cheap-gpt"]["label"] == "Cheap GPT" and relays["cheap-gpt"]["in_kb"] is True
     assert relays[OTHER]["in_kb"] is False and relays["openai"]["runs"] == 15
@@ -510,7 +515,6 @@ def test_filter_options_count_every_key_under_the_other_filters(seeded, client):
     sel = _get(client, "/api/filters/options", {"relay": "cheap-gpt", "exec": "monitor"})
     assert {o["value"] for o in sel["relay"]} == {o["value"] for o in out["relay"]}
     assert {o["value"] for o in sel["exec"]} == {"manual", "monitor"}
-    monitor_runs = {o["value"]: o["runs"] for o in out["exec"]}["monitor"]
     assert sum(o["runs"] for o in sel["model"]) == sel["runs"] < monitor_runs
     # from / to narrow the counts but not the span
     window = _get(client, "/api/filters/options", {"from": (T0 + timedelta(days=50)).isoformat(),
@@ -531,6 +535,55 @@ def test_filter_options_name_relays_as_history_does(data, client):  # noqa: F811
     assert sorted(labels.values()) == ["Cheap GPT", "x.example/a", "x.example/b", "y.example:8443"]
     groups = history_api.groups(history.query_connection(), {"group": "relay", "trend.metrics": "score"})
     assert labels == {g["key"]: g["relay"]["label"] for g in groups["groups"]}
+
+
+def test_watch_selects_exactly_one_monitor(data, client):  # noqa: F811
+    """Two monitors with the same relay, model and suite (they differ only in
+    stream mode): watch=<a> is a's runs on History and Analytics, its options
+    name the monitors, and a deleted monitor's runs stay filterable."""
+    from ekte.web import watches
+
+    cfg = {"base_url": RELAY, "model": "model-a", "suite": "quick"}
+    a = watches.create({**cfg, "name": "Alpha"})
+    b = watches.create({**cfg, "name": "Beta", "performance_streaming": False})
+    runs = {w: [_save(T0 + timedelta(hours=i), watch_id=w, base_url=RELAY, model="model-a", suite="quick")
+                for i in range(n)] for w, n in ((a, 3), (b, 2), (None, 1))}
+    for w, n in ((a, 3), (b, 2)):
+        p = {"watch": str(w)}
+        assert _get(client, "/api/history/groups", {**p, "trend.metrics": "score"})["total_runs"] == n
+        page = _get(client, "/api/history/runs", {**p, "group": "all", "group.key": "(all)"})
+        assert sorted(r["id"] for r in page["rows"]) == runs[w] and {r["watch_id"] for r in page["rows"]} == {w}
+        assert _get(client, "/api/analytics/summary", p)["runs"] == n
+        series = _get(client, "/api/analytics/series", {**p, "group": "all"})["series"]
+        assert sum(pt["runs"] for s in series for pt in s["points"]) == n
+    out = _get(client, "/api/filters/options")
+    # AND with the other filters
+    [relay] = [o["value"] for o in out["relay"]]
+    assert _get(client, "/api/analytics/summary", {"watch": str(a), "exec": "manual"})["runs"] == 0
+    assert _get(client, "/api/analytics/summary", {"watch": str(a), "relay": relay})["runs"] == 3
+    assert out["watch"] == [{"value": str(a), "runs": 3, "label": "Alpha"},
+                            {"value": str(b), "runs": 2, "label": "Beta"}]
+    # counted under the other filters but its own: the sibling stays
+    assert _get(client, "/api/filters/options", {"watch": str(a)})["watch"] == out["watch"]
+    assert _get(client, "/api/filters/options", {"exec": "manual"})["watch"] == []
+
+    watches.delete(b)
+    cache.default_cache.clear()  # (keyed on the history data version, which a deleted monitor leaves)
+    assert _get(client, "/api/analytics/summary", {"watch": str(b)})["runs"] == 2
+    gone = {o["value"]: o for o in _get(client, "/api/filters/options")["watch"]}[str(b)]
+    assert gone == {"value": str(b), "runs": 2, "label": f"Deleted monitor #{b}", "deleted": True}
+
+
+@pytest.mark.parametrize("path", ["/api/history/groups", "/api/history/runs", *sorted(PATHS.values())])
+@pytest.mark.parametrize("value", ["0", "-1", "abc", ["1", "2"]])
+def test_watch_rejects_anything_but_one_monitor_id(seeded, client, path, value):  # noqa: F811
+    # (with the widget keys each endpoint needs, so only watch can be wrong)
+    extra = {"/api/history/groups": {"trend.metrics": "score"},
+             "/api/history/runs": {"group": "all", "group.key": "(all)"},
+             "/api/analytics/breakdown": {"breakdown.metric": "score"}}.get(path, {})
+    assert _get(client, path, {**extra, "watch": "1"})  # a valid id answers
+    error = _get(client, path, {**extra, "watch": value}, 400)["error"]
+    assert "watch" in error
 
 
 def test_filter_options_surfaces(data, client):  # noqa: F811
@@ -579,7 +632,7 @@ def test_the_default_surface_is_counted_once_per_selection(seeded, monkeypatch):
     monkeypatch.setattr(query, "default_surface", counted)
     analytics_widgets.SURFACE_CACHE.clear()
     for name, fn, params in WIDGET_CASES:
-        if fn is not filter_options and not {"surface", "from"} & set(params):
+        if fn is not filter_options and not {"surface", "from", "watch"} & set(params):
             assert fn(params)["surface"] == "chat", name
     # each of them selects every run (group, bucket and widget keys select none)
     assert len(calls) == 1

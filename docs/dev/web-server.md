@@ -129,6 +129,7 @@ not given; `-` means "(unknown)", i.e. the run has no value.
 | `risk` | `clean`, `low`, `medium`, `high`, `inconclusive` (no risk level is inconclusive) | History `risk` |
 | `min_score` | 0–100 (runs without a score are left out) | History `min` |
 | `exec` | `manual`, `monitor` | History `exec` (`adhoc`), Analytics `source` |
+| `watch` | a monitor id (positive integer, not repeatable): the runs of exactly that monitor, also after it was deleted | — (new, [#155](https://github.com/mn567250/ekte/issues/155)) |
 | `q` | substring, case-insensitive for ASCII (SQL `LIKE`, `%` `_` `\` literal) of base URL, relay label, claimed model, model, suite, mode, api | History `q` |
 | `group` | `relay` (default), `model`, `relay_model`, `all` | both |
 
@@ -146,7 +147,9 @@ the save time (`ts`) to the run's start (`started_at`).
 (`ekte/web/run_row.py`): the time on `m.started_us` (`time_sql`, exact to the
 microsecond), the surface on `m.surface_id`, the other few-valued keys as
 `m.facet_id IN (…)` (looked up once in `facet_combo`), relays and models by
-`m.relay_id` / `m.model_id`, `min_score` on `m.score`. Only text search
+`m.relay_id` / `m.model_id`, `watch` on `m.watch_id` (the run's
+`history.watch_id`, copied onto the run row by its triggers, history schema
+16), `min_score` on `m.score`. Only text search
 (`q`) joins `history h` (through `idx_history_query`) and the run's relay
 `rm`. Runs are grouped by an integer of their row (`run_row.GROUP_ID_SQL`:
 relay id, model id, or both packed as `relay_id << 20 | model_id`), read in
@@ -300,7 +303,7 @@ page only draws. Every endpoint:
 
 - takes every key of the query core's URL schema (`range`, `from`, `to`,
   `surface`, `relay`, `model`, `suite`, `mode`, `api`, `stream`, `detect`,
-  `risk`, `min_score`, `exec`, `q`, `group`) plus its own namespaced keys
+  `risk`, `min_score`, `exec`, `watch`, `q`, `group`) plus its own namespaced keys
   (below); other widgets' dotted keys are ignored. An unknown key (shared or
   of its own namespace), a key given twice or an invalid value answers 400
   `{"error": "..."}` (never cached);
@@ -330,7 +333,7 @@ The values present for each filter key, counted under the current filters
 **except that key** (a selected value and its siblings stay listed):
 
 ```json
-{"filters": {...}, "keys": ["surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk", "exec"],
+{"filters": {...}, "keys": ["surface", "relay", "model", "suite", "mode", "api", "stream", "detect", "risk", "exec", "watch"],
  "runs": 60, "surface_default": "chat",
  "surface": [{"value": "chat", "runs": 60}],
  "relay": [{"value": "cheap-gpt", "label": "Cheap GPT", "kind": "relay", "in_kb": true, "runs": 15}],
@@ -339,18 +342,24 @@ The values present for each filter key, counted under the current filters
  "mode": [...], "api": [...], "stream": [...],
  "detect": [{"value": "auto", "runs": 20}, {"value": "manual", "runs": 20}, {"value": "-", "runs": 20}],
  "risk": [{"value": "inconclusive", "runs": 5}, ...], "exec": [{"value": "manual", "runs": 48}, ...],
+ "watch": [{"value": "7", "runs": 9, "label": "relay check"},
+           {"value": "3", "runs": 2, "label": "Deleted monitor #3", "deleted": true}],
  "span": {"first": "<iso>", "last": "<iso>"}, "dimensions": ["protocol", ...]}
 ```
 
 `value` is spelled as the URL takes it (`-` = none; relays and models use
 `(unknown)`, their group key); a relay's `label` is what History calls it
 (`history_api.relay_labels`: its knowledge-base name, else the host of its
-URL); lists are ordered by runs, then label / value.
+URL); a monitor's (`watch`) is its name, read from `watches.db` once per
+request, or, for a monitor that no longer exists, `Deleted monitor #<id>`
+with `deleted: true` (the panel shows it translated). `watch` lists only
+monitor runs, so its counts add up to `exec=monitor`'s. Lists are ordered by
+runs, then label / value.
 `runs` counts the full selection; `span` is the first and last run under
 every filter except `from` / `to`; `dimensions` lists the `dim:<key>` keys of
 the selection. The surface is not defaulted here: `surface_default` names the
 one the widgets would use. One statement: the runs matching `min_score` / `q`
-are read once; `relay` (by relay id) and `model` are a `GROUP BY` over them,
+are read once; `relay` (by relay id), `model` and `watch` are a `GROUP BY` over them,
 and the other lists, `span` and `runs` are folded from one `GROUP BY` of each
 run's facet combination (`history_metrics.facet_id`, `ekte/web/run_row.py`).
 

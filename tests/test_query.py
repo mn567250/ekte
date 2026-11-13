@@ -115,6 +115,15 @@ def test_parse_every_key():
     assert parse_query([("q", " a "), ("suite", "")]) == Query(text="a")
 
 
+def test_watch_is_one_monitor_id():
+    q = parse_query({"watch": " 12 ", "exec": "monitor"})
+    assert q.watch == 12 and q.canonical()["watch"] == "12" and parse_query(q.params()) == q
+    assert parse_query({"watch": "012"}) == parse_query({"watch": "12"})  # one cache key
+    assert parse_query({"watch": ""}).watch is None  # empty: not given
+    sel = query.select_runs(q)
+    assert "m.watch_id = ?" in sel.where and 12 in sel.args and not sel.text  # on the run row
+
+
 def test_range_resolves_to_absolute_bounds():
     q = parse_query({"range": "7d"}, now=NOW)
     assert q.end == datetime(2026, 6, 1, 12, 1, tzinfo=UTC)  # the next whole minute
@@ -136,6 +145,13 @@ def test_range_resolves_to_absolute_bounds():
     ({"color": "red"}, "unknown parameter 'color'"),
     ({"days": "7"}, "unknown parameter 'days'"),
     ({"suite": ["a", "b"]}, "suite given more than once"),
+    ({"watch": ["3", "4"]}, "watch given more than once"),
+    ({"watch": "0"}, "watch must be a monitor id"),
+    ({"watch": "-1"}, "watch must be a monitor id"),
+    ({"watch": "abc"}, "watch must be a monitor id"),
+    ({"watch": "2.5"}, "watch must be a monitor id"),
+    ({"watch": "٣"}, "watch must be a monitor id"),  # a digit, but not an ASCII one
+    ({"watch": str(2**63)}, "watch must be a monitor id"),
     ({"range": "1y"}, "range must be one of 24h, 7d, 30d, 90d, 365d"),
     ({"range": "7d", "from": "2026-01-01"}, "range cannot be combined"),
     ({"from": "yesterday"}, "from must be an ISO 8601 timestamp"),
@@ -203,11 +219,15 @@ def test_every_filter_in_sql(seeded):
         "detect manual": (Query(detect="manual"), lambda r: r["api_auto"] == 0),
         "detect -": (Query(detect="-"), lambda r: r["api_auto"] is None),
         "risk high": (Query(risk="high"), lambda r: r["risk_level"] == "high"),
+        "watch none": (Query(watch=8), lambda r: False),
         "risk inconclusive": (Query(risk="inconclusive"),
                               lambda r: (r["risk_level"] or "inconclusive") == "inconclusive"),
         "min_score": (Query(min_score=70.0), lambda r: r["score"] is not None and r["score"] >= 70),
         "exec manual": (Query(exec="manual"), lambda r: r["watch_id"] is None),
         "exec monitor": (Query(exec="monitor"), lambda r: r["watch_id"] is not None),
+        "watch": (parse_query({"watch": "7"}), lambda r: r["watch_id"] == 7),
+        "watch, combined": (parse_query({"watch": "7", "relay": "cheap-gpt"}),
+                            lambda r: r["watch_id"] == 7 and r["relay_key"] == "cheap-gpt"),
         "from/to": (parse_query({"from": "2026-04-01", "to": "2026-05-01"}),
                     lambda r: "2026-04-01" <= r["started_at"] < "2026-05-01"),
         "q": (Query(text="OPENAI.com"), lambda r: "openai.com" in (r["base_url"] or "")),
@@ -220,7 +240,7 @@ def test_every_filter_in_sql(seeded):
     for name, (q, pred) in cases.items():
         want = _expected(pred)
         assert _ids(q) == want, name
-        assert want or name in ("mode -",), f"{name} selects nothing: a weak test"
+        assert want or name in ("mode -", "watch none"), f"{name} selects nothing: a weak test"
     # % and _ are literal, not wildcards
     assert _ids(Query(text="we_ird")) == set() and _ids(Query(text="%")) == _ids(Query(text="we%"))
     assert _ids(Query(text="\\")) == set()
