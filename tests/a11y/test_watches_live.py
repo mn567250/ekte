@@ -34,7 +34,7 @@ def test_watches_page_shows_progress_from_jobs(open_page, base_url) -> None:
         state["started"] = False
         page.reload(wait_until="load")
         page.wait_for_function(
-            "() => (document.querySelector('.mon') || {}).innerText.includes('Queued')")
+            "() => ((document.querySelector('.mon') || {}).innerText || '').includes('Queued')")
     finally:
         server._running_watches.pop(wid, None)
     # finished: the next load shows no progress any more
