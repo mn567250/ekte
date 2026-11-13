@@ -37,6 +37,11 @@
   on one key wait for one computation; errors are not cached. Answers carry
   `ETag` (a hash of the key and the ekte version) and `Cache-Control: no-cache`;
   a matching `If-None-Match` gets `304 Not Modified` without computing.
+  `GET /api/history/status` and the report detail `GET /api/history/{id}`
+  (keyed per run and `trend`; its own 16-entry LRU, as reports are large; an
+  unknown id answers 404, never cached) go through it as well. POST / DELETE,
+  `/api/secret`, `/api/jobs*` and the evidence endpoints (`no-store`) stay
+  uncached.
   Reads use `datadir.read_connection(name)`: one reused read-only connection
   per thread (`mode=ro`, WAL, `query_only`), schema-checked only on the first
   open in the process (again if the file was replaced); writes keep using
@@ -119,8 +124,8 @@ same). Internal unless under `/api/v1/` ([HTTP API v1](#http-api-v1)).
 | `GET /api/filters/options` | every filter key's values with run counts ([Analytics API](#analytics-api); History uses it too) |
 | `GET /api/analytics/summary`, `series`, `heatmap`, `leaderboard`, `breakdown`, `errors`, `integrity` | the Analytics widgets ([Analytics API](#analytics-api)) |
 | `GET /api/history/groups`, `GET /api/history/runs` | the History widgets ([History API](#history-api)) |
-| `GET /api/history/status` | the history as a whole, for the page notices |
-| `GET /api/history/{id}` (`?trend=1`), `GET /api/v1/history/{id}` | one saved report |
+| `GET /api/history/status` | the history as a whole, for the page notices (cached) |
+| `GET /api/history/{id}` (`?trend=1`, cached), `GET /api/v1/history/{id}` | one saved report |
 | `DELETE /api/history/{id}`, `DELETE /api/history` | delete one run, or all |
 | `GET /api/v1/history` | the newest runs (public; `limit`, `perf`) |
 | `GET /api/v1/history/{id}/evidence`, `…/evidence/exchanges`, `…/evidence/export`, `POST /api/history/{id}/rescore` (`/api/v1/…`) | a run's evidence; re-score it |

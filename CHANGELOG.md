@@ -20,6 +20,14 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: widget answers kept by the browser ([#153](https://github.com/mn567250/ekte/issues/153))
+
+History and Analytics leave their answers to the browser's HTTP cache, so a
+reload or a change of page revalidates them (`304`) instead of loading them
+again. `GET /api/history/status` and the report detail `GET /api/history/{id}`
+(also with `?trend=1`) are now cached with an `ETag` like the widget
+endpoints.
+
 ### Day ranges from local midnight, viewer time zone, one `30d` default ([#152](https://github.com/mn567250/ekte/issues/152))
 
 Part of [#150](https://github.com/mn567250/ekte/issues/150). Day ranges

@@ -55,10 +55,10 @@
  *   url()            the link to this view; copyLink() puts it on the clipboard
  *   render(), setOptions(options), panel (the EkteFilterPanel)
  * EkteFilters.state() / .widgetParams(ns): the same on the page's instance.
- * EkteFilters.fetchWidget(url, { signal }) -> Promise of the JSON: sends
- *   If-None-Match with the ETag last seen for that URL (kept in memory) and
- *   answers a 304 from that copy; an error status rejects with an Error that
- *   has .status and the server's message.
+ * EkteFilters.fetchWidget(url, { signal }) -> Promise of the JSON: a plain
+ *   fetch on the browser's HTTP cache (the server's ETag + no-cache make the
+ *   browser revalidate; a 304 arrives as a 200 with the stored body); an error
+ *   status rejects with an Error that has .status and the server's message.
  * EkteFilters.keyed(key, labels): the text of an i18n key ("metric.score"),
  *   falling back to labels[key] (GET /api/metrics `labels`), then the key.
  * Pure helpers (tested under node): parse, serialise, params, initial,
@@ -298,19 +298,15 @@
   }
 
   /* ---------------- fetching ---------------- */
-  var etags = new Map(); // url -> { etag, data }, newest last
-  var MAX_ETAGS = 200;
-
+  /* A plain fetch in the default cache mode: the server answers with an ETag
+   * and Cache-Control: no-cache, so the browser's HTTP cache keeps the answer
+   * (across reloads and pages) and revalidates it on every use; a 304 reaches
+   * the page as a 200 with the stored body. No copy is kept here. */
   function fetchWidget(url, o) {
     o = o || {};
-    var hit = etags.get(url), headers = { Accept: "application/json" };
-    if (hit) headers["If-None-Match"] = hit.etag;
-    return fetch(url, { signal: o.signal, headers: headers, credentials: "same-origin" }).then(function (r) {
-      if (r.status === 304 && hit) {
-        etags.delete(url);
-        etags.set(url, hit);
-        return hit.data;
-      }
+    return fetch(url, {
+      signal: o.signal, credentials: "same-origin", headers: { Accept: "application/json" },
+    }).then(function (r) {
       if (!r.ok) {
         return r.json().catch(function () { return {}; }).then(function (body) {
           var err = new Error((body && body.error) || "HTTP " + r.status);
@@ -318,15 +314,7 @@
           throw err;
         });
       }
-      return r.json().then(function (data) {
-        var tag = r.headers && r.headers.get ? r.headers.get("ETag") : null;
-        etags.delete(url);
-        if (tag) {
-          etags.set(url, { etag: tag, data: data });
-          if (etags.size > MAX_ETAGS) etags.delete(etags.keys().next().value);
-        }
-        return data;
-      });
+      return r.json();
     });
   }
 

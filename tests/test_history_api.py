@@ -16,7 +16,7 @@ from ekte.knowledge.relays import add_relay  # noqa: E402
 from ekte.web import history, history_api, metrics, query  # noqa: E402
 from ekte.web.query import QueryError  # noqa: E402
 from ekte.web.relay_map import JOIN_SQL  # noqa: E402
-from ekte.web.server import create_app  # noqa: E402
+from ekte.web.server import create_app, history_report  # noqa: E402
 from tests import test_query as tq  # noqa: E402
 from tests.test_analytics import RELAY  # noqa: E402
 from tests.test_query import T0, _bench_module, _save  # noqa: E402
@@ -321,6 +321,88 @@ def test_endpoints_are_cached_with_etags(seeded, client):
                       headers={"If-None-Match": etag}).status_code == 200
 
 
+def _revalidates(client, url):
+    """GET ``url`` twice, the second time with the first answer's ETag: the
+    first answer (200, ETag, no-cache) and the second's status."""
+    first = client.get(url)
+    assert first.status_code == 200, (url, first.text)
+    assert first.headers["etag"] and first.headers["cache-control"] == "no-cache", url
+    again = client.get(url, headers={"If-None-Match": first.headers["etag"]})
+    assert again.headers.get("etag") == first.headers["etag"]
+    assert again.headers.get("cache-control") == "no-cache"
+    return first, again.status_code
+
+
+@pytest.mark.parametrize("path", ["/api/history/status", "/api/history/{rid}",
+                                  "/api/history/{rid}?trend=1"])
+def test_status_and_report_detail_revalidate_until_a_write(seeded, client, path):
+    rid = max(r["id"] for r in _all_runs())
+    url = path.format(rid=rid)
+    first, status = _revalidates(client, url)
+    assert status == 304
+    # rescores save a new run; a save, like a delete, bumps the data version
+    _save(None, score=10.0)
+    after = client.get(url, headers={"If-None-Match": first.headers["etag"]})
+    assert after.status_code == 200 and after.headers["etag"] != first.headers["etag"]
+    assert after.json() == first.json() or path.endswith("status")
+    history.delete(rid - 1)
+    gone = client.get(url, headers={"If-None-Match": after.headers["etag"]})
+    assert gone.status_code == 200 and gone.headers["etag"] != after.headers["etag"]
+
+
+def test_report_detail_keys_on_trend_and_answers_404_uncached(seeded, client):
+    rid = max(r["id"] for r in _all_runs())
+    plain = client.get(f"/api/history/{rid}")
+    trend = client.get(f"/api/history/{rid}?trend=1")
+    assert plain.headers["etag"] != trend.headers["etag"]
+    assert "history_trends" in trend.json() and "history_trends" not in plain.json()
+    # other parameters do not split the cache; trend=0 is the plain answer
+    assert client.get(f"/api/history/{rid}?trend=0&x=1").headers["etag"] == plain.headers["etag"]
+    assert client.get(f"/api/history/{rid}?trend=abc").status_code == 422
+    history.delete(rid)
+    for _ in range(2):  # never cached
+        r = client.get(f"/api/history/{rid}?trend=1")
+        assert r.status_code == 404 and r.json() == {"error": "not found"}
+        assert "etag" not in r.headers
+    assert client.get(f"/api/history/{rid}",
+                      headers={"If-None-Match": plain.headers["etag"]}).status_code == 404
+
+
+def test_every_cached_route_sends_an_etag_and_no_cache(seeded, monkeypatch):
+    """Every GET registered through cached_endpoint (and the report detail,
+    which builds one per run) answers with an ETag and Cache-Control:
+    no-cache, never no-store, and revalidates with a 304."""
+    from ekte.web import cache
+
+    handlers = set()
+    original = cache.cached_endpoint
+
+    def recording(*args, **kwargs):
+        decorate = original(*args, **kwargs)
+
+        def wrap(fn):
+            handler = decorate(fn)
+            handlers.add(handler)
+            return handler
+        return wrap
+
+    monkeypatch.setattr(cache, "cached_endpoint", recording)
+    app = create_app()
+    client = TestClient(app, base_url="http://localhost")
+    paths = sorted(r.path for r in app.routes if getattr(r, "endpoint", None) in handlers)
+    assert {"/api/history/status", "/api/history/groups", "/api/history/runs",
+            "/api/metrics", "/api/analytics/summary"} <= set(paths)
+    rid = max(r["id"] for r in _all_runs())
+    key = history_api.groups(_conn(), {"trend.metrics": "score"})["groups"][0]["key"]
+    # the parameters an endpoint cannot do without
+    extra = {"/api/history/groups": "?trend.metrics=score",
+             "/api/history/runs": "?group.key=" + key,
+             "/api/analytics/breakdown": "?breakdown.metric=relay_overhead"}
+    for path in [*paths, f"/api/history/{rid}", f"/api/history/{rid}?trend=1"]:
+        _, status = _revalidates(client, path + extra.get(path, ""))
+        assert status == 304, path
+
+
 def test_a_day_range_keeps_its_etag_all_day_and_no_range_is_all_time(seeded, client, monkeypatch):
     """History's widgets resolve range=30d in the viewer's tz to a fixed start
     (the same ETag minutes apart, a new one at local midnight), and without a
@@ -351,7 +433,6 @@ def test_a_day_range_keeps_its_etag_all_day_and_no_range_is_all_time(seeded, cli
     # 24h stays exact
     hours = dict(history_api.resolve_params({"range": "24h"}, now=clock[0]))
     assert hours["to"] == "2026-09-11T07:00:00.000000+00:00" and hours["from"] == "2026-09-10T07:00:00.000000+00:00"
-
 
 
 # --------------------------------------------------------------------------- #
@@ -397,9 +478,20 @@ def test_relay_labels_name_saved_relays_and_disambiguate_urls(data):
 # --------------------------------------------------------------------------- #
 # Budget
 # --------------------------------------------------------------------------- #
+def _perf_record(i: int) -> dict:
+    """A stored request record: mostly successes, every 20th a failed one
+    without a failure class (a run saved before classes were recorded)."""
+    if i % 20 == 19:
+        return {"op": "complete", "ok": False, "endpoint": "target", "status_code": 502,
+                "error_type": "HTTPStatusError", "duration_ms": 900.0 + i}
+    return {"op": "complete", "ok": True, "endpoint": "target", "duration_ms": 600.0 + i * 3 % 97,
+            "ttft_ms": 300.0 + i * 7 % 53, "decode_tps_local": 40.0 + i % 11,
+            "itl_mean_ms": 20.0 + i % 5}
+
+
 @pytest.mark.slow
 @pytest.mark.timeout(600)
-def test_benchmark_20k_runs_under_budget(bench_data):
+def test_benchmark_20k_runs_under_budget(bench_data, monkeypatch):
     """Each History widget answers within the budget (p95, cold cache: the
     functions are called directly) on the 20k-run fixture. Opt-in
     (EKTE_BENCH=1), as tests/test_query.py; EKTE_BENCH_BUDGET_MS overrides 50,
@@ -439,7 +531,27 @@ def test_benchmark_20k_runs_under_budget(bench_data):
                                                                         "tz": "Europe/Berlin"})),
         "runs range 24h": lambda: history_api.runs(conn, at_end({"group.key": key, "range": "24h"})),
     }
+    # status and report detail (GET /api/history/status, /api/history/{rid}
+    # with and without trend=1) on the fixture's 16 kB reports
+    cases |= {name: (lambda fn=fn: fn(conn))
+              for name, fn in _bench_module().history_cases(conn).items()}
     results = {name: bench_report.measure(fn) for name, fn in cases.items()}
+    # The fixture's reports carry no performance section: trend=1 over a run
+    # of 100 requests (the fixture's --requests) as well, so the running
+    # medians and bands are timed too (the stored report, plus the requests).
+    rid = int(conn.execute("SELECT MAX(id) FROM history").fetchone()[0])
+    real_get, template = history.get, [_perf_record(i) for i in range(100)]
+
+    def with_requests(r):
+        report = real_get(r)
+        report["performance"] = {"requests": [dict(rec) for rec in template]}
+        return report
+
+    with monkeypatch.context() as m:
+        m.setattr(history, "get", with_requests)
+        assert history_report(rid, trend=True)["performance"]["requests"][-2]["trend_band"]
+        results["history report, trend=1, 100 requests"] = bench_report.measure(
+            lambda: history_report(rid, trend=True))
     slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}
     bench_report.record("history_api", results, budget)
     assert not slow, f"p95 over {budget} ms: {slow}"

@@ -453,7 +453,14 @@ def _audit_report(target):
     )
 
 
-async def _until(cond, timeout: float = 30.0) -> None:
+# How long a test waits for a monitor run before calling it hung. It only ends
+# a run that went wrong, so it allows for a heavily loaded runner: on Windows
+# under xdist a run's first save into a fresh data directory (creating and
+# migrating history.db) has taken more than 5 s.
+HANG_S = 30.0
+
+
+async def _until(cond, timeout: float = HANG_S) -> None:
     """Wait for ``cond``: the timeout only ends a run that went wrong, so it
     allows for a heavily loaded runner (Windows under xdist)."""
     import asyncio
@@ -711,7 +718,7 @@ async def test_alert_webhooks_are_sent_at_the_same_time(tmp_path, monkeypatch):
     monkeypatch.setattr(notify, "send", fake_send)
     wid = watches.create({"base_url": "https://relay.test/v1", "api_key": "sk-x", "model": "m",
                           "alert_on": "medium", "webhooks": [*hooks, "  "]})
-    await asyncio.wait_for(server._run_one_watch(watches.get(wid)), 5)
+    await asyncio.wait_for(server._run_one_watch(watches.get(wid)), HANG_S)
     assert sorted(entered) == hooks
     assert watches.get(wid)["last_report_id"] is not None
 
@@ -783,7 +790,7 @@ async def test_run_now_refuses_a_watch_the_scheduler_just_started(tmp_path, monk
         r = await ac.post(f"/api/watches/{wid}/run")
         assert r.status_code == 409
         audits.event("m").set()
-        await asyncio.wait_for(task, 5)
+        await asyncio.wait_for(task, HANG_S)
     assert audits.calls == ["m"]
     assert watches.get(wid)["last_report_id"] is not None
 
