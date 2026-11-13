@@ -101,10 +101,10 @@
     - spinbutton "Punteggio min."
     - text: Periodo
     - combobox "Periodo":
-      - option "Tutto il periodo" [selected]
+      - option "Tutto il periodo"
       - option "Ultime 24 ore"
       - option "Ultimi 7 giorni"
-      - option "Ultimi 30 giorni"
+      - option "Ultimi 30 giorni" [selected]
       - option "Ultimi 90 giorni"
       - option "Ultimi 365 giorni"
       - option "Periodo personalizzato"
@@ -322,7 +322,7 @@
           - text: Eliminare questa voce della cronologia?
           - button "Elimina"
           - button "Annulla"
-  - text: "Audit salvati: 15"
+  - text: 15 di 15 audit mostrati
   - button "Cancella cronologia"
   - status
 - contentinfo:

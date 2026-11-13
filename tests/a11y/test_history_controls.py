@@ -267,6 +267,55 @@ def test_copied_link_reproduces_the_view(open_page, history_server) -> None:
     assert_no_issues(issues, "history [en]", "link")
 
 
+def _groups_requests(open_page: Any, base: str, query: str) -> tuple[Page, list[dict[str, list[str]]]]:
+    """History opened at ``query`` in a viewer zone of its own, and the query
+    strings of its /api/history/groups requests."""
+    from tests.a11y.harness import DESKTOP, track_network
+
+    ctx = open_page.browser.new_context(viewport=DESKTOP, timezone_id="America/Los_Angeles")
+    open_page.contexts.append(ctx)
+    track_network(ctx)
+    ctx.add_init_script("try { localStorage.clear(); localStorage.setItem('ekte.lang', 'en'); } catch (e) {}")
+    ctx.route("**/*", lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
+    seen: list[dict[str, list[str]]] = []
+    ctx.on("request", lambda r: seen.append(parse_qs(urlparse(r.url).query, keep_blank_values=True))
+           if urlparse(r.url).path == "/api/history/groups" else None)
+    page = ctx.new_page()
+    page.goto(base + "/history" + ("?" + query if query else ""), wait_until="networkidle")
+    settle(page)
+    return page, seen
+
+
+def test_history_defaults_to_the_last_30_days(open_page, history_server) -> None:
+    """Without a range in the URL History asks for range=30d (the schema's
+    default) in the viewer's zone and keeps the URL clean; range= (All time)
+    asks for no range (#152)."""
+    issues: list[str] = []
+    page, seen = _groups_requests(open_page, history_server, "")
+    if not seen or any(q.get("range") != ["30d"] or q.get("tz") != ["America/Los_Angeles"] for q in seen):
+        issues.append(f"default requests: {seen}")
+    if "range" in parse_qs(urlparse(page.url).query) or "tz" in page.url:
+        issues.append(f"the default or the zone was written to the URL: {page.url}")
+    _open_filters(page)
+    if page.locator("[data-f=range]").input_value() != "30d":
+        issues.append("the period field does not show the last 30 days")
+    last30 = page.locator("#fcount").inner_text()
+    page, seen = _groups_requests(open_page, history_server, "range=")
+    if not seen or any("range" in q or "from" in q for q in seen) or any(q.get("tz") != ["America/Los_Angeles"] for q in seen):
+        issues.append(f"all-time requests: {seen}")
+    if parse_qs(urlparse(page.url).query, keep_blank_values=True).get("range") != [""]:
+        issues.append(f"All time is not kept as range= in the URL: {page.url}")
+    _open_filters(page)
+    if page.locator("[data-f=range]").input_value() != "":
+        issues.append("the period field does not show All time")
+    every = page.locator("#fcount").inner_text()
+    # the fixture has runs older than 30 days (the bulk spans a year)
+    if last30 == every:
+        issues.append(f"the last 30 days count as many runs as all time: {last30!r}")
+    assert_no_issues(issues, "history [en]", "default-range")
+
+
+
 @pytest.mark.bitv("9.1.4.3", "9.4.1.2", axe=True)
 @pytest.mark.parametrize("theme", THEMES)
 def test_controls_wcag_rules(open_page, history_server, theme: str) -> None:

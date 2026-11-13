@@ -7,6 +7,7 @@ localStorage fallback, and widget fetching (superseded requests aborted, ETag
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -35,10 +36,11 @@ ALL = ["q", "range", "surface", "relay", "model", "suite", "mode", "api", "strea
        "min_score", "exec", "watch", "group"]
 
 
-def run(body: str) -> Any:
+def run(body: str, tz: str | None = None) -> Any:
+    env = None if tz is None else {**os.environ, "TZ": tz}
     out = run_subprocess(
         ["node", "-e", _JS, str(STATIC), body],
-        capture_output=True, text=True, encoding="utf-8", check=True,
+        capture_output=True, text=True, encoding="utf-8", check=True, env=env,
     ).stdout
     return json.loads(out)
 
@@ -59,7 +61,8 @@ def parse(search: str, fields: list[str] | None = None) -> dict[str, Any]:
     ("range=7d", {"range": "7d"}),
     ("range=24h", {"range": "24h"}),
     ("range=12d", {}),  # not a preset
-    ("from=2026-01-01&to=2026-02-01T12:30:00Z", {"from": "2026-01-01", "to": "2026-02-01T12:30:00Z"}),
+    # from / to without range: a custom range, not the 30d default over them
+    ("from=2026-01-01&to=2026-02-01T12:30:00Z", {"from": "2026-01-01", "to": "2026-02-01T12:30:00Z", "range": ""}),
     ("from=yesterday", {}),
     ("range=30d&from=2026-01-01", {"range": "30d"}),  # range wins over from / to
     ("surface=embedding", {"surface": "embedding"}),
@@ -118,7 +121,7 @@ def test_parse_drops_keys_the_page_does_not_show():
     assert parse("risk=high&relay=a&q=x", ["relay"]) == {"relay": ["a"]}
     # from / to come with range
     assert parse("from=2026-01-01", ["relay"]) == {}
-    assert parse("from=2026-01-01", ["range"]) == {"from": "2026-01-01"}
+    assert parse("from=2026-01-01", ["range"]) == {"from": "2026-01-01", "range": ""}
 
 
 # --------------------------------------------------------------------------- #
@@ -134,11 +137,12 @@ FULL = {
 
 def test_every_key_round_trips():
     qs = run(f"return F.serialise({js(FULL)}, {{}}, {js(ALL)});")
-    assert qs == ("q=relay+x&from=2026-01-01&to=2026-02-01&surface=rerank&relay=a&relay=-&model=m1&suite=-"
+    # range "" (all time, custom from / to) differs from the schema's 30d: "range="
+    assert qs == ("q=relay+x&range=&from=2026-01-01&to=2026-02-01&surface=rerank&relay=a&relay=-&model=m1&suite=-"
                   "&mode=check&api=anthropic&stream=both&detect=manual&risk=clean&min_score=55&exec=manual&watch=12"
                   "&group=all")
     back = parse(qs)
-    assert back == {k: v for k, v in FULL.items() if k != "range"}
+    assert back == FULL
 
 
 def test_defaults_are_left_out():
@@ -318,3 +322,39 @@ def test_no_metric_logic_in_the_module():
     src = re.sub(r"/\*.*?\*/|^\s*//.*$", "", src, flags=re.S | re.M)  # the code, not its comments
     for word in ("median", "percentile", "grade", "score >", "Math.round", "success_rate", "error_rate"):
         assert word not in src, word
+
+
+# --------------------------------------------------------------------------- #
+# the viewer's time zone and the shared default range (#152)
+# --------------------------------------------------------------------------- #
+def test_the_default_range_is_30d_once_in_the_schema():
+    assert run("return F.FIELDS.range.def;") == "30d"
+    # every page starts on it without a page default, and "range=" is all time
+    o = '{ fields: ["range", "relay"], defaults: {}, page: "history", storage: null }'
+    got = run(f"return [F.initial('', {o}), F.initial('?range=', {o})];")
+    assert got[0]["state"]["range"] == "30d" and got[1]["state"]["range"] == ""
+    assert run(f"return F.serialise({{range: '30d', relay: []}}, {{}}, {js(['range', 'relay'])});") == ""
+    assert run(f"return F.serialise({{range: '', relay: []}}, {{}}, {js(['range', 'relay'])});") == "range="
+    # all time sends no range to the widgets
+    assert run(f"return F.params({{range: '', from: '', to: ''}}, {js(['range'])}, null);") == ""
+
+
+def test_widget_params_carry_the_viewers_zone_and_links_do_not():
+    state = {"range": "30d", "from": "", "to": "", "relay": ["a"], "trend.metric": "score"}
+    fields = ["range", "relay"]
+    got = run(f"""
+      const zone = F.viewerZone();
+      return {{ zone, widget: F.params({js(state)}, {js(fields)}, "trend", zone),
+                plain: F.params({js(state)}, {js(fields)}, "trend"),
+                link: F.serialise({js(state)}, {{}}, {js(fields)}),
+                parsed: F.parse("?range=7d&tz=Asia/Tokyo&trend.tz=x", {js(fields)}) }};
+    """, tz="Europe/Berlin")
+    assert got["zone"] == "Europe/Berlin"
+    assert got["widget"] == "range=30d&relay=a&trend.metric=score&tz=Europe%2FBerlin"
+    assert "tz=" not in got["plain"] and "tz" not in got["link"]
+    # a tz in a page URL is not a filter of the page: dropped, never written back
+    assert "tz" not in got["parsed"] and got["parsed"]["range"] == "7d"
+    assert run("return F.viewerZone();", tz="America/Los_Angeles") == "America/Los_Angeles"
+    # the page instance's widgetParams() is params() with the viewer's zone
+    src = (STATIC / "filters.js").read_text(encoding="utf-8")
+    assert "function widgetParams(ns) { return params(st, fields, ns, viewerZone()); }" in src

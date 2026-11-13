@@ -101,10 +101,10 @@
     - spinbutton "Score min."
     - text: Période
     - combobox "Période":
-      - option "Toute la période" [selected]
+      - option "Toute la période"
       - option "Dernières 24 heures"
       - option "7 derniers jours"
-      - option "30 derniers jours"
+      - option "30 derniers jours" [selected]
       - option "90 derniers jours"
       - option "365 derniers jours"
       - option "Période personnalisée"
@@ -322,7 +322,7 @@
           - text: Supprimer cette entrée de l'historique ?
           - button "Supprimer"
           - button "Annuler"
-  - text: "Audits enregistrés : 15"
+  - text: 15 audits affichés sur 15
   - button "Effacer l'historique"
   - status
 - contentinfo:

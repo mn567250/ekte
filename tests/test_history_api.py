@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import functools
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -320,6 +321,39 @@ def test_endpoints_are_cached_with_etags(seeded, client):
                       headers={"If-None-Match": etag}).status_code == 200
 
 
+def test_a_day_range_keeps_its_etag_all_day_and_no_range_is_all_time(seeded, client, monkeypatch):
+    """History's widgets resolve range=30d in the viewer's tz to a fixed start
+    (the same ETag minutes apart, a new one at local midnight), and without a
+    range they cover all time (the page sends range=30d by default and
+    nothing for "all time", #152)."""
+    clock = [datetime(2026, 9, 10, 12, 0, 10, tzinfo=UTC)]
+
+    class Frozen(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return clock[0].astimezone(tz) if tz else clock[0]
+
+    monkeypatch.setattr(query, "datetime", Frozen)
+    params = {"trend.metrics": "score", "range": "30d", "tz": "America/Los_Angeles"}
+    first = client.get("/api/history/groups", params=params)
+    assert first.status_code == 200
+    clock[0] += timedelta(minutes=1)
+    assert client.get("/api/history/groups", params=params,
+                      headers={"If-None-Match": first.headers["etag"]}).status_code == 304
+    clock[0] = datetime(2026, 9, 11, 7, 0, tzinfo=UTC)  # 00:00 in Los Angeles
+    assert client.get("/api/history/groups", params=params).headers["etag"] != first.headers["etag"]
+    # the last 30 days hold fewer runs than all time
+    pairs = history_api.resolve_params(params, now=clock[0])
+    assert dict(pairs)["from"] == "2026-08-13T07:00:00.000000+00:00" and "to" not in dict(pairs)
+    last30 = history_api.groups(_conn(), pairs)
+    every = history_api.groups(_conn(), {"trend.metrics": "score"})
+    assert 0 < last30["total_runs"] < every["total_runs"] == 60
+    # 24h stays exact
+    hours = dict(history_api.resolve_params({"range": "24h"}, now=clock[0]))
+    assert hours["to"] == "2026-09-11T07:00:00.000000+00:00" and hours["from"] == "2026-09-10T07:00:00.000000+00:00"
+
+
+
 # --------------------------------------------------------------------------- #
 # Relay names
 # --------------------------------------------------------------------------- #
@@ -377,6 +411,11 @@ def test_benchmark_20k_runs_under_budget(bench_data):
     t = {"trend.metrics": "score,latency_p50"}
     first = history_api.groups(conn, t)
     key = first["groups"][0]["key"]
+    end = _bench_module().END
+
+    def at_end(params):
+        return history_api.resolve_params(params, now=end)
+
     cases = {
         "groups -time": lambda: history_api.groups(conn, t),
         "groups page 2": lambda: history_api.groups(conn, {**t, "groups.after": first["after"]}),
@@ -391,6 +430,14 @@ def test_benchmark_20k_runs_under_budget(bench_data):
                                                               "runs.focus": "5"}),
         "runs all, score": lambda: history_api.runs(conn, {"group": "all", "group.key": "(all)",
                                                            "runs.sort": "score"}),
+        # relative ranges (#152), resolved at the fixture's END as the endpoints' prepare does
+        "groups range 30d Berlin": lambda: history_api.groups(conn, at_end({**t, "range": "30d",
+                                                                            "tz": "Europe/Berlin"})),
+        "groups range 365d": lambda: history_api.groups(conn, at_end({**t, "range": "365d"})),
+        "groups range 24h": lambda: history_api.groups(conn, at_end({**t, "range": "24h"})),
+        "runs range 30d Berlin": lambda: history_api.runs(conn, at_end({"group.key": key, "range": "30d",
+                                                                        "tz": "Europe/Berlin"})),
+        "runs range 24h": lambda: history_api.runs(conn, at_end({"group.key": key, "range": "24h"})),
     }
     results = {name: bench_report.measure(fn) for name, fn in cases.items()}
     slow = {name: round(p95, 1) for name, (_, p95) in results.items() if p95 >= budget}

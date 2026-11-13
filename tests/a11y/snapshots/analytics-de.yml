@@ -117,7 +117,7 @@
       - tab "Rangliste"
     - tabpanel "Kennzahlen":
       - heading "Kennzahlen" [level=2]
-      - paragraph: 01.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (02.08. – 01.09.2026).
+      - paragraph: 02.09. – 01.10.2026, verglichen mit dem gleich langen Zeitraum davor (03.08. – 01.09.2026).
       - list "Kennzahlen":
         - listitem: Läufe 15 steigend +15
         - listitem: Relays 3 steigend +3

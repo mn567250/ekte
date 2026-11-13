@@ -117,7 +117,7 @@
       - tab "Leaderboard"
     - tabpanel "Key figures":
       - heading "Key figures" [level=2]
-      - paragraph: Sep 1 – Oct 1, 2026, compared with the period of the same length before (Aug 2 – Sep 1, 2026).
+      - paragraph: Sep 2 – Oct 1, 2026, compared with the period of the same length before (Aug 3 – Sep 1, 2026).
       - list "Key figures":
         - listitem: Runs 15 rising +15
         - listitem: Relays 3 rising +3

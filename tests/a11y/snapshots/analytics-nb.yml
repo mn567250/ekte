@@ -117,7 +117,7 @@
       - tab "Rangeringsliste"
     - tabpanel "Nøkkeltall":
       - heading "Nøkkeltall" [level=2]
-      - paragraph: 1. sep.–1. okt. 2026, sammenlignet med like lang periode før (2. aug.–1. sep. 2026).
+      - paragraph: 2. sep.–1. okt. 2026, sammenlignet med like lang periode før (3. aug.–1. sep. 2026).
       - list "Nøkkeltall":
         - listitem: Kjøringer 15 stigende +15
         - listitem: Releer 3 stigende +3

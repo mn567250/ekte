@@ -167,7 +167,10 @@ der Browser das nicht erlaubt): Der Link öffnet genau diese Ansicht. Das
 Filterpanel ist auf **Verlauf**, **Überwachung** und **Analyse** dasselbe: Geschlossen zeigt es,
 wie viele Filter aktiv sind, und nennt sie in einer Zeile (z. B. „Letzte 30
 Tage · standard · Streaming · Example Relay“), so sagt eine geteilte Ansicht,
-was sie zeigt.
+was sie zeigt. **Verlauf** und **Analyse** beginnen mit den letzten 30
+Tagen: heute und die 29 Tage davor, ab Mitternacht in deiner Zeitzone
+(**Gesamter Zeitraum** zeigt jeden Lauf). Ein geteilter Link behält den
+Zeitraum, nicht die Daten: Jeder sieht ihn in seiner eigenen Zeitzone.
 
 **Erfolgs-, Fehler-, 429- und Störungsquote.** Jede Anfrage, die ekte während eines Laufs an das Relay schickt, hat genau ein Ergebnis: Erfolg, Relay-Fehler (Zeitüberschreitung beim Warten auf das Relay, eine 5xx- oder 4xx-Antwort oder eine andere fehlerhafte Antwort), Ratenbegrenzung (HTTP 429) oder ein Fehler, der das Relay nie erreicht hat (das Netz zwischen Ihnen und dem Relay oder ekte selbst). Wiederholte Versuche zählen einmal. Bewertet wird das Relay nur nach den Anfragen, die es erreicht haben: **Erfolgsquote**, **Fehlerquote** und **429-Quote** sind Erfolge, Relay-Fehler bzw. Ratenbegrenzungen geteilt durch diese Anfragen und ergeben zusammen immer 100 %. Der **Störungsanteil** ist der Anteil aller Anfragen, die vor dem Relay scheiterten: Er sagt, wie weit man dem Lauf selbst trauen kann, nicht wie gut das Relay ist; ist er hoch, wiederholen Sie die Prüfung. Über mehrere Läufe werden die Quoten zusammengezählt (alle Anfragen gemeinsam), sodass ein schlechter Lauf unter vielen guten sichtbar bleibt (neun Läufe mit 0 % und einer mit 40 % ergeben etwa 4 %, nicht 0 %); Bewertungen, Latenzen, Geschwindigkeiten und Abrechnungsverhältnisse sind der Median der Läufe. Verlauf, Analysen und Bericht zeigen für dieselben Läufe dieselben Zahlen, und ein einzelner Lauf zeigt genau die Werte seines Berichts. Die Zuverlässigkeitsprüfung im Bericht hat eine eigene Quote („Erfolgsquote der Zuverlässigkeitsprüfung“), die nur in die Bewertung eingeht.
 

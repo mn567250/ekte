@@ -139,7 +139,7 @@
           - option "Manter" [selected]
           - option "Não manter"
       - 'link "Da execução #1 →"':
-        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+        - /url: /history?range=&surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
       - form "Conclua a configuração para ativá-lo":
         - heading "Conclua a configuração para ativá-lo" [level=4]
         - paragraph: A configuração vem da execução no Histórico. Defina com que frequência é executado e ative-o.
