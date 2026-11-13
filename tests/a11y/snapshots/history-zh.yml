@@ -101,10 +101,10 @@
     - spinbutton "最低健康分"
     - text: 时间范围
     - combobox "时间范围":
-      - option "全部时间" [selected]
+      - option "全部时间"
       - option "最近 24 小时"
       - option "最近 7 天"
-      - option "最近 30 天"
+      - option "最近 30 天" [selected]
       - option "最近 90 天"
       - option "最近 365 天"
       - option "自定义"
@@ -320,7 +320,7 @@
           - text: 删除这条历史记录？
           - button "删除"
           - button "取消"
-  - text: 共 15 条记录
+  - text: 显示 15 / 15 条记录
   - button "清空历史"
   - status
 - contentinfo:

@@ -101,10 +101,10 @@
     - spinbutton "Min. Score"
     - text: Zeitraum
     - combobox "Zeitraum":
-      - option "Gesamter Zeitraum" [selected]
+      - option "Gesamter Zeitraum"
       - option "Letzte 24 Stunden"
       - option "Letzte 7 Tage"
-      - option "Letzte 30 Tage"
+      - option "Letzte 30 Tage" [selected]
       - option "Letzte 90 Tage"
       - option "Letzte 365 Tage"
       - option "Eigener Zeitraum"
@@ -320,7 +320,7 @@
           - text: Diesen Verlaufseintrag löschen?
           - button "Löschen"
           - button "Abbrechen"
-  - text: "Gespeicherte Audits: 15"
+  - text: 15 von 15 Prüfungen
   - button "Verlauf löschen"
   - status
 - contentinfo:

@@ -161,7 +161,10 @@ esta vista** copia-o (ou mostra-o num campo para copiar quando o navegador não
 o permite): a ligação abre exatamente essa vista. O painel de filtros é o mesmo
 em **Histórico**, **Monitores** e **Análises**: fechado, indica quantos filtros estão ativos e
 nomeia-os numa linha (p. ex. «Últimos 30 dias · standard · Streaming · Example
-Relay»), assim uma vista partilhada diz o que mostra.
+Relay»), assim uma vista partilhada diz o que mostra. **Histórico** e **Análises** começam nos últimos 30
+dias: hoje e os 29 dias anteriores, desde a meia-noite no seu fuso horário
+(**Todo o período** mostra todas as execuções). Uma ligação partilhada mantém
+o período, não as datas: cada pessoa vê-o no seu próprio fuso horário.
 
 **Taxas de sucesso, de erro, de 429 e de pedidos afetados.** Cada pedido que o ekte envia ao relay durante uma execução tem exatamente um resultado: sucesso, erro do relay (tempo esgotado à espera do relay, uma resposta 5xx ou 4xx ou outra resposta defeituosa), limitação de taxa (HTTP 429) ou uma falha que nunca chegou ao relay (a rede entre si e o relay, ou o próprio ekte). As tentativas repetidas contam uma vez. O relay é avaliado apenas pelos pedidos que lhe chegaram: a **taxa de sucesso**, a **taxa de erro** e a **taxa de 429** são os sucessos, os erros do relay e as limitações a dividir por esses pedidos, e somam sempre 100%. A **parte afetada** é a fração de todos os pedidos que falhou antes do relay: diz quanto se pode confiar na própria execução, não quão bom é o relay; se for alta, repita a auditoria. Ao longo de várias execuções as taxas são agregadas (todos os pedidos juntos), por isso uma má execução entre muitas boas continua visível (nove execuções a 0% e uma a 40% dão cerca de 4%, não 0%); pontuações, latências, velocidades e rácios de faturação são a mediana das execuções. Histórico, Análise e o relatório mostram os mesmos números para as mesmas execuções, e uma única execução mostra exatamente os valores do seu relatório. A verificação de fiabilidade do relatório tem a sua própria taxa («Taxa de sucesso da verificação de fiabilidade»), que conta apenas para a pontuação.
 
