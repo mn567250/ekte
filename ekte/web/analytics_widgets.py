@@ -152,13 +152,24 @@ def resolve_params(params: Any, *, now: datetime | None = None) -> list[tuple[st
     """The ``prepare`` of the widget endpoints: :func:`ekte.web.query.resolve_params`
     (``range`` resolved), and ``from`` without ``to`` bounded at now (the next
     whole minute), so every
-    answer is cached under an absolute range."""
+    answer is cached under an absolute range. :data:`WATCHES_KEY` carries the
+    monitors' data version (:func:`ekte.web.watches.data_version`, one
+    primary-key read): the filter options name monitors (:func:`watch_labels`),
+    so a renamed or deleted monitor gives them a new cache key and ETag."""
+    from ekte.web import watches
+
     pairs = query.resolve_params(params, now=now)
     keys = {k for k, _ in pairs}
     if "from" in keys and "to" not in keys and "range" not in keys:
         # rounded up to the next whole minute, as range=: a minute's requests share an answer
         pairs.append(("to", analytics_store.format_ts(query._ceil_minute((now or datetime.now(UTC)).astimezone(UTC)))))
+    pairs = [(k, v) for k, v in pairs if k != WATCHES_KEY]  # (never the client's)
+    pairs.append((WATCHES_KEY, str(watches.data_version())))
     return pairs
+
+
+WATCHES_KEY = "options.watches"
+"""The key :func:`resolve_params` adds (dotted: no endpoint's parser reads it)."""
 
 
 # --------------------------------------------------------------------------- #

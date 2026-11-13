@@ -382,7 +382,10 @@ The values present for each filter key, counted under the current filters
 (`history_api.relay_labels`: its knowledge-base name, else the host of its
 URL); a monitor's (`watch`) is its name, read from `watches.db` once per
 request, or, for a monitor that no longer exists, `Deleted monitor #<id>`
-with `deleted: true` (the panel shows it translated). `watch` lists only
+with `deleted: true` (the panel shows it translated); the widget endpoints'
+`prepare` adds the monitors' data version (`options.watches`,
+`watches.data_version()`) to the cache key, so a renamed or deleted monitor
+gets a new answer and `ETag` although the history did not change. `watch` lists only
 monitor runs, so its counts add up to `exec=monitor`'s. Lists are ordered by
 runs, then label / value.
 `runs` counts the full selection; `span` is the first and last run under

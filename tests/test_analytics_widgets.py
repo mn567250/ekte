@@ -567,11 +567,13 @@ def test_watch_selects_exactly_one_monitor(data, client):  # noqa: F811
     assert _get(client, "/api/filters/options", {"watch": str(a)})["watch"] == out["watch"]
     assert _get(client, "/api/filters/options", {"exec": "manual"})["watch"] == []
 
-    watches.delete(b)
-    cache.default_cache.clear()  # (keyed on the history data version, which a deleted monitor leaves)
-    assert _get(client, "/api/analytics/summary", {"watch": str(b)})["runs"] == 2
-    gone = {o["value"]: o for o in _get(client, "/api/filters/options")["watch"]}[str(b)]
+    etag = client.get("/api/filters/options").headers["etag"]
+    watches.delete(b)  # history stays as it was: the monitors' data version gives a new key
+    again = client.get("/api/filters/options", headers={"If-None-Match": etag})
+    assert again.status_code == 200 and again.headers["etag"] != etag
+    gone = {o["value"]: o for o in again.json()["watch"]}[str(b)]
     assert gone == {"value": str(b), "runs": 2, "label": f"Deleted monitor #{b}", "deleted": True}
+    assert _get(client, "/api/analytics/summary", {"watch": str(b)})["runs"] == 2  # still filterable
 
 
 @pytest.mark.parametrize("path", ["/api/history/groups", "/api/history/runs", *sorted(PATHS.values())])
