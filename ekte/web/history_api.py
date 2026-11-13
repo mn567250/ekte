@@ -44,7 +44,7 @@ import math
 import sqlite3
 import threading
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import datetime
 from typing import Any
 from urllib.parse import urlsplit
@@ -167,6 +167,55 @@ def _focus(value: str | None, key: str) -> int | None:
     if rid < 1:
         raise QueryError(f"{key} must be a run id")
     return rid
+
+
+# The URL key of each Query field that selects runs, in the schema's order
+# (the time fields are one filter: range); None: it selects none. Every field
+# is listed (tests/test_history_api.py checks it), so a new filter cannot be
+# missed by excluded_by.
+FILTER_KEYS: dict[str, str | None] = {
+    "start": "range", "end": "range", "range": "range", "surface": "surface",
+    "relays": "relay", "models": "model", "suite": "suite", "mode": "mode", "api": "api",
+    "stream": "stream", "detect": "detect", "risk": "risk", "min_score": "min_score",
+    "exec": "exec", "text": "q", "group": None, "tz": None,
+}
+
+
+def _filters(q: Query) -> dict[str, Query]:
+    """Each filter set in ``q`` (by its URL key, the time fields as
+    ``range``) as a query of that filter alone."""
+    blank = Query(group=q.group, tz=q.tz)
+    out: dict[str, dict[str, Any]] = {}
+    for f in fields(Query):
+        key = FILTER_KEYS[f.name]
+        value = getattr(q, f.name)
+        if key is None or value == getattr(blank, f.name):
+            continue
+        out.setdefault(key, {})[f.name] = value
+    return {key: blank.replace(**changes) for key, changes in out.items()}
+
+
+def _focus_outside(conn: sqlite3.Connection, q: Query, rid: int) -> dict[str, Any]:
+    """What a ``focus`` answer adds for the run ``rid`` when the page does
+    not hold it: when it exists but is not among ``q``'s runs, ``outside``,
+    its ``started_at``, ``by_range_only`` (only ``range`` / ``from`` / ``to``
+    leave it out) and ``excluded_by`` (the URL keys of the filters that leave
+    it out, ``range`` for the time); nothing when it does not exist or
+    matches every filter. One statement on the run's own row (by its id),
+    with one ``EXISTS`` on that row per filter set: filters are ANDed, so
+    the run matches them all exactly when it matches each."""
+    checks = [(key, query.select_runs(one).and_where("m.history_id = ?", rid))
+              for key, one in _filters(q).items()]
+    cols = "".join(f", EXISTS(SELECT 1 {sel.sql})" for _, sel in checks)
+    row = conn.execute(f"SELECT f.started_us{cols} FROM history_metrics f WHERE f.history_id = ?",
+                       (*(a for _, sel in checks for a in sel.args), rid)).fetchone()
+    if row is None:
+        return {}
+    excluded = [key for (key, _), ok in zip(checks, row[1:], strict=True) if not ok]
+    if not excluded:
+        return {}
+    return {"outside": True, "started_at": query.us_text(row[0]),
+            "by_range_only": excluded == ["range"], "excluded_by": excluded}
 
 
 def trend_metrics(values: Sequence[str] | None) -> list[Metric]:
@@ -512,7 +561,9 @@ def groups(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
         if at is not None:
             if at >= end:  # the page grows to the page that holds it
                 end = min(len(heads), start + math.ceil((at - start + 1) / limit) * limit)
-            focus_out = {"id": focus, "key": heads[at].key}
+            focus_out = {"id": focus, "found": True, "key": heads[at].key}
+        else:
+            focus_out = {"id": focus, "found": False, **_focus_outside(conn, q, focus)}
     page = heads[start:end]
     nxt = _cursor("groups", sort, page[-1].sort_key) if page and end < len(heads) else None
 
@@ -600,6 +651,8 @@ def runs(conn: sqlite3.Connection, params: Any) -> dict[str, Any]:
                                       (*sel.args, *cut_args, *ahead_args)).fetchone()[0])
             limit = max(limit, math.ceil((before + 1) / limit) * limit)
         focus_out = {"id": focus, "found": hit}
+        if row is None:  # not in this group under the filters: maybe outside them
+            focus_out.update(_focus_outside(conn, q, focus))
 
     found = conn.execute(f"SELECT id, k FROM ({base}) WHERE {later} ORDER BY {order.by} LIMIT ?",
                          (*sel.args, *cut_args, limit + 1)).fetchall()

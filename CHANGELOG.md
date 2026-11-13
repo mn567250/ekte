@@ -20,6 +20,32 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### History: a link to a run outside the filters shows it ([#157](https://github.com/mn567250/ekte/issues/157))
+
+Part of [#150](https://github.com/mn567250/ekte/issues/150). A link to one
+run (`runs.focus=<id>`, older `#r-<id>` links) used to come back
+`found: false` when the run was outside the filters, for example older than
+History's default range, the last 30 days, and the page gave no sign of it.
+Now the `focus` answer of `GET /api/history/groups` and `/api/history/runs`
+says when a run exists but is outside the filters: `outside: true`, its
+`started_at`, `by_range_only` (only `range` / `from` / `to` leave it out) and
+`excluded_by` (the URL keys of the filters that leave it out). It costs one
+statement on the run's own row, and only when the run is not on the page.
+When only the range leaves it out, History widens the range to a custom range
+from the run's day (00:00 in the viewer's time zone, written with its UTC
+offset; no end), keeps every other filter and the focus, and says "Range
+widened to show run #n" once in the page notice. Otherwise the notice says
+"Run #n doesn't match the current filters" with a "Show it" button, which
+clears the filters that leave it out, keeps the focus and moves keyboard
+focus to the run. The filter panel's range select shows "Custom range" when
+the page sets dates itself.
+
+#### Breaking changes
+
+- **`groups.focus` answers `{"id", "found", ...}`**: `{"id", "found": true,
+  "key"}` for a run on the page (was `{"id", "key"}`), and
+  `{"id", "found": false}` instead of `null` for one that is not.
+
 ### Day ranges from local midnight, viewer time zone, one `30d` default ([#152](https://github.com/mn567250/ekte/issues/152))
 
 Part of [#150](https://github.com/mn567250/ekte/issues/150). Day ranges
