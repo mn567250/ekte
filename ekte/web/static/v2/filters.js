@@ -114,7 +114,7 @@
     risk: { kind: "select", def: "", values: ["clean", "low", "medium", "high", "inconclusive"] },
     min_score: { kind: "number", def: "" },
     exec: { kind: "select", def: "", values: ["manual", "monitor"] },
-    watch: { kind: "select", def: "", values: null, pattern: /^[1-9]\d{0,17}$/ },
+    watch: { kind: "select", def: "", values: null, pattern: /^[1-9]\d{0,18}$/ },
     group: { kind: "select", def: "relay", values: ["relay", "model", "relay_model", "all"], required: true },
   };
   var ORDER = Object.keys(FIELDS);

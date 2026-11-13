@@ -165,7 +165,8 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
         conn.execute(history._BUMP_SQL)
     with datadir.connect("watches.db", watches.MIGRATIONS) as conn:
         conn.executemany(
-            "INSERT OR IGNORE INTO watches (id, name, base_url, model, suite) VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO watches (id, name, base_url, model, suite, enabled)"
+            " VALUES (?, ?, ?, ?, ?, 0)",  # paused: a server on the fixture never runs them
             [(w, f"monitor-{w:02d}", urls[w % relays], MODELS[w % len(MODELS)], SUITES[w % 3])
              for w in range(1, WATCHES - DELETED_WATCHES + 1)])
     return runs

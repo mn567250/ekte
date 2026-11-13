@@ -261,8 +261,8 @@ def ensure_run_columns(conn: sqlite3.Connection) -> None:
     them current, and fill them for the runs already saved (a migration
     step). Idempotent and cheap once done: when every trigger is as defined
     here, the columns are current and nothing is rewritten. Creates
-    :data:`INDEXES` (again when the run row changed, so the covering index
-    holds every column of it)."""
+    :data:`INDEXES` (again when their columns changed, so the covering index
+    holds every column of the run row)."""
     from ekte.knowledge.snapshot import add_link_columns
 
     triggers = _trigger_sql()
@@ -271,10 +271,6 @@ def ensure_run_columns(conn: sqlite3.Connection) -> None:
         f" ({', '.join('?' * (len(triggers) + len(_OLD_TRIGGERS)))})",
         (*triggers, *_OLD_TRIGGERS)).fetchall())
     if stored != triggers:
-        # an index made before a column was added to the run row covers less
-        # than INDEXES says: made again below
-        for name in INDEXES:
-            conn.execute(f"DROP INDEX IF EXISTS {name}")
         for name in (*triggers, *_OLD_TRIGGERS):
             conn.execute(f"DROP TRIGGER IF EXISTS {name}")
         for lookup in LOOKUPS:
@@ -285,4 +281,9 @@ def ensure_run_columns(conn: sqlite3.Connection) -> None:
         for statement in _refresh_sql("history_metrics.history_id", "TRUE").rstrip(";").split("; "):
             conn.execute(statement)
     for name, cols in INDEXES.items():
+        # an index made before a column was added to the run row covers less
+        # than it should: made again
+        have = [r[2] for r in conn.execute(f"PRAGMA index_info({name})")]
+        if have and have != cols.split(", "):
+            conn.execute(f"DROP INDEX {name}")
         conn.execute(f"CREATE INDEX IF NOT EXISTS {name} ON history_metrics ({cols})")

@@ -91,6 +91,7 @@ import base64
 import binascii
 import json
 import math
+import re
 import sqlite3
 from bisect import bisect_left, bisect_right
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -251,13 +252,15 @@ def _time(key: str, value: str | None) -> datetime | None:
 
 # the largest id SQLite stores (a monitor's id is an INTEGER PRIMARY KEY)
 _MAX_ID = 2**63 - 1
+_WATCH_RE = re.compile(r"[1-9][0-9]{0,18}")
 
 
 def _watch(value: str | None) -> int | None:
-    """A ``watch`` value: a positive integer, written in plain digits."""
+    """A ``watch`` value: a positive integer, in plain digits without leading zeros
+    (one spelling per monitor, as filters.js checks it)."""
     if value is None:
         return None
-    if not (value.isascii() and value.isdigit()) or int(value) < 1 or int(value) > _MAX_ID:
+    if not _WATCH_RE.fullmatch(value) or int(value) > _MAX_ID:
         raise QueryError("watch must be a monitor id (a positive integer)")
     return int(value)
 

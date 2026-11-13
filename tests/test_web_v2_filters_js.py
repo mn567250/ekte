@@ -94,6 +94,7 @@ def parse(search: str, fields: list[str] | None = None) -> dict[str, Any]:
     ("watch=-", {}),  # no "(unknown)": a run started by hand has exec=manual
     ("watch=abc", {}),
     ("watch=1.5", {}),
+    ("watch=012", {}),  # one spelling (the server's)
     ("watch=3&watch=4", {"watch": "3"}),  # not repeatable: the first
     ("group=model", {"group": "model"}),
     ("group=relay_model", {"group": "relay_model"}),

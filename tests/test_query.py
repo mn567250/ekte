@@ -118,7 +118,9 @@ def test_parse_every_key():
 def test_watch_is_one_monitor_id():
     q = parse_query({"watch": " 12 ", "exec": "monitor"})
     assert q.watch == 12 and q.canonical()["watch"] == "12" and parse_query(q.params()) == q
-    assert parse_query({"watch": "012"}) == parse_query({"watch": "12"})  # one cache key
+    with pytest.raises(QueryError, match="watch must be"):
+        parse_query({"watch": "012"})  # one spelling per monitor (one cache key)
+    assert parse_query({"watch": str(2**63 - 1)}).watch == 2**63 - 1  # the largest SQLite id
     assert parse_query({"watch": ""}).watch is None  # empty: not given
     sel = query.select_runs(q)
     assert "m.watch_id = ?" in sel.where and 12 in sel.args and not sel.text  # on the run row

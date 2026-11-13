@@ -203,7 +203,18 @@ def test_ensure_run_columns_is_cheap_once_done(data):  # noqa: F811
         statements: list[str] = []
         conn.set_trace_callback(statements.append)
         run_row.ensure_run_columns(conn)
-        assert not [s for s in statements if s.lstrip().upper().startswith(("UPDATE", "INSERT"))]
+        assert not [s for s in statements if s.lstrip().upper().startswith(("UPDATE", "INSERT", "DROP"))]
+
+
+def test_an_index_with_other_columns_is_made_again(data):  # noqa: F811
+    """The run row's columns changed while its triggers did not (a metric
+    column added): the covering index is made again with every column."""
+    history.save(_fixture())
+    with _db(data) as conn:
+        conn.execute("DROP INDEX idx_run_row")
+        conn.execute(f"CREATE INDEX idx_run_row ON history_metrics ({', '.join(run_row.NUMBERS[:-1])})")
+        run_row.ensure_run_columns(conn)
+        assert [r[2] for r in conn.execute("PRAGMA index_info(idx_run_row)")] == list(run_row.NUMBERS)
 
 
 def test_a_v15_database_gets_the_monitor_on_the_run_row(data):  # noqa: F811
