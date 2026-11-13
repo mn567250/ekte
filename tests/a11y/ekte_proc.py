@@ -97,7 +97,7 @@ class EkteProc:
 
 def _fix_query_clock() -> None:
     """The query core's "now" at FIXED_TS, as the snapshot browsers' clock: a
-    relative range (``range=30d``, the Analytics default) is resolved on the
+    relative range (``range=30d``, the default of both pages) is resolved on the
     server, so the seeded week stays inside it and the page reads the same on
     every run."""
     from ekte.web import analytics_widgets, query
@@ -122,8 +122,9 @@ def _main(port: int, data_dir: Path, seed_monitor: bool, seed: str = "") -> None
 
     history.init()
     rid = history.save(json.loads(REPORT_FIXTURE.read_text(encoding="utf-8")))
-    if seed_monitor:
-        _fix_query_clock()
+    # every server: History defaults to range=30d too (#152), so the saved
+    # fixtures must stay inside the range on every run
+    _fix_query_clock()
     if seed:
         getattr(seeds, seed)(datetime.fromtimestamp(FIXED_TS, UTC))
     server = uvicorn.Server(uvicorn.Config(create_app(), host="127.0.0.1", port=port, log_level="warning"))

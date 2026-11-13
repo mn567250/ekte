@@ -359,10 +359,16 @@
   }
 
   // any shared filter in the URL (the URL is the view)
-  function isFiltered() {
+  // a filter key in the URL
+  function urlFiltered() {
     var parsed = window.EkteFilters.parse(location.search, FLD, []);
     return Object.keys(parsed).some(function (k) { return k.indexOf(".") < 0; });
   }
+  // the list is a part of the history: a filter in the URL, or a range (the
+  // default range, the last 30 days, too)
+  function isFiltered() { return urlFiltered() || !!window.EkteFilters.state().range; }
+  // runs are saved, maybe outside the filters (from /api/history/status)
+  function anySaved() { return !!(note.status && note.status.runs > 0); }
   function focusRun() {
     var v = F.state()[FOCUS];
     return v != null && /^\d+$/.test(String(v)) ? String(v) : null;
@@ -526,7 +532,7 @@
       .then(function () {
         if (sig.aborted) return;
         host.setAttribute("aria-busy", "false");
-        fbar.hidden = state.error != null || (!state.totalRuns && !isFiltered());
+        fbar.hidden = state.error != null || (!state.totalRuns && !urlFiltered() && !anySaved());
       });
   }
 
@@ -594,7 +600,11 @@
     return Promise.all([st, mk])
       .then(function (res) { note.status = res[0]; note.locked = !!(res[1] && res[1].state === "locked"); note.err = false; },
         function () { note.err = true; })
-      .then(function () { paintNote(); syncCounts(); });
+      .then(function () {
+        paintNote(); syncCounts();
+        // an empty range over saved runs: "no match", not "no audits yet"
+        if (state.groups && !state.totalRuns && anySaved()) { fbar.hidden = false; render(); }
+      });
   }
   $("#note").addEventListener("click", function (e) {
     var b = e.target.closest("[data-note-act]");
@@ -624,7 +634,7 @@
     if (state.open != null && !state.rows[String(state.open)]) state.open = null;
     if (state.confirm != null && state.confirm !== "all" && !state.rows[String(state.confirm)]) state.confirm = null;
     if (!state.totalRuns) {
-      host.innerHTML = isFiltered()
+      host.innerHTML = urlFiltered() || anySaved()
         ? '<div class="nomatch"><p>' + esc(T("没有符合筛选条件的检测记录。", "No audits match these filters.")) +
           '</p><button type="button" class="btn sm" id="nmreset">' + esc(T("重置筛选", "Reset filters")) + "</button></div>"
         : '<div class="empty-box"><div class="ic">' + ico("folder") + "</div><p>" +

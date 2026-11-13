@@ -116,20 +116,95 @@ def test_parse_every_key():
 
 
 def test_range_resolves_to_absolute_bounds():
+    # a day range: today and the 6 days before it, from 00:00 (UTC by default), no end
     q = parse_query({"range": "7d"}, now=NOW)
-    assert q.end == datetime(2026, 6, 1, 12, 1, tzinfo=UTC)  # the next whole minute
-    assert q.start == q.end - timedelta(days=7)
+    assert q.start == datetime(2026, 5, 26, tzinfo=UTC) and q.end is None and q.days == 7
+    assert q.canonical() == {"from": "2026-05-26T00:00:00.000000+00:00", "group": "relay", "range": "7d"}
+    assert parse_query(q.params()) == q  # the canonical form parses back to the same query
+    # an hour range stays exact: to = now rounded up to the minute, from = to - 24 h
+    q = parse_query({"range": "24h"}, now=NOW)
+    assert q.end == datetime(2026, 6, 1, 12, 1, tzinfo=UTC) and q.start == q.end - timedelta(hours=24)
     assert "range" not in q.canonical() and q.canonical()["to"] == "2026-06-01T12:01:00.000000+00:00"
     assert parse_query({"range": "24h"}, now=NOW.replace(second=0)).end == NOW.replace(second=0)
-    for r, delta in query.RANGES.items():
+    for r, days in query.DAY_RANGES.items():
         q = parse_query({"range": r}, now=NOW)
-        assert q.end - q.start == delta
+        assert q.start == datetime(2026, 6, 1, tzinfo=UTC) - timedelta(days=days - 1) and q.end is None
     # the cache key form: range resolved, widget keys kept
     pairs = query.resolve_params([("range", "30d"), ("trend.metric", "score")], now=NOW)
-    assert ("trend.metric", "score") in pairs and not any(k == "range" for k, _ in pairs)
-    assert dict(pairs)["to"] == "2026-06-01T12:01:00.000000+00:00"
+    assert ("trend.metric", "score") in pairs and dict(pairs)["range"] == "30d" and "to" not in dict(pairs)
+    assert dict(pairs)["from"] == "2026-05-03T00:00:00.000000+00:00"
+    hours = query.resolve_params([("range", "24h")], now=NOW)
+    assert not any(k == "range" for k, _ in hours) and dict(hours)["to"] == "2026-06-01T12:01:00.000000+00:00"
     bad = [("range", "1y")]
     assert query.resolve_params(bad) == bad  # left for the endpoint to reject
+
+
+BERLIN, LA = ZoneInfo("Europe/Berlin"), ZoneInfo("America/Los_Angeles")
+
+
+@pytest.mark.parametrize("tz, now, rng, first", [
+    # the issue's example: 30d on 2026-11-10 in Berlin starts 2026-10-12 00:00 local
+    ("Europe/Berlin", datetime(2026, 11, 10, 15, 0, tzinfo=UTC), "30d", datetime(2026, 10, 12, tzinfo=BERLIN)),
+    # just after local midnight (still the day before in UTC): the local day counts
+    ("Europe/Berlin", datetime(2026, 11, 9, 23, 30, tzinfo=UTC), "7d", datetime(2026, 11, 4, tzinfo=BERLIN)),
+    ("Europe/Berlin", datetime(2026, 6, 1, 12, 0, tzinfo=UTC), "7d", datetime(2026, 5, 26, tzinfo=BERLIN)),
+    # late evening in Los Angeles is already tomorrow in UTC
+    ("America/Los_Angeles", datetime(2026, 6, 2, 5, 0, tzinfo=UTC), "7d", datetime(2026, 5, 26, tzinfo=LA)),
+    ("America/Los_Angeles", datetime(2026, 11, 10, 15, 0, tzinfo=UTC), "30d", datetime(2026, 10, 12, tzinfo=LA)),
+])
+def test_day_ranges_start_at_local_midnight(tz, now, rng, first):
+    q = parse_query({"range": rng, "tz": tz}, now=now)
+    assert q.start == first.astimezone(UTC) and q.end is None and q.tz == tz
+    assert q.start.astimezone(ZoneInfo(tz)).time() == datetime.min.time()
+    assert q.canonical()["tz"] == tz and parse_query(q.params()) == q
+
+
+@pytest.mark.parametrize("tz, now, last_offset, first_offset", [
+    # Berlin leaves summer time on 2026-10-25: 7 days back from Oct 28 cross it
+    ("Europe/Berlin", datetime(2026, 10, 28, 12, 0, tzinfo=UTC), 1, 2),
+    # Los Angeles leaves daylight time on 2026-11-01
+    ("America/Los_Angeles", datetime(2026, 11, 4, 20, 0, tzinfo=UTC), -8, -7),
+    # and enters it on 2026-03-08
+    ("America/Los_Angeles", datetime(2026, 3, 10, 20, 0, tzinfo=UTC), -7, -8),
+])
+def test_a_day_range_across_a_dst_change_is_calendar_days(tz, now, last_offset, first_offset):
+    zone = ZoneInfo(tz)
+    q = parse_query({"range": "7d", "tz": tz}, now=now)
+    local = q.start.astimezone(zone)
+    assert local.time() == datetime.min.time()
+    assert (now.astimezone(zone).date() - local.date()).days == 6  # today + 6 calendar days
+    assert local.utcoffset() == timedelta(hours=first_offset)
+    assert now.astimezone(zone).utcoffset() == timedelta(hours=last_offset)
+    # so the span to today's midnight is not 6 x 24 h: it gained or lost the hour of the change
+    today = datetime.combine(now.astimezone(zone).date(), datetime.min.time(), tzinfo=zone)
+    assert today - q.start == timedelta(days=6, hours=first_offset - last_offset)
+    # the comparison period is the 7 calendar days before
+    prev = query.previous_days(q.start, 7, zone).astimezone(zone)
+    assert prev.time() == datetime.min.time() and (local.date() - prev.date()).days == 7
+
+
+def test_a_day_range_is_stable_all_day_and_changes_at_local_midnight():
+    morning = datetime(2026, 11, 10, 7, 0, tzinfo=UTC)
+
+    def key(now):
+        return query.resolve_params({"range": "30d", "tz": "Europe/Berlin"}, now=now)
+
+    assert key(morning) == key(morning + timedelta(minutes=1)) == key(datetime(2026, 11, 10, 22, 59, tzinfo=UTC))
+    assert key(datetime(2026, 11, 10, 23, 0, tzinfo=UTC)) != key(morning)  # 00:00 in Berlin
+
+    def hour(now):
+        return query.resolve_params({"range": "24h"}, now=now)
+
+    assert hour(morning) != hour(morning + timedelta(minutes=1))  # an hour range follows the minute
+
+
+def test_tz_selects_no_runs_and_is_left_out_when_utc():
+    assert parse_query({"tz": "UTC"}) == Query() and Query().canonical() == {"group": "relay"}
+    q = parse_query({"tz": "Asia/Tokyo"})
+    assert q.canonical() == {"group": "relay", "tz": "Asia/Tokyo"}
+    assert query.select_runs(q) == query.select_runs(Query())
+    # the resolved form of a day range (a local midnight) is accepted with range
+    assert parse_query({"range": "7d", "from": "2026-01-01T00:00:00+01:00", "tz": "Europe/Berlin"}).days == 7
 
 
 @pytest.mark.parametrize("params, message", [
@@ -137,7 +212,11 @@ def test_range_resolves_to_absolute_bounds():
     ({"days": "7"}, "unknown parameter 'days'"),
     ({"suite": ["a", "b"]}, "suite given more than once"),
     ({"range": "1y"}, "range must be one of 24h, 7d, 30d, 90d, 365d"),
-    ({"range": "7d", "from": "2026-01-01"}, "range cannot be combined"),
+    ({"range": "7d", "from": "2026-01-01T05:00"}, "range cannot be combined"),  # not a midnight
+    ({"range": "7d", "to": "2026-01-01"}, "range cannot be combined"),
+    ({"range": "24h", "from": "2026-01-01"}, "range cannot be combined"),
+    ({"tz": "Mars/Olympus"}, "unknown time zone 'Mars/Olympus'"),
+    ({"tz": "../etc/passwd"}, "unknown time zone"),
     ({"from": "yesterday"}, "from must be an ISO 8601 timestamp"),
     ({"to": "2026-13-01"}, "to must be an ISO 8601 timestamp"),
     ({"from": "2026-03-02", "to": "2026-03-01"}, "from must be before to"),
