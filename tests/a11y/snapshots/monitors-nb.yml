@@ -139,7 +139,7 @@
           - option "Behold" [selected]
           - option "Ikke behold"
       - 'link "Fra kjøring #1 →"':
-        - /url: /history?surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
+        - /url: /history?range=&surface=chat&relay=http%3A%2F%2F127.0.0.1%3A9099%2Fv1&model=gpt-4o&suite=standard#r-1
       - form "Fullfør oppsettet for å slå den på":
         - heading "Fullfør oppsettet for å slå den på" [level=4]
         - paragraph: Konfigurasjonen kommer fra kjøringen i Historikk. Angi hvor ofte den skal kjøre, og aktiver den.

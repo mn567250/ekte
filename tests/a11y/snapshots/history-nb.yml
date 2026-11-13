@@ -101,10 +101,10 @@
     - spinbutton "Min. score"
     - text: Periode
     - combobox "Periode":
-      - option "Hele perioden" [selected]
+      - option "Hele perioden"
       - option "Siste 24 timer"
       - option "Siste 7 dager"
-      - option "Siste 30 dager"
+      - option "Siste 30 dager" [selected]
       - option "Siste 90 dager"
       - option "Siste 365 dager"
       - option "Egendefinert periode"
@@ -318,7 +318,7 @@
           - text: Slette denne historikkoppføringen?
           - button "Slett"
           - button "Avbryt"
-  - text: "Lagrede revisjoner: 15"
+  - text: Viser 15 av 15 revisjoner
   - button "Tøm historikken"
   - status
 - contentinfo:

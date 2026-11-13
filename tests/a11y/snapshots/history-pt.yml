@@ -101,10 +101,10 @@
     - spinbutton "Pontuação mín."
     - text: Período
     - combobox "Período":
-      - option "Todo o período" [selected]
+      - option "Todo o período"
       - option "Últimas 24 horas"
       - option "Últimos 7 dias"
-      - option "Últimos 30 dias"
+      - option "Últimos 30 dias" [selected]
       - option "Últimos 90 dias"
       - option "Últimos 365 dias"
       - option "Período personalizado"
@@ -318,7 +318,7 @@
           - text: Eliminar esta entrada do histórico?
           - button "Eliminar"
           - button "Cancelar"
-  - text: "Auditorias guardadas: 15"
+  - text: A mostrar 15 de 15 auditorias
   - button "Limpar histórico"
   - status
 - contentinfo:

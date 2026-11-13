@@ -19,6 +19,10 @@ Without ``surface`` a widget uses the most common surface of the selection
 (:func:`ekte.web.query.default_surface`, worked out once per selection and data
 version: :func:`default_surface`), so runs of different surfaces never mix;
 the answer names it (``surface``).
+
+Time buckets are made in the viewer's time zone: the widget's own key
+(``trend.tz``, ``heat.tz``, ``errors.tz``) or else the shared ``tz``
+(:mod:`ekte.web.query`; default UTC).
 """
 
 from __future__ import annotations
@@ -96,7 +100,9 @@ def default_surface(conn: Any, q: query.Query) -> str:
     """:func:`ekte.web.query.default_surface` of ``q``'s runs, computed once per
     selection and data version (:data:`SURFACE_CACHE`). ``q.surface`` and
     ``q.group`` do not select runs, so they are not part of the key."""
-    key = cache.cache_key("default_surface", q.replace(surface=None, group="relay").params())
+    # (tz and range only say how from was found: the runs are the same)
+    key = cache.cache_key("default_surface",
+                          q.replace(surface=None, group="relay", range=None, tz=query.DEFAULT_TZ).params())
     return str(SURFACE_CACHE.get_or_compute(key, lambda: query.default_surface(conn, q)))
 
 
@@ -150,9 +156,10 @@ def _judged(m: Metric, cell: dict[str, Any]) -> dict[str, Any]:
 
 def resolve_params(params: Any, *, now: datetime | None = None) -> list[tuple[str, str]]:
     """The ``prepare`` of the widget endpoints: :func:`ekte.web.query.resolve_params`
-    (``range`` resolved), and ``from`` without ``to`` bounded at now (the next
-    whole minute), so every
-    answer is cached under an absolute range."""
+    (``range`` resolved; a day range to its first local midnight with no
+    ``to``, so its key changes once a day), and a custom ``from`` without
+    ``to`` bounded at now (the next whole minute), so every answer is cached
+    under an absolute range."""
     pairs = query.resolve_params(params, now=now)
     keys = {k for k, _ in pairs}
     if "from" in keys and "to" not in keys and "range" not in keys:
@@ -188,18 +195,24 @@ def _kpi_cells(conn: Any, q: query.Query) -> dict[str, query.Cell]:
 def widget_summary(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/summary``: the 12 tiles of
     :data:`ekte.web.metrics.KPI_GRID`, in order, over the range and over the
-    previous range of the same length (none without ``from``)."""
+    previous range (``previous``; none without ``from``): for a day range the
+    same number of calendar days before it in ``tz`` (``[from − N days,
+    from)``), else the span of the same length before ``from``."""
     _widget(params, "kpi")
     conn, q = _setup(params)
     prev_q: query.Query | None = None
     start = q.start
-    if start is not None:
-        end = q.end or datetime.now(UTC)
-        q = q.replace(end=end)
-        try:
+    days = q.days
+    try:
+        if start is not None and days is not None:
+            prev_q = q.replace(start=query.previous_days(start, days, q.zone), end=start,
+                               range=None)
+        elif start is not None:
+            end = q.end or datetime.now(UTC)
+            q = q.replace(end=end)
             prev_q = q.replace(start=start - (end - start), end=start)
-        except OverflowError:
-            prev_q = None
+    except (OverflowError, ValueError):
+        prev_q = None
     now = _kpi_cells(conn, q)
     then = _kpi_cells(conn, prev_q) if prev_q is not None else {}
     tiles = []
@@ -244,7 +257,7 @@ def _series_public(result: query.SeriesResult, ahead: int | None = None) -> dict
 def widget_series(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/series``: one metric per group (``group``) over
     time buckets. ``trend.metric`` (default score), ``trend.bucket`` (hour,
-    day, week), ``trend.tz`` (IANA, default UTC), ``trend.key`` (repeatable,
+    day, week), ``trend.tz`` (IANA, default the shared ``tz``), ``trend.key`` (repeatable,
     up to :data:`MAX_KEYS` series keys; default the busiest groups),
     ``trend.ahead`` (buckets to forecast: hour 12 / 24, day 3 / 7, week 2 / 4;
     0 or absent for none): each series' ``forecast``
@@ -253,7 +266,7 @@ def widget_series(params: Any) -> dict[str, Any]:
     conn, q = _setup(params)
     bucket = _str_choice(w, "bucket", "trend.bucket", TREND_BUCKETS, "day")
     ahead = _int_choice(w, "ahead", "trend.ahead", (0, *forecast.AHEAD[bucket]), 0)
-    result = query.series(conn, q, w.get("metric") or "score", None, bucket, w.get("tz") or "UTC",
+    result = query.series(conn, q, w.get("metric") or "score", None, bucket, w.get("tz") or q.tz,
                           keys=w["key"], quantiles=True)
     return {**_head(q), **_series_public(result, ahead)}
 
@@ -262,7 +275,7 @@ def widget_heatmap(params: Any) -> dict[str, Any]:
     """``GET /api/analytics/heatmap``: one metric on the weekday x time-of-day
     grid (a series with bucket ``dow_hour``). ``heat.metric`` (default score),
     ``heat.block`` (hours per row: 1, 2, 3, 4, 6), ``heat.fold`` (week,
-    4weeks, month_week), ``heat.tz``, ``heat.key`` (one series key of
+    4weeks, month_week), ``heat.tz`` (default the shared ``tz``), ``heat.key`` (one series key of
     ``group``; default every selected run as one series, group ``all``)."""
     w = _widget(params, "heat", ("metric", "block", "fold", "tz", "key"))
     conn, q = _setup(params)
@@ -270,7 +283,7 @@ def widget_heatmap(params: Any) -> dict[str, Any]:
     fold = _str_choice(w, "fold", "heat.fold", FOLDS, "week")
     key = w.get("key")
     result = query.series(conn, q, w.get("metric") or "score", None if key else "all", "dow_hour",
-                          w.get("tz") or "UTC", keys=[key] if key else (), block=block, fold=fold,
+                          w.get("tz") or q.tz, keys=[key] if key else (), block=block, fold=fold,
                           max_keys=1)
     return {**_head(q), **_series_public(result)}
 
@@ -436,13 +449,13 @@ def widget_errors(params: Any) -> dict[str, Any]:
     outcome (:data:`ERROR_CLASSES`, from ``history_outcomes``), pooled per group
     (``group``), in total and per time bucket of the run's start
     (``errors.bucket``: hour, day, week, dow_hour; ``errors.block`` for
-    dow_hour; ``errors.tz``). ``errors.run=<id>``: also that run's per-minute
+    dow_hour; ``errors.tz``, default the shared ``tz``). ``errors.run=<id>``: also that run's per-minute
     timeline (``run``), classified from its request records."""
     w = _widget(params, "errors", ("bucket", "block", "tz", "run"))
     conn, q = _setup(params)
     size = _str_choice(w, "bucket", "errors.bucket", BUCKETS, "day")
     block = _int_choice(w, "block", "errors.block", BLOCKS, 1)
-    zone, zone_name = query._zone(w.get("tz") or "UTC")
+    zone, zone_name = query._zone(w.get("tz") or q.tz)
     rid = None
     if w.get("run") is not None:
         if not w["run"].isdigit():

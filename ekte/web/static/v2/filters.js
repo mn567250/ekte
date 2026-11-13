@@ -41,7 +41,10 @@
  *   state()          { key: value } every declared, widget and view key with
  *                    its effective value (relay / model: arrays)
  *   widgetParams(ns) the query string for a widget: the shared filters plus
- *                    the ns.* keys (ns: a name, a list, or none)
+ *                    the ns.* keys (ns: a name, a list, or none), and tz:
+ *                    the viewer's time zone, which resolves day ranges and
+ *                    buckets times; it is never in state() or url(), so a
+ *                    shared link resolves in each viewer's own zone
  *   set(patch)       { key: value | null } (null: back to the default)
  *   reset()          every filter back to its default (widget keys stay)
  *   load(widgets)    { ns: { url, done(data), fail(err) } }: fetches them all
@@ -59,7 +62,7 @@
  * EkteFilters.keyed(key, labels): the text of an i18n key ("metric.score"),
  *   falling back to labels[key] (GET /api/metrics `labels`), then the key.
  * Pure helpers (tested under node): parse, serialise, params, initial,
- *   loader, FIELDS.
+ *   loader, viewerZone, FIELDS.
  *
  * /api/filters/options (issue 123) is read as { "<key>": [{ value, label?, runs? }] }
  * for the keys of FIELDS ("-" is "(unknown)"), requested with the shared
@@ -97,10 +100,11 @@
   /* The URL schema of ekte/web/query.py, in the order fields are shown and
    * keys are written. kind: text | range | select | multi | number;
    * values: the fixed choices (null: free, listed by the options endpoint);
-   * unknown: "-" ("(unknown)") is a valid value; def: the schema default. */
+   * unknown: "-" ("(unknown)") is a valid value; def: the schema default
+   * (range: the last 30 days on every page; "range=" is all time). */
   var FIELDS = {
     q: { kind: "text", def: "" },
-    range: { kind: "range", def: "", values: RANGES },
+    range: { kind: "range", def: "30d", values: RANGES },
     surface: { kind: "select", def: "", values: ["chat", "embedding", "rerank"] },
     relay: { kind: "multi", def: [], values: null, unknown: true },
     model: { kind: "multi", def: [], values: null, unknown: true },
@@ -187,6 +191,9 @@
       }
     });
     if (out.range) { delete out.from; delete out.to; }
+    // from / to without range: a custom range (as written before range had a
+    // non-empty default), not the default range over the dates
+    else if ((out.from || out.to) && !("range" in out)) out.range = "";
     // "group=" means the default: the server requires a value
     if (out.group === "") delete out.group;
     return out;
@@ -219,10 +226,16 @@
     return q.toString();
   }
 
+  // The viewer's time zone (IANA name), "UTC" when the browser names none.
+  function viewerZone() {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (e) { return "UTC"; }
+  }
+
   /* The query string a widget sends to its endpoint: the shared filters with
-   * a value, then the keys of the widget's namespace(s), sorted. Empty values
-   * are left out (the server reads them as not given). */
-  function params(state, fields, ns) {
+   * a value, then the keys of the widget's namespace(s), sorted, then tz
+   * (given: the viewer's zone, see widgetParams). Empty values are left out
+   * (the server reads them as not given). */
+  function params(state, fields, ns, tz) {
     var own = keysOf(fields || ORDER), q = new URLSearchParams();
     var spaces = ns == null ? [] : [].concat(ns);
     var pick = function (k) {
@@ -234,6 +247,7 @@
     extraKeys(state, own).forEach(function (k) {
       if (spaces.some(function (n) { return k.indexOf(n + ".") === 0; })) pick(k);
     });
+    if (tz) q.append("tz", tz);
     return q.toString();
   }
 
@@ -555,7 +569,7 @@
       Object.keys(st).forEach(function (k) { out[k] = copy(st[k]); });
       return out;
     }
-    function widgetParams(ns) { return params(st, fields, ns); }
+    function widgetParams(ns) { return params(st, fields, ns, viewerZone()); }
     function url() {
       var qs = serialise(st, defaults, fields);
       return location.origin + location.pathname + (qs ? "?" + qs : "");
@@ -667,7 +681,7 @@
     state: function () { return current ? current.state() : {}; },
     widgetParams: function (ns) { return current ? current.widgetParams(ns) : ""; },
     fetchWidget: fetchWidget, keyed: keyed,
-    parse: parse, serialise: serialise, params: params, initial: initial, loader: loader,
+    parse: parse, serialise: serialise, params: params, initial: initial, loader: loader, viewerZone: viewerZone,
     FIELDS: FIELDS, UNKNOWN: UNKNOWN,
   };
 })();

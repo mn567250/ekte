@@ -163,7 +163,10 @@ vista** lo copia (o lo mostra in un campo da copiare se il browser non lo
 consente): il link apre esattamente quella vista. Il pannello dei filtri è lo
 stesso in **Cronologia**, **Monitor** e **Analisi**: chiuso, indica quanti filtri sono
 attivi e li nomina in una riga (ad es. «Ultimi 30 giorni · standard · Streaming
-· Example Relay»), così una vista condivisa dice cosa mostra.
+· Example Relay»), così una vista condivisa dice cosa mostra. **Cronologia** e **Analisi** partono dagli ultimi 30
+giorni: oggi e i 29 giorni precedenti, dalla mezzanotte del tuo fuso orario
+(**Tutto il periodo** mostra ogni esecuzione). Un link condiviso conserva il
+periodo, non le date: ognuno lo vede nel proprio fuso orario.
 
 **Tassi di successo, di errore, di 429 e di richieste compromesse.** Ogni richiesta che ekte invia al relay durante un'esecuzione ha esattamente un esito: un successo, un errore del relay (un timeout in attesa del relay, una risposta 5xx o 4xx o un'altra risposta difettosa), un limite di frequenza (HTTP 429) o un errore che non ha mai raggiunto il relay (la rete tra te e il relay, o ekte stesso). I tentativi ripetuti contano una volta. Il relay è giudicato solo sulle richieste che lo hanno raggiunto: il **tasso di successo**, il **tasso di errore** e il **tasso di 429** sono successi, errori del relay e limiti di frequenza divisi per quelle richieste, e sommano sempre al 100%. La **quota compromessa** è la parte di tutte le richieste fallite prima di raggiungere il relay: dice quanto ci si può fidare dell'esecuzione stessa, non quanto è buono il relay; se è alta, ripeti l'audit. Su più esecuzioni i tassi sono aggregati (tutte le richieste insieme), così un'esecuzione cattiva tra molte buone resta visibile (nove esecuzioni allo 0% e una al 40% danno circa il 4%, non lo 0%); punteggi, latenze, velocità e rapporti di fatturazione sono la mediana delle esecuzioni. Cronologia, Analisi e il report mostrano gli stessi numeri per le stesse esecuzioni, e una singola esecuzione mostra esattamente i valori del suo report. Il controllo di affidabilità del report ha un tasso proprio («Tasso di successo del controllo di affidabilità»), che conta solo per il punteggio.
 

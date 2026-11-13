@@ -25,9 +25,17 @@ Key                           Values
 ============================  ==============================================================
 ``from``, ``to``              ISO 8601 (naive = UTC), compared with the run's
                               ``started_at``; ``from`` inclusive, ``to`` exclusive
-``range``                     ``24h``, ``7d``, ``30d``, ``90d``, ``365d``: resolved at parse
-                              time to ``to`` = now rounded up to the next whole minute
-                              and ``from`` = ``to`` − range; not with ``from`` / ``to``
+``range``                     ``24h``, ``7d``, ``30d``, ``90d``, ``365d``, resolved at parse
+                              time. A day range (``7d`` … ``365d``, N days) is today and
+                              the N − 1 calendar days before it in ``tz``: ``from`` =
+                              00:00 local of the first day, no ``to``. ``24h`` is exact:
+                              ``to`` = now rounded up to the next whole minute, ``from``
+                              = ``to`` − 24 h. Not with ``to``; a day range takes
+                              ``from`` only in its resolved form (a local midnight in
+                              ``tz``, as :meth:`Query.canonical` writes it)
+``tz``                        the viewer's time zone (IANA name, default ``UTC``; an
+                              unknown zone is an error): where day ranges start, and the
+                              default zone of the widgets' time buckets. Selects no runs
 ``surface``                   ``chat``, ``embedding``, ``rerank`` (a NULL surface reads as
                               chat); empty: every surface
 ``relay``                     a relay key (``relay_map.relay_key``; ``(unknown)`` for runs
@@ -107,7 +115,7 @@ from ekte.web.relay_map import GROUP_JOIN_SQL
 __all__ = [
     "Cell", "GroupResult", "Page", "Point", "Query", "QueryError", "RunSelection",
     "Series", "SeriesResult", "aggregate", "aggregate_rows", "count_runs", "default_surface", "page_runs",
-    "parse_query", "resolve_params", "select_runs", "series", "sql_functions",
+    "day_range_start", "day_start", "parse_query", "previous_days", "resolve_params", "select_runs", "series", "sql_functions",
 ]
 
 # "(unknown)" in the URL: the run has no value.
@@ -117,13 +125,16 @@ RANGES: dict[str, timedelta] = {
     "24h": timedelta(hours=24), "7d": timedelta(days=7), "30d": timedelta(days=30),
     "90d": timedelta(days=90), "365d": timedelta(days=365),
 }
+# The day ranges among them: calendar days in the viewer's time zone (tz).
+DAY_RANGES: dict[str, int] = {"7d": 7, "30d": 30, "90d": 90, "365d": 365}
+DEFAULT_TZ = "UTC"
 DETECTS = ("auto", "manual")
 EXECS = ("manual", "monitor")
 RISKS = tuple(r.value for r in RiskLevel)
 # Longest accepted value (relay keys are URLs), as the Analytics parser.
 MAX_PARAM = analytics.MAX_PARAM
 # Keys that take one value, and the ones that may repeat.
-SINGLE_KEYS = ("from", "to", "range", "surface", "suite", "mode", "api", "stream", "detect",
+SINGLE_KEYS = ("from", "to", "range", "tz", "surface", "suite", "mode", "api", "stream", "detect",
                "risk", "min_score", "exec", "q", "group")
 MULTI_KEYS = ("relay", "model")
 # page_runs()
@@ -148,8 +159,11 @@ class Query:
     """Parsed, validated filters (see the module docstring for each key).
 
     ``suite``, ``mode``, ``api`` and ``stream`` hold :data:`UNKNOWN` for "no
-    value"; ``relays`` / ``models`` are sorted and unique. Build one with
-    :func:`parse_query`, change one with :meth:`replace`.
+    value"; ``relays`` / ``models`` are sorted and unique. ``range`` is set
+    for a day range only (:data:`DAY_RANGES`; ``start`` is its first local
+    midnight in ``tz``, ``end`` None); an hour range is resolved into
+    ``start`` / ``end``. Build one with :func:`parse_query`, change one with
+    :meth:`replace`.
     """
 
     start: datetime | None = None
@@ -167,6 +181,18 @@ class Query:
     exec: str | None = None
     text: str | None = None
     group: str = "relay"
+    range: str | None = None
+    tz: str = DEFAULT_TZ
+
+    @property
+    def days(self) -> int | None:
+        """The day count of a day range (None otherwise)."""
+        return DAY_RANGES.get(self.range) if self.range else None
+
+    @property
+    def zone(self) -> tzinfo:
+        """``tz`` as a time zone (validated by :func:`parse_query`)."""
+        return _zone(self.tz)[0]
 
     def replace(self, **changes: Any) -> Query:
         """A copy with some fields changed (e.g. ``start`` / ``end`` of a
@@ -175,9 +201,10 @@ class Query:
 
     def canonical(self) -> dict[str, Any]:
         """The query in canonical form: URL keys, sorted, only those set
-        (``group`` always), the range as absolute ``from`` / ``to``
-        (:func:`ekte.web.analytics_store.format_ts`), repeated keys as sorted
-        lists. Equal queries give equal dicts; ``parse_query(q.params())``
+        (``group`` always; ``tz`` unless UTC), the range as absolute ``from``
+        / ``to`` (:func:`ekte.web.analytics_store.format_ts`; a day range as
+        its resolved ``from`` and ``range``, which names the day count:
+        stable all day), repeated keys as sorted lists. Equal queries give equal dicts; ``parse_query(q.params())``
         gives ``q`` back."""
         out: dict[str, Any] = {
             "from": analytics_store.format_ts(self.start) if self.start else None,
@@ -189,6 +216,8 @@ class Query:
             "detect": self.detect, "risk": self.risk,
             "min_score": _num_text(self.min_score) if self.min_score is not None else None,
             "exec": self.exec, "q": self.text, "group": self.group,
+            "range": self.range if self.days else None,
+            "tz": self.tz if self.tz != DEFAULT_TZ else None,
         }
         return {k: out[k] for k in sorted(out) if out[k] is not None}
 
@@ -250,10 +279,30 @@ def _ceil_minute(now: datetime) -> datetime:
     return floor if floor == now else floor + timedelta(minutes=1)
 
 
+def day_start(day: date, zone: tzinfo) -> datetime:
+    """The first instant of the calendar day ``day`` in ``zone``, in UTC
+    (00:00 local; where a zone skips midnight, the moment the day begins)."""
+    return datetime(day.year, day.month, day.day, tzinfo=zone).astimezone(UTC)
+
+
+def day_range_start(days: int, zone: tzinfo, now: datetime) -> datetime:
+    """Where a range of ``days`` calendar days that ends today (in ``zone``,
+    at ``now``) begins: 00:00 local of today − (``days`` − 1) days, in UTC."""
+    today = now.astimezone(zone).date()
+    return day_start(today - timedelta(days=days - 1), zone)
+
+
+def previous_days(start: datetime, days: int, zone: tzinfo) -> datetime:
+    """The start of the ``days`` calendar days before the day range that
+    begins at ``start`` (in ``zone``): its comparison period is
+    [result, ``start``)."""
+    return day_start(start.astimezone(zone).date() - timedelta(days=days), zone)
+
+
 def parse_query(params: Params, *, now: datetime | None = None) -> Query:
     """Validate request parameters into a :class:`Query` (raises
     :class:`QueryError` naming the key); ``now`` (default: the clock)
-    resolves ``range``. Keys with a dot are ignored."""
+    resolves ``range`` (day ranges in ``tz``). Keys with a dot are ignored."""
     single: dict[str, str] = {}
     multi: dict[str, set[str]] = {k: set() for k in MULTI_KEYS}
     for key, value in _pairs(params):
@@ -270,13 +319,25 @@ def parse_query(params: Params, *, now: datetime | None = None) -> Query:
         else:
             raise QueryError(f"unknown parameter {key[:64]!r}")
 
+    zone, tz = _zone(single.get("tz", DEFAULT_TZ))
     start, end = _time("from", single.get("from")), _time("to", single.get("to"))
     rng = _choice("range", single.get("range"), tuple(RANGES))
+    day_range: str | None = None
     if rng is not None:
-        if start is not None or end is not None:
+        if end is not None:
             raise QueryError("range cannot be combined with from / to")
-        end = _ceil_minute((now or datetime.now(UTC)).astimezone(UTC))
-        start = end - RANGES[rng]
+        if rng in DAY_RANGES:
+            day_range = rng
+            if start is None:
+                start = day_range_start(DAY_RANGES[rng], zone, (now or datetime.now(UTC)).astimezone(UTC))
+            elif start != day_start(start.astimezone(zone).date(), zone):
+                # only the resolved form (Query.canonical: a local midnight) gives both
+                raise QueryError("range cannot be combined with from / to")
+        else:
+            if start is not None:
+                raise QueryError("range cannot be combined with from / to")
+            end = _ceil_minute((now or datetime.now(UTC)).astimezone(UTC))
+            start = end - RANGES[rng]
     if start is not None and end is not None and start >= end:
         raise QueryError("from must be before to")
 
@@ -302,12 +363,13 @@ def parse_query(params: Params, *, now: datetime | None = None) -> Query:
         exec=_choice("exec", single.get("exec"), EXECS),
         text=single.get("q"),
         group=_choice("group", single.get("group"), GROUPS) or "relay",
+        range=day_range, tz=tz,
     )
 
 
 def resolve_params(params: Params, *, now: datetime | None = None) -> list[tuple[str, str]]:
     """Request parameters with the shared ones in canonical form (``range``
-    resolved) and the widget keys (with a dot) as given: the ``prepare`` of
+    resolved: a day range to its first local midnight, stable all day) and the widget keys (with a dot) as given: the ``prepare`` of
     :func:`ekte.web.cache.cached_endpoint`, so an answer is cached under its
     absolute range. Invalid parameters are returned unchanged, for the
     endpoint's own :func:`parse_query` to reject."""
