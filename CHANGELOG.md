@@ -20,6 +20,16 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: filters remembered across pages ([#154](https://github.com/mn567250/ekte/issues/154))
+
+Filters chosen on History now follow you to Analytics (and back) through the
+navigation, when the page's link has no filters of its own; the URL always
+wins. Each page updates only the filters it shows, and the search text stays
+with its page. To keep separate filters per page, turn off **Keep filters
+across pages** in the filter panel's foot; the choice is remembered in the
+browser and is never part of a link. Part of
+[#150](https://github.com/mn567250/ekte/issues/150).
+
 ### Monitors: run window per monitor ([#165](https://github.com/mn567250/ekte/issues/165))
 
 A monitor can have a run window, for example Mon–Fri, 07:00–19:00,

@@ -204,6 +204,168 @@ def test_storage_that_throws_or_is_missing_falls_back_to_the_defaults():
 
 
 # --------------------------------------------------------------------------- #
+# remembered filters: shared across pages (default) or per page (#154)
+# --------------------------------------------------------------------------- #
+_PAGES = _STORE + """
+const HIST = ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score",
+              "range", "exec"];
+const ANA = ["range", "surface", "relay", "model", "suite", "api", "stream", "exec", "group"];
+const page = (name, fields, defaults) => ({ page: name, fields, defaults: defaults || {} });
+const hist = page("history", HIST), ana = page("analytics", ANA, { range: "30d" });
+const mon = page("monitors", ["q", "surface", "relay", "model", "suite", "api", "stream"]);
+// a page's filter change, as create().set() records it
+const use = (p, search, store) => F.remember(p.page, F.initial(search, Object.assign({ storage: store }, p)).state,
+                                              p.fields, p.defaults, store);
+const open = (p, search, store) => F.initial(search, Object.assign({ storage: store }, p));
+"""
+
+
+def test_shared_mode_is_the_default_and_carries_relay_between_pages():
+    got = run(_PAGES + """
+      const s = mem({});
+      const before = F.scope(s);
+      use(hist, "?relay=a&risk=high&range=7d", s);
+      return [before, open(ana, "", s), JSON.parse(s.getItem("ekte.v2.filters.shared"))];
+    """)
+    assert got[0] == "shared"
+    assert got[1]["source"] == "storage"
+    st = got[1]["state"]
+    assert st["relay"] == ["a"] and st["range"] == "7d" and st["group"] == "relay"
+    assert "risk" not in st  # Analytics does not show risk
+    # every shared key History shows, as shown; never the search text
+    assert got[2]["relay"] == ["a"] and got[2]["risk"] == "high" and got[2]["range"] == "7d"
+    assert got[2]["surface"] == "" and got[2]["model"] == [] and "q" not in got[2]
+
+
+def test_per_page_mode_keeps_pages_apart():
+    got = run(_PAGES + """
+      const s = mem({});
+      F.setScope("page", s);
+      use(ana, "?relay=b", s);
+      use(hist, "?relay=a", s);
+      return [F.scope(s), open(ana, "", s), open(hist, "", s), s.getItem("ekte.v2.filters.shared")];
+    """)
+    assert got[0] == "page"
+    assert got[1]["state"]["relay"] == ["b"] and got[1]["source"] == "storage"
+    assert got[2]["state"]["relay"] == ["a"]
+    assert got[3] is None  # per page writes no shared memory
+
+
+def test_a_page_with_a_subset_of_fields_leaves_the_other_shared_keys_untouched():
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?relay=a&range=90d&risk=low", s);
+      use(mon, "?relay=c&stream=both", s);     // no range, no risk on this page
+      return [JSON.parse(s.getItem("ekte.v2.filters.shared")), open(hist, "", s).state];
+    """)
+    assert got[0]["relay"] == ["c"] and got[0]["stream"] == "both"
+    assert got[0]["range"] == "90d" and got[0]["risk"] == "low"
+    assert got[1]["range"] == "90d" and got[1]["risk"] == "low" and got[1]["relay"] == ["c"]
+
+
+def test_values_cross_as_shown_whatever_each_pages_default():
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?range=", s);                                   // all time: History's default
+      const allTime = open(ana, "", s).state;
+      use(hist, "?from=2026-01-01&to=2026-02-01", s);            // a custom range
+      const custom = open(ana, "", s).state;
+      use(ana, "?range=30d&surface=chat", s);                    // Analytics' default range
+      return [allTime, custom, open(hist, "", s).state];
+    """)
+    assert got[0]["range"] == ""
+    assert (got[1]["range"], got[1]["from"], got[1]["to"]) == ("", "2026-01-01", "2026-02-01")
+    assert got[2]["range"] == "30d" and got[2]["surface"] == "chat"
+
+
+def test_search_text_never_crosses_pages():
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?q=gpt&relay=a", s);
+      const shared = JSON.parse(s.getItem("ekte.v2.filters.shared"));
+      const m = open(mon, "", s).state;
+      use(mon, "?q=claude&relay=a", s);
+      return [shared, m, open(hist, "", s).state.q, open(mon, "", s).state.q];
+    """)
+    assert "q" not in got[0]
+    assert got[1]["q"] == "" and got[1]["relay"] == ["a"]
+    assert got[2] == "gpt" and got[3] == "claude"
+
+
+def test_the_url_wins_in_both_modes():
+    got = run(_PAGES + """
+      const out = [];
+      for (const mode of ["shared", "page"]) {
+        const s = mem({});
+        F.setScope(mode, s);
+        use(hist, "?relay=a", s);
+        use(ana, "?relay=a", s);
+        out.push(open(ana, "?stream=both", s));
+      }
+      return out;
+    """)
+    for one in got:
+        assert one["source"] == "url"
+        assert one["state"]["relay"] == [] and one["state"]["stream"] == "both"
+
+
+def test_turning_sharing_on_writes_the_view_and_off_copies_nothing():
+    got = run(_PAGES + """
+      const s = mem({});
+      use(hist, "?relay=a", s);
+      F.setScope("page", s);
+      const shared = s.getItem("ekte.v2.filters.shared");
+      use(hist, "?relay=b", s);                                  // per page: shared memory untouched
+      const off = s.getItem("ekte.v2.filters.shared");
+      const st = open(ana, "?relay=z&range=7d", s).state;
+      F.setScope("shared", s, { state: st, fields: ana.fields });
+      return [shared === off, JSON.parse(off).relay, JSON.parse(s.getItem("ekte.v2.filters.shared")),
+              open(hist, "", s).state];
+    """)
+    assert got[0] is True and got[1] == ["a"]  # turning it off copied nothing
+    assert got[2]["relay"] == ["z"] and got[2]["range"] == "7d" and got[2]["group"] == "relay"
+    assert got[2]["mode"] == ""  # a key Analytics does not show: History's, unchanged
+    assert got[3]["relay"] == ["z"] and got[3]["range"] == "7d"
+
+
+def test_shared_mode_without_a_shared_memory_reads_the_pages_own():
+    got = run(_PAGES + """
+      const s = mem({ "ekte.v2.filters.analytics": "relay=old" });
+      return open(ana, "", s);
+    """)
+    assert got["source"] == "storage" and got["state"]["relay"] == ["old"]
+
+
+def test_invalid_or_foreign_shared_memory_is_dropped():
+    got = run(_PAGES + """
+      return [
+        open(ana, "", mem({ "ekte.v2.filters.shared": "{not json" })),
+        open(ana, "", mem({ "ekte.v2.filters.shared": '{"range":"12d","surface":"video","group":"model","q":"x"}' })),
+        open(ana, "", mem({ "ekte.v2.filters.shared": "[1,2]", "ekte.v2.filters.scope": "bogus" })),
+      ];
+    """)
+    assert got[0]["source"] == got[2]["source"] == "defaults"
+    # the valid key applies, the invalid ones and the page-specific q do not
+    assert got[1]["source"] == "storage"
+    for g in got:
+        assert g["state"]["range"] == "30d" and g["state"]["surface"] == ""
+    assert got[1]["state"]["group"] == "model" and "q" not in got[1]["state"]
+
+
+def test_throwing_storage_is_harmless_for_every_helper():
+    got = run(_PAGES + """
+      const partly = { getItem: (k) => { if (k === "ekte.v2.filters.shared") throw new Error("x"); return null; },
+                       setItem() { throw new Error("full"); } };
+      F.remember("history", { relay: ["a"] }, ["relay"], {}, throwing);
+      F.remember("history", { relay: ["a"] }, ["relay"], {}, partly);
+      return [F.scope(throwing), F.setScope("page", throwing, { state: {}, fields: [] }),
+              F.setScope("shared", throwing, { state: { relay: ["a"] }, fields: ["relay"] }),
+              open(ana, "", throwing).source, open(ana, "", partly).source, open(hist, "?relay=x", throwing).state.relay];
+    """)
+    assert got == ["shared", "page", "shared", "defaults", "defaults", ["x"]]
+
+
+# --------------------------------------------------------------------------- #
 # fetching
 # --------------------------------------------------------------------------- #
 # a fetch stub: each call is recorded; `respond(url, init)` decides, and a
