@@ -113,6 +113,10 @@
       - option "All" [selected]
       - option "Manual (11)"
       - option "Monitor (4)"
+    - text: Monitor
+    - combobox "Monitor":
+      - option "All" [selected]
+      - option "gpt-4o (4)"
     - group "Trends":
       - text: Trends 2 of at most 2 selected
       - button "Score" [pressed]

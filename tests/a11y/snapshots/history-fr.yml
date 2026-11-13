@@ -113,6 +113,10 @@
       - option "Tous" [selected]
       - option "Manuel (11)"
       - option "Surveillance (4)"
+    - text: Surveillance
+    - combobox "Surveillance":
+      - option "Tous" [selected]
+      - option "gpt-4o (4)"
     - group "Tendances":
       - text: Tendances 2 sélectionné(s) sur 2 au maximum
       - button "Score" [pressed]

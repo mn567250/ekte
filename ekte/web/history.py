@@ -306,6 +306,16 @@ def _v15(conn: sqlite3.Connection) -> None:
     )
 
 
+def _v16(conn: sqlite3.Connection) -> None:
+    """The monitor of each run on its run row (``history_metrics.watch_id``,
+    a copy of ``history.watch_id`` kept by the run-row triggers, for the
+    ``watch`` filter), filled in for the runs already saved; the covering
+    run-row index is made again with it."""
+    from ekte.web import run_row
+
+    run_row.ensure_run_columns(conn)
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
@@ -322,6 +332,7 @@ MIGRATIONS = (
     dbmigrate.Migration(13, _v13),
     dbmigrate.Migration(14, _v14),
     dbmigrate.Migration(15, _v15),
+    dbmigrate.Migration(16, _v16),
 )
 _SCHEMA_VERSION = dbmigrate.latest(MIGRATIONS)
 

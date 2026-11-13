@@ -307,7 +307,7 @@
 
   var host = $("#hist"), fbar = $("#filters");
   // the shared filters this page shows (ekte/web/query.py schema)
-  var FLD = ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec"];
+  var FLD = ["q", "surface", "relay", "model", "suite", "mode", "api", "detect", "stream", "risk", "min_score", "range", "exec", "watch"];
   var DEF_TRENDS = "score,latency_p50", DEF_SORT = "-time", SORTS = ["time", "risk", "score", "grade"];
   var FOCUS = "runs.focus";
   var cat = null; // GET /api/metrics: { byId, order, max, grades, labels }
