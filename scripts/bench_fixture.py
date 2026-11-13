@@ -8,7 +8,8 @@ and a year of start times into the history database of ``--data-dir`` (or
 analytics extraction leaves them, so nothing needs backfilling. Every run has
 ``--requests`` target requests (default 100) with an outcome mix like real
 runs (mostly successes, a few 429s, relay errors and network failures).
-Deterministic for a ``--seed``.
+Deterministic for a ``--seed``. It also writes ``--watches`` monitors
+(default 200) into ``watches.db``, over the same relays and models.
 
 With ``--bench`` it then times :func:`ekte.web.query.aggregate`,
 :func:`~ekte.web.query.series` and :func:`~ekte.web.query.page_runs` and
@@ -80,12 +81,45 @@ def _kb_hash(rng: random.Random, started: datetime) -> str | None:
     return f"kb{(started - _SINCE) // KB_EVERY}"
 
 
+def build_watches(watches: int = 200, relays: int = 50, seed: int = 0) -> int:
+    """Write ``watches`` monitors into ``$EKTE_DATA_DIR``'s ``watches.db``
+    (adding to what is there), straight into the table as
+    :func:`ekte.web.watches.create` leaves it, with a last run each; returns
+    the number written. Their API keys are ``env:`` references (no secret)."""
+    from ekte import datadir
+    from ekte.web import watches as store
+
+    rng = random.Random(seed + 1)
+    t_end = END.timestamp()
+    rows = []
+    for i in range(watches):
+        r = rng.randrange(relays)
+        model = MODELS[rng.randrange(len(MODELS))]
+        risk = rng.choices(("clean", "low", "medium", "high"), (0.6, 0.2, 0.15, 0.05))[0]
+        rows.append((
+            f"monitor {i:03d}", f"https://relay-{r:02d}.example/v1", "env:EKTE_BENCH_KEY", model,
+            model, "auto", "standard", rng.choice((1800, 3600, 21600, 86400)), "medium", "[]",
+            int(rng.random() < 0.8), t_end - 86400 * 30, t_end - rng.randrange(86400), risk,
+            round(rng.uniform(40, 100), 1), "chat", 1, 1,
+        ))
+    with datadir.connect("watches.db", store.MIGRATIONS) as conn:
+        conn.executemany(
+            "INSERT INTO watches (name, base_url, api_key, model, claimed_model, api, suite,"
+            " interval_sec, alert_on, webhooks, enabled, created_ts, last_run_ts, last_risk,"
+            " last_score, surface, performance_streaming, evidence)"
+            f" VALUES ({', '.join('?' * 18)})", rows)
+        conn.execute(store._BUMP_SQL)
+    return watches
+
+
 def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int = 0,
-          report_bytes: int = REPORT_BYTES) -> int:
+          report_bytes: int = REPORT_BYTES, watches: int = 200) -> int:
     """Write the fixture into ``$EKTE_DATA_DIR``'s ``history.db`` (adding to
-    what is there); returns the number of runs written. ``report_bytes``: the
-    size of each stored report (real ones, request records split off, are
-    15-50 kB, so most of a run's row lives in overflow pages)."""
+    what is there), and ``watches`` monitors into its ``watches.db``
+    (:func:`build_watches`); returns the number of runs written.
+    ``report_bytes``: the size of each stored report (real ones, request
+    records split off, are 15-50 kB, so most of a run's row lives in overflow
+    pages)."""
     from ekte import datadir
     from ekte.knowledge.relays import normalize_url
     from ekte.perf.outcomes import from_counts
@@ -153,6 +187,8 @@ def build(runs: int = 20_000, relays: int = 50, requests: int = 100, seed: int =
         conn.executemany("INSERT INTO history_outcomes VALUES (?, ?, ?, ?)", o_rows)
         conn.executemany("INSERT INTO history_dimensions VALUES (?, ?, ?, ?, ?, ?)", d_rows)
         conn.execute(history._BUMP_SQL)
+    if watches:
+        build_watches(watches, relays, seed)
     return runs
 
 
@@ -258,12 +294,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--report-bytes", type=int, default=REPORT_BYTES,
                         help="size of each stored report")
+    parser.add_argument("--watches", type=int, default=200, help="monitors in watches.db")
     parser.add_argument("--bench", action="store_true", help="time the query core afterwards")
     args = parser.parse_args(argv)
     if args.data_dir is not None:
         os.environ["EKTE_DATA_DIR"] = str(args.data_dir)
     t0 = time.perf_counter()
-    n = build(args.runs, args.relays, args.requests, args.seed, args.report_bytes)
+    n = build(args.runs, args.relays, args.requests, args.seed, args.report_bytes, args.watches)
     print(f"wrote {n} runs in {time.perf_counter() - t0:.1f} s")
     if args.bench:
         for name, (p50, p95) in bench().items():

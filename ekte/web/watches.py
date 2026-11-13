@@ -41,6 +41,13 @@ linked by ``kb_snapshot_id``; how it matched and where it came from in
 later knowledge-base edit cannot silently change what a monitor measures;
 :func:`pin` re-pins it to the current knowledge base on request. A watch whose
 model matched no profile at creation resolves the live knowledge base per run.
+
+Data version (schema version 5): ``meta`` holds ``data_version``, a counter
+bumped in the same transaction as every write that changes what
+``/api/watches`` returns (a watch created, changed, deleted, re-pinned or
+run; its key moved, sealed or dropped), from whichever process writes.
+:func:`data_version` reads it; ``GET /api/version`` derives its ``live``
+token from it.
 """
 
 from __future__ import annotations
@@ -179,11 +186,20 @@ def _v4(conn: sqlite3.Connection) -> None:
     kb_snapshot.add_link_columns(conn, "watches", {"run_window": "TEXT"})
 
 
+def _v5(conn: sqlite3.Connection) -> None:
+    """The ``meta`` key/value table and its ``data_version`` counter (see
+    :func:`data_version`). Values are read with a CAST, so either column
+    affinity works."""
+    conn.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value)")
+    conn.execute("INSERT OR IGNORE INTO meta (key, value) VALUES ('data_version', 0)")
+
+
 MIGRATIONS = (
     dbmigrate.Migration(1, _v1),
     dbmigrate.Migration(2, _v2),
     dbmigrate.Migration(3, _v3),
     dbmigrate.Migration(4, _v4),
+    dbmigrate.Migration(5, _v5),
 )
 
 
@@ -198,6 +214,27 @@ def init() -> None:
     """Create the tables. Idempotent; safe to call often."""
     with _connect():
         pass
+
+
+_BUMP_SQL = (
+    "INSERT INTO meta (key, value) VALUES ('data_version', 1)"
+    " ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + 1"
+)
+_VERSION_SQL = "SELECT CAST(value AS INTEGER) FROM meta WHERE key = 'data_version'"
+
+
+def _bump(conn: sqlite3.Connection) -> None:
+    """Increment ``data_version``; call inside the write's own transaction."""
+    conn.execute(_BUMP_SQL)
+
+
+def data_version() -> int:
+    """The store's write counter: changes with every committed write that
+    changes what ``/api/watches`` returns, from any process. One primary-key
+    lookup on this thread's reused read-only connection
+    (:func:`ekte.datadir.read_connection`)."""
+    row = datadir.read_connection(_DB_NAME, MIGRATIONS).execute(_VERSION_SQL).fetchone()
+    return int(row[0]) if row and row[0] is not None else 0
 
 
 def get_canary() -> str | None:
@@ -330,8 +367,10 @@ def keys_to_memory(box: secretbox.SecretBox | None) -> int:
         )
         _set_canary(conn, None)
         _set_storage(conn, STORAGE_MEMORY)
-    with _memory_lock:
-        _memory_keys.update(held)
+        # before the commit (as in create()); a sealed row ignores memory
+        with _memory_lock:
+            _memory_keys.update(held)
+        _bump(conn)
     _status_cache.clear()
     _scrub()
     return len(held)
@@ -352,6 +391,7 @@ def keys_to_store(box: secretbox.SecretBox) -> int:
             updates = [(box.seal(_memory_keys[i]), i) for i in ids if i in _memory_keys]
         conn.executemany("UPDATE watches SET api_key = ? WHERE id = ?", updates)
         _set_storage(conn, STORAGE_ENCRYPTED)
+        _bump(conn)
     with _memory_lock:
         for _, i in updates:
             _memory_keys.pop(i, None)
@@ -371,6 +411,7 @@ def migrate_keys(box: secretbox.SecretBox) -> int:
             "UPDATE watches SET api_key = ? WHERE id = ?",
             [(box.seal(r["api_key"]), r["id"]) for r in rows],
         )
+        _bump(conn)
     _scrub()
     return len(rows)
 
@@ -398,6 +439,7 @@ def adopt_key(box: secretbox.SecretBox, opener: secretbox.SecretBox | None = Non
                 updates.append((box.seal(stored), r["id"]))
         conn.executemany("UPDATE watches SET api_key = ? WHERE id = ?", updates)
         _set_canary(conn, secretbox.make_canary(box))
+        _bump(conn)
     _status_cache.clear()
     _scrub()
     return len(updates)
@@ -414,6 +456,7 @@ def forget_keys() -> int:
             "UPDATE watches SET api_key = '', enabled = 0 WHERE api_key LIKE 'enc:%'"
         )
         _set_canary(conn, None)
+        _bump(conn)
         n = cur.rowcount
     _status_cache.clear()
     _scrub()
@@ -604,6 +647,7 @@ def pin(wid: int, knowledge: dict[str, Any] | None) -> None:
     """
     with _connect() as conn:
         _pin(conn, wid, knowledge)
+        _bump(conn)
 
 
 def pinned_knowledge(wid: int) -> dict[str, Any] | None:
@@ -728,7 +772,10 @@ def create(
         wid = int(cur.lastrowid or -1)
         if knowledge is not None:
             _pin(conn, wid, knowledge)
-    _remember(wid, held)
+        # held before the commit: a page that sees the new data version
+        # must not read the row as "key missing"
+        _remember(wid, held)
+        _bump(conn)
     return wid
 
 
@@ -775,6 +822,7 @@ def set_enabled(wid: int, enabled: bool) -> None:
             "UPDATE watches SET enabled = ? WHERE id = ?",
             (1 if enabled else 0, int(wid)),
         )
+        _bump(conn)
 
 
 def set_language(wid: int, language: str | None) -> None:
@@ -784,6 +832,7 @@ def set_language(wid: int, language: str | None) -> None:
             "UPDATE watches SET language = ? WHERE id = ?",
             (i18n.normalize(language), int(wid)),
         )
+        _bump(conn)
 
 
 def update(
@@ -833,8 +882,9 @@ def update(
         return
     with _connect() as conn:
         conn.execute(f"UPDATE watches SET {', '.join(sets)} WHERE id = ?", (*vals, int(wid)))
-    if api_key is not None:
-        _remember(wid, held)
+        if api_key is not None:
+            _remember(wid, held)  # before the commit, as in create()
+        _bump(conn)
 
 
 def delete(wid: int) -> None:
@@ -842,6 +892,7 @@ def delete(wid: int) -> None:
     with _connect() as conn:
         conn.execute("DELETE FROM watches WHERE id = ?", (int(wid),))
         kb_snapshot.prune(conn, "watches")
+        _bump(conn)
     _remember(wid, None)
 
 
@@ -874,12 +925,14 @@ def mark_run(
                 int(wid),
             ),
         )
+        _bump(conn)
 
 
 def mark_attempt(wid: int, ts: float) -> None:
     """Record a run that was cancelled: only its time, the last result stays."""
     with _connect() as conn:
         conn.execute("UPDATE watches SET last_run_ts = ? WHERE id = ?", (float(ts), int(wid)))
+        _bump(conn)
 
 
 def due(now_ts: float) -> list[dict[str, Any]]:
