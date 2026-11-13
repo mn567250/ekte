@@ -99,6 +99,8 @@
       - option "Relais × modèle"
       - option "Tous"
     - text: 15 exécutions correspondent à ces filtres.
+    - checkbox "Conserver les filtres d’une page à l’autre" [checked]
+    - text: Conserver les filtres d’une page à l’autre
     - status
     - button "Copier le lien vers cette vue"
   - tablist "Vues de l’analyse":

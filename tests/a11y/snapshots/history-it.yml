@@ -122,6 +122,8 @@
       - button "Velocità di decodifica p50" [disabled]
       - button "Tasso di errore" [disabled]
     - text: 15 di 15 audit mostrati
+    - checkbox "Mantieni i filtri tra le pagine" [checked]
+    - text: Mantieni i filtri tra le pagine
     - status
     - button "Copia il link a questa vista"
   - status

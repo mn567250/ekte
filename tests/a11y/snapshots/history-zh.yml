@@ -122,6 +122,8 @@
       - button "输出速度 p50" [disabled]
       - button "错误率" [disabled]
     - text: 显示 15 / 15 条记录
+    - checkbox "在页面间保留筛选" [checked]
+    - text: 在页面间保留筛选
     - status
     - button "复制此视图的链接"
   - status

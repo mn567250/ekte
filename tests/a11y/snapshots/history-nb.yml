@@ -122,6 +122,8 @@
       - button "Dekodehastighet p50" [disabled]
       - button "Feilrate" [disabled]
     - text: Viser 15 av 15 revisjoner
+    - checkbox "Behold filtre på tvers av sider" [checked]
+    - text: Behold filtre på tvers av sider
     - status
     - button "Kopier lenke til denne visningen"
   - status

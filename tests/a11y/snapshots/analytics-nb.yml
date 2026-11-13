@@ -99,6 +99,8 @@
       - option "Relé × modell"
       - option "Alle"
     - text: 15 kjøringer samsvarer med disse filtrene.
+    - checkbox "Behold filtre på tvers av sider" [checked]
+    - text: Behold filtre på tvers av sider
     - status
     - button "Kopier lenke til denne visningen"
   - tablist "Analysevisninger":

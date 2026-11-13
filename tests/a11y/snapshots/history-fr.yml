@@ -122,6 +122,8 @@
       - button "Vitesse de décodage p50" [disabled]
       - button "Taux d'erreur" [disabled]
     - text: 15 audits affichés sur 15
+    - checkbox "Conserver les filtres d’une page à l’autre" [checked]
+    - text: Conserver les filtres d’une page à l’autre
     - status
     - button "Copier le lien vers cette vue"
   - status

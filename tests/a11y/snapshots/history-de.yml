@@ -122,6 +122,8 @@
       - button "Dekodiertempo p50" [disabled]
       - button "Fehlerquote" [disabled]
     - text: 15 von 15 Prüfungen
+    - checkbox "Filter über Seiten hinweg behalten" [checked]
+    - text: Filter über Seiten hinweg behalten
     - status
     - button "Link zu dieser Ansicht kopieren"
   - status

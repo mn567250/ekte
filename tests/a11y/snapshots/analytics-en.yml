@@ -99,6 +99,8 @@
       - option "Relay × model"
       - option "All"
     - text: 15 runs match these filters.
+    - checkbox "Keep filters across pages" [checked]
+    - text: Keep filters across pages
     - status
     - button "Copy link to this view"
   - tablist "Analytics views":
