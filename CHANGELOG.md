@@ -20,6 +20,22 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: change signal `GET /api/version` ([#151](https://github.com/mn567250/ekte/issues/151), part of [#150](https://github.com/mn567250/ekte/issues/150))
+
+`GET /api/version` answers `{"data": "<token>", "live": "<token>"}`, two
+opaque tokens the pages can poll cheaply (under 5 ms p95, no table scanned)
+to learn that something changed. `data` changes with every history write from
+any process (a CLI audit included) and with a knowledge-base change: exactly
+when the cached widget answers change. `live` changes when a job or a monitor
+run is queued, starts or ends (also when it fails or is cancelled), when a
+monitor is created, edited, enabled, disabled, deleted or records a run, and
+when the master key is entered or locked. The answer carries an `ETag` and
+`Cache-Control: no-cache`; a matching `If-None-Match` gets `304`.
+`watches.db` gains a `meta` table with a `data_version` counter (schema
+version 5), bumped in the same transaction as every write that changes the
+monitor list; `ekte.web.watches.data_version()` reads it.
+`scripts/bench_fixture.py` also writes 200 monitors (`--watches`).
+
 ### History and Analytics: the runs of one monitor ([#155](https://github.com/mn567250/ekte/issues/155), part of [#150](https://github.com/mn567250/ekte/issues/150))
 
 A new run filter, **Monitor** (`watch=<id>` in the URL and every History and

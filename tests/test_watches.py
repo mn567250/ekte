@@ -841,8 +841,9 @@ def test_watch_db_v3_gains_a_run_window_column(tmp_path, monkeypatch):
         conn.execute("PRAGMA user_version = 3")
     [w] = watches.list_all()
     assert w["run_window"] is None
-    with sqlite3.connect(path) as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
+    with sqlite3.connect(path) as conn:  # migrated to the latest version (5: meta, #151)
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert "run_window" in {r[1] for r in conn.execute("PRAGMA table_info(watches)")}
 
 
 def test_update_sets_clears_and_keeps_the_run_window(tmp_path, monkeypatch):
