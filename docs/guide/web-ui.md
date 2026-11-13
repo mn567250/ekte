@@ -146,7 +146,10 @@ every chart option (`?tab=reliability&range=30d&relay=…&errors.bucket=dow_hour
 browser does not allow that): opening the link shows exactly that view. The
 filter panel is the same on **History**, **Monitors** and **Analytics**: closed, it shows how
 many filters are active and names them in one line (e.g. "Last 30 days ·
-standard · Streaming · Example Relay"), so a shared view says what it shows.
+standard · Streaming · Example Relay"), so a shared view says what it shows. **History** and **Analytics** start on the last 30
+days: today and the 29 days before it, from midnight in your time zone (**All
+time** shows every run). A shared link keeps the period, not the dates: each
+viewer sees it in their own time zone.
 
 **Success, error, 429 and impaired rates.** Every request ekte sent to the
 relay during a run has exactly one outcome: a success, a relay error (a
