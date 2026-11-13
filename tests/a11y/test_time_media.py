@@ -212,13 +212,20 @@ def _route_audit_jobs(page: Page) -> None:
 
 
 def _route_monitors_running(page: Page) -> None:
-    def watches(route: Route) -> None:
+    # every monitor runs at 40 %: the live state is in /api/jobs (#158), as
+    # the job monitor-<id> of a running monitor
+    def jobs(route: Route) -> None:
         if route.request.method != "GET":
             return route.continue_()
-        rows = route.fetch().json()
-        _fulfill_json(route, [dict(w, running=True, progress=40) for w in rows])
+        answer = route.fetch().json()
+        base = route.request.url.split("/api/", 1)[0]
+        rows = route.request.frame.page.request.get(base + "/api/watches").json()
+        answer["jobs"] = [*answer.get("jobs", []), *(
+            {"id": f"monitor-{w['id']}", "kind": "monitor", "watch_id": w["id"], "name": w.get("name"),
+             "status": "running", "progress": 40, "done": 2, "total": 5} for w in rows)]
+        _fulfill_json(route, answer)
 
-    page.route(re.compile(r"/api/watches$"), _quiet(watches))
+    page.route(re.compile(r"/api/jobs$"), _quiet(jobs))
 
 
 def open_state(

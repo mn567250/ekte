@@ -48,6 +48,10 @@ bumped in the same transaction as every write that changes what
 run; its key moved, sealed or dropped), from whichever process writes.
 :func:`data_version` reads it; ``GET /api/version`` derives its ``live``
 token from it.
+
+Alert threshold: :func:`risk_meets` (the risk levels in :data:`RISK_ORDER`)
+decides whether a run's risk is at or above a watch's ``alert_on``: the
+scheduler alerts on it, and ``/api/watches`` reports it as ``alerting``.
 """
 
 from __future__ import annotations
@@ -67,6 +71,7 @@ from typing import Any
 from ekte import datadir, dbmigrate, i18n, runwindow, secretbox
 from ekte.config import SURFACES
 from ekte.knowledge import snapshot as kb_snapshot
+from ekte.models import RiskLevel
 
 # Full column set, in table order. ``api_key`` lives here for the scheduler, but
 # is filtered out of the public listing (see _LIST_COLS).
@@ -235,6 +240,64 @@ def data_version() -> int:
     (:func:`ekte.datadir.read_connection`)."""
     row = datadir.read_connection(_DB_NAME, MIGRATIONS).execute(_VERSION_SQL).fetchone()
     return int(row[0]) if row and row[0] is not None else 0
+
+
+# What :func:`list_all` returns besides the stored rows: the master key held
+# (``key_status`` locked / encrypted / unreadable) and the keys held in memory
+# (``memory`` / ``missing``). Neither is a write to the store, so neither
+# bumps the data version; caches of the listing key on this as well.
+def listing_state() -> tuple[Any, ...]:
+    """``(data version, master key held, ids of the keys held in memory)``:
+    everything :func:`list_all`'s answer depends on, never a key itself (the
+    master key as its :meth:`~ekte.secretbox.SecretBox.cache_id`, a hash)."""
+    box = secretbox.current()
+    with _memory_lock:
+        held = tuple(sorted(_memory_keys))
+    return data_version(), box.cache_id() if box is not None else None, held
+
+
+_windows_lock = threading.Lock()
+_windows_memo: dict[tuple[str, int], list[runwindow.RunWindow]] = {}
+
+
+def run_windows(version: int | None = None) -> list[runwindow.RunWindow]:
+    """The run windows of every watch that has one (by id), read once per
+    ``version`` of the store (:func:`data_version`, read when not given)."""
+    if version is None:
+        version = data_version()
+    key = (str(_db_path()), version)
+    with _windows_lock:
+        hit = _windows_memo.get(key)
+    if hit is not None:
+        return hit
+    with _connect() as conn:
+        raw = conn.execute(
+            "SELECT run_window FROM watches WHERE COALESCE(run_window, '') != '' ORDER BY id"
+        ).fetchall()
+    out = [w for w in (runwindow.parse(r[0]) for r in raw) if w is not None]
+    with _windows_lock:
+        _windows_memo.clear()
+        _windows_memo[key] = out
+    return out
+
+
+# How serious each risk level is, for alert thresholds (``alert_on``).
+RISK_ORDER: dict[str, int] = {
+    RiskLevel.CLEAN.value: 0,
+    RiskLevel.INCONCLUSIVE.value: 1,
+    RiskLevel.LOW.value: 2,
+    RiskLevel.MEDIUM.value: 3,
+    RiskLevel.HIGH.value: 4,
+}
+
+
+def risk_meets(risk: str | None, threshold: str | None) -> bool:
+    """True when ``risk`` is at or above the ``threshold`` risk level (an
+    unknown or missing threshold is ``medium``; no risk never meets it)."""
+    if not risk:
+        return False
+    limit = RISK_ORDER.get(threshold or "", RISK_ORDER[RiskLevel.MEDIUM.value])
+    return RISK_ORDER.get(risk, 0) >= limit
 
 
 def get_canary() -> str | None:

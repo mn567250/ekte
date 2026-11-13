@@ -1110,14 +1110,32 @@
     }
   });
 
+  // The list carries no live state: which monitors run, wait for their relay
+  // and how far along they are comes from /api/jobs (job id monitor-<id>).
+  // Jobs first: a run that is no longer listed there has already saved its
+  // result, so the list read after it shows that result.
+  function getJSON(url) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+  }
   function load() {
-    return fetch("/api/watches")
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
+    var jobs;
+    return getJSON("/api/jobs")
+      .then(function (j) { jobs = j; return getJSON("/api/watches"); })
       .then(function (rows) {
+        var live = {};
+        ((jobs && jobs.jobs) || []).forEach(function (j) {
+          if (j.kind === "monitor" && j.watch_id != null) live[j.watch_id] = j;
+        });
         watches = Array.isArray(rows) ? rows : [];
+        watches.forEach(function (w) {
+          var j = live[w.id];
+          w.running = !!j;
+          w.queued = !!j && j.status === "queued";
+          w.progress = j ? j.progress : null;
+        });
         loadErr = false;
         render();
         paintNote();
