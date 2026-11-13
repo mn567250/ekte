@@ -589,7 +589,7 @@
     window.EkteNotice.show($("#note"), n);
   }
   function loadNote() {
-    var st = fetch("/api/history/status").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+    var st = window.EkteFilters.fetchWidget("/api/history/status");
     var mk = fetch("/api/secret").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
     return Promise.all([st, mk])
       .then(function (res) { note.status = res[0]; note.locked = !!(res[1] && res[1].state === "locked"); note.err = false; },
@@ -1058,18 +1058,14 @@
 
   function fetchReport(panel, id) {
     panel.innerHTML = '<div class="state loading">' + esc(T("加载报告…", "Loading report…")) + "</div>";
-    fetch("/api/history/" + encodeURIComponent(id) + "?trend=1")
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
+    window.EkteFilters.fetchWidget("/api/history/" + encodeURIComponent(id) + "?trend=1")
       .then(function (rep) {
         state.reports[id] = rep;
         if (panel.isConnected) mount(panel, rep);
       })
       .catch(function (e) {
         if (panel.isConnected)
-          panel.innerHTML = '<div class="errbox">' + esc(T("无法加载这份报告：", "Could not load this report: ")) + esc(String((e && e.message) || e)) + "</div>";
+          panel.innerHTML = '<div class="errbox">' + esc(T("无法加载这份报告：", "Could not load this report: ")) + esc(EKTE_LANG.server(String((e && e.message) || e))) + "</div>";
       });
   }
 

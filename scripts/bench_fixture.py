@@ -189,6 +189,21 @@ def _time(fn: Callable[[], Any], repeat: int) -> tuple[float, float]:
     return statistics.median(t), p95(t)
 
 
+def history_cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
+    """History's status and report detail (GET /api/history/status and
+    /api/history/{rid}, with and without ``trend=1``): the functions behind
+    the endpoints, on the newest run. Timed by tests/test_history_api.py."""
+    from ekte.web import history
+    from ekte.web.server import history_report
+
+    rid = int(conn.execute("SELECT MAX(id) FROM history").fetchone()[0] or 0)
+    return {
+        "history status": lambda c: history.status(),
+        "history report": lambda c: history_report(rid),
+        "history report, trend=1": lambda c: history_report(rid, trend=True),
+    }
+
+
 def cases(conn: Any) -> dict[str, Callable[[Any], Any]]:
     """The benchmarked calls, by name: each takes a query connection."""
     from ekte.web import query

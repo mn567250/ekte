@@ -20,6 +20,14 @@ ekte has three eras:
 
 ## [Unreleased]
 
+### Web UI: widget answers kept by the browser ([#153](https://github.com/mn567250/ekte/issues/153))
+
+History and Analytics leave their answers to the browser's HTTP cache, so a
+reload or a change of page revalidates them (`304`) instead of loading them
+again. `GET /api/history/status` and the report detail `GET /api/history/{id}`
+(also with `?trend=1`) are now cached with an `ETag` like the widget
+endpoints.
+
 ### Monitors: run window per monitor ([#165](https://github.com/mn567250/ekte/issues/165))
 
 A monitor can have a run window, for example Mon–Fri, 07:00–19:00,

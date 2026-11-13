@@ -214,7 +214,9 @@ let respond = null;
 const res = (status, body, etag) => ({ status, ok: status >= 200 && status < 300,
   headers: { get: (h) => (h === "ETag" ? etag || null : null) }, json: async () => body });
 global.fetch = (url, init) => {
-  calls.push({ url, inm: (init.headers || {})["If-None-Match"] || null });
+  calls.push({ url, inm: (init.headers || {})["If-None-Match"] || null, init: {
+    headers: init.headers, credentials: init.credentials, cache: init.cache === undefined ? null : init.cache,
+    signal: !!init.signal } });
   return new Promise((resolve, reject) => {
     const abort = () => { const e = new Error("aborted"); e.name = "AbortError"; reject(e); };
     if (init.signal) { if (init.signal.aborted) return abort(); init.signal.addEventListener("abort", abort); }
@@ -226,25 +228,26 @@ const tick = () => new Promise((r) => setTimeout(r, 5));
 """
 
 
-def test_etag_is_sent_and_a_304_reuses_the_copy():
+def test_a_plain_fetch_on_the_browser_cache_keeps_no_copy():
+    """fetchWidget leaves revalidation to the browser's HTTP cache (the
+    server's ETag + no-cache): the default cache mode, no If-None-Match of
+    its own, and every answer, a stored one included, comes from fetch."""
     got = run(_FETCH + """
       let n = 0;
-      respond = (url, init) => {
-        n += 1;
-        if (init.headers["If-None-Match"] === '"v1"') return res(304, null, '"v1"');
-        return res(200, { url, n }, url.includes("nocache") ? null : '"v1"');
-      };
+      respond = (url) => { n += 1; return res(200, { url, n }, '"v1"'); };
       const a = await F.fetchWidget("/api/x?range=7d");
-      const b = await F.fetchWidget("/api/x?range=7d");      // 304: the same data
-      const c = await F.fetchWidget("/api/x?range=30d");     // another URL: no ETag of its own yet
-      const d = await F.fetchWidget("/api/nocache");
-      const e = await F.fetchWidget("/api/nocache");         // no ETag given: never conditional
-      return { a, b, c, d, e, calls };
+      const b = await F.fetchWidget("/api/x?range=7d");   // the browser revalidates; a 304 arrives as a 200
+      const ctl = new AbortController();
+      const c = await F.fetchWidget("/api/x?range=30d", { signal: ctl.signal });
+      return { a, b, c, calls };
     """)
-    assert got["a"] == got["b"] == {"url": "/api/x?range=7d", "n": 1}
+    assert got["a"] == {"url": "/api/x?range=7d", "n": 1}
+    assert got["b"] == {"url": "/api/x?range=7d", "n": 2}
     assert got["c"] == {"url": "/api/x?range=30d", "n": 3}
-    assert [c["inm"] for c in got["calls"]] == [None, '"v1"', None, None, None]
-    assert got["e"]["n"] == 5
+    assert [c["inm"] for c in got["calls"]] == [None, None, None]
+    assert [c["init"] for c in got["calls"]] == [
+        {"headers": {"Accept": "application/json"}, "credentials": "same-origin", "cache": None,
+         "signal": s} for s in (False, False, True)]
 
 
 def test_an_error_status_rejects_with_the_server_message():
